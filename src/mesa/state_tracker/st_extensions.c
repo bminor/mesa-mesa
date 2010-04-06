@@ -197,6 +197,9 @@ void st_init_extensions(struct st_context *st)
    ctx->Extensions.NV_texgen_reflection = GL_TRUE;
    ctx->Extensions.NV_texture_env_combine4 = GL_TRUE;
 
+#if FEATURE_OES_EGL_image
+   ctx->Extensions.OES_EGL_image = GL_TRUE;
+#endif
 #if FEATURE_OES_draw_texture
    ctx->Extensions.OES_draw_texture = GL_TRUE;
 #endif
