@@ -361,10 +361,12 @@ extern GLboolean i830CreateContext(const __GLcontextModes * mesaVis,
                                    __DRIcontext * driContextPriv,
                                    void *sharedContextPrivate);
 
-extern GLboolean i915CreateContext(const __GLcontextModes * mesaVis,
+extern GLboolean i915CreateContext(int api,
+				   const __GLcontextModes * mesaVis,
                                    __DRIcontext * driContextPriv,
                                    void *sharedContextPrivate);
-extern GLboolean brwCreateContext(const __GLcontextModes * mesaVis,
+extern GLboolean brwCreateContext(int api,
+				  const __GLcontextModes * mesaVis,
 				  __DRIcontext * driContextPriv,
 				  void *sharedContextPrivate);
 
@@ -380,7 +382,7 @@ intelCreateContext(gl_api api,
 #ifdef I915
    if (IS_9XX(intelScreen->deviceID)) {
       if (!IS_965(intelScreen->deviceID)) {
-	 return i915CreateContext(mesaVis, driContextPriv,
+	 return i915CreateContext(api, mesaVis, driContextPriv,
 				  sharedContextPrivate);
       }
    } else {
@@ -389,7 +391,8 @@ intelCreateContext(gl_api api,
    }
 #else
    if (IS_965(intelScreen->deviceID))
-      return brwCreateContext(mesaVis, driContextPriv, sharedContextPrivate);
+      return brwCreateContext(api, mesaVis,
+			      driContextPriv, sharedContextPrivate);
 #endif
    fprintf(stderr, "Unrecognized deviceID %x\n", intelScreen->deviceID);
    return GL_FALSE;
