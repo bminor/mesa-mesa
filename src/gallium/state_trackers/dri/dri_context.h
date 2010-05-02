@@ -35,6 +35,8 @@
 #include "pipe/p_compiler.h"
 #include "drm.h"
 #include "dri_util.h"
+#include "dri_wrapper.h"
+#include "main/mtypes.h"
 
 struct pipe_context;
 struct pipe_fence;
@@ -109,7 +111,8 @@ dri_make_current(__DRIcontext * driContextPriv,
 		 __DRIdrawable * driReadPriv);
 
 boolean
-dri_create_context(const __GLcontextModes * visual,
+dri_create_context(gl_api api,
+		   const __GLcontextModes * visual,
 		   __DRIcontext * driContextPriv,
 		   void *sharedContextPrivate);
 

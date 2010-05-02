@@ -43,7 +43,7 @@
 #include "util/u_memory.h"
 
 GLboolean
-dri_create_context(const __GLcontextModes * visual,
+dri_create_context(gl_api api, const __GLcontextModes * visual,
 		   __DRIcontext * cPriv, void *sharedContextPrivate)
 {
    __DRIscreen *sPriv = cPriv->driScreenPriv;
