@@ -44,6 +44,7 @@
 #include "tnl/t_pipeline.h"
 
 #include "drivers/common/driverfuncs.h"
+#include "drivers/common/meta.h"
 
 #include "savagedd.h"
 #include "savagestate.h"
@@ -474,6 +475,8 @@ savageCreateContext( gl_api api,
    imesa->CurrentTexObj[0] = 0;
    imesa->CurrentTexObj[1] = 0;
 
+   _mesa_meta_init( ctx );
+
    /* Initialize the software rasterizer and helper modules.
     */
    _swrast_CreateContext( ctx );
@@ -564,6 +567,8 @@ savageDestroyContext(__DRIcontext *driContextPriv)
 
       free(imesa->cmdBuf.base);
       free(imesa->clientVtxBuf.buf);
+
+      _mesa_meta_free( imesa->glCtx );
 
       _swsetup_DestroyContext(imesa->glCtx );
       _tnl_DestroyContext( imesa->glCtx );
