@@ -71,8 +71,6 @@ _mesa_GetString( GLenum name )
       case GL_VERSION:
          return (const GLubyte *) ctx->VersionString;
       case GL_EXTENSIONS:
-         if (!ctx->Extensions.String)
-            ctx->Extensions.String = _mesa_make_extension_string(ctx);
          return (const GLubyte *) ctx->Extensions.String;
 #if FEATURE_ARB_shading_language_100
       case GL_SHADING_LANGUAGE_VERSION_ARB:
