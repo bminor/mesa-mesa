@@ -1201,7 +1201,7 @@ GLboolean checkop3(r700_AssemblerBase* pAsm)
 	    {
             if( GL_FALSE == mov_temp(pAsm, 1) )
             {
-                return 1;
+                return GL_FALSE;
             }
         }
 
