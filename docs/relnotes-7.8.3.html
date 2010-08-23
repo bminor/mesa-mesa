@@ -53,9 +53,12 @@ image.</li>
 <ul>
 <li>Fix unsupported FB with D24S8 (bug 
     <a href="https://bugs.freedesktop.org/show_bug.cgi?id=23670">29116</a>)</li>
+<li>Fix ReadPixels crash when reading depth/stencil from an FBO</li>
 <li>Fixed a bug rendering to 16-bit buffers using swrast.</li>
 <li>Fixed a state tracker/TGSI bug that caused crashes when using Windows'
     memory debugging features.</li>
+<li>Fixed an issue rendering to 32-bit channels with swrast (bug
+    <a href="https://bugs.freedesktop.org/show_bug.cgi?id=29487">29487</a>)</li>
 <li>GLSL: fix indirect <TT>gl_TextureMatrix</TT> addressing (bug
     <a href="https://bugs.freedesktop.org/show_bug.cgi?id=28967">28967</a>)</li>
 <li>GLSL: fix for bug
