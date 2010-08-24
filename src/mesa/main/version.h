@@ -34,8 +34,8 @@
 /* Mesa version */
 #define MESA_MAJOR 7
 #define MESA_MINOR 8
-#define MESA_PATCH 2
-#define MESA_VERSION_STRING "7.8.2"
+#define MESA_PATCH 3
+#define MESA_VERSION_STRING "7.8.3"
 
 /* To make version comparison easy */
 #define MESA_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
