@@ -741,8 +741,6 @@ void util_blitter_copy_region(struct blitter_context *blitter,
    if (dst == src) {
       assert(!is_overlap(srcx, srcx + width, srcy, srcy + height,
                          dstx, dstx + width, dsty, dsty + height));
-   } else {
-      assert(dst->format == src->format);
    }
    assert(src->target < PIPE_MAX_TEXTURE_TYPES);
 
