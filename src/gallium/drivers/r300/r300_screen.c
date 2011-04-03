@@ -204,7 +204,7 @@ static int r300_get_shader_param(struct pipe_screen *pscreen, unsigned shader, e
         case PIPE_SHADER_CAP_MAX_PREDS:
             return is_r500 ? 1 : 0;
         case PIPE_SHADER_CAP_TGSI_CONT_SUPPORTED:
-            return 1;
+            return 0;
         }
         break;
     case PIPE_SHADER_VERTEX:
@@ -231,7 +231,7 @@ static int r300_get_shader_param(struct pipe_screen *pscreen, unsigned shader, e
         case PIPE_SHADER_CAP_MAX_PREDS:
             return is_r500 ? 4 : 0; /* XXX guessed. */
         case PIPE_SHADER_CAP_TGSI_CONT_SUPPORTED:
-            return 1;
+            return 0;
         default:
             break;
         }
