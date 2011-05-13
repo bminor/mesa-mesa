@@ -69,7 +69,7 @@ static void radeon_bo_fixed_unmap(struct radeon *radeon, struct radeon_bo *bo)
 }
 
 struct radeon_bo *radeon_bo(struct radeon *radeon, unsigned handle,
-			unsigned size, unsigned alignment)
+			    unsigned size, unsigned alignment, unsigned initial_domain)
 {
 	struct radeon_bo *bo;
 	int r;
@@ -102,7 +102,7 @@ struct radeon_bo *radeon_bo(struct radeon *radeon, unsigned handle,
 
 		args.size = size;
 		args.alignment = alignment;
-		args.initial_domain = RADEON_GEM_DOMAIN_CPU;
+		args.initial_domain = initial_domain;
 		args.flags = 0;
 		args.handle = 0;
 		r = drmCommandWriteRead(radeon->fd, DRM_RADEON_GEM_CREATE,
