@@ -20405,7 +20405,7 @@ ProgramParameters4dvNV(target, index, count, v)
 	return		void
 	param		target		VertexAttribEnumNV in value
 	param		index		UInt32 in value
-	param		count		SizeI in value
+	param		count		UInt32 in value
 	param		v		Float64 in array [count*4]
 	category	NV_vertex_program
 	version		1.2
@@ -20417,7 +20417,7 @@ ProgramParameters4fvNV(target, index, count, v)
 	return		void
 	param		target		VertexAttribEnumNV in value
 	param		index		UInt32 in value
-	param		count		SizeI in value
+	param		count		UInt32 in value
 	param		v		Float32 in array [count*4]
 	category	NV_vertex_program
 	version		1.2
