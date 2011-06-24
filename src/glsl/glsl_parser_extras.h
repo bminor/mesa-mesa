@@ -156,18 +156,18 @@ struct _mesa_glsl_parse_state {
     * \name Enable bits for GLSL extensions
     */
    /*@{*/
-   unsigned ARB_draw_buffers_enable:1;
-   unsigned ARB_draw_buffers_warn:1;
-   unsigned ARB_explicit_attrib_location_enable:1;
-   unsigned ARB_explicit_attrib_location_warn:1;
-   unsigned ARB_fragment_coord_conventions_enable:1;
-   unsigned ARB_fragment_coord_conventions_warn:1;
-   unsigned ARB_texture_rectangle_enable:1;
-   unsigned ARB_texture_rectangle_warn:1;
-   unsigned EXT_texture_array_enable:1;
-   unsigned EXT_texture_array_warn:1;
-   unsigned ARB_shader_stencil_export_enable:1;
-   unsigned ARB_shader_stencil_export_warn:1;
+   bool ARB_draw_buffers_enable;
+   bool ARB_draw_buffers_warn;
+   bool ARB_explicit_attrib_location_enable;
+   bool ARB_explicit_attrib_location_warn;
+   bool ARB_fragment_coord_conventions_enable;
+   bool ARB_fragment_coord_conventions_warn;
+   bool ARB_texture_rectangle_enable;
+   bool ARB_texture_rectangle_warn;
+   bool EXT_texture_array_enable;
+   bool EXT_texture_array_warn;
+   bool ARB_shader_stencil_export_enable;
+   bool ARB_shader_stencil_export_warn;
    /*@}*/
 
    /** Extensions supported by the OpenGL implementation. */
