@@ -35,7 +35,8 @@
 
 static ir_function_signature *
 find_matching_signature(const char *name, const exec_list *actual_parameters,
-			gl_shader **shader_list, unsigned num_shaders);
+			gl_shader **shader_list, unsigned num_shaders,
+			bool use_builtin);
 
 class call_link_visitor : public ir_hierarchical_visitor {
 public:
@@ -79,7 +80,8 @@ public:
        * final linked shader.  If it does, use it as the target of the call.
        */
       ir_function_signature *sig =
-	 find_matching_signature(name, &callee->parameters, &linked, 1);
+	 find_matching_signature(name, &callee->parameters, &linked, 1,
+				 ir->use_builtin);
       if (sig != NULL) {
 	 ir->set_callee(sig);
 	 return visit_continue;
@@ -89,7 +91,7 @@ public:
        * linked.  If it's not found there, return an error.
        */
       sig = find_matching_signature(name, &ir->actual_parameters, shader_list,
-				    num_shaders);
+				    num_shaders, ir->use_builtin);
       if (sig == NULL) {
 	 /* FINISHME: Log the full signature of unresolved function.
 	  */
@@ -114,7 +116,9 @@ public:
 
       ir_function_signature *linked_sig =
 	 f->exact_matching_signature(&callee->parameters);
-      if (linked_sig == NULL) {
+      if ((linked_sig == NULL)
+	  || ((linked_sig != NULL)
+	      && (linked_sig->is_builtin != ir->use_builtin))) {
 	 linked_sig = new(linked) ir_function_signature(callee->return_type);
 	 f->add_signature(linked_sig);
       }
@@ -245,7 +249,8 @@ private:
  */
 ir_function_signature *
 find_matching_signature(const char *name, const exec_list *actual_parameters,
-			gl_shader **shader_list, unsigned num_shaders)
+			gl_shader **shader_list, unsigned num_shaders,
+			bool use_builtin)
 {
    for (unsigned i = 0; i < num_shaders; i++) {
       ir_function *const f = shader_list[i]->symbols->get_function(name);
@@ -257,6 +262,13 @@ find_matching_signature(const char *name, const exec_list *actual_parameters,
 
       if ((sig == NULL) || !sig->is_defined)
 	 continue;
+
+      /* If this function expects to bind to a built-in function and the
+       * signature that we found isn't a built-in, keep looking.  Also keep
+       * looking if we expect a non-built-in but found a built-in.
+       */
+      if (use_builtin != sig->is_builtin)
+	    continue;
 
       return sig;
    }
