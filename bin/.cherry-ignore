@@ -1,0 +1,68 @@
+# These commits were cherry picked without using -x.
+bca6cd2d71ad944031edeacd129eb0031a89c08e scons: Remove Haiku one-offs for gallium drivers
+efd73f72d8f34a40d6a1cd279fffa48dc13b6e5b mapi/glapi: Never use a generic no-op entry-point on Windows.
+ab1195cf1127781909d5158c7de68f8732458d75 swrast: Fix implicit declaration warnings
+e2dce7f7ee3e7da9cbb0bb33307ecd79e824426d intel: Fix rendering from textures after RenderTexture().
+b4082f492b4b55df4c636445e47b97d1f1e4b5b2 r600g: add support for TN (trinity) APUs
+
+# There's no blorp in the 8.0 branch.
+32c7b2769cbe80ff56d1c73c4f9b62f13f577c8d i965/blorp: Clarify why width/height must be adjusted for Gen6 IMS surfaces.
+e14b1288ef5b5b6091facaecd42e86f0a8157f28 i965/blorp: Change gl_renderbuffer* params to intel_renderbuffer*.
+09b0fa8499d8035fa31ccb2b550056305fbd149b i965/blorp: store surface width/height in brw_blorp_mip_info.
+c130ce7b2b26b4b67d4bf2b6dd1044a200efe25d i965/blorp: store x and y offsets in brw_blorp_mip_info.
+3123f0621561549c4566248100661ef77cab2834 i965/blorp: Thread level and layer through brw_blorp_blit_miptrees().
+f04f219906e40a6647a10fd9c1928509fe25fb84 i965/blorp: Account for offsets when emitting SURFACE_STATE.
+1a75063d5f829547b75b60ae64bddf3905b4cb8f i965/blorp: don't reduce stencil alignment restrictions when multisampling.
+5fd67fac14d7f35c311eb5c671be8d4ae9b2ea37 i965/blorp: Reduce alignment restrictions for stencil blits.
+1a5d4f7cb2367c7863b28efbd78e9169114baf42 i965/blorp: Fix offsets and width/height for stencil blits.
+a33ce665a5827c598b85bb04d94b33e6a5e41c28 i965/blorp: Increase Y alignment for multisampled stencil blits.
+124b214f094fa63ff1ddb7e9f0a1c2e0ba8214fb i965/blorp: Fix sRGB MSAA resolves.
+e2249e8c4d06a85d6389ba1689e15d7e29aa4dff i965/blorp: Add support for blits between SRGB and linear formats.
+
+# The old generated ES1/ES2 disptach code is still used in 8.0.
+aa129b0833052f613a6ec570aef092733769ee0e mesa: Don't set dispatch pointer for glPointSize in ES2
+850412b8ab272b9616da9a0df29e424b07bddde9 mesa: Don't set dispatch pointer for glGetDoublev in ES2
+11927bfc4a43aefbac5af35aae34d5cdf5d9e6bb mesa: Don't set dispatch pointer for glGetBufferSubData in ES2
+2a3a68e4c7b15860ac9398c5a56c0d6762573633 mesa: Don't set dispatch pointers for glClearDepth or glDepthRange in ES2
+1c0a44aaf5c095ca261d1ce11bb8a67dbbce54a2 mesa: Don't set dispatch pointers for glPointParameter[if][v] in ES2
+a83b01371e60356d2ed69c131bf9e0a0daba59a4 mesa: Don't set dispatch pointer for glResizeBuffersMESA in ES2
+7f7268d385cc1435264b8d3111e1596b2dae9183 mesa: Don't set dispatch pointer for glGetProgramivARB in ES2
+ee77061277b640d78befb43c26a3ffbe227e9244 mesa: Don't set dispatch pointer for glTexStorage in ES2
+3ef9e43865f38e9c8c5681768645513ce26e0488 mesa: Pass GL context to _mesa_create_save_table
+a13c07f7528c74fc433a7227777351110087b89d mesa: Don't set loopback dispatch pointers for most things in ES2 or core
+aa0f588e2d4c160879699180f0e7f4d3e52b55b9 mesa: Don't set vtxfmt dispatch pointers for many things in ES2 or core
+be66cf950e01d217b5341f8e56676dc5bf81ca47 mesa: Don't set shaderapi dispatch pointers for many things in ES2 or core
+6c01a0e770432eda0e29dbd7278a94efc688a6d3 mesa: Don't set uniform dispatch pointers for many things in ES2 or core
+8f0b81bf7ddcdf5715a3e00af67395b91f27a243 mesa: don't enable glVertexPointer() when using API_OPENGLES2.
+51b069e7aa81cdc8f38db71554ae3dd12ce0a6c4 meta: Don't save and restore fog state when there is no fog state
+
+# The GLSL GenerateMipmaps does not exist in 8.0.
+299acac849eb8506de9760c94c6e8e8b1046d909 _mesa_meta_GenerateMipmap: Support all texture targets by generating shaders at runtime
+15bf3103b48a5928321fe56fbb3ed28a0f314418 _mesa_meta_GenerateMipmap: Generate separate shaders for glsl 120 / 130
+679c93ff89c71cbd3b1d24e88abd38f00b8c1f02 meta: Don't _mesa_set_enable() invalid targets in ES 1.
+ab097dde0c958dd8b1c06a07ef8913512753760c meta: Remove unsafe global mem_ctx pointer
+3308c079bd00e9b9aa546f5214ce197a904d059b meta: Rearrange shader creation in setup_glsl_generate_mipmap
+0242381f06edb09dcf0eaacd6d26ccd8584700cc meta: Don't use GLSL 1.30 shader on OpenGL ES 2
+eb1d87fb945783448cc40ad43c9cd4d98002d424 meta: Add on demand compilation of per target shader programs
+
+# There's no dual-source blending in 8.0.
+354f2cb5c7330a7d43cf0b177daf758d2aa31e0a glsl: Generate compile errors for explicit blend indices < 0 or > 1.
+ea0d08872724b5e31e9e32db2338e15fdfdcc4de intel/i965: Disable SampleAlphaToOne if dual source blending enabled
+
+# The S3TC over-ride codes doesn't exist in 8.0
+328961d95586931a17fe81ba816d362e8389c105 mesa: Don't override S3TC internalFormat if data is pre-compressed.
+
+# Causes too many regressions... it's not even 9.0
+413c4914129cd26ca87960852d8c0264c0fb29e7 intel: Improve teximage perf for Google Chrome paint rects (v3)
+b1d0fe022dc4826dadce014ab8fe062a82f75a16 intel: Fix segfault in intel_texsubimage_tiled_memcpy
+b5891286202987dfc2606ac716050c0ee426de11 intel: Fix yet-another-bug in intel_texsubimage_tiled_memcpy
+
+# Fixes bugs caused by pathes not on 8.0.
+043f66204b1a190e18747c3befa8826c82dd87a7 glapi/glx: rename 'table' variable to 'disp_table'
+22897c74979aa02facdd5cd729db8dadf86924f5 intel: Don't call intelDestroyContext if there is no context to destroy
+87f26214d6bdeb439b30615ec53c293c5141cf11 i965: Don't free the intel_context structure when intelCreateContext fails.
+de958de71b1450952e021af4e729c87406353db6 i915: Don't free the intel_context structure when intelCreateContext fails.
+7fa0f10cd85ccb5afbc3a961164011de70970ff3 mesa: Flag _NEW_VARYING_VP_INPUTS when TexEnv programs are active.
+
+# GL_NV_draw_buffers doesn't exist in 8.0.
+23ff634c9c2eff744b5ddae7d1ba02bc1ef19ac5 gles2: Alias glReadBufferNV with desktop glReadBuffer
