@@ -4,6 +4,9 @@ efd73f72d8f34a40d6a1cd279fffa48dc13b6e5b mapi/glapi: Never use a generic no-op e
 ab1195cf1127781909d5158c7de68f8732458d75 swrast: Fix implicit declaration warnings
 e2dce7f7ee3e7da9cbb0bb33307ecd79e824426d intel: Fix rendering from textures after RenderTexture().
 b4082f492b4b55df4c636445e47b97d1f1e4b5b2 r600g: add support for TN (trinity) APUs
+5beba3d0ba593b661451217a5ffcdf68644cc903 mesa: use _mesa_rebase_rgba_float/uint() in glGetTexImage code
+4a269a8dc0170c75ff22af3910786228727ea41e r300/compiler: Clear loop registers in vertex shaders w/o loops
+73249239cf71e3595ee19f3c1a02b8b0f58994cd r300/compiler: Copy all instruction attributes during local transfoms
 
 # There's no blorp in the 8.0 branch.
 32c7b2769cbe80ff56d1c73c4f9b62f13f577c8d i965/blorp: Clarify why width/height must be adjusted for Gen6 IMS surfaces.
@@ -66,3 +69,23 @@ de958de71b1450952e021af4e729c87406353db6 i915: Don't free the intel_context stru
 
 # GL_NV_draw_buffers doesn't exist in 8.0.
 23ff634c9c2eff744b5ddae7d1ba02bc1ef19ac5 gles2: Alias glReadBufferNV with desktop glReadBuffer
+
+# Introduces performance regressions for other games
+fa58644855e44830e0b91dc627703c236fa6712a r600g: fix abysmal performance in Reaction Quake
+
+# Candidates for 9.0 only
+61706915a3b5644faf7a5e67f47c9c593620bf8c gallium/u_blitter: fix stencil-only blits
+df5e2c058f73b72909fa99a2a189f5877525e3bf r600g: do not require MSAA renderbuffer support if not asked for
+2988fa940e1d8a4531fddff4d554eec1e6e04474 draw: fix non-indexed draw calls if there's an index buffer
+933faae2b8669f459e7ab27d6bcbfb6f4136b6d5 r600g: flush FMASK and CMASK when changing colorbuffers on Evergreen
+ed8d87c6a641efe8667c0ba580260ffaff5ffc7e radeonsi: add some new SI pci ids
+7da12426f7682ffc44ae40e31d1b5712521fbb70 build: Use AX_PTHREAD to detect pthreads
+9ed00075d8ea0ffaa675237e32b8611ad3064dbf build: Link libglapi with pthreads
+9dfca930d7fcfda6767d3be9b1690d010f08fea5 r600g: fix possible issue with stencil mipmap rendering
+93eba269351c6e256db3a4cc7c7018f5a3fae5a1 nouveau: use pre-calculated stride for resource_get_handle
+9a51edfb5af72a7a480f408f02d8ecd98c576b7b Re-add HAVE_PTHREADS preprocessor macro
+f42518962a08ce927e4ddd233d19d2661e135834 egl_dri2/x11: Fix eglPostSubBufferNV()
+a3b6b2d3055070da9bf7054fecfd0b171c398eb7 wayland: Destroy frame callback when destroying surface
+9785ae0973cc206afc36dbc7d5b9553f92d06b47 glsl_to_tgsi: fix dst register for texturing fetches.
+037b4f80384c72c12e31192d1a30411d4660972d r600g: fix lod bias/explicit lod with cube maps.
+eabbe5c45f5d05822c5f841628afa4008398d553 mesa: Don't glPopAttrib() GL_POINT_SPRITE_COORD_ORIGIN on < OpenGL-2.0
