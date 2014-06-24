@@ -127,6 +127,8 @@ get_stencil_miptree(struct intel_renderbuffer *irb)
 {
    if (!irb)
       return NULL;
+   if (!irb->mt)
+      return NULL;
    if (irb->mt->stencil_mt)
       return irb->mt->stencil_mt;
    return intel_renderbuffer_get_mt(irb);
