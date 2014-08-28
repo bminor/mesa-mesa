@@ -2206,6 +2206,14 @@ const struct brw_tracked_state genX(cc_vp) = {
 
 /* ---------------------------------------------------------------------- */
 
+/* Clamp scissors to 16-bit unsigned values; otherwise, the compiler truncates
+ * them to fit inside the bitfields, which is often not what is desired.
+ * My reading of GL and GLES specs suggests that overly-large scissor values are
+ * not an erroring condition and that the actual behavior is undefined, so
+ * switching from truncation to clamping is probably not a problem. ~ C.
+ */
+#define CLAMP_SCISSOR(X) CLAMP(X, 0x0000, 0xffff)
+
 static void
 set_scissor_bits(const struct gl_context *ctx, int i,
                  bool render_to_fbo, unsigned fb_width, unsigned fb_height,
@@ -2232,16 +2240,16 @@ set_scissor_bits(const struct gl_context *ctx, int i,
       sc->ScissorRectangleYMax = 0;
    } else if (render_to_fbo) {
       /* texmemory: Y=0=bottom */
-      sc->ScissorRectangleXMin = bbox[0];
-      sc->ScissorRectangleXMax = bbox[1] - 1;
-      sc->ScissorRectangleYMin = bbox[2];
-      sc->ScissorRectangleYMax = bbox[3] - 1;
+      sc->ScissorRectangleXMin = CLAMP_SCISSOR(bbox[0]);
+      sc->ScissorRectangleXMax = CLAMP_SCISSOR(bbox[1] - 1);
+      sc->ScissorRectangleYMin = CLAMP_SCISSOR(bbox[2]);
+      sc->ScissorRectangleYMax = CLAMP_SCISSOR(bbox[3] - 1);
    } else {
       /* memory: Y=0=top */
-      sc->ScissorRectangleXMin = bbox[0];
-      sc->ScissorRectangleXMax = bbox[1] - 1;
-      sc->ScissorRectangleYMin = fb_height - bbox[3];
-      sc->ScissorRectangleYMax = fb_height - bbox[2] - 1;
+      sc->ScissorRectangleXMin = CLAMP_SCISSOR(bbox[0]);
+      sc->ScissorRectangleXMax = CLAMP_SCISSOR(bbox[1] - 1);
+      sc->ScissorRectangleYMin = CLAMP_SCISSOR(fb_height - bbox[3]);
+      sc->ScissorRectangleYMax = CLAMP_SCISSOR(fb_height - bbox[2] - 1);
    }
 }
 
