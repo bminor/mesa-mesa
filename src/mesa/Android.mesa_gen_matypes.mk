@@ -36,6 +36,7 @@ LOCAL_IS_HOST_MODULE := true
 LOCAL_CFLAGS := -D_POSIX_C_SOURCE=199309L
 
 LOCAL_C_INCLUDES := \
+	$(MESA_TOP)/src \
 	$(MESA_TOP)/src/mapi \
 	$(MESA_TOP)/src/glsl
 
