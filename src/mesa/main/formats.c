@@ -73,7 +73,7 @@ struct gl_format_info
    uint8_t Swizzle[4];
 };
 
-#include "format_info.c"
+#include "format_info.h"
 
 static const struct gl_format_info *
 _mesa_get_format_info(mesa_format format)
