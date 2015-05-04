@@ -656,9 +656,6 @@ st_context_flush(struct st_context_iface *stctxi, unsigned flags,
       st->pipe->screen->fence_reference(st->pipe->screen, fence, NULL);
    }
 
-   if (flags & ST_FLUSH_FRONT)
-      st_manager_flush_frontbuffer(st);
-
    /* DRI3 changes the framebuffer after SwapBuffers, but we need to invoke
     * st_manager_validate_framebuffers to notice that.
     *
