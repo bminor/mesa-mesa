@@ -1928,6 +1928,7 @@ struct pipe_surface *si_create_surface_custom(struct pipe_context *pipe,
 	pipe_reference_init(&surface->base.reference, 1);
 	pipe_resource_reference(&surface->base.texture, texture);
 	surface->base.context = pipe;
+	surface->base.surface_destroy = pipe->surface_destroy;
 	surface->base.format = templ->format;
 	surface->base.width = width;
 	surface->base.height = height;

@@ -682,6 +682,7 @@ r600_create_sampler_view_custom(struct pipe_context *ctx,
 	view->base.texture = texture;
 	view->base.reference.count = 1;
 	view->base.context = ctx;
+	view->base.sampler_view_destroy = r600_sampler_view_destroy;
 
 	if (texture->target == PIPE_BUFFER)
 		return texture_buffer_sampler_view(view, texture->width0, 1);

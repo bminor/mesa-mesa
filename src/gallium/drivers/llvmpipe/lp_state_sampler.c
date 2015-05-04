@@ -40,6 +40,9 @@
 #include "lp_debug.h"
 #include "state_tracker/sw_winsys.h"
 
+static void
+llvmpipe_sampler_view_destroy(struct pipe_context *pipe,
+                              struct pipe_sampler_view *view);
 
 static void *
 llvmpipe_create_sampler_state(struct pipe_context *pipe,
@@ -183,6 +186,7 @@ llvmpipe_create_sampler_view(struct pipe_context *pipe,
       view->texture = NULL;
       pipe_resource_reference(&view->texture, texture);
       view->context = pipe;
+      view->sampler_view_destroy = llvmpipe_sampler_view_destroy;
 
 #ifdef DEBUG
      /*

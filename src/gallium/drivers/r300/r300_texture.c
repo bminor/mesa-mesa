@@ -1227,6 +1227,7 @@ struct pipe_surface* r300_create_surface_custom(struct pipe_context * ctx,
         pipe_reference_init(&surface->base.reference, 1);
         pipe_resource_reference(&surface->base.texture, texture);
         surface->base.context = ctx;
+        surface->base.surface_destroy = ctx->surface_destroy;
         surface->base.format = surf_tmpl->format;
         surface->base.width = u_minify(width0_override, level);
         surface->base.height = u_minify(height0_override, level);

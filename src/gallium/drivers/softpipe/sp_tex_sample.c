@@ -3467,6 +3467,7 @@ softpipe_create_sampler_view(struct pipe_context *pipe,
       view->texture = NULL;
       pipe_resource_reference(&view->texture, resource);
       view->context = pipe;
+      view->sampler_view_destroy = pipe->sampler_view_destroy;
 
 #ifdef DEBUG
      /*

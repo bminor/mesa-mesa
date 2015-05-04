@@ -427,6 +427,9 @@ struct pipe_surface
    uint16_t height;              /**< logical height in pixels */
 
    union pipe_surface_desc u;
+
+   void (*surface_destroy)(struct pipe_context *ctx,
+                           struct pipe_surface *);
 };
 
 
@@ -456,6 +459,9 @@ struct pipe_sampler_view
          unsigned size;     /**< size of the readable sub-range in bytes */
       } buf;
    } u;
+
+   void (*sampler_view_destroy)(struct pipe_context *ctx,
+                                struct pipe_sampler_view *view);
 };
 
 

@@ -147,6 +147,7 @@ llvmpipe_create_surface(struct pipe_context *pipe,
       pipe_resource_reference(&ps->texture, pt);
       ps->context = pipe;
       ps->format = surf_tmpl->format;
+      ps->surface_destroy = pipe->surface_destroy;
       if (llvmpipe_resource_is_texture(pt)) {
          assert(surf_tmpl->u.tex.level <= pt->last_level);
          assert(surf_tmpl->u.tex.first_layer <= surf_tmpl->u.tex.last_layer);

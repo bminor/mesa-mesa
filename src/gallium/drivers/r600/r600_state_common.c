@@ -385,8 +385,8 @@ static void r600_delete_rs_state(struct pipe_context *ctx, void *state)
 	FREE(rs);
 }
 
-static void r600_sampler_view_destroy(struct pipe_context *ctx,
-				      struct pipe_sampler_view *state)
+void r600_sampler_view_destroy(struct pipe_context *ctx,
+			       struct pipe_sampler_view *state)
 {
 	struct r600_pipe_sampler_view *view = (struct r600_pipe_sampler_view *)state;
 

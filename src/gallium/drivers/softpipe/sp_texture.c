@@ -300,6 +300,7 @@ softpipe_create_surface(struct pipe_context *pipe,
       pipe_resource_reference(&ps->texture, pt);
       ps->context = pipe;
       ps->format = surf_tmpl->format;
+      ps->surface_destroy = pipe->surface_destroy;
       if (pt->target != PIPE_BUFFER) {
          assert(surf_tmpl->u.tex.level <= pt->last_level);
          ps->width = u_minify(pt->width0, surf_tmpl->u.tex.level);

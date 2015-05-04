@@ -46,6 +46,10 @@
 #include "r300_texture.h"
 #include "r300_vs.h"
 
+static void
+r300_sampler_view_destroy(struct pipe_context *pipe,
+                          struct pipe_sampler_view *view);
+
 /* r300_state: Functions used to intialize state context by translating
  * Gallium state objects into semi-native r300 state objects. */
 
@@ -1609,6 +1613,7 @@ r300_create_sampler_view_custom(struct pipe_context *pipe,
         view->base.reference.count = 1;
         view->base.context = pipe;
         view->base.texture = NULL;
+        view->base.sampler_view_destroy = r300_sampler_view_destroy;
         pipe_resource_reference(&view->base.texture, texture);
 
 	view->width0_override = width0_override;

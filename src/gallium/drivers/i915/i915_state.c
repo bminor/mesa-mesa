@@ -44,6 +44,10 @@
 #include "i915_resource.h"
 #include "i915_state.h"
 
+static void
+i915_sampler_view_destroy(struct pipe_context *pipe,
+                          struct pipe_sampler_view *view);
+
 /* The i915 (and related graphics cores) do not support GL_CLAMP.  The
  * Intel drivers for "other operating systems" implement GL_CLAMP as
  * GL_CLAMP_TO_EDGE, so the same is done here.
@@ -827,6 +831,7 @@ i915_create_sampler_view_custom(struct pipe_context *pipe,
       view->texture = NULL;
       pipe_resource_reference(&view->texture, texture);
       view->context = pipe;
+      view->sampler_view_destroy = i915_sampler_view_destroy;
    }
 
    return view;
@@ -845,6 +850,7 @@ i915_create_sampler_view(struct pipe_context *pipe,
       view->texture = NULL;
       pipe_resource_reference(&view->texture, texture);
       view->context = pipe;
+      view->sampler_view_destroy = i915_sampler_view_destroy;
    }
 
    return view;

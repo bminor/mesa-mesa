@@ -376,6 +376,7 @@ i915_create_surface_custom(struct pipe_context *ctx,
       ps->u.tex.first_layer = surf_tmpl->u.tex.first_layer;
       ps->u.tex.last_layer = surf_tmpl->u.tex.last_layer;
       ps->context = ctx;
+      ps->surface_destroy = ctx->surface_destroy;
    }
    return ps;
 }
