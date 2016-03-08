@@ -671,6 +671,9 @@ private:
                                     this->record_next_sampler))
                return;
 
+            /* Avoid overflowing the sampler array. (crbug.com/141901) */
+            this->next_sampler = MIN2(this->next_sampler, MAX_SAMPLERS);
+
             for (unsigned i = uniform->opaque[shader_type].index;
                  i < MIN2(this->next_sampler, MAX_SAMPLERS);
                  i++) {
