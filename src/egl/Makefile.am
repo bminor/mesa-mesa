@@ -105,7 +105,9 @@ endif
 if HAVE_PLATFORM_ANDROID
 AM_CFLAGS += $(ANDROID_CFLAGS)
 libEGL_common_la_LIBADD += $(ANDROID_LIBS)
-dri2_backend_FILES += drivers/dri2/platform_android.c
+dri2_backend_FILES += \
+	drivers/dri2/platform_android.c \
+	drivers/dri2/egl_dri2_drm_gralloc.h
 endif
 
 AM_CFLAGS += \
