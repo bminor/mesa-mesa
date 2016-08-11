@@ -3786,6 +3786,15 @@ si_make_texture_descriptor(struct si_screen *screen,
 	}
 }
 
+static void si_sampler_view_destroy(struct pipe_context *ctx,
+                                    struct pipe_sampler_view *state)
+{
+        struct si_sampler_view *view = (struct si_sampler_view *)state;
+
+        pipe_resource_reference(&state->texture, NULL);
+        FREE(view);
+}
+
 /**
  * Create a sampler view.
  *
@@ -3821,6 +3830,7 @@ si_create_sampler_view_custom(struct pipe_context *ctx,
 	view->base.texture = NULL;
 	view->base.reference.count = 1;
 	view->base.context = ctx;
+	view->base.sampler_view_destroy = si_sampler_view_destroy;
 
 	assert(texture);
 	pipe_resource_reference(&view->base.texture, texture);
@@ -3954,15 +3964,6 @@ si_create_sampler_view(struct pipe_context *ctx,
 	return si_create_sampler_view_custom(ctx, texture, state,
 					     texture ? texture->width0 : 0,
 					     texture ? texture->height0 : 0, 0);
-}
-
-static void si_sampler_view_destroy(struct pipe_context *ctx,
-				    struct pipe_sampler_view *state)
-{
-	struct si_sampler_view *view = (struct si_sampler_view *)state;
-
-	pipe_resource_reference(&state->texture, NULL);
-	FREE(view);
 }
 
 static bool wrap_mode_uses_border_color(unsigned wrap, bool linear_filter)
