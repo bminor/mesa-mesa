@@ -224,10 +224,12 @@ expanded_line:
 			glcpp_error(& @1, parser, "undefined macro %s in expression (illegal in GLES)", $2.undefined_macro);
 		_glcpp_parser_skip_stack_change_if (parser, & @1, "elif", $2.value);
 	}
-|	LINE_EXPANDED integer_constant NEWLINE {
+|	LINE_EXPANDED expression NEWLINE {
+		if (parser->is_gles && $2.undefined_macro)
+			glcpp_error(& @1, parser, "undefined macro %s in expression (illegal in GLES)", $2.undefined_macro);
 		parser->has_new_line_number = 1;
-		parser->new_line_number = $2;
-		_mesa_string_buffer_printf(parser->output, "#line %" PRIiMAX "\n", $2);
+		parser->new_line_number = $2.value;
+		_mesa_string_buffer_printf(parser->output, "#line %" PRIiMAX "\n", $2.value);
 	}
 |	LINE_EXPANDED integer_constant integer_constant NEWLINE {
 		parser->has_new_line_number = 1;
@@ -237,6 +239,19 @@ expanded_line:
 		_mesa_string_buffer_printf(parser->output,
 					   "#line %" PRIiMAX " %" PRIiMAX "\n",
 					    $2, $3);
+	}
+|	LINE_EXPANDED '(' expression ')' '(' expression ')' NEWLINE {
+		if (parser->is_gles && $3.undefined_macro)
+			glcpp_error(& @1, parser, "undefined macro %s in expression (illegal in GLES)", $3.undefined_macro);
+		if (parser->is_gles && $6.undefined_macro)
+			glcpp_error(& @1, parser, "undefined macro %s in expression (illegal in GLES)", $6.undefined_macro);
+		parser->has_new_line_number = 1;
+		parser->new_line_number = $3.value;
+		parser->has_new_source_number = 1;
+		parser->new_source_number = $6.value;
+		_mesa_string_buffer_printf(parser->output,
+					   "#line %" PRIiMAX " %" PRIiMAX "\n",
+					   $3.value, $6.value);
 	}
 ;
 
