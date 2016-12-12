@@ -227,11 +227,11 @@ brw_workaround_depthstencil_alignment(struct brw_context *brw,
    /* Check if depth buffer is in depth/stencil format.  If so, then it's only
     * safe to invalidate it if we're also clearing stencil.
     */
-   if (depth_irb && invalidate_depth &&
+   if (depth_irb && depth_mt && invalidate_depth &&
       _mesa_get_format_base_format(depth_mt->format) == GL_DEPTH_STENCIL)
       invalidate_depth = invalidate_stencil && stencil_irb;
 
-   if (depth_irb) {
+   if (depth_irb && depth_mt) {
       if (rebase_depth_stencil(brw, depth_irb, invalidate_depth)) {
          /* In the case of stencil_irb being the same packed depth/stencil
           * texture but not the same rb, make it point at our rebased mt, too.
@@ -244,7 +244,7 @@ brw_workaround_depthstencil_alignment(struct brw_context *brw,
          }
       }
 
-      if (stencil_irb) {
+      if (stencil_irb && stencil_irb->mt) {
          assert(stencil_irb->mt == depth_irb->mt);
          assert(stencil_irb->mt_level == depth_irb->mt_level);
          assert(stencil_irb->mt_layer == depth_irb->mt_layer);
@@ -252,7 +252,7 @@ brw_workaround_depthstencil_alignment(struct brw_context *brw,
    }
 
    /* If there is no depth attachment, consider if stencil needs rebase. */
-   if (!depth_irb && stencil_irb)
+   if (!(depth_irb && depth_mt) && stencil_irb && stencil_irb->mt)
        rebase_depth_stencil(brw, stencil_irb, invalidate_stencil);
 }
 
