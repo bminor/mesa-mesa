@@ -862,7 +862,9 @@ brwCreateContext(gl_api api,
    brw->screen = screen;
    brw->bufmgr = screen->bufmgr;
 
-   brw->has_hiz = devinfo->has_hiz_and_separate_stencil;
+   /* Braswell has hiz issues, disable it. */
+   brw->has_hiz = devinfo->has_hiz_and_separate_stencil &&
+                  screen->deviceID != 0x22B1;
    brw->has_separate_stencil = devinfo->has_hiz_and_separate_stencil;
 
    brw->has_swizzling = screen->hw_has_swizzling;
