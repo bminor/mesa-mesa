@@ -43,6 +43,14 @@ struct nir_spirv_specialization {
 };
 
 struct spirv_to_nir_options {
+   /* Whether or not to lower all workgroup variable access to offsets
+    * up-front.  This means you will _shared intrinsics instead of _var
+    * for workgroup data access.
+    *
+    * This is currently required for full variable pointers support.
+    */
+   bool lower_workgroup_access_to_offsets;
+
    struct {
       bool float64;
       bool image_ms_array;
