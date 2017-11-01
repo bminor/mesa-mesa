@@ -107,7 +107,7 @@ private version is maintained in the 1.0 branch of the member gitlab server.
         <type category="define">// Vulkan 1.0 version number
 #define <name>VK_API_VERSION_1_0</name> <type>VK_MAKE_VERSION</type>(1, 0, 0)// Patch version should always be set to 0</type>
         <type category="define">// Version of this file
-#define <name>VK_HEADER_VERSION</name> 64</type>
+#define <name>VK_HEADER_VERSION</name> 65</type>
 
         <type category="define">
 #define <name>VK_DEFINE_HANDLE</name>(object) typedef struct object##_T* object;</type>
@@ -2646,6 +2646,35 @@ private version is maintained in the 1.0 branch of the member gitlab server.
             <member>const <type>void</type>*                    <name>pNext</name></member>             <!-- Pointer to next structure -->
             <member><type>VkQueueGlobalPriorityEXT</type>       <name>globalPriority</name></member>
         </type>
+        <type category="struct" name="VkDrmFormatModifierPropertiesListEXT" returnedonly="true">
+            <member values="VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT"><type>VkStructureType</type> <name>sType</name></member>
+            <member><type>void</type>* <name>pNext</name></member>
+            <member optional="true"><type>uint32_t</type> <name>drmFormatModifierCount</name></member>
+            <member optional="true,false" len="drmFormatModifierCount"><type>VkDrmFormatModifierPropertiesEXT</type>* <name>pDrmFormatModifierProperties</name></member>
+        </type>
+        <type category="struct" name="VkDrmFormatModifierPropertiesEXT" returnedonly="true">
+            <member><type>uint64_t</type> <name>drmFormatModifier</name></member>
+            <member><type>uint32_t</type> <name>drmFormatModifierPlaneCount</name></member>
+            <member><type>VkFormatFeatureFlags</type> <name>drmFormatModifierTilingFeatures</name></member>
+        </type>
+        <type category="struct" name="VkPhysicalDeviceImageDrmFormatModifierInfoEXT">
+            <member values="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT"><type>VkStructureType</type> <name>sType</name></member>
+            <member>const <type>void</type>* <name>pNext</name></member>
+            <member><type>uint64_t</type> <name>drmFormatModifier</name></member>
+        </type>
+        <type category="struct" name="VkImageDrmFormatModifierListCreateInfoEXT">
+            <member values="VK_STRUCTURE_TYPE_FLEXIBLE_DRM_FORMAT_MODIFIER_LIST_IMAGE_CREATE_INFO_EXT"><type>VkStructureType</type> <name>sType</name></member>
+            <member>const <type>void</type>* <name>pNext</name></member>
+            <member><type>uint32_t</type> <name>drmFormatModifierCount</name></member>
+            <member>const <type>uint64_t</type>* <name>pDrmFormatModifiers</name></member>
+        </type>
+        <type category="struct" name="VkImageExplicitDrmFormatModifierCreateInfoEXT">
+            <member values="VK_STRUCTURE_TYPE_IMAGE_EXCPLICIT_DRM_FORMAT_MODIFIER_CREATE_INFO_EXT"><type>VkStructureType</type> <name>sType</name></member>
+            <member>const <type>void</type>* <name>pNext</name></member>
+            <member><type>uint64_t</type> <name>drmFormatModifier</name></member>
+            <member optional="false"><type>uint32_t</type> <name>planeCount</name></member>
+            <member len="planeCount"><type>VkSubresourceLayout</type>* <name>pPlaneLayouts</name></member>
+        </type>
     </types>
 
     <comment>Vulkan enumerant (token) definitions</comment>
@@ -2666,6 +2695,7 @@ private version is maintained in the 1.0 branch of the member gitlab server.
         <enum value="1"     name="VK_TRUE"/>
         <enum value="0"     name="VK_FALSE"/>
         <enum value="(~0U)" name="VK_QUEUE_FAMILY_IGNORED"/>
+        <enum value="(~0U-2)" name="VK_QUEUE_FAMILY_FOREIGN_EXT"/>
         <enum value="(~0U-1)" name="VK_QUEUE_FAMILY_EXTERNAL_KHR"/>
         <enum value="(~0U)" name="VK_SUBPASS_EXTERNAL"/>
         <enum value="32"    name="VK_MAX_DEVICE_GROUP_SIZE_KHX"/>
@@ -5434,6 +5464,12 @@ private version is maintained in the 1.0 branch of the member gitlab server.
             <param optional="false,true"><type>size_t</type>* <name>pInfoSize</name></param>
             <param optional="true" len="pInfoSize"><type>void</type>* <name>pInfo</name></param>
         </command>
+        <command>
+            <proto><type>VkResult</type> <name>vkGetImageDrmFormatModifierEXT</name></proto>
+            <param><type>VkDevice</type> <name>device</name></param>
+            <param><type>VkImage</type> <name>image</name></param>
+            <param optional="false"><type>uint64_t</type>* <name>pDrmFormatModifier</name></param>
+        </command>
     </commands>
 
     <feature api="vulkan" name="VK_VERSION_1_0" number="1.0" comment="Vulkan core API interface definitions">
@@ -6940,16 +6976,18 @@ private version is maintained in the 1.0 branch of the member gitlab server.
                 <enum value="&quot;VK_MVK_moltenvk&quot;"               name="VK_MVK_MOLTENVK_EXTENSION_NAME"/>
             </require>
         </extension>
-        <extension name="VK_MESA_extension_126" number="126" author="MESA" contact="Chad Versace @chadversary" supported="disabled">
+        <extension name="VK_EXT_external_memory_dma_buf" number="126" type="device" requires="VK_KHR_external_memory_fd" author="EXT" contact="Chad Versace @chadversary" supported="vulkan">
             <require>
-                <enum value="0"                                         name="VK_MESA_EXTENSION_126_SPEC_VERSION"/>
-                <enum value="&quot;VK_MESA_extension_126&quot;"         name="VK_MESA_EXTENSION_126_EXTENSION_NAME"/>
+                <enum value="1"                                                  name="VK_EXT_EXTERNAL_MEMORY_DMA_BUF_SPEC_VERSION"/>
+                <enum value="&quot;VK_EXT_external_memory_dma_buf&quot;"         name="VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME"/>
+                <enum bitpos="7" extends="VkExternalMemoryHandleTypeFlagBitsKHR" name="VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT"/>
             </require>
         </extension>
-        <extension name="VK_MESA_extension_127" number="127" author="MESA" contact="Chad Versace @chadversary" supported="disabled">
+        <extension name="VK_EXT_queue_family_foreign" number="127" type="device" author="EXT" requires="VK_KHR_external_memory" contact="Chad Versace @chadversary" supported="vulkan">
             <require>
-                <enum value="0"                                         name="VK_MESA_EXTENSION_127_SPEC_VERSION"/>
-                <enum value="&quot;VK_MESA_extension_127&quot;"         name="VK_MESA_EXTENSION_127_EXTENSION_NAME"/>
+                <enum value="1"                                         name="VK_EXT_QUEUE_FAMILY_FOREIGN_SPEC_VERSION"/>
+                <enum value="&quot;VK_EXT_queue_family_foreign&quot;"   name="VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME"/>
+                <enum                                                   name="VK_QUEUE_FAMILY_FOREIGN_EXT"/>
             </require>
         </extension>
         <extension name="VK_KHR_dedicated_allocation" number="128" type="device" author="KHR" requires="VK_KHR_get_memory_requirements2" contact="James Jones @cubanismo" supported="vulkan">
@@ -7310,10 +7348,29 @@ private version is maintained in the 1.0 branch of the member gitlab server.
                 <type name="VkBindImageMemoryInfoKHR"/>
             </require>
         </extension>
-        <extension name="VK_EXT_extension_159" number="159" author="EXT" contact="Chad Versace @chadversary" supported="disabled">
+        <extension name="VK_EXT_image_drm_format_modifier" number="159" type="device" requires="VK_KHR_bind_memory2,VK_KHR_sampler_ycbcr_conversion" author="EXT" contact="Chad Versace @chadversary" supported="vulkan">
             <require>
-                <enum value="0"                                          name="VK_EXT_EXTENSION_159_SPEC_VERSION"/>
-                <enum value="&quot;VK_EXT_extension_159&quot;"           name="VK_EXT_EXTENSION_159_EXTENSION_NAME"/>
+                <enum value="1" name="VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_SPEC_VERSION"/>
+                <enum value="&quot;VK_EXT_image_drm_format_modifier&quot;" name="VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME"/>
+
+                <enum offset="0" dir="-" extends="VkResult" name="VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT"/>
+
+                <enum offset="0" extends="VkStructureType" name="VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT"/>
+                <enum offset="1" extends="VkStructureType" name="VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT"/>
+                <enum offset="2" extends="VkStructureType" name="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT"/>
+                <enum offset="3" extends="VkStructureType" name="VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT"/>
+                <enum offset="4" extends="VkStructureType" name="VK_STRUCTURE_TYPE_IMAGE_EXCPLICIT_DRM_FORMAT_MODIFIER_CREATE_INFO_EXT"/>
+
+                <enum offset="0" extends="VkImageTiling" name="VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT"/>
+                <enum bitpos="7" extends="VkImageAspectFlagBits" name="VK_IMAGE_ASPECT_PLANE_3_BIT_EXT"/>
+
+                <type name="VkDrmFormatModifierPropertiesListEXT"/>
+                <type name="VkDrmFormatModifierPropertiesEXT"/>
+                <type name="VkPhysicalDeviceImageDrmFormatModifierInfoEXT"/>
+                <type name="VkImageDrmFormatModifierListCreateInfoEXT"/>
+                <type name="VkImageExplicitDrmFormatModifierCreateInfoEXT"/>
+
+                <command name="vkGetImageDrmFormatModifierEXT"/>
             </require>
         </extension>
         <extension name="VK_EXT_extension_160" number="160" author="EXT" contact="Mark Young @MarkY_LunarG" supported="disabled">
