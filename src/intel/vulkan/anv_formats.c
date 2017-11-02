@@ -860,7 +860,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties(
                                           pImageFormatProperties, NULL);
 }
 
-static const VkExternalMemoryPropertiesKHR prime_fd_props = {
+static const VkExternalMemoryPropertiesKHR opaque_fd_props = {
    /* If we can handle external, then we can both import and export it. */
    .externalMemoryFeatures = VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR |
                              VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR,
@@ -869,6 +869,17 @@ static const VkExternalMemoryPropertiesKHR prime_fd_props = {
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR,
    .compatibleHandleTypes =
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR,
+};
+
+static const VkExternalMemoryPropertiesKHR dma_buf_props = {
+   /* If we can handle external, then we can both import and export it. */
+   .externalMemoryFeatures = VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR |
+                             VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR,
+   /* For the moment, let's not support mixing and matching */
+   .exportFromImportedHandleTypes =
+      VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
+   .compatibleHandleTypes =
+      VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
 };
 
 VkResult anv_GetPhysicalDeviceImageFormatProperties2KHR(
@@ -924,7 +935,10 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2KHR(
       switch (external_info->handleType) {
       case VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR:
          if (external_props)
-            external_props->externalMemoryProperties = prime_fd_props;
+            external_props->externalMemoryProperties = opaque_fd_props;
+      case VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT:
+         if (external_props)
+            external_props->externalMemoryProperties = dma_buf_props;
          break;
       default:
          /* From the Vulkan 1.0.42 spec:
@@ -1005,7 +1019,10 @@ void anv_GetPhysicalDeviceExternalBufferPropertiesKHR(
 
    switch (pExternalBufferInfo->handleType) {
    case VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR:
-      pExternalBufferProperties->externalMemoryProperties = prime_fd_props;
+      pExternalBufferProperties->externalMemoryProperties = opaque_fd_props;
+      return;
+   case VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT:
+      pExternalBufferProperties->externalMemoryProperties = dma_buf_props;
       return;
    default:
       goto unsupported;

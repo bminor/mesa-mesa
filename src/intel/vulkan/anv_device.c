@@ -1538,11 +1538,11 @@ VkResult anv_AllocateMemory(
     * ignored.
     */
    if (fd_info && fd_info->handleType) {
-      /* At the moment, we only support the OPAQUE_FD memory type which is
-       * just a GEM buffer.
-       */
+      /* At the moment, we support only the below handle types. */
       assert(fd_info->handleType ==
-             VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR);
+               VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR ||
+             fd_info->handleType ==
+               VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
 
       result = anv_bo_cache_import(device, &device->bo_cache,
                                    fd_info->fd, &mem->bo);
@@ -1616,9 +1616,8 @@ VkResult anv_GetMemoryFdKHR(
 
    assert(pGetFdInfo->sType == VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR);
 
-   /* We support only one handle type. */
-   assert(pGetFdInfo->handleType ==
-          VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR);
+   assert(pGetFdInfo->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR ||
+          pGetFdInfo->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
 
    return anv_bo_cache_export(dev, &dev->bo_cache, mem->bo, pFd);
 }
