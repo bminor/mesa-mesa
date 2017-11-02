@@ -66,3 +66,15 @@ if with_egl
     subdir : 'EGL',
   )
 endif
+
+# HACK
+if _vulkan_drivers != []
+  install_headers(
+    'vulkan/vk_android_native_buffer.h',
+    'vulkan/vk_icd.h',
+    'vulkan/vk_platform.h',
+    'vulkan/vulkan.h',
+    'vulkan/vulkan_intel.h',
+    subdir : 'vulkan',
+  )
+endif
