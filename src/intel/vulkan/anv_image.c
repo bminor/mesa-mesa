@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <drm_fourcc.h>
 
 #include "anv_private.h"
 #include "util/debug.h"
@@ -35,11 +36,12 @@
 #include "vk_format_info.h"
 
 static isl_surf_usage_flags_t
-choose_isl_surf_usage(VkImageCreateFlags vk_create_flags,
-                      VkImageUsageFlags vk_usage,
+choose_isl_surf_usage(const VkImageCreateInfo *vk_info,
                       isl_surf_usage_flags_t isl_extra_usage,
                       VkImageAspectFlagBits aspect)
 {
+   VkImageCreateFlags vk_create_flags = vk_info->flags;
+   VkImageUsageFlags vk_usage = vk_info->usage;
    isl_surf_usage_flags_t isl_usage = isl_extra_usage;
 
    if (vk_usage & VK_IMAGE_USAGE_SAMPLED_BIT)
@@ -87,11 +89,15 @@ choose_isl_surf_usage(VkImageCreateFlags vk_create_flags,
       isl_usage |= ISL_SURF_USAGE_RENDER_TARGET_BIT;
    }
 
+   if (vk_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+      isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
+
    return isl_usage;
 }
 
 static isl_tiling_flags_t
-choose_isl_tiling_flags(const struct anv_image_create_info *anv_info)
+choose_isl_tiling_flags(const struct anv_image_create_info *anv_info,
+                        const struct isl_drm_modifier_info *isl_mod_info)
 {
    const VkImageCreateInfo *base_info = anv_info->vk_info;
    isl_tiling_flags_t flags = 0;
@@ -100,10 +106,15 @@ choose_isl_tiling_flags(const struct anv_image_create_info *anv_info)
    default:
       unreachable("bad VkImageTiling");
    case VK_IMAGE_TILING_OPTIMAL:
+      assert(isl_mod_info == NULL);
       flags = ISL_TILING_ANY_MASK;
       break;
    case VK_IMAGE_TILING_LINEAR:
+      assert(isl_mod_info == NULL);
       flags = ISL_TILING_LINEAR_BIT;
+      break;
+   case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
+      flags = 1 << isl_mod_info->tiling;
       break;
    }
 
@@ -298,8 +309,7 @@ make_surface(const struct anv_device *dev,
    struct anv_surface *anv_surf = &image->planes[plane].surface;
 
    const isl_surf_usage_flags_t usage =
-      choose_isl_surf_usage(vk_info->flags, image->usage,
-                            anv_info->isl_extra_usage_flags, aspect);
+      choose_isl_surf_usage(vk_info, anv_info->isl_extra_usage_flags, aspect);
 
    /* If an image is created as BLOCK_TEXEL_VIEW_COMPATIBLE, then we need to
     * fall back to linear on Broadwell and earlier because we aren't
@@ -492,6 +502,38 @@ make_surface(const struct anv_device *dev,
    return VK_SUCCESS;
 }
 
+static uint32_t
+score_drm_format_mod(uint64_t mod)
+{
+   switch (mod) {
+   default: unreachable("bad DRM format modifier");
+   case I915_FORMAT_MOD_Y_TILED: return 3;
+   case I915_FORMAT_MOD_X_TILED: return 2;
+   case DRM_FORMAT_MOD_LINEAR: return 1;
+   }
+}
+
+static const struct isl_drm_modifier_info *
+choose_drm_format_mod(const VkImageDrmFormatModifierListCreateInfoEXT *mod_list)
+{
+   uint64_t best_mod = UINT64_MAX;
+   uint32_t best_score = 0;
+
+   for (uint32_t i = 0; i < mod_list->drmFormatModifierCount; ++i) {
+      uint64_t mod = mod_list->pDrmFormatModifiers[i];
+      uint32_t score = score_drm_format_mod(mod);
+
+      if (score > best_score) {
+         best_mod = mod;
+         best_score = score;
+      }
+   }
+
+   assert(best_score != 0);
+
+   return isl_drm_modifier_get_info(best_mod);
+}
+
 VkResult
 anv_image_create(VkDevice _device,
                  const struct anv_image_create_info *create_info,
@@ -500,10 +542,25 @@ anv_image_create(VkDevice _device,
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
    const VkImageCreateInfo *pCreateInfo = create_info->vk_info;
+   const VkImageDrmFormatModifierListCreateInfoEXT *vk_mod_list = NULL;
+   const struct isl_drm_modifier_info *isl_mod_info = NULL;
    struct anv_image *image = NULL;
    VkResult r;
 
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
+
+   /* Extract input structs */
+   vk_foreach_struct_const(s, pCreateInfo->pNext) {
+      switch (s->sType) {
+      case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT:
+         vk_mod_list = (const VkImageDrmFormatModifierListCreateInfoEXT *) s;
+         isl_mod_info = choose_drm_format_mod(vk_mod_list);
+         break;
+      default:
+         anv_debug_ignored_stype(s->sType);
+         break;
+      }
+   }
 
    anv_assert(pCreateInfo->mipLevels > 0);
    anv_assert(pCreateInfo->arrayLayers > 0);
@@ -529,11 +586,14 @@ anv_image_create(VkDevice _device,
    image->tiling = pCreateInfo->tiling;
    image->disjoint = pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT_KHR;
 
+   if (isl_mod_info)
+      image->drm_format_mod = isl_mod_info->modifier;
+
    const struct anv_format *format = anv_get_format(image->vk_format);
    assert(format != NULL);
 
    const isl_tiling_flags_t isl_tiling_flags =
-      choose_isl_tiling_flags(create_info);
+      choose_isl_tiling_flags(create_info, isl_mod_info);
 
    image->n_planes = format->n_planes;
 
