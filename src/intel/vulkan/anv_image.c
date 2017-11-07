@@ -757,9 +757,22 @@ void anv_GetImageSubresourceLayout(
 
    layout->offset = surface->offset;
    layout->rowPitch = surface->isl.row_pitch;
-   layout->depthPitch = isl_surf_get_array_pitch(&surface->isl);
-   layout->arrayPitch = isl_surf_get_array_pitch(&surface->isl);
    layout->size = surface->isl.size;
+
+   if (image->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       image->drm_format_mod != DRM_FORMAT_MOD_LINEAR) {
+      /* We currently support DRM format modifiers on tiled images only when
+       * the image is "simple".
+       */
+      assert(image->levels == 1);
+      assert(image->array_size == 1);
+      assert(image->samples == 1);
+      layout->depthPitch = 0;
+      layout->arrayPitch = 0;
+   } else {
+      layout->depthPitch = isl_surf_get_array_pitch(&surface->isl);
+      layout->arrayPitch = isl_surf_get_array_pitch(&surface->isl);
+   }
 }
 
 /**
