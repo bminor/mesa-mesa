@@ -1552,3 +1552,13 @@ anv_image_get_surface_for_aspect_mask(const struct anv_image *image,
    uint32_t plane = anv_image_aspect_to_plane(image->aspects, sanitized_mask);
    return &image->planes[plane].surface;
 }
+
+VkResult
+anv_GetImageDrmFormatModifierEXT(VkDevice device_h,
+                                 VkImage image_h,
+                                 uint64_t *pDrmFormatModifier)
+{
+   ANV_FROM_HANDLE(anv_image, image, image_h);
+   *pDrmFormatModifier = image->drm_format_mod;
+   return VK_SUCCESS;
+}
