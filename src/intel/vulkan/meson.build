@@ -95,7 +95,6 @@ libanv_files = files(
   'anv_formats.c',
   'anv_genX.h',
   'anv_image.c',
-  'anv_intel.c',
   'anv_nir.h',
   'anv_nir_apply_pipeline_layout.c',
   'anv_nir_lower_input_attachments.c',

@@ -67,7 +67,6 @@ typedef uint32_t xcb_visualid_t;
 typedef uint32_t xcb_window_t;
 
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_intel.h>
 #include <vulkan/vk_icd.h>
 
 #include "radv_entrypoints.h"

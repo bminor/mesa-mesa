@@ -74,7 +74,6 @@ if _vulkan_drivers != []
     'vulkan/vk_icd.h',
     'vulkan/vk_platform.h',
     'vulkan/vulkan.h',
-    'vulkan/vulkan_intel.h',
     subdir : 'vulkan',
   )
 endif
