@@ -813,6 +813,7 @@ static VkResult
 anv_get_image_format_properties(
    struct anv_physical_device *physical_device,
    const VkPhysicalDeviceImageFormatInfo2KHR *info,
+   const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *drm_info,
    VkImageFormatProperties *pImageFormatProperties,
    VkSamplerYcbcrConversionImageFormatPropertiesKHR *pYcbcrImageFormatProperties)
 {
@@ -826,14 +827,34 @@ anv_get_image_format_properties(
    if (format == NULL)
       goto unsupported;
 
+   uint64_t drm_format_mod = DRM_FORMAT_MOD_INVALID;
+   if (drm_info) {
+      assert(info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT);
+      drm_format_mod = drm_info->drmFormatModifier;
+   }
+
    VkFormatFeatureFlags format_feature_flags =
       get_image_format_features(devinfo, info->format, format, info->tiling,
-                                DRM_FORMAT_MOD_INVALID);
+                                drm_format_mod);
+
+   /* The core Vulkan spec places strict constraints on the image capabilities
+    * advertised here. For example, the core spec requires that
+    *     maxMipLevels == log2(maxWidth) + 1
+    * when tiling is VK_IMAGE_TILING_OPTIMAL; and requires that
+    *     maxExtent >= VkPhysicalDeviceLimits::maxImageDimension${N}D.
+    * However, the VK_EXT_image_drm_format_modifier specification grants the
+    * implementation the freedom to further restrict the image capabilities
+    * when tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.
+    */
 
    switch (info->type) {
    default:
       unreachable("bad VkImageType");
    case VK_IMAGE_TYPE_1D:
+      /* We reject 1D images with modifiers due to FUD */
+      if (drm_info)
+         goto unsupported;
+
       maxExtent.width = 16384;
       maxExtent.height = 1;
       maxExtent.depth = 1;
@@ -848,10 +869,20 @@ anv_get_image_format_properties(
       maxExtent.width = 16384;
       maxExtent.height = 16384;
       maxExtent.depth = 1;
-      maxMipLevels = 15; /* log2(maxWidth) + 1 */
-      maxArraySize = 2048;
+
+      if (drm_info) {
+         maxMipLevels = 1;
+         maxArraySize = 1;
+      } else {
+         maxMipLevels = 15; /* log2(maxWidth) + 1 */
+         maxArraySize = 2048;
+      }
       break;
    case VK_IMAGE_TYPE_3D:
+      /* We reject 3D images with modifiers due to FUD */
+      if (drm_info)
+         goto unsupported;
+
       maxExtent.width = 2048;
       maxExtent.height = 2048;
       maxExtent.depth = 2048;
@@ -976,7 +1007,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties(
       .flags = createFlags,
    };
 
-   return anv_get_image_format_properties(physical_device, &info,
+   return anv_get_image_format_properties(physical_device, &info, NULL,
                                           pImageFormatProperties, NULL);
 }
 
@@ -1009,6 +1040,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2KHR(
 {
    ANV_FROM_HANDLE(anv_physical_device, physical_device, physicalDevice);
    const VkPhysicalDeviceExternalImageFormatInfoKHR *external_info = NULL;
+   const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *drm_info = NULL;
    VkExternalImageFormatPropertiesKHR *external_props = NULL;
    VkSamplerYcbcrConversionImageFormatPropertiesKHR *ycbcr_props = NULL;
    VkResult result;
@@ -1018,6 +1050,9 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2KHR(
       switch (s->sType) {
       case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO_KHR:
          external_info = (const void *) s;
+         break;
+      case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT:
+         drm_info = (const void *) s;
          break;
       default:
          anv_debug_ignored_stype(s->sType);
@@ -1041,7 +1076,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2KHR(
    }
 
    result = anv_get_image_format_properties(physical_device, base_info,
-               &base_props->imageFormatProperties, ycbcr_props);
+               drm_info, &base_props->imageFormatProperties, ycbcr_props);
    if (result != VK_SUCCESS)
       goto fail;
 
