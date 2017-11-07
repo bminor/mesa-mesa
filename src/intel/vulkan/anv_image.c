@@ -288,6 +288,7 @@ static VkResult
 make_surface(const struct anv_device *dev,
              struct anv_image *image,
              const struct anv_image_create_info *anv_info,
+             const VkImageExplicitDrmFormatModifierCreateInfoEXT *explicit_drm_info,
              isl_tiling_flags_t tiling_flags,
              VkImageAspectFlagBits aspect)
 {
@@ -308,8 +309,15 @@ make_surface(const struct anv_device *dev,
       anv_get_format_plane(&dev->info, image->vk_format, aspect, image->tiling);
    struct anv_surface *anv_surf = &image->planes[plane].surface;
 
+   const VkSubresourceLayout *drm_plane_layout = explicit_drm_info ?
+      &explicit_drm_info->pPlaneLayouts[plane] : NULL;
+
    const isl_surf_usage_flags_t usage =
       choose_isl_surf_usage(vk_info, anv_info->isl_extra_usage_flags, aspect);
+
+   uint32_t row_pitch = anv_info->stride;
+   if (explicit_drm_info)
+      row_pitch = drm_plane_layout->rowPitch;
 
    /* If an image is created as BLOCK_TEXEL_VIEW_COMPATIBLE, then we need to
     * fall back to linear on Broadwell and earlier because we aren't
@@ -336,18 +344,71 @@ make_surface(const struct anv_device *dev,
       .array_len = vk_info->arrayLayers,
       .samples = vk_info->samples,
       .min_alignment = 0,
-      .row_pitch = anv_info->stride,
+      .row_pitch = row_pitch,
       .usage = usage,
       .tiling_flags = tiling_flags);
 
-   /* isl_surf_init() will fail only if provided invalid input. Invalid input
-    * is illegal in Vulkan.
-    */
-   assert(ok);
+   if (!ok) {
+      /* isl_surf_init() fails only when provided invalid input. Invalid input
+       * is illegal in Vulkan unless
+       * VkImageExplicitDrmFormatModifierCreateInfoEXT is given.
+       */
+      assert(explicit_drm_info);
+      return vk_errorf(dev->instance, dev,
+                       VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT,
+                       "isl_surf_init() failed for plane %u", plane);
+   }
+
+   if (explicit_drm_info) {
+      /* The VK_EXT_image_drm_format_modifier spec permits support of any
+       * image, but we restrict support to simple images.
+       */
+      assert(aspect == VK_IMAGE_ASPECT_COLOR_BIT);
+      assert(image->type == VK_IMAGE_TYPE_2D);
+      assert(image->array_size == 1);
+      assert(image->samples == 1);
+
+      /* FINISHME: YCbCr images with DRM format modifiers */
+      assert(!anv_get_format(image->vk_format)->can_ycbcr);
+
+      if (drm_plane_layout->size < anv_surf->isl.size) {
+         return vk_errorf(dev->instance, dev,
+                          VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT,
+                          "VkSubresourceLayout::size too small for plane %u", plane);
+      }
+
+      if (drm_plane_layout->offset & (anv_surf->isl.alignment - 1)) {
+         return vk_errorf(dev->instance, dev,
+                          VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT,
+                          "VkSubresourceLayout::offset misaligned for plane "
+                          "%u", plane);
+      }
+
+      if (drm_plane_layout->arrayPitch != 0) {
+         return vk_errorf(dev->instance, dev,
+                          VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT,
+                          "VkSubresourceLayout::arrayPitch must be 0");
+      }
+
+      if (drm_plane_layout->depthPitch != 0) {
+         return vk_errorf(dev->instance, dev,
+                          VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT,
+                          "VkSubresourceLayout::depthPitch must be 0");
+      }
+
+      anv_surf->offset = drm_plane_layout->offset;
+
+      image->planes[plane].offset = drm_plane_layout->offset;
+      image->planes[plane].alignment = anv_surf->isl.alignment;
+      image->planes[plane].size = drm_plane_layout->size;
+
+      image->size = image->planes[plane].offset + image->planes[plane].size;
+      image->alignment = image->planes[plane].alignment;
+   } else {
+      add_surface(image, anv_surf, plane);
+   }
 
    image->planes[plane].aux_usage = ISL_AUX_USAGE_NONE;
-
-   add_surface(image, anv_surf, plane);
 
    /* If an image is created as BLOCK_TEXEL_VIEW_COMPATIBLE, then we need to
     * create an identical tiled shadow surface for use while texturing so we
@@ -543,6 +604,7 @@ anv_image_create(VkDevice _device,
    ANV_FROM_HANDLE(anv_device, device, _device);
    const VkImageCreateInfo *pCreateInfo = create_info->vk_info;
    const VkImageDrmFormatModifierListCreateInfoEXT *vk_mod_list = NULL;
+   const VkImageExplicitDrmFormatModifierCreateInfoEXT *explicit_drm_info = NULL;
    const struct isl_drm_modifier_info *isl_mod_info = NULL;
    struct anv_image *image = NULL;
    VkResult r;
@@ -555,6 +617,10 @@ anv_image_create(VkDevice _device,
       case VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT:
          vk_mod_list = (const VkImageDrmFormatModifierListCreateInfoEXT *) s;
          isl_mod_info = choose_drm_format_mod(vk_mod_list);
+         break;
+      case VK_STRUCTURE_TYPE_IMAGE_EXCPLICIT_DRM_FORMAT_MODIFIER_CREATE_INFO_EXT:
+         explicit_drm_info = (const VkImageExplicitDrmFormatModifierCreateInfoEXT *) s;
+         isl_mod_info = isl_drm_modifier_get_info(explicit_drm_info->drmFormatModifier);
          break;
       default:
          anv_debug_ignored_stype(s->sType);
@@ -599,8 +665,8 @@ anv_image_create(VkDevice _device,
 
    uint32_t b;
    for_each_bit(b, image->aspects) {
-      r = make_surface(device, image, create_info, isl_tiling_flags,
-                       (1 << b));
+      r = make_surface(device, image, create_info, explicit_drm_info,
+                       isl_tiling_flags, (1 << b));
       if (r != VK_SUCCESS)
          goto fail;
    }
