@@ -21,6 +21,8 @@
  * IN THE SOFTWARE.
  */
 
+#include <drm_fourcc.h>
+
 #include "anv_private.h"
 #include "vk_enum_to_str.h"
 #include "vk_format_info.h"
@@ -425,6 +427,9 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
       return unsupported;
 
    if (aspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+      if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+         return unsupported;
+
       assert(vk_format_aspects(vk_format) &
              (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
       return plane_format;
@@ -434,6 +439,18 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
 
    const struct isl_format_layout *isl_layout =
       isl_format_get_layout(plane_format.isl_format);
+
+   /* For VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, the image's driver-internal
+    * format must be the user-facing VkFormat. Modifying the VkFormat in any
+    * way, including swizzling, is illegal.
+    */
+
+   /* For now, for no reason other than FUD, we decline to support texture
+    * compression with modifiers.
+    */
+   if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       isl_layout->txc != ISL_TXC_NONE)
+      return unsupported;
 
    if (tiling == VK_IMAGE_TILING_OPTIMAL &&
        !util_is_power_of_two(isl_layout->bpb)) {
@@ -456,7 +473,8 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
    /* The B4G4R4A4 format isn't available prior to Broadwell so we have to fall
     * back to a format with a more complex swizzle.
     */
-   if (vk_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 && devinfo->gen < 8) {
+   if (tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       vk_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 && devinfo->gen < 8) {
       plane_format.isl_format = ISL_FORMAT_B4G4R4A4_UNORM;
       plane_format.swizzle = ISL_SWIZZLE(GREEN, RED, ALPHA, BLUE);
    }
@@ -466,13 +484,21 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
 
 // Format capabilities
 
+/**
+ * Parameter drm_format_mod must be DRM_FORMAT_MOD_INVALID unless vk_tiling is
+ * VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.
+ */
 static VkFormatFeatureFlags
 get_image_format_features(const struct gen_device_info *devinfo,
                           VkFormat vk_format,
                           const struct anv_format *anv_format,
-                          VkImageTiling vk_tiling)
+                          VkImageTiling vk_tiling,
+                          uint64_t drm_format_mod)
 {
    VkFormatFeatureFlags flags = 0;
+
+   if (vk_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+      assert(drm_format_mod == DRM_FORMAT_MOD_INVALID);
 
    if (anv_format == NULL)
       return 0;
@@ -480,7 +506,7 @@ get_image_format_features(const struct gen_device_info *devinfo,
    const VkImageAspectFlags aspects = vk_format_aspects(vk_format);
 
    if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-      if (vk_tiling == VK_IMAGE_TILING_LINEAR)
+      if (vk_tiling != VK_IMAGE_TILING_OPTIMAL)
          return 0;
 
       flags |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -503,6 +529,17 @@ get_image_format_features(const struct gen_device_info *devinfo,
    if (plane_format.isl_format == ISL_FORMAT_UNSUPPORTED)
       return 0;
 
+   const struct isl_format_layout *isl_layout =
+      isl_format_get_layout(plane_format.isl_format);
+
+   if (vk_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+      assert(isl_layout->txc == ISL_TXC_NONE);
+
+   /* For VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, the base format and
+    * non-base format must be the same, because the image's driver-internal
+    * format must be the user-facing VkFormat. Modifying the VkFormat in any
+    * way, including swizzling, is illegal.
+    */
    struct anv_format_plane base_plane_format = plane_format;
    if (vk_tiling == VK_IMAGE_TILING_OPTIMAL) {
       base_plane_format = anv_get_format_plane(devinfo, vk_format,
@@ -513,8 +550,8 @@ get_image_format_features(const struct gen_device_info *devinfo,
    enum isl_format base_isl_format = base_plane_format.isl_format;
 
    /* ASTC textures must be in Y-tiled memory */
-   if (vk_tiling == VK_IMAGE_TILING_LINEAR &&
-       isl_format_get_layout(plane_format.isl_format)->txc == ISL_TXC_ASTC)
+   if (vk_tiling != VK_IMAGE_TILING_OPTIMAL &&
+       isl_layout->txc == ISL_TXC_ASTC)
       return 0;
 
    if (isl_format_supports_sampling(devinfo, plane_format.isl_format)) {
@@ -569,6 +606,11 @@ get_image_format_features(const struct gen_device_info *devinfo,
    }
 
    if (anv_format->can_ycbcr) {
+      if (vk_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+         /* FINISHME(chadv): Support YUV with DRM format modifiers. */
+         return 0;
+      }
+
       /* The sampler doesn't have support for mid point when it handles YUV on
        * its own.
        */
@@ -606,6 +648,22 @@ get_image_format_features(const struct gen_device_info *devinfo,
          VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 
       flags &= ~disallowed_ycbcr_image_features;
+   }
+
+   if (vk_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+      switch (drm_format_mod) {
+      default:
+         unreachable("bad DRM format modifier");
+      case DRM_FORMAT_MOD_LINEAR:
+         break;
+      case I915_FORMAT_MOD_X_TILED:
+         /* TODO(chadv): Should we support X-tiled storage images? */
+         flags &= ~VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+         flags &= ~VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
+         break;
+      case I915_FORMAT_MOD_Y_TILED:
+         break;
+      }
    }
 
    return flags;
@@ -651,6 +709,60 @@ get_buffer_format_features(const struct gen_device_info *devinfo,
    return flags;
 }
 
+/**
+ * Fill the VkDrmFormatModifierPropertiesEXT struct if the VkFormat supports
+ * the DRM format modifier, and return true.  On failure, the output struct
+ * has undefined content.
+ */
+static bool
+get_drm_format_modifier_properties(const struct anv_physical_device *physical_device,
+                                   VkFormat vk_format,
+                                   const struct anv_format *anv_format,
+                                   uint64_t drm_format_mod,
+                                   VkDrmFormatModifierPropertiesEXT *props)
+{
+   const struct gen_device_info *devinfo = &physical_device->info;
+
+   *props = (VkDrmFormatModifierPropertiesEXT) {
+      .drmFormatModifier = drm_format_mod,
+      .drmFormatModifierPlaneCount = anv_format->n_planes,
+      .drmFormatModifierTilingFeatures =
+         get_image_format_features(devinfo, vk_format, anv_format,
+                                   VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
+                                   drm_format_mod),
+   };
+
+   if (props->drmFormatModifierTilingFeatures == 0)
+      return false;
+
+   return true;
+}
+
+static void
+get_drm_format_modifier_properties_list(const struct anv_physical_device *physical_device,
+                                        VkFormat vk_format,
+                                        VkDrmFormatModifierPropertiesListEXT *drm_list)
+{
+   const struct anv_format *anv_format = anv_get_format(vk_format);
+
+   VK_OUTARRAY_MAKE(out, drm_list->pDrmFormatModifierProperties,
+                    &drm_list->drmFormatModifierCount);
+
+   #define TRY_MOD(mod) ({ \
+      VkDrmFormatModifierPropertiesEXT tmp_props; \
+      if (get_drm_format_modifier_properties(physical_device, vk_format, \
+                                             anv_format, (mod), &tmp_props)) { \
+         vk_outarray_append(&out, drm_props) { *drm_props = tmp_props; }; \
+      } \
+   })
+
+   TRY_MOD(I915_FORMAT_MOD_Y_TILED);
+   TRY_MOD(I915_FORMAT_MOD_X_TILED);
+   TRY_MOD(DRM_FORMAT_MOD_LINEAR);
+
+   #undef TRY_MOD
+}
+
 void anv_GetPhysicalDeviceFormatProperties(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    vk_format,
@@ -663,10 +775,12 @@ void anv_GetPhysicalDeviceFormatProperties(
    *pFormatProperties = (VkFormatProperties) {
       .linearTilingFeatures =
          get_image_format_features(devinfo, vk_format, anv_format,
-                                   VK_IMAGE_TILING_LINEAR),
+                                   VK_IMAGE_TILING_LINEAR,
+                                   DRM_FORMAT_MOD_INVALID),
       .optimalTilingFeatures =
          get_image_format_features(devinfo, vk_format, anv_format,
-                                   VK_IMAGE_TILING_OPTIMAL),
+                                   VK_IMAGE_TILING_OPTIMAL,
+                                   DRM_FORMAT_MOD_INVALID),
       .bufferFeatures =
          get_buffer_format_features(devinfo, vk_format, anv_format),
    };
@@ -674,14 +788,20 @@ void anv_GetPhysicalDeviceFormatProperties(
 
 void anv_GetPhysicalDeviceFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkFormat                                    format,
+    VkFormat                                    vk_format,
     VkFormatProperties2KHR*                     pFormatProperties)
 {
-   anv_GetPhysicalDeviceFormatProperties(physicalDevice, format,
+   ANV_FROM_HANDLE(anv_physical_device, physical_device, physicalDevice);
+
+   anv_GetPhysicalDeviceFormatProperties(physicalDevice, vk_format,
                                          &pFormatProperties->formatProperties);
 
    vk_foreach_struct(ext, pFormatProperties->pNext) {
       switch (ext->sType) {
+      case VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT:
+         get_drm_format_modifier_properties_list(physical_device, vk_format,
+            (VkDrmFormatModifierPropertiesListEXT *)ext);
+         break;
       default:
          anv_debug_ignored_stype(ext->sType);
          break;
@@ -696,7 +816,6 @@ anv_get_image_format_properties(
    VkImageFormatProperties *pImageFormatProperties,
    VkSamplerYcbcrConversionImageFormatPropertiesKHR *pYcbcrImageFormatProperties)
 {
-   VkFormatFeatureFlags format_feature_flags;
    VkExtent3D maxExtent;
    uint32_t maxMipLevels;
    uint32_t maxArraySize;
@@ -707,8 +826,9 @@ anv_get_image_format_properties(
    if (format == NULL)
       goto unsupported;
 
-   format_feature_flags = get_image_format_features(devinfo, info->format,
-                                                    format, info->tiling);
+   VkFormatFeatureFlags format_feature_flags =
+      get_image_format_features(devinfo, info->format, format, info->tiling,
+                                DRM_FORMAT_MOD_INVALID);
 
    switch (info->type) {
    default:
