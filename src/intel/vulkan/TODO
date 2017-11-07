@@ -11,3 +11,19 @@ Performance:
  - Pushing pieces of UBOs?
  - Enable guardband clipping
  - Use soft-pin to avoid relocations
+
+VK_EXT_image_drm_format_modifiers:
+    [-] Modifiers
+        [x] DRM_FORMAT_MOD_LINEAR
+        [x] I915_FORMAT_MOD_X_TILED
+        [x] I915_FORMAT_MOD_Y_TILED
+        [ ] I915_FORMAT_MOD_Y_TILED_CCS
+    [x] vkGetPhysicalDeviceFormatProperties2KHR
+    [x] vkGetPhysicalDeviceImageFormatProperties2KHR
+    [x] vkCreateImage
+        [x] VkImageDrmFormatModifierListCreateInfoEXT
+        [x] VkImageExplicitDrmFormatModifierEXT
+    [ ] Resolve CCS on foreign queue transition
+    [x] vkGetImageDrmFormatModifierEXT
+    [x] vkGetImageSubresouceLayout
+    [x] Kill vkCreateImageDmaBufINTEL
