@@ -1794,12 +1794,14 @@ fail:
 static VkResult radv_alloc_sem_counts(struct radv_winsys_sem_counts *counts,
 				      int num_sems,
 				      const VkSemaphore *sems,
+				      VkFence _fence,
 				      bool reset_temp)
 {
 	int syncobj_idx = 0, sem_idx = 0;
 
-	if (num_sems == 0)
+	if (num_sems == 0 && _fence == VK_NULL_HANDLE)
 		return VK_SUCCESS;
+
 	for (uint32_t i = 0; i < num_sems; i++) {
 		RADV_FROM_HANDLE(radv_semaphore, sem, sems[i]);
 
@@ -1807,6 +1809,12 @@ static VkResult radv_alloc_sem_counts(struct radv_winsys_sem_counts *counts,
 			counts->syncobj_count++;
 		else
 			counts->sem_count++;
+	}
+
+	if (_fence != VK_NULL_HANDLE) {
+		RADV_FROM_HANDLE(radv_fence, fence, _fence);
+		if (fence->temp_syncobj || fence->syncobj)
+			counts->syncobj_count++;
 	}
 
 	if (counts->syncobj_count) {
@@ -1835,6 +1843,14 @@ static VkResult radv_alloc_sem_counts(struct radv_winsys_sem_counts *counts,
 			assert(sem->sem);
 			counts->sem[sem_idx++] = sem->sem;
 		}
+	}
+
+	if (_fence != VK_NULL_HANDLE) {
+		RADV_FROM_HANDLE(radv_fence, fence, _fence);
+		if (fence->temp_syncobj)
+			counts->syncobj[syncobj_idx++] = fence->temp_syncobj;
+		else if (fence->syncobj)
+			counts->syncobj[syncobj_idx++] = fence->syncobj;
 	}
 
 	return VK_SUCCESS;
@@ -1867,15 +1883,16 @@ VkResult radv_alloc_sem_info(struct radv_winsys_sem_info *sem_info,
 			     int num_wait_sems,
 			     const VkSemaphore *wait_sems,
 			     int num_signal_sems,
-			     const VkSemaphore *signal_sems)
+			     const VkSemaphore *signal_sems,
+			     VkFence fence)
 {
 	VkResult ret;
 	memset(sem_info, 0, sizeof(*sem_info));
 
-	ret = radv_alloc_sem_counts(&sem_info->wait, num_wait_sems, wait_sems, true);
+	ret = radv_alloc_sem_counts(&sem_info->wait, num_wait_sems, wait_sems, VK_NULL_HANDLE, true);
 	if (ret)
 		return ret;
-	ret = radv_alloc_sem_counts(&sem_info->signal, num_signal_sems, signal_sems, false);
+	ret = radv_alloc_sem_counts(&sem_info->signal, num_signal_sems, signal_sems, fence, false);
 	if (ret)
 		radv_free_sem_info(sem_info);
 
@@ -1941,7 +1958,8 @@ VkResult radv_QueueSubmit(
 					     pSubmits[i].waitSemaphoreCount,
 					     pSubmits[i].pWaitSemaphores,
 					     pSubmits[i].signalSemaphoreCount,
-					     pSubmits[i].pSignalSemaphores);
+					     pSubmits[i].pSignalSemaphores,
+					     _fence);
 		if (result != VK_SUCCESS)
 			return result;
 
@@ -2010,11 +2028,18 @@ VkResult radv_QueueSubmit(
 
 	if (fence) {
 		if (!fence_emitted) {
-			struct radv_winsys_sem_info sem_info = {0};
+			struct radv_winsys_sem_info sem_info;
+
+			result = radv_alloc_sem_info(&sem_info, 0, NULL, 0, NULL,
+			                             _fence);
+			if (result != VK_SUCCESS)
+				return result;
+
 			ret = queue->device->ws->cs_submit(ctx, queue->queue_idx,
 							   &queue->device->empty_cs[queue->queue_family_index],
 							   1, NULL, NULL, &sem_info,
 							   false, base_fence);
+			radv_free_sem_info(&sem_info);
 		}
 		fence->submitted = true;
 	}
@@ -2506,7 +2531,8 @@ radv_sparse_image_opaque_bind_memory(struct radv_device *device,
 					     pBindInfo[i].waitSemaphoreCount,
 					     pBindInfo[i].pWaitSemaphores,
 					     pBindInfo[i].signalSemaphoreCount,
-					     pBindInfo[i].pSignalSemaphores);
+					     pBindInfo[i].pSignalSemaphores,
+					     _fence);
 		if (result != VK_SUCCESS)
 			return result;
 
@@ -2539,6 +2565,11 @@ VkResult radv_CreateFence(
 	VkFence*                                    pFence)
 {
 	RADV_FROM_HANDLE(radv_device, device, _device);
+	const VkExportFenceCreateInfoKHR *export =
+		vk_find_struct_const(pCreateInfo->pNext, EXPORT_FENCE_CREATE_INFO_KHR);
+	VkExternalFenceHandleTypeFlagsKHR handleTypes =
+		export ? export->handleTypes : 0;
+
 	struct radv_fence *fence = vk_alloc2(&device->alloc, pAllocator,
 					       sizeof(*fence), 8,
 					       VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
@@ -2549,10 +2580,24 @@ VkResult radv_CreateFence(
 	memset(fence, 0, sizeof(*fence));
 	fence->submitted = false;
 	fence->signalled = !!(pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT);
-	fence->fence = device->ws->create_fence();
-	if (!fence->fence) {
-		vk_free2(&device->alloc, pAllocator, fence);
-		return VK_ERROR_OUT_OF_HOST_MEMORY;
+	fence->temp_syncobj = 0;
+	if (handleTypes) {
+		int ret = device->ws->create_syncobj(device->ws, &fence->syncobj);
+		if (ret) {
+			vk_free2(&device->alloc, pAllocator, fence);
+			return VK_ERROR_OUT_OF_HOST_MEMORY;
+		}
+		if (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) {
+			device->ws->signal_syncobj(device->ws, fence->syncobj);
+		}
+		fence->fence = NULL;
+	} else {
+		fence->fence = device->ws->create_fence();
+		if (!fence->fence) {
+			vk_free2(&device->alloc, pAllocator, fence);
+			return VK_ERROR_OUT_OF_HOST_MEMORY;
+		}
+		fence->syncobj = 0;
 	}
 
 	*pFence = radv_fence_to_handle(fence);
@@ -2570,7 +2615,13 @@ void radv_DestroyFence(
 
 	if (!fence)
 		return;
-	device->ws->destroy_fence(fence->fence);
+
+	if (fence->temp_syncobj)
+		device->ws->destroy_syncobj(device->ws, fence->temp_syncobj);
+	if (fence->syncobj)
+		device->ws->destroy_syncobj(device->ws, fence->syncobj);
+	if (fence->fence)
+		device->ws->destroy_fence(fence->fence);
 	vk_free2(&device->alloc, pAllocator, fence);
 }
 
@@ -2605,6 +2656,18 @@ VkResult radv_WaitForFences(
 		RADV_FROM_HANDLE(radv_fence, fence, pFences[i]);
 		bool expired = false;
 
+		if (fence->temp_syncobj) {
+			if (!device->ws->wait_syncobj(device->ws, fence->temp_syncobj, timeout))
+				return VK_TIMEOUT;
+			continue;
+		}
+
+		if (fence->syncobj) {
+			if (!device->ws->wait_syncobj(device->ws, fence->syncobj, timeout))
+				return VK_TIMEOUT;
+			continue;
+		}
+
 		if (fence->signalled)
 			continue;
 
@@ -2621,13 +2684,26 @@ VkResult radv_WaitForFences(
 	return VK_SUCCESS;
 }
 
-VkResult radv_ResetFences(VkDevice device,
+VkResult radv_ResetFences(VkDevice _device,
 			  uint32_t fenceCount,
 			  const VkFence *pFences)
 {
+	RADV_FROM_HANDLE(radv_device, device, _device);
+
 	for (unsigned i = 0; i < fenceCount; ++i) {
 		RADV_FROM_HANDLE(radv_fence, fence, pFences[i]);
 		fence->submitted = fence->signalled = false;
+
+		/* Per spec, we first restore the permanent payload, and then reset, so
+		 * having a temp syncobj should not skip resetting the permanent syncobj. */
+		if (fence->temp_syncobj) {
+			device->ws->destroy_syncobj(device->ws, fence->temp_syncobj);
+			fence->temp_syncobj = 0;
+		}
+
+		if (fence->syncobj) {
+			device->ws->reset_syncobj(device->ws, fence->syncobj);
+		}
 	}
 
 	return VK_SUCCESS;
@@ -2638,11 +2714,20 @@ VkResult radv_GetFenceStatus(VkDevice _device, VkFence _fence)
 	RADV_FROM_HANDLE(radv_device, device, _device);
 	RADV_FROM_HANDLE(radv_fence, fence, _fence);
 
+	if (fence->temp_syncobj) {
+			bool success = device->ws->wait_syncobj(device->ws, fence->temp_syncobj, 0);
+			return success ? VK_SUCCESS : VK_NOT_READY;
+	}
+
+	if (fence->syncobj) {
+			bool success = device->ws->wait_syncobj(device->ws, fence->syncobj, 0);
+			return success ? VK_SUCCESS : VK_NOT_READY;
+	}
+
 	if (fence->signalled)
 		return VK_SUCCESS;
 	if (!fence->submitted)
 		return VK_NOT_READY;
-
 	if (!device->ws->fence_wait(device->ws, fence->fence, false, 0))
 		return VK_NOT_READY;
 

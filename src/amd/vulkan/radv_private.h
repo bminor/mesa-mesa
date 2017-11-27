@@ -1521,7 +1521,8 @@ VkResult radv_alloc_sem_info(struct radv_winsys_sem_info *sem_info,
 			     int num_wait_sems,
 			     const VkSemaphore *wait_sems,
 			     int num_signal_sems,
-			     const VkSemaphore *signal_sems);
+			     const VkSemaphore *signal_sems,
+			     VkFence fence);
 void radv_free_sem_info(struct radv_winsys_sem_info *sem_info);
 
 void
@@ -1556,6 +1557,9 @@ struct radv_fence {
 	struct radeon_winsys_fence *fence;
 	bool submitted;
 	bool signalled;
+
+	uint32_t syncobj;
+	uint32_t temp_syncobj;
 };
 
 struct radeon_winsys_sem;

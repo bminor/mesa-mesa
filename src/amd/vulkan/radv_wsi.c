@@ -445,13 +445,14 @@ VkResult radv_GetSwapchainImagesKHR(
 }
 
 VkResult radv_AcquireNextImageKHR(
-	VkDevice                                     device,
+	VkDevice                                     _device,
 	VkSwapchainKHR                               _swapchain,
 	uint64_t                                     timeout,
 	VkSemaphore                                  semaphore,
 	VkFence                                      _fence,
 	uint32_t*                                    pImageIndex)
 {
+	RADV_FROM_HANDLE(radv_device, device, _device);
 	RADV_FROM_HANDLE(wsi_swapchain, swapchain, _swapchain);
 	RADV_FROM_HANDLE(radv_fence, fence, _fence);
 
@@ -461,6 +462,11 @@ VkResult radv_AcquireNextImageKHR(
 	if (fence && (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR)) {
 		fence->submitted = true;
 		fence->signalled = true;
+		if (fence->temp_syncobj) {
+			device->ws->signal_syncobj(device->ws, fence->temp_syncobj);
+		} else if (fence->syncobj) {
+			device->ws->signal_syncobj(device->ws, fence->syncobj);
+		}
 	}
 	return result;
 }
@@ -479,20 +485,6 @@ VkResult radv_QueuePresentKHR(
 		struct radeon_winsys_cs *cs;
 		const VkPresentRegionKHR *region = NULL;
 		VkResult item_result;
-		struct radv_winsys_sem_info sem_info;
-
-		item_result = radv_alloc_sem_info(&sem_info,
-						  pPresentInfo->waitSemaphoreCount,
-						  pPresentInfo->pWaitSemaphores,
-						  0,
-						  NULL);
-		if (pPresentInfo->pResults != NULL)
-			pPresentInfo->pResults[i] = item_result;
-		result = result == VK_SUCCESS ? item_result : result;
-		if (item_result != VK_SUCCESS) {
-			radv_free_sem_info(&sem_info);
-			continue;
-		}
 
 		assert(radv_device_from_handle(swapchain->device) == queue->device);
 		if (swapchain->fences[0] == VK_NULL_HANDLE) {
@@ -505,12 +497,27 @@ VkResult radv_QueuePresentKHR(
 				pPresentInfo->pResults[i] = item_result;
 			result = result == VK_SUCCESS ? item_result : result;
 			if (item_result != VK_SUCCESS) {
-				radv_free_sem_info(&sem_info);
 				continue;
 			}
 		} else {
 			radv_ResetFences(radv_device_to_handle(queue->device),
 					 1, &swapchain->fences[0]);
+		}
+
+		struct radv_winsys_sem_info sem_info;
+
+		item_result = radv_alloc_sem_info(&sem_info,
+						  pPresentInfo->waitSemaphoreCount,
+						  pPresentInfo->pWaitSemaphores,
+						  0,
+						  NULL,
+						  swapchain->fences[0]);
+		if (pPresentInfo->pResults != NULL)
+			pPresentInfo->pResults[i] = item_result;
+		result = result == VK_SUCCESS ? item_result : result;
+		if (item_result != VK_SUCCESS) {
+			radv_free_sem_info(&sem_info);
+			continue;
 		}
 
 		if (swapchain->needs_linear_copy) {
