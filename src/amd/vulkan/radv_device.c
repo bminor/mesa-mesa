@@ -1906,6 +1906,32 @@ VkResult radv_alloc_sem_info(struct radv_winsys_sem_info *sem_info,
 	return ret;
 }
 
+/* Signals fence as soon as all the work currently put on queue is done. */
+static VkResult radv_signal_fence(struct radv_queue *queue,
+                              struct radv_fence *fence)
+{
+	int ret;
+	VkResult result;
+	struct radv_winsys_sem_info sem_info;
+
+	result = radv_alloc_sem_info(&sem_info, 0, NULL, 0, NULL,
+	                             radv_fence_to_handle(fence));
+	if (result != VK_SUCCESS)
+		return result;
+
+	ret = queue->device->ws->cs_submit(queue->hw_ctx, queue->queue_idx,
+	                                   &queue->device->empty_cs[queue->queue_family_index],
+	                                   1, NULL, NULL, &sem_info,
+	                                   false, fence->fence);
+	radv_free_sem_info(&sem_info);
+
+	/* TODO: find a better error */
+	if (ret)
+		return vk_error(VK_ERROR_OUT_OF_DEVICE_MEMORY);
+
+	return VK_SUCCESS;
+}
+
 VkResult radv_QueueSubmit(
 	VkQueue                                     _queue,
 	uint32_t                                    submitCount,
@@ -2032,18 +2058,7 @@ VkResult radv_QueueSubmit(
 
 	if (fence) {
 		if (!fence_emitted) {
-			struct radv_winsys_sem_info sem_info;
-
-			result = radv_alloc_sem_info(&sem_info, 0, NULL, 0, NULL,
-			                             _fence);
-			if (result != VK_SUCCESS)
-				return result;
-
-			ret = queue->device->ws->cs_submit(ctx, queue->queue_idx,
-							   &queue->device->empty_cs[queue->queue_family_index],
-							   1, NULL, NULL, &sem_info,
-							   false, base_fence);
-			radv_free_sem_info(&sem_info);
+			radv_signal_fence(queue, fence);
 		}
 		fence->submitted = true;
 	}
@@ -2555,8 +2570,11 @@ radv_sparse_image_opaque_bind_memory(struct radv_device *device,
 
 	}
 
-	if (fence && !fence_emitted) {
-		fence->signalled = true;
+	if (fence) {
+		if (!fence_emitted) {
+			radv_signal_fence(queue, fence);
+		}
+		fence->submitted = true;
 	}
 
 	return VK_SUCCESS;
