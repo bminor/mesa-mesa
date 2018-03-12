@@ -206,6 +206,7 @@ static struct pipe_surface *virgl_create_surface(struct pipe_context *ctx,
    pipe_reference_init(&surf->base.reference, 1);
    pipe_resource_reference(&surf->base.texture, resource);
    surf->base.context = ctx;
+   surf->base.surface_destroy = ctx->surface_destroy;
    surf->base.format = templ->format;
    if (resource->target != PIPE_BUFFER) {
       surf->base.width = u_minify(resource->width0, templ->u.tex.level);
@@ -676,6 +677,7 @@ static struct pipe_sampler_view *virgl_create_sampler_view(struct pipe_context *
 
    grview->base.texture = NULL;
    grview->base.context = ctx;
+   grview->base.sampler_view_destroy = ctx->sampler_view_destroy;
    pipe_resource_reference(&grview->base.texture, texture);
    grview->handle = handle;
    return &grview->base;
