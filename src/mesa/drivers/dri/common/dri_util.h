@@ -180,6 +180,10 @@ struct __DRIscreenRec {
         const __DRIimageLoaderExtension *loader;
     } image;
 
+    struct {
+       const __DRImutableRenderBufferLoaderExtension *loader;
+    } mutableRenderBuffer;
+
     driOptionCache optionInfo;
     driOptionCache optionCache;
 
