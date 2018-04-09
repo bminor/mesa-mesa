@@ -1248,10 +1248,6 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
    const char *err;
    int ret;
 
-   /* Not supported yet */
-   if (dpy->Options.UseFallback)
-      return EGL_FALSE;
-
    loader_set_logger(_eglLog);
 
    dri2_dpy = calloc(1, sizeof(*dri2_dpy));
@@ -1269,18 +1265,15 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *dpy)
    dpy->DriverData = (void *) dri2_dpy;
 
    dri2_dpy->fd = droid_open_device(dri2_dpy);
-   if (dri2_dpy->fd >= 0 && !droid_probe_device(dpy, false)) {
-      _eglLog(_EGL_WARNING, "DRI2: Failed to load hardware driver, trying software...");
-      if (!droid_probe_device(dpy, true)) {
-         err = "DRI2: failed to load driver";
-         goto cleanup;
-      }
-   } else if (!droid_probe_devices(dpy, false)) {
-      _eglLog(_EGL_WARNING, "DRI2: Failed to load hardware driver, trying software...");
-      if (!droid_probe_devices(dpy, true)) {
-         err = "DRI2: failed to load driver";
-         goto cleanup;
-      }
+   if (dri2_dpy->fd >= 0 &&
+       !droid_probe_device(dpy, dpy->Options.UseFallback)) {
+      _eglLog(_EGL_WARNING, "DRI2: Failed to load %s driver",
+              dpy->Options.UseFallback ? "software" : "hardware");
+      goto cleanup;
+   } else if (!droid_probe_devices(dpy, dpy->Options.UseFallback)) {
+      _eglLog(_EGL_WARNING, "DRI2: Failed to load %s driver",
+              dpy->Options.UseFallback ? "software" : "hardware");
+      goto cleanup;
    }
 
    if (!dri2_create_screen(dpy)) {
