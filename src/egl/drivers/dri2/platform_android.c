@@ -1189,7 +1189,7 @@ static const __DRIextension *droid_image_loader_extensions[] = {
 };
 
 static bool
-droid_probe_device(_EGLDisplay *dpy, bool swrast)
+droid_probe_device(_EGLDisplay *dpy)
 {
    struct dri2_egl_display *dri2_dpy = dpy->DriverData;
    bool loaded;
@@ -1200,7 +1200,7 @@ droid_probe_device(_EGLDisplay *dpy, bool swrast)
       return false;
    }
 
-   if (swrast)
+   if (dpy->Options.ForceSoftware)
       dri2_dpy->driver_name = strdup("kms_swrast");
    else
       dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd);
@@ -1231,7 +1231,7 @@ droid_probe_device(_EGLDisplay *dpy, bool swrast)
 }
 
 static bool
-droid_probe_devices(_EGLDisplay *dpy, bool swrast)
+droid_probe_devices(_EGLDisplay *dpy)
 {
    struct dri2_egl_display *dri2_dpy = dpy->DriverData;
    const char *name_template = "%s/renderD%d";
@@ -1250,7 +1250,7 @@ droid_probe_devices(_EGLDisplay *dpy, bool swrast)
       if (dri2_dpy->fd < 0)
          continue;
 
-      if (droid_probe_device(dpy, swrast))
+      if (droid_probe_device(dpy))
          return true;
 
       close(dri2_dpy->fd);
@@ -1266,10 +1266,6 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *disp)
    struct dri2_egl_display *dri2_dpy;
    const char *err;
    int ret;
-
-   /* Not supported yet */
-   if (disp->Options.ForceSoftware)
-      return EGL_FALSE;
 
    loader_set_logger(_eglLog);
 
@@ -1288,18 +1284,14 @@ dri2_initialize_android(_EGLDriver *drv, _EGLDisplay *disp)
    disp->DriverData = (void *) dri2_dpy;
 
    dri2_dpy->fd = droid_open_device(dri2_dpy);
-   if (dri2_dpy->fd >= 0 && !droid_probe_device(disp, false)) {
-      _eglLog(_EGL_WARNING, "DRI2: Failed to load hardware driver, trying software...");
-      if (!droid_probe_device(disp, true)) {
-         err = "DRI2: failed to load driver";
-         goto cleanup;
-      }
-   } else if (!droid_probe_devices(disp, false)) {
-      _eglLog(_EGL_WARNING, "DRI2: Failed to load hardware driver, trying software...");
-      if (!droid_probe_devices(disp, true)) {
-         err = "DRI2: failed to load driver";
-         goto cleanup;
-      }
+   if (dri2_dpy->fd >= 0 && !droid_probe_device(disp)) {
+      _eglLog(_EGL_WARNING, "DRI2: Failed to load %s driver",
+              disp->Options.ForceSoftware ? "software" : "hardware");
+      goto cleanup;
+   } else if (!droid_probe_devices(disp)) {
+      _eglLog(_EGL_WARNING, "DRI2: Failed to load %s driver",
+              disp->Options.ForceSoftware ? "software" : "hardware");
+      goto cleanup;
    }
 
    if (!dri2_create_screen(disp)) {
