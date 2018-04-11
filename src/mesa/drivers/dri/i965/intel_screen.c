@@ -1423,12 +1423,17 @@ static const __DRIrobustnessExtension dri2Robustness = {
    .base = { __DRI2_ROBUSTNESS, 1 }
 };
 
+static const __DRImutableRenderBufferDriverExtension intelMutableRenderBufferExtension = {
+   .base = { __DRI_MUTABLE_RENDER_BUFFER_DRIVER, 1 },
+};
+
 static const __DRIextension *screenExtensions[] = {
     &intelTexBufferExtension.base,
     &intelFenceExtension.base,
     &intelFlushExtension.base,
     &intelImageExtension.base,
     &intelRendererQueryExtension.base,
+    &intelMutableRenderBufferExtension.base,
     &dri2ConfigQueryExtension.base,
     &dri2NoErrorExtension.base,
     NULL
@@ -1440,6 +1445,7 @@ static const __DRIextension *intelRobustScreenExtensions[] = {
     &intelFlushExtension.base,
     &intelImageExtension.base,
     &intelRendererQueryExtension.base,
+    &intelMutableRenderBufferExtension.base,
     &dri2ConfigQueryExtension.base,
     &dri2Robustness.base,
     &dri2NoErrorExtension.base,
@@ -1952,7 +1958,9 @@ intel_screen_make_configs(__DRIscreen *dri_screen)
    else
       num_formats = 3;
 
-   /* Generate singlesample configs without accumulation buffer. */
+   /* Generate singlesample configs, each without accumulation buffer
+    * and with EGL_MUTABLE_RENDER_BUFFER_BIT_KHR.
+    */
    for (unsigned i = 0; i < num_formats; i++) {
       __DRIconfig **new_configs;
       int num_depth_stencil_bits = 2;
@@ -1983,7 +1991,8 @@ intel_screen_make_configs(__DRIscreen *dri_screen)
                                      num_depth_stencil_bits,
                                      back_buffer_modes, 2,
                                      singlesample_samples, 1,
-                                     false, false, false);
+                                     false, false,
+                                     /*mutable_render_buffer*/ true);
       configs = driConcatConfigs(configs, new_configs);
    }
 
