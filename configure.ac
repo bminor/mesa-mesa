@@ -1831,6 +1831,9 @@ for plat in $platforms; do
 
     android)
         PKG_CHECK_MODULES([ANDROID], [cutils hardware sync])
+        if test -n "$with_gallium_drivers"; then
+            PKG_CHECK_MODULES([BACKTRACE], [backtrace])
+        fi
         DEFINES="$DEFINES -DHAVE_ANDROID_PLATFORM"
         ;;
 
