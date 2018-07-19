@@ -26,8 +26,10 @@
  *
  **************************************************************************/
 
+#if !defined(ANDROID) || ANDROID_API_LEVEL >= 26
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#endif
 
 #include "pipe/p_compiler.h"
 #include "pipe/p_format.h"
@@ -83,6 +85,7 @@ dri_sw_is_displaytarget_format_supported( struct sw_winsys *ws,
    return TRUE;
 }
 
+#if !defined(ANDROID) || ANDROID_API_LEVEL >= 26
 static char *
 alloc_shm(struct dri_sw_displaytarget *dri_sw_dt, unsigned size)
 {
@@ -101,6 +104,7 @@ alloc_shm(struct dri_sw_displaytarget *dri_sw_dt, unsigned size)
 
    return addr;
 }
+#endif
 
 static struct sw_displaytarget *
 dri_sw_displaytarget_create(struct sw_winsys *winsys,
@@ -131,8 +135,11 @@ dri_sw_displaytarget_create(struct sw_winsys *winsys,
    size = dri_sw_dt->stride * nblocksy;
 
    dri_sw_dt->shmid = -1;
+
+#if !defined(ANDROID) || ANDROID_API_LEVEL >= 26
    if (ws->lf->put_image_shm)
       dri_sw_dt->data = alloc_shm(dri_sw_dt, size);
+#endif
 
    if(!dri_sw_dt->data)
       dri_sw_dt->data = align_malloc(size, alignment);
@@ -156,8 +163,10 @@ dri_sw_displaytarget_destroy(struct sw_winsys *ws,
    struct dri_sw_displaytarget *dri_sw_dt = dri_sw_displaytarget(dt);
 
    if (dri_sw_dt->shmid >= 0) {
+#if !defined(ANDROID) || ANDROID_API_LEVEL >= 26
       shmdt(dri_sw_dt->data);
       shmctl(dri_sw_dt->shmid, IPC_RMID, 0);
+#endif
    } else {
       align_free(dri_sw_dt->data);
    }
