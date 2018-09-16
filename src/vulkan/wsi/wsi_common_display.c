@@ -1315,25 +1315,39 @@ wsi_display_image_init(struct wsi_swapchain *drv_chain,
 
    memset(image->buffer, 0, sizeof (image->buffer));
 
+   /* The kernel expects a modifier for each plane for historical reasons, but
+    * they all have to be the same.
+    */
+   uint64_t drm_modifier[4] = {};
    for (unsigned int i = 0; i < image->base.num_planes; i++) {
       int ret = drmPrimeFDToHandle(wsi->fd, image->base.dma_buf_fd,
                                    &image->buffer[i]);
       if (ret < 0)
          goto fail_handle;
+      drm_modifier[i] = image->base.drm_modifier;
    }
 
    image->chain = chain;
    image->state = WSI_IMAGE_IDLE;
    image->fb_id = 0;
 
-   int ret = drmModeAddFB2(wsi->fd,
-                           create_info->imageExtent.width,
-                           create_info->imageExtent.height,
-                           drm_format,
-                           image->buffer,
-                           image->base.row_pitches,
-                           image->base.offsets,
-                           &image->fb_id, 0);
+   uint64_t *fb_modifiers = NULL;
+   uint32_t fb_flags = 0;
+   if (drm_modifier[0] != DRM_FORMAT_MOD_INVALID) {
+      fb_modifiers = drm_modifier;
+      fb_flags |= DRM_MODE_FB_MODIFIERS;
+   }
+
+   int ret = drmModeAddFB2WithModifiers(wsi->fd,
+                                        create_info->imageExtent.width,
+                                        create_info->imageExtent.height,
+                                        drm_format,
+                                        image->buffer,
+                                        image->base.row_pitches,
+                                        image->base.offsets,
+                                        fb_modifiers,
+                                        &image->fb_id,
+                                        fb_flags);
 
    if (ret)
       goto fail_fb;
