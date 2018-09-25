@@ -87,6 +87,7 @@ typedef struct wsi_display_connector {
    struct wsi_display           *wsi;
    uint32_t                     id;
    uint32_t                     crtc_id;
+   uint32_t                     plane_id;
    char                         *name;
    bool                         connected;
    bool                         active;
@@ -1609,6 +1610,101 @@ wsi_display_select_crtc(const struct wsi_display_connector *connector,
    return crtc_id;
 }
 
+static int
+wsi_display_plane_type(int dev_fd, uint32_t plane_id)
+{
+   int type = -1;
+   drmModeObjectPropertiesPtr props;
+
+   props = drmModeObjectGetProperties(dev_fd, plane_id, DRM_MODE_OBJECT_PLANE);
+   if (!props)
+      return -1;
+
+   for (size_t i = 0; i < props->count_props; i++) {
+      drmModePropertyPtr prop = drmModeGetProperty(dev_fd, props->props[i]);
+      if (!prop)
+         continue;
+
+      if (!strcmp(prop->name, "type"))
+         type = props->prop_values[i];
+
+      drmModeFreeProperty(prop);
+   }
+
+   drmModeFreeObjectProperties(props);
+
+   return type;
+}
+
+/*
+ * Pick a suitable primary plane for the current CRTC. Prefer a plane
+ * currently active on the CRTC. Settle for a plane which is currently
+ * idle but is compatible with the CRTC. Fall back to the first idle
+ * plane found.
+ */
+static uint32_t
+wsi_display_select_plane(const struct wsi_display_connector *connector,
+                         drmModeResPtr mode_res)
+{
+   struct wsi_display *wsi = connector->wsi;
+   uint32_t plane_id = connector->plane_id;
+   uint32_t active_plane = 0;
+   uint32_t possible_plane = 0;
+   int crtc_index = -1;
+
+   if (plane_id)
+      return plane_id;
+
+   /* We understand universal planes */
+   drmSetClientCap(wsi->fd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1);
+
+   /* possible_crtcs uses the crtc index and not the object id */
+   for (int i = 0; i < mode_res->count_crtcs; i++) {
+      if (mode_res->crtcs[i] == connector->crtc_id)
+         crtc_index = i;
+   }
+   if (crtc_index < 0)
+      return 0;
+
+   drmModePlaneRes *plane_res = drmModeGetPlaneResources(wsi->fd);
+   if (!plane_res)
+      return 0;
+
+   for (size_t i = 0; i < plane_res->count_planes; i++) {
+      drmModePlane *plane = drmModeGetPlane(wsi->fd, plane_res->planes[i]);
+      if (!plane)
+         continue;
+
+      /* only select primary planes */
+      int plane_type = wsi_display_plane_type(wsi->fd, plane->plane_id);
+      if (plane_type != DRM_PLANE_TYPE_PRIMARY) {
+         drmModeFreePlane(plane);
+         continue;
+      }
+
+      /* if there's a plane is active on the connector's crtc, pick it */
+      if (plane->crtc_id == connector->crtc_id) {
+         active_plane = plane->plane_id;
+      }
+
+      /* if a plane is not active on any crtc but the connector's crtc is
+       * in the plane's possible_crtcs, pick it */
+      if (plane->possible_crtcs & (1u << crtc_index)) {
+         possible_plane = plane->plane_id;
+      }
+
+      drmModeFreePlane(plane);
+   }
+
+   if (active_plane)
+      plane_id = active_plane;
+   else if (possible_plane)
+      plane_id = possible_plane;
+
+   drmModeFreePlaneResources(plane_res);
+   return plane_id;
+}
+
 static VkResult
 wsi_display_setup_connector(wsi_display_connector *connector,
                             wsi_display_mode *display_mode)
@@ -1648,6 +1744,10 @@ wsi_display_setup_connector(wsi_display_connector *connector,
          result = VK_ERROR_SURFACE_LOST_KHR;
          goto bail_connector;
       }
+
+      /* Select the primary plane of that CRTC, and populate the
+       * format/modifier lists for that plane */
+      connector->plane_id = wsi_display_select_plane(connector, mode_res);
    }
 
    if (connector->current_mode != display_mode) {
