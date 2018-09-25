@@ -50,6 +50,7 @@
 
 #include "vk_device.h"
 #include "vk_fence.h"
+#include "vk_format.h"
 #include "vk_instance.h"
 #include "vk_physical_device.h"
 #include "vk_sync.h"
@@ -1286,6 +1287,95 @@ wsi_display_destroy_buffer(struct wsi_display *wsi,
                    &((struct drm_gem_close) { .handle = buffer }));
 }
 
+static uint64_t*
+wsi_get_modifiers_for_format(const struct wsi_display * const wsi,
+                             const uint32_t plane_id,
+                             const uint32_t drm_format,
+                             uint32_t * const modifiers_count)
+{
+   /* wsi_display_setup_connector() must already have been called.  KMS objects
+    * are non-zero IDs.
+    */
+   assert(plane_id != 0);
+
+   /* Get the properties of the plane */
+   drmModeObjectProperties *props =
+      drmModeObjectGetProperties(wsi->fd, plane_id,
+                                 DRM_MODE_OBJECT_PLANE);
+   if (!props) {
+      mesa_loge("Failed to drmModeObjectGetProperties(plane=%d)", plane_id);
+      return NULL;
+   }
+
+   /* Find the blob that contains the formats and their modifiers */
+   uint32_t blob_id = 0;
+   for (size_t i = 0; i< props->count_props; i++) {
+      const drmModePropertyPtr prop =
+         drmModeGetProperty(wsi->fd, props->props[i]);
+
+      if (!strcmp(prop->name, "IN_FORMATS")) {
+         blob_id = props->prop_values[i];
+         drmModeFreeProperty(prop);
+         break;
+      }
+
+      drmModeFreeProperty(prop);
+   }
+
+   /* Property not found, which means an old kernel, so definitely no modifiers
+    * support.
+    */
+   if (blob_id == 0)
+      return NULL;
+
+   /* Grab the IN_FORMATS blob */
+   drmModePropertyBlobRes *blob = drmModeGetPropertyBlob(wsi->fd, blob_id);
+   if (!blob)
+      return NULL;
+
+   /* Get the formats and modifiers out of the blob */
+   struct drm_format_modifier_blob *fmt_mod_blob = blob->data;
+   uint32_t *blob_formats = (uint32_t*)((char*)fmt_mod_blob +
+                                        fmt_mod_blob->formats_offset);
+   struct drm_format_modifier *blob_modifiers =
+      (struct drm_format_modifier *)((char*)fmt_mod_blob +
+                                     fmt_mod_blob->modifiers_offset);
+
+   /* Find the format we care about in the list */
+   size_t format_index = 0;
+   for (size_t i = 0; i < fmt_mod_blob->count_formats; i++) {
+      if (blob_formats[i] == drm_format) {
+         format_index = i;
+         break;
+      }
+   }
+
+   /* Get the list of modifiers supported by that format */
+   uint32_t count_modifiers = 0;
+   uint64_t *modifiers = NULL;
+   for (size_t i = 0; i < fmt_mod_blob->count_modifiers; i++) {
+      struct drm_format_modifier *mod = &blob_modifiers[i];
+
+      if ((format_index < mod->offset) || (format_index > mod->offset + 63))
+         continue;
+      if (!(mod->formats & (1ull << (format_index - mod->offset))))
+         continue;
+
+      modifiers = realloc(modifiers,
+                          (count_modifiers + 1) *
+                          sizeof(modifiers[0]));
+      assert(modifiers);
+      modifiers[count_modifiers++] = mod->modifier;
+   }
+
+   drmModeFreePropertyBlob(blob);
+
+   drmModeFreeObjectProperties(props);
+
+   *modifiers_count = count_modifiers;
+   return modifiers;
+}
+
 static VkResult
 wsi_display_image_init(struct wsi_swapchain *drv_chain,
                        const VkSwapchainCreateInfoKHR *create_info,
@@ -2436,9 +2526,23 @@ wsi_display_surface_create_swapchain(
    if (result != VK_SUCCESS)
       return result;
 
+   uint32_t num_modifiers = 0;
+   const uint64_t *modifiers = NULL;
+   if (wsi_device->supports_modifiers) {
+      modifiers = wsi_get_modifiers_for_format(wsi,
+                                               display_mode->connector->plane_id,
+                                               drm_format, &num_modifiers);
+   }
+   if (num_modifiers) {
+      image_params.num_modifier_lists = 1;
+      image_params.modifiers = &modifiers;
+      image_params.num_modifiers = &num_modifiers;
+   }
+
    result = wsi_swapchain_init(wsi_device, &chain->base, device,
                                create_info, &image_params.base,
                                allocator);
+   free((void *)modifiers);
    if (result != VK_SUCCESS) {
       u_cnd_monotonic_destroy(&chain->present_id_cond);
       mtx_destroy(&chain->present_id_mutex);
@@ -2459,7 +2563,7 @@ wsi_display_surface_create_swapchain(
    chain->wsi = wsi;
    chain->status = VK_SUCCESS;
 
-   chain->surface = (VkIcdSurfaceDisplay *) icd_surface;
+   chain->surface = surface;
 
    p_atomic_inc(&display_mode->connector->refcount);
 
