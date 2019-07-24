@@ -150,7 +150,7 @@ emit_vertex_input(struct anv_pipeline *pipeline,
       enum isl_format format = anv_get_isl_format(&pipeline->device->info,
                                                   desc->format,
                                                   VK_IMAGE_ASPECT_COLOR_BIT,
-                                                  VK_IMAGE_TILING_LINEAR);
+                                                  anv_tiling_linear());
 
       assert(desc->binding < MAX_VBS);
 
@@ -604,7 +604,7 @@ emit_rs_state(struct anv_pipeline *pipeline,
          enum isl_format isl_format =
             anv_get_isl_format(&pipeline->device->info, vk_format,
                                VK_IMAGE_ASPECT_DEPTH_BIT,
-                               VK_IMAGE_TILING_OPTIMAL);
+                               anv_tiling_optimal());
          sf.DepthBufferSurfaceFormat =
             isl_format_get_depth_format(isl_format, false);
       }

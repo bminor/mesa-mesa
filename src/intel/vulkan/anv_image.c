@@ -326,7 +326,7 @@ make_surface(const struct anv_device *dev,
    isl_surf_usage_flags_t shadow_usage = 0;
    if (dev->info.gen <= 8 &&
        (image->create_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) &&
-       image->tiling == VK_IMAGE_TILING_OPTIMAL) {
+       image->tiling.vk == VK_IMAGE_TILING_OPTIMAL) {
       assert(isl_format_is_compressed(plane_format.isl_format));
       tiling_flags = ISL_TILING_LINEAR_BIT;
       needs_shadow = true;
@@ -598,11 +598,11 @@ anv_image_create(VkDevice _device,
    image->samples = pCreateInfo->samples;
    image->usage = pCreateInfo->usage;
    image->create_flags = pCreateInfo->flags;
-   image->tiling = pCreateInfo->tiling;
    image->disjoint = pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT;
    image->needs_set_tiling = wsi_info && wsi_info->scanout;
-   image->drm_format_mod = isl_mod_info ? isl_mod_info->modifier :
-                                          DRM_FORMAT_MOD_INVALID;
+   image->tiling.vk = pCreateInfo->tiling;
+   image->tiling.drm_format_mod =
+      isl_mod_info ? isl_mod_info->modifier : DRM_FORMAT_MOD_INVALID;
 
    if (image->aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
       image->stencil_usage = pCreateInfo->usage;
@@ -707,9 +707,9 @@ anv_image_from_swapchain(VkDevice device,
    struct wsi_image_create_info local_wsi_info = {
       .sType = VK_STRUCTURE_TYPE_WSI_IMAGE_CREATE_INFO_MESA,
       .modifier_count = 1,
-      .modifiers = &swapchain_image->drm_format_mod,
+      .modifiers = &swapchain_image->tiling.drm_format_mod,
    };
-   if (swapchain_image->drm_format_mod != DRM_FORMAT_MOD_INVALID)
+   if (swapchain_image->tiling.drm_format_mod != DRM_FORMAT_MOD_INVALID)
       __vk_append_struct(&local_create_info, &local_wsi_info);
 
    return anv_image_create(device,
@@ -810,20 +810,20 @@ resolve_ahw_image(struct anv_device *device,
 
    /* Check tiling. */
    int i915_tiling = anv_gem_get_tiling(device, mem->bo->gem_handle);
-   VkImageTiling vk_tiling;
+   struct anv_tiling tiling;
    isl_tiling_flags_t isl_tiling_flags = 0;
 
    switch (i915_tiling) {
    case I915_TILING_NONE:
-      vk_tiling = VK_IMAGE_TILING_LINEAR;
+      tiling = anv_tiling_linear();
       isl_tiling_flags = ISL_TILING_LINEAR_BIT;
       break;
    case I915_TILING_X:
-      vk_tiling = VK_IMAGE_TILING_OPTIMAL;
+      tiling = anv_tiling_optimal();
       isl_tiling_flags = ISL_TILING_X_BIT;
       break;
    case I915_TILING_Y:
-      vk_tiling = VK_IMAGE_TILING_OPTIMAL;
+      tiling = anv_tiling_optimal();
       isl_tiling_flags = ISL_TILING_Y0_BIT;
       break;
    case -1:
@@ -831,15 +831,15 @@ resolve_ahw_image(struct anv_device *device,
       unreachable("Invalid tiling flags.");
    }
 
-   assert(vk_tiling == VK_IMAGE_TILING_LINEAR ||
-          vk_tiling == VK_IMAGE_TILING_OPTIMAL);
+   assert(tiling.vk == VK_IMAGE_TILING_LINEAR ||
+          tiling.vk == VK_IMAGE_TILING_OPTIMAL);
 
    /* Check format. */
    VkFormat vk_format = vk_format_from_android(desc.format, desc.usage);
    enum isl_format isl_fmt = anv_get_isl_format(&device->info,
                                                 vk_format,
                                                 VK_IMAGE_ASPECT_COLOR_BIT,
-                                                vk_tiling);
+                                                tiling);
    assert(isl_fmt != ISL_FORMAT_UNSUPPORTED);
 
    /* Handle RGB(X)->RGBA fallback. */
@@ -978,8 +978,8 @@ void anv_GetImageSubresourceLayout(
 
    const struct anv_surface *surface;
    if (subresource->aspectMask == VK_IMAGE_ASPECT_PLANE_1_BIT &&
-       image->drm_format_mod != DRM_FORMAT_MOD_INVALID &&
-       isl_drm_modifier_has_aux(image->drm_format_mod))
+       image->tiling.drm_format_mod != DRM_FORMAT_MOD_INVALID &&
+       isl_drm_modifier_has_aux(image->tiling.drm_format_mod))
       surface = &image->planes[0].aux_surface;
    else
       surface = get_surface(image, subresource->aspectMask);
@@ -1049,7 +1049,7 @@ anv_layout_to_aux_usage(const struct gen_device_info * const devinfo,
       return ISL_AUX_USAGE_NONE;
 
    /* All images that use an auxiliary surface are required to be tiled. */
-   assert(image->tiling == VK_IMAGE_TILING_OPTIMAL);
+   assert(image->tiling.vk == VK_IMAGE_TILING_OPTIMAL);
 
    /* Stencil has no aux */
    assert(aspect != VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -1117,7 +1117,7 @@ anv_layout_to_aux_usage(const struct gen_device_info * const devinfo,
        * the modifier.
        */
       const struct isl_drm_modifier_info *mod_info =
-         isl_drm_modifier_get_info(image->drm_format_mod);
+         isl_drm_modifier_get_info(image->tiling.drm_format_mod);
       return mod_info ? mod_info->aux_usage : ISL_AUX_USAGE_NONE;
    }
 
@@ -1179,7 +1179,7 @@ anv_layout_to_fast_clear_type(const struct gen_device_info * const devinfo,
       return ANV_FAST_CLEAR_NONE;
 
    /* All images that use an auxiliary surface are required to be tiled. */
-   assert(image->tiling == VK_IMAGE_TILING_OPTIMAL);
+   assert(image->tiling.vk == VK_IMAGE_TILING_OPTIMAL);
 
    /* Stencil has no aux */
    assert(aspect != VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -1214,7 +1214,7 @@ anv_layout_to_fast_clear_type(const struct gen_device_info * const devinfo,
        * just always return NONE.  One day, this will change.
        */
       const struct isl_drm_modifier_info *mod_info =
-         isl_drm_modifier_get_info(image->drm_format_mod);
+         isl_drm_modifier_get_info(image->tiling.drm_format_mod);
       assert(!mod_info || !mod_info->supports_clear_color);
 #endif
       return ANV_FAST_CLEAR_NONE;
@@ -1765,7 +1765,7 @@ anv_CreateBufferView(VkDevice _device,
 
    view->format = anv_get_isl_format(&device->info, pCreateInfo->format,
                                      VK_IMAGE_ASPECT_COLOR_BIT,
-                                     VK_IMAGE_TILING_LINEAR);
+                                     anv_tiling_linear());
    const uint32_t format_bs = isl_format_get_layout(view->format)->bpb / 8;
    view->range = anv_buffer_get_range(buffer, pCreateInfo->offset,
                                               pCreateInfo->range);

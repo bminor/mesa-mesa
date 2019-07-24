@@ -26,6 +26,25 @@
 #include "vk_format_info.h"
 #include "vk_util.h"
 
+static void UNUSED
+anv_tiling_validate(struct anv_tiling tiling)
+{
+#ifndef NDEBUG
+   VkImageTiling vk = tiling.vk;
+   uint64_t drm = tiling.drm_format_mod;
+
+   /* In special cases, such as in WSI images, the tiling may be
+    * VK_IMAGE_TILING_OPTIMAL with a valid DRM format modifier.
+    */
+   assert((vk == VK_IMAGE_TILING_LINEAR &&
+           (drm == DRM_FORMAT_MOD_INVALID ||
+            drm == DRM_FORMAT_MOD_LINEAR)) ||
+          (vk == VK_IMAGE_TILING_OPTIMAL) ||
+          (vk == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+           drm != DRM_FORMAT_MOD_INVALID));
+#endif
+}
+
 /*
  * gcc-4 and earlier don't allow compound literals where a constant
  * is required in -std=c99/gnu99 mode, so we can't use ISL_SWIZZLE()
@@ -440,8 +459,11 @@ anv_get_format(VkFormat vk_format)
  */
 struct anv_format_plane
 anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
-                     VkImageAspectFlagBits aspect, VkImageTiling tiling)
+                     VkImageAspectFlagBits aspect, struct anv_tiling tiling)
 {
+   assert(tiling.vk == VK_IMAGE_TILING_LINEAR ||
+          tiling.vk == VK_IMAGE_TILING_OPTIMAL);
+
    const struct anv_format *format = anv_get_format(vk_format);
    const struct anv_format_plane unsupported = {
       .isl_format = ISL_FORMAT_UNSUPPORTED,
@@ -459,7 +481,7 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
       assert(vk_format_aspects(vk_format) &
              (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
 
-      if (tiling == VK_IMAGE_TILING_LINEAR)
+      if (tiling.vk == VK_IMAGE_TILING_LINEAR)
          return unsupported;
 
       return plane_format;
@@ -478,7 +500,7 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
        (isl_layout->bpb == 24 || isl_layout->bpb == 48))
       return unsupported;
 
-   if (tiling == VK_IMAGE_TILING_OPTIMAL &&
+   if (tiling.vk == VK_IMAGE_TILING_OPTIMAL &&
        !util_is_power_of_two_or_zero(isl_layout->bpb)) {
       /* Tiled formats *must* be power-of-two because we need up upload
        * them with the render pipeline.  For 3-channel formats, we fix
@@ -513,17 +535,20 @@ VkFormatFeatureFlags
 anv_get_image_format_features(const struct gen_device_info *devinfo,
                               VkFormat vk_format,
                               const struct anv_format *anv_format,
-                              VkImageTiling vk_tiling)
+                              struct anv_tiling tiling)
 {
    VkFormatFeatureFlags flags = 0;
 
    if (anv_format == NULL)
       return 0;
 
+   assert(tiling.vk == VK_IMAGE_TILING_LINEAR ||
+          tiling.vk == VK_IMAGE_TILING_OPTIMAL);
+
    const VkImageAspectFlags aspects = vk_format_aspects(vk_format);
 
    if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-      if (vk_tiling == VK_IMAGE_TILING_LINEAR)
+      if (tiling.vk == VK_IMAGE_TILING_LINEAR)
          return 0;
 
       flags |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
@@ -541,22 +566,22 @@ anv_get_image_format_features(const struct gen_device_info *devinfo,
 
    const struct anv_format_plane plane_format =
       anv_get_format_plane(devinfo, vk_format, VK_IMAGE_ASPECT_COLOR_BIT,
-                           vk_tiling);
+                           tiling);
 
    if (plane_format.isl_format == ISL_FORMAT_UNSUPPORTED)
       return 0;
 
    struct anv_format_plane base_plane_format = plane_format;
-   if (vk_tiling == VK_IMAGE_TILING_OPTIMAL) {
+   if (tiling.vk == VK_IMAGE_TILING_OPTIMAL) {
       base_plane_format = anv_get_format_plane(devinfo, vk_format,
                                                VK_IMAGE_ASPECT_COLOR_BIT,
-                                               VK_IMAGE_TILING_LINEAR);
+                                               anv_tiling_linear());
    }
 
    enum isl_format base_isl_format = base_plane_format.isl_format;
 
    /* ASTC textures must be in Y-tiled memory */
-   if (vk_tiling == VK_IMAGE_TILING_LINEAR &&
+   if (tiling.vk == VK_IMAGE_TILING_LINEAR &&
        isl_format_get_layout(plane_format.isl_format)->txc == ISL_TXC_ASTC)
       return 0;
 
@@ -614,7 +639,7 @@ anv_get_image_format_features(const struct gen_device_info *devinfo,
     * substantially more work and we have enough RGBX formats to handle
     * what most clients will want.
     */
-   if (vk_tiling == VK_IMAGE_TILING_OPTIMAL &&
+   if (tiling.vk == VK_IMAGE_TILING_OPTIMAL &&
        base_isl_format != ISL_FORMAT_UNSUPPORTED &&
        !util_is_power_of_two_or_zero(isl_format_layouts[base_isl_format].bpb) &&
        isl_format_rgb_to_rgbx(base_isl_format) == ISL_FORMAT_UNSUPPORTED) {
@@ -758,10 +783,10 @@ void anv_GetPhysicalDeviceFormatProperties(
    *pFormatProperties = (VkFormatProperties) {
       .linearTilingFeatures =
          anv_get_image_format_features(devinfo, vk_format, anv_format,
-                                       VK_IMAGE_TILING_LINEAR),
+                                       anv_tiling_linear()),
       .optimalTilingFeatures =
          anv_get_image_format_features(devinfo, vk_format, anv_format,
-                                       VK_IMAGE_TILING_OPTIMAL),
+                                       anv_tiling_optimal()),
       .bufferFeatures =
          get_buffer_format_features(devinfo, vk_format, anv_format),
    };
@@ -808,9 +833,14 @@ anv_get_image_format_properties(
    if (format == NULL)
       goto unsupported;
 
+   struct anv_tiling tiling = {
+      .vk = info->tiling,
+      .drm_format_mod = DRM_FORMAT_MOD_INVALID,
+   };
+
    assert(format->vk_format == info->format);
    format_feature_flags = anv_get_image_format_features(devinfo, info->format,
-                                                        format, info->tiling);
+                                                        format, tiling);
 
    switch (info->type) {
    default:
