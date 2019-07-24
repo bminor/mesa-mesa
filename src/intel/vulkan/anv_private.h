@@ -2913,6 +2913,54 @@ anv_plane_to_aspect(VkImageAspectFlags image_aspects,
 #define anv_foreach_image_aspect_bit(b, image, aspects) \
    for_each_bit(b, anv_image_expand_aspects(image, aspects))
 
+
+/**
+ * TODO(chadv-drm): Explain legal values.
+ */
+struct anv_tiling {
+   VkImageTiling vk;
+   uint64_t drm_format_mod;
+};
+
+/** Return the equivalent of VK_IMAGE_TILING_LINEAR. */
+static inline struct anv_tiling
+anv_tiling_linear(void) {
+   return (struct anv_tiling) {
+      .vk = VK_IMAGE_TILING_LINEAR,
+      .drm_format_mod = DRM_FORMAT_MOD_INVALID,
+   };
+}
+
+/** Return the equivalent of VK_IMAGE_TILING_OPTIMAL. */
+static inline struct anv_tiling
+anv_tiling_optimal(void) {
+   return (struct anv_tiling) {
+      .vk = VK_IMAGE_TILING_OPTIMAL,
+      .drm_format_mod = DRM_FORMAT_MOD_INVALID,
+   };
+}
+
+/** Return tiling with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT. */
+static inline struct anv_tiling
+anv_tiling_drm(uint64_t drm_format_mod) {
+   return (struct anv_tiling) {
+      .vk = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
+      .drm_format_mod = drm_format_mod,
+   };
+}
+
+static inline bool
+anv_tiling_is_linear(struct anv_tiling tiling) {
+   if (tiling.vk == VK_IMAGE_TILING_LINEAR)
+      return true;
+
+   if (tiling.vk == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       tiling.drm_format_mod == DRM_FORMAT_MOD_LINEAR)
+      return true;
+
+   return false;
+}
+
 const struct anv_format *
 anv_get_format(VkFormat format);
 
@@ -2926,11 +2974,11 @@ anv_get_format_planes(VkFormat vk_format)
 
 struct anv_format_plane
 anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
-                     VkImageAspectFlagBits aspect, VkImageTiling tiling);
+                     VkImageAspectFlagBits aspect, struct anv_tiling tiling);
 
 static inline enum isl_format
 anv_get_isl_format(const struct gen_device_info *devinfo, VkFormat vk_format,
-                   VkImageAspectFlags aspect, VkImageTiling tiling)
+                   VkImageAspectFlags aspect, struct anv_tiling tiling)
 {
    return anv_get_format_plane(devinfo, vk_format, aspect, tiling).isl_format;
 }
@@ -2983,7 +3031,7 @@ struct anv_image {
    VkImageUsageFlags usage; /**< VkImageCreateInfo::usage. */
    VkImageUsageFlags stencil_usage;
    VkImageCreateFlags create_flags; /* Flags used when creating image. */
-   VkImageTiling tiling; /** VkImageCreateInfo::tiling */
+   struct anv_tiling tiling;
 
    /** True if this is needs to be bound to an appropriately tiled BO.
     *
@@ -2993,12 +3041,6 @@ struct anv_image {
     * tiled buffer.
     */
    bool needs_set_tiling;
-
-   /**
-    * Must be DRM_FORMAT_MOD_INVALID unless tiling is
-    * VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.
-    */
-   uint64_t drm_format_mod;
 
    VkDeviceSize size;
    uint32_t alignment;
@@ -3464,7 +3506,7 @@ VkFormatFeatureFlags
 anv_get_image_format_features(const struct gen_device_info *devinfo,
                               VkFormat vk_format,
                               const struct anv_format *anv_format,
-                              VkImageTiling vk_tiling);
+                              struct anv_tiling tiling);
 
 void anv_fill_buffer_surface_state(struct anv_device *device,
                                    struct anv_state state,

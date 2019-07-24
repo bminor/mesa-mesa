@@ -134,10 +134,10 @@ get_ahw_buffer_format_properties(
    /* Default to OPTIMAL tiling but set to linear in case
     * of AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER usage.
     */
-   VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+   struct anv_tiling tiling = anv_tiling_optimal();
 
    if (desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER)
-      tiling = VK_IMAGE_TILING_LINEAR;
+      tiling = anv_tiling_linear();
 
    p->formatFeatures =
       anv_get_image_format_features(&device->info, p->format, anv_format,

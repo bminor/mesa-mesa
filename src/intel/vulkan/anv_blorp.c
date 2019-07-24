@@ -449,7 +449,7 @@ copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
 
       const enum isl_format buffer_format =
          anv_get_isl_format(&cmd_buffer->device->info, anv_image->vk_format,
-                            aspect, VK_IMAGE_TILING_LINEAR);
+                            aspect, anv_tiling_linear());
 
       const VkExtent3D bufferImageExtent = {
          .width  = pRegions[r].bufferRowLength ?
@@ -1174,7 +1174,7 @@ clear_depth_stencil_attachment(struct anv_cmd_buffer *cmd_buffer,
       depth_format = anv_get_isl_format(&cmd_buffer->device->info,
                                         pass_att->format,
                                         VK_IMAGE_ASPECT_DEPTH_BIT,
-                                        VK_IMAGE_TILING_OPTIMAL);
+                                        anv_tiling_optimal());
    }
 
    uint32_t binding_table;

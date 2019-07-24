@@ -37,7 +37,7 @@ static uint64_t
 anv_wsi_image_get_modifier(VkImage _image)
 {
    ANV_FROM_HANDLE(anv_image, image, _image);
-   return image->drm_format_mod;
+   return image->tiling.drm_format_mod;
 }
 
 VkResult
