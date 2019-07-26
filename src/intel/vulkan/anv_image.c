@@ -993,6 +993,13 @@ void anv_GetImageSubresourceLayout(
 {
    ANV_FROM_HANDLE(anv_image, image, _image);
 
+   if (image->tiling.vk == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+      /* FINSIHME(VK_EXT_image_drm_format_modifier) */
+      anv_finishme("vkGetImageSubresourceLayout for "
+                   "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT");
+      abort();
+   }
+
    const struct anv_surface *surface;
    if (subresource->aspectMask == VK_IMAGE_ASPECT_PLANE_1_BIT &&
        image->tiling.drm_format_mod != DRM_FORMAT_MOD_INVALID &&
