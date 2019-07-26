@@ -1222,6 +1222,9 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
     *    If handleType is 0, vkGetPhysicalDeviceImageFormatProperties2 will
     *    behave as if VkPhysicalDeviceExternalImageFormatInfo was not
     *    present and VkExternalImageFormatProperties will be ignored.
+    *
+    * FINISHME(VK_EXT_image_drm_format_modifier): Consider impact of
+    * VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT on external handles.
     */
    if (external_info && external_info->handleType != 0) {
       switch (external_info->handleType) {
