@@ -461,6 +461,10 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
    if (aspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
       assert(vk_format_aspects(vk_format) &
              (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
+
+      if (tiling.vk == VK_IMAGE_TILING_LINEAR)
+         return unsupported;
+
       return plane_format;
    }
 
