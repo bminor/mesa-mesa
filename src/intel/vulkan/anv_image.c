@@ -587,6 +587,14 @@ anv_image_create(VkDevice _device,
                                            wsi_info->modifiers);
    }
 
+   const VkImageDrmFormatModifierExplicitCreateInfoEXT *drm_explicit_info =
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
+   if (drm_explicit_info) {
+      /* FINISHME(VK_EXT_image_drm_format_modifier) */
+      anv_finishme("VkImageDrmFormatModifierExplicitCreateInfoEXT");
+      abort();
+   }
+
    if (create_info->drm_format_mod != DRM_FORMAT_MOD_INVALID) {
       ++mod_selections;
       isl_mod_info = isl_drm_modifier_get_info(create_info->drm_format_mod);
