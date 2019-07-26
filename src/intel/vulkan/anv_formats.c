@@ -908,6 +908,7 @@ static VkResult
 anv_get_image_format_properties(
    struct anv_physical_device *physical_device,
    const VkPhysicalDeviceImageFormatInfo2 *base_info,
+   const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *drm_info,
    VkImageFormatProperties *pImageFormatProperties,
    VkSamplerYcbcrConversionImageFormatProperties *pYcbcrImageFormatProperties)
 {
@@ -919,15 +920,21 @@ anv_get_image_format_properties(
    const struct gen_device_info *devinfo = &physical_device->info;
    const struct anv_format *format = anv_get_format(base_info->format);
 
+   assert((base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) ==
+          (drm_info != NULL));
+   assert(!drm_info || drm_info->drmFormatModifier != DRM_FORMAT_MOD_INVALID);
+
    if (format == NULL)
       goto unsupported;
 
+   assert(format->vk_format == base_info->format);
+
    struct anv_tiling tiling = {
       .vk = base_info->tiling,
-      .drm_format_mod = DRM_FORMAT_MOD_INVALID,
+      .drm_format_mod = drm_info ?
+         drm_info->drmFormatModifier : DRM_FORMAT_MOD_INVALID,
    };
 
-   assert(format->vk_format == base_info->format);
    format_feature_flags = anv_get_image_format_features(devinfo, base_info->format,
                                                         format, tiling);
 
@@ -935,6 +942,8 @@ anv_get_image_format_properties(
    default:
       unreachable("bad VkImageType");
    case VK_IMAGE_TYPE_1D:
+      if (base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+         goto unsupported;
       maxExtent.width = 16384;
       maxExtent.height = 1;
       maxExtent.depth = 1;
@@ -949,10 +958,18 @@ anv_get_image_format_properties(
       maxExtent.width = 16384;
       maxExtent.height = 16384;
       maxExtent.depth = 1;
-      maxMipLevels = 15; /* log2(maxWidth) + 1 */
-      maxArraySize = 2048;
+
+      if (base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+         maxMipLevels = 1;
+         maxArraySize = 1;
+      } else {
+         maxMipLevels = 15; /* log2(maxWidth) + 1 */
+         maxArraySize = 2048;
+      }
       break;
    case VK_IMAGE_TYPE_3D:
+      if (base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+         goto unsupported;
       maxExtent.width = 2048;
       maxExtent.height = 2048;
       maxExtent.depth = 2048;
@@ -1090,7 +1107,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties(
       .flags = createFlags,
    };
 
-   return anv_get_image_format_properties(physical_device, &info,
+   return anv_get_image_format_properties(physical_device, &info, NULL,
                                           pImageFormatProperties, NULL);
 }
 
@@ -1141,6 +1158,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
 {
    ANV_FROM_HANDLE(anv_physical_device, physical_device, physicalDevice);
    const VkPhysicalDeviceExternalImageFormatInfo *external_info = NULL;
+   const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *drm_info = NULL;
    VkExternalImageFormatProperties *external_props = NULL;
    VkSamplerYcbcrConversionImageFormatProperties *ycbcr_props = NULL;
    struct VkAndroidHardwareBufferUsageANDROID *android_usage = NULL;
@@ -1151,6 +1169,9 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
       switch (s->sType) {
       case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO:
          external_info = (const void *) s;
+         break;
+      case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT:
+         drm_info = (const void *) s;
          break;
       case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO_EXT:
          /* Ignore but don't warn */
@@ -1179,7 +1200,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
       }
    }
 
-   result = anv_get_image_format_properties(physical_device, base_info,
+   result = anv_get_image_format_properties(physical_device, base_info, drm_info,
                &base_props->imageFormatProperties, ycbcr_props);
    if (result != VK_SUCCESS)
       goto fail;
