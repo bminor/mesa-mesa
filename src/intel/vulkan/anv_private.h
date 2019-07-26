@@ -43,6 +43,7 @@
 #define VG(x)
 #endif
 
+#include "drm-uapi/drm_fourcc.h"
 #include "common/gen_clflush.h"
 #include "common/gen_decoder.h"
 #include "common/gen_gem.h"

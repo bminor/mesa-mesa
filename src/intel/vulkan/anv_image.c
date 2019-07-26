@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include "drm-uapi/drm_fourcc.h"
 
 #include "anv_private.h"
 #include "util/debug.h"
