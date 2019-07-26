@@ -935,6 +935,7 @@ static VkResult
 anv_get_image_format_properties(
    struct anv_physical_device *physical_device,
    const VkPhysicalDeviceImageFormatInfo2 *base_info,
+   const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *drm_info,
    VkImageFormatProperties *pImageFormatProperties,
    VkSamplerYcbcrConversionImageFormatProperties *pYcbcrImageFormatProperties)
 {
@@ -943,18 +944,22 @@ anv_get_image_format_properties(
    uint32_t maxMipLevels;
    uint32_t maxArraySize;
    VkSampleCountFlags sampleCounts = VK_SAMPLE_COUNT_1_BIT;
+
+   struct anv_instance *instance = physical_device->instance;
    const struct gen_device_info *devinfo = &physical_device->info;
    const struct anv_format *format = anv_get_format(base_info->format);
 
    if (format == NULL)
       goto unsupported;
 
+   assert(format->vk_format == base_info->format);
+
    struct anv_tiling tiling = {
       .vk = base_info->tiling,
-      .drm_format_mod = DRM_FORMAT_MOD_INVALID,
+      .drm_format_mod = drm_info ?
+         drm_info->drmFormatModifier : DRM_FORMAT_MOD_INVALID,
    };
 
-   assert(format->vk_format == base_info->format);
    format_feature_flags = anv_get_image_format_features(devinfo, base_info->format,
                                                         format, tiling);
 
@@ -962,6 +967,15 @@ anv_get_image_format_properties(
    default:
       unreachable("bad VkImageType");
    case VK_IMAGE_TYPE_1D:
+      if (base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+         /* Reject to avoid maintenance and testing burden. */
+         vk_errorf(instance, physical_device,
+                   VK_ERROR_FORMAT_NOT_SUPPORTED,
+                   "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT "
+                   "not supported for VK_IMAGE_TYPE_1D");
+         goto unsupported;
+      }
+
       maxExtent.width = 16384;
       maxExtent.height = 1;
       maxExtent.depth = 1;
@@ -978,8 +992,50 @@ anv_get_image_format_properties(
       maxExtent.depth = 1;
       maxMipLevels = 15; /* log2(maxWidth) + 1 */
       maxArraySize = 2048;
+
+      if (base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+         /* Reject mipmapped and array images because:
+          *
+          *   - We wish to avoid unnecessary maintenance burden.
+          *
+          *   - VK_EXT_image_drm_format_modifier provides sufficient API for
+          *     exporting a mipmapped and/or array image (create with
+          *     VkImageDrmFormatModifierListCreateInfoEXT and query layout
+          *     with vkGetImageSubresourceLayout), but provides no API for
+          *     *importing* such an image.
+          *     (VkImageDrmFormatModifierExplicitCreateInfoEXT is too simple).
+          *     If vkGetPhysicalDeviceImageFormatProperties2 succeeds, the app
+          *     may reasonably expect the driver to support both import and
+          *     export.
+          *
+          *   - For Intel-specific modifiers, Intel could work around the
+          *     limitations of VkImageDrmFormatModifierExplicitCreateInfoEXT
+          *     by defining ABI that hardcodes the layout of miplevels and
+          *     array layers. But Intel has not yet defined such an ABI.
+          */
+         maxMipLevels = 1;
+         maxArraySize = 1;
+
+         if (base_info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+            /* Reject for the same reasons that we reject array images. */
+            vk_errorf(instance, physical_device,
+                      VK_ERROR_FORMAT_NOT_SUPPORTED,
+                      "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT "
+                      "not supported for VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT");
+            goto unsupported;
+         }
+      }
       break;
    case VK_IMAGE_TYPE_3D:
+      if (base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+         /* Reject to avoid maintenance and testing burden. */
+         vk_errorf(instance, physical_device,
+                   VK_ERROR_FORMAT_NOT_SUPPORTED,
+                   "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT "
+                   "not supported for VK_IMAGE_TYPE_3D");
+         goto unsupported;
+      }
+
       maxExtent.width = 2048;
       maxExtent.height = 2048;
       maxExtent.depth = 2048;
@@ -997,6 +1053,22 @@ anv_get_image_format_properties(
    if (base_info->type == VK_IMAGE_TYPE_1D &&
        isl_format_is_compressed(format->planes[0].isl_format)) {
        goto unsupported;
+   }
+
+   if (base_info->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       (base_info->flags & VK_IMAGE_CREATE_DISJOINT_BIT) &&
+       isl_drm_modifier_has_aux(drm_info->drmFormatModifier)) {
+      /* Defensively reject DISJOINT because the placement of the aux surface
+       * might be constrained by hardware. For example, on gen9 the display
+       * engine requires the CCS, if it exists, to reside at a higher physical
+       * address than the primary surface.
+       */
+      vk_errorf(instance, physical_device,
+                VK_ERROR_FORMAT_NOT_SUPPORTED,
+                "drmFormatModifier(0x%"PRIx64") "
+                "not supported for VK_IMAGE_CREATE_DISJOINT_BIT",
+                drm_info->drmFormatModifier);
+      goto unsupported;
    }
 
    if (base_info->tiling == VK_IMAGE_TILING_OPTIMAL &&
@@ -1117,7 +1189,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties(
       .flags = createFlags,
    };
 
-   return anv_get_image_format_properties(physical_device, &info,
+   return anv_get_image_format_properties(physical_device, &info, NULL,
                                           pImageFormatProperties, NULL);
 }
 
@@ -1168,6 +1240,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
 {
    ANV_FROM_HANDLE(anv_physical_device, physical_device, physicalDevice);
    const VkPhysicalDeviceExternalImageFormatInfo *external_info = NULL;
+   const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *drm_info = NULL;
    VkExternalImageFormatProperties *external_props = NULL;
    VkSamplerYcbcrConversionImageFormatProperties *ycbcr_props = NULL;
    struct VkAndroidHardwareBufferUsageANDROID *android_usage = NULL;
@@ -1178,6 +1251,9 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
       switch (s->sType) {
       case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO:
          external_info = (const void *) s;
+         break;
+      case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT:
+         drm_info = (const void *) s;
          break;
       case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO_EXT:
          /* Ignore but don't warn */
@@ -1206,7 +1282,7 @@ VkResult anv_GetPhysicalDeviceImageFormatProperties2(
       }
    }
 
-   result = anv_get_image_format_properties(physical_device, base_info,
+   result = anv_get_image_format_properties(physical_device, base_info, drm_info,
                &base_props->imageFormatProperties, ycbcr_props);
    if (result != VK_SUCCESS)
       goto fail;
