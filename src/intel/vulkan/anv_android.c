@@ -472,13 +472,13 @@ anv_image_from_gralloc(VkDevice device_h,
    int i915_tiling = anv_gem_get_tiling(device, bo->gem_handle);
    switch (i915_tiling) {
    case I915_TILING_NONE:
-      anv_info.isl_tiling_flags = ISL_TILING_LINEAR_BIT;
+      anv_info.drm_format_mod = DRM_FORMAT_MOD_LINEAR;
       break;
    case I915_TILING_X:
-      anv_info.isl_tiling_flags = ISL_TILING_X_BIT;
+      anv_info.drm_format_mod = I915_FORMAT_MOD_X_TILED;
       break;
    case I915_TILING_Y:
-      anv_info.isl_tiling_flags = ISL_TILING_Y0_BIT;
+      anv_info.drm_format_mod = I915_FORMAT_MOD_Y_TILED;
       break;
    case -1:
       result = vk_errorf(device->instance, device,
