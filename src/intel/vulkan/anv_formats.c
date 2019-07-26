@@ -934,7 +934,7 @@ void anv_GetPhysicalDeviceFormatProperties2(
 static VkResult
 anv_get_image_format_properties(
    struct anv_physical_device *physical_device,
-   const VkPhysicalDeviceImageFormatInfo2 *info,
+   const VkPhysicalDeviceImageFormatInfo2 *base_info,
    VkImageFormatProperties *pImageFormatProperties,
    VkSamplerYcbcrConversionImageFormatProperties *pYcbcrImageFormatProperties)
 {
@@ -944,21 +944,21 @@ anv_get_image_format_properties(
    uint32_t maxArraySize;
    VkSampleCountFlags sampleCounts = VK_SAMPLE_COUNT_1_BIT;
    const struct gen_device_info *devinfo = &physical_device->info;
-   const struct anv_format *format = anv_get_format(info->format);
+   const struct anv_format *format = anv_get_format(base_info->format);
 
    if (format == NULL)
       goto unsupported;
 
    struct anv_tiling tiling = {
-      .vk = info->tiling,
+      .vk = base_info->tiling,
       .drm_format_mod = DRM_FORMAT_MOD_INVALID,
    };
 
-   assert(format->vk_format == info->format);
-   format_feature_flags = anv_get_image_format_features(devinfo, info->format,
+   assert(format->vk_format == base_info->format);
+   format_feature_flags = anv_get_image_format_features(devinfo, base_info->format,
                                                         format, tiling);
 
-   switch (info->type) {
+   switch (base_info->type) {
    default:
       unreachable("bad VkImageType");
    case VK_IMAGE_TYPE_1D:
@@ -994,22 +994,22 @@ anv_get_image_format_properties(
     *       if the Surface Type is SURFTYPE_1D.
     *    * This field cannot be ASTC format if the Surface Type is SURFTYPE_1D.
     */
-   if (info->type == VK_IMAGE_TYPE_1D &&
+   if (base_info->type == VK_IMAGE_TYPE_1D &&
        isl_format_is_compressed(format->planes[0].isl_format)) {
        goto unsupported;
    }
 
-   if (info->tiling == VK_IMAGE_TILING_OPTIMAL &&
-       info->type == VK_IMAGE_TYPE_2D &&
+   if (base_info->tiling == VK_IMAGE_TILING_OPTIMAL &&
+       base_info->type == VK_IMAGE_TYPE_2D &&
        (format_feature_flags & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
                                 VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
-       !(info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) &&
-       !(info->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
+       !(base_info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) &&
+       !(base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
       sampleCounts = isl_device_get_sample_counts(&physical_device->isl_dev);
    }
 
-   if (info->usage & (VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                      VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+   if (base_info->usage & (VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                           VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
       /* Accept transfers on anything we can sample from or renderer to. */
       if (!(format_feature_flags & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
                                     VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
@@ -1018,35 +1018,35 @@ anv_get_image_format_properties(
       }
    }
 
-   if (info->usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+   if (base_info->usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
       if (!(format_feature_flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
          goto unsupported;
       }
    }
 
-   if (info->usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+   if (base_info->usage & VK_IMAGE_USAGE_STORAGE_BIT) {
       if (!(format_feature_flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
          goto unsupported;
       }
    }
 
-   if (info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+   if (base_info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
       if (!(format_feature_flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
          goto unsupported;
       }
    }
 
-   if (info->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+   if (base_info->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
       if (!(format_feature_flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
          goto unsupported;
       }
    }
 
-   if (info->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
+   if (base_info->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
       /* Nothing to check. */
    }
 
-   if (info->usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
+   if (base_info->usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
       /* Ignore this flag because it was removed from the
        * provisional_I_20150910 header.
        */
