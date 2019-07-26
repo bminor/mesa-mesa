@@ -571,6 +571,15 @@ anv_image_create(VkDevice _device,
       assert(isl_mod_info);
    }
 
+   const VkImageDrmFormatModifierListCreateInfoEXT *drm_list_info =
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT);
+   if (drm_list_info) {
+      isl_mod_info = choose_drm_format_mod(&device->instance->physicalDevice,
+                                           drm_list_info->drmFormatModifierCount,
+                                           drm_list_info->pDrmFormatModifiers);
+      assert(isl_mod_info);
+   }
+
    if (create_info->drm_format_mod != DRM_FORMAT_MOD_INVALID) {
       isl_mod_info = isl_drm_modifier_get_info(create_info->drm_format_mod);
       assert(isl_mod_info);
