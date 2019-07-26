@@ -51,7 +51,7 @@ VkResult anv_CreateDmaBufImageINTEL(
 
    result = anv_image_create(_device,
       &(struct anv_image_create_info) {
-         .isl_tiling_flags = ISL_TILING_X_BIT,
+         .drm_format_mod = I915_FORMAT_MOD_X_TILED,
          .stride = pCreateInfo->strideInBytes,
          .vk_info = &(VkImageCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -61,7 +61,6 @@ VkResult anv_CreateDmaBufImageINTEL(
             .mipLevels = 1,
             .arrayLayers = 1,
             .samples = 1,
-            /* FIXME: Need a way to use X tiling to allow scanout */
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .flags = 0,

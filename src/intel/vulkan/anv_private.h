@@ -3406,8 +3406,8 @@ void anv_image_fill_surface_state(struct anv_device *device,
 struct anv_image_create_info {
    const VkImageCreateInfo *vk_info;
 
-   /** An opt-in bitmask which filters an ISL-mapping of the Vulkan tiling. */
-   isl_tiling_flags_t isl_tiling_flags;
+   /** Force a specific tiling unless DRM_FORMAT_MOD_INVALID. */
+   uint64_t drm_format_mod;
 
    /** These flags will be added to any derived from VkImageCreateInfo. */
    isl_surf_usage_flags_t isl_extra_usage_flags;

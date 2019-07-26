@@ -92,11 +92,10 @@ choose_isl_surf_usage(VkImageCreateFlags vk_create_flags,
 }
 
 static isl_tiling_flags_t
-choose_isl_tiling_flags(const struct anv_image_create_info *anv_info,
+choose_isl_tiling_flags(const struct VkImageCreateInfo *base_info,
                         const struct isl_drm_modifier_info *isl_mod_info,
                         bool legacy_scanout)
 {
-   const VkImageCreateInfo *base_info = anv_info->vk_info;
    isl_tiling_flags_t flags = 0;
 
    switch (base_info->tiling) {
@@ -109,9 +108,6 @@ choose_isl_tiling_flags(const struct anv_image_create_info *anv_info,
       flags = ISL_TILING_LINEAR_BIT;
       break;
    }
-
-   if (anv_info->isl_tiling_flags)
-      flags &= anv_info->isl_tiling_flags;
 
    if (legacy_scanout)
       flags &= ISL_TILING_LINEAR_BIT | ISL_TILING_X_BIT;
@@ -575,6 +571,11 @@ anv_image_create(VkDevice _device,
       assert(isl_mod_info);
    }
 
+   if (create_info->drm_format_mod != DRM_FORMAT_MOD_INVALID) {
+      isl_mod_info = isl_drm_modifier_get_info(create_info->drm_format_mod);
+      assert(isl_mod_info);
+   }
+
    anv_assert(pCreateInfo->mipLevels > 0);
    anv_assert(pCreateInfo->arrayLayers > 0);
    anv_assert(pCreateInfo->samples > 0);
@@ -625,7 +626,7 @@ anv_image_create(VkDevice _device,
    assert(format != NULL);
 
    const isl_tiling_flags_t isl_tiling_flags =
-      choose_isl_tiling_flags(create_info, isl_mod_info,
+      choose_isl_tiling_flags(pCreateInfo, isl_mod_info,
                               image->needs_set_tiling);
 
    image->n_planes = format->n_planes;
