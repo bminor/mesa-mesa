@@ -435,6 +435,19 @@ anv_get_format(VkFormat vk_format)
    return format;
 }
 
+static bool
+anv_format_has_npot_plane(const struct anv_format *anv_format) {
+   for (uint32_t i = 0; i < anv_format->n_planes; ++i) {
+      const struct isl_format_layout *isl_layout =
+       isl_format_get_layout(anv_format->planes[i].isl_format);
+
+      if (!util_is_power_of_two_or_zero(isl_layout->bpb))
+         return true;
+   }
+
+   return false;
+}
+
 /**
  * Exactly one bit must be set in \a aspect.
  */
@@ -442,8 +455,8 @@ struct anv_format_plane
 anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
                      VkImageAspectFlagBits aspect, struct anv_tiling tiling)
 {
-   assert(tiling.vk == VK_IMAGE_TILING_LINEAR ||
-          tiling.vk == VK_IMAGE_TILING_OPTIMAL);
+   assert((tiling.vk != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) ==
+          (tiling.drm_format_mod == DRM_FORMAT_MOD_INVALID));
 
    const struct anv_format *format = anv_get_format(vk_format);
    const struct anv_format_plane unsupported = {
@@ -462,8 +475,13 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
       assert(vk_format_aspects(vk_format) &
              (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
 
-      if (tiling.vk == VK_IMAGE_TILING_LINEAR)
+      if (tiling.vk != VK_IMAGE_TILING_OPTIMAL) {
+         /* We could support depth and stencil images with explicit
+          * user-selected tiling (linear or modifier) if we wanted, but there
+          * is no justification for the maintenance burden.
+          */
          return unsupported;
+      }
 
       return plane_format;
    }
@@ -473,13 +491,17 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
    const struct isl_format_layout *isl_layout =
       isl_format_get_layout(plane_format.isl_format);
 
-   if (tiling.vk == VK_IMAGE_TILING_OPTIMAL &&
+   bool rewrite_layout = false;
+
+   if (!anv_tiling_is_linear(tiling) &&
        !util_is_power_of_two_or_zero(isl_layout->bpb)) {
       /* Tiled formats *must* be power-of-two because we need up upload
        * them with the render pipeline.  For 3-channel formats, we fix
        * this by switching them over to RGBX or RGBA formats under the
        * hood.
        */
+      rewrite_layout = true;
+
       enum isl_format rgbx = isl_format_rgb_to_rgbx(plane_format.isl_format);
       if (rgbx != ISL_FORMAT_UNSUPPORTED &&
           isl_format_supports_rendering(devinfo, rgbx)) {
@@ -495,8 +517,17 @@ anv_get_format_plane(const struct gen_device_info *devinfo, VkFormat vk_format,
     * back to a format with a more complex swizzle.
     */
    if (vk_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 && devinfo->gen < 8) {
+      rewrite_layout = true;
       plane_format.isl_format = ISL_FORMAT_B4G4R4A4_UNORM;
       plane_format.swizzle = ISL_SWIZZLE(GREEN, RED, ALPHA, BLUE);
+   }
+
+   /* For VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, the image's physical layout
+    * must not differ from its nominal layout in the Vulkan API.
+    */
+   if (tiling.vk == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       rewrite_layout) {
+      return unsupported;
    }
 
    return plane_format;
@@ -515,14 +546,19 @@ anv_get_image_format_features(const struct gen_device_info *devinfo,
    if (anv_format == NULL)
       return 0;
 
-   assert(tiling.vk == VK_IMAGE_TILING_LINEAR ||
-          tiling.vk == VK_IMAGE_TILING_OPTIMAL);
+   assert((tiling.vk != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) ==
+          (tiling.drm_format_mod == DRM_FORMAT_MOD_INVALID));
 
    const VkImageAspectFlags aspects = vk_format_aspects(vk_format);
 
    if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-      if (tiling.vk == VK_IMAGE_TILING_LINEAR)
+      if (tiling.vk != VK_IMAGE_TILING_OPTIMAL) {
+         /* We could support depth and stencil images with explicit
+          * user-selected tiling (linear or modifier) if we wanted, but there
+          * is no justification for the maintenance burden.
+          */
          return 0;
+      }
 
       flags |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
                VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
@@ -553,18 +589,21 @@ anv_get_image_format_features(const struct gen_device_info *devinfo,
 
    enum isl_format base_isl_format = base_plane_format.isl_format;
 
-   /* ASTC textures must be in Y-tiled memory */
-   if (tiling.vk == VK_IMAGE_TILING_LINEAR &&
-       isl_format_get_layout(plane_format.isl_format)->txc == ISL_TXC_ASTC)
-      return 0;
+   if (isl_format_get_layout(plane_format.isl_format)->txc == ISL_TXC_ASTC) {
+      /* ASTC requires nasty workarounds on BSW so we just disable it for now.
+       *
+       * TODO: Figure out the ASTC workarounds and re-enable on BSW.
+       */
+      if (devinfo->gen < 9)
+         return 0;
 
-   /* ASTC requires nasty workarounds on BSW so we just disable it for now.
-    *
-    * TODO: Figure out the ASTC workarounds and re-enable on BSW.
-    */
-   if (devinfo->gen < 9 &&
-       isl_format_get_layout(plane_format.isl_format)->txc == ISL_TXC_ASTC)
-      return 0;
+      /* ASTC must be Y-tiled without CCS. */
+      if (!(tiling.vk == VK_IMAGE_TILING_OPTIMAL ||
+            (tiling.vk == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+             tiling.drm_format_mod == I915_FORMAT_MOD_Y_TILED))) {
+         return 0;
+      }
+   }
 
    if (isl_format_supports_sampling(devinfo, plane_format.isl_format)) {
       flags |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
@@ -612,7 +651,7 @@ anv_get_image_format_features(const struct gen_device_info *devinfo,
     * substantially more work and we have enough RGBX formats to handle
     * what most clients will want.
     */
-   if (tiling.vk == VK_IMAGE_TILING_OPTIMAL &&
+   if (!anv_tiling_is_linear(tiling) &&
        base_isl_format != ISL_FORMAT_UNSUPPORTED &&
        !util_is_power_of_two_or_zero(isl_format_layouts[base_isl_format].bpb) &&
        isl_format_rgb_to_rgbx(base_isl_format) == ISL_FORMAT_UNSUPPORTED) {
@@ -660,6 +699,16 @@ anv_get_image_format_features(const struct gen_device_info *devinfo,
       flags &= ~disallowed_ycbcr_image_features;
    }
 
+   if (tiling.vk == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       isl_drm_modifier_has_aux(tiling.drm_format_mod)) {
+      /* Defensively reject DISJOINT because the placement of the aux surface
+       * might be constrained by hardware. For example, on gen9 the display
+       * engine requires the CCS, if it exists, to reside at a higher physical
+       * address than the primary surface.
+       */
+      flags &= ~VK_FORMAT_FEATURE_DISJOINT_BIT;
+   }
+
    return flags;
 }
 
@@ -704,44 +753,107 @@ get_buffer_format_features(const struct gen_device_info *devinfo,
 }
 
 static void
-get_wsi_format_modifier_properties_list(const struct anv_physical_device *physical_device,
+get_drm_format_modifier_properties_list(const struct anv_physical_device *physical_device,
                                         VkFormat vk_format,
-                                        struct wsi_format_modifier_properties_list *list)
+                                        VkDrmFormatModifierPropertiesListEXT *list)
 {
+   const struct gen_device_info *devinfo = &physical_device->info;
    const struct anv_format *anv_format = anv_get_format(vk_format);
+   bool has_npot_plane = anv_format_has_npot_plane(anv_format);
 
-   VK_OUTARRAY_MAKE(out, list->modifier_properties, &list->modifier_count);
+   VK_OUTARRAY_MAKE(out, list->pDrmFormatModifierProperties,
+                    &list->drmFormatModifierCount);
 
-   /* This is a simplified list where all the modifiers are available */
-   assert(vk_format == VK_FORMAT_B8G8R8_SRGB ||
-          vk_format == VK_FORMAT_B8G8R8_UNORM ||
-          vk_format == VK_FORMAT_B8G8R8A8_SRGB ||
-          vk_format == VK_FORMAT_B8G8R8A8_UNORM);
-
-   uint64_t modifiers[] = {
+   const uint64_t mods[] = {
       DRM_FORMAT_MOD_LINEAR,
       I915_FORMAT_MOD_X_TILED,
       I915_FORMAT_MOD_Y_TILED,
       I915_FORMAT_MOD_Y_TILED_CCS,
    };
 
-   for (uint32_t i = 0; i < ARRAY_SIZE(modifiers); i++) {
+   for (uint32_t i = 0; i < ARRAY_SIZE(mods); i++) {
+      uint64_t mod = mods[i];
+
       const struct isl_drm_modifier_info *mod_info =
-         isl_drm_modifier_get_info(modifiers[i]);
+         isl_drm_modifier_get_info(mod);
+
+      /* Tiled formats must be power-of-two because we implement transfers
+       * with the render pipeline.
+       *
+       * Maybe we could support tiled non-power-of-two formats if we limited
+       * drmFormatModifierTilingFeatures to VK_FORMAT_FEATURE_SAMPLED_*, but
+       * it's not worth the maintenance and testing burden.
+       */
+      if (has_npot_plane && mod != DRM_FORMAT_MOD_LINEAR )
+         continue;
 
       if (mod_info->aux_usage == ISL_AUX_USAGE_CCS_E &&
           !isl_format_supports_ccs_e(&physical_device->info,
                                      anv_format->planes[0].isl_format))
          continue;
 
+      VkFormatFeatureFlags format_features =
+         anv_get_image_format_features(devinfo, vk_format, anv_format,
+                                       anv_tiling_drm(mod));
+      if (!format_features)
+         continue;
+
       vk_outarray_append(&out, mod_props) {
-         mod_props->modifier = modifiers[i];
-         if (isl_drm_modifier_has_aux(modifiers[i]))
-            mod_props->modifier_plane_count = 2;
-         else
-            mod_props->modifier_plane_count = anv_format->n_planes;
+         mod_props->drmFormatModifier = mod;
+         mod_props->drmFormatModifierPlaneCount = anv_format->n_planes;
+         mod_props->drmFormatModifierTilingFeatures = format_features;
+
+         if (mod_info->aux_usage != ISL_AUX_USAGE_NONE) {
+            mod_props->drmFormatModifierPlaneCount += 1;
+         }
       }
    }
+}
+
+static void
+get_wsi_format_modifier_properties_list(const struct anv_physical_device *physical_device,
+                                        VkFormat vk_format,
+                                        struct wsi_format_modifier_properties_list *wsi_list)
+{
+   /* This is a simplified list where all the modifiers are available */
+   assert(vk_format == VK_FORMAT_B8G8R8_SRGB ||
+          vk_format == VK_FORMAT_B8G8R8_UNORM ||
+          vk_format == VK_FORMAT_B8G8R8A8_SRGB ||
+          vk_format == VK_FORMAT_B8G8R8A8_UNORM);
+
+   /* Implement by proxying to VK_EXT_image_drm_format_modifier. */
+   VkDrmFormatModifierPropertiesListEXT drm_list = {
+      .sType = VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
+      .drmFormatModifierCount = wsi_list->modifier_count,
+      .pDrmFormatModifierProperties = NULL,
+   };
+
+   if (wsi_list->modifier_properties != NULL &&
+       wsi_list->modifier_count > 0) {
+      /* Allocate temporary VkDrmFormatModifierPropertiesEXT array. */
+      size_t size = sizeof(drm_list.pDrmFormatModifierProperties[0]);
+      if (__builtin_mul_overflow(size, wsi_list->modifier_count, &size))
+         abort();
+      drm_list.pDrmFormatModifierProperties = alloca(size);
+   }
+
+   get_drm_format_modifier_properties_list(physical_device, vk_format,
+                                           &drm_list);
+
+   /* Copy results from drm_list to wsi_list. */
+   if (wsi_list->modifier_properties != NULL) {
+      assert(drm_list.drmFormatModifierCount <= wsi_list->modifier_count);
+
+      for (uint32_t i = 0; i < drm_list.drmFormatModifierCount; ++i) {
+         struct wsi_format_modifier_properties *wsi_props = &wsi_list->modifier_properties[i];
+         VkDrmFormatModifierPropertiesEXT *drm_props = &drm_list.pDrmFormatModifierProperties[i];
+
+         wsi_props->modifier = drm_props->drmFormatModifier;
+         wsi_props->modifier_plane_count = drm_props->drmFormatModifierPlaneCount;
+      }
+   }
+
+   wsi_list->modifier_count = drm_list.drmFormatModifierCount;
 }
 
 void anv_GetPhysicalDeviceFormatProperties(
@@ -779,6 +891,10 @@ void anv_GetPhysicalDeviceFormatProperties2(
       switch ((unsigned)ext->sType) {
       case VK_STRUCTURE_TYPE_WSI_FORMAT_MODIFIER_PROPERTIES_LIST_MESA:
          get_wsi_format_modifier_properties_list(physical_device, format,
+                                                 (void *)ext);
+         break;
+      case VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT:
+         get_drm_format_modifier_properties_list(physical_device, format,
                                                  (void *)ext);
          break;
       default:
