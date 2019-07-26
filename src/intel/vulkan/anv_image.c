@@ -327,6 +327,8 @@ make_surface(const struct anv_device *dev,
    if (dev->info.gen <= 8 &&
        (image->create_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) &&
        image->tiling.vk == VK_IMAGE_TILING_OPTIMAL) {
+      assert(image->tiling.drm_format_mod == DRM_FORMAT_MOD_INVALID ||
+             image->tiling.drm_format_mod == DRM_FORMAT_MOD_LINEAR);
       assert(isl_format_is_compressed(plane_format.isl_format));
       tiling_flags = ISL_TILING_LINEAR_BIT;
       needs_shadow = true;
@@ -562,19 +564,38 @@ anv_image_create(VkDevice _device,
 
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
 
+   /* The pNext chain must not provide multiple methods of selecting
+    * a modifier.
+    */
+   int mod_selections = 0;
+
+   const VkImageDrmFormatModifierListCreateInfoEXT *drm_list_info =
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT);
+   if (drm_list_info) {
+      ++mod_selections;
+      isl_mod_info = choose_drm_format_mod(&device->instance->physicalDevice,
+                                           drm_list_info->drmFormatModifierCount,
+                                           drm_list_info->pDrmFormatModifiers);
+   }
+
    const struct wsi_image_create_info *wsi_info =
       vk_find_struct_const(pCreateInfo->pNext, WSI_IMAGE_CREATE_INFO_MESA);
    if (wsi_info && wsi_info->modifier_count > 0) {
+      ++mod_selections;
       isl_mod_info = choose_drm_format_mod(&device->instance->physicalDevice,
                                            wsi_info->modifier_count,
                                            wsi_info->modifiers);
-      assert(isl_mod_info);
    }
 
    if (create_info->drm_format_mod != DRM_FORMAT_MOD_INVALID) {
+      ++mod_selections;
       isl_mod_info = isl_drm_modifier_get_info(create_info->drm_format_mod);
-      assert(isl_mod_info);
    }
+
+   assert(mod_selections <= 1);
+
+   if (mod_selections > 0)
+      assert(isl_mod_info);
 
    anv_assert(pCreateInfo->mipLevels > 0);
    anv_assert(pCreateInfo->arrayLayers > 0);
