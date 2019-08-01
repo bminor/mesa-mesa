@@ -1044,6 +1044,16 @@ void anv_GetImageSubresourceLayout(
    }
 }
 
+void anv_GetImageDrmFormatModifierPropertiesEXT(
+    VkDevice                                    _device,
+    VkImage                                     _image,
+    VkImageDrmFormatModifierListCreateInfoEXT*   pProperties)
+{
+      /* FINISHME(VK_EXT_image_drm_format_modifier) */
+      anv_finishme("vkGetImageDrmFormatModifierPropertiesEXT");
+      abort();
+}
+
 /**
  * This function determines the optimal buffer to use for a given
  * VkImageLayout and other pieces of information needed to make that
