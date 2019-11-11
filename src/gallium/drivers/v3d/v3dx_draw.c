@@ -157,7 +157,8 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
                         v3d_update_shadow_texture(pctx, &view->base);
 
                 v3d_flush_jobs_writing_resource(v3d, view->texture,
-                                                V3D_FLUSH_DEFAULT);
+                                                V3D_FLUSH_DEFAULT,
+                                                s == PIPE_SHADER_COMPUTE);
         }
 
         /* Flush writes to UBOs. */
@@ -165,7 +166,8 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
                 struct pipe_constant_buffer *cb = &v3d->constbuf[s].cb[i];
                 if (cb->buffer) {
                         v3d_flush_jobs_writing_resource(v3d, cb->buffer,
-                                                        V3D_FLUSH_DEFAULT);
+                                                        V3D_FLUSH_DEFAULT,
+                                                        s == PIPE_SHADER_COMPUTE);
                 }
         }
 
@@ -174,7 +176,8 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
                 struct pipe_shader_buffer *sb = &v3d->ssbo[s].sb[i];
                 if (sb->buffer) {
                         v3d_flush_jobs_reading_resource(v3d, sb->buffer,
-                                                        V3D_FLUSH_NOT_CURRENT_JOB);
+                                                        V3D_FLUSH_NOT_CURRENT_JOB,
+                                                        s == PIPE_SHADER_COMPUTE);
                 }
         }
 
@@ -183,7 +186,8 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
                 struct v3d_image_view *view = &v3d->shaderimg[s].si[i];
 
                 v3d_flush_jobs_reading_resource(v3d, view->base.resource,
-                                                V3D_FLUSH_NOT_CURRENT_JOB);
+                                                V3D_FLUSH_NOT_CURRENT_JOB,
+                                                s == PIPE_SHADER_COMPUTE);
         }
 
         /* Flush writes to our vertex buffers (i.e. from transform feedback) */
@@ -192,7 +196,8 @@ v3d_predraw_check_stage_inputs(struct pipe_context *pctx,
                         struct pipe_vertex_buffer *vb = &v3d->vertexbuf.vb[i];
 
                         v3d_flush_jobs_writing_resource(v3d, vb->buffer.resource,
-                                                        V3D_FLUSH_DEFAULT);
+                                                        V3D_FLUSH_DEFAULT,
+                                                        false);
                 }
         }
 }
@@ -213,7 +218,8 @@ v3d_predraw_check_outputs(struct pipe_context *pctx)
                         const struct pipe_stream_output_target *target =
                                 so->targets[i];
                         v3d_flush_jobs_reading_resource(v3d, target->buffer,
-                                                        V3D_FLUSH_DEFAULT);
+                                                        V3D_FLUSH_DEFAULT,
+                                                        false);
                 }
         }
 }
@@ -667,7 +673,7 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info)
 
         if (info->indirect) {
                 v3d_flush_jobs_writing_resource(v3d, info->indirect->buffer,
-                                                V3D_FLUSH_DEFAULT);
+                                                V3D_FLUSH_DEFAULT, false);
         }
 
         v3d_predraw_check_outputs(pctx);
@@ -697,6 +703,14 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info)
                 perf_debug("Blocking binner on last render "
                            "due to vertex texturing or indirect drawing.\n");
                 job->submit.in_sync_bcl = v3d->out_sync;
+        }
+
+        /* We also need to ensure that compute is complete when render depends
+         * on resources written by it.
+         */
+        if (v3d->sync_on_last_compute_job) {
+                job->submit.in_sync_bcl = v3d->out_sync;
+                v3d->sync_on_last_compute_job = false;
         }
 
         /* Mark SSBOs and images as being written.  We don't actually know
@@ -1114,13 +1128,15 @@ v3d_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
         foreach_bit(i, v3d->ssbo[PIPE_SHADER_COMPUTE].enabled_mask) {
                 struct v3d_resource *rsc = v3d_resource(
                         v3d->ssbo[PIPE_SHADER_COMPUTE].sb[i].buffer);
-                rsc->writes++; /* XXX */
+                rsc->writes++;
+                rsc->compute_written = true;
         }
 
         foreach_bit(i, v3d->shaderimg[PIPE_SHADER_COMPUTE].enabled_mask) {
                 struct v3d_resource *rsc = v3d_resource(
                         v3d->shaderimg[PIPE_SHADER_COMPUTE].si[i].base.resource);
                 rsc->writes++;
+                rsc->compute_written = true;
         }
 
         v3d_bo_unreference(&uniforms.bo);
