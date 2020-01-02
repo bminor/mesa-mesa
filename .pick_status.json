@@ -418,7 +418,7 @@
         "description": "aco: fix target calculation when vgpr spilling introduces sgpr spilling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "master_sha": null,
         "because_sha": "a7ff1bb5b9a78cf57073b5e2e136daf0c85078d6"
     },
