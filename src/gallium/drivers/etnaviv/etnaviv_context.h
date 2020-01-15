@@ -32,6 +32,7 @@
 
 #include "etnaviv_resource.h"
 #include "etnaviv_tiling.h"
+#include "etnaviv_yuv.h"
 #include "pipe/p_context.h"
 #include "pipe/p_defines.h"
 #include "util/format/u_formats.h"
@@ -117,6 +118,8 @@ struct etna_context {
    struct etna_sampler_ts *(*ts_for_sampler_view)(struct pipe_sampler_view *pview);
    /* GPU-specific blit implementation */
    bool (*blit)(struct pipe_context *pipe, const struct pipe_blit_info *info);
+   /* GPU-specific implementation to emit yuv tiler state */
+   void (*emit_yuv_tiler_state)(struct etna_context *ctx, struct etna_yuv_config *config);
 
    struct etna_screen *screen;
    struct etna_cmd_stream *stream;

@@ -83,6 +83,8 @@ files_etnaviv = files(
   'etnaviv_uniforms.c',
   'etnaviv_uniforms.h',
   'etnaviv_util.h',
+  'etnaviv_yuv.c',
+  'etnaviv_yuv.h',
   'etnaviv_zsa.c',
   'etnaviv_zsa.h',
 )

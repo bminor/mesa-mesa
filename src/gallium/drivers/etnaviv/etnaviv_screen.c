@@ -37,6 +37,7 @@
 #include "etnaviv_query.h"
 #include "etnaviv_resource.h"
 #include "etnaviv_translate.h"
+#include "etnaviv_yuv.h"
 
 #include "util/hash_table.h"
 #include "util/os_time.h"
@@ -406,6 +407,9 @@ gpu_supports_texture_format(struct etna_screen *screen, uint32_t fmt,
        (util_format_is_pure_integer(format) || util_format_is_float(format)))
       supported = VIV_FEATURE(screen, ETNA_FEATURE_HALTI2);
 
+
+   if (etna_format_needs_yuv_tiler(format))
+      supported = VIV_FEATURE(screen, ETNA_FEATURE_YUV420_TILER);
 
    if (!supported)
       return false;

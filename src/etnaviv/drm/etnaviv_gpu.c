@@ -92,6 +92,7 @@ query_features_from_kernel(struct etna_gpu *gpu)
 	ETNA_FEATURE(chipFeatures, DXT_TEXTURE_COMPRESSION);
 	ETNA_FEATURE(chipFeatures, ETC1_TEXTURE_COMPRESSION);
 	ETNA_FEATURE(chipFeatures, NO_EARLY_Z);
+	ETNA_FEATURE(chipFeatures, YUV420_TILER);
 
 	ETNA_FEATURE(chipMinorFeatures0, MC20);
 	ETNA_FEATURE(chipMinorFeatures0, RENDERTARGET_8K);

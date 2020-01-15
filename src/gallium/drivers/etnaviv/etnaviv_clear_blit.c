@@ -36,6 +36,7 @@
 #include "etnaviv_rs.h"
 #include "etnaviv_surface.h"
 #include "etnaviv_translate.h"
+#include "etnaviv_yuv.h"
 
 #include "pipe/p_defines.h"
 #include "pipe/p_state.h"
@@ -109,6 +110,10 @@ etna_blit(struct pipe_context *pctx, const struct pipe_blit_info *blit_info)
       return;
 
    if (ctx->blit(pctx, &info))
+      goto success;
+
+   if (etna_format_needs_yuv_tiler(blit_info->src.format) &&
+       etna_try_yuv_blit(pctx, blit_info))
       goto success;
 
    if (util_try_blit_via_copy_region(pctx, &info, false))
@@ -210,7 +215,7 @@ etna_copy_resource(struct pipe_context *pctx, struct pipe_resource *dst,
    struct etna_resource *src_priv = etna_resource(src);
    struct etna_resource *dst_priv = etna_resource(dst);
 
-   assert(src->format == dst->format);
+   assert(src->format == dst->format || util_format_is_yuv(src->format));
    assert(src->array_size == dst->array_size);
    assert(last_level <= dst->last_level && last_level <= src->last_level);
 

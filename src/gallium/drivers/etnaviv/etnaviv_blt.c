@@ -622,6 +622,32 @@ etna_try_blt_blit(struct pipe_context *pctx,
    return true;
 }
 
+static void
+etna_emit_yuv_tiler_state_blt(struct etna_context *ctx, struct etna_yuv_config *config)
+{
+   struct etna_cmd_stream *stream = ctx->stream;
+
+   etna_set_state(stream, VIVS_BLT_ENABLE, 0x00000001);
+   etna_set_state(stream, VIVS_BLT_YUV_CONFIG,
+                  VIVS_BLT_YUV_CONFIG_SOURCE_FORMAT(config->format) | VIVS_BLT_YUV_CONFIG_ENABLE);
+   etna_set_state(stream, VIVS_BLT_YUV_WINDOW_SIZE,
+                  VIVS_BLT_YUV_WINDOW_SIZE_HEIGHT(config->height) |
+                  VIVS_BLT_YUV_WINDOW_SIZE_WIDTH(config->width));
+
+   etna_yuv_emit_plane(ctx, config->planes[0], ETNA_PENDING_READ, VIVS_BLT_YUV_SRC_YADDR, VIVS_BLT_YUV_SRC_YSTRIDE);
+   etna_yuv_emit_plane(ctx, config->planes[1], ETNA_PENDING_READ, VIVS_BLT_YUV_SRC_UADDR, VIVS_BLT_YUV_SRC_USTRIDE);
+   etna_yuv_emit_plane(ctx, config->planes[2], ETNA_PENDING_READ, VIVS_BLT_YUV_SRC_VADDR, VIVS_BLT_YUV_SRC_VSTRIDE);
+   etna_yuv_emit_plane(ctx, config->dst, ETNA_PENDING_WRITE, VIVS_BLT_YUV_DEST_ADDR, VIVS_BLT_YUV_DEST_STRIDE);
+
+   /* trigger resolve */
+   etna_set_state(stream, VIVS_BLT_SET_COMMAND, 0x00000003);
+   etna_set_state(stream, VIVS_BLT_COMMAND, VIVS_BLT_COMMAND_COMMAND_YUV_TILE);
+   etna_set_state(stream, VIVS_BLT_SET_COMMAND, 0x00000003);
+   etna_set_state(stream, VIVS_BLT_ENABLE, 0x00000000);
+
+   etna_stall(stream, SYNC_RECIPIENT_RA, SYNC_RECIPIENT_BLT);
+}
+
 void
 etna_clear_blit_blt_init(struct pipe_context *pctx)
 {
@@ -630,4 +656,5 @@ etna_clear_blit_blt_init(struct pipe_context *pctx)
    DBG("etnaviv: Using BLT blit engine");
    pctx->clear = etna_clear_blt;
    ctx->blit = etna_try_blt_blit;
+   ctx->emit_yuv_tiler_state = etna_emit_yuv_tiler_state_blt;
 }
