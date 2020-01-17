@@ -1451,10 +1451,6 @@ for s in [8, 16, 32, 64]:
    ])
 
 optimizations.extend([
-   (('iand', ('ineg', ('b2i', 'a@1')), ('ineg', ('b2i', 'b@1'))),
-    ('ineg', ('b2i', ('iand', a, b)))),
-   (('ior', ('ineg', ('b2i','a@1')), ('ineg', ('b2i', 'b@1'))),
-    ('ineg', ('b2i', ('ior', a, b)))),
    (('ieq', ('ineg', ('b2i', 'a@1')), -1), a),
    (('ine', ('ineg', ('b2i', 'a@1')), -1), ('inot', a)),
    (('ige', ('ineg', ('b2i', 'a@1')), 0), ('inot', a)),
@@ -1462,6 +1458,22 @@ optimizations.extend([
    (('ult', 0, ('ineg', ('b2i', 'a@1'))), a),
    (('iand', ('ineg', ('b2i', a)), 1.0), ('b2f', a)),
    (('iand', ('ineg', ('b2i', a)), 1),   ('b2i', a)),
+])
+
+for op in ('ior', 'iand', 'ixor'):
+    optimizations.extend([
+        ((op,          ('b2i', 'a@1') ,          ('b2i', 'b@1') ),          ('b2i', (op, a, b)) ),
+        ((op, ('ineg', ('b2i', 'a@1')), ('ineg', ('b2i', 'b@1'))), ('ineg', ('b2i', (op, a, b)))),
+
+        # This pattern can result when D3D-style Booleans are combined with some
+        # algebraic optimizations of masking.
+        (('iand', (op, ('b2i', 'a@1'), ('ineg', ('b2i', 'b@1'))), 1),       ('b2i', (op, a, b)) ),
+    ])
+
+# One extra rule for iand.  Since one of the sources is missing ineg, the
+# final result can only be 0 or 1.  Omit the final ineg.
+optimizations.extend([
+    (('iand', ('ineg', ('b2i', 'a@1')), ('b2i', 'b@1')), ('b2i', ('iand', a, b)))
 ])
 
 optimizations.extend([
