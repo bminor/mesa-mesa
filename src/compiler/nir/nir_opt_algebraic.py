@@ -784,12 +784,8 @@ optimizations.extend([
    (('ieq', ('iadd', a, b), a), ('ieq', b, 0)),
    (('ine', ('iadd', a, b), a), ('ine', b, 0)),
 
-   (('feq', ('b2f', 'a@1'), 0.0), ('inot', a)),
    (('fge', 0.0, ('b2f', 'a@1')), ('inot', a)),
-   (('fneu', ('b2f', 'a@1'), 0.0), a),
    (('flt',  0.0, ('b2f', 'a@1')), a),
-   (('ieq', ('b2i', 'a@1'), 0),   ('inot', a)),
-   (('ine', ('b2i', 'a@1'), 0),   a),
    (('ieq', 'a@1', False), ('inot', a)),
    (('ieq', 'a@1', True), a),
    (('ine', 'a@1', False), a),
@@ -3229,6 +3225,15 @@ for i in range(2, 4 + 1):
           optimizations  += [
              ((to_mp, vec_inst + suffix_in), vec_inst + out_mp, '!options->vectorize_vec2_16bit')
           ]
+
+for b2t, xne, xeq, zero, one in (('b2i', 'ine', 'ieq', 0, 1),
+                                 ('b2f', 'fneu', 'feq', 0.0, 1.0)):
+    optimizations += [
+        ((xeq, (b2t, 'a@1'), zero), ('inot', a)),
+        ((xeq, (b2t, 'a@1'), one),  a),
+        ((xne, (b2t, 'a@1'), zero), a),
+        ((xne, (b2t, 'a@1'), one),  ('inot', a)),
+    ]
 
 # This section contains "late" optimizations that should be run before
 # creating ffmas and calling regular optimizations for the final time.
