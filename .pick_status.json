@@ -1624,7 +1624,7 @@
         "description": "anv: Improve BTI change cache flushing",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "master_sha": null,
         "because_sha": "185630c6bc973e9a2fec6172325bf31d70bc2eec"
     },
