@@ -2272,7 +2272,7 @@
         "description": "radeonsi: don't invoke decompression inside internal launch_grid",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 3,
         "master_sha": null,
         "because_sha": null
     },
