@@ -175,7 +175,7 @@
         "description": "lima: ppir: don't delete root ld_tex nodes without successors in current block",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "master_sha": null,
         "because_sha": "c8554f849e4102a78a9f6ab371b7492d7b25af62"
     },
