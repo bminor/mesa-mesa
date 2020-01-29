@@ -13,7 +13,7 @@
         "description": "i965: Use brw_batch_references in tex_busy check",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "master_sha": null,
         "because_sha": "779923194c65ed3a588d3503cc5d53e1945ada0f"
     },
