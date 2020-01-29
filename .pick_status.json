@@ -1,5 +1,473 @@
 [
     {
+        "sha": "ca6a22305b275b49fbc88b8f4cba2fefb24c2a5d",
+        "description": "winsys/amdgpu: Close KMS handles for other DRM file descriptions",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "11a3679e3aba3524cf987f1f808d92c25f16e080"
+    },
+    {
+        "sha": "9f2bed49d476a15af0df270307f9051d810ea0ab",
+        "description": "winsys/amdgpu: Re-use amdgpu_screen_winsys when possible",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f21b40d0bf3c5662945d8e35f1925a5a208df366",
+        "description": "anv: Rename a variable",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e3f1a08c5641a6b100371a3c17f0b484e1da9b68",
+        "description": "anv/block_pool: Ensure allocations have contiguous maps",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "731c4adcf9b11d07e36e915ac17936259648c0c9"
+    },
+    {
+        "sha": "ee4cdef9aeb7f2c576d9e6a31b1f07351829b795",
+        "description": "anv: Re-use one old BT block in reset_batch_bo_chain",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a2e9dd51b3db6c572bddb04b3efd54e733ac0915",
+        "description": "anv: Set actual state pool sizes when we have softpin",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1f72857739beed55276f263f49b3802c336b8c58",
+        "description": "nir/algebraic: add some half packing optimizations",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5476d1818300835d120c21bcd5bd5967f5b66c84",
+        "description": "nir/algebraic: add patterns for a >> #b << #b",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6aecc316c000c343b25963c1356525f95ea6cafe",
+        "description": "aco: fix VS input loads with MUBUF on GFX6",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "03a0d39366db367b26aea29b04b032c6f1f7cd84"
+    },
+    {
+        "sha": "404818dd288de1b374c3b5f3589450c382bad3c4",
+        "description": "aco: run p_wqm instructions in WQM",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "93c8ebfa780ebd1495095e794731881aef29e7d3"
+    },
+    {
+        "sha": "2d7386a2d037497656aa9c601091fc4dd6d3ced2",
+        "description": "aco: ensure predecessors' p_logical_end is in WQM when a p_phi is in WQM",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "93c8ebfa780ebd1495095e794731881aef29e7d3"
+    },
+    {
+        "sha": "9be9fd85911883521a31111e728efc0f25b9bacd",
+        "description": "pan/midgard: Fix a liveness info leak",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6346490a2ee5535dc75fcab34981d2a5b591dc01",
+        "description": "etnaviv: implement UBOs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7ff8ce7a3f080b4016fa6239e9d0b406b69310e5",
+        "description": "freedreno/a6xx: convert blend state to stateobj",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f066e3afc787a5e6ec06b358003aeae00a3d3f61",
+        "description": "freedreno/a6xx: remove special handling based on MRT format",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eb281df1a1cf63dd4a4d941a019fd384e28af146",
+        "description": "mesa/st: random whitespace cleanup",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d0e0141526c2b3c515bc01fbe2745e13bf3b174c",
+        "description": "freedreno: use PIPE_CAP_RGB_OVERRIDE_DST_ALPHA_BLEND",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9ee3ec348e16f62120ef72fe2d789aa9c05bfecd",
+        "description": "gallium/util: Increase the debug_flush map depth",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8830e9f0cac2df7c8a1ae09086f27d8eb9bc80bd",
+        "description": "svga: Avoid discard DMA uploads",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8afe12b2123cca006df6d0eaa45eb89c36f63a98",
+        "description": "winsys/svga: Enable transhuge pages for buffer objects",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3b3c2daf3a73bd8e9f5dc4780a9074aa55f7cd0c",
+        "description": "winsys/svga: use new ioctl for logging",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f53b4defadcf2c5dadbac27c0dd30d6ffcad0dcf",
+        "description": "radv: remove the non conformant VK implementation warning on GFX10",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1b8d99e2885456dcd2d9309f6e1bd7f60d30ed75",
+        "description": "radv: bump conformance version to 1.2.0.0",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "401bfe028387dd82080a2cc65b5f1b461f0382a6",
+        "description": "radv: implement VK_AMD_shader_explicit_vertex_parameter",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "663d5c1399ddae76f696a8a3383deefe24076895",
+        "description": "radv: gather which input PS variables use an explicit interpolation mode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3922d95b5111af21b40e720ef30b869f39bbcfdc",
+        "description": "aco: implement VK_AMD_shader_explicit_vertex_parameter",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6f4c30091900262598c7348a83841250a2922c78",
+        "description": "ac/llvm: implement VK_AMD_shader_explicit_vertex_parameter",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "531a26d5aa03d8f4499f901f040132c5f712219a",
+        "description": "spirv: implement SPV_AMD_shader_explicit_vertex_parameter",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf6cae832c9e7c95e2df88b4e86886d1310c505a",
+        "description": "nir: lower interp_deref_at_vertex to load_input_vertex",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d29f10a7ca063b63a4e29062cf3ed0151e8ebd68",
+        "description": "nir: add nir_intrinsic_interp_deref_at_vertex",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "687f1703115bac5dff702691cfaf777eb37a9681",
+        "description": "nir: lower SYSTEM_VALUE_BARYCENTRIC_* to nir_load_barycentric()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9021b45b35ab70dd3cf2a9be45cb1f6e63d34158",
+        "description": "nir: add nir_intrinsic_load_barycentric_model",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "df8dd12e5b380ae22991ccd8cc163fe6dc751b70",
+        "description": "spirv: add support for SpvBuiltInBaryCoord*",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "61d24080bb710bb258b89ed90eaab6054be7b7ee",
+        "description": "compiler: add new SYSTEM_VALUE_BARYCENTRIC_*",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "15d53d8294bf5cfd0685422de99e8398bb52fdb8",
+        "description": "compiler: add PERSP to the existing barycentric system values",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5c053cc6ec310481e61631515e0ae7044faf9335",
+        "description": "spirv: add support for SpvDecorationExplicitInterpAMD",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "746e9e5d66cc3f56d1f73451ad7d59447317106e",
+        "description": "compiler: add a new explicit interpolation mode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e6b531af666be09ed342cc705ae4d6211cd28bc2",
+        "description": "turnip: Fix issues in tu_compute_pipeline_create() that may lead to crash",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0e11e8ba89400cba55815aa10be46f7d36e93044",
+        "description": "turnip: Remove failed command buffer from pool",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ab54624d0d52d88da7fb7f4df61f33f600a1dfd7",
+        "description": "radeonsi: stop using the VM_ALWAYS_VALID flag",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b05ac4b158fdffdc4ea82c9d78b9d02ea91a9d49",
+        "description": "radv: enable VK_AMD_shader_fragment_mask on GFX6-GFX7",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "baf9327fa1b6cd1a75c5080a86f8fd12555e3d75",
+        "description": "loader: Check if the kernel driver is i915 before loading iris",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2969012d03be1b0690eed6a855ffc57535c721eb",
+        "description": "anv: Emit CS Stall before Instruction Cache flush for gen12 WA",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "da03e07cc2f09b451705eeadfb24a12a640f6961",
+        "description": "iris: Emit CS Stall before Instruction Cache flush for gen12 WA",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b175effc7252f9e73dd78dfac0380cae69966234",
+        "description": "zink: set compareEnable when setting compareOp",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "a19cdf989b1cca7126a29a42e5f28e8c7823e937"
+    },
+    {
+        "sha": "f6e59911e52161527d1d416e6807b0bc4d639011",
+        "description": "ci: Enable -Werror on the meson-i386 build.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "527a8c345bf2b011c867f1c4d0356d0f0f3c647d",
+        "description": "mesa/st: Fix compiler warnings from INTEL_shader_integer_functions.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "1d165b0548639df48c406fd6514298309e68aba9"
+    },
+    {
+        "sha": "096921c878a1eeb2d092c49170e3584d0f2f0f5a",
+        "description": "iris: Silence warning about AUX_USAGE_MC.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "05e3ccd8a114df741ec493c977374deda3c6e693",
+        "description": "vulkan/wsi: Fix compiler warning when no WSI platforms are enabled.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "71c6208200921cc92e6f36dfb55e437d58cbaee2",
+        "description": "docs: update news, calendar, and link release notes for 19.3.3",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3e49d0efe7671667e4375a5e5facc6119633bc08",
+        "description": "docs: Add SHA 256 sums for 19.3.3",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f9ef115927e184a8d7f2399fb18d8c042bb5e126",
+        "description": "docs: Add relnotes for 19.3.3 release",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "997040e4b8353fe9b71a5e9fde2f933eae09c7a3",
         "description": "intel/mi_builder: Force write completion on Gen12+",
         "nominated": false,
