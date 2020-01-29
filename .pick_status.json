@@ -1984,7 +1984,7 @@
         "description": "winsys/amdgpu: Close KMS handles for other DRM file descriptions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "master_sha": null,
         "because_sha": "11a3679e3aba3524cf987f1f808d92c25f16e080"
     },
