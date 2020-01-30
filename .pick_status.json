@@ -1,5 +1,455 @@
 [
     {
+        "sha": "f09c466732e4a5b648d7503787777c926dd93c29",
+        "description": "docs: Update SWR tessellation support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bdba744d700717a123232cf24647f11918fc0dcd",
+        "description": "i965: Use brw_batch_references in tex_busy check",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "779923194c65ed3a588d3503cc5d53e1945ada0f"
+    },
+    {
+        "sha": "d3fa18a1fa2b36e90c52e0f5809900dadf80d83f",
+        "description": "etnaviv: drm-shim: add GC400",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c5e4d287243e13c4311baf0f9b51d3ba60d0b974",
+        "description": "lima: add noheap debug option",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b220aec628543c26cf19b125eef132052f6c599f",
+        "description": "lima: create heap buffer with new interface if available",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "92465cc999408ce1d80a9b274e09f54f5a28618d",
+        "description": "lima: sync lima_drm.h with kernel",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cd30c4d7197ac11b42aaf707280dd2927b8c11d5",
+        "description": "lima: fix lima_set_vertex_buffers()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1c5d84fcae71b40f77891386ac53c8addee4f554",
+        "description": "turnip: hook up cmdbuffer event set/wait",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5b5b7624753b57c8df0c3eab71124da012fbf3e4",
+        "description": "etnaviv: drop default state for PE_STENCIL_CONFIG_EXT2",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d78e0de772dd8c50cf30faf19a2b91794f05db20",
+        "description": "docs: add new features for RADV/ACO.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3a3b16a3958837f51f12849a557130be43b7fb29",
+        "description": "radv: refactor physical device properties",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "1b8d99e2885456dcd2d9309f6e1bd7f60d30ed75"
+    },
+    {
+        "sha": "5b9fe184854f4026fb70d90fd6fee82bc72c2c0e",
+        "description": "freedreno: remove flush-queue",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b3b1fa5e2bc4a7df3c68bb0b234d4bcf68ffaa84",
+        "description": "freedreno: add gmem_lock",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "91f9bb99c5e0db38a1ac26dd9e6a967312f5e8b0",
+        "description": "freedreno: add gmem state cache",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "712f8802ee248713821e8d649263257e67c5d597",
+        "description": "freedreno: get GMEM state from batch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4bcc3a0923b9c55fc11629bf218155b73fd02a28",
+        "description": "freedreno/a2xx: constify gmem state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5d442144ae7c8e21a1ee16e4c94e13ffdce2f821",
+        "description": "freedreno/a3xx: constify gmem state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7236d6dd4c952af21d81bdd0d8e507daad786b08",
+        "description": "freedreno/a4xx: constify gmem state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2d2f4a55ebd2db4b40ac70b56c8103c1e1fc95a6",
+        "description": "freedreno/a5xx: constify gmem state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "637ca78ee29629c3b1b083477b12f1cfdace2f08",
+        "description": "freedreno/a6xx: constify gmem state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "82a64af907da1eb6cef4b6e010788a4b7aa57faf",
+        "description": "freedreno: constify fd_vsc_pipe",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cbae9f34e9c80635a99a6cb2b0371bb67c5d7e62",
+        "description": "freedreno: constify fd_tile",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c7ab8874d07fcd2146781fb743ec5370be2045a8",
+        "description": "freedreno: consolidate GMEM state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "62c10b395e1db20e02baa401d0b0a72ca2253ffa",
+        "description": "freedreno: extract vsc pipe bo from GMEM state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d5c32db076014be206972858da93ff87419863c1",
+        "description": "turnip: remove unused descriptor state dirty",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e73f604b2125f077ec9735e666b6bf31af413bd9",
+        "description": "aco: Fix the meaning of is_atomic.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "69bed1c9186c3e24ad54089218d58c5f7b83befe"
+    },
+    {
+        "sha": "ba148813d7c5f90f2a46819c33611e760edf86ed",
+        "description": "iris: Support multiple chained batches.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "94f9c5fff672cf00843b2522aeee01effbb2afc8",
+        "description": "iris: Make iris_emit_default_l3_config pull devinfo from the batch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "afcb6625e3fe2fd7c31105f10d923762814f031e",
+        "description": "iris: Drop 'engine' from iris_batch.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "06b13dfed2a43d5f14d6886dfced9b5befcc159b",
+        "description": "tu: Fix binning address setup after pack macros change.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "59f29fc845ce6425959e8db9b707363b1e273445"
+    },
+    {
+        "sha": "3d5bdea2cf4199191c898ba433d1c099f0b0b173",
+        "description": "turnip: Enable occlusionQueryPrecise",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6f718edcedd713beb547cda48aa8dc63a0af4c35",
+        "description": "aco: simplify gathering of MIMG address components",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "901f06e9ad6ba53a9e0bb400f5fa629b491c253f",
+        "description": "aco: simplify adjust_sample_index_using_fmask() & get_image_coords()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "99d032f3cd1a7ea359f03968a30a89a18830868c",
+        "description": "aco: fix register allocation with multiple live-range splits",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "71440ba0f5512fe455be66ca48b253ecc37478a9",
+        "description": "aco: reorder VMEM operands in ACO IR",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8548fe19f03ecaee711ed9041be3dc05c7c22e56",
+        "description": "nir: Make nir_deref_path_init skip trivial casts",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "db19e96c8c63ee266fee37d3eb634b0ca30a28ab",
+        "description": "aco: fix exec mask consistency issues",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c7d05141686ecd6266683f11fb5423b6545c49a4",
+        "description": "aco: parallelcopy exec mask before s_wqm",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "517fc3abc44734d56c6aec96cd95b1404cc64695",
+        "description": "aco: fill reg_demand with sensible information in add_coupling_code()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "26d2511bcbf1f0e3affe85d42d54b4970c78a7ba",
+        "description": "aco: improve assertion at the end of spiller",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5ea23ba659adc05ff75ca7a4c9d1bd01db889ddd",
+        "description": "aco: set exec_potentially_empty after continues/breaks in nested IFs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "93c8ebfa780ebd1495095e794731881aef29e7d3"
+    },
+    {
+        "sha": "4e83e05e62101a5e3a4d8c30a16ca15294af18b1",
+        "description": "aco: error when block has no logical preds but VGPRs are live at the start",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d282a292eca05bd9f701d8509d674e4697f510ec",
+        "description": "aco: don't always add logical edges from continue_break blocks to headers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "93c8ebfa780ebd1495095e794731881aef29e7d3"
+    },
+    {
+        "sha": "dba71de5c63617677fe44558f995d35fad643413",
+        "description": "aco: only create parallelcopy to restore exec at loop exit if needed",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "93c8ebfa780ebd1495095e794731881aef29e7d3"
+    },
+    {
+        "sha": "4537b9741014fbd40b9ed5d98a658031997851aa",
+        "description": "aco: don't update demand in add_coupling_code() for loop headers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "521525fc0a3b9008e70841542ad6e3db4b1ea4d6",
+        "description": "aco: don't consider loop header blocks branch blocks in add_coupling_code",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "590c26beab153fbc7c2193ce65a9a63329a80be8",
+        "description": "aco: fix target calculation when vgpr spilling introduces sgpr spilling",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "a7ff1bb5b9a78cf57073b5e2e136daf0c85078d6"
+    },
+    {
+        "sha": "a61eff8330234306077444e97e178542991f6e27",
+        "description": "radv/gfx10: re-enable NGG GS",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e4752dafede30fbfc93208d9d4091873a8bd5d31",
+        "description": "radv/gfx10: implement NGG GS queries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3c1f657f35ca9ba0381164e4914a18907ff2cf3b",
+        "description": "radv/gfx10: add a separate flag for creating a GDS OA buffer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "ca6a22305b275b49fbc88b8f4cba2fefb24c2a5d",
         "description": "winsys/amdgpu: Close KMS handles for other DRM file descriptions",
         "nominated": true,
