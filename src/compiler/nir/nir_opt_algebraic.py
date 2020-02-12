@@ -476,8 +476,6 @@ optimizations.extend([
    (('fmin', ('fmin', a, b), b), ('fmin', a, b)),
    (('umin', ('umin', a, b), b), ('umin', a, b)),
    (('imin', ('imin', a, b), b), ('imin', a, b)),
-   (('fmax', a, ('fneg', a)), ('fabs', a)),
-   (('imax', a, ('ineg', a)), ('iabs', a)),
    (('fmin', a, ('fneg', a)), ('fneg', ('fabs', a))),
    (('imin', a, ('ineg', a)), ('ineg', ('iabs', a))),
    (('fmin', a, ('fneg', ('fabs', a))), ('fneg', ('fabs', a))),
