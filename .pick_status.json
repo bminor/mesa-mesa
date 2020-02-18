@@ -39415,7 +39415,7 @@
         "description": "util: Change os_same_file_description return type from bool to int",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "master_sha": null,
         "because_sha": null
     },
