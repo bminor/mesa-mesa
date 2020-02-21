@@ -776,8 +776,7 @@ struct_member_decoration_cb(struct vtn_builder *b,
       ctx->fields[member].sample = true;
       break;
    case SpvDecorationStream:
-      /* Vulkan only allows one GS stream */
-      vtn_assert(dec->operands[0] == 0);
+      /* This is handled later by var_decoration_cb in vtn_variables.c */
       break;
    case SpvDecorationLocation:
       ctx->fields[member].location = dec->operands[0];
@@ -828,7 +827,7 @@ struct_member_decoration_cb(struct vtn_builder *b,
 
    case SpvDecorationXfbBuffer:
    case SpvDecorationXfbStride:
-      vtn_warn("Vulkan does not have transform feedback");
+      /* This is handled later by var_decoration_cb in vtn_variables.c */
       break;
 
    case SpvDecorationCPacked:
