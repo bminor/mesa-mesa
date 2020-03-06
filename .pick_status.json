@@ -9778,7 +9778,7 @@
         "description": "aco: set exec_potentially_empty after continues/breaks in nested IFs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "master_sha": null,
         "because_sha": "93c8ebfa780ebd1495095e794731881aef29e7d3"
     },
