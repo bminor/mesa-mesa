@@ -1,5 +1,743 @@
 [
     {
+        "sha": "0103f02acb10dcdea23461ba214307a6827a7772",
+        "description": "gitlab-ci: Always name artifacts archive after the job producing it",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "20c09c9c068b7dff6705cf385eac203fd12b806a",
+        "description": "anv: stop storing prog param data into shader blobs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e03f9652801ad7f70091e084535a3fb6650c3acd",
+        "description": "anv: Bounds-check pushed UBOs when robustBufferAccess = true",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "faea84e2540810feb66ac88359b50cf69f2b3cc6",
+        "description": "anv: Add an align_down_u32 helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "61ac8cf08381f7df05b477cfc6854b3b4b88f03f",
+        "description": "anv: Align UBO sizes to 32B",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4610d69e37fd9472b88fcc7f1bad6530242aa105",
+        "description": "anv: Delete some pointless break statements",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "28c243e9ece55d0dda0cf065b2496c9f1ff05c79",
+        "description": "anv: Pass buffer addresses into emit_push_constant*",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ff5de35127d788584be56b047cb609effca5c80b",
+        "description": "anv: Mark max_push_range UNUSED and simplify the code",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "35ca2ad22e20ad3bc3301ee1e9157b8c351d959e",
+        "description": "anv: Parse VkPhysicalDeviceFeatures2 in CreateDevice",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "022e5c7e5a5a1ff40d7f5e8d3d768345e7746678"
+    },
+    {
+        "sha": "0e4c001951a3c07d7ea4ddcd7edda69c20aa49ba",
+        "description": "docs/relnotes/20.0: fix vulkan version reported",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5ff443b8aa9650f907bd9b5524bab21febe42ec9",
+        "description": "docs/relnotes/19.3: fix vulkan version reported",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2557d614d36da58ceedfdbb021b8d1f566f7d0e9",
+        "description": "gen_release_notes: fix vulkan version reported",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "4ef3f7e3d37ece7b4339870282cb52c5e334a68d"
+    },
+    {
+        "sha": "de30a7ae6ea3d1fa90977229bc71afed595a4d5d",
+        "description": "pan/bi: Fix Android.mk",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0b0be49005bf7d66d8f8fc8a9bb39dd5e29ab243",
+        "description": "pan/bi: Rename next-wait to simply 'wait'",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b329f8c750af96f9efb968045dcf03b0fad1b34e",
+        "description": "pan/bi: Add dummy scheduler",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "51e537c9fa4d10bc5b065a60095bf2d85080d3c5",
+        "description": "pan/bi: Implement load_const",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1ead0d3488bba096bd697048edf85470d1c5cf20",
+        "description": "pan/bi: Add preliminary LOAD_UNIFORM implementation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "48910e83889a0736f61aca7c4b196d7c6420db9a",
+        "description": "pan/bi: Implement store_vary for vertex shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d86659ca57ebe9d1752e33ed6ffe1e1b70c5f50d",
+        "description": "pan/bi: Add helpers for creating temporaries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "59b476e11adf1ad2ddfc597a8f742fb23fd1ab80",
+        "description": "pan/bi: Implement load_input for vertex shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dabb6c6b9fd473b10ae9d63b96e7ef248b1a7ed1",
+        "description": "pan/bi: Implement store_output for fragment shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "79c1af062341266d7ad64a0ac221394d6cbfdfdc",
+        "description": "pan/bi: Add bi_schedule_barrier helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "92a4f26e7f5249df3cb853b3a8cd9e726690d66c",
+        "description": "pan/bi: Add blend_location to IR for BI_BLEND",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "07671826658dfc90ead2773c864a2ba3460a97e2",
+        "description": "pan/bi: Implement nir_intrsinic_load_interpolated_input",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "806533ba7ff9d52583d6340b9b2b3c1212d77d79",
+        "description": "pan/bi: Fix destination printing",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "65c8dcca3b35a482c8378e10bb245a92e2e2bfdf",
+        "description": "pan/bi: Handle jumps (breaks, continues)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "987aea14000ce6524b12d72488dc1275d5e8a991",
+        "description": "pan/bi: Handle loops when ingesting CFG",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9a00cf3d1efe336e09906d87a8f5a50cbbe10fd6",
+        "description": "pan/bi: Add support for if-else blocks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "977a38c87f5816828fa42d1da02626d69ba1662f",
+        "description": "pan/bi: Call nir_lower_io_to_temporaries in cmdline",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "55dab92073f14a9b9c42175af9ddc210277bca5e",
+        "description": "pan/bi: Add instruction emit/remove helpers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7fd22c3bbd781ce497304c1270f367b1cd5fd14c",
+        "description": "pan/bi: Print branch target",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2e9b5f8ef4b80e57c9653fcdc5e0867e9dd338a6",
+        "description": "pan/bi: Don't print types for unconditional branches",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5c7ee8a9746b1ae7d852b1ae3e5408378547c156",
+        "description": "pan/bi: Improve block printing",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "83c4562503cc96ee04d873ee5c814e43b9e61b56",
+        "description": "pan/bi: Walk through the NIR control flow graph",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0d29184f6985b5e88c3a32526850acd7c8f3ab46",
+        "description": "pan/bi: Lower and optimize NIR",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c652ff8caa8fc7608fc6b98b56324ffc230c118f",
+        "description": "anv: Flatten the logic add_aux_surface_if_supported (v3)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "615c65ba1ba6a79536cbced85c13dafbd8a33375",
+        "description": "anv: Refactor creation of aux surfaces (v2)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d1b7d80bc358749a4234587e1fda66596f4dd579",
+        "description": "anv: Add anv_image_plane_needs_shadow_surface() (v2)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1da6b7f8a3b13f44e8d9cc101034319c0b732f08",
+        "description": "glsl: add subroutine support to nir linker",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b1bc24f826f4d08f22efd26f067621de84a100f0",
+        "description": "glsl: dont try to assign uniform storage for uniform blocks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "576b5ace9e2e90803d1c6b9f1b1728b1e5e8c4ed",
+        "description": "glsl: add support for builtins to the nir uniform linker",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "79127f8d5be7ab95bde0ab30a03eb21e00df70c2",
+        "description": "glsl: set ShaderStorageBlocksWriteAccess in the nir linker",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "17f240b874724510d1c2bb57f292024bb8bf5ccf",
+        "description": "glsl: nir linker fix setting of ssbo top level array",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8ffd09f3114233f742e8cfd142c74ea3477c4c59",
+        "description": "glsl: find the base offset for block members from unnamed blocks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "76ce7752403912642cd00905f1d7a5f8bf21d219",
+        "description": "glsl: correctly set explicit offsets for struct members",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "590a59437fdbc5929934aa55385186154b0ee537",
+        "description": "glsl: add std140 and std430 layouts to nir uniform linker",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "858a49a10d0e44a7e7f019137562c0d4cfbfab85",
+        "description": "nir: add glsl_get_std430_size() helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a005f1a6e7b7f885a6168f6ea94d992d03fafe6d",
+        "description": "nir: add glsl_get_std430_base_alignment() helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1ccfe821b2244d6880b2aac6641f312c7171dc49",
+        "description": "nir: add glsl_get_std140_size() helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "120a26c6f25905474464661e351e36a4c7c76aea",
+        "description": "nir: add glsl_get_std140_base_alignment() helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "262b611a5bb08ebb8d2876bc44a44952d610a248",
+        "description": "nir: add glsl_get_internal_ifc_packing() helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a02d8e040fb6cbf43a75932104e2b49807723280",
+        "description": "glsl: correctly find block index when linking glsl with nir linker",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "10b816d27e2e9f744a29beec294774c1d24f4f54",
+        "description": "glsl: add name support to nir uniform linker",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "aa9b457062cfcdb29a15e0be73bbc1a75305f89e",
+        "description": "glsl: move get_next_index() earlier in nir link uniforms",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "219cefe24f757e3b8df4052ae76d132e8956bee6",
+        "description": "glsl: move add_parameter() earlier in nir link uniforms",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "51898c8ee5edb21ac2d8cf9557dca5416ea9a304",
+        "description": "glsl: move nir link uniforms struct defs earlier",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4d5a0ae22cf9ad893ddb10fca48e85e5dbf9c80c",
+        "description": "lima: gpir: enforce instruction limit earlier",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "70349a2252a95f181de519be61ea84bd22381e4b",
+        "description": "intel/compiler: Calculate num_instructions in O(1) during register pressure calculation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e5e4d016b94fc402c328d9a202504d811d2bb5ce",
+        "description": "intel/compiler: Move register pressure calculation into IR analysis object",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f6cdf66cd6e2515471c7944f67ddb87881c2366e",
+        "description": "entel/compiler: Simplify new_idom reduction in dominance tree calculation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c9a608c0907ccdd745c8cb496e982bca68f8e6e4",
+        "description": "intel/compiler: Move dominance tree data structure into idom_tree object",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c2a7eababf568ecd23377408e5f837e3bb2e9943",
+        "description": "intel/compiler: Move idom tree calculation and related logic into analysis object",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2878817197fe94fe0c20efdf2947d63576e3ea8a",
+        "description": "intel/compiler: Drop invalidate_live_intervals()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "acf24df2017598eb23c57599e39738e0ec059438",
+        "description": "intel/compiler/vec4: Switch liveness analysis to IR analysis framework",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ea44de6d8c93551be73d91045686b59a5aa42c25",
+        "description": "intel/compiler/fs: Switch liveness analysis to IR analysis framework",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bb8cfa6837fe7967cb9b02e32bd2d1aa37631c45",
+        "description": "intel/compiler/vec4: Add live interval validation pass",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "24535604aa645651987e41a3bce8eee9e0b871bd",
+        "description": "intel/compiler/fs: Add live interval validation pass",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a9cdc14f602144620c664f7f42ea2ba0eeb58720",
+        "description": "intel/compiler: Pass single backend_shader argument to the vec4_live_variables constructor",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d0433971f958be7d38cb96bfe226fbabdd7998e7",
+        "description": "intel/compiler: Pass single backend_shader argument to the fs_live_variables constructor",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d7e84cbb0f0530bb3e065bd522e5e1814373f589",
+        "description": "intel/compiler: Restructure live intervals computation code",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "48dfb30f9231c22a6af6885dbc9ef86dc2edde1e",
+        "description": "intel/compiler: Move all live interval analysis results into vec4_live_variables",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ba73e606f63a4633fa9d8bef69f87b2d88851416",
+        "description": "intel/compiler: Move all live interval analysis results into fs_live_variables",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3ceb496cdf5ef0ccc79e71c8fb856535501a9446",
+        "description": "intel/compiler: Mark virtual_grf_interferes and vars_interfere as const",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ab6d7929864b1c80a8de5b7cd58775f02fe1a7ff",
+        "description": "intel/compiler: Pass detailed dependency classes to invalidate_analysis()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "65080dc8df00d006912ade2d69d4a06c3d4c5e0a",
+        "description": "intel/compiler: Define more detailed analysis dependency classes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d966a6b4c4684bc02647a8fdc69a6c88e5ed00c2",
+        "description": "intel/compiler: Introduce backend_shader method to propagate IR changes to analysis passes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "03eb46f4a74c8df3de6785ffe18e968b876469b8",
+        "description": "intel/compiler: Introduce simple IR analysis pass framework",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "27ae3c1f684fe64e47f7a6cd374dc156f15847e0",
+        "description": "intel/compiler: Reverse inclusion dependency between brw_vec4_live_variables.h and brw_vec4.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a6fc88e91bdf9e235aa8a0a0f69f219c051cb1af",
+        "description": "intel/compiler: Reverse inclusion dependency between brw_fs_live_variables.h and brw_fs.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "06c5c4964621268f2dedd63a614ff89f4307057b",
+        "description": "intel/compiler: Nest definition of live variables block_data structures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "310aef6b590d3d129b285ff8c50565af8cebacbc",
+        "description": "intel/compiler: Reverse inclusion dependency between brw_cfg.h and brw_shader.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d46fb2126d9fdd52386b001a140c1b70fec83f9e",
+        "description": "intel/compiler: Move base IR definitions into a separate header file",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "74e4cda64b9d114321216eefe536f80644b0f0fd",
         "description": "etnaviv: add etna_constbuf_state object",
         "nominated": false,
