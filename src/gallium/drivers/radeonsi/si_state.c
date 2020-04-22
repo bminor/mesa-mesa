@@ -4727,6 +4727,8 @@ static void *si_create_sampler_state(struct pipe_context *ctx,
    unsigned max_aniso = sscreen->force_aniso >= 0 ? sscreen->force_aniso
                          : state->max_anisotropy;
    unsigned max_aniso_ratio = si_tex_aniso_filter(max_aniso);
+   bool trunc_coord = state->min_img_filter == PIPE_TEX_FILTER_NEAREST &&
+                      state->mag_img_filter == PIPE_TEX_FILTER_NEAREST;
    union pipe_color_union clamped_border_color;
 
    if (!rstate) {
@@ -4736,16 +4738,15 @@ static void *si_create_sampler_state(struct pipe_context *ctx,
 #ifndef NDEBUG
    rstate->magic = SI_SAMPLER_STATE_MAGIC;
 #endif
-   rstate->val[0] = (S_008F30_CLAMP_X(si_tex_wrap(state->wrap_s)) |
-           S_008F30_CLAMP_Y(si_tex_wrap(state->wrap_t)) |
-           S_008F30_CLAMP_Z(si_tex_wrap(state->wrap_r)) |
-           S_008F30_MAX_ANISO_RATIO(max_aniso_ratio) |
-           S_008F30_DEPTH_COMPARE_FUNC(si_tex_compare(state->compare_func)) |
-           S_008F30_FORCE_UNNORMALIZED(!state->normalized_coords) |
-           S_008F30_ANISO_THRESHOLD(max_aniso_ratio >> 1) |
-           S_008F30_ANISO_BIAS(max_aniso_ratio) |
-           S_008F30_DISABLE_CUBE_WRAP(!state->seamless_cube_map) |
-           S_008F30_COMPAT_MODE(sctx->chip_class == GFX8 || sctx->chip_class == GFX9));
+   rstate->val[0] =
+      (S_008F30_CLAMP_X(si_tex_wrap(state->wrap_s)) | S_008F30_CLAMP_Y(si_tex_wrap(state->wrap_t)) |
+       S_008F30_CLAMP_Z(si_tex_wrap(state->wrap_r)) | S_008F30_MAX_ANISO_RATIO(max_aniso_ratio) |
+       S_008F30_DEPTH_COMPARE_FUNC(si_tex_compare(state->compare_func)) |
+       S_008F30_FORCE_UNNORMALIZED(!state->normalized_coords) |
+       S_008F30_ANISO_THRESHOLD(max_aniso_ratio >> 1) | S_008F30_ANISO_BIAS(max_aniso_ratio) |
+       S_008F30_DISABLE_CUBE_WRAP(!state->seamless_cube_map) |
+       S_008F30_TRUNC_COORD(trunc_coord) |
+       S_008F30_COMPAT_MODE(sctx->chip_class == GFX8 || sctx->chip_class == GFX9));
    rstate->val[1] = (S_008F34_MIN_LOD(S_FIXED(CLAMP(state->min_lod, 0, 15), 8)) |
            S_008F34_MAX_LOD(S_FIXED(CLAMP(state->max_lod, 0, 15), 8)) |
            S_008F34_PERF_MIP(max_aniso_ratio ? max_aniso_ratio + 6 : 0));
