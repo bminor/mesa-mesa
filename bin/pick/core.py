@@ -276,10 +276,10 @@ async def resolve_nomination(commit: 'Commit', version: str) -> 'Commit':
         )
         _out, _ = await p.communicate()
         assert p.returncode == 0, f'git log for {commit.sha} failed'
-    out = _out.decode()
+        commit_message = _out.decode()
 
     # We give precedence to fixes and cc tags over revert tags.
-    if fix_for_commit := IS_FIX.search(out):
+    if fix_for_commit := IS_FIX.search(commit_message):
         # We set the nomination_type and because_sha here so that we can later
         # check to see if this fixes another staged commit.
         try:
@@ -292,19 +292,19 @@ async def resolve_nomination(commit: 'Commit', version: str) -> 'Commit':
                 commit.nominated = True
                 return commit
 
-    if backport_to := IS_BACKPORT.search(out):
+    if backport_to := IS_BACKPORT.search(commit_message):
         if version in backport_to.groups():
             commit.nominated = True
             commit.nomination_type = NominationType.BACKPORT
             return commit
 
-    if cc_to := IS_CC.search(out):
+    if cc_to := IS_CC.search(commit_message):
         if cc_to.groups() == (None, None) or version in cc_to.groups():
             commit.nominated = True
             commit.nomination_type = NominationType.CC
             return commit
 
-    if revert_of := IS_REVERT.search(out):
+    if revert_of := IS_REVERT.search(commit_message):
         # See comment for IS_FIX path
         try:
             commit.because_sha = reverted = await full_sha(revert_of.group(1))
