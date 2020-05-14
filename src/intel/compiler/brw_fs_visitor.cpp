@@ -538,6 +538,23 @@ fs_visitor::emit_fb_writes()
 
    inst->last_rt = true;
    inst->eot = true;
+
+   if (devinfo->gen >= 11 && devinfo->gen <= 12 &&
+       prog_data->dual_src_blend) {
+      /* The dual-source RT write messages fail to release the thread
+       * dependency on ICL and TGL with SIMD32 dispatch, leading to hangs.
+       *
+       * XXX - Emit an extra single-source NULL RT-write marked LastRT in
+       *       order to release the thread dependency without disabling
+       *       SIMD32.
+       *
+       * The dual-source RT write messages may lead to hangs with SIMD16
+       * dispatch on ICL due some unknown reasons, see
+       * https://gitlab.freedesktop.org/mesa/mesa/-/issues/2183
+       */
+      limit_dispatch_width(8, "Dual source blending unsupported "
+                           "in SIMD16 and SIMD32 modes.\n");
+   }
 }
 
 void
