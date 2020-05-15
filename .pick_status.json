@@ -1,5 +1,284 @@
 [
     {
+        "sha": "a887ad7c84e14fdad7907037a39e9fee9d504bf3",
+        "description": "st/nine: Handle full pSourceRect better",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dbb08255708b9005b5bb719a94ebd93194f51861",
+        "description": "st/nine: Ignore pDirtyRegion",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1c474dde282aa7b02513097b58435a470eee23f9",
+        "description": "st/nine: Improve pDestRect handling",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ffed34113b652a59e6d6a9d9e212a3eac72dd216",
+        "description": "st/nine: Retry allocations after freeing some space",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d771e0cc60a0aa853c5e1e0df304f970a47ab774",
+        "description": "st/nine: Increase available GPU memory",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4cf13691beb4237a8a449dd317561066df492842",
+        "description": "st/nine: Add missing NULL checks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "725ebc4657d27349ed586e5c178d5b1a971587cd",
+        "description": "st/nine: Fix a crash if the state is not initialized",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0222c550c726f0b80d083681d749e2891b11a318",
+        "description": "st/nine: Fix uninitialized variable in BEM()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5d904d27491aab489d54746bc6650b27c5927c39",
+        "description": "st/nine: Improve return error code in CheckDeviceFormat",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "54a7a6908597e016912609db16532cc8eba16864",
+        "description": "st/nine: Pass more adapter formats for CheckDepthStencilMatch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "edff31c0d902cd83495a1e49f306d8f031cf118b",
+        "description": "st/nine: Do not return invalidcall on getrenderstate",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2c61b4db7d6f9ce2638bdd35c8dcac70ea950e4e",
+        "description": "st/nine: Return error when setting invalid depth buffer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c0f21cbaa124fa32509a8d9c14120fc22f0c8c63",
+        "description": "st/nine: Add checks for pure device",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "09ac0350fdc97a746342c63deb4e9b626959d47a",
+        "description": "zink: implement i2b1",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "7f6a491eec02d6c141e2b4849a3ba924926a482a"
+    },
+    {
+        "sha": "4c212a1168de9ffc83a7b8e8751ea7cf3dca5c4a",
+        "description": "util/rand_xor: use getrandom() when available",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf2b285c5592e5d8fce24ab6a34eaa9c168aa129",
+        "description": "zink: mark depth-component cube-maps as done",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ea62c237031a05e82147bca2699269bf2d80fa05",
+        "description": "nir: Use 8-bit types for most info fields",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "57e796a12a883f5845c8e0ed05ec6bdb6d055b53",
+        "description": "radv: Implement VK_EXT_custom_border_color",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9e3c6a7ba769d358dfffa690751cac6ca7f9c5df",
+        "description": "radv: Provide a better error for permission issues with priorities.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e7458f19e1de7d40ff8aa72b6a141f24d33451c6",
+        "description": "freedreno/uuid: Generate meaningful device and driver UUID",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9623debf48ae7dbea120389eae40d784d22eee24",
+        "description": "freedreno: Centralize UUID generation into new files freedreno_uuid.c/h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cdfede7336b6ef99aa60d955f7a173ea945602d4",
+        "description": "aco: split operations that use a swap's definition",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f293d02dc44e631a888073a884648543feecbe51",
+        "description": "tu: Advertise COLOR_ATTACHMENT_BLEND_BIT for blendable formats",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "adbdab3ee80017a4939e9cb586ea85f8c4e7efc9",
+        "description": "tu: Implement dual-src blending",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "078aa9df8daff60e52a66d8f8062dce135b94ec1",
+        "description": "tu: Move RENDER_COMPONENTS setting to pipeline state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2a9d12d5133639946b624a1ad367ea3f9543a8fe",
+        "description": "ir3: Fixup dual-source blending slot",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0e0580550e1b4846d3ad7ff738f57063b05089c9",
+        "description": "freedreno/a6xx: Document dual-src blending enable bits",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4aeaef99c003f3c75279d9b400315685ebbba30d",
+        "description": "Revert \"nir/validate: validate the stride for deref_ptr_as_array\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "667e14e7bd759a77e732c4de09fb978ee3816eaf"
+    },
+    {
+        "sha": "2c6599d6d6dc908374a77d2f315d9a3e235e3656",
+        "description": "docs: update calendar, add news item, and link releases notes for 20.0.7",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "212ee624f81bdbf7acb17c1b343a3500130be5d3",
+        "description": "docs/relnotes Add sha256 sums to 20.0.7",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e5e9a0dfd7e7ef7c47108ddd4d6e5c7aff4fb7d6",
+        "description": "docs: Add release notes for 20.0.7",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "ceae09da156309327d7ba6f4a59d3a2e9b8837d9",
         "description": "intel: Silence unused parameter warning in __intel_log_use_args",
         "nominated": false,
