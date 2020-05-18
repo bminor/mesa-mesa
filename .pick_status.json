@@ -1,5 +1,401 @@
 [
     {
+        "sha": "4504d6374dbe2aa40af519c16765457bcbf81b84",
+        "description": "ci: Fix TypoError error when traces in traces.yml is an empty list",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e85dc9a240601a201ec662f1a17bbdbea2965bfd",
+        "description": "ci: Split test_tracie_skips_traces_without_checksum in separate cases",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "550a4f77648f68bc48df34ce9d39dc3df1461f13",
+        "description": "ci: Migrate tracie tests done in shell script to pytest",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "37621da7b144a6021a8e3962352ad3561e82f560",
+        "description": "ci: ArgumentParser receives the args from the main parameters",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eb1f22fb014384bec96fa2c2b08e09a2cb29cddd",
+        "description": "ci: TRACES_DB_PATH and RESULTS_PATH defined as relative paths",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "78c46c2126109dc5c1cb2ff315aecdd69b93d1f5",
+        "description": "etnaviv: don't expose timer queries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b5accb3ff997c073f9a9418c97ddd2365f81504f",
+        "description": "freedreno/a3xx: parameterize ubo optimization",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "475fb28377fa4f5293c1a0853f2c4260418aea7f",
+        "description": "freedreno: fix off-by-one in assertions checking for const sizes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1c05e16666c78a099fd8c732fc6156a85950ee6a",
+        "description": "freedreno/a3xx: fix const footprint",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9048adbd246c725ae80942b6b56a742ad02295dc",
+        "description": "freedreno/ir3: avoid applying (sat) on bary.f",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8d86892ea3cd6239a9faae825bb657292a7ba848",
+        "description": "freedreno/a3xx: reinstate rgb10_a2ui texture format",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ff4df32fae58d944e309ffd8e3fd05669a8cc2c9",
+        "description": "freedreno/a3xx: there's no r8i/ui rb format, only rg8i/rg8ui",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "78615dcca19699737bf9cbc784b66d9ea966bcc0",
+        "description": "radv: use util_float_to_half_rtz",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "8b8af6d398a94cb07015c695fdfdb5c157aa72cf"
+    },
+    {
+        "sha": "632a921bd0dd40ad3167a0b8a74fe7054a78256a",
+        "description": "lima/ppir: optimize tex loads with single successor",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a4b7699d849d28adfd057136812b00a6b4838ed0",
+        "description": "lima/ppir: rework tex lowering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "92611e21c19b35d1e5c9091614b2659d789558e2",
+        "description": "lima/ppir: improve handling for successors in other blocks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "96c1d5f629b3e45958e5ee41d7d8b34e52ae247d",
+        "description": "lima/ppir: handle failures on all ppir_emit_cf_list paths",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fa3549c92b240aab23bd5838f1fdca2ae4caf055",
+        "description": "util/rand_xor: extend the urandom path to all non-Windows platforms",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d76abe98cf15226f25d93e76e383715061ada6f4",
+        "description": "util/rand_xor: fallback Linux to time-based instead of fixed seed",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e0ce684aae83bd6c8129cac09dc98823d786b798",
+        "description": "util/rand_xor: drop unused header",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f50f26325f8df7e076a0ffd2196eab1c36ff07ae",
+        "description": "util/rand_xor: make it clear that {,s_}rand_xorshift128plus take *exactly 2* uint64_t",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "576bff5c73ff217b15900982640dbf8f184569d5",
+        "description": "gitlab-ci: exclude scripts that don't affect the build",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "494b7ef0c1a440c57f5a6a8a301fba4f7e551417",
+        "description": "gallium/auxiliary/vl: Fix compute shader scaling for non-square pixels",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fd6a5e112aa1fd09bc01f4cf3ca211ad73cc404e",
+        "description": "gallium/u_threaded: execute transfer_unmap with THREAD_SAFE directly",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "7f22e0fd29369f478da1d36520049f001cd698d1"
+    },
+    {
+        "sha": "c9ccceff1092049b081db88e53db8335a0a64951",
+        "description": "radeonsi: test uncached clear/copy buffer performance with compute shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5acf99e81f7ad3c93426e62d6df98d64d73d80b3",
+        "description": "radeonsi: compute perf tests - don't test 1 wave/SA limit, test no limit first",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c45a2145f5eaae53d48e3aa7e0f10f2c70f267b0",
+        "description": "radeonsi: disable the L2 cache for CPU read mappings of buffers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7356144fe42939ecbc01d2066ca6ea5d0f9351a7",
+        "description": "radeonsi: disable the L2 cache for most CPU mappings of textures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "36c01248049abba6d79b5ff1ddfe38306e0ddbff",
+        "description": "winsys/amdgpu: add RADEON_FLAG_UNCACHED for faster blits over PCIe",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cbbc18bc678a826508ed0b904ab485c44b7348c8",
+        "description": "radeonsi: use display_dcc_offset for setting displayable_dcc_cb_mask",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b5ac9d18d8f30893aff1e141f89085dab557b7df",
+        "description": "radeonsi: use vi_dcc_enabled instead of using tex->surface.dcc_offset directly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2c4c1b049966a2cc4619fec796ea244f53051a6c",
+        "description": "radeonsi: rename SI_RESOURCE_FLAG_TRANSFER to FORCE_LINEAR",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4907bb44c3c9bdeac0077ce8d0a533d3ef685920",
+        "description": "radeonsi: simplify setting resource usage for si_init_temp_resource_from_box",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f57276309b14be8a61e1913ab00dd6e4b1e5e8ce",
+        "description": "radeonsi: tweak clear/copy_buffer limits when to use compute",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b158b117e1ef69d47724f607fb5bd28389148fac",
+        "description": "radeonsi: optimize access pattern for compute blits with linear textures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9f8089139f1be6f30628fad033d87fdb8c804f80",
+        "description": "radeonsi: use correct clear value size for EQAA in expand_fmask",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2361e8e72278cfe256f80946516be7a48534e6d5",
+        "description": "ac/nir: honor ACCESS_STREAM_CACHE_POLICY for L1 and L0 caches too",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d573d1d82524b8a2e5f56938069cabc0f0176a0e",
+        "description": "radeonsi: Use TRUNC_COORD on samplers",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "65c2362e88578575899bd208713d87b1206ad360",
+        "description": "iris: Use modfiy disables for 3DSTATE_WM_DEPTH_STENCIL command",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "864d8acbfdb5df17c5495b87ceba7c009f65988b",
+        "description": "radeon: Fix whitespaces",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f80d653d701f51f00f88601707747554c9a7af1c",
+        "description": "radeonsi: don't expose 16xAA on chips with 1 RB due to an occlusion query issue",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "844d561c580188dad583dd4bad3b77d55e39372f",
+        "description": "spirv: handle OpCopyObject correctly with any types",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9d1821adf0bc51958becf116d6df5c65514d58b6",
+        "description": "etnaviv: retarget transfer to render resource when necessary",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "b9627765303356328c409cd59bef43d15f4eafcf"
+    },
+    {
+        "sha": "bb3545a6ee419c4802ac4153eb690a93dc2f339d",
+        "description": "intel: Store the aperture size in devinfo.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "a887ad7c84e14fdad7907037a39e9fee9d504bf3",
         "description": "st/nine: Handle full pSourceRect better",
         "nominated": false,
