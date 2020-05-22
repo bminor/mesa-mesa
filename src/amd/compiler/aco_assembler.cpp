@@ -30,8 +30,6 @@ struct asm_context {
 
 void emit_instruction(asm_context& ctx, std::vector<uint32_t>& out, Instruction* instr)
 {
-   uint32_t instr_offset = out.size() * 4u;
-
    /* lower remaining pseudo-instructions */
    if (instr->opcode == aco_opcode::p_constaddr) {
       unsigned dest = instr->definitions[0].physReg();
@@ -56,7 +54,7 @@ void emit_instruction(asm_context& ctx, std::vector<uint32_t>& out, Instruction*
       encoding |= 255 << 8;
       out.push_back(encoding);
       ctx.constaddrs.push_back(out.size());
-      out.push_back(-(instr_offset + 4) + offset);
+      out.push_back(offset);
 
       /* s_addc_u32 dest[1], dest[1], 0 */
       encoding = (0b10 << 30);
@@ -695,7 +693,7 @@ void fix_branches(asm_context& ctx, std::vector<uint32_t>& out)
 void fix_constaddrs(asm_context& ctx, std::vector<uint32_t>& out)
 {
    for (unsigned addr : ctx.constaddrs)
-      out[addr] += out.size() * 4u;
+      out[addr] += (out.size() - addr + 1u) * 4u;
 }
 
 unsigned emit_program(Program* program,
