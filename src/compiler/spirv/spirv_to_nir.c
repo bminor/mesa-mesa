@@ -866,6 +866,7 @@ struct_member_decoration_cb(struct vtn_builder *b,
       break;
 
    case SpvDecorationUserSemantic:
+   case SpvDecorationUserTypeGOOGLE:
       /* User semantic decorations can safely be ignored by the driver. */
       break;
 
@@ -1045,6 +1046,10 @@ type_decoration_cb(struct vtn_builder *b,
    case SpvDecorationAlignment:
       vtn_warn("Decoration only allowed for CL-style kernels: %s",
                spirv_decoration_to_string(dec->decoration));
+      break;
+
+   case SpvDecorationUserTypeGOOGLE:
+      /* User semantic decorations can safely be ignored by the driver. */
       break;
 
    default:
