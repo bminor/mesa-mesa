@@ -1,5 +1,1049 @@
 [
     {
+        "sha": "e58112bc08f99861ac634ede8db0f98cd497fc14",
+        "description": "panfrost: Update fails list",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e42950fe96408c4addcc31990787dc5cca537476",
+        "description": "panfrost: Use internal_format throughout",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e7765a8c7f5b225d11373a35bd5156c9a98a6514",
+        "description": "panfrost: Add separate_stencil BO to batch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6aa7f6792d30f91eccc68fcec65b81105afc347a",
+        "description": "panfrost: Check for large tilebuffer requirements",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c46b11438d363f27e9f4418766063c5be9b3e0c2",
+        "description": "panfrost: Let Gallium pack colours",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8dc8b6640334e94f4f8b66a93c68e49c04b06623",
+        "description": "panfrost: Account for differing types in blend lower",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0c9fe82ee92c1a6ba9a3f8230ed94bac8bbca0be",
+        "description": "panfrost: Conditionally allow fp16 blending",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "19b4e586f62eb054bf1dc2f828d5b73abae6a7c7",
+        "description": "panfrost: Switch to pan_lower_framebuffer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4c286cc0a2146a6ab3e8be278c4c27226b6ff990",
+        "description": "panfrost: Un/pack sRGB via NIR",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5d14757c033b78791968390201f2ece564a4c1ce",
+        "description": "panfrost: Un/pack R11G11B10",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e24e248b84a2fbcc70cc1ee5c598e5a942effbce",
+        "description": "panfrost: Un/pack RGB10_A2_UINT",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "91cc67855186c8df05f22047df29c462ee985376",
+        "description": "panfrost: Un/pack RGB10_A2_UNORM",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7de0e5500b6fbab2ed66131a7a54df9f95693a17",
+        "description": "panfrost: Un/pack RGB565 and RGB5A1",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ff590702da3ead33976f3b764de4df78f2aa630a",
+        "description": "panfrost: Un/pack UNORM 4",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eab8701e7c23cd11e991624804487ecb393c54eb",
+        "description": "panfrost: Flesh out dispatch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e937dd521b240f5cd6246a18e761992c49a8e415",
+        "description": "panfrost: Un/pack 8-bit UNORM",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f01aabb82968077e7ed690276394074cca14bf3e",
+        "description": "panfrost: Un/pack pure 8-bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9a6483bb47fb654e3c78e5d81e8500b993d51cbd",
+        "description": "panfrost: Un/pack pure 16-bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c31bcca48e34e44288b9f5e7dbf573a492717ef3",
+        "description": "panfrost: Un/pack pure 32-bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e5fcc193f71c4767866e8c7f9f396e60a312ab6d",
+        "description": "panfrost: Stub out lowering boilerplate",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dbd72a8f94ca8aad954990b527d7c510983c96f5",
+        "description": "panfrost: Determine classes for stores",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "18a767df35f2a71105703a1132ab5a3c1ec27313",
+        "description": "panfrost: Determine load classes for formats",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e53d27de61b408049c07e64911b20b117e243910",
+        "description": "panfrost: Add quirks for blend shader types",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "60d647f9def4b84396fd820fd7a5e6ea7a4f1f0a",
+        "description": "panfrost: Determine unpacked type for formats",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5c82f8a097f2824de650e6cae16d4ce73b1cb512",
+        "description": "panfrost: Add theory for new framebuffer lowering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5a175e4a1b1e777b9a9185ad504c3516e55f4c3f",
+        "description": "pan/mdg: Implement raw colourbuf loads on T720",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4f82aad7a27e44314b0fd2461819d31efb49fd5e",
+        "description": "pan/mdg: Drop the u8 from the colorbuf op names",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "49840a8a58a6614615fb73c0e558863478190913",
+        "description": "pan/mdg: Print 8-bit constants",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0ff0291896a91dde9c6f7f0a1bc5b7c3962e72a0",
+        "description": "pan/mdg: Handle bitsize for packs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e9c780b1d08092880a1ad769fffbad571f094c46",
+        "description": "pan/mdg: Treat packs \"specially\"",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c495c6c2957c7c30cedeaa218c2caf443ac04797",
+        "description": "pan/mdg: Add pack_unorm_4x8 via 8-bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "551d990a7c85d2b3cba567b00e6f2aceef6e2e87",
+        "description": "pan/mdg: Handle un/pack opcodes as moves",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "605b0e8acf307ff0f9cccd34c2cae8932ad9222a",
+        "description": "iris: Fixup copy'n'paste mistake in Makefile.sources",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "034329128b703f8c2e8ad1980ddb131df372ce48"
+    },
+    {
+        "sha": "aaec065f03e65f75fd18f8cc24d003f220209714",
+        "description": "intel/dev: Don't consider all TGL SKUs as GT1 only",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "54996ad49273641e20dbb2d7aff382199e27cd10"
+    },
+    {
+        "sha": "d2f8105b606269c0e71cd599f57997279385d300",
+        "description": "r300g: Remove extra printf format specifiers.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "04c1536bf7abe253e0e900c311ff9474ff4d1813"
+    },
+    {
+        "sha": "6e1c47b98df384b46ff41ffbf9689a93c78c040d",
+        "description": "nouveau: allow invalidating coherent/persistent buffer backings",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c48f42e178a1cc484870367c0cfe5fbbf71d86cc",
+        "description": "intel/fs: Emit HALT for discard on Gen4-5",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "94aa7997e45b5314d169bbee5bf22ad368c2fd25",
+        "description": "intel/fs: Fix unused texture coordinate zeroing on Gen4-5",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a7c8811fe4012b60a9bcdb2ea2ef6ab79e402809",
+        "description": "intel/vec4: Stomp the return type of RESINFO to UINT32",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e843303d6f18d56d7c412e6c879134f7b79372ac",
+        "description": "radv: fix regression with builtin cache",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "cd61f5234d2c275b21c249fc2effc058a74ecf0a"
+    },
+    {
+        "sha": "7e4c8949c6f79090b7d8675b488c7bdc90477e26",
+        "description": "gallium/dri: Remove lowered_yuv tracking for plane mapping.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "13735c4f476f997966baa8a1f4c071867d78b401",
+        "description": "panfrost: Fix printf format specifier.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "6148d1be4bb52039ccda57f25a9d27ecb7aa7541"
+    },
+    {
+        "sha": "4925fb97f65f20fd52c94a080a68108c25a4095f",
+        "description": "glthread: don't upload for glDraw inside a display list and always sync",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "2840bc3065b9e991b2c5880a2ee02e2458a758c4"
+    },
+    {
+        "sha": "cf9926714783efa4524ca2afd62a9817dcbccf06",
+        "description": "util/format: Add more multi-planar formats.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d491b0dfd97c27b245ad0ed0e7356377f25ebe67",
+        "description": "util/format: Use correct pipe format for VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "75d7ee80291d6693ca2611bf8ad2bb14a34588db"
+    },
+    {
+        "sha": "273ead81f1a219b39a93abbed4db548d8eeb0e5f",
+        "description": "util/format: Add VK_FORMAT_D16_UNORM_S8_UINT.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f047d585ee472a314d4ad5da4dffa5e7c2a42eb5",
+        "description": "etnaviv: Fix memory leak on error path.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "eed5a009897a859ec118ef84c0437be174a49da3"
+    },
+    {
+        "sha": "bccb3deee2995e68a7f8a63d857f2cd298ff8361",
+        "description": "panfrost: Probe G31/G52 if PAN_MESA_DEBUG=bifrost",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "be8cbe0b41dcabb5a0beb7b2ab2bd6ce87eb7955",
+        "description": "panfrost: Add GPU IDs for G31/G52",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "229084f5de848ea83c83b6d0743edfc90eddb428",
+        "description": "panfrost: Disable QUAD_STRIP/POLYGON on Bifrost",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4be2cd604bc601f90eb90625bb91a040659b6767",
+        "description": "pan/bi: Passthrough deps of the branch target",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8230a04f513e033843da2f2e26f87ac3846c4dd7",
+        "description": "pan/bi: Allow two successors in header packing",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "db2c10d0325cc9c127209b11b8c36f2e5625d185",
+        "description": "pan/bi: Measure backwards branches as well",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a42731536d59ec2c028138d303d15c18158e85c9",
+        "description": "pan/bi: Add bi_foreach_block_from_rev helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c697992ca18e6f059d167fa0a1a9af53b3f93fea",
+        "description": "pan/bi: Defer block naming until after emit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bd6ff4f7e1845d380c366d4f643725fe76a101f5",
+        "description": "pan/bi: Pack unconditional branch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e4791d2bf85045f59451dcbc0e166b3c71ec3048",
+        "description": "pan/bi: Set branch conditional bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ffe7a61a46139b9d872ec60b686aad1926b857f7",
+        "description": "pan/bi: Set back-to-back bit more accurately",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3aacfaf87eccee657ab9a5acc7bfe83b226f120b",
+        "description": "pan/bi: Set branch_conditional if b2b is set",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e945d4f79d6f4da1d6ad61ebcef43ba47aeb7833",
+        "description": "pan/bi: Pack proper clause offsets",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "682b63cdc2631de48d6d5e8ce739e272ae373c10",
+        "description": "pan/bi: Measure distance between blocks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "64c49ab1fc48e9a82c06f1e9fc92c3cf093ef3ce",
+        "description": "pan/bi: Add bi_foreach_clause_in_block_from{_rev} helpers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "64bedbfa67bc0f814ba6b0d4a587807fb9b88050",
+        "description": "pan/bi: Link clauses back to their blocks",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9c329567508836b5b40cfbacf29a840e1e6d4c41",
+        "description": "pan/bi: Preliminary branch packing",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cd9a08d4f2360c227eb17f5b1f166ac46ca08ebe",
+        "description": "pan/bi: Assign constant port for branch offsets",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cdff3ebc9a28ffa0001012ab5ad913c81de7fb8a",
+        "description": "pan/bi: Set branch_constant if there is a branch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b9967ab6da8a1c383939752611ad564aee271cb7",
+        "description": "pan/bi: Pack branch offset constants",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "627872ef7f8be877cc8c64f0b424827a43ed8ef7",
+        "description": "pan/bi: Add branch constant field to IR",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f1298ae33658c7e0e1c2e07b70903338e0981bed",
+        "description": "pan/bi: Passthrough ZERO in branch packing",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d619ff009b57e6949e88b9a607cc8f089d6d7ad2",
+        "description": "pan/bi: Fix branch condition typesize",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1cdd55a81ea14df39608ef38bd6acb77369f9de1",
+        "description": "pan/bi: Fix CONVERT component counting",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d8c6a7187856edeb55ebd63c9274e9a780f22b35",
+        "description": "pan/bi: Only rewrite COMBINE dest if not SSA",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e42a5dfd4f2b22c73f4627128ac6d3dbcb10aca1",
+        "description": "pan/bi: Fix emit_if successor assignment",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": "9a00cf3d1efe336e09906d87a8f5a50cbbe10fd6"
+    },
+    {
+        "sha": "b34eb94d9c97a7bfdd64da444dcc0860f6546f89",
+        "description": "pan/bi: Allow printing branches without targets",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a4fc16a1d4bbfa520bdf11dbcdf41dd3a3e14829",
+        "description": "pan/bi: Remove schedule_barrier",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b3ae088b96d9242d7d0fabde0516ccd76279ffd5",
+        "description": "pan/bi: Add helper to measure clause size",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2a4e4477fc3ce3e3a914dad98b1129e90cbdf0b0",
+        "description": "pan/bi: Add bi_layout.c for clause layout helpers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c3de28bb49229f195e2353d8bbaee63ff3198481",
+        "description": "pan/bi: Remove more artefacts of 2-pass scheduling",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4096be05af306d18bf948f92ab03ee7d6f7468f4",
+        "description": "pan/bi: Add MUL.i32 to disasm",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ec8665615f4b4bd019ea56fb1dd2be3716802b78",
+        "description": "pan/bi: Disassemble pos=0xe",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a658a4f7a5599141c678794676f4a5cfc16ba7f1",
+        "description": "pan/bi: Document constant count invariant",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ac64bf9b207f6a4e7f41d57ee123b173f631cb28",
+        "description": "pan/bi: Move bi_flip_ports out of port assignment",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "95e3776d3e0119f679bfb467028ed09226fdf95d",
+        "description": "pan/bi: Add FILE* argument to bi_print_registers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dd96b451f66c793b2a9593a58c672e6482eaa12c",
+        "description": "pan/bi: Drop `struct` from bi_registers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b042ddef325ee6f88ebfff76f84173825c40d33f",
+        "description": "pan/bi: Move bi_registers to bi_bundle",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "79f30d8a86e9f9fe0f542c75f8ebf2e617f13135",
+        "description": "pan/bi: Move bi_registers to common IR structures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "59f8f20306b5890ce2f26b12f22db682cbdbebac",
+        "description": "pan/bi: Remove comment about old scheduler design",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "635bf652edc9150e2e939d76cacbb74537530ef5",
+        "description": "pan/bi: Remove FMA? parameter from get_src",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "20f6c7a9134062b6e16f7a5bd16c197cc2055e9b",
+        "description": "panfrost: Preload gl_FragCoord on Bifrost",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1d194f8ac471a075984a0d4f5c6399318c525998",
+        "description": "panfrost: Set reads_frag_coord as a sysval",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "52875a34aaf7eaf913740f157bccce5e82f8679b",
+        "description": "panfrost: Don't generate gl_FragCoord varying on Bifrost",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "11470fcde266aa8b864b6a114fc923b2b8e5907a",
+        "description": "freedreno/a6xx: fix vsc assert",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f6f7bc2979926faff3abecfb52533e7043fc05a5",
+        "description": "freedreno/a6xx: Program VFD_DEST_CNTL from program stateobj",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7aa809e31c77a7b0fdfa5c3f818edabc288148cd",
+        "description": "freedreno/a6xx: Create stateobj for VFD_DECODE",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8952dd6d991fd5041a48df31f849e8ddbcb74046",
+        "description": "freedreno/a6xx: Decouple VFD_FETCH and VFD_DECODE",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c15db8928fb7d16a0cf5443fefce7efde5a50eaa",
+        "description": "freedreno/a6xx: Move per element offset to VFD_DECODE",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "601a029e67cc62a32cf028d87653a877c18ecfbd",
+        "description": "ci: Rename x86_cross_arm_test to just arm_test.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9c9ade468598e9c177612e5fc0860aa8b9b39b1d",
+        "description": "ci: Don't build an arm_test container now that the last user is gone.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6f4fc4ff71524d55f6b481e4580c377d3c5f3b66",
+        "description": "ci: Switch cheza (freedreno a630) testing to baremetal.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c89a749f66527caf72c43b433dc27de1594a87f6",
+        "description": "ci: Add scripts for controlling bare-metal chezas.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3a1010e21ac426736fb9af289570d3fbbaaa1884",
+        "description": "ci: Build a cheza kernel.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b678568a5ef56a6b87204ec1b0499b7c04591656",
+        "description": "ci: Disable the firmware loader user helper option in arm64 kernels.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9d645a19ebf2cc574e6ad3f84100f0e2ddd4d59b",
+        "description": "radv/aco: enable VK_KHR_subgroup_extended_types on GFX8+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e22567089c829765d0b78a87d96f7dc5af9e10cd",
+        "description": "aco: sign-extend input/indentity for 32-bit reduce ops on GFX10",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "83dcd1690be5dbf7129ed05cc12043130a2f875c",
+        "description": "aco: allow gfx10_wave64_bpermute with 8-bit/16-bit input",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8ece71507db9ca8c1cd01974f81a17d1f52efd0c",
+        "description": "aco: allocate a temp VGPR for some 8-bit/16-bit reduction ops on GFX10",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2e0ea9bccae5d280e163479d9c46d0ad8b29a504",
+        "description": "aco: implement 8-bit/16-bit reductions on GFX10",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "75a730ced59701201ef4247cbe2189a9be6a9d18",
+        "description": "aco: fix register allocation for subdword instructions on GFX10",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ad609bf55a87200ab11ad7cf31420dcfd8dfc141",
+        "description": "frontend/dri: Implement mapping individual planes.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a2ee293422c09c9ecc8150ad70d29273e28c6a71",
+        "description": "zink: Check fopen result.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "8d46e35d16e3936968958bcab86d61967a673305"
+    },
+    {
+        "sha": "7503863fe2a48d155ec9c1778206f1e9a2dc5987",
+        "description": "radv/aco: enable VK_EXT_subgroup_size_control",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6f391262003e2d58395dd17d2cf1e1a6807f7a0a",
+        "description": "freedreno/a6xx: document LRZ flag buffer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a3947f9d247619043ac9a2c17f746d2fbfb0e5ac",
+        "description": "freedreno/a6xx: LRZ fix for alpha-test",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "838666a41dcbbf566bff57e7a7b841e50bf2bdce",
+        "description": "util: Initialize pipe_shader_state for passthrough and transform shaders",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "f01c0565bb9ad7335395920aebc7489cb76d1b72"
+    },
+    {
+        "sha": "034329128b703f8c2e8ad1980ddb131df372ce48",
+        "description": "iris: Rename iris_seqno to iris_fine_fence",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "master_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "682e14d3eaee8991ee08ea309cbf9a509b6e6b27",
+        "description": "nir: lower_tex: Don't normalize coordinates for TXF with RECT",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "master_sha": null,
+        "because_sha": "1ce8060c25c7f2c7a54159fab6a6974c0ba182a8"
+    },
+    {
         "sha": "f0c102c075f8ac76629bb34619187262ccc3e9d8",
         "description": "ci: Quick exit qpa extraction for non-matching qpas.",
         "nominated": false,
