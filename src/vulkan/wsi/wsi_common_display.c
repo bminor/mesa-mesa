@@ -82,6 +82,35 @@ typedef struct wsi_display_mode {
    uint32_t                     flags;
 } wsi_display_mode;
 
+enum connector_property {
+   CONN_CRTC_ID,
+   DPMS,
+   CONNECTOR_PROPERTY_MAX,
+};
+
+enum crtc_property {
+   MODE_ID,
+   ACTIVE,
+   GAMMA_LUT,
+   DEGAMMA_LUT,
+   CTM,
+   CRTC_PROPERTY_MAX,
+};
+
+enum plane_property {
+   CRTC_ID,
+   CRTC_X,
+   CRTC_Y,
+   CRTC_W,
+   CRTC_H,
+   SRC_X,
+   SRC_Y,
+   SRC_W,
+   SRC_H,
+   FB_ID,
+   PLANE_PROPERTY_MAX,
+};
+
 typedef struct wsi_display_connector {
    struct list_head             list;
    struct wsi_display           *wsi;
@@ -95,7 +124,9 @@ typedef struct wsi_display_connector {
    struct list_head             display_modes;
    wsi_display_mode             *current_mode;
    drmModeModeInfo              current_drm_mode;
-   uint32_t                     dpms_property;
+   uint32_t                     property[CONNECTOR_PROPERTY_MAX];
+   uint32_t                     crtc_property[CRTC_PROPERTY_MAX];
+   uint32_t                     plane_property[PLANE_PROPERTY_MAX];
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
    xcb_randr_output_t           output;
 #endif
@@ -120,6 +151,91 @@ struct wsi_display {
 
    struct list_head             connectors; /* list of all discovered connectors */
 };
+
+
+static bool
+find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
+{
+   uint32_t *prop_id, prop_count, obj_id;
+   drmModeObjectProperties *props;
+
+   switch (type) {
+   case DRM_MODE_OBJECT_CONNECTOR:
+      obj_id = connector->id;
+      prop_id = connector->property;
+      prop_count = ARRAY_SIZE(connector->property);
+      break;
+   case DRM_MODE_OBJECT_CRTC:
+      obj_id = connector->crtc_id;
+      prop_id = connector->crtc_property;
+      prop_count = ARRAY_SIZE(connector->crtc_property);
+      break;
+   case DRM_MODE_OBJECT_PLANE:
+      obj_id = connector->plane_id;
+      prop_id = connector->plane_property;
+      prop_count = ARRAY_SIZE(connector->plane_property);
+      break;
+   default:
+      unreachable("unexpected drm object type");
+   }
+
+   props = drmModeObjectGetProperties(fd, obj_id, type);
+   if (!props)
+      return false;
+
+   memset(prop_id, 0, prop_count * sizeof(*prop_id));
+
+   if (type == DRM_MODE_OBJECT_CRTC) {
+      prop_id[GAMMA_LUT] = -1;
+      prop_id[DEGAMMA_LUT] = -1;
+      prop_id[CTM] = -1;
+   }
+
+   for (int p = 0; p < props->count_props; p++) {
+      drmModePropertyPtr prop = drmModeGetProperty(fd, props->props[p]);
+      if (!prop)
+         continue;
+
+#define PROPERTY(x) if (!strcmp(prop->name, #x)) prop_id[x] = props->props[p]
+      switch (type) {
+      case DRM_MODE_OBJECT_CONNECTOR:
+         STATIC_ASSERT(CRTC_ID == (enum plane_property) CONN_CRTC_ID);
+         PROPERTY(CRTC_ID);
+         PROPERTY(DPMS);
+         break;
+      case DRM_MODE_OBJECT_CRTC:
+         PROPERTY(MODE_ID);
+         PROPERTY(ACTIVE);
+         PROPERTY(GAMMA_LUT);
+         PROPERTY(DEGAMMA_LUT);
+         PROPERTY(CTM);
+         break;
+      case DRM_MODE_OBJECT_PLANE:
+         PROPERTY(FB_ID);
+         PROPERTY(CRTC_ID);
+         PROPERTY(CRTC_X);
+         PROPERTY(CRTC_Y);
+         PROPERTY(CRTC_W);
+         PROPERTY(CRTC_H);
+         PROPERTY(SRC_X);
+         PROPERTY(SRC_Y);
+         PROPERTY(SRC_W);
+         PROPERTY(SRC_H);
+         break;
+      }
+#undef PROPERTY
+      drmModeFreeProperty(prop);
+   }
+
+   drmModeFreeObjectProperties(props);
+
+   /* verify that all required properties were found */
+   for (int i = 0; i < prop_count; i++) {
+      if (!prop_id[i])
+         return false;
+   }
+   return true;
+}
 
 #define wsi_for_each_display_mode(_mode, _conn)                 \
    list_for_each_entry_safe(struct wsi_display_mode, _mode,     \
@@ -311,6 +427,7 @@ wsi_display_is_crtc_available(const struct wsi_display * const wsi,
 
 static struct wsi_display_connector *
 wsi_display_alloc_connector(struct wsi_display *wsi,
+                            int fd,
                             uint32_t connector_id)
 {
    struct wsi_display_connector *connector =
@@ -319,12 +436,29 @@ wsi_display_alloc_connector(struct wsi_display *wsi,
    if (!connector)
       return NULL;
 
+   /* We set this flag because this is the common entrypoint before we start
+    * using atomic capabilities -- it's a simple bool setting in the kernel to
+    * make the properties we start querying be available, and re-setting it is
+    * harmless.  Otherwise, we'd need to push it up to all the entrypoints that
+    * a drm FD comes thorugh.
+    */
+   drmSetClientCap(fd, DRM_CLIENT_CAP_ATOMIC, 1);
+
    connector->id = connector_id;
    connector->wsi = wsi;
    connector->active = false;
    /* XXX use EDID name */
    connector->name = "monitor";
    list_inithead(&connector->display_modes);
+
+   /* note: drmModeConnector has props pointer, the extra
+    * drmModeObjectGetProperties here could be avoided
+    */
+   if (!find_properties(connector, fd, DRM_MODE_OBJECT_CONNECTOR)) {
+      vk_free(wsi->alloc, connector);
+      return NULL;
+   }
+
    return connector;
 }
 
@@ -349,7 +483,7 @@ wsi_display_get_connector(struct wsi_device *wsi_device,
       wsi_display_find_connector(wsi_device, connector_id);
 
    if (!connector) {
-      connector = wsi_display_alloc_connector(wsi, connector_id);
+      connector = wsi_display_alloc_connector(wsi, drm_fd, connector_id);
       if (!connector) {
          drmModeFreeConnector(drm_connector);
          return NULL;
@@ -358,21 +492,6 @@ wsi_display_get_connector(struct wsi_device *wsi_device,
    }
 
    connector->connected = drm_connector->connection != DRM_MODE_DISCONNECTED;
-
-   /* Look for a DPMS property if we haven't already found one */
-   for (int p = 0; connector->dpms_property == 0 &&
-           p < drm_connector->count_props; p++)
-   {
-      drmModePropertyPtr prop = drmModeGetProperty(drm_fd,
-                                                   drm_connector->props[p]);
-      if (!prop)
-         continue;
-      if (prop->flags & DRM_MODE_PROP_ENUM) {
-         if (!strcmp(prop->name, "DPMS"))
-            connector->dpms_property = drm_connector->props[p];
-      }
-      drmModeFreeProperty(prop);
-   }
 
    /* Mark all connector modes as invalid */
    wsi_display_invalidate_connector_modes(connector);
@@ -1655,9 +1774,6 @@ wsi_display_select_plane(const struct wsi_display_connector *connector,
    if (plane_id)
       return plane_id;
 
-   /* We understand universal planes */
-   drmSetClientCap(wsi->fd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1);
-
    /* possible_crtcs uses the crtc index and not the object id */
    for (int i = 0; i < mode_res->count_crtcs; i++) {
       if (mode_res->crtcs[i] == connector->crtc_id)
@@ -1738,9 +1854,10 @@ wsi_display_setup_connector(wsi_display_connector *connector,
 
    /* Pick a CRTC if we don't have one */
    if (!connector->crtc_id) {
-      connector->crtc_id = wsi_display_select_crtc(connector,
-                                                   mode_res, drm_connector);
-      if (!connector->crtc_id) {
+      connector->crtc_id = wsi_display_select_crtc(connector, mode_res,
+                                                   drm_connector);
+      if (!connector->crtc_id ||
+          !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_CRTC)) {
          result = VK_ERROR_SURFACE_LOST_KHR;
          goto bail_connector;
       }
@@ -1748,6 +1865,11 @@ wsi_display_setup_connector(wsi_display_connector *connector,
       /* Select the primary plane of that CRTC, and populate the
        * format/modifier lists for that plane */
       connector->plane_id = wsi_display_select_plane(connector, mode_res);
+      if (!connector->plane_id ||
+          !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_PLANE)) {
+         result = VK_ERROR_SURFACE_LOST_KHR;
+         goto bail_connector;
+      }
    }
 
    if (connector->current_mode != display_mode) {
@@ -2016,6 +2138,61 @@ wsi_register_vblank_event(struct wsi_display_fence *fence,
    }
 }
 
+static int
+drm_atomic_commit(wsi_display_connector *connector, struct wsi_display_image *image)
+{
+   const drmModeModeInfo *mode = &connector->current_drm_mode;
+   int fd = connector->wsi->fd;
+   drmModeAtomicReq *req;
+   uint32_t flags = DRM_MODE_PAGE_FLIP_EVENT | DRM_MODE_ATOMIC_NONBLOCK;
+   uint32_t crtc_id = connector->crtc_id;
+   uint32_t plane_id = connector->plane_id;
+   uint32_t blob_id;
+   int ret;
+
+   req = drmModeAtomicAlloc();
+   if (!req)
+      return -1;
+
+   if (!connector->active) {
+      if (drmModeCreatePropertyBlob(fd, mode, sizeof(*mode), &blob_id) != 0)
+         return -1;
+
+      drmModeAtomicAddProperty(req, connector->id, connector->property[CRTC_ID], crtc_id);
+      drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[MODE_ID], blob_id);
+      drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[ACTIVE], 1);
+      if (connector->crtc_property[GAMMA_LUT] != -1)
+         drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[GAMMA_LUT], 0);
+      if (connector->crtc_property[DEGAMMA_LUT] != -1)
+         drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[DEGAMMA_LUT], 0);
+      if (connector->crtc_property[CTM] != -1)
+         drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[CTM], 0);
+
+      flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
+   }
+
+   const uint32_t *prop = connector->plane_property;
+   drmModeAtomicAddProperty(req, plane_id, prop[FB_ID], image->fb_id);
+   drmModeAtomicAddProperty(req, plane_id, prop[CRTC_ID], crtc_id);
+   drmModeAtomicAddProperty(req, plane_id, prop[SRC_X], 0);
+   drmModeAtomicAddProperty(req, plane_id, prop[SRC_Y], 0);
+   drmModeAtomicAddProperty(req, plane_id, prop[SRC_W], mode->hdisplay << 16);
+   drmModeAtomicAddProperty(req, plane_id, prop[SRC_H], mode->vdisplay << 16);
+   drmModeAtomicAddProperty(req, plane_id, prop[CRTC_X], 0);
+   drmModeAtomicAddProperty(req, plane_id, prop[CRTC_Y], 0);
+   drmModeAtomicAddProperty(req, plane_id, prop[CRTC_W], mode->hdisplay);
+   drmModeAtomicAddProperty(req, plane_id, prop[CRTC_H], mode->vdisplay);
+
+   ret = drmModeAtomicCommit(fd, req, flags, image);
+   if (ret)
+      goto out;
+
+out:
+   drmModeAtomicFree(req);
+
+   return ret;
+}
+
 /*
  * Check to see if the kernel has no flip queued and if there's an image
  * waiting to be displayed.
@@ -2066,65 +2243,11 @@ _wsi_display_queue_next(struct wsi_swapchain *drv_chain)
       if (!image)
          return VK_SUCCESS;
 
-      int ret;
-      if (connector->active) {
-         ret = drmModePageFlip(wsi->fd, connector->crtc_id, image->fb_id,
-                                   DRM_MODE_PAGE_FLIP_EVENT, image);
-         if (ret == 0) {
-            image->state = WSI_IMAGE_FLIPPING;
-            return VK_SUCCESS;
-         }
-         wsi_display_debug("page flip err %d %s\n", ret, strerror(-ret));
-      } else {
-         ret = -EINVAL;
-      }
-
-      if (ret == -EINVAL) {
-         /* XXX allow setting of position */
-         ret = drmModeSetCrtc(wsi->fd, connector->crtc_id,
-                              image->fb_id, 0, 0,
-                              &connector->id, 1,
-                              &connector->current_drm_mode);
-         if (ret == 0) {
-            /* Disable the HW cursor as the app doesn't have a mechanism
-             * to control it.
-             * Refer to question 12 of the VK_KHR_display spec.
-             */
-            ret = drmModeSetCursor(wsi->fd, connector->crtc_id, 0, 0, 0 );
-            if (ret != 0) {
-               wsi_display_debug("failed to hide cursor err %d %s\n", ret, strerror(-ret));
-            }
-
-            /* unset some properties another drm master might've set
-             * which can mess up the image
-             */
-            drmModeObjectPropertiesPtr properties =
-               drmModeObjectGetProperties(wsi->fd,
-                                          connector->crtc_id,
-                                          DRM_MODE_OBJECT_CRTC);
-            for (uint32_t i = 0; i < properties->count_props; i++) {
-               drmModePropertyPtr prop =
-                  drmModeGetProperty(wsi->fd, properties->props[i]);
-               if (strcmp(prop->name, "GAMMA_LUT") == 0 ||
-                   strcmp(prop->name, "CTM") == 0 ||
-                   strcmp(prop->name, "DEGAMMA_LUT") == 0) {
-                  drmModeObjectSetProperty(wsi->fd, connector->crtc_id,
-                                           DRM_MODE_OBJECT_CRTC,
-                                           properties->props[i], 0);
-               }
-               drmModeFreeProperty(prop);
-            }
-            drmModeFreeObjectProperties(properties);
-
-            /* Assume that the mode set is synchronous and that any
-             * previous image is now idle.
-             */
-            image->state = WSI_IMAGE_DISPLAYING;
-            wsi_display_present_complete(chain, image);
-            wsi_display_idle_old_displaying(image);
-            connector->active = true;
-            return VK_SUCCESS;
-         }
+      int ret = drm_atomic_commit(connector, image);
+      if (ret == 0) {
+         image->state = WSI_IMAGE_FLIPPING;
+         connector->active = true;
+         return VK_SUCCESS;
       }
 
       if (ret != -EACCES) {
@@ -2451,6 +2574,9 @@ wsi_display_init_wsi(struct wsi_device *wsi_device,
       wsi->fd = -1;
 
    wsi->syncobj_fd = wsi->fd;
+
+   if (wsi->fd >= 0)
+      drmSetClientCap(wsi->fd, DRM_CLIENT_CAP_ATOMIC, 1);
 
    wsi->alloc = alloc;
 
@@ -2844,7 +2970,7 @@ wsi_display_get_output(struct wsi_device *wsi_device,
       connector = wsi_display_find_connector(wsi_device, connector_id);
 
       if (connector == NULL) {
-         connector = wsi_display_alloc_connector(wsi, connector_id);
+         connector = wsi_display_alloc_connector(wsi, wsi->fd, connector_id);
          if (!connector) {
             return NULL;
          }
@@ -3066,7 +3192,7 @@ wsi_DisplayPowerControlEXT(VkDevice _device,
    }
    drmModeConnectorSetProperty(wsi->fd,
                                connector->id,
-                               connector->dpms_property,
+                               connector->property[DPMS],
                                mode);
    return VK_SUCCESS;
 }
