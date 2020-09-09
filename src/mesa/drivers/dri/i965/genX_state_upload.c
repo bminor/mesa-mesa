@@ -3423,7 +3423,9 @@ UNUSED static const struct brw_tracked_state genX(color_calc_state) = {
              (GFX_VER <= 5 ? BRW_NEW_CC_VP |
                              BRW_NEW_STATS_WM
                            : BRW_NEW_CC_STATE |
-                             BRW_NEW_STATE_BASE_ADDRESS),
+                             BRW_NEW_STATE_BASE_ADDRESS) |
+             (GFX_VER == 6 ? BRW_NEW_FS_PROG_DATA
+                           : 0),
    },
    .emit = genX(upload_color_calc_state),
 };
