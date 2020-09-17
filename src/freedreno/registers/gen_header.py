@@ -220,11 +220,15 @@ class Bitset(object):
 
         address = self.get_address_field()
         if address:
+            print("#ifndef TU_CS_H")
             print("        .bo = fields.bo,")
             print("        .is_address = true,")
             print("        .bo_offset = fields.bo_offset,")
             print("        .bo_shift = %d," % address.shr)
             print("        .bo_low = %d," % address.low)
+            print("#else")
+            print("        .is_address = true,")
+            print("#endif")
 
         print("    };")
 
@@ -239,8 +243,10 @@ class Bitset(object):
         print("struct %s {" % prefix)
         for f in self.fields:
             if f.type in ["address", "waddress"]:
+                print("#ifndef TU_CS_H")
                 tab_to("    __bo_type", "bo;")
                 tab_to("    uint32_t", "bo_offset;")
+                print("#endif\n")
                 continue
             name = field_name(reg, f)
 
@@ -881,8 +887,10 @@ class Parser(object):
                     if address:
                         continue
                     address = f
+                    print("#ifndef TU_CS_H")
                     tab_to("    __bo_type", "bo;")
                     tab_to("    uint32_t", "bo_offset;")
+                    print("#endif")
                     continue
                 type, val = f.ctype("var")
                 tab_to("    %s" % type, "%s;" % name)

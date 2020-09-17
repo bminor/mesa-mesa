@@ -590,15 +590,10 @@ tu_cs_emit_data_nop(struct tu_cs *cs,
 struct tu_reg_value {
    uint32_t reg;
    uint64_t value;
-   struct tu_bo *bo;
    bool is_address;
-   uint32_t bo_offset;
-   uint32_t bo_shift;
-   uint32_t bo_low;
 };
 
 #define fd_reg_pair tu_reg_value
-#define __bo_type struct tu_bo *
 
 #include "a6xx-pack.xml.h"
 #include "adreno-pm4-pack.xml.h"
@@ -615,19 +610,9 @@ struct tu_reg_value {
    do {                                                         \
       if (i < ARRAY_SIZE(regs) && regs[i].reg > 0) {            \
          __assert_eq(regs[0].reg + i, regs[i].reg);             \
-         if (regs[i].bo) {                                      \
-            uint64_t v = regs[i].bo->iova + regs[i].bo_offset;  \
-            v >>= regs[i].bo_shift;                             \
-            v <<= regs[i].bo_low;                               \
-            v |= regs[i].value;                                 \
-                                                                \
-            *p++ = v;                                           \
-            *p++ = v >> 32;                                     \
-         } else {                                               \
-            *p++ = regs[i].value;                               \
-            if (regs[i].is_address)                             \
-               *p++ = regs[i].value >> 32;                      \
-         }                                                      \
+         *p++ = regs[i].value;                                  \
+         if (regs[i].is_address)                                \
+            *p++ = regs[i].value >> 32;                         \
       }                                                         \
    } while (0)
 

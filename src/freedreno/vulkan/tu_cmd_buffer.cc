@@ -2107,12 +2107,8 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    tu_cs_emit_regs(cs, A6XX_RB_ALPHA_TEST_CNTL()); /* always disable alpha test */
 
-   tu_cs_emit_regs(cs,
-                   A6XX_TPL1_GFX_BORDER_COLOR_BASE(.bo = dev->global_bo,
-                                                     .bo_offset = gb_offset(bcolor)));
-   tu_cs_emit_regs(cs,
-                   A6XX_TPL1_CS_BORDER_COLOR_BASE(.bo = dev->global_bo,
-                                                        .bo_offset = gb_offset(bcolor)));
+   tu_cs_emit_regs(cs, A6XX_TPL1_GFX_BORDER_COLOR_BASE(.qword = dev->global_bo->iova + gb_offset(bcolor)));
+   tu_cs_emit_regs(cs, A6XX_TPL1_CS_BORDER_COLOR_BASE(.qword = dev->global_bo->iova + gb_offset(bcolor)));
 
    /* BR-only registers */
    if (CHIP >= A7XX)
