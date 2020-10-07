@@ -14098,7 +14098,7 @@
         "description": "radv,radeonsi: Disable compression on interop depth images",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 2,
         "master_sha": null,
         "because_sha": null
     },
