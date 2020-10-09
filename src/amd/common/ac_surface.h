@@ -165,6 +165,9 @@ struct gfx9_surf_layout {
     /* Mipmap level pitch in elements. Only valid for LINEAR. */
     uint16_t                    pitch[RADEON_SURF_MAX_LEVELS];
 
+    uint16_t base_mip_width;
+    uint16_t base_mip_height;
+
     uint64_t                    stencil_offset; /* separate stencil */
 
     /* Displayable DCC. This is always rb_aligned=0 and pipe_aligned=0.
