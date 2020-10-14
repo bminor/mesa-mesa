@@ -1,0 +1,125 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>Mesa Release Notes</title>
+<link rel="stylesheet" type="text/css" href="../mesa.css">
+</head>
+<body>
+
+<div class="header">
+<h1>The Mesa 3D Graphics Library</h1>
+</div>
+
+<iframe src="../contents.html"></iframe>
+<div class="content">
+
+<h1>Mesa 20.1.10 Release Notes / 2020-10-14</h1>
+
+<p>
+    Mesa 20.1.10 is a bug fix release which fixes bugs found since the 20.1.9 release.
+</p>
+<p>
+Mesa 20.1.10 implements the OpenGL 4.6 API, but the version reported by
+glGetString(GL_VERSION) or glGetIntegerv(GL_MAJOR_VERSION) /
+glGetIntegerv(GL_MINOR_VERSION) depends on the particular driver being used.
+Some drivers don't support all the features required in OpenGL 4.6. OpenGL
+4.6 is <strong>only</strong> available if requested at context creation.
+Compatibility contexts may report a lower version depending on each driver.
+</p>
+<p>
+Mesa 20.1.10 implements the Vulkan 1.2 API, but the version reported by
+the apiVersion property of the VkPhysicalDeviceProperties struct
+depends on the particular driver being used.
+</p>
+
+<h2>SHA256 checksum</h2>
+<pre>
+TBD.
+</pre>
+
+
+<h2>New features</h2>
+
+<ul>
+    <li>None</li>
+</ul>
+
+<h2>Bug fixes</h2>
+
+<ul>
+    <li>[RADV/ACO] Star Citizen Lighting/Shadow Issue</li>
+    <li>Graphics corruption in Super Mega Baseball 2 with RADV on Navi</li>
+    <li>RADV ACO - ground line corruption in Path of Exile with Vulkan renderer</li>
+    <li>omx/tizonia build broken with latest mesa git</li>
+    <li>[hsw][bisected][regression] gpu hangs on dEQP-VK.subgroups.(shuffle|quad) tests</li>
+    <li>TGL B0 Stepping gpu hangs on many dEQP-VK.subgroups.quad nonconst tests</li>
+</ul>
+
+<h2>Changes</h2>
+
+<ul>
+    <p>Alyssa Rosenzweig (1):</p>
+    <li>      pan/bi: Handle vector moves</li>
+    <p></p>
+    <p>Anuj Phogat (1):</p>
+    <li>      intel/gen9: Enable MSC RAW Hazard Avoidance</li>
+    <p></p>
+    <p>Bas Nieuwenhuizen (2):</p>
+    <li>      radv: Use atomics to read query results.</li>
+    <li>      radv: Fix mipmap extent adjustment on GFX9+.</li>
+    <p></p>
+    <p>Dylan Baker (1):</p>
+    <li>      glsl/xxd.py: fix imports</li>
+    <p></p>
+    <p>Eric Engestrom (4):</p>
+    <li>      docs/relnotes: add sha256 sums to 20.1.9</li>
+    <li>      .pick_status.json: Update to 68daac28df1b2f50a43740d1905932cfde0ddf1a</li>
+    <li>      .pick_status.json: Mark d78df70c2a85fd846d40b71b9e213122347bea1b as denominated</li>
+    <li>      .pick_status.json: Mark c02e933de4a9a644410384f815c84d1c08107b82 as applied</li>
+    <p></p>
+    <p>Jason Ekstrand (5):</p>
+    <li>      nir/cf: Better handle intra-block splits</li>
+    <li>      intel/fs: NoMask initialize the address register for shuffles</li>
+    <li>      nir/opt_load_store_vectorize: Use bit sizes when checking mask compatibility</li>
+    <li>      intel/fs: Don&#x27;t use NoDDClk/NoDDClr for split SHUFFLEs</li>
+    <li>      intel/nir: Don&#x27;t try to emit vector load_scratch instructions</li>
+    <p></p>
+    <p>Lionel Landwerlin (1):</p>
+    <li>      intel/perf: fix crash when no perf queries are supported</li>
+    <p></p>
+    <p>Lucas Stach (1):</p>
+    <li>      etnaviv: stop leaking the dummy texure descriptor BO</li>
+    <p></p>
+    <p>Marek Olšák (1):</p>
+    <li>      radeonsi: Fix dead lock with aux_context_lock in si_screen_clear_buffer.</li>
+    <p></p>
+    <p>Nanley Chery (2):</p>
+    <li>      iris: Fix a fast-clear skipping optimization</li>
+    <li>      anv: Enable multi-layer aux-map init for HIZ+CCS</li>
+    <p></p>
+    <p>Pierre-Eric Pelloux-Prayer (1):</p>
+    <li>      omx/tizonia: fix build</li>
+    <p></p>
+    <p>Rhys Perry (4):</p>
+    <li>      spirv: add and use a generator id enum</li>
+    <li>      spirv: replace discard with demote for incorrect HLSL-&gt;SPIR-V translations</li>
+    <li>      android: fix SPIR-V -&gt; NIR build</li>
+    <li>      scons: fix SPIR-V -&gt; NIR build</li>
+    <p></p>
+    <p>Timothy Arceri (1):</p>
+    <li>      glsl: don&#x27;t duplicate state vars as uniforms in the NIR linker</li>
+    <p></p>
+    <p>Tony Wasserka (1):</p>
+    <li>      aco/isel: Always export position data from VS/NGG</li>
+    <p></p>
+    <p>Vinson Lee (1):</p>
+    <li>      freedreno: Move rsc NULL check to before rsc dereferences.</li>
+    <p></p>
+    <p></p>
+</ul>
+
+</div>
+</body>
+</html>
