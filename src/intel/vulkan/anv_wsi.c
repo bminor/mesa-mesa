@@ -66,17 +66,23 @@ anv_init_wsi(struct anv_physical_device *physical_device)
    if (result != VK_SUCCESS)
       return result;
 
-   physical_device->wsi_device.supports_modifiers = true;
-   physical_device->wsi_device.get_blit_queue = anv_wsi_get_prime_blit_queue;
+   struct wsi_device *wsi_device = &physical_device->wsi_device;
+   wsi_device->supports_modifiers = true;
+   /* Only allow protected content on display */
+   for (uint32_t i = 0; i < ARRAY_SIZE(wsi_device->supports_protected); i++) {
+      wsi_device->supports_protected[i] =
+         physical_device->has_protected_contexts &&
+         i == VK_ICD_WSI_PLATFORM_DISPLAY;
+   }
+   wsi_device->get_blit_queue = anv_wsi_get_prime_blit_queue;
    if (physical_device->info.kmd_type == INTEL_KMD_TYPE_I915) {
-      physical_device->wsi_device.signal_semaphore_with_memory = true;
-      physical_device->wsi_device.signal_fence_with_memory = true;
+      wsi_device->signal_semaphore_with_memory = true;
+      wsi_device->signal_fence_with_memory = true;
    }
 
-   physical_device->vk.wsi_device = &physical_device->wsi_device;
+   physical_device->vk.wsi_device = wsi_device;
 
-   wsi_device_setup_syncobj_fd(&physical_device->wsi_device,
-                               physical_device->local_fd);
+   wsi_device_setup_syncobj_fd(wsi_device, physical_device->local_fd);
 
    return VK_SUCCESS;
 }
