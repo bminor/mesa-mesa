@@ -229,11 +229,6 @@ vc4_write_uniforms(struct vc4_context *vc4, struct vc4_compiled_shader *shader,
                         cl_aligned_f(&uniforms, vc4->viewport.scale[2]);
                         break;
 
-                case QUNIFORM_USER_CLIP_PLANE:
-                        cl_aligned_f(&uniforms,
-                                     vc4->clip.ucp[data / 4][data % 4]);
-                        break;
-
                 case QUNIFORM_TEXTURE_CONFIG_P0:
                         write_texture_p0(job, &uniforms, texstate, data);
                         break;
@@ -387,10 +382,6 @@ vc4_set_shader_uniform_dirty_flags(struct vc4_compiled_shader *shader)
                 case QUNIFORM_VIEWPORT_Z_OFFSET:
                 case QUNIFORM_VIEWPORT_Z_SCALE:
                         dirty |= VC4_DIRTY_VIEWPORT;
-                        break;
-
-                case QUNIFORM_USER_CLIP_PLANE:
-                        dirty |= VC4_DIRTY_CLIP;
                         break;
 
                 case QUNIFORM_TEXTURE_CONFIG_P0:

@@ -241,8 +241,6 @@ enum quniform_contents {
         QUNIFORM_VIEWPORT_Z_OFFSET,
         QUNIFORM_VIEWPORT_Z_SCALE,
 
-        QUNIFORM_USER_CLIP_PLANE,
-
         /**
          * A reference to a texture config parameter 0 uniform.
          *
@@ -317,7 +315,6 @@ struct vc4_key {
                         };
                 };
         } tex[VC4_MAX_TEXTURE_SAMPLERS];
-        uint8_t ucp_enables;
 };
 
 struct vc4_fs_key {
@@ -337,6 +334,7 @@ struct vc4_fs_key {
         uint8_t logicop_func;
         uint32_t point_sprite_mask;
         uint32_t ubo_1_size;
+        uint8_t ucp_enables;
 
         struct pipe_rt_blend_state blend;
 };

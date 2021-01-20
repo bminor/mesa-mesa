@@ -67,7 +67,7 @@
 #define VC4_DIRTY_SCISSOR       (1 << 17)
 #define VC4_DIRTY_FLAT_SHADE_FLAGS (1 << 18)
 #define VC4_DIRTY_PRIM_MODE     (1 << 19)
-#define VC4_DIRTY_CLIP          (1 << 20)
+
 #define VC4_DIRTY_UNCOMPILED_VS (1 << 21)
 #define VC4_DIRTY_UNCOMPILED_FS (1 << 22)
 #define VC4_DIRTY_COMPILED_CS   (1 << 23)
@@ -373,7 +373,6 @@ struct vc4_context {
         unsigned sample_mask;
         struct pipe_framebuffer_state framebuffer;
         struct pipe_poly_stipple stipple;
-        struct pipe_clip_state clip;
         struct pipe_viewport_state viewport;
         struct vc4_constbuf_stateobj constbuf[PIPE_SHADER_TYPES];
         struct vc4_vertexbuf_stateobj vertexbuf;

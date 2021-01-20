@@ -71,9 +71,6 @@ static void
 vc4_set_clip_state(struct pipe_context *pctx,
                    const struct pipe_clip_state *clip)
 {
-        struct vc4_context *vc4 = vc4_context(pctx);
-        vc4->clip = *clip;
-        vc4->dirty |= VC4_DIRTY_CLIP;
 }
 
 static void

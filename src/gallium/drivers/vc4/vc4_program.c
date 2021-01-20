@@ -1736,15 +1736,6 @@ ntq_emit_intrinsic(struct vc4_compile *c, nir_intrinsic_instr *instr)
                 ntq_store_def(c, &instr->def, 0, vc4_ubo_load(c, instr));
                 break;
 
-        case nir_intrinsic_load_user_clip_plane:
-                for (int i = 0; i < nir_intrinsic_dest_components(instr); i++) {
-                        ntq_store_def(c, &instr->def, i,
-                                      qir_uniform(c, QUNIFORM_USER_CLIP_PLANE,
-                                                  nir_intrinsic_ucp_id(instr) *
-                                                  4 + i));
-                }
-                break;
-
         case nir_intrinsic_load_blend_const_color_r_float:
         case nir_intrinsic_load_blend_const_color_g_float:
         case nir_intrinsic_load_blend_const_color_b_float:
@@ -2294,22 +2285,10 @@ vc4_shader_ntq(struct vc4_context *vc4, enum qstage stage,
 
         NIR_PASS(_, c->s, nir_lower_tex, &tex_options);
 
-        if (c->key->ucp_enables) {
-                if (stage == QSTAGE_FRAG) {
-                        NIR_PASS(_, c->s, nir_lower_clip_fs,
-                                 c->key->ucp_enables, false, false);
-                } else {
-                        NIR_PASS(_, c->s, nir_lower_clip_vs,
-                                 c->key->ucp_enables, false, false, NULL);
-                        NIR_PASS(_, c->s, nir_lower_io_to_scalar,
-                                 nir_var_shader_out, NULL, NULL);
-                }
+        if (c->fs_key && c->fs_key->ucp_enables) {
+                NIR_PASS(_, c->s, nir_lower_clip_fs, c->fs_key->ucp_enables, false, false);
         }
 
-        /* FS input scalarizing must happen after nir_lower_two_sided_color,
-         * which only handles a vec4 at a time.  Similarly, VS output
-         * scalarizing must happen after nir_lower_clip_vs.
-         */
         if (c->stage == QSTAGE_FRAG)
                 NIR_PASS(_, c->s, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
         else
@@ -2766,8 +2745,6 @@ vc4_setup_shared_key(struct vc4_context *vc4, struct vc4_key *key,
                                 vc4_sampler->force_first_level;
                 }
         }
-
-        key->ucp_enables = vc4->rasterizer->base.clip_plane_enable;
 }
 
 static void
@@ -2792,6 +2769,8 @@ vc4_update_compiled_fs(struct vc4_context *vc4, uint8_t prim_mode)
         memset(key, 0, sizeof(*key));
         vc4_setup_shared_key(vc4, &key->base, &vc4->fragtex);
         key->base.shader_state = vc4->prog.bind_fs;
+        nir_shader *vs = vc4->prog.bind_vs->base.ir.nir;
+        key->ucp_enables = vc4->rasterizer->base.clip_plane_enable;
         key->is_points = (prim_mode == MESA_PRIM_POINTS);
         key->is_lines = (prim_mode >= MESA_PRIM_LINES &&
                          prim_mode <= MESA_PRIM_LINE_STRIP);
