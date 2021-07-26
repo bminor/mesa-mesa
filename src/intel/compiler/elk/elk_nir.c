@@ -668,10 +668,6 @@ elk_nir_optimize(nir_shader *nir, bool is_scalar,
                  const struct intel_device_info *devinfo)
 {
    bool progress;
-   unsigned lower_flrp =
-      (nir->options->lower_flrp16 ? 16 : 0) |
-      (nir->options->lower_flrp32 ? 32 : 0) |
-      (nir->options->lower_flrp64 ? 64 : 0);
 
    do {
       progress = false;
@@ -752,15 +748,6 @@ elk_nir_optimize(nir_shader *nir, bool is_scalar,
 
       OPT(nir_lower_constant_convert_alu_types);
       OPT(nir_opt_constant_folding);
-
-      if (lower_flrp != 0) {
-         OPT(nir_lower_flrp, lower_flrp, false /* always_precise */);
-
-         /* Nothing should rematerialize any flrps, so we only need to do this
-          * lowering once.
-          */
-         lower_flrp = 0;
-      }
 
       OPT(nir_opt_dead_cf);
       if (OPT(nir_opt_loop)) {
@@ -1041,6 +1028,13 @@ elk_preprocess_nir(const struct elk_compiler *compiler, nir_shader *nir,
    OPT(nir_split_struct_vars, nir_var_function_temp);
 
    elk_nir_optimize(nir, is_scalar, devinfo);
+
+   const unsigned lower_flrp =
+      (nir->options->lower_flrp16 ? 16 : 0) |
+      (nir->options->lower_flrp32 ? 32 : 0) |
+      (nir->options->lower_flrp64 ? 64 : 0);
+
+   OPT(nir_lower_flrp, lower_flrp, false /* always_precise */);
 
    OPT(nir_lower_doubles, opts->softfp64, nir->options->lower_doubles_options);
    if (OPT(nir_lower_int64_float_conversions)) {
