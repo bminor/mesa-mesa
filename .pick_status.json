@@ -934,7 +934,7 @@
         "description": "nir: fix utf-8 encoding-issue",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "21115514857d21154bf2b5af4d8f6acae6e6bdcb",
         "notes": null
