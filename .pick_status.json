@@ -742,7 +742,7 @@
         "description": "nir/loop_analyze: Fix get_iteration for nir_op_ine",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6772a17acc8ee90f9398348251a4455f988208fd"
     },
