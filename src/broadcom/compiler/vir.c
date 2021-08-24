@@ -1869,6 +1869,14 @@ v3d_attempt_compile(struct v3d_compile *c)
 
         v3d_optimize_nir(c, c->s);
 
+        const unsigned lower_flrp =
+                (c->s->options->lower_flrp16 ? 16 : 0) |
+                (c->s->options->lower_flrp32 ? 32 : 0) |
+                (c->s->options->lower_flrp64 ? 64 : 0);
+
+        NIR_PASS(_, c->s, nir_lower_flrp, lower_flrp,
+                 false /* always_precise */);
+
         /* Do late algebraic optimization to turn add(a, neg(b)) back into
          * subs, then the mandatory cleanup after algebraic.  Note that it may
          * produce fnegs, and if so then we need to keep running to squash

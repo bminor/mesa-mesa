@@ -2128,10 +2128,6 @@ void
 v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
 {
         bool progress;
-        unsigned lower_flrp =
-                (s->options->lower_flrp16 ? 16 : 0) |
-                (s->options->lower_flrp32 ? 32 : 0) |
-                (s->options->lower_flrp64 ? 64 : 0);
 
         do {
                 progress = false;
@@ -2239,16 +2235,6 @@ v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
                                 NIR_PASS(progress, s, nir_lower_pack);
                                 progress = true;
                         }
-                }
-
-                if (lower_flrp != 0) {
-                        NIR_PASS(progress, s, nir_lower_flrp,
-                                 lower_flrp, false /* always_precise */);
-
-                        /* Nothing should rematerialize any flrps, so we only
-                         * need to do this lowering once.
-                         */
-                        lower_flrp = 0;
                 }
 
                 NIR_PASS(progress, s, nir_opt_undef);
