@@ -1486,10 +1486,6 @@ static void
 vc4_optimize_nir(struct nir_shader *s)
 {
         bool progress;
-        unsigned lower_flrp =
-                (s->options->lower_flrp16 ? 16 : 0) |
-                (s->options->lower_flrp32 ? 32 : 0) |
-                (s->options->lower_flrp64 ? 64 : 0);
 
         do {
                 progress = false;
@@ -1511,16 +1507,6 @@ vc4_optimize_nir(struct nir_shader *s)
                 NIR_PASS(progress, s, nir_opt_peephole_select, &peephole_select_options);
                 NIR_PASS(progress, s, nir_opt_algebraic);
                 NIR_PASS(progress, s, nir_opt_constant_folding);
-                if (lower_flrp != 0) {
-                        NIR_PASS(progress, s, nir_lower_flrp,
-                                 lower_flrp, false /* always_precise */);
-
-                        /* Nothing should rematerialize any flrps, so we only
-                         * need to do this lowering once.
-                         */
-                        lower_flrp = 0;
-                }
-
                 NIR_PASS(progress, s, nir_opt_undef);
                 NIR_PASS(progress, s, nir_opt_loop_unroll);
         } while (progress);
