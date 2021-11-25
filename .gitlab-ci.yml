@@ -283,7 +283,7 @@ debian/x86_build-base:
     - .fdo.container-build@debian
     - .container
   variables:
-    MESA_IMAGE_TAG: &debian-x86_build-base "2022-11-16-ci-fairy"
+    MESA_IMAGE_TAG: &debian-x86_build-base "2022-11-22-wayland"
 
 .use-debian/x86_build-base:
   extends:
@@ -409,7 +409,7 @@ fedora/x86_build:
     - .container
   variables:
     FDO_DISTRIBUTION_VERSION: 34
-    MESA_IMAGE_TAG: &fedora-x86_build "2022-11-22-build-args"
+    MESA_IMAGE_TAG: &fedora-x86_build "2022-11-22-wayland"
 
 .use-fedora/x86_build:
   extends:
