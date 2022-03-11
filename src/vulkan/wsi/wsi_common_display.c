@@ -460,6 +460,37 @@ wsi_GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
    }
 }
 
+static VkResult
+wsi_get_connectors(VkPhysicalDevice physicalDevice)
+{
+   VK_FROM_HANDLE(vk_physical_device, pdevice, physicalDevice);
+   struct wsi_device *wsi_device = pdevice->wsi_device;
+   struct wsi_display *wsi =
+      (struct wsi_display *) wsi_device->wsi[VK_ICD_WSI_PLATFORM_DISPLAY];
+
+   if (wsi->fd < 0)
+      return VK_SUCCESS;
+
+   drmModeResPtr mode_res = drmModeGetResources(wsi->fd);
+
+   if (!mode_res)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   /* Get current information */
+   for (int c = 0; c < mode_res->count_connectors; c++) {
+      struct wsi_display_connector *connector =
+         wsi_display_get_connector(wsi_device, wsi->fd,
+               mode_res->connectors[c]);
+      if (!connector) {
+         drmModeFreeResources(mode_res);
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+      }
+   }
+
+   drmModeFreeResources(mode_res);
+   return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 wsi_GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice,
                                            uint32_t *pPropertyCount,
@@ -470,28 +501,14 @@ wsi_GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice,
    struct wsi_display *wsi =
       (struct wsi_display *) wsi_device->wsi[VK_ICD_WSI_PLATFORM_DISPLAY];
 
-   if (wsi->fd < 0)
-      goto bail;
-
-   drmModeResPtr mode_res = drmModeGetResources(wsi->fd);
-
-   if (!mode_res)
+   /* Get current information */
+   VkResult result = wsi_get_connectors(physicalDevice);
+   if (result != VK_SUCCESS)
       goto bail;
 
    VK_OUTARRAY_MAKE(conn, pProperties, pPropertyCount);
 
-   /* Get current information */
-
-   for (int c = 0; c < mode_res->count_connectors; c++) {
-      struct wsi_display_connector *connector =
-         wsi_display_get_connector(wsi_device, wsi->fd,
-               mode_res->connectors[c]);
-
-      if (!connector) {
-         drmModeFreeResources(mode_res);
-         return VK_ERROR_OUT_OF_HOST_MEMORY;
-      }
-
+   wsi_for_each_connector(connector, wsi) {
       if (connector->connected) {
          vk_outarray_append(&conn, prop) {
             wsi_display_fill_in_display_properties(wsi_device,
@@ -501,13 +518,11 @@ wsi_GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice,
       }
    }
 
-   drmModeFreeResources(mode_res);
-
    return vk_outarray_status(&conn);
 
 bail:
    *pPropertyCount = 0;
-   return VK_SUCCESS;
+   return result;
 }
 
 /*
@@ -541,6 +556,10 @@ wsi_GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
    struct wsi_display *wsi =
       (struct wsi_display *) wsi_device->wsi[VK_ICD_WSI_PLATFORM_DISPLAY];
 
+   VkResult result = wsi_get_connectors(physicalDevice);
+   if (result != VK_SUCCESS)
+      goto bail;
+
    VK_OUTARRAY_MAKE(conn, pProperties, pPropertyCount);
 
    wsi_for_each_connector(connector, wsi) {
@@ -554,6 +573,10 @@ wsi_GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
       }
    }
    return vk_outarray_status(&conn);
+
+bail:
+   *pPropertyCount = 0;
+   return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -566,6 +589,11 @@ wsi_GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
    struct wsi_display *wsi =
       (struct wsi_display *) wsi_device->wsi[VK_ICD_WSI_PLATFORM_DISPLAY];
 
+   /* Get current information */
+   VkResult result = wsi_get_connectors(physicalDevice);
+   if (result != VK_SUCCESS)
+      goto bail;
+
    VK_OUTARRAY_MAKE(conn, pProperties, pPropertyCount);
 
    wsi_for_each_connector(connector, wsi) {
@@ -575,6 +603,10 @@ wsi_GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
       }
    }
    return vk_outarray_status(&conn);
+
+bail:
+   *pPropertyCount = 0;
+   return result;
 }
 
 /*
