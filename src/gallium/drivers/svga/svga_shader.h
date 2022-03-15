@@ -24,7 +24,6 @@
 
 struct svga_context;
 
-
 struct svga_compile_key
 {
    /* vertex shader only */
@@ -141,7 +140,7 @@ struct svga_compile_key
    uint64_t raw_shaderbufs;          /* bitmask of raw shader buffers */
 
    struct {
-      enum tgsi_return_type return_type;
+      unsigned return_type;
       enum pipe_texture_target resource_target;
       unsigned is_array:1;
       unsigned is_single_layer:1;

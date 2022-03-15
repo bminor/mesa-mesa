@@ -6369,7 +6369,7 @@ emit_image_declarations(struct svga_shader_emitter_v10 *emit)
       return_type.component0 =
          return_type.component1 =
          return_type.component2 =
-         return_type.component3 = emit->key.images[unit].return_type + 1;
+         return_type.component3 = emit->key.images[unit].return_type;
 
       assert(emit->key.images[unit].uav_index != SVGA3D_INVALID_ID);
       begin_emit_instruction(emit);

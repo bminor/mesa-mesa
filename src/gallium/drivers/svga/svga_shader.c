@@ -489,8 +489,8 @@ svga_init_shader_key_common(const struct svga_context *svga,
             struct pipe_resource *resource = cur_image_view->desc.resource;
 
             if (resource) {
-               key->images[i].return_type =
-                  svga_get_texture_datatype(cur_image_view->desc.format);
+	       key->images[i].return_type =
+                  vgpu10_return_type(cur_image_view->desc.format);
 
                key->images[i].is_array = resource->array_size > 1;
 
