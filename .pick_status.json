@@ -949,7 +949,7 @@
         "description": "anv: Ensure we clear ANV_PIPE_PSS_STALL_SYNC_BIT on flush",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f3c629733fd0e6cf4d5d9bf0f0dad2df7a199b04"
     },
