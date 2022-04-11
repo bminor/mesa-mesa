@@ -8097,7 +8097,23 @@ iris_upload_dirty_render_state(struct iris_context *ice,
       }
    }
 
+   if (dirty & IRIS_DIRTY_VF_STATISTICS) {
+      iris_emit_cmd(batch, GENX(3DSTATE_VF_STATISTICS), vf) {
+         vf.StatisticsEnable = true;
+      }
+   }
+
    if (dirty & IRIS_DIRTY_VF) {
+#if INTEL_WA_16012775297_GFX_VER
+      /* Emit dummy VF statistics before each 3DSTATE_VF. */
+      if (intel_needs_workaround(batch->screen->devinfo, 16012775297) &&
+          (dirty & IRIS_DIRTY_VF_STATISTICS) == 0) {
+         iris_emit_cmd(batch, GENX(3DSTATE_VF_STATISTICS), vfs) {
+            vfs.StatisticsEnable = true;
+         }
+      }
+#endif
+
       iris_emit_cmd(batch, GENX(3DSTATE_VF), vf) {
 #if GFX_VERx10 >= 125
          vf.GeometryDistributionEnable = true;
@@ -8143,12 +8159,6 @@ iris_upload_dirty_render_state(struct iris_context *ice,
       }
    }
 #endif
-
-   if (dirty & IRIS_DIRTY_VF_STATISTICS) {
-      iris_emit_cmd(batch, GENX(3DSTATE_VF_STATISTICS), vf) {
-         vf.StatisticsEnable = true;
-      }
-   }
 
 #if GFX_VER == 8
    if (dirty & IRIS_DIRTY_PMA_FIX) {
