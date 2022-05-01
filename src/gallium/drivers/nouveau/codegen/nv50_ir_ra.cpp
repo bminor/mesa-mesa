@@ -692,7 +692,6 @@ private:
 
    void copyCompound(Value *dst, Value *src);
    bool coalesceValues(Value *, Value *, bool force);
-   void resolveSplitsAndMerges();
    void makeCompound(Instruction *, bool isSplit);
 
    inline void checkInterference(const RIG_Node *, Graph::EdgeIterator&);
@@ -731,10 +730,6 @@ private:
    static const RelDegree relDegree;
 
    RegisterSet regs;
-
-   // need to fixup register id for participants of OP_MERGE/SPLIT
-   std::list<Instruction *> merges;
-   std::list<Instruction *> splits;
 
    SpillCodeInserter& spill;
    std::list<ValuePair> mustSpill;
@@ -954,6 +949,9 @@ GCRA::coalesce(ArrayList& insns)
 
 static inline uint8_t makeCompMask(int compSize, int base, int size)
 {
+   assert(base % size == 0);
+   assert(base + size <= compSize);
+
    uint8_t m = ((1 << size) - 1) << base;
 
    switch (compSize) {
@@ -1032,7 +1030,6 @@ GCRA::doCoalesce(ArrayList& insns, unsigned int mask)
          for (c = 0; insn->srcExists(c); ++c)
             coalesceValues(insn->getDef(0), insn->getSrc(c), true);
          if (insn->op == OP_MERGE) {
-            merges.push_back(insn);
             if (insn->srcExists(1))
                makeCompound(insn, false);
          }
@@ -1040,7 +1037,6 @@ GCRA::doCoalesce(ArrayList& insns, unsigned int mask)
       case OP_SPLIT:
          if (!(mask & JOIN_MASK_UNION))
             break;
-         splits.push_back(insn);
          for (c = 0; insn->defExists(c); ++c)
             coalesceValues(insn->getSrc(0), insn->getDef(c), true);
          makeCompound(insn, true);
@@ -1394,9 +1390,23 @@ GCRA::selectRegisters()
       return false;
    for (unsigned int i = 0; i < nodeCount; ++i) {
       LValue *lval = nodes[i].getValue();
-      if (nodes[i].reg >= 0 && nodes[i].colors > 0)
-         lval->reg.data.id =
-            regs.unitsToId(nodes[i].f, nodes[i].reg, lval->reg.size);
+
+      if (nodes[i].reg >= 0 && nodes[i].colors > 0) {
+         // Assign register ids to all values joined to the node
+         const std::list<ValueDef *> &defs = mergedDefs(lval);
+         for (ValueDef *def : defs) {
+            LValue *joinedVal = def->get()->asLValue();
+
+            int offset = 0;
+            if (joinedVal->compound) {
+               assert(joinedVal->compMask);
+               offset = ffs(joinedVal->compMask) - 1;
+            }
+            joinedVal->reg.data.id =
+               regs.unitsToId(nodes[i].f, nodes[i].reg + offset,
+                              joinedVal->reg.size);
+         }
+      }
    }
    return true;
 }
@@ -1499,19 +1509,8 @@ GCRA::cleanup(const bool success)
       lval->compound = 0;
       lval->compMask = 0;
 
-      if (lval->join == lval)
-         continue;
-
-      if (success)
-         lval->reg.data.id = lval->join->reg.data.id;
-      else
-         lval->join = lval;
+      lval->join = lval;
    }
-
-   if (success)
-      resolveSplitsAndMerges();
-   splits.clear(); // avoid duplicate entries on next coalesce pass
-   merges.clear();
 
    delete[] nodes;
    nodes = NULL;
@@ -1800,49 +1799,6 @@ RegAlloc::execFunc()
    func->tlsSize = insertSpills.getStackSize();
 out:
    return ret;
-}
-
-// TODO: check if modifying Instruction::join here breaks anything
-void
-GCRA::resolveSplitsAndMerges()
-{
-   for (std::list<Instruction *>::iterator it = splits.begin();
-        it != splits.end();
-        ++it) {
-      Instruction *split = *it;
-      unsigned int reg = regs.idToBytes(split->getSrc(0));
-      for (int d = 0; split->defExists(d); ++d) {
-         Value *v = split->getDef(d);
-         v->reg.data.id = regs.bytesToId(v, reg);
-         v->join = v;
-         reg += v->reg.size;
-      }
-   }
-   splits.clear();
-
-   for (std::list<Instruction *>::iterator it = merges.begin();
-        it != merges.end();
-        ++it) {
-      Instruction *merge = *it;
-      unsigned int reg = regs.idToBytes(merge->getDef(0));
-      for (int s = 0; merge->srcExists(s); ++s) {
-         Value *v = merge->getSrc(s);
-         v->reg.data.id = regs.bytesToId(v, reg);
-         v->join = v;
-         // If the value is defined by a phi/union node, we also need to
-         // perform the same fixup on that node's sources, since after RA
-         // their registers should be identical.
-         if (v->getInsn()->op == OP_PHI || v->getInsn()->op == OP_UNION) {
-            Instruction *phi = v->getInsn();
-            for (int phis = 0; phi->srcExists(phis); ++phis) {
-               phi->getSrc(phis)->join = v;
-               phi->getSrc(phis)->reg.data.id = v->reg.data.id;
-            }
-         }
-         reg += v->reg.size;
-      }
-   }
-   merges.clear();
 }
 
 bool
