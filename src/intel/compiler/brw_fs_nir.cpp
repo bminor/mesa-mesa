@@ -4519,7 +4519,7 @@ fs_visitor::nir_emit_intrinsic(const fs_builder &bld, nir_intrinsic_instr *instr
       }
 
       unsigned fence_regs_count = 0;
-      fs_reg fence_regs[3] = {};
+      fs_reg fence_regs[4] = {};
 
       const fs_builder ubld = bld.group(8, 0);
 
