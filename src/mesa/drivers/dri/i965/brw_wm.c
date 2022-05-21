@@ -345,6 +345,9 @@ brw_populate_sampler_prog_key_data(struct gl_context *ctx,
             default:
               break;
             }
+
+            if (intel_tex->yuv_range == __DRI_YUV_FULL_RANGE)
+               key->yuv_full_range_mask |= 1 << s;
          }
 
       }

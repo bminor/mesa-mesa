@@ -64,6 +64,7 @@ struct brw_texture_object
 
    const struct brw_image_format *planar_format;
    unsigned int yuv_color_space;
+   enum __DRISampleRange yuv_range;
 };
 
 

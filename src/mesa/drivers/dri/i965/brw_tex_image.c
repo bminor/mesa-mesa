@@ -634,6 +634,7 @@ brw_image_target_texture(struct gl_context *ctx, GLenum target,
    struct brw_texture_object *intel_texobj = brw_texture_object(texObj);
    intel_texobj->planar_format = image->planar_format;
    intel_texobj->yuv_color_space = image->yuv_color_space;
+   intel_texobj->yuv_range = image->sample_range;
 
    GLenum internal_format =
       image->internal_format != 0 ?

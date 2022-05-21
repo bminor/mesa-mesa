@@ -72,6 +72,9 @@ debug_sampler_recompile(const struct brw_compiler *c, void *log,
    found |= check("xy_uxvx image bound", xy_uxvx_image_mask);
    found |= check("ayuv image bound", ayuv_image_mask);
    found |= check("xyuv image bound", xyuv_image_mask);
+   found |= check("bt709", bt709_mask);
+   found |= check("bt2020", bt2020_mask);
+   found |= check("yuv full range", yuv_full_range_mask);
 
    for (unsigned i = 0; i < MAX_SAMPLERS; i++) {
       found |= check("EXT_texture_swizzle or DEPTH_TEXTURE_MODE", swizzles[i]);
