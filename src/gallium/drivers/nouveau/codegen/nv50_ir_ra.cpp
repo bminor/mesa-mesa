@@ -1303,7 +1303,7 @@ GCRA::checkInterference(const RIG_Node *node, Graph::EdgeIterator& ei)
    LValue *vA = node->getValue();
    LValue *vB = intf->getValue();
 
-   const uint8_t intfMask = ((1 << intf->colors) - 1) << (intf->reg & 7);
+   const uint8_t intfMask = intf->getCompMask();
 
    if (vA->compound | vB->compound) {
       // NOTE: this only works for >aligned< register tuples !
@@ -1320,11 +1320,9 @@ GCRA::checkInterference(const RIG_Node *node, Graph::EdgeIterator& ei)
 
          uint8_t mask = vD->compound ? vD->compMask : ~0;
          if (vd->compound) {
-            assert(vB->compound);
-            mask &= vd->compMask & vB->compMask;
-         } else {
-            mask &= intfMask;
+            mask &= vd->compMask;
          }
+         mask &= intfMask;
 
          INFO_DBG(prog->dbgFlags, REG_ALLOC,
                   "(%%%i)%02x X (%%%i)%02x & %02x: $r%i.%02x\n",
@@ -1383,7 +1381,6 @@ GCRA::selectRegisters()
       bool ret = regs.assign(node->reg, node->f, node->colors, node->maxReg);
       if (ret) {
          INFO_DBG(prog->dbgFlags, REG_ALLOC, "assigned reg %i\n", node->reg);
-         lval->compMask = node->getCompMask();
       } else {
          INFO_DBG(prog->dbgFlags, REG_ALLOC, "must spill: %%%i (size %u)\n",
                   lval->id, lval->reg.size);
