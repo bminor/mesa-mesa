@@ -852,6 +852,37 @@ GCRA::coalesceValues(Value *dst, Value *src, bool force)
    LValue *rep = dst->join->asLValue();
    LValue *val = src->join->asLValue();
 
+   // Don't do anything if already coalesced
+   if (rep == val)
+      return false;
+
+   // Check if coalesced value would be overconstrained
+   bool skip_copy_compound = false;
+   if (!force) {
+      int num_constraints = 0;
+
+      if (rep->compound) num_constraints++;
+      if (val->compound) num_constraints++;
+
+      if (rep->compound && val->compound &&
+          rep->compMask == val->compMask) {
+         num_constraints--;
+         skip_copy_compound = true;
+      }
+
+      if (rep->reg.data.id >= 0) num_constraints++;
+      if (val->reg.data.id >= 0) num_constraints++;
+
+      if (rep->reg.data.id >= 0 && val->reg.data.id >= 0 &&
+          rep->reg.data.id == val->reg.data.id) {
+         num_constraints--;
+      }
+
+      if (num_constraints > 1) {
+         return false;
+      }
+   }
+
    if (!force && val->reg.data.id >= 0) {
       rep = src->join->asLValue();
       val = dst->join->asLValue();
@@ -872,8 +903,7 @@ GCRA::coalesceValues(Value *dst, Value *src, bool force)
          if (val->reg.data.id >= 0)
             WARN("forced coalescing of values in different fixed regs !\n");
       } else {
-         if (val->reg.data.id >= 0)
-            return false;
+         assert(val->reg.data.id < 0);
          // make sure that there is no overlap with the fixed register of rep
          for (ArrayList::Iterator it = func->allLValues.iterator();
               !it.end(); it.next()) {
@@ -888,14 +918,10 @@ GCRA::coalesceValues(Value *dst, Value *src, bool force)
    if (!force && nRep->livei.overlaps(nVal->livei))
       return false;
 
-   // TODO: Handle this case properly.
-   if (!force && rep->compound && val->compound)
-      return false;
-
    INFO_DBG(prog->dbgFlags, REG_ALLOC, "joining %%%i($%i) <- %%%i\n",
             rep->id, rep->reg.data.id, val->id);
 
-   if (!force)
+   if (!force && !skip_copy_compound)
       copyCompound(dst, src);
 
    // set join pointer of all values joined with val
