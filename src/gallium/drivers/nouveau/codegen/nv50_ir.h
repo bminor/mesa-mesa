@@ -783,7 +783,6 @@ public:
    unsigned compMask : 8; // compound/component mask
    unsigned compound : 1; // used by RA, value involved in split/merge
    unsigned ssa      : 1;
-   unsigned fixedReg : 1; // set & used by RA, earlier just use (id < 0)
    unsigned noSpill  : 1; // do not spill (e.g. if spill temporary already)
 };
 

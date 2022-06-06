@@ -797,7 +797,7 @@ GCRA::RIG_Node::init(const RegisterSet& regs, LValue *lval)
 {
    setValue(lval);
    if (lval->reg.data.id >= 0)
-      lval->noSpill = lval->fixedReg = 1;
+      lval->noSpill = 1;
 
    colors = regs.units(lval->reg.file, lval->reg.size);
    f = lval->reg.file;

@@ -226,7 +226,6 @@ LValue::LValue(Function *fn, DataFile file)
    compMask = 0;
    compound = 0;
    ssa = 0;
-   fixedReg = 0;
    noSpill = 0;
 
    fn->add(this, this->id);
@@ -243,7 +242,6 @@ LValue::LValue(Function *fn, LValue *lval)
    compMask = 0;
    compound = 0;
    ssa = 0;
-   fixedReg = 0;
    noSpill = 0;
 
    fn->add(this, this->id);
