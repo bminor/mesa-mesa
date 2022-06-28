@@ -2551,7 +2551,7 @@
         "description": "intel/perf: fix B/C counters accumulation in non query mode",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8750f43a9077b3b53f54505aaa2cc46fab5d4f90"
     },
