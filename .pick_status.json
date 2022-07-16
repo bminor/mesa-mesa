@@ -5638,7 +5638,7 @@
         "description": "tu: Treat CP_WAIT_FOR_ME as a cache invalidate",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37939e9c5462b871b0b9b00a43c5c9bec1e10e9d"
     },
