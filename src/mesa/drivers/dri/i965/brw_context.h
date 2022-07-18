@@ -340,7 +340,7 @@ struct brw_program {
 #define BRW_MAX_TEX_UNIT 32
 
 /** Max number of UBOs in a shader */
-#define BRW_MAX_UBO 14
+#define BRW_MAX_UBO 16
 
 /** Max number of SSBOs in a shader */
 #define BRW_MAX_SSBO 12
