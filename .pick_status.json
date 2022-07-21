@@ -472,7 +472,7 @@
         "description": "intel/perf: allocate cleared counter infos",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3144bc1d33692ed35c6431bca57d3b0d46330cde"
     },
