@@ -3775,7 +3775,7 @@
         "description": "glthread: don't ignore glPushAttrib/glPopAttrib when tracking GL_CULL_FACE",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f4348ef60d51b07ee40ebfd4215118de281bd7e4"
     },
