@@ -2385,6 +2385,9 @@ CSMT_ITEM_NO_WAIT(nine_context_draw_primitive,
     struct pipe_draw_info info;
     struct pipe_draw_start_count_bias draw;
 
+    if (context->vs && context->vs->swvp_only && !context->swvp)
+        return;
+
     nine_update_state(device);
 
     init_draw_info(&info, &draw, device, PrimitiveType, PrimitiveCount);
@@ -2409,6 +2412,9 @@ CSMT_ITEM_NO_WAIT(nine_context_draw_indexed_primitive,
     struct nine_context *context = &device->context;
     struct pipe_draw_info info;
     struct pipe_draw_start_count_bias draw;
+
+    if (context->vs && context->vs->swvp_only && !context->swvp)
+        return;
 
     nine_update_state(device);
 
@@ -2439,6 +2445,9 @@ CSMT_ITEM_NO_WAIT(nine_context_draw_indexed_primitive_from_vtxbuf_idxbuf,
     struct nine_context *context = &device->context;
     struct pipe_draw_info info;
     struct pipe_draw_start_count_bias draw;
+
+    if (context->vs && context->vs->swvp_only && !context->swvp)
+        return;
 
     nine_update_state(device);
 
