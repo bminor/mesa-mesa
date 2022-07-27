@@ -5116,7 +5116,7 @@
         "description": "docs/features.txt: mark VK_ANDROID_native_buffer as supported on turnip",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5789505ab3b62e40fb30663cc973a97f3a7175ba"
     },
