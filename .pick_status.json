@@ -4558,7 +4558,7 @@
         "description": "glsl: Fix codegen for constant ir_binop_{l,r}shift with mixed types",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "13106e1041c254a80c7e2df392efea93dcbb215f"
     },
