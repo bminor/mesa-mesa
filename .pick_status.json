@@ -3487,7 +3487,7 @@
         "description": "zink: fix gfx program cache pruning with generated tcs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4123ee3c71461d7d045fec519130128a7fc4e643"
     },
