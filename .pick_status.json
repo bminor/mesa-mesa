@@ -3910,7 +3910,7 @@
         "description": "pan/decode: Fix overrun decoding planes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ae9316f8128bec52c3ed5f06f341103241af24e1"
     },
