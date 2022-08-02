@@ -5554,7 +5554,7 @@
         "description": "turnip: Fix subpass depth/stencil change detection.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "550975f2298bcfbf565009e23d784cd5169a2089",
         "notes": null
