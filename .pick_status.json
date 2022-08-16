@@ -1894,7 +1894,7 @@
         "description": "intel/fs: improve Wa_22013689345 workaround",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6031ad4bf690fe250d90063dec7e0269da5b3016"
     },
