@@ -444,7 +444,7 @@
         "description": "nir/opt_move_discards_to_top: don't schedule discard/demote across subgroup operations",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b447f5049b6d68fd80b7337bc1f7c79b1b1a4765",
         "notes": null
