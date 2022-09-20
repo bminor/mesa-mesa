@@ -1643,6 +1643,392 @@ genX(invalidate_aux_map)(struct anv_batch *batch,
 #endif
 }
 
+#if GFX_VER >= 20
+ALWAYS_INLINE static void
+anv_dump_rsc_stage(struct log_stream *stream,
+                   const enum GENX(RESOURCE_BARRIER_STAGE) stage)
+{
+   u_foreach_bit(bit, stage) {
+      switch(1 << bit) {
+         case RESOURCE_BARRIER_STAGE_NONE:
+            mesa_log_stream_printf(stream, "None,");
+            break;
+         case RESOURCE_BARRIER_STAGE_TOP:
+            mesa_log_stream_printf(stream, "Top,");
+            break;
+         case RESOURCE_BARRIER_STAGE_COLOR:
+            mesa_log_stream_printf(stream, "Color,");
+            break;
+         case RESOURCE_BARRIER_STAGE_GPGPU:
+            mesa_log_stream_printf(stream, "GPGPU,");
+            break;
+         case RESOURCE_BARRIER_STAGE_GEOM:
+            mesa_log_stream_printf(stream, "Geometry,");
+            break;
+         case RESOURCE_BARRIER_STAGE_RASTER:
+            mesa_log_stream_printf(stream, "Raster,");
+            break;
+         case RESOURCE_BARRIER_STAGE_DEPTH:
+            mesa_log_stream_printf(stream, "Depth,");
+            break;
+         case RESOURCE_BARRIER_STAGE_PIXEL:
+            mesa_log_stream_printf(stream, "Pixel,");
+            break;
+         case RESOURCE_BARRIER_STAGE_COLORANDCOMPUTE:
+            mesa_log_stream_printf(stream, "ColorAndCompute,");
+            break;
+         case RESOURCE_BARRIER_STAGE_GEOMETRYANDCOMPUTE:
+            mesa_log_stream_printf(stream, "GeometryAndCompute,");
+            break;
+         default:
+            UNREACHABLE("Unknown barrier stage");
+      }
+   }
+}
+
+ALWAYS_INLINE static void
+anv_dump_rsc_barrier_body(const struct GENX(RESOURCE_BARRIER_BODY) body) {
+   if (!INTEL_DEBUG(DEBUG_PIPE_CONTROL))
+      return;
+
+   struct log_stream *stream = mesa_log_streami();
+
+   mesa_log_stream_printf(
+      stream, "rb : Type=%s ",
+      body.BarrierType == RESOURCE_BARRIER_TYPE_IMMEDIATE ? "Immediate" :
+      body.BarrierType == RESOURCE_BARRIER_TYPE_SIGNAL ? "Signal" :
+      body.BarrierType == RESOURCE_BARRIER_TYPE_WAIT ? "Wait" : "Unknown");
+
+   if (body.SignalStage) {
+      mesa_log_stream_printf(stream, " Signal=");
+      anv_dump_rsc_stage(stream, body.SignalStage);
+   }
+
+   if (body.WaitStage) {
+      mesa_log_stream_printf(stream, " Wait=");
+      anv_dump_rsc_stage(stream, body.WaitStage);
+   }
+
+   mesa_log_stream_printf(stream, " Flags=");
+   if (body.L1DataportCacheInvalidate)
+      mesa_log_stream_printf(stream, "+l1-dc-inval,");
+   if (body.DepthCache)
+      mesa_log_stream_printf(stream, "+ds-flush,");
+   if (body.ColorCache)
+      mesa_log_stream_printf(stream, "+rt-flush,");
+   if (body.L1DataportUAVFlush)
+      mesa_log_stream_printf(stream, "+l1-dp-uav-flush,");
+   if (body.TextureRO)
+      mesa_log_stream_printf(stream, "+tex-inval,");
+   if (body.StateRO)
+      mesa_log_stream_printf(stream, "+state-inval,");
+   if (body.VFRO)
+      mesa_log_stream_printf(stream, "+vf-inval,");
+   if (body.AMFS)
+      mesa_log_stream_printf(stream, "+amfs,");
+   if (body.ConstantCache)
+      mesa_log_stream_printf(stream, "+const-inval,");
+
+   mesa_log_stream_printf(stream, "\n");
+
+   mesa_log_stream_destroy(stream);
+}
+
+ALWAYS_INLINE static enum GENX(RESOURCE_BARRIER_STAGE)
+resource_barrier_signal_stage(enum intel_engine_class engine_class,
+                              const VkPipelineStageFlags2 vk_stages)
+{
+   enum GENX(RESOURCE_BARRIER_STAGE) hw_stages = 0;
+
+   /* BSpec 56054, Signal Stage:
+    *    "Hardware only drains to the following stages:
+    *     Geometry(Streamout Stage)
+    *     Color(End of 3D pipeline)
+    *     Compute(End of compute pipeline)"
+    *
+    * It seems setting other stages is not causing issues though.
+    */
+   if (engine_class == INTEL_ENGINE_CLASS_RENDER) {
+      if (vk_stages & (VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR))
+         hw_stages |= RESOURCE_BARRIER_STAGE_COLOR;
+      else if (vk_stages & (VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR))
+         hw_stages |= RESOURCE_BARRIER_STAGE_PIXEL;
+      else if (vk_stages & (VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR))
+         hw_stages |= RESOURCE_BARRIER_STAGE_DEPTH;
+      else if (vk_stages & (VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT |
+                            VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
+                            VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT))
+         hw_stages |= RESOURCE_BARRIER_STAGE_GEOM;
+      else if (vk_stages & (VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_HOST_BIT_KHR |
+                            VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT))
+         hw_stages |= RESOURCE_BARRIER_STAGE_GEOM;
+   }
+   if (vk_stages & (VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT))
+      hw_stages |= RESOURCE_BARRIER_STAGE_GPGPU;
+
+   /* Transfer is either done using the color output or a compute shader on
+    * RCS and only a compute shader on CCS.
+    */
+   if (vk_stages & (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR)) {
+      if (engine_class == INTEL_ENGINE_CLASS_RENDER) {
+         hw_stages |= RESOURCE_BARRIER_STAGE_COLOR |
+                      RESOURCE_BARRIER_STAGE_GPGPU;
+      } else {
+         hw_stages |= RESOURCE_BARRIER_STAGE_GPGPU;
+      }
+   }
+
+   /* BSpec 56054, Signal Stage:
+    *    "If the driver receives a request for multiple stages in the 3D pipeline,
+    *     it only specifies the last stage."
+    */
+   if ((hw_stages & RESOURCE_BARRIER_STAGE_GEOM) &&
+       (hw_stages & RESOURCE_BARRIER_STAGE_COLOR))
+      hw_stages &= ~RESOURCE_BARRIER_STAGE_GEOM;
+
+   return hw_stages;
+}
+
+ALWAYS_INLINE static enum GENX(RESOURCE_BARRIER_STAGE)
+resource_barrier_wait_stage(enum intel_engine_class engine_class,
+                            const VkPipelineStageFlags2 vk_stages)
+{
+   enum GENX(RESOURCE_BARRIER_STAGE) hw_stage = 0;
+
+   /* BSpec 56054, Wait Stage:
+    *   "Hardware is only able to stall at the following stages:
+    *       Top of the pipe (command parser)
+    *       Raster (Before rasterization of objects)
+    *       Pixel Shader (Before dispatch)
+    *
+    *    Programming different stages will cause the hardware to select the
+    *    stage before and nearest to the programmed stages"
+    *
+    * That is why we use TOP for compute stages.
+    */
+   if (vk_stages & (VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT |
+                    VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_HOST_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT |
+                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                    VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT |
+                    VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT |
+                    VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT))
+      hw_stage = RESOURCE_BARRIER_STAGE_TOP;
+   else if (vk_stages & (VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR |
+                         VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR))
+      hw_stage = RESOURCE_BARRIER_STAGE_RASTER;
+   else if (vk_stages & (VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR |
+                         VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR |
+                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR |
+                         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR |
+                         VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR |
+                         VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
+                         VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR))
+      hw_stage = RESOURCE_BARRIER_STAGE_PIXEL;
+
+   return hw_stage;
+}
+
+ALWAYS_INLINE static bool
+can_use_resource_barrier(enum intel_engine_class engine_class,
+                         VkPipelineStageFlags2 src_stages,
+                         VkPipelineStageFlags2 dst_stages,
+                         enum anv_pipe_bits bits,
+                         struct anv_address signal_addr,
+                         struct anv_address wait_addr)
+{
+   if (engine_class != INTEL_ENGINE_CLASS_RENDER &&
+       engine_class != INTEL_ENGINE_CLASS_COMPUTE)
+      return false;
+
+   /* Currently disabled, we're not sure why it doesn't work. Using a
+    * RESOURCE_BARRIER with Type=Signal and an MI_SEMAPHORE_WAIT also doesn't
+    * work, so it looks like there is a problem with the flushing happening on
+    * the signal side.
+    */
+   if (!anv_address_is_null(signal_addr) ||
+       !anv_address_is_null(wait_addr))
+      return false;
+
+   /* The HW doesn't support signaling from the top of pipeline */
+   enum GENX(RESOURCE_BARRIER_STAGE) signal_stage =
+      resource_barrier_signal_stage(engine_class, src_stages);
+   if (signal_stage == RESOURCE_BARRIER_STAGE_NONE ||
+       signal_stage == RESOURCE_BARRIER_STAGE_TOP)
+      return false;
+
+   /* L3 flushes are also not supported with RESOURCE_BARRIER */
+   if (bits & (ANV_PIPE_TILE_CACHE_FLUSH_BIT |
+               ANV_PIPE_DATA_CACHE_FLUSH_BIT |
+               ANV_PIPE_L3_FABRIC_FLUSH_BIT |
+               ANV_PIPE_CS_STALL_BIT))
+      return false;
+
+   return true;
+}
+
+ALWAYS_INLINE static void
+emit_resource_barrier(struct anv_batch *batch,
+                      const struct intel_device_info *devinfo,
+                      VkPipelineStageFlags2 src_stages,
+                      VkPipelineStageFlags2 dst_stages,
+                      enum anv_pipe_bits bits,
+                      struct anv_address signal_addr,
+                      struct anv_address wait_addr)
+{
+   enum GENX(RESOURCE_BARRIER_STAGE) signal_stages =
+      resource_barrier_signal_stage(batch->engine_class, src_stages);
+   enum GENX(RESOURCE_BARRIER_STAGE) wait_stages =
+      resource_barrier_wait_stage(batch->engine_class, dst_stages);
+
+   enum GENX(RESOURCE_BARRIER_TYPE) barrier_type;
+   struct anv_address barrier_addr;
+   if (anv_address_is_null(signal_addr) &&
+       anv_address_is_null(wait_addr)) {
+      barrier_type = RESOURCE_BARRIER_TYPE_IMMEDIATE;
+      barrier_addr = ANV_NULL_ADDRESS;
+   } else if (!anv_address_is_null(signal_addr)) {
+      barrier_type = RESOURCE_BARRIER_TYPE_SIGNAL;
+      barrier_addr = signal_addr;
+   } else {
+      assert(!anv_address_is_null(wait_addr));
+      barrier_type = RESOURCE_BARRIER_TYPE_WAIT;
+      barrier_addr = wait_addr;
+   }
+
+   if (bits & ANV_PIPE_RT_BTI_CHANGE) {
+      /* We used to deal with RT BTI changes with a PIPE_CONTROL with the
+       * following flags:
+       *    - RenderTargetCacheFlushEnable
+       *    - StallAtPixelScoreboard
+       *
+       * With the new RESOURCE_BARRIER instruction, there is a problem in HW
+       * if you do something like this:
+       *   Draw BT0=surfaceA
+       *   Type=Immediate Signal=Color Wait=Top Flags=Color
+       *   Draw BT0=surfaceB
+       *
+       * The new BTI0 is somehow not updated in the state cache, so the second
+       * draw color writes are going either to the previous surface or maybe
+       * /dev/null?
+       *
+       * The Windows drivers appear to not experience this because they're
+       * setting COMMON_SLICE_CHICKEN3:StateCachePerfFixDisabled=true.
+       *
+       * We cannot enable this unfortunately because we're still relying
+       * pretty heavily on the binding table and toggling that bit is big
+       * performance regression on multiple benchmarks (up to 25%).
+       *
+       * So when ANV_PIPE_RT_BTI_CHANGE is set, emit a RT flush + state cache
+       * invalidation (which seems to correctly invalidate the RCC).
+       */
+      bits |= ANV_PIPE_STATE_CACHE_INVALIDATE_BIT |
+              ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT;
+   }
+
+   anv_batch_emit(batch, GENX(RESOURCE_BARRIER), barrier) {
+      barrier.ResourceBarrierBody.BarrierType = barrier_type;
+      barrier.ResourceBarrierBody.BarrierIDAddress = barrier_addr;
+      barrier.ResourceBarrierBody.SignalStage = signal_stages;
+      barrier.ResourceBarrierBody.WaitStage = wait_stages;
+
+      /*
+       * ----------------------------------------------------------------------------------------------------------------
+       * | STATE_COMPUTE_MODE  |               RESOURCE_BARRIER                       |            HW behavior          |
+       * | UAV Coherency Mode  | L1 DataPort UAV Flush | L1 DataPort Cache Invalidate | LSC Flush | LSC Inv | HDC Flush |
+       * ----------------------------------------------------------------------------------------------------------------
+       * | Drain Dataport Mode | 0                     | 0                            | 0         | 0       | 0         |
+       * | Drain Dataport Mode | 0                     | 1                            | 0         | 1       | 1         |
+       * | Drain Dataport Mode | 1                     | 0                            | 0         | 0       | 1         |
+       * | Drain Dataport Mode | 1                     | 1                            | 0         | 1       | 1         |
+       * | Flush Dataport L1   | 0                     | 0                            | 0         | 0       | 0         |
+       * | Flush Dataport L1   | 0                     | 1                            | 0         | 1       | 1         |
+       * | Flush Dataport L1   | 1                     | 0                            | 0         | 0       | 1         |
+       * | Flush Dataport L1   | 1                     | 1                            | 1         | 1       | 1         |
+       * ----------------------------------------------------------------------------------------------------------------
+       */
+
+      /* Flushes */
+      barrier.ResourceBarrierBody.L1DataportCacheInvalidate =
+         bits & ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT;
+      barrier.ResourceBarrierBody.L1DataportUAVFlush =
+         bits & (ANV_PIPE_HDC_PIPELINE_FLUSH_BIT |
+                 ANV_PIPE_UNTYPED_DATAPORT_CACHE_FLUSH_BIT);
+      barrier.ResourceBarrierBody.DepthCache =
+         bits & ANV_PIPE_DEPTH_CACHE_FLUSH_BIT;
+      barrier.ResourceBarrierBody.ColorCache =
+         bits & ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT;
+
+      /* Invalidations */
+      barrier.ResourceBarrierBody.VFRO =
+         bits & ANV_PIPE_VF_CACHE_INVALIDATE_BIT;
+      barrier.ResourceBarrierBody.TextureRO =
+         bits & ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT;
+      barrier.ResourceBarrierBody.StateRO =
+         bits & ANV_PIPE_STATE_CACHE_INVALIDATE_BIT;
+      barrier.ResourceBarrierBody.ConstantCache =
+         bits & ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT;
+
+      anv_dump_rsc_barrier_body(barrier.ResourceBarrierBody);
+   }
+}
+
+#endif /* GFX_VER >= 20 */
+
+
+
 ALWAYS_INLINE static enum anv_pipe_bits
 genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                               struct anv_device *device,
@@ -1654,6 +2040,18 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                               struct anv_address wait_addr,
                               enum anv_pipe_bits *emitted_flush_bits)
 {
+#if GFX_VER >= 20
+   if (can_use_resource_barrier(batch->engine_class,
+                                src_stages, dst_stages, bits,
+                                signal_addr, wait_addr)) {
+      emit_resource_barrier(batch, device->info,
+                            src_stages, dst_stages, bits,
+                            signal_addr, wait_addr);
+      *emitted_flush_bits = 0;
+      return 0;
+   }
+#endif
+
    /* What stage require a stall at pixel scoreboard */
    VkPipelineStageFlags2 pb_stall_stages =
       VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
@@ -3046,10 +3444,11 @@ add_pending_pipe_bits_for_color_aux_op(struct anv_cmd_buffer *cmd_buffer,
    }
 
    anv_add_pending_pipe_bits(cmd_buffer,
+                             aux_op_clears(next_aux_op) ?
+                             VK_PIPELINE_STAGE_2_NONE :
                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                              aux_op_clears(next_aux_op) ?
-                             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT :
-                             VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT : 0,
                              pipe_bits, flush_reason);
 }
 
@@ -4769,6 +5168,17 @@ cmd_buffer_accumulate_barrier_bits(struct anv_cmd_buffer *cmd_buffer,
       anv_pipe_flush_bits_for_access_flags(cmd_buffer, src_flags, src_flags3) |
       anv_pipe_invalidate_bits_for_access_flags(cmd_buffer, dst_flags, dst_flags3);
 
+   /* Copies from query pools are executed with a shader writing through the
+    * dataport.
+       */
+   if (flush_query_copies) {
+      bits |= (GFX_VER >= 12 ?
+               ANV_PIPE_HDC_PIPELINE_FLUSH_BIT : ANV_PIPE_DATA_CACHE_FLUSH_BIT);
+   }
+
+   if (dst_flags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)
+      genX(cmd_buffer_flush_generated_draws)(cmd_buffer);
+
 #if GFX_VER < 20
    /* Our HW implementation of the sparse feature prior to Xe2 lives in the
     * GAM unit (interface between all the GPU caches and external memory).
@@ -4926,6 +5336,7 @@ genX(flush_pipeline_select)(struct anv_cmd_buffer *cmd_buffer,
    if (cmd_buffer->state.current_pipeline == pipeline)
       return;
 
+#if GFX_VER < 20
 #if GFX_VER == 9
    /* From the Broadwell PRM, Volume 2a: Instructions, PIPELINE_SELECT:
     *
@@ -5101,6 +5512,7 @@ genX(flush_pipeline_select)(struct anv_cmd_buffer *cmd_buffer,
    if (pipeline == GPGPU)
       cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_COMPUTE_BIT;
 #endif
+#endif /* GFX_VER < 20 */
    cmd_buffer->state.current_pipeline = pipeline;
 }
 
