@@ -265,7 +265,7 @@
         "description": "intel/fs: Fix src and dst types of LOAD_PAYLOAD ACP entries during copy propagation.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "41868bb6824c6106a55c8442006c1e2215abf567"
     },
