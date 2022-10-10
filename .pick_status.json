@@ -2002,7 +2002,7 @@
         "description": "tu: tu: Clear patchControlPoints dirty state with static patchControlPoints",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "68f3c38c8011e3ff304a67b6ffb33fd21ee65b0c"
     },
