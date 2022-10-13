@@ -5,7 +5,8 @@ variables:
           set -o xtrace
           /usr/bin/wget -q -O- ${CI_PROJECT_URL}/-/raw/${CI_COMMIT_SHA}/.gitlab-ci/download-git-cache.sh | bash -
           set +o xtrace
-  MINIO_HOST: minio-packet.freedesktop.org
+  CI_JOB_JWT_FILE: /minio_jwt
+  MINIO_HOST: s3.freedesktop.org
   # per-pipeline artifact storage on MinIO
   PIPELINE_ARTIFACTS_BASE: ${MINIO_HOST}/artifacts/${CI_PROJECT_PATH}/${CI_PIPELINE_ID}
   # per-job artifact storage on MinIO
@@ -16,9 +17,24 @@ variables:
   # running on a particular CI farm (ie. for outages, etc):
   FD_FARM: "online"
 
+default:
+  before_script:
+    - echo -e "\e[0Ksection_start:$(date +%s):unset_env_vars_section[collapsed=true]\r\e[0KUnsetting vulnerable environment variables"
+    - echo -n "${CI_JOB_JWT}" > "${CI_JOB_JWT_FILE}"
+    - unset CI_JOB_JWT
+    - echo -e "\e[0Ksection_end:$(date +%s):unset_env_vars_section\r\e[0K"
+
+  after_script:
+    - >
+      set +x
+
+      test -e "${CI_JOB_JWT_FILE}" &&
+      export CI_JOB_JWT="$(<${CI_JOB_JWT_FILE})" &&
+      rm "${CI_JOB_JWT_FILE}"
+
 include:
   - project: 'freedesktop/ci-templates'
-    ref: 79c325922670137e8f0a4dc5f6f097e0eb57c1af
+    ref: ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2
     file:
       - '/templates/ci-fairy.yml'
   - project: 'freedesktop/ci-templates'
@@ -290,7 +306,7 @@ debian/x86_build-base:
     - .fdo.container-build@debian
     - .container
   variables:
-    MESA_IMAGE_TAG: &debian-x86_build-base "2021-07-26-python"
+    MESA_IMAGE_TAG: &debian-x86_build-base "2022-11-16-ci-fairy"
 
 .use-debian/x86_build-base:
   extends:
@@ -410,13 +426,13 @@ debian/x86_test-gl:
   variables:
     FDO_DISTRIBUTION_EXEC: 'env KERNEL_URL=${KERNEL_URL} FDO_CI_CONCURRENT=${FDO_CI_CONCURRENT} bash .gitlab-ci/container/${CI_JOB_NAME}.sh'
     KERNEL_URL: &kernel-rootfs-url "https://gitlab.freedesktop.org/gfx-ci/linux/-/archive/v5.15-for-mesa-ci-540a4af22d71/linux-v5.15-for-mesa-ci-540a4af22d71.tar.bz2"
-    MESA_IMAGE_TAG: &debian-x86_test-gl "2021-11-02-lazor"
+    MESA_IMAGE_TAG: &debian-x86_test-gl "2022-11-13-ci-fairy"
 
 # Debian 11 based x86 test image for VK
 debian/x86_test-vk:
   extends: .use-debian/x86_test-base
   variables:
-    MESA_IMAGE_TAG: &debian-x86_test-vk "2021-2021-10-15-va"
+    MESA_IMAGE_TAG: &debian-x86_test-vk "2022-11-13-ci-fairy"
 
 # Debian 11 based ARM build image
 debian/arm_build:
@@ -426,7 +442,7 @@ debian/arm_build:
   tags:
     - aarch64
   variables:
-    MESA_IMAGE_TAG: &debian-arm_build "2021-07-26-python"
+    MESA_IMAGE_TAG: &debian-arm_build "2022-11-16-ci-fairy"
 
 .use-debian/arm_build:
   extends:
@@ -554,6 +570,8 @@ debian/arm_test:
     MESA_UPSTREAM_IMAGE: "$CI_REGISTRY/$FDO_UPSTREAM_REPO/$MESA_IMAGE_PATH:${MESA_IMAGE_TAG}"
 
 windows_build_vs2019:
+  inherit:
+    default: false
   extends:
     - .container
     - .windows-docker-vs2019
@@ -580,6 +598,8 @@ windows_build_vs2019:
     - when: never
 
 .use-windows_build_vs2019:
+  inherit:
+    default: false
   extends: .windows-docker-vs2019
   image: "$MESA_IMAGE"
   needs:
@@ -614,9 +634,7 @@ make git archive:
     # compress the current folder
     - tar -cvzf ../$CI_PROJECT_NAME.tar.gz .
 
-    # login with the JWT token
-    - ci-fairy minio login $CI_JOB_JWT
-    - ci-fairy minio cp ../$CI_PROJECT_NAME.tar.gz minio://$MINIO_HOST/git-cache/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/$CI_PROJECT_NAME.tar.gz
+    - ci-fairy s3cp --token-file "${CI_JOB_JWT_FILE}" ../$CI_PROJECT_NAME.tar.gz https://$MINIO_HOST/git-cache/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/$CI_PROJECT_NAME.tar.gz
 
 
 # Sanity checks of MR settings and commit logs
@@ -663,11 +681,13 @@ sanity:
     CCACHE_DIR: /cache/mesa/ccache
   # Use ccache transparently, and print stats before/after
   before_script:
+    - !reference [default, before_script]
     - export PATH="/usr/lib/ccache:$PATH"
     - export CCACHE_BASEDIR="$PWD"
     - ccache --show-stats
   after_script:
     - ccache --show-stats
+    - !reference [default, after_script]
 
 .build-windows:
   extends: .build-common
@@ -1187,6 +1207,7 @@ debian-mingw32-x86_64:
   variables:
     GIT_STRATEGY: none # testing doesn't build anything from source
   before_script:
+    - !reference [default, before_script]
     # Note: Build dir (and thus install) may be dirty due to GIT_STRATEGY
     - rm -rf install
     - tar -xf artifacts/install.tar
@@ -1336,6 +1357,7 @@ debian-mingw32-x86_64:
   interruptible: true
   stage: test
   before_script:
+    - !reference [default, before_script]
     # Use this instead of gitlab's artifacts download because it hits packet.net
     # instead of fd.o.  Set FDO_HTTP_CACHE_URI to an http cache for your test lab to
     # improve it even more (see https://docs.mesa3d.org/ci/bare-metal.html for

@@ -16,7 +16,8 @@ set +x
 chmod +x $rootfs_dst/set-job-env-vars.sh
 echo "Variables passed through:"
 cat $rootfs_dst/set-job-env-vars.sh
-echo "export CI_JOB_JWT=${CI_JOB_JWT@Q}" >> $rootfs_dst/set-job-env-vars.sh
+mkdir -p "$(dirname "$rootfs_dst/${CI_JOB_JWT_FILE}")"
+cp "${CI_JOB_JWT_FILE}" "$rootfs_dst/${CI_JOB_JWT_FILE}"
 set -x
 
 # Add the Mesa drivers we built, and make a consistent symlink to them.

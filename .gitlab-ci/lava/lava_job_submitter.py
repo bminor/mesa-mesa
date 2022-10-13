@@ -146,9 +146,6 @@ def generate_lava_yaml(args):
       'mkdir -p {}'.format(args.ci_project_dir),
       'wget -S --progress=dot:giga -O- {} | tar -xz -C {}'.format(args.mesa_build_url, args.ci_project_dir),
       'wget -S --progress=dot:giga -O- {} | tar -xz -C /'.format(args.job_rootfs_overlay_url),
-      'set +x',
-      'export CI_JOB_JWT="{}"'.format(args.jwt),
-      'set -x',
       'exec /init-stage2.sh',
     ]
     test['definitions'][0]['repository']['run']['steps'] = init_lines
@@ -286,7 +283,6 @@ def main(args):
 
     if args.dump_yaml:
         censored_args = args
-        censored_args.jwt = "jwt-hidden"
         print(generate_lava_yaml(censored_args))
 
     if args.validate_only:
@@ -341,7 +337,6 @@ if __name__ == '__main__':
     parser.add_argument("--kernel-image-type", nargs='?', default="")
     parser.add_argument("--boot-method")
     parser.add_argument("--lava-tags", nargs='?', default="")
-    parser.add_argument("--jwt")
     parser.add_argument("--validate-only", action='store_true')
     parser.add_argument("--dump-yaml", action='store_true')
     parser.add_argument("--visibility-group")

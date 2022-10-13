@@ -3,7 +3,7 @@
 set -ex
 
 INSTALL=$(realpath -s "$PWD"/install)
-MINIO_ARGS="--credentials=/tmp/.minio_credentials"
+MINIO_ARGS="--credentials=/tmp/.minio_credentials --token-file=${CI_JOB_JWT_FILE}"
 
 RESULTS=$(realpath -s "$PWD"/results)
 mkdir -p "$RESULTS"
@@ -162,8 +162,8 @@ replay_minio_upload_images() {
             __DESTINATION_FILE_PATH="$__MINIO_TRACES_PREFIX/${line##*-}"
         fi
 
-        ci-fairy minio cp $MINIO_ARGS "$RESULTS/$__PREFIX/$line" \
-            "minio://${__MINIO_PATH}/${__DESTINATION_FILE_PATH}"
+        ci-fairy s3cp $MINIO_ARGS "$RESULTS/$__PREFIX/$line" \
+            "https://${__MINIO_PATH}/${__DESTINATION_FILE_PATH}"
     done
 }
 
@@ -199,11 +199,6 @@ if [ "$RUN_CMD_WRAPPER" ]; then
 fi
 
 FAILURE_MESSAGE=$(printf "%s" "Unexpected change in results:")
-
-if [ "x$PIGLIT_PROFILES" = "xreplay" ] \
-       && [ ${PIGLIT_REPLAY_UPLOAD_TO_MINIO:-0} -eq 1 ]; then
-    ci-fairy minio login $MINIO_ARGS $CI_JOB_JWT
-fi
 
 eval $RUN_CMD
 
