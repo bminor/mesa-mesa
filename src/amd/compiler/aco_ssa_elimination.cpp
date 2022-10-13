@@ -277,6 +277,12 @@ try_remove_simple_block(ssa_elimination_ctx& ctx, Block* block)
 }
 
 bool
+is_simple_copy(Instruction* instr)
+{
+   return instr->opcode == aco_opcode::p_parallelcopy && instr->definitions.size() == 1;
+}
+
+bool
 instr_writes_exec(Instruction* instr)
 {
    for (Definition& def : instr->definitions)
@@ -317,6 +323,131 @@ instr_accesses(Instruction* instr, const T& a, bool ignore_reads)
       return true;
 
    return false;
+}
+
+void
+try_merge_break_with_continue(ssa_elimination_ctx& ctx, Block* block)
+{
+   /* Look for this:
+    * BB1:
+    *    ...
+    *    p_branch_z exec BB3, BB2
+    * BB2:
+    *    ...
+    *    s[0:1], scc = s_andn2 s[0:1], exec
+    *    p_branch_z scc BB4, BB3
+    * BB3:
+    *    exec = p_parallelcopy s[0:1]
+    *    p_branch BB1
+    * BB4:
+    *    ...
+    *
+    * And turn it into this:
+    * BB1:
+    *    ...
+    *    p_branch_z exec BB3, BB2
+    * BB2:
+    *    ...
+    *    p_branch BB3
+    * BB3:
+    *    s[0:1], scc, exec = s_andn2_wrexec s[0:1], exec
+    *    p_branch_nz scc BB1, BB4
+    * BB4:
+    *    ...
+    */
+   if (block->linear_succs.size() != 2 || block->instructions.size() < 2)
+      return;
+
+   Pseudo_branch_instruction* branch = &block->instructions.back()->branch();
+   if (branch->operands[0].physReg() != scc || branch->opcode != aco_opcode::p_cbranch_z)
+      return;
+
+   Block* merge = &ctx.program->blocks[branch->target[1]];
+   Block* loopexit = &ctx.program->blocks[branch->target[0]];
+
+   /* Just a jump to the loop header. */
+   if (merge->linear_succs.size() != 1)
+      return;
+
+   /* We want to use the loopexit as the fallthrough block from merge,
+    * so there shouldn't be a block inbetween.
+    */
+   for (unsigned i = merge->index + 1; i < loopexit->index; i++) {
+      if (!ctx.program->blocks[i].instructions.empty())
+         return;
+   }
+
+   for (unsigned merge_pred : merge->linear_preds) {
+      Block* pred = &ctx.program->blocks[merge_pred];
+      if (pred == block)
+         continue;
+
+      Instruction* pred_branch = pred->instructions.back().get();
+      /* The branch needs to be exec zero only, otherwise we corrupt exec. */
+      if (!pred_branch->isBranch() || pred_branch->opcode != aco_opcode::p_cbranch_z ||
+          pred_branch->operands[0].physReg() != exec)
+         return;
+   }
+
+   /* merge block: copy to exec, logical_start, logical_end, branch */
+   if (merge->instructions.size() != 4 || !ctx.logical_phi_info[merge->index].empty() ||
+       !ctx.linear_phi_info[merge->index].empty() || !is_empty_block(merge, true))
+      return;
+
+   aco_ptr<Instruction>& execwrite = merge->instructions[0];
+   if (!is_simple_copy(execwrite.get()) || execwrite->definitions[0].physReg() != exec)
+      return;
+
+   const aco_opcode andn2 =
+      ctx.program->lane_mask == s2 ? aco_opcode::s_andn2_b64 : aco_opcode::s_andn2_b32;
+   const aco_opcode andn2_wrexec = ctx.program->lane_mask == s2 ? aco_opcode::s_andn2_wrexec_b64
+                                                                : aco_opcode::s_andn2_wrexec_b32;
+
+   auto execsrc_it = block->instructions.end() - 2;
+   if ((*execsrc_it)->opcode != andn2 ||
+       (*execsrc_it)->definitions[0].physReg() != execwrite->operands[0].physReg() ||
+       (*execsrc_it)->operands[0].physReg() != execwrite->operands[0].physReg() ||
+       (*execsrc_it)->operands[1].physReg() != exec)
+      return;
+
+   assert(ctx.linear_phi_info[block->index].empty());
+
+   /* Move s_andn2 to the merge block. */
+   merge->instructions.insert(merge->instructions.begin(), std::move(*execsrc_it));
+   block->instructions.erase(execsrc_it);
+
+   branch->target[0] = merge->linear_succs[0];
+   branch->target[1] = loopexit->index;
+   branch->opcode = aco_opcode::p_cbranch_nz;
+
+   merge->instructions.back()->branch().target[0] = merge->index;
+   std::swap(merge->instructions.back(), block->instructions.back());
+   std::swap(merge->instructions.back()->definitions[0],
+             block->instructions.back()->definitions[0]);
+
+   block->linear_succs.clear();
+   block->linear_succs.push_back(merge->index);
+   merge->linear_succs.push_back(loopexit->index);
+   std::swap(merge->linear_succs[0], merge->linear_succs[1]);
+   ctx.blocks_incoming_exec_used[merge->index] = true;
+
+   std::replace(loopexit->linear_preds.begin(), loopexit->linear_preds.end(), block->index,
+                merge->index);
+
+   if (ctx.program->gfx_level < GFX9)
+      return;
+
+   /* Combine s_andn2 and copy to exec to s_andn2_wrexec. */
+   Instruction* r_exec = merge->instructions[0].get();
+   Instruction* wr_exec = create_instruction(andn2_wrexec, Format::SOP1, 2, 3);
+   wr_exec->operands[0] = r_exec->operands[0];
+   wr_exec->operands[1] = r_exec->operands[1];
+   wr_exec->definitions[0] = r_exec->definitions[0];
+   wr_exec->definitions[1] = r_exec->definitions[1];
+   wr_exec->definitions[2] = Definition(exec, ctx.program->lane_mask);
+
+   merge->instructions.erase(merge->instructions.begin());
+   merge->instructions[0].reset(wr_exec);
 }
 
 void
@@ -646,6 +777,9 @@ jump_threading(ssa_elimination_ctx& ctx)
    for (int i = ctx.program->blocks.size() - 1; i >= 0; i--) {
       Block* block = &ctx.program->blocks[i];
       eliminate_useless_exec_writes_in_block(ctx, *block);
+
+      if (block->kind & block_kind_break)
+         try_merge_break_with_continue(ctx, block);
 
       if (!ctx.empty_blocks[i])
          continue;
