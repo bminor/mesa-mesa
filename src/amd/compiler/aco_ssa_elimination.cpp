@@ -450,6 +450,99 @@ try_merge_break_with_continue(ssa_elimination_ctx& ctx, Block* block)
    merge->instructions[0].reset(wr_exec);
 }
 
+bool
+try_insert_saveexec_out_of_loop(ssa_elimination_ctx& ctx, Block* block, Instruction* saveexec,
+                                unsigned saveexec_pos)
+{
+   /* This pattern can be created by try_optimize_branching_sequence:
+    * BB1: // loop-header
+    *    ... // nothing that clobbers s[0:1] or writes exec
+    *    s[0:1] = p_parallelcopy exec // we will move this
+    *    exec = v_cmpx_...
+    *    p_branch_z exec BB3, BB2
+    * BB2:
+    *    ...
+    *    p_branch BB3
+    * BB3:
+    *    s[0:1], scc, exec = s_andn2_wrexec ... // exec and s[0:1] contain the same mask
+    *    ... // nothing that clobbers s[0:1] or writes exec
+    *    p_branch_nz scc BB1, BB4
+    * BB4:
+    *    ...
+    *
+    * Instead of the s_andn2_wrexec there could also be a p_parallelcopy from s[0:1] to exec.
+    * Either way, we know that that exec copy in the loop header is only needed in the first
+    * iteration, so that it can be inserted in the loop preheader.
+    */
+   if (block->linear_preds.size() != 2)
+      return false;
+
+   Block* preheader = &ctx.program->blocks[block->linear_preds[0]];
+   Block* cont = &ctx.program->blocks[block->linear_preds[1]];
+   assert(preheader->kind & block_kind_loop_preheader);
+
+   const RegClass lm = ctx.program->lane_mask;
+   const aco_opcode andn2_wrexec =
+      lm == s2 ? aco_opcode::s_andn2_wrexec_b64 : aco_opcode::s_andn2_wrexec_b32;
+
+   const Definition& saved_exec = saveexec->definitions[0];
+
+   /* Check if exec is written, or the copy's dst overwritten in the loop header. */
+   for (unsigned i = 0; i < saveexec_pos; i++) {
+      Instruction* instr = block->instructions[i].get();
+
+      if (instr->opcode == aco_opcode::p_linear_phi)
+         continue;
+
+      if (instr_accesses(instr, saved_exec, false) || instr_writes_exec(instr))
+         return false;
+   }
+
+   /* The register(s) must already contain the same value as exec in the continue block. */
+   for (int i = cont->instructions.size() - 1;; i--) {
+      if (i == -1)
+         return false;
+      Instruction* instr = cont->instructions[i].get();
+      if (is_simple_copy(instr) && instr->definitions[0].physReg() == exec &&
+          instr->definitions[0].regClass() == lm &&
+          instr->operands[0].physReg() == saved_exec.physReg()) {
+         break;
+      }
+
+      if (instr->opcode == andn2_wrexec &&
+          instr->definitions[0].physReg() == saved_exec.physReg()) {
+         break;
+      }
+
+      if (instr_accesses(instr, saved_exec, true) || instr_writes_exec(instr))
+         return false;
+   }
+
+   for (const auto& successor_phi_info : ctx.linear_phi_info[cont->index]) {
+      if (regs_intersect(successor_phi_info.def, saved_exec) ||
+          regs_intersect(successor_phi_info.def, Definition(exec, lm)))
+         return false;
+   }
+
+   /* check that saved_exec is not needed by phis in the pre-header. */
+   for (const auto& successor_phi_info : ctx.linear_phi_info[preheader->index]) {
+      if (regs_intersect(successor_phi_info.def, saved_exec) ||
+          regs_intersect(successor_phi_info.op, saved_exec) ||
+          regs_intersect(successor_phi_info.def, Definition(exec, lm)))
+         return false;
+   }
+
+   for (const auto& successor_phi_info : ctx.logical_phi_info[preheader->index]) {
+      if (regs_intersect(successor_phi_info.op, saved_exec))
+         return false;
+   }
+
+   /* Insert outside of the loop. */
+   preheader->instructions.emplace(preheader->instructions.end() - 1, saveexec);
+
+   return true;
+}
+
 void
 try_optimize_branching_sequence(ssa_elimination_ctx& ctx, Block& block, const int exec_val_idx,
                                 const int exec_copy_idx)
@@ -646,12 +739,16 @@ try_optimize_branching_sequence(ssa_elimination_ctx& ctx, Block& block, const in
        * Do this last, because inserting in the instructions vector may invalidate the exec_val
        * reference.
        */
-      const auto it = std::next(block.instructions.begin(), save_original_exec_idx);
-      aco_ptr<Instruction> copy(
-         create_instruction(aco_opcode::p_parallelcopy, Format::PSEUDO, 1, 1));
+
+      Instruction* copy = create_instruction(aco_opcode::p_parallelcopy, Format::PSEUDO, 1, 1);
       copy->definitions[0] = exec_copy_def;
       copy->operands[0] = Operand(exec, ctx.program->lane_mask);
-      block.instructions.insert(it, std::move(copy));
+      if (block.kind & block_kind_loop_header) {
+         if (try_insert_saveexec_out_of_loop(ctx, &block, copy, save_original_exec_idx))
+            return;
+      }
+      const auto it = std::next(block.instructions.begin(), save_original_exec_idx);
+      block.instructions.emplace(it, copy);
    }
 }
 
