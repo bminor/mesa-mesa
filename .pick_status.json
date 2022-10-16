@@ -6484,7 +6484,7 @@
         "description": "device_select_layer: fix inverted strcmp in device_select_find_dri_prime_tag_default (v1)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9bc5b2d169d3a3c9d52fc30987eaba52e3b7dc00",
         "notes": null
