@@ -213,6 +213,12 @@ gallium_drivers = get_option('gallium-drivers')
 if gallium_drivers.contains('auto')
   if amber
     gallium_drivers = []
+    if with_dri_i915
+      warning('End user should use i915g. i915 should only be used for regression testing.')
+    endif
+    if with_dri_i965
+      warning('End user should use crocus or iris. i965 should only be used for regression testing.')
+    endif
   elif system_has_kms_drm
     # TODO: PPC, Sparc
     if ['x86', 'x86_64'].contains(host_machine.cpu_family())
