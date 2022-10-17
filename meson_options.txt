@@ -537,5 +537,5 @@ option(
   'amber',
   type : 'boolean',
   value : false,
-  description : 'Configure LTS build to coexist with Mesa >= 22.0'
+  description : 'Configure build for legacy devices (coexist with Mesa >= 22.0)'
 )
