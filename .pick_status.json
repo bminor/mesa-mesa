@@ -11004,7 +11004,7 @@
         "description": "zink: fix source type in load/store scratch",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ddc5c3048992debc3cedd22b0f2ff2ca27e8d7e4",
         "notes": null
