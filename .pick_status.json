@@ -5359,7 +5359,7 @@
         "description": "intel/compiler: adjust [store|load]_task_payload.base too",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c36ae42e4cccc925e5319afe41c4b8ba850730b4"
     },
