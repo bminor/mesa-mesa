@@ -5341,7 +5341,7 @@
         "description": "intel/compiler: user payload starts after TUE header & its padding",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37e78803d7b088afde8c79b7cf82ee29d4835651"
     },
