@@ -23,6 +23,7 @@ enum tu_bo_alloc_flags {
    TU_BO_ALLOC_INTERNAL_RESOURCE = 1 << 3,
    TU_BO_ALLOC_DMABUF = 1 << 4,
    TU_BO_ALLOC_SHAREABLE = 1 << 5,
+   TU_BO_ALLOC_IMPLICIT_SYNC = 1 << 6,
 };
 
 enum tu_mem_sync_op {

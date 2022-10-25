@@ -3236,6 +3236,10 @@ tu_AllocateMemory(VkDevice _device,
                            VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT)))
          alloc_flags |= TU_BO_ALLOC_SHAREABLE;
 
+      const struct wsi_memory_allocate_info *wsi_info =
+         vk_find_struct_const(pAllocateInfo->pNext, WSI_MEMORY_ALLOCATE_INFO_MESA);
+      if (wsi_info && wsi_info->implicit_sync)
+         alloc_flags |= TU_BO_ALLOC_IMPLICIT_SYNC;
 
       char name[64] = "vkAllocateMemory()";
       if (device->bo_sizes)
@@ -3261,20 +3265,6 @@ tu_AllocateMemory(VkDevice _device,
    if (result != VK_SUCCESS) {
       vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
       return result;
-   }
-
-   /* Track in the device whether our BO list contains any implicit-sync BOs, so
-    * we can suppress implicit sync on non-WSI usage.
-    */
-   const struct wsi_memory_allocate_info *wsi_info =
-      vk_find_struct_const(pAllocateInfo->pNext, WSI_MEMORY_ALLOCATE_INFO_MESA);
-   if (wsi_info && wsi_info->implicit_sync) {
-      mtx_lock(&device->bo_mutex);
-      if (!mem->bo->implicit_sync) {
-         mem->bo->implicit_sync = true;
-         device->implicit_sync_bo_count++;
-      }
-      mtx_unlock(&device->bo_mutex);
    }
 
    const VkMemoryDedicatedAllocateInfo *dedicate_info =

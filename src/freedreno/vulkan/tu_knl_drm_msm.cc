@@ -576,12 +576,17 @@ tu_bo_init(struct tu_device *dev,
    }
 
    bool dump = flags & TU_BO_ALLOC_ALLOW_DUMP;
+   bool implicit_sync = flags & TU_BO_ALLOC_IMPLICIT_SYNC;
    dev->submit_bo_list[idx] = (struct drm_msm_gem_submit_bo) {
       .flags = MSM_SUBMIT_BO_READ | MSM_SUBMIT_BO_WRITE |
-               COND(dump, MSM_SUBMIT_BO_DUMP),
+               COND(dump, MSM_SUBMIT_BO_DUMP) |
+               COND(!implicit_sync, MSM_SUBMIT_BO_NO_IMPLICIT),
       .handle = gem_handle,
       .presumed = iova,
    };
+
+   if (implicit_sync)
+      dev->implicit_sync_bo_count++;
 
    *bo = (struct tu_bo) {
       .gem_handle = gem_handle,
@@ -590,6 +595,7 @@ tu_bo_init(struct tu_device *dev,
       .name = name,
       .refcnt = 1,
       .submit_bo_list_idx = idx,
+      .implicit_sync = implicit_sync,
       .base = base,
    };
 
@@ -919,6 +925,22 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
 
    mtx_lock(&queue->device->bo_mutex);
 
+   /* MSM_SUBMIT_NO_IMPLICIT skips having the scheduler wait on the previous dma
+    * fences attached to the BO (such as from the window system server's command
+    * queue) before submitting the job. Our fence will always get attached to
+    * the BO, because it gets used for synchronization for the shrinker.
+    *
+    * If the flag is not set, then the kernel falls back to checking each BO's
+    * MSM_SUBMIT_NO_IMPLICIT flag for its implicit sync handling.
+    *
+    * As of kernel 6.0, the core wsi code will be generating appropriate syncobj
+    * export-and-waits/signal-and-imports for implict syncing (on implicit sync
+    * WSI backends) and not allocating any
+    * wsi_memory_allocate_info->implicit_sync BOs from the driver. However, on
+    * older kernels with that flag set, we have to submit without NO_IMPLICIT
+    * set to do have the kernel do pre-submit waits on whatever the last fence
+    * was.
+    */
    if (queue->device->implicit_sync_bo_count == 0)
       flags |= MSM_SUBMIT_NO_IMPLICIT;
 

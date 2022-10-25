@@ -602,13 +602,18 @@ tu_bo_init(struct tu_device *dev,
       dev->submit_bo_list_size = new_len;
    }
 
+   bool implicit_sync = flags & TU_BO_ALLOC_IMPLICIT_SYNC;
    bool dump = flags & TU_BO_ALLOC_ALLOW_DUMP;
    dev->submit_bo_list[idx] = (struct drm_msm_gem_submit_bo) {
       .flags = MSM_SUBMIT_BO_READ | MSM_SUBMIT_BO_WRITE |
-               COND(dump, MSM_SUBMIT_BO_DUMP),
+               COND(dump, MSM_SUBMIT_BO_DUMP) |
+               COND(!implicit_sync, MSM_SUBMIT_BO_NO_IMPLICIT),
       .handle = bo->res_id,
       .presumed = iova,
    };
+
+   if (implicit_sync)
+      dev->implicit_sync_bo_count++;
 
    *bo = (struct tu_bo) {
       .gem_handle = gem_handle,
@@ -618,6 +623,7 @@ tu_bo_init(struct tu_device *dev,
       .name = name,
       .refcnt = 1,
       .submit_bo_list_idx = idx,
+      .implicit_sync = implicit_sync,
       .base = base,
    };
 
