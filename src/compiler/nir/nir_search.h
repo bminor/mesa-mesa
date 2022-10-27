@@ -28,7 +28,7 @@
 #include "nir.h"
 #include "nir_worklist.h"
 
-#define NIR_SEARCH_MAX_VARIABLES 16
+#define NIR_SEARCH_MAX_VARIABLES 24
 
 struct nir_builder;
 
