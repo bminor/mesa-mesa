@@ -76,11 +76,6 @@ Wrapper driver. Trace dumps an XML record of the calls made to the
 Gallium frontends
 -----------------
 
-Clover
-^^^^^^
-
-Tracker that implements the Khronos OpenCL standard.
-
 .. _dri:
 
 Direct Rendering Infrastructure

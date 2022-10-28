@@ -195,15 +195,6 @@ if with_gallium_d3d12
 else
   driver_d3d12 = declare_dependency()
 endif
-if with_gallium_clover or with_tests
-  # At the moment, clover and gallium/tests are the only two consumers
-  # for pipe-loader
-  subdir('targets/pipe-loader')
-endif
-if with_gallium_clover
-  subdir('frontends/clover')
-  subdir('targets/opencl')
-endif
 if with_gallium_rusticl
   subdir('frontends/rusticl')
   subdir('targets/rusticl')

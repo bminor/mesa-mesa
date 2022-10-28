@@ -132,7 +132,6 @@ each directory.
       -  **frontends** - These implement various libraries using the
          device drivers
 
-         -  **clover** - OpenCL frontend
          -  **d3d10umd** - D3D10 frontend for Windows only. It's similar to Microsoft WARP, but using LLVMpipe/Softpipe.
          -  **dri** - Meta frontend for DRI drivers, see mesa/state_tracker
          -  **glx** - Meta frontend for GLX

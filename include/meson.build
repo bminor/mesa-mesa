@@ -89,7 +89,7 @@ if with_gallium_st_nine
     subdir : 'd3dadapter',
   )
 endif
-
+ 
 opencl_headers = files(
   'CL/cl.h',
   'CL/cl.hpp',
@@ -113,11 +113,3 @@ opencl_headers = files(
   'CL/opencl.h',
   'CL/opencl.hpp',
 )
-# Only install the headers if we are building a stand alone implementation and
-# not an ICD enabled implementation
-if with_gallium_clover and not with_opencl_icd
-  install_headers(
-    opencl_headers,
-    subdir: 'CL'
-  )
-endif
