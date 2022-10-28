@@ -568,12 +568,32 @@ windows_build_vs2019:
     - mesa
   script:
     - .\.gitlab-ci\windows\mesa_container.ps1 $CI_REGISTRY $CI_REGISTRY_USER $CI_REGISTRY_PASSWORD $MESA_IMAGE $MESA_UPSTREAM_IMAGE
+  rules:
+    # Amber: Disable Windows jobs for marge, but allow them to be run manually
+    - if: *is-pre-merge-for-marge
+      changes:
+        *all_paths
+      when: never
+    - changes:
+        *all_paths
+      when: manual
+    - when: never
 
 .use-windows_build_vs2019:
   extends: .windows-docker-vs2019
   image: "$MESA_IMAGE"
   needs:
     - windows_build_vs2019
+  rules:
+    # Amber: Disable Windows jobs for marge, but allow them to be run manually
+    - if: *is-pre-merge-for-marge
+      changes:
+        *all_paths
+      when: never
+    - changes:
+        *all_paths
+      when: manual
+    - when: never
 
 
 # Git archive
@@ -1021,8 +1041,8 @@ debian-clang:
 windows-vs2019:
   extends:
     - .build-windows
-    - .use-windows_build_vs2019
     - .windows-build-rules
+    - .use-windows_build_vs2019
   stage: build-misc
   script:
     - . .\.gitlab-ci\windows\mesa_build.ps1
@@ -1034,8 +1054,8 @@ windows-vs2019:
 test-d3d12-windows:
   extends:
     - .build-windows
-    - .use-windows_build_vs2019
     - .windows-test-rules
+    - .use-windows_build_vs2019
   stage: layered-backends
   dependencies:
     - windows-vs2019
