@@ -5872,7 +5872,7 @@
         "description": "pan/mdg: Emulate 8-bit with the 16-bit pipe",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "39e4b7279dcdcef91a0e829a1938b2816aa4ce75"
     },
