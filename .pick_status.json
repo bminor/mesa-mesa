@@ -2119,7 +2119,7 @@
         "description": "pan/mdg: Fix out-of-order execution",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "30a393f4581079ced1ac05d6b74c7408fbe26f83"
     },
