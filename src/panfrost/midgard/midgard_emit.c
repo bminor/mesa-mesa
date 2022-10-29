@@ -414,10 +414,11 @@ mir_pack_swizzle_tex(midgard_instruction *ins)
         /* TODO: bias component */
 }
 
-/* Up to 3 { ALU, LDST } bundles can execute in parallel with a texture op.
+/*
+ * Up to 15 { ALU, LDST } bundles can execute in parallel with a texture op.
  * Given a texture op, lookahead to see how many such bundles we can flag for
- * OoO execution */
-
+ * OoO execution
+ */
 static bool
 mir_can_run_ooo(midgard_block *block, midgard_bundle *bundle,
                 unsigned dependency)
@@ -430,11 +431,14 @@ mir_can_run_ooo(midgard_block *block, midgard_bundle *bundle,
         if (!IS_ALU(bundle->tag) && bundle->tag != TAG_LOAD_STORE_4)
                 return false;
 
-        /* Ensure there is no read-after-write dependency */
-
         for (unsigned i = 0; i < bundle->instruction_count; ++i) {
                 midgard_instruction *ins = bundle->instructions[i];
 
+                /* No branches, jumps, or discards */
+                if (ins->compact_branch)
+                        return false;
+
+                /* No read-after-write data dependencies */
                 mir_foreach_src(ins, s) {
                         if (ins->src[s] == dependency)
                                 return false;
@@ -450,7 +454,7 @@ mir_pack_tex_ooo(midgard_block *block, midgard_bundle *bundle, midgard_instructi
 {
         unsigned count = 0;
 
-        for (count = 0; count < 3; ++count) {
+        for (count = 0; count < 15; ++count) {
                 if (!mir_can_run_ooo(block, bundle + count + 1, ins->dest))
                         break;
         }
