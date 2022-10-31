@@ -481,7 +481,7 @@
         "description": "panfrost: Use PIPE_CAP_VERTEX_ATTRIB_ELEMENT_ALIGNED_ONLY",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e03622e50fcebbcc32b2fd403b1a729c73cb49d5"
     },
