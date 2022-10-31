@@ -1,0 +1,83 @@
+diff --git a/framework/replay/download_utils.py b/framework/replay/download_utils.py
+index bc0225c6c..c9c6b5096 100644
+--- a/framework/replay/download_utils.py
++++ b/framework/replay/download_utils.py
+@@ -1,6 +1,6 @@
+ # coding=utf-8
+ #
+-# Copyright (c) 2020 Collabora Ltd
++# Copyright © 2020, 2022 Collabora Ltd
+ # Copyright © 2020 Valve Corporation.
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a
+@@ -33,11 +33,11 @@ from os import path
+ from time import time
+ from email.utils import formatdate
+ from requests.utils import requote_uri
++from urllib.parse import urlparse
+
+ from framework import core, exceptions
+ from framework.replay.options import OPTIONS
+
+-
+ __all__ = ['ensure_file']
+
+ minio_credentials = None
+@@ -87,7 +87,6 @@ def get_minio_credentials(url):
+ def get_authorization_headers(url, resource):
+     minio_key, minio_secret, minio_token = get_minio_credentials(url)
+
+-    content_type = 'application/octet-stream'
+     date = formatdate(timeval=None, localtime=False, usegmt=True)
+     to_sign = "GET\n\n\n%s\nx-amz-security-token:%s\n/%s/%s" % (date,
+                                                                 minio_token,
+@@ -101,6 +100,16 @@ def get_authorization_headers(url, resource):
+                'x-amz-security-token': minio_token}
+     return headers
+
++def get_jwt_authorization_headers(url, resource):
++    date = formatdate(timeval=None, localtime=False, usegmt=True)
++    jwt = OPTIONS.download['jwt']
++    host = urlparse(url).netloc
++
++    headers = {'Host': host,
++               'Date': date,
++               'Authorization': 'Bearer %s' % (jwt)}
++    return headers
++
+ def ensure_file(file_path):
+     destination_file_path = path.join(OPTIONS.db_path, file_path)
+     if OPTIONS.download['url'] is None:
+@@ -123,7 +132,9 @@ def ensure_file(file_path):
+         assert OPTIONS.download['minio_bucket']
+         assert OPTIONS.download['role_session_name']
+         assert OPTIONS.download['jwt']
+-        headers = get_authorization_headers(url, file_path)
++        headers = get_minio_authorization_headers(url, file_path)
++    elif OPTIONS.download['jwt']:
++        headers = get_jwt_authorization_headers(url, file_path)
+     else:
+         headers = None
+
+diff --git a/unittests/framework/replay/test_download_utils.py b/unittests/framework/replay/test_download_utils.py
+index 0f1102722..abd438c20 100644
+--- a/unittests/framework/replay/test_download_utils.py
++++ b/unittests/framework/replay/test_download_utils.py
+@@ -141,3 +141,17 @@ class TestDownloadUtils(object):
+         get_request = requests_mock.request_history[1]
+         assert(get_request.method == 'GET')
+         assert(requests_mock.request_history[1].headers['Authorization'].startswith('AWS Key'))
++
++    def test_jwt_authorization(self, requests_mock):
++        """download_utils.ensure_file: Check we send the authentication headers to the server"""
++        # reset minio_host from previous tests
++        OPTIONS.download['minio_host'] = ''
++        OPTIONS.download['jwt'] = 'jwt'
++
++        assert not self.trace_file.check()
++        download_utils.ensure_file(self.trace_path)
++        TestDownloadUtils.check_same_file(self.trace_file, "remote")
++
++        get_request = requests_mock.request_history[0]
++        assert(get_request.method == 'GET')
++        assert(requests_mock.request_history[0].headers['Authorization'].startswith('Bearer'))

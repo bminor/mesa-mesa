@@ -5,6 +5,11 @@ set -ex
 git clone https://gitlab.freedesktop.org/mesa/piglit.git --single-branch --no-checkout /piglit
 pushd /piglit
 git checkout 7d7dd2688c214e1b3c00f37226500cbec4a58efb
+
+# TODO: Remove the following patch when piglit commit got past
+# 1cd716180cfb6ef0c1fc54702460ef49e5115791
+git apply $OLDPWD/.gitlab-ci/piglit/build-piglit_backport-s3-migration.diff
+
 patch -p1 <$OLDPWD/.gitlab-ci/piglit/disable-vs_in.diff
 cmake -S . -B . -G Ninja -DCMAKE_BUILD_TYPE=Release $PIGLIT_OPTS $EXTRA_CMAKE_ARGS
 ninja $PIGLIT_BUILD_TARGETS
