@@ -408,6 +408,7 @@ wsi_drm_wait_for_explicit_sync_release(struct wsi_swapchain *chain,
                                        struct wsi_image **images,
                                        uint64_t rel_timeout_ns,
                                        uint32_t *image_index);
+
 #endif
 
 struct wsi_interface {
