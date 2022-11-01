@@ -1741,7 +1741,7 @@
         "description": "hasvk: fix android build and reported API version",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "00eefdcd03c0dcff173439107d7ded490a86ff95"
     },
