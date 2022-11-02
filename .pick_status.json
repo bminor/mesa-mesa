@@ -1228,7 +1228,7 @@
         "description": "nir/lower_bit_size: lower uadd_carry",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
