@@ -841,7 +841,7 @@
         "description": "docs/zink: fix and cleanup rst syntax",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "be235edfe2bc79f3e51e09831fe57753ed5da773"
     },
