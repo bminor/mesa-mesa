@@ -2740,7 +2740,7 @@
         "description": "zink: add missing build_id linker args",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4e14da056d623ababf7cf82cf2fca51c18b462f1"
     },
