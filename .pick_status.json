@@ -2317,7 +2317,7 @@
         "description": "v3dv: always check VK_ACCESS_2_MEMORY_READ_BIT for read accesses",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a981ac053964b3fa129fda124e89bff01a572394"
     },
