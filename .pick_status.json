@@ -2713,7 +2713,7 @@
         "description": "glx: Fixes apple/apple_visual.c that include non-exist util/debug.h",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "aa4ac5ff8bb8932c451c515fb9359bdecc9047f7"
     },
