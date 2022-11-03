@@ -1471,7 +1471,7 @@
         "description": "ci/update_traces_checksum.py: check if checksum is in the array, not it's value",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "45eda069531adf17d28538696ace5dfcbc9ad230"
     },
