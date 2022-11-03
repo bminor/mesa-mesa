@@ -2308,7 +2308,7 @@
         "description": "v3dv: make the helper to emit pipeline barriers public to other files",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ecb01d53fdb413121ce2a8f36ad67e51898eec00"
     },
