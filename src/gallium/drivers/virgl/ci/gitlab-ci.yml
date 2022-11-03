@@ -34,7 +34,7 @@ virgl-on-gles:
     - virgl-on-gl
     - .test-manual
 
-virgl-traces:
+.virgl-traces:
   extends:
     - .virgl-test
     - .piglit-traces-test
