@@ -6,7 +6,6 @@
   variables:
     MINIO_ARTIFACT_NAME: mesa-arm64
     BM_ROOTFS: /rootfs-arm64
-    FLAKES_CHANNEL: "#freedreno-ci"
     PIGLIT_PLATFORM: mixed_glx_egl
     BM_CMDLINE: "ip=dhcp console=ttyMSM0,115200n8 root=/dev/nfs rw nfsrootdebug nfsroot=,tcp,nfsvers=4.2 init=/init $BM_KERNELARGS"
   script:

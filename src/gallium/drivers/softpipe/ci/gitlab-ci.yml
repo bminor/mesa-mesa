@@ -9,7 +9,6 @@
     LIBGL_ALWAYS_SOFTWARE: "true"
     GALLIUM_DRIVER: "softpipe"
     DEQP_EXPECTED_RENDERER: softpipe
-    FLAKES_CHANNEL: "#mesa-swrast-ci"
 
 softpipe-deqp:
   variables:

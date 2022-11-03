@@ -1,6 +1,5 @@
 .panfrost-test:
   variables:
-    FLAKES_CHANNEL: "#panfrost-ci"
     PAN_MESA_DEBUG: sync
     HWCI_FREQ_MAX: "true"
 
