@@ -787,7 +787,7 @@
         "description": "radv: re-emit the guardband state when restoring meta operations",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "40d8df728081e050b83ff0677ce4bf947e234a03"
     },
