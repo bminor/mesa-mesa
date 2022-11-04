@@ -1543,7 +1543,7 @@
         "description": "v3dv: use vk_alloc instead of malloc",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e6884df088a1e172cd87956fe9afdac63069eb2c"
     },
