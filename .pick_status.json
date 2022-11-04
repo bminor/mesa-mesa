@@ -1552,7 +1552,7 @@
         "description": "v3dv: vkCmdWaitEvents2 takes an array of VkDependencyInfo",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e6884df088a1e172cd87956fe9afdac63069eb2c"
     },
