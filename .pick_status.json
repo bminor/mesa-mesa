@@ -1525,7 +1525,7 @@
         "description": "zink/ci: add another subtest to the list of known failures for radv",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "53721827ea1cf1c7a39c1b27398b7b1b7e9b1175"
     },
