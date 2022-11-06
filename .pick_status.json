@@ -1597,7 +1597,7 @@
         "description": "mesa: Report GL_SHADER_BINARY_FORMAT_SPIR_V as supported",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5bc03d250861df6836f9c9fe37e0609c1777a87b"
     },
