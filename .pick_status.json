@@ -2155,7 +2155,7 @@
         "description": "etnaviv: update headers from rnndb",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
