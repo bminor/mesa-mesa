@@ -3298,7 +3298,7 @@
         "description": "docs: fixup broken link syntax",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6b3b6333915e8ca64c531a4decb79c0256e1e4f2"
     },
