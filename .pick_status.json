@@ -337,7 +337,7 @@
         "description": "r600/sfn: allow building with clang 6 (Android 9)",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
