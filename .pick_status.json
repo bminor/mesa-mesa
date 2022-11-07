@@ -139,7 +139,7 @@
         "description": "panfrost: Fix build with Perfetto (again)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6a4532cbabf7770b71d63db24714fc07efb280cf"
     },
