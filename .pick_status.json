@@ -31,7 +31,7 @@
         "description": "intel/lower_mem_access_bit_sizes: Compute alignments automatically",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
