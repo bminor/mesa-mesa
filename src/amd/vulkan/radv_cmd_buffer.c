@@ -8487,7 +8487,7 @@ radv_CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer _b
    radv_after_draw(cmd_buffer);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 radv_CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                    const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo)
 {
@@ -10212,7 +10212,7 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
    assert(cmd_buffer->cs->cdw <= cdw_max);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 radv_CmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer,
                                   VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                   uint32_t groupIndex)
