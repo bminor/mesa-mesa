@@ -148,7 +148,7 @@
         "description": "glsl_to_nir: Fix NIR bit-size of ir_triop_bitfield_extract and ir_quadop_bitfield_insert",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5e922fbc160bcda9b38ccf5704cbd7276a748094"
     },
