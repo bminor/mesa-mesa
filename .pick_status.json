@@ -3838,7 +3838,7 @@
         "description": "mesa: fix typo from adding glGetObjectLabelEXT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "675bcbb7a1c0111dc907f189b4a2de18397e6f23"
     },
