@@ -2047,7 +2047,7 @@
         "description": "vulkan: Handle VK_SUBPASS_EXTERNAL at the end of a subpass",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1d726940d2881395994751078dad3bda0cabbdfb"
     },
