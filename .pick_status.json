@@ -1012,7 +1012,7 @@
         "description": "v3d: Minor fixes on sand8 blit based on sand30 modifications",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "95c4f0f91098a0da5a8e8ec76cb38f2c95bafe1c"
     },
