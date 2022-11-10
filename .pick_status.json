@@ -3307,7 +3307,7 @@
         "description": "anv: fixup invalid enum for nir environment",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8c4c4c3ee1a24b73fa29f30a05e873e9e13dddc7"
     },
