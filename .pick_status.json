@@ -2497,7 +2497,7 @@
         "description": "nir/algeraic_opt: use double options too for lowering ftrunc@64",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "29da9856826fa6a4b5117c43c78b4301a49bc6dd"
     },
