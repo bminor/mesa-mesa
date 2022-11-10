@@ -2551,7 +2551,7 @@
         "description": "radv: re-emit NGG culling settings when conservative rast mode is dynamic",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fbed3aed4aa6184a8d1ea696de44973e235d89a8"
     },
