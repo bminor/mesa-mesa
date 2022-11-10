@@ -2614,7 +2614,7 @@
         "description": "virgl: don't a use staging when a resources created with the shared flag",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c9d99b7eec7ec14d6d71d381a424b6280d75a882"
     },
