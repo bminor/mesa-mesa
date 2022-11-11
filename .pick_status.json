@@ -4045,7 +4045,7 @@
         "description": "dxil: Use nir_const_value_for_uint in dxil_nir_lower_int_samplers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b9c61379ab4c5065d624fb9403c1df9d5589b313"
     },
