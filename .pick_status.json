@@ -4072,7 +4072,7 @@
         "description": "nir: Use nir_const_value_for_int in nir_lower_subgroups",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e4e79de2a420128190b28b39b87f6de39b1b7060"
     },
