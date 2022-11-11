@@ -427,7 +427,7 @@
         "description": "etnaviv: Support negative float inline immediates",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "45a111c21c23be94f9297650fb8428fe2acf5641"
     },
