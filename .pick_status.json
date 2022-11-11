@@ -2119,7 +2119,7 @@
         "description": "venus: handle VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8f7b5bf34b4207bac6417902ff715e5643d45389"
     },
