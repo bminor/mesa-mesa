@@ -580,7 +580,7 @@
         "description": "iris: Set priority for replaced engine context",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5c4c8bdc4c54a1f3d7e496e52476124366e6e7d6"
     },
