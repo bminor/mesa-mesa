@@ -220,7 +220,7 @@
         "description": "Revert \"egl/glx: add fallback for zink loading\"",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2569215f43f6ce71fb8eb2181b36c6cf976bce2a"
     },
