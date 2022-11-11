@@ -4063,7 +4063,7 @@
         "description": "st/mesa: Use nir_const_value_for_bool() in ATIFS",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0a179bb6e26b487356384c561dee6aefa9af5889"
     },
