@@ -2137,7 +2137,7 @@
         "description": "ci: avoid triggering vc4 & v3d tests on v3dv-only MRs",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
