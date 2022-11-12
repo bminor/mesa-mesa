@@ -1867,7 +1867,7 @@
         "description": "v3dv/bo: reset bo and then call gem close",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2c44597181e28b05d4b269ee73d4f3a59bc0a806"
     },
