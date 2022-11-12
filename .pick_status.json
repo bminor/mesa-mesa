@@ -895,7 +895,7 @@
         "description": "radv/ray_queries: Fix AABB handling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3f72061be93dd23d7f29b4f4361f0940092b23ce"
     },
