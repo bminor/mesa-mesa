@@ -2056,7 +2056,7 @@
         "description": "r600/sfn: Fix f2u32 and remove backend lowring of f2u64 and f2i64",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "29da9856826fa6a4b5117c43c78b4301a49bc6dd"
     },
