@@ -89,6 +89,12 @@
 #include "wsi_common_display.h"
 #include "wsi_common_queue.h"
 
+#ifdef HAVE_LIBDISPLAY_INFO
+#include "libdisplay-info/info.h"
+#include "libdisplay-info/edid.h"
+#include "libdisplay-info/cta.h"
+#endif
+
 #if 0
 #define wsi_display_debug(...) fprintf(stderr, __VA_ARGS__)
 #define wsi_display_debug_code(...)     __VA_ARGS__
@@ -149,6 +155,11 @@ enum colorspace_enum {
    COLORSPACE_ENUM_MAX,
 };
 
+typedef struct wsi_display_connector_metadata {
+   VkHdrMetadataEXT             hdr_metadata;
+   bool                         supports_st2084;
+} wsi_display_connector_metadata;
+
 typedef struct wsi_display_connector {
    struct list_head             list;
    struct wsi_display           *wsi;
@@ -170,6 +181,7 @@ typedef struct wsi_display_connector {
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
    xcb_randr_output_t           output;
 #endif
+   struct wsi_display_connector_metadata metadata;
 } wsi_display_connector;
 
 struct wsi_display {
@@ -197,6 +209,65 @@ struct wsi_display {
     */
    uint64_t                     color_outcome_serial_counter;
 };
+
+static void
+wsi_display_parse_edid(struct wsi_display_connector *connector, drmModePropertyBlobRes *blob)
+{
+#ifdef HAVE_LIBDISPLAY_INFO
+   struct wsi_display_connector_metadata *metadata = &connector->metadata;
+   struct di_info *info = di_info_parse_edid(blob->data, blob->length);
+
+   if (!info) {
+      fprintf(stderr, "wsi_display_parse_edid: Failed to parse edid. Reason: %s\n", di_info_get_failure_msg(info));
+      return;
+   }
+
+   const struct di_edid *edid = di_info_get_edid(info);
+
+   const struct di_edid_chromaticity_coords *chroma = di_edid_get_chromaticity_coords(edid);
+   const struct di_cta_hdr_static_metadata_block *hdr_static_metadata = NULL;
+   const struct di_cta_colorimetry_block *colorimetry = NULL;
+
+   const struct di_edid_cta *cta = NULL;
+   const struct di_edid_ext * const *exts = di_edid_get_extensions(edid);
+   for (; *exts != NULL; exts++) {
+      if ((cta = di_edid_ext_get_cta(*exts)))
+         break;
+   }
+
+   if (cta) {
+      const struct di_cta_data_block * const * blocks = di_edid_cta_get_data_blocks(cta);
+      for (; *blocks != NULL; blocks++) {
+         if (!hdr_static_metadata && (hdr_static_metadata = di_cta_data_block_get_hdr_static_metadata(*blocks)))
+            continue;
+         if (!colorimetry && (colorimetry = di_cta_data_block_get_colorimetry(*blocks)))
+            continue;
+      }
+   }
+
+   if (chroma) {
+      metadata->hdr_metadata.displayPrimaryRed = (VkXYColorEXT){ chroma->red_x, chroma->red_y };
+      metadata->hdr_metadata.displayPrimaryGreen = (VkXYColorEXT){ chroma->green_x, chroma->green_y };
+      metadata->hdr_metadata.displayPrimaryBlue = (VkXYColorEXT){ chroma->blue_x, chroma->blue_y };
+      metadata->hdr_metadata.whitePoint = (VkXYColorEXT){ chroma->white_x, chroma->white_y };
+   }
+
+   if (hdr_static_metadata) {
+      metadata->hdr_metadata.maxFrameAverageLightLevel = hdr_static_metadata->desired_content_max_frame_avg_luminance;
+      metadata->hdr_metadata.minLuminance = hdr_static_metadata->desired_content_min_luminance;
+      metadata->hdr_metadata.maxLuminance = hdr_static_metadata->desired_content_max_luminance;
+      /* To be filled in by the app based on the scene, default to desired_content_max_luminance. */
+      metadata->hdr_metadata.maxContentLightLevel = hdr_static_metadata->desired_content_max_luminance;
+   }
+
+   metadata->supports_st2084 =
+      chroma &&
+      colorimetry && colorimetry->bt2020_rgb &&
+      hdr_static_metadata && hdr_static_metadata->eotfs && hdr_static_metadata->eotfs->pq;
+
+   di_info_destroy(info);
+#endif
+}
 
 /**
  * Creates the mapping from our property enums to the KMS property ID for that
@@ -293,6 +364,14 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
             COLORSPACE_ENUM(BT2020_RGB);
          }
 #undef COLORSPACE_ENUM
+      }
+
+      if (!strcmp(prop->name, "EDID")) {
+         drmModePropertyBlobRes *blob = drmModeGetPropertyBlob(fd, props->prop_values[p]);
+         if (blob) {
+            wsi_display_parse_edid(connector, blob);
+            drmModeFreePropertyBlob(blob);
+         }
       }
 
       drmModeFreeProperty(prop);
@@ -1243,6 +1322,20 @@ static const struct wsi_display_surface_format
       },
       .drm_format = DRM_FORMAT_XRGB8888
    },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+         .colorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
+      },
+      .drm_format = DRM_FORMAT_XBGR2101010
+   },
+   {
+      .surface_format = {
+         .format = VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+         .colorSpace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
+      },
+      .drm_format = DRM_FORMAT_XRGB2101010
+   },
 };
 
 static void
@@ -1263,6 +1356,21 @@ get_sorted_vk_formats(struct wsi_device *wsi_device, VkSurfaceFormatKHR *sorted_
    }
 }
 
+static bool
+surface_format_supported(VkIcdSurfaceBase *icd_surface, VkSurfaceFormatKHR surface_format)
+{
+   VkIcdSurfaceDisplay *surface = (VkIcdSurfaceDisplay *) icd_surface;
+   wsi_display_mode *mode = wsi_display_mode_from_handle(surface->displayMode);
+
+   if (surface_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      return true;
+
+   if (surface_format.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT)
+      return mode->connector->metadata.supports_st2084;
+
+   return false;
+}
+
 static VkResult
 wsi_display_surface_get_formats(VkIcdSurfaceBase *icd_surface,
                                 struct wsi_device *wsi_device,
@@ -1276,8 +1384,10 @@ wsi_display_surface_get_formats(VkIcdSurfaceBase *icd_surface,
    get_sorted_vk_formats(wsi_device, sorted_formats);
 
    for (unsigned i = 0; i < ARRAY_SIZE(sorted_formats); i++) {
-      vk_outarray_append_typed(VkSurfaceFormatKHR, &out, f) {
-         *f = sorted_formats[i];
+      if (surface_format_supported(icd_surface, sorted_formats[i])) {
+         vk_outarray_append_typed(VkSurfaceFormatKHR, &out, f) {
+            *f = sorted_formats[i];
+         }
       }
    }
 
@@ -1298,9 +1408,11 @@ wsi_display_surface_get_formats2(VkIcdSurfaceBase *surface,
    get_sorted_vk_formats(wsi_device, sorted_formats);
 
    for (unsigned i = 0; i < ARRAY_SIZE(sorted_formats); i++) {
-      vk_outarray_append_typed(VkSurfaceFormat2KHR, &out, f) {
-         assert(f->sType == VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR);
-         f->surfaceFormat = sorted_formats[i];
+      if (surface_format_supported(surface, sorted_formats[i])) {
+         vk_outarray_append_typed(VkSurfaceFormat2KHR, &out, f) {
+            assert(f->sType == VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR);
+            f->surfaceFormat = sorted_formats[i];
+         }
       }
    }
 
@@ -2797,6 +2909,10 @@ wsi_display_surface_create_swapchain(
    chain->status = VK_SUCCESS;
 
    chain->surface = surface;
+
+   /* Default HDR metadata when the HDR10/ST2084 colorspace is used
+    * to the metadata provided by the EDID. */
+   chain->hdr_metadata = display_mode->connector->metadata.hdr_metadata;
 
    p_atomic_inc(&display_mode->connector->refcount);
 
