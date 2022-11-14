@@ -3523,7 +3523,7 @@
         "description": "radv: use LATE_Z for depth/stencil attachments used in feedback loops",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
