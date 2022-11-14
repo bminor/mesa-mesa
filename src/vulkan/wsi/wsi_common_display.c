@@ -20,6 +20,35 @@
  * OF THIS SOFTWARE.
  */
 
+/*
+ * Colorimetry helper functions (color_xy_to_u16, nits_to_u16, nits_to_u16_dark),
+ * kindly taken from Weston:
+ * https://gitlab.freedesktop.org/wayland/weston/-/blob/main/libweston/backend-drm/kms-color.c
+ *
+ * Copyright 2021-2022 Collabora, Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the
+ * next paragraph) shall be included in all copies or substantial
+ * portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "util/u_atomic.h"
 #include "util/macros.h"
 #include <stdlib.h>
@@ -86,6 +115,8 @@ typedef struct wsi_display_mode {
 enum connector_property {
    CONN_CRTC_ID,
    DPMS,
+   HDR_OUTPUT_METADATA,
+   Colorspace,
    CONNECTOR_PROPERTY_MAX,
 };
 
@@ -112,6 +143,12 @@ enum plane_property {
    PLANE_PROPERTY_MAX,
 };
 
+enum colorspace_enum {
+   COLORSPACE_Default,
+   COLORSPACE_BT2020_RGB,
+   COLORSPACE_ENUM_MAX,
+};
+
 typedef struct wsi_display_connector {
    struct list_head             list;
    struct wsi_display           *wsi;
@@ -128,6 +165,8 @@ typedef struct wsi_display_connector {
    uint32_t                     property[CONNECTOR_PROPERTY_MAX];
    uint32_t                     crtc_property[CRTC_PROPERTY_MAX];
    uint32_t                     plane_property[PLANE_PROPERTY_MAX];
+   uint32_t                     colorspace_enum[COLORSPACE_ENUM_MAX];
+   uint64_t                     color_outcome_serial;
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
    xcb_randr_output_t           output;
 #endif
@@ -151,6 +190,12 @@ struct wsi_display {
    pthread_t                    hotplug_thread;
 
    struct list_head             connectors; /* list of all discovered connectors */
+
+   /* A unique monotonically increasing value to associate with an individual
+    * colorimetry outcome on the output. This is used to avoid propagating
+    * dirty tracking flags across large numbers of objects.
+    */
+   uint64_t                     color_outcome_serial_counter;
 };
 
 /**
@@ -214,6 +259,8 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
          STATIC_ASSERT(CRTC_ID == (enum plane_property) CONN_CRTC_ID);
          PROPERTY(CRTC_ID);
          PROPERTY(DPMS);
+         PROPERTY(HDR_OUTPUT_METADATA);
+         PROPERTY(Colorspace);
          break;
       case DRM_MODE_OBJECT_CRTC:
          PROPERTY(MODE_ID);
@@ -236,6 +283,18 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
          break;
       }
 #undef PROPERTY
+
+      if (!strcmp(prop->name, "Colorspace")) {
+         assert(prop->flags & DRM_MODE_PROP_ENUM);
+#define COLORSPACE_ENUM(x) if (!strcmp(en->name, #x)) connector->colorspace_enum[COLORSPACE_##x] = en->value
+         for (int e = 0; e < prop->count_enums; e++) {
+            struct drm_mode_property_enum *en = &prop->enums[e];
+            COLORSPACE_ENUM(Default);
+            COLORSPACE_ENUM(BT2020_RGB);
+         }
+#undef COLORSPACE_ENUM
+      }
+
       drmModeFreeProperty(prop);
    }
 
@@ -288,6 +347,10 @@ struct wsi_display_swapchain {
    struct u_cnd_monotonic       present_id_cond;
    uint64_t                     present_id;
    VkResult                     present_id_error;
+
+   /* A unique ID for the color outcome of the swapchain. A serial of 0 means unset/default. */
+   uint64_t                     color_outcome_serial;
+   VkHdrMetadataEXT             hdr_metadata;
 
    struct wsi_display_image     images[0];
 };
@@ -2244,6 +2307,105 @@ wsi_register_vblank_event(struct wsi_display_fence *fence,
    }
 }
 
+static inline uint16_t
+color_xy_to_u16(float v)
+{
+   assert(v >= 0.0f);
+   assert(v <= 1.0f);
+   /*
+    * CTA-861-G
+    * 6.9.1 Static Metadata Type 1
+    * chromaticity coordinate encoding
+    */
+   return (uint16_t)round(v * 50000.0);
+}
+
+static inline uint16_t
+nits_to_u16(float nits)
+{
+   assert(nits >= 1.0f);
+   assert(nits <= 65535.0f);
+   /*
+    * CTA-861-G
+    * 6.9.1 Static Metadata Type 1
+    * max display mastering luminance, max content light level,
+    * max frame-average light level
+    */
+   return (uint16_t)round(nits);
+}
+
+static inline uint16_t
+nits_to_u16_dark(float nits)
+{
+   assert(nits >= 0.0001f);
+   assert(nits <= 6.5535f);
+   /*
+    * CTA-861-G
+    * 6.9.1 Static Metadata Type 1
+    * min display mastering luminance
+    */
+   return (uint16_t)round(nits * 10000.0);
+}
+
+/* from CTA-861-G */
+#define HDMI_EOTF_SDR 0
+#define HDMI_EOTF_TRADITIONAL_HDR 1
+#define HDMI_EOTF_ST2084 2
+#define HDMI_EOTF_HLG 3
+
+static int
+_wsi_hdmi_metadata_eotf_from_vk_colorspace(VkColorSpaceKHR color_space)
+{
+   switch (color_space) {
+   default:
+   case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
+      return HDMI_EOTF_SDR;
+   case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
+      return HDMI_EOTF_TRADITIONAL_HDR;
+   case VK_COLOR_SPACE_HDR10_ST2084_EXT:
+      return HDMI_EOTF_ST2084;
+   case VK_COLOR_SPACE_HDR10_HLG_EXT:
+      return HDMI_EOTF_HLG;
+   }
+}
+
+static enum colorspace_enum
+vk_colorspace_to_drm_colorspace(VkColorSpaceKHR color_space)
+{
+   switch (color_space) {
+   default:
+   case VK_COLORSPACE_SRGB_NONLINEAR_KHR:
+      return COLORSPACE_Default;
+   case VK_COLOR_SPACE_HDR10_ST2084_EXT:
+      return COLORSPACE_BT2020_RGB;
+   }
+}
+
+static void
+_wsi_display_convert_hdr_metadata(VkHdrMetadataEXT *pMetadata, uint8_t hdmi_eotf, struct hdr_output_metadata *drm_metadata)
+{
+   memset(drm_metadata, 0, sizeof(struct hdr_output_metadata));
+
+   drm_metadata->metadata_type = 0;
+   drm_metadata->hdmi_metadata_type1.eotf = hdmi_eotf;
+   drm_metadata->hdmi_metadata_type1.metadata_type = drm_metadata->metadata_type; /* duplicated */
+
+   if (drm_metadata->hdmi_metadata_type1.eotf == HDMI_EOTF_ST2084) {
+      drm_metadata->hdmi_metadata_type1.display_primaries[0].x = color_xy_to_u16(pMetadata->displayPrimaryRed.x);
+      drm_metadata->hdmi_metadata_type1.display_primaries[0].y = color_xy_to_u16(pMetadata->displayPrimaryRed.y);
+      drm_metadata->hdmi_metadata_type1.display_primaries[1].x = color_xy_to_u16(pMetadata->displayPrimaryGreen.x);
+      drm_metadata->hdmi_metadata_type1.display_primaries[1].y = color_xy_to_u16(pMetadata->displayPrimaryGreen.y);
+      drm_metadata->hdmi_metadata_type1.display_primaries[2].x = color_xy_to_u16(pMetadata->displayPrimaryBlue.x);
+      drm_metadata->hdmi_metadata_type1.display_primaries[2].y = color_xy_to_u16(pMetadata->displayPrimaryBlue.y);
+      drm_metadata->hdmi_metadata_type1.white_point.x = color_xy_to_u16(pMetadata->whitePoint.x);
+      drm_metadata->hdmi_metadata_type1.white_point.y = color_xy_to_u16(pMetadata->whitePoint.y);
+      drm_metadata->hdmi_metadata_type1.max_display_mastering_luminance = nits_to_u16(pMetadata->maxLuminance);
+      drm_metadata->hdmi_metadata_type1.min_display_mastering_luminance = nits_to_u16_dark(pMetadata->minLuminance);
+      drm_metadata->hdmi_metadata_type1.max_cll = nits_to_u16(pMetadata->maxContentLightLevel);
+      drm_metadata->hdmi_metadata_type1.max_fall = nits_to_u16(pMetadata->maxFrameAverageLightLevel);
+   }
+}
+
 static int
 drm_atomic_commit(wsi_display_connector *connector, struct wsi_display_image *image)
 {
@@ -2283,6 +2445,36 @@ drm_atomic_commit(wsi_display_connector *connector, struct wsi_display_image *im
          drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[CTM], 0);
 
       flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
+   }
+
+   if (connector->color_outcome_serial != image->chain->color_outcome_serial) {
+      if (connector->property[HDR_OUTPUT_METADATA] != -1) {
+         const uint8_t hdmi_eotf =
+            _wsi_hdmi_metadata_eotf_from_vk_colorspace(image->chain->base.image_info.color_space);
+
+         blob_id = 0;
+
+         /* Only bother making a blob if we are HDR, otherwise set it to 0 (empty). */
+         if (hdmi_eotf != HDMI_EOTF_SDR) {
+            struct hdr_output_metadata drm_metadata;
+            _wsi_display_convert_hdr_metadata(&image->chain->hdr_metadata, hdmi_eotf, &drm_metadata);
+
+            if (drmModeCreatePropertyBlob(image->chain->wsi->fd, &drm_metadata,
+                                          sizeof(drm_metadata), &blob_id) != 0)
+               return -1;
+         }
+
+         drmModeAtomicAddProperty(req, connector->id, connector->property[HDR_OUTPUT_METADATA], blob_id);
+      }
+
+      if (connector->property[Colorspace] != -1) {
+         const enum colorspace_enum drm_colorspace =
+            vk_colorspace_to_drm_colorspace(image->chain->base.image_info.color_space);
+         drmModeAtomicAddProperty(req, connector->id, connector->property[Colorspace],
+                                  connector->colorspace_enum[drm_colorspace]);
+      }
+
+      connector->color_outcome_serial = image->chain->color_outcome_serial;
    }
 
    const uint32_t *prop = connector->plane_property;
@@ -2463,6 +2655,16 @@ wsi_display_wait_for_present(struct wsi_swapchain *wsi_chain,
    return result;
 }
 
+static void
+wsi_display_set_hdr_metadata(struct wsi_swapchain *wsi_chain,
+                             const VkHdrMetadataEXT* pMetadata)
+{
+   struct wsi_display_swapchain *chain = (struct wsi_display_swapchain *)wsi_chain;
+
+   chain->color_outcome_serial = p_atomic_inc_return(&chain->wsi->color_outcome_serial_counter);
+   chain->hdr_metadata = *pMetadata;
+}
+
 static VkResult
 wsi_display_surface_create_swapchain(
    VkIcdSurfaceBase *icd_surface,
@@ -2557,8 +2759,10 @@ wsi_display_surface_create_swapchain(
    chain->base.queue_present = wsi_display_queue_present;
    chain->base.wait_for_present = wsi_display_wait_for_present;
    chain->base.wait_for_present2 = wsi_display_wait_for_present;
+   chain->base.set_hdr_metadata = wsi_display_set_hdr_metadata;
    chain->base.present_mode = wsi_swapchain_get_present_mode(wsi_device, create_info);
    chain->base.image_count = num_images;
+   chain->color_outcome_serial = 0;
 
    chain->wsi = wsi;
    chain->status = VK_SUCCESS;
