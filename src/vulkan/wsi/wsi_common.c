@@ -403,6 +403,8 @@ configure_image(const struct wsi_swapchain *chain,
                 struct wsi_image_info *info)
 {
    info->image_type = params->image_type;
+   info->color_space = pCreateInfo->imageColorSpace;
+
    switch (params->image_type) {
    case WSI_IMAGE_TYPE_CPU: {
       const struct wsi_cpu_image_params *cpu_params =
@@ -642,6 +644,8 @@ wsi_configure_image(const struct wsi_swapchain *chain,
       .pQueueFamilyIndices = queue_family_indices,
       .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
    };
+
+   info->color_space = pCreateInfo->imageColorSpace;
 
    if (handle_types != 0) {
       info->ext_mem = (VkExternalMemoryImageCreateInfo) {

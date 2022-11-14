@@ -85,6 +85,7 @@ struct wsi_image_info {
    VkExternalMemoryImageCreateInfo ext_mem;
    VkImageFormatListCreateInfo format_list;
    VkImageDrmFormatModifierListCreateInfoEXT drm_mod_list;
+   VkColorSpaceKHR color_space;
 
    enum wsi_image_type image_type;
    bool explicit_sync;
