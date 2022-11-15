@@ -1138,7 +1138,7 @@
         "description": "aco: fix p_interp_gfx11 to not overwrite SCC",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6113ee650a272dc737a200e276de474e083a2fdf"
     },
