@@ -913,7 +913,7 @@
         "description": "mesa: treat unsupported queries as dummies",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0186e9e1c51b1de5d47ac10854c048cb83e81f4b"
     },
