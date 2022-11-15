@@ -400,7 +400,7 @@
         "description": "util: include sys/time.h for timespec functions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "095dfc6caa29e150b5c8e9566320eda1117e714b"
     },
