@@ -976,7 +976,7 @@
         "description": "frontend/va: Fix WIN32 VA_DRIVER_INIT_FUNC declaration. Remove declspec as it uses .def file",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b557ceb75b79e0d8b3f7352d4bb6764137175ee0"
     },
