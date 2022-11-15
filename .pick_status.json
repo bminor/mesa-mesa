@@ -760,7 +760,7 @@
         "description": "ci: Add va frontend to windows-build-rules",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2d504bc5a05467ad19f9a6df92f649697288f8f5"
     },
