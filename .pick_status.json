@@ -490,7 +490,7 @@
         "description": "panfrost: Fix reference counting with batch->resources",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2d8f28df731638e1270b0ae273c7bfd2b29b7993"
     },
