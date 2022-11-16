@@ -2506,7 +2506,7 @@
         "description": "d3d12: Video Screen - Do not crash if HEVC not supported, return no support instead",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8f654b90005b75a74796d36d980676ce1d739d12"
     },
