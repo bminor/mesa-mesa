@@ -1759,7 +1759,7 @@
         "description": "zink: fix json-errors in profile-file",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2ea481b2f0a8afbdf7bb510ff11497535083c424"
     },
