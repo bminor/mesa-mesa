@@ -2677,7 +2677,7 @@
         "description": "anv: get rid of ilog2_round_up",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f68d64dac01505560a53aabe2b8616685cace0c2"
     },
