@@ -1075,7 +1075,7 @@
         "description": "docs/zink: add missing required device-feature",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eb0195358c4e0376d93f10fb4f90703e51718779"
     },
