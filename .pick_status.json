@@ -1741,7 +1741,7 @@
         "description": "zink: fix incorrect requirements",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a466c2a783908899f646d4c2df38d11c74724a85"
     },
