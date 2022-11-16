@@ -913,7 +913,7 @@
         "description": "radv: disable MRT compaction with dual-source blending",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
