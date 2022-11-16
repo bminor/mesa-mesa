@@ -1732,7 +1732,7 @@
         "description": "zink: update textureCompressionBC requirement",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e4ff42684b95cfbc9c7b088a1f133bd0555b11e1"
     },
