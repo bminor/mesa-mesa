@@ -472,7 +472,7 @@
         "description": "aco: fix missing SCC for p_interp_gfx11 in emit_interp_mov_instr()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "369c9b642524cb543c59d006ad7e3ce089fa6879"
     },
