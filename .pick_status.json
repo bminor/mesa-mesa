@@ -2254,7 +2254,7 @@
         "description": "vulkan/wsi/wayland: Set num_modifier_lists = 0 if num_drm_modifiers == 0",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c315e20d619849091595450ce416e55369770234"
     },
