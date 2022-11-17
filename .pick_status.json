@@ -1669,7 +1669,7 @@
         "description": "nir/range_analysis: Set higher default maximum for max_workgroup_count",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c2a81ebe19f98b025b296fcadc279b4358d37345"
     },
