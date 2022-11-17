@@ -2272,7 +2272,7 @@
         "description": "st/mesa: suppress async glthread flushing for GLX_EXT_texture_from_pixmap",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3da170faaec2a57d76e668ab56781621c23c6703"
     },
