@@ -265,7 +265,7 @@
         "description": "ac/llvm: fix 16bit varying llvm compile error",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "279eea5bda2444fdce21744b972dad5016f0f366"
     },
