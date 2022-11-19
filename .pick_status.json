@@ -85,7 +85,7 @@
         "description": "radv: Fix custom build id with C90 compilation.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "97641e5c9422430b74967a77ddb12f3e57604e4b"
     },
