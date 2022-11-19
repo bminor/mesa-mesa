@@ -760,7 +760,7 @@
         "description": "rusticl/device: put space at the end of CL_DEVICE_VERSION",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "20c90fed5a0ab0202ee1ef474c71cb816164a448"
     },
