@@ -715,7 +715,7 @@
         "description": "anv: ensure CPS is initialized when KHR_fragment_shading_rate is disabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "231651fd89fb007610568b3ca76837253e7683ff"
     },
