@@ -2638,3 +2638,157 @@ TEST_F(cmod_propagation_test, fixed_grf_partial_overlap)
 
    EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
 }
+
+TEST_F(cmod_propagation_test, mov_nz_d_to_cmp_nz_ud)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+
+   /* Ensure the cmod propagation happens when the source types don't match
+    * exactly (D vs UD). This has been observed in some shaders after
+    * brw_lower_subgroup_ops is run.
+    */
+   bld.CMP(bld.null_reg_ud(), src0, brw_imm_ud(0), BRW_CONDITIONAL_NZ);
+
+   bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D))
+      ->conditional_mod = BRW_CONDITIONAL_NZ;
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   exp.CMP(exp.null_reg_ud(), src0, brw_imm_ud(0), BRW_CONDITIONAL_NZ);
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(cmod_propagation_test, mov_nz_to_mov_nz)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src3 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src4 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src5 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src6 = vgrf(bld, exp, BRW_TYPE_UD);
+
+   bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D))
+      ->conditional_mod = BRW_CONDITIONAL_NZ;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src1, src2, src3));
+
+   bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D))
+      ->conditional_mod = BRW_CONDITIONAL_NZ;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src4, src5, src6));
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   exp.MOV(exp.null_reg_d(), retype(src0, BRW_TYPE_D))
+      ->conditional_mod = BRW_CONDITIONAL_NZ;
+
+   set_predicate(BRW_PREDICATE_NORMAL, exp.SEL(src1, src2, src3));
+   set_predicate(BRW_PREDICATE_NORMAL, exp.SEL(src4, src5, src6));
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(cmod_propagation_test, mov_sat_nz_to_mov_sat_nz)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src3 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src4 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src5 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src6 = vgrf(bld, exp, BRW_TYPE_UD);
+
+   brw_inst *inst;
+
+   inst = bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D));
+   inst->conditional_mod = BRW_CONDITIONAL_NZ;
+   inst->saturate = true;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src1, src2, src3));
+
+   inst = bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D));
+   inst->conditional_mod = BRW_CONDITIONAL_NZ;
+   inst->saturate = true;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src4, src5, src6));
+
+   EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
+
+   inst = exp.MOV(exp.null_reg_d(), retype(src0, BRW_TYPE_D));
+   inst->conditional_mod = BRW_CONDITIONAL_NZ;
+   inst->saturate = true;
+
+   set_predicate(BRW_PREDICATE_NORMAL, exp.SEL(src1, src2, src3));
+   set_predicate(BRW_PREDICATE_NORMAL, exp.SEL(src4, src5, src6));
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+TEST_F(cmod_propagation_test, mov_sat_nz_to_mov_nz)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src3 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src4 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src5 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src6 = vgrf(bld, exp, BRW_TYPE_UD);
+
+   brw_inst *inst;
+
+   inst = bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D));
+   inst->conditional_mod = BRW_CONDITIONAL_NZ;
+   inst->saturate = true;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src1, src2, src3));
+
+   inst = bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D));
+   inst->conditional_mod = BRW_CONDITIONAL_NZ;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src4, src5, src6));
+
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+}
+
+TEST_F(cmod_propagation_test, mov_nz_to_mov_sat_nz)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src2 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src3 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src4 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src5 = vgrf(bld, exp, BRW_TYPE_UD);
+   brw_reg src6 = vgrf(bld, exp, BRW_TYPE_UD);
+
+   brw_inst *inst;
+
+   inst = bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D));
+   inst->conditional_mod = BRW_CONDITIONAL_NZ;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src1, src2, src3));
+
+   inst = bld.MOV(bld.null_reg_d(), retype(src0, BRW_TYPE_D));
+   inst->conditional_mod = BRW_CONDITIONAL_NZ;
+   inst->saturate = true;
+
+   set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(src4, src5, src6));
+
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+}
