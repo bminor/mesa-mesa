@@ -22804,7 +22804,7 @@
         "description": "virgl: link VA driver with build-id",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d6db4d2e08100b12fe6ac539f419768b3b412643",
         "notes": null
