@@ -1336,7 +1336,7 @@
         "description": "radv: Use correct init order for ETC2 image views",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d9048e31a0d7b08b23363c1e31d509b635d5383b"
     },
