@@ -1327,7 +1327,7 @@
         "description": "radv: Fix sampler types in ETC2 decode.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1153db23f58c39af2472e3bdfa721879ca1ac8cd"
     },
