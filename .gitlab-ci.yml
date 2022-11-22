@@ -409,7 +409,7 @@ fedora/x86_build:
     - .container
   variables:
     FDO_DISTRIBUTION_VERSION: 34
-    MESA_IMAGE_TAG: &fedora-x86_build "2021-07-08-bump-libdrm"
+    MESA_IMAGE_TAG: &fedora-x86_build "2022-11-22-build-args"
 
 .use-fedora/x86_build:
   extends:
@@ -602,7 +602,6 @@ fedora-release:
       -D llvm=enabled
       -D microsoft-clc=disabled
       -D shared-llvm=enabled
-      -D vulkan-device-select-layer=true
     LLVM_VERSION: ""
     UNWIND: "disabled"
     VULKAN_DRIVERS: "amd,broadcom,freedreno,intel"
