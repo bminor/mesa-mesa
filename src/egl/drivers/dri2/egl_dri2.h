@@ -215,8 +215,6 @@ struct dri2_egl_display {
 
    mtx_t lock;
 
-   int dri2_major;
-   int dri2_minor;
    struct dri_screen *dri_screen_render_gpu;
    /* dri_screen_display_gpu holds display GPU in case of prime gpu offloading
     * else dri_screen_render_gpu and dri_screen_display_gpu is same. In case of

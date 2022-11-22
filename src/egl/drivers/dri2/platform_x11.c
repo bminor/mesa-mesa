@@ -1364,8 +1364,7 @@ void
 dri2_teardown_x11(struct dri2_egl_display *dri2_dpy)
 {
 #ifdef HAVE_LIBDRM
-   if (dri2_dpy->dri2_major >= 3)
-      loader_destroy_screen_resources(&dri2_dpy->screen_resources);
+   loader_destroy_screen_resources(&dri2_dpy->screen_resources);
 #endif
 
    if (dri2_dpy->own_device)
