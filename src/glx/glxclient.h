@@ -136,7 +136,6 @@ struct __GLXDRIdrawableRec
 ** dependent methods.
 */
 extern __GLXDRIdisplay *driswCreateDisplay(Display * dpy, enum glx_driver glx_driver);
-extern __GLXDRIdisplay *dri2CreateDisplay(Display * dpy);
 extern __GLXDRIdisplay *dri3_create_display(Display * dpy);
 extern __GLXDRIdisplay *driwindowsCreateDisplay(Display * dpy);
 
