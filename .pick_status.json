@@ -2569,7 +2569,7 @@
         "description": "anv/perf: fixup counter/query mapping",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "2001a80d4a81f2e8194b29cca301dd1b27be9acb"
     },
