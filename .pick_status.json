@@ -1975,7 +1975,7 @@
         "description": "gallivm: use valid LLVM_VERSION_MAJOR instead of LLVM_VERSION",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "203920d4c69366b71db1d48d8fb8bd6439016191"
     },
