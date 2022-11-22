@@ -420,73 +420,6 @@ fedora/x86_build:
   needs:
     - fedora/x86_build
 
-# Native Windows docker builds
-#
-# Unlike the above Linux-based builds - including MinGW builds which
-# cross-compile for Windows - which use the freedesktop ci-templates, we
-# cannot use the same scheme here. As Windows lacks support for
-# Docker-in-Docker, and Podman does not run natively on Windows, we have
-# to open-code much of the same ourselves.
-#
-# This is achieved by first running in a native Windows shell instance
-# (host PowerShell) in the container stage to build and push the image,
-# then in the build stage by executing inside Docker.
-
-.windows-docker-vs2019:
-  extends:
-    - .set-image
-  variables:
-    MESA_IMAGE: "$CI_REGISTRY_IMAGE/${MESA_IMAGE_PATH}:${MESA_IMAGE_TAG}"
-    MESA_IMAGE_PATH: "windows/x64_build"
-    MESA_IMAGE_TAG: "2021-06-24-zink-msvc"
-    MESA_UPSTREAM_IMAGE: "$CI_REGISTRY/$FDO_UPSTREAM_REPO/$MESA_IMAGE_PATH:${MESA_IMAGE_TAG}"
-
-windows_build_vs2019:
-  inherit:
-    default: false
-  extends:
-    - .container
-    - .windows-docker-vs2019
-  stage: container
-  variables:
-    GIT_STRATEGY: fetch # we do actually need the full repository though
-  timeout: 2h 30m # LLVM + piglit takes ages
-  tags:
-    - windows
-    - shell
-    - "1809"
-    - mesa
-  script:
-    - .\.gitlab-ci\windows\mesa_container.ps1 $CI_REGISTRY $CI_REGISTRY_USER $CI_REGISTRY_PASSWORD $MESA_IMAGE $MESA_UPSTREAM_IMAGE
-  rules:
-    # Amber: Disable Windows jobs for marge, but allow them to be run manually
-    - if: *is-pre-merge-for-marge
-      changes:
-        *all_paths
-      when: never
-    - changes:
-        *all_paths
-      when: manual
-    - when: never
-
-.use-windows_build_vs2019:
-  inherit:
-    default: false
-  extends: .windows-docker-vs2019
-  image: "$MESA_IMAGE"
-  needs:
-    - windows_build_vs2019
-  rules:
-    # Amber: Disable Windows jobs for marge, but allow them to be run manually
-    - if: *is-pre-merge-for-marge
-      changes:
-        *all_paths
-      when: never
-    - changes:
-        *all_paths
-      when: manual
-    - when: never
-
 
 # Git archive
 
@@ -560,18 +493,6 @@ sanity:
   after_script:
     - ccache --show-stats
     - !reference [default, after_script]
-
-.build-windows:
-  extends: .build-common
-  tags:
-    - windows
-    - docker
-    - "1809"
-    - mesa
-  cache:
-    key: ${CI_JOB_NAME}
-    paths:
-      - subprojects/packagecache
 
 .meson-build:
   extends:
@@ -873,19 +794,6 @@ debian-clang:
     CC: clang
     CXX: clang++
 
-windows-vs2019:
-  extends:
-    - .build-windows
-    - .windows-build-rules
-    - .use-windows_build_vs2019
-  stage: build-misc
-  script:
-    - . .\.gitlab-ci\windows\mesa_build.ps1
-  artifacts:
-    paths:
-      - _build/meson-logs/*.txt
-      - _install/
-
 debian-clover:
   extends: .meson-build
   variables:
@@ -973,20 +881,3 @@ debian-ppc64el:
     CROSS: ppc64el
     GALLIUM_DRIVERS: "nouveau,radeonsi,swrast,virgl,zink"
     VULKAN_DRIVERS: "amd,swrast"
-
-debian-mingw32-x86_64:
-  extends: .meson-build
-  stage: build-misc
-  variables:
-    UNWIND: "disabled"
-    C_ARGS: >
-      -Wno-error=format
-      -Wno-error=format-extra-args
-    CPP_ARGS: $C_ARGS
-    DRI_DRIVERS: ""
-    GALLIUM_DRIVERS: "swrast"
-    EXTRA_OPTION: >
-      -Dllvm=disabled
-      -Dzlib=disabled
-      -Dosmesa=true
-      --cross-file=.gitlab-ci/x86_64-w64-mingw32
