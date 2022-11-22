@@ -203,9 +203,6 @@ EGL_FUNCTIONS = (
     _eglFunc("eglExportDMABUFImageQueryMESA",        "display"),
     _eglFunc("eglExportDMABUFImageMESA",             "display"),
 
-    # EGL_NOK_swap_region
-    _eglFunc("eglSwapBuffersRegionNOK",              "display"),
-
     # EGL_NV_post_sub_buffer
     _eglFunc("eglPostSubBufferNV",                   "display"),
 

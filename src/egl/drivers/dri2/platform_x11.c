@@ -1169,7 +1169,6 @@ dri2_x11_post_sub_buffer(_EGLDisplay *disp, _EGLSurface *draw, EGLint x,
    return dri2_x11_swap_buffers_region(disp, draw, 1, rect);
 }
 #else
-#define dri2_x11_swap_buffers_region NULL
 #define dri2_x11_post_sub_buffer NULL
 #endif
 
@@ -1545,7 +1544,6 @@ static const struct dri2_egl_display_vtbl dri2_x11_swrast_display_vtbl = {
    .destroy_surface = dri2_x11_destroy_surface,
    .create_image = dri2_create_image_khr,
    .swap_buffers = dri2_x11_swap_buffers,
-   .swap_buffers_region = dri2_x11_swap_buffers_region,
    .swap_buffers_with_damage = dri2_x11_swap_buffers_with_damage,
    .post_sub_buffer = dri2_x11_post_sub_buffer,
    .copy_buffers = dri2_x11_copy_buffers,
@@ -1565,7 +1563,6 @@ static const struct dri2_egl_display_vtbl dri2_x11_kopper_display_vtbl = {
    .create_image = dri2_create_image_khr,
    .swap_interval = dri2_kopper_swap_interval,
    .swap_buffers = dri2_x11_swap_buffers,
-   .swap_buffers_region = dri2_x11_swap_buffers_region,
    .swap_buffers_with_damage = dri2_x11_kopper_swap_buffers_with_damage,
    .post_sub_buffer = dri2_x11_post_sub_buffer,
    .copy_buffers = dri2_x11_copy_buffers,
@@ -1586,7 +1583,6 @@ static const struct dri2_egl_display_vtbl dri2_x11_display_vtbl = {
    .create_image = dri2_x11_create_image_khr,
    .swap_interval = dri2_x11_swap_interval,
    .swap_buffers = dri2_x11_swap_buffers,
-   .swap_buffers_region = dri2_x11_swap_buffers_region,
    .post_sub_buffer = dri2_x11_post_sub_buffer,
    .copy_buffers = dri2_x11_copy_buffers,
    .query_surface = dri2_query_surface,
