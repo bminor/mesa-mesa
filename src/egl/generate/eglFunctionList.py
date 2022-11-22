@@ -203,9 +203,6 @@ EGL_FUNCTIONS = (
     _eglFunc("eglExportDMABUFImageQueryMESA",        "display"),
     _eglFunc("eglExportDMABUFImageMESA",             "display"),
 
-    # EGL_NV_post_sub_buffer
-    _eglFunc("eglPostSubBufferNV",                   "display"),
-
     # EGL_WL_bind_wayland_display
     _eglFunc("eglCreateWaylandBufferFromImageWL",    "display"),
     _eglFunc("eglUnbindWaylandDisplayWL",            "display"),

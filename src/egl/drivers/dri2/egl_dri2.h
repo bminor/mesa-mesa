@@ -140,10 +140,6 @@ struct dri2_egl_display_vtbl {
                                           const EGLint *rects, EGLint n_rects);
 
    /* optional */
-   EGLBoolean (*post_sub_buffer)(_EGLDisplay *disp, _EGLSurface *surf, EGLint x,
-                                 EGLint y, EGLint width, EGLint height);
-
-   /* optional */
    EGLBoolean (*copy_buffers)(_EGLDisplay *disp, _EGLSurface *surf,
                               void *native_pixmap_target);
 

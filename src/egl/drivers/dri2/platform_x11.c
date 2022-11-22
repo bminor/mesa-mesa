@@ -507,9 +507,6 @@ dri2_x11_create_surface(_EGLDisplay *disp, EGLint type, _EGLConfig *conf,
       swrastCreateDrawable(dri2_dpy, dri2_surf);
    }
 
-   /* we always copy the back buffer to front */
-   dri2_surf->base.PostSubBufferSupportedNV = EGL_TRUE;
-
    return &dri2_surf->base;
 
 cleanup_dri_drawable:
@@ -1127,51 +1124,6 @@ dri2_x11_swap_buffers(_EGLDisplay *disp, _EGLSurface *draw)
    return EGL_TRUE;
 }
 
-#ifdef HAVE_X11_DRI2
-static EGLBoolean
-dri2_x11_swap_buffers_region(_EGLDisplay *disp, _EGLSurface *draw,
-                             EGLint numRects, const EGLint *rects)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   struct dri2_egl_surface *dri2_surf = dri2_egl_surface(draw);
-   EGLBoolean ret;
-   xcb_xfixes_region_t region;
-   xcb_rectangle_t rectangles[16];
-
-   if (numRects > (int)ARRAY_SIZE(rectangles))
-      return dri2_copy_region(disp, draw, dri2_surf->region);
-
-   for (int i = 0; i < numRects; i++) {
-      rectangles[i].x = rects[i * 4];
-      rectangles[i].y =
-         dri2_surf->base.Height - rects[i * 4 + 1] - rects[i * 4 + 3];
-      rectangles[i].width = rects[i * 4 + 2];
-      rectangles[i].height = rects[i * 4 + 3];
-   }
-
-   region = xcb_generate_id(dri2_dpy->conn);
-   xcb_xfixes_create_region(dri2_dpy->conn, region, numRects, rectangles);
-   ret = dri2_copy_region(disp, draw, region);
-   xcb_xfixes_destroy_region(dri2_dpy->conn, region);
-
-   return ret;
-}
-
-static EGLBoolean
-dri2_x11_post_sub_buffer(_EGLDisplay *disp, _EGLSurface *draw, EGLint x,
-                         EGLint y, EGLint width, EGLint height)
-{
-   const EGLint rect[4] = {x, y, width, height};
-
-   if (x < 0 || y < 0 || width < 0 || height < 0)
-      _eglError(EGL_BAD_PARAMETER, "eglPostSubBufferNV");
-
-   return dri2_x11_swap_buffers_region(disp, draw, 1, rect);
-}
-#else
-#define dri2_x11_post_sub_buffer NULL
-#endif
-
 static EGLBoolean
 dri2_x11_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
                                          const EGLint *rects, EGLint numRects)
@@ -1545,7 +1497,6 @@ static const struct dri2_egl_display_vtbl dri2_x11_swrast_display_vtbl = {
    .create_image = dri2_create_image_khr,
    .swap_buffers = dri2_x11_swap_buffers,
    .swap_buffers_with_damage = dri2_x11_swap_buffers_with_damage,
-   .post_sub_buffer = dri2_x11_post_sub_buffer,
    .copy_buffers = dri2_x11_copy_buffers,
    .query_buffer_age = dri2_swrast_query_buffer_age,
    /* XXX: should really implement this since X11 has pixmaps */
@@ -1564,7 +1515,6 @@ static const struct dri2_egl_display_vtbl dri2_x11_kopper_display_vtbl = {
    .swap_interval = dri2_kopper_swap_interval,
    .swap_buffers = dri2_x11_swap_buffers,
    .swap_buffers_with_damage = dri2_x11_kopper_swap_buffers_with_damage,
-   .post_sub_buffer = dri2_x11_post_sub_buffer,
    .copy_buffers = dri2_x11_copy_buffers,
    .query_buffer_age = dri2_kopper_query_buffer_age,
    /* XXX: should really implement this since X11 has pixmaps */

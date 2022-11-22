@@ -1704,21 +1704,6 @@ dri2_set_damage_region(_EGLDisplay *disp, _EGLSurface *surf, EGLint *rects,
 }
 
 static EGLBoolean
-dri2_post_sub_buffer(_EGLDisplay *disp, _EGLSurface *surf, EGLint x, EGLint y,
-                     EGLint width, EGLint height)
-{
-   struct dri2_egl_display *dri2_dpy = dri2_egl_display_lock(disp);
-   EGLBoolean ret = EGL_FALSE;
-
-   if (dri2_dpy->vtbl->post_sub_buffer)
-      ret = dri2_dpy->vtbl->post_sub_buffer(disp, surf, x, y, width, height);
-
-   mtx_unlock(&dri2_dpy->lock);
-
-   return ret;
-}
-
-static EGLBoolean
 dri2_copy_buffers(_EGLDisplay *disp, _EGLSurface *surf,
                   void *native_pixmap_target)
 {
@@ -3350,7 +3335,6 @@ const _EGLDriver _eglDriver = {
    .SwapBuffers = dri2_swap_buffers,
    .SwapBuffersWithDamageEXT = dri2_swap_buffers_with_damage,
    .SetDamageRegion = dri2_set_damage_region,
-   .PostSubBufferNV = dri2_post_sub_buffer,
    .CopyBuffers = dri2_copy_buffers,
    .QueryBufferAge = dri2_query_buffer_age,
    .CreateImageKHR = dri2_create_image,
