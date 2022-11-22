@@ -589,7 +589,7 @@
         "description": "anv: fixup context initialization on DG2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "507a86e131d648ecc85dc833f4821da6ac995cfe"
     },
