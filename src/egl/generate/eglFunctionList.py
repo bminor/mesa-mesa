@@ -76,6 +76,7 @@ method values:
     Select the vendor that owns the current context.
 """
 
+
 def _eglFunc(name, method, static=None, public=False, inheader=None, prefix="dispatch_", extension=None, retval=None):
     """
     A convenience function to define an entry in the EGL function list.
@@ -85,15 +86,16 @@ def _eglFunc(name, method, static=None, public=False, inheader=None, prefix="dis
     if inheader is None:
         inheader = (not static)
     values = {
-        "method" : method,
-        "prefix" : prefix,
-        "extension" : extension,
-        "retval" : retval,
-        "static" : static,
-        "public" : public,
-        "inheader" : inheader,
+        "method": method,
+        "prefix": prefix,
+        "extension": extension,
+        "retval": retval,
+        "static": static,
+        "public": public,
+        "inheader": inheader,
     }
     return (name, values)
+
 
 EGL_FUNCTIONS = (
     # EGL_VERSION_1_0
@@ -250,4 +252,3 @@ EGL_FUNCTIONS = (
     # EGL_EXT_surface_compression
     _eglFunc("eglQuerySupportedCompressionRatesEXT", "display"),
 )
-
