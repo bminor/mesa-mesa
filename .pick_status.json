@@ -1795,7 +1795,7 @@
         "description": "blorp: support negative offsets in addresses",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9c1c1888d9895d05246005620953ee307d1a17f1"
     },
