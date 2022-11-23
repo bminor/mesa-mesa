@@ -22,7 +22,7 @@
         "description": "nir/divergence: add missing btd_shader_type_intel",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6d9ae6ec1eaae3ff3407a37262d4b0a68e69c826"
     },
