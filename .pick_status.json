@@ -1453,7 +1453,7 @@
         "description": "virgl: Fix injection of double from const mov instruction",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "036d7172c24a18eca653fa95eb40b70719ce4d7e"
     },
