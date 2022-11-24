@@ -5024,7 +5024,7 @@
         "description": "tu: Don't override depth for GMEM",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "def56b531c86f529bc32d1834ccb479457717db7",
         "notes": null
