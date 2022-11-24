@@ -427,7 +427,7 @@
         "description": "d3d12: fix max-array-layers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7118b2136e9c7412108b668e7be4723830bbb7ec"
     },
