@@ -1174,7 +1174,7 @@
         "description": "etnaviv: always use RS align when GPU has TEXTURE_HALIGN feature",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "735718ed33b2e2b029469faac6d5e9fc52a5c723"
     },
