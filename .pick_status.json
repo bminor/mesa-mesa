@@ -1165,7 +1165,7 @@
         "description": "etnaviv: rs: fix blits with insufficient alignment for dual pipe operation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0ff96aaef3b1da78dde1ad9f6c79cc8dd3367577"
     },
