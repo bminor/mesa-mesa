@@ -1147,7 +1147,7 @@
         "description": "Revert \"glx/dri: Fix DRI drawable release at MakeCurrent time\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "31b04e420b0eb080084c6323066ea0b83929d59e"
     },
