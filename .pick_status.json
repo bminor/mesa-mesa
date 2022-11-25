@@ -1480,7 +1480,7 @@
         "description": "radv: fix and rework DISABLE_DUAL_QUAD setting",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "17b9aa92b77da1fbfa2595c6d4577c1a28eb64e6"
     },
