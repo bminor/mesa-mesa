@@ -610,6 +610,12 @@ option(
 )
 
 option(
+   'display-info',
+   type : 'feature',
+   description : 'Use libdisplay-info to build driver.'
+)
+
+option(
   'sse2',
   type : 'boolean',
   value : true,
