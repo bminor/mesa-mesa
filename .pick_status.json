@@ -184,7 +184,7 @@
         "description": "nir/lower_int64: fix shift lowering",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "41f3e9e5f5de5309821c266b76ccdd1b4d016ce8"
     },
