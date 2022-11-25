@@ -4468,7 +4468,7 @@
         "description": "anv: correctly predicate ray tracing",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7479fe6ae0935fb8f9e3c64c16c7e6855481d1da"
     },
