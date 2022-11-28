@@ -211,7 +211,7 @@
         "description": "venus: fix android wsi with global fencing disabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b21e4a7990cf4d68948f5b3379bd828626e6f8a1"
     },
