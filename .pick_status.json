@@ -3217,7 +3217,7 @@
         "description": "venus: fix deqp tests failed on iub descriptor type",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "abae9d4831b5e983385d988ef95874e449887cc1"
     },
