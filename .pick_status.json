@@ -85,7 +85,7 @@
         "description": "tu: Fix binding NULL descriptor sets",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e9f5de11d4039f3440adbdb766189d20302ac42b"
     },
