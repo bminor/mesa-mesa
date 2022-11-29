@@ -256,7 +256,7 @@
         "description": "tu: Use right enum for compute active_shader_stages",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d862a2ebcbf94374e0ab0bd1c63bc45020a2ecef"
     },
