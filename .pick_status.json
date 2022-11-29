@@ -4252,7 +4252,7 @@
         "description": "radv/rra: Set the metadata size correctly",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "574980675405e36d34519cb5cbd315b3582850ec"
     },
