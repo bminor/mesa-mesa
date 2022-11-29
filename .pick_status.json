@@ -5755,7 +5755,7 @@
         "description": "radv: Handle nodes with 2 invalid children in internal node converter.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "682dc5c28e4e16ef66cbe996d908d0d5b5c77051"
     },
