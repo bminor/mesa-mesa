@@ -3226,7 +3226,7 @@
         "description": "radv: fix guardband if the polygon mode is points or lines",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
