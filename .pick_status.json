@@ -3289,7 +3289,7 @@
         "description": "nir/lower_task_shader: fix task payload corruption when shared memory workaround is enabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8aff8d3dd42ecc399f1d7d23ddd641e7e3fce777"
     },
