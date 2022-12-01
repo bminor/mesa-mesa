@@ -4333,7 +4333,7 @@
         "description": "nir/nir_opt_offsets: Prevent offsets going above max",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cac6f633b21799bd1ecc35471d73a0bd190ccada"
     },
