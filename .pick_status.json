@@ -5080,7 +5080,7 @@
         "description": "ir3: Reduce the maximum allowed imm offset for shared var load/store",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0b2da9d795610df15346a594384c39a096be338f"
     },
