@@ -668,9 +668,9 @@ elif not with_platform_x11
     _vdpau = 'disabled'
   endif
 elif not (with_gallium_r300 or with_gallium_r600 or with_gallium_radeonsi or
-          with_gallium_nouveau or with_gallium_d3d12_video)
+          with_gallium_nouveau or with_gallium_d3d12_video or with_gallium_virgl)
   if _vdpau == 'enabled'
-    error('VDPAU state tracker requires at least one of the following gallium drivers: r300, r600, radeonsi, nouveau, d3d12 (with option gallium-d3d12-video).')
+    error('VDPAU state tracker requires at least one of the following gallium drivers: r300, r600, radeonsi, nouveau, d3d12 (with option gallium-d3d12-video, virgl).')
   else
     _vdpau = 'disabled'
   endif
