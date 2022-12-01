@@ -616,7 +616,7 @@
         "description": "radv: Include view index SET_SH_REG in ace_predication_size.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2479b6286974c1467bec5120df96650d297dcb7f"
     },
