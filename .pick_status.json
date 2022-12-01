@@ -3307,7 +3307,7 @@
         "description": "aco: more carefully apply constant offsets into scratch accesses",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0e783d687a3e13284eeae4081f16ee22033ff89b"
     },
