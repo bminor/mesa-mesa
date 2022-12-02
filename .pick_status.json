@@ -3883,7 +3883,7 @@
         "description": "radv: fix emitting invalid color attachments",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "97dc28b177649e40a4f2a15af65ebb69ee06b6fe"
     },
