@@ -2964,7 +2964,7 @@
         "description": "nine: add fallback for D3DFMT_D16 in d3d9_to_pipe_format_checked",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
