@@ -3964,7 +3964,7 @@
         "description": "radv: Reserve space in framebuffer emission.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "203f60ebf2f64dab3dc77ce9c098a6ae3d2aca43",
         "notes": null
