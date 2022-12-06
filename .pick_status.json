@@ -3181,7 +3181,7 @@
         "description": "glx: fix xshm check to init xshm_opcode.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "68e89401140d1b3a17052899c54577de3f008b67"
     },
