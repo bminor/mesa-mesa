@@ -2776,7 +2776,7 @@
         "description": "radv/rra: Emit leaf node ids for leaf nodes instead of internal nodes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e4283d857b826f6b71e0d076a7ece6282f400491"
     },
