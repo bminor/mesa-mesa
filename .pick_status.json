@@ -2776,7 +2776,7 @@
         "description": "intel/compiler: Set NoMask on cr0 access for float controls mode",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9da56ffc5228ff4578d4a078e456a0bf8588e71c"
     },
