@@ -2821,7 +2821,7 @@
         "description": "vulkan: VkPolygonMode has a bit more than two values",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9d0ed9cbcc01b31a71037fcb35742fc8b77f09fe"
     },
