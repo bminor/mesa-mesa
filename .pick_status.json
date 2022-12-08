@@ -409,7 +409,7 @@
         "description": "util/glsl2spirv: Fix build with Python 3.6",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "949c3b55dbdfaca4e62d67cc4de1f4e3958813c4"
     },
