@@ -3919,7 +3919,7 @@
         "description": "bin/gen_release_notes.py: don't fail if \"Closes\" refers to an MR",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
