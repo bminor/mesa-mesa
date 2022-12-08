@@ -1831,7 +1831,7 @@
         "description": "aco/ra: don't swap p_create_vector operand with definition blocker for scc",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9476986e6f6fe49ef8bc511f4ebeca4232263888"
     },
