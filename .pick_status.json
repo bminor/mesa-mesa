@@ -1228,7 +1228,7 @@
         "description": "nir: Do not consider phis with incompatible dests equal",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6bdce55c44a45fc8ec8426996572c18ecf88bd64"
     },
