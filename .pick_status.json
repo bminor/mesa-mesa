@@ -1210,7 +1210,7 @@
         "description": "radv: fix hashing descriptor set layout",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "19f8d338761d124b24eac2d4703dc1346c8b4f9f"
     },
