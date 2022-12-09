@@ -1606,7 +1606,7 @@
         "description": "Revert \"anv: compile anv_acceleration_structure.c\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "74d0be27ae9eb666df948874a20a3b4464df7db1"
     },
