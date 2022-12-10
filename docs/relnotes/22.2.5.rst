@@ -1,0 +1,154 @@
+Mesa 22.2.5 Release Notes / 2022-12-09
+======================================
+
+Mesa 22.2.5 is a bug fix release which fixes bugs found since the 22.2.4 release.
+
+Mesa 22.2.5 implements the OpenGL 4.6 API, but the version reported by
+glGetString(GL_VERSION) or glGetIntegerv(GL_MAJOR_VERSION) /
+glGetIntegerv(GL_MINOR_VERSION) depends on the particular driver being used.
+Some drivers don't support all the features required in OpenGL 4.6. OpenGL
+4.6 is **only** available if requested at context creation.
+Compatibility contexts may report a lower version depending on each driver.
+
+Mesa 22.2.5 implements the Vulkan 1.3 API, but the version reported by
+the apiVersion property of the VkPhysicalDeviceProperties struct
+depends on the particular driver being used.
+
+SHA256 checksum
+---------------
+
+::
+
+    TBD.
+
+
+New features
+------------
+
+- None
+
+
+Bug fixes
+---------
+
+- [iris/crocus] Native CS:GO OpenGL: fire produces black rendering artifacts
+- panfrost: application crashes with 22.2.4/22.3.0-rc3
+- "intel/compiler: Signed integer range analysis for imul_32x16 generation" regresses several OpenCL tests
+- aco: Missing 8-bit uadd_carry
+- panfrost/rk3399: performance drop in emulationstation and in RetroArch menu [mesa >= 21.3.8, batocera.linux, bisected]
+
+
+Changes
+-------
+
+Alyssa Rosenzweig (4):
+
+- panfrost: Fix reference counting with batch->resources
+- panfrost: Use PIPE_CAP_VERTEX_ATTRIB_ELEMENT_ALIGNED_ONLY
+- panfrost: Revert "Require 64-byte alignment on imports"
+- pan/mdg: Fix out-of-order execution
+
+Bas Nieuwenhuizen (4):
+
+- radv: Fix custom build id with C90 compilation.
+- radv: Use correct init order for ETC2 image views
+- radv: Fix sampler types in ETC2 decode.
+- vulkan: Remove asserts that weren't valid for RADV ETC2 emulation.
+
+Christopher Egert (1):
+
+- virgl: add missing members in virgl_caps_v2 in 22.2
+
+Connor Abbott (1):
+
+- ir3: Don't save/restore disasm string pointer
+
+Dylan Baker (7):
+
+- docs: Add sha256 sum for 22.2.4
+- .pick_status.json: Update to 5a5bc3dd52964a2d865c5b0c45c4eb3a6a4cd013
+- .pick_status.json: Update to 8133d5551de13a2c1912f61ab9f87938b33aa5ea
+- .pick_status.json: Update to 7aa94efe827fa2b99490e04ce2f5c1a4d737871c
+- .pick_status.json: Mark 81b4af28494c065c5646e3f61a72afd829d978c6 as backported
+- .pick_status.json: Mark e74d989a6935ce11d06970a3c98b474b7773c905 as backported
+- .pick_status.json: Update to cf841cdd0bcf0784fb6a4301e624e12f3502ba5a
+
+Erik Faye-Lund (3):
+
+- zink: fix incorrect requirements
+- docs/zink: add missing required device-feature
+- mesa: treat unsupported queries as dummies
+
+Gert Wollny (1):
+
+- virgl: don't a use staging when a resources created with the shared flag
+
+Hans-Kristian Arntzen (1):
+
+- vk/runtime: Fix narrowing of timeline signal and wait value to u32.
+
+Ian Romanick (1):
+
+- nir/range_analysis: Set higher default maximum for max_workgroup_count
+
+Jessica Clarke (1):
+
+- panfrost/blend: Fix invalid const values leading to NIR validation errors
+
+José Roberto de Souza (1):
+
+- iris: Set priority for replaced engine context
+
+Karol Herbst (1):
+
+- nir/lower_int64: fix shift lowering
+
+Lionel Landwerlin (6):
+
+- intel/perf: allocate cleared counter infos
+- nir/lower_explicit_io: fix metadata preserve
+- nir/lower_shader_calls: update metadata before validation
+- nir/lower_shader_calls: wrap only jumps rather than entire code blocks
+- intel/fs: improve Wa_22013689345 workaround
+- blorp: support negative offsets in addresses
+
+Lucas Stach (3):
+
+- etnaviv: fix tile status interaction with write mappings
+- etnaviv: blt: use correct TS offset in clear operations
+- etnaviv: fix wrong surface TS clear size
+
+Marek Olšák (1):
+
+- st/mesa: suppress async glthread flushing for GLX_EXT_texture_from_pixmap
+
+Mauro Rossi (1):
+
+- r600/sfn: allow building with clang 6 (Android 9)
+
+Qiang Yu (1):
+
+- ac/llvm: fix 16bit varying llvm compile error
+
+Rhys Perry (3):
+
+- nir/lower_bit_size: lower uadd_carry
+- radv: lower 8/16-bit uadd_carry/usub_borrow
+- ac/nir: mask shift operands
+
+Roman Stratiienko (1):
+
+- meson: Enable system_has_kms_drm for android
+
+Sajeesh Sidharthan (1):
+
+- radeonsi/vcn: set current pic index correctly
+
+Sviatoslav Peleshko (1):
+
+- driconf/intel: Use fake vendor to WA bad detection in Source engine games
+
+Yonggang Luo (2):
+
+- ci: Rename ci.yml to macos.yml for consistence with main branch
+- meson: Fixes name_prefix for clover on mingw
