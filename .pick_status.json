@@ -5512,7 +5512,7 @@
         "description": "nir/nir_opt_move: fix ALWAYS_INLINE compiler error",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f1d20ec67c3f186886b97de94f74484650f8fda1"
     },
