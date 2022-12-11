@@ -499,7 +499,7 @@
         "description": "intel/blorp: Fix a hang caused by invalid dispatch enables on gfx7",
         "nominated": false,
         "nomination_type": 1,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b9403b1c477e7af04114ae6a4e16ca370e22253c"
     },
