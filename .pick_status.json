@@ -1039,7 +1039,7 @@
         "description": "radv: Handle NULL miss shaders",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "85580faa4b0b654600a137e337211ce3efff43fb"
     },
