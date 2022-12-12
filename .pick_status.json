@@ -535,7 +535,7 @@
         "description": "intel/fs: make Wa_1806565034 conditional to non robust access",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
