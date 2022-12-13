@@ -463,7 +463,7 @@
         "description": "radeonsi: rewrite si_update_ps_colorbuf0_slot to fix crashes and recursions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bc6d22b92002dc43a8c742ab234717147d63ad87"
     },
