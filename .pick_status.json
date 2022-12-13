@@ -3208,7 +3208,7 @@
         "description": "zink: Fix reversed cap declarations for ImageBuffer",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f55a4407ef97e1bf78ee4a927d7d9091c4866051"
     },
