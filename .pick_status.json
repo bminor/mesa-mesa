@@ -2263,7 +2263,7 @@
         "description": "panfrost: Align WSI strides for tiled AFBC",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0255f554f39319e336b166e50fd0e6cef580975d"
     },
