@@ -2551,7 +2551,7 @@
         "description": "v3dv: handle depth/stencil resolves we can't implement via TLB",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
