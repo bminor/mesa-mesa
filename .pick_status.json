@@ -2380,7 +2380,7 @@
         "description": "aco/gfx11: export mrtz in discard early exit for non-color shaders",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bc8da20dda6b078aea800767f3b7983929e8bf23"
     },
