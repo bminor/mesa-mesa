@@ -3712,7 +3712,7 @@
         "description": "radv: fix missing initialization of radv_resolve_barrier::dst_stage_mask",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c6f83006d4d471651319c00b0c21b8b96cea2ac"
     },
