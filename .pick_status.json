@@ -1345,7 +1345,7 @@
         "description": "etnaviv: Do expose 2D texture support on pre-halti GPUs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d08bd9a8d8baf0f88554dd4f69ee5aa0fa3663ef"
     },
