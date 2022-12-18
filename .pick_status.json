@@ -904,7 +904,7 @@
         "description": "radv: Destroy mesh shader scratch ring in radv_queue_state_finish.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0280b526d58e85d65b53d3f9c8b0f7364d853751"
     },
