@@ -222,7 +222,7 @@ main(void)
 
    for (uint iter = 0;; ++iter) {
       uint32_t current_task_count = task_count(args.header);
-      if (current_task_count <= 1)
+      if (task_index == TASK_INDEX_INVALID)
          break;
 
       /* Find preferred partners and merge them */
@@ -381,6 +381,8 @@ main(void)
 
          if (task_index == current_task_count - 1) {
             set_next_task_count(args.header, new_offset);
+            if (new_offset == 1)
+               DEREF(args.header).sync_data.next_phase_exit_flag = 1;
          }
       }
    }

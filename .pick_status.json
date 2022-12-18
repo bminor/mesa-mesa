@@ -1201,7 +1201,7 @@
         "description": "radv/rt: Refactor exiting PLOC",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "271865373ed1b0ba7737a72c6ea8e554981ee079"
     },
