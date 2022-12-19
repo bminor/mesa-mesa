@@ -427,7 +427,7 @@
         "description": "util: fix util_is_vbo_upload_ratio_too_large",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "068a3bf0d7cda0301b3dfc2e258698c6848ca706"
     },
