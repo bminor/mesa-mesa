@@ -706,7 +706,7 @@
         "description": "r600/sfn: Don't try to re-use the iterator when uses is updated",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f3415cb26a62289fed9cb5f202088168add43cfd"
     },
