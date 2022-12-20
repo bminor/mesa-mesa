@@ -5917,7 +5917,7 @@
         "description": "zink: fix PIPE_RESOURCE_PARAM_NPLANES with format modifier",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c025cb9ee9d79ebfb66a577556e04deecfe012ed"
     },
