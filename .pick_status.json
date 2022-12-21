@@ -490,7 +490,7 @@
         "description": "etnaviv: disable linear PE by default",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "43eb5e777e4b64fe1b143822ae8aaf709eaad42f"
     },
