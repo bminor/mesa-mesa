@@ -418,7 +418,7 @@
         "description": "mesa: allow GL_UNSIGNED_INT64_ARB as vertex format for ARB_bindless_texture",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1fe7b1f9724ac38cbddcac6505d3750ef99a2eca"
     },
