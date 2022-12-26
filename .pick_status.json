@@ -1921,7 +1921,7 @@
         "description": "glthread: handle GL_*_ARRAY in glEnable/Disable",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0b1dd1859134e71b25ad1124535df96d435e9766"
     },
