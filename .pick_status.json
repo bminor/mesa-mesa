@@ -17239,7 +17239,7 @@
         "description": "iris: Retry DRM_IOCTL_I915_GEM_EXECBUFFER2 on ENOMEM",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
