@@ -4855,7 +4855,7 @@
         "description": "anv: fix generated forward jump with more than 67M draws",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c950fe97a05ef54e8298544a4582d21e524ada08"
     },

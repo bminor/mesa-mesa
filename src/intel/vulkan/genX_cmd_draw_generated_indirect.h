@@ -318,10 +318,9 @@ genX(cmd_buffer_emit_generated_push_data)(struct anv_cmd_buffer *cmd_buffer,
    return push_data_state;
 }
 
-static void
+static struct anv_generate_indirect_params *
 genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
                                      struct anv_address generated_cmds_addr,
-                                     uint32_t generated_cmds_size,
                                      struct anv_address indirect_data_addr,
                                      uint32_t indirect_data_stride,
                                      uint32_t item_base,
@@ -389,6 +388,8 @@ genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
       prim.VertexCountPerInstance   = 3;
       prim.InstanceCount            = 1;
    }
+
+   return push_data;
 }
 
 static void
@@ -416,6 +417,22 @@ genX(cmd_buffer_emit_indirect_generated_draws_init)(struct anv_cmd_buffer *cmd_b
    trace_intel_end_generate_draws(&cmd_buffer->trace);
 
    genX(cmd_buffer_emit_generate_draws_pipeline)(cmd_buffer);
+}
+
+static void
+genX(cmd_buffer_rewrite_forward_end_addr)(struct anv_cmd_buffer *cmd_buffer,
+                                          struct anv_generate_indirect_params *params)
+{
+   /* We don't know the end_addr until we have emitted all the generation
+    * draws. Go and edit the address of all the push parameters.
+    */
+   uint64_t end_addr =
+      anv_address_physical(anv_batch_current_address(&cmd_buffer->batch));
+   while (params != NULL) {
+      params->draw_count.end_addr_ldw = end_addr & 0xffffffff;
+      params->draw_count.end_addr_udw = end_addr >> 32;
+      params = params->prev;
+   }
 }
 
 static void
@@ -455,6 +472,7 @@ genX(cmd_buffer_emit_indirect_generated_draws)(struct anv_cmd_buffer *cmd_buffer
 
    const uint32_t draw_cmd_stride = 4 * GENX(3DPRIMITIVE_EXTENDED_length);
 
+   struct anv_generate_indirect_params *last_params = NULL;
    uint32_t item_base = 0;
    while (item_base < draw_count) {
       const uint32_t item_count = MIN2(draw_count - item_base,
@@ -473,26 +491,28 @@ genX(cmd_buffer_emit_indirect_generated_draws)(struct anv_cmd_buffer *cmd_buffer
       if (result != VK_SUCCESS)
          return;
 
-      genX(cmd_buffer_emit_generate_draws)(
-         cmd_buffer,
-         anv_batch_current_address(&cmd_buffer->batch),
-         draw_cmd_size,
-         indirect_data_addr,
-         indirect_data_stride,
-         item_base,
-         item_count,
-         indexed);
+      struct anv_generate_indirect_params *params =
+         genX(cmd_buffer_emit_generate_draws)(
+            cmd_buffer,
+            anv_batch_current_address(&cmd_buffer->batch),
+            indirect_data_addr,
+            indirect_data_stride,
+            item_base,
+            item_count,
+            indexed);
 
       anv_batch_advance(&cmd_buffer->batch, draw_cmd_size);
 
       item_base += item_count;
+
+      params->prev = last_params;
+      last_params = params;
    }
 }
 
-static void
+static struct anv_generate_indirect_params *
 genX(cmd_buffer_emit_generate_draws_count)(struct anv_cmd_buffer *cmd_buffer,
                                            struct anv_address generated_cmds_addr,
-                                           uint32_t generated_cmds_size,
                                            struct anv_address indirect_data_addr,
                                            uint32_t indirect_data_stride,
                                            uint32_t item_base,
@@ -539,9 +559,6 @@ genX(cmd_buffer_emit_generate_draws_count)(struct anv_cmd_buffer *cmd_buffer,
       genX(cmd_buffer_alloc_generated_push_data)(cmd_buffer);
 
    struct anv_graphics_pipeline *pipeline = cmd_buffer->state.gfx.pipeline;
-   uint64_t end_cmd_addr =
-      anv_address_physical(
-         anv_address_add(generated_cmds_addr, generated_cmds_size));
 
    struct anv_generate_indirect_params *push_data = push_data_state.map;
    *push_data = (struct anv_generate_indirect_params) {
@@ -553,8 +570,6 @@ genX(cmd_buffer_emit_generate_draws_count)(struct anv_cmd_buffer *cmd_buffer,
          .draw_count             = 0, // Edit this through a the command streamer
          .instance_multiplier    = pipeline->instance_multiplier,
          .indirect_data_stride   = indirect_data_stride,
-         .end_addr_ldw           = end_cmd_addr & 0xffffffff,
-         .end_addr_udw           = end_cmd_addr >> 32,
       },
       .indirect_data_addr        = anv_address_physical(indirect_data_addr),
       .generated_cmds_addr       = anv_address_physical(generated_cmds_addr),
@@ -582,6 +597,8 @@ genX(cmd_buffer_emit_generate_draws_count)(struct anv_cmd_buffer *cmd_buffer,
       prim.VertexCountPerInstance   = 3;
       prim.InstanceCount            = 1;
    }
+
+   return push_data;
 }
 
 static void
@@ -622,6 +639,7 @@ genX(cmd_buffer_emit_indirect_generated_draws_count)(struct anv_cmd_buffer *cmd_
 
    const uint32_t draw_cmd_stride = 4 * GENX(3DPRIMITIVE_EXTENDED_length);
 
+   struct anv_generate_indirect_params *last_params = NULL;
    uint32_t item_base = 0;
    while (item_base < max_draw_count) {
       const uint32_t item_count = MIN2(max_draw_count - item_base,
@@ -640,22 +658,27 @@ genX(cmd_buffer_emit_indirect_generated_draws_count)(struct anv_cmd_buffer *cmd_
       if (result != VK_SUCCESS)
          return;
 
-      genX(cmd_buffer_emit_generate_draws_count)(
-         cmd_buffer,
-         anv_batch_current_address(&cmd_buffer->batch),
-         draw_cmd_size,
-         anv_address_add(indirect_data_addr,
-                         item_base * indirect_data_stride),
-         indirect_data_stride,
-         item_base,
-         item_count,
-         count_addr,
-         indexed);
+      struct anv_generate_indirect_params *params =
+         genX(cmd_buffer_emit_generate_draws_count)(
+            cmd_buffer,
+            anv_batch_current_address(&cmd_buffer->batch),
+            anv_address_add(indirect_data_addr,
+                            item_base * indirect_data_stride),
+            indirect_data_stride,
+            item_base,
+            item_count,
+            count_addr,
+            indexed);
 
       anv_batch_advance(&cmd_buffer->batch, draw_cmd_size);
 
       item_base += item_count;
+
+      params->prev = last_params;
+      last_params = params;
    }
+
+   genX(cmd_buffer_rewrite_forward_end_addr)(cmd_buffer, last_params);
 }
 
 static void
