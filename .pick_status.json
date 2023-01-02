@@ -2389,7 +2389,7 @@
         "description": "egl: handle NULL loaderPrivate in dri_is_thread_safe",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
