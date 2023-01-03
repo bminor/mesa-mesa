@@ -2578,7 +2578,7 @@
         "description": "zink: Only expose PIPE_CAP_IMAGE_ATOMIC_FLOAT_ADD if we can actually add.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c32f046ab669e74b55ba8c29e62de055047905f8"
     },
