@@ -4108,7 +4108,7 @@
         "description": "freedreno: Fix tracking of enabled SSBOs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0ed053f03d936d301091dd68e96ced8dbedc83b2"
     },
