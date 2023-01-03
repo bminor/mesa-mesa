@@ -2569,7 +2569,7 @@
         "description": "zink: Only expose PIPE_CAP_SHADER_ATOMIC_INT64 if we can do shared and ssbos.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3ac0706aa83b10be1062dc61afe1f65ff3f716ff"
     },
