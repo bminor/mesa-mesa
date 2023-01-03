@@ -1390,7 +1390,7 @@
         "description": "radv: fix re-emitting tessellation domain origin when it's dynamic",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f22290949d3d6ad75445404e48195ed319505a05"
     },
