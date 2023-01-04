@@ -1543,7 +1543,7 @@
         "description": "ac/llvm: Fix validation error with global io",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "afd645f0576f2cf41b65f360787f01604f00f0f2"
     },
