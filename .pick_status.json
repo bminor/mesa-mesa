@@ -3334,7 +3334,7 @@
         "description": "aco: Don't use vcmpx with DPP.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "baab6f18c91166b275c339027dcd87ce57795cd5"
     },
