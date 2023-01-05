@@ -4783,7 +4783,7 @@
         "description": "anv: fix indirect draws VF cache tracking of index buffer",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e2dc32d755b15697765719acec1d23f12f9c938c"
     },
