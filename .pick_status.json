@@ -4774,7 +4774,7 @@
         "description": "anv: make sure mi_memcpy lands before push constant loads",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e2dc32d755b15697765719acec1d23f12f9c938c"
     },
