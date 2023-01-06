@@ -1606,7 +1606,7 @@
         "description": "virgl: Use virgl host side shader stage IDs when reading caps",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a26543f6368fed1604cfde7fffce2024e9d8abab"
     },
