@@ -1264,7 +1264,7 @@
         "description": "zink: only update framebuffer object during swapchain update if framebuffer exists",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
