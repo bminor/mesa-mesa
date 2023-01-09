@@ -1201,7 +1201,7 @@
         "description": "vc4: Fix running process_mux_deps on irrelevant type of instructions",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
