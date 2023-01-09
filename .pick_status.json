@@ -355,7 +355,7 @@
         "description": "intel/compiler: Drop redundant 32-bit expansion for shared float atomics",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "43169dbbe5f963ca47d51873f6639fbe3fd665b0"
     },
