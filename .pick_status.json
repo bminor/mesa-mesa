@@ -418,7 +418,7 @@
         "description": "mesa: add missing count_scale attribute",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a4e935f2d70304a89104157378a4033ba10cd3e0"
     },
