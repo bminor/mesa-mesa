@@ -5836,7 +5836,7 @@
         "description": "docs/perfetto: Fix the name of the i915 render stages data sources.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ef27399bca9561455f2a7b6cf7c3cb0fd017e63a"
     },
