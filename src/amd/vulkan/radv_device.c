@@ -3607,6 +3607,10 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
        */
       vk_device_dispatch_table_from_entrypoints(&dispatch_table, &metro_exodus_device_entrypoints, true);
       vk_device_dispatch_table_from_entrypoints(&dispatch_table, &radv_device_entrypoints, false);
+   } else if (physical_device->instance->vk.app_info.app_name &&
+              !strcmp(physical_device->instance->vk.app_info.app_name, "Rage 2")) {
+      vk_device_dispatch_table_from_entrypoints(&dispatch_table, &rage2_device_entrypoints, true);
+      vk_device_dispatch_table_from_entrypoints(&dispatch_table, &radv_device_entrypoints, false);
    } else if (radv_thread_trace_enabled()) {
       vk_device_dispatch_table_from_entrypoints(&dispatch_table, &sqtt_device_entrypoints, true);
       vk_device_dispatch_table_from_entrypoints(&dispatch_table, &radv_device_entrypoints, false);
