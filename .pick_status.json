@@ -4,7 +4,7 @@
         "description": "radv: add a layer for fixing rendering issues with RAGE2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c7d0d328d569c15c01c5830af838faac8a8b3c62"
     },
