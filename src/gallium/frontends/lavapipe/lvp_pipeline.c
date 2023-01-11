@@ -688,6 +688,10 @@ merge_layouts(struct lvp_pipeline *dst, struct lvp_pipeline_layout *src)
       /* no layout created yet: copy onto ralloc ctx allocation for auto-free */
       dst->layout = ralloc(dst->mem_ctx, struct lvp_pipeline_layout);
       memcpy(dst->layout, src, sizeof(struct lvp_pipeline_layout));
+      for (unsigned i = 0; i < dst->layout->vk.set_count; i++) {
+         if (dst->layout->vk.set_layouts[i])
+            vk_descriptor_set_layout_ref(dst->layout->vk.set_layouts[i]);
+      }
       return;
    }
 #ifndef NDEBUG
@@ -710,8 +714,10 @@ merge_layouts(struct lvp_pipeline *dst, struct lvp_pipeline_layout *src)
    }
 #endif
    for (unsigned i = 0; i < src->vk.set_count; i++) {
-      if (!dst->layout->vk.set_layouts[i])
+      if (!dst->layout->vk.set_layouts[i]) {
          dst->layout->vk.set_layouts[i] = src->vk.set_layouts[i];
+         vk_descriptor_set_layout_ref(src->vk.set_layouts[i]);
+      }
    }
    dst->layout->vk.set_count = MAX2(dst->layout->vk.set_count,
                                     src->vk.set_count);
