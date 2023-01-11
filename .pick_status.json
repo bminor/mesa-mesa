@@ -175,7 +175,7 @@
         "description": "egl: Rewrite eglGetMscRateANGLE to avoid probes and handle multi-monitor",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "47526556494f18cd2c02f978bccac7e2ba73adcd"
     },
