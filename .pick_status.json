@@ -6187,7 +6187,7 @@
         "description": "vk_cmd_queue: add a callback to free push descriptors set khr",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eb7eccc76f0a02b3a3291adaa39788b157979dc5"
     },
