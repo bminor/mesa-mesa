@@ -6196,7 +6196,7 @@
         "description": "llvmpipe: unref images correctly in the fragment shader path",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2909c654b014e5360b08b28b70df297cd8e1c090"
     },
