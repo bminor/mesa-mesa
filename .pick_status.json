@@ -4792,7 +4792,7 @@
         "description": "panfrost: Fix logic ops on Bifrost",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d849d9779a77f05d7acd418516e154a4e9018f40"
     },

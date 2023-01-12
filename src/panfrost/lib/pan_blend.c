@@ -800,7 +800,8 @@ GENX(pan_blend_get_shader_locked)(const struct panfrost_device *dev,
         };
 
         /* Blend shaders should only be used for blending on Bifrost onwards */
-        assert(dev->arch <= 5 || !pan_blend_is_opaque(state->rts[rt].equation));
+        assert(dev->arch <= 5 || state->logicop_enable ||
+               !pan_blend_is_opaque(state->rts[rt].equation));
         assert(state->rts[rt].equation.color_mask != 0);
 
         struct hash_entry *he = _mesa_hash_table_search(dev->blend_shaders.shaders, &key);
