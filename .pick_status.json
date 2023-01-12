@@ -985,7 +985,7 @@
         "description": "panfrost: Don't use AFBC of sRGB luminance-alpha",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "476be5cb27398a06b0a2828dd260c5ad4d620136"
     },
