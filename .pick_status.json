@@ -4819,7 +4819,7 @@
         "description": "pan/bi: Fix incorrect compilation of fsat(reg.yx)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ac636f5adb57704696c781a17f11609fad9035ec"
     },
