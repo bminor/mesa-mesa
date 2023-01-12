@@ -589,7 +589,7 @@
         "description": "dri2: Fix exposing robustness with swkms.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e6285ea55fb2abf3b38f40ea0c3a69c2b6d7d8e5"
     },
