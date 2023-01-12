@@ -6169,7 +6169,7 @@
         "description": "lavapipe: fix one more descriptor set reference issue",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "20902d1ed685e97e135f4a16531793ddb7b4db69"
     },
