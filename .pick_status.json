@@ -1,0 +1,443 @@
+[
+    {
+        "sha": "a5a19903ab671ebdf4130fdf3cc782a8a0a2a3d9",
+        "description": "mesa: Trivially advertise NV_generate_mipmap_sRGB",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2aad8dbfa524993ba15fed474e2211b55e9705be",
+        "description": "mesa: Fix extension table formatting",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d3feccfa6f5ad1332737dc1a8fa2864156bd0553",
+        "description": "radv: Use the new NIR builder tex helpers for meta",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "433fe592acee7ce1b1238ddb72792dda1678b874",
+        "description": "nir/builder: Add some texture helpers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "30f3fec380176b20078a37a27f3da4059aaa39e4",
+        "description": "nir: Add more opcodes to nir_tex_instr_is_query()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7d8b90a47051152e24ead666ea52494d7d43d1e1",
+        "description": "glx: Harmonize glXCreateGLXPixmap with glXCreatePixmap",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2cc3763d0455de13e78a82123ddc47a00e5ea7eb",
+        "description": "glx: Fix drawable type inference in visual/fbconfig setup",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "86c9a31d99d37f7b8838e069631e2f8b16d991e9",
+        "description": "glx: Inline a few single-use constant strings into their user",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "07292d6e76b4a6d84739cb7bad4d67171f813d64",
+        "description": "glx: Move 1.2 GLXPixmap code into glx_pbuffer.c",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf90a2b28f07a881f6eec531fbcc6bea0ef154b9",
+        "description": "glx: Check for initial \"glX\" first in glXGetProcAddress",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f8d3c222db2aac0bb492b9f7c56ef2b9c159f598",
+        "description": "glx: Reflow MakeContextCurrent a little",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf9debb6397a6c23fd6377e557e5f7ac1a19b895",
+        "description": "glx: Clean up some funny business from context bind/unbind",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f0eed0001032b9bfef12e346709a7d95f9966775",
+        "description": "glx: Remove support for glXGetDriverConfig for old drivers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f53ec64d68dbbac4cd2f10b2e021070452e26039",
+        "description": "glx: Remove a can't-happen NULL check",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9de2776e016e98814139c13276531a97afbe73c4",
+        "description": "glx: Remove glx_context::screen",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "81f77f999b5a4de9115c0f22c36c1953b57aeea7",
+        "description": "glx/dri3: Simplify protocol version tracking",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "862bf420a96c8dace856fa8c7a50ef7db4f0ec5e",
+        "description": "asahi: Handle sampler->compare_mode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "edca10e9c907a21f44698121e97d0eef92c7961a",
+        "description": "aco: Pass correct number of coords to Vega 1D LOD instruction.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "267dd1f4d571ee606141aa66f1665aa152b4e911",
+        "description": "nir/nir_opt_move: fix ALWAYS_INLINE compiler error",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f1d20ec67c3f186886b97de94f74484650f8fda1"
+    },
+    {
+        "sha": "5b3fb44ecc602bb1f6ed59222ae919ef119bf733",
+        "description": "radv: fix re-emitting RB+ when the non-compacted color format changes",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "11469f7553dc69a6c4b779527e6738c3206aa21c"
+    },
+    {
+        "sha": "ebec42d799b22b7b3d06acd710f5687252446a06",
+        "description": "radv: fix hashing pipeline keys if RADV_PERFTEST=ngg_streamout is used",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "aab08fc25017ece76fb580e964c1d4c3c611168d",
+        "description": "zink/ci: relocate radv testing from radv's gitlab-ci.yml",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "89a85a8daa0ea04fa14141913d2a6297c2f9184e",
+        "description": "zink/ci: add a fail to the VG flake list",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0907fb46eef8d184acd990e5851b479d25efb46a",
+        "description": "zink/ci/radv: remove a test from the fails list",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d7c1ba0bce57591e5ec9f147217b7882ecad7903",
+        "description": "ci/piglit: compress results.csv before uploading it to GitLab",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d110299d77c9663bf3d91a50d447f8db4f64acb0",
+        "description": "ci/deqp-runner: compress results.csv before uploading it to GitLab",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f19f119baea0c31cd48938ea41829e757e9c17d2",
+        "description": "Revert \"ci: Collabora's LAVA lab for maintance\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "900ccec7e8fa809ef0a9154db4d0ecec3fe26e9c"
+    },
+    {
+        "sha": "9a4bd32790110adab92881af47302df956d19e15",
+        "description": "ci: disable Collabora's LAVA lab for maintance",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2a5d7f4926c8b3dc702d3ee0e216c563ba7e94db",
+        "description": "radv: fix missing implementation of creating images from swapchains",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2969850d886a980d87f7a2eb570e58c1a9a086de",
+        "description": "intel/utrace: document tracepoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "270215926879a2479def9953c760068dc436caf2",
+        "description": "intel/ds: remove unused trace point",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4dd3e755eabc873d62d8fcec6bc65f369fd95d1f",
+        "description": "intel/ds: add INTEL_GPU_TRACEPOINT envvar to toggle tracepoints",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "28b15fa9e7706da41c3b6bed3c640b4198359984",
+        "description": "anv: add support for command buffer tagging in traces",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "662e05c9fb27bc9ce9959844a70dbf9bea729d44",
+        "description": "vulkan/debug_utils: copy debug util labels",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a34fcaf326f871e5136030aa23e2cf81d85b587b",
+        "description": "util/u_trace: add support for variable length trace points",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f1ab070d7f20423113e8d6aae75a4d153ae93e07",
+        "description": "intel/ds: move event_id access to perfetto lambda",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f0160ee2ab3598f379af23323d0057518d85a566",
+        "description": "intel/ds: track secondary cmdbuffers in perfetto",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9a16effeac8cc808745729ab617869c29a0f13d2",
+        "description": "anv: record secondaries' traces into primaries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1082c8ad116814e16113de9c4a7a067d3e5a0e5c",
+        "description": "pps: print out message when we get the first counters",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "61c7e1bf48f620cc81b6273cbaf595b7e27d80b7",
+        "description": "agx: Peephole select after opt_preamble",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f4b3201244d11e118fd09aac557b907bcdc88ff3",
+        "description": "nir/peephole_select: Allow load_preamble",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f3d046af6ac3a124e4565b13075ef0b37e88e72d",
+        "description": "zink: simplify get_slot_components() for xfb emission",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3fcdd9e4a7a63a9a6a1f72c2c459e02acba7f578",
+        "description": "nir/lower_bool: ntt: Generate a good opcode for bcsel",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "36e842839ff2a770fb1f36e5ad954143e27e80f1",
+        "description": "i915: Enable generation of fcsel_gt and fcsel_ge opcodes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cb1ab133eadacc4059b82b7130824fa6eb3d0628",
+        "description": "r300: Enable generation of fcsel_gt and fcsel_ge opcodes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "70b25d9fe87a6d1fe14388df338e9f3e039c99e4",
+        "description": "nir/lower_int_to_float: Add support for i32csel opcodes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "451df66ea03689c3f119dc5c700d19933444e9c4",
+        "description": "ntt: Add support for fcsel_gt and fcsel_ge opcodes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fd927737f578b912441141d6665928e1cc8f08a6",
+        "description": "docs: reset new_features.txt",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "45de63b3fd97a5914cac85d070eca1bfc1c036f9",
+        "description": "VERSION: bump to 23.1.0-devel for further development",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    }
+]
