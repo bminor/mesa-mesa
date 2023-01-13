@@ -589,7 +589,7 @@
         "description": "panfrost: Enable NV_primitive_restart on Valhall",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "30c14f54cf2bbf86f3d8f16a3d46edad6d0fce7c"
     },
