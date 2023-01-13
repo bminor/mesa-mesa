@@ -175,7 +175,7 @@
         "description": "radv: fix re-emitting RB+ when the non-compacted color format changes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "11469f7553dc69a6c4b779527e6738c3206aa21c"
     },
