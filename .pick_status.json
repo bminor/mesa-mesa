@@ -499,7 +499,7 @@
         "description": "panfrost: Fix clears with conditional rendering",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "638b22354e75fa31551f776a2cd2bbf752db1ad5"
     },
