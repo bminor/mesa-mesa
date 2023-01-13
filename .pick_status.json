@@ -787,7 +787,7 @@
         "description": "vulkan/wsi: check if image info was already freed",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b13d74583513ddd029e30c989838b96993545a0"
     },
