@@ -139,7 +139,7 @@
         "description": "radv: Fix depth-only-with-discard when epilogs are used.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eb07a11b8f400c50e8a2455df9891573eae052e1"
     },
