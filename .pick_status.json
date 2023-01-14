@@ -130,7 +130,7 @@
         "description": "ac/nir/ngg: fix clip dist culling mask uninitialized",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f75452918b27690f9c7a80f3f049483f7dec14fb"
     },
