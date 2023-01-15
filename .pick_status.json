@@ -5098,7 +5098,7 @@
         "description": "radv/rt: Divide by the correct workgroup size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9369b407250b089d54e2247a7c8c10c65188c551"
     },

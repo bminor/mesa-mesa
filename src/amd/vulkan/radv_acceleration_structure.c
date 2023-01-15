@@ -757,7 +757,8 @@ ploc_build_internal(VkCommandBuffer commandBuffer, uint32_t infoCount,
       radv_CmdPushConstants(commandBuffer,
                             cmd_buffer->device->meta_state.accel_struct_build.ploc_p_layout,
                             VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(consts), &consts);
-      radv_CmdDispatch(commandBuffer, MAX2(DIV_ROUND_UP(bvh_states[i].node_count, 64), 1), 1, 1);
+      radv_CmdDispatch(commandBuffer,
+                       MAX2(DIV_ROUND_UP(bvh_states[i].node_count, PLOC_WORKGROUP_SIZE), 1), 1, 1);
    }
 }
 
