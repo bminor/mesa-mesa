@@ -2191,7 +2191,7 @@
         "description": "radeonsi: report 0 block size for Polaris HEVC encoding",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c4482a3c1a973975eb27ac284a18bebca24f7876"
     },
