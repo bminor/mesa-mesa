@@ -49,7 +49,7 @@
         "description": "intel/compiler: add cpp_std=c++17 when building tests",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6c194ddd18f24a2fe995aa6b09c8d5d6d2c97d34"
     },
