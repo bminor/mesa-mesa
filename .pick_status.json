@@ -625,7 +625,7 @@
         "description": "radv/bvh: Prevent NANs when computing node cost",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6f45c98b580de5a534ebb0a0644ac5514793a141"
     },
