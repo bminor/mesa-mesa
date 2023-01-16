@@ -6464,7 +6464,7 @@
         "description": "device_select_layer: pick a default device before applying DRI_PRIME",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "afa1fba198f44b904efe6dddb323679c105dcfdf",
         "notes": null
