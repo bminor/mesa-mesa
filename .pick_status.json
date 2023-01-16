@@ -157,7 +157,7 @@
         "description": "ac/nir: clear unused components before storing XFB outputs to LDS",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cd22bf90e79b9d6a47f763d304e942550ab937a7"
     },
