@@ -1111,7 +1111,7 @@
         "description": "zink: correct sparse bo mem_type_idx placement",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f9515d9376752c0355de71957347e1241e3a226b"
     },
