@@ -2875,7 +2875,7 @@
         "description": "zink: store drm format as internal_format for imported resources",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2e2775c11b0d17472afd53b1398a3af7d9086a75"
     },
