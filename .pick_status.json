@@ -292,7 +292,7 @@
         "description": "vbo: remove bogus assert",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a08baaff9764372c29d89886bc1331343d4273bf"
     },
