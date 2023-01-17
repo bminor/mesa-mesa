@@ -211,7 +211,7 @@
         "description": "freedreno: Restore GL_VENDOR string",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9c1fbc076afe5a4a7a6f534cb62bf83d3d207efc"
     },
