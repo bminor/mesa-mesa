@@ -3280,7 +3280,7 @@
         "description": "v3dv: remove unused clamp_to_transparent_black_border property",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e07c5467633431377ce4c9890f96d58cc7a77fdc"
     },
