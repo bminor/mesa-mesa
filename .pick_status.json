@@ -2902,7 +2902,7 @@
         "description": "radv: fix buffer to image copies with BC views on the graphics queue",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "98ba1e0d817e0354aad5d82eb9a2dc4cce33540f"
     },
