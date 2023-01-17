@@ -139,7 +139,7 @@
         "description": "zink: fix depth-clip disable cap",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "721f33cd0fc9756c4db5cc88bccc46c977ad05f3"
     },
