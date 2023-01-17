@@ -1534,7 +1534,7 @@
         "description": "hasvk: don't leave undefined values in exec->syncobj_values",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
