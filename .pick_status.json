@@ -1894,7 +1894,7 @@
         "description": "panfrost: drop no-longer-needed libglsl",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "551c2aadd4d85e922aa695780ba3d3bc6407a465"
     },
