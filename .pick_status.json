@@ -634,7 +634,7 @@
         "description": "Revert \"nouveau/ci: temporary disable gk20a-gles\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8a1a3a31dacf9369f81cb5336acdbdd35dd8b520"
     },
