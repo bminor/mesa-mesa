@@ -328,7 +328,7 @@
         "description": "radv/rmv: Avoid more CPU unmap deadlocks",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8d0e6c02c7024fd3a1e8f60bde8dd4428943bd46"
     },
