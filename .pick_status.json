@@ -787,7 +787,7 @@
         "description": "anv: Add missing untyped data port flush on PIPELINE_SELECT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1067ec90a591b26a0d6c9b298b1a894bb0a66836"
     },
