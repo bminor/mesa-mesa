@@ -787,7 +787,7 @@
         "description": "zink: Re-emit the SpvBuiltInSampleMask access chain each load.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8899f6a19857d533d62945889c413b55cea5223c"
     },
