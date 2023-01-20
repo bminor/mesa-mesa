@@ -1669,7 +1669,7 @@
         "description": "radeonsi: respect smoothing_enabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4147add280e408c68d7910c6cadd860cf92bf5f3"
     },
