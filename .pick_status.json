@@ -121,7 +121,7 @@
         "description": "zink: use actual swapchain object for surface comparison",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b2739c9f00557347008dfc500dcc584abb81378b"
     },
