@@ -445,7 +445,7 @@
         "description": "anv: fix preemption enable emission in gpu_memcpy",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b9aa66d5d0a8c166e5b0008337fdaca2b97a37f4"
     },
