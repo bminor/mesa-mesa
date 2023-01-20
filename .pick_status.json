@@ -1,5 +1,473 @@
 [
     {
+        "sha": "e8a60633daec2989df718d28e0baa873bb9b1d15",
+        "description": "radeonsi: report 0 block size for Polaris HEVC encoding",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c4482a3c1a973975eb27ac284a18bebca24f7876"
+    },
+    {
+        "sha": "08f6d14b85b79af06d43ee1897e01720d7c9eb0d",
+        "description": "radv: Make NGG query emission a dirty flag.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "247c06d41997538e877619326d046f84887a48ab",
+        "description": "iris: add restrictions for 3DSTATE_RASTER::AntiAliasingEnable",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "58dd9d5134e280302cc5270d7cc5ecdbc49791de",
+        "description": "hasvk: add restrictions for 3DSTATE_RASTER::AntiAliasingEnable",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9b37ef40f8b5d3206c20f03c4400b0e48faecde5",
+        "description": "anv: add restrictions for 3DSTATE_RASTER::AntiAliasingEnable",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f42521f6c3f2eb8546a9290f26d25f05a85f6c85",
+        "description": "radv: advertise extendedDynamicState3ColorBlendEquation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "de1e2b65dbbd2fa27de41054aa0dd314b5bc459b",
+        "description": "radv: fix detecting that blend is enabled when all CB states are dynamic",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4041be0f6f14192ecc48f68e2d171e289f755cb8",
+        "description": "radv: enable compiling PS epilogs on-demand for dynamic color blend equations",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "daa2aeaa0c74f2d7cc6a7b7a9a707afc0ca766bb",
+        "description": "radv: add support for dynamic blend equation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "11382a6711f5a7bc7e405377c7703ccb92461523",
+        "description": "radv: add a new helper for normalizing blend factors",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "39dcac4f79426dc06734b15bea14c7b886d4ea70",
+        "description": "radv: move some color blend helpers to radv_private.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f7dd9e580644dc3d534e6c0f869d68179f724c81",
+        "description": "zink/ci: add spec@!opengl 1.1@line-smooth-stipple to the fails list",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "a8d2b288eee38c7c8535af4342e00b8f7e75a087"
+    },
+    {
+        "sha": "ec6ad8c7dc069ccbc85a1117b33b2daa9b46b64c",
+        "description": "iris: Don't flush the render cache for a compute batch",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "926f626b95a3fab3992361c0120a73b047d24717",
+        "description": "tu/kgsl: do not use kgsl_command_object::offset",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "58ababdee6cd6b1e08604033602e4a5f9d5ab7a3",
+        "description": "anv: uncompressed views of compressed 3d images are now valid",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1617dac6c3a4212d0e254c05f9f42f0bf2f5d52b",
+        "description": "radv: Fix depth-only-with-discard when epilogs are used.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "eb07a11b8f400c50e8a2455df9891573eae052e1"
+    },
+    {
+        "sha": "7bed7d94756e5a6877ecb86ec5296ff79554e898",
+        "description": "meson: use sections in summary()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6c0dc0b2a79da18de7319eb791b97e3f7563298a",
+        "description": "meson: use summary()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e8c8a94c2e36b1889bed595a994d7319a68389f3",
+        "description": "dzn: Rework meta blit VS",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8de0c23ac94e18f7d9192fa56e6eb73b18054b80",
+        "description": "dzn: Delete an unnecessary assert",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c92729c3ce91a858829e9bd1932020c4f7298b0f",
+        "description": "dzn: Enable independent blending",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "613feb39c410ddcb55bd374b2a8b44be1d55b26a",
+        "description": "ci: bump ci-fairy with session support (robust downloads)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a8d2b288eee38c7c8535af4342e00b8f7e75a087",
+        "description": "ci/piglit: 2023-01-19 uprev",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "796686af1b379cf3601e9b49d176906596af5c75",
+        "description": "ci: migrate from wget to curl",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1abd3a3051f753822c96ba408acb19d8a001804f",
+        "description": "ci/piglit: explicitely define we want GLX tests",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bab3e2fbd9b26d05cb752f7a74f1f3b8f9bc5318",
+        "description": "meson: use the same workaround for setting 'lib' on windows",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7aca37fc2814ba9e56fe1829a40df97eef09a5c3",
+        "description": "meson: use [] instead of 'lib for !windows name_prefix",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a79e6457d8aa6eb10b0c3dd0359f25d2e9a839eb",
+        "description": "meson: use builtin support for reading version from a file",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c31629ee786db9d34ef19bcc96f8cf47308aa0cf",
+        "description": "meson: remove version checks for < 0.59",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8c0531cf912fc3f8edbc73c679602e169c9ad3f2",
+        "description": "dzn: Enable multiview",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ebf26045622bbcf26d5dc6d7dc3cc662dafd36f5",
+        "description": "dzn: Implement multiview queries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4586b308d8580efe6646efcacbcadb16a88a3d4c",
+        "description": "dzn: Handle draws and clears for multiview rendering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6fca32cb38429e971f77c8600cb036ecaa592343",
+        "description": "dzn: Handle multiview pipeline creation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ea9d092655d26e7b4c130da0a9d78fef776fe37c",
+        "description": "dzn: Put nir compilation options in a struct",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3299ab04cb6bc918bef45c138a628ca13add2ac5",
+        "description": "spirv2dxil: Claim multiview support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "95a90b359a4eee5b2a1d92a9b625ef21e4fba085",
+        "description": "spirv2dxil: Implement lowering for multiview",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2d56b3214d0d36ad916890a52cc2f9df1217acad",
+        "description": "spirv2dxil: Pass runtime conf struct to lower_shader_system_values",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "58488b9d85eb0bcc7eb23d4148271659d869db73",
+        "description": "microsoft/compiler: Support view instancing",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4a440889a87fd8d0cc0307bd76d55804e46951ef",
+        "description": "microsoft/compiler: Delete stale TODO comment",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e0024a844cf93e1b7155c17ff5aec97bb5dc8e94",
+        "description": "microsoft/compiler: Subpass textures are supposed to be arrays",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8924fe9fc317903038533882253207688dae9747",
+        "description": "microsoft/compiler: Delete incorrect implementation for load_layer_id",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a6f932639a9d09166893d87ed9142c9c7739a40a",
+        "description": "zink: simplify some dynarray concat descriptor code",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1329fec3529522fe7aa7f080bced76e613927443",
+        "description": "zink: consolidate semaphore creation where possible",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7399b2241f86bf6106bfb4fb3dacdea010debc59",
+        "description": "zink: move semaphore caching to zink_reset_batch_state()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b8252784cf01fddad4cb9885d1cdb0ef7da04973",
+        "description": "zink: add a binary semaphore cache",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "283de45fd67db9129122986c3e270927ff32043a",
+        "description": "zink: add a util function for creating semaphores",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "020db79340a1932c5229574a9e5d1ccec4e5c9da",
+        "description": "zink: preserve present resources during async presentation",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "482e215a674c031a08f6d5228f8adada95aa187b",
+        "description": "ci/bare-metal: add more timestamps to help debugging issues",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7f0e213a577ca916f32f27ace3fcc3346a8eec77",
+        "description": "zink: NV_compute_shader_derivatives",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c71287e70c2bf4aac96b24635e48ec13cd31fddf",
+        "description": "zink: correct sparse bo mem_type_idx placement",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f9515d9376752c0355de71957347e1241e3a226b"
+    },
+    {
+        "sha": "e20e8f22438b619e1700753ab37e8ae9170b931e",
+        "description": "zink: trival renames heap_idx -> memoryTypeIndex",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f6d3a5755f63c81881ff5647fe783038c955e8e3",
+        "description": "zink: zink_heap isn't 1-to-1 with memoryTypeIndex",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "75276deebcf76f8fafa68f4e4ecb29768d98c764",
         "description": "meson: Use feature option methods for xmlconfig",
         "nominated": false,
