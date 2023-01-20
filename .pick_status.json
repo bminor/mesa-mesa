@@ -1957,7 +1957,7 @@
         "description": "glthread: fix an upload buffer leak",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "befbd54864d2959b83e3d2d46d0825f19cb4fc46"
     },
