@@ -310,7 +310,7 @@
         "description": "radv/rmv: Correct timestamp shifting",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "abf3bcd6ea62bab8ae31d1c883525ce166b1abbf"
     },
