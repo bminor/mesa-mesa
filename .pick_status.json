@@ -58,7 +58,7 @@
         "description": "Revert \"aco: Combine v_cvt_u32_f32 with insert to v_cvt_pk_u8_f32.\"",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
