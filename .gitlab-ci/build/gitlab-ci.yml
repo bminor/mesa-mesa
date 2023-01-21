@@ -840,6 +840,10 @@ debian-x86_32:
     EXTRA_OPTION: >
       -D vulkan-layers=device-select,overlay
       -D mesa-clc=system
+    C_LINK_ARGS: >
+      -Wl,--no-warn-rwx-segments
+    CPP_LINK_ARGS: >
+      -Wl,--no-warn-rwx-segments
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
       -D enable-glcpp-tests=false

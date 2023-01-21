@@ -172,9 +172,9 @@ meson setup _build \
       -D buildtype=${BUILDTYPE:?} \
       -D build-tests=${RUN_MESON_TESTS} \
       -D c_args="$(echo -n $C_ARGS)" \
-      -D c_link_args="$(echo -n $C_LINK_ARGS)" \
+      -D c_link_args="$(echo -n $C_LINK_ARGS) -Wl,--fatal-warnings" \
       -D cpp_args="$(echo -n $CPP_ARGS)" \
-      -D cpp_link_args="$(echo -n $CPP_LINK_ARGS)" \
+      -D cpp_link_args="$(echo -n $CPP_LINK_ARGS) -Wl,--fatal-warnings" \
       -D enable-glcpp-tests=false \
       -D libunwind=${UNWIND} \
       ${DRI_LOADERS} \
