@@ -490,7 +490,7 @@
         "description": "radv/winsys: fix incorrect PCIID for GFX11 in the null winsys",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bbad550f3d454bde016eb1b7d7acc4ea8b9eef6e"
     },
