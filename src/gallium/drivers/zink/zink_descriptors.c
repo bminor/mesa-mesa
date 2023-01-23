@@ -586,6 +586,8 @@ zink_descriptor_program_deinit(struct zink_screen *screen, struct zink_program *
          pg->dd.pool_key[i]->use_count--;
          pg->dd.pool_key[i] = NULL;
       }
+   }
+   for (unsigned i = 0; pg->num_dsl && i < ZINK_DESCRIPTOR_NON_BINDLESS_TYPES; i++) {
       if (pg->dd.templates[i]) {
          VKSCR(DestroyDescriptorUpdateTemplate)(screen->dev, pg->dd.templates[i], NULL);
          pg->dd.templates[i] = VK_NULL_HANDLE;
