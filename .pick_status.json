@@ -3568,7 +3568,7 @@
         "description": "intel/ds: Fix crash when allocating more intel_ds_queues than u_vector was initialized",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e760c5b37be938427a9c88182ea99f7f66721ca3"
     },
