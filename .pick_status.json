@@ -2920,7 +2920,7 @@
         "description": "amd: fix tile_swizzle on gfx11 - should be shifted by 10 bits, not 8",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "529eb739fc40a5fe2d0d4d4704d29a6f90c97516"
     },
