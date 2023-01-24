@@ -580,7 +580,7 @@
         "description": "panfrost: fix off-by-one when exporting format modifiers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2a1217513e1c5d881718c2a7f2afb951e1fe6305"
     },
