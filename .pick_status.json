@@ -6421,7 +6421,7 @@
         "description": "Revert \"driconf: add a workaround for plasmashell freezing\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "41eb491fb6460f401a4c845fc28a53de92e9075b"
     },
