@@ -339,6 +339,7 @@ brw_compile_task(const struct brw_compiler *compiler,
 
    g.generate_code(selected->cfg, selected->dispatch_width, selected->shader_stats,
                    selected->performance_analysis.require(), params->stats);
+   g.add_const_data(nir->constant_data, nir->constant_data_size);
 
    delete v[0];
    delete v[1];
@@ -856,6 +857,7 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    g.generate_code(selected->cfg, selected->dispatch_width, selected->shader_stats,
                    selected->performance_analysis.require(), params->stats);
+   g.add_const_data(nir->constant_data, nir->constant_data_size);
 
    delete v[0];
    delete v[1];
