@@ -202,7 +202,7 @@
         "description": "intel/compiler/mesh: handle const data in task & mesh programs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "88756cee8da77a742fc031ac83f2e5a197023ef8"
     },
