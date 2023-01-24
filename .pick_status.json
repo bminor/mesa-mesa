@@ -1048,7 +1048,7 @@
         "description": "amd: add missing gfx11 register definitions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "caa09f66ae4e97972ec9609896b4ad64a9c9d115"
     },
