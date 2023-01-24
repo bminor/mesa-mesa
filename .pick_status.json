@@ -6214,7 +6214,7 @@
         "description": "radeonsi/gfx11: set CB_COLORi_INFO.MAX_COMP_FRAG on GFX1103_R2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "caa09f66ae4e97972ec9609896b4ad64a9c9d115"
     },
