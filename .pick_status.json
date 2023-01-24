@@ -2938,7 +2938,7 @@
         "description": "radeonsi/gfx11: unset SAMPLE_MASK_TRACKER_WATERMARK to fix hangs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "529eb739fc40a5fe2d0d4d4704d29a6f90c97516"
     },
