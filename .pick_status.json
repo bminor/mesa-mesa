@@ -1,5 +1,599 @@
 [
     {
+        "sha": "12a471afac2e0c458db785681c88d045a2175ac3",
+        "description": "dzn: Enable Vulkan 1.1",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3f0bbb19de678ba85d8e61d7ea2a7efae40dc1a3",
+        "description": "dzn: Fix independent blend check",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c92729c3ce91a858829e9bd1932020c4f7298b0f"
+    },
+    {
+        "sha": "602a54a0839271b6ab6ee78e63caddacc9ff76ca",
+        "description": "dzn: Don't expose variable pointers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ad7157c1e84a0672d36b6f5cd952452fa035a0bb",
+        "description": "dzn: A single sampler descriptor set needs to support 1024 samplers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "884d8709291f69b33049b12290e88128645d52db",
+        "description": "dzn: Descriptor limits are based on binding tier, not heap tier",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9f13a4a10a184769dd1291fae35410784023a443",
+        "description": "dzn: Usage MULTISAMPLE_LOAD support instead of RT/DS support for MSAA",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "29a0bcdd84c0ced9aa72604bd9af3e9ad3e51185",
+        "description": "dzn: Support EXTENDED_USAGE bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c0d8838c30750af852e507ba9b1d4cbfee02e95d",
+        "description": "dzn: Usage image view usage instead of image usage",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1041e0d2815e063e50cf71d524cfe70d56b44a58",
+        "description": "dzn: Use SHADER_LOAD to indicate SAMPLED_IMAGE support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cfc05566ab006f470a8d848462c2b7c4bf75fb5f",
+        "description": "dzn: Move patched vertex buffer capability check up a level",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ceb287a509bea32eefb3920c7baaf875e53a2d17",
+        "description": "dzn: When rendering to 3D, don't treat layers as subresources for barriers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "232c598e79ca5305ed83d84491da11eaadef6d6c",
+        "description": "dzn: Set dynamic rendering caps",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c8b9f70fcafdeddb083c8458f8614ba09dca381a",
+        "description": "dzn: Respect suspending/resuming flags to omit clears/resolves",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cfa260cd274ccf7e27d61b5a431bcb43e650a903",
+        "description": "dzn: Use common physical device list/enumeration helpers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0bae7a307c26b97ef458b92b5a5152dd2f759574",
+        "description": "dzn: Support vkCmdDispatchBase",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "296ad630db9607d7a8ec0ab048a3bf403ee05115",
+        "description": "spirv2dxil: Support dispatches with base group indices",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6bb765f3d1c749ffd58b8f7a5472592cb2b2ef80",
+        "description": "microsoft/compiler: Lower device index to zero",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "725948c6c9c4ec09795a105b5167b3f9f16146ab",
+        "description": "microsoft/compiler: Fix atomic image umax",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "97740401dc66fb5907f591e0490513c83b5f531c",
+        "description": "zink: fix implicit feedback loop detection",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "9ba06579035c80bf216672526558388b2f66dcd6"
+    },
+    {
+        "sha": "49b7f0842ef093dc46d425b0bb7340b967741693",
+        "description": "radv: print depth image size with RADV_DEBUG=img",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5b79745b045ac6161ba531ca6de3fa78487a6cc7",
+        "description": "intel/common: add a INTEL_DECODE variable to parameter decoder at runtime",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "31931754bc1496a36dbef9877719897a3828ac08",
+        "description": "intel/decoder: print out compute push constants",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "536a2acfc20ab6b21d83f8ca7a1829087ba98032",
+        "description": "intel/compiler/mesh: handle const data in task & mesh programs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "88756cee8da77a742fc031ac83f2e5a197023ef8"
+    },
+    {
+        "sha": "9bb18a4f9ee300b566e642e6960479b63cf8f011",
+        "description": "intel/compiler: fix generation of vec8/vec16 alu instruction",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "19b0bafe35308d67c57ec6d0b2cfb02d219cd5bd",
+        "description": "loader,glx,egl: remove is_different_gpu variable from loader",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "648cbd47a799e42bc9a05cedccbc93e595303b0b",
+        "description": "glx: remove is_different_gpu variable from struct dri_screen",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "31013f3ce7cfeb1e1e04b51215abd6856dd374a7",
+        "description": "egl: remove is_different_gpu variable from struct dri2_egl_display",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1a0ec8e8d3750d580ded41158b782b8070ff0e0a",
+        "description": "loader,glx,egl,vl,d3d: loader_get_user_preferred_fd() function to return original_fd",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1c5b61eefb9be69256552cfde1caf3b7e1d29614",
+        "description": "loader,glx: add render_gpu tag psc->driScreen and psc->fd",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c712419c1a1549562aea73c9533ce40edfc7b163",
+        "description": "egl: add render_gpu tag to dri2_dpy->fd and dri2_dpy->dri_screen variable",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "967b9ad084ecf28f639aeb21b5bdf76813e65a8a",
+        "description": "egl/wayland: for prime, allocate linear_copy from display GPU VRAM",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "42a46f2c5f169c4f06db3a7d1e944fcf34b36e82",
+        "description": "loader: make image_format_to_fourcc() non-static",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "57b22f99a98182c647444b5e6a3c786cb8e7c04d",
+        "description": "egl/wayland: keep display fd open for prime",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "94946251d0e09d53389ba49691095416db7618e2",
+        "description": "loader,glx,egl/x11: init dri_screen_display_gpu in struct loader_dri3_drawable",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5519dd0bd1a5a4a2c2ca7d41d2063632aaa7ec58",
+        "description": "egl: create DRI screen for display GPU in case of prime",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b8da022da410519c95d5726fc92a9ee5731de5e8",
+        "description": "egl,egl/x11: keep display fd open for prime",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4e6e30215ddbf6be3d5be90f64f726431701aca0",
+        "description": "egl: add fd_display_gpu to struct dri2_egl_display",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0813c1a6fa5aae6e97e6f54822105ce345592c88",
+        "description": "intel/genxml: set unused 3DSTATE_PS_EXTRA field as mbz",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "205d40b8db7f4288f54522cbcf117790fb7de3a1",
+        "description": "mesa: move component bits queries as GL ES only",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a81063d2ca39c2ce01dc0fb7e6b0587906ae255c",
+        "description": "v3dv: ensure we allocate at least the requested space for a CL",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "3325950648103ee7fd3fb435eca64a0b75beac97"
+    },
+    {
+        "sha": "0c6e56c391a262bef2d20037b4ca77d60948f3e7",
+        "description": "mesa: (more) correctly handle incomplete depth textures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "818cc3085261e905c436ab2fcd7d6ac4ad1dc0c8",
+        "description": "mesa: populate gl_program::ShadowSamplers mask from shader data",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "64140a73c166980a4fc70e302de506046685b111",
+        "description": "mesa: remove dead parameter doc for _mesa_new_texture_object()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ef3205ae574ca08e4a5462316cb14b73484c864a",
+        "description": "zink: pass depth swizzle data block to shader compile",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "336d7630fdfea68a2a6479df93f98bc26365dede",
+        "description": "zink: remove old depth swizzle workaround",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b6518f3ba5955f254c462f6c48eef64b54083a27",
+        "description": "zink: create another samplerview for shadow textures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c46fb43473eb4ab65ee64530cd63e2013d9f8f04",
+        "description": "zink: plug in the program/module parts of shadow texture mode emulation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ef233d43f4206e27e522e5cc28a6cf730663a4bf",
+        "description": "zink: block pipeline fast-pathing for any programs using depth texture modes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1b2bf99f0588dfd5c71cafe46d7da5a542d5f447",
+        "description": "zink: rework depth sampler splatting in shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5193f4f712b8c83baa33f39aa68a366418787abc",
+        "description": "zink: add a fs shader key member to indicate depth texturing mode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f62ccaacb8035afe8f356bb96faa285682ec961e",
+        "description": "zink: track depth swizzle on samplerviews",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c20c79f58496879624543c7df8779f6d95fca968",
+        "description": "zink: add an extra_data param to zink_shader_compile",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e9e4c6266ea3525ea6d4310daf1006b68aee709d",
+        "description": "zink: break out tex dest rewriting into separate function",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "368197923b6403da42b27b6b677486758b47a58d",
+        "description": "zink: flag old-style shadow tex mask for fragment shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bf3c14b8a5ac30abcc36dc1f82dd2cce136c532f",
+        "description": "radv/winsys: fix incorrect PCIID for GFX11 in the null winsys",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bbad550f3d454bde016eb1b7d7acc4ea8b9eef6e"
+    },
+    {
+        "sha": "a50d2fdb4654984061bffb9293abb4178cbe435f",
+        "description": "intel/fs: avoid cmod optimization on instruction with different write_mask",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "159edf710ee089bd1525060798d2038794e898bf",
+        "description": "ci/piglit: Exclude swapbuffers front-readback tests with PIGLIT_PLATFORM=gbm.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "849af68dbd53d8fb866f3b414a681e0d6ebaf5c7",
+        "description": "ci/piglit: Add some common piglit skips for Mesa CI's testing of glx.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ac5b1df2b9c6e25b6e1617258ef86d0b7824fae7",
+        "description": "ci: Move PIGLIT_PLATFORM settings out of the .tomls.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "83c2b26acf1e6c5434d2183294103c959c7ab268",
+        "description": "ci/freedreno: Switch the piglit job to using a deqp-runner suite.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ccfacab10028f5e752ea9b7cfa98868c50841c62",
+        "description": "ci/zink: Clear issue #7781 flakes.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8189fd30ed922b616c7c7f20ba5b460ccb8c8eea",
+        "description": "ci/zink: Drop glx-swap-copy xfails.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d01f83841af17c5ec8b5625af2d63bcedabb1f38",
+        "description": "ci/zink: Drop xfail for copy-sub-buffer.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "68135c12ed2d19b1550d1ebe679edf53a2212ba4",
+        "description": "ci: Drop windowoverlap xfails, since it's always skipped.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a0d7ccccc091f5b8168b036cc736e38513797c5f",
+        "description": "ci/virgl: Disable iris traces for now while it's unstable.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c26306f7d9c72f53da219f487f4551422b3b100e",
+        "description": "radv: stop using radv_pipeline_has_stage() in BindPipeline",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "5039acfd9df6f4d3fc7cc655717b1c5389120260",
         "description": "hasvk: check the return value of anv_execbuf_add_bo_bitset()",
         "nominated": false,
