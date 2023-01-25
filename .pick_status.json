@@ -238,7 +238,7 @@
         "description": "vulkan/wsi/wayland: improve same gpu detection",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "db42ed1e04cc7c9b92fb22cc2eef7f62e73aabba"
     },
