@@ -4693,7 +4693,7 @@
         "description": "aco: set has_color_exports with GPL",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "192486b7aa5ef3b24516e16b0e219fad7032fb7c"
     },
