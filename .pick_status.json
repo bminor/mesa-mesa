@@ -67,7 +67,7 @@
         "description": "llvmpipe: Honor zero sample_mask when multisample is disabled.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "da5840f3857664848b58e193c5ba56dac355860c"
     },
