@@ -13,7 +13,7 @@
         "description": "radv: fix ignoring graphics shader stages that don't need to be imported",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c8765c5244ac194e1c85d2a88dde76c5d92a8111"
     },
