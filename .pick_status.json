@@ -346,7 +346,7 @@
         "description": "zink: fix VK_DYNAMIC_STATE_LINE_WIDTH usage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "659c39fafbb53e27e6816fa872ac6eb78772e519"
     },
