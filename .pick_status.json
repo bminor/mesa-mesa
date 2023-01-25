@@ -1237,7 +1237,7 @@
         "description": "radv: set state.vbo_misaligned_mask_invalid in radv_bind_vs_input_state",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c199a5160a08b118df6ba6d3bb211f5e2debcf83"
     },
