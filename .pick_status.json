@@ -310,7 +310,7 @@
         "description": "dzn: Report as a software device for non-Windows",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5f1b8b3e6c9e61418c507213b899b28b71dedd0c"
     },
