@@ -400,7 +400,7 @@
         "description": "etnaviv: drm: fix check if BO is on a deferred destroy list",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1b1f8592c03c7e98b7baf89cb4d012bb7af546ac"
     },
