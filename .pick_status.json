@@ -76,7 +76,7 @@
         "description": "aco: limit VALUPartialForwardingHazard search",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5806f0246fdeba22eba4fcf2d1b4cfa03b33e886"
     },
