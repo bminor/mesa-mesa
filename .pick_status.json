@@ -1,5 +1,365 @@
 [
     {
+        "sha": "1a93cd15563a5d0bb6faf12c5d4c852cb3534415",
+        "description": "radv: add a layer for fixing rendering issues with RAGE2",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c7d0d328d569c15c01c5830af838faac8a8b3c62"
+    },
+    {
+        "sha": "b2df787058be31484f2043bcc557892158078b23",
+        "description": "radv: Optimize emitting prefetches",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bd78c8bbfa7dd3371215cf445bc9fe59e6ec296f",
+        "description": "radv: Avoid redundant fetch of radv_device",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b5de1ee1f738fc243715ad98c5039d27390f0df6",
+        "description": "radv: Clean up variables in si_get_ia_multi_vgt_param",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4b8dfaae89eedd54f7f9881adc8712d99ff30a60",
+        "description": "radv: Change radeon_cmdbuf counters to uint64_t to make alias analysis optimize radeon_emit better",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d7f429ccc1ddf76832958c47e6968dae2c870f34",
+        "description": "ci/debian/x86_test-vk: drop an outdated dependency",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3ab1a06a158298dd4cef56a2914731d47fcab4d6",
+        "description": "trace: Don't use italic escape code.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "77092ca8f4f0a1a755c4f49f90d89e9a3606fc6e",
+        "description": "llvmpipe: Honor zero sample_mask when multisample is disabled.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "da5840f3857664848b58e193c5ba56dac355860c"
+    },
+    {
+        "sha": "b6a344f4baa1ee2c784ca74499dc9fe3b4519013",
+        "description": "meson: do not reconstruct ICD paths",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fd72369b65649ee7f6605b3ec3d113c083352a93",
+        "description": "freedreno/meson: simplify script-path logic",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f00c9e85e56bda24a351301460b320e3cbaff853",
+        "description": "meson: use files() instead of joining paths",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d54c8a47c677c39e8616d44896c17c36f72089f6",
+        "description": "meson: avoid using deprecated build_root() method",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b2d5a653f45fe89f4c5fef413177bda398150ce6",
+        "description": "pvr: small cleanups",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "432e263284a779f23e69f1b1201a3e7c730d021c",
+        "description": "intel/compiler: fine-grained control of dispatch widths",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "59625a68ffc592cc5c6c62baf3a03853f234dbf2",
+        "description": "meson: remove deprecated dri-drivers option",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "47d19196c1448ecf4dcc29165e10f0c3945e2b17",
+        "description": "meson: remove deprecated osmesa-bits option",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "713371c723767ff0aa747660a2556eb94716de33",
+        "description": "meson: remove dupliace add_devenv call",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "7bed7d94756e5a6877ecb86ec5296ff79554e898"
+    },
+    {
+        "sha": "47ed5836cc0649614c52db1bca5c1888fb548acd",
+        "description": "egl/dri2: Use primary device in EGL device platform for kms_swrast",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "74967249d27aba0312e37e903df983b88cce4200",
+        "description": "ci: uprev virglrenderer",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "41d5f0ee09ccc6406d9b57351fa95edf30b03298",
+        "description": "egl: Rewrite eglGetMscRateANGLE to avoid probes and handle multi-monitor",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "47526556494f18cd2c02f978bccac7e2ba73adcd"
+    },
+    {
+        "sha": "3170b63314f14f0031cb95bd5ee3a4726f26b43b",
+        "description": "loader: Add infrastructure for tracking active CRTC resources",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "47526556494f18cd2c02f978bccac7e2ba73adcd"
+    },
+    {
+        "sha": "87a9018ff90c41c85e2992f8ccdfa4f162d65d4f",
+        "description": "zink: reorder commands more aggressively",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1a29f3dfdb247d7f6a8bb6b3d559db497230f09d",
+        "description": "CI/windows: Apply CI_FDO_CONCURRENT to piglit too",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1c5a64296d5b4fdec34ccb35098601e1896ee1a2",
+        "description": "CI/windows: Don't limit deqp-runner to 4 jobs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2ae08c3e8fc7a735b24aecaeb648aee4ccba6390",
+        "description": "ac/llvm: remove llvm:: now that we use \"using namespace llvm\"",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a273f64f80ba5081fa3a3a1460df44d80daa6921",
+        "description": "ac/llvm: run the IPSCCP pass",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d05c3811cd17dc29421c497a3132ebcb64596f52",
+        "description": "ac/llvm: run the LLVM sinking pass because LLVM will stop running it",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fbd32a04daf84f7ed931a4a2510f2181083753cf",
+        "description": "anv: add a third memory type for LLC configuration",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "15e19d04f0481e31c6806dc4a5dcb0b762871099",
+        "description": "freedreno/drm: Synchronize handle close and lookup",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "444db624df59cc2eed8d58a18d0f2ea82e03afba",
+        "description": "freedreno/drm: Split out bo->finalize()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5a46e884ea80bf19449e65b946652bfd5b241683",
+        "description": "freedreno/drm: Remove bo_del_or_recycle()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "160137ccaeb925ada3936e4e0099f8d7662bacea",
+        "description": "freedreno/drm: Detect zombie BOs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "547f50c244748ac0758932d471c6905bb5bbfb19",
+        "description": "freedreno/drm: Add some ref/unref debugging",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "870beb215972e00ae4e64f0b4748d02363a97459",
+        "description": "freedreno: Don't sync timestamps while perfetto isn't running.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2010b915479a81f270a00e8c48f2dc9e2510952a",
+        "description": "dzn: Report as a software device for non-Windows",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5f1b8b3e6c9e61418c507213b899b28b71dedd0c"
+    },
+    {
+        "sha": "cdd1588d55c95a13a70d381ef09376e5e1a0d88e",
+        "description": "dzn: Don't recursively lock the physical device enum mutex",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "cfa260cd274ccf7e27d61b5a431bcb43e650a903"
+    },
+    {
+        "sha": "40a2b505990b7d5ff977af46e3bc0b1ba64d5e50",
+        "description": "dzn: Fix Windows WSI",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "cfa260cd274ccf7e27d61b5a431bcb43e650a903"
+    },
+    {
+        "sha": "633f2428f4b6af0fe362971785552ec54eeda1a7",
+        "description": "docs: update calendar for 22.3.4",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c8a32d21cfd8122a4091da31447a145c97540f3a",
+        "description": "docs/relnotes: add sha256sum for 22.3.4",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf58992a36bb94a639c0d57e587d85a2be19a4c2",
+        "description": "docs: add release notes for 22.3.4",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "50dee85b684e321708460afc3c1abd2148fd5891",
         "description": "freedreno/registers: Add RBBM_GPR0_CNTL for non-GMU operation",
         "nominated": false,
