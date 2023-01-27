@@ -4630,7 +4630,7 @@
         "description": "Revert \"zink: allow direct memory mapping for any COHERENT+CACHED buffer\"",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a3552048c7e7b8afebfc99caac6d555439ddf2bc"
     },
