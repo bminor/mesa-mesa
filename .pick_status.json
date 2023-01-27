@@ -2731,7 +2731,7 @@
         "description": "amd: fix typo in shadowed uconfig registers on gfx11",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f24f8665dbe2a03f9f60baff015aa1b78c74256b"
     },
