@@ -427,7 +427,7 @@
         "description": "anv: fix null descriptors",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4ceaed7839afd724b2a2f10f6879f54199c041ad"
     },
