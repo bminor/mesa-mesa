@@ -112,7 +112,7 @@
         "description": "radv: stop setting INTERPOLATE_COMP_Z",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
