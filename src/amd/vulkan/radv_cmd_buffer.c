@@ -7510,6 +7510,12 @@ radv_get_ngg_culling_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inve
    const struct radv_graphics_pipeline *pipeline = cmd_buffer->state.graphics_pipeline;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
+   /* Disable shader culling entirely when conservative overestimate is used.
+    * The face culling algorithm can delete very tiny triangles (even if unintended).
+    */
+   if (d->conservative_rast_mode == VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT)
+      return radv_nggc_none;
+
    /* Cull every triangle when rasterizer discard is enabled. */
    if (d->rasterizer_discard_enable)
       return radv_nggc_front_face | radv_nggc_back_face;
@@ -7531,12 +7537,10 @@ radv_get_ngg_culling_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inve
    if (d->cull_mode & VK_CULL_MODE_BACK_BIT)
       nggc_settings |= radv_nggc_back_face;
 
-   /* Small primitive culling is only valid when conservative overestimation is not used. It's also
-    * disabled for user sample locations because small primitive culling assumes a sample
-    * position at (0.5, 0.5). */
-   bool uses_conservative_overestimate =
-      d->conservative_rast_mode == VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT;
-   if (!uses_conservative_overestimate && !pipeline->uses_user_sample_locations) {
+   /* Small primitive culling assumes a sample position at (0.5, 0.5)
+    * so don't enable it with user sample locations.
+    */
+   if (!pipeline->uses_user_sample_locations) {
       nggc_settings |= radv_nggc_small_primitives;
 
       /* small_prim_precision = num_samples / 2^subpixel_bits
