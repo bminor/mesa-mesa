@@ -211,7 +211,7 @@
         "description": "radv: Set FDCC_CONTROL SAMPLE_MASK_TRACKER_WATERMARK",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e210ffb4d0dc6b91fad79134a9712a5d5694f2f8"
     },
