@@ -355,7 +355,7 @@
         "description": "intel/fs: Always stall between the fences on Gen11+",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f726246297e56ae0b3fac1af072f57dce16700ab"
     },
