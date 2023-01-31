@@ -13,7 +13,7 @@
         "description": "nir: mark progress when removing trailing unused alu channels",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cb7f20128874182629bdb0e5b2789096c0c0ec99"
     },
