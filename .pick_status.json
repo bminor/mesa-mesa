@@ -4,7 +4,7 @@
         "description": "nir: mark progress when removing trailing unused load_const channels",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3305c9602df65d08f586ee520de9d8f0c46b14f5"
     },
