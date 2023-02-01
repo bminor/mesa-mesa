@@ -751,7 +751,7 @@
         "description": "wsi/win32: Don't require buffer blits for software drivers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2f462105face258c3e57a9558b8615d5919cc261"
     },
