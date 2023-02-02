@@ -1174,7 +1174,7 @@
         "description": "meson: combine checks for linker --gc-sections support",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f51ce21e4e0bf7efabe58afb4a2cd6b9f98d9505"
     },
