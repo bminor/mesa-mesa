@@ -1,5 +1,419 @@
 [
     {
+        "sha": "3c25edfdb7456648d4226cf08bf62c57c998e894",
+        "description": "aco: Improve wave64 cycle estimates.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5a40190f04a590d596ad9dcca0b8fa4a827e486f",
+        "description": "Revert \"zink: fix zink_mem_type_idx_from_bits()\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f7796997964bb462bcbfa6b9faca5dcf04b64e1b"
+    },
+    {
+        "sha": "0d4e375a586c6b8abab3066954d47630669a734a",
+        "description": "asahi: wire up shader disk cache support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3ad9a6e7c202dd98ccfa2004a53c164640e31a57",
+        "description": "radv: simplify an assertion after considering RADV_FORCE_VRS",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3eb97b9d334afee83031743ae61839d70b45efd2",
+        "description": "radv: skip compilation when possible with GPL fast-linking",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6b513a9c6a9f465014c517b2f6b1cb8a269e2b56",
+        "description": "radv: determine the last VGT API stage earlier",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "031bbdfbe681ac45d2c19aa7813d863599fda785",
+        "description": "radv: stop using the graphics pipeline key after compilation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "aebe65e88a4245444e32da3536e40c229af8d821",
+        "description": "radv: return a boolean value in radv_pipeline_needs_dynamic_ps_epilog()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6ddf1fd9adc9a7745e2b7c91199e3b17e553f8b7",
+        "description": "radv: pass the lib flags for generating the pipeline key",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "04fefec70f4df3462149550e73082bd346096a75",
+        "description": "v3dv: mark dEQP-VK.api.command_buffers.record_many_draws_secondary_2 as flaky",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "863bc08136ae359a3e7ba65574b2564ed56655a6",
+        "description": "radv: remove one unused variable in radv_graphics_lib_pipeline_init()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c9e032be7f6279cb0f4cbc6ac222e4f308aad647",
+        "description": "radv: allow to create a noop FS in a library with GPL",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "68e914a4caad5132d728b9e98ef67c43c4cc4355",
+        "description": "zink: rework descriptor buffer templating to use offsets",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7ab5c5d36d2b988470ba85df9ebc7310b986147b"
+    },
+    {
+        "sha": "ed6edc07e40c49a934d44a3cd1fcae720166d423",
+        "description": "asahi: Split off macOS support into its own file",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2e51ccac82a4cb7f3d0c6f522b3c594c3980c1b2",
+        "description": "asahi: Split off common BO code into its own file",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ea285aea8d112670f85c160f504c34f8dc156256",
+        "description": "asahi: Use non-UAPI specific BO create flags",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9e2365708b00e1c0099c499fc4fd26b637996c3d",
+        "description": "zink/ci: allow running manual jobs again on RADV",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f6c06ef2f66a638a302346639bcd907b64c646c8"
+    },
+    {
+        "sha": "0c54f261eae2f19eb4cef5fa8b444d96a3515513",
+        "description": "ci/core-manual-rules: enclose the whole condition in quotes",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f6c06ef2f66a638a302346639bcd907b64c646c8"
+    },
+    {
+        "sha": "5e1479220049e69d0e02673b18cbbe96b4a3b2fb",
+        "description": "agx: Centralize texture lowering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7258f6bafdc1611ad11d561160e51341feca1e1d",
+        "description": "Revert \"CI: Lima farm is offline\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0733aafa2271fee6a6724467ec7f2e50754d5a9d"
+    },
+    {
+        "sha": "d23b3a13943576bbb8dd0fea12ac717c40b376e1",
+        "description": "zink: fix zink_mem_type_idx_from_bits()",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d702a503ad5cc8ca8fddb304a9343490beaf592d"
+    },
+    {
+        "sha": "ff5a761232ec8c99447f58f6d3dd395899ce5861",
+        "description": "zink: only set VkPipelineColorBlendStateCreateInfo::attachmentCount without full ds3",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fd0562693d6b8cdf81fece8368a21cf4777fc88d",
+        "description": "lavapipe: try harder to reuse pipeline layouts during merge",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a1a859328b1da23c9b9179aae8f606fcb674f655",
+        "description": "lavapipe: delete lvp_pipeline::mem_ctx",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "59af3b4ad4de22c54c8061027799e50b85e720e3",
+        "description": "lavapipe: delete unused pipelines immediately",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "408606af02b1a76f9d50ec6126ec9a4fb79bcf3d",
+        "description": "lavapipe: create gfx gallium csos at pipeline bind",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6f0303ba7674120443b3f8ce3e66019362d2be85",
+        "description": "lavapipe: break out (and slightly refactor) gallium shader cso creation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4031098b857a1d6cc006da1313f4fc34ba669ddf",
+        "description": "lavapipe: refcount nir shaders instead of cloning",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3770eaab7355a7821e45aa26d91299b912756b60",
+        "description": "lavapipe: add refcounting for shader nir",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "453f49ce6d14ce101d047dc6a0847dd3cbb04a33",
+        "description": "lavapipe: move noop fs creation to device",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dc7f6c53241dc64d2e66903120e7de0f9bb53d4c",
+        "description": "freedreno: support UBWC scanout",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1cf28bd049a7cc1554c5eeee206865526c6b0160",
+        "description": "freedreno: add has_implicit_modifier helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1244506c152d288b9ec3af443fbac24f97d5bc0f",
+        "description": "nir/opt_algebraic: Add optimization for ieq/ine and right-shift.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "873dfb673b643db7263fc77b3734aa17fa26aecd",
+        "description": "anv: Perform load_constant address math in 32-bit rather than 64-bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a0e7e7ff41f12d62fad5441208efb967d7795d50",
+        "description": "iris: Perform load_constant address math in 32-bit rather than 64-bit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "95d06343c693aa12b4cda5cda31d81fae138b0ec",
+        "description": "radv: Don't place CS in VRAM when bandwidth is too low.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ef668f3714112e665a42b63dc971b0fe266547d1",
+        "description": "ac/gpu_info: Add has_pcie_bandwidth_info.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d7730fcf22adae92b0e7a82e36cfe28200920b5f",
+        "description": "vulkan/wsi/win32: Support tearing (immediate) and VSync (FIFO) present modes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "747604b17c5e7117c47c1781f2ea8ee0c6f0b710",
+        "description": "vulkan/wsi: Add a wsi_device param to get_present_modes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0c083d29a55bf20a993eab82786d583403582c8c",
+        "description": "intel/fs: Always stall between the fences on Gen11+",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f726246297e56ae0b3fac1af072f57dce16700ab"
+    },
+    {
+        "sha": "51ea81c0a11d4874c04b36c415eccc929f8bf52c",
+        "description": "ci: Fix perf job condition.",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f6c06ef2f66a638a302346639bcd907b64c646c8"
+    },
+    {
+        "sha": "5d1c69389390258b3c7cdf398db029c7e375825d",
+        "description": "ci: Fix perf jobs blocking Marge pipelines.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "aa68b98b87604b019114a8e4127470a2f5805836",
+        "description": "radv: remove radv_pipeline_stage::spirv::sha1",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "853f8eb9300f03e341c97d4938e3f1237b0ea4e9",
+        "description": "radv: remove redundant zero initialization of pipeline layout",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1f67782eb2a0893578de8c87406ba66f10ea6aa2",
+        "description": "radv: optimize radv_pipeline_layout_add_set() slightly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a73a5915fba6cdb1345ff0feb20a88d6a27d674b",
+        "description": "venus: log upon device creation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "7e6acfd58772fbfbcd59404c26444939cfb84555",
         "description": "nir: mark progress when removing trailing unused load_const channels",
         "nominated": true,
