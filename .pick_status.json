@@ -3253,7 +3253,7 @@
         "description": "zink: fix zink_mem_type_idx_from_bits()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "d702a503ad5cc8ca8fddb304a9343490beaf592d"
     },
