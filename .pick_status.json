@@ -697,7 +697,7 @@
         "description": "util/disk_cache: Handle OS'es without d_type in struct dirent",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f58e6fee7452aa7bd83798d68c6b3605e1498406"
     },
