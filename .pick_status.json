@@ -1813,7 +1813,7 @@
         "description": "tu: Prevent using stale value of RB_UNKNOWN_88D0 on BLIT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "def56b531c86f529bc32d1834ccb479457717db7"
     },
