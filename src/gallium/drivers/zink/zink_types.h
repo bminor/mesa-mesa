@@ -1697,6 +1697,7 @@ struct zink_context {
       };
 
       VkDescriptorImageInfo fbfetch;
+      uint8_t fbfetch_db[64]; //max size from gpuinfo
 
       struct zink_resource *descriptor_res[ZINK_DESCRIPTOR_BASE_TYPES][MESA_SHADER_STAGES][PIPE_MAX_SAMPLERS];
 

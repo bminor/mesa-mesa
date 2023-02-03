@@ -1066,7 +1066,7 @@
         "description": "zink: cache and reuse dummy inputattachment for fbfetch",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7ab5c5d36d2b988470ba85df9ebc7310b986147b"
     },
