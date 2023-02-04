@@ -1624,7 +1624,7 @@
         "description": "zink: fix cap check for arb sparse texture2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4f8ba2b9aae265dfc56a62e85cd5eab3c4c718f3"
     },
