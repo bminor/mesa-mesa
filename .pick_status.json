@@ -724,7 +724,7 @@
         "description": "gallium/auxiliary/vl: add crop to compute shader",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c46e4a5da5b17e3fc2d5b31c6cf7dbaf42e30d8"
     },
