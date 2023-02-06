@@ -751,7 +751,7 @@
         "description": "lavapipe: Fix bad array index scale factor in lvp_inline_uniforms pass",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d23a9380dd601be65ba97192d8101c9c9bb13cd4"
     },
