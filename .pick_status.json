@@ -355,7 +355,7 @@
         "description": "tu: Prevent using stale value of GRAS_SC_CNTL in sysmem clear",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
