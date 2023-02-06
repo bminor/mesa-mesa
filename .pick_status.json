@@ -121,7 +121,7 @@
         "description": "util/vbuf: fix multidraw unrolling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6b07893b31fe4e6cac7bc73155770672ce7753cb"
     },
