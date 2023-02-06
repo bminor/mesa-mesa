@@ -850,7 +850,7 @@
         "description": "meson: Ignore unused variables when assertions are disabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "46b099e3925d118b1637505b1f26de50059649aa"
     },
