@@ -562,7 +562,7 @@
         "description": "zink: add a define for the \"default\" optimal key",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null
     },
