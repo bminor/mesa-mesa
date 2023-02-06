@@ -535,7 +535,7 @@
         "description": "zink: make last_vertex_stage the first bit in zink_vs_key_base",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
