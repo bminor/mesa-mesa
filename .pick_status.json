@@ -571,7 +571,7 @@
         "description": "intel/blorp: disable REP16 for gfx12+ with R10G10B10_FLOAT_A2",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
