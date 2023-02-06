@@ -256,7 +256,7 @@
         "description": "loader: unregister special event in loader_dri3_drawable_fini",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3170b63314f14f0031cb95bd5ee3a4726f26b43b"
     },
