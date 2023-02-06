@@ -7501,7 +7501,7 @@
         "description": "iris: Avoid creating uncompressed view with unaligned tile offsets on BDW",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "60568d5dce988ffb67966d88b6feeb67516c7145"
     },
