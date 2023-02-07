@@ -517,7 +517,7 @@
         "description": "zink: set zs feedback loop bit from driver workaround on ctx create",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "56fb25806428506469982e35ee5076b981023c92"
     },
