@@ -661,7 +661,7 @@
         "description": "zink: set PIPE_CAP_VALIDATE_ALL_DIRTY_STATES",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "153af03b941469c22a1b66e7d9e015d5564322a1"
     },
