@@ -328,7 +328,7 @@
         "description": "turnip: Disable draw states after dyn renderpass in all cases",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cb0f414b2aed88f48b2593dad833844be2f5f42b"
     },
