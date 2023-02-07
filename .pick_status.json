@@ -1,5 +1,266 @@
 [
     {
+        "sha": "eb9ab4efeb14e567321495596dc6f09a9952481a",
+        "description": "intel/genxml/gen125: Tune 3DSTATE_WM Walker direction",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bea93f70589b5587aa0e4b11d531394a29358135",
+        "description": "intel/genxml/gen125: Add walker configuration fields to 3DSTATE_WM",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fad1f716dd831fba4c380bce1cf76bffc11be6d6",
+        "description": "aco: fix out-of-bounds access when moving s_mem(real)time across SMEM",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7d8e2db9f95747895b6cd137cb1db445b3a1a66f",
+        "description": "lavapipe: disable VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT for int formats",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fec15a225f603f7a980241ce6b7fad35dfc6aff4",
+        "description": "v3dv: ensure we apply binning syncs to secondary command buffers",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c2601f06908434aaddd6b1db5e995bbda22d2a72",
+        "description": "v3dv: ensure at least V3D_CL_MAX_INSTR_SIZE bytes in last CL instruction",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "079247e046368ef7b07f4d63080dde66409adbfc",
+        "description": "pvr: remove start/stop transfer flags",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4347072443867f6337c33ffc330263bb851d9839",
+        "description": "meson: Ignore unused variables when assertions are disabled",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "46b099e3925d118b1637505b1f26de50059649aa"
+    },
+    {
+        "sha": "4888dd73918aaee71a3b029b5e8fab9d04640274",
+        "description": "radv: use amd common force_vrs option",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1e3198c7662b53ae7b81f7a19059aa64138a18af",
+        "description": "radv: move radv_consider_force_vrs above radv_fill_shader_info",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bee8e4704800b46b3017b06c455245a8d87a4f6f",
+        "description": "anv: use malloc for host only descriptor sets",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3e2c768aa860f96074df73cd3171960e76f5c312",
+        "description": "radv/vcn: enable dynamic dpb tier 2 for h264/h265 on navi21+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6c3c242361da7786f4020ed63c148fcf4b868a7e",
+        "description": "radv/video: add h265 decode UVD support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "db62c38091a3b244b1d720a6aa47bf1d1855db55",
+        "description": "radv: add vcn h265 decode.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8a29291dbe6c61ce469f21a745724b59e702272a",
+        "description": "radv/video: add h264 support for uvd",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1693c03a39630a43e179b84b6cb4dadba72721c0",
+        "description": "radv/video: add initial h264 decoder for VCN",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9477f117f4d45445dd8d3ccc2497b5e4dfb48bd6",
+        "description": "radv/video: add initial frameworking.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "32533409169f16a5ffb9662496cd60782b7718cd",
+        "description": "radv: add video decoder register setup.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "85eead4198dfe2e8209dccd44b6ec5a6d8839e60",
+        "description": "radv: adding video decode queue support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "30b6e9797dff5eceb34d22dad5123270811402b0",
+        "description": "ac: add name to codec info struct",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ee7837aae2bfec61961cc6cbb54d0e3002a238af",
+        "description": "radv: add new upload alloc aligned api",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "855ad612e18b8faa0c5930cb25bba82e669c5d3a",
+        "description": "radv: remove the status query mark it unsupported.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "284547af55864032ad410c59027ef110efa62b42",
+        "description": "freedreno+ir3: Move storage_16bit to compiler options",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "79caf8a44b682f731c0fd3b941f38cc1869efe2d",
+        "description": "anv: Make a batch decoder for each queue family",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1a1fa2393ec532920cefba9597774eaf49e08aa1",
+        "description": "v3d/v3dv: use shader_info->var_copies_lowered",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ba0bc7182d25a16e95fa8957ffaba8b72b76fa5b",
+        "description": "anv: use shader_info->var_copies_lowered",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a12a71e6c0c3f09a88c5b857f8e225f6bb35a3f0",
+        "description": "radv: use shader_info->var_copies_lowered",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3685528c1ea1fb8b68a421a96a888f2b7ba914f5",
+        "description": "nir: track if var copies lowering was called",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "27a89a0903f2c541541846e8d909bb67af242d5e",
+        "description": "loader: unregister special event in loader_dri3_drawable_fini",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3170b63314f14f0031cb95bd5ee3a4726f26b43b"
+    },
+    {
         "sha": "f56f277ba0e4d781be287ea5b2f8a7f15864c643",
         "description": "r300: set register file to none if swizzles are constant only",
         "nominated": false,
