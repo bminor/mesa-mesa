@@ -112,7 +112,7 @@
         "description": "aco: fix imod/omod for gfx11 VOP3 opcodes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d8d99c3c4f2355d9546f1998da75dd2ab69e67e2"
     },
