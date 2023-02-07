@@ -445,7 +445,7 @@
         "description": "zink: use screen indexing for bindless descriptor set in template bind",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8636717270f1ecd7d6a99f165f99b201c20dbf80"
     },
