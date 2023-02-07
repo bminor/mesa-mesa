@@ -526,7 +526,7 @@
         "description": "zink: set gfx feedback loop bit in pipeline state for driver workaround",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "645f2da3faf3852e0a263c386a97a7cd7f617694"
     },
