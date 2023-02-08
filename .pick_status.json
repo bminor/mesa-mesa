@@ -3316,7 +3316,7 @@
         "description": "intel/fs: bound subgroup invocation read to dispatch size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "530de844ef4d6f8d64276ad4558dd8a3d787e390"
     },
