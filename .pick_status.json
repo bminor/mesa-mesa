@@ -1444,7 +1444,7 @@
         "description": "glsl/standalone: Fix up _mesa_reference_shader_program_data signature",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "717a720e9c959d04dff45346edaf432cbc9bb270"
     },
