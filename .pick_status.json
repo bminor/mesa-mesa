@@ -2578,7 +2578,7 @@
         "description": "hasvk: Fix SPIR-V warning about TF unsupported on gen7.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d82826ad44465423407d1e4413d7d66bee82737c"
     },
