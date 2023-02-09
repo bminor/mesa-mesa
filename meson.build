@@ -1669,12 +1669,17 @@ if opt_xmlconfig.enabled() and not supports_xmlconfig
 endif
 use_xmlconfig = supports_xmlconfig and not opt_xmlconfig.disabled()
 
-if host_machine.system() == 'darwin'
-  dep_expat = meson.get_compiler('c').find_library('expat')
+if use_xmlconfig
+  if host_machine.system() == 'darwin'
+    dep_expat = meson.get_compiler('c').find_library('expat', required : opt_xmlconfig)
+  else
+    dep_expat = dependency('expat', fallback : ['expat', 'expat_dep'],
+                           required : opt_xmlconfig)
+  endif
 else
-  dep_expat = dependency('expat', fallback : ['expat', 'expat_dep'],
-                         required: use_xmlconfig)
+  dep_expat = null_dep
 endif
+
 # Predefined macros for windows
 if host_machine.system() == 'windows'
   pre_args += '-DWIN32_LEAN_AND_MEAN' # http://msdn2.microsoft.com/en-us/library/6dwk3a1z.aspx
