@@ -337,7 +337,7 @@
         "description": "crocus: disable Y tiling for render targets properly.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "32728dc66e362a9c01d151d8de5799eb76d6e06b"
     },
