@@ -778,7 +778,7 @@
         "description": "zink: unset gfx shader read when unbinding shader images",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "50e764fa50d58054259cec1fc613a0aa6ef9d60f"
     },
