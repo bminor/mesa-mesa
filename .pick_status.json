@@ -1129,7 +1129,7 @@
         "description": "zink: fix descriptor pool free iterating",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cf7c17a7af3e5de6e78e5256ecafc7daefa88184"
     },
