@@ -4276,6 +4276,16 @@ zink_shader_free(struct zink_screen *screen, struct zink_shader *shader)
          prog->base.removed = true;
          simple_mtx_unlock(&prog->ctx->program_lock[idx]);
          util_queue_fence_wait(&prog->base.cache_fence);
+
+         for (unsigned r = 0; r < ARRAY_SIZE(prog->pipelines); r++) {
+            for (int i = 0; i < ARRAY_SIZE(prog->pipelines[0]); ++i) {
+               hash_table_foreach(&prog->pipelines[r][i], entry) {
+                  struct zink_gfx_pipeline_cache_entry *pc_entry = entry->data;
+
+                  util_queue_fence_wait(&pc_entry->fence);
+               }
+            }
+         }
       }
       if (stage == MESA_SHADER_FRAGMENT || !shader->non_fs.is_generated) {
          prog->shaders[stage] = NULL;
