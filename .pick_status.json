@@ -4387,7 +4387,7 @@
         "description": "intel/fs: Fix register coalesce in presence of force_writemask_all copy source writes.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a4b36cd3dd307d75913dbc183cdf2d0c1e97ea0e"
     },
