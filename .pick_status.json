@@ -1408,7 +1408,7 @@
         "description": "radv: Implement VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "46e0c77582dd2cfbe77e78cf33399eb761ccb7b6"
     },
