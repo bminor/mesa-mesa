@@ -967,7 +967,7 @@
         "description": "radv: Fix invalid 64-bit shift.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8df17163c7864df8abd447374b4272a231233301"
     },
