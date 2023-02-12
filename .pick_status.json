@@ -958,7 +958,7 @@
         "description": "radv: Fix missing VK_ACCESS_2_SHADER_SAMPLED_READ_BIT.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8df17163c7864df8abd447374b4272a231233301"
     },
