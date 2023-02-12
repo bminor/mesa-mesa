@@ -1,5 +1,509 @@
 [
     {
+        "sha": "c0bc0ecf9eaf964ceb4a1573595da8b8b4585cc4",
+        "description": "freedreno: Avoid screen lock when no rsc tracking needed",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b70ea03302f27bf7eed963e0f9ce0ff9472ec241",
+        "description": "freedreno: Add FD_DIRTY_QUERY",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3a98822cc7d1b234a028f51026ffff23abe104b3",
+        "description": "freedreno: Remove impossible NULL check",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "918caaad59840841191c01d7bd0d8f042983fe41",
+        "description": "freedreno: Move num_vertices calc to backend",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b15aaea1d58d79a1be585b7b66e588973efb7f8b",
+        "description": "freedreno/a6xx: Move num_driver_params to program state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0a17c3afc5e0491d7ea334241bb230c64a015f83",
+        "description": "nir: Apply a maximum stack depth to avoid stack overflows.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7ead71739371ffc036883b9ee89318f5c368f4d4",
+        "description": "dzn: Enable 16bit types when supported",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d7f9e2db598b60fbb83e8d05834bc3a23a4ecd07",
+        "description": "dzn: Get options4",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "08fc7315c520936f829d11ebc7b70f245e1618b2",
+        "description": "dzn: Delete unused extensions table",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cc906c0eed00e68e70d85df1e101affb54c3a418",
+        "description": "dzn: Enable get_surface_capabilities2",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a7d4309234f0d876a45ecb82538f728910ee3b43",
+        "description": "spirv2dxil: Support 16bit types",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "536ab16bc1e92889c896c1ab251a567bec2fcfd6",
+        "description": "spirv2dxil: Move shader model into runtime conf struct",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4c527f4fc07f4dc1dc4d9a8bdc12341b25e8eb0c",
+        "description": "spirv2dxil: Lower unaligned loads and stores",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9e2683c6f0229c395dbbb092b6b9004e889129ad",
+        "description": "spirv2dxil: Set min UBO/SSBO alignments",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "58e7acb0e2d5fea29f39ceef19bec80d5e7bbabb",
+        "description": "microsoft/compiler: Support lowering SSBO accesses to 16bit vectors",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0f56fc09d92a3ea8a3c335045ae030ebde2fb511",
+        "description": "microsoft/compiler: Support raw buffer load/store intrinsics with 16bit alignment",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "196dc72838806dea963e247da618b2a9505d3e61",
+        "description": "microsoft/compiler: Handle 48-bit stores to SSBO/shared",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c994c8b3fd4aee5c7ffe66e5a282243fab2e9580",
+        "description": "microsoft/compiler: Pass an alignment to constant buffer load lowering",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7fcb60be37ba6bea57be09363c7ae83a07a59778",
+        "description": "microsoft/compiler: Simplify bitpacking for load/store lowering with nir_extract_bits",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "78309017516fb384595c48ee77724eeb09f06ab6",
+        "description": "microsoft/compiler: Pass deref modes to unaligned pass and handle push const",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "facd2e4fdba71f2a0f72dc7d7fbe52735863dd01",
+        "description": "microsoft/compiler: Move unaligned load/store pass from CL",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f50843fcdb2f3f175f9886aa9917fe6da22c65bf",
+        "description": "microsoft/compiler: Handle undef-rounding f2f16 as rtz",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8782a0b8dfd7955ec144ae8b0eb16ade6cdb89eb",
+        "description": "microsoft/compiler: Ensure native_low_precision is set for 16-bit bitcasts/stores",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4d76d46c130f6da6c56176cb4c9741bf17df5d2e",
+        "description": "microsoft/compiler: Handle frcp for float16/float64",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ed13c2261c46911136fdd1951f0017a7536a2871",
+        "description": "microsoft/compiler: Handle struct consts in DXIL module dumper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "25ee07373c3123e5f10dff74e7d90311b3c7b60f",
+        "description": "nir_lower_fp16_casts: Allow opting out of lowering certain rounding modes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c0c2b60f1d657f7de2bc8a2a479762c00ef69875",
+        "description": "nir: Add alignment to load_push_constant",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "42267588d7dc92e566a9ce845e957a4fba9d3dc9",
+        "description": "ci/windows: Update LLVM to 15",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e9ab33c9a18fa8160f38cffab19733d405455026",
+        "description": "microsoft/clc: Set features that are used by CL tests",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b27d8ee2e916290a49943586726521ad2378a45f",
+        "description": "clc: Include opencl-c-base.h with LLVM 15 (using builtins)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dda35e616b8911035d292f720e147a5fdc2ad859",
+        "description": "turnip: fix use of align() instead of util_align_npot() with tile_align_w",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "aae679e221371c892d8e1984fcab20229d9d0d57"
+    },
+    {
+        "sha": "cb611b207d9291a30aeb813e155ee74fe06d5300",
+        "description": "rusticl/icd: Make it work in case Rustc shuffles struct around",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f6c5cd33b00034453935605f2f2d70a5766dc4ae",
+        "description": "rusticl/util: extract offset_of macro",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "af9212dd82b8885e0d94921e8500b90561faa5e0",
+        "description": "nir/deref: Preserve alignments in opt_remove_cast_cast()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9b2ddd2c5ecd6b60752db3bb6d507611c8b6d9d8",
+        "description": "anv: Handle VkAccelerationStructureBuildRangeInfoKHR::transformOffset",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f3ddfd81b4deaa8033d598527e0cbc255e60addc"
+    },
+    {
+        "sha": "465c2412667674f02c8457693220013e9335eebd",
+        "description": "intel/compiler/mesh: use U888X packed index format",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2d20564a6aaf8e5802ae1d3d425a4a496124b976",
+        "description": "turnip: Disable draw states after dyn renderpass in all cases",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "cb0f414b2aed88f48b2593dad833844be2f5f42b"
+    },
+    {
+        "sha": "855fa788663b205d77cc54b6eeff6289d5aa869e",
+        "description": "turnip: Ensure that there is no renderpass rotation in binning",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "43ea1f2dfbb8c60ac8ae7ad8f1cb2c1e97b85722",
+        "description": "freedreno: Document A6XX_GRAS_SC_CNTL::rotation field",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "388e4ea7333972251dbe8ce91d15ad4001589f35",
+        "description": "tu: Prevent using stale value of GRAS_SC_CNTL in sysmem clear",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "981f1d88a18b552b5fbb2c524016dfdc481b8e46",
+        "description": "tu: Prevent using stale value of RB_UNKNOWN_88D0 on BLIT",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "def56b531c86f529bc32d1834ccb479457717db7"
+    },
+    {
+        "sha": "99fb770c4502f36110bd8ba8a8bc0fb810ba76a6",
+        "description": "freedreno: use blendcoherent to set FLUSH_PER_OVERLAP",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "527a74cb5d7cc700d0e089f1f042f2b49d211a54",
+        "description": "gallium: make BlendCoherent usable from gallium drivers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "40bdd2bbf756f79881301d84708b0069b6b8ca25",
+        "description": "freedreno: use A6XX_GRAS_SC_CNTL_SINGLE_PRIM_MODE with fb readback",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cd446b87e1f5ec2c5f1273627c611325595d1971",
+        "description": "zink: add newlines to some debug printfs",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "13f68bcce14b2f7c91611da5922fd67a111190af",
+        "description": "hasvk: Tell spirv_to_nir float controls are always supported",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6f932276c35c8b4a1ab78395e9186a3f84effc12",
+        "description": "hasvk: Don't claim shaderDenormPreserveFloat32 on gfx7",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "56667002fd757cae2a3330f38a8836f4948c42fa",
+        "description": "intel/vec4: Don't optimize multiply by 1.0 away",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dcad4a2cd122f58336266765d20d8b44e3ee8812",
+        "description": "intel/vec4: Set the rounding mode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5a2326f9b2c75f406ea2bc17a1074e7cfb7fe401",
+        "description": "panfrost: drop no-longer-needed libglsl",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "551c2aadd4d85e922aa695780ba3d3bc6407a465"
+    },
+    {
+        "sha": "bd30f3619d573fd9ca357856314b06dd6d615d90",
+        "description": "radv: implement graphics shaders relocation for a RGP workaround",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "69bd1c0c40236f7429b2c97c4d2b9b0aba40d338",
+        "description": "radv: restore uploading shaders individually instead of consecutively",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "533d0008c741e517a3d12520661a0421069ecd44",
+        "description": "aco: remove stale TODOs about v_interp opsel",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f29f656530a2b35574fbeb8623d9d141dec07d80",
+        "description": "vulkan/wsi/wayland: fix acquire_next_image to report timeouts properly",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "75ccf7c003c7fcae555ec9e53976b51b72a3f0dd",
+        "description": "radv/ci: bump the number of runners to 3 for vkcts-navi21-valve",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6533709d10ec545e9bd232db6d1deee772ac220c",
+        "description": "radv/ci: set RADV_PERFTEST=GPL for all VKCTS jobs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "94eff7ccd86658603155261c2fd59491786e7047",
         "description": "nir: shrink phi nodes in nir_opt_shrink_vectors",
         "nominated": false,
