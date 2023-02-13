@@ -2206,6 +2206,7 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_device *device,
       case VK_ACCESS_2_SHADER_READ_BIT:
       case VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT:
       case VK_ACCESS_2_TRANSFER_READ_BIT:
+      case VK_ACCESS_2_SHADER_SAMPLED_READ_BIT:
          /* Transitioning a buffer to be read through the sampler, so
           * invalidate the texture cache, we don't want any stale data.
           */
@@ -2249,6 +2250,7 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_device *device,
           */
          pipe_bits |= ANV_PIPE_TILE_CACHE_FLUSH_BIT;
          break;
+      case VK_ACCESS_2_SHADER_STORAGE_READ_BIT:
       default:
          break; /* Nothing to do */
       }
