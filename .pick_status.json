@@ -157,7 +157,7 @@
         "description": "radv: Hash VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_* flags",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "687a82d2d3debc3391d0ac66e8b3b6d099b7f3d5"
     },
