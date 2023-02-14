@@ -49,7 +49,7 @@
         "description": "radv: Make accel struct meta state initialization thread safe",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0d5570bb47a135a8f9e0641983fed2239ee6c1da"
     },
