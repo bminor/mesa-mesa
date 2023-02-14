@@ -2344,7 +2344,7 @@
         "description": "nir/from_ssa: Move the loop bounds check in resolve_parallel_copy",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c7fc44f9ebbe93f7aefc010aea4e13e29d0d67fd"
     },
