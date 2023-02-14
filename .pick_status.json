@@ -166,7 +166,7 @@
         "description": "crocus: switch gen4/5 tiling flags to follow suggestions.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6043f66dd3329c92681fc4be5a1e54e522c1cb80"
     },
