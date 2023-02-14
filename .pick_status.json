@@ -184,7 +184,7 @@
         "description": "Revert \"freedreno/a5xx: Fix clip_mask\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "2dfebf34874b5365156d254c2c1ba2ecc5262deb"
     },
