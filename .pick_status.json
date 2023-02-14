@@ -4,7 +4,7 @@
         "description": "anv: enable task redistribution",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "4eaecd79657f0cd99f6536fd55a7a14958d6624b"
     },
