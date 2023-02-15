@@ -166,7 +166,7 @@
         "description": "frontend/dri: Initialize callbacks in dri_swrast_kms_init_screen",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7d5b1cd02c4d29d0636db66d668607a6692daa75"
     },
