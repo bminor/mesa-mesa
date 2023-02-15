@@ -310,7 +310,7 @@
         "description": "turnip: fix a null descriptor set dereference",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cb3872f2cdce8476dbb8f361a7f95f005c657c3d"
     },
