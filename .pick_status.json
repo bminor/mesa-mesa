@@ -769,7 +769,7 @@
         "description": "zink: fix compute shader leaks",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "4cb4bb555e702d5f8d93841a3d786400b11198fb"
     },
