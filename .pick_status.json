@@ -1,5 +1,428 @@
 [
     {
+        "sha": "e050a00b9f4d057e93f61f79019b5cf8bcd04e49",
+        "description": "intel/common: Move i915 files to i915 folder",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "41286f100ecf7bf73baefc8b7bbf808dbd7d4b6e",
+        "description": "vl/dri3: avoid deadlocking when polling deleted windows for events",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "819cbf329a56f1e72a4192b727c7a6d44ad2c2d7",
+        "description": "vulkan/wsi: avoid deadlocking dri3 when polling deleted windows for events",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "91de576a7f67c953b7a69fd45e1eb3b2a0dde996",
+        "description": "dri3: avoid deadlocking when polling deleted windows for events",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4621ffdec12436c36629399b8a5c259a1618180b",
+        "description": "aco: Get rid of redundant load_vmem_mubuf function.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "74f1b77046346b5d3a50f63ecc356f5bc7925165",
+        "description": "radv: Move VS input lowering to new file: radv_nir_lower_vs_inputs.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "450e173de036eb2e5a5864bd2f396538386cf9b0",
+        "description": "ac/llvm: Change ac_build_tbuffer_load to take format and channel type.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0ae778ca59a75b883cfc04c8a2cf62169381f734",
+        "description": "ac/llvm: Fix ac_build_buffer_load to work with more than 4 channels.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a2755fc203fa62f48bc3547c5493f959dd300726",
+        "description": "ac/llvm: Fix buffer_load_amd with larger than 32-bit channel sizes.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b5b0ded4c16c591aac9249e0a85f12f915143a8e",
+        "description": "ac/llvm: Remove \"structurized\" argument and instead check vindex.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "881c52ba19a55b1658e425ae77750004cca920b6",
+        "description": "ac: Port ACO's get_fetch_format to ac_get_safe_fetch_size.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2e9f5aadd0e33c42fa45f3c1ff40b842397ac49f",
+        "description": "nir: Clarify comment above load_buffer_amd.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f815daa28510d72884bdd4d78191b98b91a70ea0",
+        "description": "mesa/st: refactor st_destroy_texcompress_compute condition",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "93952916c6d26b6bf1b8d295fe580f9bf688f7b2",
+        "description": "v3dv: fix stencil view aspect selection of depth/stencil image",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eba566c85405b0ae9418b93d1f3a392086a7694f",
+        "description": "ci/lava: Fix LAVA logs issues for Collabora jobs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c85f3fbbb7b92f8c7d2f75187b6011dea09e75d3",
+        "description": "ci/lava: Add LavaFarm class to find LAVA farm from runner tag",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ca110658b7535645339c230ad3120bca81a071a9",
+        "description": "ci/lava: Move LAVA dependencies to pip",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf9e1b953cab2356a29da9244263be077cf162ad",
+        "description": "radv: Hash VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_* flags",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "687a82d2d3debc3391d0ac66e8b3b6d099b7f3d5"
+    },
+    {
+        "sha": "3e9c13148218fc3dd38d9979f31032c275678226",
+        "description": "frontend/dri: Initialize callbacks in dri_swrast_kms_init_screen",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7d5b1cd02c4d29d0636db66d668607a6692daa75"
+    },
+    {
+        "sha": "f023548d2f34f067e8980bf85513486daf769af9",
+        "description": "gallium: Add MCJIT target triplet for Windows ARM64",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "982757082eaf4530c3c4435dca3fda8b4658e4cf",
+        "description": "gallium: Use DETECT_OS_WINDOWS instead of 'WIN32'",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0d1c759f4e01973ab2ff0625e824831a1937df7e",
+        "description": "radv: revert Metro Exodus workaround which was moved to common code",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "4397c166c01b641c57348d9e0d881a4a1f351455"
+    },
+    {
+        "sha": "effee24951ddf1f7fee45e85e5163c86e4bfa79f",
+        "description": "spirv: add workaround for Metro Exodus in spirv_to_nir",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "888492ecd3c2fdf60e649df58dcb5a975ffa72c4",
+        "description": "asahi: Vectorize background colour load",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "affa8a9fb2f3ed02ab812bf8f991783683fd408d",
+        "description": "amd/surface: fix base_mip_width of subsampled formats",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "28d0ddead0a913900e210097c583c0cf506529f9",
+        "description": "turnip: avoid FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8 for event blits",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dc1fab8b8cb5494d27b6e1be54da02e2a21942ab",
+        "description": "venus: update venus-protocol headers to partially fix WA1",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "95d44a0773b8ebc01987b44dc61d012561d1cc4d",
+        "description": "hasvk: fix KHR_shader_float_controls reporting",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "13f68bcce14b2f7c91611da5922fd67a111190af"
+    },
+    {
+        "sha": "f331bab88408b66eca2d7ecc86ad8d07c0c7d072",
+        "description": "anv: Move execute_simple_batch() and queue_exec_locked() to kmd backend",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0c8d8ae13c35eee643fd508c56e23cb4ca95ede7",
+        "description": "anv: Add gem_mmap to kmd backend",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "32a8250b4678b63eb4000ef619cba1673074f691",
+        "description": "anv: Add gem_close to kmd backend",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b39947ee0ca2c36ffaa57793d563a9caf1a39281",
+        "description": "asahi: Drop agx_device.memctx",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6ad64387dd065560035917a898e036af35b90da5",
+        "description": "asahi: Do not use memctx for pools / meta cache",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9daaa9e44e087de416fb78630b993af30ac67014",
+        "description": "asahi: Fix shader key cloning overreads",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bac6062d10d7665cf7de192aafd70a03263ba751",
+        "description": "turnip: fix a null descriptor set dereference",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "cb3872f2cdce8476dbb8f361a7f95f005c657c3d"
+    },
+    {
+        "sha": "bce8e7f2ae5e898575ae183773182073468b0cc0",
+        "description": "turnip: fix a major leak with GPL LTO",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e9f5de11d4039f3440adbdb766189d20302ac42b"
+    },
+    {
+        "sha": "c7f18e4183e7200cd541798f7d22c2bce03e284e",
+        "description": "tu: Don't expose KHR_present_id,KHR_present_wait without KHR_swapchain",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "09501fe5a7d049d6850c5e4e88d76d77f00c33f5",
+        "description": "anv,hasvk: flush what UNIFORM_READ flushes on SHADER_READ",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6de8b9a65b9b3b06836ddba05ddd3b4a58c674ab",
+        "description": "egl/kopper: Pass ancillary invalidate flush flags down to gallium.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "53780b7a3acd5b080cafa11ff3e974de99d6198c",
+        "description": "egl/kopper: Use the kopper private interface for swapBuffers.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3e1b40be54f1c2e0313a1b3f0193a84a52198417",
+        "description": "egl: Add a note explaining the swapBuffers badness in dri2_x11_copy_buffers().",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a6b850e335815536e03177f7ab568c4d1f8630b3",
+        "description": "egl/kopper: Add assert for no kopper in dri2_copy_region.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "24a32b2cab99d0afb4d796be06af08dd6140985b",
+        "description": "Revert \"meson: Fix Asahi build on macOS\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "4ca4a05627e40e8212a8ea957f8ef2f697e4e322"
+    },
+    {
+        "sha": "29ffc7941042d697ca687be3ab408f18822301a4",
+        "description": "meson: don't pass vk wsi args where they don't belong",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b39958a3a1862f07ab5dae18c8160906e653a3a6"
+    },
+    {
+        "sha": "7ea85871fe7551d933948155b477a10a00548d8a",
+        "description": "vulkan: prefer vulkan_core.h over vulkan.h",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b39958a3a1862f07ab5dae18c8160906e653a3a6"
+    },
+    {
+        "sha": "f5bde99cbdd208916795dc463663ddd97428ecc1",
+        "description": "gallium: plumb resolve attachments through from frontends -> pipe_framebuffer_state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "073cced86810513b785322f67c10ecf7ff5ebfaa",
+        "description": "radv/ci: add missing expected failures with RADV_PERFTEST=gpl on GFX1100",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "bd848ac92d9d77d72a1edb5645488639df91937e",
         "description": "hasvk: use Vulkan runtime's robust buffer access",
         "nominated": false,
