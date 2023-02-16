@@ -1,5 +1,311 @@
 [
     {
+        "sha": "4e09d37f3bd4b2f5837040cb1695d151672944e1",
+        "description": "nir/from_ssa: Move the loop bounds check in resolve_parallel_copy",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c7fc44f9ebbe93f7aefc010aea4e13e29d0d67fd"
+    },
+    {
+        "sha": "5afba073c6ba047e7c0e8e8824855566d15cba35",
+        "description": "nir/from_ssa: Only re-locate values that are destinations",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c7fc44f9ebbe93f7aefc010aea4e13e29d0d67fd"
+    },
+    {
+        "sha": "9673502b3b7979cc8b6e97154483a7cedefd4f5e",
+        "description": "freedreno/drm: Optimize stateobj re-emit",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6747d301557154584cccd25fecdb8c8686f5932f",
+        "description": "freedreno: Add seqno helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8f2b22ba667b4c4007444024a52c46ee5ee94d3f",
+        "description": "freedreno: Drop batch lock",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9a6de00e98ba300ce09eab29446984c8706c4b20",
+        "description": "freedreno/batch: Stop tracking cross-context deps",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a4b949fe61bd5d2ceccd739fff30e309a7ba996a",
+        "description": "freedreno: Avoid taking screen lock",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "35fc1595b378ce093f126312d00e86e59ab3bc52",
+        "description": "freedreno/a6xx: Pre-compute PROG related LRZ state",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c938101bb550931dfd67162762a48711383088ea",
+        "description": "freedreno: Move FD_MESA_DEBUG cases out of draw_vbo",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8942f4b7340f932d1bef2ab22bef286c0e09722b",
+        "description": "freedreno: Move blend out of dirty-rsc tracking",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "67d4bc7be4460c1da4c39a30042233dadd1fb191",
+        "description": "freedreno/a6xx: Remove tex-state refcnting",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cfd4721ee030f7f78e65a38a0ceb27db88e2c3be",
+        "description": "freedreno/drm: Make rb refcnt non-atomic",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f91bcd2455973af6c046b18ce32d3636b2482827",
+        "description": "freedreno/a6xx: Do tex-state invalidates in same ctx",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e7993d68e2765ea89dbb771042cac45866d5a7d2",
+        "description": "freedreno/a6xx: Multi-draw support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cc31997f1b55dcc61018be71a20c6efaea814062",
+        "description": "freedreno/a6xx: Split out flush_streamout() helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "911d67bdadcbebe08ec35ba55ffb3f40ababde71",
+        "description": "freedreno/a6xx: Drop unused return",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c4e2e821a2085687585dd63e792da33e21d01408",
+        "description": "freedreno: Push num_draws down to backend",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6bfee9e6697e286c82f36a15d0e8a7c1ec7d2a02",
+        "description": "freedreno: Account for multi-draw in num_draws",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f6251b21f9409fb02f1cabee280e77fe48f50248",
+        "description": "radv/rt: don't hash maxPipelineRayRecursionDepth",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8e718c5b639c99023ae52c741f33b8d5e4c7ee2e",
+        "description": "radv/rt: use dynamic_callable_stack_base also for static stack_sizes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2649a1f272cea69b73364d06a3dad21415921056",
+        "description": "radv/rt: introduce and set rt_pipeline->stack_size",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b338d59047dd218f1d1bb3c547cb2b0dc5665705",
+        "description": "radv: unconditionally enable scratch for RT shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "aa362b4b6fd4304d55d7bcc8c5fafe74698f85a7",
+        "description": "radv: rename shader_info->cs.uses_sbt -> shader_info->cs.is_rt_shader",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "72d9604db0bf2e27580849cde63477fc051284c0",
+        "description": "radv: Clean up dynamic RT stack allocation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fc84c63e17baa9790baa0d63e21f81ef1b10a745",
+        "description": "zink: Add missing features to the profile file",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2ea481b2f0a8afbdf7bb510ff11497535083c424"
+    },
+    {
+        "sha": "60e0322092559fa4e97779f027b4b85d98e1ae88",
+        "description": "zink: add check for samplerMirrorClampToEdge Vulkan 1.2 feature",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ed62eec58b145f9992e1411c6ce972eb588e3dfc",
+        "description": "hasvk: Fix SPIR-V warning about TF unsupported on gen7.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d82826ad44465423407d1e4413d7d66bee82737c"
+    },
+    {
+        "sha": "98455470eadc300429bc79ffbfd9a33cfa589a55",
+        "description": "hasvk: Silence conformance warning in CI.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "570acf56554a619ca2bf6ed697c876c6b12d7b31",
+        "description": "ci: Add a manual full and 1/10th hasvk CTS runs.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "be976e0aa6cca69597a35f480f65a9132da0f8ac",
+        "description": "ci/tu: Add 1/200 pass to test for stale reg usage",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "86f82d42242b2a7bdc90bd951375a7e8a821be58",
+        "description": "docs/freedreno: Add info about stale reg stomper dbg option",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a66d9c815d147b62a2fc812e925dd9a01a460d97",
+        "description": "turnip: Add debug option to find usage of stale reg values",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "084d10a7027ce8330b8c0502178322b0e1850d3f",
+        "description": "aco: Remove MTBUF zero operand.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "afdacf4dcc04e363fecd78a67c6f854a222369f7",
+        "description": "aco: Don't set scalar offset on buffer load instructions when it's zero.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "e050a00b9f4d057e93f61f79019b5cf8bcd04e49",
         "description": "intel/common: Move i915 files to i915 folder",
         "nominated": false,
