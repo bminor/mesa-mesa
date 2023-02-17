@@ -139,7 +139,7 @@
         "description": "r600: fix shader blob memory leak",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b205ef41307406983ffac829ae423d08f7527bc"
     },
