@@ -28,10 +28,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "util/bitset.h"
 #include "util/macros.h"
 #include "compiler/shader_enums.h"
 
 #include "intel/common/intel_engine.h"
+#include "intel/dev/intel_wa.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -418,6 +420,8 @@ struct intel_device_info
          } mappable, unmappable;
       } sram, vram;
    } mem;
+
+   BITSET_DECLARE(workarounds, INTEL_WA_NUM);
    /** @} */
 };
 
@@ -538,6 +542,17 @@ bool intel_get_device_info_from_pci_id(int pci_id,
  */
 bool intel_device_info_update_memory_info(struct intel_device_info *devinfo,
                                           int fd);
+
+#ifdef GFX_VERx10
+#define intel_needs_workaround(devinfo, id)         \
+   INTEL_WA_ ## id ## _GFX_VER &&                              \
+   BITSET_TEST(devinfo->workarounds, INTEL_WA_##id)
+#else
+#define intel_needs_workaround(devinfo, id) \
+   BITSET_TEST(devinfo->workarounds, INTEL_WA_##id)
+#endif
+
+enum intel_wa_steppings intel_device_info_wa_stepping(struct intel_device_info *devinfo);
 
 #ifdef __cplusplus
 }

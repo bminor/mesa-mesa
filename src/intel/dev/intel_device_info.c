@@ -34,6 +34,8 @@
 #include "intel_hwconfig.h"
 #include "intel/common/intel_gem.h"
 #include "util/bitscan.h"
+#include "intel_wa.h"
+
 #include "util/u_debug.h"
 #include "util/log.h"
 #include "util/macros.h"
@@ -1545,6 +1547,7 @@ intel_get_device_info_from_pci_id(int pci_id,
       devinfo->display_ver = devinfo->ver;
 
    update_cs_workgroup_threads(devinfo);
+   intel_device_info_init_was(devinfo);
 
    return true;
 }
@@ -2135,4 +2138,17 @@ intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo)
 bool intel_device_info_update_memory_info(struct intel_device_info *devinfo, int fd)
 {
    return i915_query_regions(devinfo, fd, true) || compute_system_memory(devinfo, true);
+}
+
+enum intel_wa_steppings
+intel_device_info_wa_stepping(struct intel_device_info *devinfo)
+{
+   if (intel_device_info_is_mtl(devinfo)) {
+      if (devinfo->revision < 4)
+         return INTEL_STEPPING_A0;
+      return INTEL_STEPPING_B0;
+   }
+
+   /* all other platforms support only released steppings */
+   return INTEL_STEPPING_RELEASE;
 }
