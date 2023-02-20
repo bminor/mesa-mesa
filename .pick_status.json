@@ -157,7 +157,7 @@
         "description": "aco: fix pathological case in LdsDirectVALUHazard",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "296b4d95a3e35b2ab62ebcbd7e3a578fcbdd5b26"
     },
