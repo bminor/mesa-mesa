@@ -3253,7 +3253,7 @@
         "description": "radeonsi: don't merge SET_* packets that have a different index in si_pm4_state",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c8e2c6faf6448697d949b962179a543ac9c2afee"
     },
