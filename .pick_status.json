@@ -1777,7 +1777,7 @@
         "description": "iris, crocus: Align workaround address to 32B",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2a4c361b069bb84facc7e6b8ae19908505c12850"
     },
