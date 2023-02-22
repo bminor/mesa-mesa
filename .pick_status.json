@@ -1588,7 +1588,7 @@
         "description": "anv: Move WA MEDIA_VFE_STATE after stalling PIPE_CONTROL",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bc612536eb2f0f77725103e53077ad5a28036ac3"
     },
