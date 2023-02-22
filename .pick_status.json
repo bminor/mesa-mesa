@@ -3451,7 +3451,7 @@
         "description": "zink: remove incorrect trailing comma",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "f7b2dbb2bdc366dd294407c5653654ad6059e2ac"
     },
