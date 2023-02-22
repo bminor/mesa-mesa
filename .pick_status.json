@@ -7474,7 +7474,7 @@
         "description": "nir/deref: don't replace casts with deref_struct if we'd lose the stride",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b779baa9bf95ca259779fa028a7b822bf8a17f46"
     },
