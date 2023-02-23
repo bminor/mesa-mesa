@@ -445,7 +445,7 @@
         "description": "docs: Fix formatting for RMV tracing docs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e1cbff228a76312e09f6713ba98c10af47579497"
     },
