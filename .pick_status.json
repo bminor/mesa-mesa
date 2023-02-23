@@ -733,7 +733,7 @@
         "description": "anv: fix testing for dynamic color blend bits",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fc3fd7c69e80366b4510d9395decdfd83c63c99a"
     },
