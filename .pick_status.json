@@ -7006,7 +7006,7 @@
         "description": "d3d12: Fix VP9 Decode - Checking 0xFF instead of 0x7F for invalid frame_ref[i].Index7Bits",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c8e8ce8359ceb9161ac05cf48b15e2e6a298ebd6"
     },
