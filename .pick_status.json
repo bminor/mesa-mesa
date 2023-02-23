@@ -1,5 +1,176 @@
 [
     {
+        "sha": "aa791961a82e1f5a9dd841c3e0398c3e80d09652",
+        "description": "pvr: Add support for dynamic buffers descriptors",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2bef26ed043110340e986b017439056254dea942",
+        "description": "ci/intel: Update hasvk HSW xfails",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d6d8edf9ae654293047b0d953516e1626ebedeb1",
+        "description": "hasvk: Handle subpass self-dependencies for stencil shadow copies",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d3162f97b5adfe61da3e7409ed0bc0845ce8c33d",
+        "description": "hasvk: Mark VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL as stencil write optimal",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b996fa8efaa42558bda2c52377561d7eb3c4127e"
+    },
+    {
+        "sha": "79a58cb79bc75b54e7bf5dfe7bd607e4e6057961",
+        "description": "hasvk: Enable PixelShaderKillsPixel when omask is used",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "15b302179a74f49036f45b7ec8d27536b58094ee",
+        "description": "aux/tc: add a 'has_resolve' member to tc_renderpass_info",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ce68824bdfb05379f0e682165588528a11b05214",
+        "description": "anv: fix invalid masking of 48bit address",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4d05be49c253ecd7a5803ccaeee8c9238af24326"
+    },
+    {
+        "sha": "af994570f022d5230fbecf06d1842e5b342fedaa",
+        "description": "intel/blorp: Allocate only necessary amount of VERTEX_BUFFER_STATE",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a364f23a6cfa28e1843ef1e64dce56b4cef5a71e",
+        "description": "intel: Make gen12 URB space reservation dependent on compute engine presence",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "63278778c649bf373468d280742164b9a3c0a791",
+        "description": "pvr: Add push consts support to descriptor program.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fbd644c59d9868fd8417d5ab32912e893fab9c1b",
+        "description": "meson: replace vk_wsi_args with dependencies to let meson take care of transitivity",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f059213f5dd510c22b1e0af102be6984aa715038",
+        "description": "meson: reuse vulkan_wsi_list for defining vk_wsi_args",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "22c1f4be8c16a60017bc6a740c488c77129989ae",
+        "description": "docs: mention `meson configure` and drop broken workaround script",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e5cf2831216aae03ec8c55e6d2ad2118498dddad",
+        "description": "docs: mention the meson summary",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "512126b26d5dbbd63ed8049f072ed0714c7cb7cf",
+        "description": "intel/compiler: remove unused field from fs_thread_payload",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9b4eb7390790fb8c6d3033d42fbb9f63c3ea5c00",
+        "description": "r600: fix shader blob memory leak",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5b205ef41307406983ffac829ae423d08f7527bc"
+    },
+    {
+        "sha": "cc3c97d8c9492c2860c50ddab162212499a98786",
+        "description": "venus: Add VkBuffer cache statistics for debug",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7d53d4d078e2e2c254867f88b1d2682ef7b1e59c",
+        "description": "venus: add VN_DEBUG_CACHE flag",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ef255444c195b387d2c8bfc301f69e260bc41679",
+        "description": "venus: switch to lazy VkBuffer cache",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "56a9aad4010ff9f2c0afcadec0ac61a6274de0a3",
         "description": "nir/deref: don't replace casts with deref_struct if we'd lose the stride",
         "nominated": true,
