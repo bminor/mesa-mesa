@@ -1,5 +1,275 @@
 [
     {
+        "sha": "56a9aad4010ff9f2c0afcadec0ac61a6274de0a3",
+        "description": "nir/deref: don't replace casts with deref_struct if we'd lose the stride",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b779baa9bf95ca259779fa028a7b822bf8a17f46"
+    },
+    {
+        "sha": "fa9a8c85e20f2d006bcf4b57fac05cc3565ac70c",
+        "description": "radeonsi/vcn: disable fence for JPEG decoding",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c392cdf7502089a26d94455bf29e7289d46afb35",
+        "description": "v3d: update supertuxkart reference after 1c028a4d5b623e73bdf5",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "1c028a4d5b623e73bdf5cc8dffcccbb2a4b601f2"
+    },
+    {
+        "sha": "4229d9324f4a8da312e624d2249a10a76992d2cd",
+        "description": "iris: Avoid creating uncompressed view with unaligned tile offsets on BDW",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "60568d5dce988ffb67966d88b6feeb67516c7145"
+    },
+    {
+        "sha": "7ebdddf319f545853555574d256bf8aa3f700692",
+        "description": "docs: update calendar for 22.3.6",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2ad59278164ed6de2889a3330304195b9f9e0629",
+        "description": "docs/relnotes: add sha256sum for 22.3.6",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e581901132ae0b9ca58869363f85b2a62210b0b7",
+        "description": "docs: add release notes for 22.3.6",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ecabc824c2e57a72d93aad1166808505f457c3a0",
+        "description": "glsl: Drop the (v.x + v.y + v.z + v.w) -> dot(v, 1.0) optimization.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3c668513b9e3c87f067b3e1b715715d70bcdcc82",
+        "description": "freedreno/a6xx: Fix view_seqno in tex cache key",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "818b49932a300b26c297b99835c5991275ea50a8",
+        "description": "freedreno/a6xx: Static-ify sampler_view_update()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e9fa92d6fa99df1bb935fb99825e279bba3dd3b7",
+        "description": "freedreno/a6xx: Small cleanup",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "936f2ebb4683cd625303a09e2684267123642897",
+        "description": "freedreno/a6xx: Remove needs_invalidate flag",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b6778995d7cffada31afe8c3783814125256981a",
+        "description": "freedreno/a6xx: Add a way to assert valid format",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ea9d1cfb20c73a0c7cb17215389e23c8ff6ab40f",
+        "description": "freedreno/a6xx: Fix sampler view rsc_seqno for X32_S8X24",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b40e3c9e6c980142bd2f8b6dd43bb3f57bee763a",
+        "description": "freedreno/a6xx: Drop unneed fd6_texture_state() arg",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "29445505f6fd2dbb4682461ccd58c0be1e766c07",
+        "description": "freedreno/a6xx: Fix set_sampler_views(start != 0)",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a3c73987ab92f7a43cd4e8918bde8b4bd04ca9fd",
+        "description": "freedreno/a6xx: Move rsc seqno out of tex cache key",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "94abccf3ce50383a1ca0feceb6e95a065b89c19f",
+        "description": "aco: fix pathological case in LdsDirectVALUHazard",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "296b4d95a3e35b2ab62ebcbd7e3a578fcbdd5b26"
+    },
+    {
+        "sha": "ee47cc8256d1154d37cfd89ed055128d34598770",
+        "description": "amd,nir: remove byte_permute_amd intrinsic",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e316416dd0d4398e3fd3c4970325477566a4e637",
+        "description": "docs: include explicit `setup` in instructions",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a502f4fc133d7e8b2804fe60ea56a82dac46b95f",
+        "description": "radeonsi/video: use specific PIPE_BIND_ value for video buffers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "635d62ba992d2ae25aaa9a92b84766bb7e3c9511",
+        "description": "mesa: use mesa_log from output_if_debug",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f18f43338eb45359fb250d27a185c0b5a3be4239",
+        "description": "mesa: add missing newlines for _mesa_debug/_mesa_log callers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "40e45eaef02764c1dca99d88c4999c58dc3fb4ef",
+        "description": "util/log: add logger_windbg",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8f0a7e848f4dfd05d59f87d8ffe7c89fad7be37b",
+        "description": "util/log: add support for MESA_LOG_FILE",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7d8d64426b1e378ff9f667f5933789f06294da1f",
+        "description": "util/log: add logger_syslog",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bbd19527c1f746f2d9babca03385ac4a8b545f59",
+        "description": "util/log: improve logger_android",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7a18a1712a0a19b4251beaf582baba03805bb9f3",
+        "description": "util/log: improve logger_file newline handling",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "63864d4dfcdf5194e8a09be6c84b3a57915a8337",
+        "description": "util/log: allow multiple loggers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "337d58f6fcac11488f2a34aae0008b8dfe1705c2",
+        "description": "util/log: refactor mesa_log",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "dd3b67b9746f1d0f2766d6c39bb23e59d6548aba",
         "description": "v3dv: handle ASPECT_MEMORY_PLANE aspect flags when getting plane number",
         "nominated": false,
