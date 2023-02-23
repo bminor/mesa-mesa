@@ -58,7 +58,7 @@
         "description": "anv: fix invalid masking of 48bit address",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4d05be49c253ecd7a5803ccaeee8c9238af24326"
     },
