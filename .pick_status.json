@@ -742,7 +742,7 @@
         "description": "vulkan: track the right value on CmdSetColorWriteMasks",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "092be5a32905989f620ff1926c2e3056fc4fea39"
     },
