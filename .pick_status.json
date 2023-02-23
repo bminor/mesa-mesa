@@ -85,7 +85,7 @@
         "description": "aco: always update orig_names in get_reg_phi()",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
