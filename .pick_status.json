@@ -1192,7 +1192,7 @@
         "description": "r600/sfn: be more conservative with channel use in multi-slot ops",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "edabd5cd8425f17dc71c2170ee0f1aa16eecbbec"
     },
