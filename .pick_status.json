@@ -5296,7 +5296,7 @@
         "description": "radv: split linker script for android since it requires different symbols",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4956f6d0bf477568731f3965125299b8857d5835"
     },
