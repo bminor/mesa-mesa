@@ -409,7 +409,7 @@
         "description": "nir: lower to fragment_mask_fetch/load_amd with EQAA correctly",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "194add2c23264694a134378fc1039b8ba5ab7923"
     },
