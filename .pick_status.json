@@ -652,7 +652,7 @@
         "description": "r600/sfn: Fix minimum required registers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9fd9f3cd10cf58549f850aeca9103d8cca5a5f81"
     },
