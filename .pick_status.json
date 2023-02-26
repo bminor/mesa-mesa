@@ -310,7 +310,7 @@
         "description": "aco/optimizer_postRA: assume all registers are untrackable in loop headers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d3b0f781103ffcef4e18257b8289948e9d37dd99"
     },
