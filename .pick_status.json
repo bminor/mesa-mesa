@@ -5179,7 +5179,7 @@
         "description": "gallivm: Fix handling of nir_intrinsic_scoped_barrier",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "13d900de0dcf7885972100f2ad36a6bc5cc0eeb1"
     },
