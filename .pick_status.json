@@ -4261,7 +4261,7 @@
         "description": "glapi/meson: drop duplicate line in deps",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0842bc879b34414de54be9a2299ea8cdb0ecde5e"
     },
