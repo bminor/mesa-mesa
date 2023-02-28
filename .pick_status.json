@@ -1,5 +1,1004 @@
 [
     {
+        "sha": "baea3b328b7a39abcee48c733236f242e1f4cf0e",
+        "description": "intel/vulkan: add missing dependency on generated headers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c356f1b4edc942f8c62125d01b7ddb886b72bbb7",
+        "description": "radv: fix draw calls with 0-sized index buffers and robustness on NAVI10",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b1c19498c642d190181e26c4fd1850aeb5c26ade",
+        "description": "pvr: replace nop binary shader with run-time compiled shader",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fa1cf83217e6f1529dd0fbda55d5557b806f5d87",
+        "description": "meson: allow checking for null pointers even if they're supposed to be non-null",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bf5cfb64868a50b84df82d2df36585f95b2c492f",
+        "description": "v3dv: Enable (leased) direct display extensions.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "12f0daddfc8d39feef699db586f1188cf41b2efd",
+        "description": "pvr: initialise size for placeholder \"zeroed\" shaders",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c9f3ba987fee21819a891ba588ba2dd84dab580e",
+        "description": "glapi/meson: drop duplicate line in deps",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0842bc879b34414de54be9a2299ea8cdb0ecde5e"
+    },
+    {
+        "sha": "7c62f6fa01d7c0d9d7eabec1c545950af20d0c92",
+        "description": "radv: fix flushing non-coherent images in EndCommandBuffer()",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6750a9094f632567534a2cbdd71ff23944647667",
+        "description": "radv: fix flushing non-coherent images inside secondaries on GFX9+",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "78c95b286583c9c2b0ece6de925bb46d903357b5",
+        "description": "glsl: align definition of _mesa_problem with the one in main/error.h",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ff494361bee7506db701cb861073ab194ae3a6e9",
+        "description": "util: rzalloc and free hash_table_u64",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6649b840c34016b4753e69d4513a8d09da9febb2"
+    },
+    {
+        "sha": "75968398f37c91a14c0eaafcd16e24a8bf59ec11",
+        "description": "anv: emit 3DSTATE_HS for each primitive on gfx12",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "df9f71d7957444f84e416e8052fddaf71d0ca44f",
+        "description": "iris: emit 3DSTATE_HS for each primitive on gfx12",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4b3a22fcd46d9aaa281ba1a178aee9891b631a28",
+        "description": "aco: only ls and ps use store output now",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e9616d1d2ae21bafaf73b28837e74d273c2109de",
+        "description": "ac/llvm: only init outputs when fragment shader for radv",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ee9ccd7ac523243408b8bcde9c7896a2aee1d7c2",
+        "description": "radeonsi: only init llvm output when needed.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "87ec94f6aac1db7769fc038ef89c3198542e6d71",
+        "description": "glsl: Move lower_vector_insert to GLSL-to-NIR.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f16a23aa9d0e352d54e98490eed028fa46a49b22",
+        "description": "panfrost/midgard: Drop redundant arg to emit_explicit_constant.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "63aa5909b4c8bb50763e07f38a3892b513986e97",
+        "description": "panfrost/midgard: Fix handling of csel with a vector constant condition.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "35c85c0ae69ada5a6119aa21dadb848a49b046c5",
+        "description": "venus: fix device memory export alloc info",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "23c350517a2cb37a27cfcb9db4cb68f2d3045ccc",
+        "description": "venus: fix external image creation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "953ff3cf556b2e2d17e915b2630ab275463508a9",
+        "description": "venus: simplify support for non-AHB external images",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ca96f94aee9b33f24d1b427e349cdeff50756773",
+        "description": "venus: simplify ahb image creation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "768017f72b9b14710a54471b50ff3368a640161d",
+        "description": "venus: refactor image create info pnext tracking",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4d616fb919ffd98de7971ea0819d6580f63a23c7",
+        "description": "venus: remove redundant abstractions for wsi struct search",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "21a06083954fc05f2e80f6d66305d855f4472981",
+        "description": "venus: fix external buffer creation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "09f5033232a13ad3d1c6b1dfc016a351ebd186e7",
+        "description": "venus: distinguish external memory from mappable memory support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "19c3608672efc7940e1ee6caa8f5d9136fbecbce",
+        "description": "venus: tighten up the sync fd requirements for Android wsi",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "657cd2e1d421d83db29c4383cced952070782455",
+        "description": "venus: refactor sync fd fence and sempahore features",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "05791b6ae08dfd4c9c17e05495321da09ad9ebc7",
+        "description": "venus: clean up globalFencing",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "344be4405c0bb67237f46cc8799c13a4e5dab064",
+        "description": "venus: clean up memoryResourceAllocationSize",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6f8fe78e3b00a97cff98a21f03a0b63ac1366c19",
+        "description": "venus: start requiring all experimental features",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9d76ed9638139dd792355bdd2070f5e15ea3eab3",
+        "description": "venus: replace binary search with hardcode for max buffer size",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "417de28e43cc4429363492ab85c4fc53b3ca5a2a",
+        "description": "venus: further disallow sparse resource",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e1eabab6fecce8fef330a303ba7fddcbaf261b17",
+        "description": "aco/optimizer_postRA: assume all registers are untrackable in loop headers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d3b0f781103ffcef4e18257b8289948e9d37dd99"
+    },
+    {
+        "sha": "4c978d54458c04d9eaa49fc03183d70785bde694",
+        "description": "zink: skip buffer barriers for ACCESS_NONE -> ACCESS_READ / ACCESS_WRITE",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fef6e6588bb6af68e06fd7c560dac18024a23519",
+        "description": "ci: Update traces expectations for gutting glsl opt_algebraic.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2f53188f18d3f81416c8a3e5f3f7909a3fbdaa31",
+        "description": "glsl: Remove unused as_rvalue_to_saturate().",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d76fb3b2b1ac840e814bd2c49e24112c99eaf168",
+        "description": "glsl/opt_algebraic: Drop the flrp recognizer.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "579aca894fd8b7b3c6ef82206b86aaf58bdf7d71",
+        "description": "glsl/opt_algebraic: Drop the ftrunc pattern recognizer.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6d52e6fd2c53355ee67d4da7518b2c59d90598eb",
+        "description": "nir: Port a floor->truncate algebraic opt pattern from GLSL.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6229d34b91506fadb3337c5d845d7d95ff4179a2",
+        "description": "glsl/opt_algebraic: Drop some fmul simplifications.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4bf65ce221982039855ea154b460c5b01104b896",
+        "description": "glsl/opt_algebraic: Drop the flrp/ffma simplifiers.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3f632ce764c0337a8d3fba1b63d218e17d6e058a",
+        "description": "glsl/opt_algebraic: Drop no-op pack/unpack optimization.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d589760f44d762e313b70918ec490db51f87d9c9",
+        "description": "glsl/opt_algebraic: Drop the eq/neq add-removal optimization.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d352bd973768580d1084b758330495a52125abcd",
+        "description": "glsl/opt_algebraic: Drop scalar all_eq/any_neq -> eq/neq opt.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "62afead36fde959df901dc025d534fcc19b7cebe",
+        "description": "glsl/opt_algebraic: Drop fdot 0-channel optimizations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ef02581590c951f090d95d53ebefc5f365f3c890",
+        "description": "nir: Add optimization for fdot(x, 0) -> 0.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b328c97e112ddf077b061f20a0d9f3c904e857a7",
+        "description": "glsl/opt_algebraic: Drop csel(true/false, x, y) optimization.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "652ff42f14958c922b68d4dcbb46701e9ce593b4",
+        "description": "glsl/opt_algebraic: Drop x + -x -> 0 optimization.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "69b178ac9099dff3bb84f195b5167bc41493e6f2",
+        "description": "glsl/opt_algebraic: Drop add/sub with 0 optimizations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c6908fc8acd31db91b5cb40383ce6d6d49bb0a9a",
+        "description": "glsl/opt_algebraic: Drop fdiv(1,x) -> frcp(x) and fdiv(x,1) -> x optimizations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4fc9342fc61efb7bba339d19dffd317b59c1f887",
+        "description": "glsl/opt_algebraic: Drop and/or/xor optimizations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ab7a9b4538355946c1947546d2b9f2b10724e335",
+        "description": "glsl/opt_algebraic: Drop rcp optimizations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6b53d4b8250ffab0137b51bea7f0832a010c8eae",
+        "description": "glsl/opt_algebraic: Drop pow optimizations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bb1b37e6c12a81b10cdae5f56750fc7b6e91fe47",
+        "description": "glsl/opt_algebraic: Drop shifts of 0 optimizations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "71c0c73f8e48f62ea7f58587749ada6e31a2695f",
+        "description": "glsl/opt_algebraic: drop fsat(fadd(b2f(x), b2f(y))) -> b2f(ior(x, y)) opt.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "144b61437a36fb105ce5b5c18cd0e42b88bad2d8",
+        "description": "glsl/opt_algebraic: Drop f2i(trunc(x)) -> f2i(x) optimization.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "47657b2ffe9587a4b1343ffc91fa663b8ec8db6e",
+        "description": "glsl/opt_algebraic: Drop -(-x) -> x optimization.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "766f551cb564233f56f9d80cb79a85a0bf490e8d",
+        "description": "glsl/opt_algebraic: Drop abs(-x) -> abs(x) and abs(abs(x)) -> abs(x).",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7a8a50106eebab2af5b88f7aab8c726453c238ad",
+        "description": "glsl/opt_algebraic: Drop pow-recognizer.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d79061dba1ef40eb52db75dd1f558e1715d4037f",
+        "description": "glsl/opt_algebraic: Drop log(exp(x)) -> x and exp(log(x)) -> x optimisations.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2bd0343ba073cc89351ccc6cf19db8b720c2306e",
+        "description": "glsl/opt_algebraic: Drop ~~x == x transformation.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "36a916f3f4d0e65b59376cb1d4da0e22c9e0eadd",
+        "description": "zink: use tc renderpass optimizing to more optimally start queries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7c96e989755029a21b78f9e9aaa00c7a3d267172",
+        "description": "zink: always start/stop/resume queries inside renderpasses",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cbbc7c98c4708cad2e843fb558e8ad02430905a7",
+        "description": "zink: pull 'was_line_loop' into ctx for query updating",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5492e927e7fe0fd4fcf6b8a0ddcc3227e1c88d0a",
+        "description": "zink: use more consistent check for deleting zink_query::stats_list links",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b4deaf7b2cb6e37f6b76765597f8fc2d3b0c9fa1",
+        "description": "zink: break out query suspend functionality for reuse",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "53c9f60ce42b398f0f6f094ae523dbf88527d845",
+        "description": "zink: track whether queries were started in a renderpass",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e5d517f36228c0788be58b00bdf23aa02f4dcf0c",
+        "description": "zink: rework query pool overflow",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7da78ffb697bfea5c20b31dca635971d00d27b3c",
+        "description": "zink: create/use query pools dynamically",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e56d4f926422ce0d1770cd7075f876c45d4d529c",
+        "description": "zink: rework find_or_allocate_qp()",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bf782503e19d50acfd1f58c2f6f0b71d3d5fc80a",
+        "description": "zink: reorder some query code",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8fdbf81ff028891efb3c84ca163a48375b27218a",
+        "description": "zink: try updating qbos on query resume if !in_rp",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "49deb9cbe74c2ecca947a0f3122c58d11dc1eafb",
+        "description": "zink: only update qbo for TIME_ELAPSED on start if !in_rp",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "93a7187f34ccc126933b91bbb35ad9fb5c03c31d",
+        "description": "zink: handle null query results for conditional render",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "cf60c7fbfacdf3a70fd420452258756eb8584f77",
+        "description": "zink: handle null query results",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6bcf4721dc06ad5e0a09105dfce64e418220be55",
+        "description": "zink: only try doing qbo updates on query suspend if !in_rp",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2440c98b3bccba403442c5b752bc9ccf0d5d9270",
+        "description": "zink: refuse to start cs invocation queries in renderpass",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "74a65363ea05ff8541c0512ca08141839a3f02d2",
+        "description": "zink: don't double suspend queries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9d0c3d3fb125a4acd3732e0b6f205118e1410576",
+        "description": "zink: un-suspend queries if they end while suspended",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "34e2d2ec5896d67bed87c8d20b5277288a344ce3",
+        "description": "zink: add zink_query::suspended to indicate suspended state of queries",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "74af46230cfb47db2882b89df308b5bcae180314",
+        "description": "zink: don't auto-sync qbos on query end",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c870c7c942c2ed8cfa411f20c3fbd7b1d948d193",
+        "description": "zink: handle multiple query starts in qbo update",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d60c864c454aba9e9d9bbfc98dae6cbae798c0d4",
+        "description": "zink: delete zink_query::last_start_idx",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c46d68235e5d99cbea4ff633f19c0312f292e4f9",
+        "description": "zink: make zink_vk_query unref consistent",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eb5e0f5ab56531ba54955e544f3b2f821ab88879",
+        "description": "zink: fix possible query destroy leak",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "10389698a09651d4e48a3b9cc494cfc450113a65",
+        "description": "zink: fix zink_query_start initialization",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2a938c3e22801fdd2ae70bcaafd0d70e8bce163a",
+        "description": "zink: rewrite zink_query_start struct",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ed9909e3a0d52f666c8bca368b94162929b72928",
+        "description": "zink: reset queries on the promoted cmdbuf when possible",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "96f7fe71913707886cd779e9b35f6067a32b55e5",
+        "description": "zink: remove suspended queries from list before resuming",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4f539975746a87a300d4d4bd8260e94f94c9ba97",
+        "description": "zink: move zink_batch_no_rp call for query reset",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7e613d2a32ba88ccae797927795a30095db11aff",
+        "description": "mesa/shaderapi: fix path memory leak",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e7c5a8b3f8fd850879802be638d045a286d73445",
+        "description": "d3d12: Don't loop in update_draw_indirect_with_sysvals",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bf6c214b2584f074652ff54d68ee018888855acd",
+        "description": "d3d12: Create varying structures as necessary, reference them",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "41d5e76f2ceedeb57435cab5bfb99c661370b5d2",
+        "description": "d3d12: Don't memcmp gs/tcs keys",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "30883c01452e4fe3de7741c3ea195b28bc5f00db",
+        "description": "d3d12: Don't unnecessarily zero out gs/tcs keys",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "56d30bf591272ac3708336bb918ceb35878d1388",
+        "description": "d3d12: Track max varying slot, set and compare less bytes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "9a3820fe1168e44c9e9abfe6863ffc43897a200c",
+        "description": "d3d12: Don't recompute has_flat_varyings or missing_dual_src_outputs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d246948ce36026dfda1b30a69bd4b95a872675ca",
+        "description": "anv: Skip BTI RT flush if we're doing an op that doesn't use render targets.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2bd304bc8f0234cb5ae4f06149fd0663611fa4dc",
+        "description": "anv: Skip the RT flush when doing depth-only rendering.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6992aa951d49090db6b9873f45fc461a1a171b35",
+        "description": "aux/tc: only call tc_parse_draw() when parsing renderpass info",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ad0d5a24aa15381c3d5863951b847160573c6f8e",
+        "description": "aux/tc: track whether queries have been terminated in a renderpass",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "91fa9397639ded341c7eb48644d3004584683bb3",
+        "description": "panfrost: Use NIR scoped barriers instead of memory barriers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "901bc6d53ca24d0128a925d2efb96084f8b9ec81",
+        "description": "pan/midgard: Handle nir_intrinsic_scoped_barrier in Midgard compiler",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "64a026626003ff969ab1615edcc99dc845930a8c",
+        "description": "pan/compiler: Fix handling of nir_intrinsic_scoped_barrier",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c80268a20d447e07c4b88a68cb850960f07b4195",
+        "description": "intel/compiler: Mark various memory barriers intrinsics unreachable",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fe908ffefa56a1e61b94f1db694d8bb08d3bac32",
+        "description": "glsl: Implement use_scoped_barrier option for lowering memory barriers",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2178a8da51fee6dc266541c468de58e66b7b0e17",
+        "description": "gallivm: Fix handling of nir_intrinsic_scoped_barrier",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "13d900de0dcf7885972100f2ad36a6bc5cc0eeb1"
+    },
+    {
+        "sha": "e411e0afd33d30320b6a83b1619746f65d1677a0",
+        "description": "microsoft/compiler: Handle scoped barrier in Tess splitting",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "1db7e6a2611145d997f8b61b270e562824e61b07",
+        "description": "nir: Support use_scoped_barrier in nir_lower_atomics_to_ssbo",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "e45bbcf6492a178e52e4b87bad31bb01bc22e507",
         "description": "Revert \"freedreno: Account for multi-draw in num_draws\"",
         "nominated": false,
