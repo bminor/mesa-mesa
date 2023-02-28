@@ -209,7 +209,7 @@ libegl = shared_library(
 
 if with_glvnd
   configure_file(
-    configuration: {'glvnd_vendor_name' : glvnd_vendor_name},
+    configuration: {'library_path' : 'libEGL_@0@.so.0'.format(glvnd_vendor_name)},
     input : 'main/50_mesa.json',
     output: '50_@0@.json'.format(glvnd_vendor_name),
     install : true,
