@@ -216,6 +216,13 @@ if with_glvnd
     install_tag : 'runtime',
     install_dir : join_paths(get_option('datadir'), 'glvnd', 'egl_vendor.d')
   )
+
+  devenv_glvnd_egl_json_file = configure_file(
+    configuration: {'library_path' : libegl.full_path()},
+    input : 'main/50_mesa.json',
+    output: 'devenv_glvnd_egl.json',
+  )
+  devenv.set('__EGL_VENDOR_LIBRARY_FILENAMES', devenv_glvnd_egl_json_file.full_path())
 else
   pkg.generate(
     name : 'egl',
