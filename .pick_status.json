@@ -3550,7 +3550,7 @@
         "description": "radv: SDMA v4 size field is size - 1",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7b5ab48c40bf391568a2128a7c7de09f708234a9"
     },
