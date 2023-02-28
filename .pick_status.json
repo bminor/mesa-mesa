@@ -3118,7 +3118,7 @@
         "description": "rusticl/kernel: Images arg sizes also have to match the host pointer size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b0d698c5328fbcb5e0ae3952cde1c1e411151adb"
     },
