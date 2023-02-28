@@ -904,7 +904,7 @@
         "description": "ac/surface: only adjust pitch if surf_pitch was modified",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fcc499d5e1deac76126de7fd0c3297298322db07"
     },
