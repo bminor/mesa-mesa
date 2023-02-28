@@ -3775,7 +3775,7 @@
         "description": "glx: Fix glXGetFBConfigFromVisualSGIX",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4ccd253588bf98be945d6708dfc49b936f9cc8d6"
     },
