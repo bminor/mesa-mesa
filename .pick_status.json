@@ -5818,7 +5818,7 @@
         "description": "glx: fix indirect initialization crash",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b090246ad27457bc48ea8f5dbe8213f5899efa22"
     },
