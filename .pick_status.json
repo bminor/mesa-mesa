@@ -5890,7 +5890,7 @@
         "description": "venus: fix VK_EXT_image_view_min_lod feature query",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8b8109851961b794bbb41cfbb40b7e53012eaf6d"
     },
