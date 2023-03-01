@@ -3649,7 +3649,7 @@
         "description": "amd,ac/rgp: fix SQTT memory types",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "aef7ea868fe55f2eb0bcedaeecdc76d54a611106"
     },
