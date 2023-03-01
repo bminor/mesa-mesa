@@ -3109,7 +3109,7 @@
         "description": "gallivm: fix lp_vec_add_offset_ptr for 32 bit builds",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "442d1fe5ad61a82cd5fa883faf2bb76a7f07401e"
     },
