@@ -1,5 +1,149 @@
 [
     {
+        "sha": "6cb0c8b6d746fe055bbe905025550140c0980720",
+        "description": "ci: Reuse MESA_CI_PERFORMANCE_ENABLED in performance-rules",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5b9a6106041263b40ba7789fbd3586aafa17faff",
+        "description": "ci: Use workflow to make CI aware of performance jobs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c91f4b2efbf66c4c3fd1a945281187587e14ab37",
+        "description": "ci: Use release builds in perf jobs",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2fcd6df107580cba84fc79257af5707073edb78a",
+        "description": "ci: Create debian-arm64-release job",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "c65eb88f0b4c67a174f94dde93311fbf86a66f26",
+        "description": "ci: Upload debian-release artifact to S3",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "53dda476a9e33503432b1f2d0b7da814377bb848",
+        "description": "llvmpipe: fix compute address bits to return native pointer size.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "67904a36a6df1af3a3fdb6b2309440699f900a73",
+        "description": "pvr: Don't update fragment signal sync when fragment stage is disabled",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4af1cf89abc8320a8deea3acec67ecf12819b3dd",
+        "description": "pvr: Clear wait syncs after job submission",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "18fb8d3b55a38b10be56639787de3ab331c89a61",
+        "description": "pvr: Enable threaded submit when supported",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5be2e44095f1fea0cc996a7385286e74c2cf6a6d",
+        "description": "pvr: Add support for VK_KHR_timeline_semaphore",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "80f864cd23bdace7097d2a596683822ea8846dbd",
+        "description": "pvr: Use common queue submit implementation",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5ce99bc5688cd8c41b5858b10943180f082041d3",
+        "description": "radv: Only init geometry infos if RRA is enabled",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7bd265bc863b7a6bf1e002dd5e28279dec558949",
+        "description": "radv: Move header and geometry info init into separate functions",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e74a3284f53a9ae10e69236c6de548584f7c828c",
+        "description": "anv: halve the push constants space in mesh pipelines",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "814eb9e2ceae538abbb56ee762074e59b014b3c3",
+        "description": "iris: consider bufmgr creation to have failed if `dup`ing of the fd fails",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "0912b14b3aea97c28c844fbdda49d309e6c67af0",
+        "description": "ci/freedreno: add flaking KHR-GL45.buffer_storage.map_persistent_flush",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "baea3b328b7a39abcee48c733236f242e1f4cf0e",
         "description": "intel/vulkan: add missing dependency on generated headers",
         "nominated": false,
