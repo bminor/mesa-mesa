@@ -4909,7 +4909,7 @@
         "description": "anv: fixup condition for Wa_14016118574",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f2645229c2fa6d9c595004a8dc4ee44cebedb5fd"
     },
