@@ -4067,12 +4067,13 @@ void genX(CmdDrawMultiEXT)(
          prim.StartInstanceLocation    = firstInstance;
          prim.BaseVertexLocation       = 0;
       }
+   }
 
 #if GFX_VERx10 == 125
-   genX(emit_dummy_post_sync_op)(cmd_buffer, draw->vertexCount);
+   genX(emit_dummy_post_sync_op)(cmd_buffer,
+                                 drawCount == 0 ? 0 :
+                                 pVertexInfo[drawCount - 1].vertexCount);
 #endif
-
-   }
 
    update_dirty_vbs_for_gfx8_vb_flush(cmd_buffer, SEQUENTIAL);
 
@@ -4242,11 +4243,14 @@ void genX(CmdDrawMultiIndexedEXT)(
             prim.StartInstanceLocation    = firstInstance;
             prim.BaseVertexLocation       = draw->vertexOffset;
          }
-#if GFX_VERx10 == 125
-         genX(emit_dummy_post_sync_op)(cmd_buffer, draw->indexCount);
-#endif
       }
    }
+
+#if GFX_VERx10 == 125
+   genX(emit_dummy_post_sync_op)(cmd_buffer,
+                                 drawCount == 0 ? 0 :
+                                 pIndexInfo[drawCount - 1].indexCount);
+#endif
 
    update_dirty_vbs_for_gfx8_vb_flush(cmd_buffer, RANDOM);
 
