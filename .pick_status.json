@@ -1174,7 +1174,7 @@
         "description": "docs: Update Clover's env variable documentation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "981bc603b46ce9668fbfb5b766b4b4b9b47dd5a1",
         "notes": null
