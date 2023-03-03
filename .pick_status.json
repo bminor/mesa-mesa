@@ -4486,7 +4486,7 @@
         "description": "frontend/va: Keep track of some VP9 previous frame data for current frame use_prev_in_find_mvs_refs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c8e8ce8359ceb9161ac05cf48b15e2e6a298ebd6"
     },
