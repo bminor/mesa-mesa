@@ -6790,7 +6790,7 @@
         "description": "pps: Fix build errors.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1cc72b2aef82373247466c2e7b81970c867ad0fa"
     },
