@@ -1012,7 +1012,7 @@
         "description": "nir: fix nir_ishl_imm",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e227bb9fd58268788a79449ed247311744210279"
     },
