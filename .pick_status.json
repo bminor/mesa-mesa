@@ -5863,7 +5863,7 @@
         "description": "zink: fix line smooth lowering",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "80285db9efe16beefc59a470b7c53d7bd38dbdc4"
     },
