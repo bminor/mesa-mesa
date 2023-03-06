@@ -3577,7 +3577,7 @@
         "description": "Revert \"iris: Avoid abort() if kernel can't allocate memory\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "f9d8d9acbb6a620684fb4dac4affe25816587d92"
     },
