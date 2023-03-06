@@ -3094,7 +3094,7 @@
         "description": "util/box: make u_box_test_intersection_2d() consistent with other funcs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
