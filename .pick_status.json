@@ -6268,7 +6268,7 @@
         "description": "intel/fs: fix nir_opt_peephole_ffma max vec assumption",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
