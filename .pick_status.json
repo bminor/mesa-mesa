@@ -2245,7 +2245,7 @@
         "description": "radeonsi: fix fast depth_clear_value/stencil_clear_value",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9defe8aca953b69615728c84d8ff6ed51bdded00"
     },
