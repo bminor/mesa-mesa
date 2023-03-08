@@ -5953,7 +5953,7 @@
         "description": "intel/isl: Don't scream FINISHME into logs for 3D vs. CCS",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "126c9562d98bf84b19140e318758ac0d4b0a9b5f"
     },
