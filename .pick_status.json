@@ -5629,7 +5629,7 @@
         "description": "intel/fs: Fix inferred_sync_pipe for F16TO32 opcodes",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
