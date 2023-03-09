@@ -19934,7 +19934,7 @@
         "description": "lavapipe: set render_condition_enabled=false for vkCmdClearDepthStencilImage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fe53c22294900142c358b75d39c43710ccfd414e",
         "notes": null
