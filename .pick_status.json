@@ -5278,7 +5278,7 @@
         "description": "iris: Don't mark protected bo as reusable",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9402ac8023a0d9ec2247bc32d704411e882e8422"
     },
