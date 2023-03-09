@@ -19944,7 +19944,7 @@
         "description": "lavapipe: fix dynamic depth clamping",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "650880105e6d2d6f5b507a9353cc1247f910b0df",
         "notes": null
