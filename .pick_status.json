@@ -5431,7 +5431,7 @@
         "description": "docs/zink: fixup wording of the GL 4.6 requirements",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5deac5c1565b056ac8967851a76cd5e81cc07d80"
     },
