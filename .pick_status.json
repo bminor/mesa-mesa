@@ -5548,7 +5548,7 @@
         "description": "vbo: fix current attribs not updating gallium vertex elements",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a18b9d071df60d5335b69fca793a743dd0a9d8cc"
     },
