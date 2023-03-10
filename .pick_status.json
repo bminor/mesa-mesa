@@ -5017,7 +5017,7 @@
         "description": "d3d12: Fix video decode for interlaced streams with reference only textures required",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d8206f628659d468c870430daa271d5bec6e860d"
     },
