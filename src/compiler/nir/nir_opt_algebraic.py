@@ -986,11 +986,6 @@ for s in [16, 32, 64]:
                (('i2i{}'.format(s), ('i2i{}'.format(B), 'a@{}'.format(s))), a),
                (('u2u{}'.format(s), ('u2u{}'.format(B), 'a@{}'.format(s))), a),
 
-               # bool1 -> typeB -> typeS ==> bool1 -> typeS
-               (('f2f{}'.format(s), ('b2f{}'.format(B), 'a@1')), ('b2f{}'.format(s), a)),
-               (('i2i{}'.format(s), ('b2i{}'.format(B), 'a@1')), ('b2i{}'.format(s), a)),
-               (('u2u{}'.format(s), ('b2i{}'.format(B), 'a@1')), ('b2i{}'.format(s), a)),
-
                # floatS -> floatB -> intB ==> floatS -> intB
                (('f2u{}'.format(B), ('f2f{}'.format(B), 'a@{}'.format(s))), ('f2u{}'.format(B), a)),
                (('f2i{}'.format(B), ('f2f{}'.format(B), 'a@{}'.format(s))), ('f2i{}'.format(B), a)),
