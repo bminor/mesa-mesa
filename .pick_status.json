@@ -19714,7 +19714,7 @@
         "description": "zink: fix stale point sprite mode state",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cf8ca77be10772e96d44e6c3274b0fb94868abc4",
         "notes": null
