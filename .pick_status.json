@@ -6214,7 +6214,7 @@
         "description": "intel/fs: fix subgroup invocation read bounds checking",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9ac192d79dbef726983d704c3e965e3b058769f6"
     },
