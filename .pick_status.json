@@ -7096,7 +7096,7 @@
         "description": "nir/algebraic: insert patterns inside optimizations list",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b86305bb5734fdd0511d227b646328ef03c80197"
     },
