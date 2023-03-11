@@ -3134,7 +3134,7 @@
         "description": "nir: fix 2 bugs in nir_create_passthrough_tcs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a8e84f50bc6c855fa08af343c02d3e1b783d1586",
         "notes": null
