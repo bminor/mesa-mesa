@@ -6736,7 +6736,7 @@
         "description": "radv/rt: place any-hit scratch vars after intersection scratch vars",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c3d82a962217def9b9f7e1f4c5ce0a450b97e9c7"
     },
