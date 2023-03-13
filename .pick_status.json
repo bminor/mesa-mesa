@@ -58,7 +58,7 @@
         "description": "ci: Re-enable some swrast testing using fd.o's shared runners for now.",
         "nominated": false,
         "nomination_type": null,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
