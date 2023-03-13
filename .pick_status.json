@@ -4,7 +4,7 @@
         "description": "v3d: add B10G10R10[X2/A2]_UNORM to format table.",
         "nominated": false,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
