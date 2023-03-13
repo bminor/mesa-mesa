@@ -5539,7 +5539,7 @@
         "description": "microsoft/compiler: Fix setting bit 31 in feature flags",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a84208ee4df8782a87464f7ed176d7499b20fc4f"
     },
@@ -6178,7 +6178,7 @@
         "description": "nir/range_analysis: add missing masking of shift amounts",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "72ac3f60261a8510512861b93e843e695331e2ab"
     },
