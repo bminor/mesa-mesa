@@ -5242,7 +5242,7 @@
         "description": "turnip: Don't push inline uniform buffer contents outside constlen.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37cde2c63483fcf99092af84c14bea7ba3adbb84"
     },
