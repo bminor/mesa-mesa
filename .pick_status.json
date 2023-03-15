@@ -5008,7 +5008,7 @@
         "description": "glsl: allow 64-bit integer on RHS of shift",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9ba9a7f854dd702364d0aaa02cb7fbf44aea5888"
     },
