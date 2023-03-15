@@ -5287,7 +5287,7 @@
         "description": "zink: fix `final_hash` update in `zink_gfx_program_update`",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "15450d2c2e222d905e0a6ced89e9ceeba3489608"
     },
