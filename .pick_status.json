@@ -5197,7 +5197,7 @@
         "description": "aco_validate: allow for wave32 in p_dual_src_export_gfx11",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bb90d29660bb44326188809da2deec0675c8264a"
     },
