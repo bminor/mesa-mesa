@@ -4441,7 +4441,7 @@
         "description": "nir: Propagate alignment when rematerializing cast derefs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "878a8daca6bfc856308dda7d265964d93feb05ae"
     },
