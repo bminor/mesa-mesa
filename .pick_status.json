@@ -4774,7 +4774,7 @@
         "description": "anv: fix incorrect utrace bo release",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c67c9688c3ff61cc79787801b68ddd62cfbf66d7"
     },
