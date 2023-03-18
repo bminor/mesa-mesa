@@ -7105,7 +7105,7 @@
         "description": "radv/rt: Handle load_constant instructions when inlining shaders",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fda262fe64ed3d55527921e67681056b0efe9f30"
     },
