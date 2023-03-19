@@ -6295,7 +6295,7 @@
         "description": "aco: drop leftover variable",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "44fdd2ebcb271011665dd100ba9ef6852cddb22e"
     },
