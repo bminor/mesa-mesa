@@ -5953,7 +5953,7 @@
         "description": "ac/llvm: add missing type convert for nir_load_buffer_amd",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "afcbccb0781343eeed1b8543c23dcdc21748bcf2"
     },
