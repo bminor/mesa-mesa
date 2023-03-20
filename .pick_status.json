@@ -6834,7 +6834,7 @@
         "description": "etnaviv: don't read too much from uniform arrays",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "77af1ca690f4f49e305c095d97b9af798bfea307",
         "notes": null
