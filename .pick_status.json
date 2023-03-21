@@ -5962,7 +5962,7 @@
         "description": "ac/llvm: respect channel_type when ac_build_buffer_load",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8030fbcf16a5811c76177f3598218b8aa35d52fc"
     },
