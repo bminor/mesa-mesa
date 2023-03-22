@@ -3487,7 +3487,7 @@
         "description": "aux/trace: fix GALLIUM_TRACE_NIR handling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f99eab23ad6d58e08336d862adcb642f9714eb51"
     },
