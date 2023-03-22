@@ -1669,7 +1669,7 @@
         "description": "nvc0: enable fp helper invocation memory loads on Turing+",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null
     },
