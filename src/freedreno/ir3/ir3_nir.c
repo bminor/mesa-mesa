@@ -1197,6 +1197,12 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
    if (so->compiler->load_shader_consts_via_preamble)
       progress |= OPT(s, ir3_nir_lower_driver_params_to_ubo, so);
 
+   /* Do matrix reassociate after preamble, because we want uniform matrix
+    * multiplies to get hoisted to preamble, which would get scattered with
+    * non-uniform calculations post reassociation.
+    */
+   progress |= OPT(s, nir_opt_reassociate_matrix_mul);
+
    /* TODO: ldg.k might also work on a6xx */
    if (so->compiler->gen >= 7)
       progress |= OPT(s, ir3_nir_lower_const_global_loads, so);
