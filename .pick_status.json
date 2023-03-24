@@ -3892,7 +3892,7 @@
         "description": "anv,hasvk: remove stale comments",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c1f4343807d1040bd7b5440aa2f5fccf5f12842d"
     },
