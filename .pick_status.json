@@ -427,7 +427,7 @@
         "description": "r600: fix typo that could lead to a possible crash",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a6b379284365e8adee780b691596d3a66de1ba93"
     },
