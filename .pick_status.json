@@ -3784,7 +3784,7 @@
         "description": "intel/vk/grl: don't install libgrl.a",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "639665053fabad75afcf7889970c6a4119fdae92"
     },
