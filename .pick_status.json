@@ -1606,7 +1606,7 @@
         "description": "radeonsi: don't use alignment_log2 of imported buffers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f7a4051b836294ab8f55c71d239e99c5cbf63170"
     },
