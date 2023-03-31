@@ -679,7 +679,7 @@
         "description": "mesa: fix invalid index_bo refcounting",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "819627041e737b05d7a9a5c74e29fd9994ec9115"
     },
