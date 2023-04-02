@@ -76,7 +76,7 @@
         "description": "aco: Don't remove exec writes that also write other registers.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bc130497472cb4ec4ec60695ed99b169d6681118"
     },
