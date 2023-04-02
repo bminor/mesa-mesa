@@ -85,7 +85,7 @@
         "description": "aco: Consider p_cbranch_nz as divergent branch too.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f030b75b7d2c359b90c18ee4ed83fa05265c12e0"
     },
