@@ -445,7 +445,7 @@
         "description": "gallium/pipe: change PIPE_DEFAULT_DECODER_FEEDBACK_TIMEOUT_NS to 1 second",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5e1bd07ac5733c3e7e5484f23a65a89e03f62d2c"
     },
