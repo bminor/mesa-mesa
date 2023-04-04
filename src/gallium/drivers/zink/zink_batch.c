@@ -328,6 +328,22 @@ zink_batch_state_destroy(struct zink_screen *screen, struct zink_batch_state *bs
    ralloc_free(bs);
 }
 
+static void
+zink_label_cmd_buffer(struct zink_context *ctx, VkDevice device, VkCommandBuffer cmd_buffer, const char *name)
+{
+   struct zink_screen *screen = zink_screen(ctx->base.screen);
+
+   VkDebugUtilsObjectNameInfoEXT name_info = {
+      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+      .pNext = NULL,
+      .objectType = VK_OBJECT_TYPE_COMMAND_BUFFER,
+      .objectHandle = (uintptr_t)cmd_buffer,
+      .pObjectName = name,
+   };
+
+   VKSCR(SetDebugUtilsObjectNameEXT)(device, &name_info);
+}
+
 /* batch states are created:
  * - on context creation
  * - dynamically up to a threshold if no free ones are available
@@ -384,6 +400,9 @@ create_batch_state(struct zink_context *ctx)
          goto fail;
       }
    );
+
+   zink_label_cmd_buffer(ctx, screen->dev, cmdbufs[0], "zink cmdbuf");
+   zink_label_cmd_buffer(ctx, screen->dev, cmdbufs[1], "zink barrier cmdbuf");
 
 #define SET_CREATE_OR_FAIL(ptr) \
    if (!_mesa_set_init(ptr, bs, _mesa_hash_pointer, _mesa_key_pointer_equal)) \
