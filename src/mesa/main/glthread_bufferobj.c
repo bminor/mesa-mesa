@@ -34,8 +34,9 @@ new_upload_buffer(struct gl_context *ctx, GLsizeiptr size, uint8_t **ptr)
 {
    assert(ctx->GLThread.SupportsBufferUploads);
 
+   /* id 0 is used to avoid returning invalid binding values to apps */
    struct gl_buffer_object *obj =
-      _mesa_bufferobj_alloc(ctx, -1);
+      _mesa_bufferobj_alloc(ctx, 0);
    if (!obj)
       return NULL;
 
