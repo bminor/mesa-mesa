@@ -5924,7 +5924,7 @@
         "description": "radeonsi: fix max scrach lds size calculation when ngg",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "028d0590f85c418cf470510cafcbe8026c2c4208",
         "notes": null
