@@ -44,8 +44,19 @@
  * will have more than one per data source, but it also means it's owned for
  * access by a trace context through tctx.GetIncrementalState().
  */
-struct MesaRenderpassIncrementalState {
+class MesaRenderpassIncrementalState {
+ public:
+   MesaRenderpassIncrementalState()
+   {
+      debug_markers = _mesa_hash_table_create(NULL, _mesa_hash_string,
+                                              _mesa_key_string_equal);
+   }
+
+   ~MesaRenderpassIncrementalState() { ralloc_free(debug_markers); }
+
    bool was_cleared = true;
+
+   struct hash_table *debug_markers;
 };
 
 using perfetto::DataSource;
@@ -62,13 +73,10 @@ class MesaRenderpassDataSource
    {
       // Use this callback to apply any custom configuration to your data
       // source based on the TraceConfig in SetupArgs.
-      debug_markers = NULL;
    }
 
    void OnStart(const perfetto::DataSourceBase::StartArgs &) override
    {
-      debug_markers = _mesa_hash_table_create(NULL, _mesa_hash_string,
-                                              _mesa_key_string_equal);
       // This notification can be used to initialize the GPU driver, enable
       // counters, etc. StartArgs will contains the DataSourceDescriptor,
       // which can be extended.
@@ -89,8 +97,6 @@ class MesaRenderpassDataSource
          packet->Finalize();
          ctx.Flush();
       });
-
-      ralloc_free(debug_markers);
    }
 
    /* Emits a clock sync trace event.  Perfetto uses periodic clock events
@@ -141,13 +147,16 @@ class MesaRenderpassDataSource
     */
    uint64_t debug_marker_stage(TraceContext &ctx, const char *name)
    {
-      struct hash_entry *entry = _mesa_hash_table_search(debug_markers, name);
+      auto istate = ctx.GetIncrementalState();
+
+      struct hash_entry *entry =
+         _mesa_hash_table_search(istate->debug_markers, name);
       const uint64_t dynamic_iid_base = 1ull << 32;
 
       if (entry) {
          return dynamic_iid_base + (uint32_t) (uintptr_t) entry->data;
       } else {
-         uint64_t iid = dynamic_iid_base + debug_markers->entries;
+         uint64_t iid = dynamic_iid_base + istate->debug_markers->entries;
 
          auto packet = ctx.NewTracePacket();
          auto interned_data = packet->set_interned_data();
@@ -159,9 +168,9 @@ class MesaRenderpassDataSource
          /* We only track the entry count in entry->data, because the
           * dynamic_iid_base would get lost on 32-bit builds.
           */
-         _mesa_hash_table_insert(debug_markers,
-                                 ralloc_strdup(debug_markers, name),
-                                 (void *) (uintptr_t) debug_markers->entries);
+         _mesa_hash_table_insert(
+            istate->debug_markers, ralloc_strdup(istate->debug_markers, name),
+            (void *) (uintptr_t) istate->debug_markers->entries);
 
          return iid;
       }
