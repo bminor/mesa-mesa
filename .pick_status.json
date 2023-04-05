@@ -5904,7 +5904,7 @@
         "description": "ac/nir/ngg: fix store shared alignment",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "60ac5dda82e1a5c020aa51a02fa65131e9bfb2ca",
         "notes": null
