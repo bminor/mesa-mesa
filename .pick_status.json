@@ -5914,7 +5914,7 @@
         "description": "ac/nir/ngg: fix gs culling vertex liveness check for odd vertices",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1bdeb961bd8c953713646ae0ea28cc5f21f4a232",
         "notes": null
