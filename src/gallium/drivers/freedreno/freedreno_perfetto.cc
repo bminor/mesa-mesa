@@ -22,12 +22,8 @@ static uint64_t next_clock_sync_ns; /* cpu time of next clk sync */
  */
 static uint64_t sync_gpu_ts;
 
-struct FdRenderpassIncrementalState {
-   bool was_cleared = true;
-};
-
 struct FdRenderpassTraits : public perfetto::DefaultDataSourceTraits {
-   using IncrementalStateType = FdRenderpassIncrementalState;
+   using IncrementalStateType = MesaRenderpassIncrementalState;
 };
 
 class FdRenderpassDataSource : public MesaRenderpassDataSource<FdRenderpassDataSource, FdRenderpassTraits> {

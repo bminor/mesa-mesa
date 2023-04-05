@@ -27,6 +27,27 @@
 #include "util/perf/u_trace.h"
 #include "util/ralloc.h"
 
+/**
+ * Struct tracking state during a perfetto packet sequence
+ *
+ * Sometimes perfetto loses state, and starts a new packet sequence to
+ * recover. One common example is when you start perfetto tracing after the
+ * driver is up and running -- all perfetto trace packets had been skipped
+ * until tracing started.
+ *
+ * When we're in a new sequence, we need to detect it (in the form of a new
+ * struct created with was_cleared set), and emit all the driver setup packets
+ * before emitting any tracing that might reference the one-time state
+ * packets.
+ *
+ * Note that incremental state structs are stored in TLS in perfetto, so you
+ * will have more than one per data source, but it also means it's owned for
+ * access by a trace context through tctx.GetIncrementalState().
+ */
+struct MesaRenderpassIncrementalState {
+   bool was_cleared = true;
+};
+
 using perfetto::DataSource;
 template <typename DataSourceType, typename DataSourceTraits>
 class MesaRenderpassDataSource

@@ -109,12 +109,8 @@ static uint64_t last_suspend_count;
 static uint64_t gpu_max_timestamp;
 static uint64_t gpu_timestamp_offset;
 
-struct TuRenderpassIncrementalState {
-   bool was_cleared = true;
-};
-
 struct TuRenderpassTraits : public perfetto::DefaultDataSourceTraits {
-   using IncrementalStateType = TuRenderpassIncrementalState;
+   using IncrementalStateType = MesaRenderpassIncrementalState;
 };
 
 class TuRenderpassDataSource : public MesaRenderpassDataSource<TuRenderpassDataSource,

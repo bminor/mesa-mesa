@@ -105,12 +105,8 @@ static const struct {
    },
 };
 
-struct IntelRenderpassIncrementalState {
-   bool was_cleared = true;
-};
-
 struct IntelRenderpassTraits : public perfetto::DefaultDataSourceTraits {
-   using IncrementalStateType = IntelRenderpassIncrementalState;
+   using IncrementalStateType = MesaRenderpassIncrementalState;
 };
 
 class IntelRenderpassDataSource : public MesaRenderpassDataSource<IntelRenderpassDataSource,
