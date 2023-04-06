@@ -1,5 +1,590 @@
 [
     {
+        "sha": "debc543904235ed7dfc14217bf43f33f9f768e5a",
+        "description": "amd/registers: use gfx9 packet definitions for gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ba74d10950cdcda314811b2311e7358355cc8805",
+        "description": "amd/registers: update gfx940.json",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e3bc800d5d8cd236aec998d045918c5fb0daa9b5",
+        "description": "amd/registers: fix the parser to include CP_COHER registers for gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e917db3b422b4b5da5d7998d00619cd37890f261",
+        "description": "amd/registers: simplify integer division by 0x1000 in the parser",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "81a66019797140e23fa362b8ad5cf2486417e73b",
+        "description": "radeonsi: don't set registers that don't exist on gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "69397180f6b760a1c153dabe681757044c9ca516",
+        "description": "radeonsi/vcn: enable RGBA/ARGB formats on gfx940 jpeg",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "6d675feff776df5824b2a868259246b709cd9525",
+        "description": "frontends/va: support crop region in jpeg decode",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "4b0d4d5ca626af12d4ef4aa258788f4437f5d591",
+        "description": "radeonsi/vcn: reset to default value when ROI/FC is not used",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "74bf0cdc9da6a6428218f2b3eb4b86b1e1b2d89c",
+        "description": "radeonsi/vcn: Add decode support for gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "73ba47e87b8c21d8aaee64a246adac8046ac585e",
+        "description": "radeonsi/vcn: Add video capabilities support for gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5639b236442bb3099382fe2cfd4366ebc7318328",
+        "description": "amd/common: Add gfx940 codec query support",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "b4efb1ef352a09d278536ec01c0061b907c86339",
+        "description": "radeonsi/vcn: set jpeg reg version for gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "334919b8ed60220aa263f3352f3194185a2b564e",
+        "description": "radeonsi/vcn: support ARGB/RGBA conversion on JPEG 4.0.3",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d0477cbd078aca923a1441227418aa06349cec2f",
+        "description": "radeonsi/vcn: add support for picture crop on JPEG 4.0.3",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "74572084d8887bd80f8ee78f3e051c10cf01724b",
+        "description": "radeonsi/vcn: use register versions for jpeg",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "94226270743f04149ec9def4bb7b2b27f43fa283",
+        "description": "radeonsi/vcn: add register definitions for JPEG 4.0.3",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d75f0d6c26c7e5202552219f8d0bf9253ca24dfc",
+        "description": "ac/nir: fix CDNA image lowering for array textures",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eaf98b14220d8cbc186d67a929254acc3e7de41a",
+        "description": "ac/nir: implement image opcode emulation for CDNA, enable it in radeonsi",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e3c6ed0685dbbdbb6bfe3d217bb8f51fefb79968",
+        "description": "radeonsi: add an emulated image descriptor for gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "96913bbf3eba74e2bf509fe7196be073eaf2ea60",
+        "description": "ac/surface: force linear image layout for chips not supporting image opcodes",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8277e6fda3908641c6ef7d6179e29ad3bc3f8e1e",
+        "description": "radeonsi: always use ffma32 on gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "72354667cbc793d52cd0350a36414460c602d56f",
+        "description": "radeonsi: use COMPUTE_DISPATCH_SCRATCH_BASE on gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "d3b03fedd8cc689a0d1571bc1f5a5aa52371a304",
+        "description": "amd: add initial code for gfx940",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "46639eb05629d4d70314aec57b93feb0af20f3fa",
+        "description": "amd: add gfx940 register definitions",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "91a6c9cccfacbe38addb5ba8f75f04871f8fd088",
+        "description": "Revert \"broadcom/ci: run gl jobs on arm64, just like vk\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "ba4eeaf435f050dfec5472c7919b9b70e38d1bb8"
+    },
+    {
+        "sha": "2242bb703ecaa46e2cda65cba2d0f66e58929a4a",
+        "description": "nv50,nvc0: Use u_pipe_screen_get_param_defaults",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fe60fa898e61c0bd4ddc408709700814a073d562",
+        "description": "Revert \"ci: disable Collabora's LAVA lab for maintance\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "86ad0356b6a8cc5f8b338cf7b92149b6e81f08e2"
+    },
+    {
+        "sha": "44053c09479b728600bdccb1dbd8c58d3f313c3f",
+        "description": "intel/common: limit the amount of SLM with Wa_14017341140",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "e21cca78ea9c146a52fef060f8b581ed8cecb5f8",
+        "description": "anv,blorp,iris: Set PreferredSLMAllocationSize on gfx125+",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3b6dbf890244e226e1d1e68e87feaa75a1a269df",
+        "description": "intel/genxml: Add the preferred slm size enum for gen125",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "606a39f9d144f863bb3ef52bf87079f8365f15e5",
+        "description": "intel/genxml/125: Add preferred SLM allocation size field",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "767c5425da673d185dcb1e596d862906aba1c794",
+        "description": "CI/windows: Increase timeout for build container job",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "24fce05f3f941f84a89fe110c4c2ba85f6e961fe",
+        "description": "CI/windows: Update headers and Agility redist to 1.710.0-preview",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "5a29af262c51682c0a3f6d2ac1c686c7a7de88a7",
+        "description": "glsl: move some GL ES checks to the NIR linker",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bf8f11a2de848f288159fc8bba9d0152665b3997",
+        "description": "mesa: add _mesa_is_api_gles2() helper",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "86ad0356b6a8cc5f8b338cf7b92149b6e81f08e2",
+        "description": "ci: disable Collabora's LAVA lab for maintance",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a38de4c011da73ae64d00565c6b4710ed1b3230e",
+        "description": "radv: disable tc_compatible_cmask on GFX9 in some cases",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "bd5fb29db6c1f338fdb8f1e3cc9bc2a1bf5e90a8",
+        "description": "radv: add RADV_FMASK_COMPRESSION_PARTIAL",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3cf7ac4e9c4bbe67844437fa7f1f739076a9682b",
+        "description": "radv: rework radv_layout_fmask_compressed",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "8e84a23697dc443ac58e81dccd22c01e9df87c2c",
+        "description": "ci/zink: Disable a630 portal-2-v2 due to kernel OOMs.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ffa867b535708cec6e8a4c0edc7a205f081518e5",
+        "description": "tgsi: Drop TGSI_OPCODE_DFRACEXP.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "ba5bc2677fae8eb398802786c1d65b950c812478",
+        "description": "glsl: Drop PIPE_SHADER_CAP_DFRACEXP_DLDEXP_SUPPORTED.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7325f699dbd7e44a07f10937d5d6f54ccbde2ecb",
+        "description": "glsl: Drop frontend lowering of 32-bit frexp.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fca48570913ff539bf4d5a9c843c18d1b7fb98d0",
+        "description": "nir_to_tgsi: Always lower frexp_exp/sig.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3f2328c6295cdbec937fba6e89bfe2ed9ec7c012",
+        "description": "panfrost/midgard: Enable nir_lower_frexp.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "094b5a71d759de547ae30871810840ea9980be4e",
+        "description": "agx: Enable nir_lower_frexp.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "862235ecaa8c5ac8362da97f79c43913596e1a92",
+        "description": "v3d: Lower frexp in the GL compiler like we do in Vulkan.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "04c31c6ada7f462b587bafde0a3c77d2d4f67e80",
+        "description": "zink: Enable nir_lower_frexp.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7c57061b77e9b82f46d4b354df949dd2524730d4",
+        "description": "nouveau: Enable frexp lowering in the backend.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "3a336a8ffd835d10556fbe96b03c91c168f46f24",
+        "description": "nouveau: Add missing nir_opt_algebraic_late.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f2228902ed8d1d5d352798d3561323e8684aa93b",
+        "description": "ir3: Move turnip's nir_lower_frexp to the shared compiler.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "f1ea6c1b40a798324326105579c0b394936cd536",
+        "description": "intel: Always call nir_lower_frexp.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "fb60edf4e9809742b49f91c92d3dd3358e0f6070",
+        "description": "state_tracker: Lower frexp before lowering doubles.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "261c1f9ee140e77007dfba2da49aefa6aa0fd3fd",
+        "description": "glsl/softfp64: Add fisfinite lowering.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "7ff899dd6e830f7dd5e55261585c0a92c91403e0",
+        "description": "glsl/softfp64: GC the temp vars after we lower them to SSA.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "2a33ea95d66cd7ba83e2774f5559bf781da66c40",
+        "description": "glsl: Retire ldexp lowering in favor of the nir lowering flag.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "675f4ff596f358bf19f499a6ab06ae035e3eb9c8",
+        "description": "zink: Add mapping for nir_op_ldexp, but disable it for 64-bit's sake.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "46bf687882ab25042b4e15edc331eb8fe32d3a21",
+        "description": "glsl: Move ForceGLSLAbsSqrt handling to glsl-to-nir.",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "a73c28fdce7c3bbeb3340303209d80a208759206",
+        "description": "radv: fix leak of nir from retained shaders",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "03d2bd6042d2d93caaab70892e35ffffa16b4bb7"
+    },
+    {
+        "sha": "e6c84b8a00f15b1e90fe379e22f94b8865eb9b82",
+        "description": "panfrost: assign the correct create_for_resource from the start",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "66d4dbd960e695d4b7db11a9fd57d3225079605f",
+        "description": "util/disk_cache: Move blob_put_cb to the async queue",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "dab1bd5a77e82ced0b9446d63a147e79307708f1",
+        "description": "util/disk_cache: Use queue state to skip put",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "213627e94b05b1cd741377678a2a306e1b0c7f9d",
+        "description": "util/disk_cache: Add NONE type",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "afb350906eaa3dc0c6273d6af1843beea3971c47",
+        "description": "util/disk_cache: Split out queue initialization",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
+        "sha": "eef7a117a1a1b045444a520a6dfc2a43069ae1fc",
+        "description": "intel/compiler: Support fmul_fsign opt for fp64 when int64 isn't supported",
+        "nominated": false,
+        "nomination_type": null,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null
+    },
+    {
         "sha": "7abd8c499b4388f1e2947d78c59aafa0b52c254a",
         "description": "radv/amdgpu: Remove can_patch and chained submit code path.",
         "nominated": false,
