@@ -313,6 +313,9 @@ update_inline_shader_state(struct rendering_state *state, enum pipe_shader_type 
    if (constbuf_dirty) {
       struct pipe_box box = {0};
       u_foreach_bit(slot, pipeline->inlines[stage].can_inline) {
+         /* this is already inlined above */
+         if (slot == 0)
+            continue;
          unsigned count = pipeline->inlines[stage].count[slot];
          struct pipe_constant_buffer *cbuf = &state->const_buffer[sh][slot - 1];
          struct pipe_resource *pres = cbuf->buffer;
