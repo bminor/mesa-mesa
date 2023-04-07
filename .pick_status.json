@@ -4574,7 +4574,7 @@
         "description": "egl: fix memory leak related to _eglRefreshDeviceList()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e39d72aec203ee317feb87ba1c8953a99aad2a5c",
         "notes": null
