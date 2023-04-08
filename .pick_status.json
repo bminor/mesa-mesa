@@ -5374,7 +5374,7 @@
         "description": "intel/compiler: Use nir_dest_bit_size() for ballot bit size check",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "069bf7c9078a1b03414a6ace4bbff887e212ab90",
         "notes": null
