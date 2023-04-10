@@ -161,7 +161,7 @@ libintel_compiler_brw = static_library(
 )
 
 idep_intel_compiler_brw = declare_dependency(
-  link_with : [libintel_compiler_brw],
+  link_with : [libintel_compiler_brw, libisl],
   dependencies : [
     idep_nir,
     idep_mesautil,

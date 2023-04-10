@@ -3785,7 +3785,6 @@ static char *
 iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
 {
    struct iris_screen *screen = (struct iris_screen *)_screen;
-   const struct intel_device_info *devinfo = screen->devinfo;
 
    NIR_PASS_V(nir, iris_fix_edge_flags);
 
@@ -3794,13 +3793,14 @@ iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
       brw_preprocess_nir(screen->brw, nir, &opts);
 
       NIR_PASS_V(nir, brw_nir_lower_storage_image,
+                 screen->brw,
                  &(struct brw_nir_lower_storage_image_opts) {
-                    .devinfo      = devinfo,
                     .lower_loads  = true,
                     .lower_stores = true,
                  });
    } else {
 #ifdef INTEL_USE_ELK
+      const struct intel_device_info *devinfo = screen->devinfo;
       assert(screen->elk);
 
       struct elk_nir_compiler_opts opts = {};

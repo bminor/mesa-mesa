@@ -1027,12 +1027,11 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
                accept_64bit_atomic_cb, NULL);
    }
 
-   NIR_PASS(_, nir, brw_nir_lower_storage_image,
+   NIR_PASS(_, nir, brw_nir_lower_storage_image, compiler,
             &(struct brw_nir_lower_storage_image_opts) {
                /* Anv only supports Gfx9+ which has better defined typed
                 * read behavior.
                 */
-               .devinfo = compiler->devinfo,
                .lower_loads = true,
                .lower_stores_64bit = true,
             });

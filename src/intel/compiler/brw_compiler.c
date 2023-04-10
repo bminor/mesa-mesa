@@ -27,6 +27,7 @@
 #include "brw_private.h"
 #include "dev/intel_debug.h"
 #include "compiler/nir/nir.h"
+#include "isl/isl.h"
 #include "util/u_debug.h"
 
 const struct nir_shader_compiler_options brw_scalar_nir_options = {
@@ -193,6 +194,31 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
 
       compiler->nir_options[i] = nir_options;
    }
+
+   /* Build a list of storage format compatible in component bit size &
+    * isl_base_type. We can apply the same lowering to those.
+    */
+   compiler->num_lowered_storage_formats = 0;
+   for (enum isl_format fmt = 0; fmt < ISL_FORMAT_RAW; fmt++) {
+      if (!isl_is_storage_image_format(devinfo, fmt))
+         continue;
+
+      if (isl_lower_storage_image_format(devinfo, fmt) == fmt)
+         continue;
+
+      compiler->lowered_storage_formats =
+         reralloc(compiler, compiler->lowered_storage_formats,
+                  uint32_t, compiler->num_lowered_storage_formats + 1);
+      compiler->lowered_storage_formats[
+         compiler->num_lowered_storage_formats++] = fmt;
+   }
+   assert((devinfo->verx10 >= 125 &&
+           compiler->num_lowered_storage_formats == 0) ||
+          (devinfo->verx10 >= 110 && devinfo->verx10 <= 120 &&
+           compiler->num_lowered_storage_formats == 3) ||
+          devinfo->verx10 == 90);
+   fprintf(stderr, "num_lowered_storage_formats=%i\n",
+           compiler->num_lowered_storage_formats);
 
    return compiler;
 }
