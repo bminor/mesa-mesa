@@ -3436,7 +3436,9 @@ end_command_buffer(struct anv_cmd_buffer *cmd_buffer)
 
    if (anv_cmd_buffer_is_video_queue(cmd_buffer) ||
        anv_cmd_buffer_is_blitter_queue(cmd_buffer)) {
-      trace_intel_end_cmd_buffer(&cmd_buffer->trace, cmd_buffer->vk.level);
+      trace_intel_end_cmd_buffer(&cmd_buffer->trace,
+                                 (uintptr_t)(vk_command_buffer_to_handle(&cmd_buffer->vk)),
+                                 cmd_buffer->vk.level);
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
       anv_cmd_buffer_end_batch_buffer(cmd_buffer);
       return VK_SUCCESS;
@@ -3483,7 +3485,9 @@ end_command_buffer(struct anv_cmd_buffer *cmd_buffer)
       genX(cmd_buffer_set_protected_memory)(cmd_buffer, false);
 #endif
 
-   trace_intel_end_cmd_buffer(&cmd_buffer->trace, cmd_buffer->vk.level);
+   trace_intel_end_cmd_buffer(&cmd_buffer->trace,
+                              (uintptr_t)(vk_command_buffer_to_handle(&cmd_buffer->vk)),
+                              cmd_buffer->vk.level);
 
    anv_cmd_buffer_end_batch_buffer(cmd_buffer);
 
@@ -6044,6 +6048,7 @@ void genX(CmdEndRendering)(
    }
 
    trace_intel_end_render_pass(&cmd_buffer->trace,
+                               (uintptr_t)(vk_command_buffer_to_handle(&cmd_buffer->vk)),
                                gfx->render_area.extent.width,
                                gfx->render_area.extent.height,
                                gfx->color_att_count,

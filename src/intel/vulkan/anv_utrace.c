@@ -580,6 +580,7 @@ void anv_CmdEndDebugUtilsLabelEXT(VkCommandBuffer _commandBuffer)
          util_dynarray_top_ptr(&cmd_buffer->vk.labels, VkDebugUtilsLabelEXT);
 
       trace_intel_end_cmd_buffer_annotation(&cmd_buffer->trace,
+                                            (uintptr_t)(vk_command_buffer_to_handle(&cmd_buffer->vk)),
                                             strlen(label->pLabelName),
                                             label->pLabelName);
    }

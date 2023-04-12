@@ -103,12 +103,14 @@ def define_tracepoints(args):
 
     # Command buffer tracepoints, only for Anv
     begin_end_tp('cmd_buffer',
-                 tp_args=[Arg(type='uint8_t', var='level', c_format='%hhu'),],
+                 tp_args=[Arg(type='uint64_t', var='command_buffer_handle', c_format='%" PRIu64 "',  perfetto_field=True),
+                          Arg(type='uint8_t', var='level', c_format='%hhu'),],
                  end_pipelined=False)
 
     # Annotations for Cmd(Begin|End)DebugUtilsLabelEXT
     begin_end_tp('cmd_buffer_annotation',
-                 tp_args=[Arg(type='unsigned', var='len'),
+                 tp_args=[Arg(type='uint64_t', var='command_buffer_handle', c_format='%" PRIu64 "',  perfetto_field=True),
+                          Arg(type='unsigned', var='len'),
                           Arg(type='str', var='str', c_format='%s', length_arg='len + 1', copy_func='strncpy'),],
                  tp_struct=[Arg(type='uint8_t', name='dummy', var='0'),],
                  end_pipelined=True)
@@ -119,7 +121,8 @@ def define_tracepoints(args):
 
     # Dynamic rendering tracepoints, only for Anv
     begin_end_tp('render_pass',
-                 tp_args=[Arg(type='uint16_t', var='width', c_format='%hu'),
+                 tp_args=[Arg(type='uint64_t', var='command_buffer_handle', c_format='%" PRIu64 "',  perfetto_field=True),
+                          Arg(type='uint16_t', var='width', c_format='%hu'),
                           Arg(type='uint16_t', var='height', c_format='%hu'),
                           Arg(type='uint8_t', var='att_count', c_format='%hhu'),
                           Arg(type='uint8_t', var='msaa', c_format='%hhu'),])

@@ -1512,7 +1512,9 @@ genX(EndCommandBuffer)(
 
    emit_isp_disable(cmd_buffer);
 
-   trace_intel_end_cmd_buffer(&cmd_buffer->trace, cmd_buffer->vk.level);
+   trace_intel_end_cmd_buffer(&cmd_buffer->trace,
+                              (uintptr_t)(vk_command_buffer_to_handle(&cmd_buffer->vk)),
+                              cmd_buffer->vk.level);
 
    anv_cmd_buffer_end_batch_buffer(cmd_buffer);
 
