@@ -152,9 +152,15 @@ sync_timestamp(IntelRenderpassDataSource::TraceContext &ctx,
 }
 
 static void
-send_descriptors(IntelRenderpassDataSource::TraceContext &ctx,
-                 struct intel_ds_device *device)
+setup_incremental_state(IntelRenderpassDataSource::TraceContext &ctx,
+                        struct intel_ds_device *device)
 {
+   auto state = ctx.GetIncrementalState();
+   if (!state->was_cleared)
+      return;
+
+   state->was_cleared = false;
+
    PERFETTO_LOG("Sending renderstage descriptors");
 
    device->event_id = 0;
@@ -276,10 +282,7 @@ end_event(struct intel_ds_queue *queue, uint64_t ts_ns,
       return;
 
    IntelRenderpassDataSource::Trace([=](IntelRenderpassDataSource::TraceContext tctx) {
-      if (auto state = tctx.GetIncrementalState(); state->was_cleared) {
-         send_descriptors(tctx, queue->device);
-         state->was_cleared = false;
-      }
+      setup_incremental_state(tctx, queue->device);
 
       sync_timestamp(tctx, queue->device);
 
@@ -544,10 +547,7 @@ intel_ds_end_submit(struct intel_ds_queue *queue,
    uint32_t submission_id = queue->submission_id++;
 
    IntelRenderpassDataSource::Trace([=](IntelRenderpassDataSource::TraceContext tctx) {
-      if (auto state = tctx.GetIncrementalState(); state->was_cleared) {
-         send_descriptors(tctx, queue->device);
-         state->was_cleared = false;
-      }
+      setup_incremental_state(tctx, queue->device);
 
       sync_timestamp(tctx, queue->device);
 
