@@ -2604,7 +2604,7 @@
         "description": "meson: keep Mako version checking in accord with build msg",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "52194ae4df18c7211cef69354a686eabc297a18d",
         "notes": null
