@@ -1694,7 +1694,7 @@
         "description": "zink: take location_frac into account in lower_line_smooth_gs",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
