@@ -2724,7 +2724,7 @@
         "description": "radv: fix usage flag for 3D compressed 128 bpp images on GFX9",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
