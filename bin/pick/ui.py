@@ -79,7 +79,7 @@ class CommitWidget(urwid.Text):
         self.commit = commit
 
     async def apply(self) -> None:
-        async with self.ui.git_lock:
+        async with core.GIT_LOCK.write():
             result, err = await self.commit.apply(self.ui)
             if not result:
                 self.ui.chp_failed(self, err)
@@ -87,12 +87,12 @@ class CommitWidget(urwid.Text):
                 self.ui.remove_commit(self)
 
     async def denominate(self) -> None:
-        async with self.ui.git_lock:
+        async with core.GIT_LOCK.write():
             await self.commit.denominate(self.ui)
             self.ui.remove_commit(self)
 
     async def backport(self) -> None:
-        async with self.ui.git_lock:
+        async with core.GIT_LOCK.write():
             await self.commit.backport(self.ui)
             self.ui.remove_commit(self)
 
@@ -145,7 +145,6 @@ class UI:
 
     previous_commits: typing.List['core.Commit'] = attr.ib(factory=list, init=False)
     new_commits: typing.List['core.Commit'] = attr.ib(factory=list, init=False)
-    git_lock: asyncio.Lock = attr.ib(factory=asyncio.Lock, init=False)
 
     def _get_current_commit(self) -> typing.Optional['core.Commit']:
         entry = self.commit_list.get_focus()[0]
@@ -224,7 +223,7 @@ class UI:
             if commit.nominated and commit.resolution is core.Resolution.UNRESOLVED:
                 b = urwid.AttrMap(CommitWidget(self, commit), None, focus_map='reversed')
                 self.commit_list.append(b)
-        self.save()
+        await self.save()
 
     async def feedback(self, text: str) -> None:
         self.feedback_box.append(urwid.AttrMap(urwid.Text(text), None))
@@ -237,8 +236,9 @@ class UI:
                 del self.commit_list[i]
                 break
 
-    def save(self):
-        core.save(itertools.chain(self.new_commits, self.previous_commits))
+    async def save(self) -> None:
+        async with core.STATE_LOCK.write():
+            core.save(itertools.chain(self.new_commits, self.previous_commits))
 
     def add(self) -> None:
         """Add an additional commit which isn't nominated."""

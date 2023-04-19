@@ -53,11 +53,6 @@ IS_CC = re.compile(r'^\s*cc:\s*["\']?([0-9]{2}\.[0-9])?["\']?\s*["\']?([0-9]{2}\
                    flags=re.MULTILINE | re.IGNORECASE)
 IS_REVERT = re.compile(r'This reverts commit ([0-9a-f]{40})')
 
-# XXX: hack
-SEM = asyncio.Semaphore(50)
-
-COMMIT_LOCK = asyncio.Lock()
-
 git_toplevel = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'],
                                        stderr=subprocess.DEVNULL).decode("ascii").strip()
 pick_status_json = pathlib.Path(git_toplevel) / '.pick_status.json'
@@ -96,6 +91,10 @@ class AsyncRWLock:
             yield
 
 
+GIT_LOCK = AsyncRWLock()
+STATE_LOCK = AsyncRWLock()
+
+
 class PickUIException(Exception):
     pass
 
@@ -121,7 +120,7 @@ class Resolution(enum.Enum):
 
 async def commit_state(*, amend: bool = False, message: str = 'Update') -> bool:
     """Commit the .pick_status.json file."""
-    async with COMMIT_LOCK:
+    async with STATE_LOCK.write():
         p = await asyncio.create_subprocess_exec(
             'git', 'add', pick_status_json.as_posix(),
             stdout=asyncio.subprocess.DEVNULL,
@@ -185,13 +184,13 @@ class Commit:
     async def apply(self, ui: 'UI') -> typing.Tuple[bool, str]:
         # FIXME: This isn't really enough if we fail to cherry-pick because the
         # git tree will still be dirty
-        async with COMMIT_LOCK:
-            p = await asyncio.create_subprocess_exec(
-                'git', 'cherry-pick', '-x', self.sha,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            _, err = await p.communicate()
+        # We'll end up with a recursive locking situation here if we take the git lock
+        p = await asyncio.create_subprocess_exec(
+            'git', 'cherry-pick', '-x', self.sha,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, err = await p.communicate()
 
         if p.returncode != 0:
             return (False, err.decode())
@@ -200,13 +199,13 @@ class Commit:
         await ui.feedback(f'{self.sha} ({self.description}) applied successfully')
 
         # Append the changes to the .pickstatus.json file
-        ui.save()
+        await ui.save()
         v = await commit_state(amend=True)
         return (v, '')
 
     async def abort_cherry(self, ui: 'UI', err: str) -> None:
         await ui.feedback(f'{self.sha} ({self.description}) failed to apply\n{err}')
-        async with COMMIT_LOCK:
+        async with GIT_LOCK.write():
             p = await asyncio.create_subprocess_exec(
                 'git', 'cherry-pick', '--abort',
                 stdout=asyncio.subprocess.DEVNULL,
@@ -217,7 +216,7 @@ class Commit:
 
     async def denominate(self, ui: 'UI') -> bool:
         self.resolution = Resolution.DENOMINATED
-        ui.save()
+        await ui.save()
         v = await commit_state(message=f'Mark {self.sha} as denominated')
         assert v
         await ui.feedback(f'{self.sha} ({self.description}) denominated successfully')
@@ -225,7 +224,7 @@ class Commit:
 
     async def backport(self, ui: 'UI') -> bool:
         self.resolution = Resolution.BACKPORTED
-        ui.save()
+        await ui.save()
         v = await commit_state(message=f'Mark {self.sha} as backported')
         assert v
         await ui.feedback(f'{self.sha} ({self.description}) backported successfully')
@@ -233,34 +232,35 @@ class Commit:
 
     async def resolve(self, ui: 'UI') -> None:
         self.resolution = Resolution.MERGED
-        ui.save()
+        await ui.save()
         v = await commit_state(amend=True)
         assert v
         await ui.feedback(f'{self.sha} ({self.description}) committed successfully')
 
     async def update_notes(self, ui: 'UI', notes: typing.Optional[str]) -> None:
         self.notes = notes
-        async with ui.git_lock:
-            ui.save()
-            v = await commit_state(message=f'Updates notes for {self.sha}')
+        await ui.save()
+        v = await commit_state(message=f'Updates notes for {self.sha}')
         assert v
         await ui.feedback(f'{self.sha} ({self.description}) notes updated successfully')
 
 
 async def get_new_commits(sha: str) -> typing.List[typing.Tuple[str, str]]:
     # Try to get the authoritative upstream main
-    p = await asyncio.create_subprocess_exec(
-        'git', 'for-each-ref', '--format=%(upstream)', 'refs/heads/main',
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL)
-    out, _ = await p.communicate()
+    async with GIT_LOCK.read():
+        p = await asyncio.create_subprocess_exec(
+            'git', 'for-each-ref', '--format=%(upstream)', 'refs/heads/main',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL)
+        out, _ = await p.communicate()
     upstream = out.decode().strip()
 
-    p = await asyncio.create_subprocess_exec(
-        'git', 'log', '--pretty=oneline', f'{sha}..{upstream}',
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL)
-    out, _ = await p.communicate()
+    async with GIT_LOCK.read():
+        p = await asyncio.create_subprocess_exec(
+            'git', 'log', '--pretty=oneline', f'{sha}..{upstream}',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL)
+        out, _ = await p.communicate()
     assert p.returncode == 0, f"git log didn't work: {sha}"
     return list(split_commit_list(out.decode().strip()))
 
@@ -275,7 +275,7 @@ def split_commit_list(commits: str) -> typing.Generator[typing.Tuple[str, str], 
 
 
 async def is_commit_in_branch(sha: str) -> bool:
-    async with SEM:
+    async with GIT_LOCK.read():
         p = await asyncio.create_subprocess_exec(
             'git', 'merge-base', '--is-ancestor', sha, 'HEAD',
             stdout=asyncio.subprocess.DEVNULL,
@@ -286,7 +286,7 @@ async def is_commit_in_branch(sha: str) -> bool:
 
 
 async def full_sha(sha: str) -> str:
-    async with SEM:
+    async with GIT_LOCK.read():
         p = await asyncio.create_subprocess_exec(
             'git', 'rev-parse', sha,
             stdout=asyncio.subprocess.PIPE,
@@ -299,7 +299,7 @@ async def full_sha(sha: str) -> str:
 
 
 async def resolve_nomination(commit: 'Commit', version: str) -> 'Commit':
-    async with SEM:
+    async with GIT_LOCK.read():
         p = await asyncio.create_subprocess_exec(
             'git', 'log', '--format=%B', '-1', commit.sha,
             stdout=asyncio.subprocess.PIPE,
