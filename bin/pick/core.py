@@ -21,6 +21,7 @@
 """Core data structures and routines for pick."""
 
 import asyncio
+import contextlib
 import enum
 import json
 import pathlib
@@ -44,7 +45,7 @@ if typing.TYPE_CHECKING:
         resolution: typing.Optional[int]
         main_sha: typing.Optional[str]
         because_sha: typing.Optional[str]
-        notes: typing.Optional[str] = attr.ib(None)
+        notes: typing.Optional[str]
 
 IS_FIX = re.compile(r'^\s*fixes:\s*([a-f0-9]{6,40})', flags=re.MULTILINE | re.IGNORECASE)
 # FIXME: I dislike the duplication in this regex, but I couldn't get it to work otherwise
@@ -60,6 +61,39 @@ COMMIT_LOCK = asyncio.Lock()
 git_toplevel = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'],
                                        stderr=subprocess.DEVNULL).decode("ascii").strip()
 pick_status_json = pathlib.Path(git_toplevel) / '.pick_status.json'
+
+
+@attr.s(slots=True, cmp=False)
+class AsyncRWLock:
+
+    """An asynchronous Read/Write lock.
+    
+    This is a very simple read/write lock that prioritizes reads.
+
+    As an implementation detail, this relies on python's global locking to drop
+    the need for a lock to protect the `readers` attribute.
+    """
+
+    readers: int = attr.ib(0, init=False)
+    global_lock: asyncio.Lock = attr.ib(factory=asyncio.Lock, init=False)
+    read_lock: asyncio.Lock = attr.ib(factory=asyncio.Lock, init=False)
+
+    @contextlib.asynccontextmanager
+    async def read(self) -> typing.AsyncIterator[None]:
+        async with self.read_lock:
+            self.readers += 1
+            if self.readers == 1:
+                await self.global_lock.acquire()
+        yield
+        async with self.read_lock:
+            self.readers -= 1
+            if self.readers == 0:
+                self.global_lock.release()
+
+    @contextlib.asynccontextmanager
+    async def write(self) -> typing.AsyncIterator[None]:
+        async with self.global_lock:
+            yield
 
 
 class PickUIException(Exception):
