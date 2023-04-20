@@ -2564,7 +2564,7 @@
         "description": "zink: check for extendedDynamicState3DepthClipNegativeOneToOne for ds3 support",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c7f46d2ad6de5368cdef09e77bba9f4ff59cad76",
         "notes": null
