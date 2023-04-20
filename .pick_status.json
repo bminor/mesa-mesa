@@ -44,7 +44,7 @@
         "description": "zink: add z32s8 as mandatory GL3.0 profile attachment format",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
