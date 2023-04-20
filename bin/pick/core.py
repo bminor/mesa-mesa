@@ -181,7 +181,7 @@ class Commit:
             stderr=subprocess.DEVNULL
         ).decode("ascii").strip()
 
-    async def apply(self, ui: 'UI') -> typing.Tuple[bool, str]:
+    async def apply(self) -> typing.Tuple[bool, str]:
         # FIXME: This isn't really enough if we fail to cherry-pick because the
         # git tree will still be dirty
         # We'll end up with a recursive locking situation here if we take the git lock
@@ -192,16 +192,10 @@ class Commit:
         )
         _, err = await p.communicate()
 
-        if p.returncode != 0:
-            return (False, err.decode())
-
-        self.resolution = Resolution.MERGED
-        await ui.feedback(f'{self.sha} ({self.description}) applied successfully')
-
-        # Append the changes to the .pickstatus.json file
-        await ui.save()
-        v = await commit_state(amend=True)
-        return (v, '')
+        ret = p.returncode == 0
+        if ret:
+            self.resolution = Resolution.MERGED
+        return ret, err.decode()
 
     async def abort_cherry(self, ui: 'UI', err: str) -> None:
         await ui.feedback(f'{self.sha} ({self.description}) failed to apply\n{err}')
@@ -214,21 +208,11 @@ class Commit:
             r = await p.wait()
         await ui.feedback(f'{"Successfully" if r == 0 else "Failed to"} abort cherry-pick.')
 
-    async def denominate(self, ui: 'UI') -> bool:
+    async def denominate(self) -> None:
         self.resolution = Resolution.DENOMINATED
-        await ui.save()
-        v = await commit_state(message=f'Mark {self.sha} as denominated')
-        assert v
-        await ui.feedback(f'{self.sha} ({self.description}) denominated successfully')
-        return True
 
-    async def backport(self, ui: 'UI') -> bool:
+    async def backport(self) -> None:
         self.resolution = Resolution.BACKPORTED
-        await ui.save()
-        v = await commit_state(message=f'Mark {self.sha} as backported')
-        assert v
-        await ui.feedback(f'{self.sha} ({self.description}) backported successfully')
-        return True
 
     async def resolve(self, ui: 'UI') -> None:
         self.resolution = Resolution.MERGED
@@ -348,38 +332,25 @@ async def resolve_nomination(commit: 'Commit', version: str) -> 'Commit':
     return commit
 
 
-async def resolve_fixes(commits: typing.List['Commit'], previous: typing.List['Commit']) -> None:
-    """Determine if any of the undecided commits fix/revert a staged commit.
+async def changes_commit(commit: Commit, commits: typing.List['Commit']) -> typing.List[Commit]:
+    """Find all reverts and fixes for a given commit.
 
-    The are still needed if they apply to a commit that is staged for
-    inclusion, but not yet included.
-
-    This must be done in order, because a commit 3 might fix commit 2 which
-    fixes commit 1.
     """
-    shas: typing.Set[str] = set(c.sha for c in previous if c.nominated)
-    assert None not in shas, 'None in shas'
+    new_commits: typing.List[Commit] = []
+    for c in reversed(commits):
+        if c is commit:
+            break
+        new_commits.append(c)
 
-    for commit in reversed(commits):
-        if not commit.nominated and commit.nomination_type is NominationType.FIXES:
-            commit.nominated = commit.because_sha in shas
+    ret: typing.List[Commit] = []
 
-        if commit.nominated:
-            shas.add(commit.sha)
-
-    for commit in commits:
-        if (commit.nomination_type is NominationType.REVERT and
-                commit.because_sha in shas):
-            for oldc in reversed(commits):
-                if oldc.sha == commit.because_sha:
-                    # In this case a commit that hasn't yet been applied is
-                    # reverted, we don't want to apply that commit at all
-                    oldc.nominated = False
-                    oldc.resolution = Resolution.DENOMINATED
-                    commit.nominated = False
-                    commit.resolution = Resolution.DENOMINATED
-                    shas.remove(commit.because_sha)
-                    break
+    for c in reversed(new_commits):
+        if (c.nomination_type in {NominationType.REVERT, NominationType.FIXES} and
+                c.because_sha == commit.sha):
+            c.nominated = True
+            ret.append(c)
+    
+    return ret
 
 
 async def gather_commits(version: str, previous: typing.List['Commit'],
@@ -405,8 +376,6 @@ async def gather_commits(version: str, previous: typing.List['Commit'],
     await asyncio.gather(*tasks)
     assert None not in m_commits
     commits = typing.cast(typing.List[Commit], m_commits)
-
-    await resolve_fixes(commits, previous)
 
     for commit in commits:
         if commit.resolution is Resolution.UNRESOLVED and not commit.nominated:

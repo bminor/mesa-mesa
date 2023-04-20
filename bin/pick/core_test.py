@@ -393,53 +393,6 @@ class TestResolveNomination:
         assert c.nomination_type is core.NominationType.CC
 
 
-class TestResolveFixes:
-
-    @pytest.mark.asyncio
-    async def test_in_new(self):
-        """Because commit abcd is nominated, so f123 should be as well."""
-        c = [
-            core.Commit('f123', 'desc', nomination_type=core.NominationType.FIXES, because_sha='abcd'),
-            core.Commit('abcd', 'desc', True),
-        ]
-        await core.resolve_fixes(c, [])
-        assert c[1].nominated
-
-    @pytest.mark.asyncio
-    async def test_not_in_new(self):
-        """Because commit abcd is not nominated, commit f123 shouldn't be either."""
-        c = [
-            core.Commit('f123', 'desc', nomination_type=core.NominationType.FIXES, because_sha='abcd'),
-            core.Commit('abcd', 'desc'),
-        ]
-        await core.resolve_fixes(c, [])
-        assert not c[0].nominated
-
-    @pytest.mark.asyncio
-    async def test_in_previous(self):
-        """Because commit abcd is nominated, so f123 should be as well."""
-        p = [
-            core.Commit('abcd', 'desc', True),
-        ]
-        c = [
-            core.Commit('f123', 'desc', nomination_type=core.NominationType.FIXES, because_sha='abcd'),
-        ]
-        await core.resolve_fixes(c, p)
-        assert c[0].nominated
-
-    @pytest.mark.asyncio
-    async def test_not_in_previous(self):
-        """Because commit abcd is not nominated, commit f123 shouldn't be either."""
-        p = [
-            core.Commit('abcd', 'desc'),
-        ]
-        c = [
-            core.Commit('f123', 'desc', nomination_type=core.NominationType.FIXES, because_sha='abcd'),
-        ]
-        await core.resolve_fixes(c, p)
-        assert not c[0].nominated
-
-
 class TestIsCommitInBranch:
 
     @pytest.mark.asyncio
@@ -468,3 +421,50 @@ class TestFullSha:
         # This commit is from 2000, it better always be in the branch
         with pytest.raises(core.PickUIException):
             await core.full_sha('fffffffffffffffffffffffffffffffffff')
+
+
+
+class TestChangesCommit:
+
+    @pytest.mark.asyncio
+    async def test_fixes(self) -> None:
+        commit = core.Commit('abcdef', 'first commit')
+        commits = [
+            commit,
+            core.Commit('abcdef1234567890', 'a commit', nomination_type=core.NominationType.FIXES,
+                        because_sha='abcdef')
+        ]
+
+        new = await core.changes_commit(commit, commits)
+        assert new == [commits[1]]
+
+    @pytest.mark.asyncio
+    async def test_revert(self) -> None:
+        commit = core.Commit('abcdef', 'first commit')
+        commits = [
+            commit,
+            core.Commit('abcdef1234567890', 'REVERT: first commit',
+                        nomination_type=core.NominationType.REVERT, because_sha='abcdef')
+        ]
+
+        new = await core.changes_commit(commit, commits)
+        assert new == [commits[1]]
+        assert new[0].nominated
+
+    @pytest.mark.asyncio
+    async def test_mixed(self) -> None:
+        commit = core.Commit('abcdef', 'first commit')
+        commits = [
+            commit,
+            core.Commit('abcdef1234567890', 'REVERT: first commit',
+                        nomination_type=core.NominationType.REVERT, because_sha='abcdef'),
+            core.Commit('123545', 'a useless commit'),
+            core.Commit('abcde123', 'a commit', nomination_type=core.NominationType.FIXES,
+                        because_sha='abcdef'),
+            core.Commit('123321', 'a useless commit'),
+        ]
+
+        new = await core.changes_commit(commit, commits)
+        assert new == [commits[1], commits[3]]
+        assert new[0].nominated
+        assert new[1].nominated
