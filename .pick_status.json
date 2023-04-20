@@ -2394,7 +2394,7 @@
         "description": "mesa/draw: fix -Wformat warning",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5791826b1ac7085c8acf056abc279e66ca64eb55",
         "notes": null

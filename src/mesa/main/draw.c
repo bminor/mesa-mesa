@@ -1641,7 +1641,7 @@ _mesa_validated_drawrangeelements(struct gl_context *ctx, GLenum mode,
          _mesa_warning(ctx, "Invalid indices offset 0x%" PRIxPTR
                             " (indices buffer size is %ld bytes)"
                             " or unallocated buffer (%u). Draw skipped.",
-                            start, index_bo->Size, !!index_bo->buffer);
+                            start, (long)index_bo->Size, !!index_bo->buffer);
          return;
       }
 
