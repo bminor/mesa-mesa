@@ -1874,7 +1874,7 @@
         "description": "draw: fix viewmask iterating",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "03cbb7b104e532a9969e3d847e95bf52e55f0ab3",
         "notes": null
