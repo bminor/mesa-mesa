@@ -6964,7 +6964,7 @@
         "description": "r600: fix refcnt imbalance related to atomic_buffer_state",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "06993e4ee350b9c2ab1e3ee7686878add3900d39",
         "notes": null
