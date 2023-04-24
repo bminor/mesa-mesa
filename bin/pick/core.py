@@ -168,7 +168,9 @@ class Commit:
     def from_json(cls, data: 'CommitDict') -> 'Commit':
         c = cls(data['sha'], data['description'], data['nominated'], main_sha=data['main_sha'],
                 because_sha=data['because_sha'], notes=data['notes'])
-        c.nomination_type = NominationType(data['nomination_type'])
+        if (d := data['nomination_type']) is None:
+            d = NominationType.NONE.value
+        c.nomination_type = NominationType(d)
         if data['resolution'] is not None:
             c.resolution = Resolution(data['resolution'])
         return c
