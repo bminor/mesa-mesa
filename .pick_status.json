@@ -1604,7 +1604,7 @@
         "description": "broadcom/compiler: add a v3d_qpu_instr_is_legacy_sfu helper",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
