@@ -588,6 +588,20 @@ void anv_CmdEndDebugUtilsLabelEXT(VkCommandBuffer _commandBuffer)
    vk_common_CmdEndDebugUtilsLabelEXT(_commandBuffer);
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL
+anv_SetDebugUtilsObjectNameEXT(
+   VkDevice _device,
+   const VkDebugUtilsObjectNameInfoEXT *pNameInfo)
+{
+   VK_FROM_HANDLE(anv_device, device, _device);
+   VkResult result = vk_common_SetDebugUtilsObjectNameEXT(_device, pNameInfo);
+
+   if (result == VK_SUCCESS)
+      intel_ds_perfetto_set_debug_utils_object_name(&device->ds, pNameInfo);
+
+   return result;
+}
+
 void
 anv_queue_trace(struct anv_queue *queue, const char *label, bool frame, bool begin)
 {

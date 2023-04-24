@@ -1612,6 +1612,16 @@ anv_queue_submit(struct vk_queue *vk_queue,
 
    anv_queue_free_initial_submission(queue);
 
+   if (u_trace_should_process(&device->ds.trace_context)) {
+      /* Refresh perfetto's knowledge of any easily accessible, long-lived
+       * object names referenced by this submit -- this helps provide better
+       * information in traces when tracing starts after application launch.
+       */
+      for (int i = 0; i < submit->command_buffer_count; i++)
+         intel_ds_perfetto_refresh_debug_utils_object_name(&device->ds,
+                                                           &submit->command_buffers[i]->base);
+   }
+
    if (queue->device->info->no_hw) {
       for (uint32_t i = 0; i < submit->signal_count; i++) {
          result = vk_sync_signal(&device->vk,

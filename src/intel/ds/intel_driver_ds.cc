@@ -566,6 +566,28 @@ intel_ds_end_submit(struct intel_ds_queue *queue,
    });
 }
 
+void intel_ds_perfetto_set_debug_utils_object_name(struct intel_ds_device *device,
+   const VkDebugUtilsObjectNameInfoEXT *pNameInfo)
+{
+   IntelRenderpassDataSource::Trace([=](auto tctx) {
+      /* Do we need this for SEQ_INCREMENTAL_STATE_CLEARED for the object name to stick? */
+      setup_incremental_state(tctx, device);
+
+      tctx.GetDataSourceLocked()->SetDebugUtilsObjectNameEXT(tctx, pNameInfo);
+   });
+}
+
+void intel_ds_perfetto_refresh_debug_utils_object_name(struct intel_ds_device *device,
+   const struct vk_object_base *object)
+{
+   IntelRenderpassDataSource::Trace([=](auto tctx) {
+      /* Do we need this for SEQ_INCREMENTAL_STATE_CLEARED for the object name to stick? */
+      setup_incremental_state(tctx, device);
+
+      tctx.GetDataSourceLocked()->RefreshSetDebugUtilsObjectNameEXT(tctx, object);
+   });
+}
+
 #endif /* HAVE_PERFETTO */
 
 static void
