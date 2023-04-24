@@ -484,7 +484,7 @@
         "description": "nir: Use alu source components count in nir_alu_srcs_negative_equal",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c6ee46a7532291fc8583400e174e77b1833daf23",
         "notes": null
