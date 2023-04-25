@@ -8624,7 +8624,7 @@
         "description": "intel/fs: fix per vertex input clamping",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e25e17dd0c39675acd48fd4a6982fcd77530ef2c",
         "notes": null
