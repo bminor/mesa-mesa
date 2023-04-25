@@ -7074,7 +7074,7 @@
         "description": "vulkan: Actually increment the count of objects in GetPipelineCacheData.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "591da9877900c56434f9e23e0ad0058b118b0be8",
         "notes": null
