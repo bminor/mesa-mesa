@@ -263,8 +263,7 @@ class UI:
                 break
 
     async def save(self) -> None:
-        async with core.STATE_LOCK.write():
-            core.save(itertools.chain(self.new_commits, self.previous_commits))
+        core.save(itertools.chain(self.new_commits, self.previous_commits))
 
     def add(self) -> None:
         """Add an additional commit which isn't nominated."""
