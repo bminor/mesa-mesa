@@ -7284,7 +7284,7 @@
         "description": "nvc0: do not randomly emit fences.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "df0a4d02f264a4c49b7503c5f564ac4c492f906f",
         "notes": null
