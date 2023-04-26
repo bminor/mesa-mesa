@@ -298,7 +298,7 @@ stw_tls_get_data(void)
    }
 
    assert(data);
-   assert(data->dwThreadId = GetCurrentThreadId());
+   assert(data->dwThreadId == GetCurrentThreadId());
    assert(data->next == NULL);
 
    return data;
