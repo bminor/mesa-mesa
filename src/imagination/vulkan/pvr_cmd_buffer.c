@@ -1948,15 +1948,15 @@ pvr_compute_generate_idfwdf(struct pvr_cmd_buffer *cmd_buffer,
                             struct pvr_sub_cmd_compute *const sub_cmd)
 {
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
-   bool *const is_sw_barier_required =
+   bool *const is_sw_barrier_required =
       &state->current_sub_cmd->compute.pds_sw_barrier_requires_clearing;
    const struct pvr_physical_device *pdevice = cmd_buffer->device->pdevice;
    struct pvr_csb *csb = &sub_cmd->control_stream;
    const struct pvr_pds_upload *program;
 
    if (PVR_NEED_SW_COMPUTE_PDS_BARRIER(&pdevice->dev_info) &&
-       *is_sw_barier_required) {
-      *is_sw_barier_required = false;
+       *is_sw_barrier_required) {
+      *is_sw_barrier_required = false;
       program = &cmd_buffer->device->idfwdf_state.sw_compute_barrier_pds;
    } else {
       program = &cmd_buffer->device->idfwdf_state.pds;
