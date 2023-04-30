@@ -7444,7 +7444,7 @@
         "description": "nir: fix constant-folding of 64-bit fpow",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9076c4e289de0debf1fb2a7237bdeb9c11002347",
         "notes": null
