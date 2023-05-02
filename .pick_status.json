@@ -5664,7 +5664,7 @@
         "description": "nir/lower_fp16_casts: Fix SSA dominance",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "01dfd65a2d407dd95ac472e7e80e736bc7a8fc57",
         "notes": null
