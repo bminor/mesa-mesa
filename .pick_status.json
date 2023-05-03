@@ -6324,7 +6324,7 @@
         "description": "llvmpipe: fixup refactor copypasta",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a1846e39269a2c1b9e2961ecb9d5e1b10d629ae4",
         "notes": null
