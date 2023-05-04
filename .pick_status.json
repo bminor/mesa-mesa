@@ -5964,7 +5964,7 @@
         "description": "isl: fix layout for comparing surf and view properties",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "628bfaf1c6f207ee01c59e236cef3fae942d6c55",
         "notes": null
