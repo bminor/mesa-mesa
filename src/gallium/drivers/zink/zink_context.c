@@ -1937,7 +1937,7 @@ zink_set_sampler_views(struct pipe_context *pctx,
                                          res->gfx_barrier);
             zink_batch_resource_usage_set(&ctx->batch, res, false, true);
          } else if (!res->obj->is_buffer) {
-            if (res->base.b.format != b->image_view->base.format)
+            if (!res->obj->dt && res->base.b.format != b->image_view->base.format)
                /* mutable not set by default */
                zink_resource_object_init_mutable(ctx, res);
             if (res->obj != b->image_view->obj) {
