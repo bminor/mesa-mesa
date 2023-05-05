@@ -1614,7 +1614,7 @@
         "description": "nir: don't create invalid inputs in `nir_create_passthrough_gs`",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d0342e28b32d7aa4b25cf045ac9933348ec053a9",
         "notes": null
