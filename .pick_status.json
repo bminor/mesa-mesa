@@ -4494,7 +4494,7 @@
         "description": "ac/nir/cull: fix line position w culling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "db0e9d3caba348d4edbbe6f883fe1ceb8ddad2c8",
         "notes": null
