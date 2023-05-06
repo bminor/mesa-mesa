@@ -3904,7 +3904,7 @@
         "description": "aco: Initialize vcmpx field in get_cmp_info.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "578d0a19341a5df2be555e19396a20c81d79c7a9",
         "notes": null
