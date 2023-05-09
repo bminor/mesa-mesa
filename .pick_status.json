@@ -3484,7 +3484,7 @@
         "description": "anv: fixup workaround 16011411144",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5cc4075f953245c143234f845769bba6ae5212fd",
         "notes": null
