@@ -3854,7 +3854,7 @@
         "description": "zink: disable always zs feedback loop on radv",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "56fb25806428506469982e35ee5076b981023c92",
         "notes": null
