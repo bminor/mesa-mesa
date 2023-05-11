@@ -3134,7 +3134,7 @@
         "description": "intel: Disable shader cache when executing intel_clc during the build",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "639665053fabad75afcf7889970c6a4119fdae92",
         "notes": null
