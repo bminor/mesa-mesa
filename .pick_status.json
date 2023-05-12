@@ -64,7 +64,7 @@
         "description": "intel/dev: remove dg2 0x5698 pci id",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "65c9a810eedc7bacd91fac558d9a7b0ab6d76459",
         "notes": null
