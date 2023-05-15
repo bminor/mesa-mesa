@@ -667,11 +667,6 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
    const struct pvr_render_pass_info *render_pass_info =
       &cmd_buffer->state.render_pass_info;
    const struct pvr_render_pass *pass = render_pass_info->pass;
-   const struct pvr_renderpass_hwsetup_render *hw_render = load_op->hw_render;
-   const struct pvr_renderpass_colorinit *color_init =
-      &hw_render->color_init[0];
-   const VkClearValue *clear_value =
-      &render_pass_info->clear_values[color_init->index];
    struct pvr_suballoc_bo *clear_bo;
    uint32_t attachment_count;
    bool has_depth_clear;
@@ -699,6 +694,7 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
    for (uint32_t i = 0; i < attachment_count; i++) {
       struct pvr_image_view *image_view;
       uint32_t attachment_idx;
+      const VkClearValue *clear_value;
 
       if (load_op->is_hw_object)
          attachment_idx = load_op->hw_render->color_init[i].index;
@@ -706,6 +702,7 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
          attachment_idx = load_op->subpass->color_attachments[i];
 
       image_view = render_pass_info->attachments[attachment_idx];
+      clear_value = &render_pass_info->clear_values[attachment_idx];
 
       assert((load_op->clears_loads_state.rt_load_mask &
               load_op->clears_loads_state.rt_clear_mask) == 0);
