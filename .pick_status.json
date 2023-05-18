@@ -6857,7 +6857,7 @@
         "resolution": 0,
         "main_sha": null,
         "because_sha": null,
-        "notes": null
+        "notes": "applies, but doesn't compile do to layerCount being a number, not a pointer"
     },
     {
         "sha": "de61eddc02ed6442cfecbf8165ce4702a8530467",
