@@ -6084,7 +6084,7 @@
         "description": "egl: reenable partial redraw with a warning when using gallium hud",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e516a0a94fd201444eef2f618d447f8e68aeb347",
         "notes": null
