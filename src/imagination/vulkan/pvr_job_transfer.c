@@ -1480,6 +1480,7 @@ static VkResult pvr_sampler_state_for_surface(
    enum pvr_filter filter,
    const struct pvr_tq_frag_sh_reg_layout *sh_reg_layout,
    uint32_t sampler,
+   bool nn_coords,
    uint32_t *mem_ptr)
 {
    uint64_t sampler_state[2U] = { 0UL, 0UL };
@@ -1501,6 +1502,8 @@ static VkResult pvr_sampler_state_for_surface(
          reg.minfilter = ROGUE_TEXSTATE_FILTER_BICUBIC;
          reg.magfilter = ROGUE_TEXSTATE_FILTER_BICUBIC;
       }
+
+      reg.non_normalized_coords = nn_coords;
 
       reg.addrmode_u = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
       reg.addrmode_v = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
@@ -1712,12 +1715,15 @@ pvr_sampler_image_state(struct pvr_transfer_ctx *ctx,
                           layer->pbe_format)) {
                const struct pvr_device_info *dev_info =
                   &transfer_cmd->cmd_buffer->device->pdevice->dev_info;
+               const bool nn_coords = state->shader_props.layer_props.linear ||
+                                      !state->shader_props.iterated;
 
                result = pvr_sampler_state_for_surface(dev_info,
                                                       surface,
                                                       filter,
                                                       sh_reg_layout,
                                                       uf_sampler,
+                                                      nn_coords,
                                                       mem_ptr);
                if (result != VK_SUCCESS)
                   return result;
@@ -4174,6 +4180,7 @@ static VkResult pvr_isp_ctrl_stream(const struct pvr_device_info *dev_info,
                state->filter[source],
                sh_reg_layout,
                0U,
+               layer->linear,
                pvr_bo_suballoc_get_map_addr(pvr_bo));
             if (result != VK_SUCCESS)
                return result;
