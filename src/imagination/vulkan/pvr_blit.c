@@ -534,10 +534,15 @@ pvr_copy_or_resolve_image_region(struct pvr_cmd_buffer *cmd_buffer,
       dst_extent.height = MAX2(1U, src_extent.height * block_height);
    }
 
-   /* We don't care what format dst is as it's guaranteed to be size compatible
-    * with src.
-    */
-   dst_format = pvr_get_raw_copy_format(src->vk.format);
+   if (src->vk.samples > dst->vk.samples) {
+      /* Resolve op needs to know the actual format. */
+      dst_format = dst->vk.format;
+   } else {
+      /* We don't care what format dst is as it's guaranteed to be size
+       * compatible with src.
+       */
+      dst_format = pvr_get_raw_copy_format(src->vk.format);
+   }
    src_format = dst_format;
 
    src_layers =

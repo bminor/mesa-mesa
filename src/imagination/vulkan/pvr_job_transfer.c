@@ -2856,10 +2856,6 @@ static VkResult pvr_3d_copy_blit_core(struct pvr_transfer_ctx *ctx,
       pvr_csb_pack (&regs->isp_bgobjvals, CR_ISP_BGOBJVALS, reg) {
          reg.enablebgtag = true;
       }
-
-      /* clang-format off */
-      pvr_csb_pack (&regs->isp_aa, CR_ISP_AA, reg);
-      /* clang-format on */
    } else {
       /* No shader. */
       state->pds_temps = 0U;
