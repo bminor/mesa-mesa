@@ -9744,7 +9744,7 @@
         "description": "ci: add perfetto into mesa git-cache",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8aff2281276c27c929c54ac4b98d564a92718cd8",
         "notes": null
