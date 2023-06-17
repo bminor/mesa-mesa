@@ -277,6 +277,29 @@ void pvr_GetImageSubresourceLayout(VkDevice device,
    pvr_get_image_subresource_layout(image, subresource, layout);
 }
 
+static void pvr_adjust_non_compressed_view(const struct pvr_image *image,
+                                           struct pvr_texture_state_info *info)
+{
+   const uint32_t base_level = info->base_level;
+
+   if (!vk_format_is_compressed(image->vk.format) ||
+       vk_format_is_compressed(info->format)) {
+      return;
+   }
+
+   /* Cannot use the image state, as the miplevel sizes for an
+    * uncompressed chain view may not decrease by 2 each time compared to the
+    * compressed one e.g. (22x22,11x11,5x5) -> (6x6,3x3,2x2)
+    * Instead manually apply an offset and patch the size
+    */
+   info->extent.width = u_minify(info->extent.width, base_level);
+   info->extent.height = u_minify(info->extent.height, base_level);
+   info->extent.depth = u_minify(info->extent.depth, base_level);
+   info->extent = vk_image_extent_to_elements(&image->vk, info->extent);
+   info->offset += image->mip_levels[base_level].offset;
+   info->base_level = 0;
+}
+
 VkResult pvr_CreateImageView(VkDevice _device,
                              const VkImageViewCreateInfo *pCreateInfo,
                              const VkAllocationCallbacks *pAllocator,
@@ -308,8 +331,7 @@ VkResult pvr_CreateImageView(VkDevice _device,
    info.is_cube = (info.type == VK_IMAGE_VIEW_TYPE_CUBE ||
                    info.type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY);
    info.array_size = iview->vk.layer_count;
-   info.offset = iview->vk.base_array_layer * image->layer_size +
-                 image->mip_levels[info.base_level].offset;
+   info.offset = iview->vk.base_array_layer * image->layer_size;
    info.mipmaps_present = (image->vk.mip_levels > 1) ? true : false;
    info.stride = image->physical_extent.width;
    info.tex_state_type = PVR_TEXTURE_STATE_SAMPLE;
@@ -319,6 +341,8 @@ VkResult pvr_CreateImageView(VkDevice _device,
    info.addr = image->dev_addr;
 
    info.format = pCreateInfo->format;
+
+   pvr_adjust_non_compressed_view(image, &info);
 
    vk_component_mapping_to_pipe_swizzle(iview->vk.swizzle, input_swizzle);
    format_swizzle = pvr_get_format_swizzle(info.format);
