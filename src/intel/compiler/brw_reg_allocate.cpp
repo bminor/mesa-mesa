@@ -736,21 +736,25 @@ brw_reg_alloc::build_lane_offsets(const brw_builder &bld, uint32_t spill_offset,
    inst = ubld.group(8, 0).MOV(retype(offset, BRW_TYPE_UW),
                                brw_imm_uv(0x76543210));
    _mesa_set_add(spill_insts, inst);
-   inst = ubld.group(8, 0).MOV(offset, retype(offset, BRW_TYPE_UW));
+
+   /* Make the offset a dword */
+   inst = ubld.group(8, 0).SHL(offset, retype(offset, BRW_TYPE_UW), brw_imm_uw(2));
    _mesa_set_add(spill_insts, inst);
+
+   /* Add the base offset */
+   if (spill_offset) {
+      inst = ubld.group(8, 0).ADD(offset, offset, brw_imm_ud(spill_offset));
+      _mesa_set_add(spill_insts, inst);
+   }
 
    /* Build offsets in the upper 8 lanes of SIMD16 */
    if (ubld.dispatch_width() > 8) {
       inst = ubld.group(8, 0).ADD(
          byte_offset(offset, REG_SIZE),
          byte_offset(offset, 0),
-         brw_imm_ud(8));
+         brw_imm_ud(8 << 2));
       _mesa_set_add(spill_insts, inst);
    }
-
-   /* Make the offset a dword */
-   inst = ubld.SHL(offset, offset, brw_imm_ud(2));
-   _mesa_set_add(spill_insts, inst);
 
    /* Build offsets in the upper 16 lanes of SIMD32 */
    if (ubld.dispatch_width() > 16) {
@@ -758,12 +762,6 @@ brw_reg_alloc::build_lane_offsets(const brw_builder &bld, uint32_t spill_offset,
          byte_offset(offset, 2 * REG_SIZE),
          byte_offset(offset, 0),
          brw_imm_ud(16 << 2));
-      _mesa_set_add(spill_insts, inst);
-   }
-
-   /* Add the base offset */
-   if (spill_offset) {
-      inst = ubld.ADD(offset, offset, brw_imm_ud(spill_offset));
       _mesa_set_add(spill_insts, inst);
    }
 
