@@ -989,26 +989,45 @@ representable_as_uw(unsigned ud, uint16_t *uw)
 }
 
 static bool
-supports_src_as_imm(const struct intel_device_info *devinfo, const fs_inst *inst)
+supports_src_as_imm(const struct intel_device_info *devinfo, const fs_inst *inst,
+                    unsigned src_idx)
 {
-   if (devinfo->ver < 12)
-      return false;
-
    switch (inst->opcode) {
    case BRW_OPCODE_ADD3:
+      /* ADD3 can use src0 or src2 in Gfx12.5. */
+      return src_idx != 1;
+
    case BRW_OPCODE_BFE:
-      return true;
+      /* BFE can use src0 or src2 in Gfx12+. */
+      return devinfo->ver >= 12 && src_idx != 1;
 
    case BRW_OPCODE_CSEL:
       /* While MAD can mix F and HF sources on some platforms, CSEL cannot. */
-      return inst->src[0].type != BRW_TYPE_F;
+      return devinfo->ver >= 12 && inst->src[0].type != BRW_TYPE_F;
 
    case BRW_OPCODE_MAD:
-      /* Integer types can always mix sizes. Floating point types can mix
-       * sizes on Gfx12. On Gfx12.5, floating point sources must all be HF or
-       * all be F.
-       */
-      return devinfo->verx10 < 125 || inst->src[0].type != BRW_TYPE_F;
+      switch (devinfo->verx10) {
+      case 90:
+      case 110:
+         return false;
+
+      case 120:
+         /* Experiment shows that we can only support src0 as immediate for
+          * MAD on Gfx12.
+          */
+         return src_idx == 0;
+
+      default:
+         /* Integer types can always mix sizes. Floating point sources must
+          * all be HF or all be F.
+          *
+          * Note: It's possible that src2 works for W or UW MAD on Gfx12.5,
+          * but no experiments have been conducted.
+          */
+         assert(devinfo->verx10 >= 125);
+         return src_idx == 0 && inst->src[0].type != BRW_TYPE_F;
+      }
+      break;
 
    default:
       return false;
@@ -1021,19 +1040,7 @@ can_promote_src_as_imm(const struct intel_device_info *devinfo, fs_inst *inst,
 {
    bool can_promote = false;
 
-   /* Experiment shows that we can only support src0 as immediate for MAD on
-    * Gfx12. ADD3 can use src0 or src2 in Gfx12.5. It's possible that src2
-    * works for W or UW MAD on Gfx12.5.
-    */
-   if (inst->opcode == BRW_OPCODE_BFE || inst->opcode == BRW_OPCODE_ADD3) {
-      if (src_idx == 1)
-         return false;
-   } else {
-      if (src_idx != 0)
-         return false;
-   }
-
-   if (!supports_src_as_imm(devinfo, inst))
+   if (!supports_src_as_imm(devinfo, inst, src_idx))
       return false;
 
    /* TODO - Fix the codepath below to use a bfloat16 immediate on XeHP,
