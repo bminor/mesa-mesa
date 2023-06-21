@@ -122,26 +122,18 @@ fn icd_set_platform_dispatch_data(
 #[test]
 fn test_get_platform_info() {
     let mut s: usize = 0;
-    let mut r = get_platform_info(
-        ptr::null(),
-        CL_PLATFORM_EXTENSIONS,
-        0,
-        ptr::null_mut(),
-        &mut s,
-    );
-    assert!(r.is_ok());
+    // Being a lil sneaky sneak, shhhh
+    Platform::init_once();
+    let p = Platform::get().as_ptr();
+    let mut r =
+        unsafe { clGetPlatformInfo(p, CL_PLATFORM_EXTENSIONS, 0, std::ptr::null_mut(), &mut s) };
+    assert_eq!(r, CL_SUCCESS as i32);
     assert!(s > 0);
 
     let mut v: Vec<u8> = vec![0; s];
-    r = get_platform_info(
-        ptr::null(),
-        CL_PLATFORM_EXTENSIONS,
-        s,
-        v.as_mut_ptr().cast(),
-        &mut s,
-    );
+    r = unsafe { clGetPlatformInfo(p, CL_PLATFORM_EXTENSIONS, s, v.as_mut_ptr().cast(), &mut s) };
 
-    assert!(r.is_ok());
+    assert_eq!(r, CL_SUCCESS as i32);
     assert_eq!(s, v.len());
     assert!(!v[0..s - 2].contains(&0));
     assert_eq!(v[s - 1], 0);
