@@ -10154,7 +10154,7 @@
         "description": "tu/drm: Add missing error path cleanup",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bea6290ca090a7be7e7d51c9316cf68337ac4e1f",
         "notes": null
