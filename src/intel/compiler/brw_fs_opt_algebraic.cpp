@@ -89,6 +89,22 @@ brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
       progress = true;
       break;
 
+   case BRW_OPCODE_ADD3:
+      if (inst->src[0].file == IMM &&
+          inst->src[1].file == IMM &&
+          inst->src[2].file == IMM) {
+         const uint64_t src0 = src_as_uint(inst->src[0]);
+         const uint64_t src1 = src_as_uint(inst->src[1]);
+         const uint64_t src2 = src_as_uint(inst->src[2]);
+
+         inst->opcode = BRW_OPCODE_MOV;
+         inst->src[0] = brw_imm_for_type(src0 + src1 + src2,
+                                         inst->dst.type);
+         inst->resize_sources(1);
+         progress = true;
+      }
+
+      break;
 
    case BRW_OPCODE_AND:
       if (inst->src[0].file == IMM && inst->src[1].file == IMM) {
@@ -233,6 +249,62 @@ brw_fs_opt_algebraic(fs_visitor &s)
          }
 
          break;
+
+      case BRW_OPCODE_ADD3: {
+         const unsigned num_imm = (inst->src[0].file == IMM) +
+                                  (inst->src[1].file == IMM) +
+                                  (inst->src[2].file == IMM);
+
+         /* If there is more than one immediate value, fold the values and
+          * convert the instruction to either ADD or MOV.
+          */
+         if (num_imm == 3) {
+            ASSERTED bool folded = brw_constant_fold_instruction(devinfo, inst);
+            assert(folded);
+         } else if (num_imm == 2) {
+            uint64_t sum = 0;
+            brw_reg src;
+
+            for (unsigned i = 0; i < 3; i++) {
+               if (inst->src[i].file == IMM) {
+                  sum += src_as_uint(inst->src[i]);
+               } else {
+                  assert(src.file == BAD_FILE);
+                  src = inst->src[i];
+               }
+            }
+
+            assert(src.file != BAD_FILE);
+
+            if (uint32_t(sum) == 0) {
+               inst->opcode = BRW_OPCODE_MOV;
+               inst->src[0] = src;
+               inst->resize_sources(1);
+            } else {
+               inst->opcode = BRW_OPCODE_ADD;
+               inst->src[0] = src;
+               inst->src[1] = brw_imm_ud(sum);
+               inst->resize_sources(2);
+            }
+
+            progress = true;
+         } else if (num_imm == 1) {
+            /* If there is a single constant, and that constant is zero,
+             * convert the instruction to regular ADD.
+             */
+            for (unsigned i = 0; i < 3; i++) {
+               if (inst->src[i].is_zero()) {
+                  inst->opcode = BRW_OPCODE_ADD;
+                  inst->src[i] = inst->src[2];
+                  inst->resize_sources(2);
+                  progress = true;
+                  break;
+               }
+            }
+         }
+
+         break;
+      }
 
       case BRW_OPCODE_MOV:
          if ((inst->conditional_mod == BRW_CONDITIONAL_Z ||
