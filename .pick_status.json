@@ -15084,7 +15084,7 @@
         "description": "anv,iris: program the maximum number of threads on compute queue init",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "90a39cac87f415375a70e1cb2f7ba2c486f941e4",
         "notes": null
