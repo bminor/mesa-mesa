@@ -192,7 +192,9 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_uniform_buffer_standard_layout = true,
       .KHR_vertex_attribute_divisor = true,
       .KHR_zero_initialize_workgroup_memory = false,
+      .EXT_border_color_swizzle = true,
       .EXT_color_write_enable = true,
+      .EXT_custom_border_color = true,
       .EXT_depth_clamp_zero_one = true,
       .EXT_extended_dynamic_state = true,
       .EXT_external_memory_dma_buf = true,
@@ -324,6 +326,13 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.3 / VK_KHR_zero_initialize_workgroup_memory */
       .shaderZeroInitializeWorkgroupMemory = false,
+
+      /* VK_EXT_border_color_swizzle */
+      .borderColorSwizzle = true,
+      .borderColorSwizzleFromImage = true,
+
+      /* VK_EXT_custom_border_color */
+      .customBorderColors = true,
    };
 }
 
@@ -562,6 +571,9 @@ static bool pvr_physical_device_get_properties(
       /* Vulkan 1.4 / VK_EXT_vertex_attribute_divisor / VK_KHR_vertex_attribute_divisor */
       .maxVertexAttribDivisor = UINT32_MAX,
       .supportsNonZeroFirstInstance = true,
+
+      /* VK_EXT_custom_border_color */
+      .maxCustomBorderColorSamplers = PVR_BORDER_COLOR_TABLE_NR_CUSTOM_ENTRIES,
    };
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
@@ -3139,7 +3151,6 @@ VkResult pvr_CreateSampler(VkDevice _device,
                            VkSampler *pSampler)
 {
    PVR_FROM_HANDLE(pvr_device, device, _device);
-   uint32_t border_color_table_index;
    struct pvr_sampler *sampler;
    float lod_rounding_bias;
    VkFilter min_filter;
@@ -3158,10 +3169,11 @@ VkResult pvr_CreateSampler(VkDevice _device,
    mag_filter = pCreateInfo->magFilter;
    min_filter = pCreateInfo->minFilter;
 
-   result =
-      pvr_border_color_table_get_or_create_entry(&device->border_color_table,
-                                                 sampler,
-                                                 &border_color_table_index);
+   result = pvr_border_color_table_get_or_create_entry(
+      device,
+      sampler,
+      &device->border_color_table,
+      &sampler->border_color_table_index);
    if (result != VK_SUCCESS)
       goto err_free_sampler;
 
@@ -3256,7 +3268,7 @@ VkResult pvr_CreateSampler(VkDevice _device,
       word.maxlod = util_unsigned_fixed(CLAMP(max_lod, 0.0f, lod_clamp_max),
                                         ROGUE_TEXSTATE_CLAMP_FRACTIONAL_BITS);
 
-      word.bordercolor_index = border_color_table_index;
+      word.bordercolor_index = sampler->border_color_table_index;
 
       if (pCreateInfo->unnormalizedCoordinates)
          word.non_normalized_coords = true;
@@ -3299,6 +3311,9 @@ void pvr_DestroySampler(VkDevice _device,
 
    if (!sampler)
       return;
+
+   pvr_border_color_table_release_entry(&device->border_color_table,
+                                        sampler->border_color_table_index);
 
    vk_sampler_destroy(&device->vk, pAllocator, &sampler->vk);
 }

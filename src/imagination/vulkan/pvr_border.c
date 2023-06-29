@@ -126,6 +126,8 @@ pvr_border_color_table_alloc_entry(struct pvr_border_color_table *const table)
    if (!index--)
       return -1;
 
+   assert(index >= PVR_BORDER_COLOR_TABLE_NR_BUILTIN_ENTRIES);
+
    BITSET_CLEAR(table->unused_entries, index);
 
    return index;
@@ -165,6 +167,117 @@ pvr_border_color_table_fill_entry(struct pvr_border_color_table *const table,
          is_int,
          dev_info);
    }
+}
+
+/** Attempt to invert a swizzle.
+ *
+ * If @param swz contains multiple channels with the same swizzle, this
+ * operation will fail and return false. The @param dst should be preloaded
+ * with suitable defaults (@var PIPE_SWIZZLE_0 or @var PIPE_SWIZZLE_1) for
+ * channels with no source.
+ *
+ * For a given swizzle S, this function produces an inverse swizzle S' such
+ * that for a given input color C:
+ *
+ *    C * S => C'
+ *    C' * S' => C"
+ *
+ * The unswizzled color C" is a subset of the input color C, where channels not
+ * contained in C' (because they weren't included as outputs in S) are set to
+ * the defaults specified in S' as described above.
+ *
+ * @param swz The swizzle to invert
+ * @param dst Output
+ * @return true if the swizzle is invertible and the operation succeeded.
+ */
+static bool pvr_invert_swizzle(const unsigned char swz[4], unsigned char dst[4])
+{
+   bool found[4] = { false };
+   unsigned i, c;
+
+   for (i = 0; i < 4; i++) {
+      c = swz[i];
+
+      if (c > PIPE_SWIZZLE_W)
+         continue;
+
+      if (found[c])
+         return false;
+
+      dst[c] = i;
+      found[c] = true;
+   }
+
+   return true;
+}
+
+static inline void pvr_border_color_swizzle_to_tex_format(
+   union pipe_color_union *const color,
+   const enum pipe_format color_format,
+   const struct pvr_tex_format_description *const pvr_tex_fmt_desc,
+   bool is_int)
+{
+   const enum pipe_format tex_pipe_format =
+      is_int ? pvr_tex_fmt_desc->pipe_format_int
+             : pvr_tex_fmt_desc->pipe_format_float;
+
+   const struct util_format_description *const color_format_desc =
+      util_format_description(color_format);
+   const struct util_format_description *const tex_format_desc =
+      util_format_description(tex_pipe_format);
+
+   union pipe_color_union swizzled_color;
+   unsigned char composed_swizzle[4];
+   unsigned char color_unswizzle[4] = {
+      PIPE_SWIZZLE_0,
+      PIPE_SWIZZLE_0,
+      PIPE_SWIZZLE_0,
+      PIPE_SWIZZLE_1,
+   };
+   const unsigned char *tpu_swizzle;
+
+   ASSERTED bool invert_succeeded;
+
+   if (color_format_desc->format == tex_pipe_format)
+      return;
+
+   /* Some format pairs (e.g. UNORM vs SRGB) fail the above test but still don't
+    * require a re-swizzle.
+    */
+   if (memcmp(color_format_desc->swizzle,
+              tex_format_desc->swizzle,
+              sizeof(color_format_desc->swizzle)) == 0) {
+      return;
+   }
+
+   mesa_logd("Mismatched border pipe formats: vk=%s, tex=%s",
+             color_format_desc->short_name,
+             tex_format_desc->short_name);
+
+   tpu_swizzle = pvr_get_format_swizzle_for_tpu(color_format_desc);
+
+   /* Any supported format for which this operation is necessary must have an
+    * invertible swizzle.
+    */
+   invert_succeeded = pvr_invert_swizzle(tpu_swizzle, color_unswizzle);
+   assert(invert_succeeded);
+
+   util_format_compose_swizzles(color_unswizzle,
+                                tex_format_desc->swizzle,
+                                composed_swizzle);
+
+   mesa_logd("Applying swizzle: %u%u%u%u",
+             composed_swizzle[0],
+             composed_swizzle[1],
+             composed_swizzle[2],
+             composed_swizzle[3]);
+
+   util_format_apply_color_swizzle(&swizzled_color,
+                                   color,
+                                   composed_swizzle,
+                                   is_int);
+
+   *color = swizzled_color;
 }
 
 VkResult pvr_border_color_table_init(struct pvr_border_color_table *const table,
@@ -227,9 +340,119 @@ void pvr_border_color_table_finish(struct pvr_border_color_table *const table,
    pvr_bo_free(device, table->table);
 }
 
-VkResult pvr_border_color_table_get_or_create_entry(
-   UNUSED struct pvr_border_color_table *const table,
+static inline void pvr_border_color_table_set_custom_entry(
+   struct pvr_border_color_table *const table,
+   const uint32_t index,
+   const VkFormat vk_format,
+   const union pipe_color_union *const color,
+   const bool is_int,
+   const struct pvr_device_info *const dev_info)
+{
+   struct pvr_border_color_table_entry *const entries = table->table->bo->map;
+   struct pvr_border_color_table_entry *const entry = &entries[index];
+
+   const enum pipe_format format = vk_format_to_pipe_format(vk_format);
+   uint32_t tex_format = pvr_get_tex_format(vk_format);
+
+   assert(tex_format != ROGUE_TEXSTATE_FORMAT_INVALID);
+
+   if (util_format_is_compressed(format)) {
+      const struct pvr_tex_format_compressed_description *const pvr_tex_fmt_desc =
+         pvr_get_tex_format_compressed_description(tex_format);
+
+      pvr_border_color_table_pack_single_compressed(
+         &entry->compressed_values[tex_format],
+         color,
+         pvr_tex_fmt_desc,
+         is_int,
+         dev_info);
+   } else {
+      const struct pvr_tex_format_description *const pvr_tex_fmt_desc =
+         pvr_get_tex_format_description(tex_format);
+      union pipe_color_union swizzled_color = *color;
+
+      if (util_format_is_depth_or_stencil(format)) {
+         VkImageAspectFlags aspect_mask;
+
+         if (is_int)
+            aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
+         else
+            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+         /* Write the border color entry at the index of the texture
+          * format relative to the depth-only or stencil-only compoment
+          * associated with this Vulkan format.
+          */
+         tex_format = pvr_get_tex_format_aspect(vk_format, aspect_mask);
+         assert(tex_format != ROGUE_TEXSTATE_FORMAT_INVALID);
+      }
+
+      pvr_border_color_swizzle_to_tex_format(&swizzled_color,
+                                             format,
+                                             pvr_tex_fmt_desc,
+                                             is_int);
+
+      pvr_border_color_table_pack_single(&entry->values[tex_format],
+                                         &swizzled_color,
+                                         pvr_tex_fmt_desc,
+                                         is_int,
+                                         dev_info);
+   }
+}
+
+static VkResult pvr_border_color_table_create_custom_entry(
+   struct pvr_device *const device,
    const struct pvr_sampler *const sampler,
+   struct pvr_border_color_table *const table,
+   uint32_t *const index_out)
+{
+   const bool is_int = vk_border_color_is_int(sampler->vk.border_color);
+   const VkClearColorValue color = sampler->vk.border_color_value;
+   const VkFormat vk_format = sampler->vk.format;
+   const bool map_table = !table->table->bo->map;
+   VkResult result;
+   int32_t index;
+
+   assert(vk_format != VK_FORMAT_UNDEFINED);
+
+   index = pvr_border_color_table_alloc_entry(table);
+   if (index < 0)
+      goto err_out;
+
+   if (map_table) {
+      result = pvr_bo_cpu_map_unchanged(device, table->table);
+      if (result != VK_SUCCESS)
+         goto err_free_entry;
+   }
+
+   pvr_border_color_table_set_custom_entry(
+      table,
+      index,
+      vk_format,
+      (const union pipe_color_union *)&color,
+      is_int,
+      &device->pdevice->dev_info);
+
+   if (map_table)
+      pvr_bo_cpu_unmap(device, table->table);
+
+   *index_out = index;
+
+   return VK_SUCCESS;
+
+err_free_entry:
+   pvr_border_color_table_free_entry(table, index);
+
+err_out:
+   return vk_errorf(sampler,
+                    VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                    "Failed to allocate border color table entry");
+}
+
+VkResult pvr_border_color_table_get_or_create_entry(
+   struct pvr_device *const device,
+   const struct pvr_sampler *const sampler,
+   struct pvr_border_color_table *const table,
    uint32_t *const index_out)
 {
    const VkBorderColor vk_type = sampler->vk.border_color;
@@ -239,6 +462,18 @@ VkResult pvr_border_color_table_get_or_create_entry(
       return VK_SUCCESS;
    }
 
-   pvr_finishme("VK_EXT_custom_border_color is currently unsupported.");
-   return vk_error(sampler, VK_ERROR_EXTENSION_NOT_PRESENT);
+   return pvr_border_color_table_create_custom_entry(device,
+                                                     sampler,
+                                                     table,
+                                                     index_out);
+}
+
+void pvr_border_color_table_release_entry(
+   struct pvr_border_color_table *const table,
+   const uint32_t index)
+{
+   if (index < PVR_BORDER_COLOR_TABLE_NR_BUILTIN_ENTRIES)
+      return;
+
+   pvr_border_color_table_free_entry(table, index);
 }

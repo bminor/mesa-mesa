@@ -717,6 +717,31 @@ const uint8_t *pvr_get_format_swizzle(VkFormat vk_format)
    return vf->swizzle;
 }
 
+/* For DS formats, hardware can only access either depth or stencil at once.
+ * It expects to find whichever one it requires in the given context in the
+ * first channel, whereas pipe formats swizzle depth into the first channel and
+ * stencil into the second.
+ */
+const uint8_t *
+pvr_get_format_swizzle_for_tpu(const struct util_format_description *desc)
+{
+   const bool has_stencil = util_format_has_stencil(desc);
+   const bool has_depth = util_format_has_depth(desc);
+
+   if (has_depth || has_stencil) {
+      static const uint8_t pvr_swizzle[4] = {
+         PIPE_SWIZZLE_X,
+         PIPE_SWIZZLE_NONE,
+         PIPE_SWIZZLE_NONE,
+         PIPE_SWIZZLE_NONE,
+      };
+
+      return pvr_swizzle;
+   }
+
+   return desc->swizzle;
+}
+
 static VkFormatFeatureFlags2
 pvr_get_buffer_format_features2(const struct pvr_format *pvr_format)
 {

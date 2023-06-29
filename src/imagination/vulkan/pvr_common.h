@@ -232,6 +232,7 @@ static_assert(
 struct pvr_sampler {
    struct vk_sampler vk;
    struct pvr_sampler_descriptor descriptor;
+   uint32_t border_color_table_index;
 };
 
 struct pvr_descriptor_set_layout_binding {

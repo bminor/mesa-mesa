@@ -263,6 +263,9 @@ pvr_get_tex_format_compressed_description(uint32_t tex_format);
            desc;                                                      \
            desc = NULL)
 
+struct util_format_description;
+const uint8_t *
+pvr_get_format_swizzle_for_tpu(const struct util_format_description *desc);
 const uint8_t *pvr_get_format_swizzle(VkFormat vk_format);
 uint32_t pvr_get_tex_format(VkFormat vk_format);
 uint32_t pvr_get_tex_format_aspect(VkFormat vk_format,
