@@ -3604,7 +3604,7 @@
         "description": "anv: use the correct GFX_VERx10 macro for WA",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "60b0d2c2cbea0c1541a2e98e22a71b7fa4a8d27d",
         "notes": null
