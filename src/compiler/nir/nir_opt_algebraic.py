@@ -540,7 +540,36 @@ for size, mask in ((8, 0xff), (16, 0xffff), (32, 0xffffffff), (64, 0xfffffffffff
        (('ushr', ('ishl', a_sz, '#b'), b), ('iand', a, ('ushr', mask, b))),
     ])
 
+# Collapses ubfe(ubfe(a, b, c), d, e) when b, c, d, e are constants.
+def ubfe_ubfe(a, b, c, d, e):
+    inner_offset = ('iand', b, 0x1f)
+    inner_bits = ('umin', ('iand', c, 0x1f), ('isub', 32, inner_offset))
+    outer_offset = ('iand', d, 0x1f)
+    outer_bits = ('iand', e, 0x1f)
+
+    offset = ('iadd', inner_offset, outer_offset)
+    bits = ('umin', outer_bits, ('imax', ('isub', inner_bits, outer_offset), 0))
+    collapsed = ('ubfe', a, offset, bits)
+    offset_out_of_range = ('ilt', 31, offset)
+
+    # This will be constant-folded to either 0 or the collapsed ubfe,
+    # whose offset and bits operands will also be constant folded.
+    return ('bcsel', offset_out_of_range, 0, collapsed)
+
 optimizations.extend([
+    # Create bitfield extract from right-shift + and pattern.
+    (('iand@32', ('ushr@32(is_used_once)', a, b), '#c(is_const_bitmask)'),
+     ('ubfe', a, b, ('bit_count', c)),
+     'options->has_bfe && !options->avoid_ternary_with_two_constants'),
+
+    # Collapse two bitfield extracts with constant operands into a single one.
+    (('ubfe', ('ubfe', a, '#b', '#c'), '#d', '#e'),
+     ubfe_ubfe(a, b, c, d, e)),
+
+    # Collapse non-zero right-shift into bitfield extract.
+    (('ushr@32', ('ubfe', a, '#b', '#c'), '#d(is_5lsb_not_zero)'),
+     ubfe_ubfe(a, b, c, d, 31)),
+
     (('iand', ('ishl', 'a@32', '#b(is_first_5_bits_uge_2)'), -4), ('ishl', a, b)),
     (('iand', ('imul', a, '#b(is_unsigned_multiple_of_4)'), -4), ('imul', a, b)),
 ])
