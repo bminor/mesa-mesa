@@ -154,7 +154,7 @@
         "description": "nir/unsigned_upper_bound: fix phi(bcsel)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "72ac3f60261a8510512861b93e843e695331e2ab",
         "notes": null
