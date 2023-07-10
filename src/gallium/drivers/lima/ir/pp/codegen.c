@@ -542,7 +542,7 @@ static void ppir_codegen_encode_combine(ppir_node *node, void *code)
    case ppir_op_cos:
    {
       f->scalar.dest_vec = false;
-      f->scalar.arg1_en = false;
+      f->scalar.src_vec = false;
 
       ppir_dest *dest = &alu->dest;
       int dest_component = ffs(dest->write_mask) - 1;
