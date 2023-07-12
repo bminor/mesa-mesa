@@ -244,7 +244,7 @@
         "description": "ci: avoid running hardware jobs if lint fails - now on Windows too!",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a1c1cce9dfc2d8400a6726affed80997514fefa0",
         "notes": null
