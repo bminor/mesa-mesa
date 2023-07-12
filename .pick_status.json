@@ -224,7 +224,7 @@
         "description": "venus: handle query feedback creation failure",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e6cffa1f0e4e54616629177e09881784e33328db",
         "notes": null
