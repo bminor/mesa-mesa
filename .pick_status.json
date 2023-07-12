@@ -174,7 +174,7 @@
         "description": "venus: add a missing barrier before copying query feedback",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "de4593faa193f575b8524c49b8e64f2dc12b498a",
         "notes": null
