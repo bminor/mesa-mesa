@@ -444,7 +444,7 @@
         "description": "pvr: skip setting up SPM consts buffer when no const shared regs are used",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1dfd5351249c957edab895bdf3f667106eaaa39a",
         "notes": null
