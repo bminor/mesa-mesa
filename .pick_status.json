@@ -64,7 +64,7 @@
         "description": "Revert \"ac/nir/ngg: Follow intrinsic sources when analyzing before culling.\"",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "411f69b9c5b884f6802758347e72a10ec5564df1",
         "notes": null
