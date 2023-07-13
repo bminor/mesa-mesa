@@ -1,0 +1,282 @@
+[
+    {
+        "sha": "6e87b277bde71e30c98ab9dda7bd2f2017b77ed5",
+        "description": "crocus: Avoid fast-clear with incompatible view",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4fa02c5c8e60a2ae13165563fb0d3b4c69155b21",
+        "description": "freedreno/cffdec: Decode CP_DRAW_AUTO",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a2a7bfd19b66a4bd29e1ef112659a2976e6d61c",
+        "description": "r300: update RV370 failures",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0bf6dcb785ce82006f9757217153735e39127834",
+        "notes": null
+    },
+    {
+        "sha": "953c04ebd39c52d457301bdd8ac803949001da2d",
+        "description": "pvr: clang-format fixes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39f547381cc84db8e2d3cf4908146ba2a949cc31",
+        "description": "isl: Set MOCS to uncached for MTL stream-out",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa47c82fbe8d61cfa2f83ad00b7624aa8f305f16",
+        "description": "isl/dev: Add uncached MOCS value",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef105f8ccee32c8aeefeaf31b61fa5d091d60e2e",
+        "description": "genxml/chv: Add MEMORY_OBJECT_CONTROL_STATE_CHV to document compared to BDW",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90535d7aef0bc3f54069453807e76d3cd40c42ce",
+        "description": "genxml/hsw: Add additional MOCS field enumerations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "492b07625d46e53dd6fa1c81c8385994ae3ee390",
+        "description": "anv,iris,hasvk: Use ISL_SURF_USAGE_STREAM_OUT_BIT for setting stream-out MOCS",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b5082f5d5d77afa2a2ca5fb0cfebceb14bbbf04",
+        "description": "isl: Add ISL_SURF_USAGE_STREAM_OUT_BIT",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0dc961645c4f0241f8512cb0ec3ad59635842072",
+        "description": "docs/ci: Add docs for EXTRA_LOCAL_PACKAGES",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3d10300b0b0e4cbfd6b9774fa3ee244087329d1",
+        "description": "ci: add EXTRA_LOCAL_PACKAGES to apt-get install",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "afaefb20f30f31df6d1493d547a1f145871b1518",
+        "description": "ci: re-add EXTRA_LOCAL_PACKAGES to rootfs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29de65206094d3d184b580937ea0646e47fcb9d0",
+        "description": "ci/freedreno: update a530 flakes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b64c27a976b6aef566505934b7f3e6e4f2f3370",
+        "description": "docs: Update release calendar for 23.2.0-rc1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c136a22b60091cb11cfd115be8a0816652c859a5",
+        "description": "nv50/ir: Convert to new-style NIR registers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a151d26513a9d89af70c8c9e475b5451db61e696",
+        "description": "venus: refactor query feedback cmd record",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed79b30639899e1815ecfbb4411ea5fd59b77867",
+        "description": "venus: add a missing barrier before copying query feedback",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "de4593faa193f575b8524c49b8e64f2dc12b498a",
+        "notes": null
+    },
+    {
+        "sha": "c4c258e19eb3ad45fada2f122cacecc9f1dfe57c",
+        "description": "vulkan/util: Use ycbcr_info for multiplane helpers in vk_format.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5b6edec0f062aadf55a16520224d06ed52773fb",
+        "description": "vulkan/util: Support VK_EXT_ycbcr_2plane_444_formats color formats in vk_format.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c263e5307fd082c82b13ebb915766f082fb8fc49",
+        "description": "vulkan/util: Support 10-bit and 12-bit color formats in ycbcr_info in vk_format.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b44880e3e22380ca3835eeeaffadc6d7dfec737",
+        "description": "venus: ensure consistency of query overflow behavior",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e6cffa1f0e4e54616629177e09881784e33328db",
+        "notes": null
+    },
+    {
+        "sha": "c55d43df04e5291c1754324e34f8bc2f38ffddda",
+        "description": "venus: handle query feedback creation failure",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e6cffa1f0e4e54616629177e09881784e33328db",
+        "notes": null
+    },
+    {
+        "sha": "d810d67a8cc0f8c9751fe2491b8272d83898039f",
+        "description": "radv/ci: Set DRIVER_NAME in LAVA raven vkcts jobs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bdaee9e09daf2ca1850fbb0ea44d8ac545647e5b",
+        "description": "ci: avoid running hardware jobs if lint fails - now on Windows too!",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a1c1cce9dfc2d8400a6726affed80997514fefa0",
+        "notes": null
+    },
+    {
+        "sha": "fd35e5913955e6b9c15d7c96c9919916ca9d8c42",
+        "description": "ci: avoid running hardware jobs if lint fails - now on LAVA too!",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a1c1cce9dfc2d8400a6726affed80997514fefa0",
+        "notes": null
+    },
+    {
+        "sha": "ef80f81c8f93f16af0ddc1152cd0139b898676a8",
+        "description": "zink: Switch to register intrinsics",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fac4f526acfa300139c37e7270dd8ec84b31ce0f",
+        "description": "VERSION: bump to 23.3.0-devel",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    }
+]
