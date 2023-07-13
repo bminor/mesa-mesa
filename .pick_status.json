@@ -24,7 +24,7 @@
         "description": "r300: update RV370 failures",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0bf6dcb785ce82006f9757217153735e39127834",
         "notes": null
