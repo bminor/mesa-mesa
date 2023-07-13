@@ -74,7 +74,7 @@
         "description": "radeonsi: Use DIV_ROUND_UP instead of ALIGN_POT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ba83c1e254d8a968c166610765ab92ce4cf0778e",
         "notes": null
