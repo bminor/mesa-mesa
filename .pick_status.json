@@ -14914,7 +14914,7 @@
         "description": "tu: Fix vk2tu_*_stage flag type",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "59259a0167184e0cf9f472d379ac9723a2842139",
         "notes": null
