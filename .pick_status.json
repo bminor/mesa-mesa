@@ -34,7 +34,7 @@
         "description": "iris: migrate WA 14013910100 to use the WA framework",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eeb3f4594d5acc40c1febf22f97ddb51517a0c88",
         "notes": null
