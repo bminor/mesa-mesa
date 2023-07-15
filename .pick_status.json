@@ -474,7 +474,7 @@
         "description": "nv50/ir: Support vector movs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6513c675ad31d192265a8286d712e8ae81c9f305",
         "notes": null
