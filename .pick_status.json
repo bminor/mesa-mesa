@@ -354,7 +354,7 @@
         "description": "iris: fix iris for WA 16013000631",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "83716b08cf103622829d84e673584781ee8850f6",
         "notes": null
