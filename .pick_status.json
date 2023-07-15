@@ -184,7 +184,7 @@
         "description": "glthread: determine global locking once every 64 batches to fix get_time perf",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3ed141e9d80bc2174e34afafb13b5bf07c802ef0",
         "notes": null
