@@ -1,5 +1,505 @@
 [
     {
+        "sha": "3a8aae9e6aa526367523c58dfe5046909776be74",
+        "description": "ci: drop leftover kernel configs",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "23158e9a3f7c1c3155bfc371ed562828661f9f18",
+        "notes": null
+    },
+    {
+        "sha": "5178c81e26ce7379a08c11a9d9f8026cd8373e14",
+        "description": "radv: Rely on workgroup_size initialization",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3fed1b4a9e22f3c910ef0d4ac9664c9c5e9b2b41",
+        "description": "v3dv: Rely on nir_builder setting workgroup size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d0f0afc6a4f350edb43a67aed2050320a1c0d0af",
+        "description": "nir: Initialize workgroup_size in builder_init_simple_shader",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce25668d020fc29a5815d1f2bedee44a796ea234",
+        "description": "ir3: Use NIR info to enable per sample shading",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "79f7882fc604515302351282f5e01ec5907727f7",
+        "description": "ci: add quirk for GitLab assuming changes is always true for scheduled runs",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16b080b5d8c1e1fc450c1190d794d7d1a9bb6857",
+        "description": "ir3: Use nir_lower_tess_coord_z",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2c8f884103382bac6ef61a401894a80d8dd31d43",
+        "description": "r600: Use nir_lower_tess_coord_xy",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f0f76346e056ee8f555f45000c876d99fd1fd4f",
+        "description": "nir: Add nir_lower_tess_coord_z pass",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9109830bb04b1664bd19f9ab350602a869e048f7",
+        "description": "nir: Promote tess_coord_r600 to tess_coord_xy",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "74f8956f27a2eb8dc4fb39c61115fffaedcc0b8d",
+        "description": "ci: replace copy of nouveau rules with reference",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "005ffbe4b75e46f331673061d23dbd7010ffbfa6",
+        "description": "freedreno,lima,zink: update CI fixes and flakes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c97961a855ad1ae5c58d47634862b459e682e158",
+        "description": "mesa: fix 38% decrease in display list performance of Viewperf2020/NX8_StudioAA",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3a294ff01fb9d1d8b4f984a364ed7ef469624c49",
+        "notes": null
+    },
+    {
+        "sha": "701b035179b61bf2d21a912132ec8408655bb1e8",
+        "description": "bin/ci: Ensure that all jobs have nodes in DAG",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e4029bfe5accb0ce78345b9111bb69318ee2ae2",
+        "description": "nir/tests: add test for unsigned_upper_bound with loop header phis",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1139d870f38e7458155c192e1b5a3fe322a7c63c",
+        "description": "nir/unsigned_upper_bound: fix phi(bcsel)",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "72ac3f60261a8510512861b93e843e695331e2ab",
+        "notes": null
+    },
+    {
+        "sha": "34c4a195f9391fb8257a68ab6a2f9ec986c1c84d",
+        "description": "radeonsi: add AV1 profile to supported profile",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36d4e832996c3e38452e98ffd3aa21e80fe32abb",
+        "description": "intel/perf: add perf query support for Intel Raptorlake",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4e0eca7dc34942759638ab00eb006ba40284a7c5",
+        "notes": null
+    },
+    {
+        "sha": "6cda08416b10e43b0a75b4d0a649f8bf29a24a8a",
+        "description": "glthread: determine global locking once every 64 batches to fix get_time perf",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3ed141e9d80bc2174e34afafb13b5bf07c802ef0",
+        "notes": null
+    },
+    {
+        "sha": "d4b211bf1b9db21d8bd2d01a3ea4a7c9c4d10caf",
+        "description": "ac/nir: always round cube array layers",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e02f8b62af290c4f94a6e422521bba263d931819",
+        "description": "radv: don't unset TRUNC_COORD if conformant_trunc_coord=true",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "436df35c17b84424d9664e66cae8b3885491d9ad",
+        "description": "radv: add conformant_trunc_coord to cache UUID",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0cb26f31feb954e7a1c49d54930f83c002329c7d",
+        "description": "ac/llvm: skip ballot zext for 32-bit dest with wave32-as-wave64",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47c9dea6ac63d70d261029588d618dd82527d992",
+        "description": "ac/llvm: fix wave32 ac_build_mbcnt_add with 64-bit mask",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a199a051e68e1fb41dd06943dc725d4c950bc16",
+        "description": "radv: fix radv_get_ballot_bit_size with CS",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85d1159a2a7b09dd285376cbb62921126ba0fda2",
+        "description": "ac/llvm: fix AC_TM_CHECK_IR",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3f272fd15e9f0776056699e90ce021f4766d3384",
+        "notes": null
+    },
+    {
+        "sha": "f7c74e35eef06b6b6f5b14eff4a129fb9592e562",
+        "description": "etnaviv: remove bogus comment about replacing resource storage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b17bab6b4a1196d3001689e525acc69fb4ae1b3",
+        "description": "etnaviv: remove always true assert in etna_transfer_unmap",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ab1d4ac33871157e5c758105e7a72f9e696cec29",
+        "description": "etnaviv: remove superfluous braces",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bee2a8465774271b814dd7678397f7208a55fe08",
+        "description": "etnaviv: move buffer range tracking into the PIPE_MAP_WRITE clause",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1c00ce5c9e21589da7a9872d77a422c941f419a",
+        "description": "etnaviv: remove huge outdated comment",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6638ba513b26aebb00e69f82db36d9cdb692a847",
+        "description": "etnaviv: reword comment about staging resource usage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6222a4b927f2a7b6e8d31f9f0b17bfb6a319261",
+        "description": "etnaviv: check for valid TS as condition to create the staging resource",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "78a999ecfac9f4fe752efb16a8535c6a317a2d1a",
+        "description": "etnaviv: don't allocate full resource as transfer staging",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c8741a17e218ea87b2637f4f14cf0705ec39e7d",
+        "description": "etnaviv: split etna_copy_resource_box levels parameter in src/dst",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07a958589859300ab48260a184f717b869df55ba",
+        "description": "iris: fix iris for WA 16013000631",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "83716b08cf103622829d84e673584781ee8850f6",
+        "notes": null
+    },
+    {
+        "sha": "a303ff668471058cb9c317a9b7c7d50fa4b875d8",
+        "description": "isl: add a tool to query surface parameters",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dfd96fac41418ac85fd64ffb2973ff1a7ca2a363",
+        "description": "ci/freedreno: add another a530 flakes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f952756d1e28fdf4f0be9efa165e29e6eb20f035",
+        "description": "ci/freedreno: fix unexpectedpass flake on a630",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b3cccaf6305bde6f27a7550a85bb8414ce0b240",
+        "description": "ci/lima: EGL testing was disabled when fp16 fail was removed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "87439a8c7184bd222325ee0d028876e641086018",
+        "description": "ci/radeonsi: stoney arb_timer_query got fixed between kernel 6.3.1..13",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3f26cbbe1a957b76804da44bbf5e30de2bac941",
+        "description": "Revert \"lima/ci: temporarily disable deqp-egl tests due to timeouts\"",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "be2619766be3f4ee0b22a10f8db179dc1e3c5773",
+        "notes": null
+    },
+    {
+        "sha": "c467d760cba654076dad7cebf3ba5f0ad3f1572c",
+        "description": "ci/freedreno: add fails introduced by upreving to 6.3.13",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd2b31a89cc40e5dd6133dd6e2d90faee94e4bec",
+        "description": "ci: update kernel to 6.3.13",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23158e9a3f7c1c3155bfc371ed562828661f9f18",
+        "description": "ci: build kernel in gfx-ci/linux and just use binaries in Mesa3D CI",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9bcdc45ee7e8c4ca0dbb18ba16077d474d5ebb31",
+        "description": "nir: Devendor load_sample_mask",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56d61d9a644a9f3f6be55a424fc911fef051d8b5",
+        "description": "nir: Add fence_{pbe,mem}_to_tex(_pixel)_agx intrinsics",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "259ba104f79f9f653130865b21bccfab62dd4829",
+        "description": "nv50/ir: Support vector movs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6513c675ad31d192265a8286d712e8ae81c9f305",
+        "notes": null
+    },
+    {
+        "sha": "39824457283bf194c2e2773c19708848027121e1",
+        "description": "glx: Assign unique serial number to GLXBadFBConfig error",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e89e1f5049d3b78542fcd69b7d6106dd4bdafc39",
+        "notes": null
+    },
+    {
+        "sha": "9590bce3e249a34665b2c42b20bfdbdc7f32147f",
+        "description": "radeonsi: prefix function with si_ to prevent name collision",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "27d30fe3c0e71efd90fcfe209d8515b195b0075f",
         "description": "isl: Disable MCS compression just on ACM platform",
         "nominated": false,
