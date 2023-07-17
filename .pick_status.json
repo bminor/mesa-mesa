@@ -1404,7 +1404,7 @@
         "description": "ci/microsoft: when re-enabling Windows Farm, always run the container",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d3b6635663f71ef65230ea4a8b321a22a64a9e26",
         "notes": null
