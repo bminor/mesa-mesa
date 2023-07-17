@@ -174,7 +174,7 @@
         "description": "intel/perf: add perf query support for Intel Raptorlake",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4e0eca7dc34942759638ab00eb006ba40284a7c5",
         "notes": null
