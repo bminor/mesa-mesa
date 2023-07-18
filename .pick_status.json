@@ -1384,7 +1384,7 @@
         "description": "anv: ensure CFE_STATE is emitted for ray tracing pipelines",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ecb709c85351c8c127a1cd3577c74d6b2b0b706a",
         "notes": null
