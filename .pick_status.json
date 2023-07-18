@@ -23104,7 +23104,7 @@
         "description": "zink: fix the fix for separate shader program refcounting",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4e380616430ce000bc4454f137265ec6e65b6afb",
         "notes": null
