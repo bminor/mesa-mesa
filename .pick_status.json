@@ -24034,7 +24034,7 @@
         "description": "nir/trivialize: Handle more RaW hazards",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d313eba94ef0aebf6ee5217fc128f359e0ce1265",
         "notes": null
