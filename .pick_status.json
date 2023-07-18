@@ -1194,7 +1194,7 @@
         "description": "iris: Re-emit 3DSTATE_DS for each primitive (workaround 14019750404)",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
