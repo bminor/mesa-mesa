@@ -25054,7 +25054,7 @@
         "description": "llvmpipe: Fix compiling with LP_USE_TEXTURE_CACHE",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "36eb75d281bd0898b4b669969993f38b5fa9515b",
         "notes": null
