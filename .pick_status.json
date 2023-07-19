@@ -24064,7 +24064,7 @@
         "description": "nir: Properly handle divergence for load_reg",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7229bffcb133b68f91607fb6bccbe0e48b6a55bd",
         "notes": null
