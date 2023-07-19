@@ -24544,7 +24544,7 @@
         "description": "intel/fs: don't try to rebuild sequences of non ssa values",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "04777171e01e9cf1a4e1d5de68922392ba8e7002",
         "notes": null
