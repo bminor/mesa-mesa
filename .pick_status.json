@@ -14854,7 +14854,7 @@
         "description": "svga: set clear_texture to NULL for vgpu9",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a1eabeff6607cf1466df3486d2585b51909e7450",
         "notes": null
