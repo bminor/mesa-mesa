@@ -23934,7 +23934,7 @@
         "description": "nir/lower_blend: Fix 32-bit logicops",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dbd0615e7ad0754ab1057cbfa810c42df971c446",
         "notes": null
