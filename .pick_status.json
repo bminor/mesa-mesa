@@ -4694,7 +4694,7 @@
         "description": "panfrost: Fix transform feedback on v9 harder",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c282f80c98831a2c41792eae39e843e9c3fb4809",
         "notes": null
