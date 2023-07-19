@@ -4704,7 +4704,7 @@
         "description": "panfrost: Lower vertex_id for XFB",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "91ffd1035105c2c04f4cc2687fb4f9ff63fb69a5",
         "notes": null
