@@ -2538,26 +2538,40 @@ VkResult pvr_create_renderpass_hwsetup(
    for (uint32_t i = 0U; i < pass->attachment_count; i++) {
       struct pvr_render_pass_attachment *attachment = &pass->attachments[i];
       struct pvr_render_int_attachment *int_attach = &ctx->int_attach[i];
-      const uint32_t pixel_size =
-         DIV_ROUND_UP(pvr_get_accum_format_bitsize(attachment->vk_format), 32U);
+      const VkFormat format = attachment->vk_format;
+      uint32_t pixel_size_in_chunks;
+      uint32_t pixel_size_in_bits;
 
       /* TODO: Add support for packing multiple attachments into the same
        * register.
        */
       const uint32_t part_bits = 0;
 
+      if (vk_format_is_color(format) &&
+          pvr_get_pbe_accum_format(attachment->vk_format) ==
+             PVR_PBE_ACCUM_FORMAT_INVALID) {
+         /* The VkFormat is not supported as a color attachment so `0`.
+          * Vulkan doesn't seems to restrict vkCreateRenderPass() to supported
+          * formats only.
+          */
+         pixel_size_in_bits = 0;
+      } else {
+         pixel_size_in_bits =
+            pvr_get_accum_format_bitsize(attachment->vk_format);
+      }
+
       int_attach->resource.type = USC_MRT_RESOURCE_TYPE_INVALID;
       int_attach->resource.intermediate_size =
-         DIV_ROUND_UP(pvr_get_accum_format_bitsize(attachment->vk_format),
-                      CHAR_BIT);
+         DIV_ROUND_UP(pixel_size_in_bits, CHAR_BIT);
       int_attach->resource.mrt_desc.intermediate_size =
          int_attach->resource.intermediate_size;
 
-      for (uint32_t j = 0U; j < pixel_size; j++)
+      pixel_size_in_chunks = DIV_ROUND_UP(pixel_size_in_bits, 32U);
+      for (uint32_t j = 0U; j < pixel_size_in_chunks; j++)
          int_attach->resource.mrt_desc.valid_mask[j] = ~0;
 
       if (part_bits > 0U) {
-         int_attach->resource.mrt_desc.valid_mask[pixel_size] =
+         int_attach->resource.mrt_desc.valid_mask[pixel_size_in_chunks] =
             BITFIELD_MASK(part_bits);
       }
 
