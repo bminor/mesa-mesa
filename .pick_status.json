@@ -4,7 +4,7 @@
         "description": "r600/sfn: remove debug output leftovers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ae7d904a73b57f6f019346b3926cde5263bff787",
         "notes": null
