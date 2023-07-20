@@ -6814,7 +6814,7 @@
         "description": "anv: don't try to access dynamic buffers from surface states",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "06dfd216d35f25acd4531b95d681c31e71892e80",
         "notes": null
