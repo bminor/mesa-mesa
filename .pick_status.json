@@ -14664,7 +14664,7 @@
         "description": "aco: fix nir_op_vec8/16 with 16-bit elements.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5718347c2b42ee25e5377d40024aaaa929889c44",
         "notes": null
