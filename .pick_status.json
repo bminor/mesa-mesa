@@ -3584,7 +3584,7 @@
         "description": "anv: Don't support ASTC images with modifiers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "355f3188438d22712850d65e48660d8f46316dc5",
         "notes": null
