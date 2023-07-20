@@ -25064,7 +25064,7 @@
         "description": "nir: Fix 16-component nir_replicate.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f534c2c539f1a4722c03c63a257e99b052e6f1a8",
         "notes": null
