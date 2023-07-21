@@ -24784,7 +24784,7 @@
         "description": "tu,freedreno: Forbid blit event for R8G8_SRGB due to gpu faults",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "029919f3c83f379065515708188d5c439c3fa6bc",
         "notes": null
