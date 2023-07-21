@@ -14654,7 +14654,7 @@
         "description": "aco: Fix some constant patterns in 16-bit vec4 construction with s_pack.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "04e3d7ad9309c4ce6fd992bf2ac735431b5e0687",
         "notes": null
