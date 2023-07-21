@@ -14844,7 +14844,7 @@
         "description": "gallivm: fix atomic global temporary storage.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f281290005119ddd2dc82e0b7a4cc22551d7fc71",
         "notes": null
