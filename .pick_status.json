@@ -24734,7 +24734,7 @@
         "description": "aco/gfx11: fix get_gfx11_true16_mask with v_cmp_class_f16",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6872f8d861b80377c8bbff2f2fad0de14bc5e8b3",
         "notes": null
