@@ -6239,8 +6239,6 @@ static VkResult pvr_validate_draw_state(struct pvr_cmd_buffer *cmd_buffer)
       &gfx_pipeline->shader_state.fragment.stage_state;
    const struct pvr_pipeline_stage_state *const vertex_state =
       &gfx_pipeline->shader_state.vertex.stage_state;
-   const struct pvr_pipeline_layout *const pipeline_layout =
-      gfx_pipeline->base.layout;
    struct pvr_sub_cmd_gfx *sub_cmd;
    bool fstencil_writemask_zero;
    bool bstencil_writemask_zero;
@@ -6346,13 +6344,13 @@ static VkResult pvr_validate_draw_state(struct pvr_cmd_buffer *cmd_buffer)
    state->dirty.fragment_descriptors = state->dirty.vertex_descriptors;
 
    /* Account for dirty descriptor set. */
-   state->dirty.vertex_descriptors |=
-      state->dirty.gfx_desc_dirty &&
-      pipeline_layout
-         ->per_stage_descriptor_masks[PVR_STAGE_ALLOCATION_VERTEX_GEOMETRY];
-   state->dirty.fragment_descriptors |=
-      state->dirty.gfx_desc_dirty &&
-      pipeline_layout->per_stage_descriptor_masks[PVR_STAGE_ALLOCATION_FRAGMENT];
+   /* TODO: It could be the case that there are no descriptors for a specific
+    * stage, or that the update descriptors aren't active for a particular
+    * stage. In such cases we could avoid regenerating the descriptor PDS
+    * program.
+    */
+   state->dirty.vertex_descriptors |= state->dirty.gfx_desc_dirty;
+   state->dirty.fragment_descriptors |= state->dirty.gfx_desc_dirty;
 
    if (BITSET_TEST(dynamic_state->dirty, MESA_VK_DYNAMIC_CB_BLEND_CONSTANTS))
       state->dirty.fragment_descriptors = true;
