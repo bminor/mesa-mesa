@@ -22894,7 +22894,7 @@
         "description": "nv50/ir/nir: fix txq emission on MS textures",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bb032d8b629cd42c8b7767d9f2156530b1b746f9",
         "notes": null
