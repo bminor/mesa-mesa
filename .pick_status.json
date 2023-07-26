@@ -22694,7 +22694,7 @@
         "description": "llvmpipe: Zero extend vectors in widen_to_simd_width",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "573b8f23c295d57507de7a36a9177f5e9a6ee1cd",
         "notes": null
