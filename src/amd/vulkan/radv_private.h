@@ -422,6 +422,7 @@ struct radv_instance {
    bool tex_non_uniform;
    bool flush_before_timestamp_write;
    bool force_rt_wave64;
+   bool dual_color_blend_by_location;
    char *app_layer;
 };
 
@@ -2134,6 +2135,7 @@ struct radv_event {
 #define RADV_HASH_SHADER_NO_FMASK        (1 << 19)
 #define RADV_HASH_SHADER_NGG_STREAMOUT   (1 << 20)
 #define RADV_HASH_SHADER_NO_RT           (1 << 21)
+#define RADV_HASH_SHADER_DUAL_BLEND_MRT1 (1 << 22)
 
 struct radv_pipeline_key;
 struct radv_ray_tracing_group;

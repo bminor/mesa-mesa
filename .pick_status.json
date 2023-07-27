@@ -22244,7 +22244,7 @@
         "description": "radv: workaround WWZ exporting index=1 through location=1",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "290c3d360e5a6f5226c062d6a9267629adb1060e",
         "notes": null
