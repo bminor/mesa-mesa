@@ -22864,7 +22864,7 @@
         "description": "radv/video: use app provided hevc scaling list order",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "da54b57888cf61737b92ed8759f3ca91350486b4",
         "notes": null
