@@ -22064,7 +22064,7 @@
         "description": "radv: fix unused non-xfb shader outputs not being removed",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e95531e101f0ba61d28195fe38414e411bf418b3",
         "notes": null
