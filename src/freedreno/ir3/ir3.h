@@ -402,6 +402,12 @@ typedef enum ir3_instruction_flags {
     * their sources.
     */
    IR3_INSTR_IMM_OFFSET = BIT(21),
+
+   /* a7xx, set on a nop after all cat6 */
+   IR3_INSTR_EOLM = BIT(22),
+
+   /* a7xx, set on a nop after all cat5/cat6 */
+   IR3_INSTR_EOGM = BIT(23),
 } ir3_instruction_flags;
 
 struct ir3_instruction {

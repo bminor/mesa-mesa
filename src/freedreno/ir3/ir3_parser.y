@@ -460,6 +460,8 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <num> T_RPT
 %token <tok> T_UL
 %token <tok> T_NOP
+%token <tok> T_EOLM
+%token <tok> T_EOGM
 
 /* category 0: */
 %token <tok> T_OP_NOP
@@ -932,6 +934,8 @@ iflag:             T_SY   { iflags.flags |= IR3_INSTR_SY; }
 |                  T_RPT  { iflags.repeat = $1; }
 |                  T_UL   { iflags.flags |= IR3_INSTR_UL; }
 |                  T_NOP  { iflags.nop = $1; }
+|                  T_EOLM { iflags.flags |= IR3_INSTR_EOLM; }
+|                  T_EOGM { iflags.flags |= IR3_INSTR_EOGM; }
 
 iflags:
 |                  iflag iflags

@@ -68,6 +68,9 @@ static const struct test {
    INSTR_6XX(07020000_00000000, "predf"),
    INSTR_6XX(07820000_00000000, "prede"),
 
+   INSTR_7XX(00000003_00000000, "(eolm)(eogm)nop"),
+   INSTR_7XX(00000001_00000000, "(eolm)nop"),
+
    /* cat1 */
    INSTR_6XX(20244000_00000020, "mov.f32f32 r0.x, c8.x"),
    INSTR_6XX(20200000_00000020, "mov.f16f16 hr0.x, hc8.x"),
