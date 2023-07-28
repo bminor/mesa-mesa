@@ -7104,7 +7104,7 @@
         "description": "radv: disable 64-bit color attachments",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "01bd012edd20927a4eb7f791dc6e6ac94089c144",
         "notes": null
