@@ -22604,7 +22604,7 @@
         "description": "bin/ci_run_n_monitor: get git sha from pipeline if specified, instead of requiring --rev to match",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9ce717ab31f24faf0a15ba09e8f3efcd78929508",
         "notes": null
