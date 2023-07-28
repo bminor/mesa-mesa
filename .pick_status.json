@@ -22214,7 +22214,7 @@
         "description": "anv: partially revert 2e8b1f6d",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2e8b1f6d1c82077c2744ef2009318ab056da6f49",
         "notes": null
