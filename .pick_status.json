@@ -22284,7 +22284,7 @@
         "description": "nv50/ir/nir: Fix zero source handling of tex instructions.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "85a31fa1fc906d500e10a7fa5c9973aa17e7f1d6",
         "notes": null
