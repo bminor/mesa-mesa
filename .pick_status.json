@@ -20594,7 +20594,7 @@
         "description": "frontends/va: Init view_resources array in vlVaPut/GetImage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "975a8ecc881873744d851ab0ef45ad7698eaa0ef",
         "notes": null
