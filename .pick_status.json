@@ -5694,7 +5694,7 @@
         "description": "aux/trace: fix set_hw_atomic_buffers method name",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b2dc63ed8ce95622312d7fa211def60f3673facd",
         "notes": null
