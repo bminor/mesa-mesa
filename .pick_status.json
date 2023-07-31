@@ -6764,7 +6764,7 @@
         "description": "Revert \"lima/ci: temporarily disable deqp-egl tests due to timeouts\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "be2619766be3f4ee0b22a10f8db179dc1e3c5773",
         "notes": null
