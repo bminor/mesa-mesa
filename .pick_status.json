@@ -22024,7 +22024,7 @@
         "description": "rusticl/kernel: only handle function_temp memory before lowering printf",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5795ee0e08355ea2445ec9d4b2235a3a35ceda83",
         "notes": null
