@@ -22234,7 +22234,7 @@
         "description": "anv: fix 3DSTATE_RASTER::APIMode field setting",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "55951ac28e7a30c2fae762990962a4410669c989",
         "notes": null
