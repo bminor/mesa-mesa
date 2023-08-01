@@ -20914,7 +20914,7 @@
         "description": "r600/sfn: AR loads should depend on all previous non ALU instructions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d21054b4bc92a1a9240841dca719f81a142fd5cc",
         "notes": null
