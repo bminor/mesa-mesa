@@ -1265,6 +1265,12 @@ static const struct intel_device_info intel_device_info_lnl = {
    .ver = 30,                                                   \
    .verx10 = 300
 
+UNUSED static const struct intel_device_info intel_device_info_ptl = {
+   XE3_FEATURES,
+   .platform = INTEL_PLATFORM_PTL,
+   .has_local_mem = false,
+};
+
 void
 intel_device_info_topology_reset_masks(struct intel_device_info *devinfo)
 {
