@@ -21884,7 +21884,7 @@
         "description": "aco: fix non constant 16bit bitnz/bitz",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "573e98f34ac99028934e273585baf9e3cbf76b3a",
         "notes": null
