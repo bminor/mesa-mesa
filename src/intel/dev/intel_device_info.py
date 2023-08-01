@@ -134,6 +134,7 @@ Enum("intel_platform",
       EnumValue("INTEL_PLATFORM_ARL_H", group_end="ARL"),
       "INTEL_PLATFORM_LNL",
       "INTEL_PLATFORM_BMG",
+      "INTEL_PLATFORM_PTL",
       ])
 
 Struct("intel_memory_class_instance",
