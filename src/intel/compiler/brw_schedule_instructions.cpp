@@ -504,6 +504,8 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          case LSC_OP_STORE:
          case LSC_OP_LOAD_CMASK:
          case LSC_OP_STORE_CMASK:
+         case LSC_OP_LOAD_CMASK_MSRT:
+         case LSC_OP_STORE_CMASK_MSRT:
             latency = 300;
             break;
          case LSC_OP_FENCE:

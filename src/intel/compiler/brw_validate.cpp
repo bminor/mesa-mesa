@@ -159,7 +159,8 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
 
    switch (inst->opcode) {
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
-      fsv_assert(op == LSC_OP_LOAD || op == LSC_OP_LOAD_CMASK);
+      fsv_assert(op == LSC_OP_LOAD || op == LSC_OP_LOAD_CMASK ||
+                 op == LSC_OP_LOAD_CMASK_MSRT);
       fsv_assert(inst->src[MEMORY_LOGICAL_DATA0].file == BAD_FILE);
       fsv_assert(inst->src[MEMORY_LOGICAL_DATA1].file == BAD_FILE);
       break;

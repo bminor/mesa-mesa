@@ -650,6 +650,8 @@ namespace {
             case LSC_OP_STORE:
             case LSC_OP_LOAD_CMASK:
             case LSC_OP_STORE_CMASK:
+            case LSC_OP_LOAD_CMASK_MSRT:
+            case LSC_OP_STORE_CMASK_MSRT:
                return calculate_desc(info, EU_UNIT_DP_DC, 2, 0, 0,
                                      0, 20 /* XXX */,
                                      10 /* XXX */, 100 /* XXX */, 0, 0,

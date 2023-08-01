@@ -588,6 +588,8 @@ static const char *const lsc_operation[] = {
    [LSC_OP_ATOMIC_AND]      = "atomic_and",
    [LSC_OP_ATOMIC_OR]       = "atomic_or",
    [LSC_OP_ATOMIC_XOR]      = "atomic_xor",
+   [LSC_OP_LOAD_CMASK_MSRT] = "load_cmask_msrt",
+   [LSC_OP_STORE_CMASK_MSRT] = "store_cmask_msrt",
 };
 
 const char *
@@ -2279,6 +2281,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
                switch(op) {
                case LSC_OP_LOAD_CMASK:
                case LSC_OP_LOAD:
+               case LSC_OP_LOAD_CMASK_MSRT:
                   format(file, ",");
                   err |= control(file, "cache_load",
                                  devinfo->ver >= 20 ?

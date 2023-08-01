@@ -930,7 +930,9 @@ brw_fb_write_desc_coarse_write(const struct intel_device_info *devinfo,
 static inline bool
 lsc_opcode_has_cmask(enum lsc_opcode opcode)
 {
-   return opcode == LSC_OP_LOAD_CMASK || opcode == LSC_OP_STORE_CMASK;
+   return opcode == LSC_OP_LOAD_CMASK || opcode == LSC_OP_STORE_CMASK ||
+          opcode == LSC_OP_LOAD_CMASK_MSRT ||
+          opcode == LSC_OP_STORE_CMASK_MSRT;
 }
 
 static inline bool
@@ -943,7 +945,8 @@ static inline bool
 lsc_opcode_is_store(enum lsc_opcode opcode)
 {
    return opcode == LSC_OP_STORE ||
-          opcode == LSC_OP_STORE_CMASK;
+          opcode == LSC_OP_STORE_CMASK ||
+          opcode == LSC_OP_STORE_CMASK_MSRT;
 }
 
 static inline bool
@@ -1006,6 +1009,7 @@ lsc_op_num_data_values(unsigned _op)
    case LSC_OP_LOAD:
    case LSC_OP_LOAD_CMASK:
    case LSC_OP_FENCE:
+   case LSC_OP_LOAD_CMASK_MSRT:
       /* XXX: actually check docs */
       return 0;
    default:
@@ -1062,6 +1066,8 @@ lsc_op_to_legacy_atomic(unsigned _op)
    case LSC_OP_STORE:
    case LSC_OP_STORE_CMASK:
    case LSC_OP_FENCE:
+   case LSC_OP_LOAD_CMASK_MSRT:
+   case LSC_OP_STORE_CMASK_MSRT:
       unreachable("not an atomic op");
    }
 

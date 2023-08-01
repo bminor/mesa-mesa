@@ -2170,11 +2170,15 @@ lsc_op_for_nir_intrinsic(const nir_intrinsic_instr *intrin)
 
    case nir_intrinsic_image_load:
    case nir_intrinsic_bindless_image_load:
-      return LSC_OP_LOAD_CMASK;
+      return nir_intrinsic_image_dim(intrin) == GLSL_SAMPLER_DIM_MS ?
+             LSC_OP_LOAD_CMASK_MSRT :
+             LSC_OP_LOAD_CMASK;
 
    case nir_intrinsic_image_store:
    case nir_intrinsic_bindless_image_store:
-      return LSC_OP_STORE_CMASK;
+      return nir_intrinsic_image_dim(intrin) == GLSL_SAMPLER_DIM_MS ?
+             LSC_OP_STORE_CMASK_MSRT :
+             LSC_OP_STORE_CMASK;
 
    default:
       assert(nir_intrinsic_has_atomic_op(intrin));

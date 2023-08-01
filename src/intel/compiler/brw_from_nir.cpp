@@ -6920,6 +6920,24 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
    case nir_intrinsic_image_store:
    case nir_intrinsic_image_atomic:
    case nir_intrinsic_image_atomic_swap:
+      /* Bspec 73734 (r50040):
+       *
+       * Instruction_StoreCmaskMSRT::Src0 Length:
+       *
+       *    "num_coordinates is the number of address coordinates used in
+       *    message. For TGM it will be 4 (U, V, R, SAMPLE_INDEX)."
+       *
+       */
+      srcs[MEMORY_LOGICAL_COORD_COMPONENTS] = brw_imm_ud(
+         (devinfo->ver >= 30 &&
+          nir_intrinsic_image_dim(instr) == GLSL_SAMPLER_DIM_MS) ? 4 :
+         nir_image_intrinsic_coord_components(instr));
+
+      /* MSAA image atomic accesses not supported, must be lowered to UGM */
+      assert((instr->intrinsic != nir_intrinsic_bindless_image_atomic &&
+             instr->intrinsic != nir_intrinsic_bindless_image_atomic_swap) ||
+             nir_intrinsic_image_dim(instr) != GLSL_SAMPLER_DIM_MS);
+
       srcs[MEMORY_LOGICAL_MODE] = brw_imm_ud(MEMORY_MODE_TYPED);
       srcs[MEMORY_LOGICAL_BINDING] =
          get_nir_image_intrinsic_image(ntb, bld, instr);
@@ -6928,8 +6946,6 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
          srcs[MEMORY_LOGICAL_BINDING_TYPE] = brw_imm_ud(LSC_ADDR_SURFTYPE_BTI);
 
       srcs[MEMORY_LOGICAL_ADDRESS] = get_nir_src(ntb, instr->src[1]);
-      srcs[MEMORY_LOGICAL_COORD_COMPONENTS] =
-         brw_imm_ud(nir_image_intrinsic_coord_components(instr));
 
       data_src = 3;
       break;

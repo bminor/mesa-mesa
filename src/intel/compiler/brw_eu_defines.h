@@ -1575,7 +1575,9 @@ enum lsc_opcode {
    LSC_OP_ATOMIC_AND      = 24,
    LSC_OP_ATOMIC_OR       = 25,
    LSC_OP_ATOMIC_XOR      = 26,
-   LSC_OP_FENCE           = 31
+   LSC_OP_FENCE           = 31,
+   LSC_OP_LOAD_CMASK_MSRT     = 49,
+   LSC_OP_STORE_CMASK_MSRT    = 50
 };
 
 /*
