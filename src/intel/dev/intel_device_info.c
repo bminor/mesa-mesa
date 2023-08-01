@@ -1260,6 +1260,11 @@ static const struct intel_device_info intel_device_info_lnl = {
    .has_local_mem = false,
 };
 
+#define XE3_FEATURES                                            \
+   XE2_FEATURES,                                                \
+   .ver = 30,                                                   \
+   .verx10 = 300
+
 void
 intel_device_info_topology_reset_masks(struct intel_device_info *devinfo)
 {
