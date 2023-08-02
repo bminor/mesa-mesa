@@ -10424,7 +10424,7 @@
         "description": "pvr: do not claim support for ASTC texture compression",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8991e646411b73c1e03278267c80758e921f2352",
         "notes": null
