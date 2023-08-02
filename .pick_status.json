@@ -20874,7 +20874,7 @@
         "description": "llvmpipe: fix fragdata/lastfragdata heuristic a bit more.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "db1371cce1d4e0f0f4fa2518379db78efde53ea4",
         "notes": null
