@@ -2288,6 +2288,7 @@ compaction_state_init(struct compaction_state *c,
    c->isa = isa;
    switch (devinfo->ver) {
    case 20:
+   case 30:
       c->control_index_table = xe2_control_index_table;
       c->datatype_table = xe2_datatype_table;
       c->subreg_table = xe2_subreg_table;
