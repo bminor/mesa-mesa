@@ -10274,7 +10274,7 @@
         "description": "zink: unset line stipple ds3 state flags when stipple not available",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7b4c1b3a426ec781c81f48bf57e5e7de07bea2af",
         "notes": null
