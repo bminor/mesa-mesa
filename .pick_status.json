@@ -19414,7 +19414,7 @@
         "description": "egl/dri2: Add a couple of missing mutex release in error path",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f1efe037dfd82d95b025a3ddf58b669758b8d69a",
         "notes": null
