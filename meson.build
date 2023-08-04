@@ -1055,12 +1055,11 @@ elif host_machine.system() == 'sunos'
   pre_args += '-D__EXTENSIONS__'
 elif host_machine.system() == 'windows'
   pre_args += [
-    '-D_WINDOWS', '-D_WIN32_WINNT=0x0A00', '-DWINVER=0x0A00',
-    '-DPIPE_SUBSYSTEM_WINDOWS_USER',
+    '-D_WIN32_WINNT=0x0A00',
+    '-DWINVER=0x0A00',
   ]
   if cc.get_argument_syntax() == 'msvc'
     pre_args += [
-      '-DVC_EXTRALEAN',
       '-D_USE_MATH_DEFINES',
       '-D_CRT_SECURE_NO_WARNINGS',
       '-D_CRT_SECURE_NO_DEPRECATE',
