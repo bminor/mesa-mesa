@@ -19464,7 +19464,7 @@
         "description": "n50/compute: submit initial compute state in nv50_screen_create",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ff72440b40211326eda118232fabd53965410afd",
         "notes": null
