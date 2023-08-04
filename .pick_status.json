@@ -19524,7 +19524,7 @@
         "description": "Revert \"compiler: Combine duplicated implementation of is_gl_identifier into glsl_types.h\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f9860a84b3cf1735ece78bc5907b2be4e2878f8e",
         "notes": null
