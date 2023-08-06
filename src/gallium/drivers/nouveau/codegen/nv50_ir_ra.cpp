@@ -2435,11 +2435,24 @@ RegAlloc::InsertConstraintsPass::insertConstraintMoves()
       Instruction *cst = *it;
       Instruction *mov;
 
-      if (cst->op == OP_SPLIT && false) {
-         // spilling splits is annoying, just make sure they're separate
+      // Note tha RA cannot handle when a split/merge/union consumes the result
+      // of a split/merge/union, so we must always insert a constraint move in
+      // this case
+      if (cst->op == OP_SPLIT) {
          for (int d = 0; cst->defExists(d); ++d) {
-            if (!cst->getDef(d)->refCount())
+            bool needs_mov = false;
+            for (ValueRef *consumer_ref: cst->getDef(d)->uses) {
+               operation consumer_op = consumer_ref->getInsn()->op;
+               needs_mov = needs_mov ||
+                  consumer_op == OP_SPLIT ||
+                  consumer_op == OP_MERGE ||
+                  consumer_op == OP_UNION;
+               if (needs_mov)
+                  break;
+            }
+            if (!needs_mov)
                continue;
+
             LValue *lval = new_LValue(func, cst->def(d).getFile());
             const uint8_t size = cst->def(d).getSize();
             lval->reg.size = size;
@@ -2451,7 +2464,6 @@ RegAlloc::InsertConstraintsPass::insertConstraintMoves()
             cst->bb->insertAfter(cst, mov);
 
             cst->getSrc(0)->asLValue()->noSpill = 1;
-            mov->getSrc(0)->asLValue()->noSpill = 1;
          }
       } else
       if (cst->op == OP_MERGE || cst->op == OP_UNION) {
