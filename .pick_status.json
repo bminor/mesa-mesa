@@ -10564,7 +10564,7 @@
         "description": "r600/sfn: Take source uses into account when switching channels",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "18a8d148d862d4a0f5b83f4385f00cf8a4a71b6d",
         "notes": null
