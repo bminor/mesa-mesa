@@ -10044,7 +10044,7 @@
         "description": "glsl: fix spirv sso validation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ffdb44d3a0a2199487f17ff566c51280c9708c60",
         "notes": null
