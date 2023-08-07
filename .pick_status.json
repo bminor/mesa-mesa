@@ -5984,7 +5984,7 @@
         "description": "dri: Use RGB internal formats for RGBX formats",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bf576772ab4d9e76dae716640bed6de879f19567",
         "notes": null
