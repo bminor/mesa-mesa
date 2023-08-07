@@ -9654,7 +9654,7 @@
         "description": "radv/rt: fix capture/replay support",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "744357477efaa0190c25f77fc15b744ff3931786",
         "notes": null
