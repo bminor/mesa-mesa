@@ -9754,7 +9754,7 @@
         "description": "zink: fix setting VkShaderCreateInfoEXT::nextStage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cd6625c6eb9699245b2fb6c9c704607d762a95ea",
         "notes": null
