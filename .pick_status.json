@@ -6724,7 +6724,7 @@
         "description": "aco: summarize register demand after handling branches",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5a536eca9ca763f53bf3e4c8b75752b527f8fc01",
         "notes": null
