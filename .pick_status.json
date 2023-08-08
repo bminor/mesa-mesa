@@ -8514,7 +8514,7 @@
         "description": "zink: explicitly set non-optimal last_vertex_stage shader key on ctx create",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
