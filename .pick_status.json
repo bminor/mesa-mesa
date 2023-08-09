@@ -9104,7 +9104,7 @@
         "description": "zink: generated tcs is on the tes, not the vs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c47d8305167d0c200f60c787fc4253d1a73f09d",
         "notes": null
