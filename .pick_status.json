@@ -9034,7 +9034,7 @@
         "description": "glsl: fix potential crash with DisableUniformArrayResize",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ac5af6c06d867507284121f31ddbabf07f7e29f4",
         "notes": null
