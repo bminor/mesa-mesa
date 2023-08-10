@@ -5734,7 +5734,7 @@
         "description": "gallium/dri: fix dri2_from_names",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "433ca3127a3b94bfe9a513e7c7ce594e09e1359f",
         "notes": null
