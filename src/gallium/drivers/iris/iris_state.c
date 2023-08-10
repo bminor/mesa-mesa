@@ -8941,6 +8941,16 @@ static void iris_emit_execute_indirect_dispatch(struct iris_context *ice,
    body.ExecutionMask       = dispatch.right_mask;
    body.PostSync.MOCS       = iris_mocs(NULL, &screen->isl_dev, 0);
    body.InterfaceDescriptor = idd;
+   /* HSD 14016252163: Use of Morton walk order (and batching using a batch
+    * size of 4) is expected to increase sampler cache hit rates by
+    * increasing sample address locality within a subslice.
+    */
+#if GFX_VER >= 30
+   body.DispatchWalkOrder =
+      cs_data->uses_sampler ? MortonWalk : LinearWalk;
+   body.ThreadGroupBatchSize =
+      cs_data->uses_sampler ? TG_BATCH_4 : TG_BATCH_1;
+#endif
 
    struct iris_address indirect_bo = ro_bo(indirect, grid->indirect_offset);
    iris_emit_cmd(batch, GENX(EXECUTE_INDIRECT_DISPATCH), ind) {

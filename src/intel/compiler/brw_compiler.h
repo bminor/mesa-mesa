@@ -881,6 +881,9 @@ struct brw_cs_prog_data {
    uint8_t generate_local_id;
    enum intel_compute_walk_order walk_order;
 
+   /* True if shader has any sample operation */
+   bool uses_sampler;
+
    struct {
       struct brw_push_const_block cross_thread;
       struct brw_push_const_block per_thread;

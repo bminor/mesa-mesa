@@ -390,6 +390,17 @@ emit_indirect_compute_walker(struct anv_cmd_buffer *cmd_buffer,
 
    struct GENX(COMPUTE_WALKER_BODY) body =  {
       .SIMDSize                 = dispatch_size,
+      /* HSD 14016252163: Use of Morton walk order (and batching using a batch
+       * size of 4) is expected to increase sampler cache hit rates by
+       * increasing sample address locality within a subslice.
+       */
+#if GFX_VER >= 30
+      .DispatchWalkOrder        = prog_data->uses_sampler ?
+                                  MortonWalk :
+                                  LinearWalk,
+      .ThreadGroupBatchSize     = prog_data->uses_sampler ? TG_BATCH_4 :
+                                                            TG_BATCH_1,
+#endif
       .MessageSIMD              = dispatch_size,
       .IndirectDataStartAddress = comp_state->base.push_constants_state.offset,
       .IndirectDataLength       = comp_state->base.push_constants_state.alloc_size,

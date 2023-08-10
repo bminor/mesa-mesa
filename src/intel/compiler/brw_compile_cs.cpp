@@ -98,6 +98,38 @@ run_cs(fs_visitor &s, bool allow_spilling)
    return !s.failed;
 }
 
+static bool
+instr_uses_sampler(nir_builder *b, nir_instr *instr, void *cb_data)
+{
+   if (instr->type != nir_instr_type_tex)
+      return false;
+
+   switch (nir_instr_as_tex(instr)->op) {
+   case nir_texop_tex:
+   case nir_texop_txd:
+   case nir_texop_txf:
+   case nir_texop_txl:
+   case nir_texop_txb:
+   case nir_texop_txf_ms:
+   case nir_texop_txf_ms_mcs_intel:
+   case nir_texop_lod:
+   case nir_texop_tg4:
+   case nir_texop_texture_samples:
+      return true;
+
+   default:
+      return false;
+   }
+}
+
+static bool
+brw_nir_uses_sampler(nir_shader *shader)
+{
+   return nir_shader_instructions_pass(shader, instr_uses_sampler,
+                                       nir_metadata_all,
+                                       NULL);
+}
+
 const unsigned *
 brw_compile_cs(const struct brw_compiler *compiler,
                struct brw_compile_cs_params *params)
@@ -128,6 +160,8 @@ brw_compile_cs(const struct brw_compiler *compiler,
       .prog_data = prog_data,
       .required_width = brw_required_dispatch_width(&nir->info),
    };
+
+   prog_data->uses_sampler = brw_nir_uses_sampler(params->base.nir);
 
    std::unique_ptr<fs_visitor> v[3];
 
