@@ -8254,7 +8254,7 @@
         "description": "panfrost: upcast uint8/uint16 before shifting them beyond their range",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
