@@ -6774,7 +6774,7 @@
         "description": "zink: fix crash in lower_pv_mode_gs_store",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "39770c6503ac44090decd88698802bb95189bb4d",
         "notes": null
