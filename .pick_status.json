@@ -6054,7 +6054,7 @@
         "description": "aco: don't create sendmsg(dealloc_vgprs) if scratch is used",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2930317cea53843b4f3f2b25f11fba5ba82fda16",
         "notes": null
