@@ -5534,7 +5534,7 @@
         "description": "Revert \"ac: don't call ac_query_pci_bus_info from ac_query_gpu_info\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a48642400be86a17d460ce2786988ec67f423f01",
         "notes": null
