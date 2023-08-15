@@ -7004,7 +7004,7 @@
         "description": "nir: Handle nir_op_mov properly in opt_shrink_vectors",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "94eff7ccd86658603155261c2fd59491786e7047",
         "notes": null
@@ -7094,7 +7094,7 @@
         "description": "radv: fix 128bpp comp-to-single clears",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7451eb1d6112aed578ab89ba21830dc4eaef14ff",
         "notes": null
