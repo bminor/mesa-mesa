@@ -6994,7 +6994,7 @@
         "description": "nir: Don't handle nir_op_mov in get_undef_mask in opt_undef",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5f26c21e62466783cd031c45a39544c992cee202",
         "notes": null
