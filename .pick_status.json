@@ -10654,7 +10654,7 @@
         "description": "vulkan/wsi/x11: Implement capture hotkey using the keymap",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "291fa055453e2832423e6f82914131fa2c748abc",
         "notes": null
