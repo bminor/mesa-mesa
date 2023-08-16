@@ -6774,7 +6774,7 @@
         "description": "nouveau: take glsl_type ref unconditionally",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5889c13fcd46ef984ea0acc02bdf68a7ef552924",
         "notes": null
