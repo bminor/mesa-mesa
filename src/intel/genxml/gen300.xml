@@ -1,6 +1,21 @@
 <?xml version='1.0' encoding='utf-8'?>
 <genxml name="XE3" gen="30">
-  <import name="gen200.xml" />
+  <import name="gen200.xml">
+    <exclude name="CPS_STATE" />
+    <exclude name="3DSTATE_CPS_POINTERS" />
+  </import>
+  <enum name="STATE_CPS_COMBINER_OPCODE" prefix="CPS_COMB_OP">
+    <value name="PASSTHROUGH" value="0" />
+    <value name="OVERRIDE" value="1" />
+    <value name="HIGH_QUALITY" value="2" />
+    <value name="LOW_QUALITY" value="3" />
+    <value name="RELATIVE" value="4" />
+  </enum>
+  <enum name="STATE_CPS_SIZE">
+    <value name="CPSIZE_1" value="0" />
+    <value name="CPSIZE_2" value="1" />
+    <value name="CPSIZE_4" value="2" />
+  </enum>
   <struct name="COMPUTE_WALKER_BODY" length="39">
     <field name="Indirect Data Length" start="32" end="48" type="uint" />
     <field name="L3 prefetch disable" start="49" end="49" type="bool" />
@@ -185,4 +200,16 @@
     <field name="Allow Low Quality LOD Calculation" start="120" end="120" type="bool" />
     <field name="Low Quality Filter" start="122" end="122" type="bool" />
   </struct>
+  <instruction name="3DSTATE_COARSE_PIXEL" bias="2" length="2" engine="render">
+    <field name="DWord Length" start="0" end="15" type="uint" default="0" />
+    <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="137" />
+    <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
+    <field name="Command SubType" start="27" end="28" type="uint" default="3" />
+    <field name="Command Type" start="29" end="31" type="uint" default="3" />
+    <field name="CPSizeX" start="32" end="33" type="STATE_CPS_SIZE" />
+    <field name="CPSizeY" start="34" end="35" type="STATE_CPS_SIZE" />
+    <field name="CPSizeCombiner1Opcode" start="36" end="38" type="STATE_CPS_COMBINER_OPCODE" />
+    <field name="CPSizeCombiner0Opcode" start="39" end="41" type="STATE_CPS_COMBINER_OPCODE" />
+    <field name="Disable CPS Pointers" start="63" end="63" type="bool" />
+  </instruction>
 </genxml>
