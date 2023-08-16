@@ -6454,7 +6454,7 @@
         "description": "hasvk: add state cache invalidation back before fast clears",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "87149cc545afdacb339a933d47ded5c1adf8f429",
         "notes": null
