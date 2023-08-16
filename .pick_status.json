@@ -9914,7 +9914,7 @@
         "description": "intel/compiler: disable per-sample interpolation modes with non-per-sample dispatch",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5644011f063f4049bf5ac1b08addba4b138fa912",
         "notes": null
