@@ -2914,7 +2914,7 @@
         "description": "vulkan: Extend vkGet/SetPrivateDataEXT handling to all platforms",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3c87618d357a4f75a4f47b2638c8f89939fd6c61",
         "notes": null
