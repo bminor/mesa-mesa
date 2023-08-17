@@ -6754,7 +6754,7 @@
         "description": "Revert \"vk/wsi/x11: handle geometry updating more asynchronously\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "36d5b58317179e5db32800743ef0faed4655b9fb",
         "notes": null
