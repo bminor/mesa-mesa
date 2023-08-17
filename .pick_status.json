@@ -6234,7 +6234,7 @@
         "description": "disk_cache: Disable the \"List\" test for RO disk cache.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3b69b67545b678da2970654b9490cc3902cdf738",
         "notes": null
