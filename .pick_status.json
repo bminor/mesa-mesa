@@ -5774,7 +5774,7 @@
         "description": "r300: don't abort on flow control when using draw for vs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1021e2b946b18739b65b575b0770e6158ba05592",
         "notes": null
