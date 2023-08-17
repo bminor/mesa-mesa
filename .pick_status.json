@@ -6194,7 +6194,7 @@
         "description": "nv50: limit max code uploads to 0x8000",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7f63d2ebdbc4c29a58c768787e0551e8a6bd411b",
         "notes": null
