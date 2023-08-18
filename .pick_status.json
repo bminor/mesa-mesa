@@ -4814,7 +4814,7 @@
         "description": "ac/surface: limit RADEON_SURF_NO_TEXTURE to color surfaces",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "de0885cdb89d77ba21dfaf369bf9aeafc8a99d7b",
         "notes": null
