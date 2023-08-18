@@ -5584,7 +5584,7 @@
         "description": "nir/passthrough_gs: Fix array size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ea14579f3dc3144541c6e5944d14e0e257115b15",
         "notes": null
@@ -26684,7 +26684,7 @@
         "description": "Revert \"intel/ci: disable iris-jsl-deqp because it always fails for an AMD MR\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "da4b5b4a47ca727a7c8892d2bea50739df3b94ed",
         "notes": null
