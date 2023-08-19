@@ -5314,7 +5314,7 @@
         "description": "v3dv: fix copy/pasted type of `sample`",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "47e02a2ef11237cf4c2cd8a72f820cdb9db27ee5",
         "notes": null
