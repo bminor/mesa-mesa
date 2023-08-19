@@ -5304,7 +5304,7 @@
         "description": "v3dv: fix shader stage name in error message",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "60145629a2bdcd4e7835b1dd810b9f60bfa9af83",
         "notes": null
