@@ -5324,7 +5324,7 @@
         "description": "v3dv: fix VK_PIPELINE_ROBUSTNESS_{BUFFER,IMAGE}_BEHAVIOR_DEVICE_DEFAULT_EXT copy/paste typo",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "24d9a80247605ac2c2377f6806df8c51e6e13b94",
         "notes": null
