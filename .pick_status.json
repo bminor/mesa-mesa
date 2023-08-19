@@ -5624,7 +5624,7 @@
         "description": "zink: fix format in zink_make_{image,texture}_handle_resident()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "99ba529feed6f9917a44458a38acaf0b3d6d261d",
         "notes": null
