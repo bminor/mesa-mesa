@@ -5294,7 +5294,7 @@
         "description": "v3d/qpu: fix type of function argument",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "05c7d9715b8a419fd6fb952715ee8fde9401aacb",
         "notes": null
