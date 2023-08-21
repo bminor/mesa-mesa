@@ -10304,7 +10304,7 @@
         "description": "vk/wsi/x11: Remove dead code",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fb9f697fbb8f836aaf12a269195841e36b93adf2",
         "notes": null
