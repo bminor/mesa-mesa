@@ -5164,7 +5164,7 @@
         "description": "radv/amdgpu: Do not pass in a BO handle when clearing PRT VA region.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a931d5a4a4d567e78d7e02b6fd506871c84a341d",
         "notes": null
