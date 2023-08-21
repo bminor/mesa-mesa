@@ -6874,7 +6874,7 @@
         "description": "vulkan/wsi: add `vk_wsi_force_swapchain_to_current_extent` driconf",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6139493ae384cfdc8452fabd41287ebd1d539f4c",
         "notes": null
