@@ -374,7 +374,7 @@
         "description": "ac/nir/ngg: Wait for attribute ring stores in mesh shaders.",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": "Applies cleanly, but doesn't build due to needing `nir_def`"
