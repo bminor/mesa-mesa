@@ -2505,7 +2505,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    ac_nir_export_position(b, options->gfx_level,
                           options->clipdist_enable_mask,
                           !options->has_param_exports,
-                          options->force_vrs,
+                          options->force_vrs, true,
                           export_outputs, state.outputs);
 
    if (options->has_param_exports) {
@@ -3035,7 +3035,7 @@ ngg_gs_export_vertices(nir_builder *b, nir_ssa_def *max_num_out_vtx, nir_ssa_def
    ac_nir_export_position(b, s->options->gfx_level,
                           s->options->clipdist_enable_mask,
                           !s->options->has_param_exports,
-                          s->options->force_vrs,
+                          s->options->force_vrs, true,
                           export_outputs, s->outputs);
 
    nir_pop_if(b, if_vtx_export_thread);
@@ -4332,7 +4332,7 @@ emit_ms_finale(nir_builder *b, lower_ngg_ms_state *s)
       ms_emit_arrayed_outputs(b, invocation_index, per_vertex_outputs, s);
 
       ac_nir_export_position(b, s->gfx_level, s->clipdist_enable_mask,
-                             !s->has_param_exports, false,
+                             !s->has_param_exports, false, true,
                              s->per_vertex_outputs, s->outputs);
 
       /* Export generic attributes on GFX10.3
