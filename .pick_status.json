@@ -404,7 +404,7 @@
         "description": "ac/nir: Slightly refactor how pos0 exports are added when missing.",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
