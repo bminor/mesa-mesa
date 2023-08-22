@@ -901,19 +901,25 @@ brw_compute_mue_map(const struct brw_compiler *compiler,
                BITFIELD64_BIT(VARYING_SLOT_POS);
 
    if (outputs_written & per_primitive_header_bits) {
+      bool zero_layer_viewport = false;
       if (outputs_written & BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_SHADING_RATE)) {
          map->start_dw[VARYING_SLOT_PRIMITIVE_SHADING_RATE] =
                map->per_primitive_start_dw + 0;
          map->len_dw[VARYING_SLOT_PRIMITIVE_SHADING_RATE] = 1;
+         /* Wa_16020916187: force 0 writes to layer and viewport slots */
+         zero_layer_viewport =
+            intel_needs_workaround(compiler->devinfo, 16020916187);
       }
 
-      if (outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER)) {
+      if ((outputs_written & BITFIELD64_BIT(VARYING_SLOT_LAYER)) ||
+          zero_layer_viewport) {
          map->start_dw[VARYING_SLOT_LAYER] =
                map->per_primitive_start_dw + 1; /* RTAIndex */
          map->len_dw[VARYING_SLOT_LAYER] = 1;
       }
 
-      if (outputs_written & BITFIELD64_BIT(VARYING_SLOT_VIEWPORT)) {
+      if ((outputs_written & BITFIELD64_BIT(VARYING_SLOT_VIEWPORT)) ||
+          zero_layer_viewport) {
           map->start_dw[VARYING_SLOT_VIEWPORT] =
                 map->per_primitive_start_dw + 2;
           map->len_dw[VARYING_SLOT_VIEWPORT] = 1;
@@ -1549,6 +1555,17 @@ brw_mesh_autostrip_enable(const struct brw_compiler *compiler, struct nir_shader
 
    if (compiler->devinfo->ver < 20)
       return false;
+
+   const uint64_t outputs_written = nir->info.outputs_written;
+
+   /* Wa_16020916187
+    * We've allocated slots for layer/viewport in brw_compute_mue_map() if this
+    * workaround is needed and will let brw_nir_initialize_mue() initialize
+    * those to 0. The workaround also requires disabling autostrip.
+    */
+   if (intel_needs_workaround(compiler->devinfo, 16020916187) &&
+       (BITFIELD64_BIT(VARYING_SLOT_PRIMITIVE_SHADING_RATE) & outputs_written))
+       return false;
 
    if (map->start_dw[VARYING_SLOT_VIEWPORT] < 0 &&
        map->start_dw[VARYING_SLOT_LAYER] < 0)
