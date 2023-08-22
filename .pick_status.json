@@ -4234,7 +4234,7 @@
         "description": "blorp: Drop unnecessary assertions in blorp_can_hiz_clear_depth",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37fcbb375cb14d0cddd003874b4ddd45c115c6df",
         "notes": null
