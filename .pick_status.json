@@ -11264,7 +11264,7 @@
         "description": "Revert \"radeonsi/vcn: add an exception of field case for h264 decoding\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bfce57c7a5ba62d8e6f65addb2df136cab603a68",
         "notes": null
