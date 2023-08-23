@@ -6204,7 +6204,7 @@
         "description": "aux/tc: handle stride mismatch during rp-optimized subdata",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
