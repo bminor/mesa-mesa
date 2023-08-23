@@ -3264,7 +3264,7 @@
         "description": "mesa: fix some TexParameter and SamplerParameter cases",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "799710be8895747f53361378605d151cf0e0eab8",
         "notes": null
