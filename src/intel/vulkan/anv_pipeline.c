@@ -513,11 +513,14 @@ populate_task_prog_key(const struct anv_device *device,
 static void
 populate_mesh_prog_key(const struct anv_device *device,
                        bool robust_buffer_access,
+                       bool compact_mue,
                        struct brw_mesh_prog_key *key)
 {
    memset(key, 0, sizeof(*key));
 
    populate_base_prog_key(device, robust_buffer_access, &key->base);
+
+   key->compact_mue = compact_mue;
 }
 
 static uint32_t
@@ -1703,11 +1706,16 @@ anv_graphics_pipeline_init_keys(struct anv_graphics_base_pipeline *pipeline,
                                 &stages[s].key.task);
          break;
 
-      case MESA_SHADER_MESH:
+      case MESA_SHADER_MESH: {
+         const bool compact_mue =
+            !(pipeline->base.type == ANV_PIPELINE_GRAPHICS_LIB &&
+              !anv_pipeline_base_has_stage(pipeline, MESA_SHADER_FRAGMENT));
          populate_mesh_prog_key(device,
                                 pipeline->base.device->robust_buffer_access,
+                                compact_mue,
                                 &stages[s].key.mesh);
          break;
+      }
 
       default:
          unreachable("Invalid graphics shader stage");
