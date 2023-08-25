@@ -9994,7 +9994,7 @@
         "description": "ci/farm-rules: fix missing valve-infra jobs in scheduled pipelines",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "79f7882fc604515302351282f5e01ec5907727f7",
         "notes": null
