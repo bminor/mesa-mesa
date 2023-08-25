@@ -7894,7 +7894,7 @@
         "description": "radv/amdgpu: fix executing secondaries without IB2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "277b2afd7081fd41fe08db6890f58f2ac1fbe42e",
         "notes": null
