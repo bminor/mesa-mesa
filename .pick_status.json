@@ -7594,7 +7594,7 @@
         "description": "vk/graphics_state: Fix copying MS locations pipeline state",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f497cc9d56e173c62a87b81b02a284e20eff9345",
         "notes": null
