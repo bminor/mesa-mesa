@@ -9974,7 +9974,7 @@
         "description": "ci/android: remove strace output from cuttlefish-runner.sh",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7b51a583edb72f9e66c231b60f9fae4c3c448d22",
         "notes": null
