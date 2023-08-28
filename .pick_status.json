@@ -8064,7 +8064,7 @@
         "description": "intel/shim: Report support for PXP status.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e358173fbfdf40598714ff7c502197fc46985472",
         "notes": null
