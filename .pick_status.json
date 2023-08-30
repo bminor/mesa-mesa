@@ -7884,7 +7884,7 @@
         "description": "radv/amdgpu: do not copy the original chain link for IBs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "df0c742543d7fd256690f7757cd0d2fc6d62aeb5",
         "notes": null
