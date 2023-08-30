@@ -858,6 +858,11 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
       goto err_unsupported_format;
    }
 
+   if (info->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
+      result = vk_error(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED);
+      goto err_unsupported_format;
+   }
+
    tiling_features2 = pvr_get_image_format_features2(pvr_format, info->tiling);
    if (tiling_features2 == 0) {
       result = vk_error(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED);

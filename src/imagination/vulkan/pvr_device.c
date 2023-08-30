@@ -183,6 +183,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_image_format_list = true,
       .KHR_index_type_uint8 = false,
       .KHR_maintenance1 = true,
+      .KHR_maintenance2 = true,
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
       .KHR_shader_expect_assume = false,
@@ -529,6 +530,10 @@ static bool pvr_physical_device_get_properties(
       .optimalBufferCopyOffsetAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
       .optimalBufferCopyRowPitchAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
       .nonCoherentAtomSize = 1U,
+
+      /* Vulkan 1.0 / VK_KHR_maintenance2 */
+      .pointClippingBehavior =
+         VK_POINT_CLIPPING_BEHAVIOR_USER_CLIP_PLANES_ONLY,
 
       /* Vulkan 1.2 / VK_KHR_driver_properties */
       .driverID = VK_DRIVER_ID_IMAGINATION_OPEN_SOURCE_MESA,
