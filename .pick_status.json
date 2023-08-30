@@ -1844,7 +1844,7 @@
         "description": "isaspec: encode: Correct used regex",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9e56f69edf5e1755e04b1461272e3a08051d25a3",
         "notes": null
