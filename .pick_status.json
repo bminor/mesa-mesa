@@ -8044,7 +8044,7 @@
         "description": "zink: be more precise about flagging rp changes around unordered u_blitter",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3a9f7d70383bb5562be718d2071a8b0c84fba3aa",
         "notes": null
