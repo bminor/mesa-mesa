@@ -3784,7 +3784,7 @@
         "description": "compiler/types: Use right hash for function types",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "26f456203cac6765dc758e84aaf373ecd3f1f04c",
         "notes": null
