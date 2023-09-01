@@ -8394,7 +8394,7 @@
         "description": "anv: drop dead ifdef",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b3f6e5dc702472f8f6c730c4172d996d92cb4b6b",
         "notes": null
