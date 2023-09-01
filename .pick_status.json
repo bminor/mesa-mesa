@@ -8344,7 +8344,7 @@
         "description": "blorp: drop undefined macro",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "97d6ceaf04d6e2fe2c6764f0a6a415f07c956851",
         "notes": null
