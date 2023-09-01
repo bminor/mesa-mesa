@@ -8374,7 +8374,7 @@
         "description": "anv: use the lineage number for WA",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d0669f3ede53cccc245efaf27e32b68f6150549a",
         "notes": null
