@@ -8384,7 +8384,7 @@
         "description": "iris: use the correct WA macros and lineage numbers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0ce595a89a784fff14db723151b9ddb824a5a81d",
         "notes": null
