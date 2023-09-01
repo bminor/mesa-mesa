@@ -8854,7 +8854,7 @@
         "description": "rusticl/memory: do not verify pitch for IMAGE1D_BUFFER",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "06daa03c5cd2d8aea6ee797923d2bbfdf500caef",
         "notes": null
