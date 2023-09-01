@@ -3,14 +3,15 @@
   extends: .container+build-rules
   # Cancel job if a newer commit is pushed to the same branch
   interruptible: true
-  # Build jobs don't take more than 1-3 minutes. 5-8 min max on a fresh runner
-  # without a populated ccache.
-  # These jobs are never slow, either they finish within reasonable time or
-  # something has gone wrong and the job will never terminate, so we should
-  # instead timeout so that the retry mechanism can kick in.
-  # A few exception are made, see `timeout:` overrides in the rest of this
-  # file.
-  timeout: 30m
+  variables:
+    # Build jobs don't take more than 1-3 minutes. 5-8 min max on a fresh runner
+    # without a populated ccache.
+    # These jobs are never slow, either they finish within reasonable time or
+    # something has gone wrong and the job will never terminate, so we should
+    # instead timeout so that the retry mechanism can kick in.
+    # A few exception are made, see overrides in the rest of this file.
+    BUILD_JOB_TIMEOUT: 30m
+  timeout: 1h
   # We don't want to download any previous job's artifacts
   dependencies: []
   artifacts:
@@ -60,7 +61,7 @@
   variables:
     LLVM_VERSION: 15
   script:
-    - &meson-build .gitlab-ci/meson/build.sh
+    - &meson-build timeout --verbose ${BUILD_JOB_TIMEOUT_OVERRIDE:-$BUILD_JOB_TIMEOUT} .gitlab-ci/meson/build.sh
 
 
 # Make sure this list stays the same as all the jobs with
