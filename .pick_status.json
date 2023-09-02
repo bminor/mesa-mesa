@@ -5634,7 +5634,7 @@
         "description": "radv: Don't use the depth image view for depth bias emission",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "266b2cfe5bf3feda16747c50c1638fb5a0426958",
         "notes": null
