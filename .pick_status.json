@@ -7864,7 +7864,7 @@
         "description": "intel/nir: rerun lower_tex if it lowers something",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
