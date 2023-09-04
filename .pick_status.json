@@ -2904,7 +2904,7 @@
         "description": "aco/insert_exec_mask: set Exact mode after p_discard_if when necessary",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5e9df85b1a4504c5b4162e77e139056dc80accc6",
         "notes": null
