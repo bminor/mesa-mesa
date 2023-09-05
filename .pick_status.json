@@ -7817,7 +7817,7 @@
         "resolution": 0,
         "main_sha": null,
         "because_sha": null,
-        "notes": null
+        "notes": "applies but doesn't build due to duplicate case values"
     },
     {
         "sha": "aedebb9d30d4a746a8c2ea94f3539dd8b766e72c",
