@@ -196,11 +196,6 @@ get_device_extensions(const struct anv_physical_device *device,
 
    const bool rt_enabled = ANV_SUPPORT_RT && device->info.has_ray_tracing;
 
-   /* We are still seeing some failures with mesh and graphics pipeline
-    * libraries used together, so disable mesh by default.
-    */
-   const bool mesh_shader_enabled = device->info.has_mesh_shading &&
-      debug_get_bool_option("ANV_MESH_SHADER", false);
    const bool nv_mesh_shading_enabled =
       debug_get_bool_option("ANV_EXPERIMENTAL_NV_MESH_SHADER", false);
 
@@ -338,7 +333,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .EXT_memory_budget                     = (!device->info.has_local_mem ||
                                                 device->vram_mappable.available > 0) &&
                                                device->sys.available,
-      .EXT_mesh_shader                       = mesh_shader_enabled,
+      .EXT_mesh_shader                       = device->info.has_mesh_shading,
       .EXT_mutable_descriptor_type           = true,
       .EXT_non_seamless_cube_map             = true,
       .EXT_pci_bus_info                      = true,
@@ -384,7 +379,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .INTEL_shader_integer_functions2       = true,
       .EXT_multi_draw                        = true,
       .NV_compute_shader_derivatives         = true,
-      .NV_mesh_shader                        = mesh_shader_enabled &&
+      .NV_mesh_shader                        = device->info.has_mesh_shading &&
                                                nv_mesh_shading_enabled,
       .VALVE_mutable_descriptor_type         = true,
    };
