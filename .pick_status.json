@@ -5024,7 +5024,7 @@
         "description": "nir/inline_uniforms: fix oob access with nir_find_inlinable_uniforms",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0c0fb216dd6d9d194593178eb0493d31b4b977af",
         "notes": null
