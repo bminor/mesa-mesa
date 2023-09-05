@@ -26684,7 +26684,7 @@
         "description": "Revert \"intel/ci: disable iris-jsl-deqp because it always fails for an AMD MR\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 1,
+        "resolution": 0,
         "main_sha": null,
         "because_sha": "da4b5b4a47ca727a7c8892d2bea50739df3b94ed",
         "notes": null
