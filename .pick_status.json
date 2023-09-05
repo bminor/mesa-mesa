@@ -1,5 +1,1835 @@
 [
     {
+        "sha": "10e75aae1bddee9795b1ff04ffd656b0da79b5b5",
+        "description": "intel/nir: rerun lower_tex if it lowers something",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4506b5af5ed548a854f554644c1071ee753c4ec",
+        "description": "pvr: Implement VK_KHR_format_feature_flags2",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e80fddf81fdd4292f16c3868a5d497af3e1990e6",
+        "description": "radv/amdgpu: do not copy the original chain link for IBs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "df0c742543d7fd256690f7757cd0d2fc6d62aeb5",
+        "notes": null
+    },
+    {
+        "sha": "9206aeb077e60fa768f6fb06960cf6ad1b89cd2a",
+        "description": "radv/amdgpu: fix executing secondaries without IB2",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "277b2afd7081fd41fe08db6890f58f2ac1fbe42e",
+        "notes": null
+    },
+    {
+        "sha": "40d7cb400076492db5d3e9061724661e6b096525",
+        "description": "intel/measure: track batch buffer sizes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2108742257d4ef72cc98c9bccc7ec82e34332759",
+        "description": "anv: reuse cmd_buffer::total_batch_size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "94e3e05b93c3c0770430b8cc741ad4c3a4dd7c49",
+        "description": "anv: rename total_batch_size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b492f73f87ab80dfae0d89631b5286ec8d4e8be4",
+        "description": "anv/android: Enable shared presentable image support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "574bdee19dac1e1e908f6b43667d46de8c96450c",
+        "description": "android: Add explanatory comment to u_gralloc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ed4c86873b708fc3f91aecbd1d2d1861af7674e",
+        "description": "util/cache_test: Add test for get/put() with disabled cache",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4547671fc3cb8611565fc4159562c1ab374ee0cf",
+        "description": "util/cache_test: Fix disabled cache test using SHADER_CACHE_DISABLE_BY_DEFAULT",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "39f26642d606fdb42ef79fa8e3f64630d4781a5d",
+        "notes": null
+    },
+    {
+        "sha": "976fe1d77c6eb4b13aa2df99f2d99660e2cb6730",
+        "description": "util/cache_test: Re-add test for disabled cache",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "39f26642d606fdb42ef79fa8e3f64630d4781a5d",
+        "notes": null
+    },
+    {
+        "sha": "651c47f0ff3af14aed84c3395a05f2290dae4f8d",
+        "description": "llvmpipe/cs: further cleanups after tgsi removal.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca162bc82d585bcbd4ec3ff61485ac1ce8247b7d",
+        "description": "zink: fix linear modifier dmabuf imports",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "31b5f5a51f3a3d19600dd43bf6ab49bab98a9bbe",
+        "description": "nir/opt_if: Simplify if's with general conditions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "977ef3b388c5a41c81369b03dc02c4867ffae4fc",
+        "description": "lavapipe: fix pipeline stride propagation",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "76725452239e9e7740c0edd6a5f3663ab897c343",
+        "notes": null
+    },
+    {
+        "sha": "f2865308c429286806238f523cdf4861922d6093",
+        "description": "lavapipe: update vbo indices before propagating stride",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "76725452239e9e7740c0edd6a5f3663ab897c343",
+        "notes": null
+    },
+    {
+        "sha": "4f7fb8341ea8ab48f60f8106a1c0d6b79feb5971",
+        "description": "zink: don't block reordering during ref updates in unordered blits",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "98340dc8c40d3bb2dbe47eac5fcdf3d65bba87a4",
+        "description": "zink: be more precise about flagging rp changes around unordered u_blitter",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3a9f7d70383bb5562be718d2071a8b0c84fba3aa",
+        "notes": null
+    },
+    {
+        "sha": "7876a2f68532a2bc5ab044cab726eae7fba328fa",
+        "description": "radeonsi/vcn: fix the incorrect dt_size",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0e9a26372bb4e6819b8d56b445564395e04c4217",
+        "description": "iris: implement Wa_14018912822",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "672155ee04f248b657d5639017e00ae370be4aa2",
+        "description": "anv: implement Wa_14018912822",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e0ad50102ffd4b4cf5f4aa05d031be2cf42725f",
+        "description": "ci: do not fail vkd3d-proton job when the expectations match",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a8afc9072c9c1f122516a96d1cb724660d1a74b",
+        "description": "radv/ci: re-enable vkd3d-polaris10-valve",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "58f19311043c97fc20c077d04158519d01652703",
+        "description": "r300: use w channel for scalar opcodes if possible",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "326080428e12871c8cb3f56fdc5d8ab4b3fc3bd2",
+        "description": "pvr: Add 'info' PVR_DEBUG flag",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d01a60e8a3f2b5800a7e38480bc21b74ee07a375",
+        "description": "kmsro: Add hdlcd DPU",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc46062ee52e8c09f10bb8cc80e00b73b592e6f4",
+        "description": "ci: disable Google Freedreno farm, currently timeouting on all jobs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b0830e911e44e5779d2c06190820ee51f9296e1b",
+        "description": "v3dv/android: Skip swapchain binding",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "064e034d5f8c51aa13021f33f058ba243c2dd3b5",
+        "description": "v3dv: Migrate to vk_device_memory",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "22809765ac9362df6cfab22fe9ed70bf5f7ddb73",
+        "description": "v3dv/android: Enable shared presentable image support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83b90c44009285e51e9bb1ef73b7ac38711ccbae",
+        "description": "v3dv/android: Use u_gralloc code",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "083e7d3a92f362b2a901a1758adbc2e15c0eddef",
+        "description": "radv: fix capturing indirect dispatches with SQTT",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b5eaec6c801c0be28ede1a870480578ec86e15f9",
+        "description": "aco,radv,radeonsi: rename is_monolithic to merged_shader_compiled_separately",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b4d213a6f3991b3851816dff0c3c2f15294cece",
+        "description": "radeonsi: Set PIPE_CONTEXT_LOSE_CONTEXT_ON_RESET for auxiliary contexts",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "591aaea6486fca44feb65e46ba09aaa708315b50",
+        "notes": null
+    },
+    {
+        "sha": "07ef39ddc61f94afa03b3cfb4e32903425949e87",
+        "description": "nir/gather: add support for fbfetch and bindless image loads.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "19a7d9615ccc655f3ad83aaf67aa849fa4ecce11",
+        "description": "ac/nir/ngg: Extract nogs_export_vertex_params function.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "93b4f200dead198e680991a1e95bf3d3b58f87bd",
+        "description": "ac/nir/ngg: Wait for attribute ring stores in mesh shaders.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0721784b78ad85d5c281530858bfb50490d741b9",
+        "description": "ac/nir/ngg: Refactor mesh shader primitive export.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "edd51655f0eb44178c9e402ae35667bd184adf2a",
+        "description": "ac/nir/ngg: Wait for attribute stores before VS/TES/GS pos0 export.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9c096e4ace70c0b4f9c390bfc275596b10a0bd72",
+        "description": "ac/nir: Slightly refactor how pos0 exports are added when missing.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "838d886d901ab2adc4c317652aebdd0bf3d52481",
+        "description": "ac/nir: Add done arg to ac_nir_export_position.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a32614a1831542c5d08073437b18b05bcfa5352",
+        "description": "isl/tilememcpy_test: add multiple tile testing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa6562b239f00f9f72c988459e252bdee072fd73",
+        "description": "Revert \"iris: Disable tiled memcpy for Tile4\"",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0022a11ff4fbbe89c2511d758f807b286ebb1bd7",
+        "notes": null
+    },
+    {
+        "sha": "a6c8ddb59659eafcc990db904e21181162e76be5",
+        "description": "intel/isl: Linear to Tile-4 conversion unittest",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f0d02902eb1c38d5a1f01004205f06308a11886",
+        "description": "intel/isl: Convert Tile4 texture to linear format",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a648ee7a70f735dff5c7cf3e2094882b647045d7",
+        "description": "intel/isl: Convert linear texture to Tile4 format",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d16eac17d84297a82e115d88f632f6e67825f5e6",
+        "description": "intel/isl: Unittest for linear to Ytile conversion",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca7ae1a53f83e71a8a117f12a7079cd57485166b",
+        "description": "blorp: drop undefined macro",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "97d6ceaf04d6e2fe2c6764f0a6a415f07c956851",
+        "notes": null
+    },
+    {
+        "sha": "99a88ca4a2419dd2efb02d5b2f5352b8fb5786a0",
+        "description": "crocus: fix GFX_VERx10 macro",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "802043018eb11562cd977702dc1297b1afa3a190",
+        "description": "crocus: add a __gen_get_batch_address declaration",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86e8ba4d327bf2d9860c88978ee524d8065c8006",
+        "description": "anv: use the lineage number for WA",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d0669f3ede53cccc245efaf27e32b68f6150549a",
+        "notes": null
+    },
+    {
+        "sha": "50c2fe46fab4db7495af7c23ceaeafd06b8ad81b",
+        "description": "iris: use the correct WA macros and lineage numbers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0ce595a89a784fff14db723151b9ddb824a5a81d",
+        "notes": null
+    },
+    {
+        "sha": "cbc491666172802e09482381049cea073bb69dd8",
+        "description": "anv: drop dead ifdef",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b3f6e5dc702472f8f6c730c4172d996d92cb4b6b",
+        "notes": null
+    },
+    {
+        "sha": "c38b67f4d1abe7b137b24dbfa4aaf0be46c2b193",
+        "description": "intel: Limit Intel Vulkan RT to x86_64",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "28c1053c07c177854520f6283fa665f17618adb5",
+        "notes": null
+    },
+    {
+        "sha": "fd114ab7068aab2a71c431fb0c96e1f7fb78e9bd",
+        "description": "ci: Disable WHL jobs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e457c6b7e917e8ef46d0866f31ae5e28abbe189",
+        "description": "ci: Disable known broken Bifrost Vulkan job",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ae94b38943f36cd02bddcf40d87063c676dcb4d",
+        "description": "aco: implement some exclusive scans with inclusive scans",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f90f68aa1cf4f87df66ae9656cf517547e9fb36c",
+        "description": "rusticl/memory: only specify PIPE_BIND_SHADER_IMAGE where supported",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3a715cc9d2f2635e72edc307dc5ce671923fbfb3",
+        "description": "nir: add nir_scalar_equal",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bce9bba90d425f2aaea5207cd32f15d624579704",
+        "description": "nir: add nir_scalar intrinsic helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ae3c40732e29aa26ad16e446da365c5131e1085",
+        "description": "docs: add LAVA farm informations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a990e21c8a0e5863427971fdf17750e8915d3cc",
+        "description": "Revert \"ci: disable a660 jobs\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "209ed8eace0ba9095e3ef956a10cd9196407047f",
+        "notes": null
+    },
+    {
+        "sha": "4066f05fe43fffd9a8984779a9994125709149e2",
+        "description": "anv: enable standard Y tiles",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db4488a2dcabe5993c64135965e6477e75b5b92b",
+        "description": "anv: Align memory VA to support for Ys, Tile64 tiled images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e03f3b646c1349d3f896120850ba9122d7337133",
+        "description": "isl: enable Tile64 for 3D images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e956f6ad305699a7ea2bedefc8c741d24140a2a0",
+        "description": "intel/isl: Allow Ys tiling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ac46dbb46ca688613595292ca86d00859ab437c",
+        "description": "isl: reorder tiling selection",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "af559c48d391419662240f9fa5298381fd683456",
+        "description": "intel/aux_map: correctly program tiling mode for Ys",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c6d003d9fb3d6011caf2c34fc6cae72bf6c410b",
+        "description": "blorp: allow 3D blits/copies on Ys/Yf/Tile64 tiling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e182f5770d88b89f329026005704504c9acbfc01",
+        "description": "isl: disable CCS on Ys/Yf",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e36aa507e90241d2753891a6c0d238d87281016",
+        "description": "isl: disable miptails on gfx12 with yuv formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aa31683dde39970c7f9b37b2ea6dbda3f89b7f88",
+        "description": "isl: disallow miptails on planar formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ee41c162d3cef18243cf873de572d4576d08f95",
+        "description": "isl: add Gfx12/12.5 restriction on 3D surfaces & compression",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63c86a95b2f7432bdec65fc552405b494405c5f9",
+        "description": "intel/isl: Disallow CCS on 3D surfaces with miptails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "46f45d62d1bc78dfdd8bf9300584a01541f7660f",
+        "description": "intel/isl: Start using miptails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a42d808b7123bc1378044c77c0256868a5b251e2",
+        "description": "intel/isl: Support miptails in isl_surf_get_uncompressed_surf",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "866af3d8fafa823f114bf148350d9650ff0bc282",
+        "description": "isl: make isl_surf_get_uncompressed_surf robust to argument accesses",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "988fa2006a8da5e1ff6883b01fd7b5d9bcff0645",
+        "description": "intel/isl: Add support for computing offsets with miptails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ada5f5490822a48958a63f90decf9d00d4001c7",
+        "description": "intel/isl: Add a max_miptail_levels field to isl_tile_info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b1862a096468a2c29c96d7e9c1ea11b7265c3f0d",
+        "description": "intel/isl: Add initial data-structure support for miptails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68ac5c21658f400387082a6a9416d522947d0cdc",
+        "description": "intel/isl: Support Yf/Ys tiling in emit_depth_stencil_hiz",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "01b50c9dacc8d631290b03eb0cc49c60db8bc950",
+        "description": "intel/isl: Support Yf/Ys tiling in surf_fill_state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f90d6d228781fff28493f516e36151f7d68e2bf",
+        "description": "intel/isl: Support Ys, Yf & Tile64 in isl_surf_get_uncompressed_surf",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ef7b074e7708e0e0f577136e27cbf10bae40ff7",
+        "description": "intel/isl: Indent uncompressed surface code",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a4e9848adf7c3b0b771367b708aaac639f52d7b",
+        "description": "intel/isl: Fill out the correct phys_total_extent for Ys/Yf/Tile64",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9421998e959fe2c5a2fbe617409d57687c589358",
+        "description": "intel/isl: Use the depth field of phys_level0_sa for GFX4_2D 3D surfaces",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "390d53e13fb0ca5a788a510af9cf5242ec5afdf1",
+        "description": "isl: disallow TileYs/Yf on 3D storage images on Gfx9/11",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15648dcbba1256e58e223b38e47c748c9d296278",
+        "description": "isl: add a usage flag to request 2D/3D compatible views",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c5015e18135b131dd38c45f2c102a77bcd01a10",
+        "description": "isl: disable Yf/Ys/Tile64 tilings for 1D images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6cde6b1d1a126998fb7a0c3db4e9c0b8258a42a1",
+        "description": "intel/isl: Disallow Yf, Ys and Tile64 for 3D depth/stencil surfaces",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "911832e9cfac39a1bb160853c6302fd4adaceee0",
+        "description": "intel/isl: Implement correct tile size calculations for Ys/Yf",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e230ef329bf0ac79fbe7360dbdcb6a64b59e133e",
+        "description": "intel/isl: Add ICL variants of Yf and Ys tiling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa625aea3d9d6c5bdd69f254e0985e742a2573c9",
+        "description": "intel/isl: Rename ISL_TILING_Yf/s to ISL_TILING_SKL_Yf/s",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "298e8dee61dd4fdb5458a8a74c9fe7add118003b",
+        "description": "isl: program 3DSTATE_HIER_DEPTH_BUFFER_BODY::TiledMode as documented",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e9f366b708382410ac701fb4aa8a7606798e828",
+        "description": "genxml/gfx12: rename Tiled Resource Mode",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc985bb2ad015288b0655ae7c0e5a7b1c6bdd2ea",
+        "description": "genxml/gfx11: remove Tiled Resource Mode field from HIER_DEPTH_BUFFER",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "34d5db05835b89a87a29865570047a52fe506048",
+        "description": "anv: add missing ISL storage usage",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28c1053c07c177854520f6283fa665f17618adb5",
+        "description": "intel: Allow using intel_clc from the system",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "526380261821cf820d70963ba07f61f46436ba9e",
+        "description": "rusticl/memory: do not verify pitch for IMAGE1D_BUFFER",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "06daa03c5cd2d8aea6ee797923d2bbfdf500caef",
+        "notes": null
+    },
+    {
+        "sha": "a8c7a2fb69920a3de49076cb6fb9f75107d79de5",
+        "description": "ci/amd: split the polaris10 rules into one for each farm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f291cb6c0b4b2a27392e396aa7eb48c0b5a4934",
+        "description": "intel: allow reduced memory usage for INTEL_MEASURE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cda5784eb3dc890138229604ab68fa319626cc73",
+        "description": "aco: use v_cvt_f32_ubyte for signed casts too",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "144c2d4e4a9f0dc492bfed6fc24bb22fb057a806",
+        "description": "anv: Initialize the clear color more often for FCV",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "223d00fe0a91b19170fd28e8ba1bfdb611576bd4",
+        "description": "radv/ci: re-enable vkcts-polaris10-valve",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "46c17a8e54bfd41fef8ded58188bab22d3e698ab",
+        "description": "rusticl/queue: properly implement clCreateCommandQueueWithProperties",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "969f7b97fdf1194e6b3e8fe06cd9f82011a22063",
+        "description": "zink/ci: add zink-radv-polaris10-valve",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a1a2aac3a3e14fb5c089c19849ee9e895d72bbaa",
+        "description": "meson: Move video to separate section in meson configuration summary",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "48a41c7700464dfcbae1619d4bb329761e094494",
+        "description": "ci: add a fix for KHR-GLES3.packed_pixels.*snorm tests",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff17766fbb4ac1a42416e70bc1af3ac393469b5b",
+        "description": "mesa: remove GL_UNSIGNED_BYTE as supported for snorm reads",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05179931afc95a0a8d5ee26b9635c7558c63e0fa",
+        "description": "pvr: Implement VK_EXT_tooling_info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "51bee677b3691a9b00ac1ba075c2c872e9813abb",
+        "description": "anv: use the pre defined _3DPRIMITIVE_DIRECT macro",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0385dcac5cc757f569d981ff48f73de84fcb3a26",
+        "description": "aco/lower_to_cssa: Fix typo",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce4c38ecae763510173631b6f8b4ba55a1537623",
+        "description": "radv: Only generate debug info if required",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "51f2fa1a5ef0e05fb4b95ba914fbee787d983fee",
+        "notes": null
+    },
+    {
+        "sha": "2a5d8d4cf4f2f1eb046f86c089a6386e90384161",
+        "description": "aco: Unify demote and demote_if selection",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9af91edda95d4a786797fb3cb972dd6ee0b79da7",
+        "description": "aco: Use bytes() instead of size() in emit_wqm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ddf8378cb40b1b51dcd4535c8040c130d5d124d",
+        "description": "aco/validate: Handle p_wqm like p_parallelcopy",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e104718c9f74549efef558bdf06cffa74811f7c8",
+        "description": "aco: allow separate compilation of NGG shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ee8ba0f98fcdd5cd679df306402308a85285776f",
+        "description": "aco: adjust fix_exports() for VS/TES as NGG and non-monolithic shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bfb39031f193b128577a5342f044f0caf3c274dc",
+        "description": "aco: flag blocks with long-jump as export_end for separate compilation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05185e8412c993bfa6deac16875c7ef67456d0c2",
+        "description": "radv: preserve shader argument for separate compilation of NGG shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f3858509c17ba8a728e39d5355cc43c8e5b6a83",
+        "description": "radeonsi: enable aco compile for part mode standalone vs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "287f7a9c355aef4a46ed21ef9de41e02ee106dc3",
+        "description": "radeonsi: set vs has prolog aco shader info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4247b742ecb139b53c42168cd040cd80427df6f3",
+        "description": "radeonsi: add vs prolog aco build",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c3b5ce0c4d96e711603f4a6bb984d21b9bcd238",
+        "description": "radeonsi: fix aco options has_ls_vgpr_init_bug setup",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b313d950e2390d6dc08a088ed9dedddefa41d245",
+        "notes": null
+    },
+    {
+        "sha": "ec57236824d801a44947bce6ce9597af8a8b5654",
+        "description": "radeonsi: extract si_get_vs_prolog_args to be shared with aco",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07b62af81022482b3921ab5b53ec18e048f41d0e",
+        "description": "radeonsi: remove is_monolithic from vs prolog key",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b5d9c4ef4f9a6da18e4f1db79b1a7fee4e7c3c5d",
+        "description": "nvk: add build_id linker argument.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c10bf1e6dd19e916b77692f6b0e99e07c210f51",
+        "description": "radeonsi: fill aco_shader_info->is_monolithic",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "80177e0296299cc46a7c78e25717c1a3c2d0d19d",
+        "notes": null
+    },
+    {
+        "sha": "667375999c7ecaf018eff6fdaceaa6dfd847636f",
+        "description": "rusticl/event: disable profiling for devices without timestamps",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8e4d51aa1f90c01e8a4f55260612acd5e9e722a0",
+        "description": "rusticl/query: fix use-after-free, but also fix incorrect usage of unsafe",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "52e53938c3775c0844f80a27a0c68150eeb5261d",
+        "notes": null
+    },
+    {
+        "sha": "6d3a7c1773fb5907d5816d8beaddaefd3bc3b2cc",
+        "description": "docs: Add row for VK_KHR_maintenance5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "01f5fd36c88f3767383c5f85c9101d262256a9d5",
+        "description": "intel: Only build perf if drivers or tools are enabled",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce7d41bbc501333856ebc70c61b14a7f6d7aa04c",
+        "description": "intel: Only build ds if drivers are enabled",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60d01cb1afa337db1fd76d17e469b7a4a39e994b",
+        "description": "intel: Only build blorp if drivers are enabled",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f89c1dafd63dacc364dbcdc445206b63dee3fd0",
+        "description": "intel: Consider with_intel_clc in with_any_intel",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "37b88a72fb2ea510a284821c53f4484d9c622b45",
+        "description": "intel: Rearrange for next commit",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f2c8cb264977e4fa58cbf019ce92a4ba497a62d4",
+        "description": "radeonsi: use wave size to determine index stride",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42abb231aa2248922c1953b2bee35704e9d575f6",
+        "description": "radeonsi: use AMD_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32 to determine wave size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "11106bab1b47a5adf12230b2d362cb201ef50ea5",
+        "description": "amd/common: add AMD_CODE_PROPERTY_ENABLE_WAVEFRONT_SIZE32 property",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ee3367dc9c3bb48bb26ce25968275d91ddd2f74",
+        "description": "freedreno/a7xx: Add CP_RESET_CONTEXT_STATE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9bd2fabee934b443d712fc77c2c840c687e07a72",
+        "description": "egl: bind dri2_set_WL_bind_wayland_display for zink when necessary",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e7c7656f3216da69e5644593bec0c9a85c19b9c",
+        "description": "egl: call dri3_x11_connect() for zink",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a31922b785ac609700c48ccba716241b877d8c41",
+        "description": "egl/dri3: only set driver_name if not already set",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "223c36e7db4fce82a493a4a7e666683b2538c1b2",
+        "description": "ci/b2c: assert that install folder is present whether or not the tarball was extracted",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e17f3a2b5aebf188363c761fdb309b8b62b837d4",
+        "description": "ci/b2c: don't allow failures in test script preparation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "95a9f66f30a6026f4ac46059e4cbcd65f1a48881",
+        "description": "ci/b2c: skip install.tar extraction if the tarball is not present",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "85a8f03211090bc9a23a5fa116f698aef1fd8cea",
+        "notes": null
+    },
+    {
+        "sha": "728f6c0b70cf3c184fc13801fcb8f9ada37e132a",
+        "description": "radv/rt: Pre-initialize instance address",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b87912f62e464a7d15167802948187a9053e2e9",
+        "description": "ci: document farm rules",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a20ac7891f08369da36df82572f12860ec528ce",
+        "description": "rusticl/disk_cache: fix stack corruption",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fbe9a7ca3e78b683266dac706d156c110dcefdfc",
+        "notes": null
+    },
+    {
+        "sha": "bcc0ec8e6c4cc8ec577cf24506676f7c682145ca",
+        "description": "anv: enable KHR_maintenance5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "688bb3755298efe2b43bb5ff4acecc61f78b7510",
+        "description": "anv: deal with new pipeline flags",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bbd5baa32697836373097b514e4cab1e0753f227",
+        "description": "anv: add maintenance5 A8_UNORM/A1B5G5R5_UNORM support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb61bb6af4e417b9bf65865ad1e2022095fa9a92",
+        "description": "anv: implement GetDeviceImageSubresourceLayoutKHR/GetImageSubresourceLayout2KHR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8b662d41b44f9df5f9f55ec8c804b1749d0e6b65",
+        "description": "anv: add vkGetRenderingAreaGranularityKHR()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4bd864c4876f11cf5ae2cb635521da83131c0d0a",
+        "description": "anv: handle new VkBufferViewUsageCreateInfoKHR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c2aca456eebc8c3a219fe56adcf21a0b9675b4a",
+        "description": "anv: implement vkCmdBindIndexBuffer2KHR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ceb1d817637527b014503832788aaf9f94e0e2e7",
+        "description": "vk/graphic_state, tu: Use dynamic blend count from subpass",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8bc0f6be678b33fd0c0c3938e350d4fbe463ee4e",
+        "description": "lavapipe: Fix the locking around cso destruction",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d0ed8bb265d815ddfb94df4b5fdf9784b78c4c8",
+        "description": "lavapipe: Avoid lowering shaders twice",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55e348b879dbdb814d9d5c846da61e9cd38471c6",
+        "description": "llvmpipe/fs: rewrite output finding using nir.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89451e79cd16c6b92f4b9ccee3416915d6b282cd",
+        "description": "llvmpipe/fs: drop the simple shader logic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a63c2daf7ad776220344046beaa410a72dae7110",
+        "description": "llvmpipe/fs: start using nir info in some places.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f36488a406fd7c2748884b8c8b4dfa7d510fa4d7",
+        "description": "llvmpipe/analyse: drop TGSI path.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2c4b8b32a54fcf7e490cc2bcbbf2e9ef56abef6",
+        "description": "llvmpipe/fs: switch to using tgsi->nir instead of handling tgsi",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17f7ffcb364f43e30ecdcb0b83c7c80fcc96399f",
+        "description": "android: Fix num_planes assignment in u_gralloc_fallback",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "ee42e2166d836251603b2b3e4801705d42d8f83d",
+        "notes": null
+    },
+    {
+        "sha": "c8687a4b09dc0ce6d3508802c3f42eb3da4cd627",
+        "description": "aco: do not fix_exports when program is prolog",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9cce7ce80a4335f4e67764fd0222ce39ae5e349f",
+        "description": "aco: add aco compile interface for radeonsi vs prolog",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a2ba50aee69756d5c7faa9081421c1b3b8bb8891",
+        "description": "aco: add vs prolog instruction selection for radeonsi",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f874138117b207d9996c241e9408fd46f514b48",
+        "description": "aco: prepare fix_ls_vgpr_init_bug to be used by gl vs prolog",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb4f8710344338869f2f53cef71e55ffe26d4175",
+        "description": "aco: pass sw_stage when setup_isel_context",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffd73285477b49af11bc96598803522c2cb37a19",
+        "description": "aco: simplify setup_tcs_info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b488f36fb8c8060e0394d6a89fe938b8e090e08",
+        "description": "ci: disable nouveau shaderdb",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bf1c7ac5cf0da0af15b527ae835f572608a31520",
+        "description": "vulkan/wsi: warn about unset present_mode in PresentModeCompatibilityExt",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a48beddb564cc84663ad7f4b6bc814e1996bcea4",
+        "description": "ci: add comment explaining which image tags to update for Fossilize",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6963a6c8e04a7cc150b339e0ef7c3e9d2d687eaa",
+        "description": "ci: uprev Fossilize",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b810eeda6ff9203da8ac04fdad2ffb6fac0df2b2",
+        "description": "ci: uprev vkd3d-proton",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8efc25c54cdad76f7ea9eea2d000a888ae9073b2",
+        "description": "radv: Use before/after_cf_list for entrypoints",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f80c57c38f717103d4611dcf4cc1da51635b7cc2",
+        "description": "treewide: Use nir_before/after_impl for more elaborate cases",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25cc04c59b4cca37b5bc667129dab7e2db7b61e2",
+        "description": "treewide: Use nir_before/after_impl in easy cases",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c45503aaea6ae65c4b5cdcb13d905af7e6eb413",
+        "description": "nir: Add nir_before/after_impl cursors",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd0d3c7b1c61e834e563f7f1c0c9ff553661cbd0",
+        "description": "panfrost: drop pan_nir_lower_64bit_intrin",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d29a264eacf463bff76c21e2b9615a7600b6731",
+        "description": "rusticl: reduce global_invocation_id_zero_base to 32 bit",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "088c2bbd51a48eb0de1e9fd23c529759585bad59",
         "description": "amd/ci: update list of failures/flakes for glcts-vangogh-valve",
         "nominated": false,
