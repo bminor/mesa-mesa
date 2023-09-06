@@ -6604,7 +6604,7 @@
         "description": "iris: migrate preemption streamwout wa to WA infra",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "db6c374919ea16be6f9a6f96d5c9e866c62c556c",
         "notes": null
