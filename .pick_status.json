@@ -377,7 +377,7 @@
         "resolution": 0,
         "main_sha": null,
         "because_sha": null,
-        "notes": null
+        "notes": "Applies cleanly, but doesn't build due to needing `nir_def`"
     },
     {
         "sha": "0721784b78ad85d5c281530858bfb50490d741b9",
