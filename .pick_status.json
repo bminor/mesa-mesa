@@ -2144,7 +2144,7 @@
         "description": "tu: Fix per-view viewport state propagation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "97da0a7734188f4b666bc38833bfadc8b4c53f84",
         "notes": null
