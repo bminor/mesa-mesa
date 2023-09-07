@@ -2184,7 +2184,7 @@
         "description": "intel/fs: Check if the whole ubo load range is in the push const range",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b2da1238012c751a8ad36c9a51d3fec46a292b0d",
         "notes": null
