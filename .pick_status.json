@@ -3997,7 +3997,7 @@
         "resolution": 0,
         "main_sha": null,
         "because_sha": "b4198e792c037dccb4d433abc1368bd8cc8d22ee",
-        "notes": null
+        "notes": "Applies, but causes assertion regressions in the zink-anv tests:\n ERROR - dEQP error: glcts: ../src/intel/vulkan/genX_cmd_buffer.c:829: init_fast_clear_color: Assertion `cmd_buffer->device->isl_dev.ss.clear_color_state_size == 32' failed"
     },
     {
         "sha": "caa5c23e481457bc0d717c758b9c90bf73cbce9e",
