@@ -2074,7 +2074,7 @@
         "description": "zink: propagate rp_tc_info_updated across unordered blits",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3a9f7d70383bb5562be718d2071a8b0c84fba3aa",
         "notes": null
