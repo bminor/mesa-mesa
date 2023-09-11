@@ -151,6 +151,13 @@ vdrm_bo_close(struct vdrm_device *vdev, uint32_t handle)
    vdev->funcs->bo_close(vdev, handle);
 }
 
+/*
+ * Special interface for dealing with syncobjs when we don't have direct
+ * access to a rendernode:
+ */
+struct util_sync_provider;
+struct util_sync_provider *vdrm_vpipe_get_sync(struct vdrm_device *vdrm);
+
 #ifdef __cplusplus
 } /* end of extern "C" */
 #endif

@@ -7,10 +7,12 @@ libvdrm = static_library(
     'vdrm.c',
     'vdrm.h',
     'vdrm_virtgpu.c',
+    'vdrm_vpipe.c',
   ],
   include_directories : [
     inc_include,
     inc_src,
+    inc_virtio,
     inc_virtio_gpu,
   ],
   c_args : [ no_override_init_args ],

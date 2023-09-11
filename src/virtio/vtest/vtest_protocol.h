@@ -27,7 +27,7 @@
 
 #define VTEST_DEFAULT_SOCKET_NAME "/tmp/.virgl_test"
 
-#define VTEST_PROTOCOL_VERSION 3
+#define VTEST_PROTOCOL_VERSION 4
 
 /* 32-bit length field */
 /* 32-bit cmd field */
@@ -77,6 +77,22 @@
 #define VCMD_SYNC_WRITE 22
 #define VCMD_SYNC_WAIT 23
 #define VCMD_SUBMIT_CMD2 24
+
+/* since protocol version 4 */
+#define VCMD_DRM_SYNC_CREATE 25
+#define VCMD_DRM_SYNC_DESTROY 26
+#define VCMD_DRM_SYNC_HANDLE_TO_FD 27
+#define VCMD_DRM_SYNC_FD_TO_HANDLE 28
+#define VCMD_DRM_SYNC_IMPORT_SYNC_FILE 29
+#define VCMD_DRM_SYNC_EXPORT_SYNC_FILE 30
+#define VCMD_DRM_SYNC_WAIT 31
+#define VCMD_DRM_SYNC_RESET 32
+#define VCMD_DRM_SYNC_SIGNAL 33
+#define VCMD_DRM_SYNC_TIMELINE_SIGNAL 34
+#define VCMD_DRM_SYNC_TIMELINE_WAIT 35
+#define VCMD_DRM_SYNC_QUERY 36
+#define VCMD_DRM_SYNC_TRANSFER 37
+#define VCMD_RESOURCE_EXPORT_FD 38
 
 #define VCMD_RES_CREATE_SIZE 10
 #define VCMD_RES_CREATE_RES_HANDLE 0 /* must be 0 since protocol version 3 */
@@ -146,6 +162,7 @@
 
 enum vcmd_param  {
    VCMD_PARAM_MAX_TIMELINE_COUNT = 1,
+   VCMD_PARAM_HAS_TIMELINE_SYNCOBJ = 2,
 };
 #define VCMD_GET_PARAM_SIZE 1
 #define VCMD_GET_PARAM_PARAM 0
@@ -210,6 +227,8 @@ enum vcmd_sync_wait_flag {
 
 enum vcmd_submit_cmd2_flag {
    VCMD_SUBMIT_CMD2_FLAG_RING_IDX = 1 << 0,
+   VCMD_SUBMIT_CMD2_FLAG_IN_FENCE_FD = 1 << 1,
+   VCMD_SUBMIT_CMD2_FLAG_OUT_FENCE_FD = 1 << 2,
 };
 
 struct vcmd_submit_cmd2_batch {
@@ -224,6 +243,9 @@ struct vcmd_submit_cmd2_batch {
 
    /* ignored unless VCMD_SUBMIT_CMD2_FLAG_RING_IDX is set */
    uint32_t ring_idx;
+
+   uint32_t num_in_syncobj;
+   uint32_t num_out_syncobj;
 };
 #define VCMD_SUBMIT_CMD2_BATCH_COUNT 0
 #define VCMD_SUBMIT_CMD2_BATCH_FLAGS(n)            (1 + 8 * (n) + 0)
@@ -232,5 +254,99 @@ struct vcmd_submit_cmd2_batch {
 #define VCMD_SUBMIT_CMD2_BATCH_SYNC_OFFSET(n)      (1 + 8 * (n) + 3)
 #define VCMD_SUBMIT_CMD2_BATCH_SYNC_COUNT(n)       (1 + 8 * (n) + 4)
 #define VCMD_SUBMIT_CMD2_BATCH_RING_IDX(n)         (1 + 8 * (n) + 5)
+#define VCMD_SUBMIT_CMD2_BATCH_NUM_IN_SYNCOBJ(n)   (1 + 8 * (n) + 6)
+#define VCMD_SUBMIT_CMD2_BATCH_NUM_OUT_SYNCOBJ(n)  (1 + 8 * (n) + 7)
+
+#define VCMD_DRM_SYNC_CREATE_SIZE 1
+#define VCMD_DRM_SYNC_CREATE_FLAGS 0
+/* resp sync handle */
+
+#define VCMD_DRM_SYNC_DESTROY_SIZE 1
+#define VCMD_DRM_SYNC_DESTROY_HANDLE 0
+
+#define VCMD_DRM_SYNC_HANDLE_TO_FD_SIZE 1
+#define VCMD_DRM_SYNC_HANDLE_TO_FD_HANDLE 0
+/* resp sync fd */
+
+#define VCMD_DRM_SYNC_FD_TO_HANDLE_SIZE 0
+/* req sync fd */
+/* resp sync handle */
+
+#define VCMD_DRM_SYNC_IMPORT_SYNC_FILE_SIZE 1
+#define VCMD_DRM_SYNC_IMPORT_SYNC_FILE_HANDLE 0
+/* req sync fd */
+
+#define VCMD_DRM_SYNC_EXPORT_SYNC_FILE_SIZE 1
+#define VCMD_DRM_SYNC_EXPORT_SYNC_FILE_HANDLE 0
+/* resp sync fd */
+
+/* Extra flag for VCMD_DRM_SYNC_WAIT/VCMD_DRM_SYNC_TIMELINE_WAIT
+ * on top of the existing drm ioctl flags, to indicate that the
+ * client expects an fd back from the server to wait on.
+ *
+ * If the DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FD flag is set, then
+ * first_signaled and status is returned via the eventfd
+ */
+#define DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FD (1 << 31)
+
+#define VCMD_DRM_SYNC_WAIT_SIZE 4
+#define VCMD_DRM_SYNC_WAIT_NUM_HANDLES 0
+#define VCMD_DRM_SYNC_WAIT_TIMEOUT_LO 1
+#define VCMD_DRM_SYNC_WAIT_TIMEOUT_HI 2
+#define VCMD_DRM_SYNC_WAIT_FLAGS 3
+/* req handles[num_handles]
+ * if (flags & DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FD) {
+ *    rsp eventfd
+ * } else {
+ *    rsp first_signaled
+ *    rsp status
+ * }
+ */
+
+#define VCMD_DRM_SYNC_RESET_SIZE 1
+#define VCMD_DRM_SYNC_RESET_NUM_HANDLES 0
+/* req handles[num_handles] */
+
+#define VCMD_DRM_SYNC_SIGNAL_SIZE 1
+#define VCMD_DRM_SYNC_SIGNAL_NUM_HANDLES 0
+/* req handles[num_handles] */
+
+#define VCMD_DRM_SYNC_TIMELINE_SIGNAL_SIZE 1
+#define VCMD_DRM_SYNC_TIMELINE_SIGNAL_NUM_HANDLES 0
+/* req points[num_handles] */
+/* req handles[num_handles] */
+
+#define VCMD_DRM_SYNC_TIMELINE_WAIT_SIZE 4
+#define VCMD_DRM_SYNC_TIMELINE_WAIT_NUM_HANDLES 0
+#define VCMD_DRM_SYNC_TIMELINE_WAIT_TIMEOUT_LO 1
+#define VCMD_DRM_SYNC_TIMELINE_WAIT_TIMEOUT_HI 2
+#define VCMD_DRM_SYNC_TIMELINE_WAIT_FLAGS 3
+/* req points[num_handles]
+ * req handles[num_handles]
+ * if (flags & DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FD) {
+ *    rsp eventfd
+ * } else {
+ *    rsp first_signaled
+ *    rsp status
+ * }
+ */
+
+#define VCMD_DRM_SYNC_QUERY_SIZE 2
+#define VCMD_DRM_SYNC_QUERY_NUM_HANDLES 0
+#define VCMD_DRM_SYNC_QUERY_FLAGS 1
+/* rsp points[num_handles]*/
+
+#define VCMD_DRM_SYNC_TRANSFER_SIZE 7
+#define VCMD_DRM_SYNC_TRANSFER_DST_HANDLE 0
+#define VCMD_DRM_SYNC_TRANSFER_DST_POINT_LO 1
+#define VCMD_DRM_SYNC_TRANSFER_DST_POINT_HI 2
+#define VCMD_DRM_SYNC_TRANSFER_SRC_HANDLE 3
+#define VCMD_DRM_SYNC_TRANSFER_SRC_POINT_LO 4
+#define VCMD_DRM_SYNC_TRANSFER_SRC_POINT_HI 5
+#define VCMD_DRM_SYNC_TRANSFER_FLAGS 6
+
+#define VCMD_RESOURCE_EXPORT_FD_SIZE 1
+#define VCMD_RESOURCE_EXPORT_FD_RES_HANDLE 0
+/* rsp fd */
 
 #endif /* VTEST_PROTOCOL */

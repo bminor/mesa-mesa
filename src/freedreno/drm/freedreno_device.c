@@ -42,6 +42,12 @@ fd_device_new(int fd)
       return NULL;
    }
 
+#ifdef HAVE_FREEDRENO_VIRTIO
+   if (debug_get_bool_option("FD_FORCE_VTEST", false)) {
+      DEBUG_MSG("virtio_gpu vtest device");
+      dev = virtio_device_new(-1, version);
+   } else
+#endif
    if (!strcmp(version->name, "msm")) {
       DEBUG_MSG("msm DRM device");
       if (version->version_major != 1) {
