@@ -3304,7 +3304,7 @@
         "description": "panfrost: delete stale editorconfig file",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0afd691f29683f6e9dde60f79eca094373521806",
         "notes": null
