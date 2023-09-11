@@ -3914,7 +3914,7 @@
         "description": "zink: move find_sampler_var from zink to nir core",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1a8dd84ec613f6e89ef5f180d79cddde0cd93d52",
         "notes": null
