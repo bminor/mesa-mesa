@@ -3834,7 +3834,7 @@
         "description": "venus: fix a device memory report leak",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f70a08bc60f26cfcefa6e1c229dd1f9bc258d7cc",
         "notes": null
