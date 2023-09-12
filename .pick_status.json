@@ -3824,7 +3824,7 @@
         "description": "wsi/x11: Fix potential deadlock in present ID.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "32f7ff2c204b28e6d312ecac6463f588d4d68f3e",
         "notes": null
