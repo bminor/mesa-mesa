@@ -1451,17 +1451,17 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
          if (i == VARYING_SLOT_PSIZ)
             continue;
 
-	 if (key->input_slots_valid & BITFIELD64_BIT(i)) {
-	    /* The back color slot is skipped when the front color is
-	     * also written to.  In addition, some slots can be
-	     * written in the vertex shader and not read in the
-	     * fragment shader.  So the register number must always be
-	     * incremented, mapped or not.
-	     */
-	    if (_mesa_varying_slot_in_fs((gl_varying_slot) i))
-	       prog_data->urb_setup[i] = urb_next;
+         if (key->input_slots_valid & BITFIELD64_BIT(i)) {
+            /* The back color slot is skipped when the front color is
+             * also written to.  In addition, some slots can be
+             * written in the vertex shader and not read in the
+             * fragment shader.  So the register number must always be
+             * incremented, mapped or not.
+             */
+            if (_mesa_varying_slot_in_fs((gl_varying_slot) i))
+               prog_data->urb_setup[i] = urb_next;
             urb_next++;
-	 }
+         }
       }
 
       /*
