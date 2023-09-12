@@ -3984,7 +3984,7 @@
         "description": "aux/tc: fix staging buffer sizing for texture_subdata",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "51ad269198e425fae719a37f169b365a8b52e7f3",
         "notes": null
