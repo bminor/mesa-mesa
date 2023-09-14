@@ -6754,7 +6754,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
        * do any unbounded checks and fail if the platform hasn't explicitly
        * been enabled here.
        */
-      assert(devinfo->ver >= 12 && devinfo->ver <= 20);
+      assert(devinfo->ver >= 12 && devinfo->ver <= 30);
 
       /* Here is what the layout of SR0 looks like on Gfx12
        * https://gfxspecs.intel.com/Predator/Home/Index/47256
@@ -6773,6 +6773,15 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
        *   [9:8]   : SubSlice ID
        *   [6:4]   : EUID
        *   [2:0]   : Thread ID
+       *
+       * Xe3: Engine 3D and GPGPU Programs, EU Overview, Registers and
+       * Register Regions, ARF Registers, State Register.
+       * Bspec 56623 (r55736)
+       *
+       *   [17:14] : Slice ID.
+       *   [11:8]  : SubSlice ID
+       *   [6:4]   : EUID
+       *   [3:0]   : Thread ID
        */
       brw_reg raw_id = bld.vgrf(BRW_TYPE_UD);
       bld.UNDEF(raw_id);
@@ -6798,9 +6807,17 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
              *
              * We are using the state register to calculate the DSSID.
              */
+            const uint32_t slice_id_mask = devinfo->ver >= 30 ?
+                                           INTEL_MASK(17, 14) :
+                                           INTEL_MASK(15, 11);
+            const uint32_t slice_id_shift = devinfo->ver >= 30 ? 14 : 11;
+
+            const uint32_t subslice_id_mask = devinfo->ver >= 30 ?
+                                              INTEL_MASK(11, 8) :
+                                              INTEL_MASK(9, 8);
             brw_reg slice_id =
-               bld.SHR(bld.AND(raw_id, brw_imm_ud(INTEL_MASK(15, 11))),
-                       brw_imm_ud(11));
+               bld.SHR(bld.AND(raw_id, brw_imm_ud(slice_id_mask)),
+                       brw_imm_ud(slice_id_shift));
 
             /* Assert that max subslices covers at least 2 bits that we use for
              * subslices.
@@ -6808,7 +6825,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
             unsigned slice_stride = devinfo->max_subslices_per_slice;
             assert(slice_stride >= (1 << 2));
             brw_reg subslice_id =
-               bld.SHR(bld.AND(raw_id, brw_imm_ud(INTEL_MASK(9, 8))),
+               bld.SHR(bld.AND(raw_id, brw_imm_ud(subslice_id_mask)),
                        brw_imm_ud(8));
             bld.ADD(retype(dest, BRW_TYPE_UD),
                     bld.MUL(slice_id, brw_imm_ud(slice_stride)), subslice_id);
@@ -6859,10 +6876,23 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
                                bld.SHL(raw8, brw_imm_ud(1))));
          }
 
-         /* ThreadID[2:0] << 4 (ThreadID comes from raw_id[2:0]) */
-         brw_reg tid =
-            bld.SHL(bld.AND(raw_id, brw_imm_ud(INTEL_MASK(2, 0))),
-                    brw_imm_ud(4));
+         brw_reg tid;
+         /* Xe3: Graphics Engine, 3D and GPGPU Programs, Shared Functions
+          * Ray Tracing, (Bspec 56936 (r56740))
+          *
+          * SyncStackID = (EUID[2:0] << 8) | (ThreadID[3:0] << 4) |
+          * SIMDLaneID[3:0];
+          *
+          * ThreadID[3:0] << 4 (ThreadID comes from raw_id[3:0])
+          *
+          * On older platforms (< Xe3):
+          * ThreadID[2:0] << 4 (ThreadID comes from raw_id[2:0])
+          */
+         const uint32_t raw_id_mask = devinfo->ver >= 30 ?
+                                      INTEL_MASK(3, 0) :
+                                      INTEL_MASK(2, 0);
+         tid = bld.SHL(bld.AND(raw_id, brw_imm_ud(raw_id_mask)),
+                       brw_imm_ud(4));
 
          /* LaneID[0:3] << 0 (Use subgroup invocation) */
          assert(bld.dispatch_width() <= 16); /* Limit to 4 bits */
