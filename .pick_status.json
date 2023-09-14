@@ -2234,7 +2234,7 @@
         "description": "aux/tc: fix rp info handling around tc_sync calls",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "07017aa137b9fa48ec25ef5d1e3fd2d137beb651",
         "notes": null
