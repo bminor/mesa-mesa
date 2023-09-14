@@ -1624,7 +1624,7 @@
         "description": "aco/optimizer_postRA: check overwritten_subdword in is_overwritten_since()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3d29779a25a98898163b1dc9c687e6e6211d13c5",
         "notes": null
