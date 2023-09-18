@@ -84,8 +84,8 @@ struct pvr_compute_kernel_info {
    uint32_t pds_code_offset;
    enum PVRX(CDMCTRL_SD_TYPE) sd_type;
    bool usc_common_shared;
-   uint32_t local_size[PVR_WORKGROUP_DIMENSIONS];
    uint32_t global_size[PVR_WORKGROUP_DIMENSIONS];
+   uint32_t local_size[PVR_WORKGROUP_DIMENSIONS];
    uint32_t max_instances;
 };
 
@@ -4318,8 +4318,8 @@ static void pvr_compute_update_shared(struct pvr_cmd_buffer *cmd_buffer,
          DIV_ROUND_UP(const_shared_regs,
                       PVRX(CDMCTRL_KERNEL0_USC_COMMON_SIZE_UNIT_SIZE)),
 
-      .local_size = { 1, 1, 1 },
       .global_size = { 1, 1, 1 },
+      .local_size = { 1, 1, 1 },
    };
 
    /* Sometimes we don't have a secondary program if there were no constants to
@@ -4388,8 +4388,8 @@ void pvr_compute_update_shared_private(
       .pds_code_offset = pipeline->pds_shared_update_code_offset,
       .sd_type = PVRX(CDMCTRL_SD_TYPE_NONE),
       .usc_common_shared = true,
-      .local_size = { 1, 1, 1 },
       .global_size = { 1, 1, 1 },
+      .local_size = { 1, 1, 1 },
    };
 
    /* We don't need to pad the workgroup size. */
