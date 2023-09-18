@@ -384,7 +384,7 @@
         "description": "pvr: Fix `for` loop itarator usage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "060c3db4efd6ed766331a8cd1c9536265390a58f",
         "notes": null
