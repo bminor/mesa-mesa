@@ -322,7 +322,7 @@ VkResult pvr_CreateImageView(VkDevice _device,
    info.base_level = iview->vk.base_mip_level;
    info.mip_levels = iview->vk.level_count;
    info.extent = image->vk.extent;
-   info.aspect_mask = image->vk.aspects;
+   info.aspect_mask = iview->vk.aspects;
    info.is_cube = (info.type == VK_IMAGE_VIEW_TYPE_CUBE ||
                    info.type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY);
    info.array_size = iview->vk.layer_count;
@@ -341,7 +341,29 @@ VkResult pvr_CreateImageView(VkDevice _device,
    pvr_adjust_non_compressed_view(image, &info);
 
    vk_component_mapping_to_pipe_swizzle(iview->vk.swizzle, input_swizzle);
-   format_swizzle = pvr_get_format_swizzle(info.format);
+
+   enum pipe_format pipe_format =
+      vk_format_to_pipe_format(iview->vk.view_format);
+   if (util_format_is_depth_or_stencil(pipe_format)) {
+      switch (pipe_format) {
+      case PIPE_FORMAT_S8_UINT:
+         pipe_format = PIPE_FORMAT_R8_UINT;
+         break;
+
+      case PIPE_FORMAT_Z16_UNORM:
+         pipe_format = PIPE_FORMAT_R16_UINT;
+         break;
+
+      case PIPE_FORMAT_Z32_FLOAT:
+         pipe_format = PIPE_FORMAT_R32_FLOAT;
+         break;
+
+      default:
+         break;
+      }
+   }
+   format_swizzle = util_format_description(pipe_format)->swizzle;
+
    util_format_compose_swizzles(format_swizzle, input_swizzle, info.swizzle);
 
    result = pvr_pack_tex_state(device,
