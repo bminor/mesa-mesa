@@ -684,6 +684,9 @@ pvr_get_image_format_features2(const struct pvr_format *pvr_format,
                   VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT;
       }
 
+      if (vk_format_has_stencil(vk_format))
+         flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT;
+
       switch (vk_format) {
       case VK_FORMAT_R8_UNORM:
       case VK_FORMAT_R8_SNORM:
@@ -899,6 +902,8 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
    /* Input attachments aren't rendered but they must have the same size
     * restrictions as any framebuffer attachment.
     */
+   const VkImageStencilUsageCreateInfo *stencil_usage_info =
+      vk_find_struct_const(info->pNext, IMAGE_STENCIL_USAGE_CREATE_INFO);
    const VkImageUsageFlags render_usage =
       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
       VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
@@ -906,6 +911,8 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
    const struct pvr_format *pvr_format = pvr_get_format(info->format);
    VkFormatFeatureFlags2 tiling_features2;
+   VkImageUsageFlags usage =
+      info->usage | (stencil_usage_info ? stencil_usage_info->stencilUsage : 0);
    VkResult result;
 
    if (!pvr_format) {
@@ -928,8 +935,8 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
     * specific format isn't supported based on the usage.
     */
    if ((info->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) == 0 &&
-       info->usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
+       usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
        pvr_format->pbe_accum_format == PVR_PBE_ACCUM_FORMAT_INVALID) {
       result = vk_error(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED);
       goto err_unsupported_format;
@@ -948,8 +955,7 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
       /* Linear tiled 3D images may only be used for transfer or blit
        * operations.
        */
-      if (info->tiling == VK_IMAGE_TILING_LINEAR &&
-          info->usage & ~transfer_usage) {
+      if (info->tiling == VK_IMAGE_TILING_LINEAR && usage & ~transfer_usage) {
          result = vk_error(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED);
          goto err_unsupported_format;
       }
@@ -961,7 +967,7 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
       }
    }
 
-   if (info->usage & render_usage) {
+   if (usage & render_usage) {
       const uint32_t max_render_size =
          rogue_get_render_size_max(&pdevice->dev_info);
 
@@ -1094,6 +1100,10 @@ VkResult pvr_GetPhysicalDeviceImageFormatProperties2(
          external_info = (const void *)ext;
          break;
       case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO:
+         break;
+      case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO:
+         /* Nothing to do here, it's handled in pvr_get_image_format_properties
+          */
          break;
       default:
          vk_debug_ignored_stype(ext->sType);
