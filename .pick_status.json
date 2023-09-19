@@ -374,7 +374,7 @@
         "description": "pvr: Fix dynamic desc offset storage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "aa791961a82e1f5a9dd841c3e0398c3e80d09652",
         "notes": null
