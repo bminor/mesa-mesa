@@ -799,6 +799,54 @@
       </group>
     </group>
   </instruction>
+  <instruction name="3DSTATE_URB_ALLOC_DS" bias="2" length="3" engine="render">
+    <field name="DWord Length" start="0" end="7" type="uint" default="1" />
+    <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="90" />
+    <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
+    <field name="Command SubType" start="27" end="28" type="uint" default="3" />
+    <field name="Command Type" start="29" end="31" type="uint" default="3" />
+    <field name="DS URB Entry Allocation Size" start="32" end="41" type="uint" />
+    <field name="DS URB Starting Address Slice0" start="42" end="49" type="uint" />
+    <field name="DS URB Starting Address Slice N" start="53" end="60" type="uint" />
+    <field name="DS Number of URB Entries Slice0" start="64" end="79" type="uint" />
+    <field name="DS Number of URB Entries Slice N" start="80" end="95" type="uint" />
+  </instruction>
+  <instruction name="3DSTATE_URB_ALLOC_GS" bias="2" length="3" engine="render">
+    <field name="DWord Length" start="0" end="7" type="uint" default="1" />
+    <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="91" />
+    <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
+    <field name="Command SubType" start="27" end="28" type="uint" default="3" />
+    <field name="Command Type" start="29" end="31" type="uint" default="3" />
+    <field name="GS URB Entry Allocation Size" start="32" end="41" type="uint" />
+    <field name="GS URB Starting Address Slice0" start="42" end="49" type="uint" />
+    <field name="GS URB Starting Address Slice N" start="53" end="60" type="uint" />
+    <field name="GS Number of URB Entries Slice0" start="64" end="79" type="uint" />
+    <field name="GS Number of URB Entries Slice N" start="80" end="95" type="uint" />
+  </instruction>
+  <instruction name="3DSTATE_URB_ALLOC_HS" bias="2" length="3" engine="render">
+    <field name="DWord Length" start="0" end="7" type="uint" default="1" />
+    <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="89" />
+    <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
+    <field name="Command SubType" start="27" end="28" type="uint" default="3" />
+    <field name="Command Type" start="29" end="31" type="uint" default="3" />
+    <field name="HS URB Entry Allocation Size" start="32" end="41" type="uint" />
+    <field name="HS URB Starting Address Slice0" start="42" end="49" type="uint" />
+    <field name="HS URB Starting Address Slice N" start="53" end="60" type="uint" />
+    <field name="HS Number of URB Entries Slice0" start="64" end="79" type="uint" />
+    <field name="HS Number of URB Entries Slice N" start="80" end="95" type="uint" />
+  </instruction>
+  <instruction name="3DSTATE_URB_ALLOC_VS" bias="2" length="3" engine="render">
+    <field name="DWord Length" start="0" end="7" type="uint" default="1" />
+    <field name="3D Command Sub Opcode" start="16" end="23" type="uint" default="88" />
+    <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
+    <field name="Command SubType" start="27" end="28" type="uint" default="3" />
+    <field name="Command Type" start="29" end="31" type="uint" default="3" />
+    <field name="VS URB Entry Allocation Size" start="32" end="41" type="uint" />
+    <field name="VS URB Starting Address Slice0" start="42" end="49" type="uint" />
+    <field name="VS URB Starting Address Slice N" start="53" end="60" type="uint" />
+    <field name="VS Number of URB Entries Slice0" start="64" end="79" type="uint" />
+    <field name="VS Number of URB Entries Slice N" start="80" end="95" type="uint" />
+  </instruction>
   <instruction name="3DSTATE_WM_DEPTH_STENCIL" bias="2" length="4" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="2" />
     <field name="Stencil Reference Value Modify Disable" start="8" end="8" type="bool" />
