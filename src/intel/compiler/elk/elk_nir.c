@@ -1565,7 +1565,11 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
 
    OPT(nir_copy_prop);
    OPT(nir_opt_dce);
-   OPT(nir_opt_move, nir_move_comparisons);
+
+   nir_move_options common = nir_move_const_undef | nir_move_load_input |
+                             nir_move_copies | nir_move_load_ssbo;
+   OPT(nir_opt_sink, common);
+   OPT(nir_opt_move, common | nir_move_comparisons | nir_move_load_ubo);
    OPT(nir_opt_dead_cf);
 
    /* TODO: Enable nir_opt_uniform_atomics on Gfx7.x too.
