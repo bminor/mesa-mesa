@@ -14,7 +14,7 @@
         "description": "aco: reset prefetch in the correct block after removing the exit",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c778803d673f8db16df5951637258405b2d7e0a6",
         "notes": null
