@@ -2145,7 +2145,14 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
 
    OPT(nir_copy_prop);
    OPT(nir_opt_dce);
-   OPT(nir_opt_move, nir_move_comparisons);
+
+   nir_move_options move_all = nir_move_const_undef | nir_move_load_ubo |
+                               nir_move_load_input | nir_move_comparisons |
+                               nir_move_copies | nir_move_load_ssbo |
+                               nir_move_alu;
+
+   OPT(nir_opt_sink, move_all);
+   OPT(nir_opt_move, move_all);
    OPT(nir_opt_dead_cf);
 
    static const nir_lower_subgroups_options subgroups_options = {
