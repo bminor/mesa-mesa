@@ -28904,7 +28904,7 @@
         "description": "zink: set pipeline dynamic state count after all dynamic states are set",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 1,
+        "resolution": 0,
         "main_sha": null,
         "because_sha": "d17c081b7c6485a00e99fa9472e3d6a0bb0f66be",
         "notes": null
