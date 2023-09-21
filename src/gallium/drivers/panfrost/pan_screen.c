@@ -699,14 +699,20 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
    unsigned count = 0;
 
    for (unsigned i = 0; i < PAN_MODIFIER_COUNT; ++i) {
-      if (drm_is_afbc(pan_best_modifiers[i]) && !afbc)
-         continue;
+      if (drm_is_afbc(pan_best_modifiers[i])) {
+         if (!afbc)
+            continue;
 
-      if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_YTR) && !ytr)
-         continue;
+         if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_SPLIT) &&
+             !panfrost_afbc_can_split(dev->arch, format, pan_best_modifiers[i]))
+            continue;
 
-      if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_TILED) && !tiled_afbc)
-         continue;
+         if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_YTR) && !ytr)
+            continue;
+
+         if ((pan_best_modifiers[i] & AFBC_FORMAT_MOD_TILED) && !tiled_afbc)
+            continue;
+      }
 
       if (drm_is_afrc(pan_best_modifiers[i]) && !afrc)
          continue;

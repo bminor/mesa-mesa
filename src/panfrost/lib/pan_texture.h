@@ -242,6 +242,9 @@ panfrost_format_supports_afbc(unsigned arch, enum pipe_format format)
 
 bool panfrost_afbc_can_ytr(enum pipe_format format);
 
+bool panfrost_afbc_can_split(unsigned arch, enum pipe_format format,
+                             uint64_t modifier);
+
 bool panfrost_afbc_can_pack(enum pipe_format format);
 
 /*

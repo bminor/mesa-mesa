@@ -94,6 +94,9 @@ panfrost_compression_tag(const struct util_format_description *desc,
 
       if (panfrost_afbc_is_wide(modifier))
          flags |= MALI_AFBC_SURFACE_FLAG_WIDE_BLOCK;
+
+      if (modifier & AFBC_FORMAT_MOD_SPLIT)
+         flags |= MALI_AFBC_SURFACE_FLAG_SPLIT_BLOCK;
 #endif
 
 #if PAN_ARCH >= 7
@@ -418,6 +421,7 @@ panfrost_emit_plane(const struct pan_image_view *iview, int index,
          cfg.plane_type = MALI_PLANE_TYPE_AFBC;
          cfg.afbc.superblock_size = translate_superblock_size(layout->modifier);
          cfg.afbc.ytr = (layout->modifier & AFBC_FORMAT_MOD_YTR);
+         cfg.afbc.split_block = (layout->modifier & AFBC_FORMAT_MOD_SPLIT);
          cfg.afbc.tiled_header = (layout->modifier & AFBC_FORMAT_MOD_TILED);
          cfg.afbc.prefetch = true;
          cfg.afbc.compression_mode = GENX(pan_afbc_compression_mode)(format);

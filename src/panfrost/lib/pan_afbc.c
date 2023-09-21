@@ -178,6 +178,26 @@ panfrost_afbc_can_ytr(enum pipe_format format)
    return desc->colorspace == UTIL_FORMAT_COLORSPACE_RGB;
 }
 
+bool
+panfrost_afbc_can_split(unsigned arch, enum pipe_format format,
+                        uint64_t modifier)
+{
+   unsigned block_width = panfrost_afbc_superblock_width(modifier);
+
+   if (arch < 6)
+      return false;
+
+   if (block_width == 16) {
+      return true;
+   } else if (block_width == 32) {
+      enum pan_afbc_mode mode = panfrost_afbc_format(arch, format);
+      return (mode == PAN_AFBC_MODE_R8G8B8A8 ||
+              mode == PAN_AFBC_MODE_R10G10B10A2);
+   }
+
+   return false;
+}
+
 /* Only support packing for RGB formats for now. */
 
 bool

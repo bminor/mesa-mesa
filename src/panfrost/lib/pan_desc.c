@@ -543,6 +543,8 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
          cfg->afbc.yuv_transform = true;
 
       cfg->afbc.wide_block = panfrost_afbc_is_wide(image->layout.modifier);
+      cfg->afbc.split_block =
+         (image->layout.modifier & AFBC_FORMAT_MOD_SPLIT);
       cfg->afbc.header = surf.afbc.header;
       cfg->afbc.body_offset = surf.afbc.body - surf.afbc.header;
       assert(surf.afbc.body >= surf.afbc.header);
@@ -557,6 +559,8 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
          pan_afbc_stride_blocks(image->layout.modifier, slice->row_stride);
       cfg->afbc.afbc_wide_block_enable =
          panfrost_afbc_is_wide(image->layout.modifier);
+      cfg->afbc.afbc_split_block_enable =
+         (image->layout.modifier & AFBC_FORMAT_MOD_SPLIT);
 #else
       cfg->afbc.chunk_size = 9;
       cfg->afbc.sparse = true;

@@ -391,6 +391,7 @@ panfrost_should_pack_afbc(struct panfrost_device *dev,
    return panfrost_afbc_can_pack(prsrc->base.format) && panfrost_is_2d(prsrc) &&
           drm_is_afbc(prsrc->image.layout.modifier) &&
           (prsrc->image.layout.modifier & AFBC_FORMAT_MOD_SPARSE) &&
+          !(prsrc->image.layout.modifier & AFBC_FORMAT_MOD_SPLIT) &&
           (prsrc->base.bind & ~valid_binding) == 0 &&
           !prsrc->modifier_constant && prsrc->base.array_size == 1 &&
           prsrc->base.width0 >= 32 && prsrc->base.height0 >= 32 ;
