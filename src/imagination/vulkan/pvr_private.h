@@ -61,6 +61,7 @@
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
 #include "vk_buffer.h"
+#include "vk_buffer_view.h"
 #include "vk_command_buffer.h"
 #include "vk_device.h"
 #include "vk_enum_to_str.h"
@@ -344,10 +345,7 @@ struct pvr_image_view {
 };
 
 struct pvr_buffer_view {
-   struct vk_object_base base;
-
-   uint64_t range;
-   VkFormat format;
+   struct vk_buffer_view vk;
 
    /* Prepacked Texture dword 0 and 1. It will be copied to the descriptor
     * during pvr_UpdateDescriptorSets().
@@ -1485,7 +1483,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_image_view,
                                VkImageView,
                                VK_OBJECT_TYPE_IMAGE_VIEW)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_buffer_view,
-                               base,
+                               vk.base,
                                VkBufferView,
                                VK_OBJECT_TYPE_BUFFER_VIEW)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set_layout,
