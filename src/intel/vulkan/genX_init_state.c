@@ -1165,9 +1165,21 @@ vk_to_intel_tex_filter(VkFilter filter, bool anisotropyEnable)
    default:
       unreachable("Invalid filter");
    case VK_FILTER_NEAREST:
-      return anisotropyEnable ? MAPFILTER_ANISOTROPIC : MAPFILTER_NEAREST;
+      return anisotropyEnable ?
+#if GFX_VER >= 30
+             MAPFILTER_ANISOTROPIC_FAST :
+#else
+             MAPFILTER_ANISOTROPIC :
+#endif
+             MAPFILTER_NEAREST;
    case VK_FILTER_LINEAR:
-      return anisotropyEnable ? MAPFILTER_ANISOTROPIC : MAPFILTER_LINEAR;
+      return anisotropyEnable ?
+#if GFX_VER >= 30
+             MAPFILTER_ANISOTROPIC_FAST :
+#else
+             MAPFILTER_ANISOTROPIC :
+#endif
+             MAPFILTER_LINEAR;
    }
 }
 
