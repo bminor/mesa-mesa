@@ -10237,7 +10237,7 @@
         "resolution": 0,
         "main_sha": null,
         "because_sha": "122ffb0c88810ca7fb3a8519830fe157c127d94e",
-        "notes": null
+        "notes": "Applies but does not build"
     },
     {
         "sha": "87044cfe33095fbb7527620cb8d9ea30260e534c",
