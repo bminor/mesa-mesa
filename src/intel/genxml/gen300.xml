@@ -79,4 +79,110 @@
       <field name="Inline Data" start="0" end="31" type="uint" />
     </group>
   </struct>
+  <struct name="SAMPLER_STATE" length="4">
+    <field name="Anisotropic Algorithm" start="0" end="0" type="uint">
+      <value name="LEGACY" value="0" />
+      <value name="EWA Approximation" value="1" />
+    </field>
+    <field name="Texture LOD Bias" start="1" end="13" type="s4.8" />
+    <field name="Min Mode Filter" start="14" end="16" type="uint" prefix="MAPFILTER">
+      <value name="NEAREST" value="0" />
+      <value name="LINEAR" value="1" />
+      <value name="ANISOTROPIC" value="2" />
+      <value name="ANISOTROPIC_FAST" value="3" />
+      <value name="MONO" value="6" />
+    </field>
+    <field name="Mag Mode Filter" start="17" end="19" type="uint" prefix="MAPFILTER">
+      <value name="NEAREST" value="0" />
+      <value name="LINEAR" value="1" />
+      <value name="ANISOTROPIC" value="2" />
+      <value name="ANISOTROPIC_FAST" value="3" />
+      <value name="MONO" value="6" />
+    </field>
+    <field name="Mip Mode Filter" start="20" end="21" type="uint" prefix="MIPFILTER">
+      <value name="NONE" value="0" />
+      <value name="NEAREST" value="1" />
+      <value name="LINEAR" value="3" />
+    </field>
+    <field name="Coarse LOD Quality Mode" start="22" end="26" type="uint" />
+    <field name="LOD PreClamp Mode" start="27" end="28" type="uint" prefix="CLAMP_MODE">
+      <value name="NONE" value="0" />
+      <value name="OGL" value="2" />
+    </field>
+    <field name="Texture Border Color Mode" start="29" end="29" type="uint">
+      <value name="DX10/OGL" value="0" />
+      <value name="DX9" value="1" />
+    </field>
+    <field name="CPS LOD Compensation Enable" start="30" end="30" type="bool" />
+    <field name="Sampler Disable" start="31" end="31" type="bool" />
+    <field name="Cube Surface Control Mode" start="32" end="32" type="uint">
+      <value name="PROGRAMMED" value="0" />
+      <value name="OVERRIDE" value="1" />
+    </field>
+    <field name="Shadow Function" start="33" end="35" type="uint" prefix="PREFILTEROP">
+      <value name="ALWAYS" value="0" />
+      <value name="NEVER" value="1" />
+      <value name="LESS" value="2" />
+      <value name="EQUAL" value="3" />
+      <value name="LEQUAL" value="4" />
+      <value name="GREATER" value="5" />
+      <value name="NOTEQUAL" value="6" />
+      <value name="GEQUAL" value="7" />
+    </field>
+    <field name="ChromaKey Mode" start="36" end="36" type="uint">
+      <value name="KEYFILTER_KILL_ON_ANY_MATCH" value="0" />
+      <value name="KEYFILTER_REPLACE_BLACK" value="1" />
+    </field>
+    <field name="ChromaKey Index" start="37" end="38" type="uint" />
+    <field name="ChromaKey Enable" start="39" end="39" type="bool" />
+    <field name="Max LOD" start="40" end="51" type="u4.8" />
+    <field name="Min LOD" start="52" end="63" type="u4.8" />
+    <field name="LOD Clamp Magnification Mode" start="64" end="64" type="uint">
+      <value name="MIPNONE" value="0" />
+      <value name="MIPFILTER" value="1" />
+    </field>
+    <field name="SRGB DECODE" start="65" end="65" type="uint">
+      <value name="DECODE_EXT" value="0" />
+      <value name="SKIP_DECODE_EXT" value="1" />
+    </field>
+    <field name="Return Filter Weight for Null Texels" start="66" end="66" type="uint" />
+    <field name="Return Filter Weight for Border Texels" start="67" end="67" type="uint" />
+    <field name="Force gather4 Behavior" start="69" end="69" type="bool" />
+    <field name="Border Color Pointer" start="70" end="95" type="offset" />
+    <field name="TCZ Address Control Mode" start="96" end="98" type="Texture Coordinate Mode" />
+    <field name="TCY Address Control Mode" start="99" end="101" type="Texture Coordinate Mode" />
+    <field name="TCX Address Control Mode" start="102" end="104" type="Texture Coordinate Mode" />
+    <field name="Reduction Type Enable" start="105" end="105" type="bool" />
+    <field name="Non-normalized Coordinate Enable" start="106" end="106" type="bool" />
+    <field name="Trilinear Filter Quality" start="107" end="108" type="uint">
+      <value name="FULL" value="0" />
+      <value name="HIGH" value="1" />
+      <value name="MED" value="2" />
+      <value name="LOW" value="3" />
+    </field>
+    <field name="R Address Min Filter Rounding Enable" start="109" end="109" type="bool" />
+    <field name="R Address Mag Filter Rounding Enable" start="110" end="110" type="bool" />
+    <field name="V Address Min Filter Rounding Enable" start="111" end="111" type="bool" />
+    <field name="V Address Mag Filter Rounding Enable" start="112" end="112" type="bool" />
+    <field name="U Address Min Filter Rounding Enable" start="113" end="113" type="bool" />
+    <field name="U Address Mag Filter Rounding Enable" start="114" end="114" type="bool" />
+    <field name="Maximum Anisotropy" start="115" end="117" type="uint">
+      <value name="RATIO 2:1" value="0" />
+      <value name="RATIO 4:1" value="1" />
+      <value name="RATIO 6:1" value="2" />
+      <value name="RATIO 8:1" value="3" />
+      <value name="RATIO 10:1" value="4" />
+      <value name="RATIO 12:1" value="5" />
+      <value name="RATIO 14:1" value="6" />
+      <value name="RATIO 16:1" value="7" />
+    </field>
+    <field name="Reduction Type" start="118" end="119" type="uint">
+      <value name="STD_FILTER" value="0" />
+      <value name="COMPARISON" value="1" />
+      <value name="MINIMUM" value="2" />
+      <value name="MAXIMUM" value="3" />
+    </field>
+    <field name="Allow Low Quality LOD Calculation" start="120" end="120" type="bool" />
+    <field name="Low Quality Filter" start="122" end="122" type="bool" />
+  </struct>
 </genxml>
