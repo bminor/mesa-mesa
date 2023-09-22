@@ -891,8 +891,10 @@ static VkResult pvr_process_queue_waits(struct pvr_queue *queue,
       uint32_t stage_wait_count = 0;
 
       for (uint32_t wait_idx = 0; wait_idx < wait_count; wait_idx++) {
-         if (!(pvr_stage_mask(waits[wait_idx].stage_mask) & BITFIELD_BIT(i)))
+         if (!(pvr_stage_mask_dst(waits[wait_idx].stage_mask) &
+               BITFIELD_BIT(i))) {
             continue;
+         }
 
          stage_waits[stage_wait_count++] = (struct vk_sync_wait){
             .sync = waits[wait_idx].sync,
