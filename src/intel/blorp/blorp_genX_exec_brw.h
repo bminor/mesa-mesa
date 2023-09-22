@@ -285,12 +285,23 @@ emit_urb_config(struct blorp_batch *batch,
    blorp_pre_emit_urb_config(batch, &urb_cfg);
 
    for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
+#if GFX_VER >= 12
+      blorp_emit(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
+         urb._3DCommandSubOpcode            += i;
+         urb.VSURBEntryAllocationSize        = urb_cfg.size[i] - 1;
+         urb.VSURBStartingAddressSlice0      = urb_cfg.start[i];
+         urb.VSURBStartingAddressSliceN      = urb_cfg.start[i];
+         urb.VSNumberofURBEntriesSlice0      = urb_cfg.entries[i];
+         urb.VSNumberofURBEntriesSliceN      = urb_cfg.entries[i];
+      }
+#else
       blorp_emit(batch, GENX(3DSTATE_URB_VS), urb) {
          urb._3DCommandSubOpcode      += i;
          urb.VSURBStartingAddress      = urb_cfg.start[i];
          urb.VSURBEntryAllocationSize  = urb_cfg.size[i] - 1;
          urb.VSNumberofURBEntries      = urb_cfg.entries[i];
       }
+#endif
    }
 
    if (batch->blorp->config.use_mesh_shading) {
