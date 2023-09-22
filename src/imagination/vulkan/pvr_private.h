@@ -349,8 +349,12 @@ struct pvr_image_view {
    struct pvr_image_descriptor image_state[PVR_TEXTURE_STATE_MAX_ENUM];
 };
 
+#define PVR_BUFFER_VIEW_WIDTH 8192U
+
 struct pvr_buffer_view {
    struct vk_buffer_view vk;
+
+   uint32_t num_rows;
 
    /* Prepacked Texture dword 0 and 1. It will be copied to the descriptor
     * during pvr_UpdateDescriptorSets().

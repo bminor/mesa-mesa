@@ -467,15 +467,16 @@ VkResult pvr_CreateBufferView(VkDevice _device,
    /* The range of the buffer view shouldn't be smaller than one texel. */
    assert(bview->vk.range >= vk_format_get_blocksize(bview->vk.format));
 
+   bview->num_rows = DIV_ROUND_UP(bview->vk.elements, PVR_BUFFER_VIEW_WIDTH);
+
    info.base_level = 0U;
    info.mip_levels = 1U;
    info.mipmaps_present = false;
-   info.extent.width = 8192U;
-   info.extent.height = bview->vk.elements;
-   info.extent.height = DIV_ROUND_UP(info.extent.height, info.extent.width);
+   info.extent.width = PVR_BUFFER_VIEW_WIDTH;
+   info.extent.height = bview->num_rows;
    info.extent.depth = 0U;
    info.sample_count = 1U;
-   info.stride = info.extent.width;
+   info.stride = PVR_BUFFER_VIEW_WIDTH;
    info.offset = 0U;
    info.addr = PVR_DEV_ADDR_OFFSET(buffer->dev_addr, pCreateInfo->offset);
    info.mem_layout = PVR_MEMLAYOUT_LINEAR;
