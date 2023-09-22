@@ -902,12 +902,23 @@ genX(emit_urb_config)(struct iris_batch *batch,
    genX(urb_workaround)(batch, &ice->shaders.urb.cfg);
 
    for (int i = MESA_SHADER_VERTEX; i <= MESA_SHADER_GEOMETRY; i++) {
+#if GFX_VER >= 12
+      iris_emit_cmd(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
+         urb._3DCommandSubOpcode           += i;
+         urb.VSURBEntryAllocationSize       = ice->shaders.urb.cfg.size[i] - 1;
+         urb.VSURBStartingAddressSlice0     = ice->shaders.urb.cfg.start[i];
+         urb.VSURBStartingAddressSliceN     = ice->shaders.urb.cfg.start[i];
+         urb.VSNumberofURBEntriesSlice0     = ice->shaders.urb.cfg.entries[i];
+         urb.VSNumberofURBEntriesSliceN     = ice->shaders.urb.cfg.entries[i];
+      }
+#else
       iris_emit_cmd(batch, GENX(3DSTATE_URB_VS), urb) {
          urb._3DCommandSubOpcode += i;
          urb.VSURBStartingAddress     = ice->shaders.urb.cfg.start[i];
          urb.VSURBEntryAllocationSize = ice->shaders.urb.cfg.size[i] - 1;
          urb.VSNumberofURBEntries     = ice->shaders.urb.cfg.entries[i];
       }
+#endif
    }
 }
 
@@ -8360,6 +8371,19 @@ genX(urb_workaround)(struct iris_batch *batch,
                                MESA_SHADER_TESS_EVAL) &&
        batch->ice->shaders.last_urb.size[0] != 0) {
       for (int i = MESA_SHADER_VERTEX; i <= MESA_SHADER_GEOMETRY; i++) {
+#if GFX_VER >= 12
+         iris_emit_cmd(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
+            urb._3DCommandSubOpcode += i;
+            urb.VSURBEntryAllocationSize =
+               batch->ice->shaders.last_urb.size[i] - 1;
+            urb.VSURBStartingAddressSlice0 =
+               batch->ice->shaders.last_urb.start[i];
+            urb.VSURBStartingAddressSliceN =
+               batch->ice->shaders.last_urb.start[i];
+            urb.VSNumberofURBEntriesSlice0 = i == 0 ? 256 : 0;
+            urb.VSNumberofURBEntriesSliceN = i == 0 ? 256 : 0;
+         }
+#else
          iris_emit_cmd(batch, GENX(3DSTATE_URB_VS), urb) {
             urb._3DCommandSubOpcode += i;
             urb.VSURBStartingAddress =
@@ -8368,6 +8392,7 @@ genX(urb_workaround)(struct iris_batch *batch,
                batch->ice->shaders.last_urb.size[i] - 1;
             urb.VSNumberofURBEntries = i == 0 ? 256 : 0;
          }
+#endif
       }
       iris_emit_cmd(batch, GENX(PIPE_CONTROL), pc) {
          pc.HDCPipelineFlushEnable = true;
