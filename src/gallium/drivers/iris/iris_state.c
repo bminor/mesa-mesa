@@ -2491,12 +2491,21 @@ fill_sampler_state(uint32_t *sampler_state,
 
       if (max_anisotropy >= 2) {
          if (state->min_img_filter == PIPE_TEX_FILTER_LINEAR) {
+#if GFX_VER >= 30
+            samp.MinModeFilter = MAPFILTER_ANISOTROPIC_FAST;
+#else
             samp.MinModeFilter = MAPFILTER_ANISOTROPIC;
+#endif
             samp.AnisotropicAlgorithm = EWAApproximation;
          }
 
-         if (state->mag_img_filter == PIPE_TEX_FILTER_LINEAR)
+         if (state->mag_img_filter == PIPE_TEX_FILTER_LINEAR) {
+#if GFX_VER >= 30
+            samp.MagModeFilter = MAPFILTER_ANISOTROPIC_FAST;
+#else
             samp.MagModeFilter = MAPFILTER_ANISOTROPIC;
+#endif
+         }
 
          samp.MaximumAnisotropy =
             MIN2((max_anisotropy - 2) / 2, RATIO161);
