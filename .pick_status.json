@@ -8294,7 +8294,7 @@
         "description": "Revert \"iris: Disable tiled memcpy for Tile4\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "0022a11ff4fbbe89c2511d758f807b286ebb1bd7",
         "notes": null
