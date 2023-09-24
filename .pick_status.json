@@ -9897,7 +9897,7 @@
         "resolution": 0,
         "main_sha": null,
         "because_sha": "d8dfd153c50f24ea50578202832b3eccfb61edf8",
-        "notes": null
+        "notes": "Causes regression on zink:\nspec@arb_gpu_shader5@arb_gpu_shader5-interpolateatsample-dynamically-nonuniform,Crash"
     },
     {
         "sha": "9bf2a89127f0f4ef3c98190b266c9346122eabe3",
