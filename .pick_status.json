@@ -3224,7 +3224,7 @@
         "description": "freedreno: Include speedbin fallback in 690 chipid to fix probing",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "210c6c11cc61c8f53c2c5506e97084dc5f9f2270",
         "notes": null
