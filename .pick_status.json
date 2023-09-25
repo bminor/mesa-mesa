@@ -3084,7 +3084,7 @@
         "description": "vc4: Fix mask RGBA validation at YUV blit",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d13da7782cd80f1626ce0f8b9630016d11f10d0c",
         "notes": null
