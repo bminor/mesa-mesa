@@ -194,7 +194,7 @@
         "description": "radeonsi/sqtt: clear record_counts variable",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "94ce6540d8c8c46c285d3877af4a56f5b59e5d80",
         "notes": null
