@@ -204,7 +204,7 @@
         "description": "radeonsi/sqtt: fix RGP pm4 state emit function",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c3129b2b83955277f9dc73f4acb0dfb0ad50e566",
         "notes": null
