@@ -3621,6 +3621,8 @@ void anv_DestroyDevice(
       anv_queue_finish(&device->queues[i]);
    vk_free(&device->vk.alloc, device->queues);
 
+   ralloc_free(device->fp64_nir);
+
    anv_device_destroy_context_or_vm(device);
 
    if (INTEL_DEBUG(DEBUG_BATCH)) {
