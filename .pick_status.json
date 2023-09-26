@@ -3174,7 +3174,7 @@
         "description": "nir/lower_int64: fix find_lsb(0)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9293d8e64bc72ac15c075b67f711fa2d986bcafb",
         "notes": null
