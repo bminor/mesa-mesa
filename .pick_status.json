@@ -3264,7 +3264,7 @@
         "description": "meson/rusticl: add sha1_h",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "20c90fed5a0ab0202ee1ef474c71cb816164a448",
         "notes": null
