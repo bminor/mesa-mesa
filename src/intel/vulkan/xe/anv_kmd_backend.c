@@ -115,9 +115,26 @@ xe_gem_mmap(struct anv_device *device, struct anv_bo *bo, uint64_t offset,
    if (intel_ioctl(device->fd, DRM_IOCTL_XE_GEM_MMAP_OFFSET, &args))
       return MAP_FAILED;
 
-   return mmap(placed_addr, size, PROT_READ | PROT_WRITE,
-               (placed_addr != NULL ? MAP_FIXED : 0) | MAP_SHARED,
-               device->fd, args.offset);
+   if (placed_addr != NULL) {
+      const uint64_t placed_num = (uintptr_t)placed_addr;
+
+      assert(placed_num >= offset);
+      if (placed_num < offset)
+         return NULL;
+
+      placed_addr -= offset;
+   }
+
+   void *ptr = mmap(placed_addr, offset + size, PROT_READ | PROT_WRITE,
+                    (placed_addr != NULL ? MAP_FIXED : 0) | MAP_SHARED,
+                    device->fd, args.offset);
+   if (ptr == MAP_FAILED)
+      return ptr;
+
+   if (offset != 0)
+      munmap(ptr, offset);
+
+   return ptr + offset;
 }
 
 static inline uint32_t
