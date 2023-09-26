@@ -344,7 +344,7 @@
         "description": "iris: Tune the BO cache's bucket sizes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0b6693a3a14029c31db2ee8576baa78fc914b9e5",
         "notes": null
