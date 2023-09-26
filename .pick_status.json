@@ -3034,7 +3034,7 @@
         "description": "aco: fix p_extract with v1 dst and s1 operand",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f14023666ca9f6387af668e403627ea2bf85c66a",
         "notes": null
