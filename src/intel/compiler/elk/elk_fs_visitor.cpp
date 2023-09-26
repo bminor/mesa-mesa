@@ -98,14 +98,16 @@ elk_fs_visitor::emit_interpolation_setup_gfx4()
    struct elk_reg g1_uw = retype(elk_vec1_grf(1, 0), ELK_REGISTER_TYPE_UW);
 
    fs_builder abld = fs_builder(this).at_end().annotate("compute pixel centers");
-   this->pixel_x = vgrf(glsl_uint_type());
-   this->pixel_y = vgrf(glsl_uint_type());
-   this->pixel_x.type = ELK_REGISTER_TYPE_UW;
-   this->pixel_y.type = ELK_REGISTER_TYPE_UW;
-   abld.ADD(this->pixel_x,
+   this->uw_pixel_x = vgrf(glsl_uint_type());
+   this->uw_pixel_y = vgrf(glsl_uint_type());
+   this->uw_pixel_x.type = ELK_REGISTER_TYPE_UW;
+   this->uw_pixel_y.type = ELK_REGISTER_TYPE_UW;
+   this->pixel_x = this->uw_pixel_x;
+   this->pixel_y = this->uw_pixel_y;
+   abld.ADD(this->uw_pixel_x,
             elk_fs_reg(stride(suboffset(g1_uw, 4), 2, 4, 0)),
             elk_fs_reg(elk_imm_v(0x10101010)));
-   abld.ADD(this->pixel_y,
+   abld.ADD(this->uw_pixel_y,
             elk_fs_reg(stride(suboffset(g1_uw, 5), 2, 4, 0)),
             elk_fs_reg(elk_imm_v(0x11001100)));
 
@@ -121,13 +123,13 @@ elk_fs_visitor::emit_interpolation_setup_gfx4()
    if (devinfo->has_pln) {
       for (unsigned i = 0; i < dispatch_width / 8; i++) {
          abld.quarter(i).ADD(quarter(offset(delta_xy, abld, 0), i),
-                             quarter(this->pixel_x, i), xstart);
+                             quarter(this->uw_pixel_x, i), xstart);
          abld.quarter(i).ADD(quarter(offset(delta_xy, abld, 1), i),
-                             quarter(this->pixel_y, i), ystart);
+                             quarter(this->uw_pixel_y, i), ystart);
       }
    } else {
-      abld.ADD(offset(delta_xy, abld, 0), this->pixel_x, xstart);
-      abld.ADD(offset(delta_xy, abld, 1), this->pixel_y, ystart);
+      abld.ADD(offset(delta_xy, abld, 0), this->uw_pixel_x, xstart);
+      abld.ADD(offset(delta_xy, abld, 1), this->uw_pixel_y, ystart);
    }
 
    this->pixel_z = fetch_payload_reg(bld, fs_payload().source_depth_reg);
