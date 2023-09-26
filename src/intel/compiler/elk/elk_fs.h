@@ -391,8 +391,6 @@ public:
 
    elk_fs_reg uw_pixel_x;
    elk_fs_reg uw_pixel_y;
-   elk_fs_reg pixel_x;
-   elk_fs_reg pixel_y;
    elk_fs_reg pixel_z;
    elk_fs_reg wpos_w;
    elk_fs_reg pixel_w;

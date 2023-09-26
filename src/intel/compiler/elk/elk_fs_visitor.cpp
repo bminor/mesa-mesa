@@ -102,8 +102,6 @@ elk_fs_visitor::emit_interpolation_setup_gfx4()
    this->uw_pixel_y = vgrf(glsl_uint_type());
    this->uw_pixel_x.type = ELK_REGISTER_TYPE_UW;
    this->uw_pixel_y.type = ELK_REGISTER_TYPE_UW;
-   this->pixel_x = this->uw_pixel_x;
-   this->pixel_y = this->uw_pixel_y;
    abld.ADD(this->uw_pixel_x,
             elk_fs_reg(stride(suboffset(g1_uw, 4), 2, 4, 0)),
             elk_fs_reg(elk_imm_v(0x10101010)));
@@ -159,9 +157,6 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
 {
    const fs_builder bld = fs_builder(this).at_end();
    fs_builder abld = bld.annotate("compute pixel centers");
-
-   this->pixel_x = vgrf(glsl_float_type());
-   this->pixel_y = vgrf(glsl_float_type());
 
    const struct elk_wm_prog_key *wm_key = (elk_wm_prog_key*) this->key;
    struct elk_wm_prog_data *wm_prog_data = elk_wm_prog_data(prog_data);
@@ -259,9 +254,6 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
                                       horiz_stride(half_int_pixel_offset_x, 0));
          hbld.emit(ELK_FS_OPCODE_PIXEL_Y, int_pixel_y, int_pixel_xy,
                                       horiz_stride(half_int_pixel_offset_y, 0));
-
-         hbld.MOV(offset(pixel_x, hbld, i), int_pixel_x);
-         hbld.MOV(offset(pixel_y, hbld, i), int_pixel_y);
       } else {
          /* The "Register Region Restrictions" page says for SNB, IVB, HSW:
           *
@@ -277,13 +269,6 @@ elk_fs_visitor::emit_interpolation_setup_gfx6()
          hbld.ADD(int_pixel_y,
                   elk_fs_reg(stride(suboffset(gi_uw, 5), 2, 4, 0)),
                   elk_fs_reg(elk_imm_v(0x11001100)));
-
-         /* As of gfx6, we can no longer mix float and int sources.  We have
-          * to turn the integer pixel centers into floats for their actual
-          * use.
-          */
-         hbld.MOV(offset(pixel_x, hbld, i), int_pixel_x);
-         hbld.MOV(offset(pixel_y, hbld, i), int_pixel_y);
       }
    }
 
