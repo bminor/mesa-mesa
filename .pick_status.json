@@ -3094,7 +3094,7 @@
         "description": "radv: stop skip emitting CB states when there is no color attachment",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c08082e86151e88c1a0677914bc365910c82714a",
         "notes": null
