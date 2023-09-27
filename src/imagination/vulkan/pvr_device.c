@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/sysmacros.h>
 #include <vulkan/vulkan.h>
 #include <xf86drm.h>
 
@@ -208,6 +209,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
       .EXT_index_type_uint8 = false,
+      .EXT_physical_device_drm = true,
       .EXT_private_data = true,
       .EXT_provoking_vertex = true,
       .EXT_queue_family_foreign = true,
@@ -633,6 +635,14 @@ static bool pvr_physical_device_get_properties(
 
       /* VK_EXT_custom_border_color */
       .maxCustomBorderColorSamplers = PVR_BORDER_COLOR_TABLE_NR_CUSTOM_ENTRIES,
+
+      /* VkPhysicalDeviceDrmPropertiesEXT */
+      .drmHasPrimary = true,
+      .drmPrimaryMajor = (int64_t) major(pdevice->primary_devid),
+      .drmPrimaryMinor = (int64_t) minor(pdevice->primary_devid),
+      .drmHasRender = true,
+      .drmRenderMajor = (int64_t) major(pdevice->render_devid),
+      .drmRenderMinor = (int64_t) minor(pdevice->render_devid),
    };
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
@@ -839,6 +849,8 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    struct vk_properties supported_properties;
    struct vk_features supported_features;
    struct pvr_winsys *ws;
+   struct stat primary_stat = {0}, render_stat = {0};
+   char *primary_path;
    char *display_path;
    char *render_path;
    VkResult result;
@@ -862,6 +874,23 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    } else {
       display_path = NULL;
    }
+
+   primary_path = drm_render_device->nodes[DRM_NODE_PRIMARY];
+   if (stat(primary_path, &primary_stat) != 0) {
+      result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+                         "failed to stat DRM primary node %s",
+                         primary_path);
+      goto err_vk_free_display_path;
+   }
+   pdevice->primary_devid = primary_stat.st_rdev;
+
+   if (stat(render_path, &render_stat) != 0) {
+      result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+                         "failed to stat DRM render node %s",
+                         render_path);
+      goto err_vk_free_display_path;
+   }
+   pdevice->render_devid = render_stat.st_rdev;
 
    result =
       pvr_winsys_create(render_path, display_path, &instance->vk.alloc, &ws);

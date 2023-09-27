@@ -103,6 +103,11 @@ struct pvr_physical_device {
    char *render_path;
    char *display_path;
 
+   /* primary node (cardN) of the render device */
+   dev_t primary_devid;
+   /* render node (renderN) of the render device */
+   dev_t render_devid;
+
    struct pvr_winsys *ws;
    struct pvr_device_info dev_info;
    struct pvr_device_runtime_info dev_runtime_info;
