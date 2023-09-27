@@ -3184,7 +3184,7 @@
         "description": "tu/kgsl: Fix bitfield of DITHER_MODE_MRT6",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e03259974e2f2c8e8c0295f8dab56d88e7bd896c",
         "notes": ""
