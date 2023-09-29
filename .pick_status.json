@@ -2064,7 +2064,7 @@
         "description": "aco: disable zero offset optimization for strict WQM coords",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "859e059aa912dee5a7ef36e21eac00e6f5fcc7b3",
         "notes": null
