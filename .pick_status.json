@@ -2774,7 +2774,7 @@
         "description": "aco/optimizer_postRA: don't combine DPP across exec on GFX8/9",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
