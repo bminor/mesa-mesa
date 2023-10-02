@@ -1674,7 +1674,7 @@
         "description": "freedreno: Add missing indirect_draw_count tracking",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f677f64e80c453f21fbfa81855c88ba97c03b062",
         "notes": null
