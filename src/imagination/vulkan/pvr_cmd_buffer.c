@@ -1250,8 +1250,11 @@ pvr_sub_cmd_gfx_align_ds_subtiles(struct pvr_cmd_buffer *const cmd_buffer,
 
       /* Now we have to fiddle with cmd_buffer to place this transfer command
        * *before* the target gfx subcommand.
+       *
+       * Note the doc for list_move_to() is subtly wrong - item is placed
+       * directly *after* loc in the list, not "in front of".
        */
-      list_move_to(&new_sub_cmd->link, &prev_sub_cmd->link);
+      list_move_to(&new_sub_cmd->link, prev_sub_cmd->link.prev);
 
       cmd_buffer->state.current_sub_cmd = prev_sub_cmd;
    }

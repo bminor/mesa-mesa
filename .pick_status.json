@@ -1884,7 +1884,7 @@
         "description": "pvr: Fix reordering of sub-cmds when performing ds subtile alignment",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d1b17a5edcd493630738681b8f104123eb92710b",
         "notes": null
