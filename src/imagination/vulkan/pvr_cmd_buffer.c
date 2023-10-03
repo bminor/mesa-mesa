@@ -1429,6 +1429,13 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
    VkResult result;
 
    if (sub_cmd->barrier_store) {
+      /* Store to the SPM scratch buffer. */
+
+      /* The scratch buffer is always needed and allocated to avoid data loss in
+       * case SPM is hit so set the flag unconditionally.
+       */
+      job->requires_spm_scratch_buffer = true;
+
       /* There can only ever be one frag job running on the hardware at any one
        * time, and a context switch is not allowed mid-tile, so instead of
        * allocating a new scratch buffer we can reuse the SPM scratch buffer to
@@ -1474,6 +1481,12 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
       typed_memcpy(job->pds_bgnd_reg_values,
                    spm_bgobj_state->pds_reg_values,
                    ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
+
+      STATIC_ASSERT(ARRAY_SIZE(job->pds_pr_bgnd_reg_values) ==
+                    ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
+      typed_memcpy(job->pds_pr_bgnd_reg_values,
+                   spm_bgobj_state->pds_reg_values,
+                   ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
    } else if (hw_render->load_op) {
       const struct pvr_load_op *load_op = hw_render->load_op;
       struct pvr_pds_upload load_op_program;
@@ -1497,27 +1510,19 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
                               job->pds_bgnd_reg_values);
    }
 
-   /* TODO: In some cases a PR can be removed by storing to the color attachment
-    * and have the background object load directly from it instead of using the
-    * scratch buffer. In those cases we can also set this to "false" and avoid
-    * extra fw overhead.
-    */
-   /* The scratch buffer is always needed and allocated to avoid data loss in
-    * case SPM is hit so set the flag unconditionally.
-    */
-   job->requires_spm_scratch_buffer = true;
-
-   memcpy(job->pr_pbe_reg_words,
-          &framebuffer->spm_eot_state_per_render[0].pbe_reg_words,
-          sizeof(job->pbe_reg_words));
-   job->pr_pds_pixel_event_data_offset =
-      framebuffer->spm_eot_state_per_render[0].pixel_event_program_data_offset;
-
-   STATIC_ASSERT(ARRAY_SIZE(job->pds_pr_bgnd_reg_values) ==
-                 ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
-   typed_memcpy(job->pds_pr_bgnd_reg_values,
-                spm_bgobj_state->pds_reg_values,
-                ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
+   if (!hw_render->requires_frag_pr) {
+      memcpy(job->pr_pbe_reg_words,
+             job->pbe_reg_words,
+             sizeof(job->pbe_reg_words));
+      job->pr_pds_pixel_event_data_offset = job->pds_pixel_event_data_offset;
+   } else {
+      memcpy(job->pr_pbe_reg_words,
+             &framebuffer->spm_eot_state_per_render[0].pbe_reg_words,
+             sizeof(job->pbe_reg_words));
+      job->pr_pds_pixel_event_data_offset =
+         framebuffer->spm_eot_state_per_render[0]
+            .pixel_event_program_data_offset;
+   }
 
    render_target = pvr_get_render_target(render_pass_info->pass,
                                          framebuffer,

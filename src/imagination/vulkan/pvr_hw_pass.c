@@ -274,7 +274,7 @@ static uint32_t pvr_get_accum_format_bitsize(VkFormat vk_format)
       return vk_format_get_blocksizebits(vk_format);
 
    if (!vk_format_has_stencil(vk_format))
-       return pvr_get_pbe_accum_format_size_in_bytes(vk_format) * 8;
+      return pvr_get_pbe_accum_format_size_in_bytes(vk_format) * 8;
 
    return 0;
 }
@@ -2430,23 +2430,27 @@ static uint32_t pvr_count_uses_in_list(uint32_t *attachments,
    return count;
 }
 
-static uint32_t
+static void
 pvr_count_uses_in_color_output_list(struct pvr_render_subpass *subpass,
-                                    uint32_t attach_idx)
+                                    uint32_t attach_idx,
+                                    uint32_t *color_output_count_out,
+                                    uint32_t *resolve_output_count_out)
 {
-   uint32_t count = 0U;
+   uint32_t resolve_count = 0U;
+   uint32_t color_count = 0U;
 
    for (uint32_t i = 0U; i < subpass->color_count; i++) {
       if (subpass->color_attachments[i] == attach_idx) {
-         count++;
+         color_count++;
 
          if (subpass->resolve_attachments &&
              subpass->resolve_attachments[i] != VK_ATTACHMENT_UNUSED)
-            count++;
+            resolve_count++;
       }
    }
 
-   return count;
+   *color_output_count_out = color_count;
+   *resolve_output_count_out = resolve_count;
 }
 
 void pvr_destroy_renderpass_hwsetup(const VkAllocationCallbacks *alloc,
@@ -2488,6 +2492,7 @@ VkResult pvr_create_renderpass_hwsetup(
    struct pvr_renderpass_hw_map *subpass_map;
    struct pvr_renderpass_hwsetup *hw_setup;
    struct pvr_renderpass_context *ctx;
+   bool requires_frag_pr = false;
    bool *surface_allocate;
    VkResult result;
 
@@ -2587,21 +2592,35 @@ VkResult pvr_create_renderpass_hwsetup(
       /* Count the number of references to this attachment in subpasses. */
       for (uint32_t j = 0U; j < pass->subpass_count; j++) {
          struct pvr_render_subpass *subpass = &pass->subpasses[j];
-         const uint32_t color_output_uses =
-            pvr_count_uses_in_color_output_list(subpass, i);
          const uint32_t input_attachment_uses =
             pvr_count_uses_in_list(subpass->input_attachments,
                                    subpass->input_count,
                                    i);
+         uint32_t resolve_output_uses;
+         uint32_t color_output_uses;
+         uint32_t total_output_uses;
 
-         if (color_output_uses != 0U || input_attachment_uses != 0U)
+         pvr_count_uses_in_color_output_list(subpass,
+                                             i,
+                                             &color_output_uses,
+                                             &resolve_output_uses);
+
+         total_output_uses = color_output_uses + resolve_output_uses;
+
+         if (total_output_uses != 0U || input_attachment_uses != 0U)
             int_attach->last_read = j;
 
          int_attach->remaining_count +=
-            color_output_uses + input_attachment_uses;
+            total_output_uses + input_attachment_uses;
 
          if ((uint32_t)subpass->depth_stencil_attachment == i)
             int_attach->remaining_count++;
+
+         requires_frag_pr |= resolve_output_uses != 0;
+         /* TODO: Should this be checking the normal attachment store op? */
+         requires_frag_pr |= color_output_uses != 0 &&
+                             pass->attachments[i].stencil_store_op !=
+                                VK_ATTACHMENT_STORE_OP_STORE;
       }
 
       if (int_attach->attachment->aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
@@ -2690,6 +2709,9 @@ VkResult pvr_create_renderpass_hwsetup(
 
    /* Finalise the last in-progress render. */
    result = pvr_close_render(device, ctx);
+
+   for (uint32_t i = 0; i < hw_setup->render_count; i++)
+      hw_setup->renders[i].requires_frag_pr = requires_frag_pr;
 
 end_create_renderpass_hwsetup:
    if (result != VK_SUCCESS) {

@@ -255,6 +255,8 @@ struct pvr_renderpass_hwsetup_render {
    bool has_side_effects;
 
    struct pvr_load_op *load_op;
+
+   bool requires_frag_pr;
 };
 
 struct pvr_renderpass_hw_map {
