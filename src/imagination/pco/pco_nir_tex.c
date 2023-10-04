@@ -1056,7 +1056,13 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    if (coords)
       coords = nir_trim_vector(b, coords, num_coord_comps);
 
-   if (ia) {
+   /* Special case, override buffers to be 2D. */
+   if (image_dim == GLSL_SAMPLER_DIM_BUF) {
+      image_dim = GLSL_SAMPLER_DIM_2D;
+      coords = nir_vec2(b,
+                        nir_umod_imm(b, coords, 8192),
+                        nir_udiv_imm(b, coords, 8192));
+   } else if (ia) {
       nir_variable *pos = nir_get_variable_with_location(b->shader,
                                                          nir_var_shader_in,
                                                          VARYING_SLOT_POS,
