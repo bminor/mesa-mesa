@@ -201,6 +201,8 @@ bool brw_nir_lower_texel_address(nir_shader *shader,
                                  const struct intel_device_info *devinfo,
                                  enum isl_tiling tiling);
 
+bool brw_nir_lower_sample_index_in_coord(nir_shader *nir);
+
 bool brw_nir_lower_mem_access_bit_sizes(nir_shader *shader,
                                         const struct
                                         intel_device_info *devinfo);

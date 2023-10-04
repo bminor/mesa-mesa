@@ -75,6 +75,7 @@ libintel_compiler_brw_files = files(
   'brw_nir_lower_intersection_shader.c',
   'brw_nir_lower_ray_queries.c',
   'brw_nir_lower_rt_intrinsics.c',
+  'brw_nir_lower_sample_index_in_coord.c',
   'brw_nir_lower_shader_calls.c',
   'brw_nir_lower_storage_image.c',
   'brw_nir_lower_texel_address.c',
