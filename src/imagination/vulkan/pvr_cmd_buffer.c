@@ -1740,6 +1740,9 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
    job->run_frag = true;
    job->geometry_terminate = true;
 
+   /* TODO: Enable pixel merging when it's safe to do. */
+   job->disable_pixel_merging = true;
+
    return VK_SUCCESS;
 }
 
