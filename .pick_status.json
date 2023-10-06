@@ -1,5 +1,445 @@
 [
     {
+        "sha": "b72f474ff017b170dbfc75763b37bf1a6575c45c",
+        "description": "docs/ci: rewrite the \"farm maintenance ^ other change\" rule to mean what we actually meant",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d6d0b515e1f8194127e03f891dae46ff4cb6d76",
+        "description": "fix: clover: LLVM 18: s/CodeGenOpt::/CodeGenOptLevel::/",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5815a8e7460778491bbf0abbc97ca1f42b4f3831",
+        "description": "fix: clover: LLVM 18 renamed/moved CGFT_*, update compat layer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "752fba464398f1193d4616234a311f985dfa4814",
+        "description": "radv: fix gang submissions with chaining",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f233a73c1c6defdfabe41081b60dd77c39666522",
+        "description": "radv: fill the scratch BO in radv_fill_shader_rings()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4192e01dcc49384404cc0b79eaeed5bacf8fc292",
+        "description": "radv: always write the sample positions when a new descriptor BO is created",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "596b4389364c41678c2c6e38e5801ae0df2fab00",
+        "description": "intel/ds: track acceleration RT commands",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e8d2617e18503809ac69307b319b3c3bc472fb6",
+        "description": "anv: use buffer pools for BVH build buffers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bab344645f7d3165482360fe016410302c876b60",
+        "description": "anv: move bo_pool allocation flags to init caller",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "787c29f2fc7db86b6dfcabf056b566985c309a3d",
+        "description": "anv: reduce working temporary memory for BVH builds",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d3ab674ee02cfe8d0cb05814f3156d277f2d660",
+        "description": "ci: drop unused ephemeral packages in alpine image",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81bc09bf97410cfc1b09d1f6471214d0c023e2fd",
+        "description": "intel/fs: Tweak default case of fs_inst::size_read()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "06816cccb9eb9276158b062ef9c3a64ec0962da5",
+        "description": "zink: don't check submit count for unflushed usage",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "db12b881c7fdbbe534b21b9d169db0a905c2c704",
+        "notes": null
+    },
+    {
+        "sha": "548d088c26109582be9cc38153c14762ddcc6fd9",
+        "description": "egl/wayland: return sooner from swrast_update_buffers() if zink",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8aa43d70e117376ddc1c8d766437b02e1f8fdedd",
+        "description": "egl/wayland: don't block in swrast when updating buffers for zink",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "74451ed3f0832694c8c1fb8fbfe42b4ed2688d4a",
+        "notes": null
+    },
+    {
+        "sha": "e213623a8cb8922dc8fc61de6feb38759be0e0fc",
+        "description": "Revert \"egl/wayland: Add image loader extension for swrast\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "45b9b0ba32c6a6eed388ff080f7eaf5a765fe970",
+        "notes": null
+    },
+    {
+        "sha": "4b9c3c76d0cf1be96053651b05e65d06827fd3cc",
+        "description": "ci/hasvk: Add a bunch of new CTS border color fails.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "762210e2241b36b556a16506c067ec45f49e7239",
+        "description": "ci/crocus: Add known piglit flakes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6788a161634118f0bcc546fc70c795bf85f58b7",
+        "description": "ci/etnaviv: return gl-1.4-tex1d-2dborder as a known flake",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d09ae30e14bedb0f9d3429ca7764272551c07f8",
+        "description": "nouveau/winsys: use mmap instead of mmap64 in nouveau_bo",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dcb764b0f0ac620180b2ebfd8ca7d8843ebc0108",
+        "description": "radv: hard code format features for emulated formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99e54c39f66c6d63a84a50f720f1b3cbccb79f98",
+        "description": "radv: simplify view format override for emulated formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55b7d6e5a338ab959ce1c03f46134a77b837b306",
+        "description": "radv: add radv_is_format_emulated",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9eda61c9311862176d4f3080f838bb22c88da9d5",
+        "description": "vulkan/runtime, radv: remove 1D support from ETC2 emulation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb40fb595b556f763852831cd25e1ddd47c3d10d",
+        "description": "vulkan/runtime: fix a harmless typo for ETC2 emulation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9c98be7115cea65c46cfbb53796f746d20e09b03",
+        "description": "vulkan/runtime: fix image type check for ETC2 emulation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "afdbeaf1b4adfdabe13a8bda276a6169423be22a",
+        "description": "radv: use vk_tecompress_etc2 from the runtime",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0337b5d8c418b0217a75bd24f637b34ff726e1fb",
+        "description": "vulkan/runtime: add a helper for ETC2 emulation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7caf3e70a1cfcd6c8e00c418d96ff8be0e777ac0",
+        "description": "tu: Fix VK_FORMAT_A8_UNORM_KHR using UBWC when !has_8bpp_ubwc",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "302907e347612c3d748c88aed90fd6ab60a638f5",
+        "notes": null
+    },
+    {
+        "sha": "ac838c1c5c2d9514ff214449510315692d49b30d",
+        "description": "mesa: Fix glBegin/End when LINE_LOOP is not supported",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b4f0e714c2d4f3b8f227e29ef1bb38a9bf404c8",
+        "description": "aco/gfx11: support vinterp as fma_mix",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d7657ef745e95ca464ead400df3ccb58c6cfd8f",
+        "description": "aco: support v_fma_f32_dpp as fma_mix",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e9fad48bf4e4bb8c07bba3db1e83059c456f161",
+        "description": "aco/gfx11: apply clamp/omod to vinterp",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7196b5318d647ba7ac2a88c7a62a1363d607bb3f",
+        "description": "Revert \"ac/gpu_info: replace ib_alignment with per-IP IB base and size alignments\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b6f435888b718506e8b806eae2a17d6ecf027dfc",
+        "notes": null
+    },
+    {
+        "sha": "5f42a21dad3f28ed8058be3ea6c2278952948324",
+        "description": "Revert \"ac/gpu_info: pad IBs according to ib_size_alignment\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "4f660f99378382871f0c29e0d4b4d6a044dfe715",
+        "notes": null
+    },
+    {
+        "sha": "29f9c492289c6e3419430916bf8cf73cfe25c53e",
+        "description": "Revert \"winsys/amdgpu: pad gfx and compute IBs with a single NOP packet\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "43e72850697e42cdf6d794407a5523a5e481bd41",
+        "notes": null
+    },
+    {
+        "sha": "461cb2fd7758b100f0caf1de105bcc66270e44e6",
+        "description": "Revert \"radv: fix alignment of DGC command buffers\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b01e87423433f6b39d244daee4b59f53baa4a02e",
+        "notes": null
+    },
+    {
+        "sha": "94f117ec9b0ba3d7a2e66ed9021a669a3df7fc87",
+        "description": "Revert \"radv/amdgpu: fix alignment of command buffers\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "4bc58c9f11f0f701be5446ee5e7e8ef9494e3c1e",
+        "notes": null
+    },
+    {
+        "sha": "b4be110333b332573412c50d4ab0a728f3b4c8ed",
+        "description": "Revert \"ac/gpu_info: override ib_size_alignment for VCN_DEC and JPEG\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "867a995ce759a725b58d3fa23e5e319035b7e3f9",
+        "notes": null
+    },
+    {
+        "sha": "194bcef7330fe3cbf9f6e307e4cadafb5d72a106",
+        "description": "ci/bare-metal: drop unused imports, sort, use SPDX license",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "daf1df9b706faa0c30f5388c329502276e23b23b",
+        "description": "ci/bare-metal: correct workaround for R8152 issue while retrieving TFTP data",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9c2212f9b3487a70d4ff5041577ecef73cfe2499",
+        "description": "docs/panfrost: use math-role to denote powers of two",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80e8c78fede7becd4f36f68f70c3e385768cc442",
+        "description": "docs/panfrost: use code-blocks with wrapping for long blocks",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e27d8f2d443c2a170b382ef9219baf080efc15e",
+        "description": "docs/panfrost: link to lima",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "2e5d2df362bf07670b1f27d9bc6d83457aab6670",
         "description": "radv/ci: cleanup list of expected failures for NAVI10/NAVI21/VEGA10",
         "nominated": false,
