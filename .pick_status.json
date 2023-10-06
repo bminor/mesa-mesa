@@ -2837,7 +2837,7 @@
         "resolution": 0,
         "main_sha": null,
         "because_sha": null,
-        "notes": null
+        "notes": "applies cleanly buti s missing \"radv_get_pipelinestat_query_offset\""
     },
     {
         "sha": "c1b916ccb9318c0b32822df99fd13a2c7e1c4b6c",
