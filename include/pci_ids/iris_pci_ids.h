@@ -299,3 +299,6 @@ CHIPSET(0xb08f, ptl, "PTL", "Intel(R) Graphics")
 CHIPSET(0xb090, ptl, "PTL", "Intel(R) Graphics")
 CHIPSET(0xb0a0, ptl, "PTL", "Intel(R) Graphics")
 CHIPSET(0xb0b0, ptl, "PTL", "Intel(R) Graphics")
+
+CHIPSET(0xfd80, wcl, "WCL", "Intel(R) Graphics")
+CHIPSET(0xfd81, wcl, "WCL", "Intel(R) Graphics")
