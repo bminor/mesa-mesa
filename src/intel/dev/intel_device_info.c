@@ -1200,7 +1200,7 @@ static const struct intel_device_info intel_device_info_ptl = {
    .has_local_mem = false,
 };
 
-UNUSED static const struct intel_device_info intel_device_info_wcl = {
+static const struct intel_device_info intel_device_info_wcl = {
    XE3_CONFIG(WCL),
    .has_local_mem = false,
    .has_ray_tracing = false,
