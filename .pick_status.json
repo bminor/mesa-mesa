@@ -334,7 +334,7 @@
         "description": "llvmpipe: fix caching for texture shaders.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f675e4ee82319db31a9a70d65063290e4f151b4f",
         "notes": null
