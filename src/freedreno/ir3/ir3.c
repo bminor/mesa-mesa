@@ -67,11 +67,10 @@ is_shared_consts(struct ir3_compiler *compiler,
 }
 
 static void
-collect_reg_info(struct ir3_instruction *instr, struct ir3_register *reg,
+collect_reg_info(struct ir3_shader_variant *v,
+                 struct ir3_instruction *instr, struct ir3_register *reg,
                  struct ir3_info *info)
 {
-   struct ir3_shader_variant *v = info->data;
-
    if (reg->flags & IR3_REG_IMMED) {
       /* nothing to do */
       return;
@@ -248,7 +247,6 @@ ir3_collect_info(struct ir3_shader_variant *v)
    const struct ir3_compiler *compiler = v->compiler;
 
    memset(info, 0, sizeof(*info));
-   info->data = v;
    info->max_reg = -1;
    info->max_half_reg = -1;
    info->max_const = -1;
@@ -290,7 +288,7 @@ ir3_collect_info(struct ir3_shader_variant *v)
 
          foreach_src (reg, instr) {
             if (!is_reg_gpr(reg) || !regmask_get(&aliases, reg)) {
-               collect_reg_info(instr, reg, info);
+               collect_reg_info(v, instr, reg, info);
             }
          }
 
@@ -299,7 +297,7 @@ ir3_collect_info(struct ir3_shader_variant *v)
                 instr->cat7.alias_scope == ALIAS_TEX) {
                regmask_set(&aliases, instr->dsts[0]);
             } else if (is_dest_gpr(reg)) {
-               collect_reg_info(instr, reg, info);
+               collect_reg_info(v, instr, reg, info);
             }
          }
 
