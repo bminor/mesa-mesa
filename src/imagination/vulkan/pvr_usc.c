@@ -1163,7 +1163,6 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
 
    load_op->const_shareds_count = shared_regs;
    load_op->shareds_count = shared_regs;
-   load_op->shareds_dest_offset = 0;
 
    return build_shader(ctx, b.shader, &data);
 }

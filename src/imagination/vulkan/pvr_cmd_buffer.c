@@ -824,7 +824,6 @@ static VkResult pvr_load_op_pds_data_create_and_upload(
                  PDSINST_DOUT_FIELDS_DOUTD_SRC1,
                  value) {
       value.dest = ROGUE_PDSINST_DOUTD_DEST_COMMON_STORE;
-      value.a0 = load_op->shareds_dest_offset;
       value.bsize = load_op->shareds_count;
    }
 
