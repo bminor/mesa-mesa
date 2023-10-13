@@ -172,6 +172,7 @@ static void pvr_physical_device_get_supported_extensions(
    *extensions = (struct vk_device_extension_table){
       .KHR_bind_memory2 = true,
       .KHR_copy_commands2 = true,
+      .KHR_dedicated_allocation = true,
       .KHR_descriptor_update_template = true,
       .KHR_driver_properties = true,
       .KHR_external_fence = true,
@@ -2298,6 +2299,11 @@ VkResult pvr_AllocateMemory(VkDevice _device,
          break;
       case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO:
          break;
+      case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO:
+         /* We don't have particular optimizations associated with memory
+          * allocations that won't be suballocated to multiple resources.
+          */
+         break;
       default:
          vk_debug_ignored_stype(ext->sType);
          break;
@@ -3442,6 +3448,22 @@ void pvr_GetBufferMemoryRequirements2(
 
    pMemoryRequirements->memoryRequirements.size =
       ALIGN_POT(size, buffer->alignment);
+
+   vk_foreach_struct (ext, pMemoryRequirements->pNext) {
+      switch (ext->sType) {
+      case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: {
+         VkMemoryDedicatedRequirements *req =
+            (VkMemoryDedicatedRequirements *)ext;
+
+         req->requiresDedicatedAllocation = false;
+         req->prefersDedicatedAllocation = false;
+         break;
+      }
+      default:
+         vk_debug_ignored_stype(ext->sType);
+         break;
+      }
+   }
 }
 
 void pvr_GetImageMemoryRequirements2(VkDevice _device,
@@ -3478,4 +3500,21 @@ void pvr_GetImageMemoryRequirements2(VkDevice _device,
    pMemoryRequirements->memoryRequirements.size =
       align64(image->size, image->alignment);
    pMemoryRequirements->memoryRequirements.memoryTypeBits = memory_types;
+
+   vk_foreach_struct (ext, pMemoryRequirements->pNext) {
+      switch (ext->sType) {
+      case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS: {
+         bool has_ext_handle_types = image->vk.external_handle_types != 0;
+         VkMemoryDedicatedRequirements *req =
+            (VkMemoryDedicatedRequirements *)ext;
+
+         req->prefersDedicatedAllocation = has_ext_handle_types;
+         req->requiresDedicatedAllocation = has_ext_handle_types;
+         break;
+      }
+      default:
+         vk_debug_ignored_stype(ext->sType);
+         break;
+      }
+   }
 }
