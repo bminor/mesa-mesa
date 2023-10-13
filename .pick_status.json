@@ -194,7 +194,7 @@
         "description": "intel/fs: Don't optimize DW*1 MUL if it stores value to the accumulator",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a8b86459a1bb74cfdf0d63572a9fe194b2b5b53f",
         "notes": null
