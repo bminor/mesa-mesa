@@ -517,7 +517,12 @@ ra_add_node_adjacency(struct ra_graph *g, unsigned int n1, unsigned int n2)
    int n2_class = g->nodes[n2].class;
    g->nodes[n1].q_total += g->regs->classes[n1_class]->q[n2_class];
 
-   util_dynarray_append(&g->nodes[n1].adjacency_list, unsigned int, n2);
+   struct ra_list *adj = &g->nodes[n1].adjacency;
+   if (adj->size == adj->cap) {
+      adj->cap = MAX2(16, adj->cap * 2);
+      adj->elems = reralloc(g, adj->elems, unsigned int, adj->cap);
+   }
+   adj->elems[adj->size++] = n2;
 }
 
 static void
@@ -530,8 +535,14 @@ ra_node_remove_adjacency(struct ra_graph *g, unsigned int n1, unsigned int n2)
    int n2_class = g->nodes[n2].class;
    g->nodes[n1].q_total -= g->regs->classes[n1_class]->q[n2_class];
 
-   util_dynarray_delete_unordered(&g->nodes[n1].adjacency_list, unsigned int,
-                                  n2);
+   struct ra_list *adj = &g->nodes[n1].adjacency;
+   for (unsigned i = 0; i < adj->size; i++) {
+      if (adj->elems[i] == n2) {
+         adj->elems[i] = adj->elems[adj->size - 1];
+         adj->size--;
+         break;
+      }
+   }
 }
 
 static void
@@ -554,7 +565,6 @@ ra_realloc_interference_graph(struct ra_graph *g, unsigned int alloc)
    /* Initialize new nodes. */
    for (unsigned i = g->alloc; i < alloc; i++) {
       struct ra_node* node = g->nodes + i;
-      util_dynarray_init(&node->adjacency_list, g);
       node->q_total = 0;
       node->reg = NO_REG;
       g->nodes_extra[i].forced_reg = NO_REG;
@@ -647,11 +657,12 @@ ra_add_node_interference(struct ra_graph *g,
 void
 ra_reset_node_interference(struct ra_graph *g, unsigned int n)
 {
-   util_dynarray_foreach(&g->nodes[n].adjacency_list, unsigned int, n2p) {
-      ra_node_remove_adjacency(g, *n2p, n);
-   }
+   struct ra_list *adj = &g->nodes[n].adjacency;
 
-   util_dynarray_clear(&g->nodes[n].adjacency_list);
+   for (unsigned i = 0; i < adj->size; i++)
+      ra_node_remove_adjacency(g, adj->elems[i], n);
+
+   adj->size = 0;
 }
 
 static void
@@ -684,8 +695,9 @@ add_node_to_stack(struct ra_graph *g, unsigned int n)
 
    assert(!BITSET_TEST(g->tmp.in_stack, n));
 
-   util_dynarray_foreach(&g->nodes[n].adjacency_list, unsigned int, n2p) {
-      unsigned int n2 = *n2p;
+   struct ra_list *adj = &g->nodes[n].adjacency;
+   for (unsigned i = 0; i < adj->size; i++) {
+      unsigned int n2 = adj->elems[i];
       unsigned int n2_class = g->nodes[n2].class;
 
       if (!BITSET_TEST(g->tmp.in_stack, n2) &&
@@ -833,8 +845,9 @@ ra_class_allocations_conflict(struct ra_class *c1, unsigned int r1,
 static struct ra_node *
 ra_find_conflicting_neighbor(struct ra_graph *g, unsigned int n, unsigned int r)
 {
-   util_dynarray_foreach(&g->nodes[n].adjacency_list, unsigned int, n2p) {
-      unsigned int n2 = *n2p;
+   struct ra_list *adj = &g->nodes[n].adjacency;
+   for (unsigned i = 0; i < adj->size; i++) {
+      unsigned int n2 = adj->elems[i];
 
       /* If our adjacent node is in the stack, it's not allocated yet. */
       if (!BITSET_TEST(g->tmp.in_stack, n2) &&
@@ -864,11 +877,12 @@ ra_compute_available_regs(struct ra_graph *g, unsigned int n, BITSET_WORD *regs)
    /* Remove any regs that conflict with nodes that we're adjacent to and have
     * already colored.
     */
-   util_dynarray_foreach(&g->nodes[n].adjacency_list, unsigned int, n2p) {
-      struct ra_node *n2 = &g->nodes[*n2p];
+   struct ra_list *adj = &g->nodes[n].adjacency;
+   for (unsigned i = 0; i < adj->size; i++) {
+      struct ra_node *n2 = &g->nodes[adj->elems[i]];
       struct ra_class *n2c = g->regs->classes[n2->class];
 
-      if (!BITSET_TEST(g->tmp.in_stack, *n2p)) {
+      if (!BITSET_TEST(g->tmp.in_stack, adj->elems[i])) {
          if (c->contig_len) {
             int start = MAX2(0, (int)n2->reg - c->contig_len + 1);
             int end = MIN2(g->regs->count, n2->reg + n2c->contig_len);
@@ -1022,8 +1036,9 @@ ra_get_spill_benefit(struct ra_graph *g, unsigned int n)
     * "count number of edges" approach of traditional graph coloring,
     * but takes classes into account.
     */
-   util_dynarray_foreach(&g->nodes[n].adjacency_list, unsigned int, n2p) {
-      unsigned int n2 = *n2p;
+   struct ra_list *adj = &g->nodes[n].adjacency;
+   for (unsigned i = 0; i < adj->size; i++) {
+      unsigned int n2 = adj->elems[i];
       unsigned int n2_class = g->nodes[n2].class;
       benefit += ((float)g->regs->classes[n_class]->q[n2_class] /
                   g->regs->classes[n_class]->p);

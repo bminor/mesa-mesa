@@ -38,6 +38,12 @@ extern "C" {
 #define class klass
 #endif
 
+struct ra_list {
+   unsigned int *elems;
+   unsigned int size;
+   unsigned int cap;
+};
+
 struct ra_reg {
    BITSET_WORD *conflicts;
    struct util_dynarray conflict_list;
@@ -92,7 +98,7 @@ struct ra_node {
     * List of which nodes this node interferes with.  This should be
     * symmetric with the other node.
     */
-   struct util_dynarray adjacency_list;
+   struct ra_list adjacency;
    /** @} */
 
    unsigned int class;
