@@ -97,9 +97,6 @@ struct ra_node {
 
    unsigned int class;
 
-   /* Client-assigned register, if assigned, or NO_REG. */
-   unsigned int forced_reg;
-
    /* Register, if assigned, or NO_REG. */
    unsigned int reg;
 
@@ -108,11 +105,6 @@ struct ra_node {
     * interfering nodes not in the stack.
     */
    unsigned int q_total;
-
-   /* For an implementation that needs register spilling, this is the
-    * approximate cost of spilling this node.
-    */
-   float spill_cost;
 
    /* Temporary data for the algorithm to scratch around in */
    struct {
@@ -124,12 +116,28 @@ struct ra_node {
    } tmp;
 };
 
+struct ra_node_extra {
+   /* For an implementation that needs register spilling, this is the
+    * approximate cost of spilling this node.
+    */
+   float spill_cost;
+
+   /* Client-assigned register, if assigned, or NO_REG. Same size and
+    * capacity as the nodes array.
+    */
+   unsigned int forced_reg;
+};
+
 struct ra_graph {
    struct ra_regs *regs;
    /**
     * the variables that need register allocation.
     */
    struct ra_node *nodes;
+
+   /* Less used per-node data.  Keep it out of the tight loops. */
+   struct ra_node_extra *nodes_extra;
+
    BITSET_WORD *adjacency;
    unsigned int count; /**< count of nodes. */
 

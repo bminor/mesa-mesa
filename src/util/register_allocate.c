@@ -546,6 +546,7 @@ ra_realloc_interference_graph(struct ra_graph *g, unsigned int alloc)
    assert(g->alloc % BITSET_WORDBITS == 0);
    alloc = align(alloc, BITSET_WORDBITS);
    g->nodes = rerzalloc(g, g->nodes, struct ra_node, g->alloc, alloc);
+   g->nodes_extra = rerzalloc(g, g->nodes_extra, struct ra_node_extra, g->alloc, alloc);
    g->adjacency = rerzalloc(g, g->adjacency, BITSET_WORD,
                             BITSET_WORDS(ra_get_num_adjacency_bits(g->alloc)),
                             BITSET_WORDS(ra_get_num_adjacency_bits(alloc)));
@@ -555,8 +556,8 @@ ra_realloc_interference_graph(struct ra_graph *g, unsigned int alloc)
       struct ra_node* node = g->nodes + i;
       util_dynarray_init(&node->adjacency_list, g);
       node->q_total = 0;
-      node->forced_reg = NO_REG;
       node->reg = NO_REG;
+      g->nodes_extra[i].forced_reg = NO_REG;
    }
 
    /* These are scratch values and don't need to be zeroed.  We'll clear them
@@ -735,7 +736,7 @@ ra_simplify(struct ra_graph *g)
       g->tmp.min_q_node[i] = UINT_MAX;
       for (int j = high_bit; j >= 0; j--) {
          unsigned int n = i * BITSET_WORDBITS + j;
-         g->nodes[n].reg = g->nodes[n].forced_reg;
+         g->nodes[n].reg = g->nodes_extra[n].forced_reg;
          g->nodes[n].tmp.q_total = g->nodes[n].q_total;
          if (g->nodes[n].reg != NO_REG)
             g->tmp.reg_assigned[i] |= BITSET_BIT(j);
@@ -985,8 +986,8 @@ ra_allocate(struct ra_graph *g)
 unsigned int
 ra_get_node_reg(struct ra_graph *g, unsigned int n)
 {
-   if (g->nodes[n].forced_reg != NO_REG)
-      return g->nodes[n].forced_reg;
+   if (g->nodes_extra[n].forced_reg != NO_REG)
+      return g->nodes_extra[n].forced_reg;
    else
       return g->nodes[n].reg;
 }
@@ -1007,7 +1008,7 @@ ra_get_node_reg(struct ra_graph *g, unsigned int n)
 void
 ra_set_node_reg(struct ra_graph *g, unsigned int n, unsigned int reg)
 {
-   g->nodes[n].forced_reg = reg;
+   g->nodes_extra[n].forced_reg = reg;
 }
 
 static float
@@ -1054,7 +1055,7 @@ ra_get_best_spill_node(struct ra_graph *g)
     * in us making progress.
     */
    for (n = 0; n < g->count; n++) {
-      float cost = g->nodes[n].spill_cost;
+      float cost = g->nodes_extra[n].spill_cost;
       float benefit;
 
       if (cost <= 0.0f)
@@ -1081,11 +1082,11 @@ ra_get_best_spill_node(struct ra_graph *g)
 void
 ra_set_node_spill_cost(struct ra_graph *g, unsigned int n, float cost)
 {
-   g->nodes[n].spill_cost = cost;
+   g->nodes_extra[n].spill_cost = cost;
 }
 
 float
 ra_debug_get_node_spill_cost(struct ra_graph *g, unsigned int n)
 {
-   return g->nodes[n].spill_cost;
+   return g->nodes_extra[n].spill_cost;
 }
