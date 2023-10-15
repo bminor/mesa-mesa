@@ -46,7 +46,7 @@ struct ra_list {
 
 struct ra_reg {
    BITSET_WORD *conflicts;
-   struct util_dynarray conflict_list;
+   struct ra_list conflict_list;
 };
 
 struct ra_regs {
@@ -57,6 +57,7 @@ struct ra_regs {
    unsigned int class_count;
 
    bool round_robin;
+   bool uses_conflict_lists;
 };
 
 struct ra_class {

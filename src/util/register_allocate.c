@@ -76,7 +76,6 @@
 #include "blob.h"
 #include "ralloc.h"
 #include "util/bitset.h"
-#include "util/u_dynarray.h"
 #include "u_math.h"
 #include "register_allocate.h"
 #include "register_allocate_internal.h"
@@ -96,16 +95,19 @@ ra_alloc_reg_set(void *mem_ctx, unsigned int count, bool need_conflict_lists)
    regs = rzalloc(mem_ctx, struct ra_regs);
    regs->count = count;
    regs->regs = rzalloc_array(regs, struct ra_reg, count);
+   regs->uses_conflict_lists = need_conflict_lists;
 
    for (i = 0; i < count; i++) {
       regs->regs[i].conflicts = rzalloc_array(regs->regs, BITSET_WORD,
                                               BITSET_WORDS(count));
       BITSET_SET(regs->regs[i].conflicts, i);
 
-      util_dynarray_init(&regs->regs[i].conflict_list,
-                         need_conflict_lists ? regs->regs : NULL);
-      if (need_conflict_lists)
-         util_dynarray_append(&regs->regs[i].conflict_list, unsigned int, i);
+      if (need_conflict_lists) {
+         struct ra_list *list = &regs->regs[i].conflict_list;
+         list->cap = 16;
+         list->elems = ralloc_array(regs->regs, unsigned int, list->cap);
+         list->elems[list->size++] = i;
+      }
    }
 
    return regs;
@@ -132,9 +134,16 @@ ra_add_conflict_list(struct ra_regs *regs, unsigned int r1, unsigned int r2)
 {
    struct ra_reg *reg1 = &regs->regs[r1];
 
-   if (reg1->conflict_list.mem_ctx) {
-      util_dynarray_append(&reg1->conflict_list, unsigned int, r2);
+   if (regs->uses_conflict_lists) {
+      struct ra_list *list = &reg1->conflict_list;
+      if (list->size == list->cap) {
+         assert(list->cap);
+         list->cap *= 2;
+         list->elems = reralloc(regs, list->elems, unsigned int, list->cap);
+      }
+      list->elems[list->size++] = r2;
    }
+
    BITSET_SET(reg1->conflicts, r2);
 }
 
@@ -161,10 +170,9 @@ ra_add_transitive_reg_conflict(struct ra_regs *regs,
 {
    ra_add_reg_conflict(regs, reg, base_reg);
 
-   util_dynarray_foreach(&regs->regs[base_reg].conflict_list, unsigned int,
-                         r2p) {
-      ra_add_reg_conflict(regs, reg, *r2p);
-   }
+   struct ra_list *list = &regs->regs[base_reg].conflict_list;
+   for (unsigned int i = 0; i < list->size; i++)
+      ra_add_reg_conflict(regs, reg, list->elems[i]);
 }
 
 /**
@@ -181,8 +189,9 @@ ra_add_transitive_reg_pair_conflict(struct ra_regs *regs,
    ra_add_reg_conflict(regs, reg0, base_reg);
    ra_add_reg_conflict(regs, reg1, base_reg);
 
-   util_dynarray_foreach(&regs->regs[base_reg].conflict_list, unsigned int, i) {
-      unsigned int conflict = *i;
+   struct ra_list *list = &regs->regs[base_reg].conflict_list;
+   for (unsigned int i = 0; i < list->size; i++) {
+      unsigned int conflict = list->elems[i];
       if (conflict != reg1)
          ra_add_reg_conflict(regs, reg0, conflict);
       if (conflict != reg0)
@@ -360,9 +369,9 @@ ra_set_finalize(struct ra_regs *regs, unsigned int **q_values)
                BITSET_FOREACH_SET(rc, regs->classes[c]->regs, regs->count) {
                   int conflicts = 0;
 
-                  util_dynarray_foreach(&regs->regs[rc].conflict_list,
-                                       unsigned int, rbp) {
-                     unsigned int rb = *rbp;
+                  struct ra_list *list = &regs->regs[rc].conflict_list;
+                  for (unsigned int i = 0; i < list->size; i++) {
+                     unsigned int rb = list->elems[i];
                      if (reg_belongs_to_class(rb, regs->classes[b]))
                         conflicts++;
                   }
@@ -374,8 +383,13 @@ ra_set_finalize(struct ra_regs *regs, unsigned int **q_values)
       }
    }
 
-   for (b = 0; b < regs->count; b++) {
-      util_dynarray_fini(&regs->regs[b].conflict_list);
+   if (regs->uses_conflict_lists) {
+      for (b = 0; b < regs->count; b++) {
+         struct ra_list *list = &regs->regs[b].conflict_list;
+         ralloc_free(list->elems);
+         list->size = 0;
+         list->cap = 0;
+      }
    }
 
    bool all_contig = true;
@@ -407,7 +421,7 @@ ra_set_serialize(const struct ra_regs *regs, struct blob *blob)
          struct ra_reg *reg = &regs->regs[r];
          blob_write_bytes(blob, reg->conflicts, BITSET_WORDS(regs->count) *
                                                 sizeof(BITSET_WORD));
-         assert(util_dynarray_num_elements(&reg->conflict_list, unsigned int) == 0);
+         assert(reg->conflict_list.size == 0);
       }
    }
 
