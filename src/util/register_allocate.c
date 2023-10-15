@@ -519,7 +519,7 @@ ra_add_node_adjacency(struct ra_graph *g, unsigned int n1, unsigned int n2)
 
    struct ra_list *adj = &g->nodes[n1].adjacency;
    if (adj->size == adj->cap) {
-      adj->cap = MAX2(16, adj->cap * 2);
+      adj->cap = MAX2(64, adj->cap * 2);
       adj->elems = reralloc(g, adj->elems, unsigned int, adj->cap);
    }
    adj->elems[adj->size++] = n2;
