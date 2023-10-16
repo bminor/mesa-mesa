@@ -1092,6 +1092,12 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->uses_kernel_cu_mask = false; /* Not implemented in the kernel. */
    info->has_graphics = info->ip[AMD_IP_GFX].num_queues > 0;
 
+   /* On GFX8, the TBA/TMA registers can be configured from the userspace.
+    * On GFX9+, they are privileged registers and they need to be configured
+    * from the kernel but it's not suppported yet.
+    */
+   info->has_trap_handler_support = info->gfx_level == GFX8;
+
    info->pa_sc_tile_steering_override = device_info.pa_sc_tile_steering_override;
    info->max_render_backends = device_info.num_rb_pipes;
    /* The value returned by the kernel driver was wrong. */
@@ -2010,6 +2016,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    }
 
    fprintf(f, "    has_tmz_support = %u\n", info->has_tmz_support);
+   fprintf(f, "    has_trap_handler_support = %u\n", info->has_trap_handler_support);
    for (unsigned i = 0; i < AMD_NUM_IP_TYPES; i++) {
       if (info->max_submitted_ibs[i]) {
          fprintf(f, "    IP %-7s max_submitted_ibs = %u\n", ac_get_ip_type_string(info, i),

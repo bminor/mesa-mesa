@@ -234,6 +234,7 @@ struct radeon_info {
    /* Whether SR-IOV is enabled or amdgpu.mcbp=1 was set on the kernel command line. */
    bool register_shadowing_required;
    bool has_tmz_support;
+   bool has_trap_handler_support;
    bool kernel_has_modifiers;
 
    /* If the kernel driver uses CU reservation for high priority compute on gfx10+, it programs
