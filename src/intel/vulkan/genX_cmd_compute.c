@@ -1364,6 +1364,10 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
 #if INTEL_NEEDS_WA_14017794102 || INTEL_NEEDS_WA_14023061436
       btd.BTDMidthreadpreemption = false;
 #endif
+
+#if GFX_VER >= 30
+      btd.RTMemStructures64bModeEnable = true;
+#endif
    }
 
    genX(cmd_buffer_ensure_cfe_state)(cmd_buffer, pipeline->base.scratch_size);
