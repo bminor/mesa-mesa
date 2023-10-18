@@ -87,7 +87,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
    case MESA_SHADER_CLOSEST_HIT:
    case MESA_SHADER_INTERSECTION:
       brw_nir_rt_load_mem_hit(b, &hit_in,
-                              stage == MESA_SHADER_CLOSEST_HIT);
+                              stage == MESA_SHADER_CLOSEST_HIT, devinfo);
       brw_nir_rt_load_mem_ray(b, &object_ray_in,
                               BRW_RT_BVH_LEVEL_OBJECT);
       FALLTHROUGH;

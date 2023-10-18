@@ -446,7 +446,8 @@ static inline void
 brw_nir_rt_load_mem_hit_from_addr(nir_builder *b,
                                   struct brw_nir_rt_mem_hit_defs *defs,
                                   nir_def *stack_addr,
-                                  bool committed)
+                                  bool committed,
+                                  const struct intel_device_info *devinfo)
 {
    nir_def *hit_addr =
       brw_nir_rt_mem_hit_addr_from_addr(b, stack_addr, committed);
@@ -478,10 +479,11 @@ brw_nir_rt_load_mem_hit_from_addr(nir_builder *b,
 static inline void
 brw_nir_rt_load_mem_hit(nir_builder *b,
                         struct brw_nir_rt_mem_hit_defs *defs,
-                        bool committed)
+                        bool committed,
+                        const struct intel_device_info *devinfo)
 {
    brw_nir_rt_load_mem_hit_from_addr(b, defs, brw_nir_rt_stack_addr(b),
-                                     committed);
+                                     committed, devinfo);
 }
 
 static inline void
@@ -521,11 +523,12 @@ brw_nir_memclear_global(nir_builder *b,
 }
 
 static inline nir_def *
-brw_nir_rt_query_done(nir_builder *b, nir_def *stack_addr)
+brw_nir_rt_query_done(nir_builder *b, nir_def *stack_addr,
+                      const struct intel_device_info *devinfo)
 {
    struct brw_nir_rt_mem_hit_defs hit_in = {};
    brw_nir_rt_load_mem_hit_from_addr(b, &hit_in, stack_addr,
-                                     false /* committed */);
+                                     false /* committed */, devinfo);
 
    return hit_in.done;
 }

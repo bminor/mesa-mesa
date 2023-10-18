@@ -203,7 +203,7 @@ brw_nir_lower_intersection_shader(nir_shader *intersection,
                brw_nir_rt_load_mem_ray(b, &ray_def, BRW_RT_BVH_LEVEL_WORLD);
 
                struct brw_nir_rt_mem_hit_defs hit_in = {};
-               brw_nir_rt_load_mem_hit(b, &hit_in, false);
+               brw_nir_rt_load_mem_hit(b, &hit_in, false, devinfo);
 
                nir_def *max_t = ray_def.t_far;
 

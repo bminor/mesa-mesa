@@ -282,7 +282,7 @@ lower_ray_query_intrinsic(nir_builder *b,
 
    case nir_intrinsic_rq_proceed: {
       nir_def *not_done =
-         nir_inot(b, brw_nir_rt_query_done(b, stack_addr));
+         nir_inot(b, brw_nir_rt_query_done(b, stack_addr, state->devinfo));
       nir_def *not_done_then, *not_done_else;
 
       nir_push_if(b, not_done);
@@ -307,7 +307,8 @@ lower_ray_query_intrinsic(nir_builder *b,
          nir_trace_ray_intel(b, state->rq_globals, level, ctrl, .synchronous = true);
 
          struct brw_nir_rt_mem_hit_defs hit_in = {};
-         brw_nir_rt_load_mem_hit_from_addr(b, &hit_in, hw_stack_addr, false);
+         brw_nir_rt_load_mem_hit_from_addr(b, &hit_in, hw_stack_addr, false,
+                                           state->devinfo);
 
          if (shadow_stack_addr)
             spill_query(b, hw_stack_addr, shadow_stack_addr);
@@ -365,7 +366,8 @@ lower_ray_query_intrinsic(nir_builder *b,
                                         BRW_RT_BVH_LEVEL_WORLD);
       brw_nir_rt_load_mem_ray_from_addr(b, &object_ray_in, stack_addr,
                                         BRW_RT_BVH_LEVEL_OBJECT);
-      brw_nir_rt_load_mem_hit_from_addr(b, &hit_in, stack_addr, committed);
+      brw_nir_rt_load_mem_hit_from_addr(b, &hit_in, stack_addr, committed,
+                                        state->devinfo);
 
       nir_def *sysval = NULL;
       switch (nir_intrinsic_ray_query_value(intrin)) {
