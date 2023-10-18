@@ -305,7 +305,8 @@ struct brw_nir_rt_globals_defs {
 static inline void
 brw_nir_rt_load_globals_addr(nir_builder *b,
                              struct brw_nir_rt_globals_defs *defs,
-                             nir_def *addr)
+                             nir_def *addr,
+                             const struct intel_device_info *devinfo)
 {
    nir_def *data;
    data = brw_nir_rt_load_const(b, 16, addr);
@@ -316,38 +317,78 @@ brw_nir_rt_load_globals_addr(nir_builder *b,
 
    defs->hw_stack_size = nir_channel(b, data, 4);
    defs->num_dss_rt_stacks = nir_iand_imm(b, nir_channel(b, data, 5), 0xffff);
-   defs->hit_sbt_addr =
-      nir_pack_64_2x32_split(b, nir_channel(b, data, 8),
-                                nir_extract_i16(b, nir_channel(b, data, 9),
-                                                   nir_imm_int(b, 0)));
-   defs->hit_sbt_stride =
-      nir_unpack_32_2x16_split_y(b, nir_channel(b, data, 9));
-   defs->miss_sbt_addr =
-      nir_pack_64_2x32_split(b, nir_channel(b, data, 10),
-                                nir_extract_i16(b, nir_channel(b, data, 11),
-                                                   nir_imm_int(b, 0)));
-   defs->miss_sbt_stride =
-      nir_unpack_32_2x16_split_y(b, nir_channel(b, data, 11));
+   if (devinfo->ver >= 30) {
+      /* maxBVHLevels are not used yet. */
+      defs->hit_sbt_stride =
+         nir_iand_imm(b, nir_ishr_imm(b, nir_channel(b, data, 6), 0x3), 0x1fff);
+      defs->miss_sbt_stride =
+         nir_iand_imm(b, nir_unpack_32_2x16_split_y(b, nir_channel(b, data, 6)),
+                      0x1fff);
+      /* per context control flags are not used yet. */
+
+      /* Bspec 56933 (r58935):
+       *
+       * hitGroupBasePtr: [63:4] Canonical address with 58b address-space,16B
+       *                  aligned GPUVA : base pointer of hit group shader
+       *                  record array (16-bytes alignment)
+       */
+      defs->hit_sbt_addr = nir_pack_64_2x32(b, nir_channels(b, data, 0x3 << 8));
+
+      /* Bspec 56933 (r58935):
+       *
+       * missShaderBasePtr: [63:3] Canonical address with 58b address-space,8B
+       *                    aligned GPUVA: base pointer of miss shader record
+       *                    array (8-bytes alignment)
+       */
+      defs->miss_sbt_addr = nir_pack_64_2x32(b, nir_channels(b, data, 0x3 << 10));
+   } else {
+      defs->hit_sbt_addr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data, 8),
+                                   nir_extract_i16(b, nir_channel(b, data, 9),
+                                                      nir_imm_int(b, 0)));
+      defs->hit_sbt_stride =
+         nir_unpack_32_2x16_split_y(b, nir_channel(b, data, 9));
+      defs->miss_sbt_addr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data, 10),
+                                   nir_extract_i16(b, nir_channel(b, data, 11),
+                                                      nir_imm_int(b, 0)));
+      defs->miss_sbt_stride =
+         nir_unpack_32_2x16_split_y(b, nir_channel(b, data, 11));
+   }
+
    defs->sw_stack_size = nir_channel(b, data, 12);
    defs->launch_size = nir_channels(b, data, 0x7u << 13);
 
    data = brw_nir_rt_load_const(b, 8, nir_iadd_imm(b, addr, 64));
-   defs->call_sbt_addr =
-      nir_pack_64_2x32_split(b, nir_channel(b, data, 0),
-                                nir_extract_i16(b, nir_channel(b, data, 1),
-                                                   nir_imm_int(b, 0)));
-   defs->call_sbt_stride =
-      nir_unpack_32_2x16_split_y(b, nir_channel(b, data, 1));
 
-   defs->resume_sbt_addr =
-      nir_pack_64_2x32(b, nir_channels(b, data, 0x3 << 2));
+   if (devinfo->ver >= 30) {
+      defs->call_sbt_addr = nir_pack_64_2x32_split(b, nir_channel(b, data, 0),
+                                                   nir_channel(b, data, 1));
+      defs->call_sbt_stride =
+         nir_iand_imm(b, nir_unpack_32_2x16_split_x(b, nir_channel(b, data, 2)),
+                      0x1fff);
+      defs->resume_sbt_addr =
+         nir_pack_64_2x32(b, nir_channels(b, data, 0x3 << 3));
+   } else {
+      defs->call_sbt_addr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data, 0),
+                                   nir_extract_i16(b, nir_channel(b, data, 1),
+                                                      nir_imm_int(b, 0)));
+      defs->call_sbt_stride =
+         nir_unpack_32_2x16_split_y(b, nir_channel(b, data, 1));
+
+      defs->resume_sbt_addr =
+         nir_pack_64_2x32(b, nir_channels(b, data, 0x3 << 2));
+   }
 }
 
 static inline void
 brw_nir_rt_load_globals(nir_builder *b,
-                        struct brw_nir_rt_globals_defs *defs)
+                        struct brw_nir_rt_globals_defs *defs,
+                        const struct intel_device_info *devinfo)
 {
-   brw_nir_rt_load_globals_addr(b, defs, nir_load_btd_global_arg_addr_intel(b));
+   brw_nir_rt_load_globals_addr(b, defs, nir_load_btd_global_arg_addr_intel(b),
+                                devinfo);
 }
 
 static inline nir_def *

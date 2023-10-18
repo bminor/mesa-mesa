@@ -73,7 +73,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
    nir_builder *b = &build;
 
    struct brw_nir_rt_globals_defs globals;
-   brw_nir_rt_load_globals(b, &globals);
+   brw_nir_rt_load_globals(b, &globals, devinfo);
 
    nir_def *hotzone_addr = brw_nir_rt_sw_hotzone_addr(b, devinfo);
    nir_def *hotzone = nir_load_global(b, hotzone_addr, 16, 4, 32);

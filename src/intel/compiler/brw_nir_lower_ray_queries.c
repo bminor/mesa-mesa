@@ -508,7 +508,8 @@ lower_ray_query_impl(nir_function_impl *impl, struct lowering_state *state)
 
    state->rq_globals = nir_load_ray_query_global_intel(b);
 
-   brw_nir_rt_load_globals_addr(b, &state->globals, state->rq_globals);
+   brw_nir_rt_load_globals_addr(b, &state->globals, state->rq_globals,
+                                state->devinfo);
 
    nir_foreach_block_safe(block, impl) {
       nir_foreach_instr_safe(instr, block) {

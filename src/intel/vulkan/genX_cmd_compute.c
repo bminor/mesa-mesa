@@ -1057,13 +1057,28 @@ cmd_buffer_emit_rt_dispatch_globals(struct anv_cmd_buffer *cmd_buffer,
       .NumDSSRTStacks     = rt->scratch.layout.stack_ids_per_dss,
       .MaxBVHLevels       = BRW_RT_MAX_BVH_LEVELS,
       .Flags              = RT_DEPTH_TEST_LESS_EQUAL,
+#if GFX_VER >= 30
+      .HitGroupStride     = params->hit_sbt->stride,
+      .MissGroupStride    = params->miss_sbt->stride,
+      .HitGroupTable      =
+         anv_address_from_u64(params->hit_sbt->deviceAddress),
+      .MissGroupTable     =
+         anv_address_from_u64(params->miss_sbt->deviceAddress),
+#else
       .HitGroupTable      = vk_sdar_to_shader_table(params->hit_sbt),
       .MissGroupTable     = vk_sdar_to_shader_table(params->miss_sbt),
+#endif
       .SWStackSize        = rt->scratch.layout.sw_stack_size / 64,
       .LaunchWidth        = params->launch_size[0],
       .LaunchHeight       = params->launch_size[1],
       .LaunchDepth        = params->launch_size[2],
+#if GFX_VER >= 30
+      .CallableGroupTable =
+         anv_address_from_u64(params->callable_sbt->deviceAddress),
+      .CallableGroupStride = params->callable_sbt->stride,
+#else
       .CallableGroupTable = vk_sdar_to_shader_table(params->callable_sbt),
+#endif
    };
    GENX(RT_DISPATCH_GLOBALS_pack)(NULL, rtdg_state.map, &rtdg);
 
