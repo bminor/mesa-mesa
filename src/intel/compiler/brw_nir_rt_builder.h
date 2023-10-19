@@ -33,6 +33,7 @@
 
 #include "brw_rt.h"
 #include "nir_builder.h"
+#include "nir_format_convert.h"
 
 #define is_access_for_builder(b) \
    ((b)->shader->info.stage == MESA_SHADER_FRAGMENT ? \
@@ -392,24 +393,35 @@ brw_nir_rt_load_globals(nir_builder *b,
 }
 
 static inline nir_def *
-brw_nir_rt_unpack_leaf_ptr(nir_builder *b, nir_def *vec2)
+brw_nir_rt_unpack_leaf_ptr(nir_builder *b, nir_def *vec2,
+                           const struct intel_device_info *devinfo)
 {
-   /* Hit record leaf pointers are 42-bit and assumed to be in 64B chunks.
-    * This leaves 22 bits at the top for other stuff.
-    */
-   nir_def *ptr64 = nir_imul_imm(b, nir_pack_64_2x32(b, vec2), 64);
+   nir_def *result;
+   if (devinfo->ver >= 30) {
+      /* Hit record leaf pointers are at the higher 58-bit.
+       * We get rid of the lower 6bit to make an address.
+       * The lower 6bit being zero indicates that this ptr is 64B aligned.
+       */
+      result = nir_iand_imm(b, nir_pack_64_2x32(b, vec2), 0xFFFFFFFFFFFFFFC0);
+   } else {
+      /* Hit record leaf pointers are 42-bit and assumed to be in 64B chunks.
+       * This leaves 22 bits at the top for other stuff.
+       *
+       * The top 16 bits (remember, we shifted by 6 already) contain garbage
+       * that we need to get rid of.
+       */
+      nir_def *ptr64 = nir_imul_imm(b, nir_pack_64_2x32(b, vec2), 64);
+      nir_def *ptr_lo = nir_unpack_64_2x32_split_x(b, ptr64);
+      nir_def *ptr_hi = nir_unpack_64_2x32_split_y(b, ptr64);
+      ptr_hi = nir_extract_i16(b, ptr_hi, nir_imm_int(b, 0));
+      result = nir_pack_64_2x32_split(b, ptr_lo, ptr_hi);
+   }
 
-   /* The top 16 bits (remember, we shifted by 6 already) contain garbage
-    * that we need to get rid of.
-    */
-   nir_def *ptr_lo = nir_unpack_64_2x32_split_x(b, ptr64);
-   nir_def *ptr_hi = nir_unpack_64_2x32_split_y(b, ptr64);
-   ptr_hi = nir_extract_i16(b, ptr_hi, nir_imm_int(b, 0));
-   return nir_pack_64_2x32_split(b, ptr_lo, ptr_hi);
+   return result;
 }
 
 /**
- * MemHit memory layout (BSpec 47547) :
+ * On Gfx < Xe3, MemHit memory layout (BSpec 47547) :
  *
  *      name            bits    description
  *    - t               32      hit distance of current hit (or initial traversal distance)
@@ -426,6 +438,30 @@ brw_nir_rt_unpack_leaf_ptr(nir_builder *b, nir_def *vec2)
  *    - hitGroupRecPtr0 22      LSB of hit group record of the hit triangle (multiple of 16 bytes)
  *    - instLeafPtr     42      pointer to BVH instance leaf node (in multiple of 64 bytes)
  *    - hitGroupRecPtr1 22      MSB of hit group record of the hit triangle (multiple of 32 bytes)
+ *
+ * MemHit memory layout on Xe3+ (Bspec 56933) :
+ *
+ *      name            bits    description
+ *    - t               32      hit distance of current hit (or initial traversal distance)
+ *    - u               24      barycentric u hit coordinate stored as 24 bit unorm
+ *    - hitGroupIndex0   8      1st bits of hitGroupIndex
+ *    - v               24      barycentric v hit coordinate stored as 24 bit unorm
+ *    - hitGroupIndex1   8      2nd bits of hitGroupIndex
+ *    - primIndexDelta   5      prim index delta for compressed meshlets and quads
+ *    - pad1             7      unused bits
+ *    - leafNodeSubType  4      sub-type of leaf node
+ *    - valid            1      set if there is a hit
+ *    - leafType         3      type of node primLeafPtr is pointing to
+ *    - primLeafIndex    4      index of the hit primitive inside the leaf
+ *    - bvhLevel         3      the instancing level at which the hit occured
+ *    - frontFace        1      whether we hit the front-facing side of a triangle (also used to pass opaque flag when calling intersection shaders)
+ *    - done             1      used in sync mode to indicate that traversal is done
+ *    - needSWSTOC       1      if set, AnyHit Shader must perform a SW fallback STOC test
+ *    - pad0             2      unused bits
+ *    - hitGroupIndex2   6      3rd bits of hitGroupIndex
+ *    - primLeafPtr     58      pointer to BVH leaf node (MSBs of 64b pointer aligned to 64B)
+ *    - hitGroupIndex3   6      4th bits of hit group index
+ *    - instLeafPtr     58      pointer to BVH instance leaf node (MSBs of 64b pointer aligned to 64B)
  */
 struct brw_nir_rt_mem_hit_defs {
    nir_def *t;
@@ -454,11 +490,29 @@ brw_nir_rt_load_mem_hit_from_addr(nir_builder *b,
 
    nir_def *data = brw_nir_rt_load(b, hit_addr, 16, 4, 32);
    defs->t = nir_channel(b, data, 0);
-   defs->aabb_hit_kind = nir_channel(b, data, 1);
-   defs->tri_bary = nir_channels(b, data, 0x6);
+
    nir_def *bitfield = nir_channel(b, data, 3);
-   defs->prim_index_delta =
-      nir_ubitfield_extract(b, bitfield, nir_imm_int(b, 0), nir_imm_int(b, 16));
+   if (devinfo->ver >= 30) {
+      defs->aabb_hit_kind = nir_iand_imm(b, nir_channel(b, data, 1),
+                                         0xffffff);
+      nir_def *u = nir_iand_imm(b, nir_channel(b, data, 1), 0xffffff);
+      nir_def *v = nir_iand_imm(b, nir_channel(b, data, 2), 0xffffff);
+      /* For Xe3+, barycentric coordinates are stored as 24 bit unorm */
+      const unsigned bits[1] = {24};
+      defs->tri_bary = nir_vec2(b,
+                                nir_format_unorm_to_float_precise(b, u, bits),
+                                nir_format_unorm_to_float_precise(b, v, bits));
+      defs->prim_index_delta = nir_ubitfield_extract(b, bitfield,
+                                                     nir_imm_int(b, 0),
+                                                     nir_imm_int(b, 5));
+   } else {
+      defs->aabb_hit_kind = nir_channel(b, data, 1);
+      defs->tri_bary = nir_channels(b, data, 0x6);
+      defs->prim_index_delta = nir_ubitfield_extract(b, bitfield,
+                                                     nir_imm_int(b, 0),
+                                                     nir_imm_int(b, 16));
+   }
+
    defs->valid = nir_i2b(b, nir_iand_imm(b, bitfield, 1u << 16));
    defs->leaf_type =
       nir_ubitfield_extract(b, bitfield, nir_imm_int(b, 17), nir_imm_int(b, 3));
@@ -467,13 +521,14 @@ brw_nir_rt_load_mem_hit_from_addr(nir_builder *b,
    defs->bvh_level =
       nir_ubitfield_extract(b, bitfield, nir_imm_int(b, 24), nir_imm_int(b, 3));
    defs->front_face = nir_i2b(b, nir_iand_imm(b, bitfield, 1 << 27));
+
    defs->done = nir_i2b(b, nir_iand_imm(b, bitfield, 1 << 28));
 
    data = brw_nir_rt_load(b, nir_iadd_imm(b, hit_addr, 16), 16, 4, 32);
    defs->prim_leaf_ptr =
-      brw_nir_rt_unpack_leaf_ptr(b, nir_channels(b, data, 0x3 << 0));
+      brw_nir_rt_unpack_leaf_ptr(b, nir_channels(b, data, 0x3 << 0), devinfo);
    defs->inst_leaf_ptr =
-      brw_nir_rt_unpack_leaf_ptr(b, nir_channels(b, data, 0x3 << 2));
+      brw_nir_rt_unpack_leaf_ptr(b, nir_channels(b, data, 0x3 << 2), devinfo);
 }
 
 static inline void
