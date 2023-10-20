@@ -617,8 +617,8 @@ init_render_queue_state(struct anv_queue *queue, bool is_companion_rcs_batch)
     * the dynamic state base address we need to emit this instruction after
     * STATE_BASE_ADDRESS in init_common_queue_state().
     */
-#if GFX_VER == 11
-   anv_batch_emit(batch, GENX(3DSTATE_CPS), cps);
+#if GFX_VER >= 30
+   anv_batch_emit(batch, GENX(3DSTATE_COARSE_PIXEL), cps);
 #elif GFX_VER >= 12
    anv_batch_emit(batch, GENX(3DSTATE_CPS_POINTERS), cps) {
       assert(device->cps_states.alloc_size != 0);
@@ -626,6 +626,8 @@ init_render_queue_state(struct anv_queue *queue, bool is_companion_rcs_batch)
       cps.CoarsePixelShadingStateArrayPointer =
          device->cps_states.offset;
    }
+#elif GFX_VER == 11
+   anv_batch_emit(batch, GENX(3DSTATE_CPS), cps);
 #endif
 
 #if GFX_VERx10 >= 125
@@ -977,7 +979,7 @@ genX(init_device_state)(struct anv_device *device)
 void
 genX(init_cps_device_state)(struct anv_device *device)
 {
-#if GFX_VER >= 12
+#if GFX_VER >= 12 && GFX_VER < 30
    void *cps_state_ptr = device->cps_states.map;
 
    /* Disabled CPS mode */
@@ -1032,7 +1034,7 @@ genX(init_cps_device_state)(struct anv_device *device)
          }
       }
    }
-#endif /* GFX_VER >= 12 */
+#endif /* GFX_VER >= 12 && GFX_VER < 30 */
 }
 
 void

@@ -1457,6 +1457,7 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_CLIP,
    ANV_GFX_STATE_CC_STATE,
    ANV_GFX_STATE_CC_STATE_PTR,
+   ANV_GFX_STATE_COARSE_PIXEL,
    ANV_GFX_STATE_CPS,
    ANV_GFX_STATE_DEPTH_BOUNDS,
    ANV_GFX_STATE_INDEX_BUFFER,
@@ -1553,6 +1554,15 @@ struct anv_gfx_dynamic_state {
       uint32_t LineStripListProvokingVertexSelect;
       uint32_t TriangleFanProvokingVertexSelect;
    } clip;
+
+   /* 3DSTATE_COARSE_PIXEL */
+   struct {
+      uint32_t    CPSizeX;
+      uint32_t    CPSizeY;
+      uint32_t    CPSizeCombiner0Opcode;
+      uint32_t    CPSizeCombiner1Opcode;
+      bool        DisableCPSPointers;
+   } coarse_pixel;
 
    /* 3DSTATE_CPS/3DSTATE_CPS_POINTERS */
    struct {

@@ -164,7 +164,7 @@ genX(streamout_prologue)(struct anv_cmd_buffer *cmd_buffer)
 #endif
 }
 
-#if GFX_VER >= 12
+#if GFX_VER >= 12 && GFX_VER < 30
 static uint32_t
 get_cps_state_offset(const struct anv_device *device, bool cps_enabled,
                      const struct vk_fragment_shading_rate_state *fsr)
@@ -197,7 +197,32 @@ get_cps_state_offset(const struct anv_device *device, bool cps_enabled,
 
    return device->cps_states.offset + offset;
 }
-#endif /* GFX_VER >= 12 */
+#endif /* GFX_VER >= 12 && GFX_VER < 30 */
+
+#if GFX_VER >= 30
+static uint32_t
+get_cps_size(uint32_t size)
+{
+   switch (size) {
+   case 1:
+      return CPSIZE_1;
+   case 2:
+      return CPSIZE_2;
+   case 4:
+      return CPSIZE_4;
+   default:
+      unreachable("Invalid size");
+   }
+}
+
+static const uint32_t vk_to_intel_shading_rate_combiner_op[] = {
+   [VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR] = CPS_COMB_OP_PASSTHROUGH,
+   [VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR] = CPS_COMB_OP_OVERRIDE,
+   [VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MIN_KHR] = CPS_COMB_OP_HIGH_QUALITY,
+   [VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MAX_KHR] = CPS_COMB_OP_LOW_QUALITY,
+   [VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR] = CPS_COMB_OP_RELATIVE,
+};
+#endif
 
 static bool
 has_ds_feedback_loop(const struct vk_dynamic_graphics_state *dyn)
@@ -960,17 +985,27 @@ update_cps(struct anv_gfx_dynamic_state *hw_state,
    if (!wm_prog_data)
       return;
 
-   const bool cps_enable =
+   UNUSED const bool cps_enable =
       brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags);
 
-#if GFX_VER == 11
+#if GFX_VER >= 30
+   SET(COARSE_PIXEL, coarse_pixel.CPSizeX,
+       get_cps_size(dyn->fsr.fragment_size.width));
+   SET(COARSE_PIXEL, coarse_pixel.CPSizeY,
+       get_cps_size(dyn->fsr.fragment_size.height));
+   SET(COARSE_PIXEL, coarse_pixel.CPSizeCombiner0Opcode,
+       vk_to_intel_shading_rate_combiner_op[dyn->fsr.combiner_ops[0]]);
+   SET(COARSE_PIXEL, coarse_pixel.CPSizeCombiner1Opcode,
+       vk_to_intel_shading_rate_combiner_op[dyn->fsr.combiner_ops[1]]);
+#elif GFX_VER >= 12
+   SET(CPS, cps.CoarsePixelShadingStateArrayPointer,
+       get_cps_state_offset(device, cps_enable, &dyn->fsr));
+#else
+   STATIC_ASSERT(GFX_VER == 11);
    SET(CPS, cps.CoarsePixelShadingMode,
             cps_enable ? CPS_MODE_CONSTANT : CPS_MODE_NONE);
    SET(CPS, cps.MinCPSizeX, dyn->fsr.fragment_size.width);
    SET(CPS, cps.MinCPSizeY, dyn->fsr.fragment_size.height);
-#elif GFX_VER >= 12
-   SET(CPS, cps.CoarsePixelShadingStateArrayPointer,
-            get_cps_state_offset(device, cps_enable, &dyn->fsr));
 #endif
 }
 #endif
@@ -2430,6 +2465,17 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       }
    }
 
+#if GFX_VER >= 30
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_COARSE_PIXEL)) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_COARSE_PIXEL), coarse_pixel) {
+         coarse_pixel.DisableCPSPointers = true;
+         SET(coarse_pixel, coarse_pixel, CPSizeX);
+         SET(coarse_pixel, coarse_pixel, CPSizeY);
+         SET(coarse_pixel, coarse_pixel, CPSizeCombiner0Opcode);
+         SET(coarse_pixel, coarse_pixel, CPSizeCombiner1Opcode);
+      }
+   }
+#else
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_CPS)) {
 #if GFX_VER == 11
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_CPS), cps) {
@@ -2461,6 +2507,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       }
 #endif
    }
+#endif /* GFX_VER >= 30 */
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SF)) {
       anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_SF),
