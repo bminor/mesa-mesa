@@ -646,6 +646,14 @@ void radv_cmd_buffer_annotate(struct radv_cmd_buffer *cmd_buffer, const char *an
 
 void radv_gang_cache_flush(struct radv_cmd_buffer *cmd_buffer);
 
+bool radv_flush_gang_leader_semaphore(struct radv_cmd_buffer *cmd_buffer);
+
+bool radv_flush_gang_follower_semaphore(struct radv_cmd_buffer *cmd_buffer);
+
+void radv_wait_gang_leader(struct radv_cmd_buffer *cmd_buffer);
+
+void radv_wait_gang_follower(struct radv_cmd_buffer *cmd_buffer);
+
 bool radv_gang_init(struct radv_cmd_buffer *cmd_buffer);
 
 void radv_set_descriptor_set(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point,
