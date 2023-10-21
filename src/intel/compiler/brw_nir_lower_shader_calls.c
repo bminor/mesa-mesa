@@ -147,7 +147,9 @@ store_resume_addr(nir_builder *b, nir_intrinsic_instr *call)
 static bool
 lower_shader_trace_ray_instr(struct nir_builder *b, nir_instr *instr, void *data)
 {
-   struct brw_bs_prog_key *key = data;
+   const struct brw_nir_lower_shader_calls_state *state = data;
+   const struct intel_device_info *devinfo = state->devinfo;
+   struct brw_bs_prog_key *key = state->key;
 
    if (instr->type != nir_instr_type_intrinsic)
       return false;
@@ -224,9 +226,6 @@ lower_shader_trace_ray_instr(struct nir_builder *b, nir_instr *instr, void *data
        */
       .ray_flags = nir_ior_imm(b, nir_u2u16(b, ray_flags), key->pipeline_ray_flags),
       .ray_mask = cull_mask,
-      .hit_group_sr_base_ptr = hit_sbt_addr,
-      .hit_group_sr_stride = nir_u2u16(b, hit_sbt_stride_B),
-      .miss_sr_ptr = miss_sbt_addr,
       .orig = ray_orig,
       .t_near = ray_t_min,
       .dir = ray_dir,
@@ -240,7 +239,17 @@ lower_shader_trace_ray_instr(struct nir_builder *b, nir_instr *instr, void *data
        */
       .inst_leaf_ptr = nir_u2u64(b, ray_flags),
    };
-   brw_nir_rt_store_mem_ray(b, &ray_defs, BRW_RT_BVH_LEVEL_WORLD);
+
+   if (devinfo->ver >= 30) {
+      ray_defs.hit_group_index = sbt_offset;
+      ray_defs.miss_shader_index = nir_u2u16(b, miss_index);
+   } else {
+      ray_defs.hit_group_sr_base_ptr = hit_sbt_addr;
+      ray_defs.hit_group_sr_stride = nir_u2u16(b, hit_sbt_stride_B);
+      ray_defs.miss_sr_ptr = miss_sbt_addr;
+   }
+
+   brw_nir_rt_store_mem_ray(b, &ray_defs, BRW_RT_BVH_LEVEL_WORLD, devinfo);
 
    nir_trace_ray_intel(b,
                        nir_load_btd_global_arg_addr_intel(b),
@@ -272,12 +281,13 @@ lower_shader_call_instr(struct nir_builder *b, nir_intrinsic_instr *call,
 }
 
 bool
-brw_nir_lower_shader_calls(nir_shader *shader, struct brw_bs_prog_key *key)
+brw_nir_lower_shader_calls(nir_shader *shader,
+                           struct brw_nir_lower_shader_calls_state *state)
 {
    bool a = nir_shader_instructions_pass(shader,
                                          lower_shader_trace_ray_instr,
                                          nir_metadata_none,
-                                         key);
+                                         state);
    bool b = nir_shader_intrinsics_pass(shader, lower_shader_call_instr,
                                          nir_metadata_control_flow,
                                          NULL);

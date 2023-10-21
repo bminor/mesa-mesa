@@ -89,12 +89,12 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
       brw_nir_rt_load_mem_hit(b, &hit_in,
                               stage == MESA_SHADER_CLOSEST_HIT, devinfo);
       brw_nir_rt_load_mem_ray(b, &object_ray_in,
-                              BRW_RT_BVH_LEVEL_OBJECT);
+                              BRW_RT_BVH_LEVEL_OBJECT, devinfo);
       FALLTHROUGH;
 
    case MESA_SHADER_MISS:
       brw_nir_rt_load_mem_ray(b, &world_ray_in,
-                              BRW_RT_BVH_LEVEL_WORLD);
+                              BRW_RT_BVH_LEVEL_WORLD, devinfo);
       break;
 
    default:

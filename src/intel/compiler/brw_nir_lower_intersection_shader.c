@@ -200,7 +200,8 @@ brw_nir_lower_intersection_shader(nir_shader *intersection,
                nir_def *min_t = nir_load_ray_t_min(b);
 
                struct brw_nir_rt_mem_ray_defs ray_def;
-               brw_nir_rt_load_mem_ray(b, &ray_def, BRW_RT_BVH_LEVEL_WORLD);
+               brw_nir_rt_load_mem_ray(b, &ray_def, BRW_RT_BVH_LEVEL_WORLD,
+                                       devinfo);
 
                struct brw_nir_rt_mem_hit_defs hit_in = {};
                brw_nir_rt_load_mem_hit(b, &hit_in, false, devinfo);

@@ -759,12 +759,17 @@ struct brw_nir_rt_mem_ray_defs {
    nir_def *shader_index_multiplier;
    nir_def *inst_leaf_ptr;
    nir_def *ray_mask;
+
+   /* Valid on Xe3+ */
+   nir_def *hit_group_index;
+   nir_def *miss_shader_index;
 };
 
 static inline void
 brw_nir_rt_store_mem_ray_query_at_addr(nir_builder *b,
                                        nir_def *ray_addr,
-                                       const struct brw_nir_rt_mem_ray_defs *defs)
+                                       const struct brw_nir_rt_mem_ray_defs *defs,
+                                       const struct intel_device_info *devinfo)
 {
    assert_def_size(defs->orig, 3, 32);
    assert_def_size(defs->dir, 3, 32);
@@ -784,15 +789,6 @@ brw_nir_rt_store_mem_ray_query_at_addr(nir_builder *b,
                   defs->t_far),
       ~0 /* write mask */);
 
-   assert_def_size(defs->root_node_ptr, 1, 64);
-   assert_def_size(defs->ray_flags, 1, 16);
-   brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 32), 16,
-      nir_vec2(b, nir_unpack_64_2x32_split_x(b, defs->root_node_ptr),
-                  nir_pack_32_2x16_split(b,
-                     nir_unpack_64_4x16_split_z(b, defs->root_node_ptr),
-                     defs->ray_flags)),
-      0x3 /* write mask */);
-
    /* leaf_ptr is optional */
    nir_def *inst_leaf_ptr;
    if (defs->inst_leaf_ptr) {
@@ -801,20 +797,47 @@ brw_nir_rt_store_mem_ray_query_at_addr(nir_builder *b,
       inst_leaf_ptr = nir_imm_int64(b, 0);
    }
 
+   assert_def_size(defs->root_node_ptr, 1, 64);
    assert_def_size(inst_leaf_ptr, 1, 64);
-   assert_def_size(defs->ray_mask, 1, 32);
-   brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 56), 8,
-      nir_vec2(b, nir_unpack_64_2x32_split_x(b, inst_leaf_ptr),
-                  nir_pack_32_2x16_split(b,
-                     nir_unpack_64_4x16_split_z(b, inst_leaf_ptr),
-                     nir_unpack_32_2x16_split_x(b, defs->ray_mask))),
-      ~0 /* write mask */);
+   assert_def_size(defs->ray_flags, 1, 16);
+
+   if (devinfo->ver >= 30) {
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 32), 16,
+         nir_vec4(b, nir_unpack_64_2x32_split_x(b, defs->root_node_ptr),
+                     nir_unpack_64_2x32_split_y(b, defs->root_node_ptr),
+                     nir_unpack_64_2x32_split_x(b, inst_leaf_ptr),
+                     nir_unpack_64_2x32_split_y(b, inst_leaf_ptr)),
+         ~0 /* write mask */);
+
+      assert_def_size(defs->ray_mask, 1, 32);
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 48), 8,
+         nir_pack_32_2x16_split(b,
+            defs->ray_flags,
+            nir_unpack_32_2x16_split_x(b, defs->ray_mask)),
+         0x1 /* write mask */);
+   } else {
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 32), 16,
+         nir_vec2(b, nir_unpack_64_2x32_split_x(b, defs->root_node_ptr),
+                     nir_pack_32_2x16_split(b,
+                        nir_unpack_64_4x16_split_z(b, defs->root_node_ptr),
+                        defs->ray_flags)),
+         0x3 /* write mask */);
+
+      assert_def_size(defs->ray_mask, 1, 32);
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 56), 8,
+         nir_vec2(b, nir_unpack_64_2x32_split_x(b, inst_leaf_ptr),
+                     nir_pack_32_2x16_split(b,
+                        nir_unpack_64_4x16_split_z(b, inst_leaf_ptr),
+                        nir_unpack_32_2x16_split_x(b, defs->ray_mask))),
+         ~0 /* write mask */);
+   }
 }
 
 static inline void
 brw_nir_rt_store_mem_ray(nir_builder *b,
                          const struct brw_nir_rt_mem_ray_defs *defs,
-                         enum brw_rt_bvh_level bvh_level)
+                         enum brw_rt_bvh_level bvh_level,
+                         const struct intel_device_info *devinfo)
 {
    nir_def *ray_addr =
       brw_nir_rt_mem_ray_addr(b, brw_nir_rt_stack_addr(b), bvh_level);
@@ -837,21 +860,6 @@ brw_nir_rt_store_mem_ray(nir_builder *b,
                   defs->t_far),
       ~0 /* write mask */);
 
-   assert_def_size(defs->root_node_ptr, 1, 64);
-   assert_def_size(defs->ray_flags, 1, 16);
-   assert_def_size(defs->hit_group_sr_base_ptr, 1, 64);
-   assert_def_size(defs->hit_group_sr_stride, 1, 16);
-   brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 32), 16,
-      nir_vec4(b, nir_unpack_64_2x32_split_x(b, defs->root_node_ptr),
-                  nir_pack_32_2x16_split(b,
-                     nir_unpack_64_4x16_split_z(b, defs->root_node_ptr),
-                     defs->ray_flags),
-                  nir_unpack_64_2x32_split_x(b, defs->hit_group_sr_base_ptr),
-                  nir_pack_32_2x16_split(b,
-                     nir_unpack_64_4x16_split_z(b, defs->hit_group_sr_base_ptr),
-                     defs->hit_group_sr_stride)),
-      ~0 /* write mask */);
-
    /* leaf_ptr is optional */
    nir_def *inst_leaf_ptr;
    if (defs->inst_leaf_ptr) {
@@ -860,33 +868,122 @@ brw_nir_rt_store_mem_ray(nir_builder *b,
       inst_leaf_ptr = nir_imm_int64(b, 0);
    }
 
-   assert_def_size(defs->miss_sr_ptr, 1, 64);
-   assert_def_size(defs->shader_index_multiplier, 1, 32);
+   assert_def_size(defs->root_node_ptr, 1, 64);
    assert_def_size(inst_leaf_ptr, 1, 64);
-   assert_def_size(defs->ray_mask, 1, 32);
-   brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 48), 16,
-      nir_vec4(b, nir_unpack_64_2x32_split_x(b, defs->miss_sr_ptr),
-                  nir_pack_32_2x16_split(b,
-                     nir_unpack_64_4x16_split_z(b, defs->miss_sr_ptr),
-                     nir_unpack_32_2x16_split_x(b,
-                        nir_ishl(b, defs->shader_index_multiplier,
-                                    nir_imm_int(b, 8)))),
-                  nir_unpack_64_2x32_split_x(b, inst_leaf_ptr),
-                  nir_pack_32_2x16_split(b,
-                     nir_unpack_64_4x16_split_z(b, inst_leaf_ptr),
-                     nir_unpack_32_2x16_split_x(b, defs->ray_mask))),
-      ~0 /* write mask */);
+   assert_def_size(defs->ray_flags, 1, 16);
+
+   if (devinfo->ver >= 30) {
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 32), 16,
+         nir_vec4(b, nir_unpack_64_2x32_split_x(b, defs->root_node_ptr),
+                     nir_unpack_64_2x32_split_y(b, defs->root_node_ptr),
+                     nir_unpack_64_2x32_split_x(b, inst_leaf_ptr),
+                     nir_unpack_64_2x32_split_y(b, inst_leaf_ptr)),
+         ~0 /* write mask */);
+
+      assert_def_size(defs->ray_mask, 1, 32);
+      assert_def_size(defs->miss_shader_index, 1, 16);
+      assert_def_size(defs->shader_index_multiplier, 1, 32);
+
+      nir_def *packed0 = nir_pack_32_2x16_split(b,
+                            defs->ray_flags,
+                            nir_unpack_32_2x16_split_x(b, defs->ray_mask));
+      /* internalRayFlags are not used at the moment */
+      nir_def *packed1 = nir_pack_32_2x16_split(b,
+                            defs->miss_shader_index,
+                            nir_unpack_32_2x16_split_x(b, defs->shader_index_multiplier));
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 48), 16,
+         nir_vec3(b, packed0, defs->hit_group_index, packed1),
+         0x7 /* write mask */);
+   } else {
+      assert_def_size(defs->hit_group_sr_base_ptr, 1, 64);
+      assert_def_size(defs->hit_group_sr_stride, 1, 16);
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 32), 16,
+         nir_vec4(b, nir_unpack_64_2x32_split_x(b, defs->root_node_ptr),
+                     nir_pack_32_2x16_split(b,
+                        nir_unpack_64_4x16_split_z(b, defs->root_node_ptr),
+                        defs->ray_flags),
+                     nir_unpack_64_2x32_split_x(b, defs->hit_group_sr_base_ptr),
+                     nir_pack_32_2x16_split(b,
+                        nir_unpack_64_4x16_split_z(b, defs->hit_group_sr_base_ptr),
+                        defs->hit_group_sr_stride)),
+         ~0 /* write mask */);
+
+      assert_def_size(defs->miss_sr_ptr, 1, 64);
+      assert_def_size(defs->shader_index_multiplier, 1, 32);
+      assert_def_size(defs->ray_mask, 1, 32);
+      brw_nir_rt_store(b, nir_iadd_imm(b, ray_addr, 48), 16,
+         nir_vec4(b, nir_unpack_64_2x32_split_x(b, defs->miss_sr_ptr),
+                     nir_pack_32_2x16_split(b,
+                        nir_unpack_64_4x16_split_z(b, defs->miss_sr_ptr),
+                        nir_unpack_32_2x16_split_x(b,
+                           nir_ishl(b, defs->shader_index_multiplier,
+                                       nir_imm_int(b, 8)))),
+                     nir_unpack_64_2x32_split_x(b, inst_leaf_ptr),
+                     nir_pack_32_2x16_split(b,
+                        nir_unpack_64_4x16_split_z(b, inst_leaf_ptr),
+                        nir_unpack_32_2x16_split_x(b, defs->ray_mask))),
+         ~0 /* write mask */);
+   }
 }
 
+/* On Xe3+, MemRay memory data structure (Bspec 56933):
+ * 64b version:
+ *
+ * org_x                   32    the origin of the ray
+ * org_y                   32    the origin of the ray
+ * org_z                   32    the origin of the ray
+ * dir_x                   32    the direction of the ray
+ * dir_y                   32    the direction of the ray
+ * dir_z                   32    the direction of the ray
+ * tnear                   32    the start of the ray
+ * tfar                    32    the end of the ray
+ * rootNodePtr             64    root node to start traversal at (64-byte
+ *                               alignment)
+ * instLeafPtr             64    the pointer to instance leaf in case we
+ *                               traverse an instance (64-bytes alignment)
+ * rayFlags                16    ray flags (see RayFlag structure)
+ * rayMask                  8    ray mask used for ray masking
+ * comparisonValue          7    to be compared with Instance.ComparisonMask
+ * pad                      1
+ * hitGroupIndex           32    hit group shader index
+ * missShaderIndex         16    index of miss shader to invoke on a miss
+ * shaderIndexMultiplier    4    shader index multiplier
+ * pad2                     4
+ * internalRayFlags         8    internal ray flags
+ *
+ * On older platforms (< Xe3):
+ * 48b version:
+ *
+ * org_x                   32    the origin of the ray
+ * org_y                   32    the origin of the ray
+ * org_z                   32    the origin of the ray
+ * dir_x                   32    the direction of the ray
+ * dir_y                   32    the direction of the ray
+ * dir_z                   32    the direction of the ray
+ * tnear                   32    the start of the ray
+ * tfar                    32    the end of the ray
+ * rootNodePtr             48    root node to start traversal at
+ * rayFlags                16    ray flags (see RayFlag structure)
+ * hitGroupSRBasePtr       48    base of hit group shader record array (8-bytes
+ *                               alignment)
+ * hitGroupSRStride        16    stride of hit group shader record array (8-bytes
+ *                               alignment)
+ * missSRPtr               48    pointer to miss shader record to invoke on a
+ *                               miss (8-bytes alignment)
+ * pad                     8
+ * shaderIndexMultiplier   8     shader index multiplier
+ * instLeafPtr             48    the pointer to instance leaf in case we traverse an
+ *                               instance (64-bytes alignment)
+ * rayMask                 8     ray mask used for ray masking
+ */
 static inline void
 brw_nir_rt_load_mem_ray_from_addr(nir_builder *b,
                                   struct brw_nir_rt_mem_ray_defs *defs,
                                   nir_def *ray_base_addr,
-                                  enum brw_rt_bvh_level bvh_level)
+                                  enum brw_rt_bvh_level bvh_level,
+                                  const struct intel_device_info *devinfo)
 {
-   nir_def *ray_addr = brw_nir_rt_mem_ray_addr(b,
-                                                   ray_base_addr,
-                                                   bvh_level);
+   nir_def *ray_addr = brw_nir_rt_mem_ray_addr(b, ray_base_addr, bvh_level);
 
    nir_def *data[4] = {
       brw_nir_rt_load(b, nir_iadd_imm(b, ray_addr,  0), 16, 4, 32),
@@ -901,40 +998,62 @@ brw_nir_rt_load_mem_ray_from_addr(nir_builder *b,
                            nir_channel(b, data[1], 1));
    defs->t_near = nir_channel(b, data[1], 2);
    defs->t_far = nir_channel(b, data[1], 3);
-   defs->root_node_ptr =
-      nir_pack_64_2x32_split(b, nir_channel(b, data[2], 0),
+
+   if (devinfo->ver >= 30) {
+      defs->root_node_ptr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data[2], 0),
+                                   nir_channel(b, data[2], 1));
+      defs->inst_leaf_ptr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data[2], 2),
+                                   nir_channel(b, data[2], 3));
+      defs->ray_flags =
+         nir_unpack_32_2x16_split_x(b, nir_channel(b, data[3], 0));
+      defs->ray_mask =
+         nir_iand_imm(b, nir_unpack_32_2x16_split_y(b, nir_channel(b, data[3], 0)),
+                      0xff);
+      defs->hit_group_index = nir_channel(b, data[3], 1);
+      defs->miss_shader_index =
+         nir_unpack_32_2x16_split_x(b, nir_channel(b, data[3], 2));
+      defs->shader_index_multiplier =
+         nir_iand_imm(b, nir_unpack_32_2x16_split_y(b, nir_channel(b, data[3], 2)),
+                      0xf);
+   } else {
+      defs->root_node_ptr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data[2], 0),
                                 nir_extract_i16(b, nir_channel(b, data[2], 1),
                                                    nir_imm_int(b, 0)));
-   defs->ray_flags =
-      nir_unpack_32_2x16_split_y(b, nir_channel(b, data[2], 1));
-   defs->hit_group_sr_base_ptr =
-      nir_pack_64_2x32_split(b, nir_channel(b, data[2], 2),
+      defs->ray_flags =
+         nir_unpack_32_2x16_split_y(b, nir_channel(b, data[2], 1));
+      defs->hit_group_sr_base_ptr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data[2], 2),
                                 nir_extract_i16(b, nir_channel(b, data[2], 3),
                                                    nir_imm_int(b, 0)));
-   defs->hit_group_sr_stride =
-      nir_unpack_32_2x16_split_y(b, nir_channel(b, data[2], 3));
-   defs->miss_sr_ptr =
-      nir_pack_64_2x32_split(b, nir_channel(b, data[3], 0),
+      defs->hit_group_sr_stride =
+         nir_unpack_32_2x16_split_y(b, nir_channel(b, data[2], 3));
+      defs->miss_sr_ptr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data[3], 0),
                                 nir_extract_i16(b, nir_channel(b, data[3], 1),
                                                    nir_imm_int(b, 0)));
-   defs->shader_index_multiplier =
-      nir_ushr(b, nir_unpack_32_2x16_split_y(b, nir_channel(b, data[3], 1)),
-                  nir_imm_int(b, 8));
-   defs->inst_leaf_ptr =
-      nir_pack_64_2x32_split(b, nir_channel(b, data[3], 2),
+      defs->shader_index_multiplier =
+         nir_ushr(b, nir_unpack_32_2x16_split_y(b, nir_channel(b, data[3], 1)),
+                     nir_imm_int(b, 8));
+      defs->inst_leaf_ptr =
+         nir_pack_64_2x32_split(b, nir_channel(b, data[3], 2),
                                 nir_extract_i16(b, nir_channel(b, data[3], 3),
                                                    nir_imm_int(b, 0)));
-   defs->ray_mask =
-      nir_unpack_32_2x16_split_y(b, nir_channel(b, data[3], 3));
+      defs->ray_mask =
+         nir_unpack_32_2x16_split_y(b, nir_channel(b, data[3], 3));
+   }
 }
 
 static inline void
 brw_nir_rt_load_mem_ray(nir_builder *b,
                         struct brw_nir_rt_mem_ray_defs *defs,
-                        enum brw_rt_bvh_level bvh_level)
+                        enum brw_rt_bvh_level bvh_level,
+                        const struct intel_device_info *devinfo)
 {
    brw_nir_rt_load_mem_ray_from_addr(b, defs, brw_nir_rt_stack_addr(b),
-                                     bvh_level);
+                                     bvh_level, devinfo);
 }
 
 struct brw_nir_rt_bvh_instance_leaf_defs {

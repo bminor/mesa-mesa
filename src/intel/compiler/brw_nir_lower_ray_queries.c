@@ -271,7 +271,8 @@ lower_ray_query_intrinsic(nir_builder *b,
          brw_nir_rt_mem_ray_addr(b, stack_addr, BRW_RT_BVH_LEVEL_WORLD);
 
       brw_nir_rt_query_mark_init(b, stack_addr);
-      brw_nir_rt_store_mem_ray_query_at_addr(b, ray_addr, &ray_defs);
+      brw_nir_rt_store_mem_ray_query_at_addr(b, ray_addr, &ray_defs,
+                                             state->devinfo);
 
       update_trace_ctrl_level(b, ctrl_level_deref,
                               NULL, NULL,
@@ -363,9 +364,11 @@ lower_ray_query_intrinsic(nir_builder *b,
       struct brw_nir_rt_mem_ray_defs object_ray_in = {};
       struct brw_nir_rt_mem_hit_defs hit_in = {};
       brw_nir_rt_load_mem_ray_from_addr(b, &world_ray_in, stack_addr,
-                                        BRW_RT_BVH_LEVEL_WORLD);
+                                        BRW_RT_BVH_LEVEL_WORLD,
+                                        state->devinfo);
       brw_nir_rt_load_mem_ray_from_addr(b, &object_ray_in, stack_addr,
-                                        BRW_RT_BVH_LEVEL_OBJECT);
+                                        BRW_RT_BVH_LEVEL_OBJECT,
+                                        state->devinfo);
       brw_nir_rt_load_mem_hit_from_addr(b, &hit_in, stack_addr, committed,
                                         state->devinfo);
 
