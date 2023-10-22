@@ -108,6 +108,9 @@ static const nir_shader_compiler_options ir3_base_options = {
    .lower_cs_local_index_to_id = true,
    .lower_wpos_pntc = true,
 
+   .lower_hadd = true,
+   .lower_hadd64 = true,
+
    .lower_int64_options = (nir_lower_int64_options)~0,
    .lower_doubles_options = (nir_lower_doubles_options)~0,
 
