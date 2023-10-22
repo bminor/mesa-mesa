@@ -9024,7 +9024,7 @@
         "description": "r600/sfn: keep workgroup and invocation ID registers for whole shader",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
