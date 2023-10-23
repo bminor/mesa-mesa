@@ -69,7 +69,7 @@ nouveau_flush(struct gl_context *ctx, unsigned gallium_flush_flags)
 	struct nouveau_context *nctx = to_nouveau_context(ctx);
 	struct nouveau_pushbuf *push = context_push(ctx);
 
-	PUSH_KICK(push);
+	if (push) PUSH_KICK(push);
 
 	if (ctx->DrawBuffer && _mesa_is_winsys_fbo(ctx->DrawBuffer) &&
 	    ctx->DrawBuffer->_ColorDrawBufferIndexes[0] == BUFFER_FRONT_LEFT) {
