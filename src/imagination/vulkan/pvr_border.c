@@ -57,11 +57,11 @@ static inline void pvr_border_color_table_pack_single(
    struct pvr_border_color_table_value *const dst,
    const union pipe_color_union *const color,
    const struct pvr_tex_format_description *const pvr_tex_fmt_desc,
-   const bool is_int)
+   const bool is_int,
+   const struct pvr_device_info *const dev_info)
 {
-   const enum pipe_format pipe_format =
-      is_int ? pvr_tex_fmt_desc->pipe_format_int
-             : pvr_tex_fmt_desc->pipe_format_float;
+   enum pipe_format pipe_format = is_int ? pvr_tex_fmt_desc->pipe_format_int
+                                         : pvr_tex_fmt_desc->pipe_format_float;
 
    if (pipe_format == PIPE_FORMAT_NONE)
       return;
@@ -82,6 +82,11 @@ static inline void pvr_border_color_table_pack_single(
          util_format_pack_z_float(pipe_format, dst->value, color->f, 1);
       }
    } else {
+      if (PVR_HAS_FEATURE(dev_info, tpu_border_colour_enhanced)) {
+         if (pipe_format == PIPE_FORMAT_R9G9B9E5_FLOAT)
+            pipe_format = PIPE_FORMAT_R16G16B16A16_FLOAT;
+      }
+
       util_format_pack_rgba(pipe_format, dst->value, color, 1);
    }
 }
@@ -99,7 +104,8 @@ static inline void pvr_border_color_table_pack_single_compressed(
       pvr_border_color_table_pack_single(dst,
                                          color,
                                          pvr_tex_fmt_desc_simple,
-                                         false);
+                                         false,
+                                         dev_info);
       return;
    }
 
@@ -150,7 +156,8 @@ pvr_border_color_table_fill_entry(struct pvr_border_color_table *const table,
          &entry->values[tex_format],
          color,
          pvr_get_tex_format_description(tex_format),
-         is_int);
+         is_int,
+         dev_info);
    }
 
    for (; tex_format < PVR_TEX_FORMAT_COUNT * 2; tex_format++) {
