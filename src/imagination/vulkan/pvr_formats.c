@@ -341,29 +341,15 @@ pvr_get_tex_format_description(const uint32_t tex_format)
    return NULL;
 }
 
-bool pvr_tex_format_compressed_is_supported(uint32_t tex_format)
+bool pvr_tex_format_compressed_is_supported(const uint32_t tex_format)
 {
-   /* In some contexts, the sequence of compressed tex format ids are appended
-    * to the normal tex format ids; in that case, we need to remove that offset
-    * before lookup.
-    */
-   if (tex_format >= PVR_TEX_FORMAT_COUNT)
-      tex_format -= PVR_TEX_FORMAT_COUNT;
-
    return tex_format < ARRAY_SIZE(pvr_tex_format_compressed_table) &&
           pvr_tex_format_compressed_table[tex_format].present;
 }
 
 const struct pvr_tex_format_compressed_description *
-pvr_get_tex_format_compressed_description(uint32_t tex_format)
+pvr_get_tex_format_compressed_description(const uint32_t tex_format)
 {
-   /* In some contexts, the sequence of compressed tex format ids are appended
-    * to the normal tex format ids; in that case, we need to remove that offset
-    * before lookup.
-    */
-   if (tex_format >= PVR_TEX_FORMAT_COUNT)
-      tex_format -= PVR_TEX_FORMAT_COUNT;
-
    if (pvr_tex_format_compressed_is_supported(tex_format))
       return &pvr_tex_format_compressed_table[tex_format].desc;
 

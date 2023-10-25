@@ -50,7 +50,8 @@ static_assert(sizeof(struct pvr_border_color_table_value) ==
               "struct pvr_border_color_table_value must be 4 x u32");
 
 struct pvr_border_color_table_entry {
-   struct pvr_border_color_table_value values[PVR_TEX_FORMAT_COUNT * 2];
+   struct pvr_border_color_table_value values[PVR_TEX_FORMAT_COUNT];
+   struct pvr_border_color_table_value compressed_values[PVR_TEX_FORMAT_COUNT];
 } PACKED;
 
 static inline void pvr_border_color_table_pack_single(
@@ -95,6 +96,7 @@ static inline void pvr_border_color_table_pack_single_compressed(
    struct pvr_border_color_table_value *const dst,
    const union pipe_color_union *const color,
    const struct pvr_tex_format_compressed_description *const pvr_tex_fmt_desc,
+   const bool is_int,
    const struct pvr_device_info *const dev_info)
 {
    if (PVR_HAS_FEATURE(dev_info, tpu_border_colour_enhanced)) {
@@ -104,7 +106,7 @@ static inline void pvr_border_color_table_pack_single_compressed(
       pvr_border_color_table_pack_single(dst,
                                          color,
                                          pvr_tex_fmt_desc_simple,
-                                         false,
+                                         is_int,
                                          dev_info);
       return;
    }
@@ -146,28 +148,21 @@ pvr_border_color_table_fill_entry(struct pvr_border_color_table *const table,
 {
    struct pvr_border_color_table_entry *const entries = table->table->bo->map;
    struct pvr_border_color_table_entry *const entry = &entries[index];
-   uint32_t tex_format = 0;
 
-   for (; tex_format < PVR_TEX_FORMAT_COUNT; tex_format++) {
-      if (!pvr_tex_format_is_supported(tex_format))
-         continue;
-
-      pvr_border_color_table_pack_single(
-         &entry->values[tex_format],
-         color,
-         pvr_get_tex_format_description(tex_format),
-         is_int,
-         dev_info);
+   pvr_foreach_supported_tex_format (tex_format, desc) {
+      pvr_border_color_table_pack_single(&entry->values[tex_format],
+                                         color,
+                                         desc,
+                                         is_int,
+                                         dev_info);
    }
 
-   for (; tex_format < PVR_TEX_FORMAT_COUNT * 2; tex_format++) {
-      if (!pvr_tex_format_compressed_is_supported(tex_format))
-         continue;
-
+   pvr_foreach_supported_tex_format_compressed (tex_format, desc) {
       pvr_border_color_table_pack_single_compressed(
-         &entry->values[tex_format],
+         &entry->compressed_values[tex_format],
          color,
-         pvr_get_tex_format_compressed_description(tex_format),
+         desc,
+         is_int,
          dev_info);
    }
 }

@@ -234,7 +234,7 @@ const struct pvr_tex_format_description *
 pvr_get_tex_format_description(uint32_t tex_format);
 
 #define pvr_foreach_supported_tex_format_(format)                             \
-   for (enum PVRX(TEXSTATE_FORMAT) format = 0; format < PVR_TEX_FORMAT_COUNT; \
+   for (enum ROGUE_TEXSTATE_FORMAT format = 0; format < PVR_TEX_FORMAT_COUNT; \
         format++)                                                             \
       if (pvr_tex_format_is_supported(format))
 
@@ -251,7 +251,7 @@ const struct pvr_tex_format_compressed_description *
 pvr_get_tex_format_compressed_description(uint32_t tex_format);
 
 #define pvr_foreach_supported_tex_format_compressed_(format) \
-   for (enum PVRX(TEXSTATE_FORMAT_COMPRESSED) format = 0;    \
+   for (enum ROGUE_TEXSTATE_FORMAT_COMPRESSED format = 0;    \
         format < PVR_TEX_FORMAT_COUNT;                       \
         format++)                                            \
       if (pvr_tex_format_compressed_is_supported(format))
