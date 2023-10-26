@@ -650,6 +650,10 @@ csf_emit_tiler_desc(struct panfrost_batch *batch, const struct pan_fb_info *fb)
       if (MAX2(batch->key.width, batch->key.height) >= 4096)
          tiler.hierarchy_mask &= ~1;
 
+      /* For effective tile size larger than 16x16, disable first level */
+      if (fb->tile_size > 16 * 16)
+         tiler.hierarchy_mask &= ~1;
+
       tiler.fb_width = batch->key.width;
       tiler.fb_height = batch->key.height;
       tiler.heap = batch->ctx->csf.heap.desc_bo->ptr.gpu;

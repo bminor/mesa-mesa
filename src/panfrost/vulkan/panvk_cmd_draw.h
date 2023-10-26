@@ -186,6 +186,10 @@ panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
    if (last_hierarchy_bit > tiler_features.max_levels)
       hierarchy_mask <<= last_hierarchy_bit - tiler_features.max_levels;
 
+   /* For effective tile size larger than 16x16, disable first level */
+   if (state->render.fb.info.tile_size > 16 * 16)
+      hierarchy_mask &= ~1;
+
    return hierarchy_mask;
 }
 

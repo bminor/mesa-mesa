@@ -31,6 +31,7 @@
 
 #include "pan_desc.h"
 #include "pan_encoder.h"
+#include "pan_props.h"
 #include "pan_texture.h"
 
 static unsigned
@@ -93,10 +94,8 @@ GENX(pan_select_crc_rt)(const struct pan_fb_info *fb, unsigned tile_size)
     * CRCs are more expensive at smaller tile sizes, reducing the benefit.
     * Restricting CRC to 16x16 should work in practice.
     */
-   if (tile_size != 16 * 16) {
-      assert(tile_size < 16 * 16);
+   if (tile_size < 16 * 16)
       return -1;
-   }
 
 #if PAN_ARCH <= 6
    if (fb->rt_count == 1 && fb->rts[0].view && !fb->rts[0].discard &&
@@ -371,7 +370,8 @@ GENX(pan_select_tile_size)(struct pan_fb_info *fb)
    fb->tile_size = fb->tile_buf_budget >> util_logbase2_ceil(bytes_per_pixel);
 
    /* Clamp tile size to hardware limits */
-   fb->tile_size = MIN2(fb->tile_size, 16 * 16);
+   fb->tile_size =
+      MIN2(fb->tile_size, panfrost_max_effective_tile_size(PAN_ARCH));
    assert(fb->tile_size >= 4 * 4);
 
    /* Colour buffer allocations must be 1K aligned. */
@@ -695,7 +695,7 @@ pan_force_clean_write_rt(const struct pan_image_view *rt, unsigned tile_size)
    unsigned superblock = panfrost_afbc_superblock_width(image->layout.modifier);
 
    assert(superblock >= 16);
-   assert(tile_size <= 16 * 16);
+   assert(tile_size <= panfrost_max_effective_tile_size(PAN_ARCH));
 
    /* Tile size and superblock differ unless they are both 16x16 */
    return !(superblock == 16 && tile_size == 16 * 16);
@@ -705,7 +705,7 @@ static bool
 pan_force_clean_write(const struct pan_fb_info *fb, unsigned tile_size)
 {
    /* Maximum tile size */
-   assert(tile_size <= 16 * 16);
+   assert(tile_size <= panfrost_max_effective_tile_size(PAN_ARCH));
 
    for (unsigned i = 0; i < fb->rt_count; ++i) {
       if (fb->rts[i].view && !fb->rts[i].discard &&
