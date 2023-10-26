@@ -312,9 +312,15 @@ pan_slice_align(uint64_t modifier)
  * are required on all current GPUs.
  */
 uint32_t
-pan_afbc_body_align(uint64_t modifier)
+pan_afbc_body_align(unsigned arch, uint64_t modifier)
 {
-   return (modifier & AFBC_FORMAT_MOD_TILED) ? 4096 : 64;
+   if (modifier & AFBC_FORMAT_MOD_TILED)
+      return 4096;
+
+   if (arch >= 6)
+      return 128;
+
+   return 64;
 }
 
 static inline unsigned
@@ -555,7 +561,7 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
             slice->afbc.stride * (effective_height / block_size.height);
          slice->afbc.header_size =
             ALIGN_POT(slice->row_stride * (effective_height / align_h),
-                      pan_afbc_body_align(layout->modifier));
+                      pan_afbc_body_align(arch, layout->modifier));
 
          if (explicit_layout &&
              explicit_layout->row_stride < slice->row_stride) {
