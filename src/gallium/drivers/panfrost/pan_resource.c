@@ -762,7 +762,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
    if (dev->ro && (template->bind & PIPE_BIND_SCANOUT)) {
       struct winsys_handle handle;
       struct pan_block_size blocksize =
-         panfrost_block_size(modifier, template->format);
+         panfrost_renderblock_size(modifier, template->format);
 
       /* Block-based texture formats are only used for texture
        * compression (not framebuffer compression!), which doesn't

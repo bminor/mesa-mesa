@@ -82,11 +82,24 @@ mali_sampling_mode(const struct pan_image_view *view)
    return MALI_MSAA_SINGLE;
 }
 
+static bool
+renderblock_fits_in_single_pass(const struct pan_image_view *view,
+                                unsigned tile_size)
+{
+   uint64_t mod = view->planes[0]->layout.modifier;
+
+   if (!drm_is_afbc(mod))
+      return tile_size >= 16 * 16;
+
+   struct pan_block_size renderblk_sz = panfrost_afbc_renderblock_size(mod);
+   return tile_size >= renderblk_sz.width * renderblk_sz.height;
+}
+
 int
 GENX(pan_select_crc_rt)(const struct pan_fb_info *fb, unsigned tile_size)
 {
-   /* Disable CRC when the tile size is not 16x16. In the hardware, CRC
-    * tiles are the same size as the tiles of the framebuffer. However,
+   /* Disable CRC when the tile size is smaller than 16x16. In the hardware,
+    * CRC tiles are the same size as the tiles of the framebuffer. However,
     * our code only handles 16x16 tiles. Therefore under the current
     * implementation, we must disable CRC when 16x16 tiles are not used.
     *
@@ -110,6 +123,9 @@ GENX(pan_select_crc_rt)(const struct pan_fb_info *fb, unsigned tile_size)
    for (unsigned i = 0; i < fb->rt_count; i++) {
       if (!fb->rts[i].view || fb->rts[i].discard ||
           !pan_image_view_has_crc(fb->rts[i].view))
+         continue;
+
+      if (!renderblock_fits_in_single_pass(fb->rts[i].view, tile_size))
          continue;
 
       bool valid = *(fb->rts[i].crc_valid);
@@ -692,13 +708,13 @@ pan_force_clean_write_rt(const struct pan_image_view *rt, unsigned tile_size)
    if (!drm_is_afbc(image->layout.modifier))
       return false;
 
-   unsigned superblock = panfrost_afbc_superblock_width(image->layout.modifier);
+   struct pan_block_size renderblk_sz =
+      panfrost_afbc_renderblock_size(image->layout.modifier);
 
-   assert(superblock >= 16);
+   assert(renderblk_sz.width >= 16 && renderblk_sz.height >= 16);
    assert(tile_size <= panfrost_max_effective_tile_size(PAN_ARCH));
 
-   /* Tile size and superblock differ unless they are both 16x16 */
-   return !(superblock == 16 && tile_size == 16 * 16);
+   return tile_size != renderblk_sz.width * renderblk_sz.height;
 }
 
 static bool

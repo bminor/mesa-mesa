@@ -95,6 +95,26 @@ panfrost_afbc_superblock_size(uint64_t modifier)
 }
 
 /*
+ * Given an AFBC modifier, return the render size.
+ */
+struct pan_block_size
+panfrost_afbc_renderblock_size(uint64_t modifier)
+{
+   unsigned index = (modifier & AFBC_FORMAT_MOD_BLOCK_SIZE_MASK);
+
+   assert(drm_is_afbc(modifier));
+   assert(index < ARRAY_SIZE(afbc_superblock_sizes));
+
+   struct pan_block_size blk_size = afbc_superblock_sizes[index];
+
+  /* The GPU needs to render 16x16 tiles. For wide tiles, that means we
+   * have to extend the render region to have a height of 16 pixels.
+   */
+   blk_size.height = ALIGN_POT(blk_size.height, 16);
+   return blk_size;
+}
+
+/*
  * Given an AFBC modifier, return the width of the superblock.
  */
 unsigned
@@ -258,6 +278,19 @@ panfrost_block_size(uint64_t modifier, enum pipe_format format)
       return (struct pan_block_size){1, 1};
 }
 
+/* For non-AFBC and non-wide AFBC, the render block size matches
+ * the block size, but for wide AFBC, the GPU wants the block height
+ * to be 16 pixels high.
+ */
+struct pan_block_size
+panfrost_renderblock_size(uint64_t modifier, enum pipe_format format)
+{
+   if (!drm_is_afbc(modifier))
+      return panfrost_block_size(modifier, format);
+
+   return panfrost_afbc_renderblock_size(modifier);
+}
+
 /*
  * Determine the tile size used by AFBC. This tiles superblocks themselves.
  * Current GPUs support either 8x8 tiling or no tiling (1x1)
@@ -392,7 +425,7 @@ panfrost_get_legacy_stride(const struct pan_image_layout *layout,
 {
    unsigned row_stride = layout->slices[level].row_stride;
    struct pan_block_size block_size =
-      panfrost_block_size(layout->modifier, layout->format);
+      panfrost_renderblock_size(layout->modifier, layout->format);
 
    if (drm_is_afbc(layout->modifier)) {
       unsigned width = u_minify(layout->width, level);
@@ -415,7 +448,8 @@ unsigned
 panfrost_from_legacy_stride(unsigned legacy_stride, enum pipe_format format,
                             uint64_t modifier)
 {
-   struct pan_block_size block_size = panfrost_block_size(modifier, format);
+   struct pan_block_size block_size =
+      panfrost_renderblock_size(modifier, format);
 
    if (drm_is_afbc(modifier)) {
       unsigned width = legacy_stride / util_format_get_blocksize(format);
@@ -492,6 +526,8 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
    bool is_3d = layout->dim == MALI_TEXTURE_DIMENSION_3D;
 
    uint64_t offset = explicit_layout ? explicit_layout->offset : 0;
+   struct pan_block_size renderblk_size =
+      panfrost_renderblock_size(layout->modifier, layout->format);
    struct pan_block_size block_size =
       panfrost_block_size(layout->modifier, layout->format);
 
@@ -499,8 +535,8 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
    unsigned height = layout->height;
    unsigned depth = layout->depth;
 
-   unsigned align_w = block_size.width;
-   unsigned align_h = block_size.height;
+   unsigned align_w = renderblk_size.width;
+   unsigned align_h = renderblk_size.height;
 
    /* For tiled AFBC, align to tiles of superblocks (this can be large) */
    if (afbc) {
@@ -560,7 +596,7 @@ pan_image_layout_init(unsigned arch, struct pan_image_layout *layout,
          slice->afbc.nr_blocks =
             slice->afbc.stride * (effective_height / block_size.height);
          slice->afbc.header_size =
-            ALIGN_POT(slice->row_stride * (effective_height / align_h),
+            ALIGN_POT(slice->afbc.nr_blocks * AFBC_HEADER_BYTES_PER_TILE,
                       pan_afbc_body_align(arch, layout->modifier));
 
          if (explicit_layout &&

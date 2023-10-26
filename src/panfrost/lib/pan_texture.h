@@ -271,6 +271,8 @@ unsigned panfrost_afbc_superblock_width(uint64_t modifier);
 
 unsigned panfrost_afbc_superblock_height(uint64_t modifier);
 
+struct pan_block_size panfrost_afbc_renderblock_size(uint64_t modifier);
+
 bool panfrost_afbc_is_wide(uint64_t modifier);
 
 struct pan_block_size panfrost_afbc_subblock_size(uint64_t modifier);
@@ -346,6 +348,9 @@ uint32_t panfrost_afrc_get_rate(enum pipe_format format, uint64_t modifier);
 
 struct pan_block_size panfrost_block_size(uint64_t modifier,
                                           enum pipe_format format);
+
+struct pan_block_size panfrost_renderblock_size(uint64_t modifier,
+                                                enum pipe_format format);
 
 #ifdef PAN_ARCH
 unsigned GENX(panfrost_estimate_texture_payload_size)(
