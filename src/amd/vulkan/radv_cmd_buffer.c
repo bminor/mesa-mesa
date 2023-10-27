@@ -10610,7 +10610,10 @@ radv_barrier(struct radv_cmd_buffer *cmd_buffer, const VkDependencyInfo *dep_inf
    }
 
    radv_gang_barrier(cmd_buffer, 0, dst_stage_mask);
-   radv_cp_dma_wait_for_stages(cmd_buffer, src_stage_mask);
+
+   const bool is_gfx_or_ace = cmd_buffer->qf == RADV_QUEUE_GENERAL || cmd_buffer->qf == RADV_QUEUE_COMPUTE;
+   if (is_gfx_or_ace)
+      radv_cp_dma_wait_for_stages(cmd_buffer, src_stage_mask);
 
    cmd_buffer->state.flush_bits |= dst_flush_bits;
 
