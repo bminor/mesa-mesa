@@ -200,6 +200,8 @@ isl_aux_get_initial_state(const struct intel_device_info *devinfo,
           * behavior, COMPRESSED_NO_CLEAR.
           */
          return ISL_AUX_STATE_COMPRESSED_NO_CLEAR;
+      } else if (devinfo->ver >= 9) {
+         return ISL_AUX_STATE_AUX_INVALID;
       } else {
          UNREACHABLE("Unsupported gfx version");
       }
