@@ -16,6 +16,30 @@
     <value name="CPSIZE_2" value="1" />
     <value name="CPSIZE_4" value="2" />
   </enum>
+  <struct name="BLEND_STATE_ENTRY" length="2">
+    <field name="Write Disable Blue" start="0" end="0" type="bool" />
+    <field name="Write Disable Green" start="1" end="1" type="bool" />
+    <field name="Write Disable Red" start="2" end="2" type="bool" />
+    <field name="Write Disable Alpha" start="3" end="3" type="bool" />
+    <field name="Alpha Blend Function" start="5" end="7" type="3D_Color_Buffer_Blend_Function" />
+    <field name="Destination Alpha Blend Factor" start="8" end="12" type="3D_Color_Buffer_Blend_Factor" />
+    <field name="Source Alpha Blend Factor" start="13" end="17" type="3D_Color_Buffer_Blend_Factor" />
+    <field name="Color Blend Function" start="18" end="20" type="3D_Color_Buffer_Blend_Function" />
+    <field name="Destination Blend Factor" start="21" end="25" type="3D_Color_Buffer_Blend_Factor" />
+    <field name="Source Blend Factor" start="26" end="30" type="3D_Color_Buffer_Blend_Factor" />
+    <field name="Color Buffer Blend Enable" start="31" end="31" type="bool" />
+    <field name="Post-Blend Color Clamp Enable" start="32" end="32" type="bool" />
+    <field name="Pre-Blend Color Clamp Enable" start="33" end="33" type="bool" />
+    <field name="Color Clamp Range" start="34" end="35" type="uint">
+      <value name="COLORCLAMP_UNORM" value="0" />
+      <value name="COLORCLAMP_SNORM" value="1" />
+      <value name="COLORCLAMP_RTFORMAT" value="2" />
+    </field>
+    <field name="Pre-Blend Source Only Clamp Enable" start="36" end="36" type="bool" />
+    <field name="Simple Float Blend Enable" start="37" end="37" type="bool" />
+    <field name="Logic Op Function" start="59" end="62" type="3D_Logic_Op_Function" />
+    <field name="Logic Op Enable" start="63" end="63" type="bool" />
+  </struct>
   <struct name="INTERFACE_DESCRIPTOR_DATA" length="8">
     <field name="Kernel Start Pointer" start="6" end="31" type="offset" />
     <field name="Software Exception Enable" start="71" end="71" type="bool" />
