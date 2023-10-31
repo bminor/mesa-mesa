@@ -1378,6 +1378,10 @@ update_blend_state(struct anv_gfx_dynamic_state *hw_state,
       SET(BLEND_STATE, blend.rts[rt].PreBlendColorClampEnable, true);
       SET(BLEND_STATE, blend.rts[rt].PostBlendColorClampEnable, true);
 
+#if GFX_VER >= 30
+      SET(BLEND_STATE, blend.rts[rt].SimpleFloatBlendEnable, true);
+#endif
+
       /* Setup blend equation. */
       SET(BLEND_STATE, blend.rts[rt].ColorBlendFunction,
                        vk_to_intel_blend_op[
@@ -2745,6 +2749,9 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
             INIT(blend.rts[i], LogicOpEnable),
             INIT(blend.rts[i], ColorBufferBlendEnable),
             INIT(blend.rts[i], ColorClampRange),
+#if GFX_VER >= 30
+            INIT(blend.rts[i], SimpleFloatBlendEnable),
+#endif
             INIT(blend.rts[i], PreBlendColorClampEnable),
             INIT(blend.rts[i], PostBlendColorClampEnable),
             INIT(blend.rts[i], SourceBlendFactor),

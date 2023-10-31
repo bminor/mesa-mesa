@@ -1532,6 +1532,7 @@ struct anv_gfx_dynamic_state {
 
          bool     ColorBufferBlendEnable;
          uint32_t ColorClampRange;
+         bool     SimpleFloatBlendEnable;
          bool     PreBlendColorClampEnable;
          bool     PostBlendColorClampEnable;
          uint32_t SourceBlendFactor;
