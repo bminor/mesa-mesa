@@ -624,7 +624,7 @@
         "description": "docs: use os.pardir",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "67485efd654fd448c2adbb520a1fc1bca469c230",
         "notes": null
