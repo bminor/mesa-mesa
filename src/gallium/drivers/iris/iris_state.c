@@ -1773,6 +1773,9 @@ iris_create_blend_state(struct pipe_context *ctx,
          be.WriteDisableGreen = !(rt->colormask & PIPE_MASK_G);
          be.WriteDisableBlue  = !(rt->colormask & PIPE_MASK_B);
          be.WriteDisableAlpha = !(rt->colormask & PIPE_MASK_A);
+#if GFX_VER >= 30
+         be.SimpleFloatBlendEnable = true;
+#endif
       }
       blend_entry += GENX(BLEND_STATE_ENTRY_length);
    }
