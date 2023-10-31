@@ -975,6 +975,9 @@ blorp_emit_blend_state(struct blorp_batch *batch,
             .WriteDisableGreen = params->color_write_disable & 2,
             .WriteDisableBlue = params->color_write_disable & 4,
             .WriteDisableAlpha = params->color_write_disable & 8,
+#if GFX_VER >= 30
+            .SimpleFloatBlendEnable = true,
+#endif
          };
          GENX(BLEND_STATE_ENTRY_pack)(NULL, pos, &entry);
          pos += GENX(BLEND_STATE_ENTRY_length);
