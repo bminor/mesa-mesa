@@ -184,7 +184,7 @@
         "description": "radeonsi/sqtt: rework pm4.reg_va_low_idx",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8034a71430be0b6473449028d90937729b77d6d9",
         "notes": null
