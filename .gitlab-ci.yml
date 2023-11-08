@@ -104,6 +104,7 @@ variables:
   # Default priority for non-merge pipelines
   VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
   JOB_PRIORITY: 50
+  DATA_STORAGE_PATH: data_storage
 
 default:
   id_tokens:
