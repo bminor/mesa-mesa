@@ -1384,7 +1384,7 @@
         "description": "egl/surfaceless: Fix EGL_DEVICE_EXT implementation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1efaa85889051978f806c4ea7c6d4997329624e5",
         "notes": null
