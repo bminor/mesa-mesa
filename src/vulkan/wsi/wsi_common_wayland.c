@@ -41,6 +41,7 @@
 #include "vk_util.h"
 #include "wsi_common_entrypoints.h"
 #include "wsi_common_private.h"
+#include "fifo-v1-client-protocol.h"
 #include "linux-dmabuf-unstable-v1-client-protocol.h"
 #include "presentation-time-client-protocol.h"
 #include "linux-drm-syncobj-v1-client-protocol.h"
@@ -114,6 +115,8 @@ struct wsi_wl_display {
    struct wp_presentation *wp_presentation_notwrapped;
    uint32_t wp_presentation_version;
 
+   struct wp_fifo_manager_v1 *fifo_manager;
+
    struct wsi_wayland *wsi_wl;
 
    /* Formats populated by zwp_linux_dmabuf_v1 or wl_shm interfaces */
@@ -181,6 +184,7 @@ struct wsi_wl_swapchain {
 
    struct wsi_wl_surface *wsi_wl_surface;
    struct wp_tearing_control_v1 *tearing_control;
+   struct wp_fifo_v1 *fifo;
 
    struct wl_callback *frame;
 
@@ -197,7 +201,7 @@ struct wsi_wl_swapchain {
    const uint64_t *drm_modifiers;
 
    VkPresentModeKHR present_mode;
-   bool fifo_ready;
+   bool legacy_fifo_ready;
 
    struct {
       mtx_t lock; /* protects all members */
@@ -866,6 +870,9 @@ registry_handle_global(void *data, struct wl_registry *registry,
    } else if (strcmp(interface, wp_tearing_control_manager_v1_interface.name) == 0) {
       display->tearing_control_manager =
          wl_registry_bind(registry, name, &wp_tearing_control_manager_v1_interface, 1);
+   } else if (strcmp(interface, wp_fifo_manager_v1_interface.name) == 0) {
+      display->fifo_manager =
+         wl_registry_bind(registry, name, &wp_fifo_manager_v1_interface, 1);
    }
 }
 
@@ -894,6 +901,8 @@ wsi_wl_display_finish(struct wsi_wl_display *display)
       zwp_linux_dmabuf_v1_destroy(display->wl_dmabuf);
    if (display->wp_presentation_notwrapped)
       wp_presentation_destroy(display->wp_presentation_notwrapped);
+   if (display->fifo_manager)
+      wp_fifo_manager_v1_destroy(display->fifo_manager);
    if (display->tearing_control_manager)
       wp_tearing_control_manager_v1_destroy(display->tearing_control_manager);
    if (display->wl_display_wrapper)
@@ -1089,10 +1098,26 @@ wsi_wl_surface_get_support(VkIcdSurfaceBase *surface,
 }
 
 static uint32_t
-wsi_wl_surface_get_min_image_count(const VkSurfacePresentModeEXT *present_mode)
+wsi_wl_surface_get_min_image_count(struct wsi_wl_display *display,
+                                   const VkSurfacePresentModeEXT *present_mode)
 {
+   /* With legacy frame callback mechanism, report 4 images by default, unless
+    * EXT_surface_maintenance1 query is used to ask explicitly for FIFO. */
    if (present_mode && (present_mode->presentMode == VK_PRESENT_MODE_FIFO_KHR ||
                         present_mode->presentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)) {
+      if (display->fifo_manager) {
+         /* When FIFO protocol is supported, applications will no longer block
+          * in QueuePresentKHR due to frame callback, so returning 4 images
+          * for a FIFO swapchain is problematic due to excessive latency. This
+          * latency can only be limited through means of presentWait which few
+          * applications use.
+          * 2 images are enough for forward progress, but 3 is used here
+          * because 2 could result in waiting for the compositor to remove an
+          * old image from scanout when we'd like to be rendering.
+          */
+         return 3;
+      }
+
       /* If we receive a FIFO present mode, only 2 images is required for forward progress.
        * Performance with 2 images will be questionable, but we only allow it for applications
        * using the new API, so we don't risk breaking any existing apps this way.
@@ -1110,12 +1135,30 @@ wsi_wl_surface_get_min_image_count(const VkSurfacePresentModeEXT *present_mode)
 }
 
 static VkResult
-wsi_wl_surface_get_capabilities(VkIcdSurfaceBase *surface,
+wsi_wl_surface_get_capabilities(VkIcdSurfaceBase *icd_surface,
                                 struct wsi_device *wsi_device,
                                 const VkSurfacePresentModeEXT *present_mode,
                                 VkSurfaceCapabilitiesKHR* caps)
 {
-   caps->minImageCount = wsi_wl_surface_get_min_image_count(present_mode);
+   VkIcdSurfaceWayland *surface = (VkIcdSurfaceWayland *)icd_surface;
+   struct wsi_wl_surface *wsi_wl_surface =
+      wl_container_of((VkIcdSurfaceWayland *)icd_surface, wsi_wl_surface, base);
+   struct wsi_wayland *wsi =
+      (struct wsi_wayland *)wsi_device->wsi[VK_ICD_WSI_PLATFORM_WAYLAND];
+   struct wsi_wl_display temp_display, *display = wsi_wl_surface->display;
+
+   if (!wsi_wl_surface->display) {
+      if (wsi_wl_display_init(wsi, &temp_display, surface->display, true,
+                              wsi_device->sw, "mesa image count query"))
+         return VK_ERROR_SURFACE_LOST_KHR;
+      display = &temp_display;
+   }
+
+   caps->minImageCount = wsi_wl_surface_get_min_image_count(display, present_mode);
+
+   if (!wsi_wl_surface->display)
+      wsi_wl_display_finish(&temp_display);
+
    /* There is no real maximum */
    caps->maxImageCount = 0;
 
@@ -2097,7 +2140,7 @@ frame_handle_done(void *data, struct wl_callback *callback, uint32_t serial)
    struct wsi_wl_swapchain *chain = data;
 
    chain->frame = NULL;
-   chain->fifo_ready = true;
+   chain->legacy_fifo_ready = true;
 
    wl_callback_destroy(callback);
 }
@@ -2139,6 +2182,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       return VK_ERROR_OUT_OF_DATE_KHR;
 
    struct wsi_wl_surface *wsi_wl_surface = chain->wsi_wl_surface;
+   bool mode_fifo = chain->base.present_mode == VK_PRESENT_MODE_FIFO_KHR;
 
    if (chain->buffer_type == WSI_WL_BUFFER_SHM_MEMCPY) {
       struct wsi_wl_image *image = &chain->images[image_index];
@@ -2148,7 +2192,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
 
    /* For EXT_swapchain_maintenance1. We might have transitioned from FIFO to MAILBOX.
     * In this case we need to let the FIFO request complete, before presenting MAILBOX. */
-   while (!chain->fifo_ready) {
+   while (!chain->legacy_fifo_ready) {
       int ret = wl_display_dispatch_queue(wsi_wl_surface->display->wl_display,
                                           wsi_wl_surface->display->queue);
       if (ret < 0)
@@ -2188,13 +2232,13 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       wl_surface_damage(wsi_wl_surface->surface, 0, 0, INT32_MAX, INT32_MAX);
    }
 
-   if (chain->base.present_mode == VK_PRESENT_MODE_FIFO_KHR) {
+   if (mode_fifo && !chain->fifo) {
       chain->frame = wl_surface_frame(wsi_wl_surface->surface);
       wl_callback_add_listener(chain->frame, &frame_listener, chain);
-      chain->fifo_ready = false;
+      chain->legacy_fifo_ready = false;
    } else {
       /* If we present MAILBOX, any subsequent presentation in FIFO can replace this image. */
-      chain->fifo_ready = true;
+      chain->legacy_fifo_ready = true;
    }
 
    if (present_id > 0 || util_perfetto_is_tracing_enabled()) {
@@ -2228,6 +2272,11 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
    }
 
    chain->images[image_index].busy = true;
+
+   if (mode_fifo && chain->fifo) {
+      wp_fifo_v1_set_barrier(chain->fifo);
+      wp_fifo_v1_wait_barrier(chain->fifo);
+   }
    wl_surface_commit(wsi_wl_surface->surface);
    wl_display_flush(wsi_wl_surface->display->wl_display);
 
@@ -2443,6 +2492,9 @@ wsi_wl_swapchain_chain_free(struct wsi_wl_swapchain *chain,
 
    vk_free(pAllocator, (void *)chain->drm_modifiers);
 
+   if (chain->fifo)
+      wp_fifo_v1_destroy(chain->fifo);
+
    wsi_swapchain_finish(&chain->base);
 }
 
@@ -2509,6 +2561,10 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
       if (old_chain->tearing_control) {
          wp_tearing_control_v1_destroy(old_chain->tearing_control);
          old_chain->tearing_control = NULL;
+      }
+      if (old_chain->fifo) {
+         wp_fifo_v1_destroy(old_chain->fifo);
+         old_chain->fifo = NULL;
       }
    }
 
@@ -2658,7 +2714,12 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
                          chain->present_ids.queue);
    }
 
-   chain->fifo_ready = true;
+   chain->legacy_fifo_ready = true;
+   struct wsi_wl_display *dpy = chain->wsi_wl_surface->display;
+   if (dpy->fifo_manager) {
+      chain->fifo = wp_fifo_manager_v1_get_fifo(dpy->fifo_manager,
+                                                chain->wsi_wl_surface->surface);
+   }
 
    for (uint32_t i = 0; i < chain->base.image_count; i++) {
       result = wsi_wl_image_init(chain, &chain->images[i],
