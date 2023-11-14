@@ -12184,7 +12184,7 @@
         "description": "meson: Update lua wrap to 5.4.6-4",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
