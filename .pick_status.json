@@ -234,7 +234,7 @@
         "description": "egl/glx: fallback to software when Zink is forced and fails",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8cd44b8843877a2f7d559d123eb3694841f16fdc",
         "notes": null
