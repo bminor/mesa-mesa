@@ -1534,7 +1534,7 @@
         "description": "venus: implement vkGet[Device]ImageSparseMemoryRequirements",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a55d26b566f1ba67f770f689e4de9b0f70c0d47b",
         "notes": null
