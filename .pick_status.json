@@ -1404,7 +1404,7 @@
         "description": "nir/lower_vars_to_scratch: Remove all unused derefs",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
