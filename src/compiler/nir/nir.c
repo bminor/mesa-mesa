@@ -92,6 +92,8 @@ static const struct debug_named_value nir_debug_control[] = {
      "Print shaders even if they are marked as internal" },
    { "print_pass_flags", NIR_DEBUG_PRINT_PASS_FLAGS,
      "Print pass_flags for every instruction when pass_flags are non-zero" },
+   { "print_struct_decls", NIR_DEBUG_PRINT_STRUCT_DECLS,
+     "Print information about members of struct types used by variables" },
    DEBUG_NAMED_VALUE_END
 };
 

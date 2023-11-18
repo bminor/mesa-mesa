@@ -60,6 +60,9 @@ typedef struct {
    /** set of names used so far for nir_variables */
    struct set *syms;
 
+   /* set of struct types that were already printed */
+   struct set *struct_types;
+
    /* an index used to make new non-conflicting names */
    unsigned index;
 
@@ -847,6 +850,34 @@ print_access(enum gl_access_qualifier access, print_state *state, const char *se
          first = false;
       }
    }
+}
+
+static void
+print_struct_decl(const struct glsl_type *type, print_state *state)
+{
+   if (_mesa_set_search(state->struct_types, type))
+      return;
+
+   _mesa_set_add(state->struct_types, type);
+
+   FILE *fp = state->fp;
+
+   for (uint32_t i = 0; i < type->length; i++) {
+      const struct glsl_type *field_type =
+         glsl_without_array(glsl_get_struct_field(type, i));
+
+      if (glsl_type_is_struct_or_ifc(field_type))
+         print_struct_decl(field_type, state);
+   }
+
+   fprintf(fp, "struct %s {\n", get_type_name(type, state));
+
+   for (uint32_t i = 0; i < type->length; i++) {
+      fprintf(fp, "   %s %s;\n", get_type_name(glsl_get_struct_field(type, i), state),
+              glsl_get_struct_elem_name(type, i));
+   }
+
+   fprintf(fp, "}\n");
 }
 
 static void
@@ -2434,6 +2465,9 @@ init_print_state(print_state *state, nir_shader *shader, FILE *fp)
    state->float_types = NULL;
    state->max_dest_index = 0;
    state->padding_for_no_dest = 0;
+
+   if (NIR_DEBUG(PRINT_STRUCT_DECLS))
+      state->struct_types = _mesa_pointer_set_create(NULL);
 }
 
 static void
@@ -2441,6 +2475,9 @@ destroy_print_state(print_state *state)
 {
    _mesa_hash_table_destroy(state->ht, NULL);
    _mesa_set_destroy(state->syms, NULL);
+
+   if (NIR_DEBUG(PRINT_STRUCT_DECLS))
+      _mesa_set_destroy(state->struct_types, NULL);
 }
 
 static const char *
@@ -2809,6 +2846,23 @@ _nir_print_shader_annotated(nir_shader *shader, FILE *fp,
       fprintf(fp, "scratch: %u\n", shader->scratch_size);
    if (shader->constant_data_size)
       fprintf(fp, "constants: %u\n", shader->constant_data_size);
+
+   if (NIR_DEBUG(PRINT_STRUCT_DECLS)) {
+      nir_foreach_variable_in_shader(var, shader) {
+         const struct glsl_type *type = glsl_without_array(var->type);
+         if (glsl_type_is_struct_or_ifc(type))
+            print_struct_decl(type, &state);
+      }
+
+      nir_foreach_function_impl(impl, shader) {
+         nir_foreach_function_temp_variable(var, impl) {
+            const struct glsl_type *type = glsl_without_array(var->type);
+            if (glsl_type_is_struct_or_ifc(type))
+               print_struct_decl(type, &state);
+         }
+      }
+   }
+
    for (unsigned i = 0; i < nir_num_variable_modes; i++) {
       nir_variable_mode mode = BITFIELD_BIT(i);
       if (mode == nir_var_function_temp)
