@@ -126,6 +126,7 @@ struct rendering_state {
       float offset_units;
       float offset_scale;
       float offset_clamp;
+      VkDepthBiasRepresentationEXT representation;
       bool enabled;
    } depth_bias;
    struct pipe_rasterizer_state rs_state;
@@ -420,6 +421,16 @@ static void emit_state(struct rendering_state *state)
          state->rs_state.offset_tri = true;
          state->rs_state.offset_line = true;
          state->rs_state.offset_point = true;
+
+         state->rs_state.offset_units_unscaled =
+            state->depth_bias.representation == VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT ||
+            state->depth_bias.representation == VK_DEPTH_BIAS_REPRESENTATION_FLOAT_EXT;
+
+         if (state->depth_bias.representation == VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT) {
+            enum pipe_format depth_format = util_format_get_depth_only(state->depth_att.imgv->pformat);
+            const struct util_format_description *desc = util_format_description(depth_format);
+            state->rs_state.offset_units *= util_get_depth_format_mrd(desc);
+         }
       } else {
          state->rs_state.offset_units = 0.0f;
          state->rs_state.offset_scale = 0.0f;
@@ -766,6 +777,7 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
          state->depth_bias.offset_units = ps->rs->depth_bias.constant_factor;
          state->depth_bias.offset_scale = ps->rs->depth_bias.slope_factor;
          state->depth_bias.offset_clamp = ps->rs->depth_bias.clamp;
+         state->depth_bias.representation = ps->rs->depth_bias.representation;
       }
 
       if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_RS_CULL_MODE))
@@ -1985,6 +1997,24 @@ static void handle_set_depth_bias(struct vk_cmd_queue_entry *cmd,
    state->depth_bias.offset_units = cmd->u.set_depth_bias.depth_bias_constant_factor;
    state->depth_bias.offset_scale = cmd->u.set_depth_bias.depth_bias_slope_factor;
    state->depth_bias.offset_clamp = cmd->u.set_depth_bias.depth_bias_clamp;
+   state->rs_dirty = true;
+}
+
+static void handle_set_depth_bias2(struct vk_cmd_queue_entry *cmd,
+                                   struct rendering_state *state)
+{
+   VkDepthBiasInfoEXT *info = cmd->u.set_depth_bias2_ext.depth_bias_info;
+
+   state->depth_bias.offset_units = info->depthBiasConstantFactor;
+   state->depth_bias.offset_scale = info->depthBiasSlopeFactor;
+   state->depth_bias.offset_clamp = info->depthBiasClamp;
+
+   const VkDepthBiasRepresentationInfoEXT *representation_info =
+      vk_find_struct_const(info->pNext, DEPTH_BIAS_REPRESENTATION_INFO_EXT);
+   state->depth_bias.representation =
+      representation_info ? representation_info->depthBiasRepresentation
+                          : VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT;
+
    state->rs_dirty = true;
 }
 
@@ -4911,6 +4941,8 @@ void lvp_add_enqueue_cmd_entrypoints(struct vk_device_dispatch_table *disp)
    ENQUEUE_CMD(CmdTraceRaysIndirectKHR)
    ENQUEUE_CMD(CmdTraceRaysKHR)
 
+   ENQUEUE_CMD(CmdSetDepthBias2EXT)
+
 #undef ENQUEUE_CMD
 }
 
@@ -5317,6 +5349,9 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
          break;
       case VK_CMD_TRACE_RAYS_KHR:
          handle_trace_rays(cmd, state);
+         break;
+      case VK_CMD_SET_DEPTH_BIAS2_EXT:
+         handle_set_depth_bias2(cmd, state);
          break;
       default:
          fprintf(stderr, "Unsupported command %s\n", vk_cmd_queue_type_names[cmd->type]);
