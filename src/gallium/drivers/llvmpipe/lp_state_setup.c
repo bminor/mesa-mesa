@@ -795,9 +795,9 @@ lp_make_setup_variant_key(const struct llvmpipe_context *lp,
     * to the primitive's maximum Z value. Retain the original depth bias
     * value until that stage.
     */
-   key->floating_point_depth = lp->floating_point_depth;
+   key->floating_point_depth = lp->floating_point_depth && !lp->rasterizer->offset_units_unscaled;
 
-   if (key->floating_point_depth) {
+   if (lp->floating_point_depth || lp->rasterizer->offset_units_unscaled) {
       key->pgon_offset_units = (float) lp->rasterizer->offset_units;
    } else {
       key->pgon_offset_units =
