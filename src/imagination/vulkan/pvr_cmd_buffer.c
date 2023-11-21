@@ -2833,15 +2833,20 @@ void pvr_CmdPushConstants2KHR(VkCommandBuffer commandBuffer,
    }
 }
 
-static VkResult
-pvr_cmd_buffer_setup_attachments(struct pvr_cmd_buffer *cmd_buffer,
-                                 const struct pvr_render_pass *pass,
-                                 const struct pvr_framebuffer *framebuffer)
+static VkResult pvr_cmd_buffer_setup_attachments(
+   struct pvr_cmd_buffer *cmd_buffer,
+   struct pvr_render_pass *pass,
+   const struct pvr_framebuffer *framebuffer,
+   const VkRenderPassBeginInfo *pRenderPassBeginInfo)
 {
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    struct pvr_render_pass_info *info = &state->render_pass_info;
+   const VkRenderPassAttachmentBeginInfo *pImageless =
+      vk_find_struct_const(pRenderPassBeginInfo->pNext,
+                           RENDER_PASS_ATTACHMENT_BEGIN_INFO);
 
-   assert(pass->attachment_count == framebuffer->attachment_count);
+   if (!pImageless)
+      assert(pass->attachment_count == framebuffer->attachment_count);
 
    /* Free any previously allocated attachments. */
    vk_free(&cmd_buffer->vk.pool->alloc, state->render_pass_info.attachments);
@@ -2861,8 +2866,15 @@ pvr_cmd_buffer_setup_attachments(struct pvr_cmd_buffer *cmd_buffer,
                                          VK_ERROR_OUT_OF_HOST_MEMORY);
    }
 
-   for (uint32_t i = 0; i < pass->attachment_count; i++)
-      info->attachments[i] = framebuffer->attachments[i];
+   for (uint32_t i = 0; i < pass->attachment_count; i++) {
+      if (pImageless && pImageless->attachmentCount) {
+         assert(pImageless->attachmentCount == pass->attachment_count);
+         PVR_FROM_HANDLE(pvr_image_view, img_view, pImageless->pAttachments[i]);
+         info->attachments[i] = img_view;
+      } else {
+         info->attachments[i] = framebuffer->attachments[i];
+      }
+   }
 
    return VK_SUCCESS;
 }
@@ -3300,7 +3312,10 @@ void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    state->render_pass_info.isp_userpass = pass->subpasses[0].isp_userpass;
    state->dirty.isp_userpass = true;
 
-   result = pvr_cmd_buffer_setup_attachments(cmd_buffer, pass, framebuffer);
+   result = pvr_cmd_buffer_setup_attachments(cmd_buffer,
+                                             pass,
+                                             framebuffer,
+                                             pRenderPassBeginInfo);
    if (result != VK_SUCCESS)
       return;
 

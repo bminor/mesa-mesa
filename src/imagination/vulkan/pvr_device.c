@@ -181,6 +181,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_external_semaphore_fd = PVR_USE_WSI_PLATFORM,
       .KHR_get_memory_requirements2 = true,
       .KHR_image_format_list = true,
+      .KHR_imageless_framebuffer = true,
       .KHR_index_type_uint8 = false,
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
@@ -278,6 +279,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_KHR_index_type_uint8 */
       .indexTypeUint8 = true,
+
+      /* Vulkan 1.2 / VK_KHR_imageless_framebuffer */
+      .imagelessFramebuffer = true,
 
       /* Vulkan 1.2 / VK_KHR_timeline_semaphore */
       .timelineSemaphore = true,
@@ -2955,6 +2959,7 @@ VkResult pvr_CreateFramebuffer(VkDevice _device,
 {
    PVR_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
    PVR_FROM_HANDLE(pvr_device, device, _device);
+   const VkFramebufferAttachmentsCreateInfoKHR *pImageless;
    struct pvr_spm_bgobj_state *spm_bgobj_state_per_render;
    struct pvr_spm_eot_state *spm_eot_state_per_render;
    struct pvr_render_target *render_targets;
@@ -2965,6 +2970,9 @@ VkResult pvr_CreateFramebuffer(VkDevice _device,
    VkResult result;
 
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
+
+   pImageless = vk_find_struct_const(pCreateInfo->pNext,
+                                     FRAMEBUFFER_ATTACHMENTS_CREATE_INFO);
 
    render_targets_count =
       PVR_RENDER_TARGETS_PER_FRAMEBUFFER(&device->pdevice->dev_info);
@@ -3003,10 +3011,17 @@ VkResult pvr_CreateFramebuffer(VkDevice _device,
    framebuffer->layers = pCreateInfo->layers;
 
    framebuffer->attachments = attachments;
-   framebuffer->attachment_count = pCreateInfo->attachmentCount;
+   if (!pImageless)
+      framebuffer->attachment_count = pCreateInfo->attachmentCount;
+   else
+      framebuffer->attachment_count = pImageless->attachmentImageInfoCount;
    for (uint32_t i = 0; i < framebuffer->attachment_count; i++) {
-      framebuffer->attachments[i] =
-         pvr_image_view_from_handle(pCreateInfo->pAttachments[i]);
+      if (!pImageless) {
+         framebuffer->attachments[i] =
+            pvr_image_view_from_handle(pCreateInfo->pAttachments[i]);
+      } else {
+         assert(i < pImageless->attachmentImageInfoCount);
+      }
    }
 
    result = pvr_framebuffer_create_ppp_state(device, framebuffer);
