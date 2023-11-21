@@ -503,37 +503,44 @@ print_alu_instr(nir_alu_instr *instr, print_state *state)
 }
 
 static const char *
-get_var_name(nir_variable *var, print_state *state)
+get_name(const void *ctx, const char *identifier, const char *default_name,
+         print_state *state)
 {
    if (state->ht == NULL)
-      return var->name ? var->name : "unnamed";
+      return identifier ? identifier : "unnamed";
 
    assert(state->syms);
 
-   struct hash_entry *entry = _mesa_hash_table_search(state->ht, var);
+   struct hash_entry *entry = _mesa_hash_table_search(state->ht, ctx);
    if (entry)
       return entry->data;
 
    char *name;
-   if (var->name == NULL) {
-      name = ralloc_asprintf(state->syms, "#%u", state->index++);
+   if (identifier == NULL || strlen(identifier) == 0) {
+      name = ralloc_asprintf(state->syms, "%s#%u", default_name, state->index++);
    } else {
-      struct set_entry *set_entry = _mesa_set_search(state->syms, var->name);
+      struct set_entry *set_entry = _mesa_set_search(state->syms, identifier);
       if (set_entry != NULL) {
          /* we have a collision with another name, append an # + a unique
           * index */
-         name = ralloc_asprintf(state->syms, "%s#%u", var->name,
+         name = ralloc_asprintf(state->syms, "%s#%u", identifier,
                                 state->index++);
       } else {
          /* Mark this one as seen */
-         _mesa_set_add(state->syms, var->name);
-         name = var->name;
+         _mesa_set_add(state->syms, identifier);
+         name = (char *)identifier;
       }
    }
 
-   _mesa_hash_table_insert(state->ht, var, name);
+   _mesa_hash_table_insert(state->ht, ctx, name);
 
    return name;
+}
+
+static const char *
+get_var_name(nir_variable *var, print_state *state)
+{
+   return get_name(var, var->name, "", state);
 }
 
 static const char *
