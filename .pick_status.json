@@ -1274,7 +1274,7 @@
         "description": "zink: Initialize pQueueFamilyIndices for image query / create",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d922850e365fc685c6ad57bdbba0abde5f6ed846",
         "notes": null
