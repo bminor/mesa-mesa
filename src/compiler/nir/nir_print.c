@@ -544,6 +544,12 @@ get_var_name(nir_variable *var, print_state *state)
 }
 
 static const char *
+get_type_name(const struct glsl_type *type, print_state *state)
+{
+   return get_name(type, glsl_get_type_name(type), "type", state);
+}
+
+static const char *
 get_constant_sampler_addressing_mode(enum cl_sampler_addressing_mode mode)
 {
    switch (mode) {
@@ -882,7 +888,7 @@ print_var_decl(nir_variable *var, print_state *state)
       fprintf(fp, "%s ", precisions[var->data.precision]);
    }
 
-   fprintf(fp, "%s %s", glsl_get_type_name(var->type),
+   fprintf(fp, "%s %s", get_type_name(var->type, state),
            get_var_name(var, state));
 
    if (var->data.mode & (nir_var_shader_in |
@@ -960,7 +966,7 @@ print_deref_link(const nir_deref_instr *instr, bool whole_chain, print_state *st
       fprintf(fp, "%s", get_var_name(instr->var, state));
       return;
    } else if (instr->deref_type == nir_deref_type_cast) {
-      fprintf(fp, "(%s *)", glsl_get_type_name(instr->type));
+      fprintf(fp, "(%s *)", get_type_name(instr->type, state));
       print_src(&instr->parent, state, nir_type_invalid);
       return;
    }
@@ -1069,7 +1075,7 @@ print_deref_instr(nir_deref_instr *instr, print_state *state)
       fprintf(fp, "%s%s", get_variable_mode_str(1 << m, true),
               modes ? "|" : "");
    }
-   fprintf(fp, " %s)", glsl_get_type_name(instr->type));
+   fprintf(fp, " %s)", get_type_name(instr->type, state));
 
    if (instr->deref_type == nir_deref_type_cast) {
       fprintf(fp, "  (ptr_stride=%u, align_mul=%u, align_offset=%u)",
@@ -1606,7 +1612,7 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
       case NIR_INTRINSIC_CMAT_DESC: {
          struct glsl_cmat_description desc = nir_intrinsic_cmat_desc(instr);
          const struct glsl_type *t = glsl_cmat_type(&desc);
-         fprintf(fp, "%s", glsl_get_type_name(t));
+         fprintf(fp, "%s", get_type_name(t, state));
          break;
       }
 
