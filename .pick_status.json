@@ -1754,7 +1754,7 @@
         "description": "anv: use main image address to determine ccs compatibility",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ee6e2bc4a31345e50b3c674cdae233a5de5179d1",
         "notes": null
