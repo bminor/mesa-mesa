@@ -328,6 +328,12 @@ VkResult pvr_CreateImageView(VkDevice _device,
 
    image = pvr_image_view_get_image(iview);
 
+   if (image->vk.image_type == VK_IMAGE_TYPE_3D &&
+       (iview->vk.view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
+        iview->vk.view_type == VK_IMAGE_VIEW_TYPE_2D)) {
+      iview->vk.layer_count = image->vk.extent.depth;
+   }
+
    info.type = iview->vk.view_type;
    info.base_level = iview->vk.base_mip_level;
    info.mip_levels = iview->vk.level_count;

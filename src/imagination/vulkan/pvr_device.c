@@ -182,6 +182,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_get_memory_requirements2 = true,
       .KHR_image_format_list = true,
       .KHR_index_type_uint8 = false,
+      .KHR_maintenance1 = true,
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
       .KHR_shader_expect_assume = false,

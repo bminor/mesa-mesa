@@ -117,6 +117,8 @@ VkResult pvr_pack_tex_state(struct pvr_device *device,
          }
       } else if (mem_layout == PVR_MEMLAYOUT_3DTWIDDLED) {
          switch (iview_type) {
+         case VK_IMAGE_VIEW_TYPE_2D:
+         case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
          case VK_IMAGE_VIEW_TYPE_3D:
             word0.textype = ROGUE_TEXSTATE_TEXTYPE_3D;
             break;
