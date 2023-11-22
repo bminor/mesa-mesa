@@ -1734,7 +1734,7 @@
         "description": "anv: remove heuristic preferring dedicated allocations",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4cdd3178fb10723e91060a75c34f379a1a92184c",
         "notes": null
