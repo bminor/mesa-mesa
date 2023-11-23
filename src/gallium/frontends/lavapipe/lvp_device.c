@@ -194,6 +194,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_variable_pointers                 = true,
    .KHR_vertex_attribute_divisor          = true,
    .KHR_vulkan_memory_model               = true,
+   .KHR_workgroup_memory_explicit_layout  = true,
    .KHR_zero_initialize_workgroup_memory  = true,
    .ARM_rasterization_order_attachment_access = true,
    .EXT_4444_formats                      = true,
@@ -782,6 +783,12 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .fragmentShaderSampleInterlock = true,
       .fragmentShaderPixelInterlock = true,
       .fragmentShaderShadingRateInterlock = false,
+
+      /* VK_KHR_workgroup_memory_explicit_layout */
+      .workgroupMemoryExplicitLayout = true,
+      .workgroupMemoryExplicitLayoutScalarBlockLayout = true,
+      .workgroupMemoryExplicitLayout8BitAccess = true,
+      .workgroupMemoryExplicitLayout16BitAccess = true,
    };
 }
 
