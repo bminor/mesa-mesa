@@ -2735,18 +2735,16 @@ void pvr_CmdBindDescriptorSets2KHR(
       cmd_buffer->state.dirty.compute_desc_dirty = true;
 }
 
-void pvr_CmdBindVertexBuffers(VkCommandBuffer commandBuffer,
-                              uint32_t firstBinding,
-                              uint32_t bindingCount,
-                              const VkBuffer *pBuffers,
-                              const VkDeviceSize *pOffsets)
+void pvr_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer,
+                               uint32_t firstBinding,
+                               uint32_t bindingCount,
+                               const VkBuffer *pBuffers,
+                               const VkDeviceSize *pOffsets,
+                               const VkDeviceSize *pSizes,
+                               const VkDeviceSize *pStrides)
 {
    PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_vertex_binding *const vb = cmd_buffer->state.vertex_bindings;
-
-   /* We have to defer setting up vertex buffer since we need the buffer
-    * stride from the pipeline.
-    */
 
    assert(firstBinding < PVR_MAX_VERTEX_INPUT_BINDINGS &&
           bindingCount <= PVR_MAX_VERTEX_INPUT_BINDINGS);
@@ -2754,8 +2752,21 @@ void pvr_CmdBindVertexBuffers(VkCommandBuffer commandBuffer,
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
    for (uint32_t i = 0; i < bindingCount; i++) {
-      vb[firstBinding + i].buffer = pvr_buffer_from_handle(pBuffers[i]);
-      vb[firstBinding + i].offset = pOffsets[i];
+      VK_FROM_HANDLE(pvr_buffer, buffer, pBuffers[i]);
+      const uint64_t size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
+
+      vb[firstBinding + i] = (struct pvr_vertex_binding){
+         .buffer = buffer,
+         .offset = pOffsets[i],
+         .size = vk_buffer_range(&buffer->vk, pOffsets[i], size),
+      };
+   }
+
+   if (pStrides != NULL) {
+      vk_cmd_set_vertex_binding_strides(&cmd_buffer->vk,
+                                        firstBinding,
+                                        bindingCount,
+                                        pStrides);
    }
 
    cmd_buffer->state.dirty.vertex_bindings = true;
@@ -3535,7 +3546,7 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
             &state->vertex_bindings[attribute->binding_index];
          pvr_dev_addr_t addr;
 
-         if (binding->buffer->vk.size <
+         if (binding->size <
              (attribute->offset + attribute->component_size_in_bytes)) {
             /* Replace with load from robustness buffer when no attribute is in
              * range
@@ -3608,23 +3619,44 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
          const uint64_t bound_size = binding->buffer->vk.size - binding->offset;
          const uint32_t attribute_end =
             attribute->offset + attribute->component_size_in_bytes;
+         const struct vk_dynamic_graphics_state *dynamic_state =
+            &cmd_buffer->vk.dynamic_graphics_state;
+         const uint32_t stride =
+            dynamic_state->vi_binding_strides[attribute->binding_index];
          uint32_t max_index;
 
          /* If the stride is 0 then all attributes use the same single
           * element from the binding so the index can only be up to 0.
           */
-         if (bound_size < attribute_end || attribute->stride == 0) {
+         if (bound_size < attribute_end || stride == 0) {
             max_index = 0;
          } else {
-            max_index = (uint32_t)(bound_size / attribute->stride) - 1;
+            max_index = (uint32_t)(bound_size / stride) - 1;
 
             /* There's one last attribute that can fit in. */
-            if (bound_size % attribute->stride >= attribute_end)
+            if (bound_size % stride >= attribute_end)
                max_index++;
          }
 
          PVR_WRITE(dword_buffer,
                    max_index,
+                   attribute->const_offset,
+                   pds_info->data_size_in_dwords);
+
+         entries += sizeof(*attribute);
+         break;
+      }
+
+      case PVR_PDS_CONST_MAP_ENTRY_TYPE_VERTEX_ATTRIBUTE_STRIDE: {
+         const struct pvr_const_map_entry_vertex_attribute_stride *attribute =
+            (const struct pvr_const_map_entry_vertex_attribute_stride *)entries;
+         const struct vk_dynamic_graphics_state *dynamic_state =
+            &cmd_buffer->vk.dynamic_graphics_state;
+         const uint32_t stride =
+            dynamic_state->vi_binding_strides[attribute->binding_index];
+
+         PVR_WRITE(dword_buffer,
+                   stride,
                    attribute->const_offset,
                    pds_info->data_size_in_dwords);
 

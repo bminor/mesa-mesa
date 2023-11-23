@@ -741,6 +741,7 @@ void pvr_pds_generate_vertex_primary_program(
    }
 
    for (uint32_t dma = 0; dma < input_program->dma_count; dma++) {
+      struct pvr_const_map_entry_vertex_attribute_stride *stride_entry;
       uint32_t const_base = dma * PVR_PDS_DDMAD_NUM_CONSTS;
       uint32_t control_word;
       struct pvr_const_map_entry_literal32 *literal_entry;
@@ -1011,12 +1012,12 @@ void pvr_pds_generate_vertex_primary_program(
          use_robust_vertex_fetch);
 
       /* DDMAD Const Usage [__XXX---] */
-      literal_entry =
+      stride_entry =
          pvr_prepare_next_pds_const_map_entry(&entry_write_state,
-                                              sizeof(*literal_entry));
-      literal_entry->type = PVR_PDS_CONST_MAP_ENTRY_TYPE_LITERAL32;
-      literal_entry->const_offset = const_base + 3;
-      literal_entry->literal_value = vertex_dma->stride;
+                                              sizeof(*stride_entry));
+      stride_entry->type = PVR_PDS_CONST_MAP_ENTRY_TYPE_VERTEX_ATTRIBUTE_STRIDE;
+      stride_entry->const_offset = const_base + 3;
+      stride_entry->binding_index = vertex_dma->binding_index;
 
       control_word = vertex_dma->size_in_dwords
                      << PVR_ROGUE_PDSINST_DDMAD_FIELDS_SRC3_BSIZE_SHIFT;

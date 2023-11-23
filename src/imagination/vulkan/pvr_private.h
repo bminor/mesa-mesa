@@ -142,6 +142,7 @@ struct pvr_queue {
 struct pvr_vertex_binding {
    struct pvr_buffer *buffer;
    VkDeviceSize offset;
+   VkDeviceSize size;
 };
 
 struct pvr_pds_upload {
