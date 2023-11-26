@@ -20,7 +20,7 @@ if with_platform_wayland
    vklayer_deps += dep_wayland_client
 endif
 
-shared_library(
+vklayer_mesa_device_select = shared_library(
   'VkLayer_MESA_device_select',
   vklayer_files,
   c_args : [no_override_init_args, vklayer_flags],
@@ -34,8 +34,18 @@ shared_library(
   install : true
 )
 
-install_data(
-  files('VkLayer_MESA_device_select.json'),
+configure_file(
+  configuration : {'library_path' : 'libVkLayer_MESA_device_select.so'},
+  input : 'VkLayer_MESA_device_select.json.in',
+  output : '@BASENAME@',
+  install : true,
   install_dir : join_paths(get_option('datadir'), 'vulkan', 'implicit_layer.d'),
   install_tag : 'runtime',
 )
+
+configure_file(
+  configuration : {'library_path' : vklayer_mesa_device_select.full_path()},
+  input : 'VkLayer_MESA_device_select.json.in',
+  output : '@PLAINNAME@_dev.json',
+)
+devenv.append('VK_ADD_LAYER_PATH', meson.current_build_dir())
