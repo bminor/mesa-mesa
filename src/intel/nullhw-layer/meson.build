@@ -15,8 +15,18 @@ vklayer_intel_nullhw = shared_library(
   install : true
 )
 
-install_data(
-  files('VkLayer_INTEL_nullhw.json'),
+configure_file(
+  configuration : {'library_path' : 'libVkLayer_INTEL_nullhw.so'},
+  input : 'VkLayer_INTEL_nullhw.json.in',
+  output : '@BASENAME@',
+  install : true,
   install_dir : join_paths(get_option('datadir'), 'vulkan', 'explicit_layer.d'),
   install_tag : 'runtime',
 )
+
+configure_file(
+  configuration : {'library_path' : vklayer_intel_nullhw.full_path()},
+  input : 'VkLayer_INTEL_nullhw.json.in',
+  output : '@PLAINNAME@_dev.json',
+)
+devenv.append('VK_ADD_LAYER_PATH', meson.current_build_dir())
