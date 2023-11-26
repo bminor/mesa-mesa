@@ -236,6 +236,7 @@ struct radeon_info {
    bool has_tmz_support;
    bool has_trap_handler_support;
    bool kernel_has_modifiers;
+   bool use_userq;
 
    /* If the kernel driver uses CU reservation for high priority compute on gfx10+, it programs
     * a global CU mask in the hw that is AND'ed with CU_EN register fields set by userspace.
