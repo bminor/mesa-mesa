@@ -39,10 +39,13 @@
 #include "util/u_string.h"
 
 static const struct pvr_device_info *device_infos[] = {
+   /* clang-format off */
    &pvr_device_info_4_40_2_51,
+   &pvr_device_info_4_45_2_58,
    &pvr_device_info_33_15_11_3,
    &pvr_device_info_36_50_54_182,
    &pvr_device_info_36_53_104_796,
+   /* clang-format on */
 };
 
 /**
@@ -63,6 +66,7 @@ int pvr_device_info_init(struct pvr_device_info *info, uint64_t bvnc)
 
    switch (bvnc) {
       CASE_PACKED_BVNC_DEVICE_INFO(4, 40, 2, 51);
+      CASE_PACKED_BVNC_DEVICE_INFO(4, 45, 2, 58);
       CASE_PACKED_BVNC_DEVICE_INFO(33, 15, 11, 3);
       CASE_PACKED_BVNC_DEVICE_INFO(36, 50, 54, 182);
       CASE_PACKED_BVNC_DEVICE_INFO(36, 53, 104, 796);
