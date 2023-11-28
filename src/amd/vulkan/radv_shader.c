@@ -168,7 +168,7 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
       progress = false;
 
       NIR_LOOP_PASS(progress, skip, shader, nir_split_array_vars, nir_var_function_temp);
-      NIR_LOOP_PASS(progress, skip, shader, nir_shrink_vec_array_vars, nir_var_function_temp);
+      NIR_LOOP_PASS(progress, skip, shader, nir_shrink_vec_array_vars, nir_var_function_temp | nir_var_mem_shared);
 
       if (!shader->info.var_copies_lowered) {
          /* Only run this pass if nir_lower_var_copies was not called
