@@ -434,7 +434,7 @@
         "description": "venus: properly initialize ring monitor initial alive status",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4a4b05869a6ad909417e30d46706ad6038084901",
         "notes": null
