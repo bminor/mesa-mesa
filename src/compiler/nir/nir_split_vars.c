@@ -95,7 +95,10 @@ num_array_levels_in_array_of_vector_type(const struct glsl_type *type)
 {
    int num_levels = 0;
    while (true) {
-      if (glsl_type_is_array_or_matrix(type)) {
+      if (glsl_type_is_interface(type)) {
+         /* Don't bother with aliased shared memory. */
+         return -1;
+      } else if (glsl_type_is_array_or_matrix(type)) {
          num_levels++;
          type = glsl_get_array_element(type);
       } else if (glsl_type_is_vector_or_scalar(type) &&
@@ -1292,6 +1295,13 @@ find_used_components_impl(nir_function_impl *impl,
             break;
          }
 
+         case nir_intrinsic_deref_atomic:
+         case nir_intrinsic_deref_atomic_swap:
+            mark_deref_used(nir_src_as_deref(intrin->src[0]),
+                            1, 1,
+                            NULL, var_usage_map, modes, mem_ctx);
+            break;
+
          default:
             break;
          }
@@ -1300,8 +1310,9 @@ find_used_components_impl(nir_function_impl *impl,
 }
 
 static bool
-shrink_vec_var_list(struct exec_list *vars,
-                    nir_variable_mode mode,
+shrink_vec_var_list(nir_shader *shader,
+                    struct exec_list *vars,
+                    nir_variable_mode modes,
                     struct hash_table *var_usage_map)
 {
    /* Initialize the components kept field of each variable.  This is the
@@ -1321,7 +1332,7 @@ shrink_vec_var_list(struct exec_list *vars,
     * to leave components and array_len of any wildcards alone.
     */
    nir_foreach_variable_in_list(var, vars) {
-      if (var->data.mode != mode)
+      if (!(var->data.mode & modes))
          continue;
 
       struct vec_var_usage *usage =
@@ -1329,21 +1340,29 @@ shrink_vec_var_list(struct exec_list *vars,
       if (!usage)
          continue;
 
+      /* Zero inited shared memory is always written. */
+      bool zero_init = var->data.mode == nir_var_mem_shared && shader->info.zero_initialize_shared_memory;
       assert(usage->comps_kept == 0);
       if (usage->has_external_copy || usage->has_complex_use)
          usage->comps_kept = usage->all_comps;
+      else if (zero_init)
+         usage->comps_kept = usage->comps_read;
       else
          usage->comps_kept = usage->comps_read & usage->comps_written;
 
       for (unsigned i = 0; i < usage->num_levels; i++) {
          struct array_level_usage *level = &usage->levels[i];
-         assert(level->array_len > 0);
 
          if (level->max_written == UINT_MAX || level->has_external_copy ||
              usage->has_complex_use)
             continue; /* Can't shrink */
 
          unsigned max_used = MIN2(level->max_read, level->max_written);
+
+         /* Zero inited shared memory is always written. */
+         if (zero_init)
+            max_used = MAX2(level->max_read, max_used);
+
          level->array_len = MIN2(max_used, level->array_len - 1) + 1;
       }
    }
@@ -1357,7 +1376,7 @@ shrink_vec_var_list(struct exec_list *vars,
    do {
       fp_progress = false;
       nir_foreach_variable_in_list(var, vars) {
-         if (var->data.mode != mode)
+         if (!(var->data.mode & modes))
             continue;
 
          struct vec_var_usage *var_usage =
@@ -1397,7 +1416,7 @@ shrink_vec_var_list(struct exec_list *vars,
 
    bool vars_shrunk = false;
    nir_foreach_variable_in_list_safe(var, vars) {
-      if (var->data.mode != mode)
+      if (!(var->data.mode & modes))
          continue;
 
       struct vec_var_usage *usage =
@@ -1421,7 +1440,6 @@ shrink_vec_var_list(struct exec_list *vars,
             shrunk = true;
          vec_type = glsl_get_array_element(vec_type);
       }
-      assert(glsl_type_is_vector_or_scalar(vec_type));
 
       assert(usage->comps_kept == (usage->comps_kept & usage->all_comps));
       if (usage->comps_kept != usage->all_comps)
@@ -1433,6 +1451,7 @@ shrink_vec_var_list(struct exec_list *vars,
          exec_node_remove(&var->node);
          continue;
       }
+      assert(glsl_type_is_vector_or_scalar(vec_type));
 
       if (!shrunk) {
          /* This variable doesn't need to be shrunk.  Remove it from the
@@ -1689,7 +1708,7 @@ function_impl_has_vars_with_modes(nir_function_impl *impl,
 bool
 nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
 {
-   assert((modes & (nir_var_shader_temp | nir_var_function_temp)) == modes);
+   assert((modes & (nir_var_shader_temp | nir_var_function_temp | nir_var_mem_shared)) == modes);
 
    void *mem_ctx = ralloc_context(NULL);
 
@@ -1715,9 +1734,11 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
    }
 
    bool globals_shrunk = false;
-   if (modes & nir_var_shader_temp) {
-      globals_shrunk = shrink_vec_var_list(&shader->variables,
-                                           nir_var_shader_temp,
+   nir_variable_mode global_modes = modes & ~nir_var_function_temp;
+   if (global_modes) {
+      globals_shrunk = shrink_vec_var_list(shader,
+                                           &shader->variables,
+                                           global_modes,
                                            &var_usage_map);
    }
 
@@ -1725,7 +1746,8 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
    nir_foreach_function_impl(impl, shader) {
       bool locals_shrunk = false;
       if (modes & nir_var_function_temp) {
-         locals_shrunk = shrink_vec_var_list(&impl->locals,
+         locals_shrunk = shrink_vec_var_list(shader,
+                                             &impl->locals,
                                              nir_var_function_temp,
                                              &var_usage_map);
       }
