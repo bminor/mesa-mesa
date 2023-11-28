@@ -1374,7 +1374,7 @@
         "description": "d3d10umd: Fix compilation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4eb4c9bba97d659eb199cf41fb607d02caf6c748",
         "notes": null
