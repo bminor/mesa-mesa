@@ -994,9 +994,10 @@ nir_split_array_vars(nir_shader *shader, nir_variable_mode modes)
 struct array_level_usage {
    unsigned array_len;
 
-   /* The value UINT_MAX will be used to indicate an indirect */
-   unsigned max_read;
-   unsigned max_written;
+   unsigned max_read_constant;
+   unsigned max_read_indirect;
+   unsigned max_written_constant;
+   unsigned max_written_indirect;
 
    /* True if there is a copy that isn't to/from a shrinkable array */
    bool has_external_copy;
@@ -1110,6 +1111,7 @@ mark_deref_used(nir_deref_instr *deref,
                 nir_component_mask_t comps_written,
                 nir_deref_instr *copy_deref,
                 struct hash_table *var_usage_map,
+                struct hash_table *range_ht,
                 nir_variable_mode modes,
                 void *mem_ctx)
 {
@@ -1164,8 +1166,11 @@ mark_deref_used(nir_deref_instr *deref,
              deref->deref_type == nir_deref_type_array_wildcard);
 
       unsigned max_used;
+      bool indirect = false;
       if (deref->deref_type == nir_deref_type_array) {
-         max_used = nir_src_is_const(deref->arr.index) ? nir_src_as_uint(deref->arr.index) : UINT_MAX;
+         indirect = !nir_src_is_const(deref->arr.index);
+         nir_shader *shader = nir_cf_node_get_function(&deref->instr.block->cf_node)->function->shader;
+         max_used = nir_unsigned_upper_bound(shader, range_ht, nir_get_scalar(deref->arr.index.ssa, 0), NULL);
       } else {
          /* For wildcards, we read or wrote the whole thing. */
          assert(deref->deref_type == nir_deref_type_array_wildcard);
@@ -1193,10 +1198,18 @@ mark_deref_used(nir_deref_instr *deref,
          }
       }
 
-      if (comps_written)
-         level->max_written = MAX2(level->max_written, max_used);
-      if (comps_read)
-         level->max_read = MAX2(level->max_read, max_used);
+      if (comps_written) {
+         if (indirect)
+            level->max_written_indirect = MAX2(level->max_written_indirect, max_used);
+         else
+            level->max_written_constant = MAX2(level->max_written_constant, max_used);
+      }
+      if (comps_read) {
+         if (indirect)
+            level->max_read_indirect = MAX2(level->max_read_indirect, max_used);
+         else
+            level->max_read_constant = MAX2(level->max_read_constant, max_used);
+      }
    }
 }
 
@@ -1259,6 +1272,7 @@ get_non_self_referential_store_comps(nir_intrinsic_instr *store)
 static void
 find_used_components_impl(nir_function_impl *impl,
                           struct hash_table *var_usage_map,
+                          struct hash_table *range_ht,
                           nir_variable_mode modes,
                           void *mem_ctx)
 {
@@ -1277,21 +1291,21 @@ find_used_components_impl(nir_function_impl *impl,
          case nir_intrinsic_load_deref:
             mark_deref_used(nir_src_as_deref(intrin->src[0]),
                             nir_def_components_read(&intrin->def), 0,
-                            NULL, var_usage_map, modes, mem_ctx);
+                            NULL, var_usage_map, range_ht, modes, mem_ctx);
             break;
 
          case nir_intrinsic_store_deref:
             mark_deref_used(nir_src_as_deref(intrin->src[0]),
                             0, get_non_self_referential_store_comps(intrin),
-                            NULL, var_usage_map, modes, mem_ctx);
+                            NULL, var_usage_map, range_ht, modes, mem_ctx);
             break;
 
          case nir_intrinsic_copy_deref: {
             /* Just mark everything used for copies. */
             nir_deref_instr *dst = nir_src_as_deref(intrin->src[0]);
             nir_deref_instr *src = nir_src_as_deref(intrin->src[1]);
-            mark_deref_used(dst, 0, ~0, src, var_usage_map, modes, mem_ctx);
-            mark_deref_used(src, ~0, 0, dst, var_usage_map, modes, mem_ctx);
+            mark_deref_used(dst, 0, ~0, src, var_usage_map, range_ht, modes, mem_ctx);
+            mark_deref_used(src, ~0, 0, dst, var_usage_map, range_ht, modes, mem_ctx);
             break;
          }
 
@@ -1299,7 +1313,7 @@ find_used_components_impl(nir_function_impl *impl,
          case nir_intrinsic_deref_atomic_swap:
             mark_deref_used(nir_src_as_deref(intrin->src[0]),
                             1, 1,
-                            NULL, var_usage_map, modes, mem_ctx);
+                            NULL, var_usage_map, range_ht, modes, mem_ctx);
             break;
 
          default:
@@ -1353,16 +1367,17 @@ shrink_vec_var_list(nir_shader *shader,
       for (unsigned i = 0; i < usage->num_levels; i++) {
          struct array_level_usage *level = &usage->levels[i];
 
-         if (level->max_written == UINT_MAX || level->has_external_copy ||
-             usage->has_complex_use)
+         if (level->has_external_copy || usage->has_complex_use)
             continue; /* Can't shrink */
 
-         unsigned max_used = MIN2(level->max_read, level->max_written);
+         /* XXX: This assumes out of bounds reads only give an undefined result,
+          * but do not cause full undefined behavior, for example a gpu hang.
+          */
+         unsigned max_read = MAX2(level->max_read_indirect, level->max_read_constant);
+         unsigned max_writen_constant = zero_init ? UINT_MAX : level->max_written_constant;
 
-         /* Zero inited shared memory is always written. */
-         if (zero_init)
-            max_used = MAX2(level->max_read, max_used);
-
+         /* Constant OOB writes will be removed, but indirect writes must remain in bounds. */
+         unsigned max_used = MAX2(MIN2(max_read, max_writen_constant), level->max_written_indirect);
          level->array_len = MIN2(max_used, level->array_len - 1) + 1;
       }
    }
@@ -1715,6 +1730,9 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
    struct hash_table var_usage_map;
    _mesa_pointer_hash_table_init(&var_usage_map, mem_ctx);
 
+   struct hash_table range_ht;
+   _mesa_pointer_hash_table_init(&range_ht, mem_ctx);
+
    bool has_vars_to_shrink = false;
    nir_foreach_function_impl(impl, shader) {
       /* Don't even bother crawling the IR if we don't have any variables.
@@ -1723,7 +1741,7 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
        */
       if (function_impl_has_vars_with_modes(impl, modes)) {
          has_vars_to_shrink = true;
-         find_used_components_impl(impl, &var_usage_map,
+         find_used_components_impl(impl, &var_usage_map, &range_ht,
                                    modes, mem_ctx);
       }
    }
