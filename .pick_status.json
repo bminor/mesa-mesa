@@ -14,7 +14,7 @@
         "description": "util/hash_table: Don't leak hash_key_u64 objects when the u64 hash table is destroyed",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ff494361bee7506db701cb861073ab194ae3a6e9",
         "notes": null
