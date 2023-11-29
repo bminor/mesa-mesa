@@ -524,7 +524,7 @@
         "description": "radv,vtn,driconf: Add and use radv_rt_ssbo_non_uniform workaround for Crysis 2/3 Remastered",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
