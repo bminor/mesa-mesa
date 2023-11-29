@@ -514,7 +514,7 @@
         "description": "panfrost: Fix multiplanar YUV texture descriptor emission on v9+",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "144f9324a3747748191513c0a1a596171f193a82",
         "notes": null
