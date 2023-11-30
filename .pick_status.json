@@ -984,7 +984,7 @@
         "description": "r600/sfn: Fix usage of std::string constructor",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f718ac62688b555a933c7112f656944288d04edb",
         "notes": null
