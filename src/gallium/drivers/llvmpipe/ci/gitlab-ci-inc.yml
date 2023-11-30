@@ -71,6 +71,8 @@
 .llvmpipe-test:
   extends:
     - .llvmpipe-rules
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   variables:
     LIBGL_ALWAYS_SOFTWARE: "true"
     GALLIUM_DRIVER: "llvmpipe"

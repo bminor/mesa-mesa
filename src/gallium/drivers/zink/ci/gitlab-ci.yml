@@ -7,7 +7,8 @@ zink-lvp:
     - .deqp-test
     - .zink-lvp-test
   tags:
-    - kvm  # FIXME: this is a hack, should not be needed
+    # FIXME: kvm is a hack, should not be needed
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   variables:
     DEQP_SUITE: zink-lvp
     DEQP_FRACTION: 8

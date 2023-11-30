@@ -39,6 +39,8 @@
   extends:
     - .test-vk
     - .lavapipe-rules
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   variables:
     VK_DRIVER: lvp
     LVP_POISON_MEMORY: "1"

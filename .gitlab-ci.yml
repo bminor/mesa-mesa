@@ -38,6 +38,9 @@ workflow:
     - if: &is-merge-attempt $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "merge_request_event"
       variables:
         MESA_CI_PERFORMANCE_ENABLED: 1
+        FDO_RUNNER_JOB_PRIORITY_TAG_X86_64: priority:high
+        FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM: priority:high-kvm
+        FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: priority:high-aarch64
         VALVE_INFRA_VANGOGH_JOB_PRIORITY: ""  # Empty tags are ignored by gitlab
         JOB_PRIORITY: 75
         # fast-fail in merge pipelines: stop early if we get this many unexpected fails/crashes
@@ -51,6 +54,9 @@ workflow:
     # nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
       variables:
+        FDO_RUNNER_JOB_PRIORITY_TAG_X86_64: priority:low
+        FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM: priority:low-kvm
+        FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: priority:low-aarch64
         JOB_PRIORITY: 45
         # (some) nightly builds perform LTO, so they take much longer than the
         # short timeout allowed in other pipelines.
@@ -110,6 +116,9 @@ variables:
   # Avoid the wall of "Unsupported SPIR-V capability" warnings in CI job log, hiding away useful output
   MESA_SPIRV_LOG_LEVEL: error
   # Default priority for non-merge pipelines
+  FDO_RUNNER_JOB_PRIORITY_TAG_X86_64: ""  # Empty tags are ignored by gitlab
+  FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM: kvm
+  FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: aarch64
   VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
   JOB_PRIORITY: 50
   DATA_STORAGE_PATH: data_storage
@@ -348,6 +357,8 @@ sanity:
   extends:
     - .fdo.ci-fairy
   stage: sanity
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   rules:
     - if: *is-pre-merge
       when: on_success
@@ -394,6 +405,8 @@ mr-label-maker-test:
   extends:
     - .fdo.ci-fairy
   stage: sanity
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   rules:
     - !reference [.mr-label-maker-rules, rules]
   variables:

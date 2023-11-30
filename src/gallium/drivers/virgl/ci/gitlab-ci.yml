@@ -18,7 +18,7 @@ virgl-on-gl:
     LP_NUM_THREADS: 1 # There will be FDO_CI_CONCURRENT Crosvm processes, so each should use a single thread
   parallel: 3
   tags:
-    - kvm
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   extends:
     - .deqp-test
     - .virgl-test
@@ -43,7 +43,7 @@ virgl-traces:
     PIGLIT_RESULTS: "virgl-replay"
     LD_LIBRARY_PATH: "${CI_PROJECT_DIR}/install/lib/"     # For Crosvm
   tags:
-    - kvm
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   script:
     - . "$SCRIPTS_DIR"/setup-test-env.sh
     # Use all threads for rendering and only run one job at a time

@@ -799,7 +799,7 @@ debian-s390x:
     - .use-debian/s390x_build
     - .meson-build-only
   tags:
-    - kvm
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   variables:
     BUILDTYPE: debug
     CROSS: s390x

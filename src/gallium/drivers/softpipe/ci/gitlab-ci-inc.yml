@@ -11,6 +11,8 @@
       when: on_success
 
 .softpipe-test:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   variables:
     GPU_VERSION: softpipe
     LIBGL_ALWAYS_SOFTWARE: "true"

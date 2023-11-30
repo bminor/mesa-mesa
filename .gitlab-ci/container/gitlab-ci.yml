@@ -55,6 +55,8 @@
   extends:
     - .container+build-rules
     - .incorporate-templates-commit
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   variables:
     FDO_REPO_SUFFIX: $CI_JOB_NAME
     FDO_DISTRIBUTION_EXEC: 'bash .gitlab-ci/container/container_job_trampoline.sh "${CI_JOB_NAME}"'
@@ -101,6 +103,8 @@ debian/x86_64_build-base:
     LLVM_VERSION: &debian-x86_64-llvm 19
 
 .use-debian/x86_64_build-base:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .fdo.container-build@debian
     - .debian-container-version
@@ -122,6 +126,8 @@ debian/x86_64_build:
     LLVM_VERSION: *debian-x86_64-llvm
 
 .use-debian/x86_64_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image-base-tag
   variables:
@@ -140,6 +146,8 @@ debian/x86_32_build:
     MESA_IMAGE_TAG: &debian-x86_32_build ${DEBIAN_BUILD_TAG}
 
 .use-debian/x86_32_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image-base-tag
   variables:
@@ -159,6 +167,8 @@ debian/ppc64el_build:
     LLVM_VERSION: &debian-ppc64el-llvm 15 # no LLVM packages for PPC
 
 .use-debian/ppc64el_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image-base-tag
   variables:
@@ -178,6 +188,8 @@ debian/s390x_build:
     LLVM_VERSION: &debian-s390x-llvm 19
 
 .use-debian/s390x_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image-base-tag
   variables:
@@ -217,6 +229,8 @@ debian/android_build:
   extends:
     - .android-variables
     - .set-image-base-tag
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   variables:
     MESA_BASE_TAG: *debian-x86_64_build-base
     MESA_IMAGE_PATH: "debian/android_build"
@@ -231,7 +245,7 @@ debian/arm64_build:
     - .container
     - .debian-container-version
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   variables:
     MESA_IMAGE_TAG: &debian-arm64_build "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
     LLVM_VERSION: &debian-arm64-llvm 19
@@ -240,7 +254,7 @@ debian/arm64_build:
   extends:
     - .set-image
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   variables:
     MESA_IMAGE_PATH: "debian/arm64_build"
     MESA_IMAGE_TAG: *debian-arm64_build
@@ -275,6 +289,8 @@ alpine/x86_64_build:
     - !reference [.container, rules]
 
 .use-alpine/x86_64_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image
   variables:
@@ -302,6 +318,8 @@ fedora/x86_64_build:
     LLVM_VERSION: &fedora-x86_64-llvm 19
 
 .use-fedora/x86_64_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image
   variables:
@@ -320,6 +338,8 @@ debian/x86_64_test-base:
     LLVM_VERSION: *debian-x86_64-llvm
 
 .use-debian/x86_64_test-base:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .fdo.container-build@debian
     - .debian-container-version
@@ -334,7 +354,7 @@ debian/x86_64_test-base:
 # Debian based ARMv7/armhf test image base
 debian/arm32_test-base:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .debian-container
     - .firmware_arm32
@@ -345,7 +365,7 @@ debian/arm32_test-base:
 
 .use-debian/arm32_test-base:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .fdo.container-build@debian
     - .debian-container-version
@@ -361,7 +381,7 @@ debian/arm32_test-base:
 # Debian based aarch64 test image base
 debian/arm64_test-base:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .debian-container
   variables:
@@ -370,7 +390,7 @@ debian/arm64_test-base:
 
 .use-debian/arm64_test-base:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .fdo.container-build@debian
     - .debian-container-version
@@ -389,6 +409,8 @@ debian/x86_64_test-gl:
     MESA_IMAGE_TAG: &debian-x86_64_test-gl ${DEBIAN_TEST_GL_TAG}
 
 .use-debian/x86_64_test-gl:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image-base-tag
   variables:
@@ -405,6 +427,8 @@ debian/x86_64_test-vk:
     MESA_IMAGE_TAG: &debian-x86_64_test-vk ${DEBIAN_TEST_VK_TAG}
 
 .use-debian/x86_64_test-vk:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .set-image-base-tag
   variables:
@@ -424,7 +448,7 @@ debian/x86_64_test-android:
 
 .use-debian/x86_64_test-android:
   tags:
-    - kvm
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   extends:
     - .android-variables
     - .set-image-base-tag
@@ -443,6 +467,8 @@ debian/x86_64_pyutils:
     MESA_IMAGE_TAG: &debian-x86_64_pyutils "${DEBIAN_PYUTILS_TAG}"
 
 .use-debian/x86_64_pyutils:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
   extends:
     - .fdo.container-build@debian
     - .debian-container-version
@@ -456,14 +482,14 @@ debian/x86_64_pyutils:
 # Debian based ARMv7/armhf test image for GL
 debian/arm32_test-gl:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends: .use-debian/arm32_test-base
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-gl ${DEBIAN_TEST_GL_TAG}
 
 .use-debian/arm32_test-gl:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .set-image-base-tag
   variables:
@@ -476,14 +502,14 @@ debian/arm32_test-gl:
 # Debian based ARMv7/armhf test image for VK
 debian/arm32_test-vk:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends: .use-debian/arm32_test-base
   variables:
     MESA_IMAGE_TAG: &debian-arm32_test-vk ${DEBIAN_TEST_VK_TAG}
 
 .use-debian/arm32_test-vk:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .set-image-base-tag
   variables:
@@ -496,7 +522,7 @@ debian/arm32_test-vk:
 # Debian based aarch64 test image for GL
 debian/arm64_test-gl:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .use-debian/arm64_test-base
     - .container-builds-arm64
@@ -505,7 +531,7 @@ debian/arm64_test-gl:
 
 .use-debian/arm64_test-gl:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .set-image-base-tag
   variables:
@@ -518,14 +544,14 @@ debian/arm64_test-gl:
 # Debian based aarch64 test image for VK
 debian/arm64_test-vk:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends: .use-debian/arm64_test-base
   variables:
     MESA_IMAGE_TAG: &debian-arm64_test-vk ${DEBIAN_TEST_VK_TAG}
 
 .use-debian/arm64_test-vk:
   tags:
-    - aarch64
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64
   extends:
     - .set-image-base-tag
   variables:
