@@ -284,7 +284,7 @@
         "description": "nir: Handle divergence for decl_reg",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4fd257d20fed9efdfedc4eefc99b4900841c6f85",
         "notes": null
