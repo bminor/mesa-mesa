@@ -3394,7 +3394,7 @@
         "description": "panfrost: Don't leak NIR compute shaders",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "40372bd720fe16186e9abc832bb452a3143d0e00",
         "notes": null
