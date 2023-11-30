@@ -54,7 +54,7 @@
         "description": "zink: use KHR version of maint5 features",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f501f9453adc7024584e9d9598754c55c36d20f3",
         "notes": null
