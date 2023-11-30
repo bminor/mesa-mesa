@@ -494,7 +494,7 @@
         "description": "r600/sfn: Don't try to re-use iterators when the set is made empty",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "05fab97b2ce8ebd8420ded175101a0fa5110172c",
         "notes": null
