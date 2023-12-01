@@ -143,6 +143,11 @@ isl_aux_get_initial_state(const struct intel_device_info *devinfo,
           * ambiguate in some cases.
           */
          return ISL_AUX_STATE_RESOLVED;
+      } else if (zeroed && devinfo->ver <= 11) {
+         /* On ICL and prior, fast-clearing a HiZ block fills it with zeroes.
+          * On gfx12+, it is filled with a non-zero value.
+          */
+         return ISL_AUX_STATE_CLEAR;
       } else {
          return ISL_AUX_STATE_AUX_INVALID;
       }
