@@ -2534,7 +2534,7 @@
         "description": "d3d12: Fix d3d12_tcs_variant_cache_destroy leak in d3d12_context",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
