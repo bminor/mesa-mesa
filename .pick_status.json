@@ -174,7 +174,7 @@
         "description": "meson: work around meson 0.62 issue",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5fe5c3e2231b58da7c3ce92d4f3cf0fd0d5f216b",
         "notes": null
