@@ -989,6 +989,14 @@ iris_resource_init_aux_buf(struct iris_screen *screen,
    if (isl_aux_usage_has_ccs(res->aux.usage) && devinfo->ver <= 11)
       zero_aux = true;
 
+   /* Initialize HiZ on BDW-ICL to the CLEAR state. This allows us to skip
+    * initializing fast-clears and this ensures that we won't have to perform
+    * an ambiguate operation. Ambiguates are not allowed on non-8x4-aligned
+    * LODs for BDW and SKL.
+    */
+   if (res->aux.usage == ISL_AUX_USAGE_HIZ && devinfo->ver <= 11)
+      zero_aux = true;
+
    if (zero_aux != res->bo->zeroed) {
       void* map = iris_bo_map(NULL, res->bo, MAP_WRITE | MAP_RAW);
       if (!map)
