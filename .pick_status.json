@@ -34,7 +34,7 @@
         "description": "util/hash_table: Use FREE() to be consistent with the CALLOC_STRUCT() call",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6649b840c34016b4753e69d4513a8d09da9febb2",
         "notes": null
