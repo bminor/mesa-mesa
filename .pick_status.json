@@ -304,7 +304,7 @@
         "description": "amd/ci: radeonsi is gl, not vk",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cf323446e70d9fa10d7d5441631e30297b8d5274",
         "notes": null
