@@ -144,7 +144,7 @@
         "description": "nvk: Drop MME_DMA_SYSMEMBAR before indirect draw/dispatch",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "3d3641e446794e3ebfe07de81b37c4d60eea26f0",
         "notes": null
