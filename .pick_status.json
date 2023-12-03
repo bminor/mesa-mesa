@@ -594,7 +594,7 @@
         "description": "panfrost: Fix dual-source blending",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c65a9be421cd4a338939e29e9dca1d8f81f165ac",
         "notes": null
