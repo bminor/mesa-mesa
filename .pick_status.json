@@ -204,7 +204,7 @@
         "description": "radv: use 32bit va range for sparse descriptor buffers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5c5735fd68168fd1e80d474df84dc819d7a1ad24",
         "notes": null
