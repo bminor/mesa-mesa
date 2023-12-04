@@ -1184,7 +1184,7 @@
         "description": "ci: fix rules for formatting checks",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "70eff587673ceec181efda86d2e93ede44a59532",
         "notes": null
