@@ -1,5 +1,365 @@
 [
     {
+        "sha": "ebaede788e05ea3a22bfd4f054c85053247de9ff",
+        "description": "amd/ci: limit radv jobs to radv + aco files changes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03d8ea9912db699655cf84fb7bcedb9eaa0f9c13",
+        "description": "amd/ci: split common amd files list from radeonsi files list",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "98f0800c94ffae04a3b91052bbe732a672851e5d",
+        "description": "amd/ci: fix yaml indentation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc96bc9b58731b160452cd5c54adb762b588bbd7",
+        "description": "hasvk: update symbols that have become aliases for newer ones",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "680d5fdaf328a3157cc88683826fe49685203085",
+        "description": "anv: update symbols that have become aliases for newer ones",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b2a0b6778a515fcdda05d6c008b053b0d58264f",
+        "description": "iris: Fix the mmap mode for IRIS_HEAP_DEVICE_LOCAL_PREFERRED",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "21170a58d8ae919f820bf111aca32edaa58c5cff",
+        "notes": null
+    },
+    {
+        "sha": "d7f0804a4794faffdba6d35e4cda19bfb8f899ae",
+        "description": "nir/format_convert: handle clamping smaller bit sizes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33fd93f3b182a9421b863d9155ca3429090e5a3f",
+        "description": "intel/tools: hang viewer/editor",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1e17c2219aed70594226656ce2d0a507a2deca6b",
+        "description": "intel/error_decode: map i915 gfx12.5 register names to our names",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a2a2624a8fae4c14ff6ed3a41e630ea5a9cf9e3f",
+        "description": "intel/aubinator_error_decode: bump max buffers to 1024",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "df77e6da820005566e27c1fb1a1b77134ee25461",
+        "description": "intel: add error2hangdump tool",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a496abf17746b1250e8365742346623d6e67477c",
+        "description": "intel/hang_replay: add the ability to pass the context image to sim-drm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03712579b04a063e2aac857dda98faa38ee3e760",
+        "description": "intel/tools: add hang_replay tool",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "008f56ec5a65a50e61c2694cb3b854ac5f6adae3",
+        "description": "Revert \"ci: disable Collabora's LAVA lab for maintance\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2143e2abbbcf7637d37734c7c984bb2af552344c",
+        "description": "Revert \"ci/freedreno: disable a660 as it's down now\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "5161af7df70001ac1bb71f332c7bac180c3e25d1",
+        "notes": null
+    },
+    {
+        "sha": "d6d68ceda19a1fedfc0fc6d0532069708e3a7f46",
+        "description": "radv: Enable compute dispatch tunneling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3ab233ff780d4334091e7622da66871ffa9cc3d",
+        "description": "pvr: update symbols that have become aliases for newer ones",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8d49ad03415a432392e1f09fc7e1a684bdff3d9",
+        "description": "meson: work around meson 0.62 issue",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5fe5c3e2231b58da7c3ce92d4f3cf0fd0d5f216b",
+        "notes": null
+    },
+    {
+        "sha": "5119e0adc3e3d0bbf3fa162b00d952d71d53c6fe",
+        "description": "egl/wayland: set the correct modifier for the linear_copy image",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "778000ec7f5b57743dec1cf1d1480875126b90bd",
+        "description": "radv: update symbols that have become aliases for newer ones",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "059391b63114055a5349f8aef9c3f03245a2aa07",
+        "description": "radv: use 32bit va range for sparse descriptor buffers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5c5735fd68168fd1e80d474df84dc819d7a1ad24",
+        "notes": null
+    },
+    {
+        "sha": "9027c6d8ca5ca91dc2b58f326534237f40427ca8",
+        "description": "radv: adjust assertions for multi-layer resolves with the HW/FS paths",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "70556739e0d9ed9c9dd14daee6533aef5ee179c9",
+        "description": "radv: only re-initialize DCC for one level for the HW resolve path",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91aaf0c663659e29b12fdecad056264cca7112b8",
+        "description": "radv: remove unused layers support for the HW/FS resolve paths",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aae25953905c47a14048d07e55ab1bd766b5f099",
+        "description": "radv: stop performing redundant resolves with the HW resolve path",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e425f92f3eddc9f38675789103daeb81fd8a5c17",
+        "description": "radv: simplify creating image views for src resolve images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3816e5dae7b6131e2be8c03b3b28be942d6df5cb",
+        "description": "ci: disable Collabora's LAVA lab for maintance",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38ce0c1747ccbf7c20515fb628ab88d0c65bef33",
+        "description": "v3dv: drop duplicate flag",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1e03ac324f58e78912546000daba015d602e4baf",
+        "description": "v3dv: update symbols that have become aliases for newer ones",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "78bb77e41be3b7a8bf9e9f6062de31a54457b885",
+        "description": "ci/freedreno: disable a660 as it's down now",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2cdebf51fdb800dea06c9a7d421c42a48e8ffd8e",
+        "description": "amd/ci: radeonsi is gl, not vk",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "cf323446e70d9fa10d7d5441631e30297b8d5274",
+        "notes": null
+    },
+    {
+        "sha": "76be39ca6dbcfb62f1ef5194661c765cc97620c7",
+        "description": "ci_run_n_monitor: allow picking a pipeline by its MR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed53147a7fbe3cc9029c414533c8b3347f2f7289",
+        "description": "turnip: fix typo in comment",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10a0f878579a4f830c220a44e8fa6b0c6a75d329",
+        "description": "docs: Add sha256 sum for 23.2.1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71655f33cf74fb1267e376fb3b422e4796685d8b",
+        "description": "docs: add release notes for 23.2.1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb923b3b4eb70eb4233a0cb7b164cde9aa84a3c2",
+        "description": "docs: fix release date for 23.3.0",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "cad37be6c9040e3d8fe746c28e23a9dae770b5ba",
+        "notes": null
+    },
+    {
         "sha": "0e1bee73eb401e3b9c39f4777f775dd3ab9a08e2",
         "description": "nak: Call nir_opt_shrink_vectors",
         "nominated": false,
