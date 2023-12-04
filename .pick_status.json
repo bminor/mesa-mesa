@@ -1944,7 +1944,7 @@
         "description": "anv: Fix handling of host_cached_coherent bos in gen9 lp in older kernels",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fc0acf6d9019eec93ee1d00b544f69acef936e21",
         "notes": null
