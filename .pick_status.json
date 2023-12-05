@@ -2834,7 +2834,7 @@
         "description": "v3d: drop leftover from \"move v3d_tiling to common\"",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d198e26a1ebc32c43e5bef10dcf0f8cc3234301d",
         "notes": null
