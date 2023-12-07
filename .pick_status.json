@@ -624,7 +624,7 @@
         "description": "nvk: fix transform feedback with multiple saved counters.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5fd7df4aa2c36726d190ba06c6ce9f1c01da5d4a",
         "notes": null
