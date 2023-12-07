@@ -1304,7 +1304,7 @@
         "description": "ir3/legalize: Fix helper propagation with b.any/b.all/getone",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "aa322a37fcb6ab58c389b48186268af5f041a62c",
         "notes": null
