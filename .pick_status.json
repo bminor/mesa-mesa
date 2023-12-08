@@ -1784,7 +1784,7 @@
         "description": "freedreno/a6xx: Fix NV12+UBWC import",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1e820ac128506bd66a20fb7345fd562feb9e730b",
         "notes": null
