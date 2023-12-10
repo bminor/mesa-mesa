@@ -394,7 +394,7 @@
         "description": "docs: drop unused manual optimizations override",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ed4fd1d90e3f3dca0ed0ac7a4a3366854c565f4b",
         "notes": null
