@@ -264,7 +264,7 @@
         "description": "spirv: add missing build dependency",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "59a72570b66ad7c4fd953e18e18a9b09b1a7ae7e",
         "notes": null
