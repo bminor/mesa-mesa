@@ -248,7 +248,7 @@ cull_small_primitive_line(nir_builder *b, nir_def *pos[3][4],
        * It should contain no holes if this matches hw behavior.
        */
       nir_def *v0[2], *v1[2];
-      nir_def *vp = nir_load_cull_triangle_viewport_xy_scale_and_offset_amd(b);
+      nir_def *vp = nir_load_cull_line_viewport_xy_scale_and_offset_amd(b);
 
       /* Get vertex positions in pixels. */
       for (unsigned chan = 0; chan < 2; chan++) {
