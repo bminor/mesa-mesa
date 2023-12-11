@@ -887,8 +887,12 @@ set_tex_parameterf(struct gl_context *ctx,
          goto invalid_enum;
 
       flush(ctx);
-      /* ARB_texture_float disables clamping */
-      if (ctx->Extensions.ARB_texture_float) {
+
+      /* ARB_texture_float, OES_texture_float and OES_texture_half_float
+       * disables clamping.
+       */
+      if (_mesa_has_float_textures(ctx) ||
+          _mesa_has_half_float_textures(ctx)) {
          memcpy(texObj->Sampler.Attrib.state.border_color.f, params, 4 * sizeof(float));
       } else {
          texObj->Sampler.Attrib.state.border_color.f[RCOMP] = CLAMP(params[0], 0.0F, 1.0F);
