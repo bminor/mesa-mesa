@@ -417,7 +417,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_ishl_imm(b, small_prim_precision, 23);
       break;
    }
-   case nir_intrinsic_load_cull_small_primitives_enabled_amd: {
+   case nir_intrinsic_load_cull_small_triangles_enabled_amd: {
       unsigned mask = SI_NGG_CULL_LINES | SI_NGG_CULL_SMALL_LINES_DIAMOND_EXIT;
       replacement = nir_imm_bool(b, (key->ge.opt.ngg_culling & mask) != SI_NGG_CULL_LINES);
       break;
