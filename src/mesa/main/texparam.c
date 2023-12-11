@@ -470,8 +470,8 @@ set_tex_parameteri(struct gl_context *ctx,
          goto invalid_param;
       if (texObj->Attrib.GenerateMipmap != params[0]) {
          /* no flush() */
-	 texObj->Attrib.GenerateMipmap = params[0] ? GL_TRUE : GL_FALSE;
-	 return GL_TRUE;
+         texObj->Attrib.GenerateMipmap = params[0] ? GL_TRUE : GL_FALSE;
+         return GL_TRUE;
       }
       return GL_FALSE;
 
@@ -619,13 +619,13 @@ set_tex_parameteri(struct gl_context *ctx,
          if (!_mesa_target_allows_setting_sampler_parameters(texObj->Target))
             goto invalid_dsa;
 
-	 if (decode == GL_DECODE_EXT || decode == GL_SKIP_DECODE_EXT) {
-	    if (texObj->Sampler.Attrib.sRGBDecode != decode) {
-	       flush(ctx);
-	       texObj->Sampler.Attrib.sRGBDecode = decode;
-	    }
-	    return GL_TRUE;
-	 }
+         if (decode == GL_DECODE_EXT || decode == GL_SKIP_DECODE_EXT) {
+            if (texObj->Sampler.Attrib.sRGBDecode != decode) {
+               flush(ctx);
+               texObj->Sampler.Attrib.sRGBDecode = decode;
+            }
+            return GL_TRUE;
+         }
       }
       goto invalid_pname;
 
@@ -1903,10 +1903,10 @@ get_tex_level_parameter_image(struct gl_context *ctx,
       case GL_TEXTURE_DEPTH_TYPE_ARB:
          if (!ctx->Extensions.ARB_texture_float)
             goto invalid_pname;
-	 if (_mesa_base_format_has_channel(img->_BaseFormat, pname))
-	    *params = _mesa_get_format_datatype(texFormat);
-	 else
-	    *params = GL_NONE;
+         if (_mesa_base_format_has_channel(img->_BaseFormat, pname))
+            *params = _mesa_get_format_datatype(texFormat);
+         else
+            *params = GL_NONE;
          break;
 
       /* GL_ARB_texture_multisample */
