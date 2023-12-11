@@ -1016,7 +1016,8 @@ system_value("viewport_z_offset", 1)
 system_value("viewport_scale", 3)
 system_value("viewport_offset", 3)
 # Pack xy scale and offset into a vec4 load (used by AMD NGG primitive culling)
-system_value("viewport_xy_scale_and_offset", 4)
+system_value("cull_triangle_viewport_xy_scale_and_offset_amd", 4)
+system_value("cull_line_viewport_xy_scale_and_offset_amd", 4)
 
 # Blend constant color values.  Float values are clamped. Vectored versions are
 # provided as well for driver convenience

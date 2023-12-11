@@ -238,7 +238,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_viewport_x_offset:
    case nir_intrinsic_load_viewport_y_offset:
    case nir_intrinsic_load_viewport_z_offset:
-   case nir_intrinsic_load_viewport_xy_scale_and_offset:
+   case nir_intrinsic_load_cull_triangle_viewport_xy_scale_and_offset_amd:
+   case nir_intrinsic_load_cull_line_viewport_xy_scale_and_offset_amd:
    case nir_intrinsic_load_blend_const_color_a_float:
    case nir_intrinsic_load_blend_const_color_b_float:
    case nir_intrinsic_load_blend_const_color_g_float:

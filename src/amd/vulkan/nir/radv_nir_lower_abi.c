@@ -237,7 +237,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       break;
    }
 
-   case nir_intrinsic_load_viewport_xy_scale_and_offset: {
+   case nir_intrinsic_load_cull_triangle_viewport_xy_scale_and_offset_amd: {
       nir_def *comps[] = {
          ac_nir_load_arg(b, &s->args->ac, s->args->ngg_viewport_scale[0]),
          ac_nir_load_arg(b, &s->args->ac, s->args->ngg_viewport_scale[1]),

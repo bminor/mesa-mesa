@@ -383,7 +383,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_load_smem_amd(b, 2, addr, nir_imm_int(b, 32));
       break;
    }
-   case nir_intrinsic_load_viewport_xy_scale_and_offset: {
+   case nir_intrinsic_load_cull_triangle_viewport_xy_scale_and_offset_amd: {
       bool prim_is_lines = key->ge.opt.ngg_culling & SI_NGG_CULL_LINES;
       nir_def *addr = ac_nir_load_arg(b, &args->ac, args->small_prim_cull_info);
       unsigned offset = prim_is_lines ? 16 : 0;
