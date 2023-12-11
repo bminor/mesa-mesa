@@ -3794,7 +3794,7 @@
         "description": "Revert \"mesa: limit number of error raised by invalid GL_TEXTURE_MAX_ANISOTROPY_EXT\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "74bec42b45910e2ff6bf1a8cc0eeb2bc5c705767",
         "notes": null
