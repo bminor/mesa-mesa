@@ -407,11 +407,14 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_imm_bool(b, key->ge.opt.ngg_culling & SI_NGG_CULL_FRONT_FACE);
       break;
    case nir_intrinsic_load_cull_small_triangle_precision_amd: {
-      nir_def *small_prim_precision =
-         key->ge.opt.ngg_culling & SI_NGG_CULL_LINES ?
-         GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION_NO_AA) :
-         GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION);
-
+      nir_def *small_prim_precision = GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION);
+      /* Extract the small prim precision. */
+      small_prim_precision = nir_ior_imm(b, small_prim_precision, 0x70);
+      replacement = nir_ishl_imm(b, small_prim_precision, 23);
+      break;
+   }
+   case nir_intrinsic_load_cull_small_line_precision_amd: {
+      nir_def *small_prim_precision = GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION_NO_AA);
       /* Extract the small prim precision. */
       small_prim_precision = nir_ior_imm(b, small_prim_precision, 0x70);
       replacement = nir_ishl_imm(b, small_prim_precision, 23);
