@@ -880,7 +880,8 @@ set_tex_parameterf(struct gl_context *ctx,
        * OpenGL ES 2.0+, it only exists in when GL_OES_texture_border_clamp is
        * enabled.  It is never available in OpenGL ES 1.x.
        */
-      if (_mesa_is_gles1(ctx))
+      if (!_mesa_is_desktop_gl(ctx) &&
+          !_mesa_has_OES_texture_border_clamp(ctx))
          goto invalid_pname;
 
       if (!_mesa_target_allows_setting_sampler_parameters(texObj->Target))
