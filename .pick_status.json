@@ -104,7 +104,7 @@
         "description": "util: Provide a secure_getenv fallback for platforms without it",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 1,
+        "resolution": 4,
         "main_sha": null,
         "because_sha": null,
         "notes": null
@@ -20014,7 +20014,7 @@
         "description": "freedreno: De-duplicate 19.2MHz RBBM tick conversion",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
