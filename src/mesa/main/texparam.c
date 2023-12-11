@@ -613,7 +613,7 @@ set_tex_parameteri(struct gl_context *ctx,
       goto invalid_pname;
 
    case GL_TEXTURE_SRGB_DECODE_EXT:
-      if (ctx->Extensions.EXT_texture_sRGB_decode) {
+      if (_mesa_has_EXT_texture_sRGB_decode(ctx)) {
          GLenum decode = params[0];
 
          if (!_mesa_target_allows_setting_sampler_parameters(texObj->Target))
@@ -630,7 +630,7 @@ set_tex_parameteri(struct gl_context *ctx,
       goto invalid_pname;
 
    case GL_TEXTURE_REDUCTION_MODE_EXT:
-      if (ctx->Extensions.EXT_texture_filter_minmax ||
+      if (_mesa_has_EXT_texture_filter_minmax(ctx) ||
           _mesa_has_ARB_texture_filter_minmax(ctx)) {
          GLenum mode = params[0];
 
