@@ -63,8 +63,6 @@
 static GLboolean
 validate_texture_wrap_mode(struct gl_context * ctx, GLenum target, GLenum wrap)
 {
-   const struct gl_extensions * const e = & ctx->Extensions;
-   const bool is_desktop_gl = _mesa_is_desktop_gl(ctx);
    bool supported;
 
    switch (wrap) {
@@ -92,8 +90,8 @@ validate_texture_wrap_mode(struct gl_context * ctx, GLenum target, GLenum wrap)
       break;
 
    case GL_MIRROR_CLAMP_EXT:
-      supported = is_desktop_gl
-         && (e->ATI_texture_mirror_once || e->EXT_texture_mirror_clamp)
+      supported = (_mesa_has_ATI_texture_mirror_once(ctx)
+         || _mesa_has_EXT_texture_mirror_clamp(ctx))
          && (target != GL_TEXTURE_RECTANGLE_NV)
          && (target != GL_TEXTURE_EXTERNAL_OES);
       break;
@@ -108,7 +106,7 @@ validate_texture_wrap_mode(struct gl_context * ctx, GLenum target, GLenum wrap)
       break;
 
    case GL_MIRROR_CLAMP_TO_BORDER_EXT:
-      supported = is_desktop_gl && e->EXT_texture_mirror_clamp
+      supported = _mesa_has_EXT_texture_mirror_clamp(ctx)
          && (target != GL_TEXTURE_RECTANGLE_NV)
          && (target != GL_TEXTURE_EXTERNAL_OES);
       break;
@@ -476,7 +474,8 @@ set_tex_parameteri(struct gl_context *ctx,
       return GL_FALSE;
 
    case GL_TEXTURE_COMPARE_MODE_ARB:
-      if ((_mesa_is_desktop_gl(ctx) && ctx->Extensions.ARB_shadow)
+      if (_mesa_has_ARB_shadow(ctx)
+          || _mesa_is_desktop_gl_core(ctx)
           || _mesa_is_gles3(ctx)) {
 
          if (!_mesa_target_allows_setting_sampler_parameters(texObj->Target))
@@ -495,7 +494,8 @@ set_tex_parameteri(struct gl_context *ctx,
       goto invalid_pname;
 
    case GL_TEXTURE_COMPARE_FUNC_ARB:
-      if ((_mesa_is_desktop_gl(ctx) && ctx->Extensions.ARB_shadow)
+      if (_mesa_has_ARB_shadow(ctx)
+          || _mesa_is_desktop_gl_core(ctx)
           || _mesa_is_gles3(ctx)) {
 
          if (!_mesa_target_allows_setting_sampler_parameters(texObj->Target))
@@ -560,7 +560,7 @@ set_tex_parameteri(struct gl_context *ctx,
       goto invalid_pname;
 
    case GL_TEXTURE_CROP_RECT_OES:
-      if (ctx->API != API_OPENGLES || !ctx->Extensions.OES_draw_texture)
+      if (!_mesa_has_OES_draw_texture(ctx))
          goto invalid_pname;
 
       texObj->CropRect[0] = params[0];
@@ -832,7 +832,7 @@ set_tex_parameterf(struct gl_context *ctx,
       return GL_TRUE;
 
    case GL_TEXTURE_MAX_ANISOTROPY_EXT:
-      if (ctx->Extensions.EXT_texture_filter_anisotropic) {
+      if (_mesa_has_EXT_texture_filter_anisotropic(ctx)) {
          if (!_mesa_target_allows_setting_sampler_parameters(texObj->Target))
             goto invalid_dsa;
 
@@ -1868,8 +1868,8 @@ get_tex_level_parameter_image(struct gl_context *ctx,
          *params = _mesa_get_format_bits(texFormat, pname);
          break;
       case GL_TEXTURE_SHARED_SIZE:
-         if (ctx->Version < 30 &&
-             !ctx->Extensions.EXT_texture_shared_exponent)
+         if (!_mesa_has_EXT_texture_shared_exponent(ctx) &&
+             !_mesa_is_gles31(ctx))
             goto invalid_pname;
          *params = texFormat == MESA_FORMAT_R9G9B9E5_FLOAT ? 5 : 0;
          break;
@@ -2409,7 +2409,7 @@ get_tex_parameterfv(struct gl_context *ctx,
          *params = (GLfloat) obj->Attrib.MaxLevel;
          break;
       case GL_TEXTURE_MAX_ANISOTROPY_EXT:
-         if (!ctx->Extensions.EXT_texture_filter_anisotropic)
+         if (!_mesa_has_EXT_texture_filter_anisotropic(ctx))
             goto invalid_pname;
          *params = obj->Sampler.Attrib.MaxAnisotropy;
          break;
@@ -2420,13 +2420,15 @@ get_tex_parameterfv(struct gl_context *ctx,
 	 *params = (GLfloat) obj->Attrib.GenerateMipmap;
          break;
       case GL_TEXTURE_COMPARE_MODE_ARB:
-         if ((!_mesa_is_desktop_gl(ctx) || !ctx->Extensions.ARB_shadow)
+         if (!_mesa_has_ARB_shadow(ctx)
+             && !_mesa_is_desktop_gl_core(ctx)
              && !_mesa_is_gles3(ctx))
             goto invalid_pname;
          *params = (GLfloat) obj->Sampler.Attrib.CompareMode;
          break;
       case GL_TEXTURE_COMPARE_FUNC_ARB:
-         if ((!_mesa_is_desktop_gl(ctx) || !ctx->Extensions.ARB_shadow)
+         if (!_mesa_has_ARB_shadow(ctx)
+             && !_mesa_is_desktop_gl_core(ctx)
              && !_mesa_is_gles3(ctx))
             goto invalid_pname;
          *params = (GLfloat) obj->Sampler.Attrib.CompareFunc;
@@ -2452,7 +2454,7 @@ get_tex_parameterfv(struct gl_context *ctx,
          *params = obj->Sampler.Attrib.LodBias;
          break;
       case GL_TEXTURE_CROP_RECT_OES:
-         if (ctx->API != API_OPENGLES || !ctx->Extensions.OES_draw_texture)
+         if (!_mesa_has_OES_draw_texture(ctx))
             goto invalid_pname;
 
          params[0] = (GLfloat) obj->CropRect[0];
@@ -2519,7 +2521,7 @@ get_tex_parameterfv(struct gl_context *ctx,
          break;
 
       case GL_REQUIRED_TEXTURE_IMAGE_UNITS_OES:
-         if (!_mesa_is_gles(ctx) || !ctx->Extensions.OES_EGL_image_external)
+         if (!_mesa_has_OES_EGL_image_external(ctx))
             goto invalid_pname;
          *params = (GLfloat) obj->RequiredTextureImageUnits;
          break;
@@ -2685,7 +2687,7 @@ get_tex_parameteriv(struct gl_context *ctx,
          *params = obj->Attrib.MaxLevel;
          break;
       case GL_TEXTURE_MAX_ANISOTROPY_EXT:
-         if (!ctx->Extensions.EXT_texture_filter_anisotropic)
+         if (!_mesa_has_EXT_texture_filter_anisotropic(ctx))
             goto invalid_pname;
          /* GL spec 'Data Conversions' section specifies that floating-point
           * value in integer Get function is rounded to nearest integer
@@ -2706,13 +2708,15 @@ get_tex_parameteriv(struct gl_context *ctx,
 	 *params = (GLint) obj->Attrib.GenerateMipmap;
          break;
       case GL_TEXTURE_COMPARE_MODE_ARB:
-         if ((!_mesa_is_desktop_gl(ctx) || !ctx->Extensions.ARB_shadow)
+         if (!_mesa_has_ARB_shadow(ctx)
+             && !_mesa_is_desktop_gl_core(ctx)
              && !_mesa_is_gles3(ctx))
             goto invalid_pname;
          *params = (GLint) obj->Sampler.Attrib.CompareMode;
          break;
       case GL_TEXTURE_COMPARE_FUNC_ARB:
-         if ((!_mesa_is_desktop_gl(ctx) || !ctx->Extensions.ARB_shadow)
+         if (!_mesa_has_ARB_shadow(ctx)
+             && !_mesa_is_desktop_gl_core(ctx)
              && !_mesa_is_gles3(ctx))
             goto invalid_pname;
          *params = (GLint) obj->Sampler.Attrib.CompareFunc;
@@ -2745,7 +2749,7 @@ get_tex_parameteriv(struct gl_context *ctx,
          *params = LCLAMPF(obj->Sampler.Attrib.LodBias, INT32_MIN, INT32_MAX);
          break;
       case GL_TEXTURE_CROP_RECT_OES:
-         if (ctx->API != API_OPENGLES || !ctx->Extensions.OES_draw_texture)
+         if (!_mesa_has_OES_draw_texture(ctx))
             goto invalid_pname;
 
          params[0] = obj->CropRect[0];
@@ -2810,7 +2814,7 @@ get_tex_parameteriv(struct gl_context *ctx,
          break;
 
       case GL_REQUIRED_TEXTURE_IMAGE_UNITS_OES:
-         if (!_mesa_is_gles(ctx) || !ctx->Extensions.OES_EGL_image_external)
+         if (!_mesa_has_OES_EGL_image_external(ctx))
             goto invalid_pname;
          *params = obj->RequiredTextureImageUnits;
          break;
