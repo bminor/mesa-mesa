@@ -417,11 +417,14 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_ishl_imm(b, small_prim_precision, 23);
       break;
    }
-   case nir_intrinsic_load_cull_small_triangles_enabled_amd: {
-      unsigned mask = SI_NGG_CULL_LINES | SI_NGG_CULL_SMALL_LINES_DIAMOND_EXIT;
-      replacement = nir_imm_bool(b, (key->ge.opt.ngg_culling & mask) != SI_NGG_CULL_LINES);
+   case nir_intrinsic_load_cull_small_triangles_enabled_amd:
+      /* Triangles always have small primitive culling enabled. */
+      replacement = nir_imm_bool(b, true);
       break;
-   }
+   case nir_intrinsic_load_cull_small_lines_enabled_amd:
+      replacement =
+         nir_imm_bool(b, key->ge.opt.ngg_culling & SI_NGG_CULL_SMALL_LINES_DIAMOND_EXIT);
+      break;
    case nir_intrinsic_load_provoking_vtx_in_prim_amd:
       replacement = nir_bcsel(b, nir_i2b(b, GET_FIELD_NIR(GS_STATE_PROVOKING_VTX_FIRST)),
                               nir_imm_int(b, 0),

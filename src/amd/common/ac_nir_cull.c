@@ -217,7 +217,7 @@ cull_small_primitive_line(nir_builder *b, nir_def *pos[3][4],
    nir_def *prim_is_small = NULL;
 
    /* Small primitive filter - eliminate lines that are too small to affect a sample. */
-   nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_triangles_enabled_amd(b));
+   nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_lines_enabled_amd(b));
    {
       /* This only works with lines without perpendicular end caps (lines with perpendicular
        * end caps are rasterized as quads and thus can't be culled as small prims in 99% of
