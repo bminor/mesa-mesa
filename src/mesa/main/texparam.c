@@ -1906,7 +1906,7 @@ get_tex_level_parameter_image(struct gl_context *ctx,
       case GL_TEXTURE_BLUE_TYPE_ARB:
       case GL_TEXTURE_ALPHA_TYPE_ARB:
       case GL_TEXTURE_DEPTH_TYPE_ARB:
-         if (!ctx->Extensions.ARB_texture_float)
+         if (!_mesa_has_float_textures(ctx))
             goto invalid_pname;
          if (_mesa_base_format_has_channel(img->_BaseFormat, pname))
             *params = _mesa_get_format_datatype(texFormat);
@@ -1933,19 +1933,22 @@ get_tex_level_parameter_image(struct gl_context *ctx,
 
       /* GL_ARB_texture_buffer_object */
       case GL_TEXTURE_BUFFER_DATA_STORE_BINDING:
-         if (!ctx->Extensions.ARB_texture_buffer_object)
+         if (!_mesa_has_ARB_texture_buffer_object(ctx) &&
+             !_mesa_has_OES_texture_buffer(ctx))
             goto invalid_pname;
          *params = 0;
          break;
 
       /* GL_ARB_texture_buffer_range */
       case GL_TEXTURE_BUFFER_OFFSET:
-         if (!ctx->Extensions.ARB_texture_buffer_range)
+         if (!_mesa_has_ARB_texture_buffer_range(ctx) &&
+             !_mesa_has_EXT_texture_buffer(ctx))
             goto invalid_pname;
          *params = 0;
          break;
       case GL_TEXTURE_BUFFER_SIZE:
-         if (!ctx->Extensions.ARB_texture_buffer_range)
+         if (!_mesa_has_ARB_texture_buffer_range(ctx) &&
+             !_mesa_has_EXT_texture_buffer(ctx))
             goto invalid_pname;
          *params = 0;
          break;
@@ -2055,12 +2058,14 @@ get_tex_level_parameter_buffer(struct gl_context *ctx,
 
       /* GL_ARB_texture_buffer_range */
       case GL_TEXTURE_BUFFER_OFFSET:
-         if (!ctx->Extensions.ARB_texture_buffer_range)
+         if (!_mesa_has_ARB_texture_buffer_range(ctx) &&
+             !_mesa_has_OES_texture_buffer(ctx))
             goto invalid_pname;
          *params = texObj->BufferOffset;
          break;
       case GL_TEXTURE_BUFFER_SIZE:
-         if (!ctx->Extensions.ARB_texture_buffer_range)
+         if (!_mesa_has_ARB_texture_buffer_range(ctx) &&
+             !_mesa_has_OES_texture_buffer(ctx))
             goto invalid_pname;
          *params = (texObj->BufferSize == -1) ? bo->Size : texObj->BufferSize;
          break;
@@ -2094,7 +2099,7 @@ get_tex_level_parameter_buffer(struct gl_context *ctx,
       case GL_TEXTURE_LUMINANCE_TYPE_ARB:
       case GL_TEXTURE_INTENSITY_TYPE_ARB:
       case GL_TEXTURE_DEPTH_TYPE_ARB:
-         if (!ctx->Extensions.ARB_texture_float)
+         if (!_mesa_has_ARB_texture_float(ctx))
             goto invalid_pname;
          if (_mesa_base_format_has_channel(baseFormat, pname))
             *params = _mesa_get_format_datatype(texFormat);
