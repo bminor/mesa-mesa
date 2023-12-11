@@ -94,7 +94,7 @@ cull_small_primitive_triangle(nir_builder *b, nir_def *bbox_min[2], nir_def *bbo
    nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_triangles_enabled_amd(b));
    {
       nir_def *vp = nir_load_viewport_xy_scale_and_offset(b);
-      nir_def *small_prim_precision = nir_load_cull_small_prim_precision_amd(b);
+      nir_def *small_prim_precision = nir_load_cull_small_triangle_precision_amd(b);
       prim_is_small = prim_is_small_else;
 
       for (unsigned chan = 0; chan < 2; ++chan) {
@@ -263,7 +263,7 @@ cull_small_primitive_line(nir_builder *b, nir_def *pos[3][4],
       rotate_45degrees(b, v0);
       rotate_45degrees(b, v1);
 
-      nir_def *small_prim_precision = nir_load_cull_small_prim_precision_amd(b);
+      nir_def *small_prim_precision = nir_load_cull_small_triangle_precision_amd(b);
 
       nir_def *rounded_to_eq[2];
       for (unsigned chan = 0; chan < 2; chan++) {

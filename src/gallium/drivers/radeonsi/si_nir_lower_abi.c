@@ -406,7 +406,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_cull_front_face_enabled_amd:
       replacement = nir_imm_bool(b, key->ge.opt.ngg_culling & SI_NGG_CULL_FRONT_FACE);
       break;
-   case nir_intrinsic_load_cull_small_prim_precision_amd: {
+   case nir_intrinsic_load_cull_small_triangle_precision_amd: {
       nir_def *small_prim_precision =
          key->ge.opt.ngg_culling & SI_NGG_CULL_LINES ?
          GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION_NO_AA) :

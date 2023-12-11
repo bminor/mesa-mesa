@@ -225,7 +225,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    case nir_intrinsic_load_cull_small_triangles_enabled_amd:
       replacement = nggc_bool_setting(b, radv_nggc_small_primitives, s);
       break;
-   case nir_intrinsic_load_cull_small_prim_precision_amd: {
+   case nir_intrinsic_load_cull_small_triangle_precision_amd: {
       /* To save space, only the exponent is stored in the high 8 bits.
        * We calculate the precision from those 8 bits:
        * exponent = nggc_settings >> 24
