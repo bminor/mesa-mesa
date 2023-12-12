@@ -1704,7 +1704,7 @@
         "description": "ci/b2c: drop passthrough of unset CI_JOB_JWT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dabc068e6c04dca7800c17c165e57c36c6cff7ee",
         "notes": null
