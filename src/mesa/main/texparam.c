@@ -1685,7 +1685,7 @@ _mesa_legal_get_tex_level_parameter_target(struct gl_context *ctx, GLenum target
    case GL_TEXTURE_3D:
       return GL_TRUE;
    case GL_TEXTURE_2D_ARRAY_EXT:
-      return ctx->Extensions.EXT_texture_array;
+      return _mesa_has_EXT_texture_array(ctx) || _mesa_is_gles3(ctx);
    case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
    case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
    case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
@@ -2538,13 +2538,13 @@ get_tex_parameterfv(struct gl_context *ctx,
          break;
 
       case GL_TEXTURE_SRGB_DECODE_EXT:
-         if (!ctx->Extensions.EXT_texture_sRGB_decode)
+         if (!_mesa_has_EXT_texture_sRGB_decode(ctx))
             goto invalid_pname;
          *params = (GLfloat) obj->Sampler.Attrib.sRGBDecode;
          break;
 
       case GL_TEXTURE_REDUCTION_MODE_EXT:
-         if (!ctx->Extensions.EXT_texture_filter_minmax &&
+         if (!_mesa_has_EXT_texture_filter_minmax(ctx) &&
              !_mesa_has_ARB_texture_filter_minmax(ctx))
             goto invalid_pname;
          *params = (GLfloat) obj->Sampler.Attrib.ReductionMode;
@@ -2831,13 +2831,13 @@ get_tex_parameteriv(struct gl_context *ctx,
          break;
 
       case GL_TEXTURE_SRGB_DECODE_EXT:
-         if (!ctx->Extensions.EXT_texture_sRGB_decode)
+         if (!_mesa_has_EXT_texture_sRGB_decode(ctx))
             goto invalid_pname;
          *params = obj->Sampler.Attrib.sRGBDecode;
          break;
 
       case GL_TEXTURE_REDUCTION_MODE_EXT:
-         if (!ctx->Extensions.EXT_texture_filter_minmax &&
+         if (!_mesa_has_EXT_texture_filter_minmax(ctx) &&
              !_mesa_has_ARB_texture_filter_minmax(ctx))
             goto invalid_pname;
          *params = obj->Sampler.Attrib.ReductionMode;
