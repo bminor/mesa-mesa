@@ -824,7 +824,7 @@
         "description": "ci/freedreno: fail introduced by ARB_post_depth_coverage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fd00e994449d21f906ad291c0161b8b781c05443",
         "notes": null
