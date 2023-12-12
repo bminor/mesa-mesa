@@ -594,7 +594,7 @@
         "description": "anv/hasvk/drirc: change anv_assume_full_subgroups to have subgroup size",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
