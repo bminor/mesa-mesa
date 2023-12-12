@@ -994,7 +994,7 @@
         "description": "anv: fix incorrect queue_family access on command buffer",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9866c4e32b50c6682d33f248ddb5c80a06040152",
         "notes": null
