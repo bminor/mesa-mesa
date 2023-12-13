@@ -324,7 +324,7 @@
         "description": "radeonsi: fix divide by zero in si_get_small_prim_cull_info()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f8a0aa6852756d8f1593ef6627ddb1754ae967be",
         "notes": null
