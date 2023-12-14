@@ -524,7 +524,7 @@
         "description": "gallium/dri: Return __DRI_ATTRIB_SWAP_UNDEFINED for _SWAP_METHOD",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e64ab3e4a94c4e8baee3bec3a5eb4d098b8e7193",
         "notes": null
