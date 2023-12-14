@@ -174,7 +174,7 @@
         "description": "mesa: fix enum support for EXT_clip_cull_distance",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "979bcb9f4288564fb6c5807bcfbfd0a78176c3ef",
         "notes": null
