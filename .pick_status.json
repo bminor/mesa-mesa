@@ -5604,7 +5604,7 @@
         "description": "ac/surface: don't oversize surf_size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "87ecfdfbf0a8448d1475e6da15175e68bdeb933b",
         "notes": null
