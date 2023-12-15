@@ -1490,7 +1490,7 @@ if cc.links('int main() { return 0; }', args : '-Wl,-Bsymbolic', name : 'Bsymbol
   ld_args_bsymbolic += '-Wl,-Bsymbolic'
 endif
 with_ld_version_script = false
-if cc.links('int main() { return 0; }',
+if host_machine.system() != 'windows' and cc.links('int main() { return 0; }',
             args : '-Wl,--version-script=@0@'.format(
               join_paths(meson.current_source_dir(), 'build-support/conftest.map')),
             name : 'version-script')
