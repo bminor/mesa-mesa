@@ -804,7 +804,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %type <unum> const_val cat6_src_shift
 %type <num> buf_type
 
-%error-verbose
+%define parse.error verbose
 
 %start shader
 
