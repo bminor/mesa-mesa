@@ -964,7 +964,7 @@
         "description": "iris: use intel_needs_workaround with 14015055625",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0f147240398a5e9d424e507d9cd271802a340114",
         "notes": null
