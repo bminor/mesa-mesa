@@ -82,6 +82,7 @@ print_constant_data(FILE* output, Program* program)
    }
 }
 
+#ifndef _WIN32
 /**
  * Determines the GPU type to use for CLRXdisasm
  */
@@ -155,6 +156,7 @@ get_branch_target(char** output, Program* program, const std::vector<bool>& refe
    }
    return false;
 }
+#endif
 
 bool
 print_asm_clrx(Program* program, std::vector<uint32_t>& binary, unsigned exec_size, FILE* output)
