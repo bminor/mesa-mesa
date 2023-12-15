@@ -2224,11 +2224,18 @@ endif
 
 pkg = import('pkgconfig')
 
-if host_machine.system() == 'windows'
+if host_machine.system() == 'windows' and cc.get_argument_syntax() == 'msvc'
   prog_dumpbin = find_program('dumpbin', required : false)
   with_symbols_check = prog_dumpbin.found() and with_tests
   if with_symbols_check
     symbols_check_args = ['--dumpbin', prog_dumpbin.full_path()]
+  endif
+elif host_machine.system() == 'windows' and cc.get_argument_syntax() != 'msvc'
+  # mingw
+  prog_gendef = find_program('gendef', required : false)
+  with_symbols_check = prog_gendef.found() and with_tests
+  if with_symbols_check
+    symbols_check_args = ['--gendef', prog_gendef.full_path()]
   endif
 else
   prog_nm = find_program('nm')
