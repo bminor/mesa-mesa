@@ -244,7 +244,7 @@
         "description": "rusticl: do not warn on empty RUSTICL_DEBUG or RUSTICL_FEATURES",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b90d1cfbfea9fe40e2ec6d44e788ab27ff213e2a",
         "notes": null
