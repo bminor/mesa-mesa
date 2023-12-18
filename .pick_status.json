@@ -254,7 +254,7 @@
         "description": "panvk: Fix tracing",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "56be9a55be03cce9925989e7d22696733488e05b",
         "notes": null
