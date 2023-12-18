@@ -34,7 +34,7 @@
         "description": "zink: put sysmacros.h include under #ifdef MAJOR_IN_SYSMACROS",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6d60115be7cce87402f15ba01d81783dbf25f80a",
         "notes": null
