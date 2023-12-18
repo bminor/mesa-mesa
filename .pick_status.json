@@ -984,7 +984,7 @@
         "description": "intel/compiler: move gen5 final pass to actually be final pass",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ce75c3c3fea9d0c045587f3a8dfa33c1dc8cc222",
         "notes": null
