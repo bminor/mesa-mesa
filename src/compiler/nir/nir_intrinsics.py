@@ -1868,6 +1868,15 @@ intrinsic("bvh64_intersect_ray_amd", [4, 2, 1, 3, 3, 3], 4, flags=[CAN_ELIMINATE
 #
 intrinsic("bvh8_intersect_ray_amd", [4, 2, 1, 1, 3, 3, 1], 16, flags=[CAN_ELIMINATE, CAN_REORDER])
 
+# operands:
+# 1. stack address
+# 2. previous node pointer
+# 3. BVH node pointers
+# returns:
+# component 0: next stack address
+# component 1: next node pointer
+intrinsic("bvh_stack_rtn_amd", [1, 1, 0], 2, indices=[STACK_SIZE])
+
 # Return of a callable in raytracing pipelines
 intrinsic("rt_return_amd")
 

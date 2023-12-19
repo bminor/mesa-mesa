@@ -4018,6 +4018,40 @@ pops_await_overlapped_waves(isel_context* ctx)
    bld.reset(ctx->block);
 }
 
+uint16_t
+ds_bvh_stack_offset1_gfx11(unsigned stack_size)
+{
+   switch (stack_size) {
+   case 8: return 0x00;
+   case 16: return 0x10;
+   case 32: return 0x20;
+   case 64: return 0x30;
+   default: unreachable("invalid stack size");
+   }
+}
+
+void
+emit_ds_bvh_stack_push4_pop1_rtn(isel_context* ctx, nir_intrinsic_instr* instr, Builder& bld)
+{
+   Temp dst = get_ssa_temp(ctx, &instr->def);
+   Temp stack_addr = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[0].ssa));
+   Temp last_node = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[1].ssa));
+   Temp intersection_result = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[2].ssa));
+
+   Temp dst_stack_addr = bld.tmp(v1);
+   Temp dst_node_pointer = bld.tmp(v1);
+   uint32_t offset0 = 0, offset1 = 0;
+   if (ctx->program->gfx_level >= GFX12)
+      offset0 = nir_intrinsic_stack_size(instr);
+   else
+      offset1 = ds_bvh_stack_offset1_gfx11(nir_intrinsic_stack_size(instr));
+   bld.ds(aco_opcode::ds_bvh_stack_push4_pop1_rtn_b32, Definition(dst_stack_addr),
+          Definition(dst_node_pointer), Operand(stack_addr), Operand(last_node),
+          Operand(intersection_result), offset0, offset1);
+   bld.pseudo(aco_opcode::p_create_vector, Definition(dst), Operand(dst_stack_addr),
+              Operand(dst_node_pointer));
+}
+
 } // namespace
 
 void
@@ -5056,6 +5090,13 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       bld.pseudo(aco_opcode::p_unit_test, Definition(get_ssa_temp(ctx, &instr->def)),
                  Operand::c32(nir_intrinsic_base(instr)));
       break;
+   case nir_intrinsic_bvh_stack_rtn_amd: {
+      switch (instr->num_components) {
+      case 4: emit_ds_bvh_stack_push4_pop1_rtn(ctx, instr, bld); break;
+      default: unreachable("Invalid BVH stack component count!");
+      }
+      break;
+   }
    default:
       isel_err(&instr->instr, "Unimplemented intrinsic instr");
       abort();

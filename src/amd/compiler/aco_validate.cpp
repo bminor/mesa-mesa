@@ -912,9 +912,10 @@ validate_ir(Program* program)
                check(op.isOfType(RegType::vgpr) || op.physReg() == m0 || op.isUndefined(),
                      "Only VGPRs are valid DS instruction operands", instr.get());
             }
-            if (!instr->definitions.empty())
-               check(instr->definitions[0].regClass().type() == RegType::vgpr,
-                     "DS instruction must return VGPR", instr.get());
+            for (const Definition& def : instr->definitions) {
+               check(def.regClass().type() == RegType::vgpr, "DS instruction must return VGPR",
+                     instr.get());
+            }
             break;
          }
          case Format::EXP: {

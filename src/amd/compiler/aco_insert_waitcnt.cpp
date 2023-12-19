@@ -696,8 +696,8 @@ gen(Instruction* instr, wait_ctx& ctx)
       if (ds.gds)
          update_counters(ctx, event_gds_gpr_lock);
 
-      if (!instr->definitions.empty())
-         insert_wait_entry(ctx, instr->definitions[0], ds.gds ? event_gds : event_lds);
+      for (auto& definition : instr->definitions)
+         insert_wait_entry(ctx, definition, ds.gds ? event_gds : event_lds);
 
       if (ds.gds) {
          for (const Operand& op : instr->operands)

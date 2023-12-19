@@ -1598,6 +1598,14 @@ static_assert(sizeof(VINTRP_instruction) == sizeof(Instruction) + 4, "Unexpected
  * Operand(n-1): M0 - LDS size.
  * Definition(0): VDST - Destination VGPR when results returned to VGPRs.
  *
+ * For ds_bvh_stack* instructions:
+ *
+ * Operand(0): ADDR - VGPR supplying the stack address (overwritten with stack address after push)
+ * Operand(1): LVADDR - VGPR supplying the last visited node ID
+ * Operand(2): DATA - VGPR supplying the result of bvh*_intersect_ray
+ * Definition(0) - new ADDR (tied to operand 0, contains new stack address)
+ * Definition(1): VDST - next node ID to test for intersection
+ *
  */
 struct DS_instruction : public Instruction {
    memory_sync_info sync;

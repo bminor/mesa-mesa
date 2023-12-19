@@ -1649,6 +1649,7 @@ DS = {
    ("ds_pk_add_rtn_f16",       op(gfx12=0xaa)),
    ("ds_pk_add_bf16",          op(gfx12=0x9b)),
    ("ds_pk_add_rtn_bf16",      op(gfx12=0xab)),
+   ("ds_bvh_stack_push4_pop1_rtn_b32", op(gfx11=0xad, gfx12=0xe0)), #ds_bvh_stack_rtn in GFX11
 }
 for (name, num) in DS:
     insn(name, num, Format.DS, InstrClass.DS)

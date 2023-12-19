@@ -513,7 +513,7 @@ emit_ds_instruction(asm_context& ctx, std::vector<uint32_t>& out, const Instruct
    out.push_back(encoding);
    encoding = 0;
    if (!instr->definitions.empty())
-      encoding |= reg(ctx, instr->definitions[0], 8) << 24;
+      encoding |= reg(ctx, instr->definitions.back(), 8) << 24;
    for (unsigned i = 0; i < MIN2(instr->operands.size(), 3); i++) {
       const Operand& op = instr->operands[i];
       if (op.physReg() != m0 && !op.isUndefined())
