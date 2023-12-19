@@ -264,7 +264,7 @@
         "description": "radv: Use correct writemask for cooperative matrix ordering.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9df4703fbb59d1295a9d3daf6320f329c9de2d66",
         "notes": null
