@@ -13,6 +13,12 @@
 #include "compiler/spirv/spirv.h"
 
 struct radv_device;
+struct radv_physical_device;
+
+bool radv_use_bvh_stack_rtn(const struct radv_physical_device *pdevice);
+
+nir_def *radv_build_bvh_stack_rtn_addr(nir_builder *b, const struct radv_physical_device *pdev, uint32_t workgroup_size,
+                                       uint32_t stack_base, uint32_t max_stack_entries);
 
 nir_def *build_addr_to_node(struct radv_device *device, nir_builder *b, nir_def *addr, nir_def *flags);
 
@@ -107,6 +113,9 @@ struct radv_ray_traversal_vars {
    nir_deref_instr *instance_addr;
    nir_deref_instr *sbt_offset_and_flags;
 
+   /* If non-NULL, contains a boolean flag whether to break after the current iteration. */
+   nir_deref_instr *break_flag;
+
    /* Statistics. Iteration count in the low 16 bits, candidate instance counts in the high 16 bits. */
    nir_deref_instr *iteration_instance_count;
 };
@@ -132,6 +141,7 @@ struct radv_ray_traversal_args {
 
    bool ignore_cull_mask;
 
+   bool use_bvh_stack_rtn;
    radv_rt_stack_store_cb stack_store_cb;
    radv_rt_stack_load_cb stack_load_cb;
 

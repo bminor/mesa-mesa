@@ -128,6 +128,8 @@ struct radv_bvh_box32_node {
 
 #define RADV_BVH_ROOT_NODE    radv_bvh_node_box32
 #define RADV_BVH_INVALID_NODE 0xffffffffu
+/* used by gfx11's ds_bvh_stack* only */
+#define RADV_BVH_STACK_TERMINAL_NODE 0xfffffffeu
 
 /* GFX12 */
 

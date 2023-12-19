@@ -11,6 +11,42 @@
 
 static nir_def *build_node_to_addr(struct radv_device *device, nir_builder *b, nir_def *node, bool skip_type_and);
 
+bool
+radv_use_bvh_stack_rtn(const struct radv_physical_device *pdevice)
+{
+   return (pdevice->info.gfx_level == GFX11 || pdevice->info.gfx_level == GFX11_5) && !radv_emulate_rt(pdevice);
+}
+
+nir_def *
+radv_build_bvh_stack_rtn_addr(nir_builder *b, const struct radv_physical_device *pdev, uint32_t workgroup_size,
+                              uint32_t stack_base, uint32_t max_stack_entries)
+{
+   assert(stack_base % 4 == 0);
+
+   nir_def *stack_idx = nir_load_local_invocation_index(b);
+   /* RDNA3's ds_bvh_stack_rtn instruction uses a special encoding for the stack address.
+    * Bits 0-17 encode the current stack index (set to 0 initially)
+    * Bits 18-31 encodes the stack base in multiples of 4
+    *
+    * The hardware uses a stride of 128 bytes (32 entries) for the stack index so the upper 32 threads need a different
+    * base offset with wave64.
+    */
+   if (workgroup_size > 32) {
+      nir_def *wave32_thread_id = nir_iand_imm(b, stack_idx, 0x1f);
+      nir_def *wave32_group_id = nir_ushr_imm(b, stack_idx, 5);
+      uint32_t stack_entries_per_group = max_stack_entries * 32;
+      nir_def *group_stack_base = nir_imul_imm(b, wave32_group_id, stack_entries_per_group);
+      stack_idx = nir_iadd(b, wave32_thread_id, group_stack_base);
+   }
+   stack_idx = nir_iadd_imm(b, stack_idx, stack_base / 4);
+   /* There are 4 bytes in each stack entry so no further arithmetic is needed. */
+   if (pdev->info.gfx_level >= GFX12)
+      stack_idx = nir_ishl_imm(b, stack_idx, 15);
+   else
+      stack_idx = nir_ishl_imm(b, stack_idx, 18);
+   return stack_idx;
+}
+
 static void
 nir_sort_hit_pair(nir_builder *b, nir_variable *var_distances, nir_variable *var_indices, uint32_t chan_1,
                   uint32_t chan_2)
@@ -693,12 +729,36 @@ build_bvh_base(nir_builder *b, const struct radv_physical_device *pdev, nir_def 
    return nir_pack_64_2x32(b, nir_vector_insert_imm(b, base_addr_vec, addr_hi, 1));
 }
 
+static void
+build_instance_exit(nir_builder *b, const struct radv_physical_device *pdev, const struct radv_ray_traversal_args *args,
+                    nir_def *stack_instance_exit, nir_def *ptr_flags)
+{
+   nir_def *root_instance_exit = nir_iand(
+      b, nir_ieq_imm(b, nir_load_deref(b, args->vars.current_node), RADV_BVH_INVALID_NODE),
+      nir_ieq(b, nir_load_deref(b, args->vars.previous_node), nir_load_deref(b, args->vars.instance_bottom_node)));
+   nir_if *instance_exit = nir_push_if(b, nir_ior(b, stack_instance_exit, root_instance_exit));
+   instance_exit->control = nir_selection_control_dont_flatten;
+   {
+      nir_store_deref(b, args->vars.top_stack, nir_imm_int(b, -1), 1);
+      nir_store_deref(b, args->vars.previous_node, nir_load_deref(b, args->vars.instance_top_node), 1);
+      nir_store_deref(b, args->vars.instance_bottom_node, nir_imm_int(b, RADV_BVH_NO_INSTANCE_ROOT), 1);
+
+      nir_store_deref(b, args->vars.bvh_base, build_bvh_base(b, pdev, args->root_bvh_base, ptr_flags, true), 0x1);
+      nir_store_deref(b, args->vars.origin, args->origin, 7);
+      nir_store_deref(b, args->vars.dir, args->dir, 7);
+      nir_store_deref(b, args->vars.inv_dir, nir_frcp(b, args->dir), 7);
+   }
+   nir_pop_if(b, NULL);
+}
+
 nir_def *
 radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struct radv_ray_traversal_args *args)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    nir_variable *incomplete = nir_local_variable_create(b->impl, glsl_bool_type(), "incomplete");
    nir_store_var(b, incomplete, nir_imm_true(b), 0x1);
+   nir_variable *intrinsic_result = nir_local_variable_create(b->impl, glsl_uvec4_type(), "intrinsic_result");
+   nir_variable *last_visited_node = nir_local_variable_create(b->impl, glsl_uint_type(), "last_visited_node");
 
    struct radv_ray_flags ray_flags = {
       .force_opaque = radv_test_flag(b, args, SpvRayFlagsOpaqueKHRMask, true),
@@ -722,38 +782,47 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
 
    nir_push_loop(b);
    {
-      nir_push_if(b, nir_ieq_imm(b, nir_load_deref(b, args->vars.current_node), RADV_BVH_INVALID_NODE));
-      {
-         /* Early exit if we never overflowed the stack, to avoid having to backtrack to
-          * the root for no reason. */
-         nir_push_if(b, nir_ilt_imm(b, nir_load_deref(b, args->vars.stack), args->stack_base + args->stack_stride));
+      /* When exiting instances via stack, current_node won't ever be invalid with ds_bvh_stack_rtn */
+      if (args->use_bvh_stack_rtn) {
+         /* Early-exit when the stack is empty and there are no more nodes to process. */
+         nir_push_if(b, nir_ieq_imm(b, nir_load_deref(b, args->vars.current_node), RADV_BVH_STACK_TERMINAL_NODE));
          {
             nir_store_var(b, incomplete, nir_imm_false(b), 0x1);
             nir_jump(b, nir_jump_break);
          }
          nir_pop_if(b, NULL);
+         build_instance_exit(b, pdev, args,
+                             nir_ilt(b, nir_load_deref(b, args->vars.stack), nir_load_deref(b, args->vars.top_stack)),
+                             ptr_flags);
+      }
 
-         nir_def *stack_instance_exit =
-            nir_ige(b, nir_load_deref(b, args->vars.top_stack), nir_load_deref(b, args->vars.stack));
-         nir_def *root_instance_exit =
-            nir_ieq(b, nir_load_deref(b, args->vars.previous_node), nir_load_deref(b, args->vars.instance_bottom_node));
-         nir_if *instance_exit = nir_push_if(b, nir_ior(b, stack_instance_exit, root_instance_exit));
-         instance_exit->control = nir_selection_control_dont_flatten;
-         {
-            nir_store_deref(b, args->vars.top_stack, nir_imm_int(b, -1), 1);
-            nir_store_deref(b, args->vars.previous_node, nir_load_deref(b, args->vars.instance_top_node), 1);
-            nir_store_deref(b, args->vars.instance_bottom_node, nir_imm_int(b, RADV_BVH_NO_INSTANCE_ROOT), 1);
-
-            nir_store_deref(b, args->vars.bvh_base, build_bvh_base(b, pdev, args->root_bvh_base, ptr_flags, true), 0x1);
-            nir_store_deref(b, args->vars.origin, args->origin, 7);
-            nir_store_deref(b, args->vars.dir, args->dir, 7);
-            nir_store_deref(b, args->vars.inv_dir, nir_fdiv(b, vec3ones, args->dir), 7);
+      nir_push_if(b, nir_ieq_imm(b, nir_load_deref(b, args->vars.current_node), RADV_BVH_INVALID_NODE));
+      {
+         /* Early exit if we never overflowed the stack, to avoid having to backtrack to
+          * the root for no reason. */
+         if (!args->use_bvh_stack_rtn) {
+            nir_push_if(b, nir_ilt_imm(b, nir_load_deref(b, args->vars.stack), args->stack_base + args->stack_stride));
+            {
+               nir_store_var(b, incomplete, nir_imm_false(b), 0x1);
+               nir_jump(b, nir_jump_break);
+            }
+            nir_pop_if(b, NULL);
+            build_instance_exit(
+               b, pdev, args, nir_ige(b, nir_load_deref(b, args->vars.top_stack), nir_load_deref(b, args->vars.stack)),
+               ptr_flags);
          }
-         nir_pop_if(b, NULL);
 
-         nir_push_if(
-            b, nir_ige(b, nir_load_deref(b, args->vars.stack_low_watermark), nir_load_deref(b, args->vars.stack)));
+         nir_def *overflow_cond =
+            nir_ige(b, nir_load_deref(b, args->vars.stack_low_watermark), nir_load_deref(b, args->vars.stack));
+         /* ds_bvh_stack_rtn returns 0xFFFFFFFF if and only if there was a stack overflow. */
+         if (args->use_bvh_stack_rtn)
+            overflow_cond = nir_imm_true(b);
+
+         nir_push_if(b, overflow_cond);
          {
+            /* Fix up the stack pointer if we overflowed. The HW will decrement the stack pointer by one in that case. */
+            if (args->use_bvh_stack_rtn)
+               nir_store_deref(b, args->vars.stack, nir_iadd_imm(b, nir_load_deref(b, args->vars.stack), 1), 0x1);
             nir_def *prev = nir_load_deref(b, args->vars.previous_node);
             nir_def *bvh_addr = build_node_to_addr(device, b, nir_load_deref(b, args->vars.bvh_base), true);
 
@@ -768,13 +837,15 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
          }
          nir_push_else(b, NULL);
          {
-            nir_store_deref(b, args->vars.stack,
-                            nir_iadd_imm(b, nir_load_deref(b, args->vars.stack), -args->stack_stride), 1);
+            if (!args->use_bvh_stack_rtn) {
+               nir_store_deref(b, args->vars.stack,
+                               nir_iadd_imm(b, nir_load_deref(b, args->vars.stack), -args->stack_stride), 1);
 
-            nir_def *stack_ptr =
-               nir_umod_imm(b, nir_load_deref(b, args->vars.stack), args->stack_stride * args->stack_entries);
-            nir_def *bvh_node = args->stack_load_cb(b, stack_ptr, args);
-            nir_store_deref(b, args->vars.current_node, bvh_node, 0x1);
+               nir_def *stack_ptr =
+                  nir_umod_imm(b, nir_load_deref(b, args->vars.stack), args->stack_stride * args->stack_entries);
+               nir_def *bvh_node = args->stack_load_cb(b, stack_ptr, args);
+               nir_store_deref(b, args->vars.current_node, bvh_node, 0x1);
+            }
             nir_store_deref(b, args->vars.previous_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
          }
          nir_pop_if(b, NULL);
@@ -786,19 +857,25 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
       nir_pop_if(b, NULL);
 
       nir_def *bvh_node = nir_load_deref(b, args->vars.current_node);
+      if (args->use_bvh_stack_rtn)
+         nir_store_var(b, last_visited_node, nir_imm_int(b, RADV_BVH_STACK_TERMINAL_NODE), 0x1);
+      else
+         nir_store_deref(b, args->vars.current_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
 
       nir_def *prev_node = nir_load_deref(b, args->vars.previous_node);
       nir_store_deref(b, args->vars.previous_node, bvh_node, 0x1);
-      nir_store_deref(b, args->vars.current_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
 
       nir_def *global_bvh_node = nir_iadd(b, nir_load_deref(b, args->vars.bvh_base), nir_u2u64(b, bvh_node));
 
-      nir_def *intrinsic_result = NULL;
+      bool has_result = false;
       if (pdev->info.has_image_bvh_intersect_ray && !radv_emulate_rt(pdev)) {
-         intrinsic_result =
+         nir_store_var(
+            b, intrinsic_result,
             nir_bvh64_intersect_ray_amd(b, 32, desc, nir_unpack_64_2x32(b, global_bvh_node),
                                         nir_load_deref(b, args->vars.tmax), nir_load_deref(b, args->vars.origin),
-                                        nir_load_deref(b, args->vars.dir), nir_load_deref(b, args->vars.inv_dir));
+                                        nir_load_deref(b, args->vars.dir), nir_load_deref(b, args->vars.inv_dir)),
+            0xf);
+         has_result = true;
       }
 
       nir_push_if(b, nir_test_mask(b, bvh_node, BITFIELD64_BIT(ffs(radv_bvh_node_box16) - 1)));
@@ -833,9 +910,10 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
                   nir_def *instance_and_mask = nir_channel(b, instance_data, 2);
                   nir_push_if(b, nir_ult(b, nir_iand(b, instance_and_mask, args->cull_mask), nir_imm_int(b, 1 << 24)));
                   {
-                     nir_jump(b, nir_jump_continue);
+                     if (!args->use_bvh_stack_rtn)
+                        nir_jump(b, nir_jump_continue);
                   }
-                  nir_pop_if(b, NULL);
+                  nir_push_else(b, NULL);
                }
 
                nir_store_deref(b, args->vars.top_stack, nir_load_deref(b, args->vars.stack), 1);
@@ -856,7 +934,15 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
                        build_bvh_base(b, pdev, instance_pointer, ptr_flags, false), 0x1);
 
                /* Push the instance root node onto the stack */
-               nir_store_deref(b, args->vars.current_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 0x1);
+               if (args->use_bvh_stack_rtn) {
+                  nir_store_var(b, last_visited_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
+                  nir_store_var(b, intrinsic_result,
+                                nir_imm_ivec4(b, RADV_BVH_ROOT_NODE, RADV_BVH_INVALID_NODE, RADV_BVH_INVALID_NODE,
+                                              RADV_BVH_INVALID_NODE),
+                                0xf);
+               } else {
+                  nir_store_deref(b, args->vars.current_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 0x1);
+               }
                nir_store_deref(b, args->vars.instance_bottom_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 1);
                nir_store_deref(b, args->vars.instance_top_node, bvh_node, 1);
 
@@ -864,13 +950,17 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
                nir_store_deref(b, args->vars.origin, nir_build_vec3_mat_mult(b, args->origin, wto_matrix, true), 7);
                nir_store_deref(b, args->vars.dir, nir_build_vec3_mat_mult(b, args->dir, wto_matrix, false), 7);
                nir_store_deref(b, args->vars.inv_dir, nir_fdiv(b, vec3ones, nir_load_deref(b, args->vars.dir)), 7);
+               if (!args->ignore_cull_mask)
+                  nir_pop_if(b, NULL);
             }
             nir_pop_if(b, NULL);
          }
          nir_push_else(b, NULL);
          {
-            nir_def *result = intrinsic_result;
-            if (!result) {
+            nir_def *result;
+            if (has_result) {
+               result = nir_load_var(b, intrinsic_result);
+            } else {
                /* If we didn't run the intrinsic cause the hardware didn't support it,
                 * emulate ray/box intersection here */
                result = intersect_ray_amd_software_box(
@@ -879,49 +969,55 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
             }
 
             /* box */
-            nir_push_if(b, nir_ieq_imm(b, prev_node, RADV_BVH_INVALID_NODE));
-            {
-               nir_def *new_nodes[4];
-               for (unsigned i = 0; i < 4; ++i)
-                  new_nodes[i] = nir_channel(b, result, i);
+            if (args->use_bvh_stack_rtn) {
+               nir_store_var(b, last_visited_node, prev_node, 0x1);
+            } else {
+               nir_push_if(b, nir_ieq_imm(b, prev_node, RADV_BVH_INVALID_NODE));
+               {
+                  nir_def *new_nodes[4];
+                  for (unsigned i = 0; i < 4; ++i)
+                     new_nodes[i] = nir_channel(b, result, i);
 
-               for (unsigned i = 1; i < 4; ++i)
-                  nir_push_if(b, nir_ine_imm(b, new_nodes[i], RADV_BVH_INVALID_NODE));
+                  for (unsigned i = 1; i < 4; ++i)
+                     nir_push_if(b, nir_ine_imm(b, new_nodes[i], RADV_BVH_INVALID_NODE));
 
-               for (unsigned i = 4; i-- > 1;) {
-                  nir_def *stack = nir_load_deref(b, args->vars.stack);
-                  nir_def *stack_ptr = nir_umod_imm(b, stack, args->stack_entries * args->stack_stride);
-                  args->stack_store_cb(b, stack_ptr, new_nodes[i], args);
-                  nir_store_deref(b, args->vars.stack, nir_iadd_imm(b, stack, args->stack_stride), 1);
+                  for (unsigned i = 4; i-- > 1;) {
+                     nir_def *stack = nir_load_deref(b, args->vars.stack);
+                     nir_def *stack_ptr = nir_umod_imm(b, stack, args->stack_entries * args->stack_stride);
+                     args->stack_store_cb(b, stack_ptr, new_nodes[i], args);
+                     nir_store_deref(b, args->vars.stack, nir_iadd_imm(b, stack, args->stack_stride), 1);
 
-                  if (i == 1) {
-                     nir_def *new_watermark =
-                        nir_iadd_imm(b, nir_load_deref(b, args->vars.stack), -args->stack_entries * args->stack_stride);
-                     new_watermark = nir_imax(b, nir_load_deref(b, args->vars.stack_low_watermark), new_watermark);
-                     nir_store_deref(b, args->vars.stack_low_watermark, new_watermark, 0x1);
+                     if (i == 1) {
+                        nir_def *new_watermark = nir_iadd_imm(b, nir_load_deref(b, args->vars.stack),
+                                                              -args->stack_entries * args->stack_stride);
+                        new_watermark = nir_imax(b, nir_load_deref(b, args->vars.stack_low_watermark), new_watermark);
+                        nir_store_deref(b, args->vars.stack_low_watermark, new_watermark, 0x1);
+                     }
+
+                     nir_pop_if(b, NULL);
                   }
-
-                  nir_pop_if(b, NULL);
+                  nir_store_deref(b, args->vars.current_node, new_nodes[0], 0x1);
                }
-               nir_store_deref(b, args->vars.current_node, new_nodes[0], 0x1);
-            }
-            nir_push_else(b, NULL);
-            {
-               nir_def *next = nir_imm_int(b, RADV_BVH_INVALID_NODE);
-               for (unsigned i = 0; i < 3; ++i) {
-                  next = nir_bcsel(b, nir_ieq(b, prev_node, nir_channel(b, result, i)), nir_channel(b, result, i + 1),
-                                   next);
+               nir_push_else(b, NULL);
+               {
+                  nir_def *next = nir_imm_int(b, RADV_BVH_INVALID_NODE);
+                  for (unsigned i = 0; i < 3; ++i) {
+                     next = nir_bcsel(b, nir_ieq(b, prev_node, nir_channel(b, result, i)),
+                                      nir_channel(b, result, i + 1), next);
+                  }
+                  nir_store_deref(b, args->vars.current_node, next, 0x1);
                }
-               nir_store_deref(b, args->vars.current_node, next, 0x1);
+               nir_pop_if(b, NULL);
             }
-            nir_pop_if(b, NULL);
          }
          nir_pop_if(b, NULL);
       }
       nir_push_else(b, NULL);
       {
-         nir_def *result = intrinsic_result;
-         if (!result) {
+         nir_def *result;
+         if (has_result) {
+            result = nir_load_var(b, intrinsic_result);
+         } else {
             /* If we didn't run the intrinsic cause the hardware didn't support it,
              * emulate ray/tri intersection here */
             result = intersect_ray_amd_software_tri(
@@ -936,6 +1032,21 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
          nir_def *iteration_instance_count = nir_load_deref(b, args->vars.iteration_instance_count);
          iteration_instance_count = nir_iadd_imm(b, iteration_instance_count, 1);
          nir_store_deref(b, args->vars.iteration_instance_count, iteration_instance_count, 0x1);
+      }
+      if (args->use_bvh_stack_rtn) {
+         nir_def *stack_result =
+            nir_bvh_stack_rtn_amd(b, 32, nir_load_deref(b, args->vars.stack), nir_load_var(b, last_visited_node),
+                                  nir_load_var(b, intrinsic_result), .stack_size = args->stack_entries);
+         nir_store_deref(b, args->vars.stack, nir_channel(b, stack_result, 0), 0x1);
+         nir_store_deref(b, args->vars.current_node, nir_channel(b, stack_result, 1), 0x1);
+      }
+
+      if (args->vars.break_flag) {
+         nir_push_if(b, nir_load_deref(b, args->vars.break_flag));
+         {
+            nir_jump(b, nir_jump_break);
+         }
+         nir_pop_if(b, NULL);
       }
    }
    nir_pop_loop(b, NULL);

@@ -1411,23 +1411,26 @@ handle_candidate_triangle(nir_builder *b, struct radv_triangle_intersection *int
       nir_push_if(b, nir_inot(b, nir_load_var(b, data->vars->ahit_accept)));
       {
          nir_store_var(b, data->barycentrics, prev_barycentrics, 0x3);
-         nir_jump(b, nir_jump_continue);
       }
       nir_pop_if(b, NULL);
    }
    nir_pop_if(b, NULL);
 
-   nir_store_var(b, data->vars->primitive_id, intersection->base.primitive_id, 1);
-   nir_store_var(b, data->vars->geometry_id_and_flags, intersection->base.geometry_id_and_flags, 1);
-   nir_store_var(b, data->vars->tmax, intersection->t, 0x1);
-   nir_store_var(b, data->vars->instance_addr, nir_load_var(b, data->trav_vars->instance_addr), 0x1);
-   nir_store_var(b, data->vars->hit_kind, hit_kind, 0x1);
+   nir_push_if(b, nir_load_var(b, data->vars->ahit_accept));
+   {
+      nir_store_var(b, data->vars->primitive_id, intersection->base.primitive_id, 1);
+      nir_store_var(b, data->vars->geometry_id_and_flags, intersection->base.geometry_id_and_flags, 1);
+      nir_store_var(b, data->vars->tmax, intersection->t, 0x1);
+      nir_store_var(b, data->vars->instance_addr, nir_load_var(b, data->trav_vars->instance_addr), 0x1);
+      nir_store_var(b, data->vars->hit_kind, hit_kind, 0x1);
 
-   nir_store_var(b, data->vars->idx, sbt_idx, 1);
-   nir_store_var(b, data->trav_vars->hit, nir_imm_true(b), 1);
+      nir_store_var(b, data->vars->idx, sbt_idx, 1);
+      nir_store_var(b, data->trav_vars->hit, nir_imm_true(b), 1);
 
-   nir_def *ray_terminated = nir_load_var(b, data->vars->ahit_terminate);
-   nir_break_if(b, nir_ior(b, ray_flags->terminate_on_first_hit, ray_terminated));
+      nir_def *ray_terminated = nir_load_var(b, data->vars->ahit_terminate);
+      nir_break_if(b, nir_ior(b, ray_flags->terminate_on_first_hit, ray_terminated));
+   }
+   nir_pop_if(b, NULL);
 }
 
 static void
@@ -1528,6 +1531,17 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
 
    nir_store_var(b, trav_vars.bvh_base, root_bvh_base, 1);
 
+   nir_def *stack_idx = nir_load_local_invocation_index(b);
+   uint32_t stack_stride;
+
+   if (radv_use_bvh_stack_rtn(pdev)) {
+      stack_idx = radv_build_bvh_stack_rtn_addr(b, pdev, pdev->rt_wave_size, 0, MAX_STACK_ENTRY_COUNT);
+      stack_stride = 1;
+   } else {
+      stack_idx = nir_imul_imm(b, stack_idx, sizeof(uint32_t));
+      stack_stride = pdev->rt_wave_size * sizeof(uint32_t);
+   }
+
    nir_def *vec3ones = nir_imm_vec3(b, 1.0, 1.0, 1.0);
 
    nir_store_var(b, trav_vars.origin, nir_load_var(b, vars->origin), 7);
@@ -1536,7 +1550,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
    nir_store_var(b, trav_vars.sbt_offset_and_flags, nir_imm_int(b, 0), 1);
    nir_store_var(b, trav_vars.instance_addr, nir_imm_int64(b, 0), 1);
 
-   nir_store_var(b, trav_vars.stack, nir_imul_imm(b, nir_load_local_invocation_index(b), sizeof(uint32_t)), 1);
+   nir_store_var(b, trav_vars.stack, stack_idx, 1);
    nir_store_var(b, trav_vars.stack_low_watermark, nir_load_var(b, trav_vars.stack), 1);
    nir_store_var(b, trav_vars.current_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 0x1);
    nir_store_var(b, trav_vars.previous_node, nir_imm_int(b, RADV_BVH_INVALID_NODE), 0x1);
@@ -1588,7 +1602,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
       .tmin = nir_load_var(b, vars->tmin),
       .dir = nir_load_var(b, vars->direction),
       .vars = trav_vars_args,
-      .stack_stride = pdev->rt_wave_size * sizeof(uint32_t),
+      .stack_stride = stack_stride,
       .stack_entries = MAX_STACK_ENTRY_COUNT,
       .stack_base = 0,
       .ignore_cull_mask = ignore_cull_mask,
@@ -1602,6 +1616,7 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
       .triangle_cb = (pipeline->base.base.create_flags & VK_PIPELINE_CREATE_2_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR)
                         ? NULL
                         : handle_candidate_triangle,
+      .use_bvh_stack_rtn = radv_use_bvh_stack_rtn(pdev),
       .data = &data,
    };
 
