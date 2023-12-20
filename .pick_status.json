@@ -264,7 +264,7 @@
         "description": "rusticl: check rustc version for flags requiring newer rustc/clippy",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7e74ee07e3a7aebc46cbd6d724b49790cb9f9c29",
         "notes": null
