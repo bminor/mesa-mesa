@@ -1,5 +1,525 @@
 [
     {
+        "sha": "e61fae6eb8ae1ae1228d6f89329324310db808ae",
+        "description": "lavapipe: bump image alignment up to 64 bytes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d93aac74df68fad9b2ca5a9c653b913874f383d",
+        "description": "radv: Use correct plane and binding index with SDMA.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ab4720691c65e2624d0c41237cbee2801ddf90ac",
+        "description": "radv: Clean up SDMA chunked copy info struct.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7fe899a3b6350d4b82bf716560be2b202b922251",
+        "description": "radv: Use SDMA surface structs for determining unaligned buffer copies.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dab48633966d15b398737f987ea934e86363304e",
+        "description": "radv: Pass radv_sdma_surf from copy functions to SDMA.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85fa749c639a4adf00d51ab10f4321ae09882f60",
+        "description": "radv: Refactor and simplify SDMA surface info functions.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a21cba679917680e6ac41ed4c8df49d1eefe82b4",
+        "description": "radv: Unify SDMA surface struct for linear and tiled images.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65dfdd3fff293bcd4ac7e3ca2292d97d63537cd2",
+        "description": "radv: Move SDMA function and struct declarations to a new header.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ce0ea8e7c1bb4fc0552f8e6bf67b6966b688106",
+        "description": "radv/ci: update CI lists for NAVI10,NAVI31 and RENOIR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27c46dd20778d08a74a483ab1857d3e4df72511a",
+        "description": "radeonsi: emit SQ_NON_EVENT for GFX11_5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "981fbafa187b0d040be8acd22de962cd23de6cbb",
+        "description": "radeonsi: fix extra_md handling with fmask",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5371fca829d16e778e9c29a0708cd3185997f9ff",
+        "description": "radeonsi/sqtt: handle COMPUTE queues as well",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2efd1baa6446bed0426058eb0424ba40112c347c",
+        "description": "radeonsi/sqtt: fix capturing RGP on RDNA3 with more than one Shader Engine",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0507ec50b0186ac0a31d0751a93127fe50842e6",
+        "description": "radeonsi/sqtt: fix emitting SQTT userdata when CAM is needed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a2cfd4186f80d9c78846b5ddface39bf60d37537",
+        "description": "radeonsi/winsys: add cs_get_ip_type function",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1f08608b8097dfce7d6a79bcb8b7ed13b0b044b",
+        "description": "radeonsi/sqtt: fix capturing indirect dispatches with SQTT",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5139441c96d9f0ecfc5d62bd3eb1811afd3a3c65",
+        "description": "radeonsi/sqtt: reformat with clang-format",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "af8e6c93473da991abbf588ce24ef409b08e84ce",
+        "description": "radeonsi/sqtt: use calloc instead of malloc",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b55a2065e03e0f033217b1b58a0c18e3a5e86136",
+        "description": "radeonsi/sqtt: rework pm4.reg_va_low_idx",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8034a71430be0b6473449028d90937729b77d6d9",
+        "notes": null
+    },
+    {
+        "sha": "e4d537fb84369906d7eda9229f847f5d4cdfb124",
+        "description": "radeonsi/sqtt: clear record_counts variable",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "94ce6540d8c8c46c285d3877af4a56f5b59e5d80",
+        "notes": null
+    },
+    {
+        "sha": "77098ec467fae56d3e3885d8e84137ac410e15cc",
+        "description": "radeonsi/sqtt: fix RGP pm4 state emit function",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c3129b2b83955277f9dc73f4acb0dfb0ad50e566",
+        "notes": null
+    },
+    {
+        "sha": "63e08bd61d61a0ab92ca6bcd85567217a052a8d5",
+        "description": "rusticl/nir: add missing nir include",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4d8f257ce5ca76144dcacc0c16702f114f73003",
+        "description": "rusticl: fix constant and printf buffer size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e74ee07e3a7aebc46cbd6d724b49790cb9f9c29",
+        "description": "rusticl: silence clippy::arc-with-non-send-sync for now",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "382718e0e1493ae9d654a667f4c5a75ac86422b6",
+        "description": "rusticl: do not warn on empty RUSTICL_DEBUG or RUSTICL_FEATURES",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b90d1cfbfea9fe40e2ec6d44e788ab27ff213e2a",
+        "notes": null
+    },
+    {
+        "sha": "f8afd416677d3c7abb527eb71299fda841bef73d",
+        "description": "clc: add workaround for clang always defining __IMAGE_SUPPORT_ and __opencl_c_int64",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07ad6fd34a6ed32b74a3f9697545261a3fd84de2",
+        "description": "radv: Use correct writemask for cooperative matrix ordering.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9df4703fbb59d1295a9d3daf6320f329c9de2d66",
+        "notes": null
+    },
+    {
+        "sha": "16af090908e8eb4fff552151dbb130120e11c1f9",
+        "description": "ci/lava: separate HW definitions from SW",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d04ee0771277d475c005847c8797107335fd4d22",
+        "description": "radeonsi: Add support to clear LDS at the end of a shader.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eaf61adea56a9242a160afa4f68827e6568b4e80",
+        "description": "radv: Add option to clear LDS at the end of a shader.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da6a5e1f63713d0d1dd66841e1f9bb754a0cdb99",
+        "description": "nir: Add pass for clearing memory at the end of a shader.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc99b73d70b9ab84390564ad2ade7bca998135e7",
+        "description": "nir: Add nir_static_workgroup_size helper.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "21d569b081ca68f47d5a5dd54f840867c34e148e",
+        "description": "radeonsi: unify elf and raw shader binary upload",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f11b4d1ebef0d5014a1ba69c1e9227736461fe13",
+        "description": "nvk: Advertise shaderFloat64",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a4815b8552bf216cebe6e598905c1714dd9a203",
+        "description": "nak/nir: Lower a bunch of fp64",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e042173e4bb2ba5cdac1b3328d9b8021ba19c07",
+        "description": "nir/lower_doubles: Add lowering for fmin/fmax/fsat",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1fecd83edcd6d6682acb14f8256b3436272856a",
+        "description": "nak/sm50: Add DMnMx and use it for fp64 fmin/fmax",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a7e83c87f09eca150da25efa852fc36dd330105",
+        "description": "nak/sm50: Properly legalize OpSel and drop an assert",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7f5c6642d807060a9be1baf5fe3bc3ef6cf23f05",
+        "description": "nak/sm50: Fix encoding of iadd with imm32",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ac6a81ab5f0f7aa083afd6bf674c78af13e0878",
+        "description": "nak: sm50: fix ineg legalization",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73a1acef18fabbfc1699eb3504a3f829dbd7030f",
+        "description": "nak/sm50: Fix encoding of f20 immediates",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17d2b2f2cc39e6020e49ea06855e083361956e94",
+        "description": "nak/sm50: Add encoding and legalization for dadd/dfma/dmul/dsetp",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f5623c5576ed87f44333f255ab8c62be22d95d6",
+        "description": "nak: Implement 64-bit nir_op_fsign",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d03cbac05af0398a8e126296829f40b9e4986d13",
+        "description": "nak: Fix encoding of dsetp with RZ on SM70+",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "52dbf44d2e9a39d12b17366efbc1eedabf0e632b",
+        "description": "glsl: add support for inout params to glsl_to_nir()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d3ba9f4287f09f391e861b8e57882e3a7df4ea5",
+        "description": "glsl: move glsl ir lowering out of glsl_to_nir()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb1873faad7f29986b62f9f13eb1d5930e71f0b9",
+        "description": "glsl: add additional lower mediump test",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d42f9d94afc0d1e1e9ad2414634e4a0c7c04176b",
+        "description": "glsl: copy precision val of function output params",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3c26889acf6baecb99d5fa5c29881ad5b0e9fb3",
+        "description": "d3d12: Report support for PIPE_VIDEO_CAP_ENC_ROI for Delta QP",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "917044db98ed3c6f9bed2941efad07cc93aa1173",
+        "description": "d3d12: Implement Delta QP ROI In h264, hevc and av1 video encode",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "37e83a93d76fbd496164f86b85370ad3094862f4",
+        "description": "glsl: remove some unused linker code",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4584acca6b3f4be649b1c2f495ff88a929484b35",
+        "description": "glsl: tidy up validation loop in linker",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "670a799ebff9a98daafccf49324c2a01311b0c41",
         "description": "meson: Support for both packaging and distutils",
         "nominated": false,
