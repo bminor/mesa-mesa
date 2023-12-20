@@ -74,7 +74,7 @@
         "description": "etnaviv: Remove duplicate initializers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9dc4ee91215cfd5ea6d98c4879abc4e7979b4c64",
         "notes": null
