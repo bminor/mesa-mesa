@@ -1414,7 +1414,7 @@
         "description": "intel/compiler: reemit boolean resolve for inverted if on gen5",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "31b5f5a51f3a3d19600dd43bf6ab49bab98a9bbe",
         "notes": null
