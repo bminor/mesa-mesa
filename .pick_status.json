@@ -1,5 +1,355 @@
 [
     {
+        "sha": "1e6fcd6a611574241b1cde306afcc416a03ac76b",
+        "description": "dzn: Remove #if D3D12_SDK_VERSION blocks now that 611 is required",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8023ede00adf08359e6d0c2ebd6e62ebbbcc3c4c",
+        "description": "ci: Remove per-driver wayland-dEQP-EGL xfails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2bb95653b7873b1b61e712355a0488d33af31f2",
+        "description": "ci: Add wayland-dEQP-EGL.functional.render.* skips",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4261621a7ee1b3b5af292ae5c980903d8a34e1cd",
+        "description": "ci: List specific color_clears skips",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dbe5b8b5a468981e793dde2b285f6cbb43773304",
+        "description": "ci: More context for color_clear skips for Wayland",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f49624fc97d3ca8362774f1a2d81f153b10f7a13",
+        "description": "freedreno/drm: fallback to default BO allocation if heap alloc fails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e88c711a3da96cb633bdc35e009bcb1bd193d74",
+        "description": "drirc/anv: disable FCV optimization for Baldur's Gate 3",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5d08bdf4e3a0e75a846b76889e234b7c9bbd754",
+        "description": "etnaviv: Remove duplicate initializers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9dc4ee91215cfd5ea6d98c4879abc4e7979b4c64",
+        "notes": null
+    },
+    {
+        "sha": "184fc71aa171ae920eb8bd8309704f535fa5cd84",
+        "description": "iris: Only initialize batch decoder if necessary",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68c53ec2c2b6e898f7e93c8e79f1b91d95ac07de",
+        "description": "freedreno: Add layout metadata support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "32fa9bed1223ff3636c39b416d9df9ff28d33389",
+        "description": "freedreno/drm: Add BO metadata support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8df7069d3e16be20f4c08537ca1ac389b7bb68d",
+        "description": "tu: Add metadata support for dedicated allocations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0105c2e2ebad80f2a8171f753b85a9f27783cb70",
+        "description": "freedreno/layout: Add layout metadata",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96aba6e8e3b62795a859b557c2c50f496d8046a0",
+        "description": "drm-uapi: Sync drm-uapi",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f2c97440f22a65028e13f21c8f7e906c1d435f6f",
+        "description": "intel: Only validate inst compaction if debugging a shader stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2309451c4f9b8687c31820d40edbd00ea2336cb5",
+        "description": "ci/google: re-enable farm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "555955fc9f616042e669df2be6f7a16f544c2473",
+        "description": "dzn: Fix 3D to 2D image copies",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "629b15f446a41492fc5057c04008c6de9c52b078",
+        "description": "mesa: fix enum support for EXT_clip_cull_distance",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "979bcb9f4288564fb6c5807bcfbfd0a78176c3ef",
+        "notes": null
+    },
+    {
+        "sha": "423f9d1bb0f506fa5e68d050d2c60e3fd41c788c",
+        "description": "ci: add nvk to the clang build",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2763655571acfc0020a1d3f4e41b599003a33474",
+        "description": "ci/freedreno: add FARM variable",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc66de302980dadf2f4d866628d6e77c4f352b0e",
+        "description": "ci: bare-metal: cros-servo: Create strutured logs for a630",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc69d797ba1d80b4a0747a8936aa986c5c5333b3",
+        "description": "mesa: enable GL_SELECT and GL_FEEDBACK modes for indirect draws",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1b09fbd9aa265bd1f969f9f85564b7ac4260a950",
+        "description": "mesa: add a pipe_draw_indirect_info* parameter into the DrawGallium callback",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ad1c3eb7c956f3bcc43327f9d92f088fbd5da46",
+        "description": "st/mesa: restore pipe_draw_info::mode at the end of st_hw_select_draw_gallium",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e40f5a7cb3212f1d8b5faa7d9d0c40648625d2f7",
+        "description": "mesa: micro-improvements in draw.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5a4eddc2987acbedca5cfdff4b1b9b38e5def5dd",
+        "description": "glthread: add a missing end-of-batch marker",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c3b95d1507d809ff9c812c64021148a1681e47ce",
+        "notes": null
+    },
+    {
+        "sha": "9643671dae06701fa5ad926b6f30909407d1f8ac",
+        "description": "rusticl: check rustc version for flags requiring newer rustc/clippy",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7e74ee07e3a7aebc46cbd6d724b49790cb9f9c29",
+        "notes": null
+    },
+    {
+        "sha": "eb5bb5c784e97c533e30b348e82e446ac0da59c8",
+        "description": "vk/util: ignore unsupported feature structs",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2816db0182fbc0555fde4503a2cda797a3472a56",
+        "description": "ci: disable the google/freedreno farm because it's down",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fbb9ce014080edd085b2e998c3e6d7fb569ef0b0",
+        "description": "intel/common: add directory prefix to intel_gem.h include",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e050a00b9f4d057e93f61f79019b5cf8bcd04e49",
+        "notes": null
+    },
+    {
+        "sha": "91e4428dc445e409fccfcb5f2016622a7e6c6a53",
+        "description": "radv/ci: add flake on raven",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b2067001d43fd83ae4942fd2412f6a75b3769167",
+        "description": "radv/rt: bsearch inlined shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b1fafe7164305fbdab6a2c88abf2e8f5cc88bc4",
+        "description": "nvk: Enable KHR_present_id and KHR_present_wait",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "edb52295387839b032d9c14bbf09994d4a3416d7",
+        "description": "nvk: Hook up driconf for nvk_instance",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2464cd81d3b74bfe1ac198777cc354010146225e",
+        "description": "nvk: Fix tautological-overlap-compare warning",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f1c909edd5c9159609ab27e7b6a7374796cceab3",
+        "notes": null
+    },
+    {
         "sha": "e61fae6eb8ae1ae1228d6f89329324310db808ae",
         "description": "lavapipe: bump image alignment up to 64 bytes",
         "nominated": false,
