@@ -1,5 +1,735 @@
 [
     {
+        "sha": "55c262898ae7188311c89a60e4ec0fbb67b7a95b",
+        "description": "iris: Skip mi_builder init for indirect draws",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d55b5d4af5d55a25837d8507840f4ab9b1075ea3",
+        "description": "iris: Don't search the exec list if BOs have never been added to one",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d178334d5cafa9b215d38c7c443c4dbc168e66c5",
+        "description": "iris: Initialize bo->index to -1 when importing buffers",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd32badbb778339d0280e2160dace09c08544510",
+        "description": "iris: Delay main and aux resource creation on import",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f93f97892e449cbe4b9d366e322c981cb4ffe83",
+        "description": "iris: Use common res fields for imported planes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0f3c0a2466b4bd1332b59b3613551b184a77612",
+        "description": "iris: Inline import_aux_info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81d132d5ea909e1589421f39a78fe0019e0ffb6d",
+        "description": "iris: Use helpers for generic aux plane importing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "733607cc37ee75269663c838d8ee502ff7e5ad1a",
+        "description": "iris: Simplify a plane count check in from_handle",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "79222e5884f6b795e3801e0dcf89938391315632",
+        "description": "iris: Simplify get_main_plane_for_plane",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9ba75e2e1193de45f110509e748038633853a8c",
+        "description": "Revert \"vk/util: ignore unsupported feature structs\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "eb5bb5c784e97c533e30b348e82e446ac0da59c8",
+        "notes": null
+    },
+    {
+        "sha": "bc9fe6637b37078d9f3126977cb55082a6871b7c",
+        "description": "ci: merge debian-rusticl-testing into debian-testing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d4577799ce0b789a969b0984c0985901829a707",
+        "description": "ci/microsoft: Update the image-tag and image-path for msvc2019/msvc2022",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb50d0cabfd4624d156d7c3adb2f67883a9accf1",
+        "description": "ci/msvc: Split the install of rust and d3d out of mesa_deps_test.ps1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e8c3a585ab2bd20ef76cc1d43c240792c331cce",
+        "description": "ci/msvc: Stick VK-GL-CTS to specific version 56114106d860c121cd6ff0c3b926ddc50c4c11fd",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85bbc1a753079453f14b9919e62f2817d12cc377",
+        "description": "ci/msvc: Stick deqp-runner to version v0.16.1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5109790cf936aa5fd4dcba0005f9c1de96f7be1a",
+        "description": "ci/msvc: Install both msvc2019 and msvc2022",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "14e624bf4397dbb32d9ed3d8e9df23e29f16059a",
+        "description": "ci/msvc: Install msvc2019 only from vs2022",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24c40cafc4d6e92e167fbf14e6189fdb47027290",
+        "description": "ci/msvc: Upgrade to vs2022 build tools",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25a560b6226c3d44b42507769a7316dacf8b685f",
+        "description": "ci/msvc: Remove &windows_msvc_image_tag",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0ad42fe3453f0079b0a6b282898e7e8182255d6",
+        "description": "ci/msvc: Improve msvc init",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a2595dbf3bf3ccee005acb418680bec041a73c96",
+        "description": "ci/msvc: Rename vs to msvc for consistence",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d6d0a24ed01263f118286b098ac8aecd9a49a92",
+        "description": "ci/msvc: Rename vs2019 to msvc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "543e872d908792871e532608e5e4ab4246c12845",
+        "description": "ci/msvc: Split install vulkan sdk out of choco",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e89e7a7c2b0ea1186e1bf6cdc79a855ce311601",
+        "description": "ci/msvc: Install graphics tools(DirectX debug layer) easy to stuck, place it at the beginning",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09ca7b3d9e88f7d90695ea243ffcb2014885edb7",
+        "description": "ci/msvc: update flex and bison to winflexbison3",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e8db6aedfdcfd2fa4fac92919e0af55fd443b47",
+        "description": "meson: always define {,DRAW_}LLVM_AVAILABLE one way or the other",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ac5a27917d9046960fd60f542500d3aa0e0ad89f",
+        "description": "ci: fix farm restore pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d75643f400c2b0a9e2323b8219aa12b5341eb1a8",
+        "description": "ci: disable collabora farm as it is currently offline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c05261a7d824bc8e6dfdc4ec206a73a6f979e577",
+        "description": "ci/v3dv: add new failures",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "551924aa87912f664637ae844b422986f8453712",
+        "description": "ci: apply two bugfixes for VKCTS",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e46ee61d557b0a1cee9930e708a3603dec8c34d",
+        "description": "intel/fs/xe2+: Lift CPS dispatch width restrictions on Xe2+.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "84b53e1a54ccc099679bbebc8802495462ecea60",
+        "description": "intel/fs/xe2+: Pass correct dispatch_width to fs_generator for geometry-processing stages.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f92dde55efeae8b692780602008b72821900c8b",
+        "description": "intel/fs/xe2+: Stop building SIMD8 shaders for geometry stages (VS/TCS/TES/GS).",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68779161556b185251b883d0dbe557d7b5b30d3a",
+        "description": "intel/fs/xe2+: Stop building SIMD8 fragment shaders.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7397ba61c2d3e6f0347c34e863ca2ebd971f098d",
+        "description": "intel/fs/xe2+: Stop building SIMD8 compute-like shaders (CS/BS/TS/MS).",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "69cc72e50adcf110e0cbffb75acb487a3da00c18",
+        "description": "anv/gfx12: Hook up dual-SIMD8 fragment shader dispatch.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ec54e84da603fe9f4d0c2cb070284ce2a300403",
+        "description": "iris/gfx12: Hook up dual-SIMD8 fragment shader dispatch.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ccb5795938c1b0870530798c6d542b3f43c82c32",
+        "description": "intel/gfx12: Enable SIMD8 dispatch in 3DSTATE_PS for FS multipolygon dispatch.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4868408e6e02e54cc49504f69c25e72bda346faf",
+        "description": "intel/genxml: Add 3DSTATE_PS definitions needed for dual-SIMD8 dispatch on Gfx12+.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f2c44dc21719eb4cf5c383866c897fd73956d2f",
+        "description": "intel/compiler: Attempt to build dual-SIMD8 variant of fragment shaders on gfx12+ platforms.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "261d07f3989738540764f88b57b7c402ed057a7f",
+        "description": "intel: Add debug flag for enabling dual-SIMD8 fragment shader dispatch.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28aec45eed56b20b3155a646d00d046c128c798e",
+        "description": "intel/fs/gfx12: Implement multi-polygon format of render target array index in PS payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b1ab77423e64397c700cda7c9ed0de273881162",
+        "description": "intel/fs/gfx12: Implement multi-polygon format of back/front-facing flag in PS payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4672fcbc76b1e2d02810cd95584fcfa72f774b47",
+        "description": "intel/fs: Fix PS thread payload setup for depth_w_coef_reg.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09ea8409870910b7f08000c4bf9081b939cd1d72",
+        "description": "intel/fs: No need to copy null destinations in lower_simd_width.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e0760a993faf9d81bc7d5c8ffbe34d95e4c034c",
+        "description": "intel/fs/gfx12: Don't consider multipolygon PS to have packed dispatch.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8f92baa5d31d69e79139650b2468b996338dfd6f",
+        "description": "intel/fs/gfx12+: Don't set nir_divergence_single_prim_per_subgroup option for fragment shaders.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6bf99e6a452beefd18772934988fe0d6b86f74fc",
+        "description": "intel/compiler: Don't change types for copies from ATTR file.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ed36050fb9b5b890c69ae55c3efbef62e7e5e60",
+        "description": "intel/fs: Don't copy-propagate ATTR registers in multi-polygon FS shaders when invalid.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f89fa63e6c0f0a34fc5925000e2eb12bd02e6cf",
+        "description": "intel/compiler: Pass max_polygons to copy-prop from fs_visitor.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b62ad4e0288a11898b425ef9594789f345f76c4b",
+        "description": "intel/fs: Rework layout of FS vertex setup data in ATTR file to support multi-polygon dispatch.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a844c0b185bffc7846eb1b4810fd8facf9b2a0ef",
+        "description": "intel/fs: Fix fs_reg::component_size() to handle two-dimensional register regions.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83a0252e8d45f74f9ccc881db8cfc3e9e4470b06",
+        "description": "intel/fs: Pass builder to per_primitive_reg().",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8e9f09dbe52242dee2c734903ab197691e195f35",
+        "description": "intel/fs: Provide component index explicitly to interp_reg().",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "742a575bd6f6281a2780ee50a0a29f01bae10e30",
+        "description": "intel/fs: Consider ATTR registers with different fs_reg::nr as belonging to disjoint register spaces.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d26ed66881f07c2f9490e0865fc806a3d3f719d",
+        "description": "intel/fs: Assert fs_reg::nr is always zero for ATTR registers in geometry stages.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b26cf8b1891b820da10c74eef9298a637e75a976",
+        "description": "intel/fs: Map all TES input attributes to ATTR register number 0.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef12565a378848ad9a65621ea01d66c1719859cf",
+        "description": "intel/fs: Map all VS input attributes to ATTR register number 0.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1d22721b5a6bebfa627ded44422a9df25bb033cc",
+        "description": "intel/fs: Map all GS input attributes to ATTR register number 0.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e4aca2ebaa75328dc216693f4f23d1161b2fd250",
+        "description": "intel/fs: Add separate constructor of fs_visitor for fragment shaders.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1eff2fcb6252a7086f6c8819c9f2f3ab126483cd",
+        "description": "intel/compiler: Add polygon count statistic to brw_compile_stats.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ccf9174655c96f8cdb208ed349a9934de4d7dcec",
+        "description": "intel/compiler: Add multipolygon dispatch fields to brw_wm_prog_data.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e7b1993376503a6922125cc7fec32b1ce5dc16cf",
+        "description": "intel/compiler: Add max_polygons FS compilation parameter.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6fccacda1eb621e6be728dd33a7df366b58ec475",
+        "description": "compiler/types: Use a typedef for glsl_type",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "550fdc2026dd447c9c7de1c641403b3aec9d312b",
+        "description": "compiler/types: Remove glsl_type C++ helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d06f0305f6255aa8488f0f183b57ba0f70924660",
+        "description": "glsl: Use glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db5f73dc9f94b90b5ba8394aff3a3c5ff164fc0d",
+        "description": "compiler/types: Add a few more glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6af93b1801a31edfc55bb1195ce221e511c3ffa3",
+        "description": "lima: Use glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d0d4a494e16e7026bde293f80351cbe58829641",
+        "description": "mesa: Use glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "582c20c431934d103821ba81b1fa32e57e9e21bb",
+        "description": "nir: Use glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc809d4de9e8e94a8caa7bef58f0ac26e10fecd2",
+        "description": "nouveau: Use glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2cbc318193b8436d660b8dca720e7dd27dc495d1",
+        "description": "r600/sfn: Use glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55cde229d5cecc8215e882505a536f18da24e220",
+        "description": "intel/compiler: Use glsl_type C helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "1e6fcd6a611574241b1cde306afcc416a03ac76b",
         "description": "dzn: Remove #if D3D12_SDK_VERSION blocks now that 611 is required",
         "nominated": false,
