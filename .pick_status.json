@@ -1,5 +1,85 @@
 [
     {
+        "sha": "ebee672ef87794f3f4201270623a92f34e62b8ff",
+        "description": "docs: update calendar for 23.3.2",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8215b54420d4971a5902f6b9455635b8ab31232",
+        "description": "docs: add sha256sum for 23.3.2",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0cf1ee35f7ecbb52a5529ccae2da8bf79578b99f",
+        "description": "docs: add release notes for 23.3.2",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3465e9f3526c8dbba3ef5ab5bd6158b70422ab83",
+        "description": "anv: Assume that imported bos already have flat CCS requirements satisfied",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8d0e70f628b745ad81124e0c3fe5e46ea84f6b46",
+        "description": "anv: Replace anv_bo.vram_only by anv_bo.alloc_flags check",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "060439bdf0e74f0f2e255d0a81b5356f9a2f5457",
+        "description": "anv: Add ANV_BO_ALLOC_IMPORTED",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5683c54d8f1c7df14351287a7373d434c9830e4a",
+        "description": "driconf: add Witcher3 to Intel XeSS workaround",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b77b67064e45d4c6b705992719634137e47f28fc",
+        "description": "driconf: add Dying Light 2 to Intel XeSS workaround",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "55c262898ae7188311c89a60e4ec0fbb67b7a95b",
         "description": "iris: Skip mi_builder init for indirect draws",
         "nominated": true,
