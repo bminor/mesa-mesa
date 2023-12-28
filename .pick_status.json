@@ -44,7 +44,7 @@
         "description": "anv: Replace anv_bo.vram_only by anv_bo.alloc_flags check",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
