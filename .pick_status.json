@@ -234,7 +234,7 @@
         "description": "radv: Fix smooth lines with dynamic polygon mode and topology",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "85cbdba35591da0ea9dc40b4ecb3aaa54947ee64",
         "notes": null
