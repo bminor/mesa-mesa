@@ -262,6 +262,22 @@ static nir_def *get_num_vertices_per_prim(nir_builder *b, struct lower_abi_state
       return nir_iadd_imm(b, GET_FIELD_NIR(GS_STATE_OUTPRIM), 1);
 }
 
+static nir_def *get_small_prim_precision(nir_builder *b, struct lower_abi_state *s, bool lines)
+{
+   /* Compute FP32 value "num_samples / quant_mode" using integer ops.
+    * See si_shader.h for how this works.
+    */
+   struct si_shader_args *args = s->args;
+   nir_def *precision = GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION);
+   nir_def *log_samples = GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION_LOG_SAMPLES);
+
+   if (lines)
+      precision = nir_iadd(b, precision, log_samples);
+
+   /* The final FP32 value is: 1/2^(15 - precision) */
+   return nir_ishl_imm(b, nir_ior_imm(b, precision, 0x70), 23);
+}
+
 static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_state *s)
 {
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
@@ -409,20 +425,12 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_cull_front_face_enabled_amd:
       replacement = nir_imm_bool(b, key->ge.opt.ngg_culling & SI_NGG_CULL_FRONT_FACE);
       break;
-   case nir_intrinsic_load_cull_small_triangle_precision_amd: {
-      nir_def *small_prim_precision = GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION);
-      /* Extract the small prim precision. */
-      small_prim_precision = nir_ior_imm(b, small_prim_precision, 0x70);
-      replacement = nir_ishl_imm(b, small_prim_precision, 23);
+   case nir_intrinsic_load_cull_small_triangle_precision_amd:
+      replacement = get_small_prim_precision(b, s, false);
       break;
-   }
-   case nir_intrinsic_load_cull_small_line_precision_amd: {
-      nir_def *small_prim_precision = GET_FIELD_NIR(GS_STATE_SMALL_PRIM_PRECISION_NO_AA);
-      /* Extract the small prim precision. */
-      small_prim_precision = nir_ior_imm(b, small_prim_precision, 0x70);
-      replacement = nir_ishl_imm(b, small_prim_precision, 23);
+   case nir_intrinsic_load_cull_small_line_precision_amd:
+      replacement = get_small_prim_precision(b, s, true);
       break;
-   }
    case nir_intrinsic_load_cull_small_triangles_enabled_amd:
       /* Triangles always have small primitive culling enabled. */
       replacement = nir_imm_bool(b, true);

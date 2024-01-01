@@ -749,7 +749,7 @@ struct si_framebuffer {
 
 enum si_quant_mode
 {
-   /* This is the list we want to support. */
+   /* The small prim precision computation depends on the enum values to be like this. */
    SI_QUANT_MODE_16_8_FIXED_POINT_1_256TH,
    SI_QUANT_MODE_14_10_FIXED_POINT_1_1024TH,
    SI_QUANT_MODE_12_12_FIXED_POINT_1_4096TH,
