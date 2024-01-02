@@ -1,5 +1,785 @@
 [
     {
+        "sha": "39c8cca34fb72db055df18abf1d473e099f4b05b",
+        "description": "zink/requirements: update feature and property names that have been promoted",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "48e4c6850956b4bf69fbb0528651d0c10c98af75",
+        "description": "zink: update symbols that have become aliases for newer ones",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a5930b4d4197032c6c229fe1de3a2ce4af8093ba",
+        "description": "zink: Force 128 fs input components under Venus for Intel",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33eecafe757264ed58e33b87e010aacc6a376da8",
+        "description": "zink: put sysmacros.h include under #ifdef MAJOR_IN_SYSMACROS",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6d60115be7cce87402f15ba01d81783dbf25f80a",
+        "notes": null
+    },
+    {
+        "sha": "aa81acf9cb51beb461141be4c88774cf67a0a3bc",
+        "description": "zink: Add ASSERTED to vars that are only used for asserts",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5024b212b6224a67d60d472c12062639185a3916",
+        "description": "zink: use KHR version of maint5 features",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f501f9453adc7024584e9d9598754c55c36d20f3",
+        "notes": null
+    },
+    {
+        "sha": "021645ebf5399a8c74f7f895a06d8919215243be",
+        "description": "zink: update profile schema",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f501f9453adc7024584e9d9598754c55c36d20f3",
+        "notes": null
+    },
+    {
+        "sha": "115b61e51f619df0b8d920b8ee572b56e7be575f",
+        "description": "ac/surface: don't oversize surf_size",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "87ecfdfbf0a8448d1475e6da15175e68bdeb933b",
+        "notes": null
+    },
+    {
+        "sha": "9ecfd7919baeeabd462b72ca10d4c24818db7b21",
+        "description": "aco: optimize 32bit fsign by using fmulz with Inf",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f60dafb4bdc5dc42fc4ee542364468392363d857",
+        "description": "vulkan: add wrappers for descriptor '2' functions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f119f34742c41bff7d77ab69cc171a3ac68e2f97",
+        "description": "radeonsi: convert \"gfx11_create_sh_query_result_cs\" shader to nir",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c109c3f95c225fd01589644b807ad321c6a05b69",
+        "description": "radeonsi: convert \"create_query_result_cs\" shader to nir",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "740a4c3448fef807029ec423ad16ba7ce657c8dd",
+        "description": "radeonsi: add comments for unpack_2x16* utility functions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5ef8a0ac036cf6280fe60415563abf79c2e5bc3",
+        "description": "radeonsi: enable nir pass for 64 bit operations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b88ac6b381c8648ec9fcded61aaa09077ed394c7",
+        "description": "nir: Optimize fpow with small constant exponents",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8b3496df30da9c248389928f8fef9b06224ea9dd",
+        "description": "ci/v3dv: update results",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e46dd062470b07d1c297275ab5a7a2040e1ab80",
+        "description": "freedreno: Enable A305B",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80a319c0b444293761eb7e07cc4e97ad65d56cd5",
+        "description": "freedreno/rddecompiler: Add ability to read GPU buffer into file",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c89b2882f8c62e0b2391c8353fe56854bfb89b6",
+        "description": "freedreno/rddecompiler: Print pkt values in hex",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "84e5b28514ae8a7e9aa67dc1446512848a01d0f9",
+        "description": "freedreno/rddecompiler: Reset buffers after RD_CMDSTREAM_ADDR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa735aacbf3a238d359e9bb640b0a50db82987ec",
+        "description": "freedreno/rddecompiler: Decode ELSE branches using NOPs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cfc2a85b89cf32128f610b722bc6673d0812f8ef",
+        "description": "freedreno/rddecompiler: Emit explicit scope for CP_COND_REG_EXEC",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10e0518a85461023c8a3deeeaa4c394d5ac09cbc",
+        "description": "nir/loop_analyze: remove invariance analysis",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0210b554d6840fef68abe87f72464e197a7eebc8",
+        "description": "treewide: Replace the include of nir_types.h with glsl_types.h",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e75d71c1faa737ef3290ff1e9cb4851762fa381",
+        "description": "intel/cmat: Generate better code for nir_intrinsic_cmat_insert",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6d44284aa633569a58200d00015b3e6d80a465a",
+        "description": "intel/dev: Enable VK_KHR_cooperative_matrix on all Gfx9+ GPUs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ea032b78ee3257fd9398db8b79cdf9ca5ff4a36",
+        "description": "intel/dev: Advertise integer configs with saturatingAccumulation too",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f952dd510e4e83639f77259baaa61ff25c918305",
+        "description": "anv: Select the SIMD mode very early when cooperative matrices are used",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "511f91e307c98326185ec69570b0c6eee2c36cab",
+        "description": "anv: Lower indirect derefs again after lowering cooperative matrices",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b741a9a851ca3747aa92ce0d6611b488c6e0e07b",
+        "description": "anv: Set PIPELINE_SELECT systolic mode enable flag",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7bfbeb79a75a04c3a7baa0e230a5bd4efa0976c4",
+        "description": "anv: Set COMPUTE_WALKER systolic mode enable flag",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "67739b02de08e97128673f05bf1a525047873d3e",
+        "description": "anv: Add anv_physical_device::has_cooperative_matrix",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a6f8b40bfdf39faaf1ff7def741faf612cf5706",
+        "description": "anv: Implement VK_KHR_cooperative_matrix",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff16458478eec50b04190f58802dde5d4d3e99d7",
+        "description": "intel/dev: Add cooperative matrix configuration information",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b14da33ad3aa8a30ed5e479eace8bc6470095a7",
+        "description": "intel/fs: nir: Add nir_intrinsic_dpas_intel",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3756f605586fb2dcf53d892606152ecc5ce1ad1d",
+        "description": "intel/fs: DPAS lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3cb96255397747ecef3f824064ca0afba349c50d",
+        "description": "intel/fs: Fix scoreboarding for DPAS",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb1f19d7bf194574b984033754a301d1407f24d5",
+        "description": "intel/compiler: Validation for DPAS instructions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1c92dad5cb7f5d46dfaf56d2f9ce0203c2fbefbe",
+        "description": "intel/disasm: Disassembly support for DPAS",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e666872c751bedd1e4c2e1231644c14ed18639e7",
+        "description": "intel/compiler: Initial bits for DPAS instruction",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3a35f8b29bb9b6a92f98e8bb897bd444a54ca255",
+        "description": "intel/cmat: Lower cmat_load and cmat_store",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "502be565da052e91adfa596945d5d55f7565a203",
+        "description": "intel/cmat: Add lowering for cmat_bitcast",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7303315a8b5d16dc269359e19a8edcee4af99823",
+        "description": "intel/cmat: Enable packed formats for scalar ops",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "26c4acd8ee58239dadb0dcaf59703c7510ebbb9a",
+        "description": "intel/cmat: Enable packed formats for binary ops",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d314eb3ccdbbc9c050c9432ee3713da5a9853c7",
+        "description": "intel/cmat: Enable packed formats for unary, length, and construct",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75388a71c932db7114a6980ef818b6f50236d6f9",
+        "description": "intel/cmat: Add lowering for cmat_insert and cmat_extract",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a2ded5b26cbaa7ee5f433f046b5f2c559329740e",
+        "description": "intel/cmat: Update get_slice_type for packed slices",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dba6451ce8113b7f81df95897d666d37ae5b8cee",
+        "description": "intel/cmat: Add pass to lower cooperative matrix to subgroup operations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61c9cf9890431f94e3ec9c810aa18987fcfaafb3",
+        "description": "freedreno: Add a644 support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ee524e198b54a1acb762f9be7ec47160bb9fde37",
+        "description": "iris: Fix lowered images in get_main_plane_for_plane",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "79222e5884f6b795e3801e0dcf89938391315632",
+        "notes": null
+    },
+    {
+        "sha": "94e5b5d04952922217da899ca80c36d3e4c4f359",
+        "description": "isl: Handle MOD_INVALID in clear color plane check",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "81d132d5ea909e1589421f39a78fe0019e0ffb6d",
+        "notes": null
+    },
+    {
+        "sha": "5fff6eac42b1fe0854cb1437f6d03261e1cc1809",
+        "description": "intel/compiler: Update disassembly for new LSC cache enums",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b91fa057abd066749d358af7baaf48e4b8e19d1f",
+        "description": "intel/compiler/xe2: Don't disassemble non-existent fields.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6495fe3d37c37f2a476cfcd2b98d42e80f185136",
+        "description": "intel/xe2+: Implement brw_wm_state_simd_width_for_ksp() on Xe2+.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8ad51ec76c1d84747b1c74d93405ae73645d19d",
+        "description": "intel/xe2+: Implement fragment shader dispatch state setup.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ab0eff438839d319e61af7c6d60a67012d4912d5",
+        "description": "intel/fs/xe2+: Attempt to build quad-SIMD8 and dual-SIMD16 FS variants on Xe2+ platforms.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8cd8d6bcccea8fb66d7fa2c368833ebda362e3b2",
+        "description": "intel: Add debug flags for enabling Xe2+ multipolygon fragment shader dispatch modes.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50d084ec295163f73fa7316be7ba77317a5704a8",
+        "description": "intel/fs/xe2+: Lower SIMD width of instructions that access ATTR file from SIMD2x8/4x8 FS.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d332d0c49b099e5d1316a697fe51bec868ea9bc",
+        "description": "intel/fs: Plumb shader instead of compiler to get_lowered_simd_width() and friends.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd634bef1237b3429731d70f508680ebd26e56f1",
+        "description": "intel/fs/xe2+: Implement layout of mesh shading per-primitive inputs in PS thread payloads.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4cebfaadf730c300afa0d84ec247ffe941ee57fc",
+        "description": "intel/fs/xe2+: Implement support for multi-polygon vertex setup data in PS payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "702eabaaae3ae559ba495488148139d506c1edcb",
+        "description": "intel/fs/xe2+: Update for new layout of vertex setup data in PS payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d622e19f000c7c26b6788a41375c1f0ea920c33d",
+        "description": "intel/fs/xe2+: Enable new format of barycentrics in PS payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49a867f67e16a746f615a7aff6a6e99e8a8a57a8",
+        "description": "intel/fs: Add support for vector payload values to fetch_payload_reg().",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f295494cee8e8839b775a7444108b786ef26dd26",
+        "description": "intel/fs/xe2+: Update poly info PS payload for new multi-polygon dispatch format.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4cc9c37bba0173e4b362435209b35f5d0ab7b56c",
+        "description": "intel/fs/xe2+: Update location of sample ID fields in PS payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0ae3c0dbac0c02017dd219f4f520265e032fbfc",
+        "description": "intel/fs/xe2+: Update uses of pixel/sample mask from PS thread payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6dae56cc57411c6d8a8534c2a5ce48e93eeee6b2",
+        "description": "intel/fs/xe2+: Fix for new layout of X/Y pixel coordinates in PS payload.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef6ef7aa8eb71cbaff0de401f18df0836f005607",
+        "description": "intel/fs/xe2+: Implement PS thread payload register offset setup.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24e8709d8bbfcaebbe67a768bf6f09ebb7701d16",
+        "description": "intel/eu/xe2+: Add helpers for constructing registers in 512b units.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ffb828513d0225e3657e21cefb496aba499033f",
+        "description": "Revert \"meson: add wrap for libdrm\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "40b87cde2ac6824d9827d897b9971c004c6c6586",
+        "notes": null
+    },
+    {
+        "sha": "666f27d228b6eadca4b9c0d0261a4cf91fbff3d3",
+        "description": "ci/containers: use build-libdrm.sh in debian/android",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "753056fb94fcd94ec06c607a89d378f5288d69ab",
+        "description": "meson: use `allow_fallback` instead of manually listing the deps and what they provide",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb24e070bfbcee7c84590148c274559d31d76a7a",
+        "description": "meson: update zlib wrap",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05500ba4eb51ec6dadb8f05901e00238e901489a",
+        "description": "meson: update libxml2 wrap",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "14f8dd4236a6ddbd4df238dc727b46f5bddd3cfe",
+        "description": "meson: update libarchive wrap",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d55c655794363fc6376d8993f3265267b059b5ac",
+        "description": "meson: update expat wrap",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "40b87cde2ac6824d9827d897b9971c004c6c6586",
+        "description": "meson: add wrap for libdrm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "ebee672ef87794f3f4201270623a92f34e62b8ff",
         "description": "docs: update calendar for 23.3.2",
         "nominated": false,
