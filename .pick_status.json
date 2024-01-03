@@ -144,7 +144,7 @@
         "description": "Revert \"d3d12: Fix screen->winsys leak in d3d12_screen\"",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "81c8e89ff8e846839fffc1d103b2080bef5c1b5c",
         "notes": null
