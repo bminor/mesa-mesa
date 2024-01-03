@@ -54,7 +54,7 @@
         "description": "radeonsi: compute epitch when modifying surf_pitch",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "115b61e51f619df0b8d920b8ee572b56e7be575f",
         "notes": null
