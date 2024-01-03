@@ -2174,7 +2174,7 @@
         "description": "hasvk: add missing linker arguments",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "78578a6ddb4a7faee3b1e20d6ba1ce34e9dd58ba",
         "notes": null
