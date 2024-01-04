@@ -1,5 +1,375 @@
 [
     {
+        "sha": "e2a7c877ad1fd6bda4032f707eea7646e5229969",
+        "description": "ci/vc4/v3d: remove some flakes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "34cc76517286b88c8191a3e10dda0a3293c09127",
+        "description": "radv/rt: Free traversal NIR after compilation",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8e06fa48aa88e9c5b608fe4ce2a965ec3349e71",
+        "description": "virgl: Only send the same amount of data than declared in pipe_sampler_state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "395dee0d89b82facdb63a510bd373656c4f9db3e",
+        "description": "radv: drop si_ prefix from all functions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89947eb151d3c89bc5378be844151569f733e2a4",
+        "description": "radv: remove radv_write_scissors()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dd64293104a47831f7dcd90d3958737b4a8c319d",
+        "description": "radv: rename si_make_texture_descriptor() to gfx6_make_texture_descriptor()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "887ac765bbd0829ff6ad0714592c4c58c5f6aeac",
+        "description": "radv: remove duplicated si_tile_mode_index() function",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aa1eb54b3bd721f5457c3829c927789a9453b650",
+        "description": "radv: constify a variable in radv_emit_depth_control()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8b7b5be98bc28117e6f4ce144a9d2fa087c18782",
+        "description": "radv: disable stencil test without a stencil attachment",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc7ce6c01f9221ba90ec109ce163fc27c7f665ec",
+        "description": "r300: mark load_ubo_vec4 with ACCESS_CAN_SPECULATE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f8a5cba3b4265ccf088c05d9d44f36f42c961e0b",
+        "description": "r300: remove backend LRP lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f62a12827441c060dfb6e2a5b19721a4b5e6a090",
+        "description": "r300: remove backend CMP lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e6e1da8124940785920b038a14fdf78f37a1d03b",
+        "description": "r300: lower ftrunc in NIR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "77f429e1a5179b891b58281fcdee856e84cf056b",
+        "description": "r300: fcsel_ge lowering from lowered ftrunc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6167f6e0962f6d60553f021c7e8d91edbbd9dba8",
+        "description": "r300: lower flrp in NIR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ddcf29202d012e3b2ea715bf1f0d0f7e0c91be7c",
+        "description": "r300: add some more early bool lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "024491f60fdc6747b33de63fb2bef9e18267e9a9",
+        "description": "r300: nir fcsel/CMP lowering pass for R500",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75e7790ee5230a555d9e58d573131205d613abfe",
+        "description": "r300: small adress register load optimization",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "af3cca98a2f9db3fc79dcfe91aeff2c0deeaf8e1",
+        "description": "lavapipe: bump .maxResourceDescriptorBufferRange",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da53d0b6e5a0f72607bf00871e6121149dd74f00",
+        "description": "gallivm/lp: move sampler index around to reduce struct",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "839045bcc840b451679b0dfcaf7653d019a66fb2",
+        "description": "gallivm/lp: merge sample info into normal info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "344fa0895ee8ca2daa6c38b9f2157eb7830722e3",
+        "description": "gallivm/lp: reduce image descriptor size.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "749a4fff86914453b922da1db1b7c2ffb7ebc5a2",
+        "description": "gallivm/lp: reduce size of lp_jit_texture.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1c68381ead41bd95ef7d5b494a596f795391eaae",
+        "description": "gallivm/sample: make the load_mip helper useful outside this file.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bdde30c1310e8720aa2d157829f82f01e06970ea",
+        "description": "gallivm/sample: add some num_samples vs level zero only support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d4453b586260639c20c0632c1b95a282a855a4c",
+        "description": "gallivm/sample: refactor first/last level handling and use level_zero_only.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8c8c5a3cf34d54423c91ab95d949e7315aabe35",
+        "description": "freedreno/drm: don't crash in heap allocator when run under valgrind",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd6b3bf2672b0036dd26a30a67fc8542d50254c7",
+        "description": "freedreno/drm: notify valgrind about FD_BO_NOMAP maps",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60686d4146cd3856dd2066f6e49560b1dd76bd66",
+        "description": "ir3/a6xx: fix ldg/stg of ulong2 and ulong4 data",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f25a73f17cb9e127b22a9172bba4195b2b31bc2",
+        "description": "ir3: fix shift amount for 8-bit shifts",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e7f3112eb97952b5966089d8769cb53db8efe2a0",
+        "description": "asahi: Implement lod queries",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d32daa3fb22b5ad647b3ce5aefec69c72b0137e9",
+        "description": "nir/validate: allow bias on nir_texop_lod",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "407fd1e1d735cd2768f33a98bf8df60183e90481",
+        "description": "venus/android: Switch to using u_gralloc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2f79d7fb1c3c4931bee8171750a67d867366fda",
+        "description": "llvmpipe: fix caching for texture shaders.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f675e4ee82319db31a9a70d65063290e4f151b4f",
+        "notes": null
+    },
+    {
+        "sha": "8f73cc802cb935a1cc49560f9b89c3290ad7973c",
+        "description": "intel/compiler: revert part of \"Move earlier scheduler code that is not mode-specific\"",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "81594d0db180398f48634438c8c8b5b9ab6a227b",
+        "notes": null
+    },
+    {
+        "sha": "37366fef682fbadcfd5d4376008ed0fc5542c8f1",
+        "description": "intel/compiler: fix release build unused variable.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "158ac265dfd0647830e8bca3e7fecc92e7fa421b",
+        "notes": null
+    },
+    {
+        "sha": "b3cfec2fd824a52023c92fd5928f4f5c1cb449a0",
+        "description": "gallivm: handle llvm 16 atexit ordering problems.",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "2c078bfd18cae0ed1a0a3916020e49fb74668504",
         "description": "freedreno/drm/virtio: Fix typo",
         "nominated": false,
