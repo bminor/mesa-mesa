@@ -201,15 +201,12 @@ virgl_drm_winsys_resource_create_blob(struct virgl_winsys *qws,
       return NULL;
 
    /* Make sure blob is page aligned. */
-   if (flags & (VIRGL_RESOURCE_FLAG_MAP_PERSISTENT |
-                VIRGL_RESOURCE_FLAG_MAP_COHERENT)) {
-      width = ALIGN(width, getpagesize());
-      size = ALIGN(size, getpagesize());
-   }
+   width = ALIGN(width, getpagesize());
+   size = ALIGN(size, getpagesize());
 
    blob_id = p_atomic_inc_return(&qdws->blob_id);
    cmd[0] = VIRGL_CMD0(VIRGL_CCMD_PIPE_RESOURCE_CREATE, 0, VIRGL_PIPE_RES_CREATE_SIZE);
-   cmd[VIRGL_PIPE_RES_CREATE_FORMAT] = format;
+   cmd[VIRGL_PIPE_RES_CREATE_FORMAT] = pipe_to_virgl_format(format);
    cmd[VIRGL_PIPE_RES_CREATE_BIND] = bind;
    cmd[VIRGL_PIPE_RES_CREATE_TARGET] = target;
    cmd[VIRGL_PIPE_RES_CREATE_WIDTH] = width;
