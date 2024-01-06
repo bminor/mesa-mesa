@@ -294,7 +294,7 @@
         "description": "gallium/vl: match YUYV/UYVY swizzle with change of color channels",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dc2119bf3fa9a7f18481b16b0b3e9e9900ad6d8e",
         "notes": null
