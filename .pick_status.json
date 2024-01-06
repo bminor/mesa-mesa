@@ -224,7 +224,7 @@
         "description": "glthread: don't unroll draws using user VBOs with GLES",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "50d791ca73e52c678cee8a84e607ff810d834689",
         "notes": null
