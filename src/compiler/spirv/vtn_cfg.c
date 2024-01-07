@@ -331,6 +331,8 @@ vtn_cfg_handle_prepass_instruction(struct vtn_builder *b, SpvOp opcode,
          func->params[idx++] = (nir_parameter) {
             .num_components = nir_address_format_num_components(addr_format),
             .bit_size = nir_address_format_bit_size(addr_format),
+            .is_return = true,
+            .type = func_type->return_type->type,
          };
       }
 

@@ -3580,7 +3580,7 @@ typedef struct {
    uint8_t num_components;
    uint8_t bit_size;
 
-   /* True if this paramater is actually the function return variable */
+   /* True if this parameter is a deref used for returning values */
    bool is_return;
 
    bool implicit_conversion_prohibited;
