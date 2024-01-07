@@ -1458,8 +1458,10 @@ void
 nir_divergence_analysis(nir_shader *shader)
 {
    shader->info.divergence_analysis_run = true;
-   nir_divergence_analysis_impl(nir_shader_get_entrypoint(shader),
-                                shader->options->divergence_analysis_options);
+   nir_foreach_function_impl(impl, shader) {
+      nir_divergence_analysis_impl(impl,
+                                   shader->options->divergence_analysis_options);
+   }
 }
 
 /* Compute divergence between vertices of the same primitive. This uses
@@ -1474,7 +1476,6 @@ nir_vertex_divergence_analysis(nir_shader *shader)
    struct divergence_state state = {
       .stage = shader->info.stage,
       .shader = shader,
-      .impl = nir_shader_get_entrypoint(shader),
       .options = shader->options->divergence_analysis_options,
       .loop = NULL,
       .loop_all_invariant = false,
@@ -1482,10 +1483,12 @@ nir_vertex_divergence_analysis(nir_shader *shader)
       .first_visit = true,
    };
 
-   nir_metadata_require(nir_shader_get_entrypoint(shader),
-                        nir_metadata_block_index);
-   visit_cf_list(&nir_shader_get_entrypoint(shader)->body, &state);
-   nir_metadata_preserve(nir_shader_get_entrypoint(shader), nir_metadata_all);
+   nir_foreach_function_impl(impl, shader) {
+      nir_metadata_require(impl, nir_metadata_block_index);
+      state.impl = impl;
+      visit_cf_list(&impl->body, &state);
+      nir_metadata_preserve(impl, nir_metadata_all);
+   }
 }
 
 bool

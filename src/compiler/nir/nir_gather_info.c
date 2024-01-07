@@ -956,7 +956,8 @@ gather_func_info(nir_function_impl *func, nir_shader *shader,
 
             if (!call->indirect_callee.ssa)
                assert(impl || !"nir_shader_gather_info only works with linked shaders");
-            gather_func_info(impl, shader, visited_funcs, dead_ctx);
+            if (impl)
+               gather_func_info(impl, shader, visited_funcs, dead_ctx);
             break;
          }
          default:
