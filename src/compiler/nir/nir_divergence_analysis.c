@@ -1120,8 +1120,9 @@ instr_is_loop_invariant(nir_instr *instr, struct divergence_state *state)
    case nir_instr_type_deref:
    case nir_instr_type_tex:
       return nir_foreach_src(instr, src_invariant, state->loop);
-   case nir_instr_type_phi:
    case nir_instr_type_call:
+      return false;
+   case nir_instr_type_phi:
    case nir_instr_type_parallel_copy:
    default:
       unreachable("NIR divergence analysis: Unsupported instruction type.");
@@ -1146,9 +1147,10 @@ update_instr_divergence(nir_instr *instr, struct divergence_state *state)
       return visit_deref(state->shader, nir_instr_as_deref(instr), state);
    case nir_instr_type_debug_info:
       return false;
+   case nir_instr_type_call:
+      return false;
    case nir_instr_type_jump:
    case nir_instr_type_phi:
-   case nir_instr_type_call:
    case nir_instr_type_parallel_copy:
    default:
       unreachable("NIR divergence analysis: Unsupported instruction type.");

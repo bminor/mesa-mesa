@@ -971,6 +971,11 @@ validate_call_instr(nir_call_instr *instr, validate_state *state)
 {
    validate_assert(state, instr->num_params == instr->callee->num_params);
 
+   if (instr->indirect_callee.ssa) {
+      validate_assert(state, !instr->callee->impl);
+      validate_src(&instr->indirect_callee, state);
+   }
+
    for (unsigned i = 0; i < instr->num_params; i++) {
       validate_sized_src(&instr->params[i], state,
                          instr->callee->params[i].bit_size,
