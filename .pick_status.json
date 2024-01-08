@@ -84,7 +84,7 @@
         "description": "egl: only check dri3 on X11",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cedb534a1763b6bd3c733d439e5d145ae6f1270e",
         "notes": null
