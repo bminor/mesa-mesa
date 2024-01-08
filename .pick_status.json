@@ -1094,7 +1094,7 @@
         "description": "radv: do not issue SQTT marker with DISPATCH_MESH_INDIRECT_MULTI",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "312103e0ffb6129427feee2ece1db81fc57862a6",
         "notes": null
