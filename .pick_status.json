@@ -514,7 +514,7 @@
         "description": "Revert \"radv: disable DCC with signedness reinterpretation on GFX11\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "e6735409eefaec52ef78acecd3f3e7c310c63887",
         "notes": null
