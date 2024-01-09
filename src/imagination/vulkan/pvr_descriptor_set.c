@@ -870,6 +870,19 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
    }
 }
 
+void pvr_GetDescriptorSetLayoutSupport(
+   VkDevice _device,
+   const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+   VkDescriptorSetLayoutSupport *pSupport)
+{
+   uint32_t descriptor_count = 0;
+
+   for (uint32_t i = 0; i < pCreateInfo->bindingCount; i++)
+      descriptor_count += pCreateInfo->pBindings[i].descriptorCount;
+
+   pSupport->supported = descriptor_count <= PVR_MAX_DESCRIPTORS_PER_SET;
+}
+
 void pvr_UpdateDescriptorSetWithTemplate(
    VkDevice _device,
    VkDescriptorSet descriptorSet,

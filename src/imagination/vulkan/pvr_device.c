@@ -127,6 +127,9 @@
 #define PVR_SUBALLOCATOR_USC_SIZE (128 * 1024)
 #define PVR_SUBALLOCATOR_VIS_TEST_SIZE (128 * 1024)
 
+/* Minimum required by the Vulkan 1.1 spec (see Table 32. Required Limits) */
+#define PVR_MAX_MEMORY_ALLOCATION_SIZE (1ull << 30)
+
 struct pvr_drm_device_config {
    struct pvr_drm_device_info {
       const char *name;
@@ -186,6 +189,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_index_type_uint8 = false,
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
+      .KHR_maintenance3 = true,
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
       .KHR_shader_expect_assume = false,
@@ -393,6 +397,10 @@ static bool pvr_physical_device_get_properties(
    UNUSED const uint32_t max_compute_work_group_invocations =
       (usc_slots * max_instances_per_pds_task >= 512U) ? 512U : 384U;
 
+   assert(pdevice->memory.memoryHeapCount == 1);
+   const VkDeviceSize max_memory_alloc_size =
+      pdevice->memory.memoryHeaps[0].size;
+
    *properties = (struct vk_properties){
       /* Vulkan 1.0 */
       .apiVersion = PVR_API_VERSION,
@@ -555,6 +563,10 @@ static bool pvr_physical_device_get_properties(
       .pointClippingBehavior =
          VK_POINT_CLIPPING_BEHAVIOR_USER_CLIP_PLANES_ONLY,
 
+      /* Vulkan 1.1 / VK_KHR_maintenance3 */
+      .maxPerSetDescriptors = PVR_MAX_DESCRIPTORS_PER_SET,
+      .maxMemoryAllocationSize = max_memory_alloc_size,
+
       /* Vulkan 1.2 / VK_KHR_driver_properties */
       .driverID = VK_DRIVER_ID_IMAGINATION_OPEN_SOURCE_MESA,
       .driverName = "Imagination open-source Mesa driver",
@@ -706,6 +718,11 @@ static uint64_t pvr_compute_heap_size(void)
    if (!os_get_total_physical_memory(&total_ram))
       return 0;
 
+   if (total_ram < PVR_MAX_MEMORY_ALLOCATION_SIZE) {
+      mesa_logw(
+         "Warning: The available RAM is below the minimum required by the Vulkan specification!");
+   }
+
    /* We don't want to burn too much ram with the GPU. If the user has 4GiB
     * or less, we use at most half. If they have more than 4GiB, we use 3/4.
     */
@@ -715,7 +732,7 @@ static uint64_t pvr_compute_heap_size(void)
    else
       available_ram = total_ram * 3U / 4U;
 
-   return available_ram;
+   return MAX2(available_ram, PVR_MAX_MEMORY_ALLOCATION_SIZE);
 }
 
 static void
@@ -836,6 +853,18 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    if (result != VK_SUCCESS)
       goto err_pvr_winsys_destroy;
 
+   /* Setup available memory heaps and types */
+   pdevice->memory.memoryHeapCount = 1;
+   pdevice->memory.memoryHeaps[0].size = pvr_compute_heap_size();
+   pdevice->memory.memoryHeaps[0].flags = VK_MEMORY_HEAP_DEVICE_LOCAL_BIT;
+
+   pdevice->memory.memoryTypeCount = 1;
+   pdevice->memory.memoryTypes[0].propertyFlags =
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+   pdevice->memory.memoryTypes[0].heapIndex = 0;
+
    pvr_physical_device_get_supported_extensions(&supported_extensions);
    pvr_physical_device_get_supported_features(&pdevice->dev_info,
                                               &supported_features);
@@ -875,18 +904,6 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    }
 
    pdevice->vk.supported_sync_types = ws->sync_types;
-
-   /* Setup available memory heaps and types */
-   pdevice->memory.memoryHeapCount = 1;
-   pdevice->memory.memoryHeaps[0].size = pvr_compute_heap_size();
-   pdevice->memory.memoryHeaps[0].flags = VK_MEMORY_HEAP_DEVICE_LOCAL_BIT;
-
-   pdevice->memory.memoryTypeCount = 1;
-   pdevice->memory.memoryTypes[0].propertyFlags =
-      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
-      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-   pdevice->memory.memoryTypes[0].heapIndex = 0;
 
    pdevice->pco_ctx = pco_ctx_create(&pdevice->dev_info, NULL);
    if (!pdevice->pco_ctx) {
@@ -2216,6 +2233,17 @@ VkResult pvr_AllocateMemory(VkDevice _device,
    assert(pAllocateInfo->sType == VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
    assert(pAllocateInfo->allocationSize > 0);
 
+   const VkMemoryType *mem_type =
+      &device->pdevice->memory.memoryTypes[pAllocateInfo->memoryTypeIndex];
+   const VkMemoryHeap *mem_heap =
+      &device->pdevice->memory.memoryHeaps[mem_type->heapIndex];
+
+   VkDeviceSize aligned_alloc_size =
+      ALIGN_POT(pAllocateInfo->allocationSize, device->ws->page_size);
+
+   if (aligned_alloc_size > mem_heap->size)
+      return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+
    mem = vk_object_alloc(&device->vk,
                          pAllocator,
                          sizeof(*mem),
@@ -2241,9 +2269,6 @@ VkResult pvr_AllocateMemory(VkDevice _device,
    }
 
    if (fd_info && fd_info->handleType) {
-      VkDeviceSize aligned_alloc_size =
-         ALIGN_POT(pAllocateInfo->allocationSize, device->ws->page_size);
-
       assert(
          fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT ||
          fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
