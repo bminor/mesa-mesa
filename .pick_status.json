@@ -1494,7 +1494,7 @@
         "description": "freedreno/drm: don't crash for unsupported devices",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "48610676897d989ff8ce604022e7d611cec9c131",
         "notes": null
