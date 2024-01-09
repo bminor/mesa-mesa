@@ -664,7 +664,7 @@
         "description": "r300: fix reusing of color varying slots for generic ones",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d4b8e8a48144f4b899d48c271558f0dc613632cb",
         "notes": null
