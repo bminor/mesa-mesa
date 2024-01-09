@@ -1504,7 +1504,7 @@
         "description": "radv/video: refactor sq start/end code to avoid decode hangs.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d8f3060bd915e6ba6cc01086978d126e70bfea92",
         "notes": null
