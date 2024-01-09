@@ -1384,7 +1384,7 @@
         "description": "zink: ignore tc buffer replacement info",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "96cf4531e11eac8175671be990a02c7b5d17fb60",
         "notes": null
