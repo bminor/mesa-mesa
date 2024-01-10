@@ -1394,7 +1394,7 @@
         "description": "zink: fix buffer rebind early-out check",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c32bcb9a8c2354b0c117d3f209c3d790b81f26be",
         "notes": null

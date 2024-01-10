@@ -4360,7 +4360,7 @@ rebind_buffer(struct zink_context *ctx, struct zink_resource *res, uint32_t rebi
       }
       rebind_mask &= ~BITFIELD_BIT(TC_BINDING_STREAMOUT_BUFFER);
    }
-   if (num_rebinds && expected_num_rebinds >= num_rebinds && !rebind_mask)
+   if (expected_num_rebinds && num_rebinds >= expected_num_rebinds && !rebind_mask)
       goto end;
 
    if ((rebind_mask & BITFIELD_BIT(TC_BINDING_VERTEX_BUFFER)) || (!rebind_mask && res->vbo_bind_mask)) {
@@ -4375,7 +4375,7 @@ rebind_buffer(struct zink_context *ctx, struct zink_resource *res, uint32_t rebi
       rebind_mask &= ~BITFIELD_BIT(TC_BINDING_VERTEX_BUFFER);
       ctx->vertex_buffers_dirty = true;
    }
-   if (num_rebinds && expected_num_rebinds >= num_rebinds && !rebind_mask)
+   if (expected_num_rebinds && num_rebinds >= expected_num_rebinds && !rebind_mask)
       goto end;
 
    const uint32_t ubo_mask = rebind_mask ?
@@ -4391,7 +4391,7 @@ rebind_buffer(struct zink_context *ctx, struct zink_resource *res, uint32_t rebi
       }
    }
    rebind_mask &= ~BITFIELD_RANGE(TC_BINDING_UBO_VS, MESA_SHADER_STAGES);
-   if (num_rebinds && expected_num_rebinds >= num_rebinds && !rebind_mask)
+   if (expected_num_rebinds && num_rebinds >= expected_num_rebinds && !rebind_mask)
       goto end;
 
    const unsigned ssbo_mask = rebind_mask ?
@@ -4408,7 +4408,7 @@ rebind_buffer(struct zink_context *ctx, struct zink_resource *res, uint32_t rebi
       }
    }
    rebind_mask &= ~BITFIELD_RANGE(TC_BINDING_SSBO_VS, MESA_SHADER_STAGES);
-   if (num_rebinds && expected_num_rebinds >= num_rebinds && !rebind_mask)
+   if (expected_num_rebinds && num_rebinds >= expected_num_rebinds && !rebind_mask)
       goto end;
    const unsigned sampler_mask = rebind_mask ?
                                  rebind_mask & BITFIELD_RANGE(TC_BINDING_SAMPLERVIEW_VS, MESA_SHADER_STAGES) :
@@ -4423,7 +4423,7 @@ rebind_buffer(struct zink_context *ctx, struct zink_resource *res, uint32_t rebi
       }
    }
    rebind_mask &= ~BITFIELD_RANGE(TC_BINDING_SAMPLERVIEW_VS, MESA_SHADER_STAGES);
-   if (num_rebinds && expected_num_rebinds >= num_rebinds && !rebind_mask)
+   if (expected_num_rebinds && num_rebinds >= expected_num_rebinds && !rebind_mask)
       goto end;
 
    const unsigned image_mask = rebind_mask ?
