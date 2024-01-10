@@ -1,5 +1,305 @@
 [
     {
+        "sha": "67ad1142cf6afe61de834cefeddb4be06382899f",
+        "description": "r300/ci: switch to b2c v0.9.11",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc8979025458bca2f84d603d8ee699295623b2e4",
+        "description": "r300/ci: add missing kernel url quotes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3485664f38cb224cedd72e2d8cdadf4e329572f",
+        "description": "egl: only accept APIs that are compiled in",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68418db212d51c8d4348ec43bb1f0a927b761423",
+        "description": "winsys/amdgpu: remove amdgpu_bo_sparse::gpu_address, use amdgpu_va_get_start_addr",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d05e029ff0c07fff3f02f9f6553857131191fb51",
+        "description": "winsys/amdgpu: remove amdgpu_bo_real::gpu_address, use amdgpu_va_get_start_addr",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f5f1ce29d1dddf0ada816d9e667d5ecd67aa97f",
+        "description": "meson: require libdrm_amdgpu 2.4.119",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29fc135a55e65a0d3987ad40b0d25b57f31ed529",
+        "description": "anv: use workaround framework for Wa_22018402687",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "afc7203539688f581f865e710c795786dad6080b",
+        "description": "iris: use workaround framework for Wa_22018402687",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0fd066a1d7f64011fed63c64a1d3e3757ba5a55b",
+        "description": "egl: only check dri3 on X11",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "cedb534a1763b6bd3c733d439e5d145ae6f1270e",
+        "notes": null
+    },
+    {
+        "sha": "71e486d1cf5ec2ef4c3b35a300869fe7841f5ce3",
+        "description": "radv: Add layer to skip UnmapMemory for Quantic Dream Engine",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dd758d9de9baaac342a621a46e783051f14117b0",
+        "description": "ci: disable collabora's farm which appears to be down",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b0149a22b2d591a85206ae0dfabf4407165997da",
+        "description": "ci: disable mupuf's farm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8467b7f44abd0aa130fdfe1f803e0864899c2914",
+        "description": "ci: bump Fedora and Android libdrm2 to 2.4.119",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d0630d763c7a24f5e902912e9061a8b02e367a3",
+        "description": "ci/alpine: update to latest to get libdrm 2.4.119",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "402330101009754f32ce05a7a59b92f35869b1e1",
+        "description": "ci: enable ci-deb-repo for libdrm 2.4.119 (and others in the future)",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "436051f8eee992287fdf3f785a2021ac4460d6b1",
+        "description": "u_gralloc: Add QCOM gralloc support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3922bd59760e82d6da4bb9d063c5854349120f03",
+        "description": "u_gralloc: Extract common code from fallback gralloc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c363acf94a04a9a885ed4025e628520354186dc",
+        "description": "vtn: Allow for OpCopyLogical with different but compatible types",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "745d7b63ebd5cc7117d47cedf9455b2f52f6b6b4",
+        "description": "docs: update features.txt for nvk",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83ba2498c2c0bce273420b8730b603c361c8184a",
+        "description": "nvk: VK_EXT_shader_module_identifier",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "057133927b4e777af9cd1625ac4fc0ce7f7be51a",
+        "description": "nvk: VK_EXT_pipeline_creation_cache_control",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "74647ee45af6759487c75cd93cb7be70f0b7fe61",
+        "description": "nvk: VK_EXT_pipeline_creation_feedback",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d6a1e29ccdc12461495e01b7dc0b510a9bb84c3d",
+        "description": "nvk: pipeline shader cache",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad802ae2f991c4d0c433d3814c793213f4f410c3",
+        "description": "nvk: allocatable nvk_shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e4411a1d34946f87c54333744b690a84415f489",
+        "description": "nvk: Free shaders created by codegen",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e13d0fcd9ff2e2a7a5f0b95a88724db2925cc96",
+        "description": "nvk: add hashing for shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1cb6b4f82d6e584071f15e99e85034e9491fb2d9",
+        "description": "nvk: loop over stages in MESA order",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b55a3cf644dea132dbeb3294ead904effb2bb0f",
+        "description": "radv/rt: Acceleration structure updates",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "62fe4f0b1b8986dbc90f70794bb468496420cb2e",
+        "description": "radv/rt: Move per-geometry build info into a geometry_data struct",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3da27733166450a86815276b4adcd352fb29186b",
+        "description": "vtn: fuse OpenCL mad if we can can",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "f6d2df5a7542025022e69b81dbe3af3e51ea5cd3",
         "description": "egl: implement EGL_EXT_query_reset_notification_strategy",
         "nominated": false,
