@@ -244,7 +244,7 @@
         "description": "panvk: Fix access to unitialized panvk_pipeline_layout::num_sets field",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "73eecffabdd37fc2a181dfe38e35e4240812611e",
         "notes": null
