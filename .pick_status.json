@@ -1254,7 +1254,7 @@
         "description": "nir: Fix cast",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "268ad47c1115be8a8444d8e0e40af71623f9d281",
         "notes": null
