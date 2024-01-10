@@ -504,7 +504,7 @@
         "description": "util/tests: Disable half-float NaN test on hppa/old-mips",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "067023dce2cae5ef44d2b8cd52a81aa880256037",
         "notes": null
