@@ -564,7 +564,7 @@
         "description": "zink: fix separate shader patch variable location adjustment",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d9942442f200bea0ef5b906f288a5234994767b5",
         "notes": null
