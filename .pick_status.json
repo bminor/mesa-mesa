@@ -474,7 +474,7 @@
         "description": "ac/nir: Export clip distances according to clip_cull_mask",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "f823581dd4c9bd9054a1e10d958d6e0f93f39b22",
         "notes": null
