@@ -1144,7 +1144,7 @@
         "description": "lavapipe: Mark vertex elements dirty if the stride changed",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "76725452239e9e7740c0edd6a5f3663ab897c343",
         "notes": null
