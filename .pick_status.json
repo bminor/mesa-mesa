@@ -184,7 +184,7 @@
         "description": "clc: force fPIC for every user when using shared LLVM",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e22491c83265200f518e9fb4deff54e3c2823b68",
         "notes": null
