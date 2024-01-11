@@ -354,8 +354,8 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
       SET(STREAMOUT, so.RenderingDisable, dyn->rs.rasterizer_discard_enable);
       SET(STREAMOUT, so.RenderStreamSelect, dyn->rs.rasterization_stream);
 
-#if INTEL_NEEDS_WA_14017076903
-      /* Wa_14017076903 :
+#if INTEL_NEEDS_WA_18022508906
+      /* Wa_18022508906 :
        *
        * SKL PRMs, Volume 7: 3D-Media-GPGPU, Stream Output Logic (SOL) Stage:
        *
@@ -383,8 +383,9 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
        * Here we force rendering to get SOL_INT::Render_Enable when occlusion
        * queries are active.
        */
-      if (!GET(so.RenderingDisable) && gfx->n_occlusion_queries > 0)
-         SET(STREAMOUT, so.ForceRendering, Force_on);
+      SET(STREAMOUT, so.ForceRendering,
+          (!GET(so.RenderingDisable) && gfx->n_occlusion_queries > 0) ?
+          Force_on : 0);
 #endif
 
       switch (dyn->rs.provoking_vertex) {
@@ -1304,6 +1305,7 @@ genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer)
          SET(so, so, RenderingDisable);
          SET(so, so, RenderStreamSelect);
          SET(so, so, ReorderMode);
+         SET(so, so, ForceRendering);
       }
    }
 
