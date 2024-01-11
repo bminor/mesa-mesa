@@ -1134,7 +1134,7 @@
         "description": "lavapipe: Report the correct preprocess buffer size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "976dd26004ff6b52e14c031398edae840ded005a",
         "notes": null
