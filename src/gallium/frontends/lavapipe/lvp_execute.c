@@ -2550,14 +2550,24 @@ static void handle_blit_image(struct vk_cmd_queue_entry *cmd,
       assert_subresource_layers(info.dst.resource, dst_image, &blitcmd->pRegions[i].dstSubresource, blitcmd->pRegions[i].dstOffsets);
       if (src_image->planes[0].bo->target == PIPE_TEXTURE_3D) {
          if (dstZ0 < dstZ1) {
-            info.dst.box.z = dstZ0;
+            if (dst_image->planes[0].bo->target == PIPE_TEXTURE_3D) {
+               info.dst.box.z = dstZ0;
+               info.dst.box.depth = dstZ1 - dstZ0;
+            } else {
+               info.dst.box.z = blitcmd->pRegions[i].dstSubresource.baseArrayLayer;
+               info.dst.box.depth = subresource_layercount(dst_image, &blitcmd->pRegions[i].dstSubresource);
+            }
             info.src.box.z = srcZ0;
-            info.dst.box.depth = dstZ1 - dstZ0;
             info.src.box.depth = srcZ1 - srcZ0;
          } else {
-            info.dst.box.z = dstZ1;
+            if (dst_image->planes[0].bo->target == PIPE_TEXTURE_3D) {
+               info.dst.box.z = dstZ1;
+               info.dst.box.depth = dstZ0 - dstZ1;
+            } else {
+               info.dst.box.z = blitcmd->pRegions[i].dstSubresource.baseArrayLayer;
+               info.dst.box.depth = subresource_layercount(dst_image, &blitcmd->pRegions[i].dstSubresource);
+            }
             info.src.box.z = srcZ1;
-            info.dst.box.depth = dstZ0 - dstZ1;
             info.src.box.depth = srcZ0 - srcZ1;
          }
       } else {
