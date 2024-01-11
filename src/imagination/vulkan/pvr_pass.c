@@ -413,6 +413,137 @@ pvr_is_load_op_needed(const struct pvr_render_pass *pass,
    return false;
 }
 
+static void
+pvr_render_pass_load_ops_cleanup(struct pvr_device *device,
+                                 const VkAllocationCallbacks *pAllocator,
+                                 struct pvr_render_pass *pass)
+{
+   if (!pass)
+      return;
+
+   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
+      struct pvr_renderpass_hwsetup_render *hw_render =
+         &pass->hw_setup->renders[i];
+
+      for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
+         if (hw_render->subpasses[j].load_op) {
+            pvr_load_op_destroy(device,
+                                pAllocator,
+                                hw_render->subpasses[j].load_op);
+         }
+      }
+
+      if (hw_render->load_op)
+         pvr_load_op_destroy(device, pAllocator, hw_render->load_op);
+   }
+}
+
+static VkResult
+pvr_render_pass_load_ops_setup(struct pvr_device *device,
+                               const VkAllocationCallbacks *allocator,
+                               struct pvr_render_pass *pass)
+{
+   VkResult result;
+
+   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
+      struct pvr_renderpass_hwsetup_render *hw_render =
+         &pass->hw_setup->renders[i];
+      struct pvr_load_op *load_op = NULL;
+
+      if (hw_render->tile_buffers_count) {
+         result = pvr_device_tile_buffer_ensure_cap(
+            device,
+            hw_render->tile_buffers_count,
+            hw_render->eot_setup.tile_buffer_size);
+         if (result != VK_SUCCESS)
+            goto err_load_op_cleanup;
+      }
+
+      assert(!hw_render->load_op);
+
+      if (hw_render->color_init_count != 0U) {
+         if (!pvr_has_output_register_writes(hw_render)) {
+            const uint32_t last = hw_render->init_setup.num_render_targets;
+            struct usc_mrt_resource *mrt_resources;
+
+            hw_render->init_setup.num_render_targets++;
+
+            mrt_resources =
+               vk_realloc(allocator,
+                          hw_render->init_setup.mrt_resources,
+                          hw_render->init_setup.num_render_targets *
+                             sizeof(*mrt_resources),
+                          8U,
+                          VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+            if (!mrt_resources) {
+               result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+               goto err_load_op_cleanup;
+            }
+
+            hw_render->init_setup.mrt_resources = mrt_resources;
+
+            mrt_resources[last].type = USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+            mrt_resources[last].reg.output_reg = 0U;
+            mrt_resources[last].reg.offset = 0U;
+            mrt_resources[last].intermediate_size = 4U;
+            mrt_resources[last].mrt_desc.intermediate_size = 4U;
+            mrt_resources[last].mrt_desc.priority = 0U;
+            mrt_resources[last].mrt_desc.valid_mask[0U] = ~0;
+            mrt_resources[last].mrt_desc.valid_mask[1U] = ~0;
+            mrt_resources[last].mrt_desc.valid_mask[2U] = ~0;
+            mrt_resources[last].mrt_desc.valid_mask[3U] = ~0;
+         }
+
+         result = pvr_render_load_op_create(device,
+                                            allocator,
+                                            pass,
+                                            hw_render,
+                                            &load_op);
+         if (result != VK_SUCCESS)
+            goto err_load_op_cleanup;
+
+         result =
+            pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
+         if (result != VK_SUCCESS) {
+            vk_free2(&device->vk.alloc, allocator, load_op);
+            goto err_load_op_cleanup;
+         }
+
+         hw_render->load_op = load_op;
+      }
+
+      for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
+         if (!pvr_is_load_op_needed(pass, hw_render, j))
+            continue;
+
+         result = pvr_subpass_load_op_create(device,
+                                             allocator,
+                                             pass,
+                                             hw_render,
+                                             j,
+                                             &load_op);
+         if (result != VK_SUCCESS) {
+            vk_free2(&device->vk.alloc, allocator, load_op);
+            goto err_load_op_cleanup;
+         }
+
+         result =
+            pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
+         if (result != VK_SUCCESS)
+            goto err_load_op_cleanup;
+
+         hw_render->subpasses[j].load_op = load_op;
+      }
+   }
+
+   return VK_SUCCESS;
+
+err_load_op_cleanup:
+   pvr_render_pass_load_ops_cleanup(device, allocator, pass);
+
+   return result;
+}
+
 VkResult pvr_CreateRenderPass2(VkDevice _device,
                                const VkRenderPassCreateInfo2 *pCreateInfo,
                                const VkAllocationCallbacks *pAllocator,
@@ -635,118 +766,15 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
 
    pvr_init_subpass_isp_userpass(pass->hw_setup, pass, pass->subpasses);
 
-   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
-      struct pvr_renderpass_hwsetup_render *hw_render =
-         &pass->hw_setup->renders[i];
-      struct pvr_load_op *load_op = NULL;
-
-      if (hw_render->tile_buffers_count) {
-         result = pvr_device_tile_buffer_ensure_cap(
-            device,
-            hw_render->tile_buffers_count,
-            hw_render->eot_setup.tile_buffer_size);
-         if (result != VK_SUCCESS)
-            goto err_free_pass;
-      }
-
-      assert(!hw_render->load_op);
-
-      if (hw_render->color_init_count != 0U) {
-         if (!pvr_has_output_register_writes(hw_render)) {
-            const uint32_t last = hw_render->init_setup.num_render_targets;
-            struct usc_mrt_resource *mrt_resources;
-
-            hw_render->init_setup.num_render_targets++;
-
-            mrt_resources =
-               vk_realloc(alloc,
-                          hw_render->init_setup.mrt_resources,
-                          hw_render->init_setup.num_render_targets *
-                             sizeof(*mrt_resources),
-                          8U,
-                          VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-            if (!mrt_resources) {
-               result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-               goto err_load_op_destroy;
-            }
-
-            hw_render->init_setup.mrt_resources = mrt_resources;
-
-            mrt_resources[last].type = USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
-            mrt_resources[last].reg.output_reg = 0U;
-            mrt_resources[last].reg.offset = 0U;
-            mrt_resources[last].intermediate_size = 4U;
-            mrt_resources[last].mrt_desc.intermediate_size = 4U;
-            mrt_resources[last].mrt_desc.priority = 0U;
-            mrt_resources[last].mrt_desc.valid_mask[0U] = ~0;
-            mrt_resources[last].mrt_desc.valid_mask[1U] = ~0;
-            mrt_resources[last].mrt_desc.valid_mask[2U] = ~0;
-            mrt_resources[last].mrt_desc.valid_mask[3U] = ~0;
-         }
-
-         result = pvr_render_load_op_create(device,
-                                            pAllocator,
-                                            pass,
-                                            hw_render,
-                                            &load_op);
-         if (result != VK_SUCCESS)
-            goto err_load_op_destroy;
-
-         result =
-            pvr_load_op_shader_generate(device, pAllocator, hw_render, load_op);
-         if (result != VK_SUCCESS) {
-            vk_free2(&device->vk.alloc, pAllocator, load_op);
-            goto err_load_op_destroy;
-         }
-
-         hw_render->load_op = load_op;
-      }
-
-      for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
-         if (!pvr_is_load_op_needed(pass, hw_render, j))
-            continue;
-
-         result = pvr_subpass_load_op_create(device,
-                                             pAllocator,
-                                             pass,
-                                             hw_render,
-                                             j,
-                                             &load_op);
-         if (result != VK_SUCCESS) {
-            vk_free2(&device->vk.alloc, pAllocator, load_op);
-            goto err_load_op_destroy;
-         }
-
-         result =
-            pvr_load_op_shader_generate(device, pAllocator, hw_render, load_op);
-         if (result != VK_SUCCESS)
-            goto err_load_op_destroy;
-
-         hw_render->subpasses[j].load_op = load_op;
-      }
-   }
+   result = pvr_render_pass_load_ops_setup(device, alloc, pass);
+   if (result != VK_SUCCESS)
+      goto err_destroy_renderpass_hwsetup;
 
    *pRenderPass = pvr_render_pass_to_handle(pass);
 
    return VK_SUCCESS;
 
-err_load_op_destroy:
-   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
-      struct pvr_renderpass_hwsetup_render *hw_render =
-         &pass->hw_setup->renders[i];
-
-      for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
-         if (hw_render->subpasses[j].load_op) {
-            pvr_load_op_destroy(device,
-                                pAllocator,
-                                hw_render->subpasses[j].load_op);
-         }
-      }
-
-      if (hw_render->load_op)
-         pvr_load_op_destroy(device, pAllocator, hw_render->load_op);
-   }
-
+err_destroy_renderpass_hwsetup:
    pvr_destroy_renderpass_hwsetup(alloc, pass->hw_setup);
 
 err_free_pass:
@@ -762,28 +790,14 @@ void pvr_DestroyRenderPass(VkDevice _device,
 {
    PVR_FROM_HANDLE(pvr_device, device, _device);
    PVR_FROM_HANDLE(pvr_render_pass, pass, _pass);
+   const VkAllocationCallbacks *allocator = pAllocator ? pAllocator
+                                                       : &device->vk.alloc;
 
    if (!pass)
       return;
 
-   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
-      struct pvr_renderpass_hwsetup_render *hw_render =
-         &pass->hw_setup->renders[i];
-
-      for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
-         if (hw_render->subpasses[j].load_op) {
-            pvr_load_op_destroy(device,
-                                pAllocator,
-                                hw_render->subpasses[j].load_op);
-         }
-      }
-
-      if (hw_render->load_op)
-         pvr_load_op_destroy(device, pAllocator, hw_render->load_op);
-   }
-
-   pvr_destroy_renderpass_hwsetup(pAllocator ? pAllocator : &device->vk.alloc,
-                                  pass->hw_setup);
+   pvr_render_pass_load_ops_cleanup(device, allocator, pass);
+   pvr_destroy_renderpass_hwsetup(allocator, pass->hw_setup);
    vk_object_base_finish(&pass->base);
    vk_free2(&device->vk.alloc, pAllocator, pass);
 }
