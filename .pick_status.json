@@ -94,7 +94,7 @@
         "description": "venus: fix pipeline derivatives",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a65ac274acf250a8f4a5abb030c46b572c3552f4",
         "notes": null
