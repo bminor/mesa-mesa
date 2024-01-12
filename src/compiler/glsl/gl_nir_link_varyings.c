@@ -746,7 +746,7 @@ gl_nir_cross_validate_outputs_to_inputs(const struct gl_constants *consts,
          if (!validate_explicit_variable_location(consts,
                                                   output_explicit_locations,
                                                   var, prog, producer)) {
-            return;
+            goto out;
          }
       }
    }
@@ -800,7 +800,7 @@ gl_nir_cross_validate_outputs_to_inputs(const struct gl_constants *consts,
             if (!validate_explicit_variable_location(consts,
                                                      input_explicit_locations,
                                                      input, prog, consumer)) {
-               return;
+               goto out;
             }
 
             while (idx < slot_limit) {
@@ -808,7 +808,7 @@ gl_nir_cross_validate_outputs_to_inputs(const struct gl_constants *consts,
                   linker_error(prog,
                                "Invalid location %u in %s shader\n", idx,
                                _mesa_shader_stage_to_string(consumer->Stage));
-                  return;
+                  goto out;
                }
 
                output = output_explicit_locations[idx][input->data.location_frac].var;
@@ -871,6 +871,7 @@ gl_nir_cross_validate_outputs_to_inputs(const struct gl_constants *consts,
       }
    }
 
+ out:
    _mesa_symbol_table_dtor(table);
 }
 
