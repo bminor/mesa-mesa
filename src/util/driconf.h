@@ -688,6 +688,10 @@
 
 #define DRI_CONF_RADV_APP_LAYER() DRI_CONF_OPT_S_NODEF(radv_app_layer, "Select an application layer.")
 
+#define DRI_CONF_RADV_FORCE_ACTIVE_ACCEL_STRUCT_LEAVES(def) \
+   DRI_CONF_OPT_B(radv_force_active_accel_struct_leaves, def, \
+                  "Force leaf nodes of acceleration structures to be marked active.")
+
 /**
  * \brief ANV specific configuration options
  */

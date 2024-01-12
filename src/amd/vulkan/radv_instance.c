@@ -154,6 +154,7 @@ static const driOptionDescription radv_dri_options[] = {
       DRI_CONF_RADV_RT_WAVE64(false)
       DRI_CONF_DUAL_COLOR_BLEND_BY_LOCATION(false)
       DRI_CONF_RADV_SSBO_NON_UNIFORM(false)
+      DRI_CONF_RADV_FORCE_ACTIVE_ACCEL_STRUCT_LEAVES(false)
       DRI_CONF_RADV_APP_LAYER()
    DRI_CONF_SECTION_END
 };
@@ -214,6 +215,9 @@ radv_init_dri_options(struct radv_instance *instance)
    instance->force_rt_wave64 = driQueryOptionb(&instance->dri_options, "radv_rt_wave64");
 
    instance->dual_color_blend_by_location = driQueryOptionb(&instance->dri_options, "dual_color_blend_by_location");
+
+   instance->force_active_accel_struct_leaves =
+      driQueryOptionb(&instance->dri_options, "radv_force_active_accel_struct_leaves");
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {

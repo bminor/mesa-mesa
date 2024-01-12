@@ -333,6 +333,14 @@ main(void)
       is_active = build_instance(bounds, src_ptr, dst_ptr, global_id);
    }
 
+#if ALWAYS_ACTIVE
+   if (!is_active && args.geometry_type != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      bounds.min = vec3(0.0);
+      bounds.max = vec3(0.0);
+      is_active = true;
+   }
+#endif
+
    DEREF(id_ptr).id = is_active ? pack_ir_node_id(dst_offset, node_type) : RADV_BVH_INVALID_NODE;
 
    uvec4 ballot = subgroupBallot(is_active);

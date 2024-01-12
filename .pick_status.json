@@ -124,7 +124,7 @@
         "description": "radv/rt: Add workaround to make leaves always active",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

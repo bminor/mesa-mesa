@@ -420,6 +420,7 @@ struct radv_instance {
    bool flush_before_timestamp_write;
    bool force_rt_wave64;
    bool dual_color_blend_by_location;
+   bool force_active_accel_struct_leaves;
    char *app_layer;
 };
 
