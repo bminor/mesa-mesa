@@ -1,5 +1,525 @@
 [
     {
+        "sha": "4fe5f06d400a7310ffc280761c27b036aec86646",
+        "description": "radv/rt: re-use radv_ray_tracing_stage::sha1 for hashing RT pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb86fc03596a1aca0862a10eb251c1c71ed81d10",
+        "description": "radv: constify stages in radv_rt_fill_group_info()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36f428f1de78d6bd2c0aa6719da06cd5233a8c7f",
+        "description": "anv: check for wa 16013994831 in emit_so_memcpy_end",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73835874a82f741e10cbc8da9128a4f5cd46e347",
+        "description": "intel/disasm: Remove duplicate variable reg_file",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "1c92dad5cb7f5d46dfaf56d2f9ce0203c2fbefbe",
+        "notes": null
+    },
+    {
+        "sha": "e84aa455e550bb151cccbc8668c5dd64719342e9",
+        "description": "iris: Use Mesa internal drm-uapi headers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a34a113059f55947cc08624897999f7f066f000a",
+        "description": "anv: hide vendor ID for The Finals",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff6041afdf2df9f048aa192f602c191e96ce92fd",
+        "description": "intel/aux_map: fix fallback unmapping range on failure",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "7c6faa1efe8f50263bfc1f71cb1c4a1c2302b5df",
+        "notes": null
+    },
+    {
+        "sha": "33b77ec774a10f052a2814d9ff3668cc0aa13083",
+        "description": "cso: don't unbind vertex buffers when enabling/disabling u_vbuf",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb20ef92772c6a4963128370260d578f100efee9",
+        "description": "gallium: remove unbind_trailing_count from set_vertex_buffers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2725b095ea2a16a1ce28aca8ae31e9d3df448c67",
+        "description": "gallium/u_vbuf: replace unnecessary dst_index with \"i\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cfba24ccb548af0ad3427b525def602383cd204a",
+        "description": "nvk: Add a couple more features to features.txt",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27a1b4e4f314832c164380ea332c096fe394c8f0",
+        "description": "ci/deqp: ensure that in `default` builds, wayland + x11 + xcb are all built",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c7460c0238a4c7823aea22d9fbfb795ea738fc4",
+        "description": "nvk: Advertise variableMultisampleRate and EDS3RasterizationSamples",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0e33dba6256f0da5882a55081616004d3f5dc1e2",
+        "description": "nvk: Move SET_HYBRID_ANTI_ALIAS_CONTROL to draw time",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "148ea7792f32d6a454c610fa8a49994ff954a61f",
+        "description": "nvk: Emit SET_ANTI_ALIAS at draw time when no render targets are bound",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "48d510ac578c859ce2046f055d1e6dc37716a499",
+        "description": "vulkan: Fix null pointer dereferencing on sample locations state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e36235e6d530e037cffd189d48fb6ae88f5dd613",
+        "description": "aco: reassign split vector to SOPC",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "94d96dac601ff2126996ac37a0b637961d06dfab",
+        "description": "nak: Add explicit padding to nak_shader_info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d280160a1352e8f05be27a9573fead98c617e2ac",
+        "description": "nak: Disallow gl_FragData and set MRT correctly",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "005b5b1464518201dbb25907094268e0e0ca4cb3",
+        "description": "nvk: Set a minimum of one patch control point",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2cab67a9f1825b21584b86fbec5d03cca671830d",
+        "description": "nvk: Invalidate state after secondary command buffers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc36dfdb5d80c3e1d939ac881b81472c160960b9",
+        "description": "nvk: Handle missing descriptor sets in nvk_nir_lower_descriptors",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3197aff4e8ff47708b825f272322e759591d7f79",
+        "description": "nvk: Make dynamic cbuf indices relative to the descriptor set",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0d907f56fd84c119af22d6b4d14c52d99fd7b0c",
+        "description": "nvk: Rework descriptor set binding",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a11adbe40845d9cb60f71cc3ca2d43f3a78a7b3c",
+        "description": "nvk: Use s instead of set_idx in CmdBindDescriptorSets",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d5c04ee4aa655bef250b246077e2618c265c421",
+        "description": "nvk: Return an nvk_cbuf_map from nvk_lower_nir()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f62b5582ea398bba0bbc67006ac4ed5f34b5a77a",
+        "description": "nvk: Add an explicit mapping from shader stages to cbuf bindings",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8120360358663af237562a7c81313087a23f8dd6",
+        "description": "Revert \"v3d: show warning on creating a v3d screen on real hw\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c31be1f4bacde88ccd7177af26cb554c35472573",
+        "notes": null
+    },
+    {
+        "sha": "4cb9c77e8e08507b5c181a480259e42b43dd647e",
+        "description": "mesa: Consider mesa format in addition to internal format for mip/cube completeness",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75ff6ca470dcceaba317877e636968278a044ac2",
+        "description": "clc: add support for the native spir-v backend",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "22fa315ee0622b73956cebf8375497f3ccb8d456",
+        "description": "clc: use spirv triple starting with llvm-17",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49fe060b5f39eb673b0c6a8757730386c6ce5570",
+        "description": "anv: Fix PAT entry for userptr in integrated GPUs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "060439bdf0e74f0f2e255d0a81b5356f9a2f5457",
+        "notes": null
+    },
+    {
+        "sha": "8929257352d127feaaaf764d019b83803b9a325c",
+        "description": "zink: use maint6 for multi-layer compressed surface creation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33282e750452860918149c0ef6e16c795d3607d8",
+        "description": "zink: hook up maint6",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ccc91de17014bc5e36ec8b1b4963348ac331b88",
+        "description": "zink: use local screen variable in surface creation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a3197094649487d8ca6f3233e206d4d869746f4",
+        "description": "intel/compiler/xe2: Implement instruction compaction for DPAS.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e56a4b474944eec5d17af81732e26c398244b2d",
+        "description": "intel/compiler/xe2: Fix for the removal of AccWrCtrl.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7f39e51dd5144b95844b4226f83346bbf84f1f87",
+        "description": "intel/compiler/xe2: Add extra flag registers.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f974eacab3d239e9cd3c3f29f0b2589eb8563386",
+        "description": "intel/compiler/xe2: Fix for the removal of most predication modes.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f79123e1d99ccff43ba714e2a6457345b7239f6f",
+        "description": "intel/compiler/xe2: Fix for NibCtrl field removal.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7db3f0b1c1739a5b09c46f743c32e160849c484d",
+        "description": "intel/compiler/xe2: Implement instruction compaction.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57ba9c176cd1b1211ee74acc5374b788505ccab2",
+        "description": "intel/compiler/xe2: Implement codegen of compact instructions.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8ba1d63bc6ebc1639137843bb543399e6fd9a9e",
+        "description": "intel/compiler: Add assume() checks to brw_compact_inst_(set_)bits().",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a24f49b5790383effadfece49735f27b576de73",
+        "description": "intel/compiler/xe2: Implement codegen of three-source instructions.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e10e7d5aa3cad29759550874428bec01d2cfc94e",
+        "description": "intel/compiler/xe2: Implement codegen of indirect immediates.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "294bdbb25353ca8be1ff9f573241ce8179454c08",
+        "description": "intel/compiler/xe2: Implement codegen of 2-source instruction operands.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "72bbfa8e8d676615583b4361d5a492f2feac2246",
+        "description": "intel/compiler/xe2: Implement codegen of general instruction controls.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "066e6c6234c505d43aec30190d6b6a6046097d53",
+        "description": "intel/compiler/xe2: Add Xe2 bounds to FF() macro.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ecd50e70d4d23802c4c102ca2e5723ebf4a19c0c",
+        "description": "venus: populate oom from ring submit alloc failures",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "ec131c6e55313d5816a4d69e5a828d7e56965e3d",
+        "notes": null
+    },
+    {
+        "sha": "12d428bc689d1508e2efb8ebe0012f446bfdb94c",
+        "description": "venus: avoid redundant layout transition for optimal internal layout",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b7c73390247caa847c56c442298107a1e568a6d",
+        "description": "util/tests: Disable half-float NaN test on hppa/old-mips",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "067023dce2cae5ef44d2b8cd52a81aa880256037",
+        "notes": null
+    },
+    {
+        "sha": "0540c9de447730e5efe73a0c5a1a5b6c1e902722",
+        "description": "util: Add DETECT_ARCH_HPPA macro",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "68f5277887aae1cdc202f45ecd44df2c3c59ba7d",
         "description": "glsl: Make sure that the variable is a ir_variable before unreferencing it",
         "nominated": false,
