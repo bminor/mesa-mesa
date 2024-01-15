@@ -674,7 +674,7 @@
         "description": "radeonsi: emit cache flushes before draw registers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1e4b5390425c13b493b05bdaf17a94a6f2f32057",
         "notes": null
