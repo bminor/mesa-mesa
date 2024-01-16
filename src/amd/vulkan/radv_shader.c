@@ -93,7 +93,6 @@ get_nir_options_for_stage(struct radv_physical_device *device, gl_shader_stage s
       .lower_ffma64 = split_fma,
       .lower_fpow = true,
       .lower_mul_2x32_64 = true,
-      .lower_rotate = true,
       .lower_iadd_sat = device->rad_info.gfx_level <= GFX8,
       .lower_hadd = true,
       .lower_mul_32x16 = true,
