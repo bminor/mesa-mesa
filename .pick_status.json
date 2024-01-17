@@ -1654,7 +1654,7 @@
         "description": "etnaviv: Improve split sampler check",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e481c1269c36efae6fad9e3c60af9c66cc8bbf74",
         "notes": null
