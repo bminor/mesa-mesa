@@ -1244,7 +1244,7 @@
         "description": "intel/compiler: Track mue_compaction and mue_header_packing flags in brw_get_compiler_config_value",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "48885c7fe347b61555ddae247a7c7fdc6834a6a1",
         "notes": null
