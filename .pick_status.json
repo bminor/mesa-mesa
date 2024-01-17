@@ -124,7 +124,7 @@
         "description": "virgl: Use better reporting for mirror_clamp features",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9efe50c83bfa3678fe7ad3cfcd94cf73d900be22",
         "notes": null
