@@ -1994,7 +1994,7 @@
         "description": "aco: fix labelling of s_not with constant",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dfaa3c0af69ab035cb825943b1cee0f60272010e",
         "notes": null
