@@ -957,7 +957,7 @@ lower_sampler_logical_send(const fs_builder &bld, fs_inst *inst,
    case SHADER_OPCODE_TXF_LOGICAL:
        /* On Gfx9 the parameters are intermixed they are u, v, lod, r. */
       sources[length] = retype(sources[length], payload_signed_type);
-      bld.MOV(sources[length++], coordinate);
+      bld.MOV(sources[length++], offset(coordinate, bld, 0));
 
       if (coord_components >= 2) {
          sources[length] = retype(sources[length], payload_signed_type);
@@ -1489,11 +1489,11 @@ lower_lsc_memory_logical_send(const fs_builder &bld, fs_inst *inst)
          assert(components < 8);
 
          for (unsigned i = 0; i < components; i++)
-            data[size++] = offset(data0, inst->exec_size, i);
+            data[size++] = offset(data0, bld, i);
 
          if (data1.file != BAD_FILE) {
             for (unsigned i = 0; i < components; i++)
-               data[size++] = offset(data1, inst->exec_size, i);
+               data[size++] = offset(data1, bld, i);
          }
 
          payload2 = bld.vgrf(data0.type, size);
@@ -1719,14 +1719,14 @@ lower_hdc_memory_logical_send(const fs_builder &bld, fs_inst *inst)
          data[num_sources++] = header;
 
       for (unsigned i = 0; i < coord_components; i++)
-         data[num_sources++] = offset(addr, inst->exec_size, i);
+         data[num_sources++] = offset(addr, bld, i);
 
       if (data0.file != BAD_FILE) {
          for (unsigned i = 0; i < components; i++)
-            data[num_sources++] = offset(data0, inst->exec_size, i);
+            data[num_sources++] = offset(data0, bld, i);
          if (data1.file != BAD_FILE) {
             for (unsigned i = 0; i < components; i++)
-               data[num_sources++] = offset(data1, inst->exec_size, i);
+               data[num_sources++] = offset(data1, bld, i);
          }
       }
 
