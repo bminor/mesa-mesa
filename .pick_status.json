@@ -284,7 +284,7 @@
         "description": "nir/lower_non_uniform: set non_uniform=false when lowering is not needed",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b1619109ca91f5b9b4f29d75479241ec82c31549",
         "notes": null
