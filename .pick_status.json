@@ -1294,7 +1294,7 @@
         "description": "anv: don't prevent L1 untyped cache flush in 3D mode",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
