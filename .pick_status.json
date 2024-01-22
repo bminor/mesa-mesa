@@ -294,7 +294,7 @@
         "description": "r600/sfn: fix class Shader object last_alu_with_indirect_reg memory leak",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ddb167e81a18c09bd3a4c519e8728e2842d827f1",
         "notes": null
