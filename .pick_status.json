@@ -304,7 +304,7 @@
         "description": "r600/sfn: fix class Shader object m_register_allocations memory leak",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5de814171bd0b6787f6c1eac019d0e05c5d432eb",
         "notes": null
