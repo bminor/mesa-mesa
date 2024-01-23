@@ -154,7 +154,7 @@
         "description": "mesa/main: fix regression in extension-checking",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3251f321b8686a9aa283d88f66a2f8d78471f1cd",
         "notes": null
