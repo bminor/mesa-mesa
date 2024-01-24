@@ -944,7 +944,7 @@
         "description": "panfrost: add copy_resource flag to pan_resource_modifier_convert",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "33b48a55857b15f7e7b892a89cad2f0ad2399ba6",
         "notes": null

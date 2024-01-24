@@ -1307,12 +1307,9 @@ panfrost_ptr_map(struct pipe_context *pctx, struct pipe_resource *resource,
 void
 pan_resource_modifier_convert(struct panfrost_context *ctx,
                               struct panfrost_resource *rsrc, uint64_t modifier,
-                              const char *reason)
+                              bool copy_resource, const char *reason)
 {
    assert(!rsrc->modifier_constant);
-
-   perf_debug_ctx(ctx, "%s AFBC with a blit. Reason: %s",
-                  drm_is_afbc(modifier) ? "Unpacking" : "Disabling", reason);
 
    struct pipe_resource *tmp_prsrc = panfrost_resource_create_with_modifier(
       ctx->base.screen, &rsrc->base, modifier);
@@ -1325,31 +1322,33 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
    struct pipe_box box = {0,    0, 0, rsrc->base.width0, rsrc->base.height0,
                           depth};
 
-   struct pipe_blit_info blit = {
-      .dst.resource = &tmp_rsrc->base,
-      .dst.format = tmp_rsrc->base.format,
-      .dst.box = box,
-      .src.resource = &rsrc->base,
-      .src.format = rsrc->base.format,
-      .src.box = box,
-      .mask = util_format_get_mask(tmp_rsrc->base.format),
-      .filter = PIPE_TEX_FILTER_NEAREST,
-   };
+   if (copy_resource) {
+      struct pipe_blit_info blit = {
+         .dst.resource = &tmp_rsrc->base,
+         .dst.format = tmp_rsrc->base.format,
+         .dst.box = box,
+         .src.resource = &rsrc->base,
+         .src.format = rsrc->base.format,
+         .src.box = box,
+         .mask = util_format_get_mask(tmp_rsrc->base.format),
+         .filter = PIPE_TEX_FILTER_NEAREST,
+      };
 
-   for (int i = 0; i <= rsrc->base.last_level; i++) {
-      if (BITSET_TEST(rsrc->valid.data, i)) {
-         blit.dst.level = blit.src.level = i;
-         panfrost_blit(&ctx->base, &blit);
+      for (int i = 0; i <= rsrc->base.last_level; i++) {
+         if (BITSET_TEST(rsrc->valid.data, i)) {
+            blit.dst.level = blit.src.level = i;
+            panfrost_blit(&ctx->base, &blit);
+         }
       }
-   }
 
-   panfrost_bo_unreference(rsrc->image.data.bo);
+      panfrost_bo_unreference(rsrc->image.data.bo);
+   }
 
    rsrc->image.data.bo = tmp_rsrc->image.data.bo;
    panfrost_bo_reference(rsrc->image.data.bo);
 
    panfrost_resource_setup(pan_device(ctx->base.screen), rsrc, modifier,
-                           blit.dst.format);
+                           tmp_rsrc->base.format);
    /* panfrost_resource_setup will force the modifier to stay constant when
     * called with a specific modifier. We don't want that here, we want to
     * be able to convert back to another modifier if needed */
@@ -1374,7 +1373,7 @@ pan_legalize_afbc_format(struct panfrost_context *ctx,
    if (panfrost_afbc_format(dev->arch, rsrc->base.format) !=
        panfrost_afbc_format(dev->arch, format)) {
       pan_resource_modifier_convert(
-         ctx, rsrc, DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED,
+         ctx, rsrc, DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED, true,
          "Reinterpreting AFBC surface as incompatible format");
       return;
    }
@@ -1382,7 +1381,7 @@ pan_legalize_afbc_format(struct panfrost_context *ctx,
    if (write && (rsrc->image.layout.modifier & AFBC_FORMAT_MOD_SPARSE) == 0)
       pan_resource_modifier_convert(
          ctx, rsrc, rsrc->image.layout.modifier | AFBC_FORMAT_MOD_SPARSE,
-         "Legalizing resource to allow writing");
+         true, "Legalizing resource to allow writing");
 }
 
 static bool
