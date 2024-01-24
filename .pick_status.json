@@ -4,7 +4,7 @@
         "description": "rusticl/kernel: check that local size on dispatch doesn't exceed limits",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
