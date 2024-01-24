@@ -1588,6 +1588,10 @@ panfrost_ptr_unmap(struct pipe_context *pctx, struct pipe_transfer *transfer)
                pan_resource(trans->staging.rsrc)->image.data.bo;
             panfrost_bo_reference(prsrc->image.data.bo);
          } else {
+            bool discard = panfrost_can_discard(&prsrc->base, &transfer->box,
+                                                transfer->usage);
+            pan_legalize_afbc_format(ctx, prsrc, prsrc->image.layout.format,
+                                     true, discard);
             pan_blit_from_staging(pctx, trans);
             panfrost_flush_batches_accessing_rsrc(
                ctx, pan_resource(trans->staging.rsrc),
