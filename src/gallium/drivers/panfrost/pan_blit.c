@@ -92,7 +92,7 @@ panfrost_blit(struct pipe_context *pipe, const struct pipe_blit_info *info)
 
    /* Legalize here because it could trigger a recursive blit otherwise */
    pan_legalize_afbc_format(ctx, pan_resource(info->dst.resource),
-                            info->dst.format, true);
+                            info->dst.format, true, false);
 
    panfrost_blitter_save(ctx, info->render_condition_enable
                                  ? PAN_RENDER_BLIT_COND
