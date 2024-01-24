@@ -344,7 +344,7 @@
         "description": "broadcom/compiler: fix incorrect flags setup in non-uniform if path",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e401add741f33d113fe1496298e35ad00ce6a878",
         "notes": null
