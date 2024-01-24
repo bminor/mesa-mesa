@@ -3517,3 +3517,44 @@ nir_block_contains_work(nir_block *block)
 
    return false;
 }
+
+nir_op
+nir_atomic_op_to_alu(nir_atomic_op op)
+{
+   switch (op) {
+   case nir_atomic_op_iadd:
+      return nir_op_iadd;
+   case nir_atomic_op_imin:
+      return nir_op_imin;
+   case nir_atomic_op_umin:
+      return nir_op_umin;
+   case nir_atomic_op_imax:
+      return nir_op_imax;
+   case nir_atomic_op_umax:
+      return nir_op_umax;
+   case nir_atomic_op_iand:
+      return nir_op_iand;
+   case nir_atomic_op_ior:
+      return nir_op_ior;
+   case nir_atomic_op_ixor:
+      return nir_op_ixor;
+   case nir_atomic_op_fadd:
+      return nir_op_fadd;
+   case nir_atomic_op_fmin:
+      return nir_op_fmin;
+   case nir_atomic_op_fmax:
+      return nir_op_fmax;
+
+   /* We don't handle exchanges or wraps */
+   case nir_atomic_op_xchg:
+   case nir_atomic_op_cmpxchg:
+   case nir_atomic_op_fcmpxchg:
+   case nir_atomic_op_inc_wrap:
+   case nir_atomic_op_dec_wrap:
+   case nir_atomic_op_ordered_add_gfx12_amd:
+      return nir_num_opcodes;
+   }
+
+   unreachable("Invalid nir_atomic_op");
+}
+

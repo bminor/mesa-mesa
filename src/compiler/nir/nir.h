@@ -1373,6 +1373,9 @@ nir_atomic_op_type(nir_atomic_op op)
    unreachable("Invalid nir_atomic_op");
 }
 
+nir_op
+nir_atomic_op_to_alu(nir_atomic_op op);
+
 /** Returns nir_op_vec<num_components> or nir_op_mov if num_components == 1
  *
  * This is subtly different from nir_op_is_vec() which returns false for

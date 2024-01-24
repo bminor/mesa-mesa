@@ -40,46 +40,6 @@
 #include "nir/nir_builder.h"
 
 static nir_op
-atomic_op_to_alu(nir_atomic_op op)
-{
-   switch (op) {
-   case nir_atomic_op_iadd:
-      return nir_op_iadd;
-   case nir_atomic_op_imin:
-      return nir_op_imin;
-   case nir_atomic_op_umin:
-      return nir_op_umin;
-   case nir_atomic_op_imax:
-      return nir_op_imax;
-   case nir_atomic_op_umax:
-      return nir_op_umax;
-   case nir_atomic_op_iand:
-      return nir_op_iand;
-   case nir_atomic_op_ior:
-      return nir_op_ior;
-   case nir_atomic_op_ixor:
-      return nir_op_ixor;
-   case nir_atomic_op_fadd:
-      return nir_op_fadd;
-   case nir_atomic_op_fmin:
-      return nir_op_fmin;
-   case nir_atomic_op_fmax:
-      return nir_op_fmax;
-
-   /* We don't handle exchanges or wraps */
-   case nir_atomic_op_xchg:
-   case nir_atomic_op_cmpxchg:
-   case nir_atomic_op_fcmpxchg:
-   case nir_atomic_op_inc_wrap:
-   case nir_atomic_op_dec_wrap:
-   case nir_atomic_op_ordered_add_gfx12_amd:
-      return nir_num_opcodes;
-   }
-
-   unreachable("Unknown atomic op");
-}
-
-static nir_op
 parse_atomic_op(nir_intrinsic_instr *intr, unsigned *offset_src,
                 unsigned *data_src, unsigned *offset2_src)
 {
@@ -88,26 +48,26 @@ parse_atomic_op(nir_intrinsic_instr *intr, unsigned *offset_src,
       *offset_src = 1;
       *data_src = 2;
       *offset2_src = *offset_src;
-      return atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
    case nir_intrinsic_shared_atomic:
    case nir_intrinsic_global_atomic:
    case nir_intrinsic_deref_atomic:
       *offset_src = 0;
       *data_src = 1;
       *offset2_src = *offset_src;
-      return atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
    case nir_intrinsic_global_atomic_amd:
       *offset_src = 0;
       *data_src = 1;
       *offset2_src = 2;
-      return atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
    case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_atomic:
    case nir_intrinsic_bindless_image_atomic:
       *offset_src = 1;
       *data_src = 3;
       *offset2_src = *offset_src;
-      return atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
 
    default:
       return nir_num_opcodes;
