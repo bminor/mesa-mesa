@@ -1554,7 +1554,7 @@
         "description": "anv: untyped data port flush required when a pipeline sets the VK_ACCESS_2_SHADER_STORAGE_READ_BIT",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
