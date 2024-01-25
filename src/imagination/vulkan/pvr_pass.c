@@ -438,6 +438,46 @@ pvr_render_pass_load_ops_cleanup(struct pvr_device *device,
    }
 }
 
+static inline VkResult pvr_render_add_missing_output_register_write(
+   struct pvr_renderpass_hwsetup_render *hw_render,
+   const VkAllocationCallbacks *allocator)
+{
+   const uint32_t last = hw_render->init_setup.num_render_targets;
+   struct usc_mrt_resource *mrt_resources;
+
+   /* Add a dummy output register use to the HW render setup if it has no
+    * output registers in use.
+    */
+   if (pvr_has_output_register_writes(hw_render))
+      return VK_SUCCESS;
+
+   hw_render->init_setup.num_render_targets++;
+
+   mrt_resources = vk_realloc(allocator,
+                              hw_render->init_setup.mrt_resources,
+                              hw_render->init_setup.num_render_targets *
+                                 sizeof(*mrt_resources),
+                              8U,
+                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!mrt_resources)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   hw_render->init_setup.mrt_resources = mrt_resources;
+
+   mrt_resources[last].type = USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+   mrt_resources[last].reg.output_reg = 0U;
+   mrt_resources[last].reg.offset = 0U;
+   mrt_resources[last].intermediate_size = 4U;
+   mrt_resources[last].mrt_desc.intermediate_size = 4U;
+   mrt_resources[last].mrt_desc.priority = 0U;
+   mrt_resources[last].mrt_desc.valid_mask[0U] = ~0;
+   mrt_resources[last].mrt_desc.valid_mask[1U] = ~0;
+   mrt_resources[last].mrt_desc.valid_mask[2U] = ~0;
+   mrt_resources[last].mrt_desc.valid_mask[3U] = ~0;
+
+   return VK_SUCCESS;
+}
+
 static VkResult
 pvr_render_pass_load_ops_setup(struct pvr_device *device,
                                const VkAllocationCallbacks *allocator,
@@ -462,37 +502,10 @@ pvr_render_pass_load_ops_setup(struct pvr_device *device,
       assert(!hw_render->load_op);
 
       if (hw_render->color_init_count != 0U) {
-         if (!pvr_has_output_register_writes(hw_render)) {
-            const uint32_t last = hw_render->init_setup.num_render_targets;
-            struct usc_mrt_resource *mrt_resources;
-
-            hw_render->init_setup.num_render_targets++;
-
-            mrt_resources =
-               vk_realloc(allocator,
-                          hw_render->init_setup.mrt_resources,
-                          hw_render->init_setup.num_render_targets *
-                             sizeof(*mrt_resources),
-                          8U,
-                          VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-            if (!mrt_resources) {
-               result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-               goto err_load_op_cleanup;
-            }
-
-            hw_render->init_setup.mrt_resources = mrt_resources;
-
-            mrt_resources[last].type = USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
-            mrt_resources[last].reg.output_reg = 0U;
-            mrt_resources[last].reg.offset = 0U;
-            mrt_resources[last].intermediate_size = 4U;
-            mrt_resources[last].mrt_desc.intermediate_size = 4U;
-            mrt_resources[last].mrt_desc.priority = 0U;
-            mrt_resources[last].mrt_desc.valid_mask[0U] = ~0;
-            mrt_resources[last].mrt_desc.valid_mask[1U] = ~0;
-            mrt_resources[last].mrt_desc.valid_mask[2U] = ~0;
-            mrt_resources[last].mrt_desc.valid_mask[3U] = ~0;
-         }
+         result =
+            pvr_render_add_missing_output_register_write(hw_render, allocator);
+         if (result != VK_SUCCESS)
+            goto err_load_op_cleanup;
 
          result = pvr_render_load_op_create(device,
                                             allocator,
