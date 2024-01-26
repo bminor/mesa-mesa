@@ -30,7 +30,6 @@
 
 #include "pipe/p_context.h"
 #include "pipe/p_defines.h"
-#include "pipe/p_shader_tokens.h"
 #include "pipe/p_state.h"
 #include "pipe/p_screen.h"
 #include "util/compiler.h"
@@ -787,52 +786,6 @@ util_query_clear_result(union pipe_query_result *result, unsigned type)
       memset(result, 0, sizeof(*result));
    }
 }
-
-/** Convert PIPE_TEXTURE_x to TGSI_TEXTURE_x */
-static inline enum tgsi_texture_type
-util_pipe_tex_to_tgsi_tex(enum pipe_texture_target pipe_tex_target,
-                          unsigned nr_samples)
-{
-   switch (pipe_tex_target) {
-   case PIPE_BUFFER:
-      return TGSI_TEXTURE_BUFFER;
-
-   case PIPE_TEXTURE_1D:
-      assert(nr_samples <= 1);
-      return TGSI_TEXTURE_1D;
-
-   case PIPE_TEXTURE_2D:
-      return nr_samples > 1 ? TGSI_TEXTURE_2D_MSAA : TGSI_TEXTURE_2D;
-
-   case PIPE_TEXTURE_RECT:
-      assert(nr_samples <= 1);
-      return TGSI_TEXTURE_RECT;
-
-   case PIPE_TEXTURE_3D:
-      assert(nr_samples <= 1);
-      return TGSI_TEXTURE_3D;
-
-   case PIPE_TEXTURE_CUBE:
-      assert(nr_samples <= 1);
-      return TGSI_TEXTURE_CUBE;
-
-   case PIPE_TEXTURE_1D_ARRAY:
-      assert(nr_samples <= 1);
-      return TGSI_TEXTURE_1D_ARRAY;
-
-   case PIPE_TEXTURE_2D_ARRAY:
-      return nr_samples > 1 ? TGSI_TEXTURE_2D_ARRAY_MSAA :
-                              TGSI_TEXTURE_2D_ARRAY;
-
-   case PIPE_TEXTURE_CUBE_ARRAY:
-      return TGSI_TEXTURE_CUBE_ARRAY;
-
-   default:
-      assert(0 && "unexpected texture target");
-      return TGSI_TEXTURE_UNKNOWN;
-   }
-}
-
 
 static inline void
 util_copy_constant_buffer(struct pipe_constant_buffer *dst,

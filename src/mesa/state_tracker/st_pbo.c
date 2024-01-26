@@ -36,6 +36,7 @@
 #include "pipe/p_context.h"
 #include "pipe/p_defines.h"
 #include "pipe/p_screen.h"
+#include "pipe/p_shader_tokens.h"
 #include "cso_cache/cso_context.h"
 #include "util/format/u_format.h"
 #include "util/u_inlines.h"

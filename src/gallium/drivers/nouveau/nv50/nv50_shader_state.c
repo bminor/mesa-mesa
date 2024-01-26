@@ -23,6 +23,7 @@
 
 #include "pipe/p_context.h"
 #include "pipe/p_defines.h"
+#include "pipe/p_shader_tokens.h"
 #include "pipe/p_state.h"
 #include "util/u_inlines.h"
 
