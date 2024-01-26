@@ -71,11 +71,11 @@ util_make_vertex_passthrough_shader(struct pipe_context *pipe,
 
 void *
 util_make_vertex_passthrough_shader_with_so(struct pipe_context *pipe,
-                                    unsigned num_attribs,
-                                    const enum tgsi_semantic *semantic_names,
-                                    const unsigned *semantic_indexes,
-                                    bool window_space, bool layered,
-				    const struct pipe_stream_output_info *so)
+                                            unsigned num_attribs,
+                                            const enum tgsi_semantic *semantic_names,
+                                            const unsigned *semantic_indexes,
+                                            bool window_space, bool layered,
+                                            const struct pipe_stream_output_info *so)
 {
    struct ureg_program *ureg;
    unsigned i;
