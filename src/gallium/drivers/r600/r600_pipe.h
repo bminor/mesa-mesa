@@ -485,6 +485,10 @@ struct r600_context {
 	struct blitter_context		*blitter;
 	struct u_suballocator		allocator_fetch_shader;
 
+	/* blitter state */
+	void *vs_pos_only[4];
+	void *velem_state_readbuf[4]; /**< X, XY, XYZ, XYZW */
+
 	/* Hardware info. */
 	bool				has_vertex_cache;
 	unsigned			default_gprs[EG_NUM_HW_STAGES];

@@ -6,7 +6,10 @@
 #include "r600_pipe.h"
 #include "compute_memory_pool.h"
 #include "evergreen_compute.h"
+#include "util/u_draw.h"
+#include "util/u_simple_shaders.h"
 #include "util/u_surface.h"
+#include "util/u_upload_mgr.h"
 #include "util/format/u_format.h"
 #include "evergreend.h"
 
@@ -628,6 +631,94 @@ static void r600_copy_global_buffer(struct pipe_context *ctx,
 	r600_copy_buffer(ctx, dst, dstx, src, &new_src_box);
 }
 
+static void bind_vs_pos_only(struct r600_context *ctx,
+                             unsigned num_so_channels)
+{
+	struct pipe_context *pipe = &ctx->b.b;
+	int index = num_so_channels ? num_so_channels - 1 : 0;
+
+	if (!ctx->vs_pos_only[index]) {
+	struct pipe_stream_output_info so;
+	static const enum tgsi_semantic semantic_names[] =
+		{ TGSI_SEMANTIC_POSITION };
+	const unsigned semantic_indices[] = { 0 };
+
+	memset(&so, 0, sizeof(so));
+	so.num_outputs = 1;
+	so.output[0].num_components = num_so_channels;
+	so.stride[0] = num_so_channels;
+
+	ctx->vs_pos_only[index] =
+		util_make_vertex_passthrough_shader_with_so(pipe, 1, semantic_names,
+		                                            semantic_indices, false,
+		                                            false, &so);
+	}
+
+	pipe->bind_vs_state(pipe, ctx->vs_pos_only[index]);
+}
+
+static void r600_blitter_clear_buffer(struct r600_context *rctx,
+                                      struct pipe_resource *dst,
+                                      unsigned offset, unsigned size,
+                                      unsigned num_channels,
+                                      const union pipe_color_union *clear_value)
+{
+	struct pipe_context *pipe = &rctx->b.b;
+	struct r600_screen *rscreen = (struct r600_screen *)pipe->screen;
+	struct pipe_vertex_buffer vb = {0};
+	struct pipe_stream_output_target *so_target = NULL;
+	unsigned offsets[PIPE_MAX_SO_BUFFERS] = {0};
+
+	assert(num_channels >= 1);
+	assert(num_channels <= 4);
+
+	/* IMPORTANT:  DON'T DO ANY BOUNDS CHECKING HERE!
+	*
+	* R600 uses this to initialize texture resources, so width0 might not be
+	* what you think it is.
+	*/
+
+	/* Some alignment is required. */
+	if (offset % 4 != 0 || size % 4 != 0) {
+		assert(!"Bad alignment in r600_blitter_clear_buffer()");
+		return;
+	}
+
+	u_upload_data(pipe->stream_uploader, 0, num_channels*4, 4, clear_value,
+	              &vb.buffer_offset, &vb.buffer.resource);
+	if (!vb.buffer.resource)
+		goto out;
+
+	util_blitter_set_running_flag(rctx->blitter);
+
+#if 0
+	blitter_check_saved_vertex_states(rctx->blitter); // never asserts on r600
+	blitter_disable_render_cond(rctx->blitter);       // r600 never saves render cond
+#endif
+
+	pipe->set_vertex_buffers(pipe, 1, &vb);
+	pipe->bind_vertex_elements_state(pipe, rctx->velem_state_readbuf[num_channels-1]);
+	bind_vs_pos_only(rctx, num_channels);
+	pipe->bind_gs_state(pipe, NULL);
+	if (rscreen->b.family >= CHIP_CEDAR) {
+		pipe->bind_tcs_state(pipe, NULL);
+		pipe->bind_tes_state(pipe, NULL);
+	}
+	pipe->bind_rasterizer_state(pipe, util_blitter_get_discard_rasterizer_state(rctx->blitter));
+
+	so_target = pipe->create_stream_output_target(pipe, dst, offset, size);
+	pipe->set_stream_output_targets(pipe, 1, &so_target, offsets, MESA_PRIM_POINTS);
+
+	util_draw_arrays(pipe, MESA_PRIM_POINTS, 0, size / 4);
+
+out:
+	util_blitter_restore_vertex_states(rctx->blitter);
+	util_blitter_restore_render_cond(rctx->blitter);
+	util_blitter_unset_running_flag(rctx->blitter);
+	pipe_so_target_reference(&so_target, NULL);
+	pipe_resource_reference(&vb.buffer.resource, NULL);
+}
+
 static void r600_clear_buffer(struct pipe_context *ctx, struct pipe_resource *dst,
 			      uint64_t offset, uint64_t size, unsigned value,
 			      enum r600_coherency coher)
@@ -643,7 +734,7 @@ static void r600_clear_buffer(struct pipe_context *ctx, struct pipe_resource *ds
 		clear_value.ui[0] = value;
 
 		r600_blitter_begin(ctx, R600_DISABLE_RENDER_COND);
-		util_blitter_clear_buffer(rctx->blitter, dst, offset, size,
+		r600_blitter_clear_buffer(rctx, dst, offset, size,
 					  1, &clear_value);
 		r600_blitter_end(ctx);
 	} else {

@@ -69,8 +69,6 @@ struct blitter_context_priv
    /* Vertex shaders. */
    void *vs; /**< Vertex shader which passes {pos, generic} to the output.*/
    void *vs_nogeneric;
-   void *vs_pos_only[4]; /**< Vertex shader which passes pos to the output
-                              for clear_buffer.*/
    void *vs_layered; /**< Vertex shader which sets LAYER = INSTANCEID. */
 
    /* Fragment shaders. */
@@ -122,7 +120,6 @@ struct blitter_context_priv
 
    /* Vertex elements states. */
    void *velem_state;
-   void *velem_state_readbuf[4]; /**< X, XY, XYZ, XYZW */
 
    /* Sampler state. */
    void *sampler_state;
@@ -315,23 +312,6 @@ struct blitter_context *util_blitter_create(struct pipe_context *pipe)
    }
    ctx->velem_state = pipe->create_vertex_elements_state(pipe, 2, &velem[0]);
 
-   if (ctx->has_stream_out) {
-      static enum pipe_format formats[4] = {
-         PIPE_FORMAT_R32_UINT,
-         PIPE_FORMAT_R32G32_UINT,
-         PIPE_FORMAT_R32G32B32_UINT,
-         PIPE_FORMAT_R32G32B32A32_UINT
-      };
-
-      for (i = 0; i < 4; i++) {
-         velem[0].src_format = formats[i];
-         velem[0].vertex_buffer_index = 0;
-         velem[0].src_stride = 0;
-         ctx->velem_state_readbuf[i] =
-               pipe->create_vertex_elements_state(pipe, 1, &velem[0]);
-      }
-   }
-
    ctx->has_layered =
       pipe->screen->caps.vs_instanceid &&
       pipe->screen->caps.vs_layer_viewport;
@@ -364,32 +344,6 @@ void *util_blitter_get_discard_rasterizer_state(struct blitter_context *blitter)
    struct blitter_context_priv *ctx = (struct blitter_context_priv*)blitter;
 
    return ctx->rs_discard_state;
-}
-
-static void bind_vs_pos_only(struct blitter_context_priv *ctx,
-                             unsigned num_so_channels)
-{
-   struct pipe_context *pipe = ctx->base.pipe;
-   int index = num_so_channels ? num_so_channels - 1 : 0;
-
-   if (!ctx->vs_pos_only[index]) {
-      struct pipe_stream_output_info so;
-      static const enum tgsi_semantic semantic_names[] =
-         { TGSI_SEMANTIC_POSITION };
-      const unsigned semantic_indices[] = { 0 };
-
-      memset(&so, 0, sizeof(so));
-      so.num_outputs = 1;
-      so.output[0].num_components = num_so_channels;
-      so.stride[0] = num_so_channels;
-
-      ctx->vs_pos_only[index] =
-         util_make_vertex_passthrough_shader_with_so(pipe, 1, semantic_names,
-                                                     semantic_indices, false,
-                                                     false, &so);
-   }
-
-   pipe->bind_vs_state(pipe, ctx->vs_pos_only[index]);
 }
 
 static void *get_vs_passthrough_pos_generic(struct blitter_context *blitter)
@@ -501,17 +455,11 @@ void util_blitter_destroy(struct blitter_context *blitter)
       pipe->delete_vs_state(pipe, ctx->vs);
    if (ctx->vs_nogeneric)
       pipe->delete_vs_state(pipe, ctx->vs_nogeneric);
-   for (i = 0; i < 4; i++)
-      if (ctx->vs_pos_only[i])
-         pipe->delete_vs_state(pipe, ctx->vs_pos_only[i]);
+
    if (ctx->vs_layered)
       pipe->delete_vs_state(pipe, ctx->vs_layered);
    pipe->delete_vertex_elements_state(pipe, ctx->velem_state);
-   for (i = 0; i < 4; i++) {
-      if (ctx->velem_state_readbuf[i]) {
-         pipe->delete_vertex_elements_state(pipe, ctx->velem_state_readbuf[i]);
-      }
-   }
+
 
    for (i = 0; i < PIPE_MAX_TEXTURE_TYPES; i++) {
       for (unsigned type = 0; type < ARRAY_SIZE(ctx->fs_texfetch_col); ++type) {
@@ -2605,73 +2553,6 @@ void util_blitter_custom_depth_stencil(struct blitter_context *blitter,
    util_blitter_restore_fb_state(blitter);
    util_blitter_restore_render_cond(blitter);
    util_blitter_unset_running_flag(blitter);
-}
-
-void util_blitter_clear_buffer(struct blitter_context *blitter,
-                               struct pipe_resource *dst,
-                               unsigned offset, unsigned size,
-                               unsigned num_channels,
-                               const union pipe_color_union *clear_value)
-{
-   struct blitter_context_priv *ctx = (struct blitter_context_priv*)blitter;
-   struct pipe_context *pipe = ctx->base.pipe;
-   struct pipe_vertex_buffer vb = {0};
-   struct pipe_stream_output_target *so_target = NULL;
-   unsigned offsets[PIPE_MAX_SO_BUFFERS] = {0};
-
-   assert(num_channels >= 1);
-   assert(num_channels <= 4);
-
-   /* IMPORTANT:  DON'T DO ANY BOUNDS CHECKING HERE!
-    *
-    * R600 uses this to initialize texture resources, so width0 might not be
-    * what you think it is.
-    */
-
-   /* Streamout is required. */
-   if (!ctx->has_stream_out) {
-      assert(!"Streamout unsupported in util_blitter_clear_buffer()");
-      return;
-   }
-
-   /* Some alignment is required. */
-   if (offset % 4 != 0 || size % 4 != 0) {
-      assert(!"Bad alignment in util_blitter_clear_buffer()");
-      return;
-   }
-
-   u_upload_data(pipe->stream_uploader, 0, num_channels*4, 4, clear_value,
-                 &vb.buffer_offset, &vb.buffer.resource);
-   if (!vb.buffer.resource)
-      goto out;
-
-   util_blitter_set_running_flag(blitter);
-   blitter_check_saved_vertex_states(ctx);
-   blitter_disable_render_cond(ctx);
-
-   pipe->bind_vertex_elements_state(pipe,
-                                    ctx->velem_state_readbuf[num_channels-1]);
-   pipe->set_vertex_buffers(pipe, 1, &vb);
-   bind_vs_pos_only(ctx, num_channels);
-
-   if (ctx->has_geometry_shader)
-      pipe->bind_gs_state(pipe, NULL);
-   if (ctx->has_tessellation) {
-      pipe->bind_tcs_state(pipe, NULL);
-      pipe->bind_tes_state(pipe, NULL);
-   }
-   pipe->bind_rasterizer_state(pipe, ctx->rs_discard_state);
-
-   so_target = pipe->create_stream_output_target(pipe, dst, offset, size);
-   pipe->set_stream_output_targets(pipe, 1, &so_target, offsets, MESA_PRIM_POINTS);
-
-   util_draw_arrays(pipe, MESA_PRIM_POINTS, 0, size / 4);
-
-out:
-   util_blitter_restore_vertex_states(blitter);
-   util_blitter_restore_render_cond(blitter);
-   util_blitter_unset_running_flag(blitter);
-   pipe_so_target_reference(&so_target, NULL);
 }
 
 /* probably radeon specific */
