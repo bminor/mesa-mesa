@@ -794,7 +794,7 @@
         "description": "radv/rt: Write inactive node data in ALWAYS_ACTIVE workaround",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a9831caa144f9944fec936608faf03d253e9bb7d",
         "notes": null
