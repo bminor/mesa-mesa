@@ -615,7 +615,7 @@ static bool pvr_physical_device_get_properties(
 
    snprintf(properties->deviceName,
             sizeof(properties->deviceName),
-            "Imagination PowerVR %s %s",
+            "PowerVR %s %s",
             dev_info->ident.series_name,
             dev_info->ident.public_name);
 
