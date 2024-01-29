@@ -484,7 +484,7 @@
         "description": "zink: fix descriptor buffer unmaps on screen destroy",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b06f6e00fba6e33c28a198a1bb14b89e9dfbb4ae",
         "notes": null
