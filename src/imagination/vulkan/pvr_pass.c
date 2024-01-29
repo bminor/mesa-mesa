@@ -180,121 +180,6 @@ VkResult pvr_pds_unitex_state_program_create_and_upload(
    return VK_SUCCESS;
 }
 
-/* TODO: pvr_subpass_load_op_create() and pvr_render_load_op_create() are quite
- * similar. See if we can dedup them?
- */
-static VkResult
-pvr_subpass_load_op_create(struct pvr_device *device,
-                           const VkAllocationCallbacks *allocator,
-                           const struct pvr_render_pass *pass,
-                           struct pvr_renderpass_hwsetup_render *hw_render,
-                           uint32_t hw_subpass_idx,
-                           struct pvr_load_op **const load_op_out)
-{
-   const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
-      &hw_render->subpasses[hw_subpass_idx];
-   const struct pvr_render_subpass *subpass =
-      &pass->subpasses[hw_subpass->index];
-
-   struct pvr_load_op *load_op = vk_zalloc2(&device->vk.alloc,
-                                            allocator,
-                                            sizeof(*load_op),
-                                            8,
-                                            VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-   if (!load_op)
-      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   load_op->clears_loads_state.depth_clear_to_reg = PVR_NO_DEPTH_CLEAR_TO_REG;
-
-   if (hw_subpass->z_replicate != -1) {
-      const int32_t z_replicate = hw_subpass->z_replicate;
-
-      switch (hw_subpass->depth_initop) {
-      case VK_ATTACHMENT_LOAD_OP_LOAD:
-         assert(z_replicate < PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
-         load_op->clears_loads_state.rt_load_mask = BITFIELD_BIT(z_replicate);
-         load_op->clears_loads_state.dest_vk_format[z_replicate] =
-            VK_FORMAT_D32_SFLOAT;
-         break;
-
-      case VK_ATTACHMENT_LOAD_OP_CLEAR:
-         load_op->clears_loads_state.depth_clear_to_reg = z_replicate;
-         break;
-
-      default:
-         break;
-      }
-   }
-
-   assert(subpass->color_count <= PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
-   for (uint32_t i = 0; i < subpass->color_count; i++) {
-      const uint32_t attachment_idx = subpass->color_attachments[i];
-
-      assert(attachment_idx < pass->attachment_count);
-      load_op->clears_loads_state.dest_vk_format[i] =
-         pass->attachments[attachment_idx].vk_format;
-
-      if (pass->attachments[attachment_idx].sample_count > 1)
-         load_op->clears_loads_state.unresolved_msaa_mask |= BITFIELD_BIT(i);
-
-      if (hw_subpass->color_initops[i] == VK_ATTACHMENT_LOAD_OP_LOAD)
-         load_op->clears_loads_state.rt_load_mask |= BITFIELD_BIT(i);
-      else if (hw_subpass->color_initops[i] == VK_ATTACHMENT_LOAD_OP_CLEAR)
-         load_op->clears_loads_state.rt_clear_mask |= BITFIELD_BIT(i);
-   }
-
-   load_op->is_hw_object = false;
-   load_op->subpass = subpass;
-   load_op->clears_loads_state.mrt_setup = &hw_subpass->setup;
-
-   *load_op_out = load_op;
-
-   return VK_SUCCESS;
-}
-
-static VkResult
-pvr_render_load_op_create(struct pvr_device *device,
-                          const VkAllocationCallbacks *allocator,
-                          const struct pvr_render_pass *pass,
-                          const struct pvr_renderpass_hwsetup_render *hw_render,
-                          struct pvr_load_op **const load_op_out)
-{
-   struct pvr_load_op *load_op = vk_zalloc2(&device->vk.alloc,
-                                            allocator,
-                                            sizeof(*load_op),
-                                            8,
-                                            VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-   if (!load_op)
-      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   load_op->clears_loads_state.depth_clear_to_reg = PVR_NO_DEPTH_CLEAR_TO_REG;
-
-   assert(hw_render->color_init_count <= PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
-   for (uint32_t i = 0; i < hw_render->color_init_count; i++) {
-      struct pvr_renderpass_colorinit *color_init = &hw_render->color_init[i];
-
-      assert(color_init->index < pass->attachment_count);
-      load_op->clears_loads_state.dest_vk_format[i] =
-         pass->attachments[color_init->index].vk_format;
-
-      if (pass->attachments[color_init->index].sample_count > 1)
-         load_op->clears_loads_state.unresolved_msaa_mask |= BITFIELD_BIT(i);
-
-      if (color_init->op == VK_ATTACHMENT_LOAD_OP_LOAD)
-         load_op->clears_loads_state.rt_load_mask |= BITFIELD_BIT(i);
-      else if (color_init->op == VK_ATTACHMENT_LOAD_OP_CLEAR)
-         load_op->clears_loads_state.rt_clear_mask |= BITFIELD_BIT(i);
-   }
-
-   load_op->is_hw_object = true;
-   load_op->hw_render = hw_render;
-   load_op->clears_loads_state.mrt_setup = &hw_render->init_setup;
-
-   *load_op_out = load_op;
-
-   return VK_SUCCESS;
-}
-
 static VkResult
 pvr_load_op_shader_generate(struct pvr_device *device,
                             const VkAllocationCallbacks *allocator,
@@ -364,6 +249,135 @@ err_free_usc_frag_prog_bo:
    pvr_bo_suballoc_free(load_op->usc_frag_prog_bo);
 
    return result;
+}
+
+/* TODO: pvr_subpass_load_op_init() and pvr_render_load_op_init() are quite
+ * similar. See if we can dedup them?
+ */
+static VkResult
+pvr_subpass_load_op_init(struct pvr_device *device,
+                         const VkAllocationCallbacks *allocator,
+                         const struct pvr_render_pass *pass,
+                         struct pvr_renderpass_hwsetup_render *hw_render,
+                         uint32_t hw_subpass_idx)
+{
+   const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
+      &hw_render->subpasses[hw_subpass_idx];
+   const struct pvr_render_subpass *subpass =
+      &pass->subpasses[hw_subpass->index];
+   struct pvr_load_op *load_op;
+   VkResult result;
+
+   load_op = vk_zalloc2(&device->vk.alloc,
+                        allocator,
+                        sizeof(*load_op),
+                        8,
+                        VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!load_op)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   load_op->clears_loads_state.depth_clear_to_reg = PVR_NO_DEPTH_CLEAR_TO_REG;
+
+   if (hw_subpass->z_replicate != -1) {
+      const int32_t z_replicate = hw_subpass->z_replicate;
+
+      switch (hw_subpass->depth_initop) {
+      case VK_ATTACHMENT_LOAD_OP_LOAD:
+         assert(z_replicate < PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
+         load_op->clears_loads_state.rt_load_mask = BITFIELD_BIT(z_replicate);
+         load_op->clears_loads_state.dest_vk_format[z_replicate] =
+            VK_FORMAT_D32_SFLOAT;
+         break;
+
+      case VK_ATTACHMENT_LOAD_OP_CLEAR:
+         load_op->clears_loads_state.depth_clear_to_reg = z_replicate;
+         break;
+
+      default:
+         break;
+      }
+   }
+
+   assert(subpass->color_count <= PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
+   for (uint32_t i = 0; i < subpass->color_count; i++) {
+      const uint32_t attachment_idx = subpass->color_attachments[i];
+
+      assert(attachment_idx < pass->attachment_count);
+      load_op->clears_loads_state.dest_vk_format[i] =
+         pass->attachments[attachment_idx].vk_format;
+
+      if (pass->attachments[attachment_idx].sample_count > 1)
+         load_op->clears_loads_state.unresolved_msaa_mask |= BITFIELD_BIT(i);
+
+      if (hw_subpass->color_initops[i] == VK_ATTACHMENT_LOAD_OP_LOAD)
+         load_op->clears_loads_state.rt_load_mask |= BITFIELD_BIT(i);
+      else if (hw_subpass->color_initops[i] == VK_ATTACHMENT_LOAD_OP_CLEAR)
+         load_op->clears_loads_state.rt_clear_mask |= BITFIELD_BIT(i);
+   }
+
+   load_op->is_hw_object = false;
+   load_op->subpass = subpass;
+   load_op->clears_loads_state.mrt_setup = &hw_subpass->setup;
+
+   result = pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
+   if (result != VK_SUCCESS) {
+      vk_free2(&device->vk.alloc, allocator, load_op);
+      return result;
+   }
+
+   hw_render->subpasses[hw_subpass_idx].load_op = load_op;
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+pvr_render_load_op_init(struct pvr_device *device,
+                        const VkAllocationCallbacks *allocator,
+                        const struct pvr_render_pass *pass,
+                        struct pvr_renderpass_hwsetup_render *hw_render)
+{
+   VkResult result;
+
+   struct pvr_load_op *load_op = vk_zalloc2(&device->vk.alloc,
+                                            allocator,
+                                            sizeof(*load_op),
+                                            8,
+                                            VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!load_op)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   load_op->clears_loads_state.depth_clear_to_reg = PVR_NO_DEPTH_CLEAR_TO_REG;
+
+   assert(hw_render->color_init_count <= PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
+   for (uint32_t i = 0; i < hw_render->color_init_count; i++) {
+      struct pvr_renderpass_colorinit *color_init = &hw_render->color_init[i];
+
+      assert(color_init->index < pass->attachment_count);
+      load_op->clears_loads_state.dest_vk_format[i] =
+         pass->attachments[color_init->index].vk_format;
+
+      if (pass->attachments[color_init->index].sample_count > 1)
+         load_op->clears_loads_state.unresolved_msaa_mask |= BITFIELD_BIT(i);
+
+      if (color_init->op == VK_ATTACHMENT_LOAD_OP_LOAD)
+         load_op->clears_loads_state.rt_load_mask |= BITFIELD_BIT(i);
+      else if (color_init->op == VK_ATTACHMENT_LOAD_OP_CLEAR)
+         load_op->clears_loads_state.rt_clear_mask |= BITFIELD_BIT(i);
+   }
+
+   load_op->is_hw_object = true;
+   load_op->hw_render = hw_render;
+   load_op->clears_loads_state.mrt_setup = &hw_render->init_setup;
+
+   result = pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
+   if (result != VK_SUCCESS) {
+      vk_free2(&device->vk.alloc, allocator, load_op);
+      return result;
+   }
+
+   hw_render->load_op = load_op;
+
+   return VK_SUCCESS;
 }
 
 static void pvr_load_op_destroy(struct pvr_device *device,
@@ -488,7 +502,6 @@ pvr_render_pass_load_ops_setup(struct pvr_device *device,
    for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
       struct pvr_renderpass_hwsetup_render *hw_render =
          &pass->hw_setup->renders[i];
-      struct pvr_load_op *load_op = NULL;
 
       if (hw_render->tile_buffers_count) {
          result = pvr_device_tile_buffer_ensure_cap(
@@ -507,45 +520,19 @@ pvr_render_pass_load_ops_setup(struct pvr_device *device,
          if (result != VK_SUCCESS)
             goto err_load_op_cleanup;
 
-         result = pvr_render_load_op_create(device,
-                                            allocator,
-                                            pass,
-                                            hw_render,
-                                            &load_op);
+         result = pvr_render_load_op_init(device, allocator, pass, hw_render);
          if (result != VK_SUCCESS)
             goto err_load_op_cleanup;
-
-         result =
-            pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
-         if (result != VK_SUCCESS) {
-            vk_free2(&device->vk.alloc, allocator, load_op);
-            goto err_load_op_cleanup;
-         }
-
-         hw_render->load_op = load_op;
       }
 
       for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
          if (!pvr_is_load_op_needed(pass, hw_render, j))
             continue;
 
-         result = pvr_subpass_load_op_create(device,
-                                             allocator,
-                                             pass,
-                                             hw_render,
-                                             j,
-                                             &load_op);
-         if (result != VK_SUCCESS) {
-            vk_free2(&device->vk.alloc, allocator, load_op);
-            goto err_load_op_cleanup;
-         }
-
          result =
-            pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
+            pvr_subpass_load_op_init(device, allocator, pass, hw_render, j);
          if (result != VK_SUCCESS)
             goto err_load_op_cleanup;
-
-         hw_render->subpasses[j].load_op = load_op;
       }
    }
 
