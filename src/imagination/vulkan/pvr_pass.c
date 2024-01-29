@@ -180,11 +180,11 @@ VkResult pvr_pds_unitex_state_program_create_and_upload(
    return VK_SUCCESS;
 }
 
-/* TODO: pvr_create_subpass_load_op() and pvr_create_render_load_op() are quite
+/* TODO: pvr_subpass_load_op_create() and pvr_render_load_op_create() are quite
  * similar. See if we can dedup them?
  */
 static VkResult
-pvr_create_subpass_load_op(struct pvr_device *device,
+pvr_subpass_load_op_create(struct pvr_device *device,
                            const VkAllocationCallbacks *allocator,
                            const struct pvr_render_pass *pass,
                            struct pvr_renderpass_hwsetup_render *hw_render,
@@ -253,7 +253,7 @@ pvr_create_subpass_load_op(struct pvr_device *device,
 }
 
 static VkResult
-pvr_create_render_load_op(struct pvr_device *device,
+pvr_render_load_op_create(struct pvr_device *device,
                           const VkAllocationCallbacks *allocator,
                           const struct pvr_render_pass *pass,
                           const struct pvr_renderpass_hwsetup_render *hw_render,
@@ -296,7 +296,7 @@ pvr_create_render_load_op(struct pvr_device *device,
 }
 
 static VkResult
-pvr_generate_load_op_shader(struct pvr_device *device,
+pvr_load_op_shader_generate(struct pvr_device *device,
                             const VkAllocationCallbacks *allocator,
                             struct pvr_renderpass_hwsetup_render *hw_render,
                             struct pvr_load_op *load_op)
@@ -684,7 +684,7 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
             mrt_resources[last].mrt_desc.valid_mask[3U] = ~0;
          }
 
-         result = pvr_create_render_load_op(device,
+         result = pvr_render_load_op_create(device,
                                             pAllocator,
                                             pass,
                                             hw_render,
@@ -693,7 +693,7 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
             goto err_load_op_destroy;
 
          result =
-            pvr_generate_load_op_shader(device, pAllocator, hw_render, load_op);
+            pvr_load_op_shader_generate(device, pAllocator, hw_render, load_op);
          if (result != VK_SUCCESS) {
             vk_free2(&device->vk.alloc, pAllocator, load_op);
             goto err_load_op_destroy;
@@ -706,7 +706,7 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
          if (!pvr_is_load_op_needed(pass, hw_render, j))
             continue;
 
-         result = pvr_create_subpass_load_op(device,
+         result = pvr_subpass_load_op_create(device,
                                              pAllocator,
                                              pass,
                                              hw_render,
@@ -718,7 +718,7 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
          }
 
          result =
-            pvr_generate_load_op_shader(device, pAllocator, hw_render, load_op);
+            pvr_load_op_shader_generate(device, pAllocator, hw_render, load_op);
          if (result != VK_SUCCESS)
             goto err_load_op_destroy;
 
