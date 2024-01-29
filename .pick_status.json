@@ -654,7 +654,7 @@
         "description": "radv: Fix compilation with gcc-13 and tsan enabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4de305cb8a3c68df8e89f8c1359f510a1089cfd3",
         "notes": null
