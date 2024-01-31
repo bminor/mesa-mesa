@@ -65,7 +65,7 @@ struct nir_to_brw_state {
 };
 
 static brw_reg get_nir_src(nir_to_brw_state &ntb, const nir_src &src, int channel = 0);
-static brw_reg get_nir_def(nir_to_brw_state &ntb, const nir_def &def);
+static brw_reg get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform = false);
 static nir_component_mask_t get_nir_write_mask(const nir_def &def);
 
 static void fs_nir_emit_intrinsic(nir_to_brw_state &ntb, const fs_builder &bld, nir_intrinsic_instr *instr);
@@ -508,11 +508,10 @@ fs_nir_emit_block(nir_to_brw_state &ntb, nir_block *block)
  * match instr.
  */
 static bool
-optimize_extract_to_float(nir_to_brw_state &ntb, nir_alu_instr *instr,
-                          const brw_reg &result)
+optimize_extract_to_float(nir_to_brw_state &ntb, const fs_builder &bld,
+                          nir_alu_instr *instr, const brw_reg &result)
 {
    const intel_device_info *devinfo = ntb.devinfo;
-   const fs_builder &bld = ntb.bld;
 
    /* No fast path for f16 (yet) or f64. */
    assert(instr->op == nir_op_i2f32 || instr->op == nir_op_u2f32);
@@ -736,19 +735,26 @@ prepare_alu_destination_and_sources(nir_to_brw_state &ntb,
 {
    const intel_device_info *devinfo = ntb.devinfo;
 
-   brw_reg result =
-      need_dest ? get_nir_def(ntb, instr->def) : bld.null_reg_ud();
-
-   result.type = brw_type_for_nir_type(devinfo,
-      (nir_alu_type)(nir_op_infos[instr->op].output_type |
-                     instr->def.bit_size));
-
+   bool all_sources_uniform = true;
    for (unsigned i = 0; i < nir_op_infos[instr->op].num_inputs; i++) {
       op[i] = get_nir_src(ntb, instr->src[i].src, -1);
       op[i].type = brw_type_for_nir_type(devinfo,
          (nir_alu_type)(nir_op_infos[instr->op].input_types[i] |
                         nir_src_bit_size(instr->src[i].src)));
+
+      /* is_scalar sources won't be is_uniform because get_nir_src was passed
+       * -1 as the channel.
+       */
+      if (!is_uniform(op[i]) && !op[i].is_scalar)
+         all_sources_uniform = false;
    }
+
+   brw_reg result =
+      need_dest ? get_nir_def(ntb, instr->def, all_sources_uniform) : bld.null_reg_ud();
+
+   result.type = brw_type_for_nir_type(devinfo,
+      (nir_alu_type)(nir_op_infos[instr->op].output_type |
+                     instr->def.bit_size));
 
    /* Move and vecN instrutions may still be vectored.  Return the raw,
     * vectored source and destination so that fs_visitor::nir_emit_alu can
@@ -767,6 +773,9 @@ prepare_alu_destination_and_sources(nir_to_brw_state &ntb,
       break;
    }
 
+   const bool is_scalar = result.is_scalar || (!need_dest && all_sources_uniform);
+   const fs_builder xbld = is_scalar ? bld.scalar_group() : bld;
+
    /* At this point, we have dealt with any instruction that operates on
     * more than a single channel.  Therefore, we can just adjust the source
     * and destination registers for that channel and emit the instruction.
@@ -780,12 +789,18 @@ prepare_alu_destination_and_sources(nir_to_brw_state &ntb,
       assert(util_bitcount(write_mask) == 1);
       channel = ffs(write_mask) - 1;
 
-      result = offset(result, bld, channel);
+      result = offset(result, xbld, channel);
    }
 
    for (unsigned i = 0; i < nir_op_infos[instr->op].num_inputs; i++) {
       assert(nir_op_infos[instr->op].input_sizes[i] < 2);
-      op[i] = offset(op[i], bld, instr->src[i].swizzle[channel]);
+      op[i] = offset(op[i], xbld, instr->src[i].swizzle[channel]);
+
+      /* If the dispatch width matches the scalar allocation width, offset()
+       * won't set the stride to zero. Force that here.
+       */
+      if (op[i].is_scalar)
+         op[i] = component(op[i], 0);
    }
 
    return result;
@@ -867,14 +882,13 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
                 bool need_dest)
 {
    const intel_device_info *devinfo = ntb.devinfo;
-   const fs_builder &bld = ntb.bld;
 
    fs_inst *inst;
    unsigned execution_mode =
-      bld.shader->nir->info.float_controls_execution_mode;
+      ntb.bld.shader->nir->info.float_controls_execution_mode;
 
    brw_reg op[NIR_MAX_VEC_COMPONENTS];
-   brw_reg result = prepare_alu_destination_and_sources(ntb, bld, instr, op, need_dest);
+   brw_reg result = prepare_alu_destination_and_sources(ntb, ntb.bld, instr, op, need_dest);
 
 #ifndef NDEBUG
    /* Everything except raw moves, some type conversions, iabs, and ineg
@@ -908,6 +922,8 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       }
    }
 #endif
+
+   const fs_builder &bld = result.is_scalar ? ntb.bld.scalar_group() : ntb.bld;
 
    switch (instr->op) {
    case nir_op_mov:
@@ -976,7 +992,7 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
 
    case nir_op_i2f32:
    case nir_op_u2f32:
-      if (optimize_extract_to_float(ntb, instr, result))
+      if (optimize_extract_to_float(ntb, bld, instr, result))
          return;
       bld.MOV(result, op[0]);
       break;
@@ -1056,7 +1072,7 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       if (extract_instr != NULL) {
          if (extract_instr->op == nir_op_extract_u8 ||
              extract_instr->op == nir_op_extract_i8) {
-            prepare_alu_destination_and_sources(ntb, bld, extract_instr, op, false);
+            prepare_alu_destination_and_sources(ntb, ntb.bld, extract_instr, op, false);
 
             const unsigned byte = nir_src_as_uint(extract_instr->src[1].src);
             const brw_reg_type type =
@@ -1065,7 +1081,7 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
             op[0] = subscript(op[0], type, byte);
          } else if (extract_instr->op == nir_op_extract_u16 ||
                     extract_instr->op == nir_op_extract_i16) {
-            prepare_alu_destination_and_sources(ntb, bld, extract_instr, op, false);
+            prepare_alu_destination_and_sources(ntb, ntb.bld, extract_instr, op, false);
 
             const unsigned word = nir_src_as_uint(extract_instr->src[1].src);
             const brw_reg_type type =
@@ -1302,6 +1318,12 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
 
       bld.CMP(dest, op[0], op[1], brw_cmod_for_nir_comparison(instr->op));
 
+      /* The destination will now be used as a source, so select component 0
+       * if it's is_scalar (as is done in get_nir_src).
+       */
+      if (bit_size != 32 && result.is_scalar)
+         dest = component(dest, 0);
+
       if (bit_size > 32) {
          bld.MOV(result, subscript(dest, BRW_TYPE_UD, 0));
       } else if(bit_size < 32) {
@@ -1333,6 +1355,12 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       bld.CMP(dest, op[0], op[1],
               brw_cmod_for_nir_comparison(instr->op));
 
+      /* The destination will now be used as a source, so select component 0
+       * if it's is_scalar (as is done in get_nir_src).
+       */
+      if (bit_size != 32 && result.is_scalar)
+         dest = component(dest, 0);
+
       if (bit_size > 32) {
          bld.MOV(result, subscript(dest, BRW_TYPE_UD, 0));
       } else if (bit_size < 32) {
@@ -1357,7 +1385,7 @@ fs_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
          /* The sources of the source logical instruction are now the
           * sources of the instruction that will be generated.
           */
-         prepare_alu_destination_and_sources(ntb, bld, inot_src_instr, op, false);
+         prepare_alu_destination_and_sources(ntb, ntb.bld, inot_src_instr, op, false);
          resolve_inot_sources(ntb, bld, inot_src_instr, op);
 
          /* Smash all of the sources and destination to be signed.  This
@@ -1938,7 +1966,7 @@ get_nir_src_imm(nir_to_brw_state &ntb, const nir_src &src)
 }
 
 static brw_reg
-get_nir_def(nir_to_brw_state &ntb, const nir_def &def)
+get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
 {
    nir_intrinsic_instr *store_reg = nir_store_reg_for_def(&def);
    bool is_scalar = false;
@@ -1963,6 +1991,8 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def)
 
       /* This cannot be is_scalar if NIR thought it was divergent. */
       assert(!(is_scalar && def.divergent));
+   } else if (def.parent_instr->type == nir_instr_type_alu) {
+      is_scalar = store_reg == NULL && all_sources_uniform && !def.divergent;
    }
 
    const fs_builder &bld = is_scalar ? ntb.bld.scalar_group() : ntb.bld;
