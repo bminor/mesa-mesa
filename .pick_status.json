@@ -1084,7 +1084,7 @@
         "description": "vk/util: fix 'beta' check for physical device properties",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "083793a39dd9fb421bb8ae78908b18ae6cb8a178",
         "notes": null
