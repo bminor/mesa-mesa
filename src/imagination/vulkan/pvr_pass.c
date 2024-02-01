@@ -183,7 +183,6 @@ VkResult pvr_pds_unitex_state_program_create_and_upload(
 static VkResult
 pvr_load_op_shader_generate(struct pvr_device *device,
                             const VkAllocationCallbacks *allocator,
-                            struct pvr_renderpass_hwsetup_render *hw_render,
                             struct pvr_load_op *load_op)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
@@ -319,7 +318,7 @@ pvr_subpass_load_op_init(struct pvr_device *device,
    load_op->subpass = subpass;
    load_op->clears_loads_state.mrt_setup = &hw_subpass->setup;
 
-   result = pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
+   result = pvr_load_op_shader_generate(device, allocator, load_op);
    if (result != VK_SUCCESS) {
       vk_free2(&device->vk.alloc, allocator, load_op);
       return result;
@@ -369,7 +368,7 @@ pvr_render_load_op_init(struct pvr_device *device,
    load_op->hw_render = hw_render;
    load_op->clears_loads_state.mrt_setup = &hw_render->init_setup;
 
-   result = pvr_load_op_shader_generate(device, allocator, hw_render, load_op);
+   result = pvr_load_op_shader_generate(device, allocator, load_op);
    if (result != VK_SUCCESS) {
       vk_free2(&device->vk.alloc, allocator, load_op);
       return result;
