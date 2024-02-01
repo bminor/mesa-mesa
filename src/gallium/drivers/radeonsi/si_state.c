@@ -4617,6 +4617,9 @@ static void si_bind_vertex_elements(struct pipe_context *ctx, void *state)
    sctx->vertex_elements = v;
    sctx->num_vertex_elements = v->count;
    sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
+#ifndef NDEBUG
+   sctx->vertex_elements_but_no_buffers = v->count > 0;
+#endif
 
    if (old->instance_divisor_is_one != v->instance_divisor_is_one ||
        old->instance_divisor_is_fetched != v->instance_divisor_is_fetched ||
@@ -4697,6 +4700,9 @@ static void si_set_vertex_buffers(struct pipe_context *ctx, unsigned count,
    sctx->num_vertex_buffers = count;
    sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
    sctx->vertex_buffer_unaligned = unaligned;
+#ifndef NDEBUG
+   sctx->vertex_elements_but_no_buffers = false;
+#endif
 
    /* Check whether alignment may have changed in a way that requires
     * shader changes. This check is conservative: a vertex buffer can only

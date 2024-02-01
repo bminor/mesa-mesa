@@ -1089,6 +1089,7 @@ struct si_context {
    unsigned num_vertex_elements;
    unsigned cs_max_waves_per_sh;
    uint32_t compute_tmpring_size;
+   bool vertex_elements_but_no_buffers;
    bool uses_nontrivial_vs_inputs;
    bool force_trivial_vs_inputs;
    bool do_update_shaders;

@@ -1817,6 +1817,7 @@ static bool si_upload_and_prefetch_VB_descriptors(struct si_context *sctx,
 
    if (sctx->vertex_buffers_dirty || IS_DRAW_VERTEX_STATE) {
       assert(count || IS_DRAW_VERTEX_STATE);
+      assert(IS_DRAW_VERTEX_STATE || !sctx->vertex_elements_but_no_buffers);
 
       struct si_vertex_elements *velems = sctx->vertex_elements;
       unsigned alloc_size = IS_DRAW_VERTEX_STATE ?
