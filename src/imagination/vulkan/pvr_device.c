@@ -246,7 +246,7 @@ static void pvr_physical_device_get_supported_features(
       .fragmentStoresAndAtomics = false,
       .shaderTessellationAndGeometryPointSize = false,
       .shaderImageGatherExtended = false,
-      .shaderStorageImageExtendedFormats = false,
+      .shaderStorageImageExtendedFormats = true,
       .shaderStorageImageMultisample = false,
       .shaderStorageImageReadWithoutFormat = true,
       .shaderStorageImageWriteWithoutFormat = true,
