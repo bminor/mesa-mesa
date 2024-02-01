@@ -34,7 +34,7 @@
         "description": "zink: move sparse lowering up in file",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0d652c0c8db33ff80d16f30b2d2e8f4413946338",
         "notes": null
