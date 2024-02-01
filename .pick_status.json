@@ -44,7 +44,7 @@
         "description": "zink: zero allocate resident_defs array in ntv",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "73ef54e34242fa59803a3a89b5a6eb92053e917e",
         "notes": null
