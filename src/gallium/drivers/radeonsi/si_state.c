@@ -4446,6 +4446,7 @@ static void *si_create_vertex_elements(struct pipe_context *ctx, unsigned count,
       v->elem[i].src_offset = elements[i].src_offset;
       v->elem[i].stride = elements[i].src_stride;
       v->vertex_buffer_index[i] = vbo_index;
+      v->num_vertex_buffers = MAX2(v->num_vertex_buffers, vbo_index + 1);
 
       bool always_fix = false;
       union si_vs_fix_fetch fix_fetch;
@@ -4670,7 +4671,7 @@ static void si_set_vertex_buffers(struct pipe_context *ctx, unsigned count,
    unsigned i;
 
    assert(count <= ARRAY_SIZE(sctx->vertex_buffer));
-   assert(!count || buffers);
+   assert(!count || (count == sctx->vertex_elements->num_vertex_buffers && buffers));
 
    for (i = 0; i < count; i++) {
       const struct pipe_vertex_buffer *src = buffers + i;
@@ -4698,7 +4699,7 @@ static void si_set_vertex_buffers(struct pipe_context *ctx, unsigned count,
       pipe_resource_reference(&sctx->vertex_buffer[i].buffer.resource, NULL);
 
    sctx->num_vertex_buffers = count;
-   sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
+   sctx->vertex_buffers_dirty = count > 0;
    sctx->vertex_buffer_unaligned = unaligned;
 #ifndef NDEBUG
    sctx->vertex_elements_but_no_buffers = false;
