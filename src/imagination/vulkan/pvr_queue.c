@@ -213,15 +213,22 @@ static void pvr_update_job_syncs(struct pvr_device *device,
    queue->last_job_signal_sync[submitted_job_type] = new_signal_sync;
 }
 
-static VkResult pvr_process_graphics_cmd(struct pvr_device *device,
-                                         struct pvr_queue *queue,
-                                         struct pvr_cmd_buffer *cmd_buffer,
-                                         struct pvr_sub_cmd_gfx *sub_cmd)
+static VkResult
+pvr_process_graphics_cmd_for_view(struct pvr_device *device,
+                                  struct pvr_queue *queue,
+                                  struct pvr_cmd_buffer *cmd_buffer,
+                                  struct pvr_sub_cmd_gfx *sub_cmd,
+                                  uint32_t view_index)
 {
    pvr_dev_addr_t original_ctrl_stream_addr = { 0 };
+   struct pvr_render_job *job = &sub_cmd->job;
    struct vk_sync *geom_signal_sync;
    struct vk_sync *frag_signal_sync = NULL;
    VkResult result;
+
+   job->ds.addr =
+      PVR_DEV_ADDR_OFFSET(job->ds.addr, job->ds.stride * view_index);
+   job->view_state.view_index = view_index;
 
    result = vk_sync_create(&device->vk,
                            &device->pdevice->ws->syncobj_type,
@@ -231,7 +238,7 @@ static VkResult pvr_process_graphics_cmd(struct pvr_device *device,
    if (result != VK_SUCCESS)
       return result;
 
-   if (sub_cmd->job.run_frag) {
+   if (job->run_frag) {
       result = vk_sync_create(&device->vk,
                               &device->pdevice->ws->syncobj_type,
                               0U,
@@ -254,11 +261,11 @@ static VkResult pvr_process_graphics_cmd(struct pvr_device *device,
        * and if geometry_terminate is false this kick can't have a fragment
        * stage without another terminating geometry kick.
        */
-      assert(sub_cmd->job.geometry_terminate && sub_cmd->job.run_frag);
+      assert(job->geometry_terminate && job->run_frag);
 
       /* First submit must not touch fragment work. */
-      sub_cmd->job.geometry_terminate = false;
-      sub_cmd->job.run_frag = false;
+      job->geometry_terminate = false;
+      job->run_frag = false;
 
       result =
          pvr_render_job_submit(queue->gfx_ctx,
@@ -268,20 +275,19 @@ static VkResult pvr_process_graphics_cmd(struct pvr_device *device,
                                NULL,
                                NULL);
 
-      sub_cmd->job.geometry_terminate = true;
-      sub_cmd->job.run_frag = true;
+      job->geometry_terminate = true;
+      job->run_frag = true;
 
       if (result != VK_SUCCESS)
          goto err_destroy_frag_sync;
 
-      original_ctrl_stream_addr = sub_cmd->job.ctrl_stream_addr;
+      original_ctrl_stream_addr = job->ctrl_stream_addr;
 
       /* Second submit contains only a trivial control stream to terminate the
        * geometry work.
        */
       assert(sub_cmd->terminate_ctrl_stream);
-      sub_cmd->job.ctrl_stream_addr =
-         sub_cmd->terminate_ctrl_stream->vma->dev_addr;
+      job->ctrl_stream_addr = sub_cmd->terminate_ctrl_stream->vma->dev_addr;
    }
 
    result = pvr_render_job_submit(queue->gfx_ctx,
@@ -292,14 +298,14 @@ static VkResult pvr_process_graphics_cmd(struct pvr_device *device,
                                   frag_signal_sync);
 
    if (original_ctrl_stream_addr.addr > 0)
-      sub_cmd->job.ctrl_stream_addr = original_ctrl_stream_addr;
+      job->ctrl_stream_addr = original_ctrl_stream_addr;
 
    if (result != VK_SUCCESS)
       goto err_destroy_frag_sync;
 
    pvr_update_job_syncs(device, queue, geom_signal_sync, PVR_JOB_TYPE_GEOM);
 
-   if (sub_cmd->job.run_frag)
+   if (job->run_frag)
       pvr_update_job_syncs(device, queue, frag_signal_sync, PVR_JOB_TYPE_FRAG);
 
    /* FIXME: DoShadowLoadOrStore() */
@@ -313,6 +319,30 @@ err_destroy_geom_sync:
    vk_sync_destroy(&device->vk, geom_signal_sync);
 
    return result;
+}
+
+static VkResult pvr_process_graphics_cmd(struct pvr_device *device,
+                                         struct pvr_queue *queue,
+                                         struct pvr_cmd_buffer *cmd_buffer,
+                                         struct pvr_sub_cmd_gfx *sub_cmd)
+{
+   const pvr_dev_addr_t ds_addr = sub_cmd->job.ds.addr;
+
+   u_foreach_bit (view_idx, sub_cmd->view_mask) {
+      VkResult result;
+
+      result = pvr_process_graphics_cmd_for_view(device,
+                                                 queue,
+                                                 cmd_buffer,
+                                                 sub_cmd,
+                                                 view_idx);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   sub_cmd->job.ds.addr = ds_addr;
+
+   return VK_SUCCESS;
 }
 
 static VkResult pvr_process_compute_cmd(struct pvr_device *device,

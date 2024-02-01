@@ -2834,11 +2834,7 @@ pvr_create_renderpass_state(const VkGraphicsPipelineCreateInfo *const info)
 
    return (struct vk_render_pass_state){
       .attachments = attachments,
-
-      /* TODO: This is only needed for VK_KHR_create_renderpass2 (or core 1.2),
-       * which is not currently supported.
-       */
-      .view_mask = 0,
+      .view_mask = subpass->view_mask,
    };
 }
 

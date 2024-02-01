@@ -394,6 +394,24 @@ void pvr_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer,
    };
 }
 
+static inline const uint32_t
+pvr_cmd_buffer_state_get_view_count(const struct pvr_cmd_buffer_state *state)
+{
+   const struct pvr_render_pass_info *render_pass_info =
+      &state->render_pass_info;
+   const struct pvr_sub_cmd_gfx *gfx_sub_cmd = &state->current_sub_cmd->gfx;
+   const uint32_t hw_render_idx = gfx_sub_cmd->hw_render_idx;
+   const struct pvr_renderpass_hwsetup_render *hw_render =
+      &render_pass_info->pass->hw_setup->renders[hw_render_idx];
+   const uint32_t view_count = util_bitcount(hw_render->view_mask);
+
+   assert(state->current_sub_cmd->type == PVR_SUB_CMD_TYPE_GRAPHICS);
+   /* hw_render view masks have 1 bit set at least. */
+   assert(view_count);
+
+   return view_count;
+}
+
 void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
                        VkQueryPool queryPool,
                        uint32_t query,
@@ -401,6 +419,7 @@ void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
+   uint32_t view_count = 1;
    VK_FROM_HANDLE(pvr_query_pool, pool, queryPool);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
@@ -435,6 +454,8 @@ void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
          state->current_sub_cmd->gfx.barrier_store = false;
          state->current_sub_cmd->gfx.query_pool = pool;
       }
+
+      view_count = pvr_cmd_buffer_state_get_view_count(state);
    }
 
    state->query_pool = pool;
@@ -443,7 +464,8 @@ void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
    state->dirty.vis_test = true;
 
    /* Add the index to the list for this render. */
-   util_dynarray_append(&state->query_indices, __typeof__(query), query);
+   for (uint32_t i = 0; i < view_count; i++)
+      util_dynarray_append(&state->query_indices, __typeof__(query), query);
 }
 
 void pvr_CmdEndQuery(VkCommandBuffer commandBuffer,

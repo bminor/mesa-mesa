@@ -71,8 +71,6 @@ struct pvr_rt_mtile_info {
  * (although it doesn't subclass).
  */
 struct pvr_render_job {
-   struct pvr_rt_dataset *rt_dataset;
-
    struct {
       bool run_frag : 1;
       bool geometry_terminate : 1;
@@ -88,7 +86,7 @@ struct pvr_render_job {
       bool z_only_render : 1;
    };
 
-   uint32_t pds_pixel_event_data_offset;
+   /* PDS pixel event for partial renders do not depend on the view index. */
    uint32_t pr_pds_pixel_event_data_offset;
 
    pvr_dev_addr_t ctrl_stream_addr;
@@ -154,8 +152,33 @@ struct pvr_render_job {
                  "CR_PDS_BGRND3_SIZEINFO cannot be stored in uint64_t");
    static_assert(ROGUE_NUM_CR_PDS_BGRND_WORDS == 3,
                  "Cannot store all CR_PDS_BGRND words");
-   uint64_t pds_bgnd_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
-   uint64_t pr_pds_bgnd_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
+
+   struct pvr_view_state {
+      struct {
+         uint32_t pds_pixel_event_data_offset;
+         uint64_t pds_bgnd_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
+         uint64_t pr_pds_bgnd_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
+      } view[PVR_MAX_MULTIVIEW];
+
+      /* True if pds_pixel_event_data_offset should be taken from the first
+       * element of the view array. Otherwise view_index should be used.
+       */
+      bool force_pds_pixel_event_data_offset_zero : 1;
+
+      /* True if a partial render job uses the same EOT program data for a
+       * pixel event as the fragment job and not from the scratch buffer.
+       */
+      bool use_pds_pixel_event_data_offset : 1;
+
+      /* True if first_pds_bgnd_reg_values should be taken from the first
+       * element of the view array. Otherwise view_index should be used.
+       */
+      bool force_pds_bgnd_reg_values_zero : 1;
+
+      struct pvr_rt_dataset **rt_datasets;
+
+      uint32_t view_index;
+   } view_state;
 };
 
 void pvr_rt_mtile_info_init(const struct pvr_device_info *dev_info,

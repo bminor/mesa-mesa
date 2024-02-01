@@ -1877,6 +1877,9 @@ pvr_can_combine_with_render(const struct pvr_device_info *dev_info,
    sp_dsts->color = NULL;
    new_alloc->tile_buffers = NULL;
 
+   if (ctx->hw_render && (ctx->hw_render->view_mask != subpass->view_mask))
+      return false;
+
    /* The hardware doesn't support replicating the stencil, so we need to store
     * the depth to memory if a stencil attachment is used as an input
     * attachment.
@@ -2060,6 +2063,7 @@ pvr_merge_subpass(const struct pvr_device *device,
       ctx->hw_render->depth_init = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       ctx->hw_render->stencil_init = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       ctx->hw_render->sample_count = input_subpass->sample_count;
+      ctx->hw_render->view_mask = input_subpass->view_mask;
    }
 
    /* Allocate a new subpass in the in-progress render. */

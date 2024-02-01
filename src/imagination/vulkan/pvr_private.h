@@ -518,6 +518,8 @@ struct pvr_sub_cmd_gfx {
    bool wait_on_previous_transfer;
 
    bool has_depth_feedback;
+
+   uint32_t view_mask;
 };
 
 struct pvr_sub_cmd_compute {
@@ -1009,11 +1011,11 @@ struct pvr_query_info {
 };
 
 struct pvr_render_target {
-   struct pvr_rt_dataset *rt_dataset;
+   struct pvr_rt_dataset *rt_dataset[PVR_MAX_MULTIVIEW];
 
    pthread_mutex_t mutex;
 
-   bool valid;
+   uint32_t valid_mask;
 };
 
 struct pvr_framebuffer {
@@ -1101,6 +1103,9 @@ struct pvr_render_subpass {
    uint32_t isp_userpass;
 
    VkPipelineBindPoint pipeline_bind_point;
+
+   /* View mask for multiview. */
+   uint32_t view_mask;
 };
 
 struct pvr_render_pass {
@@ -1123,6 +1128,13 @@ struct pvr_render_pass {
 
    /* The maximum number of tile buffers to use in any subpass. */
    uint32_t max_tilebuffer_count;
+
+   /* VkSubpassDescription2::viewMask or 1 when non-multiview
+    *
+    * To determine whether multiview is enabled, check
+    * pvr_render_pass::multiview_enabled.
+    */
+   bool multiview_enabled;
 };
 
 /* Max render targets for the clears loads state in load op.
@@ -1166,6 +1178,10 @@ struct pvr_load_op {
 
       const struct usc_mrt_setup *mrt_setup;
    } clears_loads_state;
+
+   uint32_t view_indices[PVR_MAX_MULTIVIEW];
+
+   uint32_t view_count;
 };
 
 #define CHECK_MASK_SIZE(_struct_type, _field_name, _nr_bits)               \
@@ -1184,6 +1200,15 @@ CHECK_MASK_SIZE(pvr_load_op,
                 PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
 
 #undef CHECK_MASK_SIZE
+
+struct pvr_load_op_state {
+   uint32_t load_op_count;
+
+   /* Load op array indexed by HW render view (not by the index in the view
+    * mask).
+    */
+   struct pvr_load_op *load_ops;
+};
 
 uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
    const struct pvr_device_info *dev_info,
@@ -1427,6 +1452,20 @@ void pvr_reset_graphics_dirty_state(struct pvr_cmd_buffer *const cmd_buffer,
 
 const struct pvr_renderpass_hwsetup_subpass *
 pvr_get_hw_subpass(const struct pvr_render_pass *pass, const uint32_t subpass);
+
+static inline void
+pvr_render_targets_datasets_destroy(struct pvr_render_target *render_target)
+{
+   u_foreach_bit (valid_idx, render_target->valid_mask) {
+      struct pvr_rt_dataset *rt_dataset = render_target->rt_dataset[valid_idx];
+
+      if (rt_dataset && render_target->valid_mask & BITFIELD_BIT(valid_idx))
+         pvr_render_target_dataset_destroy(rt_dataset);
+
+      render_target->rt_dataset[valid_idx] = NULL;
+      render_target->valid_mask &= ~BITFIELD_BIT(valid_idx);
+   }
+}
 
 VK_DEFINE_HANDLE_CASTS(pvr_cmd_buffer,
                        vk.base,

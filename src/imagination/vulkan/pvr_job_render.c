@@ -992,9 +992,11 @@ static void pvr_geom_state_stream_init(struct pvr_render_ctx *ctx,
    stream_ptr += pvr_cmd_length(CR_PPP_CTRL);
 
    pvr_csb_pack (stream_ptr, CR_TE_PSG, value) {
+      struct pvr_rt_dataset *rt_dataset =
+         job->view_state.rt_datasets[job->view_state.view_index];
       value.completeonterminate = job->geometry_terminate;
 
-      value.region_stride = job->rt_dataset->rgn_headers_stride /
+      value.region_stride = rt_dataset->rgn_headers_stride /
                             ROGUE_CR_TE_PSG_REGION_STRIDE_UNIT_SIZE;
 
       value.forcenewstate = PVR_HAS_QUIRK(dev_info, 52942);
@@ -1015,9 +1017,9 @@ static void pvr_geom_state_stream_init(struct pvr_render_ctx *ctx,
    }
    stream_ptr += pvr_cmd_length(VDMCTRL_PDS_STATE0);
 
-   /* clang-format off */
-   pvr_csb_pack (stream_ptr, KMD_STREAM_VIEW_IDX, value);
-   /* clang-format on */
+   pvr_csb_pack (stream_ptr, KMD_STREAM_VIEW_IDX, value) {
+      value.idx = job->view_state.view_index;
+   }
    stream_ptr += pvr_cmd_length(KMD_STREAM_VIEW_IDX);
 
    state->fw_stream_len = (uint8_t *)stream_ptr - (uint8_t *)state->fw_stream;
@@ -1070,7 +1072,8 @@ pvr_geom_state_flags_init(const struct pvr_render_job *const job,
                           struct pvr_winsys_geometry_state_flags *flags)
 {
    *flags = (struct pvr_winsys_geometry_state_flags){
-      .is_first_geometry = !job->rt_dataset->need_frag,
+      .is_first_geometry =
+         !job->view_state.rt_datasets[job->view_state.view_index]->need_frag,
       .is_last_geometry = job->geometry_terminate,
       .use_single_core = job->frag_uses_atomic_ops,
    };
@@ -1147,7 +1150,8 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    const struct pvr_device_runtime_info *dev_runtime_info =
       &pdevice->dev_runtime_info;
    const struct pvr_device_info *dev_info = &pdevice->dev_info;
-   const struct pvr_rt_dataset *rt_dataset = job->rt_dataset;
+   const struct pvr_rt_dataset *rt_dataset =
+      job->view_state.rt_datasets[job->view_state.view_index];
    const enum ROGUE_CR_ISP_AA_MODE_TYPE isp_aa_mode =
       pvr_cr_isp_aa_mode_type(job->samples);
    struct pvr_rt_mtile_info tiling_info = { 0 };
@@ -1155,6 +1159,7 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    enum ROGUE_CR_ZLS_FORMAT_TYPE zload_format = ROGUE_CR_ZLS_FORMAT_TYPE_F32Z;
    uint32_t *stream_ptr = (uint32_t *)state->fw_stream;
    uint32_t *stream_len_ptr = stream_ptr;
+   uint32_t view_index;
    uint32_t pixel_ctl;
    uint32_t isp_ctl;
 
@@ -1296,20 +1301,28 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    }
    stream_ptr += pvr_cmd_length(CR_TPU_BORDER_COLOUR_TABLE_PDM);
 
-   STATIC_ASSERT(ARRAY_SIZE(job->pds_bgnd_reg_values) ==
+   STATIC_ASSERT(ARRAY_SIZE(job->view_state.view[0].pds_bgnd_reg_values) ==
                  ROGUE_NUM_CR_PDS_BGRND_WORDS);
-   STATIC_ASSERT(sizeof(job->pds_bgnd_reg_values[0]) == sizeof(uint64_t));
+   STATIC_ASSERT(sizeof(job->view_state.view[0].pds_bgnd_reg_values[0]) ==
+                 sizeof(uint64_t));
+
+   if (job->view_state.force_pds_bgnd_reg_values_zero)
+      view_index = 0;
+   else
+      view_index = job->view_state.view_index;
+
    memcpy(stream_ptr,
-          job->pds_bgnd_reg_values,
-          sizeof(job->pds_bgnd_reg_values));
+          job->view_state.view[view_index].pds_bgnd_reg_values,
+          sizeof(job->view_state.view[view_index].pds_bgnd_reg_values));
    stream_ptr += ROGUE_NUM_CR_PDS_BGRND_WORDS * DWORDS_PER_U64;
 
-   STATIC_ASSERT(ARRAY_SIZE(job->pr_pds_bgnd_reg_values) ==
+   STATIC_ASSERT(ARRAY_SIZE(job->view_state.view[0].pr_pds_bgnd_reg_values) ==
                  ROGUE_NUM_CR_PDS_BGRND_WORDS);
-   STATIC_ASSERT(sizeof(job->pr_pds_bgnd_reg_values[0]) == sizeof(uint64_t));
+   STATIC_ASSERT(sizeof(job->view_state.view[0].pr_pds_bgnd_reg_values[0]) ==
+                 sizeof(uint64_t));
    memcpy(stream_ptr,
-          job->pr_pds_bgnd_reg_values,
-          sizeof(job->pr_pds_bgnd_reg_values));
+          job->view_state.view[view_index].pr_pds_bgnd_reg_values,
+          sizeof(job->view_state.view[view_index].pr_pds_bgnd_reg_values));
    stream_ptr += ROGUE_NUM_CR_PDS_BGRND_WORDS * DWORDS_PER_U64;
 
 #undef DWORDS_PER_U64
@@ -1445,9 +1458,9 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
       stream_ptr += pvr_cmd_length(KMD_STREAM_PIXEL_PHANTOM);
    }
 
-   /* clang-format off */
-   pvr_csb_pack (stream_ptr, KMD_STREAM_VIEW_IDX, value);
-   /* clang-format on */
+   pvr_csb_pack (stream_ptr, KMD_STREAM_VIEW_IDX, value) {
+      value.idx = job->view_state.view_index;
+   }
    stream_ptr += pvr_cmd_length(KMD_STREAM_VIEW_IDX);
 
    /* Make sure that the pvr_frag_km_...() function is returning the correct
@@ -1456,8 +1469,14 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    assert((uint8_t *)stream_ptr - (uint8_t *)state->fw_stream ==
           pvr_frag_km_stream_pds_eot_data_addr_offset(dev_info));
 
+   if (job->view_state.force_pds_pixel_event_data_offset_zero)
+      view_index = 0;
+   else
+      view_index = job->view_state.view_index;
+
    pvr_csb_pack (stream_ptr, CR_EVENT_PIXEL_PDS_DATA, value) {
-      value.addr = PVR_DEV_ADDR(job->pds_pixel_event_data_offset);
+      value.addr = PVR_DEV_ADDR(
+         job->view_state.view[view_index].pds_pixel_event_data_offset);
    }
    stream_ptr += pvr_cmd_length(CR_EVENT_PIXEL_PDS_DATA);
 
@@ -1599,6 +1618,14 @@ static void pvr_render_job_ws_fragment_pr_init_based_on_fragment_state(
       pvr_frag_km_stream_pbe_reg_words_offset(dev_info);
    const uint32_t eot_data_addr_byte_offset =
       pvr_frag_km_stream_pds_eot_data_addr_offset(dev_info);
+   const uint32_t view_index =
+      job->view_state.force_pds_pixel_event_data_offset_zero
+         ? 0
+         : job->view_state.view_index;
+   const uint32_t pr_pds_pixel_event_data_offset =
+      job->view_state.use_pds_pixel_event_data_offset
+         ? job->view_state.view[view_index].pds_pixel_event_data_offset
+         : job->pr_pds_pixel_event_data_offset;
 
    /* Massive copy :( */
    *state = *frag;
@@ -1613,10 +1640,11 @@ static void pvr_render_job_ws_fragment_pr_init_based_on_fragment_state(
    assert(state->fw_stream_len >=
           eot_data_addr_byte_offset +
              PVR_DW_TO_BYTES(pvr_cmd_length(CR_EVENT_PIXEL_PDS_DATA)));
+
    pvr_csb_pack ((uint32_t *)&state->fw_stream[eot_data_addr_byte_offset],
                  CR_EVENT_PIXEL_PDS_DATA,
                  eot_pds_data) {
-      eot_pds_data.addr = PVR_DEV_ADDR(job->pr_pds_pixel_event_data_offset);
+      eot_pds_data.addr = PVR_DEV_ADDR(pr_pds_pixel_event_data_offset);
    }
 }
 
@@ -1629,8 +1657,10 @@ static void pvr_render_job_ws_submit_info_init(
 {
    memset(submit_info, 0, sizeof(*submit_info));
 
-   submit_info->rt_dataset = job->rt_dataset->ws_rt_dataset;
-   submit_info->rt_data_idx = job->rt_dataset->rt_data_idx;
+   submit_info->rt_dataset =
+      job->view_state.rt_datasets[job->view_state.view_index]->ws_rt_dataset;
+   submit_info->rt_data_idx =
+      job->view_state.rt_datasets[job->view_state.view_index]->rt_data_idx;
 
    submit_info->frame_num = ctx->device->global_queue_present_count;
    submit_info->job_num = ctx->device->global_cmd_buffer_submit_count;
@@ -1671,7 +1701,8 @@ VkResult pvr_render_job_submit(struct pvr_render_ctx *ctx,
                                struct vk_sync *signal_sync_geom,
                                struct vk_sync *signal_sync_frag)
 {
-   struct pvr_rt_dataset *rt_dataset = job->rt_dataset;
+   struct pvr_rt_dataset *rt_dataset =
+      job->view_state.rt_datasets[job->view_state.view_index];
    struct pvr_winsys_render_submit_info submit_info;
    struct pvr_device *device = ctx->device;
    VkResult result;

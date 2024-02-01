@@ -1496,10 +1496,11 @@ pvr_get_max_layers_covering_target(VkRect2D target_rect,
  */
 static inline bool
 pvr_clear_needs_rt_id_output(struct pvr_device_info *dev_info,
+                             bool multiview_enabled,
                              uint32_t rect_count,
                              const VkClearRect *rects)
 {
-   if (!PVR_HAS_FEATURE(dev_info, gs_rta_support))
+   if (!PVR_HAS_FEATURE(dev_info, gs_rta_support) || multiview_enabled)
       return false;
 
    for (uint32_t i = 0; i < rect_count; i++) {
@@ -1890,8 +1891,10 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
    /* We'll be emitting to the control stream. */
    sub_cmd->empty_cmd = false;
 
-   vs_has_rt_id_output =
-      pvr_clear_needs_rt_id_output(dev_info, rect_count, rects);
+   vs_has_rt_id_output = pvr_clear_needs_rt_id_output(dev_info,
+                                                      pass->multiview_enabled,
+                                                      rect_count,
+                                                      rects);
 
    /* 4 because we're expecting the USC to output X, Y, Z, and W. */
    vs_output_size_in_bytes = PVR_DW_TO_BYTES(4);

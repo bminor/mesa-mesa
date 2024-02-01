@@ -3016,11 +3016,7 @@ static void pvr_render_targets_fini(struct pvr_render_target *render_targets,
                                     uint32_t render_targets_count)
 {
    for (uint32_t i = 0; i < render_targets_count; i++) {
-      if (render_targets[i].valid) {
-         pvr_render_target_dataset_destroy(render_targets[i].rt_dataset);
-         render_targets[i].valid = false;
-      }
-
+      pvr_render_targets_datasets_destroy(&render_targets[i]);
       pthread_mutex_destroy(&render_targets[i].mutex);
    }
 }

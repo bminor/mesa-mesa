@@ -255,9 +255,12 @@ struct pvr_renderpass_hwsetup_render {
    /* true if this HW render has lasting effects on its attachments. */
    bool has_side_effects;
 
-   struct pvr_load_op *load_op;
-
    bool requires_frag_pr;
+
+   /* View mask for multiview. */
+   uint32_t view_mask;
+
+   struct pvr_load_op_state *load_op_state;
 };
 
 struct pvr_renderpass_hw_map {

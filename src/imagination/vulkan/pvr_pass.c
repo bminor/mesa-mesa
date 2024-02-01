@@ -384,32 +384,90 @@ pvr_subpass_load_op_init(struct pvr_device *device,
       return result;
    }
 
+   load_op->view_count = 0;
+   u_foreach_bit (view_idx, hw_render->view_mask) {
+      load_op->view_indices[load_op->view_count] = view_idx;
+      load_op->view_count++;
+   }
+
    hw_render->subpasses[hw_subpass_idx].load_op = load_op;
 
    return VK_SUCCESS;
 }
 
-static VkResult
-pvr_render_load_op_init(struct pvr_device *device,
-                        const VkAllocationCallbacks *allocator,
-                        const struct pvr_render_pass *pass,
-                        struct pvr_renderpass_hwsetup_render *hw_render)
+struct pvr_per_view_attachment_first_use_info {
+   uint32_t *first_subpass[PVR_MAX_MULTIVIEW];
+   uint32_t *first_subpass_memory;
+};
+
+/**
+ * \brief Returns true if a clear op is needed instead of the hw render reported
+ * load op load.
+ *
+ * The hw render isn't aware of multiview renders so it thinks we're reusing the
+ * attachment of a previous subpass even if it's the first time the attachment
+ * is used in the render pass, so a clear op gets reported as a load op load
+ * instead.
+ */
+/* FIXME: Investigate whether we can change the HW render code so it reports
+ * the correct load operation. This will mean we can get rid of struct
+ * pvr_per_view_attachment_first_use_info and struct pvr_load_op_state.
+ * Instead we'll be able to have a single render struct load_op like we do for
+ * subpasses.
+ */
+static bool pvr_render_load_op_multiview_load_should_be_clear(
+   const struct pvr_render_pass *pass,
+   const struct pvr_renderpass_hwsetup_render *hw_render,
+   uint32_t hw_render_index,
+   const struct pvr_renderpass_colorinit *color_init,
+   const struct pvr_per_view_attachment_first_use_info *first_use_info,
+   uint32_t view_index)
 {
-   VkResult result;
+   uint32_t first_use_view_index;
 
-   struct pvr_load_op *load_op = vk_zalloc2(&device->vk.alloc,
-                                            allocator,
-                                            sizeof(*load_op),
-                                            8,
-                                            VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-   if (!load_op)
-      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+   if (!pass->multiview_enabled)
+      return false;
 
+   /* Check we have a load op load to see if we might need to correct the hw
+    * render.
+    */
+   if (color_init->op != VK_ATTACHMENT_LOAD_OP_LOAD)
+      return false;
+
+   first_use_view_index =
+      first_use_info->first_subpass[view_index][color_init->index];
+
+   /* Check that we're looking at the render where the attachment is used for
+    * the first time.
+    */
+   if (first_use_view_index != hw_render_index)
+      return false;
+
+   /* Check that the original load op was a clear op. */
+   if (pass->attachments[color_init->index].load_op !=
+       VK_ATTACHMENT_LOAD_OP_CLEAR) {
+      return false;
+   }
+
+   return true;
+}
+
+static VkResult pvr_render_load_op_init(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   struct pvr_load_op *const load_op,
+   const struct pvr_render_pass *pass,
+   const struct pvr_renderpass_hwsetup_render *hw_render,
+   uint32_t hw_render_index,
+   uint32_t view_index,
+   const struct pvr_per_view_attachment_first_use_info *first_use_info)
+{
    load_op->clears_loads_state.depth_clear_to_reg = PVR_NO_DEPTH_CLEAR_TO_REG;
 
    assert(hw_render->color_init_count <= PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
    for (uint32_t i = 0; i < hw_render->color_init_count; i++) {
       struct pvr_renderpass_colorinit *color_init = &hw_render->color_init[i];
+      bool multiview_load_op_should_be_clear = false;
 
       assert(color_init->index < pass->attachment_count);
       load_op->clears_loads_state.dest_vk_format[i] =
@@ -418,35 +476,113 @@ pvr_render_load_op_init(struct pvr_device *device,
       if (pass->attachments[color_init->index].sample_count > 1)
          load_op->clears_loads_state.unresolved_msaa_mask |= BITFIELD_BIT(i);
 
-      if (color_init->op == VK_ATTACHMENT_LOAD_OP_LOAD)
-         load_op->clears_loads_state.rt_load_mask |= BITFIELD_BIT(i);
-      else if (color_init->op == VK_ATTACHMENT_LOAD_OP_CLEAR)
+      multiview_load_op_should_be_clear =
+         pvr_render_load_op_multiview_load_should_be_clear(pass,
+                                                           hw_render,
+                                                           hw_render_index,
+                                                           color_init,
+                                                           first_use_info,
+                                                           view_index);
+
+      if (color_init->op == VK_ATTACHMENT_LOAD_OP_CLEAR ||
+          multiview_load_op_should_be_clear) {
          load_op->clears_loads_state.rt_clear_mask |= BITFIELD_BIT(i);
+      } else if (color_init->op == VK_ATTACHMENT_LOAD_OP_LOAD) {
+         load_op->clears_loads_state.rt_load_mask |= BITFIELD_BIT(i);
+      }
    }
 
    load_op->is_hw_object = true;
    load_op->hw_render = hw_render;
    load_op->clears_loads_state.mrt_setup = &hw_render->init_setup;
+   load_op->view_indices[0] = view_index;
+   load_op->view_count = 1;
 
-   result = pvr_load_op_shader_generate(device, allocator, load_op);
-   if (result != VK_SUCCESS) {
-      vk_free2(&device->vk.alloc, allocator, load_op);
-      return result;
-   }
+   return pvr_load_op_shader_generate(device, allocator, load_op);
+}
 
-   hw_render->load_op = load_op;
-
-   return VK_SUCCESS;
+static void pvr_load_op_fini(struct pvr_load_op *load_op)
+{
+   pvr_bo_suballoc_free(load_op->pds_tex_state_prog.pvr_bo);
+   pvr_bo_suballoc_free(load_op->pds_frag_prog.pvr_bo);
+   pvr_bo_suballoc_free(load_op->usc_frag_prog_bo);
 }
 
 static void pvr_load_op_destroy(struct pvr_device *device,
                                 const VkAllocationCallbacks *allocator,
                                 struct pvr_load_op *load_op)
 {
-   pvr_bo_suballoc_free(load_op->pds_tex_state_prog.pvr_bo);
-   pvr_bo_suballoc_free(load_op->pds_frag_prog.pvr_bo);
-   pvr_bo_suballoc_free(load_op->usc_frag_prog_bo);
+   pvr_load_op_fini(load_op);
    vk_free2(&device->vk.alloc, allocator, load_op);
+}
+
+static void
+pvr_render_load_op_state_destroy(struct pvr_device *device,
+                                 const VkAllocationCallbacks *pAllocator,
+                                 struct pvr_load_op_state *load_op_state)
+{
+   if (!load_op_state)
+      return;
+
+   while (load_op_state->load_op_count--) {
+      const uint32_t load_op_idx = load_op_state->load_op_count;
+      struct pvr_load_op *load_op = &load_op_state->load_ops[load_op_idx];
+
+      pvr_load_op_fini(load_op);
+   }
+
+   vk_free2(&device->vk.alloc, pAllocator, load_op_state);
+}
+
+static VkResult pvr_render_load_op_state_create(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   const struct pvr_render_pass *pass,
+   const struct pvr_renderpass_hwsetup_render *hw_render,
+   uint32_t hw_render_index,
+   const struct pvr_per_view_attachment_first_use_info *first_use_info,
+   struct pvr_load_op_state **const load_op_state_out)
+{
+   const uint32_t view_count = util_bitcount(hw_render->view_mask);
+   struct pvr_load_op_state *load_op_state;
+   struct pvr_load_op *load_ops;
+   VkResult result;
+
+   VK_MULTIALLOC(ma);
+   vk_multialloc_add(&ma, &load_op_state, __typeof__(*load_op_state), 1);
+   vk_multialloc_add(&ma, &load_ops, __typeof__(*load_ops), view_count);
+
+   if (!vk_multialloc_zalloc(&ma, allocator, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE))
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   load_op_state->load_ops = load_ops;
+
+   u_foreach_bit (view_idx, hw_render->view_mask) {
+      struct pvr_load_op *const load_op =
+         &load_op_state->load_ops[load_op_state->load_op_count];
+
+      result = pvr_render_load_op_init(device,
+                                       allocator,
+                                       load_op,
+                                       pass,
+                                       hw_render,
+                                       hw_render_index,
+                                       view_idx,
+                                       first_use_info);
+      if (result != VK_SUCCESS)
+         goto err_load_op_state_destroy;
+
+      load_op_state->load_op_count++;
+   }
+
+   *load_op_state_out = load_op_state;
+
+   return VK_SUCCESS;
+
+err_load_op_state_destroy:
+   pvr_render_load_op_state_destroy(device, allocator, load_op_state);
+
+   return result;
 }
 
 #define PVR_SPM_LOAD_IN_BUFFERS_COUNT(dev_info)              \
@@ -486,29 +622,94 @@ pvr_is_load_op_needed(const struct pvr_render_pass *pass,
    return false;
 }
 
-static void
-pvr_render_pass_load_ops_cleanup(struct pvr_device *device,
-                                 const VkAllocationCallbacks *pAllocator,
-                                 struct pvr_render_pass *pass)
+static VkResult pvr_per_view_attachment_first_use_info_init(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   struct pvr_render_pass *pass,
+   struct pvr_per_view_attachment_first_use_info *first_use_info)
 {
-   if (!pass)
-      return;
+   size_t alloc_size;
 
-   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
-      struct pvr_renderpass_hwsetup_render *hw_render =
-         &pass->hw_setup->renders[i];
+   if (!pass->attachment_count) {
+      memset(first_use_info, 0, sizeof(*first_use_info));
 
-      for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
-         if (hw_render->subpasses[j].load_op) {
-            pvr_load_op_destroy(device,
-                                pAllocator,
-                                hw_render->subpasses[j].load_op);
+      return VK_SUCCESS;
+   }
+
+   STATIC_ASSERT(ARRAY_SIZE(first_use_info->first_subpass) ==
+                 PVR_MAX_MULTIVIEW);
+
+   alloc_size =
+      sizeof(first_use_info->first_subpass_memory[0]) * pass->attachment_count;
+   alloc_size *= ARRAY_SIZE(first_use_info->first_subpass);
+
+   first_use_info->first_subpass_memory =
+      vk_zalloc2(&device->vk.alloc,
+                 allocator,
+                 alloc_size,
+                 4,
+                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+   if (!first_use_info->first_subpass_memory)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+#define PVR_SUBPASS_INVALID (~0U)
+   for (uint32_t i = 0; i < ARRAY_SIZE(first_use_info->first_subpass); i++) {
+      first_use_info->first_subpass[i] =
+         &first_use_info->first_subpass_memory[i * pass->attachment_count];
+
+      for (uint32_t j = 0; j < pass->attachment_count; j++)
+         first_use_info->first_subpass[i][j] = PVR_SUBPASS_INVALID;
+   }
+
+   for (uint32_t subpass_idx = 0; subpass_idx < pass->subpass_count;
+        subpass_idx++) {
+      struct pvr_render_subpass *const subpass = &pass->subpasses[subpass_idx];
+
+      u_foreach_bit (view_idx, subpass->view_mask) {
+         for (uint32_t i = 0; i < subpass->color_count; i++) {
+            const uint32_t attach_idx = subpass->color_attachments[i];
+            uint32_t *first_use =
+               &first_use_info->first_subpass[view_idx][attach_idx];
+
+            if (attach_idx < pass->attachment_count &&
+                *first_use == PVR_SUBPASS_INVALID) {
+               *first_use = subpass_idx;
+            }
+         }
+
+         for (uint32_t i = 0; i < subpass->input_count; i++) {
+            const uint32_t input_attach_idx =
+               subpass->input_attachments[i].attachment_idx;
+            uint32_t *first_use =
+               &first_use_info->first_subpass[view_idx][input_attach_idx];
+
+            if (input_attach_idx < pass->attachment_count &&
+                *first_use == PVR_SUBPASS_INVALID) {
+               *first_use = subpass_idx;
+            }
+         }
+
+         if (subpass->depth_stencil_attachment != VK_ATTACHMENT_UNUSED) {
+            const uint32_t ds_attach_idx = subpass->depth_stencil_attachment;
+            uint32_t *first_use =
+               &first_use_info->first_subpass[view_idx][ds_attach_idx];
+
+            if (*first_use == PVR_SUBPASS_INVALID)
+               *first_use = subpass_idx;
          }
       }
-
-      if (hw_render->load_op)
-         pvr_load_op_destroy(device, pAllocator, hw_render->load_op);
    }
+#undef PVR_SUBPASS_INVALID
+
+   return VK_SUCCESS;
+}
+
+static inline void pvr_per_view_attachment_first_use_info_fini(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   struct pvr_per_view_attachment_first_use_info *first_use_info)
+{
+   vk_free2(&device->vk.alloc, allocator, first_use_info->first_subpass_memory);
 }
 
 static inline VkResult pvr_render_add_missing_output_register_write(
@@ -551,55 +752,173 @@ static inline VkResult pvr_render_add_missing_output_register_write(
    return VK_SUCCESS;
 }
 
+static inline void
+pvr_subpass_load_op_cleanup(struct pvr_device *device,
+                            const VkAllocationCallbacks *allocator,
+                            struct pvr_renderpass_hwsetup_render *hw_render,
+                            uint32_t subpass_count)
+{
+   while (subpass_count--) {
+      const uint32_t subpass_idx = subpass_count;
+
+      if (hw_render->subpasses[subpass_idx].load_op) {
+         pvr_load_op_destroy(device,
+                             allocator,
+                             hw_render->subpasses[subpass_idx].load_op);
+      }
+   }
+}
+
+static inline VkResult
+pvr_subpass_load_op_setup(struct pvr_device *device,
+                          const VkAllocationCallbacks *allocator,
+                          struct pvr_render_pass *pass,
+                          struct pvr_renderpass_hwsetup_render *hw_render)
+{
+   for (uint32_t i = 0; i < hw_render->subpass_count; i++) {
+      VkResult result;
+
+      if (!pvr_is_load_op_needed(pass, hw_render, i))
+         continue;
+
+      result = pvr_subpass_load_op_init(device, allocator, pass, hw_render, i);
+      if (result != VK_SUCCESS) {
+         /* pvr_subpass_load_op_setup() is responsible for cleaning
+          * up all load_ops created in this loop for this hw_render.
+          */
+         pvr_subpass_load_op_cleanup(device, allocator, hw_render, i);
+         return result;
+      }
+   }
+
+   return VK_SUCCESS;
+}
+
+static inline VkResult pvr_hw_render_load_ops_setup(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   struct pvr_render_pass *pass,
+   struct pvr_renderpass_hwsetup_render *hw_render,
+   uint32_t hw_render_idx,
+   struct pvr_per_view_attachment_first_use_info *first_use_info)
+{
+   VkResult result;
+
+   if (hw_render->tile_buffers_count) {
+      result = pvr_device_tile_buffer_ensure_cap(
+         device,
+         hw_render->tile_buffers_count,
+         hw_render->eot_setup.tile_buffer_size);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   assert(!hw_render->load_op_state);
+
+   if (hw_render->color_init_count != 0U) {
+      struct pvr_load_op_state *load_op_state = NULL;
+
+      result =
+         pvr_render_add_missing_output_register_write(hw_render, allocator);
+      if (result != VK_SUCCESS)
+         return result;
+
+      result = pvr_render_load_op_state_create(device,
+                                               allocator,
+                                               pass,
+                                               hw_render,
+                                               hw_render_idx,
+                                               first_use_info,
+                                               &load_op_state);
+      if (result != VK_SUCCESS)
+         return result;
+
+      hw_render->load_op_state = load_op_state;
+   }
+
+   result = pvr_subpass_load_op_setup(device, allocator, pass, hw_render);
+   if (result != VK_SUCCESS) {
+      /* pvr_hw_render_load_ops_setup() is responsible for cleaning up only
+       * one load_op_state for this hw_render.
+       */
+      pvr_render_load_op_state_destroy(device,
+                                       allocator,
+                                       hw_render->load_op_state);
+      return result;
+   }
+
+   return VK_SUCCESS;
+}
+
+static void
+pvr_render_pass_load_ops_cleanup(struct pvr_device *device,
+                                 const VkAllocationCallbacks *allocator,
+                                 struct pvr_render_pass *pass,
+                                 uint32_t hw_render_count)
+{
+   while (hw_render_count--) {
+      const uint32_t hw_render_idx = hw_render_count;
+      struct pvr_renderpass_hwsetup_render *hw_render =
+         &pass->hw_setup->renders[hw_render_idx];
+
+      pvr_subpass_load_op_cleanup(device,
+                                  allocator,
+                                  hw_render,
+                                  hw_render->subpass_count);
+      pvr_render_load_op_state_destroy(device,
+                                       allocator,
+                                       hw_render->load_op_state);
+   }
+}
+
 static VkResult
 pvr_render_pass_load_ops_setup(struct pvr_device *device,
                                const VkAllocationCallbacks *allocator,
                                struct pvr_render_pass *pass)
 {
+   struct pvr_per_view_attachment_first_use_info first_use_info;
+   uint32_t hw_render_idx;
    VkResult result;
 
-   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
+   result = pvr_per_view_attachment_first_use_info_init(device,
+                                                        allocator,
+                                                        pass,
+                                                        &first_use_info);
+   if (result != VK_SUCCESS)
+      goto err_return;
+
+   for (hw_render_idx = 0; hw_render_idx < pass->hw_setup->render_count;
+        hw_render_idx++) {
       struct pvr_renderpass_hwsetup_render *hw_render =
-         &pass->hw_setup->renders[i];
+         &pass->hw_setup->renders[hw_render_idx];
 
-      if (hw_render->tile_buffers_count) {
-         result = pvr_device_tile_buffer_ensure_cap(
-            device,
-            hw_render->tile_buffers_count,
-            hw_render->eot_setup.tile_buffer_size);
-         if (result != VK_SUCCESS)
-            goto err_load_op_cleanup;
-      }
-
-      assert(!hw_render->load_op);
-
-      if (hw_render->color_init_count != 0U) {
-         result =
-            pvr_render_add_missing_output_register_write(hw_render, allocator);
-         if (result != VK_SUCCESS)
-            goto err_load_op_cleanup;
-
-         result = pvr_render_load_op_init(device, allocator, pass, hw_render);
-         if (result != VK_SUCCESS)
-            goto err_load_op_cleanup;
-      }
-
-      for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
-         if (!pvr_is_load_op_needed(pass, hw_render, j))
-            continue;
-
-         result =
-            pvr_subpass_load_op_init(device, allocator, pass, hw_render, j);
-         if (result != VK_SUCCESS)
-            goto err_load_op_cleanup;
-      }
+      result = pvr_hw_render_load_ops_setup(device,
+                                            allocator,
+                                            pass,
+                                            hw_render,
+                                            hw_render_idx,
+                                            &first_use_info);
+      if (result != VK_SUCCESS)
+         goto err_pvr_render_pass_load_ops_cleanup;
    }
+
+   pvr_per_view_attachment_first_use_info_fini(device,
+                                               allocator,
+                                               &first_use_info);
 
    return VK_SUCCESS;
 
-err_load_op_cleanup:
-   pvr_render_pass_load_ops_cleanup(device, allocator, pass);
+err_pvr_render_pass_load_ops_cleanup:
+   /* pvr_render_pass_load_ops_setup() is responsible for cleaning
+    * up all load_ops created in this loop for each hw_render.
+    */
+   pvr_render_pass_load_ops_cleanup(device, allocator, pass, hw_render_idx);
 
+   pvr_per_view_attachment_first_use_info_fini(device,
+                                               allocator,
+                                               &first_use_info);
+
+err_return:
    return result;
 }
 
@@ -718,6 +1037,13 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
       }
    }
 
+   /* Multiview is considered enabled for all subpasses when the viewMask
+    * of them all isn't 0. Assume this now and assert later that it holds
+    * for each subpass viewMask.
+    */
+   pass->multiview_enabled = pass->subpass_count &&
+                             pCreateInfo->pSubpasses[0].viewMask;
+
    /* Assign reference pointers to lists, and fill in the attachments list, we
     * need to re-walk the dependencies array later to fill the per-subpass
     * dependencies lists in.
@@ -727,6 +1053,12 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
       struct pvr_render_subpass *subpass = &pass->subpasses[i];
 
       subpass->pipeline_bind_point = desc->pipelineBindPoint;
+      subpass->view_mask = desc->viewMask;
+
+      assert(!pass->multiview_enabled || subpass->view_mask);
+
+      if (!pass->multiview_enabled)
+         subpass->view_mask = 1;
 
       /* From the Vulkan spec. 1.3.265
        * VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872:
@@ -873,7 +1205,10 @@ void pvr_DestroyRenderPass(VkDevice _device,
    if (!pass)
       return;
 
-   pvr_render_pass_load_ops_cleanup(device, allocator, pass);
+   pvr_render_pass_load_ops_cleanup(device,
+                                    allocator,
+                                    pass,
+                                    pass->hw_setup->render_count);
    pvr_destroy_renderpass_hwsetup(allocator, pass->hw_setup);
    vk_object_base_finish(&pass->base);
    vk_free2(&device->vk.alloc, pAllocator, pass);

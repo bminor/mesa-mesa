@@ -634,7 +634,8 @@ err_csb_finish:
 static VkResult pvr_setup_texture_state_words(
    struct pvr_device *device,
    struct pvr_combined_image_sampler_descriptor *descriptor,
-   const struct pvr_image_view *image_view)
+   const struct pvr_image_view *image_view,
+   uint32_t view_index)
 {
    const struct pvr_image *image = vk_to_pvr_image(image_view->vk.image);
    struct pvr_texture_state_info info = {
@@ -648,6 +649,7 @@ static VkResult pvr_setup_texture_state_words(
       .mip_levels = 1,
       .sample_count = image_view->vk.image->samples,
       .stride = image->physical_extent.width,
+      .offset = image->layer_size * view_index,
       .addr = image->dev_addr,
    };
    const uint8_t *const swizzle = pvr_get_format_swizzle(info.format);
@@ -682,6 +684,7 @@ static VkResult pvr_setup_texture_state_words(
 static VkResult
 pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
                                         const struct pvr_load_op *load_op,
+                                        uint32_t view_index,
                                         pvr_dev_addr_t *const addr_out)
 {
    const struct pvr_render_pass_info *render_pass_info =
@@ -725,7 +728,8 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
       if (load_op->clears_loads_state.rt_load_mask & BITFIELD_BIT(i)) {
          result = pvr_setup_texture_state_words(cmd_buffer->device,
                                                 &texture_states[texture_count],
-                                                image_view);
+                                                image_view,
+                                                view_index);
          if (result != VK_SUCCESS)
             return result;
 
@@ -786,7 +790,8 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
 
       result = pvr_setup_texture_state_words(cmd_buffer->device,
                                              &texture_states[texture_count],
-                                             image_view);
+                                             image_view,
+                                             view_index);
       if (result != VK_SUCCESS)
          return result;
 
@@ -919,6 +924,7 @@ static VkResult pvr_load_op_pds_data_create_and_upload(
 static VkResult
 pvr_load_op_data_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
                                    const struct pvr_load_op *load_op,
+                                   uint32_t view_index,
                                    struct pvr_pds_upload *const pds_upload_out)
 {
    pvr_dev_addr_t constants_addr;
@@ -926,6 +932,7 @@ pvr_load_op_data_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
 
    result = pvr_load_op_constants_create_and_upload(cmd_buffer,
                                                     load_op,
+                                                    view_index,
                                                     &constants_addr);
    if (result != VK_SUCCESS)
       return result;
@@ -964,6 +971,63 @@ static void pvr_pds_bgnd_pack_state(
    }
 }
 
+static inline VkResult pvr_load_op_state_data_create_and_upload_for_view(
+   struct pvr_cmd_buffer *cmd_buffer,
+   const struct pvr_load_op *load_op,
+   uint32_t view_index,
+   uint64_t pds_reg_values[static const ROGUE_NUM_CR_PDS_BGRND_WORDS])
+{
+   struct pvr_pds_upload load_op_program;
+   VkResult result;
+
+   /* FIXME: Should we free the PDS pixel event data or let it be freed
+    * when the pool gets emptied?
+    */
+   result = pvr_load_op_data_create_and_upload(cmd_buffer,
+                                               load_op,
+                                               view_index,
+                                               &load_op_program);
+   if (result != VK_SUCCESS)
+      return result;
+
+   pvr_pds_bgnd_pack_state(load_op, &load_op_program, pds_reg_values);
+
+   return VK_SUCCESS;
+}
+
+static VkResult pvr_load_op_state_data_create_and_upload(
+   struct pvr_cmd_buffer *cmd_buffer,
+   const struct pvr_load_op_state *load_op_state,
+   struct pvr_view_state *view_state)
+{
+   for (uint32_t i = 0; i < load_op_state->load_op_count; i++) {
+      const struct pvr_load_op *load_op = &load_op_state->load_ops[i];
+      uint32_t view_index = load_op->view_indices[0];
+      uint64_t *pds_reg_values;
+      VkResult result;
+
+      pds_reg_values = view_state->view[view_index].pds_bgnd_reg_values;
+      result =
+         pvr_load_op_state_data_create_and_upload_for_view(cmd_buffer,
+                                                           load_op,
+                                                           view_index,
+                                                           pds_reg_values);
+      if (result != VK_SUCCESS)
+         return result;
+
+      pds_reg_values = view_state->view[view_index].pr_pds_bgnd_reg_values;
+      result =
+         pvr_load_op_state_data_create_and_upload_for_view(cmd_buffer,
+                                                           load_op,
+                                                           view_index,
+                                                           pds_reg_values);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   return VK_SUCCESS;
+}
+
 /**
  * \brief Calculates the stride in pixels based on the pitch in bytes and pixel
  * format.
@@ -991,7 +1055,8 @@ static void pvr_setup_pbe_state(
    const bool down_scale,
    const uint32_t samples,
    uint32_t pbe_cs_words[static const ROGUE_NUM_PBESTATE_STATE_WORDS],
-   uint64_t pbe_reg_words[static const ROGUE_NUM_PBESTATE_REG_WORDS])
+   uint64_t pbe_reg_words[static const ROGUE_NUM_PBESTATE_REG_WORDS],
+   uint32_t view_index)
 {
    const struct pvr_image *image = pvr_image_view_get_image(iview);
    uint32_t level_pitch = image->mip_levels[iview->vk.base_mip_level].pitch;
@@ -1033,9 +1098,10 @@ static void pvr_setup_pbe_state(
    /* FIXME: Should we have an inline function to return the address of a mip
     * level?
     */
-   surface_params.addr =
-      PVR_DEV_ADDR_OFFSET(image->vma->dev_addr,
-                          image->mip_levels[iview->vk.base_mip_level].offset);
+   surface_params.addr = PVR_DEV_ADDR_OFFSET(
+      image->vma->dev_addr,
+      image->layer_size * view_index +
+         image->mip_levels[iview->vk.base_mip_level].offset);
 
    if (!iview->vk.storage.z_slice_offset) {
       surface_params.addr =
@@ -1381,6 +1447,7 @@ static void
 pvr_setup_emit_state(const struct pvr_device_info *dev_info,
                      const struct pvr_renderpass_hwsetup_render *hw_render,
                      struct pvr_render_pass_info *render_pass_info,
+                     uint32_t view_index,
                      struct pvr_emit_state *emit_state)
 {
    assert(hw_render->pbe_emits <= PVR_NUM_PBE_EMIT_REGS);
@@ -1450,7 +1517,8 @@ pvr_setup_emit_state(const struct pvr_device_info *dev_info,
                              surface->need_resolve,
                              samples,
                              emit_state->pbe_cs_words[emit_state->emit_count],
-                             emit_state->pbe_reg_words[emit_state->emit_count]);
+                             emit_state->pbe_reg_words[emit_state->emit_count],
+                             view_index);
          emit_state->emit_count += 1;
       }
    }
@@ -1486,7 +1554,6 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
    const struct pvr_renderpass_hwsetup_render *hw_render =
       &render_pass_info->pass->hw_setup->renders[sub_cmd->hw_render_idx];
    struct pvr_render_job *job = &sub_cmd->job;
-   struct pvr_pds_upload pds_pixel_event_program;
    struct pvr_framebuffer *framebuffer = render_pass_info->framebuffer;
    struct pvr_spm_bgobj_state *spm_bgobj_state =
       &framebuffer->spm_bgobj_state_per_render[sub_cmd->hw_render_idx];
@@ -1494,6 +1561,12 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
       &framebuffer->spm_eot_state_per_render[sub_cmd->hw_render_idx];
    struct pvr_render_target *render_target;
    VkResult result;
+
+   /* Unless for barrier_{store,load}, where the index defaults to zero, the
+    * view index associated with a gfx job is known and set only at submission
+    * time.
+    */
+   job->view_state.view_index = 0;
 
    if (sub_cmd->barrier_store) {
       /* Store to the SPM scratch buffer. */
@@ -1514,15 +1587,46 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
       memcpy(job->pbe_reg_words,
              &spm_eot_state->pbe_reg_words,
              sizeof(job->pbe_reg_words));
-      job->pds_pixel_event_data_offset =
+
+      /* Configure the job view state for a barrier store */
+      assert(!job->view_state.view_index);
+
+      job->view_state.view[0].pds_pixel_event_data_offset =
          spm_eot_state->pixel_event_program_data_offset;
+      job->view_state.force_pds_pixel_event_data_offset_zero = true;
    } else {
+      struct pvr_pds_upload pds_pixel_event_program;
       struct pvr_emit_state emit_state = { 0 };
       memset(emit_state.tile_buffer_ids,
              ~0,
              sizeof(emit_state.tile_buffer_ids));
 
-      pvr_setup_emit_state(dev_info, hw_render, render_pass_info, &emit_state);
+      u_foreach_bit (view_idx, hw_render->view_mask) {
+         pvr_setup_emit_state(dev_info,
+                              hw_render,
+                              render_pass_info,
+                              view_idx,
+                              &emit_state);
+
+         unsigned pixel_output_width =
+            pvr_pass_get_pixel_output_width(render_pass_info->pass,
+                                            sub_cmd->hw_render_idx,
+                                            dev_info);
+
+         result = pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
+            cmd_buffer,
+            emit_state.emit_count,
+            emit_state.pbe_cs_words[0],
+            emit_state.tile_buffer_ids,
+            pixel_output_width,
+            &pds_pixel_event_program);
+         if (result != VK_SUCCESS)
+            return result;
+
+         /* Configure the job view state */
+         job->view_state.view[view_idx].pds_pixel_event_data_offset =
+            pds_pixel_event_program.data_offset;
+      }
 
       job->z_only_render = !hw_render->eot_surface_count &&
                            !sub_cmd->frag_has_side_effects &&
@@ -1531,23 +1635,6 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
       memcpy(job->pbe_reg_words,
              emit_state.pbe_reg_words,
              sizeof(job->pbe_reg_words));
-
-      unsigned pixel_output_width =
-         pvr_pass_get_pixel_output_width(render_pass_info->pass,
-                                         sub_cmd->hw_render_idx,
-                                         dev_info);
-
-      result = pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
-         cmd_buffer,
-         emit_state.emit_count,
-         emit_state.pbe_cs_words[0],
-         emit_state.tile_buffer_ids,
-         pixel_output_width,
-         &pds_pixel_event_program);
-      if (result != VK_SUCCESS)
-         return result;
-
-      job->pds_pixel_event_data_offset = pds_pixel_event_program.data_offset;
    }
 
    if (sub_cmd->barrier_load) {
@@ -1556,45 +1643,45 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
 
       /* Load the previously stored render from the SPM scratch buffer. */
 
-      STATIC_ASSERT(ARRAY_SIZE(job->pds_bgnd_reg_values) ==
+      STATIC_ASSERT(ARRAY_SIZE(job->view_state.view[0].pds_bgnd_reg_values) ==
                     ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
-      typed_memcpy(job->pds_bgnd_reg_values,
+      typed_memcpy(job->view_state.view[0].pds_bgnd_reg_values,
                    spm_bgobj_state->pds_reg_values,
                    ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
 
-      STATIC_ASSERT(ARRAY_SIZE(job->pr_pds_bgnd_reg_values) ==
-                    ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
-      typed_memcpy(job->pr_pds_bgnd_reg_values,
+      STATIC_ASSERT(
+         ARRAY_SIZE(job->view_state.view[0].pr_pds_bgnd_reg_values) ==
+         ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
+      typed_memcpy(job->view_state.view[0].pr_pds_bgnd_reg_values,
                    spm_bgobj_state->pds_reg_values,
                    ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
-   } else if (hw_render->load_op) {
-      const struct pvr_load_op *load_op = hw_render->load_op;
-      struct pvr_pds_upload load_op_program;
+
+      /* Configure the job view state for a barrier load */
+      assert(!job->view_state.view_index);
+      job->view_state.force_pds_bgnd_reg_values_zero = true;
+   } else if (hw_render->load_op_state) {
+      const struct pvr_load_op_state *load_op_state = hw_render->load_op_state;
+
+      /* We always have at least 1 bit set in the view_mask */
+      assert(load_op_state->load_op_count);
 
       /* Recalculate Background Object(s). */
 
-      /* FIXME: Should we free the PDS pixel event data or let it be freed
-       * when the pool gets emptied?
-       */
-      result = pvr_load_op_data_create_and_upload(cmd_buffer,
-                                                  load_op,
-                                                  &load_op_program);
+      result = pvr_load_op_state_data_create_and_upload(cmd_buffer,
+                                                        load_op_state,
+                                                        &job->view_state);
       if (result != VK_SUCCESS)
          return result;
 
       job->enable_bg_tag = render_pass_info->enable_bg_tag;
       job->process_empty_tiles = render_pass_info->process_empty_tiles;
-
-      pvr_pds_bgnd_pack_state(load_op,
-                              &load_op_program,
-                              job->pds_bgnd_reg_values);
    }
 
    if (!hw_render->requires_frag_pr) {
       memcpy(job->pr_pbe_reg_words,
              job->pbe_reg_words,
              sizeof(job->pbe_reg_words));
-      job->pr_pds_pixel_event_data_offset = job->pds_pixel_event_data_offset;
+      job->view_state.use_pds_pixel_event_data_offset = true;
    } else {
       memcpy(job->pr_pbe_reg_words,
              &spm_eot_state->pbe_reg_words,
@@ -1606,7 +1693,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
    render_target = pvr_get_render_target(render_pass_info->pass,
                                          framebuffer,
                                          sub_cmd->hw_render_idx);
-   job->rt_dataset = render_target->rt_dataset;
+   job->view_state.rt_datasets = &render_target->rt_dataset[0];
 
    job->ctrl_stream_addr = pvr_csb_get_start_address(&sub_cmd->control_stream);
 
@@ -2097,6 +2184,9 @@ pvr_compute_generate_idfwdf(struct pvr_cmd_buffer *cmd_buffer,
    pvr_compute_generate_control_stream(csb, sub_cmd, &info);
 }
 
+/* TODO: This can be pre-packed and uploaded directly. Would that provide any
+ * speed up?
+ */
 void pvr_compute_generate_fence(struct pvr_cmd_buffer *cmd_buffer,
                                 struct pvr_sub_cmd_compute *const sub_cmd,
                                 bool deallocate_shareds)
@@ -2416,6 +2506,17 @@ pvr_cmd_uses_deferred_cs_cmds(const struct pvr_cmd_buffer *const cmd_buffer)
              deferred_control_stream_flags;
 }
 
+static inline uint32_t
+pvr_render_pass_info_get_view_mask(const struct pvr_render_pass_info *rp_info)
+{
+   const uint32_t hw_render_idx = rp_info->current_hw_subpass;
+   const struct pvr_render_pass *pass = rp_info->pass;
+   const struct pvr_renderpass_hwsetup_render *hw_render =
+      &pass->hw_setup->renders[hw_render_idx];
+
+   return hw_render->view_mask;
+}
+
 VkResult pvr_cmd_buffer_start_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
                                       enum pvr_sub_cmd_type type)
 {
@@ -2468,6 +2569,8 @@ VkResult pvr_cmd_buffer_start_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
       sub_cmd->gfx.hw_render_idx = state->render_pass_info.current_hw_subpass;
       sub_cmd->gfx.framebuffer = state->render_pass_info.framebuffer;
       sub_cmd->gfx.empty_cmd = true;
+      sub_cmd->gfx.view_mask =
+         pvr_render_pass_info_get_view_mask(&state->render_pass_info);
 
       if (state->vis_test_enabled)
          sub_cmd->gfx.query_pool = state->query_pool;
@@ -2892,40 +2995,63 @@ static VkResult pvr_cmd_buffer_attachments_setup(
    return VK_SUCCESS;
 }
 
-static VkResult pvr_render_targets_init(struct pvr_device *device,
-                                        struct pvr_render_pass *pass,
-                                        struct pvr_framebuffer *framebuffer)
+static inline VkResult pvr_render_targets_datasets_create(
+   struct pvr_device *device,
+   struct pvr_framebuffer *framebuffer,
+   const struct pvr_renderpass_hwsetup_render *hw_render,
+   struct pvr_render_target *render_target)
 {
    const struct pvr_device_info *const dev_info = &device->pdevice->dev_info;
    const uint32_t layers =
       PVR_HAS_FEATURE(dev_info, gs_rta_support) ? framebuffer->layers : 1;
 
+   pthread_mutex_lock(&render_target->mutex);
+
+   u_foreach_bit (view_idx, hw_render->view_mask) {
+      struct pvr_rt_dataset *rt_dataset;
+      VkResult result;
+
+      if (render_target->valid_mask & BITFIELD_BIT(view_idx))
+         continue;
+
+      result = pvr_render_target_dataset_create(device,
+                                                framebuffer->width,
+                                                framebuffer->height,
+                                                hw_render->sample_count,
+                                                layers,
+                                                &rt_dataset);
+      if (result != VK_SUCCESS) {
+         pvr_render_targets_datasets_destroy(render_target);
+         pthread_mutex_unlock(&render_target->mutex);
+         return result;
+      }
+
+      render_target->valid_mask |= BITFIELD_BIT(view_idx);
+      render_target->rt_dataset[view_idx] = rt_dataset;
+   }
+
+   pthread_mutex_unlock(&render_target->mutex);
+
+   return VK_SUCCESS;
+}
+
+static VkResult pvr_render_targets_init(struct pvr_device *device,
+                                        struct pvr_render_pass *pass,
+                                        struct pvr_framebuffer *framebuffer)
+{
    for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
       struct pvr_render_target *render_target =
          pvr_get_render_target(pass, framebuffer, i);
+      const struct pvr_renderpass_hwsetup_render *hw_render =
+         &pass->hw_setup->renders[i];
+      VkResult result;
 
-      pthread_mutex_lock(&render_target->mutex);
-
-      if (!render_target->valid) {
-         const struct pvr_renderpass_hwsetup_render *hw_render =
-            &pass->hw_setup->renders[i];
-         VkResult result;
-
-         result = pvr_render_target_dataset_create(device,
-                                                   framebuffer->width,
-                                                   framebuffer->height,
-                                                   hw_render->sample_count,
-                                                   layers,
-                                                   &render_target->rt_dataset);
-         if (result != VK_SUCCESS) {
-            pthread_mutex_unlock(&render_target->mutex);
-            return result;
-         }
-
-         render_target->valid = true;
-      }
-
-      pthread_mutex_unlock(&render_target->mutex);
+      result = pvr_render_targets_datasets_create(device,
+                                                  framebuffer,
+                                                  hw_render,
+                                                  render_target);
+      if (result != VK_SUCCESS)
+         return result;
    }
 
    return VK_SUCCESS;
@@ -3213,10 +3339,11 @@ static void pvr_emit_clear_words(struct pvr_cmd_buffer *const cmd_buffer,
    pvr_csb_clear_relocation_mark(csb);
 }
 
-static VkResult pvr_cs_write_load_op(struct pvr_cmd_buffer *cmd_buffer,
-                                     struct pvr_sub_cmd_gfx *sub_cmd,
-                                     struct pvr_load_op *load_op,
-                                     uint32_t isp_userpass)
+static VkResult pvr_cs_write_load_op_for_view(struct pvr_cmd_buffer *cmd_buffer,
+                                              struct pvr_sub_cmd_gfx *sub_cmd,
+                                              struct pvr_load_op *load_op,
+                                              uint32_t view_index,
+                                              uint32_t isp_userpass)
 {
    const struct pvr_device *device = cmd_buffer->device;
    struct pvr_static_clear_ppp_template template =
@@ -3228,6 +3355,7 @@ static VkResult pvr_cs_write_load_op(struct pvr_cmd_buffer *cmd_buffer,
 
    result = pvr_load_op_data_create_and_upload(cmd_buffer,
                                                load_op,
+                                               view_index,
                                                &shareds_update_program);
    if (result != VK_SUCCESS)
       return result;
@@ -3291,6 +3419,29 @@ static VkResult pvr_cs_write_load_op(struct pvr_cmd_buffer *cmd_buffer,
    pvr_emit_clear_words(cmd_buffer, sub_cmd);
 
    pvr_reset_graphics_dirty_state(cmd_buffer, false);
+
+   return VK_SUCCESS;
+}
+
+static VkResult pvr_cs_write_load_op(struct pvr_cmd_buffer *cmd_buffer,
+                                     struct pvr_sub_cmd_gfx *sub_cmd,
+                                     struct pvr_load_op *load_op,
+                                     uint32_t isp_userpass)
+{
+   assert(load_op->view_count);
+
+   for (uint32_t i = 0; i < load_op->view_count; i++) {
+      const uint32_t view_index = load_op->view_indices[i];
+      VkResult result;
+
+      result = pvr_cs_write_load_op_for_view(cmd_buffer,
+                                             sub_cmd,
+                                             load_op,
+                                             view_index,
+                                             isp_userpass);
+      if (result != VK_SUCCESS)
+         return result;
+   }
 
    return VK_SUCCESS;
 }
