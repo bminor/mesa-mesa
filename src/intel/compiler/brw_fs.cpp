@@ -1043,7 +1043,11 @@ fs_visitor::assign_curb_setup()
             brw_reg.abs = inst->src[i].abs;
             brw_reg.negate = inst->src[i].negate;
 
-            assert(inst->src[i].stride == 0);
+            /* The combination of is_scalar for load_uniform, copy prop, and
+             * lower_btd_logical_send can generate a MOV from a UNIFORM with
+             * exec size 2 and stride of 1.
+             */
+            assert(inst->src[i].stride == 0 || inst->exec_size == 2);
             inst->src[i] = byte_offset(
                retype(brw_reg, inst->src[i].type),
                inst->src[i].offset % 4);
