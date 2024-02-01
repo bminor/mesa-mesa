@@ -54,7 +54,7 @@
         "description": "zink: fix sparse bo placement",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c71287e70c2bf4aac96b24635e48ec13cd31fddf",
         "notes": null
