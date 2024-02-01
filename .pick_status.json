@@ -994,7 +994,7 @@
         "description": "zink: use sparse residency for buffers.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c90246b682686597b09109858fb2c220dca1ad59",
         "notes": null
