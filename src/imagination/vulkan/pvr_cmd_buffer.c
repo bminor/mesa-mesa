@@ -2833,9 +2833,9 @@ void pvr_CmdPushConstants2KHR(VkCommandBuffer commandBuffer,
    }
 }
 
-static VkResult pvr_cmd_buffer_setup_attachments(
+static VkResult pvr_cmd_buffer_attachments_setup(
    struct pvr_cmd_buffer *cmd_buffer,
-   struct pvr_render_pass *pass,
+   const struct pvr_render_pass *pass,
    const struct pvr_framebuffer *framebuffer,
    const VkRenderPassBeginInfo *pRenderPassBeginInfo)
 {
@@ -2879,7 +2879,7 @@ static VkResult pvr_cmd_buffer_setup_attachments(
    return VK_SUCCESS;
 }
 
-static VkResult pvr_init_render_targets(struct pvr_device *device,
+static VkResult pvr_render_targets_init(struct pvr_device *device,
                                         struct pvr_render_pass *pass,
                                         struct pvr_framebuffer *framebuffer)
 {
@@ -3312,14 +3312,14 @@ void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    state->render_pass_info.isp_userpass = pass->subpasses[0].isp_userpass;
    state->dirty.isp_userpass = true;
 
-   result = pvr_cmd_buffer_setup_attachments(cmd_buffer,
+   result = pvr_cmd_buffer_attachments_setup(cmd_buffer,
                                              pass,
                                              framebuffer,
                                              pRenderPassBeginInfo);
    if (result != VK_SUCCESS)
       return;
 
-   result = pvr_init_render_targets(cmd_buffer->device, pass, framebuffer);
+   result = pvr_render_targets_init(cmd_buffer->device, pass, framebuffer);
    if (result != VK_SUCCESS) {
       pvr_cmd_buffer_set_error_unwarned(cmd_buffer, result);
       return;
