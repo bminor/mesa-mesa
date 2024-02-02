@@ -2814,7 +2814,7 @@
         "description": "driconf: Advertise GL_EXT_shader_image_load_store on iris for SVP13",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
