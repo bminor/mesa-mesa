@@ -36,6 +36,7 @@
 #include "util/u_math.h"
 
 #include "vk_format.h"
+#include "av1_tables.h"
 
 #define ANV_OFFSET_IMPLICIT UINT64_MAX
 
@@ -946,19 +947,7 @@ add_video_buffers(struct anv_device *device,
       unsigned h_mb = DIV_ROUND_UP(image->vk.extent.height, ANV_MB_HEIGHT);
       size = w_mb * h_mb * 128;
    } else {
-      for (unsigned i = 0; i < profile_list->profileCount; i++) {
-         if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR ||
-             profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR) {
-            unsigned w_mb = DIV_ROUND_UP(image->vk.extent.width, ANV_MB_WIDTH);
-            unsigned h_mb = DIV_ROUND_UP(image->vk.extent.height, ANV_MB_HEIGHT);
-            size = w_mb * h_mb * 128;
-         } else if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR ||
-                    profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
-            unsigned w_mb = DIV_ROUND_UP(image->vk.extent.width, 32);
-            unsigned h_mb = DIV_ROUND_UP(image->vk.extent.height, 32);
-            size = ALIGN(w_mb * h_mb, 2) << 6;
-         }
-      }
+      size = anv_video_get_image_mv_size(device, image, profile_list);
    }
 
    if (size == 0)
@@ -966,6 +955,19 @@ add_video_buffers(struct anv_device *device,
 
    ok = image_binding_grow(device, image, ANV_IMAGE_MEMORY_BINDING_PRIVATE,
                            ANV_OFFSET_IMPLICIT, size, 65536, &image->vid_dmv_top_surface);
+   if (ok != VK_SUCCESS)
+      return ok;
+
+   /* Doesn't work for av1 without provided profiles */
+   if (!independent_profile) {
+      for (unsigned i = 0; i < profile_list->profileCount; i++) {
+         if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR) {
+            ok = image_binding_grow(device, image, ANV_IMAGE_MEMORY_BINDING_PRIVATE,
+                                    ANV_OFFSET_IMPLICIT, av1_cdf_max_num_bytes, 4096, &image->av1_cdf_table);
+         }
+      }
+   }
+
    return ok;
 }
 

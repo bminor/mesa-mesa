@@ -238,6 +238,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_video_decode_queue                = device->video_decode_enabled,
       .KHR_video_decode_h264                 = VIDEO_CODEC_H264DEC && device->video_decode_enabled,
       .KHR_video_decode_h265                 = VIDEO_CODEC_H265DEC && device->video_decode_enabled,
+      .KHR_video_decode_av1                  = device->info.ver >= 12 && VIDEO_CODEC_AV1DEC && device->video_decode_enabled,
       .KHR_video_encode_queue                = device->video_encode_enabled,
       .KHR_video_encode_h264                 = VIDEO_CODEC_H264ENC && device->video_encode_enabled,
       .KHR_video_encode_h265                 = device->info.ver >= 12 && VIDEO_CODEC_H265ENC && device->video_encode_enabled,
@@ -2810,6 +2811,8 @@ void anv_GetPhysicalDeviceQueueFamilyProperties2(
                if (queue_family->queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR) {
                   prop->videoCodecOperations = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR |
                                                VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR;
+                  if (pdevice->info.ver >= 12)
+                     prop->videoCodecOperations |= VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR;
                }
 
                if (queue_family->queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) {

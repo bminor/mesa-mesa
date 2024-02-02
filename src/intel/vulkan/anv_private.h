@@ -5525,6 +5525,7 @@ struct anv_image {
 
    /* Link in the anv_device.image_private_objects list */
    struct list_head link;
+   struct anv_image_memory_range av1_cdf_table;
 };
 
 static inline bool
@@ -6315,17 +6316,65 @@ enum anv_vid_mem_h265_types {
    ANV_VID_MEM_H265_ENC_MAX,
 };
 
+enum anv_vid_mem_av1_types {
+   ANV_VID_MEM_AV1_BITSTREAM_LINE_ROWSTORE,
+   ANV_VID_MEM_AV1_BITSTREAM_TILE_LINE_ROWSTORE,
+   ANV_VID_MEM_AV1_INTRA_PREDICTION_LINE_ROWSTORE,
+   ANV_VID_MEM_AV1_INTRA_PREDICTION_TILE_LINE_ROWSTORE,
+   ANV_VID_MEM_AV1_SPATIAL_MOTION_VECTOR_LINE,
+   ANV_VID_MEM_AV1_SPATIAL_MOTION_VECTOR_TILE_LINE,
+   ANV_VID_MEM_AV1_LOOP_RESTORATION_META_TILE_COLUMN,
+   ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_LINE_Y,
+   ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_LINE_U,
+   ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_LINE_V,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_LINE_Y,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_LINE_U,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_LINE_V,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_TILE_LINE_Y,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_TILE_LINE_U,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_TILE_LINE_V,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_TILE_COLUMN_Y,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_TILE_COLUMN_U,
+   ANV_VID_MEM_AV1_DEBLOCKER_FILTER_TILE_COLUMN_V,
+   ANV_VID_MEM_AV1_CDEF_FILTER_LINE,
+   ANV_VID_MEM_AV1_CDEF_FILTER_TILE_LINE,
+   ANV_VID_MEM_AV1_CDEF_FILTER_TILE_COLUMN,
+   ANV_VID_MEM_AV1_CDEF_FILTER_META_TILE_LINE,
+   ANV_VID_MEM_AV1_CDEF_FILTER_META_TILE_COLUMN,
+   ANV_VID_MEM_AV1_CDEF_FILTER_TOP_LEFT_CORNER,
+   ANV_VID_MEM_AV1_SUPER_RES_TILE_COLUMN_Y,
+   ANV_VID_MEM_AV1_SUPER_RES_TILE_COLUMN_U,
+   ANV_VID_MEM_AV1_SUPER_RES_TILE_COLUMN_V,
+   ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_Y,
+   ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_U,
+   ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_V,
+   ANV_VID_MEM_AV1_CDF_DEFAULTS_0,
+   ANV_VID_MEM_AV1_CDF_DEFAULTS_1,
+   ANV_VID_MEM_AV1_CDF_DEFAULTS_2,
+   ANV_VID_MEM_AV1_CDF_DEFAULTS_3,
+   ANV_VID_MEM_AV1_DBD_BUFFER,
+   ANV_VID_MEM_AV1_MAX,
+};
+
 struct anv_video_session {
    struct vk_video_session vk;
 
+   bool cdf_initialized;
    /* the decoder needs some private memory allocations */
-   struct anv_vid_mem vid_mem[ANV_VID_MEM_H265_ENC_MAX];
+   struct anv_vid_mem vid_mem[ANV_VID_MEM_AV1_MAX];
 };
 
 struct anv_video_session_params {
    struct vk_video_session_parameters vk;
    VkVideoEncodeRateControlModeFlagBitsKHR rc_mode;
 };
+
+void anv_init_av1_cdf_tables(struct anv_cmd_buffer *cmd,
+                             struct anv_video_session *vid);
+
+uint32_t anv_video_get_image_mv_size(struct anv_device *device,
+                                     struct anv_image *image,
+                                     const struct VkVideoProfileListInfoKHR *profile_list);
 
 void
 anv_dump_pipe_bits(enum anv_pipe_bits bits, FILE *f);
