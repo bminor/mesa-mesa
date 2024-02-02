@@ -4618,17 +4618,13 @@ static void si_bind_vertex_elements(struct pipe_context *ctx, void *state)
    sctx->vertex_elements = v;
    sctx->num_vertex_elements = v->count;
    sctx->vertex_buffers_dirty = sctx->num_vertex_elements > 0;
+   sctx->vertex_buffer_unaligned = 0;
 #ifndef NDEBUG
    sctx->vertex_elements_but_no_buffers = v->count > 0;
 #endif
 
    if (old->instance_divisor_is_one != v->instance_divisor_is_one ||
        old->instance_divisor_is_fetched != v->instance_divisor_is_fetched ||
-       (old->vb_alignment_check_mask ^ v->vb_alignment_check_mask) &
-       sctx->vertex_buffer_unaligned ||
-       ((v->vb_alignment_check_mask & sctx->vertex_buffer_unaligned) &&
-        memcmp(old->vertex_buffer_index, v->vertex_buffer_index,
-               sizeof(v->vertex_buffer_index[0]) * MAX2(old->count, v->count))) ||
        /* fix_fetch_{always,opencode,unaligned} and hw_load_is_dword are
         * functions of fix_fetch and the src_offset alignment.
         * If they change and fix_fetch doesn't, it must be due to different
