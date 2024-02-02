@@ -14,7 +14,7 @@
         "description": "panfrost: fix UB caused by shifting signed int too far",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "13d7ca13001064dc7114e6cc26ba2c3e7ff64e47",
         "notes": null
