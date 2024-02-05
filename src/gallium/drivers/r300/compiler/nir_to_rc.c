@@ -8,6 +8,10 @@
 #include "compiler/nir/nir_deref.h"
 #include "compiler/nir/nir_legacy.h"
 #include "compiler/nir/nir_worklist.h"
+#include "compiler/radeon_code.h"
+#include "compiler/radeon_program_constants.h"
+#include "r300_nir.h"
+#include "r300_screen.h"
 #include "pipe/p_screen.h"
 #include "pipe/p_state.h"
 #include "tgsi/tgsi_dump.h"
@@ -803,8 +807,7 @@ ntr_setup_uniforms(struct ntr_compile *c)
 
          const struct glsl_type *stype = glsl_without_array(var->type);
          enum tgsi_texture_type target = tgsi_texture_type_from_sampler_dim(
-            glsl_get_sampler_dim(stype), glsl_sampler_type_is_array(stype),
-            glsl_sampler_type_is_shadow(stype));
+            glsl_get_sampler_dim(stype), glsl_sampler_type_is_array(stype), false);
          enum tgsi_return_type ret_type =
             tgsi_return_type_from_base_type(glsl_get_sampler_result_type(stype));
          for (int i = 0; i < size; i++) {
@@ -2240,7 +2243,8 @@ nir_to_rc_lower_txp(nir_shader *s)
  * TGSI tokens instead.  If you need to keep the NIR, then pass us a clone.
  */
 const void *
-nir_to_rc(struct nir_shader *s, struct pipe_screen *screen)
+nir_to_rc(struct nir_shader *s, struct pipe_screen *screen,
+          struct r300_fragment_program_external_state state)
 {
    struct ntr_compile *c;
    const void *tgsi_tokens;
@@ -2286,8 +2290,27 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen)
    NIR_PASS_V(s, nir_lower_io, nir_var_shader_in | nir_var_shader_out, type_size,
               nir_lower_io_use_interpolated_input_intrinsics);
 
-   nir_to_rc_lower_txp(s);
-   NIR_PASS_V(s, nir_to_rc_lower_tex);
+   if (s->info.stage == MESA_SHADER_FRAGMENT) {
+      /* Shadow lowering. */
+      int num_texture_states = state.sampler_state_count;
+      if (num_texture_states > 0) {
+         nir_lower_tex_shadow_swizzle tex_swizzle[PIPE_MAX_SHADER_SAMPLER_VIEWS];
+         enum compare_func tex_compare_func[PIPE_MAX_SHADER_SAMPLER_VIEWS];
+
+         for (unsigned i = 0; i < num_texture_states; i++) {
+            tex_compare_func[i] = state.unit[i].texture_compare_func;
+            tex_swizzle[i].swizzle_r = GET_SWZ(state.unit[i].texture_swizzle, 0);
+            tex_swizzle[i].swizzle_g = GET_SWZ(state.unit[i].texture_swizzle, 1);
+            tex_swizzle[i].swizzle_b = GET_SWZ(state.unit[i].texture_swizzle, 2);
+            tex_swizzle[i].swizzle_a = GET_SWZ(state.unit[i].texture_swizzle, 3);
+         }
+         NIR_PASS_V(s, nir_lower_tex_shadow, num_texture_states, tex_compare_func,
+                    tex_swizzle, true);
+      }
+
+      nir_to_rc_lower_txp(s);
+      NIR_PASS_V(s, nir_to_rc_lower_tex);
+   }
 
    bool progress;
    do {
