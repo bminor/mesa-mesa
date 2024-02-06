@@ -134,7 +134,7 @@
         "description": "i915: fix slab_create() related memory leaks",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e7a73b75a0dbd599187b8980b2e1e1cb5dfdaf6d",
         "notes": null

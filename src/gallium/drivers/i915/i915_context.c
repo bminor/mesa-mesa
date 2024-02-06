@@ -159,6 +159,9 @@ i915_destroy(struct pipe_context *pipe)
       pipe_resource_reference(&i915->constants[i], NULL);
    }
 
+   slab_destroy(&i915->texture_transfer_pool);
+   slab_destroy(&i915->transfer_pool);
+
    FREE(i915);
 }
 
