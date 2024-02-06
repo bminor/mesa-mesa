@@ -46,15 +46,12 @@
  */
 struct _mesa_HashTable {
    struct util_sparse_array array;
-   simple_mtx_t Mutex;
-   GLuint MaxKey;                        /**< highest key inserted so far */
-   bool alloc_via_idalloc;
-   /* Used when name reuse is enabled */
    struct util_idalloc_sparse id_alloc;
+   simple_mtx_t Mutex;
 };
 
 void
-_mesa_InitHashTable(struct _mesa_HashTable *table, bool enable_reuse);
+_mesa_InitHashTable(struct _mesa_HashTable *table);
 
 void
 _mesa_DeinitHashTable(struct _mesa_HashTable *table,

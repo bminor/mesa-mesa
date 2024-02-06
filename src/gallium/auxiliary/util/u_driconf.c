@@ -67,7 +67,6 @@ u_driconf_fill_st_options(struct st_config_options *options,
    query_bool_option(glthread_nop_check_framebuffer_status);
    query_bool_option(ignore_map_unsynchronized);
    query_bool_option(ignore_discard_framebuffer);
-   query_int_option(reuse_gl_names);
    query_bool_option(force_gl_map_buffer_synchronized);
    query_bool_option(force_gl_depth_component_type_int);
    query_bool_option(transcode_etc);

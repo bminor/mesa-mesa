@@ -182,7 +182,7 @@ _mesa_init_transform_feedback(struct gl_context *ctx)
 
    assert(ctx->TransformFeedback.DefaultObject->RefCount == 2);
 
-   _mesa_InitHashTable(&ctx->TransformFeedback.Objects, ctx->Shared->ReuseGLNames);
+   _mesa_InitHashTable(&ctx->TransformFeedback.Objects);
 
    _mesa_reference_buffer_object(ctx,
                                  &ctx->TransformFeedback.CurrentBuffer, NULL);

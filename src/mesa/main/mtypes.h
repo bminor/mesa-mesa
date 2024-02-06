@@ -2397,9 +2397,6 @@ struct gl_shared_state
    GLint RefCount;			   /**< Reference count */
    bool DisplayListsAffectGLThread;
 
-   /* Whether the next glGen returns the lowest unused GL ID. */
-   bool ReuseGLNames;
-
    struct _mesa_HashTable DisplayList;	   /**< Display lists hash table */
    struct _mesa_HashTable TexObjects;	   /**< Texture objects hash table */
 

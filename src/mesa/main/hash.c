@@ -45,7 +45,7 @@
  * Initialize a hash table.
  */
 void
-_mesa_InitHashTable(struct _mesa_HashTable *table, bool enable_reuse)
+_mesa_InitHashTable(struct _mesa_HashTable *table)
 {
    memset(table, 0, sizeof(*table));
    util_sparse_array_init(&table->array, sizeof(void*), 1024);
@@ -53,7 +53,6 @@ _mesa_InitHashTable(struct _mesa_HashTable *table, bool enable_reuse)
    /* Mark ID = 0 as used, so that we don't return it. */
    util_idalloc_sparse_reserve(&table->id_alloc, 0);
    simple_mtx_init(&table->Mutex, mtx_plain);
-   table->alloc_via_idalloc = enable_reuse;
 }
 
 /**
@@ -102,10 +101,6 @@ void
 _mesa_HashInsertLocked(struct _mesa_HashTable *table, GLuint key, void *data)
 {
    assert(key);
-
-   if (key > table->MaxKey)
-      table->MaxKey = key;
-
    *(void**)util_sparse_array_get(&table->array, key) = data;
 
    util_idalloc_sparse_reserve(&table->id_alloc, key);
@@ -188,61 +183,19 @@ _mesa_HashWalk(struct _mesa_HashTable *table,
  * \param table the hash table.
  * \param numKeys number of keys needed.
  * 
- * \return Starting key of free block or 0 if failure.
- *
- * If there are enough free keys between the maximum key existing in the table
- * (_mesa_HashTable::MaxKey) and the maximum key possible, then simply return
- * the adjacent key. Otherwise do a full search for a free key block in the
- * allowable key range.
+ * \return Starting key of a free block
  */
 GLuint
 _mesa_HashFindFreeKeyBlock(struct _mesa_HashTable *table, GLuint numKeys)
 {
-   const GLuint maxKey = ~((GLuint) 0) - 1;
-   if (table->alloc_via_idalloc) {
-      return util_idalloc_sparse_alloc_range(&table->id_alloc, numKeys);
-   } else if (maxKey - numKeys > table->MaxKey) {
-      /* the quick solution */
-      return table->MaxKey + 1;
-   }
-   else {
-      /* the slow solution */
-      GLuint freeCount = 0;
-      GLuint freeStart = 1;
-      GLuint key;
-      for (key = 1; key != maxKey; key++) {
-	 if (_mesa_HashLookupLocked(table, key)) {
-	    /* darn, this key is already in use */
-	    freeCount = 0;
-	    freeStart = key+1;
-	 }
-	 else {
-	    /* this key not in use, check if we've found enough */
-	    freeCount++;
-	    if (freeCount == numKeys) {
-	       return freeStart;
-	    }
-	 }
-      }
-      /* cannot allocate a block of numKeys consecutive keys */
-      return 0;
-   }
+   return util_idalloc_sparse_alloc_range(&table->id_alloc, numKeys);
 }
 
 bool
 _mesa_HashFindFreeKeys(struct _mesa_HashTable *table, GLuint* keys, GLuint numKeys)
 {
-   if (!table->alloc_via_idalloc) {
-      GLuint first = _mesa_HashFindFreeKeyBlock(table, numKeys);
-      for (int i = 0; i < numKeys; i++) {
-         keys[i] = first + i;
-      }
-      return first != 0;
-   }
-
-   for (int i = 0; i < numKeys; i++) {
+   for (int i = 0; i < numKeys; i++)
       keys[i] = util_idalloc_sparse_alloc(&table->id_alloc);
-   }
 
    return true;
 }

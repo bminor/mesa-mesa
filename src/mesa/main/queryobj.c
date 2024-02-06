@@ -1342,7 +1342,7 @@ _mesa_init_queryobj(struct gl_context *ctx)
 {
    struct pipe_screen *screen = ctx->pipe->screen;
 
-   _mesa_InitHashTable(&ctx->Query.QueryObjects, ctx->Shared->ReuseGLNames);
+   _mesa_InitHashTable(&ctx->Query.QueryObjects);
    ctx->Query.CurrentOcclusionObject = NULL;
 
    if (screen->caps.occlusion_query)

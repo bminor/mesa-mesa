@@ -74,32 +74,26 @@ _mesa_alloc_shared_state(struct gl_context *ctx,
 
    simple_mtx_init(&shared->Mutex, mtx_plain);
 
-   /* Enable GL name reuse for all drivers by default.
-    *
-    * To disable it, set reuse_gl_names=0 in the environment.
-    */
-   shared->ReuseGLNames = options->reuse_gl_names != 0;
-
-   _mesa_InitHashTable(&shared->DisplayList, shared->ReuseGLNames);
-   _mesa_InitHashTable(&shared->TexObjects, shared->ReuseGLNames);
-   _mesa_InitHashTable(&shared->Programs, shared->ReuseGLNames);
+   _mesa_InitHashTable(&shared->DisplayList);
+   _mesa_InitHashTable(&shared->TexObjects);
+   _mesa_InitHashTable(&shared->Programs);
 
    shared->DefaultVertexProgram =
       ctx->Driver.NewProgram(ctx, MESA_SHADER_VERTEX, 0, true);
    shared->DefaultFragmentProgram =
       ctx->Driver.NewProgram(ctx, MESA_SHADER_FRAGMENT, 0, true);
 
-   _mesa_InitHashTable(&shared->ATIShaders, shared->ReuseGLNames);
+   _mesa_InitHashTable(&shared->ATIShaders);
    shared->DefaultFragmentShader = _mesa_new_ati_fragment_shader(ctx, 0);
 
-   _mesa_InitHashTable(&shared->ShaderObjects, shared->ReuseGLNames);
+   _mesa_InitHashTable(&shared->ShaderObjects);
 
-   _mesa_InitHashTable(&shared->BufferObjects, shared->ReuseGLNames);
+   _mesa_InitHashTable(&shared->BufferObjects);
    shared->ZombieBufferObjects = _mesa_set_create(NULL, _mesa_hash_pointer,
                                                   _mesa_key_pointer_equal);
 
    /* GL_ARB_sampler_objects */
-   _mesa_InitHashTable(&shared->SamplerObjects, shared->ReuseGLNames);
+   _mesa_InitHashTable(&shared->SamplerObjects);
 
    /* GL_ARB_bindless_texture */
    _mesa_init_shared_handles(shared);
@@ -141,14 +135,14 @@ _mesa_alloc_shared_state(struct gl_context *ctx,
    simple_mtx_init(&shared->TexMutex, mtx_plain);
    shared->TextureStateStamp = 0;
 
-   _mesa_InitHashTable(&shared->FrameBuffers, shared->ReuseGLNames);
-   _mesa_InitHashTable(&shared->RenderBuffers, shared->ReuseGLNames);
+   _mesa_InitHashTable(&shared->FrameBuffers);
+   _mesa_InitHashTable(&shared->RenderBuffers);
 
    shared->SyncObjects = _mesa_set_create(NULL, _mesa_hash_pointer,
                                           _mesa_key_pointer_equal);
 
-   _mesa_InitHashTable(&shared->MemoryObjects, shared->ReuseGLNames);
-   _mesa_InitHashTable(&shared->SemaphoreObjects, shared->ReuseGLNames);
+   _mesa_InitHashTable(&shared->MemoryObjects);
+   _mesa_InitHashTable(&shared->SemaphoreObjects);
 
    shared->GLThread.NoLockDuration = ONE_SECOND_IN_NS;
 

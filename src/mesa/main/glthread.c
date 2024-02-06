@@ -223,7 +223,7 @@ _mesa_glthread_init(struct gl_context *ctx)
       return;
    }
 
-   _mesa_InitHashTable(&glthread->VAOs, ctx->Shared->ReuseGLNames);
+   _mesa_InitHashTable(&glthread->VAOs);
    _mesa_glthread_reset_vao(&glthread->DefaultVAO);
    glthread->CurrentVAO = &glthread->DefaultVAO;
 
