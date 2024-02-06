@@ -613,6 +613,8 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_video_decode_queue = pdev->video_decode_enabled,
       .KHR_video_decode_h264 = VIDEO_CODEC_H264DEC && pdev->video_decode_enabled,
       .KHR_video_decode_h265 = VIDEO_CODEC_H265DEC && pdev->video_decode_enabled,
+      .KHR_video_decode_vp9 = (pdev->info.vcn_ip_version >= VCN_2_0_0 &&
+                               VIDEO_CODEC_VP9DEC && pdev->video_decode_enabled),
       .KHR_video_encode_h264 = VIDEO_CODEC_H264ENC && pdev->video_encode_enabled,
       .KHR_video_encode_h265 = VIDEO_CODEC_H265ENC && pdev->video_encode_enabled,
       .KHR_video_encode_queue = pdev->video_encode_enabled,
@@ -1314,6 +1316,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_EXT_zero_initialize_device_memory */
       .zeroInitializeDeviceMemory = true,
+
+      /* VK_KHR_video_decode_vp9 */
+      .videoDecodeVP9 = true,
    };
 }
 
@@ -2563,6 +2568,8 @@ radv_GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, ui
                if (VIDEO_CODEC_AV1DEC && pdev->info.vcn_ip_version >= VCN_3_0_0 &&
                    pdev->info.vcn_ip_version != VCN_3_0_33)
                   prop->videoCodecOperations |= VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR;
+               if (VIDEO_CODEC_VP9DEC)
+                  prop->videoCodecOperations |= VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR;
             }
             if (pQueueFamilyProperties[i].queueFamilyProperties.queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) {
                if (VIDEO_CODEC_H264ENC)

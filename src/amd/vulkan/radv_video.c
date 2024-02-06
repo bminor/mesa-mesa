@@ -13,7 +13,6 @@
 #include "util/vl_zscan_data.h"
 #include "vk_video/vulkan_video_codecs_common.h"
 #include "ac_uvd_dec.h"
-#include "ac_vcn_av1_default.h"
 #include "ac_vcn_dec.h"
 
 #include "radv_buffer.h"
@@ -31,7 +30,8 @@
 #define RADV_VIDEO_H265_MAX_NUM_REF_FRAME     15
 #define RADV_VIDEO_AV1_MAX_DPB_SLOTS          9
 #define RADV_VIDEO_AV1_MAX_NUM_REF_FRAME      7
-
+#define RADV_VIDEO_VP9_MAX_DPB_SLOTS          9
+#define RADV_VIDEO_VP9_MAX_NUM_REF_FRAME      3
 #define FB_BUFFER_OFFSET             0x1000
 #define FB_BUFFER_SIZE               2048
 #define FB_BUFFER_SIZE_TONGA         (2048 * 64)
@@ -324,7 +324,7 @@ have_it(struct radv_video_session *vid)
 static bool
 have_probs(struct radv_video_session *vid)
 {
-   return vid->stream_type == RDECODE_CODEC_AV1;
+   return vid->stream_type == RDECODE_CODEC_AV1 || vid->stream_type == RDECODE_CODEC_VP9;
 }
 
 static unsigned
@@ -421,6 +421,40 @@ radv_video_patch_session_parameters(struct vk_video_session_parameters *params)
    }
 }
 
+static unsigned calc_ctx_size_vp9(const struct radv_physical_device *pdev,
+                                  struct radv_video_session *vid) {
+   /* default probability + probability data */
+   unsigned ctx_size = 2304 * 5;
+
+   if (pdev->info.vcn_ip_version >= VCN_2_0_0) {
+      /* SRE collocated context data */
+      ctx_size += 32 * 2 * 128 * 68;
+      /* SMP collocated context data */
+      ctx_size += 9 * 64 * 2 * 128 * 68;
+      /* SDB left tile pixel */
+      ctx_size += 8 * 2 * 2 * 8192;
+   } else {
+      ctx_size += 32 * 2 * 64 * 64;
+      ctx_size += 9 * 64 * 2 * 64 * 64;
+      ctx_size += 8 * 2 * 4096;
+   }
+
+   if (vid->vk.vp9.profile == STD_VIDEO_VP9_PROFILE_2)
+      ctx_size += 8 * 2 * 4096;
+   return ctx_size;
+}
+
+static unsigned calc_intra_only_vp9(struct radv_video_session *vid) {
+   unsigned width = align(vid->vk.max_coded.width, vid->db_alignment);
+   unsigned height = align(vid->vk.max_coded.height, vid->db_alignment);
+
+   unsigned dpb_size = (width * height) * 3;
+
+   if (vid->vk.vp9.profile == STD_VIDEO_VP9_PROFILE_2)
+      dpb_size = dpb_size * 3 / 2;
+   return dpb_size;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *pCreateInfo,
                            const VkAllocationCallbacks *pAllocator, VkVideoSessionKHR *pVideoSession)
@@ -458,6 +492,13 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
    case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
       vid->stream_type = RDECODE_CODEC_AV1;
       vid->dpb_type = DPB_DYNAMIC_TIER_2;
+      break;
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+      vid->stream_type = RDECODE_CODEC_VP9;
+      if (pdev->info.vcn_ip_version >= VCN_3_0_0)
+         vid->dpb_type = DPB_DYNAMIC_TIER_2;
+      else
+         vid->dpb_type = DPB_DYNAMIC_TIER_1;
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
       vid->encode = true;
@@ -517,7 +558,7 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
    vid->dbg_frame_cnt = 0;
    vid->db_alignment = radv_video_get_db_alignment(
       pdev, vid->vk.max_coded.width,
-      (vid->stream_type == RDECODE_CODEC_AV1 ||
+      (vid->stream_type == RDECODE_CODEC_AV1 || vid->stream_type == RDECODE_CODEC_VP9 ||
        (vid->stream_type == RDECODE_CODEC_H265 && vid->vk.h265.profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN_10)));
 
    *pVideoSession = radv_video_session_to_handle(vid);
@@ -601,6 +642,9 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
       cap = &pdev->info.enc_caps.codec_info[AMDGPU_INFO_VIDEO_CAPS_CODEC_IDX_HEVC];
       is_encode = true;
+      break;
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+      cap = &pdev->info.dec_caps.codec_info[AMDGPU_INFO_VIDEO_CAPS_CODEC_IDX_VP9];
       break;
 #endif
    default:
@@ -741,6 +785,20 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       pCapabilities->stdHeaderVersion.specVersion = VK_STD_VULKAN_VIDEO_CODEC_AV1_DECODE_SPEC_VERSION;
       break;
    }
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+      struct VkVideoDecodeVP9CapabilitiesKHR *ext =
+         vk_find_struct(pCapabilities->pNext, VIDEO_DECODE_VP9_CAPABILITIES_KHR);
+      pCapabilities->maxDpbSlots = RADV_VIDEO_VP9_MAX_DPB_SLOTS;
+      pCapabilities->maxActiveReferencePictures = RADV_VIDEO_VP9_MAX_NUM_REF_FRAME;
+      if (pdev->info.vcn_ip_version >= VCN_3_0_0)
+         pCapabilities->flags |= VK_VIDEO_CAPABILITY_SEPARATE_REFERENCE_IMAGES_BIT_KHR;
+      ext->maxLevel = STD_VIDEO_VP9_LEVEL_6_2;
+      strcpy(pCapabilities->stdHeaderVersion.extensionName, VK_STD_VULKAN_VIDEO_CODEC_VP9_DECODE_EXTENSION_NAME);
+      pCapabilities->stdHeaderVersion.specVersion = VK_STD_VULKAN_VIDEO_CODEC_VP9_DECODE_SPEC_VERSION;
+      pCapabilities->minCodedExtent.width = 64;
+      pCapabilities->minCodedExtent.height = 64;
+      break;
+   }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
       struct VkVideoEncodeH264CapabilitiesKHR *ext = (struct VkVideoEncodeH264CapabilitiesKHR *)vk_find_struct(
          pCapabilities->pNext, VIDEO_ENCODE_H264_CAPABILITIES_KHR);
@@ -859,6 +917,12 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          pCapabilities->maxCodedExtent.height =
             (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 1152 : 4096) : 4352;
          break;
+      case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+         pCapabilities->maxCodedExtent.width = (pdev->info.family < CHIP_RENOIR) ?
+            ((pdev->info.family < CHIP_TONGA) ? 2048 : 4096) : 8192;
+         pCapabilities->maxCodedExtent.height = (pdev->info.family < CHIP_RENOIR) ?
+            ((pdev->info.family < CHIP_TONGA) ? 1152 : 4096) : 4352;
+         break;
       default:
          break;
       }
@@ -967,6 +1031,7 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
 
 #define RADV_BIND_SESSION_CTX 0
 #define RADV_BIND_DECODER_CTX 1
+#define RADV_BIND_INTRA_ONLY 2
 
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device, VkVideoSessionKHR videoSession,
@@ -1019,6 +1084,26 @@ radv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device, VkVideoSessionKHR vi
          m->memoryRequirements.memoryTypeBits = memory_type_bits;
       }
    }
+   if (vid->stream_type == RDECODE_CODEC_VP9) {
+      vk_outarray_append_typed(VkVideoSessionMemoryRequirementsKHR, &out, m) {
+         m->memoryBindIndex = RADV_BIND_DECODER_CTX;
+         m->memoryRequirements.size = align(calc_ctx_size_vp9(pdev, vid), 4096);
+         m->memoryRequirements.alignment = 0;
+         m->memoryRequirements.memoryTypeBits = 0;
+         for (unsigned i = 0; i < pdev->memory_properties.memoryTypeCount; i++)
+            if (pdev->memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+              m->memoryRequirements.memoryTypeBits |= (1 << i);
+      }
+
+      if (vid->vk.max_dpb_slots == 0) {
+         vk_outarray_append_typed(VkVideoSessionMemoryRequirementsKHR, &out, m) {
+            m->memoryBindIndex = RADV_BIND_INTRA_ONLY;
+            m->memoryRequirements.size = calc_intra_only_vp9(vid);
+            m->memoryRequirements.alignment = 0;
+            m->memoryRequirements.memoryTypeBits = memory_type_bits;
+         }
+      }
+   }
    if (vid->stream_type == RDECODE_CODEC_AV1) {
       vk_outarray_append_typed(VkVideoSessionMemoryRequirementsKHR, &out, m)
       {
@@ -1068,6 +1153,9 @@ radv_BindVideoSessionMemoryKHR(VkDevice _device, VkVideoSessionKHR videoSession,
          break;
       case RADV_BIND_DECODER_CTX:
          copy_bind(&vid->ctx, &pBindSessionMemoryInfos[i]);
+         break;
+      case RADV_BIND_INTRA_ONLY:
+         copy_bind(&vid->intra_only_dpb, &pBindSessionMemoryInfos[i]);
          break;
       default:
          assert(0);
@@ -1492,6 +1580,196 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
    return result;
 }
 
+static rvcn_dec_message_vp9_t
+get_vp9_msg(struct radv_device *device, struct radv_video_session *vid,
+            struct radv_video_session_params *params,
+            const struct VkVideoDecodeInfoKHR *frame_info,
+            void *probs_ptr,
+            int *update_reference_slot)
+{
+   rvcn_dec_message_vp9_t result;
+   const struct VkVideoDecodeVP9PictureInfoKHR *vp9_pic_info =
+      vk_find_struct_const(frame_info->pNext, VIDEO_DECODE_VP9_PICTURE_INFO_KHR);
+   const struct StdVideoDecodeVP9PictureInfo *std_pic_info =
+      vp9_pic_info->pStdPictureInfo;
+
+   const int intra_only_decoding = vid->vk.max_dpb_slots == 0;
+   if (intra_only_decoding)
+      assert(frame_info->pSetupReferenceSlot == NULL);
+   *update_reference_slot = !intra_only_decoding;
+
+   memset(&result, 0, sizeof(result));
+
+   bool lossless = std_pic_info->base_q_idx == 0 && std_pic_info->delta_q_y_dc == 0 &&
+      std_pic_info->delta_q_uv_dc == 0 && std_pic_info->delta_q_uv_ac == 0;
+
+   ac_vcn_vp9_fill_probs_table(probs_ptr);
+
+   rvcn_dec_vp9_probs_segment_t *prbs = (rvcn_dec_vp9_probs_segment_t *)(probs_ptr);
+   if (std_pic_info->flags.segmentation_enabled) {
+
+      for (unsigned i = 0; i < 8; ++i) {
+         prbs->seg.feature_data[i] = (uint16_t)std_pic_info->pSegmentation->FeatureData[i][0] |
+            ((uint32_t)(std_pic_info->pSegmentation->FeatureData[i][1] & 0xff) << 16) |
+            ((uint32_t)(std_pic_info->pSegmentation->FeatureData[i][2] & 0xf) << 24);
+         prbs->seg.feature_mask[i] = std_pic_info->pSegmentation->FeatureEnabled[i];
+      }
+
+      for (unsigned i = 0; i < STD_VIDEO_VP9_MAX_SEGMENTATION_TREE_PROBS; ++i)
+         prbs->seg.tree_probs[i] = std_pic_info->pSegmentation->segmentation_tree_probs[i];
+
+      for (unsigned i = 0; i < STD_VIDEO_VP9_MAX_SEGMENTATION_PRED_PROB; ++i)
+         prbs->seg.pred_probs[i] = std_pic_info->pSegmentation->segmentation_pred_prob[i];
+   } else {
+      memset(&prbs->seg, 0, 256);
+   }
+
+   // Based on the radeonsi implementation
+   result.frame_header_flags = (std_pic_info->frame_type
+                                << RDECODE_FRAME_HDR_INFO_VP9_FRAME_TYPE_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_FRAME_TYPE_MASK;
+
+   result.frame_header_flags |= (std_pic_info->flags.error_resilient_mode
+                                << RDECODE_FRAME_HDR_INFO_VP9_ERROR_RESILIENT_MODE_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_ERROR_RESILIENT_MODE_MASK;
+
+   result.frame_header_flags |= (std_pic_info->flags.intra_only
+                                << RDECODE_FRAME_HDR_INFO_VP9_INTRA_ONLY_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_INTRA_ONLY_MASK;
+
+   result.frame_header_flags |= (std_pic_info->flags.allow_high_precision_mv
+                                 << RDECODE_FRAME_HDR_INFO_VP9_ALLOW_HIGH_PRECISION_MV_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_ALLOW_HIGH_PRECISION_MV_MASK;
+
+   result.frame_header_flags |= (std_pic_info->flags.frame_parallel_decoding_mode
+                                 << RDECODE_FRAME_HDR_INFO_VP9_FRAME_PARALLEL_DECODING_MODE_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_FRAME_PARALLEL_DECODING_MODE_MASK;
+
+   result.frame_header_flags |= (std_pic_info->flags.refresh_frame_context
+                                 << RDECODE_FRAME_HDR_INFO_VP9_REFRESH_FRAME_CONTEXT_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_REFRESH_FRAME_CONTEXT_MASK;
+   if (std_pic_info->flags.segmentation_enabled) {
+      assert(std_pic_info->pSegmentation);
+      result.frame_header_flags |= (std_pic_info->flags.segmentation_enabled
+                                    << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_ENABLED_SHIFT) &
+                                 RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_ENABLED_MASK;
+
+      result.frame_header_flags |= (std_pic_info->pSegmentation->flags.segmentation_update_map
+                                    << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_MAP_SHIFT) &
+                                 RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_MAP_MASK;
+
+      result.frame_header_flags |= (std_pic_info->pSegmentation->flags.segmentation_temporal_update
+                                    << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_TEMPORAL_UPDATE_SHIFT) &
+                                 RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_TEMPORAL_UPDATE_MASK;
+
+      result.frame_header_flags |= (std_pic_info->pSegmentation->flags.segmentation_update_data
+                                    << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_DATA_SHIFT) &
+                                 RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_DATA_MASK;
+   }
+   result.frame_header_flags |= (std_pic_info->pLoopFilter->flags.loop_filter_delta_enabled
+                                 << RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_ENABLED_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_ENABLED_MASK;
+
+   result.frame_header_flags |= (std_pic_info->pLoopFilter->flags.loop_filter_delta_update
+                                 << RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_UPDATE_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_UPDATE_MASK;
+
+   result.frame_header_flags |= (std_pic_info->flags.UsePrevFrameMvs
+                                 << RDECODE_FRAME_HDR_INFO_VP9_USE_PREV_IN_FIND_MV_REFS_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_USE_PREV_IN_FIND_MV_REFS_MASK;
+
+   result.frame_header_flags |= (1 << RDECODE_FRAME_HDR_INFO_VP9_USE_FRAME_SIZE_AS_OFFSET_SHIFT) &
+                                RDECODE_FRAME_HDR_INFO_VP9_USE_FRAME_SIZE_AS_OFFSET_MASK;
+   result.interp_filter = std_pic_info->interpolation_filter;
+
+   result.frame_context_idx = std_pic_info->frame_context_idx;
+   result.reset_frame_context = std_pic_info->reset_frame_context;
+
+   result.filter_level = std_pic_info->pLoopFilter->loop_filter_level;
+   result.sharpness_level = std_pic_info->pLoopFilter->loop_filter_sharpness;
+
+   int shifted = std_pic_info->pLoopFilter->loop_filter_level >= 32;
+
+   for (int i = 0; i < (std_pic_info->flags.segmentation_enabled ? 8 : 1); i++) {
+      uint8_t lvl = std_pic_info->pLoopFilter->loop_filter_level;
+
+      if (std_pic_info->pLoopFilter->flags.loop_filter_delta_enabled) {
+         result.lf_adj_level[i][0][0] = result.lf_adj_level[i][0][1] =
+            CLAMP(lvl + (std_pic_info->pLoopFilter->loop_filter_ref_deltas[0] * (1 << shifted)), 0, 63);
+         for (int j = 1; j < 4; j++) {
+            result.lf_adj_level[i][j][0] =
+               CLAMP((lvl + (std_pic_info->pLoopFilter->loop_filter_ref_deltas[j] +
+                             std_pic_info->pLoopFilter->loop_filter_mode_deltas[0]) * (1 << shifted)), 0, 63);
+            result.lf_adj_level[i][j][1] =
+               CLAMP((lvl + (std_pic_info->pLoopFilter->loop_filter_ref_deltas[j] +
+                             std_pic_info->pLoopFilter->loop_filter_mode_deltas[1]) * (1 << shifted)), 0, 63);
+         }
+      } else {
+         memset(result.lf_adj_level[i], lvl, 4 * 2);
+      }
+   }
+
+   if (lossless) {
+      result.base_qindex = 0;
+      result.y_dc_delta_q = 0;
+      result.uv_ac_delta_q = 0;
+      result.uv_dc_delta_q = 0;
+   } else {
+      result.base_qindex = std_pic_info->base_q_idx;
+      result.y_dc_delta_q = std_pic_info->delta_q_y_dc;
+      result.uv_ac_delta_q = std_pic_info->delta_q_uv_ac;
+      result.uv_dc_delta_q = std_pic_info->delta_q_uv_dc;
+   }
+
+   result.log2_tile_cols = std_pic_info->tile_cols_log2;
+   result.log2_tile_rows = std_pic_info->tile_rows_log2;
+   result.chroma_format = 1;
+
+   result.bit_depth_luma_minus8 = result.bit_depth_chroma_minus8 =
+      (std_pic_info->pColorConfig->BitDepth - 8);
+   result.vp9_frame_size = vp9_pic_info->uncompressedHeaderOffset;
+
+   result.compressed_header_size = vp9_pic_info->tilesOffset - vp9_pic_info->compressedHeaderOffset;
+   result.uncompressed_header_size = vp9_pic_info->compressedHeaderOffset - vp9_pic_info->uncompressedHeaderOffset;
+
+   result.curr_pic_idx = intra_only_decoding ? 0 : frame_info->pSetupReferenceSlot->slotIndex;
+
+   uint16_t used_slots = (1 << result.curr_pic_idx);
+   int idx;
+   for (idx = 0; idx < frame_info->referenceSlotCount; idx++) {
+      int32_t slotIndex = frame_info->pReferenceSlots[idx].slotIndex;
+      result.ref_frame_map[idx] = slotIndex;
+      used_slots |= 1 << slotIndex;
+   }
+   for (unsigned j = 0; j < STD_VIDEO_VP9_NUM_REF_FRAMES + 1; j++) {
+      if ((used_slots & (1 << j)) == 0) {
+         result.ref_frame_map[idx] = j;
+	 used_slots |= 1 << j;
+	 idx++;
+      }
+   }
+
+   for (unsigned i = 0; i < 3; i++) {
+      result.frame_refs[i] = vp9_pic_info->referenceNameSlotIndices[i] == -1 ? 0x7f : vp9_pic_info->referenceNameSlotIndices[i];
+   }
+
+   for (unsigned i = STD_VIDEO_VP9_REFERENCE_NAME_LAST_FRAME; i <= STD_VIDEO_VP9_REFERENCE_NAME_ALTREF_FRAME; i++) {
+      result.ref_frame_sign_bias[i - 1] = std_pic_info->ref_frame_sign_bias_mask & (1 << i) ? 1 : 0;
+   }
+
+   if (vid->vk.vp9.profile == STD_VIDEO_VP9_PROFILE_2) {
+      if (vid->vk.picture_format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16) {
+         result.p010_mode = 1;
+         result.msb_mode = 1;
+      } else {
+         result.p010_mode = 0;
+         result.luma_10to8 = 1;
+         result.chroma_10to8 = 1;
+      }
+   }
+   return result;
+}
+
 enum {
    AV1_RESTORE_NONE = 0,
    AV1_RESTORE_WIENER = 1,
@@ -1897,6 +2175,7 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    rvcn_dec_message_index_t *index_codec;
    rvcn_dec_message_decode_t *decode;
    rvcn_dec_message_index_t *index_dynamic_dpb = NULL;
+   rvcn_dec_message_dynamic_dpb_t *dynamic_dpb = NULL;
    rvcn_dec_message_dynamic_dpb_t2_t *dynamic_dpb_t2 = NULL;
    void *codec;
    unsigned sizes = 0, offset_decode, offset_codec, offset_dynamic_dpb;
@@ -1904,6 +2183,7 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    struct radv_image *img = dst_iv->image;
    struct radv_image_plane *luma = &img->planes[0];
    struct radv_image_plane *chroma = &img->planes[1];
+   bool use_intra_only_allocation_for_dpb = false;
 
    header = ptr;
    sizes += sizeof(rvcn_dec_message_header_t);
@@ -1911,7 +2191,7 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    index_codec = (void *)((char *)header + sizes);
    sizes += sizeof(rvcn_dec_message_index_t);
 
-   if (vid->dpb_type == DPB_DYNAMIC_TIER_2) {
+   if (vid->dpb_type == DPB_DYNAMIC_TIER_1 || vid->dpb_type == DPB_DYNAMIC_TIER_2) {
       index_dynamic_dpb = (void *)((char *)header + sizes);
       sizes += sizeof(rvcn_dec_message_index_t);
    }
@@ -1920,10 +2200,15 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    decode = (void *)((char *)header + sizes);
    sizes += sizeof(rvcn_dec_message_decode_t);
 
-   if (vid->dpb_type == DPB_DYNAMIC_TIER_2) {
+   if (vid->dpb_type == DPB_DYNAMIC_TIER_1 || vid->dpb_type == DPB_DYNAMIC_TIER_2) {
       offset_dynamic_dpb = sizes;
-      dynamic_dpb_t2 = (void *)((char *)header + sizes);
-      sizes += sizeof(rvcn_dec_message_dynamic_dpb_t2_t);
+      if (vid->dpb_type == DPB_DYNAMIC_TIER_1) {
+         dynamic_dpb = (void *)((char *)header + sizes);
+         sizes += sizeof(rvcn_dec_message_dynamic_dpb_t);
+      } else {
+         dynamic_dpb_t2 = (void *)((char *)header + sizes);
+         sizes += sizeof(rvcn_dec_message_dynamic_dpb_t2_t);
+      }
    }
 
    offset_codec = sizes;
@@ -1947,12 +2232,15 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    index_codec->filled = 0;
    ++header->num_buffers;
 
-   if (vid->dpb_type == DPB_DYNAMIC_TIER_2) {
+   if (vid->dpb_type == DPB_DYNAMIC_TIER_1 || vid->dpb_type == DPB_DYNAMIC_TIER_2) {
       index_dynamic_dpb->message_id = RDECODE_MESSAGE_DYNAMIC_DPB;
       index_dynamic_dpb->offset = offset_dynamic_dpb;
       index_dynamic_dpb->filled = 0;
       ++header->num_buffers;
-      index_dynamic_dpb->size = sizeof(rvcn_dec_message_dynamic_dpb_t2_t);
+      if (vid->dpb_type == DPB_DYNAMIC_TIER_1)
+         index_dynamic_dpb->size = sizeof(rvcn_dec_message_dynamic_dpb_t);
+      else if (vid->dpb_type == DPB_DYNAMIC_TIER_2)
+         index_dynamic_dpb->size = sizeof(rvcn_dec_message_dynamic_dpb_t2_t);
    }
 
    decode->stream_type = vid->stream_type;
@@ -2032,6 +2320,15 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
       assert(frame_info->referenceSlotCount < 9);
       break;
    }
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+      index_codec->size = sizeof(rvcn_dec_message_vp9_t);
+      rvcn_dec_message_vp9_t vp9 = get_vp9_msg(device, vid, params, frame_info, it_probs_ptr, &dpb_update_required);
+      memcpy(codec, (void *)&vp9, sizeof(rvcn_dec_message_vp9_t));
+      index_codec->message_id = RDECODE_MESSAGE_VP9;
+      if (vid->vk.max_dpb_slots == 0)
+         use_intra_only_allocation_for_dpb = true;
+      break;
+   }
    default:
       unreachable("unknown operation");
    }
@@ -2051,7 +2348,7 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    if (dpb_update_required)
       dpb_array_idx = frame_info->pSetupReferenceSlot->pPictureResource->baseArrayLayer + dpb_iv->vk.base_array_layer;
 
-   decode->dpb_size = (vid->dpb_type != DPB_DYNAMIC_TIER_2) ? dpb->size : 0;
+   decode->dpb_size = (vid->dpb_type < DPB_DYNAMIC_TIER_2) ? dpb->size : 0;
    decode->db_pitch = dpb->planes[0].surface.u.gfx9.surf_pitch;
    decode->db_aligned_height = dpb->planes[0].surface.u.gfx9.surf_height;
    decode->db_swizzle_mode = dpb->planes[0].surface.u.gfx9.swizzle_mode;
@@ -2059,13 +2356,34 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
 
    decode->hw_ctxt_size = vid->ctx.size;
 
+   if (vid->dpb_type == DPB_DYNAMIC_TIER_1) {
+      decode->decode_flags |= (RDECODE_FLAGS_USE_DYNAMIC_DPB_MASK | RDECODE_FLAGS_USE_PAL_MASK);
+
+      dynamic_dpb->dpbArraySize = RADV_VIDEO_VP9_MAX_DPB_SLOTS;
+      dynamic_dpb->dpbLumaPitch = dpb->planes[0].surface.u.gfx9.surf_pitch;
+      dynamic_dpb->dpbLumaAlignedHeight = dpb->planes[0].surface.u.gfx9.surf_height;
+      dynamic_dpb->dpbLumaAlignedSize =
+         dpb->planes[0].surface.u.gfx9.surf_slice_size;
+      dynamic_dpb->dpbChromaPitch = dpb->planes[1].surface.u.gfx9.surf_pitch;
+      dynamic_dpb->dpbChromaAlignedHeight = dpb->planes[1].surface.u.gfx9.surf_height;
+      dynamic_dpb->dpbChromaAlignedSize = dpb->planes[1].surface.u.gfx9.surf_slice_size;
+      dynamic_dpb->dpbReserved0[0] = vid->db_alignment;
+   }
+
    if (vid->dpb_type != DPB_DYNAMIC_TIER_2)
       return true;
 
-   uint64_t addr = dpb->bindings[0].addr;
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, dpb->bindings[0].bo);
+   uint64_t addr;
 
-   addr += dpb_array_idx * (dpb->planes[0].surface.u.gfx9.surf_slice_size + dpb->planes[1].surface.u.gfx9.surf_slice_size);
+   if (use_intra_only_allocation_for_dpb) {
+      addr = radv_buffer_get_va(vid->intra_only_dpb.mem->bo) + vid->intra_only_dpb.offset;
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, vid->intra_only_dpb.mem->bo);
+   } else {
+      addr = dpb->bindings[0].addr;
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, dpb->bindings[0].bo);
+      addr += dpb_array_idx * (dpb->planes[0].surface.u.gfx9.surf_slice_size + dpb->planes[1].surface.u.gfx9.surf_slice_size);
+   }
+
    dynamic_dpb_t2->dpbCurrLo = addr;
    dynamic_dpb_t2->dpbCurrHi = addr >> 32;
 
@@ -2096,12 +2414,6 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
 
       ++dynamic_dpb_t2->dpbArraySize;
    }
-
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, dpb->bindings[0].bo);
-   addr = dpb->bindings[0].addr;
-   addr += dpb_array_idx * (dpb->planes[0].surface.u.gfx9.surf_slice_size + dpb->planes[1].surface.u.gfx9.surf_slice_size);
-   dynamic_dpb_t2->dpbCurrLo = addr;
-   dynamic_dpb_t2->dpbCurrHi = addr >> 32;
 
    decode->decode_flags = 1;
    dynamic_dpb_t2->dpbConfigFlags = 0;
@@ -2538,6 +2850,12 @@ radv_vcn_cmd_reset(struct radv_cmd_buffer *cmd_buffer)
    void *ptr;
    uint32_t out_offset;
 
+   if (vid->stream_type == RDECODE_CODEC_VP9) {
+      uint8_t *ctxptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
+      ctxptr += vid->ctx.offset;
+      ac_vcn_vp9_fill_probs_table(ctxptr);
+      device->ws->buffer_unmap(device->ws, vid->ctx.mem->bo, false);
+   }
    if (vid->stream_type == RDECODE_CODEC_AV1) {
       uint8_t *ctxptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
       ctxptr += vid->ctx.offset;
@@ -2689,7 +3007,10 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
 
    size += sizeof(rvcn_dec_message_header_t); /* header */
    size += sizeof(rvcn_dec_message_index_t);  /* codec */
-   if (vid->dpb_type == DPB_DYNAMIC_TIER_2) {
+   if (vid->dpb_type == DPB_DYNAMIC_TIER_1) {
+      size += sizeof(rvcn_dec_message_index_t);
+      size += sizeof(rvcn_dec_message_dynamic_dpb_t);
+   } else  if (vid->dpb_type == DPB_DYNAMIC_TIER_2) {
       size += sizeof(rvcn_dec_message_index_t);
       size += sizeof(rvcn_dec_message_dynamic_dpb_t2_t);
    }
@@ -2704,6 +3025,9 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
       size += sizeof(rvcn_dec_message_av1_t);
       break;
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+      size += sizeof(rvcn_dec_message_vp9_t);
+      break;
    default:
       unreachable("unsupported codec.");
    }
@@ -2714,7 +3038,14 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
       radv_vid_buffer_upload_alloc(cmd_buffer, IT_SCALING_TABLE_SIZE, &it_probs_offset, &it_probs_ptr);
       it_probs_bo = cmd_buffer->upload.upload_bo;
    } else if (have_probs(vid)) {
-      radv_vid_buffer_upload_alloc(cmd_buffer, sizeof(rvcn_dec_av1_segment_fg_t), &it_probs_offset, &it_probs_ptr);
+      size_t sz = 0;
+
+      if (vid->stream_type == RDECODE_CODEC_AV1) {
+         sz = sizeof(rvcn_dec_av1_segment_fg_t);
+      } else if (vid->stream_type == RDECODE_CODEC_VP9) {
+         sz = sizeof(rvcn_dec_vp9_probs_t) + 256;
+      }
+      radv_vid_buffer_upload_alloc(cmd_buffer, sz, &it_probs_offset, &it_probs_ptr);
       it_probs_bo = cmd_buffer->upload.upload_bo;
    }
 
@@ -2732,10 +3063,15 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    send_cmd(cmd_buffer, RDECODE_CMD_MSG_BUFFER, msg_bo, radv_buffer_get_va(msg_bo) + out_offset);
 
    if (vid->dpb_type != DPB_DYNAMIC_TIER_2) {
-      struct radv_image_view *dpb_iv =
-         radv_image_view_from_handle(frame_info->pSetupReferenceSlot->pPictureResource->imageViewBinding);
-      struct radv_image *dpb = dpb_iv->image;
-      send_cmd(cmd_buffer, RDECODE_CMD_DPB_BUFFER, dpb->bindings[0].bo, dpb->bindings[0].addr);
+      if (vid->vk.max_dpb_slots == 0) {
+         uint64_t addr = radv_buffer_get_va(vid->intra_only_dpb.mem->bo) + vid->intra_only_dpb.offset;
+         send_cmd(cmd_buffer, RDECODE_CMD_DPB_BUFFER, vid->intra_only_dpb.mem->bo, addr);
+      } else {
+         struct radv_image_view *dpb_iv =
+            radv_image_view_from_handle(frame_info->pSetupReferenceSlot->pPictureResource->imageViewBinding);
+         struct radv_image *dpb = dpb_iv->image;
+         send_cmd(cmd_buffer, RDECODE_CMD_DPB_BUFFER, dpb->bindings[0].bo, dpb->bindings[0].addr);
+      }
    }
 
    if (vid->ctx.mem)
