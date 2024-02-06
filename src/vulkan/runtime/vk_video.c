@@ -66,7 +66,14 @@ vk_video_session_init(struct vk_device *device,
       vid->av1.profile = av1_profile->stdProfile;
       vid->av1.film_grain_support = av1_profile->filmGrainSupport;
       break;
-   };
+   }
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+      const struct VkVideoDecodeVP9ProfileInfoKHR *vp9_profile =
+         vk_find_struct_const(create_info->pVideoProfile->pNext,
+                              VIDEO_DECODE_VP9_PROFILE_INFO_KHR);
+      vid->vp9.profile = vp9_profile->stdProfile;
+      break;
+   }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
       const struct VkVideoEncodeH264ProfileInfoKHR *h264_profile =
          vk_find_struct_const(create_info->pVideoProfile->pNext, VIDEO_ENCODE_H264_PROFILE_INFO_KHR);
@@ -500,6 +507,9 @@ vk_video_session_parameters_init(struct vk_device *device,
          vk_video_deep_copy_av1_seq_hdr(&params->av1_dec.seq_hdr,
                                         av1_create->pStdSequenceHeader);
       }
+      break;
+   }
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
       break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {

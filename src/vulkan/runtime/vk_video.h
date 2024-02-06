@@ -103,6 +103,9 @@ struct vk_video_session {
          StdVideoAV1Profile profile;
          int film_grain_support;
       } av1;
+      struct {
+         StdVideoVP9Profile profile;
+      } vp9;
    };
 };
 
