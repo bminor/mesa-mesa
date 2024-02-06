@@ -124,7 +124,7 @@
         "description": "i915: fix nir_to_tgsi() related memory leak",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "487a49332592ad5f77841ac37fd2b601c9472e8b",
         "notes": null
