@@ -114,7 +114,7 @@
         "description": "i915: fix draw_create_fragment_shader() related memory leak",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1a69b50b3b441ce8f7a00af3a7f02c37df50f6c3",
         "notes": null
