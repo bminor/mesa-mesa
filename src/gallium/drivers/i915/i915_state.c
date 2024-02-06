@@ -640,6 +640,7 @@ i915_bind_fs_state(struct pipe_context *pipe, void *shader)
 static void
 i915_delete_fs_state(struct pipe_context *pipe, void *shader)
 {
+   struct i915_context *i915 = i915_context(pipe);
    struct i915_fragment_shader *ifs = (struct i915_fragment_shader *)shader;
 
    ralloc_free(ifs->error);
@@ -647,6 +648,13 @@ i915_delete_fs_state(struct pipe_context *pipe, void *shader)
    ifs->program = NULL;
    FREE((struct tgsi_token *)ifs->state.tokens);
    ifs->state.tokens = NULL;
+
+   if (ifs->draw_data) {
+      if (likely(i915))
+         draw_delete_fragment_shader(i915->draw, ifs->draw_data);
+      else
+         draw_delete_fragment_shader(NULL, ifs->draw_data);
+   }
 
    ifs->program_len = 0;
 
