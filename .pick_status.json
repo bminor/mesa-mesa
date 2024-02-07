@@ -2634,7 +2634,7 @@
         "description": "panfrost: Pad compute jobs with zeros on v4",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b76420be1f1f3a0ceb7808131b9c8aa8e970a415",
         "notes": null
