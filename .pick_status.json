@@ -2564,7 +2564,7 @@
         "description": "pan/va: Add missing valhall_enums dep to valhall_disasm",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "619566dea18e94e0c1e00effc8200df75b892941",
         "notes": null
