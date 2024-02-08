@@ -1154,7 +1154,7 @@
         "description": "llvmpipe: Set \"+64bit\" for X86_64",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f92cadccc65128fdaa54e59ba40dcf75e90a25dd",
         "notes": null
