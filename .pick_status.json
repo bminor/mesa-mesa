@@ -2414,7 +2414,7 @@
         "description": "zink: adjust swizzled deref loads by the variable component offset",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17a35412dcc77a3058107100d27f734796a9d0ca",
         "notes": null
