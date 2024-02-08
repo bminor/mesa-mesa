@@ -2114,7 +2114,7 @@
         "description": "aco: don't remove branches that skip v_writelane_b32",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
