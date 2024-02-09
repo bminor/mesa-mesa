@@ -882,6 +882,25 @@ static bool ip_uses_alt_fence(enum amd_ip_type ip_type)
           ip_type == AMD_IP_VCN_JPEG;
 }
 
+static void amdgpu_cs_destroy(struct radeon_cmdbuf *rcs)
+{
+   struct amdgpu_cs *cs = amdgpu_cs(rcs);
+
+   if (!cs)
+      return;
+
+   amdgpu_cs_sync_flush(rcs);
+   util_queue_fence_destroy(&cs->flush_completed);
+   p_atomic_dec(&cs->aws->num_cs);
+   radeon_bo_reference(&cs->aws->dummy_sws.base, &cs->preamble_ib_bo, NULL);
+   radeon_bo_reference(&cs->aws->dummy_sws.base, &cs->main_ib.big_buffer, NULL);
+   FREE(rcs->prev);
+   amdgpu_destroy_cs_context(cs->aws, &cs->csc1);
+   amdgpu_destroy_cs_context(cs->aws, &cs->csc2);
+   amdgpu_fence_reference(&cs->next_fence, NULL);
+   FREE(cs);
+}
+
 static bool
 amdgpu_cs_create(struct radeon_cmdbuf *rcs,
                  struct radeon_winsys_ctx *rwctx,
@@ -958,18 +977,22 @@ amdgpu_cs_create(struct radeon_cmdbuf *rcs,
    cs->csc1.aws = ctx->aws;
    cs->csc2.aws = ctx->aws;
 
-   rcs->priv = cs;
+   p_atomic_inc(&ctx->aws->num_cs);
 
-   if (!amdgpu_get_new_ib(ctx->aws, rcs, &cs->main_ib, cs)) {
-      amdgpu_destroy_cs_context(ctx->aws, &cs->csc2);
-      amdgpu_destroy_cs_context(ctx->aws, &cs->csc1);
-      FREE(cs);
-      rcs->priv = NULL;
-      return false;
+   if (!amdgpu_get_new_ib(ctx->aws, rcs, &cs->main_ib, cs))
+      goto fail;
+
+   /* Currently only gfx, compute and sdma queues supports user queue. */
+   if (cs->aws->info.use_userq && ip_type <= AMD_IP_SDMA) {
+      if (!amdgpu_userq_init(cs->aws, &cs->aws->queues[cs->queue_index].userq, ip_type))
+         goto fail;
    }
 
-   p_atomic_inc(&ctx->aws->num_cs);
+   rcs->priv = cs;
    return true;
+fail:
+   amdgpu_cs_destroy(rcs);
+   return false;
 }
 
 static bool
@@ -1845,25 +1868,6 @@ static int amdgpu_cs_flush(struct radeon_cmdbuf *rcs,
       aws->num_sdma_IBs++;
 
    return error_code;
-}
-
-static void amdgpu_cs_destroy(struct radeon_cmdbuf *rcs)
-{
-   struct amdgpu_cs *cs = amdgpu_cs(rcs);
-
-   if (!cs)
-      return;
-
-   amdgpu_cs_sync_flush(rcs);
-   util_queue_fence_destroy(&cs->flush_completed);
-   p_atomic_dec(&cs->aws->num_cs);
-   radeon_bo_reference(&cs->aws->dummy_sws.base, &cs->preamble_ib_bo, NULL);
-   radeon_bo_reference(&cs->aws->dummy_sws.base, &cs->main_ib.big_buffer, NULL);
-   FREE(rcs->prev);
-   amdgpu_destroy_cs_context(cs->aws, &cs->csc1);
-   amdgpu_destroy_cs_context(cs->aws, &cs->csc2);
-   amdgpu_fence_reference(&cs->next_fence, NULL);
-   FREE(cs);
 }
 
 static bool amdgpu_bo_is_referenced(struct radeon_cmdbuf *rcs,

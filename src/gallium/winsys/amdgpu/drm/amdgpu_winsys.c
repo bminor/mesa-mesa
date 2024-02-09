@@ -62,6 +62,9 @@ static bool do_winsys_init(struct amdgpu_winsys *aws,
                               driQueryOptionb(config->options, "radeonsi_zerovram");
    aws->info.use_userq = debug_get_bool_option("AMD_USERQ", false);
 
+   for (unsigned i = 0; i < ARRAY_SIZE(aws->queues); i++)
+      simple_mtx_init(&aws->queues[i].userq.lock, mtx_plain);
+
    return true;
 
 fail:
@@ -78,6 +81,9 @@ static void do_winsys_deinit(struct amdgpu_winsys *aws)
    for (unsigned i = 0; i < ARRAY_SIZE(aws->queues); i++) {
       for (unsigned j = 0; j < ARRAY_SIZE(aws->queues[i].fences); j++)
          amdgpu_fence_reference(&aws->queues[i].fences[j], NULL);
+
+      amdgpu_userq_deinit(aws, &aws->queues[i].userq);
+      simple_mtx_destroy(&aws->queues[i].userq.lock);
 
       amdgpu_ctx_reference(&aws->queues[i].last_ctx, NULL);
    }
