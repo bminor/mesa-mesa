@@ -258,6 +258,7 @@ struct radeon_encoder {
 
    bool emulation_prevention;
    bool need_feedback;
+   bool need_rate_control;
    unsigned dpb_size;
    rvcn_enc_picture_info_t dpb_info[RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES];
    unsigned max_ltr_idx;
