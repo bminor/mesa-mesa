@@ -414,7 +414,7 @@
         "description": "i915: fix i915_set_vertex_buffers() related refcnt imbalance and remove redundancies",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0278d1fa323cf1f289a2c5f4cd803c4203d4a48a",
         "notes": null

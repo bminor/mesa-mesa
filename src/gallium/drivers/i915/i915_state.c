@@ -1012,11 +1012,11 @@ i915_set_vertex_buffers(struct pipe_context *pipe, unsigned count,
    struct i915_context *i915 = i915_context(pipe);
    struct draw_context *draw = i915->draw;
 
-   util_set_vertex_buffers_count(i915->vertex_buffers, &i915->nr_vertex_buffers,
-                                 buffers, count, true);
+   assert(count <= PIPE_MAX_ATTRIBS);
 
-   /* pass-through to draw module */
-   draw_set_vertex_buffers(draw, count, buffers);
+   util_set_vertex_buffers_count(draw->pt.vertex_buffer,
+                                 &draw->pt.nr_vertex_buffers, buffers, count,
+                                 true);
 }
 
 static void *
