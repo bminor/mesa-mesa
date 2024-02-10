@@ -1914,7 +1914,7 @@
         "description": "nvk: Don't clobber vb0 after repeated blits",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e1c665013b14d63ccf4be265c5ec59914e5a5748",
         "notes": null
