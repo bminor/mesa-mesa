@@ -478,11 +478,12 @@ needs_src_copy(const fs_builder &lbld, const fs_inst *inst, unsigned i)
    if (inst->opcode == SHADER_OPCODE_MOV_INDIRECT && i == 0)
       return false;
 
-   return !(is_periodic(inst->src[i], lbld.dispatch_width()) ||
-            (inst->components_read(i) == 1 &&
-             lbld.dispatch_width() <= inst->exec_size)) ||
-          (inst->flags_written(lbld.shader->devinfo) &
-           brw_fs_flag_mask(inst->src[i], brw_type_size_bytes(inst->src[i].type)));
+   return !inst->src[i].is_scalar &&
+          (!(is_periodic(inst->src[i], lbld.dispatch_width()) ||
+             (inst->components_read(i) == 1 &&
+              lbld.dispatch_width() <= inst->exec_size)) ||
+           (inst->flags_written(lbld.shader->devinfo) &
+            brw_fs_flag_mask(inst->src[i], brw_type_size_bytes(inst->src[i].type))));
 }
 
 /**
@@ -509,7 +510,8 @@ emit_unzip(const fs_builder &lbld, fs_inst *inst, unsigned i)
 
       return tmp;
    } else if (is_periodic(inst->src[i], lbld.dispatch_width()) ||
-              (inst->opcode == SHADER_OPCODE_MOV_INDIRECT && i == 0)) {
+              (inst->opcode == SHADER_OPCODE_MOV_INDIRECT && i == 0) ||
+              inst->src[i].is_scalar) {
       /* The source is invariant for all dispatch_width-wide groups of the
        * original region.
        *

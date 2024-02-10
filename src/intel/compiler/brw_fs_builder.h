@@ -28,6 +28,9 @@
 #include "brw_eu.h"
 #include "brw_fs.h"
 
+static inline brw_reg offset(const brw_reg &, const brw::fs_builder &,
+                             unsigned);
+
 namespace brw {
    /**
     * Toolbox to assemble an FS IR program out of individual instructions.
@@ -402,8 +405,9 @@ namespace brw {
       move_to_vgrf(const brw_reg &src, unsigned num_components) const
       {
          brw_reg *const src_comps = new brw_reg[num_components];
+
          for (unsigned i = 0; i < num_components; i++)
-            src_comps[i] = offset(src, dispatch_width(), i);
+            src_comps[i] = offset(src, *this, i);
 
          const brw_reg dst = vgrf(src.type, num_components);
          LOAD_PAYLOAD(dst, src_comps, num_components, 0);
@@ -891,8 +895,36 @@ namespace brw {
    };
 }
 
+/**
+ * Offset by a number of components into a VGRF
+ *
+ * It is assumed that the VGRF represents a vector (e.g., returned by
+ * load_uniform or a texture operation). Convergent and divergent values are
+ * stored differently, so care must be taken to offset properly.
+ */
 static inline brw_reg
 offset(const brw_reg &reg, const brw::fs_builder &bld, unsigned delta)
 {
+   /* If the value is convergent (stored as one or more SIMD8), offset using
+    * SIMD8 and select component 0.
+    */
+   if (reg.is_scalar) {
+      const unsigned allocation_width = 8 * reg_unit(bld.shader->devinfo);
+
+      brw_reg offset_reg = offset(reg, allocation_width, delta);
+
+      /* If the dispatch width is larger than the allocation width, that
+       * implies that the register can only be used as a source. Otherwise the
+       * instruction would write past the allocation size of the register.
+       */
+      if (bld.dispatch_width() > allocation_width)
+         return component(offset_reg, 0);
+      else
+         return offset_reg;
+   }
+
+   /* Offset to the component assuming the value was allocated in
+    * dispatch_width units.
+    */
    return offset(reg, bld.dispatch_width(), delta);
 }

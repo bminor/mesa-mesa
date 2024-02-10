@@ -182,7 +182,19 @@ typedef struct brw_reg {
          unsigned vstride:4;      /* source only */
          unsigned width:3;        /* src only, align1 only */
          unsigned hstride:2;      /* align1 only */
-         unsigned pad1:1;
+
+         /**
+          * Does this register represent a scalar value?
+          *
+          * Registers are allocated in SIMD8 parcels, but may be used to
+          * represent convergent (i.e., scalar) values. As a destination, it
+          * is written as SIMD8. As a source, it may be read as <8,8,1> in
+          * SIMD8 instructions or <0,1,0> on other execution sizes.
+          *
+          * If the value represents a vector (e.g., a convergent load_uniform
+          * of a vec4), it will be stored as multiple SIMD8 registers.
+          */
+         unsigned is_scalar:1;
       };
 
       double df;
@@ -405,7 +417,7 @@ brw_make_reg(enum brw_reg_file file,
    reg.vstride = vstride;
    reg.width = width;
    reg.hstride = hstride;
-   reg.pad1 = 0;
+   reg.is_scalar = 0;
 
    reg.offset = 0;
    reg.stride = 1;

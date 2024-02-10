@@ -749,6 +749,7 @@ brw_fs_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, fs_inst 
    new_reg = byte_offset(new_reg, reg->offset);
    new_reg.abs = reg->abs;
    new_reg.negate = reg->negate;
+   new_reg.is_scalar = reg->is_scalar;
 
    *reg = new_reg;
 }

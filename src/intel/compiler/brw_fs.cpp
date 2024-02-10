@@ -729,7 +729,9 @@ fs_inst::size_read(const struct intel_device_info *devinfo, int arg) const
    case FIXED_GRF:
    case VGRF:
    case ATTR:
-      return components_read(arg) * src[arg].component_size(exec_size);
+      /* Regardless of exec_size, values marked as scalar are SIMD8. */
+      return components_read(arg) *
+             src[arg].component_size(src[arg].is_scalar ? 8 * reg_unit(devinfo) : exec_size);
    }
    return 0;
 }

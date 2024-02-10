@@ -377,6 +377,9 @@ brw_fs_validate(const fs_visitor &s)
       if (inst->dst.file == VGRF) {
          fsv_assert_lte(inst->dst.offset / REG_SIZE + regs_written(inst),
                         s.alloc.sizes[inst->dst.nr]);
+
+         if (inst->exec_size > 1)
+            fsv_assert_ne(inst->dst.stride, 0);
       }
 
       for (unsigned i = 0; i < inst->sources; i++) {

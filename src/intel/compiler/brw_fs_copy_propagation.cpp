@@ -1778,11 +1778,19 @@ find_value_for_offset(fs_inst *def, const brw_reg &src, unsigned src_size)
    case SHADER_OPCODE_LOAD_PAYLOAD: {
       unsigned offset = 0;
       for (int i = def->header_size; i < def->sources; i++) {
-         const unsigned splat = def->src[i].stride == 0 ? def->exec_size : 1;
+         /* Ignore the source splat if the source is a scalar. In that case
+          * always use just the first component.
+          */
+         const unsigned splat =
+            (def->src[i].stride == 0 && !src.is_scalar) || def->src[i].file == IMM ? def->exec_size : 1;
+         const unsigned component_size =
+            def->src[i].component_size(def->exec_size);
+
          if (offset == src.offset) {
             if (def->dst.type == def->src[i].type &&
                 def->src[i].stride <= 1 &&
-                def->src[i].component_size(def->exec_size) * splat == src_size)
+                (component_size * splat == src_size ||
+                 (def->src[i].file == IMM && component_size == src_size)))
                val = def->src[i];
 
             break;
