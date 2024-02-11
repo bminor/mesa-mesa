@@ -1524,7 +1524,7 @@
         "description": "Revert \"zink: always force flushes when originating from api frontend\"",
         "nominated": false,
         "nomination_type": 2,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "03f049f49730b8b1268f2975fc34ac2b1f9a4ef9",
         "notes": null
