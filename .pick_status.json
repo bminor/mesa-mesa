@@ -1844,7 +1844,7 @@
         "description": "Revert \"ci: Enable GALLIUM_DUMP_CPU=true only in the clang job\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c6979d97e46907ff341665200b853cbca1d5524c",
         "notes": null
