@@ -214,6 +214,11 @@ static const struct test {
    INSTR_5XX(c0ce0100_02800000, "stg.u8_32 g[r0.x], r0.x, 2"),
    INSTR_5XX(c0c00100_02800000, "stg.f16 g[r0.x], hr0.x, 2"),
 
+   /* dEQP-VK.ray_query.builtin.objectraydirection.geom.aabbs */
+   INSTR_7XX(c380941e_0703c079, "ray_intersection r7.z, [r3.w], r15.x, r1.w, r18.z"),
+   /* dEQP-VK.ray_query.builtin.rayqueryterminate.geom.triangles */
+   INSTR_7XX(c0260207_00630100, "resbase.untyped.1d.u32.1.imm.base0 r1.w, 1"), /* resbase.u32.1d.mode4.base0 r1.w, 1 */
+
    /* Customely crafted */
    INSTR_6XX(c0d61104_01800228, "stg.a.u32 g[r2.x+(r1.x+1)<<2], r5.x, 1"),
    INSTR_6XX(c0d61104_01802628, "stg.a.u32 g[r2.x+r1.x<<4+3<<2], r5.x, 1"),

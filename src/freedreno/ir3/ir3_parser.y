@@ -623,6 +623,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_OP_STLW
 %token <tok> T_OP_RESFMT
 %token <tok> T_OP_RESINFO
+%token <tok> T_OP_RESBASE
 %token <tok> T_OP_ATOMIC_ADD
 %token <tok> T_OP_ATOMIC_SUB
 %token <tok> T_OP_ATOMIC_XCHG
@@ -681,6 +682,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_OP_STC
 %token <tok> T_OP_STSC
 %token <tok> T_OP_SHFL
+%token <tok> T_OP_RAY_INTERSECTION
 
 /* category 7: */
 %token <tok> T_OP_BAR
@@ -1344,6 +1346,7 @@ cat6_reg_or_immed: src
 |                  integer { new_src(0, IR3_REG_IMMED)->iim_val = $1; }
 
 cat6_bindless_ibo_opc_1src: T_OP_RESINFO_B       { new_instr(OPC_RESINFO); }
+|                           T_OP_RESBASE         { new_instr(OPC_RESBASE); }
 
 cat6_bindless_ibo_opc_2src: T_OP_ATOMIC_B_ADD        { new_instr(OPC_ATOMIC_B_ADD); dummy_dst(); }
 |                  T_OP_ATOMIC_B_SUB        { new_instr(OPC_ATOMIC_B_SUB); dummy_dst(); }
@@ -1401,6 +1404,9 @@ cat6_shfl_mode: T_MOD_XOR   { instr->cat6.shfl_mode = SHFL_XOR;   }
 cat6_shfl:
          T_OP_SHFL { new_instr(OPC_SHFL); } '.' cat6_shfl_mode cat6_type dst ',' src ',' cat6_reg_or_immed
 
+cat6_ray_intersection: T_OP_RAY_INTERSECTION {
+                     new_instr(OPC_RAY_INTERSECTION);
+                     } dst_reg ',' '[' src_reg_or_const ']' ',' src_reg ',' src_reg ',' src_reg
 
 cat6_todo:         T_OP_G2L                 { new_instr(OPC_G2L); }
 |                  T_OP_L2G                 { new_instr(OPC_L2G); }
@@ -1418,6 +1424,7 @@ cat6_instr:        cat6_load
 |                  cat6_bindless_ibo
 |                  cat6_stc
 |                  cat6_shfl
+|                  cat6_ray_intersection
 |                  cat6_todo
 
 cat7_scope:        '.' 'w'  { instr->cat7.w = true; }

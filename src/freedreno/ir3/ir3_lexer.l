@@ -363,6 +363,7 @@ static int parse_reg(const char *str)
 "stlw"                            return TOKEN(T_OP_STLW);
 "resfmt"                          return TOKEN(T_OP_RESFMT);
 "resinfo"                         return TOKEN(T_OP_RESINFO);
+"resbase"                         return TOKEN(T_OP_RESBASE);
 "atomic.add"                      return TOKEN(T_OP_ATOMIC_ADD);
 "atomic.sub"                      return TOKEN(T_OP_ATOMIC_SUB);
 "atomic.xchg"                     return TOKEN(T_OP_ATOMIC_XCHG);
@@ -422,6 +423,8 @@ static int parse_reg(const char *str)
 "stc"                             return TOKEN(T_OP_STC);
 "stsc"                            return TOKEN(T_OP_STSC);
 "shfl"                            return TOKEN(T_OP_SHFL);
+
+"ray_intersection"                return TOKEN(T_OP_RAY_INTERSECTION);
 
 ("b16"|"b32"){1} ir3_yylval.str = yytext; return T_INSTR_TYPE;
 
