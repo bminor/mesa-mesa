@@ -148,6 +148,9 @@ static type_t parse_type(const char **type)
 	} else if (!strncmp("u8_32", *type, 5)) {
 		*type += 5;
 		return TYPE_U8_32;
+	} else if (!strncmp("u64", *type, 3)) {
+		*type += 3;
+		return TYPE_ATOMIC_U64;
 	} else {
 		assert(0);  /* shouldn't get here */
 		return ~0;
@@ -673,6 +676,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_TYPE_S32
 %token <tok> T_TYPE_U8
 %token <tok> T_TYPE_U8_32
+%token <tok> T_TYPE_U64
 
 %token <tok> T_UNTYPED
 %token <tok> T_TYPED
@@ -1615,3 +1619,4 @@ type:              T_TYPE_F16   { $$ = TYPE_F16;   }
 |                  T_TYPE_S32   { $$ = TYPE_S32;   }
 |                  T_TYPE_U8    { $$ = TYPE_U8;    }
 |                  T_TYPE_U8_32 { $$ = TYPE_U8_32; }
+|                  T_TYPE_U64   { $$ = TYPE_ATOMIC_U64;  }
