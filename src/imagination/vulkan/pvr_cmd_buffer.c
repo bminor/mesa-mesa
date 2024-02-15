@@ -2771,6 +2771,10 @@ static VkResult pvr_init_render_targets(struct pvr_device *device,
                                         struct pvr_render_pass *pass,
                                         struct pvr_framebuffer *framebuffer)
 {
+   const struct pvr_device_info *const dev_info = &device->pdevice->dev_info;
+   const uint32_t layers =
+      PVR_HAS_FEATURE(dev_info, gs_rta_support) ? framebuffer->layers : 1;
+
    for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
       struct pvr_render_target *render_target =
          pvr_get_render_target(pass, framebuffer, i);
@@ -2786,7 +2790,7 @@ static VkResult pvr_init_render_targets(struct pvr_device *device,
                                                    framebuffer->width,
                                                    framebuffer->height,
                                                    hw_render->sample_count,
-                                                   framebuffer->layers,
+                                                   layers,
                                                    &render_target->rt_dataset);
          if (result != VK_SUCCESS) {
             pthread_mutex_unlock(&render_target->mutex);
