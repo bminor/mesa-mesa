@@ -1981,6 +1981,10 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
          is_scalar = true;
          break;
 
+      case nir_intrinsic_load_ubo:
+         is_scalar = get_nir_src(ntb, instr->src[1]).is_scalar;
+         break;
+
       case nir_intrinsic_load_uniform:
          is_scalar = get_nir_src(ntb, instr->src[0]).is_scalar;
          break;
@@ -6492,7 +6496,10 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
          s.prog_data->has_ubo_pull = true;
 
          if (instr->intrinsic == nir_intrinsic_load_ubo) {
-            /* load_ubo with non-uniform offset */
+            /* load_ubo with non-constant offset. The offset might still be
+             * uniform on non-LSC platforms when loading fewer than 4
+             * components.
+             */
             brw_reg base_offset = retype(get_nir_src(ntb, instr->src[1]),
                                         BRW_TYPE_UD);
 
@@ -6500,12 +6507,12 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
             for (unsigned i = 0; i < num_components; i += comps_per_load) {
                const unsigned remaining = num_components - i;
-               bld.VARYING_PULL_CONSTANT_LOAD(offset(dest, bld, i),
-                                              surface, surface_handle,
-                                              base_offset,
-                                              i * brw_type_size_bytes(dest.type),
-                                              instr->def.bit_size / 8,
-                                              MIN2(remaining, comps_per_load));
+               xbld.VARYING_PULL_CONSTANT_LOAD(offset(dest, xbld, i),
+                                               surface, surface_handle,
+                                               base_offset,
+                                               i * brw_type_size_bytes(dest.type),
+                                               instr->def.bit_size / 8,
+                                               MIN2(remaining, comps_per_load));
             }
          } else {
             /* load_ubo_uniform_block_intel with non-constant offset */
@@ -6544,8 +6551,8 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
          if (push_reg.file != BAD_FILE) {
             for (unsigned i = 0; i < num_components; i++) {
-               bld.MOV(offset(dest, bld, i),
-                       byte_offset(push_reg, i * type_size));
+               xbld.MOV(offset(dest, xbld, i),
+                        byte_offset(push_reg, i * type_size));
             }
             break;
          }
@@ -6576,7 +6583,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
                       dest.type);
 
             for (unsigned d = 0; d < count; d++)
-               bld.MOV(offset(dest, bld, c + d), component(consts, d));
+               xbld.MOV(offset(dest, xbld, c + d), component(consts, d));
 
             c += count;
          }
