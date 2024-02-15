@@ -876,16 +876,22 @@ void pvr_pack_clear_vdm_state(const struct pvr_device_info *const dev_info,
    const uint32_t vs_output_size =
       DIV_ROUND_UP(vs_output_size_in_bytes,
                    ROGUE_VDMCTRL_VDM_STATE4_VS_OUTPUT_SIZE_UNIT_SIZE);
-   const bool needs_instance_count =
-      !PVR_HAS_FEATURE(dev_info, gs_rta_support) && layer_count > 1;
    uint32_t *stream = state_buffer;
+   bool needs_instance_count;
    uint32_t max_instances;
    uint32_t cam_size;
 
-   /* The layer count should at least be 1. For vkCmdClearAttachment() the spec.
-    * guarantees that the layer count is not 0.
-    */
-   assert(layer_count != 0);
+   if (PVR_HAS_FEATURE(dev_info, gs_rta_support)) {
+      needs_instance_count = layer_count > 1;
+
+      /* The layer count should at least be 1. For vkCmdClearAttachment() the
+       * spec. guarantees that the layer count is not 0.
+       */
+      assert(layer_count);
+   } else {
+      needs_instance_count = false;
+      assert(layer_count == 1);
+   }
 
    pvr_calculate_vertex_cam_size(dev_info,
                                  vs_output_size,
