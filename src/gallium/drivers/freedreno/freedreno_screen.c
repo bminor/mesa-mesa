@@ -213,6 +213,8 @@ fd_init_shader_caps(struct fd_screen *screen)
       case PIPE_SHADER_GEOMETRY:
          if (!is_a6xx(screen))
             continue;
+         if (screen->info->a6xx.is_a702)
+            continue;
          break;
       case PIPE_SHADER_COMPUTE:
          if (!has_compute(screen))
@@ -232,7 +234,8 @@ fd_init_shader_caps(struct fd_screen *screen)
       caps->max_inputs = is_a6xx(screen) && i != PIPE_SHADER_GEOMETRY ?
          screen->info->a6xx.vs_max_inputs_count : 16;
 
-      caps->max_outputs = is_a6xx(screen) ? 32 : 16;
+      caps->max_outputs =
+         (is_a6xx(screen) && !screen->info->a6xx.is_a702) ? 32 : 16;
 
       caps->max_temps = 64; /* Max native temporaries. */
 
@@ -479,13 +482,28 @@ fd_init_screen_caps(struct fd_screen *screen)
    caps->int64 =
    caps->doubles = is_ir3(screen);
 
-   caps->glsl_feature_level =
-   caps->glsl_feature_level_compatibility =
-      is_a6xx(screen) ? 460 : (is_ir3(screen) ? 140 : 120);
+   if (is_a6xx(screen)) {
+      if (screen->info->a6xx.is_a702) {
+         /* a702 family is a special case, no gs/tess: */
+         caps->glsl_feature_level = 140;
+         caps->essl_feature_level = 310;
+      } else {
+         /* a6xx+*/
+         caps->glsl_feature_level = 460;
+         caps->essl_feature_level = 320;
+      }
+   } else if (is_a5xx(screen) || is_a4xx(screen)) {
+      caps->glsl_feature_level = 140;
+      caps->essl_feature_level = 320;
+   } else if (is_a3xx(screen)) {
+      caps->glsl_feature_level = 140;
+      caps->essl_feature_level = 300;
+   } else { /* a2xx */
+      caps->glsl_feature_level = 120;
+      caps->essl_feature_level = 100;
+   }
 
-   caps->essl_feature_level =
-      is_a4xx(screen) || is_a5xx(screen) || is_a6xx(screen) ? 320 :
-      (is_ir3(screen) ? 300 : 120);
+   caps->glsl_feature_level_compatibility = caps->glsl_feature_level;
 
    caps->shader_buffer_offset_alignment =
       is_a6xx(screen) ? 64 : (is_a5xx(screen) || is_a4xx(screen) ? 4 : 0);
@@ -519,7 +537,7 @@ fd_init_screen_caps(struct fd_screen *screen)
 
    caps->max_viewports = is_a6xx(screen) ? 16 : 1;
 
-   caps->max_varyings = is_a6xx(screen) ? 31 : 16;
+   caps->max_varyings = (is_a6xx(screen) && !screen->info->a6xx.is_a702) ? 31 : 16;
 
    /* We don't really have a limit on this, it all goes into the main
     * memory buffer. Needs to be at least 120 / 4 (minimum requirement
@@ -566,8 +584,9 @@ fd_init_screen_caps(struct fd_screen *screen)
       (is_a5xx(screen) ? 0 : 1);
 
    /* Stream output. */
-   caps->max_vertex_streams = is_a6xx(screen) ?  /* has SO + GS */
-      PIPE_MAX_SO_BUFFERS : 0;
+   caps->max_vertex_streams =
+      (is_a6xx(screen) && !screen->info->a6xx.is_a702) ?  /* has SO + GS */
+         PIPE_MAX_SO_BUFFERS : 0;
    caps->max_stream_output_buffers = is_ir3(screen) ? PIPE_MAX_SO_BUFFERS : 0;
    caps->stream_output_pause_resume =
    caps->stream_output_interleave_buffers =
@@ -579,6 +598,7 @@ fd_init_screen_caps(struct fd_screen *screen)
    caps->shader_group_vote = is_a6xx(screen);
    caps->fs_face_is_integer_sysval = true;
    caps->fs_point_is_sysval = is_a2xx(screen);
+   /* TODO this is correct for a702 but otherwise I think it should be 2x this: */
    caps->max_stream_output_separate_components =
    caps->max_stream_output_interleaved_components = is_ir3(screen) ?
       16 * 4 /* should only be shader out limit? */ : 0;

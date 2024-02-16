@@ -99,8 +99,9 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
    OUT_REG(ring, A6XX_VPC_POLYGON_MODE(mode));
    OUT_REG(ring, PC_POLYGON_MODE(CHIP, mode));
 
-   if (CHIP == A7XX) {
-      OUT_REG(ring, A7XX_VPC_POLYGON_MODE2(mode));
+   if (CHIP == A7XX ||
+       (CHIP == A6XX && ctx->screen->info->a6xx.is_a702)) {
+      OUT_REG(ring, A6XX_VPC_POLYGON_MODE2(mode));
    }
 
    /* With a7xx the hw doesn't do the clamping for us.  When depth clamp

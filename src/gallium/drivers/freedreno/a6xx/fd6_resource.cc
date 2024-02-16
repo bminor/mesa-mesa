@@ -28,6 +28,12 @@ ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_s
 {
    const struct fd_dev_info *info = fd_screen(pscreen)->info;
 
+   /*
+    * TODO: no UBWC on a702?
+    */
+   if (info->a6xx.is_a702)
+      return false;
+
    switch (pfmt) {
    case PIPE_FORMAT_Z24X8_UNORM:
       /* MSAA+UBWC does not work without FMT6_Z24_UINT_S8_UINT: */

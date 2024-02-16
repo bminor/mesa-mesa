@@ -11,6 +11,8 @@
 
 #include "fd6_format_table.h"
 
+#include "freedreno_dev_info.h"
+
 /* Specifies the table of all the formats and their features. Also supplies
  * the helpers that look up various data in those tables.
  */
@@ -425,6 +427,18 @@ bool
 fd6_texture_format_supported(const struct fd_dev_info *info, enum pipe_format format,
                              enum a6xx_tile_mode tile_mode, bool is_mutable)
 {
+   if (info->a6xx.is_a702) {
+      /* BPTC is removed */
+      switch (format) {
+      case PIPE_FORMAT_BPTC_RGBA_UNORM:
+      case PIPE_FORMAT_BPTC_SRGBA:
+      case PIPE_FORMAT_BPTC_RGB_FLOAT:
+      case PIPE_FORMAT_BPTC_RGB_UFLOAT:
+         return false;
+      default:
+         break;
+      }
+   }
    return fd6_texture_format(format, tile_mode, is_mutable) != FMT6_NONE;
 }
 

@@ -900,7 +900,7 @@ fd6_emit_static_regs(struct fd_context *ctx, struct fd_ringbuffer *ring)
    WRITE(REG_A6XX_SP_FLOAT_CNTL, A6XX_SP_FLOAT_CNTL_F16_NO_INF);
    WRITE(REG_A6XX_SP_DBG_ECO_CNTL, screen->info->a6xx.magic.SP_DBG_ECO_CNTL);
    WRITE(REG_A6XX_SP_PERFCTR_ENABLE, 0x3f);
-   if (CHIP == A6XX)
+   if (CHIP == A6XX && !screen->info->a6xx.is_a702)
       WRITE(REG_A6XX_TPL1_UNKNOWN_B605, 0x44);
    WRITE(REG_A6XX_TPL1_DBG_ECO_CNTL, screen->info->a6xx.magic.TPL1_DBG_ECO_CNTL);
    if (CHIP == A6XX) {

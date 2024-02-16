@@ -1277,6 +1277,7 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
       OUT_RING(ring, 0x0);
 
       OUT_PKT7(ring, CP_SET_BIN_DATA5, 7);
+      /* A702 also sets BIT(0) but that hangchecks */
       OUT_RING(ring, CP_SET_BIN_DATA5_0_VSC_SIZE(pipe->w * pipe->h) |
                         CP_SET_BIN_DATA5_0_VSC_N(tile->n));
       OUT_RELOC(ring, fd6_ctx->vsc_draw_strm, /* per-pipe draw-stream address */

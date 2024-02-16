@@ -219,6 +219,9 @@ struct fd_dev_info {
       /* Whether the sad instruction (iadd3) is supported. */
       bool has_sad;
 
+      /* A702 cuts A LOT of things.. */
+      bool is_a702;
+
       struct {
          uint32_t PC_POWER_CNTL;
          uint32_t TPL1_DBG_ECO_CNTL;

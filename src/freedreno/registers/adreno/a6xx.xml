@@ -4340,7 +4340,7 @@ to upconvert to 32b float internally?
 	<reg32 offset="0x9306" name="VPC_SO_DISABLE" usage="rp_blit">
 		<bitfield name="DISABLE" pos="0" type="boolean"/>
 	</reg32>
-	<reg32 offset="0x9307" name="VPC_POLYGON_MODE2" variants="A7XX-" usage="rp_blit">
+	<reg32 offset="0x9307" name="VPC_POLYGON_MODE2" variants="A6XX-" usage="rp_blit"> <!-- A702 + A7xx -->
 		<bitfield name="MODE" low="0" high="1" type="a6xx_polygon_mode"/>
 	</reg32>
 	<reg32 offset="0x9308" name="VPC_ATTR_BUF_SIZE_GMEM" variants="A7XX-" usage="rp_blit">

@@ -825,6 +825,51 @@ add_gpus([
         ],
     ))
 
+add_gpus([
+        GPUId(702), # KGSL
+        GPUId(chip_id=0x00b207002000, name="FD702"), # QRB2210 RB1
+        GPUId(chip_id=0xffff07002000, name="FD702"), # Default no-speedbin fallback
+    ], A6xxGPUInfo(
+        CHIP.A6XX, # NOT a mistake!
+        [a6xx_base, a6xx_gen1_low, A6XXProps(
+            has_cp_reg_write = False,
+            has_gmem_fast_clear = True,
+            sysmem_per_ccu_depth_cache_size = 8 * 1024, # ??????
+            sysmem_per_ccu_color_cache_size = 8 * 1024, # ??????
+            gmem_ccu_color_cache_fraction = CCUColorCacheFraction.HALF.value,
+            supports_double_threadsize = True,
+            prim_alloc_threshold = 0x1,
+            storage_16bit = True,
+            is_a702 = True,
+            )
+        ],
+        num_ccu = 1,
+        tile_align_w = 32,
+        tile_align_h = 16,
+        num_vsc_pipes = 16,
+        cs_shared_mem_size = 16 * 1024,
+        wave_granularity = 1,
+        fibers_per_sp = 128 * 16,
+        threadsize_base = 16,
+        max_waves = 16,
+        # has_early_preamble = True,  # for VS/FS but not CS?
+        magic_regs = dict(
+            PC_POWER_CNTL = 0,
+            TPL1_DBG_ECO_CNTL = 0x8000,
+            GRAS_DBG_ECO_CNTL = 0,
+            SP_CHICKEN_BITS = 0x1400,
+            UCHE_CLIENT_PF = 0x84,
+            PC_MODE_CNTL = 0xf,
+            SP_DBG_ECO_CNTL = 0x0,
+            RB_DBG_ECO_CNTL = 0x100000,
+            RB_DBG_ECO_CNTL_blit = 0x100000,
+            HLSQ_DBG_ECO_CNTL = 0,
+            RB_UNKNOWN_8E01 = 0x1,
+            VPC_DBG_ECO_CNTL = 0x0,
+            UCHE_UNKNOWN_0E12 = 0x1,
+        ),
+    ))
+
 # Based on a6xx_base + a6xx_gen4
 a7xx_base = A6XXProps(
         has_gmem_fast_clear = True,

@@ -341,6 +341,10 @@ ubwc_possible(struct tu_device *device,
               uint32_t mip_levels,
               bool use_z24uint_s8uint)
 {
+   /* TODO: enable for a702 */
+   if (info->a6xx.is_a702)
+      return false;
+
    /* no UBWC with compressed formats, E5B9G9R9, S8_UINT
     * (S8_UINT because separate stencil doesn't have UBWC-enable bit)
     */
