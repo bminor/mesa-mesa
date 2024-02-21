@@ -9,6 +9,47 @@
 using namespace brw;
 
 /**
+ * Align16 3-source instructions cannot have scalar stride w/64-bit types.
+ *
+ * The Bspec says:
+ *
+ *    Replicate Control. This field is only present in three-source
+ *    instructions, for each of the three source operands. It controls
+ *    replication of the starting channel to all channels in the execution
+ *    size. ChanSel does not apply when Replicate Control is set. This is
+ *    applicable to 32b datatypes and 16b datatype. 64b datatypes cannot use
+ *    the replicate control.
+ *
+ * In practice, this can only happen on Gfx9 with DF sources to MAD.  Since
+ * the source is_scalar, this can be fixed by just making the stride=1. Also
+ * clear is_scalar "just in case."
+ */
+bool
+brw_lower_scalar_fp64_MAD(fs_visitor &s)
+{
+   const intel_device_info *devinfo = s.devinfo;
+   bool progress = false;
+
+   if (devinfo->ver != 9)
+      return false;
+
+   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+      if (inst->opcode == BRW_OPCODE_MAD &&
+          inst->dst.type == BRW_TYPE_DF) {
+         for (unsigned i = 0; i < 3; i++) {
+            if (inst->src[i].is_scalar) {
+               inst->src[i].is_scalar = false;
+               inst->src[i].stride = 1;
+               progress = true;
+            }
+         }
+      }
+   }
+
+   return progress;
+}
+
+/**
  * Replace UNIFORM register file access with either UNIFORM_PULL_CONSTANT_LOAD
  * or VARYING_PULL_CONSTANT_LOAD instructions which load values into VGRFs.
  */

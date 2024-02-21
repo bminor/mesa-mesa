@@ -366,7 +366,12 @@ brw_fs_validate(const fs_visitor &s)
                const unsigned stride_in_bytes = byte_stride(inst->src[i]);
                const unsigned size_in_bytes = brw_type_size_bytes(inst->src[i].type);
                if (stride_in_bytes == 0) {
-                  fsv_assert_lte(size_in_bytes, 4);
+                  /* If the source is_scalar, then the stride will be
+                   * converted to <4;4,1> in brw_lower_scalar_fp64_MAD after
+                   * SIMD splitting.
+                   */
+                  if (!inst->src[i].is_scalar)
+                     fsv_assert_lte(size_in_bytes, 4);
                } else {
                   fsv_assert_eq(stride_in_bytes, size_in_bytes);
                }

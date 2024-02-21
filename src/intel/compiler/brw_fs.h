@@ -641,6 +641,7 @@ bool brw_fs_lower_logical_sends(fs_visitor &s);
 bool brw_fs_lower_pack(fs_visitor &s);
 bool brw_fs_lower_load_payload(fs_visitor &s);
 bool brw_fs_lower_regioning(fs_visitor &s);
+bool brw_lower_scalar_fp64_MAD(fs_visitor &s);
 bool brw_fs_lower_scoreboard(fs_visitor &s);
 bool brw_fs_lower_sends_overlapping_payload(fs_visitor &s);
 bool brw_fs_lower_simd_width(fs_visitor &s);
