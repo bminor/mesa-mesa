@@ -1774,6 +1774,7 @@ impl<'a> ShaderFromNir<'a> {
             assert!(fault.is_none());
             b.push_op(OpTxq {
                 dsts: dsts,
+                tex: TexRef::Bindless,
                 src: src,
                 query: TexQuery::Dimension,
                 mask: mask,
@@ -1783,6 +1784,7 @@ impl<'a> ShaderFromNir<'a> {
             assert!(fault.is_none());
             b.push_op(OpTxq {
                 dsts: dsts,
+                tex: TexRef::Bindless,
                 src: src,
                 query: TexQuery::TextureType,
                 mask: mask,
@@ -1814,6 +1816,7 @@ impl<'a> ShaderFromNir<'a> {
                 b.push_op(OpTxd {
                     dsts: dsts,
                     fault,
+                    tex: TexRef::Bindless,
                     srcs: srcs,
                     dim: dim,
                     offset: offset_mode == Tld4OffsetMode::AddOffI,
@@ -1823,6 +1826,7 @@ impl<'a> ShaderFromNir<'a> {
                 assert!(offset_mode == Tld4OffsetMode::None);
                 b.push_op(OpTmml {
                     dsts: dsts,
+                    tex: TexRef::Bindless,
                     srcs: srcs,
                     dim: dim,
                     mask: mask,
@@ -1832,6 +1836,7 @@ impl<'a> ShaderFromNir<'a> {
                 b.push_op(OpTld {
                     dsts: dsts,
                     fault,
+                    tex: TexRef::Bindless,
                     srcs: srcs,
                     dim: dim,
                     lod_mode: lod_mode,
@@ -1843,6 +1848,7 @@ impl<'a> ShaderFromNir<'a> {
                 b.push_op(OpTld4 {
                     dsts: dsts,
                     fault,
+                    tex: TexRef::Bindless,
                     srcs: srcs,
                     dim: dim,
                     comp: tex.component().try_into().unwrap(),
@@ -1855,6 +1861,7 @@ impl<'a> ShaderFromNir<'a> {
                 b.push_op(OpTex {
                     dsts: dsts,
                     fault,
+                    tex: TexRef::Bindless,
                     srcs: srcs,
                     dim: dim,
                     lod_mode: lod_mode,
