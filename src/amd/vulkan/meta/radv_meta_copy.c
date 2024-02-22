@@ -81,6 +81,10 @@ transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
+   if (!radv_sdma_supports_image(device, image)) {
+      return;
+   }
+
    struct radv_sdma_surf buf = radv_sdma_get_buf_surf(buffer_va, image, region);
    const struct radv_sdma_surf img = radv_sdma_get_surf(device, image, region->imageSubresource, region->imageOffset);
    const VkExtent3D extent = radv_sdma_get_copy_extent(image, region->imageSubresource, region->imageExtent);
@@ -380,6 +384,10 @@ transfer_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_i
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    unsigned int dst_aspect_mask_remaining = region->dstSubresource.aspectMask;
+
+   if (!radv_sdma_supports_image(device, src_image) || !radv_sdma_supports_image(device, dst_image)) {
+      return;
+   }
 
    VkImageSubresourceLayers src_subresource = region->srcSubresource;
    VkImageSubresourceLayers dst_subresource = region->dstSubresource;

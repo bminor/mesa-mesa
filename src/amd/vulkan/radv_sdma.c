@@ -708,3 +708,20 @@ radv_sdma_copy_image_t2t_scanline(const struct radv_device *device, struct radv_
       }
    }
 }
+
+bool
+radv_sdma_supports_image(const struct radv_device *device, const struct radv_image *image)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   /* TODO: Handle emulated formats and verify sparse image support. */
+
+   if (!pdev->info.sdma_supports_sparse &&
+       (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT))
+      return false;
+
+   if (image->vk.samples != VK_SAMPLE_COUNT_1_BIT)
+      return false;
+
+   return true;
+}
