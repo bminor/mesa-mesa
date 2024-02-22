@@ -9,6 +9,27 @@
 
 #include "util/u_math.h"
 
+static bool
+tex_handle_as_cbuf(nir_def *tex_h, uint32_t *cbuf_out)
+{
+   if (tex_h->parent_instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(tex_h->parent_instr);
+   if (intrin->intrinsic != nir_intrinsic_load_ubo)
+      return false;
+
+   if (!nir_src_is_const(intrin->src[1]))
+      return false;
+
+   uint32_t idx = nir_src_as_uint(intrin->src[0]);
+   uint32_t offset = nir_src_as_uint(intrin->src[1]);
+   assert(idx < (1 << 5) && offset < (1 << 16));
+   *cbuf_out = (idx << 16) | offset;
+
+   return true;
+}
+
 static enum glsl_sampler_dim
 remap_sampler_dim(enum glsl_sampler_dim dim)
 {
@@ -49,6 +70,12 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
    if (samp_h != NULL && samp_h != tex_h) {
       tex_h = nir_ior(b, nir_iand_imm(b, tex_h,  0x000fffff),
                          nir_iand_imm(b, samp_h, 0xfff00000));
+   }
+
+   enum nak_nir_tex_ref_type ref_type = NAK_NIR_TEX_REF_TYPE_BINDLESS;
+   if (nak->sm >= 70 && tex_handle_as_cbuf(tex_h, &tex->texture_index)) {
+      ref_type = NAK_NIR_TEX_REF_TYPE_CBUF;
+      tex_h = NULL;
    }
 
    /* Array index is treated separately, so pull it off if we have one. */
@@ -149,7 +176,8 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
 
    if (nak->sm >= 50) {
       if (tex->op == nir_texop_txd) {
-         PUSH(src0, tex_h);
+         if (tex_h != NULL)
+            PUSH(src0, tex_h);
 
          for (uint32_t i = 0; i < coord_components; i++)
             PUSH(src0, nir_channel(b, coord, i));
@@ -181,7 +209,8 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
          for (uint32_t i = 0; i < coord_components; i++)
             PUSH(src0, nir_channel(b, coord, i));
 
-         PUSH(src1, tex_h);
+         if (tex_h != NULL)
+            PUSH(src1, tex_h);
          if (ms_idx != NULL)
             PUSH(src1, ms_idx);
          if (lod != NULL)
@@ -198,6 +227,9 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
    } else {
       unreachable("Unsupported shader model");
    }
+
+   if (src1_comps == 0)
+      PUSH(src1, nir_imm_int(b, 0));
 
    nir_def *vec_srcs[2] = {
       nir_vec(b, src0, src0_comps),
@@ -217,6 +249,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
    tex->sampler_dim = remap_sampler_dim(tex->sampler_dim);
 
    struct nak_nir_tex_flags flags = {
+      .ref_type = ref_type,
       .lod_mode = lod_mode,
       .offset_mode = offset_mode,
       .has_z_cmpr = tex->is_shadow,
@@ -270,6 +303,12 @@ lower_txq(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       }
    }
 
+   enum nak_nir_tex_ref_type ref_type = NAK_NIR_TEX_REF_TYPE_BINDLESS;
+   if (nak->sm >= 70 && tex_handle_as_cbuf(tex_h, &tex->texture_index)) {
+      ref_type = NAK_NIR_TEX_REF_TYPE_CBUF;
+      tex_h = NULL;
+   }
+
    nir_def *txq_src;
    nir_component_mask_t mask;
    switch (tex->op) {
@@ -277,17 +316,18 @@ lower_txq(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       tex->op = nir_texop_hdr_dim_nv;
       if (lod == NULL)
          lod = nir_imm_int(b, 0);
-      txq_src = nir_vec2(b, tex_h, lod);
+      txq_src = tex_h != NULL ? nir_vec2(b, tex_h, lod) : lod;
       mask = BITSET_MASK(tex->def.num_components);
       break;
    case nir_texop_query_levels:
       tex->op = nir_texop_hdr_dim_nv;
-      txq_src = nir_vec2(b, tex_h, nir_imm_int(b, 0));
+      lod = nir_imm_int(b, 0);
+      txq_src = tex_h != NULL ? nir_vec2(b, tex_h, lod) : lod;
       mask = BITSET_BIT(3);
       break;
    case nir_texop_texture_samples:
       tex->op = nir_texop_tex_type_nv;
-      txq_src = tex_h;
+      txq_src = tex_h != NULL ? tex_h : nir_imm_int(b, 0);
       mask = BITSET_BIT(2);
       break;
    default:
@@ -302,6 +342,12 @@ lower_txq(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       nir_tex_instr_remove_src(tex, tex->num_srcs - 1);
 
    tex->sampler_dim = remap_sampler_dim(tex->sampler_dim);
+
+   struct nak_nir_tex_flags flags = {
+      .ref_type = ref_type,
+   };
+   STATIC_ASSERT(sizeof(flags) == sizeof(tex->backend_flags));
+   memcpy(&tex->backend_flags, &flags, sizeof(flags));
 
    b->cursor = nir_after_instr(&tex->instr);
 
@@ -485,37 +531,50 @@ lower_image_txq(nir_builder *b, nir_intrinsic_instr *intrin,
 
    nir_def *img_h = intrin->src[0].ssa;
 
+   uint32_t texture_index = 0;
+   enum nak_nir_tex_ref_type ref_type = NAK_NIR_TEX_REF_TYPE_BINDLESS;
+   if (nak->sm >= 70 && tex_handle_as_cbuf(img_h, &texture_index)) {
+      ref_type = NAK_NIR_TEX_REF_TYPE_CBUF;
+      img_h = NULL;
+   }
+
    nir_tex_instr *txq = nir_tex_instr_create(b->shader, 1);
    txq->sampler_dim = remap_sampler_dim(nir_intrinsic_image_dim(intrin));
    txq->is_array = nir_intrinsic_image_array(intrin);
    txq->dest_type = nir_type_int32;
 
+   nir_def *txq_src;
    nir_component_mask_t mask;
    switch (intrin->intrinsic) {
    case nir_intrinsic_bindless_image_size: {
-      nir_def *lod = intrin->src[1].ssa;
-
       txq->op = nir_texop_hdr_dim_nv;
-      txq->src[0] = (nir_tex_src) {
-         .src_type = nir_tex_src_backend1,
-         .src = nir_src_for_ssa(nir_vec2(b, img_h, lod)),
-      };
+      nir_def *lod = intrin->src[1].ssa;
+      txq_src = img_h != NULL ? nir_vec2(b, img_h, lod) : lod;
       mask = BITSET_MASK(intrin->def.num_components);
       break;
    }
 
    case nir_intrinsic_bindless_image_samples:
       txq->op = nir_texop_tex_type_nv;
-      txq->src[0] = (nir_tex_src) {
-         .src_type = nir_tex_src_backend1,
-         .src = nir_src_for_ssa(img_h),
-      };
+      txq_src = img_h != NULL ? img_h : nir_imm_int(b, 0);
       mask = BITSET_BIT(2);
       break;
 
    default:
       unreachable("Invalid image query op");
    }
+
+   txq->src[0] = (nir_tex_src) {
+      .src_type = nir_tex_src_backend1,
+      .src = nir_src_for_ssa(txq_src),
+   };
+   txq->texture_index = texture_index;
+
+   struct nak_nir_tex_flags flags = {
+      .ref_type = ref_type,
+   };
+   STATIC_ASSERT(sizeof(flags) == sizeof(txq->backend_flags));
+   memcpy(&txq->backend_flags, &flags, sizeof(flags));
 
    nir_def_init(&txq->instr, &txq->def, 4, 32);
    nir_builder_instr_insert(b, &txq->instr);

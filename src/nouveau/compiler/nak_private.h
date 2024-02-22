@@ -144,6 +144,23 @@ struct nak_io_addr_offset {
 struct nak_io_addr_offset
 nak_get_io_addr_offset(nir_def *addr, uint8_t imm_bits);
 
+enum nak_nir_tex_ref_type {
+   /** Indicates that this is a bindless texture */
+   NAK_NIR_TEX_REF_TYPE_BINDLESS,
+
+   /** Indicates that this is a bound texture
+    *
+    * The binding index provided in texture_index.
+    */
+   NAK_NIR_TEX_REF_TYPE_BOUND,
+
+   /** Indicates that this is a cbuf texture
+    *
+    * texture_index is (idx << 16) | offset.
+    */
+   NAK_NIR_TEX_REF_TYPE_CBUF,
+};
+
 enum nak_nir_lod_mode {
    NAK_NIR_LOD_MODE_AUTO = 0,
    NAK_NIR_LOD_MODE_ZERO,
@@ -159,13 +176,19 @@ enum nak_nir_offset_mode {
    NAK_NIR_OFFSET_MODE_PER_PX,
 };
 
+PRAGMA_DIAGNOSTIC_PUSH
+PRAGMA_DIAGNOSTIC_ERROR(-Wpadded)
 struct nak_nir_tex_flags {
+   enum nak_nir_tex_ref_type ref_type:2;
    enum nak_nir_lod_mode lod_mode:3;
    enum nak_nir_offset_mode offset_mode:2;
    bool has_z_cmpr:1;
    bool is_sparse:1;
-   uint32_t pad:25;
+   uint32_t pad:23;
 };
+PRAGMA_DIAGNOSTIC_POP
+static_assert(sizeof(struct nak_nir_tex_flags) == 4,
+              "nak_nir_tex_flags has no holes");
 
 bool nak_nir_lower_scan_reduce(nir_shader *shader);
 bool nak_nir_lower_tex(nir_shader *nir, const struct nak_compiler *nak);
