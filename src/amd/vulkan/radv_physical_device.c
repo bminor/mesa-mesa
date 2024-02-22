@@ -94,6 +94,9 @@ radv_transfer_queue_enabled(const struct radv_physical_device *pdev)
        !(instance->perftest_flags & RADV_PERFTEST_TRANSFER_QUEUE))
       return false;
 
+   if (!pdev->info.has_gang_submit || !radv_compute_queue_enabled(pdev))
+      return false;
+
    return pdev->info.gfx_level >= GFX9;
 }
 
