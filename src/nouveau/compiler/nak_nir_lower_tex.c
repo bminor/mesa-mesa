@@ -50,7 +50,6 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       tex_h = nir_ior(b, nir_iand_imm(b, tex_h,  0x000fffff),
                          nir_iand_imm(b, samp_h, 0xfff00000));
    }
-   tex_h = nir_u2u32(b, tex_h);
 
    /* Array index is treated separately, so pull it off if we have one. */
    nir_def *arr_idx = NULL;
@@ -271,9 +270,6 @@ lower_txq(nir_builder *b, nir_tex_instr *tex, const struct nak_compiler *nak)
       }
    }
 
-   /* TODO: We should only support 32-bit handles */
-   tex_h = nir_u2u32(b, tex_h);
-
    nir_def *txq_src;
    nir_component_mask_t mask;
    switch (tex->op) {
@@ -487,8 +483,7 @@ lower_image_txq(nir_builder *b, nir_intrinsic_instr *intrin,
 {
    b->cursor = nir_instr_remove(&intrin->instr);
 
-   /* TODO: We should only support 32-bit handles */
-   nir_def *img_h = nir_u2u32(b, intrin->src[0].ssa);
+   nir_def *img_h = intrin->src[0].ssa;
 
    nir_tex_instr *txq = nir_tex_instr_create(b->shader, 1);
    txq->sampler_dim = remap_sampler_dim(nir_intrinsic_image_dim(intrin));
