@@ -1459,10 +1459,30 @@ radv_gang_barrier(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 src_
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT))
       dst_stage_mask |= cmd_buffer->state.dma_is_busy ? VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT : 0;
 
-   /* Increment the GFX/ACE semaphore when task shaders are blocked. */
-   if (dst_stage_mask & (VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
-                         RADV_TASK_SHADER_SENSITIVE_STAGES))
+   /* Increment the leader to follower semaphore when the leader wants to block the follower:
+    * - graphics command buffer: task shader execution needs to wait for something
+    * - transfer command buffer: a transfer operation on ACE needs to wait for a previous operation on SDMA
+    */
+   const VkPipelineStageFlags2 gang_leader_flags =
+      cmd_buffer->qf == RADV_QUEUE_TRANSFER
+         ? (VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT |
+            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+         : (VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
+            RADV_TASK_SHADER_SENSITIVE_STAGES);
+   if (dst_stage_mask & gang_leader_flags)
       cmd_buffer->gang.sem.leader_value++;
+
+   /* Increment the follower to leader semaphore when the follower wants to block the leader:
+    * - graphics command buffer: not necessary yet
+    * - transfer command buffer: a transfer operation on SDMA needs to wait for a previous operation on ACE
+    */
+   const VkPipelineStageFlags2 gang_follower_flags =
+      cmd_buffer->qf == RADV_QUEUE_TRANSFER
+         ? (VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT |
+            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+         : 0;
+   if (src_stage_mask & gang_follower_flags)
+      cmd_buffer->gang.sem.follower_value++;
 }
 
 void
