@@ -75,7 +75,8 @@ alloc_transfer_temp_bo(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_va, struct radv_image *image,
+transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_va, uint64_t buffer_size,
+                           enum radv_copy_flags buffer_flags, struct radv_image *image, const VkImageLayout layout,
                            const VkBufferImageCopy2 *region, bool to_image)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -232,7 +233,8 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
       radv_cs_add_buffer(device->ws, cs->b, dst_image->bindings[bind_idx].bo);
 
       if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-         transfer_copy_memory_image(cmd_buffer, src_buffer->vk.device_address, dst_image, region, true);
+         transfer_copy_memory_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, src_copy_flags,
+                                    dst_image, pCopyBufferToImageInfo->dstImageLayout, region, true);
       } else {
          const bool use_compute = cmd_buffer->qf == RADV_QUEUE_COMPUTE || !radv_image_is_renderable(device, dst_image);
          gfx_or_compute_copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size,
@@ -377,7 +379,8 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
       radv_cs_add_buffer(device->ws, cs->b, src_image->bindings[bind_idx].bo);
 
       if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-         transfer_copy_memory_image(cmd_buffer, dst_buffer->vk.device_address, src_image, region, false);
+         transfer_copy_memory_image(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags,
+                                    src_image, pCopyImageToBufferInfo->srcImageLayout, region, false);
       } else {
          compute_copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags,
                                       src_image, pCopyImageToBufferInfo->srcImageLayout, region);
