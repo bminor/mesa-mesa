@@ -162,7 +162,7 @@ struct pvr_render_job {
    static_assert(ROGUE_NUM_CR_PDS_BGRND_WORDS == 3,
                  "Cannot store all CR_PDS_BGRND words");
    uint64_t pds_bgnd_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
-   uint64_t pds_pr_bgnd_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
+   uint64_t pr_pds_bgnd_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
 };
 
 void pvr_rt_mtile_info_init(const struct pvr_device_info *dev_info,

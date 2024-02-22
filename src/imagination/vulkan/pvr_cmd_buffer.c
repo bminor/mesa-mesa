@@ -1553,9 +1553,9 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
                    spm_bgobj_state->pds_reg_values,
                    ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
 
-      STATIC_ASSERT(ARRAY_SIZE(job->pds_pr_bgnd_reg_values) ==
+      STATIC_ASSERT(ARRAY_SIZE(job->pr_pds_bgnd_reg_values) ==
                     ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
-      typed_memcpy(job->pds_pr_bgnd_reg_values,
+      typed_memcpy(job->pr_pds_bgnd_reg_values,
                    spm_bgobj_state->pds_reg_values,
                    ARRAY_SIZE(spm_bgobj_state->pds_reg_values));
    } else if (hw_render->load_op) {

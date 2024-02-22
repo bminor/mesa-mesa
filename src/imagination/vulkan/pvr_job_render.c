@@ -1275,12 +1275,12 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
           sizeof(job->pds_bgnd_reg_values));
    stream_ptr += ROGUE_NUM_CR_PDS_BGRND_WORDS * DWORDS_PER_U64;
 
-   STATIC_ASSERT(ARRAY_SIZE(job->pds_pr_bgnd_reg_values) ==
+   STATIC_ASSERT(ARRAY_SIZE(job->pr_pds_bgnd_reg_values) ==
                  ROGUE_NUM_CR_PDS_BGRND_WORDS);
-   STATIC_ASSERT(sizeof(job->pds_pr_bgnd_reg_values[0]) == sizeof(uint64_t));
+   STATIC_ASSERT(sizeof(job->pr_pds_bgnd_reg_values[0]) == sizeof(uint64_t));
    memcpy(stream_ptr,
-          job->pds_pr_bgnd_reg_values,
-          sizeof(job->pds_pr_bgnd_reg_values));
+          job->pr_pds_bgnd_reg_values,
+          sizeof(job->pr_pds_bgnd_reg_values));
    stream_ptr += ROGUE_NUM_CR_PDS_BGRND_WORDS * DWORDS_PER_U64;
 
 #undef DWORDS_PER_U64
