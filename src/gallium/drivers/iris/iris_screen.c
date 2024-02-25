@@ -116,15 +116,6 @@ iris_get_driver_uuid(struct pipe_screen *pscreen, char *uuid)
    intel_uuid_compute_driver_id((uint8_t *)uuid, devinfo, PIPE_UUID_SIZE);
 }
 
-static bool
-iris_enable_clover()
-{
-   static int enable = -1;
-   if (enable < 0)
-      enable = debug_get_bool_option("IRIS_ENABLE_CLOVER", false);
-   return enable;
-}
-
 static void
 iris_warn_cl()
 {
@@ -551,12 +542,8 @@ iris_get_shader_param(struct pipe_screen *pscreen,
    case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTERS:
    case PIPE_SHADER_CAP_MAX_HW_ATOMIC_COUNTER_BUFFERS:
       return 0;
-   case PIPE_SHADER_CAP_SUPPORTED_IRS: {
-      int irs = 1 << PIPE_SHADER_IR_NIR;
-      if (iris_enable_clover())
-         irs |= 1 << PIPE_SHADER_IR_NIR_SERIALIZED;
-      return irs;
-   }
+   case PIPE_SHADER_CAP_SUPPORTED_IRS:
+      return 1 << PIPE_SHADER_IR_NIR;
    case PIPE_SHADER_CAP_TGSI_ANY_INOUT_DECL_RANGE:
    case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
       return 0;

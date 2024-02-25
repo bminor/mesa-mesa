@@ -934,14 +934,6 @@ llvmpipe_create_compute_state(struct pipe_context *pipe,
 
    if (templ->ir_type == PIPE_SHADER_IR_TGSI) {
       shader->base.ir.nir = tgsi_to_nir(templ->prog, pipe->screen, false);
-   } else if (templ->ir_type == PIPE_SHADER_IR_NIR_SERIALIZED) {
-      struct blob_reader reader;
-      const struct pipe_binary_program_header *hdr = templ->prog;
-
-      blob_reader_init(&reader, hdr->blob, hdr->num_bytes);
-      shader->base.ir.nir = nir_deserialize(NULL, pipe->screen->get_compiler_options(pipe->screen, PIPE_SHADER_IR_NIR, PIPE_SHADER_COMPUTE), &reader);
-
-      pipe->screen->finalize_nir(pipe->screen, shader->base.ir.nir);
    } else if (templ->ir_type == PIPE_SHADER_IR_NIR) {
       shader->base.ir.nir = (struct nir_shader *)templ->prog;
    }

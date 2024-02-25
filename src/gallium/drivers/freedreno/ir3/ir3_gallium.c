@@ -292,16 +292,6 @@ ir3_shader_compute_state_create(struct pipe_context *pctx,
    if (cso->ir_type == PIPE_SHADER_IR_NIR) {
       /* we take ownership of the reference: */
       nir = (nir_shader *)cso->prog;
-   } else if (cso->ir_type == PIPE_SHADER_IR_NIR_SERIALIZED) {
-      const nir_shader_compiler_options *options =
-            ir3_get_compiler_options(compiler);
-      const struct pipe_binary_program_header *hdr = cso->prog;
-      struct blob_reader reader;
-
-      blob_reader_init(&reader, hdr->blob, hdr->num_bytes);
-      nir = nir_deserialize(NULL, options, &reader);
-
-      ir3_finalize_nir(compiler, &ir3_options.nir_options, nir);
    } else {
       assert(cso->ir_type == PIPE_SHADER_IR_TGSI);
       if (ir3_shader_debug & IR3_DBG_DISASM) {

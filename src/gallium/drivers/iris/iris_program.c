@@ -3235,23 +3235,12 @@ iris_create_compute_state(struct pipe_context *ctx,
    struct iris_context *ice = (void *) ctx;
    struct iris_screen *screen = (void *) ctx->screen;
    struct u_upload_mgr *uploader = ice->shaders.uploader_unsync;
-   const nir_shader_compiler_options *options =
-      screen->brw ? screen->brw->nir_options[MESA_SHADER_COMPUTE]
-                  : screen->elk->nir_options[MESA_SHADER_COMPUTE];
 
    nir_shader *nir;
    switch (state->ir_type) {
    case PIPE_SHADER_IR_NIR:
       nir = (void *)state->prog;
       break;
-
-   case PIPE_SHADER_IR_NIR_SERIALIZED: {
-      struct blob_reader reader;
-      const struct pipe_binary_program_header *hdr = state->prog;
-      blob_reader_init(&reader, hdr->blob, hdr->num_bytes);
-      nir = nir_deserialize(NULL, options, &reader);
-      break;
-   }
 
    default:
       unreachable("Unsupported IR");

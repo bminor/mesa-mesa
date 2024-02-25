@@ -393,12 +393,8 @@ nvc0_screen_get_shader_param(struct pipe_screen *pscreen,
    }
 
    switch (param) {
-   case PIPE_SHADER_CAP_SUPPORTED_IRS: {
-      uint32_t irs = 1 << PIPE_SHADER_IR_NIR;
-      if (screen->force_enable_cl)
-         irs |= 1 << PIPE_SHADER_IR_NIR_SERIALIZED;
-      return irs;
-   }
+   case PIPE_SHADER_CAP_SUPPORTED_IRS:
+      return 1 << PIPE_SHADER_IR_NIR;
    case PIPE_SHADER_CAP_MAX_INSTRUCTIONS:
    case PIPE_SHADER_CAP_MAX_ALU_INSTRUCTIONS:
    case PIPE_SHADER_CAP_MAX_TEX_INSTRUCTIONS:

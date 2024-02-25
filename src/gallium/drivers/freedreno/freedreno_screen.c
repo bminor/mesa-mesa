@@ -736,8 +736,6 @@ fd_screen_get_shader_param(struct pipe_screen *pscreen,
       return 16;
    case PIPE_SHADER_CAP_SUPPORTED_IRS:
       return (1 << PIPE_SHADER_IR_NIR) |
-             COND(has_compute(screen) && (shader == PIPE_SHADER_COMPUTE),
-                  (1 << PIPE_SHADER_IR_NIR_SERIALIZED)) |
              /* tgsi_to_nir doesn't support all stages: */
              COND((shader == PIPE_SHADER_VERTEX) ||
                   (shader == PIPE_SHADER_FRAGMENT) ||

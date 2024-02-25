@@ -408,8 +408,7 @@ llvmpipe_get_shader_param(struct pipe_screen *screen,
    case PIPE_SHADER_COMPUTE:
       if ((lscreen->allow_cl) && param == PIPE_SHADER_CAP_SUPPORTED_IRS)
          return ((1 << PIPE_SHADER_IR_TGSI) |
-                 (1 << PIPE_SHADER_IR_NIR) |
-                 (1 << PIPE_SHADER_IR_NIR_SERIALIZED));
+                 (1 << PIPE_SHADER_IR_NIR));
       FALLTHROUGH;
    case PIPE_SHADER_MESH:
    case PIPE_SHADER_TASK:
