@@ -31,11 +31,6 @@
 #include "nir.h"
 #include <fstream>
 
-#ifdef HAVE_CLOVER_SPIRV
-#include "spirv/invocation.hpp"
-#include "nir/invocation.hpp"
-#endif
-
 using namespace clover;
 
 namespace {
@@ -165,8 +160,7 @@ device::device(clover::platform &platform, pipe_loader_device *ldev) :
    platform(platform), clc_cache(NULL), ldev(ldev) {
    pipe = pipe_loader_create_screen(ldev, false);
    if (pipe && pipe->get_param(pipe, PIPE_CAP_COMPUTE)) {
-      const bool has_supported_ir = supports_ir(PIPE_SHADER_IR_NATIVE) ||
-                                    supports_ir(PIPE_SHADER_IR_NIR_SERIALIZED);
+      const bool has_supported_ir = supports_ir(PIPE_SHADER_IR_NATIVE);
       if (has_supported_ir) {
          unsigned major = 1, minor = 1;
          debug_get_version_option("CLOVER_DEVICE_CLC_VERSION_OVERRIDE",
@@ -184,14 +178,6 @@ device::device(clover::platform &platform, pipe_loader_device *ldev) :
 
       if (supports_ir(PIPE_SHADER_IR_NATIVE))
          return;
-#ifdef HAVE_CLOVER_SPIRV
-      if (supports_ir(PIPE_SHADER_IR_NIR_SERIALIZED)) {
-         nir::check_for_libclc(*this);
-         clc_cache = nir::create_clc_disk_cache();
-         clc_nir = lazy<std::shared_ptr<nir_shader>>([&] () { std::string log; return std::shared_ptr<nir_shader>(nir::load_libclc_nir(*this, log), ralloc_free); });
-         return;
-      }
-#endif
    }
    if (pipe)
       pipe->destroy(pipe);
@@ -460,11 +446,8 @@ device::vendor_name() const {
 
 enum pipe_shader_ir
 device::ir_format() const {
-   if (supports_ir(PIPE_SHADER_IR_NATIVE))
-      return PIPE_SHADER_IR_NATIVE;
-
-   assert(supports_ir(PIPE_SHADER_IR_NIR_SERIALIZED));
-   return PIPE_SHADER_IR_NIR_SERIALIZED;
+   assert(supports_ir(PIPE_SHADER_IR_NATIVE));
+   return PIPE_SHADER_IR_NATIVE;
 }
 
 std::string
@@ -528,11 +511,6 @@ device::supported_extensions() const {
       vec.push_back( cl_name_version{ CL_MAKE_VERSION(1, 0, 0), "cl_khr_fp16" } );
    if (svm_support())
       vec.push_back( cl_name_version{ CL_MAKE_VERSION(1, 0, 0), "cl_arm_shared_virtual_memory" } );
-#ifdef HAVE_CLOVER_SPIRV
-   if (!clover::spirv::supported_versions().empty() &&
-       supports_ir(PIPE_SHADER_IR_NIR_SERIALIZED))
-      vec.push_back( cl_name_version{ CL_MAKE_VERSION(1, 0, 0), "cl_khr_il_program" } );
-#endif
    vec.push_back( cl_name_version{ CL_MAKE_VERSION(1, 0, 0), "cl_khr_extended_versioning" } );
    return vec;
 }
@@ -555,11 +533,7 @@ device::supported_extensions_as_string() const {
 
 std::vector<cl_name_version>
 device::supported_il_versions() const {
-#ifdef HAVE_CLOVER_SPIRV
-   return clover::spirv::supported_versions();
-#else
    return {};
-#endif
 }
 
 const void *

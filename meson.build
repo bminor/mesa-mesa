@@ -802,8 +802,7 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv')
   endif
 endif
 
-with_clover_spirv = with_gallium_clover and get_option('opencl-spirv')
-with_clc = with_microsoft_clc or with_intel_clc or with_gallium_asahi or with_asahi_vk or with_gallium_rusticl or with_clover_spirv
+with_clc = with_microsoft_clc or with_intel_clc or with_gallium_asahi or with_asahi_vk or with_gallium_rusticl
 
 dep_clc = null_dep
 if with_gallium_clover or with_clc
@@ -1817,7 +1816,7 @@ pre_args += '-DDRAW_LLVM_AVAILABLE=@0@'.format((with_llvm and draw_with_llvm).to
 pre_args += '-DAMD_LLVM_AVAILABLE=@0@'.format(amd_with_llvm.to_int())
 pre_args += '-DGALLIVM_USE_ORCJIT=@0@'.format((with_llvm and llvm_with_orcjit).to_int())
 
-if with_clover_spirv or with_clc
+if with_clc
   chosen_llvm_version_array = dep_llvm.version().split('.')
   chosen_llvm_version_major = chosen_llvm_version_array[0].to_int()
   chosen_llvm_version_minor = chosen_llvm_version_array[1].to_int()
@@ -1847,7 +1846,7 @@ endif
 
 dep_spirv_tools = dependency(
   'SPIRV-Tools',
-  required : with_clover_spirv or with_clc,
+  required : with_clc,
   version : '>= 2022.1'
 )
 if dep_spirv_tools.found()
