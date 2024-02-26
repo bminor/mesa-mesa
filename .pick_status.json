@@ -704,7 +704,7 @@
         "description": "nvc0: return NULL instead of asserting in nvc0_resource_from_user_memory",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "212f1ab40ea5945919a92926fd9b2aa085fed661",
         "notes": null
