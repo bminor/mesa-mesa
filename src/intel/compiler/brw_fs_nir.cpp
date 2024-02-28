@@ -83,6 +83,7 @@ static void fs_nir_emit_instr(nir_to_brw_state &ntb, nir_instr *instr);
 
 static void fs_nir_emit_memory_access(nir_to_brw_state &ntb,
                                       const fs_builder &bld,
+                                      const fs_builder &xbld,
                                       nir_intrinsic_instr *instr);
 
 static void brw_combine_with_vec(const fs_builder &bld, const brw_reg &dst,
@@ -1980,8 +1981,11 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
       case nir_intrinsic_load_btd_global_arg_addr_intel:
       case nir_intrinsic_load_btd_local_arg_addr_intel:
       case nir_intrinsic_load_btd_shader_type_intel:
+      case nir_intrinsic_load_global_constant_uniform_block_intel:
       case nir_intrinsic_load_inline_data_intel:
       case nir_intrinsic_load_reloc_const_intel:
+      case nir_intrinsic_load_ssbo_uniform_block_intel:
+      case nir_intrinsic_load_ubo_uniform_block_intel:
       case nir_intrinsic_load_workgroup_id:
          is_scalar = true;
          break;
@@ -5033,18 +5037,7 @@ try_rebuild_source(nir_to_brw_state &ntb, const brw::fs_builder &bld,
 
          case nir_intrinsic_load_ubo_uniform_block_intel:
          case nir_intrinsic_load_ssbo_uniform_block_intel: {
-            enum brw_reg_type type =
-               brw_type_with_size(BRW_TYPE_D, intrin->def.bit_size);
-            brw_reg src_data = retype(ntb.ssa_values[def->index], type);
-            unsigned n_components = ntb.s.alloc.sizes[src_data.nr] /
-                                    (bld.dispatch_width() / 8);
-            brw_reg dst_data = ubld.vgrf(type, n_components);
-            ntb.resource_insts[def->index] = ubld.MOV(dst_data, src_data);
-            for (unsigned c = 1; c < n_components; c++) {
-               ubld.MOV(offset(dst_data, ubld, c),
-                        offset(src_data, bld, c));
-            }
-            break;
+            unreachable("load_{ubo,ssbo}_uniform_block_intel should already be is_scalar");
          }
 
          default:
@@ -6079,7 +6072,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
    case nir_intrinsic_global_atomic_swap:
    case nir_intrinsic_load_scratch:
    case nir_intrinsic_store_scratch:
-      fs_nir_emit_memory_access(ntb, bld, instr);
+      fs_nir_emit_memory_access(ntb, bld, xbld, instr);
       break;
 
    case nir_intrinsic_image_size:
@@ -6489,7 +6482,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
             }
          } else {
             /* load_ubo_uniform_block_intel with non-constant offset */
-            fs_nir_emit_memory_access(ntb, bld, instr);
+            fs_nir_emit_memory_access(ntb, bld, xbld, instr);
          }
       } else {
          /* Even if we are loading doubles, a pull constant load will load
@@ -7082,9 +7075,23 @@ lsc_bits_to_data_size(unsigned bit_size)
    }
 }
 
+/**
+ *
+ * \param bld  "Normal" builder. This is the full dispatch width of the shader.
+ *
+ * \param xbld Builder for the intrinsic. If the intrinsic is convergent, this
+ *             builder will be scalar_group(). Otherwise it will be the same
+ *             as bld.
+ *
+ * Some places in the function will also use \c ubld. There are two cases of
+ * this. Sometimes it is to generate intermediate values as SIMD1. Other
+ * places that use \c ubld need a scalar_group() builder to operate on sources
+ * to the intrinsic that are is_scalar.
+ */
 static void
 fs_nir_emit_memory_access(nir_to_brw_state &ntb,
                           const fs_builder &bld,
+                          const fs_builder &xbld,
                           nir_intrinsic_instr *instr)
 {
    const intel_device_info *devinfo = ntb.devinfo;
@@ -7168,12 +7175,24 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
       srcs[MEMORY_LOGICAL_MODE] = brw_imm_ud(MEMORY_MODE_SHARED_LOCAL);
       srcs[MEMORY_LOGICAL_BINDING_TYPE] = brw_imm_ud(LSC_ADDR_SURFTYPE_FLAT);
 
-      const nir_src &nir_src = instr->src[is_store ? 1 : 0];
+      const brw_reg nir_src = get_nir_src(ntb, instr->src[is_store ? 1 : 0]);
+      const fs_builder ubld = nir_src.is_scalar ? bld.scalar_group() : bld;
 
-      srcs[MEMORY_LOGICAL_ADDRESS] = nir_src_is_const(nir_src) ?
-         brw_imm_ud(nir_intrinsic_base(instr) + nir_src_as_uint(nir_src)) :
-         bld.ADD(retype(get_nir_src(ntb, nir_src), BRW_TYPE_UD),
-                 brw_imm_ud(nir_intrinsic_base(instr)));
+      /* If the logical address is not uniform, a call to emit_uniformize
+       * below will fix it up.
+       */
+      srcs[MEMORY_LOGICAL_ADDRESS] =
+         ubld.ADD(retype(nir_src, BRW_TYPE_UD),
+                  brw_imm_ud(nir_intrinsic_base(instr)));
+
+      /* If nir_src is_scalar, the MEMORY_LOGICAL_ADDRESS will be allocated at
+       * scalar_group() size and will have every component the same
+       * value. This is the definition of is_scalar. Much more importantly,
+       * setting is_scalar properly also ensures that emit_uniformize (below)
+       * will handle the value as scalar_group() size instead of full dispatch
+       * width.
+       */
+      srcs[MEMORY_LOGICAL_ADDRESS].is_scalar = nir_src.is_scalar;
 
       data_src = is_atomic ? 1 : 0;
       no_mask_handle = true;
@@ -7195,6 +7214,9 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
          if (devinfo->ver >= 20)
             bind = component(ubld.SHR(bind, brw_imm_ud(4)), 0);
 
+         /* load_scratch / store_scratch cannot be is_scalar yet. */
+         assert(xbld.dispatch_width() == bld.dispatch_width());
+
          srcs[MEMORY_LOGICAL_BINDING] = bind;
          srcs[MEMORY_LOGICAL_ADDRESS] =
             swizzle_nir_scratch_addr(ntb, bld, addr, false);
@@ -7202,6 +7224,10 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
          unsigned bit_size =
             is_store ? nir_src_bit_size(instr->src[0]) : instr->def.bit_size;
          bool dword_aligned = align >= 4 && bit_size == 32;
+
+         /* load_scratch / store_scratch cannot be is_scalar yet. */
+         assert(xbld.dispatch_width() == bld.dispatch_width());
+
          srcs[MEMORY_LOGICAL_BINDING_TYPE] =
             brw_imm_ud(LSC_ADDR_SURFTYPE_FLAT);
          srcs[MEMORY_LOGICAL_ADDRESS] =
@@ -7266,10 +7292,10 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
 
          if (data_bit_size > nir_bit_size) {
             /* Expand e.g. D16 to D16U32 */
-            srcs[MEMORY_LOGICAL_DATA0 + i] = bld.vgrf(data_type, components);
+            srcs[MEMORY_LOGICAL_DATA0 + i] = xbld.vgrf(data_type, components);
             for (unsigned c = 0; c < components; c++) {
-               bld.MOV(offset(srcs[MEMORY_LOGICAL_DATA0 + i], bld, c),
-                       offset(nir_src, bld, c));
+               xbld.MOV(offset(srcs[MEMORY_LOGICAL_DATA0 + i], xbld, c),
+                        offset(nir_src, xbld, c));
             }
          } else {
             srcs[MEMORY_LOGICAL_DATA0 + i] = nir_src;
@@ -7280,7 +7306,7 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
    brw_reg dest, nir_dest;
    if (!is_store) {
       nir_dest = retype(get_nir_def(ntb, instr->def), nir_data_type);
-      dest = data_bit_size > nir_bit_size ? bld.vgrf(data_type, components)
+      dest = data_bit_size > nir_bit_size ? xbld.vgrf(data_type, components)
                                           : nir_dest;
    }
 
@@ -7304,14 +7330,14 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
    fs_inst *inst;
 
    if (!block) {
-      inst = bld.emit(opcode, dest, srcs, MEMORY_LOGICAL_NUM_SRCS);
+      inst = xbld.emit(opcode, dest, srcs, MEMORY_LOGICAL_NUM_SRCS);
       inst->size_written *= components;
 
       if (dest.file != BAD_FILE && data_bit_size > nir_bit_size) {
          /* Shrink e.g. D16U32 result back to D16 */
          for (unsigned i = 0; i < components; i++) {
-            bld.MOV(offset(nir_dest, bld, i),
-                    subscript(offset(dest, bld, i), nir_dest.type, 0));
+            xbld.MOV(offset(nir_dest, xbld, i),
+                     subscript(offset(dest, xbld, i), nir_dest.type, 0));
          }
       }
    } else {
@@ -7371,8 +7397,8 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
 
       if (convergent_block_load) {
          for (unsigned c = 0; c < components; c++) {
-            bld.MOV(retype(offset(nir_dest, bld, c), BRW_TYPE_UD),
-                    component(dest, c));
+            xbld.MOV(retype(offset(nir_dest, xbld, c), BRW_TYPE_UD),
+                     component(dest, c));
          }
       }
    }
