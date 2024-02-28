@@ -1979,6 +1979,7 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
          is_scalar = get_nir_src(ntb, instr->src[0]).is_scalar;
          break;
 
+      case nir_intrinsic_ballot:
       case nir_intrinsic_resource_intel:
          is_scalar = !def.divergent;
          break;
@@ -6403,8 +6404,33 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
          dest.type = BRW_TYPE_UD;
       }
 
-      const brw_reg value = get_nir_src(ntb, instr->src[0]);
-      bld.emit(SHADER_OPCODE_BALLOT, dest, value);
+      brw_reg value = get_nir_src(ntb, instr->src[0]);
+
+      /* A ballot will always be at the full dispatch width even if the
+       * use of the ballot result is smaller. If the source is_scalar,
+       * it may be allocated at less than the full dispatch width (e.g.,
+       * allocated at SIMD8 with SIMD32 dispatch). The input may or may
+       * not be stride=0. If it is not, the generated ballot
+       *
+       *    ballot(32) dst, value<1>
+       *
+       * is invalid because it will read out of bounds from value.
+       *
+       * To account for this, modify the stride of an is_scalar input to be
+       * zero.
+       */
+      if (value.is_scalar)
+         value = component(value, 0);
+
+      /* Note the use of bld here instead of xbld. As mentioned above, the
+       * ballot must execute on all SIMD lanes regardless of the amount of
+       * data (i.e., scalar or not scalar) generated.
+       */
+      fs_inst *inst = bld.emit(SHADER_OPCODE_BALLOT, dest, value);
+
+      if (dest.is_scalar)
+         inst->size_written = dest.component_size(xbld.dispatch_width());
+
       break;
    }
 
