@@ -167,31 +167,20 @@ fs_generator::generate_send(fs_inst *inst,
                             struct brw_reg payload,
                             struct brw_reg payload2)
 {
-   const unsigned rlen = inst->dst.is_null() ? 0 : inst->size_written / REG_SIZE;
-
-   uint32_t desc_imm = inst->desc |
-      brw_message_desc(devinfo, inst->mlen, rlen, inst->header_size);
-
-   uint32_t ex_desc_imm = inst->ex_desc |
-      brw_message_ex_desc(devinfo, inst->ex_mlen);
-
-   if (ex_desc.file != IMM || ex_desc.ud || ex_desc_imm ||
-       inst->send_ex_desc_scratch) {
+   if (ex_desc.file == IMM && ex_desc.ud == 0) {
+      brw_send_indirect_message(p, inst->sfid, dst, payload, desc, inst->eot);
+      if (inst->check_tdr)
+         brw_eu_inst_set_opcode(p->isa, brw_last_inst, BRW_OPCODE_SENDC);
+   } else {
       /* If we have any sort of extended descriptor, then we need SENDS.  This
        * also covers the dual-payload case because ex_mlen goes in ex_desc.
        */
       brw_send_indirect_split_message(p, inst->sfid, dst, payload, payload2,
-                                      desc, desc_imm, ex_desc, ex_desc_imm,
-                                      inst->send_ex_desc_scratch,
+                                      desc, ex_desc, inst->ex_mlen,
                                       inst->send_ex_bso, inst->eot);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst,
                              devinfo->ver >= 12 ? BRW_OPCODE_SENDC : BRW_OPCODE_SENDSC);
-   } else {
-      brw_send_indirect_message(p, inst->sfid, dst, payload, desc, desc_imm,
-                                   inst->eot);
-      if (inst->check_tdr)
-         brw_eu_inst_set_opcode(p->isa, brw_last_inst, BRW_OPCODE_SENDC);
    }
 }
 

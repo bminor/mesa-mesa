@@ -635,6 +635,7 @@ bool brw_lower_pack(fs_visitor &s);
 bool brw_lower_regioning(fs_visitor &s);
 bool brw_lower_scalar_fp64_MAD(fs_visitor &s);
 bool brw_lower_scoreboard(fs_visitor &s);
+bool brw_lower_send_descriptors(fs_visitor &s);
 bool brw_lower_sends_overlapping_payload(fs_visitor &s);
 bool brw_lower_simd_width(fs_visitor &s);
 bool brw_lower_sub_sat(fs_visitor &s);
@@ -642,6 +643,7 @@ bool brw_lower_subgroup_ops(fs_visitor &s);
 bool brw_lower_uniform_pull_constant_loads(fs_visitor &s);
 void brw_lower_vgrfs_to_fixed_grfs(fs_visitor &s);
 
+bool brw_opt_address_reg_load(fs_visitor &s);
 bool brw_opt_algebraic(fs_visitor &s);
 bool brw_opt_bank_conflicts(fs_visitor &s);
 bool brw_opt_cmod_propagation(fs_visitor &s);

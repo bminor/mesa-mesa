@@ -88,6 +88,7 @@ libintel_compiler_brw_files = files(
   'brw_nir_rt.c',
   'brw_nir_rt_builder.h',
   'brw_opt.cpp',
+  'brw_opt_address_reg_load.cpp',
   'brw_opt_algebraic.cpp',
   'brw_opt_bank_conflicts.cpp',
   'brw_opt_cmod_propagation.cpp',

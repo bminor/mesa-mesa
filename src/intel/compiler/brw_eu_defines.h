@@ -816,6 +816,13 @@ enum ENUM_PACKED gfx10_align1_3src_exec_type {
 #define BRW_THREAD_ATOMIC     1
 #define BRW_THREAD_SWITCH     2
 
+/* Subregister of the address register used for particular purposes */
+enum brw_address_subreg {
+   BRW_ADDRESS_SUBREG_INDIRECT_DESC = 0,
+   BRW_ADDRESS_SUBREG_INDIRECT_EX_DESC = 2,
+   BRW_ADDRESS_SUBREG_INDIRECT_SPILL_DESC = 4,
+};
+
 enum ENUM_PACKED brw_vertical_stride {
    BRW_VERTICAL_STRIDE_0               = 0,
    BRW_VERTICAL_STRIDE_1               = 1,
