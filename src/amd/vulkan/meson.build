@@ -191,9 +191,6 @@ if amd_with_llvm
   )
 endif
 
-subdir('radix_sort')
-libradv_files += radix_sort_files
-
 subdir('bvh')
 
 subdir('layers')

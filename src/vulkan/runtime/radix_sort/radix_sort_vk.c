@@ -11,6 +11,10 @@
 #include "common/vk/barrier.h"
 #include "radix_sort_vk_devaddr.h"
 #include "shaders/push.h"
+#include "shaders/config.h"
+
+#include "vk_command_buffer.h"
+#include "vk_device.h"
 
 //
 //
@@ -100,13 +104,40 @@ radix_sort_vk_get_memory_requirements(radix_sort_vk_t const *               rs,
       // NOTE: Assumes .histograms are before .partitions.
       //
       // Last scatter workgroup skips writing to a partition.
+      // Each RS_RADIX_LOG2 (8) bit pass has a zero-initialized histogram. This
+      // is one RS_RADIX_SIZE histogram per keyval byte.
       //
-      // One histogram per (keyval byte + partitions)
+      // The last scatter workgroup skips writing to a partition so it doesn't
+      // need to be allocated.
       //
-      uint32_t const partitions = scatter_blocks - 1;
+      // If the device doesn't support "sequential dispatch" of workgroups, then
+      // we need a zero-initialized dword counter per radix pass in the keyval
+      // to atomically acquire a virtual workgroup id.  On sequentially
+      // dispatched devices, this is simply `gl_WorkGroupID.x`.
+      //
+      // The "internal" memory map looks like this:
+      //
+      //   +---------------------------------+ <-- 0
+      //   | histograms[keyval_size]         |
+      //   +---------------------------------+ <-- keyval_size                           * histo_size
+      //   | partitions[scatter_blocks_ru-1] |
+      //   +---------------------------------+ <-- (keyval_size + scatter_blocks_ru - 1) * histo_size
+      //   | workgroup_ids[keyval_size]      |
+      //   +---------------------------------+ <-- (keyval_size + scatter_blocks_ru - 1) * histo_size + workgroup_ids_size
+      //
+      // The `.workgroup_ids[]` are located after the last partition.
+      //
+      VkDeviceSize const histo_size = RS_RADIX_SIZE * sizeof(uint32_t);
 
-      mr->internal_size      = (mr->keyval_size + partitions) * (RS_RADIX_SIZE * sizeof(uint32_t));
+      mr->internal_size      = (mr->keyval_size + scatter_blocks - 1) * histo_size;
       mr->internal_alignment = internal_sg_size * sizeof(uint32_t);
+
+      //
+      // Support for nonsequential dispatch can be disabled.
+      //
+      VkDeviceSize const workgroup_ids_size = mr->keyval_size * sizeof(uint32_t);
+
+      mr->internal_size += workgroup_ids_size;
 
       //
       // Indirect
@@ -185,13 +216,17 @@ rs_pipeline_count(struct radix_sort_vk const * rs)
 }
 
 radix_sort_vk_t *
-radix_sort_vk_create(VkDevice                           device,
+radix_sort_vk_create(VkDevice                           _device,
                     VkAllocationCallbacks const *      ac,
                     VkPipelineCache                    pc,
                     const uint32_t* const*             spv,
                     const uint32_t*                    spv_sizes,
                     struct radix_sort_vk_target_config config)
 {
+  VK_FROM_HANDLE(vk_device, device, _device);
+
+  const struct vk_device_dispatch_table *disp = &device->dispatch_table;
+
   //
   // Allocate radix_sort_vk
   //
@@ -244,6 +279,38 @@ radix_sort_vk_create(VkDevice                           device,
       .size       = sizeof(struct rs_push_scatter) },  // scatter_1_odd
   };
 
+  uint32_t spec_constants[] = {
+    [RS_FILL_WORKGROUP_SIZE] = 1u << config.fill.workgroup_size_log2,
+    [RS_FILL_BLOCK_ROWS] = config.fill.block_rows,
+    [RS_HISTOGRAM_WORKGROUP_SIZE] = 1u << config.histogram.workgroup_size_log2,
+    [RS_HISTOGRAM_SUBGROUP_SIZE_LOG2] = config.histogram.subgroup_size_log2,
+    [RS_HISTOGRAM_BLOCK_ROWS] = config.histogram.block_rows,
+    [RS_PREFIX_WORKGROUP_SIZE] = 1u << config.prefix.workgroup_size_log2,
+    [RS_PREFIX_SUBGROUP_SIZE_LOG2] = config.prefix.subgroup_size_log2,
+    [RS_SCATTER_WORKGROUP_SIZE] = 1u << config.scatter.workgroup_size_log2,
+    [RS_SCATTER_SUBGROUP_SIZE_LOG2] = config.scatter.subgroup_size_log2,
+    [RS_SCATTER_BLOCK_ROWS] = config.scatter.block_rows,
+    [RS_SCATTER_NONSEQUENTIAL_DISPATCH] = config.nonsequential_dispatch,
+  };
+
+  VkSpecializationMapEntry spec_map[ARRAY_LENGTH_MACRO(spec_constants)];
+
+  for (uint32_t ii = 0; ii < ARRAY_LENGTH_MACRO(spec_constants); ii++)
+    {
+      spec_map[ii] = (VkSpecializationMapEntry) {
+        .constantID = ii,
+        .offset = sizeof(uint32_t) * ii,
+        .size = sizeof(uint32_t),
+      };
+    }
+
+  VkSpecializationInfo spec_info = {
+    .mapEntryCount = ARRAY_LENGTH_MACRO(spec_map),
+    .pMapEntries = spec_map,
+    .dataSize = sizeof(spec_constants),
+    .pData = spec_constants,
+  };
+
   VkPipelineLayoutCreateInfo plci = {
 
     .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -259,7 +326,7 @@ radix_sort_vk_create(VkDevice                           device,
     {
       plci.pPushConstantRanges = pcr + ii;
 
-      if (vkCreatePipelineLayout(device, &plci, NULL, rs->pipeline_layouts.handles + ii) != VK_SUCCESS)
+      if (disp->CreatePipelineLayout(_device, &plci, NULL, rs->pipeline_layouts.handles + ii) != VK_SUCCESS)
         goto fail_layout;
     }
 
@@ -282,7 +349,7 @@ radix_sort_vk_create(VkDevice                           device,
       smci.codeSize = spv_sizes[ii];
       smci.pCode    = spv[ii];
 
-      if (vkCreateShaderModule(device, &smci, ac, sms + ii) != VK_SUCCESS)
+      if (disp->CreateShaderModule(_device, &smci, ac, sms + ii) != VK_SUCCESS)
         goto fail_shader;
     }
 
@@ -323,11 +390,11 @@ radix_sort_vk_create(VkDevice                           device,
     .flags = 0,                                                                                    \
     .stage = { .sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,         \
                .pNext               = NULL,                                                        \
-               .flags               = 0,                                                           \
+               .flags               = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, \
                .stage               = VK_SHADER_STAGE_COMPUTE_BIT,                                 \
                .module              = sms[idx_],                                                   \
                .pName               = "main",                                                      \
-               .pSpecializationInfo = NULL },                                                      \
+               .pSpecializationInfo = &spec_info },                                                \
                                                                                                    \
     .layout             = rs->pipeline_layouts.handles[idx_],                                      \
     .basePipelineHandle = VK_NULL_HANDLE,                                                          \
@@ -358,7 +425,7 @@ radix_sort_vk_create(VkDevice                           device,
   //
   // Create the compute pipelines
   //
-  if (vkCreateComputePipelines(device, pc, pipeline_count, cpcis, ac, rs->pipelines.handles) != VK_SUCCESS)
+  if (disp->CreateComputePipelines(_device, pc, pipeline_count, cpcis, ac, rs->pipelines.handles) != VK_SUCCESS)
     goto fail_pipeline;
 
   //
@@ -366,7 +433,7 @@ radix_sort_vk_create(VkDevice                           device,
   //
   for (uint32_t ii = 0; ii < pipeline_count; ii++)
     {
-      vkDestroyShaderModule(device, sms[ii], ac);
+      disp->DestroyShaderModule(_device, sms[ii], ac);
     }
 
 #ifdef RS_VK_ENABLE_DEBUG_UTILS
@@ -397,17 +464,17 @@ radix_sort_vk_create(VkDevice                           device,
 fail_pipeline:
   for (uint32_t ii = 0; ii < pipeline_count; ii++)
     {
-      vkDestroyPipeline(device, rs->pipelines.handles[ii], ac);
+      disp->DestroyPipeline(_device, rs->pipelines.handles[ii], ac);
     }
 fail_shader:
   for (uint32_t ii = 0; ii < pipeline_count; ii++)
     {
-      vkDestroyShaderModule(device, sms[ii], ac);
+      disp->DestroyShaderModule(_device, sms[ii], ac);
     }
 fail_layout:
    for (uint32_t ii = 0; ii < pipeline_count; ii++)
     {
-      vkDestroyPipelineLayout(device, rs->pipeline_layouts.handles[ii], ac);
+      disp->DestroyPipelineLayout(_device, rs->pipeline_layouts.handles[ii], ac);
     }
 
   free(rs);
@@ -420,18 +487,22 @@ fail_layout:
 void
 radix_sort_vk_destroy(struct radix_sort_vk * rs, VkDevice d, VkAllocationCallbacks const * const ac)
 {
+  VK_FROM_HANDLE(vk_device, device, d);
+
+  const struct vk_device_dispatch_table *disp = &device->dispatch_table;
+
   uint32_t const pipeline_count = rs_pipeline_count(rs);
 
   // destroy pipelines
   for (uint32_t ii = 0; ii < pipeline_count; ii++)
     {
-      vkDestroyPipeline(d, rs->pipelines.handles[ii], ac);
+      disp->DestroyPipeline(d, rs->pipelines.handles[ii], ac);
     }
 
   // destroy pipeline layouts
   for (uint32_t ii = 0; ii < pipeline_count; ii++)
     {
-      vkDestroyPipelineLayout(d, rs->pipeline_layouts.handles[ii], ac);
+      disp->DestroyPipelineLayout(d, rs->pipeline_layouts.handles[ii], ac);
     }
 
   free(rs);
@@ -441,8 +512,12 @@ radix_sort_vk_destroy(struct radix_sort_vk * rs, VkDevice d, VkAllocationCallbac
 //
 //
 static VkDeviceAddress
-rs_get_devaddr(VkDevice device, VkDescriptorBufferInfo const * dbi)
+rs_get_devaddr(VkDevice _device, VkDescriptorBufferInfo const * dbi)
 {
+  VK_FROM_HANDLE(vk_device, device, _device);
+
+  const struct vk_device_dispatch_table *disp = &device->dispatch_table;
+
   VkBufferDeviceAddressInfo const bdai = {
 
     .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
@@ -450,7 +525,7 @@ rs_get_devaddr(VkDevice device, VkDescriptorBufferInfo const * dbi)
     .buffer = dbi->buffer
   };
 
-  VkDeviceAddress const devaddr = vkGetBufferDeviceAddress(device, &bdai) + dbi->offset;
+  VkDeviceAddress const devaddr = disp->GetBufferDeviceAddress(_device, &bdai) + dbi->offset;
 
   return devaddr;
 }
@@ -465,13 +540,17 @@ rs_ext_cmd_write_timestamp(struct radix_sort_vk_ext_timestamps * ext_timestamps,
                            VkCommandBuffer                       cb,
                            VkPipelineStageFlagBits               pipeline_stage)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   if ((ext_timestamps != NULL) &&
       (ext_timestamps->timestamps_set < ext_timestamps->timestamp_count))
     {
-      vkCmdWriteTimestamp(cb,
-                          pipeline_stage,
-                          ext_timestamps->timestamps,
-                          ext_timestamps->timestamps_set++);
+      disp->CmdWriteTimestamp(cb,
+                              pipeline_stage,
+                              ext_timestamps->timestamps,
+                              ext_timestamps->timestamps_set++);
     }
 }
 
@@ -497,10 +576,14 @@ struct radix_sort_vk_ext_base
 void
 radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
                            radix_sort_vk_sort_devaddr_info_t const * info,
-                           VkDevice                                  device,
+                           VkDevice                                  _device,
                            VkCommandBuffer                           cb,
                            VkDeviceAddress *                         keyvals_sorted)
 {
+  VK_FROM_HANDLE(vk_device, device, _device);
+
+  const struct vk_device_dispatch_table *disp = &device->dispatch_table;
+
   //
   // Anything to do?
   //
@@ -557,16 +640,13 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
     // Label the command buffer
     //
 #ifdef RS_VK_ENABLE_DEBUG_UTILS
-  if (pfn_vkCmdBeginDebugUtilsLabelEXT != NULL)
-    {
-      VkDebugUtilsLabelEXT const label = {
-        .sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
-        .pNext      = NULL,
-        .pLabelName = "radix_sort_vk_sort",
-      };
+   VkDebugUtilsLabelEXT const label = {
+     .sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
+     .pNext      = NULL,
+     .pLabelName = "radix_sort_vk_sort",
+   };
 
-      pfn_vkCmdBeginDebugUtilsLabelEXT(cb, &label);
-    }
+   disp->CmdBeginDebugUtilsLabelEXT(cb, &label);
 #endif
 
   //
@@ -679,16 +759,16 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
     .passes             = passes
   };
 
-  vkCmdPushConstants(cb,
+  disp->CmdPushConstants(cb,
                      rs->pipeline_layouts.named.histogram,
                      VK_SHADER_STAGE_COMPUTE_BIT,
                      0,
                      sizeof(push_histogram),
                      &push_histogram);
 
-  vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.histogram);
+  disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.histogram);
 
-  vkCmdDispatch(cb, histo_blocks, 1, 1);
+  disp->CmdDispatch(cb, histo_blocks, 1, 1);
 
   ////////////////////////////////////////////////////////////////////////
   //
@@ -707,16 +787,16 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
     .devaddr_histograms = devaddr_histograms,
   };
 
-  vkCmdPushConstants(cb,
+  disp->CmdPushConstants(cb,
                      rs->pipeline_layouts.named.prefix,
                      VK_SHADER_STAGE_COMPUTE_BIT,
                      0,
                      sizeof(push_prefix),
                      &push_prefix);
 
-  vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.prefix);
+  disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.prefix);
 
-  vkCmdDispatch(cb, passes, 1, 1);
+  disp->CmdDispatch(cb, passes, 1, 1);
 
   ////////////////////////////////////////////////////////////////////////
   //
@@ -746,14 +826,14 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
   {
     uint32_t const pass_dword = pass_idx / 4;
 
-    vkCmdPushConstants(cb,
+    disp->CmdPushConstants(cb,
                        rs->pipeline_layouts.named.scatter[pass_dword].even,
                        VK_SHADER_STAGE_COMPUTE_BIT,
                        0,
                        sizeof(push_scatter),
                        &push_scatter);
 
-    vkCmdBindPipeline(cb,
+    disp->CmdBindPipeline(cb,
                       VK_PIPELINE_BIND_POINT_COMPUTE,
                       rs->pipelines.named.scatter[pass_dword].even);
   }
@@ -762,7 +842,7 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
 
   while (true)
     {
-      vkCmdDispatch(cb, scatter_blocks, 1, 1);
+      disp->CmdDispatch(cb, scatter_blocks, 1, 1);
 
       //
       // Continue?
@@ -788,7 +868,7 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
       //
       VkPipelineLayout const pl = is_even ? rs->pipeline_layouts.named.scatter[pass_dword].even  //
                                           : rs->pipeline_layouts.named.scatter[pass_dword].odd;
-      vkCmdPushConstants(cb,
+      disp->CmdPushConstants(cb,
                          pl,
                          VK_SHADER_STAGE_COMPUTE_BIT,
                          OFFSETOF_MACRO(struct rs_push_scatter, devaddr_histograms),
@@ -801,7 +881,7 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
       VkPipeline const p = is_even ? rs->pipelines.named.scatter[pass_dword].even  //
                                    : rs->pipelines.named.scatter[pass_dword].odd;
 
-      vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, p);
+      disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, p);
     }
 
 #ifdef RS_VK_ENABLE_EXTENSIONS
@@ -812,10 +892,7 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
   // End the label
   //
 #ifdef RS_VK_ENABLE_DEBUG_UTILS
-  if (pfn_vkCmdEndDebugUtilsLabelEXT != NULL)
-    {
-      pfn_vkCmdEndDebugUtilsLabelEXT(cb);
-    }
+  disp->CmdEndDebugUtilsLabelEXT(cb);
 #endif
 }
 
@@ -825,10 +902,14 @@ radix_sort_vk_sort_devaddr(radix_sort_vk_t const *                   rs,
 void
 radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                            rs,
                                     radix_sort_vk_sort_indirect_devaddr_info_t const * info,
-                                    VkDevice                                           device,
+                                    VkDevice                                           _device,
                                     VkCommandBuffer                                    cb,
                                     VkDeviceAddress * keyvals_sorted)
 {
+  VK_FROM_HANDLE(vk_device, device, _device);
+
+  const struct vk_device_dispatch_table *disp = &device->dispatch_table;
+
   //
   // Anything to do?
   //
@@ -886,16 +967,13 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
     // Label the command buffer
     //
 #ifdef RS_VK_ENABLE_DEBUG_UTILS
-  if (pfn_vkCmdBeginDebugUtilsLabelEXT != NULL)
-    {
-      VkDebugUtilsLabelEXT const label = {
-        .sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
-        .pNext      = NULL,
-        .pLabelName = "radix_sort_vk_sort_indirect",
-      };
+  VkDebugUtilsLabelEXT const label = {
+    .sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
+    .pNext      = NULL,
+    .pLabelName = "radix_sort_vk_sort_indirect",
+  };
 
-      pfn_vkCmdBeginDebugUtilsLabelEXT(cb, &label);
-    }
+  disp->CmdBeginDebugUtilsLabelEXT(cb, &label);
 #endif
 
   //
@@ -938,16 +1016,16 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
       .passes        = passes
     };
 
-    vkCmdPushConstants(cb,
+    disp->CmdPushConstants(cb,
                        rs->pipeline_layouts.named.init,
                        VK_SHADER_STAGE_COMPUTE_BIT,
                        0,
                        sizeof(push_init),
                        &push_init);
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.init);
+    disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.init);
 
-    vkCmdDispatch(cb, 1, 1, 1);
+    disp->CmdDispatch(cb, 1, 1, 1);
   }
 
 #ifdef RS_VK_ENABLE_EXTENSIONS
@@ -967,14 +1045,14 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
       .dword          = 0xFFFFFFFF
     };
 
-    vkCmdPushConstants(cb,
+    disp->CmdPushConstants(cb,
                        rs->pipeline_layouts.named.fill,
                        VK_SHADER_STAGE_COMPUTE_BIT,
                        0,
                        sizeof(push_pad),
                        &push_pad);
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.fill);
+    disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.fill);
 
     info->dispatch_indirect(cb, &info->indirect, offsetof(struct rs_indirect_info, dispatch.pad));
   }
@@ -992,14 +1070,14 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
       .dword          = 0
     };
 
-    vkCmdPushConstants(cb,
+    disp->CmdPushConstants(cb,
                        rs->pipeline_layouts.named.fill,
                        VK_SHADER_STAGE_COMPUTE_BIT,
                        0,
                        sizeof(push_zero),
                        &push_zero);
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.fill);
+    disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.fill);
 
     info->dispatch_indirect(cb, &info->indirect, offsetof(struct rs_indirect_info, dispatch.zero));
   }
@@ -1021,14 +1099,14 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
       .passes             = passes
     };
 
-    vkCmdPushConstants(cb,
+    disp->CmdPushConstants(cb,
                        rs->pipeline_layouts.named.histogram,
                        VK_SHADER_STAGE_COMPUTE_BIT,
                        0,
                        sizeof(push_histogram),
                        &push_histogram);
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.histogram);
+    disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.histogram);
 
     info->dispatch_indirect(cb,
                             &info->indirect,
@@ -1049,16 +1127,16 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
       .devaddr_histograms = devaddr_histograms,
     };
 
-    vkCmdPushConstants(cb,
+    disp->CmdPushConstants(cb,
                        rs->pipeline_layouts.named.prefix,
                        VK_SHADER_STAGE_COMPUTE_BIT,
                        0,
                        sizeof(push_prefix),
                        &push_prefix);
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.prefix);
+    disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, rs->pipelines.named.prefix);
 
-    vkCmdDispatch(cb, passes, 1, 1);
+    disp->CmdDispatch(cb, passes, 1, 1);
   }
 
 #ifdef RS_VK_ENABLE_EXTENSIONS
@@ -1088,14 +1166,14 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
     {
       uint32_t const pass_dword = pass_idx / 4;
 
-      vkCmdPushConstants(cb,
+      disp->CmdPushConstants(cb,
                          rs->pipeline_layouts.named.scatter[pass_dword].even,
                          VK_SHADER_STAGE_COMPUTE_BIT,
                          0,
                          sizeof(push_scatter),
                          &push_scatter);
 
-      vkCmdBindPipeline(cb,
+      disp->CmdBindPipeline(cb,
                         VK_PIPELINE_BIND_POINT_COMPUTE,
                         rs->pipelines.named.scatter[pass_dword].even);
     }
@@ -1134,7 +1212,7 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
         VkPipelineLayout const pl = is_even
                                       ? rs->pipeline_layouts.named.scatter[pass_dword].even  //
                                       : rs->pipeline_layouts.named.scatter[pass_dword].odd;
-        vkCmdPushConstants(
+        disp->CmdPushConstants(
           cb,
           pl,
           VK_SHADER_STAGE_COMPUTE_BIT,
@@ -1148,7 +1226,7 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
         VkPipeline const p = is_even ? rs->pipelines.named.scatter[pass_dword].even  //
                                      : rs->pipelines.named.scatter[pass_dword].odd;
 
-        vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, p);
+        disp->CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, p);
       }
   }
 
@@ -1160,10 +1238,7 @@ radix_sort_vk_sort_indirect_devaddr(radix_sort_vk_t const *                     
   // End the label
   //
 #ifdef RS_VK_ENABLE_DEBUG_UTILS
-  if (pfn_vkCmdEndDebugUtilsLabelEXT != NULL)
-    {
-      pfn_vkCmdEndDebugUtilsLabelEXT(cb);
-    }
+  disp->CmdEndDebugUtilsLabelEXT(cb);
 #endif
 }
 
@@ -1177,7 +1252,11 @@ radix_sort_vk_fill_buffer(VkCommandBuffer                     cb,
                           VkDeviceSize                        size,
                           uint32_t                            data)
 {
-  vkCmdFillBuffer(cb, buffer_info->buffer, buffer_info->offset + offset, size, data);
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
+  disp->CmdFillBuffer(cb, buffer_info->buffer, buffer_info->offset + offset, size, data);
 }
 
 //
@@ -1221,7 +1300,11 @@ radix_sort_vk_dispatch_indirect(VkCommandBuffer                     cb,
                                 radix_sort_vk_buffer_info_t const * buffer_info,
                                 VkDeviceSize                        offset)
 {
-  vkCmdDispatchIndirect(cb, buffer_info->buffer, buffer_info->offset + offset);
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
+  disp->CmdDispatchIndirect(cb, buffer_info->buffer, buffer_info->offset + offset);
 }
 
 //

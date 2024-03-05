@@ -50,22 +50,10 @@ layout(push_constant) uniform block_push
 RS_STRUCT_INDIRECT_INFO_FILL();
 
 //
-// Check all switches are defined
-//
-#ifndef RS_FILL_WORKGROUP_SIZE_LOG2
-#error "Undefined: RS_FILL_WORKGROUP_SIZE_LOG2"
-#endif
-
-//
-#ifndef RS_FILL_BLOCK_ROWS
-#error "Undefined: RS_FILL_BLOCK_ROWS"
-#endif
-
-//
 // Local macros
 //
 // clang-format off
-#define RS_WORKGROUP_SIZE   (1 << RS_FILL_WORKGROUP_SIZE_LOG2)
+#define RS_WORKGROUP_SIZE   (RS_FILL_WORKGROUP_SIZE)
 #define RS_BLOCK_DWORDS     (RS_FILL_BLOCK_ROWS * RS_WORKGROUP_SIZE)
 #define RS_RADIX_MASK       ((1 << RS_RADIX_LOG2) - 1)
 // clang-format on
@@ -73,7 +61,7 @@ RS_STRUCT_INDIRECT_INFO_FILL();
 //
 //
 //
-layout(local_size_x = RS_WORKGROUP_SIZE) in;
+layout(local_size_x_id = RS_FILL_WORKGROUP_SIZE_ID) in;
 
 //
 //

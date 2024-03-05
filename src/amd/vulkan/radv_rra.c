@@ -542,7 +542,7 @@ rra_transcode_triangle_node(struct rra_transcoding_context *ctx, const struct ra
 }
 
 static void
-rra_transcode_aabb_node(struct rra_transcoding_context *ctx, const struct radv_bvh_aabb_node *src, radv_aabb bounds)
+rra_transcode_aabb_node(struct rra_transcoding_context *ctx, const struct radv_bvh_aabb_node *src, vk_aabb bounds)
 {
    struct rra_aabb_node *dst = (struct rra_aabb_node *)(ctx->dst + ctx->dst_leaf_offset);
    ctx->dst_leaf_offset += sizeof(struct rra_aabb_node);
@@ -580,7 +580,7 @@ rra_transcode_instance_node(struct rra_transcoding_context *ctx, const struct ra
 }
 
 static uint32_t rra_transcode_node(struct rra_transcoding_context *ctx, uint32_t parent_id, uint32_t src_id,
-                                   radv_aabb bounds);
+                                   vk_aabb bounds);
 
 static void
 rra_transcode_box16_node(struct rra_transcoding_context *ctx, const struct radv_bvh_box16_node *src)
@@ -597,7 +597,7 @@ rra_transcode_box16_node(struct rra_transcoding_context *ctx, const struct radv_
          continue;
       }
 
-      radv_aabb bounds = {
+      vk_aabb bounds = {
          .min =
             {
                _mesa_half_to_float(src->coords[i][0][0]),
@@ -653,7 +653,7 @@ get_geometry_id(const void *node, uint32_t node_type)
 }
 
 static uint32_t
-rra_transcode_node(struct rra_transcoding_context *ctx, uint32_t parent_id, uint32_t src_id, radv_aabb bounds)
+rra_transcode_node(struct rra_transcoding_context *ctx, uint32_t parent_id, uint32_t src_id, vk_aabb bounds)
 {
    uint32_t node_type = src_id & 7;
    uint32_t src_offset = (src_id & (~7u)) << 3;

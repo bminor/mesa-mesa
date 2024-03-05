@@ -37,6 +37,7 @@
 extern "C" {
 #endif
 
+struct vk_acceleration_structure_build_ops;
 struct vk_command_buffer_ops;
 struct vk_device_shader_ops;
 struct vk_sync;
@@ -133,6 +134,9 @@ struct vk_device {
 
    /** Shader vtable for VK_EXT_shader_object and common pipelines */
    const struct vk_device_shader_ops *shader_ops;
+
+   /** Acceleration structure build vtable for common BVH building. */
+   const struct vk_acceleration_structure_build_ops *as_build_ops;
 
    /**
     * Write data to a buffer from the command processor. This is simpler than

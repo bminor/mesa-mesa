@@ -24,7 +24,9 @@
 #include "radv_rra.h"
 #include "radv_shader.h"
 
+#include "vk_acceleration_structure.h"
 #include "vk_device.h"
+#include "vk_meta.h"
 #include "vk_texcompress_astc.h"
 #include "vk_texcompress_etc2.h"
 
@@ -302,17 +304,6 @@ struct radv_meta_state {
    } dcc_retile;
 
    struct {
-      VkPipelineLayout leaf_p_layout;
-      VkPipeline leaf_pipeline;
-      VkPipeline leaf_updateable_pipeline;
-      VkPipelineLayout morton_p_layout;
-      VkPipeline morton_pipeline;
-      VkPipelineLayout lbvh_main_p_layout;
-      VkPipeline lbvh_main_pipeline;
-      VkPipelineLayout lbvh_generate_ir_p_layout;
-      VkPipeline lbvh_generate_ir_pipeline;
-      VkPipelineLayout ploc_p_layout;
-      VkPipeline ploc_pipeline;
       VkPipelineLayout encode_p_layout;
       VkPipeline encode_pipeline;
       VkPipeline encode_compact_pipeline;
@@ -324,6 +315,7 @@ struct radv_meta_state {
       VkPipeline copy_pipeline;
 
       struct radix_sort_vk *radix_sort;
+      struct vk_acceleration_structure_build_args build_args;
 
       struct {
          VkBuffer buffer;
@@ -340,6 +332,8 @@ struct radv_meta_state {
       VkDescriptorSetLayout ds_layout;
       VkPipelineLayout p_layout;
    } dgc_prepare;
+
+   struct vk_meta_device device;
 };
 
 struct radv_memory_trace_data {

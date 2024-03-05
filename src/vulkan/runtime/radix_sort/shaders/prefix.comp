@@ -47,40 +47,19 @@ layout(push_constant) uniform block_push
 #endif
 
 //
-// Check all switches are defined
-//
-//
-#ifndef RS_PREFIX_SUBGROUP_SIZE_LOG2
-#error "Undefined: RS_PREFIX_SUBGROUP_SIZE_LOG2"
-#endif
-
-//
-#ifndef RS_PREFIX_WORKGROUP_SIZE_LOG2
-#error "Undefined: RS_PREFIX_WORKGROUP_SIZE_LOG2"
-#endif
-
-//
 // Local macros
 //
 // clang-format off
 #define RS_KEYVAL_SIZE          (RS_KEYVAL_DWORDS * 4)
-#define RS_WORKGROUP_SIZE       (1 << RS_PREFIX_WORKGROUP_SIZE_LOG2)
+#define RS_WORKGROUP_SIZE       (RS_PREFIX_WORKGROUP_SIZE)
 #define RS_SUBGROUP_SIZE        (1 << RS_PREFIX_SUBGROUP_SIZE_LOG2)
 #define RS_WORKGROUP_SUBGROUPS  (RS_WORKGROUP_SIZE / RS_SUBGROUP_SIZE)
 // clang-format on
 
 //
-// There is no purpose in having a workgroup size larger than the
-// radix size.
-//
-#if (RS_WORKGROUP_SIZE > RS_RADIX_SIZE)
-#error "Error: (RS_WORKGROUP_SIZE > RS_RADIX_SIZE)"
-#endif
-
 //
 //
-//
-layout(local_size_x = RS_WORKGROUP_SIZE) in;
+layout(local_size_x_id = RS_PREFIX_WORKGROUP_SIZE_ID) in;
 
 //
 // Histogram buffer reference
@@ -95,34 +74,23 @@ layout(buffer_reference, std430) buffer buffer_rs_histograms
 //
 #include "prefix_limits.h"
 
-//
-// If multi-subgroup then define shared memory
-//
-#if (RS_WORKGROUP_SUBGROUPS > 1)
-
 //----------------------------------------
 shared uint32_t smem_sweep0[RS_SWEEP_0_SIZE];
 
 #define RS_PREFIX_SWEEP0(idx_) smem_sweep0[idx_]
 //----------------------------------------
 
-#if (RS_SWEEP_1_SIZE > 0)
 //----------------------------------------
 shared uint32_t smem_sweep1[RS_SWEEP_1_SIZE];
 
 #define RS_PREFIX_SWEEP1(idx_) smem_sweep1[idx_]
 //----------------------------------------
-#endif
 
-#if (RS_SWEEP_2_SIZE > 0)
 //----------------------------------------
 shared uint32_t smem_sweep2[RS_SWEEP_2_SIZE];
 
 #define RS_PREFIX_SWEEP2(idx_) smem_sweep2[idx_]
 //----------------------------------------
-#endif
-
-#endif
 
 //
 // Define function arguments
@@ -151,37 +119,21 @@ main()
   //
   // Define buffer reference to read histograms
   //
-#if (RS_WORKGROUP_SUBGROUPS == 1)
-  //
-  // Define histograms bufref for single subgroup
-  //
   // NOTE(allanmac): The histogram buffer reference could be adjusted
   // on the host to save a couple instructions at the cost of added
   // complexity.
   //
+  const uint32_t invocation_id = RS_WORKGROUP_SUBGROUPS == 1 ? gl_SubgroupInvocationID : gl_LocalInvocationID.x;
+
   RS_SUBGROUP_UNIFORM
   const uint32_t histograms_base   = ((RS_KEYVAL_SIZE - 1 - gl_WorkGroupID.x) * RS_RADIX_SIZE);
-  const uint32_t histograms_offset = (histograms_base + gl_SubgroupInvocationID) * 4;
+  const uint32_t histograms_offset = (histograms_base + invocation_id) * 4;
 
   RS_BUFREF_DEFINE_AT_OFFSET_UINT32(buffer_rs_histograms,
                                     rs_histograms,
                                     push.devaddr_histograms,
                                     histograms_offset);
 
-#else
-  //
-  // Define histograms bufref for workgroup
-  //
-  RS_SUBGROUP_UNIFORM
-  const uint32_t histograms_base   = ((RS_KEYVAL_SIZE - 1 - gl_WorkGroupID.x) * RS_RADIX_SIZE);
-  const uint32_t histograms_offset = (histograms_base + gl_LocalInvocationID.x) * 4;
-
-  RS_BUFREF_DEFINE_AT_OFFSET_UINT32(buffer_rs_histograms,
-                                    rs_histograms,
-                                    push.devaddr_histograms,
-                                    histograms_offset);
-
-#endif
 
   //
   // Compute exclusive prefix of uint32_t[256]

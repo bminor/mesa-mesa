@@ -62,25 +62,10 @@ layout(push_constant) uniform block_push
 #endif
 
 //
-#ifndef RS_HISTOGRAM_BLOCK_ROWS
-#error "Undefined: RS_HISTOGRAM_BLOCK_ROWS"
-#endif
-
-//
-#ifndef RS_HISTOGRAM_WORKGROUP_SIZE_LOG2
-#error "Undefined: RS_HISTOGRAM_WORKGROUP_SIZE_LOG2"
-#endif
-
-//
-#ifndef RS_HISTOGRAM_SUBGROUP_SIZE_LOG2
-#error "Undefined: RS_HISTOGRAM_SUBGROUP_SIZE_LOG2"
-#endif
-
-//
 // Local macros
 //
 // clang-format off
-#define RS_WORKGROUP_SIZE       (1 << RS_HISTOGRAM_WORKGROUP_SIZE_LOG2)
+#define RS_WORKGROUP_SIZE       (RS_HISTOGRAM_WORKGROUP_SIZE)
 #define RS_SUBGROUP_SIZE        (1 << RS_HISTOGRAM_SUBGROUP_SIZE_LOG2)
 #define RS_WORKGROUP_SUBGROUPS  (RS_WORKGROUP_SIZE / RS_SUBGROUP_SIZE)
 #define RS_BLOCK_KEYVALS        (RS_HISTOGRAM_BLOCK_ROWS * RS_WORKGROUP_SIZE)
@@ -104,11 +89,8 @@ layout(push_constant) uniform block_push
 //
 #define RS_HISTOGRAM_BASE(pass_) ((RS_RADIX_SIZE * 4) * pass_)
 
-#if (RS_WORKGROUP_SUBGROUPS == 1)
-#define RS_HISTOGRAM_OFFSET(pass_) (RS_HISTOGRAM_BASE(pass_) + gl_SubgroupInvocationID * 4)
-#else
-#define RS_HISTOGRAM_OFFSET(pass_) (RS_HISTOGRAM_BASE(pass_) + gl_LocalInvocationID.x * 4)
-#endif
+#define RS_HISTOGRAM_OFFSET(pass_) \
+  RS_HISTOGRAM_BASE(pass_) + (RS_WORKGROUP_SUBGROUPS == 1 ? gl_SubgroupInvocationID : gl_LocalInvocationID.x) * 4
 
 //
 // Assumes (RS_RADIX_LOG2 == 8)
@@ -167,7 +149,7 @@ shared rs_histogram_smem smem;
 //
 //
 //
-layout(local_size_x = RS_WORKGROUP_SIZE) in;
+layout(local_size_x_id = RS_HISTOGRAM_WORKGROUP_SIZE_ID) in;
 
 //
 //
@@ -196,41 +178,38 @@ rs_histogram_zero()
   //
   // Zero SMEM histogram
   //
-#if (RS_WORKGROUP_SUBGROUPS == 1)
-
-  const uint32_t smem_offset = gl_SubgroupInvocationID;
-
-  [[unroll]] for (RS_SUBGROUP_UNIFORM uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_SUBGROUP_SIZE)
+  if (RS_WORKGROUP_SUBGROUPS == 1)
   {
-    smem.histogram[smem_offset + ii] = 0;
-  }
+    const uint32_t smem_offset = gl_SubgroupInvocationID;
 
-#elif (RS_WORKGROUP_SIZE < RS_RADIX_SIZE)
-
-  const uint32_t smem_offset = gl_LocalInvocationID.x;
-
-  [[unroll]] for (uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_WORKGROUP_SIZE)
-  {
-    smem.histogram[smem_offset + ii] = 0;
-  }
-
-  const uint32_t smem_idx = smem_offset + ((RS_RADIX_SIZE / RS_WORKGROUP_SIZE) * RS_WORKGROUP_SIZE);
-
-  if (smem_idx < RS_RADIX_SIZE)
+    [[unroll]] for (RS_SUBGROUP_UNIFORM uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_SUBGROUP_SIZE)
     {
-      smem.histogram[smem_idx] = 0;
+      smem.histogram[smem_offset + ii] = 0;
+    }
+  }
+  else if (RS_WORKGROUP_SIZE < RS_RADIX_SIZE)
+  {
+    const uint32_t smem_offset = gl_LocalInvocationID.x;
+
+    [[unroll]] for (uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_WORKGROUP_SIZE)
+    {
+      smem.histogram[smem_offset + ii] = 0;
     }
 
-#elif (RS_WORKGROUP_SIZE >= RS_RADIX_SIZE)
+    const uint32_t smem_idx = smem_offset + ((RS_RADIX_SIZE / RS_WORKGROUP_SIZE) * RS_WORKGROUP_SIZE);
 
-#if (RS_WORKGROUP_SIZE > RS_RADIX_SIZE)
-  if (gl_LocalInvocationID.x < RS_RADIX_SIZE)
-#endif
-    {
-      smem.histogram[gl_LocalInvocationID.x] = 0;
-    }
-
-#endif
+    if (smem_idx < RS_RADIX_SIZE)
+      {
+        smem.histogram[smem_idx] = 0;
+      }
+  }
+  else if (RS_WORKGROUP_SIZE >= RS_RADIX_SIZE)
+  {
+    if (RS_WORKGROUP_SIZE == RS_RADIX_SIZE || gl_LocalInvocationID.x < RS_RADIX_SIZE)
+      {
+        smem.histogram[gl_LocalInvocationID.x] = 0;
+      }
+  }
 }
 
 //
@@ -242,50 +221,47 @@ rs_histogram_global_store(restrict buffer_rs_histograms rs_histograms)
   //
   // Store to GMEM
   //
-#if (RS_WORKGROUP_SUBGROUPS == 1)
-
-  const uint32_t smem_offset = gl_SubgroupInvocationID;
-
-  [[unroll]] for (RS_SUBGROUP_UNIFORM uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_SUBGROUP_SIZE)
+  if (RS_WORKGROUP_SUBGROUPS == 1)
   {
-    const uint32_t count = smem.histogram[smem_offset + ii];
+    const uint32_t smem_offset = gl_SubgroupInvocationID;
 
-    atomicAdd(rs_histograms.extent[ii], count);
-  }
-
-#elif (RS_WORKGROUP_SIZE < RS_RADIX_SIZE)
-
-  const uint32_t smem_offset = gl_LocalInvocationID.x;
-
-  [[unroll]] for (uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_WORKGROUP_SIZE)
-  {
-    const uint32_t count = smem.histogram[smem_offset + ii];
-
-    atomicAdd(rs_histograms.extent[ii], count);
-  }
-
-  const uint32_t smem_idx = smem_offset + ((RS_RADIX_SIZE / RS_WORKGROUP_SIZE) * RS_WORKGROUP_SIZE);
-
-  if (smem_idx < RS_RADIX_SIZE)
+    [[unroll]] for (RS_SUBGROUP_UNIFORM uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_SUBGROUP_SIZE)
     {
-      const uint32_t count = smem.histogram[smem_idx];
+      const uint32_t count = smem.histogram[smem_offset + ii];
 
-      atomicAdd(rs_histograms.extent[((RS_RADIX_SIZE / RS_WORKGROUP_SIZE) * RS_WORKGROUP_SIZE)],
-                count);
+      atomicAdd(rs_histograms.extent[ii], count);
+    }
+  }
+  else if (RS_WORKGROUP_SIZE < RS_RADIX_SIZE)
+  {
+    const uint32_t smem_offset = gl_LocalInvocationID.x;
+
+    [[unroll]] for (uint32_t ii = 0; ii < RS_RADIX_SIZE; ii += RS_WORKGROUP_SIZE)
+    {
+      const uint32_t count = smem.histogram[smem_offset + ii];
+
+      atomicAdd(rs_histograms.extent[ii], count);
     }
 
-#elif (RS_WORKGROUP_SIZE >= RS_RADIX_SIZE)
+    const uint32_t smem_idx = smem_offset + ((RS_RADIX_SIZE / RS_WORKGROUP_SIZE) * RS_WORKGROUP_SIZE);
 
-#if (RS_WORKGROUP_SIZE > RS_RADIX_SIZE)
-  if (gl_LocalInvocationID.x < RS_RADIX_SIZE)
-#endif
-    {
-      const uint32_t count = smem.histogram[gl_LocalInvocationID.x];
+    if (smem_idx < RS_RADIX_SIZE)
+      {
+        const uint32_t count = smem.histogram[smem_idx];
 
-      atomicAdd(rs_histograms.extent[0], count);
-    }
+        atomicAdd(rs_histograms.extent[((RS_RADIX_SIZE / RS_WORKGROUP_SIZE) * RS_WORKGROUP_SIZE)],
+                  count);
+      }
+  }
+  else if (RS_WORKGROUP_SIZE >= RS_RADIX_SIZE)
+  {
+    if (RS_WORKGROUP_SIZE == RS_RADIX_SIZE || gl_LocalInvocationID.x < RS_RADIX_SIZE)
+      {
+        const uint32_t count = smem.histogram[gl_LocalInvocationID.x];
 
-#endif
+        atomicAdd(rs_histograms.extent[0], count);
+      }
+  }
 }
 
 #endif
@@ -298,21 +274,19 @@ rs_histogram_global_store(restrict buffer_rs_histograms rs_histograms)
 void
 rs_histogram_atomic_after_write()
 {
-#if (RS_WORKGROUP_SUBGROUPS == 1)
-  subgroupMemoryBarrierShared();
-#else
-  barrier();
-#endif
+  if (RS_WORKGROUP_SUBGROUPS == 1)
+    subgroupMemoryBarrierShared();
+  else
+    barrier();
 }
 
 void
 rs_histogram_read_after_atomic()
 {
-#if (RS_WORKGROUP_SUBGROUPS == 1)
-  subgroupMemoryBarrierShared();
-#else
-  barrier();
-#endif
+  if (RS_WORKGROUP_SUBGROUPS == 1)
+    subgroupMemoryBarrierShared();
+  else
+    barrier();
 }
 
 #endif

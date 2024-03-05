@@ -7,6 +7,8 @@
 //
 
 #include "barrier.h"
+#include "vulkan/runtime/vk_device.h"
+#include "vulkan/runtime/vk_command_buffer.h"
 
 //
 //
@@ -15,6 +17,10 @@
 void
 vk_barrier_compute_w_to_compute_r(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -23,7 +29,7 @@ vk_barrier_compute_w_to_compute_r(VkCommandBuffer cb)
     .dstAccessMask = VK_ACCESS_SHADER_READ_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        0,
@@ -42,6 +48,10 @@ vk_barrier_compute_w_to_compute_r(VkCommandBuffer cb)
 void
 vk_barrier_compute_w_to_transfer_r(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -50,7 +60,7 @@ vk_barrier_compute_w_to_transfer_r(VkCommandBuffer cb)
     .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        VK_PIPELINE_STAGE_TRANSFER_BIT,
                        0,
@@ -69,6 +79,10 @@ vk_barrier_compute_w_to_transfer_r(VkCommandBuffer cb)
 void
 vk_barrier_transfer_w_to_compute_r(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -77,7 +91,7 @@ vk_barrier_transfer_w_to_compute_r(VkCommandBuffer cb)
     .dstAccessMask = VK_ACCESS_SHADER_READ_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_TRANSFER_BIT,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        0,
@@ -96,6 +110,10 @@ vk_barrier_transfer_w_to_compute_r(VkCommandBuffer cb)
 void
 vk_barrier_transfer_w_to_compute_w(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -104,7 +122,7 @@ vk_barrier_transfer_w_to_compute_w(VkCommandBuffer cb)
     .dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_TRANSFER_BIT,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        0,
@@ -123,6 +141,10 @@ vk_barrier_transfer_w_to_compute_w(VkCommandBuffer cb)
 void
 vk_barrier_compute_w_to_indirect_compute_r(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -132,7 +154,7 @@ vk_barrier_compute_w_to_indirect_compute_r(VkCommandBuffer cb)
                      VK_ACCESS_SHADER_READ_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        0,
@@ -151,6 +173,10 @@ vk_barrier_compute_w_to_indirect_compute_r(VkCommandBuffer cb)
 void
 vk_barrier_transfer_w_compute_w_to_transfer_r(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -160,7 +186,7 @@ vk_barrier_transfer_w_compute_w_to_transfer_r(VkCommandBuffer cb)
     .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        VK_PIPELINE_STAGE_TRANSFER_BIT,
                        0,
@@ -179,6 +205,10 @@ vk_barrier_transfer_w_compute_w_to_transfer_r(VkCommandBuffer cb)
 void
 vk_barrier_compute_w_to_host_r(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -187,7 +217,7 @@ vk_barrier_compute_w_to_host_r(VkCommandBuffer cb)
     .dstAccessMask = VK_ACCESS_HOST_READ_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        VK_PIPELINE_STAGE_HOST_BIT,
                        0,
@@ -206,6 +236,10 @@ vk_barrier_compute_w_to_host_r(VkCommandBuffer cb)
 void
 vk_barrier_transfer_w_to_host_r(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -214,7 +248,7 @@ vk_barrier_transfer_w_to_host_r(VkCommandBuffer cb)
     .dstAccessMask = VK_ACCESS_HOST_READ_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_TRANSFER_BIT,
                        VK_PIPELINE_STAGE_HOST_BIT,
                        0,
@@ -237,12 +271,16 @@ vk_memory_barrier(VkCommandBuffer      cb,
                   VkPipelineStageFlags dst_stage,
                   VkAccessFlags        dst_mask)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   VkMemoryBarrier const mb = { .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
                                .pNext         = NULL,
                                .srcAccessMask = src_mask,
                                .dstAccessMask = dst_mask };
 
-  vkCmdPipelineBarrier(cb, src_stage, dst_stage, 0, 1, &mb, 0, NULL, 0, NULL);
+  disp->CmdPipelineBarrier(cb, src_stage, dst_stage, 0, 1, &mb, 0, NULL, 0, NULL);
 }
 
 //
@@ -252,6 +290,10 @@ vk_memory_barrier(VkCommandBuffer      cb,
 void
 vk_barrier_debug(VkCommandBuffer cb)
 {
+  VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, cb);
+  const struct vk_device_dispatch_table *disp =
+    &cmd_buffer->base.device->dispatch_table;
+
   static VkMemoryBarrier const mb = {
 
     .sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -288,7 +330,7 @@ vk_barrier_debug(VkCommandBuffer cb)
                      VK_ACCESS_HOST_WRITE_BIT
   };
 
-  vkCmdPipelineBarrier(cb,
+  disp->CmdPipelineBarrier(cb,
                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                        0,

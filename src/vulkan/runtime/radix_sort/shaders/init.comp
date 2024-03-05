@@ -53,9 +53,9 @@ RS_STRUCT_INDIRECT_INFO();
 // Local macros
 //
 // clang-format off
-#define RS_FILL_WORKGROUP_SIZE        (1 << RS_FILL_WORKGROUP_SIZE_LOG2)
-#define RS_SCATTER_WORKGROUP_SIZE     (1 << RS_SCATTER_WORKGROUP_SIZE_LOG2)
-#define RS_HISTOGRAM_WORKGROUP_SIZE   (1 << RS_HISTOGRAM_WORKGROUP_SIZE_LOG2)
+#define RS_FILL_WORKGROUP_SIZE        (RS_FILL_WORKGROUP_SIZE)
+#define RS_SCATTER_WORKGROUP_SIZE     (RS_SCATTER_WORKGROUP_SIZE)
+#define RS_HISTOGRAM_WORKGROUP_SIZE   (RS_HISTOGRAM_WORKGROUP_SIZE)
 
 #define RS_FILL_BLOCK_DWORDS          (RS_FILL_BLOCK_ROWS * RS_FILL_WORKGROUP_SIZE)
 #define RS_SCATTER_BLOCK_KEYVALS      (RS_SCATTER_BLOCK_ROWS * RS_SCATTER_WORKGROUP_SIZE)
@@ -150,11 +150,33 @@ main()
   // 256-dword partitions directly follow the 256-dword histograms, we
   // can dispatch just one FILL.
   //
+  // The "internal" memory map looks like this:
+  //
+  //   +---------------------------------+ <-- 0
+  //   | histograms[keyval_size]         |
+  //   +---------------------------------+ <-- keyval_size                           * histo_dwords
+  //   | partitions[scatter_blocks_ru-1] |
+  //   +---------------------------------+ <-- (keyval_size + scatter_blocks_ru - 1) * histo_dwords
+  //   | workgroup_ids[keyval_size]      |
+  //   +---------------------------------+ <-- (keyval_size + scatter_blocks_ru - 1) * histo_dwords + keyval_size
+  //
+  // NOTE(allanmac): The `.block_offset` and `.dword_offset_min`
+  // parameters are zeroes because the host can offset the buffer
+  // device address since the number of passes is known by the host.
+  // If we ever wanted to supported an indirect number of "key" bits
+  // in the sort, then this would need to change.
+  //
+  // NOTE(allanmac): The `.workgroup_ids[]` are only used if
+  // nonsequential dispatch isn't supported by the device.
+  //
   rs_indirect_info_fill zero;
 
   zero.block_offset               = 0;
   zero.dword_offset_min           = 0;
   zero.dword_offset_max_minus_min = (push.passes + scatter_ru_blocks - 1) * RS_RADIX_SIZE;
+
+  if (RS_SCATTER_NONSEQUENTIAL_DISPATCH != 0)
+    zero.dword_offset_max_minus_min += (RS_KEYVAL_DWORDS * 4);  // one pass per byte
 
   const uint32_t zero_ru_blocks =
     RS_COUNT_RU_BLOCKS(zero.dword_offset_max_minus_min, RS_FILL_BLOCK_DWORDS);

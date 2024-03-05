@@ -1,7 +1,24 @@
 /*
  * Copyright © 2022 Bas Nieuwenhuizen
  *
- * SPDX-License-Identifier: MIT
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
  */
 
 #version 460
@@ -17,9 +34,9 @@
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference2 : require
 
-layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+#include "vk_build_interface.h"
 
-#include "build_interface.h"
+layout(local_size_x_id = SUBGROUP_SIZE_ID, local_size_y = 1, local_size_z = 1) in;
 
 TYPE(lbvh_node_info, 4);
 
@@ -74,11 +91,11 @@ main()
 {
    if (args.id_count <= 1) {
       REF(lbvh_node_info) dst = REF(lbvh_node_info)(args.node_info);
-      DEREF(dst).parent = RADV_BVH_INVALID_NODE;
+      DEREF(dst).parent = VK_BVH_INVALID_NODE;
       DEREF(dst).path_count = 2;
       DEREF(dst).children[0] =
-         args.id_count == 1 ? DEREF(INDEX(key_id_pair, args.src_ids, 0)).id : RADV_BVH_INVALID_NODE;
-      DEREF(dst).children[1] = RADV_BVH_INVALID_NODE;
+         args.id_count == 1 ? DEREF(INDEX(key_id_pair, args.src_ids, 0)).id : VK_BVH_INVALID_NODE;
+      DEREF(dst).children[1] = VK_BVH_INVALID_NODE;
       return;
    }
 
@@ -136,5 +153,5 @@ main()
    DEREF(dst).children[0] = DEREF(INDEX(key_id_pair, args.src_ids, left)).id;
    DEREF(dst).children[1] = DEREF(INDEX(key_id_pair, args.src_ids, right)).id;
    if (id == 0)
-      DEREF(dst).parent = RADV_BVH_INVALID_NODE;
+      DEREF(dst).parent = VK_BVH_INVALID_NODE;
 }
