@@ -1195,7 +1195,15 @@ do_validate_attachment(struct gl_context *ctx,
                                        stObj->pt->nr_storage_samples,
                                        bindings);
    if (!valid) {
-      fbo_invalid("Invalid format");
+      /* this is the actual texture, so check the bind flags for more info */
+      if (stObj->pt->bind & (PIPE_BIND_RENDER_TARGET | PIPE_BIND_DEPTH_STENCIL)) {
+         if (_mesa_is_format_srgb(texFormat))
+            fbo_invalid("Invalid format: linear format supported for rendering but not sRGB");
+         else
+            fbo_invalid("Invalid format");
+      } else {
+         fbo_invalid("Format unsupported for rendering: RENDER_TARGET bind not applied");
+      }
    }
 
    return valid;
