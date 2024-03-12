@@ -205,6 +205,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_index_type_uint8 = false,
       .EXT_private_data = true,
       .EXT_provoking_vertex = true,
+      .EXT_queue_family_foreign = true,
       .EXT_scalar_block_layout = true,
       .EXT_texel_buffer_alignment = false,
       .EXT_tooling_info = true,
