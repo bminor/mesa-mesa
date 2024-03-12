@@ -81,7 +81,7 @@ brw_set_dest(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg dest)
       assert(dest.hstride == BRW_HORIZONTAL_STRIDE_1 &&
              dest.vstride == dest.width + 1);
       assert(!dest.negate && !dest.abs);
-      brw_eu_inst_set_dst_da_reg_nr(devinfo, inst, dest.nr);
+      brw_eu_inst_set_dst_da_reg_nr(devinfo, inst, phys_nr(devinfo, dest));
       brw_eu_inst_set_dst_da16_subreg_nr(devinfo, inst, dest.subnr / 16);
       brw_eu_inst_set_send_dst_reg_file(devinfo, inst, phys_file(dest));
    } else {
@@ -178,7 +178,7 @@ brw_set_src0(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
              (reg.hstride == BRW_HORIZONTAL_STRIDE_1 &&
               reg.vstride == reg.width + 1));
       assert(!reg.negate && !reg.abs);
-      brw_eu_inst_set_src0_da_reg_nr(devinfo, inst, reg.nr);
+      brw_eu_inst_set_src0_da_reg_nr(devinfo, inst, phys_nr(devinfo, reg));
       brw_eu_inst_set_src0_da16_subreg_nr(devinfo, inst, reg.subnr / 16);
    } else {
       brw_eu_inst_set_src0_file_type(devinfo, inst, phys_file(reg), reg.type);
