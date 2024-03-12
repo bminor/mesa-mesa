@@ -115,19 +115,21 @@ static void pvr_image_setup_mip_levels(struct pvr_image *image)
       extent.depth = u_minify(extent.depth, 1);
    }
 
-   /* The hw calculates layer strides as if a full mip chain up until 1x1x1
-    * were present so we need to account for that in the `layer_size`.
-    */
-   while (extent.height != 1 || extent.width != 1 || extent.depth != 1) {
-      const uint32_t height_pitch = ALIGN(extent.height, extent_alignment);
-      const uint32_t pitch = cpp * ALIGN(extent.width, extent_alignment);
+   if (image->vk.mip_levels > 1) {
+      /* The hw calculates layer strides as if a full mip chain up until 1x1x1
+       * were present so we need to account for that in the `layer_size`.
+       */
+      while (extent.height != 1 || extent.width != 1 || extent.depth != 1) {
+         const uint32_t height_pitch = ALIGN(extent.height, extent_alignment);
+         const uint32_t pitch = cpp * ALIGN(extent.width, extent_alignment);
 
-      image->layer_size += image->vk.samples * pitch * height_pitch *
-                           ALIGN(extent.depth, extent_alignment);
+         image->layer_size += image->vk.samples * pitch * height_pitch *
+                              ALIGN(extent.depth, extent_alignment);
 
-      extent.height = u_minify(extent.height, 1);
-      extent.width = u_minify(extent.width, 1);
-      extent.depth = u_minify(extent.depth, 1);
+         extent.height = u_minify(extent.height, 1);
+         extent.width = u_minify(extent.width, 1);
+         extent.depth = u_minify(extent.depth, 1);
+      }
    }
 
    /* TODO: It might be useful to store the alignment in the image so it can be
