@@ -1824,7 +1824,7 @@
         "description": "pvr: fix image size calculation when mipLevels is 1",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2a3aa6da5038e50a34f22d986fb36870024fd57e",
         "notes": null
