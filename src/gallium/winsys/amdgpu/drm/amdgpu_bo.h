@@ -89,6 +89,9 @@ struct amdgpu_bo_real {
 
    amdgpu_bo_handle bo_handle;
    amdgpu_va_handle va_handle;
+   /* Timeline point of latest VM ioctl completion. Only used in userqueue. */
+   uint64_t vm_timeline_point;
+
    void *cpu_ptr; /* for user_ptr and permanent maps */
    int map_count;
    uint32_t kms_handle;
@@ -122,6 +125,8 @@ struct amdgpu_bo_real_reusable {
 struct amdgpu_bo_sparse {
    struct amdgpu_winsys_bo b;
    amdgpu_va_handle va_handle;
+   /* Only used in case of userqueue. Will hold the latest point including for backing bo. */
+   uint64_t vm_timeline_point;
 
    uint32_t num_va_pages;
    uint32_t num_backing_pages;

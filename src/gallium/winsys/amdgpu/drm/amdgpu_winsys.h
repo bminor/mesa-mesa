@@ -256,6 +256,16 @@ struct amdgpu_winsys {
     * for invoking them because sws_list can be NULL.
     */
    struct amdgpu_screen_winsys dummy_sws;
+
+   /*
+    * In case of userqueue, mesa should ensure that VM page tables are available
+    * when jobs are executed. For this, VM ioctl now outputs timeline syncobj.
+    * This timeline syncobj output will be used as one of the dependency
+    * fence in userqueue wait ioctl.
+    */
+   uint32_t vm_timeline_syncobj;
+   uint64_t vm_timeline_seq_num;
+   simple_mtx_t vm_ioctl_lock;
 };
 
 static inline struct amdgpu_screen_winsys *

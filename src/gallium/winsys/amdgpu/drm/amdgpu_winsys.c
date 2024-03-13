@@ -104,6 +104,8 @@ static void do_winsys_deinit(struct amdgpu_winsys *aws)
 
    ac_addrlib_destroy(aws->addrlib);
    amdgpu_device_deinitialize(aws->dev);
+   drmSyncobjDestroy(aws->fd, aws->vm_timeline_syncobj);
+
    FREE(aws);
 }
 
@@ -451,6 +453,10 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
       }
       aws->info.drm_major = drm_major;
       aws->info.drm_minor = drm_minor;
+
+      if (amdgpu_cs_create_syncobj(dev, &aws->vm_timeline_syncobj))
+         goto fail_alloc;
+      simple_mtx_init(&aws->vm_ioctl_lock, mtx_plain);
 
       /* Only aws and buffer functions are used. */
       aws->dummy_sws.aws = aws;
