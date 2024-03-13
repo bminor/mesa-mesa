@@ -6768,11 +6768,6 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
                    HLSQ_CS_NDRANGE_5(CHIP, .globalsize_z = local_size[2] * num_groups[2]),
                    HLSQ_CS_NDRANGE_6(CHIP, .globaloff_z = 0));
 
-   tu_cs_emit_regs(cs,
-                   HLSQ_CS_KERNEL_GROUP_X(CHIP, 1),
-                   HLSQ_CS_KERNEL_GROUP_Y(CHIP, 1),
-                   HLSQ_CS_KERNEL_GROUP_Z(CHIP, 1));
-
    if (info->indirect) {
       uint64_t iova = info->indirect->iova + info->indirect_offset;
 
