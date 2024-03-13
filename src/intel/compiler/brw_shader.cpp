@@ -323,4 +323,3 @@ fs_inst::remove(bblock_t *block, bool defer_later_block_ip_updates)
 
    exec_node::remove();
 }
-

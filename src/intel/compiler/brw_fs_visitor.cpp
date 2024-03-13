@@ -471,6 +471,8 @@ fs_visitor::init()
    this->spilled_any_registers = false;
 
    this->phase = BRW_SHADER_PHASE_INITIAL;
+
+   this->next_address_register_nr = 1;
 }
 
 fs_visitor::~fs_visitor()

@@ -264,6 +264,19 @@ brw_reg::is_accumulator() const
 }
 
 bool
+brw_reg::is_address() const
+{
+   return file == ADDRESS;
+}
+
+unsigned
+brw_reg::address_slot(unsigned byte_offset) const
+{
+   assert(is_address());
+   return (reg_offset(*this) + byte_offset) / 2;
+}
+
+bool
 brw_reg::equals(const brw_reg &r) const
 {
    return brw_regs_equal(this, &r);

@@ -122,6 +122,12 @@ public:
     */
    bool has_sampler_residency() const;
 
+   /**
+    * Return true if this instruction is using the address register
+    * implicitly.
+    */
+   bool uses_address_register_implicitly() const;
+
    uint8_t sources; /**< Number of brw_reg sources. */
 
    /**

@@ -434,7 +434,10 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
       fprintf(file, "***attr%d***", inst->dst.nr);
       break;
    case ADDRESS:
-      fprintf(file, "a0.%d", inst->dst.subnr);
+      if (inst->dst.nr == 0)
+         fprintf(file, "a0.%d", inst->dst.subnr);
+      else
+         fprintf(file, "va%u.%d", inst->dst.nr, inst->dst.subnr);
       break;
    case ARF:
       switch (inst->dst.nr & 0xF0) {
@@ -498,7 +501,10 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
          fprintf(file, "g%d", inst->src[i].nr);
          break;
       case ADDRESS:
-         fprintf(file, "a0.%d", inst->src[i].subnr);
+         if (inst->src[i].nr == 0)
+            fprintf(file, "a0.%d", inst->src[i].subnr);
+         else
+            fprintf(file, "va%u.%d", inst->src[i].nr, inst->src[i].subnr);
          break;
       case ATTR:
          fprintf(file, "attr%d", inst->src[i].nr);

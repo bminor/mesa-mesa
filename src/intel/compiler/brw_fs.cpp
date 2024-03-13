@@ -799,6 +799,19 @@ fs_inst::is_raw_move() const
            brw_type_size_bits(src[0].type) == brw_type_size_bits(dst.type));
 }
 
+bool
+fs_inst::uses_address_register_implicitly() const
+{
+   switch (opcode) {
+   case SHADER_OPCODE_BROADCAST:
+   case SHADER_OPCODE_SHUFFLE:
+   case SHADER_OPCODE_MOV_INDIRECT:
+      return true;
+   default:
+      return false;
+   }
+}
+
 /* For SIMD16, we need to follow from the uniform setup of SIMD8 dispatch.
  * This brings in those uniform definitions
  */

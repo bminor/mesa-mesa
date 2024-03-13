@@ -212,6 +212,14 @@ namespace brw {
             return retype(null_reg_ud(), type);
       }
 
+      brw_reg
+      vaddr(enum brw_reg_type type, unsigned subnr) const
+      {
+         brw_reg addr = brw_address_reg(subnr);
+         addr.nr = shader->next_address_register_nr++;
+         return retype(addr, type);
+      }
+
       /**
        * Create a null register of floating type.
        */

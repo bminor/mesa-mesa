@@ -448,6 +448,8 @@ public:
    /* The API selected subgroup size */
    unsigned api_subgroup_size; /**< 0, 8, 16, 32 */
 
+   unsigned next_address_register_nr;
+
    struct brw_shader_stats shader_stats;
 
    void debug_optimizer(const nir_shader *nir,
