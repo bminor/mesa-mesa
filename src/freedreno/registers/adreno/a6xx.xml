@@ -5723,8 +5723,8 @@ to upconvert to 32b float internally?
 		<bitfield name="WGTILEHEIGHT" low="26" high="31"/>
 	</reg32>
 
-	<reg32 offset="0xa9df" name="HLSQ_CS_LOCAL_SIZE" variants="A7XX-" usage="cmd">
-		<!-- localsize is value minus one: -->
+	<reg32 offset="0xa9df" name="HLSQ_CS_LAST_LOCAL_SIZE" variants="A7XX-" usage="cmd">
+		<!-- The size of the last workgroup. localsize is value minus one: -->
 		<bitfield name="LOCALSIZEX" low="2" high="11" type="uint"/>
 		<bitfield name="LOCALSIZEY" low="12" high="21" type="uint"/>
 		<bitfield name="LOCALSIZEZ" low="22" high="31" type="uint"/>

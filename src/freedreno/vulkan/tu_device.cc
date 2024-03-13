@@ -2302,7 +2302,7 @@ tu_init_cmdbuf_start_a725_quirk(struct tu_device *device)
                   HLSQ_CS_NDRANGE_4(A7XX, .globaloff_y = 0),
                   HLSQ_CS_NDRANGE_5(A7XX, .globalsize_z = 1),
                   HLSQ_CS_NDRANGE_6(A7XX, .globaloff_z = 0));
-   tu_cs_emit_regs(&sub_cs, A7XX_HLSQ_CS_LOCAL_SIZE(
+   tu_cs_emit_regs(&sub_cs, A7XX_HLSQ_CS_LAST_LOCAL_SIZE(
             .localsizex = 255,
             .localsizey = 0,
             .localsizez = 0));
