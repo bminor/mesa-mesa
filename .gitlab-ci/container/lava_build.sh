@@ -310,6 +310,10 @@ if [ "$BUILD_VK" == "ON" ]; then
   DEQP_API=VK \
   DEQP_TARGET=default \
   . .gitlab-ci/container/build-deqp.sh
+
+  DEQP_API=VK-main \
+  DEQP_TARGET=default \
+  . .gitlab-ci/container/build-deqp.sh
 fi
 
 rm -rf /VK-GL-CTS

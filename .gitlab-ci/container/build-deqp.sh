@@ -17,7 +17,7 @@ uncollapsed_section_start deqp-$deqp_api "Building dEQP $DEQP_API"
 
 # See `deqp_build_targets` below for which release is used to produce which
 # binary. Unless this comment has bitrotten:
-# - the commit from the main branch produces the deqp tools,
+# - the commit from the main branch produces the deqp tools and `deqp-vk`,
 # - the VK release produces `deqp-vk`,
 # - the GL release produces `glcts`, and
 # - the GLES release produces `deqp-gles*` and `deqp-egl`
@@ -94,6 +94,7 @@ git config --global user.name "Mesa CI"
 # shellcheck disable=SC2153
 case "${DEQP_API}" in
   tools) DEQP_VERSION="$DEQP_MAIN_COMMIT";;
+  *-main) DEQP_VERSION="$DEQP_MAIN_COMMIT";;
   VK) DEQP_VERSION="vulkan-cts-$DEQP_VK_VERSION";;
   GL) DEQP_VERSION="opengl-cts-$DEQP_GL_VERSION";;
   GLES) DEQP_VERSION="opengl-es-cts-$DEQP_GLES_VERSION";;
@@ -210,7 +211,7 @@ fi
 
 deqp_build_targets=()
 case "${DEQP_API}" in
-  VK)
+  VK|VK-main)
     deqp_build_targets+=(deqp-vk)
     ;;
   GL)
@@ -234,7 +235,7 @@ if [ "${DEQP_TARGET}" != 'android' ] && [ "$DEQP_API" != tools ]; then
     # Copy out the mustpass lists we want.
     mkdir -p mustpass
 
-    if [ "${DEQP_API}" = 'VK' ]; then
+    if [ "${DEQP_API}" = 'VK' ] || [ "${DEQP_API}" = 'VK-main' ]; then
         for mustpass in $(< /VK-GL-CTS/external/vulkancts/mustpass/main/vk-default.txt) ; do
             cat /VK-GL-CTS/external/vulkancts/mustpass/main/$mustpass \
                 >> mustpass/vk-main.txt
@@ -284,7 +285,7 @@ rm -rf modules/internal
 rm -rf execserver
 rm -rf framework
 find . -depth \( -iname '*cmake*' -o -name '*ninja*' -o -name '*.o' -o -name '*.a' \) -exec rm -rf {} \;
-if [ "${DEQP_API}" = 'VK' ]; then
+if [ "${DEQP_API}" = 'VK' ] || [ "${DEQP_API}" = 'VK-main' ]; then
   ${STRIP_CMD:-strip} external/vulkancts/modules/vulkan/deqp-vk
 fi
 if [ "${DEQP_API}" = 'GL' ] || [ "${DEQP_API}" = 'GLES' ]; then

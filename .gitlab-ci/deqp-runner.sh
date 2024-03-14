@@ -53,7 +53,7 @@ if [ -z "$DEQP_SUITE" ]; then
     DEQP_OPTIONS="$DEQP_OPTIONS --deqp-gl-config-name=$DEQP_CONFIG"
     DEQP_OPTIONS="$DEQP_OPTIONS --deqp-visibility=hidden"
 
-    if [ "$DEQP_VER" = "vk" ] && [ -z "$VK_DRIVER" ]; then
+    if [[ "$DEQP_VER" = "vk"* ]] && [ -z "$VK_DRIVER" ]; then
         echo 'VK_DRIVER must be to something like "radeon" or "intel" for the test run'
         exit 1
     fi
@@ -62,6 +62,9 @@ if [ -z "$DEQP_SUITE" ]; then
     if [ "$DEQP_VER" = "vk" ]; then
        MUSTPASS=/deqp-vk/mustpass/vk-main.txt.zst
        DEQP=/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk
+    elif [ "$DEQP_VER" = "vk-main" ]; then
+       MUSTPASS=/deqp-vk-main/mustpass/vk-main.txt.zst
+       DEQP=/deqp-vk-main/external/vulkancts/modules/vulkan/deqp-vk
     elif [ "$DEQP_VER" = "gles2" ] || [ "$DEQP_VER" = "gles3" ] || [ "$DEQP_VER" = "gles31" ] || [ "$DEQP_VER" = "egl" ]; then
        MUSTPASS=/deqp-gles/mustpass/$DEQP_VER-main.txt.zst
        DEQP=/deqp-gles/modules/$DEQP_VER/deqp-$DEQP_VER
@@ -188,7 +191,7 @@ uncollapsed_section_switch deqp "deqp: deqp-runner"
 
 # Print the detailed version with the list of backports and local patches
 { set +x; } 2>/dev/null
-for api in vk gl gles; do
+for api in vk-main vk gl gles; do
   deqp_version_log=/deqp-$api/version
   if [ -r "$deqp_version_log" ]; then
     cat "$deqp_version_log"
