@@ -95,6 +95,14 @@ public:
     */
    int issue_time;
 
+   /**
+    * Whether the instruction reads any part of the address register (to speed
+    * up instruction checks).
+    */
+   schedule_node **address_read;
+   int address_read_count;
+   int address_read_cap;
+
    /* Temporary data used during the scheduling process. */
    struct {
       int parent_count;
@@ -579,6 +587,7 @@ public:
    void add_cross_lane_deps(schedule_node *n);
    void add_dep(schedule_node *before, schedule_node *after, int latency);
    void add_dep(schedule_node *before, schedule_node *after);
+   void add_address_dep(schedule_node *before, schedule_node *after);
 
    void set_current_block(bblock_t *block);
    void compute_delays();
@@ -590,6 +599,7 @@ public:
    void calculate_deps();
    bool is_compressed(const fs_inst *inst);
    bool register_needs_barrier(const brw_reg &reg);
+   bool address_register_interfere(const schedule_node *n);
    schedule_node *choose_instruction_to_schedule();
    int calculate_issue_time(const fs_inst *inst);
 
@@ -626,6 +636,9 @@ public:
       unsigned cand_generation;
       int time;
       exec_list available;
+
+      /* Currently used address register */
+      uint32_t address_register[16];
    } current;
 
    bool post_reg_alloc;
@@ -946,8 +959,19 @@ instruction_scheduler::compute_delays()
          n->delay = n->issue_time;
       } else {
          for (int i = 0; i < n->children_count; i++) {
-            assert(n->children[i].n->delay);
-            n->delay = MAX2(n->delay, n->latency + n->children[i].n->delay);
+            if (n->children[i].n->delay == 0) {
+               /* This is a special case for address register, where a child
+                * could be a prior instruction.
+                *
+                * This ensures that a address register write instruction will
+                * always unblock the reader of the address register. Otherwise
+                * we could end up with scheduling deadlocks.
+                */
+               assert(n->children[i].n->inst->dst.is_address());
+               n->delay = MAX2(n->delay, 1);
+            } else {
+               n->delay = MAX2(n->delay, n->latency + n->children[i].n->delay);
+            }
          }
       }
    }
@@ -1023,6 +1047,10 @@ instruction_scheduler::add_dep(schedule_node *before, schedule_node *after,
    child->effective_latency = latency;
    before->children_count++;
    after->initial_parent_count++;
+
+   /* Propagate the dependency to the address register instructions. */
+   for (int i = 0; i < after->address_read_count; i++)
+      add_dep(before, after->address_read[i]);
 }
 
 void
@@ -1032,6 +1060,24 @@ instruction_scheduler::add_dep(schedule_node *before, schedule_node *after)
       return;
 
    add_dep(before, after, before->latency);
+}
+
+void
+instruction_scheduler::add_address_dep(schedule_node *before, schedule_node *after)
+{
+   assert(before && after);
+
+   add_dep(before, after, before->latency);
+
+   if (after->address_read_cap <= after->address_read_count) {
+      after->address_read_cap = MAX2(2 * after->address_read_cap, 1);
+
+      after->address_read = reralloc(mem_ctx, after->address_read,
+                                     schedule_node *,
+                                     after->address_read_cap);
+   }
+
+   after->address_read[after->address_read_count++] = before;
 }
 
 static bool
@@ -1199,8 +1245,76 @@ instruction_scheduler::calculate_deps()
     * granular level.
     */
    schedule_node *last_fixed_grf_write = NULL;
+   schedule_node *last_address_write[16] = {};
 
    /* top-to-bottom dependencies: RAW and WAW. */
+
+   if (!post_reg_alloc) {
+      /* Address registers have virtual identifier, allowing us to identify
+       * what instructions needs the values written to the register. The
+       * address register is written/read in pairs of instructions (enforced
+       * by the brw_fs_validate.cpp).
+       *
+       * To allow scheduling of SEND messages, out of order, without the
+       * address register tracking generating serialized dependency between
+       * all the messages, we first track all the dependencies of the address
+       * register. Those dependencies are added to the instructions consuming
+       * the address register value. Then when doing the normal dependency
+       * tracking, any node adding a dependency to an instruction consuming
+       * the address register is also added as dependency to the instruction
+       * writing the value to the address register.
+       *
+       * This scheme allows the scheduling done by
+       * choose_instruction_to_schedule() to ensure that once an instruction
+       * writing the address register is scheduled, we can always schedule all
+       * instructions making use of the address register value. Otherwise we
+       * could run into scheduling deadlocks.
+       *
+       * Here is a deadlock example :
+       *
+       *    mov    a0, 0x42
+       *    send grf1, ..., a0
+       *    mov    a0, 0x43
+       *    send grf2, grf1, a0
+       *
+       * Let say choose_instruction_to_schedule() chooses the second mov
+       * instruction first (mov a0, 0x43). Then it cannot schedule the second
+       * send instruction because the first send instruction populating grf1
+       * and has not been scheduled and we cannot schedule the first mov
+       * either because the address register is already in use for another
+       * message.
+       *
+       * In post-register-allocation mode, this scheme cannot work as all GRFs
+       * can get reused and we have to serializae all address register usages
+       * (like the accumulator, flag, etc...).
+       */
+      for (schedule_node *n = current.start; n < current.end; n++) {
+         fs_inst *inst = (fs_inst *)n->inst;
+
+         /* Pre pass going over instruction using the register flag as a
+          * source.
+          */
+         for (int i = 0; i < inst->sources; i++) {
+            if (!inst->src[i].is_address())
+               continue;
+
+            for (unsigned byte = 0; byte < inst->size_read(s->devinfo, i); byte += 2) {
+               assert(inst->src[i].address_slot(byte) < ARRAY_SIZE(last_address_write));
+               schedule_node *write_addr_node =
+                  last_address_write[inst->src[i].address_slot(byte)];
+               assert(write_addr_node->inst->dst.nr == inst->src[i].nr);
+               add_address_dep(write_addr_node, n);
+            }
+         }
+
+         if (inst->dst.is_address()) {
+            for (unsigned byte = 0; byte < inst->size_written; byte += 2) {
+               last_address_write[inst->dst.address_slot(byte)] = n;
+            }
+         }
+      }
+   }
+
    for (schedule_node *n = current.start; n < current.end; n++) {
       fs_inst *inst = (fs_inst *)n->inst;
 
@@ -1225,11 +1339,15 @@ instruction_scheduler::calculate_deps()
             }
          } else if (inst->src[i].is_accumulator()) {
             add_dep(last_accumulator_write, n);
+         } else if (inst->src[i].is_address()) {
+            if (post_reg_alloc) {
+               for (unsigned byte = 0; byte < inst->size_read(s->devinfo, i); byte += 2)
+                  add_dep(last_address_write[inst->src[i].address_slot(byte)], n);
+            }
          } else if (register_needs_barrier(inst->src[i])) {
             add_barrier_deps(n);
          }
       }
-
 
       if (const unsigned mask = inst->flags_read(s->devinfo)) {
          assert(mask < (1 << ARRAY_SIZE(last_conditional_mod)));
@@ -1264,6 +1382,13 @@ instruction_scheduler::calculate_deps()
       } else if (inst->dst.is_accumulator()) {
          add_dep(last_accumulator_write, n);
          last_accumulator_write = n;
+      } else if (inst->dst.is_address()) {
+         if (post_reg_alloc) {
+            for (unsigned byte = 0; byte < inst->size_written; byte += 2) {
+               add_dep(last_address_write[inst->dst.address_slot(byte)], n);
+               last_address_write[inst->dst.address_slot(byte)] = n;
+            }
+         }
       } else if (register_needs_barrier(inst->dst)) {
          add_barrier_deps(n);
       }
@@ -1284,6 +1409,13 @@ instruction_scheduler::calculate_deps()
          add_dep(last_accumulator_write, n);
          last_accumulator_write = n;
       }
+
+      if (post_reg_alloc && inst->uses_address_register_implicitly()) {
+         for (unsigned i = 0; i < ARRAY_SIZE(last_address_write); i++) {
+            add_dep(last_address_write[i], n);
+            last_address_write[i] = n;
+         }
+      }
    }
 
    clear_last_grf_write();
@@ -1292,6 +1424,7 @@ instruction_scheduler::calculate_deps()
    memset(last_conditional_mod, 0, sizeof(last_conditional_mod));
    last_accumulator_write = NULL;
    last_fixed_grf_write = NULL;
+   memset(last_address_write, 0, sizeof(last_address_write));
 
    for (schedule_node *n = current.end - 1; n >= current.start; n--) {
       fs_inst *inst = (fs_inst *)n->inst;
@@ -1310,6 +1443,12 @@ instruction_scheduler::calculate_deps()
             }
          } else if (inst->src[i].is_accumulator()) {
             add_dep(n, last_accumulator_write, 0);
+         } else if (inst->src[i].is_address()) {
+            if (post_reg_alloc) {
+               for (unsigned byte = 0; byte < inst->size_read(s->devinfo, i); byte += 2) {
+                  add_dep(n, last_address_write[inst->src[i].address_slot(byte)], 0);
+               }
+            }
          } else if (register_needs_barrier(inst->src[i])) {
             add_barrier_deps(n);
          }
@@ -1328,6 +1467,11 @@ instruction_scheduler::calculate_deps()
          add_dep(n, last_accumulator_write);
       }
 
+      if (post_reg_alloc && inst->uses_address_register_implicitly()) {
+         for (unsigned i = 0; i < ARRAY_SIZE(last_address_write); i++)
+            last_address_write[i] = n;
+      }
+
       /* Update the things this instruction wrote, so earlier reads
        * can mark this as WAR dependency.
        */
@@ -1343,6 +1487,11 @@ instruction_scheduler::calculate_deps()
          }
       } else if (inst->dst.is_accumulator()) {
          last_accumulator_write = n;
+      } else if (inst->dst.is_address()) {
+         if (post_reg_alloc) {
+            for (unsigned byte = 0; byte < inst->size_written; byte += 2)
+               last_address_write[inst->dst.address_slot(byte)] = n;
+         }
       } else if (register_needs_barrier(inst->dst)) {
          add_barrier_deps(n);
       }
@@ -1364,6 +1513,39 @@ instruction_scheduler::calculate_deps()
    clear_last_grf_write();
 }
 
+bool
+instruction_scheduler::address_register_interfere(const schedule_node *n)
+{
+   if (n->inst->uses_address_register_implicitly()) {
+      for (unsigned i = 0; i < ARRAY_SIZE(current.address_register); i++)
+         if (current.address_register[i] != 0)
+            return true;
+      return false;
+   }
+
+   if (n->inst->dst.is_address()) {
+      for (unsigned byte = 0; byte < n->inst->size_written; byte += 2) {
+         if (current.address_register[n->inst->dst.address_slot(byte)] != 0 &&
+             current.address_register[n->inst->dst.address_slot(byte)] != n->inst->dst.nr)
+            return true;
+      }
+   }
+
+   if (n->address_read_count > 0) {
+      for (unsigned i = 0; i < n->inst->sources; i++) {
+         if (!n->inst->src[i].is_address())
+            continue;
+         for (unsigned byte = 0; byte < n->inst->size_read(s->devinfo, i); byte += 2) {
+            if (current.address_register[n->inst->src[i].address_slot(byte)] !=
+                n->inst->src[i].nr)
+               return true;
+         }
+      }
+   }
+
+   return false;
+}
+
 schedule_node *
 instruction_scheduler::choose_instruction_to_schedule()
 {
@@ -1377,6 +1559,9 @@ instruction_scheduler::choose_instruction_to_schedule()
        * otherwise the oldest one.
        */
       foreach_in_list(schedule_node, n, &current.available) {
+         if (!post_reg_alloc && address_register_interfere(n))
+            continue;
+
          if (!chosen ||
              exit_tmp_unblocked_time(n) < exit_tmp_unblocked_time(chosen) ||
              (exit_tmp_unblocked_time(n) == exit_tmp_unblocked_time(chosen) &&
@@ -1395,6 +1580,9 @@ instruction_scheduler::choose_instruction_to_schedule()
        * latency.
        */
       foreach_in_list(schedule_node, n, &current.available) {
+         if (!post_reg_alloc && address_register_interfere(n))
+            continue;
+
          if (!chosen) {
             chosen = n;
             chosen_register_pressure_benefit =
@@ -1512,6 +1700,29 @@ instruction_scheduler::schedule(schedule_node *chosen)
 void
 instruction_scheduler::update_children(schedule_node *chosen)
 {
+   if (chosen->address_read_count > 0) {
+      for (unsigned i = 0; i < chosen->inst->sources; i++) {
+         if (!chosen->inst->src[i].is_address())
+            continue;
+         for (unsigned byte = 0; byte < chosen->inst->size_read(s->devinfo, i); byte += 2) {
+            assert(chosen->inst->src[i].address_slot(byte) <
+                   ARRAY_SIZE(current.address_register));
+            current.address_register[chosen->inst->src[i].address_slot(byte)] = 0;
+         }
+      }
+   }
+
+   if (chosen->inst->dst.is_address()) {
+      for (unsigned byte = 0; byte < chosen->inst->size_written; byte += 2) {
+         assert(chosen->inst->dst.address_slot(byte) <
+                ARRAY_SIZE(current.address_register));
+         current.address_register[
+            chosen->inst->dst.address_slot(byte)] = chosen->inst->dst.nr;
+      }
+   } else if (chosen->inst->uses_address_register_implicitly()) {
+      memset(current.address_register, 0, sizeof(current.address_register));
+   }
+
    /* Now that we've scheduled a new instruction, some of its
     * children can be promoted to the list of instructions ready to
     * be scheduled.  Update the children's unblocked time for this
@@ -1556,6 +1767,8 @@ instruction_scheduler::schedule_instructions()
    }
 
    current.block->instructions.make_empty();
+
+   memset(current.address_register, 0, sizeof(current.address_register));
 
    while (!current.available.is_empty()) {
       schedule_node *chosen = choose_instruction_to_schedule();
