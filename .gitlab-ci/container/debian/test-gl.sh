@@ -104,6 +104,10 @@ PIGLIT_OPTS="-DPIGLIT_USE_WAFFLE=ON
 
 ############### Build dEQP GL
 
+DEQP_API=tools \
+DEQP_TARGET=surfaceless \
+. .gitlab-ci/container/build-deqp.sh
+
 DEQP_API=GL \
 DEQP_TARGET=surfaceless \
 . .gitlab-ci/container/build-deqp.sh

@@ -17,10 +17,12 @@ uncollapsed_section_start deqp-$deqp_api "Building dEQP $DEQP_API"
 
 # See `deqp_build_targets` below for which release is used to produce which
 # binary. Unless this comment has bitrotten:
+# - the commit from the main branch produces the deqp tools,
 # - the VK release produces `deqp-vk`,
 # - the GL release produces `glcts`, and
 # - the GLES release produces `deqp-gles*` and `deqp-egl`
 
+DEQP_MAIN_COMMIT=e9a562cfdc4d05044e8465525a79e97016b7b324
 DEQP_VK_VERSION=1.3.10.0
 DEQP_GL_VERSION=4.6.5.0
 DEQP_GLES_VERSION=3.2.11.0
@@ -88,6 +90,7 @@ git config --global user.name "Mesa CI"
 
 # shellcheck disable=SC2153
 case "${DEQP_API}" in
+  tools) DEQP_VERSION="$DEQP_MAIN_COMMIT";;
   VK) DEQP_VERSION="vulkan-cts-$DEQP_VK_VERSION";;
   GL) DEQP_VERSION="opengl-cts-$DEQP_GL_VERSION";;
   GLES) DEQP_VERSION="opengl-es-cts-$DEQP_GLES_VERSION";;
@@ -106,35 +109,43 @@ DEQP_COMMIT=$(git rev-parse FETCH_HEAD)
 
 mkdir -p /deqp
 
-cts_commits_to_backport="${deqp_api}_cts_commits_to_backport[@]"
-for commit in "${!cts_commits_to_backport}"
-do
-  PATCH_URL="https://github.com/KhronosGroup/VK-GL-CTS/commit/$commit.patch"
-  echo "Apply patch to ${DEQP_API} CTS from $PATCH_URL"
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 $PATCH_URL | \
-    GIT_COMMITTER_DATE=$(date -d@0) git am -
-done
+if [ "$DEQP_API" = tools ]; then
+  commit_desc=$(git show --no-patch --format='commit %h on %ci' --abbrev=10 "$DEQP_COMMIT")
+  echo "dEQP main at $commit_desc" > /deqp/version-$deqp_api
+else
+  cts_commits_to_backport="${deqp_api}_cts_commits_to_backport[@]"
+  for commit in "${!cts_commits_to_backport}"
+  do
+    PATCH_URL="https://github.com/KhronosGroup/VK-GL-CTS/commit/$commit.patch"
+    echo "Apply patch to ${DEQP_API} CTS from $PATCH_URL"
+    curl -L --retry 4 -f --retry-all-errors --retry-delay 60 $PATCH_URL | \
+      GIT_COMMITTER_DATE=$(date -d@0) git am -
+  done
 
-cts_patch_files="${deqp_api}_cts_patch_files[@]"
-for patch in "${!cts_patch_files}"
-do
-  echo "Apply patch to ${DEQP_API} CTS from $patch"
-  GIT_COMMITTER_DATE=$(date -d@0) git am < $OLDPWD/.gitlab-ci/container/patches/$patch
-done
+  cts_patch_files="${deqp_api}_cts_patch_files[@]"
+  for patch in "${!cts_patch_files}"
+  do
+    echo "Apply patch to ${DEQP_API} CTS from $patch"
+    GIT_COMMITTER_DATE=$(date -d@0) git am < $OLDPWD/.gitlab-ci/container/patches/$patch
+  done
 
-{
-  echo "dEQP base version $DEQP_VERSION"
-  echo "The following local patches are applied on top:"
-  git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
-} > /deqp/version-$deqp_api
+  {
+    echo "dEQP base version $DEQP_VERSION"
+    echo "The following local patches are applied on top:"
+    git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
+  } > /deqp/version-$deqp_api
+fi
 
 # --insecure is due to SSL cert failures hitting sourceforge for zlib and
 # libpng (sigh).  The archives get their checksums checked anyway, and git
 # always goes through ssh or https.
 python3 external/fetch_sources.py --insecure
 
-# Save the testlog stylesheets:
-cp doc/testlog-stylesheet/testlog.{css,xsl} /deqp
+if [[ "$DEQP_API" = tools ]]; then
+  # Save the testlog stylesheets:
+  cp doc/testlog-stylesheet/testlog.{css,xsl} /deqp
+fi
+
 popd
 
 pushd /deqp
@@ -191,14 +202,16 @@ case "${DEQP_API}" in
     deqp_build_targets+=(glcts)  # needed for gles*-khr tests
     # deqp-egl also comes from this build, but it is handled separately above.
     ;;
+  tools)
+    deqp_build_targets+=(testlog-to-xml)
+    deqp_build_targets+=(testlog-to-csv)
+    deqp_build_targets+=(testlog-to-junit)
+    ;;
 esac
-deqp_build_targets+=(testlog-to-xml)
-deqp_build_targets+=(testlog-to-csv)
-deqp_build_targets+=(testlog-to-junit)
 
 ninja "${deqp_build_targets[@]}"
 
-if [ "${DEQP_TARGET}" != 'android' ]; then
+if [ "${DEQP_TARGET}" != 'android' ] && [ "$DEQP_API" != tools ]; then
     # Copy out the mustpass lists we want.
     mkdir -p /deqp/mustpass
 
@@ -235,10 +248,12 @@ if [ "${DEQP_TARGET}" != 'android' ]; then
     zstd -1 --rm /deqp/mustpass/*.txt
 fi
 
-# Save *some* executor utils, but otherwise strip things down
-# to reduct deqp build size:
-mv /deqp/executor/testlog-to-* /deqp
-rm -rf /deqp/executor
+if [ "$DEQP_API" = tools ]; then
+    # Save *some* executor utils, but otherwise strip things down
+    # to reduct deqp build size:
+    mv /deqp/executor/testlog-to-* /deqp
+    rm -rf /deqp/executor
+fi
 
 # Remove other mustpass files, since we saved off the ones we wanted to conventient locations above.
 rm -rf /deqp/external/**/mustpass/
