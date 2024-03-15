@@ -2609,6 +2609,32 @@ emit_shfl(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    return shfl;
 }
 
+static void
+emit_ray_intersection(struct ir3_context *ctx, nir_intrinsic_instr *intr,
+                      struct ir3_instruction **dst)
+{
+   struct ir3_builder *b = &ctx->build;
+
+   struct ir3_instruction *bvh_base =
+      ir3_create_collect(b, ir3_get_src(ctx, &intr->src[0]), 2);
+   struct ir3_instruction *idx = ir3_get_src(ctx, &intr->src[1])[0];
+
+   struct ir3_instruction *ray_info =
+      ir3_create_collect(b, ir3_get_src(ctx, &intr->src[2]), 8);
+   struct ir3_instruction *flags = ir3_get_src(ctx, &intr->src[3])[0];
+
+   struct ir3_instruction *dst_init =
+      ir3_collect(b, NULL, NULL, NULL, create_immed(b, 0), NULL);
+
+   struct ir3_instruction *ray_intersection =
+      ir3_RAY_INTERSECTION(b, bvh_base, 0, idx, 0, ray_info, 0, flags, 0,
+                           dst_init, 0);
+   ray_intersection->dsts[0]->wrmask = MASK(5);
+   ir3_reg_tie(ray_intersection->dsts[0], ray_intersection->srcs[4]);
+
+   ir3_split_dest(b, dst, ray_intersection, 0, 5);
+}
+
 static void setup_input(struct ir3_context *ctx, nir_intrinsic_instr *intr);
 static void setup_output(struct ir3_context *ctx, nir_intrinsic_instr *intr);
 
@@ -3416,6 +3442,9 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_shuffle_down_uniform_ir3:
    case nir_intrinsic_shuffle_xor_uniform_ir3:
       dst[0] = emit_shfl(ctx, intr);
+      break;
+   case nir_intrinsic_ray_intersection_ir3:
+      emit_ray_intersection(ctx, intr, dst);
       break;
    default:
       ir3_context_error(ctx, "Unhandled intrinsic type: %s\n",
