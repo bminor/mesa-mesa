@@ -1267,6 +1267,11 @@ static const uint32_t av1_max_qindex          = 255;
 static const uint32_t av1_num_qm_levels       = 16;
 static const uint32_t av1_scaling_factor      = (1 << 14);
 
+static const uint32_t av1_warped_model_prec_bits  = 16;  /* Warp model precision bits */
+static const uint32_t av1_gm_trans_prec_diff      = 10;  /* Warp model precision bits - gm transformation precision bits */
+static const uint32_t av1_gm_trans_only_prec_diff = 13;  /* Warp model precision bits - 3 */
+static const uint32_t av1_gm_alpha_prec_diff      = 1;   /* Warp model precision bits - gm alpha precision bits */
+
 static uint32_t
 get_qindex(const VkVideoDecodeAV1PictureInfoKHR *av1_pic_info,
            uint32_t segment_id)
@@ -2080,10 +2085,45 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       pic.FrameLevelGlobalMotionInvalidFlags = 0;
 
       uint8_t idx = 0;
+      int warp_params[8][6] = { 0, };
+
+      for (enum av1_ref_frame r = AV1_LAST_FRAME; r <= AV1_ALTREF_FRAME; r++) {
+         unsigned gm_type = std_pic_info->pGlobalMotion->GmType[r];
+
+         for (uint32_t i = 0; i < STD_VIDEO_AV1_GLOBAL_MOTION_PARAMS; i++) {
+            warp_params[r][i] = std_pic_info->pGlobalMotion->gm_params[r][i];
+         }
+
+         if (gm_type >= AV1_ROTZOOM) {
+            warp_params[r][2] -= (1 << av1_warped_model_prec_bits);
+            warp_params[r][2] >>= av1_gm_alpha_prec_diff;
+            warp_params[r][3] >>= av1_gm_alpha_prec_diff;
+         }
+
+         if (gm_type == AV1_AFFINE) {
+            warp_params[r][4] >>= av1_gm_alpha_prec_diff;
+            warp_params[r][5] -= (1 << av1_warped_model_prec_bits);
+            warp_params[r][5] >>= av1_gm_alpha_prec_diff;
+         } else {
+            warp_params[r][4] = -warp_params[r][3];
+            warp_params[r][5] = warp_params[r][2];
+         }
+
+         if (gm_type >= AV1_TRANSLATION) {
+            int trans_shift =
+               (gm_type == AV1_TRANSLATION) ?
+                  av1_gm_trans_only_prec_diff + (std_pic_info->flags.allow_high_precision_mv ? 0 : 1) :
+                  av1_gm_trans_prec_diff;
+
+            warp_params[r][0] >>= trans_shift;
+            warp_params[r][1] >>= trans_shift;
+         }
+
+      }
 
       for (enum av1_ref_frame r = AV1_LAST_FRAME; r <= AV1_ALTREF_FRAME; r++) {
          for (uint32_t i = 0; i < STD_VIDEO_AV1_GLOBAL_MOTION_PARAMS; i++)
-            pic.WarpParameters[idx++] =  std_pic_info->pGlobalMotion->gm_params[r][i] & 0xffff;
+            pic.WarpParameters[idx++] =  warp_params[r][i] & 0xffff;
       }
 
       pic.ReferenceFrameIdx1 = AV1_LAST_FRAME;
