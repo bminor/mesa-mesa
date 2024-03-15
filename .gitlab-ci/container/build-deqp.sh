@@ -93,12 +93,13 @@ case "${DEQP_API}" in
   GLES) DEQP_VERSION="opengl-es-cts-$DEQP_GLES_VERSION";;
 esac
 
-git clone \
-    https://github.com/KhronosGroup/VK-GL-CTS.git \
-    -b $DEQP_VERSION \
-    --depth 1 \
-    /VK-GL-CTS
+mkdir /VK-GL-CTS
 pushd /VK-GL-CTS
+git init
+git remote add origin https://github.com/KhronosGroup/VK-GL-CTS.git
+git fetch --depth 1 origin "$DEQP_VERSION"
+git checkout FETCH_HEAD
+DEQP_COMMIT=$(git rev-parse FETCH_HEAD)
 
 mkdir -p /deqp
 
@@ -121,7 +122,7 @@ done
 {
   echo "dEQP base version $DEQP_VERSION"
   echo "The following local patches are applied on top:"
-  git log --reverse --oneline $DEQP_VERSION.. --format='- %s'
+  git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
 } > /deqp/version-$deqp_api
 
 # --insecure is due to SSL cert failures hitting sourceforge for zlib and
