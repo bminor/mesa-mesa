@@ -495,6 +495,7 @@ lower_intrinsic(nir_builder *b, nir_intrinsic_instr *instr,
 
    case nir_intrinsic_load_ubo:
    case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_load_uav_ir3:
    case nir_intrinsic_store_ssbo:
    case nir_intrinsic_ssbo_atomic:
    case nir_intrinsic_ssbo_atomic_swap:
