@@ -50,8 +50,8 @@ $ADB shell setenforce 0
 
 # deqp
 
-$ADB push /deqp/modules/egl/deqp-egl-android /data/.
-$ADB push /deqp/assets/gl_cts/data/mustpass/egl/aosp_mustpass/3.2.6.x/egl-main.txt /data/
+$ADB push /deqp-gles/modules/egl/deqp-egl-android /data/.
+$ADB push /deqp-gles/assets/gl_cts/data/mustpass/egl/aosp_mustpass/3.2.6.x/egl-main.txt /data/
 $ADB push /deqp-runner/deqp-runner /data/.
 
 # download Android Mesa from S3
@@ -101,7 +101,7 @@ $ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; ./deqp-runner \
     --output $RESULTS \
     --skips /data/all-skips.txt $DEQP_SKIPS \
     --flakes /data/$GPU_VERSION-flakes.txt \
-    --testlog-to-xml /deqp/testlog-to-xml \
+    --testlog-to-xml /deqp-tools/testlog-to-xml \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $(( CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
     --jobs ${FDO_CI_CONCURRENT:-4} \

@@ -312,7 +312,7 @@ DEQP_TARGET=default \
 
 rm -rf /VK-GL-CTS
 
-mv /deqp $ROOTFS/.
+mv /deqp-* $ROOTFS/.
 
 
 ############### Build SKQP

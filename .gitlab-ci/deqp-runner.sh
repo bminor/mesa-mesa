@@ -60,17 +60,17 @@ if [ -z "$DEQP_SUITE" ]; then
 
     # Generate test case list file.
     if [ "$DEQP_VER" = "vk" ]; then
-       MUSTPASS=/deqp/mustpass/vk-main.txt.zst
-       DEQP=/deqp/external/vulkancts/modules/vulkan/deqp-vk
+       MUSTPASS=/deqp-vk/mustpass/vk-main.txt.zst
+       DEQP=/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk
     elif [ "$DEQP_VER" = "gles2" ] || [ "$DEQP_VER" = "gles3" ] || [ "$DEQP_VER" = "gles31" ] || [ "$DEQP_VER" = "egl" ]; then
-       MUSTPASS=/deqp/mustpass/$DEQP_VER-main.txt.zst
-       DEQP=/deqp/modules/$DEQP_VER/deqp-$DEQP_VER
+       MUSTPASS=/deqp-gles/mustpass/$DEQP_VER-main.txt.zst
+       DEQP=/deqp-gles/modules/$DEQP_VER/deqp-$DEQP_VER
     elif [ "$DEQP_VER" = "gles2-khr" ] || [ "$DEQP_VER" = "gles3-khr" ] || [ "$DEQP_VER" = "gles31-khr" ] || [ "$DEQP_VER" = "gles32-khr" ]; then
-       MUSTPASS=/deqp/mustpass/$DEQP_VER-main.txt.zst
-       DEQP=/deqp/external/openglcts/modules/glcts
+       MUSTPASS=/deqp-gles/mustpass/$DEQP_VER-main.txt.zst
+       DEQP=/deqp-gles/external/openglcts/modules/glcts
     else
-       MUSTPASS=/deqp/mustpass/$DEQP_VER-main.txt.zst
-       DEQP=/deqp/external/openglcts/modules/glcts
+       MUSTPASS=/deqp-gl/mustpass/$DEQP_VER-main.txt.zst
+       DEQP=/deqp-gl/external/openglcts/modules/glcts
     fi
 
     [ -z "${DEQP_FRACTION:-}" ] && DEQP_FRACTION=1
@@ -189,7 +189,7 @@ uncollapsed_section_switch deqp "deqp: deqp-runner"
 # Print the detailed version with the list of backports and local patches
 { set +x; } 2>/dev/null
 for api in vk gl gles; do
-  deqp_version_log=/deqp/version-$api
+  deqp_version_log=/deqp-$api/version
   if [ -r "$deqp_version_log" ]; then
     cat "$deqp_version_log"
   fi
@@ -206,7 +206,7 @@ if [ -z "$DEQP_SUITE" ]; then
         --caselist /tmp/case-list.txt \
         --skips $INSTALL/all-skips.txt $DEQP_SKIPS \
         --flakes $INSTALL/$GPU_VERSION-flakes.txt \
-        --testlog-to-xml /deqp/testlog-to-xml \
+        --testlog-to-xml /deqp-tools/testlog-to-xml \
         --jobs ${FDO_CI_CONCURRENT:-4} \
         $DEQP_RUNNER_OPTIONS \
         -- \
@@ -222,7 +222,7 @@ else
         --output $RESULTS_DIR \
         --skips $INSTALL/all-skips.txt $DEQP_SKIPS \
         --flakes $INSTALL/$GPU_VERSION-flakes.txt \
-        --testlog-to-xml /deqp/testlog-to-xml \
+        --testlog-to-xml /deqp-tools/testlog-to-xml \
         --fraction-start ${CI_NODE_INDEX:-1} \
         --fraction $((CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
         --jobs ${FDO_CI_CONCURRENT:-4} \
@@ -247,7 +247,7 @@ find $RESULTS_DIR -name \*.xml | \
 
 # If any QPA XMLs are there, then include the XSL/CSS in our artifacts.
 find $RESULTS_DIR -name \*.xml \
-    -exec cp /deqp/testlog.css /deqp/testlog.xsl "$RESULTS_DIR/" ";" \
+    -exec cp /deqp-tools/testlog.css /deqp-tools/testlog.xsl "$RESULTS_DIR/" ";" \
     -quit
 
 deqp-runner junit \

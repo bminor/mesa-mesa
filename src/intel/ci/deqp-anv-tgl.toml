@@ -1,15 +1,15 @@
 # Basic test set
 [[deqp]]
-deqp = "/deqp/external/vulkancts/modules/vulkan/deqp-vk"
-caselists = ["/deqp/mustpass/vk-main.txt"]
+deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
+caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 skips = ["install/anv-tgl-skips.txt"]
 fraction = 6
 renderer_check = "TGL GT2"
 
 # Rerun query tests with shader query optimizations (14443 tests)
 [[deqp]]
-deqp = "/deqp/external/vulkancts/modules/vulkan/deqp-vk"
-caselists = ["/deqp/mustpass/vk-main.txt"]
+deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
+caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 renderer_check = "TGL GT2"
 include = ["dEQP-VK.query_pool.*"]
 prefix = "shaderquery-"
@@ -20,8 +20,8 @@ prefix = "shaderquery-"
 # Rerun indirect tests with in-place generation shader optimizations
 # (3814 tests)
 [[deqp]]
-deqp = "/deqp/external/vulkancts/modules/vulkan/deqp-vk"
-caselists = ["/deqp/mustpass/vk-main.txt"]
+deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
+caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 renderer_check = "TGL GT2"
 include = ["dEQP-VK.draw.*indirect*"]
 prefix = "indirectgen-inplace-"
@@ -31,8 +31,8 @@ prefix = "indirectgen-inplace-"
 # Rerun indirect tests with ring-buffer generation shader optimizations
 # (3814 tests)
 [[deqp]]
-deqp = "/deqp/external/vulkancts/modules/vulkan/deqp-vk"
-caselists = ["/deqp/mustpass/vk-main.txt"]
+deqp = "/deqp-vk/external/vulkancts/modules/vulkan/deqp-vk"
+caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 renderer_check = "TGL GT2"
 include = ["dEQP-VK.draw.*indirect*"]
 prefix = "indirectgen-inring-"
