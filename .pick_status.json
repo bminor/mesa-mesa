@@ -964,7 +964,7 @@
         "description": "anv/video: Fix to return supported video format correctly.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a64ae20d0f023545ec966e7a4e81390adb901cde",
         "notes": null
