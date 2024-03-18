@@ -1240,6 +1240,23 @@ radv_emit_sample_locations(struct radv_cmd_buffer *cmd_buffer)
    }
    radeon_emit(cs, centroid_priority);
    radeon_emit(cs, centroid_priority >> 32);
+
+   if (pdev->info.gfx_level >= GFX7) {
+      /* The exclusion bits can be set to improve rasterization efficiency if no sample lies on the pixel boundary
+       * (-8 sample offset).
+       */
+      uint32_t pa_su_prim_filter_cntl = S_02882C_XMAX_RIGHT_EXCLUSION(1) | S_02882C_YMAX_BOTTOM_EXCLUSION(1);
+      for (uint32_t i = 0; i < 4; ++i) {
+         for (uint32_t j = 0; j < num_samples; ++j) {
+            if (sample_locs[i][j].x <= -8)
+               pa_su_prim_filter_cntl &= C_02882C_XMAX_RIGHT_EXCLUSION;
+            if (sample_locs[i][j].y <= -8)
+               pa_su_prim_filter_cntl &= C_02882C_YMAX_BOTTOM_EXCLUSION;
+         }
+      }
+
+      radeon_set_context_reg(cs, R_02882C_PA_SU_PRIM_FILTER_CNTL, pa_su_prim_filter_cntl);
+   }
 }
 
 static void

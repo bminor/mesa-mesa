@@ -770,12 +770,6 @@ radv_emit_graphics(struct radv_device *device, struct radeon_cmdbuf *cs)
       radeon_set_context_reg(cs, R_028234_PA_SU_HARDWARE_SCREEN_OFFSET, 0);
    }
 
-   if (pdev->info.gfx_level >= GFX7) {
-      /* If any sample location uses the -8 coordinate, the EXCLUSION fields should be set to 0. */
-      radeon_set_context_reg(cs, R_02882C_PA_SU_PRIM_FILTER_CNTL,
-                             S_02882C_XMAX_RIGHT_EXCLUSION(1) | S_02882C_YMAX_BOTTOM_EXCLUSION(1));
-   }
-
    if (pdev->info.gfx_level <= GFX8)
       radeon_set_sh_reg(cs, R_00B324_SPI_SHADER_PGM_HI_ES, S_00B324_MEM_BASE(pdev->info.address32_hi >> 8));
 
