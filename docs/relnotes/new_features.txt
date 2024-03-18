@@ -28,3 +28,4 @@ KHR_partial_update on etnaviv
 VK_KHR_line_rasterization on panvk
 shaderImageGatherExtended on panvk
 textureCompressionBC on panvk
+VK_EXT_sample_locations on RADV for GFX10+
