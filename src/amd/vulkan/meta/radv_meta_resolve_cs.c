@@ -15,6 +15,30 @@
 #include "vk_format.h"
 #include "vk_shader_module.h"
 
+static enum radv_meta_resolve_compute_type
+radv_meta_get_resolve_compute_type(VkFormat format)
+{
+   if (vk_format_is_int(format))
+      return RADV_META_RESOLVE_COMPUTE_INTEGER;
+
+   if (vk_format_is_unorm(format) || vk_format_is_snorm(format)) {
+      uint32_t max_bit_size = 0;
+      for (uint32_t i = 0; i < vk_format_get_nr_components(format); i++)
+         max_bit_size = MAX2(max_bit_size, vk_format_get_component_bits(format, UTIL_FORMAT_COLORSPACE_RGB, i));
+
+      /* srgb formats are all 8-bit */
+      if (vk_format_is_srgb(format)) {
+         assert(max_bit_size == 8);
+         return RADV_META_RESOLVE_COMPUTE_NORM_SRGB;
+      }
+
+      if (max_bit_size <= 10)
+         return RADV_META_RESOLVE_COMPUTE_NORM;
+   }
+
+   return RADV_META_RESOLVE_COMPUTE_FLOAT;
+}
+
 static VkResult
 create_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 {
@@ -53,8 +77,7 @@ create_layout(struct radv_device *device, VkPipelineLayout *layout_out)
 
 struct radv_resolve_color_cs_key {
    enum radv_meta_object_key_type type;
-   bool is_integer;
-   bool is_srgb;
+   enum radv_meta_resolve_compute_type resolve_type;
    uint8_t samples;
 };
 
@@ -62,8 +85,7 @@ static VkResult
 get_color_resolve_pipeline(struct radv_device *device, struct radv_image_view *src_iview, VkPipeline *pipeline_out,
                            VkPipelineLayout *layout_out)
 {
-   const bool is_integer = vk_format_is_int(src_iview->vk.format);
-   const bool is_srgb = vk_format_is_srgb(src_iview->vk.format);
+   const enum radv_meta_resolve_compute_type type = radv_meta_get_resolve_compute_type(src_iview->vk.format);
    uint32_t samples = src_iview->image->vk.samples;
    struct radv_resolve_color_cs_key key;
    VkResult result;
@@ -74,8 +96,7 @@ get_color_resolve_pipeline(struct radv_device *device, struct radv_image_view *s
 
    memset(&key, 0, sizeof(key));
    key.type = RADV_META_OBJECT_KEY_RESOLVE_COLOR_CS;
-   key.is_integer = is_integer;
-   key.is_srgb = is_srgb;
+   key.resolve_type = type;
    key.samples = samples;
 
    VkPipeline pipeline_from_cache = vk_meta_lookup_pipeline(&device->meta_state.device, &key, sizeof(key));
@@ -84,7 +105,7 @@ get_color_resolve_pipeline(struct radv_device *device, struct radv_image_view *s
       return VK_SUCCESS;
    }
 
-   nir_shader *cs = radv_meta_nir_build_resolve_compute_shader(device, is_integer, is_srgb, samples);
+   nir_shader *cs = radv_meta_nir_build_resolve_compute_shader(device, type, samples);
 
    const VkPipelineShaderStageCreateInfo stage_info = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,

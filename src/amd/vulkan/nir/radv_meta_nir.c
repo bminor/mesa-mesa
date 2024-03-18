@@ -1274,14 +1274,32 @@ radv_meta_build_resolve_srgb_conversion(nir_builder *b, nir_def *input)
    return nir_vec(b, comp, 4);
 }
 
-nir_shader *
-radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev, bool is_integer, bool is_srgb, int samples)
+static const char *
+radv_meta_resolve_compute_type_name(enum radv_meta_resolve_compute_type type)
 {
-   enum glsl_base_type img_base_type = is_integer ? GLSL_TYPE_UINT : GLSL_TYPE_FLOAT;
+   switch (type) {
+   case RADV_META_RESOLVE_COMPUTE_NORM:
+      return "norm";
+   case RADV_META_RESOLVE_COMPUTE_NORM_SRGB:
+      return "srgb";
+   case RADV_META_RESOLVE_COMPUTE_INTEGER:
+      return "integer";
+   case RADV_META_RESOLVE_COMPUTE_FLOAT:
+      return "float";
+   default:
+      unreachable("invalid compute resolve type");
+   }
+}
+
+nir_shader *
+radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev, enum radv_meta_resolve_compute_type type,
+                                           int samples)
+{
+   enum glsl_base_type img_base_type = type == RADV_META_RESOLVE_COMPUTE_INTEGER ? GLSL_TYPE_UINT : GLSL_TYPE_FLOAT;
    const struct glsl_type *sampler_type = glsl_sampler_type(GLSL_SAMPLER_DIM_MS, false, false, img_base_type);
    const struct glsl_type *img_type = glsl_image_type(GLSL_SAMPLER_DIM_2D, false, img_base_type);
    nir_builder b = radv_meta_nir_init_shader(dev, MESA_SHADER_COMPUTE, "meta_resolve_cs-%d-%s", samples,
-                                         is_integer ? "int" : (is_srgb ? "srgb" : "float"));
+                                             radv_meta_resolve_compute_type_name(type));
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = 8;
 
@@ -1303,11 +1321,15 @@ radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev, bool is_inte
 
    nir_variable *color = nir_local_variable_create(b.impl, glsl_vec4_type(), "color");
 
-   radv_meta_nir_build_resolve_shader_core(dev, &b, is_integer, samples, input_img, color, src_coord);
+   radv_meta_nir_build_resolve_shader_core(dev, &b, type == RADV_META_RESOLVE_COMPUTE_INTEGER, samples, input_img,
+                                           color, src_coord);
 
    nir_def *outval = nir_load_var(&b, color);
-   if (is_srgb)
+   if (type == RADV_META_RESOLVE_COMPUTE_NORM_SRGB)
       outval = radv_meta_build_resolve_srgb_conversion(&b, outval);
+
+   if (type == RADV_META_RESOLVE_COMPUTE_NORM || type == RADV_META_RESOLVE_COMPUTE_NORM_SRGB)
+      outval = nir_f2f32(&b, nir_f2f16_rtz(&b, outval));
 
    nir_def *img_coord = nir_vec4(&b, nir_channel(&b, dst_coord, 0), nir_channel(&b, dst_coord, 1), nir_undef(&b, 1, 32),
                                  nir_undef(&b, 1, 32));

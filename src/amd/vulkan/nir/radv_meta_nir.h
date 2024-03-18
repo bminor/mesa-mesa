@@ -89,8 +89,17 @@ enum radv_meta_resolve_type {
    RADV_META_DEPTH_RESOLVE,
    RADV_META_STENCIL_RESOLVE,
 };
-nir_shader *radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev, bool is_integer, bool is_srgb,
-                                                       int samples);
+
+enum radv_meta_resolve_compute_type {
+   RADV_META_RESOLVE_COMPUTE_NORM,
+   RADV_META_RESOLVE_COMPUTE_NORM_SRGB,
+   RADV_META_RESOLVE_COMPUTE_INTEGER,
+   RADV_META_RESOLVE_COMPUTE_FLOAT,
+   RADV_META_RESOLVE_COMPUTE_COUNT,
+};
+
+nir_shader *radv_meta_nir_build_resolve_compute_shader(struct radv_device *dev,
+                                                       enum radv_meta_resolve_compute_type type, int samples);
 nir_shader *radv_meta_nir_build_depth_stencil_resolve_compute_shader(struct radv_device *dev, int samples,
                                                                      enum radv_meta_resolve_type index,
                                                                      VkResolveModeFlagBits resolve_mode);
