@@ -1738,7 +1738,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
    p->sampleLocationCoordinateRange[0] = 0.0f;
    p->sampleLocationCoordinateRange[1] = 0.9375f;
    p->sampleLocationSubPixelBits = 4;
-   p->variableSampleLocations = false;
+   p->variableSampleLocations = true;
 
    /* VK_KHR_line_rasterization */
    p->lineSubPixelPrecisionBits = 4;
