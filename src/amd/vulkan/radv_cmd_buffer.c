@@ -1226,6 +1226,7 @@ radv_emit_sample_locations(struct radv_cmd_buffer *cmd_buffer)
 
    /* Emit the specified user sample locations. */
    switch (num_samples) {
+   case 1:
    case 2:
    case 4:
       radeon_set_context_reg(R_028BF8_PA_SC_AA_SAMPLE_LOCS_PIXEL_X0Y0_0, sample_locs_pixel[0][0]);

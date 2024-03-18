@@ -1721,7 +1721,8 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .transformFeedbackDraw = true,
 
       /* VK_EXT_sample_locations */
-      .sampleLocationSampleCounts = VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT,
+      .sampleLocationSampleCounts = (pdev->info.gfx_level >= GFX10 ? VK_SAMPLE_COUNT_1_BIT : 0) |
+                                    VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT,
       .maxSampleLocationGridSize = (VkExtent2D){2, 2},
       .sampleLocationCoordinateRange = {0.0f, 0.9375f},
       .sampleLocationSubPixelBits = 4,
@@ -2695,7 +2696,11 @@ VKAPI_ATTR void VKAPI_CALL
 radv_GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice, VkSampleCountFlagBits samples,
                                                VkMultisamplePropertiesEXT *pMultisampleProperties)
 {
+   VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
+
    VkSampleCountFlagBits supported_samples = VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT;
+   if (pdev->info.gfx_level >= GFX10)
+      supported_samples |= VK_SAMPLE_COUNT_1_BIT;
 
    if (samples & supported_samples) {
       pMultisampleProperties->maxSampleLocationGridSize = (VkExtent2D){2, 2};
