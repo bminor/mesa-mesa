@@ -82,3 +82,4 @@ VK_EXT_shader_replicated_composites on pvr
 VK_KHR_device_group_creation on pvr
 VK_KHR_map_memory2 on pvr
 VK_EXT_map_memory_placed on pvr
+VK_KHR_device_group on pvr

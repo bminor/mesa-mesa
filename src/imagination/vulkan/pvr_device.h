@@ -30,6 +30,18 @@
 #include "pvr_spm.h"
 #include "pvr_usc.h"
 
+#if defined(VK_USE_PLATFORM_DISPLAY_KHR)
+#   define PVR_USE_WSI_PLATFORM_DISPLAY true
+#else
+#   define PVR_USE_WSI_PLATFORM_DISPLAY false
+#endif
+
+#if PVR_USE_WSI_PLATFORM_DISPLAY
+#   define PVR_USE_WSI_PLATFORM true
+#else
+#   define PVR_USE_WSI_PLATFORM false
+#endif
+
 typedef struct _pco_ctx pco_ctx;
 
 struct pvr_instance;

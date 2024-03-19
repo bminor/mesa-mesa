@@ -160,6 +160,17 @@ VkResult pvr_CreateImage(VkDevice _device,
    VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_image *image;
 
+#if defined(PVR_USE_WSI_PLATFORM)
+   const VkImageSwapchainCreateInfoKHR *swapchain_info =
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
+   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
+      return wsi_common_create_swapchain_image(&device->pdevice->wsi_device,
+                                               pCreateInfo,
+                                               swapchain_info->swapchain,
+                                               pImage);
+   }
+#endif
+
    image =
       vk_image_create(&device->vk, pCreateInfo, pAllocator, sizeof(*image));
    if (!image)
@@ -238,14 +249,32 @@ VkResult pvr_BindImageMemory2(VkDevice _device,
    for (i = 0; i < bindInfoCount; i++) {
       VK_FROM_HANDLE(pvr_device_memory, mem, pBindInfos[i].memory);
       VK_FROM_HANDLE(pvr_image, image, pBindInfos[i].image);
+      VkDeviceSize offset = pBindInfos[i].memoryOffset;
+      VkResult result;
 
-      VkResult result = pvr_bind_memory(device,
-                                        mem,
-                                        pBindInfos[i].memoryOffset,
-                                        image->size,
-                                        image->alignment,
-                                        &image->vma,
-                                        &image->dev_addr);
+#if defined(PVR_USE_WSI_PLATFORM)
+      const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+         vk_find_struct_const(pBindInfos[i].pNext,
+                              BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+
+      if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
+         VkDeviceMemory _swapchain_memory =
+            wsi_common_get_memory(swapchain_info->swapchain,
+                                  swapchain_info->imageIndex);
+         VK_FROM_HANDLE(pvr_device_memory, swapchain_memory, _swapchain_memory);
+
+         mem = swapchain_memory;
+         offset = 0;
+      }
+#endif
+
+      result = pvr_bind_memory(device,
+                               mem,
+                               offset,
+                               image->size,
+                               image->alignment,
+                               &image->vma,
+                               &image->dev_addr);
       if (result != VK_SUCCESS) {
          while (i--) {
             VK_FROM_HANDLE(pvr_image, image, pBindInfos[i].image);

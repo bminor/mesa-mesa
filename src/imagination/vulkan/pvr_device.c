@@ -109,18 +109,6 @@
  */
 #define PVR_GLOBAL_FREE_LIST_GROW_THRESHOLD 13U
 
-#if defined(VK_USE_PLATFORM_DISPLAY_KHR)
-#   define PVR_USE_WSI_PLATFORM_DISPLAY true
-#else
-#   define PVR_USE_WSI_PLATFORM_DISPLAY false
-#endif
-
-#if PVR_USE_WSI_PLATFORM_DISPLAY
-#   define PVR_USE_WSI_PLATFORM true
-#else
-#   define PVR_USE_WSI_PLATFORM false
-#endif
-
 /* Amount of padding required for VkBuffers to ensure we don't read beyond
  * a page boundary.
  */
@@ -190,6 +178,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_dedicated_allocation = true,
       .KHR_depth_stencil_resolve = true,
       .KHR_descriptor_update_template = true,
+      .KHR_device_group = true,
       .KHR_driver_properties = true,
       .KHR_external_fence = true,
       .KHR_external_fence_fd = true,
@@ -2624,6 +2613,9 @@ VkResult pvr_AllocateMemory(VkDevice _device,
          /* We don't have particular optimizations associated with memory
           * allocations that won't be suballocated to multiple resources.
           */
+         break;
+      case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO:
+         /* We're not yet using any of the flags provided. */
          break;
       default:
          vk_debug_ignored_stype(ext->sType);
