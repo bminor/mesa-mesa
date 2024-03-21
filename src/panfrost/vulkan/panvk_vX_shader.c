@@ -1050,7 +1050,6 @@ panvk_compile_shader(struct panvk_device *dev,
 
    struct panfrost_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_prod_id,
-      .no_ubo_to_push = true,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
    };
 

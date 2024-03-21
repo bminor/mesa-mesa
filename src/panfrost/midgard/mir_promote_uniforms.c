@@ -265,7 +265,7 @@ mir_special_indices(compiler_context *ctx)
 void
 midgard_promote_uniforms(compiler_context *ctx)
 {
-   if (ctx->inputs->no_ubo_to_push) {
+   if (!ctx->inputs->push_uniforms) {
       /* If nothing is pushed, all UBOs need to be uploaded
        * conventionally */
       ctx->ubo_mask = ~0;
