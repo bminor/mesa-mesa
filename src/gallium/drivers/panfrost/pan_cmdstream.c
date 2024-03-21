@@ -1321,28 +1321,6 @@ panfrost_upload_sysvals(struct panfrost_batch *batch, void *ptr_cpu,
    }
 }
 
-static const void *
-panfrost_map_constant_buffer_cpu(struct panfrost_context *ctx,
-                                 struct panfrost_constant_buffer *buf,
-                                 unsigned index)
-{
-   struct pipe_constant_buffer *cb = &buf->cb[index];
-   struct panfrost_resource *rsrc = pan_resource(cb->buffer);
-
-   if (rsrc) {
-      if (panfrost_bo_mmap(rsrc->bo))
-         return NULL;
-
-      panfrost_flush_writer(ctx, rsrc, "CPU constant buffer mapping");
-      panfrost_bo_wait(rsrc->bo, INT64_MAX, false);
-
-      return rsrc->bo->ptr.cpu + cb->buffer_offset;
-   } else if (cb->user_buffer) {
-      return cb->user_buffer + cb->buffer_offset;
-   } else
-      unreachable("No constant buffer");
-}
-
 /* Emit a single UBO record. On Valhall, UBOs are dumb buffers and are
  * implemented with buffer descriptors in the resource table, sized in terms of
  * bytes. On Bifrost and older, UBOs have special uniform buffer data
@@ -1504,13 +1482,33 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
              sysval_comp < ARRAY_SIZE(batch->num_wg_sysval))
             batch->num_wg_sysval[sysval_comp] = ptr;
       }
-      /* Map the UBO, this should be cheap. For some buffers this may
-       * read from write-combine memory which is slow, though :-(
+
+      /* Grab the mapped memory. We only do this path for sysvals & user
+       * buffers, which are already CPU mapped. We do not use this path for
+       * "real" UBOs for a few reasons. First, real UBOs are generally mapped
+       * write-combine, so reading them here is very expensive. Second, real
+       * UBOs may be written from the GPU, which would require a full stall to
+       * get the results fro m the GPU. Third, it may happen that *this* batch
+       * is writing the UBO which would require us to split the batch *and*
+       * stall, which we lack the batch tracking primitives to do correctly.
+       *
+       * The "proper" way to push true UBOs is on-device. Either we would
+       * dispatch a small compute kernel to run this logic at the start of the
+       * draw, or we would wire up nir_opt_preamble to compute kernels to the
+       * same effect. We will likely do this for Vulkan.
+       *
+       * For now, use the straightforward correct implementation.
        */
-      const void *mapped_ubo =
-         (src.ubo == sysval_ubo)
-            ? sysvals
-            : panfrost_map_constant_buffer_cpu(ctx, buf, src.ubo);
+      const void *mapped_ubo;
+      if (src.ubo == sysval_ubo) {
+         mapped_ubo = sysvals;
+      } else {
+         struct pipe_constant_buffer *cb = &buf->cb[src.ubo];
+         assert(!cb->buffer && cb->user_buffer &&
+                "only user buffers use this path");
+
+         mapped_ubo = cb->user_buffer + cb->buffer_offset;
+      }
 
       if (!mapped_ubo)
          return 0;

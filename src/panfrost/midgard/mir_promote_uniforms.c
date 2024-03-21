@@ -42,11 +42,15 @@ mir_is_ubo(midgard_instruction *ins)
    return (ins->type == TAG_LOAD_STORE_4) && (OP_IS_UBO_READ(ins->op));
 }
 
+/* We only allow pushing UBO 0. This matches the Gallium convention
+ * where UBO 0 is mapped on the CPU but other UBOs are not.
+ */
 static bool
-mir_is_direct_aligned_ubo(midgard_instruction *ins)
+mir_is_pushable_ubo(midgard_instruction *ins)
 {
    return mir_is_ubo(ins) && !(ins->constants.u32[0] & 0xF) &&
-          (ins->src[1] == ~0) && (ins->src[2] == ~0);
+          (ins->src[1] == ~0) && (ins->src[2] == ~0) &&
+          midgard_unpack_ubo_index_imm(ins->load_store) == 0;
 }
 
 /* Represents use data for a single UBO */
@@ -74,7 +78,7 @@ mir_analyze_ranges(compiler_context *ctx)
    res.blocks = calloc(res.nr_blocks, sizeof(struct mir_ubo_block));
 
    mir_foreach_instr_global(ctx, ins) {
-      if (!mir_is_direct_aligned_ubo(ins))
+      if (!mir_is_pushable_ubo(ins))
          continue;
 
       unsigned ubo = midgard_unpack_ubo_index_imm(ins->load_store);
@@ -272,6 +276,9 @@ midgard_promote_uniforms(compiler_context *ctx)
       return;
    }
 
+   /* We only push from the "default" UBO 0 */
+   assert(ctx->nir->info.first_ubo_is_default_ubo && "precondition");
+
    struct mir_ubo_analysis analysis = mir_analyze_ranges(ctx);
 
    unsigned work_count = mir_work_heuristic(ctx, &analysis);
@@ -293,7 +300,7 @@ midgard_promote_uniforms(compiler_context *ctx)
       unsigned ubo = midgard_unpack_ubo_index_imm(ins->load_store);
       unsigned qword = ins->constants.u32[0] / 16;
 
-      if (!mir_is_direct_aligned_ubo(ins)) {
+      if (!mir_is_pushable_ubo(ins)) {
          if (ins->src[1] == ~0)
             ctx->ubo_mask |= BITSET_BIT(ubo);
          else
