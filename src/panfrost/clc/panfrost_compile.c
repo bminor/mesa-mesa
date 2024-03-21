@@ -419,7 +419,6 @@ main(int argc, const char **argv)
 
          struct panfrost_compile_inputs inputs = {
             .gpu_id = target_arch << 12,
-            .no_ubo_to_push = true,
          };
 
          nir_link_shader_functions(s, nir);
