@@ -188,6 +188,7 @@ case "${DEQP_API}" in
     ;;
   GLES)
     deqp_build_targets+=(deqp-gles{2,3,31})
+    deqp_build_targets+=(glcts)  # needed for gles*-khr tests
     # deqp-egl also comes from this build, but it is handled separately above.
     ;;
 esac
@@ -252,7 +253,7 @@ find . -depth \( -iname '*cmake*' -o -name '*ninja*' -o -name '*.o' -o -name '*.
 if [ "${DEQP_API}" = 'VK' ]; then
   ${STRIP_CMD:-strip} external/vulkancts/modules/vulkan/deqp-vk
 fi
-if [ "${DEQP_API}" = 'GL' ]; then
+if [ "${DEQP_API}" = 'GL' ] || [ "${DEQP_API}" = 'GLES' ]; then
   ${STRIP_CMD:-strip} external/openglcts/modules/glcts
 fi
 if [ "${DEQP_API}" = 'GLES' ]; then
