@@ -611,6 +611,13 @@ AluInstr::replace_dest(PRegister new_dest, AluInstr *move_instr)
    if (m_dest->pin() == pin_chan && new_dest->chan() != m_dest->chan())
       return false;
 
+   bool new_chan_in_mask = m_allowed_dest_mask & (1 << new_dest->chan());
+   bool can_extend_cayman_trans =
+      has_alu_flag(alu_is_cayman_trans) && m_alu_slots == 3 && new_dest->chan() == 3;
+
+   if (!new_chan_in_mask && !can_extend_cayman_trans)
+      return false;
+
    if (m_dest->pin() == pin_chan) {
       if (new_dest->pin() == pin_group)
          new_dest->set_pin(pin_chgr);
@@ -627,6 +634,7 @@ AluInstr::replace_dest(PRegister new_dest, AluInstr *move_instr)
          m_alu_slots = 4;
          assert(m_src.size() == 3);
          m_src.push_back(m_src[0]);
+         m_allowed_dest_mask |= 0x8;
       }
    }
 
