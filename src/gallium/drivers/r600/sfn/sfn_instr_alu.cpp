@@ -2200,20 +2200,17 @@ static bool
 emit_alu_f2f32(const nir_alu_instr& alu, Shader& shader)
 {
    auto& value_factory = shader.value_factory();
-   auto group = new AluGroup();
-   AluInstr *ir = nullptr;
 
-   ir = new AluInstr(op1v_flt64_to_flt32,
-                     value_factory.dest(alu.def, 0, pin_chan),
-                     value_factory.src64(alu.src[0], 0, 1),
-                     AluInstr::write);
-   group->add_instruction(ir);
-   ir = new AluInstr(op1v_flt64_to_flt32,
-                     value_factory.dummy_dest(1),
-                     value_factory.src64(alu.src[0], 0, 0),
-                     AluInstr::empty);
-   group->add_instruction(ir);
-   shader.emit_instruction(group);
+   auto dest = value_factory.dest(alu.def, 0, pin_free, 5);
+
+   AluInstr::SrcValues srcs = {
+      value_factory.src64(alu.src[0], 0, 1),
+      value_factory.src64(alu.src[0], 0, 0),
+   };
+
+   auto ir = new AluInstr(op1v_flt64_to_flt32, dest, srcs, AluInstr::write, 2);
+
+   shader.emit_instruction(ir);
    return true;
 }
 
