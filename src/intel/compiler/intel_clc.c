@@ -635,7 +635,7 @@ int main(int argc, char **argv)
       .allowed_spirv_extensions = allowed_spirv_extensions,
    };
 
-   if (!clc_compile_c_to_spirv(&clc_args, &logger, &spirv_obj)) {
+   if (!clc_compile_c_to_spirv(&clc_args, &logger, &spirv_obj, NULL)) {
       goto fail;
    }
 

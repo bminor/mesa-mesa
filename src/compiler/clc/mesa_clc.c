@@ -155,7 +155,7 @@ main(int argc, char **argv)
       struct clc_binary *spirv_out =
          util_dynarray_grow(&spirv_objs, struct clc_binary, 1);
 
-      if (!clc_compile_c_to_spirv(&clc_args, &logger, spirv_out)) {
+      if (!clc_compile_c_to_spirv(&clc_args, &logger, spirv_out, NULL)) {
          ralloc_free(mem_ctx);
          return 1;
       }

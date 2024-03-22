@@ -810,7 +810,7 @@ ComputeTest::compile(const std::vector<const char *> &sources,
       args.source.value = sources[i];
 
       clc_binary spirv{};
-      if (!clc_compile_c_to_spirv(&args, &logger, &spirv))
+      if (!clc_compile_c_to_spirv(&args, &logger, &spirv, NULL))
          throw runtime_error("failed to compile object!");
 
       Shader shader;
