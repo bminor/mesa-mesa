@@ -1078,7 +1078,7 @@ RegisterAccessHandler::RegisterAccessHandler(Shader& shader, nir_intrinsic_instr
 void RegisterReadHandler::visit(LocalArray& array)
 {
    int slots =  ir->def.bit_size / 32;
-   auto pin = ir->def.num_components > 1 ? pin_none : pin_free;
+   auto pin = ir->def.num_components * slots > 1 ? pin_none : pin_free;
    for (int i = 0; i < ir->def.num_components; ++i) {
       for (int s = 0; s < slots; ++s) {
          int chan = i * slots + s;
