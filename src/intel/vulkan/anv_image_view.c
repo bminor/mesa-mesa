@@ -107,10 +107,8 @@ anv_image_fill_surface_state(struct anv_device *device,
       aux_address = anv_image_address(image, &aux_surface->memory_range);
    state_inout->aux_address = aux_address;
 
-   struct anv_address clear_address = ANV_NULL_ADDRESS;
-   if (device->info->ver >= 10 && isl_aux_usage_has_fast_clears(aux_usage)) {
-      clear_address = anv_image_get_clear_color_addr(device, image, aspect);
-   }
+   const struct anv_address clear_address =
+      anv_image_get_clear_color_addr(device, image, view.format, aspect);
    state_inout->clear_address = clear_address;
 
    if (image->vk.create_flags & VK_IMAGE_CREATE_PROTECTED_BIT)
@@ -125,7 +123,8 @@ anv_image_fill_surface_state(struct anv_device *device,
                        .aux_usage = aux_usage,
                        .aux_address = anv_address_physical(aux_address),
                        .clear_address = anv_address_physical(clear_address),
-                       .use_clear_address = !anv_address_is_null(clear_address),
+                       .use_clear_address =
+                          device->isl_dev.ss.clear_color_state_size > 0,
                        .mocs = anv_mocs(device, state_inout->address.bo,
                                         view_usage),
                        .x_offset_sa = tile_x_sa,

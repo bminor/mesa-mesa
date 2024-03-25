@@ -5564,16 +5564,29 @@ anv_image_view_formats_incomplete(const struct anv_image *image);
 static inline struct anv_address
 anv_image_get_clear_color_addr(UNUSED const struct anv_device *device,
                                const struct anv_image *image,
+                               enum isl_format view_format,
                                VkImageAspectFlagBits aspect)
 {
-   assert(image->vk.aspects & (VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV |
-                               VK_IMAGE_ASPECT_DEPTH_BIT));
-
    uint32_t plane = anv_image_aspect_to_plane(image, aspect);
    const struct anv_image_memory_range *mem_range =
       &image->planes[plane].fast_clear_memory_range;
 
-   return anv_image_address(image, mem_range);
+   const struct anv_address base_addr = anv_image_address(image, mem_range);
+   if (anv_address_is_null(base_addr))
+      return ANV_NULL_ADDRESS;
+
+   if (view_format == ISL_FORMAT_UNSUPPORTED)
+      view_format = image->planes[plane].primary_surface.isl.format;
+
+   const unsigned clear_state_size = device->info->ver >= 11 ? 64 : 16;
+   for (int i = 0; i < image->num_view_formats; i++) {
+      if (view_format == image->view_formats[i]) {
+         return anv_address_add(base_addr, i * clear_state_size);
+      }
+   }
+
+   assert(anv_image_view_formats_incomplete(image));
+   return base_addr;
 }
 
 static inline struct anv_address
@@ -5584,18 +5597,19 @@ anv_image_get_fast_clear_type_addr(const struct anv_device *device,
    /* Xe2+ platforms don't need fast clear type. We shouldn't get here. */
    assert(device->info->ver < 20);
    struct anv_address addr =
-      anv_image_get_clear_color_addr(device, image, aspect);
+      anv_image_get_clear_color_addr(device, image, ISL_FORMAT_UNSUPPORTED,
+                                     aspect);
 
+   /* Refer to add_aux_state_tracking_buffer(). */
    unsigned clear_color_state_size;
    if (device->info->ver >= 11) {
-      /* The fast clear type and the first compression state are stored in the
-       * last 2 dwords of the clear color struct. Refer to the comment in
-       * add_aux_state_tracking_buffer().
-       */
-      assert(device->isl_dev.ss.clear_color_state_size >= 32);
-      clear_color_state_size = device->isl_dev.ss.clear_color_state_size - 8;
-   } else
-      clear_color_state_size = device->isl_dev.ss.clear_value_size;
+      assert(device->isl_dev.ss.clear_color_state_size == 32);
+      clear_color_state_size = (image->num_view_formats - 1) * 64 + 32 - 8;
+   } else {
+      assert(device->isl_dev.ss.clear_value_size == 16);
+      clear_color_state_size = image->num_view_formats * 16;
+   }
+
    return anv_address_add(addr, clear_color_state_size);
 }
 

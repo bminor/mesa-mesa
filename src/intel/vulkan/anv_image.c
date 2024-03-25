@@ -645,10 +645,11 @@ add_aux_state_tracking_buffer(struct anv_device *device,
        *
        * As a result, the state starts 8 bytes lower than where it should be.
        */
-      assert(device->isl_dev.ss.clear_color_state_size >= 32);
-      clear_color_state_size = device->isl_dev.ss.clear_color_state_size - 8;
+      assert(device->isl_dev.ss.clear_color_state_size == 32);
+      clear_color_state_size = (image->num_view_formats - 1) * 64 + 32 - 8;
    } else {
-      clear_color_state_size = device->isl_dev.ss.clear_value_size;
+      assert(device->isl_dev.ss.clear_value_size == 16);
+      clear_color_state_size = image->num_view_formats * 16;
    }
 
    /* Clear color and fast clear type */

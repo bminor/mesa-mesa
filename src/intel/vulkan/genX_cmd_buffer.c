@@ -456,14 +456,14 @@ transition_depth_buffer(struct anv_cmd_buffer *cmd_buffer,
       return;
 
    /* Initialize the indirect clear color prior to first use. */
+   const enum isl_format depth_format =
+      image->planes[depth_plane].primary_surface.isl.format;
    const struct anv_address clear_color_addr =
-      anv_image_get_clear_color_addr(cmd_buffer->device, image,
+      anv_image_get_clear_color_addr(cmd_buffer->device, image, depth_format,
                                      VK_IMAGE_ASPECT_DEPTH_BIT);
    if (!anv_address_is_null(clear_color_addr) &&
        (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED ||
         initial_layout == VK_IMAGE_LAYOUT_PREINITIALIZED)) {
-      const enum isl_format depth_format =
-         image->planes[depth_plane].primary_surface.isl.format;
       const union isl_color_value clear_value =
          anv_image_hiz_clear_value(image);
 
@@ -876,6 +876,7 @@ genX(cmd_buffer_load_clear_color)(struct anv_cmd_buffer *cmd_buffer,
          });
    const struct anv_address entry_addr =
       anv_image_get_clear_color_addr(cmd_buffer->device, iview->image,
+                                     iview->planes[0].isl.format,
                                      VK_IMAGE_ASPECT_COLOR_BIT);
 
    unsigned copy_size = cmd_buffer->device->isl_dev.ss.clear_value_size;
@@ -909,41 +910,38 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
                       const VkImageAspectFlags aspect,
                       const uint32_t *pixel)
 {
-   UNUSED struct anv_batch *batch = &cmd_buffer->batch;
-   uint32_t plane = anv_image_aspect_to_plane(image, aspect);
-   enum isl_format format = image->planes[plane].primary_surface.isl.format;
+   for (int i = 0; i < image->num_view_formats; i++) {
+      union isl_color_value clear_color;
+      isl_color_value_unpack(&clear_color, image->view_formats[i], pixel);
 
-   union isl_color_value clear_color;
-   isl_color_value_unpack(&clear_color, format, pixel);
+      const struct anv_address addr =
+         anv_image_get_clear_color_addr(cmd_buffer->device, image,
+                                        image->view_formats[i], aspect);
+      assert(!anv_address_is_null(addr));
 
-   struct anv_address addr =
-      anv_image_get_clear_color_addr(cmd_buffer->device, image, aspect);
-   assert(!anv_address_is_null(addr));
-
-#if GFX_VER >= 20
-   assert(cmd_buffer->device->isl_dev.ss.clear_color_state_size == 0);
-   assert(cmd_buffer->device->isl_dev.ss.clear_value_size == 0);
-   unreachable("storing clear colors on invalid gfx_ver" );
-#elif GFX_VER >= 11
-   assert(cmd_buffer->device->isl_dev.ss.clear_color_state_size == 32);
-   uint32_t *dw = anv_batch_emitn(batch, 3 + 6, GENX(MI_STORE_DATA_IMM),
-                                  .StoreQword = true, .Address = addr);
-   dw[3] = clear_color.u32[0];
-   dw[4] = clear_color.u32[1];
-   dw[5] = clear_color.u32[2];
-   dw[6] = clear_color.u32[3];
-   dw[7] = pixel[0];
-   dw[8] = pixel[1];
+#if GFX_VER >= 11
+      assert(cmd_buffer->device->isl_dev.ss.clear_color_state_size == 32);
+      uint32_t *dw = anv_batch_emitn(&cmd_buffer->batch, 3 + 6,
+                                     GENX(MI_STORE_DATA_IMM),
+                                     .StoreQword = true, .Address = addr);
+      dw[3] = clear_color.u32[0];
+      dw[4] = clear_color.u32[1];
+      dw[5] = clear_color.u32[2];
+      dw[6] = clear_color.u32[3];
+      dw[7] = pixel[0];
+      dw[8] = pixel[1];
 #else
-   assert(cmd_buffer->device->isl_dev.ss.clear_color_state_size == 0);
-   assert(cmd_buffer->device->isl_dev.ss.clear_value_size == 16);
-   uint32_t *dw = anv_batch_emitn(batch, 3 + 4, GENX(MI_STORE_DATA_IMM),
-                                  .StoreQword = true, .Address = addr);
-   dw[3] = clear_color.u32[0];
-   dw[4] = clear_color.u32[1];
-   dw[5] = clear_color.u32[2];
-   dw[6] = clear_color.u32[3];
+      assert(cmd_buffer->device->isl_dev.ss.clear_color_state_size == 0);
+      assert(cmd_buffer->device->isl_dev.ss.clear_value_size == 16);
+      uint32_t *dw = anv_batch_emitn(&cmd_buffer->batch, 3 + 4,
+                                     GENX(MI_STORE_DATA_IMM),
+                                     .StoreQword = true, .Address = addr);
+      dw[3] = clear_color.u32[0];
+      dw[4] = clear_color.u32[1];
+      dw[5] = clear_color.u32[2];
+      dw[6] = clear_color.u32[3];
 #endif
+   }
 }
 
 void
