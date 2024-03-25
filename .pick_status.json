@@ -564,7 +564,7 @@
         "description": "ir3: Fix detection of nontrivial continues",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0fa93fb6626b4270ec0086d34a336046addd4462",
         "notes": null
