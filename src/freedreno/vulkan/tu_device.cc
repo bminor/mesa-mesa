@@ -928,7 +928,7 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->maxImageDimension3D = (1 << 11);
    props->maxImageDimensionCube = (1 << 14);
    props->maxImageArrayLayers = (1 << 11);
-   props->maxTexelBufferElements = 128 * 1024 * 1024;
+   props->maxTexelBufferElements = MAX_TEXEL_ELEMENTS;
    props->maxUniformBufferRange = MAX_UNIFORM_BUFFER_RANGE;
    props->maxStorageBufferRange = MAX_STORAGE_BUFFER_RANGE;
    props->maxPushConstantsSize = MAX_PUSH_CONSTANTS_SIZE;
