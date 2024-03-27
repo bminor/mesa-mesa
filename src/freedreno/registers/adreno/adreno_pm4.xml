@@ -575,7 +575,7 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<value name="IN_PREEMPT" value="0x0f" variants="A6XX-"/>
 
 	<!-- TODO do these exist on A5xx? -->
-	<value name="CP_SCRATCH_WRITE" value="0x4c" variants="A6XX"/>
+	<value name="CP_SCRATCH_WRITE" value="0x4c" variants="A6XX-"/>
 	<value name="CP_REG_TO_MEM_OFFSET_MEM" value="0x74" variants="A6XX-"/>
 	<value name="CP_REG_TO_MEM_OFFSET_REG" value="0x72" variants="A6XX-"/>
 	<value name="CP_WAIT_MEM_GTE" value="0x14" variants="A6XX"/>
