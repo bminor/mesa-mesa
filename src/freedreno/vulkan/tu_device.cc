@@ -2707,6 +2707,8 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
       fd_rd_output_init(&device->rd_output, output_name);
    }
 
+   device->vk.write_buffer_cp = tu_write_buffer_cp;
+   device->vk.flush_buffer_write_cp = tu_flush_buffer_write_cp;
    device->vk.cmd_fill_buffer_addr = tu_cmd_fill_buffer_addr;
 
    *pDevice = tu_device_to_handle(device);

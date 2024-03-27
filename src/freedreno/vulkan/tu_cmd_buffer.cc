@@ -7260,3 +7260,29 @@ tu_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer,
    tu_flush_for_access(cache, TU_ACCESS_CP_WRITE, TU_ACCESS_NONE);
 }
 TU_GENX(tu_CmdWriteBufferMarker2AMD);
+
+void
+tu_write_buffer_cp(VkCommandBuffer commandBuffer,
+                   VkDeviceAddress addr,
+                   void *data, uint32_t size)
+{
+   VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
+
+   TU_CALLX(cmd->device, tu_emit_cache_flush)(cmd);
+
+   struct tu_cs *cs = &cmd->cs;
+
+   tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 2 + size / 4);
+   tu_cs_emit_qw(cs, addr);
+   tu_cs_emit_array(cs, (uint32_t *)data, size / 4);
+}
+
+void
+tu_flush_buffer_write_cp(VkCommandBuffer commandBuffer)
+{
+   VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
+
+   struct tu_cache_state *cache = &cmd->state.cache;
+   tu_flush_for_access(cache, TU_ACCESS_CP_WRITE, (enum tu_cmd_access_mask)0);
+}
+
