@@ -3308,25 +3308,20 @@ tu_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
 TU_GENX(tu_CmdUpdateBuffer);
 
 template <chip CHIP>
-VKAPI_ATTR void VKAPI_CALL
-tu_CmdFillBuffer(VkCommandBuffer commandBuffer,
-                 VkBuffer dstBuffer,
-                 VkDeviceSize dstOffset,
-                 VkDeviceSize fillSize,
-                 uint32_t data)
+static void
+tu_cmd_fill_buffer(VkCommandBuffer commandBuffer,
+                   VkDeviceAddress dstAddr,
+                   VkDeviceSize fillSize,
+                   uint32_t data)
 {
    VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
-   VK_FROM_HANDLE(tu_buffer, buffer, dstBuffer);
    const struct blit_ops *ops = &r2d_ops<CHIP>;
    struct tu_cs *cs = &cmd->cs;
 
-   fillSize = vk_buffer_range(&buffer->vk, dstOffset, fillSize);
-
-   uint64_t dst_va = buffer->iova + dstOffset;
    uint32_t blocks = fillSize / 4;
 
    bool unaligned_store = false;
-   handle_buffer_unaligned_store<CHIP>(cmd, dst_va, fillSize, &unaligned_store);
+   handle_buffer_unaligned_store<CHIP>(cmd, dstAddr, fillSize, &unaligned_store);
 
    ops->setup(cmd, cs, PIPE_FORMAT_R32_UINT, PIPE_FORMAT_R32_UINT,
               VK_IMAGE_ASPECT_COLOR_BIT, 0, true, false,
@@ -3337,20 +3332,49 @@ tu_CmdFillBuffer(VkCommandBuffer commandBuffer,
    ops->clear_value(cmd, cs, PIPE_FORMAT_R32_UINT, &clear_val);
 
    while (blocks) {
-      uint32_t dst_x = (dst_va & 63) / 4;
+      uint32_t dst_x = (dstAddr & 63) / 4;
       uint32_t width = MIN2(blocks, 0x4000 - dst_x);
 
-      ops->dst_buffer(cs, PIPE_FORMAT_R32_UINT, dst_va & ~63, 0, PIPE_FORMAT_R32_UINT);
+      ops->dst_buffer(cs, PIPE_FORMAT_R32_UINT, dstAddr & ~63, 0, PIPE_FORMAT_R32_UINT);
       ops->coords(cmd, cs, (VkOffset2D) {dst_x}, blt_no_coord, (VkExtent2D) {width, 1});
       ops->run(cmd, cs);
 
-      dst_va += width * 4;
+      dstAddr += width * 4;
       blocks -= width;
    }
 
    ops->teardown(cmd, cs);
 
    after_buffer_unaligned_buffer_store<CHIP>(cmd, unaligned_store);
+}
+
+void
+tu_cmd_fill_buffer_addr(VkCommandBuffer commandBuffer,
+                        VkDeviceAddress dstAddr,
+                        VkDeviceSize fillSize,
+                        uint32_t data)
+{
+   VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
+
+   TU_CALLX(cmd->device, tu_cmd_fill_buffer)(commandBuffer, dstAddr, fillSize,
+                                             data);
+}
+
+template <chip CHIP>
+VKAPI_ATTR void VKAPI_CALL
+tu_CmdFillBuffer(VkCommandBuffer commandBuffer,
+                 VkBuffer dstBuffer,
+                 VkDeviceSize dstOffset,
+                 VkDeviceSize fillSize,
+                 uint32_t data)
+{
+   VK_FROM_HANDLE(tu_buffer, buffer, dstBuffer);
+
+   fillSize = vk_buffer_range(&buffer->vk, dstOffset, fillSize);
+
+   VkDeviceAddress dst_va = buffer->iova + dstOffset;
+
+   tu_cmd_fill_buffer<CHIP>(commandBuffer, dst_va, fillSize, data);
 }
 TU_GENX(tu_CmdFillBuffer);
 
