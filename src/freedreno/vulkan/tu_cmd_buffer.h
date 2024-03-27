@@ -683,6 +683,12 @@ tu_restore_suspended_pass(struct tu_cmd_buffer *cmd,
 template <chip CHIP>
 void tu_cmd_render(struct tu_cmd_buffer *cmd);
 
+void tu_dispatch_unaligned(VkCommandBuffer commandBuffer,
+                           uint32_t x, uint32_t y, uint32_t z);
+
+void tu_dispatch_unaligned_indirect(VkCommandBuffer commandBuffer,
+                                    VkDeviceAddress size_addr);
+
 void tu_write_buffer_cp(VkCommandBuffer commandBuffer,
                         VkDeviceAddress addr,
                         void *data, uint32_t size);
