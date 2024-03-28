@@ -13,6 +13,7 @@
 #include "tu_common.h"
 
 #include "vk_device_memory.h"
+#include "vk_meta.h"
 
 #include "tu_autotune.h"
 #include "tu_cs.h"
@@ -285,6 +286,8 @@ struct tu_device
 
    /* Backup in-memory cache to be used if the app doesn't provide one */
    struct vk_pipeline_cache *mem_cache;
+
+   struct vk_meta_device meta;
 
 #define MIN_SCRATCH_BO_SIZE_LOG2 12 /* A page */
 
