@@ -213,6 +213,7 @@ get_device_extensions(const struct tu_physical_device *device,
                            wsi_common_vk_instance_supports_present_wait(&device->instance->vk)),
 #endif
       .KHR_push_descriptor = true,
+      .KHR_ray_query = has_raytracing,
       .KHR_relaxed_block_layout = true,
       .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_sampler_ycbcr_conversion = true,
@@ -694,6 +695,9 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->rasterizationOrderColorAttachmentAccess = true;
    features->rasterizationOrderDepthAttachmentAccess = true;
    features->rasterizationOrderStencilAttachmentAccess = true;
+
+   /* VK_KHR_ray_query */
+   features->rayQuery = true;
 
    /* VK_EXT_robustness2 */
    features->robustBufferAccess2 = true;

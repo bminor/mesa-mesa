@@ -110,6 +110,14 @@ tu_spirv_to_nir(struct tu_device *dev,
    NIR_PASS_V(nir, nir_opt_copy_prop_vars);
    NIR_PASS_V(nir, nir_opt_dce);
 
+   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
+
+   if (nir->info.ray_queries > 0) {
+      NIR_PASS(_, nir, nir_opt_ray_queries);
+      NIR_PASS(_, nir, nir_opt_ray_query_ranges);
+      NIR_PASS(_, nir, tu_nir_lower_ray_queries);
+   }
+
    NIR_PASS_V(nir, nir_split_var_copies);
    NIR_PASS_V(nir, nir_lower_var_copies);
 

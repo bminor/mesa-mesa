@@ -39,6 +39,7 @@ libtu_files = files(
   'tu_knl.cc',
   'tu_lrz.cc',
   'tu_nir_lower_multiview.cc',
+  'tu_nir_lower_ray_query.cc',
   'tu_pass.cc',
   'tu_pipeline.cc',
   'tu_sampler.cc',
