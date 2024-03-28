@@ -214,6 +214,7 @@ get_device_extensions(const struct tu_physical_device *device,
 #endif
       .KHR_push_descriptor = true,
       .KHR_ray_query = has_raytracing,
+      .KHR_ray_tracing_maintenance1 = has_raytracing,
       .KHR_relaxed_block_layout = true,
       .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_sampler_ycbcr_conversion = true,
@@ -698,6 +699,9 @@ tu_get_features(struct tu_physical_device *pdevice,
 
    /* VK_KHR_ray_query */
    features->rayQuery = true;
+
+   /* VK_KHR_ray_tracing_maintenance1 */
+   features->rayTracingMaintenance1 = true;
 
    /* VK_EXT_robustness2 */
    features->robustBufferAccess2 = true;
