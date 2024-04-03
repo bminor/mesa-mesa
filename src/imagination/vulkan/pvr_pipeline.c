@@ -143,12 +143,12 @@ VkResult pvr_pds_fragment_program_create_and_upload(
    const VkAllocationCallbacks *allocator,
    const struct pvr_suballoc_bo *fragment_shader_bo,
    uint32_t fragment_temp_count,
-   enum rogue_msaa_mode msaa_mode,
+   enum pvr_msaa_mode msaa_mode,
    bool has_phase_rate_change,
    struct pvr_pds_upload *const pds_upload_out)
 {
    const enum PVRX(PDSINST_DOUTU_SAMPLE_RATE)
-      sample_rate = pvr_pdsinst_doutu_sample_rate_from_rogue(msaa_mode);
+      sample_rate = pvr_pdsinst_doutu_sample_rate(msaa_mode);
    struct pvr_pds_kickusc_program program = { 0 };
    uint32_t staging_buffer_size;
    uint32_t *staging_buffer;
