@@ -45,6 +45,7 @@
 #include "util/list.h"
 #include "util/macros.h"
 #include "util/u_math.h"
+#define XXH_INLINE_ALL
 #include "util/xxhash.h"
 #include "vk_format.h"
 #include "vk_log.h"
