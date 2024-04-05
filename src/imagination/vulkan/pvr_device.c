@@ -57,7 +57,7 @@
 #include "pvr_robustness.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"
-#include "pvr_uscgen.h"
+#include "usc/pvr_uscgen.h"
 #include "pvr_util.h"
 #include "pvr_winsys.h"
 #include "rogue/rogue.h"

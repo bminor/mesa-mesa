@@ -60,8 +60,6 @@ pvr_files = files(
 )
 
 pvr_includes = [
-  include_directories('usc/programs'),
-  include_directories('usc'),
   include_directories('winsys'),
   libpowervr_pds_includes,
 ]

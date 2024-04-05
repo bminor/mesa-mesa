@@ -32,7 +32,7 @@
 #include "pvr_pds.h"
 #include "pvr_private.h"
 #include "pvr_types.h"
-#include "pvr_usc_fragment_shader.h"
+#include "usc/programs/pvr_usc_fragment_shader.h"
 #include "util/macros.h"
 #include "rogue/rogue.h"
 #include "vk_alloc.h"
