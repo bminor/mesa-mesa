@@ -108,6 +108,7 @@ libvulkan_powervr_mesa = shared_library(
   ],
   link_with : [
     libpowervr_common,
+    libpowervr_compiler,
     libpowervr_pds,
     libpowervr_rogue,
     libvulkan_wsi,
