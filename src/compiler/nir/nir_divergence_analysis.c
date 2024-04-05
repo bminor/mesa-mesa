@@ -1228,7 +1228,8 @@ visit_loop(nir_loop *loop, struct divergence_state *state)
       progress |= visit_loop_exit_phi(phi, loop_state.divergent_loop_break);
    }
 
-   loop->divergent = (loop_state.divergent_loop_break || loop_state.divergent_loop_continue);
+   loop->divergent_continue = loop_state.divergent_loop_continue;
+   loop->divergent_break = loop_state.divergent_loop_break;
 
    return progress;
 }
@@ -1331,15 +1332,14 @@ nir_update_instr_divergence(nir_shader *shader, nir_instr *instr)
 bool
 nir_has_divergent_loop(nir_shader *shader)
 {
-   bool divergent_loop = false;
    nir_function_impl *func = nir_shader_get_entrypoint(shader);
 
    foreach_list_typed(nir_cf_node, node, node, &func->body) {
-      if (node->type == nir_cf_node_loop && nir_cf_node_as_loop(node)->divergent) {
-         divergent_loop = true;
-         break;
+      if (node->type == nir_cf_node_loop) {
+         if (nir_loop_is_divergent(nir_cf_node_as_loop(node)))
+            return true;
       }
    }
 
-   return divergent_loop;
+   return false;
 }

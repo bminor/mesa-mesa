@@ -340,15 +340,19 @@ lower_cf_list(nir_builder *b, nir_def *esc_reg, struct scope *parent_scope,
           * while avoiding an extra sync for the loop break is tricky at best.
           */
          struct scope break_scope = push_scope(b, SCOPE_TYPE_LOOP_BREAK,
-                                               parent_scope, loop->divergent,
-                                               loop->divergent, break_block);
+                                               parent_scope,
+                                               nir_loop_is_divergent(loop),
+                                               nir_loop_is_divergent(loop),
+                                               break_block);
 
          nir_goto(b, head_block);
          push_block(b, head_block, break_scope.divergent);
 
          struct scope cont_scope = push_scope(b, SCOPE_TYPE_LOOP_CONT,
-                                              &break_scope, loop->divergent,
-                                              loop->divergent, cont_block);
+                                              &break_scope,
+                                              nir_loop_is_divergent(loop),
+                                              nir_loop_is_divergent(loop),
+                                              cont_block);
 
          lower_cf_list(b, esc_reg, &cont_scope, &loop->body);
          normal_exit(b, esc_reg, cont_block);

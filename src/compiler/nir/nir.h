@@ -3338,8 +3338,22 @@ typedef struct {
    nir_loop_info *info;
    nir_loop_control control;
    bool partially_unrolled;
-   bool divergent;
+
+   /**
+    * Whether some loop-active invocations might take a different control-flow path:
+    * divergent_continue indicates that a continue statement might be taken by
+    * only some of the loop-active invocations. A subsequent break is always
+    * considered divergent.
+    */
+   bool divergent_continue;
+   bool divergent_break;
 } nir_loop;
+
+static inline bool
+nir_loop_is_divergent(nir_loop *loop)
+{
+   return loop->divergent_continue || loop->divergent_break;
+}
 
 /**
  * Various bits of metadata that can may be created or required by

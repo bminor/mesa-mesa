@@ -1824,7 +1824,8 @@ static void
 write_loop(write_ctx *ctx, nir_loop *loop)
 {
    blob_write_uint8(ctx->blob, loop->control);
-   blob_write_uint8(ctx->blob, loop->divergent);
+   blob_write_uint8(ctx->blob, loop->divergent_continue);
+   blob_write_uint8(ctx->blob, loop->divergent_break);
    bool has_continue_construct = nir_loop_has_continue_construct(loop);
    blob_write_uint8(ctx->blob, has_continue_construct);
 
@@ -1842,7 +1843,8 @@ read_loop(read_ctx *ctx, struct exec_list *cf_list)
    nir_cf_node_insert_end(cf_list, &loop->cf_node);
 
    loop->control = blob_read_uint8(ctx->blob);
-   loop->divergent = blob_read_uint8(ctx->blob);
+   loop->divergent_continue = blob_read_uint8(ctx->blob);
+   loop->divergent_break = blob_read_uint8(ctx->blob);
    bool has_continue_construct = blob_read_uint8(ctx->blob);
 
    read_cf_list(ctx, &loop->body);
