@@ -46,6 +46,7 @@
 #include "pvr_srv_sync_prim.h"
 #include "pvr_types.h"
 #include "pvr_winsys.h"
+#include "util/compiler.h"
 #include "util/log.h"
 #include "util/macros.h"
 #include "util/u_math.h"
