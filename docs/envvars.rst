@@ -1990,6 +1990,46 @@ PowerVR driver environment variables
    Color is forced off if set to ``off``/``0`` or on if set to ``on``/``1``.
    Defaults to ``auto``.
 
+.. envvar:: PCO_DEBUG
+
+   A comma-separated list of named flags for the PCO compiler,
+   which control various compilation options:
+
+   ``val_skip``
+      Skip IR validation.
+
+.. envvar:: PCO_SKIP_PASSES
+
+   A comma-separated list of passes to skip.
+
+.. envvar:: PCO_PRINT
+
+   A comma-separated list of named flags for the PCO compiler,
+   which control debug printing options:
+
+   ``vs``
+      Print the IR for vertex shaders.
+   ``fs``
+      Print the IR for fragment shaders.
+   ``cs``
+      Print the IR for compute shaders.
+   ``all``
+      Print the IR for all shaders.
+   ``internal``
+      Print the IR for internal shader types.
+   ``passes``
+      Print the IR after each pass.
+   ``nir``
+      Print the resulting NIR.
+   ``binary``
+      Print the resulting binary.
+
+.. envvar:: PCO_COLOR
+
+   if set to ``auto`` PCO IR will be colorized if stdout is not a pipe.
+   Color is forced off if set to ``off``/``0`` or on if set to ``on``/``1``.
+   Defaults to ``auto``.
+
 i915 driver environment variables
 ---------------------------------
 

@@ -28,6 +28,8 @@ pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx)
 
    ctx->dev_info = dev_info;
 
+   pco_debug_init();
+
    return ctx;
 }
 

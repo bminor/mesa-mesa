@@ -15,6 +15,10 @@
 
 #include "pco.h"
 #include "spirv/nir_spirv.h"
+#include "util/macros.h"
+
+#include <stdbool.h>
+#include <stdint.h>
 
 /** PCO compiler context. */
 typedef struct _pco_ctx {
@@ -28,4 +32,35 @@ typedef struct _pco_ctx {
    struct spirv_to_nir_options spirv_options;
 } pco_ctx;
 
+/* Debug. */
+enum pco_debug {
+   PCO_DEBUG_VAL_SKIP = BITFIELD64_BIT(0),
+};
+
+extern uint64_t pco_debug;
+
+#define PCO_DEBUG(flag) unlikely(pco_debug &(PCO_DEBUG_##flag))
+
+enum pco_debug_print {
+   PCO_DEBUG_PRINT_VS = BITFIELD64_BIT(0),
+   PCO_DEBUG_PRINT_FS = BITFIELD64_BIT(1),
+   PCO_DEBUG_PRINT_CS = BITFIELD64_BIT(2),
+   PCO_DEBUG_PRINT_ALL = PCO_DEBUG_PRINT_VS | PCO_DEBUG_PRINT_FS |
+                         PCO_DEBUG_PRINT_CS,
+   PCO_DEBUG_PRINT_INTERNAL = BITFIELD64_BIT(3),
+   PCO_DEBUG_PRINT_PASSES = BITFIELD64_BIT(4),
+   PCO_DEBUG_PRINT_NIR = BITFIELD64_BIT(5),
+   PCO_DEBUG_PRINT_BINARY = BITFIELD64_BIT(6),
+};
+
+extern uint64_t pco_debug_print;
+
+extern const char *pco_skip_passes;
+
+#define PCO_DEBUG_PRINT(flag) \
+   unlikely(pco_debug_print &(PCO_DEBUG_PRINT_##flag))
+
+extern bool pco_color;
+
+void pco_debug_init(void);
 #endif /* PCO_INTERNAL_H */
