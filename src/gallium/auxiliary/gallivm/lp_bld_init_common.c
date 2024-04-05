@@ -58,6 +58,7 @@ static const struct debug_named_value lp_bld_debug_flags[] = {
 #if MESA_DEBUG
    { "dumpbc", GALLIVM_DEBUG_DUMP_BC, NULL },
 #endif
+   { "symbols", GALLIVM_DEBUG_SYMBOLS, NULL },
    DEBUG_NAMED_VALUE_END
 };
 
@@ -82,6 +83,9 @@ void
 lp_init_env_options(void)
 {
    gallivm_debug = debug_get_option_gallivm_debug();
+
+   if (!__normal_user())
+      gallivm_debug &= ~GALLIVM_DEBUG_SYMBOLS;
 
    gallivm_perf = debug_get_flags_option("GALLIVM_PERF", lp_bld_perf_flags, 0 );
 }

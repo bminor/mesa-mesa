@@ -92,8 +92,11 @@ gallivm_free_ir(struct gallivm_state *gallivm)
    lp_passmgr_dispose(gallivm->passmgr);
 
    if (gallivm->engine) {
-      /* This will already destroy any associated module */
-      LLVMDisposeExecutionEngine(gallivm->engine);
+      /* This will already destroy any associated module.
+       *Destroy the execution engine later if we need to keep debug info around.
+       */
+      if (!(gallivm_debug & GALLIVM_DEBUG_SYMBOLS))
+         LLVMDisposeExecutionEngine(gallivm->engine);
    } else if (gallivm->module) {
       LLVMDisposeModule(gallivm->module);
    }
@@ -110,6 +113,9 @@ gallivm_free_ir(struct gallivm_state *gallivm)
 
    if (gallivm->builder)
       LLVMDisposeBuilder(gallivm->builder);
+
+   if (gallivm->di_builder)
+      LLVMDisposeDIBuilder(gallivm->di_builder);
 
    /* The LLVMContext should be owned by the parent of gallivm. */
 
@@ -284,6 +290,9 @@ init_gallivm_state(struct gallivm_state *gallivm, const char *name,
    if (!create_pass_manager(gallivm))
       goto fail;
 
+   if (gallivm_debug & GALLIVM_DEBUG_SYMBOLS)
+      gallivm->di_builder = LLVMCreateDIBuilder(gallivm->module);
+
    lp_build_coro_declare_malloc_hooks(gallivm);
    return true;
 
@@ -349,6 +358,8 @@ void
 gallivm_destroy(struct gallivm_state *gallivm)
 {
    gallivm_free_ir(gallivm);
+   if (gallivm->engine)
+      LLVMDisposeExecutionEngine(gallivm->engine);
    gallivm_free_code(gallivm);
    FREE(gallivm);
 }
@@ -371,6 +382,12 @@ gallivm_compile_module(struct gallivm_state *gallivm)
    if (gallivm->builder) {
       LLVMDisposeBuilder(gallivm->builder);
       gallivm->builder = NULL;
+   }
+
+   if (gallivm->di_builder) {
+      LLVMDIBuilderFinalize(gallivm->di_builder);
+      LLVMDisposeDIBuilder(gallivm->di_builder);
+      gallivm->di_builder = NULL;
    }
 
    LLVMSetDataLayout(gallivm->module, "");

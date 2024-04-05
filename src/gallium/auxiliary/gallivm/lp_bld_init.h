@@ -65,6 +65,7 @@ struct gallivm_state
 #endif
    LLVMContextRef context;
    LLVMBuilderRef builder;
+   LLVMDIBuilderRef di_builder;
    struct lp_cached_code *cache;
    unsigned compiled;
    LLVMValueRef coro_malloc_hook;
