@@ -1477,7 +1477,7 @@ nir_has_divergent_loop(nir_shader *shader)
 
    foreach_list_typed(nir_cf_node, node, node, &func->body) {
       if (node->type == nir_cf_node_loop) {
-         if (nir_loop_is_divergent(nir_cf_node_as_loop(node)))
+         if (nir_cf_node_as_loop(node)->divergent_break)
             return true;
       }
    }
