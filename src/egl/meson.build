@@ -163,14 +163,6 @@ else
   deps_for_egl += dep_glvnd
   files_egl += [g_egldispatchstubs_h, g_egldispatchstubs_c]
   files_egl += files('main/eglglvnd.c', 'main/egldispatchstubs.c')
-  configure_file(
-    configuration: {'glvnd_vendor_name' : glvnd_vendor_name},
-    input : 'main/50_mesa.json',
-    output: '50_@0@.json'.format(glvnd_vendor_name),
-    install : true,
-    install_tag : 'runtime',
-    install_dir : join_paths(get_option('datadir'), 'glvnd', 'egl_vendor.d')
-  )
 endif
 
 if with_ld_version_script
@@ -215,7 +207,16 @@ libegl = shared_library(
   vs_module_defs : egl_def
 )
 
-if not with_glvnd
+if with_glvnd
+  configure_file(
+    configuration: {'glvnd_vendor_name' : glvnd_vendor_name},
+    input : 'main/50_mesa.json',
+    output: '50_@0@.json'.format(glvnd_vendor_name),
+    install : true,
+    install_tag : 'runtime',
+    install_dir : join_paths(get_option('datadir'), 'glvnd', 'egl_vendor.d')
+  )
+else
   pkg.generate(
     name : 'egl',
     description : 'Mesa EGL Library',
