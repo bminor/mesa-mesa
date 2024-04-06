@@ -203,6 +203,9 @@ lp_build_endif(struct lp_build_if_state *ctx);
 LLVMBasicBlockRef
 lp_build_insert_new_block(struct gallivm_state *gallivm, const char *name);
 
+LLVMBuilderRef
+lp_create_builder_at_entry(struct gallivm_state *gallivm);
+
 LLVMValueRef
 lp_build_alloca(struct gallivm_state *gallivm,
                 LLVMTypeRef type,

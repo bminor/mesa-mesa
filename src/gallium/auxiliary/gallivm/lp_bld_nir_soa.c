@@ -2929,6 +2929,46 @@ assign_ssa_dest(struct lp_build_nir_soa_context *bld, const nir_def *ssa,
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
 
+   if (gallivm->di_builder && ssa->parent_instr->has_debug_info) {
+      nir_instr_debug_info *debug_info = nir_instr_get_debug_info(ssa->parent_instr);
+
+      /* Use "ssa_%u" because GDB cannot handle "%%%u" */
+      char name[16];
+      snprintf(name, sizeof(name), "ssa_%u", ssa->index);
+
+      LLVMTypeRef type = LLVMTypeOf(vals[0]);
+      if (ssa->num_components > 1)
+         type = LLVMArrayType(type, ssa->num_components);
+
+      LLVMBuilderRef first_builder = lp_create_builder_at_entry(gallivm);
+      LLVMValueRef var = LLVMBuildAlloca(first_builder, type, name);
+      LLVMBuildStore(first_builder, LLVMConstNull(type), var);
+      LLVMDisposeBuilder(first_builder);
+
+      if (ssa->num_components > 1)
+         LLVMBuildStore(builder, lp_nir_array_build_gather_values(builder, vals, ssa->num_components), var);
+      else
+         LLVMBuildStore(builder, vals[0], var);
+
+      LLVMMetadataRef di_type = lp_bld_debug_info_type(gallivm, type);
+      LLVMMetadataRef di_var = LLVMDIBuilderCreateAutoVariable(
+         gallivm->di_builder, gallivm->di_function, name, strlen(name),
+         gallivm->file, debug_info->line, di_type, true, LLVMDIFlagZero, 0);
+
+      LLVMMetadataRef di_expr = LLVMDIBuilderCreateExpression(gallivm->di_builder, NULL, 0);
+
+      LLVMMetadataRef di_loc = LLVMDIBuilderCreateDebugLocation(
+         gallivm->context, debug_info->line, debug_info->column, gallivm->di_function, NULL);
+
+#if LLVM_VERSION_MAJOR >= 19
+      LLVMDIBuilderInsertDeclareRecordAtEnd(gallivm->di_builder, var, di_var, di_expr, di_loc,
+                                            LLVMGetInsertBlock(builder));
+#else
+      LLVMDIBuilderInsertDeclareAtEnd(gallivm->di_builder, var, di_var, di_expr, di_loc,
+                                      LLVMGetInsertBlock(builder));
+#endif
+   }
+
    bool used_by_uniform = false;
    bool used_by_divergent = false;
    nir_foreach_use_including_if(use, ssa) {
