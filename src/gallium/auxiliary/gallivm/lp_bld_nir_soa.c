@@ -5547,9 +5547,18 @@ visit_call(struct lp_build_nir_soa_context *bld,
 static void
 visit_block(struct lp_build_nir_soa_context *bld, nir_block *block)
 {
+   struct gallivm_state *gallivm = bld->base.gallivm;
+
    nir_foreach_instr(instr, block)
    {
       bld->instr = instr;
+
+      if (gallivm->di_builder && gallivm->file_name && instr->has_debug_info) {
+         nir_instr_debug_info *debug_info = nir_instr_get_debug_info(instr);
+         LLVMMetadataRef di_loc = LLVMDIBuilderCreateDebugLocation(
+            gallivm->context, debug_info->nir_line, 1, gallivm->di_function, NULL);
+         LLVMSetCurrentDebugLocation2(gallivm->builder, di_loc);
+      }
 
       switch (instr->type) {
       case nir_instr_type_alu:
@@ -5936,6 +5945,19 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
                                       _mesa_key_pointer_equal);
    bld.range_ht = _mesa_pointer_hash_table_create(NULL);
 
+   nir_index_ssa_defs(impl);
+
+   if (bld.base.gallivm->di_builder && bld.base.gallivm->file_name && shader->has_debug_info) {
+      char *shader_src = nir_shader_gather_debug_info(shader, bld.base.gallivm->file_name, 1);
+      if (shader_src) {
+         FILE *f = fopen(bld.base.gallivm->file_name, "w");
+         fprintf(f, "%s\n", shader_src);
+         fclose(f);
+
+         ralloc_free(shader_src);
+      }
+   }
+
    nir_foreach_reg_decl(reg, impl) {
       LLVMTypeRef type = get_register_type(&bld, reg);
       LLVMValueRef reg_alloc = lp_build_alloca(bld.base.gallivm,
@@ -5943,7 +5965,6 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
       _mesa_hash_table_insert(bld.regs, reg, reg_alloc);
    }
 
-   nir_index_ssa_defs(impl);
    nir_divergence_analysis_impl(impl, impl->function->shader->options->divergence_analysis_options);
    bld.ssa_defs = calloc(impl->ssa_alloc * NIR_MAX_VEC_COMPONENTS * 2, sizeof(LLVMValueRef));
    visit_cf_list(&bld, &impl->body);

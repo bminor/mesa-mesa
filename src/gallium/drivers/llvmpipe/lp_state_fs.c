@@ -3320,6 +3320,11 @@ generate_fragment(struct llvmpipe_context *lp,
    assert(builder);
    LLVMPositionBuilderAtEnd(builder, block);
 
+   if (gallivm->di_function) {
+      LLVMSetCurrentDebugLocation2(
+         gallivm->builder, LLVMDIBuilderCreateDebugLocation(gallivm->context, 0, 0, gallivm->di_function, NULL));
+   }
+
    /* code generated texture sampling */
    struct lp_build_sampler_soa *sampler =
       lp_llvm_sampler_soa_create(lp_fs_variant_key_samplers(key),

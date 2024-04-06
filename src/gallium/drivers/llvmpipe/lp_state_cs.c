@@ -580,6 +580,11 @@ generate_compute(struct llvmpipe_context *lp,
       assert(builder);
       LLVMPositionBuilderAtEnd(builder, block);
 
+      if (gallivm->di_function) {
+         LLVMSetCurrentDebugLocation2(
+           gallivm->builder, LLVMDIBuilderCreateDebugLocation(gallivm->context, 0, 0, gallivm->di_function, NULL));
+      }
+
       if (is_mesh) {
          LLVMTypeRef output_type = create_mesh_jit_output_type_deref(gallivm);
          output_array = lp_build_array_alloca(gallivm, output_type, lp_build_const_int32(gallivm, align(MAX2(nir->info.mesh.max_primitives_out, nir->info.mesh.max_vertices_out), 8)), "outputs");
@@ -711,6 +716,11 @@ generate_compute(struct llvmpipe_context *lp,
    block = LLVMAppendBasicBlockInContext(gallivm->context, coro, "entry");
    builder = gallivm->builder;
    LLVMPositionBuilderAtEnd(builder, block);
+
+   if (gallivm->di_function) {
+      LLVMSetCurrentDebugLocation2(
+         gallivm->builder, LLVMDIBuilderCreateDebugLocation(gallivm->context, 0, 0, gallivm->di_function, NULL));
+   }
 
    struct lp_build_loop_state loop_state;
 
