@@ -140,6 +140,8 @@ static const char *attr_to_str(enum lp_func_attr attr)
    case LP_FUNC_ATTR_NOUNWIND: return "nounwind";
    case LP_FUNC_ATTR_CONVERGENT: return "convergent";
    case LP_FUNC_ATTR_PRESPLITCORO: return "presplitcoroutine";
+   case LP_FUNC_ATTR_NOINLINE: return "noinline";
+   case LP_FUNC_ATTR_OPTNONE: return "optnone";
    default:
       _debug_printf("Unhandled function attribute: %x\n", attr);
       return 0;

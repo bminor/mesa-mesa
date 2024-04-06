@@ -573,6 +573,8 @@ generate_compute(struct llvmpipe_context *lp,
    LLVMValueRef vec_length = lp_build_const_int32(gallivm, cs_type.length);
 
    if (use_coro) {
+      lp_function_add_debug_info(gallivm, function, func_type);
+
       block = LLVMAppendBasicBlockInContext(gallivm->context, function, "entry");
       builder = gallivm->builder;
       assert(builder);
@@ -703,6 +705,8 @@ generate_compute(struct llvmpipe_context *lp,
       if (is_mesh)
          output_array = LLVMGetParam(coro, CS_ARG_CORO_OUTPUTS);
    }
+
+   lp_function_add_debug_info(gallivm, coro, coro_func_type);
 
    block = LLVMAppendBasicBlockInContext(gallivm->context, coro, "entry");
    builder = gallivm->builder;

@@ -30,7 +30,7 @@
 #define LP_BLD_DEBUG_H
 
 
-#include "gallivm/lp_bld.h"
+#include "gallivm/lp_bld_init.h"
 
 #include "util/compiler.h"
 #include "util/u_string.h"
@@ -93,6 +93,17 @@ lp_disassemble(LLVMValueRef func, const void *code);
 
 void
 lp_profile(LLVMValueRef func, const void *code);
+
+
+LLVMMetadataRef
+lp_bld_debug_info_type(struct gallivm_state *gallivm, LLVMTypeRef type);
+
+
+void
+lp_function_add_debug_info(struct gallivm_state *gallivm, LLVMValueRef func, LLVMTypeRef func_type);
+
+
+#define LP_NIR_SHADER_DUMP_DIR "/tmp/nir_shaders"
 
 
 #ifdef __cplusplus

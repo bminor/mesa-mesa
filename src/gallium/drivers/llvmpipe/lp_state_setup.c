@@ -695,6 +695,8 @@ generate_setup_variant(struct lp_setup_variant_key *key,
 
    LLVMSetFunctionCallConv(variant->function, LLVMCCallConv);
 
+   lp_function_add_debug_info(gallivm, variant->function, func_type);
+
    struct lp_setup_args args;
    args.vec4f_type = vec4f_type;
    args.v0       = LLVMGetParam(variant->function, 0);
