@@ -30,6 +30,14 @@ pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx)
 
    pco_debug_init();
 
+#ifndef NDEBUG
+   /* Ensure NIR debug variables are processed. */
+   nir_process_debug_variable();
+#endif /* NDEBUG */
+
+   pco_setup_spirv_options(dev_info, &ctx->spirv_options);
+   pco_setup_nir_options(dev_info, &ctx->nir_options);
+
    return ctx;
 }
 
@@ -42,7 +50,6 @@ pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx)
  */
 const struct spirv_to_nir_options *pco_spirv_options(pco_ctx *ctx)
 {
-   unreachable("finishme: pco_spirv_options");
    return &ctx->spirv_options;
 }
 
@@ -55,6 +62,5 @@ const struct spirv_to_nir_options *pco_spirv_options(pco_ctx *ctx)
  */
 const nir_shader_compiler_options *pco_nir_options(pco_ctx *ctx)
 {
-   unreachable("finishme: pco_nir_options");
    return &ctx->nir_options;
 }

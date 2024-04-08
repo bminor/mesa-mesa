@@ -32,6 +32,11 @@ typedef struct _pco_ctx {
    struct spirv_to_nir_options spirv_options;
 } pco_ctx;
 
+void pco_setup_spirv_options(const struct pvr_device_info *dev_info,
+                             struct spirv_to_nir_options *spirv_options);
+void pco_setup_nir_options(const struct pvr_device_info *dev_info,
+                           nir_shader_compiler_options *nir_options);
+
 /* Debug. */
 enum pco_debug {
    PCO_DEBUG_VAL_SKIP = BITFIELD64_BIT(0),
