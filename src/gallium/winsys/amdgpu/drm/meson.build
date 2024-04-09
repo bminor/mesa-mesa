@@ -5,7 +5,7 @@ libamdgpuwinsys = static_library(
   'amdgpuwinsys',
   files(
     'amdgpu_bo.c', 'amdgpu_bo.h', 'amdgpu_cs.cpp', 'amdgpu_cs.h',
-    'amdgpu_surface.c', 'amdgpu_winsys.c',
+    'amdgpu_surface.c', 'amdgpu_userq.c', 'amdgpu_userq.h', 'amdgpu_winsys.c',
     'amdgpu_winsys.h',
   ),
   include_directories : [
