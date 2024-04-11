@@ -35,20 +35,24 @@ struct lower_phis_to_scalar_state {
    struct exec_list dead_instrs;
 
    bool lower_all;
-
-   /* Hash table marking which phi nodes are scalarizable.  The key is
-    * pointers to phi instructions and the entry is either NULL for not
-    * scalarizable or non-null for scalarizable.
-    */
-   struct hash_table *phi_table;
 };
 
 static bool
-should_lower_phi(nir_phi_instr *phi, struct lower_phis_to_scalar_state *state);
+nir_block_ends_in_continue(nir_block *block)
+{
+   if (!exec_list_is_empty(&block->instr_list)) {
+      nir_instr *instr = nir_block_last_instr(block);
+      if (instr->type == nir_instr_type_jump)
+         return nir_instr_as_jump(instr)->type == nir_jump_continue;
+   }
+
+   nir_cf_node *parent = block->cf_node.parent;
+   return parent->type == nir_cf_node_loop &&
+          block == nir_cf_node_cf_tree_last(parent);
+}
 
 static bool
-is_phi_src_scalarizable(nir_phi_src *src,
-                        struct lower_phis_to_scalar_state *state)
+is_phi_src_scalarizable(nir_phi_src *src)
 {
 
    nir_instr *src_instr = src->src.ssa->parent_instr;
@@ -66,8 +70,11 @@ is_phi_src_scalarizable(nir_phi_src *src,
    }
 
    case nir_instr_type_phi:
-      /* A phi is scalarizable if we're going to lower it */
-      return should_lower_phi(nir_instr_as_phi(src_instr), state);
+      /* If the src is another phi, scalarize it if we didn't visit it yet,
+       * which is the case for continue blocks. We are likely going to lower
+       * it anyway.
+       */
+      return nir_block_ends_in_continue(src->pred);
 
    case nir_instr_type_load_const:
       /* These are trivially scalarizable */
@@ -147,37 +154,17 @@ should_lower_phi(nir_phi_instr *phi, struct lower_phis_to_scalar_state *state)
    if (state->lower_all)
       return true;
 
-   struct hash_entry *entry = _mesa_hash_table_search(state->phi_table, phi);
-   if (entry)
-      return entry->data != NULL;
-
-   /* Insert an entry and mark it as scalarizable for now. That way
-    * we don't recurse forever and a cycle in the dependence graph
-    * won't automatically make us fail to scalarize.
-    */
-   entry = _mesa_hash_table_insert(state->phi_table, phi, (void *)(intptr_t)1);
-
-   bool scalarizable = false;
-
    nir_foreach_phi_src(src, phi) {
       /* This loop ignores srcs that are not scalarizable because its likely
        * still worth copying to temps if another phi source is scalarizable.
        * This reduces register spilling by a huge amount in the i965 driver for
        * Deus Ex: MD.
        */
-      scalarizable = is_phi_src_scalarizable(src, state);
-      if (scalarizable)
-         break;
+      if (is_phi_src_scalarizable(src))
+         return true;
    }
 
-   /* The hash table entry for 'phi' may have changed while recursing the
-    * dependence graph, so we need to reset it */
-   entry = _mesa_hash_table_search(state->phi_table, phi);
-   assert(entry);
-
-   entry->data = (void *)(intptr_t)scalarizable;
-
-   return scalarizable;
+   return false;
 }
 
 static bool
@@ -258,7 +245,6 @@ lower_phis_to_scalar_impl(nir_function_impl *impl, bool lower_all)
    state.shader = impl->function->shader;
    state.builder = nir_builder_create(impl);
    exec_list_make_empty(&state.dead_instrs);
-   state.phi_table = _mesa_pointer_hash_table_create(NULL);
    state.lower_all = lower_all;
 
    nir_foreach_block(block, impl) {
@@ -268,8 +254,6 @@ lower_phis_to_scalar_impl(nir_function_impl *impl, bool lower_all)
    nir_progress(true, impl, nir_metadata_control_flow);
 
    nir_instr_free_list(&state.dead_instrs);
-
-   ralloc_free(state.phi_table);
 
    return progress;
 }
