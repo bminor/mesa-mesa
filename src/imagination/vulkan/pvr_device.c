@@ -198,6 +198,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_color_write_enable = true,
       .EXT_custom_border_color = true,
       .EXT_depth_clamp_zero_one = true,
+      .EXT_depth_clip_enable = true,
       .EXT_extended_dynamic_state = true,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
@@ -339,6 +340,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_EXT_custom_border_color */
       .customBorderColors = true,
+
+      /* VK_EXT_depth_clip_enable */
+      .depthClipEnable = true,
    };
 }
 

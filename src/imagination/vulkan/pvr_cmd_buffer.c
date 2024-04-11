@@ -5532,10 +5532,22 @@ static void pvr_setup_ppp_control(struct pvr_cmd_buffer *const cmd_buffer)
       else
          control.flatshade_vtx = ROGUE_TA_FLATSHADE_VTX_VERTEX_0;
 
-      if (dynamic_state->rs.depth_clamp_enable)
+      switch (dynamic_state->rs.depth_clip_enable) {
+      case VK_MESA_DEPTH_CLIP_ENABLE_FALSE:
          control.clip_mode = ROGUE_TA_CLIP_MODE_NO_FRONT_OR_REAR;
-      else
+         break;
+
+      case VK_MESA_DEPTH_CLIP_ENABLE_TRUE:
          control.clip_mode = ROGUE_TA_CLIP_MODE_FRONT_REAR;
+         break;
+
+      case VK_MESA_DEPTH_CLIP_ENABLE_NOT_CLAMP:
+         if (dynamic_state->rs.depth_clamp_enable)
+            control.clip_mode = ROGUE_TA_CLIP_MODE_NO_FRONT_OR_REAR;
+         else
+            control.clip_mode = ROGUE_TA_CLIP_MODE_FRONT_REAR;
+         break;
+      }
 
       /* +--- FrontIsCCW?
        * | +--- Cull Front?
