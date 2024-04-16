@@ -69,7 +69,7 @@ occlusion_allocate(struct etna_context *ctx, ASSERTED unsigned query_type)
 static void
 occlusion_resume(struct etna_acc_query *aq, struct etna_context *ctx)
 {
-   struct etna_resource *rsc = etna_resource(aq->prsc);
+   struct etna_buffer_resource *rsc = etna_buffer_resource(aq->prsc);
    struct etna_reloc r = {
       .bo = rsc->bo,
       .flags = ETNA_RELOC_WRITE

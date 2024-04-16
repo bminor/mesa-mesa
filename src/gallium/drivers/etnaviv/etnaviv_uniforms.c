@@ -155,7 +155,7 @@ etna_uniforms_write(const struct etna_context *ctx,
 
       case ETNA_UNIFORM_UBO_ADDR:
          etna_cmd_stream_reloc(stream, &(struct etna_reloc) {
-            .bo = etna_resource(cb[val].buffer)->bo,
+            .bo = etna_buffer_resource(cb[val].buffer)->bo,
             .flags = ETNA_RELOC_READ,
             .offset = cb[val].buffer_offset,
          });

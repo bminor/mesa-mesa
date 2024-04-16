@@ -562,7 +562,7 @@ etna_set_vertex_buffers(struct pipe_context *pctx, unsigned num_buffers,
                                        etna_usermem_map */
 
       if (vbi->buffer.resource) { /* GPU buffer */
-         cs->FE_VERTEX_STREAM_BASE_ADDR.bo = etna_resource(vbi->buffer.resource)->bo;
+         cs->FE_VERTEX_STREAM_BASE_ADDR.bo = etna_buffer_resource(vbi->buffer.resource)->bo;
          cs->FE_VERTEX_STREAM_BASE_ADDR.offset = vbi->buffer_offset;
          cs->FE_VERTEX_STREAM_BASE_ADDR.flags = ETNA_RELOC_READ;
       } else {

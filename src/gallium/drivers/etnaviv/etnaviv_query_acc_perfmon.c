@@ -83,7 +83,7 @@ pm_query(struct etna_context *ctx, struct etna_acc_query *aq, unsigned flags)
    struct etna_perf p = {
       .flags = flags,
       .sequence = pq->sequence,
-      .bo = etna_resource(aq->prsc)->bo,
+      .bo = etna_buffer_resource(aq->prsc)->bo,
       .signal = pq->signal,
       .offset = offset
    };

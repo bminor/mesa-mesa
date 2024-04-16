@@ -48,6 +48,99 @@
 
 #define ETNA_PIPE_MAP_DISCARD_LEVEL   (PIPE_MAP_DRV_PRV << 0)
 
+static void *
+etna_buffer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
+                unsigned level, unsigned usage, const struct pipe_box *box,
+                struct pipe_transfer **out_transfer)
+{
+   struct etna_buffer_resource *rsc = etna_buffer_resource(prsc);
+   struct etna_context *ctx = etna_context(pctx);
+   struct etna_transfer *trans;
+
+   trans = slab_zalloc(&ctx->transfer_pool);
+   if (!trans)
+      return NULL;
+
+   /* Upgrade to UNSYNCHRONIZED if range is uninitialized. */
+   if ((usage & PIPE_MAP_WRITE) &&
+       !util_ranges_intersect(&rsc->valid_buffer_range,
+                              box->x, box->x + box->width))
+      usage |= PIPE_MAP_UNSYNCHRONIZED;
+
+   pipe_resource_reference(&trans->base.resource, prsc);
+   trans->base.level = level;
+   trans->base.usage = usage;
+   trans->base.box = *box;
+
+   /* map buffer object */
+   trans->mapped = etna_bo_map(rsc->bo);
+   if (!trans->mapped)
+         goto free_trans;
+
+   if (!(usage & PIPE_MAP_UNSYNCHRONIZED)) {
+      enum etna_resource_status status = etna_resource_status(ctx, &rsc->base);
+      uint32_t prep_flags = 0;
+
+      /*
+       * Infer flush requirement from resource access and current GPU usage
+       * (reads must wait for GPU writes, writes must have exclusive access
+       * to the buffer).
+       */
+      if (((usage & PIPE_MAP_READ) && (status & ETNA_PENDING_WRITE)) ||
+          ((usage & PIPE_MAP_WRITE) && status)) {
+         etna_flush(pctx, NULL, 0, true);
+      }
+
+      if (usage & PIPE_MAP_READ)
+         prep_flags |= DRM_ETNA_PREP_READ;
+      if (usage & PIPE_MAP_WRITE)
+         prep_flags |= DRM_ETNA_PREP_WRITE;
+
+      if (etna_bo_cpu_prep(rsc->bo, prep_flags))
+         goto free_trans;
+   }
+
+   *out_transfer = &trans->base;
+   return trans->mapped + box->x;
+
+free_trans:
+   slab_free(&ctx->transfer_pool, trans);
+   return NULL;
+}
+
+static void
+etna_buffer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
+{
+   struct etna_buffer_resource *rsc = etna_buffer_resource(ptrans->resource);
+   struct etna_transfer *trans = etna_transfer(ptrans);
+   struct etna_context *ctx = etna_context(pctx);
+
+   if (!(ptrans->usage & PIPE_MAP_UNSYNCHRONIZED))
+      etna_bo_cpu_fini(rsc->bo);
+
+   if ((ptrans->usage & PIPE_MAP_WRITE) &&
+       !(ptrans->usage & PIPE_MAP_FLUSH_EXPLICIT))
+      util_range_add(&rsc->base, &rsc->valid_buffer_range,
+                     ptrans->box.x, ptrans->box.x + ptrans->box.width);
+
+   pipe_resource_reference(&ptrans->resource, NULL);
+   slab_free(&ctx->transfer_pool, trans);
+}
+
+static void
+etna_transfer_flush_region(struct pipe_context *pctx,
+                           struct pipe_transfer *ptrans,
+                           const struct pipe_box *box)
+{
+   struct etna_buffer_resource *rsc = etna_buffer_resource(ptrans->resource);
+
+   assert(ptrans->resource->target == PIPE_BUFFER);
+
+   util_range_add(&rsc->base, &rsc->valid_buffer_range,
+                  ptrans->box.x + box->x,
+                  ptrans->box.x + box->x + box->width);
+}
+
 /* Compute offset into a 1D/2D/3D buffer of a certain box.
  * This box must be aligned to the block width and height of the
  * underlying format. */
@@ -102,7 +195,7 @@ static void etna_unpatch_data(void *buffer, const struct pipe_transfer *ptrans)
 }
 
 static void
-etna_transfer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
+etna_texture_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
 {
    struct etna_context *ctx = etna_context(pctx);
    struct etna_transfer *trans = etna_transfer(ptrans);
@@ -156,10 +249,6 @@ etna_transfer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
          }
       }
 
-      if (ptrans->resource->target == PIPE_BUFFER)
-         util_range_add(&rsc->base, &rsc->valid_buffer_range,
-                        ptrans->box.x, ptrans->box.x + ptrans->box.width);
-
       etna_resource_level_ts_mark_invalid(res_level);
       etna_resource_level_mark_changed(res_level);
 
@@ -187,11 +276,9 @@ etna_transfer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
 }
 
 static void *
-etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
-                  unsigned level,
-                  unsigned usage,
-                  const struct pipe_box *box,
-                  struct pipe_transfer **out_transfer)
+etna_texture_map(struct pipe_context *pctx, struct pipe_resource *prsc,
+                 unsigned level, unsigned usage, const struct pipe_box *box,
+                 struct pipe_transfer **out_transfer)
 {
    struct etna_context *ctx = etna_context(pctx);
    struct etna_screen *screen = ctx->screen;
@@ -206,17 +293,6 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
       return NULL;
 
    assert(level <= prsc->last_level);
-
-   /*
-    * Upgrade to UNSYNCHRONIZED if target is PIPE_BUFFER and range is uninitialized.
-    */
-   if ((usage & PIPE_MAP_WRITE) &&
-       (prsc->target == PIPE_BUFFER) &&
-       !util_ranges_intersect(&rsc->valid_buffer_range,
-                              box->x,
-                              box->x + box->width)) {
-      usage |= PIPE_MAP_UNSYNCHRONIZED;
-   }
 
    /* Upgrade DISCARD_RANGE to WHOLE_RESOURCE if the whole resource is
     * being mapped. If we add buffer reallocation to avoid CPU/GPU sync this
@@ -308,14 +384,6 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
       rsc = etna_resource(trans->rsc);
       res_level = &rsc->levels[0];
    }
-
-   /* XXX we don't handle PIPE_MAP_FLUSH_EXPLICIT; this flag can be ignored
-    * when mapping in-place,
-    * but when not in place we need to fire off the copy operation in
-    * transfer_flush_region (currently
-    * a no-op) instead of unmap. Need to handle this to support
-    * ARB_map_buffer_range extension at least.
-    */
 
    /*
     * Pull resources into the CPU domain. Only skipped for unsynchronized
@@ -422,32 +490,18 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
 fail:
    etna_bo_cpu_fini(rsc->bo);
 fail_prep:
-   etna_transfer_unmap(pctx, ptrans);
+   etna_texture_unmap(pctx, ptrans);
    return NULL;
-}
-
-static void
-etna_transfer_flush_region(struct pipe_context *pctx,
-                           struct pipe_transfer *ptrans,
-                           const struct pipe_box *box)
-{
-   struct etna_resource *rsc = etna_resource(ptrans->resource);
-
-   if (ptrans->resource->target == PIPE_BUFFER)
-      util_range_add(&rsc->base,
-                     &rsc->valid_buffer_range,
-                     ptrans->box.x + box->x,
-                     ptrans->box.x + box->x + box->width);
 }
 
 void
 etna_transfer_init(struct pipe_context *pctx)
 {
-   pctx->buffer_map = etna_transfer_map;
-   pctx->texture_map = etna_transfer_map;
+   pctx->buffer_map = etna_buffer_map;
+   pctx->texture_map = etna_texture_map;
    pctx->transfer_flush_region = etna_transfer_flush_region;
-   pctx->buffer_unmap = etna_transfer_unmap;
-   pctx->texture_unmap = etna_transfer_unmap;
+   pctx->buffer_unmap = etna_buffer_unmap;
+   pctx->texture_unmap = etna_texture_unmap;
    pctx->buffer_subdata = u_default_buffer_subdata;
    pctx->texture_subdata = u_default_texture_subdata;
 }
