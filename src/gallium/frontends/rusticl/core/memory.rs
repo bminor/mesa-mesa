@@ -30,6 +30,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::mem;
 use std::mem::size_of;
+use std::num::NonZeroU64;
 use std::ops::Deref;
 use std::os::raw::c_void;
 use std::ptr;
@@ -45,6 +46,12 @@ struct Mapping<T> {
     /// mappings content to the GPU resource.
     count: u32,
     inner: T,
+}
+
+impl<T> Mapping<T> {
+    fn size(&self) -> usize {
+        self.layout.size()
+    }
 }
 
 impl<T> Drop for Mapping<T> {
@@ -580,6 +587,7 @@ pub struct MemBase {
 
 pub struct Buffer {
     base: MemBase,
+    address: Option<HashMap<&'static Device, NonZeroU64>>,
     maps: Mutex<TrackedPointers<usize, Mapping<BufferMapping>>>,
 }
 
@@ -760,6 +768,11 @@ impl MemBase {
         mut host_ptr: *mut c_void,
         props: Properties<cl_mem_properties>,
     ) -> CLResult<Arc<Buffer>> {
+        let bda = props
+            .get(&CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT.into())
+            .copied()
+            == Some(CL_TRUE.into());
+
         let res_type = if bit_check(flags, CL_MEM_ALLOC_HOST_PTR) {
             ResourceType::Staging
         } else {
@@ -770,6 +783,7 @@ impl MemBase {
             size,
             host_ptr,
             bit_check(flags, CL_MEM_COPY_HOST_PTR),
+            bda,
             res_type,
         )?;
 
@@ -778,8 +792,21 @@ impl MemBase {
             host_ptr = ptr::null_mut()
         }
 
+        let addresses = bda.then(|| {
+            context
+                .devs
+                .iter()
+                .filter(|dev| dev.bda_supported())
+                .map(|&dev| {
+                    let address = buffer[dev].resource_get_address();
+                    Some((dev, address?))
+                })
+                .collect::<Option<_>>()
+                .unwrap()
+        });
+
         let alloc = Allocation::new(buffer, 0, host_ptr);
-        Ok(Arc::new(Buffer {
+        let buffer = Arc::new(Buffer {
             base: Self {
                 base: CLObjectBase::new(RusticlTypes::Buffer),
                 context: context,
@@ -791,8 +818,15 @@ impl MemBase {
                 cbs: Mutex::new(Vec::new()),
                 alloc: alloc,
             },
+            address: addresses,
             maps: Mutex::new(TrackedPointers::new()),
-        }))
+        });
+
+        if buffer.address.is_some() {
+            buffer.context.add_bda_ptr(&buffer);
+        }
+
+        Ok(buffer)
     }
 
     pub fn new_sub_buffer(
@@ -801,6 +835,14 @@ impl MemBase {
         offset: usize,
         size: usize,
     ) -> Arc<Buffer> {
+        let address = parent.address.as_ref().map(|addresses| {
+            addresses
+                .iter()
+                // checked_add should never fail, because an allocation will never wrap around.
+                .map(|(&dev, address)| (dev, address.checked_add(offset as u64).unwrap()))
+                .collect()
+        });
+
         Arc::new(Buffer {
             base: Self {
                 base: CLObjectBase::new(RusticlTypes::Buffer),
@@ -813,6 +855,7 @@ impl MemBase {
                 cbs: Mutex::new(Vec::new()),
                 alloc: Allocation::new_sub(Mem::Buffer(parent), offset),
             },
+            address: address,
             maps: Mutex::new(TrackedPointers::new()),
         })
     }
@@ -1000,6 +1043,7 @@ impl MemBase {
         Ok(if rusticl_type == RusticlTypes::Buffer {
             Arc::new(Buffer {
                 base: base,
+                address: None,
                 maps: Mutex::new(TrackedPointers::new()),
             })
             .into_cl()
@@ -1266,6 +1310,24 @@ impl Buffer {
         Ok(())
     }
 
+    pub fn dev_address(&self, dev: &Device) -> Option<NonZeroU64> {
+        self.address.as_ref()?.get(dev).copied()
+    }
+
+    /// Returns an iterator of device address pairs in the same order as devices in the associated
+    /// context.
+    pub fn dev_addresses(
+        &self,
+    ) -> Option<impl ExactSizeIterator<Item = (&'static Device, Option<NonZeroU64>)> + '_> {
+        let address = self.address.as_ref()?;
+        Some(
+            self.context
+                .devs
+                .iter()
+                .map(|&dev| (dev, address.get(dev).copied())),
+        )
+    }
+
     pub fn fill(
         &self,
         ctx: &QueueContext,
@@ -1504,6 +1566,14 @@ impl Buffer {
         }
 
         Ok(())
+    }
+}
+
+impl Drop for Buffer {
+    fn drop(&mut self) {
+        if self.address.is_some() {
+            self.context.remove_bda(self);
+        }
     }
 }
 

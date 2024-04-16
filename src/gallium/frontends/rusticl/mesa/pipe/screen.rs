@@ -136,6 +136,7 @@ impl PipeScreen {
         size: u32,
         res_type: ResourceType,
         pipe_bind: u32,
+        pipe_flags: u32,
     ) -> Option<PipeResource> {
         let mut tmpl = pipe_resource::default();
 
@@ -145,6 +146,7 @@ impl PipeScreen {
         tmpl.depth0 = 1;
         tmpl.array_size = 1;
         tmpl.bind = pipe_bind;
+        tmpl.flags = pipe_flags;
 
         res_type.apply(&mut tmpl);
 
@@ -156,6 +158,7 @@ impl PipeScreen {
         size: u32,
         mem: *mut c_void,
         pipe_bind: u32,
+        pipe_flags: u32,
     ) -> Option<PipeResource> {
         let mut tmpl = pipe_resource::default();
 
@@ -165,6 +168,7 @@ impl PipeScreen {
         tmpl.depth0 = 1;
         tmpl.array_size = 1;
         tmpl.bind = pipe_bind;
+        tmpl.flags = pipe_flags;
 
         self.resource_create_from_user(&tmpl, mem)
     }

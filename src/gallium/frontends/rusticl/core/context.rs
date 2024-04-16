@@ -12,6 +12,7 @@ use mesa_rust::pipe::screen::ResourceType;
 use mesa_rust_gen::*;
 use mesa_rust_util::conversion::*;
 use mesa_rust_util::properties::Properties;
+use mesa_rust_util::ptr::AllocSize;
 use mesa_rust_util::ptr::TrackedPointers;
 use rusticl_opencl_gen::*;
 
@@ -22,12 +23,28 @@ use std::mem;
 use std::os::raw::c_void;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::Weak;
+
+struct TrackedBDAAlloc {
+    buffer: Weak<Buffer>,
+    size: cl_mem_device_address_ext,
+}
+
+impl AllocSize<cl_mem_device_address_ext> for TrackedBDAAlloc {
+    fn size(&self) -> cl_mem_device_address_ext {
+        self.size
+    }
+}
 
 pub struct Context {
     pub base: CLObjectBase<CL_INVALID_CONTEXT>,
     pub devs: Vec<&'static Device>,
     pub properties: Properties<cl_context_properties>,
     pub dtors: Mutex<Vec<DeleteContextCB>>,
+    // we track the pointers per device for quick access in hot paths.
+    bda_ptrs: Mutex<
+        HashMap<&'static Device, TrackedPointers<cl_mem_device_address_ext, TrackedBDAAlloc>>,
+    >,
     svm_ptrs: Mutex<TrackedPointers<usize, Layout>>,
     pub gl_ctx_manager: Option<GLCtxManager>,
 }
@@ -45,6 +62,7 @@ impl Context {
             devs: devs,
             properties: properties,
             dtors: Mutex::new(Vec::new()),
+            bda_ptrs: Mutex::new(HashMap::new()),
             svm_ptrs: Mutex::new(TrackedPointers::new()),
             gl_ctx_manager: gl_ctx_manager,
         })
@@ -55,10 +73,17 @@ impl Context {
         size: usize,
         user_ptr: *mut c_void,
         copy: bool,
+        bda: bool,
         res_type: ResourceType,
     ) -> CLResult<HashMap<&'static Device, Arc<PipeResource>>> {
         let adj_size: u32 = size.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
         let mut res = HashMap::new();
+        let mut pipe_flags = 0;
+
+        if bda {
+            pipe_flags |= PIPE_RESOURCE_FLAG_FIXED_ADDRESS;
+        }
+
         for &dev in &self.devs {
             let mut resource = None;
 
@@ -67,13 +92,17 @@ impl Context {
                     adj_size,
                     user_ptr,
                     PIPE_BIND_GLOBAL,
+                    pipe_flags,
                 )
             }
 
             if resource.is_none() {
-                resource = dev
-                    .screen()
-                    .resource_create_buffer(adj_size, res_type, PIPE_BIND_GLOBAL)
+                resource = dev.screen().resource_create_buffer(
+                    adj_size,
+                    res_type,
+                    PIPE_BIND_GLOBAL,
+                    pipe_flags,
+                )
             }
 
             let resource = resource.ok_or(CL_OUT_OF_RESOURCES);
@@ -192,6 +221,46 @@ impl Context {
 
     pub fn remove_svm_ptr(&self, ptr: usize) -> Option<Layout> {
         self.svm_ptrs.lock().unwrap().remove(ptr)
+    }
+
+    pub fn add_bda_ptr(&self, buffer: &Arc<Buffer>) {
+        if let Some(iter) = buffer.dev_addresses() {
+            let mut bda_ptrs = self.bda_ptrs.lock().unwrap();
+
+            for (dev, address) in iter {
+                let Some(address) = address else {
+                    continue;
+                };
+
+                bda_ptrs.entry(dev).or_default().insert(
+                    address.get(),
+                    TrackedBDAAlloc {
+                        buffer: Arc::downgrade(buffer),
+                        size: buffer.size as _,
+                    },
+                );
+            }
+        }
+    }
+
+    pub fn find_bda_alloc(
+        &self,
+        dev: &Device,
+        ptr: cl_mem_device_address_ext,
+    ) -> Option<Arc<Buffer>> {
+        let lock = self.bda_ptrs.lock().unwrap();
+        let (_, mem) = lock.get(dev)?.find_alloc(ptr)?;
+        mem.buffer.upgrade()
+    }
+
+    pub fn remove_bda(&self, buf: &Buffer) {
+        let mut bda_ptrs = self.bda_ptrs.lock().unwrap();
+
+        for (dev, bdas) in bda_ptrs.iter_mut() {
+            if let Some(address) = buf.dev_address(dev) {
+                bdas.remove(address.get());
+            }
+        }
     }
 
     pub fn import_gl_buffer(

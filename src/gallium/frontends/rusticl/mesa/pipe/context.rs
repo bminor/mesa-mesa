@@ -454,12 +454,16 @@ impl PipeContext {
         block: [u32; 3],
         grid: [u32; 3],
         variable_local_mem: u32,
+        globals: &[&PipeResource],
     ) {
+        let mut globals: Vec<*mut pipe_resource> = globals.iter().map(|res| res.pipe()).collect();
         let info = pipe_grid_info {
             variable_shared_mem: variable_local_mem,
             work_dim: work_dim,
             block: block,
             grid: grid,
+            globals: globals.as_mut_ptr(),
+            num_globals: globals.len() as u32,
             ..Default::default()
         };
         unsafe { self.pipe.as_ref().launch_grid.unwrap()(self.pipe.as_ptr(), &info) }

@@ -849,6 +849,7 @@ Rusticl extensions that are not part of any OpenCL version:
   cl_khr_terminate_context                              not started
   cl_khr_throttle_hints                                 not started
   cl_khr_work_group_uniform_arithmetic                  not started
+  cl_ext_buffer_device_address                          DONE (llvmpipe, zink)
   cl_arm_non_uniform_work_group_size                    not started
   cl_arm_shared_virtual_memory                          in progress (nvc0)
   cl_intel_subgroups                                    in progress (available with RUSTICL_FEATURES=intel)
