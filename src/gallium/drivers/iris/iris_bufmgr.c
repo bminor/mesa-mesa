@@ -855,7 +855,7 @@ flags_to_heap(struct iris_bufmgr *bufmgr, unsigned flags)
          return IRIS_HEAP_DEVICE_LOCAL_COMPRESSED;
 
       /* Discrete GPUs currently always snoop CPU caches. */
-      if ((flags & BO_ALLOC_SMEM) || (flags & BO_ALLOC_COHERENT))
+      if ((flags & BO_ALLOC_SMEM) || (flags & BO_ALLOC_CACHED_COHERENT))
          return IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT;
 
       if ((flags & BO_ALLOC_LMEM) ||
@@ -882,7 +882,7 @@ flags_to_heap(struct iris_bufmgr *bufmgr, unsigned flags)
       if (flags & BO_ALLOC_COMPRESSED)
          return IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED;
 
-      if (flags & BO_ALLOC_COHERENT)
+      if (flags & BO_ALLOC_CACHED_COHERENT)
          return IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT;
 
       return IRIS_HEAP_SYSTEM_MEMORY_UNCACHED;
@@ -1210,7 +1210,7 @@ iris_bo_alloc(struct iris_bufmgr *bufmgr,
    struct bo_cache_bucket *bucket =
       bucket_for_size(bufmgr, size, heap, flags);
 
-   if (memzone != IRIS_MEMZONE_OTHER || (flags & BO_ALLOC_COHERENT))
+   if (memzone != IRIS_MEMZONE_OTHER || (flags & BO_ALLOC_CACHED_COHERENT))
       flags |= BO_ALLOC_NO_SUBALLOC;
 
    /* By default, capture all driver-internal buffers like shader kernels,
@@ -1278,7 +1278,7 @@ iris_bo_alloc(struct iris_bufmgr *bufmgr,
    /* On integrated GPUs, enable snooping to ensure coherency if needed.
     * For discrete, we instead use SMEM and avoid WB maps for coherency.
     */
-   if ((flags & BO_ALLOC_COHERENT) &&
+   if ((flags & BO_ALLOC_CACHED_COHERENT) &&
        !bufmgr->devinfo.has_llc && bufmgr->devinfo.has_caching_uapi) {
       if (bufmgr->kmd_backend->bo_set_caching(bo, true) != 0)
          goto err_free;

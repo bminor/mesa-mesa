@@ -473,7 +473,7 @@ iris_resource_alloc_flags(const struct iris_screen *screen,
 
    switch (templ->usage) {
    case PIPE_USAGE_STAGING:
-      flags |= BO_ALLOC_SMEM | BO_ALLOC_COHERENT;
+      flags |= BO_ALLOC_SMEM | BO_ALLOC_CACHED_COHERENT;
       break;
    case PIPE_USAGE_STREAM:
       flags |= BO_ALLOC_SMEM;
@@ -490,7 +490,7 @@ iris_resource_alloc_flags(const struct iris_screen *screen,
 
    if (templ->flags & (PIPE_RESOURCE_FLAG_MAP_COHERENT |
                        PIPE_RESOURCE_FLAG_MAP_PERSISTENT))
-      flags |= BO_ALLOC_SMEM | BO_ALLOC_COHERENT;
+      flags |= BO_ALLOC_SMEM | BO_ALLOC_CACHED_COHERENT;
 
    if (screen->devinfo->verx10 >= 125 && screen->devinfo->has_local_mem &&
        isl_aux_usage_has_ccs(res->aux.usage)) {
@@ -1037,7 +1037,7 @@ iris_resource_image_is_pat_compressible(const struct iris_screen *screen,
       return false;
 
    if (flags & (BO_ALLOC_PROTECTED |
-                BO_ALLOC_COHERENT |
+                BO_ALLOC_CACHED_COHERENT |
                 BO_ALLOC_CPU_VISIBLE))
       return false;
 

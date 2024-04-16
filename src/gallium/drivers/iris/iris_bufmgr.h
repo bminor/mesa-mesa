@@ -365,7 +365,7 @@ struct iris_bo {
  * integrated platforms without LLC.
  * Should only be used in BOs that will be written and read from CPU often.
  */
-#define BO_ALLOC_COHERENT        (1<<1)
+#define BO_ALLOC_CACHED_COHERENT (1<<1)
 /* Place BO only on smem. */
 #define BO_ALLOC_SMEM            (1<<2)
 /* BO can be sent to display. */
