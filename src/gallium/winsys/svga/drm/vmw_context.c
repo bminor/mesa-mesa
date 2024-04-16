@@ -13,6 +13,7 @@
 #include "util/u_debug_stack.h"
 #include "util/u_debug_flush.h"
 #include "util/u_hash_table.h"
+#include "util/u_bitmask.h"
 #include "util/u_atomic.h"
 #include "pipebuffer/pb_buffer.h"
 #include "pipebuffer/pb_validate.h"
@@ -129,6 +130,9 @@ struct vmw_svga_winsys_context
    uint64_t seen_mobs;
 
    int32_t refcount;
+
+   /* Bitmask of userspace managed surfaces */
+   struct util_bitmask *surface_id_bm;
 
    /**
     * Whether this context should fail to reserve more commands, not because it
@@ -660,6 +664,8 @@ vmw_swc_destroy(struct svga_winsys_context *swc)
       vmw_svga_winsys_shader_reference(&ishader->vshader, NULL);
    }
 
+   if (vmw_has_userspace_surface(vswc->vws))
+      util_bitmask_destroy(vswc->surface_id_bm);
    _mesa_hash_table_destroy(vswc->hash, NULL);
    pb_validate_destroy(vswc->validate);
    vmw_ioctl_context_destroy(vswc->vws, swc->cid);
@@ -825,6 +831,16 @@ vmw_svga_winsys_context_create(struct svga_winsys_screen *sws)
    if (!vswc->hash)
       goto out_no_hash;
 
+   if (vmw_has_userspace_surface(vws)) {
+      if(!(vswc->surface_id_bm = util_bitmask_create()))
+         goto out_no_user_srf;
+      /**
+       * First id assigned is 0 which is invalid for surface id. Consume the
+       * first id.
+       */
+      vmw_swc_surface_add_userspace_id(&vswc->base);
+   }
+
    /**
     * The context refcount is initialized to 2, one reference is for the context
     * itself and the other is for vws screen. One unref is done when context
@@ -847,6 +863,8 @@ vmw_svga_winsys_context_create(struct svga_winsys_screen *sws)
    vswc->base.force_coherent = vws->force_coherent;
    return &vswc->base;
 
+out_no_user_srf:
+   _mesa_hash_table_destroy(vswc->hash, NULL);
 out_no_hash:
    pb_validate_destroy(vswc->validate);
 out_no_validate:
@@ -854,4 +872,19 @@ out_no_validate:
 out_no_context:
    FREE(vswc);
    return NULL;
+}
+
+void
+vmw_swc_surface_clear_userspace_id(struct svga_winsys_context *swc,
+                                   uint32 sid)
+{
+   struct vmw_svga_winsys_context *vswc = vmw_svga_winsys_context(swc);
+   util_bitmask_clear(vswc->surface_id_bm, sid);
+}
+
+uint32_t
+vmw_swc_surface_add_userspace_id(struct svga_winsys_context *swc)
+{
+   struct vmw_svga_winsys_context *vswc = vmw_svga_winsys_context(swc);
+   return util_bitmask_add(vswc->surface_id_bm);
 }

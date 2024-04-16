@@ -54,5 +54,11 @@ vmw_swc_surface_clear_reference(struct svga_winsys_context *swc,
 void
 vmw_swc_unref(struct svga_winsys_context *swc);
 
+void
+vmw_swc_surface_clear_userspace_id(struct svga_winsys_context *swc,
+                                   uint32_t sid);
+
+uint32_t
+vmw_swc_surface_add_userspace_id(struct svga_winsys_context *swc);
 
 #endif /* VMW_CONTEXT_H_ */

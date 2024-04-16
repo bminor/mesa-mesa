@@ -28,6 +28,7 @@
 #include "util/u_inlines.h"
 #include "util/u_math.h"
 #include "util/u_memory.h"
+#include "util/u_bitmask.h"
 #include "pipebuffer/pb_buffer.h"
 #include "pipebuffer/pb_bufmgr.h"
 #include "svga_winsys.h"
@@ -516,7 +517,41 @@ vmw_svga_winsys_surface_create(struct svga_winsys_screen *sws,
       goto no_sid;
    }
 
-   if (sws->have_gb_objects) {
+   if (vmw_has_userspace_surface(vws)) {
+      struct svga_winsys_context *swc = vws->swc;
+      struct pb_buffer *pb_buf;
+
+      surface->sid = vmw_swc_surface_add_userspace_id(swc);
+      if (surface->sid == UTIL_BITMASK_INVALID_INDEX)
+         goto no_sid;
+
+      if (SVGA3D_DefineGBSurface_v4(swc, surface->sid, flags, format,
+         numMipLevels, sampleCount, multisample_pattern, quality_level,
+         SVGA3D_TEX_FILTER_NONE, size, numLayers, 0) != PIPE_OK) {
+            vmw_swc_surface_clear_userspace_id(swc, surface->sid);
+            goto no_sid;
+      }
+
+      desc.pb_desc.alignment = 4096;
+      desc.pb_desc.usage = VMW_BUFFER_USAGE_SHARED;
+      surface->size = buffer_size;
+      pb_buf = provider->create_buffer(provider, surface->size,
+                                       &desc.pb_desc);
+      surface->buf = vmw_svga_winsys_buffer_wrap(pb_buf);
+
+      if (surface->buf == NULL) {
+         vmw_svga_winsys_userspace_surface_destroy(swc, surface->sid);
+         goto no_sid;
+      }
+
+      if (SVGA3D_BindGBSurface(swc, svga_winsys_surface(surface)) != PIPE_OK) {
+         vmw_svga_winsys_buffer_destroy(sws, surface->buf);
+         vmw_svga_winsys_userspace_surface_destroy(swc, surface->sid);
+         goto no_sid;
+      }
+
+      swc->flush(swc, NULL);
+   } else if (sws->have_gb_objects) {
       struct pb_buffer *pb_buf;
 
       surface->sid = vmw_ioctl_gb_surface_create(vws, flags, format, usage,
