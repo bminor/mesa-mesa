@@ -51,5 +51,8 @@ void
 vmw_swc_surface_clear_reference(struct svga_winsys_context *swc,
                                 struct vmw_svga_winsys_surface *vsurf);
 
+void
+vmw_swc_unref(struct svga_winsys_context *swc);
+
 
 #endif /* VMW_CONTEXT_H_ */

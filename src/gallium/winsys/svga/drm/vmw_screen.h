@@ -21,6 +21,7 @@
 #include "pipe/p_state.h"
 
 #include "svga_winsys.h"
+#include "svga_surface.h"
 #include "pipebuffer/pb_buffer_fenced.h"
 #include "util/u_thread.h"
 #include <sys/types.h>
@@ -79,6 +80,8 @@ struct vmw_winsys_screen
    } pools;
 
    struct pb_fence_ops *fence_ops;
+
+   struct svga_winsys_context *swc;
 
 #ifdef VMX86_STATS
    /*

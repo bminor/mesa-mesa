@@ -13,6 +13,7 @@
 #include "util/u_debug_stack.h"
 #include "util/u_debug_flush.h"
 #include "util/u_hash_table.h"
+#include "util/u_atomic.h"
 #include "pipebuffer/pb_buffer.h"
 #include "pipebuffer/pb_validate.h"
 
@@ -126,6 +127,8 @@ struct vmw_svga_winsys_context
    uint64_t seen_surfaces;
    uint64_t seen_regions;
    uint64_t seen_mobs;
+
+   int32_t refcount;
 
    /**
     * Whether this context should fail to reserve more commands, not because it
@@ -660,10 +663,21 @@ vmw_swc_destroy(struct svga_winsys_context *swc)
    _mesa_hash_table_destroy(vswc->hash, NULL);
    pb_validate_destroy(vswc->validate);
    vmw_ioctl_context_destroy(vswc->vws, swc->cid);
+   if (vswc->vws->swc == swc)
+      vswc->vws->swc = NULL;
 #if MESA_DEBUG
    debug_flush_ctx_destroy(vswc->fctx);
 #endif
    FREE(vswc);
+}
+
+void
+vmw_swc_unref(struct svga_winsys_context *swc)
+{
+   struct vmw_svga_winsys_context *vswc = vmw_svga_winsys_context(swc);
+   if (p_atomic_dec_zero(&vswc->refcount)) {
+      vmw_swc_destroy(swc);
+   }
 }
 
 /**
@@ -764,7 +778,7 @@ vmw_svga_winsys_context_create(struct svga_winsys_screen *sws)
    if(!vswc)
       return NULL;
 
-   vswc->base.destroy = vmw_swc_destroy;
+   vswc->base.destroy = vmw_swc_unref;
    vswc->base.reserve = vmw_swc_reserve;
    vswc->base.get_command_buffer_size = vmw_swc_get_command_buffer_size;
    vswc->base.surface_relocation = vmw_swc_surface_relocation;
@@ -810,6 +824,21 @@ vmw_svga_winsys_context_create(struct svga_winsys_screen *sws)
    vswc->hash = util_hash_table_create_ptr_keys();
    if (!vswc->hash)
       goto out_no_hash;
+
+   /**
+    * The context refcount is initialized to 2, one reference is for the context
+    * itself and the other is for vws screen. One unref is done when context
+    * destroy is called and the other when the either vws screen is destroyed
+    * or it initializes another context.
+    * This ensures that a screen always has access to its last created context.
+    * The vws screen needs this context to submit surface commands for userspace
+    * managed surfaces.
+    */
+   p_atomic_set(&vswc->refcount, 1);
+   if (vws->swc)
+      vmw_swc_unref(vws->swc);
+   vws->swc = &vswc->base;
+   p_atomic_inc(&vswc->refcount);
 
 #if MESA_DEBUG
    vswc->fctx = debug_flush_ctx_create(true, VMW_DEBUG_FLUSH_STACK);
