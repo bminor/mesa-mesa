@@ -322,7 +322,7 @@ etna_transfer_map(struct pipe_context *pctx, struct pipe_resource *prsc,
     * transfers without a temporary resource.
     */
    if (trans->rsc || !(usage & PIPE_MAP_UNSYNCHRONIZED)) {
-      enum etna_resource_status status = etna_resource_status(ctx, rsc);
+      enum etna_resource_status status = etna_resource_status(ctx, &rsc->base);
       uint32_t prep_flags = 0;
 
       /*

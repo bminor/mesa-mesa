@@ -892,8 +892,8 @@ etna_try_rs_blit(struct pipe_context *pctx,
 
 manual:
    if (src->layout == ETNA_LAYOUT_TILED && dst->layout == ETNA_LAYOUT_TILED) {
-      if ((etna_resource_status(ctx, src) & ETNA_PENDING_WRITE) ||
-          (etna_resource_status(ctx, dst) & ETNA_PENDING_WRITE))
+      if ((etna_resource_status(ctx, &src->base) & ETNA_PENDING_WRITE) ||
+          (etna_resource_status(ctx, &dst->base) & ETNA_PENDING_WRITE))
          etna_flush(pctx, NULL, 0, true);
 
       perf_debug_ctx(ctx, "RS blit falls back to sw");

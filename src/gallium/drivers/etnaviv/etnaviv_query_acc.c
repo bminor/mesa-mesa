@@ -124,7 +124,7 @@ etna_acc_get_query_result(struct etna_context *ctx, struct etna_query *q,
     * So, regardless of whether we are supposed to wait or not, we do need to
     * flush now.
     */
-   if (etna_resource_status(ctx, rsc) & ETNA_PENDING_WRITE)
+   if (etna_resource_status(ctx, &rsc->base) & ETNA_PENDING_WRITE)
       etna_flush(&ctx->base, NULL, 0, true);
 
    if (!wait)

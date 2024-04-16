@@ -387,7 +387,7 @@ etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
        *
        * This isn't implemented right now, so we don't support GPU written indirect buffers for now.
        */
-      assert(!(etna_resource_status(ctx, etna_resource(indirect->buffer)) & ETNA_PENDING_WRITE));
+      assert(!(etna_resource_status(ctx, indirect->buffer) & ETNA_PENDING_WRITE));
       resource_read(ctx, indirect->buffer);
    }
 

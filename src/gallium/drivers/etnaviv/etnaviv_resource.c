@@ -872,32 +872,31 @@ void
 etna_resource_used(struct etna_context *ctx, struct pipe_resource *prsc,
                    enum etna_resource_status status)
 {
-   struct etna_resource *rsc;
    struct hash_entry *entry;
    uint32_t hash;
 
    if (!prsc)
       return;
 
-   rsc = etna_resource(prsc);
-   hash = _mesa_hash_pointer(rsc);
+   hash = _mesa_hash_pointer(prsc);
    entry = _mesa_hash_table_search_pre_hashed(ctx->pending_resources,
-                                              hash, rsc);
+                                              hash, prsc);
 
    if (entry) {
       enum etna_resource_status tmp = (uintptr_t)entry->data;
       tmp |= status;
       entry->data = (void *)(uintptr_t)tmp;
    } else {
-      _mesa_hash_table_insert_pre_hashed(ctx->pending_resources, hash, rsc,
+      _mesa_hash_table_insert_pre_hashed(ctx->pending_resources, hash, prsc,
                                          (void *)(uintptr_t)status);
    }
 }
 
 enum etna_resource_status
-etna_resource_status(struct etna_context *ctx, struct etna_resource *res)
+etna_resource_status(struct etna_context *ctx, struct pipe_resource *prsc)
 {
-   struct hash_entry *entry = _mesa_hash_table_search(ctx->pending_resources, res);
+   struct hash_entry *entry = _mesa_hash_table_search(ctx->pending_resources,
+                                                      prsc);
 
    if (entry)
       return (enum etna_resource_status)(uintptr_t)entry->data;
