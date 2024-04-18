@@ -284,8 +284,11 @@ pvr_subpass_load_op_init(struct pvr_device *device,
       case VK_ATTACHMENT_LOAD_OP_LOAD:
          assert(z_replicate < PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
          load_op->clears_loads_state.rt_load_mask = BITFIELD_BIT(z_replicate);
+
+         assert(subpass->depth_stencil_attachment != VK_ATTACHMENT_UNUSED);
          load_op->clears_loads_state.dest_vk_format[z_replicate] =
-            VK_FORMAT_D32_SFLOAT;
+            pass->attachments[subpass->depth_stencil_attachment].vk_format;
+
          break;
 
       case VK_ATTACHMENT_LOAD_OP_CLEAR:

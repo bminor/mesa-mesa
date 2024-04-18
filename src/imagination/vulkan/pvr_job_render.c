@@ -1304,6 +1304,7 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
        */
       switch (zload_format) {
       case ROGUE_CR_ZLS_FORMAT_TYPE_F32Z:
+      case ROGUE_CR_ZLS_FORMAT_TYPE_F64Z:
          value.value = fui(depth_clear);
          break;
 

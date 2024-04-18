@@ -191,17 +191,33 @@ static VkResult pvr_pbe_src_format_pick_depth(
    const VkFormat dst_format,
    enum pvr_transfer_pbe_pixel_src *const src_format_out)
 {
-   if (dst_format != VK_FORMAT_D24_UNORM_S8_UINT)
-      return VK_ERROR_FORMAT_NOT_SUPPORTED;
-
-   switch (src_format) {
+   switch (dst_format) {
    case VK_FORMAT_D24_UNORM_S8_UINT:
-   case VK_FORMAT_X8_D24_UNORM_PACK32:
-      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_DMRG_D24S8_D24S8;
+      switch (src_format) {
+      case VK_FORMAT_D24_UNORM_S8_UINT:
+      case VK_FORMAT_X8_D24_UNORM_PACK32:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_DMRG_D24S8_D24S8;
+         break;
+
+      case VK_FORMAT_D32_SFLOAT:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_DMRG_D32_D24S8;
+         break;
+
+      default:
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+      }
       break;
 
-   case VK_FORMAT_D32_SFLOAT:
-      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_DMRG_D32_D24S8;
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      switch (src_format) {
+      case VK_FORMAT_D32_SFLOAT:
+      case VK_FORMAT_D32_SFLOAT_S8_UINT:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_DMRG_D32S8_D32S8;
+         break;
+
+      default:
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+      }
       break;
 
    default:
@@ -216,16 +232,45 @@ static VkResult pvr_pbe_src_format_pick_stencil(
    const VkFormat dst_format,
    enum pvr_transfer_pbe_pixel_src *const src_format_out)
 {
-   if ((src_format != VK_FORMAT_D24_UNORM_S8_UINT &&
-        src_format != VK_FORMAT_S8_UINT) ||
-       dst_format != VK_FORMAT_D24_UNORM_S8_UINT) {
+   switch (dst_format) {
+   case VK_FORMAT_D24_UNORM_S8_UINT:
+      switch (src_format) {
+      case VK_FORMAT_D24_UNORM_S8_UINT:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SMRG_D24S8_D24S8;
+         break;
+
+      case VK_FORMAT_S8_UINT:
+      case VK_FORMAT_D32_SFLOAT_S8_UINT:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SMRG_S8_D24S8;
+         break;
+
+      default:
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+      }
+      break;
+
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      switch (src_format) {
+      case VK_FORMAT_S8_UINT:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SMRG_S8_D32S8;
+         break;
+
+      case VK_FORMAT_D24_UNORM_S8_UINT:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SMRG_D24S8_D32S8;
+         break;
+
+      case VK_FORMAT_D32_SFLOAT_S8_UINT:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SMRG_D32S8_D32S8;
+         break;
+
+      default:
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+      }
+      break;
+
+   default:
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
    }
-
-   if (src_format == VK_FORMAT_S8_UINT)
-      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SMRG_S8_D24S8;
-   else
-      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SMRG_D24S8_D24S8;
 
    return VK_SUCCESS;
 }
@@ -307,6 +352,11 @@ pvr_pbe_src_format_ds(const struct pvr_transfer_cmd_surface *src,
       else
          *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_F32;
 
+      break;
+
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      assert(src_format == VK_FORMAT_D32_SFLOAT_S8_UINT);
+      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW64;
       break;
 
    default:
@@ -730,6 +780,10 @@ pvr_pbe_setup_codegen_defaults(const struct pvr_device_info *dev_info,
       format = VK_FORMAT_R32_UINT;
       break;
 
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      format = VK_FORMAT_R32G32_UINT;
+      break;
+
    default:
       format = dst->vk_format;
       break;
@@ -947,6 +1001,13 @@ static void pvr_pbe_setup_swizzle(const struct pvr_transfer_cmd *transfer_cmd,
    case VK_FORMAT_S8_UINT:
       surf_params->swizzle[0U] = PIPE_SWIZZLE_X;
       surf_params->swizzle[1U] = PIPE_SWIZZLE_0;
+      surf_params->swizzle[2U] = PIPE_SWIZZLE_0;
+      surf_params->swizzle[3U] = PIPE_SWIZZLE_0;
+      break;
+
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      surf_params->swizzle[0U] = PIPE_SWIZZLE_X;
+      surf_params->swizzle[1U] = PIPE_SWIZZLE_Y;
       surf_params->swizzle[2U] = PIPE_SWIZZLE_0;
       surf_params->swizzle[3U] = PIPE_SWIZZLE_0;
       break;
@@ -1526,6 +1587,7 @@ static inline VkResult pvr_image_state_set_codegen_defaults(
    struct pvr_device *device,
    struct pvr_transfer_3d_state *state,
    const struct pvr_transfer_cmd_surface *surface,
+   VkFormat dst_vk_format,
    uint32_t load,
    uint64_t *mem_ptr)
 {
@@ -1548,6 +1610,7 @@ static inline VkResult pvr_image_state_set_codegen_defaults(
          info.format = VK_FORMAT_R32G32_UINT;
          break;
       default:
+         info.format = surface->vk_format;
          break;
       }
       break;
@@ -1593,15 +1656,53 @@ static inline VkResult pvr_image_state_set_codegen_defaults(
    }
 
    info.tex_state_type = PVR_TEXTURE_STATE_SAMPLE;
-   memcpy(info.swizzle,
-          pvr_get_format_swizzle(info.format),
-          sizeof(info.swizzle));
 
-   if (surface->vk_format == VK_FORMAT_S8_UINT) {
+   if (surface->vk_format == VK_FORMAT_S8_UINT &&
+       (dst_vk_format == VK_FORMAT_D24_UNORM_S8_UINT ||
+        dst_vk_format == VK_FORMAT_S8_UINT)) {
       info.swizzle[0U] = PIPE_SWIZZLE_X;
       info.swizzle[1U] = PIPE_SWIZZLE_0;
       info.swizzle[2U] = PIPE_SWIZZLE_0;
       info.swizzle[3U] = PIPE_SWIZZLE_0;
+   } else if (surface->vk_format == VK_FORMAT_S8_UINT &&
+              dst_vk_format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+      info.swizzle[0U] = PIPE_SWIZZLE_X;
+      info.swizzle[1U] = PIPE_SWIZZLE_0;
+      info.swizzle[2U] = PIPE_SWIZZLE_0;
+      info.swizzle[3U] = PIPE_SWIZZLE_1;
+   } else if (surface->vk_format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+      switch (dst_vk_format) {
+      case VK_FORMAT_S8_UINT:
+         info.swizzle[0U] = PIPE_SWIZZLE_Y;
+         info.swizzle[1U] = PIPE_SWIZZLE_0;
+         info.swizzle[2U] = PIPE_SWIZZLE_0;
+         info.swizzle[3U] = PIPE_SWIZZLE_0;
+         break;
+
+      case VK_FORMAT_D24_UNORM_S8_UINT:
+         info.swizzle[0U] = PIPE_SWIZZLE_Y;
+         info.swizzle[1U] = PIPE_SWIZZLE_X;
+         info.swizzle[2U] = PIPE_SWIZZLE_0;
+         info.swizzle[3U] = PIPE_SWIZZLE_0;
+         break;
+
+      case VK_FORMAT_D32_SFLOAT_S8_UINT:
+         info.swizzle[0U] = PIPE_SWIZZLE_X;
+         info.swizzle[1U] = PIPE_SWIZZLE_Y;
+         info.swizzle[2U] = PIPE_SWIZZLE_0;
+         info.swizzle[3U] = PIPE_SWIZZLE_0;
+         break;
+
+      default:
+         memcpy(info.swizzle,
+                pvr_get_format_swizzle(info.format),
+                sizeof(info.swizzle));
+         break;
+      }
+   } else {
+      memcpy(info.swizzle,
+             pvr_get_format_swizzle(info.format),
+             sizeof(info.swizzle));
    }
 
    if (info.extent.depth > 0U)
@@ -1638,6 +1739,7 @@ static VkResult pvr_image_state_for_surface(
    result = pvr_image_state_set_codegen_defaults(ctx->device,
                                                  state,
                                                  surface,
+                                                 transfer_cmd->dst.vk_format,
                                                  load,
                                                  (uint64_t *)tex_state);
    if (result != VK_SUCCESS)
@@ -2007,6 +2109,7 @@ static bool pvr_requires_usc_linear_filter(VkFormat format)
    case VK_FORMAT_D32_SFLOAT:
    case VK_FORMAT_D24_UNORM_S8_UINT:
    case VK_FORMAT_X8_D24_UNORM_PACK32:
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
       return true;
    default:
       return false;

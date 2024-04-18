@@ -1053,11 +1053,17 @@ pvr_copy_image_to_buffer_region(struct pvr_cmd_buffer *const cmd_buffer,
    VkFormat src_format = pvr_get_copy_format(image->vk.format);
    VkFormat dst_format;
 
-   /* Color and depth aspect copies can be done using an appropriate raw format.
+   /* Color and depth aspect copies can nearly all be done using an appropriate
+    * raw format.
     */
    if (aspect_mask & (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
-      src_format = pvr_get_raw_copy_format(src_format);
-      dst_format = src_format;
+      if (src_format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+         dst_format = VK_FORMAT_D32_SFLOAT;
+      } else {
+         src_format = pvr_get_raw_copy_format(src_format);
+
+         dst_format = src_format;
+      }
    } else if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
       /* From the Vulkan spec:
        *
@@ -1211,7 +1217,7 @@ void pvr_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
       uint32_t flags = 0U;
       VkResult result;
 
-      if (image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT &&
+      if (vk_format_aspects(image->vk.format) == ds_aspect &&
           pRanges[i].aspectMask != ds_aspect) {
          /* A depth or stencil blit to a packed_depth_stencil requires a merge
           * operation.

@@ -752,11 +752,21 @@ pvr_load_op_constants_create_and_upload(struct pvr_cmd_buffer *cmd_buffer,
    for (uint32_t i = 0;
         i < ARRAY_SIZE(load_op->clears_loads_state.dest_vk_format);
         i++) {
-      if (load_op->clears_loads_state.dest_vk_format[i] ==
-          VK_FORMAT_D32_SFLOAT) {
+      switch (load_op->clears_loads_state.dest_vk_format[i]) {
+      case VK_FORMAT_D16_UNORM:
+      case VK_FORMAT_X8_D24_UNORM_PACK32:
+      case VK_FORMAT_D32_SFLOAT:
+      case VK_FORMAT_D24_UNORM_S8_UINT:
+      case VK_FORMAT_D32_SFLOAT_S8_UINT:
          has_depth_load = true;
          break;
+
+      default:
+         break;
       }
+
+      if (has_depth_load)
+         break;
    }
 
    has_depth_clear = load_op->clears_loads_state.depth_clear_to_reg != -1;
@@ -1675,6 +1685,10 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
          case VK_FORMAT_D24_UNORM_S8_UINT:
          case VK_FORMAT_X8_D24_UNORM_PACK32:
             job->ds.zls_format = ROGUE_CR_ZLS_FORMAT_TYPE_24BITINT;
+            break;
+
+         case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            job->ds.zls_format = ROGUE_CR_ZLS_FORMAT_TYPE_F64Z;
             break;
 
          default:
