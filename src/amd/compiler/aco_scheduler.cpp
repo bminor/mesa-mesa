@@ -71,6 +71,8 @@ struct UpwardsCursor {
 
    /* Maximum demand of instructions from insert_idx (inclusive) to source_idx (exclusive) */
    RegisterDemand total_demand;
+   /* Register demand immediately before the first use instruction. */
+   RegisterDemand insert_demand;
 
    UpwardsCursor(int source_idx_) : source_idx(source_idx_)
    {
@@ -335,6 +337,8 @@ MoveState::upwards_update_insert_idx(UpwardsCursor& cursor)
 {
    cursor.insert_idx = cursor.source_idx;
    cursor.total_demand = block->instructions[cursor.insert_idx]->register_demand;
+   const RegisterDemand temp = get_temp_registers(block->instructions[cursor.insert_idx - 1].get());
+   cursor.insert_demand = block->instructions[cursor.insert_idx - 1]->register_demand - temp;
 }
 
 MoveResult
@@ -360,10 +364,7 @@ MoveState::upwards_move(UpwardsCursor& cursor)
    const RegisterDemand temp = get_temp_registers(instr.get());
    if (RegisterDemand(cursor.total_demand + candidate_diff).exceeds(max_registers))
       return move_fail_pressure;
-   const RegisterDemand temp2 =
-      get_temp_registers(block->instructions[cursor.insert_idx - 1].get());
-   const RegisterDemand new_demand =
-      block->instructions[cursor.insert_idx - 1]->register_demand - temp2 + candidate_diff + temp;
+   const RegisterDemand new_demand = cursor.insert_demand + candidate_diff + temp;
    if (new_demand.exceeds(max_registers))
       return move_fail_pressure;
 
@@ -375,8 +376,7 @@ MoveState::upwards_move(UpwardsCursor& cursor)
    for (int i = cursor.insert_idx + 1; i <= cursor.source_idx; i++)
       block->instructions[i]->register_demand += candidate_diff;
    cursor.total_demand += candidate_diff;
-
-   cursor.total_demand.update(block->instructions[cursor.source_idx]->register_demand);
+   cursor.insert_demand += candidate_diff;
 
    cursor.insert_idx++;
    cursor.source_idx++;
