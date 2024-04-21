@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cstring>
 #include <map>
+#include <optional>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -917,13 +918,17 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
       /* check if register demand is low enough during and after the current instruction */
       if (block->register_demand.exceeds(ctx.target_pressure)) {
          RegisterDemand new_demand = instr->register_demand;
+         std::optional<RegisterDemand> live_changes;
 
          /* if reg pressure is too high, spill variable with furthest next use */
          while ((new_demand - spilled_registers).exceeds(ctx.target_pressure)) {
             float score = 0.0;
             Temp to_spill = Temp();
+            bool spill_is_operand = false;
+            unsigned respill_slot = -1u;
             unsigned do_rematerialize = 0;
             unsigned avoid_respill = 0;
+
             RegType type = RegType::sgpr;
             if (new_demand.vgpr - spilled_registers.vgpr > ctx.target_pressure.vgpr)
                type = RegType::vgpr;
@@ -941,24 +946,62 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
 
                if (can_rematerialize > do_rematerialize || loop_variable > avoid_respill ||
                    ctx.ssa_infos[t].score() > score) {
-                  /* Don't spill operands */
-                  if (std::any_of(instr->operands.begin(), instr->operands.end(),
-                                  [&](Operand& op) { return op.isTemp() && op.getTemp() == var; }))
+                  bool is_operand = false;
+                  bool can_spill = true;
+                  for (auto& op : instr->operands) {
+                     if (!op.isTemp() || op.getTemp() != var)
+                        continue;
+                     /* Spilling vector operands causes us to emit a split_vector, increasing live
+                      * state temporarily.
+                      */
+                     if (op.isLateKill() || op.isKill() || op.size() > 1) {
+                        can_spill = false;
+                        break;
+                     }
+
+                     if (!live_changes)
+                        live_changes = get_temp_reg_changes(instr.get());
+
+                     /* Don't spill operands if killing operands won't help with register pressure */
+                     if (RegisterDemand(op.getTemp()).exceeds(*live_changes)) {
+                        can_spill = false;
+                        break;
+                     }
+
+                     is_operand = true;
+                     break;
+                  }
+                  if (!can_spill)
                      continue;
+
+                  bool is_spilled_operand = is_operand && reloads.count(var);
 
                   to_spill = var;
                   score = ctx.ssa_infos[t].score();
                   do_rematerialize = can_rematerialize;
-                  avoid_respill = loop_variable;
+                  avoid_respill = loop_variable || is_spilled_operand;
+                  spill_is_operand = is_operand;
+
+                  /* This variable is spilled at the loop-header of the current loop.
+                   * Re-use the spill-slot in order to avoid an extra store.
+                   */
+                  if (loop_variable)
+                     respill_slot = ctx.loop.back().spills[var];
+                  else if (is_spilled_operand)
+                     respill_slot = reloads[var].second;
                }
             }
             assert(to_spill != Temp());
 
-            if (avoid_respill) {
-               /* This variable is spilled at the loop-header of the current loop.
-                * Re-use the spill-slot in order to avoid an extra store.
+            if (spill_is_operand) {
+               /* We might not be able to spill all operands. Keep live_changes up-to-date so we
+                * stop when we spilled every operand we can.
                 */
-               current_spills[to_spill] = ctx.loop.back().spills[to_spill];
+               *live_changes -= to_spill;
+            }
+
+            if (avoid_respill) {
+               current_spills[to_spill] = respill_slot;
                spilled_registers += to_spill;
                continue;
             }
