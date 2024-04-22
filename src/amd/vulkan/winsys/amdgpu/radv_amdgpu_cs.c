@@ -1578,7 +1578,7 @@ radv_amdgpu_ctx_create(struct radeon_winsys *_ws, enum radeon_ctx_priority prior
    if (!ctx)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-   r = ac_drm_cs_ctx_create2(ws->fd, amdgpu_priority, &ctx->ctx_handle);
+   r = ac_drm_cs_ctx_create2(ws->dev, amdgpu_priority, &ctx->ctx_handle);
    if (r && r == -EACCES) {
       result = VK_ERROR_NOT_PERMITTED;
       goto fail_create;
@@ -1601,7 +1601,7 @@ radv_amdgpu_ctx_create(struct radeon_winsys *_ws, enum radeon_ctx_priority prior
    return VK_SUCCESS;
 
 fail_alloc:
-   ac_drm_cs_ctx_free(ws->fd, ctx->ctx_handle);
+   ac_drm_cs_ctx_free(ws->dev, ctx->ctx_handle);
 fail_create:
    FREE(ctx);
    return result;
@@ -1620,7 +1620,7 @@ radv_amdgpu_ctx_destroy(struct radeon_winsys_ctx *rwctx)
    }
 
    ctx->ws->base.buffer_destroy(&ctx->ws->base, ctx->fence_bo);
-   ac_drm_cs_ctx_free(ctx->ws->fd, ctx->ctx_handle);
+   ac_drm_cs_ctx_free(ctx->ws->dev, ctx->ctx_handle);
    FREE(ctx);
 }
 
@@ -1642,7 +1642,7 @@ radv_amdgpu_ctx_wait_idle(struct radeon_winsys_ctx *rwctx, enum amd_ip_type ip_t
    if (ctx->last_submission[ip_type][ring_index].fence.fence) {
       uint32_t expired;
       int ret = ac_drm_cs_query_fence_status(
-         ctx->ws->fd, ctx->ctx_handle, ctx->last_submission[ip_type][ring_index].fence.ip_type,
+         ctx->ws->dev, ctx->ctx_handle, ctx->last_submission[ip_type][ring_index].fence.ip_type,
          ctx->last_submission[ip_type][ring_index].fence.ip_instance,
          ctx->last_submission[ip_type][ring_index].fence.ring, ctx->last_submission[ip_type][ring_index].fence.fence,
          1000000000ull, 0, &expired);
@@ -1681,7 +1681,7 @@ radv_amdgpu_ctx_set_pstate(struct radeon_winsys_ctx *rwctx, enum radeon_ctx_psta
    uint32_t current_pstate = 0;
    int r;
 
-   r = ac_drm_cs_ctx_stable_pstate(ctx->ws->fd, ctx->ctx_handle, AMDGPU_CTX_OP_GET_STABLE_PSTATE, 0, &current_pstate);
+   r = ac_drm_cs_ctx_stable_pstate(ctx->ws->dev, ctx->ctx_handle, AMDGPU_CTX_OP_GET_STABLE_PSTATE, 0, &current_pstate);
    if (r) {
       fprintf(stderr, "radv/amdgpu: failed to get current pstate\n");
       return r;
@@ -1693,7 +1693,7 @@ radv_amdgpu_ctx_set_pstate(struct radeon_winsys_ctx *rwctx, enum radeon_ctx_psta
    if (current_pstate == new_pstate)
       return 0;
 
-   r = ac_drm_cs_ctx_stable_pstate(ctx->ws->fd, ctx->ctx_handle, AMDGPU_CTX_OP_SET_STABLE_PSTATE, new_pstate, NULL);
+   r = ac_drm_cs_ctx_stable_pstate(ctx->ws->dev, ctx->ctx_handle, AMDGPU_CTX_OP_SET_STABLE_PSTATE, new_pstate, NULL);
    if (r) {
       fprintf(stderr, "radv/amdgpu: failed to set new pstate\n");
       return r;
@@ -1898,7 +1898,7 @@ radv_amdgpu_cs_submit(struct radv_amdgpu_ctx *ctx, struct radv_amdgpu_cs_request
       if (r == -ENOMEM)
          os_time_sleep(1000);
 
-      r = ac_drm_cs_submit_raw2(ctx->ws->fd, ctx->ctx_handle, 0, num_chunks, chunks, &request->seq_no);
+      r = ac_drm_cs_submit_raw2(ctx->ws->dev, ctx->ctx_handle, 0, num_chunks, chunks, &request->seq_no);
    } while (r == -ENOMEM && os_time_get_nano() < abs_timeout_ns);
 
    if (r) {

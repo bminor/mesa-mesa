@@ -8,6 +8,7 @@
 
 #include "amdgpu_cs.h"
 #include "util/detect_os.h"
+#include "amdgpu_winsys.h"
 #include "util/os_time.h"
 #include <inttypes.h>
 #include <stdio.h>
@@ -209,7 +210,6 @@ bool amdgpu_fence_wait(struct pipe_fence_handle *fence, uint64_t timeout,
 
    if (ac_drm_cs_syncobj_wait(afence->aws->fd, &afence->syncobj, 1,
                               abs_timeout, 0, NULL))
-
       return false;
 
    afence->signalled = true;
@@ -272,7 +272,8 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws,
    int r;
    struct amdgpu_bo_alloc_request alloc_buffer = {};
    uint32_t amdgpu_priority = radeon_to_amdgpu_priority(priority);
-   amdgpu_bo_handle buf_handle;
+   ac_drm_device *dev;
+   ac_drm_bo buf_handle;
 
    if (!ctx)
       return NULL;
@@ -281,7 +282,9 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws,
    ctx->reference.count = 1;
    ctx->allow_context_lost = allow_context_lost;
 
-   r = ac_drm_cs_ctx_create2(ctx->aws->fd, amdgpu_priority, &ctx->ctx_handle);
+   dev = ctx->aws->dev;
+
+   r = ac_drm_cs_ctx_create2(dev, amdgpu_priority, &ctx->ctx_handle);
    if (r) {
       fprintf(stderr, "amdgpu: amdgpu_cs_ctx_create2 failed. (%i)\n", r);
       goto error_create;
@@ -291,13 +294,14 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws,
    alloc_buffer.phys_alignment = ctx->aws->info.gart_page_size;
    alloc_buffer.preferred_heap = AMDGPU_GEM_DOMAIN_GTT;
 
-   r = amdgpu_bo_alloc(ctx->aws->dev, &alloc_buffer, &buf_handle);
+   r = ac_drm_bo_alloc(dev, &alloc_buffer, &buf_handle);
    if (r) {
       fprintf(stderr, "amdgpu: amdgpu_bo_alloc failed. (%i)\n", r);
       goto error_user_fence_alloc;
    }
 
-   r = amdgpu_bo_cpu_map(buf_handle, (void**)&ctx->user_fence_cpu_address_base);
+   ctx->user_fence_cpu_address_base = NULL;
+   r = ac_drm_bo_cpu_map(dev, buf_handle, (void**)&ctx->user_fence_cpu_address_base);
    if (r) {
       fprintf(stderr, "amdgpu: amdgpu_bo_cpu_map failed. (%i)\n", r);
       goto error_user_fence_map;
@@ -305,14 +309,15 @@ static struct radeon_winsys_ctx *amdgpu_ctx_create(struct radeon_winsys *rws,
 
    memset(ctx->user_fence_cpu_address_base, 0, alloc_buffer.alloc_size);
    ctx->user_fence_bo = buf_handle;
-   amdgpu_bo_export(buf_handle, amdgpu_bo_handle_type_kms, &ctx->user_fence_bo_kms_handle);
+   ac_drm_bo_export(dev, buf_handle, amdgpu_bo_handle_type_kms, &ctx->user_fence_bo_kms_handle);
 
    return (struct radeon_winsys_ctx*)ctx;
 
 error_user_fence_map:
-   amdgpu_bo_free(buf_handle);
+   ac_drm_bo_free(dev, buf_handle);
+
 error_user_fence_alloc:
-   ac_drm_cs_ctx_free(ctx->aws->fd, ctx->ctx_handle);
+   ac_drm_cs_ctx_free(dev, ctx->ctx_handle);
 error_create:
    FREE(ctx);
    return NULL;
@@ -355,7 +360,7 @@ static int amdgpu_submit_gfx_nop(struct amdgpu_ctx *ctx)
    struct amdgpu_bo_alloc_request request = {0};
    struct drm_amdgpu_bo_list_in bo_list_in;
    struct drm_amdgpu_cs_chunk_ib ib_in = {0};
-   amdgpu_bo_handle buf_handle;
+   ac_drm_bo bo;
    amdgpu_va_handle va_handle = NULL;
    struct drm_amdgpu_cs_chunk chunks[2];
    struct drm_amdgpu_bo_list_entry list;
@@ -370,42 +375,44 @@ static int amdgpu_submit_gfx_nop(struct amdgpu_ctx *ctx)
     * that the reset is not complete.
     */
    uint32_t temp_ctx_handle;
-   r = ac_drm_cs_ctx_create2(ctx->aws->fd, AMDGPU_CTX_PRIORITY_NORMAL, &temp_ctx_handle);
+   r = ac_drm_cs_ctx_create2(ctx->aws->dev, AMDGPU_CTX_PRIORITY_NORMAL, &temp_ctx_handle);
    if (r)
       return r;
 
    request.preferred_heap = AMDGPU_GEM_DOMAIN_VRAM;
    request.alloc_size = 4096;
    request.phys_alignment = 4096;
-   r = amdgpu_bo_alloc(ctx->aws->dev, &request, &buf_handle);
+   r = ac_drm_bo_alloc(ctx->aws->dev, &request, &bo);
    if (r)
       goto destroy_ctx;
 
-   uint32_t kms_handle;
-   amdgpu_bo_export(buf_handle, amdgpu_bo_handle_type_kms, &kms_handle);
-
-   r = amdgpu_va_range_alloc(ctx->aws->dev, amdgpu_gpu_va_range_general,
-                 request.alloc_size, request.phys_alignment,
-                 0, &va, &va_handle,
-                 AMDGPU_VA_RANGE_32_BIT | AMDGPU_VA_RANGE_HIGH);
+   r = ac_drm_va_range_alloc(ctx->aws->dev, amdgpu_gpu_va_range_general,
+                             request.alloc_size, request.phys_alignment,
+                             0, &va, &va_handle,
+                             AMDGPU_VA_RANGE_32_BIT | AMDGPU_VA_RANGE_HIGH);
    if (r)
       goto destroy_bo;
-   r = ac_drm_bo_va_op_raw(ctx->aws->fd, kms_handle, 0, request.alloc_size, va,
+
+   uint32_t kms_handle;
+   ac_drm_bo_export(ctx->aws->dev, bo, amdgpu_bo_handle_type_kms, &kms_handle);
+
+   r = ac_drm_bo_va_op_raw(ctx->aws->dev, kms_handle, 0, request.alloc_size, va,
                            AMDGPU_VM_PAGE_READABLE | AMDGPU_VM_PAGE_WRITEABLE | AMDGPU_VM_PAGE_EXECUTABLE,
                            AMDGPU_VA_OP_MAP);
    if (r)
       goto destroy_bo;
 
-   r = amdgpu_bo_cpu_map(buf_handle, &cpu);
+   r = ac_drm_bo_cpu_map(ctx->aws->dev, bo, &cpu);
    if (r)
       goto destroy_bo;
 
    noop_dw_size = ctx->aws->info.ip[AMD_IP_GFX].ib_pad_dw_mask + 1;
    ((uint32_t*)cpu)[0] = PKT3(PKT3_NOP, noop_dw_size - 2, 0);
 
-   amdgpu_bo_cpu_unmap(buf_handle);
+   ac_drm_bo_cpu_unmap(ctx->aws->dev, bo);
 
-   amdgpu_bo_export(buf_handle, amdgpu_bo_handle_type_kms, &list.bo_handle);
+   list.bo_handle = kms_handle;
+   ac_drm_bo_export(ctx->aws->dev, bo, amdgpu_bo_handle_type_kms, &list.bo_handle);
    list.bo_priority = 0;
 
    bo_list_in.list_handle = ~0;
@@ -425,14 +432,14 @@ static int amdgpu_submit_gfx_nop(struct amdgpu_ctx *ctx)
    chunks[1].length_dw = sizeof(struct drm_amdgpu_cs_chunk_ib) / 4;
    chunks[1].chunk_data = (uintptr_t)&ib_in;
 
-   r = ac_drm_cs_submit_raw2(ctx->aws->fd, temp_ctx_handle, 0, 2, chunks, &seq_no);
+   r = ac_drm_cs_submit_raw2(ctx->aws->dev, temp_ctx_handle, 0, 2, chunks, &seq_no);
 
 destroy_bo:
    if (va_handle)
-      amdgpu_va_range_free(va_handle);
-   amdgpu_bo_free(buf_handle);
+      ac_drm_va_range_free(va_handle);
+   ac_drm_bo_free(ctx->aws->dev, bo);
 destroy_ctx:
-   ac_drm_cs_ctx_free(ctx->aws->fd, temp_ctx_handle);
+   ac_drm_cs_ctx_free(ctx->aws->dev, temp_ctx_handle);
 
    return r;
 }
@@ -492,7 +499,7 @@ amdgpu_ctx_query_reset_status(struct radeon_winsys_ctx *rwctx, bool full_reset_o
     * that the context reset is complete.
     */
    if (ctx->sw_status != PIPE_NO_RESET) {
-      int r = ac_drm_cs_query_reset_state2(ctx->aws->fd, ctx->ctx_handle, &flags);
+      int r = ac_drm_cs_query_reset_state2(ctx->aws->dev, ctx->ctx_handle, &flags);
       if (!r) {
          if (flags & AMDGPU_CTX_QUERY2_FLAGS_RESET) {
             if (reset_completed) {
@@ -1367,7 +1374,7 @@ static int amdgpu_cs_submit_ib_kernelq(struct amdgpu_cs *acs,
       if (r == -ENOMEM)
          os_time_sleep(1000);
 
-      r = ac_drm_cs_submit_raw2(aws->fd, acs->ctx->ctx_handle, 0, num_chunks, chunks, seq_no);
+      r = ac_drm_cs_submit_raw2(aws->dev, acs->ctx->ctx_handle, 0, num_chunks, chunks, seq_no);
    } while (r == -ENOMEM);
 
    return r;
@@ -1509,7 +1516,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
     * To implement this strategy, we use amdgpu_userq_wait() before submitting
     * a job, and amdgpu_userq_signal() after to indicate completion.
     */
-   r = ac_drm_userq_wait(aws->fd, &userq_wait_data);
+   r = ac_drm_userq_wait(aws->dev, &userq_wait_data);
    if (r)
       fprintf(stderr, "amdgpu: getting wait num_fences failed\n");
 
@@ -1517,7 +1524,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
       alloca(userq_wait_data.num_fences * sizeof(struct drm_amdgpu_userq_fence_info));
    userq_wait_data.out_fences = (uintptr_t)fence_info;
 
-   r = ac_drm_userq_wait(aws->fd, &userq_wait_data);
+   r = ac_drm_userq_wait(aws->dev, &userq_wait_data);
    if (r)
       fprintf(stderr, "amdgpu: getting wait fences failed\n");
 
@@ -1533,7 +1540,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
       .num_bo_write_handles = num_shared_buf_write,
    };
 
-   r = ac_drm_userq_signal(aws->fd, &userq_signal_data);
+   r = ac_drm_userq_signal(aws->dev, &userq_signal_data);
    if (!r)
       userq->doorbell_bo_map[AMDGPU_USERQ_DOORBELL_INDEX] = *userq->wptr_bo_map;
 

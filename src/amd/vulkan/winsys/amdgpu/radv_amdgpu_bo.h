@@ -41,7 +41,7 @@ struct radv_amdgpu_winsys_bo {
    union {
       /* physical bo */
       struct {
-         amdgpu_bo_handle bo;
+         ac_drm_bo bo;
          uint32_t bo_handle;
 
          void *cpu_map;

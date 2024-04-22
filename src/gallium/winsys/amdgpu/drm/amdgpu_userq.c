@@ -53,7 +53,7 @@ void
 amdgpu_userq_deinit(struct amdgpu_winsys *aws, struct amdgpu_userq *userq)
 {
    if (userq->userq_handle)
-      ac_drm_free_userqueue(aws->fd, userq->userq_handle);
+      ac_drm_free_userqueue(aws->dev, userq->userq_handle);
 
    radeon_bo_reference(&aws->dummy_sws.base, &userq->gtt_bo, NULL);
    radeon_bo_reference(&aws->dummy_sws.base, &userq->wptr_bo, NULL);
@@ -163,7 +163,7 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
    /* The VA page table for ring buffer should be ready before job submission so that the packets
     * submitted can be read by gpu. The same applies to rptr, wptr buffers also.
     */
-   r = amdgpu_cs_syncobj_timeline_wait(aws->dev, &aws->vm_timeline_syncobj,
+   r = ac_drm_cs_syncobj_timeline_wait(aws->fd, &aws->vm_timeline_syncobj,
                                        &get_real_bo(amdgpu_winsys_bo(userq->doorbell_bo))
                                           ->vm_timeline_point,
                                        1, INT64_MAX, DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL |
@@ -174,7 +174,7 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
    }
 
    uint64_t ring_va = amdgpu_bo_get_va(userq->gtt_bo);
-   r = ac_drm_create_userqueue(aws->fd, hw_ip_type,
+   r = ac_drm_create_userqueue(aws->dev, hw_ip_type,
                                get_real_bo(amdgpu_winsys_bo(userq->doorbell_bo))->kms_handle,
                                AMDGPU_USERQ_DOORBELL_INDEX, ring_va, AMDGPU_USERQ_RING_SIZE,
                                amdgpu_bo_get_va(userq->wptr_bo), amdgpu_bo_get_va(userq->rptr_bo),

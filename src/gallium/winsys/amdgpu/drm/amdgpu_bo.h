@@ -87,7 +87,7 @@ struct amdgpu_winsys_bo {
 struct amdgpu_bo_real {
    struct amdgpu_winsys_bo b;
 
-   amdgpu_bo_handle bo_handle;
+   ac_drm_bo bo;
    amdgpu_va_handle va_handle;
    /* Timeline point of latest VM ioctl completion. Only used in userqueue. */
    uint64_t vm_timeline_point;

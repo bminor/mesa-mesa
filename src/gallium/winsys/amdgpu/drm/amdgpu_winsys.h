@@ -13,6 +13,7 @@
 #include "winsys/radeon_winsys.h"
 #include "util/simple_mtx.h"
 #include "util/u_queue.h"
+#include "ac_linux_drm.h"
 #include <amdgpu.h>
 #include "amdgpu_userq.h"
 
@@ -200,7 +201,7 @@ struct amdgpu_winsys {
    struct pb_cache bo_cache;
    struct pb_slabs bo_slabs;  /* Slab allocator. */
 
-   amdgpu_device_handle dev;
+   ac_drm_device *dev;
 
    simple_mtx_t bo_fence_lock;
 
