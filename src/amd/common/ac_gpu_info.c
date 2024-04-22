@@ -1003,11 +1003,11 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    info->memory_freq_mhz_effective *= ac_memory_ops_per_clock(info->vram_type);
 
-   info->has_userptr = true;
+   info->has_userptr = !info->is_virtio;
    info->has_syncobj = true;
    info->has_timeline_syncobj = has_timeline_syncobj(fd);
    info->has_fence_to_handle = true;
-   info->has_local_buffers = true;
+   info->has_local_buffers = !info->is_virtio;
    info->has_bo_metadata = true;
    info->has_eqaa_surface_allocator = info->gfx_level < GFX11;
    /* Disable sparse mappings on GFX6 due to VM faults in CP DMA. Enable them once
