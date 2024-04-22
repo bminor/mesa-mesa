@@ -202,7 +202,7 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    ac_drm_device *dev;
    struct radv_amdgpu_winsys *ws = NULL;
 
-   r = ac_drm_device_initialize(fd, &drm_major, &drm_minor, &dev);
+   r = ac_drm_device_initialize(fd, false, &drm_major, &drm_minor, &dev);
    if (r) {
       fprintf(stderr, "radv/amdgpu: failed to initialize device.\n");
       return NULL;

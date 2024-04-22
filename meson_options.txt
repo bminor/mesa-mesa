@@ -225,6 +225,12 @@ option(
 )
 
 option(
+  'amdgpu-virtio',
+  type : 'boolean',
+  value : false,
+  description : 'use experimental virtio backend for radeonsi/radv',
+)
+option(
   'imagination-srv',
   type : 'boolean',
   value : false,

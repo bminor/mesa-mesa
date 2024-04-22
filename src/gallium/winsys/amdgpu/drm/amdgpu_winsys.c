@@ -395,7 +395,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
 
    /* Initialize the amdgpu device. This should always return the same pointer
     * for the same fd. */
-   r = ac_drm_device_initialize(fd, &drm_major, &drm_minor, &dev);
+   r = ac_drm_device_initialize(fd, false, &drm_major, &drm_minor, &dev);
    if (r) {
       fprintf(stderr, "amdgpu: amdgpu_device_initialize failed.\n");
       goto fail;

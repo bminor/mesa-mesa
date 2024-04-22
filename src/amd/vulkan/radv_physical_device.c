@@ -2000,6 +2000,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
 #ifdef _WIN32
    assert(drm_device == NULL);
 #else
+   bool is_virtio = false;
    if (drm_device) {
       const char *path = drm_device->nodes[DRM_NODE_RENDER];
       drmVersionPtr version;

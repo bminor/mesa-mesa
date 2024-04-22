@@ -11,14 +11,23 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef HAVE_AMDGPU_VIRTIO
+#include "virtio/amdgpu_virtio.h"
+#endif
+
 struct ac_drm_device {
    union {
       amdgpu_device_handle adev;
+#ifdef HAVE_AMDGPU_VIRTIO
+      amdvgpu_device_handle vdev;
+#endif
    };
    int fd;
+   bool is_virtio;
 };
 
-int ac_drm_device_initialize(int fd, uint32_t *major_version, uint32_t *minor_version,
+int ac_drm_device_initialize(int fd, bool is_virtio,
+                             uint32_t *major_version, uint32_t *minor_version,
                              ac_drm_device **dev)
 {
    int r;
@@ -27,22 +36,43 @@ int ac_drm_device_initialize(int fd, uint32_t *major_version, uint32_t *minor_ve
    if (!(*dev))
       return -1;
 
-   amdgpu_device_handle adev;
-   r = amdgpu_device_initialize(fd, major_version, minor_version,
-                                &adev);
-   if (r == 0) {
-      (*dev)->adev = adev;
-      (*dev)->fd = amdgpu_device_get_fd(adev);
-   } else {
-      free(*dev);
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (is_virtio) {
+      amdvgpu_device_handle vdev;
+      r = amdvgpu_device_initialize(fd, major_version, minor_version,
+                                    &vdev);
+      if (r == 0) {
+         (*dev)->vdev = vdev;
+         (*dev)->fd = amdvgpu_device_get_fd(vdev);
+      }
+   } else
+#endif
+   {
+      amdgpu_device_handle adev;
+      r = amdgpu_device_initialize(fd, major_version, minor_version,
+                                   &adev);
+      if (r == 0) {
+         (*dev)->adev = adev;
+         (*dev)->fd = amdgpu_device_get_fd(adev);
+      }
    }
+
+   if (r == 0)
+      (*dev)->is_virtio = is_virtio;
+   else
+      free(*dev);
 
    return r;
 }
 
 void ac_drm_device_deinitialize(ac_drm_device *dev)
 {
-   amdgpu_device_deinitialize(dev->adev);
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      amdvgpu_device_deinitialize(dev->vdev);
+   else
+#endif
+      amdgpu_device_deinitialize(dev->adev);
    free(dev);
 }
 
@@ -53,6 +83,10 @@ int ac_drm_device_get_fd(ac_drm_device *device_handle)
 
 int ac_drm_bo_set_metadata(ac_drm_device *dev, uint32_t bo_handle, struct amdgpu_bo_metadata *info)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_set_metadata(dev->vdev, bo_handle, info);
+#endif
    struct drm_amdgpu_gem_metadata args = {};
 
    args.handle = bo_handle;
@@ -74,6 +108,10 @@ int ac_drm_bo_set_metadata(ac_drm_device *dev, uint32_t bo_handle, struct amdgpu
 
 int ac_drm_bo_query_info(ac_drm_device *dev, uint32_t bo_handle, struct amdgpu_bo_info *info)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_query_info(dev->vdev, bo_handle, info);
+#endif
    struct drm_amdgpu_gem_metadata metadata = {};
    struct drm_amdgpu_gem_create_in bo_info = {};
    struct drm_amdgpu_gem_op gem_op = {};
@@ -148,9 +186,16 @@ int ac_drm_bo_wait_for_idle(ac_drm_device *dev, ac_drm_bo bo, uint64_t timeout_n
    memset(&args, 0, sizeof(args));
    args.in.timeout = amdgpu_cs_calculate_timeout(timeout_ns);
 
-   ac_drm_bo_export(dev, bo, amdgpu_bo_handle_type_kms,
-                    &args.in.handle);
-   r = drm_ioctl_write_read(dev->fd, DRM_AMDGPU_GEM_WAIT_IDLE, &args, sizeof(args));
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio) {
+      r = amdvgpu_bo_wait_for_idle(dev->vdev, bo.vbo, args.in.timeout);
+   } else
+#endif
+   {
+      ac_drm_bo_export(dev, bo, amdgpu_bo_handle_type_kms,
+                       &args.in.handle);
+      r = drm_ioctl_write_read(dev->fd, DRM_AMDGPU_GEM_WAIT_IDLE, &args, sizeof(args));
+   }
 
    if (r == 0) {
       *busy = args.out.status;
@@ -180,6 +225,11 @@ int ac_drm_bo_va_op_raw(ac_drm_device *dev, uint32_t bo_handle, uint64_t offset,
    if (ops != AMDGPU_VA_OP_MAP && ops != AMDGPU_VA_OP_UNMAP && ops != AMDGPU_VA_OP_REPLACE &&
        ops != AMDGPU_VA_OP_CLEAR)
       return -EINVAL;
+
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_va_op_raw(dev->vdev, bo_handle, offset, size, addr, flags, ops);
+#endif
 
    memset(&va, 0, sizeof(va));
    va.handle = bo_handle;
@@ -239,6 +289,10 @@ int ac_drm_cs_ctx_create2(ac_drm_device *dev, uint32_t priority, uint32_t *ctx_i
       }
    }
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_cs_ctx_create2(dev->vdev, priority, ctx_id);
+#endif
    /* Create the context */
    memset(&args, 0, sizeof(args));
    args.in.op = AMDGPU_CTX_OP_ALLOC_CTX;
@@ -256,6 +310,10 @@ int ac_drm_cs_ctx_create2(ac_drm_device *dev, uint32_t priority, uint32_t *ctx_i
 
 int ac_drm_cs_ctx_free(ac_drm_device *dev, uint32_t ctx_id)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_cs_ctx_free(dev->vdev, ctx_id);
+#endif
    union drm_amdgpu_ctx args;
 
    /* now deal with kernel side */
@@ -268,6 +326,10 @@ int ac_drm_cs_ctx_free(ac_drm_device *dev, uint32_t ctx_id)
 int ac_drm_cs_ctx_stable_pstate(ac_drm_device *dev, uint32_t ctx_id, uint32_t op, uint32_t flags,
                                 uint32_t *out_flags)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_cs_ctx_stable_pstate(dev->vdev, ctx_id, op, flags, out_flags);
+#endif
    union drm_amdgpu_ctx args;
    int r;
 
@@ -286,6 +348,11 @@ int ac_drm_cs_ctx_stable_pstate(ac_drm_device *dev, uint32_t ctx_id, uint32_t op
 
 int ac_drm_cs_query_reset_state2(ac_drm_device *dev, uint32_t ctx_id, uint64_t *flags)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_cs_query_reset_state2(dev->vdev, ctx_id, flags);
+#endif
+
    union drm_amdgpu_ctx args;
    int r;
 
@@ -342,8 +409,14 @@ int ac_drm_cs_query_fence_status(ac_drm_device *dev, uint32_t ctx_id, uint32_t i
 
    *expired = false;
 
-   r = amdgpu_ioctl_wait_cs(dev->fd, ctx_id, ip_type, ip_instance, ring, fence_seq_no,
-                            timeout_ns, flags, &busy);
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      r = amdvgpu_cs_query_fence_status(dev->vdev, ctx_id, ip_type, ip_instance, ring, fence_seq_no,
+                                        timeout_ns, flags, expired);
+   else
+#endif
+      r = amdgpu_ioctl_wait_cs(dev->fd, ctx_id, ip_type, ip_instance, ring, fence_seq_no,
+                               timeout_ns, flags, &busy);
 
    if (!r && !busy)
       *expired = true;
@@ -432,6 +505,11 @@ int ac_drm_cs_syncobj_timeline_wait(int device_fd, uint32_t *handles, uint64_t *
 int ac_drm_cs_submit_raw2(ac_drm_device *dev, uint32_t ctx_id, uint32_t bo_list_handle,
                           int num_chunks, struct drm_amdgpu_cs_chunk *chunks, uint64_t *seq_no)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_cs_submit_raw2(dev->vdev, ctx_id, bo_list_handle, num_chunks, chunks, seq_no);
+#endif
+
    union drm_amdgpu_cs cs;
    uint64_t *chunk_array;
    int i, r;
@@ -466,6 +544,10 @@ int ac_drm_query_info(ac_drm_device *dev, unsigned info_id, unsigned size, void 
    request.return_size = size;
    request.query = info_id;
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_query_info(dev->vdev, &request);
+#endif
    return drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
@@ -483,6 +565,10 @@ int ac_drm_read_mm_registers(ac_drm_device *dev, unsigned dword_offset, unsigned
    request.read_mmr_reg.instance = instance;
    request.read_mmr_reg.flags = flags;
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_query_info(dev->vdev, &request);
+#endif
    return drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
@@ -496,6 +582,10 @@ int ac_drm_query_hw_ip_count(ac_drm_device *dev, unsigned type, uint32_t *count)
    request.query = AMDGPU_INFO_HW_IP_COUNT;
    request.query_hw_ip.type = type;
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_query_info(dev->vdev, &request);
+#endif
    return drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
@@ -511,6 +601,10 @@ int ac_drm_query_hw_ip_info(ac_drm_device *dev, unsigned type, unsigned ip_insta
    request.query_hw_ip.type = type;
    request.query_hw_ip.ip_instance = ip_instance;
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_query_info(dev->vdev, &request);
+#endif
    return drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
@@ -529,7 +623,12 @@ int ac_drm_query_firmware_version(ac_drm_device *dev, unsigned fw_type, unsigned
    request.query_fw.ip_instance = ip_instance;
    request.query_fw.index = index;
 
-   r = drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      r = amdvgpu_query_info(dev->vdev, &request);
+   else
+#endif
+      r = drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
    if (r)
       return r;
 
@@ -690,6 +789,10 @@ int ac_drm_query_sensor_info(ac_drm_device *dev, unsigned sensor_type, unsigned 
    request.query = AMDGPU_INFO_SENSOR;
    request.sensor_info.type = sensor_type;
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_query_info(dev->vdev, &request);
+#endif
    return drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
@@ -703,6 +806,10 @@ int ac_drm_query_video_caps_info(ac_drm_device *dev, unsigned cap_type, unsigned
    request.query = AMDGPU_INFO_VIDEO_CAPS;
    request.sensor_info.type = cap_type;
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_query_info(dev->vdev, &request);
+#endif
    return drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
@@ -715,11 +822,21 @@ int ac_drm_query_gpuvm_fault_info(ac_drm_device *dev, unsigned size, void *value
    request.return_size = size;
    request.query = AMDGPU_INFO_GPUVM_FAULT;
 
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_query_info(dev->vdev, &request);
+#endif
    return drm_ioctl_write(dev->fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_vm_reserve_vmid(ac_drm_device *dev, uint32_t flags)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio) {
+      assert(flags == 0);
+      return amdvgpu_vm_reserve_vmid(dev->vdev, 1);
+   }
+#endif
    union drm_amdgpu_vm vm;
 
    vm.in.op = AMDGPU_VM_OP_RESERVE_VMID;
@@ -730,6 +847,12 @@ int ac_drm_vm_reserve_vmid(ac_drm_device *dev, uint32_t flags)
 
 int ac_drm_vm_unreserve_vmid(ac_drm_device *dev, uint32_t flags)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio) {
+      assert(flags == 0);
+      return amdvgpu_vm_reserve_vmid(dev->vdev, 0);
+   }
+#endif
    union drm_amdgpu_vm vm;
 
    vm.in.op = AMDGPU_VM_OP_UNRESERVE_VMID;
@@ -740,24 +863,41 @@ int ac_drm_vm_unreserve_vmid(ac_drm_device *dev, uint32_t flags)
 
 const char *ac_drm_get_marketing_name(ac_drm_device *dev)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_get_marketing_name(dev->vdev);
+#endif
    return amdgpu_get_marketing_name(dev->adev);
 }
 
 int ac_drm_query_sw_info(ac_drm_device *dev,
                          enum amdgpu_sw_info info, void *value)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio) {
+      assert(info == amdgpu_sw_info_address32_hi);
+      return amdvgpu_query_sw_info(dev->vdev, info, value);
+   }
+#endif
    return amdgpu_query_sw_info(dev->adev, info, value);
 }
 
 int ac_drm_bo_alloc(ac_drm_device *dev, struct amdgpu_bo_alloc_request *alloc_buffer,
                     ac_drm_bo *bo)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_alloc(dev->vdev, alloc_buffer, &bo->vbo);
+#endif
    return amdgpu_bo_alloc(dev->adev, alloc_buffer, &bo->abo);
 }
-
 int ac_drm_bo_export(ac_drm_device *dev, ac_drm_bo bo,
                      enum amdgpu_bo_handle_type type, uint32_t *shared_handle)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_export(dev->vdev, bo.vbo, type, shared_handle);
+#endif
    return amdgpu_bo_export(bo.abo, type, shared_handle);
 }
 
@@ -766,35 +906,65 @@ int ac_drm_bo_import(ac_drm_device *dev, enum amdgpu_bo_handle_type type,
 {
    int r;
 
-   struct amdgpu_bo_import_result result;
-   r = amdgpu_bo_import(dev->adev, type, shared_handle, &result);
-   if (r == 0) {
-      output->bo.abo = result.buf_handle;
-      output->alloc_size = result.alloc_size;
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio) {
+      struct amdvgpu_bo_import_result result;
+      r = amdvgpu_bo_import(dev->vdev, type, shared_handle, &result);
+      if (r == 0) {
+         output->bo.vbo = result.buf_handle;
+         output->alloc_size = result.alloc_size;
+      }
+   }
+   else
+#endif
+   {
+      struct amdgpu_bo_import_result result;
+      r = amdgpu_bo_import(dev->adev, type, shared_handle, &result);
+      if (r == 0) {
+         output->bo.abo = result.buf_handle;
+         output->alloc_size = result.alloc_size;
+      }
    }
 
    return r;
 }
-
 int ac_drm_create_bo_from_user_mem(ac_drm_device *dev, void *cpu,
                                    uint64_t size, ac_drm_bo *bo)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio) {
+      assert(false);
+      return -1;
+   }
+#endif
    return amdgpu_create_bo_from_user_mem(dev->adev, cpu, size, &bo->abo);
 }
 
 int ac_drm_bo_free(ac_drm_device *dev, ac_drm_bo bo)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_free(dev->vdev, bo.vbo);
+#endif
    return amdgpu_bo_free(bo.abo);
 }
 
 int ac_drm_bo_cpu_map(ac_drm_device *dev, ac_drm_bo bo,
                       void **cpu)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_cpu_map(dev->vdev, bo.vbo, cpu);
+#endif
    return amdgpu_bo_cpu_map(bo.abo, cpu);
 }
 
 int ac_drm_bo_cpu_unmap(ac_drm_device *dev, ac_drm_bo bo)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_bo_cpu_unmap(dev->vdev, bo.vbo);
+#endif
    return amdgpu_bo_cpu_unmap(bo.abo);
 }
 
@@ -803,6 +973,12 @@ int ac_drm_va_range_alloc(ac_drm_device *dev, enum amdgpu_gpu_va_range va_range_
                           uint64_t *va_base_allocated, amdgpu_va_handle *va_range_handle,
                           uint64_t flags)
 {
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio)
+      return amdvgpu_va_range_alloc(dev->vdev, va_range_type, size, va_base_alignment,
+                                    va_base_required, va_base_allocated,
+                                    va_range_handle, flags);
+#endif
    return amdgpu_va_range_alloc(dev->adev, va_range_type, size, va_base_alignment,
                                 va_base_required, va_base_allocated,
                                 va_range_handle, flags);
@@ -820,6 +996,12 @@ int ac_drm_create_userqueue(ac_drm_device *dev, uint32_t ip_type, uint32_t doorb
    int ret;
    union drm_amdgpu_userq userq;
    uint64_t mqd_size;
+
+#ifdef HAVE_AMDGPU_VIRTIO
+   /* Not supported yet. */
+   if (dev->is_virtio)
+      return -1;
+#endif
 
    switch (ip_type) {
    case AMDGPU_HW_IP_GFX:

@@ -49,6 +49,9 @@ typedef union ac_drm_bo {
 #else
    amdgpu_bo_handle abo;
 #endif
+#ifdef HAVE_AMDGPU_VIRTIO
+   struct amdvgpu_bo *vbo;
+#endif
 } ac_drm_bo;
 
 struct ac_drm_bo_import_result {
@@ -56,8 +59,9 @@ struct ac_drm_bo_import_result {
    uint64_t alloc_size;
 };
 
-PROC int ac_drm_device_initialize(int fd, uint32_t *major_version, uint32_t *minor_version,
-                                  ac_drm_device **dev) TAIL;
+PROC int ac_drm_device_initialize(int fd, bool is_virtio,
+                                  uint32_t *major_version, uint32_t *minor_version,
+                                  ac_drm_device **device_handle) TAIL;
 PROC void ac_drm_device_deinitialize(ac_drm_device *dev) TAILV;
 PROC int ac_drm_device_get_fd(ac_drm_device *dev) TAIL;
 PROC int ac_drm_bo_set_metadata(ac_drm_device *dev, uint32_t bo_handle,
