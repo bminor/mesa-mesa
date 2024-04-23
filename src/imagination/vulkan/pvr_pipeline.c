@@ -1414,11 +1414,9 @@ static void pvr_graphics_pipeline_setup_vertex_dma(
        */
       dma_desc->binding_index = attribute->binding;
 
-      /* We don't currently support VK_EXT_vertex_attribute_divisor so no
-       * repeating of instance-rate vertex attributes needed. We should always
-       * move on to the next vertex attribute.
-       */
       dma_desc->divisor = 1;
+      if (binding->inputRate == VK_VERTEX_INPUT_RATE_INSTANCE)
+         dma_desc->divisor = vi->bindings[attribute->binding].divisor;
 
       /* Will be used to generate PDS code that takes care of robust buffer
        * access, and later on by the driver to write the correct robustness

@@ -189,6 +189,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,
       .KHR_uniform_buffer_standard_layout = true,
+      .KHR_vertex_attribute_divisor = true,
       .KHR_zero_initialize_workgroup_memory = false,
       .EXT_depth_clamp_zero_one = true,
       .EXT_external_memory_dma_buf = true,
@@ -200,6 +201,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_scalar_block_layout = true,
       .EXT_texel_buffer_alignment = false,
       .EXT_tooling_info = true,
+      .EXT_vertex_attribute_divisor = true,
    };
 }
 
@@ -305,6 +307,11 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_KHR_present_wait2 */
       .presentWait2 = PVR_USE_WSI_PLATFORM,
+
+      /* Vulkan 1.4 / VK_EXT_vertex_attribute_divisor /
+         VK_KHR_vertex_attribute_divisor */
+      .vertexAttributeInstanceRateDivisor = true,
+      .vertexAttributeInstanceRateZeroDivisor = true,
 
       /* Vulkan 1.3 / VK_KHR_zero_initialize_workgroup_memory */
       .shaderZeroInitializeWorkgroupMemory = false,
@@ -538,6 +545,10 @@ static bool pvr_physical_device_get_properties(
       .storageTexelBufferOffsetSingleTexelAlignment = true,
       .uniformTexelBufferOffsetAlignmentBytes = PVR_TEXEL_BUFFER_OFFSET_ALIGNMENT,
       .uniformTexelBufferOffsetSingleTexelAlignment = false,
+
+      /* Vulkan 1.4 / VK_EXT_vertex_attribute_divisor / VK_KHR_vertex_attribute_divisor */
+      .maxVertexAttribDivisor = UINT32_MAX,
+      .supportsNonZeroFirstInstance = true,
    };
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
