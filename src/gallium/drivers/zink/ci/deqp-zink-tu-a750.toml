@@ -52,16 +52,12 @@ deqp_args = [
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
 
-# FIXME: Disabled because it is currently way too flaky
-#[[piglit]]
-#piglit_folder = "/piglit"
-##profile = "gpu"  # hangs
-##profile = "quick_gl"  # hangs
-#profile = "quick_shader"
-#process_isolation = true
-#timeout = 180.0
-#  [piglit.env]
-#  PIGLIT_NO_WINDOW = "1"
-#  PIGLIT_PLATFORM = "gbm"
-#  WAFFLE_PLATFORM = "gbm"
-#  FREEDRENO_HANGCHECK_MS = "2000"
+[[piglit]]
+piglit_folder = "/piglit"
+profile = "gpu"
+process_isolation = true
+timeout = 180.0
+  [piglit.env]
+  PIGLIT_NO_WINDOW = "1"
+  PIGLIT_PLATFORM = "gbm"
+  WAFFLE_PLATFORM = "gbm"

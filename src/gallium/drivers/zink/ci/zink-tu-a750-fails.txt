@@ -33,16 +33,11 @@ dEQP-GLES3.functional.shaders.matrix.inverse.dynamic.lowp_mat4_float_vertex,Fail
 dEQP-GLES3.functional.shaders.matrix.inverse.dynamic.mediump_mat4_float_vertex,Fail
 
 glx@glx-multi-window-single-context,Fail
-glx@glx-multithread-texture,Fail
-glx@glx_arb_create_context_no_error@no error,Fail
-glx@glx_ext_no_config_context@no fbconfig,Fail
-spec@arb_texture_rectangle@fbo-blit rect,Fail
-spec@egl_chromium_sync_control@conformance,Fail
-spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
-spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_ust_test,Fail
-spec@ext_framebuffer_blit@fbo-blit,Fail
-spec@ext_framebuffer_blit@fbo-copypix,Fail
-spec@ext_framebuffer_blit@fbo-readdrawpix,Fail
+glx@glx-swap-pixmap-bad,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-divisor-zero,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 0,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return swap_interval 1,Fail
+glx@glx_arb_sync_control@swapbuffersmsc-return,Fail
 spec@!opengl 1.0@depth-clear-precision-check,Fail
 spec@!opengl 1.0@depth-clear-precision-check@depth24,Fail
 spec@!opengl 1.0@depth-clear-precision-check@depth24_stencil8,Fail
@@ -52,8 +47,13 @@ spec@!opengl 1.0@rasterpos,Fail
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked,Fail
 spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked,Fail
 spec@!opengl 1.1@line-aa-width,Fail
-spec@!opengl 1.1@line-smooth-stipple,Crash
-spec@!opengl 1.1@linestipple,Crash
+spec@!opengl 1.1@line-smooth-stipple,Fail
+spec@!opengl 1.1@linestipple,Fail
+spec@!opengl 1.1@linestipple@Factor 2x,Fail
+spec@!opengl 1.1@linestipple@Factor 3x,Fail
+spec@!opengl 1.1@linestipple@Line loop,Fail
+spec@!opengl 1.1@linestipple@Line strip,Fail
+spec@!opengl 1.1@linestipple@Restarting lines within a single Begin-End block,Fail
 spec@!opengl 1.1@polygon-mode,Fail
 spec@!opengl 1.1@polygon-mode-facing,Fail
 spec@!opengl 1.1@polygon-mode-offset,Fail
@@ -66,7 +66,6 @@ spec@!opengl 1.1@polygon-mode-offset@config 5: Expected blue pixel in center,Fai
 spec@!opengl 1.1@polygon-mode-offset@config 6: Expected blue pixel in center,Fail
 spec@!opengl 1.1@polygon-mode-offset@config 6: Expected white pixel on right edge,Fail
 spec@!opengl 1.1@polygon-mode-offset@config 6: Expected white pixel on top edge,Fail
-spec@!opengl 1.1@polygon-offset,Fail
 spec@!opengl 2.0@vs-point_size-zero,Fail
 spec@!opengl 2.1@pbo,Fail
 spec@!opengl 2.1@pbo@test_polygon_stip,Fail
@@ -79,210 +78,30 @@ spec@!opengl 3.2@gl-3.2-adj-prims line cull-front pv-first,Fail
 spec@!opengl 3.2@gl-3.2-adj-prims pv-first,Fail
 spec@!opengl 3.2@minmax,Fail
 spec@!opengl 3.3@minmax,Fail
-spec@arb_bindless_texture@compiler@samplers@arith-bound-sampler-texture2d.frag,Crash
 spec@arb_framebuffer_object@fbo-blit-scaled-linear,Fail
+spec@arb_gl_spirv@execution@uniform@atomic-uint-aoa-cs,Fail
+spec@arb_gl_spirv@execution@uniform@atomic-uint-array-cs,Fail
+spec@arb_gl_spirv@execution@uniform@atomic-uint-cs,Fail
 spec@arb_gpu_shader5@arb_gpu_shader5-interpolateatsample-dynamically-nonuniform,Fail
-spec@arb_gpu_shader5@execution@built-in-functions@fs-interpolateatcentroid-array-of-structs,Crash
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-tf-separate,Fail
 spec@arb_gpu_shader_fp64@execution@glsl-fs-loop-unroll-mul-fp64,Crash
 spec@arb_gpu_shader_fp64@uniform_buffers@fs-ubo-load.indirect.3,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_size pname checks,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_BLUE_SIZE,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_GREEN_SIZE,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_size pname checks@GL_INTERNALFORMAT_RED_SIZE,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_type pname checks,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_type pname checks@GL_INTERNALFORMAT_BLUE_TYPE,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_type pname checks@GL_INTERNALFORMAT_GREEN_TYPE,Fail
-spec@arb_internalformat_query2@all internalformat_<x>_type pname checks@GL_INTERNALFORMAT_RED_TYPE,Fail
-spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex,Fail
-spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2' on GL_PROGRAM_INPUT,Fail
-spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex@'vs_input2[1][0]' on GL_PROGRAM_INPUT,Fail
-spec@arb_sample_locations@test,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 0- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 1- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 2- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 1- X: 3- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 0- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 1- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 2- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 2- X: 3- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 0- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 1- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 2- Y: 6- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 0- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 0- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 1- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 1- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 2- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 2- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 3- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 3- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 4- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 4- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 5- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 5- Grid: true,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 6- Grid: false,Fail
-spec@arb_sample_locations@test@MSAA: 4- X: 3- Y: 6- Grid: true,Fail
 spec@arb_sample_shading@ignore-centroid-qualifier 2,Fail
 spec@arb_sample_shading@ignore-centroid-qualifier 4,Fail
 spec@arb_sample_shading@interpolate-at-sample-position 2,Fail
 spec@arb_sample_shading@interpolate-at-sample-position 4,Fail
-spec@arb_sample_shading@samplemask 2,Fail
 spec@arb_sample_shading@samplemask 2 all,Fail
 spec@arb_sample_shading@samplemask 2 all@0.500000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2 all@1.000000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2 all@noms mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2 all@noms partition,Fail
 spec@arb_sample_shading@samplemask 2 all@sample mask_in_one,Fail
+spec@arb_sample_shading@samplemask 2,Fail
 spec@arb_sample_shading@samplemask 2@0.500000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2@1.000000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2@noms mask_in_one,Fail
 spec@arb_sample_shading@samplemask 2@noms partition,Fail
 spec@arb_sample_shading@samplemask 2@sample mask_in_one,Fail
-spec@arb_sample_shading@samplemask 4,Fail
 spec@arb_sample_shading@samplemask 4 all,Fail
 spec@arb_sample_shading@samplemask 4 all@0.250000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 4 all@0.500000 mask_in_one,Fail
@@ -290,28 +109,18 @@ spec@arb_sample_shading@samplemask 4 all@1.000000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 4 all@noms mask_in_one,Fail
 spec@arb_sample_shading@samplemask 4 all@noms partition,Fail
 spec@arb_sample_shading@samplemask 4 all@sample mask_in_one,Fail
+spec@arb_sample_shading@samplemask 4,Fail
 spec@arb_sample_shading@samplemask 4@0.250000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 4@0.500000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 4@1.000000 mask_in_one,Fail
 spec@arb_sample_shading@samplemask 4@noms mask_in_one,Fail
 spec@arb_sample_shading@samplemask 4@noms partition,Fail
 spec@arb_sample_shading@samplemask 4@sample mask_in_one,Fail
-spec@arb_shader_image_load_store@coherency,Fail
-spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'coherent' qualifier coherency test/512x512,Fail
-spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'volatile' qualifier coherency test/1024x1024,Fail
-spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Geometry shader/'coherent' qualifier coherency test/1024x1024,Fail
-spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Geometry shader/'coherent' qualifier coherency test/512x512,Fail
-spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Geometry shader/'volatile' qualifier coherency test/1024x1024,Fail
-spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Geometry shader/'volatile' qualifier coherency test/512x512,Fail
-spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'coherent' qualifier coherency test/1024x1024,Fail
-spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'coherent' qualifier coherency test/256x256,Fail
-spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'coherent' qualifier coherency test/512x512,Fail
-spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'volatile' qualifier coherency test/1024x1024,Fail
-spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'volatile' qualifier coherency test/256x256,Fail
-spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'volatile' qualifier coherency test/512x512,Fail
+spec@arb_shader_image_load_store@host-mem-barrier,Fail
+spec@arb_shader_image_load_store@host-mem-barrier@Uniform buffer/RaW/one bit barrier test/16x16,Fail
+spec@arb_shader_image_load_store@host-mem-barrier@Uniform buffer/RaW/one bit barrier test/4x4,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@fs-packhalf2x16,Fail
 spec@arb_shading_language_packing@execution@built-in-functions@vs-packhalf2x16,Fail
-spec@arb_tessellation_shader@execution@tcs-input-read-mat,Fail
 spec@arb_texture_buffer_object@formats (fs- arb),Fail
 spec@arb_texture_buffer_object@formats (fs- arb)@GL_ALPHA16,Fail
 spec@arb_texture_buffer_object@formats (fs- arb)@GL_ALPHA16F_ARB,Fail
@@ -393,11 +202,12 @@ spec@arb_texture_buffer_object@formats (vs- arb)@GL_LUMINANCE_ALPHA32UI_EXT,Fail
 spec@arb_texture_buffer_object@formats (vs- arb)@GL_LUMINANCE_ALPHA8I_EXT,Fail
 spec@arb_texture_buffer_object@formats (vs- arb)@GL_LUMINANCE_ALPHA8UI_EXT,Fail
 spec@arb_texture_rectangle@1-1-linear-texture,Fail
-spec@arb_timer_query@timestamp-get,Fail
-spec@ext_external_objects@vk-depth-display,Fail
-spec@ext_external_objects@vk-depth-display@D16,Fail
-spec@ext_external_objects@vk-depth-display@D24S8,Fail
-spec@ext_external_objects@vk-depth-display@D32S8,Fail
+spec@egl 1.4@eglterminate then unbind context,Fail
+spec@egl_chromium_sync_control@conformance,Fail
+spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
+spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_ust_test,Fail
+spec@egl_khr_surfaceless_context@viewport,Fail
+spec@egl_mesa_configless_context@basic,Fail
 spec@ext_external_objects@vk-image-display,Fail
 spec@ext_external_objects@vk-image-display-muliple-textures,Fail
 spec@ext_external_objects@vk-image-display-overwrite,Fail
@@ -407,6 +217,7 @@ spec@ext_external_objects@vk-image-overwrite@RGB 10 A2 UNORM optimal: Failed to 
 spec@ext_external_objects@vk-image-overwrite@RGB 5 A1 UNORM optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 16 INT optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 16 SFLOAT optimal: Failed to create texture from GL memory object.,Fail
+spec@ext_external_objects@vk-image-overwrite@RGBA 16 SNORM optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 16 UINT optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 16 UNORM optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 32 INT optimal: Failed to create texture from GL memory object.,Fail
@@ -414,15 +225,22 @@ spec@ext_external_objects@vk-image-overwrite@RGBA 32 SFLOAT optimal: Failed to c
 spec@ext_external_objects@vk-image-overwrite@RGBA 32 UINT optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 4 UNORM optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 8 INT optimal: Failed to create texture from GL memory object.,Fail
+spec@ext_external_objects@vk-image-overwrite@RGBA 8 SNORM optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 8 SRGB optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 8 UINT optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 8 UNORM optimal: Failed to create texture from GL memory object.,Fail
+spec@ext_external_objects@vk-ping-pong-multi-sem,Crash
+spec@ext_external_objects@vk-ping-pong-single-sem,Crash
 spec@ext_external_objects@vk-semaphores,Fail
 spec@ext_external_objects@vk-semaphores-2,Fail
-spec@ext_external_objects@vk-stencil-display,Fail
-spec@ext_external_objects@vk-stencil-display@D24S8,Fail
-spec@ext_external_objects@vk-stencil-display@D32S8,Fail
-spec@ext_framebuffer_blit@fbo-blit-check-limits,Fail
+spec@ext_framebuffer_multisample@accuracy 2 srgb depthstencil linear,Fail
+spec@ext_framebuffer_multisample@accuracy 2 srgb depthstencil,Fail
+spec@ext_framebuffer_multisample@accuracy 4 srgb depthstencil linear,Fail
+spec@ext_framebuffer_multisample@accuracy 4 srgb depthstencil,Fail
+spec@ext_framebuffer_multisample@accuracy all_samples depth_draw small depthstencil,Fail
+spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil linear,Fail
+spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil,Fail
+spec@ext_framebuffer_multisample@accuracy all_samples stencil_draw small depthstencil,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-dual-src-blend 2,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-dual-src-blend 4,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 2,Fail
@@ -430,6 +248,9 @@ spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 4,Fail
 spec@ext_framebuffer_multisample@draw-buffers-alpha-to-coverage 2,Fail
 spec@ext_framebuffer_multisample@draw-buffers-alpha-to-coverage 4,Fail
 spec@ext_framebuffer_multisample@enable-flag,Fail
+spec@ext_framebuffer_multisample@formats 2,Fail
+spec@ext_framebuffer_multisample@formats 4,Fail
+spec@ext_framebuffer_multisample@formats all_samples,Fail
 spec@ext_framebuffer_multisample@interpolation 2 centroid-deriv-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 2 centroid-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 2 non-centroid-deriv-disabled,Fail
@@ -448,26 +269,29 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p012,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p016,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
-spec@ext_transform_feedback@structs struct-array-elem run,Fail
-spec@ext_transform_feedback@structs struct-array-elem run interface,Fail
+spec@ext_transform_feedback@max-varyings,Fail
+spec@ext_transform_feedback@max-varyings@max-varying-arrays-of-arrays,Fail
+spec@ext_transform_feedback@max-varyings@max-varying-single-dimension-array,Fail
 spec@ext_transform_feedback@tessellation quad_strip wireframe,Fail
 spec@ext_transform_feedback@tessellation quads wireframe,Fail
 spec@ext_transform_feedback@tessellation triangle_fan flat_first,Fail
 spec@ext_transform_feedback@tessellation triangle_strip flat_first,Fail
-spec@glsl-1.10@execution@glsl-fs-inline-explosion,Crash
-spec@glsl-1.10@execution@glsl-vs-inline-explosion,Crash
-spec@glsl-1.10@execution@loops@glsl-fs-unroll-explosion,Crash
-spec@glsl-1.10@execution@loops@glsl-vs-unroll-explosion,Crash
-spec@glsl-1.20@compiler@invalid-vec4-array-to-vec3-array-conversion.vert,Fail
+spec@glsl-1.30@execution@fs-uint-to-float-of-extract-int16,Fail
+spec@glsl-1.30@execution@fs-uint-to-float-of-extract-int8,Fail
 spec@glsl-1.30@execution@texelfetch fs sampler3d 1x129x9-98x129x9,Fail
 spec@glsl-1.30@execution@texelfetch fs sampler3d 98x1x9-98x129x9,Fail
 spec@glsl-1.50@built-in constants,Fail
 spec@glsl-1.50@built-in constants@gl_MaxFragmentInputComponents,Fail
 spec@glsl-1.50@execution@geometry@point-size-out,Fail
-spec@glsl-1.50@execution@geometry@primitive-id-restart gl_line_strip_adjacency other,Crash
-spec@glsl-1.50@execution@interface-blocks-complex-vs-fs,Fail
+spec@glsl-1.50@execution@geometry@primitive-id-restart gl_line_strip_adjacency other,Fail
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs,Fail
+spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec2-index-rd,Fail
+spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec3-index-rd,Fail
+spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec4-index-rd,Fail
 spec@glsl-1.50@execution@variable-indexing@gs-output-array-vec4-index-wr,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec2-index-wr-before-gs,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Fail
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Fail
 spec@glsl-3.30@built-in constants,Fail
 spec@glsl-3.30@built-in constants@gl_MaxFragmentInputComponents,Fail
 spec@glsl-es-3.00@execution@built-in-functions@fs-packhalf2x16,Fail
@@ -502,4 +326,7 @@ spec@khr_texture_compression_astc@sliced-3d-miptree-gles hdr,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles hdr@HDR Profile,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp@sRGB decode full precision,Fail
-spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
+spec@ovr_multiview2@triangle_compare_frag_index_uniform,Fail
+spec@ovr_multiview2@triangle_compare_frag_index_uniform_base2,Fail
+spec@ovr_multiview2@triangle_compare_frag_vary_color,Fail
+spec@ovr_multiview2@triangle_compare_frag_vary_color_base2,Fail

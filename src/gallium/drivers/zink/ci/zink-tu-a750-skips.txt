@@ -27,3 +27,9 @@ spec@arb_texture_cube_map@cubemap npot
 spec@arb_texture_cube_map_array@arb_texture_cube_map_array-sampler-cube-array-shadow
 spec@egl_nok_texture_from_pixmap@basic
 KHR-GL46.gpu_shader_fp64.builtin.inverse_dmat4
+
+# slow tests (skip list from @zmike)
+spec@.*double.*
+spec@arb_sample_locations@test
+spec@arb_shader_image_load_store@semantics
+spec@ext_texture_env_combine@texture-env-combine

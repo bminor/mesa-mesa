@@ -200,9 +200,9 @@ zink-tu-a750:
     - .a750-mupuf
     - .zink-turnip-valve-manual-rules
     - .test-piglit
-  timeout: 25m  # base runtime 11min total, 9min of testing
+  timeout: 30m  # base runtime 16min of testing, 18min total
   variables:
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 28
     DEQP_SUITE: zink-tu-a750
     GPU_VERSION: zink-tu-a750
     HWCI_START_WESTON: 1
