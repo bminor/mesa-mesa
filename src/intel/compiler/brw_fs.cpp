@@ -34,6 +34,7 @@
 #include "brw_fs_live_variables.h"
 #include "brw_nir.h"
 #include "brw_cfg.h"
+#include "brw_rt.h"
 #include "brw_private.h"
 #include "intel_nir.h"
 #include "shader_enums.h"
@@ -205,20 +206,39 @@ fs_visitor::assign_curb_setup()
       prog_data->curb_read_length = MAX2(1, prog_data->curb_read_length);
 
    uint64_t used = 0;
-   const bool shader_pulls_constants = devinfo->verx10 >= 125 &&
-      (gl_shader_stage_is_compute(stage) || gl_shader_stage_is_mesh(stage));
+   const bool pull_constants =
+      devinfo->verx10 >= 125 &&
+      (gl_shader_stage_is_compute(stage) ||
+       gl_shader_stage_is_mesh(stage)) &&
+      uniform_push_length;
 
-   if (shader_pulls_constants && uniform_push_length > 0) {
+   if (pull_constants) {
+      const bool pull_constants_a64 =
+         (gl_shader_stage_is_rt(stage) &&
+          brw_bs_prog_data(prog_data)->uses_inline_push_addr) ||
+         ((gl_shader_stage_is_compute(stage) ||
+           gl_shader_stage_is_mesh(stage)) &&
+          brw_cs_prog_data(prog_data)->uses_inline_push_addr);
       assert(devinfo->has_lsc);
       brw_builder ubld = brw_builder(this, 1).exec_all().at(
          cfg->first_block(), cfg->first_block()->start());
 
-      /* The base offset for our push data is passed in as R0.0[31:6]. We have
-       * to mask off the bottom 6 bits.
-       */
-      brw_reg base_addr =
-         ubld.AND(retype(brw_vec1_grf(0, 0), BRW_TYPE_UD),
-                  brw_imm_ud(INTEL_MASK(31, 6)));
+      brw_reg base_addr;
+      if (pull_constants_a64) {
+         /* The address of the push constants is at offset 0 in the inline
+          * parameter.
+          */
+         base_addr =
+            gl_shader_stage_is_rt(stage) ?
+            retype(bs_payload().inline_parameter, BRW_TYPE_UQ) :
+            retype(cs_payload().inline_parameter, BRW_TYPE_UQ);
+      } else {
+         /* The base offset for our push data is passed in as R0.0[31:6]. We
+          * have to mask off the bottom 6 bits.
+          */
+         base_addr = ubld.AND(retype(brw_vec1_grf(0, 0), BRW_TYPE_UD),
+                              brw_imm_ud(INTEL_MASK(31, 6)));
+      }
 
       /* On Gfx12-HP we load constants at the start of the program using A32
        * stateless messages.
@@ -229,11 +249,31 @@ fs_visitor::assign_curb_setup()
          assert(num_regs > 0);
          num_regs = 1 << util_logbase2(num_regs);
 
-         /* This pass occurs after all of the optimization passes, so don't
-          * emit an 'ADD addr, base_addr, 0' instruction.
-          */
-         brw_reg addr = i == 0 ? base_addr :
-            ubld.ADD(base_addr, brw_imm_ud(i * REG_SIZE));
+         brw_reg addr;
+
+         if (i != 0) {
+            if (pull_constants_a64) {
+               /* We need to do the carry manually as when this pass is run,
+                * we're not expecting any 64bit ALUs. Unfortunately all the
+                * 64bit lowering is done in NIR.
+                */
+               addr = ubld.vgrf(BRW_TYPE_UQ);
+               brw_reg addr_ldw = subscript(addr, BRW_TYPE_UD, 0);
+               brw_reg addr_udw = subscript(addr, BRW_TYPE_UD, 1);
+               brw_reg base_addr_ldw = subscript(base_addr, BRW_TYPE_UD, 0);
+               brw_reg base_addr_udw = subscript(base_addr, BRW_TYPE_UD, 1);
+               ubld.ADD(addr_ldw, base_addr_ldw, brw_imm_ud(i * REG_SIZE));
+               ubld.CMP(ubld.null_reg_d(), addr_ldw, base_addr_ldw, BRW_CONDITIONAL_L);
+               set_predicate(BRW_PREDICATE_NORMAL,
+                             ubld.ADD(addr_udw, base_addr_udw, brw_imm_ud(1)));
+               set_predicate_inv(BRW_PREDICATE_NORMAL, true,
+                                 ubld.MOV(addr_udw, base_addr_udw));
+            } else {
+               addr = ubld.ADD(base_addr, brw_imm_ud(i * REG_SIZE));
+            }
+         } else {
+            addr = base_addr;
+         }
 
          brw_reg srcs[4] = {
             brw_imm_ud(0), /* desc */
@@ -249,15 +289,20 @@ fs_visitor::assign_curb_setup()
          send->sfid = GFX12_SFID_UGM;
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,
                                       LSC_ADDR_SURFTYPE_FLAT,
-                                      LSC_ADDR_SIZE_A32,
+                                      pull_constants_a64 ?
+                                      LSC_ADDR_SIZE_A64 : LSC_ADDR_SIZE_A32,
                                       LSC_DATA_SIZE_D32,
                                       num_regs * 8 /* num_channels */,
                                       true /* transpose */,
                                       LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
          send->header_size = 0;
-         send->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, 1);
+         send->mlen = lsc_msg_addr_len(
+            devinfo, pull_constants_a64 ?
+            LSC_ADDR_SIZE_A64 : LSC_ADDR_SIZE_A32, 1);
          send->size_written =
             lsc_msg_dest_len(devinfo, LSC_DATA_SIZE_D32, num_regs * 8) * REG_SIZE;
+         assert((payload().num_regs + i + send->size_written / REG_SIZE) <=
+                (payload().num_regs + prog_data->curb_read_length));
          send->send_is_volatile = true;
 
          send->src[0] = brw_imm_ud(desc |

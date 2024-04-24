@@ -148,7 +148,8 @@ brw_compile_cs(const struct brw_compiler *compiler,
    prog_data->base.total_shared = nir->info.shared_size;
    prog_data->base.ray_queries = nir->info.ray_queries;
    prog_data->base.total_scratch = 0;
-   prog_data->uses_inline_data = brw_nir_uses_inline_data(nir);
+   prog_data->uses_inline_data = brw_nir_uses_inline_data(nir) ||
+                                 key->base.uses_inline_push_addr;
    assert(compiler->devinfo->verx10 >= 125 || !prog_data->uses_inline_data);
 
    if (!nir->info.workgroup_size_variable) {

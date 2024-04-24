@@ -386,7 +386,8 @@ brw_compile_task(const struct brw_compiler *compiler,
    prog_data->uses_drawid =
       BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_DRAW_ID);
 
-   prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir);
+   prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir) ||
+                                      key->base.uses_inline_push_addr;
 
    brw_simd_selection_state simd_state{
       .devinfo = compiler->devinfo,
@@ -1696,7 +1697,8 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    prog_data->autostrip_enable = brw_mesh_autostrip_enable(compiler, nir, &prog_data->map);
 
-   prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir);
+   prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir) ||
+                                      key->base.uses_inline_push_addr;
 
    brw_simd_selection_state simd_state{
       .devinfo = compiler->devinfo,

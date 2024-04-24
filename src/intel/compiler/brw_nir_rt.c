@@ -495,7 +495,8 @@ brw_nir_create_raygen_trampoline(const struct brw_compiler *compiler,
    struct brw_nir_compiler_opts opts = {};
    brw_preprocess_nir(compiler, nir, &opts);
 
-   NIR_PASS_V(nir, brw_nir_lower_rt_intrinsics, devinfo);
+   struct brw_cs_prog_key key = {};
+   NIR_PASS_V(nir, brw_nir_lower_rt_intrinsics, &key.base, devinfo);
 
    b = nir_builder_create(nir_shader_get_entrypoint(b.shader));
    /* brw_nir_lower_rt_intrinsics will leave us with a btd_global_arg_addr

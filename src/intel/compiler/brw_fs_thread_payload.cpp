@@ -361,6 +361,8 @@ cs_thread_payload::cs_thread_payload(const fs_visitor &v)
 
    unsigned r = reg_unit(v.devinfo);
 
+   prog_data->uses_inline_push_addr = v.key->uses_inline_push_addr;
+
    /* See nir_setup_uniforms for subgroup_id in earlier versions. */
    if (v.devinfo->verx10 >= 125) {
       subgroup_id_ = brw_ud1_grf(0, 2);
@@ -380,10 +382,14 @@ cs_thread_payload::cs_thread_payload(const fs_visitor &v)
       if (prog_data->uses_btd_stack_ids)
          r += reg_unit(v.devinfo);
 
-      if (v.stage == MESA_SHADER_COMPUTE && prog_data->uses_inline_data) {
+      if (v.stage == MESA_SHADER_COMPUTE &&
+          (prog_data->uses_inline_data ||
+           prog_data->uses_inline_push_addr)) {
          inline_parameter = brw_ud1_grf(r, 0);
          r += reg_unit(v.devinfo);
       }
+   } else {
+      assert(!prog_data->uses_inline_push_addr);
    }
 
    num_regs = r;
@@ -464,7 +470,7 @@ task_mesh_thread_payload::task_mesh_thread_payload(fs_visitor &v)
       r += reg_unit(v.devinfo);
 
    struct brw_cs_prog_data *prog_data = brw_cs_prog_data(v.prog_data);
-   if (prog_data->uses_inline_data) {
+   if (prog_data->uses_inline_data || prog_data->uses_inline_push_addr) {
       inline_parameter = brw_ud1_grf(r, 0);
       r += reg_unit(v.devinfo);
    }
@@ -474,6 +480,8 @@ task_mesh_thread_payload::task_mesh_thread_payload(fs_visitor &v)
 
 bs_thread_payload::bs_thread_payload(const fs_visitor &v)
 {
+   struct brw_bs_prog_data *prog_data = brw_bs_prog_data(v.prog_data);
+
    unsigned r = 0;
 
    /* R0: Thread header. */
@@ -483,6 +491,8 @@ bs_thread_payload::bs_thread_payload(const fs_visitor &v)
    r += reg_unit(v.devinfo);
 
    /* R2: Inline Parameter.  Used for argument addresses. */
+   prog_data->uses_inline_push_addr = v.key->uses_inline_push_addr;
+   inline_parameter = brw_ud1_grf(r, 0);
    global_arg_ptr = brw_ud1_grf(r, 0);
    local_arg_ptr = brw_ud1_grf(r, 2);
    r += reg_unit(v.devinfo);
