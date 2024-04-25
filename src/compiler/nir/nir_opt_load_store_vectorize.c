@@ -112,6 +112,8 @@ get_info(nir_intrinsic_op op)
       INFO(nir_var_mem_shared, shared_append_amd, true, -1, -1, -1, -1, 1)
       INFO(nir_var_mem_shared, shared_consume_amd, true, -1, -1, -1, -1, 1)
       LOAD(nir_var_mem_global, smem_amd, 0, 1, -1, 1)
+      LOAD(0, buffer_amd, 0, 1, -1, 1)
+      STORE(0, buffer_amd, 1, 2, -1, 0, 1)
    default:
       break;
 #undef ATOMIC
@@ -513,7 +515,9 @@ create_entry_key_from_offset(void *mem_ctx, nir_def *base, uint64_t base_mul, ui
 static nir_variable_mode
 get_variable_mode(struct entry *entry)
 {
-   if (entry->info->mode)
+   if (nir_intrinsic_has_memory_modes(entry->intrin))
+      return nir_intrinsic_memory_modes(entry->intrin);
+   else if (entry->info->mode)
       return entry->info->mode;
    assert(entry->deref && util_bitcount(entry->deref->modes) == 1);
    return entry->deref->modes;
@@ -1037,6 +1041,24 @@ may_alias(nir_shader *shader, struct entry *a, struct entry *b)
    if (a->key->var != b->key->var || a->key->resource != b->key->resource)
       return true;
 
+   bool is_a_buffer_amd = a->intrin->intrinsic == nir_intrinsic_load_buffer_amd ||
+                          a->intrin->intrinsic == nir_intrinsic_store_buffer_amd;
+   bool is_b_buffer_amd = b->intrin->intrinsic == nir_intrinsic_load_buffer_amd ||
+                          b->intrin->intrinsic == nir_intrinsic_store_buffer_amd;
+   if (is_a_buffer_amd || is_b_buffer_amd) {
+      if (is_a_buffer_amd != is_b_buffer_amd)
+         return true;
+      if ((a->access | b->access) & ACCESS_USES_FORMAT_AMD)
+         return true;
+      bool a_store = a->intrin->intrinsic == nir_intrinsic_store_buffer_amd;
+      bool b_store = b->intrin->intrinsic == nir_intrinsic_store_buffer_amd;
+      /* Check the scalar byte offset and index offset. */
+      if (!nir_srcs_equal(a->intrin->src[2 + a_store], b->intrin->src[2 + b_store]))
+         return true;
+      if (!nir_srcs_equal(a->intrin->src[3 + a_store], b->intrin->src[3 + b_store]))
+         return true;
+   }
+
    /* use adjacency information */
    /* TODO: we can look closer at the entry keys */
    int64_t diff = compare_entries(a, b);
@@ -1184,6 +1206,20 @@ can_vectorize(struct vectorize_ctx *ctx, struct entry *first, struct entry *seco
    if (first->info != second->info || first->access != second->access ||
        (first->access & ACCESS_VOLATILE) || first->info->is_atomic)
       return false;
+
+   if (first->intrin->intrinsic == nir_intrinsic_load_buffer_amd ||
+       first->intrin->intrinsic == nir_intrinsic_store_buffer_amd) {
+      if (first->access & ACCESS_USES_FORMAT_AMD)
+         return false;
+      if (nir_intrinsic_memory_modes(first->intrin) != nir_intrinsic_memory_modes(second->intrin))
+         return false;
+      bool store = first->intrin->intrinsic == nir_intrinsic_store_buffer_amd;
+      /* Check the scalar byte offset and index offset. */
+      if (!nir_srcs_equal(first->intrin->src[2 + store], second->intrin->src[2 + store]))
+         return false;
+      if (!nir_srcs_equal(first->intrin->src[3 + store], second->intrin->src[3 + store]))
+         return false;
+   }
 
    return true;
 }
@@ -1513,7 +1549,9 @@ process_block(nir_function_impl *impl, struct vectorize_ctx *ctx, nir_block *blo
          continue;
 
       nir_variable_mode mode = info->mode;
-      if (!mode)
+      if (nir_intrinsic_has_memory_modes(intrin))
+         mode = nir_intrinsic_memory_modes(intrin);
+      else if (!mode)
          mode = nir_src_as_deref(intrin->src[info->deref_src])->modes;
       if (!(mode & aliasing_modes(ctx->options->modes)))
          continue;
