@@ -13,6 +13,7 @@
 #include <sys/mman.h>
 #include <linux/dma-heap.h>
 
+#define __user
 #include "msm_kgsl.h"
 #include "ion/ion.h"
 #include "ion/ion_4.19.h"
