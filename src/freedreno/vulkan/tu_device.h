@@ -118,6 +118,7 @@ struct tu_physical_device
    int32_t reserved_set_idx;
 
    bool has_set_iova;
+   bool has_raytracing;
    uint64_t va_start;
    uint64_t va_size;
 
