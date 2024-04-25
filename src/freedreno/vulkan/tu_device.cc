@@ -1329,13 +1329,22 @@ tu_physical_device_init(struct tu_physical_device *device,
    const struct fd_dev_info info = fd_dev_info(&device->dev_id);
    assert(info.chip);
 
+   /* Print a suffix if raytracing is disabled by the SW fuse, in an attempt
+    * to avoid confusion when apps don't work.
+    */
+   bool raytracing_disabled = info.a7xx.has_sw_fuse &&
+      !device->has_raytracing;
+   const char *rt_suffix = raytracing_disabled ? " (raytracing disabled)" : "";
+
    if (strncmp(fd_name, "FD", 2) == 0) {
       device->name = vk_asprintf(&instance->vk.alloc,
                                  VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE,
-                                 "Turnip Adreno (TM) %s", &fd_name[2]);
+                                 "Turnip Adreno (TM) %s%s", &fd_name[2],
+                                 rt_suffix);
    } else {
-      device->name = vk_strdup(&instance->vk.alloc, fd_name,
-                               VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+      device->name = vk_asprintf(&instance->vk.alloc,
+                                 VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE,
+                                 "%s%s", fd_name, rt_suffix);
 
    }
    if (!device->name) {
