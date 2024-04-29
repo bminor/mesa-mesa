@@ -136,6 +136,7 @@ class LowerSplit64op : public NirLowerInstruction {
          auto alu = nir_instr_as_alu(instr);
          switch (alu->op) {
          case nir_op_bcsel:
+         case nir_op_b2f64:
             return alu->def.bit_size == 64;
          case nir_op_f2i32:
          case nir_op_f2u32:
@@ -218,6 +219,12 @@ class LowerSplit64op : public NirLowerInstruction {
             auto flow = nir_u2f64(b, low);
             auto fhigh = nir_i2f64(b, high);
             return nir_fadd(b, nir_fmul_imm(b, fhigh, 65536.0 * 65536.0), flow);
+         }
+         case nir_op_b2f64: {
+            auto src = nir_b2b32(b, nir_ssa_for_alu_src(b, alu, 0));
+            return nir_pack_64_2x32_split(b,
+                                          nir_imm_zero(b, 1, 32),
+                                          nir_iand(b, src, nir_imm_int(b, 0x3ff00000)));
          }
          default:
             UNREACHABLE("trying to lower instruction that was not in filter");

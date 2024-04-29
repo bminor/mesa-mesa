@@ -1356,8 +1356,6 @@ emit_alu_op2_64bit_one_dst(const nir_alu_instr& alu,
 static bool
 emit_alu_fma_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
 static bool
-emit_alu_b2f64(const nir_alu_instr& alu, Shader& shader);
-static bool
 emit_alu_f2f64(const nir_alu_instr& alu, Shader& shader);
 static bool
 emit_alu_i2f64(const nir_alu_instr& alu, EAluOp op, Shader& shader);
@@ -1491,8 +1489,6 @@ AluInstr::from_nir(nir_alu_instr *alu, Shader& shader)
          return emit_alu_op2_64bit(*alu, op2_max_64, shader, false);
       case nir_op_fmin:
          return emit_alu_op2_64bit(*alu, op2_min_64, shader, false);
-      case nir_op_b2f64:
-         return emit_alu_b2f64(*alu, shader);
       case nir_op_f2f64:
          return emit_alu_f2f64(*alu, shader);
       case nir_op_i2f64:
@@ -2146,29 +2142,6 @@ emit_alu_fma_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
    if (ir)
       ir->set_alu_flag(alu_last_instr);
    shader.emit_instruction(group);
-   return true;
-}
-
-static bool
-emit_alu_b2f64(const nir_alu_instr& alu, Shader& shader)
-{
-   auto& value_factory = shader.value_factory();
-
-   for (unsigned i = 0; i < alu.def.num_components; ++i) {
-      auto ir = new AluInstr(op2_and_int,
-                        value_factory.dest(alu.def, 2 * i, pin_group),
-                        value_factory.src(alu.src[0], i),
-                        value_factory.zero(),
-                        {alu_write});
-      shader.emit_instruction(ir);
-
-      ir = new AluInstr(op2_and_int,
-                        value_factory.dest(alu.def, 2 * i + 1, pin_group),
-                        value_factory.src(alu.src[0], i),
-                        value_factory.literal(0x3ff00000),
-                        {alu_write});
-      shader.emit_instruction(ir);
-   }
    return true;
 }
 
