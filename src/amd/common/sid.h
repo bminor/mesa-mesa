@@ -307,6 +307,13 @@
 #define PKT3(op, count, predicate)                                                                 \
    (PKT_TYPE_S(3) | PKT_COUNT_S(count) | PKT3_IT_OPCODE_S(op) | PKT3_PREDICATE(predicate))
 
+#define PKT3_PROTECTED_FENCE_SIGNAL                0xD0
+#define PKT3_FENCE_WAIT_MULTI                      0xD1
+#define   S_D10_ENGINE_SEL(x)                         ((x & 1) << 0)
+#define   S_D10_PREEMPTABLE(x)                        ((x & 1) << 1)
+#define   S_D10_CACHE_POLICY(x)                       ((x & 3) << 2)
+#define   S_D10_POLL_INTERVAL(x)                      ((x & 0xFFFF) << 16)
+
 #define PKT2_NOP_PAD PKT_TYPE_S(2)
 #define PKT3_NOP_PAD PKT3(PKT3_NOP, 0x3fff, 0) /* header-only version */
 
