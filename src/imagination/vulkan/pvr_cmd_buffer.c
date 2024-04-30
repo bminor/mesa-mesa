@@ -5900,6 +5900,21 @@ static void pvr_setup_ppp_control(struct pvr_cmd_buffer *const cmd_buffer)
       default:
          UNREACHABLE("Unsupported cull mode!");
       }
+
+      if (dynamic_state->rs.line.mode ==
+          VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR) {
+         switch (topology) {
+         case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+         case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+         case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+         case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
+            control.prim_msaa = true;
+            break;
+
+         default:
+            break;
+         }
+      }
    }
 
    if (ppp_control != ppp_state->ppp_control) {

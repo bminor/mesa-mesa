@@ -188,6 +188,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_image_format_list = true,
       .KHR_imageless_framebuffer = true,
       .KHR_index_type_uint8 = false,
+      .KHR_line_rasterization = true,
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
       .KHR_maintenance3 = true,
@@ -216,6 +217,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
       .EXT_index_type_uint8 = false,
+      .EXT_line_rasterization = true,
       .EXT_physical_device_drm = true,
       .EXT_private_data = true,
       .EXT_provoking_vertex = true,
@@ -422,6 +424,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = true,
+
+      /* VK_KHR_line_rasterization */
+      .bresenhamLines = true,
    };
 }
 
@@ -486,6 +491,9 @@ static bool pvr_physical_device_get_properties(
    assert(pdevice->memory.memoryHeapCount == 1);
    const VkDeviceSize max_memory_alloc_size =
       pdevice->memory.memoryHeaps[0].size;
+
+   const uint32_t line_sub_pixel_precision_bits =
+      PVR_HAS_FEATURE(dev_info, simple_internal_parameter_format) ? 4U : 8U;
 
    *properties = (struct vk_properties){
       /* Vulkan 1.0 */
@@ -759,6 +767,9 @@ static bool pvr_physical_device_get_properties(
          VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
       .independentResolveNone = true,
       .independentResolve = true,
+
+      /* VK_KHR_line_rasterization */
+      .lineSubPixelPrecisionBits = line_sub_pixel_precision_bits,
    };
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
