@@ -39,7 +39,7 @@ static void pvr_device_setup_graphics_static_clear_ppp_base(
    struct pvr_static_clear_ppp_base *const base)
 {
    pvr_csb_pack (&base->wclamp, TA_WCLAMP, wclamp) {
-      wclamp.val = fui(0.00001f);
+      wclamp.val = fui(1.0e-13f);
    }
 
    /* clang-format off */

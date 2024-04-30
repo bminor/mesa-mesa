@@ -6090,7 +6090,7 @@ static VkResult pvr_emit_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
 
    if (header->pres_wclamp) {
       pvr_csb_pack (buffer_ptr, TA_WCLAMP, wclamp) {
-         wclamp.val = fui(0.00001f);
+         wclamp.val = fui(1.0e-13f);
       }
       buffer_ptr += pvr_cmd_length(TA_WCLAMP);
       EMIT_MASK_SET(pres_wclamp, false);
