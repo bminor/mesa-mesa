@@ -367,7 +367,12 @@ public:
       }
    }
 
-   void clear(Operand op) { clear(op.physReg(), op.regClass()); }
+   void clear(Operand op)
+   {
+      if (op.isTemp() && !is_empty_or_blocked(op.physReg()))
+         assert(get_id(op.physReg()) == op.tempId());
+      clear(op.physReg(), op.regClass());
+   }
 
    void fill(Definition def)
    {
