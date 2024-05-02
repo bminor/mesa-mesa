@@ -1804,7 +1804,7 @@
         "description": "pvr: fix calculation for textures z position fractional part",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "480bdff4b526c2aabd86a42ddb02665e9b7c69e2",
         "notes": null
