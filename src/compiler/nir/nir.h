@@ -6876,6 +6876,8 @@ bool nir_opt_combine_barriers(nir_shader *shader,
                               void *data);
 bool nir_opt_barrier_modes(nir_shader *shader);
 
+bool nir_minimize_call_live_states(nir_shader *shader);
+
 bool nir_opt_combine_stores(nir_shader *shader, nir_variable_mode modes);
 
 bool nir_copy_prop_impl(nir_function_impl *impl);
