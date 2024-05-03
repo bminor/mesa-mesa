@@ -7,9 +7,8 @@
 #include "sfn_instr_alugroup.h"
 
 #include "sfn_debug.h"
-#include "sfn_instr_export.h"
-#include "sfn_instr_mem.h"
-#include "sfn_instr_tex.h"
+
+#include "util/macros.h"
 
 #include <algorithm>
 
@@ -125,6 +124,7 @@ AluGroup::add_trans_instructions(AluInstr *instr)
           * make sure the corresponding vector channel is used */
          assert(instr->has_alu_flag(alu_is_trans) || m_slots[instr->dest_chan()]);
          m_has_kill_op |= instr->is_kill();
+         m_slot_assignemnt_order[m_next_slot_assignemnt++] = 4;
          return true;
       }
    }
@@ -156,12 +156,14 @@ AluGroup::add_vec_instructions(AluInstr *instr)
       if (instr->bank_swizzle() != alu_vec_unknown) {
          if (try_readport(instr, instr->bank_swizzle())) {
             m_has_kill_op |= instr->is_kill();
+            m_slot_assignemnt_order[m_next_slot_assignemnt++] = preferred_chan;
             return true;
          }
       } else {
          for (AluBankSwizzle i = alu_vec_012; i != alu_vec_unknown; ++i) {
             if (try_readport(instr, i)) {
                m_has_kill_op |= instr->is_kill();
+               m_slot_assignemnt_order[m_next_slot_assignemnt++] = preferred_chan;
                return true;
             }
          }
@@ -194,12 +196,14 @@ AluGroup::add_vec_instructions(AluInstr *instr)
             if (instr->bank_swizzle() != alu_vec_unknown) {
                if (try_readport(instr, instr->bank_swizzle())) {
                   m_has_kill_op |= instr->is_kill();
+                  m_slot_assignemnt_order[m_next_slot_assignemnt++] = free_chan;
                   return true;
                }
             } else {
                for (AluBankSwizzle i = alu_vec_012; i != alu_vec_unknown; ++i) {
                   if (try_readport(instr, i)) {
                      m_has_kill_op |= instr->is_kill();
+                     m_slot_assignemnt_order[m_next_slot_assignemnt++] = free_chan;
                      return true;
                   }
                }
@@ -210,39 +214,74 @@ AluGroup::add_vec_instructions(AluInstr *instr)
    return false;
 }
 
-void AluGroup::update_readport_reserver()
+void
+AluGroup::update_readport_reserver()
 {
    AluReadportReservation readports_evaluator;
-   for (int i = 0; i < 4;  ++i) {
-      if (!m_slots[i])
-         continue;
 
+   for (int k = 0; k < m_next_slot_assignemnt; ++k) {
+      int i = m_slot_assignemnt_order[k];
+      if (i < 4) {
+         if (!update_readport_reserver_vec(i, readports_evaluator)) {
+            sfn_log << SfnLog::err << *this << "\n";
+            UNREACHABLE("Redport reserver update failed when it shouldn't");
+         }
+      } else {
+         if (!update_readport_reserver_trans(readports_evaluator)) {
+            sfn_log << SfnLog::err << *this << "\n";
+            UNREACHABLE("Redport reserver update failed when it shouldn't");
+         }
+      }
+   }
+
+   m_readports_reserver = readports_evaluator;
+}
+
+bool
+AluGroup::update_readport_reserver_vec(int i, AluReadportReservation& readports_evaluator)
+{
+   assert(m_slots[i]);
+
+   if (m_slots[i]->bank_swizzle() != alu_vec_unknown) {
       AluReadportReservation re = readports_evaluator;
+      if (re.schedule_vec_instruction(*m_slots[i], m_slots[i]->bank_swizzle())) {
+         readports_evaluator = re;
+      } else {
+         return false;
+      }
+   } else {
       AluBankSwizzle bs = alu_vec_012;
       while (bs != alu_vec_unknown) {
+         AluReadportReservation re = readports_evaluator;
          if (re.schedule_vec_instruction(*m_slots[i], bs)) {
             readports_evaluator = re;
             break;
          }
          ++bs;
       }
-      if (bs == alu_vec_unknown)
-         UNREACHABLE("Bank swizzle should have been checked before");
-   }
-
-   if (s_max_slots == 5 && m_slots[4]) {
-      AluReadportReservation re = readports_evaluator;
-      AluBankSwizzle bs = sq_alu_scl_201;
-      while (bs != sq_alu_scl_unknown) {
-         if (re.schedule_vec_instruction(*m_slots[4], bs)) {
-            readports_evaluator = re;
-            break;
-         }
-         ++bs;
+      if (bs == alu_vec_unknown) {
+         return false;
       }
-      if (bs == sq_alu_scl_unknown)
-         UNREACHABLE("Bank swizzle should have been checked before");
    }
+   return true;
+}
+
+bool
+AluGroup::update_readport_reserver_trans(AluReadportReservation& readports_evaluator)
+{
+   AluBankSwizzle bs = sq_alu_scl_201;
+   while (bs != sq_alu_scl_unknown) {
+      AluReadportReservation re = readports_evaluator;
+      if (re.schedule_trans_instruction(*m_slots[4], bs)) {
+         readports_evaluator = re;
+         break;
+      }
+      ++bs;
+   }
+   if (bs == sq_alu_scl_unknown) {
+      return false;
+   }
+   return true;
 }
 
 bool

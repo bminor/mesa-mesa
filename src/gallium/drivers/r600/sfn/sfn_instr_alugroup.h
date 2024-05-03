@@ -86,6 +86,9 @@ public:
    AluGroup *as_alu_group() override { return this;}
 
 private:
+   bool update_readport_reserver_vec(int i, AluReadportReservation& readports_evaluator);
+   bool update_readport_reserver_trans(AluReadportReservation& readports_evaluator);
+
    void forward_set_blockid(int id, int index) override;
    bool do_ready() const override;
    void do_print(std::ostream& os) const override;
@@ -94,6 +97,8 @@ private:
    bool try_readport(AluInstr *instr, AluBankSwizzle cycle);
 
    Slots m_slots;
+   uint8_t m_next_slot_assignemnt{0};
+   std::array<int8_t, 5> m_slot_assignemnt_order{-1, -1, -1, -1, -1};
 
    AluReadportReservation m_readports_reserver;
 
