@@ -552,6 +552,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
     * fetch + read from queue has to be in the same ALU CF block */
    if (!alu_groups_ready.empty() && !has_lds_ready && !has_ar_read_ready) {
       group = *alu_groups_ready.begin();
+      group->update_readport_reserver();
 
       if (!check_array_reads(*group)) {
 
@@ -687,7 +688,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
       assert(m_current_block->expected_ar_uses() == 0);
       start_new_block(out_blocks, Block::alu);
    }
-
+   group->update_readport_reserver();
    return success;
 }
 
