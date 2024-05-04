@@ -941,6 +941,13 @@ ir3_mem_access_size_align(nir_intrinsic_op intrin, uint8_t bytes,
    };
 }
 
+static bool
+atomic_supported(const nir_instr * instr, const void * data)
+{
+   /* No atomic 64b arithmetic is supported in A7XX so far */
+   return nir_instr_as_intrinsic(instr)->def.bit_size != 64;
+}
+
 void
 ir3_nir_lower_variant(struct ir3_shader_variant *so,
                       const struct ir3_shader_nir_options *options,
@@ -1034,6 +1041,7 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
 
    /* Lower scratch writemasks */
    progress |= OPT(s, nir_lower_wrmasks, should_split_wrmask, s);
+   progress |= OPT(s, nir_lower_atomics, atomic_supported);
 
    if (OPT(s, nir_lower_locals_to_regs, 1)) {
       progress = true;

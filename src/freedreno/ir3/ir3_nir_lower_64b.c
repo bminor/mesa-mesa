@@ -4,6 +4,10 @@
  */
 
 #include "ir3_nir.h"
+#include "nir.h"
+#include "nir_builder.h"
+#include "nir_builder_opcodes.h"
+#include "nir_intrinsics.h"
 
 /*
  * Lowering for 64b intrinsics generated with OpenCL or with
@@ -28,6 +32,13 @@ lower_64b_intrinsics_filter(const nir_instr *instr, const void *unused)
 
    if (is_intrinsic_store(intr->intrinsic))
       return nir_src_bit_size(intr->src[0]) == 64;
+
+   /* skip over ssbo atomics, we'll lower them later */
+   if (intr->intrinsic == nir_intrinsic_ssbo_atomic ||
+       intr->intrinsic == nir_intrinsic_ssbo_atomic_swap ||
+       intr->intrinsic == nir_intrinsic_global_atomic_ir3 ||
+       intr->intrinsic == nir_intrinsic_global_atomic_swap_ir3)
+      return false;
 
    if (nir_intrinsic_dest_components(intr) == 0)
       return false;
