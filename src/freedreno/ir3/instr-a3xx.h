@@ -444,6 +444,8 @@ type_uint_size(unsigned bit_size)
    case 1:  /* 1b bools are treated as normal half-regs */
    case 16: return TYPE_U16;
    case 32: return TYPE_U32;
+   case 64:
+      return TYPE_U32;
    default:
       ir3_assert(0); /* invalid size */
       return (type_t)0;

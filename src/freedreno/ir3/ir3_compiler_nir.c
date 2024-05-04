@@ -1027,7 +1027,22 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
       dst = ir3_SUB_S_rpt(b, dst_sz, src[0], 0, src[1], 0);
       set_instr_flags(dst.rpts, dst_sz, IR3_INSTR_SAT);
       break;
-
+   case nir_op_pack_64_2x32_split: {
+       struct ir3_instruction *r0 = ir3_MOV(b, src[0].rpts[0], TYPE_U32);
+       struct ir3_instruction *r1 = ir3_MOV(b, src[1].rpts[0], TYPE_U32);
+       dst.rpts[0] = r0;
+       dst.rpts[1] = r1;
+       dst_sz = 2;
+      break;
+   }
+   case nir_op_unpack_64_2x32_split_x: {
+       ir3_split_dest(b, &dst.rpts[0], src[0].rpts[0], 0, 1);
+      break;
+   }
+   case nir_op_unpack_64_2x32_split_y: {
+       ir3_split_dest(b, &dst.rpts[0], src[0].rpts[0], 1, 1);
+      break;
+   }
    case nir_op_udot_4x8_uadd:
    case nir_op_udot_4x8_uadd_sat:
    case nir_op_sdot_4x8_iadd:
@@ -3311,9 +3326,9 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
 static void
 emit_load_const(struct ir3_context *ctx, nir_load_const_instr *instr)
 {
-   struct ir3_instruction **dst =
-      ir3_get_dst_ssa(ctx, &instr->def, instr->def.num_components);
    unsigned bit_size = ir3_bitsize(ctx, instr->def.bit_size);
+   struct ir3_instruction **dst =
+      ir3_get_dst_ssa(ctx, &instr->def, instr->def.num_components * ((bit_size == 64) ? 2 : 1));
 
    if (bit_size <= 8) {
       for (int i = 0; i < instr->def.num_components; i++)
@@ -3321,9 +3336,15 @@ emit_load_const(struct ir3_context *ctx, nir_load_const_instr *instr)
    } else if (bit_size <= 16) {
       for (int i = 0; i < instr->def.num_components; i++)
          dst[i] = create_immed_typed(ctx->block, instr->value[i].u16, TYPE_U16);
-   } else {
+   } else if (bit_size <= 32) {
       for (int i = 0; i < instr->def.num_components; i++)
          dst[i] = create_immed_typed(ctx->block, instr->value[i].u32, TYPE_U32);
+   } else {
+      assert(instr->def.num_components == 1);
+      for (int i = 0; i < instr->def.num_components; i++) {
+         dst[2 * i] = create_immed_typed(ctx->block, (uint32_t)(instr->value[i].u64), TYPE_U32);
+         dst[2 * i + 1] = create_immed_typed(ctx->block, (uint32_t)(instr->value[i].u64 >> 32), TYPE_U32);
+      }
    }
 }
 
