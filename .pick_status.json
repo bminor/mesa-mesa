@@ -194,7 +194,7 @@
         "description": "nir/opt_algebraic: Allow two-step lowering of ftrunc@64 to use ffract@64",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5218cff34b34cec4819a382c500934fd9d991a60",
         "notes": null
