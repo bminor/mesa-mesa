@@ -184,7 +184,7 @@
         "description": "Revert: r600/sfn: call nir_lower_doubles explicitely\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "36c81b5e88e68e61e93bc287e243fd29abbff97a",
         "notes": null
