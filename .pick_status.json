@@ -19474,7 +19474,7 @@
         "description": "ci/shader-db: drop extra nesting section",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
