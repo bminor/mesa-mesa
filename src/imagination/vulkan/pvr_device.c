@@ -41,6 +41,7 @@
 
 #include "git_sha1.h"
 #include "hwdef/rogue_hw_utils.h"
+#include "pco/pco.h"
 #include "pvr_bo.h"
 #include "pvr_border.h"
 #include "pvr_clear.h"
@@ -659,6 +660,9 @@ static void pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
     * before freeing or that the freeing functions accept NULL pointers.
     */
 
+   if (pdevice->pco_ctx)
+      ralloc_free(pdevice->pco_ctx);
+
    if (pdevice->compiler)
       ralloc_free(pdevice->compiler);
 
@@ -822,6 +826,15 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
       result = vk_errorf(instance,
                          VK_ERROR_INITIALIZATION_FAILED,
                          "Failed to initialize Rogue compiler");
+      goto err_wsi_finish;
+   }
+
+   pdevice->pco_ctx = pco_ctx_create(&pdevice->dev_info, NULL);
+   if (!pdevice->pco_ctx) {
+      ralloc_free(pdevice->compiler);
+      result = vk_errorf(instance,
+                         VK_ERROR_INITIALIZATION_FAILED,
+                         "Failed to initialize PCO compiler context");
       goto err_wsi_finish;
    }
 

@@ -38,6 +38,7 @@
 
 #include "compiler/shader_enums.h"
 #include "hwdef/rogue_hw_defs.h"
+#include "pco/pco.h"
 #include "pvr_border.h"
 #include "pvr_clear.h"
 #include "pvr_common.h"
@@ -112,6 +113,7 @@ struct pvr_physical_device {
    struct wsi_device wsi_device;
 
    struct rogue_compiler *compiler;
+   pco_ctx *pco_ctx;
 };
 
 struct pvr_instance {

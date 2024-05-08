@@ -33,6 +33,7 @@
 #include "compiler/shader_enums.h"
 #include "hwdef/rogue_hw_utils.h"
 #include "nir/nir.h"
+#include "pco/pco.h"
 #include "pvr_bo.h"
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"
@@ -56,6 +57,7 @@
 #include "vk_pipeline_cache.h"
 #include "vk_render_pass.h"
 #include "vk_util.h"
+#include "vulkan/runtime/vk_pipeline.h"
 
 /*****************************************************************************
    PDS functions
