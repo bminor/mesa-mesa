@@ -1245,7 +1245,7 @@ static VkResult pvr_compute_pipeline_compile(
       /* We make sure that the compiler's unused reg value is compatible with
        * the pds api.
        */
-      STATIC_ASSERT(ROGUE_REG_UNUSED == PVR_PDS_COMPUTE_INPUT_REG_UNUSED);
+      STATIC_ASSERT(ROGUE_REG_UNUSED == PVR_PDS_REG_UNUSED);
 
       barrier_coefficient = build_info.barrier_reg;
 
@@ -1309,9 +1309,9 @@ static VkResult pvr_compute_pipeline_compile(
     * variant of the PDS compute program as well.
     */
    compute_pipeline->flags.base_workgroup =
-      work_group_input_regs[0] != PVR_PDS_COMPUTE_INPUT_REG_UNUSED ||
-      work_group_input_regs[1] != PVR_PDS_COMPUTE_INPUT_REG_UNUSED ||
-      work_group_input_regs[2] != PVR_PDS_COMPUTE_INPUT_REG_UNUSED;
+      work_group_input_regs[0] != PVR_PDS_REG_UNUSED ||
+      work_group_input_regs[1] != PVR_PDS_REG_UNUSED ||
+      work_group_input_regs[2] != PVR_PDS_REG_UNUSED;
 
    if (compute_pipeline->flags.base_workgroup) {
       result = pvr_pds_compute_base_workgroup_variant_program_init(
