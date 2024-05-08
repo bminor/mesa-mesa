@@ -1326,6 +1326,9 @@ tu_physical_device_init(struct tu_physical_device *device,
                                device->dev_id.chip_id, device->dev_id.gpu_id);
    }
 
+   const struct fd_dev_info info = fd_dev_info(&device->dev_id);
+   assert(info.chip);
+
    if (strncmp(fd_name, "FD", 2) == 0) {
       device->name = vk_asprintf(&instance->vk.alloc,
                                  VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE,
@@ -1340,12 +1343,6 @@ tu_physical_device_init(struct tu_physical_device *device,
                                "device name alloc fail");
    }
 
-   const struct fd_dev_info info = fd_dev_info(&device->dev_id);
-   if (!info.chip) {
-      result = vk_startup_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
-                                 "device %s is unsupported", device->name);
-      goto fail_free_name;
-   }
    switch (fd_dev_gen(&device->dev_id)) {
    case 6:
    case 7: {
