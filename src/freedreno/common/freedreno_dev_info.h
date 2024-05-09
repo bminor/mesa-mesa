@@ -330,6 +330,14 @@ struct fd_dev_info {
        * This workaround was seen in the prop driver v512.762.12.
        */
       bool reading_shading_rate_requires_smask_quirk;
+
+      /* Whether the ray_intersection instruction is present. */
+      bool has_ray_intersection;
+
+      /* Whether features may be fused off by the SW_FUSE. So far, this is
+       * just raytracing.
+       */
+      bool has_sw_fuse;
    } a7xx;
 };
 
