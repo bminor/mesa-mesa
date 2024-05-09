@@ -1251,6 +1251,20 @@ anv_cmd_buffer_fill_area(struct anv_cmd_buffer *cmd_buffer,
    anv_blorp_batch_finish(&batch);
 }
 
+void
+anv_cmd_fill_buffer_addr(VkCommandBuffer commandBuffer,
+                         VkDeviceAddress dstAddr,
+                         VkDeviceSize    fillSize,
+                         uint32_t        data)
+{
+   ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+
+   anv_cmd_buffer_fill_area(cmd_buffer, anv_address_from_u64(dstAddr),
+                            fillSize, data, false);
+
+   anv_add_buffer_write_pending_bits(cmd_buffer, "after fill buffer");
+}
+
 void anv_CmdFillBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    dstBuffer,

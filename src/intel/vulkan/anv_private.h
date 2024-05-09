@@ -5893,6 +5893,11 @@ anv_cmd_buffer_fill_area(struct anv_cmd_buffer *cmd_buffer,
                          VkDeviceSize size,
                          uint32_t data,
                          bool protected);
+void
+anv_cmd_fill_buffer_addr(VkCommandBuffer cmd_buffer,
+                         VkDeviceAddress dstAddr,
+                         VkDeviceSize size,
+                         uint32_t data);
 
 VkResult
 anv_cmd_buffer_ensure_rcs_companion(struct anv_cmd_buffer *cmd_buffer);
