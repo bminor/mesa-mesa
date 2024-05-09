@@ -13,7 +13,9 @@
  * \brief PCO internal header.
  */
 
+#include "compiler/spirv/nir_spirv.h"
 #include "pco.h"
+#include "pco_common.h"
 #include "spirv/nir_spirv.h"
 #include "util/macros.h"
 

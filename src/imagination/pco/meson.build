@@ -12,9 +12,49 @@ libpowervr_compiler_files = files(
   'pco_trans_nir.c',
 )
 
+pco_pygen_dep_files = files('pco_pygen_common.py', 'pco_isa.py', 'pco_ops.py')
+
+pco_common_h = custom_target(
+  'pco_common.h',
+  input : ['pco_common.h.py'],
+  output : 'pco_common.h',
+  command : [prog_python, '@INPUT@'],
+  capture : true,
+  depend_files : pco_pygen_dep_files,
+)
+
+pco_isa_h = custom_target(
+  'pco_isa.h',
+  input : ['pco_isa.h.py'],
+  output : 'pco_isa.h',
+  command : [prog_python, '@INPUT@'],
+  capture : true,
+  depend_files : pco_pygen_dep_files,
+)
+
+pco_ops_h = custom_target(
+  'pco_ops.h',
+  input : ['pco_ops.h.py'],
+  output : 'pco_ops.h',
+  command : [prog_python, '@INPUT@'],
+  capture : true,
+  depend_files : pco_pygen_dep_files,
+)
+
+idep_pco_pygen = declare_dependency(
+  sources : [
+    pco_common_h,
+    pco_isa_h,
+    pco_ops_h,
+  ],
+  include_directories : inc_powervr_compiler,
+)
+
+pco_pygen_c_files = []
+
 libpowervr_compiler = static_library(
   'powervr_compiler',
-  [libpowervr_compiler_files],
+  [libpowervr_compiler_files, pco_pygen_c_files],
   include_directories : [
     inc_imagination,
     inc_powervr_compiler,
@@ -24,7 +64,7 @@ libpowervr_compiler = static_library(
   ],
   # Suppress 'parameter passing for argument of type ... changed in GCC ...' warnings.
   c_args : [imagination_c_args, no_override_init_args, '-Wno-psabi'],
-  dependencies : [idep_mesautil, idep_nir],
+  dependencies : [idep_mesautil, idep_nir, idep_pco_pygen],
   gnu_symbol_visibility : 'hidden',
   install : false,
 )
