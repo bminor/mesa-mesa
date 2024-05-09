@@ -963,7 +963,7 @@ struct pvr_graphics_pipeline {
    struct vk_dynamic_graphics_state dynamic_state;
 
    /* Derived and other state */
-   size_t stage_indices[MESA_SHADER_FRAGMENT + 1];
+   size_t stage_indices[MESA_SHADER_STAGES];
 
    struct {
       struct pvr_vertex_shader_state vertex;

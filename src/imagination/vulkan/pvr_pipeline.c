@@ -38,6 +38,7 @@
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"
 #include "pvr_hardcode.h"
+#include "pvr_nir.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"
 #include "pvr_robustness.h"
@@ -1641,8 +1642,18 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
    const uint32_t cache_line_size =
       rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct rogue_compiler *compiler = device->pdevice->compiler;
-   struct rogue_build_ctx *ctx;
+   struct rogue_build_ctx *ctx = NULL;
    VkResult result;
+
+   pco_ctx *pco_ctx = device->pdevice->pco_ctx;
+   const struct spirv_to_nir_options *spirv_options =
+      pco_spirv_options(pco_ctx);
+   const nir_shader_compiler_options *nir_options = pco_nir_options(pco_ctx);
+
+   nir_shader *producer = NULL;
+   nir_shader *nir_shaders[MESA_SHADER_STAGES] = { 0 };
+   pco_shader *pco_shaders[MESA_SHADER_STAGES] = { 0 };
+   void *shader_mem_ctx = ralloc_context(NULL);
 
    /* Vars needed for the new path. */
    struct pvr_pds_vertex_dma vtx_dma_descriptions[PVR_MAX_VERTEX_ATTRIB_DMAS];
@@ -1656,6 +1667,56 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
    struct pvr_vertex_special_vars special_vars_layout = { 0 };
 
    uint32_t sh_count[PVR_STAGE_ALLOCATION_COUNT] = { 0 };
+
+   for (gl_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
+      nir_shader **nir = &nir_shaders[stage];
+      size_t stage_index = gfx_pipeline->stage_indices[stage];
+      const VkPipelineShaderStageCreateInfo *create_info =
+         &pCreateInfo->pStages[stage_index];
+
+      /* Skip unused/inactive stages. */
+      if (stage_index == ~0)
+         continue;
+
+      result = vk_pipeline_shader_stage_to_nir(&device->vk,
+                                               0,
+                                               create_info,
+                                               spirv_options,
+                                               nir_options,
+                                               shader_mem_ctx,
+                                               nir);
+      if (result != VK_SUCCESS)
+         goto err_free_build_context;
+
+      pco_preprocess_nir(pco_ctx, *nir);
+      if (producer)
+         pco_link_nir(pco_ctx, producer, *nir);
+
+      pco_lower_nir(pco_ctx, *nir);
+      pvr_lower_nir(pco_ctx, layout, *nir);
+
+      pco_postprocess_nir(pco_ctx, *nir);
+
+      producer = *nir;
+   }
+
+   for (gl_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
+      pco_shader **pco = &pco_shaders[stage];
+
+      /* Skip unused/inactive stages. */
+      if (!nir_shaders[stage])
+         continue;
+
+      *pco = pco_trans_nir(pco_ctx, nir_shaders[stage], shader_mem_ctx);
+      if (!*pco) {
+         result = VK_ERROR_INITIALIZATION_FAILED;
+         goto err_free_build_context;
+      }
+
+      pco_process_ir(pco_ctx, *pco);
+      pco_encode_ir(pco_ctx, *pco);
+      pco_shader_finalize(pco_ctx, *pco);
+   }
 
    /* Setup shared build context. */
    ctx = rogue_build_context_create(compiler, layout);
@@ -1852,6 +1913,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
    /* assert(pvr_pds_descriptor_program_variables.temp_buff_total_size == 0); */
    /* TODO: Implement spilling with the above. */
 
+   ralloc_free(shader_mem_ctx);
    ralloc_free(ctx);
 
    return VK_SUCCESS;
@@ -1882,6 +1944,7 @@ err_free_vertex_bo:
    pvr_bo_suballoc_free(gfx_pipeline->shader_state.vertex.bo);
 err_free_build_context:
    ralloc_free(ctx);
+   ralloc_free(shader_mem_ctx);
    return result;
 }
 
