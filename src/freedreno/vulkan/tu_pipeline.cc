@@ -79,6 +79,7 @@ tu6_load_state_size(struct tu_pipeline *pipeline,
          case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
          case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
          case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
             /* IBO-backed resources only need one packet for all graphics stages */
             if (stage_count)
                count += 1;
@@ -174,7 +175,8 @@ tu6_emit_load_state(struct tu_device *device,
             FALLTHROUGH;
          case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
          case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
+         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
             unsigned mul = binding->size / (A6XX_TEX_CONST_DWORDS * 4);
             /* IBO-backed resources only need one packet for all graphics stages */
             if (stages & ~VK_SHADER_STAGE_COMPUTE_BIT) {

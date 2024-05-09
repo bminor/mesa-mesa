@@ -22,6 +22,8 @@
 #include "tu_suballoc.h"
 #include "tu_util.h"
 
+#include "radix_sort/radix_sort_vk.h"
+
 #include "common/freedreno_rd_output.h"
 #include "util/vma.h"
 #include "util/u_vector.h"
@@ -290,6 +292,11 @@ struct tu_device
 
    struct vk_meta_device meta;
 
+   radix_sort_vk_t *radix_sort;
+   mtx_t radix_sort_mutex;
+
+   struct util_sparse_array accel_struct_ranges;
+
 #define MIN_SCRATCH_BO_SIZE_LOG2 12 /* A page */
 
    /* Currently the kernel driver uses a 32-bit GPU address space, but it
@@ -305,6 +312,8 @@ struct tu_device
 
    struct tu_bo *global_bo;
    struct tu6_global *global_bo_map;
+
+   struct tu_bo *null_accel_struct_bo;
 
    uint32_t implicit_sync_bo_count;
 

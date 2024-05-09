@@ -642,7 +642,7 @@ endif
 prog_glslang = find_program(
   'glslangValidator',
   native : true,
-  required : with_vulkan_overlay_layer or with_aco_tests or with_amd_vk or with_intel_vk or with_swrast_vk
+  required : with_vulkan_overlay_layer or with_aco_tests or with_amd_vk or with_intel_vk or with_swrast_vk or with_freedreno_vk
 )
 
 if prog_glslang.found()

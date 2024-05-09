@@ -3958,12 +3958,25 @@ vk2tu_access(VkAccessFlags2 flags, VkPipelineStageFlags2 stages, bool image_only
                        VK_ACCESS_2_SHADER_READ_BIT |
                        VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
                        VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
-                       VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR,
+                       VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR |
+                       VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR,
                        VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT |
                        VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
                        VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT |
+                       VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
                        SHADER_STAGES))
        mask |= TU_ACCESS_UCHE_READ | TU_ACCESS_CCHE_READ;
+
+   /* Reading the AS for copying involves doing CmdDispatchIndirect with the
+    * copy size as a parameter, so it's read by the CP as well as a shader.
+    */
+   if (gfx_read_access(flags, stages,
+                       VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                       VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+                       VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR))
+       mask |= TU_ACCESS_SYSMEM_READ;
+
 
    if (gfx_read_access(flags, stages,
                        VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT,
@@ -3984,6 +3997,11 @@ vk2tu_access(VkAccessFlags2 flags, VkPipelineStageFlags2 stages, bool image_only
                         VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT |
                         SHADER_STAGES))
        mask |= TU_ACCESS_UCHE_WRITE;
+
+   if (gfx_write_access(flags, stages,
+                        VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+                        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR))
+       mask |= TU_ACCESS_UCHE_WRITE | TU_ACCESS_CP_WRITE;
 
    /* When using GMEM, the CCU is always flushed automatically to GMEM, and
     * then GMEM is flushed to sysmem. Furthermore, we already had to flush any
