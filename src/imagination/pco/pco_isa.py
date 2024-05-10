@@ -2478,3 +2478,206 @@ field_mappings=[
    ('rsvd2', 'rsvd2_atomic'),
    ('dstsel', 'dstsel'),
 ])
+
+# Bitwise ALU ops.
+F_COUNT_SRC = field_enum_type(
+name='count_src', num_bits=1,
+elems=[
+   ('s2', 0b0),
+   ('ft2', 0b1),
+])
+
+F_COUNT_OP = field_enum_type(
+name='count_op', num_bits=2,
+elems=[
+   ('cbs', 0b00),
+   ('ftb', 0b01),
+   ('byp', 0b10),
+])
+
+F_BITMASK_SRC_OP = field_enum_type(
+name='bitmask_src_op', num_bits=1,
+elems=[
+   ('byp', 0b0),
+   ('msk', 0b1),
+])
+
+F_BITMASK_IMM_OP = field_enum_type(
+name='bitmask_imm_op', num_bits=1,
+elems=[
+   ('byp16', 0b0),
+   ('byp32', 0b1),
+])
+
+F_SHIFT1_OP = field_enum_type(
+name='shift1_op', num_bits=2,
+elems=[
+   ('byp', 0b00),
+   ('shfl', 0b01),
+   ('rev', 0b10),
+   ('lsl', 0b11),
+])
+
+F_LOGICAL_OP = field_enum_type(
+name='logical_op', num_bits=3,
+elems=[
+   ('or', 0b000),
+   ('and', 0b001),
+   ('xor', 0b010),
+   ('nor', 0b100),
+   ('nand', 0b101),
+   ('xnor', 0b110),
+   ('byp', 0b111),
+])
+
+F_BW_TST_SRC = field_enum_type(
+name='bw_tst_src', num_bits=1,
+elems=[
+   ('ft5', 0b0),
+   ('ft3', 0b1),
+])
+
+F_BW_TST_OP = field_enum_type(
+name='bw_tst_op', num_bits=1,
+elems=[
+   ('z', 0b0),
+   ('nz', 0b1),
+])
+
+F_SHIFT2_OP = field_enum_type(
+name='shift2_op', num_bits=3,
+elems=[
+   ('lsl', 0b000),
+   ('shr', 0b001),
+   ('rol', 0b010),
+   ('cps', 0b011),
+   ('asr_twb', 0b100),
+   ('asr_pwb', 0b101),
+   ('asr_mtb', 0b110),
+   ('asr_ftb', 0b111),
+])
+
+I_BITWISE = bit_set(
+name='bitwise',
+pieces=[
+   ('ph0', (0, '7')),
+   ('ph1', (0, '6')),
+
+   # phase 0
+   ('csrc', (0, '6')),
+   ('cnt', (0, '5')),
+   ('ext0', (0, '4')),
+   ('shft1', (0, '3:2')),
+   ('cnt_byp', (0, '1')),
+   ('bm', (0, '0')),
+
+   ('imm_7_0', (1, '7:0')),
+   ('imm_15_8', (2, '7:0')),
+   ('imm_23_16', (3, '7:0')),
+   ('imm_31_24', (4, '7:0')),
+
+   # phase 1
+   ('mskb', (0, '5')),
+   ('mska', (0, '3')),
+   ('logical_op', (0, '2:0')),
+
+   # phase 2
+   ('pwen', (0, '5')),
+   ('tsrc', (0, '4')),
+   ('top', (0, '3')),
+   ('shft2', (0, '2:0')),
+],
+fields=[
+   ('ph0', (F_BOOL, ['ph0'])),
+   ('ph1', (F_BOOL, ['ph1'])),
+
+   # phase 0
+   ('count_src', (F_COUNT_SRC, ['csrc'])),
+   ('bitmask_imm', (F_BOOL, ['ext0'])),
+   ('count_op', (F_COUNT_OP, ['cnt_byp', 'cnt'])),
+   ('bitmask_src_op', (F_BITMASK_SRC_OP, ['bm'])),
+   ('bitmask_imm_op', (F_BITMASK_IMM_OP, ['bm'])),
+   ('shift1_op', (F_SHIFT1_OP, ['shft1'])),
+
+   ('imm16', (F_UINT16, ['imm_15_8', 'imm_7_0'])),
+   ('imm32', (F_UINT32, ['imm_31_24', 'imm_23_16', 'imm_15_8', 'imm_7_0'])),
+
+   # phase 1
+   ('mskb', (F_BOOL, ['mskb'])),
+   ('rsvd0_ph1', (F_UINT1, ['ext0'], 0)),
+   ('mska', (F_BOOL, ['mska'])),
+   ('logical_op', (F_LOGICAL_OP, ['logical_op'])),
+
+   # phase 2
+   ('pwen', (F_BOOL, ['pwen'])),
+   ('tst_src', (F_BW_TST_SRC, ['tsrc'])),
+   ('tst_op', (F_BW_TST_OP, ['top'])),
+   ('shift2_op', (F_SHIFT2_OP, ['shft2'])),
+])
+
+I_PHASE0_SRC = bit_struct(
+name='phase0_src',
+bit_set=I_BITWISE,
+field_mappings=[
+   ('ph0', 'ph0', 0),
+
+   ('count_src', 'count_src'),
+   ('bitmask_imm', 'bitmask_imm', 0),
+   ('count_op', 'count_op'),
+   ('bitmask_src_op', 'bitmask_src_op'),
+   ('shift1_op', 'shift1_op'),
+])
+
+I_PHASE0_IMM16 = bit_struct(
+name='phase0_imm16',
+bit_set=I_BITWISE,
+field_mappings=[
+   ('ph0', 'ph0', 0),
+
+   ('count_src', 'count_src'),
+   ('bitmask_imm', 'bitmask_imm', 1),
+   ('count_op', 'count_op'),
+   ('bitmask_imm_op', 'bitmask_imm_op', 'byp16'),
+   ('shift1_op', 'shift1_op'),
+   ('imm16', 'imm16'),
+])
+
+I_PHASE0_IMM32 = bit_struct(
+name='phase0_imm32',
+bit_set=I_BITWISE,
+field_mappings=[
+   ('ph0', 'ph0', 0),
+
+   ('count_src', 'count_src'),
+   ('bitmask_imm', 'bitmask_imm', 1),
+   ('count_op', 'count_op'),
+   ('bitmask_imm_op', 'bitmask_imm_op', 'byp32'),
+   ('shift1_op', 'shift1_op'),
+   ('imm32', 'imm32'),
+])
+
+I_PHASE1 = bit_struct(
+name='phase1',
+bit_set=I_BITWISE,
+field_mappings=[
+   ('ph0', 'ph0', 0),
+   ('ph1', 'ph1', 1),
+
+   ('mskb', 'mskb'),
+   ('rsvd0', 'rsvd0_ph1'),
+   ('mska', 'mska'),
+   ('logical_op', 'logical_op'),
+])
+
+I_PHASE2 = bit_struct(
+name='phase2',
+bit_set=I_BITWISE,
+field_mappings=[
+   ('ph0', 'ph0', 0),
+   ('ph1', 'ph1', 0),
+
+   ('pwen', 'pwen'),
+   ('tst_src', 'tst_src'),
+   ('bw_tst_op', 'tst_op'),
+   ('shift2_op', 'shift2_op'),
+])
