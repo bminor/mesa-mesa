@@ -2681,3 +2681,185 @@ field_mappings=[
    ('bw_tst_op', 'tst_op'),
    ('shift2_op', 'shift2_op'),
 ])
+
+# Control ALU ops.
+F_PCND = field_enum_type(
+name='pcnd', num_bits=2,
+elems=[
+   ('always', 0b00),
+   ('p0_true', 0b01),
+   ('never', 0b10),
+   ('p0_false', 0b11),
+])
+
+F_CNDINST = field_enum_type(
+name='cndinst', num_bits=3,
+elems=[
+   ('st', 0b000),
+   ('ef', 0b001),
+   ('sm', 0b010),
+   ('lt', 0b011),
+   ('end', 0b100),
+   ('setl_b', 0b101),
+   ('lpc', 0b110),
+   ('setl_a', 0b111),
+])
+
+F_LR = field_enum_type(
+name='lr', num_bits=2,
+elems=[
+   ('release', 0b00),
+   ('release_sleep', 0b01),
+   ('release_wakeup', 0b10),
+   ('lock', 0b11),
+])
+
+F_TGT = field_enum_type(
+name='tgt', num_bits=1,
+elems=[
+   ('coeff', 0b0),
+   ('shared', 0b1),
+])
+
+F_BPRED = field_enum_type(
+name='bpred', num_bits=2,
+elems=[
+   ('cc', 0b00),
+   ('allp', 0b01),
+   ('anyp', 0b10),
+])
+
+I_CTRL = bit_set(
+name='ctrl',
+pieces=[
+   # Branch
+   ('link', (0, '4')),
+   ('bpred', (0, '3:2')),
+   ('abs', (0, '1')),
+   ('rsvd0_branch_', (0, '0')),
+
+   ('branch_offset_7_1', (1, '7:1')),
+   ('rsvd1_branch', (1, '0')),
+
+   ('branch_offset_15_8', (2, '7:0')),
+   ('branch_offset_23_16', (3, '7:0')),
+   ('branch_offset_31_24', (4, '7:0')),
+
+   # Conditional.
+   ('rsvd0_cnd', (0, '7')),
+   ('adjust', (0, '6:5')),
+   ('pcnd', (0, '4:3')),
+   ('cndinst', (0, '2:0')),
+
+   # Mutex.
+   ('lr', (0, '7:6')),
+   ('rsvd0_mutex', (0, '5:4')),
+   ('id', (0, '3:0')),
+
+   # NOP
+   ('rsvd0_nop', (0, '7:0')),
+
+   # SBO
+   ('sbo_offset_6_0', (0, '7:1')),
+   ('tgt', (0, '0')),
+
+   ('rsvd1_sbo', (1, '7:1')),
+   ('sbo_offset_7', (1, '0')),
+],
+fields=[
+   # Branch
+   ('rsvd_branch', (F_UINT5, ['rsvd1_branch', 'rsvd0_branch_', 'adjust', 'rsvd0_cnd'], 0)),
+   ('link', (F_BOOL, ['link'])),
+   ('bpred', (F_BPRED, ['bpred'])),
+   ('abs', (F_BOOL, ['abs'])),
+   ('branch_offset', (F_OFFSET31, ['branch_offset_31_24', 'branch_offset_23_16', 'branch_offset_15_8', 'branch_offset_7_1'])),
+
+   # Conditional.
+   ('rsvd_cnd', (F_UINT1, ['rsvd0_cnd'], 0)),
+   ('adjust', (F_UINT2, ['adjust'])),
+   ('pcnd', (F_PCND, ['pcnd'])),
+   ('cndinst', (F_CNDINST, ['cndinst'])),
+
+   # Mutex.
+   ('lr', (F_LR, ['lr'])),
+   ('rsvd_mutex', (F_UINT2, ['rsvd0_mutex'], 0)),
+   ('id', (F_UINT4, ['id'])),
+
+   # NOP
+   ('rsvd_nop', (F_UINT8, ['rsvd0_nop'], 0)),
+
+   # SBO
+   ('rsvd_sbo', (F_UINT7, ['rsvd1_sbo'], 0)),
+   ('tgt', (F_TGT, ['tgt'])),
+   ('sbo_offset', (F_UINT8, ['sbo_offset_7', 'sbo_offset_6_0'])),
+])
+
+I_BRANCH = bit_struct(
+name='branch',
+bit_set=I_CTRL,
+field_mappings=[
+   ('rsvd', 'rsvd_branch'),
+
+   ('link', 'link'),
+   ('bpred', 'bpred'),
+   ('abs', 'abs'),
+   ('offset', 'branch_offset'),
+])
+
+I_LAPC = bit_struct(
+name='lapc',
+bit_set=I_CTRL,
+field_mappings=[])
+
+I_SAVL = bit_struct(
+name='savl',
+bit_set=I_CTRL,
+field_mappings=[])
+
+I_CND = bit_struct(
+name='cnd',
+bit_set=I_CTRL,
+field_mappings=[
+   ('rsvd', 'rsvd_cnd'),
+
+   ('adjust', 'adjust'),
+   ('pcnd', 'pcnd'),
+   ('cndinst', 'cndinst'),
+])
+
+I_WOP = bit_struct(
+name='wop',
+bit_set=I_CTRL,
+field_mappings=[])
+
+I_WDF = bit_struct(
+name='wdf',
+bit_set=I_CTRL,
+field_mappings=[])
+
+I_MUTEX = bit_struct(
+name='mutex',
+bit_set=I_CTRL,
+field_mappings=[
+   ('rsvd', 'rsvd_mutex'),
+
+   ('lr', 'lr'),
+   ('id', 'id'),
+])
+
+I_NOP = bit_struct(
+name='nop',
+bit_set=I_CTRL,
+field_mappings=[
+   ('rsvd', 'rsvd_nop'),
+])
+
+# SBO.
+I_SBO = bit_struct(
+name='sbo',
+bit_set=I_CTRL,
+field_mappings=[
+   ('rsvd', 'rsvd_sbo'),
+   ('tgt', 'tgt'),
+   ('offset', 'sbo_offset'),
+])
