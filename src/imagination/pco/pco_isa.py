@@ -606,3 +606,72 @@ field_mappings=[
    ('sb5', 'sbC_2bit_b3'),
    ('s5', 'sC_8bit_b4'),
 ], data=(3, 11, 2, 8, 2, 8))
+
+# Internal source selector definitions.
+F_IS5_SEL = field_enum_type(
+name='is5_sel', num_bits=2,
+elems=[
+   ('ft0', 0b00),
+   ('ft1', 0b01),
+   ('ft2', 0b10),
+   ('fte', 0b11),
+])
+
+F_IS4_SEL = field_enum_type(
+name='is4_sel', num_bits=2,
+elems=[
+   ('ft0', 0b00),
+   ('ft1', 0b01),
+   ('ft2', 0b10),
+   ('fte', 0b11),
+])
+
+F_IS3_SEL = field_enum_type(
+name='is3_sel', num_bits=2,
+elems=[
+   ('ft0', 0b00),
+   ('ft1', 0b01),
+   ('fte', 0b11),
+])
+
+F_IS2_SEL = field_enum_type(
+name='is2_sel', num_bits=1,
+elems=[
+   ('ft1', 0b0),
+   ('fte', 0b1),
+])
+
+F_IS1_SEL = field_enum_type(
+name='is1_sel', num_bits=1,
+elems=[
+   ('ft0', 0b0),
+   ('fte', 0b1),
+])
+
+I__ISS = bit_set(
+name='iss',
+pieces=[
+   ('is5', (0, '7:6')),
+   ('is4', (0, '5:4')),
+   ('is3', (0, '3:2')),
+   ('is2', (0, '1')),
+   ('is1', (0, '0')),
+],
+fields=[
+   ('is5', (F_IS5_SEL, ['is5'])),
+   ('is4', (F_IS4_SEL, ['is4'])),
+   ('is3', (F_IS3_SEL, ['is3'])),
+   ('is2', (F_IS2_SEL, ['is2'])),
+   ('is1', (F_IS1_SEL, ['is1'])),
+])
+
+I_ISS = bit_struct(
+name='iss',
+bit_set=I__ISS,
+field_mappings=[
+   ('is5', 'is5'),
+   ('is4', 'is4'),
+   ('is3', 'is3'),
+   ('is2', 'is2'),
+   ('is1', 'is1'),
+])

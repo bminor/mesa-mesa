@@ -50,10 +50,12 @@ static bool ${enum.name}_valid(uint64_t val)
 /** Bit set variants. */
 % for bit_set in bit_sets.values():
 enum ${bit_set.name}_variant {
+   ${bit_set.name.upper()}_NONE,
    % for variant in bit_set.variants:
    ${variant},
    % endfor
 };
+
 % endfor
 #endif /* PCO_COMMON_H */"""
 
