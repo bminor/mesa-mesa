@@ -39,3 +39,19 @@ if with_tests
     protocol: 'gtest',
   )
 endif
+
+# Mesa Debug Archive tool.
+if with_intel_tools
+  mda = executable(
+    'mda',
+    files('mda.c'),
+    dependencies: [
+      idep_mda,
+      idep_mesautil,
+    ],
+    include_directories: [inc_include, inc_src],
+    c_args: [no_override_init_args],
+    gnu_symbol_visibility: 'hidden',
+    install: true
+  )
+endif

@@ -1,0 +1,962 @@
+/*
+ * Copyright 2024 Intel Corporation
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <dirent.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include "util/os_file.h"
+#include "util/ralloc.h"
+#include "util/u_dynarray.h"
+
+#include "slice.h"
+#include "tar.h"
+
+typedef struct content {
+   slice name;
+   slice fullname;
+   slice data;
+} content;
+
+typedef struct object {
+   slice prefix;
+   slice name;
+   slice fullname;
+
+   int      versions_count;
+   content *versions;
+
+   struct mesa_archive *ma;
+} object;
+
+typedef struct mesa_archive {
+   slice   filename;
+   slice   contents;
+   int     objects_count;
+   object *objects;
+
+   const char *info;
+} mesa_archive;
+
+typedef struct context {
+   const char *cmd_name;
+
+   char **args;
+   int    args_count;
+
+   mesa_archive **archives;
+   int            archives_count;
+} context;
+
+#define foreach_object(OBJ, MA)                            \
+   for (object *OBJ = (MA)->objects;                       \
+        OBJ < (MA)->objects + (MA)->objects_count;         \
+        OBJ++)
+
+#define foreach_version(CONTENT, OBJ)                      \
+   for (content *CONTENT = (OBJ)->versions;                \
+        CONTENT < (OBJ)->versions + (OBJ)->versions_count; \
+        CONTENT++)
+
+const char DEFAULT_DIFF_COMMAND[] = "git diff --no-index --color-words -- %s %s | tail -n +5";
+
+static void PRINTFLIKE(1, 2)
+failf(const char *fmt, ...)
+{
+   fflush(stdout);
+   va_list args;
+   va_start(args, fmt);
+   vfprintf(stderr, fmt, args);
+   va_end(args);
+   exit(1);
+}
+
+typedef struct {
+   FILE *f;
+   const char *path;
+} temp_file;
+
+static temp_file
+make_temp_file(void *mem_ctx)
+{
+   char path[] = "/tmp/fileXXXXXX";
+
+   int fd = mkstemp(path);
+   if (fd == -1)
+      failf("mda: failed creating temporary file: %s", strerror(errno));
+
+   FILE *f = fdopen(fd, "w");
+   if (!f)
+      failf("mda: failed creating temporary file: %s", strerror(errno));
+
+   temp_file r = {0};
+   r.f = f;
+   r.path = ralloc_strdup(mem_ctx, path);
+   return r;
+}
+
+static void
+diff(slice a, slice b)
+{
+   void *mem_ctx = ralloc_context(NULL);
+
+   temp_file file_a = make_temp_file(mem_ctx);
+   temp_file file_b = make_temp_file(mem_ctx);
+
+   fwrite(a.data, a.len, 1, file_a.f);
+   fwrite(b.data, b.len, 1, file_b.f);
+
+   fclose(file_a.f);
+   fclose(file_b.f);
+
+   static const char *diff_cmd = NULL;
+   if (!diff_cmd) {
+      diff_cmd = getenv("MDA_DIFF_COMMAND");
+      if (!diff_cmd)
+         diff_cmd = DEFAULT_DIFF_COMMAND;
+   }
+
+   char *cmd = ralloc_asprintf(mem_ctx, diff_cmd, file_a.path, file_b.path);
+
+   /* Make sure everything printed so far is flushed before the diff
+    * subprocess print things.
+    */
+   fflush(stdout);
+
+   system(cmd);
+
+   unlink(file_a.path);
+   unlink(file_b.path);
+   ralloc_free(mem_ctx);
+}
+
+static content *
+first_version(object *obj)
+{
+   assert(obj->versions_count > 0);
+   return &obj->versions[0];
+}
+
+static content *
+last_version(object *obj)
+{
+   assert(obj->versions_count > 0);
+   return &obj->versions[obj->versions_count - 1];
+}
+
+static void
+print_repeated(char c, int count)
+{
+   for (; count > 0; count--)
+      putchar(c);
+}
+
+static mesa_archive *
+parse_mesa_archive(void *mem_ctx, const char *filename)
+{
+   size_t size = 0;
+   char *contents = os_read_file(filename, &size);
+   if (!contents) {
+      fprintf(stderr, "mda: error reading file %s: %s\n", filename, strerror(errno));
+      return NULL;
+   }
+
+   mesa_archive *ma = rzalloc(mem_ctx, mesa_archive);
+   ma->filename = slice_from_cstr(ralloc_strdup(ma, filename));
+   ma->contents = (slice) { ralloc_memdup(ma, (const char *)contents, size), size };
+   free(contents);
+
+   tar_reader tr = {0};
+   tar_reader_init_from_bytes(&tr, ma->contents.data, ma->contents.len);
+
+   object *cur_object = NULL;
+
+   tar_reader_entry entry = {0};
+
+   {
+      if (!tar_reader_next(&tr, &entry) || entry.error) {
+         fprintf(stderr, "mda: wrong archive, missing mesa.txt\n");
+         return NULL;
+      }
+
+      const char *mesa_txt = slice_to_cstr(ma, entry.name);
+      if (strcmp(mesa_txt, "mesa.txt")) {
+         fprintf(stderr, "mda: wrong archive, missing mesa.txt\n");
+         return NULL;
+      }
+
+      ma->info = slice_to_cstr(ma, entry.contents);
+   }
+
+   while (tar_reader_next(&tr, &entry)) {
+      slice prefix = entry.prefix;
+      slice name   = entry.name;
+
+      slice_cut_result cut = slice_cut(name, '/');
+      slice version_name;
+      if (cut.found) {
+         name = cut.before;
+         version_name = cut.after;
+      } else {
+         version_name = slice_from_cstr("");
+      }
+
+      assert(prefix.len > 4);
+      assert(slice_starts_with(prefix, slice_from_cstr("mda/")));
+      prefix = slice_strip_prefix(prefix, slice_from_cstr("mda/"));
+
+      if (!cur_object || !slice_equal(prefix, cur_object->prefix) || !slice_equal(name, cur_object->name)) {
+         ma->objects = rerzalloc(ma, ma->objects, object, ma->objects_count, ma->objects_count + 1);
+         cur_object = &ma->objects[ma->objects_count++];
+         cur_object->prefix = prefix;
+         cur_object->name = name;
+         cur_object->ma = ma;
+         cur_object->fullname = slice_from_cstr(ralloc_asprintf(ma, "%.*s/%.*s/%.*s", SLICE_FMT(ma->filename), SLICE_FMT(prefix), SLICE_FMT(name)));
+      }
+
+      /* Add version to object (same for new or existing) */
+      cur_object->versions = rerzalloc(ma, cur_object->versions, content,
+                               cur_object->versions_count, cur_object->versions_count + 1);
+      int s = cur_object->versions_count++;
+
+      cur_object->versions[s].name = version_name;
+      cur_object->versions[s].data = entry.contents;
+      char *version_fullname_str = ralloc_asprintf(ma, "%.*s/%.*s", SLICE_FMT(cur_object->fullname), SLICE_FMT(version_name));
+      cur_object->versions[s].fullname = slice_from_cstr(version_fullname_str);
+   }
+
+   return ma;
+}
+
+typedef struct {
+   slice    fullname;
+   object  *object;
+   content *content;
+} match;
+
+typedef struct {
+   match *matches;
+   int    matches_count;
+} find_all_result;
+
+enum match_flags {
+   /* Up until first slash in the pattern, consider a prefix match, then
+    * fuzzy for the remaining of the pattern.
+    *
+    * This works better for the common case of mda.tar files with names
+    * containing hashes.  Trying to disambiguate by a prefix might end up
+    * also fuzzy matching the middle of other hashes.
+    */
+   MATCH_PREFIX_FIRST_SLASH = 1 << 0,
+};
+
+static bool
+is_match(slice name_slice, const char *pattern, unsigned match_flags)
+{
+   assert(!slice_is_empty(name_slice));
+
+   slice pattern_slice = slice_from_cstr(pattern);
+
+   /* Non-fuzzy matching first. */
+   if (slice_contains_str(name_slice, pattern_slice))
+      return true;
+
+   slice s = name_slice;
+   slice p = pattern_slice;
+
+   if (match_flags & MATCH_PREFIX_FIRST_SLASH) {
+      slice_cut_result pattern_cut = slice_cut(pattern_slice, '/');
+      if (pattern_cut.found) {
+         slice_cut_result name_cut = slice_cut(name_slice, '/');
+         if (!name_cut.found || !slice_starts_with(name_cut.before, pattern_cut.before))
+            return false;
+
+         /* Update s and p to continue from after the slash. */
+         s = name_cut.after;
+         p = pattern_cut.after;
+      }
+   }
+
+   bool matched = false;
+   int s_idx = 0, p_idx = 0;
+   while (s_idx < s.len && p_idx < p.len) {
+      if (s.data[s_idx] == p.data[p_idx]) {
+         p_idx++;
+         if (p_idx == p.len) {
+            matched = true;
+            break;
+         }
+      }
+      s_idx++;
+   }
+
+   return matched;
+}
+
+static void
+append_match(context *ctx, find_all_result *r, object *obj, content *c)
+{
+   r->matches = rerzalloc(ctx, r->matches, match, r->matches_count, r->matches_count + 1);
+
+   match *m   = &r->matches[r->matches_count++];
+   m->fullname    = c ? c->fullname : obj->fullname;
+   m->object  = obj;
+   m->content = c;
+}
+
+static find_all_result
+find_all(context *ctx, const char *pattern)
+{
+   find_all_result r = {};
+
+   if (!pattern)
+      pattern = "";
+
+   unsigned round_flags[2] = {};
+   unsigned rounds = 1;
+   if (strchr(pattern, '/')) {
+      /* See comment on the enum definition. */
+      round_flags[0] = MATCH_PREFIX_FIRST_SLASH;
+      rounds++;
+   }
+
+   for (int round = 0; round < rounds; round++) {
+      unsigned match_flags = round_flags[round];
+
+      for (int i = 0; i < ctx->archives_count; i++) {
+         mesa_archive *ma = ctx->archives[i];
+
+         foreach_object(obj, ma) {
+            if (is_match(obj->fullname, pattern, match_flags))
+               append_match(ctx, &r, obj, NULL);
+         }
+      }
+
+      if (r.matches_count > 0)
+         return r;
+
+      for (int i = 0; i < ctx->archives_count; i++) {
+         mesa_archive *ma = ctx->archives[i];
+
+         foreach_object(obj, ma) {
+            foreach_version(c, obj) {
+               if (is_match(c->fullname, pattern, match_flags))
+                  append_match(ctx, &r, obj, c);
+            }
+         }
+      }
+
+      if (r.matches_count > 0)
+         return r;
+   }
+
+   return r;
+}
+
+static match
+find_one(context *ctx, const char *pattern)
+{
+   find_all_result r = find_all(ctx, pattern);
+
+   if (r.matches_count == 1) {
+      return r.matches[0];
+
+   } else if (r.matches_count == 0) {
+      fprintf(stderr, "mda: couldn't match pattern: %s\n", pattern);
+      return (match){};
+
+   } else {
+      assert(r.matches_count > 1);
+      fprintf(stderr, "error: multiple matches for pattern: %s\n", pattern);
+
+      for (int i = 0; i < r.matches_count; i++) {
+         match *m = &r.matches[i];
+         fprintf(stderr, "    %.*s\n", SLICE_FMT(m->fullname));
+      }
+      return (match){};
+   }
+}
+
+static int
+cmd_info(context *ctx)
+{
+   for (int i = 0; i < ctx->archives_count; i++) {
+      if (i > 0) {
+         printf("\n");
+      }
+
+      mesa_archive *ma = ctx->archives[i];
+      printf("# From %.*s\n", SLICE_FMT(ma->filename));
+      printf("%s\n", ma->info);
+   }
+
+   return 0;
+}
+
+static int
+cmd_listraw(context *ctx)
+{
+   for (int i = 0; i < ctx->archives_count; i++) {
+      mesa_archive *ma = ctx->archives[i];
+
+      foreach_object(obj, ma) {
+         foreach_version(c, obj) {
+            printf("%.*s\n", SLICE_FMT(c->fullname));
+         }
+      }
+   }
+   return 0;
+}
+
+static int
+cmd_list(context *ctx)
+{
+   bool all = !strcmp(ctx->cmd_name, "listall");
+
+   for (int i = 0; i < ctx->archives_count; i++) {
+      if (i > 0) {
+         printf("\n");
+      }
+
+      mesa_archive *ma = ctx->archives[i];
+      printf("%.*s/\n", SLICE_FMT(ma->filename));
+
+      const char *cur_name = "";
+
+      foreach_object(obj, ma) {
+         if (!slice_equal_cstr(obj->prefix, cur_name)) {
+            printf("  %.*s/\n", SLICE_FMT(obj->prefix));
+            cur_name = slice_to_cstr(ctx, obj->prefix);
+         }
+         printf("    %.*s/", SLICE_FMT(obj->name));
+         if (obj->versions_count > 1)
+            printf(" (%d versions)", obj->versions_count);
+         printf("\n");
+         if (all) {
+            foreach_version(c, obj) {
+               printf("      %.*s\n", SLICE_FMT(c->name));
+            }
+         }
+      }
+   }
+
+   return 0;
+}
+
+static int
+cmd_logsum(context *ctx)
+{
+   if (ctx->args_count == 0) {
+      fprintf(stderr, "mda: need to pass an object to log\n");
+      return 1;
+   }
+
+   const char *pattern = ctx->args[0];
+
+   match m = find_one(ctx, pattern);
+   if (!m.object)
+      return 1;
+
+
+   printf("%.*s/\n", SLICE_FMT(m.object->fullname));
+
+   foreach_version(c, m.object) {
+      printf("  %.*s\n", SLICE_FMT(c->name));
+   }
+
+   printf("\n");
+
+   return 0;
+}
+
+static int
+cmd_diff(context *ctx)
+{
+   if (ctx->args_count != 2 && ctx->args_count != 3) {
+      fprintf(stderr, "mda: invalid arguments\n");
+      return 1;
+   }
+
+   match a = find_one(ctx, ctx->args[0]);
+   if (!a.object)
+      return 1;
+
+   match b = find_one(ctx, ctx->args[1]);
+   if (!b.object)
+      return 1;
+
+   if (!a.content)
+      a.content = last_version(a.object);
+   if (!b.content)
+      b.content = last_version(b.object);
+
+   int x = printf("# A: %.*s\n", SLICE_FMT(a.content->fullname)) + 4 + a.content->fullname.len;
+   int y = printf("# B: %.*s\n", SLICE_FMT(b.content->fullname)) + 4 + b.content->fullname.len;
+   print_repeated('#', MAX2(x, y) - 1);
+   printf("\n\n");
+
+   diff(a.content->data, b.content->data);
+   printf("\n");
+
+   return 0;
+}
+
+static int
+cmd_log(context *ctx)
+{
+   if (ctx->args_count != 1 && ctx->args_count != 2) {
+      fprintf(stderr, "mda: need to pass one or two patterns to log command\n");
+      return 1;
+   }
+
+   enum mode {
+      MODE_DIFF,
+      MODE_ONELINE,
+      MODE_FULL,
+   };
+   enum mode mode = !strcmp(ctx->cmd_name, "logfull") ? MODE_FULL     :
+                    !strcmp(ctx->cmd_name, "log1")    ? MODE_ONELINE  :
+                                                        MODE_DIFF;
+
+   const char *start_pattern = ctx->args[0];
+   const char *end_pattern   = ctx->args_count > 1 ? ctx->args[1]
+                                                   : NULL;
+
+   match start = find_one(ctx, start_pattern);
+   if (!start.object)
+      return 1;
+   if (!start.content)
+      start.content = first_version(start.object);
+
+   match end = {};
+   if (end_pattern) {
+      end = find_one(ctx, end_pattern);
+      if (!end.object)
+         return 1;
+      if (!end.content)
+         end.content = last_version(end.object);
+   } else {
+      end = start;
+      end.content = last_version(end.object);
+   }
+
+   if (start.object != end.object)
+      failf("can't log between two different objects");
+   object *obj = start.object;
+
+   if (mode == MODE_ONELINE) {
+      printf("%.*s/\n", SLICE_FMT(obj->fullname));
+      for (const content *curr = start.content; curr <= end.content; curr++) {
+         printf("  %.*s\n", SLICE_FMT(curr->name));
+      }
+
+   } else if (mode == MODE_FULL) {
+      for (const content *c = start.content; c <= end.content; c++) {
+         int x = printf("# %.*s/\n", SLICE_FMT(obj->fullname));
+         int y = printf("# %.*s\n", SLICE_FMT(c->name));
+         print_repeated('#', MAX2(x, y) - 1);
+         printf("\n\n");
+
+         printf("%.*s\n", SLICE_FMT(c->data));
+      }
+
+   } else {
+      for (const content *c = start.content; c < end.content; c++) {
+         const content *next = c + 1;
+
+         int x = printf("# %.*s/\n", SLICE_FMT(obj->fullname));
+         int y = printf("# %.*s -> %.*s\n", SLICE_FMT(c->name), SLICE_FMT(next->name));
+         print_repeated('#', MAX2(x, y) - 1);
+         printf("\n\n");
+
+         diff(c->data, next->data);
+         printf("\n");
+      }
+   }
+
+   printf("\n");
+   return 0;
+}
+
+static slice
+get_spirv_disassembly(void *mem_ctx, object *obj)
+{
+   assert(slice_equal_cstr(obj->name, "SPV"));
+   assert(obj->versions_count == 1);
+
+   content *c = &obj->versions[0];
+
+   int stdin_pipe[2], stdout_pipe[2];
+   if (pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
+      return (slice){};
+
+   pid_t pid = fork();
+   if (pid < 0) {
+      close(stdin_pipe[0]);
+      close(stdin_pipe[1]);
+      close(stdout_pipe[0]);
+      close(stdout_pipe[1]);
+      return (slice){};
+   }
+
+   /* Child process. */
+   if (pid == 0) {
+      close(stdin_pipe[1]);
+      close(stdout_pipe[0]);
+
+      dup2(stdin_pipe[0], STDIN_FILENO);
+      dup2(stdout_pipe[1], STDOUT_FILENO);
+
+      close(stdin_pipe[0]);
+      close(stdout_pipe[1]);
+
+      execvp("spirv-dis", (char *[]){"spirv-dis", "--color", "-", NULL});
+
+      /* If exec fails, exit with error. */
+      exit(1);
+   }
+
+   close(stdin_pipe[0]);
+   close(stdout_pipe[1]);
+
+   ssize_t written = write(stdin_pipe[1], c->data.data, c->data.len);
+   close(stdin_pipe[1]);
+
+   struct util_dynarray output;
+   util_dynarray_init(&output, mem_ctx);
+
+   if (written != (ssize_t)c->data.len)
+      goto wait_and_fail;
+
+   char read_buffer[1024];
+   ssize_t bytes_read;
+   while ((bytes_read = read(stdout_pipe[0], read_buffer, sizeof(read_buffer))) > 0) {
+      if (!util_dynarray_grow_bytes(&output, bytes_read, 1))
+         goto wait_and_fail;
+
+      memcpy((char *)output.data + output.size - bytes_read, read_buffer, bytes_read);
+   }
+
+   close(stdout_pipe[0]);
+
+   int status;
+   waitpid(pid, &status, 0);
+
+   if (WEXITSTATUS(status) != 0 || output.size == 0)
+      goto fail;
+
+   util_dynarray_append(&output, char, '\0');
+
+   return slice_from_cstr(output.data);
+
+wait_and_fail:
+   close(stdout_pipe[0]);
+   waitpid(pid, NULL, 0);
+
+fail:
+   failf("mda: error when running spirv-dis");
+   return (slice){};
+}
+
+static int
+print_disassembled_spirv(void *mem_ctx, object *obj)
+{
+   slice disassembly = get_spirv_disassembly(mem_ctx, obj);
+   if (slice_is_empty(disassembly)) {
+      fprintf(stderr, "mda: failed to disassemble SPIR-V\n");
+      return 1;
+   }
+
+   printf("%.*s\n", SLICE_FMT(disassembly));
+   return 0;
+}
+
+static int
+cmd_print(context *ctx)
+{
+   const bool raw = !strcmp(ctx->cmd_name, "printraw");
+
+   if (ctx->args_count == 0) {
+      fprintf(stderr, "mda: need to pass an object to print\n");
+      return 1;
+   }
+
+   const char *pattern = ctx->args[0];
+
+   match m = find_one(ctx, pattern);
+   if (!m.object)
+      return 1;
+
+   if (!m.content)
+      m.content = last_version(m.object);
+
+   if (!raw) {
+      if (slice_equal_cstr(m.object->name, "SPV"))
+         return print_disassembled_spirv(ctx, m.object);
+
+      int x = printf("### %.*s\n", SLICE_FMT(m.content->fullname));
+      print_repeated('#', x-1);
+      printf("\n\n");
+   }
+
+   printf("%.*s", SLICE_FMT(m.content->data));
+
+   if (!raw)
+      printf("\n");
+
+   return 0;
+}
+
+static void
+open_manual()
+{
+   FILE *f = NULL;
+
+   /* This fd will be set as stdin for executing man. */
+   int fd = memfd_create("mda.1", 0);
+   if (fd != -1)
+      f = fdopen(fd, "w");
+
+   if (!f) {
+      /* Fallback to just printing the content out. */
+      f = stderr;
+   }
+
+   static const char *contents[] = {
+      ".TH mda 1 2025-03-29",
+      "",
+      ".SH NAME",
+      "",
+      "mda - reads mesa debugging archive files",
+      "",
+      ".SH SYNOPSIS",
+      "",
+      "mda [[-f FILE]...] COMMAND [args]",
+      "",
+      ".SH DESCRIPTION",
+      "",
+      "Reads *.mda.tar files generated by Mesa drivers, these",
+      "files contain debugging information about a pipeline or",
+      "a single shader stage.",
+      "",
+      "Without command, all the objects are listed, an object can",
+      "be a particular internal shader form or other metadata.",
+      "Objects are identified by fuzzy matching a PATTERN with their",
+      "names.  Names can be seen in 'list' commands.",
+      "",
+      "Objects may have multiple versions, e.g. multiple steps",
+      "of a shader generated during optimization.  When not",
+      "specified in the PATTERN, commands pick a relevant version,",
+      "either first or last).",
+      "",
+      "By default all *.mda.tar files in the current directory are read.",
+      "To specify which files to read use one or more `-f FILENAME` flags",
+      "before the command.",
+      "",
+      ".SH COMMANDS",
+      "",
+      "    list                           list objects",
+      "",
+      "    listall                        list all versions of objects",
+      "",
+      "    listraw                        list all versions of objects with full names",
+      "",
+      "    print       PATTERN            formatted print an object",
+      "",
+      "    printraw    PATTERN            unformatted print an object",
+      "",
+      "    log         PATTERN [PATTERN]  print changes between versions of an object",
+      "",
+      "    logfull     PATTERN [PATTERN]  print full contents of versions of an object",
+      "",
+      "    log1        PATTERN [PATTERN]  print names of the versions of an object",
+      "",
+      "    diff        PATTERN PATTERN    compare two objects",
+      "",
+      "    info                           print metadata about the archive",
+      "",
+      ".SH ENVIRONMENT VARIABLES",
+      "",
+      "The diff program used by mda can be configured by setting",
+      "the MDA_DIFF_COMMAND environment variable.  By default it",
+      "uses git-diff -- that works even without a git repository:",
+      "",
+      DEFAULT_DIFF_COMMAND,
+      "",
+      "When showing SPIR-V files, spirv-dis tool is used.",
+      ""
+   };
+
+   for (int i = 0; i < ARRAY_SIZE(contents); i++) {
+      fputs(contents[i], f);
+      putc('\n', f);
+   }
+
+   fflush(f);
+
+   if (f != stderr) {
+      /* Inject the temporary as stdin for man. */
+      lseek(fd, 0, SEEK_SET);
+      dup2(fd, STDIN_FILENO);
+      fclose(f);
+
+      execlp("man", "man", "-l", "-", (char *)NULL);
+   } else {
+      exit(0);
+   }
+}
+
+static void
+print_help()
+{
+   printf("mda [[-f FILENAME]...] CMD [ARGS...]\n"
+          "\n"
+          "COMMANDS\n"
+          "\n"
+          "    list                           list objects\n"
+          "    listall                        list all versions of objects\n"
+          "    listraw                        list all versions of objects with full names\n"
+          "    print       PATTERN            formatted print an object\n"
+          "    printraw    PATTERN            unformatted print an object\n"
+          "    log         PATTERN [PATTERN]  print changes between versions of an object\n"
+          "    logfull     PATTERN [PATTERN]  print full contents of versions of an object\n"
+          "    log1        PATTERN [PATTERN]  print names of the versions of an object\n"
+          "    diff        PATTERN PATTERN    compare two objects\n"
+          "    info                           print metadata about the archive\n"
+          "\n"
+          "ENVIRONMENT VARIABLES DEFAULTS\n"
+          "\n"
+          "    MDA_DIFF_COMMAND=\"%s\"\n"
+          "\n"
+          "For more details, use 'mda help' to open the manual.\n"
+          , DEFAULT_DIFF_COMMAND);
+}
+
+static bool
+load_archive(context *ctx, const char *filename)
+{
+   struct mesa_archive *ma = parse_mesa_archive(ctx, filename);
+   if (!ma)
+      return false;
+
+   ctx->archives = rerzalloc(ctx, ctx->archives, mesa_archive *, ctx->archives_count,
+                             ctx->archives_count + 1);
+   ctx->archives[ctx->archives_count] = ma;
+   ctx->archives_count++;
+   return true;
+}
+
+int
+main(int argc, char *argv[])
+{
+   if (argc >= 2) {
+      if (!strcmp(argv[1], "help") ||
+          !strcmp(argv[1], "--help")) {
+         open_manual();
+         return 0;
+      } else if (!strcmp(argv[1], "-h")) {
+         print_help();
+         return 0;
+      }
+   }
+
+   context *ctx = rzalloc(NULL, context);
+
+   int cur_arg = 1;
+
+   while (cur_arg < argc && !strcmp(argv[cur_arg], "-f")) {
+      if (argc == cur_arg + 1)
+         failf("mda: missing filename after -f flag\n");
+
+      const char *filename = argv[cur_arg + 1];
+      cur_arg += 2;
+
+      for (int i = 0; i < ctx->archives_count; i++) {
+         mesa_archive *ma = ctx->archives[i];
+
+         /* Don't load duplicate files from command line. */
+         if (slice_equal_cstr(ma->filename, filename)) {
+            filename = NULL;
+            break;
+         }
+      }
+
+      if (filename && !load_archive(ctx, filename))
+         failf("mda: failed to parse file: %s\n", filename);
+   }
+
+   if (ctx->archives_count == 0) {
+      /* Load all mda files in the current directory. */
+      DIR *d;
+      struct dirent *dir;
+      d = opendir(".");
+      if (!d)
+         failf("mda: couldn't find *.mda.tar files in current directory: %s\n", strerror(errno));
+
+      while ((dir = readdir(d)) != NULL) {
+         slice filename = slice_from_cstr(dir->d_name);
+         slice mda_ext = slice_from_cstr(".mda.tar");
+         if (slice_ends_with(filename, mda_ext)) {
+            if (!load_archive(ctx, dir->d_name)) {
+               fprintf(stderr, "mda: ignoring file after parsing failure: %s\n", dir->d_name);
+               continue;
+            }
+         }
+      }
+      closedir(d);
+
+      if (ctx->archives_count == 0)
+         failf("Couldn't load any *.mda.tar files in the current directory\n");
+   }
+
+   ctx->cmd_name = cur_arg < argc ? argv[cur_arg++] : "list";
+   ctx->args_count = argc - cur_arg;
+   ctx->args = rzalloc_array(ctx, char *, argc - cur_arg + 1);
+   for (int i = 0; i < ctx->args_count; i++)
+      ctx->args[i] = ralloc_strdup(ctx, argv[cur_arg + i]);
+
+   struct command {
+      const char *name;
+      int (*func)(context *ctx);
+   };
+
+   static const struct command cmds[] = {
+      { "diff",       cmd_diff },
+      { "info",       cmd_info },
+      { "list",       cmd_list },
+      { "listall",    cmd_list },
+      { "listraw",    cmd_listraw },
+      { "log",        cmd_log },
+      { "log1",       cmd_log },
+      { "logfull",    cmd_log },
+      { "print",      cmd_print },
+      { "printraw",   cmd_print },
+   };
+
+   const struct command *cmd = NULL;
+   for (const struct command *c = cmds; c < cmds + ARRAY_SIZE(cmds); c++) {
+      if (!strcmp(c->name, ctx->cmd_name)) {
+         cmd = c;
+         break;
+      }
+   }
+
+   if (!cmd) {
+      fprintf(stderr, "mda: unknown command '%s'\n", ctx->cmd_name);
+      print_help();
+      return 1;
+   }
+
+   int r = cmd->func(ctx);
+   ralloc_free(ctx);
+
+   return r;
+}
