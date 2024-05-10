@@ -32,6 +32,19 @@ enum ${bit_set.name}_field {
    % endfor
 };
 
+static unsigned ${bit_set.name}_bytes(enum ${bit_set.name}_variant variant)
+{
+   switch (variant) {
+   case ${bit_set.name.upper()}_NONE: return 0;
+   % for variant, num_bytes in bit_set.variants:
+   case ${variant}: return ${num_bytes};
+   % endfor
+   default: break;
+   }
+
+   unreachable();
+}
+
 static unsigned ${bit_set.name}_encode_field(uint8_t *bin, enum ${bit_set.name}_field field, uint64_t val)
 {
    uint64_t enc_val;

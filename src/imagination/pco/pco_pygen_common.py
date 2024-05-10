@@ -344,8 +344,9 @@ def bit_struct(name, bit_set, field_mappings, data=None):
    assert (total_bits % 8) == 0, f'Bit struct "{name}" has a non-byte-aligned number of bits ({total_bits}).'
 
    _name = f'{bit_set.name}_{name}'
-   bs = BitStruct(_name, struct_fields, encode_fields, total_bits // 8, data)
+   total_bytes = total_bits // 8
+   bs = BitStruct(_name, struct_fields, encode_fields, total_bytes, data)
    bit_set.bit_structs[name] = bs
-   bit_set.variants.append(f'{bit_set.name}_{name}'.upper())
+   bit_set.variants.append((f'{bit_set.name}_{name}'.upper(), total_bytes))
 
    return bs
