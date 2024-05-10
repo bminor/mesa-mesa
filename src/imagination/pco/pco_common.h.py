@@ -3,6 +3,8 @@
 
 from mako.template import Template
 from pco_pygen_common import *
+from pco_ops import *
+from pco_isa import *
 
 template = """/*
  * Copyright © 2024 Imagination Technologies Ltd.
@@ -23,10 +25,25 @@ template = """/*
 
 #include <stdbool.h>
 
+/** Enums. */
+% for enum in [enum for enum in enums.values() if enum.parent is None]:
+#define _${enum.name.upper()}_COUNT ${enum.unique_count}U
+enum ${enum.name} {
+   % for cname, value, *_ in enum.elems.values():
+   ${cname} = ${hex(value) if enum.is_bitset else value},
+   % endfor
+};
+
+% endfor
+/** Sub-enums. */
+% for enum in [enum for enum in enums.values() if enum.parent is not None]:
+#define ${enum.name} ${enum.parent.name}
+% endfor
+
 #endif /* PCO_COMMON_H */"""
 
 def main():
-   print(Template(template).render())
+   print(Template(template).render(enums=enums))
 
 if __name__ == '__main__':
    main()
