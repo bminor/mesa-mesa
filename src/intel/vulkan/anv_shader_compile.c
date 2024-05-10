@@ -16,6 +16,8 @@
 #include "compiler/brw_nir_rt.h"
 #include "compiler/intel_nir.h"
 
+#include "git_sha1.h"
+
 typedef void (*game_wa_callback)(nir_shader *nir);
 
 /* Structure to hold a game-specific workaround entry */
@@ -746,6 +748,7 @@ anv_shader_compile_vs(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = shader_data->source_hash,
+         .archiver = shader_data->archiver,
       },
       .key = &shader_data->key.vs,
       .prog_data = &shader_data->prog_data.vs,
@@ -776,6 +779,7 @@ anv_shader_compile_tcs(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = shader_data->source_hash,
+         .archiver = shader_data->archiver,
       },
       .key = &shader_data->key.tcs,
       .prog_data = &shader_data->prog_data.tcs,
@@ -811,6 +815,7 @@ anv_shader_compile_tes(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = tes_shader_data->source_hash,
+         .archiver = tes_shader_data->archiver,
       },
       .key = &tes_shader_data->key.tes,
       .prog_data = &tes_shader_data->prog_data.tes,
@@ -840,6 +845,7 @@ anv_shader_compile_gs(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = shader_data->source_hash,
+         .archiver = shader_data->archiver,
       },
       .key = &shader_data->key.gs,
       .prog_data = &shader_data->prog_data.gs,
@@ -867,6 +873,7 @@ anv_shader_compile_task(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = shader_data->source_hash,
+         .archiver = shader_data->archiver,
       },
       .key = &shader_data->key.task,
       .prog_data = &shader_data->prog_data.task,
@@ -903,6 +910,7 @@ anv_shader_compile_mesh(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = mesh_shader_data->source_hash,
+         .archiver = mesh_shader_data->archiver,
       },
       .key = &mesh_shader_data->key.mesh,
       .prog_data = &mesh_shader_data->prog_data.mesh,
@@ -948,6 +956,7 @@ anv_shader_compile_fs(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = shader_data->source_hash,
+         .archiver = shader_data->archiver,
       },
       .key = &shader_data->key.wm,
       .prog_data = &shader_data->prog_data.wm,
@@ -997,6 +1006,7 @@ anv_shader_compile_cs(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = shader_data->source_hash,
+         .archiver = shader_data->archiver,
       },
       .key = &shader_data->key.cs,
       .prog_data = &shader_data->prog_data.cs,
@@ -1065,6 +1075,7 @@ anv_shader_compile_bs(struct anv_device *device,
          .log_data = device,
          .mem_ctx = mem_ctx,
          .source_hash = shader_data->source_hash,
+         .archiver = shader_data->archiver,
       },
       .key = &shader_data->key.bs,
       .prog_data = &shader_data->prog_data.bs,
@@ -1634,6 +1645,67 @@ anv_shader_get_rt_group_linking(struct vk_physical_device *device,
           any_hit_intersection : 0;
 }
 
+static void
+anv_debug_archiver_init(void *mem_ctx, struct anv_shader_data *shaders_data,
+                        uint32_t shader_count)
+{
+   /* A hash is used to identify the per stage archive file.  Just using the
+    * single stage hash/key is sufficient if it is not linked.  If shaders
+    * are linked together, also include a combined hash of all stages to
+    * distinguish from the not linked case.
+    */
+   unsigned char linked_hash[SHA1_DIGEST_LENGTH];
+   if (shader_count > 1) {
+      struct mesa_sha1 ctx;
+      _mesa_sha1_init(&ctx);
+
+      for (uint32_t s = 0; s < shader_count; s++) {
+         struct anv_shader_data *shader_data = &shaders_data[s];
+         struct vk_shader_compile_info *info = shader_data->info;
+         _mesa_sha1_update(&ctx, info->nir->info.source_blake3, BLAKE3_OUT_LEN);
+         _mesa_sha1_update(&ctx, &shader_data->key, shader_data->key_size);
+      }
+      _mesa_sha1_final(&ctx, linked_hash);
+   }
+
+   for (uint32_t s = 0; s < shader_count; s++) {
+      struct anv_shader_data *shader_data = &shaders_data[s];
+      struct vk_shader_compile_info *info = shader_data->info;
+
+      char name[SHA1_DIGEST_STRING_LENGTH + 4] = {};
+      {
+         struct mesa_sha1 ctx;
+         unsigned char hash[SHA1_DIGEST_LENGTH];
+         _mesa_sha1_init(&ctx);
+         _mesa_sha1_update(&ctx, info->nir->info.source_blake3, BLAKE3_OUT_LEN);
+         _mesa_sha1_update(&ctx, &shader_data->key, shader_data->key_size);
+         if (shader_count > 1)
+            _mesa_sha1_update(&ctx, linked_hash, SHA1_DIGEST_LENGTH);
+         _mesa_sha1_final(&ctx, hash);
+
+         _mesa_sha1_format(name, hash);
+      }
+      memcpy(&name[SHA1_DIGEST_STRING_LENGTH - 1], ".anv", 4);
+
+      shader_data->archiver =
+         debug_archiver_open(mem_ctx, name, PACKAGE_VERSION MESA_GIT_SHA1);
+
+      debug_archiver_set_prefix(shader_data->archiver,
+            _mesa_shader_stage_to_abbrev(info->stage));
+   }
+}
+
+static void
+anv_debug_archiver_finish(struct anv_shader_data *shaders_data,
+                          uint32_t shader_count)
+{
+   for (uint32_t s = 0; s < shader_count; s++) {
+      struct anv_shader_data *shader_data = &shaders_data[s];
+      debug_archiver_close(shader_data->archiver);
+      shader_data->archiver = NULL;
+   }
+}
+
 static VkResult
 anv_shader_compile(struct vk_device *vk_device,
                    uint32_t shader_count,
@@ -1774,6 +1846,9 @@ anv_shader_compile(struct vk_device *vk_device,
       }
    }
 
+   if (INTEL_DEBUG(DEBUG_MDA))
+      anv_debug_archiver_init(mem_ctx, shaders_data, shader_count);
+
    {
       /* We're going to do cross stage link if we have a fragment shader with
        * any other stage (that would include all the associated
@@ -1885,6 +1960,8 @@ anv_shader_compile(struct vk_device *vk_device,
    }
 
 end:
+   if (INTEL_DEBUG(DEBUG_MDA))
+      anv_debug_archiver_finish(shaders_data, shader_count);
 
    ralloc_free(mem_ctx);
 

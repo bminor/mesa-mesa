@@ -111,6 +111,8 @@ struct anv_shader_data {
    bool uses_bt_for_push_descs;
 
    unsigned *code;
+
+   debug_archiver *archiver;
 };
 
 VkResult anv_shader_create(struct anv_device *device,
