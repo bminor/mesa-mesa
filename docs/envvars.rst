@@ -565,6 +565,9 @@ Intel driver environment variables
       print instruction hex dump with the disassembly
    ``l3``
       emit messages about the new L3 state during transitions
+   ``mda``
+      generate mda.tar files containing shader at each optimization
+      pass and iteration that make progress (Gfx >= 9)
    ``mesh``
       dump shader assembly for mesh shaders
    ``no8``
@@ -588,7 +591,7 @@ Intel driver environment variables
       disable lossless color compression
    ``optimizer``
       dump shader assembly to files at each optimization pass and
-      iteration that make progress
+      iteration that make progress (Gfx < 9)
    ``pc``
       emit messages about PIPE_CONTROL instruction usage
    ``perf``

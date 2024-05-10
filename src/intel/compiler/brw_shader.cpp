@@ -408,7 +408,8 @@ brw_shader::brw_shader(const brw_shader_params *params)
      needs_register_pressure(params->needs_register_pressure),
      dispatch_width(params->dispatch_width),
      max_polygons(params->num_polygons),
-     api_subgroup_size(brw_nir_api_subgroup_size(params->nir, dispatch_width))
+     api_subgroup_size(brw_nir_api_subgroup_size(params->nir, dispatch_width)),
+     archiver(params->archiver)
 {
    assert(api_subgroup_size == 0 ||
          api_subgroup_size == 8 ||
@@ -1009,31 +1010,18 @@ brw_shader::debug_optimizer(const nir_shader *nir,
                             const char *pass_name,
                             int iteration, int pass_num) const
 {
-   /* source_hash is not readily accessible in this context */
-   if (!brw_should_print_shader(nir, DEBUG_OPTIMIZER, 0))
+   if (!archiver)
       return;
 
-   char *filename;
-   int ret = asprintf(&filename, "%s/%s%d-%s-%02d-%02d-%s",
-                      debug_get_option("INTEL_SHADER_OPTIMIZER_PATH", "./"),
-                      _mesa_shader_stage_to_abbrev(stage), dispatch_width, nir->info.name,
+   /* TODO: Add replacement for INTEL_SHADER_OPTIMIZER_PATH. */
+   const char *filename =
+      ralloc_asprintf(mem_ctx, "BRW%d/%02d-%02d-%s",
+                      dispatch_width,
                       iteration, pass_num, pass_name);
-   if (ret == -1)
-      return;
 
-   FILE *file = stderr;
-   if (__normal_user()) {
-      file = fopen(filename, "w");
-      if (!file)
-         file = stderr;
-   }
-
-   brw_print_instructions(*this, file);
-
-   if (file != stderr)
-      fclose(file);
-
-   free(filename);
+   FILE *f = debug_archiver_start_file(archiver, filename);
+   brw_print_instructions(*this, f);
+   debug_archiver_finish_file(archiver);
 }
 
 static uint32_t

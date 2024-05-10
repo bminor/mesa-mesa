@@ -97,6 +97,7 @@ compile_single_bs(const struct brw_compiler *compiler,
       .needs_register_pressure = stats != NULL,
       .log_data                = params->base.log_data,
       .debug_enabled           = debug_enabled,
+      .archiver                = params->base.archiver,
    };
    brw_shader s(&shader_params);
 

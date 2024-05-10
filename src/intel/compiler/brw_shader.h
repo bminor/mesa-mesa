@@ -77,6 +77,8 @@ struct brw_shader_params
    bool needs_register_pressure;
    void *log_data;
    bool debug_enabled;
+
+   debug_archiver *archiver;
 };
 
 struct brw_shader
@@ -222,6 +224,8 @@ public:
    unsigned next_address_register_nr;
 
    struct brw_shader_stats shader_stats;
+
+   debug_archiver *archiver;
 
    void debug_optimizer(const nir_shader *nir,
                         const char *pass_name,

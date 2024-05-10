@@ -71,6 +71,7 @@ static const struct debug_control_bitset debug_control[] = {
    OPT1("blorp",             DEBUG_BLORP),
    OPT1("nodualobj",         DEBUG_NO_DUAL_OBJECT_GS),
    OPT1("optimizer",         DEBUG_OPTIMIZER),
+   OPT1("mda",               DEBUG_MDA),
    OPT1("ann",               DEBUG_ANNOTATION),
    OPT1("no8",               DEBUG_NO8),
    OPT1("no-oaconfig",       DEBUG_NO_OACONFIG),

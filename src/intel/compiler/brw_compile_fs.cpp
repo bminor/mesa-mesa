@@ -1595,6 +1595,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       .needs_register_pressure = params->base.stats != NULL,
       .log_data                = params->base.log_data,
       .debug_enabled           = debug_enabled,
+      .archiver                = params->base.archiver,
    };
 
    if (devinfo->ver < 20) {

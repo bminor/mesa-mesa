@@ -281,6 +281,7 @@ brw_compile_tcs(const struct brw_compiler *compiler,
       .needs_register_pressure = params->base.stats != NULL,
       .log_data                = params->base.log_data,
       .debug_enabled           = debug_enabled,
+      .archiver                = params->base.archiver,
    };
    brw_shader v(&shader_params);
    if (!run_tcs(v)) {

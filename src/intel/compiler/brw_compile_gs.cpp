@@ -370,6 +370,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
       .needs_register_pressure = params->base.stats != NULL,
       .log_data                = params->base.log_data,
       .debug_enabled           = debug_enabled,
+      .archiver                = params->base.archiver,
    };
    brw_shader v(&shader_params);
    v.gs.control_data_bits_per_vertex = control_data_bits_per_vertex;

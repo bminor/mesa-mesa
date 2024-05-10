@@ -27,6 +27,7 @@
 #include "c11/threads.h"
 #include "dev/intel_device_info.h"
 #include "isl/isl.h"
+#include "mda/debug_archiver.h"
 #include "util/macros.h"
 #include "util/mesa-sha1.h"
 #include "util/enum_operators.h"
@@ -1478,6 +1479,8 @@ struct brw_compile_params {
    uint64_t debug_flag;
 
    uint32_t source_hash;
+
+   debug_archiver *archiver;
 };
 
 /**

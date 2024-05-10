@@ -159,7 +159,7 @@ libintel_compiler_brw = static_library(
   c_args : [no_override_init_args],
   cpp_args : ['-Werror=vla'],
   gnu_symbol_visibility : 'hidden',
-  dependencies : [idep_nir_headers, idep_mesautil, idep_intel_dev, idep_vtn],
+  dependencies : [idep_nir_headers, idep_mesautil, idep_intel_dev, idep_vtn, idep_mda],
   build_by_default : false,
 )
 
