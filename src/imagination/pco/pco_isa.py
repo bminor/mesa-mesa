@@ -792,3 +792,725 @@ field_mappings=[
    ('db1', 'db1_3bit_b2'),
    ('d1', 'd1_11bit_b3'),
 ], data=(3, 11, 3, 11))
+
+# Main ALU ops.
+F_MAIN_OP = field_enum_type(
+name='main_op', num_bits=3,
+elems=[
+   ('fadd', 0b000),
+   ('fadd_lp', 0b001),
+   ('fmul', 0b010),
+   ('fmul_lp', 0b011),
+   ('sngl', 0b100),
+   ('int8_16', 0b101),
+   ('fmad_movc', 0b110),
+   ('int32_64_tst', 0b111),
+])
+
+F_SNGL_OP = field_enum_type(
+name='sngl_op', num_bits=4,
+elems=[
+   ('rcp', 0b0000),
+   ('rsq', 0b0001),
+   ('log', 0b0010),
+   ('exp', 0b0011),
+   ('f16sop', 0b0100),
+   ('logcn', 0b0101),
+   ('gamma', 0b0110),
+   ('byp', 0b0111),
+   ('dsx', 0b1000),
+   ('dsy', 0b1001),
+   ('dsxf', 0b1010),
+   ('dsyf', 0b1011),
+   ('pck', 0b1100),
+   ('red', 0b1101),
+   ('sinc', 0b1110),
+   ('arctanc', 0b1111),
+])
+
+F_RED_PART = field_enum_type(
+name='red_part', num_bits=1,
+elems=[
+   ('a', 0b0),
+   ('b', 0b1),
+])
+
+F_RED_TYPE = field_enum_type(
+name='red_type', num_bits=1,
+elems=[
+   ('sin', 0b0),
+   ('cos', 0b1),
+])
+
+F_GAMMA_OP = field_enum_type(
+name='gamma_op', num_bits=1,
+elems=[
+   ('cmp', 0b0),
+   ('exp', 0b1),
+])
+
+F_PCK_FORMAT = field_enum_type(
+name='pck_format', num_bits=5,
+elems=[
+   ('u8888', 0b00000),
+   ('s8888', 0b00001),
+   ('o8888', 0b00010),
+   ('u1616', 0b00011),
+   ('s1616', 0b00100),
+   ('o1616', 0b00101),
+   ('u32', 0b00110),
+   ('s32', 0b00111),
+   ('u1010102', 0b01000),
+   ('s1010102', 0b01001),
+   ('u111110', 0b01010),
+   ('s111110', 0b01011),
+   ('f111110', 0b01100),
+   ('f16f16', 0b01110),
+   ('f32', 0b01111),
+   ('cov', 0b10000),
+   ('u565u565', 0b10001),
+   ('d24s8', 0b10010),
+   ('s8d24', 0b10011),
+   ('f32_mask', 0b10100),
+   ('2f10f10f10', 0b10101),
+   ('s8888ogl', 0b10110),
+   ('s1616ogl', 0b10111),
+   ('zero', 0b11110),
+   ('one', 0b11111),
+])
+
+F_INT8_16_OP = field_enum_type(
+name='int8_16_op', num_bits=2,
+elems=[
+   ('add', 0b00),
+   ('mul', 0b01),
+   ('mad_0_1', 0b10),
+   ('mad_2_3', 0b11),
+])
+
+F_INT8_16_FMT = field_enum_type(
+name='int8_16_fmt', num_bits=1,
+elems=[
+   ('8bit', 0b0),
+   ('16bit', 0b1),
+])
+
+F_S2CH = field_enum_type(
+name='s2ch', num_bits=1,
+elems=[
+   ('elo', 0b0),
+   ('ehi', 0b1),
+])
+
+F_S01CH = field_enum_type(
+name='s01ch', num_bits=2,
+elems=[
+   ('e0', 0b00),
+   ('e1', 0b01),
+   ('e2', 0b10),
+   ('e3', 0b11),
+])
+
+F_MOVW01 = field_enum_type(
+name='movw01', num_bits=2,
+elems=[
+   ('ft0', 0b00),
+   ('ft1', 0b01),
+   ('ft2', 0b10),
+   ('fte', 0b11),
+])
+
+F_MASKW0 = field_enum_type(
+name='maskw0', num_bits=4, is_bitset=True,
+elems=[
+   ('e0', 0b0001),
+   ('e1', 0b0010),
+   ('e2', 0b0100),
+   ('e3', 0b1000),
+   ('eall', 0b1111),
+])
+
+F_INT32_64_OP = field_enum_type(
+name='int32_64_op', num_bits=2,
+elems=[
+   ('add6432', 0b00),
+   ('add64', 0b01),
+   ('madd32', 0b10),
+   ('madd64', 0b11),
+])
+
+F_TST_OP = field_enum_type(
+name='tst_op', num_bits=4,
+elems=[
+   ('z', 0b0000),
+   ('gz', 0b0001),
+   ('gez', 0b0010),
+   ('c', 0b0011),
+   ('e', 0b0100),
+   ('g', 0b0101),
+   ('ge', 0b0110),
+   ('ne', 0b0111),
+   ('l', 0b1000),
+   ('le', 0b1001),
+])
+
+F_TST_OP3 = field_enum_subtype(name='tst_op3', parent=F_TST_OP, num_bits=3)
+
+F_TST_TYPE = field_enum_type(
+name='tst_type', num_bits=3,
+elems=[
+   ('f32', 0b000),
+   ('u16', 0b001),
+   ('s16', 0b010),
+   ('u8', 0b011),
+   ('s8', 0b100),
+   ('u32', 0b101),
+   ('s32', 0b110),
+])
+
+I_MAIN = bit_set(
+name='main',
+pieces=[
+   ('main_op', (0, '7:5')),
+   ('ext0', (0, '4')),
+
+   # fadd/fadd.lp/fmul/fmul.lp
+   ('sat_fam', (0, '4')),
+   ('s0neg_fam', (0, '3')),
+   ('s0abs_fam', (0, '2')),
+   ('s1abs_fam', (0, '1')),
+   ('s0flr_fam', (0, '0')),
+
+   # sngl
+   ('sngl_op', (0, '3:0')),
+
+   ## RED
+   ('red_part', (1, '7')),
+   ('iter', (1, '6:4')),
+   ('red_type', (1, '3')),
+   ('pwen_red', (1, '2')),
+
+   ## Gamma
+   ('gammaop', (1, '2')),
+
+   ## Common
+   ('s0neg_sngl', (1, '1')),
+   ('s0abs_sngl', (1, '0')),
+
+   ## PCK/UPCK
+   ('upck_elem', (1, '7:6')),
+   ('scale_rtz', (1, '5')),
+
+   ('prog', (1, '7')),
+   ('rtz', (1, '6')),
+   ('scale', (1, '5')),
+
+   ('pck_format', (1, '4:0')),
+
+   # int8_16
+   ('int8_16_op', (0, '3:2')),
+   ('s_i816', (0, '1')),
+   ('f_i816', (0, '0')),
+
+   ('s2ch', (1, '7')),
+   ('rsvd1_i816', (1, '6')),
+   ('s2neg_i816', (1, '5')),
+   ('s2abs_i816', (1, '4')),
+   ('s1abs_i816', (1, '3')),
+   ('s0neg_i816', (1, '2')),
+   ('s0abs_i816', (1, '1')),
+   ('sat_i816', (1, '0')),
+
+   ('rsvd2_i816', (2, '7:4')),
+   ('s1ch', (2, '3:2')),
+   ('s0ch', (2, '1:0')),
+
+   # fmad
+   ('s0neg_fma', (0, '3')),
+   ('s0abs_fma', (0, '2')),
+   ('s2neg_fma', (0, '1')),
+   ('sat_fma', (0, '0')),
+
+   ('rsvd1_fma', (1, '7:5')),
+   ('lp_fma', (1, '4')),
+   ('s1abs_fma', (1, '3')),
+   ('s1neg_fma', (1, '2')),
+   ('s2flr_fma', (1, '1')),
+   ('s2abs_fma', (1, '0')),
+
+   # int32_64
+   ('s_i3264', (0, '3')),
+   ('s2neg_i3264', (0, '2')),
+   ('int32_64_op', (0, '1:0')),
+
+   ('rsvd1_i3264', (1, '7')),
+   ('cin_i3264', (1, '6')),
+   ('s1neg_i3264', (1, '5')),
+   ('s0neg_i3264', (1, '4')),
+   ('rsvd1_i3264_', (1, '3')),
+   ('s0abs_i3264', (1, '2')),
+   ('s1abs_i3264', (1, '1')),
+   ('s2abs_i3264', (1, '0')),
+
+   # movc
+   ('movw1', (0, '3:2')),
+   ('movw0', (0, '1:0')),
+
+   ('rsvd1_movc', (1, '7:6')),
+   ('maskw0', (1, '5:2')),
+   ('aw', (1, '1')),
+   ('p2end_movc', (1, '0')),
+
+   # tst
+   ('tst_op_2_0', (0, '3:1')),
+   ('pwen_tst', (0, '0')),
+
+   ('tst_type', (1, '7:5')),
+   ('p2end_tst', (1, '4')),
+   ('tst_elem', (1, '3:2')),
+   ('rsvd1_tst', (1, '1')),
+   ('tst_op_3', (1, '0')),
+],
+fields=[
+   ('main_op', (F_MAIN_OP, ['main_op'])),
+   ('ext0', (F_BOOL, ['ext0'])),
+
+   # fadd/fadd.lp/fmul/fmul.lp
+   ('sat_fam', (F_BOOL, ['sat_fam'])),
+   ('s0neg_fam', (F_BOOL, ['s0neg_fam'])),
+   ('s0abs_fam', (F_BOOL, ['s0abs_fam'])),
+   ('s1abs_fam', (F_BOOL, ['s1abs_fam'])),
+   ('s0flr_fam', (F_BOOL, ['s0flr_fam'])),
+
+   # sngl
+   ('sngl_op', (F_SNGL_OP, ['sngl_op'])),
+
+   ('rsvd1_sngl', (F_UINT5, ['red_part', 'iter', 'red_type'], 0)),
+   ('rsvd1_sngl_', (F_UINT1, ['pwen_red'], 0)),
+
+   ## RED
+   ('red_part', (F_RED_PART, ['red_part'])),
+   ('iter', (F_UINT3, ['iter'])),
+   ('red_type', (F_RED_TYPE, ['red_type'])),
+   ('pwen_red', (F_BOOL, ['pwen_red'])),
+
+   ## Gamma
+   ('gammaop', (F_GAMMA_OP, ['gammaop'])),
+
+   ## Common
+   ('s0neg_sngl', (F_BOOL, ['s0neg_sngl'])),
+   ('s0abs_sngl', (F_BOOL, ['s0abs_sngl'])),
+
+   ## PCK/UPCK
+   ('upck_elem', (F_UINT2, ['upck_elem'])),
+   ('scale_rtz', (F_BOOL, ['scale_rtz'])),
+
+   ('prog', (F_BOOL, ['prog'])),
+   ('rtz', (F_BOOL, ['rtz'])),
+   ('scale', (F_BOOL, ['scale'])),
+
+   ('pck_format', (F_PCK_FORMAT, ['pck_format'])),
+
+   # int8_16
+   ('int8_16_op', (F_INT8_16_OP, ['int8_16_op'])),
+   ('s_i816', (F_BOOL, ['s_i816'])),
+   ('f_i816', (F_INT8_16_FMT, ['f_i816'])),
+
+   ('s2ch', (F_S2CH, ['s2ch'])),
+   ('rsvd1_i816', (F_UINT1, ['rsvd1_i816'], 0)),
+   ('s2neg_i816', (F_BOOL, ['s2neg_i816'])),
+   ('s2abs_i816', (F_BOOL, ['s2abs_i816'])),
+   ('s1abs_i816', (F_BOOL, ['s1abs_i816'])),
+   ('s0neg_i816', (F_BOOL, ['s0neg_i816'])),
+   ('s0abs_i816', (F_BOOL, ['s0abs_i816'])),
+   ('sat_i816', (F_BOOL, ['sat_i816'])),
+
+   ('rsvd2_i816', (F_UINT4, ['rsvd2_i816'], 0)),
+   ('s1ch', (F_S01CH, ['s1ch'])),
+   ('s0ch', (F_S01CH, ['s0ch'])),
+
+   # fmad
+   ('s0neg_fma', (F_BOOL, ['s0neg_fma'])),
+   ('s0abs_fma', (F_BOOL, ['s0abs_fma'])),
+   ('s2neg_fma', (F_BOOL, ['s2neg_fma'])),
+   ('sat_fma', (F_BOOL, ['sat_fma'])),
+
+   ('rsvd1_fma', (F_UINT3, ['rsvd1_fma'], 0)),
+   ('lp_fma', (F_BOOL, ['lp_fma'])),
+   ('s1abs_fma', (F_BOOL, ['s1abs_fma'])),
+   ('s1neg_fma', (F_BOOL, ['s1neg_fma'])),
+   ('s2flr_fma', (F_BOOL, ['s2flr_fma'])),
+   ('s2abs_fma', (F_BOOL, ['s2abs_fma'])),
+
+   # int32_64
+   ('s_i3264', (F_BOOL, ['s_i3264'])),
+   ('s2neg_i3264', (F_BOOL, ['s2neg_i3264'])),
+   ('int32_64_op', (F_INT32_64_OP, ['int32_64_op'])),
+
+   ('rsvd1_i3264', (F_UINT2, ['rsvd1_i3264_', 'rsvd1_i3264'], 0)),
+   ('cin_i3264', (F_BOOL, ['cin_i3264'])),
+   ('s1neg_i3264', (F_BOOL, ['s1neg_i3264'])),
+   ('s0neg_i3264', (F_BOOL, ['s0neg_i3264'])),
+   ('s0abs_i3264', (F_BOOL, ['s0abs_i3264'])),
+   ('s1abs_i3264', (F_BOOL, ['s1abs_i3264'])),
+   ('s2abs_i3264', (F_BOOL, ['s2abs_i3264'])),
+
+   # movc
+   ('movw1', (F_MOVW01, ['movw1'])),
+   ('movw0', (F_MOVW01, ['movw0'])),
+
+   ('rsvd1_movc', (F_UINT2, ['rsvd1_movc'], 0)),
+   ('maskw0', (F_MASKW0, ['maskw0'])),
+   ('aw', (F_BOOL, ['aw'])),
+   ('p2end_movc', (F_BOOL, ['p2end_movc'])),
+
+   # tst
+   ('tst_op_3bit', (F_TST_OP3, ['tst_op_2_0'])),
+   ('pwen_tst', (F_BOOL, ['pwen_tst'])),
+
+   ('tst_type', (F_TST_TYPE, ['tst_type'])),
+   ('p2end_tst', (F_BOOL, ['p2end_tst'])),
+   ('tst_elem', (F_UINT2, ['tst_elem'])),
+   ('rsvd1_tst', (F_UINT1, ['rsvd1_tst'], 0)),
+   ('tst_op_4bit', (F_TST_OP, ['tst_op_3', 'tst_op_2_0'])),
+])
+
+I_FADD = bit_struct(
+name='fadd',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fadd'),
+
+   ('sat', 'sat_fam'),
+   ('s0neg', 's0neg_fam'),
+   ('s0abs', 's0abs_fam'),
+   ('s1abs', 's1abs_fam'),
+   ('s0flr', 's0flr_fam'),
+])
+
+I_FADD_LP = bit_struct(
+name='fadd_lp',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fadd_lp'),
+
+   ('sat', 'sat_fam'),
+   ('s0neg', 's0neg_fam'),
+   ('s0abs', 's0abs_fam'),
+   ('s1abs', 's1abs_fam'),
+   ('s0flr', 's0flr_fam'),
+])
+
+I_FMUL = bit_struct(
+name='fmul',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fmul'),
+
+   ('sat', 'sat_fam'),
+   ('s0neg', 's0neg_fam'),
+   ('s0abs', 's0abs_fam'),
+   ('s1abs', 's1abs_fam'),
+   ('s0flr', 's0flr_fam'),
+])
+
+I_FMUL_LP = bit_struct(
+name='fmul_lp',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fmul_lp'),
+
+   ('sat', 'sat_fam'),
+   ('s0neg', 's0neg_fam'),
+   ('s0abs', 's0abs_fam'),
+   ('s1abs', 's1abs_fam'),
+   ('s0flr', 's0flr_fam'),
+])
+
+# Covers FRCP, FRSQ, FLOG, FEXP, FLOGCN, BYP,
+# FDSX, FDSY, FDSXF, FDSYF, FSINC, FARCTANC
+I_SNGL = bit_struct(
+name='sngl',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 0),
+   ('sngl_op', 'sngl_op'),
+])
+
+I_SNGL_EXT = bit_struct(
+name='sngl_ext',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 1),
+   ('sngl_op', 'sngl_op'),
+
+   ('rsvd1', 'rsvd1_sngl'),
+   ('rsvd1_', 'rsvd1_sngl_'),
+   ('s0neg', 's0neg_sngl'),
+   ('s0abs', 's0abs_sngl'),
+])
+
+# F16SOP
+# TODO
+
+# GCMP
+I_GCMP = bit_struct(
+name='gcmp',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 0),
+   ('sngl_op', 'sngl_op', 'gamma'),
+])
+
+I_GCMP_EXT = bit_struct(
+name='gcmp_ext',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 1),
+   ('sngl_op', 'sngl_op', 'gamma'),
+
+   ('rsvd1', 'rsvd1_sngl'),
+   ('gammaop', 'gammaop', 'cmp'),
+   ('s0neg', 's0neg_sngl'),
+   ('s0abs', 's0abs_sngl'),
+])
+
+# GEXP
+I_GEXP = bit_struct(
+name='gexp',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 1),
+   ('sngl_op', 'sngl_op', 'gamma'),
+
+   ('rsvd1', 'rsvd1_sngl'),
+   ('gammaop', 'gammaop', 'exp'),
+   ('s0neg', 's0neg_sngl'),
+   ('s0abs', 's0abs_sngl'),
+])
+
+# PCK
+I_PCK = bit_struct(
+name='pck',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 1),
+   ('sngl_op', 'sngl_op', 'pck'),
+
+   ('prog', 'prog'),
+   ('rtz', 'rtz'),
+   ('scale', 'scale'),
+   ('pck_format', 'pck_format'),
+])
+
+# UPCK
+I_UPCK = bit_struct(
+name='upck',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 1),
+   ('sngl_op', 'sngl_op', 'pck'),
+
+   ('elem', 'upck_elem'),
+   ('scale_rtz', 'scale_rtz'),
+   ('pck_format', 'pck_format'),
+])
+
+# FRED
+I_FRED = bit_struct(
+name='fred',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'sngl'),
+   ('ext0', 'ext0', 1),
+   ('sngl_op', 'sngl_op', 'red'),
+
+   ('red_part', 'red_part'),
+   ('iter', 'iter'),
+   ('red_type', 'red_type'),
+   ('pwen', 'pwen_red'),
+   ('s0neg', 's0neg_sngl'),
+   ('s0abs', 's0abs_sngl'),
+])
+
+I_INT8_16 = bit_struct(
+name='int8_16',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'int8_16'),
+   ('ext0', 'ext0', 0),
+   ('int8_16_op', 'int8_16_op'),
+   ('s', 's_i816'),
+   ('f', 'f_i816'),
+])
+
+I_INT8_16_EXT = bit_struct(
+name='int8_16_ext',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'int8_16'),
+   ('ext0', 'ext0', 1),
+   ('int8_16_op', 'int8_16_op'),
+   ('s', 's_i816'),
+   ('f', 'f_i816'),
+
+   ('s2ch', 's2ch'),
+   ('rsvd1', 'rsvd1_i816'),
+   ('s2neg', 's2neg_i816'),
+   ('s2abs', 's2abs_i816'),
+   ('s1abs', 's1abs_i816'),
+   ('s0neg', 's0neg_i816'),
+   ('s0abs', 's0abs_i816'),
+   ('sat', 'sat_i816'),
+])
+
+I_INT8_16_EXT_SEL = bit_struct(
+name='int8_16_ext_sel',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'int8_16'),
+   ('ext0', 'ext0', 1),
+   ('int8_16_op', 'int8_16_op'),
+   ('s', 's_i816'),
+   ('f', 'f_i816'),
+
+   ('s2ch', 's2ch'),
+   ('rsvd1', 'rsvd1_i816'),
+   ('s2neg', 's2neg_i816'),
+   ('s2abs', 's2abs_i816'),
+   ('s1abs', 's1abs_i816'),
+   ('s0neg', 's0neg_i816'),
+   ('s0abs', 's0abs_i816'),
+   ('sat', 'sat_i816'),
+
+   ('rsvd2', 'rsvd2_i816'),
+   ('s1ch', 's1ch'),
+   ('s0ch', 's0ch'),
+])
+
+I_FMAD = bit_struct(
+name='fmad',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fmad_movc'),
+   ('ext0', 'ext0', 0),
+
+   ('s0neg', 's0neg_fma'),
+   ('s0abs', 's0abs_fma'),
+   ('s2neg', 's2neg_fma'),
+   ('sat', 'sat_fma'),
+])
+
+I_FMAD_EXT = bit_struct(
+name='fmad_ext',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fmad_movc'),
+   ('ext0', 'ext0', 1),
+
+   ('s0neg', 's0neg_fma'),
+   ('s0abs', 's0abs_fma'),
+   ('s2neg', 's2neg_fma'),
+   ('sat', 'sat_fma'),
+
+   ('rsvd1', 'rsvd1_fma'),
+   ('lp', 'lp_fma'),
+   ('s1abs', 's1abs_fma'),
+   ('s1neg', 's1neg_fma'),
+   ('s2flr', 's2flr_fma'),
+   ('s2abs', 's2abs_fma'),
+])
+
+I_INT32_64 = bit_struct(
+name='int32_64',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'int32_64_tst'),
+   ('ext0', 'ext0', 0),
+
+   ('s', 's_i3264'),
+   ('s2neg', 's2neg_i3264'),
+   ('int32_64_op', 'int32_64_op'),
+])
+
+I_INT32_64_EXT = bit_struct(
+name='int32_64_ext',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'int32_64_tst'),
+   ('ext0', 'ext0', 1),
+
+   ('s', 's_i3264'),
+   ('s2neg', 's2neg_i3264'),
+   ('int32_64_op', 'int32_64_op'),
+
+   ('rsvd1', 'rsvd1_i3264'),
+
+   ('cin', 'cin_i3264'),
+   ('s1neg', 's1neg_i3264'),
+   ('s0neg', 's0neg_i3264'),
+   ('s0abs', 's0abs_i3264'),
+   ('s1abs', 's1abs_i3264'),
+   ('s2abs', 's2abs_i3264'),
+])
+
+I_MOVC = bit_struct(
+name='movc',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fmad_movc'),
+   ('ext0', 'ext0', 0),
+
+   ('movw1', 'movw1'),
+   ('movw0', 'movw0'),
+])
+
+I_MOVC_EXT = bit_struct(
+name='movc_ext',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'fmad_movc'),
+   ('ext0', 'ext0', 1),
+
+   ('movw1', 'movw1'),
+   ('movw0', 'movw0'),
+
+   ('rsvd1', 'rsvd1_movc'),
+   ('maskw0', 'maskw0'),
+   ('aw', 'aw'),
+   ('p2end', 'p2end_movc'),
+])
+
+I_TST = bit_struct(
+name='tst',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'int32_64_tst'),
+   ('ext0', 'ext0', 0),
+
+   ('tst_op', 'tst_op_3bit'),
+   ('pwen', 'pwen_tst'),
+])
+
+I_TST_EXT = bit_struct(
+name='tst_ext',
+bit_set=I_MAIN,
+field_mappings=[
+   ('main_op', 'main_op', 'int32_64_tst'),
+   ('ext0', 'ext0', 1),
+
+   ('tst_op', 'tst_op_4bit'),
+   ('pwen', 'pwen_tst'),
+
+   ('type', 'tst_type'),
+   ('p2end', 'p2end_tst'),
+   ('elem', 'tst_elem'),
+   ('rsvd1', 'rsvd1_tst'),
+])
