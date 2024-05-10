@@ -675,3 +675,120 @@ field_mappings=[
    ('is2', 'is2'),
    ('is1', 'is1'),
 ])
+
+# Destination definitions.
+I_DST = bit_set(
+name='dst',
+pieces=[
+   ('ext0', (0, '7')),
+   ('dbN_0_b0', (0, '6')),
+   ('dN_5_0_b0', (0, '5:0')),
+
+   ('rsvd1', (1, '7')),
+   ('dN_10_8_b1', (1, '6:4')),
+   ('dbN_2_1_b1', (1, '3:2')),
+   ('dN_7_6_b1', (1, '1:0')),
+
+   ('db0_0_b0', (0, '7')),
+   ('d0_6_0_b0', (0, '6:0')),
+
+   ('ext1', (1, '7')),
+   ('db1_0_b1', (1, '6')),
+   ('d1_5_0_b1', (1, '5:0')),
+
+   ('ext2', (2, '7')),
+   ('db1_2_1_b2', (2, '6:5')),
+   ('d1_7_6_b2', (2, '4:3')),
+   ('db0_2_1_b2', (2, '2:1')),
+   ('d0_7_b2', (2, '0')),
+
+   ('rsvd3', (3, '7:6')),
+   ('d1_10_8_b3', (3, '5:3')),
+   ('d0_10_8_b3', (3, '2:0')),
+],
+fields=[
+   ('ext0', (F_BOOL, ['ext0'])),
+   ('dbN_1bit_b0', (F_REGBANK1, ['dbN_0_b0'])),
+   ('dN_6bit_b0', (F_UINT6, ['dN_5_0_b0'])),
+
+   ('rsvd1', (F_UINT1, ['rsvd1'], 0)),
+   ('dbN_3bit_b1', (F_REGBANK, ['dbN_2_1_b1', 'dbN_0_b0'])),
+   ('dN_11bit_b1', (F_UINT11, ['dN_10_8_b1', 'dN_7_6_b1', 'dN_5_0_b0'])),
+
+   ('db0_1bit_b0', (F_REGBANK1, ['db0_0_b0'])),
+   ('d0_7bit_b0', (F_UINT7, ['d0_6_0_b0'])),
+
+   ('ext1', (F_BOOL, ['ext1'])),
+   ('db1_1bit_b1', (F_REGBANK1, ['db1_0_b1'])),
+   ('d1_6bit_b1', (F_UINT6, ['d1_5_0_b1'])),
+
+   ('ext2', (F_BOOL, ['ext2'])),
+   ('db0_3bit_b2', (F_REGBANK, ['db0_2_1_b2', 'db0_0_b0'])),
+   ('d0_8bit_b2', (F_UINT8, ['d0_7_b2', 'd0_6_0_b0'])),
+   ('db1_3bit_b2', (F_REGBANK, ['db1_2_1_b2', 'db1_0_b1'])),
+   ('d1_8bit_b2', (F_UINT8, ['d1_7_6_b2', 'd1_5_0_b1'])),
+
+   ('rsvd3', (F_UINT2, ['rsvd3'], 0)),
+   ('d0_11bit_b3', (F_UINT11, ['d0_10_8_b3', 'd0_7_b2', 'd0_6_0_b0'])),
+   ('d1_11bit_b3', (F_UINT11, ['d1_10_8_b3', 'd1_7_6_b2', 'd1_5_0_b1'])),
+])
+
+I_ONE_1B6I = bit_struct(
+name='1_1b6i',
+bit_set=I_DST,
+field_mappings=[
+   ('ext0', 'ext0', 0),
+
+   ('dbN', 'dbN_1bit_b0'),
+   ('dN', 'dN_6bit_b0'),
+], data=(1, 6))
+
+I_ONE_3B11I = bit_struct(
+name='1_3b11i',
+bit_set=I_DST,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('rsvd1', 'rsvd1'),
+
+   ('dbN', 'dbN_3bit_b1'),
+   ('dN', 'dN_11bit_b1'),
+], data=(3, 11))
+
+I_TWO_1B7I_1B6I = bit_struct(
+name='2_1b7i_1b6i',
+bit_set=I_DST,
+field_mappings=[
+   ('ext1', 'ext1', 0),
+
+   ('db0', 'db0_1bit_b0'),
+   ('d0', 'd0_7bit_b0'),
+   ('db1', 'db1_1bit_b1'),
+   ('d1', 'd1_6bit_b1'),
+], data=(1, 7, 1, 6))
+
+I_TWO_3B8I_3B8I = bit_struct(
+name='2_3b8i_3b8i',
+bit_set=I_DST,
+field_mappings=[
+   ('ext1', 'ext1', 1),
+   ('ext2', 'ext2', 0),
+
+   ('db0', 'db0_3bit_b2'),
+   ('d0', 'd0_8bit_b2'),
+   ('db1', 'db1_3bit_b2'),
+   ('d1', 'd1_8bit_b2'),
+], data=(3, 8, 3, 8))
+
+I_TWO_3B11I_3B11I = bit_struct(
+name='2_3b11i_3b11i',
+bit_set=I_DST,
+field_mappings=[
+   ('ext1', 'ext1', 1),
+   ('ext2', 'ext2', 1),
+   ('rsvd3', 'rsvd3'),
+
+   ('db0', 'db0_3bit_b2'),
+   ('d0', 'd0_11bit_b3'),
+   ('db1', 'db1_3bit_b2'),
+   ('d1', 'd1_11bit_b3'),
+], data=(3, 11, 3, 11))
