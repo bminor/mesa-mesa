@@ -154,7 +154,7 @@ O_SIGNPOS = op_mod_enum('signpos', [
    'mtb',
    'ftb',
 ])
-O_DMN = op_mod('dmn', BaseType.uint)
+O_DIM = op_mod('dim', BaseType.uint)
 O_PROJ = op_mod('proj', BaseType.bool)
 O_FCNORM = op_mod('fcnorm', BaseType.bool)
 O_NNCOORDS = op_mod('nncoords', BaseType.bool)
@@ -189,7 +189,7 @@ O_SAVMSK_MODE = op_mod_enum('savmsk_mode', [
    'icmi',
    'caxy',
 ])
-O_ATOMIC_OP = op_mod_enum('atomic_op', [
+O_ATOM_OP = op_mod_enum('atom_op', [
    'add',
    'sub',
    'xchg',

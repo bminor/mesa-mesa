@@ -1514,3 +1514,967 @@ field_mappings=[
    ('elem', 'tst_elem'),
    ('rsvd1', 'rsvd1_tst'),
 ])
+
+# Backend ALU ops.
+F_BACKEND_OP = field_enum_type(
+name='backend_op', num_bits=3,
+elems=[
+   ('uvsw', 0b000),
+   ('msk', 0b001),
+   ('phas', 0b010),
+   ('setl', 0b011),
+   ('vistest', 0b100),
+   ('fitr', 0b101),
+   ('emit', 0b110),
+   ('dma', 0b111),
+])
+
+F_DSEL = field_enum_type(
+name='dsel', num_bits=1,
+elems=[
+   ('w0', 0b0),
+   ('w1', 0b1),
+])
+
+F_UVSW_OP = field_enum_type(
+name='uvsw_op', num_bits=3,
+elems=[
+   ('write', 0b000),
+   ('emit', 0b001),
+   ('cut', 0b010),
+   ('emit_cut', 0b011),
+   ('endtask', 0b100),
+   ('emit_endtask', 0b101),
+   ('write_emit_endtask', 0b110),
+])
+
+F_SRCSEL = field_enum_type(
+name='srcsel', num_bits=3,
+elems=[
+   ('s0', 0b000),
+   ('s1', 0b001),
+   ('s2', 0b010),
+   ('s3', 0b011),
+   ('s4', 0b100),
+   ('s5', 0b101),
+])
+
+F_MSK_MODE = field_enum_type(
+name='msk_mode', num_bits=3,
+elems=[
+   ('vm', 0b000),
+   ('icm', 0b001),
+   ('icmoc', 0b010),
+   ('icmi', 0b011),
+   ('caxy', 0b100),
+])
+
+F_MSK_OP = field_enum_type(
+name='msk_op', num_bits=1,
+elems=[
+   ('sav', 0b0),
+   ('mov', 0b1),
+])
+
+F_PHAS_TYPE = field_enum_type(
+name='phas_type', num_bits=1,
+elems=[
+   ('reg', 0b0),
+   ('imm', 0b1),
+])
+
+F_PHAS_RATE = field_enum_type(
+name='phas_rate', num_bits=2,
+elems=[
+   ('inst', 0b00),
+   ('smp_sel', 0b01),
+   ('smp_full', 0b10),
+])
+
+F_VISTEST_OP = field_enum_type(
+name='vistest_op', num_bits=1,
+elems=[
+   ('depthf', 0b0),
+   ('atst', 0b1),
+])
+
+F_ITER_MODE = field_enum_type(
+name='iter_mode', num_bits=2,
+elems=[
+   ('pixel', 0b00),
+   ('sample', 0b01),
+   ('centroid', 0b10),
+])
+
+F_DMA_OP = field_enum_type(
+name='dma_op', num_bits=3,
+elems=[
+   ('idf', 0b000),
+   ('ld', 0b001),
+   ('st', 0b010),
+   ('smp', 0b100),
+   ('atomic', 0b101),
+])
+
+F_CACHEMODE_LD = field_enum_type(
+name='cachemode_ld', num_bits=2,
+elems=[
+   ('normal', 0b00),
+   ('bypass', 0b01),
+   ('force_line_fill', 0b10),
+])
+
+F_CACHEMODE_ST = field_enum_type(
+name='cachemode_st', num_bits=2,
+elems=[
+   ('write_through', 0b00),
+   ('write_back', 0b01),
+   ('write_back_lazy', 0b10),
+])
+
+F_DSIZE = field_enum_type(
+name='dsize', num_bits=2,
+elems=[
+   ('8bit', 0b00),
+   ('16bit', 0b01),
+   ('32bit', 0b10),
+])
+
+F_DMN = field_enum_type(
+name='dmn', num_bits=2,
+elems=[
+   ('1d', 0b01),
+   ('2d', 0b10),
+   ('3d', 0b11),
+])
+
+F_LODM = field_enum_type(
+name='lodm', num_bits=2,
+elems=[
+   ('normal', 0b00),
+   ('bias', 0b01),
+   ('replace', 0b10),
+   ('gradients', 0b11),
+])
+
+F_SBMODE = field_enum_type(
+name='sbmode', num_bits=2,
+elems=[
+   ('none', 0b00),
+   ('data', 0b01),
+   ('info', 0b10),
+   ('both', 0b11),
+])
+
+F_ATOMIC_OP = field_enum_type(
+name='atomic_op', num_bits=4,
+elems=[
+   ('add', 0b0000),
+   ('sub', 0b0001),
+   ('xchg', 0b0010),
+   ('umin', 0b0100),
+   ('imin', 0b0101),
+   ('umax', 0b0110),
+   ('imax', 0b0111),
+   ('and', 0b1000),
+   ('or', 0b1001),
+   ('xor', 0b1010),
+])
+
+I_BACKEND = bit_set(
+name='backend',
+pieces=[
+   ('backend_op', (0, '7:5')),
+
+   # uvsw
+   ('dsel', (0, '4')),
+   ('imm_uvsw', (0, '3')),
+   ('uvsw_op', (0, '2:0')),
+
+   ('rsvd1', (1, '7:3')), # Common
+   ('srcsel', (1, '2:0')), # Common
+
+   ('imm_addr_uvsw', (1, '7:0')),
+
+   ('rsvd1_uvsw_', (1, '7:2')),
+   ('stream_id', (1, '1:0')),
+
+   # movmsk
+   ('msk_op', (0, '4')),
+   ('sm', (0, '3')),
+   ('msk_mode', (0, '2:0')),
+
+   # phas
+   ('exeaddrsrc', (0, '4:2')),
+   ('phas_end', (0, '1')),
+   ('phas_type', (0, '0')),
+
+   ('phas_rate', (1, '7:6')),
+   ('commontmp', (1, '5:0')),
+
+   # setl
+   ('rsvd0_setl', (0, '4:1')),
+   ('ressel', (0, '0')),
+
+   # vistest
+   ('rsvd0_vistest', (0, '4:3')),
+   ('pwen_vistest', (0, '2')),
+   ('vistest_op', (0, '1')),
+   ('ifb', (0, '0')),
+
+   # fitr
+   ('p_fitr', (0, '4')),
+   ('drc', (0, '3')), # Common
+   ('rsvd0_fitr', (0, '2')),
+   ('fitr_mode', (0, '1:0')),
+
+   ('rsvd1_fitr', (1, '7:5')),
+   ('sat_fitr', (1, '4')),
+   ('count_fitr', (1, '3:0')),
+
+   # emitpix
+   ('rsvd0_emitpix', (0, '4:2')),
+   ('freep', (0, '1')),
+   ('rsvd0_emitpix_', (0, '0')),
+
+   # dma
+   ('dma_op', (0, '2:0')),
+   ('rsvd0_dma', (0, '4')),
+
+   ## ld/st
+   ('immbl', (0, '4')),
+
+   ('srcseladd_ldst', (1, '7:5')),
+   ('srcselbl_ldst', (1, '4:2')),
+   ('burstlen_2_0', (1, '4:2')),
+   ('cachemode_ldst', (1, '1:0')),
+
+   ('tiled', (2, '7')),
+   ('srcseldata', (2, '6:4')),
+   ('dsize', (2, '3:2')),
+   ('rsvd2_ldst', (2, '1')),
+   ('burstlen_3', (2, '0')),
+
+   ('rsvd3_st', (3, '7:3')),
+   ('srcmask', (3, '2:0')),
+
+   ## smp
+   ('fcnorm', (0, '4')),
+
+   ('extb', (1, '7')),
+   ('dmn', (1, '6:5')),
+   ('exta', (1, '4')),
+   ('chan', (1, '3:2')),
+   ('lodm', (1, '1:0')),
+
+   ('pplod', (2, '7')),
+   ('proj', (2, '6')),
+   ('sbmode', (2, '5:4')),
+   ('nncoords', (2, '3')),
+   ('sno', (2, '2')),
+   ('soo', (2, '1')),
+   ('tao', (2, '0')),
+
+   ('rsvd3_smp', (3, '7:5')),
+   ('f16', (3, '4')),
+   ('swap', (3, '3')),
+   ('cachemode_smp', (3, '2:1')),
+   ('smp_w', (3, '0')),
+
+   ## atomic
+   ('atomic_op', (1, '7:4')),
+   ('rsvd1_atomic', (1, '3')),
+
+   ('rsvd2_atomic', (2, '7:3')),
+   ('dstsel', (2, '2:0')),
+],
+fields=[
+   ('backend_op', (F_BACKEND_OP, ['backend_op'])),
+
+   # uvsw
+   ('dsel', (F_DSEL, ['dsel'])),
+   ('imm_uvsw', (F_BOOL, ['imm_uvsw'])),
+   ('uvsw_op', (F_UVSW_OP, ['uvsw_op'])),
+
+   ('rsvd1', (F_UINT5, ['rsvd1'], 0)),
+   ('srcsel', (F_SRCSEL, ['srcsel'])),
+
+   ('imm_addr_uvsw', (F_UINT8, ['imm_addr_uvsw'])),
+
+   ('rsvd1_uvsw_', (F_UINT6, ['rsvd1_uvsw_'], 0)),
+   ('stream_id', (F_UINT2, ['stream_id'])),
+
+   # movmsk
+   ('msk_op', (F_MSK_OP, ['msk_op'])),
+   ('sm', (F_BOOL, ['sm'])),
+   ('msk_mode', (F_MSK_MODE, ['msk_mode'])),
+
+   # phas
+   ('exeaddrsrc', (F_SRCSEL, ['exeaddrsrc'])),
+   ('phas_end', (F_BOOL, ['phas_end'])),
+   ('phas_type', (F_PHAS_TYPE, ['phas_type'])),
+
+   ('phas_rate', (F_PHAS_RATE, ['phas_rate'])),
+   ('commontmp', (F_UINT6MUL4, ['commontmp'])),
+
+   # setl
+   ('rsvd0_setl', (F_UINT4, ['rsvd0_setl'], 0)),
+   ('ressel', (F_DSEL, ['ressel'])),
+
+   # vistest
+   ('rsvd0_vistest', (F_UINT2, ['rsvd0_vistest'], 0)),
+   ('pwen_vistest', (F_BOOL, ['pwen_vistest'])),
+   ('vistest_op', (F_VISTEST_OP, ['vistest_op'])),
+   ('ifb', (F_BOOL, ['ifb'])),
+
+   # fitr
+   ('p_fitr', (F_BOOL, ['p_fitr'])),
+   ('drc', (F_UINT1, ['drc'])),
+   ('rsvd0_fitr', (F_UINT1, ['rsvd0_fitr'], 0)),
+   ('iter_mode', (F_ITER_MODE, ['fitr_mode'])),
+
+   ('rsvd1_fitr', (F_UINT3, ['rsvd1_fitr'], 0)),
+   ('sat_fitr', (F_BOOL, ['sat_fitr'])),
+   ('count_fitr', (F_UINT4_POS_WRAP, ['count_fitr'])),
+
+   # emitpix
+   ('rsvd0_emitpix', (F_UINT3, ['rsvd0_emitpix'], 0)),
+   ('freep', (F_BOOL, ['freep'])),
+   ('rsvd0_emitpix_', (F_UINT1, ['rsvd0_emitpix_'], 0)),
+
+   # dma
+   ('rsvd0_dma', (F_UINT1, ['rsvd0_dma'], 0)),
+   ('dma_op', (F_DMA_OP, ['dma_op'])),
+
+   ## ld/st
+   ('immbl', (F_BOOL, ['immbl'])),
+
+   ('srcseladd_ldst', (F_SRCSEL, ['srcseladd_ldst'])),
+   ('srcselbl_ldst', (F_SRCSEL, ['srcselbl_ldst'])),
+
+   ('cachemode_ld', (F_CACHEMODE_LD, ['cachemode_ldst'])),
+   ('cachemode_st', (F_CACHEMODE_ST, ['cachemode_ldst'])),
+
+   ('rsvd2_ld', (F_UINT7, ['tiled', 'srcseldata', 'dsize', 'rsvd2_ldst'], 0)),
+   ('rsvd2_st', (F_UINT1, ['rsvd2_ldst'], 0)),
+
+   ('tiled', (F_BOOL, ['tiled'])),
+   ('srcseldata', (F_SRCSEL, ['srcseldata'])),
+   ('dsize', (F_DSIZE, ['dsize'])),
+
+   ('burstlen', (F_UINT4_POS_WRAP, ['burstlen_3', 'burstlen_2_0'])),
+   ('rsvd2_st_', (F_UINT1, ['burstlen_3'], 0)),
+
+   ('rsvd3_st', (F_UINT5, ['rsvd3_st'], 0)),
+   ('srcmask', (F_SRCSEL, ['srcmask'])),
+
+   ## smp
+   ('fcnorm', (F_BOOL, ['fcnorm'])),
+
+   ('extb', (F_BOOL, ['extb'])),
+   ('dmn', (F_DMN, ['dmn'])),
+   ('exta', (F_BOOL, ['exta'])),
+   ('chan', (F_UINT2_POS_INC, ['chan'])),
+   ('lodm', (F_LODM, ['lodm'])),
+
+   ('pplod', (F_BOOL, ['pplod'])),
+   ('proj', (F_BOOL, ['proj'])),
+   ('sbmode', (F_SBMODE, ['sbmode'])),
+   ('nncoords', (F_BOOL, ['nncoords'])),
+   ('sno', (F_BOOL, ['sno'])),
+   ('soo', (F_BOOL, ['soo'])),
+   ('tao', (F_BOOL, ['tao'])),
+
+   ('rsvd3_smp', (F_UINT3, ['rsvd3_smp'], 0)),
+   ('f16', (F_BOOL, ['f16'])),
+   ('swap', (F_BOOL, ['swap'])),
+   ('cachemode_smp_ld', (F_CACHEMODE_LD, ['cachemode_smp'])),
+   ('cachemode_smp_st', (F_CACHEMODE_ST, ['cachemode_smp'])),
+   ('smp_w', (F_BOOL, ['smp_w'])),
+
+   ## atomic
+   ('atomic_op', (F_ATOMIC_OP, ['atomic_op'])),
+   ('rsvd1_atomic', (F_UINT1, ['rsvd1_atomic'], 0)),
+
+   ('rsvd2_atomic', (F_UINT5, ['rsvd2_atomic'], 0)),
+   ('dstsel', (F_SRCSEL, ['dstsel'])),
+])
+
+I_UVSW_WRITE_REG = bit_struct(
+name='uvsw_write_reg',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel'),
+   ('imm', 'imm_uvsw', 0),
+   ('uvsw_op', 'uvsw_op', 'write'),
+
+   ('rsvd1', 'rsvd1'),
+   ('srcsel', 'srcsel'),
+])
+
+I_UVSW_WRITE_IMM = bit_struct(
+name='uvsw_write_imm',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel'),
+   ('imm', 'imm_uvsw', 1),
+   ('uvsw_op', 'uvsw_op', 'write'),
+
+   ('imm_addr', 'imm_addr_uvsw'),
+])
+
+I_UVSW_EMIT = bit_struct(
+name='uvsw_emit',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 0),
+   ('uvsw_op', 'uvsw_op', 'emit'),
+])
+
+I_UVSW_EMIT_STREAM = bit_struct(
+name='uvsw_emit_imm',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 1),
+   ('uvsw_op', 'uvsw_op', 'emit'),
+
+   ('rsvd1', 'rsvd1_uvsw_'),
+   ('stream_id', 'stream_id'),
+])
+
+I_UVSW_CUT = bit_struct(
+name='uvsw_cut',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 0),
+   ('uvsw_op', 'uvsw_op', 'cut'),
+])
+
+I_UVSW_CUT_STREAM = bit_struct(
+name='uvsw_cut_imm',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 1),
+   ('uvsw_op', 'uvsw_op', 'cut'),
+
+   ('rsvd1', 'rsvd1_uvsw_'),
+   ('stream_id', 'stream_id'),
+])
+
+I_UVSW_EMIT_CUT = bit_struct(
+name='uvsw_emit_cut',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 0),
+   ('uvsw_op', 'uvsw_op', 'emit_cut'),
+])
+
+I_UVSW_EMIT_CUT_STREAM = bit_struct(
+name='uvsw_emit_cut_imm',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 1),
+   ('uvsw_op', 'uvsw_op', 'emit_cut'),
+
+   ('rsvd1', 'rsvd1_uvsw_'),
+   ('stream_id', 'stream_id'),
+])
+
+I_UVSW_ENDTASK = bit_struct(
+name='uvsw_endtask',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 0),
+   ('uvsw_op', 'uvsw_op', 'endtask'),
+])
+
+I_UVSW_EMIT_ENDTASK = bit_struct(
+name='uvsw_emit_endtask',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel', 0),
+   ('imm', 'imm_uvsw', 0),
+   ('uvsw_op', 'uvsw_op', 'emit_endtask'),
+])
+
+I_UVSW_WRITE_EMIT_ENDTASK_REG = bit_struct(
+name='uvsw_write_emit_endtask_reg',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel'),
+   ('imm', 'imm_uvsw', 0),
+   ('uvsw_op', 'uvsw_op', 'write_emit_endtask'),
+
+   ('rsvd1', 'rsvd1'),
+   ('srcsel', 'srcsel'),
+])
+
+I_UVSW_WRITE_EMIT_ENDTASK_IMM = bit_struct(
+name='uvsw_write_emit_endtask_imm',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'uvsw'),
+
+   ('dsel', 'dsel'),
+   ('imm', 'imm_uvsw', 1),
+   ('uvsw_op', 'uvsw_op', 'write_emit_endtask'),
+
+   ('imm_addr', 'imm_addr_uvsw'),
+])
+
+I_MOVMSK = bit_struct(
+name='movmsk',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'msk'),
+
+   ('msk_op', 'msk_op', 'mov'),
+   ('sm', 'sm', 0),
+   ('msk_mode', 'msk_mode', 'icm'),
+])
+
+I_MOVMSK_SM = bit_struct(
+name='movmsk_sm',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'msk'),
+
+   ('msk_op', 'msk_op', 'mov'),
+   ('sm', 'sm', 1),
+   ('msk_mode', 'msk_mode', 'icm'),
+
+   ('rsvd1', 'rsvd1'),
+   ('srcsel', 'srcsel'),
+])
+
+I_SAVMSK = bit_struct(
+name='savmsk',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'msk'),
+
+   ('msk_op', 'msk_op', 'sav'),
+   ('sm', 'sm', 0),
+   ('msk_mode', 'msk_mode'),
+])
+
+I_PHAS_REG = bit_struct(
+name='phas_reg',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'phas'),
+
+   ('exeaddrsrc', 'exeaddrsrc'),
+   ('end', 'phas_end', 0),
+   ('type', 'phas_type', 'reg'),
+
+   ('rsvd1', 'rsvd1'),
+   ('paramsrc', 'srcsel'),
+])
+
+I_PHAS_IMM = bit_struct(
+name='phas_imm',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'phas'),
+
+   ('exeaddrsrc', 'exeaddrsrc'),
+   ('end', 'phas_end'),
+   ('type', 'phas_type', 'imm'),
+
+   ('rate', 'phas_rate'),
+   ('commontmp', 'commontmp'),
+])
+
+I_SETL = bit_struct(
+name='setl',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'setl'),
+
+   ('rsvd0', 'rsvd0_setl'),
+   ('ressel', 'ressel'),
+])
+
+I_VISTEST_DEPTHF = bit_struct(
+name='vistest_depthf',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'vistest'),
+
+   ('rsvd0', 'rsvd0_vistest'),
+   ('pwen', 'pwen_vistest', 0),
+   ('vistest_op', 'vistest_op', 'depthf'),
+   ('ifb', 'ifb', 0),
+])
+
+I_VISTEST_ATST = bit_struct(
+name='vistest_atst',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'vistest'),
+
+   ('rsvd0', 'rsvd0_vistest'),
+   ('pwen', 'pwen_vistest'),
+   ('vistest_op', 'vistest_op', 'atst'),
+   ('ifb', 'ifb'),
+])
+
+I_FITR = bit_struct(
+name='fitr',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'fitr'),
+
+   ('p', 'p_fitr'),
+   ('drc', 'drc'),
+   ('rsvd0', 'rsvd0_fitr'),
+   ('iter_mode', 'iter_mode'),
+
+   ('rsvd1', 'rsvd1_fitr'),
+   ('sat', 'sat_fitr'),
+   ('count', 'count_fitr'),
+
+])
+
+I_EMITPIX = bit_struct(
+name='emitpix',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'emit'),
+
+   ('rsvd0', 'rsvd0_emitpix'),
+   ('freep', 'freep'),
+   ('rsvd0_', 'rsvd0_emitpix_'),
+])
+
+I_IDF = bit_struct(
+name='idf',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('rsvd0', 'rsvd0_dma'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'idf'),
+
+   ('rsvd1', 'rsvd1'),
+   ('srcseladd', 'srcsel'),
+])
+
+I_LD_IMMBL = bit_struct(
+name='ld_immbl',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('immbl', 'immbl', 1),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'ld'),
+
+   ('srcseladd', 'srcseladd_ldst'),
+   ('burstlen', 'burstlen'),
+   ('cachemode_ld', 'cachemode_ld'),
+
+   ('rsvd2', 'rsvd2_ld'),
+])
+
+I_LD_REGBL = bit_struct(
+name='ld_regbl',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('immbl', 'immbl', 0),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'ld'),
+
+   ('srcseladd', 'srcseladd_ldst'),
+   ('srcselbl', 'srcselbl_ldst'),
+   ('cachemode_ld', 'cachemode_ld'),
+])
+
+I_ST_IMMBL = bit_struct(
+name='st_immbl',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('immbl', 'immbl', 1),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'st'),
+
+   ('srcseladd', 'srcseladd_ldst'),
+   ('burstlen', 'burstlen'),
+   ('cachemode_st', 'cachemode_st'),
+
+   ('tiled', 'tiled', 0),
+   ('srcseldata', 'srcseldata'),
+   ('dsize', 'dsize'),
+   ('rsvd2', 'rsvd2_st'),
+])
+
+I_ST_REGBL = bit_struct(
+name='st_regbl',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('immbl', 'immbl', 0),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'st'),
+
+   ('srcseladd', 'srcseladd_ldst'),
+   ('srcselbl', 'srcselbl_ldst'),
+   ('cachemode_st', 'cachemode_st'),
+
+   ('tiled', 'tiled', 0),
+   ('srcseldata', 'srcseldata'),
+   ('dsize', 'dsize'),
+   ('rsvd2', 'rsvd2_st'),
+   ('rsvd2_', 'rsvd2_st_'),
+])
+
+I_ST_IMMBL_TILED = bit_struct(
+name='st_immbl_tiled',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('immbl', 'immbl', 1),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'st'),
+
+   ('srcseladd', 'srcseladd_ldst'),
+   ('burstlen', 'burstlen'),
+   ('cachemode_st', 'cachemode_st'),
+
+   ('tiled', 'tiled', 1),
+   ('srcseldata', 'srcseldata'),
+   ('dsize', 'dsize'),
+   ('rsvd2', 'rsvd2_st'),
+
+   ('rsvd3', 'rsvd3_st'),
+   ('srcmask', 'srcmask'),
+])
+
+I_ST_REGBL_TILED = bit_struct(
+name='st_regbl_tiled',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('immbl', 'immbl', 0),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'st'),
+
+   ('srcseladd', 'srcseladd_ldst'),
+   ('srcselbl', 'srcselbl_ldst'),
+   ('cachemode_st', 'cachemode_st'),
+
+   ('tiled', 'tiled', 1),
+   ('srcseldata', 'srcseldata'),
+   ('dsize', 'dsize'),
+   ('rsvd2', 'rsvd2_st'),
+   ('rsvd2_', 'rsvd2_st_'),
+
+   ('rsvd3', 'rsvd3_st'),
+   ('srcmask', 'srcmask'),
+])
+
+I_SMP_BRIEF = bit_struct(
+name='smp_brief',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('fcnorm', 'fcnorm'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'smp'),
+
+   ('extb', 'extb', 0),
+   ('dmn', 'dmn'),
+   ('exta', 'exta', 0),
+   ('chan', 'chan'),
+   ('lodm', 'lodm'),
+])
+
+I_SMP_EXTA = bit_struct(
+name='smp_exta',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('fcnorm', 'fcnorm'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'smp'),
+
+   ('extb', 'extb', 0),
+   ('dmn', 'dmn'),
+   ('exta', 'exta', 1),
+   ('chan', 'chan'),
+   ('lodm', 'lodm'),
+
+   ('pplod', 'pplod'),
+   ('proj', 'proj'),
+   ('sbmode', 'sbmode'),
+   ('nncoords', 'nncoords'),
+   ('sno', 'sno'),
+   ('soo', 'soo'),
+   ('tao', 'tao'),
+])
+
+I_SMP_EXTB = bit_struct(
+name='smp_extb',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('fcnorm', 'fcnorm'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'smp'),
+
+   ('extb', 'extb', 1),
+   ('dmn', 'dmn'),
+   ('exta', 'exta', 0),
+   ('chan', 'chan'),
+   ('lodm', 'lodm'),
+
+   ('rsvd3', 'rsvd3_smp'),
+   ('f16', 'f16'),
+   ('swap', 'swap'),
+   ('cachemode_ld', 'cachemode_smp_ld'),
+   ('w', 'smp_w', 0),
+])
+
+I_SMP_EXTB_W = bit_struct(
+name='smp_extb_w',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('fcnorm', 'fcnorm'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'smp'),
+
+   ('extb', 'extb', 1),
+   ('dmn', 'dmn'),
+   ('exta', 'exta', 0),
+   ('chan', 'chan'),
+   ('lodm', 'lodm'),
+
+   ('rsvd3', 'rsvd3_smp'),
+   ('f16', 'f16'),
+   ('swap', 'swap'),
+   ('cachemode_st', 'cachemode_smp_st'),
+   ('w', 'smp_w', 1),
+])
+
+I_SMP_EXTAB = bit_struct(
+name='smp_extab',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('fcnorm', 'fcnorm'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'smp'),
+
+   ('extb', 'extb', 1),
+   ('dmn', 'dmn'),
+   ('exta', 'exta', 1),
+   ('chan', 'chan'),
+   ('lodm', 'lodm'),
+
+   ('pplod', 'pplod'),
+   ('proj', 'proj'),
+   ('sbmode', 'sbmode'),
+   ('nncoords', 'nncoords'),
+   ('sno', 'sno'),
+   ('soo', 'soo'),
+   ('tao', 'tao'),
+
+   ('rsvd3', 'rsvd3_smp'),
+   ('f16', 'f16'),
+   ('swap', 'swap'),
+   ('cachemode_ld', 'cachemode_smp_ld'),
+   ('w', 'smp_w', 0),
+])
+
+I_SMP_EXTAB_W = bit_struct(
+name='smp_extab_w',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('fcnorm', 'fcnorm'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'smp'),
+
+   ('extb', 'extb', 1),
+   ('dmn', 'dmn'),
+   ('exta', 'exta', 1),
+   ('chan', 'chan'),
+   ('lodm', 'lodm'),
+
+   ('pplod', 'pplod'),
+   ('proj', 'proj'),
+   ('sbmode', 'sbmode'),
+   ('nncoords', 'nncoords'),
+   ('sno', 'sno'),
+   ('soo', 'soo'),
+   ('tao', 'tao'),
+
+   ('rsvd3', 'rsvd3_smp'),
+   ('f16', 'f16'),
+   ('swap', 'swap'),
+   ('cachemode_st', 'cachemode_smp_st'),
+   ('w', 'smp_w', 1),
+])
+
+I_ATOMIC = bit_struct(
+name='atomic',
+bit_set=I_BACKEND,
+field_mappings=[
+   ('backend_op', 'backend_op', 'dma'),
+
+   ('rsvd0', 'rsvd0_dma'),
+   ('drc', 'drc'),
+   ('dma_op', 'dma_op', 'atomic'),
+
+   ('atomic_op', 'atomic_op'),
+   ('rsvd1', 'rsvd1_atomic'),
+   ('srcsel', 'srcsel'),
+
+   ('rsvd2', 'rsvd2_atomic'),
+   ('dstsel', 'dstsel'),
+])

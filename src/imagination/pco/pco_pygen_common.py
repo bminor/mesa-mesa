@@ -125,7 +125,6 @@ def field_type(name, *args, **kwargs):
    assert name not in field_types.keys(), f'Duplicate field type "{name}".'
    t = type(name, *args, **kwargs)
    field_types[name] = t
-   assert len(field_types) <= 64, 'Too many field types!'
    return t
 
 def field_enum_type(name, *args, **kwargs):
@@ -133,7 +132,6 @@ def field_enum_type(name, *args, **kwargs):
    t = enum_type(name, *args, **kwargs)
    field_types[name] = t
    field_enum_types[name] = enums[name]
-   assert len(field_types) <= 64, 'Too many field types!'
    return t
 
 def field_enum_subtype(name, *args, **kwargs):
@@ -141,7 +139,6 @@ def field_enum_subtype(name, *args, **kwargs):
    t = enum_subtype(name, *args, **kwargs)
    field_types[name] = t
    field_enum_types[name] = enums[name]
-   assert len(field_types) <= 64, 'Too many field types!'
    return t
 
 op_mods = {}
@@ -150,7 +147,7 @@ def op_mod(name, *args, **kwargs):
    assert name not in op_mods.keys(), f'Duplicate op mod "{name}".'
    t = type(name, *args, **kwargs)
    op_mods[name] = t
-   assert len(op_mods) <= 64, 'Too many op mods!'
+   assert len(op_mods) <= 64, f'Too many op mods ({len(op_mods)})!'
    return t
 
 def op_mod_enum(name, *args, **kwargs):
@@ -158,7 +155,7 @@ def op_mod_enum(name, *args, **kwargs):
    t = enum_type(name, *args, **kwargs)
    op_mods[name] = t
    op_mod_enums[name] = enums[name]
-   assert len(op_mods) <= 64, 'Too many op mods!'
+   assert len(op_mods) <= 64, f'Too many op mods ({len(op_mods)})!'
    return t
 
 ref_mods = {}
@@ -167,7 +164,7 @@ def ref_mod(name, *args, **kwargs):
    assert name not in ref_mods.keys(), f'Duplicate ref mod "{name}".'
    t = type(name, *args, **kwargs)
    ref_mods[name] = t
-   assert len(ref_mods) <= 64, 'Too many ref mods!'
+   assert len(ref_mods) <= 64, f'Too many ref mods ({len(ref_mods)})!'
    return t
 
 def ref_mod_enum(name, *args, **kwargs):
@@ -175,7 +172,7 @@ def ref_mod_enum(name, *args, **kwargs):
    t = enum_type(name, *args, **kwargs)
    ref_mods[name] = t
    ref_mod_enums[name] = enums[name]
-   assert len(ref_mods) <= 64, 'Too many ref mods!'
+   assert len(ref_mods) <= 64, f'Too many ref mods ({len(ref_mods)})!'
    return t
 
 # Bit encoding definition helpers.
