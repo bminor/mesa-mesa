@@ -22,7 +22,8 @@ libpowervr_compiler = static_library(
     inc_compiler,
     inc_src,
   ],
-  c_args : [imagination_c_args, no_override_init_args],
+  # Suppress 'parameter passing for argument of type ... changed in GCC ...' warnings.
+  c_args : [imagination_c_args, no_override_init_args, '-Wno-psabi'],
   dependencies : [idep_mesautil, idep_nir],
   gnu_symbol_visibility : 'hidden',
   install : false,
