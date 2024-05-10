@@ -35,6 +35,19 @@ enum ${enum.name} {
 };
 
 % endfor
+/** Enum validation. */
+% for enum in enums.values():
+static bool ${enum.name}_valid(uint64_t val)
+{
+   % if enum.is_bitset:
+   return !(val & ~(${enum.valid}ULL));
+   % else:
+   return ${' || '.join([f'val == {val}' for val in enum.valid])};
+   % endif
+}
+
+% endfor
+/** Bit set variants. */
 % for bit_set in bit_sets.values():
 enum ${bit_set.name}_variant {
    % for variant in bit_set.variants:

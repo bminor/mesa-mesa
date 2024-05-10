@@ -47,8 +47,9 @@ def type(name, base_type, num_bits=None, dec_bits=None, check=None, encode=None,
 
 # Enum types.
 class EnumType(object):
-   def __init__(self, name, elems, valid, unique_count, is_bitset, parent):
+   def __init__(self, name, ename, elems, valid, unique_count, is_bitset, parent):
       self.name = name
+      self.ename = ename
       self.elems = elems
       self.valid = valid
       self.unique_count = unique_count
@@ -97,7 +98,7 @@ def enum_type(name, elems, is_bitset=False, num_bits=None, *args, **kwargs):
    _name = f'{prefix}_{name}'
    _valid = _valid_valmask if is_bitset else _valid_vals
    _unique_count = bin(_valid_valmask).count('1') if is_bitset else len(_valid_vals)
-   enum = EnumType(_name, _elems, _valid, _unique_count, is_bitset, parent=None)
+   enum = EnumType(_name, name, _elems, _valid, _unique_count, is_bitset, parent=None)
    enums[name] = enum
 
    return type(name, BaseType.enum, num_bits, *args, **kwargs, enum=enum)
@@ -110,7 +111,9 @@ def enum_subtype(name, parent, num_bits):
    assert parent.num_bits is not None and parent.num_bits > num_bits
 
    _name = f'{prefix}_{name}'
-   enum = EnumType(_name, None, None, None, False, parent)
+   # Validation of subtype - values that will fit in the smaller bit size.
+   _valid = {val for val in parent.enum.valid if val_fits_in_bits(val, num_bits)}
+   enum = EnumType(_name, name, None, _valid, None, False, parent)
    enums[name] = enum
    return type(name, BaseType.enum, num_bits, enum=enum)
 
@@ -197,13 +200,17 @@ def bit_piece(name, byte, bit_range):
    return BitPiece(name, byte, hi_bit, lo_bit, _num_bits)
 
 class BitField(object):
-   def __init__(self, name, field_type, pieces, reserved):
+   def __init__(self, name, cname, field_type, pieces, reserved, validate, encoding, encoded_bits):
       self.name = name
+      self.cname = cname
       self.field_type = field_type
       self.pieces = pieces
       self.reserved = reserved
+      self.validate = validate
+      self.encoding = encoding
+      self.encoded_bits = encoded_bits
 
-def bit_field(name, bit_set_pieces, field_type, pieces, reserved=None):
+def bit_field(bit_set_name, name, bit_set_pieces, field_type, pieces, reserved=None):
    _pieces = [bit_set_pieces[p] for p in pieces]
 
    total_bits = sum([p.num_bits for p in _pieces])
@@ -212,7 +219,26 @@ def bit_field(name, bit_set_pieces, field_type, pieces, reserved=None):
    if reserved is not None:
       assert val_fits_in_bits(reserved, total_bits), f'Reserved value for bit field {name} is too large.'
 
-   return BitField(name, field_type, _pieces, reserved)
+   cname = f'{bit_set_name}_{name}'.upper()
+   if field_type.base_type == BaseType.enum:
+      validate = f'{prefix}_{field_type.enum.ename}_valid({{}})'
+   else:
+      validate = f'{{}} < (1ULL << {field_type.num_bits})'
+
+   encoding = []
+   bits_consumed = 0
+   for i, piece in enumerate(reversed(_pieces)):
+      enc_clear = f'{{}}[{piece.byte}] &= {hex((((1 << piece.num_bits) - 1) << piece.lo_bit) ^ 0xff)}'
+
+      enc_set = f'{{}}[{piece.byte}] |= ('
+      enc_set += f'({{}} >> {bits_consumed})' if bits_consumed > 0 else '{}'
+      enc_set += f' & {hex((1 << piece.num_bits) - 1)})'
+      enc_set += f' << {piece.lo_bit}' if piece.lo_bit > 0 else ''
+      encoding.append((enc_clear, enc_set))
+
+      bits_consumed += piece.num_bits
+
+   return BitField(name, cname, field_type, _pieces, reserved, validate, encoding, bits_consumed)
 
 class BitSet(object):
    def __init__(self, name, pieces, fields):
@@ -226,6 +252,7 @@ bit_sets = {}
 
 def bit_set(name, pieces, fields):
    assert name not in bit_sets.keys(), f'Duplicate bit set "{name}".'
+   _name = f'{prefix}_{name}'
 
    _pieces = {}
    for (piece, spec) in pieces:
@@ -235,23 +262,25 @@ def bit_set(name, pieces, fields):
    _fields = {}
    for (field, spec) in fields:
       assert field not in _fields.keys(), f'Duplicate bit field "{n}" in bit set "{name}".'
-      _fields[field] = bit_field(field, _pieces, *spec)
+      _fields[field] = bit_field(_name, field, _pieces, *spec)
 
-   _name = f'{prefix}_{name}'
    bs = BitSet(_name, _pieces, _fields)
    bit_sets[name] = bs
    return bs
 
 class BitStruct(object):
-   def __init__(self, name, struct_fields, num_bytes):
+   def __init__(self, name, struct_fields, encode_fields, num_bytes, data):
       self.name = name
       self.struct_fields = struct_fields
+      self.encode_fields = encode_fields
       self.num_bytes = num_bytes
+      self.data = data
 
-def bit_struct(name, bit_set, field_mappings):
+def bit_struct(name, bit_set, field_mappings, data=None):
    assert name not in bit_set.bit_structs.keys(), f'Duplicate bit struct "{name}" in bit set "{bit_set.name}".'
 
    struct_fields = {}
+   encode_fields = []
    all_pieces = []
    total_bits = 0
    for mapping in field_mappings:
@@ -277,7 +306,7 @@ def bit_struct(name, bit_set, field_mappings):
          if is_enum and isinstance(fixed_value, str):
             enum = field_type.enum
             assert fixed_value in enum.elems.keys(), f'Fixed value for field mapping "{struct_field}" using field "{_field}" is not an element of enum {field_type.name}.'
-            fixed_value = f'{prefix}_{field_type.name}_{fixed_value}'.upper()
+            fixed_value = enum.elems[fixed_value][0].upper()
          else:
             if isinstance(fixed_value, bool):
                fixed_value = int(fixed_value)
@@ -288,6 +317,17 @@ def bit_struct(name, bit_set, field_mappings):
       all_pieces.extend([(piece.lo_bit + (8 * piece.byte), piece.hi_bit + (8 * piece.byte), piece.name) for piece in field.pieces])
       total_bits += field_type.num_bits
 
+      # Describe how to encode the bit struct.
+      encode_field = f'{bit_set.name}_{_field}'.upper()
+      if fixed_value is not None:
+         encode_value = fixed_value
+      elif field.reserved is not None:
+         encode_value = field.reserved
+      else:
+         encode_value = f's.{struct_field}'
+      encode_fields.append((encode_field, encode_value))
+
+      # Describe settable fields.
       if field.reserved is None and fixed_value is None:
          # Use parent enum for struct fields.
          if is_enum and field_type.enum.parent is not None:
@@ -307,7 +347,7 @@ def bit_struct(name, bit_set, field_mappings):
    assert (total_bits % 8) == 0, f'Bit struct "{name}" has a non-byte-aligned number of bits ({total_bits}).'
 
    _name = f'{bit_set.name}_{name}'
-   bs = BitStruct(_name, struct_fields, total_bits // 8)
+   bs = BitStruct(_name, struct_fields, encode_fields, total_bits // 8, data)
    bit_set.bit_structs[name] = bs
    bit_set.variants.append(f'{bit_set.name}_{name}'.upper())
 
