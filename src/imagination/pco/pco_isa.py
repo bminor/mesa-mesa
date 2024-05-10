@@ -474,3 +474,135 @@ field_mappings=[
    ('s2', 'sC_11bit_b5'),
    ('is0', 'mux_3bit_b4'),
 ], data=(3, 11, 2, 8, 3, 11, 3))
+
+# Upper sources.
+I_ONE_UP_1B6I = bit_struct(
+name='1up_1b6i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 0),
+
+   ('sb3', 'sbA_1bit_b0'),
+   ('s3', 'sA_6bit_b0'),
+], data=(1, 6, 0, 0, 0, 0))
+
+I_ONE_UP_3B11I = bit_struct(
+name='1up_3b11i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('sel', 'sel', 0),
+   ('ext1', 'ext1', 0),
+   ('rsvd1', 'mux_2bit_b1', 0),
+   ('rsvd2', 'rsvd2'),
+
+   ('sb3', 'sbA_3bit_b1'),
+   ('s3', 'sA_11bit_b2'),
+], data=(3, 11, 0, 0, 0, 0))
+
+I_TWO_UP_1B6I_1B5I = bit_struct(
+name='2up_1b6i_1b5i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('sel', 'sel', 1),
+   ('ext1', 'ext1', 0),
+
+   ('sb3', 'sbA_1bit_b0'),
+   ('s3', 'sA_6bit_b0'),
+   ('sb4', 'sbB_1bit_b1'),
+   ('s4', 'sB_5bit_b1'),
+], data=(1, 6, 1, 5, 0, 0))
+
+I_TWO_UP_2B7I_2B7I = bit_struct(
+name='2up_2b7i_2b7i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('sel', 'sel', 1),
+   ('ext1', 'ext1', 1),
+   ('ext2', 'ext2', 0),
+   ('rsvd2', 'mux_2bit_b2', 0),
+
+   ('sb3', 'sbA_2bit_b2'),
+   ('s3', 'sA_7bit_b2'),
+   ('sb4', 'sbB_2bit_b2'),
+   ('s4', 'sB_7bit_b2'),
+], data=(2, 7, 2, 7, 0, 0))
+
+I_TWO_UP_3B11I_2B8I = bit_struct(
+name='2up_3b11i_2b8i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('sel', 'sel', 1),
+   ('ext1', 'ext1', 1),
+   ('ext2', 'ext2', 1),
+   ('rsvd3', 'rsvd3'),
+   ('rsvd3_', 'mux_3bit_b3', 0),
+
+   ('sb3', 'sbA_3bit_b3'),
+   ('s3', 'sA_11bit_b3'),
+   ('sb4', 'sbB_2bit_b2'),
+   ('s4', 'sB_8bit_b3'),
+], data=(3, 11, 2, 8, 0, 0))
+
+I_THREE_UP_2B7I_2B7I_2B6I = bit_struct(
+name='3up_2b7i_2b7i_2b6i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('sel', 'sel', 0),
+   ('ext1', 'ext1', 1),
+   ('ext2', 'ext2', 0),
+   ('rsvd2', 'mux_2bit_b2', 0),
+
+   ('sb3', 'sbA_2bit_b2'),
+   ('s3', 'sA_7bit_b2'),
+   ('sb4', 'sbB_2bit_b2'),
+   ('s4', 'sB_7bit_b2'),
+   ('sb5', 'sbC_2bit_b3'),
+   ('s5', 'sC_6bit_b3'),
+], data=(2, 7, 2, 7, 2, 6))
+
+I_THREE_UP_3B8I_2B8I_2B8I = bit_struct(
+name='3up_3b8i_2b8i_2b8i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('sel', 'sel', 0),
+   ('ext1', 'ext1', 1),
+   ('ext2', 'ext2', 1),
+   ('ext4', 'ext4', 0),
+   ('rsvd4', 'mux_3bit_b4', 0),
+   ('rsvd4_', 'rsvd4'),
+
+   ('sb3', 'sbA_3bit_b4'),
+   ('s3', 'sA_8bit_b4'),
+   ('sb4', 'sbB_2bit_b2'),
+   ('s4', 'sB_8bit_b4'),
+   ('sb5', 'sbC_2bit_b3'),
+   ('s5', 'sC_8bit_b4'),
+], data=(3, 8, 2, 8, 2, 8))
+
+I_THREE_UP_3B11I_2B8I_2B8I = bit_struct(
+name='3up_3b11i_2b8i_2b8i',
+bit_set=I_SRC,
+field_mappings=[
+   ('ext0', 'ext0', 1),
+   ('sel', 'sel', 0),
+   ('ext1', 'ext1', 1),
+   ('ext2', 'ext2', 1),
+   ('ext4', 'ext4', 1),
+   ('rsvd4', 'mux_3bit_b4', 0),
+   ('rsvd4_', 'rsvd4'),
+   ('rsvd5', 'rsvd5'),
+   ('rsvd5_', 'rsvd5_'),
+
+   ('sb3', 'sbA_3bit_b4'),
+   ('s3', 'sA_11bit_b5'),
+   ('sb4', 'sbB_2bit_b2'),
+   ('s4', 'sB_8bit_b4'),
+   ('sb5', 'sbC_2bit_b3'),
+   ('s5', 'sC_8bit_b4'),
+], data=(3, 11, 2, 8, 2, 8))
