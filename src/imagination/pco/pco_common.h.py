@@ -35,15 +35,17 @@ enum ${enum.name} {
 };
 
 % endfor
-/** Sub-enums. */
-% for enum in [enum for enum in enums.values() if enum.parent is not None]:
-#define ${enum.name} ${enum.parent.name}
+% for bit_set in bit_sets.values():
+enum ${bit_set.name}_variant {
+   % for variant in bit_set.variants:
+   ${variant},
+   % endfor
+};
 % endfor
-
 #endif /* PCO_COMMON_H */"""
 
 def main():
-   print(Template(template).render(enums=enums))
+   print(Template(template).render(enums=enums, bit_sets=bit_sets))
 
 if __name__ == '__main__':
    main()
