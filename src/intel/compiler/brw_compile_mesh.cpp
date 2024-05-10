@@ -354,6 +354,8 @@ brw_compile_task(const struct brw_compiler *compiler,
    struct brw_task_prog_data *prog_data = params->prog_data;
    const bool debug_enabled = brw_should_print_shader(nir, DEBUG_TASK, params->base.source_hash);
 
+   brw_debug_archive_nir(params->base.archiver, nir, 0, "first");
+
    brw_nir_lower_tue_outputs(nir, &prog_data->map);
 
    NIR_PASS(_, nir, brw_nir_align_launch_mesh_workgroups);
@@ -388,6 +390,8 @@ brw_compile_task(const struct brw_compiler *compiler,
       .required_width = brw_required_dispatch_width(&nir->info),
    };
 
+   brw_debug_archive_nir(params->base.archiver, nir, 0, "before-simd");
+
    std::unique_ptr<brw_shader> v[3];
 
    for (unsigned i = 0; i < 3; i++) {
@@ -401,9 +405,12 @@ brw_compile_task(const struct brw_compiler *compiler,
       nir_shader *shader = nir_shader_clone(params->base.mem_ctx, nir);
       brw_nir_apply_key(shader, compiler, &key->base, dispatch_width);
 
+      brw_debug_archive_nir(params->base.archiver, shader, dispatch_width, "first");
+
       NIR_PASS(_, shader, brw_nir_lower_simd, dispatch_width);
 
-      brw_postprocess_nir(shader, compiler, debug_enabled,
+      brw_postprocess_nir(shader, compiler, dispatch_width,
+                          params->base.archiver, debug_enabled,
                           key->base.robust_flags);
 
       const brw_shader_params shader_params = {
@@ -1164,6 +1171,8 @@ brw_compile_mesh(const struct brw_compiler *compiler,
    struct brw_mesh_prog_data *prog_data = params->prog_data;
    const bool debug_enabled = brw_should_print_shader(nir, DEBUG_MESH, params->base.source_hash);
 
+   brw_debug_archive_nir(params->base.archiver, nir, 0, "first");
+
    brw_prog_data_init(&prog_data->base.base, &params->base);
 
    prog_data->base.local_size[0] = nir->info.workgroup_size[0];
@@ -1233,6 +1242,8 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    std::unique_ptr<brw_shader> v[3];
 
+   brw_debug_archive_nir(params->base.archiver, nir, 0, "before-simd");
+
    for (unsigned i = 0; i < 3; i++) {
       const unsigned simd = devinfo->ver >= 30 ? 2 - i : i;
 
@@ -1242,6 +1253,8 @@ brw_compile_mesh(const struct brw_compiler *compiler,
       const unsigned dispatch_width = 8 << simd;
 
       nir_shader *shader = nir_shader_clone(params->base.mem_ctx, nir);
+
+      brw_debug_archive_nir(params->base.archiver, shader, dispatch_width, "first");
 
       /*
        * When Primitive Header is enabled, we may not generates writes to all
@@ -1258,7 +1271,8 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
       NIR_PASS(_, shader, brw_nir_lower_simd, dispatch_width);
 
-      brw_postprocess_nir(shader, compiler, debug_enabled,
+      brw_postprocess_nir(shader, compiler, dispatch_width,
+                          params->base.archiver, debug_enabled,
                           key->base.robust_flags);
 
       const brw_shader_params shader_params = {

@@ -246,6 +246,8 @@ brw_compile_vs(const struct brw_compiler *compiler,
     */
    assert(!key->no_vf_slot_compaction || key->vf_component_packing);
 
+   brw_debug_archive_nir(params->base.archiver, nir, dispatch_width, "first");
+
    brw_prog_data_init(&prog_data->base.base, &params->base);
 
    /* When using Primitive Replication for multiview, each view gets its own
@@ -277,7 +279,8 @@ brw_compile_vs(const struct brw_compiler *compiler,
    if (key->vf_component_packing)
       nr_packed_regs = brw_nir_pack_vs_input(nir, prog_data);
 
-   brw_postprocess_nir(nir, compiler, debug_enabled,
+   brw_postprocess_nir(nir, compiler, dispatch_width,
+                       params->base.archiver, debug_enabled,
                        key->base.robust_flags);
 
    const bool has_clip_cull_dist =

@@ -234,6 +234,8 @@ bool brw_nir_lower_simd(nir_shader *nir, unsigned dispatch_width);
 
 void brw_postprocess_nir(nir_shader *nir,
                          const struct brw_compiler *compiler,
+                         unsigned dispatch_width,
+                         debug_archiver *archiver,
                          bool debug_enabled,
                          enum brw_robustness_flags robust_flags);
 

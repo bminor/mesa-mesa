@@ -84,7 +84,11 @@ compile_single_bs(const struct brw_compiler *compiler,
    const unsigned required_width = compiler->devinfo->ver >= 20 ? 16u : 8u;
 
    brw_nir_apply_key(shader, compiler, &key->base, required_width);
-   brw_postprocess_nir(shader, compiler, debug_enabled,
+
+   brw_debug_archive_nir(params->base.archiver, shader, required_width, "first");
+
+   brw_postprocess_nir(shader, compiler, required_width,
+                       params->base.archiver, debug_enabled,
                        key->base.robust_flags);
 
    const brw_shader_params shader_params = {

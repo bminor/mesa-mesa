@@ -1499,6 +1499,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
    const unsigned max_subgroup_size = 32;
    unsigned max_polygons = MAX2(1, params->max_polygons);
 
+   brw_debug_archive_nir(params->base.archiver, nir, 0, "first");
+
    brw_nir_apply_key(nir, compiler, &key->base, max_subgroup_size);
 
    if (brw_nir_fragment_shader_needs_wa_18019110168(devinfo, key->mesh_input, nir)) {
@@ -1556,8 +1558,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
       NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_fs_msaa_intel, f);
    }
 
-   brw_postprocess_nir(nir, compiler, debug_enabled,
-                       key->base.robust_flags);
+   brw_postprocess_nir(nir, compiler, 0, params->base.archiver,
+                       debug_enabled, key->base.robust_flags);
 
    int per_primitive_offsets[VARYING_SLOT_MAX];
    memset(per_primitive_offsets, -1, sizeof(per_primitive_offsets));

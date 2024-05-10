@@ -23,6 +23,7 @@
 
 #include "intel_nir.h"
 #include "brw_nir.h"
+#include "brw_private.h"
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
 #include "dev/intel_debug.h"
@@ -2122,6 +2123,8 @@ nir_shader_has_local_variables(const nir_shader *nir)
  */
 void
 brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
+                    unsigned dispatch_width,
+                    debug_archiver *archiver,
                     bool debug_enabled,
                     enum brw_robustness_flags robust_flags)
 {
@@ -2368,15 +2371,20 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
 
    OPT(nir_lower_locals_to_regs, 32);
 
-   if (unlikely(debug_enabled)) {
+   if (unlikely(debug_enabled || archiver)) {
       /* Re-index SSA defs so we print more sensible numbers. */
       nir_foreach_function_impl(impl, nir) {
          nir_index_ssa_defs(impl);
       }
 
-      fprintf(stderr, "NIR (SSA form) for %s shader:\n",
-              _mesa_shader_stage_to_string(nir->info.stage));
-      nir_print_shader(nir, stderr);
+      if (debug_enabled) {
+         fprintf(stderr, "NIR (SSA form) for %s shader:\n",
+                 _mesa_shader_stage_to_string(nir->info.stage));
+         nir_print_shader(nir, stderr);
+      }
+
+      if (unlikely(archiver))
+         brw_debug_archive_nir(archiver, nir, dispatch_width, "ssa");
    }
 
    nir_validate_ssa_dominance(nir, "before nir_convert_from_ssa");
@@ -2412,6 +2420,9 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
               _mesa_shader_stage_to_string(nir->info.stage));
       nir_print_shader(nir, stderr);
    }
+
+   if (unlikely(archiver))
+      brw_debug_archive_nir(archiver, nir, dispatch_width, "out");
 }
 
 static unsigned

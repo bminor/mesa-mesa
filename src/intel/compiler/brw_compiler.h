@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include "c11/threads.h"
 #include "dev/intel_device_info.h"
+#include "mda/debug_archiver.h"
 #include "isl/isl.h"
 #include "mda/debug_archiver.h"
 #include "util/macros.h"
