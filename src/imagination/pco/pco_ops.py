@@ -21,27 +21,27 @@ REF_TYPE = enum_type('ref_type', [
 ])
 
 # Ref mods.
-R_ONEMINUS = ref_mod('oneminus', BaseType.bool)
-R_CLAMP = ref_mod('clamp', BaseType.bool)
-R_ABS = ref_mod('abs', BaseType.bool)
-R_NEG = ref_mod('neg', BaseType.bool)
-R_FLR = ref_mod('flr', BaseType.bool)
+RM_ONEMINUS = ref_mod('oneminus', BaseType.bool)
+RM_CLAMP = ref_mod('clamp', BaseType.bool)
+RM_ABS = ref_mod('abs', BaseType.bool)
+RM_NEG = ref_mod('neg', BaseType.bool)
+RM_FLR = ref_mod('flr', BaseType.bool)
 
-R_ELEM = ref_mod_enum('elem', [
+RM_ELEM = ref_mod_enum('elem', [
    'e0',
    'e1',
    'e2',
    'e3',
 ], is_bitset=True)
 
-R_DTYPE = ref_mod_enum('dtype', [
+RM_DTYPE = ref_mod_enum('dtype', [
    ('any', ''),
    ('unsigned', 'u'),
    ('signed', 'i'),
    ('float', 'f'),
 ])
 
-R_BITS = ref_mod_enum('bits', [
+RM_BITS = ref_mod_enum('bits', [
    ('any', ''),
    ('1', '1'),
    ('8', '8'),
@@ -50,7 +50,7 @@ R_BITS = ref_mod_enum('bits', [
    ('64', '64'),
 ])
 
-R_REG_CLASS = ref_mod_enum('reg_class', [
+RM_REG_CLASS = ref_mod_enum('reg_class', [
    ('virt', '$'),
    ('temp', 'r'),
    ('vtxin', 'vi'),
@@ -65,7 +65,7 @@ R_REG_CLASS = ref_mod_enum('reg_class', [
    ('slot', 'sl'),
 ])
 
-R_IO = ref_mod_enum('io', [
+RM_IO = ref_mod_enum('io', [
    ('s0', 's0'),
    ('s1', 's1'),
    ('s2', 's2'),
@@ -100,7 +100,7 @@ R_IO = ref_mod_enum('io', [
    ('cout', 'cout'),
 ])
 
-R_PRED = ref_mod_enum('pred', [
+RM_PRED = ref_mod_enum('pred', [
    ('pe', 'pe'),
    ('p0', 'p0'),
 
@@ -110,29 +110,29 @@ R_PRED = ref_mod_enum('pred', [
    ('p0_false', 'if(!p0)'),
 ])
 
-R_DRC = ref_mod_enum('drc', [
+RM_DRC = ref_mod_enum('drc', [
    ('pending', '?'),
    ('0', '0'),
    ('1', '1'),
 ])
 
 # Op mods.
-O_EXEC_CND = op_mod_enum('exec_cnd', [
+OM_EXEC_CND = op_mod_enum('exec_cnd', [
    ('e1_zx', ''),
    ('e1_z1', 'if(p0)'),
    ('ex_zx', '(ignorepe)'),
    ('e1_z0', 'if(!p0)'),
 ], print_early=True)
-O_RPT = op_mod('rpt', BaseType.uint, print_early=True, nzdefault=1)
-O_ATOM = op_mod('atom', BaseType.bool)
-O_END = op_mod('end', BaseType.bool)
-O_OLCHK = op_mod('olchk', BaseType.bool)
-O_SAT = op_mod('sat', BaseType.bool)
-O_LP = op_mod('lp', BaseType.bool)
-O_SCALE = op_mod('scale', BaseType.bool)
-O_ROUNDZERO = op_mod('roundzero', BaseType.bool)
-O_S = op_mod('s', BaseType.bool)
-O_TST_OP_MAIN = op_mod_enum('tst_op_main', [
+OM_RPT = op_mod('rpt', BaseType.uint, print_early=True, nzdefault=1)
+OM_ATOM = op_mod('atom', BaseType.bool)
+OM_END = op_mod('end', BaseType.bool)
+OM_OLCHK = op_mod('olchk', BaseType.bool)
+OM_SAT = op_mod('sat', BaseType.bool)
+OM_LP = op_mod('lp', BaseType.bool)
+OM_SCALE = op_mod('scale', BaseType.bool)
+OM_ROUNDZERO = op_mod('roundzero', BaseType.bool)
+OM_S = op_mod('s', BaseType.bool)
+OM_TST_OP_MAIN = op_mod_enum('tst_op_main', [
    ('zero', 'z'),
    ('gzero', 'gz'),
    ('gezero', 'gez'),
@@ -144,52 +144,52 @@ O_TST_OP_MAIN = op_mod_enum('tst_op_main', [
    ('less', 'l'),
    ('lequal', 'le'),
 ])
-O_TST_OP_BITWISE = op_mod_enum('tst_op_bitwise', [
+OM_TST_OP_BITWISE = op_mod_enum('tst_op_bitwise', [
    ('zero', 'z'),
    ('nonzero', 'nz'),
 ])
-O_SIGNPOS = op_mod_enum('signpos', [
+OM_SIGNPOS = op_mod_enum('signpos', [
    'twb',
    'pwb',
    'mtb',
    'ftb',
 ])
-O_DIM = op_mod('dim', BaseType.uint)
-O_PROJ = op_mod('proj', BaseType.bool)
-O_FCNORM = op_mod('fcnorm', BaseType.bool)
-O_NNCOORDS = op_mod('nncoords', BaseType.bool)
-O_LOD_MODE = op_mod_enum('lod_mode', [
+OM_DIM = op_mod('dim', BaseType.uint)
+OM_PROJ = op_mod('proj', BaseType.bool)
+OM_FCNORM = op_mod('fcnorm', BaseType.bool)
+OM_NNCOORDS = op_mod('nncoords', BaseType.bool)
+OM_LOD_MODE = op_mod_enum('lod_mode', [
    ('normal', ''),
    ('bias', '.bias'),
    ('replace', '.replace'),
    ('gradient', '.gradient'),
 ])
-O_PPLOD = op_mod('pplod', BaseType.bool)
-O_TAO = op_mod('tao', BaseType.bool)
-O_SOO = op_mod('soo', BaseType.bool)
-O_SNO = op_mod('sno', BaseType.bool)
-O_WRT = op_mod('wrt', BaseType.bool)
-O_SB_MODE = op_mod_enum('sb_mode', [
+OM_PPLOD = op_mod('pplod', BaseType.bool)
+OM_TAO = op_mod('tao', BaseType.bool)
+OM_SOO = op_mod('soo', BaseType.bool)
+OM_SNO = op_mod('sno', BaseType.bool)
+OM_WRT = op_mod('wrt', BaseType.bool)
+OM_SB_MODE = op_mod_enum('sb_mode', [
    ('none', ''),
    ('data', '.data'),
    ('info', '.info'),
    ('both', '.both'),
 ])
-O_ARRAY = op_mod('array', BaseType.bool)
-O_INTEGER = op_mod('integer', BaseType.bool)
-O_SCHEDSWAP = op_mod('schedswap', BaseType.bool)
-O_F16 = op_mod('f16', BaseType.bool)
-O_TILED = op_mod('tiled', BaseType.bool)
-O_FREEP = op_mod('freep', BaseType.bool)
-O_SM = op_mod('sm', BaseType.bool)
-O_SAVMSK_MODE = op_mod_enum('savmsk_mode', [
+OM_ARRAY = op_mod('array', BaseType.bool)
+OM_INTEGER = op_mod('integer', BaseType.bool)
+OM_SCHEDSWAP = op_mod('schedswap', BaseType.bool)
+OM_F16 = op_mod('f16', BaseType.bool)
+OM_TILED = op_mod('tiled', BaseType.bool)
+OM_FREEP = op_mod('freep', BaseType.bool)
+OM_SM = op_mod('sm', BaseType.bool)
+OM_SAVMSK_MODE = op_mod_enum('savmsk_mode', [
    'vm',
    'icm',
    'icmoc',
    'icmi',
    'caxy',
 ])
-O_ATOM_OP = op_mod_enum('atom_op', [
+OM_ATOM_OP = op_mod_enum('atom_op', [
    'add',
    'sub',
    'xchg',
@@ -201,23 +201,23 @@ O_ATOM_OP = op_mod_enum('atom_op', [
    'or',
    'xor',
 ])
-O_MCU_CACHE_MODE_LD = op_mod_enum('mcu_cache_mode_ld', [
+OM_MCU_CACHE_MODE_LD = op_mod_enum('mcu_cache_mode_ld', [
    ('normal', ''),
    ('bypass', '.bypass'),
    ('force_line_fill', '.forcelinefill'),
 ])
-O_MCU_CACHE_MODE_ST = op_mod_enum('mcu_cache_mode_st', [
+OM_MCU_CACHE_MODE_ST = op_mod_enum('mcu_cache_mode_st', [
    ('write_through', '.writethrough'),
    ('write_back', '.writeback'),
    ('lazy_write_back', '.lazywriteback'),
 ])
-O_BRANCH_CND = op_mod_enum('branch_cnd', [
+OM_BRANCH_CND = op_mod_enum('branch_cnd', [
    ('exec_cond', ''),
    ('allinst', '.allinst'),
    ('anyinst', '.anyinst'),
 ])
-O_LINK = op_mod('link', BaseType.bool)
-O_PCK_FMT = op_mod_enum('pck_fmt', [
+OM_LINK = op_mod('link', BaseType.bool)
+OM_PCK_FMT = op_mod_enum('pck_fmt', [
    'u8888',
    's8888',
    'o8888',
@@ -244,4 +244,9 @@ O_PCK_FMT = op_mod_enum('pck_fmt', [
    'zero',
    'one',
 ])
-O_PHASE2END = op_mod('phase2end', BaseType.bool)
+OM_PHASE2END = op_mod('phase2end', BaseType.bool)
+
+# HW ops
+O_NOP = hw_op('nop', [OM_EXEC_CND, OM_END])
+
+O_FADD = hw_op('fadd', [OM_LP, OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])

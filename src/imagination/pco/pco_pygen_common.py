@@ -146,34 +146,42 @@ op_mod_enums = {}
 def op_mod(name, *args, **kwargs):
    assert name not in op_mods.keys(), f'Duplicate op mod "{name}".'
    t = type(name, *args, **kwargs)
-   op_mods[name] = t
+   cname = f'{prefix}_op_mod_{name}'.upper()
+   ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
+   om = op_mods[name] = (t, cname, ctype)
    assert len(op_mods) <= 64, f'Too many op mods ({len(op_mods)})!'
-   return t
+   return om
 
 def op_mod_enum(name, *args, **kwargs):
    assert name not in op_mods.keys() and name not in op_mod_enums.keys(), f'Duplicate op mod enum "{name}".'
    t = enum_type(name, *args, **kwargs)
-   op_mods[name] = t
+   cname = f'{prefix}_op_mod_{name}'.upper()
+   ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
+   om = op_mods[name] = (t, cname, ctype)
    op_mod_enums[name] = enums[name]
    assert len(op_mods) <= 64, f'Too many op mods ({len(op_mods)})!'
-   return t
+   return om
 
 ref_mods = {}
 ref_mod_enums = {}
 def ref_mod(name, *args, **kwargs):
    assert name not in ref_mods.keys(), f'Duplicate ref mod "{name}".'
    t = type(name, *args, **kwargs)
-   ref_mods[name] = t
+   cname = f'{prefix}_ref_mod_{name}'.upper()
+   ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
+   rm = ref_mods[name] = (t, cname, ctype)
    assert len(ref_mods) <= 64, f'Too many ref mods ({len(ref_mods)})!'
-   return t
+   return rm
 
 def ref_mod_enum(name, *args, **kwargs):
    assert name not in ref_mods.keys() and name not in ref_mod_enums.keys(), f'Duplicate ref mod enum "{name}".'
    t = enum_type(name, *args, **kwargs)
-   ref_mods[name] = t
+   cname = f'{prefix}_ref_mod_{name}'.upper()
+   ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
+   rm = ref_mods[name] = (t, cname, ctype)
    ref_mod_enums[name] = enums[name]
    assert len(ref_mods) <= 64, f'Too many ref mods ({len(ref_mods)})!'
-   return t
+   return rm
 
 # Bit encoding definition helpers.
 
@@ -350,3 +358,42 @@ def bit_struct(name, bit_set, field_mappings, data=None):
    bit_set.variants.append((f'{bit_set.name}_{name}'.upper(), total_bytes))
 
    return bs
+
+# Op definitions.
+VARIABLE = ~0
+
+class Op(object):
+   def __init__(self, name, cname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node):
+      self.name = name
+      self.cname = cname
+      self.is_pseudo = is_pseudo
+      self.op_mods = op_mods
+      self.cop_mods = cop_mods
+      self.op_mod_map = op_mod_map
+      self.num_dests = num_dests
+      self.num_srcs = num_srcs
+      self.dest_mods = dest_mods
+      self.cdest_mods = cdest_mods
+      self.src_mods = src_mods
+      self.csrc_mods = csrc_mods
+      self.has_target_cf_node = has_target_cf_node
+
+ops = {}
+
+def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node):
+   assert name not in ops.keys(), f'Duplicate op "{name}".'
+
+   cname = f'{prefix}_op_{name}'.replace('.', '_')
+   cop_mods = 0 if not op_mods else ' | '.join([f'(1 << {mod[1]})' for mod in op_mods])
+   op_mod_map = {mod[1]: index + 1 for index, mod in enumerate(op_mods)}
+   cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1 << {mod[1]})' for mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
+   csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1 << {mod[1]})' for mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
+   op = Op(name, cname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node)
+   ops[name] = op
+   return op
+
+def pseudo_op(name, op_mods=[], num_dests=0, num_srcs=0, dest_mods=[], src_mods=[], has_target_cf_node=False):
+   return op(name, True, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)
+
+def hw_op(name, op_mods=[], num_dests=0, num_srcs=0, dest_mods=[], src_mods=[], has_target_cf_node=False):
+   return op(name, False, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)

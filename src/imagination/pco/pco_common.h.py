@@ -49,6 +49,7 @@ static bool ${enum.name}_valid(uint64_t val)
 % endfor
 /** Bit set variants. */
 % for bit_set in bit_sets.values():
+#define _${bit_set.name.upper()}_VARIANT_COUNT ${len(bit_set.variants) + 1}U
 enum ${bit_set.name}_variant {
    ${bit_set.name.upper()}_NONE,
    % for variant, *_ in bit_set.variants:

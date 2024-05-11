@@ -25,10 +25,41 @@ template = """/*
 #include <stdbool.h>
 #include <stdint.h>
 
+#define _PCO_OP_MAX_DESTS ${max([op.num_dests for op in ops.values()])}U
+#define _PCO_OP_MAX_SRCS ${max([op.num_srcs for op in ops.values()])}U
+#define _PCO_OP_MAX_MODS ${max([len(op.op_mods) for op in ops.values()])}U
+
+/** Ops. */
+#define _PCO_OP_COUNT ${len(ops) + 1}U
+enum pco_op {
+   PCO_OP_NONE,
+% for op in ops.values():
+   ${op.cname.upper()},
+% endfor
+};
+
+/** Op mods. */
+#define _PCO_OP_MOD_COUNT ${len(op_mods) + 1}U
+enum pco_op_mod {
+   PCO_OP_MOD_NONE,
+% for op_mod, cname, *_ in op_mods.values():
+   ${cname},
+% endfor
+};
+
+/** Ref mods. */
+#define _PCO_REF_MOD_COUNT ${len(ref_mods) + 1}U
+enum pco_ref_mod {
+   PCO_REF_MOD_NONE,
+% for ref_mod, cname, *_ in ref_mods.values():
+   ${cname},
+% endfor
+};
+
 #endif /* PCO_OPS_H */"""
 
 def main():
-   print(Template(template).render())
+   print(Template(template).render(ops=ops, op_mods=op_mods, ref_mods=ref_mods))
 
 if __name__ == '__main__':
    main()

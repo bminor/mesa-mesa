@@ -23,6 +23,15 @@ pco_common_h = custom_target(
   depend_files : pco_pygen_dep_files,
 )
 
+pco_info_c = custom_target(
+  'pco_info.c',
+  input : ['pco_info.c.py'],
+  output : 'pco_info.c',
+  command : [prog_python, '@INPUT@'],
+  capture : true,
+  depend_files : pco_pygen_dep_files,
+)
+
 pco_isa_h = custom_target(
   'pco_isa.h',
   input : ['pco_isa.h.py'],
@@ -44,13 +53,14 @@ pco_ops_h = custom_target(
 idep_pco_pygen = declare_dependency(
   sources : [
     pco_common_h,
+    pco_info_c,
     pco_isa_h,
     pco_ops_h,
   ],
   include_directories : inc_powervr_compiler,
 )
 
-pco_pygen_c_files = []
+pco_pygen_c_files = [pco_info_c]
 
 libpowervr_compiler = static_library(
   'powervr_compiler',

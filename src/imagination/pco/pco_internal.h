@@ -16,6 +16,7 @@
 #include "compiler/spirv/nir_spirv.h"
 #include "pco.h"
 #include "pco_common.h"
+#include "pco_ops.h"
 #include "spirv/nir_spirv.h"
 #include "util/macros.h"
 
@@ -70,4 +71,41 @@ extern const char *pco_skip_passes;
 extern bool pco_color;
 
 void pco_debug_init(void);
+/** Op info. */
+struct pco_op_info {
+   const char *str; /** Op name string. */
+   unsigned num_dests; /** Number of dests. */
+   unsigned num_srcs; /** Number of sources. */
+   uint64_t mods; /** Supported mods. */
+   uint8_t mod_map[_PCO_OP_MOD_COUNT]; /** Index into pco_instr::mod. */
+   uint64_t dest_mods[_PCO_OP_MAX_DESTS]; /** Supported dest mods. */
+   uint64_t src_mods[_PCO_OP_MAX_SRCS]; /** Supported source mods. */
+   bool is_pseudo; /** Set if op is a pseudo-instruction. */
+   bool has_target_cf_node; /** Set if op has a cf-node as a target. */
+};
+extern const struct pco_op_info pco_op_info[_PCO_OP_COUNT];
+
+/** Op mod info. */
+struct pco_op_mod_info {
+   bool print_early : 1; /** Set if printed before the op. */
+   enum pco_mod_type type; /** Datatype. */
+   union {
+      const char *str; /** Mod name. */
+      const char **strs; /** Mod names (enums). */
+   };
+   uint32_t nzdefault; /** Default value if non-zero. */
+};
+extern const struct pco_op_mod_info pco_op_mod_info[_PCO_OP_MOD_COUNT];
+
+/** Reference mod info. */
+struct pco_ref_mod_info {
+   bool is_bitset : 1; /** Set if type is an enum bitset. */
+   enum pco_mod_type type; /** Datatype. */
+   union {
+      const char *str; /** Mod name. */
+      const char **strs; /** Mod names (enums). */
+   };
+};
+extern const struct pco_ref_mod_info pco_ref_mod_info[_PCO_REF_MOD_COUNT];
+
 #endif /* PCO_INTERNAL_H */
