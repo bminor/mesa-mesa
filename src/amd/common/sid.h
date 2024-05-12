@@ -248,6 +248,7 @@
 #define PKT3_INCREMENT_CE_COUNTER                  0x84
 #define PKT3_INCREMENT_DE_COUNTER                  0x85
 #define PKT3_WAIT_ON_CE_COUNTER                    0x86
+#define PKT3_HDP_FLUSH                             0x95
 #define PKT3_SET_SH_REG_INDEX                      0x9B
 #define PKT3_LOAD_CONTEXT_REG_INDEX                0x9F /* GFX8+ */
 #define PKT3_DISPATCH_DIRECT_INTERLEAVED           0xA7 /* GFX12+ */

@@ -1397,6 +1397,9 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_userq *userq,
          }
       }
 
+      amdgpu_pkt_add_dw(PKT3(PKT3_HDP_FLUSH, 0, 0));
+      amdgpu_pkt_add_dw(0x0);
+
       amdgpu_pkt_add_dw(PKT3(PKT3_INDIRECT_BUFFER, 2, 0));
       amdgpu_pkt_add_dw(cs->chunk_ib[IB_MAIN].va_start);
       amdgpu_pkt_add_dw(cs->chunk_ib[IB_MAIN].va_start >> 32);
