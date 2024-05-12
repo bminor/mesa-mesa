@@ -146,6 +146,13 @@ struct intel_perf_query_result;
 #define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC_FAST
 #endif
 
+#define ANV_RT_STAGE_BITS (VK_SHADER_STAGE_RAYGEN_BIT_KHR |             \
+                           VK_SHADER_STAGE_ANY_HIT_BIT_KHR |            \
+                           VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |        \
+                           VK_SHADER_STAGE_MISS_BIT_KHR |               \
+                           VK_SHADER_STAGE_INTERSECTION_BIT_KHR |       \
+                           VK_SHADER_STAGE_CALLABLE_BIT_KHR)
+
 #define NSEC_PER_SEC 1000000000ull
 
 #define BINDING_TABLE_POOL_BLOCK_SIZE (65536)
