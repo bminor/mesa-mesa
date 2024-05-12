@@ -1620,8 +1620,17 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
       struct amdgpu_fence *prev_fence =
          (struct amdgpu_fence*)queue->fences[prev_seq_no % AMDGPU_FENCE_RING_SIZE];
 
-      if (prev_fence && (aws->info.ip[acs->ip_type].num_queues > 1 || queue->last_ctx != acs->ctx))
-         add_seq_no_to_list(aws, &seq_no_dependencies, queue_index, prev_seq_no);
+      /* Add a dependency on a previous fence, unless we can determine that
+       * it's useless because the execution order is guaranteed.
+       */
+      if (prev_fence) {
+         bool same_ctx = queue->last_ctx == acs->ctx;
+         /* userqueue submission mode uses a single queue per process. */
+         bool same_queue = aws->info.ip[acs->ip_type].num_queues > 1 &&
+                           queue_type != USERQ;
+         if (!same_ctx || !same_queue)
+            add_seq_no_to_list(aws, &seq_no_dependencies, queue_index, prev_seq_no);
+      }
    }
 
    /* Since the kernel driver doesn't synchronize execution between different
