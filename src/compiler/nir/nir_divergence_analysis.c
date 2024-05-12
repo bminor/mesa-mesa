@@ -351,6 +351,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_core_id_agx:
    case nir_intrinsic_load_samples_log2_agx:
    case nir_intrinsic_load_active_subgroup_count_agx:
+   case nir_intrinsic_load_fs_msaa_intel:
    case nir_intrinsic_load_constant_base_ptr:
    case nir_intrinsic_load_const_buf_base_addr_lvp:
       is_divergent = false;

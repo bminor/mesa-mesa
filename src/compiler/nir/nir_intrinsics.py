@@ -2373,6 +2373,9 @@ intrinsic("load_inline_data_intel", [], dest_comp=0,
           indices=[BASE],
           flags=[CAN_ELIMINATE, CAN_REORDER])
 
+# Dynamic fragment shader parameters.
+system_value("fs_msaa_intel", 1)
+
 # Intrinsics for Intel bindless thread dispatch
 # BASE=brw_topoloy_id
 system_value("topology_id_intel", 1, indices=[BASE])

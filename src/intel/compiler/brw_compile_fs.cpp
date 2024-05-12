@@ -1504,10 +1504,11 @@ brw_compile_fs(const struct brw_compiler *compiler,
        * emit_alpha_to_coverage pass.
        */
       NIR_PASS(_, nir, nir_opt_constant_folding);
-      NIR_PASS(_, nir, brw_nir_lower_alpha_to_coverage, key, prog_data);
+      NIR_PASS(_, nir, brw_nir_lower_alpha_to_coverage);
    }
 
    NIR_PASS(_, nir, brw_nir_move_interpolation_to_top);
+   NIR_PASS(_, nir, brw_nir_lower_fs_msaa, key);
    brw_postprocess_nir(nir, compiler, debug_enabled,
                        key->base.robust_flags);
 
