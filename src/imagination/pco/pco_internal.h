@@ -19,7 +19,10 @@
 #include "pco_ops.h"
 #include "spirv/nir_spirv.h"
 #include "util/macros.h"
+#include "util/list.h"
+#include "util/u_dynarray.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -71,6 +74,267 @@ extern const char *pco_skip_passes;
 extern bool pco_color;
 
 void pco_debug_init(void);
+
+typedef struct _pco_cf_node pco_cf_node;
+typedef struct _pco_func pco_func;
+typedef struct _pco_block pco_block;
+typedef struct _pco_instr pco_instr;
+
+/** PCO reference index. */
+typedef struct PACKED _pco_ref {
+   /** Reference value. */
+   union PACKED {
+      unsigned val : 32;
+
+      struct PACKED {
+         unsigned num : 2; /** Index register number. */
+         unsigned offset : 8; /** Offset. */
+         unsigned _pad : 22;
+      } idx_reg;
+   };
+
+   /** Source/destination modifiers. */
+   bool oneminus : 1;
+   bool clamp : 1;
+   bool abs : 1;
+   bool neg : 1;
+   bool flr : 1;
+   enum pco_elem elem : 4; /** .e0.e1.e2.e3 */
+
+   enum pco_dtype dtype : 2; /** Reference data-type. */
+   unsigned chans : 10; /** Number of channels (1-1024). */
+   enum pco_bits bits : 3; /** Bit width. */
+   enum pco_ref_type type : 3; /** Reference type. */
+   enum pco_reg_class reg_class : 4; /** Register class. */
+
+   unsigned _pad : 1;
+} pco_ref;
+static_assert(sizeof(pco_ref) == 8, "sizeof(pco_ref) != 8");
+
+/** PCO phi source. */
+typedef struct _pco_phi_src {
+   struct list_head link; /** Link in pco_instr::phi_srcs. */
+
+   pco_block *pred; /** Predecessor block. */
+   pco_ref ref; /** Source reference. */
+} pco_phi_src;
+
+/** PCO instruction group. */
+typedef struct _pco_igrp {
+   struct list_head link; /** Link in pco_block::instrs. */
+   pco_block *parent_block; /** Basic block containing the igrp. */
+   pco_func *parent_func; /** Parent function. */
+
+   pco_instr *instrs[_PCO_OP_PHASE_COUNT]; /** Instruction/group list. */
+
+   /** Instruction group header. */
+   struct {
+      unsigned da;
+      unsigned length;
+      union {
+         enum pco_oporg oporg;
+         enum pco_opcnt opcnt;
+      };
+      bool olchk;
+      bool w1p;
+      bool w0p;
+      enum pco_cc cc;
+      enum pco_alutype alutype;
+      union {
+         struct {
+            bool end;
+            bool atom;
+            unsigned rpt;
+         };
+         struct {
+            unsigned miscctl;
+            enum pco_ctrlop ctrlop;
+         };
+      };
+   } hdr;
+
+   struct {
+      pco_ref s0;
+      pco_ref s1;
+      pco_ref s2;
+
+      pco_ref s3;
+      pco_ref s4;
+      pco_ref s5;
+   } srcs;
+
+   struct {
+      pco_ref is0;
+      pco_ref is1;
+      pco_ref is2;
+      pco_ref is3;
+      pco_ref is4;
+      pco_ref is5;
+   } iss;
+
+   struct {
+      pco_ref w0;
+      pco_ref w1;
+   } dests;
+
+   struct {
+      enum pco_igrp_hdr_variant igrp_hdr;
+      union {
+         enum pco_main_variant main;
+         enum pco_backend_variant backend;
+         enum pco_bitwise_variant bitwise;
+         enum pco_ctrl_variant ctrl;
+      } instr[_PCO_OP_PHASE_COUNT];
+      enum pco_src_variant lower_src;
+      enum pco_src_variant upper_src;
+      enum pco_iss_variant iss;
+      enum pco_dst_variant dest;
+   } variant;
+
+   struct {
+      struct {
+         unsigned hdr;
+         unsigned lower_srcs;
+         unsigned upper_srcs;
+         unsigned iss;
+         unsigned dests;
+         unsigned instrs[_PCO_OP_PHASE_COUNT];
+         unsigned word_padding;
+         unsigned align_padding;
+         unsigned total;
+      } len;
+
+      unsigned offset;
+   } enc;
+
+   unsigned index; /** Igrp index. */
+   char *comment; /** Comment string. */
+
+} pco_igrp;
+
+/** PCO instruction. */
+typedef struct _pco_instr {
+   union {
+      struct {
+         struct list_head link; /** Link in pco_block::instrs. */
+         pco_block *parent_block; /** Basic block containing the instruction. */
+      };
+
+      pco_igrp *parent_igrp; /** Igrp containing the instruction. */
+   };
+
+   pco_func *parent_func; /** Parent function. */
+
+   enum pco_op op;
+
+   unsigned num_dests;
+   pco_ref *dest;
+   unsigned num_srcs;
+   pco_ref *src;
+
+   union {
+      struct list_head phi_srcs;
+      pco_cf_node *target_cf_node;
+   };
+
+   /** Instruction flags/modifiers. */
+   uint32_t mod[_PCO_OP_MAX_MODS];
+
+   unsigned index; /** Instruction index. */
+   char *comment; /** Comment string. */
+} pco_instr;
+
+/** PCO control-flow node type. */
+enum pco_cf_node_type {
+   PCO_CF_NODE_TYPE_BLOCK,
+   PCO_CF_NODE_TYPE_IF,
+   PCO_CF_NODE_TYPE_LOOP,
+   PCO_CF_NODE_TYPE_FUNC,
+};
+
+/** PCO control-flow node. */
+typedef struct _pco_cf_node {
+   struct list_head link; /** Link in lists of pco_cf_nodes. */
+   enum pco_cf_node_type type; /** CF node type. */
+   struct _pco_cf_node *parent; /** Parent cf node. */
+} pco_cf_node;
+
+/** PCO basic block. */
+typedef struct _pco_block {
+   pco_cf_node cf_node; /** Control flow node. */
+   pco_func *parent_func; /** Parent function. */
+   struct list_head instrs; /** Instruction/group list. */
+   unsigned index; /** Block index. */
+} pco_block;
+
+/** PCO if cf construct. */
+typedef struct _pco_if {
+   pco_cf_node cf_node; /** CF node. */
+   pco_func *parent_func; /** Parent function. */
+   pco_ref cond; /** If condition. */
+   struct list_head then_body; /** List of pco_cf_nodes for if body. */
+   struct list_head else_body; /** List of pco_cf_nodes for else body. */
+   unsigned index; /** If index. */
+} pco_if;
+
+/** PCO loop cf construct. */
+typedef struct _pco_loop {
+   pco_cf_node cf_node; /** CF node. */
+   pco_func *parent_func; /** Parent function. */
+   struct list_head body; /** List of pco_cf_nodes for loop body. */
+   unsigned index; /** Loop index. */
+} pco_loop;
+
+/** PCO function. */
+typedef struct _pco_func {
+   struct list_head link; /** Link in pco_shader::funcs. */
+   pco_cf_node cf_node; /** Control flow node. */
+
+   pco_shader *parent_shader; /** Shader containing the function. */
+
+   bool is_entrypoint;
+   unsigned index; /** Function index. */
+   const char *name; /** Function name. */
+
+   struct list_head body; /** List of pco_cf_nodes for function body. */
+
+   unsigned num_params;
+   pco_ref *params;
+
+   unsigned next_ssa; /** Next SSA node index. */
+   unsigned next_instr; /** Next instruction index. */
+   unsigned next_igrp; /** Next igrp index. */
+   unsigned next_block; /** Next block index. */
+   unsigned next_if; /** Next if index. */
+   unsigned next_loop; /** Next loop index. */
+
+   unsigned temps; /** Number of temps allocated. */
+} pco_func;
+
+/** PCO shader. */
+typedef struct _pco_shader {
+   pco_ctx *ctx; /** Compiler context. */
+   nir_shader *nir; /** Source NIR shader. */
+
+   gl_shader_stage stage; /** Shader stage. */
+   const char *name; /** Shader name. */
+   bool is_internal; /** Whether this is an internal shader. */
+   bool is_grouped; /** Whether the shader uses igrps. */
+
+   struct list_head funcs; /** List of functions. */
+   unsigned next_func; /** Next function index. */
+
+   struct {
+      struct util_dynarray buf; /** Shader binary. */
+
+      /** Binary patch info. */
+      unsigned num_patches;
+      struct {
+         unsigned offset;
+      } * patch;
+   } binary;
+} pco_shader;
+
 /** Op info. */
 struct pco_op_info {
    const char *str; /** Op name string. */
@@ -108,4 +372,214 @@ struct pco_ref_mod_info {
 };
 extern const struct pco_ref_mod_info pco_ref_mod_info[_PCO_REF_MOD_COUNT];
 
+pco_instr *pco_instr_create(pco_func *func,
+                            enum pco_op op,
+                            unsigned num_dests,
+                            unsigned num_srcs);
+
+/* Cast helpers. */
+
+/* CF nodes. */
+#define PCO_DEFINE_CAST(name, in_type, out_type, field, type_field, type_value) \
+   static inline out_type *name(const in_type *parent)                          \
+   {                                                                            \
+      assert(parent && parent->type_field == type_value);                       \
+      return list_entry(parent, out_type, field);                               \
+   }
+
+PCO_DEFINE_CAST(pco_cf_node_as_block,
+                pco_cf_node,
+                pco_block,
+                cf_node,
+                type,
+                PCO_CF_NODE_TYPE_BLOCK)
+PCO_DEFINE_CAST(pco_cf_node_as_if,
+                pco_cf_node,
+                pco_if,
+                cf_node,
+                type,
+                PCO_CF_NODE_TYPE_IF)
+PCO_DEFINE_CAST(pco_cf_node_as_loop,
+                pco_cf_node,
+                pco_loop,
+                cf_node,
+                type,
+                PCO_CF_NODE_TYPE_LOOP)
+PCO_DEFINE_CAST(pco_cf_node_as_func,
+                pco_cf_node,
+                pco_func,
+                cf_node,
+                type,
+                PCO_CF_NODE_TYPE_FUNC)
+
+/**
+ * \brief Returns the entrypoint function of a PCO shader.
+ *
+ * \param[in] shader The PCO shader.
+ * \return The entrypoint function, or NULL if the shader has no functions.
+ */
+static inline pco_func *pco_entrypoint(pco_shader *shader)
+{
+   if (list_is_empty(&shader->funcs))
+      return NULL;
+
+   pco_func *func = list_first_entry(&shader->funcs, pco_func, link);
+   assert(func->is_entrypoint);
+   return func;
+}
+
+/* Motions. */
+/**
+ * \brief Returns the first block in a function.
+ *
+ * \param[in] func The function.
+ * \return The first block, or NULL if the function body is empty.
+ */
+static inline pco_block *pco_first_block(pco_func *func)
+{
+   pco_cf_node *cf_node = list_first_entry(&func->body, pco_cf_node, link);
+   if (list_is_empty(&func->body))
+      return NULL;
+
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the last block in a function.
+ *
+ * \param[in] func The function.
+ * \return The last block, or NULL if the function body is empty.
+ */
+static inline pco_block *pco_last_block(pco_func *func)
+{
+   pco_cf_node *cf_node = list_last_entry(&func->body, pco_cf_node, link);
+   if (list_is_empty(&func->body))
+      return NULL;
+
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the first instruction in a block.
+ *
+ * \param[in] block The block.
+ * \return The first instruction, or NULL if the block is empty.
+ */
+static inline pco_instr *pco_first_instr(pco_block *block)
+{
+   assert(!block->parent_func->parent_shader->is_grouped);
+   if (list_is_empty(&block->instrs))
+      return NULL;
+
+   return list_first_entry(&block->instrs, pco_instr, link);
+}
+
+/**
+ * \brief Returns the last instruction in a block.
+ *
+ * \param[in] block The block.
+ * \return The last instruction, or NULL if the block is empty.
+ */
+static inline pco_instr *pco_last_instr(pco_block *block)
+{
+   assert(!block->parent_func->parent_shader->is_grouped);
+   if (list_is_empty(&block->instrs))
+      return NULL;
+
+   return list_last_entry(&block->instrs, pco_instr, link);
+}
+
+/**
+ * \brief Returns the next instruction.
+ *
+ * \param[in] instr The current instruction.
+ * \return The next instruction, or NULL if the end of the block has been
+ *         reached.
+ */
+static inline pco_instr *pco_next_instr(pco_instr *instr)
+{
+   assert(!instr->parent_func->parent_shader->is_grouped);
+   if (!instr || instr == pco_last_instr(instr->parent_block))
+      return NULL;
+
+   return list_entry(instr->link.next, pco_instr, link);
+}
+
+/**
+ * \brief Returns the previous instruction.
+ *
+ * \param[in] instr The current instruction.
+ * \return The previous instruction, or NULL if the start of the block has been
+ *         reached.
+ */
+static inline pco_instr *pco_prev_instr(pco_instr *instr)
+{
+   assert(!instr->parent_func->parent_shader->is_grouped);
+   if (!instr || instr == pco_first_instr(instr->parent_block))
+      return NULL;
+
+   return list_entry(instr->link.prev, pco_instr, link);
+}
+
+/**
+ * \brief Returns the first instruction group in a block.
+ *
+ * \param[in] block The block.
+ * \return The first instruction group, or NULL if the block is empty.
+ */
+static inline pco_igrp *pco_first_igrp(pco_block *block)
+{
+   assert(block->parent_func->parent_shader->is_grouped);
+   if (list_is_empty(&block->instrs))
+      return NULL;
+
+   return list_first_entry(&block->instrs, pco_igrp, link);
+}
+
+/**
+ * \brief Returns the last instruction group in a block.
+ *
+ * \param[in] block The block.
+ * \return The last instruction group, or NULL if the block is empty.
+ */
+static inline pco_igrp *pco_last_igrp(pco_block *block)
+{
+   assert(block->parent_func->parent_shader->is_grouped);
+   if (list_is_empty(&block->instrs))
+      return NULL;
+
+   return list_last_entry(&block->instrs, pco_igrp, link);
+}
+
+/**
+ * \brief Returns the next instruction group.
+ *
+ * \param[in] igrp The current instruction group.
+ * \return The next instruction group, or NULL if the end of the block has been
+ *         reached.
+ */
+static inline pco_igrp *pco_next_igrp(pco_igrp *igrp)
+{
+   assert(igrp->parent_func->parent_shader->is_grouped);
+   if (!igrp || igrp == pco_last_igrp(igrp->parent_block))
+      return NULL;
+
+   return list_entry(igrp->link.next, pco_igrp, link);
+}
+
+/**
+ * \brief Returns the previous instruction group.
+ *
+ * \param[in] igrp The current instruction group.
+ * \return The previous instruction group, or NULL if the start of the block has
+ *         been reached.
+ */
+static inline pco_igrp *pco_prev_igrp(pco_igrp *igrp)
+{
+   assert(igrp->parent_func->parent_shader->is_grouped);
+   if (!igrp || igrp == pco_first_igrp(igrp->parent_block))
+      return NULL;
+
+   return list_entry(igrp->link.prev, pco_igrp, link);
+}
 #endif /* PCO_INTERNAL_H */

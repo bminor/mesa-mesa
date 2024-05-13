@@ -64,3 +64,39 @@ const nir_shader_compiler_options *pco_nir_options(pco_ctx *ctx)
 {
    return &ctx->nir_options;
 }
+
+/**
+ * \brief Allocates and sets up a PCO instruction.
+ *
+ * \param[in,out] func Parent function.
+ * \param[in] op Instruction op.
+ * \param[in] num_dests Number of destinations.
+ * \param[in] num_srcs Number of sources.
+ * \return The PCO instruction, or NULL on failure.
+ */
+pco_instr *pco_instr_create(pco_func *func,
+                            enum pco_op op,
+                            unsigned num_dests,
+                            unsigned num_srcs)
+{
+   pco_instr *instr;
+   unsigned size = sizeof(*instr);
+   size += num_dests * sizeof(*instr->dest);
+   size += num_srcs * sizeof(*instr->src);
+
+   instr = rzalloc_size(func, size);
+
+   instr->parent_func = func;
+
+   instr->op = op;
+
+   instr->num_dests = num_dests;
+   instr->dest = (pco_ref *)(instr + 1);
+
+   instr->num_srcs = num_srcs;
+   instr->src = instr->dest + num_dests;
+
+   instr->index = func->next_instr++;
+
+   return instr;
+}

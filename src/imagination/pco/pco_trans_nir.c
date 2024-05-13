@@ -11,6 +11,7 @@
  */
 
 #include "pco.h"
+#include "pco_builder.h"
 #include "pco_internal.h"
 
 #include <stdio.h>

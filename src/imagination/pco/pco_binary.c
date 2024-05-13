@@ -12,6 +12,7 @@
 
 #include "pco.h"
 #include "pco_internal.h"
+#include "pco_isa.h"
 
 #include <stdio.h>
 

@@ -16,8 +16,9 @@ class BaseType(Enum):
    enum = auto()
 
 class Type(object):
-   def __init__(self, name, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, enum):
+   def __init__(self, name, tname, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, enum):
       self.name = name
+      self.tname = tname
       self.base_type = base_type
       self.num_bits = num_bits
       self.dec_bits = dec_bits
@@ -41,7 +42,7 @@ def type(name, base_type, num_bits=None, dec_bits=None, check=None, encode=None,
    else:
       assert False, f'Invalid base type for type {name}.'
 
-   t = Type(_name, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, enum)
+   t = Type(_name, name, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, enum)
    types[name] = t
    return t
 
@@ -360,12 +361,11 @@ def bit_struct(name, bit_set, field_mappings, data=None):
    return bs
 
 # Op definitions.
-VARIABLE = ~0
-
 class Op(object):
-   def __init__(self, name, cname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node):
+   def __init__(self, name, cname, bname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node, builder_params):
       self.name = name
       self.cname = cname
+      self.bname = bname
       self.is_pseudo = is_pseudo
       self.op_mods = op_mods
       self.cop_mods = cop_mods
@@ -377,6 +377,7 @@ class Op(object):
       self.src_mods = src_mods
       self.csrc_mods = csrc_mods
       self.has_target_cf_node = has_target_cf_node
+      self.builder_params = builder_params
 
 ops = {}
 
@@ -384,11 +385,34 @@ def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_t
    assert name not in ops.keys(), f'Duplicate op "{name}".'
 
    cname = f'{prefix}_op_{name}'.replace('.', '_')
+   bname = f'{prefix}_{name}'.replace('.', '_')
    cop_mods = 0 if not op_mods else ' | '.join([f'(1 << {mod[1]})' for mod in op_mods])
    op_mod_map = {mod[1]: index + 1 for index, mod in enumerate(op_mods)}
    cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1 << {mod[1]})' for mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
    csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1 << {mod[1]})' for mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
-   op = Op(name, cname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node)
+
+   # Typed and untyped params for builder.
+   builder_params = ['', '', '', '']
+   builder_params[0] += 'pco_builder *b'
+   builder_params[1] += 'b'
+   if has_target_cf_node:
+      builder_params[0] += ', pco_cf_node *target_cf_node'
+      builder_params[1] += ', target_cf_node'
+
+   for d in range(num_dests):
+      builder_params[0] += f', pco_ref dest{d}'
+      builder_params[1] += f', dest{d}'
+
+   for s in range(num_srcs):
+      builder_params[0] += f', pco_ref src{s}'
+      builder_params[1] += f', src{s}'
+
+   if bool(op_mods):
+      builder_params[0] += f', struct {prefix}_{name}_mods mods'
+      builder_params[2] = ', ...'
+      builder_params[3] = f', (struct {bname}_mods){{0, ##__VA_ARGS__}}'
+
+   op = Op(name, cname, bname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node, builder_params)
    ops[name] = op
    return op
 

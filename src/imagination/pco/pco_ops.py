@@ -249,4 +249,8 @@ OM_PHASE2END = op_mod('phase2end', BaseType.bool)
 # HW ops
 O_NOP = hw_op('nop', [OM_EXEC_CND, OM_END])
 
+O_WOP = hw_op('wop')
+
+O_MBYP0 = hw_op('mbyp0', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT], 1, 1, [], [[RM_ABS, RM_NEG]])
+
 O_FADD = hw_op('fadd', [OM_LP, OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
