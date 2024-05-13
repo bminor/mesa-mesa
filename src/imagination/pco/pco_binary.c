@@ -25,6 +25,9 @@
 void pco_encode_ir(pco_ctx *ctx, pco_shader *shader)
 {
    puts("finishme: pco_encode_ir");
+
+   if (pco_should_print_binary(shader))
+      pco_print_binary(shader, stdout, "after encoding");
 }
 
 /**
@@ -36,6 +39,9 @@ void pco_encode_ir(pco_ctx *ctx, pco_shader *shader)
 void pco_shader_finalize(pco_ctx *ctx, pco_shader *shader)
 {
    puts("finishme: pco_shader_finalize");
+
+   if (pco_should_print_binary(shader))
+      pco_print_binary(shader, stdout, "after finalize");
 }
 
 /**

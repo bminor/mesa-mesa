@@ -22,17 +22,22 @@ static inline bool pco_should_skip_pass(const char *pass)
    return comma_separated_list_contains(pco_skip_passes, pass);
 }
 
-#define PCO_PASS(progress, shader, pass, ...)            \
-   do {                                                  \
-      if (pco_should_skip_pass(#pass)) {                 \
-         fprintf(stdout, "Skipping pass '%s'\n", #pass); \
-         break;                                          \
-      }                                                  \
-                                                         \
-      if (pass(shader, ##__VA_ARGS__)) {                 \
-         UNUSED bool _;                                  \
-         progress = true;                                \
-      }                                                  \
+#define PCO_PASS(progress, shader, pass, ...)                 \
+   do {                                                       \
+      if (pco_should_skip_pass(#pass)) {                      \
+         fprintf(stdout, "Skipping pass '%s'\n", #pass);      \
+         break;                                               \
+      }                                                       \
+                                                              \
+      if (pass(shader, ##__VA_ARGS__)) {                      \
+         UNUSED bool _;                                       \
+         progress = true;                                     \
+                                                              \
+         pco_validate_shader(shader, "after " #pass);         \
+                                                              \
+         if (pco_should_print_shader_pass(shader))            \
+            pco_print_shader(shader, stdout, "after " #pass); \
+      }                                                       \
    } while (0)
 
 /**
@@ -43,7 +48,14 @@ static inline bool pco_should_skip_pass(const char *pass)
  */
 void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
 {
+   pco_validate_shader(shader, "before passes");
+
    PCO_PASS(_, shader, pco_end);
+
+   pco_validate_shader(shader, "after passes");
+
+   if (pco_should_print_shader(shader))
+      pco_print_shader(shader, stdout, "after passes");
 
    puts("finishme: pco_process_ir");
 }

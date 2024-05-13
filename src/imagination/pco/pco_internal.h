@@ -616,6 +616,76 @@ static inline pco_igrp *pco_prev_igrp(pco_igrp *igrp)
    return list_entry(igrp->link.prev, pco_igrp, link);
 }
 
+/* Debug printing helpers. */
+static inline bool pco_should_print_nir(nir_shader *nir)
+{
+   if (!PCO_DEBUG_PRINT(NIR))
+      return false;
+
+   if (nir->info.internal && !PCO_DEBUG_PRINT(INTERNAL))
+      return false;
+
+   if (nir->info.stage == MESA_SHADER_VERTEX && !PCO_DEBUG_PRINT(VS))
+      return false;
+   else if (nir->info.stage == MESA_SHADER_FRAGMENT && !PCO_DEBUG_PRINT(FS))
+      return false;
+   else if (nir->info.stage == MESA_SHADER_COMPUTE && !PCO_DEBUG_PRINT(CS))
+      return false;
+
+   return true;
+}
+
+static inline bool pco_should_print_shader(pco_shader *shader)
+{
+   if (shader->is_internal && !PCO_DEBUG_PRINT(INTERNAL))
+      return false;
+
+   if (shader->stage == MESA_SHADER_VERTEX && !PCO_DEBUG_PRINT(VS))
+      return false;
+   else if (shader->stage == MESA_SHADER_FRAGMENT && !PCO_DEBUG_PRINT(FS))
+      return false;
+   else if (shader->stage == MESA_SHADER_COMPUTE && !PCO_DEBUG_PRINT(CS))
+      return false;
+
+   return true;
+}
+
+static inline bool pco_should_print_shader_pass(pco_shader *shader)
+{
+   if (!PCO_DEBUG_PRINT(PASSES))
+      return false;
+
+   if (shader->is_internal && !PCO_DEBUG_PRINT(INTERNAL))
+      return false;
+
+   if (shader->stage == MESA_SHADER_VERTEX && !PCO_DEBUG_PRINT(VS))
+      return false;
+   else if (shader->stage == MESA_SHADER_FRAGMENT && !PCO_DEBUG_PRINT(FS))
+      return false;
+   else if (shader->stage == MESA_SHADER_COMPUTE && !PCO_DEBUG_PRINT(CS))
+      return false;
+
+   return true;
+}
+
+static inline bool pco_should_print_binary(pco_shader *shader)
+{
+   if (!PCO_DEBUG_PRINT(BINARY))
+      return false;
+
+   if (shader->is_internal && !PCO_DEBUG_PRINT(INTERNAL))
+      return false;
+
+   if (shader->stage == MESA_SHADER_VERTEX && !PCO_DEBUG_PRINT(VS))
+      return false;
+   else if (shader->stage == MESA_SHADER_FRAGMENT && !PCO_DEBUG_PRINT(FS))
+      return false;
+   else if (shader->stage == MESA_SHADER_COMPUTE && !PCO_DEBUG_PRINT(CS))
+      return false;
+
+   return true;
+}
+
 /* PCO IR passes. */
 bool pco_end(pco_shader *shader);
 #endif /* PCO_INTERNAL_H */

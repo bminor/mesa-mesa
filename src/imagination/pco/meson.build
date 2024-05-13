@@ -10,7 +10,9 @@ libpowervr_compiler_files = files(
   'pco_end.c',
   'pco_ir.c',
   'pco_nir.c',
+  'pco_print.c',
   'pco_trans_nir.c',
+  'pco_validate.c',
 )
 
 pco_pygen_dep_files = files('pco_pygen_common.py', 'pco_isa.py', 'pco_ops.py')

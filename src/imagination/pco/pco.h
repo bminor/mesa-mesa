@@ -42,4 +42,9 @@ void pco_shader_finalize(pco_ctx *ctx, pco_shader *shader);
 
 unsigned pco_shader_binary_size(pco_shader *shader);
 const void *pco_shader_binary_data(pco_shader *shader);
+
+void pco_validate_shader(pco_shader *shader, const char *when);
+
+void pco_print_shader(pco_shader *shader, FILE *fp, const char *when);
+void pco_print_binary(pco_shader *shader, FILE *fp, const char *when);
 #endif /* PCO_H */
