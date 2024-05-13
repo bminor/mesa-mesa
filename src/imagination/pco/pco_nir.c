@@ -61,6 +61,11 @@ void pco_setup_nir_options(const struct pvr_device_info *dev_info,
  */
 void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   if (pco_should_print_nir(nir)) {
+      puts("after pco_preprocess_nir:");
+      nir_print_shader(nir, stdout);
+   }
+
    puts("finishme: pco_preprocess_nir");
 }
 
@@ -72,6 +77,11 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   if (pco_should_print_nir(nir)) {
+      puts("after pco_lower_nir:");
+      nir_print_shader(nir, stdout);
+   }
+
    puts("finishme: pco_lower_nir");
 }
 
@@ -83,6 +93,11 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   if (pco_should_print_nir(nir)) {
+      puts("after pco_postprocess_nir:");
+      nir_print_shader(nir, stdout);
+   }
+
    puts("finishme: pco_postprocess_nir");
 }
 
@@ -95,5 +110,15 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
 {
+   if (pco_should_print_nir(producer)) {
+      puts("producer after pco_link_nir:");
+      nir_print_shader(producer, stdout);
+   }
+
+   if (pco_should_print_nir(consumer)) {
+      puts("consumer after pco_link_nir:");
+      nir_print_shader(consumer, stdout);
+   }
+
    puts("finishme: pco_link_nir");
 }

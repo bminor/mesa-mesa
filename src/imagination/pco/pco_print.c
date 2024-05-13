@@ -14,12 +14,16 @@
 #include "pco_builder.h"
 #include "pco_common.h"
 #include "pco_internal.h"
+#include "util/bitscan.h"
+#include "util/list.h"
 #include "util/macros.h"
 #include "util/u_hexdump.h"
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 typedef struct _pco_print_state {
@@ -28,6 +32,12 @@ typedef struct _pco_print_state {
    unsigned indent; /** The current printing indent. */
    bool is_grouped; /** Whether the shader uses igrps. */
 } pco_print_state;
+
+/* Forward declarations. */
+static void pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node);
+static void pco_print_block_name(pco_print_state *state, pco_block *block);
+static void
+pco_print_func_sig(pco_print_state *state, pco_func *func, bool call);
 
 enum color_esc {
    ESC_RESET = 0,
@@ -159,6 +169,552 @@ static void pco_printfi(pco_print_state *state, const char *fmt, ...)
 }
 
 /**
+ * \brief Print PCO reference flags/modifiers.
+ *
+ * \param[in] state Print state.
+ * \param[in] ref PCO reference.
+ */
+static void pco_print_ref_mods(pco_print_state *state, pco_ref ref)
+{
+   if (ref.oneminus)
+      pco_printf(state, ".oneminus");
+   if (ref.clamp)
+      pco_printf(state, ".clamp");
+   if (ref.abs)
+      pco_printf(state, ".abs");
+   if (ref.neg)
+      pco_printf(state, ".neg");
+   if (ref.flr)
+      pco_printf(state, ".flr");
+
+   u_foreach_bit (e, ref.elem) {
+      pco_printf(state, ".e%u", e);
+   }
+}
+
+/**
+ * \brief Print PCO reference color.
+ *
+ * \param[in] state Print state.
+ * \param[in] ref PCO reference.
+ */
+static void pco_print_ref_color(pco_print_state *state, pco_ref ref)
+{
+   switch (ref.type) {
+   case PCO_REF_TYPE_NULL:
+      return;
+
+   case PCO_REF_TYPE_SSA:
+   case PCO_REF_TYPE_REG:
+   case PCO_REF_TYPE_IDX_REG:
+      YELLOW(state);
+      return;
+
+   case PCO_REF_TYPE_IMM:
+      BLUE(state);
+      return;
+
+   case PCO_REF_TYPE_IO:
+   case PCO_REF_TYPE_PRED:
+   case PCO_REF_TYPE_DRC:
+      WHITE(state);
+      return;
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
+ * \brief Print PCO reference.
+ *
+ * \param[in] state Print state.
+ * \param[in] ref PCO reference.
+ */
+static void pco_print_ref(pco_print_state *state, pco_ref ref)
+{
+   pco_print_ref_color(state, ref);
+   pco_printf(state, "%s", pco_ref_type_str(ref.type));
+
+   switch (ref.type) {
+   case PCO_REF_TYPE_NULL:
+      break;
+
+   case PCO_REF_TYPE_SSA:
+      pco_printf(state, "%u", ref.val);
+      break;
+
+   case PCO_REF_TYPE_REG:
+      pco_printf(state, "%s%u", pco_reg_class_str(ref.reg_class), ref.val);
+      break;
+
+   case PCO_REF_TYPE_IDX_REG:
+      pco_print_ref(state, pco_ref_get_idx_pointee(ref));
+      pco_print_ref_color(state, ref);
+      pco_printf(state, "[idx%u]", ref.idx_reg.num);
+      break;
+
+   case PCO_REF_TYPE_IMM:
+      switch (ref.dtype) {
+      case PCO_DTYPE_ANY:
+         pco_printf(state, "0x%" PRIx64, pco_ref_get_imm(ref));
+         break;
+
+      case PCO_DTYPE_UNSIGNED:
+         pco_printf(state, "%" PRIu64, pco_ref_get_imm(ref));
+         break;
+
+      case PCO_DTYPE_SIGNED:
+         pco_printf(state, "%" PRId64, pco_ref_get_imm(ref));
+         break;
+
+      case PCO_DTYPE_FLOAT:
+         pco_printf(state, "%f", uif(pco_ref_get_imm(ref)));
+         break;
+
+      default:
+         unreachable();
+      }
+      break;
+
+   case PCO_REF_TYPE_IO:
+      pco_printf(state, "%s", pco_io_str(ref.val));
+      break;
+
+   case PCO_REF_TYPE_PRED:
+      pco_printf(state, "%s", pco_pred_str(ref.val));
+      break;
+
+   case PCO_REF_TYPE_DRC:
+      pco_printf(state, "%s", pco_drc_str(ref.val));
+      break;
+
+   default:
+      unreachable();
+   }
+   RESET(state);
+
+   /* Modifiers. */
+   pco_print_ref_mods(state, ref);
+}
+
+/**
+ * \brief Print PCO reference specification.
+ *
+ * \param[in] state Print state.
+ * \param[in] ref PCO reference.
+ */
+static void pco_print_ref_spec(pco_print_state *state, pco_ref ref)
+{
+   pco_printf(state,
+              "(%s%ux%u)",
+              pco_dtype_str(pco_ref_get_dtype(ref)),
+              pco_ref_get_bits(ref),
+              pco_ref_get_chans(ref));
+}
+
+/**
+ * \brief Print PCO phi source.
+ *
+ * \param[in] state Print state.
+ * \param[in] phi_src PCO phi source.
+ */
+static void pco_print_phi_src(pco_print_state *state, pco_phi_src *phi_src)
+{
+   pco_print_block_name(state, phi_src->pred);
+   pco_printf(state, ": ");
+   pco_print_ref(state, phi_src->ref);
+}
+
+/**
+ * \brief Print PCO instruction modifiers.
+ *
+ * \param[in] state Print state.
+ * \param[in] op_info The instruction op info.
+ * \param[in] instr PCO instruction.
+ * \param[in] print_early Whether the mods are being printed before the
+ *            instruction name.
+ */
+static void pco_print_instr_mods(pco_print_state *state,
+                                 const struct pco_op_info *op_info,
+                                 pco_instr *instr,
+                                 bool print_early)
+{
+   u_foreach_bit64 (op_mod, op_info->mods) {
+      const struct pco_op_mod_info *mod_info = &pco_op_mod_info[op_mod];
+      if (mod_info->print_early != print_early)
+         continue;
+
+      uint32_t val = pco_instr_get_mod(instr, op_mod);
+
+      switch (mod_info->type) {
+      case PCO_MOD_TYPE_BOOL:
+         if (val && strlen(mod_info->str)) {
+            if (print_early)
+               pco_printf(state, "%s ", mod_info->str);
+            else
+               pco_printf(state, ".%s", mod_info->str);
+         }
+         break;
+
+      case PCO_MOD_TYPE_UINT:
+         if ((!mod_info->nzdefault || val != mod_info->nzdefault) &&
+             strlen(mod_info->str)) {
+            if (print_early)
+               pco_printf(state, "%s%u ", mod_info->str, val);
+            else
+               pco_printf(state, "%s%u", mod_info->str, val);
+         }
+         break;
+
+      case PCO_MOD_TYPE_ENUM:
+         if (strlen(mod_info->strs[val])) {
+            if (print_early)
+               pco_printf(state, "%s ", mod_info->strs[val]);
+            else
+               pco_printf(state, ".%s", mod_info->strs[val]);
+         }
+         break;
+
+      default:
+         unreachable();
+      }
+   }
+}
+
+/**
+ * \brief Print PCO instruction.
+ *
+ * \param[in] state Print state.
+ * \param[in] instr PCO instruction.
+ */
+static void pco_print_instr(pco_print_state *state, pco_instr *instr)
+{
+   const struct pco_op_info *info = &pco_op_info[instr->op];
+
+   if (!state->is_grouped)
+      pco_printfi(state, "%04u: ", instr->index);
+
+   /* Early mods. */
+   pco_print_instr_mods(state, info, instr, true);
+
+   if (info->is_pseudo)
+      RED(state);
+   else
+      GREEN(state);
+   pco_printf(state, "%s", info->str);
+   RESET(state);
+
+   /* "Late" mods. */
+   pco_print_instr_mods(state, info, instr, false);
+
+   bool printed = false;
+
+   /* Destinations. */
+   for (unsigned d = 0; d < instr->num_dests; ++d) {
+      if (printed)
+         pco_printf(state, ",");
+      pco_printf(state, " ");
+      pco_print_ref(state, instr->dest[d]);
+      printed = true;
+   }
+
+   /* Special parameters. */
+   if (info->has_target_cf_node) {
+      switch (instr->target_cf_node->type) {
+      case PCO_CF_NODE_TYPE_BLOCK: {
+         pco_block *target_block = pco_cf_node_as_block(instr->target_cf_node);
+         pco_printf(state, " ");
+         pco_print_block_name(state, target_block);
+         break;
+      }
+
+      case PCO_CF_NODE_TYPE_FUNC: {
+         pco_func *target_func = pco_cf_node_as_func(instr->target_cf_node);
+         pco_printf(state, " ");
+         pco_print_func_sig(state, target_func, true);
+         break;
+      }
+
+      default:
+         unreachable();
+      }
+      printed = true;
+   } else if (!list_is_empty(&instr->phi_srcs)) {
+      pco_foreach_phi_src_in_instr (phi_src, instr) {
+         if (printed)
+            pco_printf(state, ",");
+         pco_printf(state, " ");
+         pco_print_phi_src(state, phi_src);
+         printed = true;
+      }
+   }
+
+   /* Sources. */
+   for (unsigned s = 0; s < instr->num_srcs; ++s) {
+      if (printed)
+         pco_printf(state, ",");
+      pco_printf(state, " ");
+      pco_print_ref(state, instr->src[s]);
+      printed = true;
+   }
+   pco_printf(state, ";");
+
+   /* Spec for destinations. */
+   if (!state->is_grouped && instr->num_dests) {
+      pco_printf(state, " /*");
+
+      printed = false;
+      for (unsigned d = 0; d < instr->num_dests; ++d) {
+         if (printed)
+            pco_printf(state, ",");
+         pco_printf(state, " ");
+
+         pco_print_ref(state, instr->dest[d]);
+         pco_printf(state, ":");
+         pco_print_ref_spec(state, instr->dest[d]);
+
+         printed = true;
+      }
+
+      pco_printf(state, " */");
+   }
+
+   if (instr->comment)
+      pco_printf(state, " /* %s */", instr->comment);
+
+   if (!state->is_grouped)
+      pco_printf(state, "\n");
+}
+
+/**
+ * \brief Print PCO instruction group.
+ *
+ * \param[in] state Print state.
+ * \param[in] igrp PCO instruction group.
+ */
+static void pco_print_igrp(pco_print_state *state, pco_igrp *igrp)
+{
+   puts("finishme: pco_print_igrp");
+}
+
+/**
+ * \brief Print PCO block name.
+ *
+ * \param[in] state Print state.
+ * \param[in] block PCO block.
+ */
+static void pco_print_block_name(pco_print_state *state, pco_block *block)
+{
+   pco_printf(state, "B%u", block->index);
+}
+
+/**
+ * \brief Print PCO block.
+ *
+ * \param[in] state Print state.
+ * \param[in] block PCO block.
+ */
+static void pco_print_block(pco_print_state *state, pco_block *block)
+{
+   pco_printfi(state, "block ");
+   pco_print_block_name(state, block);
+   pco_printfi(state, ":\n");
+   ++state->indent;
+
+   if (state->is_grouped) {
+      pco_foreach_igrp_in_block (igrp, block) {
+         pco_print_igrp(state, igrp);
+      }
+   } else {
+      pco_foreach_instr_in_block (instr, block) {
+         pco_print_instr(state, instr);
+      }
+   }
+
+   --state->indent;
+}
+
+/**
+ * \brief Print PCO if name.
+ *
+ * \param[in] state Print state.
+ * \param[in] pif PCO if.
+ */
+static void pco_print_if_name(pco_print_state *state, pco_if *pif)
+{
+   pco_printf(state, "I%u", pif->index);
+}
+
+/**
+ * \brief Print PCO if.
+ *
+ * \param[in] state Print state.
+ * \param[in] pif PCO if.
+ */
+static void pco_print_if(pco_print_state *state, pco_if *pif)
+{
+   pco_printfi(state, "if ");
+   pco_print_if_name(state, pif);
+   pco_printfi(state, " (");
+   pco_print_ref(state, pif->cond);
+   pco_printf(state, ") {\n");
+   ++state->indent;
+
+   pco_foreach_cf_node_in_if_then (cf_node, pif) {
+      pco_print_cf_node(state, cf_node);
+   }
+
+   --state->indent;
+   if (list_is_empty(&pif->else_body)) {
+      pco_printf(state, "}\n");
+      return;
+   }
+
+   pco_printf(state, "} else {\n");
+   ++state->indent;
+
+   pco_foreach_cf_node_in_if_else (cf_node, pif) {
+      pco_print_cf_node(state, cf_node);
+   }
+
+   --state->indent;
+   pco_printf(state, "}\n");
+}
+
+/**
+ * \brief Print PCO loop name.
+ *
+ * \param[in] state Print state.
+ * \param[in] loop PCO loop.
+ */
+static void pco_print_loop_name(pco_print_state *state, pco_loop *loop)
+{
+   pco_printf(state, "L%u", loop->index);
+}
+
+/**
+ * \brief Print PCO loop.
+ *
+ * \param[in] state Print state.
+ * \param[in] loop PCO loop.
+ */
+static void pco_print_loop(pco_print_state *state, pco_loop *loop)
+{
+   pco_printfi(state, "loop ");
+   pco_print_loop_name(state, loop);
+   pco_printfi(state, " {\n");
+   ++state->indent;
+
+   pco_foreach_cf_node_in_loop (cf_node, loop) {
+      pco_print_cf_node(state, cf_node);
+   }
+
+   --state->indent;
+   pco_printf(state, "}\n");
+}
+
+/**
+ * \brief Print PCO function signature.
+ *
+ * \param[in] state Print state.
+ * \param[in] func PCO function.
+ * \param[in] call Whether the signature is for a function call/reference.
+ */
+static void
+pco_print_func_sig(pco_print_state *state, pco_func *func, bool call)
+{
+   if (!call) {
+      switch (func->type) {
+      case PCO_FUNC_TYPE_CALLABLE:
+         break;
+
+      case PCO_FUNC_TYPE_PREAMBLE:
+         pco_printf(state, " PREAMBLE");
+         break;
+
+      case PCO_FUNC_TYPE_ENTRYPOINT:
+         pco_printf(state, " ENTRY");
+         break;
+
+      case PCO_FUNC_TYPE_PHASE_CHANGE:
+         pco_printf(state, " PHASE CHANGE");
+         break;
+
+      default:
+         unreachable();
+      }
+   }
+
+   if (func->name)
+      pco_printf(state, " %s", func->name);
+   else
+      pco_printf(state, " _%u", func->index);
+
+   pco_printf(state, "(");
+
+   if (!call) {
+      /* TODO: Function parameter support. */
+      assert(func->num_params == 0 && func->params == NULL);
+      if (!func->num_params)
+         pco_printf(state, "void");
+   }
+
+   pco_printf(state, ")");
+}
+
+/**
+ * \brief Print PCO function.
+ *
+ * \param[in] state Print state.
+ * \param[in] func PCO function.
+ */
+static void pco_print_func(pco_print_state *state, pco_func *func)
+{
+   pco_printfi(state, "func");
+   pco_print_func_sig(state, func, false);
+   pco_printf(state, "\n");
+
+   pco_printfi(state, "{\n");
+
+   pco_foreach_cf_node_in_func (cf_node, func) {
+      pco_print_cf_node(state, cf_node);
+   }
+
+   pco_printfi(state, "}\n");
+}
+
+/**
+ * \brief Print PCO control flow node.
+ *
+ * \param[in] state Print state.
+ * \param[in] cf_node PCO control flow node.
+ */
+static void pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node)
+{
+   switch (cf_node->type) {
+   case PCO_CF_NODE_TYPE_BLOCK:
+      return pco_print_block(state, pco_cf_node_as_block(cf_node));
+
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_print_if(state, pco_cf_node_as_if(cf_node));
+
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_print_loop(state, pco_cf_node_as_loop(cf_node));
+
+   case PCO_CF_NODE_TYPE_FUNC:
+      return pco_print_func(state, pco_cf_node_as_func(cf_node));
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
  * \brief Print PCO shader info.
  *
  * \param[in] state Print state.
@@ -190,10 +746,15 @@ void pco_print_shader(pco_shader *shader, FILE *fp, const char *when)
    };
 
    if (when)
-      fprintf(fp, "%s\n", when);
+      fprintf(fp, "shader ir %s:\n", when);
+   else
+      fputs("shader ir:", fp);
 
    pco_print_shader_info(&state, shader);
-   pco_printfi(&state, "finishme: pco_print_shader\n");
+
+   pco_foreach_func_in_shader (func, shader) {
+      pco_print_func(&state, func);
+   }
 }
 
 /**
@@ -213,7 +774,9 @@ void pco_print_binary(pco_shader *shader, FILE *fp, const char *when)
    };
 
    if (when)
-      fprintf(fp, "%s\n", when);
+      fprintf(fp, "shader binary %s:\n", when);
+   else
+      fputs("shader binary:", fp);
 
    pco_print_shader_info(&state, shader);
 

@@ -18,9 +18,11 @@
 #include "pco_common.h"
 #include "pco_ops.h"
 #include "spirv/nir_spirv.h"
+#include "util/compiler.h"
 #include "util/macros.h"
 #include "util/list.h"
 #include "util/u_dynarray.h"
+#include "util/u_math.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -419,6 +421,41 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
                 type,
                 PCO_CF_NODE_TYPE_FUNC)
 
+/* Iterators. */
+#define pco_foreach_func_in_shader(func, shader) \
+   list_for_each_entry (pco_func, func, &(shader)->funcs, link)
+
+#define pco_foreach_cf_node_in_if_then(cf_node, _if) \
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->then_body, link)
+
+#define pco_foreach_cf_node_in_if_else(cf_node, _if) \
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->else_body, link)
+
+#define pco_foreach_cf_node_in_loop(cf_node, loop) \
+   list_for_each_entry (pco_cf_node, cf_node, &(loop)->body, link)
+
+#define pco_foreach_cf_node_in_func(cf_node, func) \
+   list_for_each_entry (pco_cf_node, cf_node, &(func)->body, link)
+
+#define pco_foreach_block_in_func(block, func)                   \
+   for (pco_block *block = pco_first_block(func); block != NULL; \
+        block = pco_next_block(block))
+
+#define pco_foreach_instr_in_block(instr, block)           \
+   assert(!block->parent_func->parent_shader->is_grouped); \
+   list_for_each_entry (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_block_safe(instr, block)      \
+   assert(!block->parent_func->parent_shader->is_grouped); \
+   list_for_each_entry_safe (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_igrp_in_block(igrp, block)            \
+   assert(block->parent_func->parent_shader->is_grouped); \
+   list_for_each_entry (pco_igrp, igrp, &(block)->instrs, link)
+
+#define pco_foreach_phi_src_in_instr(phi_src, instr) \
+   list_for_each_entry (pco_phi_src, phi_src, &(instr)->phi_srcs, link)
+
 /**
  * \brief Returns the preamble function of a PCO shader.
  *
@@ -688,4 +725,132 @@ static inline bool pco_should_print_binary(pco_shader *shader)
 
 /* PCO IR passes. */
 bool pco_end(pco_shader *shader);
+
+/* PCO ref checkers. */
+/**
+ * \brief Returns whether a reference is an index register.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is an index register.
+ */
+static inline bool pco_ref_is_idx_reg(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_IDX_REG;
+}
+
+/**
+ * \brief Returns whether a reference is an immediate.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is an immediate.
+ */
+static inline bool pco_ref_is_imm(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_IMM;
+}
+
+/* PCO ref getters. */
+/**
+ * \brief Returns the pointee component of an indexed register reference.
+ *
+ * \param[in] ref Indexed register reference.
+ * \return Pointee component of the indexed register reference.
+ */
+static inline pco_ref pco_ref_get_idx_pointee(pco_ref ref)
+{
+   assert(pco_ref_is_idx_reg(ref));
+
+   pco_ref pointee = ref;
+   pointee.val = ref.idx_reg.offset;
+   pointee.type = PCO_REF_TYPE_REG;
+
+   return pointee;
+}
+
+/**
+ * \brief Returns the data type of a reference.
+ *
+ * \param[in] ref Reference.
+ * \return Datatype.
+ */
+static inline enum pco_dtype pco_ref_get_dtype(pco_ref ref)
+{
+   return ref.dtype;
+}
+
+/**
+ * \brief Returns the number of channels for a reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Number of channels.
+ */
+static inline unsigned pco_ref_get_chans(pco_ref ref)
+{
+   return ref.chans + 1;
+}
+
+/**
+ * \brief Returns the number of bits for a reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Number of bits.
+ */
+static inline unsigned pco_ref_get_bits(pco_ref ref)
+{
+   switch (ref.bits) {
+   case PCO_BITS_1:
+      return 1;
+
+   case PCO_BITS_8:
+      return 8;
+
+   case PCO_BITS_16:
+      return 16;
+
+   case PCO_BITS_ANY:
+   case PCO_BITS_32:
+      return 32;
+
+   case PCO_BITS_64:
+      return 64;
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
+ * \brief Returns the bit-sized value in an immediate reference.
+ *
+ * \param[in] ref Reference.
+ * \return Immediate value.
+ */
+static inline uint64_t pco_ref_get_imm(pco_ref ref)
+{
+   assert(pco_ref_is_imm(ref));
+
+   unsigned num_bits = pco_ref_get_bits(ref);
+
+   switch (ref.dtype) {
+   case PCO_DTYPE_FLOAT:
+      assert(num_bits == 32);
+      FALLTHROUGH;
+   case PCO_DTYPE_ANY:
+      FALLTHROUGH;
+   case PCO_DTYPE_UNSIGNED:
+      return ref.val & BITFIELD_MASK(num_bits);
+
+   case PCO_DTYPE_SIGNED:
+      return util_sign_extend(ref.val, num_bits);
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/* PCO ref builders. */
 #endif /* PCO_INTERNAL_H */

@@ -10,14 +10,14 @@ MOD_TYPE = enum_type('mod_type', [
 ])
 
 REF_TYPE = enum_type('ref_type', [
-   'null',
-   'ssa',
-   'reg',
-   'idx_reg',
-   'imm',
-   'io',
-   'pred',
-   'drc',
+   ('null', '_'),
+   ('ssa', '%'),
+   ('reg', ''),
+   ('idx_reg', ''),
+   ('imm', ''),
+   ('io', ''),
+   ('pred', ''),
+   ('drc', 'drc'),
 ])
 
 FUNC_TYPE = enum_type('func_type', [

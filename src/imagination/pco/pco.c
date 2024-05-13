@@ -234,6 +234,8 @@ pco_instr *pco_instr_create(pco_func *func,
    instr->num_srcs = num_srcs;
    instr->src = instr->dest + num_dests;
 
+   list_inithead(&instr->phi_srcs);
+
    instr->index = func->next_instr++;
 
    return instr;

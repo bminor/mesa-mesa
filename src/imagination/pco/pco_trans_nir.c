@@ -198,5 +198,8 @@ pco_shader *pco_trans_nir(pco_ctx *ctx, nir_shader *nir, void *mem_ctx)
       trans_func(&tctx, impl);
    }
 
+   if (pco_should_print_shader(shader))
+      pco_print_shader(shader, stdout, "before passes");
+
    return shader;
 }
