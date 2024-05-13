@@ -199,6 +199,7 @@ MacroBlockEnd: ''
 ForEachMacros: [
   'foreach_instr',
   'foreach_instr_safe',
+  'foreach_list_typed',
   'hash_table_foreach',
   'LIST_FOR_EACH_ENTRY',
   'LIST_FOR_EACH_ENTRY_FROM',
@@ -220,6 +221,7 @@ ForEachMacros: [
   'nir_foreach_block_safe',
   'nir_foreach_block_unstructured',
   'nir_foreach_function',
+  'nir_foreach_function_with_impl',
   'nir_foreach_instr',
   'nir_foreach_instr_safe',
   'nir_foreach_shader_in_variable',

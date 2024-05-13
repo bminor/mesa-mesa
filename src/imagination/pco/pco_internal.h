@@ -292,7 +292,7 @@ typedef struct _pco_func {
 
    pco_shader *parent_shader; /** Shader containing the function. */
 
-   bool is_entrypoint;
+   enum pco_func_type type; /** Function type. */
    unsigned index; /** Function index. */
    const char *name; /** Function name. */
 
@@ -372,6 +372,13 @@ struct pco_ref_mod_info {
 };
 extern const struct pco_ref_mod_info pco_ref_mod_info[_PCO_REF_MOD_COUNT];
 
+pco_shader *pco_shader_create(pco_ctx *ctx, nir_shader *nir, void *mem_ctx);
+pco_func *pco_func_create(pco_shader *shader,
+                          enum pco_func_type type,
+                          unsigned num_params);
+pco_block *pco_block_create(pco_func *func);
+pco_if *pco_if_create(pco_func *func);
+pco_loop *pco_loop_create(pco_func *func);
 pco_instr *pco_instr_create(pco_func *func,
                             enum pco_op op,
                             unsigned num_dests,
@@ -413,19 +420,45 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
                 PCO_CF_NODE_TYPE_FUNC)
 
 /**
+ * \brief Returns the preamble function of a PCO shader.
+ *
+ * \param[in] shader The PCO shader.
+ * \return The preamble function, or NULL if the shader has no preamble.
+ */
+static inline pco_func *pco_preamble(pco_shader *shader)
+{
+   if (list_is_empty(&shader->funcs))
+      return NULL;
+
+   pco_func *func = list_first_entry(&shader->funcs, pco_func, link);
+   if (func->type == PCO_FUNC_TYPE_PREAMBLE)
+      return func;
+
+   return NULL;
+}
+
+/**
  * \brief Returns the entrypoint function of a PCO shader.
  *
  * \param[in] shader The PCO shader.
- * \return The entrypoint function, or NULL if the shader has no functions.
+ * \return The entrypoint function, or NULL if the shader has no entrypoint.
  */
 static inline pco_func *pco_entrypoint(pco_shader *shader)
 {
    if (list_is_empty(&shader->funcs))
       return NULL;
 
-   pco_func *func = list_first_entry(&shader->funcs, pco_func, link);
-   assert(func->is_entrypoint);
-   return func;
+   /* Entrypoint will either be the first or second function in the shader,
+    * depending on whether or not there is a preamble.
+    */
+   pco_func *preamble = pco_preamble(shader);
+   pco_func *func = !preamble ? list_first_entry(&shader->funcs, pco_func, link)
+                              : list_entry(preamble->link.next, pco_func, link);
+
+   if (func->type == PCO_FUNC_TYPE_ENTRYPOINT)
+      return func;
+
+   return NULL;
 }
 
 /* Motions. */
@@ -582,4 +615,7 @@ static inline pco_igrp *pco_prev_igrp(pco_igrp *igrp)
 
    return list_entry(igrp->link.prev, pco_igrp, link);
 }
+
+/* PCO IR passes. */
+bool pco_end(pco_shader *shader);
 #endif /* PCO_INTERNAL_H */

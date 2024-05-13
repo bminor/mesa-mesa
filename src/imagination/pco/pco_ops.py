@@ -20,6 +20,13 @@ REF_TYPE = enum_type('ref_type', [
    'drc',
 ])
 
+FUNC_TYPE = enum_type('func_type', [
+   'callable',
+   'preamble',
+   'entrypoint',
+   'phase_change',
+])
+
 # Ref mods.
 RM_ONEMINUS = ref_mod('oneminus', BaseType.bool)
 RM_CLAMP = ref_mod('clamp', BaseType.bool)
