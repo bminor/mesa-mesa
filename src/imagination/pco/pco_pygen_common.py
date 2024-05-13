@@ -87,9 +87,14 @@ def enum_type(name, elems, is_bitset=False, num_bits=None, *args, **kwargs):
       assert isinstance(elem, str) and isinstance(value, int) and isinstance(string, str)
 
       assert not num_bits or val_fits_in_bits(value, num_bits), f'Element "{elem}" in elem "{name}" with value "{value}" does not fit into {num_bits} bits.'
+      # Collect valid values, ensure that elements with repeated values only have one string set.
       if is_bitset:
+         if (_valid_valmask & value) != 0:
+            string = None
          _valid_valmask |= value
       else:
+         if value in _valid_vals:
+            string = None
          _valid_vals.add(value)
 
       assert elem not in _elems.keys(), f'Duplicate element "{elem}" in enum "".'

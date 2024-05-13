@@ -34,6 +34,23 @@ enum ${enum.name} {
    % endfor
 };
 
+static inline
+const char *${enum.name}_str(enum ${enum.name} val) {
+   switch (val) {
+   % for cname, _, string in enum.elems.values():
+      % if string is not None:
+   case ${cname}:
+      return "${string}";
+      % endif
+   % endfor
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
 % endfor
 /** Enum validation. */
 % for enum in enums.values():
