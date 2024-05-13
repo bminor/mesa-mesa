@@ -16404,7 +16404,7 @@
         "description": "ci: fix section_end in debian-build-testing",
         "nominated": false,
         "nomination_type": 1,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d428cc1116fd5cec4b397bfaca87e59570f178da",
         "notes": null
