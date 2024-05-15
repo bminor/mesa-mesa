@@ -146,12 +146,17 @@ nouveau_zink_predicate(int fd, const char *driver)
 
    bool prefer_zink = false;
 
-   /* enable this once zink is up to speed.
-    * struct drm_nouveau_getparam r = { .param = NOUVEAU_GETPARAM_CHIPSET_ID };
-    * int ret = drmCommandWriteRead(fd, DRM_NOUVEAU_GETPARAM, &r, sizeof(r));
-    * if (ret == 0 && (r.value & ~0xf) >= 0x160)
-    *    prefer_zink = true;
-    */
+   /* enable this once zink is up to speed. */
+   struct drm_nouveau_getparam r = { .param = NOUVEAU_GETPARAM_HAS_VMA_TILEMODE };
+   int ret = drmCommandWriteRead(fd, DRM_NOUVEAU_GETPARAM, &r, sizeof(r));
+   if (ret == 0 && r.value == 1) {
+      r.param = NOUVEAU_GETPARAM_CHIPSET_ID;
+      r.value = 0;
+      ret = drmCommandWriteRead(fd, DRM_NOUVEAU_GETPARAM, &r, sizeof(r));
+      if (ret == 0 && r.value >= 0x160) {
+         prefer_zink = true;
+      }
+   }
 
    prefer_zink = debug_get_bool_option("NOUVEAU_USE_ZINK", prefer_zink);
 
