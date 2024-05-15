@@ -543,6 +543,16 @@ aliasing_modes(nir_variable_mode modes)
 static void
 calc_alignment(struct entry *entry)
 {
+   if (entry->intrin->intrinsic == nir_intrinsic_load_buffer_amd ||
+       entry->intrin->intrinsic == nir_intrinsic_store_buffer_amd) {
+      /* The alignment is the result of the descriptor and several offset/index sources, so just use
+       * the original alignment.
+       */
+      entry->align_mul = nir_intrinsic_align_mul(entry->intrin);
+      entry->align_offset = nir_intrinsic_align_offset(entry->intrin);
+      return;
+   }
+
    uint32_t align_mul = 31;
    for (unsigned i = 0; i < entry->key->offset_def_count; i++) {
       if (entry->key->offset_defs_mul[i])
