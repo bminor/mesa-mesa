@@ -1821,6 +1821,30 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 		<bitfield name="USES_GMEM" pos="4" type="boolean" varset="set_marker_mode" variants="SET_RENDER_MODE"/>
 
 		<bitfield name="IFPC_MODE" pos="0" type="a6xx_ifpc_mode" varset="set_marker_mode" variants="SET_IFPC_MODE"/>
+
+		<!--
+			CP_SET_MARKER is used with these bits to create a
+			critical section around a workaround for ray tracing.
+			The workaround happens after BVH building, and appears
+			to invalidate the RTU's BVH node cache. It makes sure
+			that only one of BR/BV/LPAC is executing the
+			workaround at a time, and no draws using RT on BV/LPAC
+			are executing while the workaround is executed on BR (or
+			vice versa, that no draws on BV/BR using RT are executed
+			while the workaround executes on LPAC), by
+			hooking subsequent CP_EVENT_WRITE/CP_DRAW_*/CP_EXEC_CS.
+			The blob usage is:
+
+			CP_SET_MARKER(RT_WA_START)
+			... workaround here ...
+			CP_SET_MARKER(RT_WA_END)
+			...
+			CP_SET_MARKER(SHADER_USES_RT)
+			CP_DRAW_INDX(...) or CP_EXEC_CS(...)
+		-->
+		<bitfield name="SHADER_USES_RT" pos="9" type="boolean" variants="A7XX-"/>
+		<bitfield name="RT_WA_START" pos="10" type="boolean" variants="A7XX-"/>
+		<bitfield name="RT_WA_END" pos="11" type="boolean" variants="A7XX-"/>
 	</reg32>
 </domain>
 

@@ -165,6 +165,30 @@ tu_emit_vsc(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    cmd->vsc_initialized = true;
 }
 
+/* This workaround, copied from the blob, seems to ensure that the BVH node
+ * cache is invalidated so that we don't read stale values when multiple BVHs
+ * share the same address.
+ */
+static void
+tu_emit_rt_workaround(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+{
+   tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+   tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_RT_WA_START);
+
+   tu_cs_emit_regs(cs, A7XX_SP_CS_UNKNOWN_A9BE(.dword = 0x10000));
+   tu_cs_emit_regs(cs, A7XX_SP_FS_UNKNOWN_A9AB(.dword = 0x10000));
+   tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
+   tu_cs_emit_regs(cs, A7XX_SP_CS_UNKNOWN_A9BE(.dword = 0));
+   tu_cs_emit_regs(cs, A7XX_SP_FS_UNKNOWN_A9AB(.dword = 0));
+   tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
+   tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
+   tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
+   tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
+
+   tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+   tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_RT_WA_END);
+}
+
 template <chip CHIP>
 static void
 tu6_emit_flushes(struct tu_cmd_buffer *cmd_buffer,
@@ -216,6 +240,9 @@ tu6_emit_flushes(struct tu_cmd_buffer *cmd_buffer,
        /* Invalidating UCHE seems to also invalidate CCHE */
        !(flushes & TU_CMD_FLAG_CACHE_INVALIDATE))
       tu_cs_emit_pkt7(cs, CP_CCHE_INVALIDATE, 0);
+   if (CHIP >= A7XX && (flushes & TU_CMD_FLAG_RTU_INVALIDATE) &&
+       cmd_buffer->device->physical_device->info->a7xx.has_rt_workaround)
+      tu_emit_rt_workaround(cmd_buffer, cs);
    if (flushes & TU_CMD_FLAG_WAIT_MEM_WRITES)
       tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
    if (flushes & TU_CMD_FLAG_WAIT_FOR_IDLE)
@@ -3858,6 +3885,12 @@ tu_flush_for_access(struct tu_cache_state *cache,
       flush_bits |= TU_CMD_FLAG_BLIT_CACHE_CLEAN;
    }
 
+   /* Nothing writes through the RTU cache so there's no point trying to
+    * optimize this. Just always invalidate.
+    */
+   if (dst_mask & TU_ACCESS_RTU_READ)
+      flush_bits |= TU_CMD_FLAG_RTU_INVALIDATE;
+
 #undef DST_INCOHERENT_FLUSH
 
    cache->flush_bits |= flush_bits;
@@ -3968,6 +4001,11 @@ vk2tu_access(VkAccessFlags2 flags, VkPipelineStageFlags2 stages, bool image_only
                        SHADER_STAGES))
        mask |= TU_ACCESS_UCHE_READ | TU_ACCESS_CCHE_READ;
 
+   if (gfx_read_access(flags, stages,
+                       VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR,
+                       SHADER_STAGES))
+       mask |= TU_ACCESS_UCHE_READ | TU_ACCESS_CCHE_READ | TU_ACCESS_RTU_READ;
+
    /* Reading the AS for copying involves doing CmdDispatchIndirect with the
     * copy size as a parameter, so it's read by the CP as well as a shader.
     */
@@ -3975,7 +4013,8 @@ vk2tu_access(VkAccessFlags2 flags, VkPipelineStageFlags2 stages, bool image_only
                        VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR,
                        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
                        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR))
-       mask |= TU_ACCESS_SYSMEM_READ;
+       mask |= TU_ACCESS_SYSMEM_READ | TU_ACCESS_UCHE_READ |
+          TU_ACCESS_CCHE_READ;
 
 
    if (gfx_read_access(flags, stages,
@@ -5826,6 +5865,12 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
                tess_params->output_lower_left));
    }
 
+   if (cmd->device->physical_device->info->a7xx.has_rt_workaround &&
+       cmd->state.program.uses_ray_intersection) {
+      tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+      tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_SHADER_USES_RT);
+   }
+
    /* Early exit if there is nothing to emit, saves CPU cycles */
    uint32_t dirty = cmd->state.dirty;
    if (!dynamic_draw_state_dirty && !(dirty & ~TU_CMD_DIRTY_COMPUTE_DESC_SETS))
@@ -6924,6 +6969,12 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
                                                       .localsizey = local_size[1] - 1,
                                                       .localsizez = local_size[2] - 1));
       }
+   }
+
+   if (cmd->device->physical_device->info->a7xx.has_rt_workaround &&
+       shader->variant->info.uses_ray_intersection) {
+      tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
+      tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_SHADER_USES_RT);
    }
 
    if (info->indirect) {

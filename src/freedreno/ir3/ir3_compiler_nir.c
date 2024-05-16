@@ -2615,6 +2615,8 @@ emit_ray_intersection(struct ir3_context *ctx, nir_intrinsic_instr *intr,
 {
    struct ir3_builder *b = &ctx->build;
 
+   ctx->so->info.uses_ray_intersection = true;
+
    struct ir3_instruction *bvh_base =
       ir3_create_collect(b, ir3_get_src(ctx, &intr->src[0]), 2);
    struct ir3_instruction *idx = ir3_get_src(ctx, &intr->src[1])[0];

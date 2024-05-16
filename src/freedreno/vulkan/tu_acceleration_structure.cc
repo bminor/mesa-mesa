@@ -30,6 +30,9 @@
 #include "tu_acceleration_structure.h"
 #include "radix_sort/radix_sort_u64.h"
 
+
+#include "common/freedreno_gpu_event.h"
+
 #include "util/u_hexdump.h"
 
 #include "bvh/tu_build_interface.h"

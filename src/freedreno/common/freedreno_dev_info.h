@@ -338,6 +338,9 @@ struct fd_dev_info {
        * just raytracing.
        */
       bool has_sw_fuse;
+
+      /* a750-specific HW bug workaround for ray tracing */
+      bool has_rt_workaround;
    } a7xx;
 };
 

@@ -59,6 +59,7 @@ struct ir3_info {
    bool double_threadsize;
    bool multi_dword_ldp_stp;
    bool early_preamble;
+   bool uses_ray_intersection;
 
    /* number of sync bits: */
    uint16_t ss, sy;

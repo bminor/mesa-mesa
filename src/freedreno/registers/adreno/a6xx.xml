@@ -5101,6 +5101,7 @@ to upconvert to 32b float internally?
 	<reg32 offset="0xa9a7" name="SP_FS_TEX_COUNT" low="0" high="7" type="uint" usage="rp_blit"/>
 	<reg32 offset="0xa9a8" name="SP_UNKNOWN_A9A8" low="0" high="16" usage="cmd"/> <!-- always 0x0 ? -->
 	<reg32 offset="0xa9a9" name="SP_FS_PVT_MEM_HW_STACK_OFFSET" type="a6xx_sp_xs_pvt_mem_hw_stack_offset" usage="rp_blit"/>
+	<reg32 offset="0xa9ab" name="SP_FS_UNKNOWN_A9AB" variants="A7XX-" usage="cmd"/>
 
 	<!-- TODO: unknown bool register at 0xa9aa, likely same as 0xa8c0-0xa8c3 but for FS -->
 

@@ -2241,6 +2241,9 @@ tu_emit_program_state(struct tu_cs *sub_cs,
           push_consts->type == IR3_PUSH_CONSTS_SHARED_PREAMBLE) {
          prog->shared_consts = *push_consts;
       }
+
+      if (variants[i]->info.uses_ray_intersection)
+         prog->uses_ray_intersection = true;
    }
 
    unsigned dynamic_descriptor_offset = 0;
