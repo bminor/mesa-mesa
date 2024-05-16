@@ -38,6 +38,7 @@
 #include "util/log.h"
 #include "util/macros.h"
 #include "vk_alloc.h"
+#include "vk_descriptor_set_layout.h"
 #include "vk_format.h"
 #include "vk_log.h"
 #include "vk_object.h"
@@ -190,12 +191,13 @@ static uint8_t vk_to_pvr_shader_stage_flags(VkShaderStageFlags vk_flags)
 }
 
 /* If allocator == NULL, the internal one will be used. */
-static struct pvr_descriptor_set_layout *
-pvr_descriptor_set_layout_allocate(struct pvr_device *device,
-                                   const VkAllocationCallbacks *allocator,
-                                   uint32_t binding_count,
-                                   uint32_t immutable_sampler_count,
-                                   uint32_t supported_descriptors_count)
+static struct pvr_descriptor_set_layout *pvr_descriptor_set_layout_allocate(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   uint32_t binding_count,
+   uint32_t immutable_sampler_count,
+   uint32_t supported_descriptors_count,
+   const VkDescriptorSetLayoutCreateInfo *pCreateInfo)
 {
    struct pvr_descriptor_set_layout_binding *bindings;
    struct pvr_descriptor_set_layout *layout;
@@ -218,33 +220,15 @@ pvr_descriptor_set_layout_allocate(struct pvr_device *device,
    }
 
    /* pvr_CreateDescriptorSetLayout() relies on this being zero allocated. */
-   if (!vk_multialloc_zalloc2(&ma,
-                              &device->vk.alloc,
-                              allocator,
-                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)) {
+   if (!vk_descriptor_set_layout_multizalloc(&device->vk, &ma, pCreateInfo))
       return NULL;
-   }
 
    layout->bindings = bindings;
    layout->immutable_samplers = immutable_samplers;
 
    memcpy(&layout->per_stage_descriptor_count, &counts, sizeof(counts));
 
-   vk_object_base_init(&device->vk,
-                       &layout->base,
-                       VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT);
-
    return layout;
-}
-
-/* If allocator == NULL, the internal one will be used. */
-static void
-pvr_descriptor_set_layout_free(struct pvr_device *device,
-                               const VkAllocationCallbacks *allocator,
-                               struct pvr_descriptor_set_layout *layout)
-{
-   vk_object_base_finish(&layout->base);
-   vk_free2(&device->vk.alloc, allocator, layout);
 }
 
 static int pvr_binding_compare(const void *a, const void *b)
@@ -445,7 +429,12 @@ VkResult pvr_CreateDescriptorSetLayout(
    }
 
    if (pCreateInfo->bindingCount == 0) {
-      layout = pvr_descriptor_set_layout_allocate(device, pAllocator, 0, 0, 0);
+      layout = pvr_descriptor_set_layout_allocate(device,
+                                                  pAllocator,
+                                                  0,
+                                                  0,
+                                                  0,
+                                                  pCreateInfo);
       if (!layout)
          return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
@@ -494,7 +483,8 @@ VkResult pvr_CreateDescriptorSetLayout(
       pAllocator,
       pCreateInfo->bindingCount,
       immutable_sampler_count,
-      PVR_PIPELINE_LAYOUT_SUPPORTED_DESCRIPTOR_TYPE_COUNT);
+      PVR_PIPELINE_LAYOUT_SUPPORTED_DESCRIPTOR_TYPE_COUNT,
+      pCreateInfo);
    if (!layout) {
       vk_free2(&device->vk.alloc, pAllocator, bindings);
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -658,19 +648,6 @@ VkResult pvr_CreateDescriptorSetLayout(
    *pSetLayout = pvr_descriptor_set_layout_to_handle(layout);
 
    return VK_SUCCESS;
-}
-
-void pvr_DestroyDescriptorSetLayout(VkDevice _device,
-                                    VkDescriptorSetLayout _set_layout,
-                                    const VkAllocationCallbacks *pAllocator)
-{
-   PVR_FROM_HANDLE(pvr_descriptor_set_layout, layout, _set_layout);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-
-   if (!layout)
-      return;
-
-   pvr_descriptor_set_layout_free(device, pAllocator, layout);
 }
 
 static void
@@ -877,6 +854,7 @@ VkResult pvr_CreatePipelineLayout(VkDevice _device,
                             set_layout,
                             pCreateInfo->pSetLayouts[set_num]);
 
+            vk_descriptor_set_layout_ref(&set_layout->vk);
             layout->set_layout[set_num] = set_layout;
             layout->shader_stage_mask |= set_layout->shader_stage_mask;
          }
@@ -1014,6 +992,9 @@ void pvr_DestroyPipelineLayout(VkDevice _device,
    if (!layout)
       return;
 
+   for (unsigned i = 0; i < layout->set_count; i++)
+      vk_descriptor_set_layout_unref(&device->vk, &layout->set_layout[i]->vk);
+
    vk_object_free(&device->vk, pAllocator, layout);
 }
 
@@ -1072,6 +1053,7 @@ static void pvr_free_descriptor_set(struct pvr_device *device,
                                     struct pvr_descriptor_set *set)
 {
    list_del(&set->link);
+   vk_descriptor_set_layout_unref(&device->vk, &set->layout->vk);
    pvr_bo_suballoc_free(set->pvr_bo);
    vk_object_free(&device->vk, &pool->alloc, set);
 }
@@ -1170,7 +1152,7 @@ static uint16_t pvr_get_descriptor_secondary_offset(
 static VkResult
 pvr_descriptor_set_create(struct pvr_device *device,
                           struct pvr_descriptor_pool *pool,
-                          const struct pvr_descriptor_set_layout *layout,
+                          struct pvr_descriptor_set_layout *layout,
                           struct pvr_descriptor_set **const descriptor_set_out)
 {
    struct pvr_descriptor_set *set;
@@ -1211,6 +1193,7 @@ pvr_descriptor_set_create(struct pvr_device *device,
          goto err_free_descriptor_set;
    }
 
+   vk_descriptor_set_layout_ref(&layout->vk);
    set->layout = layout;
    set->pool = pool;
 

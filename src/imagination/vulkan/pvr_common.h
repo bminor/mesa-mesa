@@ -44,6 +44,7 @@
 #include "pvr_types.h"
 #include "util/list.h"
 #include "util/macros.h"
+#include "vk_descriptor_set_layout.h"
 #include "vk_object.h"
 #include "vk_sampler.h"
 #include "vk_sync.h"
@@ -269,7 +270,7 @@ struct pvr_descriptor_set_layout_mem_layout {
 };
 
 struct pvr_descriptor_set_layout {
-   struct vk_object_base base;
+   struct vk_descriptor_set_layout vk;
 
    /* Total amount of descriptors contained in this set. */
    uint32_t descriptor_count;
@@ -340,8 +341,8 @@ struct pvr_descriptor {
 struct pvr_descriptor_set {
    struct vk_object_base base;
 
-   const struct pvr_descriptor_set_layout *layout;
-   const struct pvr_descriptor_pool *pool;
+   struct pvr_descriptor_set_layout *layout;
+   struct pvr_descriptor_pool *pool;
 
    struct pvr_suballoc_bo *pvr_bo;
 

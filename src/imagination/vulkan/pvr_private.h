@@ -1472,7 +1472,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_buffer_view,
                                VkBufferView,
                                VK_OBJECT_TYPE_BUFFER_VIEW)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set_layout,
-                               base,
+                               vk.base,
                                VkDescriptorSetLayout,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set,
