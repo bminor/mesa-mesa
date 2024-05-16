@@ -608,6 +608,11 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
    if (flags & RADEON_FLAG_GTT_WC)
       request.flags |= AMDGPU_GEM_CREATE_CPU_GTT_USWC;
 
+   if (aws->info.has_local_buffers &&
+       initial_domain & (RADEON_DOMAIN_VRAM_GTT | RADEON_DOMAIN_DOORBELL) &&
+       flags & RADEON_FLAG_NO_INTERPROCESS_SHARING)
+      request.flags |= AMDGPU_GEM_CREATE_VM_ALWAYS_VALID;
+
    if (flags & RADEON_FLAG_DISCARDABLE &&
        aws->info.drm_minor >= 47)
       request.flags |= AMDGPU_GEM_CREATE_DISCARDABLE;
