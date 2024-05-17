@@ -428,8 +428,9 @@ ops = {}
 def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node):
    assert name not in ops.keys(), f'Duplicate op "{name}".'
 
-   cname = f'{prefix}_op_{name}'.replace('.', '_')
-   bname = f'{prefix}_{name}'.replace('.', '_')
+   _name = name.replace('.', '_')
+   cname = f'{prefix}_op_{_name}'
+   bname = f'{prefix}_{_name}'
    cop_mods = 0 if not op_mods else ' | '.join([f'(1 << {op_mod.cname})' for op_mod in op_mods])
    op_mod_map = {op_mod.cname: index + 1 for index, op_mod in enumerate(op_mods)}
    cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1 << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
@@ -452,7 +453,7 @@ def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_t
       builder_params[1] += f', src{s}'
 
    if bool(op_mods):
-      builder_params[0] += f', struct {prefix}_{name}_mods mods'
+      builder_params[0] += f', struct {prefix}_{_name}_mods mods'
       builder_params[2] = ', ...'
       builder_params[3] = f', (struct {bname}_mods){{0, ##__VA_ARGS__}}'
 
