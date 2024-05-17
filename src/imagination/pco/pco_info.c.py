@@ -50,35 +50,35 @@ const struct pco_op_info pco_op_info[_PCO_OP_COUNT] = {
 };
 
 const struct pco_op_mod_info pco_op_mod_info[_PCO_OP_MOD_COUNT] = {
-% for name, (mod, cname, ctype) in op_mods.items():
-   [${cname}] = {
-      .print_early = ${str(mod.print_early).lower()},
-      .type = ${ctype},
-   % if mod.base_type == BaseType.enum:
+% for name, op_mod in op_mods.items():
+   [${op_mod.cname}] = {
+      .print_early = ${str(op_mod.t.print_early).lower()},
+      .type = ${op_mod.ctype},
+   % if op_mod.t.base_type == BaseType.enum:
       .strs = (const char * []){
-      % for enum_cname, value, string in mod.enum.elems.values():
-         [${enum_cname}] = "${string}",
+      % for elem in op_mod.t.enum.elems.values():
+         [${elem.cname}] = "${elem.string}",
       % endfor
       },
    % else:
       .str = "${name}",
    % endif
-   % if mod.nzdefault is not None:
-      .nzdefault = ${mod.nzdefault},
+   % if op_mod.t.nzdefault is not None:
+      .nzdefault = ${op_mod.t.nzdefault},
    % endif
    },
 % endfor
 };
 
 const struct pco_ref_mod_info pco_ref_mod_info[_PCO_REF_MOD_COUNT] = {
-% for name, (mod, cname, ctype) in ref_mods.items():
-   [${cname}] = {
-      .type = ${ctype},
-   % if mod.base_type == BaseType.enum:
-      .is_bitset = ${str(mod.enum.is_bitset).lower()},
+% for name, ref_mod in ref_mods.items():
+   [${ref_mod.cname}] = {
+      .type = ${ref_mod.ctype},
+   % if ref_mod.t.base_type == BaseType.enum:
+      .is_bitset = ${str(ref_mod.t.enum.is_bitset).lower()},
       .strs = (const char * []){
-      % for enum_cname, value, string in mod.enum.elems.values():
-         [${enum_cname}] = "${string}",
+      % for elem in ref_mod.t.enum.elems.values():
+         [${elem.cname}] = "${elem.string}",
       % endfor
       },
    % else:

@@ -42,8 +42,8 @@ enum pco_op {
 #define _PCO_OP_MOD_COUNT ${len(op_mods) + 1}U
 enum pco_op_mod {
    PCO_OP_MOD_NONE,
-% for op_mod, cname, *_ in op_mods.values():
-   ${cname},
+% for op_mod in op_mods.values():
+   ${op_mod.cname},
 % endfor
 };
 
@@ -51,8 +51,8 @@ enum pco_op_mod {
 #define _PCO_REF_MOD_COUNT ${len(ref_mods) + 1}U
 enum pco_ref_mod {
    PCO_REF_MOD_NONE,
-% for ref_mod, cname, *_ in ref_mods.values():
-   ${cname},
+% for ref_mod in ref_mods.values():
+   ${ref_mod.cname},
 % endfor
 };
 

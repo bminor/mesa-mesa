@@ -57,6 +57,12 @@ class EnumType(object):
       self.is_bitset = is_bitset
       self.parent = parent
 
+class EnumElem(object):
+   def __init__(self, cname, value, string):
+      self.cname = cname
+      self.value = value
+      self.string = string
+
 enums = {}
 def enum_type(name, elems, is_bitset=False, num_bits=None, *args, **kwargs):
    assert name not in enums.keys(), f'Duplicate enum "{name}".'
@@ -99,7 +105,7 @@ def enum_type(name, elems, is_bitset=False, num_bits=None, *args, **kwargs):
 
       assert elem not in _elems.keys(), f'Duplicate element "{elem}" in enum "".'
       cname = f'{prefix}_{name}_{elem}'.upper()
-      _elems[elem] = (cname, value, string)
+      _elems[elem] = EnumElem(cname, value, string)
 
    _name = f'{prefix}_{name}'
    _valid = _valid_valmask if is_bitset else _valid_vals
@@ -147,6 +153,12 @@ def field_enum_subtype(name, *args, **kwargs):
    field_enum_types[name] = enums[name]
    return t
 
+class OpMod(object):
+   def __init__(self, t, cname, ctype):
+      self.t = t
+      self.cname = cname
+      self.ctype = ctype
+
 op_mods = {}
 op_mod_enums = {}
 def op_mod(name, *args, **kwargs):
@@ -154,7 +166,7 @@ def op_mod(name, *args, **kwargs):
    t = type(name, *args, **kwargs)
    cname = f'{prefix}_op_mod_{name}'.upper()
    ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
-   om = op_mods[name] = (t, cname, ctype)
+   om = op_mods[name] = OpMod(t, cname, ctype)
    assert len(op_mods) <= 64, f'Too many op mods ({len(op_mods)})!'
    return om
 
@@ -163,10 +175,16 @@ def op_mod_enum(name, *args, **kwargs):
    t = enum_type(name, *args, **kwargs)
    cname = f'{prefix}_op_mod_{name}'.upper()
    ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
-   om = op_mods[name] = (t, cname, ctype)
+   om = op_mods[name] = OpMod(t, cname, ctype)
    op_mod_enums[name] = enums[name]
    assert len(op_mods) <= 64, f'Too many op mods ({len(op_mods)})!'
    return om
+
+class RefMod(object):
+   def __init__(self, t, cname, ctype):
+      self.t = t
+      self.cname = cname
+      self.ctype = ctype
 
 ref_mods = {}
 ref_mod_enums = {}
@@ -175,7 +193,7 @@ def ref_mod(name, *args, **kwargs):
    t = type(name, *args, **kwargs)
    cname = f'{prefix}_ref_mod_{name}'.upper()
    ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
-   rm = ref_mods[name] = (t, cname, ctype)
+   rm = ref_mods[name] = RefMod(t, cname, ctype)
    assert len(ref_mods) <= 64, f'Too many ref mods ({len(ref_mods)})!'
    return rm
 
@@ -184,7 +202,7 @@ def ref_mod_enum(name, *args, **kwargs):
    t = enum_type(name, *args, **kwargs)
    cname = f'{prefix}_ref_mod_{name}'.upper()
    ctype = f'{prefix}_mod_type_{t.base_type.name.upper()}'.upper()
-   rm = ref_mods[name] = (t, cname, ctype)
+   rm = ref_mods[name] = RefMod(t, cname, ctype)
    ref_mod_enums[name] = enums[name]
    assert len(ref_mods) <= 64, f'Too many ref mods ({len(ref_mods)})!'
    return rm
@@ -221,6 +239,11 @@ class BitField(object):
       self.encoding = encoding
       self.encoded_bits = encoded_bits
 
+class Encoding(object):
+   def __init__(self, clear, set):
+      self.clear = clear
+      self.set = set
+
 def bit_field(bit_set_name, name, bit_set_pieces, field_type, pieces, reserved=None):
    _pieces = [bit_set_pieces[p] for p in pieces]
 
@@ -245,7 +268,7 @@ def bit_field(bit_set_name, name, bit_set_pieces, field_type, pieces, reserved=N
       enc_set += f'({{}} >> {bits_consumed})' if bits_consumed > 0 else '{}'
       enc_set += f' & {hex((1 << piece.num_bits) - 1)})'
       enc_set += f' << {piece.lo_bit}' if piece.lo_bit > 0 else ''
-      encoding.append((enc_clear, enc_set))
+      encoding.append(Encoding(enc_clear, enc_set))
 
       bits_consumed += piece.num_bits
 
@@ -287,6 +310,22 @@ class BitStruct(object):
       self.num_bytes = num_bytes
       self.data = data
 
+class StructField(object):
+   def __init__(self, type, field, bits):
+      self.type = type
+      self.field = field
+      self.bits = bits
+
+class EncodeField(object):
+   def __init__(self, name, value):
+      self.name = name
+      self.value = value
+
+class Variant(object):
+   def __init__(self, cname, bytes):
+      self.cname = cname
+      self.bytes = bytes
+
 def bit_struct(name, bit_set, field_mappings, data=None):
    assert name not in bit_set.bit_structs.keys(), f'Duplicate bit struct "{name}" in bit set "{bit_set.name}".'
 
@@ -317,7 +356,7 @@ def bit_struct(name, bit_set, field_mappings, data=None):
          if is_enum and isinstance(fixed_value, str):
             enum = field_type.enum
             assert fixed_value in enum.elems.keys(), f'Fixed value for field mapping "{struct_field}" using field "{_field}" is not an element of enum {field_type.name}.'
-            fixed_value = enum.elems[fixed_value][0].upper()
+            fixed_value = enum.elems[fixed_value].cname.upper()
          else:
             if isinstance(fixed_value, bool):
                fixed_value = int(fixed_value)
@@ -336,7 +375,7 @@ def bit_struct(name, bit_set, field_mappings, data=None):
          encode_value = field.reserved
       else:
          encode_value = f's.{struct_field}'
-      encode_fields.append((encode_field, encode_value))
+      encode_fields.append(EncodeField(encode_field, encode_value))
 
       # Describe settable fields.
       if field.reserved is None and fixed_value is None:
@@ -345,7 +384,7 @@ def bit_struct(name, bit_set, field_mappings, data=None):
             field_type = field_type.enum.parent
 
          struct_field_bits = field_type.dec_bits if field_type.dec_bits is not None else field_type.num_bits
-         struct_fields[struct_field] = (field_type.name, struct_field, struct_field_bits)
+         struct_fields[struct_field] = StructField(field_type.name, struct_field, struct_field_bits)
 
    # Check for overlapping pieces.
    for p0 in all_pieces:
@@ -361,7 +400,7 @@ def bit_struct(name, bit_set, field_mappings, data=None):
    total_bytes = total_bits // 8
    bs = BitStruct(_name, struct_fields, encode_fields, total_bytes, data)
    bit_set.bit_structs[name] = bs
-   bit_set.variants.append((f'{bit_set.name}_{name}'.upper(), total_bytes))
+   bit_set.variants.append(Variant(f'{bit_set.name}_{name}'.upper(), total_bytes))
 
    return bs
 
@@ -391,10 +430,10 @@ def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_t
 
    cname = f'{prefix}_op_{name}'.replace('.', '_')
    bname = f'{prefix}_{name}'.replace('.', '_')
-   cop_mods = 0 if not op_mods else ' | '.join([f'(1 << {mod[1]})' for mod in op_mods])
-   op_mod_map = {mod[1]: index + 1 for index, mod in enumerate(op_mods)}
-   cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1 << {mod[1]})' for mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
-   csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1 << {mod[1]})' for mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
+   cop_mods = 0 if not op_mods else ' | '.join([f'(1 << {op_mod.cname})' for op_mod in op_mods])
+   op_mod_map = {op_mod.cname: index + 1 for index, op_mod in enumerate(op_mods)}
+   cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1 << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
+   csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1 << {ref_mod.cname})' for ref_mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
 
    # Typed and untyped params for builder.
    builder_params = ['', '', '', '']

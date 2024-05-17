@@ -53,31 +53,31 @@ uint32_t pco_instr_get_mod(pco_instr *instr, enum pco_op_mod mod)
    return instr->mod[mod_index - 1];
 }
 
-% for t, cname, ctype in op_mods.values():
+% for op_mod in op_mods.values():
 static inline
-bool pco_instr_has_${t.tname}(const pco_instr *instr)
+bool pco_instr_has_${op_mod.t.tname}(const pco_instr *instr)
 {
-   return pco_instr_has_mod(instr, ${cname});
+   return pco_instr_has_mod(instr, ${op_mod.cname});
 }
 
 static inline
-void pco_instr_set_${t.tname}(pco_instr *instr, ${t.name} val)
+void pco_instr_set_${op_mod.t.tname}(pco_instr *instr, ${op_mod.t.name} val)
 {
-   return pco_instr_set_mod(instr, ${cname}, val);
+   return pco_instr_set_mod(instr, ${op_mod.cname}, val);
 }
 
 static inline
-${t.name} pco_instr_get_${t.tname}(pco_instr *instr)
+${op_mod.t.name} pco_instr_get_${op_mod.t.tname}(pco_instr *instr)
 {
-   return pco_instr_get_mod(instr, ${cname});
+   return pco_instr_get_mod(instr, ${op_mod.cname});
 }
 
 % endfor
 % for op in ops.values():
    % if bool(op.op_mods):
 struct ${op.bname}_mods {
-      % for t, *_ in op.op_mods:
-  ${t.name} ${t.tname};
+      % for op_mod in op.op_mods:
+  ${op_mod.t.name} ${op_mod.t.tname};
       % endfor
 };
    % endif
@@ -100,11 +100,11 @@ pco_instr *_${op.bname}(${op.builder_params[0]})
    instr->src[${s}] = src${s};
    % endfor
 
-   % for t, *_ in op.op_mods:
-      % if t.nzdefault is None:
-   pco_instr_set_${t.tname}(instr, mods.${t.tname});
+   % for op_mod in op.op_mods:
+      % if op_mod.t.nzdefault is None:
+   pco_instr_set_${op_mod.t.tname}(instr, mods.${op_mod.t.tname});
       % else:
-   pco_instr_set_${t.tname}(instr, !mods.${t.tname} ? ${t.nzdefault} : mods.${t.tname});
+   pco_instr_set_${op_mod.t.tname}(instr, !mods.${op_mod.t.tname} ? ${op_mod.t.nzdefault} : mods.${op_mod.t.tname});
       % endif
    % endfor
 

@@ -36,8 +36,8 @@ static unsigned ${bit_set.name}_bytes(enum ${bit_set.name}_variant variant)
 {
    switch (variant) {
    case ${bit_set.name.upper()}_NONE: return 0;
-   % for variant, num_bytes in bit_set.variants:
-   case ${variant}: return ${num_bytes};
+   % for variant in bit_set.variants:
+   case ${variant.cname}: return ${variant.bytes};
    % endfor
    default: break;
    }
@@ -60,9 +60,9 @@ static unsigned ${bit_set.name}_encode_field(uint8_t *bin, enum ${bit_set.name}_
       % endif
       enc_val = ${field.field_type.encode.format('val') if field.field_type.encode is not None else 'val'};
       assert(${field.validate.format('enc_val')});
-         % for enc_clear, enc_set in field.encoding:
-      ${enc_clear.format('bin')};
-      ${enc_set.format('bin', 'enc_val')};
+         % for encoding in field.encoding:
+      ${encoding.clear.format('bin')};
+      ${encoding.set.format('bin', 'enc_val')};
          % endfor
       return ${field.encoded_bits};
 
@@ -76,8 +76,8 @@ static unsigned ${bit_set.name}_encode_field(uint8_t *bin, enum ${bit_set.name}_
 
    % for bit_struct in bit_set.bit_structs.values():
 struct ${bit_struct.name} {
-      % for type, struct_field, bits in bit_struct.struct_fields.values():
-   ${type} ${struct_field} : ${bits};
+      % for struct_field in bit_struct.struct_fields.values():
+   ${struct_field.type} ${struct_field.field} : ${struct_field.bits};
       % endfor
 };
 
@@ -86,8 +86,8 @@ static unsigned _${bit_struct.name}_encode(uint8_t *bin, const struct ${bit_stru
 {
    unsigned bits_encoded = 0;
 
-      % for encode_field, encode_value in bit_struct.encode_fields:
-   bits_encoded += ${bit_set.name}_encode_field(bin, ${encode_field}, ${encode_value});
+      % for encode_field in bit_struct.encode_fields:
+   bits_encoded += ${bit_set.name}_encode_field(bin, ${encode_field.name}, ${encode_field.value});
       % endfor
 
    assert(!(bits_encoded % 8));

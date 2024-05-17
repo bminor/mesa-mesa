@@ -29,18 +29,18 @@ template = """/*
 % for enum in [enum for enum in enums.values() if enum.parent is None]:
 #define _${enum.name.upper()}_COUNT ${enum.unique_count}U
 enum ${enum.name} {
-   % for cname, value, *_ in enum.elems.values():
-   ${cname} = ${hex(value) if enum.is_bitset else value},
+   % for elem in enum.elems.values():
+   ${elem.cname} = ${hex(elem.value) if enum.is_bitset else elem.value},
    % endfor
 };
 
 static inline
 const char *${enum.name}_str(enum ${enum.name} val) {
    switch (val) {
-   % for cname, _, string in enum.elems.values():
-      % if string is not None:
-   case ${cname}:
-      return "${string}";
+   % for elem in enum.elems.values():
+      % if elem.string is not None:
+   case ${elem.cname}:
+      return "${elem.string}";
       % endif
    % endfor
 
@@ -69,8 +69,8 @@ static bool ${enum.name}_valid(uint64_t val)
 #define _${bit_set.name.upper()}_VARIANT_COUNT ${len(bit_set.variants) + 1}U
 enum ${bit_set.name}_variant {
    ${bit_set.name.upper()}_NONE,
-   % for variant, *_ in bit_set.variants:
-   ${variant},
+   % for variant in bit_set.variants:
+   ${variant.cname},
    % endfor
 };
 
