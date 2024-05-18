@@ -5905,6 +5905,11 @@ anv_cmd_buffer_update_addr(struct anv_cmd_buffer *cmd_buffer,
                            VkDeviceSize dataSize,
                            const void* pData,
                            bool is_protected);
+void
+anv_cmd_write_buffer_cp(VkCommandBuffer cmd_buffer,
+                        VkDeviceAddress dstAddr,
+                        void *data,
+                        uint32_t size);
 
 VkResult
 anv_cmd_buffer_ensure_rcs_companion(struct anv_cmd_buffer *cmd_buffer);

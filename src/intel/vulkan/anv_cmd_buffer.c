@@ -1544,3 +1544,14 @@ anv_cmd_buffer_restore_state(struct anv_cmd_buffer *cmd_buffer,
       anv_CmdPushConstants2KHR(cmd_buffer_, &push_info);
    }
 }
+
+void
+anv_cmd_write_buffer_cp(VkCommandBuffer commandBuffer,
+                        VkDeviceAddress dstAddr,
+                        void *data,
+                        uint32_t size)
+{
+   ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+   anv_genX(cmd_buffer->device->info, cmd_write_buffer_cp)(cmd_buffer, dstAddr,
+                                                           data, size);
+}

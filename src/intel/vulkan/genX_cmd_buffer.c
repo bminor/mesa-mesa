@@ -6692,3 +6692,27 @@ genX(CmdWriteBufferMarker2AMD)(VkCommandBuffer commandBuffer,
 
    trace_intel_end_write_buffer_marker(&cmd_buffer->trace);
 }
+
+void
+genX(cmd_write_buffer_cp)(struct anv_cmd_buffer *cmd_buffer,
+                          VkDeviceAddress dstAddr,
+                          void *data,
+                          uint32_t size)
+{
+   assert(size % 4 == 0);
+   struct anv_address addr = anv_address_from_u64(dstAddr);
+
+   struct mi_builder b;
+   mi_builder_init(&b, cmd_buffer->device->info, &cmd_buffer->batch);
+
+   for (uint32_t i = 0; i < size; i += 8) {
+      mi_builder_set_write_check(&b, i >= size - 8);
+      if (size - i < 8) {
+         mi_store(&b, mi_mem32(anv_address_add(addr, i)),
+                      mi_imm(*((uint32_t *)((char*)data + i))));
+      } else {
+         mi_store(&b, mi_mem64(anv_address_add(addr, i)),
+                      mi_imm(*((uint64_t *)((char*)data + i))));
+      }
+   }
+}
