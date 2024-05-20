@@ -91,6 +91,7 @@ case "${DEQP_API}" in
   VK) DEQP_VERSION="vulkan-cts-$DEQP_VK_VERSION";;
   GL) DEQP_VERSION="opengl-cts-$DEQP_GL_VERSION";;
   GLES) DEQP_VERSION="opengl-es-cts-$DEQP_GLES_VERSION";;
+  *) echo "Unexpected DEQP_API value: $DEQP_API"; exit 1;;
 esac
 
 mkdir -p /VK-GL-CTS
