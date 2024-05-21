@@ -2023,6 +2023,8 @@ PowerVR driver environment variables
       Print the resulting NIR.
    ``binary``
       Print the resulting binary.
+   ``verbose``
+      Print verbose IR.
 
 .. envvar:: PCO_COLOR
 

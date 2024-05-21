@@ -38,6 +38,7 @@ static const struct debug_named_value pco_debug_print_options[] = {
    { "passes", PCO_DEBUG_PRINT_PASSES, "Print the IR after each pass." },
    { "nir", PCO_DEBUG_PRINT_NIR, "Print the resulting NIR." },
    { "binary", PCO_DEBUG_PRINT_BINARY, "Print the resulting binary." },
+   { "verbose", PCO_DEBUG_PRINT_VERBOSE, "Print verbose IR." },
    DEBUG_NAMED_VALUE_END,
 };
 

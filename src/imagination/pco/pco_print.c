@@ -31,6 +31,7 @@ typedef struct _pco_print_state {
    pco_shader *shader; /** The shader being printed. */
    unsigned indent; /** The current printing indent. */
    bool is_grouped; /** Whether the shader uses igrps. */
+   bool verbose; /** Whether to print additional info. */
 } pco_print_state;
 
 /* Forward declarations. */
@@ -429,6 +430,10 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
 
    /* Special parameters. */
    if (info->has_target_cf_node) {
+      if (printed)
+         pco_printf(state, ",");
+      pco_printf(state, " ");
+
       switch (instr->target_cf_node->type) {
       case PCO_CF_NODE_TYPE_BLOCK: {
          pco_block *target_block = pco_cf_node_as_block(instr->target_cf_node);
@@ -469,7 +474,7 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
    pco_printf(state, ";");
 
    /* Spec for destinations. */
-   if (!state->is_grouped && instr->num_dests) {
+   if (state->verbose && !state->is_grouped && instr->num_dests) {
       pco_printf(state, " /*");
 
       printed = false;
@@ -488,7 +493,7 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
       pco_printf(state, " */");
    }
 
-   if (instr->comment)
+   if (state->verbose && instr->comment)
       pco_printf(state, " /* %s */", instr->comment);
 
    if (!state->is_grouped)
@@ -749,6 +754,7 @@ void pco_print_shader(pco_shader *shader, FILE *fp, const char *when)
       .shader = shader,
       .indent = 0,
       .is_grouped = shader->is_grouped,
+      .verbose = PCO_DEBUG_PRINT(VERBOSE),
    };
 
    if (when)
@@ -777,6 +783,7 @@ void pco_print_binary(pco_shader *shader, FILE *fp, const char *when)
       .shader = shader,
       .indent = 0,
       .is_grouped = shader->is_grouped,
+      .verbose = PCO_DEBUG_PRINT(VERBOSE),
    };
 
    if (when)
@@ -789,5 +796,5 @@ void pco_print_binary(pco_shader *shader, FILE *fp, const char *when)
    return u_hexdump(fp,
                     pco_shader_binary_data(shader),
                     pco_shader_binary_size(shader),
-                    true);
+                    state.verbose);
 }
