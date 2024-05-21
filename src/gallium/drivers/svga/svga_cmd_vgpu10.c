@@ -1815,6 +1815,78 @@ SVGA3D_sm5_DefineRasterizerState_v2(struct svga_winsys_context *swc,
 }
 
 enum pipe_error
+SVGA3D_DefineGBSurface_v2(struct svga_winsys_context *swc,
+                          uint32 sid,
+                          SVGA3dSurface1Flags surfaceFlags,
+                          SVGA3dSurfaceFormat format,
+                          uint32 numMipLevels,
+                          uint32 multisampleCount,
+                          SVGA3dTextureFilter autogenFilter,
+                          SVGA3dSize size,
+                          uint32 arraySize)
+{
+   SVGA3dCmdDefineGBSurface_v2 *cmd =
+      SVGA3D_FIFOReserve(swc,
+                         SVGA_3D_CMD_DEFINE_GB_SURFACE_V2,
+                         sizeof(*cmd),
+                         0);
+
+   if(!cmd)
+      return PIPE_ERROR_OUT_OF_MEMORY;
+
+   cmd->sid = sid;
+   cmd->surfaceFlags = surfaceFlags;
+   cmd->format = format;
+   cmd->numMipLevels = numMipLevels;
+   cmd->multisampleCount = multisampleCount;
+   cmd->autogenFilter = autogenFilter;
+   cmd->size = size;
+   cmd->arraySize = arraySize;
+
+   swc->commit(swc);
+
+   return PIPE_OK;
+}
+
+enum pipe_error
+SVGA3D_DefineGBSurface_v3(struct svga_winsys_context *swc,
+                          uint32 sid,
+                          SVGA3dSurfaceAllFlags surfaceFlags,
+                          SVGA3dSurfaceFormat format,
+                          uint32 numMipLevels,
+                          uint32 multisampleCount,
+                          SVGA3dMSPattern multisamplePattern,
+                          SVGA3dMSQualityLevel qualityLevel,
+                          SVGA3dTextureFilter autogenFilter,
+                          SVGA3dSize size,
+                          uint32 arraySize)
+{
+   SVGA3dCmdDefineGBSurface_v3 *cmd =
+      SVGA3D_FIFOReserve(swc,
+                         SVGA_3D_CMD_DEFINE_GB_SURFACE_V3,
+                         sizeof(*cmd),
+                         0);
+
+   if(!cmd)
+      return PIPE_ERROR_OUT_OF_MEMORY;
+
+   cmd->sid = sid;
+   cmd->surfaceFlags = surfaceFlags;
+   cmd->format = format;
+   cmd->numMipLevels = numMipLevels;
+   cmd->multisampleCount = multisampleCount;
+   cmd->multisamplePattern = multisamplePattern;
+   cmd->qualityLevel = qualityLevel;
+   cmd->autogenFilter = autogenFilter;
+   cmd->size = size;
+   cmd->arraySize = arraySize;
+
+   swc->commit(swc);
+
+   return PIPE_OK;
+}
+
+enum pipe_error
 SVGA3D_DefineGBSurface_v4(struct svga_winsys_context *swc,
                           uint32 sid,
                           SVGA3dSurfaceAllFlags surfaceFlags,

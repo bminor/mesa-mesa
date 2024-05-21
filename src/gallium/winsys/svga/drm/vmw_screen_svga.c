@@ -458,6 +458,38 @@ vmw_svga_winsys_fence_server_sync(struct svga_winsys_screen *sws,
    return sync_accumulate("vmwgfx", context_fd, fd);
 }
 
+static enum pipe_error
+vmw_svga_define_gb_surface_cmd(struct svga_winsys_screen *sws,
+                               struct svga_winsys_context *swc,
+                               uint32 sid,
+                               SVGA3dSurfaceAllFlags surfaceFlags,
+                               SVGA3dSurfaceFormat format,
+                               uint32 numMipLevels,
+                               uint32 multisampleCount,
+                               SVGA3dMSPattern multisamplePattern,
+                               SVGA3dMSQualityLevel qualityLevel,
+                               SVGA3dTextureFilter autogenFilter,
+                               SVGA3dSize size,
+                               uint32 arraySize,
+                               uint32 bufferByteStride)
+{
+   assert(arraySize > 0);
+   if (sws->have_sm5)
+      return SVGA3D_DefineGBSurface_v4(swc, sid, surfaceFlags, format,
+                                       numMipLevels, multisampleCount,
+                                       multisamplePattern, qualityLevel,
+                                       autogenFilter, size, arraySize,
+                                       bufferByteStride);
+   else if (sws->have_sm4_1)
+      return SVGA3D_DefineGBSurface_v3(swc, sid, surfaceFlags, format,
+                                       numMipLevels, multisampleCount,
+                                       multisamplePattern, qualityLevel,
+                                       autogenFilter, size, arraySize);
+   else
+      return SVGA3D_DefineGBSurface_v2(swc, sid, surfaceFlags, format,
+                                       numMipLevels, multisampleCount,
+                                       autogenFilter, size, arraySize);
+}
 
 static struct svga_winsys_surface *
 vmw_svga_winsys_surface_create(struct svga_winsys_screen *sws,
@@ -525,9 +557,9 @@ vmw_svga_winsys_surface_create(struct svga_winsys_screen *sws,
       if (surface->sid == UTIL_BITMASK_INVALID_INDEX)
          goto no_sid;
 
-      if (SVGA3D_DefineGBSurface_v4(swc, surface->sid, flags, format,
-         numMipLevels, sampleCount, multisample_pattern, quality_level,
-         SVGA3D_TEX_FILTER_NONE, size, numLayers, 0) != PIPE_OK) {
+      if (vmw_svga_define_gb_surface_cmd(sws, swc, surface->sid, flags, format,
+          numMipLevels, sampleCount, multisample_pattern, quality_level,
+          SVGA3D_TEX_FILTER_NONE, size, numLayers, 0) != PIPE_OK) {
             vmw_swc_surface_clear_userspace_id(swc, surface->sid);
             goto no_sid;
       }
