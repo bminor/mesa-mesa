@@ -5911,6 +5911,12 @@ anv_cmd_write_buffer_cp(VkCommandBuffer cmd_buffer,
                         void *data,
                         uint32_t size);
 void
+anv_cmd_dispatch_unaligned(VkCommandBuffer cmd_buffer,
+                           uint32_t invocations_x,
+                           uint32_t invocations_y,
+                           uint32_t invocations_z);
+
+void
 anv_cmd_flush_buffer_write_cp(VkCommandBuffer cmd_buffer);
 
 VkResult

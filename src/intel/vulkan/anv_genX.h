@@ -432,3 +432,15 @@ genX(cmd_buffer_flush_push_descriptors)(struct anv_cmd_buffer *cmd_buffer,
 void genX(emit_embedded_sampler)(struct anv_device *device,
                                  struct anv_embedded_sampler *sampler,
                                  struct anv_pipeline_embedded_sampler_binding *binding);
+
+void
+genX(cmd_buffer_dispatch_indirect)(struct anv_cmd_buffer *cmd_buffer,
+                                   struct anv_address indirect_addr,
+                                   bool is_unaligned_size_x);
+
+void
+genX(cmd_dispatch_unaligned)(
+   VkCommandBuffer                             commandBuffer,
+   uint32_t                                    invocations_x,
+   uint32_t                                    invocations_y,
+   uint32_t                                    invocations_z);
