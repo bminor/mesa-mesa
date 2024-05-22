@@ -406,11 +406,11 @@ def bit_struct(name, bit_set, field_mappings, data=None):
 
 # Op definitions.
 class Op(object):
-   def __init__(self, name, cname, bname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node, builder_params):
+   def __init__(self, name, cname, bname, op_type, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node, builder_params):
       self.name = name
       self.cname = cname
       self.bname = bname
-      self.is_pseudo = is_pseudo
+      self.op_type = op_type
       self.op_mods = op_mods
       self.cop_mods = cop_mods
       self.op_mod_map = op_mod_map
@@ -425,7 +425,7 @@ class Op(object):
 
 ops = {}
 
-def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node):
+def op(name, op_type, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node):
    assert name not in ops.keys(), f'Duplicate op "{name}".'
 
    _name = name.replace('.', '_')
@@ -436,10 +436,17 @@ def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_t
    cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1 << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
    csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1 << {ref_mod.cname})' for ref_mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
 
-   # Typed and untyped params for builder.
-   builder_params = ['', '', '', '']
-   builder_params[0] += 'pco_builder *b'
-   builder_params[1] += 'b'
+   builder_params = ['', '', '', '', '']
+
+   if op_type != 'hw_direct':
+      builder_params[0] = 'pco_builder *b'
+      builder_params[1] = 'b'
+      builder_params[4] = 'pco_cursor_func(b->cursor)'
+   else:
+      builder_params[0] = 'pco_func *func'
+      builder_params[1] = 'func'
+      builder_params[4] = 'func'
+
    if has_target_cf_node:
       builder_params[0] += ', pco_cf_node *target_cf_node'
       builder_params[1] += ', target_cf_node'
@@ -457,12 +464,15 @@ def op(name, is_pseudo, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_t
       builder_params[2] = ', ...'
       builder_params[3] = f', (struct {bname}_mods){{0, ##__VA_ARGS__}}'
 
-   op = Op(name, cname, bname, is_pseudo, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node, builder_params)
+   op = Op(name, cname, bname, op_type, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node, builder_params)
    ops[name] = op
    return op
 
 def pseudo_op(name, op_mods=[], num_dests=0, num_srcs=0, dest_mods=[], src_mods=[], has_target_cf_node=False):
-   return op(name, True, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)
+   return op(name, 'pseudo', op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)
 
 def hw_op(name, op_mods=[], num_dests=0, num_srcs=0, dest_mods=[], src_mods=[], has_target_cf_node=False):
-   return op(name, False, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)
+   return op(name, 'hw', op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)
+
+def hw_direct_op(name, num_dests=0, num_srcs=0, has_target_cf_node=False):
+   return op(name, 'hw_direct', [], num_dests, num_srcs, [], [], has_target_cf_node)

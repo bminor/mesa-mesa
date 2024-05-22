@@ -407,7 +407,7 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
    /* Early mods. */
    pco_print_instr_mods(state, info, instr, true);
 
-   if (info->is_pseudo)
+   if (info->type == PCO_OP_TYPE_PSEUDO)
       RED(state);
    else
       GREEN(state);

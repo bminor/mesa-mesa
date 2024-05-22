@@ -3,6 +3,12 @@
 
 from pco_pygen_common import *
 
+OP_TYPE = enum_type('op_type', [
+   'pseudo',
+   'hw',
+   'hw_direct',
+])
+
 MOD_TYPE = enum_type('mod_type', [
    'bool',
    'uint',

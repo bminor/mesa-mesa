@@ -347,7 +347,7 @@ struct pco_op_info {
    uint8_t mod_map[_PCO_OP_MOD_COUNT]; /** Index into pco_instr::mod. */
    uint64_t dest_mods[_PCO_OP_MAX_DESTS]; /** Supported dest mods. */
    uint64_t src_mods[_PCO_OP_MAX_SRCS]; /** Supported source mods. */
-   bool is_pseudo; /** Set if op is a pseudo-instruction. */
+   enum pco_op_type type; /** Op type. */
    bool has_target_cf_node; /** Set if op has a cf-node as a target. */
 };
 extern const struct pco_op_info pco_op_info[_PCO_OP_COUNT];

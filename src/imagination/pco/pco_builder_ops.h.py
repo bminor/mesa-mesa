@@ -85,7 +85,7 @@ struct ${op.bname}_mods {
 static
 pco_instr *_${op.bname}(${op.builder_params[0]})
 {
-   pco_instr *instr = pco_instr_create(pco_cursor_func(b->cursor),
+   pco_instr *instr = pco_instr_create(${op.builder_params[4]},
                                        ${op.cname.upper()},
                                        ${op.num_dests},
                                        ${op.num_srcs});
@@ -108,7 +108,9 @@ pco_instr *_${op.bname}(${op.builder_params[0]})
       % endif
    % endfor
 
+   % if op.op_type != 'hw_direct':
    pco_builder_insert_instr(b, instr);
+   % endif
    return instr;
 }
 

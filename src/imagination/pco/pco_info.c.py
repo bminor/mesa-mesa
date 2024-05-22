@@ -43,7 +43,7 @@ const struct pco_op_info pco_op_info[_PCO_OP_COUNT] = {
          [${index}] = ${csrc_mods},
 % endfor
       },
-      .is_pseudo = ${str(op.is_pseudo).lower()},
+      .type = PCO_OP_TYPE_${op.op_type.upper()},
       .has_target_cf_node = ${str(op.has_target_cf_node).lower()},
    },
 % endfor
