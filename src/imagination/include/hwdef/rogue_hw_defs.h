@@ -46,6 +46,8 @@
 
 #define ROGUE_MAX_INSTR_BYTES 32U
 
+#define ROGUE_ICACHE_ALIGN 8U
+
 /* MList entry stride in bytes */
 #define ROGUE_MLIST_ENTRY_STRIDE 4U
 

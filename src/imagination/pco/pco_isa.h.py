@@ -75,14 +75,20 @@ static unsigned ${bit_set.name}_encode_field(uint8_t *bin, enum ${bit_set.name}_
 }
 
    % for bit_struct in bit_set.bit_structs.values():
+      % if len(bit_struct.struct_fields) > 0:
 struct ${bit_struct.name} {
-      % for struct_field in bit_struct.struct_fields.values():
-   ${struct_field.type} ${struct_field.field} : ${struct_field.bits};
-      % endfor
+         % for struct_field in bit_struct.struct_fields.values():
+   ${struct_field.type.name} ${struct_field.field} : ${struct_field.bits};
+         % endfor
 };
+      % endif
 
+   % if len(bit_struct.struct_fields) > 0:
 #define ${bit_struct.name}_encode(bin, ...) _${bit_struct.name}_encode(bin, (const struct ${bit_struct.name}){0, ##__VA_ARGS__})
 static unsigned _${bit_struct.name}_encode(uint8_t *bin, const struct ${bit_struct.name} s)
+   % else:
+static unsigned ${bit_struct.name}_encode(uint8_t *bin)
+   % endif
 {
    unsigned bits_encoded = 0;
 

@@ -4,14 +4,113 @@
 from pco_pygen_common import *
 
 OP_PHASE = enum_type('op_phase', [
-   ('0', 0),
+   ('0', 0, 'p0'),
    ('ctrl', 0),
-   ('1', 1),
-   ('2_pck', 2),
-   ('2', 2),
-   ('2_tst', 3),
-   ('2_mov', 4),
+   ('1', 1, 'p1'),
+   ('2_pck', 2, 'p2_pck'),
+   ('2', 2, 'p2'),
+   ('2_tst', 3, 'p2_tst'),
+   ('2_mov', 4, 'p2_mov'),
    ('backend', 5),
+])
+
+SR = enum_type('sr', [
+   ('pixout0', 32),
+   ('pixout1', 33),
+   ('pixout2', 34),
+   ('pixout3', 35),
+
+   ('intl0', 36),
+   ('intl1', 37),
+   ('intl2', 38),
+   ('intl3', 39),
+   ('intl4', 40),
+   ('intl5', 41),
+   ('intl6', 42),
+   ('intl7', 43),
+
+   ('slot7', 36),
+   ('slot6', 37),
+   ('slot5', 38),
+   ('slot4', 39),
+   ('slot3', 40),
+   ('slot2', 41),
+   ('slot1', 42),
+   ('slot0', 43),
+
+   ('face_orient', 44),
+   ('back_face', 44),
+   ('cluster_num', 45),
+   ('output_part', 46),
+   ('task_id', 47),
+   ('slot_num', 48),
+   ('tile_x_pix', 49),
+   ('tile_y_pix', 50),
+   ('inst_num', 51),
+   ('dm_task_type', 52),
+   ('samp_num', 53),
+
+   ('tiled_ld_comp0', 54),
+   ('tiled_ld_comp1', 55),
+   ('tiled_ld_comp2', 56),
+   ('tiled_ld_comp3', 57),
+
+   ('tiled_st_comp0', 58),
+   ('tiled_st_comp1', 59),
+   ('tiled_st_comp2', 60),
+   ('tiled_st_comp3', 61),
+
+   ('batch_num', 62),
+   ('inst_valid', 63),
+
+   ('tile_xy', 96),
+
+   ('x_p', 97),
+   ('x_s', 98),
+
+   ('y_p', 100),
+   ('y_s', 101),
+
+   ('wg_id', 102),
+
+   ('sh_alloc_size', 103),
+
+   ('global0', 104),
+   ('global1', 105),
+   ('global2', 106),
+   ('global3', 107),
+   ('global4', 108),
+   ('global5', 109),
+   ('global6', 110),
+   ('global7', 111),
+
+   ('local_addr_inst_num', 112),
+
+   ('tile_x_p', 114),
+   ('tile_x_s', 115),
+   ('tile_y_p', 116),
+   ('tile_y_s', 117),
+
+   ('render_tgt_id', 118),
+
+   ('tiled_ld_comp4', 119),
+   ('tiled_ld_comp5', 120),
+   ('tiled_ld_comp6', 121),
+   ('tiled_ld_comp7', 122),
+
+   ('tiled_st_comp4', 123),
+   ('tiled_st_comp5', 124),
+   ('tiled_st_comp6', 125),
+   ('tiled_st_comp7', 126),
+
+   ('gpu_offset', 127),
+
+   ('timer_80ns', 160),
+
+   ('pixout4', 164),
+   ('pixout5', 165),
+   ('pixout6', 166),
+   ('pixout7', 167),
 ])
 
 # Common field types.
@@ -64,10 +163,10 @@ elems=[
 F_CC = field_enum_type(
 name='cc', num_bits=2,
 elems=[
-   ('e1_zx', 0b00),
-   ('e1_z1', 0b01),
-   ('ex_zx', 0b10),
-   ('e1_z0', 0b11),
+   ('e1_zx', 0b00, ''),
+   ('e1_z1', 0b01, 'if(p0)'),
+   ('ex_zx', 0b10, '(ignorepe)'),
+   ('e1_z0', 0b11, 'if(!p0)'),
 ])
 
 F_CC1 = field_enum_subtype(name='cc1', parent=F_CC, num_bits=1)
@@ -346,6 +445,17 @@ fields=[
    ('sA_11bit_b5', (F_UINT11, ['sA_10_8_b5', 'sA_7_b4', 'sA_6_b2', 'sA_5_0_b0'])),
 ])
 
+class SrcSpec(object):
+   def __init__(self, is_upper, sbA_bits, sA_bits, sbB_bits, sB_bits, sbC_bits, sC_bits, mux_bits):
+      self.is_upper = is_upper
+      self.sbA_bits = sbA_bits
+      self.sA_bits  = sA_bits
+      self.sbB_bits = sbB_bits
+      self.sB_bits  = sB_bits
+      self.sbC_bits = sbC_bits
+      self.sC_bits  = sC_bits
+      self.mux_bits = mux_bits
+
 # Lower sources.
 I_ONE_LO_1B6I = bit_struct(
 name='1lo_1b6i',
@@ -355,7 +465,7 @@ field_mappings=[
 
    ('sb0', 'sbA_1bit_b0'),
    ('s0', 'sA_6bit_b0'),
-], data=(1, 6, 0, 0, 0, 0, 0))
+], data=SrcSpec(False, 1, 6, -1, -1, -1, -1, -1))
 
 I_ONE_LO_3B11I_2M = bit_struct(
 name='1lo_3b11i_2m',
@@ -369,7 +479,7 @@ field_mappings=[
    ('sb0', 'sbA_3bit_b1'),
    ('s0', 'sA_11bit_b2'),
    ('is0', 'mux_2bit_b1'),
-], data=(3, 11, 0, 0, 0, 0, 2))
+], data=SrcSpec(False, 3, 11, -1, -1, -1, -1, 2))
 
 I_TWO_LO_1B6I_1B5I = bit_struct(
 name='2lo_1b6i_1b5i',
@@ -383,7 +493,7 @@ field_mappings=[
    ('s0', 'sA_6bit_b0'),
    ('sb1', 'sbB_1bit_b1'),
    ('s1', 'sB_5bit_b1'),
-], data=(1, 6, 1, 5, 0, 0, 0))
+], data=SrcSpec(False, 1, 6, 1, 5, -1, -1, -1))
 
 I_TWO_LO_2B7I_2B7I_2M = bit_struct(
 name='2lo_2b7i_2b7i_2m',
@@ -399,7 +509,7 @@ field_mappings=[
    ('sb1', 'sbB_2bit_b2'),
    ('s1', 'sB_7bit_b2'),
    ('is0', 'mux_2bit_b2'),
-], data=(2, 7, 2, 7, 0, 0, 2))
+], data=SrcSpec(False, 2, 7, 2, 7, -1, -1, 2))
 
 I_TWO_LO_3B11I_2B8I_3M = bit_struct(
 name='2lo_3b11i_2b8i_3m',
@@ -416,7 +526,7 @@ field_mappings=[
    ('sb1', 'sbB_2bit_b2'),
    ('s1', 'sB_8bit_b3'),
    ('is0', 'mux_3bit_b3'),
-], data=(3, 11, 2, 8, 0, 0, 3))
+], data=SrcSpec(False, 3, 11, 2, 8, -1, -1, 3))
 
 I_THREE_LO_2B7I_2B7I_2B6I_2M = bit_struct(
 name='3lo_2b7i_2b7i_2b6i_2m',
@@ -434,7 +544,7 @@ field_mappings=[
    ('sb2', 'sbC_2bit_b3'),
    ('s2', 'sC_6bit_b3'),
    ('is0', 'mux_2bit_b2'),
-], data=(2, 7, 2, 7, 2, 6, 2))
+], data=SrcSpec(False, 2, 7, 2, 7, 2, 6, 2))
 
 I_THREE_LO_3B8I_2B8I_3B8I_3M = bit_struct(
 name='3lo_3b8i_2b8i_3b8i_3m',
@@ -453,7 +563,7 @@ field_mappings=[
    ('sb2', 'sbC_3bit_b4'),
    ('s2', 'sC_8bit_b4'),
    ('is0', 'mux_3bit_b4'),
-], data=(3, 8, 2, 8, 3, 8, 3))
+], data=SrcSpec(False, 3, 8, 2, 8, 3, 8, 3))
 
 I_THREE_LO_3B11I_2B8I_3B11I_3M = bit_struct(
 name='3lo_3b11i_2b8i_3b11i_3m',
@@ -473,7 +583,7 @@ field_mappings=[
    ('sb2', 'sbC_3bit_b4'),
    ('s2', 'sC_11bit_b5'),
    ('is0', 'mux_3bit_b4'),
-], data=(3, 11, 2, 8, 3, 11, 3))
+], data=SrcSpec(False, 3, 11, 2, 8, 3, 11, 3))
 
 # Upper sources.
 I_ONE_UP_1B6I = bit_struct(
@@ -484,7 +594,7 @@ field_mappings=[
 
    ('sb3', 'sbA_1bit_b0'),
    ('s3', 'sA_6bit_b0'),
-], data=(1, 6, 0, 0, 0, 0))
+], data=SrcSpec(True, 1, 6, -1, -1, -1, -1, -1))
 
 I_ONE_UP_3B11I = bit_struct(
 name='1up_3b11i',
@@ -498,7 +608,7 @@ field_mappings=[
 
    ('sb3', 'sbA_3bit_b1'),
    ('s3', 'sA_11bit_b2'),
-], data=(3, 11, 0, 0, 0, 0))
+], data=SrcSpec(True, 3, 11, -1, -1, -1, -1, -1))
 
 I_TWO_UP_1B6I_1B5I = bit_struct(
 name='2up_1b6i_1b5i',
@@ -512,7 +622,7 @@ field_mappings=[
    ('s3', 'sA_6bit_b0'),
    ('sb4', 'sbB_1bit_b1'),
    ('s4', 'sB_5bit_b1'),
-], data=(1, 6, 1, 5, 0, 0))
+], data=SrcSpec(True, 1, 6, 1, 5, -1, -1, -1))
 
 I_TWO_UP_2B7I_2B7I = bit_struct(
 name='2up_2b7i_2b7i',
@@ -528,7 +638,7 @@ field_mappings=[
    ('s3', 'sA_7bit_b2'),
    ('sb4', 'sbB_2bit_b2'),
    ('s4', 'sB_7bit_b2'),
-], data=(2, 7, 2, 7, 0, 0))
+], data=SrcSpec(True, 2, 7, 2, 7, -1, -1, -1))
 
 I_TWO_UP_3B11I_2B8I = bit_struct(
 name='2up_3b11i_2b8i',
@@ -545,7 +655,7 @@ field_mappings=[
    ('s3', 'sA_11bit_b3'),
    ('sb4', 'sbB_2bit_b2'),
    ('s4', 'sB_8bit_b3'),
-], data=(3, 11, 2, 8, 0, 0))
+], data=SrcSpec(True, 3, 11, 2, 8, -1, -1, -1))
 
 I_THREE_UP_2B7I_2B7I_2B6I = bit_struct(
 name='3up_2b7i_2b7i_2b6i',
@@ -563,7 +673,7 @@ field_mappings=[
    ('s4', 'sB_7bit_b2'),
    ('sb5', 'sbC_2bit_b3'),
    ('s5', 'sC_6bit_b3'),
-], data=(2, 7, 2, 7, 2, 6))
+], data=SrcSpec(True, 2, 7, 2, 7, 2, 6, -1))
 
 I_THREE_UP_3B8I_2B8I_2B8I = bit_struct(
 name='3up_3b8i_2b8i_2b8i',
@@ -583,7 +693,7 @@ field_mappings=[
    ('s4', 'sB_8bit_b4'),
    ('sb5', 'sbC_2bit_b3'),
    ('s5', 'sC_8bit_b4'),
-], data=(3, 8, 2, 8, 2, 8))
+], data=SrcSpec(True, 3, 8, 2, 8, 2, 8, -1))
 
 I_THREE_UP_3B11I_2B8I_2B8I = bit_struct(
 name='3up_3b11i_2b8i_2b8i',
@@ -605,7 +715,7 @@ field_mappings=[
    ('s4', 'sB_8bit_b4'),
    ('sb5', 'sbC_2bit_b3'),
    ('s5', 'sC_8bit_b4'),
-], data=(3, 11, 2, 8, 2, 8))
+], data=SrcSpec(True, 3, 11, 2, 8, 2, 8, -1))
 
 # Internal source selector definitions.
 F_IS5_SEL = field_enum_type(
@@ -733,6 +843,14 @@ fields=[
    ('d1_11bit_b3', (F_UINT11, ['d1_10_8_b3', 'd1_7_6_b2', 'd1_5_0_b1'])),
 ])
 
+class DstSpec(object):
+   def __init__(self, dual_dsts, db0_bits, d0_bits, db1_bits, d1_bits):
+      self.dual_dsts = dual_dsts
+      self.db0_bits = db0_bits
+      self.d0_bits  = d0_bits
+      self.db1_bits = db1_bits
+      self.d1_bits  = d1_bits
+
 I_ONE_1B6I = bit_struct(
 name='1_1b6i',
 bit_set=I_DST,
@@ -741,7 +859,7 @@ field_mappings=[
 
    ('dbN', 'dbN_1bit_b0'),
    ('dN', 'dN_6bit_b0'),
-], data=(1, 6))
+], data=DstSpec(False, 1, 6, -1, -1))
 
 I_ONE_3B11I = bit_struct(
 name='1_3b11i',
@@ -752,7 +870,7 @@ field_mappings=[
 
    ('dbN', 'dbN_3bit_b1'),
    ('dN', 'dN_11bit_b1'),
-], data=(3, 11))
+], data=DstSpec(False, 3, 11, -1, -1))
 
 I_TWO_1B7I_1B6I = bit_struct(
 name='2_1b7i_1b6i',
@@ -764,7 +882,7 @@ field_mappings=[
    ('d0', 'd0_7bit_b0'),
    ('db1', 'db1_1bit_b1'),
    ('d1', 'd1_6bit_b1'),
-], data=(1, 7, 1, 6))
+], data=DstSpec(True, 1, 7, 1, 6))
 
 I_TWO_3B8I_3B8I = bit_struct(
 name='2_3b8i_3b8i',
@@ -777,7 +895,7 @@ field_mappings=[
    ('d0', 'd0_8bit_b2'),
    ('db1', 'db1_3bit_b2'),
    ('d1', 'd1_8bit_b2'),
-], data=(3, 8, 3, 8))
+], data=DstSpec(True, 3, 8, 3, 8))
 
 I_TWO_3B11I_3B11I = bit_struct(
 name='2_3b11i_3b11i',
@@ -791,7 +909,7 @@ field_mappings=[
    ('d0', 'd0_11bit_b3'),
    ('db1', 'db1_3bit_b2'),
    ('d1', 'd1_11bit_b3'),
-], data=(3, 11, 3, 11))
+], data=DstSpec(True, 3, 11, 3, 11))
 
 # Main ALU ops.
 F_MAIN_OP = field_enum_type(

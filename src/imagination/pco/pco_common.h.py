@@ -35,7 +35,7 @@ enum ${enum.name} {
 };
 
 static inline
-const char *${enum.name}_str(enum ${enum.name} val) {
+const char *${enum.name}_str(uint64_t val) {
    switch (val) {
    % for elem in enum.elems.values():
       % if elem.string is not None:

@@ -26,7 +26,7 @@ bool pco_end(pco_shader *shader)
 {
    /* TODO: Support for multiple end points. */
    pco_func *entry = pco_entrypoint(shader);
-   pco_block *last_block = pco_last_block(entry);
+   pco_block *last_block = pco_func_last_block(entry);
    pco_instr *last_instr = pco_last_instr(last_block);
 
    pco_builder b =
@@ -37,7 +37,7 @@ bool pco_end(pco_shader *shader)
       return true;
    }
 
-   pco_nop(&b, .end = true);
+   pco_nop_end(&b);
 
    return true;
 }

@@ -240,3 +240,19 @@ pco_instr *pco_instr_create(pco_func *func,
 
    return instr;
 }
+
+/**
+ * \brief Allocates and sets up a PCO instruction group.
+ *
+ * \param[in,out] func Parent function.
+ * \return The PCO instruction group, or NULL on failure.
+ */
+pco_igrp *pco_igrp_create(pco_func *func)
+{
+   pco_igrp *igrp = rzalloc_size(func, sizeof(*igrp));
+
+   igrp->parent_func = func;
+   igrp->index = func->next_igrp++;
+
+   return igrp;
+}

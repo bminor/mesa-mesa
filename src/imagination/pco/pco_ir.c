@@ -51,6 +51,7 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
    pco_validate_shader(shader, "before passes");
 
    PCO_PASS(_, shader, pco_end);
+   PCO_PASS(_, shader, pco_group_instrs);
 
    pco_validate_shader(shader, "after passes");
 

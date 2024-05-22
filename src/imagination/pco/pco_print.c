@@ -170,6 +170,17 @@ static void pco_printfi(pco_print_state *state, const char *fmt, ...)
 }
 
 /**
+ * \brief Returns a space if the string is not empty.
+ *
+ * \param[in] str String.
+ * \return A space if the string is not empty, else an empty string.
+ */
+static inline const char *space_if_str(const char *str)
+{
+   return str[0] != '\0' ? " " : "";
+}
+
+/**
  * \brief Print PCO reference flags/modifiers.
  *
  * \param[in] state Print state.
@@ -501,6 +512,145 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
 }
 
 /**
+ * \brief Print the name of a phase.
+ *
+ * \param[in] state Print state.
+ * \param[in] alutype ALU type.
+ * \param[in] phase Phase.
+ */
+static void pco_print_phase(pco_print_state *state,
+                            enum pco_alutype alutype,
+                            enum pco_op_phase phase)
+{
+   switch (alutype) {
+   case PCO_ALUTYPE_MAIN:
+      pco_printf(state, "%s", pco_op_phase_str(phase));
+      return;
+
+   case PCO_ALUTYPE_BITWISE:
+      pco_printf(state, "p%c", '0' + phase);
+      return;
+
+   case PCO_ALUTYPE_CONTROL:
+      pco_printf(state, "ctrl");
+      return;
+
+   default:
+      break;
+   }
+   unreachable();
+}
+
+/**
+ * \brief Print phases present in a PCO instruction group.
+ *
+ * \param[in] state Print state.
+ * \param[in] igrp PCO instruction group.
+ */
+static void pco_print_igrp_phases(pco_print_state *state, pco_igrp *igrp)
+{
+   bool printed = false;
+   for (enum pco_op_phase phase = 0; phase < _PCO_OP_PHASE_COUNT; ++phase) {
+      if (!igrp->instrs[phase])
+         continue;
+
+      if (printed)
+         pco_printf(state, ",");
+
+      pco_print_phase(state, igrp->hdr.alutype, phase);
+
+      printed = true;
+   }
+}
+
+/**
+ * \brief Print the sources in a PCO instruction group.
+ *
+ * \param[in] state Print state.
+ * \param[in] igrp PCO instruction group.
+ * \param[in] upper Whether to print the upper sources.
+ */
+static void
+pco_print_igrp_srcs(pco_print_state *state, pco_igrp *igrp, bool upper)
+{
+   unsigned offset = upper ? 3 : 0;
+   const pco_ref *srcs[] = {
+      &igrp->srcs.s0, &igrp->srcs.s1, &igrp->srcs.s2,
+      &igrp->srcs.s3, &igrp->srcs.s4, &igrp->srcs.s5,
+   };
+
+   bool printed = false;
+   for (unsigned s = 0; s < ARRAY_SIZE(srcs) / 2; ++s) {
+      const pco_ref *src = srcs[s + offset];
+      if (pco_ref_is_null(*src))
+         continue;
+
+      if (printed)
+         pco_printf(state, ", ");
+
+      pco_printf(state, "s%u = ", s + offset);
+      pco_print_ref(state, *src);
+      printed = true;
+   }
+}
+
+/**
+ * \brief Print the internal source selector in a PCO instruction group.
+ *
+ * \param[in] state Print state.
+ * \param[in] igrp PCO instruction group.
+ */
+static void pco_print_igrp_iss(pco_print_state *state, pco_igrp *igrp)
+{
+   const pco_ref *isss[] = {
+      &igrp->iss.is0, &igrp->iss.is1, &igrp->iss.is2,
+      &igrp->iss.is3, &igrp->iss.is4, &igrp->iss.is5,
+   };
+
+   bool printed = false;
+   for (unsigned i = 0; i < ARRAY_SIZE(isss); ++i) {
+      const pco_ref *iss = isss[i];
+      if (pco_ref_is_null(*iss))
+         continue;
+
+      if (printed)
+         pco_printf(state, ", ");
+
+      pco_printf(state, "is%u = ", i);
+      pco_print_ref(state, *iss);
+      printed = true;
+   }
+}
+
+/**
+ * \brief Print the dests in a PCO instruction group.
+ *
+ * \param[in] state Print state.
+ * \param[in] igrp PCO instruction group.
+ */
+static void pco_print_igrp_dests(pco_print_state *state, pco_igrp *igrp)
+{
+   const pco_ref *dests[] = {
+      &igrp->dests.w0,
+      &igrp->dests.w1,
+   };
+
+   bool printed = false;
+   for (unsigned d = 0; d < ARRAY_SIZE(dests); ++d) {
+      const pco_ref *dest = dests[d];
+      if (pco_ref_is_null(*dest))
+         continue;
+
+      if (printed)
+         pco_printf(state, ", ");
+
+      pco_printf(state, "w%u = ", d);
+      pco_print_ref(state, *dest);
+      printed = true;
+   }
+}
+
+/**
  * \brief Print PCO instruction group.
  *
  * \param[in] state Print state.
@@ -508,7 +658,183 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
  */
 static void pco_print_igrp(pco_print_state *state, pco_igrp *igrp)
 {
-   puts("finishme: pco_print_igrp");
+   bool printed = false;
+
+   pco_printfi(state,
+               "%04u:%s%s { ",
+               igrp->index,
+               space_if_str(pco_cc_str(igrp->hdr.cc)),
+               pco_cc_str(igrp->hdr.cc));
+
+   if (state->verbose) {
+      unsigned padding_size =
+         igrp->enc.len.word_padding + igrp->enc.len.align_padding;
+      unsigned unpadded_size = igrp->enc.len.total - padding_size;
+
+      pco_printf(state, "/* @ 0x%08x [", igrp->enc.offset);
+      pco_print_igrp_phases(state, igrp);
+      pco_printf(state,
+                 "] len: %u, pad: %u, total: %u, da: %u",
+                 unpadded_size,
+                 padding_size,
+                 igrp->enc.len.total,
+                 igrp->hdr.da);
+
+      if (igrp->hdr.w0p)
+         pco_printf(state, ", w0p");
+
+      if (igrp->hdr.w1p)
+         pco_printf(state, ", w1p");
+
+      pco_printf(state, " */\n");
+      ++state->indent;
+
+      pco_printfi(state,
+                  "type %s /* hdr bytes: %u */\n",
+                  pco_alutype_str(igrp->hdr.alutype),
+                  igrp->enc.len.hdr);
+   }
+
+   if (igrp->hdr.alutype != PCO_ALUTYPE_CONTROL && igrp->hdr.rpt > 1) {
+      if (state->verbose)
+         pco_printfi(state, "repeat %u\n", igrp->hdr.rpt);
+      else
+         pco_printf(state, "repeat %u ", igrp->hdr.rpt);
+
+      printed = true;
+   }
+
+   if (igrp->enc.len.lower_srcs) {
+      if (state->verbose)
+         pco_printfi(state, "%s", "");
+
+      if (!pco_igrp_srcs_unset(igrp, false)) {
+         if (!state->verbose && printed)
+            pco_printf(state, ", ");
+
+         pco_print_igrp_srcs(state, igrp, false);
+
+         if (state->verbose)
+            pco_printf(state, " ");
+      }
+
+      if (state->verbose)
+         pco_printf(state,
+                    "/* lo src bytes: %u */\n",
+                    igrp->enc.len.lower_srcs);
+
+      printed = true;
+   }
+
+   if (igrp->enc.len.upper_srcs) {
+      if (state->verbose)
+         pco_printfi(state, "%s", "");
+
+      if (!pco_igrp_srcs_unset(igrp, true)) {
+         if (!state->verbose && printed)
+            pco_printf(state, ", ");
+
+         pco_print_igrp_srcs(state, igrp, true);
+
+         if (state->verbose)
+            pco_printf(state, " ");
+      }
+
+      if (state->verbose)
+         pco_printf(state,
+                    "/* up src bytes: %u */\n",
+                    igrp->enc.len.upper_srcs);
+
+      printed = true;
+   }
+
+   if (igrp->enc.len.iss) {
+      if (state->verbose)
+         pco_printfi(state, "%s", "");
+
+      if (!pco_igrp_iss_unset(igrp)) {
+         if (!state->verbose && printed)
+            pco_printf(state, ", ");
+
+         pco_print_igrp_iss(state, igrp);
+
+         if (state->verbose)
+            pco_printf(state, " ");
+      }
+
+      if (state->verbose)
+         pco_printf(state, "/* iss bytes: %u */\n", igrp->enc.len.iss);
+
+      printed = true;
+   }
+
+   for (enum pco_op_phase phase = 0; phase < _PCO_OP_PHASE_COUNT; ++phase) {
+      if (!igrp->instrs[phase])
+         continue;
+
+      if (state->verbose)
+         pco_printfi(state, "%s", "");
+      else if (printed)
+         pco_printf(state, " ");
+
+      pco_print_phase(state, igrp->hdr.alutype, phase);
+      pco_printf(state, ": ");
+      pco_print_instr(state, igrp->instrs[phase]);
+
+      if (state->verbose) {
+         pco_printf(state, " /* ");
+         pco_print_phase(state, igrp->hdr.alutype, phase);
+         pco_printf(state, " bytes: %u */\n", igrp->enc.len.instrs[phase]);
+      }
+
+      printed = true;
+   }
+
+   if (igrp->enc.len.dests) {
+      if (state->verbose)
+         pco_printfi(state, "%s", "");
+
+      if (!pco_igrp_dests_unset(igrp)) {
+         if (!state->verbose && printed)
+            pco_printf(state, " ");
+
+         pco_print_igrp_dests(state, igrp);
+
+         if (state->verbose)
+            pco_printf(state, " ");
+      }
+
+      if (state->verbose)
+         pco_printf(state, "/* dest bytes: %u */\n", igrp->enc.len.dests);
+
+      printed = true;
+   }
+
+   if (state->verbose)
+      --state->indent;
+   else
+      pco_printf(state, " ");
+
+   if (state->verbose)
+      pco_printfi(state, "}");
+   else
+      pco_printf(state, "}");
+
+   if (igrp->hdr.olchk)
+      pco_printf(state, ".olchk");
+
+   if (igrp->hdr.alutype != PCO_ALUTYPE_CONTROL) {
+      if (igrp->hdr.atom)
+         pco_printf(state, ".atom");
+
+      if (igrp->hdr.end)
+         pco_printf(state, ".end");
+   }
+
+   if (state->verbose && igrp->comment)
+      pco_printf(state, " /* %s */", igrp->comment);
+
+   pco_printf(state, "\n");
 }
 
 /**
@@ -796,5 +1122,5 @@ void pco_print_binary(pco_shader *shader, FILE *fp, const char *when)
    return u_hexdump(fp,
                     pco_shader_binary_data(shader),
                     pco_shader_binary_size(shader),
-                    state.verbose);
+                    false);
 }

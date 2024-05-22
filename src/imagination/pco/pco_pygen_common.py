@@ -16,7 +16,7 @@ class BaseType(Enum):
    enum = auto()
 
 class Type(object):
-   def __init__(self, name, tname, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, enum):
+   def __init__(self, name, tname, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, unset, enum):
       self.name = name
       self.tname = tname
       self.base_type = base_type
@@ -26,11 +26,12 @@ class Type(object):
       self.encode = encode
       self.nzdefault = nzdefault
       self.print_early = print_early
+      self.unset = unset
       self.enum = enum
 
 types = {}
 
-def type(name, base_type, num_bits=None, dec_bits=None, check=None, encode=None, nzdefault=None, print_early=False, enum=None):
+def type(name, base_type, num_bits=None, dec_bits=None, check=None, encode=None, nzdefault=None, print_early=False, unset=False, enum=None):
    assert name not in types.keys(), f'Duplicate type "{name}".'
 
    if base_type == BaseType.bool:
@@ -42,7 +43,7 @@ def type(name, base_type, num_bits=None, dec_bits=None, check=None, encode=None,
    else:
       assert False, f'Invalid base type for type {name}.'
 
-   t = Type(_name, name, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, enum)
+   t = Type(_name, name, base_type, num_bits, dec_bits, check, encode, nzdefault, print_early, unset, enum)
    types[name] = t
    return t
 
@@ -275,8 +276,9 @@ def bit_field(bit_set_name, name, bit_set_pieces, field_type, pieces, reserved=N
    return BitField(name, cname, field_type, _pieces, reserved, validate, encoding, bits_consumed)
 
 class BitSet(object):
-   def __init__(self, name, pieces, fields):
+   def __init__(self, name, bsname, pieces, fields):
       self.name = name
+      self.bsname = bsname
       self.pieces = pieces
       self.fields = fields
       self.bit_structs = {}
@@ -298,17 +300,19 @@ def bit_set(name, pieces, fields):
       assert field not in _fields.keys(), f'Duplicate bit field "{n}" in bit set "{name}".'
       _fields[field] = bit_field(_name, field, _pieces, *spec)
 
-   bs = BitSet(_name, _pieces, _fields)
+   bs = BitSet(_name, name, _pieces, _fields)
    bit_sets[name] = bs
    return bs
 
 class BitStruct(object):
-   def __init__(self, name, struct_fields, encode_fields, num_bytes, data):
+   def __init__(self, name, bsname, struct_fields, encode_fields, num_bytes, data, bit_set):
       self.name = name
+      self.bsname = bsname
       self.struct_fields = struct_fields
       self.encode_fields = encode_fields
       self.num_bytes = num_bytes
       self.data = data
+      self.bit_set = bit_set
 
 class StructField(object):
    def __init__(self, type, field, bits):
@@ -384,7 +388,7 @@ def bit_struct(name, bit_set, field_mappings, data=None):
             field_type = field_type.enum.parent
 
          struct_field_bits = field_type.dec_bits if field_type.dec_bits is not None else field_type.num_bits
-         struct_fields[struct_field] = StructField(field_type.name, struct_field, struct_field_bits)
+         struct_fields[struct_field] = StructField(field_type, struct_field, struct_field_bits)
 
    # Check for overlapping pieces.
    for p0 in all_pieces:
@@ -398,7 +402,7 @@ def bit_struct(name, bit_set, field_mappings, data=None):
 
    _name = f'{bit_set.name}_{name}'
    total_bytes = total_bits // 8
-   bs = BitStruct(_name, struct_fields, encode_fields, total_bytes, data)
+   bs = BitStruct(_name, name, struct_fields, encode_fields, total_bytes, data, bit_set)
    bit_set.bit_structs[name] = bs
    bit_set.variants.append(Variant(f'{bit_set.name}_{name}'.upper(), total_bytes))
 
@@ -431,10 +435,10 @@ def op(name, op_type, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_tar
    _name = name.replace('.', '_')
    cname = f'{prefix}_op_{_name}'
    bname = f'{prefix}_{_name}'
-   cop_mods = 0 if not op_mods else ' | '.join([f'(1 << {op_mod.cname})' for op_mod in op_mods])
+   cop_mods = 0 if not op_mods else ' | '.join([f'(1ULL << {op_mod.cname})' for op_mod in op_mods])
    op_mod_map = {op_mod.cname: index + 1 for index, op_mod in enumerate(op_mods)}
-   cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1 << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
-   csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1 << {ref_mod.cname})' for ref_mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
+   cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
+   csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
 
    builder_params = ['', '', '', '', '']
 

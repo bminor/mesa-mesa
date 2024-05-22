@@ -181,7 +181,7 @@ typedef struct _pco_igrp {
    } dests;
 
    struct {
-      enum pco_igrp_hdr_variant igrp_hdr;
+      enum pco_igrp_hdr_variant hdr;
       union {
          enum pco_main_variant main;
          enum pco_backend_variant backend;
@@ -260,6 +260,7 @@ typedef struct _pco_cf_node {
    struct list_head link; /** Link in lists of pco_cf_nodes. */
    enum pco_cf_node_type type; /** CF node type. */
    struct _pco_cf_node *parent; /** Parent cf node. */
+   bool flag; /** Implementation-defined flag. */
 } pco_cf_node;
 
 /** PCO basic block. */
@@ -387,6 +388,7 @@ pco_instr *pco_instr_create(pco_func *func,
                             enum pco_op op,
                             unsigned num_dests,
                             unsigned num_srcs);
+pco_igrp *pco_igrp_create(pco_func *func);
 
 /* Cast helpers. */
 
@@ -427,6 +429,9 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
 #define pco_foreach_func_in_shader(func, shader) \
    list_for_each_entry (pco_func, func, &(shader)->funcs, link)
 
+#define pco_foreach_func_in_shader_rev(func, shader) \
+   list_for_each_entry_rev (pco_func, func, &(shader)->funcs, link)
+
 #define pco_foreach_cf_node_in_if_then(cf_node, _if) \
    list_for_each_entry (pco_cf_node, cf_node, &(_if)->then_body, link)
 
@@ -439,9 +444,13 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
 #define pco_foreach_cf_node_in_func(cf_node, func) \
    list_for_each_entry (pco_cf_node, cf_node, &(func)->body, link)
 
-#define pco_foreach_block_in_func(block, func)                   \
-   for (pco_block *block = pco_first_block(func); block != NULL; \
+#define pco_foreach_block_in_func(block, func)                        \
+   for (pco_block *block = pco_func_first_block(func); block != NULL; \
         block = pco_next_block(block))
+
+#define pco_foreach_block_in_func_rev(block, func)                   \
+   for (pco_block *block = pco_func_last_block(func); block != NULL; \
+        block = pco_prev_block(block))
 
 #define pco_foreach_instr_in_block(instr, block)           \
    assert(!block->parent_func->parent_shader->is_grouped); \
@@ -451,12 +460,76 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    assert(!block->parent_func->parent_shader->is_grouped); \
    list_for_each_entry_safe (pco_instr, instr, &(block)->instrs, link)
 
+#define pco_foreach_instr_in_block_rev(instr, block)       \
+   assert(!block->parent_func->parent_shader->is_grouped); \
+   list_for_each_entry_rev (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_block_safe_rev(instr, block)  \
+   assert(!block->parent_func->parent_shader->is_grouped); \
+   list_for_each_entry_safe_rev (pco_instr, instr, &(block)->instrs, link)
+
 #define pco_foreach_igrp_in_block(igrp, block)            \
    assert(block->parent_func->parent_shader->is_grouped); \
    list_for_each_entry (pco_igrp, igrp, &(block)->instrs, link)
 
 #define pco_foreach_phi_src_in_instr(phi_src, instr) \
    list_for_each_entry (pco_phi_src, phi_src, &(instr)->phi_srcs, link)
+
+#define pco_foreach_instr_in_func(instr, func) \
+   assert(!func->parent_shader->is_grouped);   \
+   pco_foreach_block_in_func (block, func)     \
+      list_for_each_entry (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_func_safe(instr, func) \
+   assert(!func->parent_shader->is_grouped);        \
+   pco_foreach_block_in_func (block, func)          \
+      list_for_each_entry_safe (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_func_rev(instr, func) \
+   assert(!func->parent_shader->is_grouped);       \
+   pco_foreach_block_in_func_rev (block, func)     \
+      list_for_each_entry_rev (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_func_safe_rev(instr, func) \
+   assert(!func->parent_shader->is_grouped);            \
+   pco_foreach_block_in_func_rev (block, func)          \
+      list_for_each_entry_safe_rev (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_instr_dest(pdest, instr)    \
+   for (pco_ref *pdest = &instr->dest[0];       \
+        pdest < &instr->dest[instr->num_dests]; \
+        ++pdest)
+
+#define pco_foreach_instr_src(psrc, instr)                                   \
+   for (pco_ref *psrc = &instr->src[0]; psrc < &instr->src[instr->num_srcs]; \
+        ++psrc)
+
+#define pco_foreach_instr_dest_ssa(pdest, instr) \
+   pco_foreach_instr_dest (pdest, instr)         \
+      if (pco_ref_is_ssa(*pdest))
+
+#define pco_foreach_instr_src_ssa(psrc, instr) \
+   pco_foreach_instr_src (psrc, instr)         \
+      if (pco_ref_is_ssa(*psrc))
+
+#define pco_first_cf_node(body) list_first_entry(body, pco_cf_node, link)
+#define pco_last_cf_node(body) list_last_entry(body, pco_cf_node, link)
+#define pco_next_cf_node(cf_node) \
+   list_entry((cf_node)->link.next, pco_cf_node, link)
+#define pco_prev_cf_node(cf_node) \
+   list_entry((cf_node)->link.prev, pco_cf_node, link)
+
+/**
+ * \brief Returns whether the current cf node is (directly) in an else body.
+ *
+ * \param[in] cf_node The cf node.
+ * \return True if in the else body, else false if in the then body.
+ */
+static inline bool pco_cf_node_in_if_else(pco_cf_node *cf_node)
+{
+   assert(cf_node->parent->type == PCO_CF_NODE_TYPE_IF);
+   return cf_node->flag;
+}
 
 /**
  * \brief Returns the preamble function of a PCO shader.
@@ -500,19 +573,130 @@ static inline pco_func *pco_entrypoint(pco_shader *shader)
    return NULL;
 }
 
+/**
+ * \brief Returns the variant of an instruction in an instruction group.
+ *
+ * \param[in] igrp The instruction group.
+ * \param[in] phase The instruction phase.
+ * \return The instruction variant.
+ */
+static inline unsigned pco_igrp_variant(const pco_igrp *igrp,
+                                        enum pco_op_phase phase)
+{
+   switch (igrp->hdr.alutype) {
+   case PCO_ALUTYPE_MAIN:
+      return phase == PCO_OP_PHASE_BACKEND ? igrp->variant.instr[phase].backend
+                                           : igrp->variant.instr[phase].main;
+
+   case PCO_ALUTYPE_BITWISE:
+      return igrp->variant.instr[phase].bitwise;
+
+   case PCO_ALUTYPE_CONTROL:
+      return igrp->variant.instr[phase].ctrl;
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
 /* Motions. */
+/**
+ * \brief Returns the first block in an if then body.
+ *
+ * \param[in] pif The if.
+ * \return The first block.
+ */
+static inline pco_block *pco_if_then_first_block(pco_if *pif)
+{
+   assert(!list_is_empty(&pif->then_body));
+
+   pco_cf_node *cf_node = pco_first_cf_node(&pif->then_body);
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the last block in an if then body.
+ *
+ * \param[in] pif The if.
+ * \return The last block.
+ */
+static inline pco_block *pco_if_then_last_block(pco_if *pif)
+{
+   assert(!list_is_empty(&pif->then_body));
+
+   pco_cf_node *cf_node = pco_last_cf_node(&pif->then_body);
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the first block in an else body.
+ *
+ * \param[in] pif The if.
+ * \return The first block.
+ */
+static inline pco_block *pco_if_else_first_block(pco_if *pif)
+{
+   assert(!list_is_empty(&pif->else_body));
+
+   pco_cf_node *cf_node = pco_first_cf_node(&pif->else_body);
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the last block in an else body.
+ *
+ * \param[in] pif The if.
+ * \return The last block.
+ */
+static inline pco_block *pco_if_else_last_block(pco_if *pif)
+{
+   assert(!list_is_empty(&pif->else_body));
+
+   pco_cf_node *cf_node = pco_last_cf_node(&pif->else_body);
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the first block in a loop.
+ *
+ * \param[in] loop The loop.
+ * \return The first block.
+ */
+static inline pco_block *pco_loop_first_block(pco_loop *loop)
+{
+   assert(!list_is_empty(&loop->body));
+
+   pco_cf_node *cf_node = pco_first_cf_node(&loop->body);
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the last block in a loop.
+ *
+ * \param[in] loop The loop.
+ * \return The last block.
+ */
+static inline pco_block *pco_loop_last_block(pco_loop *loop)
+{
+   assert(!list_is_empty(&loop->body));
+
+   pco_cf_node *cf_node = pco_last_cf_node(&loop->body);
+   return pco_cf_node_as_block(cf_node);
+}
+
 /**
  * \brief Returns the first block in a function.
  *
  * \param[in] func The function.
- * \return The first block, or NULL if the function body is empty.
+ * \return The first block.
  */
-static inline pco_block *pco_first_block(pco_func *func)
+static inline pco_block *pco_func_first_block(pco_func *func)
 {
-   pco_cf_node *cf_node = list_first_entry(&func->body, pco_cf_node, link);
-   if (list_is_empty(&func->body))
-      return NULL;
+   assert(!list_is_empty(&func->body));
 
+   pco_cf_node *cf_node = pco_first_cf_node(&func->body);
    return pco_cf_node_as_block(cf_node);
 }
 
@@ -520,15 +704,182 @@ static inline pco_block *pco_first_block(pco_func *func)
  * \brief Returns the last block in a function.
  *
  * \param[in] func The function.
- * \return The last block, or NULL if the function body is empty.
+ * \return The last block.
  */
-static inline pco_block *pco_last_block(pco_func *func)
+static inline pco_block *pco_func_last_block(pco_func *func)
 {
-   pco_cf_node *cf_node = list_last_entry(&func->body, pco_cf_node, link);
-   if (list_is_empty(&func->body))
+   assert(!list_is_empty(&func->body));
+
+   pco_cf_node *cf_node = pco_last_cf_node(&func->body);
+   return pco_cf_node_as_block(cf_node);
+}
+
+/**
+ * \brief Returns the first block in a control-flow node.
+ *
+ * \param[in] cf_node The control-flow node.
+ * \return The first block in the control-flow node.
+ */
+static inline pco_block *pco_cf_node_first_block(pco_cf_node *cf_node)
+{
+   switch (cf_node->type) {
+   case PCO_CF_NODE_TYPE_BLOCK:
+      return pco_cf_node_as_block(cf_node);
+
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_if_then_first_block(pco_cf_node_as_if(cf_node));
+
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_loop_first_block(pco_cf_node_as_loop(cf_node));
+
+   case PCO_CF_NODE_TYPE_FUNC:
+      return pco_func_first_block(pco_cf_node_as_func(cf_node));
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
+ * \brief Returns the last block in a control-flow node.
+ *
+ * \param[in] cf_node The control-flow node.
+ * \return The last block in the control-flow node.
+ */
+static inline pco_block *pco_cf_node_last_block(pco_cf_node *cf_node)
+{
+   switch (cf_node->type) {
+   case PCO_CF_NODE_TYPE_BLOCK:
+      return pco_cf_node_as_block(cf_node);
+
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_if_else_last_block(pco_cf_node_as_if(cf_node));
+
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_loop_last_block(pco_cf_node_as_loop(cf_node));
+
+   case PCO_CF_NODE_TYPE_FUNC:
+      return pco_func_last_block(pco_cf_node_as_func(cf_node));
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+static inline struct list_head *pco_parent_cf_node_body(pco_cf_node *cf_node)
+{
+   pco_cf_node *parent_cf_node = cf_node->parent;
+
+   switch (parent_cf_node->type) {
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_cf_node_in_if_else(cf_node)
+                ? &pco_cf_node_as_if(parent_cf_node)->else_body
+                : &pco_cf_node_as_if(parent_cf_node)->then_body;
+
+   case PCO_CF_NODE_TYPE_LOOP:
+      return &pco_cf_node_as_loop(parent_cf_node)->body;
+
+   case PCO_CF_NODE_TYPE_FUNC:
+      return &pco_cf_node_as_func(parent_cf_node)->body;
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
+ * \brief Returns the next block in the function.
+ *
+ * \param[in] block The current block.
+ * \return The next block, or NULL if we've reached the end of the function.
+ */
+static inline pco_block *pco_next_block(pco_block *block)
+{
+   if (!block)
       return NULL;
 
-   return pco_cf_node_as_block(cf_node);
+   pco_cf_node *cf_node = &block->cf_node;
+   pco_cf_node *last_cf_node =
+      pco_last_cf_node(pco_parent_cf_node_body(cf_node));
+
+   /* Not yet reached the end of the body, return the next cf node. */
+   if (cf_node != last_cf_node)
+      return pco_cf_node_first_block(pco_next_cf_node(cf_node));
+
+   /* Reached the end; go to the next block from the parent cf node. */
+   pco_cf_node *parent_cf_node = cf_node->parent;
+   switch (parent_cf_node->type) {
+   case PCO_CF_NODE_TYPE_IF:
+      /* If we're in the then body, go to the else body. */
+      if (!pco_cf_node_in_if_else(cf_node))
+         return pco_if_else_first_block(pco_cf_node_as_if(parent_cf_node));
+
+      /* Otherwise go to the next block from the parent's parent cf node. */
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_cf_node_first_block(pco_next_cf_node(parent_cf_node));
+
+   /* End of the function; return NULL. */
+   case PCO_CF_NODE_TYPE_FUNC:
+      return NULL;
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
+ * \brief Returns the previous block in the function.
+ *
+ * \param[in] block The current block.
+ * \return The previous block, or NULL if we've reached the start of the
+ * function.
+ */
+static inline pco_block *pco_prev_block(pco_block *block)
+{
+   if (!block)
+      return NULL;
+
+   pco_cf_node *cf_node = &block->cf_node;
+   pco_cf_node *first_cf_node =
+      pco_first_cf_node(pco_parent_cf_node_body(cf_node));
+
+   /* Not yet reached the start of the body, return the previous cf node. */
+   if (cf_node != first_cf_node)
+      return pco_cf_node_last_block(pco_prev_cf_node(cf_node));
+
+   /* Reached the start; go to the previous block from the parent cf node. */
+   pco_cf_node *parent_cf_node = cf_node->parent;
+   switch (parent_cf_node->type) {
+   case PCO_CF_NODE_TYPE_IF:
+      /* If we're in the else body, go to the then body. */
+      if (pco_cf_node_in_if_else(cf_node))
+         return pco_if_then_last_block(pco_cf_node_as_if(parent_cf_node));
+
+      /* Otherwise go to the previous block from the parent's parent cf node. */
+      FALLTHROUGH;
+
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_cf_node_last_block(pco_prev_cf_node(parent_cf_node));
+
+   /* Start of the function; return NULL. */
+   case PCO_CF_NODE_TYPE_FUNC:
+      return NULL;
+
+   default:
+      break;
+   }
+
+   unreachable();
 }
 
 /**
@@ -727,8 +1078,31 @@ static inline bool pco_should_print_binary(pco_shader *shader)
 
 /* PCO IR passes. */
 bool pco_end(pco_shader *shader);
+bool pco_group_instrs(pco_shader *shader);
 
 /* PCO ref checkers. */
+/**
+ * \brief Returns whether a reference is null.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is null.
+ */
+static inline bool pco_ref_is_null(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_NULL;
+}
+
+/**
+ * \brief Returns whether a reference is a register.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is a register.
+ */
+static inline bool pco_ref_is_reg(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_REG;
+}
+
 /**
  * \brief Returns whether a reference is an index register.
  *
@@ -749,6 +1123,17 @@ static inline bool pco_ref_is_idx_reg(pco_ref ref)
 static inline bool pco_ref_is_imm(pco_ref ref)
 {
    return ref.type == PCO_REF_TYPE_IMM;
+}
+
+/**
+ * \brief Returns whether a reference is I/O.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is I/O.
+ */
+static inline bool pco_ref_is_io(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_IO;
 }
 
 /* PCO ref getters. */
@@ -854,5 +1239,163 @@ static inline uint64_t pco_ref_get_imm(pco_ref ref)
    unreachable();
 }
 
+/**
+ * \brief Returns the register class of a reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Register class.
+ */
+static inline enum pco_reg_class pco_ref_get_reg_class(pco_ref ref)
+{
+   assert(pco_ref_is_reg(ref) || pco_ref_is_idx_reg(ref));
+   return ref.reg_class;
+}
+
+/**
+ * \brief Returns the I/O of a reference type.
+ *
+ * \param[in] ref Reference.
+ * \return I/O.
+ */
+static inline enum pco_io pco_ref_get_io(pco_ref ref)
+{
+   assert(pco_ref_is_io(ref));
+   return ref.val;
+}
+
 /* PCO ref builders. */
+/**
+ * \brief Builds and returns a null reference.
+ *
+ * \return NULL reference.
+ */
+static inline pco_ref pco_ref_null(void)
+{
+   return (pco_ref){
+      .type = PCO_REF_TYPE_NULL,
+   };
+}
+
+/**
+ * \brief Builds and returns a hardware register reference.
+ *
+ * \param[in] index Register index.
+ * \param[in] reg_class Register class.
+ * \return Hardware register reference.
+ */
+static inline pco_ref pco_ref_hwreg(unsigned index,
+                                    enum pco_reg_class reg_class)
+{
+   assert(index < 256);
+   assert(reg_class != PCO_REG_CLASS_VIRT);
+
+   return (pco_ref){
+      .val = index,
+      .bits = PCO_BITS_32,
+      .type = PCO_REF_TYPE_REG,
+      .reg_class = reg_class,
+   };
+}
+
+/**
+ * \brief Builds and returns an immediate reference.
+ *
+ * \param[in] imm Immediate.
+ * \return Immediate reference.
+ */
+static inline pco_ref pco_ref_imm(uint32_t val)
+{
+   return (pco_ref){
+      .val = val,
+      .bits = PCO_BITS_32,
+      .type = PCO_REF_TYPE_IMM,
+   };
+}
+
+/**
+ * \brief Builds and returns an I/O reference.
+ *
+ * \param[in] io I/O.
+ * \return I/O reference.
+ */
+static inline pco_ref pco_ref_io(enum pco_io io)
+{
+   return (pco_ref){
+      .val = io,
+      .type = PCO_REF_TYPE_IO,
+   };
+}
+
+/* PCO ref utils. */
+/**
+ * \brief Transfers reference mods, optionally resetting them.
+ *
+ * \param[in,out] dest Reference to transfer mods to.
+ * \param[in,out] source Reference to transfer mods from.
+ * \param[in] reset Whether to reset the source mods.
+ * \return I/O reference.
+ */
+static inline void pco_ref_xfer_mods(pco_ref *dest, pco_ref *source, bool reset)
+{
+   dest->oneminus = source->oneminus;
+   dest->clamp = source->clamp;
+   dest->abs = source->abs;
+   dest->neg = source->neg;
+   dest->flr = source->flr;
+   dest->elem = source->elem;
+
+   if (reset) {
+      source->oneminus = false;
+      source->clamp = false;
+      source->abs = false;
+      source->neg = false;
+      source->flr = false;
+      source->elem = 0;
+   }
+}
+
+/**
+ * \brief Returns whether none of the lower/upper sources in an instruction
+ *        group are set.
+ *
+ * \param[in] igrp The instruction group.
+ * \param[in] upper True if checking the upper sources.
+ * \return True if none of the lower/upper sources are set.
+ */
+static inline bool pco_igrp_srcs_unset(pco_igrp *igrp, bool upper)
+{
+   if (upper) {
+      return pco_ref_is_null(igrp->srcs.s3) && pco_ref_is_null(igrp->srcs.s4) &&
+             pco_ref_is_null(igrp->srcs.s5);
+   }
+
+   return pco_ref_is_null(igrp->srcs.s0) && pco_ref_is_null(igrp->srcs.s1) &&
+          pco_ref_is_null(igrp->srcs.s2);
+}
+
+/**
+ * \brief Returns whether none of the internal source selectors in an
+ *        instruction group are set.
+ *
+ * \param[in] igrp The instruction group.
+ * \return True if none of the internal source selectors are set.
+ */
+static inline bool pco_igrp_iss_unset(pco_igrp *igrp)
+{
+   return pco_ref_is_null(igrp->iss.is0) && pco_ref_is_null(igrp->iss.is1) &&
+          pco_ref_is_null(igrp->iss.is2) && pco_ref_is_null(igrp->iss.is3) &&
+          pco_ref_is_null(igrp->iss.is4) && pco_ref_is_null(igrp->iss.is5);
+}
+
+/**
+ * \brief Returns whether none of the destinations in an instruction group are
+ *        set.
+ *
+ * \param[in] igrp The instruction group.
+ * \return True if none of the destinations are set.
+ */
+static inline bool pco_igrp_dests_unset(pco_igrp *igrp)
+{
+   return pco_ref_is_null(igrp->dests.w0) && pco_ref_is_null(igrp->dests.w1);
+}
 #endif /* PCO_INTERNAL_H */
