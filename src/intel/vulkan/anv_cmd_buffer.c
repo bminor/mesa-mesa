@@ -1555,3 +1555,17 @@ anv_cmd_write_buffer_cp(VkCommandBuffer commandBuffer,
    anv_genX(cmd_buffer->device->info, cmd_write_buffer_cp)(cmd_buffer, dstAddr,
                                                            data, size);
 }
+
+void
+anv_cmd_flush_buffer_write_cp(VkCommandBuffer commandBuffer)
+{
+   /* TODO: cmd_write_buffer_cp is implemented with MI store +
+    * ForceWriteCompletionCheck so that should make the content globally
+    * observable.
+    *
+    * If we encounter any functional or perf bottleneck issues, let's revisit
+    * this helper and add ANV_PIPE_HDC_PIPELINE_FLUSH_BIT +
+    * ANV_PIPE_UNTYPED_DATAPORT_CACHE_FLUSH_BIT +
+    * ANV_PIPE_DATA_CACHE_FLUSH_BIT.
+    */
+}

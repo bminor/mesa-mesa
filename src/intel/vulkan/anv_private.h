@@ -5910,6 +5910,8 @@ anv_cmd_write_buffer_cp(VkCommandBuffer cmd_buffer,
                         VkDeviceAddress dstAddr,
                         void *data,
                         uint32_t size);
+void
+anv_cmd_flush_buffer_write_cp(VkCommandBuffer cmd_buffer);
 
 VkResult
 anv_cmd_buffer_ensure_rcs_companion(struct anv_cmd_buffer *cmd_buffer);
