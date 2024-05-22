@@ -215,6 +215,8 @@ bool brw_nir_lower_texture(nir_shader *nir,
 
 bool brw_nir_lower_sample_index_in_coord(nir_shader *nir);
 
+bool brw_nir_lower_immediate_offsets(nir_shader *shader);
+
 bool brw_nir_lower_mem_access_bit_sizes(nir_shader *shader,
                                         const struct
                                         intel_device_info *devinfo);

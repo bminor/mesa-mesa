@@ -1756,6 +1756,58 @@ get_mem_access_size_align(nir_intrinsic_op intrin, uint8_t bytes,
    }
 }
 
+static bool
+brw_nir_ssbo_intel_instr(nir_builder *b,
+                         nir_intrinsic_instr *intrin,
+                         void *cb_data)
+{
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_load_ssbo: {
+      b->cursor = nir_before_instr(&intrin->instr);
+      nir_def *value = nir_load_ssbo_intel(
+         b,
+         intrin->def.num_components,
+         intrin->def.bit_size,
+         intrin->src[0].ssa,
+         intrin->src[1].ssa,
+         .access = nir_intrinsic_access(intrin),
+         .align_mul = nir_intrinsic_align_mul(intrin),
+         .align_offset = nir_intrinsic_align_offset(intrin),
+         .base = 0);
+      value->loop_invariant = intrin->def.loop_invariant;
+      value->divergent = intrin->def.divergent;
+      nir_def_replace(&intrin->def, value);
+      return true;
+   }
+
+   case nir_intrinsic_store_ssbo: {
+      b->cursor = nir_instr_remove(&intrin->instr);
+      nir_store_ssbo_intel(
+         b,
+         intrin->src[0].ssa,
+         intrin->src[1].ssa,
+         intrin->src[2].ssa,
+         .access = nir_intrinsic_access(intrin),
+         .align_mul = nir_intrinsic_align_mul(intrin),
+         .align_offset = nir_intrinsic_align_offset(intrin),
+         .base = 0);
+      return true;
+   }
+
+   default:
+      return false;
+   }
+}
+
+static bool
+brw_nir_ssbo_intel(nir_shader *shader)
+{
+   return nir_shader_intrinsics_pass(shader,
+                                     brw_nir_ssbo_intel_instr,
+                                     nir_metadata_control_flow,
+                                     NULL);
+}
+
 static void
 brw_vectorize_lower_mem_access(nir_shader *nir,
                                const struct brw_compiler *compiler,
@@ -1808,7 +1860,6 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
       }
    }
 
-
    struct brw_mem_access_cb_data cb_data = {
       .devinfo = compiler->devinfo,
    };
@@ -1835,6 +1886,23 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
       OPT(nir_opt_cse);
       OPT(nir_opt_algebraic);
       OPT(nir_opt_constant_folding);
+   }
+
+   /* Do this after the vectorization & brw_nir_rebase_const_offset_ubo_loads
+    * so that we maximize the offset put into the messages.
+    */
+   if (compiler->devinfo->ver >= 20) {
+      OPT(brw_nir_ssbo_intel);
+
+      const nir_opt_offsets_options offset_options = {
+         .buffer_max        = UINT32_MAX,
+         .shared_max        = UINT32_MAX,
+         .shared_atomic_max = UINT32_MAX,
+         .uniform_max       = UINT32_MAX,
+      };
+      OPT(nir_opt_offsets, &offset_options);
+
+      OPT(brw_nir_lower_immediate_offsets);
    }
 }
 
