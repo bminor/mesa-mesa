@@ -6043,6 +6043,8 @@ bool nir_lower_is_helper_invocation(nir_shader *shader);
 
 bool nir_lower_single_sampled(nir_shader *shader);
 
+bool nir_lower_atomics(nir_shader *shader, nir_instr_filter_cb filter);
+
 typedef struct nir_lower_subgroups_options {
    /* In addition to the boolean lowering options below, this optional callback
     * will filter instructions for lowering if non-NULL. The data passed will be

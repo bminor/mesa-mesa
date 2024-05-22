@@ -294,6 +294,7 @@ files_libnir = files(
   'nir_worklist.c',
   'nir_worklist.h',
   'nir_xfb_info.h',
+  'nir_lower_atomics.c'
 )
 
 # When a file is too large, -Wmisleading-indentation will give a note about
