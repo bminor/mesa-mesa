@@ -1080,6 +1080,37 @@ static inline bool pco_should_print_binary(pco_shader *shader)
 bool pco_end(pco_shader *shader);
 bool pco_group_instrs(pco_shader *shader);
 
+/**
+ * \brief Returns the PCO bits for a bit size.
+ *
+ * \param[in] bits Reference.
+ * \return PCO bits.
+ */
+static inline enum pco_bits pco_bits(unsigned bits)
+{
+   switch (bits) {
+   case 1:
+      return PCO_BITS_1;
+
+   case 8:
+      return PCO_BITS_8;
+
+   case 16:
+      return PCO_BITS_16;
+
+   case 32:
+      return PCO_BITS_32;
+
+   case 64:
+      return PCO_BITS_64;
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
 /* PCO ref checkers. */
 /**
  * \brief Returns whether a reference is null.
@@ -1090,6 +1121,17 @@ bool pco_group_instrs(pco_shader *shader);
 static inline bool pco_ref_is_null(pco_ref ref)
 {
    return ref.type == PCO_REF_TYPE_NULL;
+}
+
+/**
+ * \brief Returns whether a reference is an SSA variable.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is an SSA variable.
+ */
+static inline bool pco_ref_is_ssa(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_SSA;
 }
 
 /**
@@ -1134,6 +1176,28 @@ static inline bool pco_ref_is_imm(pco_ref ref)
 static inline bool pco_ref_is_io(pco_ref ref)
 {
    return ref.type == PCO_REF_TYPE_IO;
+}
+
+/**
+ * \brief Returns whether a reference is a predicate.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is a predicate.
+ */
+static inline bool pco_ref_is_pred(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_PRED;
+}
+
+/**
+ * \brief Returns whether a reference is a dependant read counter.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is a dependant read counter.
+ */
+static inline bool pco_ref_is_drc(pco_ref ref)
+{
+   return ref.type == PCO_REF_TYPE_DRC;
 }
 
 /* PCO ref getters. */
@@ -1252,7 +1316,7 @@ static inline enum pco_reg_class pco_ref_get_reg_class(pco_ref ref)
 }
 
 /**
- * \brief Returns the I/O of a reference type.
+ * \brief Returns the I/O from its reference type.
  *
  * \param[in] ref Reference.
  * \return I/O.
@@ -1260,6 +1324,33 @@ static inline enum pco_reg_class pco_ref_get_reg_class(pco_ref ref)
 static inline enum pco_io pco_ref_get_io(pco_ref ref)
 {
    assert(pco_ref_is_io(ref));
+   assert(ref.val < _PCO_IO_COUNT);
+   return ref.val;
+}
+
+/**
+ * \brief Returns the predicate from its reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Predicate.
+ */
+static inline enum pco_pred pco_ref_get_pred(pco_ref ref)
+{
+   assert(pco_ref_is_pred(ref));
+   assert(ref.val < _PCO_PRED_COUNT);
+   return ref.val;
+}
+
+/**
+ * \brief Returns the dependent read counter from its reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Dependent read counter.
+ */
+static inline enum pco_drc pco_ref_get_drc(pco_ref ref)
+{
+   assert(pco_ref_is_drc(ref));
+   assert(ref.val < _PCO_DRC_COUNT);
    return ref.val;
 }
 
@@ -1273,6 +1364,37 @@ static inline pco_ref pco_ref_null(void)
 {
    return (pco_ref){
       .type = PCO_REF_TYPE_NULL,
+   };
+}
+
+/**
+ * \brief Builds and returns an SSA reference.
+ *
+ * \return SSA reference.
+ */
+static inline pco_ref pco_ref_ssa(unsigned index, unsigned bits, unsigned chans)
+{
+   return (pco_ref){
+      .val = index,
+      .chans = chans - 1,
+      .bits = pco_bits(bits),
+      .type = PCO_REF_TYPE_SSA,
+   };
+}
+
+/**
+ * \brief Builds and returns a virtual register reference.
+ *
+ * \param[in] index Virtual register index.
+ * \return Virtual register reference.
+ */
+static inline pco_ref pco_ref_vreg(unsigned index)
+{
+   return (pco_ref){
+      .val = index,
+      .bits = PCO_BITS_32,
+      .type = PCO_REF_TYPE_REG,
+      .reg_class = PCO_REG_CLASS_VIRT,
    };
 }
 
@@ -1298,12 +1420,27 @@ static inline pco_ref pco_ref_hwreg(unsigned index,
 }
 
 /**
- * \brief Builds and returns an immediate reference.
+ * \brief Builds and returns a generic value reference.
  *
- * \param[in] imm Immediate.
+ * \param[in] val 32-bit immediate.
+ * \return Value reference.
+ */
+static inline pco_ref pco_ref_val(uint32_t val)
+{
+   return (pco_ref){
+      .val = val,
+      .bits = PCO_BITS_ANY,
+      .type = PCO_REF_TYPE_IMM,
+   };
+}
+
+/**
+ * \brief Builds and returns a 32-bit immediate reference.
+ *
+ * \param[in] val 32-bit immediate.
  * \return Immediate reference.
  */
-static inline pco_ref pco_ref_imm(uint32_t val)
+static inline pco_ref pco_ref_imm32(uint32_t val)
 {
    return (pco_ref){
       .val = val,
@@ -1323,6 +1460,34 @@ static inline pco_ref pco_ref_io(enum pco_io io)
    return (pco_ref){
       .val = io,
       .type = PCO_REF_TYPE_IO,
+   };
+}
+
+/**
+ * \brief Builds and returns a predicate reference.
+ *
+ * \param[in] pred predicate.
+ * \return Predicate reference.
+ */
+static inline pco_ref pco_ref_pred(enum pco_pred pred)
+{
+   return (pco_ref){
+      .val = pred,
+      .type = PCO_REF_TYPE_PRED,
+   };
+}
+
+/**
+ * \brief Builds and returns a dependent read counter reference.
+ *
+ * \param[in] drc Dependent read counter.
+ * \return Dependent read counter reference.
+ */
+static inline pco_ref pco_ref_drc(enum pco_io drc)
+{
+   return (pco_ref){
+      .val = drc,
+      .type = PCO_REF_TYPE_DRC,
    };
 }
 
