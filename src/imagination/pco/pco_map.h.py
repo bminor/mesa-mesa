@@ -1,7 +1,7 @@
 # Copyright © 2024 Imagination Technologies Ltd.
 # SPDX-License-Identifier: MIT
 
-from mako.template import Template
+from mako.template import Template, exceptions
 from pco_map import *
 
 template = """/*
@@ -499,7 +499,10 @@ unsigned pco_dests_map_encode(uint8_t *bin, pco_igrp *igrp)
 #endif /* PCO_MAP_H */"""
 
 def main():
-   print(Template(template).render(enum_maps=enum_maps, op_maps=op_maps, encode_maps=encode_maps, I_SRC=I_SRC, I_DST=I_DST))
+   try:
+      print(Template(template).render(enum_maps=enum_maps, op_maps=op_maps, encode_maps=encode_maps, I_SRC=I_SRC, I_DST=I_DST))
+   except:
+       raise Exception(exceptions.text_error_template().render())
 
 if __name__ == '__main__':
    main()

@@ -1,7 +1,7 @@
 # Copyright © 2024 Imagination Technologies Ltd.
 # SPDX-License-Identifier: MIT
 
-from mako.template import Template
+from mako.template import Template, exceptions
 from pco_ops import *
 
 template = """/*
@@ -58,7 +58,10 @@ enum pco_ref_mod {
 #endif /* PCO_OPS_H */"""
 
 def main():
-   print(Template(template).render(ops=ops, op_mods=op_mods, ref_mods=ref_mods))
+   try:
+      print(Template(template).render(ops=ops, op_mods=op_mods, ref_mods=ref_mods))
+   except:
+       raise Exception(exceptions.text_error_template().render())
 
 if __name__ == '__main__':
    main()

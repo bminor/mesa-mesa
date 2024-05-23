@@ -1,7 +1,7 @@
 # Copyright © 2024 Imagination Technologies Ltd.
 # SPDX-License-Identifier: MIT
 
-from mako.template import Template
+from mako.template import Template, exceptions
 from pco_pygen_common import *
 from pco_ops import *
 from pco_isa import *
@@ -78,7 +78,10 @@ enum ${bit_set.name}_variant {
 #endif /* PCO_COMMON_H */"""
 
 def main():
-   print(Template(template).render(enums=enums, bit_sets=bit_sets))
+   try:
+      print(Template(template).render(enums=enums, bit_sets=bit_sets))
+   except:
+       raise Exception(exceptions.text_error_template().render())
 
 if __name__ == '__main__':
    main()
