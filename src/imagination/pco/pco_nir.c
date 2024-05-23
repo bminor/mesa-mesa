@@ -61,12 +61,20 @@ void pco_setup_nir_options(const struct pvr_device_info *dev_info,
  */
 void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   if (nir->info.internal)
+      NIR_PASS(_, nir, nir_lower_returns);
+
    if (pco_should_print_nir(nir)) {
       puts("after pco_preprocess_nir:");
       nir_print_shader(nir, stdout);
    }
 
    puts("finishme: pco_preprocess_nir");
+}
+
+static int glsl_type_size(const struct glsl_type *type, UNUSED bool bindless)
+{
+   return glsl_count_attribute_slots(type, false);
 }
 
 /**
@@ -77,6 +85,20 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   NIR_PASS(_,
+            nir,
+            nir_lower_io,
+            nir_var_shader_in | nir_var_shader_out,
+            glsl_type_size,
+            nir_lower_io_lower_64bit_to_32);
+
+   NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+   NIR_PASS(_,
+            nir,
+            nir_io_add_const_offset_to_base,
+            nir_var_shader_in | nir_var_shader_out);
+
    if (pco_should_print_nir(nir)) {
       puts("after pco_lower_nir:");
       nir_print_shader(nir, stdout);
@@ -93,6 +115,21 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir)
 {
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+   NIR_PASS(_, nir, nir_opt_copy_prop_vars);
+   NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_cse);
+
+   /* Re-index everything. */
+   nir_foreach_function_with_impl (_, impl, nir) {
+      nir_index_blocks(impl);
+      nir_index_instrs(impl);
+      nir_index_ssa_defs(impl);
+   }
+
+   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
+
    if (pco_should_print_nir(nir)) {
       puts("after pco_postprocess_nir:");
       nir_print_shader(nir, stdout);
