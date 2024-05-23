@@ -55,6 +55,7 @@ const struct pco_op_mod_info pco_op_mod_info[_PCO_OP_MOD_COUNT] = {
       .print_early = ${str(op_mod.t.print_early).lower()},
       .type = ${op_mod.ctype},
    % if op_mod.t.base_type == BaseType.enum:
+      .is_bitset = ${str(op_mod.t.enum.is_bitset).lower()},
       .strs = (const char * []){
       % for elem in op_mod.t.enum.elems.values():
          [${elem.cname}] = "${elem.string}",

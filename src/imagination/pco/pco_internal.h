@@ -354,6 +354,7 @@ extern const struct pco_op_info pco_op_info[_PCO_OP_COUNT];
 /** Op mod info. */
 struct pco_op_mod_info {
    bool print_early : 1; /** Set if printed before the op. */
+   bool is_bitset : 1; /** Set if type is an enum bitset. */
    enum pco_mod_type type; /** Datatype. */
    union {
       const char *str; /** Mod name. */

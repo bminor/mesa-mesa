@@ -370,11 +370,17 @@ static void pco_print_instr_mods(pco_print_state *state,
          break;
 
       case PCO_MOD_TYPE_ENUM:
-         if (strlen(mod_info->strs[val])) {
-            if (print_early)
-               pco_printf(state, "%s ", mod_info->strs[val]);
-            else
-               pco_printf(state, ".%s", mod_info->strs[val]);
+         if (mod_info->is_bitset) {
+            u_foreach_bit (bit, val) {
+               pco_printf(state, ".%s", mod_info->strs[1U << bit]);
+            }
+         } else {
+            if (strlen(mod_info->strs[val])) {
+               if (print_early)
+                  pco_printf(state, "%s ", mod_info->strs[val]);
+               else
+                  pco_printf(state, ".%s", mod_info->strs[val]);
+            }
          }
          break;
 
