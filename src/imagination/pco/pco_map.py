@@ -316,49 +316,7 @@ def op_map(op, hdr, isa_ops, srcs=[], iss=[], dests=[]):
    cop_name = op.cname.upper()
    op_maps[name] = OpMap(name, cop_name, igrp_mappings, None)
 
-
-op_map(O_NOP,
-   hdr=(I_IGRP_HDR_CONTROL, [
-      ('olchk', False),
-      ('w1p', False),
-      ('w0p', False),
-      ('cc', OM_EXEC_CND),
-      ('miscctl', False),
-      ('ctrlop', 'nop'),
-   ]),
-   isa_ops=[
-      ('ctrl', [(I_NOP, [])]),
-   ]
-)
-
-op_map(O_NOP_END,
-   hdr=(I_IGRP_HDR_CONTROL, [
-      ('olchk', False),
-      ('w1p', False),
-      ('w0p', False),
-      ('cc', OM_EXEC_CND),
-      ('miscctl', True),
-      ('ctrlop', 'nop'),
-   ]),
-   isa_ops=[
-      ('ctrl', [(I_NOP, [])]),
-   ]
-)
-
-op_map(O_WOP,
-   hdr=(I_IGRP_HDR_CONTROL, [
-      ('olchk', False),
-      ('w1p', False),
-      ('w0p', False),
-      ('cc', 'e1_zx'),
-      ('miscctl', 0),
-      ('ctrlop', 'wop'),
-   ]),
-   isa_ops=[
-      ('ctrl', [(I_WOP, [])]),
-   ]
-)
-
+# Main.
 op_map(O_MBYP0,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0'),
@@ -394,6 +352,7 @@ op_map(O_MBYP0,
    ]
 )
 
+# Bitwise
 op_map(O_MOVI32,
    hdr=(I_IGRP_HDR_BITWISE, [
       ('opcnt', 'p0'),
@@ -417,5 +376,48 @@ op_map(O_MOVI32,
    ],
    dests=[
       ('w0', 'dest[0]', 'ft1'),
+   ]
+)
+
+# Control.
+op_map(O_WOP,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', 'e1_zx'),
+      ('miscctl', 0),
+      ('ctrlop', 'wop'),
+   ]),
+   isa_ops=[
+      ('ctrl', [(I_WOP, [])]),
+   ]
+)
+
+op_map(O_NOP,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'nop'),
+   ]),
+   isa_ops=[
+      ('ctrl', [(I_NOP, [])]),
+   ]
+)
+
+op_map(O_NOP_END,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', True),
+      ('ctrlop', 'nop'),
+   ]),
+   isa_ops=[
+      ('ctrl', [(I_NOP, [])]),
    ]
 )

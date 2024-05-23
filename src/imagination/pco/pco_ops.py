@@ -259,16 +259,25 @@ OM_PCK_FMT = op_mod_enum('pck_fmt', [
 ])
 OM_PHASE2END = op_mod('phase2end', BaseType.bool)
 
-# HW ops
-O_NOP = hw_op('nop', [OM_EXEC_CND])
-O_NOP_END = hw_op('nop.end', [OM_EXEC_CND])
+# Ops.
 
-O_WOP = hw_op('wop')
-
+## Main.
+O_FADD = hw_op('fadd', [OM_LP, OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
 O_MBYP0 = hw_op('mbyp0', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT], 1, 1, [], [[RM_ABS, RM_NEG]])
 
-O_FADD = hw_op('fadd', [OM_LP, OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
+## Backend.
+O_UVSW_WRITE = hw_op('uvsw.write', [OM_EXEC_CND, OM_RPT], 0, 2)
+O_UVSW_ENDTASK = hw_op('uvsw.endtask', [OM_END])
+
+## Bitwise.
+O_BBYP0BM = hw_direct_op('bbyp0bm', 2, 2)
 
 O_MOVI32 = pseudo_op('movi32', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT], 1, 1)
 
-O_BBYP0BM = hw_direct_op('bbyp0bm', 2, 2)
+## Control.
+O_WOP = hw_op('wop')
+O_NOP = hw_op('nop', [OM_EXEC_CND])
+O_NOP_END = hw_op('nop.end', [OM_EXEC_CND])
+
+# Pseudo-ops (unmapped).
+O_MOV = pseudo_op('mov', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT], 1, 1)

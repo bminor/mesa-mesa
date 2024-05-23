@@ -55,7 +55,6 @@ enum pco_ref_mod {
    ${ref_mod.cname},
 % endfor
 };
-
 #endif /* PCO_OPS_H */"""
 
 def main():
