@@ -241,6 +241,11 @@ enum ac_descriptor_type
    AC_DESC_PLANE_2,
 };
 
+struct ac_nir_config {
+   enum amd_gfx_level gfx_level;
+   bool uses_aco;
+};
+
 void ac_set_nir_options(struct radeon_info *info, bool use_llvm,
                         nir_shader_compiler_options *options);
 

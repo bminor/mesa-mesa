@@ -2613,7 +2613,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
                .modes = nir_var_mem_ssbo | nir_var_mem_ubo | nir_var_mem_shared | nir_var_mem_global |
                         nir_var_shader_temp,
                .callback = ac_nir_mem_vectorize_callback,
-               .cb_data = &sel->screen->info.gfx_level,
+               .cb_data = &(struct ac_nir_config){sel->screen->info.gfx_level, sel->info.base.use_aco_amd},
                /* On GFX6, read2/write2 is out-of-bounds if the offset register is negative, even if
                 * the final offset is not.
                 */

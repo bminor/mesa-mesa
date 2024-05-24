@@ -329,7 +329,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       .modes = nir_var_mem_ssbo | nir_var_mem_ubo | nir_var_mem_push_const | nir_var_mem_shared | nir_var_mem_global |
                nir_var_shader_temp,
       .callback = ac_nir_mem_vectorize_callback,
-      .cb_data = &gfx_level,
+      .cb_data = &(struct ac_nir_config){gfx_level, !use_llvm},
       .robust_modes = 0,
       /* On GFX6, read2/write2 is out-of-bounds if the offset register is negative, even if
        * the final offset is not.
@@ -413,6 +413,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    if (constant_fold_for_push_const && stage->args.ac.inline_push_const_mask)
       NIR_PASS(_, stage->nir, nir_opt_constant_folding);
 
+   /* TODO: vectorize loads after this to vectorize loading adjacent descriptors */
    NIR_PASS_V(stage->nir, radv_nir_apply_pipeline_layout, device, stage);
 
    if (!stage->key.optimisations_disabled) {
