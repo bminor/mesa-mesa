@@ -1354,6 +1354,18 @@ static inline enum pco_drc pco_ref_get_drc(pco_ref ref)
    return ref.val;
 }
 
+/**
+ * \brief Returns whether the reference has any mods set.
+ *
+ * \param[in] ref Reference.
+ * \return True if any mods are set.
+ */
+static inline bool pco_ref_has_mods_set(pco_ref ref)
+{
+   return ref.oneminus || ref.clamp || ref.abs || ref.neg || ref.flr ||
+          (ref.elem != 0);
+}
+
 /* PCO ref builders. */
 /**
  * \brief Builds and returns a null reference.

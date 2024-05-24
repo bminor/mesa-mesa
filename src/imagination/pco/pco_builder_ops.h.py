@@ -27,6 +27,39 @@ template = """/*
 #include <assert.h>
 #include <stdbool.h>
 
+/** Ref mod info. */
+static inline
+bool pco_instr_dest_has_mod(const pco_instr *instr, unsigned dest, enum pco_ref_mod mod)
+{
+   const struct pco_op_info *info = &pco_op_info[instr->op];
+   assert(dest < info->num_dests);
+   assert(mod < _PCO_REF_MOD_COUNT);
+   return (info->dest_mods[dest] & (1ULL << mod)) != 0;
+}
+
+static inline
+bool pco_instr_src_has_mod(const pco_instr *instr, unsigned src, enum pco_ref_mod mod)
+{
+   const struct pco_op_info *info = &pco_op_info[instr->op];
+   assert(src < info->num_srcs);
+   assert(mod < _PCO_REF_MOD_COUNT);
+   return (info->src_mods[src] & (1ULL << mod)) != 0;
+}
+
+% for ref_mod in ref_mods.values():
+static inline
+bool pco_instr_dest_has_${ref_mod.t.tname}(const pco_instr *instr, unsigned dest)
+{
+   return pco_instr_dest_has_mod(instr, dest, ${ref_mod.cname});
+}
+
+static inline
+bool pco_instr_src_has_${ref_mod.t.tname}(const pco_instr *instr, unsigned src)
+{
+   return pco_instr_src_has_mod(instr, src, ${ref_mod.cname});
+}
+
+% endfor
 /** Op mod getting/setting. */
 static inline
 bool pco_instr_has_mod(const pco_instr *instr, enum pco_op_mod mod)
@@ -45,12 +78,19 @@ void pco_instr_set_mod(pco_instr *instr, enum pco_op_mod mod, uint32_t val)
 }
 
 static inline
-uint32_t pco_instr_get_mod(pco_instr *instr, enum pco_op_mod mod)
+uint32_t pco_instr_get_mod(const pco_instr *instr, enum pco_op_mod mod)
 {
    assert(mod < _PCO_OP_MOD_COUNT);
    unsigned mod_index = pco_op_info[instr->op].mod_map[mod];
    assert(mod_index > 0);
    return instr->mod[mod_index - 1];
+}
+
+static inline
+bool pco_instr_mod_is_set(const pco_instr *instr, enum pco_op_mod mod)
+{
+   const struct pco_op_mod_info *info = &pco_op_mod_info[mod];
+   return pco_instr_get_mod(instr, mod) != (info->nzdefault ? info->nzdefault : 0);
 }
 
 % for op_mod in op_mods.values():
@@ -67,7 +107,7 @@ void pco_instr_set_${op_mod.t.tname}(pco_instr *instr, ${op_mod.t.name} val)
 }
 
 static inline
-${op_mod.t.name} pco_instr_get_${op_mod.t.tname}(pco_instr *instr)
+${op_mod.t.name} pco_instr_get_${op_mod.t.tname}(const pco_instr *instr)
 {
    return pco_instr_get_mod(instr, ${op_mod.cname});
 }
