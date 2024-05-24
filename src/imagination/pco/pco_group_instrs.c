@@ -127,8 +127,10 @@ static inline void calc_lengths(pco_igrp *igrp, unsigned *offset_bytes)
  *        the last instruction group in the shader.
  *
  * \param[in,out] last_igrp The last instruction group.
+ * \param[in,out] offset_bytes The cumulative shader offset (in bytes).
  */
-static inline void calc_align_padding(pco_igrp *last_igrp)
+static inline void calc_align_padding(pco_igrp *last_igrp,
+                                      unsigned *offset_bytes)
 {
    /* We should never end up with a completely empty shader. */
    assert(last_igrp);
@@ -138,6 +140,7 @@ static inline void calc_align_padding(pco_igrp *last_igrp)
 
    if (total_align) {
       unsigned padding = ROGUE_ICACHE_ALIGN - total_align;
+      *offset_bytes += padding;
 
       /* Pad the size of the last igrp. */
       last_igrp->enc.len.align_padding += padding;
@@ -149,6 +152,7 @@ static inline void calc_align_padding(pco_igrp *last_igrp)
 
    if (offset_align) {
       unsigned padding = ROGUE_ICACHE_ALIGN - offset_align;
+      *offset_bytes += padding;
 
       /* Pad the size of the penultimate igrp. */
       pco_igrp *penultimate_igrp =
@@ -198,6 +202,9 @@ bool pco_group_instrs(pco_shader *shader)
    assert(!shader->is_grouped);
 
    pco_foreach_func_in_shader (func, shader) {
+      /* TODO: double check that *start* alignment is satisfied by
+       * calc_align_padding when having multiple functions?
+       */
       pco_foreach_block_in_func (block, func) {
          b = pco_builder_create(func, pco_cursor_before_block(block));
          pco_foreach_instr_in_block_safe (instr, block) {
@@ -205,12 +212,12 @@ bool pco_group_instrs(pco_shader *shader)
             pco_instr_to_igrp(&b, instr, igrp, &offset_bytes);
          }
       }
-   }
 
-   /* Ensure the final instruction group has a total size and offset
-    * that are a multiple of the icache alignment.
-    */
-   calc_align_padding(igrp);
+      /* Ensure the final instruction group has a total size and offset
+       * that are a multiple of the icache alignment.
+       */
+      calc_align_padding(igrp, &offset_bytes);
+   }
 
    shader->is_grouped = true;
    return true;
