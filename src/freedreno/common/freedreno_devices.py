@@ -62,20 +62,20 @@ def add_gpus(ids, info):
 
 class GPUId(object):
     def __init__(self, gpu_id = None, chip_id = None, name=None):
-        if chip_id == None:
-            assert(gpu_id != None)
+        if chip_id is None:
+            assert(gpu_id is not None)
             val = gpu_id
             core = int(val / 100)
-            val -= (core * 100);
-            major = int(val / 10);
+            val -= (core * 100)
+            major = int(val / 10)
             val -= (major * 10)
             minor = val
             chip_id = (core << 24) | (major << 16) | (minor << 8) | 0xff
         self.chip_id = chip_id
-        if gpu_id == None:
+        if gpu_id is None:
             gpu_id = 0
         self.gpu_id = gpu_id
-        if name == None:
+        if name is None:
             assert(gpu_id != 0)
             name = "FD%d" % gpu_id
         self.name = name
@@ -172,7 +172,7 @@ class A6xxGPUInfo(GPUInfo):
         if raw_magic_regs:
             self.a6xx.magic_raw = [[int(r[0]), r[1]] for r in raw_magic_regs]
 
-        templates = template if type(template) is list else [template]
+        templates = template if isinstance(template, list) else [template]
         for template in templates:
             template.apply_props(self)
 
