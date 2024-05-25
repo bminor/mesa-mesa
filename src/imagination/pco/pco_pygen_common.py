@@ -4,6 +4,7 @@
 from enum import Enum, auto
 
 _ = None
+VARIABLE = ~0
 
 prefix = 'pco'
 
@@ -455,13 +456,21 @@ def op(name, op_type, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_tar
       builder_params[0] += ', pco_cf_node *target_cf_node'
       builder_params[1] += ', target_cf_node'
 
-   for d in range(num_dests):
-      builder_params[0] += f', pco_ref dest{d}'
-      builder_params[1] += f', dest{d}'
+   if num_dests == VARIABLE:
+      builder_params[0] += f', unsigned num_dests, pco_ref *dest'
+      builder_params[1] += f', num_dests, dests'
+   else:
+      for d in range(num_dests):
+         builder_params[0] += f', pco_ref dest{d}'
+         builder_params[1] += f', dest{d}'
 
-   for s in range(num_srcs):
-      builder_params[0] += f', pco_ref src{s}'
-      builder_params[1] += f', src{s}'
+   if num_srcs == VARIABLE:
+      builder_params[0] += f', unsigned num_srcs, pco_ref *src'
+      builder_params[1] += f', num_srcs, srcs'
+   else:
+      for s in range(num_srcs):
+         builder_params[0] += f', pco_ref src{s}'
+         builder_params[1] += f', src{s}'
 
    if bool(op_mods):
       builder_params[0] += f', struct {prefix}_{_name}_mods mods'

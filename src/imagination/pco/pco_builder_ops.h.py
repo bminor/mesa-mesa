@@ -127,18 +127,28 @@ pco_instr *_${op.bname}(${op.builder_params[0]})
 {
    pco_instr *instr = pco_instr_create(${op.builder_params[4]},
                                        ${op.cname.upper()},
-                                       ${op.num_dests},
-                                       ${op.num_srcs});
+                                       ${'num_dests' if op.num_dests == VARIABLE else op.num_dests},
+                                       ${'num_srcs' if op.num_srcs == VARIABLE else op.num_srcs});
 
    % if op.has_target_cf_node:
    instr->target_cf_node = target_cf_node;
    % endif
-   % for d in range(op.num_dests):
+   % if op.num_dests == VARIABLE:
+   for (unsigned d = 0; d < num_dests; ++d)
+      instr->dest[d] = dest[d];
+   % else:
+      % for d in range(op.num_dests):
    instr->dest[${d}] = dest${d};
-   % endfor
-   % for s in range(op.num_srcs):
+      % endfor
+   % endif
+   % if op.num_srcs == VARIABLE:
+   for (unsigned s = 0; s < num_srcs; ++s)
+      instr->src[s] = src[s];
+   % else:
+      % for s in range(op.num_srcs):
    instr->src[${s}] = src${s};
-   % endfor
+      % endfor
+   % endif
 
    % for op_mod in op.op_mods:
       % if op_mod.t.nzdefault is None:
@@ -159,7 +169,7 @@ pco_instr *_${op.bname}(${op.builder_params[0]})
 
 def main():
    try:
-      print(Template(template).render(ops=ops, op_mods=op_mods, ref_mods=ref_mods))
+      print(Template(template).render(ops=ops, op_mods=op_mods, ref_mods=ref_mods, VARIABLE=VARIABLE))
    except:
        raise Exception(exceptions.text_error_template().render())
 
