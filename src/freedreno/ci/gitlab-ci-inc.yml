@@ -155,6 +155,14 @@
     - !reference [.collabora-freedreno-manual-rules, rules]
     - !reference [.collabora-turnip-manual-rules, rules]
 
+.valve-freedreno-manual-rules:
+  stage: freedreno-postmerge
+  extends: .no-auto-retry
+  rules:
+    - !reference [.test, rules]
+    - !reference [.valve-farm-manual-rules, rules]
+    - !reference [.freedreno-manual-rules, rules]
+
 .valve-freedreno-turnip-manual-rules:
   stage: freedreno-postmerge
   extends: .no-auto-retry

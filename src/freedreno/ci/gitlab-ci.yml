@@ -173,6 +173,20 @@ a618-piglit-full:
     HWCI_START_WESTON: 1
     JOB_TIMEOUT: 60
 
+a618-piglit-cl:
+  extends:
+    - .lava-test-deqp:arm64
+    - .lava-sc7180-trogdor-lazor-limozeen:arm64
+    - .collabora-freedreno-rules
+  rules:
+    - !reference [.collabora-freedreno-rules, rules]
+    - !reference [.rusticl-rules, rules]
+  variables:
+    DEQP_SUITE: freedreno-a618-piglit-cl
+    FLAKES_CHANNEL: "#freedreno-ci"
+    HWCI_START_WESTON: 1
+    PIGLIT_PROFILES: cl
+
 a618-traces:
   extends:
     - .lava-piglit-traces:arm64
@@ -204,6 +218,19 @@ a618-traces-performance:
   needs:
     - !reference [a618-traces, needs]
     - !reference [.piglit-performance:arm64, needs]
+
+a660-piglit-cl:
+  extends:
+    - .lava-test-deqp:arm64
+    - .lava-sm8350-hdk:arm64
+    - .collabora-freedreno-rules
+  rules:
+    - !reference [.collabora-freedreno-rules, rules]
+    - !reference [.rusticl-rules, rules]
+  variables:
+    DEQP_SUITE: freedreno-a660-piglit-cl
+    HWCI_START_WESTON: 1
+    PIGLIT_PROFILES: cl
 
 a660-gl:
   extends:
@@ -352,6 +379,21 @@ a630-traces-performance:
     EGL_PLATFORM: surfaceless
     GIT_STRATEGY: none
     HWCI_FREQ_MAX: "true"
+
+a750-piglit-cl:
+  extends:
+    - .b2c-arm64-test-gl
+    - .a750-mupuf
+    - .valve-freedreno-manual-rules
+  rules:
+    - !reference [.valve-freedreno-manual-rules, rules]
+    - !reference [.rusticl-rules, rules]
+  variables:
+    DEQP_SUITE: freedreno-a750-piglit-cl
+    HWCI_START_WESTON: 1
+    PIGLIT_PROFILES: cl
+    HWCI_TEST_SCRIPT: ./install/deqp-runner.sh
+    VK_DRIVER: freedreno
 
 a750-vk:
   extends:
