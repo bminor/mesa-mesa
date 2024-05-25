@@ -10,6 +10,7 @@
  * \brief Main compiler interface.
  */
 
+#include "compiler/glsl_types.h"
 #include "pco.h"
 #include "pco_internal.h"
 #include "util/list.h"
@@ -18,6 +19,16 @@
 
 #include <assert.h>
 #include <stdbool.h>
+
+/**
+ * \brief PCO compiler context destructor.
+ *
+ * \param[in,out] ptr PCO compiler context pointer.
+ */
+static void pco_ctx_destructor(UNUSED void *ptr)
+{
+   glsl_type_singleton_decref();
+}
 
 /**
  * \brief Allocates and sets up a PCO compiler context.
@@ -41,6 +52,9 @@ pco_ctx *pco_ctx_create(const struct pvr_device_info *dev_info, void *mem_ctx)
 
    pco_setup_spirv_options(dev_info, &ctx->spirv_options);
    pco_setup_nir_options(dev_info, &ctx->nir_options);
+
+   glsl_type_singleton_init_or_ref();
+   ralloc_set_destructor(ctx, pco_ctx_destructor);
 
    return ctx;
 }
