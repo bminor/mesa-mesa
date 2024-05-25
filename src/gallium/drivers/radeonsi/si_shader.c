@@ -2594,6 +2594,13 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       NIR_PASS_V(nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 
+   NIR_PASS_V(nir, nir_divergence_analysis); /* required by ac_nir_flag_smem_for_loads */
+   NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
+            !sel->info.base.use_aco_amd, true);
+   NIR_PASS(progress, nir, nir_lower_io_to_scalar,
+            nir_var_mem_ubo | nir_var_mem_ssbo | nir_var_mem_shared | nir_var_mem_global,
+            ac_nir_scalarize_overfetching_loads_callback, &sel->screen->info.gfx_level);
+
    if (progress) {
       si_nir_opts(sel->screen, nir, false);
       progress = false;

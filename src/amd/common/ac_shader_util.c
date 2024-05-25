@@ -114,6 +114,28 @@ void ac_set_nir_options(struct radeon_info *info, bool use_llvm,
       BITFIELD_BIT(nir_lower_packing_op_unpack_32_4x8);
 }
 
+static unsigned
+align_load_store_size(enum amd_gfx_level gfx_level, unsigned size, bool uses_smem, bool is_shared)
+{
+   /* LDS can't overfetch because accesses that are partially out of range would be dropped
+    * entirely, so all unaligned LDS accesses are always split.
+    */
+   if (is_shared)
+      return size;
+
+   /* Align the size to what the hw supports. Out of range access due to alignment is OK because
+    * range checking is per dword for untyped instructions. This assumes that the compiler backend
+    * overfetches due to load size alignment instead of splitting the load.
+    *
+    * GFX6-11 don't have 96-bit SMEM loads.
+    * GFX6 doesn't have 96-bit untyped VMEM loads.
+    */
+   if (gfx_level >= (uses_smem ? GFX12 : GFX7) && size == 96)
+      return size;
+   else
+      return util_next_power_of_two(size);
+}
+
 bool
 ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigned bit_size,
                               unsigned num_components, int64_t hole_size, nir_intrinsic_instr *low,
@@ -193,6 +215,38 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
       return false;
    }
    return false;
+}
+
+bool ac_nir_scalarize_overfetching_loads_callback(const nir_instr *instr, const void *data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   /* Reject opcodes we don't scalarize. */
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_ubo:
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_load_global:
+   case nir_intrinsic_load_global_constant:
+   case nir_intrinsic_load_shared:
+      break;
+   default:
+      return false;
+   }
+
+   bool uses_smem = nir_intrinsic_has_access(intr) &&
+                    nir_intrinsic_access(intr) & ACCESS_SMEM_AMD;
+   bool is_shared = intr->intrinsic == nir_intrinsic_load_shared;
+
+   enum amd_gfx_level gfx_level = *(enum amd_gfx_level *)data;
+   unsigned comp_size = intr->def.bit_size / 8;
+   unsigned load_size = intr->def.num_components * comp_size;
+   unsigned used_load_size = util_bitcount(nir_def_components_read(&intr->def)) * comp_size;
+
+   /* Scalarize if the load overfetches. That includes loads that overfetch due to load size
+    * alignment, e.g. when only a power-of-two load is available. The scalarized loads are expected
+    * to be later vectorized to optimal sizes.
+    */
+   return used_load_size < align_load_store_size(gfx_level, load_size, uses_smem, is_shared);
 }
 
 unsigned ac_get_spi_shader_z_format(bool writes_z, bool writes_stencil, bool writes_samplemask,
