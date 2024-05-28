@@ -725,7 +725,7 @@ cmd_buffer_flush_vertex_buffers(struct anv_cmd_buffer *cmd_buffer,
 }
 
 ALWAYS_INLINE static void
-genX(cmd_buffer_flush_gfx_state)(struct anv_cmd_buffer *cmd_buffer)
+cmd_buffer_flush_gfx_state(struct anv_cmd_buffer *cmd_buffer)
 {
    struct anv_graphics_pipeline *pipeline =
       anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
@@ -930,6 +930,12 @@ genX(cmd_buffer_flush_gfx_state)(struct anv_cmd_buffer *cmd_buffer)
    cmd_buffer->state.gfx.dirty = 0;
 }
 
+void
+genX(cmd_buffer_flush_gfx_state)(struct anv_cmd_buffer *cmd_buffer)
+{
+   cmd_buffer_flush_gfx_state(cmd_buffer);
+}
+
 ALWAYS_INLINE static bool
 anv_use_generated_draws(const struct anv_cmd_buffer *cmd_buffer, uint32_t count)
 {
@@ -1095,7 +1101,7 @@ void genX(CmdDraw)(
                                               false /* force_flush */);
 #endif
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -1144,7 +1150,7 @@ void genX(CmdDrawMultiEXT)(
    if (anv_batch_has_error(&cmd_buffer->batch))
       return;
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -1260,7 +1266,7 @@ void genX(CmdDrawIndexed)(
                                               0, false /* force_flush */);
 #endif
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -1310,7 +1316,7 @@ void genX(CmdDrawMultiIndexedEXT)(
    if (anv_batch_has_error(&cmd_buffer->batch))
       return;
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -1552,7 +1558,7 @@ void genX(CmdDrawIndirectByteCountEXT)(
       emit_draw_index(cmd_buffer, 0);
 #endif
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -1706,7 +1712,7 @@ emit_indirect_draws(struct anv_cmd_buffer *cmd_buffer,
       anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
    const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
 #endif
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -2088,7 +2094,7 @@ emit_indirect_count_draws(struct anv_cmd_buffer *cmd_buffer,
    const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
 #endif
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    struct mi_builder b;
    mi_builder_init(&b, cmd_buffer->device->info, &cmd_buffer->batch);
@@ -2390,7 +2396,7 @@ genX(CmdDrawMeshTasksEXT)(
    trace_intel_begin_draw_mesh(&cmd_buffer->trace);
 
    /* TODO(mesh): Check if this is not emitting more packets than we need. */
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_buffer->state.conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -2484,7 +2490,7 @@ genX(CmdDrawMeshTasksIndirectEXT)(
       return;
    }
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    if (cmd_state->conditional_render_enabled)
       genX(cmd_emit_conditional_render_predicate)(cmd_buffer);
@@ -2552,7 +2558,7 @@ genX(CmdDrawMeshTasksIndirectCountEXT)(
       return;
    }
 
-   genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
+   cmd_buffer_flush_gfx_state(cmd_buffer);
 
    bool uses_drawid = (task_prog_data && task_prog_data->uses_drawid) ||
                        mesh_prog_data->uses_drawid;
