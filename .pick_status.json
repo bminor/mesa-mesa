@@ -1184,7 +1184,7 @@
         "description": "intel/dev: Update names for BMG G31 PCI IDs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c4d90ae494e673c3c229fa5496a04275c597e90",
         "notes": null
