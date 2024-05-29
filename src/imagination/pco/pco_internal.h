@@ -99,9 +99,9 @@ typedef struct PACKED _pco_ref {
    /** Source/destination modifiers. */
    bool oneminus : 1;
    bool clamp : 1;
+   bool flr : 1;
    bool abs : 1;
    bool neg : 1;
-   bool flr : 1;
    enum pco_elem elem : 4; /** .e0.e1.e2.e3 */
 
    enum pco_dtype dtype : 2; /** Reference data-type. */
@@ -1516,17 +1516,17 @@ static inline void pco_ref_xfer_mods(pco_ref *dest, pco_ref *source, bool reset)
 {
    dest->oneminus = source->oneminus;
    dest->clamp = source->clamp;
+   dest->flr = source->flr;
    dest->abs = source->abs;
    dest->neg = source->neg;
-   dest->flr = source->flr;
    dest->elem = source->elem;
 
    if (reset) {
       source->oneminus = false;
       source->clamp = false;
+      source->flr = false;
       source->abs = false;
       source->neg = false;
-      source->flr = false;
       source->elem = 0;
    }
 }

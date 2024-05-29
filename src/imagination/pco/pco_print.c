@@ -192,12 +192,12 @@ static void pco_print_ref_mods(pco_print_state *state, pco_ref ref)
       pco_printf(state, ".oneminus");
    if (ref.clamp)
       pco_printf(state, ".clamp");
+   if (ref.flr)
+      pco_printf(state, ".flr");
    if (ref.abs)
       pco_printf(state, ".abs");
    if (ref.neg)
       pco_printf(state, ".neg");
-   if (ref.flr)
-      pco_printf(state, ".flr");
 
    u_foreach_bit (e, ref.elem) {
       pco_printf(state, ".e%u", e);

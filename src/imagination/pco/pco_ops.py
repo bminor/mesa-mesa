@@ -110,9 +110,9 @@ PRED = enum_type('pred', [
 ])
 
 DRC = enum_type('drc', [
-   ('pending', '?'),
    ('0', '0'),
    ('1', '1'),
+   ('pending', '?'),
 ])
 
 # Ref mods.
@@ -137,9 +137,6 @@ OM_EXEC_CND = op_mod_enum('exec_cnd', [
    ('e1_z0', 'if(!p0)'),
 ], print_early=True, unset=True)
 OM_RPT = op_mod('rpt', BaseType.uint, print_early=True, nzdefault=1, unset=True)
-OM_ATOM = op_mod('atom', BaseType.bool, unset=True)
-OM_END = op_mod('end', BaseType.bool, unset=True)
-OM_OLCHK = op_mod('olchk', BaseType.bool, unset=True)
 OM_SAT = op_mod('sat', BaseType.bool)
 OM_LP = op_mod('lp', BaseType.bool)
 OM_SCALE = op_mod('scale', BaseType.bool)
@@ -258,6 +255,9 @@ OM_PCK_FMT = op_mod_enum('pck_fmt', [
    'one',
 ])
 OM_PHASE2END = op_mod('phase2end', BaseType.bool)
+OM_ATOM = op_mod('atom', BaseType.bool, unset=True)
+OM_OLCHK = op_mod('olchk', BaseType.bool, unset=True)
+OM_END = op_mod('end', BaseType.bool, unset=True)
 
 # Ops.
 
