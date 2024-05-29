@@ -1269,7 +1269,6 @@ static inline unsigned pco_ref_get_bits(pco_ref ref)
    case PCO_BITS_16:
       return 16;
 
-   case PCO_BITS_ANY:
    case PCO_BITS_32:
       return 32;
 
@@ -1443,18 +1442,44 @@ static inline pco_ref pco_ref_hwreg(unsigned index,
 }
 
 /**
- * \brief Builds and returns a generic value reference.
+ * \brief Builds and returns an immediate reference.
  *
- * \param[in] val 32-bit immediate.
- * \return Value reference.
+ * \param[in] val Immediate value.
+ * \param[in] bits Immediate bit size.
+ * \param[in] dtype Immediate datatype.
+ * \return Immediate reference.
  */
-static inline pco_ref pco_ref_val(uint32_t val)
+static inline pco_ref
+pco_ref_imm(uint32_t val, enum pco_bits bits, enum pco_dtype dtype)
 {
    return (pco_ref){
       .val = val,
-      .bits = PCO_BITS_ANY,
+      .dtype = dtype,
+      .bits = bits,
       .type = PCO_REF_TYPE_IMM,
    };
+}
+
+/**
+ * \brief Builds and returns an 8-bit immediate reference.
+ *
+ * \param[in] val 8-bit immediate.
+ * \return Immediate reference.
+ */
+static inline pco_ref pco_ref_imm8(uint8_t val)
+{
+   return pco_ref_imm(val, PCO_BITS_8, PCO_DTYPE_UNSIGNED);
+}
+
+/**
+ * \brief Builds and returns a 16-bit immediate reference.
+ *
+ * \param[in] val 16-bit immediate.
+ * \return Immediate reference.
+ */
+static inline pco_ref pco_ref_imm16(uint16_t val)
+{
+   return pco_ref_imm(val, PCO_BITS_16, PCO_DTYPE_UNSIGNED);
 }
 
 /**
@@ -1465,11 +1490,40 @@ static inline pco_ref pco_ref_val(uint32_t val)
  */
 static inline pco_ref pco_ref_imm32(uint32_t val)
 {
-   return (pco_ref){
-      .val = val,
-      .bits = PCO_BITS_32,
-      .type = PCO_REF_TYPE_IMM,
-   };
+   return pco_ref_imm(val, PCO_BITS_32, PCO_DTYPE_UNSIGNED);
+}
+
+/**
+ * \brief Builds and returns an untyped 8-bit immediate reference.
+ *
+ * \param[in] val 8-bit immediate.
+ * \return Immediate reference.
+ */
+static inline pco_ref pco_ref_val8(uint8_t val)
+{
+   return pco_ref_imm(val, PCO_BITS_8, PCO_DTYPE_ANY);
+}
+
+/**
+ * \brief Builds and returns an untyped 16-bit immediate reference.
+ *
+ * \param[in] val 16-bit immediate.
+ * \return Immediate reference.
+ */
+static inline pco_ref pco_ref_val16(uint16_t val)
+{
+   return pco_ref_imm(val, PCO_BITS_16, PCO_DTYPE_ANY);
+}
+
+/**
+ * \brief Builds and returns an untyped 32-bit immediate reference.
+ *
+ * \param[in] val 32-bit immediate.
+ * \return Immediate reference.
+ */
+static inline pco_ref pco_ref_val32(uint32_t val)
+{
+   return pco_ref_imm(val, PCO_BITS_32, PCO_DTYPE_UNSIGNED);
 }
 
 /**

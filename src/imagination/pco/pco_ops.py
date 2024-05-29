@@ -41,7 +41,6 @@ DTYPE = enum_type('dtype', [
 ])
 
 BITS = enum_type('bits', [
-   ('any', ''),
    ('1', '1'),
    ('8', '8'),
    ('16', '16'),
