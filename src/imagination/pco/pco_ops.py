@@ -254,29 +254,49 @@ OM_PCK_FMT = op_mod_enum('pck_fmt', [
    'one',
 ])
 OM_PHASE2END = op_mod('phase2end', BaseType.bool)
+OM_ITR_MODE = op_mod_enum('itr_mode', [
+   'pixel',
+   'sample',
+   'centroid',
+])
 OM_ATOM = op_mod('atom', BaseType.bool, unset=True)
 OM_OLCHK = op_mod('olchk', BaseType.bool, unset=True)
 OM_END = op_mod('end', BaseType.bool, unset=True)
 
 # Ops.
 
+OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
+OM_ALU_RPT1 = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
+
 ## Main.
-O_FADD = hw_op('fadd', [OM_LP, OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
-O_MBYP0 = hw_op('mbyp0', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT], 1, 1, [], [[RM_ABS, RM_NEG]])
+O_FADD = hw_op('fadd', OM_ALU + [OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
+O_FMUL = hw_op('fmul', OM_ALU + [OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
+O_FMAD = hw_op('fmad', OM_ALU + [OM_SAT, OM_LP], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG, RM_FLR]])
+O_MBYP0 = hw_op('mbyp0', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
+O_PCK = hw_op('pck', OM_ALU + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 1)
+
 
 ## Backend.
 O_UVSW_WRITE = hw_op('uvsw.write', [OM_EXEC_CND, OM_RPT], 0, 2)
+O_UVSW_EMIT = hw_op('uvsw.emit', [OM_EXEC_CND])
 O_UVSW_ENDTASK = hw_op('uvsw.endtask', [OM_END])
+O_UVSW_EMIT_ENDTASK = hw_op('uvsw.emit.endtask', [OM_END])
+O_UVSW_WRITE_EMIT_ENDTASK = hw_op('uvsw.write.emit.endtask', [OM_END], 0, 2)
+
+O_FITRP = hw_op('fitrp', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 4)
 
 ## Bitwise.
 O_BBYP0BM = hw_direct_op('bbyp0bm', 2, 2)
 
-O_MOVI32 = pseudo_op('movi32', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT], 1, 1)
+O_MOVI32 = pseudo_op('movi32', OM_ALU, 1, 1)
 
 ## Control.
 O_WOP = hw_op('wop')
+O_WDF = hw_op('wdf', [], 0, 1)
 O_NOP = hw_op('nop', [OM_EXEC_CND])
 O_NOP_END = hw_op('nop.end', [OM_EXEC_CND])
 
 # Pseudo-ops (unmapped).
-O_MOV = pseudo_op('mov', [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT], 1, 1)
+O_MOV = pseudo_op('mov', OM_ALU, 1, 1)
+O_VEC = pseudo_op('vec', [], 1, VARIABLE, [], [[RM_ABS, RM_NEG]])
+O_COMP = pseudo_op('comp', [], 1, 2)

@@ -104,6 +104,40 @@ enum_map(IO, F_IS5_SEL, [
    ('fte', 'fte'),
 ])
 
+enum_map(OM_ITR_MODE.t, F_ITER_MODE, [
+   ('pixel', 'pixel'),
+   ('sample', 'sample'),
+   ('centroid', 'centroid'),
+])
+
+enum_map(OM_PCK_FMT.t, F_PCK_FORMAT, [
+   ('u8888', 'u8888'),
+   ('s8888', 's8888'),
+   ('o8888', 'o8888'),
+   ('u1616', 'u1616'),
+   ('s1616', 's1616'),
+   ('o1616', 'o1616'),
+   ('u32', 'u32'),
+   ('s32', 's32'),
+   ('u1010102', 'u1010102'),
+   ('s1010102', 's1010102'),
+   ('u111110', 'u111110'),
+   ('s111110', 's111110'),
+   ('f111110', 'f111110'),
+   ('f16f16', 'f16f16'),
+   ('f32', 'f32'),
+   ('cov', 'cov'),
+   ('u565u565', 'u565u565'),
+   ('d24s8', 'd24s8'),
+   ('s8d24', 's8d24'),
+   ('f32_mask', 'f32_mask'),
+   ('2f10f10f10', '2f10f10f10'),
+   ('s8888ogl', 's8888ogl'),
+   ('s1616ogl', 's1616ogl'),
+   ('zero', 'zero'),
+   ('one', 'one'),
+])
+
 # Op/ISA mapping.
 class OpMap(object):
    def __init__(self, name, cop_name, igrp_mappings, encode_variants):
@@ -160,6 +194,10 @@ def op_map(op, hdr, isa_ops, srcs=[], iss=[], dests=[]):
          if val_spec.t.unset:
             reset_val = 0 if val_spec.t.nzdefault is None else val_spec.t.nzdefault
             hdr_mappings.append(f'pco_instr_set_mod({{1}}, {val_spec.cname}, {reset_val});')
+      elif isinstance(val_spec, tuple):
+         mod, origin = val_spec
+         assert isinstance(mod, str) and isinstance(origin, str)
+         hdr_mappings.append(f'{{}}->hdr.{hdr_field} = {mod}({{}}->{origin});')
       else:
          assert False, f'Invalid value spec for field "{hdr_field}" in hdr mapping for op "{op.name}".'
 
@@ -196,10 +234,14 @@ def op_map(op, hdr, isa_ops, srcs=[], iss=[], dests=[]):
                if i > 0:
                   if_str += ' && '
 
-               if isinstance(isa_op_cond, tuple):
+               if isinstance(isa_op_cond, tuple) and len(isa_op_cond) == 3:
                   mod, origin, cond = isa_op_cond
                   assert isinstance(mod, RefMod)
                   if_str += f'{{1}}->{origin}.{mod.t.tname} {cond}'
+               elif isinstance(isa_op_cond, tuple) and len(isa_op_cond) == 2:
+                  mod, cond = isa_op_cond
+                  assert isinstance(mod, OpMod)
+                  if_str += f'pco_instr_get_mod({{1}}, {mod.cname}) {cond}'
                else:
                   assert False
             if_str += ')'
@@ -317,6 +359,126 @@ def op_map(op, hdr, isa_ops, srcs=[], iss=[], dests=[]):
    op_maps[name] = OpMap(name, cop_name, igrp_mappings, None)
 
 # Main.
+op_map(O_FADD,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT),
+   ]),
+   isa_ops=[
+      ('0', [
+         (I_FADD, [
+            ('sat', OM_SAT),
+            ('s0neg', (RM_NEG, 'src[0]')),
+            ('s0abs', (RM_ABS, 'src[0]')),
+            ('s1abs', (RM_ABS, 'src[1]')),
+            ('s0flr', (RM_FLR, 'src[0]')),
+         ])
+      ])
+   ],
+   srcs=[
+      ('s0', 'src[0]', 's0'),
+      ('s1', 'src[1]', 's1'),
+   ],
+   iss=[
+      ('is4', 'ft0'),
+   ],
+   dests=[
+      ('w0', 'dest[0]', 'ft0'),
+   ]
+)
+
+op_map(O_FMUL,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT),
+   ]),
+   isa_ops=[
+      ('0', [
+         (I_FMUL, [
+            ('sat', OM_SAT),
+            ('s0neg', (RM_NEG, 'src[0]')),
+            ('s0abs', (RM_ABS, 'src[0]')),
+            ('s1abs', (RM_ABS, 'src[1]')),
+            ('s0flr', (RM_FLR, 'src[0]')),
+         ])
+      ])
+   ],
+   srcs=[
+      ('s0', 'src[0]', 's0'),
+      ('s1', 'src[1]', 's1'),
+   ],
+   iss=[
+      ('is4', 'ft0'),
+   ],
+   dests=[
+      ('w0', 'dest[0]', 'ft0'),
+   ]
+)
+
+op_map(O_FMAD,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT),
+   ]),
+   isa_ops=[
+      ('0', [
+         (I_FMAD_EXT, [
+            ('s0neg', (RM_NEG, 'src[0]')),
+            ('s0abs', (RM_ABS, 'src[0]')),
+            ('s2neg', (RM_NEG, 'src[2]')),
+            ('sat', OM_SAT),
+
+            ('lp', OM_LP),
+            ('s1abs', (RM_ABS, 'src[1]')),
+            ('s1neg', (RM_NEG, 'src[1]')),
+            ('s2flr', (RM_FLR, 'src[2]')),
+            ('s2abs', (RM_ABS, 'src[2]')),
+         ]),
+         (I_FMAD, [
+            ('s0neg', (RM_NEG, 'src[0]')),
+            ('s0abs', (RM_ABS, 'src[0]')),
+            ('s2neg', (RM_NEG, 'src[2]')),
+            ('sat', OM_SAT),
+         ], [
+            (OM_LP, '== false'),
+            (RM_ABS, 'src[1]', '== false'),
+            (RM_NEG, 'src[1]', '== false'),
+            (RM_FLR, 'src[2]', '== false'),
+            (RM_ABS, 'src[2]', '== false'),
+         ])
+      ])
+   ],
+   srcs=[
+      ('s0', 'src[0]', 's0'),
+      ('s1', 'src[1]', 's1'),
+      ('s2', 'src[2]', 's2'),
+   ],
+   iss=[
+      ('is4', 'ft0'),
+   ],
+   dests=[
+      ('w0', 'dest[0]', 'ft0'),
+   ]
+)
+
 op_map(O_MBYP0,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0'),
@@ -336,8 +498,8 @@ op_map(O_MBYP0,
             ('s0abs', (RM_ABS, 'src[0]')),
          ]),
          (I_SNGL, [('sngl_op', 'byp')], [
-            (RM_NEG, 'src[0]', '== 0'),
-            (RM_ABS, 'src[0]', '== 0'),
+            (RM_NEG, 'src[0]', '== false'),
+            (RM_ABS, 'src[0]', '== false'),
          ])
       ])
    ],
@@ -349,6 +511,174 @@ op_map(O_MBYP0,
    ],
    dests=[
       ('w0', 'dest[0]', 'ft0'),
+   ]
+)
+
+op_map(O_PCK,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p2'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT),
+   ]),
+   isa_ops=[
+      ('2_pck', [
+         (I_PCK, [
+            ('prog', False),
+            ('rtz', OM_ROUNDZERO),
+            ('scale', OM_SCALE),
+            ('pck_format', OM_PCK_FMT),
+         ])
+      ])
+   ],
+   srcs=[
+      ('s0', 'src[0]', 'is3'),
+   ],
+   iss=[
+      ('is0', 's0'),
+      ('is3', 'fte'),
+      ('is4', 'ft2'),
+   ],
+   dests=[
+      ('w0', 'dest[0]', 'ft2'),
+   ]
+)
+
+# Backend.
+op_map(O_UVSW_WRITE,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', False),
+      ('atom', False),
+      ('rpt', OM_RPT),
+   ]),
+   isa_ops=[
+      ('backend', [
+         (I_UVSW_WRITE_IMM, [
+            ('dsel', 'w0'),
+            ('imm_addr', ('pco_ref_get_imm', 'src[1]')),
+         ])
+      ])
+   ],
+   srcs=[
+      ('s0', 'src[0]', 'w0'),
+   ],
+   iss=[
+      ('is0', 's0'),
+      ('is4', 'fte'),
+   ]
+)
+
+op_map(O_UVSW_EMIT,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', False),
+      ('atom', False),
+      ('rpt', 1),
+   ]),
+   isa_ops=[
+      ('backend', [(I_UVSW_EMIT, [])])
+   ],
+)
+
+op_map(O_UVSW_EMIT_ENDTASK,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', 'e1_zx'),
+      ('end', OM_END),
+      ('atom', False),
+      ('rpt', 1),
+   ]),
+   isa_ops=[
+      ('backend', [(I_UVSW_EMIT_ENDTASK, [])])
+   ],
+)
+
+op_map(O_UVSW_ENDTASK,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', 'e1_zx'),
+      ('end', OM_END),
+      ('atom', False),
+      ('rpt', 1),
+   ]),
+   isa_ops=[
+      ('backend', [(I_UVSW_ENDTASK, [])])
+   ],
+)
+
+op_map(O_UVSW_WRITE_EMIT_ENDTASK,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', 'e1_zx'),
+      ('end', OM_END),
+      ('atom', False),
+      ('rpt', 1),
+   ]),
+   isa_ops=[
+      ('backend', [
+         (I_UVSW_WRITE_EMIT_ENDTASK_IMM, [
+            ('dsel', 'w0'),
+            ('imm_addr', ('pco_ref_get_imm', 'src[1]')),
+         ])
+      ])
+   ],
+   srcs=[
+      ('s0', 'src[0]', 'w0'),
+   ],
+   iss=[
+      ('is0', 's0'),
+      ('is4', 'fte'),
+   ]
+)
+
+op_map(O_FITRP,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT),
+   ]),
+   isa_ops=[
+      ('backend', [
+         (I_FITR, [
+            ('p', True),
+            ('drc', ('pco_ref_get_drc', 'src[0]')),
+            ('iter_mode', OM_ITR_MODE),
+            ('sat', OM_SAT),
+            ('count', ('pco_ref_get_imm', 'src[3]')),
+         ])
+      ])
+   ],
+   srcs=[
+      ('s0', 'src[1]', 's0'),
+      ('s2', 'src[2]', 's2'),
+      ('s3', 'dest[0]', 's3'),
    ]
 )
 
@@ -391,6 +721,20 @@ op_map(O_WOP,
    ]),
    isa_ops=[
       ('ctrl', [(I_WOP, [])]),
+   ]
+)
+
+op_map(O_WDF,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', 'e1_zx'),
+      ('miscctl', ('pco_ref_get_drc', 'src[0]')),
+      ('ctrlop', 'wdf'),
+   ]),
+   isa_ops=[
+      ('ctrl', [(I_WDF, [])]),
    ]
 )
 
