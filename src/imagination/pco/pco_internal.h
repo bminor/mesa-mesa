@@ -1200,6 +1200,17 @@ static inline bool pco_ref_is_drc(pco_ref ref)
    return ref.type == PCO_REF_TYPE_DRC;
 }
 
+/**
+ * \brief Returns whether a reference is scalar.
+ *
+ * \param[in] ref PCO reference.
+ * \return True if the reference is scalar.
+ */
+static inline bool pco_ref_is_scalar(pco_ref ref)
+{
+   return !ref.chans;
+}
+
 /* PCO ref getters. */
 /**
  * \brief Returns the pointee component of an indexed register reference.

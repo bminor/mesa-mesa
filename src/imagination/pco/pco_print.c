@@ -265,10 +265,11 @@ static void pco_print_ref(pco_print_state *state, pco_ref ref)
    case PCO_REF_TYPE_IDX_REG:
       pco_print_ref(state, pco_ref_get_idx_pointee(ref));
       pco_print_ref_color(state, ref);
-      pco_printf(state, "[idx%u]", ref.idx_reg.num);
+      pco_printf(state, "[idx%u", ref.idx_reg.num);
       break;
 
    case PCO_REF_TYPE_IMM:
+      assert(pco_ref_is_scalar(ref));
       switch (ref.dtype) {
       case PCO_DTYPE_ANY:
          pco_printf(state, "0x%" PRIx64, pco_ref_get_imm(ref));
@@ -289,23 +290,35 @@ static void pco_print_ref(pco_print_state *state, pco_ref ref)
       default:
          unreachable();
       }
+      pco_printf(state, "%s", pco_dtype_str(ref.dtype));
       break;
 
    case PCO_REF_TYPE_IO:
+      assert(pco_ref_is_scalar(ref));
       pco_printf(state, "%s", pco_io_str(ref.val));
       break;
 
    case PCO_REF_TYPE_PRED:
+      assert(pco_ref_is_scalar(ref));
       pco_printf(state, "%s", pco_pred_str(ref.val));
       break;
 
    case PCO_REF_TYPE_DRC:
+      assert(pco_ref_is_scalar(ref));
       pco_printf(state, "%s", pco_drc_str(ref.val));
       break;
 
    default:
       unreachable();
    }
+
+   unsigned chans = pco_ref_get_chans(ref);
+   if (chans > 1 && !pco_ref_is_ssa(ref))
+      pco_printf(state, "..%u", ref.val + chans - 1);
+
+   if (ref.type == PCO_REF_TYPE_IDX_REG)
+      pco_printf(state, "]");
+
    RESET(state);
 
    /* Modifiers. */
@@ -1012,6 +1025,8 @@ static void pco_print_func(pco_print_state *state, pco_func *func)
 {
    pco_printfi(state, "func");
    pco_print_func_sig(state, func, false);
+   if (state->is_grouped)
+      pco_printf(state, " /* temps: %u */", func->temps);
    pco_printf(state, "\n");
 
    pco_printfi(state, "{\n");
@@ -1063,7 +1078,7 @@ static void pco_print_shader_info(pco_print_state *state, pco_shader *shader)
       pco_printfi(state, "name: \"%s\"\n", shader->name);
    pco_printfi(state, "stage: %s\n", gl_shader_stage_name(shader->stage));
    pco_printfi(state, "internal: %s\n", true_false_str(shader->is_internal));
-   /* TODO: more info/stats, e.g. stage, temps/other regs used, etc.? */
+   /* TODO: more info/stats, e.g. temps/other regs used, etc.? */
 }
 
 /**
