@@ -40,6 +40,8 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader);
 void pco_encode_ir(pco_ctx *ctx, pco_shader *shader);
 void pco_shader_finalize(pco_ctx *ctx, pco_shader *shader);
 
+unsigned pco_shader_temps(pco_shader *shader);
+
 unsigned pco_shader_binary_size(pco_shader *shader);
 const void *pco_shader_binary_data(pco_shader *shader);
 

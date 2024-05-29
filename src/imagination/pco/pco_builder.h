@@ -431,4 +431,17 @@ static inline void pco_builder_insert_igrp(pco_builder *b, pco_igrp *igrp)
 /* Generated op building functions. */
 #include "pco_builder_ops.h"
 
+/**
+ * \brief Returns whether the instruction has the default execution condition.
+ *
+ * \param[in] instr The instruction.
+ * \return True if the instruction has the default execution condition.
+ */
+static inline bool pco_instr_default_exec(pco_instr *instr)
+{
+   if (!pco_instr_has_exec_cnd(instr))
+      return true;
+
+   return pco_instr_get_exec_cnd(instr) == PCO_EXEC_CND_E1_ZX;
+}
 #endif /* PCO_BUILDER_H */

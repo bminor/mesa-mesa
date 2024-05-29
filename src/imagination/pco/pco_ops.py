@@ -275,6 +275,8 @@ O_FMAD = hw_op('fmad', OM_ALU + [OM_SAT, OM_LP], 1, 3, [], [[RM_ABS, RM_NEG], [R
 O_MBYP0 = hw_op('mbyp0', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_PCK = hw_op('pck', OM_ALU + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 1)
 
+# TODO
+# O_PCK_ELEM = pseudo_op('pck.elem', OM_ALU_RPT1 + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 2)
 
 ## Backend.
 O_UVSW_WRITE = hw_op('uvsw.write', [OM_EXEC_CND, OM_RPT], 0, 2)

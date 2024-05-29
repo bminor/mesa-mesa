@@ -50,6 +50,11 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
 {
    pco_validate_shader(shader, "before passes");
 
+   PCO_PASS(_, shader, pco_const_imms);
+   PCO_PASS(_, shader, pco_opt);
+   PCO_PASS(_, shader, pco_dce);
+   PCO_PASS(_, shader, pco_schedule);
+   PCO_PASS(_, shader, pco_ra);
    PCO_PASS(_, shader, pco_end);
    PCO_PASS(_, shader, pco_group_instrs);
 
@@ -57,6 +62,4 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
 
    if (pco_should_print_shader(shader))
       pco_print_shader(shader, stdout, "after passes");
-
-   puts("finishme: pco_process_ir");
 }

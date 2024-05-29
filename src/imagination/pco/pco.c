@@ -270,3 +270,24 @@ pco_igrp *pco_igrp_create(pco_func *func)
 
    return igrp;
 }
+
+/**
+ * \brief Deletes a PCO instruction.
+ *
+ * \param[in,out] instr PCO instruction.
+ */
+void pco_instr_delete(pco_instr *instr)
+{
+   list_del(&instr->link);
+   ralloc_free(instr);
+}
+
+/**
+ * \brief Returns the number of temps allocated to the entrypoint function.
+ *
+ * \param[in] shader PCO shader.
+ */
+unsigned pco_shader_temps(pco_shader *shader)
+{
+   return pco_entrypoint(shader)->temps;
+}

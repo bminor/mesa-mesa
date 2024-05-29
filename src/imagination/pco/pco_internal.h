@@ -379,6 +379,8 @@ pco_instr *pco_instr_create(pco_func *func,
                             unsigned num_srcs);
 pco_igrp *pco_igrp_create(pco_func *func);
 
+void pco_instr_delete(pco_instr *instr);
+
 /* Cast helpers. */
 
 /* CF nodes. */
@@ -437,6 +439,12 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    for (pco_block *block = pco_func_first_block(func); block != NULL; \
         block = pco_next_block(block))
 
+#define pco_foreach_block_in_func_from(block, from) \
+   for (pco_block *block = from; block != NULL; block = pco_next_block(block))
+
+#define pco_foreach_block_in_func_from_rev(block, from) \
+   for (pco_block *block = from; block != NULL; block = pco_prev_block(block))
+
 #define pco_foreach_block_in_func_rev(block, func)                   \
    for (pco_block *block = pco_func_last_block(func); block != NULL; \
         block = pco_prev_block(block))
@@ -468,6 +476,20 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    assert(!func->parent_shader->is_grouped);   \
    pco_foreach_block_in_func (block, func)     \
       list_for_each_entry (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_func_from(instr, from)           \
+   assert(!from->parent_func->parent_shader->is_grouped);     \
+   pco_foreach_block_in_func_from (block, from->parent_block) \
+      list_for_each_entry_from (pco_instr, instr, from, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_func_from_rev(instr, from)           \
+   assert(!from->parent_func->parent_shader->is_grouped);         \
+   pco_foreach_block_in_func_from_rev (block, from->parent_block) \
+      list_for_each_entry_from_rev (pco_instr,                    \
+                                    instr,                        \
+                                    from,                         \
+                                    &(block)->instrs,             \
+                                    link)
 
 #define pco_foreach_instr_in_func_safe(instr, func) \
    assert(!func->parent_shader->is_grouped);        \
@@ -1066,8 +1088,16 @@ static inline bool pco_should_print_binary(pco_shader *shader)
 }
 
 /* PCO IR passes. */
+bool pco_const_imms(pco_shader *shader);
+bool pco_dce(pco_shader *shader);
 bool pco_end(pco_shader *shader);
 bool pco_group_instrs(pco_shader *shader);
+bool pco_index(pco_shader *shader);
+bool pco_nir_pfo(nir_shader *nir);
+bool pco_nir_pvi(nir_shader *nir);
+bool pco_opt(pco_shader *shader);
+bool pco_ra(pco_shader *shader);
+bool pco_schedule(pco_shader *shader);
 
 /**
  * \brief Returns the PCO bits for a bit size.
@@ -1394,6 +1424,36 @@ static inline pco_ref pco_ref_ssa(unsigned index, unsigned bits, unsigned chans)
 }
 
 /**
+ * \brief Builds and returns a new SSA reference.
+ *
+ * \param[in,out] func The function.
+ * \param[in] bits Number of bits.
+ * \param[in] chans Number of channels.
+ * \return SSA reference.
+ */
+static inline pco_ref
+pco_ref_new_ssa(pco_func *func, unsigned bits, unsigned chans)
+{
+   return (pco_ref){
+      .val = func->next_ssa++,
+      .chans = chans - 1,
+      .bits = pco_bits(bits),
+      .type = PCO_REF_TYPE_SSA,
+   };
+}
+
+/**
+ * \brief Builds and returns a new 32x1 SSA reference.
+ *
+ * \param[in,out] func The function.
+ * \return SSA reference.
+ */
+static inline pco_ref pco_ref_new_ssa32(pco_func *func)
+{
+   return pco_ref_new_ssa(func, 32, 1);
+}
+
+/**
  * \brief Builds and returns a virtual register reference.
  *
  * \param[in] index Virtual register index.
@@ -1410,7 +1470,7 @@ static inline pco_ref pco_ref_vreg(unsigned index)
 }
 
 /**
- * \brief Builds and returns a hardware register reference.
+ * \brief Builds and returns a scalar hardware register reference.
  *
  * \param[in] index Register index.
  * \param[in] reg_class Register class.
@@ -1424,6 +1484,29 @@ static inline pco_ref pco_ref_hwreg(unsigned index,
 
    return (pco_ref){
       .val = index,
+      .bits = PCO_BITS_32,
+      .type = PCO_REF_TYPE_REG,
+      .reg_class = reg_class,
+   };
+}
+
+/**
+ * \brief Builds and returns a vector hardware register reference.
+ *
+ * \param[in] index Register index.
+ * \param[in] reg_class Register class.
+ * \param[in] chans Number of channels.
+ * \return Hardware register reference.
+ */
+static inline pco_ref
+pco_ref_hwreg_vec(unsigned index, enum pco_reg_class reg_class, unsigned chans)
+{
+   assert(index < 256);
+   assert(reg_class != PCO_REG_CLASS_VIRT);
+
+   return (pco_ref){
+      .val = index,
+      .chans = chans - 1,
       .bits = PCO_BITS_32,
       .type = PCO_REF_TYPE_REG,
       .reg_class = reg_class,
@@ -1549,7 +1632,7 @@ static inline pco_ref pco_ref_pred(enum pco_pred pred)
  * \param[in] drc Dependent read counter.
  * \return Dependent read counter reference.
  */
-static inline pco_ref pco_ref_drc(enum pco_io drc)
+static inline pco_ref pco_ref_drc(enum pco_drc drc)
 {
    return (pco_ref){
       .val = drc,
@@ -1583,6 +1666,137 @@ static inline void pco_ref_xfer_mods(pco_ref *dest, pco_ref *source, bool reset)
       source->neg = false;
       source->elem = 0;
    }
+}
+
+/**
+ * \brief Updates a reference to set the oneminus modifier.
+ *
+ * \param[in] ref Base reference.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_oneminus(pco_ref ref)
+{
+   ref.oneminus = true;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference to set the clamp modifier.
+ *
+ * \param[in] ref Base reference.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_clamp(pco_ref ref)
+{
+   ref.clamp = true;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference to set the floor modifier.
+ *
+ * \param[in] ref Base reference.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_flr(pco_ref ref)
+{
+   ref.flr = true;
+   ref.abs = false;
+   ref.neg = false;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference to set the abs modifier.
+ *
+ * \param[in] ref Base reference.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_abs(pco_ref ref)
+{
+   ref.abs = true;
+   ref.neg = false;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference to set the negate modifier.
+ *
+ * \param[in] ref Base reference.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_neg(pco_ref ref)
+{
+   ref.neg = !ref.neg;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference to set the element modifier.
+ *
+ * \param[in] ref Base reference.
+ * \param[in] elem New element modifier.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_elem(pco_ref ref, enum pco_elem elem)
+{
+   ref.elem = elem;
+   return ref;
+}
+
+/**
+ * \brief Checks whether two reference modifiers are the same.
+ *
+ * \param[in] ref0 First reference.
+ * \param[in] ref1 Second reference.
+ * \return True if both reference modifiers are the same.
+ */
+static inline bool pco_ref_mods_are_equal(pco_ref ref0, pco_ref ref1)
+{
+   return (ref0.oneminus == ref1.oneminus) && (ref0.clamp == ref1.clamp) &&
+          (ref0.flr == ref1.flr) && (ref0.abs == ref1.abs) &&
+          (ref0.neg == ref1.neg) && (ref0.elem == ref1.elem);
+}
+
+/**
+ * \brief Checks whether two references are the same.
+ *
+ * \param[in] ref0 First reference.
+ * \param[in] ref1 Second reference.
+ * \return True if both references are the same.
+ */
+/* TODO: can this be simplified? */
+static inline bool pco_refs_are_equal(pco_ref ref0, pco_ref ref1)
+{
+   if (ref0.type != ref1.type)
+      return false;
+
+   if (pco_ref_is_idx_reg(ref0)) {
+      if ((ref0.idx_reg.num != ref1.idx_reg.num) ||
+          (ref0.idx_reg.offset != ref1.idx_reg.offset)) {
+         return false;
+      }
+   } else if (ref0.val != ref1.val) {
+      return false;
+   }
+
+   if (pco_ref_is_idx_reg(ref0) || pco_ref_is_reg(ref0))
+      if (ref0.reg_class != ref1.reg_class)
+         return false;
+
+   if (!pco_ref_mods_are_equal(ref0, ref1))
+      return false;
+
+   if (ref0.chans != ref1.chans)
+      return false;
+
+   if (pco_ref_get_dtype(ref0) != pco_ref_get_dtype(ref1))
+      return false;
+
+   if (pco_ref_get_bits(ref0) != pco_ref_get_bits(ref1))
+      return false;
+
+   return true;
 }
 
 /**
@@ -1635,4 +1849,19 @@ static inline bool pco_igrp_dests_unset(pco_igrp *igrp)
 
    return true;
 }
+
+/* Common hw constants. */
+
+/** Integer/float zero. */
+#define pco_zero pco_ref_hwreg(0, PCO_REG_CLASS_CONST)
+
+/** Integer one. */
+#define pco_one pco_ref_hwreg(1, PCO_REG_CLASS_CONST)
+
+/** Integer -1/true/0xffffffff. */
+#define pco_true pco_ref_hwreg(143, PCO_REG_CLASS_CONST)
+
+/** Float 1. */
+#define pco_fone pco_ref_hwreg(64, PCO_REG_CLASS_CONST)
+
 #endif /* PCO_INTERNAL_H */
