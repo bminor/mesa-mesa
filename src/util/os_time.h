@@ -74,6 +74,8 @@ os_localtime(const time_t *timer, struct tm *buf)
 #endif
 }
 
+void
+os_time_nanosleep_until(int64_t deadline);
 
 /*
  * Sleep.

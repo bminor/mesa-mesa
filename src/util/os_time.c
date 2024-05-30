@@ -60,7 +60,21 @@ os_time_get_nano(void)
    return ts.tv_nsec + ts.tv_sec*INT64_C(1000000000);
 }
 
-
+void
+os_time_nanosleep_until(int64_t deadline)
+{
+#if DETECT_OS_LINUX || DETECT_OS_MANAGARM
+   struct timespec time;
+   time.tv_sec = deadline / INT64_C(1000000000);
+   time.tv_nsec = deadline % INT64_C(1000000000);
+   while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &time, &time) == EINTR);
+#else
+   int64_t duration = deadline - os_time_get_nano();
+   if (duration > 0) {
+      os_time_sleep(duration / 1000);
+   }
+#endif
+}
 
 void
 os_time_sleep(int64_t usecs)
