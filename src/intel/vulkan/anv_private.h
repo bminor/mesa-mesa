@@ -5029,7 +5029,16 @@ struct anv_compute_pipeline {
 
    struct anv_shader_bin *                      cs;
    uint32_t                                     batch_data[9];
-   uint32_t                                     interface_descriptor_data[8];
+
+   union {
+      struct {
+         uint32_t                               interface_descriptor_data[8];
+         uint32_t                               gpgpu_walker[15];
+      } gfx9;
+      struct {
+         uint32_t                               compute_walker[39];
+      } gfx125;
+   };
 
    /* A small hash based of shader_info::source_sha1 for identifying shaders
     * in renderdoc/shader-db.

@@ -189,7 +189,7 @@ genX(cmd_buffer_flush_compute_state)(struct anv_cmd_buffer *cmd_buffer)
 
       struct anv_state state =
          anv_cmd_buffer_merge_dynamic(cmd_buffer, iface_desc_data_dw,
-                                      pipeline->interface_descriptor_data,
+                                      pipeline->gfx9.interface_descriptor_data,
                                       GENX(INTERFACE_DESCRIPTOR_DATA_length),
                                       64);
 

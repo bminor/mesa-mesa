@@ -2072,8 +2072,54 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
 void
 genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
 {
-   const struct brw_cs_prog_data *cs_prog_data = get_cs_prog_data(pipeline);
-   anv_pipeline_setup_l3_config(&pipeline->base, cs_prog_data->base.total_shared > 0);
+   const struct brw_cs_prog_data *prog_data = get_cs_prog_data(pipeline);
+   anv_pipeline_setup_l3_config(&pipeline->base, prog_data->base.total_shared > 0);
+
+   const struct intel_device_info *devinfo = pipeline->base.device->info;
+   const struct intel_cs_dispatch_info dispatch =
+      brw_cs_get_dispatch_info(devinfo, prog_data, NULL);
+   const struct anv_shader_bin *shader = pipeline->cs;
+
+   struct GENX(COMPUTE_WALKER) walker =  {
+      GENX(COMPUTE_WALKER_header),
+#if GFX_VERx10 == 125
+      .SystolicModeEnable             = prog_data->uses_systolic,
+#endif
+      .body = {
+         .SIMDSize                       = dispatch.simd_size / 16,
+         .MessageSIMD                    = dispatch.simd_size / 16,
+         .GenerateLocalID                = prog_data->generate_local_id != 0,
+         .EmitLocal                      = prog_data->generate_local_id,
+         .WalkOrder                      = prog_data->walk_order,
+         .TileLayout                     = prog_data->walk_order == INTEL_WALK_ORDER_YXZ ?
+                                           TileY32bpe : Linear,
+         .LocalXMaximum                  = prog_data->local_size[0] - 1,
+         .LocalYMaximum                  = prog_data->local_size[1] - 1,
+         .LocalZMaximum                  = prog_data->local_size[2] - 1,
+         .ExecutionMask                  = dispatch.right_mask,
+         .PostSync                       = {
+            .MOCS                        = anv_mocs(pipeline->base.device, NULL, 0),
+         },
+         .InterfaceDescriptor            = {
+            .KernelStartPointer                = shader->kernel.offset,
+            /* Typically set to 0 to avoid prefetching on every thread dispatch. */
+            .BindingTableEntryCount            = devinfo->verx10 == 125 ?
+            0 : 1 + MIN2(shader->bind_map.surface_count, 30),
+            .NumberofThreadsinGPGPUThreadGroup = dispatch.threads,
+            .SharedLocalMemorySize             =
+            intel_compute_slm_encode_size(GFX_VER, prog_data->base.total_shared),
+            .PreferredSLMAllocationSize        =
+            intel_compute_preferred_slm_calc_encode_size(devinfo,
+                                                         prog_data->base.total_shared,
+                                                         dispatch.group_size,
+                                                         dispatch.simd_size),
+            .NumberOfBarriers                  = prog_data->uses_barrier,
+         },
+         .EmitInlineParameter            = prog_data->uses_inline_push_addr,
+      },
+   };
+
+   GENX(COMPUTE_WALKER_pack)(NULL, pipeline->gfx125.compute_walker, &walker);
 }
 
 #else /* #if GFX_VERx10 >= 125 */
@@ -2154,8 +2200,19 @@ genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
       .NumberofThreadsinGPGPUThreadGroup = dispatch.threads,
    };
    GENX(INTERFACE_DESCRIPTOR_DATA_pack)(NULL,
-                                        pipeline->interface_descriptor_data,
+                                        pipeline->gfx9.interface_descriptor_data,
                                         &desc);
+
+   struct GENX(GPGPU_WALKER) walker = {
+      GENX(GPGPU_WALKER_header),
+      .SIMDSize                     = dispatch.simd_size / 16,
+      .ThreadDepthCounterMaximum    = 0,
+      .ThreadHeightCounterMaximum   = 0,
+      .ThreadWidthCounterMaximum    = dispatch.threads - 1,
+      .RightExecutionMask           = dispatch.right_mask,
+      .BottomExecutionMask          = 0xffffffff,
+   };
+   GENX(GPGPU_WALKER_pack)(NULL, pipeline->gfx9.gpgpu_walker, &walker);
 }
 
 #endif /* #if GFX_VERx10 >= 125 */
