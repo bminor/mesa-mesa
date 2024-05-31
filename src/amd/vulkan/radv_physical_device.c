@@ -644,6 +644,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_descriptor_indexing = true,
       .EXT_device_address_binding_report = true,
       .EXT_device_fault = pdev->info.has_gpuvm_fault_query,
+      .EXT_device_generated_commands = pdev->info.gfx_level >= GFX8,
       .EXT_discard_rectangles = true,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
@@ -1277,6 +1278,10 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_EXT_depth_clamp_control */
       .depthClampControl = true,
+
+      /* VK_EXT_device_generated_commands */
+      .deviceGeneratedCommands = true,
+      .dynamicGeneratedPipelineLayout = true,
    };
 }
 
@@ -1965,6 +1970,22 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
 
    /* VK_KHR_compute_shader_derivatives */
    p->meshAndTaskShaderDerivatives = radv_taskmesh_enabled(pdev);
+
+   /* VK_EXT_device_generated_commands */
+   p->maxIndirectPipelineCount = 4096;
+   p->maxIndirectShaderObjectCount = 4096;
+   p->maxIndirectSequenceCount = 1048576;
+   p->maxIndirectCommandsTokenCount = 128;
+   p->maxIndirectCommandsTokenOffset = 2047;
+   p->maxIndirectCommandsIndirectStride = 2048;
+   p->supportedIndirectCommandsInputModes =
+      VK_INDIRECT_COMMANDS_INPUT_MODE_VULKAN_INDEX_BUFFER_EXT | VK_INDIRECT_COMMANDS_INPUT_MODE_DXGI_INDEX_BUFFER_EXT;
+   p->supportedIndirectCommandsShaderStages =
+      RADV_GRAPHICS_STAGE_BITS | VK_SHADER_STAGE_COMPUTE_BIT | RADV_RT_STAGE_BITS;
+   p->supportedIndirectCommandsShaderStagesPipelineBinding = VK_SHADER_STAGE_COMPUTE_BIT;
+   p->supportedIndirectCommandsShaderStagesShaderBinding = 0;
+   p->deviceGeneratedCommandsTransformFeedback = true;
+   p->deviceGeneratedCommandsMultiDrawIndirectCount = true;
 }
 
 static VkResult
