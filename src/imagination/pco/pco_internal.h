@@ -14,6 +14,7 @@
  */
 
 #include "compiler/spirv/nir_spirv.h"
+#include "hwdef/rogue_hw_utils.h"
 #include "pco.h"
 #include "pco_common.h"
 #include "pco_ops.h"
@@ -157,27 +158,15 @@ typedef struct _pco_igrp {
    } hdr;
 
    struct {
-      pco_ref s0;
-      pco_ref s1;
-      pco_ref s2;
-
-      pco_ref s3;
-      pco_ref s4;
-      pco_ref s5;
+      pco_ref s[ROGUE_MAX_ALU_INPUTS];
    } srcs;
 
    struct {
-      pco_ref is0;
-      pco_ref is1;
-      pco_ref is2;
-      pco_ref is3;
-      pco_ref is4;
-      pco_ref is5;
+      pco_ref is[ROGUE_MAX_ALU_INTERNAL_SOURCES];
    } iss;
 
    struct {
-      pco_ref w0;
-      pco_ref w1;
+      pco_ref w[ROGUE_MAX_ALU_OUTPUTS];
    } dests;
 
    struct {
@@ -1606,13 +1595,13 @@ static inline void pco_ref_xfer_mods(pco_ref *dest, pco_ref *source, bool reset)
  */
 static inline bool pco_igrp_srcs_unset(pco_igrp *igrp, bool upper)
 {
-   if (upper) {
-      return pco_ref_is_null(igrp->srcs.s3) && pco_ref_is_null(igrp->srcs.s4) &&
-             pco_ref_is_null(igrp->srcs.s5);
-   }
+   unsigned offset = upper ? ROGUE_ALU_INPUT_GROUP_SIZE : 0;
 
-   return pco_ref_is_null(igrp->srcs.s0) && pco_ref_is_null(igrp->srcs.s1) &&
-          pco_ref_is_null(igrp->srcs.s2);
+   for (unsigned u = 0; u < ROGUE_ALU_INPUT_GROUP_SIZE; ++u)
+      if (!pco_ref_is_null(igrp->srcs.s[u + offset]))
+         return false;
+
+   return true;
 }
 
 /**
@@ -1624,9 +1613,11 @@ static inline bool pco_igrp_srcs_unset(pco_igrp *igrp, bool upper)
  */
 static inline bool pco_igrp_iss_unset(pco_igrp *igrp)
 {
-   return pco_ref_is_null(igrp->iss.is0) && pco_ref_is_null(igrp->iss.is1) &&
-          pco_ref_is_null(igrp->iss.is2) && pco_ref_is_null(igrp->iss.is3) &&
-          pco_ref_is_null(igrp->iss.is4) && pco_ref_is_null(igrp->iss.is5);
+   for (unsigned u = 0; u < ARRAY_SIZE(igrp->iss.is); ++u)
+      if (!pco_ref_is_null(igrp->iss.is[u]))
+         return false;
+
+   return true;
 }
 
 /**
@@ -1638,6 +1629,10 @@ static inline bool pco_igrp_iss_unset(pco_igrp *igrp)
  */
 static inline bool pco_igrp_dests_unset(pco_igrp *igrp)
 {
-   return pco_ref_is_null(igrp->dests.w0) && pco_ref_is_null(igrp->dests.w1);
+   for (unsigned u = 0; u < ARRAY_SIZE(igrp->dests.w); ++u)
+      if (!pco_ref_is_null(igrp->dests.w[u]))
+         return false;
+
+   return true;
 }
 #endif /* PCO_INTERNAL_H */

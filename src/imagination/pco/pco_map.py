@@ -332,7 +332,6 @@ def op_map(op, hdr, isa_ops, srcs=[], iss=[], dests=[]):
 
    iss_mappings = []
    for iss, _io in iss:
-      assert iss in IO.enum.elems.keys()
       assert _io in IO.enum.elems.keys()
       io = IO.enum.elems[_io]
       iss_mappings.append(f'{{}}->iss.{iss} = pco_ref_io({io.cname});')
@@ -382,14 +381,14 @@ op_map(O_FADD,
       ])
    ],
    srcs=[
-      ('s0', 'src[0]', 's0'),
-      ('s1', 'src[1]', 's1'),
+      ('s[0]', 'src[0]', 's0'),
+      ('s[1]', 'src[1]', 's1'),
    ],
    iss=[
-      ('is4', 'ft0'),
+      ('is[4]', 'ft0'),
    ],
    dests=[
-      ('w0', 'dest[0]', 'ft0'),
+      ('w[0]', 'dest[0]', 'ft0'),
    ]
 )
 
@@ -416,14 +415,14 @@ op_map(O_FMUL,
       ])
    ],
    srcs=[
-      ('s0', 'src[0]', 's0'),
-      ('s1', 'src[1]', 's1'),
+      ('s[0]', 'src[0]', 's0'),
+      ('s[1]', 'src[1]', 's1'),
    ],
    iss=[
-      ('is4', 'ft0'),
+      ('is[4]', 'ft0'),
    ],
    dests=[
-      ('w0', 'dest[0]', 'ft0'),
+      ('w[0]', 'dest[0]', 'ft0'),
    ]
 )
 
@@ -467,15 +466,15 @@ op_map(O_FMAD,
       ])
    ],
    srcs=[
-      ('s0', 'src[0]', 's0'),
-      ('s1', 'src[1]', 's1'),
-      ('s2', 'src[2]', 's2'),
+      ('s[0]', 'src[0]', 's0'),
+      ('s[1]', 'src[1]', 's1'),
+      ('s[2]', 'src[2]', 's2'),
    ],
    iss=[
-      ('is4', 'ft0'),
+      ('is[4]', 'ft0'),
    ],
    dests=[
-      ('w0', 'dest[0]', 'ft0'),
+      ('w[0]', 'dest[0]', 'ft0'),
    ]
 )
 
@@ -504,13 +503,13 @@ op_map(O_MBYP0,
       ])
    ],
    srcs=[
-      ('s0', 'src[0]', 's0'),
+      ('s[0]', 'src[0]', 's0'),
    ],
    iss=[
-      ('is4', 'ft0'),
+      ('is[4]', 'ft0'),
    ],
    dests=[
-      ('w0', 'dest[0]', 'ft0'),
+      ('w[0]', 'dest[0]', 'ft0'),
    ]
 )
 
@@ -536,15 +535,15 @@ op_map(O_PCK,
       ])
    ],
    srcs=[
-      ('s0', 'src[0]', 'is3'),
+      ('s[0]', 'src[0]', 'is3'),
    ],
    iss=[
-      ('is0', 's0'),
-      ('is3', 'fte'),
-      ('is4', 'ft2'),
+      ('is[0]', 's0'),
+      ('is[3]', 'fte'),
+      ('is[4]', 'ft2'),
    ],
    dests=[
-      ('w0', 'dest[0]', 'ft2'),
+      ('w[0]', 'dest[0]', 'ft2'),
    ]
 )
 
@@ -569,11 +568,11 @@ op_map(O_UVSW_WRITE,
       ])
    ],
    srcs=[
-      ('s0', 'src[0]', 'w0'),
+      ('s[0]', 'src[0]', 'w0'),
    ],
    iss=[
-      ('is0', 's0'),
-      ('is4', 'fte'),
+      ('is[0]', 's0'),
+      ('is[4]', 'fte'),
    ]
 )
 
@@ -645,11 +644,11 @@ op_map(O_UVSW_WRITE_EMIT_ENDTASK,
       ])
    ],
    srcs=[
-      ('s0', 'src[0]', 'w0'),
+      ('s[0]', 'src[0]', 'w0'),
    ],
    iss=[
-      ('is0', 's0'),
-      ('is4', 'fte'),
+      ('is[0]', 's0'),
+      ('is[4]', 'fte'),
    ]
 )
 
@@ -676,9 +675,9 @@ op_map(O_FITRP,
       ])
    ],
    srcs=[
-      ('s0', 'src[1]', 's0'),
-      ('s2', 'src[2]', 's2'),
-      ('s3', 'dest[0]', 's3'),
+      ('s[0]', 'src[1]', 's0'),
+      ('s[2]', 'src[2]', 's2'),
+      ('s[3]', 'dest[0]', 's3'),
    ]
 )
 
@@ -705,7 +704,7 @@ op_map(O_MOVI32,
       ], (O_BBYP0BM, ('ft0', 'dest[0]'), ('s0', 'src[0]')))
    ],
    dests=[
-      ('w0', 'dest[0]', 'ft1'),
+      ('w[0]', 'dest[0]', 'ft1'),
    ]
 )
 

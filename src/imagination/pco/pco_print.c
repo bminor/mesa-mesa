@@ -586,22 +586,17 @@ static void pco_print_igrp_phases(pco_print_state *state, pco_igrp *igrp)
 static void
 pco_print_igrp_srcs(pco_print_state *state, pco_igrp *igrp, bool upper)
 {
-   unsigned offset = upper ? 3 : 0;
-   const pco_ref *srcs[] = {
-      &igrp->srcs.s0, &igrp->srcs.s1, &igrp->srcs.s2,
-      &igrp->srcs.s3, &igrp->srcs.s4, &igrp->srcs.s5,
-   };
-
+   unsigned offset = upper ? ROGUE_ALU_INPUT_GROUP_SIZE : 0;
    bool printed = false;
-   for (unsigned s = 0; s < ARRAY_SIZE(srcs) / 2; ++s) {
-      const pco_ref *src = srcs[s + offset];
+   for (unsigned u = 0; u < ROGUE_ALU_INPUT_GROUP_SIZE; ++u) {
+      const pco_ref *src = &igrp->srcs.s[u + offset];
       if (pco_ref_is_null(*src))
          continue;
 
       if (printed)
          pco_printf(state, ", ");
 
-      pco_printf(state, "s%u = ", s + offset);
+      pco_printf(state, "s%u = ", u + offset);
       pco_print_ref(state, *src);
       printed = true;
    }
@@ -615,21 +610,16 @@ pco_print_igrp_srcs(pco_print_state *state, pco_igrp *igrp, bool upper)
  */
 static void pco_print_igrp_iss(pco_print_state *state, pco_igrp *igrp)
 {
-   const pco_ref *isss[] = {
-      &igrp->iss.is0, &igrp->iss.is1, &igrp->iss.is2,
-      &igrp->iss.is3, &igrp->iss.is4, &igrp->iss.is5,
-   };
-
    bool printed = false;
-   for (unsigned i = 0; i < ARRAY_SIZE(isss); ++i) {
-      const pco_ref *iss = isss[i];
+   for (unsigned u = 0; u < ROGUE_MAX_ALU_INTERNAL_SOURCES; ++u) {
+      const pco_ref *iss = &igrp->iss.is[u];
       if (pco_ref_is_null(*iss))
          continue;
 
       if (printed)
          pco_printf(state, ", ");
 
-      pco_printf(state, "is%u = ", i);
+      pco_printf(state, "is%u = ", u);
       pco_print_ref(state, *iss);
       printed = true;
    }
@@ -643,21 +633,16 @@ static void pco_print_igrp_iss(pco_print_state *state, pco_igrp *igrp)
  */
 static void pco_print_igrp_dests(pco_print_state *state, pco_igrp *igrp)
 {
-   const pco_ref *dests[] = {
-      &igrp->dests.w0,
-      &igrp->dests.w1,
-   };
-
    bool printed = false;
-   for (unsigned d = 0; d < ARRAY_SIZE(dests); ++d) {
-      const pco_ref *dest = dests[d];
+   for (unsigned u = 0; u < ROGUE_MAX_ALU_OUTPUTS; ++u) {
+      const pco_ref *dest = &igrp->dests.w[u];
       if (pco_ref_is_null(*dest))
          continue;
 
       if (printed)
          pco_printf(state, ", ");
 
-      pco_printf(state, "w%u = ", d);
+      pco_printf(state, "w%u = ", u);
       pco_print_ref(state, *dest);
       printed = true;
    }

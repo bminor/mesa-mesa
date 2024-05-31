@@ -133,10 +133,12 @@ static inline
 enum pco_src_variant pco_igrp_src_variant(const pco_igrp *igrp,
                                           bool is_upper)
 {
-   pco_ref sA = is_upper ? igrp->srcs.s3 : igrp->srcs.s0;
-   pco_ref sB = is_upper ? igrp->srcs.s4 : igrp->srcs.s1;
-   pco_ref sC = is_upper ? igrp->srcs.s5 : igrp->srcs.s2;
-   pco_ref mux = is_upper ? pco_ref_null() : igrp->iss.is0;
+   unsigned offset = is_upper ? ROGUE_ALU_INPUT_GROUP_SIZE : 0;
+
+   pco_ref sA = igrp->srcs.s[0 + offset];
+   pco_ref sB = igrp->srcs.s[1 + offset];
+   pco_ref sC = igrp->srcs.s[2 + offset];
+   pco_ref mux = is_upper ? pco_ref_null() : igrp->iss.is[0];
 
    bool sA_set = !pco_ref_is_null(sA);
    bool sB_set = !pco_ref_is_null(sB);
@@ -184,8 +186,8 @@ enum pco_iss_variant pco_igrp_iss_variant(const pco_igrp *igrp)
 static inline
 enum pco_dst_variant pco_igrp_dest_variant(pco_igrp *igrp)
 {
-   pco_ref w0 = igrp->dests.w0;
-   pco_ref w1 = igrp->dests.w1;
+   pco_ref w0 = igrp->dests.w[0];
+   pco_ref w1 = igrp->dests.w[1];
 
    bool w0_set = !pco_ref_is_null(w0);
    bool w1_set = !pco_ref_is_null(w1);
@@ -372,10 +374,12 @@ unsigned pco_instr_map_encode(uint8_t *bin, pco_igrp *igrp, enum pco_op_phase ph
 static inline
 unsigned pco_srcs_map_encode(uint8_t *bin, pco_igrp *igrp, bool is_upper)
 {
-   pco_ref _sA = is_upper ? igrp->srcs.s3 : igrp->srcs.s0;
-   pco_ref _sB = is_upper ? igrp->srcs.s4 : igrp->srcs.s1;
-   pco_ref _sC = is_upper ? igrp->srcs.s5 : igrp->srcs.s2;
-   pco_ref _mux = is_upper ? pco_ref_null() : igrp->iss.is0;
+   unsigned offset = is_upper ? ROGUE_ALU_INPUT_GROUP_SIZE : 0;
+
+   pco_ref _sA = igrp->srcs.s[0 + offset];
+   pco_ref _sB = igrp->srcs.s[1 + offset];
+   pco_ref _sC = igrp->srcs.s[2 + offset];
+   pco_ref _mux = is_upper ? pco_ref_null() : igrp->iss.is[0];
 
    bool sA_set = !pco_ref_is_null(_sA);
    bool sB_set = !pco_ref_is_null(_sB);
@@ -426,17 +430,17 @@ unsigned pco_srcs_map_encode(uint8_t *bin, pco_igrp *igrp, bool is_upper)
 static inline
 unsigned pco_iss_map_encode(uint8_t *bin, pco_igrp *igrp)
 {
-   bool is5_set = !pco_ref_is_null(igrp->iss.is5);
-   bool is4_set = !pco_ref_is_null(igrp->iss.is4);
-   bool is3_set = !pco_ref_is_null(igrp->iss.is3);
-   bool is2_set = !pco_ref_is_null(igrp->iss.is2);
-   bool is1_set = !pco_ref_is_null(igrp->iss.is1);
+   bool is5_set = !pco_ref_is_null(igrp->iss.is[5]);
+   bool is4_set = !pco_ref_is_null(igrp->iss.is[4]);
+   bool is3_set = !pco_ref_is_null(igrp->iss.is[3]);
+   bool is2_set = !pco_ref_is_null(igrp->iss.is[2]);
+   bool is1_set = !pco_ref_is_null(igrp->iss.is[1]);
 
-   unsigned is5 = is5_set ? pco_map_io_to_is5_sel(pco_ref_get_io(igrp->iss.is5)) : 0;
-   unsigned is4 = is4_set ? pco_map_io_to_is4_sel(pco_ref_get_io(igrp->iss.is4)) : 0;
-   unsigned is3 = is3_set ? pco_map_io_to_is3_sel(pco_ref_get_io(igrp->iss.is3)) : 0;
-   unsigned is2 = is2_set ? pco_map_io_to_is2_sel(pco_ref_get_io(igrp->iss.is2)) : 0;
-   unsigned is1 = is1_set ? pco_map_io_to_is1_sel(pco_ref_get_io(igrp->iss.is1)) : 0;
+   unsigned is5 = is5_set ? pco_map_io_to_is5_sel(pco_ref_get_io(igrp->iss.is[5])) : 0;
+   unsigned is4 = is4_set ? pco_map_io_to_is4_sel(pco_ref_get_io(igrp->iss.is[4])) : 0;
+   unsigned is3 = is3_set ? pco_map_io_to_is3_sel(pco_ref_get_io(igrp->iss.is[3])) : 0;
+   unsigned is2 = is2_set ? pco_map_io_to_is2_sel(pco_ref_get_io(igrp->iss.is[2])) : 0;
+   unsigned is1 = is1_set ? pco_map_io_to_is1_sel(pco_ref_get_io(igrp->iss.is[1])) : 0;
 
    assert(igrp->variant.iss == PCO_ISS_ISS);
    return pco_iss_iss_encode(bin, .is5 = is5, .is4 = is4, .is3 = is3, .is2 = is2, .is1 = is1);
@@ -445,8 +449,8 @@ unsigned pco_iss_map_encode(uint8_t *bin, pco_igrp *igrp)
 static inline
 unsigned pco_dests_map_encode(uint8_t *bin, pco_igrp *igrp)
 {
-   pco_ref w0 = igrp->dests.w0;
-   pco_ref w1 = igrp->dests.w1;
+   pco_ref w0 = igrp->dests.w[0];
+   pco_ref w1 = igrp->dests.w[1];
 
    bool w0_set = !pco_ref_is_null(w0);
    bool w1_set = !pco_ref_is_null(w1);
