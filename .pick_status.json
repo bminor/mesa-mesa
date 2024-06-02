@@ -624,7 +624,7 @@
         "description": "clover: fix meson opencl-spirv option",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "815a6647eb1383e9dc704ffcc266d85f3b13338a",
         "notes": null
