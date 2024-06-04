@@ -2017,8 +2017,8 @@ void genX(CmdCopyQueryPoolResults)(
 #include "grl/include/GRLRTASCommon.h"
 #include "grl/grl_metakernel_postbuild_info.h"
 
-void
-genX(CmdWriteAccelerationStructuresPropertiesKHR)(
+static void
+anv_write_acceleration_structure_properties_grl(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    accelerationStructureCount,
     const VkAccelerationStructureKHR*           pAccelerationStructures,
@@ -2028,11 +2028,6 @@ genX(CmdWriteAccelerationStructuresPropertiesKHR)(
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    ANV_FROM_HANDLE(anv_query_pool, pool, queryPool);
-
-   assert(queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
-          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR ||
-          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR ||
-          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR);
 
    emit_query_clear_flush(cmd_buffer, pool,
                           "CmdWriteAccelerationStructuresPropertiesKHR flush query clears");
@@ -2081,5 +2076,26 @@ genX(CmdWriteAccelerationStructuresPropertiesKHR)(
 
    for (uint32_t i = 0; i < accelerationStructureCount; i++)
       emit_query_mi_availability(&b, anv_query_address(pool, firstQuery + i), true);
+}
+
+void
+genX(CmdWriteAccelerationStructuresPropertiesKHR)(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    accelerationStructureCount,
+    const VkAccelerationStructureKHR*           pAccelerationStructures,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery)
+{
+   assert(queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
+          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR ||
+          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR ||
+          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR);
+
+   anv_write_acceleration_structure_properties_grl(commandBuffer,
+                                                   accelerationStructureCount,
+                                                   pAccelerationStructures,
+                                                   queryType, queryPool,
+                                                   firstQuery);
 }
 #endif

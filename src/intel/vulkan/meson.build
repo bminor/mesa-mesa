@@ -101,7 +101,9 @@ anv_per_hw_ver_files = files(
   'genX_simple_shader.c',
 )
 if with_intel_vk_rt
-  anv_per_hw_ver_files += files('genX_acceleration_structure.c',)
+  anv_per_hw_ver_files += files(
+    'genX_acceleration_structure_grl.c',
+  )
 endif
 
 foreach _gfx_ver : ['90', '110', '120', '125', '200', '300']
