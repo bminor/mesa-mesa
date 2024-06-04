@@ -174,7 +174,7 @@
         "description": "egl/wayland: Fix direct scanout with EGL_EXT_present_opaque",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9ea9a963aa142910ed3a0fcea9060d3a92ee5ab7",
         "notes": null
