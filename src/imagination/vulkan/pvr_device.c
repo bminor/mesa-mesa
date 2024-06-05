@@ -173,6 +173,7 @@ static void pvr_physical_device_get_supported_extensions(
 {
    *extensions = (struct vk_device_extension_table){
       .KHR_bind_memory2 = true,
+      .KHR_buffer_device_address = true,
       .KHR_copy_commands2 = true,
       .KHR_create_renderpass2 = true,
       .KHR_dedicated_allocation = true,
@@ -349,9 +350,6 @@ static void pvr_physical_device_get_supported_features(
       .descriptorBindingVariableDescriptorCount = false,
       .runtimeDescriptorArray = false,
       .samplerFilterMinmax = false,
-      .bufferDeviceAddress = false,
-      .bufferDeviceAddressCaptureReplay = false,
-      .bufferDeviceAddressMultiDevice = false,
       .vulkanMemoryModel = false,
       .vulkanMemoryModelDeviceScope = false,
       .vulkanMemoryModelAvailabilityVisibilityChains = false,
@@ -464,6 +462,11 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.3 / VK_EXT_texel_buffer_alignment */
       .texelBufferAlignment = true,
+
+      /* Vulkan 1.2 / VK_KHR_buffer_device_address */
+      .bufferDeviceAddress = true,
+      .bufferDeviceAddressCaptureReplay = false,
+      .bufferDeviceAddressMultiDevice = false,
 
       /* VK_KHR_shader_expect_assume */
       .shaderExpectAssume = false,
@@ -3104,6 +3107,31 @@ VkResult pvr_CreateBuffer(VkDevice _device,
    *pBuffer = pvr_buffer_to_handle(buffer);
 
    return VK_SUCCESS;
+}
+
+VkDeviceAddress
+pvr_GetBufferDeviceAddress(UNUSED VkDevice device,
+                           const VkBufferDeviceAddressInfo *pInfo)
+{
+   VK_FROM_HANDLE(pvr_buffer, buffer, pInfo->buffer);
+
+   return buffer->dev_addr.addr;
+}
+
+uint64_t
+pvr_GetBufferOpaqueCaptureAddress(UNUSED VkDevice device,
+                                  UNUSED const VkBufferDeviceAddressInfo *pInfo)
+{
+   pvr_finishme("Missing support for bufferDeviceAddressCaptureReplay");
+   return 0;
+}
+
+uint64_t pvr_GetDeviceMemoryOpaqueCaptureAddress(
+   UNUSED VkDevice device,
+   UNUSED const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo)
+{
+   pvr_finishme("Missing support for bufferDeviceAddressCaptureReplay");
+   return 0;
 }
 
 void pvr_DestroyBuffer(VkDevice _device,
