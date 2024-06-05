@@ -388,14 +388,6 @@ can_fast_clear_with_non_zero_color(const struct intel_device_info *devinfo,
    if (image->planes[plane].aux_usage == ISL_AUX_USAGE_FCV_CCS_E)
       return false;
 
-   /* Turning on non zero fast clears for CCS_E introduces a performance
-    * regression for games such as F1 22 and RDR2 by introducing additional
-    * partial resolves. Let's turn non zero fast clears back off till we can
-    * fix performance.
-    */
-   if (image->planes[plane].aux_usage == ISL_AUX_USAGE_CCS_E &&
-       devinfo->ver >= 12)
-      return false;
 
    /* Generally, enabling non-zero fast-clears is dependent on knowing which
     * formats will be used with the surface. So, disable them if we lack this
