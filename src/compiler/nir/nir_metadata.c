@@ -66,6 +66,19 @@ nir_metadata_require(nir_function_impl *impl, nir_metadata required, ...)
 void
 nir_metadata_preserve(nir_function_impl *impl, nir_metadata preserved)
 {
+   /* If we discard valid liveness information, immediately free the
+    * liveness information for each block. For large shaders, it can
+    * consume a huge amount of memory, and it's usually not immediately
+    * needed after dirtying.
+    */
+   if ((impl->valid_metadata & ~preserved) & nir_metadata_live_defs) {
+      nir_foreach_block(block, impl) {
+         ralloc_free(block->live_in);
+         ralloc_free(block->live_out);
+         block->live_in = block->live_out = NULL;
+      }
+   }
+
    impl->valid_metadata &= preserved;
 }
 
