@@ -2494,7 +2494,7 @@
         "description": "zink: set unordered_read/write after buffer_barrier in set_global_binding",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a6e9e0f0d771e5121ea477cbaabe65a38de0ce5d",
         "notes": null
