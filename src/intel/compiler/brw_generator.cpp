@@ -1459,7 +1459,7 @@ brw_generator::generate_code(const brw_shader &s,
                  before_size, after_size,
                  100.0f * (before_size - after_size) / before_size);
          dump_assembly(p->store, start_offset, p->next_insn_offset,
-                       disasm_info, perf.block_latency);
+                       disasm_info, perf.block_latency, stderr);
       }
    }
    ralloc_free(disasm_info);

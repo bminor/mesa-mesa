@@ -64,7 +64,7 @@ struct disasm_info {
 
 void
 dump_assembly(void *assembly, int start_offset, int end_offset,
-              struct disasm_info *disasm, const unsigned *block_latency);
+              struct disasm_info *disasm, const unsigned *block_latency, FILE *f);
 
 struct disasm_info *
 disasm_initialize(const struct brw_isa_info *isa,

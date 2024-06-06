@@ -143,7 +143,7 @@ brw_assemble(void *mem_ctx, const struct intel_device_info *devinfo,
 
    if (!brw_validate_instructions(p->isa, p->store, 0,
                                   p->next_insn_offset, disasm_info)) {
-      dump_assembly(p->store, 0, p->next_insn_offset, disasm_info, NULL);
+      dump_assembly(p->store, 0, p->next_insn_offset, disasm_info, NULL, stderr);
       ralloc_free(disasm_info);
       fprintf(stderr, "Invalid instructions.\n");
       goto end;
@@ -156,7 +156,7 @@ brw_assemble(void *mem_ctx, const struct intel_device_info *devinfo,
    result.bin_size = p->next_insn_offset;
 
    if ((flags & BRW_ASSEMBLE_DUMP) != 0)
-      dump_assembly(p->store, 0, p->next_insn_offset, disasm_info, NULL);
+      dump_assembly(p->store, 0, p->next_insn_offset, disasm_info, NULL, stderr);
 
    ralloc_free(disasm_info);
 

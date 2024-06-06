@@ -117,7 +117,7 @@ validate(struct brw_codegen *p, char **error = nullptr)
                                         p->next_insn_offset, disasm);
 
    if (print) {
-      dump_assembly(p->store, 0, p->next_insn_offset, disasm, NULL);
+      dump_assembly(p->store, 0, p->next_insn_offset, disasm, NULL, stderr);
    }
 
    if (error)
