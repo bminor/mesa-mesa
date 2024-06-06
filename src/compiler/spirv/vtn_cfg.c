@@ -55,6 +55,7 @@ glsl_type_add_to_function_params(const struct glsl_type *type,
       func->params[(*param_idx)++] = (nir_parameter) {
          .num_components = glsl_get_vector_elements(type),
          .bit_size = glsl_get_bit_size(type),
+         .type = type,
       };
    } else if (glsl_type_is_array_or_matrix(type)) {
       unsigned elems = glsl_get_length(type);
