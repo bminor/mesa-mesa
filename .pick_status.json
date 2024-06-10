@@ -524,7 +524,7 @@
         "description": "clc: remove check for null pointer that cannot be true in llvm_mod_to_spirv",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3a752256f54ce839f6e75d508df51eba6464ef77",
         "notes": null
