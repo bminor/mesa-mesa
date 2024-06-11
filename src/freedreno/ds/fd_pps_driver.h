@@ -74,6 +74,7 @@ private:
 //   uint32_t cycles;  /* the number of clock cycles since last sample */
 
    void setup_a6xx_counters();
+   void setup_a7xx_counters();
 
    void configure_counters(bool reset, bool wait);
    void collect_countables();
