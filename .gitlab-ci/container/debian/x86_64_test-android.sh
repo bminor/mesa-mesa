@@ -78,19 +78,24 @@ rm -rf /VK-GL-CTS
 
 ############### Downloading Cuttlefish resources ...
 
-CUTTLEFISH_VERSION=9082637   # Chosen from https://ci.android.com/builds/branches/aosp-master/grid?
+CUTTLEFISH_PROJECT_PATH=ao2/aosp-manifest
+CUTTLEFISH_BUILD_VERSION_TAGS=mesa-venus
+CUTTLEFISH_BUILD_NUMBER=20241108.001
 
 mkdir /cuttlefish
 pushd /cuttlefish
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  -o aosp_cf_x86_64_phone-img-$CUTTLEFISH_VERSION.zip https://ci.android.com/builds/submitted/$CUTTLEFISH_VERSION/aosp_cf_x86_64_phone-userdebug/latest/raw/aosp_cf_x86_64_phone-img-$CUTTLEFISH_VERSION.zip
-unzip aosp_cf_x86_64_phone-img-$CUTTLEFISH_VERSION.zip
-rm aosp_cf_x86_64_phone-img-$CUTTLEFISH_VERSION.zip
+  -o aosp_cf_x86_64_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/aosp_cf_x86_64_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip"
+
+unzip aosp_cf_x86_64_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip
+rm aosp_cf_x86_64_phone-img-$CUTTLEFISH_BUILD_NUMBER.zip
 ls -lhS ./*
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-  https://ci.android.com/builds/submitted/$CUTTLEFISH_VERSION/aosp_cf_x86_64_phone-userdebug/latest/raw/cvd-host_package.tar.gz | tar -xzvf-
+  -o cvd-host_package.tar.gz "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CUTTLEFISH_PROJECT_PATH}/aosp-${CUTTLEFISH_BUILD_VERSION_TAGS}.${CUTTLEFISH_BUILD_NUMBER}/cvd-host_package.tar.gz"
+tar -xzvf cvd-host_package.tar.gz
+rm cvd-host_package.tar.gz
 
 popd
 
