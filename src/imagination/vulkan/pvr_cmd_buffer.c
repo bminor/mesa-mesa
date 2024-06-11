@@ -1477,6 +1477,8 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
    struct pvr_framebuffer *framebuffer = render_pass_info->framebuffer;
    struct pvr_spm_bgobj_state *spm_bgobj_state =
       &framebuffer->spm_bgobj_state_per_render[sub_cmd->hw_render_idx];
+   struct pvr_spm_eot_state *spm_eot_state =
+      &framebuffer->spm_eot_state_per_render[sub_cmd->hw_render_idx];
    struct pvr_render_target *render_target;
    VkResult result;
 
@@ -1497,11 +1499,10 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
        */
 
       memcpy(job->pbe_reg_words,
-             &framebuffer->spm_eot_state_per_render[0].pbe_reg_words,
+             &spm_eot_state->pbe_reg_words,
              sizeof(job->pbe_reg_words));
       job->pds_pixel_event_data_offset =
-         framebuffer->spm_eot_state_per_render[0]
-            .pixel_event_program_data_offset;
+         spm_eot_state->pixel_event_program_data_offset;
    } else {
       struct pvr_emit_state emit_state = { 0 };
       memset(emit_state.tile_buffer_ids,
@@ -1579,11 +1580,10 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
       job->pr_pds_pixel_event_data_offset = job->pds_pixel_event_data_offset;
    } else {
       memcpy(job->pr_pbe_reg_words,
-             &framebuffer->spm_eot_state_per_render[0].pbe_reg_words,
+             &spm_eot_state->pbe_reg_words,
              sizeof(job->pbe_reg_words));
       job->pr_pds_pixel_event_data_offset =
-         framebuffer->spm_eot_state_per_render[0]
-            .pixel_event_program_data_offset;
+         spm_eot_state->pixel_event_program_data_offset;
    }
 
    render_target = pvr_get_render_target(render_pass_info->pass,
