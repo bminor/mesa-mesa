@@ -74,51 +74,51 @@ FreedrenoDriver::setup_a6xx_counters()
     * Create the countables that we'll be using.
     */
 
-   auto PERF_CP_ALWAYS_COUNT = countable("PERF_CP_ALWAYS_COUNT");
-   auto PERF_CP_BUSY_CYCLES  = countable("PERF_CP_BUSY_CYCLES");
-   auto PERF_RB_3D_PIXELS    = countable("PERF_RB_3D_PIXELS");
-   auto PERF_TP_L1_CACHELINE_MISSES = countable("PERF_TP_L1_CACHELINE_MISSES");
-   auto PERF_TP_L1_CACHELINE_REQUESTS = countable("PERF_TP_L1_CACHELINE_REQUESTS");
+   auto PERF_CP_ALWAYS_COUNT = countable("CP", "PERF_CP_ALWAYS_COUNT");
+   auto PERF_CP_BUSY_CYCLES  = countable("CP", "PERF_CP_BUSY_CYCLES");
+   auto PERF_RB_3D_PIXELS    = countable("RB", "PERF_RB_3D_PIXELS");
+   auto PERF_TP_L1_CACHELINE_MISSES = countable("TP", "PERF_TP_L1_CACHELINE_MISSES");
+   auto PERF_TP_L1_CACHELINE_REQUESTS = countable("TP", "PERF_TP_L1_CACHELINE_REQUESTS");
 
-   auto PERF_TP_OUTPUT_PIXELS  = countable("PERF_TP_OUTPUT_PIXELS");
-   auto PERF_TP_OUTPUT_PIXELS_ANISO  = countable("PERF_TP_OUTPUT_PIXELS_ANISO");
-   auto PERF_TP_OUTPUT_PIXELS_BILINEAR = countable("PERF_TP_OUTPUT_PIXELS_BILINEAR");
-   auto PERF_TP_OUTPUT_PIXELS_POINT = countable("PERF_TP_OUTPUT_PIXELS_POINT");
-   auto PERF_TP_OUTPUT_PIXELS_ZERO_LOD = countable("PERF_TP_OUTPUT_PIXELS_ZERO_LOD");
+   auto PERF_TP_OUTPUT_PIXELS  = countable("TP", "PERF_TP_OUTPUT_PIXELS");
+   auto PERF_TP_OUTPUT_PIXELS_ANISO  = countable("TP", "PERF_TP_OUTPUT_PIXELS_ANISO");
+   auto PERF_TP_OUTPUT_PIXELS_BILINEAR = countable("TP", "PERF_TP_OUTPUT_PIXELS_BILINEAR");
+   auto PERF_TP_OUTPUT_PIXELS_POINT = countable("TP", "PERF_TP_OUTPUT_PIXELS_POINT");
+   auto PERF_TP_OUTPUT_PIXELS_ZERO_LOD = countable("TP", "PERF_TP_OUTPUT_PIXELS_ZERO_LOD");
 
-   auto PERF_TSE_INPUT_PRIM  = countable("PERF_TSE_INPUT_PRIM");
-   auto PERF_TSE_CLIPPED_PRIM  = countable("PERF_TSE_CLIPPED_PRIM");
-   auto PERF_TSE_TRIVAL_REJ_PRIM  = countable("PERF_TSE_TRIVAL_REJ_PRIM");
-   auto PERF_TSE_OUTPUT_VISIBLE_PRIM = countable("PERF_TSE_OUTPUT_VISIBLE_PRIM");
+   auto PERF_TSE_INPUT_PRIM  = countable("TSE", "PERF_TSE_INPUT_PRIM");
+   auto PERF_TSE_CLIPPED_PRIM  = countable("TSE", "PERF_TSE_CLIPPED_PRIM");
+   auto PERF_TSE_TRIVAL_REJ_PRIM  = countable("TSE", "PERF_TSE_TRIVAL_REJ_PRIM");
+   auto PERF_TSE_OUTPUT_VISIBLE_PRIM = countable("TSE", "PERF_TSE_OUTPUT_VISIBLE_PRIM");
 
-   auto PERF_SP_BUSY_CYCLES  = countable("PERF_SP_BUSY_CYCLES");
-   auto PERF_SP_ALU_WORKING_CYCLES = countable("PERF_SP_ALU_WORKING_CYCLES");
-   auto PERF_SP_EFU_WORKING_CYCLES = countable("PERF_SP_EFU_WORKING_CYCLES");
-   auto PERF_SP_VS_STAGE_EFU_INSTRUCTIONS = countable("PERF_SP_VS_STAGE_EFU_INSTRUCTIONS");
-   auto PERF_SP_VS_STAGE_FULL_ALU_INSTRUCTIONS = countable("PERF_SP_VS_STAGE_FULL_ALU_INSTRUCTIONS");
-   auto PERF_SP_VS_STAGE_TEX_INSTRUCTIONS = countable("PERF_SP_VS_STAGE_TEX_INSTRUCTIONS");
-   auto PERF_SP_FS_STAGE_EFU_INSTRUCTIONS = countable("PERF_SP_FS_STAGE_EFU_INSTRUCTIONS");
-   auto PERF_SP_FS_STAGE_FULL_ALU_INSTRUCTIONS = countable("PERF_SP_FS_STAGE_FULL_ALU_INSTRUCTIONS");
-   auto PERF_SP_FS_STAGE_HALF_ALU_INSTRUCTIONS = countable("PERF_SP_FS_STAGE_HALF_ALU_INSTRUCTIONS");
-   auto PERF_SP_STALL_CYCLES_TP = countable("PERF_SP_STALL_CYCLES_TP");
-   auto PERF_SP_ANY_EU_WORKING_FS_STAGE = countable("PERF_SP_ANY_EU_WORKING_FS_STAGE");
-   auto PERF_SP_ANY_EU_WORKING_VS_STAGE = countable("PERF_SP_ANY_EU_WORKING_VS_STAGE");
-   auto PERF_SP_ANY_EU_WORKING_CS_STAGE = countable("PERF_SP_ANY_EU_WORKING_CS_STAGE");
+   auto PERF_SP_BUSY_CYCLES  = countable("SP", "PERF_SP_BUSY_CYCLES");
+   auto PERF_SP_ALU_WORKING_CYCLES = countable("SP", "PERF_SP_ALU_WORKING_CYCLES");
+   auto PERF_SP_EFU_WORKING_CYCLES = countable("SP", "PERF_SP_EFU_WORKING_CYCLES");
+   auto PERF_SP_VS_STAGE_EFU_INSTRUCTIONS = countable("SP", "PERF_SP_VS_STAGE_EFU_INSTRUCTIONS");
+   auto PERF_SP_VS_STAGE_FULL_ALU_INSTRUCTIONS = countable("SP", "PERF_SP_VS_STAGE_FULL_ALU_INSTRUCTIONS");
+   auto PERF_SP_VS_STAGE_TEX_INSTRUCTIONS = countable("SP", "PERF_SP_VS_STAGE_TEX_INSTRUCTIONS");
+   auto PERF_SP_FS_STAGE_EFU_INSTRUCTIONS = countable("SP", "PERF_SP_FS_STAGE_EFU_INSTRUCTIONS");
+   auto PERF_SP_FS_STAGE_FULL_ALU_INSTRUCTIONS = countable("SP", "PERF_SP_FS_STAGE_FULL_ALU_INSTRUCTIONS");
+   auto PERF_SP_FS_STAGE_HALF_ALU_INSTRUCTIONS = countable("SP", "PERF_SP_FS_STAGE_HALF_ALU_INSTRUCTIONS");
+   auto PERF_SP_STALL_CYCLES_TP = countable("SP", "PERF_SP_STALL_CYCLES_TP");
+   auto PERF_SP_ANY_EU_WORKING_FS_STAGE = countable("SP", "PERF_SP_ANY_EU_WORKING_FS_STAGE");
+   auto PERF_SP_ANY_EU_WORKING_VS_STAGE = countable("SP", "PERF_SP_ANY_EU_WORKING_VS_STAGE");
+   auto PERF_SP_ANY_EU_WORKING_CS_STAGE = countable("SP", "PERF_SP_ANY_EU_WORKING_CS_STAGE");
 
-   auto PERF_UCHE_STALL_CYCLES_ARBITER = countable("PERF_UCHE_STALL_CYCLES_ARBITER");
-   auto PERF_UCHE_VBIF_READ_BEATS_TP = countable("PERF_UCHE_VBIF_READ_BEATS_TP");
-   auto PERF_UCHE_VBIF_READ_BEATS_VFD = countable("PERF_UCHE_VBIF_READ_BEATS_VFD");
-   auto PERF_UCHE_VBIF_READ_BEATS_SP = countable("PERF_UCHE_VBIF_READ_BEATS_SP");
-   auto PERF_UCHE_READ_REQUESTS_TP = countable("PERF_UCHE_READ_REQUESTS_TP");
+   auto PERF_UCHE_STALL_CYCLES_ARBITER = countable("UCHE", "PERF_UCHE_STALL_CYCLES_ARBITER");
+   auto PERF_UCHE_VBIF_READ_BEATS_TP = countable("UCHE", "PERF_UCHE_VBIF_READ_BEATS_TP");
+   auto PERF_UCHE_VBIF_READ_BEATS_VFD = countable("UCHE", "PERF_UCHE_VBIF_READ_BEATS_VFD");
+   auto PERF_UCHE_VBIF_READ_BEATS_SP = countable("UCHE", "PERF_UCHE_VBIF_READ_BEATS_SP");
+   auto PERF_UCHE_READ_REQUESTS_TP = countable("UCHE", "PERF_UCHE_READ_REQUESTS_TP");
 
-   auto PERF_PC_STALL_CYCLES_VFD = countable("PERF_PC_STALL_CYCLES_VFD");
-   auto PERF_PC_VS_INVOCATIONS = countable("PERF_PC_VS_INVOCATIONS");
-   auto PERF_PC_VERTEX_HITS = countable("PERF_PC_VERTEX_HITS");
+   auto PERF_PC_STALL_CYCLES_VFD = countable("PC", "PERF_PC_STALL_CYCLES_VFD");
+   auto PERF_PC_VS_INVOCATIONS = countable("PC", "PERF_PC_VS_INVOCATIONS");
+   auto PERF_PC_VERTEX_HITS = countable("PC", "PERF_PC_VERTEX_HITS");
 
-   auto PERF_HLSQ_QUADS = countable("PERF_HLSQ_QUADS"); /* Quads (fragments / 4) produced */
+   auto PERF_HLSQ_QUADS = countable("HLSQ", "PERF_HLSQ_QUADS"); /* Quads (fragments / 4) produced */
 
-   auto PERF_CP_NUM_PREEMPTIONS = countable("PERF_CP_NUM_PREEMPTIONS");
-   auto PERF_CP_PREEMPTION_REACTION_DELAY = countable("PERF_CP_PREEMPTION_REACTION_DELAY");
+   auto PERF_CP_NUM_PREEMPTIONS = countable("CP", "PERF_CP_NUM_PREEMPTIONS");
+   auto PERF_CP_PREEMPTION_REACTION_DELAY = countable("CP", "PERF_CP_PREEMPTION_REACTION_DELAY");
 
    /* TODO: resolve() tells there is no PERF_CMPDECMP_VBIF_READ_DATA */
    // auto PERF_CMPDECMP_VBIF_READ_DATA = countable("PERF_CMPDECMP_VBIF_READ_DATA");
@@ -591,15 +591,15 @@ void FreedrenoDriver::disable_perfcnt()
  */
 
 FreedrenoDriver::Countable
-FreedrenoDriver::countable(std::string name)
+FreedrenoDriver::countable(std::string group, std::string name)
 {
-   auto countable = Countable(this, name);
+   auto countable = Countable(this, group, name);
    countables.emplace_back(countable);
    return countable;
 }
 
-FreedrenoDriver::Countable::Countable(FreedrenoDriver *d, std::string name)
-   : id {d->next_countable_id++}, d {d}, name {name}
+FreedrenoDriver::Countable::Countable(FreedrenoDriver *d, std::string group, std::string name)
+   : id {d->next_countable_id++}, d {d}, group {group}, name {name}
 {
 }
 
@@ -655,20 +655,24 @@ FreedrenoDriver::Countable::resolve() const
 {
    for (unsigned i = 0; i < d->num_perfcntrs; i++) {
       const struct fd_perfcntr_group *g = &d->perfcntrs[i];
+      if (group != g->name)
+         continue;
+
       for (unsigned j = 0; j < g->num_countables; j++) {
          const struct fd_perfcntr_countable *c = &g->countables[j];
-         if (name == c->name) {
-            d->state[id].countable = c;
+         if (name != c->name)
+            continue;
 
-            /* Assign a counter from the same group: */
-            assert(d->assigned_counters[i] < g->num_counters);
-            d->state[id].counter = &g->counters[d->assigned_counters[i]++];
+         d->state[id].countable = c;
 
-            std::cout << "Countable: " << name << ", group=" << g->name <<
-                  ", counter=" << d->assigned_counters[i] - 1 << "\n";
+         /* Assign a counter from the same group: */
+         assert(d->assigned_counters[i] < g->num_counters);
+         d->state[id].counter = &g->counters[d->assigned_counters[i]++];
 
-            return;
-         }
+         std::cout << "Countable: " << name << ", group=" << g->name <<
+               ", counter=" << d->assigned_counters[i] - 1 << "\n";
+
+         return;
       }
    }
    unreachable("no such countable!");
