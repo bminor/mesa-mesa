@@ -107,6 +107,8 @@ static const struct pvr_format pvr_format_table[] = {
    FORMAT(R8G8_UNORM, U8U8, U8U8, U8),
    /* VK_FORMAT_R8G8_SNORM = 17. */
    FORMAT(R8G8_SNORM, S8S8, S8S8, S8),
+   /* VK_FORMAT_R8G8_SSCALED = 19. */
+   FORMAT(R8G8_SSCALED, S8S8, S8S8, INVALID),
    /* VK_FORMAT_R8G8_UINT = 20. */
    FORMAT(R8G8_UINT, U8U8, U8U8, UINT8),
    /* VK_FORMAT_R8G8_SINT = 21. */
@@ -607,6 +609,9 @@ pvr_get_image_format_features2(const struct pvr_format *pvr_format,
 
    vk_format = pvr_format->vk_format;
 
+   if (vk_format_is_scaled(vk_format))
+      return 0;
+
    if (pvr_get_tex_format(vk_format) != ROGUE_TEXSTATE_FORMAT_INVALID) {
       if (vk_tiling == VK_IMAGE_TILING_OPTIMAL) {
          const uint32_t first_component_size =
@@ -760,6 +765,9 @@ pvr_get_buffer_format_features2(const struct pvr_format *pvr_format)
       return 0;
 
    desc = vk_format_description(vk_format);
+
+   if (vk_format_is_scaled(vk_format))
+      return VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
 
    flags |= VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
             VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;

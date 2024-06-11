@@ -427,6 +427,7 @@ static VkFormat pvr_get_copy_format(VkFormat format)
    case VK_FORMAT_R8_SNORM:
       return VK_FORMAT_R8_SINT;
    case VK_FORMAT_R8G8_SNORM:
+   case VK_FORMAT_R8G8_SSCALED:
       return VK_FORMAT_R8G8_SINT;
    case VK_FORMAT_R8G8B8_SNORM:
       return VK_FORMAT_R8G8B8_SINT;

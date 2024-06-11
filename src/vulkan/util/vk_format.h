@@ -215,6 +215,11 @@ static inline bool vk_format_is_alpha_on_msb(VkFormat vk_format)
 #endif
 }
 
+static inline bool vk_format_is_scaled(VkFormat vk_format)
+{
+   return util_format_is_scaled(vk_format_to_pipe_format(vk_format));
+}
+
 static inline unsigned
 vk_format_get_blocksize(VkFormat format)
 {
