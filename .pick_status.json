@@ -1124,7 +1124,7 @@
         "description": "llvmpipe: Stop using a sample_functions pointer as cache key",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7ebf7f49a052c75f49496e31f7b3ccca716d30e5",
         "notes": null
