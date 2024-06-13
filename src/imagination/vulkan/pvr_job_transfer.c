@@ -275,6 +275,19 @@ static VkResult pvr_pbe_src_format_pick_stencil(
    return VK_SUCCESS;
 }
 
+static inline unsigned vk_format_depth_width(VkFormat vk_format)
+{
+   const struct util_format_description *desc =
+      vk_format_description(vk_format);
+   assert(desc->colorspace == UTIL_FORMAT_COLORSPACE_ZS);
+
+   unsigned depth_channel = desc->swizzle[0];
+   if (depth_channel == PIPE_SWIZZLE_NONE)
+      return 0;
+
+   return desc->channel[depth_channel].size;
+}
+
 static VkResult
 pvr_pbe_src_format_ds(const struct pvr_transfer_cmd_surface *src,
                       const enum pvr_filter filter,
@@ -289,6 +302,8 @@ pvr_pbe_src_format_ds(const struct pvr_transfer_cmd_surface *src,
    const bool dst_depth = vk_format_has_depth(dst_format);
    const bool src_stencil = vk_format_has_stencil(src_format);
    const bool dst_stencil = vk_format_has_stencil(dst_format);
+   const unsigned src_depth_width = vk_format_depth_width(src_format);
+   const unsigned dst_depth_width = vk_format_depth_width(dst_format);
 
    if (flags & PVR_TRANSFER_CMD_FLAGS_DSMERGE) {
       /* Merging, so destination should always have both. */
@@ -310,60 +325,67 @@ pvr_pbe_src_format_ds(const struct pvr_transfer_cmd_surface *src,
    if ((dst_depth && !src_depth) || (dst_stencil && !src_stencil))
       return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
-   switch (dst_format) {
-   case VK_FORMAT_D16_UNORM:
-      if (src_format == VK_FORMAT_D24_UNORM_S8_UINT)
-         return VK_ERROR_FORMAT_NOT_SUPPORTED;
-
-      if (!down_scale)
-         *src_format_out = pvr_pbe_src_format_raw(dst_format);
-      else
-         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_U16NORM;
-
-      break;
-   case VK_FORMAT_D24_UNORM_S8_UINT:
-      switch (src_format) {
-      case VK_FORMAT_D24_UNORM_S8_UINT:
-         if (filter == PVR_FILTER_LINEAR)
-            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_D24S8;
-         else
-            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW32;
-
+   if (src_depth_width == 24) {
+      switch (dst_depth_width) {
+      case 0:
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SWAP_LMSB;
          break;
 
-      /* D16_UNORM results in a 0.0->1.0 float from the TPU, the same as D32 */
-      case VK_FORMAT_D16_UNORM:
-      case VK_FORMAT_D32_SFLOAT:
-         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_CONV_D32_D24S8;
+      case 24:
+         if (src_format == VK_FORMAT_X8_D24_UNORM_PACK32 &&
+             dst_format == VK_FORMAT_D24_UNORM_S8_UINT) {
+            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_CONV_S8D24_D24S8;
+         } else if (filter == PVR_FILTER_LINEAR) {
+            assert(src_format == dst_format);
+            if (src_format == VK_FORMAT_X8_D24_UNORM_PACK32) {
+               *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_S8D24;
+            } else {
+               *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_D24S8;
+            }
+         } else {
+            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW32;
+         }
+         break;
+
+      case 32:
+         if (dst_stencil)
+            return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_CONV_D24_D32;
          break;
 
       default:
-         if (filter == PVR_FILTER_LINEAR)
-            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_D32S8;
-         else
-            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW64;
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
       }
+   } else if (src_depth_width == 32 && dst_depth_width == 24) {
+      if (src_format != VK_FORMAT_D32_SFLOAT)
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
-      break;
-
-   case VK_FORMAT_D32_SFLOAT:
-      if (src_format == VK_FORMAT_D24_UNORM_S8_UINT)
-         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_CONV_D24_D32;
+      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_CONV_D32_D24S8;
+   } else if (dst_depth_width == 16) {
+      if (down_scale && dst_format == VK_FORMAT_D16_UNORM)
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_U16NORM;
+      else if (src_format == dst_format)
+         *src_format_out = pvr_pbe_src_format_raw(dst_format);
       else
-         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_F32;
-
-      break;
-
-   case VK_FORMAT_D32_SFLOAT_S8_UINT:
-      assert(src_format == VK_FORMAT_D32_SFLOAT_S8_UINT);
-      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW64;
-      break;
-
-   default:
-      if (src_format == VK_FORMAT_D24_UNORM_S8_UINT)
-         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_SWAP_LMSB;
-      else
-         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW32;
+         *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_U16NORM;
+   } else if (src_depth_width == 16 && dst_depth_width == 24) {
+      /* D16_UNORM results in a 0.0->1.0 float from the TPU, the same as D32 */
+      *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_CONV_D32_D24S8;
+   } else {
+      if (dst_depth && dst_stencil) {
+         if (filter == PVR_FILTER_LINEAR) {
+            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_D32S8;
+         } else {
+            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW64;
+         }
+      } else {
+         if (dst_depth_width == 32) {
+            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_F32;
+         } else {
+            *src_format_out = PVR_TRANSFER_PBE_PIXEL_SRC_RAW32;
+         }
+      }
    }
 
    return VK_SUCCESS;
@@ -1607,6 +1629,7 @@ static inline VkResult pvr_image_state_set_codegen_defaults(
       case PVR_TRANSFER_PBE_PIXEL_SRC_DMRG_D32S8_D32S8:
       case PVR_TRANSFER_PBE_PIXEL_SRC_CONV_D32_D24S8:
       case PVR_TRANSFER_PBE_PIXEL_SRC_DMRG_D32_D24S8:
+      case PVR_TRANSFER_PBE_PIXEL_SRC_D32S8:
          info.format = VK_FORMAT_R32G32_UINT;
          break;
       default:
