@@ -1214,7 +1214,7 @@
         "description": "anv/sparse: fix TR-TT page table bo size and flags",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "18d8c3ca339d346b9d531f49c343353ac7a61c89",
         "notes": null
