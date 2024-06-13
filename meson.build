@@ -316,6 +316,10 @@ with_intel_vk_rt = get_option('intel-rt') \
   .disable_if(host_machine.cpu_family() != 'x86_64', error_message : 'Intel Ray Tracing is only supported on x86_64') \
   .allowed()
 
+if with_intel_vk_rt
+  with_intel_bvh_grl = get_option('intel-bvh-grl')
+endif
+
 with_any_intel = [
   with_gallium_crocus,
   with_gallium_i915,

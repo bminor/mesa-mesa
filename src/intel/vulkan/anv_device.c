@@ -985,14 +985,22 @@ VkResult anv_CreateDevice(
 
    anv_device_utrace_init(device);
 
-   result = anv_genX(device->info, init_device_state)(device);
+   result = vk_meta_device_init(&device->vk, &device->meta_device);
    if (result != VK_SUCCESS)
       goto fail_utrace;
+
+   result = anv_genX(device->info, init_device_state)(device);
+   if (result != VK_SUCCESS)
+      goto fail_meta_device;
+
+   simple_mtx_init(&device->accel_struct_build.mutex, mtx_plain);
 
    *pDevice = anv_device_to_handle(device);
 
    return VK_SUCCESS;
 
+ fail_meta_device:
+   vk_meta_device_finish(&device->vk, &device->meta_device);
  fail_utrace:
    anv_device_utrace_finish(device);
  fail_queues:
@@ -1118,6 +1126,12 @@ void anv_DestroyDevice(
    /* Do TRTT batch garbage collection before destroying queues. */
    anv_device_finish_trtt(device);
 
+   if (device->accel_struct_build.radix_sort) {
+      radix_sort_vk_destroy(device->accel_struct_build.radix_sort,
+                            _device, &device->vk.alloc);
+   }
+   vk_meta_device_finish(&device->vk, &device->meta_device);
+
    anv_device_utrace_finish(device);
 
    for (uint32_t i = 0; i < device->queue_count; i++)
@@ -1217,6 +1231,8 @@ void anv_DestroyDevice(
 
    pthread_cond_destroy(&device->queue_submit);
    pthread_mutex_destroy(&device->mutex);
+
+   simple_mtx_destroy(&device->accel_struct_build.mutex);
 
    ralloc_free(device->fp64_nir);
 

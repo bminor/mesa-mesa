@@ -658,6 +658,13 @@ option(
 )
 
 option(
+  'intel-bvh-grl',
+  type : 'boolean',
+  value : true,
+  description : 'Build the BVH structure using GRL.'
+)
+
+option(
   'install-intel-clc',
   type : 'boolean',
   value : false,

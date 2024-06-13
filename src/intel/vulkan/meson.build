@@ -38,13 +38,22 @@ idep_anv_headers = declare_dependency(
 )
 
 if with_intel_vk_rt
-  subdir('grl')
-  optional_libgrl = [libgrl]
+  if with_intel_bvh_grl
+    subdir('grl')
+    optional_libgrl = [libgrl]
+    anv_flags += '-DANV_SUPPORT_RT_GRL=1'
+  else
+    subdir('bvh')
+    idep_grl = null_dep
+    optional_libgrl = []
+    anv_flags += '-DANV_SUPPORT_RT_GRL=0'
+  endif
   anv_flags += '-DANV_SUPPORT_RT=1'
 else
   idep_grl = null_dep
   optional_libgrl = []
   anv_flags += '-DANV_SUPPORT_RT=0'
+  anv_flags += '-DANV_SUPPORT_RT_GRL=0'
 endif
 
 intel_icd = custom_target(
@@ -101,9 +110,15 @@ anv_per_hw_ver_files = files(
   'genX_simple_shader.c',
 )
 if with_intel_vk_rt
-  anv_per_hw_ver_files += files(
-    'genX_acceleration_structure_grl.c',
-  )
+  if with_intel_bvh_grl
+    anv_per_hw_ver_files += files(
+      'genX_acceleration_structure_grl.c',
+    )
+  else
+    anv_per_hw_ver_files += files(
+      'genX_acceleration_structure.c',
+    )
+  endif
 endif
 
 foreach _gfx_ver : ['90', '110', '120', '125', '200', '300']
@@ -194,6 +209,8 @@ libanv_files = files(
   'anv_va.c',
   'anv_video.c',
   'anv_wsi.c',
+  'bvh/anv_bvh.h',
+  'bvh/anv_build_interface.h',
 )
 
 anv_deps = [
@@ -248,7 +265,7 @@ libanv_common = static_library(
 
 libvulkan_intel = shared_library(
   'vulkan_intel',
-  [files('anv_gem.c'), anv_entrypoints[0]],
+  [files('anv_gem.c'), anv_entrypoints[0], bvh_spv],
   include_directories : [
     inc_include, inc_src, inc_intel,
   ],

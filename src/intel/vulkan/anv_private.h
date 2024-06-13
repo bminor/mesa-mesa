@@ -102,6 +102,7 @@
 #include "vk_log.h"
 #include "vk_ycbcr_conversion.h"
 #include "vk_video.h"
+#include "vk_meta.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1828,6 +1829,11 @@ enum anv_rt_bvh_build_method {
    ANV_BVH_BUILD_METHOD_NEW_SAH,
 };
 
+/* If serialization-breaking or algorithm-breaking changes are made,
+ * increment the digits at the end
+ */
+#define ANV_RT_UUID_MACRO             "ANV_RT_BVH_0001"
+
 struct anv_device_astc_emu {
     struct vk_texcompress_astc_state           *texcompress;
 
@@ -2102,6 +2108,14 @@ struct anv_device {
         */
        struct util_dynarray                      prints;
     } printf;
+
+    struct {
+       simple_mtx_t  mutex;
+       struct radix_sort_vk *radix_sort;
+       struct vk_acceleration_structure_build_args build_args;
+   } accel_struct_build;
+
+   struct vk_meta_device meta_device;
 };
 
 static inline uint32_t
