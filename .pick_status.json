@@ -1434,7 +1434,7 @@
         "description": "util/disk_cache: Fix cache marker refresh.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3f119a1fd8deaa46c4342837d13096cd7873c8d2",
         "notes": null
