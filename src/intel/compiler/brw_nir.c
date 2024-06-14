@@ -1432,17 +1432,6 @@ brw_nir_link_shaders(const struct brw_compiler *compiler,
       NIR_PASS(_, producer, nir_lower_global_vars_to_local);
       NIR_PASS(_, consumer, nir_lower_global_vars_to_local);
 
-      /* The backend might not be able to handle indirects on
-       * temporaries so we need to lower indirects on any of the
-       * varyings we have demoted here.
-       */
-      NIR_PASS(_, producer, nir_lower_indirect_derefs,
-                  brw_nir_no_indirect_mask(compiler, producer->info.stage),
-                  UINT32_MAX);
-      NIR_PASS(_, consumer, nir_lower_indirect_derefs,
-                  brw_nir_no_indirect_mask(compiler, consumer->info.stage),
-                  UINT32_MAX);
-
       brw_nir_optimize(producer, devinfo);
       brw_nir_optimize(consumer, devinfo);
 
