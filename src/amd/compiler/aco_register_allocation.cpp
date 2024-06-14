@@ -2103,6 +2103,7 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
 
    RegisterFile tmp_file(register_file);
 
+   BITSET_DECLARE(live_reg_assigned, 128) = {0};
    BITSET_DECLARE(mask, 128) = {0};
 
    for (unsigned i = 0; i < instr->operands.size(); i++) {
@@ -2113,6 +2114,47 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
 
       assert(op.isTemp());
       PhysReg src = ctx.assignments[op.tempId()].reg;
+      if (!BITSET_TEST(live_reg_assigned, i) && !op.isKill()) {
+         /* Figure out which register the temp will continue living in after the instruction. */
+         PhysReg live_reg = op.physReg();
+         bool found = false;
+         for (unsigned j = i; j < instr->operands.size(); ++j) {
+            const Operand& op2 = instr->operands[j];
+            if (!op2.isPrecolored() || op2.tempId() != op.tempId())
+               continue;
+
+            /* Don't consider registers interfering with definitions - we'd have to immediately copy
+             * the temporary somewhere else to make space for the interfering definition.
+             */
+            if (op2.isClobbered())
+               continue;
+
+            /* Choose the first register that doesn't interfere with definitions. If the temp can
+             * continue residing in the same register it's currently in, just choose that.
+             */
+            if (!found || op2.physReg() == src) {
+               live_reg = op2.physReg();
+               found = true;
+               if (op2.physReg() == src)
+                  break;
+            }
+         }
+
+         for (unsigned j = i; j < instr->operands.size(); ++j) {
+            if (!instr->operands[j].isPrecolored() || instr->operands[j].tempId() != op.tempId())
+               continue;
+
+            /* Fix up operand kill flags according to the live_reg choice we made. */
+            if (instr->operands[j].physReg() == live_reg) {
+               instr->operands[j].setCopyKill(false);
+               instr->operands[j].setKill(false);
+            } else {
+               instr->operands[j].setCopyKill(true);
+            }
+            BITSET_SET(live_reg_assigned, j);
+         }
+      }
+
       adjust_max_used_regs(ctx, op.regClass(), op.physReg());
 
       if (op.physReg() == src) {
@@ -2124,15 +2166,15 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
       assert(std::none_of(parallelcopy.begin(), parallelcopy.end(),
                           [&](auto copy) { return copy.def.physReg() == op.physReg(); }));
 
-      /* clear from register_file so fixed operands are not collected be collect_vars() */
-      tmp_file.clear(src, op.regClass()); // TODO: try to avoid moving block vars to src
+      /* clear from register_file so fixed operands are not collected by collect_vars() */
+      tmp_file.clear(src, op.regClass());
 
       BITSET_SET(mask, i);
 
       Operand pc_op(instr->operands[i].getTemp());
       pc_op.setFixed(src);
       Definition pc_def = Definition(op.physReg(), pc_op.regClass());
-      parallelcopy.emplace_back(pc_op, pc_def);
+      parallelcopy.emplace_back(pc_op, pc_def, op.isCopyKill());
    }
 
    if (BITSET_IS_EMPTY(mask))
