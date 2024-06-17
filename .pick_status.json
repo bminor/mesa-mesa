@@ -1064,7 +1064,7 @@
         "description": "nir/nir_group_loads: reduce chance of max_distance check overflow",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "33b4eb149ea79d9dd4b80ddda079ad027e5a40bf",
         "notes": null
