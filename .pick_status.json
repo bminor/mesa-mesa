@@ -304,7 +304,7 @@
         "description": "nir/format_convert: Smash NaN to 0 in pack_r9g9b9e5()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9981709d8f3cadf04950fae3ac6f34afdfd2d3fb",
         "notes": null
