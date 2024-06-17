@@ -1344,7 +1344,7 @@
         "description": "isl: fix condition for enabling sampler route to lsc",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "70382f7f06561dcd94e4d2e6f2bedc8dbeec5d8e",
         "notes": null
