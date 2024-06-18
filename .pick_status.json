@@ -1334,7 +1334,7 @@
         "description": "anv: Remove block promoting non CPU mapped bos to coherent",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a65e982b4412f44c035ccb474db3e64e0e9f6a16",
         "notes": null
