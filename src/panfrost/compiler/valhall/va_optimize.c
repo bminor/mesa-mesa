@@ -74,7 +74,7 @@ va_lower_mov_imm(bi_instr *I)
    assert(I->nr_srcs == 1);
 
    if (I->src[0].type == BI_INDEX_CONSTANT) {
-      I->op = BI_OPCODE_IADD_IMM_I32;
+      bi_set_opcode(I, BI_OPCODE_IADD_IMM_I32);
       I->index = I->src[0].value;
       I->src[0] = bi_zero();
    }
@@ -104,7 +104,7 @@ va_fuse_add_imm(bi_instr *I)
    if (!va_is_add_imm(I, 1 - s))
       return;
 
-   I->op = op;
+   bi_set_opcode(I, op);
    I->index = bi_apply_swizzle(I->src[s].value, I->src[s].swizzle);
 
    assert(!I->src[s].abs && "redundant .abs set");

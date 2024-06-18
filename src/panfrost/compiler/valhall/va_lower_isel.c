@@ -95,8 +95,9 @@ lower(bi_builder *b, bi_instr *I)
    case BI_OPCODE_CSEL_V2I16:
       assert(I->cmpf == BI_CMPF_EQ || I->cmpf == BI_CMPF_NE);
 
-      I->op = (I->op == BI_OPCODE_CSEL_I32) ? BI_OPCODE_CSEL_U32
-                                            : BI_OPCODE_CSEL_V2U16;
+      bi_set_opcode(I,
+                    (I->op == BI_OPCODE_CSEL_I32) ? BI_OPCODE_CSEL_U32
+                                                  : BI_OPCODE_CSEL_V2U16);
       return NULL;
 
    /* Jump -> conditional branch with condition tied to true. */
@@ -110,13 +111,13 @@ lower(bi_builder *b, bi_instr *I)
       }
 
    case BI_OPCODE_AXCHG_I32:
-      I->op = BI_OPCODE_ATOM_RETURN_I32;
+      bi_set_opcode(I, BI_OPCODE_ATOM_RETURN_I32);
       I->atom_opc = BI_ATOM_OPC_AXCHG;
       I->sr_count = 1;
       return NULL;
 
    case BI_OPCODE_ACMPXCHG_I32:
-      I->op = BI_OPCODE_ATOM_RETURN_I32;
+      bi_set_opcode(I, BI_OPCODE_ATOM_RETURN_I32);
       I->atom_opc = BI_ATOM_OPC_ACMPXCHG;
       /* Reads 2, this is special cased in bir.c */
       I->sr_count = 1;
@@ -124,7 +125,7 @@ lower(bi_builder *b, bi_instr *I)
 
    case BI_OPCODE_ATOM_RETURN_I32:
       if (bi_is_null(I->dest[0]))
-         I->op = BI_OPCODE_ATOM_I32;
+         bi_set_opcode(I, BI_OPCODE_ATOM_I32);
 
       return NULL;
 
