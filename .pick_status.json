@@ -434,7 +434,7 @@
         "description": "anv/xe: fix declaration of memory flags for integrated non-LLC platforms",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c9e41f25a1bda305efaf818bec9f933118df37fa",
         "notes": null
