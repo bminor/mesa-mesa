@@ -1014,7 +1014,7 @@
         "description": "aco/insert_exec_mask: ensure top mask is not a temporary at loop exits",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
