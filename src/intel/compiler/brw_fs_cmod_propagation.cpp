@@ -180,7 +180,7 @@ cmod_propagate_not(const intel_device_info *devinfo, bblock_t *block,
 
    foreach_inst_in_block_reverse_starting_from(fs_inst, scan_inst, inst) {
       if (regions_overlap(scan_inst->dst, scan_inst->size_written,
-                          inst->src[0], inst->size_read(0))) {
+                          inst->src[0], inst->size_read(devinfo, 0))) {
          if (scan_inst->opcode != BRW_OPCODE_OR &&
              scan_inst->opcode != BRW_OPCODE_AND)
             break;
@@ -288,7 +288,7 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
       const unsigned flags_written = inst->flags_written(devinfo);
       foreach_inst_in_block_reverse_starting_from(fs_inst, scan_inst, inst) {
          if (regions_overlap(scan_inst->dst, scan_inst->size_written,
-                             inst->src[0], inst->size_read(0))) {
+                             inst->src[0], inst->size_read(devinfo, 0))) {
             /* If the scan instruction writes a different flag register than
              * the instruction we're trying to propagate from, bail.
              *

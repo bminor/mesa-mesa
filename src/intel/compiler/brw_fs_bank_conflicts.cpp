@@ -517,7 +517,8 @@ namespace {
 
          for (int i = 0; i < inst->sources; i++) {
             if (is_grf(inst->src[i]))
-               p.require_contiguous(reg_of(inst->src[i]), regs_read(inst, i));
+               p.require_contiguous(reg_of(inst->src[i]),
+                                    regs_read(v->devinfo, inst, i));
          }
       }
 

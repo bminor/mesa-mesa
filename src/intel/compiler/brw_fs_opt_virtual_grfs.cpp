@@ -84,7 +84,7 @@ brw_fs_opt_split_virtual_grfs(fs_visitor &s)
       for (unsigned i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == VGRF) {
             unsigned reg = vgrf_to_reg[inst->src[i].nr] + inst->src[i].offset / REG_SIZE;
-            for (unsigned j = 1; j < regs_read(inst, i); j++)
+            for (unsigned j = 1; j < regs_read(s.devinfo, inst, i); j++)
                split_points[reg + j] = false;
          }
       }

@@ -583,7 +583,7 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
          fprintf(file, ".%d", inst->src[i].subnr / brw_type_size_bytes(inst->src[i].type));
       } else if (inst->src[i].offset ||
           (!s.grf_used && inst->src[i].file == VGRF &&
-           s.alloc.sizes[inst->src[i].nr] * REG_SIZE != inst->size_read(i))) {
+           s.alloc.sizes[inst->src[i].nr] * REG_SIZE != inst->size_read(s.devinfo, i))) {
          const unsigned reg_size = (inst->src[i].file == UNIFORM ? 4 : REG_SIZE);
          fprintf(file, "+%d.%d", inst->src[i].offset / reg_size,
                  inst->src[i].offset % reg_size);

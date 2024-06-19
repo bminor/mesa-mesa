@@ -57,7 +57,7 @@ public:
    bool is_payload(unsigned arg) const;
    bool is_partial_write() const;
    unsigned components_read(unsigned i) const;
-   unsigned size_read(int arg) const;
+   unsigned size_read(const struct intel_device_info *devinfo, int arg) const;
    bool can_do_source_mods(const struct intel_device_info *devinfo) const;
    bool can_do_cmod() const;
    bool can_change_types() const;
@@ -295,15 +295,15 @@ regs_written(const fs_inst *inst)
  * UNIFORM files and 32B for all other files.
  */
 inline unsigned
-regs_read(const fs_inst *inst, unsigned i)
+regs_read(const struct intel_device_info *devinfo, const fs_inst *inst, unsigned i)
 {
    if (inst->src[i].file == IMM)
       return 1;
 
    const unsigned reg_size = inst->src[i].file == UNIFORM ? 4 : REG_SIZE;
    return DIV_ROUND_UP(reg_offset(inst->src[i]) % reg_size +
-                       inst->size_read(i) -
-                       MIN2(inst->size_read(i), reg_padding(inst->src[i])),
+                       inst->size_read(devinfo, i) -
+                       MIN2(inst->size_read(devinfo, i), reg_padding(inst->src[i])),
                        reg_size);
 }
 
@@ -475,7 +475,8 @@ has_subdword_integer_region_restriction(const intel_device_info *devinfo,
  * multiple virtual registers in any order is allowed.
  */
 inline bool
-is_copy_payload(brw_reg_file file, const fs_inst *inst)
+is_copy_payload(const struct intel_device_info *devinfo,
+                brw_reg_file file, const fs_inst *inst)
 {
    if (inst->opcode != SHADER_OPCODE_LOAD_PAYLOAD ||
        inst->is_partial_write() || inst->saturate ||
@@ -491,7 +492,7 @@ is_copy_payload(brw_reg_file file, const fs_inst *inst)
          return false;
 
       if (regions_overlap(inst->dst, inst->size_written,
-                          inst->src[i], inst->size_read(i)))
+                          inst->src[i], inst->size_read(devinfo, i)))
          return false;
    }
 
@@ -504,8 +505,10 @@ is_copy_payload(brw_reg_file file, const fs_inst *inst)
  * destination without any reordering.
  */
 inline bool
-is_identity_payload(brw_reg_file file, const fs_inst *inst) {
-   if (is_copy_payload(file, inst)) {
+is_identity_payload(const struct intel_device_info *devinfo,
+                    brw_reg_file file, const fs_inst *inst)
+{
+   if (is_copy_payload(devinfo, file, inst)) {
       brw_reg reg = inst->src[0];
 
       for (unsigned i = 0; i < inst->sources; i++) {
@@ -513,7 +516,7 @@ is_identity_payload(brw_reg_file file, const fs_inst *inst) {
          if (!inst->src[i].equals(reg))
             return false;
 
-         reg = byte_offset(reg, inst->size_read(i));
+         reg = byte_offset(reg, inst->size_read(devinfo, i));
       }
 
       return true;
@@ -533,8 +536,10 @@ is_identity_payload(brw_reg_file file, const fs_inst *inst) {
  * instructions.
  */
 inline bool
-is_multi_copy_payload(const fs_inst *inst) {
-   if (is_copy_payload(VGRF, inst)) {
+is_multi_copy_payload(const struct intel_device_info *devinfo,
+                      const fs_inst *inst)
+{
+   if (is_copy_payload(devinfo, VGRF, inst)) {
       for (unsigned i = 0; i < inst->sources; i++) {
             if (inst->src[i].nr != inst->src[0].nr)
                return true;
@@ -557,9 +562,10 @@ is_multi_copy_payload(const fs_inst *inst) {
  * instruction.
  */
 inline bool
-is_coalescing_payload(const brw::simple_allocator &alloc, const fs_inst *inst)
+is_coalescing_payload(const struct intel_device_info *devinfo,
+                      const brw::simple_allocator &alloc, const fs_inst *inst)
 {
-   return is_identity_payload(VGRF, inst) &&
+   return is_identity_payload(devinfo, VGRF, inst) &&
           inst->src[0].offset == 0 &&
           alloc.sizes[inst->src[0].nr] * REG_SIZE == inst->size_written;
 }

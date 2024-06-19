@@ -647,7 +647,7 @@ fs_inst::components_read(unsigned i) const
 }
 
 unsigned
-fs_inst::size_read(int arg) const
+fs_inst::size_read(const struct intel_device_info *devinfo, int arg) const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
@@ -775,7 +775,7 @@ fs_inst::flags_read(const intel_device_info *devinfo) const
    } else {
       unsigned mask = 0;
       for (int i = 0; i < sources; i++) {
-         mask |= brw_fs_flag_mask(src[i], size_read(i));
+         mask |= brw_fs_flag_mask(src[i], size_read(devinfo, i));
       }
       return mask;
    }

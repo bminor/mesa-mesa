@@ -143,7 +143,7 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
       foreach_inst_in_block_reverse_starting_from(fs_inst, scan_inst, inst) {
          if (scan_inst->exec_size == inst->exec_size &&
              regions_overlap(scan_inst->dst, scan_inst->size_written,
-                             inst->src[0], inst->size_read(0))) {
+                             inst->src[0], inst->size_read(s.devinfo, 0))) {
             if (scan_inst->is_partial_write() ||
                 (scan_inst->dst.type != inst->dst.type &&
                  !scan_inst->can_change_types()))
@@ -167,8 +167,8 @@ opt_saturate_propagation_local(fs_visitor &s, bblock_t *block)
             if (scan_inst->src[i].file == VGRF &&
                 scan_inst->src[i].nr == inst->src[0].nr &&
                 regions_overlap(
-                  scan_inst->src[i], scan_inst->size_read(i),
-                  inst->src[0], inst->size_read(0))) {
+                  scan_inst->src[i], scan_inst->size_read(s.devinfo, i),
+                  inst->src[0], inst->size_read(s.devinfo, 0))) {
                if (scan_inst->opcode != BRW_OPCODE_MOV ||
                    !scan_inst->saturate ||
                    scan_inst->src[0].abs ||

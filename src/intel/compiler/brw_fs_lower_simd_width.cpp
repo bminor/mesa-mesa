@@ -85,7 +85,7 @@ get_fpu_lowered_simd_width(const fs_visitor *shader,
    unsigned reg_count = DIV_ROUND_UP(inst->size_written, REG_SIZE);
 
    for (unsigned i = 0; i < inst->sources; i++)
-      reg_count = MAX3(reg_count, DIV_ROUND_UP(inst->size_read(i), REG_SIZE),
+      reg_count = MAX3(reg_count, DIV_ROUND_UP(inst->size_read(devinfo, i), REG_SIZE),
                        (inst->src[i].file == ATTR ? attr_reg_count : 0));
 
    /* Calculate the maximum execution size of the instruction based on the
@@ -559,7 +559,7 @@ needs_dst_copy(const fs_builder &lbld, const fs_inst *inst)
        * the data read from the same source by other lowered instructions.
        */
       if (regions_overlap(inst->dst, inst->size_written,
-                          inst->src[i], inst->size_read(i)) &&
+                          inst->src[i], inst->size_read(lbld.shader->devinfo, i)) &&
           !inst->dst.equals(inst->src[i]))
         return true;
    }

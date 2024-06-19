@@ -122,7 +122,7 @@ is_expression(const fs_visitor *v, const fs_inst *const inst)
    case SHADER_OPCODE_LOAD_SUBGROUP_INVOCATION:
       return true;
    case SHADER_OPCODE_LOAD_PAYLOAD:
-      return !is_coalescing_payload(v->alloc, inst);
+      return !is_coalescing_payload(v->devinfo, v->alloc, inst);
    default:
       return inst->is_send_from_grf() && !inst->has_side_effects() &&
          !inst->is_volatile();

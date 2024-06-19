@@ -161,7 +161,7 @@ brw_fs_opt_dead_code_eliminate(fs_visitor &s)
             if (inst->src[i].file == VGRF) {
                int var = live_vars.var_from_reg(inst->src[i]);
 
-               for (unsigned j = 0; j < regs_read(inst, i); j++) {
+               for (unsigned j = 0; j < regs_read(devinfo, inst, i); j++) {
                   BITSET_SET(live, var + j);
                }
             }

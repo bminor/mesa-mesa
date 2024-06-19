@@ -800,7 +800,7 @@ instruction_scheduler::count_reads_remaining(const fs_inst *inst)
          if (inst->src[i].nr >= hw_reg_count)
             continue;
 
-         for (unsigned j = 0; j < regs_read(inst, i); j++)
+         for (unsigned j = 0; j < regs_read(s->devinfo, inst, i); j++)
             hw_reads_remaining[inst->src[i].nr + j]++;
       }
    }
@@ -881,7 +881,7 @@ instruction_scheduler::update_register_pressure(const fs_inst *inst)
          reads_remaining[inst->src[i].nr]--;
       } else if (inst->src[i].file == FIXED_GRF &&
                  inst->src[i].nr < hw_reg_count) {
-         for (unsigned off = 0; off < regs_read(inst, i); off++)
+         for (unsigned off = 0; off < regs_read(s->devinfo, inst, i); off++)
             hw_reads_remaining[inst->src[i].nr + off]--;
       }
    }
@@ -910,7 +910,7 @@ instruction_scheduler::get_register_pressure_benefit(const fs_inst *inst)
 
       if (inst->src[i].file == FIXED_GRF &&
           inst->src[i].nr < hw_reg_count) {
-         for (unsigned off = 0; off < regs_read(inst, i); off++) {
+         for (unsigned off = 0; off < regs_read(s->devinfo, inst, i); off++) {
             int reg = inst->src[i].nr + off;
             if (!BITSET_TEST(hw_liveout[block_idx], reg) &&
                 hw_reads_remaining[reg] == 1) {
@@ -1212,11 +1212,11 @@ instruction_scheduler::calculate_deps()
       /* read-after-write deps. */
       for (int i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == VGRF) {
-            for (unsigned r = 0; r < regs_read(inst, i); r++)
+            for (unsigned r = 0; r < regs_read(s->devinfo, inst, i); r++)
                add_dep(last_grf_write[grf_index(inst->src[i]) + r], n);
          } else if (inst->src[i].file == FIXED_GRF) {
             if (post_reg_alloc) {
-               for (unsigned r = 0; r < regs_read(inst, i); r++)
+               for (unsigned r = 0; r < regs_read(s->devinfo, inst, i); r++)
                   add_dep(last_grf_write[inst->src[i].nr + r], n);
             } else {
                add_dep(last_fixed_grf_write, n);
@@ -1297,11 +1297,11 @@ instruction_scheduler::calculate_deps()
       /* write-after-read deps. */
       for (int i = 0; i < inst->sources; i++) {
          if (inst->src[i].file == VGRF) {
-            for (unsigned r = 0; r < regs_read(inst, i); r++)
+            for (unsigned r = 0; r < regs_read(s->devinfo, inst, i); r++)
                add_dep(n, last_grf_write[grf_index(inst->src[i]) + r], 0);
          } else if (inst->src[i].file == FIXED_GRF) {
             if (post_reg_alloc) {
-               for (unsigned r = 0; r < regs_read(inst, i); r++)
+               for (unsigned r = 0; r < regs_read(s->devinfo, inst, i); r++)
                   add_dep(n, last_grf_write[inst->src[i].nr + r], 0);
             } else {
                add_dep(n, last_fixed_grf_write, 0);

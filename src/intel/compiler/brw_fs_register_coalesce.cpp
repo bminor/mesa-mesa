@@ -88,7 +88,7 @@ is_coalesce_candidate(const fs_visitor *v, const fs_inst *inst)
       return false;
 
    if (inst->opcode == SHADER_OPCODE_LOAD_PAYLOAD) {
-      if (!is_coalescing_payload(v->alloc, inst)) {
+      if (!is_coalescing_payload(v->devinfo, v->alloc, inst)) {
          return false;
       }
    }
@@ -97,7 +97,8 @@ is_coalesce_candidate(const fs_visitor *v, const fs_inst *inst)
 }
 
 static bool
-can_coalesce_vars(const fs_live_variables &live, const cfg_t *cfg,
+can_coalesce_vars(const intel_device_info *devinfo,
+                  const fs_live_variables &live, const cfg_t *cfg,
                   const bblock_t *block, const fs_inst *inst,
                   int dst_var, int src_var)
 {
@@ -161,7 +162,7 @@ can_coalesce_vars(const fs_live_variables &live, const cfg_t *cfg,
              * copy.  This effectively moves the write from the copy up.
              */
             for (int j = 0; j < scan_inst->sources; j++) {
-               if (regions_overlap(scan_inst->src[j], scan_inst->size_read(j),
+               if (regions_overlap(scan_inst->src[j], scan_inst->size_read(devinfo, j),
                                    inst->dst, inst->size_written))
                   return false; /* registers interfere */
             }
@@ -176,7 +177,7 @@ can_coalesce_vars(const fs_live_variables &live, const cfg_t *cfg,
 
          /* See the big comment above */
          if (regions_overlap(scan_inst->dst, scan_inst->size_written,
-                             inst->src[0], inst->size_read(0))) {
+                             inst->src[0], inst->size_read(devinfo, 0))) {
             if (seen_copy || scan_block != block ||
                 (scan_inst->force_writemask_all && !inst->force_writemask_all))
                return false;
@@ -303,7 +304,7 @@ brw_fs_opt_register_coalesce(fs_visitor &s)
          dst_var[i] = live.var_from_vgrf[dst_reg] + dst_reg_offset[i];
          src_var[i] = live.var_from_vgrf[src_reg] + i;
 
-         if (!can_coalesce_vars(live, s.cfg, block, inst, dst_var[i], src_var[i]) ||
+         if (!can_coalesce_vars(devinfo, live, s.cfg, block, inst, dst_var[i], src_var[i]) ||
              would_violate_eot_restriction(s.alloc, s.cfg, dst_reg, src_reg)) {
             can_coalesce = false;
             src_reg = ~0u;

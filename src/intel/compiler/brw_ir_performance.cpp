@@ -128,11 +128,11 @@ namespace {
           * messages which require the total size.
           */
          if (inst->opcode == SHADER_OPCODE_SEND) {
-            ss = DIV_ROUND_UP(inst->size_read(2), REG_SIZE) +
-                 DIV_ROUND_UP(inst->size_read(3), REG_SIZE);
+            ss = DIV_ROUND_UP(inst->size_read(devinfo, 2), REG_SIZE) +
+                 DIV_ROUND_UP(inst->size_read(devinfo, 3), REG_SIZE);
          } else {
             for (unsigned i = 0; i < inst->sources; i++)
-               ss = MAX2(ss, DIV_ROUND_UP(inst->size_read(i), REG_SIZE));
+               ss = MAX2(ss, DIV_ROUND_UP(inst->size_read(devinfo, i), REG_SIZE));
          }
 
          /* Convert the execution size to GRF units. */
@@ -878,7 +878,7 @@ namespace {
 
       /* Stall on any source dependencies. */
       for (unsigned i = 0; i < inst->sources; i++) {
-         for (unsigned j = 0; j < regs_read(inst, i); j++)
+         for (unsigned j = 0; j < regs_read(devinfo, inst, i); j++)
             stall_on_dependency(
                st, reg_dependency_id(devinfo, inst->src[i], j));
       }
@@ -935,7 +935,7 @@ namespace {
       if (inst->is_send_from_grf()) {
          for (unsigned i = 0; i < inst->sources; i++) {
             if (inst->is_payload(i)) {
-               for (unsigned j = 0; j < regs_read(inst, i); j++)
+               for (unsigned j = 0; j < regs_read(devinfo, inst, i); j++)
                   mark_read_dependency(
                      st, perf, reg_dependency_id(devinfo, inst->src[i], j));
             }

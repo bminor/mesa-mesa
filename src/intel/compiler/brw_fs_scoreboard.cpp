@@ -1049,7 +1049,7 @@ namespace {
             is_ordered ? dependency(TGL_REGDIST_SRC, jp, exec_all) :
             dependency::done;
 
-         for (unsigned j = 0; j < regs_read(inst, i); j++) {
+         for (unsigned j = 0; j < regs_read(devinfo, inst, i); j++) {
             const brw_reg r = byte_offset(inst->src[i], REG_SIZE * j);
             sb.set(r, shadow(sb.get(r), rd_dep));
          }
@@ -1163,7 +1163,7 @@ namespace {
          scoreboard &sb = sbs[block->num];
 
          for (unsigned i = 0; i < inst->sources; i++) {
-            for (unsigned j = 0; j < regs_read(inst, i); j++)
+            for (unsigned j = 0; j < regs_read(devinfo, inst, i); j++)
                add_dependency(ids, deps[ip], dependency_for_read(
                   sb.get(byte_offset(inst->src[i], REG_SIZE * j))));
          }

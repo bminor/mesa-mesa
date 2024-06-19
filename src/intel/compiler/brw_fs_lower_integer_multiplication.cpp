@@ -217,9 +217,9 @@ brw_fs_lower_mul_dword_inst(fs_visitor &s, fs_inst *inst, bblock_t *block)
       brw_reg low = inst->dst;
       if (orig_dst.is_null() ||
           regions_overlap(inst->dst, inst->size_written,
-                          inst->src[0], inst->size_read(0)) ||
+                          inst->src[0], inst->size_read(devinfo, 0)) ||
           regions_overlap(inst->dst, inst->size_written,
-                          inst->src[1], inst->size_read(1)) ||
+                          inst->src[1], inst->size_read(devinfo, 1)) ||
           inst->dst.stride >= 4) {
          needs_mov = true;
          low = brw_vgrf(s.alloc.allocate(regs_written(inst)),
