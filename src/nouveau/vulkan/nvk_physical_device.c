@@ -146,6 +146,8 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
                         wsi_common_vk_instance_supports_present_wait(&instance->vk),
       .KHR_present_wait = driQueryOptionb(&instance->dri_options, "vk_khr_present_wait") ||
                           wsi_common_vk_instance_supports_present_wait(&instance->vk),
+      .KHR_present_id2 = true,
+      .KHR_present_wait2 = true,
 #endif
       .KHR_push_descriptor = true,
       .KHR_relaxed_block_layout = true,

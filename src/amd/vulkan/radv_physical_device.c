@@ -566,8 +566,10 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
        * we can also expose the extension that way. */
       .KHR_present_id =
          instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk),
+      .KHR_present_id2 = true,
       .KHR_present_wait =
          instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk),
+      .KHR_present_wait2 = true,
       .KHR_push_descriptor = true,
       .KHR_ray_query = radv_enable_rt(pdev),
       .KHR_ray_tracing_maintenance1 = radv_enable_rt(pdev),

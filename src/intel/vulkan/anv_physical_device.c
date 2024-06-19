@@ -220,6 +220,8 @@ get_device_extensions(const struct anv_physical_device *device,
          driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
          wsi_common_vk_instance_supports_present_wait(&device->instance->vk),
       .KHR_push_descriptor                   = true,
+      .KHR_present_id2                       = true,
+      .KHR_present_wait2                     = true,
       .KHR_ray_query                         = rt_enabled,
       .KHR_ray_tracing_maintenance1          = rt_enabled,
       .KHR_ray_tracing_pipeline              = rt_enabled,

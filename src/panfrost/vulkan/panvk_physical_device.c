@@ -273,6 +273,8 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_spirv_1_4 = arch >= 10,
       .KHR_storage_buffer_storage_class = true,
 #ifdef PANVK_USE_WSI_PLATFORM
+      .KHR_present_id2 = true,
+      .KHR_present_wait2 = true,
       .KHR_swapchain = true,
 #endif
       .KHR_synchronization2 = true,

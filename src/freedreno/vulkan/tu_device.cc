@@ -224,8 +224,10 @@ get_device_extensions(const struct tu_physical_device *device,
        * we can also expose the extension that way. */
       .KHR_present_id = (driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
                          wsi_common_vk_instance_supports_present_wait(&device->instance->vk)),
+      .KHR_present_id2 = true,
       .KHR_present_wait = (driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
                            wsi_common_vk_instance_supports_present_wait(&device->instance->vk)),
+      .KHR_present_wait2 = true,
 #endif
       .KHR_push_descriptor = true,
       .KHR_ray_query = has_raytracing,

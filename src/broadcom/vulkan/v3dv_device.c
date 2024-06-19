@@ -193,6 +193,8 @@ get_device_extensions(const struct v3dv_physical_device *device,
       .KHR_swapchain                        = true,
       .KHR_swapchain_mutable_format         = true,
       .KHR_incremental_present              = true,
+      .KHR_present_id2                      = true,
+      .KHR_present_wait2                    = true,
 #endif
       .KHR_variable_pointers                = true,
       .KHR_vertex_attribute_divisor         = true,
