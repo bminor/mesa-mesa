@@ -144,7 +144,7 @@
         "description": "anv: emit the right shader instruction for protected mode",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
