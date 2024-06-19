@@ -1383,6 +1383,8 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       vk_find_struct_const(pPresentInfo->pNext, PRESENT_REGIONS_KHR);
    const VkPresentIdKHR *present_ids =
       vk_find_struct_const(pPresentInfo->pNext, PRESENT_ID_KHR);
+   const VkPresentId2KHR *present_ids2 =
+      vk_find_struct_const(pPresentInfo->pNext, PRESENT_ID_2_KHR);
    const VkSwapchainPresentFenceInfoEXT *present_fence_info =
       vk_find_struct_const(pPresentInfo->pNext, SWAPCHAIN_PRESENT_FENCE_INFO_EXT);
    const VkSwapchainPresentModeInfoEXT *present_mode_info =
@@ -1574,6 +1576,10 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       uint64_t present_id = 0;
       if (present_ids && present_ids->pPresentIds)
          present_id = present_ids->pPresentIds[i];
+      if (present_ids2 && present_ids2->pPresentIds) {
+         assert(present_id == 0);
+         present_id = present_ids2->pPresentIds[i];
+      }
       VkFence present_fence = VK_NULL_HANDLE;
       if (present_fence_info && present_fence_info->pFences)
          present_fence = present_fence_info->pFences[i];
@@ -2339,6 +2345,15 @@ wsi_WaitForPresentKHR(VkDevice device, VkSwapchainKHR _swapchain,
    VK_FROM_HANDLE(wsi_swapchain, swapchain, _swapchain);
    assert(swapchain->wait_for_present);
    return swapchain->wait_for_present(swapchain, presentId, timeout);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+wsi_WaitForPresent2KHR(VkDevice device, VkSwapchainKHR _swapchain,
+                       const VkPresentWait2InfoKHR *info)
+{
+   VK_FROM_HANDLE(wsi_swapchain, swapchain, _swapchain);
+   assert(swapchain->wait_for_present2);
+   return swapchain->wait_for_present2(swapchain, info->presentId, info->timeout);
 }
 
 VkImageUsageFlags
