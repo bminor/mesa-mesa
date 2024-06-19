@@ -554,7 +554,7 @@
         "description": "egl/dri: Use packed pipe_format",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dcbf61f5dfe313a4e8b832e376c772a4db48a58f",
         "notes": null
