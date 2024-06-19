@@ -1752,6 +1752,27 @@ wsi_wl_surface_get_capabilities(VkIcdSurfaceBase *icd_surface,
 }
 
 static VkResult
+wsi_wl_surface_check_presentation(VkIcdSurfaceBase *icd_surface,
+                                  struct wsi_device *wsi_device,
+                                  bool *has_wp_presentation)
+{
+   VkIcdSurfaceWayland *surface = (VkIcdSurfaceWayland *)icd_surface;
+   struct wsi_wayland *wsi =
+      (struct wsi_wayland *)wsi_device->wsi[VK_ICD_WSI_PLATFORM_WAYLAND];
+   struct wsi_wl_display display;
+
+   if (wsi_wl_display_init(wsi, &display, surface->display, true,
+                           wsi_device->sw, "mesa check wp_presentation"))
+      return VK_ERROR_SURFACE_LOST_KHR;
+
+   *has_wp_presentation = !!display.wp_presentation_notwrapped;
+
+   wsi_wl_display_finish(&display);
+
+   return VK_SUCCESS;
+}
+
+static VkResult
 wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
                                  struct wsi_device *wsi_device,
                                  const void *info_next,
@@ -1759,6 +1780,8 @@ wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
 {
    assert(caps->sType == VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR);
 
+   struct wsi_wl_surface *wsi_wl_surface =
+      wl_container_of((VkIcdSurfaceWayland *)surface, wsi_wl_surface, base);
    const VkSurfacePresentModeEXT *present_mode = vk_find_struct_const(info_next, SURFACE_PRESENT_MODE_EXT);
 
    VkResult result =
@@ -1827,6 +1850,32 @@ wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
                }
             }
          }
+         break;
+      }
+
+      case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_ID_2_KHR: {
+         VkSurfaceCapabilitiesPresentId2KHR *pid2 = (void *)ext;
+         bool has_feedback;
+
+         result = wsi_wl_surface_check_presentation(surface, wsi_device,
+                                                    &has_feedback);
+         if (result != VK_SUCCESS)
+            return result;
+
+         pid2->presentId2Supported = has_feedback;
+         break;
+      }
+
+      case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_WAIT_2_KHR: {
+         VkSurfaceCapabilitiesPresentWait2KHR *pwait2 = (void *)ext;
+         bool has_feedback;
+
+         result = wsi_wl_surface_check_presentation(surface, wsi_device,
+                                                    &has_feedback);
+         if (result != VK_SUCCESS)
+            return result;
+
+         pwait2->presentWait2Supported = has_feedback;
          break;
       }
 
@@ -2570,6 +2619,49 @@ wsi_wl_swapchain_ensure_dispatch(struct wsi_wl_swapchain *chain)
 already_dispatching:
    mtx_unlock(&chain->present_ids.lock);
    return ret;
+}
+
+static VkResult
+wsi_wl_swapchain_wait_for_present2(struct wsi_swapchain *wsi_chain,
+                                   uint64_t present_id,
+                                   uint64_t timeout)
+{
+   struct wsi_wl_swapchain *chain = (struct wsi_wl_swapchain *)wsi_chain;
+   struct timespec end_time;
+   VkResult ret;
+   int err;
+
+   MESA_TRACE_FUNC();
+
+   uint64_t atimeout;
+   if (timeout == 0 || timeout == UINT64_MAX)
+      atimeout = timeout;
+   else
+      atimeout = os_time_get_absolute_timeout(timeout);
+   timespec_from_nsec(&end_time, atimeout);
+
+   /* Need to observe that the swapchain semaphore has been unsignalled,
+    * as this is guaranteed when a present is complete. */
+   VkResult result = wsi_swapchain_wait_for_present_semaphore(
+         &chain->base, present_id, timeout);
+   if (result != VK_SUCCESS)
+      return result;
+
+   while (1) {
+      err = pthread_mutex_lock(&chain->present_ids.lock);
+      if (err != 0)
+         return VK_ERROR_OUT_OF_DATE_KHR;
+
+      bool completed = chain->present_ids.max_completed >= present_id;
+      pthread_mutex_unlock(&chain->present_ids.lock);
+
+      if (completed)
+         return VK_SUCCESS;
+
+      ret = dispatch_present_id_queue(wsi_chain, &end_time);
+      if (ret != VK_SUCCESS)
+         return ret;
+   }
 }
 
 static VkResult
@@ -3480,6 +3572,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    chain->base.release_images = wsi_wl_swapchain_release_images;
    chain->base.set_present_mode = wsi_wl_swapchain_set_present_mode;
    chain->base.wait_for_present = wsi_wl_swapchain_wait_for_present;
+   chain->base.wait_for_present2 = wsi_wl_swapchain_wait_for_present2;
    chain->base.present_mode = present_mode;
    chain->base.image_count = num_images;
    chain->base.set_hdr_metadata = wsi_wl_swapchain_set_hdr_metadata;
