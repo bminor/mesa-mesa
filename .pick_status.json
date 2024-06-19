@@ -4,7 +4,7 @@
         "description": "rusticl: add new CL_INVALID_BUFFER_SIZE condition for clCreateBuffer",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
