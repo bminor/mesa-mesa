@@ -444,7 +444,7 @@
         "description": "anv: Fix assert in xe_gem_create()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9d8d5cf8c9a04b164d1becff6b1be93b24149c75",
         "notes": null
