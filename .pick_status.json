@@ -1154,7 +1154,7 @@
         "description": "panvk: Report correct min value for discreteQueuePriorities",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ac34183ec3df1435481f345d87f06ee949ed43c7",
         "notes": null
