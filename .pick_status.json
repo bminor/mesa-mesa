@@ -134,7 +134,7 @@
         "description": "anv/grl: add some validation that we're not going to overflow",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dc1aedef2bd054884685ad971a3ef5be07ecd101",
         "notes": null
