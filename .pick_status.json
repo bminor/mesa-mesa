@@ -924,7 +924,7 @@
         "description": "zink: null check pipe loader config before use",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e3ea55fef28b6a8c9d337ccb0c715312363b2ebc",
         "notes": null
