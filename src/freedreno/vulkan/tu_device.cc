@@ -223,6 +223,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .KHR_sampler_ycbcr_conversion = true,
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_atomic_int64 = device->info->a7xx.has_64b_ssbo_atomics,
+      .KHR_shader_clock = true,
       .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = true,
       .KHR_shader_float16_int8 = true,
@@ -538,6 +539,10 @@ tu_get_features(struct tu_physical_device *pdevice,
 
    /* VK_KHR_present_wait */
    features->presentWait = pdevice->vk.supported_extensions.KHR_present_wait;
+
+   /* VK_KHR_shader_clock */
+   features->shaderSubgroupClock = true;
+   features->shaderDeviceClock = true;
 
    /* VK_KHR_shader_expect_assume */
    features->shaderExpectAssume = true;

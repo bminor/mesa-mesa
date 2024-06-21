@@ -552,6 +552,47 @@ ir3_nir_lower_array_sampler(nir_shader *shader)
       nir_metadata_control_flow, NULL);
 }
 
+static bool
+lower_shader_clock(struct nir_builder *b, nir_intrinsic_instr *instr, void *data)
+{
+   if (instr->intrinsic != nir_intrinsic_shader_clock)
+      return false;
+
+   uint64_t uche_trap_base = *(uint64_t *)data;
+
+   b->cursor = nir_before_instr(&instr->instr);
+   nir_def *clock, *undef;
+
+   nir_push_if(b, nir_elect(b, 1));
+   {
+      /* ALWAYSON counter is mapped to this address. */
+      nir_def *base_addr =
+         nir_unpack_64_2x32(b, nir_imm_int64(b, uche_trap_base));
+      /* Reading _LO first presumably latches _HI making the read atomic. */
+      nir_def *clock_lo =
+         nir_load_global_ir3(b, 1, 32, base_addr, nir_imm_int(b, 0));
+      nir_def *clock_hi =
+         nir_load_global_ir3(b, 1, 32, base_addr, nir_imm_int(b, 1));
+      clock = nir_vec2(b, clock_lo, clock_hi);
+   }
+   nir_push_else(b, NULL);
+   {
+      undef = nir_undef(b, 2, 32);
+   }
+   nir_pop_if(b, NULL);
+
+   clock = nir_read_first_invocation(b, nir_if_phi(b, clock, undef));
+   nir_def_replace(&instr->def, clock);
+   return true;
+}
+
+static bool
+ir3_nir_lower_shader_clock(nir_shader *shader, uint64_t uche_trap_base)
+{
+   return nir_shader_intrinsics_pass(shader, lower_shader_clock,
+                                     nir_metadata_none, &uche_trap_base);
+}
+
 void
 ir3_finalize_nir(struct ir3_compiler *compiler,
                  const struct ir3_shader_nir_options *options,
@@ -593,6 +634,10 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
 
    if (compiler->array_index_add_half)
       OPT(s, ir3_nir_lower_array_sampler);
+
+   if (compiler->gen >= 6) {
+      OPT(s, ir3_nir_lower_shader_clock, compiler->options.uche_trap_base);
+   }
 
    OPT(s, nir_lower_is_helper_invocation);
 
