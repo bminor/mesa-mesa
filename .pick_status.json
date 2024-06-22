@@ -1464,7 +1464,7 @@
         "description": "rusticl: add bsymbolic to linker flags",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
