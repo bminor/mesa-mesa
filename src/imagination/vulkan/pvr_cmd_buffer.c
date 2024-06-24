@@ -5870,6 +5870,21 @@ static VkResult pvr_emit_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
    return VK_SUCCESS;
 }
 
+static inline bool pvr_ppp_dynamic_state_isp_faces_and_control_dirty(
+   const BITSET_WORD *const dynamic_dirty)
+{
+   return BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_DEPTH_COMPARE_OP) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_DEPTH_TEST_ENABLE) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_DEPTH_WRITE_ENABLE) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_STENCIL_COMPARE_MASK) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_STENCIL_REFERENCE) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_STENCIL_WRITE_MASK) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_ENABLE) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_LINE_WIDTH) ||
+          BITSET_TEST(dynamic_dirty,
+                      MESA_VK_DYNAMIC_RS_RASTERIZER_DISCARD_ENABLE);
+}
+
 static inline bool
 pvr_ppp_state_update_required(const struct pvr_cmd_buffer *cmd_buffer)
 {
@@ -5895,12 +5910,8 @@ pvr_ppp_state_update_required(const struct pvr_cmd_buffer *cmd_buffer)
           state->dirty.fragment_descriptors || state->dirty.vis_test ||
           state->dirty.gfx_pipeline_binding || state->dirty.isp_userpass ||
           state->push_consts[PVR_STAGE_ALLOCATION_FRAGMENT].dirty ||
-          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_STENCIL_COMPARE_MASK) ||
-          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_STENCIL_WRITE_MASK) ||
-          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_DS_STENCIL_REFERENCE) ||
-          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_ENABLE) ||
+          pvr_ppp_dynamic_state_isp_faces_and_control_dirty(dynamic_dirty) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_FACTORS) ||
-          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_LINE_WIDTH) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_VP_SCISSORS) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_VP_SCISSOR_COUNT) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_VP_VIEWPORTS) ||
@@ -5934,14 +5945,8 @@ pvr_emit_dirty_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
       pvr_setup_output_select(cmd_buffer);
       pvr_setup_isp_faces_and_control(cmd_buffer, &ispa);
       pvr_setup_triangle_merging_flag(cmd_buffer, &ispa);
-   } else if (BITSET_TEST(dynamic_state->dirty,
-                          MESA_VK_DYNAMIC_DS_STENCIL_COMPARE_MASK) ||
-              BITSET_TEST(dynamic_state->dirty,
-                          MESA_VK_DYNAMIC_DS_STENCIL_REFERENCE) ||
-              BITSET_TEST(dynamic_state->dirty,
-                          MESA_VK_DYNAMIC_DS_STENCIL_WRITE_MASK) ||
-              BITSET_TEST(dynamic_state->dirty,
-                          MESA_VK_DYNAMIC_RS_LINE_WIDTH) ||
+   } else if (pvr_ppp_dynamic_state_isp_faces_and_control_dirty(
+                 dynamic_state->dirty) ||
               state->dirty.isp_userpass || state->dirty.vis_test) {
       pvr_setup_isp_faces_and_control(cmd_buffer, NULL);
    }
