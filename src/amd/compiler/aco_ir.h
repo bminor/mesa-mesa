@@ -2318,6 +2318,7 @@ int get_op_fixed_to_def(Instruction* instr);
 /* utilities for dealing with register demand */
 RegisterDemand get_live_changes(Instruction* instr);
 RegisterDemand get_temp_registers(Instruction* instr);
+RegisterDemand get_temp_reg_changes(Instruction* instr);
 
 /* adjust num_waves for workgroup size and LDS limits */
 uint16_t max_suitable_waves(Program* program, uint16_t waves);

@@ -55,6 +55,23 @@ get_temp_registers(Instruction* instr)
    return demand_after;
 }
 
+RegisterDemand get_temp_reg_changes(Instruction* instr)
+{
+   RegisterDemand available_def_space;
+
+   for (Definition def : instr->definitions) {
+      if (def.isTemp())
+         available_def_space += def.getTemp();
+   }
+
+   for (Operand op : instr->operands) {
+      if (op.isFirstKillBeforeDef() || op.isCopyKill())
+         available_def_space -= op.getTemp();
+   }
+
+   return available_def_space;
+}
+
 namespace {
 
 struct live_ctx {
