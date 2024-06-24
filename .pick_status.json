@@ -154,7 +154,7 @@
         "description": "radeonsi: fix buffer_size in si_compute_shorten_ubyte_buffer",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1a99f50c7f27793f86a089a028c678cf5cf3142c",
         "notes": null
