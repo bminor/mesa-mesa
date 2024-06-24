@@ -72,6 +72,7 @@ tu_device_get_cache_uuid(struct tu_physical_device *device, void *uuid)
 
    _mesa_sha1_update(&ctx, &family, sizeof(family));
    _mesa_sha1_update(&ctx, &driver_flags, sizeof(driver_flags));
+   _mesa_sha1_update(&ctx, &device->uche_trap_base, sizeof(device->uche_trap_base));
    _mesa_sha1_final(&ctx, sha1);
 
    memcpy(uuid, sha1, VK_UUID_SIZE);
@@ -2588,6 +2589,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
          .storage_16bit = physical_device->info->a6xx.storage_16bit,
          .storage_8bit = physical_device->info->a7xx.storage_8bit,
          .shared_push_consts = !TU_DEBUG(PUSH_CONSTS_PER_STAGE),
+         .uche_trap_base = physical_device->uche_trap_base,
       };
       device->compiler = ir3_compiler_create(
          NULL, &physical_device->dev_id, physical_device->info, &ir3_options);

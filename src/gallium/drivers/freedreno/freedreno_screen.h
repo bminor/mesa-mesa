@@ -67,6 +67,8 @@ struct fd_screen {
    uint64_t gmem_base;
    uint32_t gmemsize_bytes;
 
+   uint64_t uche_trap_base;
+
    const struct fd_dev_id *dev_id;
    uint8_t gen;      /* GPU (major) generation */
    uint32_t gpu_id;  /* 220, 305, etc */

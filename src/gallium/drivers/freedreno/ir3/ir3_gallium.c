@@ -560,6 +560,7 @@ ir3_screen_init(struct pipe_screen *pscreen)
       .bindless_fb_read_slot = IR3_BINDLESS_IMAGE_OFFSET +
                                IR3_BINDLESS_IMAGE_COUNT - 1 - screen->max_rts,
       .dual_color_blend_by_location = screen->driconf.dual_color_blend_by_location,
+      .uche_trap_base = screen->uche_trap_base,
    };
 
    if (screen->gen >= 6) {

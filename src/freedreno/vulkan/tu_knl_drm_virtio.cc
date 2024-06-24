@@ -288,6 +288,17 @@ tu_drm_get_ubwc_swizzle(struct vdrm_device *vdrm)
    return value;
 }
 
+static uint64_t
+tu_drm_get_uche_trap_base(struct vdrm_device *vdrm)
+{
+   uint64_t value;
+   int ret = tu_drm_get_param(vdrm, MSM_PARAM_UCHE_TRAP_BASE, &value);
+   if (ret)
+      return 0x1fffffffff000ull;
+
+   return value;
+}
+
 static int
 virtio_device_get_gpu_timestamp(struct tu_device *dev, uint64_t *ts)
 {
@@ -1167,6 +1178,7 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
 
    uint32_t bank_swizzle_levels = tu_drm_get_ubwc_swizzle(vdrm);
    enum fdl_macrotile_mode macrotile_mode = tu_drm_get_macrotile_mode(vdrm);
+   uint64_t uche_trap_base = tu_drm_get_uche_trap_base(vdrm);
 
    bool has_raytracing = tu_drm_get_raytracing(vdrm);
 
@@ -1233,6 +1245,7 @@ tu_knl_drm_virtio_load(struct tu_instance *instance,
    device->ubwc_config.highest_bank_bit = caps.u.msm.highest_bank_bit;
    device->has_set_iova   = true;
    device->has_preemption = has_preemption;
+   device->uche_trap_base = uche_trap_base;
 
    device->ubwc_config.bank_swizzle_levels = bank_swizzle_levels;
    device->ubwc_config.macrotile_mode = macrotile_mode;

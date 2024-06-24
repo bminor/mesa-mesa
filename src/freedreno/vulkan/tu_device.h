@@ -114,6 +114,8 @@ struct tu_physical_device
    uint32_t vpc_attr_buf_offset_bypass;
    uint32_t vpc_attr_buf_size_bypass;
 
+   uint64_t uche_trap_base;
+
    /* Amount of usable descriptor sets, this excludes any reserved set */
    uint32_t usable_sets;
    /* Index of the reserved descriptor set, may be -1 if unset */

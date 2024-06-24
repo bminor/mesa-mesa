@@ -169,6 +169,17 @@ tu_drm_get_ubwc_swizzle(const struct tu_physical_device *dev)
    return value;
 }
 
+static uint64_t
+tu_drm_get_uche_trap_base(const struct tu_physical_device *dev)
+{
+   uint64_t value;
+   int ret = tu_drm_get_param(dev->local_fd, MSM_PARAM_UCHE_TRAP_BASE, &value);
+   if (ret)
+      return 0x1fffffffff000ull;
+
+   return value;
+}
+
 static bool
 tu_drm_is_memory_type_supported(int fd, uint32_t flags)
 {
@@ -1064,6 +1075,8 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
    device->ubwc_config.highest_bank_bit = tu_drm_get_highest_bank_bit(device);
    device->ubwc_config.bank_swizzle_levels = tu_drm_get_ubwc_swizzle(device);
    device->ubwc_config.macrotile_mode = tu_drm_get_macrotile_mode(device);
+
+   device->uche_trap_base = tu_drm_get_uche_trap_base(device);
 
    device->syncobj_type = vk_drm_syncobj_get_type(fd);
    /* we don't support DRM_CAP_SYNCOBJ_TIMELINE, but drm-shim does */

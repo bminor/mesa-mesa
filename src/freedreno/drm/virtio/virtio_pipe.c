@@ -88,6 +88,8 @@ virtio_pipe_get_param(struct fd_pipe *pipe, enum fd_param_id param,
    case FD_VA_SIZE:
       *value = virtio_dev->vdrm->caps.u.msm.va_size;
       return 0;
+   case FD_UCHE_TRAP_BASE:
+      return query_param(pipe, MSM_PARAM_UCHE_TRAP_BASE, value);
    default:
       ERROR_MSG("invalid param id: %d", param);
       return -1;
