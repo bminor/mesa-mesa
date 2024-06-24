@@ -374,7 +374,7 @@
         "description": "docs: fix bootstrap-extension",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f72033bb707046ef5966cb55cbf9bd9fb7bb038f",
         "notes": null
