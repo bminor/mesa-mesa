@@ -649,6 +649,8 @@ fd_init_screen_caps(struct fd_screen *screen)
 
    caps->max_texture_anisotropy = 16.0f;
    caps->max_texture_lod_bias = 15.0f;
+
+   caps->shader_clock = is_a6xx(screen);
 }
 
 static const void *
