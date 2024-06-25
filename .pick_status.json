@@ -294,7 +294,7 @@
         "description": "nir: fix lower array to vec metadata preserve",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "35b8f6f40bb45dbffb04dd883ac6644300832981",
         "notes": null
