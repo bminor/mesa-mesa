@@ -1854,7 +1854,7 @@
         "description": "intel/elk: Don't propagate saturate to an instruction that writes flags",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e6022281f273287499e9012f9a7c3dd87a733e5b",
         "notes": null
