@@ -1864,7 +1864,7 @@
         "description": "intel/brw: Don't propagate saturate to an instruction that writes flags",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "947c828d5cbffe9640ac63103a6223112eeff27f",
         "notes": null
