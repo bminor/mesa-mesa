@@ -284,7 +284,7 @@
         "description": "nir: fix clip cull distance lowering metadata preserve",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "110887de2bd9b3e57d87bfc1af4bcd1b8e2de6a0",
         "notes": null
