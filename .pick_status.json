@@ -244,7 +244,7 @@
         "description": "ir3: Make sure constlen includes stc/ldc.k/ldg.k instructions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ccc64b7e00b69ce3b0e20df6cf6b6ad68e7c9f79",
         "notes": null
