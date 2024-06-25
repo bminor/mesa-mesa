@@ -924,7 +924,7 @@
         "description": "r300: bias presubtract fix",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0508db91556242c57029ad538613c2b1ee1969ef",
         "notes": null
