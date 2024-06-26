@@ -144,7 +144,7 @@
         "description": "Revert \"ac, radeonsi: remove has_syncobj, has_fence_to_handle\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "02fe3c32cdfc3cf48cd691d6321978b8d4c3e61b",
         "notes": null
