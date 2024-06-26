@@ -151,14 +151,15 @@ is_empty_block(Block* block, bool ignore_exec_writes)
 void
 try_remove_merge_block(ssa_elimination_ctx& ctx, Block* block)
 {
-   /* check if the successor is another merge block which restores exec */
-   // TODO: divergent loops also restore exec
-   if (block->linear_succs.size() != 1 ||
-       !(ctx.program->blocks[block->linear_succs[0]].kind & block_kind_merge))
+   if (block->linear_succs.size() != 1)
       return;
 
-   /* check if this block is empty */
-   if (!is_empty_block(block, true))
+   unsigned succ_idx = block->linear_succs[0];
+
+   /* Check if this block is empty, if the successor is an early block,
+    * we didn't gather incoming_exec_used for it yet.
+    */
+   if (!is_empty_block(block, !ctx.blocks_incoming_exec_used[succ_idx] && block->index < succ_idx))
       return;
 
    /* keep the branch instruction and remove the rest */
@@ -175,11 +176,13 @@ try_remove_invert_block(ssa_elimination_ctx& ctx, Block* block)
    if (block->linear_succs[0] != block->linear_succs[1])
       return;
 
+   unsigned succ_idx = block->linear_succs[0];
+   assert(block->index < succ_idx);
+
    /* check if block is otherwise empty */
-   if (!is_empty_block(block, true))
+   if (!is_empty_block(block, !ctx.blocks_incoming_exec_used[succ_idx]))
       return;
 
-   unsigned succ_idx = block->linear_succs[0];
    assert(block->linear_preds.size() == 2);
    for (unsigned i = 0; i < 2; i++) {
       Block* pred = &ctx.program->blocks[block->linear_preds[i]];
