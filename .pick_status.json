@@ -344,7 +344,7 @@
         "description": "broadcom/compiler: fix per-quad spilling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "597560e27c585d9be17ffdb8731c1c3d88550cf8",
         "notes": null
