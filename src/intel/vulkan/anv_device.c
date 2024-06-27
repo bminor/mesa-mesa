@@ -2176,8 +2176,13 @@ anv_device_get_pat_entry(struct anv_device *device,
    if (alloc_flags & ANV_BO_ALLOC_IMPORTED)
       return &device->info->pat.cached_coherent;
 
-   if (alloc_flags & ANV_BO_ALLOC_COMPRESSED)
-      return &device->info->pat.compressed;
+   if (alloc_flags & ANV_BO_ALLOC_COMPRESSED) {
+      /* Compressed PAT entries are available on Xe2+. */
+      assert(device->info->ver >= 20);
+      return alloc_flags & ANV_BO_ALLOC_SCANOUT ?
+             &device->info->pat.compressed_scanout :
+             &device->info->pat.compressed;
+   }
 
    if (alloc_flags & (ANV_BO_ALLOC_EXTERNAL | ANV_BO_ALLOC_SCANOUT))
       return &device->info->pat.scanout;
