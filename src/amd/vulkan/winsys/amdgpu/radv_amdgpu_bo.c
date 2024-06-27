@@ -500,6 +500,10 @@ radv_amdgpu_winsys_bo_create(struct radeon_winsys *_ws, uint64_t size, unsigned 
          request.flags |= AMDGPU_GEM_CREATE_VM_ALWAYS_VALID;
       }
    }
+   /* Set AMDGPU_GEM_CREATE_VIRTIO_SHARED if the driver didn't disable buffer sharing. */
+   if (ws->info.is_virtio && (initial_domain & RADEON_DOMAIN_VRAM_GTT) &&
+       (flags & RADEON_FLAG_NO_INTERPROCESS_SHARING) == 0)
+      request.flags |= AMDGPU_GEM_CREATE_VIRTIO_SHARED;
    if (initial_domain & RADEON_DOMAIN_VRAM) {
       if (ws->zero_all_vram_allocs || (flags & RADEON_FLAG_ZERO_VRAM))
          request.flags |= AMDGPU_GEM_CREATE_VRAM_CLEARED;
