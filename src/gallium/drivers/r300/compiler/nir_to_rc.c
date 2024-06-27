@@ -743,32 +743,20 @@ ntr_setup_outputs(struct ntr_compile *c)
 }
 
 static enum tgsi_texture_type
-tgsi_texture_type_from_sampler_dim(enum glsl_sampler_dim dim, bool is_array, bool is_shadow)
+tgsi_texture_type_from_sampler_dim(enum glsl_sampler_dim dim, bool is_array)
 {
    switch (dim) {
    case GLSL_SAMPLER_DIM_1D:
-      if (is_shadow)
-         return is_array ? TGSI_TEXTURE_SHADOW1D_ARRAY : TGSI_TEXTURE_SHADOW1D;
-      else
-         return is_array ? TGSI_TEXTURE_1D_ARRAY : TGSI_TEXTURE_1D;
+      return is_array ? TGSI_TEXTURE_1D_ARRAY : TGSI_TEXTURE_1D;
    case GLSL_SAMPLER_DIM_2D:
    case GLSL_SAMPLER_DIM_EXTERNAL:
-      if (is_shadow)
-         return is_array ? TGSI_TEXTURE_SHADOW2D_ARRAY : TGSI_TEXTURE_SHADOW2D;
-      else
-         return is_array ? TGSI_TEXTURE_2D_ARRAY : TGSI_TEXTURE_2D;
+      return is_array ? TGSI_TEXTURE_2D_ARRAY : TGSI_TEXTURE_2D;
    case GLSL_SAMPLER_DIM_3D:
       return TGSI_TEXTURE_3D;
    case GLSL_SAMPLER_DIM_CUBE:
-      if (is_shadow)
-         return is_array ? TGSI_TEXTURE_SHADOWCUBE_ARRAY : TGSI_TEXTURE_SHADOWCUBE;
-      else
-         return is_array ? TGSI_TEXTURE_CUBE_ARRAY : TGSI_TEXTURE_CUBE;
+      return is_array ? TGSI_TEXTURE_CUBE_ARRAY : TGSI_TEXTURE_CUBE;
    case GLSL_SAMPLER_DIM_RECT:
-      if (is_shadow)
-         return TGSI_TEXTURE_SHADOWRECT;
-      else
-         return TGSI_TEXTURE_RECT;
+      return TGSI_TEXTURE_RECT;
    case GLSL_SAMPLER_DIM_MS:
       return is_array ? TGSI_TEXTURE_2D_ARRAY_MSAA : TGSI_TEXTURE_2D_MSAA;
    case GLSL_SAMPLER_DIM_BUF:
@@ -807,7 +795,7 @@ ntr_setup_uniforms(struct ntr_compile *c)
 
          const struct glsl_type *stype = glsl_without_array(var->type);
          enum tgsi_texture_type target = tgsi_texture_type_from_sampler_dim(
-            glsl_get_sampler_dim(stype), glsl_sampler_type_is_array(stype), false);
+            glsl_get_sampler_dim(stype), glsl_sampler_type_is_array(stype));
          enum tgsi_return_type ret_type =
             tgsi_return_type_from_base_type(glsl_get_sampler_result_type(stype));
          for (int i = 0; i < size; i++) {
@@ -1617,8 +1605,9 @@ static void
 ntr_emit_texture(struct ntr_compile *c, nir_tex_instr *instr)
 {
    struct ureg_dst dst = ntr_get_dest(c, &instr->def);
+   assert(!instr->is_shadow);
    enum tgsi_texture_type target =
-      tgsi_texture_type_from_sampler_dim(instr->sampler_dim, instr->is_array, instr->is_shadow);
+      tgsi_texture_type_from_sampler_dim(instr->sampler_dim, instr->is_array);
    unsigned tex_opcode;
 
    int tex_handle_src = nir_tex_instr_src_index(instr, nir_tex_src_texture_handle);
