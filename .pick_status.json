@@ -1034,7 +1034,7 @@
         "description": "lavapipe: build \"Windows\" check should use the host machine, not the `platforms` option.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e030ab51632d1de1859e4683ae0ff260a8d98a14",
         "notes": null
