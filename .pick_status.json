@@ -1,5 +1,535 @@
 [
     {
+        "sha": "037eaa962b56ff70ecf889ace05020635964e23c",
+        "description": "radv: add support for executing the DGC ACE IB",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1e0c6fab21e787773fcd5119027700ef441905ba",
+        "description": "radv: add support for preparing the ACE IB in DGC",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "723acbe1e28bb62e03937fbf5471b8b8f6ebec22",
+        "description": "radv: add a helper to pad DGC IB",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a5c6415d1f4d5a76e69d33e24b390d10409ae6c",
+        "description": "radv: refactor some DGC helpers in preparation for the ACE IB",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "12cc97a15706fe5e35793d9b1ee4e5279c0312d0",
+        "description": "radv: prepare for DISPATCH_TASKMESH_DIRECT_ACE emission in the DGC shader",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a81a6066d139a9a398a9cb7347adc6a3b2dfd5f",
+        "description": "radv: prepare for DISPATCH_TASKMESH_GFX emission in the DGC shader",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bdbe3e58865fbfefd3f2bdd17b46f0a7f08c33bc",
+        "description": "radv: add support for computing the DGC ACE IB size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99cd8b6a546cf61a28e54397fa8954009853aa08",
+        "description": "radv: add a helper to execute a DGC IB",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e6772654ac3a28c14e8878c8c5dba288355c2bbd",
+        "description": "venus: Disable sparse binding on lavapipe",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f28bf41f286a53d5e530f2073a99ad3574ddfbf",
+        "description": "venus: Refactor hiding sparse features and properties",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6168317b849150db28dc222f8ac68cb1b371eb2e",
+        "description": "lavapipe: Implement shaderResourceResidency",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d747c4a8746834d3c9a6fbd7b455b7ce9441fb38",
+        "description": "lavapipe: Implement sparse buffers and images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a062544d3d0519aaa3845b7cfd79e925b9352a55",
+        "description": "llvmpipe: Use an anonymous file for memory allocations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fcc0fd2fc1d3265da51785abb70ee243201f8f0f",
+        "description": "gallium: Add a memory range parameter to resource_bind_backing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56028a888efd2735a687bbfaf22902a1f867d3f2",
+        "description": "lavapipe: Do not allocate 0 sized buffers for descriptor sets",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d159c02f68d7c196d5ec91d310d1c065a7e28b6",
+        "description": "llvmpipe: Introduce llvmpipe_memory_allocation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb64ce43866b0e87526dcd20807ccdeb5ba17c80",
+        "description": "util: Add a helper for querying sparse tile sizes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a603cc06334fd44743b083d1afeb7b73a4a4334f",
+        "description": "anv: move some pc was to batch_emit_pipe_control_write",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3bfba9c565f5cce29fba3b9e11dc4499266cfb4f",
+        "description": "iris/ci: update trace checksums",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7fc8ad2dddea0bac60533b66ff1384e379677e99",
+        "description": "aco/ir: remove unused vopc helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2225a32bb0ace610c54e822c91982ea9a2fe5d24",
+        "description": "aco: remove ordered/unordered optimizations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e86d2452ff7c0453dd78131b1d5b8148dc17236",
+        "description": "nir/opt_algebraic: add various unordered/ordered patterns from aco",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "434dfb51ca4193dd9cff477da67749e08dba8e48",
+        "description": "nir/opt_algebraic: optimize cmp(fneg(a), #b) and feq with fabs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "98cc57bccb441a2d7adb93ffa13a06968d2ceec9",
+        "description": "nir/optimize cmp(a, -0.0)",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8e6bf596cb4a2c62762c7b35e4987e08b9f4e2ac",
+        "description": "nir/opt_algebraic: look through fabs/fneg when matching fmulz/ffmaz",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "080e03d021795eb888538f0a04f90a515b98d070",
+        "description": "ac/nir: enable ford, funord, fneo, fequ, fltu, fgeu",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3dfc8b3bcf40358b28a96304f4a32ef7eaf9790d",
+        "description": "ac/llvm: implement ford, funord, fneo, fequ, fltu, fgeu",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5ba17cd255159fa2397239a518c91a18d3c2e19",
+        "description": "aco: implement ford, funord, fneo, fequ, fltu, fgeu",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99372c1ed7b77049a5e96f32b77550f1c82d0f75",
+        "description": "nir: add ford, funord, fneo, fequ, fltu, fgeu",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "01118a3fbba54d30d08336831a30515520ec4c09",
+        "description": "anv/xe2+: Align push constant ranges to GRF boundaries.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "039f4fe25e4d7e924e368a8fea7a8f1b705b673c",
+        "description": "intel/dev: Add GRF size information to the intel_device_info struct.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fea9de3c8368d3c293f6b2a1035c9ef7f1df7516",
+        "description": "vulkan: properly ignore unsupported feature structs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e6b675974261173d2cb08edf5fb4d01669f682f",
+        "description": "broadcom/compiler: drop multop if we dce umul24",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a7a36372ff35847b4d95730cb7aca38b85b6f4b",
+        "description": "broadcom/compiler: validate rtop + thrsw hazard",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1f8351f3c1c0b9306ed6a7ead500a72d69811d3",
+        "description": "broadcom/compiler: fix per-quad spilling",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "597560e27c585d9be17ffdb8731c1c3d88550cf8",
+        "notes": null
+    },
+    {
+        "sha": "38b7f411a1fb26ef4b2714852c7f950f0a3a710c",
+        "description": "broadcom/compiler: don't spill in between multop and umul24",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da1a7c04bcfde3350f6b2842c2e976ee0635945b",
+        "description": "radv: Return hang status from radv_check_gpu_hangs()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6006588ad8c0769ed0e907c4e786836bc3704a25",
+        "description": "glsl: remove out of date TODO",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "79fa3eba11c640c3d1c9326fd85ba6a138638da1",
+        "description": "intel/fs/xe2+: Add ALU-based implementation of barycentric interpolation at a per-channel sample.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "95eec5a0ddea50d43edc574f61fee96f45bc9248",
+        "description": "intel/fs/xe2+: Add ALU-based implementation of barycentric interpolation at a per-channel offset.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e8007c93259bd1ae3d6d2056fed1291edff0eef7",
+        "description": "intel/fs/xe2+: Don't lower barycentric load offsets to fixed-point format on Xe2+.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "04b5b8b9ec2d9a580e1db32c90aa9f7921bc1643",
+        "description": "anv/gfx11+: Request PS payload fields for ALU-based interpolation via 3DSTATE_PS_EXTRA.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76f095c3549eb9a522e5d4e3cbb5e319582b3fc4",
+        "description": "iris/gfx11+: Request PS payload fields for ALU-based interpolation via 3DSTATE_PS_EXTRA.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d30cc82f94ba03bd7e931a58e32e4a6fd5af3c5",
+        "description": "intel/fs/xe2+: Ask driver for PS payload registers based on barycentric load intrinsics in use.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e60dcaa71d7a5004eafadf51a737d2397660c4ee",
+        "description": "meson: add various generated header dependencies as order-only deps",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a4e0eb55ce4daac70a33e289705c60fd352cd10f",
+        "description": "meson: create libglsl declared dependency to propagate order-only deps",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2c084beb9d15ad92ffc9cbd45e55daa0faa7d2f",
+        "description": "drm-shim: stub syncobj_timeline_signal ioctl",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2a2bc50408adea18358ea2a33c29ba27a409a27",
+        "description": "ci: reorder alpine/x86_64_build rules to fix the nightly pipelines",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "fdd204538b93e17cecd32786603e0e2452e459c4",
+        "notes": null
+    },
+    {
+        "sha": "2156ea8ec7faa246f48f32e5cc6ccb102fc9b916",
+        "description": "docs/ci: drop .no_scheduled_pipelines-rules from test-docs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aba6bf7765bd578025b831dc4f49e9f879eefe38",
+        "description": "docs/ci: auto-run test-docs in fork pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d48c91c5821f8463ff5af489b0f33aa7fca57d63",
+        "description": "docs/ci: merge test-docs and test-docs-mr",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e44b4b12330e725925adc9cdf442d81775e16a5",
+        "description": "docs/ci: fix indentation of list nested in a dict item",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5bc05c6f532ffd6d8c66c0f257359b415ce11451",
+        "description": "intel/tools: Advertise I915_PARAM_HAS_EXEC_TIMELINE_FENCES",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "7da5b1caef21ca1da75573737f553fa301d25b2c",
+        "notes": null
+    },
+    {
         "sha": "dd85b50d182a2bd1c67d9a8f858d93fc4dded91c",
         "description": "treewide: use nir_break_if",
         "nominated": false,
