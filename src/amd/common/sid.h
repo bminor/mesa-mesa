@@ -403,4 +403,9 @@ enum amd_cmp_class_flags
    P_INFINITY = 1 << 9   // Positive infinity
 };
 
+/* Use the last bit of AMDGPU_GEM_CREATE_* flag as a virtio-only
+ * flag.
+ */
+#define AMDGPU_GEM_CREATE_VIRTIO_SHARED 1u << 31
+
 #endif /* _SID_H */

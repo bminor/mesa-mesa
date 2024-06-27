@@ -13,6 +13,7 @@
 #include "util/os_mman.h"
 #include "util/os_time.h"
 #include "util/u_math.h"
+#include "sid.h"
 
 #include <xf86drm.h>
 #include <string.h>
@@ -176,6 +177,11 @@ int amdvgpu_bo_alloc(amdvgpu_device_handle dev,
 
    if (!(request->flags & AMDGPU_GEM_CREATE_NO_CPU_ACCESS))
       blob_flags |= VIRTGPU_BLOB_FLAG_USE_MAPPABLE;
+
+   if (request->flags & AMDGPU_GEM_CREATE_VIRTIO_SHARED) {
+      blob_flags |= VIRTGPU_BLOB_FLAG_USE_SHAREABLE;
+      req.r.flags &= ~AMDGPU_GEM_CREATE_VIRTIO_SHARED;
+   }
 
    /* blob_id 0 is reserved for the shared memory buffer. */
    assert(req.blob_id > 0);
