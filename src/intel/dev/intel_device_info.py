@@ -230,8 +230,11 @@ Struct("intel_device_info_pat_desc",
         Member("intel_device_info_pat_entry", "scanout",
                comment="scanout and external BOs"),
 
+        Member("intel_device_info_pat_entry", "compressed_scanout",
+               comment="Only supported in Xe2, compressed + WC for displayable resources"),
+
         Member("intel_device_info_pat_entry", "compressed",
-               comment="Only supported in Xe2, compressed + WC"),
+               comment="Only supported in Xe2, compressed + WC for non-displayable resources"),
 
         Member("intel_device_info_pat_entry", "writeback_incoherent",
                comment=("BOs without special needs, can be WB not coherent "
