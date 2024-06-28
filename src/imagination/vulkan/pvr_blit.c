@@ -1246,6 +1246,8 @@ static VkResult pvr_cmd_copy_buffer_region(struct pvr_cmd_buffer *cmd_buffer,
    while (offset < size) {
       const VkDeviceSize remaining_size = size - offset;
       struct pvr_transfer_cmd *transfer_cmd;
+      uint32_t src_align = (src_addr.addr + offset + src_offset) & 0xF;
+      uint32_t dst_align = (dst_addr.addr + offset + src_offset) & 0xF;
       uint32_t texel_width;
       VkDeviceSize texels;
       VkFormat vk_format;
@@ -1256,7 +1258,9 @@ static VkResult pvr_cmd_copy_buffer_region(struct pvr_cmd_buffer *cmd_buffer,
       if (is_fill) {
          vk_format = VK_FORMAT_R32_UINT;
          texel_width = 4U;
-      } else if (remaining_size >= 16U) {
+      } else if (remaining_size >= 16U && (src_align % 16U) == 0 &&
+                 (dst_align % 16U) == 0) {
+         /* Only if address is 128bpp aligned */
          vk_format = VK_FORMAT_R32G32B32A32_UINT;
          texel_width = 16U;
       } else if (remaining_size >= 4U) {
