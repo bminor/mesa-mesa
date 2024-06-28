@@ -1646,6 +1646,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
             break;
 
          case VK_FORMAT_D24_UNORM_S8_UINT:
+         case VK_FORMAT_X8_D24_UNORM_PACK32:
             job->ds.zls_format = ROGUE_CR_ZLS_FORMAT_TYPE_24BITINT;
             break;
 
