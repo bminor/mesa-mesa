@@ -1,5 +1,195 @@
 [
     {
+        "sha": "6b5a12611bff70ffb3c736de29ff5631efbb8770",
+        "description": "meson: Build pipe-loader when build-tests is true",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "884397b587d2bffe0de9513cf6307300c9db0493",
+        "description": "anv: workaround flaky xfb query results on Gfx11",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "feaa5ce1ec2556d4cc9a7c26bdc53aa84c05b9b3",
+        "description": "vc4: fix out-of-bounds access to array",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b827aee3a3ef7198afe25b641de59c1e34bd03b9",
+        "description": "vc4: do not create 0-bytes variable length arrays",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a16575dec6f8330af07a733f289544837057ff3",
+        "description": "vc4: do not pass NULL pointer to function not expecting NULLs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eab3ee8d71075d8c1e5b511ed4ed7699d4e66a5e",
+        "description": "vc4: do not access member of a NULL structure",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e09b2b3f35b3e9140eb582fe959791145324375",
+        "description": "vc4: use unsigned types when performing bitshifting",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1bcf9c5da9aa48ddae45b84d1b06cd0f7e5b64bb",
+        "description": "v3d: do not pass NULL pointer to function not expecting NULLs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "417f70ef5a54e11b2268f150b559080117fa6539",
+        "description": "v3d: do not access member of a NULL structure",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc286867fb73b9b8344dd1ee55fbd70868406cab",
+        "description": "v3dv: fix misalignment in descriptor layout structure",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9696fd378a4dff4b2cb78cd5b1d7ccd2d9799d1f",
+        "description": "v3dv: restrict to channels when encoding border color",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ee47dc6d953107ec5b96af5a2454f1949ccd93f",
+        "description": "v3dv: do not pass NULL pointer to function not expecting NULLs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1d71be8e600d38fcecaa46a5d8685352068df2a1",
+        "description": "v3dv: do not access member of a NULL structure",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7dc6b8df1166f89c11d29e23721ebfe1afc82a0e",
+        "description": "broadcom/compiler: use unsigned types when performing bitshifting",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8f8926026f71ccfa7d2d6adce56c7976a9fe9a0",
+        "description": "anv: emit the right shader instruction for protected mode",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57e74d7b56f81edd8cba6c575aec340291a3ef9b",
+        "description": "anv: allocate compute scratch using the right scratch pool",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ccf80f9b15a49bbd79702d3c4de7ee65c8837b1",
+        "description": "anv: prepare 2 variants of all shader instructions",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08a4e0a2e3c9f5c174ec81910b0bb117dabf497a",
+        "description": "anv: add a protected scratch pool",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0138e99e6d3c7ec356a7ecec15d3f42280117d2",
+        "description": "ci: disable Collabora's farm due to maintenance",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "68215332a8cd87d8109ee4c3b50e04df223d9c83",
         "description": "build: pass licensing information in SPDX form",
         "nominated": false,
