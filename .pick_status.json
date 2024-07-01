@@ -1194,7 +1194,7 @@
         "description": "llvmpipe: Fix external memory object reference",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1608a815e3305d229091c346373c379900a8351f",
         "notes": null
