@@ -374,7 +374,7 @@
         "description": "dri: Go back to hard-coded list of RGBA formats",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ad0edea53a732fecf6ddb8340e724b66275a0619",
         "notes": null
