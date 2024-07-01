@@ -84,7 +84,7 @@
         "description": "panvk: Fix image support in vertex jobs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7bea6f8612e193d4704a8b03f719a14c500f4281",
         "notes": null
