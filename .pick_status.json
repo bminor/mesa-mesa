@@ -3164,7 +3164,7 @@
         "description": "dri: Fix BGR format exclusion",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "ad0edea53a732fecf6ddb8340e724b66275a0619",
         "notes": null
