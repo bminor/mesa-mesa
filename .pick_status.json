@@ -664,7 +664,7 @@
         "description": "tu: Fix fdm_apply_load_coords patchpoint size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7429ca3115067cf6fe54552e445f2c60832d8fb4",
         "notes": null
