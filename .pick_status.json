@@ -674,7 +674,7 @@
         "description": "tu: Make cs writeable for GMEM loads when FDM is enabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "21334e3b538ab3c862098f315604f49ac10bb1d1",
         "notes": null
