@@ -134,7 +134,7 @@
         "description": "anv: get scratch surface from the correct pool",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3ccf80f9b15a49bbd79702d3c4de7ee65c8837b1",
         "notes": null
