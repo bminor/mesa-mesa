@@ -304,7 +304,7 @@
         "description": "iris/gfx12.5: Pass non-empty push constant data to PS stage for TBIMR workaround.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "57decad9768a445de23d093cc8e004269a352b50",
         "notes": null
