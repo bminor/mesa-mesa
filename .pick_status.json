@@ -404,7 +404,7 @@
         "description": "gallivm: Call StringMapIterator from llvm:: scope",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b035d9cab5a483f0ceee2d8fad578f64aca1888a",
         "notes": null
