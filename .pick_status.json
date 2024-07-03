@@ -784,7 +784,7 @@
         "description": "anv/trtt: fix the process of picking device->trtt.queue",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "04bfe828db8187bdda755d8c55ec2f8fbf3ae298",
         "notes": null
