@@ -909,7 +909,7 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
          /* the Operand is spilled: add it to reloads */
          Temp new_tmp = ctx.program->allocateTmp(op.regClass());
          ctx.renames[block_idx][op.getTemp()] = new_tmp;
-         reloads[new_tmp] = std::make_pair(op.getTemp(), current_spills[op.getTemp()]);
+         reloads[op.getTemp()] = std::make_pair(new_tmp, current_spills[op.getTemp()]);
          current_spills.erase(op.getTemp());
          spilled_registers -= new_tmp;
       }
@@ -1007,7 +1007,7 @@ process_block(spill_ctx& ctx, unsigned block_idx, Block* block, RegisterDemand s
       /* add reloads and instruction to new instructions */
       for (std::pair<const Temp, std::pair<Temp, uint32_t>>& pair : reloads) {
          aco_ptr<Instruction> reload =
-            do_reload(ctx, pair.second.first, pair.first, pair.second.second);
+            do_reload(ctx, pair.first, pair.second.first, pair.second.second);
          instructions.emplace_back(std::move(reload));
       }
       instructions.emplace_back(std::move(instr));
