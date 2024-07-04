@@ -24,7 +24,7 @@
         "description": "mesa: Fix PopAttrib not restoring states that changed on deeper stack level",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "68030bbf73c82a16f394fab807076d5c64258dcf",
         "notes": null
