@@ -44,7 +44,7 @@
         "description": "nvk: Silently fail to enumerate if not on nouveau",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "83786bf1c9c17250bc1a0533f03608d113eea50b",
         "notes": null
