@@ -753,6 +753,40 @@ iris_screen_get_fd(struct pipe_screen *pscreen)
    return screen->winsys_fd;
 }
 
+static void
+iris_set_damage_region(struct pipe_screen *pscreen, struct pipe_resource *pres,
+                       unsigned int nrects, const struct pipe_box *rects)
+{
+   struct iris_resource *res = (struct iris_resource *)pres;
+
+   res->use_damage = nrects > 0;
+   if (!res->use_damage)
+      return;
+
+   res->damage.x = INT32_MAX;
+   res->damage.y = INT32_MAX;
+   res->damage.width = 0;
+   res->damage.height = 0;
+
+   for (unsigned i = 0; i < nrects; i++) {
+      res->damage.x = MIN2(res->damage.x, rects[i].x);
+      res->damage.y = MIN2(res->damage.y, rects[i].y);
+      res->damage.width = MAX2(res->damage.width, rects[i].width + rects[i].x);
+      res->damage.height = MAX2(res->damage.height, rects[i].height + rects[i].y);
+
+      if (unlikely(res->damage.x == 0 &&
+                   res->damage.y == 0 &&
+                   res->damage.width == res->base.b.width0 &&
+                   res->damage.height == res->base.b.height0))
+         break;
+   }
+
+   res->damage.x = MAX2(res->damage.x, 0);
+   res->damage.y = MAX2(res->damage.y, 0);
+   res->damage.width = MIN2(res->damage.width, res->base.b.width0);
+   res->damage.height = MIN2(res->damage.height, res->base.b.height0);
+}
+
 struct pipe_screen *
 iris_screen_create(int fd, const struct pipe_screen_config *config)
 {
@@ -881,6 +915,7 @@ iris_screen_create(int fd, const struct pipe_screen_config *config)
    pscreen->query_memory_info = iris_query_memory_info;
    pscreen->get_driver_query_group_info = iris_get_monitor_group_info;
    pscreen->get_driver_query_info = iris_get_monitor_info;
+   pscreen->set_damage_region = iris_set_damage_region;
    iris_init_screen_program_functions(pscreen);
 
    genX_call(screen->devinfo, init_screen_state, screen);
