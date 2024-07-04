@@ -44,7 +44,7 @@
         "description": "ir3: Fix stg/ldg immediate offset on a7xx",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "01bac643f6c088f7537edf18f2d4094881c1ecda",
         "notes": null
