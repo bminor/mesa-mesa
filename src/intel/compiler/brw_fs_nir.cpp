@@ -1977,6 +1977,7 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
          nir_instr_as_intrinsic(def.parent_instr);
 
       switch (instr->intrinsic) {
+      case nir_intrinsic_load_inline_data_intel:
       case nir_intrinsic_load_workgroup_id:
          is_scalar = true;
          break;
@@ -4589,6 +4590,8 @@ fs_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
    if (nir_intrinsic_infos[instr->intrinsic].has_dest)
       dest = get_nir_def(ntb, instr->def);
 
+   const fs_builder xbld = dest.is_scalar ? bld.scalar_group() : bld;
+
    switch (instr->intrinsic) {
    case nir_intrinsic_barrier:
       if (nir_intrinsic_memory_scope(instr) != SCOPE_NONE)
@@ -4612,13 +4615,14 @@ fs_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
    case nir_intrinsic_load_inline_data_intel: {
       const cs_thread_payload &payload = s.cs_payload();
       unsigned inline_stride = brw_type_size_bytes(dest.type);
-      for (unsigned c = 0; c < instr->def.num_components; c++)
-         bld.MOV(offset(dest, bld, c),
-                 retype(
-                    byte_offset(payload.inline_parameter,
-                                nir_intrinsic_base(instr) +
-                                c * inline_stride),
-                    dest.type));
+      for (unsigned c = 0; c < instr->def.num_components; c++) {
+         xbld.MOV(offset(dest, xbld, c),
+                  retype(
+                     byte_offset(payload.inline_parameter,
+                                 nir_intrinsic_base(instr) +
+                                 c * inline_stride),
+                     dest.type));
+      }
       break;
    }
 
@@ -4857,7 +4861,6 @@ try_rebuild_source(nir_to_brw_state &ntb, const brw::fs_builder &bld,
 
    /* Create a build at the location of the resource_intel intrinsic */
    fs_builder ubld = bld.exec_all().group(8 * reg_unit(ntb.devinfo), 0);
-   const unsigned grf_size = REG_SIZE * reg_unit(ntb.devinfo);
 
    struct rebuild_resource resources = {};
    resources.ssa_values = ntb.ssa_values;
@@ -5007,24 +5010,7 @@ try_rebuild_source(nir_to_brw_state &ntb, const brw::fs_builder &bld,
          }
 
          case nir_intrinsic_load_inline_data_intel: {
-            assert(brw_shader_stage_has_inline_data(ntb.devinfo, ntb.s.stage));
-            const cs_thread_payload &payload = ntb.s.cs_payload();
-            enum brw_reg_type type =
-               brw_type_with_size(BRW_TYPE_D, intrin->def.bit_size);
-            brw_reg dst_data = ubld.vgrf(type, intrin->def.num_components);
-            unsigned inline_stride = brw_type_size_bytes(type);
-
-            for (unsigned c = 0; c < intrin->def.num_components; c++) {
-               fs_inst *inst = ubld.MOV(byte_offset(dst_data, c * grf_size),
-                                        retype(
-                                           byte_offset(payload.inline_parameter,
-                                                       nir_intrinsic_base(intrin) +
-                                                       c * inline_stride),
-                                           type));
-               if (c == 0)
-                  ntb.resource_insts[def->index] = inst;
-            }
-            break;
+            unreachable("load_mesh_inline_data_intel should already be is_scalar");
          }
 
          case nir_intrinsic_load_btd_local_arg_addr_intel: {
