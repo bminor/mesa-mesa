@@ -944,7 +944,7 @@
         "description": "st/pbo_compute: fix async->nir memory leak",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5dab7673e10f731eddd395c4d01a2645be9437bb",
         "notes": null
