@@ -1084,7 +1084,7 @@
         "description": "brw: fix uniform rebuild of sources",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b8209d69ffdb8ea0e09257a2cc1a3fa903250e4c",
         "notes": null
