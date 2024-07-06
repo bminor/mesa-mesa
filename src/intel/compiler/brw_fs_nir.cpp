@@ -57,7 +57,6 @@ struct nir_to_brw_state {
 
    brw_reg *ssa_values;
    struct brw_fs_bind_info *ssa_bind_infos;
-   brw_reg *uniform_values;
    brw_reg *system_values;
 
    bool annotate;
@@ -387,7 +386,6 @@ fs_nir_emit_impl(nir_to_brw_state &ntb, nir_function_impl *impl)
 {
    ntb.ssa_values = rzalloc_array(ntb.mem_ctx, brw_reg, impl->ssa_alloc);
    ntb.ssa_bind_infos = rzalloc_array(ntb.mem_ctx, struct brw_fs_bind_info, impl->ssa_alloc);
-   ntb.uniform_values = rzalloc_array(ntb.mem_ctx, brw_reg, impl->ssa_alloc);
 
    fs_nir_emit_cf_list(ntb, &impl->body);
 }
@@ -1900,7 +1898,14 @@ get_resource_nir_src(nir_to_brw_state &ntb, const nir_src &src)
 {
    if (!is_resource_src(src))
       return brw_reg();
-   return ntb.uniform_values[src.ssa->index];
+
+   assert(ntb.ssa_values[src.ssa->index].is_scalar);
+
+   brw_reg reg = ntb.ssa_values[src.ssa->index];
+
+   reg.type = brw_type_with_size(BRW_TYPE_D, nir_src_bit_size(src));
+
+   return component(reg, 0);
 }
 
 /**
@@ -5760,15 +5765,11 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
          nir_intrinsic_binding(instr);
 
       brw_reg src = get_nir_src(ntb, instr->src[1]);
-      if (nir_intrinsic_resource_access_intel(instr) &
-           nir_resource_intel_non_uniform) {
-         ntb.uniform_values[instr->def.index] = brw_reg();
-      } else if (!src.is_scalar) {
-         ntb.uniform_values[instr->def.index] = bld.emit_uniformize(src);
+      if (!src.is_scalar) {
+         xbld.MOV(retype(dest, BRW_TYPE_UD), bld.emit_uniformize(src));
       } else {
-         ntb.uniform_values[instr->def.index] = src;
+         ntb.ssa_values[instr->def.index] = src;
       }
-      ntb.ssa_values[instr->def.index] = src;
       break;
    }
 
@@ -6981,9 +6982,6 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
    }
 
    case nir_intrinsic_load_global_constant_uniform_block_intel:
-      no_mask_handle =
-         ntb.uniform_values[instr->src[0].ssa->index].file != BAD_FILE;
-      FALLTHROUGH;
    case nir_intrinsic_load_global:
    case nir_intrinsic_load_global_constant:
    case nir_intrinsic_store_global:
@@ -6994,6 +6992,7 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
       srcs[MEMORY_LOGICAL_MODE] = brw_imm_ud(MEMORY_MODE_UNTYPED);
       srcs[MEMORY_LOGICAL_BINDING_TYPE] = brw_imm_ud(LSC_ADDR_SURFTYPE_FLAT);
       srcs[MEMORY_LOGICAL_ADDRESS] = get_nir_src(ntb, instr->src[is_store ? 1 : 0]);
+      no_mask_handle = srcs[MEMORY_LOGICAL_ADDRESS].is_scalar;
 
       data_src = is_atomic ? 1 : 0;
       break;
@@ -7084,8 +7083,8 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
          brw_imm_ud(MEMORY_FLAG_TRANSPOSE | srcs[MEMORY_LOGICAL_FLAGS].ud);
       srcs[MEMORY_LOGICAL_ADDRESS] =
          instr->intrinsic == nir_intrinsic_load_global_constant_uniform_block_intel &&
-         ntb.uniform_values[instr->src[0].ssa->index].file != BAD_FILE ?
-         ntb.uniform_values[instr->src[0].ssa->index] :
+         srcs[MEMORY_LOGICAL_ADDRESS].is_scalar ?
+         srcs[MEMORY_LOGICAL_ADDRESS] :
          bld.emit_uniformize(srcs[MEMORY_LOGICAL_ADDRESS]);
 
       const fs_builder ubld = bld.exec_all().group(1, 0);
