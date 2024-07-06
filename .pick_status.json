@@ -1114,7 +1114,7 @@
         "description": "anv: fix extended buffer flags usages",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bcc0ec8e6c4cc8ec577cf24506676f7c682145ca",
         "notes": null
