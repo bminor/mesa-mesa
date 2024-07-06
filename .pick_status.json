@@ -674,7 +674,7 @@
         "description": "nvk: Bump the sparse alignment requirement on buffers to 64K",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "03f0f01904ce8c4478be662c85f54bde41e852f6",
         "notes": null
