@@ -1978,6 +1978,7 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
 
       switch (instr->intrinsic) {
       case nir_intrinsic_load_inline_data_intel:
+      case nir_intrinsic_load_reloc_const_intel:
       case nir_intrinsic_load_workgroup_id:
          is_scalar = true;
          break;
@@ -5030,13 +5031,7 @@ try_rebuild_source(nir_to_brw_state &ntb, const brw::fs_builder &bld,
          }
 
          case nir_intrinsic_load_reloc_const_intel: {
-            uint32_t id = nir_intrinsic_param_idx(intrin);
-            uint32_t base = nir_intrinsic_base(intrin);
-            brw_reg dst = ubld.vgrf(BRW_TYPE_D);
-            ntb.resource_insts[def->index] =
-               ubld.emit(SHADER_OPCODE_MOV_RELOC_IMM, dst,
-                         brw_imm_ud(id), brw_imm_ud(base));
-            break;
+            unreachable("load_reloc_const_intel should already be is_scalar");
          }
 
          case nir_intrinsic_load_ubo_uniform_block_intel:
@@ -6389,15 +6384,10 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       uint32_t id = nir_intrinsic_param_idx(instr);
       uint32_t base = nir_intrinsic_base(instr);
 
-      /* Emit the reloc in the smallest SIMD size to limit register usage. */
-      const fs_builder ubld = bld.exec_all().group(1, 0);
-      brw_reg small_dest = ubld.vgrf(dest.type);
-      ubld.UNDEF(small_dest);
-      ubld.exec_all().group(1, 0).emit(SHADER_OPCODE_MOV_RELOC_IMM, small_dest,
-                                       brw_imm_ud(id), brw_imm_ud(base));
+      assert(dest.is_scalar);
 
-      /* Copy propagation will get rid of this MOV. */
-      bld.MOV(dest, component(small_dest, 0));
+      xbld.emit(SHADER_OPCODE_MOV_RELOC_IMM, retype(dest, BRW_TYPE_D),
+                brw_imm_ud(id), brw_imm_ud(base));
       break;
    }
 
