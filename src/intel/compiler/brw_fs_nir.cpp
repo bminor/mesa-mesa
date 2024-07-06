@@ -56,7 +56,6 @@ struct nir_to_brw_state {
    fs_builder bld;
 
    brw_reg *ssa_values;
-   fs_inst **resource_insts;
    struct brw_fs_bind_info *ssa_bind_infos;
    brw_reg *uniform_values;
    brw_reg *system_values;
@@ -387,7 +386,6 @@ static void
 fs_nir_emit_impl(nir_to_brw_state &ntb, nir_function_impl *impl)
 {
    ntb.ssa_values = rzalloc_array(ntb.mem_ctx, brw_reg, impl->ssa_alloc);
-   ntb.resource_insts = rzalloc_array(ntb.mem_ctx, fs_inst *, impl->ssa_alloc);
    ntb.ssa_bind_infos = rzalloc_array(ntb.mem_ctx, struct brw_fs_bind_info, impl->ssa_alloc);
    ntb.uniform_values = rzalloc_array(ntb.mem_ctx, brw_reg, impl->ssa_alloc);
 
@@ -1996,6 +1994,10 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
 
       case nir_intrinsic_load_uniform:
          is_scalar = get_nir_src(ntb, instr->src[0]).is_scalar;
+         break;
+
+      case nir_intrinsic_resource_intel:
+         is_scalar = !def.divergent;
          break;
 
       default:
@@ -4808,270 +4810,6 @@ brw_reduce_op_for_nir_reduction_op(nir_op op)
    }
 }
 
-struct rebuild_resource {
-   unsigned idx;
-   std::vector<nir_def *> array;
-   const brw_reg *ssa_values;
-};
-
-static bool
-skip_rebuild_instr(nir_instr *instr)
-{
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-   switch (intrin->intrinsic) {
-   case nir_intrinsic_load_ubo_uniform_block_intel:
-   case nir_intrinsic_load_ssbo_uniform_block_intel:
-   case nir_intrinsic_load_global_constant_uniform_block_intel:
-      /* Those intrinsic are generated using NoMask so we can trust their
-       * destination registers are fully populated. No need to rematerialize
-       * further.
-       */
-      return true;
-
-   default:
-      return false;
-   }
-}
-
-static bool
-add_rebuild_src(nir_src *src, void *state)
-{
-   struct rebuild_resource *res = (struct rebuild_resource *) state;
-
-   if (res->ssa_values[src->ssa->index].is_scalar)
-      return true;
-
-   for (nir_def *def : res->array) {
-      if (def == src->ssa)
-         return true;
-   }
-
-   if (!skip_rebuild_instr(src->ssa->parent_instr))
-      nir_foreach_src(src->ssa->parent_instr, add_rebuild_src, state);
-   res->array.push_back(src->ssa);
-   return true;
-}
-
-static brw_reg
-try_rebuild_source(nir_to_brw_state &ntb, const brw::fs_builder &bld,
-                   nir_def *resource_def, bool a64 = false)
-{
-   if (ntb.ssa_values[resource_def->index].is_scalar) {
-      brw_reg r = ntb.ssa_values[resource_def->index];
-
-      /* All users of try_rebuild_source expect an integer type. Smash the
-       * type to an integer type with the same size.
-       */
-      r.type = brw_type_with_size(BRW_TYPE_D, resource_def->bit_size);
-      return component(r, 0);
-   }
-
-   /* Create a build at the location of the resource_intel intrinsic */
-   fs_builder ubld = bld.exec_all().group(8 * reg_unit(ntb.devinfo), 0);
-
-   struct rebuild_resource resources = {};
-   resources.ssa_values = ntb.ssa_values;
-   resources.idx = 0;
-
-   if (!nir_foreach_src(resource_def->parent_instr,
-                        add_rebuild_src, &resources))
-      return brw_reg();
-   resources.array.push_back(resource_def);
-
-#if 0
-   fprintf(stderr, "Trying remat :\n");
-   for (unsigned i = 0; i < resources.array.size(); i++) {
-      fprintf(stderr, "   ");
-      nir_print_instr(resources.array[i]->parent_instr, stderr);
-      fprintf(stderr, "\n");
-   }
-#endif
-
-   for (unsigned i = 0; i < resources.array.size(); i++) {
-      nir_def *def = resources.array[i];
-
-      nir_instr *instr = def->parent_instr;
-      switch (instr->type) {
-      case nir_instr_type_load_const: {
-         unreachable("load_const should already be is_scalar");
-      }
-
-      case nir_instr_type_alu: {
-         nir_alu_instr *alu = nir_instr_as_alu(instr);
-
-         /* Not supported ALU source count */
-         if (nir_op_infos[alu->op].num_inputs > 3)
-            break;
-
-         brw_reg srcs[3];
-         for (unsigned s = 0; s < nir_op_infos[alu->op].num_inputs; s++) {
-            brw_reg reg;
-
-            if (ntb.resource_insts[alu->src[s].src.ssa->index] == NULL) {
-               reg = ntb.ssa_values[alu->src[s].src.ssa->index];
-               assert(reg.is_scalar);
-               srcs[s] = retype(offset(reg, ubld, alu->src[s].swizzle[0]),
-                                brw_int_type(brw_type_size_bytes(reg.type), false));
-            } else {
-               reg = ntb.resource_insts[alu->src[s].src.ssa->index]->dst;
-               srcs[s] = offset(reg, ubld, alu->src[s].swizzle[0]);
-            }
-
-            assert(srcs[s].file != BAD_FILE);
-         }
-
-         const enum brw_reg_type utype0 =
-            brw_type_with_size(BRW_TYPE_UD,
-                               brw_type_size_bits(srcs[0].type));
-         const enum brw_reg_type utype1 =
-            nir_op_infos[alu->op].num_inputs > 1 ?
-            brw_type_with_size(BRW_TYPE_UD,
-                               brw_type_size_bits(srcs[1].type)) :
-            BRW_TYPE_UD;
-
-         switch (alu->op) {
-         case nir_op_iadd:
-            if (srcs[0].file != IMM) {
-               ubld.ADD(retype(srcs[0], utype0),
-                        retype(srcs[1], utype1),
-                        &ntb.resource_insts[def->index]);
-            } else {
-               ubld.ADD(retype(srcs[1], utype1),
-                        retype(srcs[0], utype0),
-                        &ntb.resource_insts[def->index]);
-            }
-            break;
-         case nir_op_iadd3: {
-            brw_reg dst = ubld.vgrf(srcs[0].type);
-            ntb.resource_insts[def->index] =
-               ubld.ADD3(dst,
-                         srcs[1].file == IMM ? srcs[1] : srcs[0],
-                         srcs[1].file == IMM ? srcs[0] : srcs[1],
-                         srcs[2]);
-            break;
-         }
-         case nir_op_ushr:
-            ubld.SHR(retype(srcs[0], utype0),
-                     retype(srcs[1], utype1),
-                     &ntb.resource_insts[def->index]);
-            break;
-         case nir_op_iand:
-            ubld.AND(retype(srcs[0], utype0),
-                     retype(srcs[1], utype1),
-                     &ntb.resource_insts[def->index]);
-            break;
-         case nir_op_ishl:
-            ubld.SHL(retype(srcs[0], utype0),
-                     retype(srcs[1], utype1),
-                     &ntb.resource_insts[def->index]);
-            break;
-         case nir_op_mov:
-            break;
-         case nir_op_ult32: {
-            if (brw_type_size_bits(srcs[0].type) != 32)
-               break;
-            brw_reg dst = ubld.vgrf(utype0);
-            ntb.resource_insts[def->index] =
-               ubld.CMP(dst,
-                        retype(srcs[0], utype0),
-                        retype(srcs[1], utype1),
-                        brw_cmod_for_nir_comparison(alu->op));
-            break;
-         }
-         case nir_op_b2i32:
-            ubld.MOV(negate(retype(srcs[0], BRW_TYPE_D)),
-                     &ntb.resource_insts[def->index]);
-            break;
-         case nir_op_unpack_64_2x32_split_x:
-            ubld.MOV(subscript(srcs[0], BRW_TYPE_D, 0),
-                     &ntb.resource_insts[def->index]);
-            break;
-         case nir_op_unpack_64_2x32_split_y:
-            ubld.MOV(subscript(srcs[0], BRW_TYPE_D, 1),
-                     &ntb.resource_insts[def->index]);
-            break;
-         case nir_op_pack_64_2x32_split: {
-            brw_reg dst = ubld.vgrf(BRW_TYPE_Q);
-            ntb.resource_insts[def->index] =
-               ubld.emit(FS_OPCODE_PACK, dst, srcs[0], srcs[1]);
-         }
-         default:
-            break;
-         }
-         break;
-      }
-
-      case nir_instr_type_intrinsic: {
-         nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-         switch (intrin->intrinsic) {
-         case nir_intrinsic_resource_intel:
-            ntb.resource_insts[def->index] =
-               ntb.resource_insts[intrin->src[1].ssa->index];
-            break;
-
-         case nir_intrinsic_load_uniform: {
-            if (!nir_src_is_const(intrin->src[0]))
-               break;
-
-            unreachable("load_uniform should already be is_scalar");
-         }
-
-         case nir_intrinsic_load_inline_data_intel: {
-            unreachable("load_mesh_inline_data_intel should already be is_scalar");
-         }
-
-         case nir_intrinsic_load_btd_local_arg_addr_intel: {
-            unreachable("load_btd_local_arg_addr_intel should already be is_scalar");
-         }
-
-         case nir_intrinsic_load_btd_global_arg_addr_intel: {
-            unreachable("load_btd_global_arg_addr_intel should already be is_scalar");
-         }
-
-         case nir_intrinsic_load_reloc_const_intel: {
-            unreachable("load_reloc_const_intel should already be is_scalar");
-         }
-
-         case nir_intrinsic_load_ubo_uniform_block_intel:
-         case nir_intrinsic_load_ssbo_uniform_block_intel: {
-            unreachable("load_{ubo,ssbo}_uniform_block_intel should already be is_scalar");
-         }
-
-         default:
-            break;
-         }
-         break;
-      }
-
-      default:
-         break;
-      }
-
-      if (ntb.resource_insts[def->index] == NULL) {
-#if 0
-         if (a64) {
-         fprintf(stderr, "Tried remat :\n");
-         for (unsigned i = 0; i < resources.array.size(); i++) {
-            fprintf(stderr, "   ");
-            nir_print_instr(resources.array[i]->parent_instr, stderr);
-            fprintf(stderr, "\n");
-         }
-         fprintf(stderr, "failed at! : ");
-         nir_print_instr(instr, stderr);
-         fprintf(stderr, "\n");
-         }
-#endif
-         return brw_reg();
-      }
-   }
-
-   assert(ntb.resource_insts[resource_def->index] != NULL);
-   return component(ntb.resource_insts[resource_def->index]->dst, 0);
-}
-
 static brw_reg
 get_nir_image_intrinsic_image(nir_to_brw_state &ntb, const brw::fs_builder &bld,
                               nir_intrinsic_instr *instr)
@@ -6009,7 +5747,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
    const fs_builder xbld = dest.is_scalar ? bld.scalar_group() : bld;
 
    switch (instr->intrinsic) {
-   case nir_intrinsic_resource_intel:
+   case nir_intrinsic_resource_intel: {
       ntb.ssa_bind_infos[instr->def.index].valid = true;
       ntb.ssa_bind_infos[instr->def.index].bindless =
          (nir_intrinsic_resource_access_intel(instr) &
@@ -6021,16 +5759,18 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       ntb.ssa_bind_infos[instr->def.index].binding =
          nir_intrinsic_binding(instr);
 
+      brw_reg src = get_nir_src(ntb, instr->src[1]);
       if (nir_intrinsic_resource_access_intel(instr) &
            nir_resource_intel_non_uniform) {
          ntb.uniform_values[instr->def.index] = brw_reg();
+      } else if (!src.is_scalar) {
+         ntb.uniform_values[instr->def.index] = bld.emit_uniformize(src);
       } else {
-         ntb.uniform_values[instr->def.index] =
-            try_rebuild_source(ntb, bld, instr->src[1].ssa);
+         ntb.uniform_values[instr->def.index] = src;
       }
-      ntb.ssa_values[instr->def.index] =
-         get_nir_src(ntb, instr->src[1]);
+      ntb.ssa_values[instr->def.index] = src;
       break;
+   }
 
    case nir_intrinsic_load_reg:
    case nir_intrinsic_store_reg:
@@ -6038,9 +5778,6 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       break;
 
    case nir_intrinsic_load_global_constant_uniform_block_intel:
-      ntb.uniform_values[instr->src[0].ssa->index] =
-         try_rebuild_source(ntb, bld, instr->src[0].ssa, true);
-      FALLTHROUGH;
    case nir_intrinsic_load_ssbo_uniform_block_intel:
    case nir_intrinsic_load_shared_uniform_block_intel:
    case nir_intrinsic_load_global_block_intel:
