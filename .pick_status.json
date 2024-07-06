@@ -524,7 +524,7 @@
         "description": "gallivm: Fix compilation errors when using LLVM 13.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "47cd0eee2611001499e3aa0a045fbed38c2dc1e5",
         "notes": null
