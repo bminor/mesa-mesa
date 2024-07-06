@@ -1124,7 +1124,7 @@
         "description": "vulkan/runtime: fix GetBufferMemoryRequirements2 for maintenance4",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2649ee0724c8759ebd0348c618f3b67d27eb0dcd",
         "notes": null
