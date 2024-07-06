@@ -3710,9 +3710,6 @@ struct anv_push_constants {
     */
    uint32_t surfaces_base_offset;
 
-   /* Robust access pushed registers. */
-   uint64_t push_reg_mask[MESA_SHADER_STAGES];
-
    /** Ray query globals (RT_DISPATCH_GLOBALS) */
    uint64_t ray_query_globals;
 
@@ -3723,6 +3720,9 @@ struct anv_push_constants {
 
          /** Dynamic TCS input vertices */
          uint32_t tcs_input_vertices;
+
+         /** Robust access pushed registers. */
+         uint64_t push_reg_mask[MESA_SHADER_STAGES];
       } gfx;
 
       struct {

@@ -449,7 +449,7 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
          const struct anv_pipeline_bind_map *bind_map = &shader->bind_map;
          struct anv_push_constants *push = &gfx_state->base.push_constants;
 
-         push->push_reg_mask[stage] = 0;
+         push->gfx.push_reg_mask[stage] = 0;
          /* Start of the current range in the shader, relative to the start of
           * push constants in the shader.
           */
@@ -466,8 +466,8 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
                   MIN2(DIV_ROUND_UP(bound_size, 32) - range->start,
                        range->length);
                assert(range_start_reg + bound_regs <= 64);
-               push->push_reg_mask[stage] |= BITFIELD64_RANGE(range_start_reg,
-                                                              bound_regs);
+               push->gfx.push_reg_mask[stage] |=
+                  BITFIELD64_RANGE(range_start_reg, bound_regs);
             }
 
             cmd_buffer->state.push_constants_dirty |=

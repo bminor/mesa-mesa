@@ -96,9 +96,10 @@ anv_nir_compute_push_layout(nir_shader *nir,
        * the shader.
        */
       const uint32_t push_reg_mask_start =
-         anv_drv_const_offset(push_reg_mask[nir->info.stage]);
-      const uint32_t push_reg_mask_end = push_reg_mask_start +
-                                         anv_drv_const_size(push_reg_mask[nir->info.stage]);
+         anv_drv_const_offset(gfx.push_reg_mask[nir->info.stage]);
+      const uint32_t push_reg_mask_end =
+         push_reg_mask_start +
+         anv_drv_const_size(gfx.push_reg_mask[nir->info.stage]);
       push_start = MIN2(push_start, push_reg_mask_start);
       push_end = MAX2(push_end, push_reg_mask_end);
    }
@@ -217,7 +218,7 @@ anv_nir_compute_push_layout(nir_shader *nir,
 
       if (robust_flags & BRW_ROBUSTNESS_UBO) {
          const uint32_t push_reg_mask_offset =
-            anv_drv_const_offset(push_reg_mask[nir->info.stage]);
+            anv_drv_const_offset(gfx.push_reg_mask[nir->info.stage]);
          assert(push_reg_mask_offset >= push_start);
          prog_data->push_reg_mask_param =
             (push_reg_mask_offset - push_start) / 4;
