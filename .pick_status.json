@@ -924,7 +924,7 @@
         "description": "vk_cmd_queue_gen: Exclude CmdDispatchGraphAMDX",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2953c93cca245cb7bb28d95fab7cd1208cbb1a55",
         "notes": null
