@@ -4990,7 +4990,7 @@ static void
 anv_get_buffer_memory_requirements(struct anv_device *device,
                                    VkBufferCreateFlags flags,
                                    VkDeviceSize size,
-                                   VkBufferUsageFlags usage,
+                                   VkBufferUsageFlags2KHR usage,
                                    bool is_sparse,
                                    VkMemoryRequirements2* pMemoryRequirements)
 {
@@ -5006,8 +5006,8 @@ anv_get_buffer_memory_requirements(struct anv_device *device,
    uint32_t memory_types =
       (flags & VK_BUFFER_CREATE_PROTECTED_BIT) ?
       device->physical->memory.protected_mem_types :
-      ((usage & (VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-                 VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)) ?
+      ((usage & (VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                 VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)) ?
        device->physical->memory.desc_buffer_mem_types :
        device->physical->memory.default_buffer_mem_types);
 
@@ -5060,6 +5060,15 @@ anv_get_buffer_memory_requirements(struct anv_device *device,
    }
 }
 
+static VkBufferUsageFlags2KHR
+get_buffer_usages(const VkBufferCreateInfo *create_info)
+{
+   const VkBufferUsageFlags2CreateInfoKHR *usage2_info =
+      vk_find_struct_const(create_info->pNext,
+                           BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR);
+   return usage2_info != NULL ? usage2_info->usage : create_info->usage;
+}
+
 void anv_GetDeviceBufferMemoryRequirements(
     VkDevice                                    _device,
     const VkDeviceBufferMemoryRequirements*     pInfo,
@@ -5068,6 +5077,7 @@ void anv_GetDeviceBufferMemoryRequirements(
    ANV_FROM_HANDLE(anv_device, device, _device);
    const bool is_sparse =
       pInfo->pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+   VkBufferUsageFlags2KHR usages = get_buffer_usages(pInfo->pCreateInfo);
 
    if ((device->physical->sparse_type == ANV_SPARSE_TYPE_NOT_SUPPORTED) &&
        INTEL_DEBUG(DEBUG_SPARSE) &&
@@ -5080,7 +5090,7 @@ void anv_GetDeviceBufferMemoryRequirements(
    anv_get_buffer_memory_requirements(device,
                                       pInfo->pCreateInfo->flags,
                                       pInfo->pCreateInfo->size,
-                                      pInfo->pCreateInfo->usage,
+                                      usages,
                                       is_sparse,
                                       pMemoryRequirements);
 }
