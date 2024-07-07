@@ -504,7 +504,7 @@
         "description": "intel/common: Remove blank lines in intel_set_ps_dispatch_state() (xe2)",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
