@@ -175,6 +175,115 @@ struct intel_perf_query_result {
    bool query_disjoint;
 };
 
+struct intel_perf_query_eustall_event {
+   /**
+    * Offset of instruction within shader cache, bit shifted by 3.
+    * Should be unique identifier for event.
+    */
+   uint64_t ip_addr;
+
+   /**
+    * Number of EU stalls with at least one thread waiting on Pixel
+    * Shader dependency
+    */
+   uint64_t tdr_count;
+
+   /**
+    * Number of samples with at least one thread waiting on any
+    * other dependency (Flag/EoT etc). Multiple stall reasons can
+    * qualify during the same cycle
+    */
+   uint64_t other_count;
+
+   /**
+    * Number of samples with at least one thread waiting for JEU to
+    * complete branch instruction. Multiple stall reasons can qualify
+    * during the same cycle
+    */
+   uint64_t control_count;
+
+   /**
+    * Number of samples with at least one thread ready to be
+    * scheduled (Grf conf/send holds etc). Multiple stall reasons can
+    * qualify during the same cycle
+    */
+   uint64_t pipestall_count;
+
+   /**
+    * Number of samples with at least one thread waiting for SEND
+    * message to be dispatched from EU. Multiple stall reasons can
+    * qualify during the same cycle
+    */
+   uint64_t send_count;
+
+   /**
+    * Number of samples with at least one thread waiting for ALU to
+    * write GRF/ACC register. Multiple stall reasons can qualify
+    * during the same cycle
+    */
+   uint64_t dist_acc_count;
+
+   /**
+    * Number of samples with at least one thread waiting for
+    * Scoreboard token to be available. Multiple stall reasons can
+    * qualify during the same cycle
+    */
+   uint64_t sbid_count;
+
+   /**
+    * Number of samples with at least one thread waiting for
+    * Gateway to write Notify register. Multiple stall reasons can
+    * qualify during the same cycle
+    */
+   uint64_t sync_count;
+
+   /**
+    * Number of samples with at least one thread waiting for
+    * Instruction Fetch.  Multiple stall reasons can qualify during
+    * the same cycle
+    */
+   uint64_t inst_fetch_count;
+
+   /**
+    * Number of samples where no threads are waiting
+    */
+   uint64_t active_count;
+};
+
+struct intel_perf_query_eustall_result {
+   /**
+    * Storage for accumulated samples. Hash table containing
+    * intel_perf_query_eustall_event values with ip_addr as key.
+    */
+   struct hash_table *accumulator;
+
+   /**
+    * Hw ID used by the context on which the query was running.
+    */
+   uint32_t hw_id;
+
+   /**
+    * Number of records accumulated to produce the results.
+    */
+   uint32_t records_accumulated;
+
+   /**
+    * Overflow event occurred during sampling.
+    */
+   bool overflow;
+
+   /**
+    * Size of eu sample records in bytes. Obtained from
+    * kmd headers.
+    */
+   size_t record_size;
+
+   /**
+    * Number of bytes to next record to parse.
+    */
+   int bytes_to_next_record;
+};
+
 typedef uint64_t (*intel_counter_read_uint64_t)(struct intel_perf_config *perf,
                                                 const struct intel_perf_query_info *query,
                                                 const struct intel_perf_query_result *results);
@@ -521,7 +630,16 @@ void intel_perf_query_result_accumulate_fields(struct intel_perf_query_result *r
                                                const void *end,
                                                bool no_oa_accumulate);
 
+/** Accumulate EU stall sampling data, ensuring data from previously seen offsets
+ * get aggregated.
+ */
+void intel_perf_eustall_accumulate_results(struct intel_perf_query_eustall_result *result,
+                                           const void *start,
+                                           const void *end,
+                                           size_t record_size);
+
 void intel_perf_query_result_clear(struct intel_perf_query_result *result);
+void intel_perf_query_eustall_result_clear(struct intel_perf_query_eustall_result *result);
 
 /** Debug helper printing out query data.
  */
@@ -608,6 +726,17 @@ int intel_perf_stream_set_metrics_id(struct intel_perf_config *perf_config,
                                      uint64_t metrics_set_id,
                                      struct intel_bind_timeline *timeline);
 
+int intel_perf_eustall_stream_open(struct intel_device_info *devinfo, int drm_fd,
+                                   uint32_t sample_rate, uint32_t min_event_count);
+int intel_perf_eustall_stream_set_state(struct intel_device_info *devinfo,
+                                        int perf_stream_fd, bool enable);
+int intel_perf_eustall_stream_record_size(struct intel_device_info *devinfo,
+                                          int drm_fd);
+int intel_perf_eustall_stream_sample_rate(struct intel_device_info *devinfo,
+                                          int drm_fd);
+int intel_perf_eustall_stream_read_samples(struct intel_device_info *devinfo,
+                                           int perf_stream_fd, uint8_t *buffer,
+                                           size_t buffer_len, bool *overflow);
 #ifdef __cplusplus
 } // extern "C"
 #endif
