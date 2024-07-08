@@ -292,6 +292,9 @@ optimizations = [
    (('bcsel', ignore_exact('feq', b, 0.0), 1.0, ('fexp2', ('fmul@32', a, b))),
     ('fexp2', ('fmulz', a, b)),
     has_fmulz+' && !'+signed_zero_inf_nan_preserve_32),
+   (('bcsel', ignore_exact('feq', b, 0.0), 1.0, ('fexp2', ('fmulz@32', a, b))),
+    ('fexp2', ('fmulz', a, b)),
+    '!'+signed_zero_inf_nan_preserve_32),
 ]
 
 # Shorthand for the expansion of just the dot product part of the [iu]dp4a
@@ -1460,6 +1463,8 @@ optimizations.extend([
    # Exponential/logarithmic identities
    (('~fexp2', ('flog2', a)), a), # 2^lg2(a) = a
    (('~flog2', ('fexp2', a)), a), # lg2(2^a) = a
+   # 32-bit fpow should use fmulz to fix https://gitlab.freedesktop.org/mesa/mesa/-/issues/11464 (includes apitrace)
+   (('fpow@32', a, b), ('fexp2', ('fmulz', ('flog2', a), b)), 'options->lower_fpow && ' + has_fmulz), # a^b = 2^(lg2(a)*b)
    (('fpow', a, b), ('fexp2', ('fmul', ('flog2', a), b)), 'options->lower_fpow'), # a^b = 2^(lg2(a)*b)
    (('~fexp2', ('fmul', ('flog2', a), b)), ('fpow', a, b), '!options->lower_fpow'), # 2^(lg2(a)*b) = a^b
    (('~fexp2', ('fadd', ('fmul', ('flog2', a), b), ('fmul', ('flog2', c), d))),
