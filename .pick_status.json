@@ -17864,7 +17864,7 @@
         "description": "Revert \"rusticl/queue: gracefully stop the worker thread\"",
         "nominated": false,
         "nomination_type": 2,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9d458b7fc15a87720397b5b3d94a0971ed4aa59d",
         "notes": null
