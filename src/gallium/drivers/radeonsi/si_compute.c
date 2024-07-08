@@ -216,6 +216,7 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
    pipe_reference_init(&sel->base.reference, 1);
    sel->stage = MESA_SHADER_COMPUTE;
    sel->screen = sscreen;
+   simple_mtx_init(&sel->mutex, mtx_plain);
    sel->const_and_shader_buf_descriptors_index =
       si_const_and_shader_buffer_descriptors_idx(PIPE_SHADER_COMPUTE);
    sel->sampler_and_images_descriptors_index =
@@ -478,6 +479,16 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
    }
 
    if (config->scratch_bytes_per_wave) {
+      /* Prevent race conditions for accesses to shader->scratch_va and shader->bo, which
+       * can change when scratch_va is updated. Any accesses to shader->bo must also be inside
+       * the lock.
+       *
+       * TODO: This lock could be removed if the scratch address was passed via user SGPRs instead
+       *       of the shader binary.
+       */
+      if (!sctx->screen->info.has_scratch_base_registers)
+         simple_mtx_lock(&shader->selector->mutex);
+
       /* Update max_seen_compute_scratch_bytes_per_wave and compute_tmpring_size. */
       ac_get_scratch_tmpring_size(&sctx->screen->info,
                                   config->scratch_bytes_per_wave,
@@ -500,6 +511,12 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
 
    radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, shader->bo,
                              RADEON_USAGE_READ | RADEON_PRIO_SHADER_BINARY);
+
+   /* shader->bo can't be used after this if the scratch address is inserted into the shader
+    * binary.
+    */
+   if (config->scratch_bytes_per_wave && !sctx->screen->info.has_scratch_base_registers)
+      simple_mtx_unlock(&shader->selector->mutex);
 
    if (sctx->screen->info.has_set_sh_pairs_packed) {
       gfx11_push_compute_sh_reg(R_00B830_COMPUTE_PGM_LO, shader_va >> 8);
@@ -1093,6 +1110,7 @@ void si_destroy_compute(struct si_compute *program)
 
    si_shader_destroy(&program->shader);
    ralloc_free(program->sel.nir);
+   simple_mtx_destroy(&sel->mutex);
    FREE(program);
 }
 
