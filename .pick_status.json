@@ -154,7 +154,7 @@
         "description": "nir/opt_algebraic: use fmulz for fpow lowering to fix incorrect rendering",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9bc1fb4c07fa3ea50a71c434b5f8161bc0954bb4",
         "notes": null
