@@ -784,7 +784,7 @@
         "description": "intel/nir: Don't needlessly split u2f16 for nir_type_uint32",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f695a9fed2b0eac39acdaca132f5fc8c43c9f7d7",
         "notes": null
