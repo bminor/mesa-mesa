@@ -4,6 +4,7 @@
 
 #include "anv_private.h"
 
+#include <sys/stat.h>
 #include <math.h>
 
 #include "util/u_debug.h"
@@ -25,6 +26,165 @@
 #include "genX_mi_builder.h"
 
 #if GFX_VERx10 >= 125
+
+/* TODO: Dumping things on destory doesn't look robust. Would be nice to track
+ * the debug operation when the command buffer is executed and synchronously
+ * wait on the command buffer and write the data to disk upon completion.
+ *
+ * Each time a CmdBuildAS is completed, we append one element to bvhDumpArray.
+ * When DestroyAccelerationStructure is called every time, we dump the
+ * accumulated elements so far to files.
+ */
+static uint32_t blas_id = 0;
+static uint32_t tlas_id = 0;
+static struct bvh_dump_struct *bvhDumpArray = NULL;
+static uint32_t bvh_dump_array_size = 0;
+
+/* clear out everything from (header + bvh_offset) to the end */
+static void
+clear_out_anv_bvh(struct anv_cmd_buffer *cmd_buffer,
+                  VkDeviceAddress header_addr, struct bvh_layout bvh_layout)
+{
+   uint64_t offset = bvh_layout.bvh_offset;
+   uint64_t clear_size = bvh_layout.size - bvh_layout.bvh_offset;
+   assert(clear_size % 4 == 0);
+   struct anv_address anv_bvh_addr = anv_address_from_u64(header_addr + offset);
+
+   anv_cmd_buffer_fill_area(cmd_buffer, anv_bvh_addr, clear_size, 0, false);
+
+   genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
+                                cmd_buffer->state.current_pipeline,
+                                ANV_PIPE_END_OF_PIPE_SYNC_BIT |
+                                ANV_PIPE_DATA_CACHE_FLUSH_BIT |
+                                ANV_PIPE_HDC_PIPELINE_FLUSH_BIT |
+                                ANV_PIPE_UNTYPED_DATAPORT_CACHE_FLUSH_BIT);
+}
+
+static void
+expand_bvh_dump_array()
+{
+   /* Reallocate bvh dump array */
+   bvhDumpArray =
+      (struct bvh_dump_struct *)realloc(bvhDumpArray,
+                                        (bvh_dump_array_size + 1) *
+                                        sizeof(struct bvh_dump_struct));
+   if (bvhDumpArray == NULL) {
+      perror("Failed to reallocate memory for bvh dump array.");
+   }
+
+   bvh_dump_array_size++;
+}
+
+static void
+append_bvh_dump(struct anv_cmd_buffer *cmd_buffer, VkDeviceAddress src,
+                uint64_t dump_size, VkGeometryTypeKHR geometry_type,
+                enum bvh_dump_type dump_type)
+{
+   assert(dump_size % 4 == 0);
+
+   expand_bvh_dump_array();
+
+   struct anv_device *device = cmd_buffer->device;
+   struct bvh_dump_struct *latestElement =
+      bvhDumpArray + bvh_dump_array_size - 1;
+   struct anv_bo *bo = NULL;
+
+   VkResult result = anv_device_alloc_bo(device, "dump_bvh", dump_size,
+                                         ANV_BO_ALLOC_MAPPED |
+                                         ANV_BO_ALLOC_HOST_CACHED_COHERENT, 0,
+                                         &bo);
+   if (result != VK_SUCCESS) {
+      printf("Failed to allocate bvh for dump\n");
+      vk_command_buffer_set_error(&cmd_buffer->vk, result);
+      return;
+   }
+
+   latestElement->bo = bo;
+   latestElement->bvh_id = geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR ?
+                           tlas_id : blas_id;
+   latestElement->dump_size = dump_size;
+   latestElement->geometry_type = geometry_type;
+   latestElement->dump_type = dump_type;
+
+   struct anv_address dst_addr = { .bo = latestElement->bo, .offset = 0 };
+   struct anv_address src_addr = anv_address_from_u64(src);
+   anv_cmd_copy_addr(cmd_buffer, src_addr, dst_addr, latestElement->dump_size);
+
+   genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
+                                cmd_buffer->state.current_pipeline,
+                                ANV_PIPE_CS_STALL_BIT);
+}
+
+static void
+debug_dump_bvh(struct anv_cmd_buffer *cmd_buffer, VkDeviceAddress header_addr,
+               uint64_t bvh_anv_size, VkDeviceAddress intermediate_header_addr,
+               VkDeviceAddress intermediate_as_addr, uint32_t leaf_count,
+               VkGeometryTypeKHR geometry_type)
+{
+   if (INTEL_DEBUG(DEBUG_BVH_BLAS) &&
+       geometry_type != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      append_bvh_dump(cmd_buffer, header_addr, bvh_anv_size, geometry_type,
+                      BVH_ANV);
+   }
+
+   if (INTEL_DEBUG(DEBUG_BVH_TLAS) &&
+       geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      append_bvh_dump(cmd_buffer, header_addr, bvh_anv_size, geometry_type,
+                      BVH_ANV);
+   }
+
+   if (INTEL_DEBUG(DEBUG_BVH_BLAS_IR_HDR) &&
+       geometry_type != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      append_bvh_dump(cmd_buffer, intermediate_header_addr,
+                      sizeof(struct vk_ir_header), geometry_type, BVH_IR_HDR);
+   }
+
+   if (INTEL_DEBUG(DEBUG_BVH_TLAS_IR_HDR) &&
+       geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      append_bvh_dump(cmd_buffer, intermediate_header_addr,
+                      sizeof(struct vk_ir_header), geometry_type, BVH_IR_HDR);
+   }
+
+   uint32_t internal_node_count = MAX2(leaf_count, 2) - 1;
+   uint64_t internal_node_total_size = sizeof(struct vk_ir_box_node) *
+                                       internal_node_count;
+
+   if (INTEL_DEBUG(DEBUG_BVH_BLAS_IR_AS) &&
+       geometry_type != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      uint64_t leaf_total_size;
+
+      switch (geometry_type) {
+      case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
+         leaf_total_size = sizeof(struct vk_ir_triangle_node) * leaf_count;
+         break;
+      case VK_GEOMETRY_TYPE_AABBS_KHR:
+         leaf_total_size = sizeof(struct vk_ir_aabb_node) * leaf_count;
+         break;
+      default:
+         unreachable("invalid geometry type");
+      }
+
+      append_bvh_dump(cmd_buffer, intermediate_as_addr,
+                      internal_node_total_size + leaf_total_size,
+                      geometry_type, BVH_IR_AS);
+   }
+
+   if (INTEL_DEBUG(DEBUG_BVH_TLAS_IR_AS) &&
+       geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      uint64_t leaf_total_size = sizeof(struct vk_ir_instance_node) *
+                                 leaf_count;
+      append_bvh_dump(cmd_buffer, intermediate_as_addr,
+                      internal_node_total_size + leaf_total_size,
+                      geometry_type, BVH_IR_AS);
+   }
+
+
+   if (geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+      tlas_id++;
+   } else {
+      blas_id++;
+   }
+}
 
 static const uint32_t encode_spv[] = {
 #include "bvh/encode.spv.h"
@@ -183,6 +343,9 @@ anv_encode_as(VkCommandBuffer commandBuffer,
               uint32_t key,
               struct vk_acceleration_structure *dst)
 {
+   if (INTEL_DEBUG(DEBUG_BVH_NO_BUILD))
+      return;
+
    VK_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    struct anv_device *device = cmd_buffer->device;
 
@@ -353,6 +516,19 @@ anv_init_header(VkCommandBuffer commandBuffer,
       struct anv_address addr = anv_address_from_u64(header_addr + base);
       anv_cmd_buffer_update_addr(cmd_buffer, addr, 0, header_size,
                                  header_ptr, false);
+   }
+
+   if (INTEL_DEBUG(DEBUG_BVH_ANY)) {
+      debug_dump_bvh(cmd_buffer, header_addr, bvh_layout.size,
+                     intermediate_header_addr, intermediate_as_addr,
+                     leaf_count, geometry_type);
+
+      /* Nullify tlas and send zeros to gpu, so that tlas traversal will return
+       * early. Doing this can prevent the gpu hang caused by incorrect bvh
+       * traversal.
+       */
+      if (geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR)
+         clear_out_anv_bvh(cmd_buffer, header_addr, bvh_layout);
    }
 }
 
@@ -739,4 +915,103 @@ genX(WriteAccelerationStructuresPropertiesKHR)(
    return vk_error(device, VK_ERROR_FEATURE_NOT_PRESENT);
 }
 
+static void
+create_directory(const char *dir, const char *sub_dir)
+{
+   char full_path[PATH_MAX];
+   snprintf(full_path, sizeof(full_path), "%s/%s", dir, sub_dir);
+
+   if (mkdir(dir, 0777) == -1 && errno != EEXIST) {
+      perror("Error creating directory");
+      return;
+   }
+
+   if (mkdir(full_path, 0777) == -1 && errno != EEXIST) {
+      perror("Error creating sub directory");
+      return;
+   }
+}
+
+static void
+create_dump_file(struct bvh_dump_struct *bvh)
+{
+   if (bvh == NULL) {
+      fprintf(stderr, "Error: BVH DUMP structure is NULL\n");
+      return;
+   }
+
+   char file_name[256];
+   const char *dump_directory = "bvh_dump";
+   const char *dump_sub_directory = NULL;
+
+   switch (bvh->dump_type) {
+   case BVH_ANV:
+      dump_sub_directory = "BVH_ANV";
+      break;
+   case BVH_IR_HDR:
+      dump_sub_directory = "BVH_IR_HDR";
+      break;
+   case BVH_IR_AS:
+      dump_sub_directory = "BVH_IR_AS";
+      break;
+   default:
+      unreachable("invalid dump type");
+   }
+
+   create_directory(dump_directory, dump_sub_directory);
+
+   snprintf(file_name, sizeof(file_name),
+            bvh->geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR
+               ? "%s/%s/tlas_%d.txt"
+               : "%s/%s/blas_%d.txt",
+            dump_directory, dump_sub_directory, bvh->bvh_id);
+
+   FILE *file = fopen(file_name, "w");
+   if (file == NULL) {
+      perror("Error creating file");
+      return;
+   }
+
+   fprintf(stderr, "Dump File created: %s\n", file_name);
+
+   uint8_t *addr = (uint8_t *)(bvh->bo->map);
+   /* Dump every bytes like this: B0 B1 B2 B3 ... B15 */
+   for (uint64_t i = 0; i < bvh->dump_size; i++) {
+      uint8_t result = *(volatile uint8_t *)((uint8_t *)addr + i);
+      fprintf(file, "%02" PRIx8 " ", result);
+      if ((i + 1) % 16 == 0) {
+         fprintf(file, "\n");
+      }
+   }
+
+   fclose(file);
+}
+
+void
+genX(DestroyAccelerationStructureKHR)(
+    VkDevice                                    _device,
+    VkAccelerationStructureKHR                  accelerationStructure,
+    const VkAllocationCallbacks*                pAllocator)
+{
+
+   if (INTEL_DEBUG(DEBUG_BVH_ANY)) {
+      /* create bvh dump file */
+      ANV_FROM_HANDLE(anv_device, device, _device);
+      for (uint32_t i = 0; i < bvh_dump_array_size; i++) {
+         struct bvh_dump_struct *bvh = bvhDumpArray + i;
+         create_dump_file(bvh);
+
+         if (bvh && bvh->bo) {
+            anv_device_release_bo(device, bvh->bo);
+         }
+      }
+
+      free(bvhDumpArray);
+      bvhDumpArray = NULL;
+      bvh_dump_array_size = 0;
+   }
+
+   vk_common_DestroyAccelerationStructureKHR(_device, accelerationStructure,
+                                             pAllocator);
+}
 #endif

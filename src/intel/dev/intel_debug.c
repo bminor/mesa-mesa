@@ -94,6 +94,13 @@ static const struct debug_control debug_control[] = {
                     DEBUG_TES | DEBUG_GS | DEBUG_CS |
                     DEBUG_RT | DEBUG_TASK | DEBUG_MESH },
    { "rt",          DEBUG_RT },
+   { "bvh_blas",    DEBUG_BVH_BLAS},
+   { "bvh_tlas",    DEBUG_BVH_TLAS},
+   { "bvh_blas_ir_hdr", DEBUG_BVH_BLAS_IR_HDR},
+   { "bvh_tlas_ir_hdr", DEBUG_BVH_TLAS_IR_HDR},
+   { "bvh_blas_ir_as",  DEBUG_BVH_BLAS_IR_AS},
+   { "bvh_tlas_ir_as",  DEBUG_BVH_TLAS_IR_AS},
+   { "bvh_no_build",    DEBUG_BVH_NO_BUILD},
    { "task",        DEBUG_TASK },
    { "mesh",        DEBUG_MESH },
    { "stall",       DEBUG_STALL },

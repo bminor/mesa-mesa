@@ -1834,6 +1834,20 @@ enum anv_rt_bvh_build_method {
  */
 #define ANV_RT_UUID_MACRO             "ANV_RT_BVH_0001"
 
+enum bvh_dump_type {
+   BVH_ANV,
+   BVH_IR_HDR,
+   BVH_IR_AS
+};
+
+struct bvh_dump_struct {
+   struct anv_bo *bo;
+   uint32_t bvh_id;
+   uint64_t dump_size;
+   VkGeometryTypeKHR geometry_type;
+   enum bvh_dump_type dump_type;
+};
+
 struct anv_device_astc_emu {
     struct vk_texcompress_astc_state           *texcompress;
 
