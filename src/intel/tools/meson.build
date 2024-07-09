@@ -107,6 +107,18 @@ intel_hang_replay = executable(
   install : true
 )
 
+intel_monitor = executable(
+  'intel_monitor',
+  files('intel_monitor.c',
+        'intel_monitor_eustall.c',
+        'intel_monitor_eustall.h'),
+  dependencies : [dep_libdrm, idep_intel_driver_ds, dep_valgrind],
+  include_directories : [inc_include, inc_src, inc_intel],
+  c_args : [no_override_init_args],
+  gnu_symbol_visibility : 'hidden',
+  install : true
+)
+
 sanitize_data = configuration_data()
 sanitize_data.set(
   'install_libexecdir',

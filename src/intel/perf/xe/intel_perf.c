@@ -433,7 +433,6 @@ xe_perf_eustall_stream_record_size(int drm_fd)
 int
 xe_perf_eustall_stream_sample_rate(int drm_fd)
 {
-   int sampling_rate;
    struct drm_xe_query_eu_stall *eu_stall_data =
       xe_device_query_alloc_fetch(drm_fd, DRM_XE_DEVICE_QUERY_EU_STALL, NULL);
    if (!eu_stall_data)
@@ -441,7 +440,9 @@ xe_perf_eustall_stream_sample_rate(int drm_fd)
 
    assert(eu_stall_data->sampling_rates[0] > 0 &&
           eu_stall_data->sampling_rates[0] < INT_MAX);
-   sampling_rate = (int)eu_stall_data->sampling_rates[0];
+   /* pick slowest rate to reduce chance of overflow */
+   int idx_slowest = eu_stall_data->num_sampling_rates - 1;
+   int sampling_rate = (int)eu_stall_data->sampling_rates[idx_slowest];
    free(eu_stall_data);
    return sampling_rate;
 }
