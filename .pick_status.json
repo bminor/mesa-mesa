@@ -294,7 +294,7 @@
         "description": "anv: Fix assertion failures on BMG (xe2)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "beb0ea24696821d42b336a8170a61eb25c5022d7",
         "notes": null
