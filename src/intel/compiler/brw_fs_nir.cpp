@@ -1886,28 +1886,6 @@ get_nir_src_bindless(nir_to_brw_state &ntb, const nir_src &src)
    return ntb.ssa_bind_infos[src.ssa->index].bindless;
 }
 
-static bool
-is_resource_src(nir_src src)
-{
-   return src.ssa->parent_instr->type == nir_instr_type_intrinsic &&
-          nir_instr_as_intrinsic(src.ssa->parent_instr)->intrinsic == nir_intrinsic_resource_intel;
-}
-
-static brw_reg
-get_resource_nir_src(nir_to_brw_state &ntb, const nir_src &src)
-{
-   if (!is_resource_src(src))
-      return brw_reg();
-
-   assert(ntb.ssa_values[src.ssa->index].is_scalar);
-
-   brw_reg reg = ntb.ssa_values[src.ssa->index];
-
-   reg.type = brw_type_with_size(BRW_TYPE_D, nir_src_bit_size(src));
-
-   return component(reg, 0);
-}
-
 /**
  * Specifying -1 for channel indicates that no channel selection should be applied.
  */
@@ -4815,16 +4793,11 @@ static brw_reg
 get_nir_image_intrinsic_image(nir_to_brw_state &ntb, const brw::fs_builder &bld,
                               nir_intrinsic_instr *instr)
 {
-   if (is_resource_src(instr->src[0])) {
-      brw_reg surf_index = get_resource_nir_src(ntb, instr->src[0]);
-      if (surf_index.file != BAD_FILE)
-         return surf_index;
-   }
+   brw_reg surf_index = get_nir_src_imm(ntb, instr->src[0]);
+   enum brw_reg_type type = brw_type_with_size(BRW_TYPE_UD,
+                                               brw_type_size_bits(surf_index.type));
 
-   brw_reg image = retype(get_nir_src_imm(ntb, instr->src[0]), BRW_TYPE_UD);
-   brw_reg surf_index = image;
-
-   return bld.emit_uniformize(surf_index);
+   return bld.emit_uniformize(retype(surf_index, type));
 }
 
 static brw_reg
@@ -4837,22 +4810,15 @@ get_nir_buffer_intrinsic_index(nir_to_brw_state &ntb, const brw::fs_builder &bld
       instr->intrinsic == nir_intrinsic_store_ssbo_block_intel;
    nir_src src = is_store ? instr->src[1] : instr->src[0];
 
-   if (no_mask_handle)
-      *no_mask_handle = false;
+   brw_reg surf_index = get_nir_src_imm(ntb, src);
 
-   if (nir_src_is_const(src)) {
-      if (no_mask_handle)
-         *no_mask_handle = true;
-      return brw_imm_ud(nir_src_as_uint(src));
-   } else if (is_resource_src(src)) {
-      brw_reg surf_index = get_resource_nir_src(ntb, src);
-      if (surf_index.file != BAD_FILE) {
-         if (no_mask_handle)
-            *no_mask_handle = true;
-         return surf_index;
-      }
-   }
-   return bld.emit_uniformize(get_nir_src(ntb, src));
+   if (no_mask_handle)
+      *no_mask_handle = surf_index.is_scalar || surf_index.file == IMM;
+
+   enum brw_reg_type type = brw_type_with_size(BRW_TYPE_UD,
+                                               brw_type_size_bits(surf_index.type));
+
+   return bld.emit_uniformize(retype(surf_index, type));
 }
 
 /**
