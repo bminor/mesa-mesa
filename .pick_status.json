@@ -34,7 +34,7 @@
         "description": "ac/surface: finish display DCC for gfx11.5",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6835257246c239fd3c3f7bed1af1952b2fd6584d",
         "notes": null
