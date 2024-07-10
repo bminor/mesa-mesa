@@ -998,6 +998,10 @@ struct pipe_grid_info
    unsigned draw_count;
    unsigned indirect_draw_count_offset;
    struct pipe_resource *indirect_draw_count;
+
+   /* Resources which might be indirectly accessed through global load/store operations */
+   uint32_t num_globals;
+   struct pipe_resource **globals;
 };
 
 /**

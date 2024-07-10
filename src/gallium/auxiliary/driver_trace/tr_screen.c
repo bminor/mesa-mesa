@@ -855,6 +855,24 @@ trace_screen_resource_get_info(struct pipe_screen *_screen,
    trace_dump_call_end();
 }
 
+static uint64_t
+trace_screen_resource_get_address(struct pipe_screen *_screen,
+                                  struct pipe_resource *resource)
+{
+   struct trace_screen *tr_screen = trace_screen(_screen);
+   struct pipe_screen *screen = tr_screen->screen;
+
+   trace_dump_call_begin("pipe_screen", "resource_get_address");
+   trace_dump_arg(ptr, screen);
+   trace_dump_arg(ptr, resource);
+
+   uint64_t res = screen->resource_get_address(screen, resource);
+
+   trace_dump_ret(uint, res);
+   trace_dump_call_end();
+   return res;
+}
+
 static struct pipe_resource *
 trace_screen_resource_from_memobj(struct pipe_screen *_screen,
                                   const struct pipe_resource *templ,
@@ -1475,6 +1493,7 @@ trace_screen_create(struct pipe_screen *screen)
    tr_scr->base.resource_get_handle = trace_screen_resource_get_handle;
    SCR_INIT(resource_get_param);
    SCR_INIT(resource_get_info);
+   SCR_INIT(resource_get_address);
    SCR_INIT(resource_from_memobj);
    SCR_INIT(resource_changed);
    tr_scr->base.resource_destroy = trace_screen_resource_destroy;

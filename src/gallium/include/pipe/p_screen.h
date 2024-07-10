@@ -821,6 +821,15 @@ struct pipe_screen {
                                             enum pipe_video_entrypoint entrypoint);
 
    /**
+    * Returns the virtual address of \p resource. \p resource needs to be created
+    * with PIPE_RESOURCE_FLAG_FIXED_ADDRESS.
+    *
+    * \return the virtual address of the given resource. Returns 0 on failure.
+    */
+   uint64_t (*resource_get_address)(struct pipe_screen *screen,
+                                    struct pipe_resource *resource);
+
+   /**
     * pipe_screen is inherited by driver's screen but a simple cast to convert
     * from the generic interface to the driver version won't work if dd_pipe
     * is used.
