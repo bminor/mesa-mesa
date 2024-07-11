@@ -1883,6 +1883,9 @@ iris_resource_get_handle(struct pipe_screen *pscreen,
    }
 #endif
 
+   /* TODO: TILE64 modifier support in the KMD */
+   assert(res->surf.tiling != ISL_TILING_64);
+
    switch (whandle->type) {
    case WINSYS_HANDLE_TYPE_SHARED:
       iris_gem_set_tiling(bo, &res->surf);
