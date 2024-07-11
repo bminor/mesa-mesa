@@ -101,6 +101,8 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
    assert(is_valid);
 
    dominator_tree(program.get());
+   if (program->should_repair_ssa)
+      repair_ssa(program.get());
    lower_phis(program.get());
 
    if (program->gfx_level <= GFX7)
@@ -114,6 +116,10 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
          value_numbering(program.get());
       if (!(debug_flags & DEBUG_NO_OPT))
          optimize(program.get());
+
+      /* Optimization may move SGPR uses down, requiring further SSA repair. */
+      if (program->should_repair_ssa && repair_ssa(program.get()))
+         lower_phis(program.get());
    }
 
    /* cleanup and exec mask handling */

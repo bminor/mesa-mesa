@@ -50,6 +50,14 @@ We have two types of instructions:
 Each instruction can have operands (temporaries that it reads), and definitions (temporaries that it writes).
 Temporaries can be fixed to a specific register, or just specify a register class (either a single register, or a vector of several registers).
 
+#### Repair SSA
+
+This repairs SSA in the case of mismatches between the logical and linear CFG, where the definition of a linear temporary logically dominate its users but not linearly. This is followed by lower_phis to lower the phis created by this pass.
+
+Instruction selection might create mismatches between the logical CFG (the input NIR's CFG) and the linear CFG in the following situations:
+- We add a break at the end of a loop in case it has no active invocations (an empty exec can prevent any logical breaks from being taken). This creates a linear edge but no logical edge, and SGPR uses outside the loop can require a phi.
+- An SGPR is defined in one side of a divergent IF but it used in or after the merge block. If the other side of the IF ends in a branch, a phi is not necessary according to the logical CFG, but it is for the linear CFG. However, `sanitize_cf_list()` should already resolve this before translation from NIR for additional reasons.
+
 #### Lower Phis
 
 After instructions selection, some phi instructions need further lowering. This includes booleans which are represented as scalar values. Because the scalar ALU doesn't respect the execution mask, divergent boolean phis need to be lowered to SALU shuffle code. This pass also inserts the necessary code in order to fix phis with subdword access and repairs phis in case of mismatches between logical and linear CFG.
@@ -68,6 +76,7 @@ This pass does dominator-tree value numbering.
 
 In this phase, simpler instructions are combined into more complex instructions (like the different versions of multiply-add as well as neg, abs, clamp, and output modifiers) and constants are inlined, moves are eliminated, etc.
 Exactly which optimizations are performed depends on the hardware for which the shader is being compiled.
+After this, repair_ssa needs to be run again in case it moves a SGPR use to a different block.
 
 #### Setup of reduction temporaries
 

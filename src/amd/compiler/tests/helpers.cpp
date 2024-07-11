@@ -382,6 +382,8 @@ finish_isel_test(enum ac_hw_stage hw_stage, unsigned wave_size)
 
    select_program(program.get(), 1, &nb->shader, &config, &options, &info, &args);
    dominator_tree(program.get());
+   if (program->should_repair_ssa)
+      repair_ssa(program.get());
    lower_phis(program.get());
 
    ralloc_free(nb->shader);
