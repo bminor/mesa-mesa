@@ -214,7 +214,7 @@
         "description": "zink/kopper: Set VK_COMPOSITE_ALPHA_OPAQUE_BIT when PresentOpaque is set",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8ade5588e39d736bdeab9bdd8ffa7cbfb6a5191e",
         "notes": null
