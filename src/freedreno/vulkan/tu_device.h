@@ -204,19 +204,6 @@ struct tu_instance
 VK_DEFINE_HANDLE_CASTS(tu_instance, vk.base, VkInstance,
                        VK_OBJECT_TYPE_INSTANCE)
 
-struct tu_queue
-{
-   struct vk_queue vk;
-
-   struct tu_device *device;
-
-   uint32_t msm_queue_id;
-   uint32_t priority;
-
-   int fence;           /* timestamp/fence of the last queue submission */
-};
-VK_DEFINE_HANDLE_CASTS(tu_queue, vk.base, VkQueue, VK_OBJECT_TYPE_QUEUE)
-
 /* This struct defines the layout of the global_bo */
 struct tu6_global
 {
@@ -280,6 +267,7 @@ struct tu_pvtmem_bo {
 };
 
 struct tu_virtio_device;
+struct tu_queue;
 
 struct tu_device
 {
@@ -501,6 +489,10 @@ tu_get_system_heap_size(struct tu_physical_device *physical_device);
 VkResult
 tu_physical_device_init(struct tu_physical_device *device,
                         struct tu_instance *instance);
+
+void
+tu_physical_device_get_global_priority_properties(const struct tu_physical_device *pdevice,
+                                                  VkQueueFamilyGlobalPriorityPropertiesKHR *props);
 
 uint64_t
 tu_device_ticks_to_ns(struct tu_device *dev, uint64_t ts);

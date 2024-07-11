@@ -23,6 +23,7 @@
 #include "tu_device.h"
 #include "tu_dynamic_rendering.h"
 #include "tu_knl_drm.h"
+#include "tu_queue.h"
 #include "tu_rmv.h"
 #include "redump.h"
 

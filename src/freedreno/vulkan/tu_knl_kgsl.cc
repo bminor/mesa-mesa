@@ -29,6 +29,7 @@
 #include "tu_cs.h"
 #include "tu_device.h"
 #include "tu_dynamic_rendering.h"
+#include "tu_queue.h"
 #include "tu_rmv.h"
 
 /* ION_HEAP(ION_SYSTEM_HEAP_ID) */

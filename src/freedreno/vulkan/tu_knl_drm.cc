@@ -10,6 +10,7 @@
 
 #include "tu_knl_drm.h"
 #include "tu_device.h"
+#include "tu_queue.h"
 #include "tu_rmv.h"
 
 VkResult

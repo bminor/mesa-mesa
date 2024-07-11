@@ -28,6 +28,7 @@
 #include "tu_device.h"
 #include "tu_dynamic_rendering.h"
 #include "tu_knl_drm.h"
+#include "tu_queue.h"
 
 #include "virglrenderer_hw.h"
 #include "msm_proto.h"

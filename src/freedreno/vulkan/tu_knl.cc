@@ -24,6 +24,7 @@
 
 #include "tu_device.h"
 #include "tu_knl.h"
+#include "tu_queue.h"
 #include "tu_rmv.h"
 
 
