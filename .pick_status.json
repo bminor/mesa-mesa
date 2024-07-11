@@ -254,7 +254,7 @@
         "description": "util/glsl2spirv: fixup the generated depfile when copying sources",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "46644ba371e817d8f33ad7b46ce2ba7775e6d2cc",
         "notes": null
