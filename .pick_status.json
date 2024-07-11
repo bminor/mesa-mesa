@@ -1144,7 +1144,7 @@
         "description": "mesa/st: load state params for feedback draws with allow_st_finalize_nir_twice",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5eb0136a3c561e25d3f274e33a86812cfb2af589",
         "notes": null
