@@ -264,7 +264,7 @@
         "description": "anv: reimplement the anv_fake_nonlocal_memory workaround",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "94989b45a5ed91088777f9be100c0ceba474ce52",
         "notes": null
