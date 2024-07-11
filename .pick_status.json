@@ -174,7 +174,7 @@
         "description": "nvk: Fix indirect cbuf binds pre-Turing",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ee29a8d1cdbdc553caac8ceeda03f5c737eda0f2",
         "notes": null
