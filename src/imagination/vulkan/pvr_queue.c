@@ -605,7 +605,7 @@ pvr_process_event_cmd_wait(struct pvr_device *device,
       uint32_t wait_count = 0;
 
       for (uint32_t i = 0; i < sub_cmd->count; i++) {
-         if (sub_cmd->wait_at_stage_masks[i] & stage) {
+         if (sub_cmd->wait_at_stage_masks[i] & BITFIELD_BIT(stage)) {
             waits[wait_count++] = (struct vk_sync_wait){
                .sync = sub_cmd->events[i]->sync,
                .stage_mask = ~(VkPipelineStageFlags2)0,
