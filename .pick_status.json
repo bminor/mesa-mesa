@@ -1054,7 +1054,7 @@
         "description": "radeonsi: don't update compute scratch if the compute shader doesn't use it",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3b0bfd254f722e5773f70c6cb367e859876a4208",
         "notes": null
