@@ -164,7 +164,7 @@
         "description": "nvk: Don't advertise sparse residency on Maxwell A",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "48803ac53db8daf26af70c9d2b68802d29e1128b",
         "notes": null
