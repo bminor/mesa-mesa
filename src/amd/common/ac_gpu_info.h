@@ -264,6 +264,7 @@ struct radeon_info {
    uint32_t wave64_vgpr_alloc_granularity;
    uint32_t max_scratch_waves;
    uint32_t attribute_ring_size_per_se;
+   bool has_scratch_base_registers;
 
    /* Render backends (color + depth blocks). */
    uint32_t r300_num_gb_pipes;
