@@ -2354,7 +2354,7 @@
         "description": "aco: only remove branch jumping over SMEM/barrier if it's never taken",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
