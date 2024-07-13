@@ -134,7 +134,7 @@
         "description": "d3d10umd: Use pipe_resource_usage enum in translate_resource_usage()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "40785d9a5240ae5a69f0235b353c057b050782b9",
         "notes": null
