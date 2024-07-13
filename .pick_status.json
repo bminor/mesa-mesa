@@ -1974,7 +1974,7 @@
         "description": "nak: Add minimum bindgen requirement",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "944365802f8ef53e37db38f15f2c2dc6b820d132",
         "notes": null
