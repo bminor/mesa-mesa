@@ -155,8 +155,7 @@ intel_gem_supports_protected_context(int fd, enum intel_kmd_type kmd_type)
    case INTEL_KMD_TYPE_I915:
       return i915_gem_supports_protected_context(fd);
    case INTEL_KMD_TYPE_XE:
-      /* TODO: so far Xe don't have support for protected contexts/engines */
-      return false;
+      return xe_gem_supports_protected_exec_queue(fd);
    default:
       unreachable("Missing");
       return false;

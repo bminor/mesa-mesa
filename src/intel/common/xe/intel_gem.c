@@ -27,6 +27,9 @@
 #include "common/intel_gem.h"
 #include "common/xe/intel_engine.h"
 
+#include "util/os_time.h"
+#include "util/timespec.h"
+
 bool
 xe_gem_read_render_timestamp(int fd, uint64_t *value)
 {
@@ -102,4 +105,21 @@ intel_xe_gem_add_ext(uint64_t *ptr, uint32_t ext_name, void *data)
    ext->next_extension = *ptr;
    ext->name = ext_name;
    *ptr = (uintptr_t)ext;
+}
+
+bool
+xe_gem_supports_protected_exec_queue(int fd)
+{
+   struct drm_xe_query_pxp_status pxp_status = {};
+   struct drm_xe_device_query query = {
+      .query = DRM_XE_DEVICE_QUERY_PXP_STATUS,
+      .size = sizeof(pxp_status),
+      .data = (uintptr_t)&pxp_status,
+   };
+
+   /* returning as supported even when PXP is still in progress.
+    * exec_queue_create with PXP set will return EBUSY until PXP
+    * initialization is completed
+    */
+   return intel_ioctl(fd, DRM_IOCTL_XE_DEVICE_QUERY, &query) == 0;
 }
