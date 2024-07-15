@@ -73,16 +73,14 @@ enum Label {
    label_canonicalized = 1ull << 32, /* 1ull to prevent sign extension */
    label_extract = 1ull << 33,
    label_insert = 1ull << 34,
-   label_dpp16 = 1ull << 35,
-   label_dpp8 = 1ull << 36,
    label_f2f32 = 1ull << 37,
    label_f2f16 = 1ull << 38,
    label_split = 1ull << 39,
 };
 
-static constexpr uint64_t instr_usedef_labels =
-   label_vec | label_mul | label_bitwise | label_uniform_bitwise | label_minmax | label_usedef |
-   label_extract | label_dpp16 | label_dpp8 | label_f2f32;
+static constexpr uint64_t instr_usedef_labels = label_vec | label_mul | label_bitwise |
+                                                label_uniform_bitwise | label_minmax |
+                                                label_usedef | label_extract | label_f2f32;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -399,22 +397,6 @@ struct ssa_info {
    }
 
    bool is_insert() { return label & label_insert; }
-
-   void set_dpp16(Instruction* mov)
-   {
-      add_label(label_dpp16);
-      instr = mov;
-   }
-
-   void set_dpp8(Instruction* mov)
-   {
-      add_label(label_dpp8);
-      instr = mov;
-   }
-
-   bool is_dpp() { return label & (label_dpp16 | label_dpp8); }
-   bool is_dpp16() { return label & label_dpp16; }
-   bool is_dpp8() { return label & label_dpp8; }
 
    void set_split(Instruction* split)
    {
@@ -1848,15 +1830,6 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          assert(instr->operands[0].isFixed());
       }
       break;
-   case aco_opcode::v_mov_b32:
-      if (instr->isDPP16()) {
-         /* anything else doesn't make sense in SSA */
-         assert(instr->dpp16().row_mask == 0xf && instr->dpp16().bank_mask == 0xf);
-         ctx.info[instr->definitions[0].tempId()].set_dpp16(instr.get());
-      } else if (instr->isDPP8()) {
-         ctx.info[instr->definitions[0].tempId()].set_dpp8(instr.get());
-      }
-      break;
    case aco_opcode::p_is_helper:
       if (!ctx.program->needs_wqm)
          ctx.info[instr->definitions[0].tempId()].set_constant(ctx.program->gfx_level, 0u);
@@ -1934,6 +1907,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
       break;
    }
+   case aco_opcode::v_mov_b32:
    case aco_opcode::v_mul_lo_u16:
    case aco_opcode::v_mul_lo_u16_e64:
    case aco_opcode::v_mul_u32_u24:
@@ -2119,7 +2093,9 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::v_cvt_f16_f32: {
       if (instr->operands[0].isTemp()) {
          ssa_info& info = ctx.info[instr->operands[0].tempId()];
-         if (!info.is_dpp() || info.instr->pass_flags != instr->pass_flags)
+         if (!info.is_usedef() || !info.instr->isDPP() ||
+             info.instr->opcode != aco_opcode::v_mov_b32 ||
+             info.instr->pass_flags != instr->pass_flags)
             info.set_f2f16(instr.get());
       }
       break;
@@ -4656,7 +4632,9 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             continue;
          ssa_info info = ctx.info[instr->operands[i].tempId()];
 
-         if (!info.is_dpp() || info.instr->pass_flags != instr->pass_flags)
+         if (!info.is_usedef() || !info.instr->isDPP() ||
+             info.instr->opcode != aco_opcode::v_mov_b32 ||
+             info.instr->pass_flags != instr->pass_flags)
             continue;
 
          /* We won't eliminate the DPP mov if the operand is used twice */
@@ -4672,10 +4650,10 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             instr->valu().swapOperands(0, i);
          }
 
-         if (!can_use_DPP(ctx.program->gfx_level, instr, info.is_dpp8()))
+         bool dpp8 = info.instr->isDPP8();
+         if (!can_use_DPP(ctx.program->gfx_level, instr, dpp8))
             continue;
 
-         bool dpp8 = info.is_dpp8();
          bool input_mods = can_use_input_modifiers(ctx.program->gfx_level, instr->opcode, 0) &&
                            get_operand_size(instr, 0) == 32;
          bool mov_uses_mods = info.instr->valu().neg[0] || info.instr->valu().abs[0];
@@ -4692,6 +4670,8 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                instr->format = asVOP3(instr->format);
          } else {
             DPP16_instruction* dpp = &instr->dpp16();
+            /* anything else doesn't make sense in SSA */
+            assert(info.instr->dpp16().row_mask == 0xf && info.instr->dpp16().bank_mask == 0xf);
             dpp->dpp_ctrl = info.instr->dpp16().dpp_ctrl;
             dpp->bound_ctrl = info.instr->dpp16().bound_ctrl;
             dpp->fetch_inactive = info.instr->dpp16().fetch_inactive;
