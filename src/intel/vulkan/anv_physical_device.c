@@ -2034,6 +2034,18 @@ anv_physical_device_init_heaps(struct anv_physical_device *device, int fd)
       break;
    }
 
+   if (device->has_protected_contexts) {
+      /* Add a memory type for protected buffers, local and not host
+       * visible.
+       */
+      device->memory.types[device->memory.type_count++] =
+         (struct anv_memory_type) {
+            .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                             VK_MEMORY_PROPERTY_PROTECTED_BIT,
+            .heapIndex = 0,
+      };
+   }
+
    assert(device->memory.type_count < ARRAY_SIZE(device->memory.types));
 
    if (result != VK_SUCCESS)
