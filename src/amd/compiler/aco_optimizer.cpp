@@ -73,14 +73,13 @@ enum Label {
    label_canonicalized = 1ull << 32, /* 1ull to prevent sign extension */
    label_extract = 1ull << 33,
    label_insert = 1ull << 34,
-   label_f2f32 = 1ull << 37,
    label_f2f16 = 1ull << 38,
    label_split = 1ull << 39,
 };
 
 static constexpr uint64_t instr_usedef_labels = label_vec | label_mul | label_bitwise |
                                                 label_uniform_bitwise | label_minmax |
-                                                label_usedef | label_extract | label_f2f32;
+                                                label_usedef | label_extract;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -371,14 +370,6 @@ struct ssa_info {
    void set_canonicalized() { add_label(label_canonicalized); }
 
    bool is_canonicalized() { return label & label_canonicalized; }
-
-   void set_f2f32(Instruction* cvt)
-   {
-      add_label(label_f2f32);
-      instr = cvt;
-   }
-
-   bool is_f2f32() { return label & label_f2f32; }
 
    void set_extract(Instruction* extract)
    {
@@ -1175,8 +1166,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
 
    /* These are the only labels worth keeping at the moment. */
    for (Definition& def : instr->definitions) {
-      ctx.info[def.tempId()].label &=
-         (label_mul | label_minmax | label_usedef | label_f2f32 | instr_mod_labels);
+      ctx.info[def.tempId()].label &= (label_mul | label_minmax | label_usedef | instr_mod_labels);
       if (ctx.info[def.tempId()].label & instr_usedef_labels)
          ctx.info[def.tempId()].instr = instr.get();
    }
@@ -1907,6 +1897,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
       break;
    }
+   case aco_opcode::v_cvt_f32_f16:
    case aco_opcode::v_mov_b32:
    case aco_opcode::v_mul_lo_u16:
    case aco_opcode::v_mul_lo_u16_e64:
@@ -2098,11 +2089,6 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
              info.instr->pass_flags != instr->pass_flags)
             info.set_f2f16(instr.get());
       }
-      break;
-   }
-   case aco_opcode::v_cvt_f32_f16: {
-      if (instr->operands[0].isTemp())
-         ctx.info[instr->definitions[0].tempId()].set_f2f32(instr.get());
       break;
    }
    default: break;
@@ -3708,11 +3694,12 @@ combine_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       if (!instr->operands[i].isTemp())
          continue;
       Temp tmp = instr->operands[i].getTemp();
-      if (!ctx.info[tmp.id()].is_f2f32())
+      if (!ctx.info[tmp.id()].is_usedef())
          continue;
 
       Instruction* conv = ctx.info[tmp.id()].instr;
-      if (conv->valu().clamp || conv->valu().omod) {
+      if (conv->opcode != aco_opcode::v_cvt_f32_f16 || !conv->operands[0].isTemp() ||
+          conv->valu().clamp || conv->valu().omod) {
          continue;
       } else if (conv->isSDWA() &&
                  (conv->sdwa().dst_sel.size() != 4 || conv->sdwa().sel[0].size() != 2)) {
