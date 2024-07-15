@@ -72,7 +72,6 @@ enum Label {
    label_extract = 1ull << 33,
    label_insert = 1ull << 34,
    label_f2f16 = 1ull << 38,
-   label_split = 1ull << 39,
 };
 
 static constexpr uint64_t instr_usedef_labels =
@@ -80,7 +79,7 @@ static constexpr uint64_t instr_usedef_labels =
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
-static constexpr uint64_t instr_labels = instr_usedef_labels | instr_mod_labels | label_split;
+static constexpr uint64_t instr_labels = instr_usedef_labels | instr_mod_labels;
 static constexpr uint64_t temp_labels = label_abs | label_neg | label_temp | label_b2f |
                                         label_uniform_bool | label_scc_invert | label_b2i |
                                         label_fcanonicalize;
@@ -371,14 +370,6 @@ struct ssa_info {
    }
 
    bool is_insert() { return label & label_insert; }
-
-   void set_split(Instruction* split)
-   {
-      add_label(label_split);
-      instr = split;
-   }
-
-   bool is_split() { return label & label_split; }
 };
 
 struct opt_ctx {
@@ -1660,12 +1651,15 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
       ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
 
-      if (instr->operands.size() == 2) {
+      if (instr->operands.size() == 2 && instr->operands[1].isTemp()) {
          /* check if this is created from split_vector */
-         if (instr->operands[1].isTemp() && ctx.info[instr->operands[1].tempId()].is_split()) {
-            Instruction* split = ctx.info[instr->operands[1].tempId()].instr;
+         ssa_info& info = ctx.info[instr->operands[1].tempId()];
+         if (info.is_usedef() && info.instr->opcode == aco_opcode::p_split_vector) {
+            Instruction* split = info.instr;
             if (instr->operands[0].isTemp() &&
-                instr->operands[0].getTemp() == split->definitions[0].getTemp())
+                instr->operands[0].getTemp() == split->definitions[0].getTemp() &&
+                instr->operands[1].getTemp() == split->definitions[1].getTemp() &&
+                instr->definitions[0].regClass() == split->operands[0].regClass())
                ctx.info[instr->definitions[0].tempId()].set_temp(split->operands[0].getTemp());
          }
       }
@@ -1685,7 +1679,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       } else if (!info.is_vec()) {
          if (instr->definitions.size() == 2 && instr->operands[0].isTemp() &&
              instr->definitions[0].bytes() == instr->definitions[1].bytes()) {
-            ctx.info[instr->definitions[1].tempId()].set_split(instr.get());
+            ctx.info[instr->definitions[1].tempId()].set_usedef(instr.get());
             if (instr->operands[0].bytes() == 4) {
                /* D16 subdword split */
                ctx.info[instr->definitions[0].tempId()].set_temp(instr->operands[0].getTemp());
@@ -2127,7 +2121,8 @@ follow_operand(opt_ctx& ctx, Operand op, bool ignore_uses = false)
    Instruction* instr = ctx.info[op.tempId()].instr;
 
    if (instr->definitions.size() == 2) {
-      unsigned idx = ctx.info[op.tempId()].label & label_split ? 1 : 0;
+      unsigned idx =
+         instr->definitions[1].isTemp() && instr->definitions[1].tempId() == op.tempId();
       assert(instr->definitions[idx].isTemp() && instr->definitions[idx].tempId() == op.tempId());
       if (instr->definitions[!idx].isTemp() && ctx.uses[instr->definitions[!idx].tempId()])
          return nullptr;
