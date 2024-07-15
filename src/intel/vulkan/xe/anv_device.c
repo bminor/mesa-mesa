@@ -57,6 +57,8 @@ VkResult anv_xe_device_setup_vm(struct anv_device *device)
                        "intel_bind_timeline_init failed");
    }
 
+   device->protected_session_id = DRM_XE_PXP_HWDRM_DEFAULT_SESSION;
+
    return VK_SUCCESS;
 }
 

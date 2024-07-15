@@ -39,8 +39,12 @@ xe_gem_create(struct anv_device *device,
               enum anv_bo_alloc_flags alloc_flags,
               uint64_t *actual_size)
 {
-   /* TODO: protected content */
-   assert((alloc_flags & ANV_BO_ALLOC_PROTECTED) == 0);
+   struct drm_xe_ext_set_property pxp_ext = {
+      .base.name = DRM_XE_GEM_CREATE_EXTENSION_SET_PROPERTY,
+      .property = DRM_XE_GEM_CREATE_SET_PROPERTY_PXP_TYPE,
+      .value = DRM_XE_PXP_TYPE_HWDRM,
+   };
+
    /* WB+0 way coherent not supported by Xe KMD */
    assert((alloc_flags & ANV_BO_ALLOC_HOST_CACHED) == 0 ||
           (alloc_flags & ANV_BO_ALLOC_HOST_CACHED_COHERENT) == ANV_BO_ALLOC_HOST_CACHED_COHERENT);
@@ -78,6 +82,9 @@ xe_gem_create(struct anv_device *device,
       unreachable("missing");
       gem_create.cpu_caching = DRM_XE_GEM_CPU_CACHING_WC;
    }
+
+   if (alloc_flags & ANV_BO_ALLOC_PROTECTED)
+      gem_create.extensions = (uintptr_t)&pxp_ext;
 
    if (intel_ioctl(device->fd, DRM_IOCTL_XE_GEM_CREATE, &gem_create))
       return 0;
@@ -153,6 +160,9 @@ anv_vm_bind_to_drm_xe_vm_bind(struct anv_device *device,
          xe_bind.op = DRM_XE_VM_BIND_OP_MAP;
          xe_bind.obj = bo->gem_handle;
       }
+
+      if (bo && (bo->alloc_flags & ANV_BO_ALLOC_PROTECTED))
+         xe_bind.flags |= DRM_XE_VM_BIND_FLAG_CHECK_PXP;
    } else if (anv_bind->op == ANV_VM_UNBIND_ALL) {
       xe_bind.op = DRM_XE_VM_BIND_OP_UNMAP_ALL;
       xe_bind.obj = bo->gem_handle;

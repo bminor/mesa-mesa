@@ -94,3 +94,12 @@ xe_gem_read_correlate_cpu_gpu_timestamp(int fd,
 
    return true;
 }
+
+void
+intel_xe_gem_add_ext(uint64_t *ptr, uint32_t ext_name, void *data)
+{
+   struct drm_xe_user_extension *ext = data;
+   ext->next_extension = *ptr;
+   ext->name = ext_name;
+   *ptr = (uintptr_t)ext;
+}
