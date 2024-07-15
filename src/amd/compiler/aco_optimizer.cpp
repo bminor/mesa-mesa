@@ -60,7 +60,6 @@ enum Label {
    label_clamp = 1 << 12,
    label_b2f = 1 << 16,
    label_bitwise = 1 << 18,
-   label_minmax = 1 << 19,
    label_uniform_bool = 1 << 21,
    label_constant_64bit = 1 << 22,
    label_uniform_bitwise = 1 << 23,
@@ -77,9 +76,8 @@ enum Label {
    label_split = 1ull << 39,
 };
 
-static constexpr uint64_t instr_usedef_labels = label_vec | label_mul | label_bitwise |
-                                                label_uniform_bitwise | label_minmax |
-                                                label_usedef | label_extract;
+static constexpr uint64_t instr_usedef_labels =
+   label_vec | label_mul | label_bitwise | label_uniform_bitwise | label_usedef | label_extract;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -314,14 +312,6 @@ struct ssa_info {
    void set_uniform_bitwise() { add_label(label_uniform_bitwise); }
 
    bool is_uniform_bitwise() { return label & label_uniform_bitwise; }
-
-   void set_minmax(Instruction* minmax_instr)
-   {
-      add_label(label_minmax);
-      instr = minmax_instr;
-   }
-
-   bool is_minmax() { return label & label_minmax; }
 
    void set_scc_needed() { add_label(label_scc_needed); }
 
@@ -1166,7 +1156,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
 
    /* These are the only labels worth keeping at the moment. */
    for (Definition& def : instr->definitions) {
-      ctx.info[def.tempId()].label &= (label_mul | label_minmax | label_usedef | instr_mod_labels);
+      ctx.info[def.tempId()].label &= (label_mul | label_usedef | instr_mod_labels);
       if (ctx.info[def.tempId()].label & instr_usedef_labels)
          ctx.info[def.tempId()].instr = instr.get();
    }
@@ -1897,6 +1887,22 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
       break;
    }
+   case aco_opcode::v_min_f32:
+   case aco_opcode::v_min_f16:
+   case aco_opcode::v_min_u32:
+   case aco_opcode::v_min_i32:
+   case aco_opcode::v_min_u16:
+   case aco_opcode::v_min_i16:
+   case aco_opcode::v_min_u16_e64:
+   case aco_opcode::v_min_i16_e64:
+   case aco_opcode::v_max_f32:
+   case aco_opcode::v_max_f16:
+   case aco_opcode::v_max_u32:
+   case aco_opcode::v_max_i32:
+   case aco_opcode::v_max_u16:
+   case aco_opcode::v_max_i16:
+   case aco_opcode::v_max_u16_e64:
+   case aco_opcode::v_max_i16_e64:
    case aco_opcode::v_cvt_f32_f16:
    case aco_opcode::v_mov_b32:
    case aco_opcode::v_mul_lo_u16:
@@ -1998,24 +2004,6 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::v_xor_b32:
    case aco_opcode::v_not_b32:
       ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
-      break;
-   case aco_opcode::v_min_f32:
-   case aco_opcode::v_min_f16:
-   case aco_opcode::v_min_u32:
-   case aco_opcode::v_min_i32:
-   case aco_opcode::v_min_u16:
-   case aco_opcode::v_min_i16:
-   case aco_opcode::v_min_u16_e64:
-   case aco_opcode::v_min_i16_e64:
-   case aco_opcode::v_max_f32:
-   case aco_opcode::v_max_f16:
-   case aco_opcode::v_max_u32:
-   case aco_opcode::v_max_i32:
-   case aco_opcode::v_max_u16:
-   case aco_opcode::v_max_i16:
-   case aco_opcode::v_max_u16_e64:
-   case aco_opcode::v_max_i16_e64:
-      ctx.info[instr->definitions[0].tempId()].set_minmax(instr.get());
       break;
    case aco_opcode::s_cselect_b64:
    case aco_opcode::s_cselect_b32:
