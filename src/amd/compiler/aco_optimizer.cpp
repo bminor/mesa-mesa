@@ -59,7 +59,6 @@ enum Label {
    label_omod5 = 1 << 10,
    label_clamp = 1 << 12,
    label_b2f = 1 << 16,
-   label_add_sub = 1 << 17,
    label_bitwise = 1 << 18,
    label_minmax = 1 << 19,
    label_uniform_bool = 1 << 21,
@@ -82,8 +81,8 @@ enum Label {
 };
 
 static constexpr uint64_t instr_usedef_labels =
-   label_vec | label_mul | label_add_sub | label_bitwise | label_uniform_bitwise | label_minmax |
-   label_usedef | label_extract | label_dpp16 | label_dpp8 | label_f2f32;
+   label_vec | label_mul | label_bitwise | label_uniform_bitwise | label_minmax | label_usedef |
+   label_extract | label_dpp16 | label_dpp8 | label_f2f32;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -306,14 +305,6 @@ struct ssa_info {
    }
 
    bool is_b2f() { return label & label_b2f; }
-
-   void set_add_sub(Instruction* add_sub_instr)
-   {
-      add_label(label_add_sub);
-      instr = add_sub_instr;
-   }
-
-   bool is_add_sub() { return label & label_add_sub; }
 
    void set_bitwise(Instruction* bitwise_instr)
    {
@@ -712,7 +703,7 @@ parse_base_offset(opt_ctx& ctx, Instruction* instr, unsigned op_index, Temp* bas
    if (!op.isTemp())
       return false;
    Temp tmp = op.getTemp();
-   if (!ctx.info[tmp.id()].is_add_sub())
+   if (!ctx.info[tmp.id()].is_usedef())
       return false;
 
    Instruction* add_instr = ctx.info[tmp.id()].instr;
@@ -1946,22 +1937,6 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::v_mul_lo_u16:
    case aco_opcode::v_mul_lo_u16_e64:
    case aco_opcode::v_mul_u32_u24:
-      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
-      break;
-   case aco_opcode::v_med3_f16:
-   case aco_opcode::v_med3_f32: { /* clamp */
-      unsigned idx;
-      if (detect_clamp(instr.get(), &idx) && !instr->valu().abs && !instr->valu().neg)
-         ctx.info[instr->operands[idx].tempId()].set_clamp(instr.get());
-      break;
-   }
-   case aco_opcode::v_cndmask_b32:
-      if (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(0x3f800000u))
-         ctx.info[instr->definitions[0].tempId()].set_b2f(instr->operands[2].getTemp());
-      else if (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(1))
-         ctx.info[instr->definitions[0].tempId()].set_b2i(instr->operands[2].getTemp());
-
-      break;
    case aco_opcode::v_add_u32:
    case aco_opcode::v_add_co_u32:
    case aco_opcode::v_add_co_u32_e64:
@@ -1977,7 +1952,21 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    case aco_opcode::v_subrev_u32:
    case aco_opcode::v_subrev_co_u32:
    case aco_opcode::v_subrev_co_u32_e64:
-      ctx.info[instr->definitions[0].tempId()].set_add_sub(instr.get());
+      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
+      break;
+   case aco_opcode::v_med3_f16:
+   case aco_opcode::v_med3_f32: { /* clamp */
+      unsigned idx;
+      if (detect_clamp(instr.get(), &idx) && !instr->valu().abs && !instr->valu().neg)
+         ctx.info[instr->operands[idx].tempId()].set_clamp(instr.get());
+      break;
+   }
+   case aco_opcode::v_cndmask_b32:
+      if (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(0x3f800000u))
+         ctx.info[instr->definitions[0].tempId()].set_b2f(instr->operands[2].getTemp());
+      else if (instr->operands[0].constantEquals(0) && instr->operands[1].constantEquals(1))
+         ctx.info[instr->definitions[0].tempId()].set_b2i(instr->operands[2].getTemp());
+
       break;
    case aco_opcode::s_not_b32:
    case aco_opcode::s_not_b64:
@@ -2679,9 +2668,6 @@ combine_salu_lshl_add(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 bool
 combine_sabsdiff(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
-   if (!instr->operands[0].isTemp() || !ctx.info[instr->operands[0].tempId()].is_add_sub())
-      return false;
-
    Instruction* op_instr = follow_operand(ctx, instr->operands[0], false);
    if (!op_instr)
       return false;
@@ -2699,6 +2685,9 @@ combine_sabsdiff(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          op_instr->operands[1] = Operand::c32(-int32_t(constant));
          goto use_absdiff;
       }
+      return false;
+   } else if (op_instr->opcode != aco_opcode::s_sub_i32 &&
+              op_instr->opcode != aco_opcode::s_sub_u32) {
       return false;
    }
 
@@ -2752,7 +2741,7 @@ combine_add_sub_b2i(opt_ctx& ctx, aco_ptr<Instruction>& instr, aco_opcode new_op
          new_instr->operands[2] = Operand(ctx.info[instr->operands[i].tempId()].temp);
          new_instr->pass_flags = instr->pass_flags;
          instr = std::move(new_instr);
-         ctx.info[instr->definitions[0].tempId()].set_add_sub(instr.get());
+         ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
          return true;
       }
    }
