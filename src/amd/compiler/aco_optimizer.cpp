@@ -70,9 +70,8 @@ enum Label {
    label_b2i = 1 << 27,
    label_fcanonicalize = 1 << 28,
    label_constant_16bit = 1 << 29,
-   label_usedef = 1 << 30,   /* generic label */
-   label_vop3p = 1ull << 31, /* 1ull to prevent sign extension */
-   label_canonicalized = 1ull << 32,
+   label_usedef = 1 << 30,           /* generic label */
+   label_canonicalized = 1ull << 32, /* 1ull to prevent sign extension */
    label_extract = 1ull << 33,
    label_insert = 1ull << 34,
    label_dpp16 = 1ull << 35,
@@ -83,8 +82,8 @@ enum Label {
 };
 
 static constexpr uint64_t instr_usedef_labels =
-   label_vec | label_mul | label_add_sub | label_vop3p | label_bitwise | label_uniform_bitwise |
-   label_minmax | label_usedef | label_extract | label_dpp16 | label_dpp8 | label_f2f32;
+   label_vec | label_mul | label_add_sub | label_bitwise | label_uniform_bitwise | label_minmax |
+   label_usedef | label_extract | label_dpp16 | label_dpp8 | label_f2f32;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -371,14 +370,6 @@ struct ssa_info {
    }
 
    bool is_usedef() { return label & label_usedef; }
-
-   void set_vop3p(Instruction* vop3p_instr)
-   {
-      add_label(label_vop3p);
-      instr = vop3p_instr;
-   }
-
-   bool is_vop3p() { return label & label_vop3p; }
 
    void set_fcanonicalize(Temp tmp)
    {
@@ -1671,13 +1662,9 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             ctx.info[instr->definitions[0].tempId()].set_canonicalized();
       }
 
-      if (instr->isVOPC()) {
+      if (instr->isVOPC() || instr->isVOP3P()) {
          ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
          check_sdwa_extract(ctx, instr);
-         return;
-      }
-      if (instr->isVOP3P()) {
-         ctx.info[instr->definitions[0].tempId()].set_vop3p(instr.get());
          return;
       }
    }
@@ -3480,7 +3467,8 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
        !vop3p->opsel_lo[1] && !vop3p->opsel_hi[1]) {
 
       ssa_info& info = ctx.info[instr->operands[0].tempId()];
-      if (info.is_vop3p() && instr_info.can_use_output_modifiers[(int)info.instr->opcode]) {
+      if (info.is_usedef() && info.instr->isVOP3P() &&
+          instr_info.can_use_output_modifiers[(int)info.instr->opcode]) {
          VALU_instruction* candidate = &ctx.info[instr->operands[0].tempId()].instr->valu();
          candidate->clamp = true;
          propagate_swizzles(candidate, vop3p->opsel_lo[0], vop3p->opsel_hi[0]);
@@ -3500,7 +3488,7 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          continue;
 
       ssa_info& info = ctx.info[op.tempId()];
-      if (info.is_vop3p() && info.instr->opcode == aco_opcode::v_pk_mul_f16 &&
+      if (info.is_usedef() && info.instr->opcode == aco_opcode::v_pk_mul_f16 &&
           (info.instr->operands[0].constantEquals(0x3C00) ||
            info.instr->operands[1].constantEquals(0x3C00))) {
 
@@ -3558,7 +3546,7 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (!op_instr)
             continue;
 
-         if (ctx.info[instr->operands[i].tempId()].is_vop3p()) {
+         if (op_instr->isVOP3P()) {
             if (fadd) {
                if (op_instr->opcode != aco_opcode::v_pk_mul_f16 ||
                    op_instr->definitions[0].isPrecise())
@@ -3641,7 +3629,7 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       fma->definitions[0] = instr->definitions[0];
       fma->pass_flags = instr->pass_flags;
       instr = std::move(fma);
-      ctx.info[instr->definitions[0].tempId()].set_vop3p(instr.get());
+      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
       decrease_uses(ctx, mul_instr);
       return;
    }
