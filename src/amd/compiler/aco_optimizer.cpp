@@ -43,7 +43,6 @@ struct mad_info {
 };
 
 enum Label {
-   label_vec = 1 << 0,
    label_constant_32bit = 1 << 1,
    /* label_{abs,neg,mul,omod2,omod4,omod5,clamp} are used for both 16 and
     * 32-bit operations but this shouldn't cause any issues because we don't
@@ -77,7 +76,7 @@ enum Label {
 };
 
 static constexpr uint64_t instr_usedef_labels =
-   label_vec | label_mul | label_bitwise | label_uniform_bitwise | label_usedef | label_extract;
+   label_mul | label_bitwise | label_uniform_bitwise | label_usedef | label_extract;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -133,13 +132,7 @@ struct ssa_info {
       label |= new_label;
    }
 
-   void set_vec(Instruction* vec)
-   {
-      add_label(label_vec);
-      instr = vec;
-   }
-
-   bool is_vec() { return label & label_vec; }
+   bool is_vec() { return label & label_usedef && instr->opcode == aco_opcode::p_create_vector; }
 
    void set_constant(amd_gfx_level gfx_level, uint64_t constant)
    {
@@ -1665,7 +1658,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             assert(instr->operands[i] == ops[i]);
          }
       }
-      ctx.info[instr->definitions[0].tempId()].set_vec(instr.get());
+      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
 
       if (instr->operands.size() == 2) {
          /* check if this is created from split_vector */
@@ -1792,7 +1785,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                 ctx.info[op.tempId()].temp.type() == instr->definitions[0].regClass().type())
                op.setTemp(ctx.info[op.tempId()].temp);
          }
-         ctx.info[instr->definitions[0].tempId()].set_vec(instr.get());
+         ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
          break;
       }
       FALLTHROUGH;
