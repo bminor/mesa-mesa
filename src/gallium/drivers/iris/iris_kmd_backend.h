@@ -47,7 +47,7 @@ struct iris_kmd_backend {
    void *(*gem_mmap)(struct iris_bufmgr *bufmgr, struct iris_bo *bo);
    enum pipe_reset_status (*batch_check_for_reset)(struct iris_batch *batch);
    int (*batch_submit)(struct iris_batch *batch);
-   bool (*gem_vm_bind)(struct iris_bo *bo);
+   bool (*gem_vm_bind)(struct iris_bo *bo, unsigned flags);
    bool (*gem_vm_unbind)(struct iris_bo *bo);
 };
 

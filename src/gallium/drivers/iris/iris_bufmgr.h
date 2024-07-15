@@ -567,7 +567,8 @@ int iris_bufmgr_get_fd(struct iris_bufmgr *bufmgr);
 
 struct iris_bo *iris_bo_gem_create_from_name(struct iris_bufmgr *bufmgr,
                                              const char *name,
-                                             unsigned handle);
+                                             unsigned handle,
+                                             unsigned flags);
 
 void* iris_bufmgr_get_aux_map_context(struct iris_bufmgr *bufmgr);
 
@@ -576,7 +577,7 @@ int iris_gem_set_tiling(struct iris_bo *bo, const struct isl_surf *surf);
 
 int iris_bo_export_dmabuf(struct iris_bo *bo, int *prime_fd);
 struct iris_bo *iris_bo_import_dmabuf(struct iris_bufmgr *bufmgr, int prime_fd,
-                                      const uint64_t modifier);
+                                      const uint64_t modifier, unsigned flags);
 
 /**
  * Exports a bo as a GEM handle into a given DRM file descriptor

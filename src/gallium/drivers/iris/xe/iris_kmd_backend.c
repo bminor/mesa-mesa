@@ -41,9 +41,11 @@ xe_gem_create(struct iris_bufmgr *bufmgr,
               uint16_t regions_count, uint64_t size,
               enum iris_heap heap_flags, unsigned alloc_flags)
 {
-   /* Xe still don't have support for protected content */
-   if (alloc_flags & BO_ALLOC_PROTECTED)
-      return -EINVAL;
+   struct drm_xe_ext_set_property pxp_ext = {
+      .base.name = DRM_XE_GEM_CREATE_EXTENSION_SET_PROPERTY,
+      .property = DRM_XE_GEM_CREATE_SET_PROPERTY_PXP_TYPE,
+      .value = DRM_XE_PXP_TYPE_HWDRM,
+   };
 
    uint32_t vm_id = iris_bufmgr_get_global_vm_id(bufmgr);
    vm_id = alloc_flags & BO_ALLOC_SHARED ? 0 : vm_id;
@@ -82,6 +84,9 @@ xe_gem_create(struct iris_bufmgr *bufmgr,
       gem_create.cpu_caching = DRM_XE_GEM_CPU_CACHING_WC;
    }
 
+   if (alloc_flags & BO_ALLOC_PROTECTED)
+      gem_create.extensions = (uintptr_t)&pxp_ext;
+
    if (intel_ioctl(iris_bufmgr_get_fd(bufmgr), DRM_IOCTL_XE_GEM_CREATE,
                    &gem_create))
       return 0;
@@ -104,7 +109,7 @@ xe_gem_mmap(struct iris_bufmgr *bufmgr, struct iris_bo *bo)
 }
 
 static inline int
-xe_gem_vm_bind_op(struct iris_bo *bo, uint32_t op)
+xe_gem_vm_bind_op(struct iris_bo *bo, uint32_t op, unsigned iris_flags)
 {
    struct iris_bufmgr *bufmgr = bo->bufmgr;
    struct intel_bind_timeline *bind_timeline = iris_bufmgr_get_bind_timeline(bufmgr);
@@ -136,6 +141,8 @@ xe_gem_vm_bind_op(struct iris_bo *bo, uint32_t op)
 
    if (bo->real.capture)
       flags |= DRM_XE_VM_BIND_FLAG_DUMPABLE;
+   if (iris_flags & BO_ALLOC_PROTECTED)
+      flags |= DRM_XE_VM_BIND_FLAG_CHECK_PXP;
 
    struct drm_xe_vm_bind args = {
       .vm_id = iris_bufmgr_get_global_vm_id(bufmgr),
@@ -162,15 +169,15 @@ xe_gem_vm_bind_op(struct iris_bo *bo, uint32_t op)
 }
 
 static bool
-xe_gem_vm_bind(struct iris_bo *bo)
+xe_gem_vm_bind(struct iris_bo *bo, unsigned flags)
 {
-   return xe_gem_vm_bind_op(bo, DRM_XE_VM_BIND_OP_MAP) == 0;
+   return xe_gem_vm_bind_op(bo, DRM_XE_VM_BIND_OP_MAP, flags) == 0;
 }
 
 static bool
 xe_gem_vm_unbind(struct iris_bo *bo)
 {
-   return xe_gem_vm_bind_op(bo, DRM_XE_VM_BIND_OP_UNMAP) == 0;
+   return xe_gem_vm_bind_op(bo, DRM_XE_VM_BIND_OP_UNMAP, 0) == 0;
 }
 
 static bool

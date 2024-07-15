@@ -381,8 +381,9 @@ iris_memobj_create_from_handle(struct pipe_screen *pscreen,
 
    assert(whandle->type == WINSYS_HANDLE_TYPE_FD);
    assert(whandle->modifier == DRM_FORMAT_MOD_INVALID);
+   /* There is no information if memobj is protected or not */
    struct iris_bo *bo = iris_bo_import_dmabuf(screen->bufmgr, whandle->handle,
-                                              DRM_FORMAT_MOD_INVALID);
+                                              DRM_FORMAT_MOD_INVALID, 0);
    if (!bo) {
       free(memobj);
       return NULL;
@@ -1324,6 +1325,7 @@ iris_resource_from_handle(struct pipe_screen *pscreen,
    struct iris_screen *screen = (struct iris_screen *)pscreen;
    const struct intel_device_info *devinfo = screen->devinfo;
    struct iris_bufmgr *bufmgr = screen->bufmgr;
+   unsigned flags = 0;
 
    /* The gallium dri layer creates a pipe resource for each plane specified
     * by the format and modifier. Once all planes are present, we will merge
@@ -1334,14 +1336,17 @@ iris_resource_from_handle(struct pipe_screen *pscreen,
    if (!res)
       return NULL;
 
+   if (templ->bind & PIPE_BIND_PROTECTED)
+      flags |= BO_ALLOC_PROTECTED;
+
    switch (whandle->type) {
    case WINSYS_HANDLE_TYPE_FD:
       res->bo = iris_bo_import_dmabuf(bufmgr, whandle->handle,
-                                      whandle->modifier);
+                                      whandle->modifier, flags);
       break;
    case WINSYS_HANDLE_TYPE_SHARED:
       res->bo = iris_bo_gem_create_from_name(bufmgr, "winsys image",
-                                             whandle->handle);
+                                             whandle->handle, flags);
       break;
    default:
       unreachable("invalid winsys handle type");

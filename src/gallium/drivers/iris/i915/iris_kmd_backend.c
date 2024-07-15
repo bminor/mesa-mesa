@@ -415,7 +415,7 @@ i915_batch_submit(struct iris_batch *batch)
 }
 
 static bool
-i915_gem_vm_bind(struct iris_bo *bo)
+i915_gem_vm_bind(struct iris_bo *bo, unsigned flags)
 {
    /*
     * i915 does not support VM_BIND yet. The binding operation happens at

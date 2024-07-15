@@ -1266,7 +1266,7 @@ iris_bo_alloc(struct iris_bufmgr *bufmgr,
       if (bo->address == 0ull)
          goto err_free;
 
-      if (!bufmgr->kmd_backend->gem_vm_bind(bo))
+      if (!bufmgr->kmd_backend->gem_vm_bind(bo, flags))
          goto err_vm_alloc;
    }
 
@@ -1354,7 +1354,7 @@ iris_bo_create_userptr(struct iris_bufmgr *bufmgr, const char *name,
    bo->real.mmap_mode = heap_to_mmap_mode(bufmgr, bo->real.heap);
    bo->real.prime_fd = -1;
 
-   if (!bufmgr->kmd_backend->gem_vm_bind(bo))
+   if (!bufmgr->kmd_backend->gem_vm_bind(bo, 0))
       goto err_vma_free;
 
    return bo;
@@ -1401,7 +1401,8 @@ iris_bo_set_prime_fd(struct iris_bo *bo)
  */
 struct iris_bo *
 iris_bo_gem_create_from_name(struct iris_bufmgr *bufmgr,
-                             const char *name, unsigned int handle)
+                             const char *name, unsigned int handle,
+                             unsigned flags)
 {
    struct iris_bo *bo;
 
@@ -1464,7 +1465,7 @@ iris_bo_gem_create_from_name(struct iris_bufmgr *bufmgr,
    if (!iris_bo_set_prime_fd(bo))
       goto err_vm_alloc;
 
-   if (!bufmgr->kmd_backend->gem_vm_bind(bo))
+   if (!bufmgr->kmd_backend->gem_vm_bind(bo, flags))
       goto err_vm_alloc;
 
    _mesa_hash_table_insert(bufmgr->handle_table, &bo->gem_handle, bo);
@@ -1923,7 +1924,7 @@ iris_gem_set_tiling(struct iris_bo *bo, const struct isl_surf *surf)
 
 struct iris_bo *
 iris_bo_import_dmabuf(struct iris_bufmgr *bufmgr, int prime_fd,
-                      const uint64_t modifier)
+                      const uint64_t modifier, unsigned flags)
 {
    uint32_t handle;
    struct iris_bo *bo;
@@ -1987,7 +1988,7 @@ iris_bo_import_dmabuf(struct iris_bufmgr *bufmgr, int prime_fd,
    if (bo->address == 0ull)
       goto err_free;
 
-   if (!bufmgr->kmd_backend->gem_vm_bind(bo))
+   if (!bufmgr->kmd_backend->gem_vm_bind(bo, flags))
       goto err_vm_alloc;
 
    _mesa_hash_table_insert(bufmgr->handle_table, &bo->gem_handle, bo);
@@ -2235,7 +2236,7 @@ intel_aux_map_buffer_alloc(void *driver_ctx, uint32_t size)
    if (bo->address == 0ull)
       goto err_free;
 
-   if (!bufmgr->kmd_backend->gem_vm_bind(bo))
+   if (!bufmgr->kmd_backend->gem_vm_bind(bo, 0))
       goto err_vm_alloc;
 
    simple_mtx_unlock(&bufmgr->lock);
