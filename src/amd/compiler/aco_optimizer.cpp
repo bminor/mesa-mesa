@@ -62,7 +62,6 @@ enum Label {
    label_add_sub = 1 << 17,
    label_bitwise = 1 << 18,
    label_minmax = 1 << 19,
-   label_vopc = 1 << 20,
    label_uniform_bool = 1 << 21,
    label_constant_64bit = 1 << 22,
    label_uniform_bitwise = 1 << 23,
@@ -85,8 +84,7 @@ enum Label {
 
 static constexpr uint64_t instr_usedef_labels =
    label_vec | label_mul | label_add_sub | label_vop3p | label_bitwise | label_uniform_bitwise |
-   label_minmax | label_vopc | label_usedef | label_extract | label_dpp16 | label_dpp8 |
-   label_f2f32;
+   label_minmax | label_usedef | label_extract | label_dpp16 | label_dpp8 | label_f2f32;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -337,14 +335,6 @@ struct ssa_info {
    }
 
    bool is_minmax() { return label & label_minmax; }
-
-   void set_vopc(Instruction* vopc_instr)
-   {
-      add_label(label_vopc);
-      instr = vopc_instr;
-   }
-
-   bool is_vopc() { return label & label_vopc; }
 
    void set_scc_needed() { add_label(label_scc_needed); }
 
@@ -1222,7 +1212,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
    /* These are the only labels worth keeping at the moment. */
    for (Definition& def : instr->definitions) {
       ctx.info[def.tempId()].label &=
-         (label_mul | label_minmax | label_usedef | label_vopc | label_f2f32 | instr_mod_labels);
+         (label_mul | label_minmax | label_usedef | label_f2f32 | instr_mod_labels);
       if (ctx.info[def.tempId()].label & instr_usedef_labels)
          ctx.info[def.tempId()].instr = instr.get();
    }
@@ -1279,11 +1269,12 @@ can_eliminate_fcanonicalize(opt_ctx& ctx, aco_ptr<Instruction>& instr, Temp tmp,
 bool
 can_eliminate_and_exec(opt_ctx& ctx, Temp tmp, unsigned pass_flags)
 {
-   if (ctx.info[tmp.id()].is_vopc()) {
+   if (ctx.info[tmp.id()].is_usedef()) {
       Instruction* vopc_instr = ctx.info[tmp.id()].instr;
       /* Remove superfluous s_and when the VOPC instruction uses the same exec and thus
        * already produces the same result */
-      return vopc_instr->pass_flags == pass_flags;
+      if (vopc_instr->isVOPC())
+         return vopc_instr->pass_flags == pass_flags;
    }
    if (ctx.info[tmp.id()].is_bitwise()) {
       Instruction* instr = ctx.info[tmp.id()].instr;
@@ -1681,7 +1672,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
 
       if (instr->isVOPC()) {
-         ctx.info[instr->definitions[0].tempId()].set_vopc(instr.get());
+         ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
          check_sdwa_extract(ctx, instr);
          return;
       }
