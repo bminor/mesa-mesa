@@ -6009,7 +6009,8 @@ pvr_emit_dirty_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
 
    if (!dynamic_state->rs.rasterizer_discard_enable &&
        state->dirty.fragment_descriptors &&
-       state->gfx_pipeline->shader_state.fragment.bo) {
+       state->gfx_pipeline->shader_state.fragment.bo &&
+       !state->gfx_pipeline->shader_state.fragment.stage_state.empty_program) {
       pvr_setup_fragment_state_pointers(cmd_buffer, sub_cmd);
    }
 
