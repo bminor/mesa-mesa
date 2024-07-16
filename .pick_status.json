@@ -164,7 +164,7 @@
         "description": "rusticl/mesa: set take_ownership to true in set_constant_buffer_stream",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8da8c6c2d8bf9b9b04ee030df68d7d44146fc877",
         "notes": null
