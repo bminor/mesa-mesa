@@ -204,7 +204,7 @@
         "description": "rusticl/event: properly implement CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
