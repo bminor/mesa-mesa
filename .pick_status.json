@@ -534,7 +534,7 @@
         "description": "isl: Fix Xe2 protected mask",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7be8bc2c971bd40101f1ac537d7cf518ed648179",
         "notes": null
