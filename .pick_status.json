@@ -1094,7 +1094,7 @@
         "description": "lp: only map dt buffer on import from dmabuf",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "db38a4913ec6fde264facf95077e241c64573b27",
         "notes": null
