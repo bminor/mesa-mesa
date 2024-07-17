@@ -520,6 +520,8 @@ FF(3src_a1_src0_reg_file,   /* 9+ */   43,  43,  /* 12+ */ 46, 66, .grf_or_imm =
 F(3src_a1_src2_is_imm,      /* 9+ */   -1,  -1,  /* 12+ */ 47, 47)
 F(3src_a1_src0_is_imm,      /* 9+ */   -1,  -1,  /* 12+ */ 46, 46)
 
+FDC(boolean_func_ctrl,      /* 9+ */   -1,  -1,  /* 12+ */ 95, 92, 87, 84, devinfo->verx10 >= 125)
+
 /* Source Modifier fields same in align16 */
 FFC(3src_a1_dst_reg_file,   /* 9+ */    36,  36, /* 12+ */ 50, 50, devinfo->ver >= 10, .grf_or_acc = true)
 FC(3src_a1_exec_type,       /* 9+ */    35,  35, /* 12+ */ 39, 39, devinfo->ver >= 10)

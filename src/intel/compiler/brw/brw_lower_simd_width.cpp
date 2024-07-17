@@ -292,6 +292,7 @@ brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
    case BRW_OPCODE_CMP:
    case BRW_OPCODE_BFI1:
    case BRW_OPCODE_BFI2:
+   case BRW_OPCODE_BFN:
       return get_fpu_lowered_simd_width(shader, inst);
 
    case SHADER_OPCODE_RCP:

@@ -2035,6 +2035,13 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
 
    err |= print_opcode(file, isa, opcode);
 
+   if (opcode == BRW_OPCODE_BFN) {
+      unsigned char table_byte = 0;
+      table_byte |= (inst->data[1] >> (84 - 64)) & 0xF;
+      table_byte |= ((inst->data[1] >> (92 - 64)) & 0xF) << 4;
+      format(file, "[0x%x]", table_byte);
+   }
+
    if (!is_send(opcode))
       err |= control(file, "saturate", saturate, brw_eu_inst_saturate(devinfo, inst),
                      NULL);
@@ -2062,6 +2069,10 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
 
       format(file, "x%d", rcount);
    } else if (!is_send(opcode) &&
+              /* BFN has data in the place of the conditional modifier which
+               * is not a conditional modifer
+               */
+              opcode != BRW_OPCODE_BFN &&
               (devinfo->ver < 12 ||
                brw_eu_inst_src0_reg_file(devinfo, inst) != IMM ||
                brw_type_size_bytes(brw_eu_inst_src0_type(devinfo, inst)) < 8)) {

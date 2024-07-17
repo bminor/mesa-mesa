@@ -371,6 +371,7 @@ namespace {
       case BRW_OPCODE_BFE:
       case BRW_OPCODE_BFI2:
       case BRW_OPCODE_CSEL:
+      case BRW_OPCODE_BFN:
          if (devinfo->ver >= 11)
             return calculate_desc(info, EU_UNIT_FPU, 0, 2, 1, 0, 2,
                                   0, 10, 6 /* XXX */, 14 /* XXX */, 0, 0);

@@ -1047,6 +1047,16 @@ void brw_SYNC(struct brw_codegen *p, enum tgl_sync_function func)
  */
 
 brw_eu_inst *
+brw_BFN(struct brw_codegen *p, struct brw_reg dest,
+        struct brw_reg src0, struct brw_reg src1, struct brw_reg src2,
+        struct brw_reg table_byte)
+{
+   brw_eu_inst *inst = brw_alu3(p, BRW_OPCODE_BFN, dest, src0, src1, src2);
+   brw_eu_inst_set_boolean_func_ctrl(p->devinfo, inst, table_byte.ud);
+   return inst;
+}
+
+brw_eu_inst *
 brw_JMPI(struct brw_codegen *p, struct brw_reg index,
          unsigned predicate_control)
 {

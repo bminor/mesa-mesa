@@ -987,6 +987,9 @@ brw_generator::generate_code(const brw_shader &s,
       case BRW_OPCODE_NOT:
 	 brw_NOT(p, dst, src[0]);
 	 break;
+      case BRW_OPCODE_BFN:
+         brw_BFN(p, dst, src[0], src[1], src[2], src[3]);
+         break;
       case BRW_OPCODE_ASR:
 	 brw_ASR(p, dst, src[0], src[1]);
 	 break;

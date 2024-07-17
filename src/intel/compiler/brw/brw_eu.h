@@ -1499,6 +1499,10 @@ brw_eu_inst *brw_IF(struct brw_codegen *p, unsigned execute_size);
 void brw_ELSE(struct brw_codegen *p);
 void brw_ENDIF(struct brw_codegen *p);
 
+brw_eu_inst *brw_BFN(struct brw_codegen *p, struct brw_reg dest,
+                     struct brw_reg src0, struct brw_reg src1,
+                     struct brw_reg src2, struct brw_reg table_byte);
+
 /* DO/WHILE loops:
  */
 brw_eu_inst *brw_DO(struct brw_codegen *p, unsigned execute_size);
