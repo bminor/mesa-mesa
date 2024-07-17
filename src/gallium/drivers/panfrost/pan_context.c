@@ -270,15 +270,12 @@ panfrost_set_shader_images(struct pipe_context *pctx,
       return;
    }
 
-   /* Bind start_slot...start_slot+count */
+   /* fix up AFBC/AFRC; we do this before starting setup because it involves a
+      blit, so we need a consistent image state */
    for (int i = 0; i < count; i++) {
       const struct pipe_image_view *image = &iviews[i];
-      SET_BIT(ctx->image_mask[shader], 1 << (start_slot + i), image->resource);
-
-      if (!image->resource) {
-         util_copy_image_view(&ctx->images[shader][start_slot + i], NULL);
+      if (!image->resource)
          continue;
-      }
 
       struct panfrost_resource *rsrc = pan_resource(image->resource);
 
@@ -290,7 +287,16 @@ panfrost_set_shader_images(struct pipe_context *pctx,
             ctx, rsrc, DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED, true,
             "Shader image");
       }
+   }
 
+   /* Bind start_slot...start_slot+count */
+   for (int i = 0; i < count; i++) {
+      const struct pipe_image_view *image = &iviews[i];
+      SET_BIT(ctx->image_mask[shader], 1 << (start_slot + i), image->resource);
+      if (!image->resource) {
+         util_copy_image_view(&ctx->images[shader][start_slot + i], NULL);
+         continue;
+      }
       util_copy_image_view(&ctx->images[shader][start_slot + i], image);
    }
 
