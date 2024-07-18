@@ -7707,6 +7707,7 @@ void pvr_CmdPipelineBarrier2(VkCommandBuffer commandBuffer,
    uint32_t src_stage_mask;
    uint32_t dst_stage_mask;
    bool is_barrier_needed;
+   VkResult result;
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -7759,9 +7760,9 @@ void pvr_CmdPipelineBarrier2(VkCommandBuffer commandBuffer,
 
       switch (src_stage_mask) {
       case PVR_PIPELINE_STAGE_FRAG_BIT:
-         is_barrier_needed = !render_pass;
+         is_barrier_needed = false;
 
-         if (is_barrier_needed)
+         if (!render_pass)
             break;
 
          assert(current_sub_cmd->type == PVR_SUB_CMD_TYPE_GRAPHICS);
@@ -7816,23 +7817,18 @@ void pvr_CmdPipelineBarrier2(VkCommandBuffer commandBuffer,
                                        pDependencyInfo->pImageMemoryBarriers);
 
    if (is_stencil_store_load_needed) {
-      VkResult result;
-
+      assert(render_pass);
       result = pvr_cmd_buffer_insert_mid_frag_barrier_event(cmd_buffer,
                                                             src_stage_mask,
                                                             dst_stage_mask);
       if (result != VK_SUCCESS)
          mesa_loge("Failed to insert mid frag barrier event.");
-   } else {
-      if (is_barrier_needed) {
-         VkResult result;
-
-         result = pvr_cmd_buffer_insert_barrier_event(cmd_buffer,
-                                                      src_stage_mask,
-                                                      dst_stage_mask);
-         if (result != VK_SUCCESS)
-            mesa_loge("Failed to insert pipeline barrier event.");
-      }
+   } else if (is_barrier_needed) {
+      result = pvr_cmd_buffer_insert_barrier_event(cmd_buffer,
+                                                   src_stage_mask,
+                                                   dst_stage_mask);
+      if (result != VK_SUCCESS)
+         mesa_loge("Failed to insert pipeline barrier event.");
    }
 }
 
