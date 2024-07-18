@@ -1210,6 +1210,7 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
 
       value.forcezload = value.zloaden || value.sloaden;
       value.forcezstore = value.zstoreen || value.sstoreen;
+      value.zonlyrender = job->z_only_render;
    }
    stream_ptr += pvr_cmd_length(CR_ISP_ZLSCTL);
 

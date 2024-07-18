@@ -512,6 +512,8 @@ struct pvr_sub_cmd_gfx {
    bool has_occlusion_query;
 
    bool wait_on_previous_transfer;
+
+   bool has_depth_feedback;
 };
 
 struct pvr_sub_cmd_compute {

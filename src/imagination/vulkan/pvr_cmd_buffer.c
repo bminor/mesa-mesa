@@ -1511,6 +1511,10 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
 
       pvr_setup_emit_state(dev_info, hw_render, render_pass_info, &emit_state);
 
+      job->z_only_render = !hw_render->eot_surface_count &&
+                           !sub_cmd->frag_has_side_effects &&
+                           !sub_cmd->has_depth_feedback;
+
       memcpy(job->pbe_reg_words,
              emit_state.pbe_reg_words,
              sizeof(job->pbe_reg_words));
@@ -5779,6 +5783,8 @@ pvr_emit_dirty_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
    struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
+   const struct pvr_fragment_shader_state *fragment_state =
+      &state->gfx_pipeline->shader_state.fragment;
    VkResult result;
 
    /* TODO: The emit_header will be dirty only if
@@ -5848,6 +5854,12 @@ pvr_emit_dirty_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
    result = pvr_emit_ppp_state(cmd_buffer, sub_cmd);
    if (result != VK_SUCCESS)
       return result;
+
+   if (state->gfx_pipeline &&
+       fragment_state->pass_type == ROGUE_TA_PASSTYPE_DEPTH_FEEDBACK) {
+      assert(state->current_sub_cmd->type == PVR_SUB_CMD_TYPE_GRAPHICS);
+      state->current_sub_cmd->gfx.has_depth_feedback = true;
+   }
 
    return VK_SUCCESS;
 }

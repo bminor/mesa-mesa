@@ -84,6 +84,7 @@ struct pvr_render_job {
       bool has_stencil_attachment : 1;
       bool requires_spm_scratch_buffer : 1;
       bool disable_pixel_merging : 1;
+      bool z_only_render : 1;
    };
 
    uint32_t pds_pixel_event_data_offset;
