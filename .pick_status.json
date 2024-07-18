@@ -1,5 +1,985 @@
 [
     {
+        "sha": "534f0019d714f2331f29d1281a009bb439ebdb17",
+        "description": "intel/brw: Don't mix types for unary extended math instructions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "452fed5203c0afc904553b4baf9e50802d479010",
+        "description": "nak: Run copy-prop again after opt_prmt and opt_lop",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "842bde8694ad004520aecf05e8ff8c1adbf0acb0",
+        "description": "nak: Add a pass macro for more consistent debug printing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aed223ca89e2be53d3d7a11e54749949531ab3da",
+        "description": "nak: Optimize nested OpPrmt",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b96d2d4351a91308e6697b7e089a52cc2df2dc7f",
+        "description": "nak: Add some helpers for working with OpPrmt selectors",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e3106fa6f881964f3a8cde3cfeb3105bca651da",
+        "description": "gallivm: orcjit: use a mutex to protect symbol looking up",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d709b42180e29519ce9eb119e99226299380a9b5",
+        "description": "dri: Let dril handle the DRI driver link farm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3de62b2f9a6cbcf3fea1d33af98be20505421d4b",
+        "description": "gallium/dril: Compatibility stub for the legacy DRI loader interface",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91e1ea52c9dc3c8bac564d4dbaf196591beac3f5",
+        "description": "mesa_interface: Move out of GL/internal/",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de41fda2f58ce7028edaff9128512a1734fbce3b",
+        "description": "mesa_interface: Set ourselves free",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6be17e222d59ce39e04c517e1d553c08c519834f",
+        "description": "treewide: Include mesa_interface.h not dri_interface.h",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c48fd8a6da1863af1dbd4f4f87997b622be4074",
+        "description": "gallium: Rename ${target}/target.c to ${target}/{$target}_target.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8d64860ec751add841870139d6bdda9120d4e2b",
+        "description": "anv: set MOCS for protected memory when needed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ece7abb599e2fa59acd888985b93ea60360dbdbd",
+        "description": "anv: get scratch surface from the correct pool",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3ccf80f9b15a49bbd79702d3c4de7ee65c8837b1",
+        "notes": null
+    },
+    {
+        "sha": "bcc79499fae3f9ddeab339c17a2a30d60849f53c",
+        "description": "rusticl/queue: format file",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "00540594df33fb1e380cc8f23672d757094f9f13",
+        "description": "rusticl/event: fix outdated comment in call",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38e15037f477b065fe0b77e10ece009e85214652",
+        "description": "rusticl/mesa: set take_ownership to true in set_constant_buffer_stream",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8da8c6c2d8bf9b9b04ee030df68d7d44146fc877",
+        "notes": null
+    },
+    {
+        "sha": "17b66799b62a82314bc908d6d7d7932cd39594d2",
+        "description": "rusticl/mesa: handle failures with u_upload_data",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8da8c6c2d8bf9b9b04ee030df68d7d44146fc877",
+        "notes": null
+    },
+    {
+        "sha": "8a77488c9c3397355011e32c024c8aca9b49f7a6",
+        "description": "rusticl/event: return execution errors when doing a blocking enqueue",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f4bf6f26a9b2a9adbdf301fb80781a91b74130d1",
+        "description": "rusticl/queue: properly implement in-order queue error checking",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3684912e3fd27639c62ed3a736832ff08cfc193a",
+        "description": "rusticl/event: properly implement CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a5ef4411b8cb8589d5b5939afaf196d93f762e8",
+        "description": "rusticl/queue: properly check all dependencies for an error status",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25dedee67d27959115875bb9e0b975db7b17ce52",
+        "description": "rusticl/queue: do not overwrite event error states",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2d3f8e446069ab6649b04078e8010c1eecc5b15",
+        "description": "rusticl/event: make set_status handle error status properly",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5072848a2f692ab9179504f24df97c01bab7f007",
+        "description": "radv/meta: remove useless memset when destroying DCC retile state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "602bdda3a576d85743bfd140c918fddbaa17e372",
+        "description": "radv/meta: rework creating DCC retile pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "176befe439c010498b62cf08fa85caa157acadc8",
+        "description": "radv/meta: fix potential memleak when creating DCC retile pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8e53114de3d71795a517438698ee74daa6e11eda",
+        "description": "radv/meta: fix potential race condition when creating DCC retile pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0906b6472420c3e6482aaa4cc65b779214747b31",
+        "description": "radv/meta: rework creating copy expand pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "67d720d11550abda108f4a432922d5d0b5819afd",
+        "description": "radv/meta: create fmask copy layouts regardless on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ee1bc2e821c387d0158caa76fc4f4bd26c7a90ec",
+        "description": "radv/meta: rework creating FMASK expand pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1ec223cd2773adb86e14733e01ace4533657a5c",
+        "description": "radv/meta: create fmask expand layouts regardless on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4bef832b10027ed78f352d6f2a5b142236cce85f",
+        "description": "radv/meta: rework creating blit pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad82a338b3a2e247c4ea955604e5baef7042e726",
+        "description": "radv/meta: cleanup meta_emit_blit()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89dc3167200770e07b3aedf27e1c546722ebf1fd",
+        "description": "radv/meta: move the locking around creating blit pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e8683cae011730c3214d0eac5639d1de11ecad01",
+        "description": "radv/meta: cleanup radv_device_init_meta_blit_{color,depth,stencil]()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "20be729636fc72dd03892df70ddb0cc8f5bc1041",
+        "description": "radv/meta: create the fill/copy pipelines on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c57987afc733a235f4bb09c6068e28390c14dfd1",
+        "description": "radv/meta: separate creating the fill/copy pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f2cbc3ab9b4ed0137250dfc85516e9a64eab27f",
+        "description": "radv/meta: cleanup creating the compute depth decompress pipeline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3d9afe44de6ea470c7a3cc1e20e1a8ab8121eca",
+        "description": "radv/meta: create the compute depth decompress pipeline on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f3e7c7e19fa148ac57ec1a5c40d2227d478d0bb2",
+        "description": "radv/meta: rework creating the gfx depth decompress pipeline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b54dc6a29a0fc12645a87617b87929c0dd35260c",
+        "description": "radv/meta: remove unused parameter to radv_get_depth_pipeline()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38567300d45b3a875c9aa4a025421d9e68d23552",
+        "description": "radv/meta: move locking around the gfx depth decompress pipeline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c94ed0394710ed7d20fc7ba9170c7b95d69964b",
+        "description": "radv/meta: avoid potential NULL deref with the gfx depth decompress pipeline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9c1fa23adf1ad1f9db078c9395e681f9e3f52023",
+        "description": "radv/meta: remove the depth resummarize operation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76bf65b613d98a1dfc314cd2a6804e91c03b3af0",
+        "description": "radv/meta: rework creating the VRS copy HTILE pipeline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5c743e9e90152101bb487ef1e7d49efa0ea68ad",
+        "description": "radv/meta: fix potential race condition when creating the copy VRS pipeline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f24742e8dc08d303e93299c5da227abb2fd0fb6e",
+        "description": "winsys/radeon: revert recent changes",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f673e2bf688173bb9069bcb13aac5b70330d561c",
+        "notes": null
+    },
+    {
+        "sha": "cc9503206e226419e4ffbf48f675447d868d0500",
+        "description": "panvk: Fix assert",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0e74b6eda9a0614a7e9438beda39c659da1b26cb",
+        "notes": null
+    },
+    {
+        "sha": "0500e3516566d6cfe3170ab508bf5128395c52a1",
+        "description": "intel/dev: Drop writeback_incoherent from Xe2",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d77dfa75d334aace59839885ea81a767ac94c4b",
+        "description": "intel/dev: Use GPU WB PAT for Xe2 writecombining",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "48da8eab55640603c408348d5ada3e03fec81352",
+        "description": "intel/dev: Add comment documenting the PAT entries",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7295e09b536dea05f904e60e786ada8fab10bab1",
+        "description": "intel/dev: Drop coherency from intel_device_info_pat_entry",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa1129540a5bb472f4681bd49bb36b5d2338e3e2",
+        "description": "intel/dev: Add documentation about intel_device_info_pat_entry::mmap",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4173e0f9106b7abc70b586936196c9694f0866b4",
+        "description": "intel/dev: Drop DG1 PAT entries",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "178950bf9bc395755f83bbe67a15b9937403bf04",
+        "description": "anv: Fix return of PAT index for compressed bos for discrete GPUs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad96a993856e7caf319c736cac6f514f6a13b996",
+        "description": "docs: add sha256sum for 24.1.4",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "096548bbe9cf1df33223ebfa1ff255624ef70799",
+        "description": "docs: update calendar for 24.1.4",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc078c2dcf4d65fa6a551171de37cc35fafa8b9e",
+        "description": "docs: add release notes for 24.1.4",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "619bcd3b5c8fefec773c4281dcc808b20b95306b",
+        "description": "radv: allow to capture with RGP on GFX11_5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e2882ea3e213d61381df60e11c9259babd833388",
+        "description": "ac/rgp: assume GFX11_5 use the same SQTT/RGP versions as GFX11",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "664a31bcd1e8d5b28c75f9fe00c17de418cd9129",
+        "description": "radv: disable SPM trace on GFX11_5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "057c4e378689b066e11c2f94b1edae548645a303",
+        "description": "radv: expose BufferFloat32AtomicMinMax on GFX11_5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2ae0c9ef8fcc46c3b6155fab90a7fa704cc5ba5",
+        "description": "radv: fix programming DB_RENDER_CONTROL for NULL depth/stencil on GFX11_5",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1c5779250ba6205f7aafc9d04154dad433aa525a",
+        "description": "radv: do not expose ImageFloat32AtomicMinMax on GFX11_5",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eff0998064f2ec422fd7465d130fd17286a30b93",
+        "description": "radv: use radv_nir_opt_tid_function to create inverse_ballot",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39de1786566e2914ab27533e5318d8db0d1efe64",
+        "description": "radv: use radv_nir_opt_tid_function for shuffles",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca887833186b9d93a103ec0dbb7fff5be6b697dc",
+        "description": "radv/nir: add a pass to optimize shuffle/booleans dependent only on tid/consts",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d3f536174ea587a728f1d6d6180104e18b0e5d7",
+        "description": "aco,nir: add dpp16_shift_amd intrinsic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f430b1111b18e37c959d9ac5698e80d2aa7c139",
+        "description": "nak/nir: Make interpolate_at_sample more efficient",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24d5acf0529c653a3935e13bc411d9bf42aa70ba",
+        "description": "nak/nir: Use prmt for barycentric offset lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fffbd3ff2b9a53299ffd4b5c7dd5399f69685335",
+        "description": "nak/nir: Use prmt in texture lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bbccbd8d50b1b04461a843a4f2a1b1153ed26cdb",
+        "description": "nir,nak: Add a nir_op_prmt_nv",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3619ec9630e8a05288d08e82e2285db12867bb27",
+        "description": "nak: Don't print the destination of OpIpa twice",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef88597ebb1eaf10017d17ec072953d6ae4a0c87",
+        "description": "nak/copy_prop: Ignore the top 16 bits of OpPrmt::sel",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f949c00170f2cd0b75cfab5edebc965069161d68",
+        "description": "nak/copy_prop: Propagate OpSel with a selector of SrcRef::Zero",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc33cafcacb1ad2eb9bb04283a57ee30385260fc",
+        "description": "nak/nir: Use an indirect load for sample locations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f673e2bf688173bb9069bcb13aac5b70330d561c",
+        "description": "winsys/radeon: switch to rendernode when card node doesn't work",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "216ff9591bd088ad18c62e71fdda0965faea8b78",
+        "description": "winsys/radeon: wrap fd access with util function",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec2451fcb345dfa182e3a320f03391b621921315",
+        "description": "winsys/radeon: take the full winsys struct in radeon_get_drm_value()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10d9bc3a2ce4878b50926b0578ab33c37c7561bc",
+        "description": "panfrost: Fetch available system memory",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02e38664f32c46b34d05a2dff801761120d4309f",
+        "description": "panfrost: Increase address space to 48-bit",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "04685e732ee9908f1ab174bd98a43c9a2d5e1c97",
+        "description": "panfrost: Do not recreate bo if already mapped",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f2793ee1006af332c9cb80319243f67021fe5d4",
+        "description": "panfrost: Rewrite set_global_binding to make resources truly global",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "801922cbe6ba2d0ffe3a9f2f7357969bd11cc2d7",
+        "description": "bi: Implement basic 8-bit vec support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "368100d71c9cc03536cdb637066062955b29b149",
+        "description": "bi: Enable lower_pack pass in compiler",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5420b739253c73875a532f40216b601618ec04e8",
+        "description": "bi: Lower pack_32_4x8_split and pack_32_2x16_split in algebraic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "32ef369322187489071e1b6f38ce3ae3e23c9478",
+        "description": "bi: Enable lower_pack_64_4x16",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02cea9762953a5141cc9b6e995f19011ca6e9db7",
+        "description": "bi: Clean up mem_access_size_align_cb",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "660218529c54104f0e9c5cd31059f961f0bad418",
+        "description": "rusticl: Add panthor when panfrost is present in RUSTICL_ENABLE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e565873911103d5be2696ab5064b150a1844128f",
+        "description": "features.txt: specify that GL_ARB_depth_clamp is only supported on v3d/vc7+",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "cbd39274451af7c0ad06676012a8f28a395df64d",
+        "notes": null
+    },
+    {
+        "sha": "4e9c16b035159c01b10fadeb5930f62efba14058",
+        "description": "features.txt: specify that VK_EXT_depth_clip_enable is only supported on v3dv/vc7+",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "16f6f50ce49c965302c4d81fd65c96c9d630f66b",
+        "notes": null
+    },
+    {
+        "sha": "f5a93fa83bdf5a34d3e46cb79611fef02d26cb19",
+        "description": "features.txt: specify that VK_EXT_depth_clamp_zero_one is only supported on v3dv/vc7+",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f8623ea7da722c5656af050d7bc771fcc3f1fc47",
+        "notes": null
+    },
+    {
+        "sha": "e6de8e2533f1fb863bedd904b9dc1e07d28da27d",
+        "description": "ci: fix run_n_monitor single execution",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15461dc62fba9066c1c2d4796f7c5003beca736c",
+        "description": "mesa: switch ID allocation to util_idalloc_sparse to reduce virtual memory usage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4085aaf569bba2543b04031697842534d5a534b",
+        "description": "util: add util_idalloc_sparse, solving the excessive virtual memory usage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ace7c32333521d18ee0db44da24132da70c23c22",
+        "description": "util: don't use variable names that can appear in args of idalloc foreach macros",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "287ed620d0de450fd1b8141e14227a2033434715",
+        "description": "util: make util_idalloc_exists private",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "2d260314f101540298edf973f5393e3468ed84ba",
         "description": "nvk: Use the page size queried from NVKMD",
         "nominated": false,
