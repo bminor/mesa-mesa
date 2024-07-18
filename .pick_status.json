@@ -33654,7 +33654,7 @@
         "description": "frontends/va: Fix AV1 slice_data_offset with multiple slice data buffers",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 1,
+        "resolution": 0,
         "main_sha": null,
         "because_sha": null,
         "notes": null
