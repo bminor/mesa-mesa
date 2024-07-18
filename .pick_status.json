@@ -914,7 +914,7 @@
         "description": "features.txt: specify that VK_EXT_depth_clip_enable is only supported on v3dv/vc7+",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "16f6f50ce49c965302c4d81fd65c96c9d630f66b",
         "notes": null
