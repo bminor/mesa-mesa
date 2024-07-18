@@ -1470,6 +1470,7 @@ pan_resource_modifier_convert(struct panfrost_context *ctx,
     * be able to convert back to another modifier if needed */
    rsrc->modifier_constant = false;
    pipe_resource_reference(&tmp_prsrc, NULL);
+   perf_debug(ctx, "resource_modifier_convert required due to: %s", reason);
 }
 
 /* Validate that an AFBC/AFRC resource may be used as a particular format. If it
