@@ -56,6 +56,7 @@ This repairs SSA in the case of mismatches between the logical and linear CFG, w
 
 Instruction selection might create mismatches between the logical CFG (the input NIR's CFG) and the linear CFG in the following situations:
 - We add a break at the end of a loop in case it has no active invocations (an empty exec can prevent any logical breaks from being taken). This creates a linear edge but no logical edge, and SGPR uses outside the loop can require a phi.
+- We add an empty exec skip over a block. This is a branch which skips most contents of a sequence of instructions if exec is empty. To avoid critical edges, the inside of the construct logically dominates the merge but not linearly.
 - An SGPR is defined in one side of a divergent IF but it used in or after the merge block. If the other side of the IF ends in a branch, a phi is not necessary according to the logical CFG, but it is for the linear CFG. However, `sanitize_cf_list()` should already resolve this before translation from NIR for additional reasons.
 
 #### Lower Phis
