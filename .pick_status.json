@@ -164,7 +164,7 @@
         "description": "amd/common: skip lane size determination for chips without image opcodes (e.g. gfx940)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b3e1a0532996f47434e68ac7c469f220473b3eb",
         "notes": null
