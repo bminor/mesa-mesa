@@ -264,7 +264,7 @@
         "description": "build: Check for PyYAML in Meson build",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ccc6442d6f0539571c413222e0d6aadc78bc5d4d",
         "notes": null
