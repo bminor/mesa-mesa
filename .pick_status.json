@@ -524,7 +524,7 @@
         "description": "venus: clarify wsi image ownership",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c4b30b604fda53dfaed83bcbe1467ac1023b2c90",
         "notes": null
