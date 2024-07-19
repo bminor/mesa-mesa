@@ -514,7 +514,7 @@
         "description": "loader: gc loader_get_extensions_name() and __DRI_DRIVER_{GET_,}EXTENSIONS defines",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fa541a887c8a6732136280dce18fabfb481b34d7",
         "notes": null
