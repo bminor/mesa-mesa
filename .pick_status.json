@@ -4324,7 +4324,7 @@
         "description": "freedreno/a6xx: Rework CCU_CNTL emit for a7xx",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
