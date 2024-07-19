@@ -174,7 +174,7 @@
         "description": "radeonsi: fix eptich on chips without image opcodes (e.g. gfx940)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "26cd3a1718c7e8f55fa8605f20fb001b2954d6b4",
         "notes": null
