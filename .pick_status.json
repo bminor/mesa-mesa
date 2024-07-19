@@ -334,7 +334,7 @@
         "description": "intel/dev: Add devinfo flag for TBIMR push constant workaround.",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
