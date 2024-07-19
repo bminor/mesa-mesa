@@ -954,7 +954,7 @@
         "description": "amd: use a valid size for ac_pm4_state allocation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "428601095c38bd80f4ed164414f8096edd73832f",
         "notes": null
