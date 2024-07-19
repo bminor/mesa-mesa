@@ -196,13 +196,13 @@ radv_amdgpu_winsys_get_sync_types(struct radeon_winsys *rws)
 }
 
 struct radeon_winsys *
-radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags, bool reserve_vmid)
+radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags, bool reserve_vmid, bool is_virtio)
 {
    uint32_t drm_major, drm_minor, r;
    ac_drm_device *dev;
    struct radv_amdgpu_winsys *ws = NULL;
 
-   r = ac_drm_device_initialize(fd, false, &drm_major, &drm_minor, &dev);
+   r = ac_drm_device_initialize(fd, is_virtio, &drm_major, &drm_minor, &dev);
    if (r) {
       fprintf(stderr, "radv/amdgpu: failed to initialize device.\n");
       return NULL;
@@ -251,6 +251,7 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    ws->fd = ac_drm_device_get_fd(dev);
    ws->info.drm_major = drm_major;
    ws->info.drm_minor = drm_minor;
+   ws->info.is_virtio = is_virtio;
    if (!do_winsys_init(ws, fd))
       goto winsys_fail;
 
