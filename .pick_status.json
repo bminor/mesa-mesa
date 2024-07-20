@@ -454,7 +454,7 @@
         "description": "meson/megadriver: Don't invoke the megadriver script with no drivers",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
