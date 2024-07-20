@@ -11,6 +11,8 @@
 #include "util/bitset.h"
 
 enum etna_feature {
+   ETNA_FEATURE_CORE_GPU,
+   ETNA_FEATURE_CORE_NPU,
    ETNA_FEATURE_FAST_CLEAR,
    ETNA_FEATURE_PIPE_3D,
    ETNA_FEATURE_32_BIT_INDICES,
@@ -73,12 +75,6 @@ enum etna_feature {
    ETNA_FEATURE_NUM,
 };
 
-enum etna_core_type {
-   ETNA_CORE_NOT_SUPPORTED = 0,
-   ETNA_CORE_GPU,
-   ETNA_CORE_NPU,
-};
-
 struct etna_core_gpu_info {
    unsigned max_instructions;          /* vertex/fragment shader max instructions */
    unsigned vertex_output_buffer_size; /* size of vertex shader output buffer */
@@ -111,12 +107,8 @@ struct etna_core_info {
 
    int8_t halti; /* HALTI (gross architecture) level. -1 for pre-HALTI. */
 
-   enum etna_core_type type;
-
-   union {
-      struct etna_core_gpu_info gpu;
-      struct etna_core_npu_info npu;
-   };
+   struct etna_core_gpu_info gpu;
+   struct etna_core_npu_info npu;
 
    BITSET_DECLARE(feature, ETNA_FEATURE_NUM);
 };

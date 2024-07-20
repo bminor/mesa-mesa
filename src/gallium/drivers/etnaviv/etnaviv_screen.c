@@ -808,7 +808,7 @@ etna_get_specs(struct etna_screen *screen)
    uint32_t instruction_count = 0;
 
    /* Copy all relevant limits from etna_core_info. */
-   if (info->type == ETNA_CORE_GPU) {
+   if (etna_core_has_feature(info, ETNA_FEATURE_CORE_GPU)) {
       instruction_count = info->gpu.max_instructions;
       screen->specs.pixel_pipes = info->gpu.pixel_pipes;
 
@@ -816,7 +816,7 @@ etna_get_specs(struct etna_screen *screen)
          info = etna_gpu_get_core_info(screen->npu);
    }
 
-   if (info->type == ETNA_CORE_NPU) {
+   if (etna_core_has_feature(info, ETNA_FEATURE_CORE_NPU)) {
       if (etna_core_has_feature(info, ETNA_FEATURE_NN_XYDP0))
          screen->specs.nn_core_version = 8;
       else if (etna_core_has_feature(info, ETNA_FEATURE_VIP_V7))
