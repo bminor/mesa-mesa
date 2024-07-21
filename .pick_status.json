@@ -1,0 +1,552 @@
+[
+    {
+        "sha": "0cc23b652401600e57c278d8f6fe6756b13b9f6a",
+        "description": "nak: Move creation of nak_shader_info to ShaderBin::new()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "618dfc73e6e5907d98545db5eece5b26d3dd9cc0",
+        "description": "nak: Move a few more things to VtgIoInfo",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f39b645c66912449d25dce95a711dc572052653c",
+        "description": "nak: Rework fragment shader stage info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d96fe1854701c9292672a8a82e6ed531ed477dc6",
+        "description": "nak: Plumb tessellation parameters through ShaderStageInfo",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4c9bfdebd86dce4ce91e1b9a57435871d35c827",
+        "description": "nak: Drop the nvfuzz binary",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb7632128b7a06bb460d997b06910553591ae5c0",
+        "description": "venus: only request ring thread prio for TLS ring",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc82f80dcbdd7e6be2445e73dfa73c31970e5b35",
+        "description": "nak/nir: Split 64-bit conversions pre-Volta",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "574239c948e870f5ef9ebad763cf764ab37191ce",
+        "description": "nak/sm50: Implement OpCCtl",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6fd427bf6eb8471683598ade08ddc7588141ed2b",
+        "description": "nak: Lower fsqrt in NIR on Maxwell A and earlier",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b4a005bf867958d33d549a35118c18e01f3c7c9",
+        "description": "nak/sm50: Implement OpPixLd",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "69be07b191901241143cc8a1cd04d4e8e381dbc6",
+        "description": "nak/sm50: Various encoding fixes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "549fada5933015a689b2057e4757260f7d7a42de",
+        "description": "nak/sm50: Improve encoding of OpFFma",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cfef5a932995314c737ebd89cb46dcb2a86c9d6a",
+        "description": "nak/sm50: Support AtomOp::CmpExch",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d1b1f5d3ae934f4a12c5a48fbe93dcd1220e963",
+        "description": "nak: Add an AtomCmpSrc to AtomOp::CmpExch",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da4e368a6fbf466108b95aa94b8c7b172bda5c1b",
+        "description": "nak: Implement ineg on sm50",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71d8126e1bb8d838137440d7c2509c6ce4925fc0",
+        "description": "nak/sm50: Split IAdd2 into IAdd2 and IAdd2X",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2177f47649bb39d8afd84eca95deabe63c447fb",
+        "description": "nvk: Don't advertise sparse residency on Maxwell A",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "48803ac53db8daf26af70c9d2b68802d29e1128b",
+        "notes": null
+    },
+    {
+        "sha": "a888e83c3a299e6617aaf367028ca0ffa90bc779",
+        "description": "nvk: Fix indirect cbuf binds pre-Turing",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ee29a8d1cdbdc553caac8ceeda03f5c737eda0f2",
+        "notes": null
+    },
+    {
+        "sha": "66954d997d801743156f5eeda7a23ba1d9b6c098",
+        "description": "nouveau/headers: Add an nv_push crate in Rust",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63770a163af8945aa6d3325f9196cc496d667ee1",
+        "description": "nouveau/headers: Add a Rust struct for each method",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "591b5da49bf5dff5c92d2465de9e0fccab2e9d89",
+        "description": "nouveau/headers: Run rustfmt on generated files",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f6919e6c2d898ff940e791f558d0d919fa47747",
+        "description": "intel/clflush: Utilize clflushopt in intel_invalidate_range",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd0592afd34b6686d9645228de99b15bae9198e5",
+        "description": "gallivm: Fix LLVMPipe codegen issues discovered on Apple Silicon",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f49284cfa9da5c64ccf5bd1466d6de9536edd51",
+        "description": "nak: Rename num_barriers to num_control_barriers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aac97b22ae8d5a06646a3cef373c78c2f005f2cb",
+        "description": "nak: Don't mix up two types of barrier",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca087e202766872085d6d02363fd7f4961feba48",
+        "description": "zink: reject Imagination proprietary driver w/o geometryShader",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bed6e0d691c125eecfbd504ee96c5a4a6027418e",
+        "description": "build: Check for PyYAML in Meson build",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ccc6442d6f0539571c413222e0d6aadc78bc5d4d",
+        "notes": null
+    },
+    {
+        "sha": "149e8bff52aec95b9912812392d850829ccf1822",
+        "description": "meson: egl: Build egl_dri2 driver even for plain DRI",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec55a6c3292235aa56750989ee4a5bbd62fca61d",
+        "description": "Revert \"meson: fix with_dri2 definition for GNU Hurd\"",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8461776a09cac6540fe168e431528b4c71ffdca4",
+        "description": "Revert \"meson: Do not require libdrm for DRI2 on hurd\"",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49144ebcf93d48e3a95bc291747e49990dac7fe3",
+        "description": "iris/gfx12.5: Pass non-empty push constant data to PS stage for TBIMR workaround.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "57decad9768a445de23d093cc8e004269a352b50",
+        "notes": null
+    },
+    {
+        "sha": "ff3c3792b4f0d66af50c36b9d03373b1de5c9740",
+        "description": "anv/gfx12.5: Pass non-empty push constant data to PS stage for TBIMR workaround.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "57decad9768a445de23d093cc8e004269a352b50",
+        "notes": null
+    },
+    {
+        "sha": "b98eebbcb2ab25a6a9de4e97f352715614c72c48",
+        "description": "intel/brw: Implement null push constant workaround.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "57decad9768a445de23d093cc8e004269a352b50",
+        "notes": null
+    },
+    {
+        "sha": "bb2513918abcba892bade05008a9c79c5a304af6",
+        "description": "intel/dev: Add devinfo flag for TBIMR push constant workaround.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "faee9426ab7b79b72823c27d97f13780771f6220",
+        "description": "nir/algebraic: Optimize some masking of extract_u8 operations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1c7e35d4e00632188787fbfffb5a9882db9cc48c",
+        "description": "nir/algebraic: Optimize some bit operation nonsense observed in some shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "92befad89f6259137a1cb6acad371b96a2aa25f1",
+        "description": "nir/range_analysis: Fix errors in fmin and fmax tables",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "72c182f873bd0b6c98018cc9f15d2c3bac7c06cb",
+        "description": "ci/lava: Detect a6xx gpu recovery failures",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53f249b921d5d8a3188bfe1f9002c2ddcb3d2ff2",
+        "description": "zink: use blake3 instead of sha1 for program cache",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce1236fe87716748d6a8692cefb837607fabc38d",
+        "description": "zink: use GENERAL layout for depth attachments on some drivers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "991244dad4ec540c59e05c273688cfa88b0e346c",
+        "description": "zink: use local screen variable in zink_prep_fb_attachment",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cdc70013a25427895af26440b1e4b26cf8e17dc7",
+        "description": "zink: add lavapipe to can_do_invalid_linear_modifier list",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8d53f72da124c5135da296b14df287f304e6796",
+        "description": "zink: hash in some driver workaround flags to shader cache",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec3eb87f91c17e4777acc983bb728d8a81e91069",
+        "description": "zink: move some flags from driver_workarounds to separate struct",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e2c90da5605f3e94552284f7b7eba57444cb439c",
+        "description": "venus/ci: skip timing out test",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e64adab9a0eed39c2fe8b08c9527c8963050634c",
+        "description": "anv+zink/ci: mark a couple of tests as flaky",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ebef31e4cf1f38d579033891a6ee29155db345ee",
+        "description": "anv+zink/ci: document two tests, one failing and one crashing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ed5d362a69ad964e1920ae95eac2c2a5fd89ddc",
+        "description": "anv+zink/ci: mark some tests as fixed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8fe147de572b640291c7a51bb350ebf0c0b4085c",
+        "description": "freedreno/ci: document extra variants of failing tests on a618 and a630",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "734823fe7ded3312529a701225a72bc152ea131d",
+        "description": "freedreno/ci: double job timeout for a306",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1edf20a4d83a758a7a3afc4864402a3ef3ab240",
+        "description": "radeonsi/ci: skip timing out test",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dfd70bab4ac2336be6c1085f195aef8e0e10dc13",
+        "description": "loader: gc loader_get_extensions_name() and __DRI_DRIVER_{GET_,}EXTENSIONS defines",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fa541a887c8a6732136280dce18fabfb481b34d7",
+        "notes": null
+    },
+    {
+        "sha": "7dfb9ba023c0e4841125f8150c07515761f1143c",
+        "description": "gallivm: Fix compilation errors when using LLVM 13.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "47cd0eee2611001499e3aa0a045fbed38c2dc1e5",
+        "notes": null
+    },
+    {
+        "sha": "f4b996b77a77984ff742258f480e8826ba897ccf",
+        "description": "docs: reset new_features.txt",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b21e17979ca61f1688864a2d40019066f03d1e8",
+        "description": "VERSION: bump to 24.3",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    }
+]
