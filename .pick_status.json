@@ -1054,7 +1054,7 @@
         "description": "nak: fix meson typo",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "95bff5ca5b44e9d2a5a7863ce46a6234d86bd207",
         "notes": null
