@@ -1034,7 +1034,7 @@
         "description": "venus: initialize bitset in CreateDescriptorPool()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "de5879447b4d7548b2798ba482b25441e0df97c9",
         "notes": null
