@@ -1454,7 +1454,7 @@
         "description": "intel/brw: Use REG_CLASS_COUNT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5d87f41a546b26650b15fb33c5f1153aa041a037",
         "notes": null
