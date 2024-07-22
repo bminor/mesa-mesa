@@ -1874,7 +1874,7 @@
         "description": "tgsi_to_nir: free disk cache value if the size is wrong",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4db880d8057bac3209c196edc94c6b1e521a782a",
         "notes": null
