@@ -1582,7 +1582,7 @@ VkResult pvr_srv_rgx_kick_render2(int fd,
                                 sizeof(ret));
    if (result || ret.error != PVR_SRV_OK) {
       /* There is no 'retry' VkResult, so treat it as VK_NOT_READY instead. */
-      if (result == PVR_SRV_ERROR_RETRY)
+      if (result == PVR_SRV_ERROR_RETRY || ret.error == PVR_SRV_ERROR_RETRY)
          return VK_NOT_READY;
 
       return vk_bridge_err(VK_ERROR_OUT_OF_DEVICE_MEMORY,
