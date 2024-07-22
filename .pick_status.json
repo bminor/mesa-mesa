@@ -694,7 +694,7 @@
         "description": "iris: Run checks that do not require resources before creating them",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c8df09ebd4f164c8cd8b828db08c00deb09fb887",
         "notes": null
