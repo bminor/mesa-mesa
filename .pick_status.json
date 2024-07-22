@@ -964,7 +964,7 @@
         "description": "v3d/ci: mark spec@amd_performance_monitor@vc4 tests as flaky",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4696e9c49b01b5cc13cadf51c31782fa9b0f8441",
         "notes": null
