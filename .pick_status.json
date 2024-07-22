@@ -594,7 +594,7 @@
         "description": "nvk: Reject sparse images on Maxwell A and earlier",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d2177f47649bb39d8afd84eca95deabe63c447fb",
         "notes": null
