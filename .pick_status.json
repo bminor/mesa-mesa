@@ -44,7 +44,7 @@
         "description": "dril: rework config creation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3de62b2f9a6cbcf3fea1d33af98be20505421d4b",
         "notes": null
