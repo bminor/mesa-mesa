@@ -1444,7 +1444,7 @@
         "description": "intel/elk: Use REG_CLASS_COUNT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d44462c08d8858a4ab2dc37b311cc69501adb0dc",
         "notes": null
