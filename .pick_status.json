@@ -314,7 +314,7 @@
         "description": "dri: fix macro name check to detect svga driver",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "50fc7cc290db49288b318c116c6fdc3daaf801e9",
         "notes": null
