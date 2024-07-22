@@ -844,7 +844,7 @@
         "description": "tu/kgsl: Remove unused variable",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17c12a9924a0c6f0f52a66c92fe1bbd8886fc9b1",
         "notes": null
