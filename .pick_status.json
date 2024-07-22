@@ -604,7 +604,7 @@
         "description": "mesa: fix memory leak when using shader cache",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "656ccf4ef890b91debbb72b38957723ca04411d0",
         "notes": null
