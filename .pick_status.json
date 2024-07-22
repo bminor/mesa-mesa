@@ -1854,7 +1854,7 @@
         "description": "crocus: check for depth+stencil before creating resource",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5f7df5df0d8410925edcfb926509f6b17ef6b619",
         "notes": null
