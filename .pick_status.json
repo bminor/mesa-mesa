@@ -1754,7 +1754,7 @@
         "description": "intel/clc: Free parsed_spirv_data",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4fd7495c693818e0823b100df0e0607e448a29fe",
         "notes": null
