@@ -58,6 +58,7 @@ is_64b(void)
 static int draws[4];
 static struct {
    uint64_t base;
+   uint32_t *host_base;
    uint32_t size; /* in dwords */
    /* Generally cmdstream consists of multiple IB calls to different
     * buffers, which are themselves often re-used for each tile.  The
@@ -149,7 +150,7 @@ static void dump_tex_samp(uint32_t *texsamp, enum state_src_t src, int num_unit,
 static void dump_tex_const(uint32_t *texsamp, int num_unit, int level);
 
 static bool
-highlight_gpuaddr(uint64_t gpuaddr)
+highlight_addr(uint32_t *hostaddr)
 {
    if (!options->ibs[ib].base)
       return false;
@@ -167,10 +168,10 @@ highlight_gpuaddr(uint64_t gpuaddr)
    if (options->ibs[ib].base != ibs[ib].base)
       return false;
 
-   uint64_t start = ibs[ib].base + 4 * (ibs[ib].size - options->ibs[ib].rem);
-   uint64_t end = ibs[ib].base + 4 * ibs[ib].size;
+   uint32_t *start = ibs[ib].host_base + (ibs[ib].size - options->ibs[ib].rem);
+   uint32_t *end = ibs[ib].host_base + ibs[ib].size;
 
-   bool triggered = (start <= gpuaddr) && (gpuaddr <= end);
+   bool triggered = (start <= hostaddr) && (hostaddr <= end);
 
    if (triggered && (ib < 2) && options->ibs[ib + 1].crash_found) {
       ibs[ib].base_seen = true;
@@ -194,7 +195,7 @@ dump_hex(uint32_t *dwords, uint32_t sizedwords, int level)
    if (quiet(2))
       return;
 
-   bool highlight = highlight_gpuaddr(gpuaddr(dwords) + 4 * sizedwords - 1);
+   bool highlight = highlight_addr(dwords + sizedwords - 1);
 
    for (i = 0; i < sizedwords; i += 8) {
       int zero = 1;
@@ -2396,10 +2397,11 @@ cp_indirect(uint32_t *dwords, uint32_t sizedwords, int level)
        * executed but never returns.  Account for this by checking if
        * the IB returned:
        */
-      highlight_gpuaddr(gpuaddr(dwords));
+      highlight_addr(dwords);
 
       ib++;
       ibs[ib].base = ibaddr;
+      ibs[ib].host_base = ptr;
       ibs[ib].size = ibsize;
 
       dump_commands(ptr, ibsize, level);
@@ -2431,7 +2433,7 @@ cp_start_bin(uint32_t *dwords, uint32_t sizedwords, int level)
        * executed but never returns.  Account for this by checking if
        * the IB returned:
        */
-      highlight_gpuaddr(gpuaddr(&dwords[5]));
+      highlight_addr(&dwords[5]);
 
       /* TODO: we should duplicate the body of the loop after each bin, so
        * that draws get the correct state. We should also figure out if there
@@ -2441,6 +2443,7 @@ cp_start_bin(uint32_t *dwords, uint32_t sizedwords, int level)
       ib++;
       for (uint32_t i = 0; i < loopcount; i++) {
          ibs[ib].base = ibaddr;
+         ibs[ib].host_base = ptr;
          ibs[ib].size = ibsize;
          printl(3, "%sbin %u\n", levels[level], i);
          dump_commands(ptr, ibsize, level);
@@ -2475,11 +2478,12 @@ cp_fixed_stride_draw_table(uint32_t *dwords, uint32_t sizedwords, int level)
        * executed but never returns.  Account for this by checking if
        * the IB returned:
        */
-      highlight_gpuaddr(gpuaddr(&dwords[5]));
+      highlight_addr(&dwords[5]);
 
       ib++;
       for (uint32_t i = 0; i < loopcount; i++) {
          ibs[ib].base = ibaddr;
+         ibs[ib].host_base = ptr;
          ibs[ib].size = ibsize;
          printl(3, "%sdraw %u\n", levels[level], i);
          dump_commands(ptr, ibsize, level);
