@@ -14,7 +14,7 @@
         "description": "nak: allow clippy::not_unsafe_ptr_arg_deref lints",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b9c0e3c1ab7f157aaab4210e3f31843fb00368d5",
         "notes": null
