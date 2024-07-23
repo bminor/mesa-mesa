@@ -174,7 +174,7 @@
         "description": "intel/clc: Free disk_cache",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c15bf88f011d204c11e893c5ff0fd018a0262a39",
         "notes": null
