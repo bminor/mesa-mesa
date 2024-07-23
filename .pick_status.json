@@ -1844,7 +1844,7 @@
         "description": "egl/gbm: Walk device list to initialize DRM platform",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "32f4cf38085e4056b8e4a9fc78fea28897a1d05f",
         "notes": null
