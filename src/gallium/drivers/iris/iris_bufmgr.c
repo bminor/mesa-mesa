@@ -777,7 +777,9 @@ iris_slab_alloc(void *priv,
 
    switch (heap) {
    case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED:
+   case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT:
    case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED:
+   case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT:
       flags |= BO_ALLOC_COMPRESSED;
       break;
    case IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT:
@@ -854,9 +856,12 @@ flags_to_heap(struct iris_bufmgr *bufmgr, enum bo_alloc_flags flags)
    const struct intel_device_info *devinfo = &bufmgr->devinfo;
 
    if (bufmgr->vram.size > 0) {
-      if (flags & BO_ALLOC_COMPRESSED)
-         return IRIS_HEAP_DEVICE_LOCAL_COMPRESSED;
+      if (flags & BO_ALLOC_COMPRESSED) {
+         if (flags & BO_ALLOC_SCANOUT)
+            return IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT;
 
+         return IRIS_HEAP_DEVICE_LOCAL_COMPRESSED;
+      }
       /* Discrete GPUs currently always snoop CPU caches. */
       if ((flags & BO_ALLOC_SMEM) || (flags & BO_ALLOC_CACHED_COHERENT))
          return IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT;
@@ -882,8 +887,12 @@ flags_to_heap(struct iris_bufmgr *bufmgr, enum bo_alloc_flags flags)
       assert(!devinfo->has_llc);
       assert(!(flags & BO_ALLOC_LMEM));
 
-      if (flags & BO_ALLOC_COMPRESSED)
+      if (flags & BO_ALLOC_COMPRESSED) {
+         if (flags & BO_ALLOC_SCANOUT)
+            return IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT;
+
          return IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED;
+      }
 
       if (flags & (BO_ALLOC_SCANOUT | BO_ALLOC_SHARED))
             return IRIS_HEAP_SYSTEM_MEMORY_UNCACHED;
@@ -1139,15 +1148,15 @@ alloc_fresh_bo(struct iris_bufmgr *bufmgr, uint64_t bo_size, enum bo_alloc_flags
       case IRIS_HEAP_DEVICE_LOCAL:
       case IRIS_HEAP_DEVICE_LOCAL_CPU_VISIBLE_SMALL_BAR:
       case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED:
+      case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT:
          regions[num_regions++] = bufmgr->vram.region;
          break;
       case IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT:
          regions[num_regions++] = bufmgr->sys.region;
          break;
       case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED:
-         /* not valid, compressed in discrete is always created with
-          * IRIS_HEAP_DEVICE_LOCAL_PREFERRED_COMPRESSED
-          */
+      case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT:
+         /* Discrete GPUs have dedicated compressed heaps. */
       case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED:
          /* not valid; discrete cards always enable snooping */
       case IRIS_HEAP_MAX:
@@ -1179,8 +1188,11 @@ iris_heap_to_string[IRIS_HEAP_MAX] = {
    [IRIS_HEAP_SYSTEM_MEMORY_CACHED_COHERENT] = "system-cached-coherent",
    [IRIS_HEAP_SYSTEM_MEMORY_UNCACHED] = "system-uncached",
    [IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED] = "system-uncached-compressed",
+   [IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT] =
+      "system-uncached-compressed-scanout",
    [IRIS_HEAP_DEVICE_LOCAL] = "local",
    [IRIS_HEAP_DEVICE_LOCAL_COMPRESSED] = "local-compressed",
+   [IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT] = "local-compressed-scanout",
    [IRIS_HEAP_DEVICE_LOCAL_PREFERRED] = "local-preferred",
    [IRIS_HEAP_DEVICE_LOCAL_CPU_VISIBLE_SMALL_BAR] = "local-cpu-visible-small-bar",
 };
@@ -1201,7 +1213,9 @@ heap_to_mmap_mode(struct iris_bufmgr *bufmgr, enum iris_heap heap)
    case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED:
       return IRIS_MMAP_WC;
    case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED:
+   case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT:
    case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED:
+   case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT:
       /* compressed bos are not mmaped */
       return IRIS_MMAP_NONE;
    default:
@@ -2675,12 +2689,8 @@ const struct intel_device_info_pat_entry *
 iris_heap_to_pat_entry(const struct intel_device_info *devinfo,
                        enum iris_heap heap, bool scanout)
 {
-   if (scanout) {
-      if (iris_heap_is_compressed(heap) == false)
+   if (scanout && !iris_heap_is_compressed(heap)) {
          return &devinfo->pat.scanout;
-
-      WARN_ONCE(iris_heap_is_compressed(heap),
-                "update heap_to_pat_entry when compressed scanout pat entries are added");
    }
 
    switch (heap) {
@@ -2695,6 +2705,9 @@ iris_heap_to_pat_entry(const struct intel_device_info *devinfo,
    case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED:
    case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED:
       return &devinfo->pat.compressed;
+   case IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT:
+   case IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT:
+      return &devinfo->pat.compressed_scanout;
    default:
       unreachable("invalid heap for platforms using PAT entries");
    }

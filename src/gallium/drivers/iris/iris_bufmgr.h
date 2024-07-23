@@ -183,12 +183,24 @@ enum iris_heap {
    /** IRIS_HEAP_SYSTEM_MEMORY_UNCACHED + compressed, only supported in Xe2 */
    IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED,
 
+   /** Only supported in Xe2, this heap has a different compression-enabled
+    * PAT entry for buffers to display, compared to the
+    * IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED
+    */
+   IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT,
+
    /** Device-local memory (VRAM).  Cannot be placed in system memory! */
    IRIS_HEAP_DEVICE_LOCAL,
    IRIS_HEAP_MAX_NO_VRAM = IRIS_HEAP_DEVICE_LOCAL,
 
    /** Device-local compressed memory, only supported in Xe2 */
    IRIS_HEAP_DEVICE_LOCAL_COMPRESSED,
+
+   /** Only supported in Xe2, this heap has a different compression-enabled
+    * PAT entry for buffers to display, compared to the
+    * IRIS_HEAP_DEVICE_LOCAL_COMPRESSED
+    */
+   IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT,
 
    /** Device-local memory that may be evicted to system memory if needed. */
    IRIS_HEAP_DEVICE_LOCAL_PREFERRED,
@@ -213,14 +225,17 @@ iris_heap_is_device_local(enum iris_heap heap)
    return heap == IRIS_HEAP_DEVICE_LOCAL ||
           heap == IRIS_HEAP_DEVICE_LOCAL_PREFERRED ||
           heap == IRIS_HEAP_DEVICE_LOCAL_CPU_VISIBLE_SMALL_BAR ||
-          heap == IRIS_HEAP_DEVICE_LOCAL_COMPRESSED;
+          heap == IRIS_HEAP_DEVICE_LOCAL_COMPRESSED ||
+          heap == IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT;
 }
 
 static inline bool
 iris_heap_is_compressed(enum iris_heap heap)
 {
    return heap == IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED ||
-          heap == IRIS_HEAP_DEVICE_LOCAL_COMPRESSED;
+          heap == IRIS_HEAP_SYSTEM_MEMORY_UNCACHED_COMPRESSED_SCANOUT ||
+          heap == IRIS_HEAP_DEVICE_LOCAL_COMPRESSED ||
+          heap == IRIS_HEAP_DEVICE_LOCAL_COMPRESSED_SCANOUT;
 }
 
 #define IRIS_BATCH_COUNT 3
