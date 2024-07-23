@@ -58,7 +58,6 @@ enum Label {
    label_omod5 = 1 << 10,
    label_clamp = 1 << 12,
    label_b2f = 1 << 16,
-   label_bitwise = 1 << 18,
    label_uniform_bool = 1 << 21,
    label_constant_64bit = 1 << 22,
    label_uniform_bitwise = 1 << 23,
@@ -75,7 +74,7 @@ enum Label {
 };
 
 static constexpr uint64_t instr_usedef_labels =
-   label_mul | label_bitwise | label_uniform_bitwise | label_usedef | label_extract;
+   label_mul | label_uniform_bitwise | label_usedef | label_extract;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -292,14 +291,6 @@ struct ssa_info {
    }
 
    bool is_b2f() { return label & label_b2f; }
-
-   void set_bitwise(Instruction* bitwise_instr)
-   {
-      add_label(label_bitwise);
-      instr = bitwise_instr;
-   }
-
-   bool is_bitwise() { return label & label_bitwise; }
 
    void set_uniform_bitwise() { add_label(label_uniform_bitwise); }
 
@@ -721,7 +712,7 @@ skip_smem_offset_align(opt_ctx& ctx, SMEM_instruction* smem, uint32_t align)
     */
 
    Operand& op = smem->operands[soe ? smem->operands.size() - 1 : 1];
-   if (!op.isTemp() || !ctx.info[op.tempId()].is_bitwise())
+   if (!op.isTemp() || !ctx.info[op.tempId()].is_usedef())
       return;
 
    Instruction* bitwise_instr = ctx.info[op.tempId()].instr;
@@ -1204,18 +1195,25 @@ can_eliminate_and_exec(opt_ctx& ctx, Temp tmp, unsigned pass_flags)
       if (vopc_instr->isVOPC())
          return vopc_instr->pass_flags == pass_flags;
    }
-   if (ctx.info[tmp.id()].is_bitwise()) {
+   if (ctx.info[tmp.id()].is_usedef()) {
       Instruction* instr = ctx.info[tmp.id()].instr;
       if (instr->operands.size() != 2 || instr->pass_flags != pass_flags)
          return false;
       if (!(instr->operands[0].isTemp() && instr->operands[1].isTemp()))
          return false;
-      if (instr->opcode == aco_opcode::s_and_b32 || instr->opcode == aco_opcode::s_and_b64) {
+
+      switch (instr->opcode) {
+      case aco_opcode::s_and_b32:
+      case aco_opcode::s_and_b64:
          return can_eliminate_and_exec(ctx, instr->operands[0].getTemp(), pass_flags) ||
                 can_eliminate_and_exec(ctx, instr->operands[1].getTemp(), pass_flags);
-      } else {
+      case aco_opcode::s_or_b32:
+      case aco_opcode::s_or_b64:
+      case aco_opcode::s_xor_b32:
+      case aco_opcode::s_xor_b64:
          return can_eliminate_and_exec(ctx, instr->operands[0].getTemp(), pass_flags) &&
                 can_eliminate_and_exec(ctx, instr->operands[1].getTemp(), pass_flags);
+      default: return false;
       }
    }
    return false;
@@ -1938,7 +1936,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          ctx.info[instr->definitions[1].tempId()].set_scc_invert(
             ctx.info[instr->operands[0].tempId()].instr->definitions[1].getTemp());
       }
-      ctx.info[instr->definitions[0].tempId()].set_bitwise(instr.get());
+      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
       break;
    case aco_opcode::s_and_b32:
    case aco_opcode::s_and_b64:
@@ -1981,7 +1979,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                       })) {
          ctx.info[instr->definitions[0].tempId()].set_uniform_bitwise();
       }
-      ctx.info[instr->definitions[0].tempId()].set_bitwise(instr.get());
+      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
       break;
    case aco_opcode::s_lshl_b32:
    case aco_opcode::v_or_b32:
@@ -2025,7 +2023,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
          if (parse_extract(instr.get()))
             ctx.info[instr->definitions[0].tempId()].set_extract(instr.get());
-         ctx.info[instr->definitions[0].tempId()].set_bitwise(instr.get());
+         ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
       }
       break;
    }
