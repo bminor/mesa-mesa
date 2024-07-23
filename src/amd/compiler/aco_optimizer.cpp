@@ -49,7 +49,6 @@ enum Label {
     * look through any conversions */
    label_abs = 1 << 2,
    label_neg = 1 << 3,
-   label_mul = 1 << 4,
    label_temp = 1 << 5,
    label_literal = 1 << 6,
    label_mad = 1 << 7,
@@ -74,7 +73,7 @@ enum Label {
 };
 
 static constexpr uint64_t instr_usedef_labels =
-   label_mul | label_uniform_bitwise | label_usedef | label_extract;
+   label_uniform_bitwise | label_usedef | label_extract;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
@@ -209,14 +208,6 @@ struct ssa_info {
       add_label((Label)((uint32_t)label_abs | (uint32_t)label_neg));
       temp = neg_abs_temp;
    }
-
-   void set_mul(Instruction* mul)
-   {
-      add_label(label_mul);
-      instr = mul;
-   }
-
-   bool is_mul() { return label & label_mul; }
 
    void set_temp(Temp tmp)
    {
@@ -1131,7 +1122,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
 
    /* These are the only labels worth keeping at the moment. */
    for (Definition& def : instr->definitions) {
-      ctx.info[def.tempId()].label &= (label_mul | label_usedef | instr_mod_labels);
+      ctx.info[def.tempId()].label &= (label_usedef | instr_mod_labels);
       if (ctx.info[def.tempId()].label & instr_usedef_labels)
          ctx.info[def.tempId()].instr = instr.get();
    }
@@ -1799,12 +1790,10 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       if (!ctx.program->needs_wqm)
          ctx.info[instr->definitions[0].tempId()].set_constant(ctx.program->gfx_level, 0u);
       break;
-   case aco_opcode::v_mul_f64_e64:
-   case aco_opcode::v_mul_f64: ctx.info[instr->definitions[0].tempId()].set_mul(instr.get()); break;
    case aco_opcode::v_mul_f16:
    case aco_opcode::v_mul_f32:
    case aco_opcode::v_mul_legacy_f32: { /* omod */
-      ctx.info[instr->definitions[0].tempId()].set_mul(instr.get());
+      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
 
       /* TODO: try to move the negate/abs modifier to the consumer instead */
       bool uses_mods = instr->usesModifiers();
@@ -1872,6 +1861,8 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
       break;
    }
+   case aco_opcode::v_mul_f64_e64:
+   case aco_opcode::v_mul_f64:
    case aco_opcode::v_min_f32:
    case aco_opcode::v_min_f16:
    case aco_opcode::v_min_u32:
@@ -3589,7 +3580,7 @@ can_use_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 void
 to_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
-   ctx.info[instr->definitions[0].tempId()].label &= label_f2f16 | label_clamp | label_mul;
+   ctx.info[instr->definitions[0].tempId()].label &= label_f2f16 | label_clamp | label_usedef;
 
    if (instr->opcode == aco_opcode::v_fma_f32) {
       instr->format = (Format)((uint32_t)withoutVOP3(instr->format) | (uint32_t)(Format::VOP3P));
@@ -3621,7 +3612,7 @@ to_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    vop3p->pass_flags = instr->pass_flags;
    instr = std::move(vop3p);
 
-   if (ctx.info[instr->definitions[0].tempId()].label & label_mul)
+   if (ctx.info[instr->definitions[0].tempId()].label & label_usedef)
       ctx.info[instr->definitions[0].tempId()].instr = instr.get();
 }
 
@@ -3752,6 +3743,21 @@ is_pow_of_two(opt_ctx& ctx, Operand op)
    }
 }
 
+bool
+is_mul(Instruction* instr)
+{
+   switch (instr->opcode) {
+   case aco_opcode::v_mul_f64_e64:
+   case aco_opcode::v_mul_f64:
+   case aco_opcode::v_mul_f32:
+   case aco_opcode::v_mul_legacy_f32:
+   case aco_opcode::v_mul_f16: return true;
+   case aco_opcode::v_fma_mix_f32:
+      return instr->operands[2].constantEquals(0) && instr->valu().neg[2];
+   default: return false;
+   }
+}
+
 void
 combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
@@ -3831,10 +3837,13 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
        ctx.uses[instr->operands[1].tempId()] == 1) {
       Temp val = ctx.info[instr->definitions[0].tempId()].temp;
 
-      if (!ctx.info[val.id()].is_mul())
+      if (!ctx.info[val.id()].is_usedef())
          return;
 
       Instruction* mul_instr = ctx.info[val.id()].instr;
+
+      if (!is_mul(mul_instr))
+         return;
 
       if (mul_instr->operands[0].isLiteral())
          return;
@@ -3874,7 +3883,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       new_mul.neg[0] ^= is_neg;
       new_mul.clamp = false;
 
-      ctx.info[instr->definitions[0].tempId()].set_mul(instr.get());
+      ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
       return;
    }
 
@@ -3899,9 +3908,11 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       bool emit_fma = false;
       /* find the 'best' mul instruction to combine with the add */
       for (unsigned i = is_add_mix ? 1 : 0; i < instr->operands.size(); i++) {
-         if (!instr->operands[i].isTemp() || !ctx.info[instr->operands[i].tempId()].is_mul())
+         if (!instr->operands[i].isTemp() || !ctx.info[instr->operands[i].tempId()].is_usedef())
             continue;
          ssa_info& info = ctx.info[instr->operands[i].tempId()];
+         if (!is_mul(info.instr))
+            continue;
 
          /* no clamp/omod allowed between mul and add */
          if (info.instr->isVOP3() && (info.instr->valu().clamp || info.instr->valu().omod))
