@@ -1,5 +1,135 @@
 [
     {
+        "sha": "c30e5d44b1027ed03a8fd542829df0055d3e1a96",
+        "description": "v3d/ci: add new flakes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e16a74c0237d2e75bb8ed9c10536c290fe7eb312",
+        "description": "llvmpipe: add LoongArch support in ORCJIT",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "979c36401880132f7c8ca1f70a5fb9e8430b62f8",
+        "description": "gallivm: add LoongArch support to the mattrs setting code",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08425d9aaff8440eec3a93246b0f3ad7f6fbecab",
+        "description": "util: detect LoongArch architecture",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd83fc4bfb75b1c4d028ac3c2395ecb29f37fb53",
+        "description": "nak: Don't emit barrier ops for shared memory pre-Volta",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25eb6c82067f53c9e60f78ab658095465b53c78b",
+        "description": "nak: Disable opt_jump_thread pre-Volta",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9acacccff7934524e95c407e6cdc0c0d06572eb7",
+        "description": "nak/sm50: Emit sync instructions for control-flow",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "87fa8a788c4f57542bae0276c67032dd9e4901b5",
+        "description": "nak: Add more NIR wrappers for walking the NIR CFG",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97d2187f483444e16f5a27c0e106c18488fc8605",
+        "description": "nak/sm50: Add control-flow sync ops",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d6de61cb7e9768eba477782f7afc22381e130ca9",
+        "description": "nak: Drop the old encode_sm*.rs files",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8bf3213a5465c9079f2cd0176c7c1766c4472175",
+        "description": "nak/spill_values: Don't assume no trivial phis",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bcad2add47359588095965b040b63ea667880406",
+        "notes": null
+    },
+    {
+        "sha": "305bf503e74d5c86016a0951198da21d07f8e7ce",
+        "description": "dri: fix driver names",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "50fc7cc290db49288b318c116c6fdc3daaf801e9",
+        "notes": null
+    },
+    {
+        "sha": "0bdc2f180f1fbce16d96d718119b4eed1e5a6731",
+        "description": "dri: fix sun4i-drm driver name",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "50fc7cc290db49288b318c116c6fdc3daaf801e9",
+        "notes": null
+    },
+    {
         "sha": "3b6867f53a6718de80bbff4acb84ffd5aca8a8c8",
         "description": "nak: fix clippy::if_same_then_else error",
         "nominated": false,
