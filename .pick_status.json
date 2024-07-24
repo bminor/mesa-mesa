@@ -1,5 +1,135 @@
 [
     {
+        "sha": "6cd4372460b197fea98d257217328ddc3406e6ad",
+        "description": "ci: prune dri from LD_LIBRARY_PATH",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "50fc7cc290db49288b318c116c6fdc3daaf801e9",
+        "notes": null
+    },
+    {
+        "sha": "a885f91617885216c81b8495e04ced309597164f",
+        "description": "etnaviv: Rework uniform handling for UBO addresses",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b7bb6cc9fa410fb783e7a99d9eadcc31668f298",
+        "description": "gallium: install gallium-$version.so to libdir",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "50fc7cc290db49288b318c116c6fdc3daaf801e9",
+        "notes": null
+    },
+    {
+        "sha": "098e660a58f74630b75b63f2b75935214203c43a",
+        "description": "rusticl/memory: add a couple of performance warnings",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea0676d8ecec743b1e63f942c2b0a3d8fa6559d7",
+        "description": "rusticl/memory: remove stale TODOs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aae84eccfade4db3d9e68916419a66246f7732b4",
+        "description": "rusticl/platform: add perf debug option",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3cd3b0ed473f651e54bfecd92f7d5873a3f5331",
+        "description": "panvk: Implement CmdBindDescriptorSets2KHR, CmdPushConstants2KHR and CmdPushDescriptorSet2KHR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0329070233eb443f822973af2745c290bb9470d9",
+        "description": "panvk: Emit viewport when state is NULL",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cec45cac846385425772f9431fb0fd707be5e547",
+        "description": "panvk: Fix image support in vertex jobs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7bea6f8612e193d4704a8b03f719a14c500f4281",
+        "notes": null
+    },
+    {
+        "sha": "3b1b672849c3113eb61bc8c3691901fa2e0f6d3e",
+        "description": "panvk: Implement CmdPushDescriptorSetWithTemplate2KHR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b9db2108d86a72570fc649ec0a6694c31367327",
+        "description": "docs: Add panvk in VK_EXT_private_data to features.txt",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "af998eb2bfd97c6658bebd77620d867d8b9e7449",
+        "description": "panvk: Update CI fails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e634acaf88d0d49c633f04a15f4ac3e916414049",
+        "description": "docs: add stub header for u_format_gen.h",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e05415a82e63bd96473171bf816175b3b190645c",
+        "notes": null
+    },
+    {
         "sha": "c30e5d44b1027ed03a8fd542829df0055d3e1a96",
         "description": "v3d/ci: add new flakes",
         "nominated": false,
