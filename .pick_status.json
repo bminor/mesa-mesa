@@ -4124,7 +4124,7 @@
         "description": "nir/glsl: set deref cast mode during function inlining",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c6c150b4cd8741cc20d95bbd32a8a772f9781d62",
         "notes": null
