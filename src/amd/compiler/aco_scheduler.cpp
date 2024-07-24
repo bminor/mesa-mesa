@@ -12,17 +12,17 @@
 #include <algorithm>
 #include <vector>
 
-#define SMEM_WINDOW_SIZE    (350 - ctx.num_waves * 35)
-#define VMEM_WINDOW_SIZE    (1024 - ctx.num_waves * 64)
+#define SMEM_WINDOW_SIZE    (256 - ctx.occupancy_factor * 16)
+#define VMEM_WINDOW_SIZE    (1024 - ctx.occupancy_factor * 64)
 #define LDS_WINDOW_SIZE     64
 #define POS_EXP_WINDOW_SIZE 512
-#define SMEM_MAX_MOVES      (64 - ctx.num_waves * 4)
-#define VMEM_MAX_MOVES      (256 - ctx.num_waves * 16)
+#define SMEM_MAX_MOVES      (128 - ctx.occupancy_factor * 8)
+#define VMEM_MAX_MOVES      (256 - ctx.occupancy_factor * 16)
 #define LDSDIR_MAX_MOVES    10
 #define LDS_MAX_MOVES       32
 /* creating clauses decreases def-use distances, so make it less aggressive the lower num_waves is */
-#define VMEM_CLAUSE_MAX_GRAB_DIST (ctx.num_waves * 2)
-#define VMEM_STORE_CLAUSE_MAX_GRAB_DIST (ctx.num_waves * 4)
+#define VMEM_CLAUSE_MAX_GRAB_DIST       (ctx.occupancy_factor * 2)
+#define VMEM_STORE_CLAUSE_MAX_GRAB_DIST (ctx.occupancy_factor * 4)
 #define POS_EXP_MAX_MOVES         512
 
 namespace aco {
@@ -115,7 +115,7 @@ struct MoveState {
 
 struct sched_ctx {
    amd_gfx_level gfx_level;
-   int16_t num_waves;
+   int16_t occupancy_factor;
    int16_t last_SMEM_stall;
    int last_SMEM_dep_idx;
    MoveState mv;
@@ -745,7 +745,7 @@ schedule_SMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       /* only move VMEM instructions below descriptor loads. be more aggressive at higher num_waves
        * to help create more vmem clauses */
       if ((candidate->isVMEM() || candidate->isFlatLike()) &&
-          (cursor.insert_idx - cursor.source_idx > (ctx.num_waves * 4) ||
+          (cursor.insert_idx - cursor.source_idx > (ctx.occupancy_factor * 4) ||
            current->operands[0].size() == 4))
          break;
       /* don't move descriptor loads below buffer loads */
@@ -847,7 +847,7 @@ schedule_SMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    }
 
    ctx.last_SMEM_dep_idx = found_dependency ? up_cursor.insert_idx : 0;
-   ctx.last_SMEM_stall = 10 - ctx.num_waves - k;
+   ctx.last_SMEM_stall = 10 - ctx.occupancy_factor - k;
 }
 
 void
@@ -1254,28 +1254,24 @@ schedule_program(Program* program)
    ctx.mv.depends_on.resize(program->peekAllocationId());
    ctx.mv.RAR_dependencies.resize(program->peekAllocationId());
    ctx.mv.RAR_dependencies_clause.resize(program->peekAllocationId());
-   /* Allowing the scheduler to reduce the number of waves to as low as 5
-    * improves performance of Thrones of Britannia significantly and doesn't
-    * seem to hurt anything else. */
-   unsigned wave_fac = program->dev.physical_vgprs / 256;
-   if (program->num_waves <= 5 * wave_fac)
-      ctx.num_waves = program->num_waves;
-   else if (demand.vgpr >= 29)
-      ctx.num_waves = 5 * wave_fac;
-   else if (demand.vgpr >= 25)
-      ctx.num_waves = 6 * wave_fac;
-   else
-      ctx.num_waves = 7 * wave_fac;
-   ctx.num_waves = std::max<uint16_t>(ctx.num_waves, program->min_waves);
-   ctx.num_waves = std::min<uint16_t>(ctx.num_waves, program->num_waves);
-   ctx.num_waves = max_suitable_waves(program, ctx.num_waves);
 
-   assert(ctx.num_waves >= program->min_waves);
-   ctx.mv.max_registers = get_addr_regs_from_waves(program, ctx.num_waves);
+   const int wave_factor = program->gfx_level >= GFX10 ? 2 : 1;
+   const int wave_minimum = std::max<int>(program->min_waves, 4 * wave_factor);
+   const float reg_file_multiple = program->dev.physical_vgprs / (256.0 * wave_factor);
+
+   /* If we already have less waves than the minimum, don't reduce them further.
+    * Otherwise, sacrifice some waves and use more VGPRs, in order to improve scheduling.
+    */
+   int vgpr_demand = std::max<int>(24, demand.vgpr) + 12 * reg_file_multiple;
+   int target_waves = std::max(wave_minimum, program->dev.physical_vgprs / vgpr_demand);
+   target_waves = max_suitable_waves(program, std::min<int>(program->num_waves, target_waves));
+   assert(target_waves >= program->min_waves);
+
+   ctx.mv.max_registers = get_addr_regs_from_waves(program, target_waves);
    ctx.mv.max_registers.vgpr -= 2;
 
    /* VMEM_MAX_MOVES and such assume pre-GFX10 wave count */
-   ctx.num_waves = std::max<uint16_t>(ctx.num_waves / wave_fac, 1);
+   ctx.occupancy_factor = target_waves / wave_factor;
 
    /* NGG culling shaders are very sensitive to position export scheduling.
     * Schedule less aggressively when early primitive export is used, and
