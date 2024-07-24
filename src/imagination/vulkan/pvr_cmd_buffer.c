@@ -7652,7 +7652,6 @@ pvr_cmd_buffer_insert_mid_frag_barrier_event(struct pvr_cmd_buffer *cmd_buffer,
    cmd_buffer->state.current_sub_cmd->event = (struct pvr_sub_cmd_event){
       .type = PVR_EVENT_TYPE_BARRIER,
       .barrier = {
-         .in_render_pass = true,
          .wait_for_stage_mask = src_stage_mask,
          .wait_at_stage_mask = dst_stage_mask,
       },

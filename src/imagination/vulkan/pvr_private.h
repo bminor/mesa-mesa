@@ -554,8 +554,6 @@ struct pvr_sub_cmd_event {
       } wait;
 
       struct pvr_sub_cmd_event_barrier {
-         bool in_render_pass;
-
          /* Stages to wait for. */
          uint32_t wait_for_stage_mask;
          /* Stages to wait at. */
