@@ -93,9 +93,9 @@ struct ssa_info {
    union {
       uint32_t val;
       Temp temp;
-      Instruction* parent_instr;
       Instruction* mod_instr;
    };
+   Instruction* parent_instr;
 
    ssa_info() : label(0) {}
 
@@ -1128,8 +1128,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
    /* These are the only labels worth keeping at the moment. */
    for (Definition& def : instr->definitions) {
       ctx.info[def.tempId()].label &= (label_usedef | instr_mod_labels);
-      if (ctx.info[def.tempId()].label & instr_usedef_labels)
-         ctx.info[def.tempId()].parent_instr = instr.get();
+      ctx.info[def.tempId()].parent_instr = instr.get();
    }
 }
 
@@ -2069,6 +2068,10 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
     * neg/abs instructions because we'll likely combine it into another valu. */
    if (!(ctx.info[instr->definitions[0].tempId()].label & (label_neg | label_abs)))
       check_sdwa_extract(ctx, instr);
+
+   /* Set parent_instr for all SSA definitions. */
+   for (const Definition& def : instr->definitions)
+      ctx.info[def.tempId()].parent_instr = instr.get();
 }
 
 unsigned
@@ -2169,6 +2172,8 @@ combine_inverse_comparison(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    cmp->opcode = new_opcode;
    ctx.info[instr->definitions[0].tempId()] = ctx.info[cmp->definitions[0].tempId()];
    std::swap(instr->definitions[0], cmp->definitions[0]);
+   ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
+   ctx.info[cmp->definitions[0].tempId()].parent_instr = cmp;
 
    ctx.uses[instr->operands[0].tempId()]--;
    return true;
@@ -2264,6 +2269,7 @@ create_vop3_for_op3(opt_ctx& ctx, aco_opcode opcode, aco_ptr<Instruction>& instr
    new_instr->definitions[0] = instr->definitions[0];
    new_instr->pass_flags = instr->pass_flags;
    ctx.info[instr->definitions[0].tempId()].label = 0;
+   ctx.info[instr->definitions[0].tempId()].parent_instr = new_instr;
 
    instr.reset(new_instr);
 }
@@ -2405,6 +2411,8 @@ combine_not_xor(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    std::swap(instr->definitions[0], op_instr->definitions[0]);
    op_instr->opcode = aco_opcode::v_xnor_b32;
    ctx.info[op_instr->definitions[0].tempId()].label = 0;
+   ctx.info[op_instr->definitions[0].tempId()].parent_instr = op_instr;
+   ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
 
    return true;
 }
@@ -2505,6 +2513,10 @@ combine_salu_not_bitwise(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    std::swap(instr->definitions[1], op2_instr->definitions[1]);
    ctx.uses[instr->operands[0].tempId()]--;
    ctx.info[op2_instr->definitions[0].tempId()].label = 0;
+   ctx.info[op2_instr->definitions[0].tempId()].parent_instr = op2_instr;
+   ctx.info[op2_instr->definitions[1].tempId()].parent_instr = op2_instr;
+   ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
+   ctx.info[instr->definitions[1].tempId()].parent_instr = instr.get();
 
    switch (op2_instr->opcode) {
    case aco_opcode::s_and_b32: op2_instr->opcode = aco_opcode::s_nand_b32; break;
@@ -2631,6 +2643,10 @@ use_absdiff:
    std::swap(instr->definitions[1], op_instr->definitions[1]);
    ctx.uses[instr->operands[0].tempId()]--;
    ctx.info[op_instr->definitions[0].tempId()].label = 0;
+   ctx.info[op_instr->definitions[0].tempId()].parent_instr = op_instr;
+   ctx.info[op_instr->definitions[1].tempId()].parent_instr = op_instr;
+   ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
+   ctx.info[instr->definitions[1].tempId()].parent_instr = instr.get();
 
    return true;
 }
@@ -2676,6 +2692,7 @@ combine_add_sub_b2i(opt_ctx& ctx, aco_ptr<Instruction>& instr, aco_opcode new_op
          new_instr->pass_flags = instr->pass_flags;
          instr = std::move(new_instr);
          ctx.info[instr->definitions[0].tempId()].set_usedef(instr.get());
+         ctx.info[instr->definitions[1].tempId()].parent_instr = instr.get();
          return true;
       }
    }
@@ -2704,6 +2721,7 @@ combine_add_bcnt(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          new_instr->pass_flags = instr->pass_flags;
          instr = std::move(new_instr);
          ctx.info[instr->definitions[0].tempId()].label = 0;
+         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
 
          return true;
       }
@@ -3077,6 +3095,8 @@ apply_omod_clamp(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    instr->definitions[0].swapTemp(def_info.mod_instr->definitions[0]);
    ctx.info[instr->definitions[0].tempId()].label &= label_clamp | label_insert | label_f2f16;
    ctx.uses[def_info.mod_instr->definitions[0].tempId()]--;
+   ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
+   ctx.info[def_info.mod_instr->definitions[0].tempId()].parent_instr = def_info.mod_instr;
 
    return true;
 }
@@ -3115,6 +3135,10 @@ apply_insert(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    instr->definitions[0].swapTemp(def_info.mod_instr->definitions[0]);
    ctx.info[instr->definitions[0].tempId()].label = 0;
    ctx.uses[def_info.mod_instr->definitions[0].tempId()]--;
+   ctx.info[instr->definitions[0].tempId()].label = 0;
+   ctx.info[def_info.mod_instr->definitions[0].tempId()].parent_instr = def_info.mod_instr;
+   for (const Definition& def : instr->definitions)
+      ctx.info[def.tempId()].parent_instr = instr.get();
 
    return true;
 }
@@ -3246,6 +3270,8 @@ apply_load_extract(opt_ctx& ctx, aco_ptr<Instruction>& extract)
    std::swap(load->definitions[0], extract->definitions[0]);
    ctx.uses[extract->definitions[0].tempId()] = 0;
    ctx.info[load->definitions[0].tempId()].label = 0;
+   ctx.info[extract->definitions[0].tempId()].parent_instr = extract.get();
+   ctx.info[load->definitions[0].tempId()].parent_instr = load;
    return true;
 }
 
@@ -3287,6 +3313,7 @@ combine_v_andor_not(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          instr.reset(new_instr);
          decrease_uses(ctx, op_instr);
          ctx.info[instr->definitions[0].tempId()].label = 0;
+         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          return true;
       }
    }
@@ -3353,6 +3380,7 @@ combine_add_lshl(opt_ctx& ctx, aco_ptr<Instruction>& instr, bool is_sub)
          new_instr->pass_flags = instr->pass_flags;
          instr = std::move(new_instr);
          ctx.info[instr->definitions[0].tempId()].label = 0;
+         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          return true;
       }
    }
@@ -3397,6 +3425,7 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          propagate_swizzles(candidate, vop3p->opsel_lo[0], vop3p->opsel_hi[0]);
          instr->definitions[0].swapTemp(candidate->definitions[0]);
          ctx.info[candidate->definitions[0].tempId()].parent_instr = candidate;
+         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          ctx.uses[instr->definitions[0].tempId()]--;
          return;
       }
@@ -3618,9 +3647,7 @@ to_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    vop3p->valu().clamp = instr->valu().clamp;
    vop3p->pass_flags = instr->pass_flags;
    instr = std::move(vop3p);
-
-   if (ctx.info[instr->definitions[0].tempId()].label & label_usedef)
-      ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
+   ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
 }
 
 bool
@@ -3652,6 +3679,8 @@ combine_output_conversion(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       instr->definitions[0].setPrecise(true);
    ctx.info[instr->definitions[0].tempId()].label &= label_clamp;
    ctx.uses[conv->definitions[0].tempId()]--;
+   ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
+   ctx.info[conv->definitions[0].tempId()].parent_instr = conv;
 
    return true;
 }
@@ -4086,6 +4115,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          /* mark this ssa_def to be re-checked for profitability and literals */
          ctx.mad_infos.emplace_back(std::move(add_instr), mul_instr->definitions[0].tempId());
          ctx.info[instr->definitions[0].tempId()].set_mad(ctx.mad_infos.size() - 1);
+         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          return;
       }
    }
@@ -4111,6 +4141,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             new_instr->pass_flags = instr->pass_flags;
             instr = std::move(new_instr);
             ctx.info[instr->definitions[0].tempId()].label = 0;
+            ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
             return;
          }
       }
@@ -4272,6 +4303,7 @@ remat_constants_instr(opt_ctx& ctx, aco::map<Temp, remat_entry>& constants, Inst
          it->second.block = block_idx;
          ctx.uses.push_back(0);
          ctx.info.push_back(ctx.info[op.tempId()]);
+         ctx.info[it->second.instr->definitions[0].tempId()].parent_instr = it->second.instr;
       }
 
       /* Use the rematerialized constant and update information about latest use. */
@@ -4427,6 +4459,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             copy->operands[0] = op;
             copy->definitions[0] = instr->definitions[idx];
             instr = std::move(copy);
+            ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
 
             done = true;
          }
@@ -4442,6 +4475,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             Operand::c32((uint32_t)split_offset / instr->definitions[idx].bytes());
          extract->definitions[0] = instr->definitions[idx];
          instr = std::move(extract);
+         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
       }
    }
 
@@ -4456,6 +4490,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (instr->operands[1].isTemp())
             ctx.uses[instr->operands[1].tempId()]--;
          instr.swap(mad_info->add_instr);
+         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          mad_info = NULL;
       }
       /* check literals */
@@ -4597,8 +4632,9 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
           ctx.uses[instr->definitions[1].tempId()] == 0 &&
           can_eliminate_and_exec(ctx, instr->operands[0].getTemp(), instr->pass_flags)) {
          ctx.uses[instr->operands[0].tempId()]--;
-         ctx.info[instr->operands[0].tempId()].parent_instr->definitions[0].setTemp(
-            instr->definitions[0].getTemp());
+         Instruction* op_instr = ctx.info[instr->operands[0].tempId()].parent_instr;
+         op_instr->definitions[0].setTemp(instr->definitions[0].getTemp());
+         ctx.info[op_instr->definitions[0].tempId()].parent_instr = op_instr;
          instr.reset();
          return;
       }
@@ -4663,6 +4699,8 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (--ctx.uses[info.parent_instr->definitions[0].tempId()])
             ctx.uses[info.parent_instr->operands[0].tempId()]++;
          instr->operands[0].setTemp(info.parent_instr->operands[0].getTemp());
+         for (const Definition& def : instr->definitions)
+            ctx.info[def.tempId()].parent_instr = instr.get();
          break;
       }
    }
@@ -4688,6 +4726,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       fma->valu().neg[2] = true;
       instr.reset(fma);
       ctx.info[instr->definitions[0].tempId()].label = 0;
+      ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
    }
 
    if (instr->isSDWA() || (instr->isVOP3() && ctx.program->gfx_level < GFX10) ||
