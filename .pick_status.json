@@ -1254,7 +1254,7 @@
         "description": "Revert \"meson: disallow Venus debug + LTO build via GCC\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "423ba5d1c7e2d2958c37ba5b6be6dafe4161b333",
         "notes": null
