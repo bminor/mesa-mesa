@@ -124,7 +124,7 @@
         "description": "docs: add stub header for u_format_gen.h",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e05415a82e63bd96473171bf816175b3b190645c",
         "notes": null
