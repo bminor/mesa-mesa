@@ -1260,8 +1260,8 @@ schedule_program(Program* program)
    ctx.num_waves = max_suitable_waves(program, ctx.num_waves);
 
    assert(ctx.num_waves >= program->min_waves);
-   ctx.mv.max_registers = {int16_t(get_addr_vgpr_from_waves(program, ctx.num_waves) - 2),
-                           int16_t(get_addr_sgpr_from_waves(program, ctx.num_waves))};
+   ctx.mv.max_registers = get_addr_regs_from_waves(program, ctx.num_waves);
+   ctx.mv.max_registers.vgpr -= 2;
 
    /* VMEM_MAX_MOVES and such assume pre-GFX10 wave count */
    ctx.num_waves = std::max<uint16_t>(ctx.num_waves / wave_fac, 1);
