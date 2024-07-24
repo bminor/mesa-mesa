@@ -1064,7 +1064,7 @@
         "description": "ci/baremetal: fix logic for retrying boot when it failed",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "97b2afa16aeeceff53fb43f657d4bfb8928682b1",
         "notes": null
