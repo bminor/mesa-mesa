@@ -1246,7 +1246,6 @@ schedule_program(Program* program)
    /* Allowing the scheduler to reduce the number of waves to as low as 5
     * improves performance of Thrones of Britannia significantly and doesn't
     * seem to hurt anything else. */
-   // TODO: account for possible uneven num_waves on GFX10+
    unsigned wave_fac = program->dev.physical_vgprs / 256;
    if (program->num_waves <= 5 * wave_fac)
       ctx.num_waves = program->num_waves;
@@ -1260,16 +1259,12 @@ schedule_program(Program* program)
    ctx.num_waves = std::min<uint16_t>(ctx.num_waves, program->num_waves);
    ctx.num_waves = max_suitable_waves(program, ctx.num_waves);
 
+   assert(ctx.num_waves >= program->min_waves);
+   ctx.mv.max_registers = {int16_t(get_addr_vgpr_from_waves(program, ctx.num_waves) - 2),
+                           int16_t(get_addr_sgpr_from_waves(program, ctx.num_waves))};
+
    /* VMEM_MAX_MOVES and such assume pre-GFX10 wave count */
    ctx.num_waves = std::max<uint16_t>(ctx.num_waves / wave_fac, 1);
-
-   assert(ctx.num_waves > 0);
-   ctx.mv.max_registers = {
-      int16_t(get_addr_vgpr_from_waves(
-                 program, std::max<uint16_t>(ctx.num_waves * wave_fac, program->min_waves)) -
-              2),
-      int16_t(get_addr_sgpr_from_waves(
-         program, std::max<uint16_t>(ctx.num_waves * wave_fac, program->min_waves)))};
 
    /* NGG culling shaders are very sensitive to position export scheduling.
     * Schedule less aggressively when early primitive export is used, and
