@@ -304,7 +304,7 @@
         "description": "ci: remove llvmpipe in the job that disables llvm",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "35cb0c350e6e682d97463b5a9ec27895a211322d",
         "notes": null
