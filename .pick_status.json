@@ -1284,7 +1284,7 @@
         "description": "venus: fix a race condition between gem close and gem handle tracking",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "88f481dd7422f09ac28de50667fd36ad2ab5f891",
         "notes": null
