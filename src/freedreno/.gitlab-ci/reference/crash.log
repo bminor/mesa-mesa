@@ -1673,7 +1673,13 @@ got rb_base=1000000001000
 IB1: 100000000, 5
 IB2: 0, 0
 found ring!
-got cmdszdw=27
+got cmdszdw=31
+		opcode: CP_REG_TO_MEM (3e) (4 dwords)
+			{ REG = 0x400 | CNT = 2 | 64B }
+			{ DEST = 0x28 }
+			{ DEST_HI = 0x10000 }
+		gpuaddr:0001000000000028
+0000000000000000:		0000: 703e8003 40080400 00000028 00010000
 		opcode: CP_REG_TO_MEM (3e) (4 dwords)
 			{ REG = 0x1f888 | CNT = 2 | 64B }
 			{ DEST = 0x38 }

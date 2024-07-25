@@ -362,6 +362,7 @@ dump_cmdstream(void)
    options.ibs[2].base = regval64("CP_IB2_BASE");
    if (have_rem_info())
       options.ibs[2].rem = regval("CP_IB2_REM_SIZE");
+   uint32_t rb_rptr = regval("CP_RB_RPTR");
 
    /* Adjust remaining size to account for cmdstream slurped into ROQ
     * but not yet consumed by SQE
@@ -372,9 +373,11 @@ dump_cmdstream(void)
     * TODO it would be nice to be able to extract out register bitfields
     * by name rather than hard-coding this.
     */
+   uint32_t rb_rem = 0;
    if (have_rem_info()) {
       uint32_t ib1_rem = regval("CP_ROQ_AVAIL_IB1") >> 16;
       uint32_t ib2_rem = regval("CP_ROQ_AVAIL_IB2") >> 16;
+      rb_rem = regval("CP_ROQ_AVAIL_RB") >> 16;
       options.ibs[1].rem += ib1_rem ? ib1_rem - 1 : 0;
       options.ibs[2].rem += ib2_rem ? ib2_rem - 1 : 0;
    }
@@ -410,14 +413,21 @@ dump_cmdstream(void)
 /* helper macro to deal with modulo size math: */
 #define mod_add(b, v) ((ringszdw + (int)(b) + (int)(v)) % ringszdw)
 
+      /* On a7xx, the RPTR seems to be the point the SQE is reading, and on
+       * a6xx it is the point the ROQ is reading. We really care about where
+       * the SQE is reading, so back it up on a6xx.
+       */
+      if (is_a6xx())
+         rb_rptr = mod_add(rb_rptr, -rb_rem);
+
       /* The rptr will (most likely) have moved past the IB to
        * userspace cmdstream, so back up a bit, and then advance
        * until we find a valid start of a packet.. this is going
        * to be less reliable on a4xx and before (pkt0/pkt3),
        * compared to pkt4/pkt7 with parity bits
        */
-      const int lookback = 12;
-      unsigned rptr = mod_add(ringbuffers[id].rptr, -lookback);
+      const int lookback = 20;
+      unsigned rptr = mod_add(rb_rptr, -lookback);
 
       for (int idx = 0; idx < lookback; idx++) {
          if (valid_header(ringbuffers[id].buf[rptr]))
