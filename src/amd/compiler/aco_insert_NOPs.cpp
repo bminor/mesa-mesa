@@ -240,9 +240,7 @@ public:
 
       unsigned i;
       BITSET_FOREACH_SET (i, other.resident, Size) {
-         if (!BITSET_TEST(resident, i))
-            return false;
-         if (val[i] + base != other.val[i] + other.base)
+         if (MIN2(val[i] + base, Max) != MIN2(other.val[i] + other.base, Max))
             return false;
       }
       return true;
