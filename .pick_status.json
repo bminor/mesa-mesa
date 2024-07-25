@@ -1,5 +1,325 @@
 [
     {
+        "sha": "c33d2db06ac0ea4d3d5372caa93bee3bbbe028c7",
+        "description": "meson: Add missing inc's to idep_nir_headers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f7eb8cff6c8a93bf552290e9cce76e31d45850e",
+        "description": "freedreno: support lua pkgconfig variants",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76ae27efb3cdc772c8322d58a70ff58d23b708f7",
+        "description": "llvmpipe/cs/orcjit: add stub function name for coro",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bb0efdd4d8968a71957b563e7dbf98cefa80a986",
+        "notes": null
+    },
+    {
+        "sha": "fcf9e33ec0e51ee8f22463b388a3bcefd3b5f572",
+        "description": "draw/orcjit: supply stub function for tcs coro",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bb0efdd4d8968a71957b563e7dbf98cefa80a986",
+        "notes": null
+    },
+    {
+        "sha": "ec7afd2c24c6afa6a5c80da4f80e0b799580e12a",
+        "description": "dril: rework config creation",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3de62b2f9a6cbcf3fea1d33af98be20505421d4b",
+        "notes": null
+    },
+    {
+        "sha": "dd5362c78a1d2e8bb88cd321f510e5f9660775e1",
+        "description": "anv/xe: try harder when the vm_bind ioctl fails",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e9f63df2f2c0dafe0997dd69b60b7da99b5d91f4",
+        "notes": null
+    },
+    {
+        "sha": "8b86653da6d0cc80ccf6c51900dbbf596eba23ac",
+        "description": "util: fix 32bit compiler error in fossilize_db",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1af2f5e198d81ff1c60ebc2bb44d0e67465c1fa2",
+        "description": "ci: re-enable venus ci",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71639eb837de8c71dbb8ee95496bbef5f9bc8c60",
+        "description": "nak: Use the RED path for atomics with unused destinations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c347c7cbd839bb5ff8696237f0c8d542221c89cd",
+        "description": "nak/sm50: Implement OpAtom with Dst::None as RED",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "959ae0161bcaedc62475c11878ae0d0e7be615d5",
+        "description": "nak/sm70: Implement OpAtom with Dst::None as RED",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bcff324ef3f51a5dbe9ec9c83d5cdf37a6bfed52",
+        "description": "svga/ci: disable vmware-qemu-traces jobs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61a647ba4a2e8e43f309a87178a77058f9c864ef",
+        "description": "svga/ci: triage unexpected piglit passes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "93005d20ee0effa07a24f61af82c0e4cf7155470",
+        "description": "svga/ci: update FORCE_KERNEL_TAG",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d0df53558ecfaa01585c82aed3de92609d743e54",
+        "description": "svga/ci: triage unexpected piglit pass",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8bcd18c90e8385a623aa112aa3f614bf5afd3157",
+        "description": "svga/ci: change DNS server for vmware jobs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c98f5d5eea8729087017edbb835efb6d6c7d7663",
+        "description": "svga/ci: enable vmware farm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aae82061af66a536a38197b5a06089b1d8d4ef6b",
+        "description": "intel/clc: Free disk_cache",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c15bf88f011d204c11e893c5ff0fd018a0262a39",
+        "notes": null
+    },
+    {
+        "sha": "1574372de48768e69f7ec72b2ab7273989c5e430",
+        "description": "intel/clc: Free parsed_spirv_data",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4fd7495c693818e0823b100df0e0607e448a29fe",
+        "notes": null
+    },
+    {
+        "sha": "8b1a889e453d36fab948246adf6fe1310fa7853b",
+        "description": "radeonsi/vcn: Add support for QVBR rate control mode",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae293d176b0ab2977d4277d28a7734a2fcaa8f04",
+        "description": "radeonsi/vcn: Bump enc FW interface version for VCN3 and VCN4",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e539f8ef5f64bbf6c8b91b03d57e2102ab6b4cc2",
+        "description": "radeonsi/vcn: Only enable filler data for CBR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6d8dd6c9fe7e5b4ab015089853683b3a0082643",
+        "description": "util: fix fossilize_db compile error",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1f8c465d5e14f8f1301478b4662ce6663a05f3c",
+        "description": "vc4,v3d,v3dv: avoid compiling in unused `sim_file` field in the {vc4,v3d}_screen/v3dv_physical_device struct",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eae740f2e4d6ab8f153c5cb1452cf4bf115940d4",
+        "description": "v3d,v3dv: simplify USE_V3D_SIMULATOR/using_v3d_simulator logic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5577078ac1ea6b2642d1aa029e030d2e8bbad07e",
+        "description": "v3d,v3dv: figure out whether we're using the simulator only once",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f90d1182e0dabebf19ec271743b27d40accf181b",
+        "description": "v3d,v3dv: reuse dep_v3d_hw from simulator/meson.build",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "794947171658739f279544a353f894a9fafc6bd8",
+        "description": "egl/gbm: Walk device list to initialize DRM platform",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "32f4cf38085e4056b8e4a9fc78fea28897a1d05f",
+        "notes": null
+    },
+    {
+        "sha": "4ef0cbaf055c077c5cb65326f9642ea1c37bf825",
+        "description": "crocus: check for depth+stencil before creating resource",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5f7df5df0d8410925edcfb926509f6b17ef6b619",
+        "notes": null
+    },
+    {
+        "sha": "34145725ce25018efc84c9d0dde7674aaff8faeb",
+        "description": "crocus: properly free resources on BO allocation failure",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f3630548f1da904ec6c63b43ece7e68afdb8867e",
+        "notes": null
+    },
+    {
+        "sha": "11bc95934f7a4418d2b85cdeeb44d902f65e78ec",
+        "description": "tgsi_to_nir: free disk cache value if the size is wrong",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4db880d8057bac3209c196edc94c6b1e521a782a",
+        "notes": null
+    },
+    {
+        "sha": "945564e49866f19af267c9d634fc8a4a807ec604",
+        "description": "anv: Wait for Xe exec queue to be idle before destroying it",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "6cd4372460b197fea98d257217328ddc3406e6ad",
         "description": "ci: prune dri from LD_LIBRARY_PATH",
         "nominated": true,
