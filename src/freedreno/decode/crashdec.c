@@ -445,6 +445,10 @@ dump_cmdstream(void)
          buf[idx] = ringbuffers[id].buf[p];
       }
 
+      options.rb_host_base = buf;
+      options.ibs[0].rem = mod_add(ringbuffers[id].wptr, -rb_rptr);
+      options.ibs[0].size = cmdszdw;
+
       handle_prefetch(buf, cmdszdw);
       dump_commands(buf, cmdszdw, 0);
       free(buf);

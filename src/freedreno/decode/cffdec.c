@@ -152,7 +152,7 @@ static void dump_tex_const(uint32_t *texsamp, int num_unit, int level);
 static bool
 highlight_addr(uint32_t *hostaddr)
 {
-   if (!options->ibs[ib].base)
+   if (!options->ibs[ib].base && (ib != 0 || !options->rb_host_base))
       return false;
 
    if ((ib > 0) && options->ibs[ib - 1].base &&
@@ -165,11 +165,15 @@ highlight_addr(uint32_t *hostaddr)
    if (ibs[ib].triggered)
       return options->color;
 
-   if (options->ibs[ib].base != ibs[ib].base)
+   if (ib != 0 && options->ibs[ib].base != ibs[ib].base)
       return false;
 
-   uint32_t *start = ibs[ib].host_base + (ibs[ib].size - options->ibs[ib].rem);
-   uint32_t *end = ibs[ib].host_base + ibs[ib].size;
+   uint32_t *host_base = (ib != 0) ? ibs[ib].host_base :
+      options->rb_host_base;
+   uint32_t size = options->ibs[ib].size ? options->ibs[ib].size :
+      ibs[ib].size;
+   uint32_t *start = host_base + (size - options->ibs[ib].rem);
+   uint32_t *end = host_base + size;
 
    bool triggered = (start <= hostaddr) && (hostaddr <= end);
 

@@ -63,8 +63,13 @@ struct cffdec_options {
    struct {
       uint64_t base;
       uint32_t rem;
+      uint32_t size;
       bool crash_found : 1;
    } ibs[4];
+
+   /* Ringbuffer addresses are non-contiguous so we use the host address.
+    */
+   uint32_t *rb_host_base;
 };
 
 /**
