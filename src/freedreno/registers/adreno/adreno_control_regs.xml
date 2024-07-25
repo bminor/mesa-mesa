@@ -153,6 +153,19 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<doc> Controls high 32 bits used by load and store afuc instructions </doc>
 	<reg32 name="LOAD_STORE_HI" offset="0x058"/>
 
+	<doc>
+		Used for testing whether register protection does not allow a
+		read. To use this register, write the register address to $usraddr
+		with bit 20 or'd in and then write the register count to $data. Then
+		the results of the test will be available in this register when
+		bit 0 is set.
+	</doc>
+	<reg32 name="REG_READ_TEST_RESULT" offset="0x05b">
+		<bitfield name="READY" pos="0" type="boolean"/>
+		<doc> Whether there was a register protection violation. </doc>
+		<bitfield name="VIOLATION" pos="2" type="boolean"/>
+	</reg32>
+
 	<enum name="sqe_perfcntr_cntl">
 		<!-- 0 doesn't do anything -->
 		<value value="1" name="INCR"/>
@@ -217,6 +230,17 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	</doc>
 	<reg32 name="PREEMPT_COOKIE" offset="0x078"/>
 
+	<doc>
+		This is a mirror of PC_MARKER. At preemption time, it's used to
+		read the data written by CP_SET_MARKER to see what state the GPU
+		is in. Because PC_MARKER is "just" a normal GPU register, writes
+		to it are pipelined, so reading this gives the firmware the
+		state the GPU is in when preempted, rather than the SQE which
+		may be well ahead of the GPU. This is used e.g. to determine
+		whether to save/restore GMEM.
+	</doc>
+	<reg32 name="MARKER" offset="0x098"/>
+
 	<!--
 		Note: I think that registers above 0x100 are actually just a
 		scratch space which can be used by firmware however it wants,
@@ -251,9 +275,10 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<reg32 name="PREEMPTION_INFO" offset="0x126"/>
 
 	<doc>
-		Seems to be a shadow for PC_MARKER
+		Used to keep track of last value PC_MARKER was written to. Not
+		necessarily equal to @MARKER due to pending writes.
 	</doc>
-	<reg32 name="MARKER" offset="0x12a"/>
+	<reg32 name="MARKER_TEMP" offset="0x12a"/>
 
 	<doc>
 		Set by SET_MARKER, used to conditionally execute
@@ -315,6 +340,13 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<reg64 name="DRAW_STATE_BASE" offset="0x045"/>
 	<reg32 name="DRAW_STATE_HDR" offset="0x047"/>
 	<reg32 name="DRAW_STATE_ACTIVE_BITMASK" offset="0x049"/>
+	<doc>
+		This is now a register on a7xx and not a scratch temporary
+		because draw states are fetched automatically. However it has
+		the same meaning and is written the same as before by
+		CP_SET_MARKER.
+	</doc>
+	<reg32 name="MODE_BITMASK" offset="0x4b"/>
 
 	<reg32 name="DRAW_STATE_SET_HDR" offset="0x04c"/>
 
@@ -329,6 +361,13 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 
 	<doc> Controls high 32 bits used by load and store afuc instructions </doc>
 	<reg32 name="LOAD_STORE_HI" offset="0x058"/>
+
+	<reg32 name="REG_READ_TEST_RESULT" offset="0x05b">
+		<bitfield name="READY" pos="0" type="boolean"/>
+		<doc> Whether there was a register protection violation. </doc>
+		<bitfield name="VIOLATION" pos="2" type="boolean"/>
+		<bitfield name="CLUSTER" low="4" high="6"/>
+	</reg32>
 
 	<!-- This seems to be the same as a6xx because the CP perfcntrs are the same -->
 	<reg32 name="PERFCNTR_CNTL" offset="0x05d">
@@ -364,6 +403,8 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<reg32 name="SECURE_MODE" offset="0x075"/>
 	<reg32 name="PREEMPT_COOKIE" offset="0x078"/>
 
+	<reg32 name="MARKER" offset="0x098"/>
+
 	<doc>These registers seem to define a range that load/store instructions can access</doc>
 	<reg32 name="LOAD_STORE_RANGE_MIN" offset="0x0a0"/>
 	<reg32 name="LOAD_STORE_RANGE_LEN" offset="0x0a1"/>
@@ -375,6 +416,24 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 		taken. Writing 0 unlocks.
 	</doc>
 	<reg32 name="COPROCESSOR_LOCK" offset="0x0b1"/>
+
+	<doc> Replaces CP_APERTURE_CNTL_SQE on a7xx. Uses same format as CP_APERTURE_CNTL_HOST. </doc>
+	<reg32 name="APERTURE_CNTL" offset="0x0d4"/>
+	<doc>
+		Aperture control used specially for preemption save and restore.
+		Has extra fields compared to @APERTURE_CNTL.
+	</doc>
+	<reg32 name="APERTURE_CNTL_PREEMPT" offset="0x0d5">
+		<doc>
+			When this is set this seems to redirect register writes
+			to a special register space for triggering preemption
+			save/restore actions.
+		</doc>
+		<bitfield name="USEPREEMPTREG" pos="16" type="boolean"/>
+		<bitfield name="PIPE" low="12" high="13"/>
+		<bitfield name="CLUSTER" low="8" high="10"/>
+		<bitfield name="CONTEXT" low="4" high="5"/>
+	</reg32>
 
 	<reg64 name="BV_INSTR_BASE" offset="0x0d6"/>
 	<reg32 name="BV_CNTL" offset="0x0d8"/>
@@ -410,18 +469,24 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<reg32 name="REG_READ_DWORDS" offset="0x01a"/>
 	<reg32 name="REG_READ_ADDR" offset="0x01b"/>
 
+	<reg32 name="APERTURE_CNTL" offset="0x01c"/>
+	<reg32 name="APERTURE_CNTL_PREEMPT" offset="0x01d"/>
+
 	<reg64 name="IB1_BASE" offset="0x020"/>
 	<reg32 name="IB1_DWORDS" offset="0x022"/>
 	<reg64 name="IB2_BASE" offset="0x024"/>
 	<reg32 name="IB2_DWORDS" offset="0x026"/>
+	<reg32 name="IB2_BASE_HI_PREEMPTION" offset="0x27"/>
 	<reg64 name="IB3_BASE" offset="0x028"/>
 	<reg32 name="IB3_DWORDS" offset="0x02a"/>
 
 	<reg64 name="MEM_READ_ADDR" offset="0x02c"/>
 	<reg32 name="MEM_READ_DWORDS" offset="0x02e"/>
-	<reg32 name="MEM_READ_ADDR_HI_PRIVILEGED" offset="0x02f"/>
+	<reg32 name="MEM_READ_ADDR_HI_PREEMPTION" offset="0x02f"/>
 
 	<reg32 name="IB_LEVEL" offset="0x03d"/>
+
+	<reg32 name="MODE_BITMASK" offset="0x5b"/>
 
 	<reg32 name="PACKET_TABLE_WRITE_ADDR" offset="0x070"/>
 	<reg32 name="PACKET_TABLE_WRITE" offset="0x071"/>
@@ -436,6 +501,13 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 
 	<reg32 name="LOAD_STORE_RANGE_MIN" offset="0x0a2"/>
 	<reg32 name="LOAD_STORE_RANGE_LEN" offset="0x0a3"/>
+
+	<reg32 name="REG_READ_TEST_RESULT" offset="0x0a8">
+		<bitfield name="READY" pos="0" type="boolean"/>
+		<doc> Whether there was a register protection violation. </doc>
+		<bitfield name="VIOLATION" pos="2" type="boolean"/>
+		<bitfield name="CLUSTER" low="4" high="6"/>
+	</reg32>
 
 	<reg32 name="WFI_PEND_INCR" offset="0x0b0"/>
 	<reg32 name="QUERY_PEND_INCR" offset="0x0b1"/>
@@ -468,6 +540,14 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<reg32 name="PREEMPT_COOKIE" offset="0x132"/>
 	<reg32 name="PREEMPT_ENABLE" offset="0x133"/>
 	<reg32 name="PREEMPT_TRIGGER" offset="0x0134"/>
+	<reg32 name="SECURE_MODE" offset="0x136"/>
+
+	<reg32 name="MARKER" offset="0x138"/>
+
+	<reg32 name="PREEMPTION_TIMER" offset="0x140"/>
+	<reg32 name="PREEMPTION_TIMER_CNTL" offset="0x141">
+		<bitfield name="RUNNING" pos="0"/>
+	</reg32>
 
 	<reg64 name="AQE1_PREEMPT_BASE" offset="0x26e"/>
 	<reg64 name="AQE0_PREEMPT_BASE" offset="0x275"/>
