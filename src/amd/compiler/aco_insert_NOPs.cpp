@@ -164,14 +164,14 @@ struct NOP_ctx_gfx10 {
    }
 };
 
-template <int Max> struct VGPRCounterMap {
+template <int Start, int Size, int Max> struct CounterMap {
 public:
    int base = 0;
-   BITSET_DECLARE(resident, 256);
-   int val[256];
+   BITSET_DECLARE(resident, Size);
+   int val[Size];
 
    /* Initializes all counters to Max. */
-   VGPRCounterMap() { BITSET_ZERO(resident); }
+   CounterMap() { BITSET_ZERO(resident); }
 
    /* Increase all counters, clamping at Max. */
    void inc() { base++; }
@@ -185,11 +185,12 @@ public:
 
    void set(PhysReg reg, unsigned bytes)
    {
-      if (reg.reg() < 256)
+      if (reg.reg() < Start)
          return;
 
-      for (unsigned i = 0; i < DIV_ROUND_UP(bytes, 4); i++)
-         set(reg.reg() - 256 + i);
+      unsigned size = MIN2(DIV_ROUND_UP(bytes, 4), Start + Size - reg.reg());
+      for (unsigned i = 0; i < size; i++)
+         set(reg.reg() - Start + i);
    }
 
    /* Reset all counters to Max. */
@@ -201,11 +202,12 @@ public:
 
    void reset(PhysReg reg, unsigned bytes)
    {
-      if (reg.reg() < 256)
+      if (reg.reg() < Start)
          return;
 
-      for (unsigned i = 0; i < DIV_ROUND_UP(bytes, 4); i++)
-         BITSET_CLEAR(resident, reg.reg() - 256 + i);
+      unsigned size = MIN2(DIV_ROUND_UP(bytes, 4), Start + Size - reg.reg());
+      for (unsigned i = 0; i < size; i++)
+         BITSET_CLEAR(resident, reg.reg() - Start + i);
    }
 
    uint8_t get(unsigned idx)
@@ -215,14 +217,14 @@ public:
 
    uint8_t get(PhysReg reg, unsigned offset = 0)
    {
-      assert(reg.reg() >= 256);
-      return get(reg.reg() - 256 + offset);
+      assert(reg.reg() >= Start);
+      return get(reg.reg() - Start + offset);
    }
 
-   void join_min(const VGPRCounterMap& other)
+   void join_min(const CounterMap& other)
    {
       unsigned i;
-      BITSET_FOREACH_SET (i, other.resident, 256) {
+      BITSET_FOREACH_SET (i, other.resident, Size) {
          if (BITSET_TEST(resident, i))
             val[i] = MIN2(val[i] + base, other.val[i] + other.base) - base;
          else
@@ -231,13 +233,13 @@ public:
       BITSET_OR(resident, resident, other.resident);
    }
 
-   bool operator==(const VGPRCounterMap& other) const
+   bool operator==(const CounterMap& other) const
    {
       if (!BITSET_EQUAL(resident, other.resident))
          return false;
 
       unsigned i;
-      BITSET_FOREACH_SET (i, other.resident, 256) {
+      BITSET_FOREACH_SET (i, other.resident, Size) {
          if (!BITSET_TEST(resident, i))
             return false;
          if (val[i] + base != other.val[i] + other.base)
@@ -245,7 +247,11 @@ public:
       }
       return true;
    }
+
+   unsigned size() const { return Size; }
 };
+
+template <int Max> using VGPRCounterMap = CounterMap<256, 256, Max>;
 
 struct NOP_ctx_gfx11 {
    /* VcmpxPermlaneHazard */
