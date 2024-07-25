@@ -151,6 +151,21 @@ process_live_temps_per_block(Program* program, live& lives, Block* block, unsign
          }
       }
 
+      if (program->gfx_level >= GFX10 && insn->isVALU() &&
+          insn->definitions.back().regClass() == s2) {
+         /* RDNA2 ISA doc, 6.2.4. Wave64 Destination Restrictions:
+          * The first pass of a wave64 VALU instruction may not overwrite a scalar value used by
+          * the second half.
+          */
+         bool carry_in = insn->opcode == aco_opcode::v_addc_co_u32 ||
+                         insn->opcode == aco_opcode::v_subb_co_u32 ||
+                         insn->opcode == aco_opcode::v_subbrev_co_u32;
+         for (unsigned op_idx = 0; op_idx < (carry_in ? 2 : insn->operands.size()); op_idx++) {
+            if (insn->operands[op_idx].isOfType(RegType::sgpr))
+               insn->operands[op_idx].setLateKill(true);
+         }
+      }
+
       /* GEN */
       if (insn->opcode == aco_opcode::p_logical_end) {
          new_demand.sgpr += phi_info[block->index].logical_phi_sgpr_ops;
