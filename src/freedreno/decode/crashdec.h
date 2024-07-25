@@ -42,6 +42,12 @@ have_rem_info(void)
 }
 
 static inline bool
+has_a7xx_gen3_control_regs(void)
+{
+   return options.info->a7xx.new_control_regs;
+}
+
+static inline bool
 is_a7xx(void)
 {
    return options.info->chip == 7;

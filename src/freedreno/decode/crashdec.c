@@ -635,6 +635,31 @@ dump_cp_sqe_stat(uint32_t *stat)
 }
 
 static void
+dump_scratch_control_regs(uint32_t *regs)
+{
+   if (!rnn_control)
+      return;
+
+   struct regacc r = regacc(rnn_control);
+
+   /* Control regs 0x100-0x17f are a scratch space to be used by the firmware
+    * however it wants, unlike lower regs which involve some fixed-function
+    * units. Therefore only these registers get dumped directly. On a7xx this
+    * is doubled to 0x100-0x1ff, and on a7xx gen3 this is shuffled to
+    * 0x400-0x4ff to make space for expanded shared regs.
+    */
+   uint32_t scratch_size = is_a7xx() ? 0x100 : 0x80;
+   uint32_t scratch_base = has_a7xx_gen3_control_regs() ? 0x400 : 0x100;
+
+   for (uint32_t i = 0; i < scratch_size; i++) {
+      if (regacc_push(&r, i + scratch_base, regs[i])) {
+         printf("\t%08"PRIx64"\t", r.value);
+         dump_register(&r);
+      }
+   }
+}
+
+static void
 dump_control_regs(uint32_t *regs)
 {
    if (!rnn_control)
@@ -642,13 +667,8 @@ dump_control_regs(uint32_t *regs)
 
    struct regacc r = regacc(rnn_control);
 
-   /* Control regs 0x100-0x17f are a scratch space to be used by the
-    * firmware however it wants, unlike lower regs which involve some
-    * fixed-function units. Therefore only these registers get dumped
-    * directly.
-    */
-   for (uint32_t i = 0; i < 0x80; i++) {
-      if (regacc_push(&r, i + 0x100, regs[i])) {
+   for (uint32_t i = 0; i < 0x400; i++) {
+      if (regacc_push(&r, i, regs[i])) {
          printf("\t%08"PRIx64"\t", r.value);
          dump_register(&r);
       }
@@ -664,7 +684,7 @@ dump_cp_ucode_dbg(uint32_t *dbg)
     * mirrors of the actual data.
     */
 
-   for (int section = 0; section < 6; section++, dbg += 0x1000) {
+   for (int section = 0; section < (has_a7xx_gen3_control_regs() ? 8 : 6); section++, dbg += 0x1000) {
       switch (section) {
       case 0:
          /* Contains scattered data from a630_sqe.fw: */
@@ -692,6 +712,11 @@ dump_cp_ucode_dbg(uint32_t *dbg)
          break;
       case 5:
          printf("\tSQE scratch control regs:\n");
+         dump_scratch_control_regs(dbg);
+         break;
+      /* TODO check if this exists prior to a750 */
+      case 7:
+         printf("\tSQE control regs:\n");
          dump_control_regs(dbg);
          break;
       }
@@ -862,8 +887,13 @@ decode(void)
             rnn_gmu = rnn_new(!options.color);
             rnn_load_file(rnn_gmu, "adreno/a6xx_gmu.xml", "A6XX");
             rnn_control = rnn_new(!options.color);
-            rnn_load_file(rnn_control, "adreno/adreno_control_regs.xml",
-                          "A7XX_CONTROL_REG");
+            if (has_a7xx_gen3_control_regs()) {
+               rnn_load_file(rnn_control, "adreno/adreno_control_regs.xml",
+                             "A7XX_GEN3_CONTROL_REG");
+            } else {
+               rnn_load_file(rnn_control, "adreno/adreno_control_regs.xml",
+                             "A7XX_CONTROL_REG");
+            }
             rnn_pipe = rnn_new(!options.color);
             rnn_load_file(rnn_pipe, "adreno/adreno_pipe_regs.xml",
                           "A7XX_PIPE_REG");

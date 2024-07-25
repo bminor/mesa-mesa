@@ -350,6 +350,9 @@ struct fd_dev_info {
 
       /* Whether CP_SET_BIN_DATA5::ABS_MASK exists */
       bool has_abs_bin_mask;
+
+      /* On a750 the control register layout is rearranged. */
+      bool new_control_regs;
    } a7xx;
 };
 

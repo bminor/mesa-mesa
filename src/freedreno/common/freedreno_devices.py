@@ -916,6 +916,7 @@ a7xx_gen3 = A7XXProps(
         has_rt_workaround = True,
         has_alias_rt = True,
         has_abs_bin_mask = True,
+        new_control_regs = True,
     )
 
 a730_magic_regs = dict(
