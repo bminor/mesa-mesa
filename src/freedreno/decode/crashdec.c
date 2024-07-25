@@ -749,7 +749,8 @@ decode_indexed_registers(void)
          if (!strcmp(name, "CP_SQE_STAT") || !strcmp(name, "CP_BV_SQE_STAT"))
             dump_cp_sqe_stat(buf);
 
-         if (!strcmp(name, "CP_UCODE_DBG_DATA"))
+         if (!strcmp(name, "CP_UCODE_DBG_DATA") ||
+             !strcmp(name, "CP_BV_SQE_UCODE_DBG_ADDR"))
             dump_cp_ucode_dbg(buf);
 
          if (!strcmp(name, "CP_MEMPOOL"))
