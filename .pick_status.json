@@ -994,7 +994,7 @@
         "description": "spirv: ignore more function param decorations",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9b55dcca540ca0bc48dc52b25dc1a3b1cf84f861",
         "notes": null
