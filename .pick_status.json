@@ -1134,7 +1134,7 @@
         "description": "panvk: Pass attrib_buf_idx_offset to desc_copy_info",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cec45cac846385425772f9431fb0fd707be5e547",
         "notes": null
