@@ -494,7 +494,7 @@
         "description": "dri: Allow INVALID for modifier-less drivers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "361f3622587e5bc452a62dbd671969b713273b79",
         "notes": null
