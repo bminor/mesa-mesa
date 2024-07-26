@@ -1674,7 +1674,7 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
       .ThreadGroupIDXDimension        = group_x1,
       .ThreadGroupIDYDimension        = group_y1,
       .ThreadGroupIDZDimension        = group_z1,
-      .ExecutionMask                  = 0xffffffff,
+      .ExecutionMask                  = dispatch.right_mask,
       .PostSync.MOCS                  = isl_mocs(batch->blorp->isl_dev, 0, false),
 
       .IndirectDataStartAddress       = push_const_offset,
