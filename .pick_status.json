@@ -4014,7 +4014,7 @@
         "description": "glsl: fix glsl to nir support for lower precision builtins",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8fcf8e7fd401346ff32f0179ab96ee6b7739e0bb",
         "notes": null

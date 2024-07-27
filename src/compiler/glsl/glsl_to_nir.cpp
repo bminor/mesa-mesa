@@ -1756,13 +1756,27 @@ nir_visitor::visit(ir_expression *ir)
    case ir_binop_interpolate_at_sample: {
       ir_dereference *deref = ir->operands[0]->as_dereference();
       ir_swizzle *swizzle = NULL;
+      ir_expression *precision_op = NULL;
       if (!deref) {
-         /* the api does not allow a swizzle here, but the varying packing code
-          * may have pushed one into here.
-          */
-         swizzle = ir->operands[0]->as_swizzle();
-         assert(swizzle);
-         deref = swizzle->val->as_dereference();
+         precision_op = ir->operands[0]->as_expression();
+         if (precision_op) {
+            /* For some builtins precision is lowered to mediump for certain
+             * parameters that ignore precision. For example for Interpolation
+             * and Bitfield functions.
+             */
+            assert(precision_op->operation == ir_unop_f2fmp);
+            deref = precision_op->operands[0]->as_dereference();
+         }
+
+         if (!deref) {
+            /* the api does not allow a swizzle here, but the varying packing code
+             * may have pushed one into here.
+             */
+            swizzle = ir->operands[0]->as_swizzle();
+            assert(swizzle);
+            deref = swizzle->val->as_dereference();
+         }
+
          assert(deref);
       }
 
@@ -1802,6 +1816,10 @@ nir_visitor::visit(ir_expression *ir)
 
          result = nir_swizzle(&b, result, swiz,
                               swizzle->type->vector_elements);
+      }
+
+      if (precision_op) {
+         result = nir_build_alu(&b, nir_op_f2fmp, result, NULL, NULL, NULL);
       }
 
       return;
