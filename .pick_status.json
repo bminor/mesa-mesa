@@ -2334,7 +2334,7 @@
         "description": "aco: print s_delay_alu INSTSKIP>3 correctly",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "94958e637d11d9dbe9345da1a8ff4048ef441389",
         "notes": null
