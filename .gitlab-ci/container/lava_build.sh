@@ -184,6 +184,7 @@ PKG_CI=(
   bash ca-certificates curl
   initramfs-tools jq netcat-openbsd dropbear openssh-server
   libasan8
+  libubsan1
   git
   python3-dev python3-pip python3-setuptools python3-wheel
   weston # Wayland

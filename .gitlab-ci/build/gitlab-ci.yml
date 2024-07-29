@@ -189,6 +189,34 @@ debian-testing-msan:
       -D intel-clc=enabled
       -D install-intel-clc=true
 
+debian-testing-ubsan:
+  extends:
+    - debian-testing
+  stage: build-for-tests
+  timeout: 40m
+  variables:
+    C_ARGS: >
+      -Wno-error=stringop-overflow
+      -Wno-error=stringop-truncation
+    CPP_ARGS: >
+      -Wno-error=array-bounds
+    EXTRA_OPTION: >
+      -D b_sanitize=undefined
+      -D intel-clc=system
+    S3_ARTIFACT_NAME: ""
+    ARTIFACTS_DEBUG_SYMBOLS: 1
+    HOST_BUILD_OPTIONS: >
+      -D build-tests=false
+      -D enable-glcpp-tests=false
+      -D gallium-opencl=disabled
+      -D gallium-drivers=
+      -D vulkan-drivers=
+      -D video-codecs=
+      -D glx=disabled
+      -D platforms=
+      -D intel-clc=enabled
+      -D install-intel-clc=true
+
 debian-build-testing:
   extends: .meson-build
   stage: build-for-tests
@@ -350,12 +378,6 @@ fedora-release:
     CPP_ARGS: >
       -Wno-error=dangling-reference
       -Wno-error=overloaded-virtual
-    C_LINK_ARGS: >
-      -Wno-error=stringop-overflow
-      -Wno-error=stringop-overread
-    CPP_LINK_ARGS: >
-      -Wno-error=stringop-overflow
-      -Wno-error=stringop-overread
     DRI_LOADERS: >
       -D glx=dri
       -D gbm=enabled
@@ -567,6 +589,26 @@ debian-arm64-asan:
       -D tools=dlclose-skip
     ARTIFACTS_DEBUG_SYMBOLS: 1
     S3_ARTIFACT_NAME: mesa-arm64-asan-${BUILDTYPE}
+    MESON_TEST_ARGS: "--no-suite mesa:compiler"
+
+debian-arm64-ubsan:
+  extends:
+    - debian-arm64
+  stage: build-for-tests
+  variables:
+    C_ARGS: >
+      -Wno-error=array-bounds
+      -Wno-error=stringop-overflow
+      -Wno-error=stringop-truncation
+    CPP_ARGS: >
+      -Wno-error=array-bounds
+      -fno-var-tracking-assignments
+    DRI_LOADERS:
+      -D glvnd=disabled
+    EXTRA_OPTION: >
+      -D b_sanitize=undefined
+    ARTIFACTS_DEBUG_SYMBOLS: 1
+    S3_ARTIFACT_NAME: mesa-arm64-ubsan-${BUILDTYPE}
     MESON_TEST_ARGS: "--no-suite mesa:compiler"
 
 debian-arm64-build-test:

@@ -13,7 +13,7 @@
 
 variables:
    DEBIAN_X86_64_BUILD_BASE_IMAGE: "debian/x86_64_build-base"
-   DEBIAN_BASE_TAG: "20241125-crosvm"
+   DEBIAN_BASE_TAG: "20250109-libubsan1"
 
    DEBIAN_X86_64_BUILD_IMAGE_PATH: "debian/x86_64_build"
    DEBIAN_BUILD_TAG: "20241220-android"
@@ -30,7 +30,7 @@ variables:
    DEBIAN_TEST_ANDROID_TAG: "20241220-venus"
    DEBIAN_TEST_GL_TAG: "20241210-piglit-4c"
    DEBIAN_TEST_VK_TAG: "20250103-vkd3d"
-   KERNEL_ROOTFS_TAG: "20250103-vkd3d"
+   KERNEL_ROOTFS_TAG: "20250109-libubsan1"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20241223-pyutils"

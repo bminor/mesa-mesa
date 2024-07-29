@@ -82,6 +82,7 @@ DEPS=(
     liblz4-1
     libpng16-16
     libpython3.11
+    libubsan1
     libvulkan1
     libwayland-client0
     libwayland-server0

@@ -259,6 +259,18 @@ yaml-toml-shell-py-test:
       artifacts: false
     - !reference [.required-for-hardware-jobs, needs]
 
+.baremetal-arm64-ubsan-test:
+  extends:
+    - .baremetal-test
+    - .use-debian/baremetal_arm64_test
+  variables:
+    S3_ARTIFACT_NAME: mesa-arm64-ubsan-debugoptimized
+  needs:
+    - debian/baremetal_arm64_test
+    - job: debian-arm64-ubsan
+      artifacts: false
+    - !reference [.required-for-hardware-jobs, needs]
+
 .baremetal-deqp-test:
   variables:
     HWCI_TEST_SCRIPT: "/install/deqp-runner.sh"
