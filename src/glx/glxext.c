@@ -1060,22 +1060,6 @@ __glXInitialize(Display * dpy)
 #ifdef GLX_USE_WINDOWSGL
    if (glx_direct && glx_accel)
       glx_driver |= GLX_DRIVER_WINDOWS;
-#else
-#ifndef RTLD_NOW
-#define RTLD_NOW 0
-#endif
-#ifndef RTLD_GLOBAL
-#define RTLD_GLOBAL 0
-#endif
-
-#ifndef GL_LIB_NAME
-#define GL_LIB_NAME "libGL.so.1"
-#endif
-
-   void *glhandle = dlopen(GL_LIB_NAME, RTLD_NOW | RTLD_GLOBAL);
-   if (glhandle)
-      dlclose(glhandle);
-
 #endif
 #endif /* GLX_DIRECT_RENDERING && !GLX_USE_APPLEGL */
 
