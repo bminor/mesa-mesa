@@ -1039,10 +1039,6 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
    return vk_outarray_status(&out);
 }
 
-#define RADV_BIND_SESSION_CTX 0
-#define RADV_BIND_DECODER_CTX 1
-#define RADV_BIND_INTRA_ONLY 2
-
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device, VkVideoSessionKHR videoSession,
                                           uint32_t *pMemoryRequirementsCount,
