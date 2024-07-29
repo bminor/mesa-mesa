@@ -856,18 +856,13 @@ loader_open_driver_lib(const char *driver_name,
          next = end;
 
       len = next - p;
-      snprintf(path, sizeof(path), "%.*s/tls/%s%s.so", len,
+      snprintf(path, sizeof(path), "%.*s/%s%s.so", len,
                p, driver_name, lib_suffix);
       driver = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
       if (driver == NULL) {
-         snprintf(path, sizeof(path), "%.*s/%s%s.so", len,
-                  p, driver_name, lib_suffix);
-         driver = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
-         if (driver == NULL) {
-            dl_error = dlerror();
-            log_(_LOADER_DEBUG, "MESA-LOADER: failed to open %s: %s\n",
-                 path, dl_error);
-         }
+         dl_error = dlerror();
+         log_(_LOADER_DEBUG, "MESA-LOADER: failed to open %s: %s\n",
+              path, dl_error);
       }
       /* not need continue to loop all paths once the driver is found */
       if (driver != NULL)
