@@ -546,8 +546,23 @@ is_only_used_as_float(const nir_alu_instr *instr)
 {
    nir_foreach_use(src, &instr->def) {
       const nir_instr *const user_instr = nir_src_parent_instr(src);
-      if (user_instr->type != nir_instr_type_alu)
+
+      if (user_instr->type != nir_instr_type_alu) {
+         if (user_instr->type == nir_instr_type_intrinsic) {
+            switch (nir_instr_as_intrinsic(user_instr)->intrinsic) {
+            case nir_intrinsic_ddx:
+            case nir_intrinsic_ddy:
+            case nir_intrinsic_ddx_fine:
+            case nir_intrinsic_ddy_fine:
+            case nir_intrinsic_ddx_coarse:
+            case nir_intrinsic_ddy_coarse:
+               continue;
+            default:
+               break;
+            }
+         }
          return false;
+      }
 
       const nir_alu_instr *const user_alu = nir_instr_as_alu(user_instr);
       assert(instr != user_alu);
