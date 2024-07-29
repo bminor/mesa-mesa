@@ -45,6 +45,8 @@ enum binding_property {
 };
 
 struct apply_pipeline_layout_state {
+   void *mem_ctx;
+
    const struct anv_physical_device *pdevice;
 
    const struct anv_pipeline_sets_layout *layout;
@@ -2306,73 +2308,42 @@ binding_should_use_sampler_binding_table(const struct apply_pipeline_layout_stat
    return true;
 }
 
-void
-anv_nir_apply_pipeline_layout(nir_shader *shader,
-                              const struct anv_physical_device *pdevice,
-                              enum brw_robustness_flags robust_flags,
-                              bool independent_sets,
-                              const struct anv_pipeline_sets_layout *layout,
-                              struct anv_pipeline_bind_map *map,
-                              struct anv_pipeline_push_map *push_map,
-                              void *push_map_mem_ctx)
+static void
+build_packed_binding_table(struct apply_pipeline_layout_state *state,
+                           nir_shader *shader,
+                           struct anv_pipeline_bind_map *map,
+                           struct anv_pipeline_push_map *push_map,
+                           void *push_map_mem_ctx)
 {
-   void *mem_ctx = ralloc_context(NULL);
-
-#ifndef NDEBUG
-   /* We should not have have any reference to a descriptor set that is not
-    * given through the pipeline layout (layout->set[set].layout = NULL).
-    */
-   anv_validate_pipeline_layout(layout, shader);
-#endif
-
-   const bool bindless_stage =
-      brw_shader_stage_requires_bindless_resources(shader->info.stage);
-   struct apply_pipeline_layout_state state = {
-      .pdevice = pdevice,
-      .layout = layout,
-      .desc_addr_format = bindless_stage ?
-                          nir_address_format_64bit_global_32bit_offset :
-                          nir_address_format_32bit_index_offset,
-      .ssbo_addr_format = anv_nir_ssbo_addr_format(pdevice, robust_flags),
-      .ubo_addr_format = anv_nir_ubo_addr_format(pdevice, robust_flags),
-      .lowered_instrs = _mesa_pointer_set_create(mem_ctx),
-      .has_independent_sets = independent_sets,
-   };
-
    /* Compute the amount of push block items required. */
    unsigned push_block_count = 0;
-   for (unsigned s = 0; s < layout->num_sets; s++) {
-      if (!layout->set[s].layout)
+   for (unsigned s = 0; s < state->layout->num_sets; s++) {
+      const struct anv_descriptor_set_layout *set_layout =
+         state->layout->set[s].layout;
+      if (!set_layout)
          continue;
 
-      const unsigned count = layout->set[s].layout->binding_count;
-      state.set[s].binding = rzalloc_array_size(mem_ctx, sizeof(state.set[s].binding[0]), count);
-
-      const struct anv_descriptor_set_layout *set_layout = layout->set[s].layout;
       for (unsigned b = 0; b < set_layout->binding_count; b++) {
          if (set_layout->binding[b].type != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
             push_block_count += set_layout->binding[b].array_size;
       }
    }
 
-   /* Find all use sets/bindings */
-   nir_shader_instructions_pass(shader, get_used_bindings,
-                                nir_metadata_all, &state);
-
    /* Assign a BTI to each used descriptor set */
-   for (unsigned s = 0; s < layout->num_sets; s++) {
-      if (state.desc_addr_format != nir_address_format_32bit_index_offset) {
-         state.set[s].desc_offset = BINDLESS_OFFSET;
-      } else if (state.set[s].desc_buffer_used) {
+   for (unsigned s = 0; s < state->layout->num_sets; s++) {
+      if (state->desc_addr_format != nir_address_format_32bit_index_offset) {
+         state->set[s].desc_offset = BINDLESS_OFFSET;
+      } else if (state->set[s].desc_buffer_used) {
          map->surface_to_descriptor[map->surface_count] =
             (struct anv_pipeline_binding) {
-               .set = (layout->type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_BUFFER) ?
+               .set = (state->layout->type ==
+                       ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_BUFFER) ?
                       ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER :
                       ANV_DESCRIPTOR_SET_DESCRIPTORS,
                .binding = UINT32_MAX,
                .index = s,
             };
-         state.set[s].desc_offset = map->surface_count++;
+         state->set[s].desc_offset = map->surface_count++;
       }
    }
 
@@ -2390,13 +2361,14 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
     * for promotion to push constants
     */
    unsigned used_binding_count = 0;
-   for (uint32_t set = 0; set < layout->num_sets; set++) {
-      struct anv_descriptor_set_layout *set_layout = layout->set[set].layout;
+   for (uint32_t set = 0; set < state->layout->num_sets; set++) {
+      struct anv_descriptor_set_layout *set_layout =
+         state->layout->set[set].layout;
       if (!set_layout)
          continue;
 
       for (unsigned b = 0; b < set_layout->binding_count; b++) {
-         if (state.set[set].binding[b].use_count == 0)
+         if (state->set[set].binding[b].use_count == 0)
             continue;
 
          used_binding_count++;
@@ -2404,35 +2376,36 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
          const struct anv_descriptor_set_binding_layout *bind_layout =
             &set_layout->binding[b];
 
-         if (state.set[set].binding[b].properties & BINDING_PROPERTY_EMBEDDED_SAMPLER)
-            add_embedded_sampler_entry(&state, map, set, b);
+         if (state->set[set].binding[b].properties & BINDING_PROPERTY_EMBEDDED_SAMPLER)
+            add_embedded_sampler_entry(state, map, set, b);
 
          if (binding_is_promotable_to_push(set_layout, bind_layout)) {
             if (bind_layout->type != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-               state.set[set].binding[b].push_block = push_map->block_count;
+               state->set[set].binding[b].push_block = push_map->block_count;
                for (unsigned i = 0; i < bind_layout->array_size; i++)
-                  add_push_entry(push_map, set, b, i, layout, bind_layout);
+                  add_push_entry(push_map, set, b, i, state->layout, bind_layout);
             } else {
-               state.set[set].binding[b].push_block = state.set[set].desc_offset;
+               state->set[set].binding[b].push_block = state->set[set].desc_offset;
             }
          }
       }
    }
 
    struct binding_info *infos =
-      rzalloc_array(mem_ctx, struct binding_info, used_binding_count);
+      rzalloc_array(state->mem_ctx, struct binding_info, used_binding_count);
    used_binding_count = 0;
-   for (uint32_t set = 0; set < layout->num_sets; set++) {
-      const struct anv_descriptor_set_layout *set_layout = layout->set[set].layout;
+   for (uint32_t set = 0; set < state->layout->num_sets; set++) {
+      const struct anv_descriptor_set_layout *set_layout =
+         state->layout->set[set].layout;
       if (!set_layout)
          continue;
 
       for (unsigned b = 0; b < set_layout->binding_count; b++) {
-         if (state.set[set].binding[b].use_count == 0)
+         if (state->set[set].binding[b].use_count == 0)
             continue;
 
          const struct anv_descriptor_set_binding_layout *binding =
-               &layout->set[set].layout->binding[b];
+               &state->layout->set[set].layout->binding[b];
 
          /* Do a fixed-point calculation to generate a score based on the
           * number of uses and the binding array size.  We shift by 7 instead
@@ -2440,13 +2413,13 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
           * everything which does not support bindless super higher priority
           * than things which do.
           */
-         uint16_t score = ((uint16_t)state.set[set].binding[b].use_count << 7) /
+         uint16_t score = ((uint16_t)state->set[set].binding[b].use_count << 7) /
                           binding->array_size;
 
          /* If the descriptor type doesn't support bindless then put it at the
           * beginning so we guarantee it gets a slot.
           */
-         if (!anv_descriptor_supports_bindless(pdevice, set_layout, binding))
+         if (!anv_descriptor_supports_bindless(state->pdevice, set_layout, binding))
             score |= 1 << 15;
 
          infos[used_binding_count++] = (struct binding_info) {
@@ -2465,37 +2438,37 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
 
    for (unsigned i = 0; i < used_binding_count; i++) {
       unsigned set = infos[i].set, b = infos[i].binding;
-      assert(layout->set[set].layout);
+      assert(state->layout->set[set].layout);
       const struct anv_descriptor_set_layout *set_layout =
-         layout->set[set].layout;
+         state->layout->set[set].layout;
       const struct anv_descriptor_set_binding_layout *binding =
             &set_layout->binding[b];
 
       const uint32_t array_size = binding->array_size;
 
       if (binding->dynamic_offset_index >= 0)
-         state.has_dynamic_buffers = true;
+         state->has_dynamic_buffers = true;
 
-      const unsigned array_multiplier = bti_multiplier(&state, set, b);
+      const unsigned array_multiplier = bti_multiplier(state, set, b);
       assert(array_multiplier >= 1);
 
       /* Assume bindless by default */
-      state.set[set].binding[b].surface_offset = BINDLESS_OFFSET;
-      state.set[set].binding[b].sampler_offset = BINDLESS_OFFSET;
+      state->set[set].binding[b].surface_offset = BINDLESS_OFFSET;
+      state->set[set].binding[b].sampler_offset = BINDLESS_OFFSET;
 
-      if (binding_should_use_surface_binding_table(&state, binding, set, b)) {
+      if (binding_should_use_surface_binding_table(state, binding, set, b)) {
          if (map->surface_count + array_size * array_multiplier > MAX_BINDING_TABLE_SIZE ||
-             anv_descriptor_requires_bindless(pdevice, set_layout, binding) ||
+             anv_descriptor_requires_bindless(state->pdevice, set_layout, binding) ||
              brw_shader_stage_requires_bindless_resources(shader->info.stage)) {
             /* If this descriptor doesn't fit in the binding table or if it
              * requires bindless for some reason, flag it as bindless.
              */
-            assert(anv_descriptor_supports_bindless(pdevice, set_layout, binding));
+            assert(anv_descriptor_supports_bindless(state->pdevice, set_layout, binding));
          } else {
-            state.set[set].binding[b].surface_offset = map->surface_count;
+            state->set[set].binding[b].surface_offset = map->surface_count;
             if (binding->dynamic_offset_index < 0) {
                struct anv_sampler **samplers = binding->immutable_samplers;
-               uint8_t max_planes = bti_multiplier(&state, set, b);
+               uint8_t max_planes = bti_multiplier(state, set, b);
                for (unsigned i = 0; i < binding->array_size; i++) {
                   uint8_t planes = samplers ? samplers[i]->n_planes : 1;
                   for (uint8_t p = 0; p < max_planes; p++) {
@@ -2508,15 +2481,16 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
                }
             } else {
                for (unsigned i = 0; i < binding->array_size; i++)
-                  add_dynamic_bti_entry(map, set, b, i, layout, binding);
+                  add_dynamic_bti_entry(map, set, b, i, state->layout, binding);
             }
          }
          assert(map->surface_count <= MAX_BINDING_TABLE_SIZE);
       }
 
-      if (binding_should_use_sampler_binding_table(&state, binding)) {
+      if (binding_should_use_sampler_binding_table(state, binding)) {
          if (map->sampler_count + array_size * array_multiplier > MAX_SAMPLER_TABLE_SIZE ||
-             anv_descriptor_requires_bindless(pdevice, set_layout, binding) ||
+             anv_descriptor_requires_bindless(state->pdevice,
+                                              set_layout, binding) ||
              brw_shader_stage_requires_bindless_resources(shader->info.stage)) {
             /* If this descriptor doesn't fit in the binding table or if it
              * requires bindless for some reason, flag it as bindless.
@@ -2525,30 +2499,81 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
              * using indirect sends thanks to bindless samplers being packed
              * less tightly than the sampler table.
              */
-            assert(anv_descriptor_supports_bindless(pdevice, set_layout, binding));
+            assert(anv_descriptor_supports_bindless(state->pdevice,
+                                                    set_layout, binding));
          } else {
-            state.set[set].binding[b].sampler_offset = map->sampler_count;
-            uint8_t max_planes = bti_multiplier(&state, set, b);
+            state->set[set].binding[b].sampler_offset = map->sampler_count;
+            uint8_t max_planes = bti_multiplier(state, set, b);
             for (unsigned i = 0; i < binding->array_size; i++) {
                for (uint8_t p = 0; p < max_planes; p++) {
-                  add_sampler_entry(map, set, b, i, p, layout, binding);
+                  add_sampler_entry(map, set, b, i, p, state->layout, binding);
                }
             }
          }
       }
 
-      if (binding->data & ANV_DESCRIPTOR_INLINE_UNIFORM) {
-         state.set[set].binding[b].surface_offset = state.set[set].desc_offset;
-      }
+      if (binding->data & ANV_DESCRIPTOR_INLINE_UNIFORM)
+         state->set[set].binding[b].surface_offset = state->set[set].desc_offset;
 
 #if 0
       fprintf(stderr, "set=%u binding=%u surface_offset=0x%08x require_bindless=%u type=%s\n",
               set, b,
-              state.set[set].binding[b].surface_offset,
-              anv_descriptor_requires_bindless(pdevice, set_layout, binding),
+              state->set[set].binding[b].surface_offset,
+              anv_descriptor_requires_bindless(state->pdevice, set_layout, binding),
               vk_DescriptorType_to_str(binding->type));
 #endif
    }
+}
+
+void
+anv_nir_apply_pipeline_layout(nir_shader *shader,
+                              const struct anv_physical_device *pdevice,
+                              enum brw_robustness_flags robust_flags,
+                              bool independent_sets,
+                              const struct anv_pipeline_sets_layout *layout,
+                              struct anv_pipeline_bind_map *map,
+                              struct anv_pipeline_push_map *push_map,
+                              void *push_map_mem_ctx)
+{
+#ifndef NDEBUG
+   /* We should not have have any reference to a descriptor set that is not
+    * given through the pipeline layout (layout->set[set].layout = NULL).
+    */
+   anv_validate_pipeline_layout(layout, shader);
+#endif
+
+   const bool bindless_stage =
+      brw_shader_stage_requires_bindless_resources(shader->info.stage);
+   struct apply_pipeline_layout_state state = {
+      .mem_ctx = ralloc_context(NULL),
+      .pdevice = pdevice,
+      .layout = layout,
+      .desc_addr_format = bindless_stage ?
+                          nir_address_format_64bit_global_32bit_offset :
+                          nir_address_format_32bit_index_offset,
+      .ssbo_addr_format = anv_nir_ssbo_addr_format(pdevice, robust_flags),
+      .ubo_addr_format = anv_nir_ubo_addr_format(pdevice, robust_flags),
+      .has_independent_sets = independent_sets,
+   };
+   state.lowered_instrs = _mesa_pointer_set_create(state.mem_ctx);
+
+   /* Allocate binding arrays. */
+   for (unsigned s = 0; s < state.layout->num_sets; s++) {
+      const struct anv_descriptor_set_layout *set_layout = layout->set[s].layout;
+      if (!set_layout)
+         continue;
+
+      state.set[s].binding = rzalloc_array_size(state.mem_ctx,
+                                                sizeof(state.set[s].binding[0]),
+                                                set_layout->binding_count);
+   }
+
+   /* Find all use sets/bindings */
+   nir_shader_instructions_pass(shader, get_used_bindings,
+                                nir_metadata_all, &state);
+
+   /* Build the binding table */
+   build_packed_binding_table(&state, shader, map, push_map, push_map_mem_ctx);
 
    /* Before we do the normal lowering, we look for any SSBO operations
     * that we can lower to the BTI model and lower them up-front.  The BTI
@@ -2593,7 +2618,7 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
                                 nir_metadata_none,
                                 &state);
 
-   ralloc_free(mem_ctx);
+   ralloc_free(state.mem_ctx);
 
    if (brw_shader_stage_is_bindless(shader->info.stage)) {
       assert(map->surface_count == 0);
