@@ -528,7 +528,7 @@ struct radv_enc_state {
    bool emulation_prevention;
    bool is_even_frame;
    unsigned task_id;
-   uint32_t copy_start_offset;
+   uint32_t *copy_start;
 };
 
 struct radv_cmd_buffer_upload {

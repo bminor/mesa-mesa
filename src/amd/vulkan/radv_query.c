@@ -2407,7 +2407,7 @@ radv_GetQueryPoolResults(VkDevice _device, VkQueryPool queryPool, uint32_t first
             uint64_t *dest64 = (uint64_t *)dest;
             if (available || (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
                dest64[0] = src32[5];
-               dest64[1] = src32[6];
+               dest64[1] = src32[6] - src32[8];
             }
             dest += 16;
             if (flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) {
@@ -2418,7 +2418,7 @@ radv_GetQueryPoolResults(VkDevice _device, VkQueryPool queryPool, uint32_t first
             uint32_t *dest32 = (uint32_t *)dest;
             if (available || (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
                dest32[0] = src32[5];
-               dest32[1] = src32[6];
+               dest32[1] = src32[6] - src32[8];
             }
             dest += 8;
             if (flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) {

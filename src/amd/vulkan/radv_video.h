@@ -29,6 +29,7 @@ struct radv_image_create_info;
 #define RADV_BIND_SESSION_CTX 0
 #define RADV_BIND_DECODER_CTX 1
 #define RADV_BIND_INTRA_ONLY 2
+#define RADV_BIND_ENCODE_AV1_CDF_STORE RADV_BIND_DECODER_CTX
 
 struct radv_vid_mem {
    struct radv_device_memory *mem;
@@ -55,12 +56,16 @@ struct radv_video_session {
    rvcn_enc_layer_control_t rc_layer_control;
    rvcn_enc_rate_ctl_layer_init_t rc_layer_init[RADV_ENC_MAX_RATE_LAYER];
    rvcn_enc_rate_ctl_per_picture_t rc_per_pic[RADV_ENC_MAX_RATE_LAYER];
+   rvcn_enc_av1_tile_config_t tile_config;
    uint32_t enc_preset_mode;
    uint32_t enc_rate_control_method;
    uint32_t enc_vbv_buffer_level;
    bool enc_rate_control_default;
    bool enc_need_begin;
    bool enc_need_rate_control;
+   bool skip_mode_allowed;
+   bool disallow_skip_mode;
+   bool session_initialized;
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_video_session, vk.base, VkVideoSessionKHR, VK_OBJECT_TYPE_VIDEO_SESSION_KHR)
@@ -89,11 +94,12 @@ void radv_video_enc_control_video_coding(struct radv_cmd_buffer *cmd_buffer,
 VkResult radv_video_get_encode_session_memory_requirements(struct radv_device *device, struct radv_video_session *vid,
                                                            uint32_t *pMemoryRequirementsCount,
                                                            VkVideoSessionMemoryRequirementsKHR *pMemoryRequirements);
-void radv_video_patch_encode_session_parameters(struct vk_video_session_parameters *params);
+void radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk_video_session_parameters *params);
 void radv_video_get_enc_dpb_image(struct radv_device *device,
                                   const struct VkVideoProfileListInfoKHR *profile_list,
                                   struct radv_image *image,
                                   struct radv_image_create_info *create_info);
 bool radv_video_decode_vp9_supported(const struct radv_physical_device *pdev);
+bool radv_video_encode_av1_supported(const struct radv_physical_device *pdev);
 
 #endif /* RADV_VIDEO_H */

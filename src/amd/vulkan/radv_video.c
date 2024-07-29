@@ -417,7 +417,7 @@ calc_ctx_size_av1(struct radv_device *device, struct radv_video_session *vid)
 }
 
 static void
-radv_video_patch_session_parameters(struct vk_video_session_parameters *params)
+radv_video_patch_session_parameters(struct radv_device *device, struct vk_video_session_parameters *params)
 {
    switch (params->op) {
    case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
@@ -426,7 +426,8 @@ radv_video_patch_session_parameters(struct vk_video_session_parameters *params)
       return;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
-      radv_video_patch_encode_session_parameters(params);
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+      radv_video_patch_encode_session_parameters(device, params);
       break;
    }
 }
@@ -560,6 +561,31 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
          break;
       }
       break;
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+      vid->encode = true;
+      vid->enc_session.encode_standard = RENCODE_ENCODE_STANDARD_AV1;
+      vid->enc_session.aligned_picture_width = align(vid->vk.max_coded.width, 64);
+      vid->enc_session.aligned_picture_height = align(vid->vk.max_coded.height, 64);
+      vid->enc_session.padding_width = vid->enc_session.aligned_picture_width - vid->vk.max_coded.width;
+      vid->enc_session.padding_height = vid->enc_session.aligned_picture_height - vid->vk.max_coded.height;
+      vid->enc_session.display_remote = 0;
+      vid->enc_session.pre_encode_mode = 0;
+      vid->enc_session.pre_encode_chroma_enabled = 0;
+      switch (vid->vk.enc_usage.tuning_mode) {
+      case VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR:
+      default:
+         vid->enc_preset_mode = RENCODE_PRESET_MODE_BALANCE;
+         break;
+      case VK_VIDEO_ENCODE_TUNING_MODE_LOW_LATENCY_KHR:
+      case VK_VIDEO_ENCODE_TUNING_MODE_ULTRA_LOW_LATENCY_KHR:
+         vid->enc_preset_mode = RENCODE_PRESET_MODE_SPEED;
+         break;
+      case VK_VIDEO_ENCODE_TUNING_MODE_HIGH_QUALITY_KHR:
+      case VK_VIDEO_ENCODE_TUNING_MODE_LOSSLESS_KHR:
+         vid->enc_preset_mode = RENCODE_PRESET_MODE_QUALITY;
+         break;
+      }
+      break;
    default:
       return VK_ERROR_FEATURE_NOT_PRESENT;
    }
@@ -609,7 +635,7 @@ radv_CreateVideoSessionParametersKHR(VkDevice _device, const VkVideoSessionParam
       return result;
    }
 
-   radv_video_patch_session_parameters(&params->vk);
+   radv_video_patch_session_parameters(device, &params->vk);
 
    *pVideoSessionParameters = radv_video_session_params_to_handle(params);
    return VK_SUCCESS;
@@ -655,6 +681,10 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       break;
    case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
       cap = &pdev->info.dec_caps.codec_info[AMDGPU_INFO_VIDEO_CAPS_CODEC_IDX_VP9];
+      break;
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+      cap = &pdev->info.enc_caps.codec_info[AMDGPU_INFO_VIDEO_CAPS_CODEC_IDX_AV1];
+      is_encode = true;
       break;
 #endif
    default:
@@ -908,6 +938,66 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       pCapabilities->minCodedExtent.height = 128;
       break;
    }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+      struct VkVideoEncodeAV1CapabilitiesKHR *ext = (struct VkVideoEncodeAV1CapabilitiesKHR *)
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_AV1_CAPABILITIES_KHR);
+      pCapabilities->maxDpbSlots = RADV_VIDEO_AV1_MAX_DPB_SLOTS;
+      pCapabilities->maxActiveReferencePictures = RADV_VIDEO_AV1_MAX_NUM_REF_FRAME;
+      strcpy(pCapabilities->stdHeaderVersion.extensionName, VK_STD_VULKAN_VIDEO_CODEC_AV1_ENCODE_EXTENSION_NAME);
+      pCapabilities->stdHeaderVersion.specVersion = VK_STD_VULKAN_VIDEO_CODEC_AV1_ENCODE_SPEC_VERSION;
+      ext->flags = VK_VIDEO_ENCODE_AV1_CAPABILITY_PER_RATE_CONTROL_GROUP_MIN_MAX_Q_INDEX_BIT_KHR |
+                   VK_VIDEO_ENCODE_AV1_CAPABILITY_GENERATE_OBU_EXTENSION_HEADER_BIT_KHR;
+      ext->maxLevel = STD_VIDEO_AV1_LEVEL_6_0;
+      ext->codedPictureAlignment.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 8 : 64;
+      ext->codedPictureAlignment.height = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 2 : 16;
+      pCapabilities->pictureAccessGranularity = ext->codedPictureAlignment;
+      ext->maxTiles.width = 2;
+      ext->maxTiles.height = 16;
+      ext->minTileSize.width = 64;
+      ext->minTileSize.height = 64;
+      ext->maxTileSize.width = 4096;
+      ext->maxTileSize.height = 4096;
+      ext->superblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+      ext->maxSingleReferenceCount = 1;
+      ext->singleReferenceNameMask =
+         (1 << (STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME));
+      if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5) {
+         ext->maxUnidirectionalCompoundReferenceCount = 2;
+         ext->maxUnidirectionalCompoundGroup1ReferenceCount = 2;
+         ext->unidirectionalCompoundReferenceNameMask =
+            (1 << (STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME)) |
+            (1 << (STD_VIDEO_AV1_REFERENCE_NAME_GOLDEN_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME));
+         ext->maxBidirectionalCompoundReferenceCount = 2;
+         ext->maxBidirectionalCompoundGroup1ReferenceCount = 1;
+         ext->maxBidirectionalCompoundGroup2ReferenceCount = 1;
+         ext->bidirectionalCompoundReferenceNameMask =
+            (1 << (STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME)) |
+            (1 << (STD_VIDEO_AV1_REFERENCE_NAME_ALTREF_FRAME - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME));
+      } else {
+         ext->maxUnidirectionalCompoundReferenceCount = 0;
+         ext->maxUnidirectionalCompoundGroup1ReferenceCount = 0;
+         ext->unidirectionalCompoundReferenceNameMask = 0;
+         ext->maxBidirectionalCompoundReferenceCount = 0;
+         ext->maxBidirectionalCompoundGroup1ReferenceCount = 0;
+         ext->maxBidirectionalCompoundGroup2ReferenceCount = 0;
+         ext->bidirectionalCompoundReferenceNameMask = 0;
+      }
+      ext->maxTemporalLayerCount = 4;
+      ext->maxSpatialLayerCount = 1;
+      ext->maxOperatingPoints = 4;
+      ext->minQIndex = 1;
+      ext->maxQIndex = 255;
+      ext->prefersGopRemainingFrames = false;
+      ext->requiresGopRemainingFrames = false;
+      ext->stdSyntaxFlags = 0;
+      if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5) {
+         ext->stdSyntaxFlags |= VK_VIDEO_ENCODE_AV1_STD_SKIP_MODE_PRESENT_UNSET_BIT_KHR |
+                                VK_VIDEO_ENCODE_AV1_STD_DELTA_Q_BIT_KHR;
+      }
+      pCapabilities->minCodedExtent.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 320 : 128;
+      pCapabilities->minCodedExtent.height = 128;
+      break;
+   }
    default:
       break;
    }
@@ -1135,12 +1225,13 @@ VKAPI_ATTR VkResult VKAPI_CALL
 radv_UpdateVideoSessionParametersKHR(VkDevice _device, VkVideoSessionParametersKHR videoSessionParameters,
                                      const VkVideoSessionParametersUpdateInfoKHR *pUpdateInfo)
 {
+   VK_FROM_HANDLE(radv_device, device, _device);
    VK_FROM_HANDLE(radv_video_session_params, params, videoSessionParameters);
 
    VkResult result = vk_video_session_parameters_update(&params->vk, pUpdateInfo);
    if (result != VK_SUCCESS)
       return result;
-   radv_video_patch_session_parameters(&params->vk);
+   radv_video_patch_session_parameters(device, &params->vk);
    return result;
 }
 
