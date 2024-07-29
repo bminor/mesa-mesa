@@ -131,6 +131,6 @@ fi
 # Compress results.csv to save on bandwidth during the upload of artifacts to
 # GitLab. This reduces a full piglit run to 550 KB, down from 6 MB, and takes
 # 55ms on my Ryzen 5950X (with or without parallelism).
-zstd --rm -T0 -8qc $RESULTS_DIR/results.csv -o $RESULTS_DIR/results.csv.zst
+zstd --quiet --rm --threads ${FDO_CI_CONCURRENT:-0} -8 $RESULTS_DIR/results.csv -o $RESULTS_DIR/results.csv.zst
 
 exit $PIGLIT_EXITCODE
