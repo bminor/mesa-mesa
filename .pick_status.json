@@ -144,7 +144,7 @@
         "description": "rusticl: fix clippy lint having bounds defined in multiple places",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "734352ddfb91f14aab2dd43937d45a360044f5cf",
         "notes": null
