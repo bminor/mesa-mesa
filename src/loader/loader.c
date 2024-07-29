@@ -858,7 +858,7 @@ loader_open_driver_lib(const char *driver_name,
       len = next - p;
       snprintf(path, sizeof(path), "%.*s/%s%s.so", len,
                p, driver_name, lib_suffix);
-      driver = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+      driver = dlopen(path, RTLD_NOW | RTLD_LOCAL);
       if (driver == NULL) {
          dl_error = dlerror();
          log_(_LOADER_DEBUG, "MESA-LOADER: failed to open %s: %s\n",
