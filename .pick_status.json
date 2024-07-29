@@ -134,7 +134,7 @@
         "description": "rusticl/program: protect against 0 length in slice::from_raw_parts",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e028baa1772eeaa55393b1d01d5e5fb217474f95",
         "notes": null
