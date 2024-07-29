@@ -148,6 +148,22 @@ vl_bitstream_put_bits(struct vl_bitstream_encoder *enc, int bits_count, uint32_t
    }
 }
 
+static inline void
+vl_bitstream_put_uvlc(struct vl_bitstream_encoder *enc, uint64_t val)
+{
+   uint32_t num_bits = 0;
+   uint64_t value_plus1 = (uint64_t)val + 1;
+   uint32_t num_leading_zeros = 0;
+
+   while ((uint64_t)1 << num_bits <= value_plus1)
+      num_bits++;
+
+   num_leading_zeros = num_bits - 1;
+   vl_bitstream_put_bits(enc, num_leading_zeros, 0);
+   vl_bitstream_put_bits(enc, 1, 1);
+   vl_bitstream_put_bits(enc, num_leading_zeros, (uint32_t)value_plus1);
+}
+
 static inline int
 vl_bitstream_get_exp_golomb0_code_len(uint32_t val)
 {
@@ -201,4 +217,13 @@ vl_bitstream_rbsp_trailing(struct vl_bitstream_encoder *enc)
    ASSERTED bool is_aligned = vl_bitstream_is_byte_aligned(enc);
    assert(is_aligned);
 }
+
+static inline uint8_t*
+vl_bitstream_get_byte_offset(struct vl_bitstream_encoder *enc)
+{
+   ASSERTED bool is_aligned = vl_bitstream_is_byte_aligned(enc);
+   assert(is_aligned);
+   return enc->bits + (enc->offset + ((32 - enc->bits_to_go) >> 3));
+}
+
 #endif

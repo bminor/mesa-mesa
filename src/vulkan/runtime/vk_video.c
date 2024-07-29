@@ -88,12 +88,20 @@ vk_video_session_init(struct vk_device *device,
       vid->h265.profile_idc = h265_profile->stdProfileIdc;
       break;
    }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+      const struct VkVideoEncodeAV1ProfileInfoKHR *av1_profile =
+         vk_find_struct_const(create_info->pVideoProfile->pNext,
+                              VIDEO_ENCODE_AV1_PROFILE_INFO_KHR);
+      vid->av1.profile = av1_profile->stdProfile;
+      break;
+   };
    default:
       return VK_ERROR_FEATURE_NOT_PRESENT;
    }
 
    if (vid->op == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR ||
-       vid->op == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
+       vid->op == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR ||
+       vid->op == VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR) {
       const struct VkVideoEncodeUsageInfoKHR *encode_usage_profile =
          vk_find_struct_const(create_info->pVideoProfile->pNext, VIDEO_ENCODE_USAGE_INFO_KHR);
       if (encode_usage_profile) {
@@ -561,6 +569,15 @@ vk_video_session_parameters_init(struct vk_device *device,
       }
 
       init_add_h265_enc_session_parameters(params, h265_create->pParametersAddInfo, templ);
+      break;
+   }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+      const struct VkVideoEncodeAV1SessionParametersCreateInfoKHR *av1_create =
+         vk_find_struct_const(create_info->pNext, VIDEO_ENCODE_AV1_SESSION_PARAMETERS_CREATE_INFO_KHR);
+      if (av1_create) {
+         vk_video_deep_copy_av1_seq_hdr(&params->av1_enc.seq_hdr,
+                                        av1_create->pStdSequenceHeader);
+      }
       break;
    }
    default:
@@ -1614,7 +1631,8 @@ vk_video_get_profile_alignments(const VkVideoProfileListInfoKHR *profile_list,
             width_align = MAX2(width_align, VK_VIDEO_H265_CTU_MAX_WIDTH);
             height_align = MAX2(height_align, VK_VIDEO_H265_CTU_MAX_HEIGHT);
          }
-         if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR) {
+         if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR ||
+             profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR) {
             width_align = MAX2(width_align, VK_VIDEO_AV1_BLOCK_WIDTH);
             height_align = MAX2(height_align, VK_VIDEO_AV1_BLOCK_HEIGHT);
          }
@@ -2763,4 +2781,294 @@ finish:
    vl_bitstream_encoder_free(&enc);
 
    return;
+}
+
+enum AV1NALUType
+{
+   OBU_SEQUENCE_HEADER = 1,
+   OBU_TEMPORAL_DELIMITER = 2,
+   OBU_FRAME_HEADER = 3,
+   OBU_TILE_GROUP = 4,
+   OBU_METADATA = 5,
+   OBU_FRAME = 6,
+   OBU_REDUNDANT_FRAME_HEADER = 7,
+   OBU_PADDING = 15,
+};
+
+static void
+emit_obu_av1_header(struct vl_bitstream_encoder *enc,
+                    enum AV1NALUType obu_type,
+                    uint32_t obu_extension_flag,
+                    uint32_t temporal_id,
+                    uint32_t spatial_id)
+{
+   vl_bitstream_put_bits(enc, 1, 0); // obu_forbidden_bit
+   vl_bitstream_put_bits(enc, 4, obu_type);   // type
+   vl_bitstream_put_bits(enc, 1, obu_extension_flag);
+   vl_bitstream_put_bits(enc, 1, 1);   // obu_has_size_field
+   vl_bitstream_put_bits(enc, 1, 0);   // reserved
+   if (obu_extension_flag) {
+      // obu_extension_header()
+      vl_bitstream_put_bits(enc, 3, temporal_id);
+      vl_bitstream_put_bits(enc, 2, spatial_id);
+      vl_bitstream_put_bits(enc, 3, 0);   // extension_header_reserved_3bits
+   }
+}
+
+static void vk_video_encode_av1_code_leb128(uint8_t *buf, uint32_t num_bytes, uint32_t value)
+{
+   uint8_t leb128_byte = 0;
+   uint32_t i = 0;
+
+   do {
+      leb128_byte = (value & 0x7f);
+      value >>= 7;
+      if (num_bytes > 1)
+         leb128_byte |= 0x80;
+
+      *(buf + i) = leb128_byte;
+      num_bytes--;
+      i++;
+   } while((leb128_byte & 0x80));
+}
+
+static StdVideoEncodeAV1OperatingPointInfo default_av1_operating_point = {
+   .flags = {
+      .decoder_model_present_for_this_op = 0,
+      .low_delay_mode_flag = 0,
+      .initial_display_delay_present_for_this_op = 0,
+   },
+   .operating_point_idc = 0,
+   .seq_level_idx = STD_VIDEO_AV1_LEVEL_6_1,
+   .seq_tier = 0,
+   .decoder_buffer_delay = 0,
+   .encoder_buffer_delay = 0,
+   .initial_display_delay_minus_1 = 0,
+};
+
+VkResult
+vk_video_encode_av1_seq_hdr(const struct vk_video_session_parameters *params,
+                            size_t size_limit,
+                            size_t *data_size_ptr,
+                            void *data_ptr)
+{
+   struct vl_bitstream_encoder enc;
+   uint32_t data_size = *data_size_ptr;
+   uint32_t obu_extension_flag = 0;
+   uint32_t temporal_id = 0;
+   uint32_t spatial_id = 0;
+   uint8_t* size_offset = NULL;
+   uint32_t obu_size;
+   uint8_t obu_size_bin[2];
+   const int num_obu_size_bytes = 2;
+   const StdVideoAV1ColorConfig* color = &params->av1_enc.seq_hdr.color_config;
+   const StdVideoAV1TimingInfo* timing_info = &params->av1_enc.seq_hdr.timing_info;
+   const StdVideoAV1SequenceHeader *seq_hdr = &params->av1_enc.seq_hdr.base;
+   uint8_t decoder_model_present_flag = 0;
+   const StdVideoEncodeAV1DecoderModelInfo* decoder_model = &params->av1_enc.decoder_model;
+   int num_op_points = MAX2(params->av1_enc.num_op_points, 1);
+   const StdVideoEncodeAV1OperatingPointInfo* op_points = params->av1_enc.num_op_points ?
+      params->av1_enc.op_points : &default_av1_operating_point;
+
+   assert(params->op == VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR);
+
+   vl_bitstream_encoder_clear(&enc, data_ptr, data_size, size_limit);
+   /* AV1 does not need start code prevention */
+   enc.prevent_start_code = false;
+
+   if (!color || (num_op_points > 0 && !op_points))
+      return VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR;
+
+   emit_obu_av1_header(&enc, OBU_SEQUENCE_HEADER, obu_extension_flag, temporal_id, spatial_id);
+
+   /* obu_size, use two bytes for header, the size will be written in afterwards */
+   size_offset = vl_bitstream_get_byte_offset(&enc);
+   vl_bitstream_put_bits(&enc, num_obu_size_bytes * 8, 0);
+
+   /* sequence_header_obu() */
+   /*  seq_profile  */
+   vl_bitstream_put_bits(&enc, 3, seq_hdr->seq_profile);
+
+   /*  still_picture */
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.still_picture);
+   /*  reduced_still_picture_header */
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.reduced_still_picture_header);
+
+   if (seq_hdr->flags.reduced_still_picture_header) {
+      vl_bitstream_put_bits(&enc, 5, op_points[0].seq_level_idx);
+   } else {
+      /*  timing_info_present_flag  */
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.timing_info_present_flag);
+
+      if (seq_hdr->flags.timing_info_present_flag) {
+         if (!timing_info)
+            return VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR;
+
+         /*  num_units_in_display_tick  */
+         vl_bitstream_put_bits(&enc, 32, timing_info->num_units_in_display_tick);
+         /*  time_scale  */
+         vl_bitstream_put_bits(&enc, 32, timing_info->time_scale);
+         /*  equal_picture_interval  */
+         vl_bitstream_put_bits(&enc, 1, timing_info->flags.equal_picture_interval);
+         /*  num_ticks_per_picture_minus_1  */
+         if (timing_info->flags.equal_picture_interval)
+            vl_bitstream_put_uvlc(&enc, timing_info->num_ticks_per_picture_minus_1);
+
+         /*  decoder_model_info_present_flag  */
+         if (decoder_model) {
+            decoder_model_present_flag = 1;
+            vl_bitstream_put_bits(&enc, 1, 1);
+            vl_bitstream_put_bits(&enc, 5, decoder_model->buffer_delay_length_minus_1);
+            vl_bitstream_put_bits(&enc, 32, decoder_model->num_units_in_decoding_tick);
+            vl_bitstream_put_bits(&enc, 5, decoder_model->buffer_removal_time_length_minus_1);
+            vl_bitstream_put_bits(&enc, 5, decoder_model->frame_presentation_time_length_minus_1);
+         } else {
+            vl_bitstream_put_bits(&enc, 1, 0);
+         }
+      }
+
+      /*  initial_display_delay_present_flag  */
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.initial_display_delay_present_flag);
+
+      /*  operating_points_cnt_minus_1  */
+      vl_bitstream_put_bits(&enc, 5, num_op_points - 1);
+
+      for (uint32_t i = 0; i < num_op_points; i++) {
+         const StdVideoEncodeAV1OperatingPointInfo *op_point_info = &op_points[i];
+         vl_bitstream_put_bits(&enc, 12, op_point_info->operating_point_idc);
+         vl_bitstream_put_bits(&enc, 5, op_point_info->seq_level_idx);
+         if (op_point_info->seq_level_idx > 7)
+            vl_bitstream_put_bits(&enc, 1, op_point_info->seq_tier);
+
+         if (decoder_model_present_flag) {
+            vl_bitstream_put_bits(&enc, 1, op_point_info->flags.decoder_model_present_for_this_op);
+            if (op_point_info->flags.decoder_model_present_for_this_op) {
+               vl_bitstream_put_uvlc(&enc, op_point_info->decoder_buffer_delay);
+               vl_bitstream_put_uvlc(&enc, op_point_info->encoder_buffer_delay);
+               vl_bitstream_put_bits(&enc, 1, op_point_info->flags.low_delay_mode_flag);
+            }
+         }
+
+         if (seq_hdr->flags.initial_display_delay_present_flag) {
+            vl_bitstream_put_bits(&enc, 1, op_point_info->flags.initial_display_delay_present_for_this_op);
+            if (op_point_info->flags.initial_display_delay_present_for_this_op) {
+               vl_bitstream_put_bits(&enc, 4, op_point_info->initial_display_delay_minus_1);
+            }
+         }
+      }
+   }
+
+   /*  frame_width_bits_minus_1  */
+   vl_bitstream_put_bits(&enc, 4, seq_hdr->frame_width_bits_minus_1);
+   /*  frame_height_bits_minus_1  */
+   vl_bitstream_put_bits(&enc, 4, seq_hdr->frame_height_bits_minus_1);
+   /*  max_frame_width_minus_1  */
+   vl_bitstream_put_bits(&enc, seq_hdr->frame_width_bits_minus_1 + 1, seq_hdr->max_frame_width_minus_1);
+   /*  max_frame_height_minus_1  */
+   vl_bitstream_put_bits(&enc, seq_hdr->frame_height_bits_minus_1 + 1, seq_hdr->max_frame_height_minus_1);
+
+   if (!seq_hdr->flags.reduced_still_picture_header)
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.frame_id_numbers_present_flag);
+
+   if (seq_hdr->flags.frame_id_numbers_present_flag) {
+      vl_bitstream_put_bits(&enc, 4, seq_hdr->delta_frame_id_length_minus_2);
+      vl_bitstream_put_bits(&enc, 3, seq_hdr->additional_frame_id_length_minus_1);
+   }
+
+   /*  use_128x128_superblock  */
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.use_128x128_superblock);
+   /*  enable_filter_intra  */
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_filter_intra);
+   /*  enable_intra_edge_filter  */
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_intra_edge_filter);
+
+   if (!seq_hdr->flags.reduced_still_picture_header) {
+      /*  enable_interintra_compound  */
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_interintra_compound);
+      /*  enable_masked_compound  */
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_masked_compound);
+      /*  enable_warped_motion  */
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_warped_motion);
+      /*  enable_dual_filter  */
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_dual_filter);
+      /*  enable_order_hint  */
+      vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_order_hint);
+
+      if (seq_hdr->flags.enable_order_hint) {
+         /*  enable_jnt_comp  */
+         vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_jnt_comp);
+         /*  enable_ref_frame_mvs  */
+         vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_ref_frame_mvs);
+      }
+
+      if (seq_hdr->seq_force_screen_content_tools == 2 /* SELECT_SCREEN_CONTENT_TOOLS */)
+         vl_bitstream_put_bits(&enc, 1, 1); /* seq_choose_screen_content_tools = 1 */
+      else {
+         vl_bitstream_put_bits(&enc, 1, 0); /* seq_choose_screen_content_tools = 0 */
+         vl_bitstream_put_bits(&enc, 1, seq_hdr->seq_force_screen_content_tools);
+      }
+
+      if (seq_hdr->seq_force_screen_content_tools > 0) {
+         if (seq_hdr->seq_force_integer_mv == 2 /* SELECT_INTEGER_MV */)
+            vl_bitstream_put_bits(&enc, 1, seq_hdr->seq_force_integer_mv); /* seq_choose_integer_mv = 1 */
+         else {
+            vl_bitstream_put_bits(&enc, 1, 0); /* seq_choose_integer_mv = 0 */
+            vl_bitstream_put_bits(&enc, 1, seq_hdr->seq_force_integer_mv);
+         }
+      }
+
+      if (seq_hdr->flags.enable_order_hint)
+         vl_bitstream_put_bits(&enc, 3, seq_hdr->order_hint_bits_minus_1);
+   } /* !reduced_still_picture_header */
+
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_superres);
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_cdef);
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.enable_restoration);
+
+   /* color_config() */
+   /*  high_bitdepth  */
+   vl_bitstream_put_bits(&enc, 1, color->BitDepth > 8);
+   /*  mono_chrome  */
+   vl_bitstream_put_bits(&enc, 1, color->flags.mono_chrome);
+   /*  color_description_present_flag  */
+   vl_bitstream_put_bits(&enc, 1, color->flags.color_description_present_flag);
+
+   if (color->flags.color_description_present_flag) {
+      /*  color_primaries  */
+      vl_bitstream_put_bits(&enc, 8, color->color_primaries);
+      /*  transfer_characteristics  */
+      vl_bitstream_put_bits(&enc, 8, color->transfer_characteristics);
+      /*  matrix_coefficients  */
+      vl_bitstream_put_bits(&enc, 8, color->matrix_coefficients);
+   }
+
+   /*  color_range  */
+   vl_bitstream_put_bits(&enc, 1, color->flags.color_range);
+   /*  chroma_sample_position  */
+   vl_bitstream_put_bits(&enc, 2, color->chroma_sample_position);
+   /*  separate_uv_delta_q  */
+   vl_bitstream_put_bits(&enc, 1, color->flags.separate_uv_delta_q);
+   /*  film_grain_params_present  */
+   vl_bitstream_put_bits(&enc, 1, seq_hdr->flags.film_grain_params_present);
+
+   /*  trailing_one_bit  */
+   vl_bitstream_rbsp_trailing(&enc);
+
+   /* obu_size doesn't include the bytes within obu_header or obu_size syntax
+    * element (6.2.1), here we use num_obu_size_bytes for obu_size syntax
+    * which needs to be removed from the size.
+    */
+   obu_size = (uint32_t)(vl_bitstream_get_byte_offset(&enc) - size_offset - num_obu_size_bytes);
+   vk_video_encode_av1_code_leb128(obu_size_bin, 2, obu_size);
+
+   /* update obu_size */
+   for (int i = 0; i < sizeof(obu_size_bin); i++) {
+      *(size_offset++) = obu_size_bin[i];
+   }
+
+   vl_bitstream_flush(&enc);
+   *data_size_ptr += vl_bitstream_get_byte_count(&enc);
+   vl_bitstream_encoder_free(&enc);
+
+   return VK_SUCCESS;
 }
