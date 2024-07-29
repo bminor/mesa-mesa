@@ -134,7 +134,7 @@
         "description": "rusticl/api: protect against 0 length in slice::from_raw_parts",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "84d16045d034cf34e782febea7cf7d933b730ba6",
         "notes": null
