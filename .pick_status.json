@@ -104,7 +104,7 @@
         "description": "Revert \"vl/dri3: use loader's dri3 init code and delete everything else\"",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "586d0c4a9b5d9779092a18a9803837082b0b2100",
         "notes": null
