@@ -82,7 +82,7 @@ cp bin/ci/structured_logger.py artifacts/
 if [ -n "$S3_ARTIFACT_NAME" ]; then
     # Pass needed files to the test stage
     S3_ARTIFACT_NAME="$S3_ARTIFACT_NAME.tar.zst"
-    zstd artifacts/install.tar -o ${S3_ARTIFACT_NAME}
+    zstd --quiet --threads ${FDO_CI_CONCURRENT:-0} artifacts/install.tar -o ${S3_ARTIFACT_NAME}
     ci-fairy s3cp --token-file "${S3_JWT_FILE}" ${S3_ARTIFACT_NAME} https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME}
 fi
 
