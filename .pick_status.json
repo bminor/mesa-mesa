@@ -664,7 +664,7 @@
         "description": "radeonsi: ensure TC_L2_dirty is set if we don't sync after internal SSBO blits",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f703dfd1bb8c22b6791dd95c7de270e176452b4b",
         "notes": null
