@@ -43,6 +43,7 @@ enum {
    DEBUG_NO_VALIDATE = 0x400,
    DEBUG_NO_SCHED_ILP = 0x800,
    DEBUG_NO_SCHED_VOPD = 0x1000,
+   DEBUG_VALIDATE_OPT = 0x2000,
 };
 
 enum storage_class : uint8_t {

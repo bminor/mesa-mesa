@@ -5060,6 +5060,51 @@ apply_literals(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    ctx.instructions.emplace_back(std::move(instr));
 }
 
+void
+validate_opt_ctx(opt_ctx& ctx)
+{
+   if (!(debug_flags & DEBUG_VALIDATE_OPT))
+      return;
+
+   Program* program = ctx.program;
+
+   bool is_valid = true;
+   auto check = [&program, &is_valid](bool success, const char* msg,
+                                      aco::Instruction* instr) -> void
+   {
+      if (!success) {
+         char* out;
+         size_t outsize;
+         struct u_memstream mem;
+         u_memstream_open(&mem, &out, &outsize);
+         FILE* const memf = u_memstream_get(&mem);
+
+         fprintf(memf, "Optimizer: %s: ", msg);
+         aco_print_instr(program->gfx_level, instr, memf);
+         u_memstream_close(&mem);
+
+         aco_err(program, "%s", out);
+         free(out);
+
+         is_valid = false;
+      }
+   };
+
+   for (Block& block : program->blocks) {
+      for (aco_ptr<Instruction>& instr : block.instructions) {
+         if (!instr)
+            continue;
+         for (const Definition& def : instr->definitions) {
+            check(ctx.info[def.tempId()].parent_instr == instr.get(), "parent_instr incorrect",
+                  instr.get());
+         }
+      }
+   }
+   if (!is_valid) {
+      abort();
+   }
+}
+
 } /* end namespace */
 
 void
@@ -5076,10 +5121,14 @@ optimize(Program* program)
          label_instruction(ctx, instr);
    }
 
+   validate_opt_ctx(ctx);
+
    ctx.uses = dead_code_analysis(program);
 
    /* 2. Rematerialize constants in every block. */
    rematerialize_constants(ctx);
+
+   validate_opt_ctx(ctx);
 
    /* 3. Combine v_mad, omod, clamp and propagate sgpr on VALU instructions */
    for (Block& block : program->blocks) {
@@ -5087,6 +5136,8 @@ optimize(Program* program)
       for (aco_ptr<Instruction>& instr : block.instructions)
          combine_instruction(ctx, instr);
    }
+
+   validate_opt_ctx(ctx);
 
    /* 4. Top-Down DAG pass (backward) to select instructions (includes DCE) */
    for (auto block_rit = program->blocks.rbegin(); block_rit != program->blocks.rend();
@@ -5098,6 +5149,8 @@ optimize(Program* program)
          select_instruction(ctx, *instr_rit);
    }
 
+   validate_opt_ctx(ctx);
+
    /* 5. Add literals to instructions */
    for (Block& block : program->blocks) {
       ctx.instructions.reserve(block.instructions.size());
@@ -5106,6 +5159,8 @@ optimize(Program* program)
          apply_literals(ctx, instr);
       block.instructions = std::move(ctx.instructions);
    }
+
+   validate_opt_ctx(ctx);
 }
 
 } // namespace aco
