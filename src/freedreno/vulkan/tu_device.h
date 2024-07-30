@@ -63,6 +63,8 @@ struct tu_memory_heap {
    alignas(8) VkDeviceSize used;
 };
 
+extern uint64_t os_page_size;
+
 struct tu_physical_device
 {
    struct vk_physical_device vk;

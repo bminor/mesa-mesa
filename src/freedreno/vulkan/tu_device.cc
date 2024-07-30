@@ -42,6 +42,8 @@
 #include "tu_tracepoints.h"
 #include "tu_wsi.h"
 
+uint64_t os_page_size = 4096;
+
 static int
 tu_device_get_cache_uuid(struct tu_physical_device *device, void *uuid)
 {
@@ -1004,6 +1006,10 @@ tu_get_properties(struct tu_physical_device *pdevice,
    memcpy(props->shaderModuleIdentifierAlgorithmUUID,
           vk_shaderModuleIdentifierAlgorithmUUID,
           sizeof(props->shaderModuleIdentifierAlgorithmUUID));
+
+   /* [Eric] backport note: this call is present on main but not in 24.1, and
+    * is required in this commit to initialise os_page_size correctly */
+   os_get_page_size(&os_page_size);
 
    /* VK_EXT_multi_draw */
    props->maxMultiDrawCount = 2048;
@@ -2212,7 +2218,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    if (physical_device->has_set_iova) {
       mtx_init(&device->vma_mutex, mtx_plain);
       util_vma_heap_init(&device->vma, physical_device->va_start,
-                         ROUND_DOWN_TO(physical_device->va_size, 4096));
+                         ROUND_DOWN_TO(physical_device->va_size, os_page_size));
    }
 
    if (TU_DEBUG(BOS))
