@@ -322,6 +322,9 @@ compute_topology_builtins(struct intel_perf_config *perf)
 
    perf->sys_vars.slice_mask = devinfo->slice_masks;
    perf->sys_vars.n_eu_slices = devinfo->num_slices;
+   perf->sys_vars.n_l3_banks = devinfo->l3_banks;
+   perf->sys_vars.n_l3_nodes = devinfo->l3_banks / 4;
+   perf->sys_vars.n_sq_idis =  devinfo->num_slices;
 
    perf->sys_vars.n_eu_slice0123 = 0;
    for (int s = 0; s < MIN2(4, devinfo->max_slices); s++) {
