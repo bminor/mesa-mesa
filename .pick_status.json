@@ -7154,7 +7154,7 @@
         "description": "freedreno/drm/virtio: Fix issues with 16k (or larger) page sizes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e6b2785811c23e44d3acfeef71ef240d95fc1663",
         "notes": null
