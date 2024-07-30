@@ -1464,7 +1464,7 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
    sscreen->barrier_flags.cp_to_L2 = SI_CONTEXT_INV_SCACHE | SI_CONTEXT_INV_VCACHE;
    if (sscreen->info.gfx_level <= GFX8) {
       sscreen->barrier_flags.cp_to_L2 |= SI_CONTEXT_INV_L2;
-      sscreen->barrier_flags.L2_to_cp |= SI_CONTEXT_WB_L2;
+      sscreen->barrier_flags.L2_to_cp |= SI_CONTEXT_WB_L2 | SI_CONTEXT_PFP_SYNC_ME;
    }
 
    if (debug_get_bool_option("RADEON_DUMP_SHADERS", false))

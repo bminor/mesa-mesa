@@ -4584,7 +4584,7 @@
         "description": "radeonsi: fix buffer coherency issues on gfx6-8,12 due to missing PFP->ME sync",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a8abbbb172ea69453ac5bbb6a97c3497eda4ca53",
         "notes": null
