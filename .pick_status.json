@@ -1,5 +1,705 @@
 [
     {
+        "sha": "235ce3df9baad0d7f0895e58c647914da00d7351",
+        "description": "llvmpipe/ci: bump timeout for nightly job to 1h",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aa9745427b917bb0613b753ccd59c6c1e6f07584",
+        "description": "ci: austriancoder farm maintenance",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "26474f8d4a5ea1091fb23e6ffd44e0c085efde58",
+        "description": "nir_lower_mem_access_bit_sizes: Support load_kernel_input",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50ff1e4f867287fa2bfce5a714c365957fbf098a",
+        "description": "radeonsi/vcn: add HDR sei in hevc enc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0460ededdafbf63c593c97dc699fa521e7b54403",
+        "description": "frontends/va: check hevc enc hdr sei",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b92134e088cfe0dad36d83f5a197875bdd644745",
+        "description": "aco: validate temp_rc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53155ba12d6e561726f435e50cb9306b6af87969",
+        "description": "aco: add CompilationProgress::after_lower_to_hw",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6da7bd842c36fdd5279ae6eab168e5c658543d60",
+        "description": "aco/optimizer: update temp_rc when converting to uniform bool alu",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0acc31a00136e8a954629888e1a822e3fa111020",
+        "description": "bin/ci: crnm: Reduce trace cluttering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff18d1ec230ba305db8724db04d88b52a8d13d0d",
+        "description": "bin/ci: crnm: Fix pipeline monitoring skipping",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3975366a88711b986a283f1b7ea56782506280b2",
+        "description": "bin/ci: crnm: Deal with `created` status",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "87ce0ce0b19a59acd2fe223750dbe4064023e24a",
+        "description": "Revert \"vl/dri3: use loader's dri3 init code and delete everything else\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "586d0c4a9b5d9779092a18a9803837082b0b2100",
+        "notes": null
+    },
+    {
+        "sha": "dc2755a4f807d5e86bb46e235202a07f848f482d",
+        "description": "rusticl/spirv: protect against 0 length in slice::from_raw_parts",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81f75e2a2dd803676d8db46207064e5724390559",
+        "description": "rusticl/api: protect against 0 length in slice::from_raw_parts",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "84d16045d034cf34e782febea7cf7d933b730ba6",
+        "notes": null
+    },
+    {
+        "sha": "ad6fb3406b500be4a78ef87f554fffcecff057dc",
+        "description": "rusticl/program: protect against 0 length in slice::from_raw_parts",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e028baa1772eeaa55393b1d01d5e5fb217474f95",
+        "notes": null
+    },
+    {
+        "sha": "7a8b1dc6e56dc94f37700be8870651715b36b161",
+        "description": "rusticl: fix clippy lint having bounds defined in multiple places",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "734352ddfb91f14aab2dd43937d45a360044f5cf",
+        "notes": null
+    },
+    {
+        "sha": "eb1f64a01eaf6ac6fbe874a4900a1174704b1250",
+        "description": "radeonsi/vcn: Fix MB/CTB calculation for slice encoding",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36a13d2b3b067c2ce03a1ecd0a579d5e418d28d3",
+        "description": "freedreno: fix a7xx perfcntr countables",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d60ae64527dfba55c998e869c743b519fbf90a3c",
+        "description": "tu/a750: Allow mutable images to have UBWC with all compatible formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a9676b79c785c53bcfb7e5992a108c8fd71d7c9",
+        "description": "ci/prepare-artifacts: check if we're about to overwrite ci config/expectations files",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "197701b860dce7e3a7c56a6ac06f1bd90ec2203d",
+        "description": "ci/prepare-artifacts: use find's -exec instead of iterating over its output with xargs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f70af7e9f2fe44d7e1f19b7067bc129723361e9",
+        "description": "bin/ci: update python-gitlab to 4.x",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d055edac11cf89e0f326e1761fc6ed44d87981f6",
+        "description": "docs/meson: add missing newline at the begining of code-block",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "324de97f480eba70c0bdeee434e2ee845e24c44f",
+        "notes": null
+    },
+    {
+        "sha": "66de8b4b5cbbb317130dde765201b5720394ed00",
+        "description": "v3d: add a faster TLB blit path",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a9f2812519f7282a91f86e3e5758a4920de1be3",
+        "description": "v3d: support blitting straight from tile buffer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9fbb11505ab9679a44fdce337fdeb8e5a3f0efa7",
+        "description": "v3d: move TLB blit checks to a helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff58f0afbed9ff4f24c7cb5410c6f6427d4b66b2",
+        "description": "rpi4/ci: mark fs variant of arb_texture_buffer_object as flaky too",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5ee7e9bdc7b2a690843c103e73268edb32692fd",
+        "description": "anv: Disable legacy CCS setup in binding (xe2)",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e054068787557264b3c7d40ed81e9615d87701a8",
+        "description": "anv: Disable compression on legacy modifiers (xe2)",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b4def143c8f676c3647ff5fd865ecb3938a7dbd",
+        "description": "iris: Fix an assertion failure with compressed format",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49c91a4ea0310fa90580d3dbcbb1a37a7b9db15c",
+        "description": "anv: Fix assertion failures on BMG (xe2)",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "beb0ea24696821d42b336a8170a61eb25c5022d7",
+        "notes": null
+    },
+    {
+        "sha": "a629d829dc8d8fa9ac8c8b22da130a19e61d40a6",
+        "description": "glsl: make use of new tex src deref intrinsic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "017770ff14a59d39cf0935692726048ad733f251",
+        "description": "nir: add nir_tex_src_{sampler,texture}_deref_intrinsic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef13ff00d1b9a6ac05374a396f045d359c18f5a9",
+        "description": "nir: create validate_tex_src_texture_deref() helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "363119641498dac65e813f2057ff9f7424217064",
+        "description": "nvk: Disable sparse D32S8 cubes pre-Turing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec7924ab9036cdc4637c9878e152e4460794cb5b",
+        "description": "nvk: Default to NAK on Maxwell+",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13cc4e48d1116dce9f6c96c05f0a2edc3c78efc3",
+        "description": "nak/sm50: Set f2f.high",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b84319ec431d28d07472f9fc4d63cefdd96ec75",
+        "description": "nak: Manually flush denorms for nir_op_fquantize2f16 pre-Volta",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "315e8d6faa663610d9b17dde9e95e2f86a777a6e",
+        "description": "nak: Disallow isetp.x pre-Volta",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "a33507d621a13aa5af6d8cecc950879e96e1a6f2",
+        "notes": null
+    },
+    {
+        "sha": "c695fd7cd269673a399c68ae0fc43f5be67fad5a",
+        "description": "nak: Rework isetp64 on sm50 again",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "efd86d6daa9b85498aef078ef24b4ff04aa2472e",
+        "notes": null
+    },
+    {
+        "sha": "3d4a4a68a0fe91a5184c59323a1a882eb594c23d",
+        "description": "nak: Non-constant offsets are allowed on patch loads",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "37a38f6744f3e81063d13995a974ccd383050514",
+        "notes": null
+    },
+    {
+        "sha": "72eb0b6c13e59de8cd059826b6b12248448631ff",
+        "description": "nak: Add tests for OpPSetP",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29f909513bdd42ac6e8431990014f2ddb9a273d9",
+        "description": "nak: Add a PredSetOp::eval() helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76e66beb5aeb878ba565c92cb5a51cd9b07aaebb",
+        "description": "nak: pre-Volta uses r0 to output the final GS handle",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63db105014861b0bbc4fc22d7c3bdc643e35868e",
+        "description": "nak: Rename OpFSOut to OpRegOut",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b4bfefd6fcacf4ecad50568ee1cdc7d67765918",
+        "description": "nak/nir: Preserve rounding modes in split_64bit_conversions()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec84d7ce74a0d397af736aace32aa5c97d53a3ba",
+        "description": "nak: Add tests for OpPopC and enable SrcMod::BNot",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27ee9027da544e1226631e3ad92becb476233c8f",
+        "description": "nak: Use OpFoldData::get_u32_bnot_src() more places",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a6ca8e60152c7b0e10caf9e27e0b6571ed9f1f3",
+        "description": "nak/sm50: Set the not bit for OpLop2::srcs[0]",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61076b04a7e8974fc7794b46e4ccd468a16a9df7",
+        "description": "nak: Add tests for OpIAdd2 and OpIAdd2X",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aa87c9c96d9ada1d21090b3c2dd3ec3185eeefbb",
+        "description": "nak/hw_tests: Use better test values for iadd tests",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6291440ee7e12d76de8a8b8c41ab43f2938bf3dc",
+        "description": "nak/hw_tests: Respect src_mod and src_swizzle in op auto-tests",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f557423467d69f717fde98d562c39513521bcc94",
+        "description": "nak: Add source and destination types for carry values",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb5f333606448792f010add79c0ebb7e894ff59b",
+        "description": "nak: Assert no overflow when legalizing iadd with too many ineg modifiers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96812f6b721a0eead98da54a4b924e4b0ebf2130",
+        "description": "nak: Add tests for OpFlo",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10701ac33122bd1b8fe2a137b55f62890cb2c615",
+        "description": "nak/hw_tests: Explicitly test equal cases in test_isetp64",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "957e7b3451eafc7dd06803c5afe7cef206035107",
+        "description": "nak: Lower iadd64(x, -y) to isub64(x, y) in NIR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8646ae7e23fc9dcfa16bd9e93b9311bde444274b",
+        "description": "nak/builder: Allow source modifiers in ineg64()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7f0b8a82d089cd860237a8ff70d80a72e9c57f19",
+        "description": "nak: Add tests for nak_builder::ineg64",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73384c626d2ca646e744dc19d19d67b189e8b7b6",
+        "description": "nak: SrcMod::INeg cannot be folded",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2b5d7ca4188f36c9aaeacc0f14e5faac2c245de",
+        "description": "nak/sm50: Add execution delays for more ops",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce91e8875afacd7d4c2f0f81b30d552720c9b658",
+        "description": "nak: OpKill also needs a delay on Maxwell",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8eb8f946ae86a4f19c7653c5a05b70f9519e524",
+        "description": "nak: Add an optimization for CRS ops",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1cf945a5d1087ac2c10e899d87b5d00abd0d2c42",
+        "description": "nak: Add target labels to CRS pop instructions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9bbc6920640b71503519e513ccb9ce528a16fb8f",
+        "description": "nak/nir: Rework CRS handling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb5e10d0aacb3110d9972f1f6736a2902cfbd01f",
+        "description": "nak/nir: Add a few more NIR helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f66ca6edc3df69a089c58e1c815c0e6f89db64f7",
+        "description": "nak/nir: Fix the reverse execlist iterator",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d19ea8524b31aed505e113efd7d883b81654815c",
+        "description": "nvk: Take CRS into account when allocating the SLM area",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b78f7d208b10fbb9ce0c3a47aa672a9e074cb34f",
+        "description": "nak: Plumb through the call/return stack size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e935df2b099c4d246b689dad6bbc80bb484a1fc",
+        "description": "nak: Move the runner into the main nak crate",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "ad90bf0500e07b1bc35f87a406f284c0a7fa7049",
         "description": "freedreno/a6xx: Initial a7xx support",
         "nominated": false,
