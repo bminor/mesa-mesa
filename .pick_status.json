@@ -1694,7 +1694,7 @@
         "description": "pvr: ensure stencil clear value fits TA_STATE_ISPA.sref field",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "821c6b93423f39347575f39b11ad3662d8cfcdc7",
         "notes": null
