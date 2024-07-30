@@ -1559,15 +1559,31 @@ VkResult anv_AllocateMemory(
    if (wsi_info)
       alloc_flags |= ANV_BO_ALLOC_SCANOUT;
 
+   struct anv_image *image = dedicated_info ?
+                             anv_image_from_handle(dedicated_info->image) :
+                             NULL;
+
+   if (device->info->ver >= 20 && image &&
+       image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+       isl_drm_modifier_has_aux(image->vk.drm_format_mod)) {
+      /* ISL should skip compression modifiers when no_ccs is set. */
+      assert(!INTEL_DEBUG(DEBUG_NO_CCS));
+      /* Images created with the Xe2 modifiers should be allocated into
+       * compressed memory, but we won't get such info from the memory type,
+       * refer to anv_image_is_pat_compressible(). We have to check the
+       * modifiers and enable compression if we can here.
+       */
+      alloc_flags |= ANV_BO_ALLOC_COMPRESSED;
+   } else if (mem_type->compressed && !INTEL_DEBUG(DEBUG_NO_CCS)) {
+      alloc_flags |= ANV_BO_ALLOC_COMPRESSED;
+   }
+
    /* Anything imported or exported is EXTERNAL */
    if (mem->vk.export_handle_types || mem->vk.import_handle_type) {
       alloc_flags |= ANV_BO_ALLOC_EXTERNAL;
 
       /* wsi has its own way of synchronizing with the compositor */
-      if (!wsi_info && dedicated_info &&
-          dedicated_info->image != VK_NULL_HANDLE) {
-         ANV_FROM_HANDLE(anv_image, image, dedicated_info->image);
-
+      if (!wsi_info && image) {
          /* Apply implicit sync to be compatible with clients relying on
           * implicit fencing. This matches the behavior in iris i915_batch
           * submit. An example client is VA-API (iHD), so only dedicated
@@ -1584,14 +1600,6 @@ VkResult anv_AllocateMemory(
             alloc_flags |= ANV_BO_ALLOC_IMPLICIT_WRITE;
       }
    }
-
-   /* TODO: Disabling compression on external bos will cause problems once we
-    * have a modifier that supports compression (Xe2+).
-    */
-   if (!(alloc_flags & ANV_BO_ALLOC_EXTERNAL) &&
-       mem_type->compressed &&
-       !INTEL_DEBUG(DEBUG_NO_CCS))
-      alloc_flags |= ANV_BO_ALLOC_COMPRESSED;
 
    if (mem_type->dynamic_visible)
       alloc_flags |= ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL;
@@ -1711,21 +1719,17 @@ VkResult anv_AllocateMemory(
    if (result != VK_SUCCESS)
       goto fail;
 
-   if (dedicated_info && dedicated_info->image != VK_NULL_HANDLE) {
-      ANV_FROM_HANDLE(anv_image, image, dedicated_info->image);
-
+   if (image && image->vk.wsi_legacy_scanout) {
       /* Some legacy (non-modifiers) consumers need the tiling to be set on
        * the BO.  In this case, we have a dedicated allocation.
        */
-      if (image->vk.wsi_legacy_scanout) {
-         const struct isl_surf *surf = &image->planes[0].primary_surface.isl;
-         result = anv_device_set_bo_tiling(device, mem->bo,
-                                           surf->row_pitch_B,
-                                           surf->tiling);
-         if (result != VK_SUCCESS) {
-            anv_device_release_bo(device, mem->bo);
-            goto fail;
-         }
+      const struct isl_surf *surf = &image->planes[0].primary_surface.isl;
+      result = anv_device_set_bo_tiling(device, mem->bo,
+                                        surf->row_pitch_B,
+                                        surf->tiling);
+      if (result != VK_SUCCESS) {
+         anv_device_release_bo(device, mem->bo);
+         goto fail;
       }
    }
 

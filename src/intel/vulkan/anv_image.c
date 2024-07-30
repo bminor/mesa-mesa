@@ -2216,13 +2216,16 @@ anv_image_is_pat_compressible(struct anv_device *device, struct anv_image *image
     *    VkImageCreateInfo structure passed to vkCreateImage.
     */
 
-   /* There are no compression-enabled modifiers on Xe2, and all legacy
-    * modifiers are not defined with compression. We simply disable
-    * compression on all modifiers.
-    *
-    * We disable this in anv_AllocateMemory() as well.
+   /* Because we cannot report different memory types for uncompressed and
+    * compressed modifiers on the VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,
+    * We don't set the right compressed memory type set for Xe2 modifiers, in
+    * order to keep the memory types same as the uncompressed modifiers. The
+    * image will get compressed memory through a dedicated allocation later.
     */
    if (image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+      return false;
+
+   if (image->vk.external_handle_types)
       return false;
 
    /* Host accessed images cannot be compressed. */
@@ -2275,11 +2278,16 @@ anv_image_get_memory_requirements(struct anv_device *device,
          if (image->vk.wsi_legacy_scanout ||
              image->from_ahb ||
              (isl_drm_modifier_has_aux(image->vk.drm_format_mod) &&
-              anv_image_uses_aux_map(device, image))) {
-            /* If we need to set the tiling for external consumers or the
-             * modifier involves AUX tables, we need a dedicated allocation.
+              (anv_image_uses_aux_map(device, image) ||
+               device->info->ver >= 20))) {
+            /* On pre-Xe2 platforms, if we need to set the tiling for external
+             * consumers or the modifier involves AUX tables, we need a
+             * dedicated allocation. On Xe2+ platforms, a dedicated allocation
+             * is still needed because we need to pass modifier information
+             * down to the allocation path. Refer to
+             * anv_image_is_pat_compressible().
              *
-             * See also anv_AllocateMemory.
+             * See also anv_AllocateMemory().
              */
             requirements->prefersDedicatedAllocation = true;
             requirements->requiresDedicatedAllocation = true;
