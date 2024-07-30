@@ -6584,7 +6584,7 @@
         "description": "nir: set disallow_undef_to_nan for legacy ARB asm programs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "861d274453c016e04da0997ee75d1c4ab26e95f0",
         "notes": null
