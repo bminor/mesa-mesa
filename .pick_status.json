@@ -2384,7 +2384,7 @@
         "description": "nvc0: fix null ptr deref on fermi due to debug changes.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "65092ab1a5522e9b05f2e58fe7326e7cb6f02a02",
         "notes": null
