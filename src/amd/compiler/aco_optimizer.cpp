@@ -71,19 +71,17 @@ enum Label {
    label_f2f16 = 1ull << 38,
 };
 
-static constexpr uint64_t instr_usedef_labels = label_uniform_bitwise | label_extract;
 static constexpr uint64_t instr_mod_labels =
    label_omod2 | label_omod4 | label_omod5 | label_clamp | label_insert | label_f2f16;
 
-static constexpr uint64_t instr_labels = instr_usedef_labels | instr_mod_labels;
 static constexpr uint64_t temp_labels = label_abs | label_neg | label_temp | label_b2f |
                                         label_uniform_bool | label_scc_invert | label_b2i |
                                         label_fcanonicalize;
 static constexpr uint32_t val_labels =
    label_constant_32bit | label_constant_64bit | label_constant_16bit | label_literal | label_mad;
 
-static_assert((instr_labels & temp_labels) == 0, "labels cannot intersect");
-static_assert((instr_labels & val_labels) == 0, "labels cannot intersect");
+static_assert((instr_mod_labels & temp_labels) == 0, "labels cannot intersect");
+static_assert((instr_mod_labels & val_labels) == 0, "labels cannot intersect");
 static_assert((temp_labels & val_labels) == 0, "labels cannot intersect");
 
 struct ssa_info {
@@ -99,30 +97,24 @@ struct ssa_info {
 
    void add_label(Label new_label)
    {
-      /* Since all the instr_usedef_labels use instr for the same thing
-       * (indicating the defining instruction), there is usually no need to
-       * clear any other instr labels. */
-      if (new_label & instr_usedef_labels)
-         label &= ~(instr_mod_labels | temp_labels | val_labels); /* instr, temp and val alias */
-
       if (new_label & instr_mod_labels) {
-         label &= ~instr_labels;
+         label &= ~instr_mod_labels;
          label &= ~(temp_labels | val_labels); /* instr, temp and val alias */
       }
 
       if (new_label & temp_labels) {
          label &= ~temp_labels;
-         label &= ~(instr_labels | val_labels); /* instr, temp and val alias */
+         label &= ~(instr_mod_labels | val_labels); /* instr, temp and val alias */
       }
 
       uint32_t const_labels =
          label_literal | label_constant_32bit | label_constant_64bit | label_constant_16bit;
       if (new_label & const_labels) {
          label &= ~val_labels | const_labels;
-         label &= ~(instr_labels | temp_labels); /* instr, temp and val alias */
+         label &= ~(instr_mod_labels | temp_labels); /* instr, temp and val alias */
       } else if (new_label & val_labels) {
          label &= ~val_labels;
-         label &= ~(instr_labels | temp_labels); /* instr, temp and val alias */
+         label &= ~(instr_mod_labels | temp_labels); /* instr, temp and val alias */
       }
 
       label |= new_label;
@@ -324,11 +316,7 @@ struct ssa_info {
 
    bool is_canonicalized() { return label & label_canonicalized; }
 
-   void set_extract(Instruction* extract)
-   {
-      add_label(label_extract);
-      parent_instr = extract;
-   }
+   void set_extract() { add_label(label_extract); }
 
    bool is_extract() { return label & label_extract; }
 
@@ -1655,7 +1643,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
             if (instr->operands[0].bytes() == 4) {
                /* D16 subdword split */
                ctx.info[instr->definitions[0].tempId()].set_temp(instr->operands[0].getTemp());
-               ctx.info[instr->definitions[1].tempId()].set_extract(instr.get());
+               ctx.info[instr->definitions[1].tempId()].set_extract();
             }
          }
          break;
@@ -1723,7 +1711,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (index == 0)
             ctx.info[instr->definitions[0].tempId()].set_temp(instr->operands[0].getTemp());
          else
-            ctx.info[instr->definitions[0].tempId()].set_extract(instr.get());
+            ctx.info[instr->definitions[0].tempId()].set_extract();
          break;
       }
 
@@ -1932,7 +1920,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       break;
    case aco_opcode::p_extract: {
       if (instr->operands[0].isTemp()) {
-         ctx.info[instr->definitions[0].tempId()].set_extract(instr.get());
+         ctx.info[instr->definitions[0].tempId()].set_extract();
          if (instr->definitions[0].bytes() == 4 && instr->operands[0].regClass() == v1 &&
              parse_insert(instr.get()))
             ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
@@ -1944,7 +1932,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (instr->operands[0].regClass() == v1)
             ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
          if (parse_extract(instr.get()))
-            ctx.info[instr->definitions[0].tempId()].set_extract(instr.get());
+            ctx.info[instr->definitions[0].tempId()].set_extract();
       }
       break;
    }
