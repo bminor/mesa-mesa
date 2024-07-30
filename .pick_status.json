@@ -674,7 +674,7 @@
         "description": "radeonsi/gfx12: fix a GPU hang due to an invalid packet with window rectangles",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f703dfd1bb8c22b6791dd95c7de270e176452b4b",
         "notes": null
