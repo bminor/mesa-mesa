@@ -6454,7 +6454,7 @@
         "description": "wsi/common: Do not update present mode with MESA_VK_WSI_PRESENT_MODE.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ad71d584cfbe588c54b2b3eaa2e6aa94af68e305",
         "notes": null
