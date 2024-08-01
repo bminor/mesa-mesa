@@ -774,7 +774,7 @@
         "description": "docs: Drop references to LIBGL_DRIVERS_PATH",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "93511c1c5c5fb60166c806d417e4b4378bf1fb31",
         "notes": null
