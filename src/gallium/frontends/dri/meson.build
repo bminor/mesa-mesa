@@ -77,6 +77,7 @@ libdri = static_library(
     idep_mesautil,
     deps_for_libdri,
   ],
+  link_with : [libloader],
 )
 
 if with_dri
