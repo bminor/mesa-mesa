@@ -1184,7 +1184,7 @@
         "description": "glx: include src/gallium for apple",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "91e1ea52c9dc3c8bac564d4dbaf196591beac3f5",
         "notes": null
