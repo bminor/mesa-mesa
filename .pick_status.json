@@ -6464,7 +6464,7 @@
         "description": "anv: fix check on pipeline mode to track buffer writes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "455a13fb7f170b0f4a55375ec3a6f006fc69f078",
         "notes": null
