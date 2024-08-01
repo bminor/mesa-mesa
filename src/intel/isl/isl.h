@@ -1558,8 +1558,16 @@ struct isl_drm_modifier_info {
    /** ISL tiling implied by this modifier */
    enum isl_tiling tiling;
 
-   /** Compression types supported by this modifier */
+   /**
+    * Whether or not this modifier supports one of the following isl_aux_usage
+    * values, depending on the hardware configuration:
+    *
+    * - ISL_AUX_USAGE_CCS_E
+    * - ISL_AUX_USAGE_FCV_CCS_E
+    */
    bool supports_render_compression;
+
+   /** Whether or not this modifier supports ISL_AUX_USAGE_MC. */
    bool supports_media_compression;
 
    /** Whether or not this modifier supports clear color */

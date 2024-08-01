@@ -171,6 +171,20 @@ isl_drm_modifier_info_list[] = {
       .supports_clear_color = false,
    },
    {
+      .modifier = I915_FORMAT_MOD_4_TILED_LNL_CCS,
+      .name = "I915_FORMAT_MOD_4_TILED_LNL_CCS",
+      .tiling = ISL_TILING_4,
+      .supports_render_compression = true,
+      .supports_clear_color = false,
+   },
+   {
+      .modifier = I915_FORMAT_MOD_4_TILED_BMG_CCS,
+      .name = "I915_FORMAT_MOD_4_TILED_BMG_CCS",
+      .tiling = ISL_TILING_4,
+      .supports_render_compression = true,
+      .supports_clear_color = false,
+   },
+   {
       .modifier = DRM_FORMAT_MOD_INVALID,
    },
 };
@@ -277,6 +291,22 @@ isl_drm_modifier_get_score(const struct intel_device_info *devinfo,
          return 0;
 
       return 5;
+   case I915_FORMAT_MOD_4_TILED_LNL_CCS:
+      if (devinfo->platform != INTEL_PLATFORM_LNL)
+         return 0;
+
+      if (INTEL_DEBUG(DEBUG_NO_CCS))
+         return 0;
+
+      return 4;
+   case I915_FORMAT_MOD_4_TILED_BMG_CCS:
+      if (devinfo->platform != INTEL_PLATFORM_BMG)
+         return 0;
+
+      if (INTEL_DEBUG(DEBUG_NO_CCS))
+         return 0;
+
+      return 4;
    }
 }
 
