@@ -487,7 +487,7 @@ dri3_handle_present_event(struct loader_dri3_drawable *draw,
                           xcb_present_generic_event_t *ge)
 {
    switch (ge->evtype) {
-   case XCB_PRESENT_CONFIGURE_NOTIFY: {
+   case XCB_PRESENT_EVENT_CONFIGURE_NOTIFY: {
       xcb_present_configure_notify_event_t *ce = (void *) ge;
       if (ce->pixmap_flags & PresentWindowDestroyed) {
          free(ge);
@@ -500,7 +500,7 @@ dri3_handle_present_event(struct loader_dri3_drawable *draw,
       dri_invalidate_drawable(draw->dri_drawable);
       break;
    }
-   case XCB_PRESENT_COMPLETE_NOTIFY: {
+   case XCB_PRESENT_EVENT_COMPLETE_NOTIFY: {
       xcb_present_complete_notify_event_t *ce = (void *) ge;
 
       /* Compute the processed SBC number from the received 32-bit serial number
