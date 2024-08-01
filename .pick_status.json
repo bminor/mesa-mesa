@@ -94,7 +94,7 @@
         "description": "util: Fix the integer addition in os_time_get_absolute_timeout()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7316cc92f3810c9e53a22c35343190d8fb7980be",
         "notes": null
