@@ -45,6 +45,7 @@ enum radeon_bo_domain
   RADEON_DOMAIN_VRAM_GTT = RADEON_DOMAIN_VRAM | RADEON_DOMAIN_GTT,
   RADEON_DOMAIN_GDS = 8,
   RADEON_DOMAIN_OA = 16,
+  RADEON_DOMAIN_DOORBELL = 32,
 };
 
 enum radeon_bo_flag
@@ -889,6 +890,10 @@ static void radeon_canonicalize_bo_flags(enum radeon_bo_domain *_domain,
    case RADEON_DOMAIN_GDS:
    case RADEON_DOMAIN_OA:
       flags |= RADEON_FLAG_NO_SUBALLOC | RADEON_FLAG_NO_CPU_ACCESS;
+      flags &= ~RADEON_FLAG_SPARSE;
+      break;
+   case RADEON_DOMAIN_DOORBELL:
+      flags |= RADEON_FLAG_NO_SUBALLOC;
       flags &= ~RADEON_FLAG_SPARSE;
       break;
    }

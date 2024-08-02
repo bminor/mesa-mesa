@@ -484,7 +484,8 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
    /* VRAM or GTT must be specified, but not both at the same time. */
    assert(util_bitcount(initial_domain & (RADEON_DOMAIN_VRAM_GTT |
                                           RADEON_DOMAIN_GDS |
-                                          RADEON_DOMAIN_OA)) == 1);
+                                          RADEON_DOMAIN_OA |
+                                          RADEON_DOMAIN_DOORBELL)) == 1);
 
    alignment = amdgpu_get_optimal_alignment(aws, size, alignment);
 
@@ -532,6 +533,8 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
       request.preferred_heap |= AMDGPU_GEM_DOMAIN_GDS;
    if (initial_domain & RADEON_DOMAIN_OA)
       request.preferred_heap |= AMDGPU_GEM_DOMAIN_OA;
+   if (initial_domain & RADEON_DOMAIN_DOORBELL)
+      request.preferred_heap |= AMDGPU_GEM_DOMAIN_DOORBELL;
 
    if (flags & RADEON_FLAG_NO_CPU_ACCESS)
       request.flags |= AMDGPU_GEM_CREATE_NO_CPU_ACCESS;
@@ -1435,8 +1438,9 @@ no_slab:
       alignment = align(alignment, aws->info.gart_page_size);
    }
 
-   bool use_reusable_pool = flags & RADEON_FLAG_NO_INTERPROCESS_SHARING &&
-                            !(flags & RADEON_FLAG_DISCARDABLE);
+   bool use_reusable_pool = !(domain & RADEON_DOMAIN_DOORBELL) &&
+      (flags & RADEON_FLAG_NO_INTERPROCESS_SHARING) &&
+      !(flags & RADEON_FLAG_DISCARDABLE);
 
    if (use_reusable_pool) {
        /* RADEON_FLAG_NO_SUBALLOC is irrelevant for the cache. */
