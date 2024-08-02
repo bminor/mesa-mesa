@@ -265,6 +265,12 @@ PipeToProfile(enum pipe_video_profile profile)
       return VAProfileVP9Profile2;
    case PIPE_VIDEO_PROFILE_AV1_MAIN:
       return VAProfileAV1Profile0;
+   case PIPE_VIDEO_PROFILE_AV1_PROFILE2:
+#if VA_CHECK_VERSION(1, 23, 0)
+      return VAProfileAV1Profile2;
+#else
+      return VAProfileNone;
+#endif
    case PIPE_VIDEO_PROFILE_MPEG4_AVC_EXTENDED:
    case PIPE_VIDEO_PROFILE_MPEG4_AVC_HIGH422:
    case PIPE_VIDEO_PROFILE_MPEG4_AVC_HIGH444:
@@ -320,6 +326,10 @@ ProfileToPipe(VAProfile profile)
       return PIPE_VIDEO_PROFILE_VP9_PROFILE2;
    case VAProfileAV1Profile0:
       return PIPE_VIDEO_PROFILE_AV1_MAIN;
+#if VA_CHECK_VERSION(1, 23, 0)
+   case VAProfileAV1Profile2:
+      return PIPE_VIDEO_PROFILE_AV1_PROFILE2;
+#endif
    case VAProfileNone:
        return PIPE_VIDEO_PROFILE_UNKNOWN;
    default:
