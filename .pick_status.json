@@ -5524,7 +5524,7 @@
         "description": "tu: Set `TU_ACCESS_CCHE_READ` for transfer ops with read access",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fb1c3f7f5de6642fcd127724a0cea5643d39d7ee",
         "notes": null
