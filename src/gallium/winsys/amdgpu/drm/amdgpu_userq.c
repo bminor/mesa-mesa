@@ -151,10 +151,27 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
                                          RADEON_FLAG_NO_INTERPROCESS_SHARING);
    if (!userq->doorbell_bo)
       goto fail;
+
+   /* doorbell map should be the last map call, it is used to wait for all mappings before
+    * calling amdgpu_create_userqueue().
+    */
    userq->doorbell_bo_map = amdgpu_bo_map(&aws->dummy_sws.base, userq->doorbell_bo, NULL,
                                           PIPE_MAP_WRITE | PIPE_MAP_UNSYNCHRONIZED);
    if (!userq->doorbell_bo_map)
       goto fail;
+
+   /* The VA page table for ring buffer should be ready before job submission so that the packets
+    * submitted can be read by gpu. The same applies to rptr, wptr buffers also.
+    */
+   r = amdgpu_cs_syncobj_timeline_wait(aws->dev, &aws->vm_timeline_syncobj,
+                                       &get_real_bo(amdgpu_winsys_bo(userq->doorbell_bo))
+                                          ->vm_timeline_point,
+                                       1, INT64_MAX, DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL |
+                                          DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT, NULL);
+   if (r) {
+      fprintf(stderr, "amdgpu: waiting for vm fences failed\n");
+      goto fail;
+   }
 
    uint64_t ring_va = amdgpu_bo_get_va(userq->gtt_bo);
    r = ac_drm_create_userqueue(aws->fd, hw_ip_type,
