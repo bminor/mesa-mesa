@@ -118,7 +118,8 @@ struct radeon_decoder {
    struct {
       enum {
          CODEC_8_BITS = 0,
-         CODEC_10_BITS
+         CODEC_10_BITS,
+         CODEC_12_BITS
       } bts;
       uint8_t index;
       unsigned ref_size;

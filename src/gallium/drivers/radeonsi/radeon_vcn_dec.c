@@ -35,6 +35,7 @@
 #define NUM_AV1_REFS   8
 #define NUM_AV1_REFS_PER_FRAME 7
 
+static enum pipe_format get_buffer_format(struct radeon_decoder *dec);
 static unsigned calc_dpb_size(struct radeon_decoder *dec);
 static unsigned calc_ctx_size_h264_perf(struct radeon_decoder *dec);
 static unsigned calc_ctx_size_h265_main(struct radeon_decoder *dec);
@@ -999,7 +1000,9 @@ static rvcn_dec_message_av1_t get_av1_msg(struct radeon_decoder *dec,
    }
 
    if (pic->picture_parameter.bit_depth_idx) {
-      if (target->buffer_format == PIPE_FORMAT_P010 || target->buffer_format == PIPE_FORMAT_P016) {
+      if (target->buffer_format == PIPE_FORMAT_P010 ||
+          target->buffer_format == PIPE_FORMAT_P012 ||
+          target->buffer_format == PIPE_FORMAT_P016) {
          result.p010_mode = 1;
          result.msb_mode = 1;
       } else {
@@ -1106,7 +1109,7 @@ static rvcn_dec_message_av1_t get_av1_msg(struct radeon_decoder *dec,
    }
 
    if (dec->dpb_type == DPB_DYNAMIC_TIER_2) {
-      dec->ref_codec.bts = pic->picture_parameter.bit_depth_idx ? CODEC_10_BITS : CODEC_8_BITS;
+      dec->ref_codec.bts = pic->picture_parameter.bit_depth_idx;
       dec->ref_codec.index = result.curr_pic_idx;
       dec->ref_codec.ref_size = 8;
       dec->ref_codec.num_refs = num_refs;
@@ -1371,7 +1374,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
    width = align(decode->width_in_samples, dec->db_alignment);
    height = align(decode->height_in_samples, dec->db_alignment);
    size = align((width * height * 3) / 2, 256);
-   if (dec->ref_codec.bts == CODEC_10_BITS)
+   if (dec->ref_codec.bts == CODEC_10_BITS || dec->ref_codec.bts == CODEC_12_BITS)
       size = (((struct si_screen *)dec->screen)->info.vcn_ip_version == VCN_5_0_0) ? size * 2 : size * 3 / 2;
 
    list_for_each_entry_safe(struct rvcn_dec_dynamic_dpb_t2, d, &dec->dpb_ref_list, list) {
@@ -1448,7 +1451,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
       if (dec->dpb_use_surf) {
          struct pipe_video_buffer templat;
          memset(&templat, 0, sizeof(templat));
-         templat.buffer_format = (dec->ref_codec.bts != CODEC_10_BITS) ? PIPE_FORMAT_NV12 : PIPE_FORMAT_P010;
+         templat.buffer_format = get_buffer_format(dec);
          templat.width = width;
          templat.height = height;
          if (encrypted)
@@ -1529,7 +1532,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
       dynamic_dpb_t2->dpbChromaAlignedSize = dynamic_dpb_t2->dpbChromaPitch *
          dynamic_dpb_t2->dpbChromaAlignedHeight * 2;
 
-      if (dec->ref_codec.bts == CODEC_10_BITS) {
+      if (dec->ref_codec.bts == CODEC_10_BITS || dec->ref_codec.bts == CODEC_12_BITS) {
           if (((struct si_screen *)dec->screen)->info.vcn_ip_version == VCN_5_0_0) {
              dynamic_dpb_t2->dpbLumaAlignedSize = dynamic_dpb_t2->dpbLumaAlignedSize * 2;
              dynamic_dpb_t2->dpbChromaAlignedSize = dynamic_dpb_t2->dpbChromaAlignedSize * 2;
@@ -3070,4 +3073,16 @@ err:
    FREE(dec);
 
    return NULL;
+}
+
+static enum pipe_format get_buffer_format(struct radeon_decoder *dec)
+{
+   switch (dec->ref_codec.bts) {
+   case CODEC_10_BITS:
+      return PIPE_FORMAT_P010;
+   case CODEC_12_BITS:
+      return PIPE_FORMAT_P012;
+   default:
+      return PIPE_FORMAT_NV12;
+   }
 }
