@@ -585,6 +585,9 @@ vlVaQuerySurfaceAttributes(VADriverContextP ctx, VAConfigID config_id,
       vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P016, attribs, &i);
    }
 
+   if (config->rt_format & VA_RT_FORMAT_YUV420_12)
+      vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_P012, attribs, &i);
+
    if (config->rt_format & VA_RT_FORMAT_YUV400)
       vlVaAddSurfaceFormat(pscreen, config, PIPE_FORMAT_Y8_400_UNORM, attribs, &i);
 
@@ -1048,6 +1051,8 @@ rt_format_to_fourcc(uint32_t format)
       return VA_FOURCC_NV12;
    case VA_RT_FORMAT_YUV420_10:
       return VA_FOURCC_P010;
+   case VA_RT_FORMAT_YUV420_12:
+      return VA_FOURCC_P012;
    case VA_RT_FORMAT_YUV422:
       return VA_FOURCC_YUY2;
    case VA_RT_FORMAT_YUV444:
@@ -1572,6 +1577,8 @@ static uint32_t pipe_format_to_drm_format(enum pipe_format format)
       return DRM_FORMAT_NV12;
    case PIPE_FORMAT_P010:
       return DRM_FORMAT_P010;
+   case PIPE_FORMAT_P012:
+      return DRM_FORMAT_P012;
    case PIPE_FORMAT_YUYV:
    case PIPE_FORMAT_R8G8_R8B8_UNORM:
       return DRM_FORMAT_YUYV;

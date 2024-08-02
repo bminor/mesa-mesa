@@ -43,6 +43,7 @@ static const VAImageFormat formats[] =
 {
    {VA_FOURCC('N','V','1','2')},
    {VA_FOURCC('P','0','1','0')},
+   {VA_FOURCC('P','0','1','2')},
    {VA_FOURCC('P','0','1','6')},
    {VA_FOURCC('I','4','2','0')},
    {VA_FOURCC('Y','V','1','2')},
@@ -153,6 +154,7 @@ vlVaCreateImage(VADriverContextP ctx, VAImageFormat *format, int width, int heig
       break;
 
    case VA_FOURCC('P','0','1','0'):
+   case VA_FOURCC('P','0','1','2'):
    case VA_FOURCC('P','0','1','6'):
       img->num_planes = 2;
       img->pitches[0] = w * 2;
@@ -359,6 +361,7 @@ vlVaDeriveImage(VADriverContextP ctx, VASurfaceID surface, VAImage *image)
 
    case VA_FOURCC('N','V','1','2'):
    case VA_FOURCC('P','0','1','0'):
+   case VA_FOURCC('P','0','1','2'):
    case VA_FOURCC('P','0','1','6'):
    {
       /* In some gallium platforms, the stride and offset are different*/
