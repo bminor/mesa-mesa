@@ -795,15 +795,21 @@ print_access(enum gl_access_qualifier access, print_state *state, const char *se
       const char *name;
    } modes[] = {
       { ACCESS_COHERENT, "coherent" },
-      { ACCESS_VOLATILE, "volatile" },
       { ACCESS_RESTRICT, "restrict" },
+      { ACCESS_VOLATILE, "volatile" },
       { ACCESS_NON_WRITEABLE, "readonly" },
       { ACCESS_NON_READABLE, "writeonly" },
+      { ACCESS_NON_UNIFORM, "non-uniform" },
       { ACCESS_CAN_REORDER, "reorderable" },
-      { ACCESS_CAN_SPECULATE, "speculatable" },
       { ACCESS_NON_TEMPORAL, "non-temporal" },
       { ACCESS_INCLUDE_HELPERS, "include-helpers" },
+      { ACCESS_IS_SWIZZLED_AMD, "is-swizzled-amd" },
+      { ACCESS_USES_FORMAT_AMD, "uses-format-amd" },
+      { ACCESS_FMASK_LOWERED_AMD, "fmask-lowered-amd" },
+      { ACCESS_CAN_SPECULATE, "speculatable" },
       { ACCESS_CP_GE_COHERENT_AMD, "cp-ge-coherent-amd" },
+      { ACCESS_IN_BOUNDS_AGX, "in-bounds-agx" },
+      { ACCESS_KEEP_SCALAR, "keep-scalar" },
    };
 
    bool first = true;
