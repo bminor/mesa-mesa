@@ -1252,6 +1252,127 @@ static void amdgpu_cs_add_syncobj_signal(struct radeon_cmdbuf *rws,
    add_fence_to_list(&cs->syncobj_to_signal, (struct amdgpu_fence*)fence);
 }
 
+static int amdgpu_cs_submit_ib_kernelq(struct amdgpu_cs *acs,
+                                       unsigned num_real_buffers,
+                                       struct drm_amdgpu_bo_list_entry *bo_list_real,
+                                       uint64_t *seq_no)
+{
+   struct amdgpu_winsys *aws = acs->aws;
+   struct amdgpu_cs_context *cs = acs->cst;
+   struct drm_amdgpu_bo_list_in bo_list_in;
+   struct drm_amdgpu_cs_chunk chunks[8];
+   unsigned num_chunks = 0;
+
+   /* BO list */
+   bo_list_in.operation = ~0;
+   bo_list_in.list_handle = ~0;
+   bo_list_in.bo_number = num_real_buffers;
+   bo_list_in.bo_info_size = sizeof(struct drm_amdgpu_bo_list_entry);
+   bo_list_in.bo_info_ptr = (uint64_t)(uintptr_t)bo_list_real;
+
+   chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_BO_HANDLES;
+   chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_bo_list_in) / 4;
+   chunks[num_chunks].chunk_data = (uintptr_t)&bo_list_in;
+   num_chunks++;
+
+   /* Syncobj dependencies. */
+   unsigned num_syncobj_dependencies = cs->syncobj_dependencies.num;
+   if (num_syncobj_dependencies) {
+      struct drm_amdgpu_cs_chunk_sem *sem_chunk =
+         (struct drm_amdgpu_cs_chunk_sem *)
+         alloca(num_syncobj_dependencies * sizeof(sem_chunk[0]));
+
+      for (unsigned i = 0; i < num_syncobj_dependencies; i++) {
+         struct amdgpu_fence *fence =
+            (struct amdgpu_fence*)cs->syncobj_dependencies.list[i];
+
+         assert(util_queue_fence_is_signalled(&fence->submitted));
+         sem_chunk[i].handle = fence->syncobj;
+      }
+
+      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_SYNCOBJ_IN;
+      chunks[num_chunks].length_dw = sizeof(sem_chunk[0]) / 4 * num_syncobj_dependencies;
+      chunks[num_chunks].chunk_data = (uintptr_t)sem_chunk;
+      num_chunks++;
+   }
+
+   /* Syncobj signals. */
+   unsigned num_syncobj_to_signal = 1 + cs->syncobj_to_signal.num;
+   struct drm_amdgpu_cs_chunk_sem *sem_chunk =
+      (struct drm_amdgpu_cs_chunk_sem *)
+      alloca(num_syncobj_to_signal * sizeof(sem_chunk[0]));
+
+   for (unsigned i = 0; i < num_syncobj_to_signal - 1; i++) {
+      struct amdgpu_fence *fence =
+         (struct amdgpu_fence*)cs->syncobj_to_signal.list[i];
+
+      sem_chunk[i].handle = fence->syncobj;
+   }
+   sem_chunk[cs->syncobj_to_signal.num].handle = ((struct amdgpu_fence*)cs->fence)->syncobj;
+
+   chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_SYNCOBJ_OUT;
+   chunks[num_chunks].length_dw = sizeof(sem_chunk[0]) / 4 * num_syncobj_to_signal;
+   chunks[num_chunks].chunk_data = (uintptr_t)sem_chunk;
+   num_chunks++;
+
+   if (aws->info.has_fw_based_shadowing && acs->mcbp_fw_shadow_chunk.shadow_va) {
+      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_CP_GFX_SHADOW;
+      chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_cp_gfx_shadow) / 4;
+      chunks[num_chunks].chunk_data = (uintptr_t)&acs->mcbp_fw_shadow_chunk;
+      num_chunks++;
+   }
+
+   /* Fence */
+   if (amdgpu_cs_has_user_fence(acs)) {
+      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_FENCE;
+      chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_fence) / 4;
+      chunks[num_chunks].chunk_data = (uintptr_t)&acs->fence_chunk;
+      num_chunks++;
+   }
+
+   /* IB */
+   if (cs->chunk_ib[IB_PREAMBLE].ib_bytes) {
+      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_IB;
+      chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_ib) / 4;
+      chunks[num_chunks].chunk_data = (uintptr_t)&cs->chunk_ib[IB_PREAMBLE];
+      num_chunks++;
+   }
+
+   /* IB */
+   chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_IB;
+   chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_ib) / 4;
+   chunks[num_chunks].chunk_data = (uintptr_t)&cs->chunk_ib[IB_MAIN];
+   num_chunks++;
+
+   if (cs->secure) {
+      cs->chunk_ib[IB_PREAMBLE].flags |= AMDGPU_IB_FLAGS_SECURE;
+      cs->chunk_ib[IB_MAIN].flags |= AMDGPU_IB_FLAGS_SECURE;
+   } else {
+      cs->chunk_ib[IB_PREAMBLE].flags &= ~AMDGPU_IB_FLAGS_SECURE;
+      cs->chunk_ib[IB_MAIN].flags &= ~AMDGPU_IB_FLAGS_SECURE;
+   }
+
+   assert(num_chunks <= 8);
+
+   /* Submit the command buffer.
+    *
+    * The kernel returns -ENOMEM with many parallel processes using GDS such as test suites
+    * quite often, but it eventually succeeds after enough attempts. This happens frequently
+    * with dEQP using NGG streamout.
+    */
+   int r = 0;
+
+   do {
+      /* Wait 1 ms and try again. */
+      if (r == -ENOMEM)
+         os_time_sleep(1000);
+
+      r = ac_drm_cs_submit_raw2(aws->fd, acs->ctx->ctx_handle, 0, num_chunks, chunks, seq_no);
+   } while (r == -ENOMEM);
+
+   return r;
+}
+
 /* The template parameter determines whether the queue should skip code used by the default queue
  * system that's based on sequence numbers, and instead use and update amdgpu_winsys_bo::alt_fence
  * for all BOs.
@@ -1524,101 +1645,6 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
    if (acs->ip_type == AMD_IP_GFX)
       aws->gfx_bo_list_counter += num_real_buffers;
 
-   struct drm_amdgpu_cs_chunk chunks[8];
-   unsigned num_chunks = 0;
-
-   /* BO list */
-   struct drm_amdgpu_bo_list_in bo_list_in;
-   bo_list_in.operation = ~0;
-   bo_list_in.list_handle = ~0;
-   bo_list_in.bo_number = num_real_buffers;
-   bo_list_in.bo_info_size = sizeof(struct drm_amdgpu_bo_list_entry);
-   bo_list_in.bo_info_ptr = (uint64_t)(uintptr_t)bo_list;
-
-   chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_BO_HANDLES;
-   chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_bo_list_in) / 4;
-   chunks[num_chunks].chunk_data = (uintptr_t)&bo_list_in;
-   num_chunks++;
-
-   /* Syncobj dependencies. */
-   unsigned num_syncobj_dependencies = cs->syncobj_dependencies.num;
-   if (num_syncobj_dependencies) {
-      struct drm_amdgpu_cs_chunk_sem *sem_chunk =
-         (struct drm_amdgpu_cs_chunk_sem *)
-         alloca(num_syncobj_dependencies * sizeof(sem_chunk[0]));
-
-      for (unsigned i = 0; i < num_syncobj_dependencies; i++) {
-         struct amdgpu_fence *fence =
-            (struct amdgpu_fence*)cs->syncobj_dependencies.list[i];
-
-         assert(util_queue_fence_is_signalled(&fence->submitted));
-         sem_chunk[i].handle = fence->syncobj;
-      }
-
-      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_SYNCOBJ_IN;
-      chunks[num_chunks].length_dw = sizeof(sem_chunk[0]) / 4 * num_syncobj_dependencies;
-      chunks[num_chunks].chunk_data = (uintptr_t)sem_chunk;
-      num_chunks++;
-   }
-
-   /* Syncobj signals. */
-   unsigned num_syncobj_to_signal = 1 + cs->syncobj_to_signal.num;
-   struct drm_amdgpu_cs_chunk_sem *sem_chunk =
-      (struct drm_amdgpu_cs_chunk_sem *)
-      alloca(num_syncobj_to_signal * sizeof(sem_chunk[0]));
-
-   for (unsigned i = 0; i < num_syncobj_to_signal - 1; i++) {
-      struct amdgpu_fence *fence =
-         (struct amdgpu_fence*)cs->syncobj_to_signal.list[i];
-
-      sem_chunk[i].handle = fence->syncobj;
-   }
-   sem_chunk[cs->syncobj_to_signal.num].handle = ((struct amdgpu_fence*)cs->fence)->syncobj;
-
-   chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_SYNCOBJ_OUT;
-   chunks[num_chunks].length_dw = sizeof(sem_chunk[0]) / 4 * num_syncobj_to_signal;
-   chunks[num_chunks].chunk_data = (uintptr_t)sem_chunk;
-   num_chunks++;
-
-   if (aws->info.has_fw_based_shadowing && acs->mcbp_fw_shadow_chunk.shadow_va) {
-      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_CP_GFX_SHADOW;
-      chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_cp_gfx_shadow) / 4;
-      chunks[num_chunks].chunk_data = (uintptr_t)&acs->mcbp_fw_shadow_chunk;
-      num_chunks++;
-   }
-
-   /* Fence */
-   if (has_user_fence) {
-      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_FENCE;
-      chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_fence) / 4;
-      chunks[num_chunks].chunk_data = (uintptr_t)&acs->fence_chunk;
-      num_chunks++;
-   }
-
-   /* IB */
-   if (cs->chunk_ib[IB_PREAMBLE].ib_bytes) {
-      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_IB;
-      chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_ib) / 4;
-      chunks[num_chunks].chunk_data = (uintptr_t)&cs->chunk_ib[IB_PREAMBLE];
-      num_chunks++;
-   }
-
-   /* IB */
-   chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_IB;
-   chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_ib) / 4;
-   chunks[num_chunks].chunk_data = (uintptr_t)&cs->chunk_ib[IB_MAIN];
-   num_chunks++;
-
-   if (cs->secure) {
-      cs->chunk_ib[IB_PREAMBLE].flags |= AMDGPU_IB_FLAGS_SECURE;
-      cs->chunk_ib[IB_MAIN].flags |= AMDGPU_IB_FLAGS_SECURE;
-   } else {
-      cs->chunk_ib[IB_PREAMBLE].flags &= ~AMDGPU_IB_FLAGS_SECURE;
-      cs->chunk_ib[IB_MAIN].flags &= ~AMDGPU_IB_FLAGS_SECURE;
-   }
-
-   assert(num_chunks <= ARRAY_SIZE(chunks));
-
    if (out_of_memory) {
       r = -ENOMEM;
    } else if (unlikely(acs->ctx->sw_status != PIPE_NO_RESET)) {
@@ -1639,7 +1665,7 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
          if (r == -ENOMEM)
             os_time_sleep(1000);
 
-         r = ac_drm_cs_submit_raw2(aws->fd, acs->ctx->ctx_handle, 0, num_chunks, chunks, &seq_no);
+         r = amdgpu_cs_submit_ib_kernelq(acs, num_real_buffers, bo_list, &seq_no);
       } while (r == -ENOMEM);
 
       if (!r) {
