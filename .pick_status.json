@@ -1084,7 +1084,7 @@
         "description": "rpi3/ci: remove {version,render}_check from [piglit.env]",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "3990463c484939caa358cb91882e6c957fee5109",
         "notes": null
