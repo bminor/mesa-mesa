@@ -671,11 +671,9 @@ VkResult anv_CreateDescriptorSetLayout(
    VK_MULTIALLOC_DECL(&ma, struct anv_descriptor_set_layout_sampler, samplers,
                            immutable_sampler_count);
 
-   if (!vk_object_multizalloc(&device->vk, &ma, NULL,
-                              VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT))
+   if (!vk_descriptor_set_layout_multizalloc(&device->vk, &ma, pCreateInfo))
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   set_layout->ref_cnt = 1;
    set_layout->binding_count = num_bindings;
    set_layout->flags = pCreateInfo->flags;
    set_layout->type = anv_descriptor_set_layout_type_for_flags(device->physical,
@@ -914,14 +912,6 @@ VkResult anv_CreateDescriptorSetLayout(
    return VK_SUCCESS;
 }
 
-void
-anv_descriptor_set_layout_destroy(struct anv_device *device,
-                                  struct anv_descriptor_set_layout *layout)
-{
-   assert(layout->ref_cnt == 0);
-   vk_object_free(&device->vk, NULL, layout);
-}
-
 static const struct anv_descriptor_set_binding_layout *
 set_layout_dynamic_binding(const struct anv_descriptor_set_layout *set_layout)
 {
@@ -1024,7 +1014,7 @@ void anv_DestroyDescriptorSetLayout(
    if (!set_layout)
       return;
 
-   anv_descriptor_set_layout_unref(device, set_layout);
+   vk_descriptor_set_layout_unref(&device->vk, &set_layout->vk);
 }
 
 void
@@ -1139,8 +1129,8 @@ anv_pipeline_sets_layout_add(struct anv_pipeline_sets_layout *layout,
 
    layout->num_sets = MAX2(set_idx + 1, layout->num_sets);
 
-   layout->set[set_idx].layout =
-      anv_descriptor_set_layout_ref(set_layout);
+   layout->set[set_idx].layout = set_layout;
+   vk_descriptor_set_layout_ref(&set_layout->vk);
 
    layout->set[set_idx].dynamic_offset_start = layout->num_dynamic_buffers;
    layout->num_dynamic_buffers += set_layout->dynamic_offset_count;
@@ -1189,7 +1179,8 @@ anv_pipeline_sets_layout_fini(struct anv_pipeline_sets_layout *layout)
       if (!layout->set[s].layout)
          continue;
 
-      anv_descriptor_set_layout_unref(layout->device, layout->set[s].layout);
+      vk_descriptor_set_layout_unref(&layout->device->vk,
+                                     &layout->set[s].layout->vk);
    }
 }
 
@@ -1591,7 +1582,7 @@ void anv_DestroyDescriptorPool(
 
    list_for_each_entry_safe(struct anv_descriptor_set, set,
                             &pool->desc_sets, pool_link) {
-      anv_descriptor_set_layout_unref(device, set->layout);
+      vk_descriptor_set_layout_unref(&device->vk, &set->layout->vk);
    }
 
    util_vma_heap_finish(&pool->host_heap);
@@ -1614,7 +1605,7 @@ VkResult anv_ResetDescriptorPool(
 
    list_for_each_entry_safe(struct anv_descriptor_set, set,
                             &pool->desc_sets, pool_link) {
-      anv_descriptor_set_layout_unref(device, set->layout);
+      vk_descriptor_set_layout_unref(&device->vk, &set->layout->vk);
    }
    list_inithead(&pool->desc_sets);
 
@@ -1806,7 +1797,7 @@ anv_descriptor_set_create(struct anv_device *device,
 
    set->pool = pool;
    set->layout = layout;
-   anv_descriptor_set_layout_ref(layout);
+   vk_descriptor_set_layout_ref(&layout->vk);
 
    set->buffer_view_count =
       set_layout_buffer_view_count(layout, var_desc_count);
@@ -1879,7 +1870,7 @@ anv_descriptor_set_destroy(struct anv_device *device,
                            struct anv_descriptor_pool *pool,
                            struct anv_descriptor_set *set)
 {
-   anv_descriptor_set_layout_unref(device, set->layout);
+   vk_descriptor_set_layout_unref(&device->vk, &set->layout->vk);
 
    if (set->desc_surface_mem.alloc_size) {
       anv_descriptor_pool_heap_free(device, pool, &pool->surfaces, set, set->desc_surface_mem);
@@ -2003,7 +1994,7 @@ anv_push_descriptor_set_init(struct anv_cmd_buffer *cmd_buffer,
 
    if (set->layout != layout) {
       if (set->layout) {
-         anv_descriptor_set_layout_unref(cmd_buffer->device, set->layout);
+         vk_descriptor_set_layout_unref(&cmd_buffer->device->vk, &set->layout->vk);
       } else {
          /* one-time initialization */
          vk_object_base_init(&cmd_buffer->device->vk, &set->base,
@@ -2012,7 +2003,7 @@ anv_push_descriptor_set_init(struct anv_cmd_buffer *cmd_buffer,
          set->buffer_views = push_set->buffer_views;
       }
 
-      anv_descriptor_set_layout_ref(layout);
+      vk_descriptor_set_layout_ref(&layout->vk);
       set->layout = layout;
       set->generate_surface_states = 0;
    }
@@ -2117,9 +2108,7 @@ anv_push_descriptor_set_finish(struct anv_push_descriptor_set *push_set)
 {
    struct anv_descriptor_set *set = &push_set->set;
    if (set->layout) {
-      struct anv_device *device =
-         container_of(set->base.device, struct anv_device, vk);
-      anv_descriptor_set_layout_unref(device, set->layout);
+      vk_descriptor_set_layout_unref(set->base.device, &set->layout->vk);
    }
 }
 

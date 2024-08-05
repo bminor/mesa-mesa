@@ -81,6 +81,7 @@
 #include "vk_command_pool.h"
 #include "vk_debug_report.h"
 #include "vk_debug_utils.h"
+#include "vk_descriptor_set_layout.h"
 #include "vk_descriptor_update_template.h"
 #include "vk_device.h"
 #include "vk_device_memory.h"
@@ -3017,15 +3018,12 @@ enum anv_descriptor_set_layout_type {
 };
 
 struct anv_descriptor_set_layout {
-   struct vk_object_base base;
+   struct vk_descriptor_set_layout vk;
 
    VkDescriptorSetLayoutCreateFlags flags;
 
    /* Type of descriptor set layout */
    enum anv_descriptor_set_layout_type type;
-
-   /* Descriptor set layouts can be destroyed at almost any time */
-   uint32_t ref_cnt;
 
    /* Number of bindings in this descriptor set */
    uint32_t binding_count;
@@ -3072,28 +3070,7 @@ bool anv_descriptor_requires_bindless(const struct anv_physical_device *pdevice,
                                       const struct anv_descriptor_set_layout *set,
                                       const struct anv_descriptor_set_binding_layout *binding);
 
-void anv_descriptor_set_layout_destroy(struct anv_device *device,
-                                       struct anv_descriptor_set_layout *layout);
-
 void anv_descriptor_set_layout_print(const struct anv_descriptor_set_layout *layout);
-
-static inline struct anv_descriptor_set_layout *
-anv_descriptor_set_layout_ref(struct anv_descriptor_set_layout *layout)
-{
-   assert(layout && layout->ref_cnt >= 1);
-   p_atomic_inc(&layout->ref_cnt);
-
-   return layout;
-}
-
-static inline void
-anv_descriptor_set_layout_unref(struct anv_device *device,
-                                struct anv_descriptor_set_layout *layout)
-{
-   assert(layout && layout->ref_cnt >= 1);
-   if (p_atomic_dec_zero(&layout->ref_cnt))
-      anv_descriptor_set_layout_destroy(device, layout);
-}
 
 struct anv_descriptor {
    VkDescriptorType type;
@@ -6724,7 +6701,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(anv_descriptor_pool, base, VkDescriptorPool,
                                VK_OBJECT_TYPE_DESCRIPTOR_POOL)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_descriptor_set, base, VkDescriptorSet,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET)
-VK_DEFINE_NONDISP_HANDLE_CASTS(anv_descriptor_set_layout, base,
+VK_DEFINE_NONDISP_HANDLE_CASTS(anv_descriptor_set_layout, vk.base,
                                VkDescriptorSetLayout,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_device_memory, vk.base, VkDeviceMemory,
