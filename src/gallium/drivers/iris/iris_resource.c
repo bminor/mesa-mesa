@@ -70,6 +70,8 @@ enum modifier_priority {
    MODIFIER_PRIORITY_4_DG2_RC_CCS_CC,
    MODIFIER_PRIORITY_4_MTL_RC_CCS,
    MODIFIER_PRIORITY_4_MTL_RC_CCS_CC,
+   MODIFIER_PRIORITY_4_LNL_CCS,
+   MODIFIER_PRIORITY_4_BMG_CCS,
 };
 
 static const uint64_t priority_to_modifier[] = {
@@ -85,6 +87,8 @@ static const uint64_t priority_to_modifier[] = {
    [MODIFIER_PRIORITY_4_DG2_RC_CCS_CC] = I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC,
    [MODIFIER_PRIORITY_4_MTL_RC_CCS] = I915_FORMAT_MOD_4_TILED_MTL_RC_CCS,
    [MODIFIER_PRIORITY_4_MTL_RC_CCS_CC] = I915_FORMAT_MOD_4_TILED_MTL_RC_CCS_CC,
+   [MODIFIER_PRIORITY_4_LNL_CCS] = I915_FORMAT_MOD_4_TILED_LNL_CCS,
+   [MODIFIER_PRIORITY_4_BMG_CCS] = I915_FORMAT_MOD_4_TILED_BMG_CCS,
 };
 
 static bool
@@ -129,6 +133,14 @@ modifier_is_supported(const struct intel_device_info *devinfo,
       if (!intel_device_info_is_mtl_or_arl(devinfo))
          return false;
       break;
+   case I915_FORMAT_MOD_4_TILED_LNL_CCS:
+      if (devinfo->platform != INTEL_PLATFORM_LNL)
+         return false;
+      break;
+   case I915_FORMAT_MOD_4_TILED_BMG_CCS:
+      if (devinfo->platform != INTEL_PLATFORM_BMG)
+         return false;
+      break;
    case DRM_FORMAT_MOD_INVALID:
    default:
       return false;
@@ -157,6 +169,8 @@ modifier_is_supported(const struct intel_device_info *devinfo,
          return false;
       }
       break;
+   case I915_FORMAT_MOD_4_TILED_LNL_CCS:
+   case I915_FORMAT_MOD_4_TILED_BMG_CCS:
    case I915_FORMAT_MOD_4_TILED_MTL_RC_CCS:
    case I915_FORMAT_MOD_4_TILED_MTL_RC_CCS_CC:
    case I915_FORMAT_MOD_4_TILED_DG2_RC_CCS_CC:
@@ -167,6 +181,7 @@ modifier_is_supported(const struct intel_device_info *devinfo,
       if (no_ccs)
          return false;
 
+      /* TODO: Do we still face these restrictions on Xe2+? */
       enum isl_format rt_format =
          iris_format_for_usage(devinfo, pfmt,
                                ISL_SURF_USAGE_RENDER_TARGET_BIT).fmt;
@@ -197,6 +212,12 @@ select_best_modifier(const struct intel_device_info *devinfo,
          continue;
 
       switch (modifiers[i]) {
+      case I915_FORMAT_MOD_4_TILED_BMG_CCS:
+         prio = MAX2(prio, MODIFIER_PRIORITY_4_BMG_CCS);
+         break;
+      case I915_FORMAT_MOD_4_TILED_LNL_CCS:
+         prio = MAX2(prio, MODIFIER_PRIORITY_4_LNL_CCS);
+         break;
       case I915_FORMAT_MOD_4_TILED_MTL_RC_CCS_CC:
          prio = MAX2(prio, MODIFIER_PRIORITY_4_MTL_RC_CCS_CC);
          break;
@@ -273,6 +294,8 @@ iris_query_dmabuf_modifiers(struct pipe_screen *pscreen,
       I915_FORMAT_MOD_4_TILED_MTL_RC_CCS,
       I915_FORMAT_MOD_4_TILED_MTL_RC_CCS_CC,
       I915_FORMAT_MOD_4_TILED_MTL_MC_CCS,
+      I915_FORMAT_MOD_4_TILED_LNL_CCS,
+      I915_FORMAT_MOD_4_TILED_BMG_CCS,
       I915_FORMAT_MOD_Y_TILED,
       I915_FORMAT_MOD_Y_TILED_CCS,
       I915_FORMAT_MOD_Y_TILED_GEN12_RC_CCS,
@@ -337,6 +360,8 @@ iris_get_dmabuf_modifier_planes(struct pipe_screen *pscreen, uint64_t modifier,
    case I915_FORMAT_MOD_Y_TILED_GEN12_RC_CCS:
    case I915_FORMAT_MOD_Y_TILED_CCS:
       return 2 * planes;
+   case I915_FORMAT_MOD_4_TILED_LNL_CCS:
+   case I915_FORMAT_MOD_4_TILED_BMG_CCS:
    case I915_FORMAT_MOD_4_TILED_DG2_RC_CCS:
    case I915_FORMAT_MOD_4_TILED_DG2_MC_CCS:
    default:
