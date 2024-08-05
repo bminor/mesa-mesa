@@ -4044,7 +4044,7 @@
         "description": "anv: reuse object string for RMV token",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e1b9a6e4f3c1702d68866bec2799b1216812595a",
         "notes": null
