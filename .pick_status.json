@@ -4054,7 +4054,7 @@
         "description": "vulkan/runtime: allow null/empty debug names",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3b361b234ac49f41a94a9bcf94fb68d5407b4b83",
         "notes": null
