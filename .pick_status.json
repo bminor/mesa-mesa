@@ -734,7 +734,7 @@
         "description": "nak: Sample locations are byte-aligned",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cc33cafcacb1ad2eb9bb04283a57ee30385260fc",
         "notes": null
