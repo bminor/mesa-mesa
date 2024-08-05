@@ -861,7 +861,7 @@ vk_pipeline_precompile_shader(struct vk_device *device,
       return result;
 
    if (ops->preprocess_nir != NULL)
-      ops->preprocess_nir(device->physical, nir);
+      ops->preprocess_nir(device->physical, nir, &rs);
 
    struct vk_pipeline_precomp_shader *shader =
       vk_pipeline_precomp_shader_create(device, stage_sha1,

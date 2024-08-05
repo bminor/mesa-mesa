@@ -196,7 +196,10 @@ struct vk_device_shader_ops {
     * not any enabled device features or pipeline state.  This allows us to
     * potentially cache this shader and re-use it across pipelines.
     */
-   void (*preprocess_nir)(struct vk_physical_device *device, nir_shader *nir);
+   void (*preprocess_nir)(
+      struct vk_physical_device *device,
+      nir_shader *nir,
+      const struct vk_pipeline_robustness_state *rs);
 
    /** True if the driver wants geometry stages linked
     *

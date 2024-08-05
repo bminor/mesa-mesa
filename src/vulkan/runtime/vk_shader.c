@@ -135,7 +135,7 @@ vk_shader_to_nir(struct vk_device *device,
       return NULL;
 
    if (ops->preprocess_nir != NULL)
-      ops->preprocess_nir(device->physical, nir);
+      ops->preprocess_nir(device->physical, nir, rs);
 
    return nir;
 }

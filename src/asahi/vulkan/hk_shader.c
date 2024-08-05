@@ -176,7 +176,9 @@ hk_preprocess_nir_internal(struct vk_physical_device *vk_pdev, nir_shader *nir)
 }
 
 static void
-hk_preprocess_nir(struct vk_physical_device *vk_pdev, nir_shader *nir)
+hk_preprocess_nir(struct vk_physical_device *vk_pdev,
+                  nir_shader *nir,
+                  UNUSED const struct vk_pipeline_robustness_state *rs)
 {
    hk_preprocess_nir_internal(vk_pdev, nir);
    nir_lower_compute_system_values_options csv_options = {
