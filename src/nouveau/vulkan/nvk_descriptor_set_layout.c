@@ -164,7 +164,7 @@ nvk_CreateDescriptorSetLayout(VkDevice device,
    VK_MULTIALLOC_DECL(&ma, struct nvk_sampler *, samplers,
                       immutable_sampler_count);
 
-   if (!vk_descriptor_set_layout_multizalloc(&dev->vk, &ma))
+   if (!vk_descriptor_set_layout_multizalloc(&dev->vk, &ma, pCreateInfo))
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    layout->vk.destroy = nvk_descriptor_set_layout_destroy;
