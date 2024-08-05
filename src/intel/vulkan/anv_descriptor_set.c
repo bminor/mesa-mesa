@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "util/mesa-sha1.h"
+#include "util/mesa-blake3.h"
 #include "vk_util.h"
 
 #include "anv_private.h"
@@ -627,6 +627,68 @@ void anv_GetDescriptorSetLayoutSupport(
    pSupport->supported = supported;
 }
 
+#define BLAKE3_UPDATE_VALUE(ctx, x) _mesa_blake3_update(ctx, &(x), sizeof(x));
+
+static void
+blake3_update_descriptor_set_binding_layout(struct mesa_blake3 *ctx,
+                                            bool embedded_samplers,
+                                            const struct anv_descriptor_set_binding_layout *layout)
+{
+   BLAKE3_UPDATE_VALUE(ctx, layout->flags);
+   BLAKE3_UPDATE_VALUE(ctx, layout->data);
+   BLAKE3_UPDATE_VALUE(ctx, layout->max_plane_count);
+   BLAKE3_UPDATE_VALUE(ctx, layout->array_size);
+   BLAKE3_UPDATE_VALUE(ctx, layout->descriptor_index);
+   BLAKE3_UPDATE_VALUE(ctx, layout->dynamic_offset_index);
+   BLAKE3_UPDATE_VALUE(ctx, layout->buffer_view_index);
+   BLAKE3_UPDATE_VALUE(ctx, layout->descriptor_surface_offset);
+   BLAKE3_UPDATE_VALUE(ctx, layout->descriptor_sampler_offset);
+
+   if (layout->samplers) {
+      for (uint16_t i = 0; i < layout->array_size; i++) {
+         /* For embedded samplers, we need to hash the sampler parameters as
+          * the sampler handle is baked into the shader and this ultimately is
+          * part of the shader hash key. We can only consider 2 shaders
+          * identical if all their embedded samplers parameters are identical.
+          */
+         if (embedded_samplers)
+            BLAKE3_UPDATE_VALUE(ctx, layout->samplers[i].embedded_key);
+
+         /* Hash the conversion if any as this affect shader compilation due
+          * to NIR lowering.
+          */
+         if (layout->samplers[i].has_ycbcr_conversion)
+            BLAKE3_UPDATE_VALUE(ctx, layout->samplers[i].ycbcr_conversion_state);
+      }
+   }
+}
+
+static void
+blake3_hash_descriptor_set_layout(struct anv_descriptor_set_layout *layout)
+{
+   struct mesa_blake3 ctx;
+   _mesa_blake3_init(&ctx);
+
+   BLAKE3_UPDATE_VALUE(&ctx, layout->flags);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->binding_count);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->descriptor_count);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->shader_stages);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->buffer_view_count);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->vk.dynamic_descriptor_count);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->descriptor_buffer_surface_size);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->descriptor_buffer_sampler_size);
+
+   bool embedded_samplers =
+      layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
+
+   for (uint16_t i = 0; i < layout->binding_count; i++) {
+      blake3_update_descriptor_set_binding_layout(&ctx, embedded_samplers,
+                                                  &layout->binding[i]);
+   }
+
+   _mesa_blake3_final(&ctx, layout->vk.blake3);
+}
+
 VkResult anv_CreateDescriptorSetLayout(
     VkDevice                                    _device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
@@ -697,7 +759,7 @@ VkResult anv_CreateDescriptorSetLayout(
    }
 
    uint32_t buffer_view_count = 0;
-   uint32_t dynamic_offset_count = 0;
+   uint32_t dynamic_descriptor_count = 0;
    uint32_t descriptor_buffer_surface_size = 0;
    uint32_t descriptor_buffer_sampler_size = 0;
    uint32_t sampler_count = 0;
@@ -826,10 +888,10 @@ VkResult anv_CreateDescriptorSetLayout(
       switch (binding->descriptorType) {
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
       case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-         set_layout->binding[b].dynamic_offset_index = dynamic_offset_count;
-         set_layout->dynamic_offset_stages[dynamic_offset_count] = binding->stageFlags;
-         dynamic_offset_count += binding->descriptorCount;
-         assert(dynamic_offset_count < MAX_DYNAMIC_BUFFERS);
+         set_layout->binding[b].dynamic_offset_index = dynamic_descriptor_count;
+         set_layout->dynamic_offset_stages[dynamic_descriptor_count] = binding->stageFlags;
+         dynamic_descriptor_count += binding->descriptorCount;
+         assert(dynamic_descriptor_count < MAX_DYNAMIC_BUFFERS);
          break;
 
       default:
@@ -897,7 +959,7 @@ VkResult anv_CreateDescriptorSetLayout(
           set_layout->type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT);
 
    set_layout->buffer_view_count = buffer_view_count;
-   set_layout->dynamic_offset_count = dynamic_offset_count;
+   set_layout->vk.dynamic_descriptor_count = dynamic_descriptor_count;
    set_layout->descriptor_buffer_surface_size = descriptor_buffer_surface_size;
    set_layout->descriptor_buffer_sampler_size = descriptor_buffer_sampler_size;
 
@@ -906,6 +968,8 @@ VkResult anv_CreateDescriptorSetLayout(
       assert(set_layout->descriptor_buffer_sampler_size == 0);
       set_layout->embedded_sampler_count = sampler_count;
    }
+
+   blake3_hash_descriptor_set_layout(set_layout);
 
    *pSetLayout = anv_descriptor_set_layout_to_handle(set_layout);
 
@@ -1035,64 +1099,6 @@ anv_descriptor_set_layout_print(const struct anv_descriptor_set_layout *layout)
    }
 }
 
-#define SHA1_UPDATE_VALUE(ctx, x) _mesa_sha1_update(ctx, &(x), sizeof(x));
-
-static void
-sha1_update_descriptor_set_binding_layout(struct mesa_sha1 *ctx,
-                                          bool embedded_samplers,
-                                          const struct anv_descriptor_set_binding_layout *layout)
-{
-   SHA1_UPDATE_VALUE(ctx, layout->flags);
-   SHA1_UPDATE_VALUE(ctx, layout->data);
-   SHA1_UPDATE_VALUE(ctx, layout->max_plane_count);
-   SHA1_UPDATE_VALUE(ctx, layout->array_size);
-   SHA1_UPDATE_VALUE(ctx, layout->descriptor_index);
-   SHA1_UPDATE_VALUE(ctx, layout->dynamic_offset_index);
-   SHA1_UPDATE_VALUE(ctx, layout->buffer_view_index);
-   SHA1_UPDATE_VALUE(ctx, layout->descriptor_surface_offset);
-   SHA1_UPDATE_VALUE(ctx, layout->descriptor_sampler_offset);
-
-   if (layout->samplers) {
-      for (uint16_t i = 0; i < layout->array_size; i++) {
-         /* For embedded samplers, we need to hash the sampler parameters as
-          * the sampler handle is baked into the shader and this ultimately is
-          * part of the shader hash key. We can only consider 2 shaders
-          * identical if all their embedded samplers parameters are identical.
-          */
-         if (embedded_samplers)
-            SHA1_UPDATE_VALUE(ctx, layout->samplers[i].embedded_key);
-
-         /* Hash the conversion if any as this affect shader compilation due
-          * to NIR lowering.
-          */
-         if (layout->samplers[i].has_ycbcr_conversion)
-            SHA1_UPDATE_VALUE(ctx, layout->samplers[i].ycbcr_conversion_state);
-      }
-   }
-}
-
-static void
-sha1_update_descriptor_set_layout(struct mesa_sha1 *ctx,
-                                  const struct anv_descriptor_set_layout *layout)
-{
-   SHA1_UPDATE_VALUE(ctx, layout->flags);
-   SHA1_UPDATE_VALUE(ctx, layout->binding_count);
-   SHA1_UPDATE_VALUE(ctx, layout->descriptor_count);
-   SHA1_UPDATE_VALUE(ctx, layout->shader_stages);
-   SHA1_UPDATE_VALUE(ctx, layout->buffer_view_count);
-   SHA1_UPDATE_VALUE(ctx, layout->dynamic_offset_count);
-   SHA1_UPDATE_VALUE(ctx, layout->descriptor_buffer_surface_size);
-   SHA1_UPDATE_VALUE(ctx, layout->descriptor_buffer_sampler_size);
-
-   const bool embedded_samplers =
-      layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
-
-   for (uint16_t i = 0; i < layout->binding_count; i++) {
-      sha1_update_descriptor_set_binding_layout(ctx, embedded_samplers,
-                                                &layout->binding[i]);
-   }
-}
-
 /*
  * Pipeline layouts.  These have nothing to do with the pipeline.  They are
  * just multiple descriptor set layouts pasted together
@@ -1133,7 +1139,7 @@ anv_pipeline_sets_layout_add(struct anv_pipeline_sets_layout *layout,
    vk_descriptor_set_layout_ref(&set_layout->vk);
 
    layout->set[set_idx].dynamic_offset_start = layout->num_dynamic_buffers;
-   layout->num_dynamic_buffers += set_layout->dynamic_offset_count;
+   layout->num_dynamic_buffers += set_layout->vk.dynamic_descriptor_count;
 
    assert(layout->num_dynamic_buffers < MAX_DYNAMIC_BUFFERS);
 
@@ -1159,17 +1165,18 @@ anv_pipeline_sets_layout_embedded_sampler_count(const struct anv_pipeline_sets_l
 void
 anv_pipeline_sets_layout_hash(struct anv_pipeline_sets_layout *layout)
 {
-   struct mesa_sha1 ctx;
-   _mesa_sha1_init(&ctx);
+   struct mesa_blake3 ctx;
+   _mesa_blake3_init(&ctx);
    for (unsigned s = 0; s < layout->num_sets; s++) {
       if (!layout->set[s].layout)
          continue;
-      sha1_update_descriptor_set_layout(&ctx, layout->set[s].layout);
-      _mesa_sha1_update(&ctx, &layout->set[s].dynamic_offset_start,
-                        sizeof(layout->set[s].dynamic_offset_start));
+      _mesa_blake3_update(&ctx, &layout->set[s].layout->vk.blake3,
+                          sizeof(layout->set[s].layout->vk.blake3));
+      _mesa_blake3_update(&ctx, &layout->set[s].dynamic_offset_start,
+                          sizeof(layout->set[s].dynamic_offset_start));
    }
-   _mesa_sha1_update(&ctx, &layout->num_sets, sizeof(layout->num_sets));
-   _mesa_sha1_final(&ctx, layout->sha1);
+   _mesa_blake3_update(&ctx, &layout->num_sets, sizeof(layout->num_sets));
+   _mesa_blake3_final(&ctx, layout->blake3);
 }
 
 void
@@ -1198,66 +1205,6 @@ anv_pipeline_sets_layout_print(const struct anv_pipeline_sets_layout *layout)
       fprintf(stderr, "   set%i: dyn_start=%u flags=0x%x\n",
               s, layout->set[s].dynamic_offset_start, layout->set[s].layout->flags);
    }
-}
-
-VkResult anv_CreatePipelineLayout(
-    VkDevice                                    _device,
-    const VkPipelineLayoutCreateInfo*           pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipelineLayout*                           pPipelineLayout)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-   struct anv_pipeline_layout *layout;
-
-   assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
-
-   layout = vk_object_zalloc(&device->vk, pAllocator, sizeof(*layout),
-                             VK_OBJECT_TYPE_PIPELINE_LAYOUT);
-   if (layout == NULL)
-      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   anv_pipeline_sets_layout_init(&layout->sets_layout, device,
-                                 pCreateInfo->flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-
-   for (uint32_t set = 0; set < pCreateInfo->setLayoutCount; set++) {
-      ANV_FROM_HANDLE(anv_descriptor_set_layout, set_layout,
-                      pCreateInfo->pSetLayouts[set]);
-
-      /* VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753
-       *
-       *    "If graphicsPipelineLibrary is not enabled, elements of
-       *     pSetLayouts must be valid VkDescriptorSetLayout objects"
-       *
-       * As a result of supporting graphicsPipelineLibrary, we need to allow
-       * null descriptor set layouts.
-       */
-      if (set_layout == NULL)
-         continue;
-
-      anv_pipeline_sets_layout_add(&layout->sets_layout, set, set_layout);
-   }
-
-   anv_pipeline_sets_layout_hash(&layout->sets_layout);
-
-   *pPipelineLayout = anv_pipeline_layout_to_handle(layout);
-
-   return VK_SUCCESS;
-}
-
-void anv_DestroyPipelineLayout(
-    VkDevice                                    _device,
-    VkPipelineLayout                            _pipelineLayout,
-    const VkAllocationCallbacks*                pAllocator)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-   ANV_FROM_HANDLE(anv_pipeline_layout, layout, _pipelineLayout);
-
-   if (!layout)
-      return;
-
-   anv_pipeline_sets_layout_fini(&layout->sets_layout);
-
-   vk_object_free(&device->vk, pAllocator, layout);
 }
 
 /*

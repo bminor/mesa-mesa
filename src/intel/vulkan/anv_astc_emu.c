@@ -145,6 +145,7 @@ astc_emu_init_flush_denorm_shader(nir_builder *b)
 static VkResult
 astc_emu_init_flush_denorm_pipeline_locked(struct anv_device *device)
 {
+   const struct vk_device_dispatch_table *disp = &device->vk.dispatch_table;
    struct anv_device_astc_emu *astc_emu = &device->astc_emu;
    VkDevice _device = anv_device_to_handle(device);
    VkResult result = VK_SUCCESS;
@@ -169,8 +170,8 @@ astc_emu_init_flush_denorm_pipeline_locked(struct anv_device *device)
             },
          },
       };
-      result = anv_CreateDescriptorSetLayout(_device, &ds_layout_create_info,
-                                             NULL, &astc_emu->ds_layout);
+      result = disp->CreateDescriptorSetLayout(_device, &ds_layout_create_info,
+                                               NULL, &astc_emu->ds_layout);
       if (result != VK_SUCCESS)
          goto out;
    }
@@ -186,8 +187,8 @@ astc_emu_init_flush_denorm_pipeline_locked(struct anv_device *device)
             .size = sizeof(uint32_t) * 4,
          },
       };
-      result = anv_CreatePipelineLayout(_device, &pipeline_layout_create_info,
-                                        NULL, &astc_emu->pipeline_layout);
+      result = disp->CreatePipelineLayout(_device, &pipeline_layout_create_info,
+                                          NULL, &astc_emu->pipeline_layout);
       if (result != VK_SUCCESS)
          goto out;
    }
@@ -210,9 +211,9 @@ astc_emu_init_flush_denorm_pipeline_locked(struct anv_device *device)
             },
          .layout = astc_emu->pipeline_layout,
       };
-      result = anv_CreateComputePipelines(_device, VK_NULL_HANDLE, 1,
-                                          &pipeline_create_info, NULL,
-                                          &astc_emu->pipeline);
+      result = disp->CreateComputePipelines(_device, VK_NULL_HANDLE, 1,
+                                            &pipeline_create_info, NULL,
+                                            &astc_emu->pipeline);
       ralloc_free(b.shader);
 
       if (result != VK_SUCCESS)
@@ -498,14 +499,15 @@ anv_device_init_astc_emu(struct anv_device *device)
 void
 anv_device_finish_astc_emu(struct anv_device *device)
 {
+   const struct vk_device_dispatch_table *disp = &device->vk.dispatch_table;
    struct anv_device_astc_emu *astc_emu = &device->astc_emu;
 
    if (device->physical->flush_astc_ldr_void_extent_denorms) {
       VkDevice _device = anv_device_to_handle(device);
 
-      anv_DestroyPipeline(_device, astc_emu->pipeline, NULL);
-      anv_DestroyPipelineLayout(_device, astc_emu->pipeline_layout, NULL);
-      anv_DestroyDescriptorSetLayout(_device, astc_emu->ds_layout, NULL);
+      disp->DestroyPipeline(_device, astc_emu->pipeline, NULL);
+      disp->DestroyPipelineLayout(_device, astc_emu->pipeline_layout, NULL);
+      disp->DestroyDescriptorSetLayout(_device, astc_emu->ds_layout, NULL);
       simple_mtx_destroy(&astc_emu->mutex);
    }
 

@@ -147,24 +147,20 @@ anv_pipeline_init(struct anv_pipeline *pipeline,
 
 static void
 anv_pipeline_init_layout(struct anv_pipeline *pipeline,
-                         struct anv_pipeline_layout *pipeline_layout)
+                         struct vk_pipeline_layout *pipeline_layout)
 {
    if (pipeline_layout) {
-      struct anv_pipeline_sets_layout *layout = &pipeline_layout->sets_layout;
-      for (uint32_t s = 0; s < layout->num_sets; s++) {
-         if (layout->set[s].layout == NULL)
+      for (uint32_t s = 0; s < pipeline_layout->set_count; s++) {
+         if (pipeline_layout->set_layouts[s] == NULL)
             continue;
 
-         anv_pipeline_sets_layout_add(&pipeline->layout, s,
-                                      layout->set[s].layout);
+         struct anv_descriptor_set_layout *set_layout =
+            (struct anv_descriptor_set_layout *) pipeline_layout->set_layouts[s];
+         anv_pipeline_sets_layout_add(&pipeline->layout, s, set_layout);
       }
    }
 
    anv_pipeline_sets_layout_hash(&pipeline->layout);
-   assert(!pipeline_layout ||
-          !memcmp(pipeline->layout.sha1,
-                  pipeline_layout->sets_layout.sha1,
-                  sizeof(pipeline_layout->sets_layout.sha1)));
 }
 
 static void
@@ -641,7 +637,7 @@ anv_pipeline_hash_common(struct mesa_sha1 *ctx,
 {
    struct anv_device *device = pipeline->device;
 
-   _mesa_sha1_update(ctx, pipeline->layout.sha1, sizeof(pipeline->layout.sha1));
+   _mesa_sha1_update(ctx, pipeline->layout.blake3, sizeof(pipeline->layout.blake3));
 
    const bool indirect_descriptors = device->physical->indirect_descriptors;
    _mesa_sha1_update(ctx, &indirect_descriptors, sizeof(indirect_descriptors));
@@ -746,8 +742,8 @@ anv_pipeline_hash_ray_tracing_combined_shader(struct anv_ray_tracing_pipeline *p
    struct mesa_sha1 ctx;
    _mesa_sha1_init(&ctx);
 
-   _mesa_sha1_update(&ctx, pipeline->base.layout.sha1,
-                     sizeof(pipeline->base.layout.sha1));
+   _mesa_sha1_update(&ctx, pipeline->base.layout.blake3,
+                     sizeof(pipeline->base.layout.blake3));
 
    const bool rba = pipeline->base.device->robust_buffer_access;
    _mesa_sha1_update(&ctx, &rba, sizeof(rba));
@@ -2793,8 +2789,7 @@ anv_compute_pipeline_create(struct anv_device *device,
       return result;
    }
 
-
-   ANV_FROM_HANDLE(anv_pipeline_layout, pipeline_layout, pCreateInfo->layout);
+   ANV_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, pCreateInfo->layout);
    anv_pipeline_init_layout(&pipeline->base, pipeline_layout);
 
    pipeline->base.active_stages = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -2985,16 +2980,35 @@ anv_graphics_pipeline_emit(struct anv_graphics_pipeline *pipeline,
 
 static void
 anv_graphics_pipeline_import_layout(struct anv_graphics_base_pipeline *pipeline,
-                                    struct anv_pipeline_sets_layout *layout)
+                                    struct vk_pipeline_layout *pipeline_layout)
 {
-   pipeline->base.layout.independent_sets |= layout->independent_sets;
+   const bool independent_layouts =
+      (pipeline_layout->create_flags &
+       VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) != 0;
+   pipeline->base.layout.independent_sets |= independent_layouts;
 
-   for (uint32_t s = 0; s < layout->num_sets; s++) {
-      if (layout->set[s].layout == NULL)
+   for (uint32_t s = 0; s < pipeline_layout->set_count; s++) {
+      if (pipeline_layout->set_layouts[s] == NULL)
+         continue;
+
+      struct anv_descriptor_set_layout *set_layout =
+         (struct anv_descriptor_set_layout *) pipeline_layout->set_layouts[s];
+      anv_pipeline_sets_layout_add(&pipeline->base.layout, s, set_layout);
+   }
+}
+
+static void
+anv_graphics_pipeline_import_sets_layout(struct anv_graphics_base_pipeline *pipeline,
+                                         const struct anv_pipeline_sets_layout *sets_layout)
+{
+   pipeline->base.layout.independent_sets |= sets_layout->independent_sets;
+
+   for (uint32_t s = 0; s < sets_layout->num_sets; s++) {
+      if (sets_layout->set[s].layout == NULL)
          continue;
 
       anv_pipeline_sets_layout_add(&pipeline->base.layout, s,
-                                   layout->set[s].layout);
+                                   sets_layout->set[s].layout);
    }
 }
 
@@ -3005,9 +3019,7 @@ anv_graphics_pipeline_import_lib(struct anv_graphics_base_pipeline *pipeline,
                                  struct anv_pipeline_stage *stages,
                                  struct anv_graphics_lib_pipeline *lib)
 {
-   struct anv_pipeline_sets_layout *lib_layout =
-      &lib->base.base.layout;
-   anv_graphics_pipeline_import_layout(pipeline, lib_layout);
+   anv_graphics_pipeline_import_sets_layout(pipeline, &lib->base.base.layout);
 
    /* We can't have shaders specified twice through libraries. */
    assert((pipeline->base.active_stages & lib->base.base.active_stages) == 0);
@@ -3145,11 +3157,9 @@ anv_graphics_lib_pipeline_create(struct anv_device *device,
    /* After we've imported all the libraries' layouts, import the pipeline
     * layout and hash the whole lot.
     */
-   ANV_FROM_HANDLE(anv_pipeline_layout, pipeline_layout, pCreateInfo->layout);
-   if (pipeline_layout != NULL) {
-      anv_graphics_pipeline_import_layout(&pipeline->base,
-                                          &pipeline_layout->sets_layout);
-   }
+   ANV_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, pCreateInfo->layout);
+   if (pipeline_layout != NULL)
+      anv_graphics_pipeline_import_layout(&pipeline->base, pipeline_layout);
 
    anv_pipeline_sets_layout_hash(&pipeline->base.base.layout);
 
@@ -3274,11 +3284,9 @@ anv_graphics_pipeline_create(struct anv_device *device,
    /* After we've imported all the libraries' layouts, import the pipeline
     * layout and hash the whole lot.
     */
-   ANV_FROM_HANDLE(anv_pipeline_layout, pipeline_layout, pCreateInfo->layout);
-   if (pipeline_layout != NULL) {
-      anv_graphics_pipeline_import_layout(&pipeline->base,
-                                          &pipeline_layout->sets_layout);
-   }
+   ANV_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, pCreateInfo->layout);
+   if (pipeline_layout != NULL)
+      anv_graphics_pipeline_import_layout(&pipeline->base, pipeline_layout);
 
    anv_pipeline_sets_layout_hash(&pipeline->base.base.layout);
 
@@ -4069,7 +4077,7 @@ anv_ray_tracing_pipeline_init(struct anv_ray_tracing_pipeline *pipeline,
 {
    util_dynarray_init(&pipeline->shaders, pipeline->base.mem_ctx);
 
-   ANV_FROM_HANDLE(anv_pipeline_layout, pipeline_layout, pCreateInfo->layout);
+   ANV_FROM_HANDLE(vk_pipeline_layout, pipeline_layout, pCreateInfo->layout);
    anv_pipeline_init_layout(&pipeline->base, pipeline_layout);
 
    anv_pipeline_setup_l3_config(&pipeline->base, /* needs_slm */ false);

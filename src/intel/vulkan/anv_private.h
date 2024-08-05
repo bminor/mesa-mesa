@@ -93,6 +93,7 @@
 #include "vk_image.h"
 #include "vk_instance.h"
 #include "vk_pipeline_cache.h"
+#include "vk_pipeline_layout.h"
 #include "vk_physical_device.h"
 #include "vk_sampler.h"
 #include "vk_shader_module.h"
@@ -3037,9 +3038,6 @@ struct anv_descriptor_set_layout {
    /* Number of buffer views in this descriptor set */
    uint32_t buffer_view_count;
 
-   /* Number of dynamic offsets used by this descriptor set */
-   uint16_t dynamic_offset_count;
-
    /* For each dynamic buffer, which VkShaderStageFlagBits stages are using
     * this buffer
     */
@@ -3417,7 +3415,7 @@ struct anv_pipeline_sets_layout {
 
    bool independent_sets;
 
-   unsigned char sha1[20];
+   blake3_hash blake3;
 };
 
 void anv_pipeline_sets_layout_init(struct anv_pipeline_sets_layout *layout,
@@ -3436,12 +3434,6 @@ anv_pipeline_sets_layout_embedded_sampler_count(const struct anv_pipeline_sets_l
 void anv_pipeline_sets_layout_hash(struct anv_pipeline_sets_layout *layout);
 
 void anv_pipeline_sets_layout_print(const struct anv_pipeline_sets_layout *layout);
-
-struct anv_pipeline_layout {
-   struct vk_object_base base;
-
-   struct anv_pipeline_sets_layout sets_layout;
-};
 
 const struct anv_descriptor_set_layout *
 anv_pipeline_layout_get_push_set(const struct anv_pipeline_sets_layout *layout,
@@ -6714,8 +6706,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(anv_image_view, vk.base, VkImageView,
                                VK_OBJECT_TYPE_IMAGE_VIEW);
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_pipeline, base, VkPipeline,
                                VK_OBJECT_TYPE_PIPELINE)
-VK_DEFINE_NONDISP_HANDLE_CASTS(anv_pipeline_layout, base, VkPipelineLayout,
-                               VK_OBJECT_TYPE_PIPELINE_LAYOUT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_query_pool, vk.base, VkQueryPool,
                                VK_OBJECT_TYPE_QUERY_POOL)
 VK_DEFINE_NONDISP_HANDLE_CASTS(anv_sampler, vk.base, VkSampler,
