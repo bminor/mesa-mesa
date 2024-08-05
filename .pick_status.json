@@ -14,7 +14,7 @@
         "description": "aco/gfx11+: don't use VOP3 v_swap_b16",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "80b8bbf0c5c223014b70eff1c10db28e1d7368d7",
         "notes": null
