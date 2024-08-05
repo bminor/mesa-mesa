@@ -224,7 +224,7 @@
         "description": "docs: update ACO_DEBUG documentation for perfwarn",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cc404d45ff4fa7947cffdc75da0d2b773902a1e4",
         "notes": null
