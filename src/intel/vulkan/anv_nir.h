@@ -31,6 +31,8 @@
 extern "C" {
 #endif
 
+struct vk_pipeline_robustness_state;
+
 #define anv_drv_const_offset(field) \
    (offsetof(struct anv_push_constants, field))
 #define anv_drv_const_size(field) \
@@ -54,8 +56,6 @@ extern "C" {
                     .base = anv_drv_const_offset(field),                \
                     .range = anv_drv_const_size(field))
 
-
-
 /* This map is represent a mapping where the key is the NIR
  * nir_intrinsic_resource_intel::block index. It allows mapping bindless UBOs
  * accesses to descriptor entry.
@@ -67,6 +67,9 @@ struct anv_pipeline_push_map {
    uint32_t                     block_count;
    struct anv_pipeline_binding *block_to_descriptor;
 };
+
+enum brw_robustness_flags
+anv_get_robust_flags(const struct vk_pipeline_robustness_state *rstate);
 
 bool anv_check_for_primitive_replication(struct anv_device *device,
                                          VkShaderStageFlags stages,

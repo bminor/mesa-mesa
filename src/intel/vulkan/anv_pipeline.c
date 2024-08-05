@@ -304,7 +304,7 @@ anv_stage_allocate_bind_map_tables(struct anv_pipeline *pipeline,
    };
 }
 
-static enum brw_robustness_flags
+enum brw_robustness_flags
 anv_get_robust_flags(const struct vk_pipeline_robustness_state *rstate)
 {
    return
