@@ -234,7 +234,7 @@
         "description": "docs: update ACO_DEBUG documentation for scheduler options",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "48461c0d9e6be9744817785de59bbbff64b8ce72",
         "notes": null
