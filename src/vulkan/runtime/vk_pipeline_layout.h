@@ -65,6 +65,13 @@ struct vk_pipeline_layout {
    /** Array of pointers to descriptor set layouts, indexed by set index */
    struct vk_descriptor_set_layout *set_layouts[MESA_VK_MAX_DESCRIPTOR_SETS];
 
+   /** Dynamic descriptors offset
+    *
+    * For each descriptor set layout, this is the sum of dynamic buffers in
+    * each preceding descriptor set.
+    */
+   uint32_t dynamic_descriptor_offset[MESA_VK_MAX_DESCRIPTOR_SETS];
+
    /** Number of push constant ranges in this pipeline layout */
    uint32_t push_range_count;
 

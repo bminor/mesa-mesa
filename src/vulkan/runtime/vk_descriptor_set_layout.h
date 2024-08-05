@@ -37,6 +37,9 @@ struct vk_descriptor_set_layout {
 
    VkDescriptorSetLayoutCreateFlags flags;
 
+   /** Number of dynamic descriptors in this layout */
+   uint32_t dynamic_descriptor_count;
+
    /* BLAKE3 hash of the descriptor set layout.  This is used by the common
     * pipeline code to properly cache shaders, including handling pipeline
     * layouts.  It must be populated by the driver or you risk pipeline cache
