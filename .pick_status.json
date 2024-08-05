@@ -3644,7 +3644,7 @@
         "description": "rusticl/memory: Fix memory unmaps after rework",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7b22bc617bf2db4120a438c1ad5e45992f638d82",
         "notes": null
