@@ -1964,7 +1964,7 @@
         "description": "nir/lower_int64: replace uadd_sat with ior for find_lsb64 and ufind_msb64",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "39ec184db6e9d614fd540b89e9cba4e6cb77de50",
         "notes": null
