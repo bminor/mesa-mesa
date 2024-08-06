@@ -1078,11 +1078,8 @@ iris_resource_image_is_pat_compressible(const struct iris_screen *screen,
    if ((iris_bufmgr_vram_size(bufmgr) > 0) && (flags & BO_ALLOC_SMEM))
       return false;
 
-   /* We don't have modifiers with compression enabled on Xe2 so far. */
-   if (res->mod_info) {
-      assert(!isl_drm_modifier_has_aux(res->mod_info->modifier));
+   if (res->mod_info && !isl_drm_modifier_has_aux(res->mod_info->modifier))
       return false;
-   }
 
    /* Bspec 58797 (r58646):
     *
