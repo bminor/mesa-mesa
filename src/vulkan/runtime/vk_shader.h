@@ -152,6 +152,11 @@ void *vk_shader_zalloc(struct vk_device *device,
                        gl_shader_stage stage,
                        const VkAllocationCallbacks *alloc,
                        size_t size);
+void *vk_shader_multizalloc(struct vk_device *device,
+                            struct vk_multialloc *ma,
+                            const struct vk_shader_ops *ops,
+                            gl_shader_stage stage,
+                            const VkAllocationCallbacks *alloc);
 void vk_shader_free(struct vk_device *device,
                     const VkAllocationCallbacks *alloc,
                     struct vk_shader *shader);
