@@ -3244,7 +3244,7 @@
         "description": "intel: fix compute SLM sizes on Xe2 and newer",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fd368f5521129731d2aa91f0f14603d9e05c32cb",
         "notes": null
