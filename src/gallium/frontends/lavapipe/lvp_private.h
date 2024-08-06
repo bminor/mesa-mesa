@@ -835,6 +835,25 @@ enum vk_cmd_type
 lvp_ext_dgc_token_to_cmd_type(const struct lvp_indirect_command_layout_ext *elayout, const VkIndirectCommandsLayoutTokenEXT *token);
 size_t
 lvp_ext_dgc_token_size(const struct lvp_indirect_command_layout_ext *elayout, const VkIndirectCommandsLayoutTokenEXT *token);
+
+struct lvp_cmd_write_buffer_cp {
+   VkDeviceAddress addr;
+   void *data;
+   uint32_t size;
+};
+
+struct lvp_cmd_fill_buffer_addr {
+   VkDeviceAddress addr;
+   VkDeviceSize size;
+   uint32_t data;
+};
+
+enum lvp_cmd_type {
+   LVP_CMD_WRITE_BUFFER_CP = VK_CMD_TYPE_COUNT,
+   LVP_CMD_DISPATCH_UNALIGNED,
+   LVP_CMD_FILL_BUFFER_ADDR,
+};
+
 #ifdef __cplusplus
 }
 #endif

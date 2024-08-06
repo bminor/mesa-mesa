@@ -9,6 +9,96 @@
 #include "util/format/format_utils.h"
 #include "util/half_float.h"
 
+static void
+lvp_write_buffer_cp(VkCommandBuffer cmdbuf, VkDeviceAddress addr,
+                    void *data, uint32_t size)
+{
+   VK_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, cmdbuf);
+
+   struct vk_cmd_queue_entry *entry =
+      vk_zalloc(cmd_buffer->vk.cmd_queue.alloc, sizeof(struct vk_cmd_queue_entry),
+                8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!entry)
+      return;
+
+   entry->type = LVP_CMD_WRITE_BUFFER_CP;
+
+   struct lvp_cmd_write_buffer_cp *cmd =
+      vk_zalloc(cmd_buffer->vk.cmd_queue.alloc, sizeof(struct lvp_cmd_write_buffer_cp) + size,
+                8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!entry) {
+      vk_free(cmd_buffer->vk.cmd_queue.alloc, entry);
+      return;
+   }
+
+   cmd->addr = addr;
+   cmd->data = cmd + 1;
+   cmd->size = size;
+
+   memcpy(cmd->data, data, size);
+
+   entry->driver_data = cmd;
+
+   list_addtail(&entry->cmd_link, &cmd_buffer->vk.cmd_queue.cmds);
+}
+
+static void
+lvp_flush_buffer_write_cp(VkCommandBuffer cmdbuf)
+{
+}
+
+static void
+lvp_cmd_dispatch_unaligned(VkCommandBuffer cmdbuf, uint32_t invocations_x,
+                           uint32_t invocations_y, uint32_t invocations_z)
+{
+   VK_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, cmdbuf);
+
+   struct vk_cmd_queue_entry *entry =
+      vk_zalloc(cmd_buffer->vk.cmd_queue.alloc, sizeof(struct vk_cmd_queue_entry),
+                8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!entry)
+      return;
+
+   entry->type = LVP_CMD_DISPATCH_UNALIGNED;
+
+   entry->u.dispatch.group_count_x = invocations_x;
+   entry->u.dispatch.group_count_y = invocations_y;
+   entry->u.dispatch.group_count_z = invocations_z;
+
+   list_addtail(&entry->cmd_link, &cmd_buffer->vk.cmd_queue.cmds);
+}
+
+static void
+lvp_cmd_fill_buffer_addr(VkCommandBuffer cmdbuf, VkDeviceAddress addr,
+                         VkDeviceSize size, uint32_t data)
+{
+   VK_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, cmdbuf);
+
+   struct vk_cmd_queue_entry *entry =
+      vk_zalloc(cmd_buffer->vk.cmd_queue.alloc, sizeof(struct vk_cmd_queue_entry),
+                8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!entry)
+      return;
+
+   entry->type = LVP_CMD_FILL_BUFFER_ADDR;
+
+   struct lvp_cmd_fill_buffer_addr *cmd =
+      vk_zalloc(cmd_buffer->vk.cmd_queue.alloc, sizeof(struct lvp_cmd_write_buffer_cp),
+                8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!entry) {
+      vk_free(cmd_buffer->vk.cmd_queue.alloc, entry);
+      return;
+   }
+
+   cmd->addr = addr;
+   cmd->size = size;
+   cmd->data = data;
+
+   entry->driver_data = cmd;
+
+   list_addtail(&entry->cmd_link, &cmd_buffer->vk.cmd_queue.cmds);
+}
+
 static_assert(sizeof(struct lvp_bvh_triangle_node) % 8 == 0, "lvp_bvh_triangle_node is not padded");
 static_assert(sizeof(struct lvp_bvh_aabb_node) % 8 == 0, "lvp_bvh_aabb_node is not padded");
 static_assert(sizeof(struct lvp_bvh_instance_node) % 8 == 0, "lvp_bvh_instance_node is not padded");
