@@ -794,7 +794,7 @@ anv_cmd_buffer_bind_descriptor_set(struct anv_cmd_buffer *cmd_buffer,
 
    anv_cmd_buffer_maybe_dirty_descriptor_mode(
       cmd_buffer,
-      (set->layout->flags &
+      (set->layout->vk.flags &
        VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0 ?
       ANV_CMD_DESCRIPTOR_BUFFER_MODE_BUFFER :
       ANV_CMD_DESCRIPTOR_BUFFER_MODE_LEGACY);
@@ -813,7 +813,8 @@ anv_cmd_buffer_bind_descriptor_set(struct anv_cmd_buffer *cmd_buffer,
        anv_descriptor_set_is_push(set)) {
       pipe_state->descriptors[set_index] = set;
 
-      if (set->layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+      if (set->layout->vk.flags &
+          VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
          assert(set->is_push);
 
          pipe_state->descriptor_buffers[set_index].buffer_index = -1;

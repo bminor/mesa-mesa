@@ -3021,8 +3021,6 @@ enum anv_descriptor_set_layout_type {
 struct anv_descriptor_set_layout {
    struct vk_descriptor_set_layout vk;
 
-   VkDescriptorSetLayoutCreateFlags flags;
-
    /* Type of descriptor set layout */
    enum anv_descriptor_set_layout_type type;
 

@@ -33,7 +33,7 @@ anv_pipeline_layout_get_push_set(const struct anv_pipeline_sets_layout *layout,
       struct anv_descriptor_set_layout *set_layout = layout->set[s].layout;
 
       if (!set_layout ||
-          !(set_layout->flags &
+          !(set_layout->vk.flags &
             VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR))
          continue;
 

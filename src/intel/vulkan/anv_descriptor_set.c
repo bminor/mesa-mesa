@@ -440,7 +440,7 @@ anv_descriptor_supports_bindless(const struct anv_physical_device *pdevice,
                                  const struct anv_descriptor_set_layout *set,
                                  const struct anv_descriptor_set_binding_layout *binding)
 {
-   return anv_descriptor_data_supports_bindless(pdevice, set->flags, binding->data);
+   return anv_descriptor_data_supports_bindless(pdevice, set->vk.flags, binding->data);
 }
 
 bool
@@ -451,11 +451,11 @@ anv_descriptor_requires_bindless(const struct anv_physical_device *pdevice,
    if (pdevice->instance->debug & ANV_DEBUG_BINDLESS)
       return anv_descriptor_supports_bindless(pdevice, set, binding);
 
-   if (set->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR)
+   if (set->vk.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR)
       return false;
 
-   if (set->flags & (VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
-                     VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT))
+   if (set->vk.flags & (VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
+                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT))
       return true;
 
    static const VkDescriptorBindingFlagBits flags_requiring_bindless =
@@ -669,7 +669,7 @@ blake3_hash_descriptor_set_layout(struct anv_descriptor_set_layout *layout)
    struct mesa_blake3 ctx;
    _mesa_blake3_init(&ctx);
 
-   BLAKE3_UPDATE_VALUE(&ctx, layout->flags);
+   BLAKE3_UPDATE_VALUE(&ctx, layout->vk.flags);
    BLAKE3_UPDATE_VALUE(&ctx, layout->binding_count);
    BLAKE3_UPDATE_VALUE(&ctx, layout->descriptor_count);
    BLAKE3_UPDATE_VALUE(&ctx, layout->shader_stages);
@@ -679,7 +679,7 @@ blake3_hash_descriptor_set_layout(struct anv_descriptor_set_layout *layout)
    BLAKE3_UPDATE_VALUE(&ctx, layout->descriptor_buffer_sampler_size);
 
    bool embedded_samplers =
-      layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
+      layout->vk.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
 
    for (uint16_t i = 0; i < layout->binding_count; i++) {
       blake3_update_descriptor_set_binding_layout(&ctx, embedded_samplers,
@@ -737,7 +737,6 @@ VkResult anv_CreateDescriptorSetLayout(
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    set_layout->binding_count = num_bindings;
-   set_layout->flags = pCreateInfo->flags;
    set_layout->type = anv_descriptor_set_layout_type_for_flags(device->physical,
                                                                pCreateInfo);
 
@@ -1143,7 +1142,7 @@ anv_pipeline_sets_layout_add(struct anv_pipeline_sets_layout *layout,
 
    assert(layout->num_dynamic_buffers < MAX_DYNAMIC_BUFFERS);
 
-   if (set_layout->flags &
+   if (set_layout->vk.flags &
        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) {
       assert(layout->push_descriptor_set_index == -1);
       layout->push_descriptor_set_index = set_idx;
@@ -1203,7 +1202,7 @@ anv_pipeline_sets_layout_print(const struct anv_pipeline_sets_layout *layout)
          continue;
 
       fprintf(stderr, "   set%i: dyn_start=%u flags=0x%x\n",
-              s, layout->set[s].dynamic_offset_start, layout->set[s].layout->flags);
+              s, layout->set[s].dynamic_offset_start, layout->set[s].layout->vk.flags);
    }
 }
 
@@ -1967,7 +1966,7 @@ anv_push_descriptor_set_init(struct anv_cmd_buffer *cmd_buffer,
       struct anv_state_stream *push_stream;
       uint64_t push_base_address;
 
-      if (layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+      if (layout->vk.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
          push_stream = pdevice->uses_ex_bso ?
             &cmd_buffer->push_descriptor_buffer_stream :
             &cmd_buffer->surface_state_stream;
@@ -2166,7 +2165,7 @@ anv_descriptor_set_write_image_view(struct anv_device *device,
    enum anv_descriptor_data data =
       bind_layout->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT ?
       anv_descriptor_data_for_type(device->physical, set->layout->type,
-                                   set->layout->flags, type) :
+                                   set->layout->vk.flags, type) :
       bind_layout->data;
 
    if (data & ANV_DESCRIPTOR_INDIRECT_SAMPLED_IMAGE) {
@@ -2321,7 +2320,7 @@ anv_descriptor_set_write_buffer_view(struct anv_device *device,
    enum anv_descriptor_data data =
       bind_layout->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT ?
       anv_descriptor_data_for_type(device->physical, set->layout->type,
-                                   set->layout->flags, type) :
+                                   set->layout->vk.flags, type) :
       bind_layout->data;
 
    void *desc_map = set->desc_surface_mem.map +
@@ -2411,7 +2410,7 @@ anv_descriptor_set_write_buffer(struct anv_device *device,
    enum anv_descriptor_data data =
       bind_layout->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT ?
       anv_descriptor_data_for_type(device->physical, set->layout->type,
-                                   set->layout->flags, type) :
+                                   set->layout->vk.flags, type) :
       bind_layout->data;
 
    void *desc_map = set->desc_surface_mem.map +
@@ -2720,7 +2719,7 @@ void anv_UpdateDescriptorSets(
             src_layout->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT ?
             anv_descriptor_data_for_type(device->physical,
                                          src->layout->type,
-                                         src->layout->flags,
+                                         src->layout->vk.flags,
                                          src_desc->type) :
             src_layout->data;
          if (data & ANV_DESCRIPTOR_BUFFER_VIEW) {

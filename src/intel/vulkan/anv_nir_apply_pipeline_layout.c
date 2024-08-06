@@ -153,7 +153,8 @@ add_binding(struct apply_pipeline_layout_state *state,
 
    state->set[set].binding[binding].properties |= BINDING_PROPERTY_NORMAL;
 
-   if (set_layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT)
+   if (set_layout->vk.flags &
+       VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT)
       state->set[set].binding[binding].properties |= BINDING_PROPERTY_EMBEDDED_SAMPLER;
 
    return &state->set[set].binding[binding];
@@ -181,8 +182,8 @@ add_binding_type(struct apply_pipeline_layout_state *state,
 
    /* We can't push descriptor buffers but we can for push descriptors */
    const bool is_set_pushable =
-      (set_layout->flags & non_pushable_set_flags) == 0 ||
-      set_layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+      (set_layout->vk.flags & non_pushable_set_flags) == 0 ||
+      set_layout->vk.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
    const bool is_binding_pushable =
       (bind_layout->flags & non_pushable_binding_flags) == 0;
 
@@ -2177,11 +2178,12 @@ static bool
 binding_is_promotable_to_push(const struct anv_descriptor_set_layout *set_layout,
                               const struct anv_descriptor_set_binding_layout *bind_layout)
 {
-   if (set_layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR)
+   if (set_layout->vk.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR)
       return true;
 
-   if (set_layout->flags & (VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
-                            VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT))
+   if (set_layout->vk.flags &
+       (VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT))
       return false;
 
    return (bind_layout->flags & non_pushable_binding_flags) == 0;
