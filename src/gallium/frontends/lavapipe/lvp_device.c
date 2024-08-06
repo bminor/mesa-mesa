@@ -23,6 +23,7 @@
 
 #include "lvp_private.h"
 #include "lvp_conv.h"
+#include "lvp_acceleration_structure.h"
 
 #include "pipe-loader/pipe_loader.h"
 #include "git_sha1.h"
@@ -1782,6 +1783,14 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDevice(
 
    device->group_handle_alloc = 1;
 
+   result = vk_meta_device_init(&device->vk, &device->meta);
+   if (result != VK_SUCCESS) {
+      lvp_DestroyDevice(lvp_device_to_handle(device), pAllocator);
+      return result;
+   }
+
+   lvp_device_init_accel_struct_state(device);
+
    *pDevice = lvp_device_to_handle(device);
 
    return VK_SUCCESS;
@@ -1793,6 +1802,10 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyDevice(
    const VkAllocationCallbacks*                pAllocator)
 {
    LVP_FROM_HANDLE(lvp_device, device, _device);
+
+   lvp_device_finish_accel_struct_state(device);
+
+   vk_meta_device_finish(&device->vk, &device->meta);
 
    util_dynarray_foreach(&device->bda_texture_handles, struct lp_texture_handle *, handle)
       device->queue.ctx->delete_texture_handle(device->queue.ctx, (uint64_t)(uintptr_t)*handle);

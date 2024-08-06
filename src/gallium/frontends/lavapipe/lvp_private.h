@@ -88,6 +88,7 @@ typedef uint32_t xcb_window_t;
 #include "vk_sync.h"
 #include "vk_sync_timeline.h"
 #include "vk_ycbcr_conversion.h"
+#include "vk_meta.h"
 #include "lp_jit.h"
 
 #include "wsi_common.h"
@@ -223,6 +224,11 @@ struct lvp_device {
    struct util_dynarray bda_image_handles;
 
    uint32_t group_handle_alloc;
+
+   struct vk_meta_device meta;
+   radix_sort_vk_t *radix_sort;
+   simple_mtx_t radix_sort_lock;
+   struct vk_acceleration_structure_build_args accel_struct_args;
 };
 
 void lvp_device_get_cache_uuid(void *uuid);
@@ -848,10 +854,26 @@ struct lvp_cmd_fill_buffer_addr {
    uint32_t data;
 };
 
+void
+lvp_encode_as(struct vk_acceleration_structure *dst, VkDeviceAddress intermediate_as_addr,
+              VkDeviceAddress intermediate_header_addr, uint32_t leaf_count,
+              VkGeometryTypeKHR geometry_type);
+
+struct lvp_cmd_encode_as {
+   struct vk_acceleration_structure *dst;
+   VkDeviceAddress intermediate_as_addr;
+   VkDeviceAddress intermediate_header_addr;
+   uint32_t leaf_count;
+   VkGeometryTypeKHR geometry_type;
+};
+
 enum lvp_cmd_type {
    LVP_CMD_WRITE_BUFFER_CP = VK_CMD_TYPE_COUNT,
    LVP_CMD_DISPATCH_UNALIGNED,
    LVP_CMD_FILL_BUFFER_ADDR,
+   LVP_CMD_ENCODE_AS,
+   LVP_CMD_SAVE_STATE,
+   LVP_CMD_RESTORE_STATE,
 };
 
 #ifdef __cplusplus
