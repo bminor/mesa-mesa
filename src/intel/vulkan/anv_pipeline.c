@@ -1055,15 +1055,17 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    NIR_PASS(_, nir, brw_nir_lower_ray_queries, &pdevice->info);
 
    stage->push_desc_info.used_descriptors =
-      anv_nir_compute_used_push_descriptors(nir, layout);
+      anv_nir_compute_used_push_descriptors(
+         nir, layout->set_layouts, layout->num_sets);
 
    struct anv_pipeline_push_map push_map = {};
 
    /* Apply the actual pipeline layout to UBOs, SSBOs, and textures */
    NIR_PASS(_, nir, anv_nir_apply_pipeline_layout,
               pdevice, stage->key.base.robust_flags,
-              layout->independent_sets,
-              layout, &stage->bind_map, &push_map, mem_ctx);
+              layout->type, layout->set_layouts, layout->num_sets,
+              layout->independent_sets ? NULL : layout->dynamic_offset_start,
+              &stage->bind_map, &push_map, mem_ctx);
 
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ubo,
             anv_nir_ubo_addr_format(pdevice, stage->key.base.robust_flags));
@@ -1165,9 +1167,15 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    }
 
    stage->push_desc_info.used_set_buffer =
-      anv_nir_loads_push_desc_buffer(nir, layout, &stage->bind_map);
+      anv_nir_loads_push_desc_buffer(nir,
+                                     layout->set_layouts,
+                                     layout->num_sets,
+                                     &stage->bind_map);
    stage->push_desc_info.fully_promoted_ubo_descriptors =
-      anv_nir_push_desc_ubo_fully_promoted(nir, layout, &stage->bind_map);
+      anv_nir_push_desc_ubo_fully_promoted(nir,
+                                           layout->set_layouts,
+                                           layout->num_sets,
+                                           &stage->bind_map);
 
 #if DEBUG_PRINTF_EXAMPLE
    if (stage->stage == MESA_SHADER_FRAGMENT) {

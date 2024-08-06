@@ -107,8 +107,10 @@ bool anv_nir_lower_ubo_loads(nir_shader *shader);
 bool anv_nir_apply_pipeline_layout(nir_shader *shader,
                                    const struct anv_physical_device *pdevice,
                                    enum brw_robustness_flags robust_flags,
-                                   bool independent_sets,
-                                   const struct anv_pipeline_sets_layout *layout,
+                                   enum anv_descriptor_set_layout_type layout_type,
+                                   struct anv_descriptor_set_layout * const *set_layouts,
+                                   uint32_t set_count,
+                                   const uint32_t *dynamic_offset_start,
                                    struct anv_pipeline_bind_map *map,
                                    struct anv_pipeline_push_map *push_map,
                                    void *push_map_mem_ctx);
@@ -137,14 +139,17 @@ bool anv_nir_lower_resource_intel(nir_shader *shader,
 bool anv_nir_add_base_work_group_id(nir_shader *shader);
 
 uint32_t anv_nir_compute_used_push_descriptors(nir_shader *shader,
-                                               const struct anv_pipeline_sets_layout *layout);
+                                               struct anv_descriptor_set_layout * const *set_layouts,
+                                               uint32_t set_count);
 
 bool anv_nir_loads_push_desc_buffer(nir_shader *nir,
-                                    const struct anv_pipeline_sets_layout *layout,
+                                    struct anv_descriptor_set_layout * const *set_layouts,
+                                    uint32_t set_count,
                                     const struct anv_pipeline_bind_map *bind_map);
 
 uint32_t anv_nir_push_desc_ubo_fully_promoted(nir_shader *nir,
-                                              const struct anv_pipeline_sets_layout *layout,
+                                              struct anv_descriptor_set_layout * const *set_layouts,
+                                              uint32_t set_count,
                                               const struct anv_pipeline_bind_map *bind_map);
 
 void anv_apply_per_prim_attr_wa(struct nir_shader *ms_nir,

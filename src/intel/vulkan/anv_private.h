@@ -3431,10 +3431,6 @@ void anv_pipeline_sets_layout_hash(struct anv_pipeline_sets_layout *layout);
 
 void anv_pipeline_sets_layout_print(const struct anv_pipeline_sets_layout *layout);
 
-const struct anv_descriptor_set_layout *
-anv_pipeline_layout_get_push_set(const struct anv_pipeline_sets_layout *layout,
-                                 uint8_t *desc_idx);
-
 struct anv_sparse_binding_data {
    uint64_t address;
    uint64_t size;
