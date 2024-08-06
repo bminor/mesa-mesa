@@ -1465,9 +1465,6 @@ struct anv_pipeline_bind_map;
 struct anv_pipeline_sets_layout;
 struct anv_push_descriptor_info;
 
-void anv_device_init_embedded_samplers(struct anv_device *device);
-void anv_device_finish_embedded_samplers(struct anv_device *device);
-
 extern const struct vk_pipeline_cache_object_ops *const anv_cache_import_ops[2];
 
 struct anv_shader_bin *
@@ -4800,6 +4797,24 @@ struct anv_embedded_sampler {
    struct anv_state sampler_state;
    struct anv_state border_color_state;
 };
+
+void anv_device_init_embedded_samplers(struct anv_device *device);
+void anv_device_finish_embedded_samplers(struct anv_device *device);
+
+static inline struct anv_embedded_sampler *
+anv_embedded_sampler_ref(struct anv_embedded_sampler *sampler)
+{
+   sampler->ref_cnt++;
+   return sampler;
+}
+
+void anv_embedded_sampler_unref(struct anv_device *device,
+                                struct anv_embedded_sampler *sampler);
+
+VkResult
+anv_device_get_embedded_samplers(struct anv_device *device,
+                                 struct anv_embedded_sampler **out_samplers,
+                                 const struct anv_pipeline_bind_map *bind_map);
 
 struct anv_shader_bin {
    struct vk_pipeline_cache_object base;

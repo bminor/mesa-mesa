@@ -157,6 +157,7 @@ libanv_files = files(
   'anv_cmd_buffer.c',
   'anv_descriptor_set.c',
   'anv_device.c',
+  'anv_embedded_sampler.c',
   'anv_event.c',
   'anv_formats.c',
   'anv_genX.h',

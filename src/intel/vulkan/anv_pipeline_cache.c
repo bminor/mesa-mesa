@@ -35,113 +35,6 @@
 #include "shaders/float64_spv.h"
 #include "util/u_printf.h"
 
-/**
- * Embedded sampler management.
- */
-
-static unsigned
-embedded_sampler_key_hash(const void *key)
-{
-   return _mesa_hash_data(key, sizeof(struct anv_embedded_sampler_key));
-}
-
-static bool
-embedded_sampler_key_equal(const void *a, const void *b)
-{
-   return memcmp(a, b, sizeof(struct anv_embedded_sampler_key)) == 0;
-}
-
-static void
-anv_embedded_sampler_free(struct anv_device *device,
-                          struct anv_embedded_sampler *sampler)
-{
-   anv_state_pool_free(&device->dynamic_state_pool, sampler->sampler_state);
-   anv_state_pool_free(&device->dynamic_state_pool, sampler->border_color_state);
-   vk_free(&device->vk.alloc, sampler);
-}
-
-static struct anv_embedded_sampler *
-anv_embedded_sampler_ref(struct anv_embedded_sampler *sampler)
-{
-   sampler->ref_cnt++;
-   return sampler;
-}
-
-static void
-anv_embedded_sampler_unref(struct anv_device *device,
-                           struct anv_embedded_sampler *sampler)
-{
-   simple_mtx_lock(&device->embedded_samplers.mutex);
-   if (--sampler->ref_cnt == 0) {
-      _mesa_hash_table_remove_key(device->embedded_samplers.map,
-                                  &sampler->key);
-      anv_embedded_sampler_free(device, sampler);
-   }
-   simple_mtx_unlock(&device->embedded_samplers.mutex);
-}
-
-void
-anv_device_init_embedded_samplers(struct anv_device *device)
-{
-   simple_mtx_init(&device->embedded_samplers.mutex, mtx_plain);
-   device->embedded_samplers.map =
-      _mesa_hash_table_create(NULL,
-                              embedded_sampler_key_hash,
-                              embedded_sampler_key_equal);
-}
-
-void
-anv_device_finish_embedded_samplers(struct anv_device *device)
-{
-   hash_table_foreach(device->embedded_samplers.map, entry) {
-      anv_embedded_sampler_free(device, entry->data);
-   }
-   ralloc_free(device->embedded_samplers.map);
-   simple_mtx_destroy(&device->embedded_samplers.mutex);
-}
-
-static VkResult
-anv_shader_bin_get_embedded_samplers(struct anv_device *device,
-                                     struct anv_shader_bin *shader,
-                                     const struct anv_pipeline_bind_map *bind_map)
-{
-   VkResult result = VK_SUCCESS;
-
-   simple_mtx_lock(&device->embedded_samplers.mutex);
-
-   for (uint32_t i = 0; i < bind_map->embedded_sampler_count; i++) {
-      struct hash_entry *entry =
-         _mesa_hash_table_search(device->embedded_samplers.map,
-                                 &bind_map->embedded_sampler_to_binding[i].key);
-      if (entry == NULL) {
-         shader->embedded_samplers[i] =
-            vk_zalloc(&device->vk.alloc,
-                      sizeof(struct anv_embedded_sampler), 8,
-                      VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-         if (shader->embedded_samplers[i] == NULL) {
-            result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-            goto err;
-         }
-
-         anv_genX(device->info, emit_embedded_sampler)(
-            device, shader->embedded_samplers[i],
-            &bind_map->embedded_sampler_to_binding[i]);
-         _mesa_hash_table_insert(device->embedded_samplers.map,
-                                 &shader->embedded_samplers[i]->key,
-                                 shader->embedded_samplers[i]);
-      } else {
-         shader->embedded_samplers[i] = anv_embedded_sampler_ref(entry->data);
-      }
-   }
-
- err:
-   simple_mtx_unlock(&device->embedded_samplers.mutex);
-   return result;
-}
-
-/**
- *
- */
 
 static bool
 anv_shader_bin_serialize(struct vk_pipeline_cache_object *object,
@@ -258,7 +151,7 @@ anv_shader_bin_create(struct anv_device *device,
 
    if (bind_map->embedded_sampler_count > 0) {
       shader->embedded_samplers = embedded_samplers;
-      if (anv_shader_bin_get_embedded_samplers(device, shader, bind_map) != VK_SUCCESS) {
+      if (anv_device_get_embedded_samplers(device, embedded_samplers, bind_map) != VK_SUCCESS) {
          ANV_DMR_SP_FREE(&device->vk.base, &device->instruction_state_pool, shader->kernel);
          anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
          vk_free(&device->vk.alloc, shader);
