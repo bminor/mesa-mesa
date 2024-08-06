@@ -2824,7 +2824,7 @@
         "description": "panfrost: fix texture.border_clamp regression for valhall",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "87aad0a5e4f92d5709bdd10b10dd06414d96a733",
         "notes": null
