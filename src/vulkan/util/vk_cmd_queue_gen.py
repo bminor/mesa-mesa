@@ -105,6 +105,7 @@ enum vk_cmd_type {
 #endif // ${c.guard}
 % endif
 % endfor
+   VK_CMD_TYPE_COUNT,
 };
 
 extern const char *vk_cmd_queue_type_names[];
@@ -344,6 +345,8 @@ vk_free_queue(struct vk_cmd_queue *queue)
 #endif // ${c.guard}
 % endif
 % endfor
+      case VK_CMD_TYPE_COUNT:
+         break;
       }
       vk_free(queue->alloc, cmd);
    }
