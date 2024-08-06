@@ -259,8 +259,8 @@ get_push_range_bound_size(struct anv_cmd_buffer *cmd_buffer,
    }
 
    case ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER:
-      return gfx_state->base.pipeline->layout.set[
-         range->index].layout->descriptor_buffer_surface_size;
+      return gfx_state->base.pipeline->layout.set_layouts[
+         range->index]->descriptor_buffer_surface_size;
 
    case ANV_DESCRIPTOR_SET_NULL:
    case ANV_DESCRIPTOR_SET_PUSH_CONSTANTS:

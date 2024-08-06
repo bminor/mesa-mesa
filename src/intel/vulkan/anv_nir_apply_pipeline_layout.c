@@ -98,7 +98,7 @@ bti_multiplier(const struct apply_pipeline_layout_state *state,
                uint32_t set, uint32_t binding)
 {
    const struct anv_descriptor_set_layout *set_layout =
-      state->layout->set[set].layout;
+      state->layout->set_layouts[set];
    const struct anv_descriptor_set_binding_layout *bind_layout =
       &set_layout->binding[binding];
 
@@ -131,12 +131,12 @@ add_binding(struct apply_pipeline_layout_state *state,
             uint32_t set, uint32_t binding)
 {
    const struct anv_descriptor_set_layout *set_layout =
-      state->layout->set[set].layout;
+      state->layout->set_layouts[set];
    const struct anv_descriptor_set_binding_layout *bind_layout =
       &set_layout->binding[binding];
 
    assert(set < state->layout->num_sets);
-   assert(binding < state->layout->set[set].layout->binding_count);
+   assert(binding < set_layout->binding_count);
 
    if (state->set[set].binding[binding].use_count < UINT8_MAX)
       state->set[set].binding[binding].use_count++;
@@ -176,7 +176,7 @@ add_binding_type(struct apply_pipeline_layout_state *state,
    add_binding(state, set, binding);
 
    const struct anv_descriptor_set_layout *set_layout =
-      state->layout->set[set].layout;
+      state->layout->set_layouts[set];
    const struct anv_descriptor_set_binding_layout *bind_layout =
       &set_layout->binding[binding];
 
@@ -188,10 +188,10 @@ add_binding_type(struct apply_pipeline_layout_state *state,
       (bind_layout->flags & non_pushable_binding_flags) == 0;
 
    if (is_set_pushable && is_binding_pushable &&
-       (state->layout->set[set].layout->binding[binding].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-        state->layout->set[set].layout->binding[binding].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-        state->layout->set[set].layout->binding[binding].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK ||
-        state->layout->set[set].layout->binding[binding].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
+       (set_layout->binding[binding].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+        set_layout->binding[binding].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
+        set_layout->binding[binding].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK ||
+        set_layout->binding[binding].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
        (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
         type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK))
       state->set[set].binding[binding].properties |= BINDING_PROPERTY_PUSHABLE;
@@ -329,7 +329,7 @@ descriptor_has_bti(nir_intrinsic_instr *intrin,
    uint32_t set = nir_intrinsic_desc_set(intrin);
    uint32_t binding = nir_intrinsic_binding(intrin);
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &state->layout->set[set].layout->binding[binding];
+      &state->layout->set_layouts[set]->binding[binding];
 
    if (state->set[set].binding[binding].properties & BINDING_PROPERTY_EMBEDDED_SAMPLER)
       return false;
@@ -652,7 +652,7 @@ build_res_index(nir_builder *b,
                 struct apply_pipeline_layout_state *state)
 {
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &state->layout->set[set].layout->binding[binding];
+      &state->layout->set_layouts[set]->binding[binding];
 
    uint32_t array_size = bind_layout->array_size;
 
@@ -691,7 +691,7 @@ build_res_index(nir_builder *b,
          } else {
             dynamic_offset_index =
                nir_imm_int(b,
-                           state->layout->set[set].dynamic_offset_start +
+                           state->layout->dynamic_offset_start[set] +
                            bind_layout->dynamic_offset_index);
          }
       } else {
@@ -851,7 +851,7 @@ build_desc_addr_for_binding(nir_builder *b,
                             const struct apply_pipeline_layout_state *state)
 {
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &state->layout->set[set].layout->binding[binding];
+      &state->layout->set_layouts[set]->binding[binding];
 
    switch (state->desc_addr_format) {
    case nir_address_format_64bit_global_32bit_offset:
@@ -928,7 +928,7 @@ build_surface_index_for_binding(nir_builder *b,
                                 const struct apply_pipeline_layout_state *state)
 {
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &state->layout->set[set].layout->binding[binding];
+      &state->layout->set_layouts[set]->binding[binding];
    const unsigned descriptor_offset =
       binding_descriptor_offset(state, bind_layout, false /* sampler */);
    const unsigned descriptor_stride =
@@ -1006,7 +1006,7 @@ build_sampler_handle_for_binding(nir_builder *b,
                                  const struct apply_pipeline_layout_state *state)
 {
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &state->layout->set[set].layout->binding[binding];
+      &state->layout->set_layouts[set]->binding[binding];
    const unsigned descriptor_offset =
       binding_descriptor_offset(state, bind_layout, true /* sampler */);
    const unsigned descriptor_stride =
@@ -1256,7 +1256,7 @@ build_buffer_addr_for_binding(nir_builder *b,
 
    if (desc_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
       const struct anv_descriptor_set_binding_layout *bind_layout =
-         &state->layout->set[set].layout->binding[binding];
+         &state->layout->set_layouts[set]->binding[binding];
       return nir_vec2(b,
                       nir_imm_int(b, state->set[set].desc_offset),
                       nir_imm_int(b, bind_layout->descriptor_surface_offset));
@@ -1351,7 +1351,7 @@ build_buffer_addr_for_idx_intrin(nir_builder *b,
                                 &set, &binding, state);
 
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &state->layout->set[set].layout->binding[binding];
+      &state->layout->set_layouts[set]->binding[binding];
 
    return build_buffer_addr_for_binding(b, bind_layout->type,
                                         set, binding, res_index,
@@ -1409,7 +1409,7 @@ try_lower_direct_buffer_intrinsic(nir_builder *b,
    const unsigned binding = nir_intrinsic_binding(desc);
 
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &state->layout->set[set].layout->binding[binding];
+      &state->layout->set_layouts[set]->binding[binding];
 
    nir_address_format addr_format = descriptor_address_format(desc, state);
 
@@ -2167,7 +2167,7 @@ anv_validate_pipeline_layout(const struct anv_pipeline_sets_layout *layout,
                continue;
 
             unsigned set = nir_intrinsic_desc_set(intrin);
-            assert(layout->set[set].layout);
+            assert(layout->set_layouts[set]);
          }
       }
    }
@@ -2249,7 +2249,8 @@ add_sampler_entry(struct anv_pipeline_bind_map *map,
                   const struct anv_pipeline_sets_layout *layout,
                   const struct anv_descriptor_set_binding_layout *bind_layout)
 {
-   assert((bind_layout->descriptor_index + element) < layout->set[set].layout->descriptor_count);
+   assert((bind_layout->descriptor_index + element) <
+          layout->set_layouts[set]->descriptor_count);
    map->sampler_to_descriptor[map->sampler_count++] =
       (struct anv_pipeline_binding) {
          .set = set,
@@ -2286,7 +2287,7 @@ add_embedded_sampler_entry(struct apply_pipeline_layout_state *state,
    struct anv_pipeline_embedded_sampler_binding *sampler_bind =
       &map->embedded_sampler_to_binding[map->embedded_sampler_count++];
    const struct anv_descriptor_set_layout *set_layout =
-      state->layout->set[set].layout;
+      state->layout->set_layouts[set];
    const struct anv_descriptor_set_binding_layout *bind_layout =
       &set_layout->binding[binding];
    const struct anv_descriptor_set_layout_sampler *sampler =
@@ -2343,7 +2344,7 @@ build_packed_binding_table(struct apply_pipeline_layout_state *state,
    unsigned push_block_count = 0;
    for (unsigned s = 0; s < state->layout->num_sets; s++) {
       const struct anv_descriptor_set_layout *set_layout =
-         state->layout->set[s].layout;
+         state->layout->set_layouts[s];
       if (!set_layout)
          continue;
 
@@ -2387,7 +2388,7 @@ build_packed_binding_table(struct apply_pipeline_layout_state *state,
    unsigned used_binding_count = 0;
    for (uint32_t set = 0; set < state->layout->num_sets; set++) {
       struct anv_descriptor_set_layout *set_layout =
-         state->layout->set[set].layout;
+         state->layout->set_layouts[set];
       if (!set_layout)
          continue;
 
@@ -2420,7 +2421,7 @@ build_packed_binding_table(struct apply_pipeline_layout_state *state,
    used_binding_count = 0;
    for (uint32_t set = 0; set < state->layout->num_sets; set++) {
       const struct anv_descriptor_set_layout *set_layout =
-         state->layout->set[set].layout;
+         state->layout->set_layouts[set];
       if (!set_layout)
          continue;
 
@@ -2429,7 +2430,7 @@ build_packed_binding_table(struct apply_pipeline_layout_state *state,
             continue;
 
          const struct anv_descriptor_set_binding_layout *binding =
-               &state->layout->set[set].layout->binding[b];
+            &set_layout->binding[b];
 
          /* Do a fixed-point calculation to generate a score based on the
           * number of uses and the binding array size.  We shift by 7 instead
@@ -2462,9 +2463,9 @@ build_packed_binding_table(struct apply_pipeline_layout_state *state,
 
    for (unsigned i = 0; i < used_binding_count; i++) {
       unsigned set = infos[i].set, b = infos[i].binding;
-      assert(state->layout->set[set].layout);
+      assert(state->layout->set_layouts[set]);
       const struct anv_descriptor_set_layout *set_layout =
-         state->layout->set[set].layout;
+         state->layout->set_layouts[set];
       const struct anv_descriptor_set_binding_layout *binding =
             &set_layout->binding[b];
 
@@ -2589,7 +2590,8 @@ anv_nir_apply_pipeline_layout(nir_shader *shader,
 
    /* Allocate binding arrays. */
    for (unsigned s = 0; s < state.layout->num_sets; s++) {
-      const struct anv_descriptor_set_layout *set_layout = layout->set[s].layout;
+      const struct anv_descriptor_set_layout *set_layout =
+         layout->set_layouts[s];
       if (!set_layout)
          continue;
 

@@ -805,9 +805,9 @@ lookup_ycbcr_conversion(const void *_sets_layout, uint32_t set,
    const struct anv_pipeline_sets_layout *sets_layout = _sets_layout;
 
    assert(set < MAX_SETS);
-   assert(binding < sets_layout->set[set].layout->binding_count);
+   assert(binding < sets_layout->set_layouts[set]->binding_count);
    const struct anv_descriptor_set_binding_layout *bind_layout =
-      &sets_layout->set[set].layout->binding[binding];
+      &sets_layout->set_layouts[set]->binding[binding];
 
    if (bind_layout->samplers == NULL)
       return NULL;
@@ -3004,11 +3004,11 @@ anv_graphics_pipeline_import_sets_layout(struct anv_graphics_base_pipeline *pipe
    pipeline->base.layout.independent_sets |= sets_layout->independent_sets;
 
    for (uint32_t s = 0; s < sets_layout->num_sets; s++) {
-      if (sets_layout->set[s].layout == NULL)
+      if (sets_layout->set_layouts[s] == NULL)
          continue;
 
       anv_pipeline_sets_layout_add(&pipeline->base.layout, s,
-                                   sets_layout->set[s].layout);
+                                   sets_layout->set_layouts[s]);
    }
 }
 

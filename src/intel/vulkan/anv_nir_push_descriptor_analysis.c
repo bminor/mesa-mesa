@@ -29,8 +29,8 @@ const struct anv_descriptor_set_layout *
 anv_pipeline_layout_get_push_set(const struct anv_pipeline_sets_layout *layout,
                                  uint8_t *set_idx)
 {
-   for (unsigned s = 0; s < ARRAY_SIZE(layout->set); s++) {
-      struct anv_descriptor_set_layout *set_layout = layout->set[s].layout;
+   for (unsigned s = 0; s < ARRAY_SIZE(layout->set_layouts); s++) {
+      struct anv_descriptor_set_layout *set_layout = layout->set_layouts[s];
 
       if (!set_layout ||
           !(set_layout->vk.flags &

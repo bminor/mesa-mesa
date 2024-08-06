@@ -3400,10 +3400,8 @@ struct anv_push_range {
 struct anv_pipeline_sets_layout {
    struct anv_device *device;
 
-   struct {
-      struct anv_descriptor_set_layout *layout;
-      uint32_t dynamic_offset_start;
-   } set[MAX_SETS];
+   struct anv_descriptor_set_layout *set_layouts[MAX_SETS];
+   uint32_t dynamic_offset_start[MAX_SETS];
 
    enum anv_descriptor_set_layout_type type;
 

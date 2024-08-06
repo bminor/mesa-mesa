@@ -679,15 +679,15 @@ void anv_CmdBindPipeline(
       if (layout->independent_sets && layout->num_dynamic_buffers > 0) {
          bool modified = false;
          for (uint32_t s = 0; s < layout->num_sets; s++) {
-            if (layout->set[s].layout == NULL)
+            if (layout->set_layouts[s] == NULL)
                continue;
 
-            assert(layout->set[s].dynamic_offset_start < MAX_DYNAMIC_BUFFERS);
-            if (layout->set[s].layout->vk.dynamic_descriptor_count > 0 &&
+            assert(layout->dynamic_offset_start[s] < MAX_DYNAMIC_BUFFERS);
+            if (layout->set_layouts[s]->vk.dynamic_descriptor_count > 0 &&
                 (push->desc_surface_offsets[s] & ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK) !=
-                layout->set[s].dynamic_offset_start) {
+                layout->dynamic_offset_start[s]) {
                push->desc_surface_offsets[s] &= ~ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK;
-               push->desc_surface_offsets[s] |= (layout->set[s].dynamic_offset_start &
+               push->desc_surface_offsets[s] |= (layout->dynamic_offset_start[s] &
                                                  ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK);
                modified = true;
             }

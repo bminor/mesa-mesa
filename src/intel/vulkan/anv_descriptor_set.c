@@ -1120,7 +1120,7 @@ anv_pipeline_sets_layout_add(struct anv_pipeline_sets_layout *layout,
                              uint32_t set_idx,
                              struct anv_descriptor_set_layout *set_layout)
 {
-   if (layout->set[set_idx].layout)
+   if (layout->set_layouts[set_idx])
       return;
 
    /* Workaround CTS : Internal CTS issue 3584 */
@@ -1134,10 +1134,10 @@ anv_pipeline_sets_layout_add(struct anv_pipeline_sets_layout *layout,
 
    layout->num_sets = MAX2(set_idx + 1, layout->num_sets);
 
-   layout->set[set_idx].layout = set_layout;
+   layout->set_layouts[set_idx] = set_layout;
    vk_descriptor_set_layout_ref(&set_layout->vk);
 
-   layout->set[set_idx].dynamic_offset_start = layout->num_dynamic_buffers;
+   layout->dynamic_offset_start[set_idx] = layout->num_dynamic_buffers;
    layout->num_dynamic_buffers += set_layout->vk.dynamic_descriptor_count;
 
    assert(layout->num_dynamic_buffers < MAX_DYNAMIC_BUFFERS);
@@ -1154,9 +1154,9 @@ anv_pipeline_sets_layout_embedded_sampler_count(const struct anv_pipeline_sets_l
 {
    uint32_t count = 0;
    for (unsigned s = 0; s < layout->num_sets; s++) {
-      if (!layout->set[s].layout)
+      if (!layout->set_layouts[s])
          continue;
-      count += layout->set[s].layout->embedded_sampler_count;
+      count += layout->set_layouts[s]->embedded_sampler_count;
    }
    return count;
 }
@@ -1167,12 +1167,12 @@ anv_pipeline_sets_layout_hash(struct anv_pipeline_sets_layout *layout)
    struct mesa_blake3 ctx;
    _mesa_blake3_init(&ctx);
    for (unsigned s = 0; s < layout->num_sets; s++) {
-      if (!layout->set[s].layout)
+      if (!layout->set_layouts[s])
          continue;
-      _mesa_blake3_update(&ctx, &layout->set[s].layout->vk.blake3,
-                          sizeof(layout->set[s].layout->vk.blake3));
-      _mesa_blake3_update(&ctx, &layout->set[s].dynamic_offset_start,
-                          sizeof(layout->set[s].dynamic_offset_start));
+      _mesa_blake3_update(&ctx, &layout->set_layouts[s]->vk.blake3,
+                          sizeof(layout->set_layouts[s]->vk.blake3));
+      _mesa_blake3_update(&ctx, &layout->dynamic_offset_start[s],
+                          sizeof(layout->dynamic_offset_start[s]));
    }
    _mesa_blake3_update(&ctx, &layout->num_sets, sizeof(layout->num_sets));
    _mesa_blake3_final(&ctx, layout->blake3);
@@ -1182,11 +1182,11 @@ void
 anv_pipeline_sets_layout_fini(struct anv_pipeline_sets_layout *layout)
 {
    for (unsigned s = 0; s < layout->num_sets; s++) {
-      if (!layout->set[s].layout)
+      if (!layout->set_layouts[s])
          continue;
 
       vk_descriptor_set_layout_unref(&layout->device->vk,
-                                     &layout->set[s].layout->vk);
+                                     &layout->set_layouts[s]->vk);
    }
 }
 
@@ -1198,11 +1198,12 @@ anv_pipeline_sets_layout_print(const struct anv_pipeline_sets_layout *layout)
            layout->num_sets,
            layout->independent_sets);
    for (unsigned s = 0; s < layout->num_sets; s++) {
-      if (!layout->set[s].layout)
+      if (!layout->set_layouts[s])
          continue;
 
       fprintf(stderr, "   set%i: dyn_start=%u flags=0x%x\n",
-              s, layout->set[s].dynamic_offset_start, layout->set[s].layout->vk.flags);
+              s, layout->dynamic_offset_start[s],
+              layout->set_layouts[s]->vk.flags);
    }
 }
 
