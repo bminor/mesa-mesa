@@ -3004,7 +3004,7 @@
         "description": "anv/blorp: force CC_VIEWPORT reallocation when programming 3DSTATE_VIEWPORT_STATE_POINTERS_CC",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fe1baa64819f9e2d59b60ccec853610db21b9911",
         "notes": null
