@@ -3254,7 +3254,7 @@
         "description": "Revert \"d3d12: Video Encode - Remove PIPE_VIDEO_PROFILE_MPEG4_AVC_BASELINE as not supported\" This reverts commit d6bb4ddc638f3ee37fbbe066c631dad80aaeb2d3. Fixes: d6bb4ddc638 (\"d3d12: Video Encode - Remove PIPE_VIDEO_PROFILE_MPEG4_AVC_BASELINE as not supported\")",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d6bb4ddc638f3ee37fbbe066c631dad80aaeb2d3",
         "notes": null
