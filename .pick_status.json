@@ -2494,7 +2494,7 @@
         "description": "egl: fix zink init",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b907eb475043a25d7d80f81a5d81ddebfa335399",
         "notes": null
