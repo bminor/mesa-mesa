@@ -187,6 +187,8 @@ libanv_files = files(
   'anv_rmv.c',
   'anv_rmv.h',
   'anv_sampler.c',
+  'anv_shader.c',
+  'anv_shader_compile.c',
   'anv_slab_bo.c',
   'anv_slab_bo.h',
   'anv_sparse.c',

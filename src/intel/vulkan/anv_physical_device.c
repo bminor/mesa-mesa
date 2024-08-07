@@ -2013,6 +2013,11 @@ get_properties(const struct anv_physical_device *pdevice,
       /* We support 4k/64k tiling alignments on most platforms */
       props->supportedImageAlignmentMask = (1 << 12) | (1 << 16);
    }
+
+   /* For the runtime common code (even thought we don't support
+    * VK_EXT_shader_object)
+    */
+   memcpy(props->shaderBinaryUUID, pdevice->shader_binary_uuid, VK_UUID_SIZE);
 }
 
 /* This function restricts the maximum size of system memory heap. The
@@ -2760,6 +2765,8 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    anv_physical_device_init_queue_families(device);
 
    anv_physical_device_init_perf(device, fd);
+
+   anv_shader_init_uuid(device);
 
    /* Gather major/minor before WSI. */
    struct stat st;

@@ -980,11 +980,6 @@ anv_cmd_buffer_bind_descriptor_set(struct anv_cmd_buffer *cmd_buffer,
    pipe_state->push_constants_data_dirty = true;
 }
 
-#define ANV_GRAPHICS_STAGE_BITS \
-   (VK_SHADER_STAGE_ALL_GRAPHICS | \
-    VK_SHADER_STAGE_MESH_BIT_EXT | \
-    VK_SHADER_STAGE_TASK_BIT_EXT)
-
 void anv_CmdBindDescriptorSets2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkBindDescriptorSetsInfoKHR*          pInfo)

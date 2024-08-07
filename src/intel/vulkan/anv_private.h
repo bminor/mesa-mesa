@@ -97,6 +97,7 @@
 #include "vk_pipeline_layout.h"
 #include "vk_physical_device.h"
 #include "vk_sampler.h"
+#include "vk_shader.h"
 #include "vk_shader_module.h"
 #include "vk_sync.h"
 #include "vk_texcompress_astc.h"
@@ -151,12 +152,21 @@ struct intel_perf_query_result;
 #define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC_FAST
 #endif
 
+#define ANV_GRAPHICS_STAGE_BITS  (VK_SHADER_STAGE_ALL_GRAPHICS | \
+                                  VK_SHADER_STAGE_MESH_BIT_EXT | \
+                                  VK_SHADER_STAGE_TASK_BIT_EXT)
+
 #define ANV_RT_STAGE_BITS (VK_SHADER_STAGE_RAYGEN_BIT_KHR |             \
                            VK_SHADER_STAGE_ANY_HIT_BIT_KHR |            \
                            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |        \
                            VK_SHADER_STAGE_MISS_BIT_KHR |               \
                            VK_SHADER_STAGE_INTERSECTION_BIT_KHR |       \
                            VK_SHADER_STAGE_CALLABLE_BIT_KHR)
+
+#define ANV_VK_STAGE_MASK (ANV_GRAPHICS_STAGE_BITS |    \
+                           ANV_RT_STAGE_BITS |          \
+                           VK_SHADER_STAGE_COMPUTE_BIT)
+
 
 #define NSEC_PER_SEC 1000000000ull
 
@@ -245,6 +255,7 @@ get_max_vbs(const struct intel_device_info *devinfo) {
 #define ANV_BINDLESS_SURFACE_BASE_ADDR_REG 0x2668 /* MI_ALU_REG13 */
 
 #define ANV_GRAPHICS_SHADER_STAGE_COUNT (MESA_SHADER_MESH + 1)
+#define ANV_RT_SHADER_STAGE_COUNT       (MESA_SHADER_CALLABLE - MESA_SHADER_RAYGEN + 1)
 
 /* Defines where various values are defined in the inline parameter register.
  */
@@ -1022,6 +1033,188 @@ VkResult anv_bo_cache_init(struct anv_bo_cache *cache,
                            struct anv_device *device);
 void anv_bo_cache_finish(struct anv_bo_cache *cache);
 
+/* Relocations */
+struct anv_reloc_list {
+   bool                                         uses_relocs;
+   uint32_t                                     dep_words;
+   BITSET_WORD *                                deps;
+   const VkAllocationCallbacks                  *alloc;
+};
+
+VkResult anv_reloc_list_init(struct anv_reloc_list *list,
+                             const VkAllocationCallbacks *alloc,
+                             bool uses_relocs);
+void anv_reloc_list_finish(struct anv_reloc_list *list);
+
+VkResult
+anv_reloc_list_add_bo_impl(struct anv_reloc_list *list, struct anv_bo *target_bo);
+
+static inline VkResult
+anv_reloc_list_add_bo(struct anv_reloc_list *list, struct anv_bo *target_bo)
+{
+   return list->uses_relocs ? anv_reloc_list_add_bo_impl(list, target_bo) : VK_SUCCESS;
+}
+
+VkResult anv_reloc_list_append(struct anv_reloc_list *list,
+                               struct anv_reloc_list *other);
+
+/* Shaders */
+
+#define ANV_DESCRIPTOR_SET_PER_PRIM_PADDING   (UINT8_MAX - 5)
+#define ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER (UINT8_MAX - 4)
+#define ANV_DESCRIPTOR_SET_NULL               (UINT8_MAX - 3)
+#define ANV_DESCRIPTOR_SET_PUSH_CONSTANTS     (UINT8_MAX - 2)
+#define ANV_DESCRIPTOR_SET_DESCRIPTORS        (UINT8_MAX - 1)
+#define ANV_DESCRIPTOR_SET_COLOR_ATTACHMENTS   UINT8_MAX
+
+struct anv_pipeline_binding {
+   /** Index in the descriptor set
+    *
+    * This is a flattened index; the descriptor set layout is already taken
+    * into account.
+    */
+   uint32_t index;
+
+   /** Binding in the descriptor set. Not valid for any of the
+    * ANV_DESCRIPTOR_SET_*
+    */
+   uint32_t binding;
+
+   /** Offset in the descriptor buffer
+    *
+    * Relative to anv_descriptor_set::desc_addr. This is useful for
+    * ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT, to generate the binding
+    * table entry.
+    */
+   uint32_t set_offset;
+
+   /** The descriptor set this surface corresponds to.
+    *
+    * The special ANV_DESCRIPTOR_SET_* values above indicates that this
+    * binding is not a normal descriptor set but something else.
+    */
+   uint8_t set;
+
+   union {
+      /** Plane in the binding index for images */
+      uint8_t plane;
+
+      /** Input attachment index (relative to the subpass) */
+      uint8_t input_attachment_index;
+
+      /** Dynamic offset index
+       *
+       * For dynamic UBOs and SSBOs, relative to set.
+       */
+      uint8_t dynamic_offset_index;
+   };
+};
+
+struct anv_embedded_sampler_key {
+   /** No need to track binding elements for embedded samplers as :
+    *
+    *    VUID-VkDescriptorSetLayoutBinding-flags-08006:
+    *
+    *       "If VkDescriptorSetLayoutCreateInfo:flags contains
+    *        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT,
+    *        descriptorCount must: less than or equal to 1"
+    *
+    * The following struct can be safely hash as it doesn't include in
+    * address/offset.
+    */
+   uint32_t sampler[4];
+   uint32_t color[4];
+};
+
+struct anv_pipeline_embedded_sampler_binding {
+   /** The descriptor set this sampler belongs to */
+   uint8_t set;
+
+   /** The binding in the set this sampler belongs to */
+   uint32_t binding;
+
+   /** The data configuring the sampler */
+   struct anv_embedded_sampler_key key;
+};
+
+struct anv_push_range {
+   /** Index in the descriptor set */
+   uint32_t index;
+
+   /** Descriptor set index */
+   uint8_t set;
+
+   /** Dynamic offset index (for dynamic UBOs), relative to set. */
+   uint8_t dynamic_offset_index;
+
+   /** Start offset in units of 32B */
+   uint8_t start;
+
+   /** Range in units of 32B */
+   uint8_t length;
+};
+
+struct anv_pipeline_bind_map {
+   unsigned char                                surface_sha1[20];
+   unsigned char                                sampler_sha1[20];
+   unsigned char                                push_sha1[20];
+
+   /* enum anv_descriptor_set_layout_type */
+   uint32_t layout_type;
+
+   uint32_t surface_count;
+   uint32_t sampler_count;
+   uint32_t embedded_sampler_count;
+
+   struct anv_pipeline_binding *                surface_to_descriptor;
+   struct anv_pipeline_binding *                sampler_to_descriptor;
+   struct anv_pipeline_embedded_sampler_binding* embedded_sampler_to_binding;
+   BITSET_DECLARE(input_attachments, MAX_DESCRIPTOR_SET_INPUT_ATTACHMENTS + 1);
+
+   struct anv_push_range                        push_ranges[4];
+};
+
+struct anv_push_descriptor_info {
+   /* A bitfield of descriptors used. */
+   uint32_t used_descriptors;
+
+   /* A bitfield of UBOs bindings fully promoted to push constants. */
+   uint32_t fully_promoted_ubo_descriptors;
+
+   /* A bitfield with one bit set indicating the push descriptor set used. */
+   uint8_t push_set_buffer;
+};
+
+struct anv_shader {
+   struct vk_shader vk;
+
+   struct anv_state kernel;
+
+   const struct brw_stage_prog_data *prog_data;
+   uint32_t prog_data_size;
+
+   struct brw_compile_stats stats[3];
+   uint32_t num_stats;
+
+   struct nir_xfb_info *xfb_info;
+
+   struct anv_push_descriptor_info push_desc_info;
+
+   struct anv_pipeline_bind_map bind_map;
+
+   uint32_t instance_multiplier;
+
+   /* Not saved in the pipeline cache.
+    *
+    * Array of pointers of length bind_map.embedded_sampler_count
+    */
+   struct anv_embedded_sampler **embedded_samplers;
+};
+
+extern struct vk_device_shader_ops anv_device_shader_ops;
+
+/* Physical device */
+
 struct anv_queue_family {
    /* Standard bits passed on to the client */
    VkQueueFlags   queueFlags;
@@ -1274,6 +1467,7 @@ struct anv_physical_device {
     struct anv_memregion                        vram_non_mappable;
     struct anv_memregion                        sys;
     uint8_t                                     driver_build_sha1[20];
+    uint8_t                                     shader_binary_uuid[VK_UUID_SIZE];
     uint8_t                                     pipeline_cache_uuid[VK_UUID_SIZE];
     uint8_t                                     driver_uuid[VK_UUID_SIZE];
     uint8_t                                     device_uuid[VK_UUID_SIZE];
@@ -1458,7 +1652,6 @@ struct anv_queue {
 };
 
 struct nir_xfb_info;
-struct anv_pipeline_bind_map;
 struct anv_pipeline_sets_layout;
 struct anv_push_descriptor_info;
 
@@ -2598,30 +2791,6 @@ anv_bo_is_small_heap(enum anv_bo_alloc_flags alloc_flags)
                          ANV_BO_ALLOC_32BIT_ADDRESS);
 }
 
-struct anv_reloc_list {
-   bool                                         uses_relocs;
-   uint32_t                                     dep_words;
-   BITSET_WORD *                                deps;
-   const VkAllocationCallbacks                  *alloc;
-};
-
-VkResult anv_reloc_list_init(struct anv_reloc_list *list,
-                             const VkAllocationCallbacks *alloc,
-                             bool uses_relocs);
-void anv_reloc_list_finish(struct anv_reloc_list *list);
-
-VkResult
-anv_reloc_list_add_bo_impl(struct anv_reloc_list *list, struct anv_bo *target_bo);
-
-static inline VkResult
-anv_reloc_list_add_bo(struct anv_reloc_list *list, struct anv_bo *target_bo)
-{
-   return list->uses_relocs ? anv_reloc_list_add_bo_impl(list, target_bo) : VK_SUCCESS;
-}
-
-VkResult anv_reloc_list_append(struct anv_reloc_list *list,
-                               struct anv_reloc_list *other);
-
 struct anv_batch_bo {
    /* Link in the anv_cmd_buffer.owned_batch_bos list */
    struct list_head                             link;
@@ -3057,22 +3226,6 @@ enum anv_descriptor_data {
    ANV_DESCRIPTOR_SURFACE_SAMPLER         = BITFIELD_BIT(9),
 };
 
-struct anv_embedded_sampler_key {
-   /** No need to track binding elements for embedded samplers as :
-    *
-    *    VUID-VkDescriptorSetLayoutBinding-flags-08006:
-    *
-    *       "If VkDescriptorSetLayoutCreateInfo:flags contains
-    *        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT,
-    *        descriptorCount must: less than or equal to 1"
-    *
-    * The following struct can be safely hash as it doesn't include in
-    * address/offset.
-    */
-   uint32_t sampler[4];
-   uint32_t color[4];
-};
-
 struct anv_descriptor_set_layout_sampler {
    /* Immutable sampler used to populate descriptor sets on allocation */
    struct anv_sampler *immutable_sampler;
@@ -3449,84 +3602,6 @@ anv_descriptor_set_write_template(struct anv_device *device,
                                   struct anv_descriptor_set *set,
                                   const struct vk_descriptor_update_template *template,
                                   const void *data);
-
-#define ANV_DESCRIPTOR_SET_PER_PRIM_PADDING   (UINT8_MAX - 5)
-#define ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER (UINT8_MAX - 4)
-#define ANV_DESCRIPTOR_SET_NULL               (UINT8_MAX - 3)
-#define ANV_DESCRIPTOR_SET_PUSH_CONSTANTS     (UINT8_MAX - 2)
-#define ANV_DESCRIPTOR_SET_DESCRIPTORS        (UINT8_MAX - 1)
-#define ANV_DESCRIPTOR_SET_COLOR_ATTACHMENTS   UINT8_MAX
-
-struct anv_pipeline_binding {
-   /** Index in the descriptor set
-    *
-    * This is a flattened index; the descriptor set layout is already taken
-    * into account.
-    */
-   uint32_t index;
-
-   /** Binding in the descriptor set. Not valid for any of the
-    * ANV_DESCRIPTOR_SET_*
-    */
-   uint32_t binding;
-
-   /** Offset in the descriptor buffer
-    *
-    * Relative to anv_descriptor_set::desc_addr. This is useful for
-    * ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT, to generate the binding
-    * table entry.
-    */
-   uint32_t set_offset;
-
-   /** The descriptor set this surface corresponds to.
-    *
-    * The special ANV_DESCRIPTOR_SET_* values above indicates that this
-    * binding is not a normal descriptor set but something else.
-    */
-   uint8_t set;
-
-   union {
-      /** Plane in the binding index for images */
-      uint8_t plane;
-
-      /** Input attachment index (relative to the subpass) */
-      uint8_t input_attachment_index;
-
-      /** Dynamic offset index
-       *
-       * For dynamic UBOs and SSBOs, relative to set.
-       */
-      uint8_t dynamic_offset_index;
-   };
-};
-
-struct anv_pipeline_embedded_sampler_binding {
-   /** The descriptor set this sampler belongs to */
-   uint8_t set;
-
-   /** The binding in the set this sampler belongs to */
-   uint32_t binding;
-
-   /** The data configuring the sampler */
-   struct anv_embedded_sampler_key key;
-};
-
-struct anv_push_range {
-   /** Index in the descriptor set */
-   uint32_t index;
-
-   /** Descriptor set index */
-   uint8_t set;
-
-   /** Dynamic offset index (for dynamic UBOs), relative to set. */
-   uint8_t dynamic_offset_index;
-
-   /** Start offset in units of 32B */
-   uint8_t start;
-
-   /** Range in units of 32B */
-   uint8_t length;
-};
 
 struct anv_pipeline_sets_layout {
    struct anv_device *device;
@@ -4909,36 +4984,11 @@ struct anv_event {
         stage = __builtin_ffs(__tmp) - 1, __tmp;                     \
         __tmp &= ~(1 << (stage)))
 
-struct anv_pipeline_bind_map {
-   unsigned char                                surface_sha1[20];
-   unsigned char                                sampler_sha1[20];
-   unsigned char                                push_sha1[20];
-
-   /* enum anv_descriptor_set_layout_type */
-   uint32_t layout_type;
-
-   uint32_t surface_count;
-   uint32_t sampler_count;
-   uint32_t embedded_sampler_count;
-
-   struct anv_pipeline_binding *                surface_to_descriptor;
-   struct anv_pipeline_binding *                sampler_to_descriptor;
-   struct anv_pipeline_embedded_sampler_binding* embedded_sampler_to_binding;
-   BITSET_DECLARE(input_attachments, MAX_DESCRIPTOR_SET_INPUT_ATTACHMENTS + 1);
-
-   struct anv_push_range                        push_ranges[4];
-};
-
-struct anv_push_descriptor_info {
-   /* A bitfield of descriptors used. */
-   uint32_t used_descriptors;
-
-   /* A bitfield of UBOs bindings fully promoted to push constants. */
-   uint32_t fully_promoted_ubo_descriptors;
-
-   /* A bitfield with one bit set indicating the push descriptor set used. */
-   uint8_t push_set_buffer;
-};
+#define anv_foreach_vk_stage(stage, stage_bits)                      \
+   for (VkShaderStageFlags stage,                                    \
+           __tmp = (stage_bits & ANV_VK_STAGE_MASK);                 \
+        stage = BITFIELD_BIT(__builtin_ffs(__tmp) - 1), __tmp;       \
+        __tmp &= ~(stage))
 
 struct anv_shader_upload_params {
    mesa_shader_stage stage;
@@ -5045,6 +5095,8 @@ enum anv_pipeline_type {
    ANV_PIPELINE_COMPUTE,
    ANV_PIPELINE_RAY_TRACING,
 };
+
+void anv_shader_init_uuid(struct anv_physical_device *device);
 
 struct anv_pipeline {
    struct vk_pipeline                           vk;
