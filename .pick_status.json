@@ -3414,7 +3414,7 @@
         "description": "ci: pass MESA_SPIRV_LOG_LEVEL from job to the test",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4b8735cd4e2fd5fca820f91d767befaa7cf39fad",
         "notes": null
