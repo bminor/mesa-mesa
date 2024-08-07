@@ -1,5 +1,265 @@
 [
     {
+        "sha": "d9849ac46623797a9f56fb9d46dc52460ac477de",
+        "description": "aco: test xor swap16 path",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0818cb87be764dcb17532e1987830d2b2f8369d",
+        "description": "aco/gfx11+: don't use VOP3 v_swap_b16",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "80b8bbf0c5c223014b70eff1c10db28e1d7368d7",
+        "notes": null
+    },
+    {
+        "sha": "796b3ab23d6816f3340a11fc4ce472b01dbe0ec2",
+        "description": "nir/opt_peephole_select: allow speculatable load constant",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae85f596457028041d114eb44dbc7c1b31de07d9",
+        "description": "anv: Disable fast clear when surface height is 16k",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f821c1e2f3de699fc0664ba73a2082879812c3d",
+        "description": "iris: Disable fast clear when surface height is 16k",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6145798022fa4a167a373a628ce8f2b68615501f",
+        "description": "intel/mi_builder: enable control flow API on Gfx9+",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8cc492cb2615ceacbcfd14b948f24d425ea42f2b",
+        "description": "genxml: unify some bits between Gfx8/Gfx11/Gfx12.5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "343e569ab7890a16c33c8645f1627c972214bfcc",
+        "description": "anv: ensure max_plane_count is at least 1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f093b2e2bc52ea2a3e7aaac64c91d2f12f1c9b8",
+        "description": "anv: add missing MEDIA_STATE_FLUSH for internal shaders",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7ca5c84804fa33b26a0b4c3cb8ea2a8f66d46315",
+        "notes": null
+    },
+    {
+        "sha": "0bd96e868c2e209e0fed5ffd94a544ae36921445",
+        "description": "intel-clc: missing printf lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "398e6cf38b770b00290c8aba93bd41c54c54b0a0",
+        "description": "anv: reuse cs_prog_data pointer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f4a812a2295b32af5e1f88477586786adf66c17a",
+        "description": "anv: remove some unused includes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cde72181b72bfae7e0decc5790f8e63ab1acc7c4",
+        "description": "anv: prevent asserts with debug printf in internal shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "32cce2f39755a5c42ea9f6398a77e3fb4e0eb0d6",
+        "description": "intel/brw: Set appropriate types for 16-bit sampler trailing components",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0116430d394c2509fedff9f3accce6445349a091",
+        "notes": null
+    },
+    {
+        "sha": "947a333ec3c741668024a9a7cb3002cca082a0b2",
+        "description": "util/u_queue: Replace relative time wait hack with u_cnd_monotonic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c40c723336f20f77f7dde0ed1ecb0b064903f3bf",
+        "description": "agx: use opt_uniform_atomics",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39e7d06eea202e8dafdc1c3a6685dec660acd3f3",
+        "description": "agx: add some SRs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "340831dbcc8838b19c62c885b9deb9bf4040364e",
+        "description": "nir/divergence_analysis: handle AGX stuff",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d99c2ef05953f333ab210e63d790bef0f38b7403",
+        "description": "nir/opt_uniform_atomics: add fs atomics predicated? flag",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fbbdc965aadee71bd386ce590fba67942c23f595",
+        "description": "asahi: don't count helper invs in pipeline stats query",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75d07cc3d036a974f3d351e603a998189e998cbf",
+        "description": "agx: fix ballot extend packing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "810808b7788daff1fbb29de4ec315e96e902309d",
+        "description": "nir/opt_uniform_atomics: require block index metadata",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "373851e7eea6c8ee965d022332dbe59e81a2ba65",
+        "description": "docs: update ACO_DEBUG documentation for perfwarn",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "cc404d45ff4fa7947cffdc75da0d2b773902a1e4",
+        "notes": null
+    },
+    {
+        "sha": "e45035c83acab9ef603b3b9eedbabe253c1daa7b",
+        "description": "docs: update ACO_DEBUG documentation for scheduler options",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "48461c0d9e6be9744817785de59bbbff64b8ce72",
+        "notes": null
+    },
+    {
+        "sha": "0c024bbe641b092bbbc751baae54a37642794de0",
+        "description": "radeonsi/vcn: Add decode DPB buffers as CS dependency",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "979dc415588e6aa9a1b87e283f491e5c2eb3e8af",
+        "description": "vulkan: MESA_VK_ENABLE_SUBMIT_THREAD=0 disables threaded submit",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "d58f7a24d1be7b8b50ebdc0c1c3ce26bd65317a5",
         "description": "v3d: do not expose EXT_float_blend",
         "nominated": false,
