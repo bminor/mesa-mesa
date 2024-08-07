@@ -1494,7 +1494,7 @@
         "description": "llvmpipe: Silence \"possibly uninitialized value\" warning for ssbo_limit (cont)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ce611935df5e7e6cc731523c7496c33ba6f7ef20",
         "notes": null
