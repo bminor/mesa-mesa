@@ -2044,7 +2044,7 @@
         "description": "nvk: Support STORAGE_READ_WITHOUT_FORMAT on buffers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fc191730145eb816d91b269d9e0b49cadbc212a7",
         "notes": null
