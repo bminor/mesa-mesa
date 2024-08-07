@@ -1164,7 +1164,7 @@
         "description": "tu: Always report that we can present on kgsl",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3e7f6c9aebf9b4cc882313b620b2ecf40ba7be1f",
         "notes": null
