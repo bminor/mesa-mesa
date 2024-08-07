@@ -1414,7 +1414,7 @@
         "description": "vulkan/wsi: Refactor can_present_on_device",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "baa38c144f6ab544bccabff3739631bab33e4cd7",
         "notes": null
