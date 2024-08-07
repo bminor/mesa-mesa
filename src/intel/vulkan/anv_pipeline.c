@@ -264,8 +264,6 @@ struct anv_pipeline_stage {
 
    struct anv_pipeline_bind_map bind_map;
 
-   bool uses_bt_for_push_descs;
-
    union brw_any_prog_data prog_data;
 
    uint32_t num_stats;
