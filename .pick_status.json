@@ -1094,7 +1094,7 @@
         "description": "anv: only set 3DSTATE_CLIP::MaximumVPIndex once",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "50f6903bd9c472eef2af2cbf62027df3bbe0ca8a",
         "notes": null
