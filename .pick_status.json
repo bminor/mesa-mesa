@@ -1,5 +1,25 @@
 [
     {
+        "sha": "ef88af846761ca9e642f7ed46011db7d3d6b61fd",
+        "description": "dril: always take the egl init path",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ec7afd2c24c6afa6a5c80da4f80e0b799580e12a",
+        "notes": null
+    },
+    {
+        "sha": "086ed1e54b86ba05b57d0a93ba8392e31c6a0311",
+        "description": "broadcom/compiler: emit instructions producing flags earlier",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "d9849ac46623797a9f56fb9d46dc52460ac477de",
         "description": "aco: test xor swap16 path",
         "nominated": false,
