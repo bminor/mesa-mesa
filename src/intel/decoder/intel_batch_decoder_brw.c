@@ -20,7 +20,7 @@ ctx_disassemble_program_brw(struct intel_batch_decode_ctx *ctx,
       return;
 
    fprintf(ctx->fp, "\nReferenced %s:\n", name);
-   brw_disassemble_with_errors(ctx->brw, bo.map, 0, ctx->fp);
+   brw_disassemble_with_errors(ctx->brw, bo.map, 0, NULL, ctx->fp);
 
    if (ctx->shader_binary) {
       int size = brw_disassemble_find_end(ctx->brw, bo.map, 0);

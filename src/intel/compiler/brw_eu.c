@@ -31,6 +31,7 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <inttypes.h>
 
 #include "brw_disasm.h"
 #include "brw_eu_defines.h"
@@ -486,7 +487,7 @@ brw_disassemble_with_labels(const struct brw_isa_info *isa,
    const struct brw_label *root_label =
       brw_label_assembly(isa, assembly, start, end, mem_ctx);
 
-   brw_disassemble(isa, assembly, start, end, root_label, out);
+   brw_disassemble(isa, assembly, start, end, root_label, NULL, out);
 
    ralloc_free(mem_ctx);
 }
@@ -494,7 +495,8 @@ brw_disassemble_with_labels(const struct brw_isa_info *isa,
 void
 brw_disassemble(const struct brw_isa_info *isa,
                 const void *assembly, int start, int end,
-                const struct brw_label *root_label, FILE *out)
+                const struct brw_label *root_label,
+                int64_t *lineno_offset, FILE *out)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
@@ -512,8 +514,8 @@ brw_disassemble(const struct brw_isa_info *isa,
       }
 
       bool compacted = brw_eu_inst_cmpt_control(devinfo, insn);
-      if (0)
-         fprintf(out, "0x%08x: ", offset);
+      if (lineno_offset)
+         fprintf(out, "0x%08" PRIx64 ": ", *lineno_offset + offset);
 
       if (compacted) {
          brw_eu_compact_inst *compacted = (brw_eu_compact_inst *)insn;

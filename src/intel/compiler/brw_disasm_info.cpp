@@ -70,7 +70,7 @@ dump_assembly(void *assembly, int start_offset, int end_offset,
       }
 
       brw_disassemble(isa, assembly, start_offset, end_offset,
-                      root_label, stderr);
+                      root_label, NULL, stderr);
 
       if (group->error) {
          fputs(group->error, stderr);

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,11 +29,17 @@ void brw_disassemble_with_labels(const struct brw_isa_info *isa,
                                  const void *assembly, int start, int end, FILE *out);
 void brw_disassemble(const struct brw_isa_info *isa,
                      const void *assembly, int start, int end,
-                     const struct brw_label *root_label, FILE *out);
+                     const struct brw_label *root_label,
+                     int64_t *lineno_offset, FILE *out);
 int brw_disassemble_find_end(const struct brw_isa_info *isa,
                              const void *assembly, int start);
 void brw_disassemble_with_errors(const struct brw_isa_info *isa,
-                                 const void *assembly, int start, FILE *out);
+                                 const void *assembly, int start,
+                                 int64_t *lineno_offset, FILE *out);
+void brw_disassemble_with_lineno(const struct brw_isa_info *isa, uint32_t stage,
+                                 int dispatch_width, uint32_t src_hash,
+                                 const void *assembly, int start,
+                                 int64_t lineno_offset, FILE *out);
 
 const char *brw_lsc_op_to_string(unsigned op);
 const char *brw_lsc_addr_surftype_to_string(unsigned t);

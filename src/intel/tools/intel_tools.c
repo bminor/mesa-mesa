@@ -28,7 +28,7 @@ intel_disassemble(const struct intel_device_info *devinfo,
       if (devinfo->ver >= 9) {
          struct brw_isa_info isa;
          brw_init_isa_info(&isa, devinfo);
-         brw_disassemble_with_errors(&isa, assembly, start, out);
+         brw_disassemble_with_errors(&isa, assembly, start, NULL, out);
       } else {
 #ifdef INTEL_USE_ELK
          struct elk_isa_info isa;

@@ -275,7 +275,7 @@ print_kernel(FILE *fp, const char *prefix,
 
    fprintf(fp, "#if 0  /* BEGIN KERNEL ASSEMBLY */\n");
    fprintf(fp, "\n");
-   brw_disassemble_with_errors(isa, kernel->code, 0, fp);
+   brw_disassemble_with_errors(isa, kernel->code, 0, NULL, fp);
    fprintf(fp, "\n");
    fprintf(fp, "#endif /* END KERNEL ASSEMBLY */\n");
    print_u32_data(fp, prefix, "code", kernel->code,

@@ -2653,7 +2653,8 @@ brw_disassemble_find_end(const struct brw_isa_info *isa,
 
 void
 brw_disassemble_with_errors(const struct brw_isa_info *isa,
-                            const void *assembly, int start, FILE *out)
+                            const void *assembly, int start,
+                            int64_t *lineno_offset, FILE *out)
 {
    int end = brw_disassemble_find_end(isa, assembly, start);
 
@@ -2683,7 +2684,7 @@ brw_disassemble_with_errors(const struct brw_isa_info *isa,
       int end_offset = next->offset;
 
       brw_disassemble(isa, assembly, start_offset, end_offset,
-                      root_label, out);
+                      root_label, lineno_offset, out);
 
       if (group->error) {
          fputs(group->error, out);
@@ -2692,4 +2693,17 @@ brw_disassemble_with_errors(const struct brw_isa_info *isa,
 
    ralloc_free(mem_ctx);
    ralloc_free(disasm_info);
+}
+
+void
+brw_disassemble_with_lineno(const struct brw_isa_info *isa, uint32_t stage,
+                            int dispatch_width, uint32_t src_hash,
+                            const void *assembly, int start,
+                            int64_t lineno_offset, FILE *out)
+{
+   fprintf(out, "\nDumping shader asm for %s", _mesa_shader_stage_to_abbrev(stage));
+   if (dispatch_width > 0)
+      fprintf(out, " SIMD%i", dispatch_width);
+   fprintf(out, " (src_hash 0x%x):\n\n", src_hash);
+   brw_disassemble_with_errors(isa, assembly, start, &lineno_offset, out);
 }
