@@ -1884,7 +1884,7 @@
         "description": "meson: Add an error message for llvmpipe without llvm draw support",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "010b2f9497ab256d9e8041207902948331af5b4b",
         "notes": null
