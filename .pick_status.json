@@ -834,7 +834,7 @@
         "description": "frontends/va: Fix use after free with EFC",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a7469a9ffd3d5b8dc3d59ed9a370ffd79122f2df",
         "notes": null
