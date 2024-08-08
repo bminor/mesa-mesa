@@ -824,7 +824,7 @@
         "description": "radeonsi: Don't allow DCC for encode in is_video_target_buffer_supported",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "40c3a53fec12b51d165b6962e07a54ce074dc3c4",
         "notes": null
