@@ -234,7 +234,7 @@
         "description": "anv: Release correct BO in anv_cmd_buffer_set_ray_query_buffer",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5d3e4193786f1b55aa6a3d74e2b9b954eb9287e5",
         "notes": null
