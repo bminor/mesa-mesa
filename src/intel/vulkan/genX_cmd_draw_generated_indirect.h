@@ -96,18 +96,10 @@ genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
       ANV_STATE_NULL;
    UNUSED uint32_t wa_insts_offset = 0;
 
-#if INTEL_WA_16011107343_GFX_VER || INTEL_WA_22018402687_GFX_VER
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(gfx->base.pipeline);
-#endif
-
 #if INTEL_WA_16011107343_GFX_VER
    if (wa_16011107343) {
       memcpy(wa_insts_state.map + wa_insts_offset,
-             &pipeline->batch_data[
-                protected ?
-                pipeline->final.hs_protected.offset :
-                pipeline->final.hs.offset],
+             gfx->dyn_state.packed.hs,
              GENX(3DSTATE_HS_length) * 4);
       wa_insts_offset += GENX(3DSTATE_HS_length) * 4;
    }
@@ -116,10 +108,7 @@ genX(cmd_buffer_emit_generate_draws)(struct anv_cmd_buffer *cmd_buffer,
 #if INTEL_WA_22018402687_GFX_VER
    if (wa_22018402687) {
       memcpy(wa_insts_state.map + wa_insts_offset,
-             &pipeline->batch_data[
-                protected ?
-                pipeline->final.ds_protected.offset :
-                pipeline->final.ds.offset],
+             gfx->dyn_state.packed.ds,
              GENX(3DSTATE_DS_length) * 4);
       wa_insts_offset += GENX(3DSTATE_DS_length) * 4;
    }

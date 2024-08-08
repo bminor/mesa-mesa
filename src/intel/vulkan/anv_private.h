@@ -1224,7 +1224,6 @@ struct anv_shader {
    struct anv_state kernel;
 
    const struct brw_stage_prog_data *prog_data;
-   uint32_t prog_data_size;
 
    struct brw_compile_stats stats[3];
    uint32_t num_stats;
@@ -2185,6 +2184,11 @@ struct anv_gfx_dynamic_state {
    struct {
       uint32_t PrimitiveTopologyType;
    } vft;
+
+   /* 3DSTATE_VS */
+   struct {
+      bool     VertexCacheDisable;
+   } vs;
 
    /* 3DSTATE_VIEWPORT_STATE_POINTERS_CC */
    struct {
@@ -4422,7 +4426,7 @@ struct anv_cmd_graphics_state {
    struct anv_cmd_pipeline_state base;
 
    /* Shaders bound */
-   struct anv_shader_bin *shaders[ANV_GRAPHICS_SHADER_STAGE_COUNT];
+   struct anv_shader *shaders[ANV_GRAPHICS_SHADER_STAGE_COUNT];
 
    /* Bitfield of valid entries in the shaders array */
    VkShaderStageFlags active_stages;
@@ -4435,6 +4439,9 @@ struct anv_cmd_graphics_state {
 
    bool kill_pixel;
    bool uses_xfb;
+
+   /* Shader stage in base.shaders[] responsible for streamout */
+   mesa_shader_stage streamout_stage;
 
    /* Render pass information */
    VkRenderingFlags rendering_flags;
@@ -4530,7 +4537,7 @@ struct anv_cmd_graphics_state {
 struct anv_cmd_compute_state {
    struct anv_cmd_pipeline_state base;
 
-   struct anv_shader_bin *shader;
+   struct anv_shader *shader;
 
    bool pipeline_dirty;
 
@@ -4550,6 +4557,8 @@ struct anv_cmd_ray_tracing_state {
       struct anv_bo *bo;
       struct brw_rt_scratch_layout layout;
    } scratch;
+
+   VkDeviceSize scratch_size;
 
    uint32_t debug_marker_count;
    uint32_t num_tlas;
@@ -5022,6 +5031,12 @@ void
 anv_cmd_buffer_update_pending_query_bits(struct anv_cmd_buffer *cmd_buffer,
                                          enum anv_pipe_bits flushed_bits);
 
+void
+anv_cmd_buffer_bind_shaders(struct vk_command_buffer *cmd_buffer,
+                            uint32_t stage_count,
+                            const mesa_shader_stage *stages,
+                            struct vk_shader ** const shaders);
+
 /**
  * A allocation tied to a command buffer.
  *
@@ -5083,7 +5098,7 @@ enum anv_cmd_saved_state_flags {
 struct anv_cmd_saved_state {
    uint32_t flags;
 
-   struct anv_pipeline *pipeline;
+   struct vk_shader *shader;
    struct anv_descriptor_set *descriptor_set[MAX_SETS];
    uint8_t push_constants[MAX_PUSH_CONSTANTS_SIZE];
 };
@@ -5443,7 +5458,6 @@ struct anv_graphics_pipeline {
       memcpy(dw, &(pipeline)->batch_data[_cmd_state->offset],           \
              4 * _cmd_state->len);                                      \
    } while (0)
-
 
 struct anv_compute_pipeline {
    struct anv_pipeline                          base;
@@ -6483,6 +6497,15 @@ anv_cmd_flush_buffer_write_cp(VkCommandBuffer cmd_buffer);
 
 VkResult
 anv_cmd_buffer_ensure_rcs_companion(struct anv_cmd_buffer *cmd_buffer);
+
+void
+anv_cmd_buffer_set_rt_state(struct vk_command_buffer *vk_cmd_buffer,
+                            VkDeviceSize scratch_size,
+                            uint32_t ray_queries);
+
+void
+anv_cmd_buffer_set_stack_size(struct vk_command_buffer *vk_cmd_buffer,
+                              VkDeviceSize stack_size);
 
 bool
 anv_can_hiz_clear_image(struct anv_cmd_buffer *cmd_buffer,

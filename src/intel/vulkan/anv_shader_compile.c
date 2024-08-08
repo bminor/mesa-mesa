@@ -1886,5 +1886,8 @@ struct vk_device_shader_ops anv_device_shader_ops = {
    .deserialize                    = anv_shader_deserialize,
    .write_rt_shader_group          = anv_write_rt_shader_group,
    .write_rt_shader_group_replay_handle = anv_write_rt_shader_group_replay_handle,
+   .cmd_bind_shaders               = anv_cmd_buffer_bind_shaders,
    .cmd_set_dynamic_graphics_state = vk_cmd_set_dynamic_graphics_state,
+   .cmd_set_rt_state               = anv_cmd_buffer_set_rt_state,
+   .cmd_set_stack_size             = anv_cmd_buffer_set_stack_size,
 };

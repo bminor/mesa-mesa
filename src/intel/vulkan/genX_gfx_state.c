@@ -209,7 +209,7 @@ genX(streamout_prologue)(struct anv_cmd_buffer *cmd_buffer,
    if (!intel_needs_workaround(cmd_buffer->device->info, 16013994831))
       return;
 
-   if (gfx->uses_xfb) {
+   if (gfx->shaders[gfx->streamout_stage]->xfb_info != NULL) {
       genX(cmd_buffer_set_preemption)(cmd_buffer, false);
       return;
    }
@@ -417,10 +417,10 @@ want_stencil_pma_fix(const struct vk_dynamic_graphics_state *dyn,
     *  3DSTATE_WM_CHROMAKEY::ChromaKeyKillEnable) ||
     * (3DSTATE_PS_EXTRA::Pixel Shader Computed Depth mode != PSCDEPTH_OFF)
     */
-   struct anv_shader_bin *fs_bin = gfx->shaders[MESA_SHADER_FRAGMENT];
+   struct anv_shader *fs = gfx->shaders[MESA_SHADER_FRAGMENT];
 
    return kill_pixel(wm_prog_data, dyn) ||
-          has_ds_feedback_loop(&fs_bin->bind_map, dyn) ||
+          has_ds_feedback_loop(&fs->bind_map, dyn) ||
           wm_prog_data->computed_depth_mode != PSCDEPTH_OFF;
 }
 
@@ -1012,21 +1012,21 @@ update_ps(struct anv_gfx_dynamic_state *hw_state,
       return;
    }
 
-   const struct anv_shader_bin *fs_bin = gfx->shaders[MESA_SHADER_FRAGMENT];
+   const struct anv_shader *fs = gfx->shaders[MESA_SHADER_FRAGMENT];
    struct GENX(3DSTATE_PS) ps = {};
    intel_set_ps_dispatch_state(&ps, device->info, wm_prog_data,
                                MAX2(dyn->ms.rasterization_samples, 1),
                                hw_state->fs_msaa_flags);
 
    SET(PS, ps.KernelStartPointer0,
-           fs_bin->kernel.offset +
+           fs->kernel.offset +
            brw_wm_prog_data_prog_offset(wm_prog_data, ps, 0));
    SET(PS, ps.KernelStartPointer1,
-           fs_bin->kernel.offset +
+           fs->kernel.offset +
            brw_wm_prog_data_prog_offset(wm_prog_data, ps, 1));
 #if GFX_VER < 20
    SET(PS, ps.KernelStartPointer2,
-           fs_bin->kernel.offset +
+           fs->kernel.offset +
            brw_wm_prog_data_prog_offset(wm_prog_data, ps, 2));
 #endif
 
@@ -1124,12 +1124,12 @@ update_ps_extra_kills_pixel(struct anv_gfx_dynamic_state *hw_state,
                             const struct vk_dynamic_graphics_state *dyn,
                             const struct anv_cmd_graphics_state *gfx)
 {
-   struct anv_shader_bin *fs_bin = gfx->shaders[MESA_SHADER_FRAGMENT];
+   struct anv_shader *fs = gfx->shaders[MESA_SHADER_FRAGMENT];
    const struct brw_wm_prog_data *wm_prog_data = get_gfx_wm_prog_data(gfx);
 
    SET_STAGE(PS_EXTRA, ps_extra.PixelShaderKillsPixel,
                        wm_prog_data &&
-                       (has_ds_feedback_loop(&fs_bin->bind_map, dyn) ||
+                       (has_ds_feedback_loop(&fs->bind_map, dyn) ||
                         wm_prog_data->uses_kill),
                        FRAGMENT);
 }
@@ -2174,6 +2174,35 @@ update_tbimr_info(struct anv_gfx_dynamic_state *hw_state,
 }
 #endif
 
+#if GFX_VERx10 == 90
+ALWAYS_INLINE static void
+update_vs(struct anv_gfx_dynamic_state *hw_state,
+          const struct anv_cmd_graphics_state *gfx,
+          const struct anv_device *device)
+{
+   if (device->info->gt < 4)
+      return;
+
+   /* On Sky Lake GT4, we have experienced some hangs related to the VS cache
+    * and tessellation. It is unknown exactly what is happening but the
+    * Haswell docs for the "VS Reference Count Full Force Miss Enable" field
+    * of the "Thread Mode" register refer to a HSW bug in which the VUE handle
+    * reference count would overflow resulting in internal reference counting
+    * bugs. My (Faith's) best guess is that this bug cropped back up on SKL
+    * GT4 when we suddenly had more threads in play than any previous gfx9
+    * hardware.
+    *
+    * What we do know for sure is that setting this bit when tessellation
+    * shaders are in use fixes a GPU hang in Batman: Arkham City when playing
+    * with DXVK (https://bugs.freedesktop.org/107280). Disabling the vertex
+    * cache with tessellation shaders should only have a minor performance
+    * impact as the tessellation shaders are likely generating and processing
+    * far more geometry than the vertex stage.
+    */
+   SET(VS, vs.VertexCacheDisable, anv_gfx_has_stage(gfx, MESA_SHADER_TESS_EVAL));
+}
+#endif
+
 #if INTEL_WA_18019110168_GFX_VER
 static inline unsigned
 compute_mesh_provoking_vertex(const struct brw_mesh_prog_data *mesh_prog_data,
@@ -2215,10 +2244,12 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
                                    const struct anv_device *device,
                                    const struct vk_dynamic_graphics_state *dyn,
                                    struct anv_cmd_graphics_state *gfx,
-                                   const struct anv_graphics_pipeline *pipeline,
                                    VkCommandBufferLevel cmd_buffer_level)
 {
    UNUSED bool fs_msaa_changed = false;
+
+   assert(gfx->shaders[gfx->streamout_stage] != NULL);
+   assert(gfx->instance_multiplier != 0);
 
    /* Do this before update_fs_msaa_flags() for primitive_id_index */
    if (gfx->dirty & ANV_CMD_DIRTY_ALL_SHADERS(device))
@@ -2233,6 +2264,11 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 
    if (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS)
       update_urb_config(hw_state, gfx, device);
+
+#if GFX_VERx10 == 90
+   if (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS)
+      update_vs(hw_state, gfx, device);
+#endif
 
    if ((gfx->dirty & ANV_CMD_DIRTY_PS) ||
        BITSET_TEST(hw_state->pack_dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)) {
@@ -2482,8 +2518,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 static void
 cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
                             struct anv_cmd_buffer *cmd_buffer,
-                            const struct anv_cmd_graphics_state *gfx,
-                            const struct anv_graphics_pipeline *pipeline)
+                            const struct anv_cmd_graphics_state *gfx)
 {
    struct anv_device *device = cmd_buffer->device;
    struct anv_instance *instance = device->physical->instance;
@@ -2502,73 +2537,107 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
    } while (0)
 #define IS_DIRTY(name) BITSET_TEST(hw_state->pack_dirty, ANV_GFX_STATE_##name)
 
-#define anv_gfx_copy(field, cmd, source) ({                             \
-      assert(sizeof(hw_state->packed.field) >=                          \
-             4 * __anv_cmd_length(cmd));                                \
-      assert((source).len == __anv_cmd_length(cmd));                    \
-      memcpy(&hw_state->packed.field,                                   \
-             &pipeline->batch_data[(source).offset],                    \
-             4 * __anv_cmd_length(cmd));                                \
+#define anv_gfx_copy(field, cmd, stage, source) ({                      \
+      if (gfx->shaders[stage] != NULL) {                                \
+         assert(sizeof(hw_state->packed.field) >=                       \
+                4 * __anv_cmd_length(cmd));                             \
+         assert((gfx->shaders[stage]->source).len ==                    \
+                __anv_cmd_length(cmd));                                 \
+         memcpy(&hw_state->packed.field,                                \
+                &gfx->shaders[stage]->cmd_data[                         \
+                   (gfx->shaders[stage]->source).offset],               \
+                4 * __anv_cmd_length(cmd));                             \
+      } else {                                                          \
+         anv_gfx_pack(field, cmd, __unused_name);                       \
+      }                                                                 \
    })
-#define anv_gfx_copy_variable(field, source) ({                         \
-      assert(sizeof(hw_state->packed.field) >=                          \
-             4 * (source).len);                                         \
-      memcpy(&hw_state->packed.field,                                   \
-             &pipeline->batch_data[(source).offset],                    \
-             4 * (source).len);                                         \
-      hw_state->packed.field##_len = (source).len;                      \
+#define anv_gfx_copy_variable(field, stage, source) ({                  \
+      if (gfx->shaders[stage] != NULL) {                                \
+         assert(sizeof(hw_state->packed.field) >=                       \
+                4 * gfx->shaders[stage]->source.len);                   \
+         memcpy(&hw_state->packed.field,                                \
+                &gfx->shaders[stage]->cmd_data[                         \
+                   (gfx->shaders[stage]->source).offset],               \
+                4 * gfx->shaders[stage]->source.len);                   \
+         hw_state->packed.field##_len =                                 \
+            gfx->shaders[stage]->source.len;                            \
+      }                                                                 \
    })
-#define anv_gfx_copy_protected(field, cmd, source) ({                  \
+#define anv_gfx_copy_protected(field, cmd, stage, source) ({           \
       const bool __protected = (cmd_buffer->vk.pool->flags &           \
                                 VK_COMMAND_POOL_CREATE_PROTECTED_BIT); \
       assert(sizeof(hw_state->packed.field) >=                         \
              4 * __anv_cmd_length(cmd));                               \
-      assert((source).len == __anv_cmd_length(cmd));                   \
-      memcpy(&hw_state->packed.field,                                  \
-             &pipeline->batch_data[                                    \
-                __protected ?                                          \
-                (source##_protected).offset :                          \
-                (source).offset],                                      \
-             4 * __anv_cmd_length(cmd));                               \
+      if (gfx->shaders[stage] != NULL) {                               \
+         assert((gfx->shaders[stage]->source).len ==                   \
+                __anv_cmd_length(cmd));                                \
+         memcpy(&hw_state->packed.field,                               \
+                &gfx->shaders[stage]->cmd_data[                        \
+                   __protected ?                                       \
+                   gfx->shaders[stage]->source##_protected.offset :    \
+                   gfx->shaders[stage]->source.offset],                \
+                4 * __anv_cmd_length(cmd));                            \
+      } else {                                                         \
+         memcpy(&hw_state->packed.field,                               \
+                device->physical->gfx_default.field,                   \
+                4 * __anv_cmd_length(cmd));                            \
+      }                                                                \
    })
-#define anv_gfx_pack_merge(field, cmd, prepacked, name)                 \
-   for (struct cmd name = { 0 },                                        \
+#define anv_gfx_pack_merge(field, cmd, stage, source, name)             \
+   for (struct cmd name = (struct cmd) { 0 },                           \
         *_dst = (struct cmd *)hw_state->packed.field;                   \
         __builtin_expect(_dst != NULL, 1);                              \
-        ({ const struct anv_gfx_state_ptr *_cmd_state = &prepacked;     \
+        ({                                                              \
            uint32_t _partial[__anv_cmd_length(cmd)];                    \
-           assert(_cmd_state->len == __anv_cmd_length(cmd));            \
            assert(sizeof(hw_state->packed.field) >=                     \
                   4 * __anv_cmd_length(cmd));                           \
            __anv_cmd_pack(cmd)(NULL, _partial, &name);                  \
-           for (uint32_t i = 0; i < __anv_cmd_length(cmd); i++) {       \
-              assert((_partial[i] &                                     \
-                      (pipeline)->batch_data[                           \
-                         (prepacked).offset + i]) == 0);                \
-              ((uint32_t *)_dst)[i] = _partial[i] |                     \
-                 (pipeline)->batch_data[_cmd_state->offset + i];        \
+           if (gfx->shaders[stage] != NULL) {                           \
+              const struct anv_gfx_state_ptr *_cmd_state =              \
+                 &gfx->shaders[stage]->source;                          \
+              assert(_cmd_state->len == __anv_cmd_length(cmd));         \
+              for (uint32_t i = 0; i < __anv_cmd_length(cmd); i++) {    \
+                 assert((_partial[i] &                                  \
+                         gfx->shaders[stage]->cmd_data[                 \
+                            _cmd_state->offset + i]) == 0);             \
+                 ((uint32_t *)_dst)[i] = _partial[i] |                  \
+                    gfx->shaders[stage]->cmd_data[_cmd_state->offset + i]; \
+              }                                                         \
+           } else {                                                     \
+              for (uint32_t i = 0; i < __anv_cmd_length(cmd); i++) {    \
+                 assert((_partial[i] &                                  \
+                         device->physical->gfx_default.field[i]) == 0); \
+                 ((uint32_t *)_dst)[i] = _partial[i] |                  \
+                    device->physical->gfx_default.field[i];             \
+              }                                                         \
            }                                                            \
            _dst = NULL;                                                 \
-         }))
-#define anv_gfx_pack_merge_protected(field, cmd, prepacked, name)       \
-   for (struct cmd name = { 0 },                                        \
+        }))
+#define anv_gfx_pack_merge_protected(field, cmd, stage, source, name)   \
+   for (struct cmd name = (struct cmd) { 0 },                           \
         *_dst = (struct cmd *)hw_state->packed.field;                   \
         __builtin_expect(_dst != NULL, 1);                              \
-        ({ const struct anv_gfx_state_ptr *_cmd_state =                 \
-              (cmd_buffer->vk.pool->flags &                             \
-               VK_COMMAND_POOL_CREATE_PROTECTED_BIT) ?                  \
-              &prepacked##_protected : &prepacked;                      \
+        ({                                                              \
            uint32_t _partial[__anv_cmd_length(cmd)];                    \
-           assert(_cmd_state->len == __anv_cmd_length(cmd));            \
            assert(sizeof(hw_state->packed.field) >=                     \
                   4 * __anv_cmd_length(cmd));                           \
            __anv_cmd_pack(cmd)(NULL, _partial, &name);                  \
+           const struct anv_gfx_state_ptr *_cmd_state =                 \
+              gfx->shaders[stage] != NULL ?                             \
+              ((cmd_buffer->vk.pool->flags &                            \
+                VK_COMMAND_POOL_CREATE_PROTECTED_BIT) ?                 \
+               &gfx->shaders[stage]->source##_protected :               \
+               &gfx->shaders[stage]->source) :                          \
+              NULL;                                                     \
+           assert(_cmd_state == NULL ||                                 \
+                  _cmd_state->len == __anv_cmd_length(cmd));            \
+           const uint32_t *_inst_data =                                 \
+              gfx->shaders[stage] != NULL ?                             \
+              &gfx->shaders[stage]->cmd_data[_cmd_state->offset] :      \
+              device->physical->gfx_default.field;                      \
            for (uint32_t i = 0; i < __anv_cmd_length(cmd); i++) {       \
-              assert((_partial[i] &                                     \
-                      (pipeline)->batch_data[                           \
-                         (prepacked).offset + i]) == 0);                \
-              ((uint32_t *)_dst)[i] = _partial[i] |                     \
-                 (pipeline)->batch_data[_cmd_state->offset + i];        \
+              assert((_partial[i] & _inst_data[i]) == 0);               \
+              ((uint32_t *)_dst)[i] = _partial[i] | _inst_data[i];      \
            }                                                            \
            _dst = NULL;                                                 \
          }))
@@ -2624,19 +2693,19 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
 #endif
 
    if (IS_DIRTY(VF_SGVS))
-      anv_gfx_copy(vf_sgvs, GENX(3DSTATE_VF_SGVS), pipeline->final.vf_sgvs);
+      anv_gfx_copy(vf_sgvs, GENX(3DSTATE_VF_SGVS), MESA_SHADER_VERTEX, vs.vf_sgvs);
 
 #if GFX_VER >= 11
    if (IS_DIRTY(VF_SGVS_2))
-      anv_gfx_copy(vf_sgvs_2, GENX(3DSTATE_VF_SGVS_2), pipeline->final.vf_sgvs_2);
+      anv_gfx_copy(vf_sgvs_2, GENX(3DSTATE_VF_SGVS_2), MESA_SHADER_VERTEX, vs.vf_sgvs_2);
 #endif
 
    if (IS_DIRTY(VF_SGVS_INSTANCING))
-      anv_gfx_copy_variable(vf_sgvs_instancing, pipeline->final.vf_sgvs_instancing);
+      anv_gfx_copy_variable(vf_sgvs_instancing, MESA_SHADER_VERTEX, vs.vf_sgvs_instancing);
 
    if (instance->vf_component_packing && IS_DIRTY(VF_COMPONENT_PACKING)) {
       anv_gfx_copy(vf_component_packing, GENX(3DSTATE_VF_COMPONENT_PACKING),
-                   pipeline->final.vf_component_packing);
+                   MESA_SHADER_VERTEX, vs.vf_component_packing);
    }
 
    if (IS_DIRTY(INDEX_BUFFER)) {
@@ -2655,7 +2724,7 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
 
    if (IS_DIRTY(STREAMOUT)) {
       anv_gfx_pack_merge(so, GENX(3DSTATE_STREAMOUT),
-                         pipeline->partial.so, so) {
+                         gfx->streamout_stage, so, so) {
          SET(so, so, RenderingDisable);
          SET(so, so, RenderStreamSelect);
          SET(so, so, ReorderMode);
@@ -2664,7 +2733,7 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
    }
 
    if (IS_DIRTY(SO_DECL_LIST))
-      anv_gfx_copy_variable(so_decl_list, pipeline->final.so_decl_list);
+      anv_gfx_copy_variable(so_decl_list, gfx->streamout_stage, so_decl_list);
 
    if (IS_DIRTY(CLIP)) {
       anv_gfx_pack(clip, GENX(3DSTATE_CLIP), clip) {
@@ -2886,7 +2955,8 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
 
    if (IS_DIRTY(TE)) {
       if (anv_gfx_has_stage(gfx, MESA_SHADER_TESS_EVAL)) {
-         anv_gfx_pack_merge(te, GENX(3DSTATE_TE), pipeline->partial.te, te) {
+         anv_gfx_pack_merge(te, GENX(3DSTATE_TE),
+                            MESA_SHADER_TESS_EVAL, ds.te, te) {
             SET(te, te, OutputTopology);
 #if GFX_VERx10 >= 125
             SET(te, te, TessellationDistributionMode);
@@ -2986,7 +3056,8 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
    }
 
    if (IS_DIRTY(WM)) {
-      anv_gfx_pack_merge(wm, GENX(3DSTATE_WM), pipeline->partial.wm, wm) {
+      anv_gfx_pack_merge(wm, GENX(3DSTATE_WM),
+                         MESA_SHADER_FRAGMENT, ps.wm, wm) {
          SET(wm, wm, LineStippleEnable);
          SET(wm, wm, BarycentricInterpolationMode);
       }
@@ -3079,12 +3150,12 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
    }
 
 #if GFX_VERx10 >= 125
-   if (device->vk.enabled_features.meshShader) {
+   if (device->vk.enabled_extensions.EXT_mesh_shader) {
       if (IS_DIRTY(MESH_CONTROL)) {
          if (anv_gfx_has_stage(gfx, MESA_SHADER_MESH)) {
             anv_gfx_copy_protected(mesh_control,
                                    GENX(3DSTATE_MESH_CONTROL),
-                                   pipeline->final.mesh_control);
+                                   MESA_SHADER_MESH, ms.control);
          } else {
             anv_gfx_pack(mesh_control, GENX(3DSTATE_MESH_CONTROL), mc);
          }
@@ -3092,8 +3163,9 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
 
       if (IS_DIRTY(TASK_CONTROL)) {
          if (anv_gfx_has_stage(gfx, MESA_SHADER_TASK)) {
-            anv_gfx_copy_protected(task_control, GENX(3DSTATE_TASK_CONTROL),
-                                   pipeline->final.task_control);
+            anv_gfx_copy_protected(task_control,
+                                   GENX(3DSTATE_TASK_CONTROL),
+                                   MESA_SHADER_TASK, ts.control);
          } else {
             anv_gfx_pack(task_control, GENX(3DSTATE_TASK_CONTROL), tc);
          }
@@ -3101,101 +3173,86 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
 
       if (IS_DIRTY(MESH_SHADER)) {
          anv_gfx_copy(mesh_shader, GENX(3DSTATE_MESH_SHADER),
-                      pipeline->final.mesh_shader);
+                      MESA_SHADER_MESH, ms.shader);
       }
 
       if (IS_DIRTY(MESH_DISTRIB)) {
          anv_gfx_copy(mesh_distrib, GENX(3DSTATE_MESH_DISTRIB),
-                      pipeline->final.mesh_distrib);
+                      MESA_SHADER_MESH, ms.distrib);
       }
 
       if (IS_DIRTY(CLIP_MESH)) {
          anv_gfx_copy(clip_mesh, GENX(3DSTATE_CLIP_MESH),
-                      pipeline->final.clip_mesh);
+                      MESA_SHADER_MESH, ms.clip);
       }
 
       if (IS_DIRTY(TASK_SHADER)) {
          anv_gfx_copy(task_shader, GENX(3DSTATE_TASK_SHADER),
-                      pipeline->final.task_shader);
+                      MESA_SHADER_TASK, ts.shader);
       }
 
       if (IS_DIRTY(TASK_REDISTRIB)) {
          anv_gfx_copy(task_redistrib, GENX(3DSTATE_TASK_REDISTRIB),
-                      pipeline->final.task_redistrib);
+                      MESA_SHADER_TASK, ts.redistrib);
       }
    }
 #endif /* GFX_VERx10 >= 125 */
 
    if (IS_DIRTY(VS)) {
-      if (anv_gfx_has_stage(gfx, MESA_SHADER_VERTEX)) {
-         anv_gfx_copy_protected(vs, GENX(3DSTATE_VS), pipeline->final.vs);
-      } else {
-         anv_gfx_pack(vs, GENX(3DSTATE_VS), vs);
+#if GFX_VERx10 == 90
+      anv_gfx_pack_merge_protected(vs, GENX(3DSTATE_VS),
+                                   MESA_SHADER_VERTEX, vs.vs, vs) {
+         SET(vs, vs, VertexCacheDisable);
       }
+#else
+      anv_gfx_copy_protected(vs, GENX(3DSTATE_VS), MESA_SHADER_VERTEX, vs.vs);
+#endif
    }
 
-   if (IS_DIRTY(HS)) {
-      if (anv_gfx_has_stage(gfx, MESA_SHADER_TESS_CTRL)) {
-         anv_gfx_copy_protected(hs, GENX(3DSTATE_HS), pipeline->final.hs);
-      } else {
-         anv_gfx_pack(hs, GENX(3DSTATE_HS), hs);
-      }
-   }
+   if (IS_DIRTY(HS))
+      anv_gfx_copy_protected(hs, GENX(3DSTATE_HS), MESA_SHADER_TESS_CTRL, hs.hs);
 
-   if (IS_DIRTY(DS)) {
-      if (anv_gfx_has_stage(gfx, MESA_SHADER_TESS_EVAL)) {
-         anv_gfx_copy_protected(ds, GENX(3DSTATE_DS), pipeline->final.ds);
-      } else {
-         anv_gfx_pack(ds, GENX(3DSTATE_DS), ds);
-      }
-   }
+   if (IS_DIRTY(DS))
+      anv_gfx_copy_protected(ds, GENX(3DSTATE_DS), MESA_SHADER_TESS_EVAL, ds.ds);
 
    if (IS_DIRTY(GS)) {
-      if (anv_gfx_has_stage(gfx, MESA_SHADER_GEOMETRY)) {
-         anv_gfx_pack_merge_protected(gs, GENX(3DSTATE_GS),
-                                      pipeline->partial.gs, gs) {
-            SET(gs, gs, ReorderMode);
-         }
-      } else {
-         anv_gfx_pack(gs, GENX(3DSTATE_GS), gs);
+      anv_gfx_pack_merge_protected(gs, GENX(3DSTATE_GS),
+                                   MESA_SHADER_GEOMETRY, gs.gs, gs) {
+         SET(gs, gs, ReorderMode);
       }
    }
 
    if (IS_DIRTY(PS)) {
-      if (anv_gfx_has_stage(gfx, MESA_SHADER_FRAGMENT)) {
-         anv_gfx_pack_merge_protected(ps, GENX(3DSTATE_PS),
-                                      pipeline->partial.ps, ps) {
-            SET(ps, ps, KernelStartPointer0);
-            SET(ps, ps, KernelStartPointer1);
-            SET(ps, ps, DispatchGRFStartRegisterForConstantSetupData0);
-            SET(ps, ps, DispatchGRFStartRegisterForConstantSetupData1);
+      anv_gfx_pack_merge_protected(ps, GENX(3DSTATE_PS),
+                                   MESA_SHADER_FRAGMENT, ps.ps, ps) {
+         SET(ps, ps, KernelStartPointer0);
+         SET(ps, ps, KernelStartPointer1);
+         SET(ps, ps, DispatchGRFStartRegisterForConstantSetupData0);
+         SET(ps, ps, DispatchGRFStartRegisterForConstantSetupData1);
 
 #if GFX_VER < 20
-            SET(ps, ps, KernelStartPointer2);
-            SET(ps, ps, DispatchGRFStartRegisterForConstantSetupData2);
+         SET(ps, ps, KernelStartPointer2);
+         SET(ps, ps, DispatchGRFStartRegisterForConstantSetupData2);
 
-            SET(ps, ps, _8PixelDispatchEnable);
-            SET(ps, ps, _16PixelDispatchEnable);
-            SET(ps, ps, _32PixelDispatchEnable);
+         SET(ps, ps, _8PixelDispatchEnable);
+         SET(ps, ps, _16PixelDispatchEnable);
+         SET(ps, ps, _32PixelDispatchEnable);
 #else
-            SET(ps, ps, Kernel0Enable);
-            SET(ps, ps, Kernel1Enable);
-            SET(ps, ps, Kernel0SIMDWidth);
-            SET(ps, ps, Kernel1SIMDWidth);
-            SET(ps, ps, Kernel0PolyPackingPolicy);
-            SET(ps, ps, Kernel0MaximumPolysperThread);
+         SET(ps, ps, Kernel0Enable);
+         SET(ps, ps, Kernel1Enable);
+         SET(ps, ps, Kernel0SIMDWidth);
+         SET(ps, ps, Kernel1SIMDWidth);
+         SET(ps, ps, Kernel0PolyPackingPolicy);
+         SET(ps, ps, Kernel0MaximumPolysperThread);
 #endif
-            SET(ps, ps, PositionXYOffsetSelect);
-         }
-      } else {
-         anv_gfx_pack(ps, GENX(3DSTATE_PS), ps);
+         SET(ps, ps, PositionXYOffsetSelect);
       }
    }
 
    if (IS_DIRTY(PS_EXTRA)) {
       if (anv_gfx_has_stage(gfx, MESA_SHADER_FRAGMENT)) {
          anv_gfx_pack_merge(ps_extra, GENX(3DSTATE_PS_EXTRA),
-                            pipeline->partial.ps_extra, pse) {
+                            MESA_SHADER_FRAGMENT, ps.ps_extra, pse) {
             SET(pse, ps_extra, PixelShaderHasUAV);
             SET(pse, ps_extra, PixelShaderIsPerSample);
 #if GFX_VER >= 11
@@ -3213,7 +3270,7 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
           * change through pre-rasterization shader) or if we notice a change.
           */
          anv_gfx_pack_merge(ps_extra_dep, GENX(3DSTATE_PS_EXTRA),
-                            pipeline->partial.ps_extra, pse) {
+                            MESA_SHADER_FRAGMENT, ps.ps_extra, pse) {
             SET(pse, ps_extra, PixelShaderHasUAV);
             SET(pse, ps_extra, PixelShaderIsPerSample);
 #if GFX_VER >= 11
@@ -3269,15 +3326,13 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
       cmd_buffer->device,
       &cmd_buffer->vk.dynamic_graphics_state,
       &cmd_buffer->state.gfx,
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline),
       cmd_buffer->vk.level);
 
    vk_dynamic_graphics_state_clear_dirty(&cmd_buffer->vk.dynamic_graphics_state);
 
    cmd_buffer_repack_gfx_state(&cmd_buffer->state.gfx.dyn_state,
                                cmd_buffer,
-                               &cmd_buffer->state.gfx,
-                               anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline));
+                               &cmd_buffer->state.gfx);
 }
 
 static void
@@ -3431,8 +3486,6 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    struct anv_device *device = cmd_buffer->device;
    struct anv_instance *instance = device->physical->instance;
    struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(gfx->base.pipeline);
    const struct vk_dynamic_graphics_state *dyn =
       &cmd_buffer->vk.dynamic_graphics_state;
    struct anv_push_constants *push_consts =
@@ -3493,7 +3546,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       const struct brw_mesh_prog_data *mesh_prog_data = get_gfx_mesh_prog_data(gfx);
       if (mesh_prog_data) {
          push_consts->gfx.fs_per_prim_remap_offset =
-            pipeline->base.shaders[MESA_SHADER_MESH]->kernel.offset +
+            gfx->shaders[MESA_SHADER_MESH]->kernel.offset +
             mesh_prog_data->wa_18019110168_mapping_offset;
       }
 
@@ -3576,7 +3629,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
        *    3. Send 3D State SOL with SOL Enabled
        */
       if (intel_needs_workaround(device->info, 16011773973) &&
-          pipeline->uses_xfb)
+          gfx->shaders[gfx->streamout_stage]->xfb_info != NULL)
          anv_batch_emit(batch, GENX(3DSTATE_STREAMOUT), so);
 
       anv_batch_emit_gfx_variable(batch, so_decl_list);
@@ -3597,7 +3650,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
 #if GFX_VERx10 >= 125
-   if (device->vk.enabled_features.meshShader) {
+   if (device->vk.enabled_extensions.EXT_mesh_shader) {
       if (IS_DIRTY(MESH_CONTROL))
          anv_batch_emit_gfx(batch, GENX(3DSTATE_MESH_CONTROL), mesh_control);
 
@@ -3670,8 +3723,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       anv_batch_emit_gfx(batch, GENX(3DSTATE_VF_TOPOLOGY), vft);
 
    if (IS_DIRTY(VERTEX_INPUT)) {
-      genX(batch_emit_pipeline_vertex_input)(batch, device,
-                                             pipeline, dyn->vi);
+      genX(batch_emit_vertex_input)(batch, device,
+                                    gfx->shaders[MESA_SHADER_VERTEX], dyn->vi);
    }
 
    if (IS_DIRTY(TE))
@@ -3823,8 +3876,6 @@ genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer)
 {
    struct anv_device *device = cmd_buffer->device;
    struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
-   struct anv_graphics_pipeline *pipeline =
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
    struct anv_gfx_dynamic_state *hw_state = &gfx->dyn_state;
 
    if (INTEL_DEBUG(DEBUG_REEMIT)) {
@@ -3863,7 +3914,7 @@ genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer)
     * it after.
     */
    if (intel_needs_workaround(device->info, 16011773973) &&
-       pipeline->uses_xfb &&
+       gfx->shaders[gfx->streamout_stage]->xfb_info != NULL &&
        BITSET_TEST(hw_state->emit_dirty, ANV_GFX_STATE_SO_DECL_LIST)) {
       BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_STREAMOUT);
    }

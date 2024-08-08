@@ -105,13 +105,11 @@ cmd_buffer_flush_compute_state(struct anv_cmd_buffer *cmd_buffer)
    struct anv_device *device = cmd_buffer->device;
    struct anv_cmd_compute_state *comp_state = &cmd_buffer->state.compute;
    const UNUSED struct intel_device_info *devinfo = cmd_buffer->device->info;
-   struct anv_compute_pipeline *pipeline =
-      anv_pipeline_to_compute(comp_state->base.pipeline);
 
    assert(comp_state->shader);
 
    genX(cmd_buffer_config_l3)(cmd_buffer,
-                              pipeline->cs->prog_data->total_shared > 0 ?
+                              comp_state->shader->prog_data->total_shared > 0 ?
                               device->l3_slm_config : device->l3_config);
 
    genX(cmd_buffer_update_color_aux_op(cmd_buffer, ISL_AUX_OP_NONE));
@@ -127,7 +125,7 @@ cmd_buffer_flush_compute_state(struct anv_cmd_buffer *cmd_buffer)
     */
    genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
-   if (cmd_buffer->state.compute.pipeline_dirty) {
+   if (comp_state->pipeline_dirty) {
 #if GFX_VERx10 < 125
       /* From the Sky Lake PRM Vol 2a, MEDIA_VFE_STATE:
        *
@@ -143,12 +141,27 @@ cmd_buffer_flush_compute_state(struct anv_cmd_buffer *cmd_buffer)
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 #endif
 
-      anv_batch_emit_batch(&cmd_buffer->batch, &pipeline->base.batch);
+#define anv_batch_emit_cs(batch, cmd, field) ({                         \
+            void *__dst = anv_batch_emit_dwords(                        \
+               batch, __anv_cmd_length(cmd));                           \
+            memcpy(__dst,                                               \
+                   &comp_state->shader->cmd_data[                       \
+                      comp_state->shader->field.offset],                \
+                   4 * __anv_cmd_length(cmd));                          \
+            VG(VALGRIND_CHECK_MEM_IS_DEFINED(                           \
+                  __dst, __anv_cmd_length(cmd) * 4));                   \
+            __dst;                                                      \
+         })
+
 
 #if GFX_VERx10 >= 125
       const struct brw_cs_prog_data *prog_data = get_cs_prog_data(comp_state);
       genX(cmd_buffer_ensure_cfe_state)(cmd_buffer, prog_data->base.total_scratch);
+#else
+      anv_batch_emit_cs(&cmd_buffer->batch, GENX(MEDIA_VFE_STATE), cs.gfx9.vfe);
 #endif
+
+#undef anv_batch_emit_cs
 
       /* Changing the pipeline affects the push constants layout (different
        * amount of cross/per thread allocations). The allocation is also
@@ -179,7 +192,7 @@ cmd_buffer_flush_compute_state(struct anv_cmd_buffer *cmd_buffer)
          cmd_buffer,
          &cmd_buffer->state.compute.base,
          VK_SHADER_STAGE_COMPUTE_BIT,
-         (const struct anv_shader_bin **)&comp_state->shader, 1);
+         (const struct anv_shader **)&comp_state->shader, 1);
       cmd_buffer->state.descriptors_dirty &= ~VK_SHADER_STAGE_COMPUTE_BIT;
 
 #if GFX_VERx10 < 125
@@ -194,7 +207,7 @@ cmd_buffer_flush_compute_state(struct anv_cmd_buffer *cmd_buffer)
 
       struct anv_state state =
          anv_cmd_buffer_merge_dynamic(cmd_buffer, iface_desc_data_dw,
-                                      pipeline->gfx9.interface_descriptor_data,
+                                      comp_state->shader->cs.gfx9.idd,
                                       GENX(INTERFACE_DESCRIPTOR_DATA_length),
                                       64);
 
@@ -439,7 +452,7 @@ emit_indirect_compute_walker(struct anv_cmd_buffer *cmd_buffer,
          &cmd_buffer->batch,
          GENX(EXECUTE_INDIRECT_DISPATCH_length),
          GENX(EXECUTE_INDIRECT_DISPATCH_body_start) / 32,
-         anv_pipeline_to_compute(comp_state->base.pipeline)->gfx125.compute_walker_body,
+         comp_state->shader->cs.gfx125.compute_walker_body,
          GENX(EXECUTE_INDIRECT_DISPATCH),
          .PredicateEnable            = predicate,
          .MaxCount                   = 1,
@@ -520,7 +533,7 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
          &cmd_buffer->batch,
          GENX(COMPUTE_WALKER_length),
          GENX(COMPUTE_WALKER_body_start) / 32,
-         anv_pipeline_to_compute(comp_state->base.pipeline)->gfx125.compute_walker_body,
+         comp_state->shader->cs.gfx125.compute_walker_body,
          GENX(COMPUTE_WALKER),
          .IndirectParameterEnable        = !anv_address_is_null(indirect_addr),
          .PredicateEnable                = predicate,
@@ -1051,8 +1064,6 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
 {
    struct anv_device *device = cmd_buffer->device;
    struct anv_cmd_ray_tracing_state *rt = &cmd_buffer->state.rt;
-   struct anv_ray_tracing_pipeline *pipeline =
-      anv_pipeline_to_ray_tracing(rt->base.pipeline);
 
    if (INTEL_DEBUG(DEBUG_RT_NO_TRACE))
       return;
@@ -1211,18 +1222,18 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
        */
       btd.PerDSSMemoryBackedBufferSize = 6;
       btd.MemoryBackedBufferBasePointer = (struct anv_address) { .bo = device->btd_fifo_bo };
-      if (pipeline->base.scratch_size > 0) {
+      if (rt->scratch_size > 0) {
          struct anv_bo *scratch_bo =
             anv_scratch_pool_alloc(device,
                                    &device->scratch_pool,
                                    MESA_SHADER_COMPUTE,
-                                   pipeline->base.scratch_size);
+                                   rt->scratch_size);
          anv_reloc_list_add_bo(cmd_buffer->batch.relocs,
                                scratch_bo);
          uint32_t scratch_surf =
             anv_scratch_pool_get_surf(cmd_buffer->device,
                                       &device->scratch_pool,
-                                      pipeline->base.scratch_size);
+                                      rt->scratch_size);
          btd.ScratchSpaceBuffer = scratch_surf >> ANV_SCRATCH_SPACE_SHIFT(GFX_VER);
       }
 #if INTEL_NEEDS_WA_14017794102 || INTEL_NEEDS_WA_14023061436
@@ -1234,7 +1245,7 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
 #endif
    }
 
-   genX(cmd_buffer_ensure_cfe_state)(cmd_buffer, pipeline->base.scratch_size);
+   genX(cmd_buffer_ensure_cfe_state)(cmd_buffer, rt->scratch_size);
 
    const struct brw_cs_prog_data *cs_prog_data =
       brw_cs_prog_data_const(device->rt_trampoline->prog_data);
@@ -1273,7 +1284,7 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
       .ThreadGroupIDZDimension        = global_size[2],
       .ExecutionMask                  = 0xff,
       .EmitInlineParameter            = true,
-      .PostSync.MOCS                  = anv_mocs(pipeline->base.device, NULL, 0),
+      .PostSync.MOCS                  = anv_mocs(cmd_buffer->device, NULL, 0),
 #if GFX_VER >= 30
          /* HSD 14016252163 */
       .DispatchWalkOrder = cs_prog_data->uses_sampler ? MortonWalk : LinearWalk,

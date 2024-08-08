@@ -5,6 +5,8 @@
 
 #include "anv_private.h"
 
+#include "vk_common_entrypoints.h"
+
 #include "compiler/nir/nir_builder.h"
 
 static void
@@ -293,8 +295,9 @@ astc_emu_flush_denorm_slice(struct anv_cmd_buffer *cmd_buffer,
                                      set_writes);
    VkDescriptorSet set = anv_descriptor_set_to_handle(&push_set.set);
 
-   anv_CmdBindPipeline(cmd_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE,
-                       astc_emu->pipeline);
+   vk_common_CmdBindPipeline(cmd_buffer_,
+                             VK_PIPELINE_BIND_POINT_COMPUTE,
+                             astc_emu->pipeline);
 
    VkPushConstantsInfoKHR push_info = {
       .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
@@ -351,7 +354,9 @@ astc_emu_decompress_slice(struct anv_cmd_buffer *cmd_buffer,
       return;
    }
 
-   anv_CmdBindPipeline(cmd_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+   vk_common_CmdBindPipeline(cmd_buffer_,
+                             VK_PIPELINE_BIND_POINT_COMPUTE,
+                             pipeline);
 
    struct vk_texcompress_astc_write_descriptor_set writes;
    vk_texcompress_astc_fill_write_descriptor_sets(astc_emu->texcompress,

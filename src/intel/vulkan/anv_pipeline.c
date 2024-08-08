@@ -173,16 +173,28 @@ anv_pipeline_finish(struct anv_pipeline *pipeline,
    vk_object_base_finish(&pipeline->vk.base);
 }
 
+VKAPI_ATTR void VKAPI_CALL
+vk_common_DestroyPipeline(VkDevice _device,
+                          VkPipeline _pipeline,
+                          const VkAllocationCallbacks *pAllocator);
+
 void anv_DestroyPipeline(
     VkDevice                                    _device,
     VkPipeline                                  _pipeline,
     const VkAllocationCallbacks*                pAllocator)
 {
    ANV_FROM_HANDLE(anv_device, device, _device);
-   ANV_FROM_HANDLE(anv_pipeline, pipeline, _pipeline);
+   VK_FROM_HANDLE(vk_pipeline, vk_pipeline, _pipeline);
 
-   if (!pipeline)
+   if (!vk_pipeline)
       return;
+
+   if (vk_pipeline->ops != NULL) {
+      vk_common_DestroyPipeline(_device, _pipeline, pAllocator);
+      return;
+   }
+
+   ANV_FROM_HANDLE(anv_pipeline, pipeline, _pipeline);
 
    ANV_RMV(resource_destroy, device, pipeline);
 
@@ -2851,6 +2863,7 @@ anv_compute_pipeline_create(struct anv_device *device,
    return pipeline->base.batch.status;
 }
 
+#if 0
 VkResult anv_CreateComputePipelines(
     VkDevice                                    _device,
     VkPipelineCache                             pipelineCache,
@@ -2885,6 +2898,7 @@ VkResult anv_CreateComputePipelines(
 
    return result;
 }
+#endif
 
 static uint32_t
 get_vs_input_elements(const struct brw_vs_prog_data *vs_prog_data)
@@ -3343,6 +3357,7 @@ anv_graphics_pipeline_create(struct anv_device *device,
    return pipeline->base.base.batch.status;
 }
 
+#if 0
 VkResult anv_CreateGraphicsPipelines(
     VkDevice                                    _device,
     VkPipelineCache                             pipelineCache,
@@ -3388,6 +3403,7 @@ VkResult anv_CreateGraphicsPipelines(
 
    return result;
 }
+#endif
 
 static bool
 should_remat_cb(nir_instr *instr, void *data)
@@ -4083,6 +4099,7 @@ anv_ray_tracing_pipeline_create(
    return pipeline->base.batch.status;
 }
 
+#if 0
 VkResult
 anv_CreateRayTracingPipelinesKHR(
     VkDevice                                    _device,
@@ -4491,3 +4508,4 @@ anv_GetRayTracingShaderGroupStackSizeKHR(
 
    return brw_bs_prog_data_const(bin->prog_data)->max_stack_size;
 }
+#endif
