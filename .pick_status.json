@@ -224,7 +224,7 @@
         "description": "anv: Add full subgroups WA for the shaders with barriers in Breaking Limit",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
