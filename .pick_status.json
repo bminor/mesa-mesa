@@ -984,7 +984,7 @@
         "description": "etnaviv: emit SAMPLER_LOG_SIZE on sampler state changes",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
