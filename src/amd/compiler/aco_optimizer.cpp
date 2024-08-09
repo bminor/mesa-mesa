@@ -5147,7 +5147,7 @@ apply_literals(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 }
 
 void
-validate_opt_ctx(opt_ctx& ctx)
+validate_opt_ctx(opt_ctx& ctx, bool incorrect_uses_lits)
 {
    if (!(debug_flags & DEBUG_VALIDATE_OPT))
       return;
@@ -5166,7 +5166,8 @@ validate_opt_ctx(opt_ctx& ctx)
          FILE* const memf = u_memstream_get(&mem);
 
          fprintf(memf, "Optimizer: %s: ", msg);
-         aco_print_instr(program->gfx_level, instr, memf);
+         if (instr)
+            aco_print_instr(program->gfx_level, instr, memf);
          u_memstream_close(&mem);
 
          aco_err(program, "%s", out);
@@ -5186,9 +5187,24 @@ validate_opt_ctx(opt_ctx& ctx)
          }
       }
    }
-   if (!is_valid) {
+
+   std::vector<uint16_t> actual_uses = dead_code_analysis(program);
+   check(ctx.uses.size() == actual_uses.size(), "ctx.uses has wrong size", nullptr);
+   check(ctx.info.size() == actual_uses.size(), "ctx.info has wrong size", nullptr);
+
+   if (!is_valid)
       abort();
+
+   for (unsigned i = 0; i < ctx.uses.size(); i++) {
+      if (incorrect_uses_lits && (ctx.info[i].label & label_constant))
+         check(ctx.uses[i] <= actual_uses[i], "ctx.uses[i] is too high for a literal",
+               ctx.info[i].parent_instr);
+      else
+         check(ctx.uses[i] == actual_uses[i], "ctx.uses[i] is incorrect", ctx.info[i].parent_instr);
    }
+
+   if (!is_valid)
+      abort();
 }
 
 void rename_loop_header_phis(opt_ctx& ctx) {
@@ -5230,18 +5246,16 @@ optimize(Program* program)
          label_instruction(ctx, instr);
    }
 
-   validate_opt_ctx(ctx);
-
    rename_loop_header_phis(ctx);
 
-   validate_opt_ctx(ctx);
-
    ctx.uses = dead_code_analysis(program);
+
+   validate_opt_ctx(ctx, false);
 
    /* 2. Rematerialize constants in every block. */
    rematerialize_constants(ctx);
 
-   validate_opt_ctx(ctx);
+   validate_opt_ctx(ctx, false);
 
    /* 3. Combine v_mad, omod, clamp and propagate sgpr on VALU instructions */
    for (Block& block : program->blocks) {
@@ -5258,7 +5272,7 @@ optimize(Program* program)
       }
    }
 
-   validate_opt_ctx(ctx);
+   validate_opt_ctx(ctx, false);
 
    /* 4. Top-Down DAG pass (backward) to select instructions (includes DCE) */
    for (auto block_rit = program->blocks.rbegin(); block_rit != program->blocks.rend();
@@ -5270,7 +5284,7 @@ optimize(Program* program)
          select_instruction(ctx, *instr_rit);
    }
 
-   validate_opt_ctx(ctx);
+   validate_opt_ctx(ctx, true);
 
    /* 5. Add literals to instructions */
    for (Block& block : program->blocks) {
@@ -5281,7 +5295,7 @@ optimize(Program* program)
       block.instructions = std::move(ctx.instructions);
    }
 
-   validate_opt_ctx(ctx);
+   validate_opt_ctx(ctx, true);
 }
 
 } // namespace aco

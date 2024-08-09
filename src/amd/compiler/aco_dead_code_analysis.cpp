@@ -23,6 +23,8 @@ void
 process_loop_header_phis(std::vector<uint16_t>& uses, Block& block)
 {
    for (aco_ptr<Instruction>& instr : block.instructions) {
+      if (!instr.get())
+         continue;
       if (!is_phi(instr))
          return;
       for (const Operand& op : instr->operands) {
@@ -37,6 +39,8 @@ process_block(std::vector<uint16_t>& uses, Block& block)
 {
    for (auto it = block.instructions.rbegin(); it != block.instructions.rend(); it++) {
       aco_ptr<Instruction>& instr = *it;
+      if (!instr.get())
+         continue;
       if ((block.kind & block_kind_loop_header) && is_phi(instr))
          break;
 
