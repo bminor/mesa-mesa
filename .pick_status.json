@@ -1814,7 +1814,7 @@
         "description": "nvk: Require color or depth/stencil attachment support for input attachments",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "20d8d1e239be95143fc25886fe28aeb5d82a4d8c",
         "notes": null
