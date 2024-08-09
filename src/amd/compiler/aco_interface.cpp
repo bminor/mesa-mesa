@@ -446,9 +446,8 @@ aco_get_codegen_flags()
 {
    init();
    /* Exclude flags which don't affect code generation. */
-   uint64_t exclude =
-      DEBUG_VALIDATE_IR | DEBUG_VALIDATE_RA | DEBUG_PERF_INFO | DEBUG_LIVE_INFO |
-      DEBUG_NO_VALIDATE_IR | DEBUG_VALIDATE_LIVE_VARS;
+   uint64_t exclude = DEBUG_VALIDATE_IR | DEBUG_VALIDATE_RA | DEBUG_PERF_INFO | DEBUG_LIVE_INFO |
+                      DEBUG_NO_VALIDATE | DEBUG_VALIDATE_LIVE_VARS;
    return debug_flags & ~exclude;
 }
 

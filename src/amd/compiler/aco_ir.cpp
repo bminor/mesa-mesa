@@ -22,7 +22,7 @@ static const struct debug_control aco_debug_options[] = {
    {"validateir", DEBUG_VALIDATE_IR},
    {"validatera", DEBUG_VALIDATE_RA},
    {"validate-livevars", DEBUG_VALIDATE_LIVE_VARS},
-   {"novalidateir", DEBUG_NO_VALIDATE_IR},
+   {"novalidate", DEBUG_NO_VALIDATE},
    {"force-waitcnt", DEBUG_FORCE_WAITCNT},
    {"force-waitdeps", DEBUG_FORCE_WAITDEPS},
    {"novn", DEBUG_NO_VN},
@@ -43,11 +43,10 @@ init_once()
 
 #ifndef NDEBUG
    /* enable some flags by default on debug builds */
-   debug_flags |= aco::DEBUG_VALIDATE_IR;
+   if (!(debug_flags & aco::DEBUG_NO_VALIDATE)) {
+      debug_flags |= aco::DEBUG_VALIDATE_IR;
+   }
 #endif
-
-   if (debug_flags & aco::DEBUG_NO_VALIDATE_IR)
-      debug_flags &= ~aco::DEBUG_VALIDATE_IR;
 }
 
 void
