@@ -1264,7 +1264,7 @@
         "description": "glsl: always copy bindless sampler packing constructors to a temp",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3cdcc5f02f39bd4dc78b88eb80bca4ac208f7f2f",
         "notes": null
