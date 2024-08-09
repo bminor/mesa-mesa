@@ -108,6 +108,7 @@ extern uint64_t intel_debug;
 #define DEBUG_BVH_NO_BUILD        (1ull << 60)
 #define DEBUG_NO_SEND_GATHER      (1ull << 61)
 #define DEBUG_RT_NO_TRACE         (1ull << 62)
+#define DEBUG_SHADERS_LINENO      (1ull << 63)
 
 #define DEBUG_ANY                 (~0ull)
 

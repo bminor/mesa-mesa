@@ -22,6 +22,7 @@
  */
 
 #include "anv_private.h"
+#include "compiler/brw_disasm.h"
 #include "genxml/gen80_pack.h"
 
 static bool
@@ -84,6 +85,12 @@ upload_blorp_shader(struct blorp_batch *batch, uint32_t stage,
     * is no need to hold a second reference.
     */
    anv_shader_bin_unref(device, bin);
+
+   if (INTEL_DEBUG(DEBUG_SHADERS_LINENO)) {
+      brw_disassemble_with_lineno(&device->physical->compiler->isa,
+                                  stage, -1, 0, kernel, 0,
+                                  bin->kernel.offset, stderr);
+   }
 
    *kernel_out = bin->kernel.offset;
    *(const struct brw_stage_prog_data **)prog_data_out = bin->prog_data;

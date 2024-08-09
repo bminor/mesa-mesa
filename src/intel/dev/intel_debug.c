@@ -117,6 +117,7 @@ static const struct debug_control debug_control[] = {
    { "shader-print", DEBUG_SHADER_PRINT },
    { "cl-quiet",     DEBUG_CL_QUIET },
    { "no-send-gather", DEBUG_NO_SEND_GATHER },
+   { "shaders-lineno", DEBUG_SHADERS_LINENO },
    { NULL,    0 }
 };
 
