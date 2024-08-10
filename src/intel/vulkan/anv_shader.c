@@ -23,6 +23,7 @@ anv_shader_destroy(struct vk_device *vk_device,
       anv_embedded_sampler_unref(device, shader->embedded_samplers[i]);
 
    anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
+   anv_reloc_list_finish(&shader->relocs);
    vk_shader_free(vk_device, pAllocator, vk_shader);
 }
 
@@ -670,11 +671,15 @@ anv_shader_create(struct anv_device *device,
                                        shader_data, mem_ctx);
    }
 
+   const uint32_t cmd_data_dwords = anv_genX(device->info, shader_cmd_size)(
+      device, stage);
+
    /* We never need this at runtime */
    shader_data->prog_data.base.param = NULL;
 
    VK_MULTIALLOC(ma);
    VK_MULTIALLOC_DECL(&ma, struct anv_shader, shader, 1);
+   VK_MULTIALLOC_DECL(&ma, uint32_t, cmd_data, cmd_data_dwords);
    VK_MULTIALLOC_DECL_SIZE(&ma, void, obj_key_data, brw_prog_key_size(stage));
    VK_MULTIALLOC_DECL_SIZE(&ma, struct brw_stage_prog_data, prog_data,
                            brw_prog_data_size(stage));
@@ -782,6 +787,19 @@ anv_shader_create(struct anv_device *device,
    shader->vk.scratch_size = shader->prog_data->total_scratch;
    shader->vk.ray_queries = shader->prog_data->ray_queries;
 
+   result =
+      anv_reloc_list_init(&shader->relocs, &device->vk.alloc,
+                          device->physical->uses_relocs);
+   if (result != VK_SUCCESS)
+      goto error_embedded_samplers;
+
+   struct anv_batch batch = {};
+   anv_batch_set_storage(&batch, ANV_NULL_ADDRESS,
+                         cmd_data, 4 * cmd_data_dwords);
+   batch.relocs = &shader->relocs;
+   shader->cmd_data = cmd_data;
+   anv_genX(device->info, shader_emit)(&batch, device, shader);
+
    *shader_out = &shader->vk;
 
    return VK_SUCCESS;
@@ -791,6 +809,7 @@ anv_shader_create(struct anv_device *device,
       anv_embedded_sampler_unref(device, shader->embedded_samplers[s]);
    anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
  error_shader:
+   anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
    vk_shader_free(&device->vk, pAllocator, &shader->vk);
    return result;
 }

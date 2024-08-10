@@ -1852,6 +1852,30 @@ fail:
    return result;
 }
 
+static void
+anv_write_rt_shader_group(struct vk_device *vk_device,
+                          VkRayTracingShaderGroupTypeKHR type,
+                          const struct vk_shader **shaders,
+                          uint32_t shader_count,
+                          void *output)
+{
+   struct anv_device *device =
+      container_of(vk_device, struct anv_device, vk);
+
+   anv_genX(device->info, write_rt_shader_group)(device, type,
+                                                 shaders, shader_count,
+                                                 output);
+}
+
+static void
+anv_write_rt_shader_group_replay_handle(struct vk_device *device,
+                                        const struct vk_shader **shaders,
+                                        uint32_t shader_count,
+                                        void *output)
+{
+   UNREACHABLE("Unimplemented");
+}
+
 struct vk_device_shader_ops anv_device_shader_ops = {
    .get_nir_options                = anv_shader_get_nir_options,
    .get_spirv_options              = anv_shader_get_spirv_options,
@@ -1860,5 +1884,7 @@ struct vk_device_shader_ops anv_device_shader_ops = {
    .hash_state                     = anv_shader_hash_state,
    .compile                        = anv_shader_compile,
    .deserialize                    = anv_shader_deserialize,
+   .write_rt_shader_group          = anv_write_rt_shader_group,
+   .write_rt_shader_group_replay_handle = anv_write_rt_shader_group_replay_handle,
    .cmd_set_dynamic_graphics_state = vk_cmd_set_dynamic_graphics_state,
 };

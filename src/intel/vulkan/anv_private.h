@@ -1185,6 +1185,39 @@ struct anv_push_descriptor_info {
    uint8_t push_set_buffer;
 };
 
+struct anv_gfx_state_ptr {
+   /* Both in dwords */
+   uint16_t  offset;
+   uint16_t  len;
+};
+
+#define anv_batch_emit_shader_state(batch, shader, state)               \
+   do {                                                                 \
+      if ((shader)->state.len == 0)                                     \
+         break;                                                         \
+      uint32_t *dw;                                                     \
+      dw = anv_batch_emit_dwords((batch), (shader)->state.len);         \
+      if (!dw)                                                          \
+         break;                                                         \
+      memcpy(dw, &(shader)->cmd_data[(shader)->state.offset],           \
+             4 * (shader)->state.len);                                  \
+   } while (0)
+
+#define anv_batch_emit_shader_state_protected(batch, shader,            \
+                                              state, protected)         \
+   do {                                                                 \
+      struct anv_gfx_state_ptr *_cmd_state = protected ?                \
+         &(shader)->state##_protected : &(shader)->state;               \
+      if (_cmd_state->len == 0)                                         \
+         break;                                                         \
+      uint32_t *dw;                                                     \
+      dw = anv_batch_emit_dwords((batch), _cmd_state->len);             \
+      if (!dw)                                                          \
+         break;                                                         \
+      memcpy(dw, &(shader)->cmd_data[_cmd_state->offset],               \
+             4 * _cmd_state->len);                                      \
+   } while (0)
+
 struct anv_shader {
    struct vk_shader vk;
 
@@ -1212,6 +1245,79 @@ struct anv_shader {
     * Array of pointers of length bind_map.embedded_sampler_count
     */
    struct anv_embedded_sampler **embedded_samplers;
+
+   struct anv_reloc_list relocs;
+
+   union {
+      struct {
+         /* Number of elements for application values */
+         uint32_t                    input_elements;
+         /* Number of elements for system generated values */
+         uint32_t                    sgvs_count;
+         uint32_t                    sgvs_elements[2 * 2 /* 2 internal */];
+
+         struct anv_gfx_state_ptr    vf_sgvs;
+         struct anv_gfx_state_ptr    vf_sgvs_2;
+         struct anv_gfx_state_ptr    vf_sgvs_instancing;
+         struct anv_gfx_state_ptr    vf_component_packing;
+         struct anv_gfx_state_ptr    vs;
+         struct anv_gfx_state_ptr    vs_protected;
+      } vs;
+
+      struct {
+         struct anv_gfx_state_ptr    hs;
+         struct anv_gfx_state_ptr    hs_protected;
+      } hs;
+
+      struct {
+         struct anv_gfx_state_ptr    te;
+         struct anv_gfx_state_ptr    ds;
+         struct anv_gfx_state_ptr    ds_protected;
+      } ds;
+
+      struct {
+         struct anv_gfx_state_ptr    gs;
+         struct anv_gfx_state_ptr    gs_protected;
+      } gs;
+
+      struct {
+         struct anv_gfx_state_ptr    control;
+         struct anv_gfx_state_ptr    control_protected;
+         struct anv_gfx_state_ptr    shader;
+         struct anv_gfx_state_ptr    redistrib;
+      } ts;
+
+      struct {
+         struct anv_gfx_state_ptr    control;
+         struct anv_gfx_state_ptr    control_protected;
+         struct anv_gfx_state_ptr    shader;
+         struct anv_gfx_state_ptr    distrib;
+         struct anv_gfx_state_ptr    clip;
+      } ms;
+
+      struct {
+         struct anv_gfx_state_ptr    ps;
+         struct anv_gfx_state_ptr    ps_protected;
+         struct anv_gfx_state_ptr    ps_extra;
+         struct anv_gfx_state_ptr    wm;
+      } ps;
+
+      union {
+         struct {
+            struct anv_gfx_state_ptr vfe;
+            uint32_t                 idd[8];
+         } gfx9;
+         struct {
+            uint32_t                 compute_walker_body[39];
+         } gfx125;
+      } cs;
+   };
+
+   /* This one is shared amongst VS/DS/GS stages */
+   struct anv_gfx_state_ptr          so_decl_list;
+   struct anv_gfx_state_ptr          so;
+
+   uint32_t *cmd_data;
 };
 
 extern struct vk_device_shader_ops anv_device_shader_ops;
@@ -5197,12 +5303,6 @@ struct anv_graphics_lib_pipeline {
    bool                                         retain_shaders;
 };
 
-struct anv_gfx_state_ptr {
-   /* Both in dwords */
-   uint16_t  offset;
-   uint16_t  len;
-};
-
 /* The final graphics pipeline object has all the graphics state ready to be
  * programmed into HW packets (dynamic_state field) or fully baked in its
  * batch.
@@ -5486,6 +5586,13 @@ get_gfx_##prefix##_prog_data(                                           \
    } else {                                                             \
       return NULL;                                                      \
    }                                                                    \
+}                                                                       \
+                                                                        \
+static inline const struct brw_##prefix##_prog_data *                   \
+get_shader_##prefix##_prog_data(const struct anv_shader *shader)        \
+{                                                                       \
+   return (const struct brw_##prefix##_prog_data *)                     \
+      shader->prog_data;                                                \
 }
 
 ANV_DECL_GET_GRAPHICS_PROG_DATA_FUNC(vs, MESA_SHADER_VERTEX)
@@ -5523,6 +5630,12 @@ get_cs_prog_data(const struct anv_cmd_compute_state *comp_state)
 {
    assert(comp_state->shader);
    return (const struct brw_cs_prog_data *) comp_state->shader->prog_data;
+}
+
+static inline const struct brw_cs_prog_data *
+get_shader_cs_prog_data(const struct anv_shader *shader)
+{
+   return (const struct brw_cs_prog_data *) shader->prog_data;
 }
 
 static inline const struct brw_vue_prog_data *

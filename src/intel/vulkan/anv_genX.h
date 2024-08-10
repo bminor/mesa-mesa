@@ -107,6 +107,11 @@ void genX(batch_emit_pipeline_vertex_input)(struct anv_batch *batch,
                                             struct anv_graphics_pipeline *pipeline,
                                             const struct vk_vertex_input_state *vi);
 
+void genX(batch_emit_vertex_input)(struct anv_batch *batch,
+                                   struct anv_device *device,
+                                   struct anv_shader *shader,
+                                   const struct vk_vertex_input_state *vi);
+
 enum anv_pipe_bits
 genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                               struct anv_device *device,
@@ -320,6 +325,36 @@ genX(ray_tracing_pipeline_emit)(struct anv_ray_tracing_pipeline *pipeline);
 #endif
 
 #if GFX_VERx10 >= 300
+#define anv_shader_get_bsr(shader, local_arg_offset) ({              \
+   assert((local_arg_offset) % 8 == 0);                              \
+   const struct brw_bs_prog_data *prog_data =                        \
+      brw_bs_prog_data_const(shader->prog_data);                     \
+   assert(prog_data->simd_size == 16);                               \
+                                                                     \
+   (struct GENX(BINDLESS_SHADER_RECORD)) {                           \
+      .OffsetToLocalArguments = (local_arg_offset) / 8,              \
+      .BindlessShaderDispatchMode = RT_SIMD16,                       \
+      .KernelStartPointer = shader->kernel.offset,                   \
+      .RegistersPerThread = ptl_register_blocks(prog_data->base.grf_used), \
+   };                                                                \
+})
+#else
+#define anv_shader_get_bsr(shader, local_arg_offset) ({              \
+   assert((local_arg_offset) % 8 == 0);                              \
+   const struct brw_bs_prog_data *prog_data =                        \
+      brw_bs_prog_data_const(shader->prog_data);                     \
+   assert(prog_data->simd_size == 8 || prog_data->simd_size == 16);  \
+                                                                     \
+   (struct GENX(BINDLESS_SHADER_RECORD)) {                           \
+      .OffsetToLocalArguments = (local_arg_offset) / 8,              \
+      .BindlessShaderDispatchMode =                                  \
+         prog_data->simd_size == 16 ? RT_SIMD16 : RT_SIMD8,          \
+      .KernelStartPointer = shader->kernel.offset,                   \
+   };                                                                \
+})
+#endif
+
+#if GFX_VERx10 >= 300
 #define anv_shader_bin_get_bsr(bin, local_arg_offset) ({             \
    assert((local_arg_offset) % 8 == 0);                              \
    const struct brw_bs_prog_data *prog_data =                        \
@@ -501,3 +536,16 @@ genX(cmd_dispatch_unaligned)(
    uint32_t                                    invocations_x,
    uint32_t                                    invocations_y,
    uint32_t                                    invocations_z);
+
+void genX(shader_emit)(struct anv_batch *batch,
+                       struct anv_device *device,
+                       struct anv_shader *shader);
+
+void genX(write_rt_shader_group)(struct anv_device *device,
+                                 VkRayTracingShaderGroupTypeKHR type,
+                                 const struct vk_shader **shaders,
+                                 uint32_t shader_count,
+                                 void *output);
+
+uint32_t genX(shader_cmd_size)(struct anv_device *device,
+                               mesa_shader_stage stage);

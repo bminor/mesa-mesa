@@ -99,6 +99,7 @@ anv_per_hw_ver_files = files(
   'genX_pipeline.c',
   'genX_query.c',
   'genX_simple_shader.c',
+  'genX_shader.c',
 )
 if with_intel_vk_rt
   anv_per_hw_ver_files += files(
