@@ -1604,7 +1604,7 @@
         "description": "intel/compiler: Adjust trace ray control field on Xe2",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
