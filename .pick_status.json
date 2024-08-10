@@ -14,7 +14,7 @@
         "description": "meson: Force use of LLVM ORCJIT for hosts without MCJIT support",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6f02ec5ed18a0a9bdd3739287cce54a621ea3bad",
         "notes": null
