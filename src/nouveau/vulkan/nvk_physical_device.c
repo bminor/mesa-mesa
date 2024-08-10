@@ -74,6 +74,10 @@ nvk_get_vk_version(const struct nv_device_info *info)
    if (!nvk_use_nak(info))
       return VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION);
 
+#if defined(ANDROID_STRICT) && ANDROID_API_LEVEL <= 32
+   return VK_MAKE_VERSION(1, 1, VK_HEADER_VERSION);
+#endif
+
    return VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION);
 }
 
