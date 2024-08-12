@@ -574,7 +574,7 @@
         "description": "intel/brw: Fix extract_imm for subregion reads of 64-bit immediates",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "580e1c592d90392a30185d8059499498748909fd",
         "notes": null
