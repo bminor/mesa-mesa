@@ -1232,6 +1232,17 @@ static const struct intel_device_info intel_device_info_wcl = {
    .has_ray_tracing = false,
 };
 
+UNUSED static const struct intel_device_info intel_device_info_nvl_s_hx_ul = {
+   XE3_CONFIG(NVL_U),
+   .has_local_mem = false,
+   .has_ray_tracing = false,
+};
+
+UNUSED static const struct intel_device_info intel_device_info_nvl_u_h = {
+   XE3_CONFIG(NVL_U),
+   .has_local_mem = false,
+};
+
 void
 intel_device_info_topology_reset_masks(struct intel_device_info *devinfo)
 {
