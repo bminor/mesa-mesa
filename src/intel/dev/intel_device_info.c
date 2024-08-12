@@ -78,6 +78,7 @@ static const struct {
    { "lnl", 0x64a0 },
    { "bmg", 0xe202 },
    { "ptl", 0xb080 },
+   { "nvl-u", 0xd740 },
 };
 
 /**
@@ -1232,13 +1233,13 @@ static const struct intel_device_info intel_device_info_wcl = {
    .has_ray_tracing = false,
 };
 
-UNUSED static const struct intel_device_info intel_device_info_nvl_s_hx_ul = {
+static const struct intel_device_info intel_device_info_nvl_s_hx_ul = {
    XE3_CONFIG(NVL_U),
    .has_local_mem = false,
    .has_ray_tracing = false,
 };
 
-UNUSED static const struct intel_device_info intel_device_info_nvl_u_h = {
+static const struct intel_device_info intel_device_info_nvl_u_h = {
    XE3_CONFIG(NVL_U),
    .has_local_mem = false,
 };
