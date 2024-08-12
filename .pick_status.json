@@ -584,7 +584,7 @@
         "description": "intel/brw: Drop misguided sign extension attempts in extract_imm()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "580e1c592d90392a30185d8059499498748909fd",
         "notes": null
