@@ -634,7 +634,7 @@
         "description": "util: Force emission of stack frame in stack unit test",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d0d14f3f6481e015b4413fa0487164b76fe45296",
         "notes": null
