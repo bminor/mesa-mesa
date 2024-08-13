@@ -94,7 +94,7 @@
         "description": "android: simplify building libgallium_dri on Android",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9568976c52a4b9fb4af659d127bfc6f9d9e7970d",
         "notes": null
