@@ -24,7 +24,7 @@
         "description": "wsi/x11: Bump maximum number of outstanding COMPLETE events.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "19dba854be005142f70c36895622c5d46c3b9ba2",
         "notes": null
