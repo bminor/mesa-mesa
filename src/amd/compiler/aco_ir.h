@@ -1889,6 +1889,7 @@ aco_opcode get_vcmp_swapped(aco_opcode op);
 aco_opcode get_vcmpx(aco_opcode op);
 bool is_cmpx(aco_opcode op);
 
+aco_opcode get_swapped_opcode(aco_opcode opcode, unsigned idx0, unsigned idx1);
 bool can_swap_operands(aco_ptr<Instruction>& instr, aco_opcode* new_op, unsigned idx0 = 0,
                        unsigned idx1 = 1);
 

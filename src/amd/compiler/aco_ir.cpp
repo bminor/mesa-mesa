@@ -1007,34 +1007,21 @@ is_cmpx(aco_opcode op)
    return !get_cmp_info(op, &info);
 }
 
-bool
-can_swap_operands(aco_ptr<Instruction>& instr, aco_opcode* new_op, unsigned idx0, unsigned idx1)
+aco_opcode
+get_swapped_opcode(aco_opcode opcode, unsigned idx0, unsigned idx1)
 {
-   if (idx0 == idx1) {
-      *new_op = instr->opcode;
-      return true;
-   }
+   if (idx0 == idx1)
+      return opcode;
 
    if (idx0 > idx1)
       std::swap(idx0, idx1);
 
-   if (instr->isDPP())
-      return false;
-
-   if (!instr->isVOP3() && !instr->isVOP3P() && !instr->operands[0].isOfType(RegType::vgpr))
-      return false;
-
-   if (instr->isVOPC()) {
-      CmpInfo info;
-      if (get_cmp_info(instr->opcode, &info) && info.swapped != aco_opcode::num_opcodes) {
-         *new_op = info.swapped;
-         return true;
-      }
-   }
+   CmpInfo info;
+   if (get_cmp_info(opcode, &info) && info.swapped != aco_opcode::num_opcodes)
+      return info.swapped;
 
    /* opcodes not relevant for DPP or SGPRs optimizations are not included. */
-   switch (instr->opcode) {
-   case aco_opcode::v_med3_f32: return false; /* order matters for clamp+GFX8+denorm ftz. */
+   switch (opcode) {
    case aco_opcode::v_add_u32:
    case aco_opcode::v_add_co_u32:
    case aco_opcode::v_add_co_u32_e64:
@@ -1094,19 +1081,19 @@ can_swap_operands(aco_ptr<Instruction>& instr, aco_opcode* new_op, unsigned idx0
    case aco_opcode::v_max_i16_e64:
    case aco_opcode::v_min_i16_e64:
    case aco_opcode::v_max_u16_e64:
-   case aco_opcode::v_min_u16_e64: *new_op = instr->opcode; return true;
-   case aco_opcode::v_sub_f16: *new_op = aco_opcode::v_subrev_f16; return true;
-   case aco_opcode::v_sub_f32: *new_op = aco_opcode::v_subrev_f32; return true;
-   case aco_opcode::v_sub_co_u32: *new_op = aco_opcode::v_subrev_co_u32; return true;
-   case aco_opcode::v_sub_u16: *new_op = aco_opcode::v_subrev_u16; return true;
-   case aco_opcode::v_sub_u32: *new_op = aco_opcode::v_subrev_u32; return true;
-   case aco_opcode::v_sub_co_u32_e64: *new_op = aco_opcode::v_subrev_co_u32_e64; return true;
-   case aco_opcode::v_subrev_f16: *new_op = aco_opcode::v_sub_f16; return true;
-   case aco_opcode::v_subrev_f32: *new_op = aco_opcode::v_sub_f32; return true;
-   case aco_opcode::v_subrev_co_u32: *new_op = aco_opcode::v_sub_co_u32; return true;
-   case aco_opcode::v_subrev_u16: *new_op = aco_opcode::v_sub_u16; return true;
-   case aco_opcode::v_subrev_u32: *new_op = aco_opcode::v_sub_u32; return true;
-   case aco_opcode::v_subrev_co_u32_e64: *new_op = aco_opcode::v_sub_co_u32_e64; return true;
+   case aco_opcode::v_min_u16_e64: return opcode;
+   case aco_opcode::v_sub_f16: return aco_opcode::v_subrev_f16;
+   case aco_opcode::v_sub_f32: return aco_opcode::v_subrev_f32;
+   case aco_opcode::v_sub_co_u32: return aco_opcode::v_subrev_co_u32;
+   case aco_opcode::v_sub_u16: return aco_opcode::v_subrev_u16;
+   case aco_opcode::v_sub_u32: return aco_opcode::v_subrev_u32;
+   case aco_opcode::v_sub_co_u32_e64: return aco_opcode::v_subrev_co_u32_e64;
+   case aco_opcode::v_subrev_f16: return aco_opcode::v_sub_f16;
+   case aco_opcode::v_subrev_f32: return aco_opcode::v_sub_f32;
+   case aco_opcode::v_subrev_co_u32: return aco_opcode::v_sub_co_u32;
+   case aco_opcode::v_subrev_u16: return aco_opcode::v_sub_u16;
+   case aco_opcode::v_subrev_u32: return aco_opcode::v_sub_u32;
+   case aco_opcode::v_subrev_co_u32_e64: return aco_opcode::v_sub_co_u32_e64;
    case aco_opcode::v_addc_co_u32:
    case aco_opcode::v_mad_i32_i24:
    case aco_opcode::v_mad_u32_u24:
@@ -1150,24 +1137,44 @@ can_swap_operands(aco_ptr<Instruction>& instr, aco_opcode* new_op, unsigned idx0
    case aco_opcode::v_fma_mixhi_f16:
    case aco_opcode::v_pk_fmac_f16: {
       if (idx1 == 2)
-         return false;
-      *new_op = instr->opcode;
-      return true;
+         return aco_opcode::num_opcodes;
+      return opcode;
    }
    case aco_opcode::v_subb_co_u32: {
       if (idx1 == 2)
-         return false;
-      *new_op = aco_opcode::v_subbrev_co_u32;
-      return true;
+         return aco_opcode::num_opcodes;
+      return aco_opcode::v_subbrev_co_u32;
    }
    case aco_opcode::v_subbrev_co_u32: {
       if (idx1 == 2)
-         return false;
-      *new_op = aco_opcode::v_subb_co_u32;
+         return aco_opcode::num_opcodes;
+      return aco_opcode::v_subb_co_u32;
+   }
+   case aco_opcode::v_med3_f32: /* order matters for clamp+GFX8+denorm ftz. */
+   default: return aco_opcode::num_opcodes;
+   }
+}
+
+bool
+can_swap_operands(aco_ptr<Instruction>& instr, aco_opcode* new_op, unsigned idx0, unsigned idx1)
+{
+   if (idx0 == idx1) {
+      *new_op = instr->opcode;
       return true;
    }
-   default: return false;
-   }
+
+   if (instr->isDPP())
+      return false;
+
+   if (!instr->isVOP3() && !instr->isVOP3P() && !instr->operands[0].isOfType(RegType::vgpr))
+      return false;
+
+   aco_opcode candidate = get_swapped_opcode(instr->opcode, idx0, idx1);
+   if (candidate == aco_opcode::num_opcodes)
+      return false;
+
+   *new_op = candidate;
+   return true;
 }
 
 wait_imm::wait_imm()
