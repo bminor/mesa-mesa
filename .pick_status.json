@@ -6434,7 +6434,7 @@
         "description": "meson,ci: remove dead `kmsro` option in `gallium-drivers`",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "70813c1c13b99cb029c8fa3537163650bdd17b6d",
         "notes": null
