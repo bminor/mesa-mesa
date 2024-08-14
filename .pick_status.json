@@ -1,5 +1,215 @@
 [
     {
+        "sha": "214b6c30406f844560bdf35a54ff8a51ee248709",
+        "description": "radeonsi/vcn: Only insert headers when requested for H264/5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c9ccce52711f680ec025ce29265a2f4638e03a7f",
+        "description": "frontends/omx: Request SPS PPS for IDR pictures",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "31f6fe13561e7610aadb9cab97edf5ee1d7a8a90",
+        "description": "frontends/va: Keep track if VPS/SPS/PPS/AUD was sent",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba1bc7c4955ff37c4b54511c33c4a1cad51d779e",
+        "description": "frontends/va: Don't check header type for packed header buffers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f8dcf15ed2e32b3abf6be772aca0dfdab9e21a13",
+        "description": "gallium: Add header_flags to pipe_h2645_enc_picture_desc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a43f18dd0468ec3ded8e3d34992e2f8fa4f1f6d1",
+        "description": "intel/dev: update mesa_defs.json from workaround database",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9fe18727e1ba01544fff78c2d584d44b392086e",
+        "description": "pvr: emit tpu_tag_cdm_ctrl in compute stream when present",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "19bf1b661bc4f7597ec49710625fe949592b8c5e",
+        "description": "pvr: add tpu_dm_global_registers feature",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6dafb5c1a23a62e37620c99d5d99b00bf9540d6",
+        "description": "pvr: enlarge transfer fw_stream buffer for multicore",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d2bc5b307f9099c79618ea0bae37e31d7bfbcc2",
+        "description": "android: simplify building libgallium_dri on Android",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9568976c52a4b9fb4af659d127bfc6f9d9e7970d",
+        "notes": null
+    },
+    {
+        "sha": "cf0884d161516f82ba9d9545434cdc6be1188e6c",
+        "description": "radv/meta: create DGC prepare pipeline on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3a4ce4a5a3b84de8f170328b1a2280e1b27db84d",
+        "description": "radv/meta: simplify initializing bufimage pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "586d6cb588399817177d5ced6325dd649d45466c",
+        "description": "radv/meta: create cleari layouts on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1dfb6e19d56f502c7b0c7353da4b456565436364",
+        "description": "radv/meta: create itoi layouts on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd00446bb03e693f0cea9a4227513d470ddd4b61",
+        "description": "radv/meta: create btoi layouts on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1b8e7fa737ad974a9ddd86a4e0f1b71e1c56a73",
+        "description": "radv/meta: create itob layouts on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db94ee1e648ec6c02c9e190dbddfb873f8c9f14e",
+        "description": "radv/meta: create blit2d layouts on-demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2352cb22447f08701403354229ca5fe7f7bc0d9e",
+        "description": "radv/meta: remove unused parameter from some blit init functions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eabbd077cc680c8468754de75dccd1e263a8fdae",
+        "description": "radv/meta: simplify initializing DCC comp-to-single pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9c591d0c270c8412a22be3777d2479cdcae97edf",
+        "description": "radv/meta: rework creating blit pipelines",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "978599a052632ecc8f1b02b9e68432c5857046b5",
+        "description": "radv/meta: simplify radv_meta_blit2d_normal_dst()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "c90e2bccf756004e48f9e7e71e555db0d03c1b98",
         "description": "etnaviv: properly set PIPE_CAP_GRAPHICS",
         "nominated": false,
