@@ -1714,7 +1714,7 @@
         "description": "ci/alpine: use llvm variables",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "da391650f534cc78c4907010010a475a72e49422",
         "notes": null
