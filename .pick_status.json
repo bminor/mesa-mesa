@@ -3384,7 +3384,7 @@
         "description": "r300: fix RGB10_A2 CONSTANT_COLOR blending",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "910bac63dfc5c6d9bf7162388c951784eba534f6",
         "notes": null
