@@ -294,7 +294,7 @@
         "description": "vulkan: Add null descriptor bits to vk_pipeline_robustness_state",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c9eac89da8357b372e6cba88f49bfb7cdb61d8bd",
         "notes": null
