@@ -6004,7 +6004,7 @@
         "description": "ci: remove dead start-x.sh script",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "599e8bf9212a1ef2f85a62ce48339aea0d365072",
         "notes": null
