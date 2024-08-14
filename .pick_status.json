@@ -1,5 +1,35 @@
 [
     {
+        "sha": "cc2dbb8ea5329b509d79eedb6c0cbb9a1903b5ad",
+        "description": "meson: Additionally probe -mtls-dialect=desc for TLSDESC support",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56f38672a28b91f4be8cf2bb89a47df75a67a663",
+        "description": "meson: Force use of LLVM ORCJIT for hosts without MCJIT support",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6f02ec5ed18a0a9bdd3739287cce54a621ea3bad",
+        "notes": null
+    },
+    {
+        "sha": "5a97916fdce788ac707df94d6b3b145a377482ac",
+        "description": "wsi/x11: Bump maximum number of outstanding COMPLETE events.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "19dba854be005142f70c36895622c5d46c3b9ba2",
+        "notes": null
+    },
+    {
         "sha": "214b6c30406f844560bdf35a54ff8a51ee248709",
         "description": "radeonsi/vcn: Only insert headers when requested for H264/5",
         "nominated": false,
