@@ -928,8 +928,11 @@ i915_queue_exec_locked(struct anv_queue *queue,
           (query_info->kind == INTEL_PERF_QUERY_TYPE_OA ||
            query_info->kind == INTEL_PERF_QUERY_TYPE_RAW)) {
          int ret = intel_perf_stream_set_metrics_id(device->physical->perf,
+                                                    device->fd,
                                                     device->perf_fd,
-                                                    query_info->oa_metrics_set_id);
+                                                    -1,/* this parameter, exec_queue is not used in i915 */
+                                                    query_info->oa_metrics_set_id,
+                                                    NULL);
          if (ret < 0) {
             result = vk_device_set_lost(&device->vk,
                                         "i915-perf config failed: %s",

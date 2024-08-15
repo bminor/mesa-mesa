@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "compiler/glsl/list.h"
+#include "common/intel_bind_timeline.h"
 #include "dev/intel_device_info.h"
 #include "util/bitscan.h"
 #include "util/bitset.h"
@@ -585,14 +586,17 @@ void intel_perf_get_counters_passes(struct intel_perf_config *perf,
 int intel_perf_stream_open(struct intel_perf_config *perf_config, int drm_fd,
                            uint32_t ctx_id, uint64_t metrics_set_id,
                            uint64_t period_exponent, bool hold_preemption,
-                           bool enable);
+                           bool enable, struct intel_bind_timeline *timeline);
 int intel_perf_stream_read_samples(struct intel_perf_config *perf_config,
                                    int perf_stream_fd, uint8_t *buffer,
                                    size_t buffer_len);
 int intel_perf_stream_set_state(struct intel_perf_config *perf_config,
                                 int perf_stream_fd, bool enable);
 int intel_perf_stream_set_metrics_id(struct intel_perf_config *perf_config,
-                                     int perf_stream_fd, uint64_t metrics_set_id);
+                                     int drm_fd, int perf_stream_fd,
+                                     uint32_t exec_queue,
+                                     uint64_t metrics_set_id,
+                                     struct intel_bind_timeline *timeline);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1569,7 +1569,7 @@ int
 intel_perf_stream_open(struct intel_perf_config *perf_config, int drm_fd,
                        uint32_t ctx_id, uint64_t metrics_set_id,
                        uint64_t period_exponent, bool hold_preemption,
-                       bool enable)
+                       bool enable, struct intel_bind_timeline *timeline)
 {
    uint64_t report_format = intel_perf_get_oa_format(perf_config);
 
@@ -1581,7 +1581,7 @@ intel_perf_stream_open(struct intel_perf_config *perf_config, int drm_fd,
    case INTEL_KMD_TYPE_XE:
       return xe_perf_stream_open(perf_config, drm_fd, ctx_id, metrics_set_id,
                                  report_format, period_exponent,
-                                 hold_preemption, enable);
+                                 hold_preemption, enable, timeline);
    default:
          unreachable("missing");
          return 0;
@@ -1629,13 +1629,18 @@ intel_perf_stream_set_state(struct intel_perf_config *perf_config,
 
 int
 intel_perf_stream_set_metrics_id(struct intel_perf_config *perf_config,
-                                 int perf_stream_fd, uint64_t metrics_set_id)
+                                 int drm_fd, int perf_stream_fd,
+                                 uint32_t exec_queue,
+                                 uint64_t metrics_set_id,
+                                 struct intel_bind_timeline *timeline)
 {
    switch (perf_config->devinfo->kmd_type) {
    case INTEL_KMD_TYPE_I915:
       return i915_perf_stream_set_metrics_id(perf_stream_fd, metrics_set_id);
    case INTEL_KMD_TYPE_XE:
-      return xe_perf_stream_set_metrics_id(perf_stream_fd, metrics_set_id);
+      return xe_perf_stream_set_metrics_id(perf_stream_fd, drm_fd,
+                                           exec_queue, metrics_set_id,
+                                           timeline);
    default:
          unreachable("missing");
          return -1;

@@ -11,6 +11,7 @@
 #include "perf/intel_perf.h"
 #include "intel_perf_common.h"
 #include "intel/common/intel_gem.h"
+#include "intel/common/xe/intel_queue.h"
 
 #include "drm-uapi/xe_drm.h"
 
@@ -136,13 +137,18 @@ int
 xe_perf_stream_open(struct intel_perf_config *perf_config, int drm_fd,
                     uint32_t exec_id, uint64_t metrics_set_id,
                     uint64_t report_format, uint64_t period_exponent,
-                    bool hold_preemption, bool enable)
+                    bool hold_preemption, bool enable,
+                    struct intel_bind_timeline *timeline)
 {
    struct drm_xe_ext_set_property props[DRM_XE_OA_PROPERTY_NO_PREEMPT + 1] = {};
    struct drm_xe_observation_param observation_param = {
       .observation_type = DRM_XE_OBSERVATION_TYPE_OA,
       .observation_op = DRM_XE_OBSERVATION_OP_STREAM_OPEN,
       .param = (uintptr_t)&props,
+   };
+   struct drm_xe_sync sync = {
+      .type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ,
+      .flags = DRM_XE_SYNC_FLAG_SIGNAL,
    };
    uint32_t i = 0;
    int fd, flags;
@@ -157,7 +163,18 @@ xe_perf_stream_open(struct intel_perf_config *perf_config, int drm_fd,
    if (hold_preemption)
       oa_prop_set(props, &i, DRM_XE_OA_PROPERTY_NO_PREEMPT, hold_preemption);
 
-   fd = intel_ioctl(drm_fd, DRM_IOCTL_XE_OBSERVATION, &observation_param);
+   if (timeline && intel_bind_timeline_get_syncobj(timeline)) {
+      oa_prop_set(props, &i, DRM_XE_OA_PROPERTY_NUM_SYNCS, 1);
+      oa_prop_set(props, &i, DRM_XE_OA_PROPERTY_SYNCS, (uintptr_t)&sync);
+
+      sync.handle = intel_bind_timeline_get_syncobj(timeline);
+      sync.timeline_value = intel_bind_timeline_bind_begin(timeline);
+      fd = intel_ioctl(drm_fd, DRM_IOCTL_XE_OBSERVATION, &observation_param);
+      intel_bind_timeline_bind_end(timeline);
+   } else {
+      fd = intel_ioctl(drm_fd, DRM_IOCTL_XE_OBSERVATION, &observation_param);
+   }
+
    if (fd < 0)
       return fd;
 
@@ -181,15 +198,63 @@ xe_perf_stream_set_state(int perf_stream_fd, bool enable)
 }
 
 int
-xe_perf_stream_set_metrics_id(int perf_stream_fd, uint64_t metrics_set_id)
+xe_perf_stream_set_metrics_id(int perf_stream_fd, int drm_fd,
+                              uint32_t exec_queue, uint64_t metrics_set_id,
+                              struct intel_bind_timeline *timeline)
 {
-   struct drm_xe_ext_set_property prop = {};
+   struct drm_xe_ext_set_property prop[3] = {};
    uint32_t index = 0;
+   int ret;
 
-   oa_prop_set(&prop, &index, DRM_XE_OA_PROPERTY_OA_METRIC_SET,
-                 metrics_set_id);
-   return intel_ioctl(perf_stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG,
-                      (void *)(uintptr_t)&prop);
+   oa_prop_set(prop, &index, DRM_XE_OA_PROPERTY_OA_METRIC_SET,
+               metrics_set_id);
+
+   if (timeline && intel_bind_timeline_get_syncobj(timeline)) {
+      struct drm_xe_sync xe_syncs[3] = {};
+      uint32_t syncobj;
+      int ret2;
+
+      oa_prop_set(prop, &index, DRM_XE_OA_PROPERTY_NUM_SYNCS, ARRAY_SIZE(xe_syncs));
+      oa_prop_set(prop, &index, DRM_XE_OA_PROPERTY_SYNCS, (uintptr_t)xe_syncs);
+
+      /* wait on all previous exec in queues */
+      ret = xe_queue_get_syncobj_for_idle(drm_fd, exec_queue, &syncobj);
+      if (ret)
+         return ret;
+      xe_syncs[0].type = DRM_XE_SYNC_TYPE_SYNCOBJ;
+      xe_syncs[0].flags = 0;/* wait */
+      xe_syncs[0].handle = syncobj;
+
+      /* wait on previous set_metrics_id to complete */
+      xe_syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+      xe_syncs[1].flags = 0;/* wait */
+      xe_syncs[1].handle = intel_bind_timeline_get_syncobj(timeline);
+      xe_syncs[1].timeline_value = intel_bind_timeline_get_last_point(timeline);
+
+      /* signal completion */
+      xe_syncs[2].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+      xe_syncs[2].flags = DRM_XE_SYNC_FLAG_SIGNAL;
+      xe_syncs[2].handle = intel_bind_timeline_get_syncobj(timeline);
+      xe_syncs[2].timeline_value = intel_bind_timeline_bind_begin(timeline);
+
+      ret = intel_ioctl(perf_stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG,
+                        (void *)(uintptr_t)&prop);
+      intel_bind_timeline_bind_end(timeline);
+
+      /* Looks safe to destroy as Xe KMD should increase the ref count until
+       * it is using it
+       */
+      struct drm_syncobj_destroy syncobj_destroy = {
+         .handle = syncobj,
+      };
+      ret2 = intel_ioctl(drm_fd, DRM_IOCTL_SYNCOBJ_DESTROY, &syncobj_destroy);
+      assert(ret2 == 0);
+   } else {
+      ret = intel_ioctl(perf_stream_fd, DRM_XE_OBSERVATION_IOCTL_CONFIG,
+                        (void *)(uintptr_t)&prop);
+   }
+
+   return ret;
 }
 
 static int
