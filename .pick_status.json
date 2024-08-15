@@ -484,7 +484,7 @@
         "description": "ir3/legalize: handle scalar ALU WAR hazards for a0.x",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "876c5396a7893d2a55a2d6635085d70c03c216d4",
         "notes": null
