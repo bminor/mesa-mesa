@@ -404,7 +404,7 @@
         "description": "Revert \"tu/a750: Disable HW binning when there is GS\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7eb6123e98e0eaa65b24e41a8f1efe44b4a95513",
         "notes": null
