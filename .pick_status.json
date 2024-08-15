@@ -1254,7 +1254,7 @@
         "description": "rusticl/device: limit CL_DEVICE_IMAGE_MAX_BUFFER_SIZE more aggressively",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
