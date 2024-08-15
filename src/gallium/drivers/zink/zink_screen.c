@@ -507,6 +507,8 @@ zink_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
       RET((uint32_t []) { 1 });
 
    case PIPE_COMPUTE_CAP_MAX_SUBGROUPS:
+      RET((uint32_t []) { screen->info.props13.maxComputeWorkgroupSubgroups });
+
    case PIPE_COMPUTE_CAP_MAX_CLOCK_FREQUENCY:
    case PIPE_COMPUTE_CAP_MAX_PRIVATE_SIZE:
    case PIPE_COMPUTE_CAP_MAX_INPUT_SIZE:
@@ -1225,6 +1227,13 @@ zink_init_screen_caps(struct zink_screen *screen)
       screen->info.props.limits.maxSamplerAnisotropy : 1.0f;
 
    caps->max_texture_lod_bias = screen->info.props.limits.maxSamplerLodBias;
+
+   if (screen->info.feats12.subgroupBroadcastDynamicId && screen->info.feats12.shaderSubgroupExtendedTypes && screen->info.feats.features.shaderFloat64) {
+      caps->shader_subgroup_size = screen->info.subgroup.subgroupSize;
+      caps->shader_subgroup_supported_stages = screen->info.subgroup.supportedStages & BITFIELD_MASK(MESA_SHADER_STAGES);
+      caps->shader_subgroup_supported_features = screen->info.subgroup.supportedOperations & BITFIELD_MASK(PIPE_SHADER_SUBGROUP_NUM_FEATURES);
+      caps->shader_subgroup_quad_all_stages = screen->info.subgroup.quadOperationsInAllStages;
+   }
 }
 
 static VkSampleCountFlagBits
