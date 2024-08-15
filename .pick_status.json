@@ -394,7 +394,7 @@
         "description": "pipe_loader_drm: Fix virtgpu_drm header path",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2ea4a59ab7cf07d660c424760ec74eff8f34a3cc",
         "notes": null
