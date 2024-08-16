@@ -200,6 +200,9 @@ struct wsi_swapchain {
    VkAllocationCallbacks alloc;
    VkFence* fences;
    VkPresentModeKHR present_mode;
+   VkPresentGravityFlagsEXT present_gravity_x;
+   VkPresentGravityFlagsEXT present_gravity_y;
+
    /**
     * Timeline for presents completing according to VK_KHR_present_wait.  The
     * present should complete as close as possible (before or after!) to the
