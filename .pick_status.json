@@ -74,7 +74,7 @@
         "description": "panvk: Adjust RGB component order for fixed-function blending",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "004e0eb3ab854957bdb798142678765360b7104b",
         "notes": null
