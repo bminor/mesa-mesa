@@ -315,7 +315,7 @@ xe_queue_exec_locked(struct anv_queue *queue,
                        perf_query_pass, &exec);
 
    if (perf_query_pool && cmd_buffer_count) {
-      struct drm_xe_sync xe_syncs[1] = {};
+      struct drm_xe_sync xe_syncs[2] = {};
       struct drm_xe_exec perf_query_exec = {
             .exec_queue_id = queue->exec_queue_id,
             .num_batch_buffer = 1,
@@ -338,7 +338,7 @@ xe_queue_exec_locked(struct anv_queue *queue,
                                                     device->perf_fd,
                                                     queue->exec_queue_id,
                                                     query_info->oa_metrics_set_id,
-                                                    NULL);
+                                                    &device->perf_timeline);
          if (ret < 0) {
             result = vk_device_set_lost(&device->vk,
                                         "intel_perf_stream_set_metrics_id failed: %s",
@@ -346,10 +346,20 @@ xe_queue_exec_locked(struct anv_queue *queue,
          }
       }
 
+      /* wait on completion of all vm binds */
       xe_syncs[0].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
       xe_syncs[0].flags = 0;/* wait */
       xe_syncs[0].handle = intel_bind_timeline_get_syncobj(&device->bind_timeline);
       xe_syncs[0].timeline_value = intel_bind_timeline_get_last_point(&device->bind_timeline);
+
+      /* wait for metric change if supported */
+      if (intel_bind_timeline_get_syncobj(&device->perf_timeline)) {
+         perf_query_exec.num_syncs++;
+         xe_syncs[1].type = DRM_XE_SYNC_TYPE_TIMELINE_SYNCOBJ;
+         xe_syncs[1].flags = 0;/* wait */
+         xe_syncs[1].handle = intel_bind_timeline_get_syncobj(&device->perf_timeline);
+         xe_syncs[1].timeline_value = intel_bind_timeline_get_last_point(&device->perf_timeline);
+      }
 
       if (!device->info->no_hw && result == VK_SUCCESS) {
          if (intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, &perf_query_exec))

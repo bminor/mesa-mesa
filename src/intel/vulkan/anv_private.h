@@ -1964,6 +1964,7 @@ struct anv_device {
 
     int                                         perf_fd; /* -1 if no opened */
     struct anv_queue                            *perf_queue;
+    struct intel_bind_timeline                  perf_timeline;
 
     struct intel_aux_map_context                *aux_map_ctx;
 

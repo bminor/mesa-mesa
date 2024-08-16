@@ -101,6 +101,8 @@ anv_device_perf_close(struct anv_device *device)
    if (device->perf_fd == -1)
       return;
 
+   if (intel_bind_timeline_get_syncobj(&device->perf_timeline))
+      intel_bind_timeline_finish(&device->perf_timeline, device->fd);
    close(device->perf_fd);
    device->perf_fd = -1;
 }
@@ -133,11 +135,19 @@ anv_device_perf_open(struct anv_device *device, struct anv_queue *queue, uint64_
    uint64_t period_exponent = 31; /* slowest sampling period */
    int ret;
 
+   if (intel_perf_has_metric_sync(device->physical->perf)) {
+      if (!intel_bind_timeline_init(&device->perf_timeline, device->fd))
+         return -1;
+   }
+
    ret = intel_perf_stream_open(device->physical->perf, device->fd,
                                 anv_device_perf_get_queue_context_or_exec_queue_id(queue),
-                                metric_id, period_exponent, true, true, NULL);
+                                metric_id, period_exponent, true, true,
+                                &device->perf_timeline);
    if (ret >= 0)
       device->perf_queue = queue;
+   else
+      intel_bind_timeline_finish(&device->perf_timeline, device->fd);
 
    return ret;
 }
@@ -290,7 +300,7 @@ VkResult anv_QueueSetPerformanceConfigurationINTEL(
                                                     device->perf_fd,
                                                     context_or_exec_queue,
                                                     config->config_id,
-                                                    NULL);
+                                                    &device->perf_timeline);
          if (ret < 0)
             return vk_device_set_lost(&device->vk, "i915-perf config failed: %m");
       }
