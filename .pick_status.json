@@ -2664,7 +2664,7 @@
         "description": "nouveau/mme: Fix add64 of immediates on Fermi",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "162269f04981da3905b22dfc8afacadc619c71c2",
         "notes": null
