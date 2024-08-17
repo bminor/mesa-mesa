@@ -1444,7 +1444,7 @@
         "description": "aco: Fix 1D->2D dispatch conversion on <gfx9",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1e3541728b63cd635aac7211b76798edfa8c34eb",
         "notes": null
