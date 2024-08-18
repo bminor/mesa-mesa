@@ -272,6 +272,75 @@ brw_type_decode_for_3src(const struct intel_device_info *devinfo,
 }
 
 /**
+ * Convert a brw_reg_type enumeration value into the hardware representation
+ * for the newer 3-bit data type with separate enums for float vs integer.
+ */
+unsigned
+brw_data_type_encode(const struct intel_device_info *devinfo,
+                     enum brw_reg_type type)
+{
+   static const struct {
+      uint8_t ty:5;
+      bool    invalid:1;
+   } map[] = {
+      [0 ... BRW_TYPE_LAST]     = { .invalid = true },
+      [BRW_TYPE_UB]             = { BRW_TYPE_INT_UB },
+      [BRW_TYPE_UW]             = { BRW_TYPE_INT_UW },
+      [BRW_TYPE_UD]             = { BRW_TYPE_INT_UD },
+      [BRW_TYPE_UQ]             = { BRW_TYPE_INT_UQ },
+      [BRW_TYPE_B]              = { BRW_TYPE_INT_B },
+      [BRW_TYPE_W]              = { BRW_TYPE_INT_W },
+      [BRW_TYPE_D]              = { BRW_TYPE_INT_D },
+      [BRW_TYPE_Q]              = { BRW_TYPE_INT_Q },
+      [BRW_TYPE_HF]             = { BRW_TYPE_FLOAT_HF },
+      [BRW_TYPE_F]              = { BRW_TYPE_FLOAT_F },
+      [BRW_TYPE_DF]             = { BRW_TYPE_FLOAT_DF },
+      [BRW_TYPE_BF]             = { BRW_TYPE_FLOAT_BF },
+   };
+
+   if (type < ARRAY_SIZE(map) && !map[type].invalid) {
+      return map[type].ty;
+   } else {
+      UNREACHABLE("Unsupported brw_reg_type!");
+      return brw_type_is_float(type) ? BRW_TYPE_FLOAT_F : BRW_TYPE_INT_UD;
+   }
+}
+
+/**
+ * Convert a brw_reg_type enumeration value into the hardware representation
+ * for the newer 3-bit data type with separate enums for float vs integer.
+ */
+enum brw_reg_type
+brw_data_type_decode(const struct intel_device_info *devinfo,
+                     unsigned data_type, bool exec_type)
+{
+   static const uint8_t map[2][8] = {
+      [0 /* int exec_type */] = {
+         [0 ... 7]              = BRW_TYPE_INVALID,
+         [BRW_TYPE_INT_UB]      = BRW_TYPE_UB,
+         [BRW_TYPE_INT_UW]      = BRW_TYPE_UW,
+         [BRW_TYPE_INT_UD]      = BRW_TYPE_UD,
+         [BRW_TYPE_INT_UQ]      = BRW_TYPE_UQ,
+         [BRW_TYPE_INT_B]       = BRW_TYPE_B,
+         [BRW_TYPE_INT_W]       = BRW_TYPE_W,
+         [BRW_TYPE_INT_D]       = BRW_TYPE_D,
+         [BRW_TYPE_INT_Q]       = BRW_TYPE_Q,
+      },
+      [1 /* float exec_type */] = {
+         [0 ... 7]              = BRW_TYPE_INVALID,
+         [BRW_TYPE_FLOAT_HF]    = BRW_TYPE_HF,
+         [BRW_TYPE_FLOAT_F]     = BRW_TYPE_F,
+         [BRW_TYPE_FLOAT_DF]    = BRW_TYPE_DF,
+         [BRW_TYPE_FLOAT_BF]    = BRW_TYPE_BF,
+      },
+   };
+   STATIC_ASSERT(ARRAY_SIZE(map) == 2 && ARRAY_SIZE(map[0]) == 8);
+
+   assert(data_type < ARRAY_SIZE(map[0]));
+   return map[exec_type][data_type];
+}
+
+/**
  * Converts a BRW_TYPE_* enum to a short string (F, UD, and so on).
  *
  * This is different than reg_encoding from brw_disasm.c in that it operates
