@@ -188,6 +188,33 @@ brw_type_larger_of(enum brw_reg_type a, enum brw_reg_type b)
 
 /* -------------------------------------------------------------- */
 
+/**
+ * Enum for float data types.
+ */
+enum PACKED brw_data_type_float {
+   BRW_TYPE_FLOAT_BF8   = 0,
+   BRW_TYPE_FLOAT_HF    = 1,
+   BRW_TYPE_FLOAT_F     = 2,
+   BRW_TYPE_FLOAT_DF    = 3,
+   BRW_TYPE_FLOAT_HF8   = 4,
+   BRW_TYPE_FLOAT_BF    = 5,
+   BRW_TYPE_FLOAT_TF32  = 6,
+};
+
+/**
+ * Enum for integer data types.
+ */
+enum PACKED brw_data_type_int {
+   BRW_TYPE_INT_UB      = 0,
+   BRW_TYPE_INT_UW      = 1,
+   BRW_TYPE_INT_UD      = 2,
+   BRW_TYPE_INT_UQ      = 3,
+   BRW_TYPE_INT_B       = 4,
+   BRW_TYPE_INT_W       = 5,
+   BRW_TYPE_INT_D       = 6,
+   BRW_TYPE_INT_Q       = 7,
+};
+
 unsigned
 brw_type_encode(const struct intel_device_info *devinfo,
                 enum brw_reg_file file, enum brw_reg_type type);
