@@ -1684,7 +1684,7 @@
         "description": "aco: fix bogus assert in RT prolog on GFX11+",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bd525f428235dc9292d2bec06695b8906849441e",
         "notes": null
