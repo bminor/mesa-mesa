@@ -1937,6 +1937,7 @@ struct anv_device {
 
     int                                         perf_fd; /* -1 if no opened */
     uint64_t                                    perf_metric; /* 0 if unset */
+    struct anv_queue                            *perf_queue;
 
     struct intel_aux_map_context                *aux_map_ctx;
 
