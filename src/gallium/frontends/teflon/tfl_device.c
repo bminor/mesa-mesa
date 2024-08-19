@@ -431,6 +431,51 @@ partition_invoke(TfLiteContext *tf_context, TfLiteNode *node)
    return kTfLiteOk;
 }
 
+static const char *tflite_builtin_op_name(TfLiteBuiltinOperator op)
+{
+   switch (op) {
+      case kTfLiteBuiltinAdd: return "ADD";
+      case kTfLiteBuiltinAveragePool2d: return "AVGPOOL";
+      case kTfLiteBuiltinConv2d: return "CONV";
+      case kTfLiteBuiltinDepthwiseConv2d: return "DWCONV";
+      case kTfLiteBuiltinDequantize: return "DEQUANT";
+      case kTfLiteBuiltinHardSwish: return "HSWISH";
+      case kTfLiteBuiltinMul: return "MUL";
+      case kTfLiteBuiltinPad: return "PAD";
+      case kTfLiteBuiltinQuantize: return "QUANT";
+      case kTfLiteBuiltinReshape: return "RESHAPE";
+      case kTfLiteBuiltinSoftmax: return "SOFTMAX";
+      case kTfLiteBuiltinSqueeze: return "SQUEEZE";
+      case kTfLiteBuiltinFullyConnected: return "FC";
+      case kTfLiteBuiltinMean: return "MEAN";
+      default: return "unknown";
+   }
+}
+
+static const char *tflite_type_name(TfLiteType type)
+{
+   switch (type) {
+      case kTfLiteNoType: return "no";
+      case kTfLiteFloat32: return "f32";
+      case kTfLiteUInt16: return "u16";
+      case kTfLiteInt16: return "i16";
+      case kTfLiteUInt32: return "u32";
+      case kTfLiteInt32: return "i32";
+      case kTfLiteUInt8: return "u8";
+      case kTfLiteInt8: return "i8";
+      default: return "??";
+   }
+}
+
+static const char *tflite_fused_activation_name(TfLiteFusedActivation activation)
+{
+   switch (activation) {
+      case kTfLiteActRelu: return "ReLU";
+      case kTfLiteActRelu6: return "ReLU6";
+      default: return "unknown";
+   }
+}
+
 static bool
 tensor_quantization_supported(TfLiteTensor *tensor)
 {
@@ -494,6 +539,9 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
    TfLiteIntArray *plan;
    TfLiteNode *node;
    TF_LITE_ENSURE_STATUS(context->GetExecutionPlan(context, &plan));
+
+   teflon_debug("%3s %7s %3s %-11s %s\n", "idx", "type", "ver", "support", "inputs");
+   teflon_debug("================================================================================================\n");
 
    // Get a list of supported nodes.
    TfLiteIntArray *supported_nodes = malloc(plan->size * sizeof(int) + sizeof(*supported_nodes));
@@ -598,6 +646,41 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
             supported = true;
             break;
       }
+
+      teflon_debug("%3d %7s v%-2d %-11s in:", node_index,
+                   tflite_builtin_op_name(registration->builtin_code),
+                   registration->version,
+                   supported ? "supported" : "unsupported");
+      for (int j = 0; j < node->inputs->size; j++) {
+         teflon_debug(" %d(%s)", node->inputs->data[j],
+                      tflite_type_name(context->tensors[node->inputs->data[j]].type));
+      }
+      teflon_debug(" out:");
+      for (int j = 0; j < node->outputs->size; j++) {
+         teflon_debug(" %d(%s)", node->outputs->data[j],
+                      tflite_type_name(context->tensors[node->outputs->data[j]].type));
+      }
+      if (registration->builtin_code == kTfLiteBuiltinConv2d) {
+         TfLiteConvParams* params = (TfLiteConvParams*)node->builtin_data;
+         if (params->activation != kTfLiteActNone) {
+            teflon_debug(" %s", tflite_fused_activation_name(params->activation));
+         }
+         if (registration->version >= 2 &&
+             (params->dilation_width_factor > 1 || params->dilation_height_factor > 1)) {
+            teflon_debug(" dil: %dx%d", params->dilation_width_factor, params->dilation_height_factor);
+         }
+      }
+      if (registration->builtin_code == kTfLiteBuiltinDepthwiseConv2d) {
+         TfLiteDepthwiseConvParams* params = (TfLiteDepthwiseConvParams*)node->builtin_data;
+         if (params->activation != kTfLiteActNone) {
+            teflon_debug(" %s", tflite_fused_activation_name(params->activation));
+         }
+         if (registration->version >= 2 &&
+             (params->dilation_width_factor > 1 || params->dilation_height_factor > 1)) {
+            teflon_debug(" dil: %dx%d", params->dilation_width_factor, params->dilation_height_factor);
+         }
+      }
+      teflon_debug("\n");
 
       if (supported)
          supported_nodes->data[node_count++] = node_index;
