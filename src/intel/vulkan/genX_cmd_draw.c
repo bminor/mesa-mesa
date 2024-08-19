@@ -1736,6 +1736,9 @@ static inline const uint32_t xi_argument_format_for_vk_cmd(enum vk_cmd_type cmd)
       case VK_CMD_DRAW_INDEXED_INDIRECT:
       case VK_CMD_DRAW_INDEXED_INDIRECT_COUNT:
          return XI_DRAWINDEXED;
+      case VK_CMD_DRAW_MESH_TASKS_INDIRECT_EXT:
+      case VK_CMD_DRAW_MESH_TASKS_INDIRECT_COUNT_EXT:
+         return XI_MESH_3D;
       default:
          unreachable("unhandled cmd type");
    }
@@ -1757,6 +1760,9 @@ stride_aligned_for_vk_cmd(uint32_t stride, enum vk_cmd_type cmd)
       case VK_CMD_DRAW_INDEXED_INDIRECT:
       case VK_CMD_DRAW_INDEXED_INDIRECT_COUNT:
          return stride == sizeof(VkDrawIndexedIndirectCommand);
+      case VK_CMD_DRAW_MESH_TASKS_INDIRECT_EXT:
+      case VK_CMD_DRAW_MESH_TASKS_INDIRECT_COUNT_EXT:
+         return stride == sizeof(VkDrawMeshTasksIndirectCommandEXT);
       default:
          unreachable("unhandled cmd type");
    }
@@ -2402,6 +2408,19 @@ genX(CmdDrawMeshTasksIndirectEXT)(
 
    trace_intel_begin_draw_mesh_indirect(&cmd_buffer->trace);
 
+   if (execute_indirect_draw_supported(cmd_buffer)) {
+      genX(cmd_buffer_emit_execute_indirect_draws)(
+         cmd_buffer,
+         anv_address_add(buffer->address, offset),
+         MAX2(stride, sizeof(VkDrawMeshTasksIndirectCommandEXT)),
+         ANV_NULL_ADDRESS /* count_addr */,
+         drawCount,
+         VK_CMD_DRAW_MESH_TASKS_INDIRECT_EXT);
+
+      trace_intel_end_draw_mesh_indirect(&cmd_buffer->trace, drawCount);
+      return;
+   }
+
    genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
 
    if (cmd_state->conditional_render_enabled)
@@ -2452,6 +2471,23 @@ genX(CmdDrawMeshTasksIndirectCountEXT)(
                         "draw mesh indirect count", 0);
 
    trace_intel_begin_draw_mesh_indirect_count(&cmd_buffer->trace);
+
+   struct anv_address count_addr =
+      anv_address_add(count_buffer->address, countBufferOffset);
+
+
+   if (execute_indirect_draw_supported(cmd_buffer)) {
+      genX(cmd_buffer_emit_execute_indirect_draws)(
+         cmd_buffer,
+         anv_address_add(buffer->address, offset),
+         MAX2(stride, sizeof(VkDrawMeshTasksIndirectCommandEXT)),
+         count_addr /* count_addr */,
+         maxDrawCount,
+         VK_CMD_DRAW_MESH_TASKS_INDIRECT_COUNT_EXT);
+
+      trace_intel_end_draw_mesh_indirect(&cmd_buffer->trace, maxDrawCount);
+      return;
+   }
 
    genX(cmd_buffer_flush_gfx_state)(cmd_buffer);
 
