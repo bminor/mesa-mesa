@@ -274,7 +274,7 @@
         "description": "tu: Fix VK_EXT_extended_dynamic_state3 feature",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "84726da2f4400568bfd13e9ea29fdfa88cd70572",
         "notes": null
