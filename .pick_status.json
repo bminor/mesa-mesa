@@ -1044,7 +1044,7 @@
         "description": "zink: bail on choose_pdev immediately if no devices are available",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
