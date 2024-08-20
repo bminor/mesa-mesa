@@ -330,7 +330,7 @@ if with_tests
         idep_intel_shaders,
       ],
       include_directories : [
-        inc_include, inc_src, inc_intel,
+        inc_include, inc_src, inc_intel, inc_compiler, inc_nir
       ],
     ),
     suite : ['intel'],
