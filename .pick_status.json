@@ -394,7 +394,7 @@
         "description": "etnaviv/ci: fix gc2000_piglit test timeout",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f39ffc69110d1da0d87f970bc87802ca81ce9fa9",
         "notes": null
