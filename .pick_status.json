@@ -514,7 +514,7 @@
         "description": "ir3: fix recognizing const/imm registers as a0",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "72bb4d79dcc8addf59e9ea513be059fce6edff9a",
         "notes": null
