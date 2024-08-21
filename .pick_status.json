@@ -1,5 +1,405 @@
 [
     {
+        "sha": "47a2ab6f3fb41bef9062182588f69c217d7e6541",
+        "description": "nv/codegen: Stop overaligning var_function_temp",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86fb61b6dccc01cf315e6b4d663a8017511d489a",
+        "description": "nv/codegen: Use nir_opt_load_store_vectorize",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8887f620b8d89cc56d0c5ed7a33ea674d9c7db55",
+        "description": "nv/codegen: Modify nir pass order",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3dbb28dc89d64d64e37e4a1c61b97ba5223b10c6",
+        "description": "nv/codegen: Vector store ssbo/global/shared/scratc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "710f5703cd397f76484a453ace12241a05277cbc",
+        "description": "nv/codegen: Vector load ssbo/global/shared/scratch",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "64e27b2af18c8818d573c30f4b6436403745fe1d",
+        "description": "nv/codegen: Limit MemoryOpt to input/output/const",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "672246f0fa9437f3f1a887df9ed60db7f1624d84",
+        "description": "nv/codegen: Use nir_lower_mem_access_bit_sizes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73947493e22c05f478e58035fe4b6db40551cf74",
+        "description": "nv50_ir_from_nir: Use getFile() more often",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "879343839bb6ab343b16597f96d701f6d96aba7a",
+        "description": "nv50/peephole: merge/split can swap word order",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71ca8529c5ffa54787f30e6e8b1f9f2971ff649e",
+        "description": "intel/brw/gfx12.5+: Fix IR of sub-dword atomic LSC operations.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "43169dbbe5f963ca47d51873f6639fbe3fd665b0",
+        "notes": null
+    },
+    {
+        "sha": "7cbe8c390d15a1057ab70274bcf623efc351b488",
+        "description": "egl: hook up swap interval bits when using zink on wayland",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a641ca34fa467c0bd38423f6748e5c0322427177",
+        "description": "egl: small refactor to avoid code duplication",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ee7f8964132128aa0be54c9703b3c0ec9a46363",
+        "description": "nouveau/codegen: Switch to derivative intrinsics",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e860879409891786527c52e78f3708911490837",
+        "description": "intel: Move depth clear value writes to drivers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16f9b8e92cf5e97d0bfef517066b43a59a9b86fe",
+        "description": "iris: Move a HIZ_CCS_WT fast-clear flush higher up",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7b0d32c28a7f383a4627536d1881fa86853b513",
+        "description": "intel/blorp: Simplify depth clear value updates",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3294200098c65f8943e1b23cd74b68451528ffab",
+        "description": "intel: Add and use isl_get_sampler_clear_field_offset",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55dbc58bf4e272345c65c118f665d934a6edf4c7",
+        "description": "iris: Invalidate state cache for some depth fast clears",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2dcecffc58a6ab2af0e9310ea5cbae1331c5a4a",
+        "description": "st/pbo: reject vs/fs pbo ops if rowstride < width",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a442f67d2f35c1b18668e06172d49d1087cf8346",
+        "description": "zink: bail on choose_pdev immediately if no devices are available",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07e083477416d51995f48c0e5ca53304e4924541",
+        "description": "intel: Use a simpler workaround for HiZ WT fast-clears",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a28bd0abdf5366c7831a787e873da05aa7721c35",
+        "description": "intel: Adjust partial depth fast clear checks",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dd384104b7dd990a342ba5113b5a11ee411435f6",
+        "description": "intel/blorp: Allow LOD0 fast-clears with HiZ WT",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6afdc9c5a6d69da37d71c66b5feaa2459d398be7",
+        "description": "intel: Enable more LOD0 HIZ+CCS fast clears",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d22d6d814d28440bbe36962127da8d6d167e5bdb",
+        "description": "intel/brw: Fix Xe2+ SWSB encoding/decoding for DPAS instructions",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89f9a6e10b19ad47109cfbaadf00212f49a228f3",
+        "description": "intel/brw: Pass opcode to brw_swsb_encode/decode",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a33ef21106a3b34cb359f0272a103c8b8066fbe6",
+        "description": "docs/envvars: fix reference",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4999e4cd4c00d51408c5e624e0f58051b838d506",
+        "notes": null
+    },
+    {
+        "sha": "b66229ac645ebd7b23c2016fc432658822de225e",
+        "description": "radv: add a small comment describing the DGC implementation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1048da8dd03d0e955338807664e6186de839c0f3",
+        "description": "radv: refactor the DGC helpers to determine cmdbuf size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca447a7a7ef519eb2f1ebae5443968b7f2b2a49d",
+        "description": "radv: pass a dgc_cmdbuf parameter to more dgc helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8027f984434b8697c76a9b9ce990e920e25998bd",
+        "description": "radv: add a small helper to determine the index type with DGC",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "acb40745f8c4ea3e4bc15e4bb00961920b894648",
+        "description": "turnip/ci: add a750_vk flakes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f81986e042cd50ef18939ff5ab78b472581a478",
+        "description": "freedreno/ci: Wire up skips for a630_vk_full",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "679477d83b513b5a4fabce78f8d98a9eaedf56d4",
+        "notes": null
+    },
+    {
+        "sha": "10c64ee63abbc05cb3cbf02c0fcddd22f15bf88d",
+        "description": "tu: Expose VK_KHR_workgroup_memory_explicit_layout",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07c6459cd8a3662c952009f7c4690e59fcfc58cd",
+        "description": "vk/meta: Add copy/fill/update helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dad5c1184ff7713dc47b18ddff7883be9640f271",
+        "description": "vk/meta: Let meta users pass the color attachment write mask explicitly",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ddc527ba4eaf465b87e0670e96f6de147dec1be",
+        "description": "vk/image: Fix the view extent of uncompressed views of compressed images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ff9b8c36b9df71d6afd3d9c06b2530bf8f25f44",
+        "description": "vk/image: Add a vk_image_buffer_range() helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f8b2f967b4db57130190bab241ed4a8d3217289e",
+        "description": "vk/format: Add missing R10G10B10A2_SINT entry in the pipe -> vk table",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff2ebdc4d694a0b4a408e7d874c3b1efa85206aa",
+        "description": "nir/format_convert: Promote input to 32-bit before packing integers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "2b2b66f497bf8c5f91067752995a5c1003255a6f",
         "description": "vk/sync: Use the proper type in vk_filter_{src,dst}_access_flags2()",
         "nominated": false,
