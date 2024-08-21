@@ -231,14 +231,11 @@ nir_opt_non_uniform_access_instr(nir_builder *b, nir_instr *instr, UNUSED void *
 bool
 nir_opt_non_uniform_access(nir_shader *shader)
 {
-   NIR_PASS(_, shader, nir_convert_to_lcssa, true, true);
    nir_divergence_analysis(shader);
 
    bool progress = nir_shader_instructions_pass(shader,
                                                 nir_opt_non_uniform_access_instr,
                                                 nir_metadata_all, NULL);
-
-   NIR_PASS(_, shader, nir_opt_remove_phis); /* cleanup LCSSA phis */
 
    return progress;
 }

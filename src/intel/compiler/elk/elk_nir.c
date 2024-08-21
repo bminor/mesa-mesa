@@ -1464,7 +1464,6 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
    OPT(nir_opt_dead_cf);
 
    bool divergence_analysis_dirty = false;
-   NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
    NIR_PASS_V(nir, nir_divergence_analysis);
 
    /* TODO: Enable nir_opt_uniform_atomics on Gfx7.x too.
@@ -1489,15 +1488,11 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
    /* Do this only after the last opt_gcm. GCM will undo this lowering. */
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       if (divergence_analysis_dirty) {
-         NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
          NIR_PASS_V(nir, nir_divergence_analysis);
       }
 
       OPT(intel_nir_lower_non_uniform_barycentric_at_sample);
    }
-
-   /* Clean up LCSSA phis */
-   OPT(nir_opt_remove_phis);
 
    OPT(nir_lower_bool_to_int32);
    OPT(nir_copy_prop);

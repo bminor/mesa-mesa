@@ -1596,9 +1596,6 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
 
    OPT(nir_opt_load_store_vectorize, &options);
 
-   /* Required for nir_divergence_analysis() */
-   OPT(nir_convert_to_lcssa, true, true);
-
    /* When HW supports block loads, using the divergence analysis, try
     * to find uniform SSBO loads and turn them into block loads.
     *
@@ -1612,7 +1609,6 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
    nir_divergence_analysis(nir);
    if (OPT(intel_nir_blockify_uniform_loads, compiler->devinfo))
       OPT(nir_opt_load_store_vectorize, &options);
-   OPT(nir_opt_remove_phis);
 
    nir_lower_mem_access_bit_sizes_options mem_access_options = {
       .modes = nir_var_mem_ssbo |
@@ -1783,7 +1779,6 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
    OPT(nir_opt_dead_cf);
 
    bool divergence_analysis_dirty = false;
-   NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
    NIR_PASS_V(nir, nir_divergence_analysis);
 
    static const nir_lower_subgroups_options subgroups_options = {
@@ -1833,15 +1828,11 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
    /* Do this only after the last opt_gcm. GCM will undo this lowering. */
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       if (divergence_analysis_dirty) {
-         NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
          NIR_PASS_V(nir, nir_divergence_analysis);
       }
 
       OPT(intel_nir_lower_non_uniform_barycentric_at_sample);
    }
-
-   /* Clean up LCSSA phis */
-   OPT(nir_opt_remove_phis);
 
    OPT(nir_lower_bool_to_int32);
    OPT(nir_copy_prop);

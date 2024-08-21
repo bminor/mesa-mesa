@@ -446,10 +446,9 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
 
    bool fix_derivs_in_divergent_cf =
       stage->stage == MESA_SHADER_FRAGMENT && !radv_use_llvm_for_stage(pdev, stage->stage);
-   if (fix_derivs_in_divergent_cf) {
-      NIR_PASS(_, stage->nir, nir_convert_to_lcssa, true, true);
+   if (fix_derivs_in_divergent_cf)
       nir_divergence_analysis(stage->nir);
-   }
+
    NIR_PASS(_, stage->nir, ac_nir_lower_tex,
             &(ac_nir_lower_tex_options){
                .gfx_level = gfx_level,
@@ -457,8 +456,6 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
                .fix_derivs_in_divergent_cf = fix_derivs_in_divergent_cf,
                .max_wqm_vgprs = 64, // TODO: improve spiller and RA support for linear VGPRs
             });
-   if (fix_derivs_in_divergent_cf)
-      NIR_PASS(_, stage->nir, nir_opt_remove_phis); /* cleanup LCSSA phis */
 
    if (stage->nir->info.uses_resource_info_query)
       NIR_PASS(_, stage->nir, ac_nir_lower_resinfo, gfx_level);
@@ -577,17 +574,12 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    NIR_PASS(_, stage->nir, nir_lower_fp16_casts, nir_lower_fp16_split_fp64);
 
    if (stage->nir->info.bit_sizes_int & (8 | 16)) {
-      if (gfx_level >= GFX8) {
-         NIR_PASS(_, stage->nir, nir_convert_to_lcssa, true, true);
+      if (gfx_level >= GFX8)
          nir_divergence_analysis(stage->nir);
-      }
 
       if (nir_lower_bit_size(stage->nir, lower_bit_size_callback, device)) {
          NIR_PASS(_, stage->nir, nir_opt_constant_folding);
       }
-
-      if (gfx_level >= GFX8)
-         NIR_PASS(_, stage->nir, nir_opt_remove_phis); /* cleanup LCSSA phis */
    }
    if (gfx_level >= GFX9) {
       bool separate_g16 = gfx_level >= GFX10;

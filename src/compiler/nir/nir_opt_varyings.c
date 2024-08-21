@@ -4328,8 +4328,6 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
     * divergence information.
     */
    if (consumer->info.stage == MESA_SHADER_FRAGMENT) {
-      /* Required by the divergence analysis. */
-      NIR_PASS(_, producer, nir_convert_to_lcssa, true, true);
       nir_vertex_divergence_analysis(producer);
    }
 

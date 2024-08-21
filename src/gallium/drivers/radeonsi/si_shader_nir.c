@@ -480,7 +480,6 @@ char *si_finalize_nir(struct pipe_screen *screen, void *nirptr)
    if (progress)
       si_nir_opts(sscreen, nir, false);
 
-   NIR_PASS_V(nir, nir_convert_to_lcssa, true, true); /* required by divergence analysis */
    NIR_PASS_V(nir, nir_divergence_analysis); /* to find divergent loops */
 
    /* Must be after divergence analysis. */
