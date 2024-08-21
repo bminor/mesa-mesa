@@ -84,7 +84,7 @@
         "description": "panvk: Fix viewport calculation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1f57aae4e4f1172c848a44e1682d73dadb14ac24",
         "notes": null
