@@ -222,10 +222,10 @@ CHIPSET(0xa7ab, rpl_p, "RPL-P", "Intel(R) Graphics")
 CHIPSET(0xa7ac, rpl_p, "RPL-U", "Intel(R) Graphics")
 CHIPSET(0xa7ad, rpl_p, "RPL-U", "Intel(R) Graphics")
 
-CHIPSET(0x4905, dg1, "DG1", "Intel(R) Graphics")
+CHIPSET(0x4905, dg1, "DG1", "Intel(R) Iris(R) Xe MAX Graphics")
 CHIPSET(0x4906, dg1, "DG1", "Intel(R) Graphics")
 CHIPSET(0x4907, sg1, "SG1", "Intel(R) Graphics")
-CHIPSET(0x4908, dg1, "DG1", "Intel(R) Graphics")
+CHIPSET(0x4908, dg1, "DG1", "Intel(R) Iris(R) Xe Graphics")
 CHIPSET(0x4909, dg1, "DG1", "Intel(R) Graphics")
 
 CHIPSET(0x5690, dg2_g10, "DG2", "Intel(R) Arc(tm) A770M Graphics")
