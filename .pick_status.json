@@ -1704,7 +1704,7 @@
         "description": "freedreno/ir3: Use nir_lower_mem_access_bit_sizes instead custom lowering",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f5ce806ed73a45a8c856ee79f4fe0074e0bd7b73",
         "notes": null
