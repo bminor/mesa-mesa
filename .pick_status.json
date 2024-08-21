@@ -404,7 +404,7 @@
         "description": "v3dv/ci: fix test timeout for v3dv-rpi5-vk-full:arm64",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4bb564f40dc1ba758c40b5c3a019ad0dc36f9406",
         "notes": null
