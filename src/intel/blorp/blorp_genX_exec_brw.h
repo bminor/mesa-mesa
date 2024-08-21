@@ -1467,6 +1467,18 @@ blorp_emit_gfx8_hiz_op(struct blorp_batch *batch,
    if (params->depth.enabled && params->hiz_op == ISL_AUX_OP_FAST_CLEAR)
       blorp_emit_cc_viewport(batch);
 
+   /* Make sure to disable fragment shader, a previous draw might have enabled
+    * a SIMD32 shader and we could be dispatching threads here with MSAA 16x
+    * which does not support SIMD32.
+    *
+    * dEQP-VK.pipeline.monolithic.multisample.misc.clear_attachments.
+    * r8g8b8a8_unorm_r16g16b16a16_sfloat_r32g32b32a32_uint_d16_unorm.
+    * 16x.ds_resolve_sample_zero.sub_framebuffer
+    * exercises this case.
+    */
+   blorp_emit(batch, GENX(3DSTATE_PS), ps);
+   blorp_emit(batch, GENX(3DSTATE_PS_EXTRA), psx);
+
    /* According to the SKL PRM formula for WM_INT::ThreadDispatchEnable, the
     * 3DSTATE_WM::ForceThreadDispatchEnable field can force WM thread dispatch
     * even when WM_HZ_OP is active.  However, WM thread dispatch is normally
