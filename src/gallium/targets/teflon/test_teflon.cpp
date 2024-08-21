@@ -23,7 +23,7 @@
 #define MODEL_TOLERANCE 8
 #define QUANT_TOLERANCE 2
 
-std::vector<bool> is_signed{false}; /* TODO: Support INT8? */
+std::vector<bool> is_signed{false, true};
 std::vector<bool> padding_same{false, true};
 std::vector<int> stride{1, 2};
 std::vector<int> output_channels{1, 32, 120, 128, 160, 256};
