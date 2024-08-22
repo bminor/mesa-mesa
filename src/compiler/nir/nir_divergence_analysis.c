@@ -1460,7 +1460,6 @@ nir_divergence_analysis(nir_shader *shader)
    nir_foreach_function_impl(impl, shader) {
       nir_metadata_require(impl, nir_metadata_divergence);
    }
-   shader->info.divergence_analysis_run = true;
 }
 
 /* Compute divergence between vertices of the same primitive. This uses
@@ -1470,8 +1469,6 @@ nir_divergence_analysis(nir_shader *shader)
 void
 nir_vertex_divergence_analysis(nir_shader *shader)
 {
-   shader->info.divergence_analysis_run = false;
-
    struct divergence_state state = {
       .stage = shader->info.stage,
       .shader = shader,
