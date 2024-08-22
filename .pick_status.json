@@ -3014,7 +3014,7 @@
         "description": "freedreno/ci: Re-enable Adreno 660 for Vulkan pre-merge jobs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "59ee87b6065255375d8fb1f5ec4fb93202e93018",
         "notes": null
