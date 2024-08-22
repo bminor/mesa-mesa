@@ -61,3 +61,13 @@ llvmpipe-deqp-asan:
   needs:
     - debian/x86_64_test-gl
     - debian-testing-asan
+
+.android-llvmpipe:
+  extends:
+    - .test-android
+    - .llvmpipe-rules
+  variables:
+    ANDROID_GPU_MODE: guest_swiftshader
+    GPU_VERSION: llvmpipe
+    DEQP_SUITE: android-llvmpipe
+    # TODO: define DEQP_FRACTION?
