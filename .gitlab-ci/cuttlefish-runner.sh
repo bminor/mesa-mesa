@@ -20,6 +20,25 @@ chown root.kvm /dev/kvm
 
 cd /cuttlefish
 
+# Add a function to perform some tasks when exiting the script
+function my_atexit()
+{
+  # shellcheck disable=SC2317
+  cp /cuttlefish/cuttlefish/instances/cvd-1/logs/logcat $RESULTS_DIR || true
+  # shellcheck disable=SC2317
+  cp /cuttlefish/cuttlefish/instances/cvd-1/kernel.log $RESULTS_DIR || true
+
+  # shellcheck disable=SC2317
+  cp /cuttlefish/cuttlefish/instances/cvd-1/logs/launcher.log $RESULTS_DIR || true
+
+  # shellcheck disable=SC2317
+  /cuttlefish/bin/stop_cvd -wait_for_launcher=10
+}
+
+# stop cuttlefish if the script ends prematurely or is interrupted
+trap 'my_atexit' EXIT
+trap 'exit 2' HUP INT PIPE TERM
+
 launch_cvd --verbosity=DEBUG --report_anonymous_usage_stats=n --cpus=8 --memory_mb=8192 --gpu_mode="$ANDROID_GPU_MODE" --daemon --enable_minimal_mode=true --guest_enforce_security=false --use_overlay=false
 sleep 1
 
@@ -128,10 +147,6 @@ set -e
 section_switch cuttlefish_results "cuttlefish: gathering the results"
 
 $ADB pull $RESULTS $RESULTS_DIR
-
-cp /cuttlefish/cuttlefish/instances/cvd-1/logs/logcat $RESULTS_DIR
-cp /cuttlefish/cuttlefish/instances/cvd-1/kernel.log $RESULTS_DIR
-cp /cuttlefish/cuttlefish/instances/cvd-1/logs/launcher.log $RESULTS_DIR
 
 section_end cuttlefish_results
 exit $EXIT_CODE
