@@ -1114,7 +1114,7 @@
         "description": "docs/envvars: fix reference",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "4999e4cd4c00d51408c5e624e0f58051b838d506",
         "notes": null
