@@ -840,6 +840,11 @@ struct pipe_screen* r300_screen_create(struct radeon_winsys *rws,
     if (SCREEN_DBG_ON(r300screen, DBG_NO_TCL))
         r300screen->caps.has_tcl = false;
 
+    if (SCREEN_DBG_ON(r300screen, DBG_IEEEMATH))
+        r300screen->options.ieeemath = true;
+    if (SCREEN_DBG_ON(r300screen, DBG_FFMATH))
+        r300screen->options.ffmath = true;
+
     r300screen->rws = rws;
     r300screen->screen.destroy = r300_destroy_screen;
     r300screen->screen.get_name = r300_get_name;

@@ -1869,6 +1869,13 @@ r300 driver environment variables
       Disable AA compression and fast AA clear
    ``notcl``
       Disable hardware accelerated Transform/Clip/Lighting
+   ``ieeemath``
+      Force IEEE versions of VS math opcodes where applicable
+      and also IEEE handling of multiply by zero (R5xx only)
+   ``ffmath``
+      Force FF versions of VS math opcodes where applicable
+      and 0 * anything = 0 rules in FS
+
 
 Asahi driver environment variables
 ----------------------------------
