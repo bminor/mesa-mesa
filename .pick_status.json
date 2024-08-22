@@ -294,7 +294,7 @@
         "description": "frontends/va: Fix leaks with multiple coded buffer segments",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "be4287c3aa06b7f22ba83696108759f5fcd58323",
         "notes": null
