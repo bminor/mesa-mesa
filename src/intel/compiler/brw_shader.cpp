@@ -330,7 +330,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
        * 4 slots data. All are explicitly zeros in order to to keep the MBZ
        * area written as zeros.
        */
-      bld.exec_all().MOV(uniform_mask, brw_imm_ud(0x10000u));
+      bld.exec_all().MOV(uniform_mask, brw_imm_ud(0x1u));
       bld.exec_all().MOV(offset(payload, bld, 0), brw_imm_ud(0u));
       bld.exec_all().MOV(offset(payload, bld, 1), brw_imm_ud(0u));
       bld.exec_all().MOV(offset(payload, bld, 2), brw_imm_ud(0u));

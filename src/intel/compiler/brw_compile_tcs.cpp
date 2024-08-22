@@ -106,7 +106,7 @@ brw_emit_tcs_thread_end(brw_shader &s)
     */
    brw_reg srcs[URB_LOGICAL_NUM_SRCS];
    srcs[URB_LOGICAL_SRC_HANDLE] = s.tcs_payload().patch_urb_output;
-   srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(WRITEMASK_X << 16);
+   srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(WRITEMASK_X);
    srcs[URB_LOGICAL_SRC_DATA] = brw_imm_ud(0);
    srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(1);
    brw_inst *inst = bld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL,

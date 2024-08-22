@@ -2469,9 +2469,7 @@ brw_shader::gs_urb_channel_mask(const brw_reg &dword_index)
    /* Set the channel masks to 1 << (dword_index % 4), so that we'll
     * write to the appropriate DWORD within the OWORD.
     */
-   brw_reg channel = ubld.AND(dword_index, brw_imm_ud(3u));
-   /* Then the channel masks need to be in bits 23:16. */
-   return ubld.SHL(intexp2(ubld, channel), brw_imm_ud(16u));
+   return intexp2(ubld, ubld.AND(dword_index, brw_imm_ud(3u)));
 }
 
 void
@@ -3286,7 +3284,7 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
 
       brw_reg mask_reg;
       if (mask != WRITEMASK_XYZW)
-         mask_reg = brw_imm_ud(mask << 16);
+         mask_reg = brw_imm_ud(mask);
 
       brw_reg sources[4];
 
@@ -5278,7 +5276,7 @@ emit_urb_direct_vec4_write(const brw_builder &bld,
 
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
-      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
+      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask);
       srcs[URB_LOGICAL_SRC_DATA] =
          retype(brw_allocate_vgrf_units(*bld.shader, length), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
@@ -5348,7 +5346,7 @@ emit_urb_direct_vec4_write_xe2(const brw_builder &bld,
 
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
-      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
+      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask);
       srcs[URB_LOGICAL_SRC_DATA] =
          retype(brw_allocate_vgrf_units(*bld.shader, comps * runit), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(comps);
@@ -5411,7 +5409,7 @@ emit_urb_indirect_vec4_write(const brw_builder &bld,
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
       srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = off;
-      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
+      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask);
       srcs[URB_LOGICAL_SRC_DATA] =
          retype(brw_allocate_vgrf_units(*bld.shader, length), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
@@ -5482,7 +5480,7 @@ emit_urb_indirect_writes_xe2(const brw_builder &bld, nir_intrinsic_instr *instr,
 
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = addr;
-      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask << 16);
+      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(mask);
       srcs[URB_LOGICAL_SRC_DATA] =
          retype(brw_allocate_vgrf_units(*bld.shader, comps * runit), BRW_TYPE_F);
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(comps);
@@ -5529,8 +5527,7 @@ emit_urb_indirect_writes(const brw_builder &bld, nir_intrinsic_instr *instr,
             bld8.ADD(quarter(retype(offset_src, BRW_TYPE_UD), q),
                      brw_imm_ud(c + base_in_dwords));
          brw_reg m = bld8.AND(off, brw_imm_ud(0x3));
-         brw_reg t = bld8.SHL(bld8.MOV(brw_imm_ud(1)), m);
-         brw_reg mask = bld8.SHL(t, brw_imm_ud(16));
+         brw_reg mask = bld8.SHL(bld8.MOV(brw_imm_ud(1)), m);
          brw_reg final_offset = bld8.SHR(off, brw_imm_ud(2));
 
          brw_reg payload_srcs[4];

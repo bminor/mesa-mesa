@@ -154,8 +154,13 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
    if (per_slot_present)
       payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
 
-   if (channel_mask_present)
-      payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_CHANNEL_MASK];
+   if (channel_mask_present) {
+      payload_sources[header_size++] =
+         inst->src[URB_LOGICAL_SRC_CHANNEL_MASK].file == IMM ?
+         brw_imm_ud(inst->src[URB_LOGICAL_SRC_CHANNEL_MASK].ud << 16) :
+         bld.SHL(retype(inst->src[URB_LOGICAL_SRC_CHANNEL_MASK], BRW_TYPE_UD),
+                 brw_imm_ud(16));
+   }
 
    for (unsigned i = header_size, j = 0; i < length; i++, j++)
       payload_sources[i] = offset(inst->src[URB_LOGICAL_SRC_DATA], bld, j);
@@ -221,13 +226,17 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
       bld.ADD(payload, payload, offsets);
    }
 
-   const brw_reg cmask = inst->src[URB_LOGICAL_SRC_CHANNEL_MASK];
-   unsigned mask = 0;
+   unsigned num_channels_or_cmask = src_comps;
 
-   if (cmask.file != BAD_FILE) {
-      assert(cmask.file == IMM);
+   const brw_reg cmask = inst->src[URB_LOGICAL_SRC_CHANNEL_MASK];
+   brw_reg desc = brw_imm_ud(0);
+   if (cmask.file == IMM) {
       assert(cmask.type == BRW_TYPE_UD);
-      mask = cmask.ud >> 16;
+      num_channels_or_cmask = cmask.ud;
+   } else if (cmask.file != BAD_FILE) {
+      const brw_builder &ubld = bld.exec_all().group(8, 0);
+      desc = component(ubld.SHL(retype(cmask, BRW_TYPE_UD), brw_imm_ud(12)), 0);
+      num_channels_or_cmask = 0;
    }
 
    brw_reg payload2 = bld.move_to_vgrf(src, src_comps);
@@ -235,11 +244,11 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
 
    inst->sfid = BRW_SFID_URB;
 
-   enum lsc_opcode op = mask ? LSC_OP_STORE_CMASK : LSC_OP_STORE;
+   enum lsc_opcode op = cmask.file != BAD_FILE ? LSC_OP_STORE_CMASK : LSC_OP_STORE;
    inst->desc = lsc_msg_desc(devinfo, op,
                              LSC_ADDR_SURFTYPE_FLAT, LSC_ADDR_SIZE_A32,
                              LSC_DATA_SIZE_D32,
-                             mask ? mask : src_comps /* num_channels */,
+                             num_channels_or_cmask,
                              false /* transpose */,
                              LSC_CACHE(devinfo, STORE, L1UC_L3UC));
 
@@ -254,7 +263,7 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
 
    inst->resize_sources(SEND_NUM_SRCS);
 
-   inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
+   inst->src[SEND_SRC_DESC]     = desc;
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
    inst->src[SEND_SRC_PAYLOAD1] = payload;
    inst->src[SEND_SRC_PAYLOAD2] = payload2;
