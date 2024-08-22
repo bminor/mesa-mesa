@@ -1,5 +1,255 @@
 [
     {
+        "sha": "d7f7aede15d5e169e7f2a3b279adf4b192e6bfe2",
+        "description": "intel/ci: don't trigger anv-jsl-full & anv-tgl-full on GL changes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a20cdfb313397dff0f25d9e3f15decdc69ecffa",
+        "description": "ci/run_n_monitor: Add --dry-run argument",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad5f4d0270b9f65a48f1f0639fe9311bc97390bf",
+        "description": "ci/run_n_monitor: Remove --force-manual",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99cd56a6846407155bfa759cc7517b2ba87e55df",
+        "description": "ci/run_n_monitor: Add --exclude-stage filtering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ffe73321478fe1c5e188806527649488fd41d7a",
+        "description": "ci/run_n_monitor: Add --include-stage argument",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e56472da2202166c7747dec7beb14b72a9d7c7f",
+        "description": "ci/panfrost: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca8f6b66a8a9cbe8f218979fbe41680be9ab3a09",
+        "description": "ci/etnaviv: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b70ad23bb1fef0dc7fe8ebc5eb2f9d477ef422a9",
+        "description": "ci/nouveau: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "337e00aa2dd81381b0202fa412e697c21ddfb1f1",
+        "description": "ci/llvmpipe: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4752ce718699052f9ff4bac30f955a904e5ac087",
+        "description": "ci/zink: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25c70888a50f3c1a980704d941f3c4dd339f53db",
+        "description": "ci/broadcom: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc507536db704946f1686c9ce6e5d9224cb96f0f",
+        "description": "ci/intel: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4bcd57b0b513a9e34801460a74476ba165be3eac",
+        "description": "ci/amd: Move manual/nightly jobs to postmerge stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f1aab081b5ccb697921d4e888a90284867484db1",
+        "description": "ci: Create new 'performance' stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97d049504c13e5c2144b13af8138188a17b0876a",
+        "description": "ir3: use physical cfg in helper_sched",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1bbc36c5d215e55724720ae0b83da9c5703f2f58",
+        "description": "ir3: recalculate reconvergence after opt_jump",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c67381538d02edebe9a6d5316e1d015be210892d",
+        "description": "ir3: fix reconvergence of blocks with multiple divergent predecessors",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9977a61762b99b75cc747fc3a52675502f02e6e",
+        "description": "ir3: fix adding physical edges multiple times",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f432eb691e839c12759d8c2a12eacb929e5c7ef1",
+        "description": "ir3: Move reconvergence backedge handling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aee097ed21951fa8d25b8b6acc573f26de5d2b87",
+        "description": "ir3: fix reconvergence points for blocks with two terminators",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fba921bf49bbcd5737aef04adb918b9ea1536c55",
+        "description": "ir3: preserve block divergence info in ir3_lower_subgroups",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "053612b7cff8984e001abf39d3a88032a7be76a9",
+        "description": "ir3: remove unnecessary reconvergence point in scan_clusters lowering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a13394ad91b7566138df20a4674dba24f831a17f",
+        "description": "ir3: print block divergence info",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec19a354dcc0d4e466ce8bee718ea7e22798413b",
+        "description": "ir3: print predicate inversion for branches",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13066905d37da55ba389a9c73757fc6ee6e2662b",
+        "description": "egl/android: call dri2_display_create() like every other driver",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "7b92e11e16ad1e947035c2af40d54076457e81e0",
         "description": "aco: forget valu delays after certain s_waitcnt_depctr/LDSDIR",
         "nominated": false,
