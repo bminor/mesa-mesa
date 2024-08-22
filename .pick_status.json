@@ -1,5 +1,505 @@
 [
     {
+        "sha": "c5156257d93ae2a9e54ba5adc73b7342c9bef96e",
+        "description": "ci: disable Collabora's farm due to maintenance",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e19871bd6ad0651a5b8ea8215eab686ace5d08e1",
+        "description": "nak: Use F2FP for nir_op_pack_half_2x16_split on SM86+",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a292c2699ccfd5aeda97ef88b1c32cdce5e037e",
+        "description": "intel: Fix bad align_offset on global_constant_uniform_block_intel",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "fbafa9cabda800fb7fdc05584adfbfe391c39a5c",
+        "notes": null
+    },
+    {
+        "sha": "c96ceb50d0f794a26c82143bcf015a13d423474c",
+        "description": "intel/brw/xe2: Allow int64 conversions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09cf9fe8abbcdeaa31326e4ad35da18e5b33caaa",
+        "description": "anv: Larger memory pools for huge shaders",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0921dfa04476c8c93e3caa7587905edf1b623749",
+        "description": "anv: Protect against OOB access to anv_state_pool::buckets",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2fa52bf6e5db5eab9af697ea67af506d7967dd31",
+        "description": "tc: set resolve on renderpass info if blit terminates the renderpass",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38f4501a5cbd65e663b78492bb69ccec9726e3f5",
+        "description": "zink: don't skip cbuf store ops if resolve is set",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a869237d502ff80db8a7d83f2d39bd8b98674590",
+        "description": "panvk: Fix viewport calculation",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "1f57aae4e4f1172c848a44e1682d73dadb14ac24",
+        "notes": null
+    },
+    {
+        "sha": "5b129e6eb9f4ca85003d1a16dce79e47fd828ea6",
+        "description": "panvk: Expose trivial google extensions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a6496e3a166c43fbdf1c7c8570865aa7acec2d44",
+        "description": "panvk: Properly propagate helper invocations requirement",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "33fef27356a508be719156c65e9cd7100ea61b30",
+        "notes": null
+    },
+    {
+        "sha": "322227ba17b74774ac25001f487c4a74102dc8a1",
+        "description": "radv: use a sized NOP packet for the DGC preamble",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fceb122a2e9f952307de119c70fd55d54335af5b",
+        "description": "egl/wayland: do display gpu fd dance for non-sw zink init",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b38480d6c74f5d13ec0ba399f47546f94ba9fe23",
+        "description": "egl: pass real value for software to dri2_setup_device()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7deb96a5f9b8f38412f9b3942b7a71b69213bd24",
+        "description": "egl/wayland: split out dmabuf extension stuff for kopper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28b291446bdd440514b2a999d08c715fd73ef7b8",
+        "description": "egl: really fix kopper fd passing",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c8c46bf90066748d550f492abf6fc03136cde348",
+        "notes": null
+    },
+    {
+        "sha": "b66743984c17ff55c3b116a217742f2a98f45e77",
+        "description": "egl: add DRI_USE_INVALIDATE with non-sw kopper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8bfbcd5b28d3b4c764ba29000945647eb3fdc2c3",
+        "description": "zink: delete hackaround for disabling wsi extensions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b20c21a5a6e5debab674658fd4c45ff28d864751",
+        "description": "device_select: disable reordering with zink on xwayland",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86bb1036e2e40777a5cc913b15a093e4650d8cc3",
+        "description": "device_select: shortcut EnumeratePhysicalDevice* for count-only calls",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39ae6a891d33e6117cc8ca6fb61b3cbefbd36c2a",
+        "description": "device_select: reorder CreateInstance to have shorter failure paths",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b2de16fa504b38b6a016b892a91d6297a0a5dce",
+        "description": "panvk/ci: Enable clearing tests",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a31a55d3489d134e4de924513c2aa6d3e54fe412",
+        "description": "panvk: Lower var copies before lowering IOs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ecfc45cd0f4fe37acb4640eeb3ed3eb3d3bb0ef",
+        "description": "panvk: Allow ZS formats on 1D/3D images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "213e895da06bfd4522a6cb4b3a55a070a1792f67",
+        "description": "panvk: Allow compressed formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a30a28653b744cb29b08c052cac594f23d53132",
+        "description": "panvk: Fix depth-stencil AFBC support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "baf8570b28b5f77afa51378ba7a2e067c09702b2",
+        "description": "panvk: Add support for render-pass resolve operations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b08826f7d71883e41fcd353954cd8341f9e5b3d",
+        "description": "panvk: Lower load_multisampled_pan",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5067921349a9830eeac3414e47f11119cfae9291",
+        "description": "panvk: Switch to vk_meta",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38258138addac4e705fa8650d0515602eb5060b2",
+        "description": "panvk: Rework the modifier selection",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f74dd596d5481625f7f3fe50a7aad9a21a7f113b",
+        "description": "panvk: Add helpers to save/restore the compute/graphics state for meta operations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c912f80a08a6397da2d34364c786ae7cc52267a0",
+        "description": "panvk: Constify the shader pointers in the graphics state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "495b718b3f5ac1a97ce97131b6887af360d81724",
+        "description": "panvk: Rework the NULL test in panvk_buffer_{gpu_ptr,range}()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1b16f9ec05d826ba3d558cbecfe6f072b8cdf6d1",
+        "description": "pan/texture: Allow uncompressed view of compressed image",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8eec3284e1d98923b462a8b0dc07667ecfe781a3",
+        "description": "panvk: Add missing vk_device_finish() calls",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd8700b793c649d12c767d541a0398dfc81ceba1",
+        "description": "panvk: Rename the error labels in create_device()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91c9393da10cf4e1b71af561d7ec8da20af60f68",
+        "description": "ci/build: add honeykrisp (asahi vk) to several builds",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3a2233f881cf098bc35da7c8d0ceb6a32947121",
+        "description": "panvk: Don't spam the error output if the device is not for us",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6fa1bf3b88076177da996e2be6434bd529948d9f",
+        "description": "radv: pad GFX preambles IBs with only one NOP",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d690f293c623b87a605b289cb8d8472b0628e5ea",
+        "description": "radv/winsys: pad gfx and compute IBs with only one NOP",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29a2e5358d0d4fe6a3171997112f8a98067aa458",
+        "description": "anv: enable KHR_shader_relaxed_extended_instruction",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "52c8e6da69010511d9cbf12cb495b5515ee9ad38",
+        "description": "vtn: handle SpvOpExtInstWithForwardRefsKHR for non semantic instructions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "19d633af0baf139f4eb205aba828afb59ec17afb",
+        "description": "radv: Handle repeated instructions when splitting disassembly",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1cf507b806f9ab75de9173d097d0f4a616423c7a",
+        "description": "radv: Handle instruction encodings > 8 bytes when splitting disassembly",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db39685e31786b985176614711126706681e65d9",
+        "description": "aco: validate temporary reachability",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39270a8be3c041659ff767f4ec4fc2a9e35cb04b",
+        "description": "aco: preserve SSA in try_eliminate_scc_copy",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d81d5b7d0043acfdeee7bfea2352ba993a8fbca3",
+        "description": "aco: use dominance helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d91e634c1306d805e913ec0f8981234c2587c41c",
+        "description": "aco: calculate indices from dominance tree",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b537c06db4f3b2f5c9e01fefcae3d4b8ed445734",
+        "description": "broadcom/ci: increase the timeout of the nightly job v3d-rpi4-gl:arm32 by 10min",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dd694ac6e59419fb3289855c9298bf8dda045fcf",
+        "description": "broadcom/ci: set default TEST_PHASE_TIMEOUT_MINUTES so that jobs never timeout without uploading results",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "47a2ab6f3fb41bef9062182588f69c217d7e6541",
         "description": "nv/codegen: Stop overaligning var_function_temp",
         "nominated": false,
