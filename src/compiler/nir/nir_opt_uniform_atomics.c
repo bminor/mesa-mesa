@@ -33,7 +33,7 @@
  *    res = atomicAdd(addr, tmp);
  * res = subgroupBroadcastFirst(res) + subgroupExclusiveAdd(1);
  *
- * This pass requires and preserves LCSSA and divergence information.
+ * This pass requires divergence information.
  */
 
 #include "nir/nir.h"
@@ -218,7 +218,6 @@ optimize_atomic(nir_builder *b, nir_intrinsic_instr *intrin, bool return_prev)
    reduce_data(b, op, data, &reduce, combined_scan_reduce ? &scan : NULL);
 
    nir_src_rewrite(&intrin->src[data_src], reduce);
-   nir_update_instr_divergence(b->shader, &intrin->instr);
 
    nir_def *cond = nir_elect(b, 1);
 
@@ -256,7 +255,6 @@ optimize_and_rewrite_atomic(nir_builder *b, nir_intrinsic_instr *intrin,
       helper_nif = nir_push_if(b, nir_inot(b, helper));
    }
 
-   ASSERTED bool original_result_divergent = intrin->def.divergent;
    bool return_prev = !nir_def_is_unused(&intrin->def);
 
    nir_def old_result = intrin->def;
@@ -275,7 +273,10 @@ optimize_and_rewrite_atomic(nir_builder *b, nir_intrinsic_instr *intrin,
    }
 
    if (result) {
-      assert(result->divergent == original_result_divergent);
+      /* It's possible the result is used as source for another atomic,
+       * so this needs to be correct.
+       */
+      result->divergent = old_result.divergent;
       nir_def_rewrite_uses(&old_result, result);
    }
 }
@@ -285,7 +286,6 @@ opt_uniform_atomics(nir_function_impl *impl, bool fs_atomics_predicated)
 {
    bool progress = false;
    nir_builder b = nir_builder_create(impl);
-   b.update_divergence = true;
 
    nir_foreach_block(block, impl) {
       nir_foreach_instr_safe(instr, block) {
