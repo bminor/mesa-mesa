@@ -1809,6 +1809,12 @@ genX(cmd_buffer_emit_execute_indirect_draws)(struct anv_cmd_buffer *cmd_buffer,
 
       }
 
+      genX(batch_emit_post_3dprimitive_was)(&cmd_buffer->batch,
+                                            cmd_buffer->device,
+                                            cmd_buffer->state.gfx.primitive_topology,
+                                            1);
+      genX(emit_breakpoint)(&cmd_buffer->batch, cmd_buffer->device, false);
+
       /* If all the indirect structures are aligned, then we can let the HW
        * do the unrolling and we only need one instruction. Otherwise we
        * need to emit one instruction per draw, but we're still avoiding
@@ -1817,11 +1823,6 @@ genX(cmd_buffer_emit_execute_indirect_draws)(struct anv_cmd_buffer *cmd_buffer,
       if (aligned_stride || GFX_VER >= 20)
          break;
 
-      genX(batch_emit_post_3dprimitive_was)(&cmd_buffer->batch,
-                                            cmd_buffer->device,
-                                            cmd_buffer->state.gfx.primitive_topology,
-                                            1);
-      genX(emit_breakpoint)(&cmd_buffer->batch, cmd_buffer->device, false);
       offset += indirect_data_stride;
    }
 #endif // GFX_VERx10 >= 125
