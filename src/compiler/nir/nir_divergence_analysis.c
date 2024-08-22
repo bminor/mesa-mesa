@@ -1303,33 +1303,6 @@ nir_vertex_divergence_analysis(nir_shader *shader)
 }
 
 bool
-nir_update_instr_divergence(nir_shader *shader, nir_instr *instr)
-{
-   nir_foreach_def(instr, set_ssa_def_not_divergent, NULL);
-
-   if (instr->type == nir_instr_type_phi) {
-      nir_cf_node *prev = nir_cf_node_prev(&instr->block->cf_node);
-      /* can only update gamma/if phis */
-      if (!prev || prev->type != nir_cf_node_if)
-         return false;
-
-      nir_if *nif = nir_cf_node_as_if(prev);
-
-      visit_if_merge_phi(nir_instr_as_phi(instr), nir_src_is_divergent(nif->condition), false);
-      return true;
-   }
-
-   struct divergence_state state = {
-      .stage = shader->info.stage,
-      .shader = shader,
-      .options = shader->options->divergence_analysis_options,
-      .first_visit = true,
-   };
-   update_instr_divergence(instr, &state);
-   return true;
-}
-
-bool
 nir_has_divergent_loop(nir_shader *shader)
 {
    nir_function_impl *func = nir_shader_get_entrypoint(shader);

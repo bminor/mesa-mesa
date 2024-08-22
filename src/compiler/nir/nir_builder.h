@@ -40,10 +40,6 @@ typedef struct nir_builder {
    /* Whether new ALU instructions will be marked "exact" */
    bool exact;
 
-   /* Whether to run divergence analysis on inserted instructions (loop merge
-    * and header phis are not updated). */
-   bool update_divergence;
-
    /* Float_controls2 bits. See nir_alu_instr for details. */
    uint32_t fp_fast_math;
 
