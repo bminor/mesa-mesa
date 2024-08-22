@@ -73,6 +73,5 @@ virgl-iris-traces-performance:
     - .virgl-rules
   variables:
     ANDROID_GPU_MODE: drm_virgl
-    ANDROID_DRIVER: virtio_gpu
     GPU_VERSION: virgl-gl
     DEQP_SUITE: android-virgl
