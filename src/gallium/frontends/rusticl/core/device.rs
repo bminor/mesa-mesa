@@ -252,6 +252,13 @@ impl Device {
         for f in FORMATS {
             let mut fs = HashMap::new();
             for t in CL_IMAGE_TYPES {
+                // depth images are only valid for 2D and 2DArray
+                if [CL_DEPTH, CL_DEPTH_STENCIL].contains(&f.cl_image_format.image_channel_order)
+                    && ![CL_MEM_OBJECT_IMAGE2D, CL_MEM_OBJECT_IMAGE2D_ARRAY].contains(&t)
+                {
+                    continue;
+                }
+
                 // the CTS doesn't test them, so let's not advertize them by accident if they are
                 // broken
                 if t == CL_MEM_OBJECT_IMAGE1D_BUFFER
@@ -298,7 +305,7 @@ impl Device {
 
             // Restrict supported formats with 1DBuffer images. This is an OpenCL CTS workaround.
             // See https://github.com/KhronosGroup/OpenCL-CTS/issues/1889
-            let image1d_mask = fs[&CL_MEM_OBJECT_IMAGE1D];
+            let image1d_mask = fs.get(&CL_MEM_OBJECT_IMAGE1D).copied().unwrap_or_default();
             if let Some(entry) = fs.get_mut(&CL_MEM_OBJECT_IMAGE1D_BUFFER) {
                 *entry &= image1d_mask;
             }
