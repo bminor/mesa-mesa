@@ -52,6 +52,7 @@ pub struct Device {
 #[derive(Default)]
 pub struct DeviceCaps {
     pub has_3d_image_writes: bool,
+    pub has_depth_images: bool,
     pub has_images: bool,
     pub has_rw_images: bool,
     pub has_timestamp: bool,
@@ -325,6 +326,13 @@ impl Device {
             })
             .map(|f| self.formats[&f.cl_image_format][&CL_MEM_OBJECT_IMAGE3D])
             .any(|f| f & cl_mem_flags::from(CL_MEM_WRITE_ONLY) == 0);
+
+        self.caps.has_depth_images = self
+            .formats
+            .iter()
+            .filter_map(|(k, v)| (k.image_channel_order == CL_DEPTH).then_some(v.values()))
+            .flatten()
+            .any(|mask| *mask != 0);
 
         // if we can't advertize 3d image write ext, we have to disable them all
         if !self.caps.has_3d_image_writes {
@@ -656,6 +664,10 @@ impl Device {
             if self.caps.has_3d_image_writes {
                 add_ext(1, 0, 0, "cl_khr_3d_image_writes");
                 add_feat(1, 0, 0, "__opencl_c_3d_image_writes");
+            }
+
+            if self.caps.has_depth_images {
+                add_ext(1, 0, 0, "cl_khr_depth_images");
             }
         }
 
@@ -1087,6 +1099,7 @@ impl Device {
             fp64: self.fp64_supported(),
             int64: self.int64_supported(),
             images: self.caps.has_images,
+            images_depth: self.caps.has_depth_images,
             images_read_write: self.caps.has_rw_images,
             images_write_3d: self.caps.has_3d_image_writes,
             integer_dot_product: true,
