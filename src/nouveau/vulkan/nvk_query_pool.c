@@ -984,7 +984,13 @@ nvk_meta_copy_query_pool_results(struct nvk_cmd_buffer *cmd,
    vk_common_CmdPushConstants(nvk_cmd_buffer_to_handle(cmd), layout,
                               VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push), &push);
 
+   struct nv_push *p = nvk_cmd_buffer_push(cmd, 2);
+   P_IMMD(p, NVA0C0, SET_RENDER_ENABLE_OVERRIDE, MODE_ALWAYS_RENDER);
+
    nvk_CmdDispatchBase(nvk_cmd_buffer_to_handle(cmd), 0, 0, 0, 1, 1, 1);
+
+   p = nvk_cmd_buffer_push(cmd, 2);
+   P_IMMD(p, NVA0C0, SET_RENDER_ENABLE_OVERRIDE, MODE_USE_RENDER_ENABLE);
 
    /* Restore pipeline and push constants */
    if (shader_save)

@@ -1394,7 +1394,7 @@
         "description": "nvk: Disable conditional rendering around CopyQueryPoolResults",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "57c38a56696cd8a49786a884a9720e63c7ae0161",
         "notes": null
