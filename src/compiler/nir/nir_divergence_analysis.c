@@ -1448,17 +1448,19 @@ nir_divergence_analysis_impl(nir_function_impl *impl, nir_divergence_options opt
 
    visit_cf_list(&impl->body, &state);
 
-   nir_metadata_preserve(impl, nir_metadata_all);
+   /* Unless this pass is called with shader->options->divergence_analysis_options,
+    * it invalidates nir_metadata_divergence.
+    */
+   nir_metadata_preserve(impl, ~nir_metadata_divergence);
 }
 
 void
 nir_divergence_analysis(nir_shader *shader)
 {
-   shader->info.divergence_analysis_run = true;
    nir_foreach_function_impl(impl, shader) {
-      nir_divergence_analysis_impl(impl,
-                                   shader->options->divergence_analysis_options);
+      nir_metadata_require(impl, nir_metadata_divergence);
    }
+   shader->info.divergence_analysis_run = true;
 }
 
 /* Compute divergence between vertices of the same primitive. This uses
@@ -1484,7 +1486,7 @@ nir_vertex_divergence_analysis(nir_shader *shader)
       nir_metadata_require(impl, nir_metadata_block_index);
       state.impl = impl;
       visit_cf_list(&impl->body, &state);
-      nir_metadata_preserve(impl, nir_metadata_all);
+      nir_metadata_preserve(impl, nir_metadata_all & ~nir_metadata_divergence);
    }
 }
 

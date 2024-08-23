@@ -3317,6 +3317,22 @@ typedef enum {
     */
    nir_metadata_instr_index = 0x20,
 
+   /** Indicates that divergence analysis information is valid.
+    *
+    * This includes:
+    *   - nir_def::divergent
+    *   - nir_def::loop_invariant
+    *   - nir_block::divergent
+    *   - nir_loop::divergent_break
+    *   - nir_loop::divergent_continue
+    *
+    * A pass can preserve this metadata type if it never adds any instructions or
+    * moves them across loop breaks, as well as if it only removes instructions.
+    * CF modifications usually invalidate this metadata.  Most passes
+    * shouldn't preserve this metadata type.
+    */
+   nir_metadata_divergence = 0x40,
+
    /** All control flow metadata
     *
     * This includes all metadata preserved by a pass that preserves control flow
