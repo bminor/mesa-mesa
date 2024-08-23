@@ -22,6 +22,7 @@
  */
 
 #include "anv_nir.h"
+#include "nir.h"
 #include "nir_builder.h"
 
 static bool
@@ -114,6 +115,8 @@ lower_ubo_load_instr(nir_builder *b, nir_intrinsic_instr *load,
 bool
 anv_nir_lower_ubo_loads(nir_shader *shader)
 {
+   nir_divergence_analysis(shader);
+
    return nir_shader_intrinsics_pass(shader, lower_ubo_load_instr,
                                        nir_metadata_none,
                                        NULL);

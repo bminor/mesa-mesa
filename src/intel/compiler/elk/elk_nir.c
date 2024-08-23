@@ -1468,9 +1468,6 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
    OPT(nir_opt_move, nir_move_comparisons);
    OPT(nir_opt_dead_cf);
 
-   bool divergence_analysis_dirty = false;
-   NIR_PASS_V(nir, nir_divergence_analysis);
-
    /* TODO: Enable nir_opt_uniform_atomics on Gfx7.x too.
     * It currently fails Vulkan tests on Haswell for an unknown reason.
     */
@@ -1486,16 +1483,10 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
 
       if (OPT(nir_lower_int64))
          elk_nir_optimize(nir, is_scalar, devinfo);
-
-      divergence_analysis_dirty = true;
    }
 
    /* Do this only after the last opt_gcm. GCM will undo this lowering. */
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      if (divergence_analysis_dirty) {
-         NIR_PASS_V(nir, nir_divergence_analysis);
-      }
-
       OPT(intel_nir_lower_non_uniform_barycentric_at_sample);
    }
 

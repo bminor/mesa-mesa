@@ -1010,9 +1010,6 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
       NIR_PASS(progress, nir, nir_opt_dce);
    } while (progress);
 
-   /* Needed for anv_nir_lower_ubo_loads. */
-   nir_divergence_analysis(nir);
-
    NIR_PASS(_, nir, anv_nir_lower_ubo_loads);
 
    enum nir_lower_non_uniform_access_type lower_non_uniform_access_types =

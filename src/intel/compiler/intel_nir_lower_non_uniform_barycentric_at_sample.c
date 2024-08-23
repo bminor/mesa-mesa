@@ -131,6 +131,7 @@ intel_nir_lower_non_uniform_barycentric_at_sample(nir_shader *nir)
 {
    bool progress;
 
+   nir_divergence_analysis(nir);
    nir_shader_clear_pass_flags(nir);
 
    progress = nir_shader_instructions_pass(
