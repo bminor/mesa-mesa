@@ -1967,16 +1967,25 @@ fn enqueue_fill_image(
     // description for origin and region.
     validate_image_bounds(&i, origin, region)?;
 
-    // we have to copy memory and it's always a 4 component int value
-    // TODO but not for CL_DEPTH
-    let fill_color = unsafe { slice::from_raw_parts(fill_color.cast(), 4).to_vec() };
+    // The fill color is a single floating-point value if the channel order is CL_DEPTH. Otherwise,
+    // the fill color is a four component RGBA floating-point color value if the image channel data
+    // type is not an unnormalized signed or unsigned integer type, is a four component signed
+    // integer value if the image channel data type is an unnormalized signed integer type and is a
+    // four component unsigned integer value if the image channel data type is an unnormalized
+    // unsigned integer type.
+    let fill_color = if i.image_format.image_channel_order == CL_DEPTH {
+        [unsafe { fill_color.cast::<u32>().read() }, 0, 0, 0]
+    } else {
+        unsafe { fill_color.cast::<[u32; 4]>().read() }
+    };
+
     create_and_queue(
         q,
         CL_COMMAND_FILL_BUFFER,
         evs,
         event,
         false,
-        Box::new(move |q, ctx| i.fill(q, ctx, &fill_color, &origin, &region)),
+        Box::new(move |q, ctx| i.fill(q, ctx, fill_color, &origin, &region)),
     )
 
     //• CL_INVALID_IMAGE_SIZE if image dimensions (image width, height, specified or compute row and/or slice pitch) for image are not supported by device associated with queue.
