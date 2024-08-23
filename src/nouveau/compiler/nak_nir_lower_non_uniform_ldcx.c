@@ -477,7 +477,7 @@ nak_nir_lower_non_uniform_ldcx(nir_shader *nir)
    nir_builder b = nir_builder_create(impl);
 
    /* We use block indices to determine when something is a predecessor */
-   nir_metadata_require(impl, nir_metadata_block_index);
+   nir_metadata_require(impl, nir_metadata_block_index | nir_metadata_divergence);
 
    if (lower_cf_list(&b, &impl->body)) {
       nir_metadata_preserve(impl, nir_metadata_none);

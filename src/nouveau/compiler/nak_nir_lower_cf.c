@@ -425,6 +425,8 @@ recompute_phi_divergence_impl(nir_function_impl *impl)
          }
       }
    } while(progress);
+
+   impl->valid_metadata |= nir_metadata_divergence;
 }
 
 static bool
@@ -441,7 +443,7 @@ lower_cf_func(nir_function *func)
    nir_function_impl *old_impl = func->impl;
 
    /* We use this in block_is_merge() */
-   nir_metadata_require(old_impl, nir_metadata_dominance);
+   nir_metadata_require(old_impl, nir_metadata_dominance | nir_metadata_divergence);
 
    /* First, we temporarily get rid of SSA.  This will make all our block
     * motion way easier.
