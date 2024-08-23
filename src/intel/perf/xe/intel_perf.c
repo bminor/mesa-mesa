@@ -11,6 +11,7 @@
 #include "perf/intel_perf.h"
 #include "intel_perf_common.h"
 #include "intel/common/intel_gem.h"
+#include "intel/common/xe/intel_device_query.h"
 #include "intel/common/xe/intel_queue.h"
 
 #include "drm-uapi/xe_drm.h"
@@ -47,6 +48,7 @@ uint64_t xe_perf_get_oa_format(struct intel_perf_config *perf)
 bool
 xe_oa_metrics_available(struct intel_perf_config *perf, int fd, bool use_register_snapshots)
 {
+   struct drm_xe_query_oa_units *oa_units;
    bool perf_oa_available = false;
    struct stat sb;
 
@@ -71,6 +73,37 @@ xe_oa_metrics_available(struct intel_perf_config *perf, int fd, bool use_registe
       return perf_oa_available;
 
    perf->features_supported |= INTEL_PERF_FEATURE_HOLD_PREEMPTION;
+
+   oa_units = xe_device_query_alloc_fetch(fd, DRM_XE_DEVICE_QUERY_OA_UNITS, NULL);
+   if (oa_units) {
+      uint8_t *poau;
+      uint32_t i;
+
+      poau = (uint8_t *)oa_units->oa_units;
+      for (i = 0; i < oa_units->num_oa_units; i++) {
+         struct drm_xe_oa_unit *oa_unit = (struct drm_xe_oa_unit *)poau;
+         uint32_t engine_i;
+         bool render_found = false;
+
+         for (engine_i = 0; engine_i < oa_unit->num_engines; engine_i++) {
+            if (oa_unit->eci[engine_i].engine_class == DRM_XE_ENGINE_CLASS_RENDER) {
+               render_found = true;
+               break;
+            }
+         }
+
+         if (!render_found)
+            continue;
+
+         if (oa_unit->capabilities & DRM_XE_OA_CAPS_SYNCS) {
+            perf->features_supported |= INTEL_PERF_FEATURE_METRIC_SYNC;
+            break;
+         }
+         poau += sizeof(*oa_unit) + oa_unit->num_engines * sizeof(oa_unit->eci[0]);
+      }
+
+      free(oa_units);
+   }
 
    return perf_oa_available;
 }

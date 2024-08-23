@@ -322,6 +322,7 @@ enum intel_perf_features {
    INTEL_PERF_FEATURE_GLOBAL_SSEU = (1 << 1),
    /* Whether i915 has DRM_I915_QUERY_PERF_CONFIG support. */
    INTEL_PERF_FEATURE_QUERY_PERF = (1 << 2),
+   INTEL_PERF_FEATURE_METRIC_SYNC = (1 << 3),
 };
 
 struct intel_perf_config {
@@ -572,6 +573,12 @@ static inline bool
 intel_perf_has_global_sseu(const struct intel_perf_config *perf)
 {
    return perf->features_supported & INTEL_PERF_FEATURE_GLOBAL_SSEU;
+}
+
+static inline bool
+intel_perf_has_metric_sync(const struct intel_perf_config *perf)
+{
+   return perf->features_supported & INTEL_PERF_FEATURE_METRIC_SYNC;
 }
 
 uint32_t intel_perf_get_n_passes(struct intel_perf_config *perf,
