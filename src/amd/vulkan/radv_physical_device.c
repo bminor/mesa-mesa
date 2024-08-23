@@ -1078,12 +1078,12 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .rayTracingPipeline = true,
       .rayTracingPipelineShaderGroupHandleCaptureReplay = true,
       .rayTracingPipelineShaderGroupHandleCaptureReplayMixed = false,
-      .rayTracingPipelineTraceRaysIndirect = true,
+      .rayTracingPipelineTraceRaysIndirect = pdev->info.gfx_level >= GFX7,
       .rayTraversalPrimitiveCulling = true,
 
       /* VK_KHR_ray_tracing_maintenance1 */
       .rayTracingMaintenance1 = true,
-      .rayTracingPipelineTraceRaysIndirect2 = radv_enable_rt(pdev),
+      .rayTracingPipelineTraceRaysIndirect2 = radv_enable_rt(pdev) && pdev->info.gfx_level >= GFX7,
 
       /* VK_KHR_ray_tracing_position_fetch */
       .rayTracingPositionFetch = true,
