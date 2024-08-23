@@ -904,7 +904,7 @@ Rusticl OpenCL 2.0 -- all DONE:
   Extended 2D images creation                           in progress
   - CL_ABGR                                             DONE
   - cl_khr_image2d_from_buffer                          DONE (iris, llvmpipe)
-  - cl_khr_depth_images                                 not started
+  - cl_khr_depth_images                                 DONE
   - from sRGB images                                    in progress
   clCreateSamplerWithProperties                         DONE
   Non-uniform work-group sizes                          not started
