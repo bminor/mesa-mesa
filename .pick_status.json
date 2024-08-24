@@ -44,7 +44,7 @@
         "description": "nvk: Fix regression observed on Kepler",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dc99d9b2dff67cc4aa9249594aaab6625d3ce317",
         "notes": null
