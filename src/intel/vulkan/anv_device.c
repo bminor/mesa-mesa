@@ -1613,6 +1613,26 @@ VkResult anv_AllocateMemory(
                VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT ||
              fd_info->handleType ==
                VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
+      if (alloc_flags & ANV_BO_ALLOC_COMPRESSED) {
+         /* First, when importing a compressed buffer on Xe2+, we are sure
+          * about that the buffer is from a resource created with modifiers
+          * supporting compression, even the info of modifier is not available
+          * on the path of allocation. (Buffers created with modifiers not
+          * supporting compression must be uncompressed or resolved first
+          * for sharing.)
+          *
+          * We assume the source of the sharing (a GL driver or this driver)
+          * would create the shared buffer for scanout usage as well by
+          * following the above reasons. As a result, configure the imported
+          * buffer for scanout.
+          *
+          * Such assumption could fit on pre-Xe2 platforms as well but become
+          * more relevant on Xe2+ because the alloc flags will determine bo's
+          * heap and then PAT entry in the later vm_bind stage.
+          */
+         assert(device->info->ver >= 20);
+         alloc_flags |= ANV_BO_ALLOC_SCANOUT;
+      }
 
       result = anv_device_import_bo(device, fd_info->fd, alloc_flags,
                                     client_address, &mem->bo);
