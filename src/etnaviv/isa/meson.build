@@ -56,6 +56,11 @@ etnaviv_enums_h = custom_target(
   depend_files: isa_depend_files,
 )
 
+idep_etnaviv_enums_h = declare_dependency(
+  sources : [etnaviv_enums_h],
+  include_directories : include_directories('.'),
+)
+
 encode_h = custom_target(
   'encode.h',
   input: ['etnaviv.xml'],

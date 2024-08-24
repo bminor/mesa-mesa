@@ -8,6 +8,6 @@ test(
   executable(
     'etnaviv_disasm', 'disasm.cpp',
     include_directories: [inc_etnaviv, inc_src],
-    dependencies : [idep_gtest, idep_libetnaviv_decode],
+    dependencies : [idep_gtest, idep_etnaviv_enums_h, idep_libetnaviv_decode],
   )
 )
