@@ -1234,7 +1234,7 @@
         "description": "egl/android: Fix wrong pipe format for RGB_565",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "273e54391af7e0a89daec778980c3f8a800bcd7b",
         "notes": null
