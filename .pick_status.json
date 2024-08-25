@@ -384,7 +384,7 @@
         "description": "rusticl/mem: set bind flags for gl imports",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2645003bdc527b5dc046366fce5e65b44b27334f",
         "notes": null
