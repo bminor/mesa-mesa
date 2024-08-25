@@ -351,7 +351,7 @@ struct radv_shader_binary_legacy {
    uint32_t ir_size;
    uint32_t disasm_size;
    uint32_t stats_size;
-   uint32_t padding;
+   uint32_t debug_info_size;
 
    /* data has size of stats_size + code_size + ir_size + disasm_size + 2,
     * where the +2 is for 0 of the ir strings. */
@@ -451,6 +451,8 @@ struct radv_shader {
    char *disasm_string;
    char *ir_string;
    uint32_t *statistics;
+   struct ac_shader_debug_info *debug_info;
+   uint32_t debug_info_count;
 };
 
 struct radv_shader_part {

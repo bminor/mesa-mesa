@@ -2308,6 +2308,7 @@ struct radv_shader_binary_layout {
    void *code;
    void *ir;
    void *disasm;
+   void *debug_info;
 };
 
 static struct radv_shader_binary_layout
@@ -2328,6 +2329,9 @@ radv_shader_binary_get_layout(struct radv_shader_binary_legacy *binary)
 
    layout.disasm = binary->data + offset;
    offset += binary->disasm_size;
+
+   layout.debug_info = binary->data + offset;
+   offset += binary->debug_info_size;
 
    return layout;
 }
@@ -2878,8 +2882,12 @@ radv_aco_build_shader_binary(void **bin, const struct ac_shader_config *config, 
                              const struct ac_shader_debug_info *debug_info, unsigned debug_info_count)
 {
    struct radv_shader_binary **binary = (struct radv_shader_binary **)bin;
+
+   uint32_t debug_info_size = debug_info_count * sizeof(struct ac_shader_debug_info);
+
    size_t size = llvm_ir_size;
 
+   size += debug_info_size;
    size += disasm_size;
    size += stats_size;
 
@@ -2898,6 +2906,7 @@ radv_aco_build_shader_binary(void **bin, const struct ac_shader_config *config, 
    legacy_binary->code_size = code_dw * sizeof(uint32_t);
    legacy_binary->ir_size = llvm_ir_size;
    legacy_binary->disasm_size = disasm_size;
+   legacy_binary->debug_info_size = debug_info_size;
 
    struct radv_shader_binary_layout layout = radv_shader_binary_get_layout(legacy_binary);
 
@@ -2911,6 +2920,9 @@ radv_aco_build_shader_binary(void **bin, const struct ac_shader_config *config, 
 
    if (disasm_size)
       memcpy(layout.disasm, disasm_str, disasm_size);
+
+   if (debug_info_size)
+      memcpy(layout.debug_info, debug_info, debug_info_size);
 
    *binary = (struct radv_shader_binary *)legacy_binary;
 }
@@ -2988,6 +3000,10 @@ radv_capture_shader_executable_info(struct radv_device *device, struct radv_shad
 
       shader->ir_string = bin->ir_size ? strdup(layout.ir) : NULL;
       shader->disasm_string = bin->disasm_size ? strdup(layout.disasm) : NULL;
+
+      shader->debug_info = malloc(bin->debug_info_size);
+      memcpy(shader->debug_info, layout.debug_info, bin->debug_info_size);
+      shader->debug_info_count = bin->debug_info_size / sizeof(struct ac_shader_debug_info);
    }
 }
 
