@@ -2302,6 +2302,36 @@ radv_shader_combine_cfg_tes_gs(const struct radv_shader *tes, const struct radv_
    }
 }
 
+/* This struct has pointers into radv_shader_binary_legacy::data for easy access to the different sections. */
+struct radv_shader_binary_layout {
+   void *stats;
+   void *code;
+   void *ir;
+   void *disasm;
+};
+
+static struct radv_shader_binary_layout
+radv_shader_binary_get_layout(struct radv_shader_binary_legacy *binary)
+{
+   struct radv_shader_binary_layout layout = {0};
+
+   uint32_t offset = 0;
+
+   layout.stats = binary->data + offset;
+   offset += binary->stats_size;
+
+   layout.code = binary->data + offset;
+   offset += binary->code_size;
+
+   layout.ir = binary->data + offset;
+   offset += binary->ir_size;
+
+   layout.disasm = binary->data + offset;
+   offset += binary->disasm_size;
+
+   return layout;
+}
+
 static bool
 radv_shader_binary_upload(struct radv_device *device, const struct radv_shader_binary *binary,
                           struct radv_shader *shader, void *dest_ptr)
@@ -2346,10 +2376,12 @@ radv_shader_binary_upload(struct radv_device *device, const struct radv_shader_b
 #endif
    } else {
       struct radv_shader_binary_legacy *bin = (struct radv_shader_binary_legacy *)binary;
-      memcpy(dest_ptr, bin->data + bin->stats_size, bin->code_size);
+      struct radv_shader_binary_layout layout = radv_shader_binary_get_layout(bin);
+
+      memcpy(dest_ptr, layout.code, bin->code_size);
 
       if (shader->code) {
-         memcpy(shader->code, bin->data + bin->stats_size, bin->code_size);
+         memcpy(shader->code, layout.code, bin->code_size);
       }
    }
 
@@ -2621,7 +2653,8 @@ radv_shader_create_uncached(struct radv_device *device, const struct radv_shader
 
       if (bin->stats_size) {
          shader->statistics = calloc(bin->stats_size, 1);
-         memcpy(shader->statistics, bin->data, bin->stats_size);
+         struct radv_shader_binary_layout layout = radv_shader_binary_get_layout(bin);
+         memcpy(shader->statistics, layout.stats, bin->stats_size);
       }
    }
 
@@ -2860,28 +2893,25 @@ radv_aco_build_shader_binary(void **bin, const struct ac_shader_config *config, 
    legacy_binary->base.type = RADV_BINARY_TYPE_LEGACY;
    legacy_binary->base.total_size = size;
    legacy_binary->base.config = *config;
-
-   if (stats_size)
-      memcpy(legacy_binary->data, statistics, stats_size);
    legacy_binary->stats_size = stats_size;
-
-   memcpy(legacy_binary->data + legacy_binary->stats_size, code, code_dw * sizeof(uint32_t));
    legacy_binary->exec_size = exec_size;
    legacy_binary->code_size = code_dw * sizeof(uint32_t);
-
-   legacy_binary->disasm_size = 0;
    legacy_binary->ir_size = llvm_ir_size;
-
-   if (llvm_ir_size) {
-      memcpy((char *)legacy_binary->data + legacy_binary->stats_size + legacy_binary->code_size, llvm_ir_str,
-             llvm_ir_size);
-   }
-
    legacy_binary->disasm_size = disasm_size;
-   if (disasm_size) {
-      memcpy((char *)legacy_binary->data + legacy_binary->stats_size + legacy_binary->code_size + llvm_ir_size,
-             disasm_str, disasm_size);
-   }
+
+   struct radv_shader_binary_layout layout = radv_shader_binary_get_layout(legacy_binary);
+
+   if (stats_size)
+      memcpy(layout.stats, statistics, stats_size);
+
+   memcpy(layout.code, code, code_dw * sizeof(uint32_t));
+
+   if (llvm_ir_size)
+      memcpy(layout.ir, llvm_ir_str, llvm_ir_size);
+
+   if (disasm_size)
+      memcpy(layout.disasm, disasm_str, disasm_size);
+
    *binary = (struct radv_shader_binary *)legacy_binary;
 }
 
@@ -2954,10 +2984,10 @@ radv_capture_shader_executable_info(struct radv_device *device, struct radv_shad
 #endif
    } else {
       struct radv_shader_binary_legacy *bin = (struct radv_shader_binary_legacy *)binary;
+      struct radv_shader_binary_layout layout = radv_shader_binary_get_layout(bin);
 
-      shader->ir_string = bin->ir_size ? strdup((const char *)(bin->data + bin->stats_size + bin->code_size)) : NULL;
-      shader->disasm_string =
-         bin->disasm_size ? strdup((const char *)(bin->data + bin->stats_size + bin->code_size + bin->ir_size)) : NULL;
+      shader->ir_string = bin->ir_size ? strdup(layout.ir) : NULL;
+      shader->disasm_string = bin->disasm_size ? strdup(layout.disasm) : NULL;
    }
 }
 
