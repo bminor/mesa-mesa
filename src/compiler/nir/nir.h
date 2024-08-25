@@ -5232,7 +5232,10 @@ char *nir_shader_as_str(nir_shader *nir, void *mem_ctx);
 char *nir_shader_as_str_annotated(nir_shader *nir, struct hash_table *annotations, void *mem_ctx);
 char *nir_instr_as_str(const nir_instr *instr, void *mem_ctx);
 
-char *nir_shader_gather_debug_info(nir_shader *shader, const char *filename);
+/** Adds debug information to the shader. The line numbers point to
+ * the corresponding lines in the printed NIR, starting first_line;
+ */
+char *nir_shader_gather_debug_info(nir_shader *shader, const char *filename, uint32_t first_line);
 
 /** Shallow clone of a single instruction. */
 nir_instr *nir_instr_clone(nir_shader *s, const nir_instr *orig);

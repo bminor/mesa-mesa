@@ -2832,7 +2832,7 @@ nir_log_shader_annotated_tagged(enum mesa_log_level level, const char *tag,
 }
 
 char *
-nir_shader_gather_debug_info(nir_shader *shader, const char *filename)
+nir_shader_gather_debug_info(nir_shader *shader, const char *filename, uint32_t first_line)
 {
    uint32_t instr_count = 0;
    nir_foreach_function_impl(impl, shader) {
@@ -2869,7 +2869,7 @@ nir_shader_gather_debug_info(nir_shader *shader, const char *filename)
 
    char *str = _nir_shader_as_str_annotated(shader, NULL, NULL, debug_info);
 
-   uint32_t line = 1;
+   uint32_t line = first_line;
    uint32_t character_index = 0;
 
    for (uint32_t i = 0; i < instr_count; i++) {
