@@ -110,6 +110,7 @@ static const nir_shader_compiler_options ir3_base_options = {
 
    .lower_hadd = true,
    .lower_hadd64 = true,
+   .lower_fisnormal = true,
 
    .lower_int64_options = (nir_lower_int64_options)~0,
    .lower_doubles_options = (nir_lower_doubles_options)~0,
