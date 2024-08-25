@@ -2851,7 +2851,7 @@ radv_shader_part_cache_get(struct radv_device *device, struct radv_shader_part_c
    return shader_part;
 }
 
-static char *
+char *
 radv_dump_nir_shaders(struct nir_shader *const *shaders, int shader_count)
 {
    char *data = NULL;
@@ -2968,8 +2968,6 @@ radv_capture_shader_executable_info(struct radv_device *device, struct radv_shad
                                     struct nir_shader *const *shaders, int shader_count,
                                     const struct radv_shader_binary *binary)
 {
-   shader->nir_string = radv_dump_nir_shaders(shaders, shader_count);
-
    if (binary->type == RADV_BINARY_TYPE_RTLD) {
 #if !defined(USE_LIBELF)
       return;

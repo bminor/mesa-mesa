@@ -444,6 +444,10 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
          nir_print_shader(shaders[i], stderr);
    }
 
+   char *nir_string = NULL;
+   if (keep_executable_info || dump_shader)
+      nir_string = radv_dump_nir_shaders(shaders, num_shaders);
+
    /* Compile NIR shader to AMD assembly. */
    binary =
       radv_shader_nir_to_asm(device, stage, shaders, num_shaders, NULL, keep_executable_info, keep_statistic_info);
@@ -461,6 +465,8 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
       shader = radv_shader_create(device, cache, binary, keep_executable_info || dump_shader);
 
    if (shader) {
+      shader->nir_string = nir_string;
+
       radv_shader_generate_debug_info(device, dump_shader, keep_executable_info, binary, shader, shaders, num_shaders,
                                       &stage->info);
 
