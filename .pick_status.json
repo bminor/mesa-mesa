@@ -834,7 +834,7 @@
         "description": "radv/video: fix reporting video format props for encode.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "05cd42417ffabbe3364fb58ddf2a2d4427cd6579",
         "notes": null
