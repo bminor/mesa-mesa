@@ -44,7 +44,7 @@
         "description": "nil,nvk: Disable modifiers for B10G11R11_UFLOAT and E5B9G9R9_UFLOAT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cd428e01d7876da243933ee49f10f866777820f5",
         "notes": null
