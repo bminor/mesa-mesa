@@ -94,7 +94,7 @@
         "description": "nir/opt_loop: Fix handling else-breaks in merge_terminators",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9995f336e60c2197236c7d815e8ab20ede18b781",
         "notes": null
