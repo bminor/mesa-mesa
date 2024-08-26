@@ -154,7 +154,7 @@
         "description": "llvmpipe: handle stride properly on lvp udmabuf imports",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c44d65a46764a5f2cd3dc3924bd6179cd93993f6",
         "notes": null
