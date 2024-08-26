@@ -444,7 +444,7 @@
         "description": "llvmpipe: Only use udmabuf with libdrm",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "112063a060ef2603e66f5ee375346b2d24508c2b",
         "notes": null
