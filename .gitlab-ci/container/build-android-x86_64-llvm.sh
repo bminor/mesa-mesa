@@ -9,20 +9,28 @@ set -exu
 # Early check for required env variables, relies on `set -u`
 : "$ANDROID_SDK_VERSION"
 : "$ANDROID_NDK"
-: "$LLVM_VERSION"
-: "$LLVM_ARTIFACT_NAME"
+: "$ANDROID_LLVM_VERSION"
+: "$ANDROID_LLVM_ARTIFACT_NAME"
 : "$S3_JWT_FILE"
 : "$S3_HOST"
 : "$S3_ANDROID_BUCKET"
 
-# Check if the auth file used later on for CI is non-empty
+# Check for CI if the auth file used later on is non-empty
 if [ -n "$CI" ] && [ ! -s "${S3_JWT_FILE}" ]; then
   echo "Error: ${S3_JWT_FILE} is empty." 1>&2
   exit 1
 fi
 
-if curl -s -o /dev/null -I -L -f --retry 4 --retry-delay 15 "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CI_PROJECT_PATH}/${LLVM_ARTIFACT_NAME}.tar.zst"; then
-  echo "Artifact ${LLVM_ARTIFACT_NAME}.tar.zst already exists, skip re-building."
+if curl -s -o /dev/null -I -L -f --retry 4 --retry-delay 15 "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CI_PROJECT_PATH}/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"; then
+  echo "Artifact ${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst already exists, skip re-building."
+
+  # Download prebuilt LLVM libraries for Android when they have not changed,
+  # to save some time
+  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
+    -o "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CI_PROJECT_PATH}/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
+  tar -C / --zstd -xf "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
+  rm "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
+
   exit
 fi
 
@@ -51,7 +59,7 @@ then
   pushd "/llvm-project"
   git init
   git remote add origin https://github.com/llvm/llvm-project.git
-  git fetch --depth 1 origin "$LLVM_VERSION"
+  git fetch --depth 1 origin "$ANDROID_LLVM_VERSION"
   git checkout FETCH_HEAD
   popd
 fi
@@ -59,9 +67,9 @@ fi
 pushd "/llvm-project"
 
 # Checkout again the intended version, just in case of a pre-existing full clone
-git checkout "$LLVM_VERSION" || true
+git checkout "$ANDROID_LLVM_VERSION" || true
 
-LLVM_INSTALL_PREFIX="/${LLVM_ARTIFACT_NAME}"
+LLVM_INSTALL_PREFIX="/${ANDROID_LLVM_ARTIFACT_NAME}"
 
 rm -rf build/
 cmake -GNinja -S llvm -B build/ \
@@ -95,14 +103,14 @@ popd
 
 rm -rf /llvm-project
 
-tar --zstd -cf "${LLVM_ARTIFACT_NAME}.tar.zst" "$LLVM_INSTALL_PREFIX"
+tar --zstd -cf "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "$LLVM_INSTALL_PREFIX"
 
 # If run in CI upload the tar.zst archive to S3 to avoid rebuilding it if the
 # version does not change, and delete it.
 # The file is not deleted for non-CI because it can be useful in local runs.
 if [ -n "$CI" ]; then
-  ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${LLVM_ARTIFACT_NAME}.tar.zst" "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CI_PROJECT_PATH}/${LLVM_ARTIFACT_NAME}.tar.zst"
-  rm "${LLVM_ARTIFACT_NAME}.tar.zst"
+  ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CI_PROJECT_PATH}/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
+  rm "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
 fi
 
 rm -rf "$LLVM_INSTALL_PREFIX"

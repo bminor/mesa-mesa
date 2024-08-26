@@ -414,10 +414,11 @@ debian-android:
       -D egl=enabled
       -D glvnd=disabled
       -D platforms=android
+    FORCE_FALLBACK_FOR: llvm
     EXTRA_OPTION: >
       -D android-stub=true
-      -D llvm=disabled
       -D platform-sdk-version=33
+      -D cpp_rtti=false
       -D valgrind=disabled
       -D android-libbacktrace=disabled
       -D intel-clc=system
@@ -453,8 +454,9 @@ debian-android:
     # drivers because they requires LLVM, which we don't have an Android build
     # of.
     - export CROSS=x86_64-linux-android
-    - export GALLIUM_DRIVERS=iris,virgl
-    - export VULKAN_DRIVERS=amd,intel
+    - export GALLIUM_DRIVERS=iris,virgl,zink,softpipe,llvmpipe,swrast
+    - export VULKAN_DRIVERS=virtio,swrast
+    - .gitlab-ci/create-llvm-meson-wrap-file.sh
     - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
 
