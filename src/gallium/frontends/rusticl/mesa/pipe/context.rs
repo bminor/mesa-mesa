@@ -162,7 +162,7 @@ impl PipeContext {
         }
     }
 
-    pub fn resource_copy_region(
+    fn resource_copy_region(
         &self,
         src: &PipeResource,
         dst: &PipeResource,
@@ -182,6 +182,41 @@ impl PipeContext {
                 bx,
             )
         }
+    }
+
+    pub fn resource_copy_buffer(
+        &self,
+        src: &PipeResource,
+        src_offset: i32,
+        dst: &PipeResource,
+        dst_offset: u32,
+        width: i32,
+    ) {
+        debug_assert!(src.is_buffer());
+        debug_assert!(dst.is_buffer());
+
+        let bx = pipe_box {
+            x: src_offset,
+            width: width,
+            height: 1,
+            depth: 1,
+            ..Default::default()
+        };
+
+        self.resource_copy_region(src, dst, &[dst_offset, 0, 0], &bx)
+    }
+
+    pub fn resource_copy_texture(
+        &self,
+        src: &PipeResource,
+        dst: &PipeResource,
+        dst_offset: &[u32; 3],
+        bx: &pipe_box,
+    ) {
+        debug_assert!(!src.is_buffer());
+        debug_assert!(!dst.is_buffer());
+
+        self.resource_copy_region(src, dst, dst_offset, bx)
     }
 
     fn resource_map(

@@ -1172,19 +1172,17 @@ impl Buffer {
         dst_offset: usize,
         size: usize,
     ) -> CLResult<()> {
-        let src_offset = self.apply_offset(src_offset)?;
-        let dst_offset = dst.apply_offset(dst_offset)?;
         let src_res = self.get_res_for_access(ctx, RWFlags::RD)?;
         let dst_res = dst.get_res_for_access(ctx, RWFlags::WR)?;
+        let size = size.try_into().map_err(|_| CL_OUT_OF_HOST_MEMORY)?;
+        let src_offset = self
+            .apply_offset(src_offset)?
+            .try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
+        let dst_offset = dst
+            .apply_offset(dst_offset)?
+            .try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
 
-        let bx = create_pipe_box(
-            [src_offset, 0, 0].into(),
-            [size, 1, 1].into(),
-            CL_MEM_OBJECT_BUFFER,
-        )?;
-        let dst_origin: [u32; 3] = [dst_offset.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?, 0, 0];
-
-        ctx.resource_copy_region(src_res, dst_res, &dst_origin, &bx);
+        ctx.resource_copy_buffer(src_res, src_offset, dst_res, dst_offset, size);
         Ok(())
     }
 
@@ -1620,7 +1618,7 @@ impl Image {
                 (dst_origin[1], dst_origin[2]) = (dst_origin[2], dst_origin[1]);
             }
 
-            ctx.resource_copy_region(src_res, dst_res, &dst_origin, &bx);
+            ctx.resource_copy_texture(src_res, dst_res, &dst_origin, &bx);
         }
         Ok(())
     }
