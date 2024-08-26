@@ -761,8 +761,9 @@ llvmpipe_resource_get_handle(struct pipe_screen *_screen,
             lpr->data = lpr->dmabuf_alloc->data;
          /* reuse lavapipe codepath to handle destruction */
          lpr->backable = true;
+      } else {
+         whandle->handle = os_dupfd_cloexec(lpr->dmabuf_alloc->dmabuf_fd);
       }
-      whandle->handle = lpr->dmabuf_alloc->dmabuf_fd;
       return true;
    } else if (!lpr->dt && whandle->type == WINSYS_HANDLE_TYPE_KMS) {
       /* dri winsys code will use this to query the drm modifiers
