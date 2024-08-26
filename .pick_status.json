@@ -4524,7 +4524,7 @@
         "description": "anv: Make sure all previous vm binds are done before execute perf query pool",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
