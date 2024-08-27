@@ -234,7 +234,7 @@
         "description": "anv/trtt: fix error handling when adding binds",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7da5b1caef21ca1da75573737f553fa301d25b2c",
         "notes": null
