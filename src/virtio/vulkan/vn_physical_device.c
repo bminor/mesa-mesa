@@ -678,6 +678,27 @@ vn_physical_device_init_queue_family_properties(
    vn_call_vkGetPhysicalDeviceQueueFamilyProperties2(
       ring, vn_physical_device_to_handle(physical_dev), &count, props);
 
+#if DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 34
+   /* Starting from Android 14 (Android U), framework HWUI has required a
+    * second graphics queue to avoid racing between webview and skiavk.
+    */
+   static const bool require_second_queue = true;
+#else
+   const bool require_second_queue = VN_DEBUG(SECOND_QUEUE);
+#endif
+   physical_dev->emulate_second_queue = -1;
+   for (uint32_t i = 0; i < count; i++) {
+      if (props[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+         if (require_second_queue &&
+             props[i].queueFamilyProperties.queueCount < 2) {
+            props[i].queueFamilyProperties.queueCount = 2;
+            physical_dev->emulate_second_queue = i;
+         }
+
+         break;
+      }
+   }
+
    /* Filter out queue families that exclusively support sparse binding as
     * we need additional support for submitting feedback commands
     */
