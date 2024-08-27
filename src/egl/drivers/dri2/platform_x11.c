@@ -2018,8 +2018,7 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
    if (!dri2_get_xcb_connection(disp, dri2_dpy))
       return EGL_FALSE;
 
-   if (disp->Options.ForceSoftware ||
-       (disp->Options.Zink && !debug_get_bool_option("LIBGL_KOPPER_DISABLE", false)))
+   if (disp->Options.ForceSoftware || dri2_dpy->kopper)
       return dri2_initialize_x11_swrast(disp);
 
 #ifdef HAVE_LIBDRM
