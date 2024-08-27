@@ -1948,7 +1948,8 @@ static const __DRIextension *dri2_loader_extensions[] = {
    NULL,
 };
 
-static EGLBoolean
+/* don't consolidate any of this, it's a separate codepath  */
+EGLBoolean
 dri2_initialize_x11_dri2(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
@@ -2005,10 +2006,16 @@ dri2_initialize_x11_dri2(_EGLDisplay *disp)
 cleanup:
    return EGL_FALSE;
 }
+#else
+EGLBoolean
+dri2_initialize_x11_dri2(_EGLDisplay *disp)
+{
+   return _eglError(EGL_NOT_INITIALIZED, "legacy-x11 dri2 not built");
+}
 #endif
 
 EGLBoolean
-dri2_initialize_x11(_EGLDisplay *disp)
+dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
 {
    enum dri2_egl_driver_fail status = DRI2_EGL_DRIVER_FAILED;
    if (disp->Options.ForceSoftware ||
@@ -2024,16 +2031,10 @@ dri2_initialize_x11(_EGLDisplay *disp)
 #endif
 
 #ifdef HAVE_X11_DRI2
-   if (!debug_get_bool_option("LIBGL_DRI2_DISABLE", false) &&
-       status != DRI2_EGL_DRIVER_PREFER_ZINK)
-      /* this is a fallthrough using the same dri2_dpy from dri3,
-       * so the existing one must be destroyed and a new one created
-       * the caller will switch to the new display automatically
-       */
-      dri2_display_destroy(disp);
-      dri2_display_create(disp);
-      if (dri2_initialize_x11_dri2(disp))
-         return EGL_TRUE;
+   *allow_dri2 = !debug_get_bool_option("LIBGL_DRI2_DISABLE", false) &&
+                  status != DRI2_EGL_DRIVER_PREFER_ZINK;
+#else
+   *allow_dri2 = false;
 #endif
 
    return EGL_FALSE;

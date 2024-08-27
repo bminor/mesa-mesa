@@ -503,14 +503,21 @@ dri2_create_image_from_dri(_EGLDisplay *disp, struct dri_image *dri_image);
 
 #ifdef HAVE_X11_PLATFORM
 EGLBoolean
-dri2_initialize_x11(_EGLDisplay *disp);
+dri2_initialize_x11_dri2(_EGLDisplay *disp);
+EGLBoolean
+dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2);
 void
 dri2_teardown_x11(struct dri2_egl_display *dri2_dpy);
 unsigned int
 dri2_x11_get_red_mask_for_depth(struct dri2_egl_display *dri2_dpy, int depth);
 #else
 static inline EGLBoolean
-dri2_initialize_x11(_EGLDisplay *disp)
+dri2_initialize_x11_dri2(_EGLDisplay *disp)
+{
+   return _eglError(EGL_NOT_INITIALIZED, "X11 platform not built");
+}
+static inline EGLBoolean
+dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
 {
    return _eglError(EGL_NOT_INITIALIZED, "X11 platform not built");
 }

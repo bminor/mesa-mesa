@@ -880,6 +880,7 @@ dri2_initialize(_EGLDisplay *disp)
 
    loader_set_logger(_eglLog);
 
+   bool allow_dri2 = false;
    switch (disp->Platform) {
    case _EGL_PLATFORM_SURFACELESS:
       ret = dri2_initialize_surfaceless(disp);
@@ -889,7 +890,17 @@ dri2_initialize(_EGLDisplay *disp)
       break;
    case _EGL_PLATFORM_X11:
    case _EGL_PLATFORM_XCB:
-      ret = dri2_initialize_x11(disp);
+      ret = dri2_initialize_x11(disp, &allow_dri2);
+      /* platform_x11 detects dri2 availability */
+      if (!ret && allow_dri2) {
+         /* this is a fallthrough using the same dri2_dpy from dri3,
+         * so the existing one must be destroyed and a new one created
+         * the caller will switch to the new display automatically
+         */
+         dri2_display_destroy(disp);
+         dri2_display_create(disp);
+         ret = dri2_initialize_x11_dri2(disp);
+      }
       break;
    case _EGL_PLATFORM_DRM:
       ret = dri2_initialize_drm(disp);
