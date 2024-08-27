@@ -336,9 +336,7 @@ EGLBoolean
 dri2_initialize_device(_EGLDisplay *disp)
 {
    const char *err;
-   struct dri2_egl_display *dri2_dpy = dri2_display_create(disp);
-   if (!dri2_dpy)
-      return EGL_FALSE;
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    /* Extension requires a PlatformDisplay - the EGLDevice. */
    disp->Device = disp->PlatformDisplay;
@@ -378,6 +376,5 @@ dri2_initialize_device(_EGLDisplay *disp)
    return EGL_TRUE;
 
 cleanup:
-   dri2_display_destroy(disp);
    return _eglError(EGL_NOT_INITIALIZED, err);
 }

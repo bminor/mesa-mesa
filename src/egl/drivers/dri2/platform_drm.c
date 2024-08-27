@@ -560,9 +560,7 @@ dri2_initialize_drm(_EGLDisplay *disp)
 {
    struct gbm_device *gbm;
    const char *err;
-   struct dri2_egl_display *dri2_dpy = dri2_display_create(disp);
-   if (!dri2_dpy)
-      return EGL_FALSE;
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    gbm = disp->PlatformDisplay;
    if (gbm == NULL) {
@@ -681,7 +679,6 @@ dri2_initialize_drm(_EGLDisplay *disp)
    return EGL_TRUE;
 
 cleanup:
-   dri2_display_destroy(disp);
    return _eglError(EGL_NOT_INITIALIZED, err);
 }
 

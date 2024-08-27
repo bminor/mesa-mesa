@@ -361,9 +361,7 @@ dri2_initialize_surfaceless(_EGLDisplay *disp)
 {
    const char *err;
    bool driver_loaded = false;
-   struct dri2_egl_display *dri2_dpy = dri2_display_create(disp);
-   if (!dri2_dpy)
-      return EGL_FALSE;
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    /* When ForceSoftware is false, we try the HW driver.  When ForceSoftware
     * is true, we try kms_swrast and swrast in order.
@@ -397,6 +395,5 @@ dri2_initialize_surfaceless(_EGLDisplay *disp)
    return EGL_TRUE;
 
 cleanup:
-   dri2_display_destroy(disp);
    return _eglError(EGL_NOT_INITIALIZED, err);
 }

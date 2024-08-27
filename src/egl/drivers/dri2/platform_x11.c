@@ -1764,9 +1764,7 @@ dri2_x11_check_multibuffers(_EGLDisplay *disp)
 static EGLBoolean
 dri2_initialize_x11_swrast(_EGLDisplay *disp)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_display_create(disp);
-   if (!dri2_dpy)
-      return EGL_FALSE;
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    if (!dri2_get_xcb_connection(disp, dri2_dpy))
       goto cleanup;
@@ -1842,7 +1840,6 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
    return EGL_TRUE;
 
 cleanup:
-   dri2_display_destroy(disp);
    return EGL_FALSE;
 }
 
@@ -1857,10 +1854,8 @@ static const __DRIextension *dri3_image_loader_extensions[] = {
 static enum dri2_egl_driver_fail
 dri2_initialize_x11_dri3(_EGLDisplay *disp)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_display_create(disp);
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    enum dri2_egl_driver_fail status = DRI2_EGL_DRIVER_FAILED;
-   if (!dri2_dpy)
-      return DRI2_EGL_DRIVER_FAILED;
 
    if (!dri2_get_xcb_connection(disp, dri2_dpy))
       goto cleanup;
@@ -1916,7 +1911,6 @@ dri2_initialize_x11_dri3(_EGLDisplay *disp)
    return DRI2_EGL_DRIVER_LOADED;
 
 cleanup:
-   dri2_display_destroy(disp);
    return status == DRI2_EGL_DRIVER_PREFER_ZINK ?
           DRI2_EGL_DRIVER_PREFER_ZINK :
           DRI2_EGL_DRIVER_FAILED;
@@ -1957,9 +1951,7 @@ static const __DRIextension *dri2_loader_extensions[] = {
 static EGLBoolean
 dri2_initialize_x11_dri2(_EGLDisplay *disp)
 {
-   struct dri2_egl_display *dri2_dpy = dri2_display_create(disp);
-   if (!dri2_dpy)
-      return EGL_FALSE;
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    if (!dri2_get_xcb_connection(disp, dri2_dpy))
       goto cleanup;
@@ -2011,7 +2003,6 @@ dri2_initialize_x11_dri2(_EGLDisplay *disp)
    return EGL_TRUE;
 
 cleanup:
-   dri2_display_destroy(disp);
    return EGL_FALSE;
 }
 #endif
@@ -2035,6 +2026,12 @@ dri2_initialize_x11(_EGLDisplay *disp)
 #ifdef HAVE_X11_DRI2
    if (!debug_get_bool_option("LIBGL_DRI2_DISABLE", false) &&
        status != DRI2_EGL_DRIVER_PREFER_ZINK)
+      /* this is a fallthrough using the same dri2_dpy from dri3,
+       * so the existing one must be destroyed and a new one created
+       * the caller will switch to the new display automatically
+       */
+      dri2_display_destroy(disp);
+      dri2_display_create(disp);
       if (dri2_initialize_x11_dri2(disp))
          return EGL_TRUE;
 #endif
