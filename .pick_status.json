@@ -5174,7 +5174,7 @@
         "description": "ci/a618: Fix zink-tu-a618-full rules",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "69eac6dd152c8c526aea35d2c1a93077a6f6c1d7",
         "notes": null
