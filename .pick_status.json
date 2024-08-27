@@ -1744,7 +1744,7 @@
         "description": "pvr: really free memory in subpass render init",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "10b6a0d567e9782ae5217f4303bdc6fd2f0610ec",
         "notes": null
