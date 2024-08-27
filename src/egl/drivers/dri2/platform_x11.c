@@ -1761,13 +1761,55 @@ dri2_x11_check_multibuffers(_EGLDisplay *disp)
    return EGL_TRUE;
 }
 
+static bool
+platform_x11_finalize(_EGLDisplay *disp)
+{
+   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+
+   if (!dri2_x11_check_multibuffers(disp))
+      return false;
+
+   if (!dri2_create_screen(disp))
+      return false;
+
+   if (!dri2_setup_device(disp, disp->Options.ForceSoftware || dri2_dpy->kopper_without_modifiers)) {
+      _eglError(EGL_NOT_INITIALIZED, "DRI2: failed to setup EGLDevice");
+      return false;
+   }
+
+   dri2_setup_screen(disp);
+
+   if (!dri2_dpy->swrast) {
+      dri2_x11_setup_swap_interval(disp);
+
+#ifdef HAVE_WAYLAND_PLATFORM
+      if (dri2_dpy->kopper)
+         dri2_dpy->device_name = strdup("zink");
+#endif
+
+      dri2_dpy->swap_available = true;
+      if (dri2_dpy->fd_render_gpu == dri2_dpy->fd_display_gpu)
+         disp->Extensions.KHR_image_pixmap = EGL_TRUE;
+      disp->Extensions.NOK_texture_from_pixmap = EGL_TRUE;
+      disp->Extensions.CHROMIUM_sync_control = EGL_TRUE;
+#ifdef HAVE_LIBDRM
+      if (dri2_dpy->multibuffers_available)
+         dri2_set_WL_bind_wayland_display(disp);
+#endif
+   }
+   disp->Extensions.ANGLE_sync_control_rate = EGL_TRUE;
+   disp->Extensions.EXT_buffer_age = EGL_TRUE;
+   disp->Extensions.EXT_swap_buffers_with_damage = EGL_TRUE;
+
+   dri2_x11_add_configs_for_visuals(dri2_dpy, disp, !dri2_dpy->kopper);
+
+   return true;
+}
+
 static EGLBoolean
 dri2_initialize_x11_swrast(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-
-   if (!dri2_load_driver(disp))
-      goto cleanup;
 
    if (disp->Options.Zink && !disp->Options.ForceSoftware) {
       dri2_dpy->loader_extensions = kopper_loader_extensions;
@@ -1777,41 +1819,8 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
       dri2_dpy->loader_extensions = swrast_loader_extensions;
    }
 
-   if (!dri2_x11_check_multibuffers(disp))
-      goto cleanup;
-
-   if (!dri2_create_screen(disp))
-      goto cleanup;
-
-   if (!dri2_setup_device(disp, disp->Options.ForceSoftware || dri2_dpy->kopper_without_modifiers)) {
-      _eglError(EGL_NOT_INITIALIZED, "DRI2: failed to setup EGLDevice");
-      goto cleanup;
-   }
-
-   dri2_setup_screen(disp);
-
-   if (disp->Options.Zink) {
-      /* kopper */
-#ifdef HAVE_WAYLAND_PLATFORM
-      dri2_dpy->device_name = strdup("zink");
-#endif
-      dri2_dpy->swap_available = EGL_TRUE;
-      dri2_x11_setup_swap_interval(disp);
-      if (dri2_dpy->fd_render_gpu == dri2_dpy->fd_display_gpu)
-         disp->Extensions.KHR_image_pixmap = EGL_TRUE;
-      disp->Extensions.NOK_texture_from_pixmap = EGL_TRUE;
-      disp->Extensions.CHROMIUM_sync_control = EGL_TRUE;
-
-#ifdef HAVE_LIBDRM
-      if (dri2_dpy->multibuffers_available)
-         dri2_set_WL_bind_wayland_display(disp);
-#endif
-   }
-   disp->Extensions.EXT_swap_buffers_with_damage = EGL_TRUE;
-   disp->Extensions.EXT_buffer_age = EGL_TRUE;
-   disp->Extensions.ANGLE_sync_control_rate = EGL_TRUE;
-
-   dri2_x11_add_configs_for_visuals(dri2_dpy, disp, !disp->Options.Zink);
+   if (!platform_x11_finalize(disp))
+      return EGL_FALSE;
 
    /* Fill vtbl last to prevent accidentally calling virtual function during
     * initialization.
@@ -1822,9 +1831,6 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
       dri2_dpy->vtbl = &dri2_x11_swrast_display_vtbl;
 
    return EGL_TRUE;
-
-cleanup:
-   return EGL_FALSE;
 }
 
 #ifdef HAVE_LIBDRM
@@ -1840,39 +1846,10 @@ dri2_initialize_x11_dri3(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
-   if (!dri2_load_driver(disp))
-      goto cleanup;
-
    dri2_dpy->loader_extensions = dri3_image_loader_extensions;
 
-   dri2_dpy->swap_available = true;
-
-   if (!dri2_x11_check_multibuffers(disp))
-      goto cleanup;
-
-   if (!dri2_create_screen(disp))
-      goto cleanup;
-
-   if (!dri2_setup_device(disp, false)) {
-      _eglError(EGL_NOT_INITIALIZED, "DRI2: failed to setup EGLDevice");
-      goto cleanup;
-   }
-
-   dri2_setup_screen(disp);
-
-   dri2_x11_setup_swap_interval(disp);
-
-   if (dri2_dpy->fd_render_gpu == dri2_dpy->fd_display_gpu)
-      disp->Extensions.KHR_image_pixmap = EGL_TRUE;
-   disp->Extensions.NOK_texture_from_pixmap = EGL_TRUE;
-   disp->Extensions.CHROMIUM_sync_control = EGL_TRUE;
-   disp->Extensions.ANGLE_sync_control_rate = EGL_TRUE;
-   disp->Extensions.EXT_buffer_age = EGL_TRUE;
-   disp->Extensions.EXT_swap_buffers_with_damage = EGL_TRUE;
-
-   dri2_set_WL_bind_wayland_display(disp);
-
-   dri2_x11_add_configs_for_visuals(dri2_dpy, disp, false);
+   if (!platform_x11_finalize(disp))
+      return EGL_FALSE;
 
    loader_init_screen_resources(&dri2_dpy->screen_resources, dri2_dpy->conn,
                                 dri2_dpy->screen);
@@ -1885,9 +1862,6 @@ dri2_initialize_x11_dri3(_EGLDisplay *disp)
    _eglLog(_EGL_INFO, "Using DRI3");
 
    return EGL_TRUE;
-
-cleanup:
-   return EGL_FALSE;
 }
 #endif
 
@@ -2020,6 +1994,9 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
          return EGL_FALSE;
    }
 #endif
+   if (!dri2_load_driver(disp))
+      return EGL_FALSE;
+
    if (disp->Options.ForceSoftware || dri2_dpy->kopper)
       return dri2_initialize_x11_swrast(disp);
 
