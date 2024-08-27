@@ -534,7 +534,7 @@
         "description": "llvmpipe: Fix type mismatch when storing residency info",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6168317b849150db28dc222f8ac68cb1b371eb2e",
         "notes": null
