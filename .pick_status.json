@@ -534,7 +534,7 @@
         "description": "vc4: Add missing libvc4_neon build dependencies",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ebcb4c2156e9c0900fce6ee9ce6e3bd7894f7953",
         "notes": null
