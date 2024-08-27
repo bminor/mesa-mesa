@@ -74,14 +74,15 @@ $ADB push /deqp-gles/assets/gl_cts/data/mustpass/egl/aosp_mustpass/3.2.6.x/egl-m
 $ADB push /deqp-runner/deqp-runner /data/.
 
 # download Android Mesa from S3
-MESA_ANDROID_ARTIFACT_URL=https://${PIPELINE_ARTIFACTS_BASE}/${S3_ARTIFACT_NAME}.tar.zst
-curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -o ${S3_ARTIFACT_NAME}.tar.zst ${MESA_ANDROID_ARTIFACT_URL}
-tar -xvf ${S3_ARTIFACT_NAME}.tar.zst
-rm "${S3_ARTIFACT_NAME}.tar.zst" &
+MESA_ANDROID_ARTIFACT_URL=https://${PIPELINE_ARTIFACTS_BASE}/${S3_ANDROID_ARTIFACT_NAME}.tar.zst
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -o ${S3_ANDROID_ARTIFACT_NAME}.tar.zst ${MESA_ANDROID_ARTIFACT_URL}
+mkdir /mesa-android
+tar -C /mesa-android -xvf ${S3_ANDROID_ARTIFACT_NAME}.tar.zst
+rm "${S3_ANDROID_ARTIFACT_NAME}.tar.zst" &
 
-$ADB push install/all-skips.txt /data/.
-$ADB push install/$GPU_VERSION-flakes.txt /data/.
-$ADB push install/deqp-$DEQP_SUITE.toml /data/.
+$ADB push /mesa-android/install/all-skips.txt /data/.
+$ADB push "/mesa-android/install/$GPU_VERSION-flakes.txt" /data/.
+$ADB push "/mesa-android/install/deqp-$DEQP_SUITE.toml" /data/.
 
 # remove 32 bits libs from /vendor/lib
 
@@ -97,11 +98,11 @@ $ADB shell rm -f /vendor/lib/egl/libGLESv2_emulation.so
 
 # replace on /vendor/lib64
 
-$ADB push install/lib/libgallium_dri.so /vendor/lib64/libgallium_dri.so
-$ADB push install/lib/libglapi.so /vendor/lib64/libglapi.so
-$ADB push install/lib/libEGL.so /vendor/lib64/egl/libEGL_mesa.so
-$ADB push install/lib/libGLESv1_CM.so /vendor/lib64/egl/libGLESv1_CM_mesa.so
-$ADB push install/lib/libGLESv2.so /vendor/lib64/egl/libGLESv2_mesa.so
+$ADB push /mesa-android/install/lib/libgallium_dri.so /vendor/lib64/libgallium_dri.so
+$ADB push /mesa-android/install/lib/libglapi.so /vendor/lib64/libglapi.so
+$ADB push /mesa-android/install/lib/libEGL.so /vendor/lib64/egl/libEGL_mesa.so
+$ADB push /mesa-android/install/lib/libGLESv1_CM.so /vendor/lib64/egl/libGLESv1_CM_mesa.so
+$ADB push /mesa-android/install/lib/libGLESv2.so /vendor/lib64/egl/libGLESv2_mesa.so
 
 $ADB shell rm -f /vendor/lib64/egl/libEGL_angle.so
 $ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so
@@ -121,7 +122,7 @@ $ADB shell start
 # Check what GLES implementation Surfaceflinger is using after copying the new mesa libraries
 while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
 MESA_RUNTIME_VERSION="$($ADB shell dumpsys SurfaceFlinger | grep GLES:)"
-MESA_BUILD_VERSION=$(cat install/VERSION)
+MESA_BUILD_VERSION=$(cat /mesa-android/install/VERSION)
 if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep "${MESA_BUILD_VERSION}$"; then
     echo "Fatal: Android is loading a wrong version of the Mesa3D libs: ${MESA_RUNTIME_VERSION}" 1>&2
     exit 1

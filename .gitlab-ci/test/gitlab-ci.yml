@@ -114,7 +114,9 @@ yaml-toml-shell-py-test:
     - .test
     - .use-debian/x86_64_test-android
   variables:
-    S3_ARTIFACT_NAME: mesa-x86_64-android-debug
+    # This is for the guest artifacts from debian-android which will be
+    # downloaded explicitly by cuttlefish-runner.sh
+    S3_ANDROID_ARTIFACT_NAME: mesa-x86_64-android-debug
   needs:
     - job: debian-testing
       artifacts: true  # On the host we want the Linux build
