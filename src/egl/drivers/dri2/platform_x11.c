@@ -1992,6 +1992,7 @@ EGLBoolean
 dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+   bool dri3_disable = debug_get_bool_option("LIBGL_DRI3_DISABLE", false);
 
    /*
     * Every hardware driver_name is set using strdup. Doing the same in
@@ -2009,7 +2010,7 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
    /* kopper_without_modifiers really means (zink && LIBGL_DRI3_DISABLE=true),
     * so this conditional is effectively "is dri3 enabled"
     */
-   if (!debug_get_bool_option("LIBGL_DRI3_DISABLE", false) &&
+   if (!dri3_disable &&
        (!disp->Options.Zink || !debug_get_bool_option("LIBGL_KOPPER_DRI2", false))) {
       bool status = dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
       /* the status here is ignored for zink-with-kopper and swrast,
@@ -2023,7 +2024,7 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
       return dri2_initialize_x11_swrast(disp);
 
 #ifdef HAVE_LIBDRM
-   if (!debug_get_bool_option("LIBGL_DRI3_DISABLE", false)) {
+   if (!dri3_disable) {
       if (dri2_initialize_x11_dri3(disp))
          return EGL_TRUE;
    }
