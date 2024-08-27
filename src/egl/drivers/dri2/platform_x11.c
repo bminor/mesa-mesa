@@ -2014,6 +2014,14 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
    enum dri2_egl_driver_fail status = DRI2_EGL_DRIVER_FAILED;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
+   /*
+    * Every hardware driver_name is set using strdup. Doing the same in
+    * here will allow is to simply free the memory at dri2_terminate().
+    */
+   if (dri2_dpy->kopper)
+      dri2_dpy->driver_name = strdup("zink");
+   else if (disp->Options.ForceSoftware)
+      dri2_dpy->driver_name = strdup("swrast");
 
    if (!dri2_get_xcb_connection(disp, dri2_dpy))
       return EGL_FALSE;
