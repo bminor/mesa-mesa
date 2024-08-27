@@ -449,6 +449,7 @@ v3d_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
                       enum pipe_compute_cap param, void *ret)
 {
         struct v3d_screen *screen = v3d_screen(pscreen);
+        const char *const ir = "v3d";
 
         if (!screen->has_csd)
                 return 0;
@@ -465,8 +466,9 @@ v3d_get_compute_param(struct pipe_screen *pscreen, enum pipe_shader_ir ir_type,
                 break;
 
         case PIPE_COMPUTE_CAP_IR_TARGET:
-                sprintf(ret, "v3d");
-                return strlen(ret);
+                if (ret)
+                        sprintf(ret, "%s", ir);
+                return strlen(ir) * sizeof(char);
 
         case PIPE_COMPUTE_CAP_GRID_DIMENSION:
                 RET((uint64_t []) { 3 });
