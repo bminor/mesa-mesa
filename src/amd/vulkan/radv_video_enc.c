@@ -2029,7 +2029,7 @@ radv_video_enc_begin_coding(struct radv_cmd_buffer *cmd_buffer)
    radeon_check_space(device->ws, cmd_buffer->cs, 1024);
 
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
-      radv_vcn_sq_header(cmd_buffer->cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE);
+      radv_vcn_sq_header(cmd_buffer->cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE, false);
 }
 
 void
