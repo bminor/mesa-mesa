@@ -1876,7 +1876,6 @@ dri2_initialize_x11_dri3(_EGLDisplay *disp)
    dri2_dpy->loader_extensions = dri3_image_loader_extensions;
 
    dri2_dpy->swap_available = true;
-   dri2_dpy->invalidate_available = true;
 
    if (!dri2_x11_check_multibuffers(disp))
       goto cleanup;
@@ -1978,7 +1977,6 @@ dri2_initialize_x11_dri2(_EGLDisplay *disp)
       dri2_dpy->loader_extensions = dri2_loader_extensions_old;
 
    dri2_dpy->swap_available = (dri2_dpy->dri2_minor >= 2);
-   dri2_dpy->invalidate_available = (dri2_dpy->dri2_minor >= 3);
 
    if (!dri2_x11_check_multibuffers(disp))
       goto cleanup;

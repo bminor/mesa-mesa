@@ -248,7 +248,6 @@ struct dri2_egl_display {
 
    bool has_compression_modifiers;
    bool own_device;
-   bool invalidate_available;
    bool kopper;
    bool kopper_without_modifiers;
    bool swrast;
