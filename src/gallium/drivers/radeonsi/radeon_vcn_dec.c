@@ -235,12 +235,11 @@ static rvcn_dec_message_avc_t get_h264_msg(struct radeon_decoder *dec,
                     || dec->h264_valid_poc_num[k] == result.field_order_cnt_list[i][1]))
                break;
          }
-      }
-      if (result.ref_frame_list[i] != 0xff && (j == ARRAY_SIZE(dec->h264_valid_ref_num))
-                                           && (k == ARRAY_SIZE(dec->h264_valid_poc_num))) {
-         result.non_existing_frame_flags |= 1 << i;
-         result.curr_pic_ref_frame_num--;
-         result.ref_frame_list[i] = 0xff;
+         if ((j == ARRAY_SIZE(dec->h264_valid_ref_num)) && (k == ARRAY_SIZE(dec->h264_valid_poc_num))) {
+            result.non_existing_frame_flags |= 1 << i;
+            result.curr_pic_ref_frame_num--;
+            result.ref_frame_list[i] = 0xff;
+         }
       }
    }
 
