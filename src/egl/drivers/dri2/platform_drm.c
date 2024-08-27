@@ -560,11 +560,9 @@ dri2_initialize_drm(_EGLDisplay *disp)
 {
    struct gbm_device *gbm;
    const char *err;
-   struct dri2_egl_display *dri2_dpy = dri2_display_create();
+   struct dri2_egl_display *dri2_dpy = dri2_display_create(disp);
    if (!dri2_dpy)
       return EGL_FALSE;
-
-   disp->DriverData = (void *)dri2_dpy;
 
    gbm = disp->PlatformDisplay;
    if (gbm == NULL) {

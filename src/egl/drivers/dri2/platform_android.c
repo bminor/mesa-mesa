@@ -1184,7 +1184,7 @@ dri2_initialize_android(_EGLDisplay *disp)
    struct dri2_egl_display *dri2_dpy;
    const char *err;
 
-   dri2_dpy = dri2_display_create();
+   dri2_dpy = dri2_display_create(disp);
    if (!dri2_dpy)
       return _eglError(EGL_BAD_ALLOC, "eglInitialize");
 
@@ -1196,7 +1196,6 @@ dri2_initialize_android(_EGLDisplay *disp)
 
    bool force_pure_swrast = debug_get_bool_option("MESA_ANDROID_NO_KMS_SWRAST", false);
 
-   disp->DriverData = (void *)dri2_dpy;
    if (!force_pure_swrast)
       device_opened = droid_open_device(disp, disp->Options.ForceSoftware);
 

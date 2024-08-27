@@ -612,7 +612,7 @@ void
 dri2_display_destroy(_EGLDisplay *disp);
 
 struct dri2_egl_display *
-dri2_display_create(void);
+dri2_display_create(_EGLDisplay *disp);
 
 EGLBoolean
 dri2_init_surface(_EGLSurface *surf, _EGLDisplay *disp, EGLint type,
