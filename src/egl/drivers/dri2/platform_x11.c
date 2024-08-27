@@ -1991,7 +1991,6 @@ dri2_initialize_x11_dri2(_EGLDisplay *disp)
 EGLBoolean
 dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
 {
-   enum dri2_egl_driver_fail status = DRI2_EGL_DRIVER_FAILED;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
    /*
@@ -2012,11 +2011,11 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
     */
    if (!debug_get_bool_option("LIBGL_DRI3_DISABLE", false) &&
        (!disp->Options.Zink || !debug_get_bool_option("LIBGL_KOPPER_DRI2", false))) {
-      status = dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
+      bool status = dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
       /* the status here is ignored for zink-with-kopper and swrast,
        * otherwise return whatever error/fallback status as failure
        */
-      if (!dri2_dpy->kopper && !disp->Options.ForceSoftware && status != DRI2_EGL_DRIVER_LOADED)
+      if (!dri2_dpy->kopper && !disp->Options.ForceSoftware && !status)
          return EGL_FALSE;
    }
 #endif
@@ -2031,8 +2030,7 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
 #endif
 
 #ifdef HAVE_X11_DRI2
-   *allow_dri2 = !debug_get_bool_option("LIBGL_DRI2_DISABLE", false) &&
-                  status != DRI2_EGL_DRIVER_PREFER_ZINK;
+   *allow_dri2 = !debug_get_bool_option("LIBGL_DRI2_DISABLE", false);
 #else
    *allow_dri2 = false;
 #endif
