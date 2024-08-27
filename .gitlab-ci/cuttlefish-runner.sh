@@ -85,15 +85,15 @@ $ADB push install/deqp-$DEQP_SUITE.toml /data/.
 
 # remove 32 bits libs from /vendor/lib
 
-$ADB shell rm /vendor/lib/libglapi.so
-$ADB shell rm /vendor/lib/egl/libGLES_mesa.so
+$ADB shell rm -f /vendor/lib/libglapi.so
+$ADB shell rm -f /vendor/lib/egl/libGLES_mesa.so
 
-$ADB shell rm /vendor/lib/egl/libEGL_angle.so
-$ADB shell rm /vendor/lib/egl/libEGL_emulation.so
-$ADB shell rm /vendor/lib/egl/libGLESv1_CM_angle.so
-$ADB shell rm /vendor/lib/egl/libGLESv1_CM_emulation.so
-$ADB shell rm /vendor/lib/egl/libGLESv2_angle.so
-$ADB shell rm /vendor/lib/egl/libGLESv2_emulation.so
+$ADB shell rm -f /vendor/lib/egl/libEGL_angle.so
+$ADB shell rm -f /vendor/lib/egl/libEGL_emulation.so
+$ADB shell rm -f /vendor/lib/egl/libGLESv1_CM_angle.so
+$ADB shell rm -f /vendor/lib/egl/libGLESv1_CM_emulation.so
+$ADB shell rm -f /vendor/lib/egl/libGLESv2_angle.so
+$ADB shell rm -f /vendor/lib/egl/libGLESv2_emulation.so
 
 # replace on /vendor/lib64
 
@@ -103,12 +103,12 @@ $ADB push install/lib/libEGL.so /vendor/lib64/egl/libEGL_mesa.so
 $ADB push install/lib/libGLESv1_CM.so /vendor/lib64/egl/libGLESv1_CM_mesa.so
 $ADB push install/lib/libGLESv2.so /vendor/lib64/egl/libGLESv2_mesa.so
 
-$ADB shell rm /vendor/lib64/egl/libEGL_angle.so
-$ADB shell rm /vendor/lib64/egl/libEGL_emulation.so
-$ADB shell rm /vendor/lib64/egl/libGLESv1_CM_angle.so
-$ADB shell rm /vendor/lib64/egl/libGLESv1_CM_emulation.so
-$ADB shell rm /vendor/lib64/egl/libGLESv2_angle.so
-$ADB shell rm /vendor/lib64/egl/libGLESv2_emulation.so
+$ADB shell rm -f /vendor/lib64/egl/libEGL_angle.so
+$ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so
+$ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_angle.so
+$ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_emulation.so
+$ADB shell rm -f /vendor/lib64/egl/libGLESv2_angle.so
+$ADB shell rm -f /vendor/lib64/egl/libGLESv2_emulation.so
 
 # Check what GLES implementation Surfaceflinger is using before copying the new mesa libraries
 while [ "$($ADB shell dumpsys SurfaceFlinger | grep GLES:)" = "" ] ; do sleep 1; done
