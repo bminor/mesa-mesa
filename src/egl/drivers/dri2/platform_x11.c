@@ -1766,19 +1766,6 @@ dri2_initialize_x11_swrast(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
-   /*
-    * Every hardware driver_name is set using strdup. Doing the same in
-    * here will allow is to simply free the memory at dri2_terminate().
-    */
-   dri2_dpy->driver_name = strdup(disp->Options.Zink ? "zink" : "swrast");
-
-#ifdef HAVE_LIBDRM
-   if (disp->Options.Zink &&
-       !debug_get_bool_option("LIBGL_DRI3_DISABLE", false) &&
-       (!disp->Options.Zink || !debug_get_bool_option("LIBGL_KOPPER_DRI2", false)))
-      dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
-#endif
-
    if (!dri2_load_driver(disp))
       goto cleanup;
 
@@ -1848,15 +1835,10 @@ static const __DRIextension *dri3_image_loader_extensions[] = {
    NULL,
 };
 
-static enum dri2_egl_driver_fail
+static EGLBoolean
 dri2_initialize_x11_dri3(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   enum dri2_egl_driver_fail status = DRI2_EGL_DRIVER_FAILED;
-
-   status = dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
-   if (status != DRI2_EGL_DRIVER_LOADED)
-      goto cleanup;
 
    if (!dri2_load_driver(disp))
       goto cleanup;
@@ -1902,12 +1884,10 @@ dri2_initialize_x11_dri3(_EGLDisplay *disp)
 
    _eglLog(_EGL_INFO, "Using DRI3");
 
-   return DRI2_EGL_DRIVER_LOADED;
+   return EGL_TRUE;
 
 cleanup:
-   return status == DRI2_EGL_DRIVER_PREFER_ZINK ?
-          DRI2_EGL_DRIVER_PREFER_ZINK :
-          DRI2_EGL_DRIVER_FAILED;
+   return EGL_FALSE;
 }
 #endif
 
@@ -2026,13 +2006,26 @@ dri2_initialize_x11(_EGLDisplay *disp, bool *allow_dri2)
    if (!dri2_get_xcb_connection(disp, dri2_dpy))
       return EGL_FALSE;
 
+#ifdef HAVE_LIBDRM
+   /* kopper_without_modifiers really means (zink && LIBGL_DRI3_DISABLE=true),
+    * so this conditional is effectively "is dri3 enabled"
+    */
+   if (!debug_get_bool_option("LIBGL_DRI3_DISABLE", false) &&
+       (!disp->Options.Zink || !debug_get_bool_option("LIBGL_KOPPER_DRI2", false))) {
+      status = dri3_x11_connect(dri2_dpy, disp->Options.Zink, disp->Options.ForceSoftware);
+      /* the status here is ignored for zink-with-kopper and swrast,
+       * otherwise return whatever error/fallback status as failure
+       */
+      if (!dri2_dpy->kopper && !disp->Options.ForceSoftware && status != DRI2_EGL_DRIVER_LOADED)
+         return EGL_FALSE;
+   }
+#endif
    if (disp->Options.ForceSoftware || dri2_dpy->kopper)
       return dri2_initialize_x11_swrast(disp);
 
 #ifdef HAVE_LIBDRM
    if (!debug_get_bool_option("LIBGL_DRI3_DISABLE", false)) {
-      status = dri2_initialize_x11_dri3(disp);
-      if (status == DRI2_EGL_DRIVER_LOADED)
+      if (dri2_initialize_x11_dri3(disp))
          return EGL_TRUE;
    }
 #endif
