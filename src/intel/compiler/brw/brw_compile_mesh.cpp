@@ -788,9 +788,7 @@ brw_nir_lower_mue_outputs(nir_shader *nir, const struct brw_mue_map *map)
 }
 
 static bool
-brw_nir_initialize_mue(nir_shader *nir,
-                       const struct brw_mue_map *map,
-                       unsigned dispatch_width)
+brw_nir_initialize_mue(nir_shader *nir, const struct brw_mue_map *map)
 {
    nir_builder b;
    nir_function_impl *entrypoint = nir_shader_get_entrypoint(nir);
@@ -856,11 +854,17 @@ brw_nir_initialize_mue(nir_shader *nir,
    /* If there's more than one subgroup, then we need to wait for all of them
     * to finish initialization before we can proceed. Otherwise some subgroups
     * may start filling MUE before other finished initializing.
+    *
+    * Note that brw_nir_lower_simd and subsequent optimizations will remove
+    * this code if condition is false.
     */
-   if (workgroup_size > dispatch_width) {
+   nir_push_if(&b, nir_ilt_imm(&b, nir_load_subgroup_size(&b), workgroup_size));
+   {
       nir_barrier(&b, SCOPE_WORKGROUP, SCOPE_WORKGROUP,
-                         NIR_MEMORY_ACQ_REL, nir_var_shader_out);
+                  NIR_MEMORY_ACQ_REL, nir_var_shader_out);
    }
+   nir_pop_if(&b, NULL);
+
 
    if (remaining) {
       nir_progress(true, entrypoint, nir_metadata_none);
@@ -1231,6 +1235,12 @@ brw_compile_mesh(const struct brw_compiler *compiler,
                        apply_wa_18019110168 ? wa_18019110168_mapping : NULL);
    brw_nir_lower_mue_outputs(nir, &prog_data->map);
 
+   /* When Primitive Header is enabled, we may not generates writes to all
+    * fields, so let's initialize everything.
+    */
+   if (prog_data->map.has_per_primitive_header)
+      NIR_PASS(_, nir, brw_nir_initialize_mue, &prog_data->map);
+
    prog_data->autostrip_enable = brw_mesh_autostrip_enable(compiler, nir, &prog_data->map);
 
    prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir) ||
@@ -1259,13 +1269,6 @@ brw_compile_mesh(const struct brw_compiler *compiler,
       nir_shader *shader = nir_shader_clone(params->base.mem_ctx, nir);
 
       brw_debug_archive_nir(params->base.archiver, shader, dispatch_width, "first");
-
-      /*
-       * When Primitive Header is enabled, we may not generates writes to all
-       * fields, so let's initialize everything.
-       */
-      if (prog_data->map.has_per_primitive_header)
-         NIR_PASS(_, shader, brw_nir_initialize_mue, &prog_data->map, dispatch_width);
 
       brw_nir_apply_key(shader, compiler, &key->base, dispatch_width);
 
