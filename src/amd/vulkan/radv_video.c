@@ -119,14 +119,17 @@ radv_vcn_write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *even
    struct rvcn_sq_var sq;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
-   if (pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED)
+   bool separate_queue = pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED;
+   if (cmd_buffer->qf == RADV_QUEUE_VIDEO_DEC && separate_queue) {
+      // TODO: decode impl
       return;
+   }
 
    radv_cs_add_buffer(device->ws, cs, event->bo);
    uint64_t va = radv_buffer_get_va(event->bo);
 
    radeon_check_space(device->ws, cs, 256);
-   radv_vcn_sq_header(cs, &sq, RADEON_VCN_ENGINE_TYPE_COMMON, false);
+   radv_vcn_sq_header(cs, &sq, RADEON_VCN_ENGINE_TYPE_COMMON, separate_queue);
    struct rvcn_cmn_engine_ib_package *ib_header = (struct rvcn_cmn_engine_ib_package *)&(cs->buf[cs->cdw]);
    ib_header->package_size = sizeof(struct rvcn_cmn_engine_ib_package) + sizeof(struct rvcn_cmn_engine_op_writememory);
    cs->cdw++;
