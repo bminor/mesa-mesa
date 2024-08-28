@@ -37,7 +37,7 @@ ci-fairy s3cp --token-file "${S3_JWT_FILE}" job-rootfs-overlay.tar.gz "https://$
 section_switch variables "Environment variables passed through to device:"
 cat results/job-rootfs-overlay/set-job-env-vars.sh
 
-ARTIFACT_URL="${FDO_HTTP_CACHE_URI:-}https://${PIPELINE_ARTIFACTS_BASE}/${LAVA_S3_ARTIFACT_NAME:?}.tar.zst"
+ARTIFACT_URL="https://${PIPELINE_ARTIFACTS_BASE}/${LAVA_S3_ARTIFACT_NAME:?}.tar.zst"
 
 section_switch lava_submit "Submitting job for scheduling"
 
@@ -51,7 +51,7 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--kernel-url-prefix "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}" \
 	--kernel-external "${EXTERNAL_KERNEL_TAG}" \
 	--build-url "${ARTIFACT_URL}" \
-	--job-rootfs-overlay-url "${LAVA_HTTP_CACHE_URI:-}https://${JOB_ROOTFS_OVERLAY_PATH}" \
+	--job-rootfs-overlay-url "https://${JOB_ROOTFS_OVERLAY_PATH}" \
 	--job-timeout-min ${JOB_TIMEOUT:-30} \
 	--first-stage-init artifacts/ci-common/init-stage1.sh \
 	--ci-project-dir "${CI_PROJECT_DIR}" \

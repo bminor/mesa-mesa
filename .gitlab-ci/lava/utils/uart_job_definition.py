@@ -102,7 +102,7 @@ def qemu_deploy_actions(job_definition: "LAVAJobDefinition", nfsrootfs) -> tuple
 
 
 def uart_test_actions(
-    args: "LAVAJobSubmitter", init_stage1_steps: list[str], artifact_download_steps: list[str]
+    args: "LAVAJobSubmitter", init_stage1_steps: list[str], jwt_steps: list[str]
 ) -> tuple[dict[str, Any]]:
     # skeleton test definition: only declaring each job as a single 'test'
     # since LAVA's test parsing is not useful to us
@@ -131,7 +131,7 @@ def uart_test_actions(
     }
 
     run_steps += init_stage1_steps
-    run_steps += artifact_download_steps
+    run_steps += jwt_steps
 
     run_steps += [
         # Sleep a bit to give time for bash to dump shell xtrace messages into
