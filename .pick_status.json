@@ -1,5 +1,105 @@
 [
     {
+        "sha": "64ca0fd2f2896faa2ec85e454e2ecba2f68390c8",
+        "description": "frontends/va: Allocate surface buffers on demand",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de61cb72fe3fc5fba4c00e285eddb3d3cbdb76a3",
+        "description": "pipe: Use correct struct for h264/h265 dpb entry",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "cc14724d73b2ec03720c1f7366d7697e50bd9f16",
+        "notes": null
+    },
+    {
+        "sha": "83b74bfc6d787017f403410293d4c580503209d8",
+        "description": "bin/gen_release_notes: adjust checksums section",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2aa373aee5730b27f29850af5b61968340a7e372",
+        "description": "radeonsi/vcn: Implement get_feedback_fence",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49596f70ee72be8288a315e40a3d71e2db40a39e",
+        "description": "frontends/va: Check for errors from end_frame in vlVaEndPicture",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db45d16dfefe6260a71138b44be4bcb6f3aa654b",
+        "description": "pipe: Add int return value to video end_frame",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96fe9fde3f37539b2e6e4a498709d0f2e035c7be",
+        "description": "frontends/va: Implement sync buffer/surface timeout for encode feedback",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d6974854299cc3d65e86078a5f2b106f797a081",
+        "description": "d3d12: Remove get_feedback_fence implementation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef4c41d7fde9590e0b85980a614eabcc96690251",
+        "description": "v3d, vc4: remove unused functions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "518b2d548fb055ab4bc8836705bd23351c2f773e",
+        "description": "nir: Preserve fp_fast_math in nir_opt_vectorize()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "7392e3306ef376121097cf03b388dc75bff127c0",
         "description": "radv: remove useless check about non-indexed draws and DGC",
         "nominated": false,
