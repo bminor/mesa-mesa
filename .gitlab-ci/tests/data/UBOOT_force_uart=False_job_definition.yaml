@@ -25,7 +25,7 @@ actions:
     kernel:
       url: None/None
     nfsrootfs:
-      url: None/lava-rootfs.tar.zst
+      url: None
       compression: zstd
       format: tar
       overlays:

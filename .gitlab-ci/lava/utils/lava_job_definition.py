@@ -62,7 +62,7 @@ class LAVAJobDefinition:
         """
         args = self.job_submitter
         nfsrootfs = {
-            "url": f"{args.rootfs_url_prefix}/lava-rootfs.tar.zst",
+            "url": f"{args.rootfs_url}",
             "compression": "zstd",
             "format": "tar",
             "overlays": {

@@ -22,7 +22,7 @@ actions:
       minutes: 10
     to: nfs
     nfsrootfs:
-      url: None/lava-rootfs.tar.zst
+      url: None
       compression: zstd
       format: tar
       overlays:

@@ -412,7 +412,7 @@ class LAVAJobSubmitter(PathResolver):
     lava_tags: str = ""  # Comma-separated LAVA tags for the job
     mesa_job_name: str = "mesa_ci_job"
     pipeline_info: str = ""
-    rootfs_url_prefix: str = None
+    rootfs_url: str = None
     validate_only: bool = False  # Whether to only validate the job, not execute it
     visibility_group: str = None  # Only affects LAVA farm maintainers
     job_rootfs_overlay_url: str = None

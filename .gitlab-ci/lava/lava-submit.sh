@@ -47,7 +47,7 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	submit \
 	--dump-yaml \
 	--pipeline-info "$CI_JOB_NAME: $CI_PIPELINE_URL on $CI_COMMIT_REF_NAME ${CI_NODE_INDEX}/${CI_NODE_TOTAL}" \
-	--rootfs-url-prefix "https://${BASE_SYSTEM_HOST_PATH}" \
+	--rootfs-url "https://${BASE_SYSTEM_HOST_PATH}/lava-rootfs.tar.zst" \
 	--kernel-url-prefix "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}" \
 	--kernel-external "${EXTERNAL_KERNEL_TAG}" \
 	--build-url "${ARTIFACT_URL}" \
