@@ -5574,7 +5574,7 @@
         "description": "v3d: v3d_resource Use LINEAR layout for importing with INVALID modifier",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
