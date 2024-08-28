@@ -205,9 +205,6 @@ $HWCI_TEST_SCRIPT ${HWCI_TEST_ARGS:-}
 EXIT_CODE=$?
 set -e
 
-# Let's make sure the results are always stored in current working directory
-mv -f ${RESULTS_DIR} ./ 2>/dev/null || true
-
 # Make sure that capture-devcoredump is done before we start trying to tar up
 # artifacts -- if it's writing while tar is reading, tar will throw an error and
 # kill the job.
