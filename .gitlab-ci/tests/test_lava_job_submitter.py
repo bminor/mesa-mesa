@@ -73,7 +73,6 @@ def lava_job_submitter(
         mock_setup_lava_proxy.return_value = mock_proxy()
         yield LAVAJobSubmitter(
             boot_method="test_boot",
-            ci_project_dir="test_dir",
             device_type="test_device",
             farm="test_farm",
             job_timeout_min=1,

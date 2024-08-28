@@ -28,17 +28,7 @@ actions:
       url: None
       compression: zstd
       format: tar
-      overlays:
-        mesa-build:
-          url: null # aka None
-          compression: zstd
-          format: tar
-          path: /ci/project/dir
-        job-metadata:
-          url: null # aka None
-          compression: gz
-          format: tar
-          path: /
+      overlays: {}
     dtb:
       url: None/my_dtb_filename.dtb
 - boot:

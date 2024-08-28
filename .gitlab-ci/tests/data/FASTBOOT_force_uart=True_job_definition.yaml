@@ -25,17 +25,7 @@ actions:
       url: None
       compression: zstd
       format: tar
-      overlays:
-        mesa-build:
-          url: null # aka None
-          compression: zstd
-          format: tar
-          path: /ci/project/dir
-        job-metadata:
-          url: null # aka None
-          compression: gz
-          format: tar
-          path: /
+      overlays: {}
 - deploy:
     timeout:
       minutes: 5
@@ -94,6 +84,7 @@ actions:
         run:
           steps:
           - echo test FASTBOOT
+          - export CURRENT_SECTION=dut_boot
           - set -e
           - echo Could not find jwt file, disabling S3 requests...
           - sed -i '/S3_RESULTS_UPLOAD/d' /set-job-env-vars.sh

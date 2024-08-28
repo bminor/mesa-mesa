@@ -65,20 +65,7 @@ class LAVAJobDefinition:
             "url": f"{args.rootfs_url}",
             "compression": "zstd",
             "format": "tar",
-            "overlays": {
-                "mesa-build": {
-                    "url": self.job_submitter.build_url,
-                    "compression": "zstd",
-                    "format": "tar",
-                    "path": self.job_submitter.ci_project_dir
-                },
-                "job-metadata": {
-                    "url": args.job_rootfs_overlay_url,
-                    "compression": "gz",
-                    "format": "tar",
-                    "path": "/"
-                }
-            }
+            "overlays": args._overlays,
         }
         values = self.generate_metadata()
 

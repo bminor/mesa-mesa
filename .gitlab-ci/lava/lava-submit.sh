@@ -37,31 +37,25 @@ ci-fairy s3cp --token-file "${S3_JWT_FILE}" job-rootfs-overlay.tar.gz "https://$
 section_switch variables "Environment variables passed through to device:"
 cat results/job-rootfs-overlay/set-job-env-vars.sh
 
-ARTIFACT_URL="https://${PIPELINE_ARTIFACTS_BASE}/${LAVA_S3_ARTIFACT_NAME:?}.tar.zst"
-
 section_switch lava_submit "Submitting job for scheduling"
 
 touch results/lava.log
 tail -f results/lava.log &
 PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
-	submit \
+	--farm "${FARM}" \
+	--device-type "${DEVICE_TYPE}" \
+	--boot-method "${BOOT_METHOD}" \
+	--job-timeout-min ${JOB_TIMEOUT:-30} \
 	--dump-yaml \
 	--pipeline-info "$CI_JOB_NAME: $CI_PIPELINE_URL on $CI_COMMIT_REF_NAME ${CI_NODE_INDEX}/${CI_NODE_TOTAL}" \
-	--rootfs-url "https://${BASE_SYSTEM_HOST_PATH}/lava-rootfs.tar.zst" \
+	--rootfs-url "${ROOTFS_URL}" \
 	--kernel-url-prefix "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}" \
 	--kernel-external "${EXTERNAL_KERNEL_TAG}" \
-	--build-url "${ARTIFACT_URL}" \
-	--job-rootfs-overlay-url "https://${JOB_ROOTFS_OVERLAY_PATH}" \
-	--job-timeout-min ${JOB_TIMEOUT:-30} \
 	--first-stage-init artifacts/ci-common/init-stage1.sh \
-	--ci-project-dir "${CI_PROJECT_DIR}" \
-	--device-type "${DEVICE_TYPE}" \
-	--farm "${FARM}" \
 	--dtb-filename "${DTB}" \
 	--jwt-file "${S3_JWT_FILE}" \
 	--kernel-image-name "${KERNEL_IMAGE_NAME}" \
 	--kernel-image-type "${KERNEL_IMAGE_TYPE}" \
-	--boot-method "${BOOT_METHOD}" \
 	--visibility-group "${VISIBILITY_GROUP}" \
 	--lava-tags "${LAVA_TAGS}" \
 	--mesa-job-name "$CI_JOB_NAME" \
@@ -70,4 +64,17 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--project-name "${CI_PROJECT_NAME}" \
 	--starting-section "${CURRENT_SECTION}" \
 	--job-submitted-at "${CI_JOB_STARTED_AT}" \
+	- append-overlay \
+		--name=mesa-build \
+		--url="https://${PIPELINE_ARTIFACTS_BASE}/${LAVA_S3_ARTIFACT_NAME:?}.tar.zst" \
+		--compression=zstd \
+		--path="${CI_PROJECT_DIR}" \
+		--format=tar \
+	- append-overlay \
+		--name=job-overlay \
+		--url="https://${JOB_ROOTFS_OVERLAY_PATH}" \
+		--compression=gz \
+		--path="/" \
+		--format=tar \
+	- submit \
 	>> results/lava.log

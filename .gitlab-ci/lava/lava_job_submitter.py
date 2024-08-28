@@ -15,10 +15,10 @@ import pathlib
 import sys
 import time
 from collections import defaultdict
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from datetime import datetime, timedelta, UTC
-from os import environ, getenv, path
-from typing import Any, Optional
+from os import environ, getenv
+from typing import Any, Optional, Self
 
 import fire
 from lavacli.utils import flow_yaml as lava_yaml
@@ -396,11 +396,9 @@ class PathResolver:
 @dataclass
 class LAVAJobSubmitter(PathResolver):
     boot_method: str
-    ci_project_dir: str
     device_type: str
     farm: str
     job_timeout_min: int  # The job timeout in minutes
-    build_url: str = None
     dtb_filename: str = None
     dump_yaml: bool = False  # Whether to dump the YAML payload to stdout
     first_stage_init: str = None
@@ -415,26 +413,61 @@ class LAVAJobSubmitter(PathResolver):
     rootfs_url: str = None
     validate_only: bool = False  # Whether to only validate the job, not execute it
     visibility_group: str = None  # Only affects LAVA farm maintainers
-    job_rootfs_overlay_url: str = None
     structured_log_file: pathlib.Path = None  # Log file path with structured LAVA log
     ssh_client_image: str = None  # x86_64 SSH client image to follow the job's output
     project_name: str = None  # Project name to be used in the job name
     starting_section: str = None # GitLab section used to start
     job_submitted_at: [str | datetime] = None
     __structured_log_context = contextlib.nullcontext()  # Structured Logger context
+    _overlays: dict = field(default_factory=dict, init=False)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> Self:
         super().__post_init__()
         # Remove mesa job names with spaces, which breaks the lava-test-case command
         self.mesa_job_name = self.mesa_job_name.split(" ")[0]
 
-        if not self.structured_log_file:
-            return
+        if self.structured_log_file:
+            self.__structured_log_context = StructuredLoggerWrapper(self).logger_context()
 
         if self.job_submitted_at:
             self.job_submitted_at = datetime.fromisoformat(self.job_submitted_at)
-        self.__structured_log_context = StructuredLoggerWrapper(self).logger_context()
         self.proxy = setup_lava_proxy()
+
+        return self
+
+    def append_overlay(
+        self, compression: str, name: str, path: str, url: str, format: str = "tar"
+    ) -> Self:
+        """
+        Append an overlay to the LAVA job definition.
+
+        Args:
+            compression (str): The compression type of the overlay (e.g., "gz", "xz").
+            name (str): The name of the overlay.
+            path (str): The path where the overlay should be applied.
+            url (str): The URL from where the overlay can be downloaded.
+            format (str, optional): The format of the overlay (default is "tar").
+
+        Returns:
+            Self: The instance of LAVAJobSubmitter with the overlay appended.
+        """
+        self._overlays[name] = {
+            "compression": compression,
+            "format": format,
+            "path": path,
+            "url": url,
+        }
+        return self
+
+    def print(self) -> Self:
+        """
+        Prints the dictionary representation of the instance and returns the instance itself.
+
+        Returns:
+            Self: The instance of the class.
+        """
+        print(self.__dict__)
+        return self
 
     def __prepare_submission(self) -> str:
         # Overwrite the timeout for the testcases with the value offered by the
