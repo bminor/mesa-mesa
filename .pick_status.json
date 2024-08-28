@@ -1174,7 +1174,7 @@
         "description": "nir/opt_sink: do not sink inverse_ballot out of loops",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "18a0ff137ffa38257b3e54b70c5394c7de4c7b3d",
         "notes": null
