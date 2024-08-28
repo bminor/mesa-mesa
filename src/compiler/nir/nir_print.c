@@ -2014,7 +2014,8 @@ print_instr(const nir_instr *instr, print_state *state, unsigned tabs)
 
    if (state->debug_info) {
       nir_debug_info_instr *di = state->debug_info[instr->index];
-      di->src_loc.column = (uint32_t)ftell(fp);
+      if (di)
+         di->src_loc.column = (uint32_t)ftell(fp);
    }
 
    print_indentation(tabs, fp);
@@ -2856,7 +2857,8 @@ nir_shader_gather_debug_info(nir_shader *shader, const char *filename, uint32_t 
 
       nir_foreach_block(block, impl) {
          nir_foreach_instr_safe(instr, block) {
-            if (instr->type == nir_instr_type_debug_info)
+            if (instr->type == nir_instr_type_debug_info ||
+                instr->type == nir_instr_type_phi)
                continue;
 
             nir_debug_info_instr *di = nir_debug_info_instr_create(shader, nir_debug_info_src_loc, 0);
@@ -2874,6 +2876,8 @@ nir_shader_gather_debug_info(nir_shader *shader, const char *filename, uint32_t 
 
    for (uint32_t i = 0; i < instr_count; i++) {
       nir_debug_info_instr *di = debug_info[i];
+      if (!di)
+         continue;
 
       while (character_index < di->src_loc.column) {
          if (str[character_index] == '\n')
@@ -2889,7 +2893,8 @@ nir_shader_gather_debug_info(nir_shader *shader, const char *filename, uint32_t 
    nir_foreach_function_impl(impl, shader) {
       nir_foreach_block(block, impl) {
          nir_foreach_instr_safe(instr, block) {
-            if (instr->type != nir_instr_type_debug_info)
+            if (instr->type != nir_instr_type_debug_info &&
+                instr->type != nir_instr_type_phi)
                nir_instr_insert_before(instr, &debug_info[instr_count++]->instr);
          }
       }
