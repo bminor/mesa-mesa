@@ -2,23 +2,47 @@
 # shellcheck disable=SC2086 # we want word splitting
 # shellcheck disable=SC1091 # paths only become valid at runtime
 
+# If we run in the fork (not from mesa or Marge-bot), reuse mainline kernel and rootfs, if exist.
+_check_artifact_path() {
+	_url="https://${1}/${2}"
+	if curl -s -o /dev/null -I -L -f --retry 4 --retry-delay 15 "${_url}"; then
+		echo -n "${_url}"
+	fi
+}
+
+get_path_to_artifact() {
+	_mainline_artifact="$(_check_artifact_path ${BASE_SYSTEM_MAINLINE_HOST_PATH} ${1})"
+	if [ -n "${_mainline_artifact}" ]; then
+		echo -n "${_mainline_artifact}"
+		return
+	fi
+	_fork_artifact="$(_check_artifact_path ${BASE_SYSTEM_FORK_HOST_PATH} ${1})"
+	if [ -n "${_fork_artifact}" ]; then
+		echo -n "${_fork_artifact}"
+		return
+	fi
+	set +x
+	error "Sorry, I couldn't find a viable built path for ${1} in either mainline or a fork." >&2
+	echo "" >&2
+	echo "If you're working on CI, this probably means that you're missing a dependency:" >&2
+	echo "this job ran ahead of the job which was supposed to upload that artifact." >&2
+	echo "" >&2
+	echo "If you aren't working on CI, please ping @mesa/ci-helpers to see if we can help." >&2
+	echo "" >&2
+	echo "This job is going to fail, because I can't find the resources I need. Sorry." >&2
+	set -x
+	exit 1
+}
+
 . "${SCRIPTS_DIR}/setup-test-env.sh"
 
 section_start prepare_rootfs "Preparing root filesystem"
 
 set -ex
 
-# If we run in the fork (not from mesa or Marge-bot), reuse mainline kernel and rootfs, if exist.
-BASE_SYSTEM_HOST_PATH="${BASE_SYSTEM_MAINLINE_HOST_PATH}"
-if [ "$CI_PROJECT_PATH" != "$FDO_UPSTREAM_REPO" ]; then
-    if ! curl -s -X HEAD -L --retry 4 -f --retry-delay 60 \
-      "https://${BASE_SYSTEM_MAINLINE_HOST_PATH}/done"; then
-	echo "Using kernel and rootfs from the fork, cached from mainline is unavailable."
-	BASE_SYSTEM_HOST_PATH="${BASE_SYSTEM_FORK_HOST_PATH}"
-    else
-	echo "Using the cached mainline kernel and rootfs."
-    fi
-fi
+section_switch rootfs "Assembling root filesystem"
+ROOTFS_URL="$(get_path_to_artifact lava-rootfs.tar.zst)"
+[ $? != 1 ] || exit 1
 
 rm -rf results
 mkdir -p results/job-rootfs-overlay/
