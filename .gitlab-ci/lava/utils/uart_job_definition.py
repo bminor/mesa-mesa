@@ -134,8 +134,6 @@ def uart_test_actions(
     run_steps += artifact_download_steps
 
     run_steps += [
-        f"mkdir -p {args.ci_project_dir}",
-        f"curl {args.build_url} | tar --zstd -x -C {args.ci_project_dir}",
         # Sleep a bit to give time for bash to dump shell xtrace messages into
         # console which may cause interleaving with LAVA_SIGNAL_STARTTC in some
         # devices like a618.
