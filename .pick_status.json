@@ -1184,7 +1184,7 @@
         "description": "nir/opt_sink: do not sink load_ubo_vec4 out of loops",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d199d65c3af6cc87cd77585b21435ddb5125654d",
         "notes": null
