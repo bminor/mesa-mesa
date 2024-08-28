@@ -72,6 +72,7 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"nongg_gs", RADV_DEBUG_NO_NGG_GS},
                                                           {"noeso", RADV_DEBUG_NO_ESO},
                                                           {"psocachestats", RADV_DEBUG_PSO_CACHE_STATS},
+                                                          {"nirdebuginfo", RADV_DEBUG_NIR_DEBUG_INFO},
                                                           {NULL, 0}};
 
 const char *

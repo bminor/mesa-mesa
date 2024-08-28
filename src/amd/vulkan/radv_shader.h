@@ -547,7 +547,8 @@ void radv_shader_generate_debug_info(struct radv_device *device, bool dump_shade
                                      struct nir_shader *const *shaders, int shader_count,
                                      struct radv_shader_info *info);
 
-char *radv_dump_nir_shaders(struct nir_shader *const *shaders, int shader_count);
+struct radv_instance;
+char *radv_dump_nir_shaders(const struct radv_instance *instance, struct nir_shader *const *shaders, int shader_count);
 
 VkResult radv_shader_wait_for_upload(struct radv_device *device, uint64_t seq);
 

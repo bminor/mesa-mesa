@@ -2851,9 +2851,45 @@ radv_shader_part_cache_get(struct radv_device *device, struct radv_shader_part_c
    return shader_part;
 }
 
-char *
-radv_dump_nir_shaders(struct nir_shader *const *shaders, int shader_count)
+static char *
+radv_gather_nir_debug_info(struct nir_shader *const *shaders, int shader_count)
 {
+   char **strings = malloc(shader_count * sizeof(char *));
+   uint32_t total_size = 1;
+   uint32_t first_line = 1;
+
+   for (uint32_t i = 0; i < shader_count; i++) {
+      char *string = nir_shader_gather_debug_info(shaders[i], "", first_line);
+      strings[i] = string;
+
+      uint32_t length = strlen(string);
+      total_size += length;
+
+      for (uint32_t c = 0; c < length; c++) {
+         if (string[c] == '\n')
+            first_line++;
+      }
+   }
+
+   char *ret = calloc(total_size, sizeof(char));
+   if (ret) {
+      for (uint32_t i = 0; i < shader_count; i++)
+         strcat(ret, strings[i]);
+   }
+
+   for (uint32_t i = 0; i < shader_count; i++)
+      ralloc_free(strings[i]);
+   free(strings);
+
+   return ret;
+}
+
+char *
+radv_dump_nir_shaders(const struct radv_instance *instance, struct nir_shader *const *shaders, int shader_count)
+{
+   if (instance->debug_flags & RADV_DEBUG_NIR_DEBUG_INFO)
+      return radv_gather_nir_debug_info(shaders, shader_count);
+
    char *data = NULL;
    char *ret = NULL;
    size_t size = 0;
