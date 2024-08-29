@@ -2934,7 +2934,7 @@
         "description": "anv: selectively disable binding table usage on Gfx20",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e9f63df2f2c0dafe0997dd69b60b7da99b5d91f4",
         "notes": null
