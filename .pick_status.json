@@ -374,7 +374,7 @@
         "description": "nouveau/ci: fix gk20a-gles test timeout",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "c8207158b5dc1f4f883015b6ee2afe41f8901154",
         "notes": null
