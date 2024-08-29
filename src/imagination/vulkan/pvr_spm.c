@@ -228,7 +228,7 @@ VkResult pvr_spm_scratch_buffer_get_buffer(
     * framebuffers as the scratch buffer is only used during PRs and only one PR
     * can ever be executed at any one time.
     */
-   if (store->head_ref && store->head_ref->size <= size) {
+   if (store->head_ref && store->head_ref->size == size) {
       buffer = store->head_ref;
    } else {
       VkResult result;
