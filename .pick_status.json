@@ -1,5 +1,625 @@
 [
     {
+        "sha": "51e05c284465786bf125d9d36081e9152c80619b",
+        "description": "iris,anv: simplify and inline sampler count calculations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "32f606486fa79ba4b549f42b45f646de6bc38bd2",
+        "description": "anv: prefetch samplers when dispatching compute shaders",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb426b7f3c8bece76490737d21eeee4542979ad9",
+        "description": "nir/tests: add basic terminator merge test",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85741c6a15de6ed402e0b5a8b2219dbdb83d5c44",
+        "description": "nir/tests: make add_loop_terminators more flexible",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "51bb0e68b391c62f60766f7f77cb63a957772f37",
+        "description": "nir/opt_if: merge IFs which have phis between them",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "37881801c14724518bce165aac020900d04e42ed",
+        "description": "nir/opt_if: optimize phis between similar IFs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50d416fe892f75c54d10ad4d12e56abc5e8fe1b5",
+        "description": "nir: add nir_block *nir_src_get_block(src) helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "12ff1b683eefa0aeb6631cd071819f51c65d3596",
+        "description": "Revert \"ci: take igalia farm offline\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "4246c88c5e0c8dac1b61f18d1f72022ab2001892",
+        "notes": null
+    },
+    {
+        "sha": "893c93a27acc4e56d9cdd119c1f591b85e08d318",
+        "description": "meson: Allow building lavapipe without specifying llvmpipe",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0fc3c52e438cc2f0fb8fd0e04094423736afa0b6",
+        "description": "nir/opt_loop: Fix handling else-breaks in merge_terminators",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9995f336e60c2197236c7d815e8ab20ede18b781",
+        "notes": null
+    },
+    {
+        "sha": "44e1cf2748972e9289d5ab595be89f75ffb4654b",
+        "description": "anv: set correct miplevel for anv_image_hiz_op",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5efecc9782cca3df1e413883ff10d16fde5fa135",
+        "notes": null
+    },
+    {
+        "sha": "5f402f3aae492d29de00c6027fdf4cb8aa042c19",
+        "description": "nvk: Hash minSampleShading in nvk_hash_graphics_state()",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "813b253939ee8c965bf14746a48c6191b062a57a",
+        "notes": null
+    },
+    {
+        "sha": "5b69215ec2ec7238581f5c13f929cfad75be8e8f",
+        "description": "nvk: Use 4 bits per value for the anti alias values",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e63a79267c03b1eac3af40ddc417e0e0ae63c38",
+        "description": "nvk: Fix a typo in a comment",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "615d6b0e1a4fe1292b110c254bc251ae857b3eb7",
+        "description": "docs: add sha sum for 24.1.7",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8503dbd0d23d3428fce95b079c20e1c0e4f686b3",
+        "description": "docs: update calendar for 24.1.7",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e78ecfc9a4b3f169663ccc2892357cb0fc147242",
+        "description": "docs: add release notes for 24.1.7",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42114aa72383b4b501d1d5ed879f612fa4e2b7ae",
+        "description": "vulkan: Handle VIEW_INDEX_FROM_DEVICE_INDEX_BIT in the runtime",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c60f1461bc4fe9217317325d26a3be17def32aa",
+        "description": "vulkan: Take a VkPipelineCreateFlags2KHR in vk_pipeline_*shader_stage*()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81a00a48bc2b96d0f511273ee7242d15ab13a73d",
+        "description": "microsoft/compiler: Handle subgroup size 4 as a required wave size",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15f13f3c459f2805c0279833c12ef460136f63c6",
+        "description": "dzn: Drop custom subgroup size handling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "faf27a59899ccd7a55a321ed895fc41e2b56f4dc",
+        "description": "dzn: Use vk_pipeline_shader_stage_to_nir()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4365d0d7694bc356ce19aeb1a1e5724c16c08271",
+        "description": "lvp: Stash the PipelineCreateFlags2KHR in the pipeline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0191b20de5f41c0c66ac534d6b735275c4916bb",
+        "description": "vulkan/pipeline: Handle VIEW_INDEX_FROM_DEVICE_INDEX_BIT",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9308e8d90d26fca678fe72380d899cdae77415b5",
+        "notes": null
+    },
+    {
+        "sha": "03655dfda12c16f13b0e132282a5ef779b925b93",
+        "description": "compiler, vk: Support subgroup size of 4",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9f88b6025bbd01f425c44df8ff907e5fb927d18b",
+        "description": "ci/windows: Bump image tags to rebuild deps with v143 build tools",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a93b1e2178da056fe925b6064548c4c666df0e9",
+        "description": "ci/windows: Update VK-GL-CTS to d48899f85b486a70d090af59a1453763458611d9",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5053ac02ed0e5714d86ef42c47a75fe5cd624f09",
+        "description": "ci/windows: Use MSVC v143 build tools",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e389b949b4f36197f518e49a49e8d6c2516c19a",
+        "description": "freedreno/ci: add a630 flake",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "74f7b370eabdfb4f575c7f34acefb54f470952e2",
+        "description": "ci/build: untangle debian-s390x from debian-ppc64el",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b39e34ba92b5c348d030984d328c9660767c8d2f",
+        "description": "nouveau/ci: drop TEST_PHASE_TIMEOUT_MINUTES that match the default value",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71787885e37128c68c8641cd8cec9f662d2db968",
+        "description": "freedreno/ci: drop TEST_PHASE_TIMEOUT_MINUTES that match the default value",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83d3c35eff55cacb79e5fd814075c40b48644a50",
+        "description": "etnaviv/ci: drop TEST_PHASE_TIMEOUT_MINUTES that match the default value",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "812fb1d2764d07c0185d98164654654501b59a26",
+        "description": "broadcom/ci: use TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc3701bb5cdf278c3ccc0a0c3cd2261aebbaa962",
+        "description": "broadcom/ci: drop TEST_PHASE_TIMEOUT_MINUTES that match the default value",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f01825569eea051ff396452da4edf9d6fa5c0fd7",
+        "description": "ci/bare-metal/poe: change the default TEST_PHASE_TIMEOUT_MINUTES to `CI_JOB_TIMEOUT - 5min`",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fe075df8d9559f3d2a87367829f935c66280d332",
+        "description": "freedreno/ci: drop unused TEST_PHASE_TIMEOUT_MINUTES in LAVA jobs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "033818fdd99a543fd1cb17cc8e4be07f831a9003",
+        "description": "nouveau/ci: fix gk20a-gles test timeout",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c8207158b5dc1f4f883015b6ee2afe41f8901154",
+        "notes": null
+    },
+    {
+        "sha": "4888d39f29ae84dd279f2bd4714eb0f6e8ba5d20",
+        "description": "freedreno/ci: fix a630_*_full tests timeout",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e61b423074bc77438a8015ccc9480e692f8dc03e",
+        "notes": null
+    },
+    {
+        "sha": "b978d3eb54b081228d040e58f722d2007f331e84",
+        "description": "etnaviv/ci: fix gc2000_piglit test timeout",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f39ffc69110d1da0d87f970bc87802ca81ce9fa9",
+        "notes": null
+    },
+    {
+        "sha": "aac9c74a8341975aa7b49415da8d3072c878a848",
+        "description": "v3dv/ci: fix test timeout for v3dv-rpi5-vk-full:arm64",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4bb564f40dc1ba758c40b5c3a019ad0dc36f9406",
+        "notes": null
+    },
+    {
+        "sha": "e5852bd41fd734da1f0b767fa824cf158103c002",
+        "description": "ci/vkd3d: check for tests listed in fails but not actually failing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5434aa79f5804a642206a2df665a6587f6ba2e7c",
+        "description": "ci: run only one vkd3d test at a time",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23e9cbc623edadc1ef98977f7f933ffa745c8a7a",
+        "description": "ci/vkd3d: use upstream test-runner.sh for process isolation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2019ccfc491732d9115054b86c6cd02c316c141c",
+        "description": "ci/vkd3d: make the job output less spammy, focus on what is useful to print",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4a629f20a11869e48fe7a7a2b4df725c77e0feaa",
+        "description": "nvk/ci: drop skip of fixed vkd3d test",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dac44e02f72d645418a1c6059342a60b508c6eb8",
+        "description": "d3d12: Don't use a vertex re-ordering GS for line primitives",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b7a6429410318011ca6218fb4a9ab7f28bd56e3",
+        "description": "docs: update calendar for 24.2.1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "59fa27e1da9958ad14197a317a03afbde7a0cc2d",
+        "description": "docs: add sha sum for 24.2.1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "beb6f3f12195ae74ab3a8d107b73dc9f476fc623",
+        "description": "docs: add release notes for 24.2.1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4246c88c5e0c8dac1b61f18d1f72022ab2001892",
+        "description": "ci: take igalia farm offline",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e1d847d370c3773d4c3fd31fb8d1045299e8efb",
+        "description": "radv: Use the SPIR-V printer in spirv_to_nir",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e3938f45b4976fe16dac3efa0a81230351ae0d5",
+        "description": "v3dv: Drop the SPIR-V dumper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c60a421f0c2357fe13636f0d51f21e7be25b625e",
+        "description": "vtn: Add a debug flag to dump SPIR-V assembly",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9520fb8ecc5dc031a09142d03d218434227733e0",
+        "description": "vtn: Allow SPIR-V debug options in release builds",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ee7b596abc65d67c6f4b95e7eb96955ce0d8312d",
+        "description": "vtn: Move initialization of mesa_spirv_debug to a helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8644a533e533d600162b37bc76d1a78938e2b3a",
+        "description": "v3dv: Update a debug message",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da395e6985ab32978ebe120fe83ef05989c1a3e6",
+        "description": "intel/brw: Fix extract_imm for subregion reads of 64-bit immediates",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "580e1c592d90392a30185d8059499498748909fd",
+        "notes": null
+    },
+    {
+        "sha": "51c85e03632c85da64a65d925bbfc30e3908dbb3",
+        "description": "intel/brw: Drop misguided sign extension attempts in extract_imm()",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "580e1c592d90392a30185d8059499498748909fd",
+        "notes": null
+    },
+    {
+        "sha": "53869ae45bbad5fb2d791bb24aaed40c9872190e",
+        "description": "rusticl/mesa: Return CStr for device and vendor names.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b43c5c552be342e4924571a824456b7ca6dc70e",
+        "description": "zink: cache generated vendor and device name inside zink_screen",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73c8e2c3cd08367fce4073c1e0b6a12eb3e6ff14",
+        "description": "rusticl: reuse PipeContext",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "64ca0fd2f2896faa2ec85e454e2ecba2f68390c8",
         "description": "frontends/va: Allocate surface buffers on demand",
         "nominated": false,
