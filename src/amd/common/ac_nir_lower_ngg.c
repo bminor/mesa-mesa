@@ -1285,7 +1285,7 @@ save_reusable_variables(nir_builder *b, lower_ngg_nogs_state *s)
           */
          bool next_is_divergent_if =
             next_cf_node->type == nir_cf_node_if &&
-            nir_cf_node_as_if(next_cf_node)->condition.ssa->divergent;
+            nir_src_is_divergent(&nir_cf_node_as_if(next_cf_node)->condition);
 
          if (next_is_loop || next_is_divergent_if) {
             block = nir_cf_node_cf_tree_next(next_cf_node);

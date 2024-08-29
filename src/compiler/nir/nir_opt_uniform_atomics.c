@@ -213,7 +213,8 @@ optimize_atomic(nir_builder *b, nir_intrinsic_instr *intrin, bool return_prev)
    nir_def *data = intrin->src[data_src].ssa;
 
    /* Separate uniform reduction and scan is faster than doing a combined scan+reduce */
-   bool combined_scan_reduce = return_prev && data->divergent;
+   bool combined_scan_reduce = return_prev &&
+                               nir_src_is_divergent(&intrin->src[data_src]);
    nir_def *reduce = NULL, *scan = NULL;
    reduce_data(b, op, data, &reduce, combined_scan_reduce ? &scan : NULL);
 

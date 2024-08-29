@@ -400,7 +400,7 @@ static bool si_mark_divergent_texture_non_uniform(struct nir_shader *nir)
 
          nir_tex_instr *tex = nir_instr_as_tex(instr);
          for (int i = 0; i < tex->num_srcs; i++) {
-            bool divergent = tex->src[i].src.ssa->divergent;
+            bool divergent = nir_src_is_divergent(&tex->src[i].src);
 
             switch (tex->src[i].src_type) {
             case nir_tex_src_texture_deref:
