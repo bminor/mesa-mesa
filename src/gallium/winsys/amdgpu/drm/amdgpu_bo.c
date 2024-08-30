@@ -181,8 +181,10 @@ void amdgpu_bo_destroy(struct amdgpu_winsys *aws, struct pb_buffer_lean *_buf)
    _mesa_hash_table_remove_key(aws->bo_export_table, bo->bo_handle);
 
    if (bo->b.base.placement & RADEON_DOMAIN_VRAM_GTT) {
-      ac_drm_bo_va_op(aws->fd, bo->kms_handle, 0, bo->b.base.size,
-                      amdgpu_va_get_start_addr(bo->va_handle), 0, AMDGPU_VA_OP_UNMAP);
+      ac_drm_bo_va_op_raw(aws->fd, bo->kms_handle, 0, bo->b.base.size,
+                          amdgpu_va_get_start_addr(bo->va_handle), AMDGPU_VM_PAGE_READABLE |
+                             AMDGPU_VM_PAGE_WRITEABLE | AMDGPU_VM_PAGE_EXECUTABLE,
+                          AMDGPU_VA_OP_UNMAP);
       amdgpu_va_range_free(bo->va_handle);
    }
 
@@ -1748,7 +1750,9 @@ static struct pb_buffer_lean *amdgpu_bo_from_ptr(struct radeon_winsys *rws,
     uint32_t kms_handle;
     amdgpu_bo_export(buf_handle, amdgpu_bo_handle_type_kms, &kms_handle);
 
-    if (ac_drm_bo_va_op(aws->fd, kms_handle, 0, aligned_size, va, 0, AMDGPU_VA_OP_MAP))
+    if (ac_drm_bo_va_op_raw(aws->fd, kms_handle, 0, aligned_size, va, AMDGPU_VM_PAGE_READABLE |
+                               AMDGPU_VM_PAGE_WRITEABLE | AMDGPU_VM_PAGE_EXECUTABLE,
+                            AMDGPU_VA_OP_MAP))
         goto error_va_map;
 
     /* Initialize it. */
