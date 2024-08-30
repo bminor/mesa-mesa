@@ -1,5 +1,635 @@
 [
     {
+        "sha": "3e4f73b3a0e0b9420f9614d3e271c49225c6f5d3",
+        "description": "intel/dev: Update hwconfig => max_threads_per_psd for Xe2",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "588a65f29a9fc46b8b1700575bb60108a8f264e4",
+        "description": "ac: do not lower some ops in nir_lower_packing",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0f937426cc9c6bfbb8fa9f1da3481082aa99aba1",
+        "notes": null
+    },
+    {
+        "sha": "d43c5003fc83536e03ec8efb3449a5227ca69106",
+        "description": "nir: add skip_lower_packing_ops shader compile option",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6c1d0b82fbd5859a168387cfd922fd45220ec377",
+        "description": "turnip/ci: add vkd3d job on the a750",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e4f090d3a627f5765a905ad052bb1bb2176331e2",
+        "description": "intel/brw: Remove special treatment for 2-src in emit() helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73f365e208e4375b352c1d23d0c6cef8513ece15",
+        "description": "intel/brw: load_offset cannot be constant on this path",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fef175de0991e7c3200e90391f503fc7cc43c6c7",
+        "description": "intel/brw: Enable constant propagation for a couple more logical sends",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6a8b382fd021987660eb74d2d55f3686c69aeaf",
+        "description": "intel/brw: Relax is_partial_write check in cmod propagation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13332c236b87b44b1e0b0fc1f1c51a16f47af5e4",
+        "description": "intel/brw: Unconditionally run optimizations after nir_opt_uniform_subgroup",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65eb7ed5fc454af405b1adacc95185cb8e15d135",
+        "description": "intel/brw: Run intel_nir_lower_conversions only after brw_nir_optimize",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "572e00dd66117331cc52c1756e9f2812d72ff0ac",
+        "description": "intel/brw: Copy prop from raw integer moves with mismatched types",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c160ed212edf528f21cd3679a73f4acbc4efb345",
+        "description": "nir/divergence: resource_intel is less divergent than you thought",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eda55c7c2f695492e8ebdd26725e5be5ee66eb1c",
+        "description": "vulkan/screenshot-layer: Add Vulkan screenshot layer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7530487e609f07587a477f805b7f268859a20880",
+        "description": "d3d12: Video Encode HEVC - Use VPS information from frontend, specifically for vps_max_dec_pic_buffering_minus1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e268ed0613f048ee9896325d3b9ed5ce10162d8e",
+        "description": "d3d12: Video Encode HEVC to use direct DPB from frontend",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0249f2e6528216f8adba7c807a2b7fc712cb1f3c",
+        "description": "d3d12: Video Encode H264 - Support direct mmco operations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da2cbfe3bf8a9f393e9868089b1646a9f7e99837",
+        "description": "d3d12: Video Encode H264 to use direct DPB from frontend",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb1bbe51df95a2031c1a9f6aacc89dd21dc2fb79",
+        "description": "d3d12: Implement get_feedback_fence",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "067f8814354006004a9f78a885f791c9126ee558",
+        "description": "frontend/va: VaSyncSurface encoder check for surface feedback",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "96fe9fde3f37539b2e6e4a498709d0f2e035c7be",
+        "notes": null
+    },
+    {
+        "sha": "dad58e0cd3fad90cf197d028f1c6f1aecb52adf1",
+        "description": "d3d12: Implement pipe_video_codec.create_dpb_buffer for texture array resources",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "06a8b8c7e94573a49817e26a9b98fc55afc34f6f",
+        "description": "d3d12: Allow passing custom pipe_resource creation template/placed resource to d3d12_video_buffer_create_impl",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4070d02524d1dbb78012af46decb859400ae06dc",
+        "description": "d3d12: Implement pipe_video_codec.create_dpb_buffer for AOT resources",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f8145fe691833421bfe53d0516030e9e3fc9d21f",
+        "description": "pipe: Add PIPE_BIND_VIDEO_DECODE_DPB/PIPE_BIND_VIDEO_ENCODE_DPB",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e751cb074ab5dfef1bb937a80b45e661b0eaf135",
+        "description": "frontends/va: Allow drivers to allocate and use encode DPB surface buffers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bab6f2a1ec3c6b94f490000d6ca130715704f8c3",
+        "description": "etnaviv: isa: Add conv instruction",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7f1c0fbe61045fb1a049c04f653606ba0e29435e",
+        "description": "radeonsi/vcn: Rename transform_skip_disabled and remove hardcoded value for VCN5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "419885e2806555d6ea00041718287a300bb7a14c",
+        "description": "tu: Simplify VK_EXT_sample_locations SampleCounts assignment",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "98d52cf292883898b7432b932aaed1e2ddf89129",
+        "description": "tu: Fix VK_EXT_extended_dynamic_state3 feature",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "84726da2f4400568bfd13e9ea29fdfa88cd70572",
+        "notes": null
+    },
+    {
+        "sha": "630d6d1f2ec7bc76216956e5353839813d2981bc",
+        "description": "tu: Add a750 flush workaround and re-enable UBWC for storage images",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4442d61b16f7fb844f0fca2595f09cac86140a02",
+        "description": "nvk: Advertise VK_KHR_maintenance7",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ace54cc9988f6ed1cb933fea47df22c1ce6786bd",
+        "description": "zink+turnip/ci: fix .zink-turnip-valve-manual-rules",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f11a414645484d3c217dc925cfe720ac7348df16",
+        "description": "nir/algebraic: Remove incorrect bfi of iand pattern",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "1c7e35d4e00632188787fbfffb5a9882db9cc48c",
+        "notes": null
+    },
+    {
+        "sha": "0b010b357dbd2c12d08308a33f5b6d6e6e1b82cd",
+        "description": "ci: use v6.11-rc5 kernel for Mali V10 testing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d90f48b4f13ed7e96055f72541fa9b4388b091e",
+        "description": "ci: enable Mali V10 testing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91b3ae71d71789c0846d592c83782b6885c48e2a",
+        "description": "iris: fix utrace compute end timestamp reads on Gfx20",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "14d772d67876a25cca0bd9161df5315a4d3055a1",
+        "description": "anv: fix utrace compute timestamp reads on Gfx20",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08ecfe8fa45034a5a4b150591ca1a0059e7dbf8c",
+        "description": "zink+nvk/ci: mark a ton of tests as fixed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f668b17da6a71991e04a7f32518df83a24bb4933",
+        "description": "zink+nvk/ci: bump zink-nvk-ga106-valve timeout as more tests are being run",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0cbd5bbb47d263f55c9f9f6369254819f2698b2e",
+        "description": "venus/ci: add flake and skip timing out test",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71dbe2953722928ec57eae1c17d079151d055dbb",
+        "description": "venus/ci: drop redundant flakes definitions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66bae75d475781a889256b4c9f9e0d0796a454cf",
+        "description": "radeonsi/ci: mark a bunch of subgroups tests as failing",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "48a49c4e04e433f0802ea011db6f88d02b5287b9",
+        "notes": null
+    },
+    {
+        "sha": "f05887a3590ab6ba03b2e717e76fa8cea869e611",
+        "description": "freedreno/ci: fix test timeout for a306_piglit",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8bfd2c083eb06010418329cd3166e6a100e465c3",
+        "description": "Revert \"freedreno/ci: drop TEST_PHASE_TIMEOUT_MINUTES that match the default value\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "71787885e37128c68c8641cd8cec9f662d2db968",
+        "notes": null
+    },
+    {
+        "sha": "39d62511410716730a21f92cd6dff8cf3ccb0c5d",
+        "description": "radeonsi/ci: bump timeout for nightly job glcts-vangogh-valve",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ffb44a63386d03acff8e94a568cf03a18bab3ba",
+        "description": "nvk/ci: mark -dEQP-VK.drm_format_modifiers.export_import* as fixed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b967677d4e59d5aeecc0af29e11fd796ed04e6de",
+        "description": "ir3/postsched: take WAR ss-delay into account",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb13f30db2528157b913d6e6cccc9520d5e31c37",
+        "description": "ir3: add is_war_hazard_producer helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce5c0c21c4416e99103be538afd400eff5b44c17",
+        "description": "ir3/legalize: don't add (ss) for WAR hazards synced with (sy)",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a19274e3dc4264bb402536943c111d1c60a70c2",
+        "description": "ir3/legalize: add needs_ss_war helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e16dc60a176c5d2ea8ee074d1281a36af0e78cf",
+        "description": "ir3: add assert to detect getting reg file of const/imm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "523a0e2e395fa147307f78bb6d65b7e7cdbb0d80",
+        "description": "ir3/legalize: don't add WAR dependencies for const/imm regs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7cc24aa506beb09847181c64a4a14507e77d840f",
+        "description": "ir3: fix recognizing const/imm registers as a0",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "72bb4d79dcc8addf59e9ea513be059fce6edff9a",
+        "notes": null
+    },
+    {
+        "sha": "43d65e0ff0c38cafa40152953bdbedc2bcae0fb9",
+        "description": "ci: Make per-build dependencies optional",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "310e3bb0266bb2ab18783a67948d5fa98ce5022e",
+        "notes": null
+    },
+    {
+        "sha": "9b717596b21175036b361986f0db5c12c4dccb45",
+        "description": "llvmpipe: Fix type mismatch when storing residency info",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "6168317b849150db28dc222f8ac68cb1b371eb2e",
+        "notes": null
+    },
+    {
+        "sha": "7fb7fa794c32be84f0d8b58857af44a596806f1a",
+        "description": "util: Remove Vulkan-only formats from get_plane_width/height",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "3316bc3e8849504f2c6b30e4abe1853026cb39fb",
+        "notes": null
+    },
+    {
+        "sha": "1ae09c4e79fbc5f0a6f2de78b6f3979a83074953",
+        "description": "tu: Use vk_format_get_plane_count for tu6_plane_count",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29d1cd6e8bd77580b6d9288355555d7663ee7546",
+        "description": "tu: Use vk_format_get_plane_width/height to get the plane dimensions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b37e06fd5889d4c2711b9f840c593ffe0eba9ab3",
+        "description": "vulkan, radv: Add new common vk_format_get_plane_width/height helpers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d0a631f20dc71efb1cc7adb57b2d162523fcd37",
+        "description": "llvmpipe: export dmabuf caps for kms_swrast",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "310e3bb0266bb2ab18783a67948d5fa98ce5022e",
+        "description": "ci: do not start build-only jobs until the critical build-for-tests jobs are done",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27fba5ccdf4b92eeabf602f025ee5c6dd91dae40",
+        "description": "ci: merge build-x86_64 & build-misc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c9e847e51f7366a96ae9fa1860ac3816696518ed",
+        "description": "ci: move build jobs that are used by tests to an earlier stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "096acf8c0c4d0815dcf05394a167b252d34b9db0",
+        "description": "anv: change existing ICL workaround to depend on BLEND_STATE",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "eebb6cd236ea27881a1f70a3b78141d6d39ccf4a",
+        "notes": null
+    },
+    {
         "sha": "51e05c284465786bf125d9d36081e9152c80619b",
         "description": "iris,anv: simplify and inline sampler count calculations",
         "nominated": false,
