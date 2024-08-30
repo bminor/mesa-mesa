@@ -210,9 +210,10 @@ fi
 section_end init_stage2
 
 set +e
-$HWCI_TEST_SCRIPT ${HWCI_TEST_ARGS:-}
-EXIT_CODE=$?
+$HWCI_TEST_SCRIPT ${HWCI_TEST_ARGS:-}; EXIT_CODE=$?
 set -e
+
+section_start post_test_cleanup "Cleaning up after testing, uploading results"
 
 # Make sure that capture-devcoredump is done before we start trying to tar up
 # artifacts -- if it's writing while tar is reading, tar will throw an error and
@@ -230,6 +231,7 @@ fi
 [ ${EXIT_CODE} -eq 0 ] && RESULT=pass || RESULT=fail
 
 set +x
+section_end post_test_cleanup
 
 # Print the final result; both bare-metal and LAVA look for this string to get
 # the result of our run, so try really hard to get it out rather than losing

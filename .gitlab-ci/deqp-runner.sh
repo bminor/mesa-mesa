@@ -207,7 +207,7 @@ if [ -z "$DEQP_SUITE" ]; then
         --jobs ${FDO_CI_CONCURRENT:-4} \
         $DEQP_RUNNER_OPTIONS \
         -- \
-        $DEQP_OPTIONS
+        $DEQP_OPTIONS; DEQP_EXITCODE=$?
 else
     # If you change the format of the suite toml filenames or the
     # $GPU_VERSION-{fails,flakes,skips}.txt filenames, look through the rest
@@ -223,18 +223,17 @@ else
         --fraction-start ${CI_NODE_INDEX:-1} \
         --fraction $((CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
         --jobs ${FDO_CI_CONCURRENT:-4} \
-        $DEQP_RUNNER_OPTIONS
+        $DEQP_RUNNER_OPTIONS; DEQP_EXITCODE=$?
 fi
 
-DEQP_EXITCODE=$?
+{ set +x; } 2>/dev/null
+
 set -e
-
-set +x
-
-report_load
 
 section_switch test_post_process "deqp: post-processing test results"
 set -x
+
+report_load
 
 # Remove all but the first 50 individual XML files uploaded as artifacts, to
 # save fd.o space when you break everything.
@@ -275,6 +274,7 @@ fi
 # 0.17s on a Ryzen 5950X (16 threads, 0.95s when limited to 1 thread).
 zstd --rm -T0 -8q "$RESULTS_DIR/results.csv" -o "$RESULTS_DIR/results.csv.zst"
 
+set +x
 section_end test_post_process
 
 exit $DEQP_EXITCODE
