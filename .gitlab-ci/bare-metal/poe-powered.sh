@@ -220,9 +220,6 @@ date +'%F %T'
 # Bring artifacts back from the NFS dir to the build dir where gitlab-runner
 # will look for them.
 cp -Rp /nfs/results/. results/
-if [ -f "${STRUCTURED_LOG_FILE}" ]; then
-  echo "Structured log file is available at ${ARTIFACTS_BASE_URL}/results/${STRUCTURED_LOG_FILE}"
-fi
 
 date +'%F %T'
 

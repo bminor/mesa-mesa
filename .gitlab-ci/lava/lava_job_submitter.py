@@ -485,17 +485,7 @@ class LAVAJobSubmitter(PathResolver):
             finally:
                 self.finish_script(last_attempt_job)
 
-    def print_log_artifact_url(self):
-        relative_log_path = self.structured_log_file.relative_to(pathlib.Path.cwd())
-        full_path = f"$ARTIFACTS_BASE_URL/{relative_log_path}"
-        artifact_url = path.expandvars(full_path)
-
-        print_log(f"Structural Logging data available at: {artifact_url}")
-
     def finish_script(self, last_attempt_job):
-        if self.is_under_ci() and self.structured_log_file:
-            self.print_log_artifact_url()
-
         if not last_attempt_job:
             # No job was run, something bad happened
             STRUCTURAL_LOG["job_combined_status"] = "script_crash"

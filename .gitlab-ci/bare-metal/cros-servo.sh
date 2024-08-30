@@ -116,8 +116,5 @@ set -e
 # Bring artifacts back from the NFS dir to the build dir where gitlab-runner
 # will look for them.
 cp -Rp /nfs/results/. results/
-if [ -f "${STRUCTURED_LOG_FILE}" ]; then
-  echo "Structured log file is available at https://${CI_PROJECT_ROOT_NAMESPACE}.pages.freedesktop.org/-/${CI_PROJECT_NAME}/-/jobs/${CI_JOB_ID}/artifacts/results/${STRUCTURED_LOG_FILE}"
-fi
 
 exit $ret
