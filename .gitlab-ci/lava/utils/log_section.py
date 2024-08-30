@@ -75,7 +75,7 @@ class LogSection:
     collapsed: bool = False
 
     def from_log_line_to_section(
-        self, lava_log_line: dict[str, str]
+        self, lava_log_line: dict[str, str], main_test_case: Optional[str]
     ) -> Optional[GitlabSection]:
         if lava_log_line["lvl"] not in self.levels:
             return
@@ -83,12 +83,15 @@ class LogSection:
         if match := re.search(self.regex, lava_log_line["msg"]):
             section_id = self.section_id.format(*match.groups())
             section_header = self.section_header.format(*match.groups())
+            is_main_test_case = section_id == main_test_case
             timeout = DEFAULT_GITLAB_SECTION_TIMEOUTS[self.section_type]
             return GitlabSection(
                 id=section_id,
                 header=f"{section_header} - Timeout: {timeout}",
                 type=self.section_type,
                 start_collapsed=self.collapsed,
+                suppress_start=is_main_test_case,
+                suppress_end=is_main_test_case,
             )
 
 

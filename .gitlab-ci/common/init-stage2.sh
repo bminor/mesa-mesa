@@ -47,6 +47,13 @@ for path in '/dut-env-vars.sh' '/set-job-env-vars.sh' './set-job-env-vars.sh'; d
 done
 . "$SCRIPTS_DIR"/setup-test-env.sh
 
+# Flush out anything which might be stuck in a serial buffer
+echo
+echo
+echo
+
+section_switch init_stage2 "Pre-testing hardware setup"
+
 set -ex
 
 # Set up any devices required by the jobs
@@ -199,6 +206,8 @@ if [ -n "$HWCI_START_WESTON" ]; then
 
   while [ ! -S "$WESTON_X11_SOCK" ]; do sleep 1; done
 fi
+
+section_end init_stage2
 
 set +e
 $HWCI_TEST_SCRIPT ${HWCI_TEST_ARGS:-}

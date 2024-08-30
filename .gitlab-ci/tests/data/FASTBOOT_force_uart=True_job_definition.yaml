@@ -82,6 +82,7 @@ actions:
         run:
           steps:
           - echo test FASTBOOT
+          - export CURRENT_SECTION=dut_boot
           - set -ex
           - curl -L --retry 4 -f --retry-all-errors --retry-delay 60 None | tar -xz
             -C /

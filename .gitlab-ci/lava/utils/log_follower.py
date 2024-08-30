@@ -33,6 +33,7 @@ from lava.utils.log_section import (
 @dataclass
 class LogFollower:
     starting_section: Optional[GitlabSection] = None
+    main_test_case: Optional[str] = None
     _current_section: Optional[GitlabSection] = None
     section_history: list[GitlabSection] = field(default_factory=list, init=False)
     timeout_durations: dict[LogSectionType, timedelta] = field(
@@ -122,7 +123,9 @@ class LogFollower:
             return
 
         for log_section in LOG_SECTIONS:
-            if new_section := log_section.from_log_line_to_section(line):
+            if new_section := log_section.from_log_line_to_section(
+                line, self.main_test_case
+            ):
                 self.update_section(new_section)
                 break
 

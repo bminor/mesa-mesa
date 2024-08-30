@@ -252,15 +252,16 @@ def wait_for_job_get_started(job, attempt_no):
     print_log(f"Job {job.job_id} started.")
 
 
-def bootstrap_log_follower() -> LogFollower:
+def bootstrap_log_follower(main_test_case) -> LogFollower:
     start_section = GitlabSection(
         id="dut_boot",
         header="Booting hardware device",
         type=LogSectionType.LAVA_BOOT,
         start_collapsed=True,
+        suppress_end=True, # init-stage2 prints the end for us
     )
     print(start_section.start())
-    return LogFollower(starting_section=start_section)
+    return LogFollower(starting_section=start_section, main_test_case=main_test_case)
 
 
 def follow_job_execution(job, log_follower):
@@ -309,7 +310,7 @@ def print_job_final_status(job):
 
 
 def execute_job_with_retries(
-    proxy, job_definition, retry_count, jobs_log
+    proxy, job_definition, retry_count, jobs_log, main_test_case
 ) -> Optional[LAVAJob]:
     last_failed_job = None
     for attempt_no in range(1, retry_count + 2):
@@ -330,7 +331,7 @@ def execute_job_with_retries(
             )
             with queue_section as section:
                 wait_for_job_get_started(job, attempt_no)
-            log_follower: LogFollower = bootstrap_log_follower()
+            log_follower: LogFollower = bootstrap_log_follower(main_test_case)
             follow_job_execution(job, log_follower)
             return job
 
@@ -354,11 +355,12 @@ def execute_job_with_retries(
     return last_failed_job
 
 
-def retriable_follow_job(proxy, job_definition) -> LAVAJob:
+def retriable_follow_job(proxy, job_definition, main_test_case) -> LAVAJob:
     number_of_retries = NUMBER_OF_RETRIES_TIMEOUT_DETECTION
 
     last_attempted_job = execute_job_with_retries(
-        proxy, job_definition, number_of_retries, STRUCTURAL_LOG["dut_jobs"]
+        proxy, job_definition, number_of_retries, STRUCTURAL_LOG["dut_jobs"],
+        main_test_case
     )
 
     if last_attempted_job.exception is not None:
@@ -488,7 +490,9 @@ class LAVAJobSubmitter(PathResolver):
         with self.__structured_log_context:
             last_attempt_job = None
             try:
-                last_attempt_job = retriable_follow_job(self.proxy, job_definition)
+                last_attempt_job = retriable_follow_job(
+                    self.proxy, job_definition,
+                    f'{self.project_name}_{self.mesa_job_name}')
 
             except MesaCIRetryError as retry_exception:
                 last_attempt_job = retry_exception.last_job

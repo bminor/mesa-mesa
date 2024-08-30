@@ -18,6 +18,8 @@ class GitlabSection:
     header: str
     type: LogSectionType
     start_collapsed: bool = False
+    suppress_end: bool = False
+    suppress_start: bool = False
     escape: str = "\x1b[0K"
     colour: str = f"{CONSOLE_LOG['FG_CYAN']}"
     __start_time: Optional[datetime] = field(default=None, init=False)
@@ -86,6 +88,8 @@ class GitlabSection:
         return self.print_start_section()
 
     def print_start_section(self) -> str:
+        if self.suppress_start:
+            return ""
         return self.section(marker="start", header=self.header, time=self.__start_time)
 
     def end(self) -> str:
@@ -97,6 +101,8 @@ class GitlabSection:
         return self.print_end_section()
 
     def print_end_section(self) -> str:
+        if self.suppress_end:
+            return ""
         return self.section(marker="end", header="", time=self.__end_time)
 
     def delta_time(self) -> Optional[timedelta]:

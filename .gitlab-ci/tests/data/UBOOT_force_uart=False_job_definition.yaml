@@ -58,6 +58,7 @@ actions:
           steps:
           - |-
             echo test UBOOT
+            export CURRENT_SECTION=dut_boot
           - export -p > /dut-env-vars.sh
 - test:
     namespace: container

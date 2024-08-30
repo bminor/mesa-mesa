@@ -86,6 +86,7 @@ actions:
           steps:
           - |-
             echo test FASTBOOT
+            export CURRENT_SECTION=dut_boot
           - export -p > /dut-env-vars.sh
 - test:
     namespace: container

@@ -232,4 +232,6 @@ class LAVAJobDefinition:
                 + '-o "/lib/firmware/qcom/sm8350/a660_zap.mbn"'
             )
 
+        run_steps.append("export CURRENT_SECTION=dut_boot")
+
         return run_steps
