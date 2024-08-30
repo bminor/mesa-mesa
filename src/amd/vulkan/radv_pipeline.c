@@ -137,7 +137,7 @@ radv_pipeline_get_shader_key(const struct radv_device *device, const VkPipelineS
    if (flags & VK_PIPELINE_CREATE_2_VIEW_INDEX_FROM_DEVICE_INDEX_BIT_KHR)
       key.view_index_from_device_index = 1;
 
-   if (flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV)
+   if (flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT)
       key.indirect_bindable = 1;
 
    if (stage->stage & RADV_GRAPHICS_STAGE_BITS) {

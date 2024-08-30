@@ -19,12 +19,6 @@ struct radv_shader_info;
 
 struct radv_compute_pipeline {
    struct radv_pipeline base;
-
-   struct {
-      struct radeon_cmdbuf cs;
-      uint64_t va;
-      uint64_t size;
-   } indirect;
 };
 
 RADV_DECL_PIPELINE_DOWNCAST(compute, RADV_PIPELINE_COMPUTE)

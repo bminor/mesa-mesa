@@ -747,10 +747,6 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .INTEL_shader_integer_functions2 = true,
       .MESA_image_alignment_control = pdev->info.gfx_level >= GFX9 && pdev->info.gfx_level <= GFX11_5,
       .NV_compute_shader_derivatives = true,
-      .NV_device_generated_commands =
-         pdev->info.gfx_level >= GFX8 && instance->drirc.enable_dgc && !(instance->debug_flags & RADV_DEBUG_NO_IBS),
-      .NV_device_generated_commands_compute =
-         pdev->info.gfx_level >= GFX8 && instance->drirc.enable_dgc && !(instance->debug_flags & RADV_DEBUG_NO_IBS),
       /* Undocumented extension purely for vkd3d-proton. This check is to prevent anyone else from
        * using it.
        */
@@ -1129,9 +1125,6 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .performanceCounterQueryPools = has_perf_query,
       .performanceCounterMultipleQueryPools = has_perf_query,
 
-      /* VK_NV_device_generated_commands */
-      .deviceGeneratedCommandsNV = true,
-
       /* VK_EXT_attachment_feedback_loop_layout */
       .attachmentFeedbackLoopLayout = true,
 
@@ -1213,11 +1206,6 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_maintenance5 */
       .maintenance5 = true,
-
-      /* VK_NV_device_generated_commands_compute */
-      .deviceGeneratedCompute = true,
-      .deviceGeneratedComputePipelines = true,
-      .deviceGeneratedComputeCaptureReplay = false,
 
       /* VK_KHR_cooperative_matrix */
       .cooperativeMatrix = pdev->info.gfx_level >= GFX11 && !pdev->use_llvm,
@@ -1829,20 +1817,6 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
 
    /* VK_KHR_performance_query */
    p->allowCommandBufferQueryCopies = false;
-
-   /* VK_NV_device_generated_commands */
-   p->maxIndirectCommandsStreamCount = 1;
-   p->maxIndirectCommandsStreamStride = UINT32_MAX;
-   p->maxIndirectCommandsTokenCount = 512;
-   p->maxIndirectCommandsTokenOffset = UINT16_MAX;
-   p->minIndirectCommandsBufferOffsetAlignment = 4;
-   p->minSequencesCountBufferOffsetAlignment = 4;
-   p->minSequencesIndexBufferOffsetAlignment = 4;
-   /* Don't support even a shader group count = 1 until we support shader
-    * overrides during pipeline creation. */
-   p->maxGraphicsShaderGroupCount = 0;
-   /* MSB reserved for signalling indirect count enablement. */
-   p->maxIndirectSequenceCount = UINT32_MAX >> 1;
 
    /* VK_EXT_graphics_pipeline_library */
    p->graphicsPipelineLibraryFastLinking = true;

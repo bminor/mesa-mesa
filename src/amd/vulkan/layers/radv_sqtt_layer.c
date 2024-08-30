@@ -1263,11 +1263,12 @@ sqtt_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
 }
 
 VKAPI_ATTR void VKAPI_CALL
-sqtt_CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                   const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo)
+sqtt_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                    const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo)
 {
    /* There is no ExecuteIndirect Vulkan event in RGP yet. */
-   API_MARKER_ALIAS(ExecuteGeneratedCommandsNV, ExecuteCommands, commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
+   API_MARKER_ALIAS(ExecuteGeneratedCommandsEXT, ExecuteCommands, commandBuffer, isPreprocessed,
+                    pGeneratedCommandsInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL

@@ -13,7 +13,7 @@
 #include "radv_cp_dma.h"
 #include "radv_cs.h"
 #include "radv_debug.h"
-#include "radv_device_generated_commands.h"
+#include "radv_dgc.h"
 #include "radv_event.h"
 #include "radv_pipeline_rt.h"
 #include "radv_radeon_winsys.h"
@@ -477,7 +477,6 @@ radv_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer, UNUSED VkCommandB
    cmd_buffer->gang.sem.emitted_leader_value = 0;
    cmd_buffer->gang.sem.va = 0;
    cmd_buffer->shader_upload_seq = 0;
-   cmd_buffer->has_indirect_pipeline_binds = false;
 
    if (cmd_buffer->upload.upload_bo)
       radv_cs_add_buffer(device->ws, cmd_buffer->cs, cmd_buffer->upload.upload_bo);
@@ -646,8 +645,8 @@ radv_gang_barrier(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 src_
 
    /* Add stage flush only when necessary. */
    if (src_stage_mask & (VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT |
-                         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT |
-                         VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV))
+                         VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_EXT | VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
+                         VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT))
       cmd_buffer->gang.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
 
    /* Block task shaders when we have to wait for CP DMA on the GFX cmdbuf. */
@@ -6645,9 +6644,10 @@ radv_stage_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 src_s
 
    if (src_stage_mask &
        (VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT |
-        VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+        VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
         VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR |
-        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)) {
+        VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_EXT | VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
+        VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)) {
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
    }
 
@@ -6719,7 +6719,7 @@ radv_src_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 
          has_DB_meta = false;
    }
 
-   if (src_flags & VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_NV)
+   if (src_flags & VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_EXT)
       flush_bits |= RADV_CMD_FLAG_INV_L2;
 
    if (src_flags & (VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR)) {
@@ -6808,9 +6808,8 @@ radv_dst_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 
          flush_bits |= RADV_CMD_FLAG_INV_SCACHE;
 
       /* Ensure the DGC meta shader can read the commands. */
-      if (radv_uses_device_generated_commands(device)) {
+      if (device->vk.enabled_features.deviceGeneratedCommands) {
          flush_bits |= RADV_CMD_FLAG_INV_SCACHE | RADV_CMD_FLAG_INV_VCACHE;
-
          if (pdev->info.gfx_level < GFX9)
             flush_bits |= RADV_CMD_FLAG_INV_L2;
       }
@@ -6849,7 +6848,7 @@ radv_dst_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 
          flush_bits |= RADV_CMD_FLAG_INV_L2;
    }
 
-   if (dst_flags & VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_NV) {
+   if (dst_flags & VK_ACCESS_2_COMMAND_PREPROCESS_READ_BIT_EXT) {
       flush_bits |= RADV_CMD_FLAG_INV_VCACHE;
       if (pdev->info.gfx_level < GFX9)
          flush_bits |= RADV_CMD_FLAG_INV_L2;
@@ -11558,52 +11557,31 @@ radv_CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer _b
 }
 
 /* TODO: Use these functions with the normal dispatch path. */
-static void radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer);
+static void radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point);
 static void radv_dgc_after_dispatch(struct radv_cmd_buffer *cmd_buffer);
 
-VKAPI_ATTR void VKAPI_CALL
-radv_CmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
-                                      const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo)
-{
-   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   VK_FROM_HANDLE(radv_indirect_command_layout, layout, pGeneratedCommandsInfo->indirectCommandsLayout);
-   VK_FROM_HANDLE(radv_pipeline, pipeline, pGeneratedCommandsInfo->pipeline);
-
-   if (!radv_dgc_can_preprocess(layout, pipeline))
-      return;
-
-   /* VK_EXT_conditional_rendering says that copy commands should not be
-    * affected by conditional rendering.
-    */
-   const bool old_predicating = cmd_buffer->state.predicating;
-   cmd_buffer->state.predicating = false;
-
-   radv_prepare_dgc(cmd_buffer, pGeneratedCommandsInfo, old_predicating);
-
-   /* Restore conditional rendering. */
-   cmd_buffer->state.predicating = old_predicating;
-}
-
+/* VK_EXT_device_generated_commands */
 static void
-radv_dgc_execute_ib(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo)
+radv_dgc_execute_ib(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo)
 {
-   VK_FROM_HANDLE(radv_buffer, prep_buffer, pGeneratedCommandsInfo->preprocessBuffer);
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const bool has_task_shader = radv_dgc_with_task_shader(pGeneratedCommandsInfo);
-
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const VkGeneratedCommandsPipelineInfoEXT *pipeline_info =
+      vk_find_struct_const(pGeneratedCommandsInfo->pNext, GENERATED_COMMANDS_PIPELINE_INFO_EXT);
+   const VkGeneratedCommandsShaderInfoEXT *eso_info =
+      vk_find_struct_const(pGeneratedCommandsInfo->pNext, GENERATED_COMMANDS_SHADER_INFO_EXT);
+   const struct radv_shader *task_shader = radv_dgc_get_shader(pipeline_info, eso_info, MESA_SHADER_TASK);
    const uint32_t cmdbuf_size = radv_get_indirect_main_cmdbuf_size(pGeneratedCommandsInfo);
-   const uint64_t ib_va =
-      radv_buffer_get_va(prep_buffer->bo) + prep_buffer->offset + pGeneratedCommandsInfo->preprocessOffset;
-   const uint64_t main_trailer_va = ib_va + radv_get_indirect_main_trailer_offset(pGeneratedCommandsInfo);
+   const uint64_t ib_va = pGeneratedCommandsInfo->preprocessAddress;
    const uint64_t main_ib_va = ib_va + radv_get_indirect_main_cmdbuf_offset(pGeneratedCommandsInfo);
+   const uint64_t main_trailer_va = ib_va + radv_get_indirect_main_trailer_offset(pGeneratedCommandsInfo);
 
    device->ws->cs_chain_dgc_ib(cmd_buffer->cs, main_ib_va, cmdbuf_size >> 2, main_trailer_va,
                                cmd_buffer->state.predicating);
 
-   if (has_task_shader) {
+   if (task_shader) {
       const uint32_t ace_cmdbuf_size = radv_get_indirect_ace_cmdbuf_size(pGeneratedCommandsInfo);
-      const uint64_t ace_trailer_va = ib_va + radv_get_indirect_ace_trailer_offset(pGeneratedCommandsInfo);
       const uint64_t ace_ib_va = ib_va + radv_get_indirect_ace_cmdbuf_offset(pGeneratedCommandsInfo);
+      const uint64_t ace_trailer_va = ib_va + radv_get_indirect_ace_trailer_offset(pGeneratedCommandsInfo);
 
       assert(cmd_buffer->gang.cs);
       device->ws->cs_chain_dgc_ib(cmd_buffer->gang.cs, ace_ib_va, ace_cmdbuf_size >> 2, ace_trailer_va,
@@ -11612,82 +11590,82 @@ radv_dgc_execute_ib(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommand
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
-                                   const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo)
+radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                    const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo)
 {
-   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_indirect_command_layout, layout, pGeneratedCommandsInfo->indirectCommandsLayout);
-   VK_FROM_HANDLE(radv_pipeline, pipeline, pGeneratedCommandsInfo->pipeline);
-   VK_FROM_HANDLE(radv_buffer, prep_buffer, pGeneratedCommandsInfo->preprocessBuffer);
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const bool compute = layout->pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE;
+   VK_FROM_HANDLE(radv_indirect_execution_set, ies, pGeneratedCommandsInfo->indirectExecutionSet);
+   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const bool use_predication = radv_use_dgc_predication(cmd_buffer, pGeneratedCommandsInfo);
+   const bool compute = !!(layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DISPATCH));
+   const bool rt = !!(layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_RT));
+   const VkGeneratedCommandsPipelineInfoEXT *pipeline_info =
+      vk_find_struct_const(pGeneratedCommandsInfo->pNext, GENERATED_COMMANDS_PIPELINE_INFO_EXT);
+   const VkGeneratedCommandsShaderInfoEXT *eso_info =
+      vk_find_struct_const(pGeneratedCommandsInfo->pNext, GENERATED_COMMANDS_SHADER_INFO_EXT);
 
-   /* Secondary command buffers are needed for the full extension but can't use
-    * PKT3_INDIRECT_BUFFER.
-    */
+   if (ies) {
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs, ies->bo);
+
+      cmd_buffer->compute_scratch_size_per_wave_needed =
+         MAX2(cmd_buffer->compute_scratch_size_per_wave_needed, ies->compute_scratch_size_per_wave);
+      cmd_buffer->compute_scratch_waves_wanted =
+         MAX2(cmd_buffer->compute_scratch_waves_wanted, ies->compute_scratch_waves);
+   }
+
+   /* Secondary command buffers are banned. */
    assert(cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
    if (use_predication) {
-      VK_FROM_HANDLE(radv_buffer, seq_count_buffer, pGeneratedCommandsInfo->sequencesCountBuffer);
-      const uint64_t va = radv_buffer_get_va(seq_count_buffer->bo) + seq_count_buffer->offset +
-                          pGeneratedCommandsInfo->sequencesCountOffset;
-
+      const uint64_t va = pGeneratedCommandsInfo->sequenceCountAddress;
       radv_begin_conditional_rendering(cmd_buffer, va, true);
    }
 
-   if (!radv_dgc_can_preprocess(layout, pipeline)) {
+   if (!(layout->vk.usage & VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_EXT)) {
       /* Suspend conditional rendering when the DGC execute is called on the compute queue to
-       * generate a cmdbuf which will skips dispatches when necessary. This is because the
-       * compute queue is missing IB2 which means it's not possible to skip the cmdbuf entirely.
-       * It should also be suspended when task shaders are used because the DGC ACE IB would be
+       * generate a cmdbuf which will skips dispatches when necessary. This is because the compute
+       * queue is missing IB2 which means it's not possible to skip the cmdbuf entirely. This
+       * should also be suspended when task shaders are used because the DGC ACE IB would be
        * uninitialized otherwise.
        */
-      const bool suspend_cond_render =
-         (cmd_buffer->qf == RADV_QUEUE_COMPUTE || radv_dgc_with_task_shader(pGeneratedCommandsInfo));
+      const bool suspend_conditional_rendering =
+         (cmd_buffer->qf == RADV_QUEUE_COMPUTE || radv_dgc_get_shader(pipeline_info, eso_info, MESA_SHADER_TASK));
       const bool old_predicating = cmd_buffer->state.predicating;
 
-      if (suspend_cond_render && cmd_buffer->state.predicating) {
+      if (suspend_conditional_rendering && cmd_buffer->state.predicating) {
          cmd_buffer->state.predicating = false;
       }
 
-      radv_prepare_dgc(cmd_buffer, pGeneratedCommandsInfo, old_predicating);
+      radv_prepare_dgc(cmd_buffer, pGeneratedCommandsInfo, cmd_buffer, old_predicating);
 
-      if (suspend_cond_render) {
+      if (suspend_conditional_rendering) {
          cmd_buffer->state.predicating = old_predicating;
       }
 
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_VCACHE | RADV_CMD_FLAG_INV_L2;
 
-      if (radv_dgc_with_task_shader(pGeneratedCommandsInfo)) {
-         /* Make sure the DGC ACE IB will wait for the DGC prepare shader before the execution
-          * starts.
-          */
+      /* Make sure the DGC ACE IB will wait for the DGC prepare shader before the execution
+       * starts.
+       */
+      if (radv_dgc_get_shader(pipeline_info, eso_info, MESA_SHADER_TASK)) {
          radv_gang_barrier(cmd_buffer, VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV,
                            VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT);
       }
    }
 
-   if (compute) {
-      radv_dgc_before_dispatch(cmd_buffer);
-
-      if (!pGeneratedCommandsInfo->pipeline)
-         cmd_buffer->has_indirect_pipeline_binds = true;
+   if (rt) {
+      radv_dgc_before_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+   } else if (compute) {
+      radv_dgc_before_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
    } else {
-      struct radv_graphics_pipeline *graphics_pipeline = radv_pipeline_to_graphics(pipeline);
-      struct radv_draw_info info;
+      struct radv_draw_info info = {
+         .count = pGeneratedCommandsInfo->maxSequenceCount,
+         .indirect = (void *)&info,
+         .indexed = !!(layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_INDEXED)),
+      };
 
-      info.count = pGeneratedCommandsInfo->sequencesCount;
-      info.indirect = prep_buffer; /* We're not really going use it this way, but a good signal
-                                   that this is not direct. */
-      info.indirect_offset = 0;
-      info.stride = 0;
-      info.strmout_buffer = NULL;
-      info.count_buffer = NULL;
-      info.indexed = layout->indexed;
-      info.instance_count = 0;
-
-      if (radv_pipeline_has_stage(graphics_pipeline, MESA_SHADER_MESH)) {
+      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_MESH)) {
          if (!radv_before_taskmesh_draw(cmd_buffer, &info, 1, true))
             return;
       } else {
@@ -11696,46 +11674,63 @@ radv_CmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPre
       }
    }
 
-   const uint32_t view_mask = cmd_buffer->state.render.view_mask;
-
    if (!radv_cmd_buffer_uses_mec(cmd_buffer)) {
       radeon_emit(cmd_buffer->cs, PKT3(PKT3_PFP_SYNC_ME, 0, cmd_buffer->state.predicating));
       radeon_emit(cmd_buffer->cs, 0);
    }
 
-   radv_cs_add_buffer(device->ws, cmd_buffer->cs, prep_buffer->bo);
-
-   if (compute || !view_mask) {
+   const uint32_t view_mask = cmd_buffer->state.render.view_mask;
+   if (rt || compute || !view_mask) {
       radv_dgc_execute_ib(cmd_buffer, pGeneratedCommandsInfo);
    } else {
       u_foreach_bit (view, view_mask) {
          radv_emit_view_index(&cmd_buffer->state, cmd_buffer->cs, view);
-
          radv_dgc_execute_ib(cmd_buffer, pGeneratedCommandsInfo);
       }
    }
 
-   if (compute) {
+   if (rt) {
+      cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
+
+      radv_dgc_after_dispatch(cmd_buffer);
+   } else if (compute) {
       cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
 
-      if (!pGeneratedCommandsInfo->pipeline)
+      if (ies)
          radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 
       radv_dgc_after_dispatch(cmd_buffer);
    } else {
-      struct radv_graphics_pipeline *graphics_pipeline = radv_pipeline_to_graphics(pipeline);
-
-      if (layout->binds_index_buffer) {
+      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IB)) {
          cmd_buffer->state.last_index_type = -1;
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_INDEX_BUFFER;
       }
 
-      if (layout->bind_vbo_mask)
+      if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_VB))
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VERTEX_BUFFER;
 
-      cmd_buffer->push_constant_stages |= graphics_pipeline->active_stages;
+      if (pipeline_info) {
+         VK_FROM_HANDLE(radv_pipeline, pipeline, pipeline_info->pipeline);
+         struct radv_graphics_pipeline *graphics_pipeline = radv_pipeline_to_graphics(pipeline);
 
-      cmd_buffer->state.last_index_type = -1;
+         cmd_buffer->push_constant_stages |= graphics_pipeline->active_stages;
+      } else {
+         assert(eso_info);
+
+         for (unsigned i = 0; i < eso_info->shaderCount; ++i) {
+            VK_FROM_HANDLE(radv_shader_object, shader_object, eso_info->pShaders[i]);
+
+            cmd_buffer->push_constant_stages |= mesa_to_vk_shader_stage(shader_object->stage);
+         }
+      }
+
+      if (!(layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DRAW_INDEXED))) {
+         /* Non-indexed draws overwrite VGT_INDEX_TYPE, so the state must be
+          * re-emitted before the next indexed draw.
+          */
+         cmd_buffer->state.last_index_type = -1;
+      }
+
       cmd_buffer->state.last_num_instances = -1;
       cmd_buffer->state.last_vertex_offset_valid = false;
       cmd_buffer->state.last_first_instance = -1;
@@ -12102,12 +12097,16 @@ radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_inf
 }
 
 static void
-radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer)
+radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_compute_pipeline *pipeline = cmd_buffer->state.compute_pipeline;
-   struct radv_shader *compute_shader = cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
+   struct radv_compute_pipeline *pipeline = bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
+                                               ? &cmd_buffer->state.rt_pipeline->base
+                                               : cmd_buffer->state.compute_pipeline;
+   struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
+                                           ? cmd_buffer->state.rt_pipeline->prolog
+                                           : cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
    bool pipeline_is_dirty = pipeline != cmd_buffer->state.emitted_compute_pipeline;
 
    /* We will have run the DGC patch shaders before, so we can assume that there is something to
@@ -12119,9 +12118,11 @@ radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer)
 
    if (pipeline)
       radv_emit_compute_pipeline(cmd_buffer, pipeline);
+   if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
+      radv_emit_rt_stack_size(cmd_buffer);
    radv_emit_cache_flush(cmd_buffer);
 
-   radv_upload_compute_shader_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+   radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
 
    if (pipeline_is_dirty) {
       const bool has_prefetch = pdev->info.gfx_level >= GFX7;
@@ -12136,7 +12137,9 @@ radv_dgc_before_dispatch(struct radv_cmd_buffer *cmd_buffer)
        * We only need to do this when the pipeline is dirty because when we switch between
        * the two we always need to switch pipelines.
        */
-      radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+      radv_mark_descriptor_sets_dirty(cmd_buffer, bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
+                                                     ? VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
+                                                     : VK_PIPELINE_BIND_POINT_COMPUTE);
    }
 }
 
@@ -13670,42 +13673,6 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
    }
 
    assert(cmd_buffer->cs->cdw <= cdw_max);
-}
-
-VKAPI_ATTR void VKAPI_CALL
-radv_CmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                  VkPipeline pipeline, uint32_t groupIndex)
-{
-   fprintf(stderr, "radv: unimplemented vkCmdBindPipelineShaderGroupNV\n");
-   abort();
-}
-
-/* VK_NV_device_generated_commands_compute */
-VKAPI_ATTR void VKAPI_CALL
-radv_CmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                       VkPipeline _pipeline)
-{
-   VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   VK_FROM_HANDLE(radv_pipeline, pipeline, _pipeline);
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_compute_pipeline *compute_pipeline = radv_pipeline_to_compute(pipeline);
-   const struct radeon_cmdbuf *cs = &compute_pipeline->indirect.cs;
-   const uint64_t va = compute_pipeline->indirect.va;
-   struct radv_compute_pipeline_metadata metadata;
-   uint32_t offset = 0;
-
-   radv_get_compute_shader_metadata(device, compute_pipeline->base.shaders[MESA_SHADER_COMPUTE], &metadata);
-
-   radv_write_data(cmd_buffer, V_370_ME, va + offset, sizeof(metadata) / 4, (const uint32_t *)&metadata, false);
-   offset += sizeof(metadata);
-
-   radv_write_data(cmd_buffer, V_370_ME, va + offset, 1, (const uint32_t *)&cs->cdw, false);
-   offset += sizeof(uint32_t);
-
-   radv_write_data(cmd_buffer, V_370_ME, va + offset, cs->cdw, (const uint32_t *)cs->buf, false);
-   offset += cs->cdw * sizeof(uint32_t);
-
-   assert(offset < compute_pipeline->indirect.size);
 }
 
 /* VK_EXT_descriptor_buffer */

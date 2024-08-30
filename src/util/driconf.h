@@ -708,10 +708,6 @@
   DRI_CONF_OPT_B(radv_disable_depth_storage, def, \
                  "Hides support for storage access to depth formats")
 
-#define DRI_CONF_RADV_DGC(def) \
-   DRI_CONF_OPT_B(radv_dgc, def, \
-                  "Expose an experimental implementation of VK_NV_device_generated_commands on GFX8+")
-
 #define DRI_CONF_RADV_FLUSH_BEFORE_QUERY_COPY(def) \
   DRI_CONF_OPT_B( \
       radv_flush_before_query_copy, def, \

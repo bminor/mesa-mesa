@@ -66,7 +66,6 @@ struct radv_instance {
       bool legacy_sparse_binding;
       bool force_pstate_peak_gfx11_dgpu;
       bool clear_lds;
-      bool enable_dgc;
       bool enable_khr_present_wait;
       bool report_llvm9_version_string;
       bool vk_require_etc2;

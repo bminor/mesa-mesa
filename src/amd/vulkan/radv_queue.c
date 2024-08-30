@@ -1268,7 +1268,6 @@ radv_update_preambles(struct radv_queue_state *queue, struct radv_device *device
                       bool *has_follower)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   bool has_indirect_pipeline_binds = false;
 
    if (queue->qf != RADV_QUEUE_GENERAL && queue->qf != RADV_QUEUE_COMPUTE) {
       for (uint32_t j = 0; j < cmd_buffer_count; j++) {
@@ -1308,16 +1307,6 @@ radv_update_preambles(struct radv_queue_state *queue, struct radv_device *device
       needs.sample_positions |= cmd_buffer->sample_positions_needed;
       *use_perf_counters |= cmd_buffer->state.uses_perf_counters;
       *has_follower |= !!cmd_buffer->gang.cs;
-
-      has_indirect_pipeline_binds |= cmd_buffer->has_indirect_pipeline_binds;
-   }
-
-   if (has_indirect_pipeline_binds) {
-      /* Use the maximum possible scratch size for indirect compute pipelines with DGC. */
-      simple_mtx_lock(&device->compute_scratch_mtx);
-      needs.compute_scratch_size_per_wave = MAX2(needs.compute_scratch_waves, device->compute_scratch_size_per_wave);
-      needs.compute_scratch_waves = MAX2(needs.compute_scratch_waves, device->compute_scratch_waves);
-      simple_mtx_unlock(&device->compute_scratch_mtx);
    }
 
    /* Sanitize scratch size information. */

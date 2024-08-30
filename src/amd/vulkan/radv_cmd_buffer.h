@@ -537,7 +537,6 @@ struct radv_cmd_buffer {
    bool gds_needed;    /* for GFX10 streamout and NGG GS queries */
    bool gds_oa_needed; /* for GFX10 streamout */
    bool sample_positions_needed;
-   bool has_indirect_pipeline_binds;
 
    uint64_t gfx9_fence_va;
    uint32_t gfx9_fence_idx;

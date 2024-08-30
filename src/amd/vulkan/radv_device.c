@@ -1100,7 +1100,6 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    simple_mtx_init(&device->trace_mtx, mtx_plain);
    simple_mtx_init(&device->pstate_mtx, mtx_plain);
    simple_mtx_init(&device->rt_handles_mtx, mtx_plain);
-   simple_mtx_init(&device->compute_scratch_mtx, mtx_plain);
    simple_mtx_init(&device->pso_cache_stats_mtx, mtx_plain);
 
    device->rt_handles = _mesa_hash_table_create(NULL, _mesa_hash_u32, _mesa_key_u32_equal);
@@ -1359,7 +1358,6 @@ fail_queue:
    simple_mtx_destroy(&device->pstate_mtx);
    simple_mtx_destroy(&device->trace_mtx);
    simple_mtx_destroy(&device->rt_handles_mtx);
-   simple_mtx_destroy(&device->compute_scratch_mtx);
    simple_mtx_destroy(&device->pso_cache_stats_mtx);
    mtx_destroy(&device->overallocation_mutex);
 
@@ -1417,7 +1415,6 @@ radv_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    simple_mtx_destroy(&device->pstate_mtx);
    simple_mtx_destroy(&device->trace_mtx);
    simple_mtx_destroy(&device->rt_handles_mtx);
-   simple_mtx_destroy(&device->compute_scratch_mtx);
    simple_mtx_destroy(&device->pso_cache_stats_mtx);
 
    radv_destroy_shader_arenas(device);
