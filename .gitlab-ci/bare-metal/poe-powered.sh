@@ -71,6 +71,8 @@ if [ -z "$BM_CMDLINE" ]; then
   exit 1
 fi
 
+section_start prepare_rootfs "Preparing rootfs components"
+
 set -ex
 
 date +'%F %T'
@@ -180,6 +182,8 @@ echo "$BM_CMDLINE" > /tftp/cmdline.txt
 if [ -n "$BM_BOOTCONFIG" ]; then
   printf "$BM_BOOTCONFIG" >> /tftp/config.txt
 fi
+
+section_end prepare_rootfs
 
 set +e
 STRUCTURED_LOG_FILE=results/job_detail.json

@@ -55,6 +55,8 @@ if echo $BM_CMDLINE | grep -q "root=/dev/nfs"; then
   BM_FASTBOOT_NFSROOT=1
 fi
 
+section_start prepare_rootfs "Preparing rootfs components"
+
 set -ex
 
 # Clear out any previous run's artifacts.
@@ -147,6 +149,8 @@ if [ -n "$BM_SERIAL_SCRIPT" ]; then
     sleep 1
   done
 fi
+
+section_end prepare_rootfs
 
 set +e
 $BM/fastboot_run.py \
