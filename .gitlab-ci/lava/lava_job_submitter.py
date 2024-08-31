@@ -440,7 +440,6 @@ class LAVAJobSubmitter(PathResolver):
         validation_job = LAVAJob(self.proxy, job_definition)
         if errors := validation_job.validate():
             fatal_err(f"Error in LAVA job definition: {errors}")
-        print_log("LAVA job definition validated successfully")
 
         return job_definition
 
