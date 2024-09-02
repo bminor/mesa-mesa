@@ -234,7 +234,7 @@
         "description": "tu: use instance indices in RD dump filenames",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f9c4e25483f9e96479566209b643fa6342eeccb9",
         "notes": null
