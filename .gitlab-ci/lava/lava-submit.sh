@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2086 # we want word splitting
 
+section_start prepare_rootfs "Preparing root filesystem"
+
 set -ex
 
 # If we run in the fork (not from mesa or Marge-bot), reuse mainline kernel and rootfs, if exist.
@@ -18,21 +20,23 @@ fi
 rm -rf results
 mkdir -p results/job-rootfs-overlay/
 
+artifacts/ci-common/generate-env.sh > results/job-rootfs-overlay/set-job-env-vars.sh
 cp artifacts/ci-common/capture-devcoredump.sh results/job-rootfs-overlay/
 cp artifacts/ci-common/init-*.sh results/job-rootfs-overlay/
 cp artifacts/ci-common/intel-gpu-freq.sh results/job-rootfs-overlay/
 cp artifacts/ci-common/kdl.sh results/job-rootfs-overlay/
 cp "$SCRIPTS_DIR"/setup-test-env.sh results/job-rootfs-overlay/
 
-# Prepare env vars for upload.
-section_start variables "Variables passed through:"
-artifacts/ci-common/generate-env.sh | tee results/job-rootfs-overlay/set-job-env-vars.sh
-section_end variables
-
 tar zcf job-rootfs-overlay.tar.gz -C results/job-rootfs-overlay/ .
 ci-fairy s3cp --token-file "${S3_JWT_FILE}" job-rootfs-overlay.tar.gz "https://${JOB_ROOTFS_OVERLAY_PATH}"
 
+# Prepare env vars for upload.
+section_switch variables "Environment variables passed through to device:"
+cat results/job-rootfs-overlay/set-job-env-vars.sh
+
 ARTIFACT_URL="${FDO_HTTP_CACHE_URI:-}https://${PIPELINE_ARTIFACTS_BASE}/${LAVA_S3_ARTIFACT_NAME:?}.tar.zst"
+
+section_switch lava_submit "Submitting job for scheduling"
 
 touch results/lava.log
 tail -f results/lava.log &
@@ -61,4 +65,5 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--structured-log-file "results/lava_job_detail.json" \
 	--ssh-client-image "${LAVA_SSH_CLIENT_IMAGE}" \
 	--project-name "${CI_PROJECT_NAME}" \
+	--starting-section "${CURRENT_SECTION}" \
 	>> results/lava.log

@@ -255,14 +255,14 @@ def wait_for_job_get_started(job, attempt_no):
 
 
 def bootstrap_log_follower() -> LogFollower:
-    gl = GitlabSection(
+    start_section = GitlabSection(
         id="dut_boot",
         header="Booting hardware device",
         type=LogSectionType.LAVA_BOOT,
         start_collapsed=True,
     )
-    print(gl.start())
-    return LogFollower(starting_section=gl)
+    print(start_section.start())
+    return LogFollower(starting_section=start_section)
 
 
 def follow_job_execution(job, log_follower):
@@ -416,6 +416,7 @@ class LAVAJobSubmitter(PathResolver):
     structured_log_file: pathlib.Path = None  # Log file path with structured LAVA log
     ssh_client_image: str = None  # x86_64 SSH client image to follow the job's output
     project_name: str = None  # Project name to be used in the job name
+    starting_section: str = None # GitLab section used to start
     __structured_log_context = contextlib.nullcontext()  # Structured Logger context
 
     def __post_init__(self) -> None:
@@ -475,6 +476,16 @@ class LAVAJobSubmitter(PathResolver):
 
         if self.validate_only:
             return
+
+        if self.starting_section:
+            gl = GitlabSection(
+                id=self.starting_section,
+                header="Preparing to submit job for scheduling",
+                type=LogSectionType.LAVA_SUBMIT,
+                start_collapsed=True
+            )
+            gl.start()
+            print(gl.end())
 
         with self.__structured_log_context:
             last_attempt_job = None

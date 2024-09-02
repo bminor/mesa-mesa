@@ -10,12 +10,17 @@ from lava.utils.gitlab_section import GitlabSection
 
 class LogSectionType(Enum):
     UNKNOWN = auto()
+    LAVA_SUBMIT = auto()
     LAVA_QUEUE = auto()
     LAVA_BOOT = auto()
     TEST_DUT_SUITE = auto()
     TEST_SUITE = auto()
     TEST_CASE = auto()
     LAVA_POST_PROCESSING = auto()
+
+# How long to wait whilst we try to submit a job; make it fairly short,
+# since the job will be retried.
+LAVA_SUBMIT_TIMEOUT = int(getenv("LAVA_SUBMIT_TIMEOUT", 5))
 
 # How long should we wait for a device to become available?
 # For post-merge jobs, this should be ~infinite, but we can fail more
@@ -48,6 +53,7 @@ LAVA_POST_PROCESSING_TIMEOUT = int(getenv("LAVA_POST_PROCESSING_TIMEOUT", 5))
 
 FALLBACK_GITLAB_SECTION_TIMEOUT = timedelta(minutes=10)
 DEFAULT_GITLAB_SECTION_TIMEOUTS = {
+    LogSectionType.LAVA_SUBMIT: timedelta(minutes=LAVA_SUBMIT_TIMEOUT),
     LogSectionType.LAVA_QUEUE: timedelta(minutes=LAVA_QUEUE_TIMEOUT),
     LogSectionType.LAVA_BOOT: timedelta(minutes=LAVA_BOOT_TIMEOUT),
     LogSectionType.TEST_DUT_SUITE: timedelta(minutes=LAVA_TEST_DUT_SUITE_TIMEOUT),
