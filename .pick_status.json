@@ -3084,7 +3084,7 @@
         "description": "ci/alpine: Fix shellcheck errors",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "34753cefd828f5db8e9e14cee9c4e45cee5baaaa",
         "notes": null
