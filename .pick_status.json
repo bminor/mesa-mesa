@@ -1484,7 +1484,7 @@
         "description": "radv: fix emitting DGC indirect draws with drawid/base_instance",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e59a16bbb8fb770bc11bbacfa2254d6a958c7cb8",
         "notes": null
