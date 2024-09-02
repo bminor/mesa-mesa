@@ -83,6 +83,9 @@ class GitlabSection:
     def start(self) -> str:
         assert not self.has_finished, "Starting an already finished section"
         self.__start_time = datetime.now()
+        return self.print_start_section()
+
+    def print_start_section(self) -> str:
         return self.section(marker="start", header=self.header, time=self.__start_time)
 
     def end(self) -> str:
@@ -91,6 +94,9 @@ class GitlabSection:
         assert (
             self.__end_time >= self.__start_time
         ), "Section execution time will be negative"
+        return self.print_end_section()
+
+    def print_end_section(self) -> str:
         return self.section(marker="end", header="", time=self.__end_time)
 
     def delta_time(self) -> Optional[timedelta]:
