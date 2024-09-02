@@ -324,7 +324,14 @@ def execute_job_with_retries(
         try:
             job_log["submitter_start_time"] = datetime.now().isoformat()
             submit_job(job)
-            wait_for_job_get_started(job, attempt_no)
+            queue_section = GitlabSection(
+                id="dut_queue",
+                header="Waiting for hardware device to become available",
+                type=LogSectionType.LAVA_QUEUE,
+                start_collapsed=False,
+            )
+            with queue_section as section:
+                wait_for_job_get_started(job, attempt_no)
             log_follower: LogFollower = bootstrap_log_follower()
             follow_job_execution(job, log_follower)
             return job

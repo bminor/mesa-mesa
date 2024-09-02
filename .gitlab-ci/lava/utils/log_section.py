@@ -10,12 +10,17 @@ from lava.utils.gitlab_section import GitlabSection
 
 class LogSectionType(Enum):
     UNKNOWN = auto()
+    LAVA_QUEUE = auto()
     LAVA_BOOT = auto()
     TEST_DUT_SUITE = auto()
     TEST_SUITE = auto()
     TEST_CASE = auto()
     LAVA_POST_PROCESSING = auto()
 
+# How long should we wait for a device to become available?
+# For post-merge jobs, this should be ~infinite, but we can fail more
+# aggressively for pre-merge.
+LAVA_QUEUE_TIMEOUT = int(getenv("LAVA_QUEUE_TIMEOUT", 60))
 
 # Empirically, successful device boot in LAVA time takes less than 3
 # minutes.
@@ -43,6 +48,7 @@ LAVA_POST_PROCESSING_TIMEOUT = int(getenv("LAVA_POST_PROCESSING_TIMEOUT", 5))
 
 FALLBACK_GITLAB_SECTION_TIMEOUT = timedelta(minutes=10)
 DEFAULT_GITLAB_SECTION_TIMEOUTS = {
+    LogSectionType.LAVA_QUEUE: timedelta(minutes=LAVA_QUEUE_TIMEOUT),
     LogSectionType.LAVA_BOOT: timedelta(minutes=LAVA_BOOT_TIMEOUT),
     LogSectionType.TEST_DUT_SUITE: timedelta(minutes=LAVA_TEST_DUT_SUITE_TIMEOUT),
     LogSectionType.TEST_SUITE: timedelta(minutes=LAVA_TEST_SUITE_TIMEOUT),
