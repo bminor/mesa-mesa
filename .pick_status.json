@@ -864,7 +864,7 @@
         "description": "dril: use the super fallback path for software fallback",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ef88af846761ca9e642f7ed46011db7d3d6b61fd",
         "notes": null
