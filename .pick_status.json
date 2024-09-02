@@ -1034,7 +1034,7 @@
         "description": "nir/opt_loop: skip peeling if the loop ends with any kind of jump",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6b4b04473986c9b0e77c925a116be39f6ff3982f",
         "notes": null
