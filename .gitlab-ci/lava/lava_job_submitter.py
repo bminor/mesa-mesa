@@ -256,8 +256,8 @@ def wait_for_job_get_started(job, attempt_no):
 
 def bootstrap_log_follower() -> LogFollower:
     gl = GitlabSection(
-        id="lava_boot",
-        header="LAVA boot",
+        id="dut_boot",
+        header="Booting hardware device",
         type=LogSectionType.LAVA_BOOT,
         start_collapsed=True,
     )
