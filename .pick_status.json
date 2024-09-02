@@ -1354,7 +1354,7 @@
         "description": "vulkan/video: fix vui encoding",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d46162981a78e24850dca085b2da95857c56a158",
         "notes": null
