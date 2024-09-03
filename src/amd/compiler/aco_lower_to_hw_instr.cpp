@@ -2331,7 +2331,7 @@ lower_to_hw_instr(Program* program)
             }
             case aco_opcode::p_exit_early_if: {
                /* don't bother with an early exit near the end of the program */
-               if ((block->instructions.size() - 1 - instr_idx) <= 4 &&
+               if ((block->instructions.size() - 1 - instr_idx) <= 5 &&
                    block->instructions.back()->opcode == aco_opcode::s_endpgm) {
                   unsigned null_exp_dest =
                      program->gfx_level >= GFX11 ? V_008DFC_SQ_EXP_MRT : V_008DFC_SQ_EXP_NULL;
@@ -2349,6 +2349,9 @@ lower_to_hw_instr(Program* program)
                      else if (instr2->opcode == aco_opcode::p_parallelcopy &&
                               instr2->definitions[0].isFixed() &&
                               instr2->definitions[0].physReg() == exec)
+                        continue;
+                     else if (instr2->opcode == aco_opcode::s_sendmsg &&
+                              instr2->salu().imm == sendmsg_dealloc_vgprs)
                         continue;
 
                      ignore_early_exit = false;
