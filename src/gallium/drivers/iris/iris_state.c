@@ -9338,7 +9338,8 @@ iris_upload_gpgpu_walker(struct iris_context *ice,
 
 static void
 iris_use_global_bindings(struct iris_context *ice,
-                         struct iris_batch *batch)
+                         struct iris_batch *batch,
+                         const struct pipe_grid_info *grid)
 {
    for (unsigned i = 0; i < IRIS_MAX_GLOBAL_BINDINGS; i++) {
       struct pipe_resource *res = ice->state.global_bindings[i];
@@ -9347,6 +9348,13 @@ iris_use_global_bindings(struct iris_context *ice,
 
       iris_use_pinned_bo(batch, iris_resource_bo(res),
                         true, IRIS_DOMAIN_NONE);
+   }
+
+   for (unsigned i = 0; i < grid->num_globals; i++) {
+      struct iris_resource *res = (void *) grid->globals[i];
+      iris_use_pinned_bo(batch, res->bo, true, IRIS_DOMAIN_NONE);
+      util_range_add(&res->base.b, &res->valid_buffer_range,
+                     0, res->base.b.width0);
    }
 }
 
@@ -9391,7 +9399,7 @@ iris_upload_compute_state(struct iris_context *ice,
       iris_use_pinned_bo(batch, border_color_pool->bo, false,
                          IRIS_DOMAIN_NONE);
 
-   iris_use_global_bindings(ice, batch);
+   iris_use_global_bindings(ice, batch, grid);
 
 #if GFX_VER >= 12
    genX(invalidate_aux_map_state)(batch);

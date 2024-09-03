@@ -1976,7 +1976,8 @@ iris_invalidate_buffer(struct iris_context *ice, struct iris_resource *res)
 {
    struct iris_screen *screen = (void *) ice->ctx.screen;
 
-   if (res->base.b.target != PIPE_BUFFER)
+   if (res->base.b.target != PIPE_BUFFER ||
+       res->base.b.flags & PIPE_RESOURCE_FLAG_FIXED_ADDRESS)
       return false;
 
    /* If it's already invalidated, don't bother doing anything.
@@ -2736,6 +2737,15 @@ static const struct u_transfer_vtbl transfer_vtbl = {
    .get_stencil           = iris_resource_get_separate_stencil,
 };
 
+static uint64_t
+iris_resource_get_address(struct pipe_screen *pscreen,
+                          struct pipe_resource *presrouce)
+{
+   struct iris_resource *res = (struct iris_resource *)presrouce;
+   assert(presrouce->flags & PIPE_RESOURCE_FLAG_FIXED_ADDRESS);
+   return res->bo->address + res->offset;
+}
+
 void
 iris_init_screen_resource_functions(struct pipe_screen *pscreen)
 {
@@ -2753,6 +2763,7 @@ iris_init_screen_resource_functions(struct pipe_screen *pscreen)
    pscreen->resource_destroy = u_transfer_helper_resource_destroy;
    pscreen->memobj_create_from_handle = iris_memobj_create_from_handle;
    pscreen->memobj_destroy = iris_memobj_destroy;
+   pscreen->resource_get_address = iris_resource_get_address;
    pscreen->transfer_helper =
       u_transfer_helper_create(&transfer_vtbl,
                                U_TRANSFER_HELPER_SEPARATE_Z32S8 |
