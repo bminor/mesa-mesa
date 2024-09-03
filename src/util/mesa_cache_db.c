@@ -376,10 +376,21 @@ mesa_db_reload(struct mesa_cache_db *db)
    return mesa_db_load(db, true);
 }
 
-static void
-touch_file(const char* path)
+static FILE *
+mesa_db_fopen(const char *path)
 {
-   close(open(path, O_CREAT | O_CLOEXEC, 0644));
+   /* The fopen("r+b") mode doesn't auto-create new file, hence we need to
+    * explicitly create the file first.
+    */
+   int fd = open(path, O_CREAT | O_CLOEXEC | O_RDWR, 0644);
+   if (fd < 0)
+      return NULL;
+
+   FILE *f = fdopen(fd, "r+b");
+   if (!f)
+      close(fd);
+
+   return f;
 }
 
 static bool
@@ -390,12 +401,7 @@ mesa_db_open_file(struct mesa_cache_db_file *db_file,
    if (asprintf(&db_file->path, "%s/%s", cache_path, filename) == -1)
       return false;
 
-   /* The fopen("r+b") mode doesn't auto-create new file, hence we need to
-    * explicitly create the file first.
-    */
-   touch_file(db_file->path);
-
-   db_file->file = fopen(db_file->path, "r+b");
+   db_file->file = mesa_db_fopen(db_file->path);
    if (!db_file->file) {
       free(db_file->path);
       return false;
@@ -481,8 +487,8 @@ mesa_db_compact(struct mesa_cache_db *db, int64_t blob_size,
    if (!entries)
       return false;
 
-   compacted_cache = fopen(db->cache.path, "r+b");
-   compacted_index = fopen(db->index.path, "r+b");
+   compacted_cache = mesa_db_fopen(db->cache.path);
+   compacted_index = mesa_db_fopen(db->index.path);
    if (!compacted_cache || !compacted_index)
       goto cleanup;
 
