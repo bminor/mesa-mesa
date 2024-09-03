@@ -27,5 +27,6 @@
 #include "util/u_screen.h"
 #include "util/u_surface.h"
 #include "util/u_transfer.h"
+#include "util/vma.h"
 
 #include "rusticl_nir.h"

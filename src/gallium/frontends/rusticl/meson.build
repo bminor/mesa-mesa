@@ -25,6 +25,7 @@ libmesa_rust_files = files(
   'mesa/pipe/transfer.rs',
   'mesa/util.rs',
   'mesa/util/disk_cache.rs',
+  'mesa/util/vm.rs',
 )
 
 rusticl_proc_macros_files = files(
@@ -260,6 +261,8 @@ rusticl_mesa_bindings = rust.bindgen(
     '--allowlist-var',          'SHA1_.*',
     '--allowlist-function',     'u_.*',
     '--allowlist-function',     'util_format_.*',
+    '--allowlist-function',     'util_vma_.*',
+    '--no-copy',                'util_vma_heap', # it's a linked list
 
     # CL API
     '--allowlist-type',         'cl_sampler_.*_mode',
