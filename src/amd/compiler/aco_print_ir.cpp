@@ -848,6 +848,8 @@ print_block_kind(uint16_t kind, FILE* output)
       fprintf(output, "merge, ");
    if (kind & block_kind_invert)
       fprintf(output, "invert, ");
+   if (kind & block_kind_discard_early_exit)
+      fprintf(output, "discard_early_exit, ");
    if (kind & block_kind_uses_discard)
       fprintf(output, "discard, ");
    if (kind & block_kind_resume)
