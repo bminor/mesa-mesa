@@ -3,6 +3,7 @@ use mesa_rust_gen::*;
 use std::{
     marker::PhantomData,
     mem,
+    num::NonZeroU64,
     ptr::{self, NonNull},
 };
 
@@ -122,6 +123,14 @@ impl PipeResource {
 
     pub fn is_user(&self) -> bool {
         self.as_ref().flags & PIPE_RESOURCE_FLAG_RUSTICL_IS_USER != 0
+    }
+
+    pub fn resource_get_address(&self) -> Option<NonZeroU64> {
+        let screen_ptr = self.as_ref().screen;
+        // SAFETY: it's a valid pointer and everything.
+        let screen = unsafe { screen_ptr.as_ref().unwrap_unchecked() };
+
+        NonZeroU64::new(unsafe { screen.resource_get_address?(screen_ptr, self.pipe()) })
     }
 
     pub fn pipe_image_view(&self, read_write: bool, host_access: u16) -> PipeImageView {

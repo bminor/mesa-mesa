@@ -352,6 +352,10 @@ impl PipeScreen {
         self.screen().resource_from_handle.is_some() && self.screen().resource_get_handle.is_some()
     }
 
+    pub fn is_fixed_address_supported(&self) -> bool {
+        self.screen().resource_get_address.is_some()
+    }
+
     pub fn nir_shader_compiler_options(
         &self,
         shader: pipe_shader_type,
