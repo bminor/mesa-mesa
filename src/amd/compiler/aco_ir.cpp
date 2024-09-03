@@ -1536,11 +1536,6 @@ dealloc_vgprs(Program* program)
    if (program->gfx_level < GFX11)
       return false;
 
-   /* sendmsg(dealloc_vgprs) releases scratch, so this isn't safe if there is a in-progress scratch
-    * store. */
-   if (uses_scratch(program))
-      return false;
-
    /* If we insert the sendmsg on GFX11.5, the export priority workaround will require us to insert
     * a wait after exports. There might still be pending VMEM stores for PS parameter exports,
     * except NGG lowering usually inserts a memory barrier. This means there is unlikely to be any

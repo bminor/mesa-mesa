@@ -344,6 +344,15 @@ kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_inf
       force_waitcnt(ctx, imm);
    }
 
+   /* sendmsg(dealloc_vgprs) releases scratch, so this isn't safe if there is a in-progress
+    * scratch store.
+    */
+   if (ctx.gfx_level >= GFX11 && instr->opcode == aco_opcode::s_sendmsg &&
+       instr->salu().imm == sendmsg_dealloc_vgprs) {
+      imm.combine(ctx.barrier_imm[ffs(storage_scratch) - 1]);
+      imm.combine(ctx.barrier_imm[ffs(storage_vgpr_spill) - 1]);
+   }
+
    /* Make sure POPS coherent memory accesses have reached the L2 cache before letting the
     * overlapping waves proceed into the ordered section.
     */
@@ -448,7 +457,11 @@ update_barrier_imm(wait_ctx& ctx, uint8_t counters, wait_event event, memory_syn
    for (unsigned i = 0; i < storage_count; i++) {
       wait_imm& bar = ctx.barrier_imm[i];
       uint16_t& bar_ev = ctx.barrier_events[i];
-      if (sync.storage & (1 << i) && !(sync.semantics & semantic_private)) {
+
+      /* We re-use barrier_imm/barrier_events to wait for all scratch stores to finish. */
+      bool ignore_private = i == (ffs(storage_scratch) - 1) || i == (ffs(storage_vgpr_spill) - 1);
+
+      if (sync.storage & (1 << i) && (!(sync.semantics & semantic_private) || ignore_private)) {
          bar_ev |= event;
          u_foreach_bit (j, counters)
             bar[j] = 0;

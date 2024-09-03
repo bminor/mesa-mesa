@@ -2376,6 +2376,12 @@ lower_to_hw_instr(Program* program)
                   }
                   block = &program->blocks[block_idx];
 
+                  /* sendmsg(dealloc_vgprs) releases scratch, so it isn't safe if there is an
+                   * in-progress scratch store. */
+                  wait_imm wait;
+                  if (should_dealloc_vgprs && uses_scratch(program))
+                     wait.vs = 0;
+
                   bld.reset(discard_block);
                   if (program->has_pops_overlapped_waves_wait &&
                       (program->gfx_level >= GFX11 || discard_sends_pops_done)) {
@@ -2383,16 +2389,16 @@ lower_to_hw_instr(Program* program)
                       * the waitcnt necessary before resuming overlapping waves as the normal
                       * waitcnt insertion doesn't work in a discard early exit block.
                       */
-                     wait_imm pops_exit_wait_imm;
                      if (program->gfx_level >= GFX10)
-                        pops_exit_wait_imm.vs = 0;
-                     pops_exit_wait_imm.vm = 0;
+                        wait.vs = 0;
+                     wait.vm = 0;
                      if (program->has_smem_buffer_or_global_loads)
-                        pops_exit_wait_imm.lgkm = 0;
-                     pops_exit_wait_imm.build_waitcnt(bld);
+                        wait.lgkm = 0;
+                     wait.build_waitcnt(bld);
                   }
                   if (discard_sends_pops_done)
                      bld.sopp(aco_opcode::s_sendmsg, sendmsg_ordered_ps_done);
+
                   unsigned target = V_008DFC_SQ_EXP_NULL;
                   if (program->gfx_level >= GFX11)
                      target =
@@ -2400,8 +2406,11 @@ lower_to_hw_instr(Program* program)
                   if (program->stage == fragment_fs)
                      bld.exp(aco_opcode::exp, Operand(v1), Operand(v1), Operand(v1), Operand(v1), 0,
                              target, false, true, true);
+
+                  wait.build_waitcnt(bld);
                   if (should_dealloc_vgprs)
                      bld.sopp(aco_opcode::s_sendmsg, sendmsg_dealloc_vgprs);
+
                   bld.sopp(aco_opcode::s_endpgm);
 
                   bld.reset(&ctx.instructions);
