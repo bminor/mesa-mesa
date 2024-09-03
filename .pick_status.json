@@ -2114,7 +2114,7 @@
         "description": "anv: be consistent about aux usage with modifiers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c1a7d520f3ffe720dfb949ee651d7299167a2924",
         "notes": null
