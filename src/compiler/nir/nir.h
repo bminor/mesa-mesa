@@ -1059,6 +1059,13 @@ typedef struct nir_def {
     * invocations of the shader.  This is set by nir_divergence_analysis.
     */
    bool divergent;
+
+   /**
+    * True if this SSA value is loop invariant w.r.t. the innermost parent
+    * loop.  This is set by nir_divergence_analysis and used to determine
+    * the divergence of a nir_src.
+    */
+   bool loop_invariant;
 } nir_def;
 
 struct nir_src;
