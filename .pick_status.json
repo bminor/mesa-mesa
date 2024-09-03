@@ -26254,7 +26254,7 @@
         "description": "ir3: Increase compute const size on a7xx",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
