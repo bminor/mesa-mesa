@@ -344,7 +344,7 @@
         "description": "anv: Drop \"not yet supported\" warning for Xe2",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null,
         "notes": null
