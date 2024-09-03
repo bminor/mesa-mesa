@@ -73,7 +73,40 @@ visit_cf_list(struct exec_list *list, struct divergence_state *state);
 bool
 nir_src_is_divergent(nir_src *src)
 {
-   return src->ssa->divergent;
+   if (src->ssa->divergent)
+      return true;
+
+   nir_cf_node *use_node = nir_src_get_block(src)->cf_node.parent;
+   nir_cf_node *def_node = src->ssa->parent_instr->block->cf_node.parent;
+
+   /* Short-cut the common case. */
+   if (def_node == use_node)
+      return false;
+
+   /* If the source was computed in a divergent loop, and is not
+    * loop-invariant, then it must also be considered divergent.
+    */
+   bool loop_invariant = src->ssa->loop_invariant;
+   while (def_node) {
+      if (def_node->type == nir_cf_node_loop) {
+         /* Check whether the use is inside this loop. */
+         for (nir_cf_node *node = use_node; node != NULL; node = node->parent) {
+            if (def_node == node)
+               return false;
+         }
+
+         /* Because the use is outside of this loop, it is divergent. */
+         if (nir_cf_node_as_loop(def_node)->divergent_break && !loop_invariant)
+            return true;
+
+         /* For outer loops, consider this variable not loop invariant. */
+         loop_invariant = false;
+      }
+
+      def_node = def_node->parent;
+   }
+
+   return false;
 }
 
 static inline bool
