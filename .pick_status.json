@@ -154,7 +154,7 @@
         "description": "panfrost: drop leftover definition after pan_nir_lower_64bit_intrin removal",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bd0d3c7b1c61e834e563f7f1c0c9ff553661cbd0",
         "notes": null
