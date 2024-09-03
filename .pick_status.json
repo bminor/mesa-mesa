@@ -2884,7 +2884,7 @@
         "description": "brw: Fix mov cmod propagation when there's int signedness mismatch",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b23432c540b1274904d80b90eb67d1798b11d2c8",
         "notes": null
