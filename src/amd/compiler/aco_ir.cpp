@@ -1555,8 +1555,6 @@ dealloc_vgprs(Program* program)
    Builder bld(program);
    if (!block.instructions.empty() && block.instructions.back()->opcode == aco_opcode::s_endpgm) {
       bld.reset(&block.instructions, block.instructions.begin() + (block.instructions.size() - 1));
-      /* Due to a hazard, an s_nop is needed before "s_sendmsg sendmsg_dealloc_vgprs". */
-      bld.sopp(aco_opcode::s_nop, 0);
       bld.sopp(aco_opcode::s_sendmsg, sendmsg_dealloc_vgprs);
    }
 

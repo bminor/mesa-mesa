@@ -1388,6 +1388,12 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
 {
    Builder bld(state.program, &new_instructions);
 
+   /* Due to a hazard, an s_nop is needed before "s_sendmsg sendmsg_dealloc_vgprs". */
+   if (instr->opcode == aco_opcode::s_sendmsg && instr->salu().imm == sendmsg_dealloc_vgprs &&
+       (new_instructions.empty() || new_instructions.back()->opcode != aco_opcode::s_nop)) {
+      bld.sopp(aco_opcode::s_nop, 0);
+   }
+
    /* VcmpxPermlaneHazard
     * Handle any permlane following a VOPC instruction writing exec, insert v_mov between them.
     */
