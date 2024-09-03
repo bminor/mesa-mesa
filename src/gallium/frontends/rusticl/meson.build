@@ -25,6 +25,8 @@ libmesa_rust_files = files(
   'mesa/pipe/fence.rs',
   'mesa/pipe/screen.rs',
   'mesa/pipe/transfer.rs',
+  'mesa/util.rs',
+  'mesa/util/disk_cache.rs',
 )
 
 rusticl_proc_macros_files = files(
