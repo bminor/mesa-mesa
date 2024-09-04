@@ -44,7 +44,7 @@
         "description": "vulkan: Allow pColorAttachmentLocations == NULL in CmdSetRenderingAttachmentLocationsKHR()",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fe19405c4640cdee88cf91a0faa13620090d5f70",
         "notes": null
