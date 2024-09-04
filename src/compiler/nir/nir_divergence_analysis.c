@@ -1267,6 +1267,8 @@ visit_cf_list(struct exec_list *list, struct divergence_state *state)
 void
 nir_divergence_analysis_impl(nir_function_impl *impl, nir_divergence_options options)
 {
+   nir_metadata_require(impl, nir_metadata_block_index);
+
    struct divergence_state state = {
       .stage = impl->function->shader->info.stage,
       .shader = impl->function->shader,
@@ -1278,6 +1280,8 @@ nir_divergence_analysis_impl(nir_function_impl *impl, nir_divergence_options opt
    };
 
    visit_cf_list(&impl->body, &state);
+
+   nir_metadata_preserve(impl, nir_metadata_all);
 }
 
 void
@@ -1305,7 +1309,10 @@ nir_vertex_divergence_analysis(nir_shader *shader)
       .first_visit = true,
    };
 
+   nir_metadata_require(nir_shader_get_entrypoint(shader),
+                        nir_metadata_block_index);
    visit_cf_list(&nir_shader_get_entrypoint(shader)->body, &state);
+   nir_metadata_preserve(nir_shader_get_entrypoint(shader), nir_metadata_all);
 }
 
 bool
