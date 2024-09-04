@@ -754,7 +754,7 @@
         "description": "etnaviv: emit all PA shader attributes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "11ffb20b7072b4096dc4e033395f36ff6fbfd42e",
         "notes": null
