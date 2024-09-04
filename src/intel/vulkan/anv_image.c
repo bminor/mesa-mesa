@@ -413,23 +413,6 @@ can_fast_clear_with_non_zero_color(const struct intel_device_info *devinfo,
        !(isl_mod_info && isl_mod_info->supports_clear_color))
       return false;
 
-   enum isl_format img_format = image->planes[plane].primary_surface.isl.format;
-
-   /* Check bit compatibility for clear color components */
-   for (uint32_t i = 0; fmt_list && i < fmt_list->viewFormatCount; i++) {
-      if (fmt_list->pViewFormats[i] == VK_FORMAT_UNDEFINED)
-         continue;
-
-      struct anv_format_plane view_format_plane =
-         anv_get_format_plane(devinfo, fmt_list->pViewFormats[i],
-                              plane, image->vk.tiling);
-
-      enum isl_format view_format = view_format_plane.isl_format;
-
-      if (!isl_formats_have_same_bits_per_channel(img_format, view_format))
-         return false;
-   }
-
    return true;
 }
 
