@@ -1230,22 +1230,34 @@ visit_loop_header_phi(nir_phi_instr *phi, nir_block *preheader, bool divergent_c
  * (3) eta: represent values that leave a loop.
  *     The resulting value is divergent if the source value is divergent
  *     or any loop exit condition is divergent for a value which is
- *     not loop-invariant.
- *     (note: there should be no phi for loop-invariant variables.) */
+ *     not loop-invariant (see nir_src_is_divergent()).
+ */
 static bool
-visit_loop_exit_phi(nir_phi_instr *phi, bool divergent_break)
+visit_loop_exit_phi(nir_phi_instr *phi, nir_loop *loop)
 {
    if (phi->def.divergent)
       return false;
 
-   if (divergent_break) {
-      phi->def.divergent = true;
-      return true;
-   }
-
-   /* if any source value is divergent, the resulting value is divergent */
+   nir_def *same = NULL;
    nir_foreach_phi_src(src, phi) {
-      if (nir_src_is_divergent(&src->src)) {
+      /* If any loop exit condition is divergent and this value is not loop
+       * invariant, or if the source value is divergent, then the resulting
+       * value is divergent.
+       */
+      if ((loop->divergent_break && !src_invariant(&src->src, loop)) ||
+          nir_src_is_divergent(&src->src)) {
+         phi->def.divergent = true;
+         return true;
+      }
+
+      /* if this loop is uniform, we're done here */
+      if (!loop->divergent_break)
+         continue;
+
+      /* check if all loop-exit values are from the same ssa-def */
+      if (!same)
+         same = src->src.ssa;
+      else if (same != src->src.ssa) {
          phi->def.divergent = true;
          return true;
       }
@@ -1353,7 +1365,7 @@ visit_loop(nir_loop *loop, struct divergence_state *state)
          phi->def.divergent = false;
          phi->def.loop_invariant = false;
       }
-      progress |= visit_loop_exit_phi(phi, loop_state.divergent_loop_break);
+      progress |= visit_loop_exit_phi(phi, loop);
    }
 
    state->consider_loop_invariance |= loop_state.consider_loop_invariance ||
