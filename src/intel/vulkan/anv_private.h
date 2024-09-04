@@ -5338,6 +5338,15 @@ struct anv_image {
    VkFormat emu_plane_format;
 
    /**
+    * The set of formats that will be used with the first plane of this image.
+    *
+    * Assuming all view formats have the same bits-per-channel, we support the
+    * largest number of variations which may exist.
+    */
+   enum isl_format view_formats[5];
+   unsigned num_view_formats;
+
+   /**
     * The memory bindings created by vkCreateImage and vkBindImageMemory.
     *
     * For details on the image's memory layout, see check_memory_bindings().
@@ -5548,6 +5557,9 @@ anv_image_address(const struct anv_image *image,
 
    return anv_address_add(binding->address, mem_range->offset);
 }
+
+bool
+anv_image_view_formats_incomplete(const struct anv_image *image);
 
 static inline struct anv_address
 anv_image_get_clear_color_addr(UNUSED const struct anv_device *device,
