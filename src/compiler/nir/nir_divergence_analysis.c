@@ -65,6 +65,8 @@ struct divergence_state {
 
    /* True if we visit the block for the fist time */
    bool first_visit;
+   /* True if we visit a block that is dominated by a loop with a divergent break */
+   bool consider_loop_invariance;
 };
 
 static bool
@@ -112,6 +114,9 @@ nir_src_is_divergent(nir_src *src)
 static inline bool
 src_divergent(nir_src src, struct divergence_state *state)
 {
+   if (!state->consider_loop_invariance)
+      return src.ssa->divergent;
+
    return nir_src_is_divergent(&src);
 }
 
@@ -1286,6 +1291,9 @@ visit_if(nir_if *if_stmt, struct divergence_state *state)
     * which means that a following break might be taken by some invocations, only */
    state->divergent_loop_cf |= state->divergent_loop_continue;
 
+   state->consider_loop_invariance |= then_state.consider_loop_invariance ||
+                                      else_state.consider_loop_invariance;
+
    return progress;
 }
 
@@ -1348,6 +1356,8 @@ visit_loop(nir_loop *loop, struct divergence_state *state)
       progress |= visit_loop_exit_phi(phi, loop_state.divergent_loop_break);
    }
 
+   state->consider_loop_invariance |= loop_state.consider_loop_invariance ||
+                                      loop->divergent_break;
    return progress;
 }
 
