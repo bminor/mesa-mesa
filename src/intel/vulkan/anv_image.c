@@ -3462,26 +3462,6 @@ anv_layout_to_fast_clear_type(const struct intel_device_info * const devinfo,
    unreachable("Invalid isl_aux_state");
 }
 
-static bool
-isl_color_value_requires_conversion(union isl_color_value color,
-                                    const struct isl_surf *surf,
-                                    enum isl_format view_format,
-                                    struct isl_swizzle view_swizzle)
-{
-   if (surf->format == view_format && isl_swizzle_is_identity(view_swizzle))
-      return false;
-
-   uint32_t surf_pack[4] = { 0, 0, 0, 0 };
-   isl_color_value_pack(&color, surf->format, surf_pack);
-
-   uint32_t view_pack[4] = { 0, 0, 0, 0 };
-   union isl_color_value swiz_color =
-      isl_color_value_swizzle_inv(color, view_swizzle);
-   isl_color_value_pack(&swiz_color, view_format, view_pack);
-
-   return memcmp(surf_pack, view_pack, sizeof(surf_pack)) != 0;
-}
-
 bool
 anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
                          const struct anv_image *image,
@@ -3489,7 +3469,6 @@ anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
                          const struct VkClearRect *clear_rect,
                          VkImageLayout layout,
                          enum isl_format view_format,
-                         struct isl_swizzle view_swizzle,
                          union isl_color_value clear_color)
 {
    if (INTEL_DEBUG(DEBUG_NO_FAST_CLEAR))
@@ -3527,20 +3506,6 @@ anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
        clear_rect->rect.extent.width != image->vk.extent.width ||
        clear_rect->rect.extent.height != image->vk.extent.height)
       return false;
-
-   /* If the clear color is one that would require non-trivial format
-    * conversion on resolve, we don't bother with the fast clear.  This
-    * shouldn't be common as most clear colors are 0/1 and the most common
-    * format re-interpretation is for sRGB.
-    */
-   if (isl_color_value_requires_conversion(clear_color,
-                                           &image->planes[0].primary_surface.isl,
-                                           view_format, view_swizzle)) {
-      anv_perf_warn(VK_LOG_OBJS(&image->vk.base),
-                    "Cannot fast-clear to colors which would require "
-                    "format conversion on resolve");
-      return false;
-   }
 
    /* We only allow fast clears to the first slice of an image (level 0,
     * layer 0) and only for the entire slice.  This guarantees us that, at

@@ -1458,7 +1458,7 @@ void anv_CmdClearColorImage(
 
          if (anv_can_fast_clear_color(cmd_buffer, image, level, &clear_rect,
                                       imageLayout, src_format.isl_format,
-                                      src_format.swizzle, clear_color)) {
+                                      clear_color)) {
             assert(level == 0);
             assert(clear_rect.baseArrayLayer == 0);
             if (image->vk.samples == 1) {
@@ -1662,7 +1662,6 @@ can_fast_clear_color_att(struct anv_cmd_buffer *cmd_buffer,
                                    att->iview->vk.base_mip_level,
                                    pRects, att->layout,
                                    att->iview->planes[0].isl.format,
-                                   att->iview->planes[0].isl.swizzle,
                                    clear_color);
 }
 

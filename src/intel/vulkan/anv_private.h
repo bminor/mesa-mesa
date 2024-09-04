@@ -5904,7 +5904,6 @@ anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
                          const struct VkClearRect *clear_rect,
                          VkImageLayout layout,
                          enum isl_format view_format,
-                         struct isl_swizzle view_swizzle,
                          union isl_color_value clear_color);
 
 enum isl_aux_state ATTRIBUTE_PURE

@@ -5355,7 +5355,6 @@ void genX(CmdBeginRendering)(
                                      iview->vk.base_mip_level,
                                      &clear_rect, att->imageLayout,
                                      iview->planes[0].isl.format,
-                                     iview->planes[0].isl.swizzle,
                                      clear_color);
 
          if (att->imageLayout != initial_layout) {
