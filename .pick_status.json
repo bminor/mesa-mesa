@@ -84,7 +84,7 @@
         "description": "nvk: Don't do linear<->tiled copies for rendering suspend/resume",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bca2f13dd8ee3904fac67bbe273226a0864caa59",
         "notes": null
