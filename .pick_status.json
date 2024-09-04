@@ -404,7 +404,7 @@
         "description": "dril: also create double-buffered configs in swrast fallback",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "06d417af80bc1f171cadc338e63a7aa75c877754",
         "notes": null
