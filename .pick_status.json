@@ -74,7 +74,7 @@
         "description": "nvk: Take depth image layer counts from the VkRenderingInfo",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9345b95346dd3eac280ad152d07357526010b5d0",
         "notes": null
