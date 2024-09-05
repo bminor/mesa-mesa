@@ -437,6 +437,13 @@ enum opcode {
     */
    SHADER_OPCODE_VOTE_EQUAL,
 
+   /* Produces a mask from the boolean value from all channels, and broadcast
+    * the result to all channels.
+    *
+    * Source 0: Boolean value.
+    */
+   SHADER_OPCODE_BALLOT,
+
    /* Select between src0 and src1 based on channel enables.
     *
     * This instruction copies src0 into the enabled channels of the

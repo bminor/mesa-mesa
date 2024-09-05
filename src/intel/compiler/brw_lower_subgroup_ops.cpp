@@ -511,6 +511,34 @@ brw_lower_vote(fs_visitor &s, bblock_t *block, fs_inst *inst)
    return true;
 }
 
+static bool
+brw_lower_ballot(fs_visitor &s, bblock_t *block, fs_inst *inst)
+{
+   const fs_builder bld(&s, block, inst);
+
+   brw_reg value = retype(inst->src[0], BRW_TYPE_UD);
+   brw_reg dst = inst->dst;
+
+   if (value.file == IMM) {
+      /* Implement a fast-path for ballot(true). */
+      if (!value.is_zero()) {
+         brw_reg tmp = bld.vgrf(BRW_TYPE_UD);
+         bld.exec_all().emit(SHADER_OPCODE_LOAD_LIVE_CHANNELS, tmp);
+         bld.MOV(dst, brw_reg(component(tmp, 0)));
+      } else {
+         brw_reg zero = retype(brw_imm_uq(0), dst.type);
+         bld.MOV(dst, zero);
+      }
+   } else {
+      brw_reg flag = brw_fill_flag(bld, 0);
+      bld.CMP(bld.null_reg_ud(), value, brw_imm_ud(0u), BRW_CONDITIONAL_NZ);
+      bld.MOV(dst, flag);
+   }
+
+   inst->remove(block);
+   return true;
+}
+
 bool
 brw_fs_lower_subgroup_ops(fs_visitor &s)
 {
@@ -531,6 +559,10 @@ brw_fs_lower_subgroup_ops(fs_visitor &s)
       case SHADER_OPCODE_VOTE_ALL:
       case SHADER_OPCODE_VOTE_EQUAL:
          progress |= brw_lower_vote(s, block, inst);
+         break;
+
+      case SHADER_OPCODE_BALLOT:
+         progress |= brw_lower_ballot(s, block, inst);
          break;
 
       default:

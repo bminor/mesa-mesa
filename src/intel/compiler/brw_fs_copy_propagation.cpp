@@ -1216,6 +1216,7 @@ try_constant_propagate_value(brw_reg val, brw_reg_type dst_type,
    case BRW_OPCODE_LRP:
    case FS_OPCODE_PACK_HALF_2x16_SPLIT:
    case SHADER_OPCODE_SHUFFLE:
+   case SHADER_OPCODE_BALLOT:
       inst->src[arg] = val;
       progress = true;
       break;

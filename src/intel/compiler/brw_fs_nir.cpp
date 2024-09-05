@@ -6627,25 +6627,8 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
          dest.type = BRW_TYPE_UD;
       }
 
-      /* Implement a fast-path for ballot(true). */
-      if (nir_src_is_const(instr->src[0]) &&
-          nir_src_as_bool(instr->src[0])) {
-         brw_reg tmp = bld.vgrf(BRW_TYPE_UD);
-         bld.exec_all().emit(SHADER_OPCODE_LOAD_LIVE_CHANNELS, tmp);
-         bld.MOV(dest, brw_reg(component(tmp, 0)));
-         break;
-      }
-
-      const brw_reg value = retype(get_nir_src(ntb, instr->src[0]),
-                                  BRW_TYPE_UD);
-      struct brw_reg flag = brw_flag_reg(0, 0);
-
-      if (s.dispatch_width == 32)
-         flag.type = BRW_TYPE_UD;
-
-      bld.exec_all().group(1, 0).MOV(flag, retype(brw_imm_ud(0u), flag.type));
-      bld.CMP(bld.null_reg_ud(), value, brw_imm_ud(0u), BRW_CONDITIONAL_NZ);
-      bld.MOV(dest, flag);
+      const brw_reg value = get_nir_src(ntb, instr->src[0]);
+      bld.emit(SHADER_OPCODE_BALLOT, dest, value);
       break;
    }
 
