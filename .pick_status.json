@@ -3994,7 +3994,7 @@
         "description": "freedreno/drm: Fix ring_heap flags",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a3fb2b07aa299f6d4d3656a92d30112be2212674",
         "notes": null
