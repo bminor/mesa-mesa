@@ -3734,7 +3734,7 @@
         "description": "nvk: Use stride in the explicit modifier case for linear images",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f1fdffa1b2e5c1b9b813191a2881030cc7278906",
         "notes": null
