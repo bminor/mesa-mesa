@@ -18,3 +18,12 @@ MobileDetParam.Op/mobiledet53
 MobileDetParam.Op/mobiledet60
 MobileDetParam.Op/mobiledet64
 MobileDetParam.Op/mobiledet68
+
+YoloXParam.Op/yolox11
+YoloXParam.Op/yolox20
+YoloXParam.Op/yolox23
+YoloXParam.Op/yolox26
+YoloXParam.Op/yolox35
+YoloXParam.Op/yolox38
+YoloXParam.Op/yolox41
+

@@ -18,9 +18,11 @@
 #define TEST_ADD         1
 #define TEST_MOBILENETV1 1
 #define TEST_MOBILEDET   1
+#define TEST_YOLOX       1
 
 #define TOLERANCE       2
 #define MODEL_TOLERANCE 8
+#define YOLOX_TOLERANCE 38
 #define QUANT_TOLERANCE 2
 
 std::vector<bool> is_signed{false, true};
@@ -134,14 +136,14 @@ test_model(std::vector<uint8_t> buf, std::string cache_dir, unsigned tolerance)
 }
 
 static void
-test_model_file(std::string file_name)
+test_model_file(std::string file_name, unsigned tolerance)
 {
    set_seed(4);
 
    std::ifstream model_file(file_name, std::ios::binary);
    std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(model_file)),
                                std::istreambuf_iterator<char>());
-   test_model(buffer, "", MODEL_TOLERANCE);
+   test_model(buffer, "", tolerance);
 }
 
 void
@@ -398,7 +400,7 @@ TEST(MobileNetV1, Whole)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/mobilenet_v1_1.0_224_quant.tflite";
 
-   test_model_file(file_path.str());
+   test_model_file(file_path.str(), MODEL_TOLERANCE);
 }
 
 TEST_P(MobileNetV1Param, Op)
@@ -407,7 +409,7 @@ TEST_P(MobileNetV1Param, Op)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/mb" << GetParam() << ".tflite";
 
-   test_model_file(file_path.str());
+   test_model_file(file_path.str(), MODEL_TOLERANCE);
 }
 
 static inline std::string
@@ -441,7 +443,7 @@ TEST(MobileDet, Whole)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/ssdlite_mobiledet_coco_qat_postprocess.tflite";
 
-   test_model_file(file_path.str());
+   test_model_file(file_path.str(), MODEL_TOLERANCE);
 }
 
 TEST_P(MobileDetParam, Op)
@@ -450,7 +452,7 @@ TEST_P(MobileDetParam, Op)
    assert(getenv("TEFLON_TEST_DATA"));
    file_path << getenv("TEFLON_TEST_DATA") << "/mobiledet" << GetParam() << ".tflite";
 
-   test_model_file(file_path.str());
+   test_model_file(file_path.str(), MODEL_TOLERANCE);
 }
 
 static inline std::string
@@ -469,6 +471,49 @@ INSTANTIATE_TEST_SUITE_P(
    , MobileDetParam,
    ::testing::Range(0, 121),
    MobileDetTestCaseName);
+
+#endif
+
+#if TEST_YOLOX
+
+class YoloX : public ::testing::Test {};
+
+class YoloXParam : public testing::TestWithParam<int> {};
+
+TEST(YoloX, Whole)
+{
+   std::ostringstream file_path;
+   assert(getenv("TEFLON_TEST_DATA"));
+   file_path << getenv("TEFLON_TEST_DATA") << "/yolox.tflite";
+
+   test_model_file(file_path.str(), YOLOX_TOLERANCE);
+}
+
+TEST_P(YoloXParam, Op)
+{
+   std::ostringstream file_path;
+   assert(getenv("TEFLON_TEST_DATA"));
+   file_path << getenv("TEFLON_TEST_DATA") << "/yolox-" << GetParam() << ".tflite";
+
+   test_model_file(file_path.str(), MODEL_TOLERANCE);
+}
+
+static inline std::string
+YoloXTestCaseName(
+   const testing::TestParamInfo<int> &info)
+{
+   std::string name = "";
+
+   name += "yolox";
+   name += std::to_string(info.param);
+
+   return name;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+   , YoloXParam,
+   ::testing::Range(0, 128),
+   YoloXTestCaseName);
 
 #endif
 
@@ -506,7 +551,7 @@ main(int argc, char **argv)
 
       return 0;
    } else if (argc > 1 && !strcmp(argv[1], "run_model")) {
-      test_model_file(std::string(argv[2]));
+      test_model_file(std::string(argv[2]), MODEL_TOLERANCE);
    } else {
       testing::InitGoogleTest(&argc, argv);
       return RUN_ALL_TESTS();
