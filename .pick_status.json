@@ -684,7 +684,7 @@
         "description": "anv: if queue is NULL in vm_bind return early",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dd5362c78a1d2e8bb88cd321f510e5f9660775e1",
         "notes": null
