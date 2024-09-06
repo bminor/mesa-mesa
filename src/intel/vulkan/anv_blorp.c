@@ -1474,6 +1474,7 @@ void anv_CmdClearColorImage(
             if (cmd_buffer->device->info->ver < 20) {
                anv_cmd_buffer_mark_image_fast_cleared(cmd_buffer, image,
                                                       src_format.isl_format,
+                                                      src_format.swizzle,
                                                       clear_color);
             }
 
@@ -1705,6 +1706,7 @@ clear_color_attachment(struct anv_cmd_buffer *cmd_buffer,
       if (cmd_buffer->device->info->ver < 20) {
          anv_cmd_buffer_mark_image_fast_cleared(cmd_buffer, iview->image,
                                                 iview->planes[0].isl.format,
+                                                iview->planes[0].isl.swizzle,
                                                 clear_color);
          anv_cmd_buffer_load_clear_color(cmd_buffer, att->surface_state.state,
                                          iview);

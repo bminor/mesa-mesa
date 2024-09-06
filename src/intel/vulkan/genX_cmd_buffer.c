@@ -977,10 +977,13 @@ void
 genX(set_fast_clear_state)(struct anv_cmd_buffer *cmd_buffer,
                            const struct anv_image *image,
                            const enum isl_format format,
+                           const struct isl_swizzle swizzle,
                            union isl_color_value clear_color)
 {
    uint32_t pixel[4] = {};
-   isl_color_value_pack(&clear_color, format, pixel);
+   union isl_color_value swiz_color =
+      isl_color_value_swizzle_inv(clear_color, swizzle);
+   isl_color_value_pack(&swiz_color, format, pixel);
    set_image_clear_color(cmd_buffer, image, VK_IMAGE_ASPECT_COLOR_BIT, pixel);
 
    if (isl_color_value_is_zero(clear_color, format)) {
@@ -5414,6 +5417,7 @@ void genX(CmdBeginRendering)(
 #if GFX_VER < 20
             genX(set_fast_clear_state)(cmd_buffer, iview->image,
                                        iview->planes[0].isl.format,
+                                       iview->planes[0].isl.swizzle,
                                        clear_color);
 #endif
          }

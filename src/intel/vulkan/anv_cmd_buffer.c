@@ -345,10 +345,11 @@ void
 anv_cmd_buffer_mark_image_fast_cleared(struct anv_cmd_buffer *cmd_buffer,
                                        const struct anv_image *image,
                                        const enum isl_format format,
+                                       const struct isl_swizzle swizzle,
                                        union isl_color_value clear_color)
 {
    const struct intel_device_info *devinfo = cmd_buffer->device->info;
-   anv_genX(devinfo, set_fast_clear_state)(cmd_buffer, image, format,
+   anv_genX(devinfo, set_fast_clear_state)(cmd_buffer, image, format, swizzle,
                                            clear_color);
 }
 
