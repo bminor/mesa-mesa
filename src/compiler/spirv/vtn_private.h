@@ -364,7 +364,9 @@ struct vtn_type {
 
       /* Members for pointer types */
       struct {
-         /* For pointers, the vtn_type of the object pointed to. */
+         /* For regular pointers, the vtn_type of the object pointed to;
+          * for untyped pointers it must be NULL.
+          */
          struct vtn_type *pointed;
 
          /* Storage class for pointers */
@@ -921,6 +923,10 @@ nir_deref_instr *vtn_pointer_to_deref(struct vtn_builder *b,
 nir_def *
 vtn_pointer_to_offset(struct vtn_builder *b, struct vtn_pointer *ptr,
                       nir_def **index_out);
+
+struct vtn_pointer *
+vtn_cast_pointer(struct vtn_builder *b, struct vtn_pointer *p,
+                 struct vtn_type *pointed);
 
 nir_deref_instr *
 vtn_get_call_payload_for_location(struct vtn_builder *b, uint32_t location_id);

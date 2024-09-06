@@ -331,6 +331,7 @@ vtn_create_internal_pointer_type(struct vtn_builder *b,
    t->pointed = pointed;
    t->storage_class = original->storage_class;
    t->type = original->type;
+   t->stride = original->stride;
    return t;
 }
 
@@ -1958,6 +1959,10 @@ vtn_pointer_ssa_is_desc_index(struct vtn_builder *b,
    if (ptr->mode == vtn_variable_mode_phys_ssbo)
       return false;
 
+   /* Untyped pointers are never in desc_index form. */
+   if (ptr->type->pointed == NULL)
+      return false;
+
    return vtn_pointer_is_external_block(b, ptr) &&
           vtn_type_is_block_array(b, ptr->type->pointed);
 }
@@ -1990,8 +1995,10 @@ vtn_pointer_from_ssa(struct vtn_builder *b, nir_def *ssa,
 {
    vtn_assert(ptr_type->base_type == vtn_base_type_pointer);
 
+   const bool untyped = !ptr_type->pointed;
+
    struct vtn_pointer *ptr = vtn_zalloc(b, struct vtn_pointer);
-   struct vtn_type *without_array =
+   struct vtn_type *without_array = untyped ? NULL :
       vtn_type_without_array(ptr_type->pointed);
 
    nir_variable_mode nir_mode;
@@ -2639,6 +2646,42 @@ ptr_nonuniform_workaround_cb(struct vtn_builder *b, struct vtn_value *val,
    }
 }
 
+struct vtn_pointer *
+vtn_cast_pointer(struct vtn_builder *b, struct vtn_pointer *p,
+                 struct vtn_type *pointed)
+{
+   assert(pointed);
+
+   struct vtn_pointer *casted = vtn_zalloc(b, struct vtn_pointer);
+   *casted = *p;
+   casted->type = vtn_create_internal_pointer_type(b, p->type, pointed);
+   vtn_assert(pointed == casted->type->pointed);
+
+   if (p->deref) {
+      casted->deref = nir_build_deref_cast(&b->nb, &p->deref->def,
+                                           p->deref->modes,
+                                           pointed->type, 0);
+   } else if (p->desc_index != NULL) {
+      /* Nothing to do for descriptor index pointers. */
+   } else if (p->var != NULL) {
+      struct vtn_variable *var = p->var;
+
+      if (b->options->environment == NIR_SPIRV_VULKAN &&
+          vtn_pointer_is_external_block(b, casted)) {
+         casted->desc_index = vtn_variable_resource_index(b, var, NULL);
+      } else {
+         vtn_assert(var->var);
+         nir_deref_instr *deref = nir_build_deref_var(&b->nb, var->var);
+         casted->deref = nir_build_deref_cast(&b->nb, &deref->def,
+                                              deref->modes, pointed->type, 0);
+      }
+   } else {
+      vtn_fail("Invalid pointer");
+   }
+
+   return casted;
+}
+
 void
 vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
                      const uint32_t *w, unsigned count)
@@ -2651,9 +2694,12 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       break;
    }
 
-   case SpvOpVariable: {
+   case SpvOpVariable:
+   case SpvOpUntypedVariableKHR: {
+      const bool untyped = opcode == SpvOpUntypedVariableKHR;
+
       struct vtn_type *ptr_type = vtn_get_type(b, w[1]);
-      struct vtn_type *data_type = ptr_type->pointed;
+      struct vtn_type *data_type = untyped ? vtn_get_type(b, w[4]) : ptr_type->pointed;
 
       SpvStorageClass storage_class = w[3];
 
@@ -2672,7 +2718,10 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       }
 
       struct vtn_value *val = vtn_push_value(b, w[2], vtn_value_type_pointer);
-      struct vtn_value *initializer = count > 4 ? vtn_untyped_value(b, w[4]) : NULL;
+
+      const unsigned init_idx = untyped ? 5 : 4;
+      struct vtn_value *initializer =
+         count > init_idx ? vtn_untyped_value(b, w[init_idx]) : NULL;
 
       vtn_create_variable(b, val, ptr_type, data_type, storage_class, initializer);
 
@@ -2707,14 +2756,27 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
    case SpvOpAccessChain:
    case SpvOpPtrAccessChain:
    case SpvOpInBoundsAccessChain:
-   case SpvOpInBoundsPtrAccessChain: {
+   case SpvOpInBoundsPtrAccessChain:
+   case SpvOpUntypedAccessChainKHR:
+   case SpvOpUntypedPtrAccessChainKHR:
+   case SpvOpUntypedInBoundsAccessChainKHR:
+   case SpvOpUntypedInBoundsPtrAccessChainKHR: {
       bool ptr_as_array = opcode == SpvOpPtrAccessChain ||
-                          opcode == SpvOpInBoundsPtrAccessChain;
+                          opcode == SpvOpInBoundsPtrAccessChain ||
+                          opcode == SpvOpUntypedPtrAccessChainKHR ||
+                          opcode == SpvOpUntypedInBoundsPtrAccessChainKHR;
+
+      const bool untyped = opcode == SpvOpUntypedAccessChainKHR ||
+                           opcode == SpvOpUntypedInBoundsAccessChainKHR ||
+                           opcode == SpvOpUntypedPtrAccessChainKHR ||
+                           opcode == SpvOpUntypedInBoundsPtrAccessChainKHR;
 
       struct vtn_type *ptr_type = vtn_get_type(b, w[1]);
-      struct vtn_pointer *base = vtn_pointer(b, w[3]);
+      struct vtn_pointer *base =
+         untyped ? vtn_cast_pointer(b, vtn_pointer(b, w[4]), vtn_get_type(b, w[3]))
+                 : vtn_pointer(b, w[3]);
 
-      unsigned first_idx = 4;
+      unsigned first_idx = untyped ? 5 : 4;
 
       /* The SPIR-V spec says
        *
@@ -2723,6 +2785,7 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
        *    then the behavior is undefined."
        */
       if (ptr_as_array &&
+          base->type->pointed &&
           (base->type->pointed->block || base->type->pointed->buffer_block)) {
 
          struct vtn_value *val = vtn_untyped_value(b, w[first_idx]);
@@ -2759,7 +2822,10 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
          idx++;
       }
 
-      chain->in_bounds = (opcode == SpvOpInBoundsAccessChain || opcode == SpvOpInBoundsPtrAccessChain);
+      chain->in_bounds = opcode == SpvOpInBoundsAccessChain ||
+                         opcode == SpvOpInBoundsPtrAccessChain ||
+                         opcode == SpvOpUntypedInBoundsAccessChainKHR ||
+                         opcode == SpvOpUntypedInBoundsPtrAccessChainKHR;
 
       /* Workaround for https://gitlab.freedesktop.org/mesa/mesa/-/issues/3406 */
       access |= base->access & ACCESS_NON_UNIFORM;
@@ -2780,8 +2846,15 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       struct vtn_pointer *dest = vtn_value_to_pointer(b, dest_val);
       struct vtn_pointer *src = vtn_value_to_pointer(b, src_val);
 
-      vtn_assert_types_equal(b, opcode, dest_val->type->pointed,
-                                        src_val->type->pointed);
+      /* At least one must be a regular (typed) pointer. */
+      vtn_assert(dest->type->pointed || src->type->pointed);
+
+      if (!dest->type->pointed)
+         dest = vtn_cast_pointer(b, dest, src->type->pointed);
+      else if (!src->type->pointed)
+         src = vtn_cast_pointer(b, src, dest->type->pointed);
+
+      vtn_assert_types_equal(b, opcode, src->type->pointed, dest->type->pointed);
 
       unsigned idx = 3, dest_alignment, src_alignment;
       SpvMemoryAccessMask dest_access, src_access;
@@ -2844,7 +2917,10 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       struct vtn_value *src_val = vtn_value(b, w[3], vtn_value_type_pointer);
       struct vtn_pointer *src = vtn_value_to_pointer(b, src_val);
 
-      vtn_assert_types_equal(b, opcode, res_type, src_val->type->pointed);
+      if (!src->type->pointed)
+         src = vtn_cast_pointer(b, src, res_type);
+
+      vtn_assert_types_equal(b, opcode, res_type, src->type->pointed);
 
       unsigned idx = 4, alignment;
       SpvMemoryAccessMask access;
@@ -2862,6 +2938,9 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       struct vtn_value *dest_val = vtn_pointer_value(b, w[1]);
       struct vtn_pointer *dest = vtn_value_to_pointer(b, dest_val);
       struct vtn_value *src_val = vtn_untyped_value(b, w[2]);
+
+      if (!dest->type->pointed)
+         dest = vtn_cast_pointer(b, dest, src_val->type);
 
       /* OpStore requires us to actually have a storage type */
       vtn_fail_if(dest->type->pointed->type == NULL,
@@ -2886,7 +2965,7 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
          break;
       }
 
-      vtn_assert_types_equal(b, opcode, dest_val->type->pointed, src_val->type);
+      vtn_assert_types_equal(b, opcode, dest->type->pointed, src_val->type);
 
       unsigned idx = 3, alignment;
       SpvMemoryAccessMask access;
@@ -2901,14 +2980,27 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       break;
    }
 
-   case SpvOpArrayLength: {
-      struct vtn_pointer *ptr = vtn_pointer(b, w[3]);
-      const uint32_t field = w[4];
+   case SpvOpArrayLength:
+   case SpvOpUntypedArrayLengthKHR: {
+      const bool untyped = opcode == SpvOpUntypedArrayLengthKHR;
 
-      vtn_fail_if(ptr->type->pointed->base_type != vtn_base_type_struct,
+      unsigned idx = 3;
+      struct vtn_pointer *ptr;
+      struct vtn_type *struct_type;
+      if (untyped) {
+         struct_type = vtn_get_type(b, w[idx++]);
+         ptr = vtn_cast_pointer(b, vtn_pointer(b, w[idx++]), struct_type);
+      } else {
+         ptr = vtn_pointer(b, w[idx++]);
+         struct_type = ptr->type->pointed;
+      }
+
+      const uint32_t field = w[idx];
+
+      vtn_fail_if(struct_type->base_type != vtn_base_type_struct,
                   "OpArrayLength must take a pointer to a structure type");
-      vtn_fail_if(field != ptr->type->pointed->length - 1 ||
-                  ptr->type->pointed->members[field]->base_type != vtn_base_type_array,
+      vtn_fail_if(field != struct_type->length - 1 ||
+                  struct_type->members[field]->base_type != vtn_base_type_array,
                   "OpArrayLength must reference the last member of the "
                   "structure and that must be an array");
 
@@ -2923,7 +3015,7 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       nir_def *array_length =
          nir_deref_buffer_array_length(&b->nb, 32,
                                        vtn_pointer_to_ssa(b, array),
-                                       .access=ptr->access | ptr->type->pointed->access);
+                                       .access=ptr->access | struct_type->access);
 
       vtn_push_nir_ssa(b, w[2], array_length);
       break;

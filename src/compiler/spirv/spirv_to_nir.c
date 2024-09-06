@@ -203,6 +203,7 @@ static const struct spirv_capabilities implemented_capabilities = {
    .UniformDecoration = true,
    .UniformTexelBufferArrayDynamicIndexingEXT = true,
    .UniformTexelBufferArrayNonUniformIndexingEXT = true,
+   .UntypedPointersKHR = true,
    .VariablePointers = true,
    .VariablePointersStorageBuffer = true,
    .Vector16 = true,
@@ -1348,6 +1349,9 @@ const struct glsl_type *
 vtn_type_get_nir_type(struct vtn_builder *b, struct vtn_type *type,
                       enum vtn_variable_mode mode)
 {
+   if (type == NULL)
+      return glsl_void_type();
+
    if (mode == vtn_variable_mode_atomic_counter) {
       vtn_fail_if(glsl_without_array(type->type) != glsl_uint_type(),
                   "Variables in the AtomicCounter storage class should be "
@@ -1462,6 +1466,7 @@ array_stride_decoration_cb(struct vtn_builder *b,
 
    if (dec->decoration == SpvDecorationArrayStride) {
       if (type->base_type == vtn_base_type_pointer &&
+          type->pointed != NULL &&
           (type->pointed->block || type->pointed->buffer_block)) {
          vtn_warn("A pointer to a structure decorated with *Block* or "
                   "*BufferBlock* must not have an *ArrayStride* decoration");
@@ -2107,6 +2112,26 @@ vtn_handle_type(struct vtn_builder *b, SpvOp opcode,
       for (unsigned i = 0; i < count - 3; i++) {
          val->type->params[i] = vtn_get_type(b, w[i + 3]);
       }
+      break;
+   }
+
+   case SpvOpTypeUntypedPointerKHR: {
+      SpvStorageClass storage_class = w[2];
+      val->type->base_type = vtn_base_type_pointer;
+      val->type->storage_class = storage_class;
+
+      /* For untyped pointers, storage class alone should be sufficient to
+       * identify the right variable_mode (and glsl_type).  The special cases
+       * are either handling legacy stuff or classes not used with untyped
+       * pointers.
+       */
+      enum vtn_variable_mode mode = vtn_storage_class_to_mode(
+         b, storage_class, NULL, NULL);
+      val->type->type = nir_address_format_to_glsl_type(
+         vtn_mode_to_address_format(b, mode));
+
+      vtn_foreach_decoration(b, val, array_stride_decoration_cb, NULL);
+
       break;
    }
 
@@ -5868,6 +5893,7 @@ vtn_handle_variable_or_type_instruction(struct vtn_builder *b, SpvOp opcode,
    case SpvOpTypeAccelerationStructureKHR:
    case SpvOpTypeRayQueryKHR:
    case SpvOpTypeCooperativeMatrixKHR:
+   case SpvOpTypeUntypedPointerKHR:
       vtn_handle_type(b, opcode, w, count);
       break;
 
@@ -5889,6 +5915,7 @@ vtn_handle_variable_or_type_instruction(struct vtn_builder *b, SpvOp opcode,
    case SpvOpUndef:
    case SpvOpVariable:
    case SpvOpConstantSampler:
+   case SpvOpUntypedVariableKHR:
       vtn_handle_variables(b, opcode, w, count);
       break;
 
@@ -6029,10 +6056,26 @@ vtn_handle_ptr(struct vtn_builder *b, SpvOp opcode,
 
    switch (opcode) {
    case SpvOpPtrDiff: {
-      /* OpPtrDiff returns the difference in number of elements (not byte offset). */
+      /* OpPtrDiff returns the difference in number of elements (not byte offset).
+       *
+       * SPV_KHR_untyped_pointers extension adds
+       *
+       *    "The types of Operand 1 and Operand 2 must be the same
+       *    OpTypePointer or OpTypeUntypedPointerKHR."
+       */
       unsigned elem_size, elem_align;
-      glsl_get_natural_size_align_bytes(type1->pointed->type,
-                                        &elem_size, &elem_align);
+      if (type1->pointed != NULL) {
+         vtn_assert(type2->pointed != NULL);
+         glsl_get_natural_size_align_bytes(type1->pointed->type,
+                                           &elem_size, &elem_align);
+      } else {
+         vtn_assert(type2->pointed == NULL);
+         /* If 'Operand 1' and 'Operand 2' are OpTypeUntypedPointerKHR,
+          * the array is interpreted as an array of 8-bit integers.
+          */
+         elem_size = 1;
+         elem_align = 1;
+      }
 
       def = nir_build_addr_isub(&b->nb,
                                 vtn_get_nir_ssa(b, w[3]),
@@ -6421,6 +6464,11 @@ vtn_handle_body_instruction(struct vtn_builder *b, SpvOp opcode,
    case SpvOpSubgroupBlockReadINTEL:
    case SpvOpSubgroupBlockWriteINTEL:
    case SpvOpConvertUToAccelerationStructureKHR:
+   case SpvOpUntypedAccessChainKHR:
+   case SpvOpUntypedPtrAccessChainKHR:
+   case SpvOpUntypedInBoundsAccessChainKHR:
+   case SpvOpUntypedInBoundsPtrAccessChainKHR:
+   case SpvOpUntypedArrayLengthKHR:
       vtn_handle_variables(b, opcode, w, count);
       break;
 
