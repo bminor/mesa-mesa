@@ -6699,61 +6699,21 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       break;
    }
 
-   case nir_intrinsic_quad_swap_horizontal: {
-      const brw_reg value = get_nir_src(ntb, instr->src[0]);
-      const brw_reg tmp = bld.vgrf(value.type);
-
-      const fs_builder ubld = bld.exec_all().group(s.dispatch_width / 2, 0);
-
-      const brw_reg src_left = horiz_stride(value, 2);
-      const brw_reg src_right = horiz_stride(horiz_offset(value, 1), 2);
-      const brw_reg tmp_left = horiz_stride(tmp, 2);
-      const brw_reg tmp_right = horiz_stride(horiz_offset(tmp, 1), 2);
-
-      ubld.MOV(tmp_left, src_right);
-      ubld.MOV(tmp_right, src_left);
-
-      bld.MOV(retype(dest, value.type), tmp);
-      break;
-   }
-
-   case nir_intrinsic_quad_swap_vertical: {
-      const brw_reg value = get_nir_src(ntb, instr->src[0]);
-      if (nir_src_bit_size(instr->src[0]) == 32) {
-         /* For 32-bit, we can use a SIMD4x2 instruction to do this easily */
-         const brw_reg tmp = bld.vgrf(value.type);
-         const fs_builder ubld = bld.exec_all();
-         ubld.emit(SHADER_OPCODE_QUAD_SWIZZLE, tmp, value,
-                   brw_imm_ud(BRW_SWIZZLE4(2,3,0,1)));
-         bld.MOV(retype(dest, value.type), tmp);
-      } else {
-         /* For larger data types, we have to either emit dispatch_width many
-          * MOVs or else fall back to doing indirects.
-          */
-         brw_reg idx = bld.vgrf(BRW_TYPE_W);
-         bld.XOR(idx, bld.LOAD_SUBGROUP_INVOCATION(), brw_imm_w(0x2));
-         bld.emit(SHADER_OPCODE_SHUFFLE, retype(dest, value.type), value, idx);
-      }
-      break;
-   }
-
+   case nir_intrinsic_quad_swap_horizontal:
+   case nir_intrinsic_quad_swap_vertical:
    case nir_intrinsic_quad_swap_diagonal: {
       const brw_reg value = get_nir_src(ntb, instr->src[0]);
-      if (nir_src_bit_size(instr->src[0]) == 32) {
-         /* For 32-bit, we can use a SIMD4x2 instruction to do this easily */
-         const brw_reg tmp = bld.vgrf(value.type);
-         const fs_builder ubld = bld.exec_all();
-         ubld.emit(SHADER_OPCODE_QUAD_SWIZZLE, tmp, value,
-                   brw_imm_ud(BRW_SWIZZLE4(3,2,1,0)));
-         bld.MOV(retype(dest, value.type), tmp);
-      } else {
-         /* For larger data types, we have to either emit dispatch_width many
-          * MOVs or else fall back to doing indirects.
-          */
-         brw_reg idx = bld.vgrf(BRW_TYPE_W);
-         bld.XOR(idx, bld.LOAD_SUBGROUP_INVOCATION(), brw_imm_w(0x3));
-         bld.emit(SHADER_OPCODE_SHUFFLE, retype(dest, value.type), value, idx);
+
+      enum brw_swap_direction dir;
+      switch (instr->intrinsic) {
+      case nir_intrinsic_quad_swap_horizontal: dir = BRW_SWAP_HORIZONTAL; break;
+      case nir_intrinsic_quad_swap_vertical:   dir = BRW_SWAP_VERTICAL;   break;
+      case nir_intrinsic_quad_swap_diagonal:   dir = BRW_SWAP_DIAGONAL;   break;
+      default: unreachable("invalid quad swap");
       }
+
+      bld.emit(SHADER_OPCODE_QUAD_SWAP, retype(dest, value.type),
+               value, brw_imm_ud(dir));
       break;
    }
 

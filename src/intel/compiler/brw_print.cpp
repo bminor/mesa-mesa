@@ -305,6 +305,8 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
       return "vote_equal";
    case SHADER_OPCODE_BALLOT:
       return "ballot";
+   case SHADER_OPCODE_QUAD_SWAP:
+      return "quad_swap";
    }
 
    unreachable("not reached");
@@ -610,6 +612,19 @@ brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *fi
             fprintf(file, "<%u>", stride);
 
          fprintf(file, ":%s", brw_reg_type_to_letters(inst->src[i].type));
+      }
+
+      if (inst->opcode == SHADER_OPCODE_QUAD_SWAP && i == 1) {
+         assert(inst->src[i].file == IMM);
+         const char *name = NULL;
+         switch (inst->src[i].ud) {
+         case BRW_SWAP_HORIZONTAL: name = "horizontal"; break;
+         case BRW_SWAP_VERTICAL:   name = "vertical";   break;
+         case BRW_SWAP_DIAGONAL:   name = "diagonal";   break;
+         default:
+            unreachable("invalid brw_swap_direction");
+         }
+         fprintf(file, " (%s)", name);
       }
    }
 

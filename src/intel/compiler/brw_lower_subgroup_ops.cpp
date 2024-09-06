@@ -539,6 +539,62 @@ brw_lower_ballot(fs_visitor &s, bblock_t *block, fs_inst *inst)
    return true;
 }
 
+static bool
+brw_lower_quad_swap(fs_visitor &s, bblock_t *block, fs_inst *inst)
+{
+   const fs_builder bld(&s, block, inst);
+
+   assert(inst->dst.type == inst->src[0].type);
+   brw_reg dst = inst->dst;
+   brw_reg value = inst->src[0];
+
+   assert(inst->src[1].file == IMM);
+   enum brw_swap_direction dir = (enum brw_swap_direction)inst->src[1].ud;
+
+   switch (dir) {
+   case BRW_SWAP_HORIZONTAL: {
+      const brw_reg tmp = bld.vgrf(value.type);
+
+      const fs_builder ubld = bld.exec_all().group(s.dispatch_width / 2, 0);
+
+      const brw_reg src_left = horiz_stride(value, 2);
+      const brw_reg src_right = horiz_stride(horiz_offset(value, 1), 2);
+      const brw_reg tmp_left = horiz_stride(tmp, 2);
+      const brw_reg tmp_right = horiz_stride(horiz_offset(tmp, 1), 2);
+
+      ubld.MOV(tmp_left, src_right);
+      ubld.MOV(tmp_right, src_left);
+
+      bld.MOV(retype(dst, value.type), tmp);
+      break;
+   }
+   case BRW_SWAP_VERTICAL:
+   case BRW_SWAP_DIAGONAL: {
+      if (brw_type_size_bits(value.type) == 32) {
+         /* For 32-bit, we can use a SIMD4x2 instruction to do this easily */
+         const unsigned swizzle = dir == BRW_SWAP_VERTICAL ? BRW_SWIZZLE4(2,3,0,1)
+                                                           : BRW_SWIZZLE4(3,2,1,0);
+         const brw_reg tmp = bld.vgrf(value.type);
+         const fs_builder ubld = bld.exec_all();
+         ubld.emit(SHADER_OPCODE_QUAD_SWIZZLE, tmp, value, brw_imm_ud(swizzle));
+         bld.MOV(dst, tmp);
+      } else {
+         /* For larger data types, we have to either emit dispatch_width many
+          * MOVs or else fall back to doing indirects.
+          */
+         const unsigned xor_mask = dir == BRW_SWAP_VERTICAL ? 0x2 : 0x3;
+         brw_reg idx = bld.vgrf(BRW_TYPE_W);
+         bld.XOR(idx, bld.LOAD_SUBGROUP_INVOCATION(), brw_imm_w(xor_mask));
+         bld.emit(SHADER_OPCODE_SHUFFLE, dst, value, idx);
+      }
+      break;
+   }
+   }
+
+   inst->remove(block);
+   return true;
+}
+
 bool
 brw_fs_lower_subgroup_ops(fs_visitor &s)
 {
@@ -563,6 +619,10 @@ brw_fs_lower_subgroup_ops(fs_visitor &s)
 
       case SHADER_OPCODE_BALLOT:
          progress |= brw_lower_ballot(s, block, inst);
+         break;
+
+      case SHADER_OPCODE_QUAD_SWAP:
+         progress |= brw_lower_quad_swap(s, block, inst);
          break;
 
       default:

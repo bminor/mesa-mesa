@@ -451,6 +451,13 @@ enum opcode {
     */
    SHADER_OPCODE_SEL_EXEC,
 
+   /* Swap values inside a quad based on the direction.
+    *
+    * Source 0: Value.
+    * Source 1: Immediate with brw_swap_direction.
+    */
+   SHADER_OPCODE_QUAD_SWAP,
+
    /* This turns into an align16 mov from src0 to dst with a swizzle
     * provided as an immediate in src1.
     */
@@ -721,6 +728,12 @@ enum brw_reduce_op {
    BRW_REDUCE_OP_AND,
    BRW_REDUCE_OP_OR,
    BRW_REDUCE_OP_XOR,
+};
+
+enum brw_swap_direction {
+   BRW_SWAP_HORIZONTAL,
+   BRW_SWAP_VERTICAL,
+   BRW_SWAP_DIAGONAL,
 };
 
 enum ENUM_PACKED brw_predicate {

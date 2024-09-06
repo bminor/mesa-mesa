@@ -649,6 +649,7 @@ instruction_requires_packed_data(fs_inst *inst)
    case FS_OPCODE_DDY_FINE:
    case FS_OPCODE_DDY_COARSE:
    case SHADER_OPCODE_QUAD_SWIZZLE:
+   case SHADER_OPCODE_QUAD_SWAP:
       return true;
    default:
       return false;
