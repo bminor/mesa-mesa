@@ -1118,8 +1118,10 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    const struct pvr_device_runtime_info *dev_runtime_info =
       &pdevice->dev_runtime_info;
    const struct pvr_device_info *dev_info = &pdevice->dev_info;
+   const struct pvr_rt_dataset *rt_dataset = job->rt_dataset;
    const enum ROGUE_CR_ISP_AA_MODE_TYPE isp_aa_mode =
       pvr_cr_isp_aa_mode_type(job->samples);
+   struct pvr_rt_mtile_info tiling_info = { 0 };
 
    enum ROGUE_CR_ZLS_FORMAT_TYPE zload_format = ROGUE_CR_ZLS_FORMAT_TYPE_F32Z;
    uint32_t *stream_ptr = (uint32_t *)state->fw_stream;
@@ -1332,6 +1334,11 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    }
    stream_ptr += pvr_cmd_length(CR_ISP_AA);
 
+   pvr_rt_mtile_info_init(dev_info,
+                          &tiling_info,
+                          rt_dataset->width,
+                          rt_dataset->height,
+                          rt_dataset->samples);
    pvr_csb_pack (stream_ptr, CR_ISP_CTL, value) {
       value.sample_pos = true;
       value.process_empty_tiles = job->process_empty_tiles;
@@ -1343,8 +1350,20 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
       value.dbias_is_int = PVR_HAS_ERN(dev_info, 42307) &&
                            pvr_zls_format_type_is_int(job->ds.zls_format);
 
-      if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support))
+      if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
          value.skip_init_hdrs = true;
+
+         if (PVR_HAS_QUIRK(dev_info, 72168)) {
+            /* x_tile_max is the 0-based index of the last 16x16 tile in a row.
+             * We cannot set SKIP_INIT_HDRS if the number of tile group rows is
+             * odd AND the width is <= 2 tiles.
+             */
+            if (((((tiling_info.y_tile_max + 1) / 2) & 0x1) == 1) &&
+                (tiling_info.x_tile_max <= 1)) {
+               value.skip_init_hdrs = false;
+            }
+         }
+      }
    }
    /* FIXME: When pvr_setup_tiles_in_flight() is refactored it might be
     * possible to fully pack CR_ISP_CTL above rather than having to OR in part
