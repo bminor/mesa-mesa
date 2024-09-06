@@ -3754,7 +3754,7 @@
         "description": "radv: fix allocating sparse descriptor buffers in the 32-bit addr space",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "059391b63114055a5349f8aef9c3f03245a2aa07",
         "notes": null
