@@ -111,6 +111,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_bind_memory2                      = true,
    .KHR_buffer_device_address             = true,
    .KHR_create_renderpass2                = true,
+   .KHR_compute_shader_derivatives        = true,
    .KHR_copy_commands2                    = true,
    .KHR_dedicated_allocation              = true,
    .KHR_deferred_host_operations          = true,
@@ -750,6 +751,10 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
 
       /* KHR_shader_float_controls2 */
       .shaderFloatControls2 = true,
+
+      /* VK_KHR_compute_shader_derivatives */
+      .computeDerivativeGroupQuads = true,
+      .computeDerivativeGroupLinear = true,
    };
 }
 
@@ -1217,6 +1222,9 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .maxRayDispatchInvocationCount = 1024 * 1024 * 64,
       .shaderGroupHandleAlignment = 16,
       .maxRayHitAttributeSize = LVP_RAY_HIT_ATTRIBS_SIZE,
+
+      /* VK_KHR_compute_shader_derivatives */
+      .meshAndTaskShaderDerivatives = true,
    };
 
    /* Vulkan 1.0 */

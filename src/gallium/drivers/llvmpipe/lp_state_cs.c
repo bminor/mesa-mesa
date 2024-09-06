@@ -741,9 +741,25 @@ generate_compute(struct llvmpipe_context *lp,
       LLVMValueRef block_x_size_vec = lp_build_broadcast_scalar(&bld, block_x_size_arg);
       LLVMValueRef block_y_size_vec = lp_build_broadcast_scalar(&bld, block_y_size_arg);
 
-      system_values.thread_id[0] = LLVMBuildURem(gallivm->builder, invocation_index, block_x_size_vec, "");
-      system_values.thread_id[1] = LLVMBuildUDiv(gallivm->builder, invocation_index, block_x_size_vec, "");
-      system_values.thread_id[1] = LLVMBuildURem(gallivm->builder, system_values.thread_id[1], block_y_size_vec, "");
+      if (nir->info.derivative_group == DERIVATIVE_GROUP_QUADS) {
+         /* x = (invocation_index / 4 * 2 + invocation_index % 2) % block_width */
+         LLVMValueRef quad_x = LLVMBuildAnd(builder, invocation_index, lp_build_const_int_vec(gallivm, bld.type, ~3u), "");
+         quad_x = LLVMBuildUDiv(builder, quad_x, lp_build_const_int_vec(gallivm, bld.type, 2), "");
+         LLVMValueRef quad_sub_x = LLVMBuildURem(builder, invocation_index, lp_build_const_int_vec(gallivm, bld.type, 2), "");
+         system_values.thread_id[0] = LLVMBuildAdd(builder, quad_x, quad_sub_x, "");
+         system_values.thread_id[0] = LLVMBuildURem(builder, system_values.thread_id[0], block_x_size_vec, "");
+         /* y = (invocation_index / block_width / 2 * 2 + (invocation_index / 2) % 2) % block_height */
+         LLVMValueRef quad_y = LLVMBuildUDiv(builder, invocation_index, block_x_size_vec, "");
+         quad_y = LLVMBuildAnd(builder, quad_y, lp_build_const_int_vec(gallivm, bld.type, ~1u), "");
+         LLVMValueRef quad_sub_y = LLVMBuildUDiv(builder, invocation_index, lp_build_const_int_vec(gallivm, bld.type, 2), "");
+         quad_sub_y = LLVMBuildURem(builder, quad_sub_y, lp_build_const_int_vec(gallivm, bld.type, 2), "");
+         system_values.thread_id[1] = LLVMBuildAdd(builder, quad_y, quad_sub_y, "");
+         system_values.thread_id[1] = LLVMBuildURem(builder, system_values.thread_id[1], block_y_size_vec, "");
+      } else {
+         system_values.thread_id[0] = LLVMBuildURem(gallivm->builder, invocation_index, block_x_size_vec, "");
+         system_values.thread_id[1] = LLVMBuildUDiv(gallivm->builder, invocation_index, block_x_size_vec, "");
+         system_values.thread_id[1] = LLVMBuildURem(gallivm->builder, system_values.thread_id[1], block_y_size_vec, "");
+      }
       system_values.thread_id[2] = LLVMBuildUDiv(gallivm->builder, invocation_index, block_x_size_vec, "");
       system_values.thread_id[2] = LLVMBuildUDiv(gallivm->builder, system_values.thread_id[2], block_y_size_vec, "");
 
