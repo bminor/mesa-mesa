@@ -3427,16 +3427,17 @@ anv_layout_to_fast_clear_type(const struct intel_device_info * const devinfo,
          return ANV_FAST_CLEAR_DEFAULT_VALUE;
       }
 
-      /* On TGL (< C0), if a block of fragment shader outputs match the
-       * surface's clear color, the HW may convert them to fast-clears (see
-       * HSD 1607794140).  This can lead to rendering corruptions if not
-       * handled properly. We restrict the clear color to zero to avoid issues
-       * that can occur with:
-       *     - Texture view rendering (including blorp_copy calls)
-       *     - Images with multiple levels or array layers
+      /* On gfx12, the FCV feature may convert a block of fragment shader
+       * outputs to fast-clears. If this image has multiple subresources,
+       * restrict the clear color to zero to keep the fast cleared blocks in
+       * sync.
        */
-      if (image->planes[plane].aux_usage == ISL_AUX_USAGE_FCV_CCS_E)
+      if (image->planes[plane].aux_usage == ISL_AUX_USAGE_FCV_CCS_E &&
+          (image->vk.mip_levels > 1 ||
+           image->vk.array_layers > 1 ||
+           image->vk.extent.depth > 1)) {
          return ANV_FAST_CLEAR_DEFAULT_VALUE;
+      }
 
       /* On gfx9, we only load clear colors for attachments and for BLORP
        * surfaces. Outside of those surfaces, we can only support the default
