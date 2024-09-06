@@ -2093,13 +2093,11 @@ vtn_type_is_ray_query(struct vtn_type *type)
 
 static void
 vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
-                    struct vtn_type *ptr_type, SpvStorageClass storage_class,
-                    struct vtn_value *initializer)
+                    struct vtn_type *ptr_type, struct vtn_type *data_type,
+                    SpvStorageClass storage_class, struct vtn_value *initializer)
 {
    vtn_assert(ptr_type->base_type == vtn_base_type_pointer);
-   struct vtn_type *type = ptr_type->pointed;
-
-   struct vtn_type *without_array = vtn_type_without_array(ptr_type->pointed);
+   struct vtn_type *without_array = vtn_type_without_array(data_type);
 
    enum vtn_variable_mode mode;
    nir_variable_mode nir_mode;
@@ -2151,7 +2149,7 @@ vtn_create_variable(struct vtn_builder *b, struct vtn_value *val,
    }
 
    struct vtn_variable *var = vtn_zalloc(b, struct vtn_variable);
-   var->type = type;
+   var->type = data_type;
    var->mode = mode;
    var->base_location = -1;
    var->input_attachment_index = NIR_VARIABLE_NO_INDEX;
@@ -2651,6 +2649,7 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
 
    case SpvOpVariable: {
       struct vtn_type *ptr_type = vtn_get_type(b, w[1]);
+      struct vtn_type *data_type = ptr_type->pointed;
 
       SpvStorageClass storage_class = w[3];
 
@@ -2671,7 +2670,7 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       struct vtn_value *val = vtn_push_value(b, w[2], vtn_value_type_pointer);
       struct vtn_value *initializer = count > 4 ? vtn_untyped_value(b, w[4]) : NULL;
 
-      vtn_create_variable(b, val, ptr_type, storage_class, initializer);
+      vtn_create_variable(b, val, ptr_type, data_type, storage_class, initializer);
 
       break;
    }
@@ -2690,7 +2689,7 @@ vtn_handle_variables(struct vtn_builder *b, SpvOp opcode,
       ptr_type->type = nir_address_format_to_glsl_type(
          vtn_mode_to_address_format(b, vtn_variable_mode_function));
 
-      vtn_create_variable(b, val, ptr_type, ptr_type->storage_class, NULL);
+      vtn_create_variable(b, val, ptr_type, sampler_type, ptr_type->storage_class, NULL);
 
       nir_variable *nir_var = val->pointer->var->var;
       nir_var->data.sampler.is_inline_sampler = true;
