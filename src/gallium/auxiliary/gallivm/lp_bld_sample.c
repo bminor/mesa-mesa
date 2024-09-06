@@ -924,14 +924,14 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
             }
          }
 
-         if (0) {
+         /* get more accurate results if we just sqaure rho always */
+         if (!rho_squared)
+            rho = lp_build_mul(lodf_bld, rho, rho);
+
+         if (is_lodq)
             lod = lp_build_log2(lodf_bld, rho);
-         } else {
-            /* get more accurate results if we just sqaure rho always */
-            if (!rho_squared)
-               rho = lp_build_mul(lodf_bld, rho, rho);
+         else
             lod = lp_build_fast_log2(lodf_bld, rho);
-         }
 
          /* log2(x^2) == 0.5*log2(x) */
          lod = lp_build_mul(lodf_bld, lod,
