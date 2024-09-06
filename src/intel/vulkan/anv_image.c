@@ -1928,14 +1928,6 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
    if (r != VK_SUCCESS)
       goto fail;
 
-   /* Once we have all the bindings, determine whether we can do non 0 fast
-    * clears for each plane.
-    */
-   for (uint32_t p = 0; p < image->n_planes; p++) {
-      image->planes[p].can_non_zero_fast_clear =
-         can_fast_clear_with_non_zero_color(device->info, image, p, fmt_list);
-   }
-
    if (anv_image_is_sparse(image)) {
       r = anv_image_init_sparse_bindings(image, create_info);
       if (r != VK_SUCCESS)
@@ -3411,6 +3403,10 @@ anv_layout_to_fast_clear_type(const struct intel_device_info * const devinfo,
    const VkImageUsageFlags layout_usage =
       vk_image_layout_to_usage_flags(layout, aspect) & image->vk.usage;
 
+   const struct isl_drm_modifier_info *isl_mod_info =
+      image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT ?
+      isl_drm_modifier_get_info(image->vk.drm_format_mod) : NULL;
+
    switch (aux_state) {
    case ISL_AUX_STATE_CLEAR:
       unreachable("We never use this state");
@@ -3418,7 +3414,28 @@ anv_layout_to_fast_clear_type(const struct intel_device_info * const devinfo,
    case ISL_AUX_STATE_PARTIAL_CLEAR:
    case ISL_AUX_STATE_COMPRESSED_CLEAR:
 
-      if (!image->planes[plane].can_non_zero_fast_clear)
+      /* Generally, enabling non-zero fast-clears is dependent on knowing which
+       * formats will be used with the surface. So, disable them if we lack
+       * this knowledge.
+       *
+       * For dmabufs with clear color modifiers, we already restrict
+       * problematic accesses for the clear color during the negotiation
+       * phase. So, don't restrict clear color support in this case.
+       */
+      if (anv_image_view_formats_incomplete(image) &&
+          !(isl_mod_info && isl_mod_info->supports_clear_color)) {
+         return ANV_FAST_CLEAR_DEFAULT_VALUE;
+      }
+
+      /* On TGL (< C0), if a block of fragment shader outputs match the
+       * surface's clear color, the HW may convert them to fast-clears (see
+       * HSD 1607794140).  This can lead to rendering corruptions if not
+       * handled properly. We restrict the clear color to zero to avoid issues
+       * that can occur with:
+       *     - Texture view rendering (including blorp_copy calls)
+       *     - Images with multiple levels or array layers
+       */
+      if (image->planes[plane].aux_usage == ISL_AUX_USAGE_FCV_CCS_E)
          return ANV_FAST_CLEAR_DEFAULT_VALUE;
 
       /* On gfx9, we only load clear colors for attachments and for BLORP

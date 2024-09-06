@@ -1242,7 +1242,7 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
 
    if (must_init_fast_clear_state) {
       if (image->planes[plane].aux_usage == ISL_AUX_USAGE_FCV_CCS_E) {
-         assert(!image->planes[plane].can_non_zero_fast_clear);
+         /* Ensure the raw and converted clear colors are in sync. */
          const uint32_t zero_pixel[4] = {};
          set_image_clear_color(cmd_buffer, image, aspect, zero_pixel);
       }
