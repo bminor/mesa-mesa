@@ -1363,6 +1363,16 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
                value.skip_init_hdrs = false;
             }
          }
+
+         if (PVR_HAS_QUIRK(dev_info, 72463)) {
+            /* We cannot set SKIP_INIT_HDRS if the number of tile group rows is
+             * <= 2 AND the width is <= 2 tiles.
+             */
+            if ((((tiling_info.y_tile_max + 1) / 2) <= 2) &&
+                (tiling_info.x_tile_max <= 1)) {
+               value.skip_init_hdrs = false;
+            }
+         }
       }
    }
    /* FIXME: When pvr_setup_tiles_in_flight() is refactored it might be
