@@ -2824,7 +2824,7 @@
         "description": "intel/dev: Fix warning for max_threads_per_psd when devinfo->verx10 == 120",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3e4f73b3a0e0b9420f9614d3e271c49225c6f5d3",
         "notes": null
