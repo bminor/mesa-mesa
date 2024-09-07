@@ -300,6 +300,7 @@ BranchCtrl      { return BRANCH_CTRL; }
 
  /* data types */
 :?B     { return TYPE_B; }
+:?BF    { return TYPE_BF; }
 :?D     { return TYPE_D; }
 :?DF    { return TYPE_DF; }
 :?F     { return TYPE_F; }

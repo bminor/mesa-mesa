@@ -356,6 +356,7 @@ i965_asm_set_instruction_options(struct brw_codegen *p,
 %token <integer> TYPE_Q TYPE_UQ
 %token <integer> TYPE_V TYPE_UV
 %token <integer> TYPE_F TYPE_HF
+%token <integer> TYPE_BF
 %token <integer> TYPE_DF
 %token <integer> TYPE_VF
 
@@ -1883,6 +1884,7 @@ reg_type:
    | TYPE_UQ   { $$ = BRW_TYPE_UQ; }
    | TYPE_Q    { $$ = BRW_TYPE_Q;  }
    | TYPE_HF   { $$ = BRW_TYPE_HF; }
+   | TYPE_BF   { $$ = BRW_TYPE_BF; }
    ;
 
 imm_type:
