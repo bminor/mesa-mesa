@@ -442,6 +442,15 @@ llvmpipe_resource_create_unbacked(struct pipe_screen *_screen,
    return pt;
 }
 
+static uint64_t
+llvmpipe_resource_get_address(struct pipe_screen *_screen,
+                              struct pipe_resource *resource)
+{
+   struct llvmpipe_resource *lp_res = llvmpipe_resource(resource);
+   assert(resource->target == PIPE_BUFFER);
+   return (uint64_t)(uintptr_t)lp_res->data;
+}
+
 
 static struct pipe_memory_object *
 llvmpipe_memobj_create_from_handle(struct pipe_screen *pscreen,
@@ -1792,6 +1801,7 @@ llvmpipe_init_screen_resource_funcs(struct pipe_screen *screen)
    screen->resource_from_handle = llvmpipe_resource_from_handle;
    screen->resource_from_memobj = llvmpipe_resource_from_memobj;
    screen->resource_get_handle = llvmpipe_resource_get_handle;
+   screen->resource_get_address = llvmpipe_resource_get_address;
    screen->can_create_resource = llvmpipe_can_create_resource;
 
    screen->resource_create_unbacked = llvmpipe_resource_create_unbacked;
