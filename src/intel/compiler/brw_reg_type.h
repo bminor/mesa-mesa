@@ -100,7 +100,7 @@ brw_type_is_float(enum brw_reg_type t)
 static inline bool
 brw_type_is_uint(enum brw_reg_type t)
 {
-   return (t & BRW_TYPE_BASE_MASK) == 0;
+   return (t & BRW_TYPE_BASE_MASK) == BRW_TYPE_BASE_UINT;
 }
 
 static inline bool
@@ -112,7 +112,7 @@ brw_type_is_sint(enum brw_reg_type t)
 static inline bool
 brw_type_is_int(enum brw_reg_type t)
 {
-   return !brw_type_is_float(t);
+   return brw_type_is_uint(t) || brw_type_is_sint(t);
 }
 
 static inline bool

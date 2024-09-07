@@ -1089,7 +1089,7 @@ has_dst_aligned_region_restriction(const intel_device_info *devinfo,
     * simulator suggest that only 32x32-bit integer multiplication is
     * restricted.
     */
-   const bool is_dword_multiply = !brw_type_is_float(exec_type) &&
+   const bool is_dword_multiply = brw_type_is_int(exec_type) &&
       ((inst->opcode == BRW_OPCODE_MUL &&
         MIN2(brw_type_size_bytes(inst->src[0].type), brw_type_size_bytes(inst->src[1].type)) >= 4) ||
        (inst->opcode == BRW_OPCODE_MAD &&

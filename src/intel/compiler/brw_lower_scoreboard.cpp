@@ -83,7 +83,7 @@ namespace {
             if (inst->src[i].file != BAD_FILE &&
                 !inst->is_control_source(i)) {
                const brw_reg_type t = inst->src[i].type;
-               has_int_src |= !brw_type_is_float(t);
+               has_int_src |= brw_type_is_int(t);
                has_long_src |= brw_type_size_bytes(t) >= 8;
             }
          }
@@ -116,7 +116,7 @@ namespace {
    inferred_exec_pipe(const struct intel_device_info *devinfo, const brw_inst *inst)
    {
       const brw_reg_type t = get_exec_type(inst);
-      const bool is_dword_multiply = !brw_type_is_float(t) &&
+      const bool is_dword_multiply = brw_type_is_int(t) &&
          ((inst->opcode == BRW_OPCODE_MUL &&
            MIN2(brw_type_size_bytes(inst->src[0].type),
                 brw_type_size_bytes(inst->src[1].type)) >= 4) ||
