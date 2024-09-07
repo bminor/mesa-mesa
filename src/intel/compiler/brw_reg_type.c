@@ -46,6 +46,9 @@ brw_type_encode(const struct intel_device_info *devinfo,
                                : devinfo->has_64bit_float))
       return INVALID_HW_REG_TYPE;
 
+   if (brw_type_is_bfloat(type) && !devinfo->has_bfloat16)
+      return INVALID_HW_REG_TYPE;
+
    if (devinfo->ver >= 12) {
       if (brw_type_is_vector_imm(type))
          return type & ~(BRW_TYPE_VECTOR | BRW_TYPE_SIZE_MASK);
@@ -121,8 +124,9 @@ brw_type_decode(const struct intel_device_info *devinfo,
          else if (file == IMM)
             return (t & BRW_TYPE_BASE_SINT) ? BRW_TYPE_V : BRW_TYPE_UV;
       }
-      /* signed-integer floats -> no */
-      if ((t & BRW_TYPE_BASE_MASK) == BRW_TYPE_BASE_MASK)
+      if (brw_type_is_bfloat(t) && !devinfo->has_bfloat16)
+         return BRW_TYPE_INVALID;
+      if (brw_type_is_float_or_bfloat(t) && brw_type_size_bits(t) < 16)
          return BRW_TYPE_INVALID;
       return t;
    } else if (devinfo->ver >= 11) {
@@ -191,6 +195,9 @@ unsigned
 brw_type_encode_for_3src(const struct intel_device_info *devinfo,
                          enum brw_reg_type type)
 {
+   if (brw_type_is_bfloat(type) && !devinfo->has_bfloat16)
+      return INVALID_HW_REG_TYPE;
+
    if (devinfo->ver >= 12) {
       /* size mask and SINT type bit match exactly */
       return type & 0b111;
@@ -238,7 +245,7 @@ brw_type_decode_for_3src(const struct intel_device_info *devinfo,
       unsigned base_field = hw_type & BRW_TYPE_BASE_MASK;
       if (exec_type == BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT) {
          base_field |= BRW_TYPE_BASE_FLOAT;
-         if (base_field & BRW_TYPE_BASE_SINT)
+         if (base_field == BRW_TYPE_BASE_BFLOAT && !devinfo->has_bfloat16)
             return BRW_TYPE_INVALID;
       }
       return (enum brw_reg_type) (base_field | size_field);
@@ -287,6 +294,8 @@ brw_reg_type_to_letters(enum brw_reg_type type)
       [BRW_TYPE_HF] = "HF",
       [BRW_TYPE_F]  = "F",
       [BRW_TYPE_DF] = "DF",
+
+      [BRW_TYPE_BF] = "BF",
 
       [BRW_TYPE_UV] = "UV",
       [BRW_TYPE_V]  = "V",

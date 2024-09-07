@@ -1031,7 +1031,7 @@ get_exec_type(const brw_inst *inst)
          if (brw_type_size_bytes(t) > brw_type_size_bytes(exec_type))
             exec_type = t;
          else if (brw_type_size_bytes(t) == brw_type_size_bytes(exec_type) &&
-                  brw_type_is_float(t))
+                  brw_type_is_float_or_bfloat(t))
             exec_type = t;
       }
    }

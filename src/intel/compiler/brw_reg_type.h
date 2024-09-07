@@ -42,8 +42,8 @@ struct intel_device_info;
  * Enum for register/value types throughout the compiler.
  *
  * Bits 1:0 is the size of the type as a U2 'n' where size = 8 * 2^n.
- * Bit 3 is set for signed integer types (B/W/D/Q/V/UV).
- * Bit 4 is set for floating point types.  Unsigned types have neither set.
+ * Bits 3:4 is set to identify base type: unsigned integer, signed integer,
+ * regular floating point and bfloat.
  * Bit 5 is set for vector immediates.
  *
  * While this is inspired by the Tigerlake encodings (and nir_alu_type),
@@ -74,18 +74,23 @@ enum PACKED brw_reg_type {
    BRW_TYPE_DF = 0b01011,
    /** @} */
 
+   /** Floating point types (bfloat variants): 16-bit @{ */
+   BRW_TYPE_BF  = 0b01101,
+   /** @} */
+
    /** Vector immediate types */
    BRW_TYPE_UV = 0b10001,
    BRW_TYPE_V  = 0b10101,
    BRW_TYPE_VF = 0b11010,
    /** @} */
 
-   BRW_TYPE_SIZE_MASK  = 0b00011, /* type is (8 << x) bits */
-   BRW_TYPE_BASE_MASK  = 0b01100, /* base types expressed in these bits */
-   BRW_TYPE_BASE_UINT  = 0b00000, /* unsigned types have no base bits set */
-   BRW_TYPE_BASE_SINT  = 0b00100, /* type has a signed integer base type */
-   BRW_TYPE_BASE_FLOAT = 0b01000, /* type has a floating point base type */
-   BRW_TYPE_VECTOR     = 0b10000, /* type is a vector immediate */
+   BRW_TYPE_SIZE_MASK   = 0b00011, /* type is (8 << x) bits */
+   BRW_TYPE_BASE_MASK   = 0b01100, /* base types expressed in these bits */
+   BRW_TYPE_BASE_UINT   = 0b00000, /* unsigned types have no base bits set */
+   BRW_TYPE_BASE_SINT   = 0b00100, /* type has a signed integer base type */
+   BRW_TYPE_BASE_FLOAT  = 0b01000, /* type has a floating point base type */
+   BRW_TYPE_BASE_BFLOAT = 0b01100, /* type has a floating point (bfloat variant) base type */
+   BRW_TYPE_VECTOR      = 0b10000, /* type is a vector immediate */
 
    BRW_TYPE_INVALID    = 0b11111,
    BRW_TYPE_LAST       = BRW_TYPE_INVALID,
@@ -95,6 +100,18 @@ static inline bool
 brw_type_is_float(enum brw_reg_type t)
 {
    return (t & BRW_TYPE_BASE_MASK) == BRW_TYPE_BASE_FLOAT;
+}
+
+static inline bool
+brw_type_is_bfloat(enum brw_reg_type t)
+{
+   return (t & BRW_TYPE_BASE_MASK) == BRW_TYPE_BASE_BFLOAT;
+}
+
+static inline bool
+brw_type_is_float_or_bfloat(enum brw_reg_type t)
+{
+   return brw_type_is_float(t) || brw_type_is_bfloat(t);
 }
 
 static inline bool

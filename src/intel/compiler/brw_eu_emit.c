@@ -611,7 +611,7 @@ brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
       brw_eu_inst_set_3src_a1_dst_hstride(devinfo, inst,
                                           to_3src_align1_dst_hstride(dest.hstride));
 
-      if (brw_type_is_float(dest.type)) {
+      if (brw_type_is_float_or_bfloat(dest.type)) {
          brw_eu_inst_set_3src_a1_exec_type(devinfo, inst,
                                         BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT);
       } else {
@@ -771,7 +771,7 @@ brw_dpas_three_src(struct brw_codegen *p, enum opcode opcode,
    brw_eu_inst_set_dpas_3src_dst_reg_nr(devinfo, inst, phys_nr(devinfo, dest));
    brw_eu_inst_set_dpas_3src_dst_subreg_nr(devinfo, inst, phys_subnr(devinfo, dest));
 
-   if (brw_type_is_float(dest.type)) {
+   if (brw_type_is_float_or_bfloat(dest.type)) {
       brw_eu_inst_set_dpas_3src_exec_type(devinfo, inst,
                                        BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT);
    } else {

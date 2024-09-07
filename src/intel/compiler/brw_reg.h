@@ -363,6 +363,7 @@ get_exec_type(const enum brw_reg_type type)
    case BRW_TYPE_UV:
       return BRW_TYPE_UW;
    case BRW_TYPE_VF:
+   case BRW_TYPE_BF:
       return BRW_TYPE_F;
    default:
       return type;

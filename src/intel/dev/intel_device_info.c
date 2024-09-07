@@ -1045,6 +1045,7 @@ static const struct intel_device_info intel_device_info_sg1 = {
    .has_llc = false,                                            \
    .has_ray_tracing = true,                                     \
    .has_mesh_shading = true,                                    \
+   .has_bfloat16 = true,                                        \
    .has_coarse_pixel_primitive_and_cb = true,                   \
    .needs_null_push_constant_tbimr_workaround = true,           \
    .simulator_id = 29

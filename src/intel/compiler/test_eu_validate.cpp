@@ -443,6 +443,7 @@ TEST_P(validation_test, invalid_type_encoding_3src_a1)
       { BRW_TYPE_UD, E(INT),   true  },
       { BRW_TYPE_W,  E(INT),   true  },
       { BRW_TYPE_UW, E(INT),   true  },
+      { BRW_TYPE_BF, E(FLOAT), devinfo.has_bfloat16 },
 
       /* There are no ternary instructions that can operate on B-type sources
        * on Gfx11-12. Src1/Src2 cannot be B-typed either.
