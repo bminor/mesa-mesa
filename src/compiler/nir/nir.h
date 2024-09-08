@@ -6864,6 +6864,9 @@ typedef struct {
    /** nir_var_mem_shared max base offset */
    uint32_t shared_max;
 
+   /** nir_var_mem_shared atomic max base offset */
+   uint32_t shared_atomic_max;
+
    /** nir_load/store_buffer_amd max base offset */
    uint32_t buffer_max;
 

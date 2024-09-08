@@ -207,6 +207,7 @@ radv_optimize_nir_algebraic(nir_shader *nir, bool opt_offsets, bool opt_mqsad)
          .uniform_max = 0,
          .buffer_max = ~0,
          .shared_max = ~0,
+         .shared_atomic_max = ~0,
       };
       NIR_PASS(_, nir, nir_opt_offsets, &offset_options);
    }
