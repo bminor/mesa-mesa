@@ -3153,7 +3153,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       break;
    case nir_intrinsic_shared_atomic:
    case nir_intrinsic_shared_atomic_swap: {
-      LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[0], 0);
+      LLVMValueRef ptr = get_memory_ptr(ctx, instr->src[0], nir_intrinsic_base(instr));
       result = visit_var_atomic(ctx, instr, ptr, 1);
       break;
    }
