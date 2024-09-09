@@ -2924,7 +2924,7 @@
         "description": "d3d12: Fix shader selector hash to hash array instead of pointer-to-array",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "116d0bf76be2bb970c933b4c36dc80a2c78531c4",
         "notes": null
