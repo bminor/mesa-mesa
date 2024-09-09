@@ -2014,7 +2014,7 @@
         "description": "mesa: Reset vbo attributes after flushing them to Current in glPopAttrib",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2fe771f4e963cbb3a3032f1e148fb594c3c1a2a3",
         "notes": null
