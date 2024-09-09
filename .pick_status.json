@@ -2454,7 +2454,7 @@
         "description": "nir_lower_mem_access_bit_sizes: Assert when 0 components or bits are requested",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
