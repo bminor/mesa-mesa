@@ -5112,21 +5112,14 @@ swizzle_nir_scratch_addr(nir_to_brw_state &ntb,
 }
 
 static unsigned
-choose_oword_block_size_dwords(const struct intel_device_info *devinfo,
-                               unsigned dwords)
+choose_block_size_dwords(const intel_device_info *devinfo, unsigned dwords)
 {
-   unsigned block;
-   if (devinfo->has_lsc && dwords >= 64) {
-      block = 64;
-   } else if (dwords >= 32) {
-      block = 32;
-   } else if (dwords >= 16) {
-      block = 16;
-   } else {
-      block = 8;
-   }
-   assert(block <= dwords);
-   return block;
+   const unsigned min_block = 8;
+   const unsigned max_block = devinfo->has_lsc ? 64 : 32;
+
+   const unsigned block = 1 << util_logbase2(dwords);
+
+   return CLAMP(block, min_block, max_block);
 }
 
 static brw_reg
@@ -7248,7 +7241,7 @@ fs_nir_emit_memory_access(nir_to_brw_state &ntb,
       unsigned block_comps = components;
 
       for (done = 0; done < total; done += block_comps) {
-         block_comps = choose_oword_block_size_dwords(devinfo, total - done);
+         block_comps = choose_block_size_dwords(devinfo, total - done);
          const unsigned block_bytes = block_comps * (nir_bit_size / 8);
 
          srcs[MEMORY_LOGICAL_COMPONENTS] = brw_imm_ud(block_comps);
