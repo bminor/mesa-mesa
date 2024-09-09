@@ -235,7 +235,7 @@ vkcts-vega10-valve:
     GPU_VERSION: radv-vega10-aco
     B2C_TIMEOUT_BOOT_MINUTES: 70
     B2C_TIMEOUT_OVERALL_MINUTES: 70
-    RADV_PERFTEST: transfer_queue
+    RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
 vkcts-renoir-valve:
   extends:
@@ -247,7 +247,7 @@ vkcts-renoir-valve:
     GPU_VERSION: radv-renoir-aco
     B2C_TIMEOUT_BOOT_MINUTES: 130
     B2C_TIMEOUT_OVERALL_MINUTES: 130
-    RADV_PERFTEST: transfer_queue
+    RADV_PERFTEST: transfer_queue,video_decode,video_encode
     FDO_CI_CONCURRENT: 12  # HACK: Reduce the memory pressure
 
 vkcts-navi10-valve:
@@ -258,7 +258,7 @@ vkcts-navi10-valve:
     - .radv-valve-manual-rules
   variables:
     GPU_VERSION: radv-navi10-aco
-    RADV_PERFTEST: transfer_queue
+    RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
 vkcts-navi21-valve:
   timeout: 35m
@@ -327,7 +327,7 @@ vkcts-raphael-valve:
     GPU_VERSION: radv-raphael-aco
     B2C_TIMEOUT_BOOT_MINUTES: 35
     B2C_TIMEOUT_OVERALL_MINUTES: 40
-    RADV_PERFTEST: transfer_queue
+    RADV_PERFTEST: transfer_queue,video_decode,video_encode
 
 vkcts-navi31-valve:
   timeout: 25m
@@ -339,7 +339,7 @@ vkcts-navi31-valve:
   variables:
     GPU_VERSION: radv-navi31-aco
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
-    RADV_PERFTEST: transfer_queue
+    RADV_PERFTEST: transfer_queue,video_decode,video_encode
     B2C_TIMEOUT_BOOT_MINUTES: 20
     B2C_TIMEOUT_OVERALL_MINUTES: 20
 

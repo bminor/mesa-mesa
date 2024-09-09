@@ -33,6 +33,18 @@ dEQP-VK.api.copy_and_blit.copy_commands2.image_to_image_transfer_queue.all_forma
 dEQP-VK.api.copy_and_blit.copy_commands2.image_to_image_transfer_queue.all_formats.depth_stencil.2d_to_2d.d32_sfloat_s8_uint_d32_sfloat_s8_uint_depth_stencil_aspects.general_optimal,Fail
 dEQP-VK.api.copy_and_blit.copy_commands2.image_to_image_transfer_queue.all_formats.depth_stencil.2d_to_2d.d32_sfloat_s8_uint_d32_sfloat_s8_uint_separate_layouts.optimal_optimal,Fail
 
+# Video failures (needs firmware updates).
+dEQP-VK.video.synchronization.decode_av1.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization.decode_h264.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization.decode_h265.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization.encode_h264.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization.encode_h265.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization2.decode_av1.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization2.decode_h264.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization2.decode_h265.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization2.encode_h264.basic.event.device_set_reset,Fail
+dEQP-VK.video.synchronization2.encode_h265.basic.event.device_set_reset,Fail
+
 # Issues specific to the Raphael. The list can be reduced when disabling VRS flat shading
 dEQP-VK.fragment_shading_rate.renderpass2.monolithic.fragdepth_baselevel.dynamic.attachment.noshaderrate.keep.replace.1x1.samples1.ms,Fail
 dEQP-VK.fragment_shading_rate.renderpass2.monolithic.fragdepth_baselevel.dynamic.attachment.noshaderrate.keep.replace.1x1.samples1.vs,Fail
