@@ -1226,6 +1226,20 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    bool needs_tiling = !rs->rasterizer_discard_enable;
 
    if (!rs->rasterizer_discard_enable) {
+      struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+      uint32_t rasterization_samples =
+         cmdbuf->vk.dynamic_graphics_state.ms.rasterization_samples;
+
+      /* If there's no attachment, and the FB descriptor hasn't been allocated
+       * yet, we patch nr_samples to match rasterization_samples, otherwise, we
+       * make sure those two numbers match. */
+      if (!batch->fb.desc.gpu && !cmdbuf->state.gfx.render.bound_attachments) {
+         assert(rasterization_samples > 0);
+         fbinfo->nr_samples = rasterization_samples;
+      } else {
+         assert(rasterization_samples == fbinfo->nr_samples);
+      }
+
       result = panvk_per_arch(cmd_alloc_fb_desc)(cmdbuf);
       if (result != VK_SUCCESS)
          return;
