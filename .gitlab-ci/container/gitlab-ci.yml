@@ -161,6 +161,8 @@ debian/android_build:
     MESA_IMAGE_TAG: &debian-android_build ${DEBIAN_BUILD_TAG}
     ANDROID_SDK_VERSION: 33
     ANDROID_NDK: android-ndk-r25b
+    LLVM_VERSION: llvmorg-18.1.8
+    LLVM_ARTIFACT_NAME: android-x86_64-llvm-20241219
 
 .use-debian/android_build:
   extends:

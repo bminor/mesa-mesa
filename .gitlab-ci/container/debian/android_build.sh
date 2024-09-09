@@ -23,7 +23,7 @@ apt-get install -y --no-remove "${EPHEMERAL[@]}"
 ndk=$ANDROID_NDK
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
   -o $ndk.zip https://dl.google.com/android/repository/$ndk-linux.zip
-unzip -d / $ndk.zip "$ndk/toolchains/llvm/*"
+unzip -d / $ndk.zip "$ndk/source.properties" "$ndk/build/cmake/*" "$ndk/toolchains/llvm/*"
 rm $ndk.zip
 # Since it was packed as a zip file, symlinks/hardlinks got turned into
 # duplicate files.  Turn them into hardlinks to save on container space.
@@ -99,5 +99,10 @@ done
 
 cd ..
 rm -rf $LIBELF_VERSION
+
+
+# Build LLVM libraries for Android only if necessary, uploading a copy to S3
+# to avoid rebuilding it in a future run if the version does not change.
+bash .gitlab-ci/container/build-android-x86_64-llvm.sh
 
 apt-get purge -y "${EPHEMERAL[@]}"
