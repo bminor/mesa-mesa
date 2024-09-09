@@ -2794,7 +2794,7 @@
         "description": "vl/bitstream: use an int32_t for se encoding.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1782ab4d8bab0b0e1b57a334b8f802bd821421c0",
         "notes": null
