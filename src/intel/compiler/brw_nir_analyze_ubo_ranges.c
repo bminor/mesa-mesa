@@ -129,11 +129,6 @@ analyze_ubos_block(struct ubo_analysis_state *state, nir_block *block)
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
       switch (intrin->intrinsic) {
       case nir_intrinsic_load_uniform:
-      case nir_intrinsic_image_deref_load:
-      case nir_intrinsic_image_deref_store:
-      case nir_intrinsic_image_deref_atomic:
-      case nir_intrinsic_image_deref_atomic_swap:
-      case nir_intrinsic_image_deref_size:
          state->uses_regular_uniforms = true;
          continue;
 
