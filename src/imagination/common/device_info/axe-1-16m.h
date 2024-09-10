@@ -96,6 +96,9 @@ static const struct pvr_device_features pvr_device_features_33_V_11_3 = {
    .vdm_cam_size = 32U,
 
    .has_s8xe = true,
+   .has_usc_itr_parallel_instances = true,
+
+   .usc_itr_parallel_instances = 4U,
 };
 
 static const struct pvr_device_enhancements pvr_device_enhancements_33_15_11_3 = {

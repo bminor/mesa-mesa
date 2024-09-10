@@ -294,6 +294,8 @@ struct pvr_device_features {
    bool has_tpu_image_state_v2 : 1;
    bool has_unified_store_depth : 1;
    bool has_usc_f16sop_u8 : 1;
+   bool has_usc_itrsmp : 1;
+   bool has_usc_itrsmp_enhanced : 1;
    bool has_usc_min_output_registers_per_pix : 1;
    bool has_usc_pixel_partition_mask : 1;
    bool has_usc_slots : 1;
@@ -333,6 +335,9 @@ struct pvr_device_features {
    /* Derived features. */
    bool has_requires_fb_cdc_zls_setup : 1;
    bool has_s8xe : 1;
+   bool has_usc_itr_parallel_instances : 1;
+
+   uint32_t usc_itr_parallel_instances;
 };
 
 struct pvr_device_enhancements {
