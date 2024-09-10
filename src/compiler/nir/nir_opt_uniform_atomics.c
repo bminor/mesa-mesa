@@ -298,9 +298,9 @@ opt_uniform_atomics(nir_function_impl *impl, bool fs_atomics_predicated)
              nir_num_opcodes)
             continue;
 
-         if (nir_src_is_divergent(intrin->src[offset_src]))
+         if (nir_src_is_divergent(&intrin->src[offset_src]))
             continue;
-         if (nir_src_is_divergent(intrin->src[offset2_src]))
+         if (nir_src_is_divergent(&intrin->src[offset2_src]))
             continue;
 
          if (is_atomic_already_optimized(b.shader, intrin))

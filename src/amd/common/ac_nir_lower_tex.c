@@ -432,7 +432,7 @@ move_coords_from_divergent_cf(struct move_tex_coords_state *state, nir_function_
                      *divergent_discard = true;
                   break;
                case nir_intrinsic_terminate_if:
-                  if (divergent_cf || nir_src_is_divergent(intrin->src[0]))
+                  if (divergent_cf || nir_src_is_divergent(&intrin->src[0]))
                      *divergent_discard = true;
                   break;
                case nir_intrinsic_ddx:
@@ -458,7 +458,7 @@ move_coords_from_divergent_cf(struct move_tex_coords_state *state, nir_function_
          nir_if *nif = nir_cf_node_as_if(cf_node);
          bool divergent_discard_then = *divergent_discard;
          bool divergent_discard_else = *divergent_discard;
-         bool then_else_divergent = divergent_cf || nir_src_is_divergent(nif->condition);
+         bool then_else_divergent = divergent_cf || nir_src_is_divergent(&nif->condition);
          progress |= move_coords_from_divergent_cf(state, impl, &nif->then_list,
                                                    &divergent_discard_then, then_else_divergent);
          progress |= move_coords_from_divergent_cf(state, impl, &nif->else_list,

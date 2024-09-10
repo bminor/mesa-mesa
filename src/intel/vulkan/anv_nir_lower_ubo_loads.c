@@ -44,7 +44,7 @@ lower_ubo_load_instr(nir_builder *b, nir_intrinsic_instr *load,
    unsigned byte_size = bit_size / 8;
 
    nir_def *val;
-   if (!nir_src_is_divergent(load->src[0]) && nir_src_is_const(load->src[1])) {
+   if (!nir_src_is_divergent(&load->src[0]) && nir_src_is_const(load->src[1])) {
       uint32_t offset = nir_src_as_uint(load->src[1]);
 
       /* Things should be component-aligned. */

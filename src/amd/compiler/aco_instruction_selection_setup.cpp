@@ -194,16 +194,16 @@ apply_nuw_to_offsets(isel_context* ctx, nir_function_impl* impl)
          case nir_intrinsic_load_constant:
          case nir_intrinsic_load_uniform:
          case nir_intrinsic_load_push_constant:
-            if (!nir_src_is_divergent(intrin->src[0]))
+            if (!nir_src_is_divergent(&intrin->src[0]))
                apply_nuw_to_ssa(ctx, intrin->src[0].ssa);
             break;
          case nir_intrinsic_load_ubo:
          case nir_intrinsic_load_ssbo:
-            if (!nir_src_is_divergent(intrin->src[1]))
+            if (!nir_src_is_divergent(&intrin->src[1]))
                apply_nuw_to_ssa(ctx, intrin->src[1].ssa);
             break;
          case nir_intrinsic_store_ssbo:
-            if (!nir_src_is_divergent(intrin->src[2]))
+            if (!nir_src_is_divergent(&intrin->src[2]))
                apply_nuw_to_ssa(ctx, intrin->src[2].ssa);
             break;
          case nir_intrinsic_load_scratch: apply_nuw_to_ssa(ctx, intrin->src[0].ssa); break;
@@ -682,7 +682,7 @@ init_context(isel_context* ctx, nir_shader* shader)
                      if (nir_cf_node_prev(&block->cf_node) &&
                          nir_cf_node_prev(&block->cf_node)->type == nir_cf_node_if) {
                         nir_if* nif = nir_cf_node_as_if(nir_cf_node_prev(&block->cf_node));
-                        divergent_merge = nir_src_is_divergent(nif->condition);
+                        divergent_merge = nir_src_is_divergent(&nif->condition);
                      }
 
                      /* In case of uniform phis after divergent merges, ensure that the dst is an

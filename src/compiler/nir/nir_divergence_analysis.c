@@ -69,6 +69,12 @@ struct divergence_state {
 static bool
 visit_cf_list(struct exec_list *list, struct divergence_state *state);
 
+bool
+nir_src_is_divergent(nir_src *src)
+{
+   return src->ssa->divergent;
+}
+
 static bool
 visit_alu(nir_alu_instr *instr, struct divergence_state *state)
 {

@@ -2900,7 +2900,7 @@ emit_store_output_gs(struct v3d_compile *c, nir_intrinsic_instr *instr)
          */
          bool is_uniform_offset =
                  !vir_in_nonuniform_control_flow(c) &&
-                 !nir_src_is_divergent(instr->src[1]);
+                 !nir_src_is_divergent(&instr->src[1]);
          vir_VPM_WRITE_indirect(c, val, offset, is_uniform_offset);
 
         if (vir_in_nonuniform_control_flow(c)) {
@@ -2928,7 +2928,7 @@ emit_store_output_vs(struct v3d_compile *c, nir_intrinsic_instr *instr)
                                              vir_uniform_ui(c, base));
                 bool is_uniform_offset =
                         !vir_in_nonuniform_control_flow(c) &&
-                        !nir_src_is_divergent(instr->src[1]);
+                        !nir_src_is_divergent(&instr->src[1]);
                 vir_VPM_WRITE_indirect(c, val, offset, is_uniform_offset);
         }
 }
@@ -3154,7 +3154,7 @@ ntq_emit_load_unifa(struct v3d_compile *c, nir_intrinsic_instr *instr)
 
         /* We can only use unifa if the offset is uniform */
         nir_src offset = is_uniform ? instr->src[0] : instr->src[1];
-        if (nir_src_is_divergent(offset))
+        if (nir_src_is_divergent(&offset))
                 return false;
 
         /* Emitting loads from unifa may not be safe under non-uniform control
@@ -4370,7 +4370,7 @@ ntq_emit_if(struct v3d_compile *c, nir_if *nif)
         bool was_in_control_flow = c->in_control_flow;
         c->in_control_flow = true;
         if (!vir_in_nonuniform_control_flow(c) &&
-            !nir_src_is_divergent(nif->condition)) {
+            !nir_src_is_divergent(&nif->condition)) {
                 ntq_emit_uniform_if(c, nif);
         } else {
                 ntq_emit_nonuniform_if(c, nif);

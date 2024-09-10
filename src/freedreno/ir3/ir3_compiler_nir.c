@@ -4355,7 +4355,7 @@ nif_can_be_predicated(nir_if *nif)
    /* For non-divergent branches, predication is more expensive than a branch
     * because the latter can potentially skip all instructions.
     */
-   if (!nir_src_is_divergent(nif->condition))
+   if (!nir_src_is_divergent(&nif->condition))
       return false;
 
    /* Although it could potentially be possible to allow a limited form of

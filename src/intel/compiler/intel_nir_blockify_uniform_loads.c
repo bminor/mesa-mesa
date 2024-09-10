@@ -50,7 +50,7 @@ intel_nir_blockify_uniform_loads_instr(nir_builder *b,
       if (devinfo->ver < 9)
          return false;
 
-      if (nir_src_is_divergent(intrin->src[1]))
+      if (nir_src_is_divergent(&intrin->src[1]))
          return false;
 
       if (intrin->def.bit_size != 32)
@@ -73,7 +73,7 @@ intel_nir_blockify_uniform_loads_instr(nir_builder *b,
       if (devinfo->ver < 11)
          return false;
 
-      if (nir_src_is_divergent(intrin->src[0]))
+      if (nir_src_is_divergent(&intrin->src[0]))
          return false;
 
       if (intrin->def.bit_size != 32)
@@ -91,7 +91,7 @@ intel_nir_blockify_uniform_loads_instr(nir_builder *b,
       return true;
 
    case nir_intrinsic_load_global_constant:
-      if (nir_src_is_divergent(intrin->src[0]))
+      if (nir_src_is_divergent(&intrin->src[0]))
          return false;
 
       if (intrin->def.bit_size != 32)
