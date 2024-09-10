@@ -1725,6 +1725,8 @@ elems=[
    ('centroid', 0b10),
 ])
 
+F_ITER_MODE1 = field_enum_subtype(name='iter_mode1', parent=F_ITER_MODE, num_bits=1)
+
 F_PERSP_CTL = field_enum_type(
 name='persp_ctl', num_bits=2,
 elems=[
@@ -2933,6 +2935,34 @@ pieces=[
    ('sched_ctrl_b4', (4, '3:2')),
    ('drc_b4', (4, '1')),
    ('sat', (4, '0')),
+
+   # itrsmp
+   ('texoff_7_2', (2, '7:2')),
+   ('drc_b2', (2, '1')),
+   ('itrsmp_mode_0', (2, '0')),
+
+   ('smpoff_7_2', (3, '7:2')),
+   ('dmn', (3, '1:0')),
+
+   ('woff_b4_7_2', (4, '7:2')),
+   ('proj', (4, '1')),
+
+   ('ext5', (5, '7')),
+   ('f16_b5', (5, '6')),
+   ('sched_ctrl_b5', (5, '5:4')),
+   ('chan', (5, '3:2')),
+   ('nncoords', (5, '1')),
+   ('fcnorm', (5, '0')),
+
+   ('ext6', (6, '7')),
+   ('itr_count_b6', (6, '6:3')),
+   ('comparison', (6, '2')),
+   ('rsvd6_itrsmp', (6, '1:0')),
+
+   ('rsvd7_itrsmp', (7, '7:5')),
+   ('coff_idx_ctrl_b7', (7, '4:3')),
+   ('woff_idx_ctrl_b7', (7, '2:1')),
+   ('itrsmp_mode_1', (7, '0')),
 ],
 fields=[
    # Branch
@@ -2980,6 +3010,34 @@ fields=[
    ('sched_ctrl_b4', (F_SCHED_CTRL, ['sched_ctrl_b4'])),
    ('drc_b4', (F_UINT1, ['drc_b4'])),
    ('sat', (F_BOOL, ['sat'])),
+
+   # itrsmp
+   ('texoff', (F_UINT6MUL4, ['texoff_7_2'])),
+   ('drc_b2', (F_UINT1, ['drc_b2'])),
+   ('itrsmp_mode1', (F_ITER_MODE1, ['itrsmp_mode_0'])),
+
+   ('smpoff', (F_UINT6MUL4, ['smpoff_7_2'])),
+   ('dmn', (F_DMN, ['dmn'])),
+
+   ('woff_b4', (F_UINT6MUL4, ['woff_b4_7_2'])),
+   ('proj', (F_BOOL, ['proj'])),
+
+   ('ext5', (F_BOOL, ['ext5'])),
+   ('f16_b5', (F_BOOL, ['f16_b5'])),
+   ('sched_ctrl_b5', (F_SCHED_CTRL, ['sched_ctrl_b5'])),
+   ('chan', (F_UINT2_POS_INC, ['chan'])),
+   ('nncoords', (F_BOOL, ['nncoords'])),
+   ('fcnorm', (F_BOOL, ['fcnorm'])),
+
+   ('ext6', (F_BOOL, ['ext6'])),
+   ('itr_count_b6', (F_UINT4_POS_WRAP, ['itr_count_b6'])),
+   ('comparison', (F_BOOL, ['comparison'])),
+   ('rsvd6_itrsmp', (F_UINT2, ['rsvd6_itrsmp'], 0)),
+
+   ('rsvd7_itrsmp', (F_UINT3, ['rsvd7_itrsmp'], 0)),
+   ('coff_idx_ctrl_b7', (F_IDX_CTRL, ['coff_idx_ctrl_b7'])),
+   ('woff_idx_ctrl_b7', (F_IDX_CTRL, ['woff_idx_ctrl_b7'])),
+   ('itrsmp_mode', (F_ITER_MODE, ['itrsmp_mode_1', 'itrsmp_mode_0'])),
 ])
 
 I_BRANCH = bit_struct(
@@ -3074,4 +3132,102 @@ field_mappings=[
    ('sched_ctrl', 'sched_ctrl_b4'),
    ('drc', 'drc_b4'),
    'sat',
+])
+
+I_ITRSMP = bit_struct(
+name='itrsmp',
+bit_set=I_CTRL,
+field_mappings=[
+   'dest',
+
+   'coff',
+   ('p', 'p_itr'),
+
+   'texoff',
+   ('drc', 'drc_b2'),
+   ('mode', 'itrsmp_mode1'),
+
+   'smpoff',
+   'dmn',
+
+   ('woff', 'woff_b4'),
+   'proj',
+   'sat',
+
+   ('ext5', 'ext5', False),
+   ('f16', 'f16_b5'),
+   ('sched_ctrl', 'sched_ctrl_b5'),
+   'chan',
+   'nncoords',
+   'fcnorm',
+])
+
+I_ITRSMP_EXT = bit_struct(
+name='itrsmp_ext',
+bit_set=I_CTRL,
+field_mappings=[
+   'dest',
+
+   'coff',
+   ('p', 'p_itr'),
+
+   'texoff',
+   ('drc', 'drc_b2'),
+   ('mode', 'itrsmp_mode1'),
+
+   'smpoff',
+   'dmn',
+
+   ('woff', 'woff_b4'),
+   'proj',
+   'sat',
+
+   ('ext5', 'ext5', True),
+   ('f16', 'f16_b5'),
+   ('sched_ctrl', 'sched_ctrl_b5'),
+   'chan',
+   'nncoords',
+   'fcnorm',
+
+   ('ext6', 'ext6', False),
+   ('count', 'itr_count_b6'),
+   'comparison',
+   'rsvd6_itrsmp',
+])
+
+I_ITRSMP_EXT2 = bit_struct(
+name='itrsmp_ext2',
+bit_set=I_CTRL,
+field_mappings=[
+   'dest',
+
+   'coff',
+   ('p', 'p_itr'),
+
+   'texoff',
+   ('drc', 'drc_b2'),
+
+   'smpoff',
+   'dmn',
+
+   ('woff', 'woff_b4'),
+   'proj',
+   'sat',
+
+   ('ext5', 'ext5', True),
+   ('f16', 'f16_b5'),
+   ('sched_ctrl', 'sched_ctrl_b5'),
+   'chan',
+   'nncoords',
+   'fcnorm',
+
+   ('ext6', 'ext6', True),
+   ('count', 'itr_count_b6'),
+   'comparison',
+   'rsvd6_itrsmp',
+
+   'rsvd7_itrsmp',
+   ('coff_idx_ctrl', 'coff_idx_ctrl_b7'),
+   ('woff_idx_ctrl', 'woff_idx_ctrl_b7'),
+   ('mode', 'itrsmp_mode'),
 ])
