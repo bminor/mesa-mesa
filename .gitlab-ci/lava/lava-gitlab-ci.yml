@@ -39,7 +39,7 @@ variables:
   tags:
     - $RUNNER_TAG
   after_script:
-    - curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -s "https://${JOB_RESULTS_PATH}" | tar --zstd -x
+    - curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -s "https://${JOB_RESULTS_PATH}" | tar --warning=no-timestamp --zstd -x
   needs:
     - !reference [.required-for-hardware-jobs, needs]
     - job: alpine/x86_64_lava_ssh_client
