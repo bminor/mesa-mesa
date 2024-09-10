@@ -304,7 +304,9 @@ def fix_lava_gitlab_section_log():
 
 def print_log(msg: str, *args) -> None:
     # Reset color from timestamp, since `msg` can tint the terminal color
-    print(f"{CONSOLE_LOG['RESET']}{datetime.now(tz=UTC)}: {msg}", *args)
+    ts = datetime.now(tz=UTC)
+    ts_str = f"{ts.hour:02}:{ts.minute:02}:{ts.second:02}.{int(ts.microsecond / 1000):03}"
+    print(f"{CONSOLE_LOG['RESET']}{ts_str}: {msg}", *args)
 
 
 def fatal_err(msg, exception=None):
