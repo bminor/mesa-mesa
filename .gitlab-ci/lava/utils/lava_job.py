@@ -173,7 +173,7 @@ class LAVAJob:
                 self.status = result.group(1)
                 self.exit_code = int(result.group(2))
 
-                last_line = idx + 1
+                last_line = idx
                 # We reached the log end here. hwci script has finished.
                 break
         return lava_lines[:last_line]

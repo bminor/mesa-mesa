@@ -136,39 +136,6 @@ def raise_lava_error(job) -> None:
     job.status = "fail"
 
 
-def show_final_job_data(
-    job, colour=f"{CONSOLE_LOG['FG_GREEN']}", timestamp_relative_to=None
-):
-    with GitlabSection(
-        "job_data",
-        "LAVA job info",
-        type=LogSectionType.LAVA_POST_PROCESSING,
-        start_collapsed=True,
-        colour=colour,
-        timestamp_relative_to=timestamp_relative_to,
-    ):
-        wait_post_processing_retries: int = WAIT_FOR_LAVA_POST_PROCESSING_RETRIES
-        while not job.is_post_processed() and wait_post_processing_retries > 0:
-            # Wait a little until LAVA finishes processing metadata
-            time.sleep(WAIT_FOR_LAVA_POST_PROCESSING_SEC)
-            wait_post_processing_retries -= 1
-
-        if not job.is_post_processed():
-            waited_for_sec: int = (
-                WAIT_FOR_LAVA_POST_PROCESSING_RETRIES
-                * WAIT_FOR_LAVA_POST_PROCESSING_SEC
-            )
-            print_log(
-                f"Waited for {waited_for_sec} seconds "
-                "for LAVA to post-process the job, it haven't finished yet. "
-                "Dumping it's info anyway"
-            )
-
-        details: dict[str, str] = job.show()
-        for field, value in details.items():
-            print(f"{field:<15}: {value}")
-        job.refresh_log()
-
 
 def fetch_logs(job, max_idle_time, log_follower) -> None:
     is_job_hanging(job, max_idle_time)
@@ -303,21 +270,40 @@ def structural_log_phases(job, log_follower):
 
 
 def print_job_final_status(job, timestamp_relative_to):
+    job.refresh_log()
     if job.status == "running":
         job.status = "hung"
 
-    color = LAVAJob.COLOR_STATUS_MAP.get(job.status, CONSOLE_LOG["FG_RED"])
-    print_log(
-        f"{color}"
-        f"Hardware test job finished with status: {job.status}"
-        f"{CONSOLE_LOG['RESET']}"
-    )
+    colour = LAVAJob.COLOR_STATUS_MAP.get(job.status, CONSOLE_LOG["FG_RED"])
+    with GitlabSection(
+        "job_data",
+        f"Hardware job info for {job.status} job",
+        type=LogSectionType.LAVA_POST_PROCESSING,
+        start_collapsed=True,
+        colour=colour,
+        timestamp_relative_to=timestamp_relative_to,
+    ):
+        wait_post_processing_retries: int = WAIT_FOR_LAVA_POST_PROCESSING_RETRIES
+        while not job.is_post_processed() and wait_post_processing_retries > 0:
+            # Wait a little until LAVA finishes processing metadata
+            time.sleep(WAIT_FOR_LAVA_POST_PROCESSING_SEC)
+            wait_post_processing_retries -= 1
 
-    job.refresh_log()
-    show_final_job_data(
-        job, colour=f"{CONSOLE_LOG['FG_BOLD_RED']}",
-        timestamp_relative_to=timestamp_relative_to
-    )
+        if not job.is_post_processed():
+            waited_for_sec: int = (
+                WAIT_FOR_LAVA_POST_PROCESSING_RETRIES
+                * WAIT_FOR_LAVA_POST_PROCESSING_SEC
+            )
+            print_log(
+                "Timed out waiting for LAVA post-processing after "
+                f"{waited_for_sec} seconds. Printing incomplete information "
+                "anyway."
+            )
+
+        details: dict[str, str] = job.show()
+        for field, value in details.items():
+            print(f"{field:<15}: {value}")
+        job.refresh_log()
 
 
 def execute_job_with_retries(
