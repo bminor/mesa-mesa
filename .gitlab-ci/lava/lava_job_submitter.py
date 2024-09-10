@@ -16,7 +16,7 @@ import sys
 import time
 from collections import defaultdict
 from dataclasses import dataclass, fields
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from os import environ, getenv, path
 from typing import Any, Optional
 
@@ -91,7 +91,7 @@ CI_JOB_STARTED_AT_RAW = getenv("CI_JOB_STARTED_AT", "")
 CI_JOB_STARTED_AT: datetime = (
     datetime.fromisoformat(CI_JOB_STARTED_AT_RAW)
     if CI_JOB_STARTED_AT_RAW
-    else datetime.now(timezone.utc)
+    else datetime.now(tz=UTC)
 )
 
 
@@ -181,7 +181,7 @@ def fetch_logs(job, max_idle_time, log_follower) -> None:
 def is_job_hanging(job, max_idle_time):
     # Poll to check for new logs, assuming that a prolonged period of
     # silence means that the device has died and we should try it again
-    if datetime.now() - job.last_log_time > max_idle_time:
+    if datetime.now(tz=UTC) - job.last_log_time > max_idle_time:
         max_idle_time_min = max_idle_time.total_seconds() / 60
 
         raise MesaCITimeoutError(
@@ -236,7 +236,7 @@ def wait_for_job_get_started(job, attempt_no):
     print_log(f"Waiting for job {job.job_id} to start.")
     while not job.is_started():
         current_job_duration_sec: int = int(
-            (datetime.now(timezone.utc) - CI_JOB_STARTED_AT).total_seconds()
+            (datetime.now(tz=UTC) - CI_JOB_STARTED_AT).total_seconds()
         )
         remaining_time_sec: int = max(0, CI_JOB_TIMEOUT_SEC - current_job_duration_sec)
         if remaining_time_sec < EXPECTED_JOB_DURATION_SEC:
@@ -322,7 +322,7 @@ def execute_job_with_retries(
         job = LAVAJob(proxy, job_definition, job_log)
         STRUCTURAL_LOG["dut_attempt_counter"] = attempt_no
         try:
-            job_log["submitter_start_time"] = datetime.now().isoformat()
+            job_log["submitter_start_time"] = datetime.now(tz=UTC).isoformat()
             submit_job(job)
             queue_section = GitlabSection(
                 id="dut_queue",
@@ -343,7 +343,7 @@ def execute_job_with_retries(
             print_job_final_status(job)
             # If LAVA takes too long to post process the job, the submitter
             # gives up and proceeds.
-            job_log["submitter_end_time"] = datetime.now().isoformat()
+            job_log["submitter_end_time"] = datetime.now(tz=UTC).isoformat()
             last_failed_job = job
             print_log(
                 f"{CONSOLE_LOG['BOLD']}"
@@ -565,11 +565,5 @@ if __name__ == "__main__":
     # more buffering
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
-    # LAVA farm is giving datetime in UTC timezone, let's set it locally for the
-    # script run.
-    # Setting environ here will not affect the system time, as the os.environ
-    # lifetime follows the script one.
-    environ["TZ"] = "UTC"
-    time.tzset()
 
     fire.Fire(LAVAJobSubmitter)

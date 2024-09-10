@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import TYPE_CHECKING, Optional
 
 from lava.utils.console_format import CONSOLE_LOG
@@ -82,7 +82,7 @@ class GitlabSection:
 
     def start(self) -> str:
         assert not self.has_finished, "Starting an already finished section"
-        self.__start_time = datetime.now()
+        self.__start_time = datetime.now(tz=UTC)
         return self.print_start_section()
 
     def print_start_section(self) -> str:
@@ -90,7 +90,7 @@ class GitlabSection:
 
     def end(self) -> str:
         assert self.has_started, "Ending an uninitialized section"
-        self.__end_time = datetime.now()
+        self.__end_time = datetime.now(tz=UTC)
         assert (
             self.__end_time >= self.__start_time
         ), "Section execution time will be negative"
@@ -104,6 +104,6 @@ class GitlabSection:
             return self.__end_time - self.__start_time
 
         if self.has_started:
-            return datetime.now() - self.__start_time
+            return datetime.now(tz=UTC) - self.__start_time
 
         return None

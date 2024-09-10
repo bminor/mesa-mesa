@@ -14,7 +14,7 @@ import logging
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional, Union
 
 from lava.exceptions import MesaCITimeoutError
@@ -304,7 +304,7 @@ def fix_lava_gitlab_section_log():
 
 def print_log(msg: str, *args) -> None:
     # Reset color from timestamp, since `msg` can tint the terminal color
-    print(f"{CONSOLE_LOG['RESET']}{datetime.now()}: {msg}", *args)
+    print(f"{CONSOLE_LOG['RESET']}{datetime.now(tz=UTC)}: {msg}", *args)
 
 
 def fatal_err(msg, exception=None):

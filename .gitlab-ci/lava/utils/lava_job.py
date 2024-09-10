@@ -1,7 +1,7 @@
 import re
 import xmlrpc
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Optional
 
 from lava.exceptions import (
@@ -39,7 +39,7 @@ class LAVAJob:
         self.__exception: Optional[Exception] = None
 
     def heartbeat(self) -> None:
-        self.last_log_time: datetime = datetime.now()
+        self.last_log_time: datetime = datetime.now(tz=UTC)
         self.status = "running"
 
     @property
