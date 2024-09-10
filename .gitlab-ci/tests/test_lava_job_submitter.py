@@ -86,7 +86,7 @@ def test_submit_and_follow_respects_exceptions(mock_sleep, mock_proxy, exception
     with pytest.raises(MesaCIException):
         proxy = mock_proxy(side_effect=exception)
         job = LAVAJob(proxy, "")
-        log_follower = bootstrap_log_follower(main_test_case="")
+        log_follower = bootstrap_log_follower(main_test_case="", timestamp_relative_to=None)
         follow_job_execution(job, log_follower)
 
 
@@ -242,7 +242,7 @@ def test_retriable_follow_job(
 ):
     with expectation:
         proxy = mock_proxy(side_effect=test_log, **proxy_args)
-        job: LAVAJob = retriable_follow_job(proxy, "", "")
+        job: LAVAJob = retriable_follow_job(proxy, "", "", None)
         assert job_result == job.status
         assert exit_code == job.exit_code
 
@@ -269,6 +269,7 @@ def test_simulate_a_long_wait_to_start_a_job(
         ),
         "",
         "",
+        None
     )
 
     end_time = datetime.now()
@@ -323,7 +324,7 @@ def test_log_corruption(mock_sleep, data_sequence, expected_exception, mock_prox
     proxy_logs_mock = proxy_mock.scheduler.jobs.logs
     proxy_logs_mock.side_effect = data_sequence
     with expected_exception:
-        retriable_follow_job(proxy_mock, "", "")
+        retriable_follow_job(proxy_mock, "", "", None)
 
 
 LAVA_RESULT_LOG_SCENARIOS = {
@@ -440,7 +441,7 @@ def test_full_yaml_log(mock_proxy, frozen_time, lava_job_submitter):
     try:
         time_travel_to_test_time()
         start_time = datetime.now()
-        retriable_follow_job(proxy, "", "")
+        retriable_follow_job(proxy, "", "", None)
     finally:
         try:
             # If the job fails, maybe there will be no structured log

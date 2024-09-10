@@ -136,13 +136,16 @@ def raise_lava_error(job) -> None:
     job.status = "fail"
 
 
-def show_final_job_data(job, colour=f"{CONSOLE_LOG['FG_GREEN']}"):
+def show_final_job_data(
+    job, colour=f"{CONSOLE_LOG['FG_GREEN']}", timestamp_relative_to=None
+):
     with GitlabSection(
         "job_data",
         "LAVA job info",
         type=LogSectionType.LAVA_POST_PROCESSING,
         start_collapsed=True,
         colour=colour,
+        timestamp_relative_to=timestamp_relative_to,
     ):
         wait_post_processing_retries: int = WAIT_FOR_LAVA_POST_PROCESSING_RETRIES
         while not job.is_post_processed() and wait_post_processing_retries > 0:
@@ -252,16 +255,21 @@ def wait_for_job_get_started(job, attempt_no):
     print_log(f"Job {job.job_id} started.")
 
 
-def bootstrap_log_follower(main_test_case) -> LogFollower:
+def bootstrap_log_follower(main_test_case, timestamp_relative_to) -> LogFollower:
     start_section = GitlabSection(
         id="dut_boot",
         header="Booting hardware device",
         type=LogSectionType.LAVA_BOOT,
         start_collapsed=True,
         suppress_end=True, # init-stage2 prints the end for us
+        timestamp_relative_to=timestamp_relative_to,
     )
     print(start_section.start())
-    return LogFollower(starting_section=start_section, main_test_case=main_test_case)
+    return LogFollower(
+        starting_section=start_section,
+        main_test_case=main_test_case,
+        timestamp_relative_to=timestamp_relative_to
+    )
 
 
 def follow_job_execution(job, log_follower):
@@ -294,7 +302,7 @@ def structural_log_phases(job, log_follower):
     job.log["dut_job_phases"] = phases
 
 
-def print_job_final_status(job):
+def print_job_final_status(job, timestamp_relative_to):
     if job.status == "running":
         job.status = "hung"
 
@@ -306,11 +314,15 @@ def print_job_final_status(job):
     )
 
     job.refresh_log()
-    show_final_job_data(job, colour=f"{CONSOLE_LOG['FG_BOLD_RED']}")
+    show_final_job_data(
+        job, colour=f"{CONSOLE_LOG['FG_BOLD_RED']}",
+        timestamp_relative_to=timestamp_relative_to
+    )
 
 
 def execute_job_with_retries(
-    proxy, job_definition, retry_count, jobs_log, main_test_case
+    proxy, job_definition, retry_count, jobs_log, main_test_case,
+    timestamp_relative_to
 ) -> Optional[LAVAJob]:
     last_failed_job = None
     for attempt_no in range(1, retry_count + 2):
@@ -328,10 +340,13 @@ def execute_job_with_retries(
                 header="Waiting for hardware device to become available",
                 type=LogSectionType.LAVA_QUEUE,
                 start_collapsed=False,
+                timestamp_relative_to=timestamp_relative_to
             )
             with queue_section as section:
                 wait_for_job_get_started(job, attempt_no)
-            log_follower: LogFollower = bootstrap_log_follower(main_test_case)
+            log_follower: LogFollower = bootstrap_log_follower(
+                main_test_case, timestamp_relative_to
+            )
             follow_job_execution(job, log_follower)
             return job
 
@@ -339,7 +354,7 @@ def execute_job_with_retries(
             job.handle_exception(exception)
 
         finally:
-            print_job_final_status(job)
+            print_job_final_status(job, timestamp_relative_to)
             # If LAVA takes too long to post process the job, the submitter
             # gives up and proceeds.
             job_log["submitter_end_time"] = datetime.now(tz=UTC).isoformat()
@@ -355,12 +370,14 @@ def execute_job_with_retries(
     return last_failed_job
 
 
-def retriable_follow_job(proxy, job_definition, main_test_case) -> LAVAJob:
+def retriable_follow_job(
+    proxy, job_definition, main_test_case, timestamp_relative_to
+) -> LAVAJob:
     number_of_retries = NUMBER_OF_RETRIES_TIMEOUT_DETECTION
 
     last_attempted_job = execute_job_with_retries(
         proxy, job_definition, number_of_retries, STRUCTURAL_LOG["dut_jobs"],
-        main_test_case
+        main_test_case, timestamp_relative_to
     )
 
     if last_attempted_job.exception is not None:
@@ -417,6 +434,7 @@ class LAVAJobSubmitter(PathResolver):
     ssh_client_image: str = None  # x86_64 SSH client image to follow the job's output
     project_name: str = None  # Project name to be used in the job name
     starting_section: str = None # GitLab section used to start
+    job_submitted_at: [str | datetime] = None
     __structured_log_context = contextlib.nullcontext()  # Structured Logger context
 
     def __post_init__(self) -> None:
@@ -427,6 +445,8 @@ class LAVAJobSubmitter(PathResolver):
         if not self.structured_log_file:
             return
 
+        if self.job_submitted_at:
+            self.job_submitted_at = datetime.fromisoformat(self.job_submitted_at)
         self.__structured_log_context = StructuredLoggerWrapper(self).logger_context()
         self.proxy = setup_lava_proxy()
 
@@ -482,7 +502,8 @@ class LAVAJobSubmitter(PathResolver):
                 id=self.starting_section,
                 header="Preparing to submit job for scheduling",
                 type=LogSectionType.LAVA_SUBMIT,
-                start_collapsed=True
+                start_collapsed=True,
+                timestamp_relative_to=self.job_submitted_at,
             )
             gl.start()
             print(gl.end())
@@ -492,7 +513,8 @@ class LAVAJobSubmitter(PathResolver):
             try:
                 last_attempt_job = retriable_follow_job(
                     self.proxy, job_definition,
-                    f'{self.project_name}_{self.mesa_job_name}')
+                    f'{self.project_name}_{self.mesa_job_name}',
+                    self.job_submitted_at)
 
             except MesaCIRetryError as retry_exception:
                 last_attempt_job = retry_exception.last_job

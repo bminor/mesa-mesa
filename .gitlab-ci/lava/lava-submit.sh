@@ -66,4 +66,5 @@ PYTHONPATH=artifacts/ artifacts/lava/lava_job_submitter.py \
 	--ssh-client-image "${LAVA_SSH_CLIENT_IMAGE}" \
 	--project-name "${CI_PROJECT_NAME}" \
 	--starting-section "${CURRENT_SECTION}" \
+	--job-submitted-at "${CI_JOB_STARTED_AT}" \
 	>> results/lava.log

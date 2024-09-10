@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, UTC
+from math import floor
 from typing import TYPE_CHECKING, Optional
 
 from lava.utils.console_format import CONSOLE_LOG
@@ -20,6 +21,7 @@ class GitlabSection:
     start_collapsed: bool = False
     suppress_end: bool = False
     suppress_start: bool = False
+    timestamp_relative_to: Optional[datetime] = None
     escape: str = "\x1b[0K"
     colour: str = f"{CONSOLE_LOG['FG_CYAN']}"
     __start_time: Optional[datetime] = field(default=None, init=False)
@@ -60,7 +62,12 @@ class GitlabSection:
 
         timestamp = self.get_timestamp(time)
         before_header = ":".join([preamble, timestamp, section_id])
-        colored_header = f"{self.colour}{header}\x1b[0m" if header else ""
+        if self.timestamp_relative_to:
+            delta = self.start_time - self.timestamp_relative_to
+            reltime = f"[{floor(delta.seconds / 60):02}:{(delta.seconds % 60):02}] "
+        else:
+            reltime = ""
+        colored_header = f"{self.colour}{reltime}{header}\x1b[0m" if header else ""
         header_wrapper = "\r" + f"{self.escape}{colored_header}"
 
         return f"{before_header}{header_wrapper}"

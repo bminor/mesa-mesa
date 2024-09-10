@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import Enum, auto
 from os import getenv
 from typing import Optional, Pattern, Union
@@ -75,7 +75,8 @@ class LogSection:
     collapsed: bool = False
 
     def from_log_line_to_section(
-        self, lava_log_line: dict[str, str], main_test_case: Optional[str]
+        self, lava_log_line: dict[str, str], main_test_case: Optional[str],
+        timestamp_relative_to: Optional[datetime]
     ) -> Optional[GitlabSection]:
         if lava_log_line["lvl"] not in self.levels:
             return
@@ -92,6 +93,7 @@ class LogSection:
                 start_collapsed=self.collapsed,
                 suppress_start=is_main_test_case,
                 suppress_end=is_main_test_case,
+                timestamp_relative_to=timestamp_relative_to,
             )
 
 
