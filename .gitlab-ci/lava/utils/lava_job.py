@@ -21,9 +21,9 @@ from .lava_proxy import call_proxy
 class LAVAJob:
     COLOR_STATUS_MAP: dict[str, str] = {
         "pass": CONSOLE_LOG["FG_GREEN"],
-        "hung": CONSOLE_LOG["FG_YELLOW"],
-        "fail": CONSOLE_LOG["FG_RED"],
-        "canceled": CONSOLE_LOG["FG_MAGENTA"],
+        "hung": CONSOLE_LOG["FG_BOLD_YELLOW"],
+        "fail": CONSOLE_LOG["FG_BOLD_RED"],
+        "canceled": CONSOLE_LOG["FG_BOLD_MAGENTA"],
     }
 
     def __init__(self, proxy, definition, log=defaultdict(str)) -> None:

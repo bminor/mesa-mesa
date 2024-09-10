@@ -252,7 +252,7 @@ class LogFollower:
         if line["lvl"] in ["results", "feedback", "debug"]:
             return
         elif line["lvl"] in ["warning", "error"]:
-            prefix = CONSOLE_LOG["FG_RED"]
+            prefix = CONSOLE_LOG["FG_BOLD_RED"]
             suffix = CONSOLE_LOG["RESET"]
         elif line["lvl"] == "input":
             prefix = "$ "
@@ -310,7 +310,7 @@ def print_log(msg: str, *args) -> None:
 
 
 def fatal_err(msg, exception=None):
-    colored_msg = f"{CONSOLE_LOG['FG_RED']}"
+    colored_msg = f"{CONSOLE_LOG['FG_BOLD_RED']}"
     print_log(colored_msg, f"{msg}", f"{CONSOLE_LOG['RESET']}")
     if exception:
         raise exception

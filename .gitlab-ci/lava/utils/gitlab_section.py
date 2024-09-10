@@ -19,7 +19,7 @@ class GitlabSection:
     type: LogSectionType
     start_collapsed: bool = False
     escape: str = "\x1b[0K"
-    colour: str = f"{CONSOLE_LOG['BOLD']}{CONSOLE_LOG['FG_GREEN']}"
+    colour: str = f"{CONSOLE_LOG['FG_GREEN']}"
     __start_time: Optional[datetime] = field(default=None, init=False)
     __end_time: Optional[datetime] = field(default=None, init=False)
 

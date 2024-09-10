@@ -136,7 +136,7 @@ def raise_lava_error(job) -> None:
     job.status = "fail"
 
 
-def show_final_job_data(job, colour=f"{CONSOLE_LOG['BOLD']}{CONSOLE_LOG['FG_GREEN']}"):
+def show_final_job_data(job, colour=f"{CONSOLE_LOG['FG_GREEN']}"):
     with GitlabSection(
         "job_data",
         "LAVA job info",
@@ -185,10 +185,9 @@ def is_job_hanging(job, max_idle_time):
         max_idle_time_min = max_idle_time.total_seconds() / 60
 
         raise MesaCITimeoutError(
-            f"{CONSOLE_LOG['BOLD']}"
-            f"{CONSOLE_LOG['FG_YELLOW']}"
-            f"LAVA job {job.job_id} does not respond for {max_idle_time_min} "
-            "minutes. Retry."
+            f"{CONSOLE_LOG['FG_BOLD_YELLOW']}"
+            f"LAVA job {job.job_id} unresponsive for {max_idle_time_min} "
+            "minutes; retrying the job."
             f"{CONSOLE_LOG['RESET']}",
             timeout_duration=max_idle_time,
         )
@@ -242,8 +241,7 @@ def wait_for_job_get_started(job, attempt_no):
         if remaining_time_sec < EXPECTED_JOB_DURATION_SEC:
             job.cancel()
             raise MesaCIFatalException(
-                f"{CONSOLE_LOG['BOLD']}"
-                f"{CONSOLE_LOG['FG_YELLOW']}"
+                f"{CONSOLE_LOG['FG_BOLD_YELLOW']}"
                 f"Job {job.job_id} only has {remaining_time_sec} seconds "
                 "remaining to run, but it is expected to take at least "
                 f"{EXPECTED_JOB_DURATION_SEC} seconds."
@@ -302,12 +300,12 @@ def print_job_final_status(job):
     color = LAVAJob.COLOR_STATUS_MAP.get(job.status, CONSOLE_LOG["FG_RED"])
     print_log(
         f"{color}"
-        f"LAVA Job finished with status: {job.status}"
+        f"Hardware test job finished with status: {job.status}"
         f"{CONSOLE_LOG['RESET']}"
     )
 
     job.refresh_log()
-    show_final_job_data(job, colour=f"{CONSOLE_LOG['BOLD']}{color}")
+    show_final_job_data(job, colour=f"{CONSOLE_LOG['FG_BOLD_RED']}")
 
 
 def execute_job_with_retries(
