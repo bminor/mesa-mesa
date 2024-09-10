@@ -928,6 +928,8 @@ struct pvr_pipeline {
 
    /* Saved information from pCreateInfo. */
    struct pvr_pipeline_layout *layout;
+
+   VkPipelineCreateFlags2KHR pipeline_flags;
 };
 
 struct pvr_compute_pipeline {

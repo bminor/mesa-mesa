@@ -1678,13 +1678,14 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       if (stage_index == ~0)
          continue;
 
-      result = vk_pipeline_shader_stage_to_nir(&device->vk,
-                                               0,
-                                               create_info,
-                                               spirv_options,
-                                               nir_options,
-                                               shader_mem_ctx,
-                                               nir);
+      result =
+         vk_pipeline_shader_stage_to_nir(&device->vk,
+                                         gfx_pipeline->base.pipeline_flags,
+                                         create_info,
+                                         spirv_options,
+                                         nir_options,
+                                         shader_mem_ctx,
+                                         nir);
       if (result != VK_SUCCESS)
          goto err_free_build_context;
 
