@@ -399,8 +399,17 @@ can_fast_clear_with_non_zero_color(const struct intel_device_info *devinfo,
    /* Generally, enabling non-zero fast-clears is dependent on knowing which
     * formats will be used with the surface. So, disable them if we lack this
     * knowledge.
+    *
+    * For dmabufs with clear color modifiers, we already restrict
+    * problematic accesses for the clear color during the negotiation
+    * phase. So, don't restrict clear color support in this case.
     */
-   if (anv_image_view_formats_incomplete(image))
+   const struct isl_drm_modifier_info *isl_mod_info =
+      image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT ?
+      isl_drm_modifier_get_info(image->vk.drm_format_mod) : NULL;
+
+   if (anv_image_view_formats_incomplete(image) &&
+       !(isl_mod_info && isl_mod_info->supports_clear_color))
       return false;
 
    enum isl_format img_format = image->planes[plane].primary_surface.isl.format;
@@ -1419,6 +1428,10 @@ add_all_surfaces_explicit_layout(
             return result;
 
          assert(isl_aux_usage_has_ccs(image->planes[plane].aux_usage));
+         if (aux_state_offset != ANV_OFFSET_IMPLICIT) {
+            assert(image->planes[plane].fast_clear_memory_range.size <=
+                   device->isl_dev.ss.clear_color_state_size);
+         }
       }
    }
 
@@ -1842,6 +1855,19 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
             add_image_view_format(image, fmt_list_format);
          }
       }
+   }
+
+   if (isl_mod_info && isl_mod_info->supports_clear_color) {
+      if (image->num_view_formats > 1) {
+         /* We use the number of view formats to determine the number of
+          * CLEAR_COLOR structures to append to the image. For an imported
+          * dmabuf supporting clear colors, we're limited to a single such
+          * struct. So, mark the view format list as incomplete because doing
+          * so shrinks the list size to one.
+          */
+         mark_image_view_formats_incomplete(image);
+      }
+      assert(image->num_view_formats == 1);
    }
 
    if (mod_explicit_info) {
