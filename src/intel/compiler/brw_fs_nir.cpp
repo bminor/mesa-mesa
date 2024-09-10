@@ -6384,6 +6384,9 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       else
          surface = get_nir_buffer_intrinsic_index(ntb, bld, instr, &no_mask_handle);
 
+      const unsigned num_components =
+         nir_def_last_component_read(&instr->def) + 1;
+
       if (!nir_src_is_const(instr->src[1])) {
          s.prog_data->has_ubo_pull = true;
 
@@ -6394,8 +6397,8 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
             const unsigned comps_per_load = brw_type_size_bytes(dest.type) == 8 ? 2 : 4;
 
-            for (int i = 0; i < instr->num_components; i += comps_per_load) {
-               const unsigned remaining = instr->num_components - i;
+            for (unsigned i = 0; i < num_components; i += comps_per_load) {
+               const unsigned remaining = num_components - i;
                bld.VARYING_PULL_CONSTANT_LOAD(offset(dest, bld, i),
                                               surface, surface_handle,
                                               base_offset,
@@ -6422,7 +6425,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
             brw_nir_ubo_surface_index_get_push_block(instr->src[0]);
          const unsigned offset_256b = load_offset / 32;
          const unsigned end_256b =
-            DIV_ROUND_UP(load_offset + type_size * instr->num_components, 32);
+            DIV_ROUND_UP(load_offset + type_size * num_components, 32);
 
          /* See if we've selected this as a push constant candidate */
          brw_reg push_reg;
@@ -6439,7 +6442,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
          }
 
          if (push_reg.file != BAD_FILE) {
-            for (unsigned i = 0; i < instr->num_components; i++) {
+            for (unsigned i = 0; i < num_components; i++) {
                bld.MOV(offset(dest, bld, i),
                        byte_offset(push_reg, i * type_size));
             }
@@ -6451,10 +6454,10 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
          const unsigned block_sz = 64; /* Fetch one cacheline at a time. */
          const fs_builder ubld = bld.exec_all().group(block_sz / 4, 0);
 
-         for (unsigned c = 0; c < instr->num_components;) {
+         for (unsigned c = 0; c < num_components;) {
             const unsigned base = load_offset + c * type_size;
             /* Number of usable components in the next block-aligned load. */
-            const unsigned count = MIN2(instr->num_components - c,
+            const unsigned count = MIN2(num_components - c,
                                         (block_sz - base % block_sz) / type_size);
 
             const brw_reg packed_consts = ubld.vgrf(BRW_TYPE_UD);
