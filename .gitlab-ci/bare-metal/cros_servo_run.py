@@ -22,11 +22,11 @@ SECTION_END="end"
 class CrosServoRun:
     def __init__(self, cpu, ec, test_timeout, logger):
         self.cpu_ser = SerialBuffer(
-            cpu, "results/serial.txt", "R SERIAL-CPU> ")
+            cpu, "results/serial.txt", ": ")
         # Merge the EC serial into the cpu_ser's line stream so that we can
         # effectively poll on both at the same time and not have to worry about
         self.ec_ser = SerialBuffer(
-            ec, "results/serial-ec.txt", "R SERIAL-EC> ", line_queue=self.cpu_ser.line_queue)
+            ec, "results/serial-ec.txt", " EC: ", line_queue=self.cpu_ser.line_queue)
         self.test_timeout = test_timeout
         self.logger = logger
 
@@ -35,11 +35,11 @@ class CrosServoRun:
         self.cpu_ser.close()
 
     def ec_write(self, s):
-        print("W SERIAL-EC> %s" % s)
+        print("EC> %s" % s)
         self.ec_ser.serial.write(s.encode())
 
     def cpu_write(self, s):
-        print("W SERIAL-CPU> %s" % s)
+        print("> %s" % s)
         self.cpu_ser.serial.write(s.encode())
 
     def print_error(self, message):
