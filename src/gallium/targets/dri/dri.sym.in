@@ -7,6 +7,7 @@
 		@amdgpu_winsys_create@
 		@fd_drm_screen_create_renderonly@
 		@ac_init_shared_llvm_once@
+		@va_driver_init@
 	local:
 		*;
 };
