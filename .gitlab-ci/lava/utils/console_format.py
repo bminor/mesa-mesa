@@ -7,6 +7,7 @@ CONSOLE_LOG = {
     "FG_BOLD_YELLOW": "\x1b[0;1;33m",
     "FG_MAGENTA": "\x1b[0;35m",
     "FG_BOLD_MAGENTA": "\x1b[0;1;35m",
+    "FG_CYAN": "\x1b[0;36m",
     "RESET": "\x1b[0m",
     "UNDERLINED": "\x1b[3m",
     "BOLD": "\x1b[1m",
