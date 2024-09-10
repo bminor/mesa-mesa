@@ -207,13 +207,18 @@ if [ -n "$HWCI_START_WESTON" ]; then
   while [ ! -S "$WESTON_X11_SOCK" ]; do sleep 1; done
 fi
 
+set +x
+
 section_end init_stage2
+
+echo "Running ${HWCI_TEST_SCRIPT} ${HWCI_TEST_ARGS} ..."
 
 set +e
 $HWCI_TEST_SCRIPT ${HWCI_TEST_ARGS:-}; EXIT_CODE=$?
 set -e
 
 section_start post_test_cleanup "Cleaning up after testing, uploading results"
+set -x
 
 # Make sure that capture-devcoredump is done before we start trying to tar up
 # artifacts -- if it's writing while tar is reading, tar will throw an error and
