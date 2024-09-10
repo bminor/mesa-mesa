@@ -1447,11 +1447,7 @@ brw_nir_should_vectorize_mem(unsigned align_mul, unsigned align_offset,
    }
 
 
-   uint32_t align;
-   if (align_offset)
-      align = 1 << (ffs(align_offset) - 1);
-   else
-      align = align_mul;
+   const uint32_t align = nir_combined_align(align_mul, align_offset);
 
    if (align < bit_size / 8)
       return false;
