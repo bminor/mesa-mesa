@@ -1307,6 +1307,11 @@ unop_horiz("cube_amd", 4, tfloat32, 3, tfloat32, """
 unop("fsin_amd", tfloat, "sinf(6.2831853 * src0)")
 unop("fcos_amd", tfloat, "cosf(6.2831853 * src0)")
 
+opcode("alignbyte_amd", 0, tuint32, [0, 0, 0], [tuint32, tuint32, tuint32], False, "", """
+   uint64_t src = src1 | ((uint64_t)src0 << 32);
+   dst = src >> ((src2 & 0x3) * 8);
+""")
+
 # Midgard specific sin and cos
 # These expect their inputs to be divided by pi.
 unop("fsin_mdg", tfloat, "sinf(3.141592653589793 * src0)")

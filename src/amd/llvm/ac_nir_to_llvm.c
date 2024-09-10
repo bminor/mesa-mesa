@@ -1245,6 +1245,11 @@ static bool visit_alu(struct ac_nir_context *ctx, const nir_alu_instr *instr)
                                   (LLVMValueRef[]){src[0], src[1], src[2]}, 3, 0);
       break;
 
+   case nir_op_alignbyte_amd:
+      result = ac_build_intrinsic(&ctx->ac, "llvm.amdgcn.alignbyte", ctx->ac.i32,
+                                  (LLVMValueRef[]){src[0], src[1], src[2]}, 3, 0);
+      break;
+
    default:
       fprintf(stderr, "Unknown NIR alu instr: ");
       nir_print_instr(&instr->instr, stderr);
