@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1003 # works for us now...
 # shellcheck disable=SC2086 # we want word splitting
+# shellcheck disable=SC1091 # paths only become valid at runtime
+
+. "${SCRIPTS_DIR}/setup-test-env.sh"
 
 section_switch meson-cross-file "meson: cross file generate"
 

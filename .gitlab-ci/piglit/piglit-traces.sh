@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2035 # FIXME glob
 # shellcheck disable=SC2086 # we want word splitting
+# shellcheck disable=SC1091 # paths only become valid at runtime
+
+. "${SCRIPTS_DIR}/setup-test-env.sh"
 
 section_start traces_prepare "traces: preparing test setup"
 
