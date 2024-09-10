@@ -192,6 +192,7 @@ elems=[
    ('nop', 0b0111),
    ('itrsmp', 0b1000),
    ('sbo', 0b1011),
+   ('ditr', 0b1100),
 ])
 
 I_IGRP_HDR = bit_set(
@@ -1724,6 +1725,35 @@ elems=[
    ('centroid', 0b10),
 ])
 
+F_PERSP_CTL = field_enum_type(
+name='persp_ctl', num_bits=2,
+elems=[
+   ('none', 0b00),
+   ('iter_mul', 0b01),
+   ('iter_mul_store', 0b10),
+   ('mul_stored', 0b11),
+])
+
+F_PERSP_CTL1 = field_enum_subtype(name='persp_ctl1', parent=F_PERSP_CTL, num_bits=1)
+
+F_SCHED_CTRL = field_enum_type(
+name='sched_ctrl', num_bits=2,
+elems=[
+   ('none', 0b00),
+   ('swap', 0b01),
+   ('wdf', 0b10),
+])
+
+F_SCHED_CTRL1 = field_enum_subtype(name='sched_ctrl1', parent=F_SCHED_CTRL, num_bits=1)
+
+F_IDX_CTRL = field_enum_type(
+name='idx_ctrl', num_bits=2,
+elems=[
+   ('none', 0b00),
+   ('idx0', 0b01),
+   ('idx1', 0b10),
+])
+
 F_DMA_OP = field_enum_type(
 name='dma_op', num_bits=3,
 elems=[
@@ -1946,7 +1976,7 @@ fields=[
    ('ifb', (F_BOOL, ['ifb'])),
 
    # fitr
-   ('p_fitr', (F_BOOL, ['p_fitr'])),
+   ('p_fitr', (F_PERSP_CTL1, ['p_fitr'])),
    ('drc', (F_UINT1, ['drc'])),
    ('rsvd0_fitr', (F_UINT1, ['rsvd0_fitr'], 0)),
    ('iter_mode', (F_ITER_MODE, ['fitr_mode'])),
@@ -2005,7 +2035,7 @@ fields=[
 
    ('rsvd3_smp', (F_UINT3, ['rsvd3_smp'], 0)),
    ('f16', (F_BOOL, ['f16'])),
-   ('swap', (F_BOOL, ['swap'])),
+   ('swap', (F_SCHED_CTRL1, ['swap'])),
    ('cachemode_smp_ld', (F_CACHEMODE_LD, ['cachemode_smp'])),
    ('cachemode_smp_st', (F_CACHEMODE_ST, ['cachemode_smp'])),
    ('smp_w', (F_BOOL, ['smp_w'])),
@@ -2883,6 +2913,26 @@ pieces=[
 
    ('rsvd1_sbo', (1, '7:1')),
    ('sbo_offset_7', (1, '0')),
+
+   # ditr
+   ('dest_7_0', (0, '7:0')),
+
+   ('coff_7_2', (1, '7:2')),
+   ('p_itr', (1, '1:0')),
+
+   ('woff_b2_7_2', (2, '7:2')),
+   ('ditr_mode', (2, '1:0')),
+
+   ('itr_count_b3', (3, '7:4')),
+   ('coff_idx_ctrl_b3', (3, '3:2')),
+   ('woff_idx_ctrl_b3', (3, '1:0')),
+
+   ('rsvd4_7_ditr', (4, '7')),
+   ('f16_b4', (4, '6')),
+   ('rsvd4_5_ditr', (4, '5:4')),
+   ('sched_ctrl_b4', (4, '3:2')),
+   ('drc_b4', (4, '1')),
+   ('sat', (4, '0')),
 ],
 fields=[
    # Branch
@@ -2910,6 +2960,26 @@ fields=[
    ('rsvd_sbo', (F_UINT7, ['rsvd1_sbo'], 0)),
    ('tgt', (F_TGT, ['tgt'])),
    ('sbo_offset', (F_UINT8, ['sbo_offset_7', 'sbo_offset_6_0'])),
+
+   # ditr
+   ('dest', (F_UINT8, ['dest_7_0'])),
+
+   ('coff', (F_UINT6MUL4, ['coff_7_2'])),
+   ('p_itr', (F_PERSP_CTL, ['p_itr'])),
+
+   ('woff_b2', (F_UINT6MUL4, ['woff_b2_7_2'])),
+   ('ditr_mode', (F_ITER_MODE, ['ditr_mode'])),
+
+   ('itr_count_b3', (F_UINT4_POS_WRAP, ['itr_count_b3'])),
+   ('coff_idx_ctrl_b3', (F_IDX_CTRL, ['coff_idx_ctrl_b3'])),
+   ('woff_idx_ctrl_b3', (F_IDX_CTRL, ['woff_idx_ctrl_b3'])),
+
+   ('rsvd4_7_ditr', (F_UINT1, ['rsvd4_7_ditr'], 0)),
+   ('f16_b4', (F_BOOL, ['f16_b4'])),
+   ('rsvd4_5_ditr', (F_UINT2, ['rsvd4_5_ditr'], 0)),
+   ('sched_ctrl_b4', (F_SCHED_CTRL, ['sched_ctrl_b4'])),
+   ('drc_b4', (F_UINT1, ['drc_b4'])),
+   ('sat', (F_BOOL, ['sat'])),
 ])
 
 I_BRANCH = bit_struct(
@@ -2980,4 +3050,28 @@ field_mappings=[
    ('rsvd', 'rsvd_sbo'),
    ('tgt', 'tgt'),
    ('offset', 'sbo_offset'),
+])
+
+I_DITR = bit_struct(
+name='ditr',
+bit_set=I_CTRL,
+field_mappings=[
+   'dest',
+
+   'coff',
+   ('p', 'p_itr'),
+
+   ('woff', 'woff_b2'),
+   ('mode', 'ditr_mode'),
+
+   ('count', 'itr_count_b3'),
+   ('coff_idx_ctrl', 'coff_idx_ctrl_b3'),
+   ('woff_idx_ctrl', 'woff_idx_ctrl_b3'),
+
+   ('rsvd0', 'rsvd4_7_ditr'),
+   ('f16', 'f16_b4'),
+   ('rsvd1', 'rsvd4_5_ditr'),
+   ('sched_ctrl', 'sched_ctrl_b4'),
+   ('drc', 'drc_b4'),
+   'sat',
 ])
