@@ -293,12 +293,12 @@ def bit_set(name, pieces, fields):
 
    _pieces = {}
    for (piece, spec) in pieces:
-      assert piece not in _pieces.keys(), f'Duplicate bit piece "{n}" in bit set "{name}".'
+      assert piece not in _pieces.keys(), f'Duplicate bit piece "{piece}" in bit set "{name}".'
       _pieces[piece] = bit_piece(piece, *spec)
 
    _fields = {}
    for (field, spec) in fields:
-      assert field not in _fields.keys(), f'Duplicate bit field "{n}" in bit set "{name}".'
+      assert field not in _fields.keys(), f'Duplicate bit field "{field}" in bit set "{name}".'
       _fields[field] = bit_field(_name, field, _pieces, *spec)
 
    bs = BitSet(_name, name, _pieces, _fields)
