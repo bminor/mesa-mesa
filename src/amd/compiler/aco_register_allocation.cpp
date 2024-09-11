@@ -346,7 +346,9 @@ public:
    void fill_killed_operands(Instruction* instr)
    {
       for (Operand& op : instr->operands) {
-         if (op.isFixed() && op.isFirstKillBeforeDef()) {
+         if (op.isPrecolored()) {
+            block(op.physReg(), op.regClass());
+         } else if (op.isFixed() && op.isFirstKillBeforeDef()) {
             if (op.regClass().is_subdword())
                fill_subdword(op.physReg(), op.bytes(), op.tempId());
             else
