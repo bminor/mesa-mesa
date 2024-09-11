@@ -663,6 +663,12 @@ _mesa_hash_u32(const void *key)
    return XXH32(key, 4, 0);
 }
 
+uint32_t
+_mesa_hash_u64(const void *key)
+{
+   return XXH32(key, 8, 0);
+}
+
 /** FNV-1a string hash implementation */
 uint32_t
 _mesa_hash_string(const void *_key)
@@ -707,6 +713,12 @@ bool
 _mesa_key_u32_equal(const void *a, const void *b)
 {
    return *((const uint32_t *)a) == *((const uint32_t *)b);
+}
+
+bool
+_mesa_key_u64_equal(const void *a, const void *b)
+{
+   return *((const uint64_t *)a) == *((const uint64_t *)b);
 }
 
 /**
