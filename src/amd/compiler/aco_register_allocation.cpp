@@ -799,7 +799,6 @@ adjust_max_used_regs(ra_ctx& ctx, RegClass rc, unsigned reg)
 
 enum UpdateRenames {
    rename_not_killed_ops = 0x1,
-   rename_precolored_ops = 0x4,
 };
 MESA_DEFINE_CPP_ENUM_BITFIELD_OPERATORS(UpdateRenames);
 
@@ -880,8 +879,7 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file,
             continue;
          if (op.tempId() == copy.first.tempId()) {
             /* only rename precolored operands if the copy-location matches */
-            bool omit_renaming = (flags & rename_precolored_ops) && op.isFixed() &&
-                                 op.physReg() != copy.second.physReg();
+            bool omit_renaming = op.isPrecolored() && op.physReg() != copy.second.physReg();
 
             /* Omit renaming in some cases for p_create_vector in order to avoid
              * unnecessary shuffle code. */
@@ -908,7 +906,7 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file,
             op.setTemp(copy.second.getTemp());
             op.setFixed(copy.second.physReg());
 
-            fill = !op.isKillBeforeDef() || (flags & rename_precolored_ops);
+            fill = !op.isKillBeforeDef() || op.isPrecolored();
          }
       }
 
@@ -2097,9 +2095,10 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
    for (unsigned i = 0; i < instr->operands.size(); i++) {
       Operand& op = instr->operands[i];
 
-      if (!op.isTemp() || !op.isFixed())
+      if (!op.isPrecolored())
          continue;
 
+      assert(op.isTemp());
       PhysReg src = ctx.assignments[op.tempId()].reg;
       adjust_max_used_regs(ctx, op.regClass(), op.physReg());
 
@@ -2139,8 +2138,7 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
    }
 
    get_regs_for_copies(ctx, tmp_file, parallelcopy, blocking_vars, instr, PhysRegInterval());
-   update_renames(ctx, register_file, parallelcopy, instr,
-                  rename_not_killed_ops | rename_precolored_ops);
+   update_renames(ctx, register_file, parallelcopy, instr, rename_not_killed_ops);
 }
 
 void
@@ -3086,7 +3084,7 @@ register_allocation(Program* program, ra_test_policy policy)
             assert(ctx.assignments[operand.tempId()].assigned);
 
             fixed |=
-               operand.isFixed() && ctx.assignments[operand.tempId()].reg != operand.physReg();
+               operand.isPrecolored() && ctx.assignments[operand.tempId()].reg != operand.physReg();
          }
 
          bool is_writelane = instr->opcode == aco_opcode::v_writelane_b32 ||
