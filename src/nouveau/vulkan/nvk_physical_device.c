@@ -430,6 +430,9 @@ nvk_get_device_features(const struct nv_device_info *info,
       .shaderIntegerDotProduct = true,
       .maintenance4 = true,
 
+      /* Vulkan 1.4 */
+      .pushDescriptor = true,
+
       /* VK_KHR_compute_shader_derivatives */
       .computeDerivativeGroupQuads = true,
       .computeDerivativeGroupLinear = true,
@@ -953,6 +956,10 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .uniformTexelBufferOffsetAlignmentBytes = NVK_MIN_TEXEL_BUFFER_ALIGNMENT,
       .uniformTexelBufferOffsetSingleTexelAlignment = true,
       .maxBufferSize = NVK_MAX_BUFFER_SIZE,
+
+      /* Vulkan 1.4 properties */
+      .dynamicRenderingLocalReadDepthStencilAttachments = true,
+      .dynamicRenderingLocalReadMultisampledAttachments = true,
 
       /* VK_KHR_compute_shader_derivatives */
       .meshAndTaskShaderDerivatives = false,
