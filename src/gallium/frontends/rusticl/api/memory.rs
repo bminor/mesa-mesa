@@ -19,8 +19,6 @@ use rusticl_opencl_gen::*;
 use rusticl_proc_macros::cl_entrypoint;
 use rusticl_proc_macros::cl_info_entrypoint;
 
-use std::alloc;
-use std::alloc::Layout;
 use std::cmp;
 use std::cmp::Ordering;
 use std::mem::{self, MaybeUninit};
@@ -2386,32 +2384,7 @@ pub fn svm_alloc(
         mem::size_of::<[u64; 16]>()
     };
 
-    // clSVMAlloc will fail if alignment is not a power of two.
-    // `from_size_align()` verifies this condition is met.
-    let layout = Layout::from_size_align(size, alignment).or(Err(CL_INVALID_VALUE))?;
-
-    // clSVMAlloc will fail if size is 0 or > CL_DEVICE_MAX_MEM_ALLOC_SIZE value
-    // for any device in context.
-    // Verify that the requested size, once adjusted to be a multiple of
-    // alignment, fits within the maximum allocation size. While
-    // `from_size_align()` ensures that the allocation will fit in host memory,
-    // the maximum allocation may be smaller due to limitations from gallium or
-    // devices.
-    let size_aligned = layout.pad_to_align().size();
-    if size == 0 || checked_compare(size_aligned, Ordering::Greater, c.max_mem_alloc()) {
-        return Err(CL_INVALID_VALUE);
-    }
-
-    // SAFETY: `size` is verified to be non-zero and the returned pointer is not
-    // expected to point to initialized memory.
-    let ptr = unsafe { alloc::alloc(layout) };
-
-    if ptr.is_null() {
-        return Err(CL_OUT_OF_HOST_MEMORY);
-    }
-
-    c.add_svm_ptr(ptr as usize, layout);
-    Ok(ptr.cast())
+    c.alloc_svm_ptr(size, alignment)
 
     // Values specified in flags do not follow rules described for supported values in the SVM Memory Flags table.
     // CL_MEM_SVM_FINE_GRAIN_BUFFER or CL_MEM_SVM_ATOMICS is specified in flags and these are not supported by at least one device in context.
@@ -2420,19 +2393,9 @@ pub fn svm_alloc(
     // There was a failure to allocate resources.
 }
 
-fn svm_free_impl(c: &Context, svm_pointer: usize) {
-    if let Some(layout) = c.remove_svm_ptr(svm_pointer) {
-        // SAFETY: we make sure that svm_pointer is a valid allocation and reuse the same layout
-        // from the allocation
-        unsafe {
-            alloc::dealloc(svm_pointer as *mut u8, layout);
-        }
-    }
-}
-
 pub fn svm_free(context: cl_context, svm_pointer: usize) -> CLResult<()> {
     let c = Context::ref_from_raw(context)?;
-    svm_free_impl(c, svm_pointer);
+    c.remove_svm_ptr(svm_pointer);
     Ok(())
 }
 
@@ -2493,7 +2456,7 @@ fn enqueue_svm_free_impl(
                 cb.call(q, &mut svm_pointers);
             } else {
                 for ptr in svm_pointers {
-                    svm_free_impl(&q.context, ptr);
+                    q.context.remove_svm_ptr(ptr);
                 }
             }
 

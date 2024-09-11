@@ -1,5 +1,6 @@
 use crate::api::icd::*;
 use crate::api::types::DeleteContextCB;
+use crate::api::util::checked_compare;
 use crate::core::device::*;
 use crate::core::format::*;
 use crate::core::gl::*;
@@ -16,7 +17,9 @@ use mesa_rust_util::ptr::AllocSize;
 use mesa_rust_util::ptr::TrackedPointers;
 use rusticl_opencl_gen::*;
 
+use std::alloc;
 use std::alloc::Layout;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::mem;
@@ -207,8 +210,32 @@ impl Context {
         self.devs.iter().any(|dev| dev.svm_supported())
     }
 
-    pub fn add_svm_ptr(&self, ptr: usize, layout: Layout) {
-        self.svm_ptrs.lock().unwrap().insert(ptr, layout);
+    pub fn alloc_svm_ptr(&self, size: usize, alignment: usize) -> CLResult<*mut c_void> {
+        // clSVMAlloc will fail if alignment is not a power of two.
+        // `from_size_align()` verifies this condition is met.
+        let layout = Layout::from_size_align(size, alignment).or(Err(CL_INVALID_VALUE))?;
+
+        // clSVMAlloc will fail if size is 0 or > CL_DEVICE_MAX_MEM_ALLOC_SIZE value
+        // for any device in context.
+        // Verify that the requested size, once adjusted to be a multiple of
+        // alignment, fits within the maximum allocation size. While
+        // `from_size_align()` ensures that the allocation will fit in host memory,
+        // the maximum allocation may be smaller due to limitations from gallium or
+        // devices.
+        let size_aligned = layout.pad_to_align().size();
+        if size == 0 || checked_compare(size_aligned, Ordering::Greater, self.max_mem_alloc()) {
+            return Err(CL_INVALID_VALUE);
+        }
+
+        // SAFETY: `size` is verified to be non-zero and the returned pointer is not
+        // expected to point to initialized memory.
+        let ptr = unsafe { alloc::alloc(layout) };
+
+        if ptr.is_null() {
+            Err(CL_OUT_OF_HOST_MEMORY)
+        } else {
+            Ok(ptr.cast())
+        }
     }
 
     pub fn find_svm_alloc(&self, ptr: usize) -> Option<(*const c_void, usize)> {
@@ -219,8 +246,14 @@ impl Context {
             .map(|(ptr, layout)| (ptr as *const c_void, layout.size()))
     }
 
-    pub fn remove_svm_ptr(&self, ptr: usize) -> Option<Layout> {
-        self.svm_ptrs.lock().unwrap().remove(ptr)
+    pub fn remove_svm_ptr(&self, ptr: usize) {
+        if let Some(layout) = self.svm_ptrs.lock().unwrap().remove(ptr) {
+            // SAFETY: we make sure that svm_pointer is a valid allocation and reuse the same layout
+            // from the allocation
+            unsafe {
+                alloc::dealloc(ptr as *mut u8, layout);
+            }
+        }
     }
 
     pub fn add_bda_ptr(&self, buffer: &Arc<Buffer>) {
