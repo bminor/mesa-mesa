@@ -909,6 +909,29 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .shaderIntegerDotProduct = true,
       .maintenance4 = true,
 
+      /* Vulkan 1.4 */
+      .globalPriorityQuery = true,
+      .shaderSubgroupRotate = true,
+      .shaderSubgroupRotateClustered = true,
+      .shaderFloatControls2 = true,
+      .shaderExpectAssume = true,
+      .rectangularLines = true,
+      .bresenhamLines = true,
+      .smoothLines = true,
+      .stippledRectangularLines = false,
+      .stippledBresenhamLines = true,
+      .stippledSmoothLines = false,
+      .vertexAttributeInstanceRateDivisor = true,
+      .vertexAttributeInstanceRateZeroDivisor = true,
+      .indexTypeUint8 = pdev->info.gfx_level >= GFX8,
+      .dynamicRenderingLocalRead = true,
+      .maintenance5 = true,
+      .maintenance6 = true,
+      .pipelineProtectedAccess = false,
+      .pipelineRobustness = true,
+      .hostImageCopy = false,
+      .pushDescriptor = true,
+
       /* VK_EXT_conditional_rendering */
       .conditionalRendering = true,
       .inheritedConditionalRendering = false,
@@ -1657,6 +1680,33 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
    p->uniformTexelBufferOffsetSingleTexelAlignment = true;
 
    p->maxBufferSize = RADV_MAX_MEMORY_ALLOCATION_SIZE;
+
+   /* Vulkan 1.4 */
+   p->lineSubPixelPrecisionBits = 4;
+   p->maxVertexAttribDivisor = UINT32_MAX;
+   p->supportsNonZeroFirstInstance = true;
+   p->maxPushDescriptors = MAX_PUSH_DESCRIPTORS;
+   p->dynamicRenderingLocalReadDepthStencilAttachments = true;
+   p->dynamicRenderingLocalReadMultisampledAttachments = true;
+   p->earlyFragmentMultisampleCoverageAfterSampleCounting = true;
+   p->earlyFragmentSampleMaskTestBeforeSampleCounting = true;
+   p->depthStencilSwizzleOneSupport = true;
+   p->polygonModePointSize = true;
+   p->nonStrictSinglePixelWideLinesUseParallelogram = true;
+   p->nonStrictWideLinesUseParallelogram = true;
+   p->blockTexelViewCompatibleMultipleLayers = true;
+   p->maxCombinedImageSamplerDescriptorCount = 1;
+   p->fragmentShadingRateClampCombinerInputs = true;
+   p->defaultRobustnessStorageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS;
+   p->defaultRobustnessUniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS;
+   p->defaultRobustnessVertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED;
+   p->defaultRobustnessImages = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2;
+   p->copySrcLayoutCount = 0;
+   p->pCopySrcLayouts = NULL;
+   p->copyDstLayoutCount = 0;
+   p->pCopyDstLayouts = NULL;
+   memset(p->optimalTilingLayoutUUID, 0, sizeof(p->optimalTilingLayoutUUID));
+   p->identicalMemoryTypeRequirements = false;
 
    /* VK_KHR_push_descriptor */
    p->maxPushDescriptors = MAX_PUSH_DESCRIPTORS;
