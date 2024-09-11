@@ -1050,7 +1050,13 @@ wsi_CreateSwapchainKHR(VkDevice _device,
          .sType = VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR,
       };
       iface->get_capabilities2(surface, wsi_device, NULL, &caps2);
-      info.imageExtent = caps2.surfaceCapabilities.currentExtent;
+
+      /* 0xffffffff (UINT32_MAX) indicates that the surface has no intrinsic extent, so the size of the
+       * surface will be the size of the swapchain. In this case, overriding the swapchain size makes
+       * no sense.
+       */
+      if (caps2.surfaceCapabilities.currentExtent.width != UINT32_MAX)
+         info.imageExtent = caps2.surfaceCapabilities.currentExtent;
    }
 
    /* Ignore DEFERRED_MEMORY_ALLOCATION_BIT. Would require deep plumbing to be able to take advantage of it.
