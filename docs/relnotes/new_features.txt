@@ -1,1 +1,2 @@
 cl_khr_depth_images in rusticl
+Vulkan 1.4 on radv/gfx8+
