@@ -5409,6 +5409,8 @@ void genX(CmdBeginRendering)(
 
       if (GFX_VER < 10 &&
           (att->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
+           render_area.extent.width != iview->vk.extent.width ||
+           render_area.extent.height != iview->vk.extent.height ||
            (gfx->rendering_flags & VK_RENDERING_RESUMING_BIT)) &&
           iview->image->planes[0].aux_usage != ISL_AUX_USAGE_NONE &&
           iview->planes[0].isl.base_level == 0 &&
