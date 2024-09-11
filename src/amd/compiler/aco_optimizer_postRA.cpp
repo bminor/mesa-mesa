@@ -404,7 +404,8 @@ try_optimize_scc_nocompare(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
       /* Use the SCC def from wr_instr */
       ctx.uses[instr->operands[0].tempId()]--;
-      instr->operands[0] = Operand(wr_instr->definitions[1].getTemp(), scc);
+      instr->operands[0] = Operand(wr_instr->definitions[1].getTemp());
+      instr->operands[0].setFixed(scc);
       ctx.uses[instr->operands[0].tempId()]++;
 
       /* Set the opcode and operand to 32-bit */

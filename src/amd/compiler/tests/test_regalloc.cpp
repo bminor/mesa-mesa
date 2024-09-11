@@ -76,7 +76,7 @@ BEGIN_TEST(regalloc.precolor.swap)
    //! s2: %op0_2:s[2-3], s2: %op1_2:s[0-1] = p_parallelcopy %op0:s[0-1], %op1:s[2-3]
    //! p_unit_test %op0_2:s[2-3], %op1_2:s[0-1]
    Operand op(inputs[0]);
-   op.setFixed(PhysReg(2));
+   op.setPrecolored(PhysReg(2));
    bld.pseudo(aco_opcode::p_unit_test, op, op1);
 
    finish_ra_test(ra_test_policy());
@@ -90,7 +90,7 @@ BEGIN_TEST(regalloc.precolor.blocking_vector)
    //! s1: %tmp1_2:s[1], s2: %tmp0_2:s[2-3] = p_parallelcopy %tmp1:s[2], %tmp0:s[0-1]
    //! p_unit_test %tmp1_2:s[1]
    Operand op(inputs[1]);
-   op.setFixed(PhysReg(1));
+   op.setPrecolored(PhysReg(1));
    bld.pseudo(aco_opcode::p_unit_test, op);
 
    //! p_unit_test %tmp0_2:s[2-3]
@@ -107,7 +107,7 @@ BEGIN_TEST(regalloc.precolor.vector.test)
    //! s2: %tmp0_2:s[2-3], s1: %tmp2_2:s[#t2] = p_parallelcopy %tmp0:s[0-1], %tmp2:s[3]
    //! p_unit_test %tmp0_2:s[2-3]
    Operand op(inputs[0]);
-   op.setFixed(PhysReg(2));
+   op.setPrecolored(PhysReg(2));
    bld.pseudo(aco_opcode::p_unit_test, op);
 
    //! p_unit_test %tmp2_2:s[#t2]
@@ -124,7 +124,7 @@ BEGIN_TEST(regalloc.precolor.vector.collect)
    //! s2: %tmp0_2:s[2-3], s1: %tmp1_2:s[#t1], s1: %tmp2_2:s[#t2] = p_parallelcopy %tmp0:s[0-1], %tmp1:s[2], %tmp2:s[3]
    //! p_unit_test %tmp0_2:s[2-3]
    Operand op(inputs[0]);
-   op.setFixed(PhysReg(2));
+   op.setPrecolored(PhysReg(2));
    bld.pseudo(aco_opcode::p_unit_test, op);
 
    //! p_unit_test %tmp1_2:s[#t1], %tmp2_2:s[#t2]

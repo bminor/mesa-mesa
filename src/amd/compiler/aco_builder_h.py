@@ -365,7 +365,7 @@ public:
           assert(tmp.type() == RegType::sgpr && tmp.bytes() <= 8);
        % endif
        Operand op(tmp);
-       op.setFixed(aco::${fixed});
+       op.setPrecolored(aco::${fixed});
        return op;
    }
 
@@ -374,7 +374,7 @@ public:
           //vcc_hi and exec_hi can still be used in wave32
           assert(def.regClass().type() == RegType::sgpr && def.bytes() <= 8);
        % endif
-       def.setFixed(aco::${fixed});
+       def.setPrecolored(aco::${fixed});
        return def;
    }
 

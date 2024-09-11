@@ -473,7 +473,7 @@ public:
       assert(r.id()); /* Don't allow fixing an undef to a register */
       data_.temp = r;
       isTemp_ = true;
-      setFixed(reg);
+      setPrecolored(reg);
    };
 
    /* 8-bit constant */
@@ -919,7 +919,7 @@ public:
    {}
    explicit Definition(Temp tmp) noexcept : temp(tmp) {}
    explicit Definition(PhysReg reg, RegClass type) noexcept : temp(Temp(0, type)) { setFixed(reg); }
-   explicit Definition(Temp tmp, PhysReg reg) noexcept : temp(tmp) { setFixed(reg); }
+   explicit Definition(Temp tmp, PhysReg reg) noexcept : temp(tmp) { setPrecolored(reg); }
 
    constexpr bool isTemp() const noexcept { return tempId() > 0; }
 

@@ -346,11 +346,11 @@ convert_to_SDWA(amd_gfx_level gfx_level, aco_ptr<Instruction>& instr)
    sdwa.dst_sel = SubdwordSel(instr->definitions[0].bytes(), 0, false);
 
    if (instr->definitions[0].getTemp().type() == RegType::sgpr && gfx_level == GFX8)
-      instr->definitions[0].setFixed(vcc);
+      instr->definitions[0].setPrecolored(vcc);
    if (instr->definitions.size() >= 2)
-      instr->definitions[1].setFixed(vcc);
+      instr->definitions[1].setPrecolored(vcc);
    if (instr->operands.size() >= 3)
-      instr->operands[2].setFixed(vcc);
+      instr->operands[2].setPrecolored(vcc);
 
    instr->pass_flags = tmp->pass_flags;
 
@@ -474,11 +474,11 @@ convert_to_DPP(amd_gfx_level gfx_level, aco_ptr<Instruction>& instr, bool dpp8)
    instr->valu().opsel_hi = tmp->valu().opsel_hi;
 
    if ((instr->isVOPC() || instr->definitions.size() > 1) && gfx_level < GFX11)
-      instr->definitions.back().setFixed(vcc);
+      instr->definitions.back().setPrecolored(vcc);
 
    if (instr->operands.size() >= 3 && instr->operands[2].isOfType(RegType::sgpr) &&
        gfx_level < GFX11)
-      instr->operands[2].setFixed(vcc);
+      instr->operands[2].setPrecolored(vcc);
 
    instr->pass_flags = tmp->pass_flags;
 

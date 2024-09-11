@@ -2117,7 +2117,8 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
 
       BITSET_SET(mask, i);
 
-      Operand pc_op(instr->operands[i].getTemp(), src);
+      Operand pc_op(instr->operands[i].getTemp());
+      pc_op.setFixed(src);
       Definition pc_def = Definition(op.physReg(), pc_op.regClass());
       parallelcopy.emplace_back(pc_op, pc_def);
    }
@@ -3095,7 +3096,7 @@ register_allocation(Program* program, ra_test_policy policy)
             /* v_writelane_b32 can take two sgprs but only if one is m0. */
             if (ctx.assignments[instr->operands[0].tempId()].reg != m0 &&
                 ctx.assignments[instr->operands[1].tempId()].reg != m0) {
-               instr->operands[0].setFixed(m0);
+               instr->operands[0].setPrecolored(m0);
                fixed = true;
             }
          }
@@ -3137,7 +3138,7 @@ register_allocation(Program* program, ra_test_policy policy)
           */
          int op_fixed_to_def = get_op_fixed_to_def(instr.get());
          if (op_fixed_to_def != -1)
-            instr->definitions[0].setFixed(instr->operands[op_fixed_to_def].physReg());
+            instr->definitions[0].setPrecolored(instr->operands[op_fixed_to_def].physReg());
 
          /* handle fixed definitions first */
          for (unsigned i = 0; i < instr->definitions.size(); ++i) {
