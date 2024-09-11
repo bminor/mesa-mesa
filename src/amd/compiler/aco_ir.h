@@ -452,9 +452,10 @@ static constexpr PhysReg scc{253};
 class Operand final {
 public:
    constexpr Operand()
-       : reg_(PhysReg{128}), isTemp_(false), isFixed_(true), isConstant_(false), isKill_(false),
-         isUndef_(true), isFirstKill_(false), constSize(0), isLateKill_(false), isClobbered_(false),
-         isCopyKill_(false), is16bit_(false), is24bit_(false), signext(false)
+       : reg_(PhysReg{128}), isTemp_(false), isFixed_(true), isPrecolored_(false),
+         isConstant_(false), isKill_(false), isUndef_(true), isFirstKill_(false),
+         isLateKill_(false), isClobbered_(false), isCopyKill_(false), is16bit_(false),
+         is24bit_(false), signext(false), constSize(0)
    {}
 
    explicit Operand(Temp r) noexcept
@@ -734,6 +735,13 @@ public:
       reg_ = reg;
    }
 
+   constexpr bool isPrecolored() const noexcept { return isPrecolored_; }
+   constexpr void setPrecolored(PhysReg reg) noexcept
+   {
+      setFixed(reg);
+      isPrecolored_ = isFixed_;
+   }
+
    constexpr bool isConstant() const noexcept { return isConstant_; }
 
    constexpr bool isLiteral() const noexcept { return isConstant() && reg_ == 255; }
@@ -879,17 +887,18 @@ private:
       struct {
          uint8_t isTemp_ : 1;
          uint8_t isFixed_ : 1;
+         uint8_t isPrecolored_ : 1;
          uint8_t isConstant_ : 1;
          uint8_t isKill_ : 1;
          uint8_t isUndef_ : 1;
          uint8_t isFirstKill_ : 1;
-         uint8_t constSize : 2;
          uint8_t isLateKill_ : 1;
          uint8_t isClobbered_ : 1;
          uint8_t isCopyKill_ : 1;
          uint8_t is16bit_ : 1;
          uint8_t is24bit_ : 1;
          uint8_t signext : 1;
+         uint8_t constSize : 2;
       };
       /* can't initialize bit-fields in c++11, so work around using a union */
       uint16_t control_ = 0;
@@ -905,8 +914,8 @@ private:
 class Definition final {
 public:
    constexpr Definition()
-       : temp(Temp(0, s1)), reg_(0), isFixed_(0), isKill_(0), isPrecise_(0), isInfPreserve_(0),
-         isNaNPreserve_(0), isSZPreserve_(0), isNUW_(0), isNoCSE_(0)
+       : temp(Temp(0, s1)), reg_(0), isFixed_(0), isPrecolored_(0), isKill_(0), isPrecise_(0),
+         isInfPreserve_(0), isNaNPreserve_(0), isSZPreserve_(0), isNUW_(0), isNoCSE_(0)
    {}
    explicit Definition(Temp tmp) noexcept : temp(tmp) {}
    explicit Definition(PhysReg reg, RegClass type) noexcept : temp(Temp(0, type)) { setFixed(reg); }
@@ -936,6 +945,13 @@ public:
    {
       isFixed_ = 1;
       reg_ = reg;
+   }
+
+   constexpr bool isPrecolored() const noexcept { return isPrecolored_; }
+   constexpr void setPrecolored(PhysReg reg) noexcept
+   {
+      setFixed(reg);
+      isPrecolored_ = isFixed_;
    }
 
    constexpr void setKill(bool flag) noexcept { isKill_ = flag; }
@@ -973,6 +989,7 @@ private:
    union {
       struct {
          uint8_t isFixed_ : 1;
+         uint8_t isPrecolored_ : 1;
          uint8_t isKill_ : 1;
          uint8_t isPrecise_ : 1;
          uint8_t isInfPreserve_ : 1;
@@ -982,7 +999,7 @@ private:
          uint8_t isNoCSE_ : 1;
       };
       /* can't initialize bit-fields in c++11, so work around using a union */
-      uint8_t control_ = 0;
+      uint16_t control_ = 0;
    };
 };
 
