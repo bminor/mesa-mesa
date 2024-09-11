@@ -179,7 +179,7 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          if (!definition.isTemp()) {
             continue;
          }
-         if (definition.isFixed() && definition.physReg() == vcc)
+         if (definition.isPrecolored() && definition.physReg() == vcc)
             ctx.program->needs_vcc = true;
 
          const Temp temp = definition.getTemp();
@@ -252,7 +252,7 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
             continue;
 
          const Temp temp = operand.getTemp();
-         if (operand.isFixed() && ctx.program->progress < CompilationProgress::after_ra) {
+         if (operand.isPrecolored()) {
             assert(!operand.isLateKill());
             ctx.program->needs_vcc |= operand.physReg() == vcc;
 
@@ -266,13 +266,12 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
                             }))
                operand.setClobbered(true);
 
-            /* Check if this temp is fixed to a different register as well.
+            /* Check if another precolored operand uses the same temporary.
              * This assumes that operands of one instruction are not precolored twice to
              * the same register. In this case, register pressure might be overestimated.
              */
             for (unsigned j = i + 1; !operand.isCopyKill() && j < insn->operands.size(); ++j) {
-               if (insn->operands[j].isTemp() && insn->operands[j].getTemp() == temp &&
-                   insn->operands[j].isFixed()) {
+               if (insn->operands[j].isPrecolored() && insn->operands[j].getTemp() == temp) {
                   operand_demand += temp;
                   insn->operands[j].setCopyKill(true);
                }
