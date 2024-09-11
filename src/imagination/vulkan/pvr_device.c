@@ -308,13 +308,6 @@ static bool pvr_physical_device_get_properties(
    const uint32_t max_multisample =
       PVR_GET_FEATURE_VALUE(dev_info, max_multisample, 4);
 
-   /* Default value based on the minimum value found in all existing cores. */
-   const uint32_t uvs_banks = PVR_GET_FEATURE_VALUE(dev_info, uvs_banks, 2);
-
-   /* Default value based on the minimum value found in all existing cores. */
-   const uint32_t uvs_pba_entries =
-      PVR_GET_FEATURE_VALUE(dev_info, uvs_pba_entries, 160);
-
    UNUSED const uint32_t sub_pixel_precision =
       PVR_HAS_FEATURE(dev_info, simple_internal_parameter_format) ? 4U : 8U;
 
@@ -323,7 +316,7 @@ static bool pvr_physical_device_get_properties(
    UNUSED const uint32_t max_sample_bits = ((max_multisample << 1) - 1);
 
    UNUSED const uint32_t max_user_vertex_components =
-      ((uvs_banks <= 8U) && (uvs_pba_entries == 160U)) ? 64U : 128U;
+      pvr_get_max_user_vertex_output_components(dev_info);
 
    /* The workgroup invocations are limited by the case where we have a compute
     * barrier - each slot has a fixed number of invocations, the whole workgroup
