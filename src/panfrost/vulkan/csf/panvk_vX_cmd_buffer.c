@@ -123,9 +123,9 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
       cs_load32_to(b, error, debug_sync_addr,
                    offsetof(struct panvk_cs_sync32, error));
       cs_wait_slots(b, SB_ALL_MASK, false);
-      cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_SYSTEM, one, debug_sync_addr,
-                    cs_now());
-
+      if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+         cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_SYSTEM, one,
+                       debug_sync_addr, cs_now());
       cs_match(b, error, cmp_scratch) {
          cs_case(b, 0) {
             /* Do nothing. */
@@ -701,5 +701,90 @@ panvk_per_arch(BeginCommandBuffer)(VkCommandBuffer commandBuffer,
    if (instance->debug_flags & PANVK_DEBUG_TRACE)
       cmdbuf->flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
+   panvk_per_arch(cmd_inherit_render_state)(cmdbuf, pBeginInfo);
+
    return VK_SUCCESS;
+}
+
+static void
+panvk_cmd_invalidate_state(struct panvk_cmd_buffer *cmdbuf)
+{
+   /* From the Vulkan 1.3.275 spec:
+    *
+    *    "...There is one exception to this rule - if the primary command
+    *    buffer is inside a render pass instance, then the render pass and
+    *    subpass state is not disturbed by executing secondary command
+    *    buffers."
+    *
+    * We need to reset everything EXCEPT the render pass state.
+    */
+   struct panvk_rendering_state render_save = cmdbuf->state.gfx.render;
+   memset(&cmdbuf->state.gfx, 0, sizeof(cmdbuf->state.gfx));
+   cmdbuf->state.gfx.render = render_save;
+
+   cmdbuf->state.gfx.fs.desc.res_table = 0;
+   cmdbuf->state.gfx.fs.spd = 0;
+   cmdbuf->state.gfx.vs.desc.res_table = 0;
+   cmdbuf->state.gfx.vs.spds.pos = 0;
+   cmdbuf->state.gfx.vs.spds.var = 0;
+   cmdbuf->state.gfx.vb.dirty = true;
+   cmdbuf->state.gfx.ib.dirty = true;
+
+   vk_dynamic_graphics_state_dirty_all(&cmdbuf->vk.dynamic_graphics_state);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+panvk_per_arch(CmdExecuteCommands)(VkCommandBuffer commandBuffer,
+                                   uint32_t commandBufferCount,
+                                   const VkCommandBuffer *pCommandBuffers)
+{
+   VK_FROM_HANDLE(panvk_cmd_buffer, primary, commandBuffer);
+
+   if (commandBufferCount == 0)
+      return;
+
+   for (uint32_t i = 0; i < commandBufferCount; i++) {
+      VK_FROM_HANDLE(panvk_cmd_buffer, secondary, pCommandBuffers[i]);
+
+      /* make sure the CS context is setup properly
+       * to inherit the primary command buffer state
+       */
+      primary->state.tls.info.tls.size =
+         MAX2(primary->state.tls.info.tls.size,
+              secondary->state.tls.info.tls.size);
+      panvk_per_arch(cmd_prepare_exec_cmd_for_draws)(primary, secondary);
+
+      for (uint32_t j = 0; j < ARRAY_SIZE(primary->state.cs); j++) {
+         struct cs_builder *sec_b = panvk_get_cs_builder(secondary, j);
+         assert(cs_is_valid(sec_b));
+         if (!cs_is_empty(sec_b)) {
+            struct cs_builder *prim_b = panvk_get_cs_builder(primary, j);
+            struct cs_index addr = cs_scratch_reg64(prim_b, 0);
+            struct cs_index size = cs_scratch_reg32(prim_b, 2);
+            cs_move64_to(prim_b, addr, cs_root_chunk_gpu_addr(sec_b));
+            cs_move32_to(prim_b, size, cs_root_chunk_size(sec_b));
+            cs_call(prim_b, addr, size);
+         }
+      }
+   }
+
+   /* From the Vulkan 1.3.275 spec:
+    *
+    *    "When secondary command buffer(s) are recorded to execute on a
+    *    primary command buffer, the secondary command buffer inherits no
+    *    state from the primary command buffer, and all state of the primary
+    *    command buffer is undefined after an execute secondary command buffer
+    *    command is recorded. There is one exception to this rule - if the
+    *    primary command buffer is inside a render pass instance, then the
+    *    render pass and subpass state is not disturbed by executing secondary
+    *    command buffers. For state dependent commands (such as draws and
+    *    dispatches), any state consumed by those commands must not be
+    *    undefined."
+    *
+    * Therefore, it's the client's job to reset all the state in the primary
+    * after the secondary executes.  However, if we're doing any internal
+    * dirty tracking, we may miss the fact that a secondary has messed with
+    * GPU state if we don't invalidate all our internal tracking.
+    */
+   panvk_cmd_invalidate_state(primary);
 }

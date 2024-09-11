@@ -193,7 +193,13 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    vk_device_dispatch_table_from_entrypoints(
       &device->cmd_dispatch, &vk_common_device_entrypoints, false);
 
-   result = vk_device_init(&device->vk, &physical_device->vk, &dispatch_table,
+   /* vkCmdExecuteCommands is currently only implemented on v10+. The panvk
+    * implementation will not run if the vk_cmd_enqueue_unless_primary
+    * entrypoint is present in the dispatch table.
+    */
+   result = vk_device_init(&device->vk, &physical_device->vk,
+                           PAN_ARCH <= 9 ?
+                           &dispatch_table : &device->cmd_dispatch,
                            pCreateInfo, pAllocator);
    if (result != VK_SUCCESS)
       goto err_free_dev;

@@ -39,6 +39,7 @@
 #include "vk_format.h"
 #include "vk_meta.h"
 #include "vk_pipeline_layout.h"
+#include "vk_render_pass.h"
 
 struct panvk_draw_info {
    struct {
@@ -1376,13 +1377,16 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    if (result != VK_SUCCESS)
       return result;
 
-   result = get_tiler_desc(cmdbuf);
-   if (result != VK_SUCCESS)
-      return result;
+   if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ||
+       !(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
+      result = get_tiler_desc(cmdbuf);
+      if (result != VK_SUCCESS)
+         return result;
 
-   result = get_fb_descs(cmdbuf);
-   if (result != VK_SUCCESS)
-      return result;
+      result = get_fb_descs(cmdbuf);
+      if (result != VK_SUCCESS)
+         return result;
+   }
 
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
@@ -1508,6 +1512,25 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
                   cs_undef());
    }
    cs_req_res(b, 0);
+}
+
+void
+panvk_per_arch(cmd_prepare_exec_cmd_for_draws)(
+   struct panvk_cmd_buffer *primary,
+   struct panvk_cmd_buffer *secondary)
+{
+   VkResult result;
+
+   if (secondary->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+      assert(primary->vk.render_pass);
+      result = get_tiler_desc(primary);
+      if (result != VK_SUCCESS)
+         return;
+
+      result = get_fb_descs(primary);
+      if (result != VK_SUCCESS)
+         return;
+   }
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -1646,8 +1669,8 @@ panvk_per_arch(CmdDrawIndexedIndirect)(VkCommandBuffer commandBuffer,
 }
 
 static void
-panvk_cmd_begin_rendering_init_state(struct panvk_cmd_buffer *cmdbuf,
-                                     const VkRenderingInfo *pRenderingInfo)
+panvk_cmd_init_render_state(struct panvk_cmd_buffer *cmdbuf,
+                            const VkRenderingInfo *pRenderingInfo)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct panvk_physical_device *phys_dev =
@@ -1656,10 +1679,6 @@ panvk_cmd_begin_rendering_init_state(struct panvk_cmd_buffer *cmdbuf,
    uint32_t att_width = 0, att_height = 0;
 
    cmdbuf->state.gfx.render.flags = pRenderingInfo->flags;
-
-   /* Resuming from a suspended pass, the state should be unchanged. */
-   if (cmdbuf->state.gfx.render.flags & VK_RENDERING_RESUMING_BIT)
-      return;
 
    cmdbuf->state.gfx.render.dirty = true;
    memset(cmdbuf->state.gfx.render.fb.crc_valid, 0,
@@ -1951,6 +1970,93 @@ preload_render_area_border(struct panvk_cmd_buffer *cmdbuf,
    }
 }
 
+void
+panvk_per_arch(cmd_inherit_render_state)(
+   struct panvk_cmd_buffer *cmdbuf,
+   const VkCommandBufferBeginInfo *pBeginInfo)
+{
+   if (cmdbuf->vk.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY ||
+       !(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))
+      return;
+
+   assert(pBeginInfo->pInheritanceInfo);
+   char gcbiar_data[VK_GCBIARR_DATA_SIZE(MAX_RTS)];
+   const VkRenderingInfo *resume_info =
+      vk_get_command_buffer_inheritance_as_rendering_resume(cmdbuf->vk.level,
+                                                            pBeginInfo,
+                                                            gcbiar_data);
+   if (resume_info) {
+      panvk_cmd_init_render_state(cmdbuf, resume_info);
+      return;
+   }
+
+   const VkCommandBufferInheritanceRenderingInfo *inheritance_info =
+      vk_get_command_buffer_inheritance_rendering_info(cmdbuf->vk.level,
+                                                       pBeginInfo);
+   assert(inheritance_info);
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(dev->vk.physical);
+   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+
+   cmdbuf->state.gfx.render.flags = inheritance_info->flags;
+
+   cmdbuf->state.gfx.render.dirty = true;
+   memset(cmdbuf->state.gfx.render.fb.crc_valid, 0,
+          sizeof(cmdbuf->state.gfx.render.fb.crc_valid));
+   memset(&cmdbuf->state.gfx.render.color_attachments, 0,
+          sizeof(cmdbuf->state.gfx.render.color_attachments));
+   memset(&cmdbuf->state.gfx.render.z_attachment, 0,
+          sizeof(cmdbuf->state.gfx.render.z_attachment));
+   memset(&cmdbuf->state.gfx.render.s_attachment, 0,
+          sizeof(cmdbuf->state.gfx.render.s_attachment));
+   cmdbuf->state.gfx.render.bound_attachments = 0;
+
+   cmdbuf->state.gfx.render.layer_count = 0;
+   *fbinfo = (struct pan_fb_info){
+      .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
+      .nr_samples = 1,
+      .rt_count = inheritance_info->colorAttachmentCount,
+   };
+
+   assert(inheritance_info->colorAttachmentCount <= ARRAY_SIZE(fbinfo->rts));
+
+   for (uint32_t i = 0; i < inheritance_info->colorAttachmentCount; i++) {
+      cmdbuf->state.gfx.render.bound_attachments |=
+         MESA_VK_RP_ATTACHMENT_COLOR_BIT(i);
+      cmdbuf->state.gfx.render.color_attachments.fmts[i] =
+         inheritance_info->pColorAttachmentFormats[i];
+      cmdbuf->state.gfx.render.color_attachments.samples[i] =
+         inheritance_info->rasterizationSamples;
+   }
+
+   if (inheritance_info->depthAttachmentFormat) {
+      cmdbuf->state.gfx.render.bound_attachments |=
+         MESA_VK_RP_ATTACHMENT_DEPTH_BIT;
+      cmdbuf->state.gfx.render.z_attachment.fmt =
+         inheritance_info->depthAttachmentFormat;
+   }
+
+   if (inheritance_info->stencilAttachmentFormat) {
+      cmdbuf->state.gfx.render.bound_attachments |=
+         MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
+      cmdbuf->state.gfx.render.s_attachment.fmt =
+         inheritance_info->stencilAttachmentFormat;
+   }
+
+   const VkRenderingAttachmentLocationInfoKHR att_loc_info_default = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR,
+      .colorAttachmentCount = inheritance_info->colorAttachmentCount,
+   };
+   const VkRenderingAttachmentLocationInfoKHR *att_loc_info =
+      vk_get_command_buffer_rendering_attachment_location_info(
+         cmdbuf->vk.level, pBeginInfo);
+   if (att_loc_info == NULL)
+      att_loc_info = &att_loc_info_default;
+
+   vk_cmd_set_rendering_attachment_locations(&cmdbuf->vk, att_loc_info);
+}
+
 VKAPI_ATTR void VKAPI_CALL
 panvk_per_arch(CmdBeginRendering)(VkCommandBuffer commandBuffer,
                                   const VkRenderingInfo *pRenderingInfo)
@@ -1958,9 +2064,13 @@ panvk_per_arch(CmdBeginRendering)(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    struct panvk_cmd_graphics_state *state = &cmdbuf->state.gfx;
 
-   panvk_cmd_begin_rendering_init_state(cmdbuf, pRenderingInfo);
+   bool resuming = pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT;
 
-   bool resuming = state->render.flags & VK_RENDERING_RESUMING_BIT;
+   /* When resuming from a suspended pass, the state should be unchanged. */
+   if (resuming)
+      state->render.flags = pRenderingInfo->flags;
+   else
+      panvk_cmd_init_render_state(cmdbuf, pRenderingInfo);
 
    /* If we're not resuming, the FBD should be NULL. */
    assert(!state->render.fbds.gpu || resuming);
