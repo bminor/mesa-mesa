@@ -291,7 +291,7 @@ xe_perf_stream_set_metrics_id(int perf_stream_fd, int drm_fd,
 }
 
 static int
-xe_perf_stream_read_error(int perf_stream_fd, uint8_t *buffer, size_t buffer_len)
+xe_perf_stream_read_error(int perf_stream_fd, uint8_t *buffer)
 {
    struct drm_xe_oa_stream_status status = {};
    struct intel_perf_record_header *header;
@@ -341,7 +341,7 @@ xe_perf_stream_read_samples(struct intel_perf_config *perf_config, int perf_stre
 
    if (len <= 0) {
       if (errno == EIO)
-         return xe_perf_stream_read_error(perf_stream_fd, buffer, buffer_len);
+         return xe_perf_stream_read_error(perf_stream_fd, buffer);
 
       return len < 0 ? -errno : 0;
    }
