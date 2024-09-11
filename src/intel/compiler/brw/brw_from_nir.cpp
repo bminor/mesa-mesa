@@ -5163,9 +5163,8 @@ adjust_handle_and_offset(const brw_builder &bld,
    unsigned adjustment = (urb_global_offset >> 11) << 11;
 
    if (adjustment) {
-      brw_builder ubld8 = bld.group(8, 0).exec_all();
       /* Allocate new register to not overwrite the shared URB handle. */
-      urb_handle = ubld8.ADD(urb_handle, brw_imm_ud(adjustment));
+      urb_handle = bld.ADD(urb_handle, brw_imm_ud(adjustment));
       urb_global_offset -= adjustment;
    }
 }
