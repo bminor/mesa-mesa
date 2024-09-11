@@ -2901,6 +2901,7 @@ nir_get_nir_type_for_glsl_base_type(enum glsl_base_type base_type)
    case GLSL_TYPE_INT64:   return nir_type_int64;
    case GLSL_TYPE_FLOAT:   return nir_type_float32;
    case GLSL_TYPE_FLOAT16: return nir_type_float16;
+   case GLSL_TYPE_BFLOAT16: return nir_type_uint16;
    case GLSL_TYPE_DOUBLE:  return nir_type_float64;
       /* clang-format on */
 

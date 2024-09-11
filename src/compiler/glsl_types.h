@@ -63,6 +63,7 @@ enum glsl_base_type {
    GLSL_TYPE_INT,
    GLSL_TYPE_FLOAT,
    GLSL_TYPE_FLOAT16,
+   GLSL_TYPE_BFLOAT16,
    GLSL_TYPE_DOUBLE,
    GLSL_TYPE_UINT8,
    GLSL_TYPE_INT8,
@@ -99,6 +100,7 @@ static unsigned glsl_base_type_bit_size(enum glsl_base_type type)
       return 32;
 
    case GLSL_TYPE_FLOAT16:
+   case GLSL_TYPE_BFLOAT16:
    case GLSL_TYPE_UINT16:
    case GLSL_TYPE_INT16:
       return 16;
@@ -167,6 +169,7 @@ glsl_base_type_get_bit_size(const enum glsl_base_type base_type)
       return 32;
 
    case GLSL_TYPE_FLOAT16:
+   case GLSL_TYPE_BFLOAT16:
    case GLSL_TYPE_UINT16:
    case GLSL_TYPE_INT16:
       return 16;
@@ -622,6 +625,12 @@ glsl_type_is_float_16_32_64(const glsl_type *t)
 }
 
 static inline bool
+glsl_type_is_bfloat_16(const glsl_type *t)
+{
+   return t->base_type == GLSL_TYPE_BFLOAT16;
+}
+
+static inline bool
 glsl_type_is_int_16_32_64(const glsl_type *t)
 {
    return t->base_type == GLSL_TYPE_INT16 ||
@@ -937,6 +946,7 @@ static inline const glsl_type *glsl_int8_t_type(void) { return &glsl_type_builti
 static inline const glsl_type *glsl_uint8_t_type(void) { return &glsl_type_builtin_uint8_t; }
 static inline const glsl_type *glsl_bool_type(void) { return &glsl_type_builtin_bool; }
 static inline const glsl_type *glsl_atomic_uint_type(void) { return &glsl_type_builtin_atomic_uint; }
+static inline const glsl_type *glsl_bfloat16_t_type(void) { return &glsl_type_builtin_bfloat16_t; }
 
 static inline const glsl_type *
 glsl_floatN_t_type(unsigned bit_size)
@@ -945,6 +955,16 @@ glsl_floatN_t_type(unsigned bit_size)
    case 16: return &glsl_type_builtin_float16_t;
    case 32: return &glsl_type_builtin_float;
    case 64: return &glsl_type_builtin_double;
+   default:
+      unreachable("Unsupported bit size");
+   }
+}
+
+static inline const glsl_type *
+glsl_bfloatN_t_type(unsigned bit_size)
+{
+   switch (bit_size) {
+   case 16: return &glsl_type_builtin_bfloat16_t;
    default:
       unreachable("Unsupported bit size");
    }
@@ -978,6 +998,7 @@ glsl_uintN_t_type(unsigned bit_size)
 
 const glsl_type *glsl_vec_type(unsigned components);
 const glsl_type *glsl_f16vec_type(unsigned components);
+const glsl_type *glsl_bf16vec_type(unsigned components);
 const glsl_type *glsl_dvec_type(unsigned components);
 const glsl_type *glsl_ivec_type(unsigned components);
 const glsl_type *glsl_uvec_type(unsigned components);

@@ -76,6 +76,7 @@ elk_type_for_base_type(const struct glsl_type *type)
    case GLSL_TYPE_VOID:
    case GLSL_TYPE_ERROR:
    case GLSL_TYPE_COOPERATIVE_MATRIX:
+   case GLSL_TYPE_BFLOAT16:
       unreachable("not reached");
    }
 

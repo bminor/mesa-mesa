@@ -26,12 +26,21 @@ def sampler_type(name, gl_type, base_type, dim, shadow, array, sampled_type):
     })
 
 def vector_type(base_name, vec_name, base_type, gl_type, extra_gl_type=None):
+    gl_types = [None, None, None, None]
+
     if extra_gl_type is None:
         extra_gl_type = ""
-    simple_type(base_name, gl_type + extra_gl_type, base_type, 1, 1)
-    simple_type(vec_name + "2", gl_type + "_VEC2" + extra_gl_type, base_type, 2, 1)
-    simple_type(vec_name + "3", gl_type + "_VEC3" + extra_gl_type, base_type, 3, 1)
-    simple_type(vec_name + "4", gl_type + "_VEC4" + extra_gl_type, base_type, 4, 1)
+
+    if gl_type:
+        gl_types = [gl_type + extra_gl_type,
+                    gl_type + "_VEC2" + extra_gl_type,
+                    gl_type + "_VEC3" + extra_gl_type,
+                    gl_type + "_VEC4" + extra_gl_type]
+
+    simple_type(base_name, gl_types[0], base_type, 1, 1)
+    simple_type(vec_name + "2",  gl_types[1], base_type, 2, 1)
+    simple_type(vec_name + "3",  gl_types[2], base_type, 3, 1)
+    simple_type(vec_name + "4",  gl_types[3], base_type, 4, 1)
     simple_type(vec_name + "5", None, base_type, 5, 1)
     simple_type(vec_name + "8", None, base_type, 8, 1)
     simple_type(vec_name + "16", None, base_type, 16, 1)
@@ -51,6 +60,8 @@ vector_type("int16_t",   "i16vec", "GLSL_TYPE_INT16",   "GL_INT16", "_NV")
 vector_type("uint16_t",  "u16vec", "GLSL_TYPE_UINT16",  "GL_UNSIGNED_INT16", "_NV")
 vector_type("int8_t",    "i8vec",  "GLSL_TYPE_INT8",    "GL_INT8", "_NV")
 vector_type("uint8_t",   "u8vec",  "GLSL_TYPE_UINT8",   "GL_UNSIGNED_INT8", "_NV")
+
+vector_type("bfloat16_t", "bf16vec", "GLSL_TYPE_BFLOAT16", None)
 
 simple_type("mat2",   "GL_FLOAT_MAT2",   "GLSL_TYPE_FLOAT", 2, 2)
 simple_type("mat3",   "GL_FLOAT_MAT3",   "GLSL_TYPE_FLOAT", 3, 3)

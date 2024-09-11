@@ -989,6 +989,7 @@ associate_uniform_storage(struct gl_context *ctx,
             FALLTHROUGH;
          case GLSL_TYPE_FLOAT:
          case GLSL_TYPE_FLOAT16:
+         case GLSL_TYPE_BFLOAT16:
             format = uniform_native;
             columns = storage->type->matrix_columns;
             break;
