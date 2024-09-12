@@ -2308,7 +2308,11 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
       d3d12_video_encoder_store_current_picture_references(pD3D12Enc, current_metadata_slot);
    }
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS1 inputStreamArguments = {
+#else
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS inputStreamArguments = {
+#endif
       // D3D12_VIDEO_ENCODER_SEQUENCE_CONTROL_DESC
       { // D3D12_VIDEO_ENCODER_SEQUENCE_CONTROL_FLAGS
         pD3D12Enc->m_currentEncodeConfig.m_seqFlags,
@@ -2320,7 +2324,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
         pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode,
         d3d12_video_encoder_get_current_slice_param_settings(pD3D12Enc),
         d3d12_video_encoder_get_current_gop_desc(pD3D12Enc) },
-      // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC
+      // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC/D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC1
       { // uint32_t IntraRefreshFrameIndex;
         pD3D12Enc->m_currentEncodeConfig.m_IntraRefreshCurrentFrameIndex,
         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAGS Flags;
@@ -2328,14 +2332,50 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
         // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA PictureControlCodecData;
         currentPicParams,
         // D3D12_VIDEO_ENCODE_REFERENCE_FRAMES ReferenceFrames;
-        referenceFramesDescriptor },
+        referenceFramesDescriptor
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+         // ... extra params to initialize D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC1
+         , // extra comma from last param above #if
+         // D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS MotionVectors;
+         {},
+         // D3D12_VIDEO_ENCODER_DIRTY_REGIONS DirtyRects;
+         {},
+         // D3D12_VIDEO_ENCODER_QUANTIZATION_OPAQUE_MAP QuantizationTextureMap;
+         {},
+#endif
+      },
       pInputVideoD3D12Res,
       inputVideoD3D12Subresource,
       static_cast<UINT>(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize)
       // budgeting. - User can also calculate headers fixed size beforehand (eg. no VUI,
       // etc) and build them with final values after EncodeFrame is executed
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   // ... extra params to initialize D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS1
+   , // extra comma from last param above #if
+   // D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAGS OptionalMetadata;
+   D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE, // must match with ResolveEncodeOutputMetadata flags
+#endif
    };
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM1 bitstreamArgs = { };
+   bitstreamArgs.NotificationMode = D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME;
+   // D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM
+   bitstreamArgs.FrameOutputBuffer =
+   {
+      pOutputBufferD3D12Res,
+      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize,
+   };
+
+   const D3D12_VIDEO_ENCODER_ENCODEFRAME_OUTPUT_ARGUMENTS1 outputStreamArguments = {
+      // D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM1
+      bitstreamArgs,
+      // D3D12_VIDEO_ENCODER_RECONSTRUCTED_PICTURE
+      reconPicOutputTextureDesc,
+      // D3D12_VIDEO_ENCODER_ENCODE_OPERATION_METADATA_BUFFER
+      { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(), 0 }
+   };
+#else
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_OUTPUT_ARGUMENTS outputStreamArguments = {
       // D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM
       {
@@ -2347,6 +2387,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
       // D3D12_VIDEO_ENCODER_ENCODE_OPERATION_METADATA_BUFFER
       { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(), 0 }
    };
+#endif
 
    debug_printf("DX12 EncodeFrame submission fenceValue %" PRIu64 " current_metadata_slot %" PRIu64 " - POC %d picture_type %s LayoutMode %d SlicesCount %d IRMode %d IRIndex %d\n",
                 pD3D12Enc->m_fenceValue,
@@ -2359,11 +2400,18 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
                 pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_IntraRefreshCurrentFrameIndex);
 
    // Record EncodeFrame
-   pD3D12Enc->m_spEncodeCommandList->EncodeFrame(pD3D12Enc->m_spVideoEncoder.Get(),
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   pD3D12Enc->m_spEncodeCommandList->EncodeFrame1(pD3D12Enc->m_spVideoEncoder.Get(),
                                                  pD3D12Enc->m_spVideoEncoderHeap.Get(),
                                                  &inputStreamArguments,
                                                  &outputStreamArguments);
 
+#else
+   pD3D12Enc->m_spEncodeCommandList->EncodeFrame(pD3D12Enc->m_spVideoEncoder.Get(),
+                                                 pD3D12Enc->m_spVideoEncoderHeap.Get(),
+                                                 &inputStreamArguments,
+                                                 &outputStreamArguments);
+#endif
    D3D12_RESOURCE_BARRIER rgResolveMetadataStateTransitions[] = {
       CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
                                            D3D12_RESOURCE_STATE_COMMON,
@@ -2382,27 +2430,62 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(_countof(rgResolveMetadataStateTransitions),
                                                      rgResolveMetadataStateTransitions);
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS1 inputMetadataCmd = {
+#else
    const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS inputMetadataCmd = {
+#endif
       pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
       d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
       pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo.Format,
       // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC
       pD3D12Enc->m_currentEncodeConfig.m_currentResolution,
       { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(), 0 }
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   // ... extra params to initialize D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS1
+   , // extra comma from last param above #if
+    // D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAGS OptionalMetadata;
+    D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE, // must match with EncodeFrame flags
+    // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
+    d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc),
+#endif
    };
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_OUTPUT_ARGUMENTS1 outputMetadataCmd = {
+#else
    const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_OUTPUT_ARGUMENTS outputMetadataCmd = {
+#endif
       /*If offset were to change, has to be aligned to pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.EncoderMetadataBufferAccessAlignment*/
       { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(), 0 }
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   // ... extra params to initialize D3D12_VIDEO_ENCODER_RESOLVE_METADATA_OUTPUT_ARGUMENTS
+   , // extra comma from last param above #if
+   // ID3D12Resource *pOutputQPMap;
+   NULL,
+   // ID3D12Resource *pOutputSATDMap;
+   NULL,
+   // ID3D12Resource *pOutputBitAllocationMap;
+   NULL,
+#endif
    };
+
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   pD3D12Enc->m_spEncodeCommandList->ResolveEncoderOutputMetadata1(&inputMetadataCmd, &outputMetadataCmd);
+#else
    pD3D12Enc->m_spEncodeCommandList->ResolveEncoderOutputMetadata(&inputMetadataCmd, &outputMetadataCmd);
+#endif
 
    debug_printf("[d3d12_video_encoder_encode_bitstream] EncodeFrame slot %" PRIu64 " encoder %p encoderheap %p input tex %p output bitstream %p raw metadata buf %p resolved metadata buf %p Command allocator %p\n",
                static_cast<uint64_t>(d3d12_video_encoder_pool_current_index(pD3D12Enc)),
                pD3D12Enc->m_spVideoEncoder.Get(),
                pD3D12Enc->m_spVideoEncoderHeap.Get(),
                inputStreamArguments.pInputFrame,
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+               outputStreamArguments.Bitstream.FrameOutputBuffer.pBuffer,
+#else
                outputStreamArguments.Bitstream.pBuffer,
+#endif
                inputMetadataCmd.HWLayoutMetadata.pBuffer,
                outputMetadataCmd.ResolvedLayoutMetadata.pBuffer,
                pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spCommandAllocator.Get());

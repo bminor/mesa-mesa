@@ -405,7 +405,11 @@ struct d3d12_video_encoder
    ComPtr<ID3D12VideoEncoder>            m_spVideoEncoder;
    ComPtr<ID3D12VideoEncoderHeap>        m_spVideoEncoderHeap;
    ComPtr<ID3D12CommandQueue>            m_spEncodeCommandQueue;
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   ComPtr<ID3D12VideoEncodeCommandList4> m_spEncodeCommandList;
+#else
    ComPtr<ID3D12VideoEncodeCommandList2> m_spEncodeCommandList;
+#endif
    std::vector<D3D12_RESOURCE_BARRIER>   m_transitionsBeforeCloseCmdList;
 
    std::unique_ptr<d3d12_video_encoder_references_manager_interface> m_upDPBManager;
