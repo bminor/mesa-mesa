@@ -483,10 +483,9 @@ read_src(read_ctx *ctx, nir_src *src)
 union packed_def {
    uint8_t u8;
    struct {
+      uint8_t _pad : 2;
       uint8_t num_components : 3;
       uint8_t bit_size : 3;
-      uint8_t divergent : 1;
-      uint8_t loop_invariant : 1;
    };
 };
 
@@ -611,8 +610,6 @@ write_def(write_ctx *ctx, const nir_def *def, union packed_instr header,
    pdef.num_components =
       encode_num_components_in_3bits(def->num_components);
    pdef.bit_size = encode_bit_size_3bits(def->bit_size);
-   pdef.divergent = def->divergent;
-   pdef.loop_invariant = def->loop_invariant;
    header.any.def = pdef.u8;
 
    /* Check if the current ALU instruction has the same header as the previous
@@ -674,8 +671,6 @@ read_def(read_ctx *ctx, nir_def *def, nir_instr *instr,
    else
       num_components = decode_num_components_in_3bits(pdef.num_components);
    nir_def_init(instr, def, num_components, bit_size);
-   def->divergent = pdef.divergent;
-   def->loop_invariant = pdef.loop_invariant;
    read_add_object(ctx, def);
 }
 
@@ -1259,8 +1254,6 @@ read_load_const(read_ctx *ctx, union packed_instr header)
    nir_load_const_instr *lc =
       nir_load_const_instr_create(ctx->nir, header.load_const.last_component + 1,
                                   decode_bit_size_3bits(header.load_const.bit_size));
-   lc->def.divergent = false;
-   lc->def.loop_invariant = true;
 
    switch (header.load_const.packing) {
    case load_const_scalar_hi_19bits:
@@ -1353,9 +1346,6 @@ read_ssa_undef(read_ctx *ctx, union packed_instr header)
    nir_undef_instr *undef =
       nir_undef_instr_create(ctx->nir, header.undef.last_component + 1,
                              decode_bit_size_3bits(header.undef.bit_size));
-
-   undef->def.divergent = false;
-   undef->def.loop_invariant = true;
 
    read_add_object(ctx, &undef->def);
    return undef;
@@ -1784,7 +1774,6 @@ static void
 write_block(write_ctx *ctx, const nir_block *block)
 {
    write_add_object(ctx, block);
-   blob_write_uint8(ctx->blob, block->divergent);
    blob_write_uint32(ctx->blob, exec_list_length(&block->instr_list));
 
    ctx->last_instr_type = ~0;
@@ -1807,7 +1796,6 @@ read_block(read_ctx *ctx, struct exec_list *cf_list)
       exec_node_data(nir_block, exec_list_get_tail(cf_list), cf_node.node);
 
    read_add_object(ctx, block);
-   block->divergent = blob_read_uint8(ctx->blob);
    unsigned num_instrs = blob_read_uint32(ctx->blob);
    for (unsigned i = 0; i < num_instrs;) {
       i += read_instr(ctx, block);
@@ -1848,8 +1836,6 @@ static void
 write_loop(write_ctx *ctx, nir_loop *loop)
 {
    blob_write_uint8(ctx->blob, loop->control);
-   blob_write_uint8(ctx->blob, loop->divergent_continue);
-   blob_write_uint8(ctx->blob, loop->divergent_break);
    bool has_continue_construct = nir_loop_has_continue_construct(loop);
    blob_write_uint8(ctx->blob, has_continue_construct);
 
@@ -1867,8 +1853,6 @@ read_loop(read_ctx *ctx, struct exec_list *cf_list)
    nir_cf_node_insert_end(cf_list, &loop->cf_node);
 
    loop->control = blob_read_uint8(ctx->blob);
-   loop->divergent_continue = blob_read_uint8(ctx->blob);
-   loop->divergent_break = blob_read_uint8(ctx->blob);
    bool has_continue_construct = blob_read_uint8(ctx->blob);
 
    read_cf_list(ctx, &loop->body);
