@@ -1283,8 +1283,14 @@ void pvr_GetPhysicalDeviceMemoryProperties2(
 PFN_vkVoidFunction pvr_GetInstanceProcAddr(VkInstance _instance,
                                            const char *pName)
 {
-   PVR_FROM_HANDLE(pvr_instance, instance, _instance);
-   return vk_instance_get_proc_addr(&instance->vk,
+   const struct vk_instance *vk_instance = NULL;
+
+   if (_instance != NULL) {
+      PVR_FROM_HANDLE(pvr_instance, instance, _instance);
+      vk_instance = &instance->vk;
+   }
+
+   return vk_instance_get_proc_addr(vk_instance,
                                     &pvr_instance_entrypoints,
                                     pName);
 }
