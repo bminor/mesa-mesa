@@ -910,7 +910,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                uint32_t &max_tile_cols,
                                uint32_t &maxIRDuration,
                                union pipe_enc_cap_roi &roi_support,
-                               bool &bVideoEncodeRequiresTextureArray)
+                               bool &bVideoEncodeRequiresTextureArray,
+                               union pipe_enc_cap_dirty_rect &dirty_rects_support)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1016,6 +1017,54 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
             supportsProfile = d3d12_video_encode_get_h264_codec_support(profDesc,
                                                                         spD3D12VideoDevice.Get(),
                                                                         codecSupport.h264_support.d3d12_caps);
+
+            #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+            D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
+            {
+               // UINT NodeIndex;
+               0u,
+               // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
+               {
+                  // D3D12_VIDEO_ENCODER_CODEC Codec;
+                  capEncoderSupportData1.Codec,
+                  // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
+                  profDesc,
+                  // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
+                  maxLvl,
+                  // DXGI_FORMAT InputFormat;
+                  capEncoderSupportData1.InputFormat,
+                  // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
+                  maxRes,
+                  // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
+                  capEncoderSupportData1.CodecConfiguration,
+                  // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
+                  capEncoderSupportData1.SubregionFrameEncoding,
+                  // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
+                  capEncoderSupportData1.SubregionFrameEncodingData,
+               },
+               // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+               D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+               // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
+               D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
+               // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAGS SupportFlags;
+               D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_NONE,
+               // UINT MapSourcePreferenceRanking;
+               0u
+            };
+
+            if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+            {
+               dirty_rects_support.bits.supports_full_frame_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_REPEAT_FRAME) ? 1u : 0u;
+               dirty_rects_support.bits.supports_rect_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+               dirty_rects_support.bits.supports_require_full_row_rects = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
+            }
+
+            capDirtyRegions.MapValuesType = D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+            if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+            {
+               dirty_rects_support.bits.supports_rect_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+            }
+#endif
          }
       } break;
 #endif
@@ -1295,6 +1344,52 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
                roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
                roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
+
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+               D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
+               {
+                  // UINT NodeIndex;
+                  0u,
+                  // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
+                  {
+                     // D3D12_VIDEO_ENCODER_CODEC Codec;
+                     capEncoderSupportData1.Codec,
+                     // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
+                     profDesc,
+                     // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
+                     maxLvl,
+                     // DXGI_FORMAT InputFormat;
+                     capEncoderSupportData1.InputFormat,
+                     // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
+                     capEncoderSupportData1.pResolutionList[0],
+                     // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
+                     capEncoderSupportData1.CodecConfiguration,
+                     // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
+                     capEncoderSupportData1.SubregionFrameEncoding,
+                     // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
+                     capEncoderSupportData1.SubregionFrameEncodingData,
+                  },
+                  // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+                  D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+                  // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
+                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
+                  // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAGS SupportFlags;
+                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_NONE,
+                  // UINT MapSourcePreferenceRanking;
+                  0u
+               };
+               if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+               {
+                  dirty_rects_support.bits.supports_full_frame_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_REPEAT_FRAME) ? 1u : 0u;
+                  dirty_rects_support.bits.supports_rect_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+                  dirty_rects_support.bits.supports_require_full_row_rects = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
+               }
+               capDirtyRegions.MapValuesType = D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+               if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+               {
+                  dirty_rects_support.bits.supports_rect_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+               }
+#endif
             }
          }
       } break;
@@ -1873,6 +1968,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    uint32_t max_tile_cols = 0u;
    uint32_t maxIRDuration = 0u;
    union pipe_enc_cap_roi roi_support = {};
+   union pipe_enc_cap_dirty_rect dirty_rects_support = {};
    struct d3d12_encode_codec_support codec_specific_support;
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    switch (param) {
@@ -1936,6 +2032,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_HEVC_RANGE_EXTENSION_FLAGS_SUPPORT:
       case PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME:
       case PIPE_VIDEO_CAP_ENC_MAX_DPB_CAPACITY:
+      case PIPE_VIDEO_CAP_ENC_DIRTY_RECTS:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -1955,7 +2052,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             max_tile_cols,
                                             maxIRDuration,
                                             roi_support,
-                                            bVideoEncodeRequiresTextureArray)) {
+                                            bVideoEncodeRequiresTextureArray,
+                                            dirty_rects_support)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2040,6 +2138,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return static_cast<int>(roi_support.value);
                } else if(param == PIPE_VIDEO_CAP_ENC_SURFACE_ALIGNMENT) {
                   return alignResEncode.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_DIRTY_RECTS) {
+                  return dirty_rects_support.value;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2108,6 +2208,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    union pipe_enc_cap_roi roi_support = {};
    struct d3d12_encode_codec_support codec_specific_support;
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
+   union pipe_enc_cap_dirty_rect dirty_rects_support = {};
    if (d3d12_has_video_encode_support(&pScreen->base,
                                       profile,
                                       maxLvlEncode,
@@ -2126,7 +2227,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       max_tile_cols,
                                       maxIRDuration,
                                       roi_support,
-                                      bVideoEncodeRequiresTextureArray))
+                                      bVideoEncodeRequiresTextureArray,
+                                      dirty_rects_support))
    {
       return bVideoEncodeRequiresTextureArray;
    }

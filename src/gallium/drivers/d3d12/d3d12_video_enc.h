@@ -138,6 +138,7 @@ enum d3d12_video_encoder_config_dirty_flags
    d3d12_video_encoder_config_dirty_flag_aud_header             = 0x4000,
    d3d12_video_encoder_config_dirty_flag_sei_header             = 0x8000,
    d3d12_video_encoder_config_dirty_flag_svcprefix_slice_header = 0x10000,
+   d3d12_video_encoder_config_dirty_flag_dirty_regions          = 0x20000,
 };
 DEFINE_ENUM_FLAG_OPERATORS(d3d12_video_encoder_config_dirty_flags);
 
@@ -294,6 +295,11 @@ struct D3D12EncodeConfiguration
    struct pipe_h265_enc_pic_param m_encoderCodecSpecificPictureStateDescH265;
 
    bool m_bUsedAsReference; // Set if frame will be used as reference frame
+
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   D3D12_VIDEO_ENCODER_DIRTY_RECT_INFO m_DirtyRectsDesc = {};
+   std::vector<RECT> m_DirtyRectsArray;
+#endif
 };
 
 struct EncodedBitstreamResolvedMetadata
@@ -571,7 +577,9 @@ d3d12_video_encoder_update_picparams_region_of_interest_qpmap(struct d3d12_video
                                                               std::vector<T>& pQPMap);
 bool
 d3d12_video_encoder_uses_direct_dpb(enum pipe_video_format codec);
-
+void
+d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
+                                       const struct pipe_enc_dirty_rects& rects);
 ///
 /// d3d12_video_encoder functions ends
 ///

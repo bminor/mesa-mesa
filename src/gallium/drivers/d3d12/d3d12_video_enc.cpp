@@ -338,6 +338,30 @@ d3d12_video_encoder_friendly_frame_type_h264(D3D12_VIDEO_ENCODER_FRAME_TYPE_H264
 }
 
 void
+d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
+                                       const struct pipe_enc_dirty_rects& rects)
+{
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.SourceDPBFrameReference = rects.dpb_reference_index;
+   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.FullFrameIdentical = rects.full_frame_skip;
+   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapValuesType =
+      (rects.rects_type == PIPE_ENC_DIRTY_RECT_TYPE_DIRTY) ? D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY :
+                                                             D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+
+   assert(rects.num_rects <= PIPE_ENC_DIRTY_RECTS_NUM_MAX);
+   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects = std::min(rects.num_rects, static_cast<uint32_t>(PIPE_ENC_DIRTY_RECTS_NUM_MAX));
+   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray.resize(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects);
+   for (uint32_t i = 0; i < pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects; i++) {
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].top = rects.rects[i].top;
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].left = rects.rects[i].left;
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].right = rects.rects[i].right;
+      pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray[i].bottom = rects.rects[i].bottom;
+   }
+   pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.pDirtyRects = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsArray.data();
+#endif
+}
+
+void
 d3d12_video_encoder_update_picparams_tracking(struct d3d12_video_encoder *pD3D12Enc,
                                               struct pipe_video_buffer *  srcTexture,
                                               struct pipe_picture_desc *  picture)
@@ -440,6 +464,8 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
                                         d3d12_video_encoder_config_dirty_flag_motion_precision_limit) != 0);
    bool irChanged = ((pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags &
                                         d3d12_video_encoder_config_dirty_flag_intra_refresh) != 0);
+   bool dirtyRegionsChanged = ((pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags &
+                                        d3d12_video_encoder_config_dirty_flag_dirty_regions) != 0);
 
    // Events that that trigger a re-creation of the reference picture manager
    // Stores codec agnostic textures so only input format, resolution and gop (num dpb references) affects this
@@ -564,6 +590,8 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
                            D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SEQUENCE_GOP_RECONFIGURATION_AVAILABLE) ==
                           0 /*checking the flag is NOT set*/))
        // || motionPrecisionLimitChanged // Only affects encoder
+       // Re-create encoder heap if dirty regions changes and the current heap doesn't already support them
+       || dirtyRegionsChanged && ((pD3D12Enc->m_spVideoEncoderHeap->GetEncoderHeapFlags() & D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_DIRTY_REGIONS) == 0)
    ) {
       if (!pD3D12Enc->m_spVideoEncoderHeap) {
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_reconfigure_encoder_objects - Creating "
@@ -573,8 +601,18 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
          reCreatedEncoderHeap = true;
       }
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+      D3D12_VIDEO_ENCODER_HEAP_FLAGS heapFlags = D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE;
+      if (pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.DirtyRegions.DirtyRegionsSupportFlags) {
+         heapFlags |= D3D12_VIDEO_ENCODER_HEAP_FLAG_ALLOW_DIRTY_REGIONS;
+      }
+
+      D3D12_VIDEO_ENCODER_HEAP_DESC heapDesc = { pD3D12Enc->m_NodeMask,
+                                                 heapFlags,
+#else
       D3D12_VIDEO_ENCODER_HEAP_DESC heapDesc = { pD3D12Enc->m_NodeMask,
                                                  D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE,
+#endif
                                                  pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
                                                  d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
                                                  d3d12_video_encoder_get_current_level_desc(pD3D12Enc),
@@ -1616,24 +1654,29 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 {
    pD3D12Enc->m_prevFrameEncodeConfig = pD3D12Enc->m_currentEncodeConfig;
 
+   bool bCodecUpdatesSuccess = false;
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
    switch (codec) {
 #if VIDEO_CODEC_H264ENC
       case PIPE_VIDEO_FORMAT_MPEG4_AVC:
       {
-         return d3d12_video_encoder_update_current_encoder_config_state_h264(pD3D12Enc, srcTextureDesc, picture);
+         d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_rects);
+         // ...encoder_config_state_h264 calls encoder support cap, set any state before this call
+         bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_h264(pD3D12Enc, srcTextureDesc, picture);
       } break;
 #endif
 #if VIDEO_CODEC_H265ENC
       case PIPE_VIDEO_FORMAT_HEVC:
       {
-         return d3d12_video_encoder_update_current_encoder_config_state_hevc(pD3D12Enc, srcTextureDesc, picture);
+         d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_rects);
+         // ...encoder_config_state_hevc calls encoder support cap, set any state before this call
+         bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_hevc(pD3D12Enc, srcTextureDesc, picture);
       } break;
 #endif
 #if VIDEO_CODEC_AV1ENC
       case PIPE_VIDEO_FORMAT_AV1:
       {
-         return d3d12_video_encoder_update_current_encoder_config_state_av1(pD3D12Enc, srcTextureDesc, picture);
+         bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_av1(pD3D12Enc, srcTextureDesc, picture);
       } break;
 #endif
       default:
@@ -1641,6 +1684,15 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
          unreachable("Unsupported pipe_video_format");
       } break;
    }
+
+   // Set dirty region changes
+   if (memcmp(&pD3D12Enc->m_prevFrameEncodeConfig.m_DirtyRectsDesc,
+              &pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc,
+              sizeof(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc)) != 0) {
+      pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags |= d3d12_video_encoder_config_dirty_flag_dirty_regions;
+   }
+
+   return bCodecUpdatesSuccess;
 }
 
 bool
@@ -2353,6 +2405,12 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    }
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   D3D12_VIDEO_ENCODER_DIRTY_REGIONS dirtyRegions = { };
+   dirtyRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
+   dirtyRegions.pCPUBuffer = &pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc;
+   if (dirtyRegions.pCPUBuffer->NumDirtyRects > 0)
+      picCtrlFlags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAG_ENABLE_DIRTY_REGIONS_INPUT;
+
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS1 inputStreamArguments = {
 #else
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS inputStreamArguments = {
@@ -2383,7 +2441,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
          // D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS MotionVectors;
          {},
          // D3D12_VIDEO_ENCODER_DIRTY_REGIONS DirtyRects;
-         {},
+         dirtyRegions,
          // D3D12_VIDEO_ENCODER_QUANTIZATION_OPAQUE_MAP QuantizationTextureMap;
          {},
 #endif
