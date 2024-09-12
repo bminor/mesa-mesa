@@ -71,7 +71,7 @@ panvk_device_init_mempools(struct panvk_device *dev)
    panvk_pool_init(&dev->mempools.rw, dev, NULL, &rw_pool_props);
 
    struct panvk_pool_properties rw_nc_pool_props = {
-      .create_flags = PAN_KMOD_BO_FLAG_GPU_UNCACHED,
+      .create_flags = PAN_ARCH <= 9 ? 0 : PAN_KMOD_BO_FLAG_GPU_UNCACHED,
       .slab_size = 16 * 1024,
       .label = "Device RW uncached memory pool",
       .owns_bos = false,
