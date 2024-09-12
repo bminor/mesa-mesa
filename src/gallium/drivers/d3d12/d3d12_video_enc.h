@@ -151,7 +151,11 @@ struct D3D12EncodeCapabilities
 
    D3D12_VIDEO_ENCODER_SUPPORT_FLAGS                          m_SupportFlags = {};
    D3D12_VIDEO_ENCODER_VALIDATION_FLAGS                       m_ValidationFlags = {};
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS1 m_currentResolutionSupportCaps = {};
+#else
    D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS m_currentResolutionSupportCaps = {};
+#endif
    union
    {
       D3D12_VIDEO_ENCODER_PROFILE_H264 m_H264Profile;
@@ -526,10 +530,18 @@ d3d12_video_encoder_get_current_codec(struct d3d12_video_encoder *pD3D12Enc);
 
 bool
 d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(struct d3d12_video_encoder *pD3D12Enc,
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+                                                                       D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 &capEncoderSupportData);
+#else
                                                                        D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 &capEncoderSupportData);
+#endif
 bool
 d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3D12Enc,
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+                                            D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 &capEncoderSupportData);
+#else
                                             D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 &capEncoderSupportData);
+#endif
 bool
 d3d12_video_encoder_check_subregion_mode_support(struct d3d12_video_encoder *pD3D12Enc,
                                                  D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE requestedSlicesMode);

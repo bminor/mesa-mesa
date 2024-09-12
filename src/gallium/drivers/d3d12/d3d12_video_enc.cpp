@@ -1212,7 +1212,11 @@ d3d12_video_encoder_disable_rc_extended1_to_legacy(struct D3D12EncodeRateControl
 /// Note that with fallbacks, the upper layer will not get exactly the encoding seetings they requested
 /// but for very particular settings it's better to continue with warnings than failing the whole encoding process
 ///
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+bool d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(struct d3d12_video_encoder *pD3D12Enc, D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 &capEncoderSupportData1) {
+#else
 bool d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(struct d3d12_video_encoder *pD3D12Enc, D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 &capEncoderSupportData1) {
+#endif
 
    ///
    /// Check for general support
@@ -1309,7 +1313,8 @@ bool d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(stru
                   "reported IR duration %d in query caps) for current resolution.\n",
                   pD3D12Enc->m_currentEncodeConfig.m_IntraRefresh.IntraRefreshDuration,
                   pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.MaxIntraRefreshFrameDuration);
-      return false;
+      capEncoderSupportData1.ValidationFlags |= D3D12_VIDEO_ENCODER_VALIDATION_FLAG_INTRA_REFRESH_MODE_NOT_SUPPORTED;
+      configSupported = false;
    }
 
    if(!configSupported) {
@@ -1353,6 +1358,14 @@ bool d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(stru
          0) {
          debug_printf("[d3d12_video_encoder] Requested input dxgi format is not supported\n");
       }
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+      if ((capEncoderSupportData1.ValidationFlags & D3D12_VIDEO_ENCODER_VALIDATION_FLAG_DIRTY_REGIONS_NOT_SUPPORTED ) !=
+         0) {
+         debug_printf("[d3d12_video_encoder] Requested input dirty regions is not supported\n");
+      }
+#else
+
+#endif
    }
 
    if (memcmp(&pD3D12Enc->m_prevFrameEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex],
@@ -1364,7 +1377,11 @@ bool d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(stru
    return configSupported;
 }
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3D12Enc, D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 &capEncoderSupportData1) {
+#else
 bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3D12Enc, D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 &capEncoderSupportData1) {
+#endif
    capEncoderSupportData1.NodeIndex                                = pD3D12Enc->m_NodeIndex;
    capEncoderSupportData1.Codec                                    = d3d12_video_encoder_get_current_codec(pD3D12Enc);
    capEncoderSupportData1.InputFormat            = pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo.Format;
@@ -1377,6 +1394,13 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
    capEncoderSupportData1.MaxReferenceFramesInDPB =
       std::max(2u, d3d12_video_encoder_get_current_max_dpb_capacity(pD3D12Enc)) - 1u; // we only want the number of references (not the current pic slot too)
    capEncoderSupportData1.CodecConfiguration = d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc);
+
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   // Set dirty regions input info to cap
+   capEncoderSupportData1.DirtyRegions.Enabled = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.FullFrameIdentical || (pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.NumDirtyRects > 0);
+   capEncoderSupportData1.DirtyRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
+   capEncoderSupportData1.DirtyRegions.MapValuesType = pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapValuesType;
+#endif
 
    enum pipe_video_format codec = u_reduce_video_profile(pD3D12Enc->base.profile);
    switch (codec) {
@@ -1430,9 +1454,29 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
       &pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps;
    
    capEncoderSupportData1.SubregionFrameEncodingData = d3d12_video_encoder_get_current_slice_param_settings(pD3D12Enc);
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_SUPPORT2,
+                                                                     &capEncoderSupportData1,
+                                                                     sizeof(capEncoderSupportData1));
+
+   if (FAILED(hr)) {
+      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT2 failed with HR %x\n", hr);
+      debug_printf("Falling back to check previous query version D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1...\n");
+
+      // D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 extends D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1
+      // in a binary compatible way, so just cast it and try with the older query D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1
+      D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 * casted_down_cap_data = reinterpret_cast<D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1*>(&capEncoderSupportData1);
+      hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1,
+                                                                casted_down_cap_data,
+                                                                sizeof(D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1));
+   }
+
+#else
    HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1,
-                                                                         &capEncoderSupportData1,
-                                                                         sizeof(capEncoderSupportData1));
+                                                                     &capEncoderSupportData1,
+                                                                     sizeof(capEncoderSupportData1));
+#endif
+
    if (FAILED(hr)) {
       debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 failed with HR %x\n", hr);
       debug_printf("Falling back to check previous query version D3D12_FEATURE_VIDEO_ENCODER_SUPPORT...\n");

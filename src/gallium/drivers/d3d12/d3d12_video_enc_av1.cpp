@@ -1184,7 +1184,11 @@ d3d12_video_encoder_update_current_encoder_config_state_av1(struct d3d12_video_e
 
    // Will call for d3d12 driver support based on the initial requested (non codec specific) features, then
    // try to fallback if any of them is not supported and return the negotiated d3d12 settings
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData1 = {};
+#else
    D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 capEncoderSupportData1 = {};
+#endif
    if (!d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(pD3D12Enc, capEncoderSupportData1)) {
       debug_printf("[d3d12_video_encoder_av1] After negotiating caps, D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 "
                    "arguments are not supported - "
