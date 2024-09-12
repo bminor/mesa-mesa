@@ -185,6 +185,10 @@ enum pipe_video_cap
     * Support for dirty rects in encoder picture params pipe_enc_cap_dirty_rect
     */
    PIPE_VIDEO_CAP_ENC_DIRTY_RECTS = 57,
+   /*
+    * Support for move rects in encoder picture params pipe_enc_cap_move_rect
+    */
+   PIPE_VIDEO_CAP_ENC_MOVE_RECTS = 58,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags
