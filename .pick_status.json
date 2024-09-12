@@ -1224,7 +1224,7 @@
         "description": "radv/video: handle missing h265 feedback struct.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7c6e3c70b6c18a4ccd1e6c13d3d1e3561be9d2ec",
         "notes": null
