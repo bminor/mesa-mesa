@@ -338,6 +338,54 @@ d3d12_video_encoder_friendly_frame_type_h264(D3D12_VIDEO_ENCODER_FRAME_TYPE_H264
 }
 
 void
+d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
+                                      const struct pipe_enc_move_rects& rects)
+{
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   assert(rects.num_rects <= PIPE_ENC_MOVE_RECTS_NUM_MAX);
+   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.NumMoveRegions = std::min(rects.num_rects, static_cast<uint32_t>(PIPE_ENC_MOVE_RECTS_NUM_MAX));
+   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray.resize(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.NumMoveRegions);
+   for (uint32_t i = 0; i < pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.NumMoveRegions; i++) {
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].SourcePoint.x = rects.rects[i].source_point.x;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].SourcePoint.y = rects.rects[i].source_point.y;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.top = rects.rects[i].dest_rect.top;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.left = rects.rects[i].dest_rect.left;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.right = rects.rects[i].dest_rect.right;
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray[i].DestRect.bottom = rects.rects[i].dest_rect.bottom;
+   }
+   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.pMoveRegions = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsArray.data();
+
+   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionSearchModeConfiguration.MotionSearchMode = D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH;
+   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionSearchModeConfiguration.SearchDeviationLimit = 0u;
+
+   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.SourceDPBFrameReference = rects.dpb_reference_index;
+
+   pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.Flags = rects.overlapping_rects ? D3D12_VIDEO_ENCODER_MOVEREGION_INFO_FLAG_MULTIPLE_HINTS :
+                                                                                      D3D12_VIDEO_ENCODER_MOVEREGION_INFO_FLAG_NONE;
+
+   switch (rects.precision)
+   {
+      case PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_FULL_PIXEL:
+      {
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_FULL_PIXEL;
+      } break;
+      case PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_HALF_PIXEL:
+      {
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_HALF_PIXEL;
+      } break;
+      case PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_QUARTER_PIXEL:
+      {
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MotionUnitPrecision = D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_QUARTER_PIXEL;
+      } break;
+      default:
+      {
+         unreachable("Unsupported pipe_enc_move_rects");
+      } break;
+   }
+#endif
+}
+
+void
 d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
                                        const struct pipe_enc_dirty_rects& rects)
 {
@@ -1660,6 +1708,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 #if VIDEO_CODEC_H264ENC
       case PIPE_VIDEO_FORMAT_MPEG4_AVC:
       {
+         d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->move_rects);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_rects);
          // ...encoder_config_state_h264 calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_h264(pD3D12Enc, srcTextureDesc, picture);
@@ -1668,6 +1717,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 #if VIDEO_CODEC_H265ENC
       case PIPE_VIDEO_FORMAT_HEVC:
       {
+         d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_rects);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_rects);
          // ...encoder_config_state_hevc calls encoder support cap, set any state before this call
          bCodecUpdatesSuccess = d3d12_video_encoder_update_current_encoder_config_state_hevc(pD3D12Enc, srcTextureDesc, picture);
@@ -2411,6 +2461,12 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    if (dirtyRegions.pCPUBuffer->NumDirtyRects > 0)
       picCtrlFlags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAG_ENABLE_DIRTY_REGIONS_INPUT;
 
+   D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS motionRegions = { };
+   motionRegions.MapSource = D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER;
+   motionRegions.pCPUBuffer = &pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc;
+   if (motionRegions.pCPUBuffer->NumMoveRegions > 0)
+      picCtrlFlags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAG_ENABLE_MOTION_VECTORS_INPUT;
+
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS1 inputStreamArguments = {
 #else
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS inputStreamArguments = {
@@ -2439,7 +2495,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
          // ... extra params to initialize D3D12_VIDEO_ENCODER_PICTURE_CONTROL_DESC1
          , // extra comma from last param above #if
          // D3D12_VIDEO_ENCODER_FRAME_MOTION_VECTORS MotionVectors;
-         {},
+         motionRegions,
          // D3D12_VIDEO_ENCODER_DIRTY_REGIONS DirtyRects;
          dirtyRegions,
          // D3D12_VIDEO_ENCODER_QUANTIZATION_OPAQUE_MAP QuantizationTextureMap;

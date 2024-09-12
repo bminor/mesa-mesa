@@ -911,7 +911,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                uint32_t &maxIRDuration,
                                union pipe_enc_cap_roi &roi_support,
                                bool &bVideoEncodeRequiresTextureArray,
-                               union pipe_enc_cap_dirty_rect &dirty_rects_support)
+                               union pipe_enc_cap_dirty_rect &dirty_rects_support,
+                               union pipe_enc_cap_move_rect &move_rects_support)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1018,51 +1019,101 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                                                         spD3D12VideoDevice.Get(),
                                                                         codecSupport.h264_support.d3d12_caps);
 
-            #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-            D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
+            D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo =
             {
-               // UINT NodeIndex;
-               0u,
-               // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
-               {
-                  // D3D12_VIDEO_ENCODER_CODEC Codec;
-                  capEncoderSupportData1.Codec,
-                  // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
-                  profDesc,
-                  // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
-                  maxLvl,
-                  // DXGI_FORMAT InputFormat;
-                  capEncoderSupportData1.InputFormat,
-                  // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
-                  maxRes,
-                  // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
-                  capEncoderSupportData1.CodecConfiguration,
-                  // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
-                  capEncoderSupportData1.SubregionFrameEncoding,
-                  // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
-                  capEncoderSupportData1.SubregionFrameEncodingData,
-               },
-               // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
-               D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
-               // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
-               D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
-               // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAGS SupportFlags;
-               D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_NONE,
-               // UINT MapSourcePreferenceRanking;
-               0u
+               // D3D12_VIDEO_ENCODER_CODEC Codec;
+               capEncoderSupportData1.Codec,
+               // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
+               profDesc,
+               // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
+               maxLvl,
+               // DXGI_FORMAT InputFormat;
+               capEncoderSupportData1.InputFormat,
+               // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
+               maxRes,
+               // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
+               capEncoderSupportData1.CodecConfiguration,
+               // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
+               capEncoderSupportData1.SubregionFrameEncoding,
+               // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
+               capEncoderSupportData1.SubregionFrameEncodingData,
             };
 
-            if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+            ///
+            /// Dirty rects caps
+            ///
             {
-               dirty_rects_support.bits.supports_full_frame_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_REPEAT_FRAME) ? 1u : 0u;
-               dirty_rects_support.bits.supports_rect_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
-               dirty_rects_support.bits.supports_require_full_row_rects = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
+               D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
+               {
+                  // UINT NodeIndex;
+                  0u,
+                  sessionInfo,
+                  // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+                  D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+                  // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
+                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
+                  // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAGS SupportFlags;
+                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_NONE,
+                  // UINT MapSourcePreferenceRanking;
+                  0u
+               };
+
+               if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+               {
+                  dirty_rects_support.bits.supports_full_frame_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_REPEAT_FRAME) ? 1u : 0u;
+                  dirty_rects_support.bits.supports_rect_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+                  dirty_rects_support.bits.supports_require_full_row_rects = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
+               }
+
+               capDirtyRegions.MapValuesType = D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+               if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+               {
+                  dirty_rects_support.bits.supports_rect_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+               }
             }
 
-            capDirtyRegions.MapValuesType = D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
-            if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+            ///
+            /// Motion hints caps
+            ///
             {
-               dirty_rects_support.bits.supports_rect_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+               D3D12_FEATURE_DATA_VIDEO_ENCODER_MOTION_SEARCH capMotionVectors =
+               {
+                  // UINT NodeIndex;                                                                                 // input
+                  0u,
+                  // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;                                         // input
+                  sessionInfo,
+                  // D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE MotionSearchMode;                                  // input
+                  D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH,
+                  // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;                                                 // input
+                  D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+                  // BOOL BidirectionalRefFrameEnabled;                                                              // input
+                  false,
+                  // D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAGS SupportFlags;                                   // output
+                  D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAG_NONE,
+                  // UINT MaxMotionHints;                                                                            // output
+                  0u,
+                  // UINT MinDeviation;                                                                              // output
+                  0u,
+                  // UINT MaxDeviation;                                                                              // output
+                  0u,
+                  // UINT MapSourcePreferenceRanking;                                                                // output
+                  0u,
+                  // D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAGS MotionUnitPrecisionSupport; // output
+                  D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_NONE
+               };
+
+               move_rects_support.value = 0u;
+               if ((SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_MOTION_SEARCH, &capMotionVectors, sizeof(capMotionVectors)))) &&
+                   (capMotionVectors.SupportFlags & D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAG_SUPPORTED))
+               {
+                  move_rects_support.bits.max_motion_hints = std::min(capMotionVectors.MaxMotionHints, 1u << 16u);
+                  move_rects_support.bits.supports_overlapped_rects = (capMotionVectors.SupportFlags & D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAG_MULTIPLE_HINTS) ? 1u : 0u; 
+                  move_rects_support.bits.supports_precision_full_pixel = (capMotionVectors.MotionUnitPrecisionSupport & D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_FULL_PIXEL) ? 1u : 0u;
+                  move_rects_support.bits.supports_precision_half_pixel = (capMotionVectors.MotionUnitPrecisionSupport & D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_HALF_PIXEL) ? 1u : 0u;
+                  move_rects_support.bits.supports_precision_quarter_pixel = (capMotionVectors.MotionUnitPrecisionSupport & D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_QUARTER_PIXEL) ? 1u : 0u;
+               }
             }
 #endif
          }
@@ -1346,48 +1397,99 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-               D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
+               D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo =
                {
-                  // UINT NodeIndex;
-                  0u,
-                  // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;
-                  {
-                     // D3D12_VIDEO_ENCODER_CODEC Codec;
-                     capEncoderSupportData1.Codec,
-                     // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
-                     profDesc,
-                     // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
-                     maxLvl,
-                     // DXGI_FORMAT InputFormat;
-                     capEncoderSupportData1.InputFormat,
-                     // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
-                     capEncoderSupportData1.pResolutionList[0],
-                     // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
-                     capEncoderSupportData1.CodecConfiguration,
-                     // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
-                     capEncoderSupportData1.SubregionFrameEncoding,
-                     // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
-                     capEncoderSupportData1.SubregionFrameEncodingData,
-                  },
-                  // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
-                  D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
-                  // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
-                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
-                  // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAGS SupportFlags;
-                  D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_NONE,
-                  // UINT MapSourcePreferenceRanking;
-                  0u
+                  // D3D12_VIDEO_ENCODER_CODEC Codec;
+                  capEncoderSupportData1.Codec,
+                  // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
+                  profDesc,
+                  // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
+                  maxLvl,
+                  // DXGI_FORMAT InputFormat;
+                  capEncoderSupportData1.InputFormat,
+                  // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
+                  capEncoderSupportData1.pResolutionList[0],
+                  // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
+                  capEncoderSupportData1.CodecConfiguration,
+                  // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
+                  capEncoderSupportData1.SubregionFrameEncoding,
+                  // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
+                  capEncoderSupportData1.SubregionFrameEncodingData,
                };
-               if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+
+               ///
+               /// Dirty rects caps
+               ///
                {
-                  dirty_rects_support.bits.supports_full_frame_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_REPEAT_FRAME) ? 1u : 0u;
-                  dirty_rects_support.bits.supports_rect_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
-                  dirty_rects_support.bits.supports_require_full_row_rects = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
+                  D3D12_FEATURE_DATA_VIDEO_ENCODER_DIRTY_REGIONS capDirtyRegions =
+                  {
+                     // UINT NodeIndex;
+                     0u,
+                     sessionInfo,
+                     // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
+                     D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+                     // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE MapValuesType;
+                     D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_DIRTY,
+                     // D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAGS SupportFlags;
+                     D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_NONE,
+                     // UINT MapSourcePreferenceRanking;
+                     0u
+                  };
+
+                  if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+                  {
+                     dirty_rects_support.bits.supports_full_frame_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_REPEAT_FRAME) ? 1u : 0u;
+                     dirty_rects_support.bits.supports_rect_type_dirty = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+                     dirty_rects_support.bits.supports_require_full_row_rects = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS_REQUIRE_FULL_ROW) ? 1u : 0u;
+                  }
+
+                  capDirtyRegions.MapValuesType = D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
+                  if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+                  {
+                     dirty_rects_support.bits.supports_rect_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+                  }
                }
-               capDirtyRegions.MapValuesType = D3D12_VIDEO_ENCODER_DIRTY_REGIONS_MAP_VALUES_MODE_SKIP;
-               if (SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_DIRTY_REGIONS, &capDirtyRegions, sizeof(capDirtyRegions))))
+
+               ///
+               /// Motion hints caps
+               ///
                {
-                  dirty_rects_support.bits.supports_rect_type_skip = (capDirtyRegions.SupportFlags & D3D12_VIDEO_ENCODER_DIRTY_REGIONS_SUPPORT_FLAG_DIRTY_REGIONS) ? 1u : 0u;
+                  D3D12_FEATURE_DATA_VIDEO_ENCODER_MOTION_SEARCH capMotionVectors =
+                  {
+                     // UINT NodeIndex;                                                                                 // input
+                     0u,
+                     // D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO SessionInfo;                                         // input
+                     sessionInfo,
+                     // D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE MotionSearchMode;                                  // input
+                     D3D12_VIDEO_ENCODER_FRAME_MOTION_SEARCH_MODE_FULL_SEARCH,
+                     // D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;                                                 // input
+                     D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER,
+                     // BOOL BidirectionalRefFrameEnabled;                                                              // input
+                     false,
+                     // D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAGS SupportFlags;                                   // output
+                     D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAG_NONE,
+                     // UINT MaxMotionHints;                                                                            // output
+                     0u,
+                     // UINT MinDeviation;                                                                              // output
+                     0u,
+                     // UINT MaxDeviation;                                                                              // output
+                     0u,
+                     // UINT MapSourcePreferenceRanking;                                                                // output
+                     0u,
+                     // D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAGS MotionUnitPrecisionSupport; // output
+                     D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_NONE
+                  };
+
+                  move_rects_support.value = 0u;
+                  if ((SUCCEEDED(spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_MOTION_SEARCH, &capMotionVectors, sizeof(capMotionVectors)))) &&
+                     (capMotionVectors.SupportFlags & D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAG_SUPPORTED))
+                  {
+                     move_rects_support.bits.max_motion_hints = std::min(capMotionVectors.MaxMotionHints, 1u << 16u);
+                     move_rects_support.bits.supports_overlapped_rects = (capMotionVectors.SupportFlags & D3D12_VIDEO_ENCODER_MOTION_SEARCH_SUPPORT_FLAG_MULTIPLE_HINTS) ? 1u : 0u; 
+                     move_rects_support.bits.supports_precision_full_pixel = (capMotionVectors.MotionUnitPrecisionSupport & D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_FULL_PIXEL) ? 1u : 0u;
+                     move_rects_support.bits.supports_precision_half_pixel = (capMotionVectors.MotionUnitPrecisionSupport & D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_HALF_PIXEL) ? 1u : 0u;
+                     move_rects_support.bits.supports_precision_quarter_pixel = (capMotionVectors.MotionUnitPrecisionSupport & D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION_SUPPORT_FLAG_QUARTER_PIXEL) ? 1u : 0u;
+                  }
                }
 #endif
             }
@@ -1969,6 +2071,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    uint32_t maxIRDuration = 0u;
    union pipe_enc_cap_roi roi_support = {};
    union pipe_enc_cap_dirty_rect dirty_rects_support = {};
+   union pipe_enc_cap_move_rect move_rects_support = {};
    struct d3d12_encode_codec_support codec_specific_support;
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    switch (param) {
@@ -2033,6 +2136,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME:
       case PIPE_VIDEO_CAP_ENC_MAX_DPB_CAPACITY:
       case PIPE_VIDEO_CAP_ENC_DIRTY_RECTS:
+      case PIPE_VIDEO_CAP_ENC_MOVE_RECTS:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -2053,7 +2157,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             maxIRDuration,
                                             roi_support,
                                             bVideoEncodeRequiresTextureArray,
-                                            dirty_rects_support)) {
+                                            dirty_rects_support,
+                                            move_rects_support)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2140,6 +2245,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return alignResEncode.value;
                } else if (param == PIPE_VIDEO_CAP_ENC_DIRTY_RECTS) {
                   return dirty_rects_support.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_MOVE_RECTS) {
+                  return move_rects_support.value;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2209,6 +2316,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    struct d3d12_encode_codec_support codec_specific_support;
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    union pipe_enc_cap_dirty_rect dirty_rects_support = {};
+   union pipe_enc_cap_move_rect move_rects_support = {};
    if (d3d12_has_video_encode_support(&pScreen->base,
                                       profile,
                                       maxLvlEncode,
@@ -2228,7 +2336,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       maxIRDuration,
                                       roi_support,
                                       bVideoEncodeRequiresTextureArray,
-                                      dirty_rects_support))
+                                      dirty_rects_support,
+                                      move_rects_support))
    {
       return bVideoEncodeRequiresTextureArray;
    }

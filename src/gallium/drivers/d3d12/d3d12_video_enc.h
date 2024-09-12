@@ -299,6 +299,8 @@ struct D3D12EncodeConfiguration
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    D3D12_VIDEO_ENCODER_DIRTY_RECT_INFO m_DirtyRectsDesc = {};
    std::vector<RECT> m_DirtyRectsArray;
+   D3D12_VIDEO_ENCODER_MOVEREGION_INFO m_MoveRectsDesc = {};
+   std::vector<D3D12_VIDEO_ENCODER_MOVE_RECT> m_MoveRectsArray;
 #endif
 };
 
@@ -580,6 +582,9 @@ d3d12_video_encoder_uses_direct_dpb(enum pipe_video_format codec);
 void
 d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
                                        const struct pipe_enc_dirty_rects& rects);
+void
+d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
+                                      const struct pipe_enc_move_rects& rects);
 ///
 /// d3d12_video_encoder functions ends
 ///
