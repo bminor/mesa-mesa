@@ -67,6 +67,14 @@ struct cs_load_store_tracker {
    uint8_t sb_slot;
 };
 
+/**
+ * This is used to determine which registers as been written to (a.k.a. used
+ * as an instruction's destination).
+ */
+struct cs_dirty_tracker {
+   BITSET_DECLARE(regs, 256);
+};
+
 enum cs_reg_perm {
    CS_REG_NO_ACCESS = 0,
    CS_REG_RD = BITFIELD_BIT(1),
@@ -90,6 +98,9 @@ struct cs_builder_conf {
 
    /* Optional load/store tracker. */
    struct cs_load_store_tracker *ls_tracker;
+
+   /* Optional dirty registers tracker. */
+   struct cs_dirty_tracker *dirty_tracker;
 
    /* Optional register access checker. */
    reg_perm_cb_t reg_perm;
@@ -347,6 +358,11 @@ cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count)
       }
    }
 
+   if (unlikely(b->conf.dirty_tracker)) {
+      for (unsigned i = reg; i < reg + count; i++)
+         BITSET_SET(b->conf.dirty_tracker->regs, i);
+   }
+
    return reg;
 }
 
@@ -423,20 +439,21 @@ cs_cur_block(struct cs_builder *b)
 
 #define JUMP_SEQ_INSTR_COUNT 4
 
-static inline void *
-cs_alloc_ins_block(struct cs_builder *b, uint32_t num_instrs)
+static inline bool
+cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
 {
    /* Don't call this function with num_instrs=0. */
    assert(num_instrs > 0);
+   assert(cs_cur_block(b) == NULL);
 
    /* If an allocation failure happened before, we just discard all following
     * instructions.
     */
    if (unlikely(!cs_is_valid(b)))
-      return &b->discard_instr_slot;
+      return false;
 
-   if (cs_cur_block(b))
-      return util_dynarray_grow(&b->blocks.instrs, uint64_t, num_instrs);
+   /* Make sure the instruction sequence fits in a single chunk. */
+   assert(b->cur_chunk.buffer.capacity >= num_instrs);
 
    /* Lazy root chunk allocation. */
    if (unlikely(!b->root_chunk.buffer.cpu)) {
@@ -444,12 +461,9 @@ cs_alloc_ins_block(struct cs_builder *b, uint32_t num_instrs)
       b->cur_chunk.buffer = b->root_chunk.buffer;
       if (!b->cur_chunk.buffer.cpu) {
          b->invalid = true;
-         return &b->discard_instr_slot;
+         return false;
       }
    }
-
-   /* Make sure the instruction sequence fits in a single chunk. */
-   assert(b->cur_chunk.buffer.capacity >= num_instrs);
 
    /* If the current chunk runs out of space, allocate a new one and jump to it.
     * We actually do this a few instructions before running out, because the
@@ -464,7 +478,7 @@ cs_alloc_ins_block(struct cs_builder *b, uint32_t num_instrs)
        * discarded.
        */
       if (unlikely(!b->cur_chunk.buffer.cpu))
-         return &b->discard_instr_slot;
+         return false;
 
       uint64_t *ptr = b->cur_chunk.buffer.cpu + (b->cur_chunk.pos++);
 
@@ -497,6 +511,18 @@ cs_alloc_ins_block(struct cs_builder *b, uint32_t num_instrs)
       b->cur_chunk.buffer = newbuf;
       b->cur_chunk.pos = 0;
    }
+
+   return true;
+}
+
+static inline void *
+cs_alloc_ins_block(struct cs_builder *b, uint32_t num_instrs)
+{
+   if (cs_cur_block(b))
+      return util_dynarray_grow(&b->blocks.instrs, uint64_t, num_instrs);
+
+   if (!cs_reserve_instrs(b, num_instrs))
+      return &b->discard_instr_slot;
 
    assert(b->cur_chunk.size + num_instrs - 1 < b->cur_chunk.buffer.capacity);
    uint32_t pos = b->cur_chunk.pos;
@@ -1635,4 +1661,124 @@ static inline void
 cs_nop(struct cs_builder *b)
 {
    cs_emit(b, NOP, I) {};
+}
+
+struct cs_exception_handler {
+   struct cs_block block;
+   struct cs_dirty_tracker dirty;
+   uint64_t backup_addr;
+   uint8_t sb_slot;
+};
+
+static inline struct cs_exception_handler *
+cs_exception_handler_start(struct cs_builder *b,
+                           struct cs_exception_handler *handler,
+                           uint64_t backup_addr, uint8_t sb_slot)
+{
+   assert(cs_cur_block(b) == NULL);
+   assert(b->conf.dirty_tracker == NULL);
+
+   *handler = (struct cs_exception_handler){
+      .backup_addr = backup_addr,
+      .sb_slot = sb_slot,
+   };
+
+   cs_block_start(b, &handler->block);
+
+   b->conf.dirty_tracker = &handler->dirty;
+
+   return handler;
+}
+
+#define SAVE_RESTORE_MAX_OPS (256 / 16)
+
+static inline void
+cs_exception_handler_end(struct cs_builder *b,
+                         struct cs_exception_handler *handler)
+{
+   struct cs_index ranges[SAVE_RESTORE_MAX_OPS];
+   uint16_t masks[SAVE_RESTORE_MAX_OPS];
+   unsigned num_ranges = 0;
+   uint32_t num_instrs =
+      util_dynarray_num_elements(&b->blocks.instrs, uint64_t);
+   struct cs_index addr_reg = {
+      .type = CS_INDEX_REGISTER,
+      .size = 2,
+      .reg = b->conf.nr_registers - 2,
+   };
+
+   /* Manual cs_block_end() without an instruction flush. We do that to insert
+    * the preamble without having to move memory in b->blocks.instrs. The flush
+    * will be done after the preamble has been emitted. */
+   assert(cs_cur_block(b) == &handler->block);
+   assert(handler->block.next == NULL);
+   b->blocks.stack = NULL;
+
+   if (!num_instrs)
+      return;
+
+   /* Try to minimize number of load/store by grouping them */
+   unsigned nregs = b->conf.nr_registers - b->conf.nr_kernel_registers;
+   unsigned pos, last = 0;
+
+   BITSET_FOREACH_SET(pos, handler->dirty.regs, nregs) {
+      unsigned range = MIN2(nregs - pos, 16);
+      unsigned word = BITSET_BITWORD(pos);
+      unsigned bit = pos % BITSET_WORDBITS;
+      unsigned remaining_bits = BITSET_WORDBITS - bit;
+
+      if (pos < last)
+         continue;
+
+      masks[num_ranges] = handler->dirty.regs[word] >> bit;
+      if (remaining_bits < range)
+         masks[num_ranges] |= handler->dirty.regs[word + 1] << remaining_bits;
+      masks[num_ranges] &= BITFIELD_MASK(range);
+
+      ranges[num_ranges] =
+         cs_reg_tuple(b, pos, util_last_bit(masks[num_ranges]));
+      num_ranges++;
+      last = pos + range;
+   }
+
+   /* Make sure the current chunk is able to accommodate the block
+    * instructions as well as the preamble and postamble.
+    * Adding 4 instructions (2x wait_slot and the move for the address) as
+    * the move might actually be translated to two MOVE32 instructions. */
+   if (!cs_reserve_instrs(b, num_instrs + (num_ranges * 2) + 4))
+      return;
+
+   /* Preamble: backup modified registers */
+   if (num_ranges > 0) {
+      unsigned offset = 0;
+
+      cs_move64_to(b, addr_reg, handler->backup_addr);
+
+      for (unsigned i = 0; i < num_ranges; ++i) {
+         unsigned reg_count = util_bitcount(masks[i]);
+
+         cs_store(b, ranges[i], addr_reg, masks[i], offset);
+         offset += reg_count * 4;
+      }
+
+      cs_wait_slot(b, handler->sb_slot, false);
+   }
+
+   /* Now that the preamble is emitted, we can flush the instructions we have in
+    * our exception handler block. */
+   cs_flush_block_instrs(b);
+
+   /* Postamble: restore modified registers */
+   if (num_ranges > 0) {
+      unsigned offset = 0;
+
+      for (unsigned i = 0; i < num_ranges; ++i) {
+         unsigned reg_count = util_bitcount(masks[i]);
+
+         cs_load_to(b, ranges[i], addr_reg, masks[i], offset);
+         offset += reg_count * 4;
+      }
+
+      cs_wait_slot(b, handler->sb_slot, false);
+   }
 }
