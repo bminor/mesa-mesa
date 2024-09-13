@@ -114,6 +114,29 @@ d3d12_video_create_dpb_buffer(struct pipe_video_codec *codec,
                               struct pipe_picture_desc *picture,
                               const struct pipe_video_buffer *templat);
 
+void
+d3d12_video_encoder_encode_bitstream_sliced(struct pipe_video_codec *codec,
+                                            struct pipe_video_buffer *source,
+                                            unsigned num_slice_objects,
+                                            struct pipe_resource **slice_destinations,
+                                            struct pipe_fence_handle ***slice_fences,
+                                            void **feedback);
+
+void
+d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
+                                          struct pipe_video_buffer *source,
+                                          unsigned num_slice_objects,
+                                          struct pipe_resource **slice_destinations,
+                                          struct pipe_fence_handle ***slice_fences,
+                                          void **feedback);
+
+void
+d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
+                                             void *feedback,
+                                             unsigned slice_idx,
+                                             struct codec_unit_location_t *codec_unit_metadata,
+                                             unsigned *codec_unit_metadata_count);
+
 ///
 /// Pipe video interface ends
 ///
@@ -354,14 +377,14 @@ struct EncodedBitstreamResolvedMetadata
    * If needed get_feedback will have to generate
    * headers and re-pack the compressed bitstream
    */
-   pipe_resource* comp_bit_destination;
+   std::vector<pipe_resource*> comp_bit_destinations;
    
    /*
    * Staging bitstream for when headers must be
    * packed in get_feedback, it contains the encoded
    * stream from EncodeFrame.
    */
-   ComPtr<ID3D12Resource> spStagingBitstream;
+   std::vector<ComPtr<ID3D12Resource>> spStagingBitstreams;
    
    /* codec specific associated configuration flags */
    union {
@@ -374,7 +397,7 @@ struct EncodedBitstreamResolvedMetadata
    
    /* 
    * Scratch CPU buffer memory to generate any extra headers
-   * in between the GPU spStagingBitstream contents
+   * in between the GPU spStagingBitstreams contents
    */
    std::vector<uint8_t> m_StagingBitstreamConstruction;
 
@@ -405,6 +428,8 @@ struct d3d12_video_encoder
    struct d3d12_screen *   m_pD3D12Screen = nullptr;
    UINT max_quality_levels = 1;
    UINT max_num_ltr_frames = 0;
+
+   union pipe_enc_cap_sliced_notifications supports_sliced_fences = {};
 
    enum d3d12_video_encoder_driver_workarounds driver_workarounds = d3d12_video_encoder_driver_workaround_none;
 

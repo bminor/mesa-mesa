@@ -1884,6 +1884,8 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
    pD3D12Enc->base.get_feedback     = d3d12_video_encoder_get_feedback;
    pD3D12Enc->base.create_dpb_buffer = d3d12_video_create_dpb_buffer;
    pD3D12Enc->base.fence_wait       = d3d12_video_encoder_fence_wait;
+   pD3D12Enc->base.encode_bitstream_sliced = d3d12_video_encoder_encode_bitstream_sliced;
+   pD3D12Enc->base.get_slice_bitstream_data = d3d12_video_encoder_get_slice_bitstream_data;
 
    struct d3d12_context *pD3D12Ctx = (struct d3d12_context *) context;
    pD3D12Enc->m_pD3D12Screen       = d3d12_screen(pD3D12Ctx->base.screen);
@@ -1916,6 +1918,9 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
                                        codec->profile,
                                        codec->entrypoint,
                                        PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME);
+   pD3D12Enc->supports_sliced_fences.value = context->screen->get_video_param(context->screen, codec->profile,
+                                                                              codec->entrypoint,
+                                                                              PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS);
 
    return &pD3D12Enc->base;
 
@@ -2204,14 +2209,61 @@ d3d12_video_encoder_calculate_max_slices_count_in_output(
    return maxSlices;
 }
 
-/**
- * encode a bitstream
- */
+void
+d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
+                                             void *feedback,
+                                             unsigned slice_idx,
+                                             struct codec_unit_location_t *codec_unit_metadata,
+                                             unsigned *codec_unit_metadata_count)
+{
+   assert(false);
+}
+
+void
+d3d12_video_encoder_encode_bitstream_sliced(struct pipe_video_codec *codec,
+                                            struct pipe_video_buffer *source,
+                                            unsigned num_slice_objects,
+                                            struct pipe_resource **slice_destinations,
+                                            struct pipe_fence_handle ***slice_fences,
+                                            void **feedback)
+{
+   struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
+   if(!pD3D12Enc->supports_sliced_fences.bits.supported)
+   {
+      assert(false);
+      return;
+   }
+
+   d3d12_video_encoder_encode_bitstream_impl(codec,
+                                             source,
+                                             num_slice_objects,
+                                             slice_destinations,
+                                             slice_fences,
+                                             feedback);
+}
+
 void
 d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
                                      struct pipe_video_buffer *source,
                                      struct pipe_resource *    destination,
                                      void **                   feedback)
+{
+   struct pipe_fence_handle **slice_fences = NULL;
+   d3d12_video_encoder_encode_bitstream_impl(codec,
+                                             source,
+                                             1 /*num_slice_objects*/,
+                                             &destination /*slice_destinations*/,
+                                             &slice_fences,
+                                             feedback);
+}
+
+void
+d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
+                                          struct pipe_video_buffer *source,
+                                          unsigned num_slice_objects,
+                                          struct pipe_resource **slice_destinations,
+                                          struct pipe_fence_handle ***slice_fences,
+                                          void **feedback)
 {
    struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
    assert(pD3D12Enc);
@@ -2232,10 +2284,14 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    ID3D12Resource *pInputVideoD3D12Res        = d3d12_resource_resource(pInputVideoBuffer->texture);
    uint32_t        inputVideoD3D12Subresource = 0u;
 
-   struct d3d12_resource *pOutputBitstreamBuffer = (struct d3d12_resource *) destination;
+   std::vector<struct d3d12_resource *> pOutputBitstreamBuffers(num_slice_objects, NULL);
+   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+      pOutputBitstreamBuffers[slice_idx] = (struct d3d12_resource *) slice_destinations[0];
+      // Make permanently resident for video use
+      d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pOutputBitstreamBuffers[slice_idx]);
+   }
 
-   // Make them permanently resident for video use
-   d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pOutputBitstreamBuffer);
+   // Make permanently resident for video use
    d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pInputVideoBuffer->texture);
 
    size_t current_metadata_slot = d3d12_video_encoder_metadata_current_index(pD3D12Enc);
@@ -2254,7 +2310,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    ///
 
    ///
-   /// pInputVideoBuffer and pOutputBitstreamBuffer are passed externally
+   /// pInputVideoBuffer and pOutputBitstreamBuffers are passed externally
    /// and could be tracked by pipe_context and have pending ops. Flush any work on them and transition to
    /// D3D12_RESOURCE_STATE_COMMON before issuing work in Video command queue below. After the video work is done in the
    /// GPU, transition back to D3D12_RESOURCE_STATE_COMMON
@@ -2269,23 +2325,30 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
       pInputVideoBuffer->texture,
       D3D12_RESOURCE_STATE_COMMON,
       D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
-   d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
-                                   pOutputBitstreamBuffer,
+
+   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+      d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
+                                   pOutputBitstreamBuffers[slice_idx],
                                    D3D12_RESOURCE_STATE_COMMON,
                                    D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
+   }
+
    d3d12_apply_resource_states(d3d12_context(pD3D12Enc->base.context), false);
 
    d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context),
                             pInputVideoBuffer->texture,
                             false /*wantToWrite*/);
-   d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pOutputBitstreamBuffer, true /*wantToWrite*/);
+
+   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+      d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pOutputBitstreamBuffers[slice_idx], true /*wantToWrite*/);
+   }
 
    ///
    /// Process pre-encode bitstream headers
    ///
 
    // Decide the D3D12 buffer EncodeFrame will write to based on pre-post encode headers generation policy
-   ID3D12Resource *pOutputBufferD3D12Res = nullptr;
+   std::vector<ID3D12Resource*> pOutputBufferD3D12Resources(num_slice_objects, NULL);
 
    d3d12_video_encoder_build_pre_encode_codec_headers(pD3D12Enc, 
                                                       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].postEncodeHeadersNeeded,
@@ -2295,14 +2358,19 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersBytePadding = 0;
 
    // Save the pipe destination buffer the headers need to be written to in get_feedback if post encode headers needed or H264 SVC NAL prefixes, etc
-   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destination = &pOutputBitstreamBuffer->base.b;
+   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations.resize(num_slice_objects, NULL);
+   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[slice_idx] = &pOutputBitstreamBuffers[slice_idx]->base.b;
+   }
 
    // Only upload headers now and leave prefix offset space gap in compressed bitstream if the codec builds headers before execution.
    if (!pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].postEncodeHeadersNeeded)
    {
 
       // Headers are written before encode execution, have EncodeFrame write directly into the pipe destination buffer
-      pOutputBufferD3D12Res = d3d12_resource_resource(pOutputBitstreamBuffer);
+      for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+         pOutputBufferD3D12Resources[slice_idx] = d3d12_resource_resource(pOutputBitstreamBuffers[slice_idx]);
+      }
 
       // It can happen that codecs like H264/HEVC don't write pre-headers for all frames (ie. reuse previous PPS)
       if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize > 0)
@@ -2325,7 +2393,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
 
          pD3D12Enc->base.context->buffer_subdata(
             pD3D12Enc->base.context,         // context
-            &pOutputBitstreamBuffer->base.b, // dst buffer
+            &pOutputBitstreamBuffers[0/*first slice buffer*/]->base.b, // dst buffer
             PIPE_MAP_WRITE,                  // usage PIPE_MAP_x
             0,                               // offset
             static_cast<unsigned int>(pD3D12Enc->m_BitstreamHeadersBuffer.size()),
@@ -2334,30 +2402,39 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    }
    else
    {
-      assert(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize == 0);
-      if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstream == nullptr) {
-         D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-         CD3DX12_RESOURCE_DESC resolvedMetadataBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(D3D12_DEFAULT_COMPBIT_STAGING_SIZE);
-         HRESULT hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(
-            &Properties,
-            D3D12_HEAP_FLAG_NONE,
-            &resolvedMetadataBufferDesc,
-            D3D12_RESOURCE_STATE_COMMON,
-            nullptr,
-            IID_PPV_ARGS(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstream.GetAddressOf()));
+      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams.resize(num_slice_objects, NULL);
+      for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+         assert(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize == 0);
 
-         if (FAILED(hr)) {
-            debug_printf("CreateCommittedResource failed with HR %x\n", hr);
-            pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
-            pD3D12Enc->m_spEncodedFrameMetadata[d3d12_video_encoder_metadata_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
-            assert(false);
-            return;
+         if ((slice_idx > 0) && !pD3D12Enc->supports_sliced_fences.bits.multiple_buffers_required) {
+            // For multi slice notification and multiple_buffers_required = 0, use the same staging for all
+            // spStagingBitstreams[] entries
+            pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx] =
+               pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[0/*first slice*/];
+         } else if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx] == nullptr) {
+            D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+            CD3DX12_RESOURCE_DESC resolvedMetadataBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(D3D12_DEFAULT_COMPBIT_STAGING_SIZE);
+            HRESULT hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(
+               &Properties,
+               D3D12_HEAP_FLAG_NONE,
+               &resolvedMetadataBufferDesc,
+               D3D12_RESOURCE_STATE_COMMON,
+               nullptr,
+               IID_PPV_ARGS(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx].GetAddressOf()));
+
+            if (FAILED(hr)) {
+               debug_printf("CreateCommittedResource failed with HR %x\n", hr);
+               pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+               pD3D12Enc->m_spEncodedFrameMetadata[d3d12_video_encoder_metadata_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+               assert(false);
+               return;
+            }
          }
+
+         // Headers are written after execution, have EncodeFrame write into a staging buffer
+         // and then get_feedback will pack the finalized bitstream and copy into comp_bit_destinations[0 /*first slice*/]
+         pOutputBufferD3D12Resources[slice_idx] = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx].Get();
       }
-      
-      // Headers are written after execution, have EncodeFrame write into a staging buffer 
-      // and then get_feedback will pack the finalized bitstream and copy into comp_bit_destination
-      pOutputBufferD3D12Res = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstream.Get();
    }
 
    memset(&pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_FenceData,
@@ -2371,13 +2448,17 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
       CD3DX12_RESOURCE_BARRIER::Transition(pInputVideoD3D12Res,
                                            D3D12_RESOURCE_STATE_COMMON,
                                            D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ),
-      CD3DX12_RESOURCE_BARRIER::Transition(pOutputBufferD3D12Res,
-                                           D3D12_RESOURCE_STATE_COMMON,
-                                           D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE),
       CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(),
                                            D3D12_RESOURCE_STATE_COMMON,
                                            D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)
    };
+
+   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+      if ((slice_idx == 0) || pD3D12Enc->supports_sliced_fences.bits.multiple_buffers_required)
+         rgCurrentFrameStateTransitions.push_back(CD3DX12_RESOURCE_BARRIER::Transition(pOutputBufferD3D12Resources[slice_idx],
+                                                                                       D3D12_RESOURCE_STATE_COMMON,
+                                                                                       D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
+   }
 
    pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<UINT>(rgCurrentFrameStateTransitions.size()),
                                                      rgCurrentFrameStateTransitions.data());
@@ -2606,7 +2687,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    // D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM
    bitstreamArgs.FrameOutputBuffer =
    {
-      pOutputBufferD3D12Res,
+      pOutputBufferD3D12Resources[0],
       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize,
    };
 
@@ -2622,7 +2703,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_OUTPUT_ARGUMENTS outputStreamArguments = {
       // D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM
       {
-         pOutputBufferD3D12Res,
+         pOutputBufferD3D12Resources[0],
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize,
       },
       // D3D12_VIDEO_ENCODER_RECONSTRUCTED_PICTURE
@@ -2655,7 +2736,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
                                                  &inputStreamArguments,
                                                  &outputStreamArguments);
 #endif
-   D3D12_RESOURCE_BARRIER rgResolveMetadataStateTransitions[] = {
+   std::vector<D3D12_RESOURCE_BARRIER> rgResolveMetadataStateTransitions = {
       CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
                                            D3D12_RESOURCE_STATE_COMMON,
                                            D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE),
@@ -2665,13 +2746,18 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
       CD3DX12_RESOURCE_BARRIER::Transition(pInputVideoD3D12Res,
                                            D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ,
                                            D3D12_RESOURCE_STATE_COMMON),
-      CD3DX12_RESOURCE_BARRIER::Transition(pOutputBufferD3D12Res,
-                                           D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
-                                           D3D12_RESOURCE_STATE_COMMON)
+
    };
 
-   pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(_countof(rgResolveMetadataStateTransitions),
-                                                     rgResolveMetadataStateTransitions);
+   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
+      if ((slice_idx == 0) || pD3D12Enc->supports_sliced_fences.bits.multiple_buffers_required)
+         rgResolveMetadataStateTransitions.push_back(CD3DX12_RESOURCE_BARRIER::Transition(pOutputBufferD3D12Resources[slice_idx],
+                                                   D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
+                                                   D3D12_RESOURCE_STATE_COMMON));
+   }
+
+   pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(rgResolveMetadataStateTransitions.size()),
+                                                     rgResolveMetadataStateTransitions.data());
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
@@ -2932,7 +3018,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          assert (pD3D12Enc->m_nalPrefixTmpBuffer);
 
          //
-         // Copy slices from driver comp_bit_destination into m_nalPrefixTmpBuffer with collated slices NAL prefixes
+         // Copy slices from driver comp_bit_destinations[0/*first slice*/] into m_nalPrefixTmpBuffer with collated slices NAL prefixes
          //
          // Skip SPS, PPS, etc first preEncodeGeneratedHeadersByteSize bytes in src_driver_buffer_read_bytes
          uint32_t src_driver_buffer_read_bytes = static_cast<uint32_t>(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize);
@@ -2979,7 +3065,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
                                                           dst_tmp_buffer_written_bytes,                                                    // dstX - Skip the other headers in the final bitstream (e.g SPS, PPS, etc)
                                                           0,                                                                               // dstY
                                                           0,                                                                               // dstZ
-                                                          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destination, // src
+                                                          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[0/*first slice*/], // src
                                                           0,                                                                               // src level
                                                           &src_box);
             src_driver_buffer_read_bytes += static_cast<uint32_t>(cur_subregion_metadata.bSize);
@@ -2990,12 +3076,12 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          }
 
          //
-         // Copy from m_nalPrefixTmpBuffer with prefixes and slices back into comp_bit_destination
+         // Copy from m_nalPrefixTmpBuffer with prefixes and slices back into comp_bit_destinations[0/*first slice*/]
          //
 
          // Make sure we have enough space in destination buffer
          if (dst_tmp_buffer_written_bytes >
-            (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize + pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destination->width0))
+            (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize + pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[0/*first slice*/]->width0))
          {
             opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
             debug_printf("[d3d12_video_encoder] Insufficient compressed buffer size passed from frontend while building the H264 SVC NAL prefixes.\n");
@@ -3017,7 +3103,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          );
 
          pD3D12Enc->base.context->resource_copy_region(pD3D12Enc->base.context,                                                                    // ctx
-                                                       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destination,             // dst
+                                                       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[0/*first slice*/],             // dst
                                                        0,                                                                                           // dst_level
                                                        static_cast<unsigned int>(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize),// dstX - Skip the other headers in the final bitstream (e.g SPS, PPS, etc)
                                                        0,                                                                                           // dstY
