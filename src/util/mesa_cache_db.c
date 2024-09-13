@@ -264,6 +264,7 @@ mesa_db_update_index(struct mesa_cache_db *db)
    struct mesa_index_db_hash_entry *hash_entry;
    struct mesa_index_db_file_entry index_entry;
    size_t file_length;
+   size_t old_entries, new_entries;
 
    if (!mesa_db_seek_end(db->index.file))
       return false;
@@ -272,6 +273,10 @@ mesa_db_update_index(struct mesa_cache_db *db)
 
    if (!mesa_db_seek(db->index.file, db->index.offset))
       return false;
+
+   old_entries = _mesa_hash_table_num_entries(db->index_db->table);
+   new_entries = (file_length - db->index.offset) / sizeof(index_entry);
+   _mesa_hash_table_reserve(db->index_db->table, old_entries + new_entries);
 
    while (db->index.offset < file_length) {
       if (!mesa_db_read(db->index.file, &index_entry))
