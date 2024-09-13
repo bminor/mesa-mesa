@@ -122,6 +122,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
          (nvk_nak_stages(info) & VK_SHADER_STAGE_FRAGMENT_BIT) != 0,
       .KHR_fragment_shading_rate = info->cls_eng3d >= TURING_A,
       .KHR_get_memory_requirements2 = true,
+      .KHR_global_priority = true,
       .KHR_image_format_list = true,
       .KHR_imageless_framebuffer = true,
 #ifdef NVK_USE_WSI_PLATFORM
@@ -218,6 +219,8 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .EXT_extended_dynamic_state2 = true,
       .EXT_extended_dynamic_state3 = true,
       .EXT_external_memory_dma_buf = true,
+      .EXT_global_priority = true,
+      .EXT_global_priority_query = true,
       .EXT_graphics_pipeline_library = true,
       .EXT_host_query_reset = true,
       .EXT_host_image_copy = info->cls_eng3d >= TURING_A,
@@ -442,6 +445,9 @@ nvk_get_device_features(const struct nv_device_info *info,
       .pipelineFragmentShadingRate = info->cls_eng3d >= TURING_A,
       .primitiveFragmentShadingRate = info->cls_eng3d >= TURING_A,
       .attachmentFragmentShadingRate = info->cls_eng3d >= TURING_A,
+
+      /* VK_KHR_global_priority */
+      .globalPriorityQuery = true,
 
       /* VK_KHR_index_type_uint8 */
       .indexTypeUint8 = true,
@@ -1618,6 +1624,21 @@ nvk_GetPhysicalDeviceQueueFamilyProperties2(
          p->queueFamilyProperties.timestampValidBits = 64;
          p->queueFamilyProperties.minImageTransferGranularity =
             (VkExtent3D){1, 1, 1};
+
+         vk_foreach_struct(ext, p->pNext) {
+            switch (ext->sType) {
+            case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES: {
+               VkQueueFamilyGlobalPriorityProperties *p = (void *)ext;
+               p->priorityCount = 1;
+               p->priorities[0] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;
+               break;
+            }
+
+            default:
+               vk_debug_ignored_stype(ext->sType);
+               break;
+            }
+         }
       }
    }
 }
