@@ -220,6 +220,13 @@ enum pipe_video_cap
     * The returned value is pipe_enc_cap_gpu_stats_map
     */
    PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP = 61,
+   /*
+    * Support for encoding an entire frame with pipe_video_codec::encode_bitstream_sliced
+      for a given profile/codec
+    *
+    * The returned value is pipe_enc_cap_sliced_notifications
+    */
+   PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS = 62,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags

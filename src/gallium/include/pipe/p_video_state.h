@@ -2669,6 +2669,28 @@ union pipe_enc_cap_gpu_stats_map {
   uint32_t value;
 };
 
+/* Used with PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS */
+union pipe_enc_cap_sliced_notifications {
+   struct {
+      /*
+       * Driver Output. Indicates support for sliced notifications
+       */
+      uint32_t supported: 1;
+      /*
+       * Driver Output. When reported indicates that encode_bitstream_sliced
+       * parameter slice_destinations[i] must contain different pipe_resource
+       * allocations for each slice i.
+       *
+       * When NOT reported, indicates that encode_bitstream_sliced
+       * parameter slice_destinations[i] must contain the same pipe_resource
+       * allocation for each slice i. In this case the driver will take care
+       * of suballocating and calculating offsets within the single allocation
+       */
+      uint32_t multiple_buffers_required: 1;
+   } bits;
+  uint32_t value;
+};
+
 #ifdef __cplusplus
 }
 #endif

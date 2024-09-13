@@ -96,6 +96,45 @@ struct pipe_video_codec
                             void **feedback);
 
    /**
+    * encode an entire frame texture to a bitstream, but get notified asynchronously
+    * in slice_fences[] as the slices are ready (can be of out order if multi engine encoder)
+    * for frontend consumption before the full frame is finished.
+    *
+    * The different slices are written in each slice_destinations[] buffer
+    *
+    * num_slice_objects indicates the number of elements in the input
+    * array slice_destinations and indicates the number of outputs expected
+    * in slice_fences
+    *
+    * The frame NALs are attached to the first slice buffer
+    * Any packed slice header (e.g SVC NAL prefix) is attached to each slice buffer
+    *
+    * get_feedback information/stats is still only available after full frame
+    * completion is signaled (e.g pipe_picture_desc::fence)
+    *
+    *  Driver reports support for this function used with different codecs/profiles
+    *  in PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS, frontend must check before using it.
+    */
+   void (*encode_bitstream_sliced)(struct pipe_video_codec *codec,
+                                   struct pipe_video_buffer *source,
+                                   unsigned num_slice_objects,
+                                   struct pipe_resource **slice_destinations,
+                                   struct pipe_fence_handle **slice_fences,
+                                   void **feedback);
+
+
+   /**
+    * Once encode_bitstream_sliced::slice_fences[slice_idx] is signaled, use this function
+    * to retrieve the slice size and offset for readback from encode_bitstream_sliced::slice_destinations[slice_idx]
+    * As the slice may include other packed headers, a list of codec_unit_location_t elements is returned
+    */
+   void (*get_slice_bitstream_data)(struct pipe_video_codec *codec,
+                                    void *feedback, /* corresponding to the encode_bitstream_sliced frame call */
+                                    unsigned slice_idx, /* [0..max_slices_expected] */
+                                    struct codec_unit_location_t *codec_unit_metadata,
+                                    unsigned *codec_unit_metadata_count);
+
+   /**
     * Perform post-process effect
     */
    int (*process_frame)(struct pipe_video_codec *codec,
