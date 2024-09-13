@@ -119,7 +119,7 @@ d3d12_video_encoder_encode_bitstream_sliced(struct pipe_video_codec *codec,
                                             struct pipe_video_buffer *source,
                                             unsigned num_slice_objects,
                                             struct pipe_resource **slice_destinations,
-                                            struct pipe_fence_handle ***slice_fences,
+                                            struct pipe_fence_handle **slice_fences,
                                             void **feedback);
 
 void
@@ -127,7 +127,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                           struct pipe_video_buffer *source,
                                           unsigned num_slice_objects,
                                           struct pipe_resource **slice_destinations,
-                                          struct pipe_fence_handle ***slice_fences,
+                                          struct pipe_fence_handle **slice_fences,
                                           void **feedback);
 
 void
@@ -385,7 +385,20 @@ struct EncodedBitstreamResolvedMetadata
    * stream from EncodeFrame.
    */
    std::vector<ComPtr<ID3D12Resource>> spStagingBitstreams;
-   
+   D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE SubregionNotificationMode;
+   std::vector<ComPtr<ID3D12Resource>> pspSubregionSizes;
+   std::vector<ComPtr<ID3D12Resource>> pspSubregionOffsets;
+   std::vector<ComPtr<ID3D12Fence>> pspSubregionFences;
+   // Needed to convert psp* above from array of ComPtr<ID3D12XXX> to array of ID3D12XXX*
+   std::vector<ID3D12Resource*> ppSubregionSizes;
+   std::vector<ID3D12Resource*> ppSubregionOffsets;
+   std::vector<UINT64> ppResolvedSubregionSizes;
+   std::vector<UINT64> ppResolvedSubregionOffsets;
+   std::vector<ID3D12Fence*> ppSubregionFences;
+   std::vector<struct d3d12_fence> pSubregionPipeFences;
+   std::vector<UINT64> pSubregionBitstreamsBaseOffsets;
+   std::vector<UINT64> ppSubregionFenceValues;
+
    /* codec specific associated configuration flags */
    union {
       struct {
@@ -559,8 +572,8 @@ d3d12_video_encoder_build_pre_encode_codec_headers(struct d3d12_video_encoder *p
 void
 d3d12_video_encoder_extract_encode_metadata(
    struct d3d12_video_encoder *                               pD3D12Dec,
-   ID3D12Resource *                                           pResolvedMetadataBuffer,
-   uint64_t                                                   resourceMetadataSize,
+   void                                                       *feedback,
+   struct EncodedBitstreamResolvedMetadata &                  raw_metadata,
    D3D12_VIDEO_ENCODER_OUTPUT_METADATA &                      encoderMetadata,
    std::vector<D3D12_VIDEO_ENCODER_FRAME_SUBREGION_METADATA> &pSubregionsMetadata);
 

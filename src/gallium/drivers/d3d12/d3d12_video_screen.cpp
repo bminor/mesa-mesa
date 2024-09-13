@@ -915,7 +915,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                union pipe_enc_cap_move_rect &move_rects_support,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_qp,
                                union pipe_enc_cap_gpu_stats_map &gpu_stats_satd,
-                               union pipe_enc_cap_gpu_stats_map &gpu_stats_rcbits)
+                               union pipe_enc_cap_gpu_stats_map &gpu_stats_rcbits,
+                               union pipe_enc_cap_sliced_notifications &sliced_encode_support)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1190,6 +1191,17 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                      gpu_stats_rcbits.bits.log2_values_block_size = std::log2(block_size);
                   }
                }
+            }
+
+            ///
+            /// Sliced encode caps
+            /// Only support for H264/HEVC for now
+            ///
+            {
+               sliced_encode_support.value = 0;
+               sliced_encode_support.bits.supported = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_SINGLE_BUFFER_AVAILABLE) ||
+                                                         (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE)) ? 1u : 0u;
+               sliced_encode_support.bits.multiple_buffers_required = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE) ? 1u : 0u;
             }
 #endif
          }
@@ -1639,6 +1651,17 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                         gpu_stats_rcbits.bits.log2_values_block_size = static_cast<uint32_t>(std::log2(block_size));
                      }
                   }
+               }
+
+               ///
+               /// Sliced encode caps
+               /// Only support for H264/HEVC for now
+               ///
+               {
+                  sliced_encode_support.value = 0;
+                  sliced_encode_support.bits.supported = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_SINGLE_BUFFER_AVAILABLE) ||
+                                                          (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE)) ? 1u : 0u;
+                  sliced_encode_support.bits.multiple_buffers_required = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE) ? 1u : 0u;
                }
 #endif
             }
@@ -2225,6 +2248,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    union pipe_enc_cap_gpu_stats_map gpu_stats_qp = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_satd = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_rcbits = {};
+   union pipe_enc_cap_sliced_notifications sliced_encode_support = {};
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    switch (param) {
       case PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME:
@@ -2292,6 +2316,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP:
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_SATD_MAP:
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP:
+      case PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -2316,7 +2341,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             move_rects_support,
                                             gpu_stats_qp,
                                             gpu_stats_satd,
-                                            gpu_stats_rcbits)) {
+                                            gpu_stats_rcbits,
+                                            sliced_encode_support)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2411,6 +2437,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return gpu_stats_satd.value;
                } else if (param == PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP) {
                   return gpu_stats_rcbits.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS) {
+                  return sliced_encode_support.value;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2484,6 +2512,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    union pipe_enc_cap_gpu_stats_map gpu_stats_qp = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_satd = {};
    union pipe_enc_cap_gpu_stats_map gpu_stats_rcbits = {};
+   union pipe_enc_cap_sliced_notifications sliced_encode_support = {};
    if (d3d12_has_video_encode_support(&pScreen->base,
                                       profile,
                                       maxLvlEncode,
@@ -2507,7 +2536,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       move_rects_support,
                                       gpu_stats_qp,
                                       gpu_stats_satd,
-                                      gpu_stats_rcbits))
+                                      gpu_stats_rcbits,
+                                      sliced_encode_support))
    {
       return bVideoEncodeRequiresTextureArray;
    }
