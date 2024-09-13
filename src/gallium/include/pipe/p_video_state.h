@@ -857,6 +857,13 @@ struct pipe_h264_enc_picture_desc
    struct pipe_enc_dirty_rects dirty_rects;
    struct pipe_enc_move_rects move_rects;
 
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP */
+   struct pipe_resource *gpu_stats_qp_map;
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_SATD_MAP */
+   struct pipe_resource *gpu_stats_satd_map;
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP */
+   struct pipe_resource *gpu_stats_rc_bitallocation_map;
+
    bool not_referenced;
    bool is_ltr;
    unsigned ltr_index;
@@ -1241,6 +1248,14 @@ struct pipe_h265_enc_picture_desc
    struct pipe_enc_roi roi;
    struct pipe_enc_dirty_rects dirty_rects;
    struct pipe_enc_move_rects move_rects;
+
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP */
+   struct pipe_resource *gpu_stats_qp_map;
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_SATD_MAP */
+   struct pipe_resource *gpu_stats_satd_map;
+   /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP */
+   struct pipe_resource *gpu_stats_rc_bitallocation_map;
+
    unsigned num_ref_idx_l0_active_minus1;
    unsigned num_ref_idx_l1_active_minus1;
    unsigned ref_idx_l0_list[PIPE_H265_MAX_NUM_LIST_REF];
@@ -2622,6 +2637,34 @@ union pipe_enc_cap_move_rect {
        * Driver Output. Indicates support for setting in pipe_enc_move_rects.precision = PIPE_ENC_MOVE_RECTS_PRECISION_UNIT_QUARTER_PIXEL
        */
       uint32_t supports_precision_quarter_pixel: 1;
+   } bits;
+  uint32_t value;
+};
+
+/* Used with PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP */
+/* Used with PIPE_VIDEO_CAP_ENC_GPU_STATS_SATD_MAP */
+/* Used with PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP */
+union pipe_enc_cap_gpu_stats_map {
+   struct {
+      /*
+       * Driver Output. Indicates support for writing this map
+         into a GPU resource during encode frame execution
+       */
+      uint32_t supported: 1;
+      /*
+       * Driver Output. Indicates the pipe_format required for
+         the pipe_resource allocation passed to the driver
+       */
+      uint32_t pipe_pixel_format: 9; /* 9 bits for pipe_format < PIPE_FORMAT_COUNT */
+      /*
+       * Driver Output. Indicates the pixel size of the blocks containing
+         the stats. For example log2_values_block_size=4 indicates that
+         the stats blocks will correspond to 16x16 blocks. This also indicates
+         the dimensions of the pipe_resource allocation passed to the driver
+         as the encoded frame dimensions (rounded up to codec block size) divided
+         by 2^log2_values_block_size
+       */
+      uint32_t log2_values_block_size: 4;
    } bits;
   uint32_t value;
 };

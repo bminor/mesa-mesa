@@ -189,6 +189,37 @@ enum pipe_video_cap
     * Support for move rects in encoder picture params pipe_enc_cap_move_rect
     */
    PIPE_VIDEO_CAP_ENC_MOVE_RECTS = 58,
+   /*
+    * Support for stats written into a pipe_resource (e.g GPU allocation) during
+    * the encoding of a frame, indicating QP values used for each block
+    *
+    * Note that this may be written during the encode operation, before the
+    * get_feedback operation, since it's written into a GPU memory allocation
+    *
+    * The returned value is pipe_enc_cap_gpu_stats_map
+    */
+   PIPE_VIDEO_CAP_ENC_GPU_STATS_QP_MAP = 59,
+   /*
+    * Support for stats written into a pipe_resource (e.g GPU allocation) during
+    * the encoding of a frame, indicating SATD values for each block
+    *
+    * Note that this may be written during the encode operation, before the
+    * get_feedback operation, since it's written into a GPU memory allocation
+    *
+    * The returned value is pipe_enc_cap_gpu_stats_map
+    */
+   PIPE_VIDEO_CAP_ENC_GPU_STATS_SATD_MAP = 60,
+   /*
+    * Support for stats written into a pipe_resource (e.g GPU allocation) during
+    * the encoding of a frame, indicating the rate control
+    * bit allocations used for each block
+    *
+    * Note that this may be written during the encode operation, before the
+    * get_feedback operation, since it's written into a GPU memory allocation
+    *
+    * The returned value is pipe_enc_cap_gpu_stats_map
+    */
+   PIPE_VIDEO_CAP_ENC_GPU_STATS_RATE_CONTROL_BITS_MAP = 61,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags
