@@ -142,6 +142,7 @@ struct pvr_drm_device_config {
 static const struct pvr_drm_device_config pvr_drm_configs[] = {
    DEF_CONFIG("mediatek,mt8173-gpu", "mediatek-drm"),
    DEF_CONFIG("ti,am62-gpu", "ti,am625-dss"),
+   DEF_CONFIG("ti,j721s2-gpu", "ti,j721e-dss"),
 };
 
 #undef DEF_CONFIG
