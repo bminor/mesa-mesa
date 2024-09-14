@@ -1168,6 +1168,8 @@ enum pipe_resource_param
    PIPE_RESOURCE_PARAM_HANDLE_TYPE_KMS,
    PIPE_RESOURCE_PARAM_HANDLE_TYPE_FD,
    PIPE_RESOURCE_PARAM_LAYER_STRIDE,
+   /* If texture/image has separate plane buffers. */
+   PIPE_RESOURCE_PARAM_DISJOINT_PLANES,
 };
 
 /**

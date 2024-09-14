@@ -1148,6 +1148,9 @@ dri2_query_image_by_resource_param(struct dri_image *image, int attrib, int *val
    case __DRI_IMAGE_ATTRIB_FD:
       param = PIPE_RESOURCE_PARAM_HANDLE_TYPE_FD;
       break;
+   case __DRI_IMAGE_ATTRIB_DISJOINT_PLANES:
+      param = PIPE_RESOURCE_PARAM_DISJOINT_PLANES;
+      break;
    default:
       return false;
    }
@@ -1161,6 +1164,7 @@ dri2_query_image_by_resource_param(struct dri_image *image, int attrib, int *val
    case __DRI_IMAGE_ATTRIB_STRIDE:
    case __DRI_IMAGE_ATTRIB_OFFSET:
    case __DRI_IMAGE_ATTRIB_NUM_PLANES:
+   case __DRI_IMAGE_ATTRIB_DISJOINT_PLANES:
       if (res_param > INT_MAX)
          return false;
       *value = (int)res_param;

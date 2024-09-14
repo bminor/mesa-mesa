@@ -1927,6 +1927,12 @@ zink_resource_get_param(struct pipe_screen *pscreen, struct pipe_context *pctx,
       return false;
 #endif
    }
+   case PIPE_RESOURCE_PARAM_DISJOINT_PLANES:
+      if (pres->target == PIPE_BUFFER)
+         *value = false;
+      else
+         *value = util_format_get_num_planes(pres->format) > 1;
+      break;
    }
    return true;
 }

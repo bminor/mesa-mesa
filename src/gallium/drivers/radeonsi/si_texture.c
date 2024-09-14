@@ -722,6 +722,12 @@ static bool si_resource_get_param(struct pipe_screen *screen, struct pipe_contex
       return true;
    case PIPE_RESOURCE_PARAM_LAYER_STRIDE:
       break;
+   case PIPE_RESOURCE_PARAM_DISJOINT_PLANES:
+      if (resource->target == PIPE_BUFFER)
+         *value = false;
+      else
+         *value = tex->num_planes > 1;
+      return true;
    }
    return false;
 }
