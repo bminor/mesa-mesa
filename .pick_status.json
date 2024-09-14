@@ -654,7 +654,7 @@
         "description": "ci/freedreno: move disabled a530 entries back to main gitlab-ci.yml",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9442571664e5a7d6e06f098ce4ea2246e5504796",
         "notes": null
