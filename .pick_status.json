@@ -1094,7 +1094,7 @@
         "description": "Revert \"frontends/va: Process VAEncSequenceParameterBufferType first in vaRenderPicture\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "c970a9b6634d22d8b9b7567aff8708dc58ba9e81",
         "notes": null
