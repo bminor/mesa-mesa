@@ -115,6 +115,11 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
          if (node_registration->builtin_code == kTfLiteBuiltinConv2d) {
             TfLiteConvParams* params = (TfLiteConvParams*)node->builtin_data;
 
+            assert(params->activation == kTfLiteActNone);
+            if (node_registration->version >= 2) {
+               assert(params->dilation_width_factor == 1);
+               assert(params->dilation_height_factor == 1);
+            }
             operation->conv.stride_x = params->stride_width;
             operation->conv.stride_y = params->stride_height;
             operation->conv.padding_same = params->padding == kTfLitePaddingSame;
@@ -122,6 +127,11 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
          } else {
             TfLiteDepthwiseConvParams* params = (TfLiteDepthwiseConvParams*)node->builtin_data;
 
+            assert(params->activation == kTfLiteActNone);
+            if (node_registration->version >= 2) {
+               assert(params->dilation_width_factor == 1);
+               assert(params->dilation_height_factor == 1);
+            }
             operation->conv.stride_x = params->stride_width;
             operation->conv.stride_y = params->stride_height;
             operation->conv.padding_same = params->padding == kTfLitePaddingSame;
@@ -377,8 +387,30 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
           context, node_index, &node, &registration));
 
       switch(registration->builtin_code) {
-         case kTfLiteBuiltinConv2d:
-         case kTfLiteBuiltinDepthwiseConv2d:
+         case kTfLiteBuiltinConv2d: {
+            TfLiteConvParams* params = (TfLiteConvParams*)node->builtin_data;
+
+            // Fused activation and dilation not yet implemented
+            if (params->activation == kTfLiteActNone &&
+                (registration->version < 2 ||
+                 (params->dilation_width_factor == 1 &&
+                  params->dilation_height_factor == 1))) {
+               supported = true;
+            }
+            break;
+         }
+         case kTfLiteBuiltinDepthwiseConv2d: {
+            TfLiteDepthwiseConvParams* params = (TfLiteDepthwiseConvParams*)node->builtin_data;
+
+            // Fused activation and dilation not yet implemented
+            if (params->activation == kTfLiteActNone &&
+                (registration->version < 2 ||
+                 (params->dilation_width_factor == 1 &&
+                  params->dilation_height_factor == 1))) {
+               supported = true;
+            }
+            break;
+         }
          case kTfLiteBuiltinAdd:
             supported = true;
             break;
