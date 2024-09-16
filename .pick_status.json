@@ -464,7 +464,7 @@
         "description": "nir/instr_set: fix fp_fast_math",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "666647acaedb1b4112f19192b992b05547975dfa",
         "notes": null
