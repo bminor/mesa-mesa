@@ -185,8 +185,11 @@ struct D3D12EncodeCapabilities
    // The maximum number of slices that the output of the current frame to be encoded will contain
    uint32_t m_MaxSlicesInOutput = 0;
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1 m_ResourceRequirementsCaps = {};
+#else
    D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOURCE_REQUIREMENTS m_ResourceRequirementsCaps = {};
-
+#endif
 };
 
 struct D3D12EncodeRateControlState
@@ -301,6 +304,9 @@ struct D3D12EncodeConfiguration
    std::vector<RECT> m_DirtyRectsArray;
    D3D12_VIDEO_ENCODER_MOVEREGION_INFO m_MoveRectsDesc = {};
    std::vector<D3D12_VIDEO_ENCODER_MOVE_RECT> m_MoveRectsArray;
+   struct d3d12_resource *m_GPUQPStatsResource = NULL;
+   struct d3d12_resource *m_GPUSATDStatsResource = NULL;
+   struct d3d12_resource *m_GPURCBitAllocationStatsResource = NULL;
 #endif
 };
 
@@ -585,6 +591,11 @@ d3d12_video_encoder_update_dirty_rects(struct d3d12_video_encoder *pD3D12Enc,
 void
 d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
                                       const struct pipe_enc_move_rects& rects);
+void
+d3d12_video_encoder_update_output_stats_resources(struct d3d12_video_encoder *pD3D12Enc,
+                                                  struct pipe_resource* qpmap,
+                                                  struct pipe_resource* satdmap,
+                                                  struct pipe_resource* rcbitsmap);
 ///
 /// d3d12_video_encoder functions ends
 ///

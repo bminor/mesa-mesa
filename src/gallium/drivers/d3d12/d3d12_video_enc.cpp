@@ -1695,6 +1695,19 @@ d3d12_video_encoder_get_current_max_dpb_capacity(struct d3d12_video_encoder *pD3
    }
 }
 
+void
+d3d12_video_encoder_update_output_stats_resources(struct d3d12_video_encoder *pD3D12Enc,
+                                                  struct pipe_resource* qpmap,
+                                                  struct pipe_resource* satdmap,
+                                                  struct pipe_resource* rcbitsmap)
+{
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource = d3d12_resource(qpmap);
+   pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource = d3d12_resource(satdmap);
+   pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource = d3d12_resource(rcbitsmap);
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+}
+
 bool
 d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encoder *pD3D12Enc,
                                                         D3D12_VIDEO_SAMPLE srcTextureDesc,
@@ -1708,6 +1721,11 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 #if VIDEO_CODEC_H264ENC
       case PIPE_VIDEO_FORMAT_MPEG4_AVC:
       {
+         d3d12_video_encoder_update_output_stats_resources(pD3D12Enc,
+                                                           ((struct pipe_h264_enc_picture_desc *)picture)->gpu_stats_qp_map,
+                                                           ((struct pipe_h264_enc_picture_desc *)picture)->gpu_stats_satd_map,
+                                                           ((struct pipe_h264_enc_picture_desc *)picture)->gpu_stats_rc_bitallocation_map);
+
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->move_rects);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_rects);
          // ...encoder_config_state_h264 calls encoder support cap, set any state before this call
@@ -1717,6 +1735,11 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 #if VIDEO_CODEC_H265ENC
       case PIPE_VIDEO_FORMAT_HEVC:
       {
+         d3d12_video_encoder_update_output_stats_resources(pD3D12Enc,
+                                                           ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_qp_map,
+                                                           ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_satd_map,
+                                                           ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_rc_bitallocation_map);
+
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_rects);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_rects);
          // ...encoder_config_state_hevc calls encoder support cap, set any state before this call
@@ -1919,10 +1942,35 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
    pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.PictureTargetResolution =
       pD3D12Enc->m_currentEncodeConfig.m_currentResolution;
 
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   // Assume all stats will be required and use max allocation to avoid reallocating between frames
+   pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.OptionalMetadata = D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_QP_MAP |
+                                                                                        D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_SATD_MAP |
+                                                                                        D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_RC_BIT_ALLOCATION_MAP;
+   pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.CodecConfiguration = d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc);
+
+   HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(
+      D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1,
+      &pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps,
+      sizeof(pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps));
+
+   if (FAILED(hr)) {
+      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1 failed with HR %x\n", hr);
+      debug_printf("Falling back to check previous query version D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS...\n");
+
+      // D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1 extends D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS
+      // in a binary compatible way, so just cast it and try with the older query D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS
+      D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOURCE_REQUIREMENTS* casted_down_cap_data = reinterpret_cast<D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOURCE_REQUIREMENTS*>(&pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps);
+      hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS,
+                                                  casted_down_cap_data,
+                                                  sizeof(*casted_down_cap_data));
+   }
+#else
    HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(
       D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS,
       &pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps,
       sizeof(pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps));
+#endif
 
    if (FAILED(hr)) {
       debug_printf("CheckFeatureSupport failed with HR %x\n", hr);
@@ -2467,6 +2515,43 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    if (motionRegions.pCPUBuffer->NumMoveRegions > 0)
       picCtrlFlags |= D3D12_VIDEO_ENCODER_PICTURE_CONTROL_FLAG_ENABLE_MOTION_VECTORS_INPUT;
 
+   ID3D12Resource* d12_gpu_stats_qp_map = NULL;
+   D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAGS optionalMetadataFlags = D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE;
+   if (pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource) {
+      optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_QP_MAP;
+      d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource);
+      d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
+                                    pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource,
+                                    D3D12_RESOURCE_STATE_COMMON,
+                                    D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
+      d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource, true /*wantToWrite*/);
+      d12_gpu_stats_qp_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource);
+   }
+
+   ID3D12Resource* d12_gpu_stats_satd_map = NULL;
+   if (pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource) {
+      optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_SATD_MAP;
+      d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource);
+      d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
+                                    pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource,
+                                    D3D12_RESOURCE_STATE_COMMON,
+                                    D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
+      d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource, true /*wantToWrite*/);
+      d12_gpu_stats_satd_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource);
+   }
+
+   ID3D12Resource* d12_gpu_stats_rc_bitallocation_map = NULL;
+   if (pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource) {
+      optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_RC_BIT_ALLOCATION_MAP;
+      d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource);
+      d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
+                                    pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource,
+                                    D3D12_RESOURCE_STATE_COMMON,
+                                    D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
+      d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource, true /*wantToWrite*/);
+      d12_gpu_stats_rc_bitallocation_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource);
+   }
+
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS1 inputStreamArguments = {
 #else
    const D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS inputStreamArguments = {
@@ -2511,7 +2596,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    // ... extra params to initialize D3D12_VIDEO_ENCODER_ENCODEFRAME_INPUT_ARGUMENTS1
    , // extra comma from last param above #if
    // D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAGS OptionalMetadata;
-   D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE, // must match with ResolveEncodeOutputMetadata flags
+   optionalMetadataFlags, // must match with ResolveEncodeOutputMetadata flags
 #endif
    };
 
@@ -2589,6 +2674,31 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
                                                      rgResolveMetadataStateTransitions);
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+
+   std::vector<D3D12_RESOURCE_BARRIER> output_stats_barriers;
+   if (d12_gpu_stats_qp_map) {
+      output_stats_barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(d12_gpu_stats_qp_map,
+                                                                           D3D12_RESOURCE_STATE_COMMON,
+                                                                           D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
+   }
+
+   if (d12_gpu_stats_satd_map) {
+      output_stats_barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(d12_gpu_stats_satd_map,
+                                                                           D3D12_RESOURCE_STATE_COMMON,
+                                                                           D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
+   }
+
+   if (d12_gpu_stats_rc_bitallocation_map) {
+      output_stats_barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(d12_gpu_stats_rc_bitallocation_map,
+                                                                           D3D12_RESOURCE_STATE_COMMON,
+                                                                           D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
+   }
+
+   pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
+                                                     output_stats_barriers.data());
+#endif
+
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS1 inputMetadataCmd = {
 #else
    const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS inputMetadataCmd = {
@@ -2603,7 +2713,7 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    // ... extra params to initialize D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS1
    , // extra comma from last param above #if
     // D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAGS OptionalMetadata;
-    D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE, // must match with EncodeFrame flags
+    optionalMetadataFlags, // must match with EncodeFrame flags
     // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
     d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc),
 #endif
@@ -2620,11 +2730,11 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
    // ... extra params to initialize D3D12_VIDEO_ENCODER_RESOLVE_METADATA_OUTPUT_ARGUMENTS
    , // extra comma from last param above #if
    // ID3D12Resource *pOutputQPMap;
-   NULL,
+   d12_gpu_stats_qp_map,
    // ID3D12Resource *pOutputSATDMap;
-   NULL,
+   d12_gpu_stats_satd_map,
    // ID3D12Resource *pOutputBitAllocationMap;
-   NULL,
+   d12_gpu_stats_rc_bitallocation_map,
 #endif
    };
 
@@ -2672,6 +2782,16 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
 
    pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(_countof(rgRevertResolveMetadataStateTransitions),
                                                      rgRevertResolveMetadataStateTransitions);
+
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+   // Revert output_stats_barriers
+   for (auto &BarrierDesc : output_stats_barriers) {
+      std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
+   }
+   pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
+                                                     output_stats_barriers.data());
+#endif
+
 
    debug_printf("[d3d12_video_encoder] d3d12_video_encoder_encode_bitstream finalized for fenceValue: %" PRIu64 "\n",
                  pD3D12Enc->m_fenceValue);
