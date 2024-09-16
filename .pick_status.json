@@ -74,7 +74,7 @@
         "description": "intel/compiler: use the correct cache enum for loads and stores",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "74efde76635ca0cbd582b6ca3ab4bb5a24b9d2fe",
         "notes": null
