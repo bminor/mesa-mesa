@@ -424,7 +424,7 @@
         "description": "lavapipe: Do not return in report_ray_intersection",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d99e95e033eccfece156e8715a1e33daca10160e",
         "notes": null
