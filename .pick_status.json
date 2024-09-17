@@ -14,7 +14,7 @@
         "description": "radv,aco: fix legacy vertex attributes when offset >= stride on GFX6-7",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "38cbc3c605ff17c813e70521f4a6c8d3a5d1e397",
         "notes": null
