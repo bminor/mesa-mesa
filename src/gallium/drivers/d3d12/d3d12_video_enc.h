@@ -385,7 +385,9 @@ struct EncodedBitstreamResolvedMetadata
    * stream from EncodeFrame.
    */
    std::vector<ComPtr<ID3D12Resource>> spStagingBitstreams;
+#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE SubregionNotificationMode;
+#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    std::vector<ComPtr<ID3D12Resource>> pspSubregionSizes;
    std::vector<ComPtr<ID3D12Resource>> pspSubregionOffsets;
    std::vector<ComPtr<ID3D12Fence>> pspSubregionFences;
@@ -398,6 +400,12 @@ struct EncodedBitstreamResolvedMetadata
    std::vector<struct d3d12_fence> pSubregionPipeFences;
    std::vector<UINT64> pSubregionBitstreamsBaseOffsets;
    std::vector<UINT64> ppSubregionFenceValues;
+   /* Slice headers written before each slices */
+   typedef struct SliceNalInfo {
+      uint64_t nal_type;
+      std::vector<uint8_t> buffer;
+   } SliceNalInfo;
+   std::vector<std::vector<SliceNalInfo>> pSliceHeaders;
 
    /* codec specific associated configuration flags */
    union {
@@ -472,7 +480,7 @@ struct d3d12_video_encoder
    std::shared_ptr<d3d12_video_dpb_storage_manager_interface>        m_upDPBStorageManager;
    std::unique_ptr<d3d12_video_bitstream_builder_interface>          m_upBitstreamBuilder;
 
-   pipe_resource* m_nalPrefixTmpBuffer = NULL;
+   pipe_resource* m_SliceHeaderRepackBuffer = NULL;
    std::vector<uint8_t> m_BitstreamHeadersBuffer;
    std::vector<uint8_t> m_StagingHeadersBuffer;
    std::vector<EncodedBitstreamResolvedMetadata> m_spEncodedFrameMetadata;
