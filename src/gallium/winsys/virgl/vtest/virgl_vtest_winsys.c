@@ -274,9 +274,9 @@ virgl_vtest_winsys_resource_create(struct virgl_winsys *vws,
    res->height = height;
    res->width = width;
    res->size = size;
-   virgl_vtest_send_resource_create(vtws, handle, target, pipe_to_virgl_format(format), bind,
-                                    width, height, depth, array_size,
-                                    last_level, nr_samples, size, &fd);
+   handle = virgl_vtest_send_resource_create(vtws, handle, target, pipe_to_virgl_format(format), bind,
+                                             width, height, depth, array_size,
+                                             last_level, nr_samples, size, &fd);
 
    if (vtws->protocol_version >= 2) {
       if (res->size == 0) {

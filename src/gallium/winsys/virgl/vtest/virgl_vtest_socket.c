@@ -294,7 +294,7 @@ static int virgl_vtest_send_resource_create2(struct virgl_vtest_winsys *vws,
    vtest_hdr[VTEST_CMD_LEN] = VCMD_RES_CREATE2_SIZE;
    vtest_hdr[VTEST_CMD_ID] = VCMD_RESOURCE_CREATE2;
 
-   res_create_buf[VCMD_RES_CREATE2_RES_HANDLE] = handle;
+   res_create_buf[VCMD_RES_CREATE2_RES_HANDLE] = vws->protocol_version < 3 ? handle : 0;
    res_create_buf[VCMD_RES_CREATE2_TARGET] = target;
    res_create_buf[VCMD_RES_CREATE2_FORMAT] = format;
    res_create_buf[VCMD_RES_CREATE2_BIND] = bind;
@@ -313,13 +313,20 @@ static int virgl_vtest_send_resource_create2(struct virgl_vtest_winsys *vws,
    if (size == 0)
       return 0;
 
+   if (vws->protocol_version >= 3) {
+      virgl_block_read(vws->sock_fd, vtest_hdr, sizeof(vtest_hdr));
+      assert(vtest_hdr[VTEST_CMD_LEN] == 1);
+      assert(vtest_hdr[VTEST_CMD_ID] == VCMD_RESOURCE_CREATE2);
+      virgl_block_read(vws->sock_fd, &handle, sizeof(handle));
+   }
+
    *out_fd = virgl_vtest_receive_fd(vws->sock_fd);
    if (*out_fd < 0) {
       fprintf(stderr, "failed to get fd\n");
       return -1;
    }
 
-   return 0;
+   return handle;
 }
 
 int virgl_vtest_send_resource_create(struct virgl_vtest_winsys *vws,
@@ -361,7 +368,7 @@ int virgl_vtest_send_resource_create(struct virgl_vtest_winsys *vws,
    virgl_block_write(vws->sock_fd, &vtest_hdr, sizeof(vtest_hdr));
    virgl_block_write(vws->sock_fd, &res_create_buf, sizeof(res_create_buf));
 
-   return 0;
+   return handle;
 }
 
 int virgl_vtest_submit_cmd(struct virgl_vtest_winsys *vws,
