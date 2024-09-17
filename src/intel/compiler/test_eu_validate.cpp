@@ -105,15 +105,13 @@ INSTANTIATE_TEST_SUITE_P(
 );
 
 static bool
-validate(struct brw_codegen *p)
+validate(struct brw_codegen *p, char **error = nullptr)
 {
    const bool print = getenv("TEST_DEBUG");
    struct disasm_info *disasm = disasm_initialize(p->isa, NULL);
 
-   if (print) {
-      disasm_new_inst_group(disasm, 0);
-      disasm_new_inst_group(disasm, p->next_insn_offset);
-   }
+   struct inst_group *group = disasm_new_inst_group(disasm, 0);
+   disasm_new_inst_group(disasm, p->next_insn_offset);
 
    bool ret = brw_validate_instructions(p->isa, p->store, 0,
                                         p->next_insn_offset, disasm);
@@ -121,7 +119,9 @@ validate(struct brw_codegen *p)
    if (print) {
       dump_assembly(p->store, 0, p->next_insn_offset, disasm, NULL);
    }
-   ralloc_free(disasm);
+
+   if (error)
+      *error = group->error;
 
    return ret;
 }
@@ -470,13 +470,17 @@ TEST_P(validation_test, invalid_type_encoding_3src_a1)
          }
 
          struct brw_reg g = retype(g0, test_case[i].type);
-         if (!brw_type_is_int(test_case[i].type)) {
+         if (brw_type_is_bfloat(test_case[i].type)) {
+            /* BF is more restrictive, so ensure the instruction is valid. */
+            brw_MAD(p, retype(g, BRW_TYPE_F), g, g, retype(g, BRW_TYPE_F));
+         } else if (!brw_type_is_int(test_case[i].type)) {
             brw_MAD(p, g, g, g, g);
          } else {
             brw_BFE(p, g, g, g, g);
          }
 
-         EXPECT_TRUE(validate(p));
+         char *error = NULL;
+         EXPECT_TRUE(validate(p, &error)) << "Unexpected validation failure: " << error;
 
          clear_instructions(p);
       }
@@ -2385,7 +2389,9 @@ TEST_P(validation_test, qword_low_power_no_indirect_addressing)
       if (intel_device_info_is_9lp(&devinfo)) {
          EXPECT_EQ(inst[i].expected_result, validate(p));
       } else {
-         EXPECT_TRUE(validate(p));
+         char *error = nullptr;
+         EXPECT_TRUE(validate(p, &error))
+            << "Test index = " << i << " failed to validate: " << error;
       }
 
       clear_instructions(p);
@@ -3714,6 +3720,166 @@ TEST_P(validation_test, scalar_register_restrictions)
 
       EXPECT_EQ(t.expected_result, validate(p)) <<
          "test vector index = " << i;
+
+      clear_instructions(p);
+   }
+}
+
+TEST_P(validation_test, bfloat_restrictions)
+{
+   /* Restrictions from ACM PRM, vol. 9, section "Register Region
+    * Restrictions", sub-section 7.
+    */
+
+   if (!devinfo.has_bfloat16)
+      return;
+
+   struct test {
+      const char *error_pattern;
+      enum opcode opcode;
+      unsigned exec_size;
+      brw_reg dst, src0, src1, src2;
+   };
+
+   const char *PASS = nullptr;
+
+   const struct test tests[] = {
+      { PASS,
+        BRW_OPCODE_MOV, 8, brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_F,  20, 0, 1,1,0) },
+
+      { "pure bfloat16 operands are not supported",
+        BRW_OPCODE_MOV, 8, brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 1,1,0) },
+
+      { "Execution size must not be greater than",
+        BRW_OPCODE_MOV, 16 * reg_unit(&devinfo),
+                        brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                        brw_grf(BRW_TYPE_F,  20, 0, 1,1,0) },
+
+      { PASS,
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_F,  20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { "pure bfloat16 operands are not supported",
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 30, 0, 1,1,0) },
+
+      { "Broadcast of bfloat16 scalar is not supported",
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_F,  20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 30, 0, 0,1,0) },
+
+      { PASS,
+        BRW_OPCODE_MUL, 8, brw_grf(BRW_TYPE_BF, 10, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { "Bfloat16 not allowed in Src1 of 2-source instructions involving multiplier",
+        BRW_OPCODE_MUL, 8, brw_grf(BRW_TYPE_BF, 10, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 30, 0, 1,1,0) },
+
+      { PASS,
+        BRW_OPCODE_MAD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 30, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  40, 0, 1,1,0) },
+
+      { "Bfloat16 not allowed in Src2 of 3-source instructions involving multiplier",
+        BRW_OPCODE_MAD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 40, 0, 1,1,0) },
+
+      { PASS,
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 1, 2,1,2),
+                           brw_grf(BRW_TYPE_F,  20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { "Unpacked bfloat16 destination must have stride 2 and register offset 0 or 1",
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 3, 2,1,2),
+                           brw_grf(BRW_TYPE_F,  20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { PASS,
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 8 * reg_unit(&devinfo), 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { "Packed bfloat16 destination must have register offset 0 or half of GRF register",
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 1, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { "Bfloat16 source must be packed",
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 20, 0, 2,1,2),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { PASS,
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 20, 8 * reg_unit(&devinfo), 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+
+      { "Bfloat16 source must have register offset 0 or half of GRF register",
+        BRW_OPCODE_ADD, 8, brw_grf(BRW_TYPE_BF, 10, 0, 1,1,0),
+                           brw_grf(BRW_TYPE_BF, 20, 5, 1,1,0),
+                           brw_grf(BRW_TYPE_F,  30, 0, 1,1,0) },
+   };
+
+   for (unsigned i = 0; i < ARRAY_SIZE(tests); i++) {
+      const struct test &t = tests[i];
+
+      switch (tests[i].opcode) {
+      case BRW_OPCODE_MOV:
+         brw_MOV(p, t.dst, t.src0);
+         break;
+      case BRW_OPCODE_ADD:
+         brw_ADD(p, t.dst, t.src0, t.src1);
+         break;
+      case BRW_OPCODE_MUL:
+         brw_MUL(p, t.dst, t.src0, t.src1);
+         break;
+      case BRW_OPCODE_MAD:
+         brw_MAD(p, t.dst, t.src0, t.src1, t.src2);
+         break;
+      default:
+         unreachable("unexpected opcode in tests");
+      }
+
+      if (tests[i].opcode == BRW_OPCODE_MAD) {
+         brw_eu_inst_set_3src_exec_size(&devinfo, last_inst, cvt(t.exec_size) - 1);
+      } else {
+         brw_eu_inst_set_exec_size(&devinfo, last_inst, cvt(t.exec_size) - 1);
+      }
+
+      /* TODO: Expand this test logic to check validation error to other
+       * tests.
+       */
+
+      char *error = nullptr;
+      bool valid = validate(p, &error);
+
+      if (t.error_pattern) {
+         EXPECT_FALSE(valid)
+            << "Test vector index = " << i << " expected to "
+            << "fail validation with error containing: '" << t.error_pattern << "' "
+            << "but succeeded instead.";
+
+         if (error) {
+            EXPECT_TRUE(strstr(error, t.error_pattern))
+               << "Test vector index = " << i << " expected to "
+               << "fail validation with error containing: '" << t.error_pattern << "' "
+               << "but error was: '" << error << "'.";
+         }
+      } else {
+         EXPECT_TRUE(valid)
+            << "Test vector index = " << i << " expected to succeed "
+            << "but failed validation with error: '" << error << "'.";
+      }
 
       clear_instructions(p);
    }

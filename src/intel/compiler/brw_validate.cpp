@@ -345,9 +345,9 @@ brw_validate(const brw_shader &s)
                brw_type_is_int(inst->src[1].type) +
                brw_type_is_int(inst->src[2].type);
             const unsigned float_sources =
-               brw_type_is_float(inst->src[0].type) +
-               brw_type_is_float(inst->src[1].type) +
-               brw_type_is_float(inst->src[2].type);
+               brw_type_is_float_or_bfloat(inst->src[0].type) +
+               brw_type_is_float_or_bfloat(inst->src[1].type) +
+               brw_type_is_float_or_bfloat(inst->src[2].type);
 
             fsv_assert((integer_sources == 3 && float_sources == 0) ||
                        (integer_sources == 0 && float_sources == 3));
