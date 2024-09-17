@@ -424,7 +424,7 @@
         "description": "brw: disable null_rt only if color output does not affect other outputs",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
