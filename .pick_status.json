@@ -1,5 +1,285 @@
 [
     {
+        "sha": "45377dc5c46c4f449307c7efc28a1b66a57cf6aa",
+        "description": "brw: fix vecN rebuilds",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "339630ab05abcaf11a9f67b2dd42ef793d2f689a",
+        "notes": null
+    },
+    {
+        "sha": "c16b27f66f2711480694231022bd02f53aef7c0d",
+        "description": "brw: use a builder of the size of the physical register for uniforms",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "339630ab05abcaf11a9f67b2dd42ef793d2f689a",
+        "notes": null
+    },
+    {
+        "sha": "31168bdbaabe787fe7e4f1f6d592a018de3cecf6",
+        "description": "va/vl: add kopper support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55341689c8207035c00165ec3520f95fadd6ea9a",
+        "description": "vl/winsys: move dri3_get_screen_for_root to common",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d79e517261fb413dc7b4af37ea7e4d56979ce44",
+        "description": "va: flush_resource before presentation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b40ec57e369ff296e85f3fb2a50dd42208f0ccbe",
+        "description": "panvk: Temporarily disable VK_FORMAT_D32_SFLOAT_S8_UINT on Valhall",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7dc350ad768f0a147e6c8457c5b7b29288772721",
+        "description": "pan/va: Accept DIM_SUBPASS[_MS] in valhall_tex_dimension()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f6fa4679d6705660b83579a20fb50cfad2c0184",
+        "description": "clc: find opencl headers from the installed llvm/clang location",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0e02de5a50cbbd89db5715ecc534d3b4c546d882",
+        "description": "iris: fix issues with memory object updates via glBufferSubData",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02b124846f8dfb5a209d84ab348a032bffff7198",
+        "description": "brw: fix TGM messages to use cmask lsc opcodes",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b55f77161ddf30ff4ab0a90f62972ce9a1f8dc17",
+        "notes": null
+    },
+    {
+        "sha": "2159e17da0b7715f15c8e3a9e1e25bf697f61a0c",
+        "description": "brw: remove (load|store)_raw_intel",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b8f264cfe4eb490b6ca4a73bddc1dd9d68ab5c9b",
+        "notes": null
+    },
+    {
+        "sha": "b3b09db951589fc055bf4290e16291bf9d0d0d78",
+        "description": "r300/ci: update fails list with a recent fix",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "656d7e887ab1711c0a3f6606b53995cef878cad7",
+        "description": "radv: fix lowering the view index to an input varying for FS",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb3b563d1f0b7afde6ba69d810ed35e726eeb035",
+        "description": "radv: enable more properties with VK_KHR_maintenance5",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b7e4f6ae79cb4225d743c5a5f87ec0f94b8cb7f",
+        "description": "driconf: Disable dzn for bg3.exe",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28db11d2f37691ed3d25b1f58e5bfc66f5e3188b",
+        "description": "winsys/d3d12: Implement the latency control option",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9ce526714123fda20520655ca08cee13e13d1e7",
+        "description": "wgl: Add driconf options for controlling latency and swap interval",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "64885821c246b0616918ee510ba8093aed2cd6cb",
+        "description": "winsys/d3d12: Use the waitable object to decrease latency",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b8a980240a1c771552b5cab72f35ffe8163f407",
+        "description": "util/fossilize_db: don't use check_files_opened_successfully for foz_prepare",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "112481d57649233cba42b7ca304432433858b46c",
+        "description": "nil: Assert array_len == 0 in Extent4D<Bytes>::size_B()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7527b22fd618717c2ca8df2e7960c977ab15e434",
+        "description": "nil: Return a more accurate size in level_size_B",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a50108e5219385cb89bb9dce1fadb4f144b0ea8",
+        "description": "nil: Rework calculations of the sizes of miplevels",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99f1b7d732ac20dcfabb2ce1b33702f7f62afdb0",
+        "description": "compiler/glsl: explicitly delete copy constructor and copy-assign",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f3cb1e2fab128edda35473189c7e0666960f252",
+        "description": "intel/elk: delete copy constructor and copy-assignment-operator",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "58092093164395d656f4770022c10669e43549a5",
+        "description": "anv: enforce state->cmd_buffer is never null in emit_Simpler_shader_init_fragment",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ebdfc88135b7834533a5113b142daa3d977fdf8",
+        "description": "anv: assert we don't write past the end of an array",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7556521417b3887e7baef8b10f1eb486f78b46da",
+        "description": "intel: replace `(uint64_t - uint64_t) > 0` with `uint64_t > uint64_t`",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dfc4a68b0aad040a1979468783fe690e0941a145",
+        "description": "ci/freedreno: re-enable piglit tests for Adreno 530 in nightly runs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "8b272c8d8c419ecb7aee0257563c9489b675f4ef",
         "description": "docs: update feature matrix for VK_KHR_shader_relaxed_extended_instruction",
         "nominated": false,
