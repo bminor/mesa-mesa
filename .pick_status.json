@@ -4154,7 +4154,7 @@
         "description": "egl/dri/wl: Move swrast damage region from put to swap",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fa465e34cadacb7d29a664006b5d73bc2a8d9cf3",
         "notes": null
