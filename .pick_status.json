@@ -14,7 +14,7 @@
         "description": "brw: use a builder of the size of the physical register for uniforms",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "339630ab05abcaf11a9f67b2dd42ef793d2f689a",
         "notes": null
