@@ -4174,7 +4174,7 @@
         "description": "radv: Initialize sqtt state before meta state",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5fa22f9fec5c6bb74d73243d3e3b6d31c40e9565",
         "notes": null
