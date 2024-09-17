@@ -4164,7 +4164,7 @@
         "description": "drisw: Copy entire buffer ignoring damage regions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cda627eb48a4e740bbfd687caee9037d6bdb09af",
         "notes": null
