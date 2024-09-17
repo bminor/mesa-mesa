@@ -464,7 +464,7 @@
         "description": "anv: fix missing tracking for alpha-to-coverage runtime changes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9926aedc96fe13cf9ff343cd7c4d92aa771e323a",
         "notes": null
