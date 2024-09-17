@@ -335,10 +335,6 @@ mesa_db_load(struct mesa_cache_db *db, bool reload)
        !mesa_db_load_header(&db->index) ||
        db->cache.uuid != db->index.uuid) {
 
-      /* This is unexpected to happen on reload, bail out */
-      if (reload)
-         goto fail;
-
       if (!mesa_db_recreate_files(db))
          goto fail;
    } else {
@@ -350,8 +346,16 @@ mesa_db_load(struct mesa_cache_db *db, bool reload)
    if (reload)
       mesa_db_hash_table_reset(db);
 
-   if (!mesa_db_update_index(db))
-      goto fail;
+   /* The update failed so we assume the files are corrupt and
+    * recreate them.
+    */
+   if (!mesa_db_update_index(db)) {
+      mesa_db_recreate_files(db);
+      db->index.offset = ftell(db->index.file);
+
+      if (!mesa_db_update_index(db))
+         goto fail;
+   }
 
    if (!reload)
       mesa_db_unlock(db);
