@@ -90,21 +90,33 @@ static inline bool mesa_db_truncate(FILE *file, long pos)
    return !ftruncate(fileno(file), pos);
 }
 
+static int
+mesa_db_flock(FILE *file, int op)
+{
+   int ret;
+
+   do {
+      ret = flock(fileno(file), op);
+   } while (ret < 0 && errno == EINTR);
+
+   return ret;
+}
+
 static bool
 mesa_db_lock(struct mesa_cache_db *db)
 {
    simple_mtx_lock(&db->flock_mtx);
 
-   if (flock(fileno(db->cache.file), LOCK_EX) == -1)
+   if (mesa_db_flock(db->cache.file, LOCK_EX) < 0)
       goto unlock_mtx;
 
-   if (flock(fileno(db->index.file), LOCK_EX) == -1)
+   if (mesa_db_flock(db->index.file, LOCK_EX) < 0)
       goto unlock_cache;
 
    return true;
 
 unlock_cache:
-   flock(fileno(db->cache.file), LOCK_UN);
+   mesa_db_flock(db->cache.file, LOCK_UN);
 unlock_mtx:
    simple_mtx_unlock(&db->flock_mtx);
 
@@ -114,8 +126,8 @@ unlock_mtx:
 static void
 mesa_db_unlock(struct mesa_cache_db *db)
 {
-   flock(fileno(db->index.file), LOCK_UN);
-   flock(fileno(db->cache.file), LOCK_UN);
+   mesa_db_flock(db->index.file, LOCK_UN);
+   mesa_db_flock(db->cache.file, LOCK_UN);
    simple_mtx_unlock(&db->flock_mtx);
 }
 
