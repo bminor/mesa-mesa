@@ -1402,6 +1402,26 @@ void gfx6_math(struct brw_codegen *p,
              (src1.type == BRW_TYPE_HF && devinfo->ver >= 9));
    }
 
+  /* This workaround says that we cannot use scalar broadcast with HF types.
+   * However, for is_scalar values, all 16 elements contain the same value, so
+   * we can replace a <0,1,0> region with <16,16,1> without ill effect.
+   */
+   if (intel_needs_workaround(devinfo, 22016140776)) {
+      if (src0.is_scalar && src0.type == BRW_TYPE_HF) {
+         src0.vstride = BRW_VERTICAL_STRIDE_16;
+         src0.width = BRW_WIDTH_16;
+         src0.hstride = BRW_HORIZONTAL_STRIDE_1;
+         src0.swizzle = BRW_SWIZZLE_XYZW;
+      }
+
+      if (src1.is_scalar && src1.type == BRW_TYPE_HF) {
+         src1.vstride = BRW_VERTICAL_STRIDE_16;
+         src1.width = BRW_WIDTH_16;
+         src1.hstride = BRW_HORIZONTAL_STRIDE_1;
+         src1.swizzle = BRW_SWIZZLE_XYZW;
+      }
+   }
+
    brw_inst_set_math_function(devinfo, insn, function);
 
    brw_set_dest(p, insn, dest);

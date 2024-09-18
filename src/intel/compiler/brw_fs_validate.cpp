@@ -418,7 +418,8 @@ brw_fs_validate(const fs_visitor &s)
           * potential problems sooner rather than later.
           */
          for (unsigned i = 0; i < inst->sources; i++) {
-            fsv_assert(!is_uniform(inst->src[i]) ||
+            fsv_assert(inst->src[i].is_scalar ||
+                       !is_uniform(inst->src[i]) ||
                        inst->src[i].type != BRW_TYPE_HF);
          }
       }
