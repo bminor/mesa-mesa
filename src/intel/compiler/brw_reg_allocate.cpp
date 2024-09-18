@@ -82,7 +82,8 @@ extern "C" void
 brw_fs_alloc_reg_sets(struct brw_compiler *compiler)
 {
    const struct intel_device_info *devinfo = compiler->devinfo;
-   int base_reg_count = BRW_MAX_GRF;
+   int base_reg_count = (devinfo->ver >= 30 ? XE3_MAX_GRF / reg_unit(devinfo) :
+                         BRW_MAX_GRF);
 
    /* The registers used to make up almost all values handled in the compiler
     * are a scalar value occupying a single register (or 2 registers in the
@@ -104,7 +105,7 @@ brw_fs_alloc_reg_sets(struct brw_compiler *compiler)
    for (unsigned i = 0; i < REG_CLASS_COUNT; i++)
       class_sizes[i] = i + 1;
 
-   struct ra_regs *regs = ra_alloc_reg_set(compiler, BRW_MAX_GRF, false);
+   struct ra_regs *regs = ra_alloc_reg_set(compiler, base_reg_count, false);
    ra_set_allocate_round_robin(regs);
    struct ra_class **classes = ralloc_array(compiler, struct ra_class *,
                                             REG_CLASS_COUNT);
