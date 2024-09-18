@@ -3934,7 +3934,7 @@
         "description": "anv: Fix condition to clear query pool with blorp",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d5b05265077adbbc6cf7a9c9a5e767fea7b165e8",
         "notes": null
