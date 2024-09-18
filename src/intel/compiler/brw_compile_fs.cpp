@@ -1610,15 +1610,15 @@ brw_compile_fs(const struct brw_compiler *compiler,
          has_spilled = v8->spilled_any_registers;
          allow_spilling = false;
       }
-   }
 
-   if (key->coarse_pixel && devinfo->ver < 20) {
-      if (prog_data->dual_src_blend) {
-         v8->limit_dispatch_width(8, "SIMD16 coarse pixel shading cannot"
-                                  " use SIMD8 messages.\n");
+      if (key->coarse_pixel) {
+         if (prog_data->dual_src_blend) {
+            v8->limit_dispatch_width(8, "SIMD16 coarse pixel shading cannot"
+                                     " use SIMD8 messages.\n");
+         }
+         v8->limit_dispatch_width(16, "SIMD32 not supported with coarse"
+                                  " pixel shading.\n");
       }
-      v8->limit_dispatch_width(16, "SIMD32 not supported with coarse"
-                               " pixel shading.\n");
    }
 
    if (devinfo->ver >= 30) {
