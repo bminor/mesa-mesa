@@ -40,6 +40,7 @@
 struct blorp_const_color_prog_key
 {
    struct blorp_base_key base;
+   bool is_fast_clear;
    bool use_simd16_replicated_data;
    bool clear_rgb_as_red;
    uint8_t local_y;
@@ -49,6 +50,7 @@ struct blorp_const_color_prog_key
 static bool
 blorp_params_get_clear_kernel_fs(struct blorp_batch *batch,
                                  struct blorp_params *params,
+                                 bool is_fast_clear,
                                  bool want_replicated_data,
                                  bool clear_rgb_as_red)
 {
@@ -59,6 +61,7 @@ blorp_params_get_clear_kernel_fs(struct blorp_batch *batch,
    const struct blorp_const_color_prog_key blorp_key = {
       .base = BLORP_BASE_KEY_INIT(BLORP_SHADER_TYPE_CLEAR),
       .base.shader_pipeline = BLORP_SHADER_PIPELINE_RENDER,
+      .is_fast_clear = is_fast_clear,
       .use_simd16_replicated_data = use_replicated_data,
       .clear_rgb_as_red = clear_rgb_as_red,
       .local_y = 0,
@@ -95,7 +98,8 @@ blorp_params_get_clear_kernel_fs(struct blorp_batch *batch,
 
    const bool multisample_fbo = false;
    struct blorp_program p =
-      blorp_compile_fs(blorp, mem_ctx, b.shader, multisample_fbo, use_replicated_data);
+      blorp_compile_fs(blorp, mem_ctx, b.shader, multisample_fbo,
+                       is_fast_clear, use_replicated_data);
 
    bool result =
       blorp->upload_shader(batch, MESA_SHADER_FRAGMENT,
@@ -183,6 +187,7 @@ blorp_params_get_clear_kernel_cs(struct blorp_batch *batch,
 static bool
 blorp_params_get_clear_kernel(struct blorp_batch *batch,
                               struct blorp_params *params,
+                              bool is_fast_clear,
                               bool use_replicated_data,
                               bool clear_rgb_as_red)
 {
@@ -190,7 +195,7 @@ blorp_params_get_clear_kernel(struct blorp_batch *batch,
       assert(!use_replicated_data);
       return blorp_params_get_clear_kernel_cs(batch, params, clear_rgb_as_red);
    } else {
-      return blorp_params_get_clear_kernel_fs(batch, params,
+      return blorp_params_get_clear_kernel_fs(batch, params, is_fast_clear,
                                               use_replicated_data,
                                               clear_rgb_as_red);
    }
@@ -481,7 +486,7 @@ blorp_fast_clear(struct blorp_batch *batch,
    get_fast_clear_rect(batch->blorp->isl_dev, surf->surf, surf->aux_surf,
                        &params.x0, &params.y0, &params.x1, &params.y1);
 
-   if (!blorp_params_get_clear_kernel(batch, &params, true, false))
+   if (!blorp_params_get_clear_kernel(batch, &params, true, true, false))
       return;
 
    blorp_surface_info_init(batch, &params.dst, surf, level,
@@ -654,7 +659,7 @@ blorp_clear(struct blorp_batch *batch,
    if (color_write_disable)
       use_simd16_replicated_data = false;
 
-   if (!blorp_params_get_clear_kernel(batch, &params,
+   if (!blorp_params_get_clear_kernel(batch, &params, false,
                                       use_simd16_replicated_data,
                                       clear_rgb_as_red))
       return;
@@ -820,7 +825,7 @@ blorp_clear_stencil_as_rgba(struct blorp_batch *batch,
    blorp_params_init(&params);
    params.op = BLORP_OP_SLOW_DEPTH_CLEAR;
 
-   if (!blorp_params_get_clear_kernel(batch, &params, true, false))
+   if (!blorp_params_get_clear_kernel(batch, &params, false, true, false))
       return false;
 
    memset(&params.wm_inputs.clear_color, stencil_value,
@@ -913,7 +918,7 @@ blorp_clear_depth_stencil(struct blorp_batch *batch,
        * we disable statistics in 3DSTATE_WM.  Give it the usual clear shader
        * to work around the issue.
        */
-      if (!blorp_params_get_clear_kernel(batch, &params, false, false))
+      if (!blorp_params_get_clear_kernel(batch, &params, false, false, false))
          return;
    }
 
@@ -1137,7 +1142,7 @@ blorp_clear_attachments(struct blorp_batch *batch,
        * is tiled or not, we have to assume it may be linear.  This means no
        * SIMD16_REPDATA for us. :-(
        */
-      if (!blorp_params_get_clear_kernel(batch, &params, false, false))
+      if (!blorp_params_get_clear_kernel(batch, &params, false, false, false))
          return;
    }
 
@@ -1269,7 +1274,7 @@ blorp_ccs_resolve(struct blorp_batch *batch,
     * color" message.
     */
 
-   if (!blorp_params_get_clear_kernel(batch, &params, true, false))
+   if (!blorp_params_get_clear_kernel(batch, &params, false, true, false))
       return;
 
    batch->blorp->exec(batch, &params);
@@ -1359,7 +1364,7 @@ blorp_params_get_mcs_partial_resolve_kernel(struct blorp_batch *batch,
 
    const bool multisample_fbo = true;
    const struct blorp_program p =
-      blorp_compile_fs(blorp, mem_ctx, b.shader, multisample_fbo, false);
+      blorp_compile_fs(blorp, mem_ctx, b.shader, multisample_fbo, false, false);
 
    bool result =
       blorp->upload_shader(batch, MESA_SHADER_FRAGMENT,
@@ -1506,7 +1511,7 @@ blorp_mcs_ambiguate(struct blorp_batch *batch,
    params.wm_inputs.clear_color[0] = pixel & 0xFFFFFFFF;
    params.wm_inputs.clear_color[1] = pixel >> 32;
 
-   if (!blorp_params_get_clear_kernel(batch, &params, true, false))
+   if (!blorp_params_get_clear_kernel(batch, &params, false, true, false))
       return;
 
    batch->blorp->exec(batch, &params);
@@ -1665,7 +1670,7 @@ blorp_ccs_ambiguate(struct blorp_batch *batch,
    memset(&params.wm_inputs.clear_color, 0,
           sizeof(params.wm_inputs.clear_color));
 
-   if (!blorp_params_get_clear_kernel(batch, &params, true, false))
+   if (!blorp_params_get_clear_kernel(batch, &params, false, true, false))
       return;
 
    batch->blorp->exec(batch, &params);
