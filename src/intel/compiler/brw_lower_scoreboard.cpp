@@ -1232,9 +1232,9 @@ namespace {
       /* XXX - Use bin-packing algorithm to assign hardware SBIDs optimally in
        *       shaders with a large number of SEND messages.
        *
-       * XXX - Use 32 SBIDs on Xe2+ while in large GRF mode.
+       * XXX - Use 32 SBIDs on Xe2 while in large GRF mode.
        */
-      const unsigned num_sbids = 16;
+      const unsigned num_sbids = (shader->devinfo->ver >= 30 ? 32 : 16);
 
       /* Allocate an unordered dependency ID to hardware SBID translation
        * table with as many entries as instructions there are in the shader,
