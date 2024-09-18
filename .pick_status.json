@@ -1,5 +1,525 @@
 [
     {
+        "sha": "ad3e6bb06a8e598be2381dfe2f5947f872b76bcd",
+        "description": "radv: fix lowering VS inputs when offset >= stride on GFX6-7",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15b1790a1e9ef12bcfa0259dea370c3206de4c26",
+        "description": "radv,aco: fix legacy vertex attributes when offset >= stride on GFX6-7",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "38cbc3c605ff17c813e70521f4a6c8d3a5d1e397",
+        "notes": null
+    },
+    {
+        "sha": "b11296bd3e6fdf093e31dcaa2eb50f81ce5e581e",
+        "description": "broadcom/simulator: Add support for asahi based systems",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "514df444ebc31b42707ffa10c1432d3c6e11ca60",
+        "description": "gbm: split the DRI backend into a separate library and unify backend handling",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "67bcdbf4a14294809303d88bb9b60f1ce515df00",
+        "description": "hasvk: remove useless uint >= 0 check",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27dd9fd67773196d931be58828717771fa6b8dff",
+        "description": "anv: remove useless uint >= 0 check",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "31a6a9637063ee090a9cda017078ddf88500a29c",
+        "description": "radeonsi: merge the CB/DB conditional blocks in gfx10_emit_barrier",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0e1b7aa8cbc1c19d6f0f8dbb8b388b8d22c76d2a",
+        "description": "radeonsi: deduplicate how GLM flush flags are set for gfx10-11",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "37944969942ddadb6edd2b09f9ef059178122e35",
+        "description": "radeonsi: skip CB_META/DB_META events when they are redundant on gfx10-11",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2642d93ddd7f713d193ffbc6aabb9f45308330b3",
+        "description": "radeonsi: remove an obsolete comment about SMEM stores",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0adea53a6aafcb3f556c8e9f3088878d245484b1",
+        "description": "radeonsi: consolidate code around unsetting barrier_flags in emit_barrier",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce723766418dae93ecba5053afcc93db102b7fd8",
+        "description": "radeonsi: rename SI_CONTEXT_* flags to SI_BARRIER_* flags",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f25ace87ecddeecf1d2ecdb42a6222de2f1d010",
+        "description": "radeonsi: add si_fb_barrier_before_rendering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0be3900b8d372e6e00f03db4d00c3433ade0f605",
+        "description": "radeonsi: move DB synchronization into si_fb_barrier_after_rendering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75d98f1db4a64b4c6daba0602c59705e3a55f341",
+        "description": "radeonsi: move CB synchronization into si_fb_barrier_after_rendering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dad0e0131b5482ce0df876d44898208f07364220",
+        "description": "radeonsi: restructure fb_barrier code in si_launch_grid",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "895226e3ab7b778bc39f547bbe5507a162ea610f",
+        "description": "radeonsi: move initial framebuffer barrier code into si_barrier.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "834aa812ea895b8695958b0fa42e398a6a6358ee",
+        "description": "radeonsi: rename si_context::flags -> barrier_flags",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba53b57731080367728ba2412b995031d5d5e10f",
+        "description": "radeonsi: rewrite si_memory_barrier to generate fewer barrier flags",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03aec8129074ee72a4bd8fc78d3c0437028e5894",
+        "description": "radeonsi: check sctx->flags inside si_emit_barrier_direct",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7cc2fee3787f53cc7c5d6942f31a0582d3217972",
+        "description": "radeonsi: rename TC_L2_dirty -> L2_cache_dirty",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f063ed1e7daf1b429348dc925481f490917c6d1",
+        "description": "radeonsi: update remaining comments related to the L2 cache, use \"L2\", not \"TC\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "311fafccef503540535e6174422ab362f1c1f137",
+        "description": "radeonsi: move most barrier code into a new file si_barrier.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dac99e75afa86590374abc41fd0fd5ed4ffd6d9d",
+        "description": "radeonsi: rename \"cache_flush\" -> \"barrier\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "214b4a119d63f235c5060bb0f303202e9560e820",
+        "description": "radeonsi: remove unused buffer_subdata fallback from si_clear_buffer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1cfac91ebca1484700d394d1475a1b9dc9914a1",
+        "description": "radeonsi: remove SI_CP_DMA_CLEAR_METHOD, call si_cp_dma_clear_buffer directly",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47f6e05c6a43164b4f87c5ded21230947420c7d4",
+        "description": "radeonsi: replace SI_OP_CS_RENDER_COND_ENABLE with bool render_condition_enable",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc489d185554b881f8db17318e293ea0446f01f1",
+        "description": "radeonsi: enable conditional rendering for si_compute_shorten_ubyte_buffer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "df6b5e3c0591e21757e5fa4e8eca5282f69d197d",
+        "description": "radeonsi: remove unused flags and user_flags params from clear/copy functions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f4a9e65a795d89a98ff870a7ec76a93f4dd55ce",
+        "description": "radeonsi: change the flags parameter of si_compute_blit to bool fail_if_slow",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7432d2f19c7df8c3088f83cc1945127e991e5fd8",
+        "description": "radeonsi: remove SI_OP_SYNC_BEFORE* flags",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0923bd1c5fea48eb90000081a6744e960789f437",
+        "description": "radeonsi: remove unused SI_OP_IS_NESTED",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2d8cba0b4b1dbf8e52573d7b78dfe0093d078ed",
+        "description": "radeonsi: always wait for idle before get_query_result_resource",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e8b474c9214d07a8385c566139a31d81c6685a2f",
+        "description": "radeonsi: always pass flags=0 into si_barrier_after_internal_op/simple_buffer_op",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb6c098cd1948cdfd1fcf8aacf5b7ce68fb4ddc0",
+        "description": "radeonsi: remove SI_OP_SYNC_AFTER",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d225fb302564d7747d2c802377f0325e37d9b483",
+        "description": "radeonsi: remove SI_OP_SKIP_CACHE_INV_BEFORE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "67593f0c5197af4230a7ecbdb022ca7b915df9cd",
+        "description": "radeonsi: move barriers out of si_compute_shorten_ubyte_buffer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e805c35986a76a8f40b06c4d3512291bb38273a0",
+        "description": "radeonsi: move barriers out of si_copy_buffer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ee394c34de94907e4192fc11f93719651b4a2d7",
+        "description": "radeonsi: move barriers out of si_clear_buffer",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80a6f568e2f5d24de53284d99fcfff4b480ca8ae",
+        "description": "radeonsi: move barriers out of si_compute_clear_copy_buffer & si_cp_dma_*",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d607348a307e60ce987cbfa838d43a7589c0e40",
+        "description": "radeonsi: add barrier helpers for simple internal buffer ops",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "999b254ca86d0253e81d37fc6f5c8287cd30ebe8",
+        "description": "radeonsi: remove unnecessary barriers from clear_buffer_rmw and clear_dcc_msaa",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4194774edf5998e3e0126ab1b058278da978fdaa",
+        "description": "radeonsi: move barriers out of si_launch_grid_internal_ssbos",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d55f4d6d24b1175e77e6c9c2a0a1fed549f7282",
+        "description": "radeonsi: inline si_launch_grid_internal_images without the barriers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "35727d2e9c09aa55eaa0e3afa0b6d95aae23c921",
+        "description": "radeonsi: remove SI_OP_CS_IMAGE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "58d22e41af8a11947da910425c50991a9d4070f9",
+        "description": "radeonsi: fix broken tessellation in Unigine Heaven",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b7136d08901499d6dd1b55d2b039683259900a31",
+        "notes": null
+    },
+    {
+        "sha": "a3d6a770c0ca17e1d0ac69a614c945712ac8d4c1",
+        "description": "nir/instr_set: fix fp_fast_math",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "666647acaedb1b4112f19192b992b05547975dfa",
+        "notes": null
+    },
+    {
+        "sha": "0d8fe2d03b274dc724484c52ee6a06884f47c932",
+        "description": "ac/nir/meta: tune clear/copy_buffer performance for gfx6-10.3",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "34bd8427f882ad69c56202f134c2ee23edc9a9ae",
+        "description": "radeonsi/gfx12: fix shader uploads via CP DMA",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c90d4e0d570449be2e4c665c7c640b30e6603033",
+        "notes": null
+    },
+    {
+        "sha": "e0f8993336dfac26216845d33f988bb77b6ac7c2",
+        "description": "radeonsi: fix waiting for PS to finish if there are no CB/DB bindings on gfx6-8",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "495e88eab559a3af92f8f2edd5b7119522a8a56c",
+        "description": "r300: move HyperZ blacklist to driconf",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "009017c33cc6e20b98763eb23ef43beb8cbe34b4",
+        "description": "radeonsi: Disable EFC on VCN 2.2",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "45377dc5c46c4f449307c7efc28a1b66a57cf6aa",
         "description": "brw: fix vecN rebuilds",
         "nominated": true,
