@@ -632,6 +632,9 @@ init_render_queue_state(struct anv_queue *queue, bool is_companion_rcs_batch)
 
 #if GFX_VERx10 >= 125
    anv_batch_emit(batch, GENX(STATE_COMPUTE_MODE), cm) {
+#if GFX_VER >= 30
+      cm.EnableVariableRegisterSizeAllocation = true;
+#endif
       cm.Mask1 = 0xffff;
 #if GFX_VERx10 >= 200
       cm.Mask2 = 0xffff;
@@ -766,6 +769,10 @@ init_compute_queue_state(struct anv_queue *queue)
    }
 
    anv_batch_emit(batch, GENX(STATE_COMPUTE_MODE), cm) {
+#if GFX_VER >= 30
+      cm.EnableVariableRegisterSizeAllocationMask = 1;
+      cm.EnableVariableRegisterSizeAllocation = true;
+#endif
 #if GFX_VER >= 20
       cm.AsyncComputeThreadLimit = ACTL_Max8;
       cm.ZPassAsyncComputeThreadLimit = ZPACTL_Max60;
