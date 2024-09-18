@@ -569,6 +569,17 @@ struct brw_stage_prog_data {
    u_printf_info *printf_info;
 };
 
+/**
+ * Convert a number of GRF registers used (grf_used in prog_data) into
+ * a number of GRF register blocks supported by the hardware on PTL+.
+ */
+static inline unsigned
+ptl_register_blocks(unsigned grf_used)
+{
+   const unsigned n = DIV_ROUND_UP(grf_used, 32) - 1;
+   return (n < 6 ? n : 7);
+}
+
 static inline uint32_t *
 brw_stage_prog_data_add_params(struct brw_stage_prog_data *prog_data,
                                unsigned nr_new_params)
