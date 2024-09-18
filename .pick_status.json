@@ -24,7 +24,7 @@
         "description": "iris: fix iris_ensure_indirect_generation_shader() memory leak",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5438b1910464e4b17fe0248a96a6ed98f0280a20",
         "notes": null
