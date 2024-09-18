@@ -106,7 +106,8 @@ brw_fs_alloc_reg_sets(struct brw_compiler *compiler)
       class_sizes[i] = i + 1;
 
    struct ra_regs *regs = ra_alloc_reg_set(compiler, base_reg_count, false);
-   ra_set_allocate_round_robin(regs);
+   if (devinfo->ver < 30)
+      ra_set_allocate_round_robin(regs);
    struct ra_class **classes = ralloc_array(compiler, struct ra_class *,
                                             REG_CLASS_COUNT);
 
