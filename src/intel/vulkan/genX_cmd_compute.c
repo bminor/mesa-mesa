@@ -367,6 +367,9 @@ get_interface_descriptor_data(struct anv_cmd_buffer *cmd_buffer,
                                                       dispatch->group_size,
                                                       dispatch->simd_size),
       .NumberOfBarriers = prog_data->uses_barrier,
+#if GFX_VER >= 30
+      .RegistersPerThread = ptl_register_blocks(prog_data->base.grf_used),
+#endif
    };
 }
 
@@ -1369,6 +1372,9 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
          .BTDMode = true,
 #if INTEL_NEEDS_WA_14017794102 || INTEL_NEEDS_WA_14023061436
          .ThreadPreemption = false,
+#endif
+#if GFX_VER >= 30
+         .RegistersPerThread = ptl_register_blocks(cs_prog_data->base.grf_used),
 #endif
       },
    };

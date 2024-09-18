@@ -208,6 +208,10 @@ genX(emit_simpler_shader_init_fragment)(struct anv_simple_shader *state)
          brw_wm_prog_data_prog_offset(prog_data, ps, 2);
 #endif
 
+#if GFX_VER >= 30
+      ps.RegistersPerThread = ptl_register_blocks(prog_data->base.grf_used);
+#endif
+
       ps.MaximumNumberofThreadsPerPSD = device->info->max_threads_per_psd - 1;
    }
 
@@ -603,6 +607,9 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
             .SharedLocalMemorySize             = intel_compute_slm_encode_size(GFX_VER,
                                                                                prog_data->base.total_shared),
             .NumberOfBarriers                  = prog_data->uses_barrier,
+#if GFX_VER >= 30
+            .RegistersPerThread = ptl_register_blocks(prog_data->base.grf_used),
+#endif
          },
       };
 
@@ -692,6 +699,9 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
          .ThreadPreemptionDisable               = true,
 #endif
          .NumberofThreadsinGPGPUThreadGroup     = dispatch.threads,
+#if GFX_VER >= 30
+         .RegistersPerThread = ptl_register_blocks(prog_data->base.grf_used),
+#endif
       };
       GENX(INTERFACE_DESCRIPTOR_DATA_pack)(batch, iface_desc_state.map, &iface_desc);
       anv_batch_emit(batch, GENX(MEDIA_INTERFACE_DESCRIPTOR_LOAD), mid) {
