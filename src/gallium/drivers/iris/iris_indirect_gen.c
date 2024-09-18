@@ -328,6 +328,11 @@ emit_indirect_generate_draw(struct iris_batch *batch,
       ps.KernelStartPointer2 = KSP(ice->draw.generation.shader) +
          brw_wm_prog_data_prog_offset(wm_prog_data, ps, 2);
 #endif
+
+#if GFX_VER >= 30
+      ps.RegistersPerThread = ptl_register_blocks(wm_prog_data->base.grf_used);
+#endif
+
 #else
       ps.DispatchGRFStartRegisterForConstantSetupData0 =
          elk_wm_prog_data_dispatch_grf_start_reg(wm_prog_data, ps, 0);
