@@ -1509,6 +1509,8 @@ run_fs(fs_visitor &s, bool allow_spilling, bool do_rep_send)
 	 return false;
 
       brw_emit_fb_writes(s);
+      if (s.failed)
+	 return false;
 
       brw_calculate_cfg(s);
 
