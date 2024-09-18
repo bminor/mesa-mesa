@@ -34,7 +34,7 @@
         "description": "radv: fix assigning mesh shader outputs when clip/cull distances are read in FS",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
