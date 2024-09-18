@@ -1110,6 +1110,11 @@ struct pipe_ml_operation
           * Whether this is a depthwise convolution.
           */
          bool depthwise;
+
+         /**
+          * Whether this convolution has fused ReLU activation.
+          */
+         bool relu;
       } conv;
       struct {
          /**
