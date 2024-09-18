@@ -44,7 +44,7 @@
         "description": "i915: fix vertex atan regression",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c4cec842315313a24342d1d9a4dbd4ad11fbdd6c",
         "notes": null
