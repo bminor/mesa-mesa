@@ -1576,6 +1576,14 @@ brw_compile_fs(const struct brw_compiler *compiler,
    brw_nir_populate_wm_prog_data(nir, compiler->devinfo, key, prog_data,
                                  params->mue_map);
 
+   /* Either an unrestricted or a fixed SIMD16 subgroup size are
+    * allowed -- The latter is needed for fast clear and replicated
+    * data clear shaders.
+    */
+   const unsigned reqd_dispatch_width = brw_required_dispatch_width(&nir->info);
+   assert(reqd_dispatch_width == SUBGROUP_SIZE_VARYING ||
+          reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16);
+
    std::unique_ptr<fs_visitor> v8, v16, v32, vmulti;
    cfg_t *simd8_cfg = NULL, *simd16_cfg = NULL, *simd32_cfg = NULL,
       *multi_cfg = NULL;
@@ -1613,9 +1621,9 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                " pixel shading.\n");
    }
 
-   if (!has_spilled &&
-       (!v8 || v8->max_dispatch_width >= 16) &&
-       (INTEL_SIMD(FS, 16) || params->use_rep_send)) {
+   if ((!has_spilled && (!v8 || v8->max_dispatch_width >= 16) &&
+        INTEL_SIMD(FS, 16)) ||
+       reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16) {
       /* Try a SIMD16 compile */
       v16 = std::make_unique<fs_visitor>(compiler, &params->base, key,
                                          prog_data, nir, 16, 1,
@@ -1645,9 +1653,9 @@ brw_compile_fs(const struct brw_compiler *compiler,
    /* Currently, the compiler only supports SIMD32 on SNB+ */
    if (!has_spilled &&
        (!v8 || v8->max_dispatch_width >= 32) &&
-       (!v16 || v16->max_dispatch_width >= 32) && !params->use_rep_send &&
-       !simd16_failed &&
-       INTEL_SIMD(FS, 32)) {
+       (!v16 || v16->max_dispatch_width >= 32) &&
+       reqd_dispatch_width == SUBGROUP_SIZE_VARYING &&
+       !simd16_failed && INTEL_SIMD(FS, 32)) {
       /* Try a SIMD32 compile */
       v32 = std::make_unique<fs_visitor>(compiler, &params->base, key,
                                          prog_data, nir, 32, 1,
@@ -1680,7 +1688,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
    }
 
    if (devinfo->ver >= 12 && !has_spilled &&
-       params->max_polygons >= 2 && !key->coarse_pixel) {
+       params->max_polygons >= 2 && !key->coarse_pixel &&
+       reqd_dispatch_width == SUBGROUP_SIZE_VARYING) {
       fs_visitor *vbase = v8 ? v8.get() : v16 ? v16.get() : v32.get();
       assert(vbase);
 
@@ -1749,8 +1758,10 @@ brw_compile_fs(const struct brw_compiler *compiler,
       }
    }
 
-   /* When the caller requests a repclear shader, they want SIMD16-only */
-   if (params->use_rep_send)
+   /* When the caller compiles a repclear or fast clear shader, they
+    * want SIMD16-only.
+    */
+   if (reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16)
       simd8_cfg = NULL;
 
    brw_generator g(compiler, &params->base, &prog_data->base,
