@@ -432,6 +432,7 @@ etna_ml_lower_convolution(struct etna_ml_subgraph *subgraph,
    operation->addition = false;
    operation->depthwise = poperation->conv.depthwise;
    operation->pointwise = poperation->conv.pointwise;
+   operation->relu = poperation->conv.relu;
    operation->pooling_first_pixel = calc_pooling_first_pixel(subgraph, poperation);
    operation->padding_same = poperation->conv.padding_same;
    operation->stride = poperation->conv.stride_x;
@@ -692,7 +693,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    map->nn_layer_flush = 0x1;
    map->brick_mode = 0x0;
    map->brick_distance = 0x0;
-   map->relu = 0x0;
+   map->relu = operation->relu;
    map->no_flush = nn_core_version == 8;
    map->rounding_mode = 0x1;
    map->partial_cache_data_unit = 0x0;

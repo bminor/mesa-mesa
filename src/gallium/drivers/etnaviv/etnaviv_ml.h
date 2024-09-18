@@ -69,6 +69,7 @@ struct etna_operation {
    bool pointwise;
    bool pooling_first_pixel;
    bool padding_same;
+   bool relu;
 
    unsigned stride;
 
