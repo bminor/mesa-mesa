@@ -454,7 +454,7 @@
         "description": "anv: Only flush render target cache when detecting RT changes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2bd304bc8f0234cb5ae4f06149fd0663611fa4dc",
         "notes": null
