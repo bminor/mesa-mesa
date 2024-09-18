@@ -1409,6 +1409,13 @@ iris_init_render_context(struct iris_batch *batch)
    }
 #endif
 
+#if GFX_VER >= 30
+   iris_emit_cmd(batch, GENX(STATE_COMPUTE_MODE), cm) {
+      cm.EnableVariableRegisterSizeAllocationMask = 1;
+      cm.EnableVariableRegisterSizeAllocation = true;
+   }
+#endif
+
    upload_pixel_hashing_tables(batch);
 
    /* 3DSTATE_DRAWING_RECTANGLE is non-pipelined, so we want to avoid
@@ -1529,6 +1536,10 @@ iris_init_compute_context(struct iris_batch *batch)
                                    PIPE_CONTROL_FLUSH_HDC);
 
    iris_emit_cmd(batch, GENX(STATE_COMPUTE_MODE), cm) {
+#if GFX_VER >= 30
+      cm.EnableVariableRegisterSizeAllocationMask = 1;
+      cm.EnableVariableRegisterSizeAllocation = true;
+#endif
 #if GFX_VER >= 20
       cm.AsyncComputeThreadLimit = ACTL_Max8;
       cm.ZPassAsyncComputeThreadLimit = ZPACTL_Max60;
