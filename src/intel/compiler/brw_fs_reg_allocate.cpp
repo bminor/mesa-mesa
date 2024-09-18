@@ -600,7 +600,7 @@ fs_reg_alloc::setup_inst_interference(const fs_inst *inst)
     * We could just do "something high".  Instead, we just pick the highest
     * register that works.
     */
-   if (inst->eot) {
+   if (inst->eot && devinfo->ver < 30) {
       const int vgrf = inst->opcode == SHADER_OPCODE_SEND ?
                        inst->src[2].nr : inst->src[0].nr;
       const int size = DIV_ROUND_UP(fs->alloc.sizes[vgrf], reg_unit(devinfo));
