@@ -558,7 +558,7 @@ mesa_db_compact(struct mesa_cache_db *db, int64_t blob_size,
    FILE *compacted_cache = NULL, *compacted_index = NULL;
    struct mesa_index_db_file_entry *index_entry;
    struct sort_entry *entries;
-   bool success = false, compact = false;
+   bool success = false;
    void *buffer = NULL;
    unsigned int i = 0;
 
@@ -615,52 +615,38 @@ mesa_db_compact(struct mesa_cache_db *db, int64_t blob_size,
        !mesa_db_write_header(&db->index, 0, false))
       goto cleanup;
 
+   /* Skip non-evicted entries at the start of the files */
+   for (i = 0; i < num_entries; i++) {
+      if (entries[i].evicted)
+         break;
+   }
+
    /* Sync the file pointers */
-   if (!mesa_db_seek(compacted_cache, ftell(db->cache.file)) ||
-       !mesa_db_seek(compacted_index, ftell(db->index.file)))
+   if (!mesa_db_seek(compacted_cache, entries[i].index_entry->cache_db_file_offset) ||
+       !mesa_db_seek(compacted_index, ftell(db->index.file) +
+                     i * sizeof(struct mesa_index_db_file_entry)))
       goto cleanup;
 
    /* Do the compaction */
-   for (i = 0; i < num_entries; i++) {
+   for (; i < num_entries; i++) {
       struct mesa_index_db_file_entry *index_entry = entries[i].index_entry;
+
+      if (entries[i].evicted)
+         continue;
 
       blob_size = blob_file_size(index_entry->size);
 
-      /* Sanity-check the cache-read offset */
-      if (ftell(db->cache.file) != index_entry->cache_db_file_offset)
+      /* Compact the cache file */
+      if (!mesa_db_seek(db->cache.file, index_entry->cache_db_file_offset) ||
+          !mesa_db_read_data(db->cache.file, buffer, blob_size) ||
+          !mesa_db_cache_entry_valid(buffer) ||
+          !mesa_db_write_data(compacted_cache, buffer, blob_size))
          goto cleanup;
 
-      if (entries[i].evicted) {
-         /* Jump over the evicted entry */
-         if (!mesa_db_seek_cur(db->cache.file, blob_size))
-            goto cleanup;
+      index_entry->cache_db_file_offset = ftell(compacted_cache) - blob_size;
 
-         compact = true;
-         continue;
-      }
-
-      if (compact) {
-         /* Compact the cache file */
-         if (!mesa_db_read_data(db->cache.file,   buffer, blob_size) ||
-             !mesa_db_cache_entry_valid(buffer) ||
-             !mesa_db_write_data(compacted_cache, buffer, blob_size))
-            goto cleanup;
-
-         index_entry->cache_db_file_offset = ftell(compacted_cache) - blob_size;
-
-         if (!mesa_db_write(compacted_index, index_entry))
-            goto cleanup;
-      } else {
-         /* Sanity-check the cache-write offset */
-         if (ftell(compacted_cache) != index_entry->cache_db_file_offset)
-            goto cleanup;
-
-         /* Jump over the unchanged entry */
-         if (!mesa_db_seek_cur(compacted_index, sizeof(*index_entry)) ||
-             !mesa_db_seek_cur(db->cache.file,  blob_size) ||
-             !mesa_db_seek_cur(compacted_cache, blob_size))
-            goto cleanup;
-      }
+      if (!mesa_db_write(compacted_index, index_entry))
+         goto cleanup;
    }
 
    fflush(compacted_cache);
