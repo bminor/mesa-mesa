@@ -548,6 +548,9 @@ struct brw_stage_prog_data {
     */
    unsigned dispatch_grf_start_reg;
 
+   /** Number of GRF registers used. */
+   unsigned grf_used;
+
    bool use_alt_mode; /**< Use ALT floating point mode?  Otherwise, IEEE. */
 
    /* 32-bit identifiers for all push/pull parameters.  These can be anything

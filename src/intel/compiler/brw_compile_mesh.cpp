@@ -495,6 +495,8 @@ brw_compile_task(const struct brw_compiler *compiler,
 
    fs_visitor *selected = v[selected_simd].get();
    prog_data->base.prog_mask = 1 << selected_simd;
+   prog_data->base.base.grf_used = MAX2(prog_data->base.base.grf_used,
+                                        selected->grf_used);
 
    if (unlikely(debug_enabled)) {
       fprintf(stderr, "Task Output ");
@@ -1816,6 +1818,8 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    fs_visitor *selected = v[selected_simd].get();
    prog_data->base.prog_mask = 1 << selected_simd;
+   prog_data->base.base.grf_used = MAX2(prog_data->base.base.grf_used,
+                                        selected->grf_used);
 
    if (unlikely(debug_enabled)) {
       if (params->tue_map) {

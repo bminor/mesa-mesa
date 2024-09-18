@@ -1606,6 +1606,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
          assert(v8->payload().num_regs % reg_unit(devinfo) == 0);
          prog_data->base.dispatch_grf_start_reg = v8->payload().num_regs / reg_unit(devinfo);
+         prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                         v8->grf_used);
 
          const performance &perf = v8->performance_analysis.require();
          throughput = MAX2(throughput, perf.throughput);
@@ -1714,8 +1716,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
             simd32_cfg = v32->cfg;
             assert(v32->payload().num_regs % reg_unit(devinfo) == 0);
             prog_data->dispatch_grf_start_reg_32 = v32->payload().num_regs / reg_unit(devinfo);
-            prog_data->base.grf_used = std::max(prog_data->base.grf_used,
-                                                v32->grf_used);
+            prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                            v32->grf_used);
          }
       }
 
@@ -1735,8 +1737,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
             assert(v16->payload().num_regs % reg_unit(devinfo) == 0);
             prog_data->dispatch_grf_start_reg_16 = v16->payload().num_regs / reg_unit(devinfo);
-            prog_data->base.grf_used = std::max(prog_data->base.grf_used,
-                                                v16->grf_used);
+            prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                            v16->grf_used);
          }
       }
 
@@ -1760,6 +1762,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
             assert(v16->payload().num_regs % reg_unit(devinfo) == 0);
             prog_data->dispatch_grf_start_reg_16 = v16->payload().num_regs / reg_unit(devinfo);
+            prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                            v16->grf_used);
 
             const performance &perf = v16->performance_analysis.require();
             throughput = MAX2(throughput, perf.throughput);
@@ -1801,6 +1805,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
                assert(v32->payload().num_regs % reg_unit(devinfo) == 0);
                prog_data->dispatch_grf_start_reg_32 = v32->payload().num_regs / reg_unit(devinfo);
+               prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                               v32->grf_used);
 
                throughput = MAX2(throughput, perf.throughput);
             }
@@ -1877,6 +1883,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
    if (multi_cfg) {
       assert(vmulti->payload().num_regs % reg_unit(devinfo) == 0);
       prog_data->base.dispatch_grf_start_reg = vmulti->payload().num_regs / reg_unit(devinfo);
+      prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                      vmulti->grf_used);
    }
 
    /* When the caller compiles a repclear or fast clear shader, they

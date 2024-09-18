@@ -147,6 +147,10 @@ compile_single_bs(const struct brw_compiler *compiler,
    else
       assert(offset == 0);
 
+   if (!prog_offset)
+      prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                      selected->grf_used);
+
    return dispatch_width;
 }
 

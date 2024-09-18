@@ -263,6 +263,10 @@ brw_compile_cs(const struct brw_compiler *compiler,
          if (stats)
             stats->max_dispatch_width = max_dispatch_width;
          stats = stats ? stats + 1 : NULL;
+
+         prog_data->base.grf_used = MAX2(prog_data->base.grf_used,
+                                         v[simd]->grf_used);
+
          max_dispatch_width = 8u << simd;
       }
    }

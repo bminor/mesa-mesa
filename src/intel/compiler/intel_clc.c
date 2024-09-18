@@ -169,6 +169,7 @@ print_cs_prog_data_fields(FILE *fp, const char *prefix, const char *pad,
    PROG_DATA_FIELD("%u", base.const_data_offset);
    PROG_DATA_FIELD("%u", base.num_relocs);
    fprintf(fp, "%s.base.relocs = %s_relocs,\n", pad, prefix);
+   PROG_DATA_FIELD("%u", base.grf_used);
    PROG_DATA_FIELD("%u", base.printf_info_count);
    fprintf(fp, "%s.base.printf_info = (u_printf_info *)%s_printfs,\n", pad, prefix);
    assert(!cs_prog_data->base.has_ubo_pull);
