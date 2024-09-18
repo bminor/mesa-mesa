@@ -59,6 +59,7 @@ struct intel_device_info;
 /** Size of general purpose register space in REG_SIZE units */
 #define BRW_MAX_GRF 128
 #define XE2_MAX_GRF 256
+#define XE3_MAX_GRF 512
 
 /**
  * BRW hardware swizzles.
@@ -416,7 +417,7 @@ brw_make_reg(enum brw_reg_file file,
 {
    struct brw_reg reg;
    if (file == FIXED_GRF)
-      assert(nr < XE2_MAX_GRF);
+      assert(nr < XE3_MAX_GRF);
    else if (file == ARF)
       assert(nr <= BRW_ARF_TIMESTAMP);
 

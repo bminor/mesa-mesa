@@ -41,7 +41,7 @@ brw_set_dest(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg dest)
    const struct intel_device_info *devinfo = p->devinfo;
 
    if (dest.file == FIXED_GRF)
-      assert(dest.nr < XE2_MAX_GRF);
+      assert(dest.nr < XE3_MAX_GRF);
 
    /* The hardware has a restriction where a destination of size Byte with
     * a stride of 1 is only allowed for a packed byte MOV. For any other
@@ -135,7 +135,7 @@ brw_set_src0(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
    const struct intel_device_info *devinfo = p->devinfo;
 
    if (reg.file == FIXED_GRF)
-      assert(reg.nr < XE2_MAX_GRF);
+      assert(reg.nr < XE3_MAX_GRF);
 
    if (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SEND  ||
        brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDC ||
@@ -260,7 +260,7 @@ brw_set_src1(struct brw_codegen *p, brw_eu_inst *inst, struct brw_reg reg)
    const struct intel_device_info *devinfo = p->devinfo;
 
    if (reg.file == FIXED_GRF)
-      assert(reg.nr < XE2_MAX_GRF);
+      assert(reg.nr < XE3_MAX_GRF);
 
    if (brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDS ||
        brw_eu_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDSC ||
@@ -555,7 +555,7 @@ brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
    const struct intel_device_info *devinfo = p->devinfo;
    brw_eu_inst *inst = next_insn(p, opcode);
 
-   assert(dest.nr < XE2_MAX_GRF);
+   assert(dest.nr < XE3_MAX_GRF);
 
    if (devinfo->ver <= 9) {
       assert(src0.file != IMM && src2.file != IMM);
@@ -579,9 +579,9 @@ brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
    assert(opcode != BRW_OPCODE_BFI2 ||
           (src0.file != IMM && src2.file != IMM));
 
-   assert(src0.file == IMM || src0.nr < XE2_MAX_GRF);
-   assert(src1.file != IMM && src1.nr < XE2_MAX_GRF);
-   assert(src2.file == IMM || src2.nr < XE2_MAX_GRF);
+   assert(src0.file == IMM || src0.nr < XE3_MAX_GRF);
+   assert(src1.file != IMM && src1.nr < XE3_MAX_GRF);
+   assert(src2.file == IMM || src2.nr < XE3_MAX_GRF);
    assert(dest.address_mode == BRW_ADDRESS_DIRECT);
    assert(src0.address_mode == BRW_ADDRESS_DIRECT);
    assert(src1.address_mode == BRW_ADDRESS_DIRECT);

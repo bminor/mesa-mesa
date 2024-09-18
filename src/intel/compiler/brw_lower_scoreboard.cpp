@@ -756,7 +756,7 @@ namespace {
       }
 
    private:
-      dependency grf_deps[XE2_MAX_GRF];
+      dependency grf_deps[XE3_MAX_GRF];
       dependency addr_dep;
       dependency accum_dep;
 
