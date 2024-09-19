@@ -1514,7 +1514,7 @@
         "description": "freedreno/devices: Fix A740v3 from Quest 3",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0b5097081a366fde4f9a45eef3b46527df1a59a1",
         "notes": null
