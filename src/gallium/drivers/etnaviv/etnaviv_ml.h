@@ -94,6 +94,7 @@ struct etna_operation {
    unsigned weight_height;
    uint8_t weight_zero_point;
    float weight_scale;
+   bool weight_signed;
 
    uint8_t addition_offset;
 

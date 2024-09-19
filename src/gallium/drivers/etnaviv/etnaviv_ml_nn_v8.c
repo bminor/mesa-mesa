@@ -192,8 +192,17 @@ static uint32_t calculate_bias_correction(struct etna_ml_subgraph *subgraph, con
    else
       input_channels = operation->input_channels;
 
-   for (unsigned i = 0; i < operation->weight_width * operation->weight_height * input_channels; i++) {
-      correction += (weights[i] - operation->weight_zero_point) * input_zero_point;
+   if (operation->weight_signed) {
+      /* See etna_tensor_zero_point() */
+      int8_t weight_zero_point = operation->weight_zero_point - 128;
+
+      for (unsigned i = 0; i < operation->weight_width * operation->weight_height * input_channels; i++) {
+         correction += (((int8_t *)weights)[i] - weight_zero_point) * input_zero_point;
+      }
+   } else {
+      for (unsigned i = 0; i < operation->weight_width * operation->weight_height * input_channels; i++) {
+         correction += (weights[i] - operation->weight_zero_point) * input_zero_point;
+      }
    }
 
    return correction;
@@ -652,6 +661,8 @@ static void encode_superblock(struct etna_ml_subgraph *subgraph, const struct et
 
             if (kernel_idx + block * block_size >= kernel_size)
                weight = operation->weight_zero_point;
+            else if (operation->weight_signed)
+               weight = ((int8_t *)(weights_map[oc]))[kernel_idx + block * block_size] + 128;
             else
                weight = weights_map[oc][kernel_idx + block * block_size];
 

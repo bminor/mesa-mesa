@@ -542,7 +542,19 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
 
    for (int i = 0; i < inputs_count; i++) {
       struct pipe_resource *res = etna_ml_get_tensor(subgraph, input_idxs[i]);
-      pipe_buffer_write(pctx, res, offsets[input_idxs[i]], sizes[input_idxs[i]], inputs[i]);
+      if (is_signed[i]) {
+         struct pipe_transfer *dst_transfer;
+         const uint8_t *src = inputs[i];
+         uint8_t *dst_map;
+         dst_map = pipe_buffer_map_range(pctx, res, 0, sizes[input_idxs[i]], PIPE_MAP_WRITE, &dst_transfer);
+         assert(dst_map);
+         for (unsigned k = 0; k < sizes[input_idxs[i]]; k++) {
+            dst_map[k] = src[k] + 128;
+         }
+         pipe_buffer_unmap(pctx, dst_transfer);
+      } else {
+         pipe_buffer_write(pctx, res, offsets[input_idxs[i]], sizes[input_idxs[i]], inputs[i]);
+      }
    }
 
    unsigned i = 0;
@@ -662,7 +674,22 @@ etna_ml_subgraph_read_outputs(struct pipe_context *context, struct pipe_ml_subgr
 
    for (int i = 0; i < outputs_count; i++) {
       struct pipe_resource *res = etna_ml_get_tensor(subgraph, output_idxs[i]);
-      pipe_buffer_read(context, res, 0, pipe_buffer_size(res), outputs[i]);
+      if (is_signed[i]) {
+         struct pipe_transfer *src_transfer;
+         uint8_t *src_map;
+         src_map = (uint8_t *) pipe_buffer_map_range(context,
+                                                     res,
+                                                     0, pipe_buffer_size(res),
+                                                     PIPE_MAP_READ,
+                                                     &src_transfer);
+         assert(src_map);
+         for (unsigned k = 0; k < pipe_buffer_size(res); k++) {
+            ((uint8_t *)(outputs[i]))[k] = src_map[k] - 128;
+         }
+         pipe_buffer_unmap(context, src_transfer);
+      } else {
+         pipe_buffer_read(context, res, 0, pipe_buffer_size(res), outputs[i]);
+      }
    }
 }
 

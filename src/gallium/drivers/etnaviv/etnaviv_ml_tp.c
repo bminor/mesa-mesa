@@ -535,6 +535,18 @@ create_reshuffle_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
    return bo;
 }
 
+static inline uint8_t
+etna_tensor_zero_point(struct pipe_tensor *tensor)
+{
+   if (tensor->is_signed) {
+      assert(tensor->zero_point >= -128 && tensor->zero_point <= 127);
+      return tensor->zero_point + 128;
+   } else {
+      assert(tensor->zero_point >= 0 && tensor->zero_point <= 255);
+      return tensor->zero_point;
+   }
+}
+
 void
 etna_ml_lower_transpose(struct etna_ml_subgraph *subgraph,
                         const struct pipe_ml_operation *first_operation,
@@ -548,7 +560,7 @@ etna_ml_lower_transpose(struct etna_ml_subgraph *subgraph,
    operation->input_width = first_operation->input_tensors[0]->dims[1];
    operation->input_height = first_operation->input_tensors[0]->dims[2];
    operation->input_channels = first_operation->input_tensors[0]->dims[3];
-   operation->input_zero_point = first_operation->input_tensors[0]->zero_point;
+   operation->input_zero_point = etna_tensor_zero_point(first_operation->input_tensors[0]);
    operation->input_scale = first_operation->input_tensors[0]->scale;
    operation->input_tensor_size = operation->input_width *
                                   operation->input_height *
@@ -559,7 +571,7 @@ etna_ml_lower_transpose(struct etna_ml_subgraph *subgraph,
    operation->output_width = first_operation->input_tensors[0]->dims[1];
    operation->output_height = first_operation->input_tensors[0]->dims[2];
    operation->output_channels = first_operation->input_tensors[0]->dims[3];
-   operation->output_zero_point = first_operation->input_tensors[0]->zero_point;
+   operation->output_zero_point = etna_tensor_zero_point(first_operation->input_tensors[0]);
    operation->output_scale = first_operation->input_tensors[0]->scale;
 }
 
@@ -606,7 +618,7 @@ etna_ml_lower_reshuffle(struct etna_ml_subgraph *subgraph,
    operation->input_width = convolution->input_tensors[0]->dims[1];
    operation->input_height = convolution->input_tensors[0]->dims[2];
    operation->input_channels = convolution->input_tensors[0]->dims[3];
-   operation->input_zero_point = convolution->input_tensors[0]->zero_point;
+   operation->input_zero_point = etna_tensor_zero_point(convolution->input_tensors[0]);
    operation->input_scale = convolution->input_tensors[0]->scale;
    operation->input_tensor_size = operation->input_width *
                                   operation->input_height *
@@ -617,7 +629,7 @@ etna_ml_lower_reshuffle(struct etna_ml_subgraph *subgraph,
    operation->output_width = DIV_ROUND_UP(operation->input_width, operation->stride);
    operation->output_height = DIV_ROUND_UP(operation->input_height, operation->stride);
    operation->output_channels = operation->input_channels * operation->stride * operation->stride;
-   operation->output_zero_point = convolution->input_tensors[0]->zero_point;
+   operation->output_zero_point = etna_tensor_zero_point(convolution->input_tensors[0]);
    operation->output_scale = convolution->input_tensors[0]->scale;
 
    /* When destriding a convolution, the transformation to be made to the input
