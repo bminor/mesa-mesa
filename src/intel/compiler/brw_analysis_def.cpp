@@ -85,7 +85,8 @@ brw_def_analysis::update_for_reads(const brw_idom_tree &idom,
       /* Additionally, if one of our sources is not a def, then our
        * destination may have multiple dynamic assignments.
        */
-      if (!def_insts[nr] && inst->dst.file == VGRF)
+      if (inst->opcode != SHADER_OPCODE_LOAD_REG &&
+          !def_insts[nr] && inst->dst.file == VGRF)
          mark_invalid(inst->dst.nr);
    }
 }
@@ -158,7 +159,8 @@ brw_def_analysis::brw_def_analysis(const brw_shader *v)
             const int nr = def->src[i].nr;
 
             /* If our "def" reads a non-SSA source, then it isn't a def. */
-            if (!def_insts[nr] || def_insts[nr] == UNSEEN) {
+            if (def->opcode != SHADER_OPCODE_LOAD_REG &&
+                (!def_insts[nr] || def_insts[nr] == UNSEEN)) {
                mark_invalid(def->dst.nr);
                iterate = true;
                break;

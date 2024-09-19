@@ -557,6 +557,13 @@ enum opcode {
 
    /* Ends a block moving to the next one.  See brw_cfg for details. */
    SHADER_OPCODE_FLOW,
+
+   /**
+    * Load a VGRF to generate an SSA value.
+    *
+    * Acts as a scheduling barrier.
+    */
+   SHADER_OPCODE_LOAD_REG,
 };
 
 enum fb_write_logical_srcs {

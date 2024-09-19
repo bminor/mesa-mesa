@@ -44,15 +44,15 @@
 
 #define fsv_assert_eq(A, B)                                             \
    {                                                                    \
-      unsigned a = (A);                                                 \
-      unsigned b = (B);                                                 \
+      uintptr_t a = uintptr_t(A);                                       \
+      uintptr_t b = uintptr_t(B);                                       \
       if (a != b) {                                                     \
          fprintf(stderr, "ASSERT: Scalar %s validation failed!\n",      \
                  _mesa_shader_stage_to_abbrev(s.stage));                \
          brw_print_instruction(s, inst, stderr);                        \
          fprintf(stderr, "%s:%d: A == B failed\n", __FILE__, __LINE__); \
-         fprintf(stderr, "  A = %s = %u\n", #A, a);                     \
-         fprintf(stderr, "  B = %s = %u\n", #B, b);                     \
+         fprintf(stderr, "  A = %s = %" PRIuPTR "\n", #A, a);           \
+         fprintf(stderr, "  B = %s = %" PRIuPTR "\n", #B, b);           \
          abort();                                                       \
       }                                                                 \
    }
@@ -250,6 +250,7 @@ brw_validate_instruction_phase(const brw_shader &s, brw_inst *inst)
    case SHADER_OPCODE_QUAD_SWAP:
    case SHADER_OPCODE_READ_FROM_LIVE_CHANNEL:
    case SHADER_OPCODE_READ_FROM_CHANNEL:
+   case SHADER_OPCODE_LOAD_REG:
       invalid_from = BRW_SHADER_PHASE_AFTER_EARLY_LOWERING;
       break;
 
@@ -323,6 +324,24 @@ brw_validate(const brw_shader &s)
             fsv_assert(inst->sources == 2);
             fsv_assert(is_ud_imm(inst->src[1])); /* commit enable */
             break;
+
+         case SHADER_OPCODE_LOAD_REG: {
+            fsv_assert_eq(inst->sources, 1);
+            fsv_assert_eq(s.alloc.sizes[inst->dst.nr] * REG_SIZE, inst->size_written);
+            fsv_assert(!inst->is_partial_write());
+            fsv_assert_lte(inst->src[0].stride, 1);
+
+            /* For example, if file == UNIFORM, stride will be zero and offset
+             * may be non-zero.
+             */
+            if (inst->src[0].stride != 0)
+               fsv_assert_eq(inst->src[0].offset, 0);
+
+            const brw_def_analysis &defs = s.def_analysis.require();
+            fsv_assert_eq(inst, defs.get(inst->dst));
+
+            break;
+         }
 
          default:
             break;

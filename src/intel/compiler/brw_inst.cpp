@@ -303,6 +303,7 @@ brw_inst::can_do_source_mods(const struct intel_device_info *devinfo) const
    case SHADER_OPCODE_REDUCE:
    case SHADER_OPCODE_INCLUSIVE_SCAN:
    case SHADER_OPCODE_EXCLUSIVE_SCAN:
+   case SHADER_OPCODE_LOAD_REG:
    case SHADER_OPCODE_VOTE_ANY:
    case SHADER_OPCODE_VOTE_ALL:
    case SHADER_OPCODE_VOTE_EQUAL:
@@ -586,6 +587,11 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
       }
       break;
    }
+
+   case SHADER_OPCODE_LOAD_REG:
+      return is_uniform(src[arg]) ?
+         components_read(arg) * brw_type_size_bytes(src[arg].type) :
+         size_written;
 
    default:
       break;
@@ -952,6 +958,7 @@ bool
 brw_inst::is_volatile() const
 {
    return opcode == SHADER_OPCODE_MEMORY_LOAD_LOGICAL ||
+          opcode == SHADER_OPCODE_LOAD_REG ||
           ((opcode == SHADER_OPCODE_SEND ||
             opcode == SHADER_OPCODE_SEND_GATHER) && send_is_volatile);
 }

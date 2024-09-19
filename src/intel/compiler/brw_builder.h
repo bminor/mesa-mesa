@@ -859,6 +859,35 @@ public:
       return component(dst, 0);
    }
 
+   brw_reg
+   LOAD_REG(const brw_reg &src0, brw_inst **out = NULL) const
+   {
+      /* LOAD_REG is a raw, bulk copy of one VGRF to another. The type is
+       * irrelevant. The pass that inserts LOAD_REG to encourage results to be
+       * defs will force all types to be integer types.  Forcing the type to
+       * always be integer here helps with uniformity, and it will also help
+       * implement unit tests that want to compare two shaders for equality.
+       */
+      brw_reg_type t = brw_type_with_size(BRW_TYPE_UD,
+                                          brw_type_size_bits(src0.type));
+      brw_reg dst = retype(brw_allocate_vgrf_units(*shader,
+                                                   shader->alloc.sizes[src0.nr]),
+                           t);
+
+      assert(src0.file == VGRF);
+      assert(shader->alloc.sizes[dst.nr] == shader->alloc.sizes[src0.nr]);
+
+      brw_inst *inst = emit(SHADER_OPCODE_LOAD_REG, dst, retype(src0, t));
+
+      inst->size_written = REG_SIZE * shader->alloc.sizes[src0.nr];
+
+      assert(shader->alloc.sizes[inst->dst.nr] * REG_SIZE == inst->size_written);
+      assert(!inst->is_partial_write());
+
+      if (out) *out = inst;
+      return retype(inst->dst, src0.type);
+   }
+
    brw_shader *shader;
 
    brw_inst *BREAK()    const { return emit(BRW_OPCODE_BREAK); }
