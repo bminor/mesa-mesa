@@ -1269,6 +1269,7 @@ clear_dirty(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 
    cmdbuf->state.gfx.fs.spd = fs ? panvk_priv_mem_dev_addr(fs->spd) : 0;
 
+   cmdbuf->state.gfx.vb.dirty = false;
    if (draw->index.size)
       cmdbuf->state.gfx.ib.dirty = false;
 
@@ -2387,6 +2388,7 @@ panvk_per_arch(CmdBindVertexBuffers)(VkCommandBuffer commandBuffer,
       MAX2(cmdbuf->state.gfx.vb.count, firstBinding + bindingCount);
    memset(&cmdbuf->state.gfx.vs.desc.driver_set, 0,
           sizeof(cmdbuf->state.gfx.vs.desc.driver_set));
+   cmdbuf->state.gfx.vb.dirty = true;
 }
 
 VKAPI_ATTR void VKAPI_CALL
