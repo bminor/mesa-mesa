@@ -53,6 +53,14 @@ brw_optimize(brw_shader &s)
 
    OPT(brw_opt_eliminate_find_live_channel);
 
+   /* Add load_reg instructions before the main optimization loop to get more
+    * defs available in those passes. Do it after the preceeding few pre-loop
+    * passes so that it hopefully has less work to do. Having it here versus
+    * before the call to opt_dce made some difference, but it was mostly
+    * noise.
+    */
+   OPT(brw_insert_load_reg);
+
    /* Track how much non-SSA at this point. */
    {
       const brw_def_analysis &defs = s.def_analysis.require();
@@ -84,6 +92,12 @@ brw_optimize(brw_shader &s)
 
    if (OPT(brw_opt_combine_convergent_txf))
       OPT(brw_opt_copy_propagation_defs);
+
+   if (OPT(brw_lower_load_reg)) {
+      OPT(brw_opt_copy_propagation);
+      OPT(brw_opt_register_coalesce);
+      OPT(brw_opt_dead_code_eliminate);
+   }
 
    if (OPT(brw_lower_pack)) {
       OPT(brw_opt_register_coalesce);

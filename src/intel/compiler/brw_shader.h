@@ -353,3 +353,6 @@ unsigned brw_get_lowered_simd_width(const brw_shader *shader,
 
 brw_reg brw_allocate_vgrf(brw_shader &s, brw_reg_type type, unsigned count);
 brw_reg brw_allocate_vgrf_units(brw_shader &s, unsigned units_of_REGSIZE);
+
+bool brw_insert_load_reg(brw_shader &s);
+bool brw_lower_load_reg(brw_shader &s);
