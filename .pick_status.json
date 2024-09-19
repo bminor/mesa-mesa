@@ -214,7 +214,7 @@
         "description": "intel/brw: Don't include sync.nop in INTEL_DEBUG instruction counts",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1497f4e0c2c416db4c478390b98cdff8b141aa70",
         "notes": null
