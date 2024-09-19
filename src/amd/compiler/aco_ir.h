@@ -182,6 +182,7 @@ enum wait_type {
 };
 
 struct Instruction;
+class Builder;
 
 struct wait_imm {
    static const uint8_t unset_counter = 0xff;
@@ -208,6 +209,8 @@ struct wait_imm {
    bool empty() const;
 
    void print(FILE* output) const;
+
+   void build_waitcnt(Builder& bld);
 
    uint8_t& operator[](size_t i)
    {

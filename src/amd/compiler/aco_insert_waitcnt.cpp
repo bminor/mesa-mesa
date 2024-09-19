@@ -666,43 +666,7 @@ void
 emit_waitcnt(wait_ctx& ctx, std::vector<aco_ptr<Instruction>>& instructions, wait_imm& imm)
 {
    Builder bld(ctx.program, &instructions);
-
-   if (ctx.gfx_level >= GFX12) {
-      if (imm.vm != wait_imm::unset_counter && imm.lgkm != wait_imm::unset_counter) {
-         bld.sopp(aco_opcode::s_wait_loadcnt_dscnt, (imm.vm << 8) | imm.lgkm);
-         imm.vm = wait_imm::unset_counter;
-         imm.lgkm = wait_imm::unset_counter;
-      }
-
-      if (imm.vs != wait_imm::unset_counter && imm.lgkm != wait_imm::unset_counter) {
-         bld.sopp(aco_opcode::s_wait_storecnt_dscnt, (imm.vs << 8) | imm.lgkm);
-         imm.vs = wait_imm::unset_counter;
-         imm.lgkm = wait_imm::unset_counter;
-      }
-
-      aco_opcode op[wait_type_num];
-      op[wait_type_exp] = aco_opcode::s_wait_expcnt;
-      op[wait_type_lgkm] = aco_opcode::s_wait_dscnt;
-      op[wait_type_vm] = aco_opcode::s_wait_loadcnt;
-      op[wait_type_vs] = aco_opcode::s_wait_storecnt;
-      op[wait_type_sample] = aco_opcode::s_wait_samplecnt;
-      op[wait_type_bvh] = aco_opcode::s_wait_bvhcnt;
-      op[wait_type_km] = aco_opcode::s_wait_kmcnt;
-
-      for (unsigned i = 0; i < wait_type_num; i++) {
-         if (imm[i] != wait_imm::unset_counter)
-            bld.sopp(op[i], imm[i]);
-      }
-   } else {
-      if (imm.vs != wait_imm::unset_counter) {
-         assert(ctx.gfx_level >= GFX10);
-         bld.sopk(aco_opcode::s_waitcnt_vscnt, Operand(sgpr_null, s1), imm.vs);
-         imm.vs = wait_imm::unset_counter;
-      }
-      if (!imm.empty())
-         bld.sopp(aco_opcode::s_waitcnt, imm.pack(ctx.gfx_level));
-   }
-   imm = wait_imm();
+   imm.build_waitcnt(bld);
 }
 
 bool

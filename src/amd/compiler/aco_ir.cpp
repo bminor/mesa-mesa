@@ -1328,6 +1328,50 @@ wait_imm::print(FILE* output) const
    }
 }
 
+void
+wait_imm::build_waitcnt(Builder& bld)
+{
+   enum amd_gfx_level gfx_level = bld.program->gfx_level;
+
+   if (gfx_level >= GFX12) {
+      if (vm != wait_imm::unset_counter && lgkm != wait_imm::unset_counter) {
+         bld.sopp(aco_opcode::s_wait_loadcnt_dscnt, (vm << 8) | lgkm);
+         vm = wait_imm::unset_counter;
+         lgkm = wait_imm::unset_counter;
+      }
+
+      if (vs != wait_imm::unset_counter && lgkm != wait_imm::unset_counter) {
+         bld.sopp(aco_opcode::s_wait_storecnt_dscnt, (vs << 8) | lgkm);
+         vs = wait_imm::unset_counter;
+         lgkm = wait_imm::unset_counter;
+      }
+
+      aco_opcode op[wait_type_num];
+      op[wait_type_exp] = aco_opcode::s_wait_expcnt;
+      op[wait_type_lgkm] = aco_opcode::s_wait_dscnt;
+      op[wait_type_vm] = aco_opcode::s_wait_loadcnt;
+      op[wait_type_vs] = aco_opcode::s_wait_storecnt;
+      op[wait_type_sample] = aco_opcode::s_wait_samplecnt;
+      op[wait_type_bvh] = aco_opcode::s_wait_bvhcnt;
+      op[wait_type_km] = aco_opcode::s_wait_kmcnt;
+
+      for (unsigned i = 0; i < wait_type_num; i++) {
+         if ((*this)[i] != wait_imm::unset_counter)
+            bld.sopp(op[i], (*this)[i]);
+      }
+   } else {
+      if (vs != wait_imm::unset_counter) {
+         assert(gfx_level >= GFX10);
+         bld.sopk(aco_opcode::s_waitcnt_vscnt, Operand(sgpr_null, s1), vs);
+         vs = wait_imm::unset_counter;
+      }
+      if (!empty())
+         bld.sopp(aco_opcode::s_waitcnt, pack(gfx_level));
+   }
+
+   *this = wait_imm();
+}
+
 bool
 should_form_clause(const Instruction* a, const Instruction* b)
 {

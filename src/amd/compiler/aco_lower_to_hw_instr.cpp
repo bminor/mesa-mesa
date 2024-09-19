@@ -2380,13 +2380,13 @@ lower_to_hw_instr(Program* program)
                       * the waitcnt necessary before resuming overlapping waves as the normal
                       * waitcnt insertion doesn't work in a discard early exit block.
                       */
-                     if (program->gfx_level >= GFX10)
-                        bld.sopk(aco_opcode::s_waitcnt_vscnt, Operand(sgpr_null, s1), 0);
                      wait_imm pops_exit_wait_imm;
+                     if (program->gfx_level >= GFX10)
+                        pops_exit_wait_imm.vs = 0;
                      pops_exit_wait_imm.vm = 0;
                      if (program->has_smem_buffer_or_global_loads)
                         pops_exit_wait_imm.lgkm = 0;
-                     bld.sopp(aco_opcode::s_waitcnt, pops_exit_wait_imm.pack(program->gfx_level));
+                     pops_exit_wait_imm.build_waitcnt(bld);
                   }
                   if (discard_sends_pops_done)
                      bld.sopp(aco_opcode::s_sendmsg, sendmsg_ordered_ps_done);
