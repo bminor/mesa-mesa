@@ -374,7 +374,7 @@
         "description": "aco: don't byte align global VMEM loads if it might be unsafe",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "391bf3ea30ecb90b2b620f91a2cdc8632ce7b0d8",
         "notes": null
