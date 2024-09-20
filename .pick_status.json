@@ -404,7 +404,7 @@
         "description": "nvk: Don't emit critical messages during init",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4db1bd584659dfd62cc6968cd7be65dbc37ee3a9",
         "notes": null
