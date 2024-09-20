@@ -213,6 +213,7 @@ zink-radv-vangogh-valve:
     B2C_TIMEOUT_BOOT_MINUTES: 30
     B2C_TIMEOUT_OVERALL_MINUTES: 30
     FDO_CI_CONCURRENT: 6
+    ZINK_DEBUG: vvl
   # Override the list of tags to drop `priority:low`
   tags:
     - farm:$RUNNER_FARM_LOCATION
@@ -228,3 +229,4 @@ zink-radv-navi31-valve:
     GPU_VERSION: zink-radv-navi31
     B2C_TIMEOUT_BOOT_MINUTES: 75
     B2C_TIMEOUT_OVERALL_MINUTES: 75
+    ZINK_DEBUG: vvl
