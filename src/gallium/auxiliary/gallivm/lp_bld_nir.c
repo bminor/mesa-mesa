@@ -1066,6 +1066,26 @@ visit_alu(struct lp_build_nir_context *bld_base,
    const unsigned num_components = instr->def.num_components;
    unsigned src_components;
 
+   struct lp_type half_type = bld_base->half_bld.type;
+   struct lp_type float_type = bld_base->base.type;
+   struct lp_type double_type = bld_base->dbl_bld.type;
+
+   /* Set the per-intruction float controls. */
+   bld_base->half_bld.type.signed_zero_preserve |=
+      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16);
+   bld_base->half_bld.type.nan_preserve |=
+      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP16);
+
+   bld_base->base.type.signed_zero_preserve |=
+      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32);
+   bld_base->base.type.nan_preserve |=
+      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP32);
+
+   bld_base->dbl_bld.type.signed_zero_preserve |=
+      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP64);
+   bld_base->dbl_bld.type.nan_preserve |=
+      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP64);
+
    switch (instr->op) {
    case nir_op_vec2:
    case nir_op_vec3:
@@ -1148,6 +1168,11 @@ visit_alu(struct lp_build_nir_context *bld_base,
       }
    }
    assign_ssa_dest(bld_base, &instr->def, result);
+
+   /* Restore the global float controls. */
+   bld_base->half_bld.type = half_type;
+   bld_base->base.type = float_type;
+   bld_base->dbl_bld.type = double_type;
 }
 
 

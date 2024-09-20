@@ -129,6 +129,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
 #endif
    .KHR_external_semaphore                = true,
    .KHR_shader_float_controls             = true,
+   .KHR_shader_float_controls2            = true,
    .KHR_get_memory_requirements2          = true,
    .KHR_global_priority                   = true,
 #ifdef LVP_USE_WSI_PLATFORM
@@ -746,6 +747,9 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       /* VK_KHR_shader_subgroup_rotate */
       .shaderSubgroupRotate = true,
       .shaderSubgroupRotateClustered = true,
+
+      /* KHR_shader_float_controls2 */
+      .shaderFloatControls2 = true,
    };
 }
 
