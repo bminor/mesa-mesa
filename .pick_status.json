@@ -414,7 +414,7 @@
         "description": "pan/va: Fix nir_op_pack_uvec4_to_uint",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "934b0f1add1a843e0ed14f15adbdef2f2c34c88b",
         "notes": null
