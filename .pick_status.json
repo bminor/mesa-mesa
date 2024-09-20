@@ -534,7 +534,7 @@
         "description": "util/mesa-db: Open DB files during access time",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fd9f7b748e2e2fa57b39bb800305d2fb3d665079",
         "notes": null

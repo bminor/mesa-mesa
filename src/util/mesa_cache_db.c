@@ -90,6 +90,12 @@ static inline bool mesa_db_truncate(FILE *file, long pos)
    return !ftruncate(fileno(file), pos);
 }
 
+static bool
+mesa_db_reopen_file(struct mesa_cache_db_file *db_file);
+
+static void
+mesa_db_close_file(struct mesa_cache_db_file *db_file);
+
 static int
 mesa_db_flock(FILE *file, int op)
 {
@@ -107,8 +113,12 @@ mesa_db_lock(struct mesa_cache_db *db)
 {
    simple_mtx_lock(&db->flock_mtx);
 
+   if (!mesa_db_reopen_file(&db->index) ||
+       !mesa_db_reopen_file(&db->cache))
+      goto close_files;
+
    if (mesa_db_flock(db->cache.file, LOCK_EX) < 0)
-      goto unlock_mtx;
+      goto close_files;
 
    if (mesa_db_flock(db->index.file, LOCK_EX) < 0)
       goto unlock_cache;
@@ -117,7 +127,10 @@ mesa_db_lock(struct mesa_cache_db *db)
 
 unlock_cache:
    mesa_db_flock(db->cache.file, LOCK_UN);
-unlock_mtx:
+close_files:
+   mesa_db_close_file(&db->index);
+   mesa_db_close_file(&db->cache);
+
    simple_mtx_unlock(&db->flock_mtx);
 
    return false;
@@ -128,6 +141,10 @@ mesa_db_unlock(struct mesa_cache_db *db)
 {
    mesa_db_flock(db->index.file, LOCK_UN);
    mesa_db_flock(db->cache.file, LOCK_UN);
+
+   mesa_db_close_file(&db->index);
+   mesa_db_close_file(&db->cache);
+
    simple_mtx_unlock(&db->flock_mtx);
 }
 
@@ -410,10 +427,34 @@ mesa_db_open_file(struct mesa_cache_db_file *db_file,
    return true;
 }
 
+static bool
+mesa_db_reopen_file(struct mesa_cache_db_file *db_file)
+{
+   if (db_file->file)
+      return true;
+
+   db_file->file = mesa_db_fopen(db_file->path);
+   if (!db_file->file)
+      return false;
+
+   return true;
+}
+
 static void
 mesa_db_close_file(struct mesa_cache_db_file *db_file)
 {
-   fclose(db_file->file);
+   if (db_file->file) {
+      fclose(db_file->file);
+      db_file->file = NULL;
+   }
+}
+
+static void
+mesa_db_free_file(struct mesa_cache_db_file *db_file)
+{
+   if (db_file->file)
+      fclose(db_file->file);
+
    free(db_file->path);
 }
 
@@ -650,9 +691,9 @@ destroy_mtx:
 
    ralloc_free(db->mem_ctx);
 close_index:
-   mesa_db_close_file(&db->index);
+   mesa_db_free_file(&db->index);
 close_cache:
-   mesa_db_close_file(&db->cache);
+   mesa_db_free_file(&db->cache);
 
    return false;
 }
@@ -680,8 +721,8 @@ mesa_cache_db_close(struct mesa_cache_db *db)
    simple_mtx_destroy(&db->flock_mtx);
    ralloc_free(db->mem_ctx);
 
-   mesa_db_close_file(&db->index);
-   mesa_db_close_file(&db->cache);
+   mesa_db_free_file(&db->index);
+   mesa_db_free_file(&db->cache);
 }
 
 void
