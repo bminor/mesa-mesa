@@ -3005,6 +3005,9 @@ lp_build_opt_nir(struct nir_shader *nir)
 
    NIR_PASS_V(nir, nir_lower_flrp, 16|32|64, true);
    NIR_PASS_V(nir, nir_lower_fp16_casts, nir_lower_fp16_all | nir_lower_fp16_split_fp64);
+
+   NIR_PASS(_, nir, nir_lower_alu);
+
    do {
       progress = false;
       NIR_PASS(progress, nir, nir_opt_constant_folding);
