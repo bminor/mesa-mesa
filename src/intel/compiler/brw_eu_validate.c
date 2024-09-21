@@ -2185,6 +2185,158 @@ send_descriptor_restrictions(const struct brw_isa_info *isa,
 }
 
 static struct string
+register_region_special_restrictions(const struct brw_isa_info *isa,
+                                     const brw_hw_decoded_inst *inst)
+{
+   const struct intel_device_info *devinfo = isa->devinfo;
+   struct string error_msg = { .str = NULL, .len = 0 };
+
+   bool format_uses_regions = inst->format == FORMAT_BASIC ||
+                              inst->format == FORMAT_BASIC_THREE_SRC;
+
+   /* "Src0 Restrictions" in "Special Restrictions" in Bspec 56640 (r57070). */
+   if (devinfo->ver >= 20 &&
+       format_uses_regions &&
+       inst->num_sources > 0 &&
+       inst->src[0].file == FIXED_GRF) {
+      const unsigned v = inst->src[0].vstride;
+      const unsigned w = inst->src[0].width;
+      const unsigned h = inst->src[0].hstride;
+
+      const bool multi_indirect =
+         inst->src[0].address_mode == BRW_ADDRESS_REGISTER_INDIRECT_REGISTER &&
+         inst->src[0].vstride == STRIDE(BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL);
+      const bool is_Vx1 = multi_indirect && w != 1;
+      const bool is_VxH = multi_indirect && w == 1;
+
+      const unsigned src0_stride         = w == 1 ? v : h;
+      const unsigned src0_uniform_stride = (w == 1) || (h * w == v) || is_Vx1;
+      const unsigned dst_stride          = inst->dst.hstride;
+
+      const unsigned src0_size  = brw_type_size_bytes(inst->src[0].type);
+      const unsigned dst_size   = brw_type_size_bytes(inst->dst.type);
+      const unsigned src0_subnr = inst->src[0].subnr / src0_size;
+      const unsigned dst_subnr  = inst->dst.subnr / dst_size;
+
+      const bool dst_dword_aligned = (dst_size >= 4) ||
+                                     (dst_size == 2 && (dst_subnr % 2 == 0)) ||
+                                     (dst_size == 1 && (dst_subnr % 4 == 0));
+
+      /* The section below follows the pseudo-code in the spec to make
+       * easier to verify.
+       */
+      bool allowed = false;
+      if ((dst_size >= 4) ||
+          (src0_size >= 4) ||
+          (dst_size == 2 && dst_stride > 1) ||
+          (dst_size == 1 && dst_stride > 2) ||
+          is_VxH) {
+         /* One element per DWord channel. */
+         allowed = true;
+
+      } else if (src0_uniform_stride || dst_dword_aligned) {
+         if (src0_size == 2 && dst_size == 2) {
+            if ((src0_stride < 2) ||
+                (src0_stride == 2 && src0_uniform_stride && (dst_subnr % 16 == src0_subnr / 2)))
+               allowed = true;
+
+         } else if (src0_size == 2 && dst_size == 1 && dst_stride == 2) {
+            if ((src0_stride < 2) ||
+                (src0_stride == 2 && src0_uniform_stride && (dst_subnr % 32 == src0_subnr)))
+               allowed = true;
+
+         } else if (src0_size == 1 && dst_size == 2) {
+            if ((src0_stride < 4) ||
+                (src0_stride == 4 && src0_uniform_stride && ((2 * dst_subnr) % 16 == src0_subnr / 2)) ||
+                (src0_stride == 8 && src0_uniform_stride && ((2 * dst_subnr) % 8 == src0_subnr / 4)))
+               allowed = true;
+
+         } else if (src0_size == 1 && dst_size == 1 && dst_stride == 2) {
+            if ((src0_stride < 4) ||
+                (src0_stride == 4 && src0_uniform_stride && (dst_subnr % 32 == src0_subnr / 2)) ||
+                (src0_stride == 8 && src0_uniform_stride && (dst_subnr % 16 == src0_subnr / 4)))
+               allowed = true;
+
+         } else if (src0_size == 1 && dst_size == 1 && dst_stride == 1 && w != 2) {
+            if ((src0_stride < 2) ||
+                (src0_stride == 2 && src0_uniform_stride && (dst_subnr % 32 == src0_subnr / 2)) ||
+                (src0_stride == 4 && src0_uniform_stride && (dst_subnr % 16 == src0_subnr / 4)))
+               allowed = true;
+
+         } else if (src0_size == 1 && dst_size == 1 && dst_stride == 1 && w == 2) {
+            if ((h == 0 && v < 4) ||
+                (h == 1 && v < 4) ||
+                (h == 2 && v < 2) ||
+                (h == 1 && v == 4 && (dst_subnr % 32 == 2 * (src0_subnr / 4)) && (src0_subnr % 2 == 0)) ||
+                (h == 2 && v == 4 && (dst_subnr % 32 == src0_subnr / 2)) ||
+                (h == 4 && v == 8 && (dst_subnr % 32 == src0_subnr / 4)))
+               allowed = true;
+         }
+      }
+
+      ERROR_IF(!allowed,
+               "Invalid register region for source 0.  See special restrictions section.");
+   }
+
+   /* "Src1 Restrictions" in "Special Restrictions" in Bspec 56640 (r57070). */
+   if (devinfo->ver >= 20 &&
+       format_uses_regions &&
+       inst->num_sources > 1 &&
+       inst->src[1].file == FIXED_GRF) {
+      const unsigned v = inst->src[1].vstride;
+      const unsigned w = inst->src[1].width;
+      const unsigned h = inst->src[1].hstride;
+
+      const bool multi_indirect =
+         inst->src[1].address_mode == BRW_ADDRESS_REGISTER_INDIRECT_REGISTER &&
+         inst->src[1].vstride == STRIDE(BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL);
+      const bool is_Vx1 = multi_indirect && w != 1;
+
+      const unsigned src1_stride         = w == 1 ? v : h;
+      const unsigned src1_uniform_stride = (w == 1) || (h * w == v) || is_Vx1;
+      const unsigned dst_stride          = inst->dst.hstride;
+
+      const unsigned src1_size  = brw_type_size_bytes(inst->src[1].type);
+      const unsigned dst_size   = brw_type_size_bytes(inst->dst.type);
+      const unsigned src1_subnr = inst->src[1].subnr / src1_size;
+      const unsigned dst_subnr  = inst->dst.subnr / dst_size;
+
+      const bool dst_dword_aligned = (dst_size >= 4) ||
+                                     (dst_size == 2 && (dst_subnr % 2 == 0)) ||
+                                     (dst_size == 1 && (dst_subnr % 4 == 0));
+
+      /* The section below follows the pseudo-code in the spec to make
+       * easier to verify.
+       */
+      bool allowed = false;
+      if ((dst_size >= 4) ||
+          (src1_size >= 4) ||
+          (dst_size == 2 && dst_stride > 1) ||
+          (dst_size == 1 && dst_stride > 2)) {
+         /* One element per DWord channel. */
+         allowed = true;
+
+      } else if (src1_uniform_stride || dst_dword_aligned) {
+         if (src1_size == 2 && dst_size == 2) {
+            if ((src1_stride < 2) ||
+                (src1_stride == 2 && src1_uniform_stride && (dst_subnr % 16 == src1_subnr / 2)))
+               allowed = true;
+
+         } else if (src1_size == 2 && dst_size == 1 && dst_stride == 2) {
+            if ((src1_stride < 2) ||
+                (src1_stride == 2 && src1_uniform_stride && (dst_subnr % 32 == src1_subnr)))
+               allowed = true;
+         }
+      }
+
+      ERROR_IF(!allowed,
+               "Invalid register region for source 1.  See special restrictions section.");
+   }
+
+   return error_msg;
+}
+
+static struct string
 scalar_register_restrictions(const struct brw_isa_info *isa,
                              const brw_hw_decoded_inst *inst)
 {
@@ -2652,6 +2804,7 @@ brw_validate_instruction(const struct brw_isa_info *isa,
          CHECK(special_requirements_for_handling_double_precision_data_types);
          CHECK(instruction_restrictions);
          CHECK(send_descriptor_restrictions);
+         CHECK(register_region_special_restrictions);
          CHECK(scalar_register_restrictions);
       }
 
