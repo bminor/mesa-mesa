@@ -3376,6 +3376,186 @@ TEST_P(validation_test, dpas_src_subreg_nr)
    }
 }
 
+TEST_P(validation_test, xe2_register_region_special_restrictions_for_src0_and_src1)
+{
+   if (devinfo.verx10 < 200)
+      return;
+
+   /* See "Src0 Restrictions" and "Src1 Restrictions" in "Special Restrictions"
+    * in Bspec 56640 (r57070).
+    */
+
+   const unsigned V = 0xF;
+
+#define DST(t, s, h)             { BRW_TYPE_ ## t, s, h }
+#define SRC(t, s, v, w, h, ...)  { BRW_TYPE_ ## t, s, v, w, h, __VA_ARGS__ }
+#define INDIRECT true
+
+   static const struct {
+      struct {
+         brw_reg_type type;
+         unsigned     subnr;
+         unsigned     h;
+      } dst;
+
+      struct {
+         brw_reg_type type;
+         unsigned     subnr;
+         unsigned     v;
+         unsigned     w;
+         unsigned     h;
+         bool         indirect;
+      } src0, src1;
+
+      bool         expected_result;
+   } test_vectors[] = {
+      /* Source 0.  One element per dword channel. */
+      { DST( D, 0, 1 ), SRC( D, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+      { DST( D, 0, 1 ), SRC( W, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+      { DST( D, 0, 1 ), SRC( B, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+
+      { DST( W, 0, 2 ), SRC( D, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+      { DST( W, 0, 2 ), SRC( W, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+      { DST( W, 0, 2 ), SRC( B, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+
+      { DST( B, 0, 4 ), SRC( D, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+      { DST( B, 0, 4 ), SRC( W, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+      { DST( B, 0, 4 ), SRC( B, 0,  1,1,0 ),  SRC( D, 0, 1,1,0 ), true },
+
+      { DST( D, 0, 1 ), SRC( D, 0,  V,8,1, INDIRECT ),  SRC( D, 0, 1,1,0 ), true },
+      { DST( D, 0, 1 ), SRC( D, 0,  V,1,0, INDIRECT ),  SRC( D, 0, 1,1,0 ), true },
+
+      /* Source 0.  Uniform stride W->W cases. */
+      { DST( W, 1, 1 ), SRC( W, 0,  1,1,0 ),  SRC( W, 0, 1,1,0 ), true },
+      { DST( W, 1, 1 ), SRC( W, 2,  1,1,0 ),  SRC( W, 0, 1,1,0 ), true },
+      { DST( W, 1, 1 ), SRC( W, 0,  2,1,0 ),  SRC( W, 0, 1,1,0 ), false },
+      { DST( W, 1, 1 ), SRC( W, 2,  2,1,0 ),  SRC( W, 0, 1,1,0 ), true },
+      { DST( W, 1, 1 ), SRC( W, 0,  4,1,0 ),  SRC( W, 0, 1,1,0 ), false },
+      { DST( W, 1, 1 ), SRC( W, 2,  4,1,0 ),  SRC( W, 0, 1,1,0 ), false },
+
+      /* Source 0.  Dword aligned W->W cases. */
+      { DST( W, 2, 1 ), SRC( W, 0,  8,4,1 ),   SRC( W, 0, 1,1,0 ), true },
+      { DST( W, 2, 1 ), SRC( W, 4,  8,4,1 ),   SRC( W, 0, 1,1,0 ), true },
+      { DST( W, 2, 1 ), SRC( W, 0,  8,4,2 ),   SRC( W, 0, 1,1,0 ), false },
+      { DST( W, 2, 1 ), SRC( W, 4,  8,4,2 ),   SRC( W, 0, 1,1,0 ), true },
+      { DST( W, 2, 1 ), SRC( W, 0,  16,2,4 ),  SRC( W, 0, 1,1,0 ), false },
+      { DST( W, 2, 1 ), SRC( W, 4,  16,2,4 ),  SRC( W, 0, 1,1,0 ), false },
+
+      /* Source 0. Uniform stride W->B cases. */
+      { DST( B, 2, 2 ), SRC( W, 0,  1,1,0),  SRC( W, 0, 1,1,0 ), true },
+      { DST( B, 2, 2 ), SRC( W, 1,  1,1,0),  SRC( W, 0, 1,1,0 ), true },
+      { DST( B, 2, 2 ), SRC( W, 0,  2,1,0),  SRC( W, 0, 1,1,0 ), false },
+      { DST( B, 2, 2 ), SRC( W, 1,  2,1,0),  SRC( W, 0, 1,1,0 ), false },
+      { DST( B, 2, 2 ), SRC( W, 0,  4,1,0),  SRC( W, 0, 1,1,0 ), false },
+      { DST( B, 2, 2 ), SRC( W, 1,  4,1,0),  SRC( W, 0, 1,1,0 ), false },
+
+      /* Source 0.  Dword aligned W->B cases. */
+      { DST( B, 4, 2 ), SRC( W, 0,  8,4,1 ),   SRC( W, 0, 1,1,0 ), true },
+      { DST( B, 4, 2 ), SRC( W, 2,  8,4,1 ),   SRC( W, 0, 1,1,0 ), true },
+      { DST( B, 4, 2 ), SRC( W, 0,  8,4,2 ),   SRC( W, 0, 1,1,0 ), false },
+      { DST( B, 4, 2 ), SRC( W, 2,  8,4,2 ),   SRC( W, 0, 1,1,0 ), false },
+      { DST( B, 4, 2 ), SRC( W, 0,  16,2,4 ),  SRC( W, 0, 1,1,0 ), false },
+      { DST( B, 4, 2 ), SRC( W, 2,  16,2,4 ),  SRC( W, 0, 1,1,0 ), false },
+
+      /* TODO: Add B->W and B->B cases. */
+
+      /* Source 1.  One element per dword channel. */
+      { DST( D, 0, 1 ),  SRC( D, 0, 1,1,0 ),  SRC( D, 0,  1,1,0 ), true },
+      { DST( D, 0, 1 ),  SRC( D, 0, 1,1,0 ),  SRC( W, 0,  1,1,0 ), true },
+      { DST( W, 0, 2 ),  SRC( D, 0, 1,1,0 ),  SRC( D, 0,  1,1,0 ), true },
+      { DST( W, 0, 2 ),  SRC( D, 0, 1,1,0 ),  SRC( W, 0,  1,1,0 ), true },
+
+      /* Source 1.  Uniform stride W->W cases. */
+      { DST( W, 1, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  1,1,0 ), true },
+      { DST( W, 1, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 2,  1,1,0 ), true },
+      { DST( W, 1, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  2,1,0 ), false },
+      { DST( W, 1, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 2,  2,1,0 ), true },
+      { DST( W, 1, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  4,1,0 ), false },
+      { DST( W, 1, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 2,  4,1,0 ), false },
+
+      /* Source 1.  Dword aligned W->W cases. */
+      { DST( W, 2, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  8,4,1 ),  true },
+      { DST( W, 2, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 4,  8,4,1 ),  true },
+      { DST( W, 2, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  8,4,2 ),  false },
+      { DST( W, 2, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 4,  8,4,2 ),  true },
+      { DST( W, 2, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  16,2,4 ), false },
+      { DST( W, 2, 1 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 4,  16,2,4 ), false },
+
+      /* Source 1. Uniform stride W->B cases. */
+      { DST( B, 2, 2 ),  SRC( B, 0, 1,1,0 ),  SRC( W, 0,  1,1,0), true },
+      { DST( B, 2, 2 ),  SRC( B, 0, 1,1,0 ),  SRC( W, 1,  1,1,0), true },
+      { DST( B, 2, 2 ),  SRC( B, 0, 1,1,0 ),  SRC( W, 0,  2,1,0), false },
+      { DST( B, 2, 2 ),  SRC( B, 0, 1,1,0 ),  SRC( W, 1,  2,1,0), false },
+      { DST( B, 2, 2 ),  SRC( B, 0, 1,1,0 ),  SRC( W, 0,  4,1,0), false },
+      { DST( B, 2, 2 ),  SRC( B, 0, 1,1,0 ),  SRC( W, 1,  4,1,0), false },
+
+      /* Source 1.  Dword aligned W->B cases. */
+      { DST( B, 4, 2 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  8,4,1 ),  true },
+      { DST( B, 4, 2 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 2,  8,4,1 ),  true },
+      { DST( B, 4, 2 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  8,4,2 ),  false },
+      { DST( B, 4, 2 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 2,  8,4,2 ),  false },
+      { DST( B, 4, 2 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 0,  16,2,4 ), false },
+      { DST( B, 4, 2 ),  SRC( W, 0, 1,1,0 ),  SRC( W, 2,  16,2,4 ), false },
+   };
+
+#undef DST
+#undef SRC
+#undef SOME
+#undef INDIRECT
+
+   for (unsigned i = 0; i < ARRAY_SIZE(test_vectors); i++) {
+      struct brw_reg dst =
+         brw_make_reg(FIXED_GRF,
+                      0,
+                      test_vectors[i].dst.subnr,
+                      0,
+                      0,
+                      test_vectors[i].dst.type,
+                      cvt(test_vectors[i].dst.h),
+                      BRW_WIDTH_1,
+                      cvt(test_vectors[i].dst.h),
+                      BRW_SWIZZLE_XYZW,
+                      WRITEMASK_XYZW);
+
+      struct brw_reg src0 =
+         brw_make_reg(FIXED_GRF,
+                      2,
+                      test_vectors[i].src0.subnr,
+                      0,
+                      0,
+                      test_vectors[i].src0.type,
+                      test_vectors[i].src0.v == V ? 0xF : cvt(test_vectors[i].src0.v),
+                      cvt(test_vectors[i].src0.w) - 1,
+                      cvt(test_vectors[i].src0.h),
+                      BRW_SWIZZLE_XYZW,
+                      WRITEMASK_XYZW);
+      if (test_vectors[i].src0.indirect)
+         src0.address_mode = BRW_ADDRESS_REGISTER_INDIRECT_REGISTER;
+
+      struct brw_reg src1 =
+         brw_make_reg(FIXED_GRF,
+                      4,
+                      test_vectors[i].src1.subnr,
+                      0,
+                      0,
+                      test_vectors[i].src1.type,
+                      test_vectors[i].src1.v == V ? 0xF : cvt(test_vectors[i].src1.v),
+                      cvt(test_vectors[i].src1.w) - 1,
+                      cvt(test_vectors[i].src1.h),
+                      BRW_SWIZZLE_XYZW,
+                      WRITEMASK_XYZW);
+      if (test_vectors[i].src1.indirect)
+         src1.address_mode = BRW_ADDRESS_REGISTER_INDIRECT_REGISTER;
+
+      brw_ADD(p, dst, src0, src1);
+
+      EXPECT_EQ(test_vectors[i].expected_result, validate(p)) <<
+         "test vector index = " << i;
+
+      clear_instructions(p);
+   }
+}
+
 static brw_reg
 brw_s0(enum brw_reg_type type, unsigned subnr)
 {
