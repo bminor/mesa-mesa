@@ -314,7 +314,7 @@
         "description": "anv: free shaders on rt pipeline compile error",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "58c9f817cbed2fc5263c86b514730e54a2d9cbe4",
         "notes": null
