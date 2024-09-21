@@ -923,15 +923,6 @@ general_restrictions_on_region_parameters(const struct brw_isa_info *isa,
       ERROR_IF(inst->exec_size < width, "ExecSize must be greater than or equal "
                                         "to Width");
 
-      /* If ExecSize = Width and HorzStride ≠ 0,
-       * VertStride must be set to Width * HorzStride.
-       */
-      if (inst->exec_size == width && hstride != 0) {
-         ERROR_IF(vstride != width * hstride,
-                  "If ExecSize = Width and HorzStride ≠ 0, "
-                  "VertStride must be set to Width * HorzStride");
-      }
-
       /* If Width = 1, HorzStride must be 0 regardless of the values of
        * ExecSize and VertStride.
        */
@@ -939,6 +930,18 @@ general_restrictions_on_region_parameters(const struct brw_isa_info *isa,
          ERROR_IF(hstride != 0,
                   "If Width = 1, HorzStride must be 0 regardless "
                   "of the values of ExecSize and VertStride");
+      }
+
+      if (vstride == STRIDE(BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL))
+         continue;
+
+      /* If ExecSize = Width and HorzStride ≠ 0,
+       * VertStride must be set to Width * HorzStride.
+       */
+      if (inst->exec_size == width && hstride != 0) {
+         ERROR_IF(vstride != width * hstride,
+                  "If ExecSize = Width and HorzStride ≠ 0, "
+                  "VertStride must be set to Width * HorzStride");
       }
 
       /* If ExecSize = Width = 1, both VertStride and HorzStride must be 0. */
