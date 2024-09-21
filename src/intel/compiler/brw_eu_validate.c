@@ -42,8 +42,20 @@
 #include "brw_eu.h"
 #include "brw_disasm_info.h"
 
+enum brw_hw_instr_format {
+   FORMAT_BASIC,
+   FORMAT_BASIC_THREE_SRC,
+   FORMAT_DPAS_THREE_SRC,
+   FORMAT_SEND,
+   FORMAT_BRANCH,
+   FORMAT_ILLEGAL,
+   FORMAT_NOP,
+};
+
 typedef struct brw_hw_decoded_inst {
    const brw_inst *raw;
+
+   enum brw_hw_instr_format format;
 
    enum opcode opcode;
 
@@ -2305,30 +2317,19 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
    RETURN_ERROR_IF(inst->access_mode == BRW_ALIGN_16 && devinfo->ver >= 11,
                    "Align16 mode doesn't exist on Gfx11+");
 
-   enum instr_format {
-      FORMAT_BASIC,
-      FORMAT_BASIC_THREE_SRC,
-      FORMAT_DPAS_THREE_SRC,
-      FORMAT_SEND,
-      FORMAT_BRANCH,
-      FORMAT_ILLEGAL,
-      FORMAT_NOP,
-   };
-
-   enum instr_format format;
    switch (inst->opcode) {
    case BRW_OPCODE_DPAS:
-      format = FORMAT_DPAS_THREE_SRC;
+      inst->format = FORMAT_DPAS_THREE_SRC;
       break;
 
    case BRW_OPCODE_SEND:
    case BRW_OPCODE_SENDC:
-      format = devinfo->ver >= 12 ? FORMAT_SEND : FORMAT_BASIC;
+      inst->format = devinfo->ver >= 12 ? FORMAT_SEND : FORMAT_BASIC;
       break;
 
    case BRW_OPCODE_SENDS:
    case BRW_OPCODE_SENDSC:
-      format = FORMAT_SEND;
+      inst->format = FORMAT_SEND;
       break;
 
    case BRW_OPCODE_DO:
@@ -2345,27 +2346,27 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
    case BRW_OPCODE_CALLA:
    case BRW_OPCODE_CALL:
    case BRW_OPCODE_GOTO:
-      format = FORMAT_BRANCH;
+      inst->format = FORMAT_BRANCH;
       break;
 
    case BRW_OPCODE_NOP:
-      format = FORMAT_NOP;
+      inst->format = FORMAT_NOP;
       break;
 
    case BRW_OPCODE_ILLEGAL:
-      format = FORMAT_ILLEGAL;
+      inst->format = FORMAT_ILLEGAL;
       break;
 
    default:
       if (inst->num_sources == 3) {
-         format = FORMAT_BASIC_THREE_SRC;
+         inst->format = FORMAT_BASIC_THREE_SRC;
       } else {
-         format = FORMAT_BASIC;
+         inst->format = FORMAT_BASIC;
       }
       break;
    }
 
-   switch (format) {
+   switch (inst->format) {
    case FORMAT_BASIC: {
       assert(inst->num_sources == 1 ||
              inst->num_sources == 2 ||
@@ -2597,9 +2598,9 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
                "Invalid source register type encoding.");
    }
 
-   if ((format == FORMAT_BASIC ||
-        format == FORMAT_BASIC_THREE_SRC ||
-        format == FORMAT_DPAS_THREE_SRC) &&
+   if ((inst->format == FORMAT_BASIC ||
+        inst->format == FORMAT_BASIC_THREE_SRC ||
+        inst->format == FORMAT_DPAS_THREE_SRC) &&
        !inst_is_send(inst)) {
       inst->saturate = brw_inst_saturate(devinfo, raw);
 
