@@ -304,7 +304,7 @@
         "description": "anv: skip rt pipeline compile if we found all shaders",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1dacea10f35983833dabcad220317fe6e61db31b",
         "notes": null
