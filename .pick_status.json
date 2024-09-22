@@ -1274,7 +1274,7 @@
         "description": "vulkan/video: set HEVC nuh_temporal_id_plus1 and nal_unit_type correctly",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "72f52329cd7166bf46d1544e7d93705d3ff9a7dd",
         "notes": null
