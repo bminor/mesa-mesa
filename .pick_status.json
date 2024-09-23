@@ -84,7 +84,7 @@
         "description": "turnip/ci: Remove fixed test from a660 xfails",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "812c8f6abe4d78a26c7f669f0fcbc07540b3c0d8",
         "notes": null
