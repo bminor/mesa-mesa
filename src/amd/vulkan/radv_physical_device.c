@@ -132,20 +132,35 @@ radv_get_conformance_version(const struct radv_physical_device *pdev)
 {
    VkConformanceVersion conformance_version = {0}; /* Non-conformant by default */
 
-   if (pdev->info.gfx_level == GFX10_3) {
-      conformance_version = (VkConformanceVersion){
-         .major = 1,
-         .minor = 3,
-         .subminor = 0,
-         .patch = 0,
-      };
-   } else if (pdev->info.gfx_level >= GFX8) {
-      conformance_version = (VkConformanceVersion){
-         .major = 1,
-         .minor = 2,
-         .subminor = 7,
-         .patch = 1,
-      };
+   if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level <= GFX11_5) {
+      switch (pdev->info.family) {
+      /* GFX8 */
+      case CHIP_TONGA:
+      case CHIP_FIJI:
+      case CHIP_POLARIS10:
+      /* GFX9 */
+      case CHIP_VEGA10:
+      case CHIP_RENOIR:
+      /* GFX10 */
+      case CHIP_NAVI14:
+      /* GFX10.3 */
+      case CHIP_NAVI21:
+      case CHIP_NAVI22:
+      case CHIP_VANGOGH:
+      /* GFX11 */
+      case CHIP_NAVI31:
+      /* GFX11.5 */
+      case CHIP_GFX1150:
+         conformance_version = (VkConformanceVersion){
+            .major = 1,
+            .minor = 4,
+            .subminor = 0,
+            .patch = 0,
+         };
+         break;
+      default:
+         break;
+      }
    } else {
       /* GFX6-7 */
       switch (pdev->info.family) {
