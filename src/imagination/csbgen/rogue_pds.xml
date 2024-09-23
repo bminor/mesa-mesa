@@ -36,6 +36,11 @@ SOFTWARE.
     <value name="COMMON_STORE"  value="1"/>
   </enum>
 
+  <enum name="DEST">
+    <value name="UNIFIED_STORE" value="0"/>
+    <value name="COMMON_STORE"  value="1"/>
+  </enum>
+
   <enum name="DOUTI_SHADEMODEL">
     <value name="FLAT_VERTEX0" value="0"/>
     <value name="FLAT_VERTEX1" value="1"/>
@@ -68,6 +73,20 @@ SOFTWARE.
     <value name="THREE" value="2"/>
     <value name="FOUR"  value="3"/>
   </enum>
+
+  <struct name="DDMAD_FIELDS_SRC3" length="2">
+    <condition type="if" check="PDS_DDMADT"/>
+      <field name="msize" start="33" end="63" type="uint"/>
+      <field name="test" start="32" end="32" type="bool"/>
+    <condition type="endif" check="PDS_DDMADT"/>
+    <field name="last" start="31" end="31" type="bool"/>
+    <field name="wordsize" start="29" end="30" type="WORDSIZE"/>
+    <field name="dest" start="28" end="28" type="DEST"/>
+    <field name="cmode" start="26" end="27" type="CMODE_LD"/>
+    <field name="a0" start="13" end="25" type="uint"/>
+    <field name="repeat" start="12" end="12" type="bool"/>
+    <field name="bsize" start="0" end="11" type="uint"/>
+  </struct>
 
   <struct name="DOUTU_SRC0" length="2">
     <field name="dual_phase" start="41" end ="41" type="bool"/>

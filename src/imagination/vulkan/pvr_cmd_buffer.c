@@ -3465,6 +3465,49 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
          break;
       }
 
+      case PVR_PDS_CONST_MAP_ENTRY_TYPE_VERTEX_ATTR_DDMADT_OOB_BUFFER_SIZE: {
+         const struct pvr_pds_const_map_entry_vertex_attr_ddmadt_oob_buffer_size
+            *ddmadt_src3 =
+               (struct pvr_pds_const_map_entry_vertex_attr_ddmadt_oob_buffer_size
+                   *)entries;
+         const struct pvr_vertex_binding *const binding =
+            &state->vertex_bindings[ddmadt_src3->binding_index];
+
+         const struct vk_dynamic_graphics_state *dynamic_state =
+            &cmd_buffer->vk.dynamic_graphics_state;
+         uint32_t stride =
+            dynamic_state->vi_binding_strides[ddmadt_src3->binding_index];
+         uint32_t bound_size = binding->buffer->vk.size - binding->offset;
+         uint64_t control_qword;
+         uint32_t control_dword;
+
+         assert(PVR_HAS_FEATURE(&cmd_buffer->device->pdevice->dev_info,
+                                pds_ddmadt));
+
+         if (stride) {
+            bound_size -= bound_size % stride;
+            if (bound_size == 0) {
+               /* If size is zero, DMA OOB won't execute. Read will come from
+                * robustness buffer.
+                */
+               bound_size = stride;
+            }
+         }
+
+         pvr_csb_pack (&control_qword, PDSINST_DDMAD_FIELDS_SRC3, src3) {
+            src3.test = true;
+            src3.msize = bound_size;
+         }
+         control_dword = (uint32_t)(control_qword >> 32);
+
+         PVR_WRITE(dword_buffer,
+                   control_dword,
+                   ddmadt_src3->const_offset,
+                   pds_info->data_size_in_dwords);
+
+         entries += sizeof(*ddmadt_src3);
+         break;
+      }
       case PVR_PDS_CONST_MAP_ENTRY_TYPE_VERTEX_ATTRIBUTE_MAX_INDEX: {
          const struct pvr_const_map_entry_vertex_attribute_max_index *attribute =
             (struct pvr_const_map_entry_vertex_attribute_max_index *)entries;
@@ -3475,20 +3518,8 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
             attribute->offset + attribute->component_size_in_bytes;
          uint32_t max_index;
 
-         if (PVR_HAS_FEATURE(&cmd_buffer->device->pdevice->dev_info,
-                             pds_ddmadt)) {
-            /* TODO: PVR_PDS_CONST_MAP_ENTRY_TYPE_VERTEX_ATTRIBUTE_MAX_INDEX
-             * has the same define value as
-             * PVR_PDS_CONST_MAP_ENTRY_TYPE_VERTEX_ATTR_DDMADT_OOB_BUFFER_SIZE
-             * so maybe we want to remove one of the defines or change the
-             * values.
-             */
-            pvr_finishme("Unimplemented robust buffer access with DDMADT");
-            assert(false);
-         }
-
-         /* If the stride is 0 then all attributes use the same single element
-          * from the binding so the index can only be up to 0.
+         /* If the stride is 0 then all attributes use the same single
+          * element from the binding so the index can only be up to 0.
           */
          if (bound_size < attribute_end || attribute->stride == 0) {
             max_index = 0;
