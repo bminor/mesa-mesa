@@ -2667,6 +2667,9 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
       NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_lower_fs_barycentric, gfx_state, rast_prim);
    }
 
+   if (stages[MESA_SHADER_VERTEX].nir && !gfx_state->vs.has_prolog)
+      NIR_PASS(_, stages[MESA_SHADER_VERTEX].nir, radv_nir_optimize_vs_inputs_to_const, gfx_state);
+
    radv_foreach_stage(i, active_nir_stages)
    {
       int64_t stage_start = os_time_get_nano();
