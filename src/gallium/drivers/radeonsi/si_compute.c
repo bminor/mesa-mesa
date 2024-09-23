@@ -968,6 +968,15 @@ static void si_launch_grid(struct pipe_context *ctx, const struct pipe_grid_info
                                 RADEON_USAGE_READWRITE | RADEON_PRIO_SHADER_RW_BUFFER);
    }
 
+   for (unsigned i = 0; i < info->num_globals; i++) {
+      struct si_resource *buffer = si_resource(info->globals[i]);
+      if (!buffer) {
+         continue;
+      }
+      radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, buffer,
+                                RADEON_USAGE_READWRITE | RADEON_PRIO_SHADER_RW_BUFFER);
+   }
+
    /* Registers that are not read from memory should be set before this: */
    si_emit_barrier_direct(sctx);
 

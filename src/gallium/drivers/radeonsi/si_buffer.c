@@ -256,6 +256,11 @@ static bool si_invalidate_buffer(struct si_context *sctx, struct si_resource *bu
    if (buf->b.is_user_ptr)
       return false;
 
+   /* Can't reallocate when this resource can't change its address.
+    */
+   if (buf->b.b.flags & PIPE_RESOURCE_FLAG_FIXED_ADDRESS)
+      return false;
+
    /* Check if mapping this buffer would cause waiting for the GPU. */
    if (!si_is_buffer_idle(sctx, buf, RADEON_USAGE_READWRITE)) {
       /* Reallocate the buffer in the same pipe_resource. */
@@ -776,11 +781,19 @@ static bool si_resource_commit(struct pipe_context *pctx, struct pipe_resource *
       return si_texture_commit(ctx, res, level, box, commit);
 }
 
+static uint64_t si_resource_get_address(struct pipe_screen *screen,
+                                        struct pipe_resource *resource)
+{
+   struct si_resource *res = si_resource(resource);
+   return res->gpu_address;
+}
+
 void si_init_screen_buffer_functions(struct si_screen *sscreen)
 {
    sscreen->b.resource_create = si_resource_create;
    sscreen->b.resource_destroy = si_resource_destroy;
    sscreen->b.resource_from_user_memory = si_buffer_from_user_memory;
+   sscreen->b.resource_get_address = si_resource_get_address;
 }
 
 void si_init_buffer_functions(struct si_context *sctx)
