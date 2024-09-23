@@ -1150,6 +1150,12 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    csf_prepare_gsubmit(ctx, &gsubmit, &qsubmit, 1);
    ret = csf_submit_gsubmit(ctx, &gsubmit);
 
+   if (dev->debug & PAN_DBG_TRACE) {
+      uint32_t regs[256] = {0};
+      pandecode_cs(dev->decode_ctx, qsubmit.stream_addr, qsubmit.stream_size,
+                   panfrost_device_gpu_id(dev), regs);
+   }
+
    if (ret)
       goto err_g_submit;
 
