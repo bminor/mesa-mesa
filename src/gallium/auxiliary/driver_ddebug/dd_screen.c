@@ -239,7 +239,6 @@ dd_screen_query_dmabuf_modifiers(struct pipe_screen *_screen,
                                   external_only, count);
 }
 
-
 static struct pipe_resource *
 dd_screen_resource_from_user_memory(struct pipe_screen *_screen,
                                     const struct pipe_resource *templ,
@@ -354,6 +353,25 @@ dd_screen_get_sparse_texture_virtual_page_size(struct pipe_screen *_screen,
 
    return screen->get_sparse_texture_virtual_page_size(
       _screen, target, multi_sample, format, offset, size, x, y, z);
+}
+
+static bool
+dd_screen_is_dmabuf_modifier_supported(struct pipe_screen *_screen,
+                                       uint64_t modifier,
+                                       enum pipe_format format,
+                                       bool *external_only)
+{
+   struct pipe_screen *screen = dd_screen(_screen)->screen;
+   return screen->is_dmabuf_modifier_supported(screen, modifier, format, external_only);
+}
+
+static unsigned int
+dd_screen_get_dmabuf_modifier_planes(struct pipe_screen *_screen,
+                                     uint64_t modifier,
+                                     enum pipe_format format)
+{
+   struct pipe_screen *screen = dd_screen(_screen)->screen;
+   return screen->get_dmabuf_modifier_planes(screen, modifier, format);
 }
 
 /********************************************************************
@@ -655,6 +673,8 @@ ddebug_screen_create(struct pipe_screen *screen)
    SCR_INIT(create_vertex_state);
    SCR_INIT(vertex_state_destroy);
    dscreen->base.get_driver_pipe_screen = dd_get_driver_pipe_screen;
+   SCR_INIT(is_dmabuf_modifier_supported);
+   SCR_INIT(get_dmabuf_modifier_planes);
 
    /* copy all caps */
    *(struct pipe_caps *)&dscreen->base.caps = screen->caps;
