@@ -351,16 +351,34 @@ partition_invoke(TfLiteContext *tf_context, TfLiteNode *node)
    }
 
    void **buffers = malloc(tsubgraph->input_count * sizeof(*buffers));
-   for (unsigned i = 0; i < tsubgraph->input_count; i++)
-      buffers[i] = tf_context->tensors[tsubgraph->input_tensors[i]].data.data;
-   context->ml_subgraph_invoke(context, subgraph, tsubgraph->input_count, tsubgraph->input_tensors, buffers);
+   bool *is_signed = malloc(tsubgraph->input_count * sizeof(*is_signed));
+   for (unsigned i = 0; i < tsubgraph->input_count; i++) {
+      TfLiteTensor tf_tensor = tf_context->tensors[tsubgraph->input_tensors[i]];
+
+      buffers[i] = tf_tensor.data.data;
+      is_signed[i] = !(tf_tensor.type == kTfLiteUInt8 ||
+                       tf_tensor.type == kTfLiteUInt16 ||
+                       tf_tensor.type == kTfLiteUInt32 ||
+                       tf_tensor.type == kTfLiteUInt64);
+   }
+   context->ml_subgraph_invoke(context, subgraph, tsubgraph->input_count, tsubgraph->input_tensors, buffers, is_signed);
    free(buffers);
+   free(is_signed);
 
    buffers = malloc(tsubgraph->output_count * sizeof(*buffers));
-   for (unsigned i = 0; i < tsubgraph->output_count; i++)
-      buffers[i] = tf_context->tensors[tsubgraph->output_tensors[i]].data.data;
-   context->ml_subgraph_read_output(context, subgraph, tsubgraph->output_count, tsubgraph->output_tensors, buffers);
+   is_signed = malloc(tsubgraph->output_count * sizeof(*is_signed));
+   for (unsigned i = 0; i < tsubgraph->output_count; i++) {
+      TfLiteTensor tf_tensor = tf_context->tensors[tsubgraph->output_tensors[i]];
+
+      buffers[i] = tf_tensor.data.data;
+      is_signed[i] = !(tf_tensor.type == kTfLiteUInt8 ||
+                       tf_tensor.type == kTfLiteUInt16 ||
+                       tf_tensor.type == kTfLiteUInt32 ||
+                       tf_tensor.type == kTfLiteUInt64);
+   }
+   context->ml_subgraph_read_output(context, subgraph, tsubgraph->output_count, tsubgraph->output_tensors, buffers, is_signed);
    free(buffers);
+   free(is_signed);
 
    if (unlikely(debug_get_option_debug_teflon() & TEFLON_DEBUG_VERBOSE)) {
       struct timespec time;

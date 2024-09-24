@@ -1261,12 +1261,13 @@ struct pipe_context {
     * \param inputs_count number of input tensors to copy in
     * \param input_idxs   array with the indices of input tensors
     * \param inputs       array of buffers to copy the tensor data from
+    * \param is_signed    per-buffer signed integer flag
     */
    void (*ml_subgraph_invoke)(struct pipe_context *context,
                               struct pipe_ml_subgraph *subgraph,
                               unsigned inputs_count,
                               unsigned input_idxs[],
-                              void *inputs[]);
+                              void *inputs[], bool is_signed[]);
 
    /**
     * After a ML subgraph has been invoked, copy the contents of the output
@@ -1277,10 +1278,12 @@ struct pipe_context {
     * \param outputs_count number of output tensors to copy out
     * \param output_idxs   array with the indices of output tensors
     * \param outputs       array of buffers to copy the tensor data to
+    * \param is_signed     per-buffer signed integer flag
     */
    void (*ml_subgraph_read_output)(struct pipe_context *context,
                                    struct pipe_ml_subgraph *subgraph,
-                                   unsigned outputs_count, unsigned output_idxs[], void *outputs[]);
+                                   unsigned outputs_count, unsigned output_idxs[],
+                                   void *outputs[], bool is_signed[]);
 
    /**
     * Release all resources allocated by the implementation of ml_subgraph_create

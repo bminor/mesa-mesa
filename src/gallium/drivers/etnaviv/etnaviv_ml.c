@@ -512,7 +512,8 @@ close_batch(struct pipe_context *pctx)
 
 void
 etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psubgraph,
-                        unsigned inputs_count, unsigned input_idxs[], void *inputs[])
+                        unsigned inputs_count, unsigned input_idxs[], void *inputs[],
+                        bool is_signed[])
 {
    struct etna_context *ctx = etna_context(pctx);
    unsigned tp_core_count = etna_ml_get_core_info(ctx)->tp_core_count;
@@ -629,7 +630,8 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
 
 void
 etna_ml_subgraph_read_outputs(struct pipe_context *context, struct pipe_ml_subgraph *psubgraph,
-                              unsigned outputs_count, unsigned output_idxs[], void *outputs[])
+                              unsigned outputs_count, unsigned output_idxs[], void *outputs[],
+                              bool is_signed[])
 {
    struct etna_ml_subgraph *subgraph = (struct etna_ml_subgraph *)(psubgraph);
    unsigned operation_count = util_dynarray_num_elements(&subgraph->operations, struct etna_vip_instruction);
