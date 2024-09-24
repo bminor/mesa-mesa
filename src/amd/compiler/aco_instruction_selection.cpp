@@ -7916,7 +7916,7 @@ emit_rotate_by_constant(isel_context* ctx, Temp& dst, Temp src, unsigned cluster
       dst = bld.vop1_dpp8(aco_opcode::v_mov_b32, bld.def(rc), src, lane_sel);
    } else if (cluster_size == 16 && ctx->program->gfx_level >= GFX8) {
       dst = bld.vop1_dpp(aco_opcode::v_mov_b32, bld.def(rc), src, dpp_row_rr(16 - delta));
-   } else if (cluster_size <= 32 && ctx->program->gfx_level >= GFX9) {
+   } else if (cluster_size <= 32 && ctx->program->gfx_level >= GFX8) {
       uint32_t ctrl = ds_pattern_rotate(delta, ~(cluster_size - 1) & 0x1f);
       dst = bld.ds(aco_opcode::ds_swizzle_b32, bld.def(v1), src, ctrl);
    } else if (cluster_size == 64) {
