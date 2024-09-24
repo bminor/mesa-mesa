@@ -398,6 +398,7 @@ const unsigned *
 brw_compile_task(const struct brw_compiler *compiler,
                  struct brw_compile_task_params *params)
 {
+   const struct intel_device_info *devinfo = compiler->devinfo;
    struct nir_shader *nir = params->base.nir;
    const struct brw_task_prog_key *key = params->key;
    struct brw_task_prog_data *prog_data = params->prog_data;
@@ -441,7 +442,9 @@ brw_compile_task(const struct brw_compiler *compiler,
 
    std::unique_ptr<fs_visitor> v[3];
 
-   for (unsigned simd = 0; simd < 3; simd++) {
+   for (unsigned i = 0; i < 3; i++) {
+      const unsigned simd = devinfo->ver >= 30 ? 2 - i : i;
+
       if (!brw_simd_should_compile(simd_state, simd))
          continue;
 
@@ -467,11 +470,16 @@ brw_compile_task(const struct brw_compiler *compiler,
          v[simd]->import_uniforms(v[first].get());
       }
 
-      const bool allow_spilling = !brw_simd_any_compiled(simd_state);
-      if (run_task_mesh(*v[simd], allow_spilling))
+      const bool allow_spilling = simd == 0 ||
+         (!simd_state.compiled[simd - 1] && !brw_simd_should_compile(simd_state, simd - 1));
+      if (run_task_mesh(*v[simd], allow_spilling)) {
          brw_simd_mark_compiled(simd_state, simd, v[simd]->spilled_any_registers);
-      else
+
+         if (devinfo->ver >= 30 && !v[simd]->spilled_any_registers)
+            break;
+      } else {
          simd_state.error[simd] = ralloc_strdup(params->base.mem_ctx, v[simd]->fail_msg);
+      }
    }
 
    int selected_simd = brw_simd_select(simd_state);
@@ -1688,6 +1696,7 @@ const unsigned *
 brw_compile_mesh(const struct brw_compiler *compiler,
                  struct brw_compile_mesh_params *params)
 {
+   const struct intel_device_info *devinfo = compiler->devinfo;
    struct nir_shader *nir = params->base.nir;
    const struct brw_mesh_prog_key *key = params->key;
    struct brw_mesh_prog_data *prog_data = params->prog_data;
@@ -1742,7 +1751,9 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
    std::unique_ptr<fs_visitor> v[3];
 
-   for (int simd = 0; simd < 3; simd++) {
+   for (unsigned i = 0; i < 3; i++) {
+      const unsigned simd = devinfo->ver >= 30 ? 2 - i : i;
+
       if (!brw_simd_should_compile(simd_state, simd))
          continue;
 
@@ -1780,11 +1791,16 @@ brw_compile_mesh(const struct brw_compiler *compiler,
          v[simd]->import_uniforms(v[first].get());
       }
 
-      const bool allow_spilling = !brw_simd_any_compiled(simd_state);
-      if (run_task_mesh(*v[simd], allow_spilling))
+      const bool allow_spilling = simd == 0 ||
+         (!simd_state.compiled[simd - 1] && !brw_simd_should_compile(simd_state, simd - 1));
+      if (run_task_mesh(*v[simd], allow_spilling)) {
          brw_simd_mark_compiled(simd_state, simd, v[simd]->spilled_any_registers);
-      else
+
+         if (devinfo->ver >= 30 && !v[simd]->spilled_any_registers)
+            break;
+      } else {
          simd_state.error[simd] = ralloc_strdup(params->base.mem_ctx, v[simd]->fail_msg);
+      }
    }
 
    int selected_simd = brw_simd_select(simd_state);

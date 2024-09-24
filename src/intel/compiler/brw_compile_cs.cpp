@@ -135,6 +135,7 @@ const unsigned *
 brw_compile_cs(const struct brw_compiler *compiler,
                struct brw_compile_cs_params *params)
 {
+   const struct intel_device_info *devinfo = compiler->devinfo;
    struct nir_shader *nir = params->base.nir;
    const struct brw_cs_prog_key *key = params->key;
    struct brw_cs_prog_data *prog_data = params->prog_data;
@@ -166,7 +167,9 @@ brw_compile_cs(const struct brw_compiler *compiler,
 
    std::unique_ptr<fs_visitor> v[3];
 
-   for (unsigned simd = 0; simd < 3; simd++) {
+   for (unsigned i = 0; i < 3; i++) {
+      const unsigned simd = devinfo->ver >= 30 ? 2 - i : i;
+
       if (!brw_simd_should_compile(simd_state, simd))
          continue;
 
@@ -192,16 +195,25 @@ brw_compile_cs(const struct brw_compiler *compiler,
                                              params->base.stats != NULL,
                                              debug_enabled);
 
-      const int first = brw_simd_first_compiled(simd_state);
-      if (first >= 0)
-         v[simd]->import_uniforms(v[first].get());
+      const bool allow_spilling = simd == 0 ||
+         (!simd_state.compiled[simd - 1] && !brw_simd_should_compile(simd_state, simd - 1)) ||
+         nir->info.workgroup_size_variable;
 
-      const bool allow_spilling = first < 0 || nir->info.workgroup_size_variable;
+      if (devinfo->ver < 30 || nir->info.workgroup_size_variable) {
+         const int first = brw_simd_first_compiled(simd_state);
+         if (first >= 0)
+            v[simd]->import_uniforms(v[first].get());
+         assert(allow_spilling == (first < 0 || nir->info.workgroup_size_variable));
+      }
 
       if (run_cs(*v[simd], allow_spilling)) {
          cs_fill_push_const_info(compiler->devinfo, prog_data);
 
          brw_simd_mark_compiled(simd_state, simd, v[simd]->spilled_any_registers);
+
+         if (devinfo->ver >= 30 && !v[simd]->spilled_any_registers &&
+             !nir->info.workgroup_size_variable)
+            break;
       } else {
          simd_state.error[simd] = ralloc_strdup(params->base.mem_ctx, v[simd]->fail_msg);
          if (simd > 0) {
