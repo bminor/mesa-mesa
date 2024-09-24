@@ -203,9 +203,9 @@ util_dynarray_append_dynarray(struct util_dynarray *buf,
 /* Returns a pointer to the space of the first new element (in case of growth) or NULL on failure. */
 #define util_dynarray_resize(buf, type, nelts) util_dynarray_resize_bytes(buf, (nelts), sizeof(type))
 #define util_dynarray_grow(buf, type, ngrow) util_dynarray_grow_bytes(buf, (ngrow), sizeof(type))
-#define util_dynarray_top_ptr(buf, type) (type*)((char*)(buf)->data + (buf)->size - sizeof(type))
+#define util_dynarray_top_ptr(buf, type) ((type*)((char*)(buf)->data + (buf)->size - sizeof(type)))
 #define util_dynarray_top(buf, type) *util_dynarray_top_ptr(buf, type)
-#define util_dynarray_pop_ptr(buf, type) (type*)((char*)(buf)->data + ((buf)->size -= sizeof(type)))
+#define util_dynarray_pop_ptr(buf, type) ((type*)((char*)(buf)->data + ((buf)->size -= sizeof(type))))
 #define util_dynarray_pop(buf, type) *util_dynarray_pop_ptr(buf, type)
 #define util_dynarray_contains(buf, type) ((buf)->size >= sizeof(type))
 #define util_dynarray_element(buf, type, idx) ((type*)(buf)->data + (idx))
