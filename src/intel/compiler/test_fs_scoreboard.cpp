@@ -947,6 +947,111 @@ TEST_F(scoreboard_test, gitlab_issue_from_mr_29723)
    EXPECT_EQ(instruction(block0, 1)->sched, regdist(TGL_PIPE_FLOAT, 1));
 }
 
+TEST_F(scoreboard_test, DISABLED_combine_regdist_float_and_int_with_sbid_set)
+{
+   devinfo->ver = 20;
+   devinfo->verx10 = 200;
+   brw_init_isa_info(&compiler->isa, devinfo);
+
+   brw_reg a = retype(brw_ud8_grf(1, 0), BRW_TYPE_F);
+   brw_reg b = brw_ud8_grf(2, 0);
+   brw_reg x = brw_ud8_grf(3, 0);
+
+   bld.ADD(       a, a, a);
+   bld.ADD(       b, b, b);
+   emit_SEND(bld, x, a, b);
+
+   brw_calculate_cfg(*v);
+   bblock_t *block0 = v->cfg->blocks[0];
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   lower_scoreboard(v);
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_null());
+   EXPECT_EQ(instruction(block0, 1)->sched, tgl_swsb_null());
+
+   const tgl_swsb expected = {
+      .regdist = 1,
+      .pipe = TGL_PIPE_ALL,
+      .mode = TGL_SBID_SET,
+   };
+
+   EXPECT_EQ(instruction(block0, 2)->sched, expected);
+}
+
+TEST_F(scoreboard_test, DISABLED_combine_regdist_float_with_sbid_set)
+{
+   devinfo->ver = 20;
+   devinfo->verx10 = 200;
+   brw_init_isa_info(&compiler->isa, devinfo);
+
+   brw_reg a = retype(brw_ud8_grf(1, 0), BRW_TYPE_F);
+   brw_reg b = retype(brw_ud8_grf(2, 0), BRW_TYPE_F);
+   brw_reg x = brw_ud8_grf(3, 0);
+
+   bld.ADD(       a, a, a);
+   bld.ADD(       b, b, b);
+   emit_SEND(bld, x, a, b);
+
+   brw_calculate_cfg(*v);
+   bblock_t *block0 = v->cfg->blocks[0];
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   lower_scoreboard(v);
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_null());
+   EXPECT_EQ(instruction(block0, 1)->sched, tgl_swsb_null());
+
+   const tgl_swsb expected = {
+      .regdist = 1,
+      .pipe = TGL_PIPE_FLOAT,
+      .mode = TGL_SBID_SET,
+   };
+
+   EXPECT_EQ(instruction(block0, 2)->sched, expected);
+}
+
+TEST_F(scoreboard_test, DISABLED_combine_regdist_int_with_sbid_set)
+{
+   devinfo->ver = 20;
+   devinfo->verx10 = 200;
+   brw_init_isa_info(&compiler->isa, devinfo);
+
+   brw_reg a = brw_ud8_grf(1, 0);
+   brw_reg b = brw_ud8_grf(2, 0);
+   brw_reg x = brw_ud8_grf(3, 0);
+
+   bld.ADD(       a, a, a);
+   bld.ADD(       b, b, b);
+   emit_SEND(bld, x, a, b);
+
+   brw_calculate_cfg(*v);
+   bblock_t *block0 = v->cfg->blocks[0];
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   lower_scoreboard(v);
+   ASSERT_EQ(0, block0->start_ip);
+   ASSERT_EQ(2, block0->end_ip);
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_null());
+   EXPECT_EQ(instruction(block0, 1)->sched, tgl_swsb_null());
+
+   const tgl_swsb expected = {
+      .regdist = 1,
+      .pipe = TGL_PIPE_INT,
+      .mode = TGL_SBID_SET,
+   };
+
+   EXPECT_EQ(instruction(block0, 2)->sched, expected);
+}
+
 TEST_F(scoreboard_test, gitlab_issue_11069)
 {
    brw_init_isa_info(&compiler->isa, devinfo);
