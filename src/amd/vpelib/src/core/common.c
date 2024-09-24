@@ -178,10 +178,10 @@ bool vpe_is_yuv444_10(enum vpe_surface_pixel_format format)
         return false;
     }
 }
-
 bool vpe_is_yuv444(enum vpe_surface_pixel_format format)
 {
-    return (vpe_is_yuv444_8(format) || vpe_is_yuv444_10(format));
+    return (vpe_is_yuv444_8(format) ||
+            vpe_is_yuv444_10(format));
 }
 
 bool vpe_is_yuv(enum vpe_surface_pixel_format format)
