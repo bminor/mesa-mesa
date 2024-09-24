@@ -1,5 +1,495 @@
 [
     {
+        "sha": "bf41cf2eeffca5ec102e67f9c5e9f2c65deae43f",
+        "description": "radv/rt: don't split array/struct payload variables",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "204e446bcd4aa4cfbe9d946fd8b8bc43e7214551",
+        "description": "radv/rt: align constant data by 64 when inlining shaders",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e48cbb029ac4db3cb79b9dd98d51db9a44adaeb",
+        "description": "intel: uncached L1 to fix memory barrier issue in RT shader",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "730e83b525cb27e153e929ed0e57ac6e3ad4b741",
+        "description": "anv: Require compression for fast-clears on gfx20+",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "44351d67f8f0e20a50544b1c6ffca9fa90d0ce36",
+        "notes": null
+    },
+    {
+        "sha": "d5f207311d23b232a29e72650fa4fe67d8cc0d97",
+        "description": "pvr: Don't emit critical warning all the time",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "78a664b584f6adce368fa4b02438c014daede28e",
+        "description": "anv: Update XeSS workaround executable names for Satisfactory 1.0",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8b36d230bbe089b184cb2c23aca742a80e200e42",
+        "notes": null
+    },
+    {
+        "sha": "04709e4f7d7eaae8671b634834036d0da05938c1",
+        "description": "anv: fix video profile lists",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a36b17d7a86a7dfb393d94000fcdbada6386a41e",
+        "description": "zink: walk the chain of resources for multi-planar formats.",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f81dc17e7d90b5280ba41ec9d3e13b53d3e24703",
+        "description": "anv: add missing pipeline instance multiplier",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56adf421107d335fa56bbf4370b8dfbfe8642dd5",
+        "description": "intel/brw: lower math op regions for Xe2+",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc7723f78865b5912cf62f18780862697aac4139",
+        "description": "radeonsi: Revert to GLSL_SAMPLER_DIM_2D in si_create_fmask_expand_cs",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "997c39c268e0c445a82f25098952ee8a798e991c",
+        "notes": null
+    },
+    {
+        "sha": "d69c1ca1a057872e4eebee46489943c6bbd213dd",
+        "description": "Revert \"radeonsi: remove CB sync after FMASK and DCC decompression\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "3527d9f81d61fe9a54b4b29f75213314d56b3aef",
+        "notes": null
+    },
+    {
+        "sha": "76c5c49fca91d5b15d6c0dae5681bc4c7a8fabab",
+        "description": "radeonsi/ci: mark KHR-GL46.shader_image_load_store.basic-allTargets-atomic as fixed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc6eae7d0aebbd87427e13bd037d01b622dc08b6",
+        "description": "radeonsi/ci: document spec@egl_ext_surface_compression@create as crashing",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "213f5e915255dd6796a9158c9cbf884a396383df",
+        "notes": null
+    },
+    {
+        "sha": "712e49f13729c5b7ff7f25b1fad0eea1c00e47be",
+        "description": "radeonsi/vcn: Don't reuse context with multiple VCN instances",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf536f63d1474ce5b2e0f266475a673fb9f2af13",
+        "description": "radv: introduce dirty flags for shaders state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8beea8523257ec64756f2d71913a310a867b0ee5",
+        "description": "radv: rename shader_query_state to task_state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0951bae7076e650502bb24476db6e5a73e18a28",
+        "description": "radv: use only one user SGPR for all NGG state",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3022282ba30633cc3d4e25b2c01facbee9a7189d",
+        "description": "radv: make sure to re-emit shader query state when a task shader is bound",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16341f41e1d0e0cbe356f60e914447969a0a09b6",
+        "description": "radv: emit all shader related user SGPR states in one place",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1b74407bbdba3e0ac07a05ff23b2246ed237b36",
+        "description": "intel/brw: Only validate GRF boundary crossing restriction for GRFs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "878ae9708a9bc438849d11fed1df4f491c4084c1",
+        "description": "intel/brw: Don't include sync.nop in INTEL_DEBUG instruction counts",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "1497f4e0c2c416db4c478390b98cdff8b141aa70",
+        "notes": null
+    },
+    {
+        "sha": "c243970d5014475517101d1ea450f9010ec8e594",
+        "description": "gfxstream: use gralloc metadata in vkGetAHBPropertiesANDROID",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "466df904b7ecda640c4c6c78e5b2144115cde3da",
+        "description": "panfrost: Add back A8_UNORM format for valhall",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c01f70bdc82ca1cfad7616ac1ce0ee9bb249c96",
+        "description": "mesa: Fix AMD performance monitor implementation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f8788b2a388bcf32de0920fce200c531b37335bc",
+        "description": "radeonsi: remove the make_texture_descriptor indirect function call",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a578ca838837a1539098619c5236d11d95596b91",
+        "description": "radeonsi: rename hw_level -> view_level",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5b0f80de4371119519ab6674ec3adb9d21dbb6e",
+        "description": "radeonsi: don't insert any barrier after the copy for PIPE_MAP_READ",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7cb1433e3944925903c70c80446de69ac608e87",
+        "description": "radeonsi: use ACO on GFX11.5 with LLVM 18 or older to work around GPU hangs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1c156f7fa9a031f6cd1603c435d61d6c0e3a76c3",
+        "description": "radeonsi: clean up set_log_context code for all aux contexts",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e1c278e3d2e379a6d566d5aa75d7c1739886430",
+        "description": "anv: skip rt pipeline compile if we found all shaders",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "1dacea10f35983833dabcad220317fe6e61db31b",
+        "notes": null
+    },
+    {
+        "sha": "1a45c8827b39c5c43c93393eed2319f6d805c965",
+        "description": "anv: free shaders on rt pipeline compile error",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "58c9f817cbed2fc5263c86b514730e54a2d9cbe4",
+        "notes": null
+    },
+    {
+        "sha": "f263e6d24295c2cb92fd2c9e01c687f1c2bfc70c",
+        "description": "radeonsi/vcn: Enable IB parsing with AMD_DEBUG=ib",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1459193b9968856f97050f2f63a49c995b6ff413",
+        "description": "ac: Add VCN IB parser",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ada6702af08084cc1359d37483be5db5ecf011a6",
+        "description": "llvmpipe/ci: document regression",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc086fcbdb4cf66044fa0eb501f721e96561b2b1",
+        "description": "lavapipe/ci: document regression",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb51cb3f0eddb3936b00b7307d89b61430d47134",
+        "description": "zink+nvk/ci: add flakes seen recently",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10b83041b823d641ea234c8d4fd5f213facf4999",
+        "description": "zink+nvk/ci: document spec@egl_ext_surface_compression@create as crashing",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "213f5e915255dd6796a9158c9cbf884a396383df",
+        "notes": null
+    },
+    {
+        "sha": "8da847560b7c85775f81a1e45a887b90a332ae25",
+        "description": "ci: partially emulate cdna devices using lower image opcodes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2c62ca05b3eb8fc3ecf4a680e1c87b583c696f80",
+        "description": "docs/release-calendar: add 24.3 branchpoint and rcs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9f612155fc378d5cf4a679c5903a2e4ace3c0e69",
+        "description": "nvk: Don't emit critical messages during init",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4db1bd584659dfd62cc6968cd7be65dbc37ee3a9",
+        "notes": null
+    },
+    {
+        "sha": "dc1a7b94a80078a4701d84fbeb1d3427dc10c366",
+        "description": "pan/va: Fix nir_op_pack_uvec4_to_uint",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "934b0f1add1a843e0ed14f15adbdef2f2c34c88b",
+        "notes": null
+    },
+    {
+        "sha": "35ea8b6cd26bcea93f7157bacea4c781b45fd0aa",
+        "description": "brw: disable null_rt only if color output does not affect other outputs",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b45ce7d43edb2ad784bbe2aafea339d50a15f779",
+        "description": "brw: move null_rt control up a layer",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b42215e0d6762151e3063fd83e779dee17ad058",
+        "description": "iris: ensure null render target for specific cases",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "badb3f6301d47f922ce52839ae77b0e851b1011e",
+        "description": "anv: Only flush render target cache when detecting RT changes",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2bd304bc8f0234cb5ae4f06149fd0663611fa4dc",
+        "notes": null
+    },
+    {
+        "sha": "fb3ae17d9616f9db1fc673059e61fe8465cc12a1",
+        "description": "anv: fix missing tracking for alpha-to-coverage runtime changes",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9926aedc96fe13cf9ff343cd7c4d92aa771e323a",
+        "notes": null
+    },
+    {
+        "sha": "22841babeef82ce4ee72d7eb3907c53df8e9104e",
+        "description": "panvk: Protect access to the virtual address heap",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "53fb1d99cac9ab318c251aa3e448d26e0c94641c",
+        "notes": null
+    },
+    {
+        "sha": "5bdcc290e33f0787898fb6622dcf761f83c6c1a0",
+        "description": "svga: sync up with the latest svga include files",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "00c94e0cd4d46b093c20b2ec2be35ab3de3cb8a6",
         "description": "radv: Workaround apps using ray tracing when it is unsupported",
         "nominated": false,
