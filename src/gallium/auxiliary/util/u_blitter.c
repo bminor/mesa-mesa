@@ -2254,6 +2254,7 @@ util_blitter_blit(struct blitter_context *blitter,
    struct pipe_context *pipe = ctx->base.pipe;
    struct pipe_surface *dst_view, dst_templ;
    struct pipe_sampler_view src_templ, *src_view;
+   const uint8_t *swizzle = info->swizzle_enable ? info->swizzle : NULL;
 
    /* Initialize the surface. */
    util_blitter_default_dst_texture(&dst_templ, dst, info->dst.level,
@@ -2264,6 +2265,12 @@ util_blitter_blit(struct blitter_context *blitter,
    /* Initialize the sampler view. */
    util_blitter_default_src_texture(blitter, &src_templ, src, info->src.level);
    src_templ.format = info->src.format;
+   if (swizzle) {
+      src_templ.swizzle_r = swizzle[0];
+      src_templ.swizzle_g = swizzle[1];
+      src_templ.swizzle_b = swizzle[2];
+      src_templ.swizzle_a = swizzle[3];
+   }
    src_view = pipe->create_sampler_view(pipe, src, &src_templ);
 
    /* Copy. */

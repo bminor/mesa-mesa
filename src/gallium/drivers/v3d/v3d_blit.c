@@ -260,6 +260,7 @@ v3d_tfu_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                 return;
 
         if (info->scissor_enable ||
+            info->swizzle_enable ||
             info->dst.box.x != 0 ||
             info->dst.box.y != 0 ||
             info->dst.box.width != dst_width ||
@@ -328,7 +329,7 @@ check_tlb_blit_ok(struct v3d_device_info *devinfo, struct pipe_blit_info *info)
         assert ((is_color_blit && !is_depth_blit && !is_stencil_blit) ||
                 (!is_color_blit && (is_depth_blit || is_stencil_blit)));
 
-        if (info->scissor_enable)
+        if (info->scissor_enable || info->swizzle_enable)
                 return false;
 
         if (info->src.box.x != info->dst.box.x ||
@@ -1101,7 +1102,8 @@ v3d_sand30_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                 return;
         if (!(info->mask & PIPE_MASK_RGBA))
                 return;
-
+        if (info->swizzle_enable)
+                return;
         assert(dst->base.format == src->base.format);
         assert(dst->tiled);
 
