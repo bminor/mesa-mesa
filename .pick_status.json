@@ -574,7 +574,7 @@
         "description": "anv: allocate sparse descriptor buffers from the correct heap",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c6a91f16952cfe9f685cc6a0a185161364fdcdcf",
         "notes": null
