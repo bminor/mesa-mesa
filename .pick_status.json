@@ -1,5 +1,445 @@
 [
     {
+        "sha": "f6e7520b139f45971cdfa027aee29405c13c726d",
+        "description": "glsl: remove now unused linker code",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cbfc225e2bda2c8627a4580fa3a9b63bfb7133e0",
+        "description": "glsl: switch to a full nir based linker",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5108a9a37d25f3bc26552fe55c59d221430e8700",
+        "description": "glsl: set blake3 hash in standalone scaffolding",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1c88ed61943a009cd87f09dca0ada6128cdca77b",
+        "description": "glsl: add lower_derivatives_without_layout() helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff4596ae616fccfe9cfb1c1dd995464c5c7eefab",
+        "description": "spirv: explicitly lower derivatives to zero",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "721d23b8ffa91578f3a0432785a6920e8d95a77f",
+        "description": "glsl: add intrastage shader linking helpers for nir linker",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fe9b93fc1ccf95def5ac5634bc1bd3e50195faf2",
+        "description": "nir: handle wildcard array deref",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6bb6b0e5ad4dd290dc84dde4a779f6e308b42958",
+        "description": "nir: add nir_intrinsic_deref_implicit_array_length intrinsic",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "083b4ffb7897f6d4c155829256078ca0f668f532",
+        "description": "glsl: add gl_nir_linker_size_arrays()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a235da080e693ba543cb1472d2cb2716129fd08b",
+        "description": "glsl: add gl_nir_link_function_calls()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60937b5286cff3ef0f233e201f9d68fbda388dd9",
+        "description": "nir: add implicit_conversion_prohibited field to nir_parameter",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5645495156d850f11a169e6a04707fe27baf7103",
+        "description": "nir: store variable mode in nir_parameter",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89a2411c54b4684c2ba88f992e19f557e0cfbb2a",
+        "description": "nir: serialize nir_parameter type",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ff3e87e5f6068887aa9052b68332196af8f74b5",
+        "description": "nir: add function in/outs to variable modes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f3da074dc34d82deee5bab63e1c0ee0c35b71400",
+        "description": "glsl: move _mesa_glsl_can_implicitly_convert() to linker_util.cpp",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1cb115abd28ab2d63068fa0958e7ecdce82919c9",
+        "description": "nir: add nir_function_impl_clone_remap_globals()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a1061e0dd5392d3798091cdb2d01c969e9adfa7",
+        "description": "nir: add max_ifc_array_access field to vars",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6219275ffe90b91c927de06ffebc152f79b7bf59",
+        "description": "util/hash_table: add _mesa_string_hash_table_create() helper",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c5b21c032309a726144bbb77352251b9fd0a235",
+        "description": "glsl: add support for converting global instructions to NIR",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1fc9d5223eead0d1c76337849f16db8164f70c68",
+        "description": "glsl: make gl_nir_validate_intrastage_arrays() more flexible",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffbd763586f52164252a3ad70f0c7a87e9fe0be4",
+        "description": "glsl: add gl_nir_validate_intrastage_interface_blocks()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90e76d34ff335f5cde92d4c0f99d2d0ec4040988",
+        "description": "mesa/glsl: add nir fields to the gl shader structs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a9095f0dbf6deae508b43eeb993d2a4427d66ccd",
+        "description": "radv: do not keep executable info when compiling shaders for ESO",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f7482e85baa6e890cc76903b1f12661d9c9fe7ca",
+        "description": "radv: move updating compute scratch for RT when stack size is emitted",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ebe66dee08e4d76e3498694c9fb7f3693cdd82d0",
+        "description": "radv: move emitting some RT user SGPRs when the RT pipeline is emitted",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4d6d9254ab2d9b92ee5ece4d6e4cf8fa3facc1a",
+        "description": "vk/image: fix view creation for planar video aspects",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0efab520eb41624c0a70ce728ffb83d50b2816c",
+        "description": "zink: add adl flake",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "427014e4e3726f63e11c57fdd0e2cb32d4bd92eb",
+        "description": "zink: add some other missing X format emulation variants",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66e3df6a2ac9a26afbc768314fa59db1d7ad0fd1",
+        "description": "zink: add X format variants for 30-bit formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f96dc11e41df7d955a41d80ff1c0bf4cec6ee3bb",
+        "description": "zink: fix zink_format_is_voidable_rgba_variant()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42648508f7f67eeba63f16ecab289be5288d1a32",
+        "description": "zink: move x8 format function to zink_format.c",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "735e402ae458968a9e81625079e470560bb61ec9",
+        "description": "zink: implement compression control",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9696df413275a40aa55d904cad557d2d9588c85b",
+        "description": "zink: store compression rate info for formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33c1b940e0a1b2e8e835f3cad4febd403885fd20",
+        "description": "zink: hook up compression control extensions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33335fdd892a3fa29ed5c0c36f6c0ce9dfb0dccf",
+        "description": "egl/kopper: hook up EGL_EXT_surface_compression on wayland",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f4aab9984bfd538d4bcf47fc495c9ace6e996923",
+        "description": "gallium: delete pipe_screen::is_compression_modifier",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1cb1212823aa63d1d52270aa7081cf0482342e31",
+        "description": "trace: add get_device_reset_status",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1b97415fa8a8c16d66d633759657a430fd354d7",
+        "description": "ci: disable gimark trace",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec59d56c52fec67001f528807874db8bdf4cffbc",
+        "description": "ci: Add a new build-only job without libdrm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "087ef34b9ccef5beb671a65a2069c375574fb38d",
+        "description": "aco: fix descriptor leaking when printing assembly with CLRX",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "480793be984784958070cfbb183b438559623013",
+        "description": "ci/build: move debian-clang-release to priority build-for-tests stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25b09b9c5a435d1442ae67650a7217af9fa4f07f",
+        "description": "radv: Fix report_ray_intersection affecting terminated rays",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "466bbaf40f62a4021440906b9487d477c0273156",
+        "description": "lavapipe: Do not return in report_ray_intersection",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d99e95e033eccfece156e8715a1e33daca10160e",
+        "notes": null
+    },
+    {
+        "sha": "4824bcdd5dc85eecf0f80dab9dbc09e1a26198ae",
+        "description": "lavapipe: Fix report_ray_intersection affecting terminated rays",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d99e95e033eccfece156e8715a1e33daca10160e",
+        "notes": null
+    },
+    {
         "sha": "bf41cf2eeffca5ec102e67f9c5e9f2c65deae43f",
         "description": "radv/rt: don't split array/struct payload variables",
         "nominated": false,
