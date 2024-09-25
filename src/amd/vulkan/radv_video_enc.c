@@ -867,6 +867,60 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    RADEON_ENC_END();
 }
 
+static unsigned int
+radv_enc_hevc_st_ref_pic_set(struct radv_cmd_buffer *cmd_buffer,
+                             const StdVideoH265SequenceParameterSet *sps,
+                             const StdVideoH265ShortTermRefPicSet *rps)
+{
+   const StdVideoH265ShortTermRefPicSet *ref_rps;
+   unsigned num_pic_total_curr = 0;
+   unsigned int num_short_term_ref_pic_sets = sps->num_short_term_ref_pic_sets;
+   unsigned int index = num_short_term_ref_pic_sets;
+
+   if (index != 0)
+      radv_enc_code_fixed_bits(cmd_buffer, rps->flags.inter_ref_pic_set_prediction_flag, 0x1);
+
+   if (rps->flags.inter_ref_pic_set_prediction_flag) {
+      /* in the slice case this is always true, but leave here to make spec alignment easier */
+      if (index == num_short_term_ref_pic_sets)
+         radv_enc_code_ue(cmd_buffer, rps->delta_idx_minus1);
+      radv_enc_code_fixed_bits(cmd_buffer, rps->flags.delta_rps_sign, 0x1);
+      radv_enc_code_ue(cmd_buffer, rps->abs_delta_rps_minus1);
+
+      unsigned ref_rps_idx = index - (rps->delta_idx_minus1 + 1);
+
+      if (ref_rps_idx == num_short_term_ref_pic_sets) {
+         ref_rps = rps;
+      } else {
+         ref_rps = &sps->pShortTermRefPicSet[ref_rps_idx];
+      }
+
+      for (unsigned i = 0; i <= (ref_rps->num_negative_pics + ref_rps->num_positive_pics); i++) {
+         radv_enc_code_fixed_bits(cmd_buffer, !!(rps->used_by_curr_pic_flag & (1 << i)), 0x1);
+         if (!(rps->used_by_curr_pic_flag & (1 << i))) {
+            radv_enc_code_fixed_bits(cmd_buffer, !!(rps->use_delta_flag & (1 << i)), 0x1);
+         }
+      }
+   } else {
+      radv_enc_code_ue(cmd_buffer, rps->num_negative_pics);
+      radv_enc_code_ue(cmd_buffer, rps->num_positive_pics);
+
+      for (int i = 0; i < rps->num_negative_pics; i++) {
+         radv_enc_code_ue(cmd_buffer, rps->delta_poc_s0_minus1[i]);
+         radv_enc_code_fixed_bits(cmd_buffer, !!(rps->used_by_curr_pic_s0_flag & (1 << i)), 0x1);
+         if (rps->used_by_curr_pic_s0_flag & (1 << i))
+            num_pic_total_curr++;
+      }
+      for (int i = 0; i < rps->num_positive_pics; i++) {
+         radv_enc_code_ue(cmd_buffer, rps->delta_poc_s1_minus1[i]);
+         radv_enc_code_fixed_bits(cmd_buffer, !!(rps->used_by_curr_pic_s1_flag & (1 << i)), 0x1);
+         if (rps->used_by_curr_pic_s1_flag & (1 << i))
+            num_pic_total_curr++;
+      }
+   }
+   return num_pic_total_curr;
+}
+
 static void
 radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
 {
@@ -886,6 +940,7 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
    unsigned int cdw_start = 0;
    unsigned int cdw_filled = 0;
    unsigned int bits_copied = 0;
+   unsigned int num_pic_total_curr = 0;
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
@@ -952,42 +1007,34 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
       radv_enc_code_fixed_bits(cmd_buffer, pic->PicOrderCntVal % (1 << max_poc_bits), max_poc_bits);
       radv_enc_code_fixed_bits(cmd_buffer, pic->flags.short_term_ref_pic_set_sps_flag, 0x1);
       if (!pic->flags.short_term_ref_pic_set_sps_flag) {
-         int st_rps_idx = sps->num_short_term_ref_pic_sets;
-         const StdVideoH265ShortTermRefPicSet *rps = &pic->pShortTermRefPicSet[st_rps_idx];
+         num_pic_total_curr = radv_enc_hevc_st_ref_pic_set(cmd_buffer,
+                                                           sps,
+                                                           pic->pShortTermRefPicSet);
+      } else if (sps->num_short_term_ref_pic_sets > 1) {
+         radv_enc_code_fixed_bits(cmd_buffer, pic->short_term_ref_pic_set_idx,
+                                  util_logbase2_ceil(sps->num_short_term_ref_pic_sets));
+      }
 
-         if (st_rps_idx != 0)
-            radv_enc_code_fixed_bits(cmd_buffer, rps->flags.inter_ref_pic_set_prediction_flag, 0x1);
-
-         if (rps->flags.inter_ref_pic_set_prediction_flag) {
-            int ref_rps_idx = st_rps_idx - (rps->delta_idx_minus1 + 1);
-            if (st_rps_idx == sps->num_short_term_ref_pic_sets)
-               radv_enc_code_ue(cmd_buffer, rps->delta_idx_minus1);
-            radv_enc_code_fixed_bits(cmd_buffer, rps->flags.delta_rps_sign, 0x1);
-            radv_enc_code_ue(cmd_buffer, rps->abs_delta_rps_minus1);
-
-            const StdVideoH265ShortTermRefPicSet *rps_ref = &sps->pShortTermRefPicSet[ref_rps_idx];
-            int num_delta_pocs = rps_ref->num_negative_pics + rps_ref->num_positive_pics;
-            for (int j = 0; j < num_delta_pocs; j++) {
-               radv_enc_code_fixed_bits(cmd_buffer, !!(rps->used_by_curr_pic_flag & (1 << j)), 0x1);
-               if (!(rps->used_by_curr_pic_flag & (1 << j))) {
-                  radv_enc_code_fixed_bits(cmd_buffer, !!(rps->use_delta_flag & (1 << j)), 0x1);
-               }
+      if (sps->flags.long_term_ref_pics_present_flag) {
+         const StdVideoEncodeH265LongTermRefPics *lt = pic->pLongTermRefPics;
+         if (sps->num_long_term_ref_pics_sps > 0)
+            radv_enc_code_ue(cmd_buffer, lt->num_long_term_sps);
+         radv_enc_code_ue(cmd_buffer, lt->num_long_term_pics);
+         for (unsigned i = 0; i < lt->num_long_term_sps + lt->num_long_term_pics; i++) {
+            if (i < lt->num_long_term_sps) {
+               if (sps->num_long_term_ref_pics_sps > 1)
+                  radv_enc_code_fixed_bits(cmd_buffer, lt->lt_idx_sps[i], util_logbase2_ceil(sps->num_long_term_ref_pics_sps));
+            } else {
+               radv_enc_code_fixed_bits(cmd_buffer, lt->poc_lsb_lt[i], sps->log2_max_pic_order_cnt_lsb_minus4 + 4);
+               radv_enc_code_fixed_bits(cmd_buffer, lt->used_by_curr_pic_lt_flag & (1 << i), 1);
+               if (lt->used_by_curr_pic_lt_flag & (1 << i))
+                  num_pic_total_curr++;
             }
-         } else {
-            radv_enc_code_ue(cmd_buffer, rps->num_negative_pics);
-            radv_enc_code_ue(cmd_buffer, rps->num_positive_pics);
-
-            for (int i = 0; i < rps->num_negative_pics; i++) {
-               radv_enc_code_ue(cmd_buffer, rps->delta_poc_s0_minus1[i]);
-               radv_enc_code_fixed_bits(cmd_buffer, !!(rps->used_by_curr_pic_s0_flag & (1 << i)), 0x1);
-            }
-            for (int i = 0; i < rps->num_positive_pics; i++) {
-               radv_enc_code_ue(cmd_buffer, rps->delta_poc_s1_minus1[i]);
-               radv_enc_code_fixed_bits(cmd_buffer, !!(rps->used_by_curr_pic_s1_flag & (1 << i)), 0x1);
-            }
+            radv_enc_code_fixed_bits(cmd_buffer, lt->delta_poc_msb_present_flag[i], 1);
+            if (lt->delta_poc_msb_present_flag[i])
+               radv_enc_code_ue(cmd_buffer, lt->delta_poc_msb_cycle_lt[i]);
          }
-      } else if (sps->num_short_term_ref_pic_sets > 1)
-         radv_enc_code_ue(cmd_buffer, pic->short_term_ref_pic_set_idx);
+      }
 
       if (sps->flags.sps_temporal_mvp_enabled_flag)
          radv_enc_code_fixed_bits(cmd_buffer, pic->flags.slice_temporal_mvp_enabled_flag, 1);
@@ -1010,6 +1057,22 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
          radv_enc_code_ue(cmd_buffer, pic->pRefLists->num_ref_idx_l0_active_minus1);
          if (pic->pic_type == STD_VIDEO_H265_PICTURE_TYPE_B)
             radv_enc_code_ue(cmd_buffer, pic->pRefLists->num_ref_idx_l1_active_minus1);
+      }
+      if (pps->flags.lists_modification_present_flag && num_pic_total_curr > 1) {
+         const StdVideoEncodeH265ReferenceListsInfo *rl = pic->pRefLists;
+         unsigned num_pic_bits = util_logbase2_ceil(num_pic_total_curr);
+         unsigned num_ref_l0_minus1 = slice->flags.num_ref_idx_active_override_flag ?
+            rl->num_ref_idx_l0_active_minus1 : pps->num_ref_idx_l0_default_active_minus1;
+         radv_enc_code_fixed_bits(cmd_buffer, rl->flags.ref_pic_list_modification_flag_l0, 1);
+         for (unsigned i = 0; i <= num_ref_l0_minus1; i++)
+            radv_enc_code_fixed_bits(cmd_buffer, rl->list_entry_l0[i], num_pic_bits);
+         if (pic->pic_type == STD_VIDEO_H265_PICTURE_TYPE_B) {
+            unsigned num_ref_l1_minus1 = slice->flags.num_ref_idx_active_override_flag ?
+               rl->num_ref_idx_l1_active_minus1 : pps->num_ref_idx_l1_default_active_minus1;
+            radv_enc_code_fixed_bits(cmd_buffer, rl->flags.ref_pic_list_modification_flag_l1, 1);
+            for (unsigned i = 0; i <= num_ref_l1_minus1; i++)
+               radv_enc_code_fixed_bits(cmd_buffer, rl->list_entry_l1[i], num_pic_bits);
+         }
       }
       if (pic->pic_type == STD_VIDEO_H265_PICTURE_TYPE_B)
          radv_enc_code_fixed_bits(cmd_buffer, slice->flags.mvd_l1_zero_flag, 1);
