@@ -4,7 +4,7 @@
         "description": "frontends/va: Fix AV1 packed header parsing",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5edbecb8569d88e7faa28ca7a56eb5e1672a2dd0",
         "notes": null
