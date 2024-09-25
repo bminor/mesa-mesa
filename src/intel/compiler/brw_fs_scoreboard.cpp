@@ -987,15 +987,27 @@ namespace {
                                                             exec_all).pipe;
       const tgl_sbid_mode unordered_mode =
          baked_unordered_dependency_mode(devinfo, inst, deps, jp);
+      const tgl_pipe inferred_pipe = inferred_sync_pipe(devinfo, inst);
 
       if (!has_ordered)
          return false;
       else if (!unordered_mode)
          return true;
-      else
-         return ordered_pipe == inferred_sync_pipe(devinfo, inst) &&
+      else if (devinfo->ver < 20)
+         return ordered_pipe == inferred_pipe &&
                 unordered_mode == (is_unordered(devinfo, inst) ? TGL_SBID_SET :
                                    TGL_SBID_DST);
+      else if (is_send(inst))
+         return unordered_mode == TGL_SBID_SET &&
+                (ordered_pipe == TGL_PIPE_FLOAT ||
+                 ordered_pipe == TGL_PIPE_INT ||
+                 ordered_pipe == TGL_PIPE_ALL);
+      else if (inst->opcode == BRW_OPCODE_DPAS)
+         return ordered_pipe == inferred_pipe;
+      else
+         return (unordered_mode == TGL_SBID_DST && ordered_pipe == inferred_pipe) ||
+                (unordered_mode == TGL_SBID_SRC && ordered_pipe == inferred_pipe) ||
+                (unordered_mode == TGL_SBID_DST && ordered_pipe == TGL_PIPE_ALL);
    }
 
    /** @} */

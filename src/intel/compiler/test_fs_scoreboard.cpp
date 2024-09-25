@@ -947,7 +947,7 @@ TEST_F(scoreboard_test, gitlab_issue_from_mr_29723)
    EXPECT_EQ(instruction(block0, 1)->sched, regdist(TGL_PIPE_FLOAT, 1));
 }
 
-TEST_F(scoreboard_test, DISABLED_combine_regdist_float_and_int_with_sbid_set)
+TEST_F(scoreboard_test, combine_regdist_float_and_int_with_sbid_set)
 {
    devinfo->ver = 20;
    devinfo->verx10 = 200;
@@ -982,7 +982,7 @@ TEST_F(scoreboard_test, DISABLED_combine_regdist_float_and_int_with_sbid_set)
    EXPECT_EQ(instruction(block0, 2)->sched, expected);
 }
 
-TEST_F(scoreboard_test, DISABLED_combine_regdist_float_with_sbid_set)
+TEST_F(scoreboard_test, combine_regdist_float_with_sbid_set)
 {
    devinfo->ver = 20;
    devinfo->verx10 = 200;
@@ -1017,7 +1017,7 @@ TEST_F(scoreboard_test, DISABLED_combine_regdist_float_with_sbid_set)
    EXPECT_EQ(instruction(block0, 2)->sched, expected);
 }
 
-TEST_F(scoreboard_test, DISABLED_combine_regdist_int_with_sbid_set)
+TEST_F(scoreboard_test, combine_regdist_int_with_sbid_set)
 {
    devinfo->ver = 20;
    devinfo->verx10 = 200;
