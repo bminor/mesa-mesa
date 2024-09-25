@@ -1284,7 +1284,7 @@
         "description": "vulkan: use standard sample locations if there's no VkPipelineSampleLocationsStateCreateInfoEXT",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1deb83fb86d22227a3553f43873b4d4ff9180214",
         "notes": null
