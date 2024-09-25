@@ -911,7 +911,7 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
    inst_index++;
 
    if ((nal_unit_type >= 16) && (nal_unit_type <= 23))
-      radv_enc_code_fixed_bits(cmd_buffer, 0x0, 1);
+      radv_enc_code_fixed_bits(cmd_buffer, pic->flags.no_output_of_prior_pics_flag, 1);
 
    radv_enc_code_ue(cmd_buffer, pic->pps_pic_parameter_set_id);
 
@@ -942,6 +942,9 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
    default:
       radv_enc_code_ue(cmd_buffer, 0x1);
    }
+
+   if (pps->flags.output_flag_present_flag)
+      radv_enc_code_fixed_bits(cmd_buffer, pic->flags.pic_output_flag, 1);
 
    if ((nal_unit_type != 19) && nal_unit_type != 20) {
       /* slice_pic_order_cnt_lsb */
