@@ -3704,6 +3704,9 @@ bool ac_surface_apply_umd_metadata(const struct radeon_info *info, struct radeon
          assert(0);
          return false;
       }
+
+      surf->num_meta_levels = desc_last_level + 1;
+      surf->flags &= ~RADEON_SURF_DISABLE_DCC;
    } else {
       /* Disable DCC. dcc_offset is always set by texture_from_handle
        * and must be cleared here.
