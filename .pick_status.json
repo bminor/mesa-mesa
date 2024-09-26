@@ -704,7 +704,7 @@
         "description": "X11: fix crash of gnome-shell if mesa is compiled with legacy-x11=dri2",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
