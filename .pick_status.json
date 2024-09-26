@@ -924,7 +924,7 @@
         "description": "zink: avoid host transfer usage with sparse",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f24891269d2532ed5a1317882cd6b6108110a8fd",
         "notes": null
