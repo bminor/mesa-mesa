@@ -1152,7 +1152,8 @@ static void
 dpb_image_sizes(struct radv_image *image,
                 uint32_t *luma_pitch,
                 uint32_t *luma_size,
-                uint32_t *chroma_size)
+                uint32_t *chroma_size,
+                uint32_t *colloc_bytes)
 {
    uint32_t rec_alignment = 64;
    uint32_t aligned_width = align(image->vk.extent.width, rec_alignment);
@@ -1169,6 +1170,7 @@ dpb_image_sizes(struct radv_image *image,
       *luma_size *= 2;
       *chroma_size *= 2;
    }
+   *colloc_bytes = (align((aligned_width / 16), 64) / 2) * (aligned_height / 16);
 }
 
 static void
@@ -1197,11 +1199,11 @@ radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *inf
       }
    }
 
-   uint32_t luma_size = 0, chroma_size = 0;
+   uint32_t luma_size = 0, chroma_size = 0, colloc_bytes = 0;
    if (dpb_iv) {
       dpb = dpb_iv->image;
 
-      dpb_image_sizes(dpb, &luma_pitch, &luma_size, &chroma_size);
+      dpb_image_sizes(dpb, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
 
       radv_cs_add_buffer(device->ws, cs, dpb->bindings[0].bo);
       va = radv_buffer_get_va(dpb->bindings[0].bo);
@@ -2106,18 +2108,31 @@ radv_video_get_encode_session_memory_requirements(struct radv_device *device, st
 }
 
 void radv_video_get_enc_dpb_image(struct radv_device *device,
+                                  const struct VkVideoProfileListInfoKHR *profile_list,
                                   struct radv_image *image,
                                   struct radv_image_create_info *create_info)
 {
-   uint32_t luma_pitch, luma_size, chroma_size;
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   uint32_t luma_pitch, luma_size, chroma_size, colloc_bytes;
    uint32_t num_reconstructed_pictures = image->vk.array_layers;
-   int i;
+   bool has_h264_b_support = false;
 
-   dpb_image_sizes(image, &luma_pitch, &luma_size, &chroma_size);
+   for (unsigned i = 0; i < profile_list->profileCount; i++) {
+      if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR) {
+         if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_3) {
+            has_h264_b_support = true;
+         }
+      }
+   }
+   dpb_image_sizes(image, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
 
    image->size = 0;
 
-   for (i = 0; i < num_reconstructed_pictures; i++) {
+   if (has_h264_b_support) {
+      image->size += colloc_bytes;
+   }
+
+   for (unsigned i = 0; i < num_reconstructed_pictures; i++) {
       image->size += luma_size;
       image->size += chroma_size;
    }

@@ -1180,7 +1180,8 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
       }
 
       if (image->vk.usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) {
-         radv_video_get_enc_dpb_image(device, image, &create_info);
+         assert(profile_list);
+         radv_video_get_enc_dpb_image(device, profile_list, image, &create_info);
          return VK_SUCCESS;
       }
    }
