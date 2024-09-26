@@ -154,7 +154,7 @@
         "description": "nvk: Handle aspects in D32_S8_UINT copies",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3572f5cd7e273f101fa36c98dc73b52d5b6be567",
         "notes": null
