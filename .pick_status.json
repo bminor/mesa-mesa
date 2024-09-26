@@ -274,7 +274,7 @@
         "description": "panfrost: check fmt.bitfeat_bit for compressed-support",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0c1fde956bf9b91182eca9c244ebc8bc63983481",
         "notes": null
