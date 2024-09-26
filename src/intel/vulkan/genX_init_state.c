@@ -666,6 +666,7 @@ init_render_queue_state(struct anv_queue *queue, bool is_companion_rcs_batch)
       cm.Mask1 = 0xffff;
 #if GFX_VERx10 >= 200
       cm.Mask2 = 0xffff;
+      cm.UAVCoherencyMode = FlushDataportL1;
 #endif
    }
    anv_batch_emit(batch, GENX(3DSTATE_MESH_CONTROL), zero);
@@ -808,6 +809,8 @@ init_compute_queue_state(struct anv_queue *queue)
       cm.AsyncComputeThreadLimitMask = 0x7;
       cm.ZPassAsyncComputeThreadLimitMask = 0x7;
       cm.ZAsyncThrottlesettingsMask = 0x3;
+      cm.Mask2 = 0xffff;
+      cm.UAVCoherencyMode = FlushDataportL1;
 #else
       cm.PixelAsyncComputeThreadLimit = PACTL_Max24;
       cm.ZPassAsyncComputeThreadLimit = ZPACTL_Max60;
