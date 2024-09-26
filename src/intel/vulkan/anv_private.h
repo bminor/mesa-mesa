@@ -5585,7 +5585,8 @@ static inline struct anv_address
 anv_image_get_clear_color_addr(UNUSED const struct anv_device *device,
                                const struct anv_image *image,
                                enum isl_format view_format,
-                               VkImageAspectFlagBits aspect)
+                               VkImageAspectFlagBits aspect,
+                               bool for_sampler)
 {
    uint32_t plane = anv_image_aspect_to_plane(image, aspect);
    const struct anv_image_memory_range *mem_range =
@@ -5598,15 +5599,17 @@ anv_image_get_clear_color_addr(UNUSED const struct anv_device *device,
    if (view_format == ISL_FORMAT_UNSUPPORTED)
       view_format = image->planes[plane].primary_surface.isl.format;
 
-   const unsigned clear_state_size = device->info->ver >= 11 ? 64 : 16;
+   uint64_t access_offset = device->info->ver == 9 && for_sampler ? 16 : 0;
+   const unsigned clear_state_size = device->info->ver >= 11 ? 64 : 32;
    for (int i = 0; i < image->num_view_formats; i++) {
       if (view_format == image->view_formats[i]) {
-         return anv_address_add(base_addr, i * clear_state_size);
+         uint64_t entry_offset = i * clear_state_size + access_offset;
+         return anv_address_add(base_addr, entry_offset);
       }
    }
 
    assert(anv_image_view_formats_incomplete(image));
-   return base_addr;
+   return anv_address_add(base_addr, access_offset);
 }
 
 static inline struct anv_address
@@ -5618,7 +5621,7 @@ anv_image_get_fast_clear_type_addr(const struct anv_device *device,
    assert(device->info->ver < 20);
    struct anv_address addr =
       anv_image_get_clear_color_addr(device, image, ISL_FORMAT_UNSUPPORTED,
-                                     aspect);
+                                     aspect, false);
 
    /* Refer to add_aux_state_tracking_buffer(). */
    unsigned clear_color_state_size;
@@ -5627,7 +5630,7 @@ anv_image_get_fast_clear_type_addr(const struct anv_device *device,
       clear_color_state_size = (image->num_view_formats - 1) * 64 + 32 - 8;
    } else {
       assert(device->isl_dev.ss.clear_value_size == 16);
-      clear_color_state_size = image->num_view_formats * 16;
+      clear_color_state_size = image->num_view_formats * 16 * 2;
    }
 
    return anv_address_add(addr, clear_color_state_size);

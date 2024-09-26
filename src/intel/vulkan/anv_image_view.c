@@ -108,7 +108,8 @@ anv_image_fill_surface_state(struct anv_device *device,
    state_inout->aux_address = aux_address;
 
    const struct anv_address clear_address =
-      anv_image_get_clear_color_addr(device, image, view.format, aspect);
+      anv_image_get_clear_color_addr(device, image, view.format, aspect,
+                                     view_usage & ISL_SURF_USAGE_TEXTURE_BIT);
    state_inout->clear_address = clear_address;
 
    if (image->vk.create_flags & VK_IMAGE_CREATE_PROTECTED_BIT)

@@ -29,6 +29,8 @@
 #include "vk_render_pass.h"
 #include "vk_util.h"
 
+#include "util/format_srgb.h"
+
 #include "genxml/gen_macros.h"
 #include "genxml/genX_pack.h"
 
@@ -472,7 +474,7 @@ transition_depth_buffer(struct anv_cmd_buffer *cmd_buffer,
       image->planes[depth_plane].primary_surface.isl.format;
    const struct anv_address clear_color_addr =
       anv_image_get_clear_color_addr(cmd_buffer->device, image, depth_format,
-                                     VK_IMAGE_ASPECT_DEPTH_BIT);
+                                     VK_IMAGE_ASPECT_DEPTH_BIT, true);
    if (!anv_address_is_null(clear_color_addr) &&
        (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED ||
         initial_layout == VK_IMAGE_LAYOUT_PREINITIALIZED)) {
@@ -889,7 +891,7 @@ genX(cmd_buffer_load_clear_color)(struct anv_cmd_buffer *cmd_buffer,
    const struct anv_address entry_addr =
       anv_image_get_clear_color_addr(cmd_buffer->device, iview->image,
                                      iview->planes[0].isl.format,
-                                     VK_IMAGE_ASPECT_COLOR_BIT);
+                                     VK_IMAGE_ASPECT_COLOR_BIT, false);
 
    unsigned copy_size = cmd_buffer->device->isl_dev.ss.clear_value_size;
 
@@ -926,9 +928,20 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
       union isl_color_value clear_color;
       isl_color_value_unpack(&clear_color, image->view_formats[i], pixel);
 
+      UNUSED union isl_color_value sample_color = clear_color;
+      if (isl_format_is_srgb(image->view_formats[i])) {
+         sample_color.f32[0] =
+            util_format_linear_to_srgb_float(clear_color.f32[0]);
+         sample_color.f32[1] =
+            util_format_linear_to_srgb_float(clear_color.f32[1]);
+         sample_color.f32[2] =
+            util_format_linear_to_srgb_float(clear_color.f32[2]);
+      }
+
       const struct anv_address addr =
          anv_image_get_clear_color_addr(cmd_buffer->device, image,
-                                        image->view_formats[i], aspect);
+                                        image->view_formats[i], aspect,
+                                        false);
       assert(!anv_address_is_null(addr));
 
 #if GFX_VER >= 11
@@ -945,13 +958,17 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
 #else
       assert(cmd_buffer->device->isl_dev.ss.clear_color_state_size == 0);
       assert(cmd_buffer->device->isl_dev.ss.clear_value_size == 16);
-      uint32_t *dw = anv_batch_emitn(&cmd_buffer->batch, 3 + 4,
+      uint32_t *dw = anv_batch_emitn(&cmd_buffer->batch, 3 + 8,
                                      GENX(MI_STORE_DATA_IMM),
                                      .StoreQword = true, .Address = addr);
       dw[3] = clear_color.u32[0];
       dw[4] = clear_color.u32[1];
       dw[5] = clear_color.u32[2];
       dw[6] = clear_color.u32[3];
+      dw[7]  = sample_color.u32[0];
+      dw[8]  = sample_color.u32[1];
+      dw[9]  = sample_color.u32[2];
+      dw[10] = sample_color.u32[3];
 #endif
    }
 }

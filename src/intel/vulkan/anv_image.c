@@ -649,8 +649,13 @@ add_aux_state_tracking_buffer(struct anv_device *device,
       assert(device->isl_dev.ss.clear_color_state_size == 32);
       clear_color_state_size = (image->num_view_formats - 1) * 64 + 32 - 8;
    } else {
+      /* When sampling or rendering with an sRGB format, HW expects the clear
+       * color to be in two different color spaces - sRGB in the former and
+       * linear in the latter. Allocate twice the space to support either
+       * access.
+       */
       assert(device->isl_dev.ss.clear_value_size == 16);
-      clear_color_state_size = image->num_view_formats * 16;
+      clear_color_state_size = image->num_view_formats * 16 * 2;
    }
 
    /* Clear color and fast clear type */
@@ -3581,21 +3586,6 @@ anv_can_fast_clear_color(const struct anv_cmd_buffer *cmd_buffer,
                     "Pitch not 512B-aligned. Slow clearing surface.");
       return false;
    }
-
-   /* Disable sRGB fast-clears for non-0/1 color values on Gfx9. For texturing
-    * and draw calls, HW expects the clear color to be in two different color
-    * spaces after sRGB fast-clears - sRGB in the former and linear in the
-    * latter. By limiting the allowable values to 0/1, both color space
-    * requirements are satisfied.
-    *
-    * Gfx11+ is fine as the fast clear generate 2 colors at the clear color
-    * address, raw & converted such that all fixed functions can find the
-    * value they need.
-    */
-   if (cmd_buffer->device->info->ver == 9 &&
-       isl_format_is_srgb(view_format) &&
-       !isl_color_value_is_zero_one(clear_color, view_format))
-      return false;
 
    /* Wa_16021232440: Disable fast clear when height is 16k */
    if (intel_needs_workaround(cmd_buffer->device->info, 16021232440) &&
