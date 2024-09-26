@@ -454,7 +454,7 @@
         "description": "zink: add spirv_info_h dep to libzink.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a09c5d55ed7481a9ec61cec956538b8759212c98",
         "notes": null
