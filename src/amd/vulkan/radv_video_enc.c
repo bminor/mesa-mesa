@@ -109,6 +109,8 @@
 #define RENCODE_FW_INTERFACE_MAJOR_VERSION 1
 #define RENCODE_FW_INTERFACE_MINOR_VERSION 15
 
+#define ENC_ALIGNMENT 256
+
 void
 radv_probe_video_encode(struct radv_physical_device *pdev)
 {
@@ -1147,6 +1149,29 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
 }
 
 static void
+dpb_image_sizes(struct radv_image *image,
+                uint32_t *luma_pitch,
+                uint32_t *luma_size,
+                uint32_t *chroma_size)
+{
+   uint32_t rec_alignment = 64;
+   uint32_t aligned_width = align(image->vk.extent.width, rec_alignment);
+   uint32_t aligned_height = align(image->vk.extent.height, rec_alignment);
+   uint32_t pitch = align(aligned_width, ENC_ALIGNMENT);
+   uint32_t aligned_dpb_height = MAX2(256, aligned_height);
+
+   *luma_pitch = pitch;
+   *luma_size = align(pitch * aligned_dpb_height, ENC_ALIGNMENT);
+   *chroma_size = align(*luma_size / 2, ENC_ALIGNMENT);
+
+   if (image->vk.format == VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16 ||
+       image->vk.format == VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16) {
+      *luma_size *= 2;
+      *chroma_size *= 2;
+   }
+}
+
+static void
 radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *info)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -1154,8 +1179,6 @@ radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *inf
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
    struct radv_image_view *dpb_iv = NULL;
    struct radv_image *dpb = NULL;
-   struct radv_image_plane *dpb_luma = NULL;
-   struct radv_image_plane *dpb_chroma = NULL;
    uint64_t va = 0;
    uint32_t luma_pitch = 0;
    int max_ref_slot_idx = 0;
@@ -1174,13 +1197,14 @@ radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *inf
       }
    }
 
+   uint32_t luma_size = 0, chroma_size = 0;
    if (dpb_iv) {
       dpb = dpb_iv->image;
-      dpb_luma = &dpb->planes[0];
-      dpb_chroma = &dpb->planes[1];
+
+      dpb_image_sizes(dpb, &luma_pitch, &luma_size, &chroma_size);
+
       radv_cs_add_buffer(device->ws, cs, dpb->bindings[0].bo);
-      va = radv_buffer_get_va(dpb->bindings[0].bo) + dpb->bindings[0].offset;     // TODO DPB resource
-      luma_pitch = dpb_luma->surface.u.gfx9.surf_pitch * dpb_luma->surface.blk_w; // rec_luma_pitch
+      va = radv_buffer_get_va(dpb->bindings[0].bo);
    }
 
    uint32_t swizzle_mode = 0;
@@ -1199,12 +1223,12 @@ radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *inf
    radeon_emit(cs, max_ref_slot_idx + 1); // num_reconstructed_pictures
 
    int i;
+   unsigned offset = 0;
    for (i = 0; i < max_ref_slot_idx + 1; i++) {
-      radeon_emit(cs, dpb_luma ? dpb_luma->surface.u.gfx9.surf_offset + i * dpb_luma->surface.u.gfx9.surf_slice_size
-                               : 0); // luma offset
-      radeon_emit(cs, dpb_chroma
-                         ? dpb_chroma->surface.u.gfx9.surf_offset + i * dpb_chroma->surface.u.gfx9.surf_slice_size
-                         : 0); // chroma offset
+      radeon_emit(cs, offset);
+      offset += luma_size;
+      radeon_emit(cs, offset);
+      offset += chroma_size;
 
       if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4) {
          radeon_emit(cs, 0); /* unused offset 1 */
@@ -2079,4 +2103,23 @@ radv_video_get_encode_session_memory_requirements(struct radv_device *device, st
    }
 
    return vk_outarray_status(&out);
+}
+
+void radv_video_get_enc_dpb_image(struct radv_device *device,
+                                  struct radv_image *image,
+                                  struct radv_image_create_info *create_info)
+{
+   uint32_t luma_pitch, luma_size, chroma_size;
+   uint32_t num_reconstructed_pictures = image->vk.array_layers;
+   int i;
+
+   dpb_image_sizes(image, &luma_pitch, &luma_size, &chroma_size);
+
+   image->size = 0;
+
+   for (i = 0; i < num_reconstructed_pictures; i++) {
+      image->size += luma_size;
+      image->size += chroma_size;
+   }
+   image->alignment = ENC_ALIGNMENT;
 }

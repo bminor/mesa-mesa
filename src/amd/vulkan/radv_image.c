@@ -1178,6 +1178,11 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
          /* UVD and kernel demand a full DPB allocation. */
          image_info.array_size = MIN2(16, image_info.array_size);
       }
+
+      if (image->vk.usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) {
+         radv_video_get_enc_dpb_image(device, image, &create_info);
+         return VK_SUCCESS;
+      }
    }
 
    unsigned plane_count = radv_get_internal_plane_count(pdev, image->vk.format);
