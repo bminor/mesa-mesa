@@ -515,8 +515,8 @@ radv_enc_slice_control(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoE
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
    uint32_t num_mbs_in_slice;
-   uint32_t width_in_mbs = enc_info->srcPictureResource.codedExtent.width / 16;
-   uint32_t height_in_mbs = enc_info->srcPictureResource.codedExtent.height / 16;
+   uint32_t width_in_mbs = DIV_ROUND_UP(enc_info->srcPictureResource.codedExtent.width, 16);
+   uint32_t height_in_mbs = DIV_ROUND_UP(enc_info->srcPictureResource.codedExtent.height, 16);
    num_mbs_in_slice = width_in_mbs * height_in_mbs;
    ENC_BEGIN;
    radeon_emit(cs, pdev->vcn_enc_cmds.slice_control_h264);
