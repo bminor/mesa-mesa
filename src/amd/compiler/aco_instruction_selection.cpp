@@ -3616,9 +3616,11 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
                break;
             }
             amount = bld.copy(bld.def(s1), Operand::c32(camount));
-         } else {
+         } else if (get_alu_src_ub(ctx, instr, 2) >= 32) {
             amount = bld.sop2(aco_opcode::s_and_b32, bld.def(s1), bld.def(s1, scc),
                               get_alu_src(ctx, instr->src[2]), Operand::c32(0x1f));
+         } else {
+            amount = get_alu_src(ctx, instr->src[2]);
          }
 
          Temp src = bld.pseudo(aco_opcode::p_create_vector, bld.def(s2), src1, src0);
