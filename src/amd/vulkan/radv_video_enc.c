@@ -1915,6 +1915,9 @@ radv_video_patch_encode_session_parameters(struct vk_video_session_parameters *p
 {
    switch (params->op) {
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+      for (unsigned i = 0; i < params->h264_enc.h264_pps_count; i++) {
+         params->h264_enc.h264_pps[i].base.pic_init_qp_minus26 = 0;
+      }
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
       /*
@@ -1925,6 +1928,7 @@ radv_video_patch_encode_session_parameters(struct vk_video_session_parameters *p
       for (unsigned i = 0; i < params->h265_enc.h265_pps_count; i++) {
          params->h265_enc.h265_pps[i].base.flags.cu_qp_delta_enabled_flag = 1;
          params->h265_enc.h265_pps[i].base.diff_cu_qp_delta_depth = 0;
+         params->h265_enc.h265_pps[i].base.init_qp_minus26 = 0;
       }
       break;
    }
@@ -1964,6 +1968,13 @@ radv_GetEncodedVideoSessionParametersKHR(VkDevice device,
          char *data_ptr = pData ? (char *)pData + sps_size : NULL;
          vk_video_encode_h264_pps(pps, templ->vk.h264_enc.profile_idc == STD_VIDEO_H264_PROFILE_IDC_HIGH, size_limit,
                                   &pps_size, data_ptr);
+         if (pFeedbackInfo) {
+            struct VkVideoEncodeH264SessionParametersFeedbackInfoKHR *h264_feedback_info =
+               vk_find_struct(pFeedbackInfo->pNext, VIDEO_ENCODE_H264_SESSION_PARAMETERS_FEEDBACK_INFO_KHR);
+            pFeedbackInfo->hasOverrides = VK_TRUE;
+            if (h264_feedback_info)
+               h264_feedback_info->hasStdPPSOverrides = VK_TRUE;
+         }
       }
       total_size = sps_size + pps_size;
       break;
