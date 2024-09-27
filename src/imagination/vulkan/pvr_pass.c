@@ -493,7 +493,8 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
       attachment->sample_count = desc->samples;
       attachment->initial_layout = desc->initialLayout;
       attachment->is_pbe_downscalable =
-         pvr_format_is_pbe_downscalable(attachment->vk_format);
+         pvr_format_is_pbe_downscalable(&device->pdevice->dev_info,
+                                        attachment->vk_format);
       attachment->index = i;
 
       if (attachment->sample_count > pass->max_sample_count)

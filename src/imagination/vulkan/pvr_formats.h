@@ -245,7 +245,8 @@ uint32_t pvr_get_tex_format_aspect(VkFormat vk_format,
 uint32_t pvr_get_pbe_packmode(VkFormat vk_format);
 uint32_t pvr_get_pbe_accum_format(VkFormat vk_format);
 uint32_t pvr_get_pbe_accum_format_size_in_bytes(VkFormat vk_format);
-bool pvr_format_is_pbe_downscalable(VkFormat vk_format);
+bool pvr_format_is_pbe_downscalable(const struct pvr_device_info *dev_info,
+                                    VkFormat vk_format);
 
 void pvr_get_hw_clear_color(VkFormat vk_format,
                             VkClearColorValue value,

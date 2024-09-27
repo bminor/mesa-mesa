@@ -1151,7 +1151,8 @@ unsupported:
       };
 }
 
-bool pvr_format_is_pbe_downscalable(VkFormat vk_format)
+bool pvr_format_is_pbe_downscalable(const struct pvr_device_info *dev_info,
+                                    VkFormat vk_format)
 {
    if (vk_format_is_int(vk_format)) {
       /* PBE downscale behavior for integer formats does not match Vulkan
@@ -1164,7 +1165,8 @@ bool pvr_format_is_pbe_downscalable(VkFormat vk_format)
    switch (pvr_get_pbe_packmode(vk_format)) {
    default:
       return true;
-
+   case ROGUE_PBESTATE_PACKMODE_F16:
+      return PVR_HAS_FEATURE(dev_info, pbe_filterable_f16);
    case ROGUE_PBESTATE_PACKMODE_U16U16U16U16:
    case ROGUE_PBESTATE_PACKMODE_S16S16S16S16:
    case ROGUE_PBESTATE_PACKMODE_U32U32U32U32:
