@@ -2544,7 +2544,11 @@ lower_to_hw_instr(Program* program)
                      bld.sop2(signext ? aco_opcode::s_bfe_i32 : aco_opcode::s_bfe_u32, dst,
                               instr->definitions[1], op, Operand::c32((bits << 16) | offset));
                   }
-               } else if (dst.regClass() == v1 && op.physReg().byte() == 0) {
+               } else if (dst.regClass() == v1) {
+                  if (op.physReg().byte()) {
+                     offset += op.physReg().byte() * 8;
+                     op = Operand(PhysReg(op.physReg().reg()), v1);
+                  }
                   assert(op.physReg().byte() == 0 && dst.physReg().byte() == 0);
                   if (offset == (32 - bits) && op.regClass() != s1) {
                      bld.vop2(signext ? aco_opcode::v_ashrrev_i32 : aco_opcode::v_lshrrev_b32, dst,
