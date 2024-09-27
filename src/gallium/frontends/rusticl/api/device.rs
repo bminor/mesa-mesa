@@ -262,9 +262,9 @@ impl CLInfo<cl_device_info> for cl_device_id {
             CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE => cl_prop::<cl_uint>(0),
             CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE => cl_prop::<cl_uint>(0),
             CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES => cl_prop::<cl_command_queue_properties>(0),
-            CL_DEVICE_QUEUE_ON_HOST_PROPERTIES => {
-                cl_prop::<cl_command_queue_properties>(CL_QUEUE_PROFILING_ENABLE.into())
-            }
+            CL_DEVICE_QUEUE_ON_HOST_PROPERTIES => cl_prop::<cl_command_queue_properties>(
+                (CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE).into(),
+            ),
             CL_DEVICE_REFERENCE_COUNT => cl_prop::<cl_uint>(1),
             CL_DEVICE_SHARED_SYSTEM_MEM_CAPABILITIES_INTEL => {
                 cl_prop::<cl_device_unified_shared_memory_capabilities_intel>(0)
