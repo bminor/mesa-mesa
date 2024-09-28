@@ -933,7 +933,7 @@ lvp_lower_ray_tracing_instr(nir_builder *b, nir_instr *instr, void *data)
       unsigned c = nir_intrinsic_column(intr);
       nir_def *instance_node_addr = nir_load_var(b, state->instance_addr);
       nir_def *wto_matrix[3];
-      lvp_load_wto_matrix(b, instance_node_addr, wto_matrix);
+      lvp_load_wto_matrix(b, instance_node_addr, NULL, wto_matrix);
 
       nir_def *vals[3];
       for (unsigned i = 0; i < 3; ++i)
@@ -956,14 +956,14 @@ lvp_lower_ray_tracing_instr(nir_builder *b, nir_instr *instr, void *data)
    case nir_intrinsic_load_ray_object_origin: {
       nir_def *instance_node_addr = nir_load_var(b, state->instance_addr);
       nir_def *wto_matrix[3];
-      lvp_load_wto_matrix(b, instance_node_addr, wto_matrix);
+      lvp_load_wto_matrix(b, instance_node_addr, NULL, wto_matrix);
       def = lvp_mul_vec3_mat(b, nir_load_var(b, state->origin), wto_matrix, true);
       break;
    }
    case nir_intrinsic_load_ray_object_direction: {
       nir_def *instance_node_addr = nir_load_var(b, state->instance_addr);
       nir_def *wto_matrix[3];
-      lvp_load_wto_matrix(b, instance_node_addr, wto_matrix);
+      lvp_load_wto_matrix(b, instance_node_addr, NULL, wto_matrix);
       def = lvp_mul_vec3_mat(b, nir_load_var(b, state->dir), wto_matrix, false);
       break;
    }

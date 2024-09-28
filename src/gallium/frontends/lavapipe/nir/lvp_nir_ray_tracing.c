@@ -31,12 +31,27 @@ lvp_mul_vec3_mat(nir_builder *b, nir_def *vec, nir_def *matrix[], bool translati
    return nir_vec(b, result_components, 3);
 }
 
+static nir_def *
+lvp_load_node_data(nir_builder *b, nir_def *addr, nir_def **node_data, uint32_t offset)
+{
+   if (offset < LVP_BVH_NODE_PREFETCH_SIZE && node_data)
+      return node_data[offset / 4];
+
+   return nir_build_load_global(b, 1, 32, nir_iadd_imm(b, addr, offset));
+}
+
 void
-lvp_load_wto_matrix(nir_builder *b, nir_def *instance_addr, nir_def **out)
+lvp_load_wto_matrix(nir_builder *b, nir_def *instance_addr, nir_def **node_data, nir_def **out)
 {
    unsigned offset = offsetof(struct lvp_bvh_instance_node, wto_matrix);
    for (unsigned i = 0; i < 3; ++i) {
       out[i] = nir_build_load_global(b, 4, 32, nir_iadd_imm(b, instance_addr, offset + i * 16));
+      out[i] = nir_vec4(b,
+         lvp_load_node_data(b, instance_addr, node_data, offset + i * 16 + 0),
+         lvp_load_node_data(b, instance_addr, node_data, offset + i * 16 + 4),
+         lvp_load_node_data(b, instance_addr, node_data, offset + i * 16 + 8),
+         lvp_load_node_data(b, instance_addr, node_data, offset + i * 16 + 12)
+      );
    }
 }
 
@@ -58,7 +73,7 @@ lvp_load_vertex_position(nir_builder *b, nir_def *instance_addr, nir_def *primit
 }
 
 static nir_def *
-lvp_build_intersect_ray_box(nir_builder *b, nir_def *node_addr, nir_def *ray_tmax,
+lvp_build_intersect_ray_box(nir_builder *b, nir_def **node_data, nir_def *ray_tmax,
                             nir_def *origin, nir_def *dir, nir_def *inv_dir)
 {
    const struct glsl_type *vec2_type = glsl_vector_type(GLSL_TYPE_FLOAT, 2);
@@ -81,12 +96,19 @@ lvp_build_intersect_ray_box(nir_builder *b, nir_def *node_addr, nir_def *ray_tma
          offsetof(struct lvp_bvh_box_node, bounds[i].max.x),
       };
 
-      nir_def *child_index =
-         nir_build_load_global(b, 1, 32, nir_iadd_imm(b, node_addr, child_offset));
+      nir_def *child_index = lvp_load_node_data(b, NULL, node_data, child_offset);
 
       nir_def *node_coords[2] = {
-         nir_build_load_global(b, 3, 32, nir_iadd_imm(b, node_addr, coord_offsets[0])),
-         nir_build_load_global(b, 3, 32, nir_iadd_imm(b, node_addr, coord_offsets[1])),
+         nir_vec3(b,
+            lvp_load_node_data(b, NULL, node_data, coord_offsets[0] + 0),
+            lvp_load_node_data(b, NULL, node_data, coord_offsets[0] + 4),
+            lvp_load_node_data(b, NULL, node_data, coord_offsets[0] + 8)
+         ),
+         nir_vec3(b,
+            lvp_load_node_data(b, NULL, node_data, coord_offsets[1] + 0),
+            lvp_load_node_data(b, NULL, node_data, coord_offsets[1] + 4),
+            lvp_load_node_data(b, NULL, node_data, coord_offsets[1] + 8)
+         ),
       };
 
       /* If x of the aabb min is NaN, then this is an inactive aabb.
@@ -140,7 +162,7 @@ lvp_build_intersect_ray_box(nir_builder *b, nir_def *node_addr, nir_def *ray_tma
 }
 
 static nir_def *
-lvp_build_intersect_ray_tri(nir_builder *b, nir_def *node_addr, nir_def *ray_tmax,
+lvp_build_intersect_ray_tri(nir_builder *b, nir_def **node_data, nir_def *ray_tmax,
                             nir_def *origin, nir_def *dir, nir_def *inv_dir)
 {
    const struct glsl_type *vec4_type = glsl_vector_type(GLSL_TYPE_FLOAT, 4);
@@ -152,9 +174,21 @@ lvp_build_intersect_ray_tri(nir_builder *b, nir_def *node_addr, nir_def *ray_tma
    };
 
    nir_def *node_coords[3] = {
-      nir_build_load_global(b, 3, 32, nir_iadd_imm(b, node_addr, coord_offsets[0])),
-      nir_build_load_global(b, 3, 32, nir_iadd_imm(b, node_addr, coord_offsets[1])),
-      nir_build_load_global(b, 3, 32, nir_iadd_imm(b, node_addr, coord_offsets[2])),
+      nir_vec3(b,
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[0] + 0),
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[0] + 4),
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[0] + 8)
+      ),
+      nir_vec3(b,
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[1] + 0),
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[1] + 4),
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[1] + 8)
+      ),
+      nir_vec3(b,
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[2] + 0),
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[2] + 4),
+         lvp_load_node_data(b, NULL, node_data, coord_offsets[2] + 8)
+      ),
    };
 
    nir_variable *result = nir_variable_create(b->shader, nir_var_shader_temp, vec4_type, "result");
@@ -286,7 +320,7 @@ lvp_build_hit_is_opaque(nir_builder *b, nir_def *sbt_offset_and_flags,
 static void
 lvp_build_triangle_case(nir_builder *b, const struct lvp_ray_traversal_args *args,
                         const struct lvp_ray_flags *ray_flags, nir_def *result,
-                        nir_def *node_addr)
+                        nir_def *node_addr, nir_def **node_data)
 {
    if (!args->triangle_cb)
       return;
@@ -315,12 +349,10 @@ lvp_build_triangle_case(nir_builder *b, const struct lvp_ray_traversal_args *arg
       nir_push_if(b, nir_iand(b, nir_flt(b, args->tmin, intersection.t), not_cull));
       {
          intersection.base.node_addr = node_addr;
-         nir_def *triangle_info = nir_build_load_global(
-            b, 2, 32,
-            nir_iadd_imm(b, intersection.base.node_addr,
-                         offsetof(struct lvp_bvh_triangle_node, primitive_id)));
-         intersection.base.primitive_id = nir_channel(b, triangle_info, 0);
-         intersection.base.geometry_id_and_flags = nir_channel(b, triangle_info, 1);
+         intersection.base.primitive_id =
+            lvp_load_node_data(b, node_addr, node_data, offsetof(struct lvp_bvh_triangle_node, primitive_id));
+         intersection.base.geometry_id_and_flags =
+            lvp_load_node_data(b, node_addr, node_data, offsetof(struct lvp_bvh_triangle_node, geometry_id_and_flags));
          intersection.base.opaque =
             lvp_build_hit_is_opaque(b, nir_load_deref(b, args->vars.sbt_offset_and_flags), ray_flags,
                                     intersection.base.geometry_id_and_flags);
@@ -340,18 +372,18 @@ lvp_build_triangle_case(nir_builder *b, const struct lvp_ray_traversal_args *arg
 
 static void
 lvp_build_aabb_case(nir_builder *b, const struct lvp_ray_traversal_args *args,
-                           const struct lvp_ray_flags *ray_flags, nir_def *node_addr)
+                           const struct lvp_ray_flags *ray_flags, nir_def *node_addr,
+                           nir_def **node_data)
 {
    if (!args->aabb_cb)
       return;
 
    struct lvp_leaf_intersection intersection;
    intersection.node_addr = node_addr;
-   nir_def *triangle_info = nir_build_load_global(
-      b, 2, 32,
-      nir_iadd_imm(b, intersection.node_addr, offsetof(struct lvp_bvh_aabb_node, primitive_id)));
-   intersection.primitive_id = nir_channel(b, triangle_info, 0);
-   intersection.geometry_id_and_flags = nir_channel(b, triangle_info, 1);
+   intersection.primitive_id =
+      lvp_load_node_data(b, node_addr, node_data, offsetof(struct lvp_bvh_aabb_node, primitive_id));
+   intersection.geometry_id_and_flags =
+      lvp_load_node_data(b, node_addr, node_data, offsetof(struct lvp_bvh_aabb_node, geometry_id_and_flags));
    intersection.opaque = lvp_build_hit_is_opaque(b, nir_load_deref(b, args->vars.sbt_offset_and_flags),
                                                  ray_flags, intersection.geometry_id_and_flags);
 
@@ -438,6 +470,10 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
 
       nir_def *node_addr = nir_iadd(b, nir_load_deref(b, args->vars.bvh_base), nir_u2u64(b, nir_iand_imm(b, bvh_node, ~3u)));
 
+      nir_def *node_data[LVP_BVH_NODE_PREFETCH_SIZE / 4];
+      for (uint32_t i = 0; i < ARRAY_SIZE(node_data); i++)
+         node_data[i] = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, node_addr, i * 4));
+
       nir_def *node_type = nir_iand_imm(b, bvh_node, 3);
       nir_push_if(b, nir_uge_imm(b, node_type, lvp_bvh_node_internal));
       {
@@ -445,24 +481,20 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
          {
             nir_push_if(b, nir_ieq_imm(b, node_type, lvp_bvh_node_aabb));
             {
-               lvp_build_aabb_case(b, args, &ray_flags, node_addr);
+               lvp_build_aabb_case(b, args, &ray_flags, node_addr, node_data);
             }
             nir_push_else(b, NULL);
             {
                /* instance */
                nir_store_deref(b, args->vars.instance_addr, node_addr, 1);
 
-               nir_def *instance_data = nir_build_load_global(
-                  b, 4, 32,
-                  nir_iadd_imm(b, node_addr, offsetof(struct lvp_bvh_instance_node, bvh_ptr)));
-
                nir_def *wto_matrix[3];
-               lvp_load_wto_matrix(b, node_addr, wto_matrix);
+               lvp_load_wto_matrix(b, node_addr, node_data, wto_matrix);
 
-               nir_store_deref(b, args->vars.sbt_offset_and_flags, nir_channel(b, instance_data, 3),
+               nir_store_deref(b, args->vars.sbt_offset_and_flags, node_data[3],
                                1);
 
-               nir_def *instance_and_mask = nir_channel(b, instance_data, 2);
+               nir_def *instance_and_mask = node_data[2];
                nir_push_if(b, nir_ult(b, nir_iand(b, instance_and_mask, args->cull_mask),
                                       nir_imm_int(b, 1 << 24)));
                {
@@ -471,7 +503,7 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
                nir_pop_if(b, NULL);
 
                nir_store_deref(b, args->vars.bvh_base,
-                               nir_pack_64_2x32(b, nir_trim_vector(b, instance_data, 2)), 1);
+                               nir_pack_64_2x32_split(b, node_data[0], node_data[1]), 1);
 
                nir_store_deref(b, args->vars.stack_base, nir_load_deref(b, args->vars.stack_ptr), 0x1);
 
@@ -491,7 +523,7 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
          nir_push_else(b, NULL);
          {
             nir_def *result = lvp_build_intersect_ray_box(
-               b, node_addr, nir_load_deref(b, args->vars.tmax),
+               b, node_data, nir_load_deref(b, args->vars.tmax),
                nir_load_deref(b, args->vars.origin), nir_load_deref(b, args->vars.dir),
                nir_load_deref(b, args->vars.inv_dir));
 
@@ -508,10 +540,10 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
       nir_push_else(b, NULL);
       {
          nir_def *result = lvp_build_intersect_ray_tri(
-            b, node_addr, nir_load_deref(b, args->vars.tmax), nir_load_deref(b, args->vars.origin),
+            b, node_data, nir_load_deref(b, args->vars.tmax), nir_load_deref(b, args->vars.origin),
             nir_load_deref(b, args->vars.dir), nir_load_deref(b, args->vars.inv_dir));
 
-         lvp_build_triangle_case(b, args, &ray_flags, result, node_addr);
+         lvp_build_triangle_case(b, args, &ray_flags, result, node_addr, node_data);
       }
       nir_pop_if(b, NULL);
    }

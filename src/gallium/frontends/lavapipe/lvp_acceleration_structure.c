@@ -640,6 +640,8 @@ lvp_get_as_size(VkDevice device,
 
    nodes_size += leaf_count * output_leaf_node_size;
 
+   nodes_size = util_align_npot(nodes_size, LVP_BVH_NODE_PREFETCH_SIZE);
+
    return sizeof(struct lvp_bvh_header) + nodes_size;
 }
 

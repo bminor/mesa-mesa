@@ -23,6 +23,7 @@
 #define lvp_bvh_node_instance 2
 #define lvp_bvh_node_aabb     3
 
+/* 48 bytes */
 struct lvp_bvh_triangle_node {
    float coords[3][3];
 
@@ -33,6 +34,7 @@ struct lvp_bvh_triangle_node {
    uint32_t geometry_id_and_flags;
 };
 
+/* 32 bytes */
 struct lvp_bvh_aabb_node {
    vk_aabb bounds;
 
@@ -41,6 +43,7 @@ struct lvp_bvh_aabb_node {
    uint32_t geometry_id_and_flags;
 };
 
+/* 120 bytes */
 struct lvp_bvh_instance_node {
    uint64_t bvh_ptr;
 
@@ -58,10 +61,13 @@ struct lvp_bvh_instance_node {
    mat3x4 otw_matrix;
 };
 
+/* 56 bytes */
 struct lvp_bvh_box_node {
    vk_aabb bounds[2];
    uint32_t children[2];
 };
+
+#define LVP_BVH_NODE_PREFETCH_SIZE 56
 
 struct lvp_bvh_header {
    vk_aabb bounds;
