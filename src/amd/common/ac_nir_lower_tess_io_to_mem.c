@@ -61,8 +61,8 @@
  * TCS per-vertex inputs for patch 1
  * TCS per-vertex inputs for patch 2  <─── hs_per_vertex_input_lds_offset (rel_patch_id = 2)
  * ...
- * TCS per-vertex outputs for patch 0 <─── output_patch0_offset
- * TCS per-patch outputs for patch 0  <─── output_patch0_patch_data_offset
+ * TCS per-vertex outputs for patch 0 <─── hs_output_lds_offset (rel_patch_id = 0, per-vertex)
+ * TCS per-patch outputs for patch 0  <─── hs_output_lds_offset (rel_patch_id = 0, per-patch)
  * TCS per-vertex outputs for patch 1
  * TCS per-patch outputs for patch 1
  * TCS per-vertex outputs for patch 2 <─── hs_output_lds_offset (rel_patch_id = 2, per-vertex)
@@ -284,6 +284,11 @@ lower_ls_output_store(nir_builder *b,
    unsigned write_mask = nir_intrinsic_write_mask(intrin);
 
    nir_def *off = nir_iadd_nuw(b, base_off_var, io_off);
+
+   /* The first vec4 is reserved for the tf0/1 shader message group vote. */
+   if (st->gfx_level >= GFX11)
+      off = nir_iadd_imm_nuw(b, off, AC_HS_MSG_VOTE_LDS_BYTES);
+
    AC_NIR_STORE_IO(b, intrin->src[0].ssa, 0, write_mask, io_sem.high_16bits,
                    nir_store_shared, off, .write_mask = store_write_mask, .base = store_const_offset);
 
@@ -354,8 +359,10 @@ hs_per_vertex_input_lds_offset(nir_builder *b,
    const unsigned mapped = ac_nir_map_io_location(io_sem.location, st->tcs_inputs_read & ~st->tcs_temp_only_inputs,
                                                   st->map_io);
    nir_def *io_offset = ac_nir_calc_io_off(b, instr, nir_imm_int(b, 16u), 4u, mapped);
+   nir_def *lds_offset = nir_iadd_nuw(b, nir_iadd_nuw(b, tcs_in_current_patch_offset, vertex_index_off), io_offset);
 
-   return nir_iadd_nuw(b, nir_iadd_nuw(b, tcs_in_current_patch_offset, vertex_index_off), io_offset);
+   /* The first LDS vec4 is reserved for the tf0/1 shader message group vote. */
+   return st->gfx_level >= GFX11 ? nir_iadd_imm_nuw(b, lds_offset, AC_HS_MSG_VOTE_LDS_BYTES) : lds_offset;
 }
 
 static unsigned
@@ -419,17 +426,21 @@ hs_output_lds_offset(nir_builder *b,
    nir_def *input_patch_size = nir_imul(b, tcs_in_vtxcnt, nir_load_lshs_vertex_stride_amd(b));
    nir_def *output_patch0_offset = nir_imul(b, input_patch_size, tcs_num_patches);
    nir_def *output_patch_offset = nir_iadd_nuw(b, patch_offset, output_patch0_offset);
+   nir_def *lds_offset;
 
    if (per_vertex) {
       nir_def *vertex_index = nir_get_io_arrayed_index_src(intrin)->ssa;
       nir_def *vertex_index_off = nir_imul_imm(b, vertex_index, output_vertex_size);
 
       off = nir_iadd_nuw(b, off, vertex_index_off);
-      return nir_iadd_nuw(b, off, output_patch_offset);
+      lds_offset = nir_iadd_nuw(b, off, output_patch_offset);
    } else {
       off = nir_iadd_imm_nuw(b, off, pervertex_output_patch_size);
-      return nir_iadd_nuw(b, off, output_patch_offset);
+      lds_offset = nir_iadd_nuw(b, off, output_patch_offset);
    }
+
+   /* The first LDS vec4 is reserved for the tf0/1 shader message group vote. */
+   return st->gfx_level >= GFX11 ? nir_iadd_imm_nuw(b, lds_offset, AC_HS_MSG_VOTE_LDS_BYTES) : lds_offset;
 }
 
 static unsigned
@@ -963,6 +974,7 @@ filter_any_input_access(const nir_instr *instr,
 void
 ac_nir_lower_ls_outputs_to_mem(nir_shader *shader,
                                ac_nir_map_io_driver_location map,
+                               enum amd_gfx_level gfx_level,
                                bool tcs_in_out_eq,
                                uint64_t tcs_inputs_read,
                                uint64_t tcs_temp_only_inputs)
@@ -970,6 +982,7 @@ ac_nir_lower_ls_outputs_to_mem(nir_shader *shader,
    assert(shader->info.stage == MESA_SHADER_VERTEX);
 
    lower_tess_io_state state = {
+      .gfx_level = gfx_level,
       .tcs_in_out_eq = tcs_in_out_eq,
       .tcs_inputs_read = tcs_inputs_read,
       .tcs_temp_only_inputs = tcs_in_out_eq ? tcs_temp_only_inputs : 0,
@@ -984,12 +997,14 @@ ac_nir_lower_ls_outputs_to_mem(nir_shader *shader,
 void
 ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
                               ac_nir_map_io_driver_location map,
+                              enum amd_gfx_level gfx_level,
                               bool tcs_in_out_eq,
                               uint64_t tcs_temp_only_inputs)
 {
    assert(shader->info.stage == MESA_SHADER_TESS_CTRL);
 
    lower_tess_io_state state = {
+      .gfx_level = gfx_level,
       .tcs_inputs_read = shader->info.inputs_read,
       .tcs_in_out_eq = tcs_in_out_eq,
       .tcs_temp_only_inputs = tcs_in_out_eq ? tcs_temp_only_inputs : 0,

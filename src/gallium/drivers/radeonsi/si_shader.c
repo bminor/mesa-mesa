@@ -1855,6 +1855,7 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir,
       if (key->ge.as_ls) {
          NIR_PASS_V(nir, ac_nir_lower_ls_outputs_to_mem,
                     is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
+                    sel->screen->info.gfx_level,
                     key->ge.opt.same_patch_vertices,
                     is_gfx9_mono_tcs ? next_sel->info.base.inputs_read : ~0ull,
                     tcs_vgpr_only_inputs);
@@ -1867,6 +1868,7 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir,
    } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
       NIR_PASS_V(nir, ac_nir_lower_hs_inputs_to_mem,
                  is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
+                 sel->screen->info.gfx_level,
                  key->ge.opt.same_patch_vertices, sel->info.tcs_vgpr_only_inputs);
 
       /* Used by hs_emit_write_tess_factors() when monolithic shader. */

@@ -219,7 +219,7 @@ radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_stage *s
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       if (info->vs.as_ls) {
-         NIR_PASS_V(nir, ac_nir_lower_ls_outputs_to_mem, map_output, info->vs.tcs_in_out_eq,
+         NIR_PASS_V(nir, ac_nir_lower_ls_outputs_to_mem, map_output, pdev->info.gfx_level, info->vs.tcs_in_out_eq,
                     info->vs.hs_inputs_read, info->vs.tcs_temp_only_input_mask);
          return true;
       } else if (info->vs.as_es) {
@@ -227,9 +227,10 @@ radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_stage *s
          return true;
       }
    } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-      NIR_PASS_V(nir, ac_nir_lower_hs_inputs_to_mem, map_input, info->vs.tcs_in_out_eq, info->vs.tcs_temp_only_input_mask);
-      NIR_PASS_V(nir, ac_nir_lower_hs_outputs_to_mem, map_output, pdev->info.gfx_level,
-                 info->tcs.tes_inputs_read, info->tcs.tes_patch_inputs_read, info->wave_size);
+      NIR_PASS_V(nir, ac_nir_lower_hs_inputs_to_mem, map_input, pdev->info.gfx_level, info->vs.tcs_in_out_eq,
+                 info->vs.tcs_temp_only_input_mask);
+      NIR_PASS_V(nir, ac_nir_lower_hs_outputs_to_mem, map_output, pdev->info.gfx_level, info->tcs.tes_inputs_read,
+                 info->tcs.tes_patch_inputs_read, info->wave_size);
 
       return true;
    } else if (nir->info.stage == MESA_SHADER_TESS_EVAL) {

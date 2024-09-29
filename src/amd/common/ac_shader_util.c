@@ -6,6 +6,7 @@
 
 #include "ac_shader_util.h"
 #include "ac_gpu_info.h"
+#include "ac_nir.h"
 
 #include "sid.h"
 #include "util/u_math.h"
@@ -1209,7 +1210,11 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
 uint32_t
 ac_compute_tess_lds_size(const struct radeon_info *info, uint32_t lds_per_patch, uint32_t num_patches)
 {
-   const unsigned lds_size = lds_per_patch * num_patches;
+   unsigned lds_size = lds_per_patch * num_patches;
+
+   /* The first vec4 is reserved for the tf0/1 shader message group vote. */
+   if (info->gfx_level >= GFX11)
+      lds_size += AC_HS_MSG_VOTE_LDS_BYTES;
 
    assert(lds_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
 

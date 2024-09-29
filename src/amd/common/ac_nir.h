@@ -17,6 +17,9 @@
 extern "C" {
 #endif
 
+/* Reserve this size at the beginning of LDS for the tf0/1 shader message group vote. */
+#define AC_HS_MSG_VOTE_LDS_BYTES 16
+
 enum
 {
    /* SPI_PS_INPUT_CNTL_i.OFFSET[0:4] */
@@ -76,6 +79,7 @@ bool ac_nir_optimize_outputs(nir_shader *nir, bool sprite_tex_disallowed,
 void
 ac_nir_lower_ls_outputs_to_mem(nir_shader *ls,
                                ac_nir_map_io_driver_location map,
+                               enum amd_gfx_level gfx_level,
                                bool tcs_in_out_eq,
                                uint64_t tcs_inputs_read,
                                uint64_t tcs_temp_only_inputs);
@@ -83,6 +87,7 @@ ac_nir_lower_ls_outputs_to_mem(nir_shader *ls,
 void
 ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
                               ac_nir_map_io_driver_location map,
+                              enum amd_gfx_level gfx_level,
                               bool tcs_in_out_eq,
                               uint64_t tcs_temp_only_inputs);
 
