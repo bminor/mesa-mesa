@@ -102,6 +102,8 @@ struct vk_meta_device {
    struct hash_table *cache;
    simple_mtx_t cache_mtx;
 
+   VkPipelineCache pipeline_cache;
+
    uint32_t max_bind_map_buffer_size_B;
    bool use_layered_rendering;
    bool use_gs_for_layer;

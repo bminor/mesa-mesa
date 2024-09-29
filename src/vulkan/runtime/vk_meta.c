@@ -484,7 +484,7 @@ vk_meta_create_compute_pipeline(struct vk_device *device,
    VkDevice _device = vk_device_to_handle(device);
 
    VkPipeline pipeline;
-   VkResult result = disp->CreateComputePipelines(_device, VK_NULL_HANDLE,
+   VkResult result = disp->CreateComputePipelines(_device, meta->pipeline_cache,
                                                   1, info, NULL, &pipeline);
    if (result != VK_SUCCESS)
       return result;
