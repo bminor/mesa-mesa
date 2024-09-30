@@ -528,6 +528,9 @@ get_features(const struct anv_physical_device *pdevice,
       .shaderIntegerDotProduct = true,
       .maintenance4 = true,
 
+      /* Vulkan 1.4 */
+      .pushDescriptor = true,
+
       /* VK_EXT_4444_formats */
       .formatA4R4G4B4 = true,
       .formatA4B4G4R4 = false,
@@ -1353,6 +1356,10 @@ get_properties(const struct anv_physical_device *pdevice,
 
       /* VK_KHR_cooperative_matrix */
       .cooperativeMatrixSupportedStages = VK_SHADER_STAGE_COMPUTE_BIT,
+
+      /* Vulkan 1.4 */
+      .dynamicRenderingLocalReadDepthStencilAttachments = true,
+      .dynamicRenderingLocalReadMultisampledAttachments = true,
    };
 
    snprintf(props->deviceName, sizeof(props->deviceName),
