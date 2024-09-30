@@ -391,15 +391,12 @@ F(hw_opcode,           /* 9+ */   6,  0,  /* 12+ */ 6,  0)
  *  @{
  */
 F(3src_src2_reg_nr,         /* 9+ */ 125, 118, /* 12+ */ 127, 120) /* same in align1 */
-F(3src_a16_src2_subreg_nr,  /* 9+ */ 117, 115, /* 12+ */ -1, -1) /* Extra discontiguous bit on CHV? */
 F(3src_a16_src2_swizzle,    /* 9+ */ 114, 107, /* 12+ */ -1, -1)
 F(3src_a16_src2_rep_ctrl,   /* 9+ */ 106, 106, /* 12+ */ -1, -1)
 F(3src_src1_reg_nr,         /* 9+ */ 104,  97, /* 12+ */ 111, 104) /* same in align1 */
-F(3src_a16_src1_subreg_nr,  /* 9+ */ 96,  94,  /* 12+ */ -1, -1) /* Extra discontiguous bit on CHV? */
 F(3src_a16_src1_swizzle,    /* 9+ */ 93,  86,  /* 12+ */ -1, -1)
 F(3src_a16_src1_rep_ctrl,   /* 9+ */ 85,  85,  /* 12+ */ -1, -1)
 F(3src_src0_reg_nr,         /* 9+ */ 83,  76,  /* 12+ */ 79, 72) /* same in align1 */
-F(3src_a16_src0_subreg_nr,  /* 9+ */ 75,  73,  /* 12+ */ -1, -1) /* Extra discontiguous bit on CHV? */
 F(3src_a16_src0_swizzle,    /* 9+ */ 72,  65,  /* 12+ */ -1, -1)
 F(3src_a16_src0_rep_ctrl,   /* 9+ */ 64,  64,  /* 12+ */ -1, -1)
 F(3src_dst_reg_nr,          /* 9+ */ 63,  56,  /* 12+ */ 63, 56) /* same in align1 */
@@ -437,6 +434,33 @@ F(3src_swsb,                /* 9+ */ -1, -1,   /* 12+ */ 15,  8)
 /* Bit 7 is Reserved (for future Opcode expansion) */
 F(3src_hw_opcode,           /* 9+ */ 6,  0,    /* 12+ */ 6, 0)
 /** @} */
+
+#define F_3SRC_A16_SUBREG_NR(srcN, src_base) \
+static inline void                                                          \
+brw_inst_set_3src_a16_##srcN##_subreg_nr(const struct                       \
+                                         intel_device_info *devinfo,        \
+                                         brw_inst *inst,                    \
+                                         unsigned value)                    \
+{                                                                           \
+   assert(devinfo->ver == 9);                                               \
+   assert((value & ~0b11110) == 0);                                         \
+   brw_inst_set_bits(inst, src_base + 11, src_base + 9, value >> 2);        \
+   brw_inst_set_bits(inst, src_base + 20, src_base + 20, (value >> 1) & 1); \
+}                                                                           \
+static inline unsigned                                                      \
+brw_inst_3src_a16_##srcN##_subreg_nr(const struct                           \
+                                     intel_device_info *devinfo,            \
+                                     const brw_inst *inst)                  \
+{                                                                           \
+   assert(devinfo->ver == 9);                                               \
+   return brw_inst_bits(inst, src_base + 11, src_base + 9) << 2 |           \
+          brw_inst_bits(inst, src_base + 20, src_base + 20) << 1;           \
+}
+
+F_3SRC_A16_SUBREG_NR(src0, 64)
+F_3SRC_A16_SUBREG_NR(src1, 85)
+F_3SRC_A16_SUBREG_NR(src2, 106)
+#undef F_3SRC_A16_SUBREG_NR
 
 #define REG_TYPE(reg)                                                         \
 static inline void                                                            \

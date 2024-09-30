@@ -957,7 +957,7 @@ dest_3src(FILE *file, const struct intel_device_info *devinfo,
       subreg_nr = brw_inst_3src_a1_dst_subreg_nr(devinfo, inst);
    } else {
       type = brw_inst_3src_a16_dst_type(devinfo, inst);
-      subreg_nr = brw_inst_3src_a16_dst_subreg_nr(devinfo, inst) * 4;
+      subreg_nr = brw_inst_3src_a16_dst_subreg_nr(devinfo, inst);
    }
    subreg_nr /= brw_type_size_bytes(type);
 
@@ -1264,7 +1264,7 @@ src0_3src(FILE *file, const struct intel_device_info *devinfo,
    } else {
       _file = FIXED_GRF;
       reg_nr = brw_inst_3src_src0_reg_nr(devinfo, inst);
-      subreg_nr = brw_inst_3src_a16_src0_subreg_nr(devinfo, inst) * 4;
+      subreg_nr = brw_inst_3src_a16_src0_subreg_nr(devinfo, inst);
       type = brw_inst_3src_a16_src_type(devinfo, inst);
 
       if (brw_inst_3src_a16_src0_rep_ctrl(devinfo, inst)) {
@@ -1330,7 +1330,7 @@ src1_3src(FILE *file, const struct intel_device_info *devinfo,
    } else {
       _file = FIXED_GRF;
       reg_nr = brw_inst_3src_src1_reg_nr(devinfo, inst);
-      subreg_nr = brw_inst_3src_a16_src1_subreg_nr(devinfo, inst) * 4;
+      subreg_nr = brw_inst_3src_a16_src1_subreg_nr(devinfo, inst);
       type = brw_inst_3src_a16_src_type(devinfo, inst);
 
       if (brw_inst_3src_a16_src1_rep_ctrl(devinfo, inst)) {
@@ -1413,7 +1413,7 @@ src2_3src(FILE *file, const struct intel_device_info *devinfo,
    } else {
       _file = FIXED_GRF;
       reg_nr = brw_inst_3src_src2_reg_nr(devinfo, inst);
-      subreg_nr = brw_inst_3src_a16_src2_subreg_nr(devinfo, inst) * 4;
+      subreg_nr = brw_inst_3src_a16_src2_subreg_nr(devinfo, inst);
       type = brw_inst_3src_a16_src_type(devinfo, inst);
 
       if (brw_inst_3src_a16_src2_rep_ctrl(devinfo, inst)) {
