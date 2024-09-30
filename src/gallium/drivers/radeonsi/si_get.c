@@ -718,9 +718,8 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
          return (sscreen->info.vcn_ip_version >= VCN_1_0_0) ? 1 : 0;
 
       case PIPE_VIDEO_CAP_ENC_HEVC_FEATURE_FLAGS:
-         if ((sscreen->info.vcn_ip_version >= VCN_1_0_0) &&
-               (profile == PIPE_VIDEO_PROFILE_HEVC_MAIN ||
-             profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_10)) {
+         if (profile == PIPE_VIDEO_PROFILE_HEVC_MAIN ||
+             profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_10) {
             union pipe_h265_enc_cap_features pipe_features;
             pipe_features.value = 0;
 
@@ -741,9 +740,8 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             return 0;
 
       case PIPE_VIDEO_CAP_ENC_HEVC_BLOCK_SIZES:
-         if (sscreen->info.vcn_ip_version >= VCN_1_0_0 &&
-             (profile == PIPE_VIDEO_PROFILE_HEVC_MAIN ||
-              profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_10)) {
+         if (profile == PIPE_VIDEO_PROFILE_HEVC_MAIN ||
+             profile == PIPE_VIDEO_PROFILE_HEVC_MAIN_10) {
             union pipe_h265_enc_cap_block_sizes pipe_block_sizes;
             pipe_block_sizes.value = 0;
 
@@ -752,6 +750,13 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             pipe_block_sizes.bits.log2_min_luma_coding_block_size_minus3 = 0;
             pipe_block_sizes.bits.log2_max_luma_transform_block_size_minus2 = 3;
             pipe_block_sizes.bits.log2_min_luma_transform_block_size_minus2 = 0;
+
+            if (sscreen->info.ip[AMD_IP_UVD_ENC].num_queues) {
+               pipe_block_sizes.bits.max_max_transform_hierarchy_depth_inter = 3;
+               pipe_block_sizes.bits.min_max_transform_hierarchy_depth_inter = 3;
+               pipe_block_sizes.bits.max_max_transform_hierarchy_depth_intra = 3;
+               pipe_block_sizes.bits.min_max_transform_hierarchy_depth_intra = 3;
+            }
 
             return pipe_block_sizes.value;
          } else
