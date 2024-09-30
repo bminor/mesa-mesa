@@ -115,12 +115,6 @@ struct aco_shader_info {
 
       /* Vulkan only */
       uint32_t num_lds_blocks;
-
-      /* OpenGL only */
-      bool pass_tessfactors_by_reg;
-      unsigned patch_stride;
-      struct ac_arg tes_offchip_addr;
-      struct ac_arg vs_state_bits;
    } tcs;
    struct {
       uint32_t num_interp;

@@ -47,7 +47,6 @@ radv_aco_convert_shader_info(struct aco_shader_info *aco_info, const struct radv
    aco_info->epilog_pc = radv_args->epilog_pc;
    aco_info->hw_stage = radv_select_hw_stage(radv, gfx_level);
    aco_info->tcs.tcs_offchip_layout = radv_args->tcs_offchip_layout;
-   aco_info->tcs.pass_tessfactors_by_reg = true;
    aco_info->next_stage_pc = radv_args->next_stage_pc;
 }
 
