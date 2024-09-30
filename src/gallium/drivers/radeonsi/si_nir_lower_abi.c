@@ -738,7 +738,10 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       if (shader->is_monolithic) {
          replacement = nir_imm_int(b, key->ge.opt.tes_prim_mode);
       } else {
-         replacement = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 29, 2);
+         if (b->shader->info.tess._primitive_mode != TESS_PRIMITIVE_UNSPECIFIED)
+            replacement = nir_imm_int(b, b->shader->info.tess._primitive_mode);
+         else
+            replacement = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 29, 2);
       }
       break;
    case nir_intrinsic_load_ring_gsvs_amd: {
