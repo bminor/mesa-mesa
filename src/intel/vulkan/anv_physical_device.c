@@ -1006,8 +1006,8 @@ get_properties_1_2(const struct anv_physical_device *pdevice,
 
    p->conformanceVersion = (VkConformanceVersion) {
       .major = 1,
-      .minor = 3,
-      .subminor = 6,
+      .minor = 4,
+      .subminor = 0,
       .patch = 0,
    };
 
