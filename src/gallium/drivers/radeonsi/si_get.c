@@ -758,7 +758,16 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             return 0;
 
       case PIPE_VIDEO_CAP_ENC_SUPPORTS_ASYNC_OPERATION:
-         return (sscreen->info.vcn_ip_version >= VCN_1_0_0) ? 1 : 0;
+         if (sscreen->info.vcn_ip_version >= VCN_1_0_0)
+            return 1;
+
+         /* dual instance */
+         if (codec == PIPE_VIDEO_FORMAT_MPEG4_AVC &&
+             sscreen->info.family >= CHIP_TONGA &&
+             sscreen->info.vce_harvest_config == 0)
+            return 0;
+
+         return 1;
 
       case PIPE_VIDEO_CAP_ENC_MAX_SLICES_PER_FRAME:
          return (sscreen->info.vcn_ip_version >= VCN_1_0_0) ? 128 : 1;
