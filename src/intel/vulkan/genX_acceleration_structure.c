@@ -640,6 +640,8 @@ genX(CmdBuildAccelerationStructuresKHR)(
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+   trace_intel_begin_as_build(&cmd_buffer->trace);
+
    struct anv_device *device = cmd_buffer->device;
 
    VkResult result = anv_device_init_accel_struct_build_state(device);
@@ -660,6 +662,7 @@ genX(CmdBuildAccelerationStructuresKHR)(
                                         &device->accel_struct_build.build_args);
 
    anv_cmd_buffer_restore_state(cmd_buffer, &saved);
+   trace_intel_end_as_build(&cmd_buffer->trace);
 }
 
 void
