@@ -221,7 +221,7 @@ static void radeon_uvd_enc_begin_frame(struct pipe_video_codec *encoder,
       struct rvid_buffer fb;
       enc->stream_handle = si_vid_alloc_stream_handle();
       enc->si = CALLOC_STRUCT(rvid_buffer);
-      si_vid_create_buffer(enc->screen, enc->si, 128 * 1024, PIPE_USAGE_STAGING);
+      si_vid_create_buffer(enc->screen, enc->si, 128 * 1024, PIPE_USAGE_DEFAULT);
       si_vid_create_buffer(enc->screen, &fb, 4096, PIPE_USAGE_STAGING);
       enc->fb = &fb;
       enc->begin(enc, picture);
