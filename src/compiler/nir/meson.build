@@ -98,6 +98,7 @@ files_libnir = files(
   'nir_from_ssa.c',
   'nir_functions.c',
   'nir_gather_info.c',
+  'nir_gather_tcs_info.c',
   'nir_gather_types.c',
   'nir_gather_xfb_info.c',
   'nir_group_loads.c',
