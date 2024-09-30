@@ -1875,8 +1875,7 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir,
       NIR_PASS_V(nir, ac_nir_lower_hs_outputs_to_mem, si_map_io_driver_location,
                  sel->screen->info.gfx_level,
                  ~0ULL, ~0U, /* no TES inputs filter */
-                 shader->wave_size,
-                 sel->info.tessfactors_are_def_in_all_invocs);
+                 shader->wave_size);
       return true;
    } else if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
       NIR_PASS_V(nir, ac_nir_lower_tes_inputs_to_mem, si_map_io_driver_location);

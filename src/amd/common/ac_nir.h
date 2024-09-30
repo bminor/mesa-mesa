@@ -92,8 +92,7 @@ ac_nir_lower_hs_outputs_to_mem(nir_shader *shader,
                                enum amd_gfx_level gfx_level,
                                uint64_t tes_inputs_read,
                                uint32_t tes_patch_inputs_read,
-                               unsigned wave_size,
-                               bool pass_tessfactors_by_reg);
+                               unsigned wave_size);
 
 void
 ac_nir_lower_tes_inputs_to_mem(nir_shader *shader,
