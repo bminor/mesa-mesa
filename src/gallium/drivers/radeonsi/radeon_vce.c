@@ -30,9 +30,9 @@
 /**
  * flush commands to the hardware
  */
-static void flush(struct rvce_encoder *enc, unsigned flags)
+static void flush(struct rvce_encoder *enc, unsigned flags, struct pipe_fence_handle **fence)
 {
-   enc->ws->cs_flush(&enc->cs, flags, NULL);
+   enc->ws->cs_flush(&enc->cs, flags, fence);
    enc->task_info_idx = 0;
    enc->bs_idx = 0;
 }
@@ -225,7 +225,7 @@ static void rvce_destroy(struct pipe_video_codec *encoder)
       enc->fb = &fb;
       enc->session(enc);
       enc->destroy(enc);
-      flush(enc, PIPE_FLUSH_ASYNC);
+      flush(enc, PIPE_FLUSH_ASYNC, NULL);
       si_vid_destroy_buffer(&fb);
    }
    si_vid_destroy_buffer(&enc->cpb);
@@ -307,7 +307,7 @@ static void rvce_begin_frame(struct pipe_video_codec *encoder, struct pipe_video
       enc->create(enc);
       enc->config(enc);
       enc->feedback(enc);
-      flush(enc, PIPE_FLUSH_ASYNC);
+      flush(enc, PIPE_FLUSH_ASYNC, NULL);
       // dump_feedback(enc, &fb);
       si_vid_destroy_buffer(&fb);
       need_rate_control = false;
@@ -316,7 +316,7 @@ static void rvce_begin_frame(struct pipe_video_codec *encoder, struct pipe_video
    if (need_rate_control) {
       enc->session(enc);
       enc->config(enc);
-      flush(enc, PIPE_FLUSH_ASYNC);
+      flush(enc, PIPE_FLUSH_ASYNC, NULL);
    }
 }
 
@@ -346,7 +346,7 @@ static int rvce_end_frame(struct pipe_video_codec *encoder, struct pipe_video_bu
    struct rvce_cpb_slot *slot = list_entry(enc->cpb_slots.prev, struct rvce_cpb_slot, list);
 
    if (!enc->dual_inst || enc->bs_idx > 1)
-      flush(enc, picture->flush_flags);
+      flush(enc, picture->flush_flags, enc->dual_inst ? NULL : picture->fence);
 
    /* update the CPB backtrack with the just encoded frame */
    slot->picture_type = enc->pic.picture_type;
@@ -382,6 +382,15 @@ static void rvce_get_feedback(struct pipe_video_codec *encoder, void *feedback, 
    FREE(fb);
 }
 
+static int rvce_fence_wait(struct pipe_video_codec *encoder,
+                           struct pipe_fence_handle *fence,
+                           uint64_t timeout)
+{
+   struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
+
+   return enc->ws->fence_wait(enc->ws, fence, timeout);
+}
+
 static void rvce_destroy_fence(struct pipe_video_codec *encoder,
                                struct pipe_fence_handle *fence)
 {
@@ -397,7 +406,7 @@ static void rvce_flush(struct pipe_video_codec *encoder)
 {
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
 
-   flush(enc, PIPE_FLUSH_ASYNC);
+   flush(enc, PIPE_FLUSH_ASYNC, NULL);
 }
 
 static void rvce_cs_flush(void *ctx, unsigned flags, struct pipe_fence_handle **fence)
@@ -445,6 +454,7 @@ struct pipe_video_codec *si_vce_create_encoder(struct pipe_context *context,
    enc->base.end_frame = rvce_end_frame;
    enc->base.flush = rvce_flush;
    enc->base.get_feedback = rvce_get_feedback;
+   enc->base.fence_wait = rvce_fence_wait;
    enc->base.destroy_fence = rvce_destroy_fence;
    enc->get_buffer = get_buffer;
 
