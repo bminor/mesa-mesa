@@ -574,7 +574,7 @@ disassemble_ceu_instr(struct pandecode_context *ctx, uint64_t dword,
 
    case MALI_CS_OPCODE_FINISH_FRAGMENT: {
       pan_unpack(bytes, CS_FINISH_FRAGMENT, I);
-      fprintf(fp, "FINISH_FRAGMENT.%s, d%u, d%u, #%x, #%u\n",
+      fprintf(fp, "FINISH_FRAGMENT%s d%u, d%u, #%x, #%u\n",
               I.increment_fragment_completed ? ".frag_end" : "",
               I.last_heap_chunk, I.first_heap_chunk, I.wait_mask,
               I.signal_slot);
