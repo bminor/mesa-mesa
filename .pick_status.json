@@ -14,7 +14,7 @@
         "description": "glsl: fix gl_{Clip,Cull}Distance error messages",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d656736bbf926c219b6bcbc0ad59132fc82a7382",
         "notes": null
