@@ -1870,7 +1870,8 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir,
                  key->ge.opt.same_patch_vertices, sel->info.tcs_vgpr_only_inputs);
 
       /* Used by hs_emit_write_tess_factors() when monolithic shader. */
-      nir->info.tess._primitive_mode = key->ge.opt.tes_prim_mode;
+      if (nir->info.tess._primitive_mode == TESS_PRIMITIVE_UNSPECIFIED)
+         nir->info.tess._primitive_mode = key->ge.opt.tes_prim_mode;
 
       NIR_PASS_V(nir, ac_nir_lower_hs_outputs_to_mem, si_map_io_driver_location,
                  sel->screen->info.gfx_level,
