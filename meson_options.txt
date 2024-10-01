@@ -660,7 +660,7 @@ option(
 option(
   'intel-bvh-grl',
   type : 'boolean',
-  value : true,
+  value : false,
   description : 'Build the BVH structure using GRL.'
 )
 
