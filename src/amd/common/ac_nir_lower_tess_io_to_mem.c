@@ -110,25 +110,27 @@ typedef struct {
    /* I/O semantic -> real location used by lowering. */
    ac_nir_map_io_driver_location map_io;
 
-   /* True if merged VS+TCS (on GFX9+) has the same number
-    * of input and output patch size.
-    */
-   bool tcs_in_out_eq;
-
-   /* Bit mask of TCS per-vertex inputs (VS outputs) which
-    * are passed between the two stages only in temporaries (registers).
+   /* Bit mask of TCS per-vertex inputs (VS outputs) which are passed via temporaries (VGPRs)
+    * from VS to TCS because they are read using gl_InvocationIndex as the vertex index.
     *
-    * A VS output can be passed to TCS in registers when:
-    * - VS is known to write, and TCS is known to read it
-    * - Neither VS nor TCS accesses it indirecty
-    * - There are no TCS cross-invocation reads to this input
+    * If TCS cross-invocation reads or indirect reads of these inputs are present, they don't
+    * prevent fast access via gl_InvocationIndex because those are just different ways of reading
+    * the same values.
+    *
+    * An example where a TCS input is indexed by gl_InvocationIndex and some other index is
+    * Unigine Heaven where the position input is used for patch culling (with cross-invocation
+    * access) and also read with gl_InvocationIndex to forward it to TES.
+    *
+    * Passing TCS inputs in VGPRs is only possible when:
+    * - VS+TCS are merged (GFX9+).
+    * - Input and output patch sizes are the same.
     */
-   uint64_t tcs_temp_only_inputs;
+   uint64_t tcs_inputs_via_temp;
 
-   /* Bit mask of inputs read by the TCS,
-    * this is used for linking VS outputs to TCS inputs.
+   /* Bit mask of TCS per-vertex inputs (VS outputs) which are passed via LDS for cross-invocation
+    * reads or indirect reads.
     */
-   uint64_t tcs_inputs_read;
+   uint64_t tcs_inputs_via_lds;
 
    /* Bit mask of TCS outputs read by TES. */
    uint64_t tes_inputs_read;
@@ -264,38 +266,34 @@ lower_ls_output_store(nir_builder *b,
    lower_tess_io_state *st = (lower_tess_io_state *) state;
 
    /* When a VS output isn't read by TCS, don't emit anything. */
-   if ((io_sem.no_varying || !(st->tcs_inputs_read & BITFIELD64_BIT(io_sem.location)))) {
+   if ((io_sem.no_varying ||
+        !((st->tcs_inputs_via_temp | st->tcs_inputs_via_lds) & BITFIELD64_BIT(io_sem.location)))) {
       nir_instr_remove(&intrin->instr);
       return true;
    }
 
-   /* If this is a temp-only TCS input, we don't need to use shared memory at all. */
-   if (st->tcs_temp_only_inputs & BITFIELD64_BIT(io_sem.location))
-      return false;
+   if (st->tcs_inputs_via_lds & BITFIELD64_BIT(io_sem.location)) {
+      b->cursor = nir_before_instr(&intrin->instr);
 
-   b->cursor = nir_before_instr(&intrin->instr);
+      nir_def *vertex_idx = nir_load_local_invocation_index(b);
+      nir_def *base_off_var = nir_imul(b, vertex_idx, nir_load_lshs_vertex_stride_amd(b));
 
-   nir_def *vertex_idx = nir_load_local_invocation_index(b);
-   nir_def *base_off_var = nir_imul(b, vertex_idx, nir_load_lshs_vertex_stride_amd(b));
+      unsigned mapped = ac_nir_map_io_location(io_sem.location, st->tcs_inputs_via_lds, st->map_io);
+      nir_def *io_off = ac_nir_calc_io_off(b, intrin, nir_imm_int(b, 16u), 4u, mapped);
+      unsigned write_mask = nir_intrinsic_write_mask(intrin);
 
-   unsigned mapped = ac_nir_map_io_location(io_sem.location, st->tcs_inputs_read & ~st->tcs_temp_only_inputs,
-                                            st->map_io);
-   nir_def *io_off = ac_nir_calc_io_off(b, intrin, nir_imm_int(b, 16u), 4u, mapped);
-   unsigned write_mask = nir_intrinsic_write_mask(intrin);
+      nir_def *off = nir_iadd_nuw(b, base_off_var, io_off);
 
-   nir_def *off = nir_iadd_nuw(b, base_off_var, io_off);
+      /* The first vec4 is reserved for the tf0/1 shader message group vote. */
+      if (st->gfx_level >= GFX11)
+         off = nir_iadd_imm_nuw(b, off, AC_HS_MSG_VOTE_LDS_BYTES);
 
-   /* The first vec4 is reserved for the tf0/1 shader message group vote. */
-   if (st->gfx_level >= GFX11)
-      off = nir_iadd_imm_nuw(b, off, AC_HS_MSG_VOTE_LDS_BYTES);
+      AC_NIR_STORE_IO(b, intrin->src[0].ssa, 0, write_mask, io_sem.high_16bits,
+                      nir_store_shared, off, .write_mask = store_write_mask, .base = store_const_offset);
+   }
 
-   AC_NIR_STORE_IO(b, intrin->src[0].ssa, 0, write_mask, io_sem.high_16bits,
-                   nir_store_shared, off, .write_mask = store_write_mask, .base = store_const_offset);
-
-   /* NOTE: don't remove the store_output intrinsic on GFX9+ when tcs_in_out_eq,
-    * it will be used by same-invocation TCS input loads.
-    */
-   if (!st->tcs_in_out_eq)
+   /* The store_output intrinsic on GFX9+ is used to pass the output to TCS via VGPRs. */
+   if (!(st->tcs_inputs_via_temp & BITFIELD64_BIT(io_sem.location)))
       nir_instr_remove(&intrin->instr);
 
    return true;
@@ -313,29 +311,21 @@ filter_load_tcs_per_vertex_input(const nir_instr *instr,
 
    if (intrin->intrinsic != nir_intrinsic_load_per_vertex_input)
       return false;
-   if (!st->tcs_in_out_eq)
-      return true;
 
-   /* tcs_in_out_eq: a same-invocation input load, without indirect offset,
-    * can use temporaries, no need to use shared memory.
-    */
    nir_src *off_src = nir_get_io_offset_src(intrin);
    nir_src *vertex_index_src = nir_get_io_arrayed_index_src(intrin);
    nir_instr *vertex_index_instr = vertex_index_src->ssa->parent_instr;
-
-
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
 
-   /* If this is a temp-only TCS input, we don't need to use shared memory at all. */
-   if (st->tcs_temp_only_inputs & BITFIELD64_BIT(io_sem.location)) {
-      ASSERTED bool can_use_temps =
-         nir_src_is_const(*off_src) &&
-         vertex_index_instr->type == nir_instr_type_intrinsic &&
-         nir_instr_as_intrinsic(vertex_index_instr)->intrinsic == nir_intrinsic_load_invocation_id;
-
-      assert(can_use_temps);
+   /* If this is accessed via gl_InvocationIndex, don't use LDS if tcs_inputs_via_temp is also set,
+    * which indicates that VS and TCS have the same number of patch vertices and the input can be
+    * read from VGPRs.
+    */
+   if (st->tcs_inputs_via_temp & BITFIELD64_BIT(io_sem.location) &&
+       nir_src_is_const(*off_src) && /* array indexing */
+       vertex_index_instr->type == nir_instr_type_intrinsic &&
+       nir_instr_as_intrinsic(vertex_index_instr)->intrinsic == nir_intrinsic_load_invocation_id)
       return false;
-   }
 
    return true;
 }
@@ -356,8 +346,7 @@ hs_per_vertex_input_lds_offset(nir_builder *b,
    nir_def *tcs_in_current_patch_offset = nir_imul(b, rel_patch_id, tcs_in_patch_stride);
 
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(instr);
-   const unsigned mapped = ac_nir_map_io_location(io_sem.location, st->tcs_inputs_read & ~st->tcs_temp_only_inputs,
-                                                  st->map_io);
+   const unsigned mapped = ac_nir_map_io_location(io_sem.location, st->tcs_inputs_via_lds, st->map_io);
    nir_def *io_offset = ac_nir_calc_io_off(b, instr, nir_imm_int(b, 16u), 4u, mapped);
    nir_def *lds_offset = nir_iadd_nuw(b, nir_iadd_nuw(b, tcs_in_current_patch_offset, vertex_index_off), io_offset);
 
@@ -1183,12 +1172,12 @@ ac_nir_lower_ls_outputs_to_mem(nir_shader *shader,
                                uint64_t tcs_temp_only_inputs)
 {
    assert(shader->info.stage == MESA_SHADER_VERTEX);
+   assert(gfx_level >= GFX9 || !tcs_in_out_eq);
 
    lower_tess_io_state state = {
       .gfx_level = gfx_level,
-      .tcs_in_out_eq = tcs_in_out_eq,
-      .tcs_inputs_read = tcs_inputs_read,
-      .tcs_temp_only_inputs = tcs_in_out_eq ? tcs_temp_only_inputs : 0,
+      .tcs_inputs_via_temp = tcs_in_out_eq ? tcs_temp_only_inputs : 0,
+      .tcs_inputs_via_lds = tcs_inputs_read & (tcs_in_out_eq ? ~tcs_temp_only_inputs : ~0ull),
       .map_io = map,
    };
 
@@ -1205,12 +1194,12 @@ ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
                               uint64_t tcs_temp_only_inputs)
 {
    assert(shader->info.stage == MESA_SHADER_TESS_CTRL);
+   assert(gfx_level >= GFX9 || !tcs_in_out_eq);
 
    lower_tess_io_state state = {
       .gfx_level = gfx_level,
-      .tcs_inputs_read = shader->info.inputs_read,
-      .tcs_in_out_eq = tcs_in_out_eq,
-      .tcs_temp_only_inputs = tcs_in_out_eq ? tcs_temp_only_inputs : 0,
+      .tcs_inputs_via_temp = tcs_in_out_eq ? tcs_temp_only_inputs : 0,
+      .tcs_inputs_via_lds = shader->info.inputs_read & (tcs_in_out_eq ? ~tcs_temp_only_inputs : ~0ull),
       .map_io = map,
    };
 
