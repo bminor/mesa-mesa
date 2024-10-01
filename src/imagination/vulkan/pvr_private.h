@@ -402,7 +402,7 @@ struct pvr_transfer_cmd_source {
    /* In the case of a simple 1:1 copy, this setting does not affect the output
     * but will affect performance. Use clamp to edge when possible.
     */
-   /* This is of type enum PVRX(TEXSTATE_ADDRMODE). */
+   /* This is of type enum ROGUE_TEXSTATE_ADDRMODE. */
    int addr_mode;
 
    /* Source filtering method. */
@@ -610,7 +610,7 @@ struct pvr_ppp_state {
 
    struct {
       /* TODO: Can we get rid of the "control" field? */
-      struct PVRX(TA_STATE_ISPCTL) control_struct;
+      struct ROGUE_TA_STATE_ISPCTL control_struct;
       uint32_t control;
 
       uint32_t front_a;
@@ -697,7 +697,7 @@ struct pvr_cmd_buffer_state {
 
    struct pvr_ppp_state ppp_state;
 
-   struct PVRX(TA_STATE_HEADER) emit_header;
+   struct ROGUE_TA_STATE_HEADER emit_header;
 
    struct pvr_vertex_binding vertex_bindings[PVR_MAX_VERTEX_INPUT_BINDINGS];
 
@@ -915,7 +915,7 @@ struct pvr_fragment_shader_state {
    struct pvr_pipeline_stage_state stage_state;
    /* FIXME: Move this into stage_state? */
    struct pvr_stage_allocation_descriptor_state descriptor_state;
-   enum PVRX(TA_PASSTYPE) pass_type;
+   enum ROGUE_TA_PASSTYPE pass_type;
 
    struct pvr_pds_upload pds_coeff_program;
    struct pvr_pds_upload pds_fragment_program;

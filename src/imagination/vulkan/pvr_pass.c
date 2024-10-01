@@ -129,7 +129,7 @@ pvr_init_subpass_isp_userpass(struct pvr_renderpass_hwsetup *hw_setup,
 
       for (uint32_t j = 0; j < hw_render->subpass_count; j++) {
          subpasses[subpass_idx].isp_userpass =
-            (j + initial_isp_userpass) & PVRX(CR_ISP_CTL_UPASS_START_SIZE_MAX);
+            (j + initial_isp_userpass) & ROGUE_CR_ISP_CTL_UPASS_START_SIZE_MAX;
          subpass_idx++;
       }
    }

@@ -66,7 +66,7 @@ pvr_transfer_cmd_alloc(struct pvr_cmd_buffer *cmd_buffer)
    /* transfer_cmd->mapping_count is already set to zero. */
    transfer_cmd->sources[0].filter = PVR_FILTER_POINT;
    transfer_cmd->sources[0].resolve_op = PVR_RESOLVE_BLEND;
-   transfer_cmd->sources[0].addr_mode = PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_EDGE);
+   transfer_cmd->sources[0].addr_mode = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
    transfer_cmd->cmd_buffer = cmd_buffer;
 
    return transfer_cmd;
@@ -1654,7 +1654,7 @@ static VkResult pvr_clear_color_attachment_static(
    pvr_csb_pack (&texture_program.texture_dma_control[0],
                  PDSINST_DOUT_FIELDS_DOUTD_SRC1,
                  doutd_src1) {
-      doutd_src1.dest = PVRX(PDSINST_DOUTD_DEST_COMMON_STORE);
+      doutd_src1.dest = ROGUE_PDSINST_DOUTD_DEST_COMMON_STORE;
       doutd_src1.bsize = shader_info->const_shared_regs;
    }
 
@@ -1702,11 +1702,11 @@ static VkResult pvr_clear_color_attachment_static(
                  sizeinfo1) {
       sizeinfo1.pds_texturestatesize = DIV_ROUND_UP(
          clear_attachment_program->texture_program_data_size,
-         PVRX(TA_STATE_PDS_SIZEINFO1_PDS_TEXTURESTATESIZE_UNIT_SIZE));
+         ROGUE_TA_STATE_PDS_SIZEINFO1_PDS_TEXTURESTATESIZE_UNIT_SIZE);
 
       sizeinfo1.pds_tempsize =
          DIV_ROUND_UP(clear_attachment_program->texture_program_pds_temps_count,
-                      PVRX(TA_STATE_PDS_SIZEINFO1_PDS_TEMPSIZE_UNIT_SIZE));
+                      ROGUE_TA_STATE_PDS_SIZEINFO1_PDS_TEMPSIZE_UNIT_SIZE);
    }
 
    pvr_csb_pack (&pds_state[PVR_STATIC_CLEAR_PPP_PDS_TYPE_SIZEINFO2],
@@ -1714,7 +1714,7 @@ static VkResult pvr_clear_color_attachment_static(
                  sizeinfo2) {
       sizeinfo2.usc_sharedsize =
          DIV_ROUND_UP(shader_info->const_shared_regs,
-                      PVRX(TA_STATE_PDS_SIZEINFO2_USC_SHAREDSIZE_UNIT_SIZE));
+                      ROGUE_TA_STATE_PDS_SIZEINFO2_USC_SHAREDSIZE_UNIT_SIZE);
    }
 
    /* Dummy coefficient loading program. */
@@ -1737,7 +1737,7 @@ static VkResult pvr_clear_color_attachment_static(
 
    if (template_idx & VK_IMAGE_ASPECT_STENCIL_BIT) {
       /* clang-format off */
-      template.config.ispa.sref = stencil & PVRX(TA_STATE_ISPA_SREF_SIZE_MAX);
+      template.config.ispa.sref = stencil & ROGUE_TA_STATE_ISPA_SREF_SIZE_MAX;
       /* clang-format on */
    }
 
@@ -2020,7 +2020,7 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
             /* clang-format off */
             template.config.ispa.sref =
                attachment->clearValue.depthStencil.stencil &
-                  PVRX(TA_STATE_ISPA_SREF_SIZE_MAX);
+                  ROGUE_TA_STATE_ISPA_SREF_SIZE_MAX;
             /* clang-format on */
          }
 

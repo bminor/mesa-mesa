@@ -150,8 +150,8 @@ VkResult pvr_pds_fragment_program_create_and_upload(
    bool has_phase_rate_change,
    struct pvr_pds_upload *const pds_upload_out)
 {
-   const enum PVRX(PDSINST_DOUTU_SAMPLE_RATE)
-      sample_rate = pvr_pdsinst_doutu_sample_rate(msaa_mode);
+   const enum ROGUE_PDSINST_DOUTU_SAMPLE_RATE sample_rate =
+      pvr_pdsinst_doutu_sample_rate(msaa_mode);
    struct pvr_pds_kickusc_program program = { 0 };
    uint32_t staging_buffer_size;
    uint32_t *staging_buffer;
@@ -444,7 +444,7 @@ static VkResult pvr_pds_vertex_attrib_programs_create_and_upload(
    pvr_pds_setup_doutu(&input.usc_task_control,
                        0,
                        usc_temp_count,
-                       PVRX(PDSINST_DOUTU_SAMPLE_RATE_INSTANCE),
+                       ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
 
    /* Note: programs_out_ptr is a pointer to an array so this is fine. See the
@@ -715,7 +715,7 @@ static void pvr_pds_compute_program_setup(
    pvr_pds_setup_doutu(&program->usc_task_control,
                        usc_shader_dev_addr.addr,
                        usc_temps,
-                       PVRX(PDSINST_DOUTU_SAMPLE_RATE_INSTANCE),
+                       ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
 
    pvr_pds_compute_shader(program, NULL, PDS_GENERATE_SIZES, dev_info);
@@ -1302,7 +1302,7 @@ pvr_fragment_state_init(struct pvr_graphics_pipeline *gfx_pipeline,
    fragment_state->stage_state.has_side_effects = false;
    fragment_state->stage_state.empty_program = false;
 
-   fragment_state->pass_type = PVRX(TA_PASSTYPE_OPAQUE);
+   fragment_state->pass_type = ROGUE_TA_PASSTYPE_OPAQUE;
    fragment_state->entry_offset = 0;
 
    /* We can't initialize it yet since we still need to generate the PDS

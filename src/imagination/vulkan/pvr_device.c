@@ -1178,7 +1178,7 @@ uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
       max_common_size = MIN2(max_common_size, ROGUE_MAX_PIXEL_SHARED_REGISTERS);
       max_common_size =
          ROUND_DOWN_TO(max_common_size,
-                       PVRX(TA_STATE_PDS_SIZEINFO2_USC_SHAREDSIZE_UNIT_SIZE));
+                       ROGUE_TA_STATE_PDS_SIZEINFO2_USC_SHAREDSIZE_UNIT_SIZE);
 
       return max_common_size;
    }
@@ -1351,10 +1351,10 @@ VkResult pvr_pds_compute_shader_create_and_upload(
    result = pvr_gpu_upload_pds(device,
                                data_buffer,
                                program->data_size,
-                               PVRX(CDMCTRL_KERNEL1_DATA_ADDR_ALIGNMENT),
+                               ROGUE_CDMCTRL_KERNEL1_DATA_ADDR_ALIGNMENT,
                                code_buffer,
                                program->code_size / sizeof(uint32_t),
-                               PVRX(CDMCTRL_KERNEL2_CODE_ADDR_ALIGNMENT),
+                               ROGUE_CDMCTRL_KERNEL2_CODE_ADDR_ALIGNMENT,
                                cache_line_size,
                                pds_upload_out);
 
@@ -1422,7 +1422,7 @@ static VkResult pvr_pds_idfwdf_programs_create_and_upload(
    pvr_pds_setup_doutu(&program.usc_task_control,
                        usc_addr.addr,
                        temps,
-                       PVRX(PDSINST_DOUTU_SAMPLE_RATE_INSTANCE),
+                       ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
 
    pvr_pds_vertex_shader_sa(&program, NULL, PDS_GENERATE_SIZES, dev_info);
@@ -1574,10 +1574,10 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
    /* Pack state words. */
 
    pvr_csb_pack (&sampler_state[0], TEXSTATE_SAMPLER, sampler) {
-      sampler.dadjust = PVRX(TEXSTATE_DADJUST_ZERO_UINT);
-      sampler.magfilter = PVRX(TEXSTATE_FILTER_POINT);
-      sampler.addrmode_u = PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_EDGE);
-      sampler.addrmode_v = PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_EDGE);
+      sampler.dadjust = ROGUE_TEXSTATE_DADJUST_ZERO_UINT;
+      sampler.magfilter = ROGUE_TEXSTATE_FILTER_POINT;
+      sampler.addrmode_u = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
+      sampler.addrmode_v = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
    }
 
    /* clang-format off */
@@ -1718,7 +1718,7 @@ static VkResult pvr_device_init_nop_program(struct pvr_device *device)
    pvr_pds_setup_doutu(&program.usc_task_control,
                        device->nop_program.usc->dev_addr.addr,
                        0U,
-                       PVRX(PDSINST_DOUTU_SAMPLE_RATE_INSTANCE),
+                       ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                        false);
 
    pvr_pds_set_sizes_pixel_shader(&program);
@@ -1842,13 +1842,13 @@ err_release_lock:
 static void pvr_device_init_default_sampler_state(struct pvr_device *device)
 {
    pvr_csb_pack (&device->input_attachment_sampler, TEXSTATE_SAMPLER, sampler) {
-      sampler.addrmode_u = PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_EDGE);
-      sampler.addrmode_v = PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_EDGE);
-      sampler.addrmode_w = PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_EDGE);
-      sampler.dadjust = PVRX(TEXSTATE_DADJUST_ZERO_UINT);
-      sampler.magfilter = PVRX(TEXSTATE_FILTER_POINT);
-      sampler.minfilter = PVRX(TEXSTATE_FILTER_POINT);
-      sampler.anisoctl = PVRX(TEXSTATE_ANISOCTL_DISABLED);
+      sampler.addrmode_u = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
+      sampler.addrmode_v = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
+      sampler.addrmode_w = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
+      sampler.dadjust = ROGUE_TEXSTATE_DADJUST_ZERO_UINT;
+      sampler.magfilter = ROGUE_TEXSTATE_FILTER_POINT;
+      sampler.minfilter = ROGUE_TEXSTATE_FILTER_POINT;
+      sampler.anisoctl = ROGUE_TEXSTATE_ANISOCTL_DISABLED;
       sampler.non_normalized_coords = true;
    }
 }
@@ -2830,12 +2830,12 @@ pvr_framebuffer_create_ppp_state(struct pvr_device *device,
       term0.clip_right =
          DIV_ROUND_UP(
             framebuffer->width,
-            PVRX(TA_STATE_TERMINATE0_CLIP_RIGHT_BLOCK_SIZE_IN_PIXELS)) -
+            ROGUE_TA_STATE_TERMINATE0_CLIP_RIGHT_BLOCK_SIZE_IN_PIXELS) -
          1;
       term0.clip_bottom =
          DIV_ROUND_UP(
             framebuffer->height,
-            PVRX(TA_STATE_TERMINATE0_CLIP_BOTTOM_BLOCK_SIZE_IN_PIXELS)) -
+            ROGUE_TA_STATE_TERMINATE0_CLIP_BOTTOM_BLOCK_SIZE_IN_PIXELS) -
          1;
    }
 
@@ -3062,9 +3062,9 @@ pvr_sampler_get_hw_filter_from_vk(const struct pvr_device_info *dev_info,
 {
    switch (filter) {
    case VK_FILTER_NEAREST:
-      return PVRX(TEXSTATE_FILTER_POINT);
+      return ROGUE_TEXSTATE_FILTER_POINT;
    case VK_FILTER_LINEAR:
-      return PVRX(TEXSTATE_FILTER_LINEAR);
+      return ROGUE_TEXSTATE_FILTER_LINEAR;
    default:
       unreachable("Unknown filter type.");
    }
@@ -3075,15 +3075,15 @@ pvr_sampler_get_hw_addr_mode_from_vk(VkSamplerAddressMode addr_mode)
 {
    switch (addr_mode) {
    case VK_SAMPLER_ADDRESS_MODE_REPEAT:
-      return PVRX(TEXSTATE_ADDRMODE_REPEAT);
+      return ROGUE_TEXSTATE_ADDRMODE_REPEAT;
    case VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT:
-      return PVRX(TEXSTATE_ADDRMODE_FLIP);
+      return ROGUE_TEXSTATE_ADDRMODE_FLIP;
    case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE:
-      return PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_EDGE);
+      return ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
    case VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE:
-      return PVRX(TEXSTATE_ADDRMODE_FLIP_ONCE_THEN_CLAMP);
+      return ROGUE_TEXSTATE_ADDRMODE_FLIP_ONCE_THEN_CLAMP;
    case VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER:
-      return PVRX(TEXSTATE_ADDRMODE_CLAMP_TO_BORDER);
+      return ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_BORDER;
    default:
       unreachable("Invalid sampler address mode.");
    }
@@ -3160,14 +3160,14 @@ VkResult pvr_CreateSampler(VkDevice _device,
                  TEXSTATE_SAMPLER,
                  word) {
       const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-      const float lod_clamp_max = (float)PVRX(TEXSTATE_CLAMP_MAX) /
-                                  (1 << PVRX(TEXSTATE_CLAMP_FRACTIONAL_BITS));
-      const float max_dadjust = ((float)(PVRX(TEXSTATE_DADJUST_MAX_UINT) -
-                                         PVRX(TEXSTATE_DADJUST_ZERO_UINT))) /
-                                (1 << PVRX(TEXSTATE_DADJUST_FRACTIONAL_BITS));
-      const float min_dadjust = ((float)(PVRX(TEXSTATE_DADJUST_MIN_UINT) -
-                                         PVRX(TEXSTATE_DADJUST_ZERO_UINT))) /
-                                (1 << PVRX(TEXSTATE_DADJUST_FRACTIONAL_BITS));
+      const float lod_clamp_max = (float)ROGUE_TEXSTATE_CLAMP_MAX /
+                                  (1 << ROGUE_TEXSTATE_CLAMP_FRACTIONAL_BITS);
+      const float max_dadjust = ((float)(ROGUE_TEXSTATE_DADJUST_MAX_UINT -
+                                         ROGUE_TEXSTATE_DADJUST_ZERO_UINT)) /
+                                (1 << ROGUE_TEXSTATE_DADJUST_FRACTIONAL_BITS);
+      const float min_dadjust = ((float)(ROGUE_TEXSTATE_DADJUST_MIN_UINT -
+                                         ROGUE_TEXSTATE_DADJUST_ZERO_UINT)) /
+                                (1 << ROGUE_TEXSTATE_DADJUST_FRACTIONAL_BITS);
 
       word.magfilter = pvr_sampler_get_hw_filter_from_vk(dev_info, mag_filter);
       word.minfilter = pvr_sampler_get_hw_filter_from_vk(dev_info, min_filter);
@@ -3183,10 +3183,10 @@ VkResult pvr_CreateSampler(VkDevice _device,
          pvr_sampler_get_hw_addr_mode_from_vk(pCreateInfo->addressModeW);
 
       /* TODO: Figure out defines for these. */
-      if (word.addrmode_u == PVRX(TEXSTATE_ADDRMODE_FLIP))
+      if (word.addrmode_u == ROGUE_TEXSTATE_ADDRMODE_FLIP)
          sampler->descriptor.data.word3 |= 0x40000000;
 
-      if (word.addrmode_v == PVRX(TEXSTATE_ADDRMODE_FLIP))
+      if (word.addrmode_v == ROGUE_TEXSTATE_ADDRMODE_FLIP)
          sampler->descriptor.data.word3 |= 0x20000000;
 
       /* The Vulkan 1.0.205 spec says:
@@ -3195,13 +3195,13 @@ VkResult pvr_CreateSampler(VkDevice _device,
        *    VkPhysicalDeviceLimits::maxSamplerLodBias.
        */
       word.dadjust =
-         PVRX(TEXSTATE_DADJUST_ZERO_UINT) +
+         ROGUE_TEXSTATE_DADJUST_ZERO_UINT +
          util_signed_fixed(
             CLAMP(pCreateInfo->mipLodBias, min_dadjust, max_dadjust),
-            PVRX(TEXSTATE_DADJUST_FRACTIONAL_BITS));
+            ROGUE_TEXSTATE_DADJUST_FRACTIONAL_BITS);
 
       /* Anisotropy is not supported for now. */
-      word.anisoctl = PVRX(TEXSTATE_ANISOCTL_DISABLED);
+      word.anisoctl = ROGUE_TEXSTATE_ANISOCTL_DISABLED;
 
       if (PVR_HAS_QUIRK(&device->pdevice->dev_info, 51025) &&
           pCreateInfo->mipmapMode == VK_SAMPLER_MIPMAP_MODE_NEAREST) {
@@ -3219,11 +3219,11 @@ VkResult pvr_CreateSampler(VkDevice _device,
 
       min_lod = pCreateInfo->minLod + lod_rounding_bias;
       word.minlod = util_unsigned_fixed(CLAMP(min_lod, 0.0f, lod_clamp_max),
-                                        PVRX(TEXSTATE_CLAMP_FRACTIONAL_BITS));
+                                        ROGUE_TEXSTATE_CLAMP_FRACTIONAL_BITS);
 
       max_lod = pCreateInfo->maxLod + lod_rounding_bias;
       word.maxlod = util_unsigned_fixed(CLAMP(max_lod, 0.0f, lod_clamp_max),
-                                        PVRX(TEXSTATE_CLAMP_FRACTIONAL_BITS));
+                                        ROGUE_TEXSTATE_CLAMP_FRACTIONAL_BITS);
 
       word.bordercolor_index = border_color_table_index;
 
