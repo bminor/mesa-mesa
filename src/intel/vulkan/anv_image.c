@@ -3463,7 +3463,7 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
     */
    case VK_IMAGE_LAYOUT_UNDEFINED:
    case VK_IMAGE_LAYOUT_PREINITIALIZED:
-      return ISL_AUX_STATE_AUX_INVALID;
+      return isl_aux_get_initial_state(devinfo, aux_usage, false);
 
    case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: {
       assert(image->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT);
