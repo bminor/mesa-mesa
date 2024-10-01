@@ -41,6 +41,9 @@ struct queue_ctx {
    /* Current instruction end pointer */
    uint64_t *end;
 
+   /* Whether currently inside an exception handler */
+   bool in_exception_handler;
+
    /* Call stack. Depth=0 means root */
    struct {
       /* Link register to return to */
@@ -48,7 +51,7 @@ struct queue_ctx {
 
       /* End pointer, there is a return (or exit) after */
       uint64_t *end;
-   } call_stack[MAX_CALL_STACK_DEPTH];
+   } call_stack[MAX_CALL_STACK_DEPTH + 1]; /* +1 for exception handler */
    uint8_t call_stack_depth;
 
    unsigned gpu_id;
@@ -79,6 +82,9 @@ pandecode_run_compute(struct pandecode_context *ctx, FILE *fp,
    fprintf(fp, "RUN_COMPUTE%s.%s #%u\n",
            I->progress_increment ? ".progress_inc" : "", axes[I->task_axis],
            I->task_increment);
+
+   if (qctx->in_exception_handler)
+      return;
 
    ctx->indent++;
 
@@ -124,6 +130,9 @@ pandecode_run_compute_indirect(struct pandecode_context *ctx, FILE *fp,
            I->progress_increment ? ".progress_inc" : "",
            I->workgroups_per_task);
 
+   if (qctx->in_exception_handler)
+      return;
+
    ctx->indent++;
 
    unsigned reg_srt = 0 + (I->srt_select * 2);
@@ -166,6 +175,9 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
    fprintf(fp, "RUN_TILING%s", I->progress_increment ? ".progress_inc" : "");
 
    fprintf(fp, "\n");
+
+   if (qctx->in_exception_handler)
+      return;
 
    ctx->indent++;
 
@@ -254,6 +266,9 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
       fprintf(fp, " r%u", I->draw_id);
 
    fprintf(fp, "\n");
+
+   if (qctx->in_exception_handler)
+      return;
 
    ctx->indent++;
 
@@ -394,6 +409,9 @@ pandecode_run_fragment(struct pandecode_context *ctx, FILE *fp,
            tile_order[I->tile_order],
            I->progress_increment ? ".progress_inc" : "");
 
+   if (qctx->in_exception_handler)
+      return;
+
    ctx->indent++;
 
    DUMP_CL(ctx, SCISSOR, &qctx->regs[42], "Scissor\n");
@@ -412,6 +430,9 @@ pandecode_run_fullscreen(struct pandecode_context *ctx, FILE *fp,
 {
    fprintf(fp, "RUN_FULLSCREEN%s\n",
            I->progress_increment ? ".progress_inc" : "");
+
+   if (qctx->in_exception_handler)
+      return;
 
    ctx->indent++;
 
@@ -876,6 +897,12 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
 
    assert(qctx->ip < qctx->end);
 
+   /* Don't try to keep track of registers/operations inside exception handler */
+   if (qctx->in_exception_handler) {
+      assert(base.opcode != MALI_CS_OPCODE_SET_EXCEPTION_HANDLER);
+      goto no_interpret;
+   }
+
    switch (base.opcode) {
    case MALI_CS_OPCODE_MOVE: {
       pan_unpack(bytes, CS_MOVE, I);
@@ -950,6 +977,31 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       return interpret_ceu_jump(ctx, qctx, I.address, I.length);
    }
 
+   case MALI_CS_OPCODE_SET_EXCEPTION_HANDLER: {
+      pan_unpack(bytes, CS_SET_EXCEPTION_HANDLER, I);
+
+      if (!I.address) return true;
+
+      assert(qctx->call_stack_depth < MAX_CALL_STACK_DEPTH);
+
+      qctx->ip++;
+
+      /* Note: tail calls are not optimized in the hardware. */
+      assert(qctx->ip <= qctx->end);
+
+      unsigned depth = qctx->call_stack_depth++;
+
+      qctx->call_stack[depth].lr = qctx->ip;
+      qctx->call_stack[depth].end = qctx->end;
+
+      /* Exception handler can use the full frame stack depth but we don't try
+       * to keep track of the nested JUMP/CALL as we don't know what will be
+       * the registers/memory content when the handler is triggered. */
+      qctx->in_exception_handler = true;
+
+      return interpret_ceu_jump(ctx, qctx, I.address, I.length);
+   }
+
    case MALI_CS_OPCODE_JUMP: {
       pan_unpack(bytes, CS_JUMP, I);
 
@@ -972,6 +1024,8 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       break;
    }
 
+no_interpret:
+
    /* Update IP first to point to the next instruction, so call doesn't
     * require special handling (even for tail calls).
     */
@@ -987,6 +1041,7 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
 
       qctx->ip = qctx->call_stack[old_depth].lr;
       qctx->end = qctx->call_stack[old_depth].end;
+      qctx->in_exception_handler = false;
    }
 
    return true;
