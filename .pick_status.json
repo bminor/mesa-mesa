@@ -464,7 +464,7 @@
         "description": "brw/copy: Don't remove instructions w/ conditional modifier",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9e750f00c3bfb86a7f41eb21babea5bb5c32ce4c",
         "notes": null
