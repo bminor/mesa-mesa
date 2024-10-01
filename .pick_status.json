@@ -64,7 +64,7 @@
         "description": "anv: Xe2+ doesn't need the special flush for sparse",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4aa3b2d3ad73fec9d1eea7a41233a707e1d640c8",
         "notes": null

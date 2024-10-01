@@ -4210,12 +4210,18 @@ cmd_buffer_barrier(struct anv_cmd_buffer *cmd_buffer,
       bits |= ANV_PIPE_CS_STALL_BIT;
 
 #if GFX_VER < 20
-   /* Our HW implementation of the sparse feature lives in the GAM unit
-    * (interface between all the GPU caches and external memory). As a result
-    * writes to NULL bound images & buffers that should be ignored are
-    * actually still visible in the caches. The only way for us to get correct
-    * NULL bound regions to return 0s is to evict the caches to force the
-    * caches to be repopulated with 0s.
+   /* Our HW implementation of the sparse feature prior to Xe2 lives in the
+    * GAM unit (interface between all the GPU caches and external memory).
+    * As a result writes to NULL bound images & buffers that should be
+    * ignored are actually still visible in the caches. The only way for us
+    * to get correct NULL bound regions to return 0s is to evict the caches
+    * to force the caches to be repopulated with 0s.
+    *
+    * Our understanding is that Xe2 started to tag the L3 cache with some
+    * kind physical address information rather. It is therefore able to
+    * detect that a cache line in the cache is going to a null tile and so
+    * the L3 cache also has a sparse compatible behavior and we don't need
+    * to flush anymore.
     */
    if (apply_sparse_flushes)
       bits |= ANV_PIPE_FLUSH_BITS;
@@ -5484,13 +5490,13 @@ void genX(CmdEndRendering)(
 
    if (!(gfx->rendering_flags & VK_RENDERING_SUSPENDING_BIT)) {
       bool has_color_resolve = false;
-      bool has_sparse_color_resolve = false;
+      UNUSED bool has_sparse_color_resolve = false;
 
       for (uint32_t i = 0; i < gfx->color_att_count; i++) {
          if (gfx->color_att[i].resolve_mode != VK_RESOLVE_MODE_NONE) {
             has_color_resolve = true;
-            if (anv_image_is_sparse(gfx->color_att[i].iview->image))
-                  has_sparse_color_resolve = true;
+            has_sparse_color_resolve |=
+               anv_image_is_sparse(gfx->color_att[i].iview->image);
          }
       }
 
@@ -5509,12 +5515,6 @@ void genX(CmdEndRendering)(
          gfx->depth_att.resolve_mode != VK_RESOLVE_MODE_NONE;
       const bool has_stencil_resolve =
          gfx->stencil_att.resolve_mode != VK_RESOLVE_MODE_NONE;
-      const bool has_sparse_depth_resolve =
-         has_depth_resolve &&
-         anv_image_is_sparse(gfx->depth_att.iview->image);
-      const bool has_sparse_stencil_resolve =
-         has_stencil_resolve &&
-         anv_image_is_sparse(gfx->stencil_att.iview->image);
 
       if (has_depth_resolve || has_stencil_resolve) {
          /* We are about to do some MSAA resolves.  We need to flush so that
@@ -5527,6 +5527,26 @@ void genX(CmdEndRendering)(
                                  "MSAA resolve");
       }
 
+#if GFX_VER < 20
+      const bool has_sparse_depth_resolve =
+         has_depth_resolve &&
+         anv_image_is_sparse(gfx->depth_att.iview->image);
+      const bool has_sparse_stencil_resolve =
+         has_stencil_resolve &&
+         anv_image_is_sparse(gfx->stencil_att.iview->image);
+      /* Our HW implementation of the sparse feature prior to Xe2 lives in the
+       * GAM unit (interface between all the GPU caches and external memory).
+       * As a result writes to NULL bound images & buffers that should be
+       * ignored are actually still visible in the caches. The only way for us
+       * to get correct NULL bound regions to return 0s is to evict the caches
+       * to force the caches to be repopulated with 0s.
+       *
+       * Our understanding is that Xe2 started to tag the L3 cache with some
+       * kind physical address information rather. It is therefore able to
+       * detect that a cache line in the cache is going to a null tile and so
+       * the L3 cache also has a sparse compatible behavior and we don't need
+       * to flush anymore.
+       */
       if (has_sparse_color_resolve || has_sparse_depth_resolve ||
           has_sparse_stencil_resolve) {
          /* If the resolve image is sparse we need some extra bits to make
@@ -5536,6 +5556,7 @@ void genX(CmdEndRendering)(
          anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_TILE_CACHE_FLUSH_BIT,
                                    "sparse MSAA resolve");
       }
+#endif
 
       for (uint32_t i = 0; i < gfx->color_att_count; i++) {
          const struct anv_attachment *att = &gfx->color_att[i];
