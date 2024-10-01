@@ -779,7 +779,7 @@ struct si_shader_key_ge {
       unsigned same_patch_vertices:1;
 
       /* For TCS. */
-      unsigned tes_prim_mode : 3;
+      unsigned tes_prim_mode : 2;
       unsigned tes_reads_tess_factors : 1;
 
       unsigned inline_uniforms:1;
