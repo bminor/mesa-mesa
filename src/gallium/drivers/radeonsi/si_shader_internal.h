@@ -96,9 +96,6 @@ void si_add_arg_checked(struct ac_shader_args *args, enum ac_arg_regfile file, u
                         enum ac_arg_type type, struct ac_arg *arg, unsigned idx);
 void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args);
 unsigned si_get_max_workgroup_size(const struct si_shader *shader);
-struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_shader_args *args,
-                                     bool *free_nir, uint64_t tcs_vgpr_only_inputs,
-                                     ac_nir_gs_output_info *output_info);
 bool si_need_ps_prolog(const union si_shader_part_key *key);
 void si_get_ps_prolog_key(struct si_shader *shader, union si_shader_part_key *key);
 void si_get_ps_epilog_key(struct si_shader *shader, union si_shader_part_key *key);

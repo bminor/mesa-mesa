@@ -1842,8 +1842,7 @@ static unsigned si_map_io_driver_location(unsigned semantic)
    return si_shader_io_get_unique_index(semantic);
 }
 
-static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir,
-                               uint64_t tcs_vgpr_only_inputs)
+static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir)
 {
    struct si_shader_selector *sel = shader->selector;
    struct si_shader_selector *next_sel = shader->next_shader ? shader->next_shader->selector : sel;
@@ -2244,11 +2243,8 @@ bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *sha
    return shader->info.stage == MESA_SHADER_COMPUTE && shader->info.shared_size > 0 && sscreen->options.clear_lds;
 }
 
-struct nir_shader *si_get_nir_shader(struct si_shader *shader,
-                                     struct si_shader_args *args,
-                                     bool *free_nir,
-                                     uint64_t tcs_vgpr_only_inputs,
-                                     ac_nir_gs_output_info *output_info)
+static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_shader_args *args,
+                                            bool *free_nir, ac_nir_gs_output_info *output_info)
 {
    struct si_shader_selector *sel = shader->selector;
    const union si_shader_key *key = &shader->key;
@@ -2406,7 +2402,7 @@ struct nir_shader *si_get_nir_shader(struct si_shader *shader,
    if (sel->stage == MESA_SHADER_VERTEX)
       NIR_PASS(progress, nir, si_nir_lower_vs_inputs, shader, args);
 
-   progress |= si_lower_io_to_mem(shader, nir, tcs_vgpr_only_inputs);
+   progress |= si_lower_io_to_mem(shader, nir);
 
    if (is_last_vgt_stage) {
       /* Assign param export indices. */
@@ -2912,7 +2908,7 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
 
    bool free_nir;
    struct nir_shader *nir =
-      si_get_nir_shader(shader, &args, &free_nir, 0, &legacy_gs_output_info.info);
+      si_get_nir_shader(shader, &args, &free_nir, &legacy_gs_output_info.info);
 
    /* Dump NIR before doing NIR->LLVM conversion in case the
     * conversion fails. */
@@ -3644,8 +3640,7 @@ nir_shader *si_get_prev_stage_nir_shader(struct si_shader *shader,
 
    si_init_shader_args(prev_shader, args);
 
-   nir_shader *nir = si_get_nir_shader(prev_shader, args, free_nir, 0, NULL);
-
+   nir_shader *nir = si_get_nir_shader(prev_shader, args, free_nir, NULL);
    si_update_shader_binary_info(shader, nir);
 
    shader->info.uses_instanceid |=
