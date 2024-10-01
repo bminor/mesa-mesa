@@ -171,6 +171,7 @@ struct radv_physical_device {
    struct {
       unsigned data0;
       unsigned data1;
+      unsigned data2;
       unsigned cmd;
       unsigned cntl;
    } vid_dec_reg;

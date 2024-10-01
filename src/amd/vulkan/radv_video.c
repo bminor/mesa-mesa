@@ -35,6 +35,8 @@
 /* Not 100% sure this isn't too much but works */
 #define VID_DEFAULT_ALIGNMENT 256
 
+static void set_reg(struct radv_cmd_buffer *cmd_buffer, unsigned reg, uint32_t val);
+
 static bool
 radv_enable_tier2(struct radv_physical_device *pdev)
 {
@@ -119,14 +121,18 @@ radv_vcn_write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *even
    struct rvcn_sq_var sq;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
 
-   bool separate_queue = pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED;
-   if (cmd_buffer->qf == RADV_QUEUE_VIDEO_DEC && separate_queue) {
-      // TODO: decode impl
-      return;
-   }
-
    radv_cs_add_buffer(device->ws, cs, event->bo);
    uint64_t va = radv_buffer_get_va(event->bo);
+
+   bool separate_queue = pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED;
+   if (cmd_buffer->qf == RADV_QUEUE_VIDEO_DEC && separate_queue && pdev->vid_dec_reg.data2) {
+      radeon_check_space(device->ws, cmd_buffer->cs, 8);
+      set_reg(cmd_buffer, pdev->vid_dec_reg.data0, va & 0xffffffff);
+      set_reg(cmd_buffer, pdev->vid_dec_reg.data1, va >> 32);
+      set_reg(cmd_buffer, pdev->vid_dec_reg.data2, value);
+      set_reg(cmd_buffer, pdev->vid_dec_reg.cmd, RDECODE_CMD_WRITE_MEMORY << 1);
+      return;
+   }
 
    radeon_check_space(device->ws, cs, 256);
    radv_vcn_sq_header(cs, &sq, RADEON_VCN_ENGINE_TYPE_COMMON, separate_queue);
@@ -205,6 +211,7 @@ init_vcn_decoder(struct radv_physical_device *pdev)
    case VCN_2_2_0:
       pdev->vid_dec_reg.data0 = RDECODE_VCN2_GPCOM_VCPU_DATA0;
       pdev->vid_dec_reg.data1 = RDECODE_VCN2_GPCOM_VCPU_DATA1;
+      pdev->vid_dec_reg.data2 = RDECODE_VCN2_GPCOM_VCPU_DATA2;
       pdev->vid_dec_reg.cmd = RDECODE_VCN2_GPCOM_VCPU_CMD;
       pdev->vid_dec_reg.cntl = RDECODE_VCN2_ENGINE_CNTL;
       break;
@@ -218,6 +225,7 @@ init_vcn_decoder(struct radv_physical_device *pdev)
    case VCN_3_1_2:
       pdev->vid_dec_reg.data0 = RDECODE_VCN2_5_GPCOM_VCPU_DATA0;
       pdev->vid_dec_reg.data1 = RDECODE_VCN2_5_GPCOM_VCPU_DATA1;
+      pdev->vid_dec_reg.data2 = RDECODE_VCN2_5_GPCOM_VCPU_DATA2;
       pdev->vid_dec_reg.cmd = RDECODE_VCN2_5_GPCOM_VCPU_CMD;
       pdev->vid_dec_reg.cntl = RDECODE_VCN2_5_ENGINE_CNTL;
       break;
