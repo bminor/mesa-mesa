@@ -491,6 +491,14 @@ typedef struct shader_info {
          bool point_mode:1;
 
          /* Bit mask of TCS per-vertex inputs (VS outputs) that are used
+          * with a vertex index that is equal to the invocation id.
+          *
+          * Not mutually exclusive with tcs_cross_invocation_inputs_read, i.e.
+          * both input[0] and input[invocation_id] can be present.
+          */
+         uint64_t tcs_same_invocation_inputs_read;
+
+         /* Bit mask of TCS per-vertex inputs (VS outputs) that are used
           * with a vertex index that is NOT the invocation id
           */
          uint64_t tcs_cross_invocation_inputs_read;

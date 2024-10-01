@@ -2587,6 +2587,8 @@ print_shader_info(const struct shader_info *info, FILE *fp)
 
       print_nz_bool(fp, "ccw", info->tess.ccw);
       print_nz_bool(fp, "point_mode", info->tess.point_mode);
+      print_nz_x64(fp, "tcs_same_invocation_inputs_read",
+                   info->tess.tcs_same_invocation_inputs_read);
       print_nz_x64(fp, "tcs_cross_invocation_inputs_read", info->tess.tcs_cross_invocation_inputs_read);
       print_nz_x64(fp, "tcs_cross_invocation_outputs_read", info->tess.tcs_cross_invocation_outputs_read);
       break;
