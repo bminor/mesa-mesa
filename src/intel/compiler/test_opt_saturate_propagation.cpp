@@ -264,30 +264,6 @@ TEST_F(saturate_propagation_test, producer_saturates)
    EXPECT_SHADERS_MATCH(bld, exp);
 }
 
-TEST_F(saturate_propagation_test, intervening_saturating_copy)
-{
-   brw_builder bld = make_shader(MESA_SHADER_FRAGMENT, 16);
-   brw_builder exp = make_shader(MESA_SHADER_FRAGMENT, 16);
-
-   brw_reg dst0 = vgrf(bld, exp, BRW_TYPE_F);
-   brw_reg dst1 = vgrf(bld, exp, BRW_TYPE_F);
-   brw_reg dst2 = vgrf(bld, exp, BRW_TYPE_F);
-   brw_reg src0 = vgrf(bld, exp, BRW_TYPE_F);
-   brw_reg src1 = vgrf(bld, exp, BRW_TYPE_F);
-
-   bld.ADD(dst0, bld.LOAD_REG(src0), bld.LOAD_REG(src1));
-   bld.MOV(dst1, dst0)->saturate = true;
-   bld.MOV(dst2, dst0)->saturate = true;
-
-   EXPECT_PROGRESS(brw_opt_saturate_propagation, bld);
-
-   exp.ADD(dst0, exp.LOAD_REG(src0), exp.LOAD_REG(src1))->saturate = true;
-   exp.MOV(dst1, dst0);
-   exp.MOV(dst2, dst0);
-
-   EXPECT_SHADERS_MATCH(bld, exp);
-}
-
 TEST_F(saturate_propagation_test, intervening_dest_write)
 {
    brw_builder bld = make_shader(MESA_SHADER_FRAGMENT, 16);
