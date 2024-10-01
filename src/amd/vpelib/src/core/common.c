@@ -531,8 +531,6 @@ enum vpe_status vpe_check_input_support(struct vpe *vpe, const struct vpe_stream
         return VPE_STATUS_COLOR_SPACE_VALUE_NOT_SUPPORTED;
     }
 
-    // TODO: Add support
-    // adjustments
     if (surface_info->cs.primaries == VPE_PRIMARIES_BT2020 &&
         surface_info->cs.encoding == VPE_PIXEL_ENCODING_RGB && use_adj) {
         // for BT2020 + RGB input with adjustments, it is expected not working.

@@ -51,7 +51,6 @@ extern "C" {
 #define VPE_MIN_VIEWPORT_SIZE                                                                      \
     2                      // chroma viewport size is half of it, thus need to be 2 for YUV420
                            // for simplication we just use 2 for all types
-#define MAX_VPE_CMD 256    // TODO Dynamic allocation
 
 #define MAX_LINE_SIZE 1024 // without 16 pixels for the seams
 #define MAX_LINE_CNT  4

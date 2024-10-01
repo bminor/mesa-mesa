@@ -932,9 +932,6 @@ enum vpe_status vpe10_populate_cmd_info(struct vpe_priv *vpe_priv)
         tm_enabled = stream_ctx->stream.tm_params.UID != 0 || stream_ctx->stream.tm_params.enable_3dlut;
 
         for (segment_idx = 0; segment_idx < stream_ctx->num_segments; segment_idx++) {
-            if (vpe_priv->vpe_cmd_vector->num_elements >= MAX_VPE_CMD) {
-                return VPE_STATUS_CMD_OVERFLOW_ERROR;
-            }
 
             cmd_info.inputs[0].stream_idx  = stream_idx;
             cmd_info.cd                    = (uint8_t)(stream_ctx->num_segments - segment_idx - 1);
