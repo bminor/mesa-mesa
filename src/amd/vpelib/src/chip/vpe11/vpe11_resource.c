@@ -249,8 +249,8 @@ enum vpe_status vpe11_set_num_segments(struct vpe_priv *vpe_priv, struct stream_
     *max_seg_width = min(*max_seg_width, max_lb_size / scl_data->taps.v_taps);
 
     num_segs = vpe_get_num_segments(vpe_priv, src_rect, dst_rect, *max_seg_width);
-    if ((src_rect->width > (uint32_t)(vpe_priv->vpe_num_instance * VPE_MIN_VIEWPORT_SIZE)) &&
-        (num_segs % vpe_priv->vpe_num_instance != 0)) {
+    if ((src_rect->width >= (uint32_t)(vpe_priv->vpe_num_instance * VPE_MIN_VIEWPORT_SIZE)) &&
+        ((num_segs % vpe_priv->vpe_num_instance) != 0)) {
         num_segs += (vpe_priv->vpe_num_instance - (num_segs % vpe_priv->vpe_num_instance));
     }
 

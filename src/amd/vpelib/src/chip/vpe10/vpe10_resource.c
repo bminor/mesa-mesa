@@ -561,6 +561,43 @@ void vpe10_calculate_dst_viewport_and_active(
     data->v_active = data->dst_viewport.height;
 }
 
+
+static uint16_t get_max_gap_num(
+    struct vpe_priv* vpe_priv, const struct vpe_build_param* params, uint32_t max_seg_width)
+{
+    const uint16_t num_multiple = vpe_priv->vpe_num_instance ? vpe_priv->vpe_num_instance : 1;
+    bool is_color_fill = (vpe_priv->num_streams == 1) && (vpe_priv->stream_ctx[0].stream_type == VPE_STREAM_TYPE_BG_GEN);
+
+    uint16_t max_gaps =
+        (uint16_t)(max((params->target_rect.width + max_seg_width - 1) / max_seg_width, 1));
+
+    /* If the stream width is less than max_seg_width - 1024, and it
+    * lies inside a max_seg_width window of the background, vpe needs
+    * an extra bg segment to store that.
+       1    2  3  4   5
+    |....|....|.**.|....|
+    |....|....|.**.|....|
+    |....|....|.**.|....|
+
+     (*: stream
+      .: background
+      |: 1k separator)
+
+    */
+
+    if (!is_color_fill) {
+        // full colorfillOnly case, no need to + 1 as the gap won't be seaprated by stream dst
+        // for non-colorfillOnly case, +1 for worst case the gap is separated by stream dst
+        max_gaps += 1;
+    }
+
+    if (max_gaps % num_multiple > 0) {
+        max_gaps += num_multiple - (max_gaps % num_multiple);
+    }
+
+    return max_gaps;
+}
+
 enum vpe_status vpe10_calculate_segments(
     struct vpe_priv *vpe_priv, const struct vpe_build_param *params)
 {
@@ -584,6 +621,9 @@ enum vpe_status vpe10_calculate_segments(
         stream_ctx = &vpe_priv->stream_ctx[stream_idx];
         src_rect   = &stream_ctx->stream.scaling_info.src_rect;
         dst_rect   = &stream_ctx->stream.scaling_info.dst_rect;
+
+        if (stream_ctx->stream_type == VPE_STREAM_TYPE_BG_GEN)
+            continue;
 
         if (src_rect->width < VPE_MIN_VIEWPORT_SIZE || src_rect->height < VPE_MIN_VIEWPORT_SIZE ||
             dst_rect->width < VPE_MIN_VIEWPORT_SIZE || dst_rect->height < VPE_MIN_VIEWPORT_SIZE) {
@@ -643,27 +683,16 @@ enum vpe_status vpe10_calculate_segments(
         }
     }
 
-    /* If the stream width is less than max_seg_width - 1024, and it
-    * lies inside a max_seg_width window of the background, vpe needs
-    * an extra bg segment to store that.
-       1    2  3  4   5
-    |....|....|.**.|....|
-    |....|....|.**.|....|
-    |....|....|.**.|....|
-
-     (*: stream
-      .: background
-      |: 1k separator)
-
-    */
     max_seg_width = vpe_priv->pub.caps->plane_caps.max_viewport_width;
-    max_gaps =
-        (uint16_t)(max((params->target_rect.width + max_seg_width - 1) / max_seg_width, 1) + 1);
+ 
+    max_gaps = get_max_gap_num(vpe_priv, params, max_seg_width);
+
     gaps = vpe_zalloc(sizeof(struct vpe_rect) * max_gaps);
     if (!gaps)
         return VPE_STATUS_NO_MEMORY;
 
     gaps_cnt = vpe_priv->resource.find_bg_gaps(vpe_priv, &(params->target_rect), gaps, max_gaps);
+
     if (gaps_cnt > 0)
         vpe_priv->resource.create_bg_segments(vpe_priv, gaps, gaps_cnt, VPE_CMD_OPS_BG);
 
@@ -1084,7 +1113,7 @@ void vpe10_create_stream_ops_config(struct vpe_priv *vpe_priv, uint32_t pipe_idx
 #define VPE10_GENERAL_VPE_DESC_SIZE                144   // 4 * (4 + (2 * MAX_NUM_SAVED_CONFIG))
 #define VPE10_GENERAL_EMB_USAGE_FRAME_SHARED       6000  // currently max 4804 is recorded
 #define VPE10_GENERAL_EMB_USAGE_3DLUT_FRAME_SHARED 40960 // currently max 35192 is recorded
-#define VPE10_GENERAL_EMB_USAGE_BG_SHARED          2400 // currently max 1772 + 92 + 72 = 1936 is recorded
+#define VPE10_GENERAL_EMB_USAGE_BG_SHARED          3600 // currently max 52 + 128 + 1356 +1020 +92 + 60 + 116 = 2824 is recorded
 #define VPE10_GENERAL_EMB_USAGE_SEG_NON_SHARED                                                     \
     240 // segment specific config + plane descripor size. currently max 92 + 72 = 164 is recorded.
 

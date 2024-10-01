@@ -133,8 +133,8 @@ static void verify_collaboration_mode(struct vpe_priv *vpe_priv)
     if (vpe_priv->pub.level == VPE_IP_LEVEL_1_1) {
         if (vpe_priv->collaboration_mode == true && vpe_priv->collaborate_sync_index == 0) {
             srand((unsigned int)time(NULL)); // Initialization, should only be called once.
-            uint32_t randnum                 = (uint32_t)rand();
-            randnum                          = randnum & 0x0000f000;
+            uint32_t randnum                 = (uint32_t)rand() % 15;
+            randnum                          = randnum << 12;
             vpe_priv->collaborate_sync_index = (int32_t)randnum;
         }
     } else if (vpe_priv->pub.level == VPE_IP_LEVEL_1_0) {
@@ -789,16 +789,20 @@ enum vpe_status vpe_build_commands(
             status = builder->build_vpe_cmd(vpe_priv, &curr_bufs, cmd_idx);
             if (status != VPE_STATUS_OK) {
                 vpe_log("failed in building vpe cmd %d\n", (int)status);
+                break;
             }
 
             cmd_info = vpe_vector_get(vpe_priv->vpe_cmd_vector, cmd_idx);
-            if (cmd_info == NULL)
-                return VPE_STATUS_ERROR;
+            if (cmd_info == NULL) {
+                status = VPE_STATUS_ERROR;
+                break;
+            }
 
             if ((vpe_priv->collaboration_mode == true) && (cmd_info->insert_end_csync == true)) {
                 status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
                 if (status != VPE_STATUS_OK) {
                     vpe_log("failed in building collaborate sync cmd %d\n", (int)status);
+                    break;
                 }
 
                 // Add next collaborate sync start command when this vpe_cmd isn't the final one.
@@ -806,11 +810,12 @@ enum vpe_status vpe_build_commands(
                     status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
                     if (status != VPE_STATUS_OK) {
                         vpe_log("failed in building collaborate sync cmd %d\n", (int)status);
+                        break;
                     }
                 }
             }
         }
-        if (vpe_priv->collaboration_mode == true) {
+        if ((status == VPE_STATUS_OK) && (vpe_priv->collaboration_mode == true)) {
             status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
             if (status != VPE_STATUS_OK) {
                 vpe_log("failed in building collaborate sync cmd %d\n", (int)status);
