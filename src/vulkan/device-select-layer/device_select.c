@@ -35,6 +35,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "util/macros.h"
 #include "device_select.h"
 
 static bool
@@ -52,7 +53,7 @@ fill_drm_device_info(const struct instance_info *info, struct device_pci_info *d
       properties.pNext = &ext_pci_properties;
    device_select_get_properties(info, device, &properties);
 
-   drm_device->cpu_device = properties.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU;
+   drm_device->device_type = properties.properties.deviceType;
    drm_device->dev_info.vendor_id = properties.properties.vendorID;
    drm_device->dev_info.device_id = properties.properties.deviceID;
    if (info->has_vulkan11 && info->has_pci_bus) {
@@ -62,7 +63,7 @@ fill_drm_device_info(const struct instance_info *info, struct device_pci_info *d
       drm_device->bus_info.dev = ext_pci_properties.pciDevice;
       drm_device->bus_info.func = ext_pci_properties.pciFunction;
    }
-   return drm_device->cpu_device;
+   return drm_device->device_type == VK_PHYSICAL_DEVICE_TYPE_CPU;
 }
 
 static int
@@ -81,6 +82,36 @@ device_select_find_explicit_default(struct device_pci_info *pci_infos, uint32_t 
          default_idx = i;
    }
    return default_idx;
+}
+
+static int
+device_select_find_typed_default(struct device_pci_info *pci_infos, uint32_t device_count,
+                                 const char *selection)
+{
+   static struct {
+      const char *name;
+      VkPhysicalDeviceType type;
+   } names[] = {
+      {"other", VK_PHYSICAL_DEVICE_TYPE_OTHER},
+      {"integrated", VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU},
+      {"igpu", VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU},
+      {"discrete", VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU},
+      {"dgpu", VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU},
+      {"virtual", VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU},
+      {"vgpu", VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU},
+      {"cpu", VK_PHYSICAL_DEVICE_TYPE_CPU},
+   };
+
+   for (unsigned i = 0; i < ARRAY_SIZE(names); ++i) {
+      if (strncasecmp(names[i].name, selection, strlen(names[i].name)) == 0) {
+         for (unsigned j = 0; j < device_count; ++j) {
+            if (pci_infos[j].device_type == names[i].type)
+               return j;
+         }
+      }
+   }
+
+   return -1;
 }
 
 static int
@@ -198,7 +229,7 @@ device_select_find_non_cpu(struct device_pci_info *pci_infos, uint32_t device_co
 
    /* pick first GPU device */
    for (unsigned i = 0; i < device_count; ++i) {
-      if (!pci_infos[i].cpu_device) {
+      if (pci_infos[i].device_type != VK_PHYSICAL_DEVICE_TYPE_CPU) {
          default_idx = i;
          break;
       }
@@ -213,7 +244,7 @@ find_non_cpu_skip(struct device_pci_info *pci_infos, uint32_t device_count, int 
    for (unsigned i = 0; i < device_count; ++i) {
       if (i == skip_idx)
          continue;
-      if (pci_infos[i].cpu_device)
+      if (pci_infos[i].device_type == VK_PHYSICAL_DEVICE_TYPE_CPU)
          continue;
       skip_count--;
       if (skip_count > 0)
@@ -238,8 +269,25 @@ get_selected(const struct instance_info *info, uint32_t count, struct device_pci
    int default_idx = -1;
 
    if (info->selection)
+      default_idx = device_select_find_typed_default(pci_infos, count, info->selection);
+   if (default_idx != -1) {
+      if (info->debug)
+         fprintf(stderr,
+                 "device-select: device_select_find_typed_default for MESA_VK_DEVICE_SELECT "
+                 "selected %i\n",
+                 default_idx);
+      *expose_only_one_dev = ends_with_exclamation_mark(info->selection);
+      return default_idx;
+   }
+
+   if (info->selection)
       default_idx = device_select_find_explicit_default(pci_infos, count, info->selection);
    if (default_idx != -1) {
+      if (info->debug)
+         fprintf(stderr,
+                 "device-select: device_select_find_explicit_default for MESA_VK_DEVICE_SELECT "
+                 "selected %i\n",
+                 default_idx);
       *expose_only_one_dev = ends_with_exclamation_mark(info->selection);
       return default_idx;
    }
@@ -280,7 +328,7 @@ get_default(const struct instance_info *info, uint32_t count, struct device_pci_
 
    bool has_cpu = false;
    for (unsigned i = 0; i < count; ++i)
-      has_cpu |= pci_infos[i].cpu_device;
+      has_cpu |= pci_infos[i].device_type == VK_PHYSICAL_DEVICE_TYPE_CPU;
 
    if (default_idx == -1 && info->has_wayland) {
       default_idx = device_select_find_wayland_pci_default(pci_infos, count);
