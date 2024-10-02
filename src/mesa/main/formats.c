@@ -980,6 +980,7 @@ _mesa_uncompressed_format_to_type(mesa_format format)
    case MESA_FORMAT_I_UNORM16:
    case MESA_FORMAT_YCBCR:
    case MESA_FORMAT_YCBCR_REV:
+   case MESA_FORMAT_NV12:
    case MESA_FORMAT_RG_RB_UNORM8:
    case MESA_FORMAT_RB_RG_UNORM8:
    case MESA_FORMAT_GR_BR_UNORM8:
