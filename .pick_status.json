@@ -1764,7 +1764,7 @@
         "description": "intel/hang_replay: remove EXEC_OBJECT_WRITE",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bab52763f45860fba90116e553df5cd8a510282f",
         "notes": null
