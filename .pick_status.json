@@ -1774,7 +1774,7 @@
         "description": "intel/hang_replay: fix the typo in the ioctl call",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a9f1151de270c5270a9e0280924b70b39d4692e1",
         "notes": null
