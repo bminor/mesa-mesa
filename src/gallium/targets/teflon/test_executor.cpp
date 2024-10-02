@@ -295,10 +295,12 @@ run_model(TfLiteModel *model, enum executor executor, std::vector<std::vector<ui
       TfLiteTensor *input_tensor = TfLiteInterpreterGetInputTensor(interpreter, i);
 
       if (generate_random_input) {
-         int shape[4] = {input_tensor->dims->data[0],
-                         input_tensor->dims->data[1],
-                         input_tensor->dims->data[2],
-                         input_tensor->dims->data[3]};
+         std::vector<size_t> shape;
+
+         shape.resize(input_tensor->dims->size);
+         for (int j = 0; j < input_tensor->dims->size; j++)
+            shape[j] = input_tensor->dims->data[j];
+
          xt::xarray<uint8_t> a = xt::random::randint<uint8_t>(shape, 0, 255);
          input.push_back({a.begin(), a.end()});
       }
