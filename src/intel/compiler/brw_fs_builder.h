@@ -477,6 +477,17 @@ namespace brw {
          const brw_reg &src2) const                                     \
       {                                                                 \
          return emit(BRW_OPCODE_##op, dst, src0, src1, src2);           \
+      }                                                                 \
+      brw_reg                                                           \
+      op(const brw_reg &src0, const brw_reg &src1, const brw_reg &src2, \
+         fs_inst **out = NULL) const                                    \
+      {                                                                 \
+         enum brw_reg_type inferred_dst_type =                          \
+            brw_type_larger_of(brw_type_larger_of(src0.type, src1.type),\
+                               src2.type);                              \
+         fs_inst *inst = op(vgrf(inferred_dst_type), src0, src1, src2); \
+         if (out) *out = inst;                                          \
+         return inst->dst;                                              \
       }
 
       ALU3(ADD3)
