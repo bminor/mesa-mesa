@@ -67,6 +67,7 @@ struct panfrost_csf_context {
 struct panfrost_batch;
 struct panfrost_context;
 struct pan_fb_info;
+struct pan_tls_info;
 struct pipe_draw_info;
 struct pipe_grid_info;
 struct pipe_draw_start_count_bias;
@@ -79,6 +80,8 @@ void GENX(csf_cleanup_batch)(struct panfrost_batch *batch);
 int GENX(csf_submit_batch)(struct panfrost_batch *batch);
 
 void GENX(csf_preload_fb)(struct panfrost_batch *batch, struct pan_fb_info *fb);
+void GENX(csf_emit_fbds)(struct panfrost_batch *batch, struct pan_fb_info *fb,
+                         struct pan_tls_info *tls);
 void GENX(csf_emit_fragment_job)(struct panfrost_batch *batch,
                                  const struct pan_fb_info *pfb);
 void GENX(csf_emit_batch_end)(struct panfrost_batch *batch);

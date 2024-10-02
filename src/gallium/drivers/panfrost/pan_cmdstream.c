@@ -2605,8 +2605,7 @@ emit_fbd(struct panfrost_batch *batch, struct pan_fb_info *fb)
       panfrost_sample_positions_offset(pan_sample_pattern(fb->nr_samples));
 #endif
 
-   batch->framebuffer.gpu |=
-      GENX(pan_emit_fbd)(fb, 0, &tls, &batch->tiler_ctx, batch->framebuffer.cpu);
+   JOBX(emit_fbds)(batch, fb, &tls);
 }
 
 /* Mark a surface as written */

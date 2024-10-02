@@ -254,6 +254,14 @@ GENX(jm_preload_fb)(struct panfrost_batch *batch, struct pan_fb_info *fb)
 }
 
 void
+GENX(jm_emit_fbds)(struct panfrost_batch *batch, struct pan_fb_info *fb,
+                   struct pan_tls_info *tls)
+{
+   batch->framebuffer.gpu |= GENX(pan_emit_fbd)(
+      fb, 0, tls, &batch->tiler_ctx, batch->framebuffer.cpu);
+}
+
+void
 GENX(jm_emit_fragment_job)(struct panfrost_batch *batch,
                            const struct pan_fb_info *pfb)
 {
