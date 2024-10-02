@@ -28,10 +28,33 @@
 #include "compiler/shader_enums.h"
 
 #include "pan_bo.h"
+#include "pan_desc.h"
 #include "pan_mempool.h"
 
 struct cs_builder;
 struct cs_load_store_tracker;
+
+enum pan_rendering_pass {
+   PAN_INCREMENTAL_RENDERING_FIRST_PASS,
+   PAN_INCREMENTAL_RENDERING_MIDDLE_PASS,
+   PAN_INCREMENTAL_RENDERING_LAST_PASS,
+   PAN_INCREMENTAL_RENDERING_PASS_COUNT
+};
+
+struct pan_csf_tiler_oom_ctx {
+   /* Number of times the OOM exception handler was called */
+   uint32_t counter;
+
+   /* Alternative framebuffer descriptors for incremental rendering */
+   struct panfrost_ptr fbds[PAN_INCREMENTAL_RENDERING_PASS_COUNT];
+
+   /* Bounding Box (Register 42 and 43) */
+   uint32_t bbox_min;
+   uint32_t bbox_max;
+
+   /* Tiler descriptor address */
+   mali_ptr tiler_desc;
+} PACKED;
 
 struct panfrost_csf_batch {
    /* CS related fields. */
@@ -49,6 +72,8 @@ struct panfrost_csf_batch {
 
    /* Pool used to allocate CS chunks. */
    struct panfrost_pool cs_chunk_pool;
+
+   struct panfrost_ptr tiler_oom_ctx;
 };
 
 struct panfrost_csf_context {
@@ -62,6 +87,12 @@ struct panfrost_csf_context {
 
    /* Temporary geometry buffer. Used as a FIFO by the tiler. */
    struct panfrost_bo *tmp_geom_bo;
+
+   struct {
+      struct panfrost_bo *cs_bo;
+      struct panfrost_bo *save_bo;
+      uint32_t length;
+   } tiler_oom_handler;
 };
 
 #if defined(PAN_ARCH) && PAN_ARCH >= 10
