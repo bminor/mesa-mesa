@@ -407,7 +407,7 @@ TEST_P(MobileNetV1Param, Op)
 {
    std::ostringstream file_path;
    assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/mb" << GetParam() << ".tflite";
+   file_path << getenv("TEFLON_TEST_DATA") << "/mb-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
 
    test_model_file(file_path.str(), MODEL_TOLERANCE);
 }
@@ -417,16 +417,18 @@ MobileNetV1TestCaseName(
    const testing::TestParamInfo<int> &info)
 {
    std::string name = "";
+   std::string param = std::to_string(info.param);
 
    name += "mb";
-   name += std::to_string(info.param);
+   name += std::string(3 - param.length(), '0');
+   name += param;
 
    return name;
 }
 
 INSTANTIATE_TEST_SUITE_P(
    , MobileNetV1Param,
-   ::testing::Range(0, 28),
+   ::testing::Range(0, 31),
    MobileNetV1TestCaseName);
 
 #endif
@@ -450,7 +452,7 @@ TEST_P(MobileDetParam, Op)
 {
    std::ostringstream file_path;
    assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/mobiledet" << GetParam() << ".tflite";
+   file_path << getenv("TEFLON_TEST_DATA") << "/mobiledet-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
 
    test_model_file(file_path.str(), MODEL_TOLERANCE);
 }
@@ -460,16 +462,18 @@ MobileDetTestCaseName(
    const testing::TestParamInfo<int> &info)
 {
    std::string name = "";
+   std::string param = std::to_string(info.param);
 
    name += "mobiledet";
-   name += std::to_string(info.param);
+   name += std::string(3 - param.length(), '0');
+   name += param;
 
    return name;
 }
 
 INSTANTIATE_TEST_SUITE_P(
    , MobileDetParam,
-   ::testing::Range(0, 121),
+   ::testing::Range(0, 124),
    MobileDetTestCaseName);
 
 #endif
@@ -493,7 +497,7 @@ TEST_P(YoloXParam, Op)
 {
    std::ostringstream file_path;
    assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/yolox-" << GetParam() << ".tflite";
+   file_path << getenv("TEFLON_TEST_DATA") << "/yolox-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
 
    test_model_file(file_path.str(), MODEL_TOLERANCE);
 }
@@ -503,9 +507,11 @@ YoloXTestCaseName(
    const testing::TestParamInfo<int> &info)
 {
    std::string name = "";
+   std::string param = std::to_string(info.param);
 
    name += "yolox";
-   name += std::to_string(info.param);
+   name += std::string(3 - param.length(), '0');
+   name += param;
 
    return name;
 }
