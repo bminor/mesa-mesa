@@ -334,7 +334,7 @@
         "description": "intel/brw: Use whole 512-bit registers in constant combining on Xe2",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
