@@ -418,7 +418,7 @@ TEST_F(saturate_propagation_test, mad_imm_float_neg_mov_sat)
     * sources. We want to test specifically that case.
     */
    fs_inst *mad = bld.MAD(dst0, src2, src2, src2);
-   mad->src[0]= src0;
+   mad->src[0] = src0;
    mad->src[1] = src1;
    dst0.negate = true;
    set_saturate(true, bld.MOV(dst1, dst0));
@@ -688,7 +688,7 @@ TEST_F(saturate_propagation_test, intervening_dest_write)
    EXPECT_EQ(BRW_OPCODE_ADD, instruction(block0, 0)->opcode);
    EXPECT_FALSE(instruction(block0, 0)->saturate);
    EXPECT_EQ(SHADER_OPCODE_TEX_LOGICAL, instruction(block0, 1)->opcode);
-   EXPECT_FALSE(instruction(block0, 0)->saturate);
+   EXPECT_FALSE(instruction(block0, 1)->saturate);
    EXPECT_EQ(BRW_OPCODE_MOV, instruction(block0, 2)->opcode);
    EXPECT_TRUE(instruction(block0, 2)->saturate);
 }
@@ -815,8 +815,8 @@ TEST_F(saturate_propagation_test, offset_source_barrier)
    /* = Before =
     *
     * 0: add(16)       dst0  src0   src1
-    * 0: add(1)        dst1  dst0+8 1.0f
-    * 1: mov.sat(16)   dst2  dst0
+    * 1: add(1)        dst1  dst0+8 1.0f
+    * 2: mov.sat(16)   dst2  dst0
     *
     * = After =
     * (no changes)
