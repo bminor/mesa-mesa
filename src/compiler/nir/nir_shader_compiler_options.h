@@ -712,6 +712,11 @@ typedef struct nir_shader_compiler_options {
    uint8_t support_indirect_inputs;
    uint8_t support_indirect_outputs;
 
+   /**
+    * Lower fmulz to `min(abs(a), abs(b)) == 0.0 ? 0.0 : a * b`.
+    */
+   bool lower_fmulz_with_abs_min;
+
    /** store the variable offset into the instrinsic range_base instead
     *  of adding it to the image index.
     */

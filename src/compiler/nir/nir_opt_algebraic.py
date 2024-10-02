@@ -3954,6 +3954,14 @@ for op in ['ffma', 'ffmaz']:
         (('bcsel', a, (op, b, c, d), (op + '(is_used_once)', b, e, d)), (op, b, ('bcsel', a, c, e), d)),
     ]
 
+# Lower fmulz using min(abs(a), abs(b))==0.0
+late_optimizations += [
+   (('fmulz@32', a, b),
+    ('bcsel', ('feq', ('fmin', ('fabs', a), ('fabs', b)), 0.0), 0.0, ('fmul', a, b)), 'options->lower_fmulz_with_abs_min'),
+   (('ffmaz@32', a, b, c),
+    ('bcsel', ('feq', ('fmin', ('fabs', a), ('fabs', b)), 0.0), c, ('ffma@32', a, b, c)), 'options->lower_fmulz_with_abs_min')
+]
+
 # mediump: If an opcode is surrounded by conversions, remove the conversions.
 # The rationale is that type conversions + the low precision opcode are more
 # expensive that the same arithmetic opcode at higher precision.

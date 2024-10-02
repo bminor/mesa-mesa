@@ -113,6 +113,12 @@ static const nir_shader_compiler_options ir3_base_options = {
    .lower_uniforms_to_ubo = true,
    .max_unroll_iterations = 32,
 
+   /* Not actually supported but we want fmulz to be produced and then be
+    * lowered with the abs min pattern since we have free abs on min.
+    */
+   .has_fmulz = true,
+   .lower_fmulz_with_abs_min = true,
+
    .lower_cs_local_index_to_id = true,
    .lower_wpos_pntc = true,
 
