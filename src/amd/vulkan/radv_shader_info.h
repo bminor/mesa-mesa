@@ -118,7 +118,8 @@ struct radv_shader_info {
       bool as_es;
       bool as_ls;
       bool tcs_in_out_eq;
-      uint64_t tcs_temp_only_input_mask;
+      uint64_t tcs_inputs_via_temp;
+      uint64_t tcs_inputs_via_lds;
       uint8_t num_linked_outputs;
       bool needs_base_instance;
       bool use_per_attribute_vb_descs;
@@ -128,7 +129,6 @@ struct radv_shader_info {
       bool dynamic_inputs;
       bool dynamic_num_verts_per_prim;
       uint32_t num_outputs; /* For NGG streamout only */
-      uint64_t hs_inputs_read; /* Mask of HS inputs read (only used by linked LS) */
    } vs;
    struct {
       uint8_t output_usage_mask[VARYING_SLOT_VAR31 + 1];

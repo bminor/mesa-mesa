@@ -115,7 +115,7 @@ struct isel_context {
    Temp ttmp8;
 
    /* tessellation information */
-   uint64_t tcs_temp_only_inputs;
+   bool any_tcs_inputs_via_lds = false;
    bool tcs_in_out_eq = false;
 
    /* Fragment color output information */

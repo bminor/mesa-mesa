@@ -107,7 +107,7 @@ struct aco_shader_info {
    struct ac_arg epilog_pc; /* Vulkan only */
    struct {
       bool tcs_in_out_eq;
-      uint64_t tcs_temp_only_input_mask;
+      bool any_tcs_inputs_via_lds;
       bool has_prolog;
    } vs;
    struct {

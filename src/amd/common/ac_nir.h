@@ -81,15 +81,16 @@ ac_nir_lower_ls_outputs_to_mem(nir_shader *ls,
                                ac_nir_map_io_driver_location map,
                                enum amd_gfx_level gfx_level,
                                bool tcs_in_out_eq,
-                               uint64_t tcs_inputs_read,
-                               uint64_t tcs_temp_only_inputs);
+                               uint64_t tcs_inputs_via_temp,
+                               uint64_t tcs_inputs_via_lds);
 
 void
 ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
                               ac_nir_map_io_driver_location map,
                               enum amd_gfx_level gfx_level,
                               bool tcs_in_out_eq,
-                              uint64_t tcs_temp_only_inputs);
+                              uint64_t tcs_inputs_via_temp,
+                              uint64_t tcs_inputs_via_lds);
 
 void
 ac_nir_lower_hs_outputs_to_mem(nir_shader *shader,

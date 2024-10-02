@@ -4661,11 +4661,11 @@ unsigned si_shader_lshs_vertex_stride(struct si_shader *ls)
       assert(tcs->selector->screen->info.gfx_level >= GFX9);
 
       if (tcs->is_monolithic) {
-         uint64_t lds_inputs_read = tcs->selector->info.base.inputs_read;
+         uint64_t lds_inputs_read = tcs->selector->info.tcs_inputs_via_lds;
 
-         /* Don't allocate LDS for inputs passed via VGPRs. */
-         if (tcs->key.ge.opt.same_patch_vertices)
-            lds_inputs_read &= ~tcs->selector->info.tcs_vgpr_only_inputs;
+         /* If the TCS in/out number of vertices is different, all inputs are passed via LDS. */
+         if (!tcs->key.ge.opt.same_patch_vertices)
+            lds_inputs_read |= tcs->selector->info.tcs_inputs_via_temp;
 
          /* NIR lowering passes pack LS outputs/HS inputs if the usage masks of both are known. */
          num_slots = util_bitcount64(lds_inputs_read);

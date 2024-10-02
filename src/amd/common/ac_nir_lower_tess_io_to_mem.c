@@ -1168,18 +1168,23 @@ ac_nir_lower_ls_outputs_to_mem(nir_shader *shader,
                                ac_nir_map_io_driver_location map,
                                enum amd_gfx_level gfx_level,
                                bool tcs_in_out_eq,
-                               uint64_t tcs_inputs_read,
-                               uint64_t tcs_temp_only_inputs)
+                               uint64_t tcs_inputs_via_temp,
+                               uint64_t tcs_inputs_via_lds)
 {
    assert(shader->info.stage == MESA_SHADER_VERTEX);
    assert(gfx_level >= GFX9 || !tcs_in_out_eq);
 
    lower_tess_io_state state = {
       .gfx_level = gfx_level,
-      .tcs_inputs_via_temp = tcs_in_out_eq ? tcs_temp_only_inputs : 0,
-      .tcs_inputs_via_lds = tcs_inputs_read & (tcs_in_out_eq ? ~tcs_temp_only_inputs : ~0ull),
       .map_io = map,
    };
+
+   if (tcs_in_out_eq) {
+      state.tcs_inputs_via_temp = tcs_inputs_via_temp;
+      state.tcs_inputs_via_lds = tcs_inputs_via_lds;
+   } else {
+      state.tcs_inputs_via_lds = tcs_inputs_via_lds | tcs_inputs_via_temp;
+   }
 
    nir_shader_intrinsics_pass(shader, lower_ls_output_store,
                                 nir_metadata_control_flow,
@@ -1191,17 +1196,23 @@ ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
                               ac_nir_map_io_driver_location map,
                               enum amd_gfx_level gfx_level,
                               bool tcs_in_out_eq,
-                              uint64_t tcs_temp_only_inputs)
+                              uint64_t tcs_inputs_via_temp,
+                              uint64_t tcs_inputs_via_lds)
 {
    assert(shader->info.stage == MESA_SHADER_TESS_CTRL);
    assert(gfx_level >= GFX9 || !tcs_in_out_eq);
 
    lower_tess_io_state state = {
       .gfx_level = gfx_level,
-      .tcs_inputs_via_temp = tcs_in_out_eq ? tcs_temp_only_inputs : 0,
-      .tcs_inputs_via_lds = shader->info.inputs_read & (tcs_in_out_eq ? ~tcs_temp_only_inputs : ~0ull),
       .map_io = map,
    };
+
+   if (tcs_in_out_eq) {
+      state.tcs_inputs_via_temp = tcs_inputs_via_temp;
+      state.tcs_inputs_via_lds = tcs_inputs_via_lds;
+   } else {
+      state.tcs_inputs_via_lds = shader->info.inputs_read;
+   }
 
    nir_shader_lower_instructions(shader,
                                  filter_load_tcs_per_vertex_input,

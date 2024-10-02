@@ -228,7 +228,7 @@ void
 setup_tcs_info(isel_context* ctx)
 {
    ctx->tcs_in_out_eq = ctx->program->info.vs.tcs_in_out_eq;
-   ctx->tcs_temp_only_inputs = ctx->program->info.vs.tcs_temp_only_input_mask;
+   ctx->any_tcs_inputs_via_lds = ctx->program->info.vs.any_tcs_inputs_via_lds;
 }
 
 void

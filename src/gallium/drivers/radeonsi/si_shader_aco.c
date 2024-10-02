@@ -87,7 +87,9 @@ si_fill_aco_shader_info(struct si_shader *shader, struct aco_shader_info *info,
    switch (stage) {
    case MESA_SHADER_TESS_CTRL:
       info->vs.tcs_in_out_eq = key->ge.opt.same_patch_vertices;
-      info->vs.tcs_temp_only_input_mask = sel->info.tcs_vgpr_only_inputs;
+      info->vs.any_tcs_inputs_via_lds = sel->info.tcs_inputs_via_lds ||
+                                        (!shader->key.ge.opt.same_patch_vertices &&
+                                         sel->info.tcs_inputs_via_temp);
       info->tcs.tcs_offchip_layout = args->tcs_offchip_layout;
       break;
    case MESA_SHADER_FRAGMENT:

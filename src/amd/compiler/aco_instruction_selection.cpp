@@ -11930,7 +11930,7 @@ select_program_merged(isel_context& ctx, const unsigned shader_count, nir_shader
 
       /* Skip s_barrier from TCS when VS outputs are not stored in the LDS. */
       const bool tcs_skip_barrier =
-         ctx.stage == vertex_tess_control_hs && ctx.tcs_temp_only_inputs == nir->info.inputs_read;
+         ctx.stage == vertex_tess_control_hs && !ctx.any_tcs_inputs_via_lds;
 
       /* A barrier is usually needed at the beginning of the second shader, with exceptions. */
       const bool need_barrier = i != 0 && !ngg_gs && !tcs_skip_barrier;

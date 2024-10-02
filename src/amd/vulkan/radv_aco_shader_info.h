@@ -34,11 +34,11 @@ radv_aco_convert_shader_info(struct aco_shader_info *aco_info, const struct radv
    ASSIGN_FIELD(ps.has_epilog);
    ASSIGN_FIELD(merged_shader_compiled_separately);
    ASSIGN_FIELD(vs.tcs_in_out_eq);
-   ASSIGN_FIELD(vs.tcs_temp_only_input_mask);
    ASSIGN_FIELD(vs.has_prolog);
    ASSIGN_FIELD(tcs.num_lds_blocks);
    ASSIGN_FIELD(ps.num_inputs);
    ASSIGN_FIELD(cs.uses_full_subgroups);
+   aco_info->vs.any_tcs_inputs_via_lds = radv->vs.tcs_inputs_via_lds != 0;
    aco_info->ps.spi_ps_input_ena = radv->ps.spi_ps_input_ena;
    aco_info->ps.spi_ps_input_addr = radv->ps.spi_ps_input_addr;
    aco_info->ps.has_prolog = false;

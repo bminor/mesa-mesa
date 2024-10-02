@@ -588,7 +588,7 @@ gather_shader_info_vs(struct radv_device *device, const nir_shader *nir,
    }
 
    info->gs_inputs_read = ~0ULL;
-   info->vs.hs_inputs_read = ~0ULL;
+   info->vs.tcs_inputs_via_lds = ~0ULL;
 
    /* Use per-attribute vertex descriptors to prevent faults and for correct bounds checking. */
    info->vs.use_per_attribute_vb_descs = radv_use_per_attribute_vb_descs(nir, gfx_state, stage_key);
@@ -1782,7 +1782,7 @@ radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *pro
       struct radv_shader_stage *vs_stage = producer;
       struct radv_shader_stage *tcs_stage = consumer;
 
-      vs_stage->info.vs.hs_inputs_read = tcs_stage->nir->info.inputs_read;
+      vs_stage->info.vs.tcs_inputs_via_lds = tcs_stage->nir->info.inputs_read;
 
       if (gfx_state->ts.patch_control_points) {
          vs_stage->info.workgroup_size =
@@ -1804,11 +1804,16 @@ radv_link_shaders_info(struct radv_device *device, struct radv_shader_stage *pro
                gfx_state->ts.patch_control_points == tcs_stage->info.tcs.tcs_vertices_out &&
                vs_stage->nir->info.float_controls_execution_mode == tcs_stage->nir->info.float_controls_execution_mode;
 
-            if (vs_stage->info.vs.tcs_in_out_eq)
-               vs_stage->info.vs.tcs_temp_only_input_mask =
-                  tcs_stage->nir->info.inputs_read & vs_stage->nir->info.outputs_written &
-                  ~tcs_stage->nir->info.tess.tcs_cross_invocation_inputs_read &
-                  ~tcs_stage->nir->info.inputs_read_indirectly & ~vs_stage->nir->info.outputs_accessed_indirectly;
+            if (vs_stage->info.vs.tcs_in_out_eq) {
+               vs_stage->info.vs.tcs_inputs_via_temp = vs_stage->nir->info.outputs_written &
+                                                       ~vs_stage->nir->info.outputs_accessed_indirectly &
+                                                       tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read;
+               vs_stage->info.vs.tcs_inputs_via_lds = tcs_stage->nir->info.tess.tcs_cross_invocation_inputs_read |
+                                                      (tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read &
+                                                       tcs_stage->nir->info.inputs_read_indirectly) |
+                                                      (tcs_stage->nir->info.tess.tcs_same_invocation_inputs_read &
+                                                       vs_stage->nir->info.outputs_accessed_indirectly);
+            }
          }
       }
    }

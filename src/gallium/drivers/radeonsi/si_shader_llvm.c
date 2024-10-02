@@ -702,8 +702,7 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
       if (ctx->stage == MESA_SHADER_TESS_CTRL) {
          /* We need the barrier only if TCS inputs are read from LDS. */
          if (!shader->key.ge.opt.same_patch_vertices ||
-             shader->selector->info.base.inputs_read &
-             ~shader->selector->info.tcs_vgpr_only_inputs) {
+             shader->selector->info.tcs_inputs_via_lds) {
             ac_build_waitcnt(&ctx->ac, AC_WAIT_DS);
 
             /* If both input and output patches are wholly in one wave, we don't need a barrier.

@@ -702,9 +702,10 @@ void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
          assert(((info->esgs_vertex_stride / 4) & C_028AAC_ITEMSIZE) == 0);
       }
 
-      info->tcs_vgpr_only_inputs = ~info->base.tess.tcs_cross_invocation_inputs_read &
-                                   ~info->base.inputs_read_indirectly &
-                                   info->base.inputs_read;
+      info->tcs_inputs_via_temp = info->base.tess.tcs_same_invocation_inputs_read;
+      info->tcs_inputs_via_lds = info->base.tess.tcs_cross_invocation_inputs_read |
+                                 (info->base.tess.tcs_same_invocation_inputs_read &
+                                  info->base.inputs_read_indirectly);
    }
 
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {

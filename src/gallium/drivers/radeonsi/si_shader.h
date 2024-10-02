@@ -482,7 +482,8 @@ struct si_shader_info {
    uint16_t enabled_streamout_buffer_mask;
 
    uint64_t inputs_read; /* "get_unique_index" bits */
-   uint64_t tcs_vgpr_only_inputs; /* TCS inputs that are only in VGPRs, not LDS. */
+   uint64_t tcs_inputs_via_temp;
+   uint64_t tcs_inputs_via_lds;
 
    /* For VS before {TCS, TES, GS} and TES before GS. */
    uint64_t ls_es_outputs_written;     /* "get_unique_index" bits */

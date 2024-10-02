@@ -1857,8 +1857,8 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir,
                     is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
                     sel->screen->info.gfx_level,
                     key->ge.opt.same_patch_vertices,
-                    is_gfx9_mono_tcs ? next_sel->info.base.inputs_read : ~0ull,
-                    tcs_vgpr_only_inputs);
+                    is_gfx9_mono_tcs ? next_sel->info.tcs_inputs_via_temp : 0,
+                    is_gfx9_mono_tcs ? next_sel->info.tcs_inputs_via_lds : ~0ull);
          return true;
       } else if (key->ge.as_es) {
          NIR_PASS_V(nir, ac_nir_lower_es_outputs_to_mem, si_map_io_driver_location,
@@ -1868,8 +1868,8 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir,
    } else if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
       NIR_PASS_V(nir, ac_nir_lower_hs_inputs_to_mem,
                  is_gfx9_mono_tcs ? NULL : si_map_io_driver_location,
-                 sel->screen->info.gfx_level,
-                 key->ge.opt.same_patch_vertices, sel->info.tcs_vgpr_only_inputs);
+                 sel->screen->info.gfx_level, key->ge.opt.same_patch_vertices,
+                 sel->info.tcs_inputs_via_temp, sel->info.tcs_inputs_via_lds);
 
       /* Used by hs_emit_write_tess_factors() when monolithic shader. */
       if (nir->info.tess._primitive_mode == TESS_PRIMITIVE_UNSPECIFIED)
@@ -3644,8 +3644,7 @@ nir_shader *si_get_prev_stage_nir_shader(struct si_shader *shader,
 
    si_init_shader_args(prev_shader, args);
 
-   nir_shader *nir = si_get_nir_shader(prev_shader, args, free_nir,
-                                       sel->info.tcs_vgpr_only_inputs, NULL);
+   nir_shader *nir = si_get_nir_shader(prev_shader, args, free_nir, 0, NULL);
 
    si_update_shader_binary_info(shader, nir);
 
