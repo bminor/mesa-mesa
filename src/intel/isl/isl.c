@@ -3153,7 +3153,7 @@ isl_surf_supports_ccs(const struct isl_device *dev,
       }
    }
 
-   if (ISL_GFX_VER(dev) >= 12) {
+   if (ISL_GFX_VER(dev) == 12) {
       if (isl_surf_usage_is_stencil(surf->usage)) {
          /* HiZ and MCS aren't allowed with stencil */
          assert(hiz_or_mcs_surf == NULL || hiz_or_mcs_surf->size_B == 0);
@@ -3216,14 +3216,12 @@ isl_surf_supports_ccs(const struct isl_device *dev,
        * Since the note applies to MTL, we apply this to TILE64 too.
        */
       uint32_t format_bpb = isl_format_get_layout(surf->format)->bpb;
-      if (ISL_GFX_VER(dev) == 12 &&
-          surf->dim == ISL_SURF_DIM_3D &&
+      if (surf->dim == ISL_SURF_DIM_3D &&
           (surf->tiling == ISL_TILING_ICL_Ys ||
            isl_tiling_is_64(surf->tiling)) &&
           (format_bpb == 64 || format_bpb == 128))
          return false;
-   } else {
-      /* ISL_GFX_VER(dev) < 12 */
+   } else if (ISL_GFX_VER(dev) < 12) {
       if (surf->samples > 1)
          return false;
 
