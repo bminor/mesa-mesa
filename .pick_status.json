@@ -2244,7 +2244,7 @@
         "description": "etnaviv: re-emit uniforms on sampler view changes when txs is used",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "88f399b6515787adbe6e396df85fb5659797cb00",
         "notes": null
