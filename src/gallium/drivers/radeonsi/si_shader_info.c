@@ -239,20 +239,20 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                } else if ((slot_semantic <= VARYING_SLOT_VAR31 ||
                            slot_semantic >= VARYING_SLOT_VAR0_16BIT) &&
                           slot_semantic != VARYING_SLOT_EDGE) {
+                  uint64_t bit = BITFIELD64_BIT(si_shader_io_get_unique_index(slot_semantic));
+
                   /* Ignore outputs that are not passed from VS to PS. */
                   if (slot_semantic != VARYING_SLOT_POS &&
                       slot_semantic != VARYING_SLOT_PSIZ &&
                       slot_semantic != VARYING_SLOT_CLIP_VERTEX &&
-                      slot_semantic != VARYING_SLOT_LAYER) {
-                     info->outputs_written_before_ps |=
-                        BITFIELD64_BIT(si_shader_io_get_unique_index(slot_semantic));
-                  }
+                      slot_semantic != VARYING_SLOT_LAYER)
+                     info->outputs_written_before_ps |= bit;
 
                   /* LAYER and VIEWPORT have no effect if they don't feed the rasterizer. */
                   if (slot_semantic != VARYING_SLOT_LAYER &&
                       slot_semantic != VARYING_SLOT_VIEWPORT) {
-                     info->outputs_written_before_tes_gs |=
-                        BITFIELD64_BIT(si_shader_io_get_unique_index(slot_semantic));
+                     info->ls_es_outputs_written |= bit;
+                     info->tcs_outputs_written |= bit;
                   }
                }
             }
@@ -681,7 +681,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
        nir->info.stage == MESA_SHADER_TESS_CTRL ||
        nir->info.stage == MESA_SHADER_TESS_EVAL) {
       info->esgs_vertex_stride =
-         util_last_bit64(info->outputs_written_before_tes_gs) * 16;
+         util_last_bit64(info->ls_es_outputs_written) * 16;
 
       /* For the ESGS ring in LDS, add 1 dword to reduce LDS bank
        * conflicts, i.e. each vertex will start on a different bank.

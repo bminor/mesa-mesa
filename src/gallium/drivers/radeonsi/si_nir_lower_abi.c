@@ -371,7 +371,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       nir_def *per_vtx_out_patch_size = NULL;
 
       if (stage == MESA_SHADER_TESS_CTRL) {
-         const unsigned num_hs_out = util_last_bit64(sel->info.outputs_written_before_tes_gs);
+         const unsigned num_hs_out = util_last_bit64(sel->info.tcs_outputs_written);
          const unsigned out_vtx_size = num_hs_out * 16;
          const unsigned out_vtx_per_patch = sel->info.base.tess.tcs_vertices_out;
          per_vtx_out_patch_size = nir_imm_int(b, out_vtx_size * out_vtx_per_patch);

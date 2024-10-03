@@ -460,7 +460,7 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args)
 
             /* VS outputs passed via VGPRs to TCS. */
             if (shader->key.ge.opt.same_patch_vertices && !sel->info.base.use_aco_amd) {
-               unsigned num_outputs = util_last_bit64(shader->selector->info.outputs_written_before_tes_gs);
+               unsigned num_outputs = util_last_bit64(shader->selector->info.ls_es_outputs_written);
                for (i = 0; i < num_outputs * 4; i++)
                   ac_add_return(&args->ac, AC_ARG_VGPR);
             }
@@ -468,7 +468,7 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args)
       } else {
          /* TCS inputs are passed via VGPRs from VS. */
          if (shader->key.ge.opt.same_patch_vertices && !sel->info.base.use_aco_amd) {
-            unsigned num_inputs = util_last_bit64(shader->previous_stage_sel->info.outputs_written_before_tes_gs);
+            unsigned num_inputs = util_last_bit64(shader->previous_stage_sel->info.ls_es_outputs_written);
             for (i = 0; i < num_inputs * 4; i++)
                ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, NULL);
          }
@@ -1313,7 +1313,7 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
       if (shader->key.ge.as_ls)
          num_ls_outputs = si_shader_lshs_vertex_stride(shader) / 16;
       else if (shader->selector->stage == MESA_SHADER_TESS_CTRL)
-         num_hs_outputs = util_last_bit64(shader->selector->info.outputs_written_before_tes_gs);
+         num_hs_outputs = util_last_bit64(shader->selector->info.tcs_outputs_written);
       else if (shader->key.ge.as_es)
          num_es_outputs = shader->selector->info.esgs_vertex_stride / 16;
       else if (shader->gs_copy_shader)

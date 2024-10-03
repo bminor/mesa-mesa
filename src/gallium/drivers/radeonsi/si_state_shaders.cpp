@@ -4527,7 +4527,7 @@ bool si_set_tcs_to_fixed_func_shader(struct si_context *sctx)
    }
 
    struct si_fixed_func_tcs_shader_key key;
-   key.outputs_written = sctx->shader.vs.cso->info.outputs_written_before_tes_gs;
+   key.outputs_written = sctx->shader.vs.cso->info.ls_es_outputs_written;
    key.vertices_out = sctx->patch_vertices;
 
    struct hash_entry *entry = _mesa_hash_table_search(
@@ -4606,7 +4606,7 @@ unsigned si_shader_lshs_vertex_stride(struct si_shader *ls)
    if (ls->selector->stage == MESA_SHADER_VERTEX && !ls->next_shader) {
       assert(ls->key.ge.as_ls);
       assert(ls->selector->screen->info.gfx_level <= GFX8 || !ls->is_monolithic);
-      num_slots = util_last_bit64(ls->selector->info.outputs_written_before_tes_gs);
+      num_slots = util_last_bit64(ls->selector->info.ls_es_outputs_written);
    } else {
       struct si_shader *tcs = ls->next_shader ? ls->next_shader : ls;
 
@@ -4623,7 +4623,7 @@ unsigned si_shader_lshs_vertex_stride(struct si_shader *ls)
          /* NIR lowering passes pack LS outputs/HS inputs if the usage masks of both are known. */
          num_slots = util_bitcount64(lds_inputs_read);
       } else {
-         num_slots = util_last_bit64(tcs->previous_stage_sel->info.outputs_written_before_tes_gs);
+         num_slots = util_last_bit64(tcs->previous_stage_sel->info.ls_es_outputs_written);
       }
    }
 
@@ -4683,7 +4683,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
 
    /* This calculates how shader inputs and outputs among VS, TCS, and TES
     * are laid out in LDS. */
-   unsigned num_tcs_outputs = util_last_bit64(tcs->info.outputs_written_before_tes_gs);
+   unsigned num_tcs_outputs = util_last_bit64(tcs->info.tcs_outputs_written);
    unsigned num_tcs_output_cp = tcs->info.base.tess.tcs_vertices_out;
    unsigned num_tcs_patch_outputs = util_last_bit64(tcs->info.patch_outputs_written);
 
