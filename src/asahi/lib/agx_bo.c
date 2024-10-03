@@ -11,7 +11,7 @@
 
 /* Helper to calculate the bucket index of a BO */
 static unsigned
-agx_bucket_index(unsigned size)
+agx_bucket_index(size_t size)
 {
    /* Round down to POT to compute a bucket index */
    unsigned bucket_index = util_logbase2(size);
@@ -24,7 +24,7 @@ agx_bucket_index(unsigned size)
 }
 
 static struct list_head *
-agx_bucket(struct agx_device *dev, unsigned size)
+agx_bucket(struct agx_device *dev, size_t size)
 {
    return &dev->bo_cache.buckets[agx_bucket_index(size)];
 }
@@ -197,14 +197,14 @@ agx_bo_unreference(struct agx_device *dev, struct agx_bo *bo)
 }
 
 struct agx_bo *
-agx_bo_create(struct agx_device *dev, unsigned size, unsigned align,
+agx_bo_create(struct agx_device *dev, size_t size, unsigned align,
               enum agx_bo_flags flags, const char *label)
 {
    struct agx_bo *bo;
    assert(size > 0);
 
    /* BOs are allocated in pages */
-   size = ALIGN_POT(size, dev->params.vm_page_size);
+   size = ALIGN_POT(size, (size_t)dev->params.vm_page_size);
    align = MAX2(align, dev->params.vm_page_size);
 
    /* See if we have a BO already in the cache */
