@@ -1,5 +1,335 @@
 [
     {
+        "sha": "023277173ce1d84c448626ded21e4d2b66363b41",
+        "description": "frontends/va: Fix AV1 packed header parsing",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5edbecb8569d88e7faa28ca7a56eb5e1672a2dd0",
+        "notes": null
+    },
+    {
+        "sha": "1c58f513c4a0389091ddc5f620f1a72ffe99a0a9",
+        "description": "glsl: fix gl_{Clip,Cull}Distance error messages",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d656736bbf926c219b6bcbc0ad59132fc82a7382",
+        "notes": null
+    },
+    {
+        "sha": "c58b8db54752e857e553376455de361d766595ed",
+        "description": "nak/hw_tests: Use f32::to_bits()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "790759dfafac752d057cd087b48d4acbe8edc81c",
+        "description": "vk/image: Fix the extent adjustment of non-compressed views",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "8ddc527ba4eaf465b87e0670e96f6de147dec1be",
+        "notes": null
+    },
+    {
+        "sha": "c79470a37c8497d677f66d25d12c3cffc233aed0",
+        "description": "zink: Adjust the surface size of non-compressed views",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "767a7d785b033c71ec555860e7102d6dd0981149",
+        "description": "vk/meta: Fix buffer -> image copy using a graphics pipeline",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "07c6459cd8a3662c952009f7c4690e59fcfc58cd",
+        "notes": null
+    },
+    {
+        "sha": "7dc6826bc324772a827732304de5728c060f2e6a",
+        "description": "nak,nvk: Implement VK_KHR_shader_quad_control",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "62a4fe861afeb98a31cce5b395f7e6bcac1be630",
+        "description": "nir: Add an option to lower quad vote",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "64e3e2890d5934e7c1caf3254899466aa5eadbbb",
+        "description": "nvk/nvkmd: Stop leaking the primary FD",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f546df95a6662c187a5fa15aa20de9af89e17488",
+        "description": "nir/opt_vectorize_io: fix skipped output vectorization if inputs were vectorized",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2514999c9c5d4b64b007304e46f0a41d50e71cc9",
+        "notes": null
+    },
+    {
+        "sha": "b7c66f4f890111682af599d77c5d3172044cc80e",
+        "description": "v3dv/ci: move asan fail to skip",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "e120176c58de94393f6f0b88d2cec02bce815573",
+        "notes": null
+    },
+    {
+        "sha": "842a7b2821e21b5869160025b3efd85626e87578",
+        "description": "egl: fix dri2_from_names() call",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd0ff1502a73508c839130f340f6e5fa09c1c9ff",
+        "description": "panvk: expose already-implemented KHR_maintenance1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "14261cbb181111d33416b3e211bd5eeb0b2a1c81",
+        "description": "panvk: drop needless function implementation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "322c89e9fabdcde6599f34b5a2f16a8f1619fd18",
+        "description": "panvk: implement KHR_get_memory_requirements2",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f2ad64b63944257075f798e9f009c002102cbee",
+        "description": "anv: optimize WA 16011107343/22018402687",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4cdb5de1638cb389c077289a5ddb1c991ca7f7e4",
+        "description": "anv: consolidate pre/post draw workaround in helpers",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "18e2c25dad9a2f0d69a634b7a852313153a7d238",
+        "description": "anv: limit 22018402687 to impacted platforms",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65d5231381ae3290cf99a8c272c7da569da956c8",
+        "description": "panvk: Advertise KHR_create_renderpass2 support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fbe8428af8398b82be038daa89fcbacf3bc714dc",
+        "description": "panvk/csf: Fix prepare_vp() when viewport->x is negative",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2203376865ba2298b515265a834ecbda6713932e",
+        "description": "panvk: Fix bounds checking in upload_shader_desc_info()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e489a92c3329cd7aa5b05ce37a6394523ef7e202",
+        "description": "panvk: Make sure RUN_IDVS has a valid tiler descriptor",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b25784df7636255017880987f3a25b7c2b609a3",
+        "description": "zink+nvk/ci: document more flakes seen lately",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6337bde12ec99e76567ffaa7048b14c49fe555ac",
+        "description": "zink+nvk/ci: mark spec@egl 1.4@egl-ext_egl_image_storage as fixed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50f04a8e99d6cef47c53d983212f78f40a2f52cd",
+        "description": "turnip/ci: mark vkd3d test_planar_video_formats as fixed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b8bfbbdf66a95d5163ae2f1f0c3bdb5a6ee64455",
+        "description": "panvk: check against texfeat_bit",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "213e895da06bfd4522a6cb4b3a55a070a1792f67",
+        "notes": null
+    },
+    {
+        "sha": "6f1b5f3eea18ed68caa07e7c5536303935a912c9",
+        "description": "panfrost: do not re-fetch compressed formats",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23cad7c695c0e95e50c4cb3996d86e3f5e261d73",
+        "description": "panfrost: check fmt.bitfeat_bit for compressed-support",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0c1fde956bf9b91182eca9c244ebc8bc63983481",
+        "notes": null
+    },
+    {
+        "sha": "1637fa3d85756be4926d1d77f402540a4a07946e",
+        "description": "panfrost: store texfeat_bit in panfrost_format",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0c1fde956bf9b91182eca9c244ebc8bc63983481",
+        "notes": null
+    },
+    {
+        "sha": "8072c901e1d7c518ada48a2fd8436c6294f79e2a",
+        "description": "panfrost: unify compressed formats",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0c1fde956bf9b91182eca9c244ebc8bc63983481",
+        "notes": null
+    },
+    {
+        "sha": "d4fa181f7b429c566399b77cb59056ef50e1c251",
+        "description": "ci/image-tags: add DEBIAN_PYUTILS_TAG",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30dc71b060549f7b36df2525b35b2dd61bf35896",
+        "description": "tu: Improve 2D buffer-to-image copies for A7XX",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73e7ba8f14913f8ef247a41cb6ec391b9a285574",
+        "description": "freedreno/registers: Document TPL1_2D_SRC_CNTL register",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "61f3294786d52f3a95f0fa314eb21d90a0485624",
         "description": "pvr: unify code into one condition",
         "nominated": false,
