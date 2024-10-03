@@ -7,6 +7,7 @@ use mesa_rust_gen::*;
 use mesa_rust_util::serialize::*;
 use mesa_rust_util::string::*;
 
+use std::ffi::CStr;
 use std::ffi::CString;
 use std::fmt::Debug;
 use std::os::raw::c_char;
@@ -14,7 +15,7 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
 
-const INPUT_STR: *const c_char = b"input.cl\0".as_ptr().cast();
+const INPUT_STR: &CStr = c"input.cl";
 
 pub enum SpecConstant {
     None,
@@ -140,7 +141,7 @@ impl SPIRVBin {
             headers: c_headers.as_ptr(),
             num_headers: c_headers.len() as u32,
             source: clc_named_value {
-                name: INPUT_STR,
+                name: INPUT_STR.as_ptr(),
                 value: source.as_ptr(),
             },
             args: c_args.as_ptr(),

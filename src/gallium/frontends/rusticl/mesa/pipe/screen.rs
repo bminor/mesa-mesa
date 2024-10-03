@@ -357,7 +357,7 @@ impl PipeScreen {
                 });
             if ptr.is_null() {
                 // this string is good enough to pass the CTS
-                CStr::from_bytes_with_nul(b"v0000-01-01-00\0").unwrap()
+                c"v0000-01-01-00"
             } else {
                 CStr::from_ptr(ptr)
             }
