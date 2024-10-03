@@ -235,14 +235,17 @@ struct radv_shader_info {
    struct {
       uint64_t tes_inputs_read;
       uint64_t tes_patch_inputs_read;
+      uint64_t tcs_outputs_read;
+      uint64_t tcs_outputs_written;
+      uint32_t tcs_patch_outputs_read;
+      uint32_t tcs_patch_outputs_written;
       unsigned tcs_vertices_out;
       uint32_t num_lds_blocks;
       uint8_t num_linked_inputs;          /* Number of reserved per-vertex input slots in LDS. */
       uint8_t num_linked_outputs;         /* Number of reserved per-vertex output slots in VRAM. */
       uint8_t num_linked_patch_outputs;   /* Number of reserved per-patch output slots in VRAM. */
-      uint8_t num_lds_per_vertex_outputs; /* Number of reserved per-vertex output slots in LDS. */
-      uint8_t num_lds_per_patch_outputs;  /* Number of reserved per-patch output slots in LDS. */
       bool tes_reads_tess_factors : 1;
+      bool all_invocations_define_tess_levels : 1;
    } tcs;
    struct {
       enum mesa_prim output_prim;

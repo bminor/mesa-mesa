@@ -3495,17 +3495,21 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
     * is dynamic.
     */
    if (cmd_buffer->state.uses_dynamic_patch_control_points) {
-      /* Compute the number of patches. */
-      cmd_buffer->state.tess_num_patches = radv_get_tcs_num_patches(
-         pdev, d->vk.ts.patch_control_points, tcs->info.tcs.tcs_vertices_out, vs->info.vs.num_linked_outputs,
-         tcs->info.tcs.num_lds_per_vertex_outputs, tcs->info.tcs.num_lds_per_patch_outputs,
-         tcs->info.tcs.num_linked_outputs, tcs->info.tcs.num_linked_patch_outputs);
+      struct shader_info tcs_info;
 
-      /* Compute the LDS size. */
-      cmd_buffer->state.tess_lds_size =
-         radv_get_tess_lds_size(pdev, d->vk.ts.patch_control_points, tcs->info.tcs.tcs_vertices_out,
-                                vs->info.vs.num_linked_outputs, cmd_buffer->state.tess_num_patches,
-                                tcs->info.tcs.num_lds_per_vertex_outputs, tcs->info.tcs.num_lds_per_patch_outputs);
+      /* No other shader_info fields are needed. */
+      tcs_info.tess.tcs_vertices_out = tcs->info.tcs.tcs_vertices_out;
+      /* These are only used to determine the LDS layout for TCS outputs. */
+      tcs_info.outputs_read = tcs->info.tcs.tcs_outputs_read;
+      tcs_info.outputs_written = tcs->info.tcs.tcs_outputs_written;
+      tcs_info.patch_outputs_read = tcs->info.tcs.tcs_patch_outputs_read;
+      tcs_info.patch_outputs_written = tcs->info.tcs.tcs_patch_outputs_written;
+
+      radv_get_tess_wg_info(pdev, &tcs_info, d->vk.ts.patch_control_points,
+                            /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
+                            vs->info.vs.num_linked_outputs, tcs->info.tcs.num_linked_outputs,
+                            tcs->info.tcs.num_linked_patch_outputs, tcs->info.tcs.all_invocations_define_tess_levels,
+                            &cmd_buffer->state.tess_num_patches, &cmd_buffer->state.tess_lds_size);
    }
 
    ls_hs_config = S_028B58_NUM_PATCHES(cmd_buffer->state.tess_num_patches) |

@@ -1209,20 +1209,6 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
    return num_patches;
 }
 
-uint32_t
-ac_compute_tess_lds_size(const struct radeon_info *info, uint32_t lds_per_patch, uint32_t num_patches)
-{
-   unsigned lds_size = lds_per_patch * num_patches;
-
-   /* The first vec4 is reserved for the tf0/1 shader message group vote. */
-   if (info->gfx_level >= GFX11)
-      lds_size += AC_HS_MSG_VOTE_LDS_BYTES;
-
-   assert(lds_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
-
-   return align(lds_size, info->lds_encode_granularity) / info->lds_encode_granularity;
-}
-
 uint32_t ac_apply_cu_en(uint32_t value, uint32_t clear_mask, unsigned value_shift,
                         const struct radeon_info *info)
 {
