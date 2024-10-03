@@ -172,6 +172,7 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 
       for (unsigned i = 0; i < num_slots; i++) {
          unsigned loc = driver_location + i;
+         unsigned slot_semantic = semantic + i;
 
          /* Call the translation functions to validate the semantic (call assertions in them). */
          if (nir->info.stage != MESA_SHADER_FRAGMENT &&
@@ -180,14 +181,14 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                 semantic == VARYING_SLOT_TESS_LEVEL_OUTER ||
                 (semantic >= VARYING_SLOT_PATCH0 && semantic <= VARYING_SLOT_PATCH31)) {
                ac_shader_io_get_unique_index_patch(semantic);
-               ac_shader_io_get_unique_index_patch(semantic + i);
+               ac_shader_io_get_unique_index_patch(slot_semantic);
             } else {
                si_shader_io_get_unique_index(semantic);
-               si_shader_io_get_unique_index(semantic + i);
+               si_shader_io_get_unique_index(slot_semantic);
             }
          }
 
-         info->output_semantic[loc] = semantic + i;
+         info->output_semantic[loc] = slot_semantic;
 
          if (!is_output_load && mask) {
             /* Output stores. */
@@ -224,6 +225,37 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 
             info->output_usagemask[loc] |= mask;
             info->num_outputs = MAX2(info->num_outputs, loc + 1);
+
+            if (nir->info.stage == MESA_SHADER_VERTEX ||
+                nir->info.stage == MESA_SHADER_TESS_CTRL ||
+                nir->info.stage == MESA_SHADER_TESS_EVAL ||
+                nir->info.stage == MESA_SHADER_GEOMETRY) {
+               if (slot_semantic == VARYING_SLOT_TESS_LEVEL_INNER ||
+                   slot_semantic == VARYING_SLOT_TESS_LEVEL_OUTER ||
+                   (slot_semantic >= VARYING_SLOT_PATCH0 &&
+                    slot_semantic < VARYING_SLOT_TESS_MAX)) {
+                  info->patch_outputs_written |=
+                     BITFIELD_BIT(ac_shader_io_get_unique_index_patch(slot_semantic));
+               } else if ((slot_semantic <= VARYING_SLOT_VAR31 ||
+                           slot_semantic >= VARYING_SLOT_VAR0_16BIT) &&
+                          slot_semantic != VARYING_SLOT_EDGE) {
+                  /* Ignore outputs that are not passed from VS to PS. */
+                  if (slot_semantic != VARYING_SLOT_POS &&
+                      slot_semantic != VARYING_SLOT_PSIZ &&
+                      slot_semantic != VARYING_SLOT_CLIP_VERTEX &&
+                      slot_semantic != VARYING_SLOT_LAYER) {
+                     info->outputs_written_before_ps |=
+                        BITFIELD64_BIT(si_shader_io_get_unique_index(slot_semantic));
+                  }
+
+                  /* LAYER and VIEWPORT have no effect if they don't feed the rasterizer. */
+                  if (slot_semantic != VARYING_SLOT_LAYER &&
+                      slot_semantic != VARYING_SLOT_VIEWPORT) {
+                     info->outputs_written_before_tes_gs |=
+                        BITFIELD64_BIT(si_shader_io_get_unique_index(slot_semantic));
+                  }
+               }
+            }
 
             if (nir->info.stage == MESA_SHADER_FRAGMENT &&
                 semantic >= FRAG_RESULT_DATA0 && semantic <= FRAG_RESULT_DATA7) {
@@ -637,38 +669,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
 
    info->uses_vmem_load_other |= info->uses_indirect_descriptor;
    info->has_divergent_loop = nir_has_divergent_loop((nir_shader*)nir);
-
-   if (nir->info.stage == MESA_SHADER_VERTEX ||
-       nir->info.stage == MESA_SHADER_TESS_CTRL ||
-       nir->info.stage == MESA_SHADER_TESS_EVAL ||
-       nir->info.stage == MESA_SHADER_GEOMETRY) {
-      for (unsigned i = 0; i < info->num_outputs; i++) {
-         unsigned semantic = info->output_semantic[i];
-
-         if (semantic == VARYING_SLOT_TESS_LEVEL_INNER ||
-             semantic == VARYING_SLOT_TESS_LEVEL_OUTER ||
-             (semantic >= VARYING_SLOT_PATCH0 && semantic < VARYING_SLOT_TESS_MAX)) {
-            info->patch_outputs_written |= 1ull << ac_shader_io_get_unique_index_patch(semantic);
-         } else if ((semantic <= VARYING_SLOT_VAR31 || semantic >= VARYING_SLOT_VAR0_16BIT) &&
-                    semantic != VARYING_SLOT_EDGE) {
-            /* Ignore outputs that are not passed from VS to PS. */
-            if (semantic != VARYING_SLOT_POS &&
-                semantic != VARYING_SLOT_PSIZ &&
-                semantic != VARYING_SLOT_CLIP_VERTEX &&
-                semantic != VARYING_SLOT_LAYER) {
-               info->outputs_written_before_ps |= 1ull
-                                                  << si_shader_io_get_unique_index(semantic);
-            }
-
-            /* LAYER and VIEWPORT have no effect if they don't feed the rasterizer. */
-            if (semantic != VARYING_SLOT_LAYER &&
-                semantic != VARYING_SLOT_VIEWPORT) {
-               info->outputs_written_before_tes_gs |=
-                  BITFIELD64_BIT(si_shader_io_get_unique_index(semantic));
-            }
-         }
-      }
-   }
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       info->num_vs_inputs =
