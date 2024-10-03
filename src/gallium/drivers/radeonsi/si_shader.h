@@ -468,7 +468,6 @@ struct si_shader_info {
    union si_input_info input[PIPE_MAX_SHADER_INPUTS];
    uint8_t output_semantic[PIPE_MAX_SHADER_OUTPUTS];
    uint8_t output_usagemask[PIPE_MAX_SHADER_OUTPUTS];
-   uint8_t output_readmask[PIPE_MAX_SHADER_OUTPUTS];
    uint8_t output_streams[PIPE_MAX_SHADER_OUTPUTS];
    uint8_t output_type[PIPE_MAX_SHADER_OUTPUTS]; /* enum nir_alu_type */
 

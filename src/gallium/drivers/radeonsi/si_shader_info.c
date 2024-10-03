@@ -189,10 +189,7 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 
          info->output_semantic[loc] = semantic + i;
 
-         if (is_output_load) {
-            /* Output loads have only a few things that we need to track. */
-            info->output_readmask[loc] |= mask;
-         } else if (mask) {
+         if (!is_output_load && mask) {
             /* Output stores. */
             unsigned gs_streams = (uint32_t)nir_intrinsic_io_semantics(intr).gs_streams <<
                                   (nir_intrinsic_component(intr) * 2);
@@ -639,11 +636,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
    }
 
    info->uses_vmem_load_other |= info->uses_indirect_descriptor;
-
-   /* Trim output read masks based on write masks. */
-   for (unsigned i = 0; i < info->num_outputs; i++)
-      info->output_readmask[i] &= info->output_usagemask[i];
-
    info->has_divergent_loop = nir_has_divergent_loop((nir_shader*)nir);
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||
