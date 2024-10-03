@@ -757,7 +757,7 @@ hk_get_device_properties(const struct agx_device *dev,
       .maxMultiviewViewCount = HK_MAX_MULTIVIEW_VIEW_COUNT,
       .maxMultiviewInstanceIndex = UINT32_MAX,
       .maxPerSetDescriptors = UINT32_MAX,
-      .maxMemoryAllocationSize = (1u << 31),
+      .maxMemoryAllocationSize = (1ull << 37),
 
       /* Vulkan 1.2 properties */
       .supportedDepthResolveModes =
