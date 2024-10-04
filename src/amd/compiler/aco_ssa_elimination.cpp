@@ -337,7 +337,15 @@ try_optimize_branching_sequence(ssa_elimination_ctx& ctx, Block& block, const in
    const aco_opcode and_saveexec = ctx.program->lane_mask == s2 ? aco_opcode::s_and_saveexec_b64
                                                                 : aco_opcode::s_and_saveexec_b32;
 
-   if (exec_copy->opcode != and_saveexec && exec_copy->opcode != aco_opcode::p_parallelcopy)
+   const aco_opcode s_and =
+      ctx.program->lane_mask == s2 ? aco_opcode::s_and_b64 : aco_opcode::s_and_b32;
+
+   if (exec_copy->opcode != and_saveexec && exec_copy->opcode != aco_opcode::p_parallelcopy &&
+       (exec_copy->opcode != s_and || exec_copy->operands[1].physReg() != exec))
+      return;
+
+   /* The SCC def of s_and/s_and_saveexec must be unused. */
+   if (exec_copy->opcode != aco_opcode::p_parallelcopy && !exec_copy->definitions[1].isKill())
       return;
 
    /* Only allow SALU with multiple definitions. */
