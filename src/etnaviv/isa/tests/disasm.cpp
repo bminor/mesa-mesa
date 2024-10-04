@@ -155,6 +155,7 @@ INSTANTIATE_TEST_SUITE_P(Opcodes, DisasmTest,
       disasm_state{ {0x00801026, 0x00000004, 0x00000000, 0x00000008}, "ceil              t0.x___, void, void, t0.xxxx\n"},
       disasm_state{ {0x00801027, 0x00000004, 0x00000000, 0x00000008}, "sign              t0.x___, void, void, t0.xxxx\n" },
       disasm_state{ {0x0000002a, 0x00000000, 0x00000000, 0x00000000}, "barrier           void, void, void, void\n" },
+      disasm_state{ {0x0787102b, 0x39202804, 0xc0a802c0, 0x781fdffa}, "swizzle.u8        t7, t2.xyzw, u5.xyyy, 65535\n", FLAG_FAILING_ASM },
       disasm_state{ {0x0080102c, 0x00200804, 0x50001040, 0x00000007}, "i2i.s16           t0.x___, t0.xxxx, 32, void\n" },
       disasm_state{ {0x0381102d, 0x00201804, 0x40000000, 0x00000000}, "i2f.s16           t1.xyz_, t1.xxxx, void, void\n"},
       disasm_state{ {0x0101102e, 0x00201804, 0x80000020, 0x00002000}, "f2i.u32.t0        t1._y__, th1.xxxx, void, void\n"},
@@ -378,6 +379,22 @@ INSTANTIATE_TEST_SUITE_P(ConvVariants, DisasmTest,
 INSTANTIATE_TEST_SUITE_P(ShadowSampler, DisasmTest,
    testing::Values(
       disasm_state{ {0x00811018, 0x15001800, 0x00000000, 0x002a8018}, "texld             t1.x___, tex0.xxxx, t1.xyyy, void, t1.zzzz\n", FLAG_FAILING_PARSE | FLAG_FAILING_ASM}
+   )
+);
+// clang-format on
+
+// clang-format off
+INSTANTIATE_TEST_SUITE_P(SwizzleVariants, DisasmTest,
+   testing::Values(
+      // seen on GC7000
+      disasm_state{ {0x0782102b, 0x00000804, 0xa000007c ,0x7800001f}, "swizzle.s8        t2, 0, 0, 1\n", FLAG_FAILING_ASM },
+      disasm_state{ {0x0782102b, 0x00002804, 0xa0000040, 0x7800002f}, "swizzle.s8        t2, t2.xxxx, 0, 2\n", FLAG_FAILING_ASM },
+      disasm_state{ {0x0780102b, 0x00002804, 0xa0000040, 0x7800001f}, "swizzle.s8        t0, t2.xxxx, 0, 1\n", FLAG_FAILING_ASM },
+      disasm_state{ {0x0781102b, 0x00002804, 0xa00000c0, 0x7800001f}, "swizzle.s8        t1, t2.xxxx, 1, 1\n", FLAG_FAILING_ASM },
+      disasm_state{ {0x0781102b, 0x00200804, 0x6000007e, 0x7800003f}, "swizzle.s16       t1, 0.000000, 0, 3\n", FLAG_FAILING_ASM },
+      disasm_state{ {0x0781102b, 0x00201804, 0x60000040, 0x780000cf}, "swizzle.s16       t1, t1.xxxx, 0, 12\n", FLAG_FAILING_ASM },
+      disasm_state{ {0x0780102b, 0x00201804, 0x60000040, 0x7800003f}, "swizzle.s16       t0, t1.xxxx, 0, 3\n", FLAG_FAILING_ASM },
+      disasm_state{ {0x0781102b, 0x00202804, 0x600000c0, 0x7800003f}, "swizzle.s16       t1, t2.xxxx, 1, 3\n", FLAG_FAILING_ASM }
    )
 );
 // clang-format on
