@@ -18,8 +18,8 @@ namespace {
 
 enum WQMState : uint8_t {
    Unspecified = 0,
-   Exact = 1 << 0,
-   WQM = 1 << 1, /* with control flow applied */
+   Exact,
+   WQM, /* with control flow applied */
 };
 
 enum mask_type : uint8_t {
