@@ -742,7 +742,7 @@ lower_image_deref(nir_builder *b,
    }
 
    if (index)
-      index = nir_umin(b, index, nir_imm_int(b, array_elements - 1));
+      nir_umin(b, index, nir_imm_int(b, array_elements - 1));
 
    uint32_t set = deref->var->data.descriptor_set;
    uint32_t binding = deref->var->data.binding;

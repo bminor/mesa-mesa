@@ -626,7 +626,6 @@ get_attr_type(const struct util_format_description *desc)
          break;
       default:
          mesa_loge("format %s unsupported\n", desc->name);
-         attr_type = ATTRIBUTE_BYTE;
          abort();
       }
       break;

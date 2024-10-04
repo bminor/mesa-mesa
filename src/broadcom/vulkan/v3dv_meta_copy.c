@@ -1506,7 +1506,6 @@ copy_image_blit(struct v3dv_cmd_buffer *cmd_buffer,
        */
       assert(src->planes[src_plane].cpp == dst->planes[dst_plane].cpp);
 
-      format = VK_FORMAT_R32G32_UINT;
       switch (src->planes[src_plane].cpp) {
       case 16:
          format = VK_FORMAT_R32G32B32A32_UINT;
