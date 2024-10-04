@@ -1097,7 +1097,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
          break;
 
       case MESA_SHADER_FRAGMENT:
-         s->value.u64 += shader->info.ps.colors_written + !!shader->info.ps.writes_z +
+         s->value.u64 += DIV_ROUND_UP(util_bitcount(shader->info.ps.colors_written), 4) + !!shader->info.ps.writes_z +
                          !!shader->info.ps.writes_stencil + !!shader->info.ps.writes_sample_mask +
                          !!shader->info.ps.writes_mrt0_alpha;
          break;
