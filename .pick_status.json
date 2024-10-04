@@ -4474,7 +4474,7 @@
         "description": "v3dv: fix BO allocation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2adea940f1fc155032923cd84fc1cbb51459d0d5",
         "notes": null
