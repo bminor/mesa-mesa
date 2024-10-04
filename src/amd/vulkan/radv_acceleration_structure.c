@@ -469,9 +469,9 @@ radv_init_header_bind_pipeline(VkCommandBuffer commandBuffer, uint32_t key)
    /* Wait for encoding to finish. */
    cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH |
                                    radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                                                         VK_ACCESS_2_SHADER_WRITE_BIT, NULL, NULL) |
+                                                         VK_ACCESS_2_SHADER_WRITE_BIT, 0, NULL, NULL) |
                                    radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                                                         VK_ACCESS_2_SHADER_READ_BIT, NULL, NULL);
+                                                         VK_ACCESS_2_SHADER_READ_BIT, 0, NULL, NULL);
 
    device->vk.dispatch_table.CmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                                              device->meta_state.accel_struct_build.header_pipeline);
@@ -580,9 +580,9 @@ radv_update_bind_pipeline(VkCommandBuffer commandBuffer)
    /* Wait for update scratch initialization to finish.. */
    cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH |
                                    radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                                                         VK_ACCESS_2_SHADER_WRITE_BIT, NULL, NULL) |
+                                                         VK_ACCESS_2_SHADER_WRITE_BIT, 0, NULL, NULL) |
                                    radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                                                         VK_ACCESS_2_SHADER_READ_BIT, NULL, NULL);
+                                                         VK_ACCESS_2_SHADER_READ_BIT, 0, NULL, NULL);
 
    device->vk.dispatch_table.CmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                                              device->meta_state.accel_struct_build.update_pipeline);
@@ -828,7 +828,7 @@ radv_CmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer, const VkCopy
                               sizeof(consts), &consts);
 
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-                                                         VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, NULL, NULL);
+                                                         VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, 0, NULL, NULL);
 
    radv_indirect_dispatch(
       cmd_buffer, src_buffer->bo,
@@ -934,7 +934,7 @@ radv_CmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                               sizeof(consts), &consts);
 
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-                                                         VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, NULL, NULL);
+                                                         VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, 0, NULL, NULL);
 
    radv_indirect_dispatch(
       cmd_buffer, src_buffer->bo,
