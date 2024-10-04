@@ -583,6 +583,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_maintenance5 = true,
       .KHR_maintenance6 = true,
       .KHR_maintenance7 = true,
+      .KHR_maintenance8 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_performance_query = radv_perf_query_supported(pdev),
@@ -1321,6 +1322,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       /* VK_EXT_device_generated_commands */
       .deviceGeneratedCommands = true,
       .dynamicGeneratedPipelineLayout = true,
+
+      /* VK_KHR_maintenance8 */
+      .maintenance8 = true,
    };
 }
 
