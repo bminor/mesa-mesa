@@ -234,7 +234,7 @@
         "description": "r300: remove gl_ClipVertex early",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5dcef1e7b87498f1f115f2167a007fb724987b97",
         "notes": null
