@@ -685,6 +685,7 @@ add_gpus([
     ))
 
 add_gpus([
+        # These are all speedbins/variants of A635
         GPUId(chip_id=0x00be06030500, name="Adreno 8c Gen 3"),
         GPUId(chip_id=0x007506030500, name="Adreno 7c+ Gen 3"),
         GPUId(chip_id=0x006006030500, name="Adreno 7c+ Gen 3 Lite"),
