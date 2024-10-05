@@ -341,9 +341,9 @@ a6xx_base = A6XXProps(
     )
 
 
-# a6xx can be divided into distinct sub-generations, where certain device-
-# info parameters are keyed to the sub-generation.  These templates reduce
-# the copypaste
+# a6xx and a7xx can be divided into distinct sub-generations, where certain
+# device-info parameters are keyed to the sub-generation.  These templates
+# reduce the copypaste
 
 a6xx_gen1_low = A6XXProps(
         reg_size_vec4 = 48,
@@ -859,30 +859,13 @@ a7xx_base = A6XXProps(
         has_early_preamble = True,
     )
 
-a7xx_725 = A7XXProps(
-        cmdbuf_start_a725_quirk = True,
+a7xx_gen1 = A7XXProps(
         supports_ibo_ubwc = True,
         fs_must_have_non_zero_constlen_quirk = True,
         enable_tp_ubwc_flag_hint = True,
     )
 
-a7xx_730 = A7XXProps(
-        supports_ibo_ubwc = True,
-        fs_must_have_non_zero_constlen_quirk = True,
-        enable_tp_ubwc_flag_hint = True,
-    )
-
-a7xx_735 = A7XXProps(
-        stsc_duplication_quirk = True,
-        has_event_write_sample_count = True,
-        ubwc_unorm_snorm_int_compatible = True,
-        supports_ibo_ubwc = True,
-        fs_must_have_non_zero_constlen_quirk = True,
-        enable_tp_ubwc_flag_hint = True,
-        has_64b_ssbo_atomics = True,
-    )
-
-a7xx_740 = A7XXProps(
+a7xx_gen2 = A7XXProps(
         stsc_duplication_quirk = True,
         has_event_write_sample_count = True,
         ubwc_unorm_snorm_int_compatible = True,
@@ -894,40 +877,7 @@ a7xx_740 = A7XXProps(
         has_64b_ssbo_atomics = True,
     )
 
-a7xx_740_a32 = A7XXProps(
-        cmdbuf_start_a725_quirk = True,
-        stsc_duplication_quirk = True,
-        has_event_write_sample_count = True,
-        ubwc_unorm_snorm_int_compatible = True,
-        supports_ibo_ubwc = True,
-        fs_must_have_non_zero_constlen_quirk = True,
-        enable_tp_ubwc_flag_hint = False,
-        has_64b_ssbo_atomics = True,
-    )
-
-a7xx_740v3 = A7XXProps(
-        stsc_duplication_quirk = True,
-        has_event_write_sample_count = True,
-        ubwc_unorm_snorm_int_compatible = True,
-        supports_ibo_ubwc = True,
-        fs_must_have_non_zero_constlen_quirk = True,
-        enable_tp_ubwc_flag_hint = True,
-        has_64b_ssbo_atomics = True,
-    )
-
-a7xx_x1_85 = A7XXProps(
-        stsc_duplication_quirk = True,
-        has_event_write_sample_count = True,
-        ubwc_unorm_snorm_int_compatible = True,
-        supports_ibo_ubwc = True,
-        fs_must_have_non_zero_constlen_quirk = True,
-        # Most devices with a740 have blob v6xx which doesn't have
-        # this hint set. Match them for better compatibility by default.
-        enable_tp_ubwc_flag_hint = False,
-        compute_constlen_quirk = True,
-    )
-
-a7xx_750 = A7XXProps(
+a7xx_gen3 = A7XXProps(
         has_event_write_sample_count = True,
         load_inline_uniforms_via_preamble_ldgk = True,
         load_shader_consts_via_preamble = True,
@@ -1085,7 +1035,7 @@ add_gpus([
         GPUId(chip_id=0xffff07030002, name="FD725"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_725],
+        [a7xx_base, a7xx_gen1, A7XXProps(cmdbuf_start_a725_quirk = True)],
         num_ccu = 4,
         tile_align_w = 64,
         tile_align_h = 32,
@@ -1103,7 +1053,7 @@ add_gpus([
         GPUId(chip_id=0xffff07030001, name="FD730"), # Default no-speedbin fallback
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_730],
+        [a7xx_base, a7xx_gen1],
         num_ccu = 4,
         tile_align_w = 64,
         tile_align_h = 32,
@@ -1120,7 +1070,7 @@ add_gpus([
         GPUId(chip_id=0x43030B00, name="FD735")
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_735],
+        [a7xx_base, a7xx_gen2, A7XXProps(enable_tp_ubwc_flag_hint = True)],
         num_ccu = 3,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1201,7 +1151,7 @@ add_gpus([
         GPUId(chip_id=0xffff43050a01, name="FD740"), # Default no-speedbin fallback
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_740],
+        [a7xx_base, a7xx_gen2],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1218,7 +1168,7 @@ add_gpus([
         GPUId(chip_id=0xffff43050c01, name="Adreno X1-85"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_x1_85],
+        [a7xx_base, a7xx_gen2, A7XXProps(compute_constlen_quirk = True)],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1237,7 +1187,7 @@ add_gpus([
         GPUId(chip_id=0xffff43050a00, name="FDA32"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_740_a32],
+        [a7xx_base, a7xx_gen2, A7XXProps(cmdbuf_start_a725_quirk = True)],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1302,7 +1252,7 @@ add_gpus([
         GPUId(chip_id=0xffff43050b00, name="FD740v3"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_740v3],
+        [a7xx_base, a7xx_gen2, A7XXProps(enable_tp_ubwc_flag_hint = True)],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1337,7 +1287,7 @@ add_gpus([
         GPUId(chip_id=0xffff43051401, name="FD750"), # Default no-speedbin fallback
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_750],
+        [a7xx_base, a7xx_gen3],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
