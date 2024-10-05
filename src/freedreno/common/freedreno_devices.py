@@ -432,10 +432,6 @@ a6xx_gen4 = A6XXProps(
         #has_early_preamble = True,
     )
 
-a6xx_a690_quirk = A6XXProps(
-        broken_ds_ubwc_quirk = True,
-    )
-
 add_gpus([
         GPUId(605), # TODO: Test it, based only on libwrapfake dumps
         GPUId(608), # TODO: Test it, based only on libwrapfake dumps
@@ -788,7 +784,7 @@ add_gpus([
         GPUId(chip_id=0xffff06090000, name="FD690"), # Default no-speedbin fallback
     ], A6xxGPUInfo(
         CHIP.A6XX,
-        [a6xx_base, a6xx_gen4, a6xx_a690_quirk],
+        [a6xx_base, a6xx_gen4, A6XXProps(broken_ds_ubwc_quirk = True)],
         num_ccu = 8,
         tile_align_w = 64,
         tile_align_h = 32,
