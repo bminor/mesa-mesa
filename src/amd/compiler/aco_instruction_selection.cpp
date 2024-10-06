@@ -10540,6 +10540,30 @@ visit_jump(isel_context* ctx, nir_jump_instr* instr)
 }
 
 void
+visit_debug_info(isel_context* ctx, nir_debug_info_instr* instr)
+{
+   ac_shader_debug_info info;
+   memset(&info, 0, sizeof(info));
+
+   switch (instr->type) {
+   case nir_debug_info_src_loc:
+      info.type = ac_shader_debug_info_src_loc;
+      info.src_loc.file = strdup(nir_src_as_string(instr->src_loc.filename));
+      info.src_loc.line = instr->src_loc.line;
+      info.src_loc.column = instr->src_loc.column;
+      info.src_loc.spirv_offset = instr->src_loc.spirv_offset;
+      break;
+   default:
+      return;
+   }
+
+   Builder bld(ctx->program, ctx->block);
+   bld.pseudo(aco_opcode::p_debug_info, Operand::c32(ctx->program->debug_info.size()));
+
+   ctx->program->debug_info.push_back(info);
+}
+
+void
 visit_block(isel_context* ctx, nir_block* block)
 {
    if (ctx->block->kind & block_kind_top_level) {
@@ -10562,6 +10586,7 @@ visit_block(isel_context* ctx, nir_block* block)
       case nir_instr_type_undef: visit_undef(ctx, nir_instr_as_undef(instr)); break;
       case nir_instr_type_deref: break;
       case nir_instr_type_jump: visit_jump(ctx, nir_instr_as_jump(instr)); break;
+      case nir_instr_type_debug_info: visit_debug_info(ctx, nir_instr_as_debug_info(instr)); break;
       default: isel_err(instr, "Unknown NIR instr type");
       }
    }

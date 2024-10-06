@@ -1216,6 +1216,11 @@ emit_instruction(asm_context& ctx, std::vector<uint32_t>& out, Instruction* inst
       instr->opcode = aco_opcode::s_mov_b32;
       /* in case it's an inline constant, make it a literal */
       instr->operands[0] = Operand::literal32(0);
+   } else if (instr->opcode == aco_opcode::p_debug_info) {
+      assert(instr->operands[0].isConstant());
+      uint32_t index = instr->operands[0].constantValue();
+      ctx.program->debug_info[index].offset = (out.size() - 1) * 4;
+      return;
    }
 
    /* Promote VOP12C to VOP3 if necessary. */

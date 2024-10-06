@@ -15,6 +15,7 @@
 
 #include "ac_binary.h"
 #include "ac_hw_stage.h"
+#include "ac_shader_debug_info.h"
 #include "ac_shader_util.h"
 #include "amd_family.h"
 #include <algorithm>
@@ -2130,6 +2131,8 @@ public:
    bool has_color_exports = false;
    bool is_prolog = false;
    bool is_epilog = false;
+
+   std::vector<ac_shader_debug_info> debug_info;
 
    std::vector<uint8_t> constant_data;
    Temp private_segment_buffer;

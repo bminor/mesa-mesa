@@ -439,6 +439,8 @@ insn("p_end_with_regs")
 
 insn("p_shader_cycles_hi_lo_hi")
 
+insn("p_debug_info")
+
 # SOP2 instructions: 2 scalar inputs, 1 scalar output (+optional scc)
 SOP2 = {
    ("s_add_u32",            dst(1, SCC), src(1, 1), op(0x00)),
