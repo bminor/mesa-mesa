@@ -8,6 +8,7 @@
 #define ACO_INTERFACE_H
 
 #include "aco_shader_info.h"
+#include "ac_shader_debug_info.h"
 
 #include "nir.h"
 
@@ -34,7 +35,8 @@ typedef void(aco_callback)(void** priv_ptr, const struct ac_shader_config* confi
                            const char* llvm_ir_str, unsigned llvm_ir_size, const char* disasm_str,
                            unsigned disasm_size, uint32_t* statistics, uint32_t stats_size,
                            uint32_t exec_size, const uint32_t* code, uint32_t code_dw,
-                           const struct aco_symbol* symbols, unsigned num_symbols);
+                           const struct aco_symbol* symbols, unsigned num_symbols,
+                           const struct ac_shader_debug_info* debug_info, unsigned debug_info_count);
 
 typedef void(aco_shader_part_callback)(void** priv_ptr, uint32_t num_sgprs, uint32_t num_vgprs,
                                        const uint32_t* code, uint32_t code_size,

@@ -300,7 +300,8 @@ aco_compile_shader(const struct aco_compiler_options* options, const struct aco_
 
    (*build_binary)(binary, &config, llvm_ir.c_str(), llvm_ir.size(), disasm.c_str(), disasm.size(),
                    program->statistics, stats_size, exec_size, code.data(), code.size(),
-                   symbols.data(), symbols.size());
+                   symbols.data(), symbols.size(), program->debug_info.data(),
+                   program->debug_info.size());
 }
 
 void
@@ -344,7 +345,7 @@ aco_compile_rt_prolog(const struct aco_compiler_options* options,
       disasm = get_disasm_string(program.get(), code, exec_size);
 
    (*build_prolog)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), program->statistics, 0,
-                   exec_size, code.data(), code.size(), NULL, 0);
+                   exec_size, code.data(), code.size(), NULL, 0, NULL, 0);
 }
 
 void
