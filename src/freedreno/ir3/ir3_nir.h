@@ -96,6 +96,7 @@ nir_def *ir3_get_shared_driver_ubo(nir_builder *b,
 nir_def *ir3_get_driver_ubo(nir_builder *b, struct ir3_driver_ubo *ubo);
 nir_def *ir3_get_driver_consts_ubo(nir_builder *b,
                                    struct ir3_shader_variant *v);
+void ir3_update_driver_ubo(nir_shader *nir, const struct ir3_driver_ubo *ubo, const char *name);
 nir_def *ir3_load_driver_ubo(nir_builder *b, unsigned components,
                              struct ir3_driver_ubo *ubo,
                              unsigned offset);
