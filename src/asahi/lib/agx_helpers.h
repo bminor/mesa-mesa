@@ -54,6 +54,8 @@ agx_pack_txf_sampler(struct agx_sampler_packed *out)
 {
    agx_pack(out, SAMPLER, cfg) {
       /* Allow mipmapping. This is respected by txf, weirdly. */
+      cfg.minimum_lod = 0.0;
+      cfg.maximum_lod = INFINITY;
       cfg.mip_filter = AGX_MIP_FILTER_NEAREST;
 
       /* Out-of-bounds reads must return 0 */
