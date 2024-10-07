@@ -107,7 +107,7 @@ class Field(object):
 
         self.modifier = parse_modifier(attrs.get("modifier"))
         self.exact = attrs.get("exact")
-        self.default = attrs.get("default")
+        self.default = None
 
         if self.exact is not None:
             self.default = self.exact
