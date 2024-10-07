@@ -709,12 +709,12 @@
   <struct name="USC Fragment Properties" size="4">
     <field name="Tag" size="8" start="0" type="USC Control" exact="Fragment properties"/>
     <field name="Early-z testing" size="1" start="8" type="bool"/>
-    <field name="Unk 2" size="1" start="9" type="bool" default="true"/>
+    <field name="Unk 2" size="1" start="9" type="bool"/>
     <field name="Unconditional discard 1" size="1" start="10" type="bool"/>
     <field name="Unconditional discard 2" size="1" start="11" type="bool"/>
-    <field name="Unk 3" size="4" start="12" type="hex" default="0xf"/>
+    <field name="Unk 3" size="4" start="12" type="hex"/>
     <field name="Unk 4" size="8" start="16" type="hex"/> <!-- TODO: determine relation, see docs/table.py -->
-    <field name="Unk 5" size="8" start="24" type="hex" default="0x01"/>
+    <field name="Unk 5" size="8" start="24" type="hex"/>
   </struct>
   <!-- USC commands end -->
 

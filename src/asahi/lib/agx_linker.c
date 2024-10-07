@@ -199,6 +199,8 @@ agx_fast_link(struct agx_linked_shader *linked, struct agx_device *dev,
    if (fragment) {
       agx_pack(&linked->fragment_props, USC_FRAGMENT_PROPERTIES, cfg) {
          cfg.early_z_testing = !writes_sample_mask;
+         cfg.unk_2 = true;
+         cfg.unk_3 = 0xf;
          cfg.unk_4 = 0x2;
          cfg.unk_5 = 0x0;
       }
