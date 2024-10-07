@@ -547,11 +547,11 @@ class Parser(object):
             elif field.type in self.structs:
                 default_fields.append(f"   .{field.name} = {{ {self.gen_prefix(safe_name(field.type.upper()))}_header }}")
 
-        print('#define %-40s\\' % (name + '_header'))
         if default_fields:
+            print('#define %-40s\\' % (name + '_header'))
             print(",  \\\n".join(default_fields))
         else:
-            print('   0')
+            print(f'#define {name}_header 0')
         print('')
 
     def emit_template_struct(self, name, group):
