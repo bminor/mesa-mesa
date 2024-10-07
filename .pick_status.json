@@ -224,7 +224,7 @@
         "description": "mesa: fix DXT1 support with EXT_texture_compression_dxt1",
         "nominated": false,
         "nomination_type": 3,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
