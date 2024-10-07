@@ -105,7 +105,12 @@ class Field(object):
         else:
             self.prefix = None
 
+        self.exact = attrs.get("exact")
         self.default = attrs.get("default")
+
+        if self.exact:
+            assert(self.default is None)
+            self.default = self.exact
 
         # Map enum values
         if self.type in self.parser.enums and self.default is not None:
@@ -171,11 +176,14 @@ class Group(object):
             if self.count > 1:
                 dim = "%s[%d]" % (dim, self.count)
 
-            if len(self.fields) == 0:
-                print("   int dummy;")
-
+            any_fields = False
             for field in self.fields:
-                field.emit_template_struct(dim)
+                if not field.exact:
+                    field.emit_template_struct(dim)
+                    any_fields = True
+
+            if not any_fields:
+                print("   int dummy;")
 
     class Word:
         def __init__(self):
@@ -267,6 +275,9 @@ class Group(object):
                 end -= contrib_word_start
 
                 value = f"values->{contributor.path}"
+                if field.exact:
+                    value = field.default
+
                 if field.modifier is not None:
                     if field.modifier[0] == "shr":
                         value = f"{value} >> {field.modifier[1]}"
@@ -390,13 +401,19 @@ class Group(object):
                     suffix = ", {}, {})".format(field.modifier[1],
                                                 fieldref.end - fieldref.start + 1)
 
-            if field.type in self.parser.enums:
+            if field.type in self.parser.enums and not field.exact:
                 prefix = f"(enum {enum_name(field.type)}) {prefix}"
 
             decoded = f"{prefix}{convert}({', '.join(args)}){suffix}"
 
-            print(f'   values->{fieldref.path} = {decoded};')
+            if field.exact:
+                name = self.label
+                validation.append(f'agx_genxml_validate_exact(fp, \"{name}\", {decoded}, {field.default})')
+            else:
+                print(f'   values->{fieldref.path} = {decoded};')
+
             if field.modifier and field.modifier[0] == "align":
+                assert(not field.exact)
                 mask = hex(field.modifier[1] - 1)
                 print(f'   assert(!(values->{fieldref.path} & {mask}));')
 
@@ -414,6 +431,9 @@ class Group(object):
         for field in self.fields:
             convert = None
             name, val = field.human_name, f'values->{field.name}'
+
+            if field.exact:
+                continue
 
             if field.type in self.parser.structs:
                 pack_name = self.parser.gen_prefix(safe_name(field.type)).upper()
@@ -506,7 +526,7 @@ class Parser(object):
     def emit_header(self, name):
         default_fields = []
         for field in self.group.fields:
-            if not type(field) is Field:
+            if not type(field) is Field or field.exact:
                 continue
             if field.default is not None:
                 default_fields.append(f"   .{field.name} = {field.default}")

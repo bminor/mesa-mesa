@@ -202,6 +202,7 @@ agx_merge_helper(uint32_t *dst, const uint32_t *src, size_t bytes)
 #if defined(NDEBUG) || defined(__OPENCL_VERSION__)
 #define agx_genxml_validate_bounds(a, b, c)
 #define agx_genxml_validate_mask(a, b, c, d, e) true
+#define agx_genxml_validate_exact(a, b, c, d)   true
 #else
 static inline void
 agx_genxml_validate_bounds(const char *name, uint64_t value, uint64_t bound)
@@ -229,6 +230,18 @@ agx_genxml_validate_mask(FILE *fp, const char *name, const void *cl_,
    }
 
    return bad == 0;
+}
+
+static bool
+agx_genxml_validate_exact(FILE *fp, const char *name, uint64_t value,
+                          uint64_t exact)
+{
+   if (value != exact && fp != NULL) {
+      fprintf(fp, "XXX: Expected %s to equal %" PRIx64 " but got %" PRIx64 "\n",
+              name, value, exact);
+   }
+
+   return value == exact;
 }
 
 #endif
