@@ -227,7 +227,7 @@
     <!-- If layout is not linear. Layers must be zero unless rendering to an
     array texture (with a layered framebuffer) -->
     <field name="Levels" size="4" start="104" type="uint" modifier="minus(1)"/>
-    <field name="Layers" size="14" start="108" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Layers" size="14" start="108" type="uint" modifier="minus(1)"/>
     <field name="Page-aligned layers" size="1" start="124" type="bool"/>
 
     <!-- Should writes to this image convert to sRGB?
@@ -246,7 +246,7 @@
     <field name="Acceleration buffer" size="64" start="128" type="address" modifier="shr(4)"/>
 
     <!-- If layout is linear, stride has the minus 1 encoded -->
-    <field name="Depth (linear)" size="11" start="128" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Depth (linear)" size="11" start="128" type="uint" modifier="minus(1)"/>
     <field name="Layer stride (linear)" size="27" start="139" type="uint" modifier="shr(7)"/>
 
     <!-- If neither, for software use to accelerate atomics and multisampled
@@ -255,8 +255,8 @@
     -->
     <field name="Level offset (sw)" size="27" start="128" type="uint" modifier="shr(7)"/>
     <field name="Aligned width MSAA (sw)" size="15" start="128" type="uint"/>
-    <field name="Tile width (sw)" size="3" start="155" type="uint" modifier="log2" default="1"/>
-    <field name="Tile height (sw)" size="3" start="158" type="uint" modifier="log2" default="1"/>
+    <field name="Tile width (sw)" size="3" start="155" type="uint" modifier="log2"/>
+    <field name="Tile height (sw)" size="3" start="158" type="uint" modifier="log2"/>
     <field name="Layer stride (sw)" size="27" start="161" type="uint" modifier="shr(7)"/>
     <field name="Sample count log2 (sw)" size="2" start="188" type="uint"/>
     <field name="Buffer offset (sw)" size="32" start="128" type="uint"/>
@@ -271,8 +271,8 @@
     <field name="Swizzle G" size="3" start="19" type="Channel"/>
     <field name="Swizzle B" size="3" start="22" type="Channel"/>
     <field name="Swizzle A" size="3" start="25" type="Channel"/>
-    <field name="Width" size="14" start="28" type="uint" modifier="minus(1)" default="1"/>
-    <field name="Height" size="14" start="42" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Width" size="14" start="28" type="uint" modifier="minus(1)"/>
+    <field name="Height" size="14" start="42" type="uint" modifier="minus(1)"/>
     <field name="First level" size="4" start="56" type="uint"/>
     <field name="Last level" size="4" start="60" type="uint"/>
     <field name="Samples" size="1" start="64" type="Sample Count"/>
@@ -289,7 +289,7 @@
     <field name="sRGB 2-channel" size="1" start="109" type="bool"/>
     <field name="Stride" size="18" start="110" type="hex" modifier="shr(4)"/>
     <!-- Note that 3D/arrays cannot be linear. -->
-    <field name="Depth" size="14" start="110" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Depth" size="14" start="110" type="uint" modifier="minus(1)"/>
     <field name="Page-aligned layers" size="1" start="126" type="bool"/>
 
     <!-- Read the next word (set for compression or linear 2D arrays) -->
@@ -299,7 +299,7 @@
     <field name="Acceleration buffer" size="64" start="128" type="address" modifier="shr(4)"/>
 
     <!-- If layout is linear, stride has the minus 1 encoded -->
-    <field name="Depth (linear)" size="11" start="128" type="uint" modifier="minus(1)" default="1"/>
+    <field name="Depth (linear)" size="11" start="128" type="uint" modifier="minus(1)"/>
     <field name="Layer stride (linear)" size="27" start="139" type="uint" modifier="shr(7)"/>
 
     <!-- Buffer texture metadata  -->
@@ -338,7 +338,7 @@
   <struct name="Sampler" size="8">
     <field name="Minimum LOD" size="10" start="0" type="lod"/>
     <field name="Maximum LOD" size="10" start="10" type="lod"/>
-    <field name="Maximum anisotropy" size="3" start="20" type="uint" default="1" modifier="log2"/>
+    <field name="Maximum anisotropy" size="3" start="20" type="uint" modifier="log2"/>
     <field name="Magnify" size="2" start="23" type="Filter"/>
     <field name="Minify" size="2" start="25" type="Filter"/>
     <field name="Mip filter" size="2" start="27" type="Mip filter"/>
@@ -411,7 +411,7 @@
     <field name="Depth bias/scissor" size="1" start="8" type="bool"/>
     <field name="Region clip" size="1" start="10" type="bool"/>
     <field name="Viewport" size="1" start="11" type="bool"/>
-    <field name="Viewport count" size="4" start="12" type="uint" default="1" modifier="minus(1)"/>
+    <field name="Viewport count" size="4" start="12" type="uint" modifier="minus(1)"/>
     <field name="W clamp" size="1" start="16" type="bool"/>
     <field name="Output select" size="1" start="17" type="bool"/>
     <field name="Varying counts 32" size="1" start="18" type="bool"/>
@@ -674,7 +674,7 @@
     <field name="Tag" size="8" start="0" type="USC Control" exact="Shared"/>
     <field name="Uses shared memory" size="1" start="8" type="bool"/>
     <field name="Layout" size="6" start="10" type="Shared layout"/>
-    <field name="Sample count" size="2" start="16" type="uint" default="1" modifier="log2"/>
+    <field name="Sample count" size="2" start="16" type="uint" modifier="log2"/>
     <field name="Sample stride in 8 bytes" size="4" start="20" type="uint"/>
     <field name="Bytes per threadgroup" size="8" start="24" type="uint" modifier="groups(256)"/>
   </struct>
