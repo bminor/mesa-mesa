@@ -216,8 +216,8 @@
     <field name="Width" size="14" start="24" type="uint" modifier="minus(1)"/>
     <field name="Height" size="14" start="38" type="uint" modifier="minus(1)"/>
     <field name="Unk 52" size="1" start="52" type="bool"/>
-    <field name="Rotate 90" size="1" start="53" type="bool" default="false"/>
-    <field name="Flip vertical" size="1" start="54" type="bool" default="false"/>
+    <field name="Rotate 90" size="1" start="53" type="bool"/>
+    <field name="Flip vertical" size="1" start="54" type="bool"/>
     <field name="Samples" size="1" start="56" type="Sample Count"/>
     <field name="Unk mipmapped" size="1" start="58" type="bool"/>
     <field name="Compressed 1" size="1" start="59" type="bool"/>
@@ -336,7 +336,7 @@
   </enum>
 
   <struct name="Sampler" size="8">
-    <field name="Minimum LOD" size="10" start="0" type="lod" default="0.0"/>
+    <field name="Minimum LOD" size="10" start="0" type="lod"/>
     <field name="Maximum LOD" size="10" start="10" type="lod"/>
     <field name="Maximum anisotropy" size="3" start="20" type="uint" default="1" modifier="log2"/>
     <field name="Magnify" size="2" start="23" type="Filter"/>
@@ -387,7 +387,7 @@
   </enum>
 
   <struct name="Counts" size="4">
-    <field name="Unknown 0" size="1" start="0" type="hex" default="0"/>
+    <field name="Unknown 0" size="1" start="0" type="hex"/>
     <field name="Uniform register count" size="3" start="1" type="uint" modifier="groups(64)"/>
     <field name="Texture state register count" size="5" start="4" type="uint" modifier="groups(8)"/>
     <field name="Sampler state register count" size="3" start="9" type="Sampler states"/>
@@ -599,7 +599,7 @@
   </struct>
 
   <struct name="Fragment Shader Word 0" size="4">
-    <field name="Unknown 0" size="1" start="0" type="hex" default="0"/>
+    <field name="Unknown 0" size="1" start="0" type="hex"/>
     <field name="Uniform register count" size="3" start="1" type="uint" modifier="groups(64)"/>
     <field name="Texture state register count" size="5" start="4" type="uint" modifier="groups(8)"/>
     <field name="Sampler state register count" size="3" start="9" type="Sampler states"/>
@@ -687,7 +687,7 @@
     <field name="Tag" size="8" start="0" type="USC Control" exact="Shader"/>
     <field name="Loads varyings" size="1" start="8" type="bool"/>
     <!-- Seen set for pixel rate fragment shaders? -->
-    <field name="Unk 1" size="1" start="9" type="bool" default="0"/>
+    <field name="Unk 1" size="1" start="9" type="bool"/>
     <field name="Unk 2" size="6" start="10" type="uint" default="3"/>
     <field name="Code" size="32" start="16" type="address"/>
   </struct>
@@ -695,8 +695,8 @@
   <struct name="USC Registers" size="4">
     <field name="Tag" size="8" start="0" type="USC Control" exact="Registers"/>
     <field name="Register count" size="5" start="8" type="uint" modifier="groups(8)"/>
-    <field name="Unk 1" size="1" start="13" type="bool" default="false"/>
-    <field name="Spill size" size="4" start="18" type="hex" default="0"/>
+    <field name="Unk 1" size="1" start="13" type="bool"/>
+    <field name="Spill size" size="4" start="18" type="hex"/>
     <field name="Unk 4" size="8" start="24" type="hex" default="0x1"/>
   </struct>
 
@@ -719,7 +719,7 @@
     <field name="Unconditional discard 1" size="1" start="10" type="bool"/>
     <field name="Unconditional discard 2" size="1" start="11" type="bool"/>
     <field name="Unk 3" size="4" start="12" type="hex" default="0xf"/>
-    <field name="Unk 4" size="8" start="16" type="hex" default="0"/> <!-- TODO: determine relation, see docs/table.py -->
+    <field name="Unk 4" size="8" start="16" type="hex"/> <!-- TODO: determine relation, see docs/table.py -->
     <field name="Unk 5" size="8" start="24" type="hex" default="0x01"/>
   </struct>
   <!-- USC commands end -->
@@ -743,16 +743,16 @@
   </struct>
 
   <struct name="VDM Barrier">
-    <field name="USC cache inval" size="1" start="3" type="bool" default="false"/>
-    <field name="Unk 4" size="1" start="4" type="bool" default="false"/>
-    <field name="Unk 5" size="1" start="5" type="bool" default="false"/>
-    <field name="Unk 6" size="1" start="6" type="bool" default="false"/>
-    <field name="Unk 8" size="1" start="8" type="bool" default="false"/>
-    <field name="Unk 11" size="1" start="11" type="bool" default="false"/>
-    <field name="Unk 20" size="1" start="20" type="bool" default="false"/>
-    <field name="Unk 24" size="1" start="24" type="bool" default="false"/>
-    <field name="Unk 26" size="1" start="26" type="bool" default="false"/>
-    <field name="Returns" size="1" start="27" type="bool" default="false"/>
+    <field name="USC cache inval" size="1" start="3" type="bool"/>
+    <field name="Unk 4" size="1" start="4" type="bool"/>
+    <field name="Unk 5" size="1" start="5" type="bool"/>
+    <field name="Unk 6" size="1" start="6" type="bool"/>
+    <field name="Unk 8" size="1" start="8" type="bool"/>
+    <field name="Unk 11" size="1" start="11" type="bool"/>
+    <field name="Unk 20" size="1" start="20" type="bool"/>
+    <field name="Unk 24" size="1" start="24" type="bool"/>
+    <field name="Unk 26" size="1" start="26" type="bool"/>
+    <field name="Returns" size="1" start="27" type="bool"/>
     <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="Barrier"/>
   </struct>
 
@@ -778,7 +778,7 @@
   </struct>
 
   <struct name="VDM State Vertex Shader Word 0" size="4">
-    <field name="Unknown 0" size="1" start="0" type="hex" default="0"/>
+    <field name="Unknown 0" size="1" start="0" type="hex"/>
     <field name="Uniform register count" size="3" start="1" type="uint" modifier="groups(64)"/>
     <field name="Texture state register count" size="5" start="4" type="uint" modifier="groups(8)"/>
     <field name="Sampler state register count" size="3" start="9" type="Sampler states"/>
@@ -791,8 +791,8 @@
   </struct>
 
   <struct name="VDM State Vertex Outputs" size="4">
-    <field name="Output count 1" size="8" start="0" type="uint" default="0"/>
-    <field name="Output count 2" size="8" start="8" type="uint" default="0"/>
+    <field name="Output count 1" size="8" start="0" type="uint"/>
+    <field name="Output count 2" size="8" start="8" type="uint"/>
   </struct>
 
   <enum name="VDM Vertex">
@@ -1046,30 +1046,30 @@
   </struct>
 
   <struct name="CDM Barrier" size="4">
-    <field name="Unk 0" size="1" start="0" type="bool" default="false"/>
-    <field name="Unk 1" size="1" start="1" type="bool" default="false"/>
-    <field name="Unk 2" size="1" start="2" type="bool" default="false"/>
-    <field name="USC cache inval" size="1" start="3" type="bool" default="false"/>
-    <field name="Unk 4" size="1" start="4" type="bool" default="false"/>
-    <field name="Unk 5" size="1" start="5" type="bool" default="false"/>
-    <field name="Unk 6" size="1" start="6" type="bool" default="false"/>
-    <field name="Unk 7" size="1" start="7" type="bool" default="false"/>
-    <field name="Unk 8" size="1" start="8" type="bool" default="false"/>
-    <field name="Unk 9" size="1" start="9" type="bool" default="false"/>
-    <field name="Unk 10" size="1" start="10" type="bool" default="false"/>
-    <field name="Unk 11" size="1" start="11" type="bool" default="false"/>
-    <field name="Unk 12" size="1" start="12" type="bool" default="false"/>
-    <field name="Unk 13" size="1" start="13" type="bool" default="false"/>
-    <field name="Unk 14" size="1" start="14" type="bool" default="false"/>
-    <field name="Unk 15" size="1" start="15" type="bool" default="false"/>
-    <field name="Unk 16" size="1" start="16" type="bool" default="false"/>
-    <field name="Unk 17" size="1" start="17" type="bool" default="false"/>
-    <field name="Unk 18" size="1" start="18" type="bool" default="false"/>
-    <field name="Unk 19" size="1" start="19" type="bool" default="false"/>
-    <field name="Unk 20" size="1" start="20" type="bool" default="false"/>
-    <field name="Unk 24" size="1" start="24" type="bool" default="false"/>
-    <field name="Unk 26" size="1" start="26" type="bool" default="false"/>
-    <field name="Returns" size="1" start="27" type="bool" default="false"/>
+    <field name="Unk 0" size="1" start="0" type="bool"/>
+    <field name="Unk 1" size="1" start="1" type="bool"/>
+    <field name="Unk 2" size="1" start="2" type="bool"/>
+    <field name="USC cache inval" size="1" start="3" type="bool"/>
+    <field name="Unk 4" size="1" start="4" type="bool"/>
+    <field name="Unk 5" size="1" start="5" type="bool"/>
+    <field name="Unk 6" size="1" start="6" type="bool"/>
+    <field name="Unk 7" size="1" start="7" type="bool"/>
+    <field name="Unk 8" size="1" start="8" type="bool"/>
+    <field name="Unk 9" size="1" start="9" type="bool"/>
+    <field name="Unk 10" size="1" start="10" type="bool"/>
+    <field name="Unk 11" size="1" start="11" type="bool"/>
+    <field name="Unk 12" size="1" start="12" type="bool"/>
+    <field name="Unk 13" size="1" start="13" type="bool"/>
+    <field name="Unk 14" size="1" start="14" type="bool"/>
+    <field name="Unk 15" size="1" start="15" type="bool"/>
+    <field name="Unk 16" size="1" start="16" type="bool"/>
+    <field name="Unk 17" size="1" start="17" type="bool"/>
+    <field name="Unk 18" size="1" start="18" type="bool"/>
+    <field name="Unk 19" size="1" start="19" type="bool"/>
+    <field name="Unk 20" size="1" start="20" type="bool"/>
+    <field name="Unk 24" size="1" start="24" type="bool"/>
+    <field name="Unk 26" size="1" start="26" type="bool"/>
+    <field name="Returns" size="1" start="27" type="bool"/>
     <field name="Block Type" size="3" start="29" type="CDM Block Type" exact="Barrier"/>
   </struct>
 
