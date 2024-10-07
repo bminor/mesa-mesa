@@ -595,9 +595,8 @@ class Parser(object):
             name = '{}_{}'.format(prefix, value.name)
             name = safe_name(name).upper()
             print('    case {}: return "{}";'.format(name, value.name))
-        print('    default: break;')
+        print('    default: return NULL;')
         print("    }")
-        print("    return NULL;")
         print("}")
         print("#endif\n")
 
