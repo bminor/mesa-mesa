@@ -173,7 +173,6 @@ libagx_draw(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
          cfg.unk_1_present = false;
          cfg.indirect_buffer_present = false;
          cfg.unk_2_present = false;
-         cfg.block_type = AGX_VDM_BLOCK_TYPE_INDEX_LIST;
       }
 
       agx_pack(&desc[1], INDEX_LIST_BUFFER_LO, cfg) {
@@ -233,7 +232,6 @@ libagx_draw_points(private struct CHWTessellator *ctx,
          cfg.unk_1_present = false;
          cfg.indirect_buffer_present = false;
          cfg.unk_2_present = false;
-         cfg.block_type = AGX_VDM_BLOCK_TYPE_INDEX_LIST;
       }
 
       agx_pack(&desc[1], INDEX_LIST_COUNT, cfg) {

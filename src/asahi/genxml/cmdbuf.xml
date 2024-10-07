@@ -638,21 +638,21 @@
   </enum>
 
   <struct name="USC Uniform" size="8">
-    <field name="Tag" size="8" start="0:0" type="USC Control" default="Uniform"/>
+    <field name="Tag" size="8" start="0:0" type="USC Control" exact="Uniform"/>
     <field name="Start (halfs)" size="8" start="0:8" type="uint"/>
     <field name="Size (halfs)" size="6" start="0:20" type="uint" modifier="groups(1)"/>
     <field name="Buffer" size="38" start="0:26" type="address" modifier="shr(2)"/>
   </struct>
 
   <struct name="USC Uniform High" size="8">
-    <field name="Tag" size="8" start="0:0" type="USC Control" default="Uniform High"/>
+    <field name="Tag" size="8" start="0:0" type="USC Control" exact="Uniform High"/>
     <field name="Start (halfs)" size="8" start="0:8" type="uint"/>
     <field name="Size (halfs)" size="6" start="0:20" type="uint" modifier="groups(1)"/>
     <field name="Buffer" size="38" start="0:26" type="address" modifier="shr(2)"/>
   </struct>
 
   <struct name="USC Texture" size="8">
-    <field name="Tag" size="8" start="0:0" type="USC Control" default="Texture"/>
+    <field name="Tag" size="8" start="0:0" type="USC Control" exact="Texture"/>
     <field name="Start" size="8" start="0:8" type="uint"/>
     <!-- Exact split is unknown. Count is at least 5 bits. Less than 8 bits. -->
     <field name="Count" size="7" start="0:20" type="uint"/>
@@ -660,7 +660,7 @@
   </struct>
 
   <struct name="USC Sampler" size="8">
-    <field name="Tag" size="8" start="0:0" type="USC Control" default="Sampler"/>
+    <field name="Tag" size="8" start="0:0" type="USC Control" exact="Sampler"/>
     <field name="Start" size="8" start="0:8" type="uint"/>
     <field name="Count" size="7" start="0:20" type="uint"/>
     <!-- Exact split is unknown. -->
@@ -675,7 +675,7 @@
   </enum>
 
   <struct name="USC Shared" size="4">
-    <field name="Tag" size="8" start="0" type="USC Control" default="Shared"/>
+    <field name="Tag" size="8" start="0" type="USC Control" exact="Shared"/>
     <field name="Uses shared memory" size="1" start="8" type="bool"/>
     <field name="Layout" size="6" start="10" type="Shared layout"/>
     <field name="Sample count" size="2" start="16" type="uint" default="1" modifier="log2"/>
@@ -684,7 +684,7 @@
   </struct>
 
   <struct name="USC Shader" size="6">
-    <field name="Tag" size="8" start="0" type="USC Control" default="Shader"/>
+    <field name="Tag" size="8" start="0" type="USC Control" exact="Shader"/>
     <field name="Loads varyings" size="1" start="8" type="bool"/>
     <!-- Seen set for pixel rate fragment shaders? -->
     <field name="Unk 1" size="1" start="9" type="bool" default="0"/>
@@ -693,7 +693,7 @@
   </struct>
 
   <struct name="USC Registers" size="4">
-    <field name="Tag" size="8" start="0" type="USC Control" default="Registers"/>
+    <field name="Tag" size="8" start="0" type="USC Control" exact="Registers"/>
     <field name="Register count" size="5" start="8" type="uint" modifier="groups(8)"/>
     <field name="Unk 1" size="1" start="13" type="bool" default="false"/>
     <field name="Spill size" size="4" start="18" type="hex" default="0"/>
@@ -701,17 +701,17 @@
   </struct>
 
   <struct name="USC No Preshader" size="2">
-    <field name="Tag" size="8" start="0" type="USC Control" default="No preshader"/>
+    <field name="Tag" size="8" start="0" type="USC Control" exact="No preshader"/>
   </struct>
 
   <struct name="USC Preshader" size="8">
-    <field name="Tag" size="8" start="0" type="USC Control" default="Preshader"/>
+    <field name="Tag" size="8" start="0" type="USC Control" exact="Preshader"/>
     <field name="Unk" size="24" start="8" type="hex" default="0xc08000"/>
     <field name="Code" size="32" start="32" type="address"/>
   </struct>
 
   <struct name="USC Fragment Properties" size="4">
-    <field name="Tag" size="8" start="0" type="USC Control" default="Fragment properties"/>
+    <field name="Tag" size="8" start="0" type="USC Control" exact="Fragment properties"/>
     <!-- Guess. Set if the shader does not write the sample mask (including by
         discard_fragment) -->
     <field name="Early-z testing" size="1" start="8" type="bool"/>
@@ -738,7 +738,7 @@
   <struct name="PPP State" size="8">
     <field name="Pointer (hi)" size="8" start="0" type="hex"/>
     <field name="Size (words)" size="8" start="8" type="uint"/>
-    <field name="Block Type" size="3" start="29" type="VDM Block Type" default="PPP State Update"/>
+    <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="PPP State Update"/>
     <field name="Pointer (lo)" size="32" start="32" type="address"/>
   </struct>
 
@@ -753,7 +753,7 @@
     <field name="Unk 24" size="1" start="24" type="bool" default="false"/>
     <field name="Unk 26" size="1" start="26" type="bool" default="false"/>
     <field name="Returns" size="1" start="27" type="bool" default="false"/>
-    <field name="Block Type" size="3" start="29" type="VDM Block Type" default="Barrier"/>
+    <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="Barrier"/>
   </struct>
 
   <enum name="Index size">
@@ -770,7 +770,7 @@
     <field name="Tessellation present" size="1" start="4" type="bool"/>
     <field name="Vertex unknown present" size="1" start="5" type="bool"/>
     <field name="Tessellation scale present" size="1" start="7" type="bool"/>
-    <field name="Block Type" size="3" start="29" type="VDM Block Type" default="VDM State Update"/>
+    <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="VDM State Update"/>
   </struct>
 
   <struct name="VDM State Restart Index" size="4">
@@ -874,7 +874,7 @@
     <!-- 1 word, unknown purpose -->
     <field name="Unk 2 present" size="1" start="27" type="bool"/>
 
-    <field name="Block Type" size="3" start="29" type="VDM Block Type" default="Index List"/>
+    <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="Index List"/>
   </struct>
 
   <struct name="Index List: Buffer lo" size="4">
@@ -911,7 +911,7 @@
   <struct name="VDM Stream Link" size="8">
     <field name="Target hi" size="8" start="0" type="hex"/>
     <field name="With return" size="1" start="28" type="bool"/>
-    <field name="Block Type" size="3" start="29" type="VDM Block Type" default="Stream Link"/>
+    <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="Stream Link"/>
     <field name="Target lo" size="32" start="32" type="hex"/>
   </struct>
 
@@ -941,7 +941,7 @@
     <field name="Factor buffer size present" size="1" start="28" type="bool"/>
 
     <field name="Unknown 1" size="1" start="28" type="hex"/> <!-- 1 -->
-    <field name="Block Type" size="3" start="29" type="VDM Block Type" default="Tessellate"/>
+    <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="Tessellate"/>
   </struct>
 
   <struct name="VDM Tessellate: Factor buffer" size="4">
@@ -983,7 +983,7 @@
   </struct>
 
   <struct name="VDM Stream Terminate" size="32">
-    <field name="Block Type" size="3" start="29" type="VDM Block Type" default="Stream Terminate"/>
+    <field name="Block Type" size="3" start="29" type="VDM Block Type" exact="Stream Terminate"/>
   </struct>
 
   <!-- VDM commands end -->
@@ -1017,7 +1017,7 @@
     <field name="Sampler state register count" size="3" start="9" type="Sampler states"/>
     <field name="Preshader register count" size="4" start="12" type="uint" modifier="groups(16)"/>
     <field name="Mode" size="2" start="27" type="CDM Mode"/>
-    <field name="Block Type" size="3" start="29" type="CDM Block Type" default="Launch"/>
+    <field name="Block Type" size="3" start="29" type="CDM Block Type" exact="Launch"/>
   </struct>
 
   <struct name="CDM Launch Word 1" size="4">
@@ -1070,17 +1070,17 @@
     <field name="Unk 24" size="1" start="24" type="bool" default="false"/>
     <field name="Unk 26" size="1" start="26" type="bool" default="false"/>
     <field name="Returns" size="1" start="27" type="bool" default="false"/>
-    <field name="Block Type" size="3" start="29" type="CDM Block Type" default="Barrier"/>
+    <field name="Block Type" size="3" start="29" type="CDM Block Type" exact="Barrier"/>
   </struct>
 
   <struct name="CDM Stream Link" size="8">
     <field name="Target hi" size="8" start="0" type="hex"/>
-    <field name="Block Type" size="3" start="29" type="CDM Block Type" default="Stream Link"/>
+    <field name="Block Type" size="3" start="29" type="CDM Block Type" exact="Stream Link"/>
     <field name="Target lo" size="32" start="32" type="hex"/>
   </struct>
 
   <struct name="CDM Stream Terminate" size="8">
-    <field name="Block Type" size="3" start="29" type="CDM Block Type" default="Stream Terminate"/>
+    <field name="Block Type" size="3" start="29" type="CDM Block Type" exact="Stream Terminate"/>
   </struct>
   <!-- CDM commands end -->
 
