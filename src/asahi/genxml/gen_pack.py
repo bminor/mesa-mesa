@@ -335,7 +335,7 @@ class Group(object):
         # First, verify there is no garbage in unused bits
         words = {}
         self.collect_words(self.fields, 0, '', words)
-        print('   bool valid = true;')
+        validation = []
 
         for index in range(self.length // 4):
             base = index * 32
@@ -347,7 +347,7 @@ class Group(object):
 
             if mask != ALL_ONES:
                 bad_mask = hex(mask ^ ALL_ONES)
-                print(f'   valid &= agx_genxml_validate_mask(fp, \"{self.label}\", cl, {index}, {bad_mask});')
+                validation.append(f'agx_genxml_validate_mask(fp, \"{self.label}\", cl, {index}, {bad_mask})')
 
         fieldrefs = []
         self.collect_fields(self.fields, 0, '', fieldrefs)
@@ -398,6 +398,16 @@ class Group(object):
             if field.modifier and field.modifier[0] == "align":
                 mask = hex(field.modifier[1] - 1)
                 print(f'   assert(!(values->{fieldref.path} & {mask}));')
+
+        if len(validation) > 1:
+            print('   bool valid = true;')
+            for v in validation:
+                print(f'   valid &= {v};')
+            print("   return valid;")
+        elif len(validation) == 1:
+            print(f"   return {validation[0]};")
+        else:
+            print("   return true;")
 
     def emit_print_function(self):
         for field in self.fields:
@@ -531,7 +541,6 @@ class Parser(object):
 
         group.emit_unpack_function()
 
-        print("   return valid;\n")
         print("}\n")
 
     def emit_print_function(self, name, group):
