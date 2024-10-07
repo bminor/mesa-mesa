@@ -1093,11 +1093,11 @@
   </enum>
 
   <struct name="IOGPU Attachment" size="24">
-    <field name="Unk 0" start="0:0" size="16" default="0x100" type="hex"/>
+    <field name="Unk 0" start="0:0" size="16" type="hex"/>
     <field name="Address" start="0:16" size="48" type="address"/>
     <field name="Type" start="2:16" size="16" type="IOGPU Attachment Type"/>
     <field name="Size" start="3:9" size="32" type="uint"/>
-    <field name="Unk 3" start="4:16" size="4" type="hex" default="0xC"/>
+    <field name="Unk 3" start="4:16" size="4" type="hex"/>
     <!-- Percent of total attachment space used for this attachment, expressed
          in a decimal percentage [0, 100] <field name="Percent" start="5:16" -->
     <field name="Percent" start="5:16" size="16" type="uint"/>
@@ -1128,15 +1128,15 @@
   </struct>
 
   <struct name="IOGPU Header" size="64" os="darwin">
-    <field name="Unk 0" start="0:0" size="32" default="0x10000" type="hex"/>
+    <field name="Unk 0" start="0:0" size="32" type="hex"/>
     <field name="Total size" start="1:0" size="32" type="uint"/>
     <!-- 0x7 in 11.x -->
-    <field name="Unk 2" start="2:0" size="32" default="0x4" type="hex"/>
+    <field name="Unk 2" start="2:0" size="32" type="hex"/>
     <field name="Attachment length" start="9:0" size="32" type="uint"/>
     <field name="Attachment offset" start="10:0" size="32" type="uint"/>
     <field name="Unknown offset" start="11:0" size="32" type="uint"/>
-    <field name="Unk 4" start="12:0" size="32" default="0x30" type="hex"/>
-    <field name="Unk 5" start="13:0" size="32" default="0x01" type="hex"/>
+    <field name="Unk 4" start="12:0" size="32" type="hex"/>
+    <field name="Unk 5" start="13:0" size="32" type="hex"/>
     <field name="Encoder" start="14:0" size="64" type="address"/>
   </struct>
 
@@ -1165,24 +1165,24 @@
     <field name="Deflake 3" start="28:0" size="64" type="address"/>
     <field name="Deflake 4" start="30:0" size="64" type="address"/>
     <field name="Deflake 5" start="32:0" size="64" type="address"/>
-    <field name="Unk 34" start="34:0" size="32" default="1" type="hex"/>
+    <field name="Unk 34" start="34:0" size="32" type="hex"/>
     <field name="Unk address" start="36:0" size="64" type="address"/>
-    <field name="Unk 40" start="40:0" size="32" default="0x1c" type="hex"/>
+    <field name="Unk 40" start="40:0" size="32" type="hex"/>
     <field name="Encoder ID" start="41:0" size="32" type="hex"/>
-    <field name="Unk 44" start="44:0" size="32" default="0xffffffff" type="hex"/>
+    <field name="Unk 44" start="44:0" size="32" type="hex"/>
     <field name="Context switch program" start="48:0" size="32" type="address"/>
 
     <!-- An enum that's purely macOS defined UAPI. Doesn't matter for us.
     More info at https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/21062#note_1754715 -->
-    <field name="Context switch block size" start="56:0" size="4" default="2" type="hex"/>
+    <field name="Context switch block size" start="56:0" size="4" type="hex"/>
     <field name="Spilling unk 1" start="57:3" size="1" type="bool"/>
     <!-- Depends on grid size, as well as other factors. TODO: Decode. -->
-    <field name="Number of context switch buffers" start="58:0" size="32" default="1" type="uint"/>
+    <field name="Number of context switch buffers" start="58:0" size="32" type="uint"/>
     <field name="Spill Buffer Histogram" start="60:0" size="480" type="Spill Buffer Histogram"/>
     <!-- Lina's guess at the meaning -->
-    <field name="Enable context switching" start="75:16" size="1" default="true" type="bool"/>
-    <field name="Unk 94" start="94:0" size="32" default="0xffffffff" type="hex"/>
-    <field name="Unk 95" start="95:0" size="32" default="0xffffffff" type="hex"/>
+    <field name="Enable context switching" start="75:16" size="1" type="bool"/>
+    <field name="Unk 94" start="94:0" size="32" type="hex"/>
+    <field name="Unk 95" start="95:0" size="32" type="hex"/>
   </struct>
 
   <struct name="IOGPU Graphics" size="1920" os="darwin">
@@ -1190,29 +1190,29 @@
          geometry counts -->
     <field name="Deflake 1" start="22:0" size="64" type="address"/>
     <field name="Deflake 2" start="24:0" size="64" type="address"/>
-    <field name="Unk 54" start="38:0" size="32" default="0x6b0003" type="hex"/>
-    <field name="Unk 55" start="39:0" size="32" default="0x3a0012" type="hex"/>
-    <field name="Unk 56" start="40:0" size="32" default="0x1" type="hex"/>
+    <field name="Unk 54" start="38:0" size="32" type="hex"/>
+    <field name="Unk 55" start="39:0" size="32" type="hex"/>
+    <field name="Unk 56" start="40:0" size="32" type="hex"/>
     <field name="Deflake 3" start="94:0" size="64" type="address"/>
-    <field name="Unk 112" start="96:0" size="32" default="0x1" type="hex"/>
-    <field name="Unk 114" start="98:0" size="32" default="0x1c" type="hex"/>
+    <field name="Unk 112" start="96:0" size="32" type="hex"/>
+    <field name="Unk 114" start="98:0" size="32" type="hex"/>
     <field name="Memoryless render targets used" start="100:0" size="1" type="bool"/>
     <field name="OpenGL depth clipping" start="100:24" size="1" type="bool"/>
-    <field name="Unk 118" start="102:0" size="32" default="0xffffffff" type="hex"/>
-    <field name="Unk 119" start="103:0" size="32" default="0xffffffff" type="hex"/>
-    <field name="Unk 120" start="104:0" size="32" default="0xffffffff" type="hex"/>
+    <field name="Unk 118" start="102:0" size="32" type="hex"/>
+    <field name="Unk 119" start="103:0" size="32" type="hex"/>
+    <field name="Unk 120" start="104:0" size="32" type="hex"/>
 
     <field name="Clear pipeline bind" start="146:0" size="32" type="hex"/>
-    <field name="Clear pipeline unk" start="148:0" size="4" default="4" type="hex"/>
+    <field name="Clear pipeline unk" start="148:0" size="4" type="hex"/>
     <field name="Clear pipeline" start="148:4" size="28" type="address" modifier="shr(4)"/>
     <field name="Store pipeline bind" start="154:0" size="32" type="hex"/>
-    <field name="Store pipeline unk" start="156:0" size="4" default="4" type="hex"/>
+    <field name="Store pipeline unk" start="156:0" size="4" type="hex"/>
     <field name="Store pipeline" start="156:4" size="28" type="address" modifier="shr(4)"/>
     <field name="Scissor array" start="158:0" size="64" type="address"/>
     <field name="Depth bias array" start="160:0" size="64" type="address"/>
     <field name="ZLS control" start="164:0" size="32" type="ZLS Control"/>
-    <field name="Depth width" start="170:0" size="15" type="uint" default="1" modifier="minus(1)"/>
-    <field name="Depth height" start="170:15" size="15" type="uint" default="1" modifier="minus(1)"/>
+    <field name="Depth width" start="170:0" size="15" type="uint" modifier="minus(1)"/>
+    <field name="Depth height" start="170:15" size="15" type="uint" modifier="minus(1)"/>
     <field name="Depth buffer 1" start="172:7" size="33" type="address" modifier="shr(7)"/>
     <!-- Normally 0, 0x38001 with layered -->
     <field name="Depth unknown 1" start="176:0" size="32" type="hex"/>
@@ -1230,8 +1230,8 @@
     <field name="Stencil unknown 2" start="206:0" size="32" type="hex"/>
     <field name="Stencil acceleration buffer 2" start="208:7" size="33" type="address" modifier="shr(7)"/>
     <!-- Proportional to tile width * tile height * sample count -->
-    <field name="Unk 212" start="212:0" size="32" default="0x4" type="hex"/>
-    <field name="Unk 214" start="214:0" size="16" default="0xc000" type="hex"/>
+    <field name="Unk 212" start="212:0" size="32" type="hex"/>
+    <field name="Unk 214" start="214:0" size="16" type="hex"/>
     <field name="Z16 Unorm attachment 1" start="214:18" size="1" type="bool"/>
     <field name="Width 1" start="216:0" size="32" type="uint"/>
     <field name="Height 1" start="217:0" size="32" type="uint"/>
@@ -1244,20 +1244,20 @@
     <!-- Encoded like the depth attachment -->
     <field name="Depth clear value" start="276:0" size="32" type="hex"/>
     <field name="Stencil clear value" start="277:0" size="8" type="uint"/>
-    <field name="Unk 277" start="277:8" size="8" type="hex" default="3"/>
+    <field name="Unk 277" start="277:8" size="8" type="hex"/>
     <field name="Set when reloading Z or S 1" start="279:8" size="1" type="bool"/>
     <field name="Set when frag shader spills" start="279:24" size="1" type="bool"/>
     <field name="Set when reloading Z or S 2" start="280:24" size="1" type="bool"/>
     <field name="Z16 Unorm attachment 2" start="281:8" size="1" type="bool"/>
-    <field name="Unk 282" start="282:0" size="32" type="hex" default="0xffffffff"/>
-    <field name="Unk 283" start="283:0" size="32" type="hex" default="0xffffffff"/>
-    <field name="Unk 284" start="284:0" size="32" type="hex" default="0xffffffff"/>
+    <field name="Unk 282" start="282:0" size="32" type="hex"/>
+    <field name="Unk 283" start="283:0" size="32" type="hex"/>
+    <field name="Unk 284" start="284:0" size="32" type="hex"/>
     <field name="Visibility result buffer" start="286:0" size="64" type="address"/>
     <field name="Partial reload pipeline bind" start="296:0" size="32" type="hex"/>
-    <field name="Partial reload pipeline unk" start="298:0" size="4" default="4" type="hex"/>
+    <field name="Partial reload pipeline unk" start="298:0" size="4" type="hex"/>
     <field name="Partial reload pipeline" start="298:4" size="28" type="address" modifier="shr(4)"/>
     <field name="Partial store pipeline bind" start="304:0" size="32" type="hex"/>
-    <field name="Partial store pipeline unk" start="306:0" size="4" default="4" type="hex"/>
+    <field name="Partial store pipeline unk" start="306:0" size="4" type="hex"/>
     <field name="Partial store pipeline" start="306:4" size="28" type="address" modifier="shr(4)"/>
 
     <!-- New in 12.x -->
@@ -1267,39 +1267,39 @@
     <field name="Stencil acceleration buffer 3" start="346:0" size="64" type="address"/>
     <!-- maybe only set when doing a depth clear? -->
     <!-- 0x1000000 bit set with memoryless render targets? -->
-    <field name="Unk 352" start="352:0" size="32" default="0x1" type="hex"/>
-    <field name="Unk 360" start="360:0" size="32" default="0x1c" type="hex"/>
+    <field name="Unk 352" start="352:0" size="32" type="hex"/>
+    <field name="Unk 360" start="360:0" size="32" type="hex"/>
     <field name="Encoder ID" start="362:0" size="32" type="hex"/>
     <!-- top bit maybe only set with a depth clear? -->
-    <field name="Unk 365" start="365:0" size="64" default="0x1ffffffff" type="hex"/>
+    <field name="Unk 365" start="365:0" size="64" type="hex"/>
     <field name="Unknown buffer" start="370:0" size="64" type="address"/>
     <field name="Width 2" start="382:0" size="32" type="uint"/>
     <field name="Height 2" start="383:0" size="32" type="uint"/>
-    <field name="Sample count" start="384:0" size="32" default="1" type="uint"/>
+    <field name="Sample count" start="384:0" size="32" type="uint"/>
 
     <!-- Divided by 16 and rounded -->
-    <field name="Sample 0 X" start="385:0" size="5" default="8" type="uint"/>
-    <field name="Sample 0 Y" start="386:0" size="5" default="8" type="uint"/>
-    <field name="Sample 1 X" start="387:0" size="5" default="0" type="uint"/>
-    <field name="Sample 1 Y" start="388:0" size="5" default="0" type="uint"/>
-    <field name="Sample 2 X" start="389:0" size="5" default="0" type="uint"/>
-    <field name="Sample 2 Y" start="390:0" size="5" default="0" type="uint"/>
-    <field name="Sample 3 X" start="391:0" size="5" default="0" type="uint"/>
-    <field name="Sample 3 Y" start="392:0" size="5" default="0" type="uint"/>
+    <field name="Sample 0 X" start="385:0" size="5" type="uint"/>
+    <field name="Sample 0 Y" start="386:0" size="5" type="uint"/>
+    <field name="Sample 1 X" start="387:0" size="5" type="uint"/>
+    <field name="Sample 1 Y" start="388:0" size="5" type="uint"/>
+    <field name="Sample 2 X" start="389:0" size="5" type="uint"/>
+    <field name="Sample 2 Y" start="390:0" size="5" type="uint"/>
+    <field name="Sample 3 X" start="391:0" size="5" type="uint"/>
+    <field name="Sample 3 Y" start="392:0" size="5" type="uint"/>
 
     <!-- if tile size 32x32: max(tib allocation, 8) rounded to POT
          if tile size 32x16: that, halved
          -->
-    <field name="Unk 49:0" start="401:0" size="32" default="8" type="uint"/>
-    <field name="Tile width" start="402:0" size="32" default="32" type="uint"/>
-    <field name="Tile height" start="403:0" size="32" default="32" type="uint"/>
+    <field name="Unk 49:0" start="401:0" size="32" type="uint"/>
+    <field name="Tile width" start="402:0" size="32" type="uint"/>
+    <field name="Tile height" start="403:0" size="32" type="uint"/>
     <!-- Number of framebuffer layers when rendering to a layered framebuffer (1
         otherwise). This affects tiling calculations. It also affects how many
     times the background program and end-of-tile programs are executed. The
     layer index is available in sr2. -->
-    <field name="Framebuffer layers" start="404:0" size="32" default="1" type="uint"/>
-    <field name="Unk 56:0" start="408:0" size="32" default="0" type="uint"/>
-    <field name="Unk 70:0" start="410:0" size="32" default="1" type="uint"/>
+    <field name="Framebuffer layers" start="404:0" size="32" type="uint"/>
+    <field name="Unk 56:0" start="408:0" size="32" type="uint"/>
+    <field name="Unk 70:0" start="410:0" size="32" type="uint"/>
   </struct>
 
   <struct name="IOGPU Attachment Count" size="16" os="darwin">
