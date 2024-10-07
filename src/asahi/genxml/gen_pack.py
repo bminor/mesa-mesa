@@ -307,7 +307,7 @@ class Group(object):
 
                 if field.type in ["uint", "hex", "address", "bool"] or field.type in self.parser.enums:
                     bits = (end - start + 1)
-                    if bits < 64:
+                    if bits < 64 and not field.exact:
                         # Add some nicer error checking
                         label = f"{self.label}::{name}"
                         bound = hex(1 << bits)
