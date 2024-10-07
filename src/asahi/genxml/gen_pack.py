@@ -584,7 +584,7 @@ class Parser(object):
         for value in self.values:
             name = '{}_{}'.format(prefix, value.name)
             name = safe_name(name).upper()
-            print('        % -36s = %6d,' % (name, value.value))
+            print(f'   {name} = {value.value},')
         print('};\n')
 
         print("#ifndef __OPENCL_VERSION__")
