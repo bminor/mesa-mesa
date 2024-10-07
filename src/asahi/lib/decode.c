@@ -739,6 +739,7 @@ agxdecode_vdm(struct agxdecode_ctx *ctx, const uint8_t *map, uint64_t *link,
    }
 }
 
+#if __APPLE__
 static void
 agxdecode_cs(struct agxdecode_ctx *ctx, uint32_t *cmdbuf, uint64_t encoder,
              bool verbose, decoder_params *params)
@@ -794,6 +795,7 @@ agxdecode_gfx(struct agxdecode_ctx *ctx, uint32_t *cmdbuf, uint64_t encoder,
                          params, NULL);
    }
 }
+#endif
 
 static void
 agxdecode_sampler_heap(struct agxdecode_ctx *ctx, uint64_t heap, unsigned count)
