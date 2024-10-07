@@ -714,7 +714,7 @@
         "description": "nir/lower_amul: Fix ASAN error",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2e833b16bca66662938b139de90a1710cdc00f2b",
         "notes": null
