@@ -283,17 +283,9 @@ class Group(object):
                     bits = (end - start + 1)
                     if bits < 64:
                         # Add some nicer error checking
-                        error = f"{self.label}::{name} out-of-bounds"
+                        label = f"{self.label}::{name}"
                         bound = hex(1 << bits)
-
-                        print("#ifndef NDEBUG")
-                        print("#ifndef __OPENCL_VERSION__")
-                        print(f"if (unlikely((uint64_t){value} >= {bound})) {{")
-                        print(f"    fprintf(stderr, \"{error}, got 0x%\" PRIx64 \", max {bound}\\n\", (uint64_t) {value});")
-                        print(f"    unreachable(\"{error}\");")
-                        print(f"}}")
-                        print("#endif")
-                        print("#endif")
+                        print(f"   agx_genxml_validate_bounds(\"{label}\", {value}, {bound}ull);")
 
                     s = f"util_bitpack_uint({value}, {start}, {end})"
                 elif field.type == "int":
@@ -343,9 +335,8 @@ class Group(object):
         # First, verify there is no garbage in unused bits
         words = {}
         self.collect_words(self.fields, 0, '', words)
-        print('    bool valid = true;')
+        print('   bool valid = true;')
 
-        print('#ifndef __OPENCL_VERSION__')
         for index in range(self.length // 4):
             base = index * 32
             word = words.get(index, self.Word())
@@ -355,18 +346,8 @@ class Group(object):
             ALL_ONES = 0xffffffff
 
             if mask != ALL_ONES:
-                TMPL = '''
-   if (((const uint32_t *) cl)[{}] & {}) {{
-      valid = false;
-
-      if (fp != NULL) {{
-          fprintf(fp, "XXX: Unknown field of {} unpacked at word {}: got %X, bad mask %X\\n",
-                  ((const uint32_t *) cl)[{}], ((const uint32_t *) cl)[{}] & {});
-      }}
-   }}
-                '''
-                print(TMPL.format(index, hex(mask ^ ALL_ONES), self.label, index, index, index, hex(mask ^ ALL_ONES)))
-        print('#endif')
+                bad_mask = hex(mask ^ ALL_ONES)
+                print(f'   valid &= agx_genxml_validate_mask(fp, \"{self.label}\", cl, {index}, {bad_mask});')
 
         fieldrefs = []
         self.collect_fields(self.fields, 0, '', fieldrefs)
