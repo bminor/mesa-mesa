@@ -9,6 +9,7 @@ import xml.parsers.expat
 import sys
 import operator
 import math
+import platform
 from functools import reduce
 
 global_prefix = "agx"
@@ -449,6 +450,7 @@ class Parser(object):
         self.parser = xml.parsers.expat.ParserCreate()
         self.parser.StartElementHandler = self.start_element
         self.parser.EndElementHandler = self.end_element
+        self.os = platform.system().lower()
 
         self.struct = None
         self.structs = {}
@@ -459,6 +461,9 @@ class Parser(object):
         return f'{global_prefix.upper()}_{name}'
 
     def start_element(self, name, attrs):
+        if "os" in attrs and attrs["os"] != self.os:
+            return
+
         if name == "genxml":
             print(pack_header)
         elif name == "struct":
@@ -471,7 +476,7 @@ class Parser(object):
                 self.group.length = int(attrs["size"])
             self.group.align = int(attrs["align"]) if "align" in attrs else None
             self.structs[attrs["name"]] = self.group
-        elif name == "field":
+        elif name == "field" and self.group is not None:
             self.group.fields.append(Field(self, attrs))
             self.values = []
         elif name == "enum":
@@ -487,10 +492,12 @@ class Parser(object):
 
     def end_element(self, name):
         if name == "struct":
-            self.emit_struct()
-            self.struct = None
+            if self.struct is not None:
+                self.emit_struct()
+                self.struct = None
+
             self.group = None
-        elif name  == "field":
+        elif name  == "field" and self.group is not None:
             self.group.fields[-1].values = self.values
         elif name  == "enum":
             self.emit_enum()

@@ -1127,7 +1127,7 @@
     <field name="S Resolve" start="58" size="1" type="bool"/>
   </struct>
 
-  <struct name="IOGPU Header" size="64">
+  <struct name="IOGPU Header" size="64" os="darwin">
     <field name="Unk 0" start="0:0" size="32" default="0x10000" type="hex"/>
     <field name="Total size" start="1:0" size="32" type="uint"/>
     <!-- 0x7 in 11.x -->
@@ -1140,7 +1140,7 @@
     <field name="Encoder" start="14:0" size="64" type="address"/>
   </struct>
 
-  <struct name="Spill Buffer Histogram" size="60">
+  <struct name="Spill Buffer Histogram" size="60" os="darwin">
     <field name="Bin 0" start="0:0" size="4" type="uint"/>
     <field name="Bin 1" start="1:0" size="4" type="uint"/>
     <field name="Bin 2" start="2:0" size="4" type="uint"/>
@@ -1158,7 +1158,7 @@
     <field name="Bin 14" start="14:0" size="4" type="uint"/>
   </struct>
 
-  <struct name="IOGPU Compute" size="384">
+  <struct name="IOGPU Compute" size="384" os="darwin">
     <field name="Deflake 1" start="20:0" size="64" type="address"/>
     <field name="Terminate of encoder" start="22:0" size="64" type="address"/>
     <field name="Deflake 2" start="26:0" size="64" type="address"/>
@@ -1185,7 +1185,7 @@
     <field name="Unk 95" start="95:0" size="32" default="0xffffffff" type="hex"/>
   </struct>
 
-  <struct name="IOGPU Graphics" size="1920">
+  <struct name="IOGPU Graphics" size="1920" os="darwin">
     <!-- if either deflake address is null, rendering gets flaky for high
          geometry counts -->
     <field name="Deflake 1" start="22:0" size="64" type="address"/>
@@ -1302,7 +1302,7 @@
     <field name="Unk 70:0" start="410:0" size="32" default="1" type="uint"/>
   </struct>
 
-  <struct name="IOGPU Attachment Count" size="16">
+  <struct name="IOGPU Attachment Count" size="16" os="darwin">
     <field name="Count" start="3:0" size="32" type="uint"/>
   </struct>
 
