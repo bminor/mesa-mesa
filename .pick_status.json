@@ -1634,7 +1634,7 @@
         "description": "v3d: Don't use performance counters names array with an older kernel",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "017dde0d1caa981560c5e6c54491337e4e06d497",
         "notes": null
