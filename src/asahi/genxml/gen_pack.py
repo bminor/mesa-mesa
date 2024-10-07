@@ -557,8 +557,8 @@ class Parser(object):
 
         group.emit_print_function()
 
-        print("}\n")
-        print("#endif")
+        print("}")
+        print("#endif\n")
 
     def emit_struct(self):
         name = self.struct
