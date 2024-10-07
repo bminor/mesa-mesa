@@ -193,6 +193,7 @@ agx_fast_link(struct agx_linked_shader *linked, struct agx_device *dev,
       cfg.register_count = nr_gprs;
       cfg.unk_1 = fragment;
       cfg.spill_size = scratch_size ? agx_scratch_get_bucket(scratch_size) : 0;
+      cfg.unk_4 = 1;
    }
 
    if (fragment) {

@@ -693,7 +693,7 @@
     <field name="Register count" size="5" start="8" type="uint" modifier="groups(8)"/>
     <field name="Unk 1" size="1" start="13" type="bool"/>
     <field name="Spill size" size="4" start="18" type="hex"/>
-    <field name="Unk 4" size="8" start="24" type="hex" default="0x1"/>
+    <field name="Unk 4" size="8" start="24" type="hex"/>
   </struct>
 
   <struct name="USC No Preshader" size="2">
