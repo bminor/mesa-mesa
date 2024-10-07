@@ -60,6 +60,7 @@ void
 GENX(csf_cleanup_batch)(struct panfrost_batch *batch)
 {
    free(batch->csf.cs.builder);
+   free(batch->csf.cs.ls_tracker);
 
    panfrost_pool_cleanup(&batch->csf.cs_chunk_pool);
 }
@@ -73,6 +74,13 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
    panfrost_pool_init(&batch->csf.cs_chunk_pool, NULL, dev, 0, 32768,
                       "CS chunk pool", false, true);
 
+   if (dev->debug & PAN_DBG_CS) {
+      /* Load/store tracker if extra checks are enabled. */
+      batch->csf.cs.ls_tracker =
+         calloc(1, sizeof(struct cs_load_store_tracker));
+      batch->csf.cs.ls_tracker->sb_slot = 0;
+   }
+
    /* Allocate and bind the command queue */
    struct cs_buffer queue = csf_alloc_cs_buffer(batch);
    const struct cs_builder_conf conf = {
@@ -80,6 +88,7 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
       .nr_kernel_registers = 4,
       .alloc_buffer = csf_alloc_cs_buffer,
       .cookie = batch,
+      .ls_tracker = batch->csf.cs.ls_tracker,
    };
 
    /* Setup the queue builder */

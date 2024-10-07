@@ -76,6 +76,7 @@ static const struct debug_named_value panfrost_debug_options[] = {
 #endif
    {"yuv",        PAN_DBG_YUV,      "Tint YUV textures with blue for 1-plane and green for 2-plane"},
    {"forcepack",  PAN_DBG_FORCE_PACK,  "Force packing of AFBC textures on upload"},
+   {"cs",         PAN_DBG_CS,       "Enable extra checks in command stream"},
    DEBUG_NAMED_VALUE_END
 };
 /* clang-format on */
