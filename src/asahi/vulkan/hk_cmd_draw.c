@@ -2517,18 +2517,16 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
    }
 
    if (dirty.fragment_front_face_2) {
-      agx_pack(&fragment_face_2, FRAGMENT_FACE_2, cfg) {
-         cfg.object_type = gfx->object_type;
+      if (fs) {
+         agx_pack(&fragment_face_2, FRAGMENT_FACE_2, cfg) {
+            cfg.object_type = gfx->object_type;
+         }
 
-         /* TODO: flip the default? */
-         if (fs)
-            cfg.conservative_depth = 0;
-      }
-
-      if (fs)
          agx_merge(fragment_face_2, fs->frag_face, FRAGMENT_FACE_2);
-
-      agx_ppp_push_packed(&ppp, &fragment_face_2, FRAGMENT_FACE_2);
+         agx_ppp_push_packed(&ppp, &fragment_face_2, FRAGMENT_FACE_2);
+      } else {
+         agx_ppp_fragment_face_2(&ppp, gfx->object_type, NULL);
+      }
    }
 
    if (dirty.fragment_front_stencil) {

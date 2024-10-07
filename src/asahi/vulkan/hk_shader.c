@@ -753,10 +753,7 @@ hk_upload_shader(struct hk_device *dev, struct hk_shader *shader)
    }
 
    if (shader->info.stage == MESA_SHADER_FRAGMENT) {
-      agx_pack(&shader->frag_face, FRAGMENT_FACE_2, cfg) {
-         cfg.conservative_depth =
-            agx_translate_depth_layout(shader->b.info.depth_layout);
-      }
+      agx_pack_fragment_face_2(&shader->frag_face, 0, &shader->b.info);
    }
 
    agx_pack(&shader->counts, COUNTS, cfg) {
