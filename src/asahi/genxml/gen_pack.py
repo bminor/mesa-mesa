@@ -598,8 +598,8 @@ class Parser(object):
         print('    default: break;')
         print("    }")
         print("    return NULL;")
-        print("}\n")
-        print("#endif")
+        print("}")
+        print("#endif\n")
 
     def parse(self, filename):
         file = open(filename, "rb")
