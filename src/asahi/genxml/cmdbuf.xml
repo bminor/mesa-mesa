@@ -573,9 +573,7 @@
     <field name="Varyings" size="1" start="16" type="bool"/>
     <field name="Point size" size="1" start="18" type="bool"/>
     <!-- For layered rendering, enable both and write the 2x16-bit tuple from
-    the vertex shader (layer, (viewport << u) + (u & layer)). So far unclear
-    what u is supposed to be. If u=0, this simplifies to the expected (layer,
-        viewport) at least. -->
+      the vertex shader (layer, viewport). -->
     <field name="Viewport target" size="1" start="19" type="bool"/>
     <field name="Render target" size="1" start="20" type="bool"/>
     <field name="Frag coord Z" size="1" start="21" type="bool"/>
