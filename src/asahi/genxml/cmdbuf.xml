@@ -491,8 +491,6 @@
     <value name="Translucent" value="1"/>
     <value name="Punch through" value="2"/>
     <value name="Translucent punch through" value="3"/>
-    <!-- See PASSTYPE in rogue_ppp.xml if more values are observed on AGX...
-         Translucent punch through seems notably different though? -->
   </enum>
 
   <struct name="Fragment control" size="4">
