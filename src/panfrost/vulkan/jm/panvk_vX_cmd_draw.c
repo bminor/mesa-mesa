@@ -1605,6 +1605,7 @@ panvk_cmd_begin_rendering_init_state(struct panvk_cmd_buffer *cmdbuf,
       struct panvk_image *img =
          container_of(iview->vk.image, struct panvk_image, vk);
       const VkExtent3D iview_size = iview->vk.extent;
+      cmdbuf->state.gfx.render.z_attachment.fmt = iview->vk.format;
 
       if (iview->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
          cmdbuf->state.gfx.render.bound_attachments |=
@@ -1648,6 +1649,7 @@ panvk_cmd_begin_rendering_init_state(struct panvk_cmd_buffer *cmdbuf,
       struct panvk_image *img =
          container_of(iview->vk.image, struct panvk_image, vk);
       const VkExtent3D iview_size = iview->vk.extent;
+      cmdbuf->state.gfx.render.s_attachment.fmt = iview->vk.format;
 
       if (iview->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
          cmdbuf->state.gfx.render.bound_attachments |=

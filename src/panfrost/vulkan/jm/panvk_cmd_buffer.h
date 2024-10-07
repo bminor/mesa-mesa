@@ -146,6 +146,7 @@ struct panvk_cmd_graphics_state {
 
       struct {
          struct panvk_image_view *iview;
+         VkFormat fmt;
          struct panvk_resolve_attachment resolve;
       } z_attachment, s_attachment;
 

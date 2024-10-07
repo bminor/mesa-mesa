@@ -187,29 +187,16 @@ panvk_per_arch(CmdClearAttachments)(VkCommandBuffer commandBuffer,
       .view_mask = 0,
       .samples = fbinfo->nr_samples,
       .color_attachment_count = fbinfo->rt_count,
+      .depth_attachment_format = cmdbuf->state.gfx.render.z_attachment.fmt,
+      .stencil_attachment_format = cmdbuf->state.gfx.render.s_attachment.fmt,
    };
 
-   for (uint32_t i = 0; i < fbinfo->rt_count; i++) {
-      if (fbinfo->rts[i].view) {
-         render.color_attachment_formats[i] =
-            cmdbuf->state.gfx.render.color_attachments.fmts[i];
-         render.color_attachment_write_masks[i] =
-            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-      }
-   }
-
-   if (fbinfo->zs.view.zs) {
-      render.depth_attachment_format =
-         vk_format_from_pipe_format(fbinfo->zs.view.zs->format);
-
-      if (vk_format_has_stencil(render.depth_attachment_format))
-         render.stencil_attachment_format = render.depth_attachment_format;
-   }
-
-   if (fbinfo->zs.view.s) {
-      render.stencil_attachment_format =
-         vk_format_from_pipe_format(fbinfo->zs.view.s->format);
+   for (uint32_t i = 0; i < render.color_attachment_count; i++) {
+       render.color_attachment_formats[i] =
+          cmdbuf->state.gfx.render.color_attachments.fmts[i];
+       render.color_attachment_write_masks[i] =
+          VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
    }
 
    panvk_per_arch(cmd_meta_gfx_start)(cmdbuf, &save);
