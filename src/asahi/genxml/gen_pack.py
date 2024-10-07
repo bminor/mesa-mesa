@@ -54,7 +54,7 @@ def prefixed_upper_name(prefix, name):
     return safe_name(name).upper()
 
 def enum_name(name):
-    return "{}_{}".format(global_prefix, safe_name(name)).lower()
+    return f"{global_prefix}_{safe_name(name)}".lower()
 
 MODIFIERS = ["shr", "minus", "align", "log2", "groups"]
 
@@ -97,7 +97,7 @@ class Field(object):
         self.type = attrs["type"]
 
         if self.type == 'bool' and self.start != self.end:
-            print("#error Field {} has bool type but more than one bit of size".format(self.name));
+            print(f"#error Field {self.name} has bool type but more than one bit of size");
 
         if "prefix" in attrs:
             self.prefix = safe_name(attrs["prefix"]).upper()
@@ -108,7 +108,7 @@ class Field(object):
 
         # Map enum values
         if self.type in self.parser.enums and self.default is not None:
-            self.default = safe_name('{}_{}_{}'.format(global_prefix, self.type, self.default)).upper()
+            self.default = safe_name(f'{global_prefix}_{self.type}_{self.default}').upper()
 
         self.modifier  = parse_modifier(attrs.get("modifier"))
 
@@ -130,7 +130,7 @@ class Field(object):
         elif self.type in self.parser.enums:
             type = 'enum ' + enum_name(self.type)
         else:
-            print("#error unhandled type: %s" % self.type)
+            print(f"#error unhandled type: {self.type}")
             type = "uint32_t"
 
         print("   %-36s %s%s;" % (type, self.name, dim))
@@ -190,7 +190,7 @@ class Group(object):
 
     def collect_fields(self, fields, offset, path, all_fields):
         for field in fields:
-            field_path = '{}{}'.format(path, field.name)
+            field_path = f'{path}{field.name}'
             field_offset = offset + field.start
 
             if field.type in self.parser.structs:
@@ -204,7 +204,7 @@ class Group(object):
 
     def collect_words(self, fields, offset, path, words):
         for field in fields:
-            field_path = '{}{}'.format(path, field.name)
+            field_path = f'{path}{field.name}'
             start = offset + field.start
 
             if field.type in self.parser.structs:
@@ -235,11 +235,11 @@ class Group(object):
             if field.modifier[0] == "shr":
                 shift = field.modifier[1]
                 mask = hex((1 << shift) - 1)
-                print("   assert((values->{} & {}) == 0);".format(field.name, mask))
+                print(f"   assert((values->{field.name} & {mask}) == 0);")
             elif field.modifier[0] == "minus":
-                print("   assert(values->{} >= {});".format(field.name, field.modifier[1]))
+                print(f"   assert(values->{field.name} >= {field.modifier[1]});")
             elif field.modifier[0] == "log2":
-                print("   assert(IS_POT_NONZERO(values->{}));".format(field.name))
+                print(f"   assert(IS_POT_NONZERO(values->{field.name}));")
 
         for index in range(math.ceil(self.length / 4)):
             # Handle MBZ words
@@ -265,16 +265,16 @@ class Group(object):
                 start -= contrib_word_start
                 end -= contrib_word_start
 
-                value = "values->{}".format(contributor.path)
+                value = f"values->{contributor.path}"
                 if field.modifier is not None:
                     if field.modifier[0] == "shr":
-                        value = "{} >> {}".format(value, field.modifier[1])
+                        value = f"{value} >> {field.modifier[1]}"
                     elif field.modifier[0] == "minus":
-                        value = "{} - {}".format(value, field.modifier[1])
+                        value = f"{value} - {field.modifier[1]}"
                     elif field.modifier[0] == "align":
-                        value = "ALIGN_POT({}, {})".format(value, field.modifier[1])
+                        value = f"ALIGN_POT({value}, {field.modifier[1]})"
                     elif field.modifier[0] == "log2":
-                        value = "util_logbase2({})".format(value)
+                        value = f"util_logbase2({value})"
                     elif field.modifier[0] == "groups":
                         value = "__gen_to_groups({}, {}, {})".format(value,
                                 field.modifier[1], end - start + 1)
@@ -301,15 +301,15 @@ class Group(object):
                         (value, start, end)
                 elif field.type == "float":
                     assert(start == 0 and end == 31)
-                    s = "util_bitpack_float({})".format(value)
+                    s = f"util_bitpack_float({value})"
                 elif field.type == "half":
                     assert(start == 0 and end == 15)
-                    s = "_mesa_float_to_half({})".format(value)
+                    s = f"_mesa_float_to_half({value})"
                 elif field.type == "lod":
                     assert(end - start + 1 == 10)
                     s = "__gen_pack_lod(%s, %d, %d)" % (value, start, end)
                 else:
-                    s = "#error unhandled field {}, type {}".format(contributor.path, field.type)
+                    s = f"#error unhandled field {contributor.path}, type {field.type}"
 
                 if not s == None:
                     shift = word_start - contrib_word_start
@@ -317,9 +317,9 @@ class Group(object):
                         s = "%s >> %d" % (s, shift)
 
                     if contributor == word.contributors[-1]:
-                        lines.append("%s %s;" % (prefix, s))
+                        lines.append(f"{prefix} {s};")
                     else:
-                        lines.append("%s %s |" % (prefix, s))
+                        lines.append(f"{prefix} {s} |")
                     prefix = "           "
 
             for ln in lines:
@@ -392,15 +392,15 @@ class Group(object):
             elif field.type == "lod":
                 convert = "__gen_unpack_lod"
             else:
-                s = "/* unhandled field %s, type %s */\n" % (field.name, field.type)
+                s = f"/* unhandled field {field.name}, type {field.type} */\n"
 
             suffix = ""
             prefix = ""
             if field.modifier:
                 if field.modifier[0] == "minus":
-                    suffix = " + {}".format(field.modifier[1])
+                    suffix = f" + {field.modifier[1]}"
                 elif field.modifier[0] == "shr":
-                    suffix = " << {}".format(field.modifier[1])
+                    suffix = f" << {field.modifier[1]}"
                 if field.modifier[0] == "log2":
                     prefix = "1 << "
                 elif field.modifier[0] == "groups":
@@ -411,42 +411,42 @@ class Group(object):
             if field.type in self.parser.enums:
                 prefix = f"(enum {enum_name(field.type)}) {prefix}"
 
-            decoded = '{}{}({}){}'.format(prefix, convert, ', '.join(args), suffix)
+            decoded = f"{prefix}{convert}({', '.join(args)}){suffix}"
 
-            print('   values->{} = {};'.format(fieldref.path, decoded))
+            print(f'   values->{fieldref.path} = {decoded};')
             if field.modifier and field.modifier[0] == "align":
                 mask = hex(field.modifier[1] - 1)
-                print('   assert(!(values->{} & {}));'.format(fieldref.path, mask))
+                print(f'   assert(!(values->{fieldref.path} & {mask}));')
 
     def emit_print_function(self):
         for field in self.fields:
             convert = None
-            name, val = field.human_name, 'values->{}'.format(field.name)
+            name, val = field.human_name, f'values->{field.name}'
 
             if field.type in self.parser.structs:
                 pack_name = self.parser.gen_prefix(safe_name(field.type)).upper()
-                print('   fprintf(fp, "%*s{}:\\n", indent, "");'.format(field.human_name))
-                print("   {}_print(fp, &values->{}, indent + 2);".format(pack_name, field.name))
+                print(f'   fprintf(fp, "%*s{field.human_name}:\\n", indent, "");')
+                print(f"   {pack_name}_print(fp, &values->{field.name}, indent + 2);")
             elif field.type == "address":
                 # TODO resolve to name
-                print('   fprintf(fp, "%*s{}: 0x%" PRIx64 "\\n", indent, "", {});'.format(name, val))
+                print(f'   fprintf(fp, "%*s{name}: 0x%" PRIx64 "\\n", indent, "", {val});')
             elif field.type in self.parser.enums:
-                print('   if ({}_as_str({}))'.format(enum_name(field.type), val))
-                print('     fprintf(fp, "%*s{}: %s\\n", indent, "", {}_as_str({}));'.format(name, enum_name(field.type), val))
+                print(f'   if ({enum_name(field.type)}_as_str({val}))')
+                print(f'     fprintf(fp, "%*s{name}: %s\\n", indent, "", {enum_name(field.type)}_as_str({val}));')
                 print('    else')
-                print('     fprintf(fp, "%*s{}: unknown %X (XXX)\\n", indent, "", {});'.format(name, val))
+                print(f'     fprintf(fp, "%*s{name}: unknown %X (XXX)\\n", indent, "", {val});')
             elif field.type == "int":
-                print('   fprintf(fp, "%*s{}: %d\\n", indent, "", {});'.format(name, val))
+                print(f'   fprintf(fp, "%*s{name}: %d\\n", indent, "", {val});')
             elif field.type == "bool":
-                print('   fprintf(fp, "%*s{}: %s\\n", indent, "", {} ? "true" : "false");'.format(name, val))
+                print(f'   fprintf(fp, "%*s{name}: %s\\n", indent, "", {val} ? "true" : "false");')
             elif field.type in ["float", "lod", "half"]:
-                print('   fprintf(fp, "%*s{}: %f\\n", indent, "", {});'.format(name, val))
+                print(f'   fprintf(fp, "%*s{name}: %f\\n", indent, "", {val});')
             elif field.type in ["uint", "hex"] and (field.end - field.start) >= 32:
-                print('   fprintf(fp, "%*s{}: 0x%" PRIx64 "\\n", indent, "", {});'.format(name, val))
+                print(f'   fprintf(fp, "%*s{name}: 0x%" PRIx64 "\\n", indent, "", {val});')
             elif field.type == "hex":
-                print('   fprintf(fp, "%*s{}: 0x%" PRIx32 "\\n", indent, "", {});'.format(name, val))
+                print(f'   fprintf(fp, "%*s{name}: 0x%" PRIx32 "\\n", indent, "", {val});')
             else:
-                print('   fprintf(fp, "%*s{}: %u\\n", indent, "", {});'.format(name, val))
+                print(f'   fprintf(fp, "%*s{name}: %u\\n", indent, "", {val});')
 
 class Value(object):
     def __init__(self, attrs):
@@ -465,7 +465,7 @@ class Parser(object):
         self.enums = set()
 
     def gen_prefix(self, name):
-        return '{}_{}'.format(global_prefix.upper(), name)
+        return f'{global_prefix.upper()}_{name}'
 
     def start_element(self, name, attrs):
         if name == "genxml":
@@ -511,9 +511,9 @@ class Parser(object):
             if not type(field) is Field:
                 continue
             if field.default is not None:
-                default_fields.append("   .{} = {}".format(field.name, field.default))
+                default_fields.append(f"   .{field.name} = {field.default}")
             elif field.type in self.structs:
-                default_fields.append("   .{} = {{ {}_header }}".format(field.name, self.gen_prefix(safe_name(field.type.upper()))))
+                default_fields.append(f"   .{field.name} = {{ {self.gen_prefix(safe_name(field.type.upper()))}_header }}")
 
         print('#define %-40s\\' % (name + '_header'))
         if default_fields:
@@ -535,14 +535,13 @@ class Parser(object):
 
         print("}\n\n")
 
-        print('#define {} {}'.format (name + "_LENGTH", self.group.length))
+        print(f"#define {name + '_LENGTH'} {self.group.length}")
         if self.group.align != None:
-            print('#define {} {}'.format (name + "_ALIGN", self.group.align))
+            print(f"#define {name + '_ALIGN'} {self.group.align}")
 
         # round up to handle 6 half-word USC structures
         words = (self.group.length + 4 - 1) // 4
-        print('struct {}_packed {{ uint32_t opaque[{}];}};'.format(name.lower(),
-                                                                   words))
+        print(f'struct {name.lower()}_packed {{ uint32_t opaque[{words}];}};')
 
     def emit_unpack_function(self, name, group):
         print("static inline bool")
@@ -557,7 +556,7 @@ class Parser(object):
     def emit_print_function(self, name, group):
         print("#ifndef __OPENCL_VERSION__")
         print("static inline void")
-        print("{}_print(FILE *fp, const struct {} * values, unsigned indent)\n{{".format(name.upper(), name))
+        print(f"{name.upper()}_print(FILE *fp, const struct {name} * values, unsigned indent)\n{{")
 
         group.emit_print_function()
 
@@ -579,22 +578,22 @@ class Parser(object):
     def emit_enum(self):
         e_name = enum_name(self.enum)
         prefix = e_name if self.enum != 'Format' else global_prefix
-        print('enum {} {{'.format(e_name))
+        print(f'enum {e_name} {{')
 
         for value in self.values:
-            name = '{}_{}'.format(prefix, value.name)
+            name = f'{prefix}_{value.name}'
             name = safe_name(name).upper()
             print(f'   {name} = {value.value},')
         print('};\n')
 
         print("#ifndef __OPENCL_VERSION__")
         print("static inline const char *")
-        print("{}_as_str(enum {} imm)\n{{".format(e_name.lower(), e_name))
+        print(f"{e_name.lower()}_as_str(enum {e_name} imm)\n{{")
         print("    switch (imm) {")
         for value in self.values:
-            name = '{}_{}'.format(prefix, value.name)
+            name = f'{prefix}_{value.name}'
             name = safe_name(name).upper()
-            print('    case {}: return "{}";'.format(name, value.name))
+            print(f'    case {name}: return "{value.name}";')
         print('    default: return NULL;')
         print("    }")
         print("}")
