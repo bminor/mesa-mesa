@@ -524,7 +524,7 @@ class Parser(object):
 
         group.emit_pack_function()
 
-        print("}\n\n")
+        print("}\n")
 
         print(f"#define {name + '_LENGTH'} {self.group.length}")
         if self.group.align != None:
