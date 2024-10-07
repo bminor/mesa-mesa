@@ -433,7 +433,7 @@ class Group(object):
             elif field.type in self.parser.enums:
                 print(f'   if ({enum_name(field.type)}_as_str({val}))')
                 print(f'     fprintf(fp, "%*s{name}: %s\\n", indent, "", {enum_name(field.type)}_as_str({val}));')
-                print('    else')
+                print(f'   else')
                 print(f'     fprintf(fp, "%*s{name}: unknown %X (XXX)\\n", indent, "", {val});')
             elif field.type == "int":
                 print(f'   fprintf(fp, "%*s{name}: %d\\n", indent, "", {val});')
