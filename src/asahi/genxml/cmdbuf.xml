@@ -706,7 +706,7 @@
 
   <struct name="USC Preshader" size="8">
     <field name="Tag" size="8" start="0" type="USC Control" exact="Preshader"/>
-    <field name="Unk" size="24" start="8" type="hex" default="0xc08000"/>
+    <field name="Unk" size="24" start="8" type="hex" exact="0xc08000"/>
     <field name="Code" size="32" start="32" type="address"/>
   </struct>
 
@@ -1025,7 +1025,7 @@
   </struct>
 
   <struct name="CDM Unk G14X" size="8">
-    <field name="Unknown 30" size="1" start="1:30" type="bool" default="true"/>
+    <field name="Unknown 30" size="1" start="1:30" type="bool" exact="true"/>
   </struct>
 
   <struct name="CDM Indirect" size="8">
