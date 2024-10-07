@@ -3748,6 +3748,7 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
    if (dirty.cull_2) {
       agx_ppp_push(&ppp, CULL_2, cfg) {
          cfg.needs_primitive_id = batch->generate_primitive_id;
+         cfg.clamp_w = true;
       }
    }
 

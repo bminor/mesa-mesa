@@ -2600,6 +2600,7 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
    if (dirty.cull_2) {
       agx_ppp_push(&ppp, CULL_2, cfg) {
          cfg.needs_primitive_id = gfx->generate_primitive_id;
+         cfg.clamp_w = true;
       }
    }
 
