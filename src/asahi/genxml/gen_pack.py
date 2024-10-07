@@ -105,18 +105,32 @@ class Field(object):
         else:
             self.prefix = None
 
+        self.modifier = parse_modifier(attrs.get("modifier"))
         self.exact = attrs.get("exact")
         self.default = attrs.get("default")
 
-        if self.exact:
-            assert(self.default is None)
+        if self.exact is not None:
             self.default = self.exact
+        elif self.modifier is not None:
+            # Set the default value to encode to zero
+            mod = self.modifier
+            if mod[0] == 'log2':
+                self.default = 1
+            elif mod[0] == 'minus':
+                self.default = mod[1]
+            elif mod[0] == 'groups':
+                # The zero encoding means "all"
+                self.default = 1 << int(attrs["size"])
+            elif mod[0] in ['shr', 'align']:
+                # Zero encodes to zero
+                pass
+            else:
+                assert(0)
 
         # Map enum values
         if self.type in self.parser.enums and self.default is not None:
             self.default = safe_name(f'{global_prefix}_{self.type}_{self.default}').upper()
 
-        self.modifier  = parse_modifier(attrs.get("modifier"))
 
     def emit_template_struct(self, dim):
         if self.type == 'address':
