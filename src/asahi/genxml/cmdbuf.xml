@@ -684,7 +684,7 @@
     <field name="Loads varyings" size="1" start="8" type="bool"/>
     <!-- Seen set for pixel rate fragment shaders? -->
     <field name="Unk 1" size="1" start="9" type="bool"/>
-    <field name="Unk 2" size="6" start="10" type="uint" default="3"/>
+    <field name="Unk 2" size="6" start="10" type="uint"/>
     <field name="Code" size="32" start="16" type="address"/>
   </struct>
 
