@@ -174,7 +174,7 @@
     <value name="Varying" value="0"/>
     <value name="Fragcoord Z" value="1"/>
     <value name="Point coord" value="2"/>
-    <value name="Primitive ID" value="3"/> 
+    <value name="Primitive ID" value="3"/>
     <!-- Vec2 only -->
     <value name="Barycentric coord" value="5"/>
   </enum>
