@@ -850,20 +850,23 @@ public:
 
    constexpr bool operator==(Operand other) const noexcept
    {
-      if (other.size() != size())
+      if (other.bytes() != bytes())
          return false;
       if (isFixed() != other.isFixed() || isKillBeforeDef() != other.isKillBeforeDef())
          return false;
-      if (isFixed() && other.isFixed() && physReg() != other.physReg())
+      if (isFixed() && physReg() != other.physReg())
          return false;
-      if (isLiteral())
-         return other.isLiteral() && other.constantValue() == constantValue();
-      else if (isConstant())
-         return other.isConstant() && other.physReg() == physReg();
+      if (hasRegClass() && (!other.hasRegClass() || other.regClass() != regClass()))
+         return false;
+
+      if (isConstant())
+         return other.isConstant() && other.constantValue64() == constantValue64();
       else if (isUndefined())
-         return other.isUndefined() && other.regClass() == regClass();
-      else
+         return other.isUndefined();
+      else if (isTemp())
          return other.isTemp() && other.getTemp() == getTemp();
+      else
+         return true;
    }
 
    constexpr bool operator!=(Operand other) const noexcept { return !operator==(other); }
