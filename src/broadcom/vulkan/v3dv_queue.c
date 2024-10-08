@@ -333,8 +333,10 @@ handle_reset_query_cpu_job(struct v3dv_queue *queue,
 
          set_multisync(&ms, sync_info, NULL, 0, (void *)&reset, device, job,
                        V3DV_QUEUE_CPU, V3DV_QUEUE_CPU, V3D_CPU, signal_syncs);
-         if (!ms.base.id)
+         if (!ms.base.id) {
+            free(syncs);
             return vk_error(device->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+         }
       } else {
          assert(info->pool->query_type == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR);
          struct drm_v3d_reset_performance_query reset = {0};
@@ -373,8 +375,11 @@ handle_reset_query_cpu_job(struct v3dv_queue *queue,
 
          set_multisync(&ms, sync_info, waits, wait_count, (void *)&reset, device, job,
                        V3DV_QUEUE_CPU, V3DV_QUEUE_CPU, V3D_CPU, signal_syncs);
-         if (!ms.base.id)
+         if (!ms.base.id) {
+            free(syncs);
+            free(kperfmon_ids);
             return vk_error(device->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+         }
       }
 
       submit.flags |= DRM_V3D_SUBMIT_EXTENSION;
@@ -598,8 +603,12 @@ handle_copy_query_results_cpu_job(struct v3dv_queue *queue,
 
          set_multisync(&ms, sync_info, NULL, 0, (void *)&copy, device, job,
                        V3DV_QUEUE_CPU, V3DV_QUEUE_CPU, V3D_CPU, signal_syncs);
-         if (!ms.base.id)
+         if (!ms.base.id) {
+            free(bo_handles);
+            free(offsets);
+            free(syncs);
             return vk_error(device->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+         }
       } else {
          assert(info->pool->query_type == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR);
 
@@ -651,8 +660,13 @@ handle_copy_query_results_cpu_job(struct v3dv_queue *queue,
 
          set_multisync(&ms, sync_info, waits, wait_count, (void *)&copy, device, job,
                        V3DV_QUEUE_CPU, V3DV_QUEUE_CPU, V3D_CPU, signal_syncs);
-         if (!ms.base.id)
+         if (!ms.base.id) {
+            free(kperfmon_ids);
+            free(bo_handles);
+            free(offsets);
+            free(syncs);
             return vk_error(device->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+         }
       }
 
       submit.flags |= DRM_V3D_SUBMIT_EXTENSION;
@@ -773,8 +787,11 @@ handle_timestamp_query_cpu_job(struct v3dv_queue *queue,
 
    set_multisync(&ms, sync_info, NULL, 0, (void *)&timestamp, device, job,
 	         V3DV_QUEUE_CPU, V3DV_QUEUE_CPU, V3D_CPU, signal_syncs);
-   if (!ms.base.id)
+   if (!ms.base.id) {
+      free(offsets);
+      free(syncs);
       return vk_error(device->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
 
    submit.flags |= DRM_V3D_SUBMIT_EXTENSION;
    submit.extensions = (uintptr_t)(void *)&ms;
@@ -998,8 +1015,10 @@ handle_cl_job(struct v3dv_queue *queue,
    enum v3d_queue wait_stage = needs_rcl_sync ? V3D_RENDER : V3D_BIN;
    set_multisync(&ms, sync_info, NULL, 0, NULL, device, job,
                  V3DV_QUEUE_CL, V3DV_QUEUE_CL, wait_stage, signal_syncs);
-   if (!ms.base.id)
+   if (!ms.base.id) {
+      free(bo_handles);
       return vk_error(device->instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
 
    submit.flags |= DRM_V3D_SUBMIT_EXTENSION;
    submit.extensions = (uintptr_t)(void *)&ms;
