@@ -304,19 +304,12 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
       ctx.info[idx].exec = ctx.info[preds[0]].exec;
    } else {
       assert(preds.size() == 2);
-      /* if one of the predecessors ends in exact mask, we pop it from stack */
-      unsigned num_exec_masks =
-         std::min(ctx.info[preds[0]].exec.size(), ctx.info[preds[1]].exec.size());
+      assert(ctx.info[preds[0]].exec.size() == ctx.info[preds[1]].exec.size());
 
-      if (block->kind & block_kind_merge) {
-         restore_exec = true;
-         num_exec_masks--;
-      }
-      if (block->kind & block_kind_top_level)
-         num_exec_masks = std::min(num_exec_masks, 2u);
+      unsigned last = ctx.info[preds[0]].exec.size() - 1;
 
-      /* create phis for diverged exec masks */
-      for (unsigned i = 0; i < num_exec_masks; i++) {
+      /* create phis for diverged temporary exec masks */
+      for (unsigned i = 0; i < last; i++) {
          /* skip trivial phis */
          if (ctx.info[preds[0]].exec[i].op == ctx.info[preds[1]].exec[i].op) {
             Operand op = ctx.info[preds[0]].exec[i].op;
@@ -332,6 +325,19 @@ add_coupling_code(exec_ctx& ctx, Block* block, std::vector<aco_ptr<Instruction>>
                                   ctx.info[preds[0]].exec[i].op, ctx.info[preds[1]].exec[i].op);
          uint8_t mask_type = ctx.info[preds[0]].exec[i].type & ctx.info[preds[1]].exec[i].type;
          ctx.info[idx].exec.emplace_back(phi, mask_type);
+      }
+
+      if (block->kind & block_kind_merge) {
+         restore_exec = true;
+      } else {
+         /* The last mask is already in exec. */
+         Operand current_exec = Operand(exec, bld.lm);
+         if (ctx.info[preds[0]].exec[last].op == ctx.info[preds[1]].exec[last].op) {
+            current_exec = ctx.info[preds[0]].exec[last].op;
+         }
+         uint8_t mask_type =
+            ctx.info[preds[0]].exec[last].type & ctx.info[preds[1]].exec[last].type;
+         ctx.info[idx].exec.emplace_back(current_exec, mask_type);
       }
    }
 
