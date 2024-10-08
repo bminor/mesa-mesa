@@ -7,9 +7,6 @@
 #include "aco_builder.h"
 #include "aco_ir.h"
 
-#include "util/u_math.h"
-
-#include <set>
 #include <vector>
 
 namespace aco {
