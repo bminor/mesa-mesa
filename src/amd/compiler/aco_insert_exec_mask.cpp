@@ -630,9 +630,10 @@ add_branch_code(exec_ctx& ctx, Block* block)
 
       ctx.loop.emplace_back(&ctx.program->blocks[block->linear_succs[0]], num_exec_masks,
                             has_divergent_break, has_divergent_continue, has_discard);
-   }
 
-   if (block->kind & block_kind_continue_or_break) {
+      Pseudo_branch_instruction& branch = block->instructions.back()->branch();
+      branch.target[0] = block->linear_succs[0];
+   } else if (block->kind & block_kind_continue_or_break) {
       assert(ctx.program->blocks[ctx.program->blocks[block->linear_succs[1]].linear_succs[0]].kind &
              block_kind_loop_header);
       assert(ctx.program->blocks[ctx.program->blocks[block->linear_succs[0]].linear_succs[0]].kind &
@@ -651,10 +652,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
             bld.copy(Definition(exec, bld.lm), ctx.info[idx].exec.back().op);
       bld.branch(aco_opcode::p_cbranch_nz, bld.def(s2), Operand(exec, bld.lm),
                  block->linear_succs[1], block->linear_succs[0]);
-      return;
-   }
-
-   if (block->kind & block_kind_uniform) {
+   } else if (block->kind & block_kind_uniform) {
       Pseudo_branch_instruction& branch = block->instructions.back()->branch();
       if (branch.opcode == aco_opcode::p_branch) {
          branch.target[0] = block->linear_succs[0];
@@ -662,10 +660,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
          branch.target[0] = block->linear_succs[1];
          branch.target[1] = block->linear_succs[0];
       }
-      return;
-   }
-
-   if (block->kind & block_kind_branch) {
+   } else if (block->kind & block_kind_branch) {
       // orig = s_and_saveexec_b64
       assert(block->linear_succs.size() == 2);
       assert(block->instructions.back()->opcode == aco_opcode::p_cbranch_z);
@@ -690,10 +685,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
                                      block->linear_succs[1], block->linear_succs[0]);
       r->branch().rarely_taken = branch->branch().rarely_taken;
       r->branch().never_taken = branch->branch().never_taken;
-      return;
-   }
-
-   if (block->kind & block_kind_invert) {
+   } else if (block->kind & block_kind_invert) {
       // exec = s_andn2_b64 (original_exec, exec)
       assert(block->instructions.back()->opcode == aco_opcode::p_branch);
       aco_ptr<Instruction> branch = std::move(block->instructions.back());
@@ -707,10 +699,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
                                      block->linear_succs[1], block->linear_succs[0]);
       r->branch().rarely_taken = branch->branch().rarely_taken;
       r->branch().never_taken = branch->branch().never_taken;
-      return;
-   }
-
-   if (block->kind & block_kind_break) {
+   } else if (block->kind & block_kind_break) {
       // loop_mask = s_andn2_b64 (loop_mask, exec)
       assert(block->instructions.back()->opcode == aco_opcode::p_branch);
       block->instructions.pop_back();
@@ -736,10 +725,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
 
       bld.branch(aco_opcode::p_cbranch_nz, bld.def(s2), bld.scc(cond), block->linear_succs[1],
                  block->linear_succs[0]);
-      return;
-   }
-
-   if (block->kind & block_kind_continue) {
+   } else if (block->kind & block_kind_continue) {
       assert(block->instructions.back()->opcode == aco_opcode::p_branch);
       block->instructions.pop_back();
 
@@ -765,7 +751,8 @@ add_branch_code(exec_ctx& ctx, Block* block)
 
       bld.branch(aco_opcode::p_cbranch_nz, bld.def(s2), bld.scc(cond), block->linear_succs[1],
                  block->linear_succs[0]);
-      return;
+   } else {
+      unreachable("unknown/invalid block type");
    }
 }
 
