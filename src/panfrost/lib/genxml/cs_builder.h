@@ -576,6 +576,7 @@ cs_flush_pending_if(struct cs_builder *b)
 
    cs_set_label(b, &b->blocks.pending_if.end_label);
    b->blocks.stack = b->blocks.pending_if.block.next;
+   cs_flush_block_instrs(b);
 }
 
 static inline void *
@@ -584,7 +585,6 @@ cs_alloc_ins(struct cs_builder *b)
    /* If an instruction is emitted after an if_end(), it flushes the pending if,
     * causing further cs_else_start() instructions to be invalid. */
    cs_flush_pending_if(b);
-   cs_flush_block_instrs(b);
 
    return cs_alloc_ins_block(b, 1);
 }
@@ -599,7 +599,6 @@ cs_finish(struct cs_builder *b)
       return;
 
    cs_flush_pending_if(b);
-   cs_flush_block_instrs(b);
    cs_wrap_chunk(b);
 
    /* This prevents adding instructions after that point. */
