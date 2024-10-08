@@ -643,6 +643,9 @@ write_performance_query_result(struct v3dv_device *device,
    struct v3dv_query *q = &pool->queries[query];
    uint64_t counter_values[V3D_MAX_PERFCNT];
 
+   assert(pool->perfmon.nperfmons);
+   assert(pool->perfmon.ncounters);
+
    for (uint32_t i = 0; i < pool->perfmon.nperfmons; i++) {
       struct drm_v3d_perfmon_get_values req = {
          .id = q->perf.kperfmon_ids[i],
