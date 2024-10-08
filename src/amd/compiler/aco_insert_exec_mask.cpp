@@ -632,11 +632,6 @@ add_branch_code(exec_ctx& ctx, Block* block)
                             has_divergent_break, has_divergent_continue, has_discard);
    }
 
-   /* For normal breaks, this is the exec mask. For discard+break, it's the
-    * old exec mask before it was zero'd.
-    */
-   Operand break_cond = Operand(exec, bld.lm);
-
    if (block->kind & block_kind_continue_or_break) {
       assert(ctx.program->blocks[ctx.program->blocks[block->linear_succs[1]].linear_succs[0]].kind &
              block_kind_loop_header);
@@ -725,7 +720,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
          cond = bld.tmp(s1);
          Operand exec_mask = ctx.info[idx].exec[exec_idx].op;
          exec_mask = bld.sop2(Builder::s_andn2, bld.def(bld.lm), bld.scc(Definition(cond)),
-                              exec_mask, break_cond);
+                              exec_mask, Operand(exec, bld.lm));
          ctx.info[idx].exec[exec_idx].op = exec_mask;
          if (ctx.info[idx].exec[exec_idx].type & mask_type_loop)
             break;
