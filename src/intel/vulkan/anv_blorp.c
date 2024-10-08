@@ -1394,22 +1394,21 @@ void anv_CmdClearColorImage(
    struct blorp_batch batch;
    anv_blorp_batch_init(cmd_buffer, &batch, 0);
 
+   struct anv_format_plane src_format =
+      anv_get_format_aspect(cmd_buffer->device->info, image->vk.format,
+                            VK_IMAGE_ASPECT_COLOR_BIT, image->vk.tiling);
+   struct blorp_surf surf;
+   get_blorp_surf_for_anv_image(cmd_buffer, image,
+                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                imageLayout, ISL_AUX_USAGE_NONE,
+                                &surf);
+
+   union isl_color_value clear_color = vk_to_isl_color(*pColor);
+
+
    for (unsigned r = 0; r < rangeCount; r++) {
-      if (pRanges[r].aspectMask == 0)
-         continue;
-
-      assert(pRanges[r].aspectMask & VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV);
-
-      struct blorp_surf surf;
-      get_blorp_surf_for_anv_image(cmd_buffer,
-                                   image, pRanges[r].aspectMask,
-                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                   imageLayout, ISL_AUX_USAGE_NONE, &surf);
-
-      struct anv_format_plane src_format =
-         anv_get_format_aspect(cmd_buffer->device->info, image->vk.format,
-                               VK_IMAGE_ASPECT_COLOR_BIT, image->vk.tiling);
-      union isl_color_value clear_color = vk_to_isl_color(*pColor);
+      assert(pRanges[r].aspectMask == VK_IMAGE_ASPECT_COLOR_BIT);
 
       uint32_t level_count =
          vk_image_subresource_level_count(&image->vk, &pRanges[r]);
