@@ -1,5 +1,115 @@
 [
     {
+        "sha": "78b614b333b01ce0dfb9e4d9353a02a03fdcc154",
+        "description": "anv: add depth, DC and L3 fabric flush for aux map invalidation",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e29ea69ce683b23dd8708f13dd8b98433a3c59c",
+        "description": "iris: add depth, DC and L3 fabric flush for aux map invalidation",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "11774075a354dda934aaedcfb34bd88956806d41",
+        "description": "iris: add plumbing/support for L3 fabric flush",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3814dee1ac0f90771b921a4f6f5aed10f06e8d4",
+        "description": "anv: add plumbing/support for L3 fabric flush",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03f762f90c54c09e58cc736e0ac7c684ac367a45",
+        "description": "intel/ds: add L3 fabric flush support",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8cb08830e6bfee6940ed1a3933f7fa626792b293",
+        "description": "intel/genxml: introduce L3 Fabric Flush for gfx12",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0dacdba80415d878eb733b59e3c01d13e0a1d7ee",
+        "description": "radeonsi: correct map and unmap function timing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5bd825a4b8fdc1b7f4a1d94f8826f13eeebc985a",
+        "description": "vulkan: fix merging bind sparse submits together",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "bba6bf33a82f939d23721595622792d1a04fcf5a",
+        "notes": null
+    },
+    {
+        "sha": "e46dffddb11f23fef52625ed2ab99d01d02cb919",
+        "description": "util/vbuf: rename/consolidate some bools",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d008aaa6dafa61bf3c67d70b54c2d143d662c96d",
+        "description": "gallium: rework vbuf alignment pipe caps",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "afe28429f90c33bed6e95bf7b0655ddb35043f38",
+        "description": "zink/ci: update list of expected failures for NAVI10",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "1cbc316999af23b2dbe5f2fc0c057a9a26ae68b7",
         "description": "radv: remove RADV_THREAD_TRACE_TRIGGER completely",
         "nominated": false,
