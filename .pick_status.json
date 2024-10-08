@@ -224,7 +224,7 @@
         "description": "freedreno: Balance out u_blitter cb0 save/restore",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5de33f3d3e155283ab72b6acccaee8eeeab4b710",
         "notes": null
