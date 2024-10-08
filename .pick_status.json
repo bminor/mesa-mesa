@@ -1,5 +1,95 @@
 [
     {
+        "sha": "336f80137d26230bd124f475bd4382a0c727004f",
+        "description": "radv: fix conditional rendering with DGC preprocessing on compute",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "89ea2b6c260b5188d2a4d39af4331d690c74d783",
+        "description": "radeonsi/vcn: Don't hardcode nal_ref_idc",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8880f0f1417c6b775d597927cdf470e6961a9a84",
+        "description": "radeonsi/vcn: Use correct initial DPB size for HEVC encode",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "88c134d49676c8f6e319449f33a8a3909eeb9e9f",
+        "description": "radeonsi/vcn: Allow per-frame QP and max frame size changes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85d7826afa13e1efc8edbb810fd136eec17fd831",
+        "description": "freedreno/ir3: Add more cat1 float-immed cases",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ddfe9cfc869fdcf931abb2f177822c6b986a384",
+        "description": "freedreno/ir3: Fix cat1 parser ambiguity vs FLUTs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0633a23dc900424cafd2652d86eec0383ff545f5",
+        "description": "freedreno/ir3: Add half-FLUT cases",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "771fe0378736d4be36fa1f449b8d1b5d2ef290d5",
+        "description": "freedreno/ir3: Fix GPU name in disasm test",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a422ebc5009bcd7cd8216521d55b93d69b375318",
+        "description": "etnaviv: flush shader caches when UBO content is modified",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "78b614b333b01ce0dfb9e4d9353a02a03fdcc154",
         "description": "anv: add depth, DC and L3 fabric flush for aux map invalidation",
         "nominated": true,
