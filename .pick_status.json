@@ -1214,7 +1214,7 @@
         "description": "radeonsi/vcn: Fix out of bounds write when invalidating QP map regions",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9c07a2e10d6d0999b50c33ce4b893ada4a5000c5",
         "notes": null
