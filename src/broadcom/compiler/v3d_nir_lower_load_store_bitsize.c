@@ -75,7 +75,8 @@ lower_load_bitsize(nir_builder *b,
 
         b->cursor = nir_before_instr(&intr->instr);
 
-        unsigned offset_idx = nir_get_io_offset_src_number(intr);
+        int offset_idx = nir_get_io_offset_src_number(intr);
+        assert(offset_idx >= 0);
         nir_def *offset = intr->src[offset_idx].ssa;
 
         /* Split vector store to multiple scalar loads */
