@@ -604,7 +604,8 @@ add_branch_code(exec_ctx& ctx, Block* block)
 
       if (has_divergent_break) {
          /* save restore exec mask */
-         if (!ctx.info[idx].exec.back().op.constantEquals(-1u)) {
+         const Operand& current_exec = ctx.info[idx].exec.back().op;
+         if (!current_exec.isTemp() && !current_exec.isConstant()) {
             bld.reset(bld.instructions, std::prev(bld.instructions->end()));
             Operand restore = bld.copy(bld.def(bld.lm), Operand(exec, bld.lm));
             ctx.info[idx].exec.back().op = restore;
