@@ -658,6 +658,9 @@ add_branch_code(exec_ctx& ctx, Block* block)
       uint8_t mask_type = ctx.info[idx].exec.back().type & (mask_type_wqm | mask_type_exact);
       if (ctx.info[idx].exec.back().op.constantEquals(-1u)) {
          bld.copy(Definition(exec, bld.lm), cond);
+      } else if (ctx.info[idx].exec.back().op.isTemp()) {
+         bld.sop2(Builder::s_and, Definition(exec, bld.lm), bld.def(s1, scc), cond,
+                  Operand(exec, bld.lm));
       } else {
          Temp old_exec = bld.sop1(Builder::s_and_saveexec, bld.def(bld.lm), bld.def(s1, scc),
                                   Definition(exec, bld.lm), cond, Operand(exec, bld.lm));
