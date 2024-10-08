@@ -93,7 +93,7 @@ impl SPIRVBin {
         headers: &[CLCHeader],
         cache: &Option<DiskCache>,
         features: clc_optional_features,
-        spirv_extensions: &[CString],
+        spirv_extensions: &[&CStr],
         address_bits: u32,
     ) -> (Option<Self>, String) {
         let mut hash_key = None;

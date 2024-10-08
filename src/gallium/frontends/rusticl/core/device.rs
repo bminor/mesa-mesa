@@ -23,7 +23,7 @@ use std::cmp::min;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::env;
-use std::ffi::CString;
+use std::ffi::CStr;
 use std::mem::transmute;
 use std::os::raw::*;
 use std::sync::Arc;
@@ -40,7 +40,7 @@ pub struct Device {
     pub embedded: bool,
     pub extension_string: String,
     pub extensions: Vec<cl_name_version>,
-    pub spirv_extensions: Vec<CString>,
+    pub spirv_extensions: Vec<&'static CStr>,
     pub clc_features: Vec<cl_name_version>,
     pub formats: HashMap<cl_image_format, HashMap<cl_mem_object_type, cl_mem_flags>>,
     pub lib_clc: NirShader,
@@ -606,8 +606,8 @@ impl Device {
         let mut add_feat = |major, minor, patch, feat: &str| {
             feats.push(mk_cl_version_ext(major, minor, patch, feat));
         };
-        let mut add_spirv = |ext: &str| {
-            spirv_exts.push(CString::new(ext).unwrap());
+        let mut add_spirv = |ext| {
+            spirv_exts.push(ext);
         };
 
         // add extensions all drivers support for now
@@ -624,10 +624,10 @@ impl Device {
         add_ext(1, 0, 0, "cl_khr_local_int32_base_atomics");
         add_ext(1, 0, 0, "cl_khr_local_int32_extended_atomics");
 
-        add_spirv("SPV_KHR_expect_assume");
-        add_spirv("SPV_KHR_float_controls");
-        add_spirv("SPV_KHR_integer_dot_product");
-        add_spirv("SPV_KHR_no_integer_wrap_decoration");
+        add_spirv(c"SPV_KHR_expect_assume");
+        add_spirv(c"SPV_KHR_float_controls");
+        add_spirv(c"SPV_KHR_integer_dot_product");
+        add_spirv(c"SPV_KHR_no_integer_wrap_decoration");
 
         if self.fp16_supported() {
             add_ext(1, 0, 0, "cl_khr_fp16");
