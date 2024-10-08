@@ -374,7 +374,7 @@
         "description": "nir/glsl: set cast mode for image during function inlining",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d681cf96fbf962b67d98ecab1968ed0bb7a04eb0",
         "notes": null
