@@ -6027,7 +6027,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       /* Since the image size is always uniform, we can just emit a SIMD8
        * query instruction and splat the result out.
        */
-      const fs_builder ubld = bld.exec_all().group(8 * reg_unit(devinfo), 0);
+      const fs_builder ubld = bld.scalar_group();
 
       brw_reg tmp = ubld.vgrf(BRW_TYPE_UD, 4);
       fs_inst *inst = ubld.emit(SHADER_OPCODE_IMAGE_SIZE_LOGICAL,
@@ -6507,7 +6507,7 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
        * for SURFTYPE_BUFFER, we can just use the SIMD8 variant regardless of
        * the dispatch width.
        */
-      const fs_builder ubld = bld.exec_all().group(8 * reg_unit(devinfo), 0);
+      const fs_builder ubld = bld.scalar_group();
       brw_reg ret_payload = ubld.vgrf(BRW_TYPE_UD, 4);
 
       /* Set LOD = 0 */

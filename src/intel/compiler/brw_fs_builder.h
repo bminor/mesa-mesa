@@ -152,6 +152,15 @@ namespace brw {
       }
 
       /**
+       * Construct a builder for SIMD8-as-scalar
+       */
+      fs_builder
+      scalar_group() const
+      {
+         return exec_all().group(8 * reg_unit(shader->devinfo), 0);
+      }
+
+      /**
        * Construct a builder with the given debug annotation info.
        */
       fs_builder
