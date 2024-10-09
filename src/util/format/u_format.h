@@ -1361,6 +1361,8 @@ static inline unsigned
 util_format_get_nr_components(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
+   assert(desc->nr_channels <= 4);
+
    return desc->nr_channels;
 }
 
