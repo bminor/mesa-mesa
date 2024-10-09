@@ -218,8 +218,7 @@ vlVaHandleVAEncMiscParameterTypeQualityLevel(struct pipe_enc_quality_modes *p, v
          p->pre_encode_mode = PREENCODING_MODE_DEFAULT;
          p->vbaq_mode = VBAQ_AUTO;
       } else {
-         p->preset_mode = in->preset_mode > PRESET_MODE_HIGH_QUALITY
-            ? PRESET_MODE_HIGH_QUALITY : in->preset_mode;
+         p->preset_mode = in->preset_mode;
          p->pre_encode_mode = in->pre_encode_mode;
          p->vbaq_mode = in->vbaq_mode;
       }
@@ -1004,6 +1003,10 @@ vlVaRenderPicture(VADriverContextP ctx, VAContextID context_id, VABufferID *buff
 
    for (i = 0; i < num_buffers && vaStatus == VA_STATUS_SUCCESS; ++i) {
       vlVaBuffer *buf = handle_table_get(drv->htab, buffers[i]);
+      if (!buf) {
+         mtx_unlock(&drv->mutex);
+         return VA_STATUS_ERROR_INVALID_BUFFER;
+      }
 
       switch (buf->type) {
       case VAPictureParameterBufferType:
@@ -1402,7 +1405,7 @@ vlVaAddRawHeader(struct util_dynarray *headers, uint8_t type, uint32_t size,
       memcpy(header.buffer, buf, emulation_bytes_start);
       for (uint32_t i = emulation_bytes_start; i < size; i++) {
          uint8_t byte = buf[i];
-         if (num_zeros >= 2 && byte >= 0x00 && byte <= 0x03) {
+         if (num_zeros >= 2 && byte <= 0x03) {
             header.buffer[pos++] = 0x03;
             num_zeros = 0;
          }

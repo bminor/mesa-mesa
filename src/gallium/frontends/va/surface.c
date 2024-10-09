@@ -345,9 +345,6 @@ vlVaPutSubpictures(vlVaSurface *surf, vlVaDriver *drv,
    vlVaSubpicture *sub;
    int i;
 
-   if (!(surf->subpics.data || surf->subpics.size))
-      return VA_STATUS_SUCCESS;
-
    for (i = 0; i < surf->subpics.size/sizeof(vlVaSubpicture *); i++) {
       struct pipe_blend_state blend;
       void *blend_state;
