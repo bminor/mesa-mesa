@@ -99,6 +99,8 @@ patch_conv2d(unsigned operation_index,
    input_tensor->shape.data()[2] = input_size;
    input_tensor->shape.data()[3] = input_channels;
    input_tensor->type = is_signed ? tflite::TensorType_INT8 : tflite::TensorType_UINT8;
+   if (is_signed)
+      input_tensor->quantization->zero_point[0] -= 128;
 
    /* Bias */
    auto bias_tensor = subgraph->tensors[bias_index];
@@ -125,6 +127,8 @@ patch_conv2d(unsigned operation_index,
       weight_tensor->shape.data()[3] = input_channels;
    }
    weight_tensor->type = is_signed ? tflite::TensorType_INT8 : tflite::TensorType_UINT8;
+   if (is_signed)
+      weight_tensor->quantization->zero_point[0] = 0;
 
    auto weights_data = &model->buffers[weights_buffer_index]->data;
    std::vector<int> weight_shape;
@@ -149,6 +153,8 @@ patch_conv2d(unsigned operation_index,
    output_tensor->shape.data()[2] = output_size;
    output_tensor->shape.data()[3] = output_channels;
    output_tensor->type = is_signed ? tflite::TensorType_INT8 : tflite::TensorType_UINT8;
+   if (is_signed)
+      output_tensor->quantization->zero_point[0] -= 128;
 }
 
 std::vector<uint8_t>
@@ -173,7 +179,7 @@ conv2d_generate_model(int input_size,
 }
 
 static void
-patch_quant_for_add(tflite::ModelT *model)
+patch_quant_for_add(tflite::ModelT *model, bool is_signed)
 {
    auto subgraph = model->subgraphs[0];
    auto add_op = subgraph->operators[2];
@@ -182,11 +188,15 @@ patch_quant_for_add(tflite::ModelT *model)
    auto input_tensor = subgraph->tensors[input_index];
    input_tensor->quantization->scale[0] = randf(0.0078125, 0.4386410117149353);
    input_tensor->quantization->zero_point[0] = rand() % 255;
+   if (is_signed)
+      input_tensor->quantization->zero_point[0] -= 128;
 
    input_index = add_op->inputs.data()[1];
    input_tensor = subgraph->tensors[input_index];
    input_tensor->quantization->scale[0] = randf(0.0078125, 0.4386410117149353);
    input_tensor->quantization->zero_point[0] = rand() % 255;
+   if (is_signed)
+      input_tensor->quantization->zero_point[0] -= 128;
 }
 
 std::vector<uint8_t>
@@ -204,7 +214,7 @@ add_generate_model(int input_size,
 
    patch_conv2d(0, &model, input_size, weight_size, input_channels, output_channels, stride, padding_same, is_signed, depthwise);
    patch_conv2d(1, &model, input_size, weight_size, input_channels, output_channels, stride, padding_same, is_signed, depthwise);
-   patch_quant_for_add(&model);
+   patch_quant_for_add(&model, is_signed);
 
    /* Output */
    auto subgraph = model.subgraphs[0];
