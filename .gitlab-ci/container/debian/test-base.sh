@@ -79,6 +79,7 @@ EPHEMERAL=(
     python3-dev
     python3-pip
     python3-setuptools
+    python3-venv
     python3-wheel
     wayland-protocols
     xz-utils
@@ -188,6 +189,10 @@ pip3 install --break-system-packages "ci-fairy[s3] @ git+https://gitlab.freedesk
 pip3 install --break-system-packages yq
 
 section_end debian_setup
+
+############### Build ci-kdl
+
+. .gitlab-ci/container/build-kdl.sh
 
 ############### Download prebuilt kernel and firmware
 
