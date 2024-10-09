@@ -85,6 +85,34 @@ struct panvk_resolve_attachment {
    struct panvk_image_view *dst_iview;
 };
 
+struct panvk_rendering_state {
+   VkRenderingFlags flags;
+   uint32_t layer_count;
+
+   enum vk_rp_attachment_flags bound_attachments;
+   struct {
+      struct panvk_image_view *iviews[MAX_RTS];
+      VkFormat fmts[MAX_RTS];
+      uint8_t samples[MAX_RTS];
+      struct panvk_resolve_attachment resolve[MAX_RTS];
+   } color_attachments;
+
+   struct pan_image_view zs_pview;
+
+   struct {
+      struct panvk_image_view *iview;
+      VkFormat fmt;
+      struct panvk_resolve_attachment resolve;
+   } z_attachment, s_attachment;
+
+   struct {
+      struct pan_fb_info info;
+      bool crc_valid[MAX_RTS];
+      uint32_t bo_count;
+      struct pan_kmod_bo *bos[MAX_RTS + 2];
+   } fb;
+};
+
 struct panvk_cmd_graphics_state {
    struct panvk_descriptor_state desc_state;
 
@@ -130,33 +158,7 @@ struct panvk_cmd_graphics_state {
       uint32_t first_vertex, base_vertex, base_instance;
    } ib;
 
-   struct {
-      VkRenderingFlags flags;
-      uint32_t layer_count;
-
-      enum vk_rp_attachment_flags bound_attachments;
-      struct {
-         struct panvk_image_view *iviews[MAX_RTS];
-         VkFormat fmts[MAX_RTS];
-         uint8_t samples[MAX_RTS];
-         struct panvk_resolve_attachment resolve[MAX_RTS];
-      } color_attachments;
-
-      struct pan_image_view zs_pview;
-
-      struct {
-         struct panvk_image_view *iview;
-         VkFormat fmt;
-         struct panvk_resolve_attachment resolve;
-      } z_attachment, s_attachment;
-
-      struct {
-         struct pan_fb_info info;
-         bool crc_valid[MAX_RTS];
-         uint32_t bo_count;
-         struct pan_kmod_bo *bos[MAX_RTS + 2];
-      } fb;
-   } render;
+   struct panvk_rendering_state render;
 
    mali_ptr vpd;
    mali_ptr push_uniforms;
