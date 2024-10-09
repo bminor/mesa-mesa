@@ -1126,15 +1126,19 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
 
    mtx_lock(&drv->mutex);
    context = handle_table_get(drv->htab, context_id);
-   mtx_unlock(&drv->mutex);
-   if (!context)
+   if (!context) {
+      mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_CONTEXT;
+   }
 
    if (!context->decoder) {
-      if (context->templat.profile != PIPE_VIDEO_PROFILE_UNKNOWN)
+      if (context->templat.profile != PIPE_VIDEO_PROFILE_UNKNOWN) {
+         mtx_unlock(&drv->mutex);
          return VA_STATUS_ERROR_INVALID_CONTEXT;
+      }
 
       /* VPP */
+      mtx_unlock(&drv->mutex);
       return VA_STATUS_SUCCESS;
    }
 
@@ -1142,7 +1146,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    out_target = &context->target;
    apply_av1_fg = vlVaQueryApplyFilmGrainAV1(context, &output_id, &out_target);
 
-   mtx_lock(&drv->mutex);
    surf = handle_table_get(drv->htab, output_id);
    vlVaGetSurfaceBuffer(drv, surf);
    if (!surf || !surf->buffer) {
