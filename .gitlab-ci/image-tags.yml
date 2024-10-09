@@ -19,14 +19,14 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BASE_TAG: "20250425-apitrace"
+  DEBIAN_BASE_TAG: "20250424-rootfs"
 
   DEBIAN_BUILD_TAG: "20250422-ci-fairy"
 
-  DEBIAN_TEST_ANDROID_TAG: "20250422-angle-f3"
-  DEBIAN_TEST_GL_TAG: "20250422-piglit-c50"
-  DEBIAN_TEST_VK_TAG: "20250422-piglit-c50"
-  KERNEL_ROOTFS_TAG: "20250422-piglit-c50"
+  DEBIAN_TEST_ANDROID_TAG: "20250414-goldilocks"
+  DEBIAN_TEST_GL_TAG: "20250414-goldilocks"
+  DEBIAN_TEST_VK_TAG: "20250414-goldilocks"
+  KERNEL_ROOTFS_TAG: "20250414-goldilocks"
 
   DEBIAN_PYUTILS_TAG: "20250422-ci-fairy"
 

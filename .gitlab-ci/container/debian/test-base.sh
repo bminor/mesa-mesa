@@ -21,6 +21,8 @@ sed -i -e 's/http:\/\/deb/https:\/\/deb/g' /etc/apt/sources.list.d/*
 
 echo "deb [trusted=yes] https://gitlab.freedesktop.org/gfx-ci/ci-deb-repo/-/raw/${PKG_REPO_REV}/ ${FDO_DISTRIBUTION_VERSION%-*} main" | tee /etc/apt/sources.list.d/gfx-ci_.list
 
+echo "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://deb.debian.org/debian ${FDO_DISTRIBUTION_VERSION%-*} non-free-firmware" | tee /etc/apt/sources.list.d/non-free-firmware.list
+
 : "${LLVM_VERSION:?llvm version not set!}"
 
 . .gitlab-ci/container/debian/maybe-add-llvm-repo.sh
@@ -145,6 +147,22 @@ DEPS=(
     zstd
 )
 
+HW_DEPS=(
+    firmware-realtek
+)
+
+[ "$DEBIAN_ARCH" = "arm64" ] && ARCH_DEPS=(
+    firmware-linux-nonfree
+    firmware-qcom-media
+)
+[ "$DEBIAN_ARCH" = "armhf" ] && ARCH_DEPS=(
+    firmware-misc-nonfree
+)
+[ "$DEBIAN_ARCH" = "amd64" ] && ARCH_DEPS=(
+    firmware-amd-graphics
+    firmware-misc-nonfree
+)
+
 apt-get update
 apt-get dist-upgrade -y
 
@@ -165,10 +183,10 @@ pip3 install --break-system-packages yq
 
 section_end debian_setup
 
-############### Download prebuilt kernel
+############### Download prebuilt kernel and firmware
 
 if [ "$DEBIAN_ARCH" = amd64 ]; then
-  uncollapsed_section_start kernel "Downloading kernel for crosvm"
+  uncollapsed_section_start kernel "Downloading kernel and firmware"
   export KERNEL_IMAGE_NAME=bzImage
   mkdir -p /kernel
   # shellcheck disable=SC2153 # KERNEL_IMAGE_BASE is set in the root .gitlab-ci.yml file
@@ -176,6 +194,7 @@ if [ "$DEBIAN_ARCH" = amd64 ]; then
       -o "/kernel/${KERNEL_IMAGE_NAME}" "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${KERNEL_IMAGE_NAME}"
   section_end kernel
 fi
+. .gitlab-ci/container/get-firmware-from-source.sh / "$FIRMWARE_FILES"
 
 ############### Build mold
 
