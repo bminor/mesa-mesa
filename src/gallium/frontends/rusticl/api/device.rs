@@ -16,7 +16,7 @@ use std::ffi::CStr;
 use std::mem::{size_of, MaybeUninit};
 use std::ptr;
 
-const SPIRV_SUPPORT_STRING: &str = "SPIR-V_1.0 SPIR-V_1.1 SPIR-V_1.2 SPIR-V_1.3 SPIR-V_1.4";
+const SPIRV_SUPPORT_STRING: &CStr = c"SPIR-V_1.0 SPIR-V_1.1 SPIR-V_1.2 SPIR-V_1.3 SPIR-V_1.4";
 const SPIRV_SUPPORT: [cl_name_version; 5] = [
     mk_cl_version_ext(1, 0, 0, "SPIR-V"),
     mk_cl_version_ext(1, 1, 0, "SPIR-V"),
@@ -46,7 +46,7 @@ impl CLInfo<cl_device_info> for cl_device_id {
                     as cl_device_atomic_capabilities,
             ),
             CL_DEVICE_AVAILABLE => cl_prop::<bool>(true),
-            CL_DEVICE_BUILT_IN_KERNELS => cl_prop::<&str>(""),
+            CL_DEVICE_BUILT_IN_KERNELS => cl_prop::<&CStr>(c""),
             CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION => cl_prop::<Vec<cl_name_version>>(Vec::new()),
             CL_DEVICE_COMPILER_AVAILABLE => cl_prop::<bool>(true),
             CL_DEVICE_CROSS_DEVICE_SHARED_MEM_CAPABILITIES_INTEL => {
@@ -100,7 +100,7 @@ impl CLInfo<cl_device_info> for cl_device_id {
                 cl_prop::<cl_device_unified_shared_memory_capabilities_intel>(0)
             }
             CL_DEVICE_HOST_UNIFIED_MEMORY => cl_prop::<bool>(dev.unified_memory()),
-            CL_DEVICE_IL_VERSION => cl_prop::<&str>(SPIRV_SUPPORT_STRING),
+            CL_DEVICE_IL_VERSION => cl_prop::<&CStr>(SPIRV_SUPPORT_STRING),
             CL_DEVICE_ILS_WITH_VERSION => cl_prop::<Vec<cl_name_version>>(SPIRV_SUPPORT.to_vec()),
             CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT => {
                 cl_prop::<cl_uint>(dev.image_base_address_alignment())
@@ -252,9 +252,9 @@ impl CLInfo<cl_device_info> for cl_device_id {
             }
             CL_DEVICE_PRINTF_BUFFER_SIZE => cl_prop::<usize>(dev.printf_buffer_size()),
             CL_DEVICE_PROFILE => cl_prop(if dev.embedded {
-                "EMBEDDED_PROFILE"
+                c"EMBEDDED_PROFILE"
             } else {
-                "FULL_PROFILE"
+                c"FULL_PROFILE"
             }),
             CL_DEVICE_PROFILING_TIMER_RESOLUTION => {
                 cl_prop::<usize>(dev.caps.timer_resolution as usize)

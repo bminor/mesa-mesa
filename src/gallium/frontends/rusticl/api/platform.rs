@@ -21,13 +21,13 @@ impl CLInfo<cl_platform_info> for cl_platform_id {
                 cl_prop::<Vec<cl_name_version>>(PLATFORM_EXTENSIONS.to_vec())
             }
             CL_PLATFORM_HOST_TIMER_RESOLUTION => cl_prop::<cl_ulong>(1),
-            CL_PLATFORM_ICD_SUFFIX_KHR => cl_prop("MESA"),
-            CL_PLATFORM_NAME => cl_prop("rusticl"),
+            CL_PLATFORM_ICD_SUFFIX_KHR => cl_prop(c"MESA"),
+            CL_PLATFORM_NAME => cl_prop(c"rusticl"),
             CL_PLATFORM_NUMERIC_VERSION => cl_prop::<cl_version>(CLVersion::Cl3_0 as u32),
-            CL_PLATFORM_PROFILE => cl_prop("FULL_PROFILE"),
-            CL_PLATFORM_VENDOR => cl_prop("Mesa/X.org"),
+            CL_PLATFORM_PROFILE => cl_prop(c"FULL_PROFILE"),
+            CL_PLATFORM_VENDOR => cl_prop(c"Mesa/X.org"),
             // OpenCL<space><major_version.minor_version><space><platform-specific information>
-            CL_PLATFORM_VERSION => cl_prop("OpenCL 3.0 "),
+            CL_PLATFORM_VERSION => cl_prop(c"OpenCL 3.0 "),
             // CL_INVALID_VALUE if param_name is not one of the supported values
             _ => return Err(CL_INVALID_VALUE),
         })
