@@ -73,7 +73,6 @@ EPHEMERAL=(
     "llvm-${LLVM_VERSION}-dev"
     make
     meson
-    openssh-server
     patch
     pkgconf
     protobuf-compiler
@@ -89,6 +88,7 @@ DEPS=(
     apt-utils
     clinfo
     curl
+    dropbear
     git
     git-lfs
     inetutils-syslogd
@@ -131,6 +131,7 @@ DEPS=(
     python3-simplejson
     python3-six
     python3-yaml
+    sntp
     socat
     spirv-tools
     sysvinit-core
@@ -144,11 +145,16 @@ DEPS=(
     xauth
     xvfb
     zlib1g
-    zstd
 )
 
 HW_DEPS=(
     firmware-realtek
+    netcat-openbsd
+    mount
+    python3-distutils
+    python3-serial
+    tzdata
+    zstd
 )
 
 [ "$DEBIAN_ARCH" = "arm64" ] && ARCH_DEPS=(
@@ -169,7 +175,7 @@ apt-get dist-upgrade -y
 apt-get install --purge -y \
       sysvinit-core libelogind0
 
-apt-get install -y --no-remove "${DEPS[@]}"
+apt-get install -y --no-remove "${DEPS[@]}" "${HW_DEPS[@]}" "${ARCH_DEPS[@]}"
 
 apt-get install -y --no-install-recommends "${EPHEMERAL[@]}"
 
