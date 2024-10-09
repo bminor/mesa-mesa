@@ -684,7 +684,7 @@
         "description": "v3d: initialize job local key with the 8 color buffer available in v7.1+",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9e90d955087dfa6b7487940f58d3613ac4082894",
         "notes": null
