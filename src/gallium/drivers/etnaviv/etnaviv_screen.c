@@ -168,6 +168,7 @@ etna_screen_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
    case PIPE_CAP_MIXED_FRAMEBUFFER_SIZES:
    case PIPE_CAP_STRING_MARKER:
    case PIPE_CAP_FRONTEND_NOOP:
+   case PIPE_CAP_FRAMEBUFFER_NO_ATTACHMENT:
       return 1;
    case PIPE_CAP_VERTEX_INPUT_ALIGNMENT:
       return PIPE_VERTEX_INPUT_ALIGNMENT_4BYTE;
@@ -614,6 +615,10 @@ etna_screen_is_format_supported(struct pipe_screen *pscreen,
 
    if (MAX2(1, sample_count) != MAX2(1, storage_sample_count))
       return false;
+
+   /* For ARB_framebuffer_no_attachments - Short-circuit the rest of the logic. */
+   if (format == PIPE_FORMAT_NONE && usage & PIPE_BIND_RENDER_TARGET)
+      return true;
 
    if (usage & PIPE_BIND_RENDER_TARGET) {
       if (gpu_supports_render_format(screen, format, sample_count))
