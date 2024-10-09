@@ -926,14 +926,8 @@ hk_get_device_properties(const struct agx_device *dev,
           vk_shaderModuleIdentifierAlgorithmUUID,
           sizeof(properties->shaderModuleIdentifierAlgorithmUUID));
 
-   const struct {
-      uint16_t vendor_id;
-      uint16_t device_id;
-      uint8_t pad[12];
-   } dev_uuid = {
-      .vendor_id = 0,
-      .device_id = 0,
-   };
+   uint8_t dev_uuid[VK_UUID_SIZE];
+   agx_get_device_uuid(dev, &dev_uuid);
    static_assert(sizeof(dev_uuid) == VK_UUID_SIZE);
    memcpy(properties->deviceUUID, &dev_uuid, VK_UUID_SIZE);
    static_assert(sizeof(instance->driver_build_sha) >= VK_UUID_SIZE);
