@@ -5902,6 +5902,11 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
                                 VkImageCompressionFlagsEXT comp_flags);
 
 void
+anv_cmd_copy_addr(struct anv_cmd_buffer *cmd_buffer,
+                  struct anv_address src_addr,
+                  struct anv_address dst_addr,
+                  uint64_t size);
+void
 anv_cmd_buffer_fill_area(struct anv_cmd_buffer *cmd_buffer,
                          struct anv_address address,
                          VkDeviceSize size,

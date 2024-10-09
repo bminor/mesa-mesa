@@ -1069,6 +1069,42 @@ copy_buffer(struct anv_device *device,
    blorp_buffer_copy(batch, src, dst, region->size);
 }
 
+void
+anv_cmd_copy_addr(struct anv_cmd_buffer *cmd_buffer,
+                  struct anv_address src_addr,
+                  struct anv_address dst_addr,
+                  uint64_t size)
+{
+   struct anv_device *device = cmd_buffer->device;
+
+   struct blorp_batch batch;
+   anv_blorp_batch_init(cmd_buffer, &batch,
+                        cmd_buffer->state.current_pipeline ==
+                        cmd_buffer->device->physical->gpgpu_pipeline_value ?
+                        BLORP_BATCH_USE_COMPUTE : 0);
+
+   struct blorp_address src = {
+      .buffer = src_addr.bo,
+      .offset = src_addr.offset,
+      .mocs = anv_mocs(device, src_addr.bo,
+                       blorp_batch_isl_copy_usage(&batch, false /* is_dest */,
+                                                  false)),
+   };
+
+   struct blorp_address dst = {
+      .buffer = dst_addr.bo,
+      .offset = dst_addr.offset,
+      .mocs = anv_mocs(device, dst_addr.bo,
+                       blorp_batch_isl_copy_usage(&batch, true /* is_dest */,
+                                                  false)),
+   };
+
+   blorp_buffer_copy(&batch, src, dst, size);
+
+   anv_add_buffer_write_pending_bits(cmd_buffer, "after copy buffer");
+   anv_blorp_batch_finish(&batch);
+}
+
 void anv_CmdCopyBuffer2(
     VkCommandBuffer                             commandBuffer,
     const VkCopyBufferInfo2*                    pCopyBufferInfo)
