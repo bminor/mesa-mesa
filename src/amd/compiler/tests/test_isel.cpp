@@ -1741,3 +1741,41 @@ BEGIN_TEST(isel.cf.empty_exec.repair_ssa)
 
    finish_isel_test();
 END_TEST
+
+/*
+ * loop {
+ *   if (uniform) {
+ *     terminate_if
+ *     //potentially empty
+ *     continue
+ *   }
+ *   //potentially empty
+ *   break
+ * }
+ */
+BEGIN_TEST(isel.cf.empty_exec.loop_uniform_continue)
+   if (!setup_nir_cs(GFX11))
+      return;
+
+   nir_push_loop(nb);
+   {
+      //>> BB1
+      //! /* logical preds: BB0, BB2, / linear preds: BB0, BB3, / kind: uniform, loop-header, */
+
+      nir_push_if(nb, nir_unit_test_uniform_amd(nb, 1, 1, .base = 0));
+      {
+         //>> BB2
+         //! /* logical preds: BB1, / linear preds: BB1, / kind: continue, discard, */
+         nir_terminate_if(nb, nir_unit_test_uniform_amd(nb, 1, 1, .base = 1));
+         nir_jump(nb, nir_jump_continue);
+      }
+      nir_pop_if(nb, NULL);
+
+      //>> BB6
+      //! /* logical preds: BB5, / linear preds: BB4, BB5, / kind: uniform, break, */
+      nir_jump(nb, nir_jump_break);
+   }
+   nir_pop_loop(nb, NULL);
+
+   finish_isel_test();
+END_TEST
