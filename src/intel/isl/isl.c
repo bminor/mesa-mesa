@@ -597,6 +597,329 @@ static const uint8_t acm_tile64_3d_miptail_offset_el[][5][3] = {
    { {0, 0, 3}, { 0, 0, 3}, { 0,  0, 3}, { 0,  0,  3}, { 0,  0,  3}, },
 };
 
+#define U(val) ISL_ADDR_SWIZ_U(val)
+#define V(val) ISL_ADDR_SWIZ_V(val)
+#define R(val) ISL_ADDR_SWIZ_R(val)
+#define S(val) ISL_ADDR_SWIZ_S(val)
+#define REV12(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11) \
+   { _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0 }
+#define REV16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15) \
+   { _15, _14, _13, _12, _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0 }
+
+/* The following swizzles are described in :
+ *
+ * ICL PRMs, Volume 5: Memory Data Formats, Compressed Multisampled Surfaces
+ *
+ * BSpec 770
+ */
+static const uint8_t tilex_swiz[12] = REV12(
+   V(2), V(1), V(0), U(8), U(7), U(6), U(5), U(4), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tiley_swiz[12] = REV12(
+   U(6), U(5), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tilew_swiz[12] = REV12(
+   U(5), U(4), U(3), V(5), V(4), V(3), V(2), U(2), V(1), U(1), V(0), U(0)
+);
+
+static const uint8_t tile_ysyf_2d_128_64bpp_swiz[16] = REV16(
+   U(9), V(5), U(8), V(4), U(7), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ysyf_2d_32_16bpp_swiz[16] = REV16(
+   U(8), V(6), U(7), V(5), U(6), V(4), U(5), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ysyf_2d_8bpp_swiz[16] = REV16(
+   U(7), V(7), U(6), V(6), U(5), V(5), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+/* BSpec 770 */
+
+static const uint8_t tile_yf_2d_128_64bpp_2msaa_swiz[12] = REV12(
+   S(0), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_32_16bpp_2msaa_swiz[12] = REV12(
+   S(0), V(4), U(5), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_8bpp_2msaa_swiz[12] = REV12(
+   S(0), V(5), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_128_64bpp_4msaa_swiz[12] = REV12(
+   S(1), S(0), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_32_16bpp_4msaa_swiz[12] = REV12(
+   S(1), S(0), U(5), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_8bpp_4msaa_swiz[12] = REV12(
+   S(1), S(0), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_128_64bpp_8msaa_swiz[12] = REV12(
+   S(2), S(1), S(0), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_32_16bpp_8msaa_swiz[12] = REV12(
+   S(2), S(1), S(0), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_8bpp_8msaa_swiz[12] = REV12(
+   S(2), S(1), S(0), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_128_64bpp_16msaa_swiz[12] = REV12(
+   S(3), S(2), S(1), S(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_32_16bpp_16msaa_swiz[12] = REV12(
+   S(3), S(2), S(1), S(0), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_yf_2d_8bpp_16msaa_swiz[12] = REV12(
+   S(3), S(2), S(1), S(0), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+/* The following swizzles are described in :
+ *
+ * ICL PRMs, Volume 5: Memory Data Formats, Calculating Texel Location
+ *
+ * BSpec 768
+ */
+static const uint8_t tile_ys_2d_128_64bpp_2msaa_swiz[16] = REV16(
+   S(0), V(5), U(8), V(4), U(7), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_32_16bpp_2msaa_swiz[16] = REV16(
+   S(0), V(6), U(7), V(5), U(6), V(4), U(5), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_8bpp_2msaa_swiz[16] = REV16(
+   S(0), V(7), U(6), V(6), U(5), V(5), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_128_64bpp_4msaa_swiz[16] = REV16(
+   S(1), S(0), U(8), V(4), U(7), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_32_16bpp_4msaa_swiz[16] = REV16(
+   S(1), S(0), U(7), V(5), U(6), V(4), U(5), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_8bpp_4msaa_swiz[16] = REV16(
+   S(1), S(0), U(6), V(6), U(5), V(5), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_128_64bpp_8msaa_swiz[16] = REV16(
+   S(2), S(1), S(0), V(4), U(7), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_32_16bpp_8msaa_swiz[16] = REV16(
+   S(2), S(1), S(0), V(5), U(6), V(4), U(5), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_8bpp_8msaa_swiz[16] = REV16(
+   S(2), S(1), S(0), V(6), U(5), V(5), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_128_64bpp_16msaa_swiz[16] = REV16(
+   S(3), S(2), S(1), S(0), U(7), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_32_16bpp_16msaa_swiz[16] = REV16(
+   S(3), S(2), S(1), S(0), U(6), V(4), U(5), V(3), U(4), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t tile_ys_2d_8bpp_16msaa_swiz[16] = REV16(
+   S(3), S(2), S(1), S(0), U(5), V(5), U(4), V(4), V(3), V(2), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+/* The following swizzles are described in :
+ *
+ * SKL PRMs, Volume 5: Memory Views, Calculating Texel Location, 3D Surfaces
+
+ * ICL PRMs, Volume 5: Memory Data Formats, Calculating Texel Location, 3D
+ * Surfaces
+ *
+ * BSpec 774
+ */
+
+static const uint8_t skl_tile_ysyf_3d_128_64bpp_swiz[16] = REV16(
+   U(7), V(3), R(3), U(6), V(2), R(2), U(5), U(4), R(1), R(0), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t skl_tile_ysyf_3d_32bpp_swiz[16] = REV16(
+   U(6), V(4), R(3), U(5), V(3), R(2), U(4), V(2), R(1), R(0), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t skl_tile_ysyf_3d_16_8bpp_swiz[16] = REV16(
+   U(5), V(4), R(4), U(4), V(3), R(3), V(2), R(2), R(1), R(0), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t icl_tile_ysyf_3d_128_64bpp_swiz[16] = REV16(
+   U(7), V(3), R(3), U(6), V(2), R(2), U(5), V(1), R(1), U(4), R(0), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t icl_tile_ysyf_3d_32bpp_swiz[16] = REV16(
+   U(6), V(4), R(3), U(5), V(3), R(2), U(4), V(2), R(1), U(3), V(1), V(0), R(0), U(2), U(1), U(0)
+);
+
+static const uint8_t icl_tile_ysyf_3d_16_8bpp_swiz[16] = REV16(
+   U(5), V(4), R(4), U(4), V(3), R(3), U(3), V(2), R(2), U(2), V(1), V(0), R(1), R(0), U(1), U(0)
+);
+
+/* The following swizzles are described in :
+ *
+ * ATS-M PRMs, Volume 5: Memory Data Formats, Calculating Texel Location
+ *
+ * BSpec 44635
+ */
+static const uint8_t tile4_swiz[12] = REV12(
+   V(4), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_128_64bpp_swiz[16] = REV16(
+   V(5), U(9), U(8), U(7), V(4), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_32_16bpp_swiz[16] = REV16(
+   V(6), V(5), U(8), U(7), V(4), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_8bpp_swiz[16] = REV16(
+   V(7), V(6), V(5), U(7), V(4), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_128_64bpp_2msaa_swiz[16] = REV16(
+   V(5), U(8), U(7), U(6), V(4), V(3), U(5), V(2), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_32_16bpp_2msaa_swiz[16] = REV16(
+   V(6), V(5), U(7), U(6), V(4), V(3), U(5), V(2), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_8bpp_2msaa_swiz[16] = REV16(
+   V(7), V(6), V(5), U(6), V(4), V(3), U(5), V(2), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_128_64bpp_16_8_4msaa_swiz[16] = REV16(
+   V(4), U(8), U(7), U(6), V(3), V(2), U(5), S(1), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_32_16bpp_16_8_4msaa_swiz[16] = REV16(
+   V(5), V(4), U(7), U(6), V(3), V(2), U(5), S(1), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_2d_8bpp_16_8_4msaa_swiz[16] = REV16(
+   V(6), V(5), V(4), U(6), V(3), V(2), U(5), S(1), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_3d_128_64bpp_swiz[16] = REV16(
+   R(3), R(2), V(3), U(7), U(6), U(5), R(1), V(2), R(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_3d_32bpp_swiz[16] = REV16(
+   R(3), R(2), V(4), U(6), V(3), U(5), R(1), V(2), R(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_3d_16bpp_swiz[16] = REV16(
+   R(4), R(3), R(2), V(4), V(3), U(5), R(1), V(2), R(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t acm_tile64_3d_8bpp_swiz[16] = REV16(
+   R(4), R(3), R(2), U(5), V(4), V(3), R(1), V(2), R(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+/* The following swizzles are described in :
+ *
+ * BSpec 58767, 58786
+ */
+
+static const uint8_t xe2_tile64_2d_128_64bpp_swiz[16] = REV16(
+   V(5), U(9), U(8), U(7), V(4), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_32_16bpp_swiz[16] = REV16(
+   V(6), V(5), U(8), U(7), V(4), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_8bpp_swiz[16] = REV16(
+   V(7), V(6), V(5), U(7), V(4), V(3), U(6), V(2), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_128bpp_2msaa_swiz[16] = REV16(
+   V(4), U(9), U(8), U(7), V(3), V(2), U(6), S(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_64bpp_2msaa_swiz[16] = REV16(
+   V(5), U(8), U(7), U(6), V(4), V(3), U(5), V(2), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_32_16bpp_2msaa_swiz[16] = REV16(
+   V(6), V(5), V(4), U(7), V(3), V(2), U(6), S(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_8bpp_2msaa_swiz[16] = REV16(
+   V(7), V(6), V(5), V(4), V(3), V(2), U(6), S(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_128_64bpp_4msaa_swiz[16] = REV16(
+   V(4), U(8), U(7), U(6), V(3), V(2), S(1), S(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_32_16bpp_4msaa_swiz[16] = REV16(
+   V(5), V(4), U(7), U(6), V(3), V(2), S(1), S(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_8bpp_4msaa_swiz[16] = REV16(
+   V(6), V(5), V(4), U(6), V(3), V(2), S(1), S(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_128_64_32bpp_8msaa_swiz[16] = REV16(
+   V(4), V(3), U(7), U(6), V(2), U(5), S(2), S(1), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_16_8bpp_8msaa_swiz[16] = REV16(
+   V(5), V(4), V(3), U(6), V(2), U(5), S(2), S(1), S(0), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_128bpp_16msaa_swiz[16] = REV16(
+   V(3), U(7), U(6), U(5), V(2), U(4), S(3), S(2), S(1), S(0), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_64_32_16bpp_16msaa_swiz[16] = REV16(
+   V(4), V(3), U(6), U(5), V(2), U(4), S(3), S(2), S(1), S(0), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_2d_8bpp_16msaa_swiz[16] = REV16(
+   V(5), V(4), V(3), U(5), V(2), U(4), S(3), S(2), S(1), S(0), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_3d_128_64bpp_swiz[16] = REV16(
+   R(3), R(2), V(3), U(7), U(6), V(2), R(1), R(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_3d_32bpp_swiz[16] = REV16(
+   R(3), R(2), V(4), U(6), V(3), V(2), R(1), R(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+static const uint8_t xe2_tile64_3d_16_8bpp_swiz[16] = REV16(
+   R(4), R(3), R(2), V(4), V(3), V(2), R(1), R(0), U(5), U(4), V(1), V(0), U(3), U(2), U(1), U(0)
+);
+
+#undef U
+#undef V
+#undef R
+#undef S
+#undef REV12
+#undef REV16
+
 static uint32_t
 tiling_max_mip_tail(enum isl_tiling tiling,
                     enum isl_surf_dim dim,
@@ -699,6 +1022,8 @@ isl_tiling_get_info(enum isl_tiling tiling,
    const uint32_t bs = format_bpb / 8;
    struct isl_extent4d logical_el;
    struct isl_extent2d phys_B;
+   const uint8_t *swiz = NULL;
+   uint32_t swiz_count = 0;
 
    if (tiling != ISL_TILING_LINEAR && !isl_is_pow2(format_bpb)) {
       /* It is possible to have non-power-of-two formats in a tiled buffer.
@@ -714,6 +1039,21 @@ isl_tiling_get_info(enum isl_tiling tiling,
       return;
    }
 
+#define SET_SWIZ(swizzle, bit_count)                                    \
+      do {                                                              \
+         assert(bs > 0);                                                \
+         isl_tile_extent _tile_extent =                                 \
+            isl_swizzle_get_tile_coefficients(swizzle, bit_count, bs);  \
+         logical_el = (struct isl_extent4d) {                           \
+            .w = (1 << _tile_extent.w) / bs,                            \
+            .h = (1 << _tile_extent.h),                                 \
+            .d = (1 << _tile_extent.d),                                 \
+            .a = (1 << _tile_extent.a),                                 \
+         };                                                             \
+         swiz = swizzle;                                                \
+         swiz_count = bit_count;                                        \
+      } while (0)
+
    switch (tiling) {
    case ISL_TILING_LINEAR:
       assert(bs > 0);
@@ -722,21 +1062,22 @@ isl_tiling_get_info(enum isl_tiling tiling,
       break;
 
    case ISL_TILING_X:
-      assert(bs > 0);
-      logical_el = isl_extent4d(512 / bs, 8, 1, 1);
+      SET_SWIZ(tilex_swiz, 12);
       phys_B = isl_extent2d(512, 8);
       break;
 
    case ISL_TILING_Y0:
+      SET_SWIZ(tiley_swiz, 12);
+      phys_B = isl_extent2d(128, 32);
+      break;
    case ISL_TILING_4:
-      assert(bs > 0);
-      logical_el = isl_extent4d(128 / bs, 32, 1, 1);
+      SET_SWIZ(tile4_swiz, 12);
       phys_B = isl_extent2d(128, 32);
       break;
 
    case ISL_TILING_W:
       assert(bs == 1);
-      logical_el = isl_extent4d(64, 64, 1, 1);
+      SET_SWIZ(tilew_swiz, 12);
       /* From the Broadwell PRM Vol 2d, RENDER_SURFACE_STATE::SurfacePitch:
        *
        *    "If the surface is a stencil buffer (and thus has Tile Mode set
@@ -752,219 +1093,312 @@ isl_tiling_get_info(enum isl_tiling tiling,
       break;
 
    case ISL_TILING_SKL_Yf:
-   case ISL_TILING_SKL_Ys:
-   case ISL_TILING_ICL_Yf:
-   case ISL_TILING_ICL_Ys: {
-      bool is_Ys = tiling == ISL_TILING_SKL_Ys ||
-                   tiling == ISL_TILING_ICL_Ys;
-      assert(format_bpb >= 8);
-
       switch (dim) {
       case ISL_SURF_DIM_2D:
-         /* See the BSpec Memory Data Formats » Common Surface Formats »
-          * Surface Layout and Tiling [SKL+] » 2D Surfaces SKL+ » 2D/CUBE
-          * Alignment Requirement [SKL+]
-          *
-          * Or, look in the SKL PRM under Memory Views > Common Surface
-          * Formats > Surface Layout and Tiling > 2D Surfaces > 2D/CUBE
-          * Alignment Requirements.
-          */
-         logical_el = (struct isl_extent4d) {
-            .w = 1 << (6 - ((ffs(format_bpb) - 4) / 2) + (2 * is_Ys)),
-            .h = 1 << (6 - ((ffs(format_bpb) - 3) / 2) + (2 * is_Ys)),
-            .d = 1,
-            .a = 1,
-         };
-
-         if (samples > 1 && tiling != ISL_TILING_SKL_Yf) {
-            /* SKL PRMs, Volume 5: Memory Views, 2D/CUBE Alignment
-             * Requirement:
-             *
-             *    "For MSFMT_MSS type multi-sampled TileYS surfaces, the
-             *     alignments given above must be divided by the appropriate
-             *     value from the table below."
-             *
-             * The formulas below reproduce those values.
-             */
-            if (msaa_layout == ISL_MSAA_LAYOUT_ARRAY) {
-               logical_el.w >>= (ffs(samples) - 0) / 2;
-               logical_el.h >>= (ffs(samples) - 1) / 2;
-               logical_el.a = samples;
-            }
+         switch (format_bpb) {
+         case 128:
+         case 64:
+            SET_SWIZ(tile_ysyf_2d_128_64bpp_swiz, 12);
+            break;
+         case 32:
+         case 16:
+            SET_SWIZ(tile_ysyf_2d_32_16bpp_swiz, 12);
+            break;
+         case 8:
+            SET_SWIZ(tile_ysyf_2d_8bpp_swiz, 12);
+            break;
+         default:
+            unreachable("Unsupported format size");
          }
          break;
-
       case ISL_SURF_DIM_3D:
-         /* See the BSpec Memory Data Formats » Common Surface Formats »
-          * Surface Layout and Tiling [SKL+] » 3D Surfaces SKL+ » 3D Alignment
-          * Requirements [SKL+]
-          *
-          * Or, look in the SKL PRM under Memory Views > Common Surface
-          * Formats > Surface Layout and Tiling > 3D Surfaces > 3D Alignment
-          * Requirements.
-          */
-         logical_el = (struct isl_extent4d) {
-            .w = 1 << (4 - ((ffs(format_bpb) - 2) / 3) + (2 * is_Ys)),
-            .h = 1 << (4 - ((ffs(format_bpb) - 4) / 3) + (1 * is_Ys)),
-            .d = 1 << (4 - ((ffs(format_bpb) - 3) / 3) + (1 * is_Ys)),
-            .a = 1,
-         };
+         switch (format_bpb) {
+         case 128:
+         case 64:
+            SET_SWIZ(skl_tile_ysyf_3d_128_64bpp_swiz, 12);
+            break;
+         case 32:
+            SET_SWIZ(skl_tile_ysyf_3d_32bpp_swiz, 12);
+            break;
+         case 16:
+         case 8:
+            SET_SWIZ(skl_tile_ysyf_3d_16_8bpp_swiz, 12);
+            break;
+         default:
+            unreachable("Unsupported format size");
+         }
          break;
       default:
          unreachable("Invalid dimension");
       }
 
-      uint32_t tile_size_B = is_Ys ? (1 << 16) : (1 << 12);
+      phys_B.w = logical_el.width * bs;
+      phys_B.h = 4096 / phys_B.w;
+      break;
+
+   case ISL_TILING_SKL_Ys:
+   case ISL_TILING_ICL_Yf:
+   case ISL_TILING_ICL_Ys: {
+      bool is_Ys = tiling == ISL_TILING_SKL_Ys ||
+                   tiling == ISL_TILING_ICL_Ys;
+      const uint32_t tiling_bits = is_Ys ? 16 : 12;
+
+#define YS_OR_YF(_name) \
+      is_Ys ? tile_ys_##_name : tile_yf_##_name
+
+      switch (dim) {
+      case ISL_SURF_DIM_2D: {
+         const uint8_t *_128_64bpp_swiz[5] = {
+            tile_ysyf_2d_128_64bpp_swiz,
+            YS_OR_YF(2d_128_64bpp_2msaa_swiz),
+            YS_OR_YF(2d_128_64bpp_4msaa_swiz),
+            YS_OR_YF(2d_128_64bpp_8msaa_swiz),
+            YS_OR_YF(2d_128_64bpp_16msaa_swiz),
+         };
+         const uint8_t *_32_16bpp_swiz[5] = {
+            tile_ysyf_2d_32_16bpp_swiz,
+            YS_OR_YF(2d_32_16bpp_2msaa_swiz),
+            YS_OR_YF(2d_32_16bpp_4msaa_swiz),
+            YS_OR_YF(2d_32_16bpp_8msaa_swiz),
+            YS_OR_YF(2d_32_16bpp_16msaa_swiz),
+         };
+         const uint8_t *_8bpp_swiz[5] = {
+            tile_ysyf_2d_8bpp_swiz,
+            YS_OR_YF(2d_8bpp_2msaa_swiz),
+            YS_OR_YF(2d_8bpp_4msaa_swiz),
+            YS_OR_YF(2d_8bpp_8msaa_swiz),
+            YS_OR_YF(2d_8bpp_16msaa_swiz),
+         };
+
+#undef YS_OR_YF
+
+         switch (format_bpb) {
+         case 128:
+         case 64:
+            SET_SWIZ(_128_64bpp_swiz[ffs(samples) - 1], tiling_bits);
+            break;
+         case 32:
+         case 16:
+            SET_SWIZ(_32_16bpp_swiz[ffs(samples) - 1], tiling_bits);
+            break;
+         case 8:
+            SET_SWIZ(_8bpp_swiz[ffs(samples) - 1], tiling_bits);
+            break;
+         default:
+            unreachable("Unsupported format size");
+         }
+         break;
+      }
+
+      case ISL_SURF_DIM_3D:
+#define ICL_OR_SKL(_name) \
+         ((tiling == ISL_TILING_SKL_Ys || \
+           tiling == ISL_TILING_SKL_Yf) ? \
+          skl_##_name : icl_##_name)
+         switch (format_bpb) {
+         case 128:
+         case 64:
+            SET_SWIZ(ICL_OR_SKL(tile_ysyf_3d_128_64bpp_swiz), tiling_bits);
+            break;
+         case 32:
+            SET_SWIZ(ICL_OR_SKL(tile_ysyf_3d_32bpp_swiz), tiling_bits);
+            break;
+         case 16:
+         case 8:
+            SET_SWIZ(ICL_OR_SKL(tile_ysyf_3d_16_8bpp_swiz), tiling_bits);
+            break;
+         default:
+            unreachable("Unsupported format size");
+         }
+#undef ICL_OR_SKL
+         break;
+
+      default:
+         unreachable("Invalid dimension");
+      }
+
+      const uint32_t tile_size_B = 1u << tiling_bits;
 
       phys_B.w = logical_el.width * bs;
       phys_B.h = tile_size_B / phys_B.w;
       break;
    }
    case ISL_TILING_64:
-      /* The tables below are taken from the "2D Surfaces" & "3D Surfaces"
-       * pages in the Bspec which are formulated in terms of the Cv and Cu
-       * constants. This is different from the tables in the "Tile64 Format"
-       * page which should be equivalent but are usually in terms of pixels.
-       * Also note that Cv and Cu are HxW order to match the Bspec table, not
-       * WxH order like you might expect.
-       *
-       * From the Bspec's or ATS-M PRMs Volume 5: Memory Data Formats, "Tile64
-       * Format" :
-       *
-       *    MSAA Depth/Stencil surface use IMS (Interleaved Multi Samples)
-       *    which means:
-       *
-       *    - Use the 1X MSAA (non-MSRT) version of the Tile64 equations and
-       *      let the client unit do the swizzling internally
-       *
-       * Surfaces using the IMS layout will use the mapping for 1x MSAA.
-       */
-#define tile_extent2d(bs, cv, cu, a) \
-      isl_extent4d((1 << cu) / bs, 1 << cv, 1, a)
-#define tile_extent3d(bs, cr, cv, cu) \
-      isl_extent4d((1 << cu) / bs, 1 << cv, 1 << cr, 1)
-
       if (dim == ISL_SURF_DIM_3D) {
-          switch (format_bpb) {
-          case 128: logical_el = tile_extent3d(bs, 4, 4, 8); break;
-          case  64: logical_el = tile_extent3d(bs, 4, 4, 8); break;
-          case  32: logical_el = tile_extent3d(bs, 4, 5, 7); break;
-          case  16: logical_el = tile_extent3d(bs, 5, 5, 6); break;
-          case   8: logical_el = tile_extent3d(bs, 5, 5, 6); break;
-          default: unreachable("Unsupported format size for 3D");
-          }
+         switch (format_bpb) {
+         case 128:
+         case  64:
+            SET_SWIZ(acm_tile64_3d_128_64bpp_swiz, 16);
+            break;
+         case  32:
+            SET_SWIZ(acm_tile64_3d_32bpp_swiz, 16);
+            break;
+         case  16:
+            SET_SWIZ(acm_tile64_3d_16bpp_swiz, 16);
+            break;
+         case   8:
+            SET_SWIZ(acm_tile64_3d_8bpp_swiz, 16);
+            break;
+         default:
+            unreachable("Unsupported format size for 3D");
+         }
       } else {
-          if (samples == 1 || msaa_layout == ISL_MSAA_LAYOUT_INTERLEAVED) {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 6, 10, 1); break;
-              case  64: logical_el = tile_extent2d(bs, 6, 10, 1); break;
-              case  32: logical_el = tile_extent2d(bs, 7,  9, 1); break;
-              case  16: logical_el = tile_extent2d(bs, 7,  9, 1); break;
-              case   8: logical_el = tile_extent2d(bs, 8,  8, 1); break;
-              default: unreachable("Unsupported format size.");
-              }
-          } else if (samples == 2) {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 6,  9, 2); break;
-              case  64: logical_el = tile_extent2d(bs, 6,  9, 2); break;
-              case  32: logical_el = tile_extent2d(bs, 7,  8, 2); break;
-              case  16: logical_el = tile_extent2d(bs, 7,  8, 2); break;
-              case   8: logical_el = tile_extent2d(bs, 8,  7, 2); break;
-              default: unreachable("Unsupported format size.");
-              }
-          } else {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 5,  9, 4); break;
-              case  64: logical_el = tile_extent2d(bs, 5,  9, 4); break;
-              case  32: logical_el = tile_extent2d(bs, 6,  8, 4); break;
-              case  16: logical_el = tile_extent2d(bs, 6,  8, 4); break;
-              case   8: logical_el = tile_extent2d(bs, 7,  7, 4); break;
-              default: unreachable("Unsupported format size.");
-              }
-          }
-      }
+         const uint8_t *_128_64bpp_swiz[5] = {
+            acm_tile64_2d_128_64bpp_swiz,
+            acm_tile64_2d_128_64bpp_2msaa_swiz,
+            acm_tile64_2d_128_64bpp_16_8_4msaa_swiz,
+            acm_tile64_2d_128_64bpp_16_8_4msaa_swiz,
+            acm_tile64_2d_128_64bpp_16_8_4msaa_swiz,
+         };
+         const uint8_t *_32_16bpp_swiz[5] = {
+            acm_tile64_2d_32_16bpp_swiz,
+            acm_tile64_2d_32_16bpp_2msaa_swiz,
+            acm_tile64_2d_32_16bpp_16_8_4msaa_swiz,
+            acm_tile64_2d_32_16bpp_16_8_4msaa_swiz,
+            acm_tile64_2d_32_16bpp_16_8_4msaa_swiz,
+         };
+         const uint8_t *_8bpp_swiz[5] = {
+            acm_tile64_2d_8bpp_swiz,
+            acm_tile64_2d_8bpp_2msaa_swiz,
+            acm_tile64_2d_8bpp_16_8_4msaa_swiz,
+            acm_tile64_2d_8bpp_16_8_4msaa_swiz,
+            acm_tile64_2d_8bpp_16_8_4msaa_swiz,
+         };
 
-#undef tile_extent2d
-#undef tile_extent3d
+         /* From the Bspec's or ATS-M PRMs Volume 5: Memory Data Formats,
+          * "Tile64 Format" :
+          *
+          *    MSAA Depth/Stencil surface use IMS (Interleaved Multi Samples)
+          *    which means:
+          *
+          *    - Use the 1X MSAA (non-MSRT) version of the Tile64 equations
+          *      and let the client unit do the swizzling internally
+          *
+          * Surfaces using the IMS layout will use the mapping for 1x MSAA.
+          */
+         const uint32_t sample_idx =
+            (msaa_layout == ISL_MSAA_LAYOUT_INTERLEAVED) ? 0 :
+            (ffs(samples) - 1);
+
+         switch (format_bpb) {
+         case 128:
+         case  64:
+            SET_SWIZ(_128_64bpp_swiz[sample_idx], 16);
+            break;
+         case  32:
+         case  16:
+            SET_SWIZ(_32_16bpp_swiz[sample_idx], 16);
+            break;
+         case   8:
+            SET_SWIZ(_8bpp_swiz[sample_idx], 16);
+            break;
+         default:
+            unreachable("Unsupported format size.");
+         }
+      }
 
       phys_B.w = logical_el.w * bs;
       phys_B.h = 64 * 1024 / phys_B.w;
       break;
 
    case ISL_TILING_64_XE2:
-      /* The tables below are taken from BSpec 58767 which are formulated in
-       * terms of the Cv and Cu constants. This is different from the tables in
-       * the "Tile64 Format" page which should be equivalent but are usually in
-       * terms of pixels.
-       *
-       * Also note that Cv and Cu are HxW order to match the Bspec table, not
-       * WxH order like you might expect.
-       */
-#define tile_extent2d(bs, cv, cu, a) \
-      isl_extent4d((1 << cu) / bs, 1 << cv, 1, a)
-#define tile_extent3d(bs, cr, cv, cu) \
-      isl_extent4d((1 << cu) / bs, 1 << cv, 1 << cr, 1)
-
+      /* From BSpec 58767  */
       if (dim == ISL_SURF_DIM_3D) {
-          switch (format_bpb) {
-          case 128: logical_el = tile_extent3d(bs, 4, 4, 8); break;
-          case  64: logical_el = tile_extent3d(bs, 4, 4, 8); break;
-          case  32: logical_el = tile_extent3d(bs, 4, 5, 7); break;
-          case  16: logical_el = tile_extent3d(bs, 5, 5, 6); break;
-          case   8: logical_el = tile_extent3d(bs, 5, 5, 6); break;
-          default: unreachable("Unsupported format size for 3D");
-          }
+         switch (format_bpb) {
+         case 128:
+         case  64:
+            SET_SWIZ(xe2_tile64_3d_128_64bpp_swiz, 16);
+            break;
+         case  32:
+            SET_SWIZ(xe2_tile64_3d_32bpp_swiz, 16);
+            break;
+         case  16:
+         case   8:
+            SET_SWIZ(xe2_tile64_3d_16_8bpp_swiz, 16);
+            break;
+         default:
+            unreachable("Unsupported format size for 3D");
+         }
       } else {
-          if (samples == 1 || msaa_layout == ISL_MSAA_LAYOUT_INTERLEAVED) {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 6, 10, 1); break;
-              case  64: logical_el = tile_extent2d(bs, 6, 10, 1); break;
-              case  32: logical_el = tile_extent2d(bs, 7,  9, 1); break;
-              case  16: logical_el = tile_extent2d(bs, 7,  9, 1); break;
-              case   8: logical_el = tile_extent2d(bs, 8,  8, 1); break;
-              default: unreachable("Unsupported format size.");
-              }
-          } else if (samples == 2) {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 5, 10, 2); break;
-              case  64: logical_el = tile_extent2d(bs, 6,  9, 2); break;
-              case  32: logical_el = tile_extent2d(bs, 7,  8, 2); break;
-              case  16: logical_el = tile_extent2d(bs, 7,  8, 2); break;
-              case   8: logical_el = tile_extent2d(bs, 8,  7, 2); break;
-              default: unreachable("Unsupported format size.");
-              }
-          } else if (samples == 4) {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 5,  9, 4); break;
-              case  64: logical_el = tile_extent2d(bs, 5,  9, 4); break;
-              case  32: logical_el = tile_extent2d(bs, 6,  8, 4); break;
-              case  16: logical_el = tile_extent2d(bs, 6,  8, 4); break;
-              case   8: logical_el = tile_extent2d(bs, 7,  7, 4); break;
-              default: unreachable("Unsupported format size.");
-              }
-          } else if (samples == 8) {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 5,  8, 8); break;
-              case  64: logical_el = tile_extent2d(bs, 5,  8, 8); break;
-              case  32: logical_el = tile_extent2d(bs, 5,  8, 8); break;
-              case  16: logical_el = tile_extent2d(bs, 6,  7, 8); break;
-              case   8: logical_el = tile_extent2d(bs, 6,  7, 8); break;
-              default: unreachable("Unsupported format size.");
-              }
-          } else if (samples == 16) {
-              switch (format_bpb) {
-              case 128: logical_el = tile_extent2d(bs, 4,  8, 16); break;
-              case  64: logical_el = tile_extent2d(bs, 5,  7, 16); break;
-              case  32: logical_el = tile_extent2d(bs, 5,  7, 16); break;
-              case  16: logical_el = tile_extent2d(bs, 5,  7, 16); break;
-              case   8: logical_el = tile_extent2d(bs, 6,  6, 16); break;
-              default: unreachable("Unsupported format size.");
-              }
-          }
+         if (samples == 1 || msaa_layout == ISL_MSAA_LAYOUT_INTERLEAVED) {
+            switch (format_bpb) {
+            case 128:
+            case  64:
+               SET_SWIZ(xe2_tile64_2d_128_64bpp_swiz, 16);
+               break;
+            case  32:
+            case  16:
+               SET_SWIZ(xe2_tile64_2d_32_16bpp_swiz, 16);
+               break;
+            case   8:
+               SET_SWIZ(xe2_tile64_2d_8bpp_swiz, 16);
+               break;
+            default:
+               unreachable("Unsupported format size.");
+            }
+         } else if (samples == 2) {
+            switch (format_bpb) {
+            case 128:
+               SET_SWIZ(xe2_tile64_2d_128bpp_2msaa_swiz, 16);
+               break;
+            case  64:
+               SET_SWIZ(xe2_tile64_2d_64bpp_2msaa_swiz, 16);
+               break;
+            case  32:
+            case  16:
+               SET_SWIZ(xe2_tile64_2d_32_16bpp_2msaa_swiz, 16);
+               break;
+            case   8:
+               SET_SWIZ(xe2_tile64_2d_8bpp_2msaa_swiz, 16);
+               break;
+            default:
+               unreachable("Unsupported format size.");
+            }
+         } else if (samples == 4) {
+            switch (format_bpb) {
+            case 128:
+            case  64:
+               SET_SWIZ(xe2_tile64_2d_128_64bpp_4msaa_swiz, 16);
+               break;
+            case  32:
+            case  16:
+               SET_SWIZ(xe2_tile64_2d_32_16bpp_4msaa_swiz, 16);
+               break;
+            case   8:
+               SET_SWIZ(xe2_tile64_2d_8bpp_4msaa_swiz, 16);
+               break;
+            default: unreachable("Unsupported format size.");
+            }
+         } else if (samples == 8) {
+            switch (format_bpb) {
+            case 128:
+            case  64:
+            case  32:
+               SET_SWIZ(xe2_tile64_2d_128_64_32bpp_8msaa_swiz, 16);
+               break;
+            case  16:
+            case   8:
+               SET_SWIZ(xe2_tile64_2d_16_8bpp_8msaa_swiz, 16);
+               break;
+            default: unreachable("Unsupported format size.");
+            }
+         } else if (samples == 16) {
+            switch (format_bpb) {
+            case 128:
+               SET_SWIZ(xe2_tile64_2d_128bpp_16msaa_swiz, 16);
+               break;
+            case  64:
+            case  32:
+            case  16:
+               SET_SWIZ(xe2_tile64_2d_64_32_16bpp_16msaa_swiz, 16);
+               break;
+            case   8:
+               SET_SWIZ(xe2_tile64_2d_8bpp_16msaa_swiz, 16);
+               break;
+            default: unreachable("Unsupported format size.");
+            }
+         }
       }
-
-#undef tile_extent2d
-#undef tile_extent3d
 
       phys_B.w = logical_el.w * bs;
       phys_B.h = 64 * 1024 / phys_B.w;
@@ -1007,12 +1441,16 @@ isl_tiling_get_info(enum isl_tiling tiling,
       unreachable("not reached");
    } /* end switch */
 
+#undef SET_SWIZ
+
    *tile_info = (struct isl_tile_info) {
       .tiling = tiling,
       .format_bpb = format_bpb,
       .logical_extent_el = logical_el,
       .phys_extent_B = phys_B,
       .max_miptail_levels = tiling_max_mip_tail(tiling, dim, samples),
+      .swiz = swiz,
+      .swiz_count = swiz_count,
    };
 }
 

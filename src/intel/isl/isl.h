@@ -1170,6 +1170,18 @@ typedef uint8_t isl_channel_mask_t;
 /** @} */
 
 /**
+ * Address swizzles are expressed in uint8_t with the top 4bits being the
+ * component/sample and the bottom 4bits being the bit index in the component.
+ */
+#define ISL_ADDR_SWIZ_U(val) ((0 << 4) | (val))
+#define ISL_ADDR_SWIZ_V(val) ((1 << 4) | (val))
+#define ISL_ADDR_SWIZ_R(val) ((2 << 4) | (val))
+#define ISL_ADDR_SWIZ_S(val) ((3 << 4) | (val))
+
+#define ISL_ADDR_SWIZ_COMPONENT(item) ((item) >> 4)
+#define ISL_ADDR_SWIZ_INDEX(item)     ((item) & 0xf)
+
+/**
  * @brief A channel select (also known as texture swizzle) value
  */
 enum ENUM_PACKED isl_channel_select {
@@ -1500,7 +1512,42 @@ struct isl_tile_info {
     * See :c:member:`isl_surf.row_pitch_B`
     */
    struct isl_extent2d phys_extent_B;
+
+   /**
+    * Swizzle of the virtual address
+    */
+   const uint8_t *swiz;
+
+   /**
+    * Number of bit swizzles in swiz[]
+    */
+   uint8_t swiz_count;
 };
+
+typedef union {
+   uint8_t values[4];
+   struct {
+      uint8_t w;
+      uint8_t h;
+      uint8_t d;
+      uint8_t a;
+   };
+} isl_tile_extent;
+
+static inline isl_tile_extent
+isl_swizzle_get_tile_coefficients(const uint8_t *swiz,
+                                  uint8_t swiz_count,
+                                  unsigned bs)
+{
+   isl_tile_extent extent = {};
+   for (uint32_t i = ffs(bs) - 1; i < swiz_count; i++) {
+      extent.values[ISL_ADDR_SWIZ_COMPONENT(swiz[i])] =
+         MAX2(extent.values[ISL_ADDR_SWIZ_COMPONENT(swiz[i])],
+              ISL_ADDR_SWIZ_INDEX(swiz[i]) + 1);
+   }
+
+   return extent;
+}
 
 /**
  * Metadata about a DRM format modifier.
