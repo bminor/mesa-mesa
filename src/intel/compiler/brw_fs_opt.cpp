@@ -100,21 +100,24 @@ brw_fs_optimize(fs_visitor &s)
 
    /* After logical SEND lowering. */
 
-   if (OPT(brw_fs_opt_copy_propagation_defs) || OPT(brw_fs_opt_copy_propagation))
-      OPT(brw_fs_opt_algebraic);
+   if (!OPT(brw_fs_opt_copy_propagation_defs))
+      OPT(brw_fs_opt_copy_propagation);
 
    /* Identify trailing zeros LOAD_PAYLOAD of sampler messages.
     * Do this before splitting SENDs.
     */
-   if (OPT(brw_fs_opt_zero_samples) && (OPT(brw_fs_opt_copy_propagation_defs) || OPT(brw_fs_opt_copy_propagation)))
-      OPT(brw_fs_opt_algebraic);
+   if (OPT(brw_fs_opt_zero_samples)) {
+      if (!OPT(brw_fs_opt_copy_propagation_defs)) {
+         OPT(brw_fs_opt_copy_propagation);
+      }
+   }
 
    OPT(brw_fs_opt_split_sends);
    OPT(brw_fs_workaround_nomask_control_flow);
 
    if (progress) {
-      if (OPT(brw_fs_opt_copy_propagation_defs) || OPT(brw_fs_opt_copy_propagation))
-         OPT(brw_fs_opt_algebraic);
+      if (!OPT(brw_fs_opt_copy_propagation_defs))
+         OPT(brw_fs_opt_copy_propagation);
 
       /* Run after logical send lowering to give it a chance to CSE the
        * LOAD_PAYLOAD instructions created to construct the payloads of
@@ -160,7 +163,6 @@ brw_fs_optimize(fs_visitor &s)
       const bool cp1 = OPT(brw_fs_opt_copy_propagation_defs);
       const bool cp2 = OPT(brw_fs_opt_copy_propagation);
       if (cp1 || cp2) {
-         OPT(brw_fs_opt_algebraic);
          OPT(brw_fs_opt_combine_constants);
       }
       OPT(brw_fs_opt_dead_code_eliminate);
