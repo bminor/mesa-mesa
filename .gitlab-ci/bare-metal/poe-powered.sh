@@ -192,6 +192,7 @@ python3 $CI_INSTALL/custom_logger.py ${STRUCTURED_LOG_FILE} --update farm "${FAR
 ATTEMPTS=3
 first_attempt=True
 while [ $((ATTEMPTS--)) -gt 0 ]; do
+  section_start dut_boot "Booting hardware device ..."
   python3 $CI_INSTALL/custom_logger.py ${STRUCTURED_LOG_FILE} --create-dut-job dut_name "${CI_RUNNER_DESCRIPTION}"
   # Update subtime time to CI_JOB_STARTED_AT only for the first run
   if [ "$first_attempt" = "True" ]; then
@@ -208,13 +209,17 @@ while [ $((ATTEMPTS--)) -gt 0 ]; do
   ret=$?
 
   if [ $ret -eq 2 ]; then
-    echo "Did not detect boot sequence, retrying..."
     python3 $CI_INSTALL/custom_logger.py ${STRUCTURED_LOG_FILE} --close-dut-job
     first_attempt=False
+    error "Device failed to boot; will retry"
   else
+    # We're no longer in dut_boot by this point
+    unset CURRENT_SECTION
     ATTEMPTS=0
   fi
 done
+
+section_start dut_cleanup "Cleaning up after job"
 python3 $CI_INSTALL/custom_logger.py ${STRUCTURED_LOG_FILE} --close-dut-job
 python3 $CI_INSTALL/custom_logger.py ${STRUCTURED_LOG_FILE} --close
 set -e
@@ -226,5 +231,6 @@ date +'%F %T'
 cp -Rp /nfs/results/. results/
 
 date +'%F %T'
+section_end dut_cleanup
 
 exit $ret
