@@ -73,6 +73,8 @@ libbroadcom_v3d = static_library(
   dependencies: [dep_valgrind, dep_thread, idep_mesautil, dep_libdrm],
 )
 
+subdir('perfcntrs')
+
 if with_broadcom_vk
   subdir('vulkan')
 endif
