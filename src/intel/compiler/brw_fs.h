@@ -654,6 +654,7 @@ bool brw_fs_lower_subgroup_ops(fs_visitor &s);
 bool brw_fs_lower_uniform_pull_constant_loads(fs_visitor &s);
 void brw_fs_lower_vgrfs_to_fixed_grfs(fs_visitor &s);
 
+bool brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst);
 bool brw_fs_opt_algebraic(fs_visitor &s);
 bool brw_fs_opt_bank_conflicts(fs_visitor &s);
 bool brw_fs_opt_cmod_propagation(fs_visitor &s);
