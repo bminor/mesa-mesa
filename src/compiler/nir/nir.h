@@ -6739,9 +6739,21 @@ bool nir_lower_memory_model(nir_shader *shader);
 bool nir_lower_goto_ifs(nir_shader *shader);
 bool nir_lower_continue_constructs(nir_shader *shader);
 
+typedef struct nir_lower_multiview_options {
+   uint32_t view_mask;
+
+   /**
+    * Bitfield of output locations that may be converted to a per-view array.
+    *
+    * If a variable exists in an allowed location, it will be converted to an
+    * array even if its value does not depend on the view index.
+    */
+   uint64_t allowed_per_view_outputs;
+} nir_lower_multiview_options;
+
 bool nir_shader_uses_view_index(nir_shader *shader);
-bool nir_can_lower_multiview(nir_shader *shader);
-bool nir_lower_multiview(nir_shader *shader, uint32_t view_mask);
+bool nir_can_lower_multiview(nir_shader *shader, nir_lower_multiview_options options);
+bool nir_lower_multiview(nir_shader *shader, nir_lower_multiview_options options);
 
 bool nir_lower_view_index_to_device_index(nir_shader *shader);
 
