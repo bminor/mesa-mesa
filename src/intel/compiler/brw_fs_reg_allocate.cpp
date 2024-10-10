@@ -721,8 +721,10 @@ fs_reg_alloc::build_lane_offsets(const fs_builder &bld, uint32_t spill_offset, i
    _mesa_set_add(spill_insts, inst);
 
    /* Add the base offset */
-   inst = ubld.ADD(offset, offset, brw_imm_ud(spill_offset));
-   _mesa_set_add(spill_insts, inst);
+   if (spill_offset) {
+      inst = ubld.ADD(offset, offset, brw_imm_ud(spill_offset));
+      _mesa_set_add(spill_insts, inst);
+   }
 
    return offset;
 }
