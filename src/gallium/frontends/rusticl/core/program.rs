@@ -60,7 +60,7 @@ fn get_disk_cache() -> &'static Option<DiskCache> {
     ];
     unsafe {
         DISK_CACHE_ONCE.call_once(|| {
-            DISK_CACHE = DiskCache::new("rusticl", &func_ptrs, 0);
+            DISK_CACHE = DiskCache::new(c"rusticl", &func_ptrs, 0);
         });
         &*addr_of!(DISK_CACHE)
     }
