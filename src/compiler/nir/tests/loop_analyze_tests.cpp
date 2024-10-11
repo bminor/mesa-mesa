@@ -60,6 +60,8 @@ struct loop_builder_param {
    nir_def *(*incr_instr)(nir_builder *,
                               nir_def *,
                               nir_def *);
+   bool use_unknown_init_value;
+   bool invert_exit_condition_and_continue_branch;
 };
 
 static nir_loop *
@@ -75,7 +77,14 @@ loop_builder(nir_builder *b, loop_builder_param p)
     *       i = incr_instr(i, incr_value);
     *    }
     */
-   nir_def *ssa_0 = nir_imm_int(b, p.init_value);
+   nir_def *ssa_0;
+   if (p.use_unknown_init_value) {
+      nir_def *one = nir_imm_int(b, 1);
+      nir_def *twelve = nir_imm_int(b, 12);
+      ssa_0 = nir_load_ubo(b, 1, 32, one, twelve, (gl_access_qualifier)0, 0, 0, 0, 16);
+   } else
+      ssa_0 = nir_imm_int(b, p.init_value);
+
    nir_def *ssa_1 = nir_imm_int(b, p.cond_value);
    nir_def *ssa_2 = nir_imm_int(b, p.incr_value);
 
@@ -91,8 +100,14 @@ loop_builder(nir_builder *b, loop_builder_param p)
       nir_def *ssa_5 = &phi->def;
       nir_def *ssa_3 = p.cond_instr(b, ssa_5, ssa_1);
 
+      if (p.invert_exit_condition_and_continue_branch)
+         ssa_3 = nir_inot(b, ssa_3);
+
       nir_if *nif = nir_push_if(b, ssa_3);
       {
+         if (p.invert_exit_condition_and_continue_branch)
+            nir_push_else(b, NULL);
+
          nir_jump_instr *jump = nir_jump_instr_create(b->shader, nir_jump_break);
          nir_builder_instr_insert(b, &jump->instr);
       }
@@ -199,7 +214,9 @@ TEST_F(nir_loop_analyze_test, one_iteration_fneu)
    nir_loop *loop =
       loop_builder(&b, {.init_value = 0xe7000000, .cond_value = 0xe7000000,
                         .incr_value = 0x5b000000,
-                        .cond_instr = nir_fneu, .incr_instr = nir_fadd});
+                        .cond_instr = nir_fneu, .incr_instr = nir_fadd,
+                        .use_unknown_init_value = false,
+                        .invert_exit_condition_and_continue_branch = false});
 
    /* At this point, we should have:
     *
@@ -319,7 +336,9 @@ INOT_COMPARE(ilt_imin_rev)
                            .cond_value = _cond_value,                   \
                            .incr_value = _incr_value,                   \
                            .cond_instr = nir_ ## cond,                  \
-                           .incr_instr = nir_ ## incr});                \
+                           .incr_instr = nir_ ## incr,                  \
+                           .use_unknown_init_value = false,             \
+                           .invert_exit_condition_and_continue_branch = false}); \
                                                                         \
       nir_validate_shader(b.shader, "input");                           \
                                                                         \
@@ -345,6 +364,42 @@ INOT_COMPARE(ilt_imin_rev)
       }                                                                 \
    }
 
+#define INEXACT_COUNT_TEST_UNKNOWN_INIT(_cond_value, _incr_value, cond, incr, count, invert) \
+   TEST_F(nir_loop_analyze_test, incr ## _ ## cond ## _inexact_count_ ## count ## _invert_ ## invert)    \
+   {                                                                    \
+      nir_loop *loop =                                                  \
+         loop_builder(&b, {.init_value = 0,                             \
+                           .cond_value = _cond_value,                   \
+                           .incr_value = _incr_value,                   \
+                           .cond_instr = nir_ ## cond,                  \
+                           .incr_instr = nir_ ## incr,                  \
+                           .use_unknown_init_value = true,              \
+                           .invert_exit_condition_and_continue_branch = invert }); \
+                                                                        \
+      nir_validate_shader(b.shader, "input");                           \
+                                                                        \
+      nir_loop_analyze_impl(b.impl, nir_var_all, false);                \
+                                                                        \
+      ASSERT_NE((void *)0, loop->info);                                 \
+      EXPECT_NE((void *)0, loop->info->limiting_terminator);            \
+      EXPECT_EQ(count, loop->info->max_trip_count);                     \
+      EXPECT_FALSE(loop->info->exact_trip_count_known);                 \
+                                                                        \
+      EXPECT_EQ(2, loop->info->num_induction_vars);                     \
+      ASSERT_NE((void *)0, loop->info->induction_vars);                 \
+                                                                        \
+      const nir_loop_induction_variable *const ivars =                  \
+         loop->info->induction_vars;                                    \
+                                                                        \
+      for (unsigned i = 0; i < loop->info->num_induction_vars; i++) {   \
+         EXPECT_NE((void *)0, ivars[i].def);                            \
+         ASSERT_NE((void *)0, ivars[i].init_src);                       \
+         EXPECT_FALSE(nir_src_is_const(*ivars[i].init_src));            \
+         ASSERT_NE((void *)0, ivars[i].update_src);                     \
+         EXPECT_TRUE(nir_src_is_const(ivars[i].update_src->src));       \
+      }                                                                 \
+   }
+
 #define INEXACT_COUNT_TEST(_init_value, _cond_value, _incr_value, cond, incr, count) \
    TEST_F(nir_loop_analyze_test, incr ## _ ## cond ## _inexact_count_ ## count)    \
    {                                                                    \
@@ -353,7 +408,9 @@ INOT_COMPARE(ilt_imin_rev)
                            .cond_value = _cond_value,                   \
                            .incr_value = _incr_value,                   \
                            .cond_instr = nir_ ## cond,                  \
-                           .incr_instr = nir_ ## incr});                \
+                           .incr_instr = nir_ ## incr,                  \
+                           .use_unknown_init_value = false,             \
+                           .invert_exit_condition_and_continue_branch = false}); \
                                                                         \
       nir_validate_shader(b.shader, "input");                           \
                                                                         \
@@ -387,7 +444,9 @@ INOT_COMPARE(ilt_imin_rev)
                            .cond_value = _cond_value,                   \
                            .incr_value = _incr_value,                   \
                            .cond_instr = nir_ ## cond,                  \
-                           .incr_instr = nir_ ## incr});                \
+                           .incr_instr = nir_ ## incr,                  \
+                           .use_unknown_init_value = false,             \
+                           .invert_exit_condition_and_continue_branch = false}); \
                                                                         \
       nir_validate_shader(b.shader, "input");                           \
                                                                         \
@@ -407,7 +466,9 @@ INOT_COMPARE(ilt_imin_rev)
                            .cond_value = _cond_value,                   \
                            .incr_value = _incr_value,                   \
                            .cond_instr = nir_ ## cond,                  \
-                           .incr_instr = nir_ ## incr});                \
+                           .incr_instr = nir_ ## incr,                  \
+                           .use_unknown_init_value = false,             \
+                           .invert_exit_condition_and_continue_branch = false}); \
                                                                         \
       nir_validate_shader(b.shader, "input");                           \
                                                                         \
@@ -1636,3 +1697,27 @@ INEXACT_COUNT_TEST(0x00000008, 0x00000004, 0xffffffff, ilt_imax, iadd, 5)
  *    }
  */
 INEXACT_COUNT_TEST(0x00000001, 0x00000100, 0x00000001, uge_umin, ishl, 8)
+
+/*    uniform uint x;
+ *    uint i = x;
+ *    while (true) {
+ *       if (i >= 4)
+ *          break;
+ *
+ *       i += 6;
+ *    }
+ */
+INEXACT_COUNT_TEST_UNKNOWN_INIT(0x00000004, 0x00000006, uge, iadd, 1, 0)
+
+/*    uniform uint x;
+ *    uint i = x;
+ *    while (true) {
+ *       if (!(i >= 4))
+ *          continue;
+ *       else
+ *          break;
+ *
+ *       i += 6;
+ *    }
+ */
+INEXACT_COUNT_TEST_UNKNOWN_INIT(0x00000004, 0x00000006, uge, iadd, 1, 1)
