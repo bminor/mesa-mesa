@@ -781,7 +781,7 @@ fn compile_nir_variant(
                        var_loc: &mut usize,
                        kind: CompiledKernelArgType,
                        glsl_type: *const glsl_type,
-                       name: &str| {
+                       name| {
         *var_loc = compiled_args.len();
         compiled_args.push(CompiledKernelArg {
             kind: kind,
@@ -803,7 +803,7 @@ fn compile_nir_variant(
             &mut lower_state.base_global_invoc_id_loc,
             CompiledKernelArgType::GlobalWorkOffsets,
             unsafe { glsl_vector_type(address_bits_base_type, 3) },
-            "base_global_invocation_id",
+            c"base_global_invocation_id",
         )
     }
 
@@ -813,7 +813,7 @@ fn compile_nir_variant(
             &mut lower_state.global_size_loc,
             CompiledKernelArgType::GlobalWorkSize,
             unsafe { glsl_vector_type(address_bits_base_type, 3) },
-            "global_size",
+            c"global_size",
         )
     }
 
@@ -824,7 +824,7 @@ fn compile_nir_variant(
             &mut lower_state.base_workgroup_id_loc,
             CompiledKernelArgType::WorkGroupOffsets,
             unsafe { glsl_vector_type(address_bits_base_type, 3) },
-            "base_workgroup_id",
+            c"base_workgroup_id",
         );
     }
 
@@ -834,7 +834,7 @@ fn compile_nir_variant(
             &mut lower_state.num_workgroups_loc,
             CompiledKernelArgType::NumWorkgroups,
             unsafe { glsl_vector_type(glsl_base_type::GLSL_TYPE_UINT, 3) },
-            "num_workgroups",
+            c"num_workgroups",
         );
     }
 
@@ -844,7 +844,7 @@ fn compile_nir_variant(
             &mut lower_state.const_buf_loc,
             CompiledKernelArgType::ConstantBuffer,
             address_bits_ptr_type,
-            "constant_buffer_addr",
+            c"constant_buffer_addr",
         );
     }
     if nir.has_printf() {
@@ -853,7 +853,7 @@ fn compile_nir_variant(
             &mut lower_state.printf_buf_loc,
             CompiledKernelArgType::PrintfBuffer,
             address_bits_ptr_type,
-            "printf_buffer_addr",
+            c"printf_buffer_addr",
         );
     }
 
@@ -865,7 +865,7 @@ fn compile_nir_variant(
             &mut lower_state.format_arr_loc,
             CompiledKernelArgType::FormatArray,
             unsafe { glsl_array_type(glsl_int16_t_type(), count as u32, 2) },
-            "image_formats",
+            c"image_formats",
         );
 
         add_var(
@@ -873,7 +873,7 @@ fn compile_nir_variant(
             &mut lower_state.order_arr_loc,
             CompiledKernelArgType::OrderArray,
             unsafe { glsl_array_type(glsl_int16_t_type(), count as u32, 2) },
-            "image_orders",
+            c"image_orders",
         );
     }
 
@@ -883,7 +883,7 @@ fn compile_nir_variant(
             &mut lower_state.work_dim_loc,
             CompiledKernelArgType::WorkDim,
             unsafe { glsl_uint8_t_type() },
-            "work_dim",
+            c"work_dim",
         );
     }
 
