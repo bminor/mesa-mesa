@@ -1051,7 +1051,8 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
       assert(tmp.type() != RegType::sgpr); /* No sub-dword SGPR regclasses */
       return true;
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
-               instr->opcode == aco_opcode::v_cvt_f32_i32) &&
+               instr->opcode == aco_opcode::v_cvt_f32_i32 ||
+               instr->opcode == aco_opcode::v_cvt_f32_ubyte0) &&
               sel.size() == 1 && !sel.sign_extend() && !instr->usesModifiers()) {
       return true;
    } else if (instr->opcode == aco_opcode::v_lshlrev_b32 && instr->operands[0].isConstant() &&
@@ -1117,7 +1118,8 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
        tmp.type() == instr->operands[idx].regClass().type()) {
       /* extract is a no-op */
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
-               instr->opcode == aco_opcode::v_cvt_f32_i32) &&
+               instr->opcode == aco_opcode::v_cvt_f32_i32 ||
+               instr->opcode == aco_opcode::v_cvt_f32_ubyte0) &&
               sel.size() == 1 && !sel.sign_extend() && !instr->usesModifiers()) {
       switch (sel.offset()) {
       case 0: instr->opcode = aco_opcode::v_cvt_f32_ubyte0; break;
