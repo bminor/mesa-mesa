@@ -856,6 +856,8 @@ panfrost_emit_vertex_buffers(struct panfrost_batch *batch)
       pan_pool_alloc_desc_array(&batch->pool.base, buffer_count, BUFFER);
    struct mali_buffer_packed *buffers = T.cpu;
 
+   memset(buffers, 0, sizeof(*buffers) * buffer_count);
+
    u_foreach_bit(i, ctx->vb_mask) {
       struct pipe_vertex_buffer vb = ctx->vertex_buffers[i];
       struct pipe_resource *prsrc = vb.buffer.resource;
@@ -1404,14 +1406,18 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
    struct panfrost_compiled_shader *shader = ctx->prog[stage];
    unsigned ubo_count = shader->info.ubo_count - (sys_size ? 1 : 0);
    unsigned sysval_ubo = sys_size ? ubo_count : ~0;
+   unsigned desc_size;
    struct panfrost_ptr ubos = {0};
 
 #if PAN_ARCH >= 9
+   desc_size = sizeof(struct mali_buffer_packed);
    ubos = pan_pool_alloc_desc_array(&batch->pool.base, ubo_count + 1, BUFFER);
 #else
+   desc_size = sizeof(struct mali_uniform_buffer_packed);
    ubos = pan_pool_alloc_desc_array(&batch->pool.base, ubo_count + 1,
                                     UNIFORM_BUFFER);
 #endif
+   memset(ubos.cpu, 0, desc_size * (ubo_count + 1));
 
    if (buffer_count)
       *buffer_count = ubo_count + (sys_size ? 1 : 0);
