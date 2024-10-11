@@ -65,22 +65,29 @@ EPHEMERAL=(
     python3-pip
     python3-setuptools
     python3-wheel
-    spirv-tools
     wayland-protocols
     xz-utils
 )
 
 DEPS=(
     apt-utils
+    clinfo
     curl
     git
     git-lfs
     inetutils-syslogd
     iptables
     jq
+    kmod
     libasan8
+    libcap2
     libdrm2
+    libegl1
+    libepoxy0
     libexpat1
+    libfdt1
+    "libclang-common-${LLVM_VERSION}-dev"
+    "libclang-cpp${LLVM_VERSION}"
     "libllvm${LLVM_VERSION}"
     liblz4-1
     libpng16-16
@@ -91,20 +98,33 @@ DEPS=(
     libwayland-server0
     libxcb-ewmh2
     libxcb-randr0
+    libxcb-shm0
     libxcb-xfixes0
     libxkbcommon0
     libxrandr2
     libxrender1
+    ocl-icd-libopencl1
+    pciutils
+    python3-lxml
     python3-mako
     python3-numpy
     python3-packaging
     python3-pil
+    python3-renderdoc
     python3-requests
+    python3-simplejson
     python3-six
     python3-yaml
     socat
+    spirv-tools
+    sysvinit-core
     vulkan-tools
     waffle-utils
+    weston
+    xwayland
+    xinit
+    xserver-xorg-video-amdgpu
+    xserver-xorg-video-ati
     xauth
     xvfb
     zlib1g

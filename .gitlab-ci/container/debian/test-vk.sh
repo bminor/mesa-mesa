@@ -13,8 +13,6 @@ uncollapsed_section_start debian_setup "Base Debian system setup"
 
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get install -y libelogind0  # this interfere with systemd deps, install separately
-
 # Ephemeral packages (installed for this script and removed again at the end)
 EPHEMERAL=(
     ccache
@@ -55,26 +53,14 @@ EPHEMERAL=(
 )
 
 DEPS=(
-    curl
-    libepoxy0
-    libxcb-shm0
-    pciutils
-    python3-lxml
-    python3-simplejson
-    sysvinit-core
-    weston
-    xwayland
     wine
     wine64
-    xinit
-    xserver-xorg-video-amdgpu
-    xserver-xorg-video-ati
 )
 
 apt-get update
 
 apt-get install -y --no-remove --no-install-recommends \
-      "${DEPS[@]}" "${EPHEMERAL[@]}"
+      "${DEPS[@]}" "${EPHEMERAL[@]}" "${EXTRA_LOCAL_PACKAGES:-}"
 
 ############### Building ...
 

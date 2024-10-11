@@ -54,24 +54,6 @@ EPHEMERAL=(
 )
 
 DEPS=(
-    clinfo
-    iptables
-    kmod
-    "libclang-common-${LLVM_VERSION}-dev"
-    "libclang-cpp${LLVM_VERSION}"
-    libcap2
-    libegl1
-    libepoxy0
-    libfdt1
-    libxcb-shm0
-    ocl-icd-libopencl1
-    python3-lxml
-    python3-renderdoc
-    python3-simplejson
-    spirv-tools
-    sysvinit-core
-    weston
-    xwayland
 )
 
 apt-get update
