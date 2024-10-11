@@ -112,6 +112,7 @@ struct wsi_wl_display {
 
    /* users want per-chain wsi_wl_swapchain->present_ids.wp_presentation */
    struct wp_presentation *wp_presentation_notwrapped;
+   uint32_t wp_presentation_version;
 
    struct wsi_wayland *wsi_wl;
 
@@ -853,8 +854,14 @@ registry_handle_global(void *data, struct wl_registry *registry,
    }
 
    if (strcmp(interface, wp_presentation_interface.name) == 0) {
+      if (version > 1)
+         display->wp_presentation_version = 2;
+      else
+         display->wp_presentation_version = 1;
+
       display->wp_presentation_notwrapped =
-         wl_registry_bind(registry, name, &wp_presentation_interface, 1);
+         wl_registry_bind(registry, name, &wp_presentation_interface,
+                          display->wp_presentation_version);
       wp_presentation_add_listener(display->wp_presentation_notwrapped, &presentation_listener, display);
    } else if (strcmp(interface, wp_tearing_control_manager_v1_interface.name) == 0) {
       display->tearing_control_manager =
