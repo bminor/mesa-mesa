@@ -104,10 +104,6 @@ DEQP_TARGET=default \
 
 rm -rf /VK-GL-CTS
 
-############### Build apitrace
-
-. .gitlab-ci/container/build-apitrace.sh
-
 ############### Build Fossilize
 
 . .gitlab-ci/container/build-fossilize.sh

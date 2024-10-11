@@ -47,13 +47,27 @@ EPHEMERAL=(
     libegl-dev
     libelf-dev
     libepoxy-dev
+    libexpat1-dev
     libgbm-dev
+    libgles2-mesa-dev
+    liblz4-dev
     libpciaccess-dev
     libssl-dev
     libvulkan-dev
+    libudev-dev
+    libwaffle-dev
     libwayland-dev
     libx11-xcb-dev
+    libxcb-dri2-0-dev
+    libxcb-dri3-dev
+    libxcb-present-dev
+    libxfixes-dev
+    libxcb-ewmh-dev
     libxext-dev
+    libxkbcommon-dev
+    libxrandr-dev
+    libxrender-dev
+    libzstd-dev
     "llvm-${LLVM_VERSION}-dev"
     make
     meson
@@ -189,6 +203,12 @@ fi
 ############### Build dEQP runner
 
 . .gitlab-ci/container/build-deqp-runner.sh
+
+############### Build apitrace
+
+uncollapsed_section_switch apitrace "Building apitrace"
+
+. .gitlab-ci/container/build-apitrace.sh
 
 ############### Uninstall the build software
 

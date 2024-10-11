@@ -100,10 +100,6 @@ DEQP_TARGET=surfaceless \
 
 rm -rf /VK-GL-CTS
 
-############### Build apitrace
-
-. .gitlab-ci/container/build-apitrace.sh
-
 ############### Build validation layer for zink
 
 . .gitlab-ci/container/build-vulkan-validation.sh
