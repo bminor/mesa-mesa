@@ -339,6 +339,7 @@ ubwc_possible(struct tu_device *device,
               VkImageUsageFlags stencil_usage,
               const struct fd_dev_info *info,
               VkSampleCountFlagBits samples,
+              uint32_t mip_levels,
               bool use_z24uint_s8uint)
 {
    /* no UBWC with compressed formats, E5B9G9R9, S8_UINT
@@ -362,12 +363,13 @@ ubwc_possible(struct tu_device *device,
        vk_format_get_plane_count(format) == 1)
       return false;
 
-   if (type == VK_IMAGE_TYPE_3D) {
+   if (type == VK_IMAGE_TYPE_3D && mip_levels > 1) {
       if (device) {
-         perf_debug(device,
-                    "Disabling UBWC for %s 3D image, but it should be "
-                    "possible to support.",
-                    util_format_name(vk_format_to_pipe_format(format)));
+         perf_debug(
+            device,
+            "Disabling UBWC for %s 3D image with mipmaps, but it should be "
+            "possible to support.",
+            util_format_name(vk_format_to_pipe_format(format)));
       }
       return false;
    }
@@ -673,7 +675,7 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
        !ubwc_possible(device, image->vk.format, pCreateInfo->imageType,
                       pCreateInfo->usage, image->vk.stencil_usage,
                       device->physical_device->info, pCreateInfo->samples,
-                      device->use_z24uint_s8uint))
+                      pCreateInfo->mipLevels, device->use_z24uint_s8uint))
       image->ubwc_enabled = false;
 
    bool fmt_list_has_swaps = false;

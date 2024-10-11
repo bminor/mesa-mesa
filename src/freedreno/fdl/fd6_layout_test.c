@@ -901,7 +901,66 @@ static const struct testcase
                      },
                },
          },
-
+         {
+            .format = PIPE_FORMAT_R16G16B16A16_UINT,
+            .is_3d = true,
+            .layout =
+               {
+                  .tile_mode = TILE6_3,
+                  .ubwc = true,
+                  .width0 = 56,
+                  .height0 = 32,
+                  .depth0 = 18,
+                  .slices =
+                     {
+                        {.offset = 0, .pitch = 512, .size0 = 16384},
+                     },
+                  .ubwc_slices =
+                     {
+                        {.offset = 0, .pitch = 64},
+                     },
+               },
+         },
+         {
+            .format = PIPE_FORMAT_R32_UINT,
+            .is_3d = true,
+            .layout =
+               {
+                  .tile_mode = TILE6_3,
+                  .ubwc = true,
+                  .width0 = 56,
+                  .height0 = 32,
+                  .depth0 = 16,
+                  .slices =
+                     {
+                        {.offset = 0, .pitch = 256, .size0 = 8192},
+                     },
+                  .ubwc_slices =
+                     {
+                        {.offset = 0, .pitch = 64},
+                     },
+               },
+         },
+         {
+            .format = PIPE_FORMAT_R8G8B8A8_UINT,
+            .is_3d = true,
+            .layout =
+               {
+                  .tile_mode = TILE6_3,
+                  .ubwc = true,
+                  .width0 = 56,
+                  .height0 = 32,
+                  .depth0 = 16,
+                  .slices =
+                     {
+                        {.offset = 0, .pitch = 256, .size0 = 8192},
+                     },
+                  .ubwc_slices =
+                     {
+                        {.offset = 0, .pitch = 64},
+                     },
+               },
+         },
 };
 
 int

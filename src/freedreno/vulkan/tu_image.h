@@ -122,6 +122,7 @@ ubwc_possible(struct tu_device *device,
               VkImageUsageFlags stencil_usage,
               const struct fd_dev_info *info,
               VkSampleCountFlagBits samples,
+              uint32_t mip_levels,
               bool use_z24uint_s8uint);
 
 struct tu_frag_area {

@@ -125,7 +125,13 @@ fdl6_layout(struct fdl_layout *layout, enum pipe_format format,
 
    fdl6_get_ubwc_blockwidth(layout, &ubwc_blockwidth, &ubwc_blockheight);
 
-   if (depth0 > 1 || ubwc_blockwidth == 0)
+   /* For simplicity support UBWC only for 3D images without mipmaps,
+    * most d3d11 games don't use mipmaps for 3D images.
+    */
+   if (depth0 > 1 && mip_levels > 1)
+      layout->ubwc = false;
+
+   if (ubwc_blockwidth == 0)
       layout->ubwc = false;
 
    if (layout->ubwc || util_format_is_depth_or_stencil(format))
@@ -279,9 +285,10 @@ fdl6_layout(struct fdl_layout *layout, enum pipe_format format,
     * independently.
     */
    if (layout->ubwc) {
+      assert(!(depth0 > 1 && mip_levels > 1));
       for (uint32_t level = 0; level < mip_levels; level++)
-         layout->slices[level].offset += layout->ubwc_layer_size * array_size;
-      layout->size += layout->ubwc_layer_size * array_size;
+         layout->slices[level].offset += layout->ubwc_layer_size * array_size * depth0;
+      layout->size += layout->ubwc_layer_size * array_size * depth0;
    }
 
    /* include explicit offset in size */
