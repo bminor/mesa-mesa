@@ -140,6 +140,46 @@ get_cache_uuid(uint16_t family, void *uuid)
    return 0;
 }
 
+static VkResult
+get_device_sync_types(struct panvk_physical_device *device,
+                      const struct panvk_instance *instance)
+{
+   const unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
+   uint32_t sync_type_count = 0;
+
+   device->drm_syncobj_type = vk_drm_syncobj_get_type(device->kmod.dev->fd);
+   if (!device->drm_syncobj_type.features) {
+      return vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+                       "failed to query syncobj features");
+   }
+
+   device->sync_types[sync_type_count++] = &device->drm_syncobj_type;
+
+   if (arch >= 10) {
+      assert(device->drm_syncobj_type.features & VK_SYNC_FEATURE_TIMELINE);
+   } else {
+      /* We don't support timelines in the uAPI yet and we don't want it getting
+       * suddenly turned on by vk_drm_syncobj_get_type() without us adding panvk
+       * code for it first.
+       */
+      device->drm_syncobj_type.features &= ~VK_SYNC_FEATURE_TIMELINE;
+
+      /* vk_sync_timeline requires VK_SYNC_FEATURE_GPU_MULTI_WAIT.  Panfrost
+       * waits on the underlying dma-fences and supports the feature.
+       */
+      device->drm_syncobj_type.features |= VK_SYNC_FEATURE_GPU_MULTI_WAIT;
+
+      device->sync_timeline_type =
+         vk_sync_timeline_get_type(&device->drm_syncobj_type);
+      device->sync_types[sync_type_count++] = &device->sync_timeline_type.sync;
+   }
+
+   assert(sync_type_count < ARRAY_SIZE(device->sync_types));
+   device->sync_types[sync_type_count] = NULL;
+
+   return VK_SUCCESS;
+}
+
 static void
 get_device_extensions(const struct panvk_physical_device *device,
                       struct vk_device_extension_table *ext)
@@ -175,6 +215,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_swapchain = true,
 #endif
       .KHR_synchronization2 = true,
+      .KHR_timeline_semaphore = true,
       .KHR_variable_pointers = true,
       .EXT_buffer_device_address = true,
       .EXT_custom_border_color = true,
@@ -271,7 +312,7 @@ get_features(const struct panvk_physical_device *device,
       .shaderSubgroupExtendedTypes = false,
       .separateDepthStencilLayouts = false,
       .hostQueryReset = false,
-      .timelineSemaphore = false,
+      .timelineSemaphore = true,
       .bufferDeviceAddress = true,
       .bufferDeviceAddressCaptureReplay = false,
       .bufferDeviceAddressMultiDevice = false,
@@ -650,7 +691,6 @@ get_device_properties(const struct panvk_instance *instance,
       /* XXX: VK_EXT_sampler_filter_minmax */
       .filterMinmaxSingleComponentFormats = false,
       .filterMinmaxImageComponentMapping = false,
-      /* XXX: VK_KHR_timeline_semaphore */
       .maxTimelineSemaphoreValueDifference = INT64_MAX,
       .framebufferIntegerColorSampleCounts = sample_counts,
 
@@ -801,14 +841,11 @@ panvk_physical_device_init(struct panvk_physical_device *device,
       goto fail;
    }
 
-   vk_warn_non_conformant_implementation("panvk");
+   result = get_device_sync_types(device, instance);
+   if (result != VK_SUCCESS)
+      goto fail;
 
-   device->drm_syncobj_type = vk_drm_syncobj_get_type(device->kmod.dev->fd);
-   /* We don't support timelines in the uAPI yet and we don't want it getting
-    * suddenly turned on by vk_drm_syncobj_get_type() without us adding panvk
-    * code for it first.
-    */
-   device->drm_syncobj_type.features &= ~VK_SYNC_FEATURE_TIMELINE;
+   vk_warn_non_conformant_implementation("panvk");
 
    struct vk_device_extension_table supported_extensions;
    get_device_extensions(device, &supported_extensions);
@@ -832,8 +869,6 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    if (result != VK_SUCCESS)
       goto fail;
 
-   device->sync_types[0] = &device->drm_syncobj_type;
-   device->sync_types[1] = NULL;
    device->vk.supported_sync_types = device->sync_types;
 
    result = panvk_wsi_init(device);
