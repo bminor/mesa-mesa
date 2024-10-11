@@ -2885,12 +2885,6 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        *
        *    Objective of the preamble flushes is to ensure all data is
        *    evicted from L1 caches prior to fast clear.
-       *
-       * From the ACM PRM Vol. 9, "MCS/CCS Buffers for Render Target(s)":
-       *
-       *    Any transition from any value in {Clear, Render, Resolve} to a
-       *    different value in {Clear, Render, Resolve} requires end of pipe
-       *    synchronization.
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
@@ -2899,8 +2893,7 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
             ANV_PIPE_HDC_PIPELINE_FLUSH_BIT |
             ANV_PIPE_DATA_CACHE_FLUSH_BIT |
-            ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT |
-            ANV_PIPE_END_OF_PIPE_SYNC_BIT);
+            ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT);
 
 #elif GFX_VERx10 == 120
       /* From the TGL Bspec 47704 (r52663), "Render Target Fast Clear":
@@ -2917,20 +2910,13 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        *
        *    Objective of the preamble flushes is to ensure all data is
        *    evicted from L1 caches prior to fast clear.
-       *
-       * From the TGL PRM Vol. 9, "MCS/CCS Buffers for Render Target(s)":
-       *
-       *    Any transition from any value in {Clear, Render, Resolve} to a
-       *    different value in {Clear, Render, Resolve} requires end of pipe
-       *    synchronization.
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
             ANV_PIPE_DEPTH_STALL_BIT  |
             ANV_PIPE_TILE_CACHE_FLUSH_BIT |
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
-            ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT |
-            ANV_PIPE_END_OF_PIPE_SYNC_BIT);
+            ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT);
 
 #else
       /* From the Sky Lake PRM Vol. 7, "MCS Buffer for Render Target(s)":
@@ -2962,31 +2948,7 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
 #endif
 
    } else if (aux_op_clears(last_aux_op) && !aux_op_clears(next_aux_op)) {
-#if GFX_VER >= 20
-      /* From the Xe2 Bspec 57340 (r59562),
-       * "MCS/CCS Buffers, Fast Clear for Render Target(s)":
-       *
-       *    Synchronization:
-       *    Due to interaction of scaled clearing rectangle with pixel
-       *    scoreboard, we require one of the following commands to be
-       *    issued. [...]
-       *
-       *    PIPE_CONTROL
-       *    PSS Stall Sync Enable            [...] 1b (Enable)
-       *       Machine-wide Stall at Pixel Stage, wait for all Prior Pixel
-       *       Work to Reach End of Pipe
-       *    Render Target Cache Flush Enable [...] 1b (Enable)
-       *       Post-Sync Op Flushes Render Cache before Unblocking Stall
-       *
-       *    This synchronization step is required before and after the fast
-       *    clear pass, to ensure correct ordering between pixels.
-       */
-      add_pending_pipe_bits_for_color_aux_op(
-            cmd_buffer, next_aux_op,
-            ANV_PIPE_PSS_STALL_SYNC_BIT |
-            ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT);
-
-#elif GFX_VERx10 == 125
+#if GFX_VERx10 >= 125
       /* From the ACM PRM Vol. 9, "Color Fast Clear Synchronization":
        *
        *    Postamble post fast clear synchronization
@@ -2994,18 +2956,11 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        *    PIPE_CONTROL:
        *    PS sync stall = 1
        *    RT flush = 1
-       *
-       * From the ACM PRM Vol. 9, "MCS/CCS Buffers for Render Target(s)":
-       *
-       *    Any transition from any value in {Clear, Render, Resolve} to a
-       *    different value in {Clear, Render, Resolve} requires end of pipe
-       *    synchronization.
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
             ANV_PIPE_PSS_STALL_SYNC_BIT |
-            ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
-            ANV_PIPE_END_OF_PIPE_SYNC_BIT);
+            ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT);
 
 #elif GFX_VERx10 == 120
       /* From the TGL PRM Vol. 9, "Color Fast Clear Synchronization":
@@ -3016,20 +2971,12 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        *    Depth Stall = 1
        *    Tile Cache Flush = 1
        *    RT Write Flush = 1
-       *
-       * From the TGL PRM Vol. 9, "MCS/CCS Buffers for Render Target(s)":
-       *
-       *    Any transition from any value in {Clear, Render, Resolve} to a
-       *    different value in {Clear, Render, Resolve} requires end of pipe
-       *    synchronization.
-       *
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
-            ANV_PIPE_DEPTH_STALL_BIT |
-            ANV_PIPE_TILE_CACHE_FLUSH_BIT |
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
-            ANV_PIPE_END_OF_PIPE_SYNC_BIT);
+            ANV_PIPE_TILE_CACHE_FLUSH_BIT |
+            ANV_PIPE_DEPTH_STALL_BIT);
 
 #else
       /* From the Sky Lake PRM Vol. 7, "Render Target Fast Clear":
