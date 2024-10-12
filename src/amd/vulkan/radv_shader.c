@@ -1278,8 +1278,10 @@ radv_init_shader_upload_queue(struct radv_device *device)
    for (unsigned i = 0; i < RADV_SHADER_UPLOAD_CS_COUNT; i++) {
       struct radv_shader_dma_submission *submission = calloc(1, sizeof(struct radv_shader_dma_submission));
       submission->cs = ws->cs_create(ws, AMD_IP_SDMA, false);
-      if (!submission->cs)
+      if (!submission->cs) {
+         free(submission);
          return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+      }
       list_addtail(&submission->list, &device->shader_dma_submissions);
    }
 
