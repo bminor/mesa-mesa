@@ -139,6 +139,7 @@ radv_sqtt_reloc_graphics_shaders(struct radv_device *device, struct radv_graphic
    struct radv_shader_dma_submission *submission = NULL;
    struct radv_sqtt_shaders_reloc *reloc;
    uint32_t code_size = 0;
+   VkResult result;
 
    reloc = calloc(1, sizeof(*reloc));
    if (!reloc)
@@ -156,8 +157,8 @@ radv_sqtt_reloc_graphics_shaders(struct radv_device *device, struct radv_graphic
    /* Allocate memory for all shader binaries. */
    reloc->alloc = radv_alloc_shader_memory(device, code_size, false, pipeline);
    if (!reloc->alloc) {
-      free(reloc);
-      return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+      result = VK_ERROR_OUT_OF_DEVICE_MEMORY;
+      goto fail;
    }
 
    reloc->bo = reloc->alloc->arena->bo;
@@ -169,8 +170,10 @@ radv_sqtt_reloc_graphics_shaders(struct radv_device *device, struct radv_graphic
 
    if (device->shader_use_invisible_vram) {
       submission = radv_shader_dma_get_submission(device, reloc->bo, slab_va, code_size);
-      if (!submission)
-         return VK_ERROR_UNKNOWN;
+      if (!submission) {
+         result = VK_ERROR_UNKNOWN;
+         goto fail;
+      }
    }
 
    for (int i = 0; i < MESA_VULKAN_SHADER_STAGES; ++i) {
@@ -194,8 +197,10 @@ radv_sqtt_reloc_graphics_shaders(struct radv_device *device, struct radv_graphic
    if (device->shader_use_invisible_vram) {
       uint64_t upload_seq = 0;
 
-      if (!radv_shader_dma_submit(device, submission, &upload_seq))
-         return VK_ERROR_UNKNOWN;
+      if (!radv_shader_dma_submit(device, submission, &upload_seq)) {
+         result = VK_ERROR_UNKNOWN;
+         goto fail;
+      }
 
       for (int i = 0; i < MESA_VULKAN_SHADER_STAGES; ++i) {
          struct radv_shader *shader = pipeline->base.shaders[i];
@@ -213,6 +218,12 @@ radv_sqtt_reloc_graphics_shaders(struct radv_device *device, struct radv_graphic
    pipeline->sqtt_shaders_reloc = reloc;
 
    return VK_SUCCESS;
+
+fail:
+   if (reloc->alloc)
+      radv_free_shader_memory(device, reloc->alloc);
+   free(reloc);
+   return result;
 }
 
 static void
