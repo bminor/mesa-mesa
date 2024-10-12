@@ -1484,7 +1484,7 @@
         "description": "elk: Don't apply discard_if condition opt if it can change results",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0ba9497e66a72e2f31e0e4d2b899d9bce686d698",
         "notes": null
