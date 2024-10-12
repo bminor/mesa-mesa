@@ -454,7 +454,7 @@
         "description": "osmesa: Fix OSMesaGetDepthBuffer() test without depth",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ef9362acb81bd8615cd2f9014ca9880ae3d7e738",
         "notes": null
