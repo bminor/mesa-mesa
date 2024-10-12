@@ -1254,7 +1254,7 @@
         "description": "ac/radeonsi: compute htile for tile mode RADEON_SURF_MODE_1D on GFX6-8",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d4d9ec55c589156df4edc227a86b4a8c41048d58",
         "notes": null

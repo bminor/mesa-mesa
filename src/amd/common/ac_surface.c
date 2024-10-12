@@ -816,6 +816,7 @@ static int gfx6_compute_level(ADDR_HANDLE addrlib, const struct ac_surf_config *
    struct legacy_surf_level *surf_level;
    struct legacy_surf_dcc_level *dcc_level;
    ADDR_E_RETURNCODE ret;
+   bool mode_has_htile = false;
 
    AddrSurfInfoIn->mipLevel = level;
    AddrSurfInfoIn->width = u_minify(config->info.width, level);
@@ -986,8 +987,14 @@ static int gfx6_compute_level(ADDR_HANDLE addrlib, const struct ac_surf_config *
       }
    }
 
+   if (surf_level->mode == RADEON_SURF_MODE_2D)
+      mode_has_htile = true;
+   else if (surf_level->mode == RADEON_SURF_MODE_1D &&
+            !(surf->flags & RADEON_SURF_TC_COMPATIBLE_HTILE))
+      mode_has_htile = true;
+
    /* HTILE. */
-   if (!is_stencil && AddrSurfInfoIn->flags.depth && surf_level->mode == RADEON_SURF_MODE_2D &&
+   if (!is_stencil && AddrSurfInfoIn->flags.depth && mode_has_htile &&
        level == 0 && !(surf->flags & RADEON_SURF_NO_HTILE)) {
       AddrHtileIn->flags.tcCompatible = AddrSurfInfoOut->tcCompatible;
       AddrHtileIn->pitch = AddrSurfInfoOut->pitch;
