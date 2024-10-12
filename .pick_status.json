@@ -44,7 +44,7 @@
         "description": "r600: fix sfn_nir_legalize_image_load_store cubearray behavior",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "27f51577774149d788adc2e3221a1b2b733ebb9f",
         "notes": null
