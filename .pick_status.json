@@ -114,7 +114,7 @@
         "description": "amd: Pass addrlib cpp args to the tests",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1d69c0419b39952ec9ad869fbec58be1c033cdb6",
         "notes": null
