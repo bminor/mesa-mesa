@@ -1094,12 +1094,11 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
 
             FXP fxpParam = PlacePointIn1D(&outsideTessFactorCtx[edge],
                                           outsideTessFactorOdd[edge], q);
-            if (edge == 0) {
-               DefinePoint(&ctx.Point[pointOffset], 0, fxpParam);
-            } else {
-               DefinePoint(&ctx.Point[pointOffset], fxpParam,
-                           (edge == 2) ? FXP_ONE - fxpParam : 0);
-            }
+            bool first = edge == 0;
+            DefinePoint(&ctx.Point[pointOffset], (edge == 0) ? 0 : fxpParam,
+                        (edge == 0)   ? fxpParam
+                        : (edge == 2) ? FXP_ONE - fxpParam
+                                      : 0);
          }
       }
 
