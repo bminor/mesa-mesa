@@ -444,7 +444,7 @@
         "description": "panvk: Add missing headers to android platform",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2de95773b9cc366c4d4b1339a993e31f8812b2f2",
         "notes": null
