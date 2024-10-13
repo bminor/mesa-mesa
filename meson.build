@@ -492,6 +492,7 @@ if with_platform_android and get_option('platform-sdk-version') >= 29
   # ELF TLS, even when building targeting newer API levels.  Make it actually do
   # ELF TLS instead.
   c_cpp_args += '-fno-emulated-tls'
+  add_project_link_arguments('-Wl,-plugin-opt=-emulated-tls=0', language: ['c', 'cpp'])
 endif
 
 # -mtls-dialect=gnu2 speeds up non-initial-exec TLS significantly but requires
