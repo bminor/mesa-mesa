@@ -31,8 +31,8 @@ enum libagx_tess_mode {
 };
 
 struct libagx_tess_point {
-   float u;
-   float v;
+   uint32_t u;
+   uint32_t v;
 };
 AGX_STATIC_ASSERT(sizeof(struct libagx_tess_point) == 8);
 

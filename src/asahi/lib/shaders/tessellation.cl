@@ -96,7 +96,10 @@ libagx_load_tess_coord(constant struct libagx_tess_args *p, uint raw_id)
       &p->patch_coord_buffer[p->coord_allocs[patch] + vtx];
 
    /* Written weirdly because NIR struggles with loads of structs */
-   return *((global float2 *)t);
+   uint2 fixed = *((global uint2 *)t);
+
+   /* Convert fixed point to float */
+   return convert_float2(fixed) / (1u << 16);
 }
 
 uintptr_t

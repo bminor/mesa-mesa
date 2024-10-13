@@ -353,13 +353,6 @@ floatToFixed(const float input)
    return mad(input, FXP_ONE, 0.5f);
 }
 
-static float
-fixedToFloat(const FXP input)
-{
-   // Don't need to worry about special cases because the bounds are reasonable.
-   return ((float)input) / FXP_ONE;
-}
-
 static bool
 isOdd(const float input)
 {
@@ -414,8 +407,8 @@ PatchIndexValue(private struct CHWTessellator *ctx, int index)
 static void
 DefinePoint(global struct libagx_tess_point *out, FXP fxpU, FXP fxpV)
 {
-   out->u = fixedToFloat(fxpU);
-   out->v = fixedToFloat(fxpV);
+   out->u = fxpU;
+   out->v = fxpV;
 }
 
 static void
