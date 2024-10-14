@@ -164,7 +164,7 @@
         "description": "gallium/u_threaded: fix crash in tc_create_image_handle due to resource == NULL",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3df9d8ed807a6693d5fc8cbda4faec28af081ff3",
         "notes": null
