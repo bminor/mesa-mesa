@@ -1034,7 +1034,7 @@
         "description": "radeonsi/gfx12: fill missing dcc tiling info",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0bb83a4060a021c4e14ffd2c62bfdb630287da27",
         "notes": null
