@@ -188,6 +188,11 @@ struct fd_dev_info {
 
       bool has_attachment_shading_rate;
 
+      /* Whether mipmaps below certain threshold can use LINEAR tiling when higher
+       * levels use UBWC,
+       */
+      bool has_ubwc_linear_mipmap_fallback;
+
       struct {
          uint32_t PC_POWER_CNTL;
          uint32_t TPL1_DBG_ECO_CNTL;

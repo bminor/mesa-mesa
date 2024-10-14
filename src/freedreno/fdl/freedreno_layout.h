@@ -224,7 +224,7 @@ fdl_tile_mode(const struct fdl_layout *layout, int level)
 static inline bool
 fdl_ubwc_enabled(const struct fdl_layout *layout, int level)
 {
-   return layout->ubwc;
+   return layout->ubwc && !fdl_level_linear(layout, level);
 }
 
 const char *fdl_tile_mode_desc(const struct fdl_layout *layout, int level);

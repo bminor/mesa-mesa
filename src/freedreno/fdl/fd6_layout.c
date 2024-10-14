@@ -11,6 +11,10 @@
 
 #include "freedreno_layout.h"
 
+#include "adreno_pm4.xml.h"
+#include "adreno_common.xml.h"
+#include "a6xx.xml.h"
+
 static bool
 is_r8g8(const struct fdl_layout *layout)
 {
@@ -135,7 +139,18 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
    if (ubwc_blockwidth == 0)
       layout->ubwc = false;
 
-   if (layout->ubwc || util_format_is_depth_or_stencil(format))
+   if (width0 < FDL_MIN_UBWC_WIDTH) {
+      layout->ubwc = false;
+      /* Linear D/S is not supported by HW. */
+      if (!util_format_is_depth_or_stencil(format))
+         layout->tile_mode = TILE6_LINEAR;
+   }
+
+   /* Linear D/S is not supported by HW. */
+   if (util_format_is_depth_or_stencil(format))
+      layout->tile_all = true;
+
+   if (layout->ubwc && !info->a6xx.has_ubwc_linear_mipmap_fallback)
       layout->tile_all = true;
 
    /* in layer_first layout, the level (slice) contains just one
@@ -203,7 +218,7 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
       uint32_t depth = u_minify(depth0, level);
       struct fdl_slice *slice = &layout->slices[level];
       struct fdl_slice *ubwc_slice = &layout->ubwc_slices[level];
-      uint32_t tile_mode = fdl_tile_mode(layout, level);
+      enum a6xx_tile_mode tile_mode = fdl_tile_mode(layout, level);
       uint32_t pitch = fdl_pitch(layout, level);
       uint32_t height = u_minify(height0, level);
 
@@ -260,7 +275,7 @@ fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
 
       layout->size += slice->size0 * depth * layers_in_level;
 
-      if (layout->ubwc) {
+      if (layout->ubwc && tile_mode != TILE6_LINEAR) {
          /* with UBWC every level is aligned to 4K */
          layout->size = align64(layout->size, 4096);
 
