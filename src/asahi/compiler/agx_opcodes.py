@@ -11,7 +11,7 @@ VARIABLE = ~0
 
 class Opcode(object):
    def __init__(self, name, dests, srcs, imms, is_float, can_eliminate,
-                can_reorder, schedule_class, encoding_16, encoding_32):
+                can_reorder, schedule_class, encoding_32):
       self.name = name
       self.dests = dests if dests != VARIABLE else 0
       self.srcs = srcs if srcs != VARIABLE else 0
@@ -22,7 +22,6 @@ class Opcode(object):
       self.can_eliminate = can_eliminate
       self.can_reorder = can_reorder
       self.schedule_class = schedule_class
-      self.encoding_16 = encoding_16
       self.encoding_32 = encoding_32
 
 class Immediate(object):
@@ -47,13 +46,11 @@ class Encoding(object):
          assert(length_long == length_short + (4 if length_short > 8 else 2))
 
 def op(name, encoding_32, dests = 1, srcs = 0, imms = [], is_float = False,
-        can_eliminate = True, can_reorder = True, encoding_16 = None,
-        schedule_class = "none"):
-   encoding_16 = Encoding(encoding_16) if encoding_16 is not None else None
+        can_eliminate = True, can_reorder = True, schedule_class = "none"):
    encoding_32 = Encoding(encoding_32) if encoding_32 is not None else None
 
    opcodes[name] = Opcode(name, dests, srcs, imms, is_float, can_eliminate,
-                          can_reorder, schedule_class,  encoding_16, encoding_32)
+                          can_reorder, schedule_class,  encoding_32)
 
 def immediate(name, ctype = "uint32_t"):
    imm = Immediate(name, ctype)

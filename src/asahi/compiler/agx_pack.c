@@ -409,10 +409,10 @@ static void
 agx_pack_alu(struct util_dynarray *emission, agx_instr *I)
 {
    struct agx_opcode_info info = agx_opcodes_info[I->op];
-   bool is_16 = agx_all_16(I) && info.encoding_16.exact;
+   struct agx_encoding encoding = info.encoding;
+
    bool is_f16 = (I->op == AGX_OPCODE_HMUL || I->op == AGX_OPCODE_HFMA ||
                   I->op == AGX_OPCODE_HADD);
-   struct agx_encoding encoding = is_16 ? info.encoding_16 : info.encoding;
 
    pack_assert_msg(I, encoding.exact, "invalid encoding");
 
@@ -452,7 +452,7 @@ agx_pack_alu(struct util_dynarray *emission, agx_instr *I)
       unsigned src_extend = (src >> 10);
 
       /* Size bit always zero and so omitted for 16-bit */
-      if (is_16 && !is_cmpsel)
+      if (is_f16 && !is_cmpsel)
          pack_assert(I, (src_short & (1 << 9)) == 0);
 
       if (info.is_float || (I->op == AGX_OPCODE_FCMPSEL && !is_cmpsel)) {
