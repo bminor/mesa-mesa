@@ -1842,7 +1842,7 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
       if (instr->def.bit_size == 16)
          return agx_hfma_to(b, dst, s0, s1, s2);
       else
-         return agx_fma_to(b, dst, s0, s1, s2);
+         return agx_ffma_to(b, dst, s0, s1, s2);
 
    case nir_op_fsat: {
       agx_instr *I = agx_fadd_to(b, dst, s0, agx_negzero());

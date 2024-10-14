@@ -222,7 +222,7 @@ op("fadd",
       encoding = (0x2A, 0x3F, 4, 6),
       srcs = 2, is_float = True)
 
-op("fma",
+op("ffma",
       encoding = (0x3A, 0x3F, 6, 8),
       srcs = 3, is_float = True)
 

@@ -65,7 +65,7 @@ struct alu_timing {
 
 /* clang-format off */
 struct alu_timing op_timings[] = {
-   [AGX_OPCODE_FMA]           = { F32, 2, 1 },
+   [AGX_OPCODE_FFMA]          = { F32, 2, 1 },
    [AGX_OPCODE_FADD]          = { F32, 2, 1 },
    [AGX_OPCODE_FMUL]          = { F32, 2, 1 },
 
