@@ -718,35 +718,27 @@ handleVAEncMiscParameterTypeRIR(vlVaContext *context, VAEncMiscParameterBuffer *
          break;
 #endif
       default:
-         p_intra_refresh = NULL;
-         break;
+         return status;
    };
 
-   if (p_intra_refresh) {
-      VAEncMiscParameterRIR *ir = (VAEncMiscParameterRIR *)misc->data;
+   VAEncMiscParameterRIR *ir = (VAEncMiscParameterRIR *)misc->data;
 
-      if (ir->rir_flags.value == VA_ENC_INTRA_REFRESH_ROLLING_ROW)
-         p_intra_refresh->mode = INTRA_REFRESH_MODE_UNIT_ROWS;
-      else if (ir->rir_flags.value == VA_ENC_INTRA_REFRESH_ROLLING_COLUMN)
-         p_intra_refresh->mode = INTRA_REFRESH_MODE_UNIT_COLUMNS;
-      else if (ir->rir_flags.value) /* if any other values to use the default one*/
-         p_intra_refresh->mode = INTRA_REFRESH_MODE_UNIT_COLUMNS;
-      else /* if no mode specified then no intra-refresh */
-         p_intra_refresh->mode = INTRA_REFRESH_MODE_NONE;
-
-      /* intra refresh should be started with sequence level headers */
-      p_intra_refresh->need_sequence_header = 0;
-      if (p_intra_refresh->mode) {
-         p_intra_refresh->region_size = ir->intra_insert_size;
-         p_intra_refresh->offset = ir->intra_insertion_location;
-         if (p_intra_refresh->offset == 0)
-            p_intra_refresh->need_sequence_header = 1;
-      }
-   } else {
+   if (ir->rir_flags.value == VA_ENC_INTRA_REFRESH_ROLLING_ROW)
+      p_intra_refresh->mode = INTRA_REFRESH_MODE_UNIT_ROWS;
+   else if (ir->rir_flags.value == VA_ENC_INTRA_REFRESH_ROLLING_COLUMN)
+      p_intra_refresh->mode = INTRA_REFRESH_MODE_UNIT_COLUMNS;
+   else if (ir->rir_flags.value) /* if any other values to use the default one*/
+      p_intra_refresh->mode = INTRA_REFRESH_MODE_UNIT_COLUMNS;
+   else /* if no mode specified then no intra-refresh */
       p_intra_refresh->mode = INTRA_REFRESH_MODE_NONE;
-      p_intra_refresh->region_size = 0;
-      p_intra_refresh->offset = 0;
-      p_intra_refresh->need_sequence_header = 0;
+
+   /* intra refresh should be started with sequence level headers */
+   p_intra_refresh->need_sequence_header = 0;
+   if (p_intra_refresh->mode) {
+      p_intra_refresh->region_size = ir->intra_insert_size;
+      p_intra_refresh->offset = ir->intra_insertion_location;
+      if (p_intra_refresh->offset == 0)
+         p_intra_refresh->need_sequence_header = 1;
    }
 
    return status;
