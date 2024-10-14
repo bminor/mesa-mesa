@@ -329,10 +329,18 @@ fast_clear_color(struct iris_context *ice,
        *    Depth Stall = 1
        *    Tile Cache Flush = 1
        *    RT Write Flush = 1
+       *
+       * From the TGL PRM Vol. 2a, "PIPE_CONTROL::L3 Fabric Flush":
+       *
+       *    For a sequence of color fast clears. A single PIPE_CONTROL
+       *    command with Render Target Cache Flush, L3 Fabric Flush and Depth
+       *    Stall set at the end of the sequence suffices.
+       *
+       * Replace the Tile Cache flush with an L3 fabric flush.
        */
       iris_emit_pipe_control_flush(batch, "fast clear: post flush",
                                    PIPE_CONTROL_DEPTH_STALL |
-                                   PIPE_CONTROL_TILE_CACHE_FLUSH |
+                                   PIPE_CONTROL_L3_FABRIC_FLUSH |
                                    PIPE_CONTROL_RENDER_TARGET_FLUSH);
    } else {
       /* From the Sky Lake PRM Vol. 7, "Render Target Fast Clear":
