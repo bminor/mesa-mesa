@@ -18,6 +18,7 @@
 #include "agx_compiler.h"
 #include "agx_debug.h"
 #include "agx_nir.h"
+#include "agx_opcodes.h"
 #include "glsl_types.h"
 #include "nir.h"
 #include "nir_builtin_builder.h"
@@ -1801,15 +1802,8 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
 #define BINOP(nop, aop)                                                        \
    case nir_op_##nop:                                                          \
       return agx_##aop##_to(b, dst, s0, s1);
-#define TRIOP(nop, aop)                                                        \
-   case nir_op_##nop:                                                          \
-      return agx_##aop##_to(b, dst, s0, s1, s2);
 
    switch (instr->op) {
-      BINOP(fadd, fadd);
-      BINOP(fmul, fmul);
-      TRIOP(ffma, fma);
-
       UNOP(f2f16, fmov);
       UNOP(f2f16_rtne, fmov);
       UNOP(f2f32, fmov);
@@ -1831,6 +1825,33 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
       BINOP(ior, or);
       BINOP(ixor, xor);
       BINOP(interleave_agx, intl);
+
+   case nir_op_fadd:
+      if (instr->def.bit_size == 16)
+         return agx_hadd_to(b, dst, s0, s1);
+      else
+         return agx_fadd_to(b, dst, s0, s1);
+
+   case nir_op_fmul:
+      if (instr->def.bit_size == 16)
+         return agx_hmul_to(b, dst, s0, s1);
+      else
+         return agx_fmul_to(b, dst, s0, s1);
+
+   case nir_op_ffma:
+      if (instr->def.bit_size == 16)
+         return agx_hfma_to(b, dst, s0, s1, s2);
+      else
+         return agx_fma_to(b, dst, s0, s1, s2);
+
+   case nir_op_fsat: {
+      agx_instr *I = agx_fadd_to(b, dst, s0, agx_negzero());
+      if (instr->def.bit_size == 16)
+         I->op = AGX_OPCODE_HADD;
+
+      I->saturate = true;
+      return I;
+   }
 
    case nir_op_feq:
       return agx_fcmp_to(b, dst, s0, s1, AGX_FCOND_EQ, false);
@@ -1989,12 +2010,6 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
 
    case nir_op_usub_sat: {
       agx_instr *I = agx_iadd_to(b, dst, agx_abs(s0), agx_neg(agx_abs(s1)), 0);
-      I->saturate = true;
-      return I;
-   }
-
-   case nir_op_fsat: {
-      agx_instr *I = agx_fadd_to(b, dst, s0, agx_negzero());
       I->saturate = true;
       return I;
    }

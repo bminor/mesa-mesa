@@ -410,6 +410,8 @@ agx_pack_alu(struct util_dynarray *emission, agx_instr *I)
 {
    struct agx_opcode_info info = agx_opcodes_info[I->op];
    bool is_16 = agx_all_16(I) && info.encoding_16.exact;
+   bool is_f16 = (I->op == AGX_OPCODE_HMUL || I->op == AGX_OPCODE_HFMA ||
+                  I->op == AGX_OPCODE_HADD);
    struct agx_encoding encoding = is_16 ? info.encoding_16 : info.encoding;
 
    pack_assert_msg(I, encoding.exact, "invalid encoding");
@@ -455,7 +457,7 @@ agx_pack_alu(struct util_dynarray *emission, agx_instr *I)
 
       if (info.is_float || (I->op == AGX_OPCODE_FCMPSEL && !is_cmpsel)) {
          unsigned fmod = agx_pack_float_mod(I->src[s]);
-         unsigned fmod_offset = is_16 ? 9 : 10;
+         unsigned fmod_offset = is_f16 ? 9 : 10;
          src_short |= (fmod << fmod_offset);
       } else if (I->op == AGX_OPCODE_IMAD || I->op == AGX_OPCODE_IADD) {
          /* Force unsigned for immediates so uadd_sat works properly */

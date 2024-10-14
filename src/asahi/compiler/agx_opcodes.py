@@ -222,18 +222,27 @@ iunop("popcount",  0b10)
 iunop("ffs",       0b11)
 
 op("fadd",
-      encoding_16 = (0x26, 0x3F, 4, 6),
       encoding_32 = (0x2A, 0x3F, 4, 6),
       srcs = 2, is_float = True)
 
 op("fma",
-      encoding_16 = (0x36, 0x3F, 6, 8),
       encoding_32 = (0x3A, 0x3F, 6, 8),
       srcs = 3, is_float = True)
 
 op("fmul",
-      encoding_16 = (0x16, 0x3F, 4, 6),
       encoding_32 = (0x1A, 0x3F, 4, 6),
+      srcs = 2, is_float = True)
+
+op("hadd",
+      encoding_32 = (0x26, 0x3F, 4, 6),
+      srcs = 2, is_float = True)
+
+op("hfma",
+      encoding_32 = (0x36, 0x3F, 6, 8),
+      srcs = 3, is_float = True)
+
+op("hmul",
+      encoding_32 = (0x16, 0x3F, 4, 6),
       srcs = 2, is_float = True)
 
 op("mov_imm",

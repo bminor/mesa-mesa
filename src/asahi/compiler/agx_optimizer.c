@@ -56,7 +56,7 @@
 static bool
 agx_is_fmov(agx_instr *def)
 {
-   return (def->op == AGX_OPCODE_FADD) &&
+   return (def->op == AGX_OPCODE_FADD || def->op == AGX_OPCODE_HADD) &&
           agx_is_equiv(def->src[1], agx_negzero());
 }
 
