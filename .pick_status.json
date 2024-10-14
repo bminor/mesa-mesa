@@ -1,5 +1,265 @@
 [
     {
+        "sha": "e8e8c17a0c893a74bff58c2abbc0ee8c451db933",
+        "description": "Revert \"ci: disable Collabora's farm due to maintenance\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "98f2a55edacf266f8693c31c4e0b908eae7bf0bd",
+        "notes": null
+    },
+    {
+        "sha": "620739ebc49e74601bd94e47d4e6ec8daba6fefd",
+        "description": "panvk: expose KHR_external_fence and KHR_external_fence_capabilities",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17b81d1fdcc81043f99361b23225f235431f2960",
+        "description": "panvk: expose KHR_external_memory and KHR_external_memory_capabilities",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f18bab24eb2ae8d73e351e004a609948c3e00095",
+        "description": "panvk: expose KHR_external_semaphore and KHR_external_semaphore_capabilities",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "76172b8ebdd96ce3af8721685716e6b09f6fbf44",
+        "description": "docs/features: fix bad sorting of drivers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c144e065a7bff9747a3673e01101d6a2b3c34a32",
+        "description": "panvk: expose KHR_bind_memory2 support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1e9788e20f4a9ed94ef2a8755fd403a25932093d",
+        "description": "panvk: expose KHR_relaxed_block_layout support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9940702477aa0e7aeebaf2a44bb6c1cdeeea1886",
+        "description": "panvk: implement and expose KHR_maintenance2",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56813236f47a8d2f8d7fe3dfb3909797176f6e82",
+        "description": "radv: use app names instead of exec name for shader based drirc workarounds",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a81dc87820a4c29cab61abfd8de574f47159552",
+        "description": "r300/ci: add deqp and piglit on RV410",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb3eb60c0c2acf25af6828e4fd0f04074610a792",
+        "description": "r300/ci: share some common variables",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d14d3c5bdda9947c9bfb16d30c0e95798362af02",
+        "description": "amd: Pass addrlib cpp args to the tests",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "1d69c0419b39952ec9ad869fbec58be1c033cdb6",
+        "notes": null
+    },
+    {
+        "sha": "e965dfd90be297d64ef367143eaa4f81379b56a9",
+        "description": "panfrost: make DRM version panfrost/panthor conditional on drm-shim",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a6a8c6cffa9e0039626668850877bb76d4cf8d3",
+        "description": "panfrost: add support for DRM_PANTHOR_DEV_QUERY_TIMESTAMP_INFO on drm-shim",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "302127fe9dc725f80fb242f5666279bedef921c3",
+        "notes": null
+    },
+    {
+        "sha": "281d1358101c9c260d9995e98ff89743d934b87e",
+        "description": "ci: run shellcheck when changes on scripts to check",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "abb29959ee26523f59b7e1e4ef7e5787d13fecbb",
+        "description": "ci: shellcheck requires better 'boolean or' syntax",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "afab416be48463b8829e47c6624af6f2629abefd",
+        "notes": null
+    },
+    {
+        "sha": "f33e18ab393daa0b429273230bf8e4dd6856d139",
+        "description": "vulkan/queue: Check for _mem_signal_temp before we submit",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "c95b646e234daa5cf69f53d9e521a88f3cd6a94a",
+        "notes": null
+    },
+    {
+        "sha": "980d0e2d06fa28bf1c3c003466da9b1065bdf8d9",
+        "description": "docs: Update the list of drivers with CPU tracepoints",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63f0a2f9a015b5f9f1ae40418b127d8c90a639ab",
+        "description": "vc4: Add a few function traces",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf939334e65680191e022ddb9a5aec09704285e2",
+        "description": "v3d: Add a few function traces",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03b4477c8feb4b0b235c9558b73495bb4c815fa8",
+        "description": "radv: fix returning non-zero captured address without binding",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "98f2a55edacf266f8693c31c4e0b908eae7bf0bd",
+        "description": "ci: disable Collabora's farm due to maintenance",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c7b126f6273eb4e60f3d36822593e90ad529251a",
+        "description": "freedreno: Balance out u_blitter cb0 save/restore",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5de33f3d3e155283ab72b6acccaee8eeeab4b710",
+        "notes": null
+    },
+    {
+        "sha": "cc14d402393a5fbedeec6ac7d4f936e6b9050d7e",
+        "description": "r300: remove gl_ClipVertex early",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5dcef1e7b87498f1f115f2167a007fb724987b97",
+        "notes": null
+    },
+    {
+        "sha": "a2b97b7b5632900d7a4e35fda373a707ff73fa6c",
+        "description": "i915g: fix GL_TEXTURE_BASE_LEVEL MAX_LEVEL MIN_LOD and MAX_LOD",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c0bf423818858f88bed9a0c252c0f8bdac734b2",
+        "description": "util: add aarch64 fast half-float to float conversion",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "c8c354d9c3a2e79230723f1c8b0571b20d034fee",
         "description": "radv: Disable EXT BDA capture and replay.",
         "nominated": true,
