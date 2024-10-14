@@ -1024,7 +1024,7 @@
         "description": "radeonsi: fix radeon_canonicalize_bo_flags domain handling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "593f72aa212f9e0daa94d7163e12a005be90fb19",
         "notes": null
