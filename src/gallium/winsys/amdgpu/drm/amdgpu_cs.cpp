@@ -212,6 +212,10 @@ bool amdgpu_fence_wait(struct pipe_fence_handle *fence, uint64_t timeout,
                               abs_timeout, 0, NULL))
       return false;
 
+   /* Check that guest-side syncobj agrees with the user fence. */
+   if (user_fence_cpu && afence->aws->info.is_virtio)
+      assert(afence->seq_no <= *user_fence_cpu);
+
    afence->signalled = true;
    return true;
 }
@@ -1170,6 +1174,10 @@ static unsigned amdgpu_cs_get_buffer_list(struct radeon_cmdbuf *rcs,
 
     struct amdgpu_buffer_list *real_buffers = &cs->buffer_lists[AMDGPU_BO_REAL];
     unsigned num_real_buffers = real_buffers->num_buffers;
+
+#if HAVE_AMDGPU_VIRTIO
+    assert(!cs->ws->info.is_virtio);
+#endif
 
     if (list) {
         for (unsigned i = 0; i < num_real_buffers; i++) {

@@ -373,7 +373,7 @@ amdgpu_drm_winsys_get_fd(struct radeon_winsys *rws)
 
 PUBLIC struct radeon_winsys *
 amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
-		     radeon_screen_create_t screen_create)
+		     radeon_screen_create_t screen_create, bool is_virtio)
 {
    struct amdgpu_screen_winsys *sws;
    struct amdgpu_winsys *aws;
@@ -395,9 +395,10 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
 
    /* Initialize the amdgpu device. This should always return the same pointer
     * for the same fd. */
-   r = ac_drm_device_initialize(fd, false, &drm_major, &drm_minor, &dev);
+   r = ac_drm_device_initialize(fd, is_virtio, &drm_major, &drm_minor, &dev);
    if (r) {
-      fprintf(stderr, "amdgpu: amdgpu_device_initialize failed.\n");
+      fprintf(stderr, "amdgpu: amd%s_device_initialize failed.\n",
+         is_virtio ? "vgpu" : "gpu");
       goto fail;
    }
 
@@ -458,6 +459,8 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
       if (ac_drm_cs_create_syncobj(aws->fd, &aws->vm_timeline_syncobj))
          goto fail_alloc;
       simple_mtx_init(&aws->vm_ioctl_lock, mtx_plain);
+
+      aws->info.is_virtio = is_virtio;
 
       /* Only aws and buffer functions are used. */
       aws->dummy_sws.aws = aws;

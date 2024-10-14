@@ -1599,6 +1599,7 @@ static struct pb_buffer_lean *amdgpu_bo_from_handle(struct radeon_winsys *rws,
 
    switch (whandle->type) {
    case WINSYS_HANDLE_TYPE_SHARED:
+      assert(!aws->info.is_virtio); /* Legacy-path, not handled */
       type = amdgpu_bo_handle_type_gem_flink_name;
       break;
    case WINSYS_HANDLE_TYPE_FD:
@@ -1735,11 +1736,22 @@ static bool amdgpu_bo_get_handle(struct radeon_winsys *rws,
 
    switch (whandle->type) {
    case WINSYS_HANDLE_TYPE_SHARED:
+      /* This is a legacy code-path, not supported by virtio. */
+      assert(!aws->info.is_virtio);
       type = amdgpu_bo_handle_type_gem_flink_name;
       break;
    case WINSYS_HANDLE_TYPE_KMS:
       if (sws->fd == aws->fd) {
-         whandle->handle = bo->kms_handle;
+         /* For virtio we can't return kms_handle, because it's not a GEM handle,
+          * but a resource ID. Instead, repurpose the deprecated type
+          * amdgpu_bo_handle_type_kms_noimport to request a GEM handle.
+          */
+         if (aws->info.is_virtio)
+            ac_drm_bo_export(aws->dev, bo->bo,
+                             amdgpu_bo_handle_type_kms_noimport,
+                             &whandle->handle);
+         else
+            whandle->handle = bo->kms_handle;
 
          if (bo->is_shared)
             return true;
