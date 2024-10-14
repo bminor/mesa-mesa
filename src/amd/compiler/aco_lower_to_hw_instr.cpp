@@ -2565,7 +2565,7 @@ lower_to_hw_instr(Program* program)
 
                      uint8_t swiz[4] = {4, 5, 6, 7};
                      swiz[dst.physReg().byte()] = op_vgpr_byte;
-                     if (bits == 16)
+                     if (bits == 16 && dst.bytes() >= 2)
                         swiz[dst.physReg().byte() + 1] = op_vgpr_byte + 1;
                      for (unsigned i = bits / 8; i < dst.bytes(); i++) {
                         uint8_t ext = bperm_0;
