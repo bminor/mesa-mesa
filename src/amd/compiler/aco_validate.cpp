@@ -710,6 +710,12 @@ validate_ir(Program* program)
                unsigned comp = data_bits / MAX2(op_bits, 1);
                check(instr->operands[1].constantValue() < comp, "Index must be in-bounds",
                      instr.get());
+
+               check(program->gfx_level >= GFX9 ||
+                        !instr->definitions[0].regClass().is_subdword() ||
+                        instr->operands[0].regClass().type() == RegType::vgpr,
+                     "Cannot extract/insert to subdword definition from SGPR before GFX9+",
+                     instr.get());
             } else if (instr->opcode == aco_opcode::p_jump_to_epilog) {
                check(instr->definitions.size() == 0, "p_jump_to_epilog must have 0 definitions",
                      instr.get());
