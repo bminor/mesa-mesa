@@ -1329,6 +1329,7 @@ static void
 transform_vertex_ROUND(struct radeon_compiler *c, struct rc_instruction *inst)
 {
    struct rc_reader_data readers;
+   readers.ExitOnAbort = 0;
    rc_get_readers(c, inst, &readers, NULL, NULL, NULL);
 
    assert(readers.ReaderCount > 0);
