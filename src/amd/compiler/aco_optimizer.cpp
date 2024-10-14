@@ -1068,7 +1068,9 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
          return false;
 
       /* don't remove the sign-extension when increasing the size further */
-      if (instrSel.size() > sel.size() && !instrSel.sign_extend() && sel.sign_extend())
+      if (instrSel.size() > sel.size() && sel.sign_extend() &&
+          !(instrSel.sign_extend() || (instrSel.size() == instr->operands[idx].bytes() &&
+                                       instrSel.size() == instr->definitions[0].bytes())))
          return false;
 
       return true;
@@ -1149,7 +1151,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
       unsigned size = std::min(sel.size(), instrSel.size());
       unsigned offset = sel.offset() + instrSel.offset();
       unsigned sign_extend =
-         instrSel.sign_extend() && (sel.sign_extend() || instrSel.size() <= sel.size());
+         instrSel.size() <= sel.size() ? instrSel.sign_extend() : sel.sign_extend();
 
       instr->operands[1] = Operand::c32(offset / size);
       instr->operands[2] = Operand::c32(size * 8u);
