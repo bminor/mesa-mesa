@@ -2971,11 +2971,19 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        *    Depth Stall = 1
        *    Tile Cache Flush = 1
        *    RT Write Flush = 1
+       *
+       * From the TGL PRM Vol. 2a, "PIPE_CONTROL::L3 Fabric Flush":
+       *
+       *    For a sequence of color fast clears. A single PIPE_CONTROL
+       *    command with Render Target Cache Flush, L3 Fabric Flush and Depth
+       *    Stall set at the end of the sequence suffices.
+       *
+       * Replace the Tile Cache flush with an L3 fabric flush.
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
-            ANV_PIPE_TILE_CACHE_FLUSH_BIT |
+            ANV_PIPE_L3_FABRIC_FLUSH_BIT |
             ANV_PIPE_DEPTH_STALL_BIT);
 
 #else
