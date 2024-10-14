@@ -1254,7 +1254,7 @@
         "description": "panvk: Link with --build-id explicitly",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8ea2931ed1fd9bac6b2037971e27c651c7e0ebf3",
         "notes": null
