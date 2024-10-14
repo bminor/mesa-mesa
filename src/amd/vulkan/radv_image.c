@@ -1076,6 +1076,23 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
    return info;
 }
 
+static void
+radv_surface_init(struct radv_physical_device *pdev, const struct ac_surf_info *surf_info, struct radeon_surf *surf)
+{
+   uint32_t type = RADEON_SURF_GET(surf->flags, TYPE);
+   uint32_t mode = RADEON_SURF_GET(surf->flags, MODE);
+
+   struct ac_surf_config config;
+
+   memcpy(&config.info, surf_info, sizeof(config.info));
+   config.is_1d = type == RADEON_SURF_TYPE_1D || type == RADEON_SURF_TYPE_1D_ARRAY;
+   config.is_3d = type == RADEON_SURF_TYPE_3D;
+   config.is_cube = type == RADEON_SURF_TYPE_CUBEMAP;
+   config.is_array = type == RADEON_SURF_TYPE_1D_ARRAY || type == RADEON_SURF_TYPE_2D_ARRAY;
+
+   ac_compute_surface(pdev->addrlib, &pdev->info, &config, mode, surf);
+}
+
 VkResult
 radv_image_create_layout(struct radv_device *device, struct radv_image_create_info create_info,
                          const struct VkImageDrmFormatModifierExplicitCreateInfoEXT *mod_info,
@@ -1130,7 +1147,7 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
          image->planes[plane].surface.flags |= RADEON_SURF_DISABLE_DCC | RADEON_SURF_NO_FMASK | RADEON_SURF_NO_HTILE;
       }
 
-      device->ws->surface_init(device->ws, &info, &image->planes[plane].surface);
+      radv_surface_init(pdev, &info, &image->planes[plane].surface);
 
       if (plane == 0) {
          if (!radv_use_dcc_for_image_late(device, image))

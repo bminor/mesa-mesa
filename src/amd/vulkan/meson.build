@@ -176,8 +176,6 @@ if not with_platform_windows
     'winsys/amdgpu/radv_amdgpu_bo.h',
     'winsys/amdgpu/radv_amdgpu_cs.c',
     'winsys/amdgpu/radv_amdgpu_cs.h',
-    'winsys/amdgpu/radv_amdgpu_surface.c',
-    'winsys/amdgpu/radv_amdgpu_surface.h',
     'winsys/amdgpu/radv_amdgpu_winsys.c',
     'winsys/amdgpu/radv_amdgpu_winsys.h',
     'winsys/amdgpu/radv_amdgpu_winsys_public.h',

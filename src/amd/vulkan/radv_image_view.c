@@ -350,10 +350,9 @@ compute_non_block_compressed_view(struct radv_device *device, const struct radv_
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_image *image = iview->image;
    const struct radeon_surf *surf = &image->planes[0].surface;
-   struct ac_addrlib *addrlib = device->ws->get_addrlib(device->ws);
    struct ac_surf_info surf_info = radv_get_ac_surf_info(device, image);
 
-   ac_surface_compute_nbc_view(addrlib, &pdev->info, surf, &surf_info, iview->vk.base_mip_level,
+   ac_surface_compute_nbc_view(pdev->addrlib, &pdev->info, surf, &surf_info, iview->vk.base_mip_level,
                                iview->vk.base_array_layer, nbc_view);
 }
 

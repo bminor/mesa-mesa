@@ -2087,6 +2087,14 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->local_fd = fd;
    pdev->ws->query_info(pdev->ws, &pdev->info);
 
+   if (drm_device) {
+      pdev->addrlib = ac_addrlib_create(&pdev->info, &pdev->info.max_alignment);
+      if (!pdev->addrlib) {
+         result = VK_ERROR_INITIALIZATION_FAILED;
+         goto fail_wsi;
+      }
+   }
+
    pdev->use_llvm = instance->debug_flags & RADV_DEBUG_LLVM;
 #if !AMD_LLVM_AVAILABLE
    if (pdev->use_llvm) {
@@ -2263,6 +2271,8 @@ fail_perfcounters:
    ac_destroy_perfcounters(&pdev->ac_perfcounters);
    disk_cache_destroy(pdev->vk.disk_cache);
 fail_wsi:
+   if (pdev->addrlib)
+      ac_addrlib_destroy(pdev->addrlib);
    pdev->ws->destroy(pdev->ws);
 fail_base:
    vk_physical_device_finish(&pdev->vk);
@@ -2313,6 +2323,8 @@ radv_physical_device_destroy(struct vk_physical_device *vk_device)
 
    radv_finish_wsi(pdev);
    ac_destroy_perfcounters(&pdev->ac_perfcounters);
+   if (pdev->addrlib)
+      ac_addrlib_destroy(pdev->addrlib);
    pdev->ws->destroy(pdev->ws);
    disk_cache_destroy(pdev->vk.disk_cache);
    if (pdev->local_fd != -1)
