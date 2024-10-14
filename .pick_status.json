@@ -314,7 +314,7 @@
         "description": "nvk: Advertise 64-bit atomics on buffer views",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1d10de539c2e10ddc1c5f7a239eacf1acdfe35c4",
         "notes": null
