@@ -247,7 +247,6 @@ op("hmul",
 
 op("mov_imm",
       encoding_32 = (0x62, 0xFF, 6, 8),
-      encoding_16 = (0x62, 0xFF, 4, 6),
       imms = [IMM])
 
 op("iadd",
