@@ -2079,7 +2079,11 @@ static void lp_build_skip_branch(struct lp_build_nir_context *bld_base, bool fla
 
    LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, lp_build_const_int32(gallivm, 0), "any_active");
 
-   assert(bld_base->if_stack_size < LP_MAX_TGSI_NESTING);
+   if (bld_base->if_stack_size >= LP_MAX_TGSI_NESTING) {
+      bld_base->if_stack_size++;
+      return;
+   }
+
    lp_build_if(&bld_base->if_stack[bld_base->if_stack_size], gallivm, any_active);
    bld_base->if_stack_size++;
 }
@@ -2091,6 +2095,9 @@ static void lp_build_skip_branch_end(struct lp_build_nir_context *bld_base, bool
 
    assert(bld_base->if_stack_size);
    bld_base->if_stack_size--;
+   if (bld_base->if_stack_size >= LP_MAX_TGSI_NESTING)
+      return;
+
    lp_build_endif(&bld_base->if_stack[bld_base->if_stack_size]);
 }
 
