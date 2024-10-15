@@ -1030,6 +1030,12 @@ vlVaHandleSurfaceAllocate(vlVaDriver *drv, vlVaSurface *surface,
    if (!surface->buffer)
       return VA_STATUS_ERROR_ALLOCATION_FAILED;
 
+   if (drv->pipe->screen->get_video_param(drv->pipe->screen,
+                                          PIPE_VIDEO_PROFILE_UNKNOWN,
+                                          PIPE_VIDEO_ENTRYPOINT_UNKNOWN,
+                                          PIPE_VIDEO_CAP_SKIP_CLEAR_SURFACE))
+      return VA_STATUS_SUCCESS;
+
    surfaces = surface->buffer->get_surfaces(surface->buffer);
    if (surfaces) {
       for (i = 0; i < VL_MAX_SURFACES; ++i) {
