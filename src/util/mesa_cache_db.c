@@ -524,6 +524,9 @@ mesa_db_compact(struct mesa_cache_db *db, int64_t blob_size,
       return false;
 
    num_entries = _mesa_hash_table_num_entries(db->index_db->table);
+   if (!num_entries)
+      return true;
+
    entries = calloc(num_entries, sizeof(*entries));
    if (!entries)
       return false;

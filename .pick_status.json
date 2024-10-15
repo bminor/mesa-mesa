@@ -524,7 +524,7 @@
         "description": "util/mesa-db: Fix crash on compacting empty DB",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "32211788d05311d1a92863e5445b56a5175ad4a0",
         "notes": null
