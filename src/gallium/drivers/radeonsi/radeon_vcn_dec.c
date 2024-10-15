@@ -1689,7 +1689,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
             RVID_ERR("Can't allocated dpb.\n");
             return NULL;
          }
-         si_vid_clear_buffer(dec->base.context, &dec->dpb);
       } else if (dec->dpb_type == DPB_DYNAMIC_TIER_1 && dec->dpb.res &&
                  (dec->max_width < dec->base.width || dec->max_height < dec->base.height)) {
          struct rvid_buf_offset_info buf_offset_info;
@@ -1728,7 +1727,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
             RVID_ERR("Can't allocated context buffer.\n");
             return NULL;
          }
-         si_vid_clear_buffer(dec->base.context, &dec->ctx);
       } else if (fmt == PIPE_VIDEO_FORMAT_VP9) {
          unsigned ctx_size;
          uint8_t *ptr;
@@ -1762,7 +1760,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
             RVID_ERR("Can't allocated context buffer.\n");
             return NULL;
          }
-         si_vid_clear_buffer(dec->base.context, &dec->ctx);
 
          /* ctx needs probs table */
          ptr = dec->ws->buffer_map(dec->ws, dec->ctx.res->buf, &dec->cs,
@@ -1787,7 +1784,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
             RVID_ERR("Can't allocated context buffer.\n");
             return NULL;
          }
-         si_vid_clear_buffer(dec->base.context, &dec->ctx);
       }
    }
    if (encrypted != dec->ws->cs_is_secure(&dec->cs)) {
@@ -1954,7 +1950,6 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
 
          if (!si_vid_create_buffer(dec->screen, &dec->ctx, ctx_size, PIPE_USAGE_DEFAULT))
             RVID_ERR("Can't allocated context buffer.\n");
-         si_vid_clear_buffer(dec->base.context, &dec->ctx);
 
          ptr = dec->ws->buffer_map(dec->ws, dec->ctx.res->buf, &dec->cs, PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
 
@@ -2880,9 +2875,6 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
          goto error;
       }
 
-      si_vid_clear_buffer(context, &dec->msg_fb_it_probs_buffers[i]);
-      si_vid_clear_buffer(context, &dec->bs_buffers[i]);
-
       if (have_probs(dec) && dec->stream_type == RDECODE_CODEC_VP9) {
          struct rvid_buffer *buf;
          void *ptr;
@@ -2929,7 +2921,6 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
       RVID_ERR("Can't allocated session ctx.\n");
       goto error;
    }
-   si_vid_clear_buffer(context, &dec->sessionctx);
 
    dec->addr_gfx_mode = RDECODE_ARRAY_MODE_LINEAR;
    dec->av1_version = RDECODE_AV1_VER_0;
