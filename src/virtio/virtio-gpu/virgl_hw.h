@@ -770,6 +770,7 @@ struct virgl_caps_v2 {
         uint32_t max_uniform_block_size;
         uint32_t max_tcs_outputs;
         uint32_t max_tes_outputs;
+        uint32_t max_shader_storage_blocks[6]; // PIPE_SHADER_TYPES
 };
 
 union virgl_caps {

@@ -183,6 +183,7 @@ static inline void virgl_ws_fill_new_caps_defaults(struct virgl_drm_caps *caps)
    caps->caps.v2.max_shader_sampler_views = 16;
    for (int shader_type = 0; shader_type < PIPE_SHADER_TYPES; shader_type++) {
       caps->caps.v2.max_const_buffer_size[shader_type] = 4096 * sizeof(float[4]);
+      caps->caps.v2.max_shader_storage_blocks[shader_type] = INT_MAX;
    }
 }
 

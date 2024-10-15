@@ -456,11 +456,16 @@ virgl_get_shader_param(struct pipe_screen *screen,
          if (vscreen->caps.caps.v2.host_feature_check_version < 12)
             return 4096 * sizeof(float[4]);
          return VIRGL_SHADER_STAGE_CAP_V2(max_const_buffer_size, shader);
-      case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS:
-         if (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE)
+      case PIPE_SHADER_CAP_MAX_SHADER_BUFFERS: {
+         int max_shader_buffers = VIRGL_SHADER_STAGE_CAP_V2(max_shader_storage_blocks, shader);
+         if (max_shader_buffers != INT_MAX) {
+            return max_shader_buffers;
+         } else if (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE) {
             return vscreen->caps.caps.v2.max_shader_buffer_frag_compute;
-         else
+         } else {
             return vscreen->caps.caps.v2.max_shader_buffer_other_stages;
+         }
+      }
       case PIPE_SHADER_CAP_MAX_SHADER_IMAGES:
          if (shader == PIPE_SHADER_FRAGMENT || shader == PIPE_SHADER_COMPUTE)
             return vscreen->caps.caps.v2.max_shader_image_frag_compute;
