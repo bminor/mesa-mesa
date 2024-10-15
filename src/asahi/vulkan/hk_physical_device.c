@@ -1043,8 +1043,11 @@ hk_physical_device_free_disk_cache(struct hk_physical_device *pdev)
 #define SYSMEM_HEAP_FRACTION(x) (x * 1 / 2)
 
 static uint64_t
-hk_get_sysmem_heap_size(void)
+hk_get_sysmem_heap_size(struct hk_physical_device *pdev)
 {
+   if (pdev->sysmem)
+      return pdev->sysmem;
+
    uint64_t sysmem_size_B = 0;
    if (!os_get_total_physical_memory(&sysmem_size_B))
       return 0;
@@ -1055,6 +1058,16 @@ hk_get_sysmem_heap_size(void)
 static uint64_t
 hk_get_sysmem_heap_available(struct hk_physical_device *pdev)
 {
+   if (pdev->sysmem) {
+      uint64_t total_used = 0;
+      for (unsigned i = 0; i < pdev->mem_heap_count; i++) {
+         const struct hk_memory_heap *heap = &pdev->mem_heaps[i];
+         uint64_t used = p_atomic_read(&heap->used);
+         total_used += used;
+      }
+      return pdev->sysmem - total_used;
+   }
+
    uint64_t sysmem_size_B = 0;
    if (!os_get_available_system_memory(&sysmem_size_B)) {
       vk_loge(VK_LOG_OBJS(pdev), "Failed to query available system memory");
@@ -1160,7 +1173,15 @@ hk_create_drm_physical_device(struct vk_instance *_instance,
 
    hk_physical_device_init_pipeline_cache(pdev);
 
-   uint64_t sysmem_size_B = hk_get_sysmem_heap_size();
+   const char *hk_sysmem = getenv("HK_SYSMEM");
+   if (hk_sysmem) {
+      uint64_t sysmem = strtoll(hk_sysmem, NULL, 10);
+      if (sysmem != LLONG_MIN && sysmem != LLONG_MAX) {
+         pdev->sysmem = sysmem;
+      }
+   }
+
+   uint64_t sysmem_size_B = hk_get_sysmem_heap_size(pdev);
    if (sysmem_size_B == 0) {
       result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
                          "Failed to query total system memory");
