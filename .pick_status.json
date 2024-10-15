@@ -34,7 +34,7 @@
         "description": "nir/glsl: set deref cast mode for blocks during function inlining",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d681cf96fbf962b67d98ecab1968ed0bb7a04eb0",
         "notes": null
