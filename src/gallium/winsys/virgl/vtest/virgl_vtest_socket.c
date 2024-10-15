@@ -143,7 +143,7 @@ static int virgl_vtest_send_init(struct virgl_vtest_winsys *vws)
    return 0;
 }
 
-static int virgl_vtest_negotiate_version(struct virgl_vtest_winsys *vws)
+static int virgl_vtest_negotiate_version(struct virgl_vtest_winsys *vws, int version)
 {
    uint32_t vtest_hdr[VTEST_HDR_SIZE];
    uint32_t version_buf[VCMD_PROTOCOL_VERSION_SIZE];
@@ -174,7 +174,7 @@ static int virgl_vtest_negotiate_version(struct virgl_vtest_winsys *vws)
 
      vtest_hdr[VTEST_CMD_LEN] = VCMD_PROTOCOL_VERSION_SIZE;
      vtest_hdr[VTEST_CMD_ID] = VCMD_PROTOCOL_VERSION;
-     version_buf[VCMD_PROTOCOL_VERSION_VERSION] = VTEST_PROTOCOL_VERSION;
+     version_buf[VCMD_PROTOCOL_VERSION_VERSION] = version;
      virgl_block_write(vws->sock_fd, &vtest_hdr, sizeof(vtest_hdr));
      virgl_block_write(vws->sock_fd, &version_buf, sizeof(version_buf));
 
@@ -218,7 +218,7 @@ int virgl_vtest_connect(struct virgl_vtest_winsys *vws)
 
    vws->sock_fd = sock;
    virgl_vtest_send_init(vws);
-   vws->protocol_version = virgl_vtest_negotiate_version(vws);
+   vws->protocol_version = virgl_vtest_negotiate_version(vws, VTEST_PROTOCOL_VERSION);
 
    /* Version 1 is deprecated. */
    if (vws->protocol_version == 1)
@@ -271,6 +271,14 @@ int virgl_vtest_send_get_caps(struct virgl_vtest_winsys *vws,
        ret = virgl_block_read(vws->sock_fd, &dummy, sizeof(struct virgl_caps_v1));
    } else
        ret = virgl_block_read(vws->sock_fd, &caps->caps, sizeof(struct virgl_caps_v1));
+
+   // Old virglrenderer versions can't handle the re-use of host-generated
+   // resource IDs that are used with protocol version 3, so re-negotiate the
+   // protocol version limiting to <= 2
+   if (vws->protocol_version > 2 &&
+       caps->caps.v2.host_feature_check_version < 23) {
+      vws->protocol_version = virgl_vtest_negotiate_version(vws, 2);
+   }
 
    return 0;
 }
