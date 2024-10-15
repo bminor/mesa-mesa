@@ -669,6 +669,14 @@ static bool si_resource_get_param(struct pipe_screen *screen, struct pipe_contex
    struct si_texture *tex = (struct si_texture *)resource;
    struct winsys_handle whandle;
 
+   /* Compute texture modifier when needed.
+    * This allows to return the correct values for the PIPE_RESOURCE_PARAM_NPLANES and
+    * PIPE_RESOURCE_PARAM_MODIFIER queries.
+    */
+   if ((param == PIPE_RESOURCE_PARAM_NPLANES || param == PIPE_RESOURCE_PARAM_MODIFIER) &&
+       resource->target != PIPE_BUFFER)
+         ac_compute_surface_modifier(&sscreen->info, &tex->surface, resource->nr_samples);
+
    switch (param) {
    case PIPE_RESOURCE_PARAM_NPLANES:
       if (resource->target == PIPE_BUFFER)
