@@ -92,6 +92,7 @@
 #include "drm-uapi/v3d_drm.h"
 
 #include "vk_alloc.h"
+#include "perfcntrs/v3d_perfcntrs.h"
 #include "simulator/v3d_simulator.h"
 
 #include "v3dv_cl.h"
@@ -157,6 +158,7 @@ struct v3dv_physical_device {
    VkPhysicalDeviceMemoryProperties memory;
 
    struct v3d_device_info devinfo;
+   struct v3d_perfcntrs *perfcntr;
 
 #if USE_V3D_SIMULATOR
    struct v3d_simulator_file *sim_file;

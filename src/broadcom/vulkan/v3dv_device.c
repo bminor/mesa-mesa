@@ -647,6 +647,9 @@ physical_device_finish(struct v3dv_physical_device *device)
 
    util_sparse_array_finish(&device->bo_map);
 
+   if (device->perfcntr)
+      v3d_perfcntrs_fini(device->perfcntr);
+
    close(device->render_fd);
    if (device->display_fd >= 0)
       close(device->display_fd);
@@ -1343,6 +1346,16 @@ create_physical_device(struct v3dv_instance *instance,
       result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
                          "Kernel driver doesn't have required features.");
       goto fail;
+   }
+
+   if (device->caps.perfmon) {
+      device->perfcntr = v3d_perfcntrs_init(&device->devinfo, device->render_fd);
+
+      if (!device->perfcntr) {
+         result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+                            "Failed to get init perfmon.");
+         goto fail;
+      }
    }
 
    result = init_uuids(device);
