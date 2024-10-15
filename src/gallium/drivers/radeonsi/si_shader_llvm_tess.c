@@ -58,7 +58,9 @@ void si_llvm_ls_build_end(struct si_shader_context *ctx)
    ret = si_insert_input_ret(ctx, ret, ctx->args->ac.tess_offchip_offset, 2);
    ret = si_insert_input_ret(ctx, ret, ctx->args->ac.merged_wave_info, 3);
    ret = si_insert_input_ret(ctx, ret, ctx->args->ac.tcs_factor_offset, 4);
-   if (ctx->screen->info.gfx_level <= GFX10_3)
+   if (ctx->screen->info.gfx_level >= GFX11)
+      ret = si_insert_input_ret(ctx, ret, ctx->args->ac.tcs_wave_id, 5);
+   else
       ret = si_insert_input_ret(ctx, ret, ctx->args->ac.scratch_offset, 5);
 
    ret = si_insert_input_ptr(ctx, ret, ctx->args->internal_bindings, 8 + SI_SGPR_INTERNAL_BINDINGS);
