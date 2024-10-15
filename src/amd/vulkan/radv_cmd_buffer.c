@@ -3195,27 +3195,24 @@ radv_emit_stencil(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(
-         cmd_buffer->cs, R_028088_DB_STENCIL_REF,
+      radeon_opt_set_context_reg(
+         cmd_buffer, R_028088_DB_STENCIL_REF, RADV_TRACKED_DB_STENCIL_REF,
          S_028088_TESTVAL(d->vk.ds.stencil.front.reference) | S_028088_TESTVAL_BF(d->vk.ds.stencil.back.reference));
 
-      radeon_set_context_reg(cmd_buffer->cs, R_028090_DB_STENCIL_READ_MASK,
-                             S_028090_TESTMASK(d->vk.ds.stencil.front.compare_mask) |
-                                S_028090_TESTMASK_BF(d->vk.ds.stencil.back.compare_mask));
-
-      radeon_set_context_reg(cmd_buffer->cs, R_028094_DB_STENCIL_WRITE_MASK,
-                             S_028094_WRITEMASK(d->vk.ds.stencil.front.write_mask) |
-                                S_028094_WRITEMASK_BF(d->vk.ds.stencil.back.write_mask));
+      radeon_opt_set_context_reg2(cmd_buffer, R_028090_DB_STENCIL_READ_MASK, RADV_TRACKED_DB_STENCIL_READ_MASK,
+                                  S_028090_TESTMASK(d->vk.ds.stencil.front.compare_mask) |
+                                     S_028090_TESTMASK_BF(d->vk.ds.stencil.back.compare_mask),
+                                  S_028094_WRITEMASK(d->vk.ds.stencil.front.write_mask) |
+                                     S_028094_WRITEMASK_BF(d->vk.ds.stencil.back.write_mask));
    } else {
-      radeon_set_context_reg_seq(cmd_buffer->cs, R_028430_DB_STENCILREFMASK, 2);
-      radeon_emit(cmd_buffer->cs, S_028430_STENCILTESTVAL(d->vk.ds.stencil.front.reference) |
-                                     S_028430_STENCILMASK(d->vk.ds.stencil.front.compare_mask) |
-                                     S_028430_STENCILWRITEMASK(d->vk.ds.stencil.front.write_mask) |
-                                     S_028430_STENCILOPVAL(1));
-      radeon_emit(cmd_buffer->cs, S_028434_STENCILTESTVAL_BF(d->vk.ds.stencil.back.reference) |
-                                     S_028434_STENCILMASK_BF(d->vk.ds.stencil.back.compare_mask) |
-                                     S_028434_STENCILWRITEMASK_BF(d->vk.ds.stencil.back.write_mask) |
-                                     S_028434_STENCILOPVAL_BF(1));
+      radeon_opt_set_context_reg2(
+         cmd_buffer, R_028430_DB_STENCILREFMASK, RADV_TRACKED_DB_STENCILREFMASK,
+         S_028430_STENCILTESTVAL(d->vk.ds.stencil.front.reference) |
+            S_028430_STENCILMASK(d->vk.ds.stencil.front.compare_mask) |
+            S_028430_STENCILWRITEMASK(d->vk.ds.stencil.front.write_mask) | S_028430_STENCILOPVAL(1),
+         S_028434_STENCILTESTVAL_BF(d->vk.ds.stencil.back.reference) |
+            S_028434_STENCILMASK_BF(d->vk.ds.stencil.back.compare_mask) |
+            S_028434_STENCILWRITEMASK_BF(d->vk.ds.stencil.back.write_mask) | S_028434_STENCILOPVAL_BF(1));
    }
 }
 
@@ -3226,14 +3223,16 @@ radv_emit_depth_bounds(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg_seq(cmd_buffer->cs, R_028050_DB_DEPTH_BOUNDS_MIN, 2);
-   } else {
-      radeon_set_context_reg_seq(cmd_buffer->cs, R_028020_DB_DEPTH_BOUNDS_MIN, 2);
-   }
+   const uint32_t depth_bounds_min = fui(d->vk.ds.depth.bounds_test.min);
+   const uint32_t depth_bounds_max = fui(d->vk.ds.depth.bounds_test.max);
 
-   radeon_emit(cmd_buffer->cs, fui(d->vk.ds.depth.bounds_test.min));
-   radeon_emit(cmd_buffer->cs, fui(d->vk.ds.depth.bounds_test.max));
+   if (pdev->info.gfx_level >= GFX12) {
+      radeon_opt_set_context_reg2(cmd_buffer, R_028050_DB_DEPTH_BOUNDS_MIN, RADV_TRACKED_DB_DEPTH_BOUNDS_MIN,
+                                  depth_bounds_min, depth_bounds_max);
+   } else {
+      radeon_opt_set_context_reg2(cmd_buffer, R_028020_DB_DEPTH_BOUNDS_MIN, RADV_TRACKED_DB_DEPTH_BOUNDS_MIN,
+                                  depth_bounds_min, depth_bounds_max);
+   }
 }
 
 static void
@@ -3373,9 +3372,11 @@ radv_emit_depth_control(struct radv_cmd_buffer *cmd_buffer)
       S_028800_STENCILFUNC_BF(d->vk.ds.stencil.back.op.compare);
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(cmd_buffer->cs, R_028070_DB_DEPTH_CONTROL, db_depth_control);
+      radeon_opt_set_context_reg(cmd_buffer, R_028070_DB_DEPTH_CONTROL, RADV_TRACKED_DB_DEPTH_CONTROL,
+                                 db_depth_control);
    } else {
-      radeon_set_context_reg(cmd_buffer->cs, R_028800_DB_DEPTH_CONTROL, db_depth_control);
+      radeon_opt_set_context_reg(cmd_buffer, R_028800_DB_DEPTH_CONTROL, RADV_TRACKED_DB_DEPTH_CONTROL,
+                                 db_depth_control);
    }
 }
 
@@ -3394,9 +3395,11 @@ radv_emit_stencil_control(struct radv_cmd_buffer *cmd_buffer)
       S_02842C_STENCILZFAIL_BF(radv_translate_stencil_op(d->vk.ds.stencil.back.op.depth_fail));
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(cmd_buffer->cs, R_028074_DB_STENCIL_CONTROL, db_stencil_control);
+      radeon_opt_set_context_reg(cmd_buffer, R_028074_DB_STENCIL_CONTROL, RADV_TRACKED_DB_STENCIL_CONTROL,
+                                 db_stencil_control);
    } else {
-      radeon_set_context_reg(cmd_buffer->cs, R_02842C_DB_STENCIL_CONTROL, db_stencil_control);
+      radeon_opt_set_context_reg(cmd_buffer, R_02842C_DB_STENCIL_CONTROL, RADV_TRACKED_DB_STENCIL_CONTROL,
+                                 db_stencil_control);
    }
 }
 
