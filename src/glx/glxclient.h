@@ -600,7 +600,6 @@ struct glx_display
 
    __glxHashTable *dri2Hash;
    bool has_multibuffer;
-   bool has_explicit_modifiers;
 #endif
 #ifdef GLX_USE_WINDOWSGL
    __GLXDRIdisplay *windowsdriDisplay;

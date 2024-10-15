@@ -93,7 +93,7 @@ x11_dri3_open(xcb_connection_t *conn,
 #endif
 
 bool
-x11_dri3_check_multibuffer(xcb_connection_t *c, bool *err, bool *explicit_modifiers)
+x11_dri3_has_multibuffer(xcb_connection_t *c)
 {
    xcb_dri3_query_version_cookie_t      dri3_cookie;
    xcb_dri3_query_version_reply_t       *dri3_reply;
@@ -107,11 +107,11 @@ x11_dri3_check_multibuffer(xcb_connection_t *c, bool *err, bool *explicit_modifi
 
    extension = xcb_get_extension_data(c, &xcb_dri3_id);
    if (!(extension && extension->present))
-      goto error;
+      return false;
 
    extension = xcb_get_extension_data(c, &xcb_present_id);
    if (!(extension && extension->present))
-      goto error;
+      return false;
 
    dri3_cookie = xcb_dri3_query_version(c,
                                         DRI3_SUPPORTED_MAJOR,
@@ -123,7 +123,7 @@ x11_dri3_check_multibuffer(xcb_connection_t *c, bool *err, bool *explicit_modifi
    dri3_reply = xcb_dri3_query_version_reply(c, dri3_cookie, &error);
    if (!dri3_reply) {
       free(error);
-      goto error;
+      return false;
    }
 
    int dri3Major = dri3_reply->major_version;
@@ -133,21 +133,12 @@ x11_dri3_check_multibuffer(xcb_connection_t *c, bool *err, bool *explicit_modifi
    present_reply = xcb_present_query_version_reply(c, present_cookie, &error);
    if (!present_reply) {
       free(error);
-      goto error;
+      return false;
    }
    int presentMajor = present_reply->major_version;
    int presentMinor = present_reply->minor_version;
    free(present_reply);
 
-#ifdef HAVE_X11_DRM
-   if (presentMajor > 1 || (presentMajor == 1 && presentMinor >= 2)) {
-      *explicit_modifiers = dri3Major > 1 || (dri3Major == 1 && dri3Minor >= 2);
-      if (dri3Major >= 1)
-         return true;
-   }
-#endif
-   return false;
-error:
-   *err = true;
-   return false;
+   return (presentMajor > 1 || (presentMajor == 1 && presentMinor >= 2)) &&
+      (dri3Major > 1 || (dri3Major == 1 && dri3Minor >= 2));
 }

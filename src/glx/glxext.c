@@ -1016,7 +1016,7 @@ __glXInitialize(Display * dpy)
 #if defined(GLX_USE_DRM)
    bool dri3_err = false;
    if (glx_direct && glx_accel && dri3)
-      dpyPriv->has_multibuffer = x11_dri3_check_multibuffer(XGetXCBConnection(dpy), &dri3_err, &dpyPriv->has_explicit_modifiers);
+      dpyPriv->has_multibuffer = x11_dri3_has_multibuffer(XGetXCBConnection(dpy));
    if (glx_direct && glx_accel &&
        (!(glx_driver & GLX_DRIVER_ZINK_YES) || !kopper)) {
       if (dri3) {
@@ -1043,7 +1043,7 @@ __glXInitialize(Display * dpy)
       glx_driver |= GLX_DRIVER_SW;
 
 #if !defined(GLX_USE_APPLE)
-   if (!dpyPriv->has_explicit_modifiers && glx_accel && !debug_get_bool_option("LIBGL_KOPPER_DRI2", false)) {
+   if (!dpyPriv->has_multibuffer && glx_accel && !debug_get_bool_option("LIBGL_KOPPER_DRI2", false)) {
       if (glx_driver & GLX_DRIVER_ZINK_YES) {
          /* only print error if zink was explicitly requested */
          CriticalErrorMessageF("DRI3 not available\n");
