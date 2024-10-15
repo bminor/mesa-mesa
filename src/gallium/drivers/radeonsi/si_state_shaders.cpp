@@ -4698,7 +4698,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
 {
    struct si_shader *ls_current;
    struct si_shader_selector *tcs = sctx->shader.tcs.cso;
-   unsigned tess_uses_primid = sctx->ia_multi_vgt_param_key.u.tess_uses_prim_id;
+   bool tess_uses_primid = sctx->ia_multi_vgt_param_key.u.tess_uses_prim_id;
    bool has_primid_instancing_bug = sctx->gfx_level == GFX6 && sctx->screen->info.max_se == 1;
    unsigned tes_sh_base = sctx->shader_pointers.sh_base[PIPE_SHADER_TESS_EVAL];
    uint8_t num_tcs_input_cp = sctx->patch_vertices;
@@ -4729,39 +4729,23 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    sctx->last_tess_uses_primid = tess_uses_primid;
 
    /* This calculates how shader inputs and outputs among VS, TCS, and TES
-    * are laid out in LDS. */
-   unsigned num_tcs_outputs = util_last_bit64(tcs->info.tcs_outputs_written);
-   unsigned num_tcs_output_cp = tcs->info.base.tess.tcs_vertices_out;
-   unsigned num_tcs_patch_outputs = util_last_bit64(tcs->info.patch_outputs_written);
-
-   unsigned input_vertex_size = si_shader_lshs_vertex_stride(ls_current);
-   unsigned num_vs_outputs = input_vertex_size / 16;
-   unsigned output_vertex_size = num_tcs_outputs * 16;
-   unsigned input_patch_size = num_tcs_input_cp * input_vertex_size;
-
-   unsigned pervertex_output_patch_size = num_tcs_output_cp * output_vertex_size;
-   unsigned output_patch_size = pervertex_output_patch_size + num_tcs_patch_outputs * 16;
-   unsigned lds_per_patch;
-
-   /* Compute the LDS size per patch.
-    *
-    * LDS is used to store TCS outputs if they are read, and to store tess
-    * factors if they are not defined in all invocations.
+    * are laid out in LDS and memory.
     */
-   if (tcs->info.base.outputs_read ||
-       tcs->info.base.patch_outputs_read ||
-       !tcs->info.tessfactors_are_def_in_all_invocs) {
-      lds_per_patch = input_patch_size + output_patch_size;
-   } else {
-      /* LDS will only store TCS inputs. The offchip buffer will only store TCS outputs. */
-      lds_per_patch = MAX2(input_patch_size, output_patch_size);
-   }
+   unsigned num_tcs_output_cp = tcs->info.base.tess.tcs_vertices_out;
+   unsigned lds_input_vertex_size = si_shader_lshs_vertex_stride(ls_current);
+   unsigned num_mem_tcs_outputs = util_last_bit64(tcs->info.tcs_outputs_written_for_tes);
+   unsigned num_mem_tcs_patch_outputs =
+      util_last_bit(tcs->info.patch_outputs_written_for_tes |
+                    (!ls_current->is_monolithic || ls_current->key.ge.opt.tes_reads_tess_factors ?
+                        tcs->info.tess_levels_written_for_tes : 0));
+   unsigned num_patches, lds_size;
 
-   unsigned num_patches =
-      ac_compute_num_tess_patches(&sctx->screen->info, num_tcs_input_cp,
-                                  num_tcs_output_cp, output_patch_size,
-                                  lds_per_patch, ls_current->wave_size,
-                                  tess_uses_primid);
+   /* Compute NUM_PATCHES and LDS_SIZE. */
+   ac_nir_compute_tess_wg_info(&sctx->screen->info, &tcs->info.base, ls_current->wave_size,
+                               tess_uses_primid, tcs->info.tessfactors_are_def_in_all_invocs,
+                               num_tcs_input_cp, lds_input_vertex_size,
+                               num_mem_tcs_outputs, num_mem_tcs_patch_outputs,
+                               &num_patches, &lds_size);
 
    if (sctx->num_patches_per_workgroup != num_patches) {
       sctx->num_patches_per_workgroup = num_patches;
@@ -4769,11 +4753,13 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    }
 
    /* Compute userdata SGPRs. */
+   unsigned num_lds_vs_outputs = lds_input_vertex_size / 16;
+   assert(ls_current->config.lds_size == 0);
    assert(num_tcs_input_cp <= 32);
    assert(num_tcs_output_cp <= 32);
    assert(num_patches <= 128);
-   assert(num_vs_outputs <= 63);
-   assert(num_tcs_outputs <= 63);
+   assert(num_lds_vs_outputs <= 63);
+   assert(num_mem_tcs_outputs <= 63);
 
    uint64_t ring_va =
       sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
@@ -4785,15 +4771,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
    sctx->tcs_offchip_layout &= 0xe0000000;
    sctx->tcs_offchip_layout |=
       (num_patches - 1) | ((num_tcs_output_cp - 1) << 7) | ((num_tcs_input_cp - 1) << 12) |
-      (num_vs_outputs << 17) | (num_tcs_outputs << 23);
-
-   /* Compute the LDS size. */
-   unsigned lds_size = ac_compute_tess_lds_size(&sctx->screen->info, lds_per_patch, num_patches);
-
-   /* We should be able to support in-shader LDS use with LLVM >= 9
-    * by just adding the lds_sizes together, but it has never
-    * been tested. */
-   assert(ls_current->config.lds_size == 0);
+      (num_lds_vs_outputs << 17) | (num_mem_tcs_outputs << 23);
 
    unsigned ls_hs_rsrc2;
 

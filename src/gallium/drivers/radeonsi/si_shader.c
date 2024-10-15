@@ -1313,7 +1313,7 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
       if (shader->key.ge.as_ls)
          num_ls_outputs = si_shader_lshs_vertex_stride(shader) / 16;
       else if (shader->selector->stage == MESA_SHADER_TESS_CTRL)
-         num_hs_outputs = util_last_bit64(shader->selector->info.tcs_outputs_written);
+         num_hs_outputs = util_last_bit64(shader->selector->info.tcs_outputs_written_for_tes);
       else if (shader->key.ge.as_es)
          num_es_outputs = shader->selector->info.esgs_vertex_stride / 16;
       else if (shader->gs_copy_shader)
@@ -1342,7 +1342,7 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
                       conf->lds_size, conf->scratch_bytes_per_wave, shader->info.max_simd_waves,
                       conf->spilled_sgprs, conf->spilled_vgprs, shader->info.private_mem_vgprs,
                       num_ls_outputs, num_hs_outputs,
-                      util_last_bit64(shader->selector->info.patch_outputs_written),
+                      util_last_bit(shader->selector->info.patch_outputs_written_for_tes),
                       num_es_outputs, num_gs_outputs, num_vs_outputs, num_ps_outputs,
                       shader->selector->info.base.num_inlinable_uniforms,
                       shader->selector->info.has_divergent_loop,

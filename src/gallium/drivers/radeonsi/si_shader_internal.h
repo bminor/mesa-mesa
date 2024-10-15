@@ -58,9 +58,9 @@ struct si_shader_args {
     * # 5 bits
     *   [12:16] = the number of input vertices per patch - 1, max = 31 (TCS only)
     * # 6 bits
-    *   [17:22] = the number of LS outputs, max = 63
+    *   [17:22] = the number of LS outputs in LDS, max = 63
     * # 6 bits
-    *   [23:28] = the number of HS per-vertex outputs, max = 63
+    *   [23:28] = the number of HS per-vertex outputs in memory, max = 63
     * # 2 bits
     *   [29:30] = TES output primitive type
     * # 1 bit

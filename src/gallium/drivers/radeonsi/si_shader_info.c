@@ -231,11 +231,17 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                 nir->info.stage == MESA_SHADER_TESS_EVAL ||
                 nir->info.stage == MESA_SHADER_GEOMETRY) {
                if (slot_semantic == VARYING_SLOT_TESS_LEVEL_INNER ||
-                   slot_semantic == VARYING_SLOT_TESS_LEVEL_OUTER ||
-                   (slot_semantic >= VARYING_SLOT_PATCH0 &&
-                    slot_semantic < VARYING_SLOT_TESS_MAX)) {
-                  info->patch_outputs_written |=
-                     BITFIELD_BIT(ac_shader_io_get_unique_index_patch(slot_semantic));
+                   slot_semantic == VARYING_SLOT_TESS_LEVEL_OUTER) {
+                  if (!nir_intrinsic_io_semantics(intr).no_varying) {
+                     info->tess_levels_written_for_tes |=
+                        BITFIELD_BIT(ac_shader_io_get_unique_index_patch(slot_semantic));
+                  }
+               } else if (slot_semantic >= VARYING_SLOT_PATCH0 &&
+                          slot_semantic < VARYING_SLOT_TESS_MAX) {
+                  if (!nir_intrinsic_io_semantics(intr).no_varying) {
+                     info->patch_outputs_written_for_tes |=
+                        BITFIELD_BIT(ac_shader_io_get_unique_index_patch(slot_semantic));
+                  }
                } else if ((slot_semantic <= VARYING_SLOT_VAR31 ||
                            slot_semantic >= VARYING_SLOT_VAR0_16BIT) &&
                           slot_semantic != VARYING_SLOT_EDGE) {
@@ -252,7 +258,9 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                   if (slot_semantic != VARYING_SLOT_LAYER &&
                       slot_semantic != VARYING_SLOT_VIEWPORT) {
                      info->ls_es_outputs_written |= bit;
-                     info->tcs_outputs_written |= bit;
+
+                     if (!nir_intrinsic_io_semantics(intr).no_varying)
+                        info->tcs_outputs_written_for_tes |= bit;
                   }
                }
             }
