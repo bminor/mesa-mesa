@@ -1014,7 +1014,7 @@
         "description": "ac/surface: fix determination of gfx12_enable_dcc",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "060d5dacfd1f1402bad795c37713db04b299f7ea",
         "notes": null
