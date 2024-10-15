@@ -1104,25 +1104,30 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
    case VK_IMAGE_TILING_LINEAR:
       format_feature_flags = format_props.linearTilingFeatures;
       break;
+   case VK_IMAGE_TILING_OPTIMAL:
+      format_feature_flags = format_props.optimalTilingFeatures;
+      break;
+   case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT: {
+      const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *mod_info =
+         vk_find_struct_const(
+            info->pNext, PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT);
+      if (mod_info->drmFormatModifier != DRM_FORMAT_MOD_LINEAR)
+         goto unsupported;
 
-   case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
       /* The only difference between optimal and linear is currently whether
        * depth/stencil attachments are allowed on depth/stencil formats.
        * There's no reason to allow importing depth/stencil textures, so just
        * disallow it and then this annoying edge case goes away.
-       *
-       * TODO: If anyone cares, we could enable this by looking at the
-       * modifier and checking if it's LINEAR or not.
        */
       if (util_format_is_depth_or_stencil(format))
          goto unsupported;
 
       assert(format_props.optimalTilingFeatures ==
              format_props.linearTilingFeatures);
-      FALLTHROUGH;
-   case VK_IMAGE_TILING_OPTIMAL:
-      format_feature_flags = format_props.optimalTilingFeatures;
+
+      format_feature_flags = format_props.linearTilingFeatures;
       break;
+   }
    default:
       unreachable("bad VkPhysicalDeviceImageFormatInfo2");
    }
