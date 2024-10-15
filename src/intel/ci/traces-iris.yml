@@ -88,7 +88,7 @@ traces:
     gl-intel-glk:
       checksum: 06f4222f7f5737f93ed1d191cbdc0798
     gl-intel-amly:
-      checksum: 06d587a2b934295da6ad874b750b9c9d
+      checksum: 06f4222f7f5737f93ed1d191cbdc0798
     gl-intel-kbl:
       checksum: 06f4222f7f5737f93ed1d191cbdc0798
     gl-intel-whl:
@@ -191,7 +191,7 @@ traces:
     gl-intel-glk:
       checksum: f9309a25e696938c0372c1afc781d01b
     gl-intel-amly:
-      checksum: 10e49cd5a5e12d4a01f504c14b4335cc
+      checksum: f9309a25e696938c0372c1afc781d01b
     gl-intel-kbl:
       checksum: f9309a25e696938c0372c1afc781d01b
     gl-intel-whl:

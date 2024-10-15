@@ -456,6 +456,14 @@ brw_fs_opt_eliminate_find_live_channel(fs_visitor &s)
             inst->opcode = BRW_OPCODE_MOV;
             inst->src[0] = brw_imm_ud(0u);
             inst->force_writemask_all = true;
+
+            /* FIND_LIVE_CHANNEL emitted by emit_uniformize will have
+             * size_written set by hand to a smaller value. In this case,
+             * munge the exec_size to match.
+             */
+            if (inst->size_written == inst->dst.component_size(8 * reg_unit(s.devinfo)))
+               inst->exec_size = 8 * reg_unit(s.devinfo);
+
             inst->resize_sources(1);
             progress = true;
 
@@ -475,7 +483,10 @@ brw_fs_opt_eliminate_find_live_channel(fs_visitor &s)
                bcast->opcode = BRW_OPCODE_MOV;
                if (!is_uniform(bcast->src[0]))
                   bcast->src[0] = component(bcast->src[0], 0);
+
                bcast->force_writemask_all = true;
+               bcast->exec_size = 8 * reg_unit(s.devinfo);
+               assert(bcast->size_written == bcast->dst.component_size(bcast->exec_size));
                bcast->resize_sources(1);
             }
          }

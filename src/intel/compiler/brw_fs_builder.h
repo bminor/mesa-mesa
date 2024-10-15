@@ -383,13 +383,19 @@ namespace brw {
          /* FIXME: We use a vector chan_index and dst to allow constant and
           * copy propagration to move result all the way into the consuming
           * instruction (typically a surface index or sampler index for a
-          * send). This uses 1 or 3 extra hw registers in 16 or 32 wide
-          * dispatch. Once we teach const/copy propagation about scalars we
+          * send). Once we teach const/copy propagation about scalars we
           * should go back to scalar destinations here.
           */
-         const brw_reg chan_index = vgrf(BRW_TYPE_UD);
+         const fs_builder xbld = scalar_group();
+         const brw_reg chan_index = xbld.vgrf(BRW_TYPE_UD);
 
-         exec_all().emit(SHADER_OPCODE_FIND_LIVE_CHANNEL, chan_index);
+         /* FIND_LIVE_CHANNEL will only write a single component after
+          * lowering. Munge size_written here to match the allocated size of
+          * chan_index.
+          */
+         exec_all().emit(SHADER_OPCODE_FIND_LIVE_CHANNEL, chan_index)
+            ->size_written = chan_index.component_size(xbld.dispatch_width());
+
          return BROADCAST(src, component(chan_index, 0));
       }
 
@@ -792,7 +798,10 @@ namespace brw {
       brw_reg
       BROADCAST(brw_reg value, brw_reg index) const
       {
-         const brw_reg dst = vgrf(value.type);
+         const fs_builder xbld = scalar_group();
+         const brw_reg dst = xbld.vgrf(value.type);
+
+         assert(is_uniform(index));
 
          /* Ensure that the source of a broadcast is always register aligned.
           * See brw_broadcast() non-scalar case for more details.
@@ -800,7 +809,12 @@ namespace brw {
          if (reg_offset(value) % (REG_SIZE * reg_unit(shader->devinfo)) != 0)
             value = MOV(value);
 
-         exec_all().emit(SHADER_OPCODE_BROADCAST, dst, value, index);
+         /* BROADCAST will only write a single component after lowering. Munge
+          * size_written here to match the allocated size of dst.
+          */
+         exec_all().emit(SHADER_OPCODE_BROADCAST, dst, value, index)
+            ->size_written = dst.component_size(xbld.dispatch_width());
+
          return component(dst, 0);
       }
 

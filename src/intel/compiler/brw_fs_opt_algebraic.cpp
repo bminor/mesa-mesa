@@ -464,6 +464,8 @@ brw_fs_opt_algebraic(fs_visitor &s)
          if (is_uniform(inst->src[0])) {
             inst->opcode = BRW_OPCODE_MOV;
             inst->force_writemask_all = true;
+            inst->exec_size = 8 * reg_unit(devinfo);
+            assert(inst->size_written == inst->dst.component_size(inst->exec_size));
             inst->resize_sources(1);
             progress = true;
          } else if (inst->src[1].file == IMM) {
@@ -480,6 +482,8 @@ brw_fs_opt_algebraic(fs_visitor &s)
             const unsigned comp = inst->src[1].ud & (inst->exec_size - 1);
             inst->src[0] = component(inst->src[0], comp);
             inst->force_writemask_all = true;
+            inst->exec_size = 8 * reg_unit(devinfo);
+            assert(inst->size_written == inst->dst.component_size(inst->exec_size));
             inst->resize_sources(1);
             progress = true;
          }
