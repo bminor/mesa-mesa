@@ -1504,7 +1504,7 @@
         "description": "glx: Fix the GLX_EXT_swap_control_tear drawable attributes",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5e9e45738353863672e6d42b52248de9ae4c70bb",
         "notes": null
