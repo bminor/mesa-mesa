@@ -305,6 +305,8 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
     * modifier selection. */
    panvk_image_select_mod(image, pCreateInfo);
 
+   image->vk.drm_format_mod = image->pimage.layout.modifier;
+
    *pImage = panvk_image_to_handle(image);
    return VK_SUCCESS;
 }
@@ -427,19 +429,5 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
       pan_kmod_bo_put(old_bo);
    }
 
-   return VK_SUCCESS;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL
-panvk_GetImageDrmFormatModifierPropertiesEXT(
-   VkDevice device, VkImage _image,
-   VkImageDrmFormatModifierPropertiesEXT *pProperties)
-{
-   VK_FROM_HANDLE(panvk_image, image, _image);
-
-   assert(pProperties->sType ==
-          VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT);
-
-   pProperties->drmFormatModifier = image->pimage.layout.modifier;
    return VK_SUCCESS;
 }
