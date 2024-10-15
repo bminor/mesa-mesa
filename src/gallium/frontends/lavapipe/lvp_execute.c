@@ -2438,6 +2438,34 @@ static void handle_copy_buffer_to_image(struct vk_cmd_queue_entry *cmd,
    }
 }
 
+static enum pipe_format
+find_depth_format(VkFormat format, VkImageAspectFlagBits aspect)
+{
+   if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) {
+      switch (format) {
+      case VK_FORMAT_D32_SFLOAT:
+      case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      case VK_FORMAT_D24_UNORM_S8_UINT:
+         return PIPE_FORMAT_Z32_FLOAT;
+      case VK_FORMAT_D16_UNORM:
+      case VK_FORMAT_D16_UNORM_S8_UINT:
+         return PIPE_FORMAT_Z16_UNORM;
+      default:
+         unreachable("unsupported format/aspect combo");
+      }
+   }
+   assert(aspect == VK_IMAGE_ASPECT_STENCIL_BIT);
+   switch (format) {
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+   case VK_FORMAT_D24_UNORM_S8_UINT:
+   case VK_FORMAT_D16_UNORM_S8_UINT:
+   case VK_FORMAT_S8_UINT:
+      return PIPE_FORMAT_S8_UINT;
+   default:
+      unreachable("unsupported format/aspect combo");
+   }
+}
+
 static void handle_copy_image(struct vk_cmd_queue_entry *cmd,
                               struct rendering_state *state)
 {
@@ -2453,30 +2481,73 @@ static void handle_copy_image(struct vk_cmd_queue_entry *cmd,
       const VkImageAspectFlagBits dst_aspects =
          copycmd->pRegions[i].dstSubresource.aspectMask;
       uint8_t dst_plane = lvp_image_aspects_to_plane(dst_image, dst_aspects);
-      struct pipe_box src_box;
+      struct pipe_box src_box, dst_box;
       src_box.x = region->srcOffset.x;
       src_box.y = region->srcOffset.y;
-      src_box.width = region->extent.width;
-      src_box.height = region->extent.height;
+      dst_box.x = region->dstOffset.x;
+      dst_box.y = region->dstOffset.y;
+      dst_box.width = src_box.width = region->extent.width;
+      dst_box.height = src_box.height = region->extent.height;
       if (src_image->planes[src_plane].bo->target == PIPE_TEXTURE_3D) {
-         src_box.depth = region->extent.depth;
+         dst_box.depth = src_box.depth = region->extent.depth;
          src_box.z = region->srcOffset.z;
+         dst_box.z = region->dstOffset.z;
       } else {
          src_box.depth = subresource_layercount(src_image, &region->srcSubresource);
+         dst_box.depth = subresource_layercount(dst_image, &region->dstSubresource);
          src_box.z = region->srcSubresource.baseArrayLayer;
+         dst_box.z = region->dstSubresource.baseArrayLayer;
       }
+
 
       unsigned dstz = dst_image->planes[dst_plane].bo->target == PIPE_TEXTURE_3D ?
                       region->dstOffset.z :
                       region->dstSubresource.baseArrayLayer;
-      state->pctx->resource_copy_region(state->pctx, dst_image->planes[dst_plane].bo,
-                                        region->dstSubresource.mipLevel,
-                                        region->dstOffset.x,
-                                        region->dstOffset.y,
-                                        dstz,
-                                        src_image->planes[src_plane].bo,
-                                        region->srcSubresource.mipLevel,
-                                        &src_box);
+      enum pipe_format src_format = src_image->planes[src_plane].bo->format,
+                       dst_format = dst_image->planes[dst_plane].bo->format;
+      /* special-casing for maintenance8 zs<->color copies */
+      if (util_format_is_depth_or_stencil(src_format) !=
+          util_format_is_depth_or_stencil(dst_format) &&
+          util_format_get_blocksize(src_format) != util_format_get_blocksize(dst_format)) {
+         if (util_format_is_depth_or_stencil(src_image->planes[src_plane].bo->format))
+            dst_format = find_depth_format(src_image->vk.format, region->srcSubresource.aspectMask);
+         else
+            src_format = find_depth_format(dst_image->vk.format, region->dstSubresource.aspectMask);
+         struct pipe_transfer *src_t, *dst_t;
+         void *src_data, *dst_data;
+         src_data = state->pctx->texture_map(state->pctx,
+                                             src_image->planes[src_plane].bo,
+                                             region->srcSubresource.mipLevel,
+                                             PIPE_MAP_READ,
+                                             &src_box,
+                                             &src_t);
+         dst_data = state->pctx->texture_map(state->pctx,
+                                             dst_image->planes[dst_plane].bo,
+                                             region->dstSubresource.mipLevel,
+                                             PIPE_MAP_WRITE,
+                                             &dst_box,
+                                             &dst_t);
+         copy_depth_box(dst_data, dst_format,
+                        dst_t->stride, dst_t->layer_stride,
+                        0, 0, 0,
+                        region->extent.width,
+                        region->extent.height,
+                        dst_box.depth,
+                        src_data, src_format,
+                        src_t->stride, src_t->layer_stride,
+                        0, 0, 0);
+         state->pctx->texture_unmap(state->pctx, src_t);
+         state->pctx->texture_unmap(state->pctx, dst_t);
+      } else {
+         state->pctx->resource_copy_region(state->pctx, dst_image->planes[dst_plane].bo,
+                                          region->dstSubresource.mipLevel,
+                                          region->dstOffset.x,
+                                          region->dstOffset.y,
+                                          dstz,
+                                          src_image->planes[src_plane].bo,
+                                          region->srcSubresource.mipLevel,
+                                          &src_box);
+      }
    }
 }
 
