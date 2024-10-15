@@ -1678,9 +1678,8 @@ clear_color_attachment(struct anv_cmd_buffer *cmd_buffer,
          anv_cmd_buffer_mark_image_fast_cleared(cmd_buffer, iview->image,
                                                 iview->planes[0].isl.format,
                                                 clear_color);
-         anv_cmd_buffer_load_clear_color_from_image(cmd_buffer,
-                                                    att->surface_state.state,
-                                                    iview->image);
+         anv_cmd_buffer_load_clear_color(cmd_buffer, att->surface_state.state,
+                                         iview);
       }
       return;
    }

@@ -862,14 +862,11 @@ genX(cmd_buffer_mark_image_written)(struct anv_cmd_buffer *cmd_buffer,
  * image's fast clear state buffer.
  */
 void
-genX(load_image_clear_color)(struct anv_cmd_buffer *cmd_buffer,
-                             struct anv_state surface_state,
-                             const struct anv_image *image)
+genX(cmd_buffer_load_clear_color)(struct anv_cmd_buffer *cmd_buffer,
+                                  struct anv_state surface_state,
+                                  const struct anv_image_view *iview)
 {
 #if GFX_VER < 10
-   assert(cmd_buffer && image);
-   assert(image->vk.aspects & VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV);
-
    struct anv_address ss_clear_addr =
       anv_state_pool_state_address(
          &cmd_buffer->device->internal_surface_state_pool,
@@ -878,8 +875,9 @@ genX(load_image_clear_color)(struct anv_cmd_buffer *cmd_buffer,
                       cmd_buffer->device->isl_dev.ss.clear_value_offset
          });
    const struct anv_address entry_addr =
-      anv_image_get_clear_color_addr(cmd_buffer->device, image,
+      anv_image_get_clear_color_addr(cmd_buffer->device, iview->image,
                                      VK_IMAGE_ASPECT_COLOR_BIT);
+
    unsigned copy_size = cmd_buffer->device->isl_dev.ss.clear_value_size;
 
    struct mi_builder b;
@@ -901,7 +899,7 @@ genX(load_image_clear_color)(struct anv_cmd_buffer *cmd_buffer,
     */
    anv_add_pending_pipe_bits(cmd_buffer,
                              ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
-                             "after load_image_clear_color surface state update");
+                             "after load_clear_color surface state update");
 #endif
 }
 
@@ -5417,9 +5415,8 @@ void genX(CmdBeginRendering)(
           iview->image->planes[0].aux_usage != ISL_AUX_USAGE_NONE &&
           iview->planes[0].isl.base_level == 0 &&
           iview->planes[0].isl.base_array_layer == 0) {
-         genX(load_image_clear_color)(cmd_buffer,
-                                      gfx->color_att[i].surface_state.state,
-                                      iview->image);
+         struct anv_state surf_state = gfx->color_att[i].surface_state.state;
+         genX(cmd_buffer_load_clear_color)(cmd_buffer, surf_state, iview);
       }
 
       if (att->resolveMode != VK_RESOLVE_MODE_NONE) {
