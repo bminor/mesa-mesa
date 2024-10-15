@@ -1982,12 +1982,6 @@ else
   prog_flex_cpp = prog_flex
 endif
 
-dep_selinux = null_dep
-if get_option('selinux')
-  dep_selinux = dependency('libselinux')
-  pre_args += '-DMESA_SELINUX'
-endif
-
 _libunwind = get_option('libunwind') \
   .require(not with_platform_android, error_message : 'Android requires the use of the backtrace library, not libunwind')
 if host_machine.system() == 'darwin'

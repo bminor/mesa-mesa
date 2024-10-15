@@ -497,10 +497,8 @@ option(
 option(
   'selinux',
   type : 'boolean',
-  value : false,
-  description : 'Build an SELinux-aware Mesa.  This currently disables ' +
-                'execmem support at runtime unless SELinux is configured ' +
-                'with allow_execmem.'
+  deprecated : true,
+  description : 'Does nothing, left here for a while to avoid build breakages.',
 )
 
 option(

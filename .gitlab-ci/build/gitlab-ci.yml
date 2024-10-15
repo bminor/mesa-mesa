@@ -354,7 +354,6 @@ fedora-release:
       -D platforms=x11,wayland
     EXTRA_OPTION: >
       -D osmesa=true
-      -D selinux=true
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,nir,nouveau,lima,panfrost,imagination
       -D vulkan-layers=device-select,overlay
       -D intel-rt=enabled
