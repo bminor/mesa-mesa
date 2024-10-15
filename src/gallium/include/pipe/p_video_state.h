@@ -1292,6 +1292,8 @@ struct pipe_av1_enc_seq_param
       uint32_t force_integer_mv:2;
       uint32_t initial_display_delay_present_flag:1;
       uint32_t choose_integer_mv:1;
+      uint32_t still_picture:1;
+      uint32_t reduced_still_picture_header:1;
    } seq_bits;
 
    /* timing info params */
