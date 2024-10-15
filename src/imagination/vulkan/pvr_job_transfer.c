@@ -392,8 +392,8 @@ pvr_pbe_src_format_normal(VkFormat src_format,
          if (dont_force_pbe) {
             count = vk_format_get_blocksizebits(dst_format) / 32U;
          } else {
-            count =
-               pvr_vk_format_get_common_color_channel_count(src_format, dst_format);
+            count = pvr_vk_format_get_common_color_channel_count(src_format,
+                                                                 dst_format);
          }
 
          if (!src_signed && !dst_signed) {
@@ -487,7 +487,7 @@ pvr_pbe_src_format_normal(VkFormat src_format,
                count = vk_format_get_blocksizebits(dst_format) / 32U;
             } else {
                count = pvr_vk_format_get_common_color_channel_count(src_format,
-                                                                dst_format);
+                                                                    dst_format);
             }
 
             switch (count) {
@@ -997,7 +997,7 @@ static void pvr_pbe_setup_swizzle(const struct pvr_transfer_cmd *transfer_cmd,
             uint32_t tmp;
 
             tmp = pvr_vk_format_get_common_color_channel_count(src_format,
-                                                           dst->vk_format);
+                                                               dst->vk_format);
 
             count = MAX2(count, tmp);
          }

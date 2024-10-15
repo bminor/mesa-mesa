@@ -963,7 +963,8 @@ static void pvr_setup_pbe_state(
                                     &surface_params.source_format,
                                     &surface_params.gamma);
 
-   surface_params.is_normalized = pvr_vk_format_is_fully_normalized(iview->vk.format);
+   surface_params.is_normalized =
+      pvr_vk_format_is_fully_normalized(iview->vk.format);
    surface_params.pbe_packmode = pvr_get_pbe_packmode(iview->vk.format);
    surface_params.nr_components = vk_format_get_nr_components(iview->vk.format);
 
@@ -7946,9 +7947,9 @@ void pvr_CmdWaitEvents2(VkCommandBuffer commandBuffer,
 }
 
 void pvr_CmdWriteTimestamp2(VkCommandBuffer commandBuffer,
-                               VkPipelineStageFlags2 stage,
-                               VkQueryPool queryPool,
-                               uint32_t query)
+                            VkPipelineStageFlags2 stage,
+                            VkQueryPool queryPool,
+                            uint32_t query)
 {
    unreachable("Timestamp queries are not supported.");
 }

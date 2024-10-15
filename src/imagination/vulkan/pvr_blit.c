@@ -212,7 +212,7 @@ static void pvr_setup_transfer_surface(struct pvr_device *device,
 }
 
 void pvr_CmdBlitImage2(VkCommandBuffer commandBuffer,
-                          const VkBlitImageInfo2 *pBlitImageInfo)
+                       const VkBlitImageInfo2 *pBlitImageInfo)
 {
    PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    PVR_FROM_HANDLE(pvr_image, src, pBlitImageInfo->srcImage);
@@ -688,7 +688,7 @@ static bool pvr_can_merge_ds_regions(const VkImageCopy2 *pRegionA,
 }
 
 void pvr_CmdCopyImage2(VkCommandBuffer commandBuffer,
-                          const VkCopyImageInfo2 *pCopyImageInfo)
+                       const VkCopyImageInfo2 *pCopyImageInfo)
 {
    PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    PVR_FROM_HANDLE(pvr_image, src, pCopyImageInfo->srcImage);
@@ -1355,7 +1355,7 @@ void pvr_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
 }
 
 void pvr_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
-                           const VkCopyBufferInfo2 *pCopyBufferInfo)
+                        const VkCopyBufferInfo2 *pCopyBufferInfo)
 {
    PVR_FROM_HANDLE(pvr_buffer, src, pCopyBufferInfo->srcBuffer);
    PVR_FROM_HANDLE(pvr_buffer, dst, pCopyBufferInfo->dstBuffer);
@@ -2265,7 +2265,7 @@ void pvr_CmdClearAttachments(VkCommandBuffer commandBuffer,
 }
 
 void pvr_CmdResolveImage2(VkCommandBuffer commandBuffer,
-                             const VkResolveImageInfo2 *pResolveImageInfo)
+                          const VkResolveImageInfo2 *pResolveImageInfo)
 {
    PVR_FROM_HANDLE(pvr_image, src, pResolveImageInfo->srcImage);
    PVR_FROM_HANDLE(pvr_image, dst, pResolveImageInfo->dstImage);
