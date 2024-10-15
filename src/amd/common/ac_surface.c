@@ -3577,6 +3577,149 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
    return true;
 }
 
+static void gfx9_compute_surface_modifier(const struct radeon_info *info,
+                                          struct radeon_surf *surf)
+{
+   unsigned block_size_bits = 0;
+   switch (surf->u.gfx9.swizzle_mode >> 2) {
+   case 0: /* 256B */
+      block_size_bits = 8;
+      break;
+   case 1: /* 4KiB */
+   case 5: /* 4KiB _X */
+      block_size_bits = 12;
+      break;
+   case 2: /* 64KiB */
+   case 4: /* 64 KiB _T */
+   case 6: /* 64 KiB _X */
+      block_size_bits = 16;
+      break;
+   case 7: /* 256 KiB */
+      block_size_bits = 18;
+      break;
+   default:
+      UNREACHABLE("invalid tile mode");
+   }
+
+   bool is_xor = surf->u.gfx9.swizzle_mode >= 16;
+   if (is_xor) {
+      if (info->gfx_level == GFX9) {
+         unsigned pipe_xor_bits =
+            MIN2(G_0098F8_NUM_PIPES(info->gb_addr_config) +
+                 G_0098F8_NUM_SHADER_ENGINES_GFX9(info->gb_addr_config),
+                 block_size_bits - 8);
+
+         unsigned bank_xor_bits =
+            MIN2(G_0098F8_NUM_BANKS(info->gb_addr_config),
+                 block_size_bits - 8 - pipe_xor_bits);
+
+         surf->modifier |=
+            AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits) |
+            AMD_FMT_MOD_SET(BANK_XOR_BITS, bank_xor_bits);
+      } else {
+         unsigned pipe_xor_bits =
+            MIN2(G_0098F8_NUM_PIPES(info->gb_addr_config), block_size_bits - 8);
+
+         unsigned pkrs = 0;
+         if (info->gfx_level == GFX10_3) {
+            pkrs = MIN2(G_0098F8_NUM_PKRS(info->gb_addr_config),
+                        block_size_bits - 8 - pipe_xor_bits);
+         } else if (info->gfx_level == GFX11) {
+            pkrs = G_0098F8_NUM_PKRS(info->gb_addr_config);
+         }
+
+         surf->modifier |=
+            AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits) |
+            AMD_FMT_MOD_SET(PACKERS, pkrs);
+      }
+   }
+
+   bool is_dcc = !!surf->meta_offset;
+   if (is_dcc) {
+      surf->modifier |=
+         AMD_FMT_MOD_SET(DCC, 1) |
+         AMD_FMT_MOD_SET(DCC_INDEPENDENT_64B, surf->u.gfx9.color.dcc.independent_64B_blocks) |
+         AMD_FMT_MOD_SET(DCC_INDEPENDENT_128B, surf->u.gfx9.color.dcc.independent_128B_blocks) |
+         AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, surf->u.gfx9.color.dcc.max_compressed_block_size) |
+         AMD_FMT_MOD_SET(DCC_PIPE_ALIGN, surf->u.gfx9.color.dcc.pipe_aligned);
+
+      if (info->gfx_level < GFX11)
+         surf->modifier |= AMD_FMT_MOD_SET(DCC_CONSTANT_ENCODE, info->has_dcc_constant_encode);
+
+      if (surf->display_dcc_offset)
+         surf->modifier |= AMD_FMT_MOD_SET(DCC_RETILE, 1);
+
+      if (info->gfx_level == GFX9 &&
+          (surf->u.gfx9.color.dcc.pipe_aligned || surf->display_dcc_offset)) {
+         unsigned pipes = G_0098F8_NUM_PIPES(info->gb_addr_config);
+         unsigned rb = G_0098F8_NUM_RB_PER_SE(info->gb_addr_config) +
+            G_0098F8_NUM_SHADER_ENGINES_GFX9(info->gb_addr_config);
+
+         surf->modifier |= AMD_FMT_MOD_SET(PIPE, pipes) | AMD_FMT_MOD_SET(RB, rb);
+      }
+   }
+}
+
+static void gfx12_compute_surface_modifier(struct radeon_surf *surf)
+{
+   if (surf->u.gfx9.gfx12_enable_dcc) {
+      surf->modifier |=
+         AMD_FMT_MOD_SET(DCC, 1) |
+         AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, surf->u.gfx9.color.dcc.max_compressed_block_size);
+   }
+}
+
+void ac_compute_surface_modifier(const struct radeon_info *info,
+                                 struct radeon_surf *surf,
+                                 unsigned samples)
+{
+   if (info->gfx_level < GFX9 || surf->modifier != DRM_FORMAT_MOD_INVALID)
+      return;
+
+   /* skip depth/stencil, PRT, VRS, 1D/3D and MSAA surface */
+   if (surf->flags & (RADEON_SURF_Z_OR_SBUFFER | RADEON_SURF_PRT | RADEON_SURF_VRS_RATE) ||
+       surf->u.gfx9.resource_type != RADEON_RESOURCE_2D ||
+       samples > 1)
+      return;
+
+   if (surf->is_linear) {
+      surf->modifier = DRM_FORMAT_MOD_LINEAR;
+      return;
+   }
+
+   unsigned version = 0;
+   switch (info->gfx_level) {
+   case GFX9:
+      version = AMD_FMT_MOD_TILE_VER_GFX9;
+      break;
+   case GFX10:
+      version = AMD_FMT_MOD_TILE_VER_GFX10;
+      break;
+   case GFX10_3:
+      version = AMD_FMT_MOD_TILE_VER_GFX10_RBPLUS;
+      break;
+   case GFX11:
+   case GFX11_5:
+      version = AMD_FMT_MOD_TILE_VER_GFX11;
+      break;
+   case GFX12:
+      version = AMD_FMT_MOD_TILE_VER_GFX12;
+      break;
+   default:
+      UNREACHABLE("invalid gfx level");
+   }
+
+   surf->modifier =
+      AMD_FMT_MOD |
+      AMD_FMT_MOD_SET(TILE_VERSION, version) |
+      AMD_FMT_MOD_SET(TILE, surf->u.gfx9.swizzle_mode);
+
+   if (info->gfx_level >= GFX12)
+      gfx12_compute_surface_modifier(surf);
+   else
+      gfx9_compute_surface_modifier(info, surf);
+}
+
 int ac_compute_surface(struct ac_addrlib *addrlib, const struct radeon_info *info,
                        const struct ac_surf_config *config, enum radeon_surf_mode mode,
                        struct radeon_surf *surf)
