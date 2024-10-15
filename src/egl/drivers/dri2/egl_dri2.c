@@ -629,11 +629,8 @@ dri2_setup_screen(_EGLDisplay *disp)
 
 #ifdef HAVE_LIBDRM
    unsigned caps = pscreen->caps.dmabuf;
-   /* set if both import and export are suported */
-   if (dri2_dpy->multibuffers_available) {
-      dri2_dpy->has_dmabuf_import = (caps & DRM_PRIME_CAP_IMPORT) > 0;
-      dri2_dpy->has_dmabuf_export = (caps & DRM_PRIME_CAP_EXPORT) > 0;
-   }
+   dri2_dpy->has_dmabuf_import = (caps & DRM_PRIME_CAP_IMPORT) > 0;
+   dri2_dpy->has_dmabuf_export = (caps & DRM_PRIME_CAP_EXPORT) > 0;
 #endif
 #ifdef HAVE_ANDROID_PLATFORM
    dri2_dpy->has_native_fence_fd = pscreen->caps.native_fence_fd;
