@@ -1059,6 +1059,8 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
           sscreen->info.vcn_ip_version == VCN_4_0_3)
          return true;
       return false;
+   case PIPE_VIDEO_CAP_SKIP_CLEAR_SURFACE:
+      return sscreen->info.is_amdgpu && sscreen->info.drm_minor >= 59;
    default:
       return 0;
    }
