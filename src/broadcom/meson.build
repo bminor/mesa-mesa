@@ -75,6 +75,10 @@ libbroadcom_v3d = static_library(
 
 subdir('perfcntrs')
 
+if with_perfetto and (with_datasources.contains('v3d') or with_datasources.contains('auto'))
+  subdir('ds')
+endif
+
 if with_broadcom_vk
   subdir('vulkan')
 endif
