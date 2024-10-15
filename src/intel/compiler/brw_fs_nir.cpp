@@ -4584,7 +4584,7 @@ fs_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
 
    case nir_intrinsic_load_workgroup_size: {
       /* Should have been lowered by brw_nir_lower_cs_intrinsics() or
-       * crocus/iris_setup_uniforms() for the variable group size case.
+       * iris_setup_uniforms() for the variable group size case.
        */
       unreachable("Should have been lowered");
       break;

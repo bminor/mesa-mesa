@@ -1184,9 +1184,6 @@ fs_visitor::assign_constant_locations()
 
    /* Now that we know how many regular uniforms we'll push, reduce the
     * UBO push ranges so we don't exceed the 3DSTATE_CONSTANT limits.
-    *
-    * If changing this value, note the limitation about total_regs in
-    * brw_curbe.c/crocus_state.c
     */
    const unsigned max_push_length = 64;
    unsigned push_length =
