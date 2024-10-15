@@ -1180,8 +1180,10 @@ uint32_t ac_compute_num_tess_patches(const struct radeon_info *info, uint32_t nu
     * use LDS for the inputs and outputs.
     */
    if (lds_per_patch) {
-      ASSERTED const unsigned max_lds_size = info->gfx_level >= GFX9 ? 64 * 1024 : 32 * 1024; /* hw limit */
-      const unsigned target_lds_size = max_lds_size / 2; /* target at least 2 workgroups per CU */
+      const unsigned max_lds_size = (info->gfx_level >= GFX9 ? 64 * 1024 : 32 * 1024); /* hw limit */
+      /* Target at least 2 workgroups per CU. */
+      const unsigned target_lds_size = max_lds_size / 2 -
+                                       (info->gfx_level >= GFX11 ? AC_HS_MSG_VOTE_LDS_BYTES : 0);
       num_patches = MIN2(num_patches, target_lds_size / lds_per_patch);
       assert(num_patches * lds_per_patch <= max_lds_size);
    }
