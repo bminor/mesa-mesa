@@ -38,7 +38,6 @@ DEPS=(
     elfutils-dev
     libclc-dev
     libdrm-dev
-    libselinux-dev
     libva-dev
     libpciaccess-dev
     zlib-dev

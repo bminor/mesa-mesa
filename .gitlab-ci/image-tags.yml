@@ -35,9 +35,9 @@ variables:
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20241002-pyutils"
 
-   ALPINE_X86_64_BUILD_TAG: "20240814-var"
+   ALPINE_X86_64_BUILD_TAG: "20241018-no-selinux"
    ALPINE_X86_64_LAVA_SSH_TAG: "20240401-wlproto"
-   FEDORA_X86_64_BUILD_TAG: "20240717-pyyaml"
+   FEDORA_X86_64_BUILD_TAG: "20241018-no-selinux"
    KERNEL_TAG: "v6.6.21-mesa-f8ea"
    KERNEL_REPO: "gfx-ci/linux"
    PKG_REPO_REV: "bca9635d"
