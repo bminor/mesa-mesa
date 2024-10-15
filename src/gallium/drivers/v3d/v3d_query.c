@@ -28,11 +28,21 @@ v3d_get_driver_query_group_info(struct pipe_screen *pscreen, unsigned index,
                                 struct pipe_driver_query_group_info *info)
 {
         struct v3d_screen *screen = v3d_screen(pscreen);
-        struct v3d_device_info *devinfo = &screen->devinfo;
 
-        return v3d_X(devinfo, get_driver_query_group_info_perfcnt)(screen,
-                                                                   index,
-                                                                   info);
+        if (!screen->has_perfmon)
+                return 0;
+
+        if (!info)
+                return 1;
+
+        if (index > 0)
+                return 0;
+
+        info->name = "V3D counters";
+        info->max_active_queries = DRM_V3D_MAX_PERF_COUNTERS;
+        info->num_queries = screen->perfcnt->max_perfcnt;
+
+        return 1;
 }
 
 int
@@ -40,11 +50,26 @@ v3d_get_driver_query_info(struct pipe_screen *pscreen, unsigned index,
                           struct pipe_driver_query_info *info)
 {
         struct v3d_screen *screen = v3d_screen(pscreen);
-        struct v3d_device_info *devinfo = &screen->devinfo;
+        struct v3d_perfcntr_desc *desc;
 
-        return v3d_X(devinfo, get_driver_query_info_perfcnt)(screen,
-                                                             index,
-                                                             info);
+        if (!screen->has_perfmon)
+                return 0;
+
+        if (!info)
+                return screen->perfcnt->max_perfcnt;
+
+        desc = v3d_perfcntrs_get_by_index(screen->perfcnt, index);
+        if (!desc)
+                return 0;
+
+        info->name = desc->name;
+        info->group_id = 0;
+        info->query_type = PIPE_QUERY_DRIVER_SPECIFIC + index;
+        info->result_type = PIPE_DRIVER_QUERY_RESULT_TYPE_CUMULATIVE;
+        info->type = PIPE_DRIVER_QUERY_TYPE_UINT64;
+        info->flags = PIPE_DRIVER_QUERY_FLAG_BATCH;
+
+        return 1;
 }
 
 static struct pipe_query *
@@ -60,12 +85,8 @@ v3d_create_batch_query(struct pipe_context *pctx, unsigned num_queries,
                        unsigned *query_types)
 {
         struct v3d_context *v3d = v3d_context(pctx);
-        struct v3d_screen *screen = v3d->screen;
-        struct v3d_device_info *devinfo = &screen->devinfo;
 
-        return v3d_X(devinfo, create_batch_query_perfcnt)(v3d_context(pctx),
-                                                          num_queries,
-                                                          query_types);
+        return v3d_create_batch_query_pipe(v3d, num_queries, query_types);
 }
 
 static void

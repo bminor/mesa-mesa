@@ -28,8 +28,7 @@
  */
 
 #include "v3d_query.h"
-
-#include "common/v3d_performance_counters.h"
+#include "v3d_screen.h"
 
 struct v3d_query_perfcnt
 {
@@ -49,77 +48,6 @@ kperfmon_destroy(struct v3d_context *v3d, struct v3d_perfmon_state *perfmon)
         if (ret != 0)
                 fprintf(stderr, "failed to destroy perfmon %d: %s\n",
                         perfmon->kperfmon_id, strerror(errno));
-}
-
-int
-v3dX(get_driver_query_group_info_perfcnt)(struct v3d_screen *screen, unsigned index,
-                                          struct pipe_driver_query_group_info *info)
-{
-        struct v3d_device_info *devinfo = &screen->devinfo;
-
-        if (!screen->has_perfmon)
-                return 0;
-
-        if (!info)
-                return 1;
-
-        if (index > 0)
-                return 0;
-
-        info->name = "V3D counters";
-        info->max_active_queries = DRM_V3D_MAX_PERF_COUNTERS;
-        info->num_queries = devinfo->max_perfcnt ? devinfo->max_perfcnt
-                                                 : ARRAY_SIZE(v3d_performance_counters);
-
-        return 1;
-}
-
-int
-v3dX(get_driver_query_info_perfcnt)(struct v3d_screen *screen, unsigned index,
-                                    struct pipe_driver_query_info *info)
-{
-        struct v3d_device_info *devinfo = &screen->devinfo;
-        unsigned max_perfcnt = devinfo->max_perfcnt ? devinfo->max_perfcnt
-                                                    : ARRAY_SIZE(v3d_performance_counters);
-
-        if (!screen->has_perfmon)
-                return 0;
-
-        if (!info)
-                return max_perfcnt;
-
-        if (index >= max_perfcnt)
-                return 0;
-
-        if (screen->perfcnt_names) {
-                if (screen->perfcnt_names[index]) {
-                        info->name = screen->perfcnt_names[index];
-                } else {
-                        struct drm_v3d_perfmon_get_counter counter = {
-                                .counter = index,
-                        };
-                        int ret = v3d_ioctl(screen->fd, DRM_IOCTL_V3D_PERFMON_GET_COUNTER, &counter);
-                        if (ret != 0) {
-                                fprintf(stderr, "Failed to get performance counter %d: %s\n",
-                                        index, strerror(errno));
-                                return 0;
-                        }
-
-                        screen->perfcnt_names[index] = ralloc_strdup(screen->perfcnt_names,
-                                                                     (const char *) counter.name);
-                        info->name = screen->perfcnt_names[index];
-                }
-        } else {
-                info->name = v3d_performance_counters[index][V3D_PERFCNT_NAME];
-        }
-
-        info->group_id = 0;
-        info->query_type = PIPE_QUERY_DRIVER_SPECIFIC + index;
-        info->result_type = PIPE_DRIVER_QUERY_RESULT_TYPE_CUMULATIVE;
-        info->type = PIPE_DRIVER_QUERY_TYPE_UINT64;
-        info->flags = PIPE_DRIVER_QUERY_FLAG_BATCH;
-
-        return 1;
 }
 
 static void
@@ -259,15 +187,14 @@ static const struct v3d_query_funcs perfcnt_query_funcs = {
 };
 
 struct pipe_query *
-v3dX(create_batch_query_perfcnt)(struct v3d_context *v3d, unsigned num_queries,
-                                 unsigned *query_types)
+v3d_create_batch_query_pipe(struct v3d_context *v3d, unsigned num_queries,
+                            unsigned *query_types)
 {
+        struct v3d_screen *screen = v3d->screen;
         struct v3d_query_perfcnt *pquery = NULL;
         struct v3d_query *query;
         struct v3d_perfmon_state *perfmon = NULL;
-        struct v3d_device_info *devinfo = &v3d->screen->devinfo;
-        unsigned max_perfcnt = devinfo->max_perfcnt ? devinfo->max_perfcnt
-                                                    : ARRAY_SIZE(v3d_performance_counters);
+        unsigned max_perfcnt = screen->perfcnt->max_perfcnt;
         int i;
 
         /* Validate queries */

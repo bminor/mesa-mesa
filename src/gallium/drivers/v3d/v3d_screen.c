@@ -76,8 +76,8 @@ v3d_screen_destroy(struct pipe_screen *pscreen)
 {
         struct v3d_screen *screen = v3d_screen(pscreen);
 
-        ralloc_free(screen->perfcnt_names);
-        screen->perfcnt_names = NULL;
+        v3d_perfcntrs_fini(screen->perfcnt);
+        screen->perfcnt = NULL;
 
         _mesa_hash_table_destroy(screen->bo_handles, NULL);
         v3d_bufmgr_destroy(pscreen);
@@ -944,14 +944,9 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
         if (!v3d_get_device_info(screen->fd, &screen->devinfo, &v3d_ioctl))
                 goto fail;
 
-        const uint8_t max_perfcnt = screen->devinfo.max_perfcnt;
-        if (max_perfcnt) {
-                screen->perfcnt_names = rzalloc_array(screen, char*, max_perfcnt);
-                if (!screen->perfcnt_names) {
-                        fprintf(stderr, "Error allocating performance counters names");
-                        goto fail;
-                }
-        }
+        screen->perfcnt = v3d_perfcntrs_init(&screen->devinfo, screen->fd);
+        if (!screen->perfcnt)
+                goto fail;
 
         driParseConfigFiles(config->options, config->options_info, 0, "v3d",
                             NULL, NULL, NULL, 0, NULL, 0);

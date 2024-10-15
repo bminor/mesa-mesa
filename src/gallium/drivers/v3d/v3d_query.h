@@ -42,5 +42,7 @@ struct v3d_query
 };
 
 struct pipe_query *v3d_create_query_pipe(struct v3d_context *v3d, unsigned query_type, unsigned index);
+struct pipe_query *v3d_create_batch_query_pipe(struct v3d_context *v3d, unsigned num_queries,
+                                               unsigned *query_types);
 
 #endif /* V3D_QUERY_H */
