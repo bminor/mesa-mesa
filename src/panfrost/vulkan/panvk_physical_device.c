@@ -963,8 +963,6 @@ format_is_supported(struct panvk_physical_device *physical_device,
       uint32_t supported_compr_fmts =
          panfrost_query_compressed_formats(&physical_device->kmod.props);
 
-      assert(fmt.texfeat_bit < 32);
-
       if (!(BITFIELD_BIT(fmt.texfeat_bit) & supported_compr_fmts))
          return false;
    }
