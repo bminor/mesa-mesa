@@ -32,9 +32,7 @@
 #include "vulkan/vulkan_core.h"
 
 struct hk_query_report {
-   /* TODO: do we want this to be legit u64? */
-   uint32_t value;
-   uint32_t padding;
+   uint64_t value;
 };
 
 static uint16_t *
@@ -311,6 +309,8 @@ emit_zero_queries(struct hk_cmd_buffer *cmd, struct hk_query_pool *pool,
       for (unsigned j = 0; j < hk_reports_per_query(pool); ++j) {
          hk_queue_write(cmd, report + (j * sizeof(struct hk_query_report)), 0,
                         false);
+         hk_queue_write(cmd, report + (j * sizeof(struct hk_query_report)) + 4,
+                        0, false);
       }
    }
 }
