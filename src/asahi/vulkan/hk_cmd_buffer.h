@@ -729,6 +729,7 @@ void hk_cdm_cache_flush(struct hk_device *dev, struct hk_cs *cs);
 
 struct hk_grid {
    bool indirect;
+   bool indirect_local;
    union {
       uint32_t count[3];
       uint64_t ptr;
@@ -745,6 +746,16 @@ static struct hk_grid
 hk_grid_indirect(uint64_t ptr)
 {
    return (struct hk_grid){.indirect = true, .ptr = ptr};
+}
+
+static struct hk_grid
+hk_grid_indirect_local(uint64_t ptr)
+{
+   return (struct hk_grid){
+      .indirect = true,
+      .indirect_local = true,
+      .ptr = ptr,
+   };
 }
 
 void hk_dispatch_with_usc(struct hk_device *dev, struct hk_cs *cs,
