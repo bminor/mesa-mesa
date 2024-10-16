@@ -3481,17 +3481,6 @@ radv_emit_clipping(struct radv_cmd_buffer *cmd_buffer)
          S_028810_DX_CLIP_SPACE_DEF(!d->vk.vp.depth_clip_negative_one_to_one) | S_028810_DX_LINEAR_ATTR_CLIP_ENA(1));
 }
 
-static bool
-radv_is_mrt0_dual_src(struct radv_cmd_buffer *cmd_buffer)
-{
-   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-
-   if (!d->vk.cb.attachments[0].write_mask || !d->vk.cb.attachments[0].blend_enable)
-      return false;
-
-   return radv_can_enable_dual_src(&d->vk.cb.attachments[0]);
-}
-
 static void
 radv_emit_logic_op(struct radv_cmd_buffer *cmd_buffer)
 {
@@ -3508,7 +3497,7 @@ radv_emit_logic_op(struct radv_cmd_buffer *cmd_buffer)
 
    if (pdev->info.has_rbplus) {
       /* RB+ doesn't work with dual source blending, logic op and CB_RESOLVE. */
-      bool mrt0_is_dual_src = radv_is_mrt0_dual_src(cmd_buffer);
+      const bool mrt0_is_dual_src = radv_can_enable_dual_src(&d->vk.cb.attachments[0]);
 
       cb_color_control |= S_028808_DISABLE_DUAL_QUAD(mrt0_is_dual_src || d->vk.cb.logic_op_enable ||
                                                      cmd_buffer->state.custom_blend_mode == V_028808_CB_RESOLVE);
@@ -5318,7 +5307,7 @@ radv_emit_color_blend(struct radv_cmd_buffer *cmd_buffer)
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned cb_blend_control[MAX_RTS], sx_mrt_blend_opt[MAX_RTS];
-   bool mrt0_is_dual_src = radv_is_mrt0_dual_src(cmd_buffer);
+   const bool mrt0_is_dual_src = radv_can_enable_dual_src(&d->vk.cb.attachments[0]);
 
    for (unsigned i = 0; i < MAX_RTS; i++) {
       VkBlendOp eqRGB = d->vk.cb.attachments[i].color_blend_op;
@@ -5457,7 +5446,7 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
          color_remap[state.color_attachment_mappings[i]] = i;
    }
 
-   state.mrt0_is_dual_src = radv_is_mrt0_dual_src(cmd_buffer);
+   state.mrt0_is_dual_src = radv_can_enable_dual_src(&d->vk.cb.attachments[0]);
 
    if (d->vk.ms.alpha_to_coverage_enable) {
       /* Select a color export format with alpha when alpha to coverage is enabled. */
@@ -5654,7 +5643,7 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
       radv_emit_clipping(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_LOGIC_OP | RADV_DYNAMIC_LOGIC_OP_ENABLE | RADV_DYNAMIC_COLOR_WRITE_MASK |
-                 RADV_DYNAMIC_COLOR_BLEND_ENABLE | RADV_DYNAMIC_COLOR_BLEND_EQUATION))
+                 RADV_DYNAMIC_COLOR_BLEND_EQUATION))
       radv_emit_logic_op(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_COLOR_WRITE_ENABLE | RADV_DYNAMIC_COLOR_WRITE_MASK))
@@ -5678,8 +5667,8 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
    if (states & (RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_ENABLE))
       radv_emit_depth_clamp_enable(cmd_buffer);
 
-   if (states & (RADV_DYNAMIC_COLOR_BLEND_ENABLE | RADV_DYNAMIC_COLOR_WRITE_MASK | RADV_DYNAMIC_COLOR_BLEND_EQUATION |
-                 RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE))
+   if (states &
+       (RADV_DYNAMIC_COLOR_BLEND_ENABLE | RADV_DYNAMIC_COLOR_BLEND_EQUATION | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE))
       radv_emit_color_blend(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE))
