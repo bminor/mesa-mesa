@@ -380,6 +380,18 @@ a630-traces-performance:
     GIT_STRATEGY: none
     HWCI_FREQ_MAX: "true"
 
+a750-gl:
+  extends:
+    - .b2c-arm64-test-gl
+    - .a750-mupuf
+    - .valve-freedreno-manual-rules
+  timeout: 30m  # base runtime 11min total, 8min of testing
+  variables:
+    B2C_TIMEOUT_BOOT_MINUTES: 22
+    B2C_TIMEOUT_OVERALL_MINUTES: 25
+    HWCI_TEST_SCRIPT: install/deqp-runner.sh
+    DEQP_SUITE: freedreno-a750
+
 a750-piglit-cl:
   extends:
     - .b2c-arm64-test-gl
