@@ -3018,16 +3018,17 @@ add_const_offset_to_base_block(nir_block *block, nir_builder *b,
              !nir_intrinsic_io_semantics(intrin).per_view) {
             unsigned off = nir_src_as_uint(*offset);
 
-            nir_intrinsic_set_base(intrin, nir_intrinsic_base(intrin) + off);
+            if (off) {
+               nir_intrinsic_set_base(intrin, nir_intrinsic_base(intrin) + off);
 
-            sem.location += off;
+               sem.location += off;
+               b->cursor = nir_before_instr(&intrin->instr);
+               nir_src_rewrite(offset, nir_imm_int(b, 0));
+               progress = true;
+            }
             /* non-indirect indexing should reduce num_slots */
             sem.num_slots = is_dual_slot(intrin) ? 2 : 1;
             nir_intrinsic_set_io_semantics(intrin, sem);
-
-            b->cursor = nir_before_instr(&intrin->instr);
-            nir_src_rewrite(offset, nir_imm_int(b, 0));
-            progress = true;
          }
       }
    }
