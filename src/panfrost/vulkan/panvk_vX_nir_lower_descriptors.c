@@ -512,7 +512,7 @@ get_resource_deref_binding(nir_deref_instr *deref, uint32_t *set,
 
          /* Zero means variable array. The minus one should give us UINT32_MAX,
           * which matches what we want. */
-         *max_idx = glsl_array_size(nir_deref_instr_parent(deref)->type) - 1;
+         *max_idx = ((uint32_t)glsl_array_size(nir_deref_instr_parent(deref)->type)) - 1;
       }
 
       deref = nir_deref_instr_parent(deref);
