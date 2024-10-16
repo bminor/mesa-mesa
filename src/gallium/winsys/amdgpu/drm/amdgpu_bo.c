@@ -1305,17 +1305,32 @@ static void amdgpu_buffer_get_metadata(struct radeon_winsys *rws,
    struct amdgpu_winsys *aws = amdgpu_winsys(rws);
    struct amdgpu_bo_real *bo = get_real_bo(amdgpu_winsys_bo(_buf));
    struct amdgpu_bo_info info = {0};
+   uint32_t md_version, md_flags;
+   enum amd_gfx_level gfx_level = aws->info.gfx_level;
    int r;
 
    r = amdgpu_bo_query_info(bo->bo_handle, &info);
    if (r)
       return;
 
-   ac_surface_apply_bo_metadata(&aws->info, surf, info.metadata.tiling_info,
-                                &md->mode);
-
    md->size_metadata = info.metadata.size_metadata;
    memcpy(md->metadata, info.metadata.umd_metadata, sizeof(md->metadata));
+
+   md_version = md->metadata[0] & 0xffff;
+   if (md_version >= 3 && md->size_metadata > 4) {
+      md_flags = md->metadata[0] >> 16;
+      if (md_flags & (1u << AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT)) {
+         /* The overriden gfx_level is always the last dword. */
+         gfx_level = md->metadata[md->size_metadata / 4 - 1];
+
+         /* Fallback to the default value if the value we got is incorrect. */
+         if (gfx_level < GFX6 || gfx_level >= NUM_GFX_VERSIONS)
+            gfx_level = aws->info.gfx_level;
+      }
+   }
+
+   ac_surface_apply_bo_metadata(gfx_level, surf, info.metadata.tiling_info,
+                                &md->mode);
 }
 
 static void amdgpu_buffer_set_metadata(struct radeon_winsys *rws,

@@ -454,7 +454,9 @@ int ac_compute_surface(struct ac_addrlib *addrlib, const struct radeon_info *inf
 void ac_surface_zero_dcc_fields(struct radeon_surf *surf);
 unsigned ac_pipe_config_to_num_pipes(unsigned pipe_config);
 
-void ac_surface_apply_bo_metadata(const struct radeon_info *info, struct radeon_surf *surf,
+#define AC_SURF_METADATA_FLAG_EXTRA_MD_BIT         0
+#define AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT 1
+void ac_surface_apply_bo_metadata(enum amd_gfx_level gfx_level, struct radeon_surf *surf,
                                   uint64_t tiling_flags, enum radeon_surf_mode *mode);
 void ac_surface_compute_bo_metadata(const struct radeon_info *info, struct radeon_surf *surf,
                                     uint64_t *tiling_flags);

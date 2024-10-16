@@ -3492,12 +3492,12 @@ static unsigned eg_tile_split_rev(unsigned eg_tile_split)
 #define AMDGPU_TILING_DCC_MAX_COMPRESSED_BLOCK_SIZE_MASK  0x3
 
 /* This should be called before ac_compute_surface. */
-void ac_surface_apply_bo_metadata(const struct radeon_info *info, struct radeon_surf *surf,
+void ac_surface_apply_bo_metadata(enum amd_gfx_level gfx_level, struct radeon_surf *surf,
                                   uint64_t tiling_flags, enum radeon_surf_mode *mode)
 {
    bool scanout;
 
-   if (info->gfx_level >= GFX12) {
+   if (gfx_level >= GFX12) {
       surf->u.gfx9.swizzle_mode = AMDGPU_TILING_GET(tiling_flags, GFX12_SWIZZLE_MODE);
       surf->u.gfx9.color.dcc.max_compressed_block_size =
          AMDGPU_TILING_GET(tiling_flags, GFX12_DCC_MAX_COMPRESSED_BLOCK);
@@ -3506,7 +3506,7 @@ void ac_surface_apply_bo_metadata(const struct radeon_info *info, struct radeon_
       surf->u.gfx9.color.dcc_number_type =
          AMDGPU_TILING_GET(tiling_flags, GFX12_DCC_NUMBER_TYPE);
       scanout = AMDGPU_TILING_GET(tiling_flags, GFX12_SCANOUT);
-   } else if (info->gfx_level >= GFX9) {
+   } else if (gfx_level >= GFX9) {
       surf->u.gfx9.swizzle_mode = AMDGPU_TILING_GET(tiling_flags, SWIZZLE_MODE);
       surf->u.gfx9.color.dcc.independent_64B_blocks =
          AMDGPU_TILING_GET(tiling_flags, DCC_INDEPENDENT_64B);
@@ -3730,21 +3730,31 @@ void ac_surface_compute_umd_metadata(const struct radeon_info *info, struct rade
 
    /* Metadata image format format version 1 and 2. Version 2 uses the same layout as
     * version 1 with some additional fields (used if include_tool_md=true).
-    * [0] = metadata_format_identifier
+    * [0] = optional flags | metadata_format_identifier
     * [1] = (VENDOR_ID << 16) | PCI_ID
     * [2:9] = image descriptor for the whole resource
     *         [2] is always 0, because the base address is cleared
     *         [9] is the DCC offset bits [39:8] from the beginning of
     *             the buffer
     * gfx8-: [10:10+LAST_LEVEL] = mipmap level offset bits [39:8] for each level (gfx8-)
-    * ---- The data below is only set in version=2.
+    * ---- Optional data (if version == 2 or version > 2 + AC_SURF_METADATA_FLAG_EXTRA_MD_BIT)
+    *      AC_SURF_METADATA_FLAG_EXTRA_MD_BIT is set.
     *      It shouldn't be used by the driver as it's only present to help
     *      tools (eg: umr) that would want to access this buffer.
     * gfx9+ if valid modifier: [10:11] = modifier
     *                          [12:12+3*nplane] = [offset, stride]
     *       else: [10]: stride
+    * ---- Optional data (if version >= 3 + AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT)
+    *  [last] = fake family id
     */
-   metadata[0] = include_tool_md ? 2 : 1; /* metadata image format version */
+
+   /* metadata image format version */
+   metadata[0] = (include_tool_md || info->family_overridden) ? 3 : 1;
+
+   if (include_tool_md)
+      metadata[0] |= 1u << (16 + AC_SURF_METADATA_FLAG_EXTRA_MD_BIT);
+   if (info->family_overridden)
+      metadata[0] |= 1u << (16 + AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT);
 
    /* Tiling modes are ambiguous without a PCI ID. */
    metadata[1] = ac_get_umd_metadata_word1(info);
@@ -3780,6 +3790,13 @@ void ac_surface_compute_umd_metadata(const struct radeon_info *info, struct rade
                                                     surf, 0, 0);
          *size_metadata = 11 * 4;
       }
+   }
+
+   if (info->family_overridden) {
+      int n_dw = *size_metadata / 4;
+      assert(n_dw < 64 - 1);
+      metadata[n_dw] = info->gfx_level;
+      *size_metadata += 4;
    }
 }
 
