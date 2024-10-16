@@ -444,7 +444,7 @@
         "description": "anv: avoid L3 fabric flush in pipeline barriers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e3814dee1ac0f90771b921a4f6f5aed10f06e8d4",
         "notes": null

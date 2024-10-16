@@ -3495,14 +3495,14 @@ anv_pipe_flush_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
          /* We're transitioning a buffer for generic write operations. Flush
           * all the caches.
           */
-         pipe_bits |= ANV_PIPE_FLUSH_BITS;
+         pipe_bits |= ANV_PIPE_BARRIER_FLUSH_BITS;
          break;
       case VK_ACCESS_2_HOST_WRITE_BIT:
          /* We're transitioning a buffer for access by CPU. Invalidate
           * all the caches. Since data and tile caches don't have invalidate,
           * we are forced to flush those as well.
           */
-         pipe_bits |= ANV_PIPE_FLUSH_BITS;
+         pipe_bits |= ANV_PIPE_BARRIER_FLUSH_BITS;
          pipe_bits |= ANV_PIPE_INVALIDATE_BITS;
          break;
       case VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT:
@@ -3610,7 +3610,7 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
          /* Generic write, make sure all previously written things land in
           * memory.
           */
-         pipe_bits |= ANV_PIPE_FLUSH_BITS;
+         pipe_bits |= ANV_PIPE_BARRIER_FLUSH_BITS;
          break;
       case VK_ACCESS_2_CONDITIONAL_RENDERING_READ_BIT_EXT:
       case VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT:
@@ -3628,7 +3628,7 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
          /* We're transitioning a buffer that was written by CPU.  Flush
           * all the caches.
           */
-         pipe_bits |= ANV_PIPE_FLUSH_BITS;
+         pipe_bits |= ANV_PIPE_BARRIER_FLUSH_BITS;
          break;
       case VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT:
          /* We're transitioning a buffer to be written by the streamout fixed
@@ -4224,7 +4224,7 @@ cmd_buffer_barrier(struct anv_cmd_buffer *cmd_buffer,
     * to flush anymore.
     */
    if (apply_sparse_flushes)
-      bits |= ANV_PIPE_FLUSH_BITS;
+      bits |= ANV_PIPE_BARRIER_FLUSH_BITS;
 #endif
 
    /* Copies from query pools are executed with a shader writing through the
@@ -5861,7 +5861,7 @@ VkResult genX(CmdSetPerformanceOverrideINTEL)(
       if (pOverrideInfo->enable) {
          /* FLUSH ALL THE THINGS! As requested by the MDAPI team. */
          anv_add_pending_pipe_bits(cmd_buffer,
-                                   ANV_PIPE_FLUSH_BITS |
+                                   ANV_PIPE_BARRIER_FLUSH_BITS |
                                    ANV_PIPE_INVALIDATE_BITS,
                                    "perf counter isolation");
          genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
@@ -6104,7 +6104,7 @@ genX(cmd_buffer_begin_companion_rcs_syncpoint)(
     */
 
    if (anv_cmd_buffer_is_compute_queue(cmd_buffer)) {
-      anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_FLUSH_BITS |
+      anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_BARRIER_FLUSH_BITS |
                                             ANV_PIPE_INVALIDATE_BITS |
                                             ANV_PIPE_STALL_BITS,
                                 "post main cmd buffer invalidate");
@@ -6176,7 +6176,7 @@ genX(cmd_buffer_end_companion_rcs_syncpoint)(struct anv_cmd_buffer *cmd_buffer,
     *    - unblock the CCS
     */
    anv_add_pending_pipe_bits(cmd_buffer->companion_rcs_cmd_buffer,
-                             ANV_PIPE_FLUSH_BITS |
+                             ANV_PIPE_BARRIER_FLUSH_BITS |
                              ANV_PIPE_INVALIDATE_BITS |
                              ANV_PIPE_STALL_BITS,
                              "post rcs flush");
