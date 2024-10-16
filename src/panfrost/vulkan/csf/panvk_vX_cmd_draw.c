@@ -1359,6 +1359,8 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    bool idvs = vs->info.vs.idvs;
    VkResult result;
 
+   assert(vs);
+
    /* FIXME: support non-IDVS. */
    assert(idvs);
 
@@ -1414,7 +1416,7 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 
    uint32_t varying_size = 0;
 
-   if (vs && fs) {
+   if (fs) {
       unsigned vs_vars = vs->info.varyings.output_count;
       unsigned fs_vars = fs->info.varyings.input_count;
       unsigned var_slots = MAX2(vs_vars, fs_vars);
