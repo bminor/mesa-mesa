@@ -49,6 +49,7 @@ struct virgl_vtest_winsys {
    struct virgl_resource_cache cache;
    mtx_t mutex;
 
+   int32_t blob_id;
    unsigned protocol_version;
 };
 
@@ -152,4 +153,8 @@ int virgl_vtest_recv_transfer_get_data(struct virgl_vtest_winsys *vws,
 
 int virgl_vtest_busy_wait(struct virgl_vtest_winsys *vws, int handle,
                           int flags);
+
+int
+virgl_vtest_send_create_blob(struct virgl_vtest_winsys *vws,
+                             uint32_t size, uint32_t blob_id, int *fd);
 #endif

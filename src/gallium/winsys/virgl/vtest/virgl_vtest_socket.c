@@ -31,6 +31,8 @@
 #include <util/format/u_format.h>
 #include <util/u_process.h>
 
+#define VIRGL_RENDERER_UNSTABLE_APIS
+
 #include "virgl_vtest_winsys.h"
 #include "virgl_vtest_public.h"
 
@@ -317,16 +319,16 @@ static int virgl_vtest_send_resource_create2(struct virgl_vtest_winsys *vws,
    virgl_block_write(vws->sock_fd, &vtest_hdr, sizeof(vtest_hdr));
    virgl_block_write(vws->sock_fd, &res_create_buf, sizeof(res_create_buf));
 
-   /* Multi-sampled textures have no backing store attached. */
-   if (size == 0)
-      return 0;
-
    if (vws->protocol_version >= 3) {
       virgl_block_read(vws->sock_fd, vtest_hdr, sizeof(vtest_hdr));
       assert(vtest_hdr[VTEST_CMD_LEN] == 1);
       assert(vtest_hdr[VTEST_CMD_ID] == VCMD_RESOURCE_CREATE2);
       virgl_block_read(vws->sock_fd, &handle, sizeof(handle));
    }
+
+   /* Multi-sampled textures have no backing store attached. */
+   if (size == 0)
+      return handle;
 
    *out_fd = virgl_vtest_receive_fd(vws->sock_fd);
    if (*out_fd < 0) {
@@ -558,3 +560,38 @@ int virgl_vtest_busy_wait(struct virgl_vtest_winsys *vws, int handle,
    assert(ret);
    return result[0];
 }
+
+int
+virgl_vtest_send_create_blob(struct virgl_vtest_winsys *vws,
+                                 uint32_t size, uint32_t blob_id,
+                                 int *out_fd)
+{
+   uint32_t vtest_hdr[VTEST_HDR_SIZE];
+   vtest_hdr[VTEST_CMD_LEN] = VCMD_RES_CREATE_BLOB_SIZE;
+   vtest_hdr[VTEST_CMD_ID] = VCMD_RESOURCE_CREATE_BLOB;
+
+   uint32_t vcmd_res_create_blob[VCMD_RES_CREATE_BLOB_SIZE];
+
+   vcmd_res_create_blob[VCMD_RES_CREATE_BLOB_TYPE] = VCMD_BLOB_TYPE_HOST3D;
+   vcmd_res_create_blob[VCMD_RES_CREATE_BLOB_FLAGS] = VCMD_BLOB_FLAG_MAPPABLE;
+   vcmd_res_create_blob[VCMD_RES_CREATE_BLOB_SIZE_LO] = (uint32_t)size;
+   vcmd_res_create_blob[VCMD_RES_CREATE_BLOB_SIZE_HI] = 0;
+   vcmd_res_create_blob[VCMD_RES_CREATE_BLOB_ID_LO] = (uint32_t)blob_id;
+   vcmd_res_create_blob[VCMD_RES_CREATE_BLOB_ID_HI] = 0;
+
+   virgl_block_write(vws->sock_fd, vtest_hdr, sizeof(vtest_hdr));
+   virgl_block_write(vws->sock_fd, vcmd_res_create_blob, sizeof(vcmd_res_create_blob));
+
+   vtest_hdr[0] = 0;
+   virgl_block_read(vws->sock_fd, vtest_hdr, sizeof(vtest_hdr));
+   assert(vtest_hdr[VTEST_CMD_LEN] == 1);
+   assert(vtest_hdr[VTEST_CMD_ID] == VCMD_RESOURCE_CREATE_BLOB);
+
+   uint32_t res_id;
+   virgl_block_read(vws->sock_fd, &res_id, sizeof(res_id));
+
+   *out_fd = virgl_vtest_receive_fd(vws->sock_fd);
+
+   return res_id;
+}
+
