@@ -3897,6 +3897,7 @@ anv_pipe_flush_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
                                      VkAccessFlags2 flags,
                                      VkAccessFlagBits3KHR flags3)
 {
+   struct anv_device *device = cmd_buffer->device;
    enum anv_pipe_bits pipe_bits = 0;
 
    u_foreach_bit64(b, flags) {
@@ -3955,9 +3956,13 @@ anv_pipe_flush_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
          break;
       case VK_ACCESS_2_MEMORY_WRITE_BIT:
          /* We're transitioning a buffer for generic write operations. Flush
-          * all the caches.
+          * all the caches. On Gfx20+ we can limit ourself to L1/L2 flushing
+          * because all the fixed functions are L3 coherent (CS, streamout).
           */
-         pipe_bits |= ANV_PIPE_BARRIER_FLUSH_BITS;
+         if (device->info->ver < 20)
+            pipe_bits |= ANV_PIPE_BARRIER_FLUSH_BITS;
+         else
+            pipe_bits |= ANV_PIPE_L1_L2_BARRIER_FLUSH_BITS;
          break;
       case VK_ACCESS_2_HOST_WRITE_BIT:
          /* We're transitioning a buffer for access by CPU. Invalidate
@@ -4015,11 +4020,13 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
           * an A64 message, so we need to invalidate constant cache.
           */
          pipe_bits |= ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT;
-         /* Tile & Data cache flush needed For Cmd*Indirect* commands since
-          * command streamer is not L3 coherent.
+         /* Prior to Gfx20, Tile & Data cache flush needed For Cmd*Indirect*
+          * commands since command streamer is not L3 coherent.
           */
-         pipe_bits |= ANV_PIPE_TILE_CACHE_FLUSH_BIT |
-                      ANV_PIPE_DATA_CACHE_FLUSH_BIT;
+         if (device->info->ver < 20) {
+            pipe_bits |= ANV_PIPE_DATA_CACHE_FLUSH_BIT |
+                         ANV_PIPE_TILE_CACHE_FLUSH_BIT;
+         }
          break;
       case VK_ACCESS_2_INDEX_READ_BIT:
       case VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT:
@@ -4084,8 +4091,13 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
           * any in-flight flush operations have completed.
           */
          pipe_bits |= ANV_PIPE_CS_STALL_BIT;
-         pipe_bits |= ANV_PIPE_TILE_CACHE_FLUSH_BIT;
-         pipe_bits |= ANV_PIPE_DATA_CACHE_FLUSH_BIT;
+         /* Prior to Gfx20, CS is not L3 coherent, so make the data available
+          * for it by flushing L3.
+          */
+         if (device->info->ver < 20) {
+            pipe_bits |= ANV_PIPE_TILE_CACHE_FLUSH_BIT;
+            pipe_bits |= ANV_PIPE_DATA_CACHE_FLUSH_BIT;
+         }
          break;
       case VK_ACCESS_2_HOST_READ_BIT:
          /* We're transitioning a buffer that was written by CPU.  Flush
@@ -4099,8 +4111,10 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
           * tile cache flush to make sure any previous write is not going to
           * create WaW hazards.
           */
-         pipe_bits |= ANV_PIPE_DATA_CACHE_FLUSH_BIT;
-         pipe_bits |= ANV_PIPE_TILE_CACHE_FLUSH_BIT;
+         if (device->info->ver < 20) {
+            pipe_bits |= ANV_PIPE_DATA_CACHE_FLUSH_BIT;
+            pipe_bits |= ANV_PIPE_TILE_CACHE_FLUSH_BIT;
+         }
          break;
       case VK_ACCESS_2_SHADER_STORAGE_READ_BIT:
       case VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR:
