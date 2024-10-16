@@ -1136,9 +1136,17 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
 {
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
-   bool fs_is_dirty =
-      cmdbuf->state.gfx.fs.spd != get_fs_spd(fs);
+
+   const struct panvk_shader *fs = NULL;
+   bool fs_is_dirty = false;
+   bool needs_fs = fs_required(cmdbuf);
+   if (needs_fs) {
+      fs = cmdbuf->state.gfx.fs.shader;
+      fs_is_dirty = cmdbuf->state.gfx.fs.spd != get_fs_spd(fs);
+   } else {
+      fs_is_dirty = cmdbuf->state.gfx.fs.spd != 0;
+   }
+
    bool dcd0_dirty = is_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||
                      is_dirty(cmdbuf, RS_CULL_MODE) ||
                      is_dirty(cmdbuf, RS_FRONT_FACE) ||
@@ -1169,8 +1177,6 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
                      is_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
                      is_dirty(cmdbuf, CB_WRITE_MASKS) || fs_is_dirty ||
                      cmdbuf->state.gfx.render.dirty;
-
-   bool needs_fs = fs_required(cmdbuf);
 
    const struct vk_dynamic_graphics_state *dyns =
       &cmdbuf->vk.dynamic_graphics_state;
