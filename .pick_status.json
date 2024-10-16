@@ -384,7 +384,7 @@
         "description": "intel/brw: Fix spill/fill count for load/store_scratch in SIMD32",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
