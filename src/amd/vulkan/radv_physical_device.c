@@ -2095,6 +2095,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->master_fd = master_fd;
    pdev->local_fd = fd;
    pdev->ws->query_info(pdev->ws, &pdev->info);
+   pdev->info.family_overridden = drm_device == NULL;
 
    if (drm_device) {
       pdev->addrlib = ac_addrlib_create(&pdev->info, &pdev->info.max_alignment);
