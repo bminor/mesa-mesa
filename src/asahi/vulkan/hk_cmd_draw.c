@@ -65,6 +65,11 @@
 #define IS_LINKED_DIRTY(bit)                                                   \
    (cmd->state.gfx.linked_dirty & BITFIELD_BIT(MESA_SHADER_##bit))
 
+/* CTS coverage of indirect draws is pretty bad, so it's helpful to be able to
+ * get some extra smoke testing.
+ */
+#define HK_TEST_INDIRECTS (0)
+
 struct hk_draw {
    struct hk_grid b;
    struct hk_addr_range index;
@@ -3619,12 +3624,24 @@ hk_CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount,
            uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
+   struct hk_draw draw;
 
-   struct hk_draw draw = {
-      .b = hk_grid(vertexCount, instanceCount, 1),
-      .start = firstVertex,
-      .start_instance = firstInstance,
-   };
+   if (HK_TEST_INDIRECTS) {
+      uint32_t data[] = {
+         vertexCount,
+         instanceCount,
+         firstVertex,
+         firstInstance,
+      };
+
+      draw = hk_draw_indirect(hk_pool_upload(cmd, data, sizeof(data), 4));
+   } else {
+      draw = (struct hk_draw){
+         .b = hk_grid(vertexCount, instanceCount, 1),
+         .start = firstVertex,
+         .start_instance = firstInstance,
+      };
+   }
 
    hk_draw(cmd, 0, draw);
 }
@@ -3656,15 +3673,25 @@ hk_draw_indexed(VkCommandBuffer commandBuffer, uint16_t draw_id,
                 uint32_t firstInstance)
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
+   struct hk_draw draw;
 
-   struct hk_draw draw = {
-      .b = hk_grid(indexCount, instanceCount, 1),
-      .indexed = true,
-      .index = cmd->state.gfx.index.buffer,
-      .start = firstIndex,
-      .index_bias = vertexOffset,
-      .start_instance = firstInstance,
-   };
+   if (HK_TEST_INDIRECTS && draw_id == 0) {
+      uint32_t data[] = {
+         indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
+      };
+      uint64_t addr = hk_pool_upload(cmd, data, sizeof(data), 4);
+
+      draw = hk_draw_indexed_indirect(addr, cmd->state.gfx.index.buffer, 0, 0);
+   } else {
+      draw = (struct hk_draw){
+         .b = hk_grid(indexCount, instanceCount, 1),
+         .indexed = true,
+         .index = cmd->state.gfx.index.buffer,
+         .start = firstIndex,
+         .index_bias = vertexOffset,
+         .start_instance = firstInstance,
+      };
+   }
 
    hk_draw(cmd, draw_id, draw);
 }
