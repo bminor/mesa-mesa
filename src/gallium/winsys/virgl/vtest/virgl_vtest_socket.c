@@ -380,15 +380,14 @@ int virgl_vtest_send_resource_create(struct virgl_vtest_winsys *vws,
 }
 
 int virgl_vtest_submit_cmd(struct virgl_vtest_winsys *vws,
-                           struct virgl_vtest_cmd_buf *cbuf)
+                           uint32_t *buf, uint32_t buf_len)
 {
    uint32_t vtest_hdr[VTEST_HDR_SIZE];
-
-   vtest_hdr[VTEST_CMD_LEN] = cbuf->base.cdw;
+   vtest_hdr[VTEST_CMD_LEN] = buf_len;
    vtest_hdr[VTEST_CMD_ID] = VCMD_SUBMIT_CMD;
 
    virgl_block_write(vws->sock_fd, &vtest_hdr, sizeof(vtest_hdr));
-   virgl_block_write(vws->sock_fd, cbuf->buf, cbuf->base.cdw * 4);
+   virgl_block_write(vws->sock_fd, buf, 4 * buf_len);
    return 0;
 }
 

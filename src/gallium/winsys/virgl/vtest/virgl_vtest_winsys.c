@@ -533,7 +533,7 @@ static int virgl_vtest_winsys_submit_cmd(struct virgl_winsys *vws,
    if (cbuf->base.cdw == 0)
       return 0;
 
-   ret = virgl_vtest_submit_cmd(vtws, cbuf);
+   ret = virgl_vtest_submit_cmd(vtws, cbuf->base.buf, cbuf->base.cdw);
    if (fence && ret == 0)
       *fence = virgl_vtest_fence_create(vws);
 
