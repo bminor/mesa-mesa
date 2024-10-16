@@ -41,7 +41,7 @@ hk_get_vk_version()
    if (version_override)
       return version_override;
 
-   return VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION);
+   return VK_MAKE_VERSION(1, 4, VK_HEADER_VERSION);
 }
 
 static void
@@ -350,6 +350,9 @@ hk_get_device_features(
       .dynamicRendering = true,
       .shaderIntegerDotProduct = true,
       .maintenance4 = true,
+
+      /* Vulkan 1.4 */
+      .pushDescriptor = true,
 
       /* VK_KHR_dynamic_rendering_local_read */
       .dynamicRenderingLocalRead = true,
@@ -768,7 +771,7 @@ hk_get_device_properties(const struct agx_device *dev,
       .independentResolveNone = true,
       .independentResolve = true,
       .driverID = VK_DRIVER_ID_MESA_HONEYKRISP,
-      .conformanceVersion = (VkConformanceVersion){1, 3, 8, 3},
+      .conformanceVersion = (VkConformanceVersion){1, 4, 0, 0},
       .denormBehaviorIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
       .roundingModeIndependence = VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL,
       .shaderSignedZeroInfNanPreserveFloat16 = true,
@@ -836,6 +839,10 @@ hk_get_device_properties(const struct agx_device *dev,
       .uniformTexelBufferOffsetAlignmentBytes = HK_MIN_TEXEL_BUFFER_ALIGNMENT,
       .uniformTexelBufferOffsetSingleTexelAlignment = true,
       .maxBufferSize = HK_MAX_BUFFER_SIZE,
+
+      /* Vulkan 1.4 properties */
+      .dynamicRenderingLocalReadDepthStencilAttachments = false,
+      .dynamicRenderingLocalReadMultisampledAttachments = true,
 
       /* VK_KHR_push_descriptor */
       .maxPushDescriptors = HK_MAX_PUSH_DESCRIPTORS,
