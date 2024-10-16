@@ -4942,6 +4942,16 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       return;
    }
 
+   /* TODO: stop cheating.
+    *
+    * libagx supports this, just needs test coverage and gallium side wiring.
+    */
+   if (indirect && info->mode == MESA_PRIM_PATCHES && info->index_size) {
+      perf_debug_ctx(ctx, "indexed indirect with tess");
+      util_draw_indirect(pctx, info, drawid_offset, indirect);
+      return;
+   }
+
    bool xfb_passthrough = false;
    if (agx_needs_passthrough_gs(ctx, info, indirect, &xfb_passthrough)) {
       agx_apply_passthrough_gs(ctx, info, drawid_offset, indirect, draws,
