@@ -429,6 +429,7 @@ pan_rt_init_format(const struct pan_image_view *rt,
        * Offset specified from RAW8, where 8 = 2^3 */
 
       unsigned bits = desc->block.bits;
+      assert(bits >= 8 && bits <= 128);
       unsigned offset = util_logbase2_ceil(bits) - 3;
       assert(offset <= 4);
 
