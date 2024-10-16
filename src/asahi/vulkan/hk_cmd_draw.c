@@ -388,15 +388,8 @@ hk_build_bg_eot(struct hk_cmd_buffer *cmd, const VkRenderingInfo *info,
           * Optimizing this would require nontrivial tracking. Fortunately,
           * this is all Android gunk and we don't have to care too much for
           * dekstop games. So do the simple thing.
-          *
-          * VK_ATTACHMENT_STORE_OP_DONT_CARE does not need this workaround,
-          * fortunately. It's just here as a temporary stopgap to workaround CTS
-          * issue #5369.
           */
-         bool no_store =
-            (att_info->storeOp == VK_ATTACHMENT_STORE_OP_NONE) ||
-            (att_info->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE);
-
+         bool no_store = (att_info->storeOp == VK_ATTACHMENT_STORE_OP_NONE);
          bool no_store_wa = no_store && !load && !clear;
          if (no_store_wa) {
             perf_debug(dev, "STORE_OP_NONE workaround");
