@@ -1691,6 +1691,7 @@ static struct pipe_resource *si_texture_from_winsys_buffer(struct si_screen *ssc
 {
    struct radeon_surf surface = {};
    struct radeon_bo_metadata metadata = {};
+   uint32_t md_version, md_flags;
    struct si_texture *tex;
    int r;
 
@@ -1700,6 +1701,21 @@ static struct pipe_resource *si_texture_from_winsys_buffer(struct si_screen *ssc
 
    if (dedicated) {
       sscreen->ws->buffer_get_metadata(sscreen->ws, buf, &metadata, &surface);
+
+      /* Refuse to import texture allocated with a overriden gfx family since
+       * the data will be garbage.
+       */
+      md_version = metadata.metadata[0] & 0xffff;
+      md_flags = metadata.metadata[0] >> 16;
+
+      if (metadata.mode != RADEON_SURF_MODE_LINEAR_ALIGNED &&
+          modifier == DRM_FORMAT_MOD_INVALID &&
+          md_version >= 3 &&
+          md_flags & (1u << AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT)) {
+         fprintf(stderr, "si_texture_from_winsys_buffer: fail texture import due to "
+                         "AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT being set.\n");
+         return NULL;
+      }
    } else {
       /**
        * The bo metadata is unset for un-dedicated images. So we fall
