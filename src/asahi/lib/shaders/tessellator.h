@@ -81,6 +81,9 @@ struct libagx_tess_args {
     */
    GLOBAL(uint32_t) grids;
 
+   /* For indirect draws, the output input assembly descriptor */
+   GLOBAL(struct agx_ia_state) ia;
+
    /* For indirect draws, the indirect draw descriptor. */
    GLOBAL(uint32_t) indirect;
 
@@ -90,6 +93,11 @@ struct libagx_tess_args {
     * it's worth it though...
     */
    GLOBAL(uint64_t) vertex_output_buffer_ptr;
+
+   /* Yet more indirect draw garbage. I need a refactor. */
+   uint64_t in_index_buffer;
+   uint32_t in_index_buffer_range_el;
+   uint32_t in_index_size_B;
 
    /* When geom+tess used together, the buffer containing TES outputs (executed
     * as a hardware compute shader).
@@ -126,4 +134,4 @@ struct libagx_tess_args {
    /* Number of patches being tessellated */
    uint32_t nr_patches;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 42 * 4);
+AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 48 * 4);

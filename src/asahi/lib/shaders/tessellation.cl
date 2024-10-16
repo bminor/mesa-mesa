@@ -187,6 +187,25 @@ libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool with_counts,
       /* TODO */
    }
 
+   global struct agx_ia_state *ia = p->ia;
+   ia->verts_per_instance = count;
+
+   /* If indexing is enabled, the third word is the offset into the index buffer
+    * in elements. Apply that offset now that we have it. For a hardware
+    * indirect draw, the hardware would do this for us, but for software input
+    * assembly we need to do it ourselves.
+    *
+    * XXX: Deduplicate?
+    */
+   if (p->in_index_size_B) {
+      ia->index_buffer =
+         libagx_index_buffer(p->in_index_buffer, p->in_index_buffer_range_el,
+                             p->indirect[2], p->in_index_size_B, 0);
+
+      ia->index_buffer_range_el = libagx_index_buffer_range_el(
+         p->in_index_buffer_range_el, p->indirect[2]);
+   }
+
    /* VS grid size */
    p->grids[0] = count;
    p->grids[1] = instance_count;
