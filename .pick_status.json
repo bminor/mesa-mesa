@@ -1,5 +1,445 @@
 [
     {
+        "sha": "7b09fc98fb60becde7435b2303f7dd329937f6cb",
+        "description": "nir/opt_16b_tex_image: Sign extension should matter for texel buffer txf",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f7f33f323645d8d633f2a002019f4b5cab157df",
+        "description": "svga/ci: disable vmware farm",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49e9cd5211dcd04673fc1e09db7c0c91b65e78be",
+        "description": "panvk: don't dirty preloaded tiles for writeback",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aa7c59e02cfffa70cac83b2c126fbb5bd313ff6c",
+        "description": "nir/glsl: set deref cast mode for blocks during function inlining",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d681cf96fbf962b67d98ecab1968ed0bb7a04eb0",
+        "notes": null
+    },
+    {
+        "sha": "bd6f3e30f2e8bde00542a18eb8b30551748fbf92",
+        "description": "amd/vpelib: Fix output_ctx gamma curve cache bug",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "259b44d97b0fef882ff8f09e17fe193fb8d7dce5",
+        "description": "amd/vpelib: Restructure CDC FE/BE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d7f51724b893d069e88d71ec09d0916afbd90b3",
+        "description": "amd/vpelib: Add documentation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5826ef5e44452c1b8ecff3e6e407b7e07fca13f5",
+        "description": "amd/vpelib: Visual confirm on input",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0d2f074cd6796a84c9870119be708857f0a42cd",
+        "description": "amd/vpelib: Add mirror & rotation capability check function for vpe1.1",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "af01d7a18105003ba8b5b2bdf28ecf2294666464",
+        "description": "amd/vpelib: Update configs to be per-pipe specific",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a68af7d21021b3ead4b108e810aa151c935f17d",
+        "description": "amd/vpelib: Add better rotation and mirror capability check",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ef8e6a6ae56e32250c9ced1b874e2511a801558",
+        "description": "amd/vpelib: Luma AND Color Keyer Full Support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "338760d9b5b55967eebd42c1b1c3d097047463c7",
+        "description": "amd/vpelib: Document public API structures",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ded1a2b3f0e7e45cce609e973b131833dece3710",
+        "description": "amd/vpelib: Multiple instance support in caching framework",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a293a812ab054fd708b902514979d82d3bc5488",
+        "description": "amd/vpelib: Color Keyer Implementation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2272db2ac66561e4389d4101596480234378e00d",
+        "description": "radeonsi: set the valid buffer range for bindless image buffers",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "88f057eb531180c37f0d2c2d5bbbdc6e0a261816",
+        "description": "gallium/u_threaded: fix crash in tc_create_image_handle due to resource == NULL",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3df9d8ed807a6693d5fc8cbda4faec28af081ff3",
+        "notes": null
+    },
+    {
+        "sha": "4d60f905b3db8e8e6fa1553278914011ac0404ec",
+        "description": "anv/trtt: extract anv_trtt_first_bind_init_queue()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8280a6fee976993eb1c3326c53ede1e1b41e1580",
+        "description": "anv/trtt: convert anv_trtt_bind arrays to util_dynarray",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5839b9d0839efd7ea3d69a167bce8517e01ba6a2",
+        "description": "anv/trtt: remove TODO comment regarding the reloc list",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e047365d76a4fb4832920e97220dbf0a7609c1c8",
+        "description": "anv/trtt: delay batch garbage collection",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "acb759c44fad9fb1cd6029dedab065c8d623b7b8",
+        "description": "anv/trtt: decrement trtt->timeline_val when submission fails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0802bbd486415026ce98bbba97e2be012637db97",
+        "description": "anv/trtt: don't submit empty batches when there are no binds to do",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aea9ac47d23d842bc1b10241c36fd8db7653113d",
+        "description": "anv/trtt: fix error handling when adding binds",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7da5b1caef21ca1da75573737f553fa301d25b2c",
+        "notes": null
+    },
+    {
+        "sha": "fd43c4a97342bd6b1b344142ce67d19840a3ad08",
+        "description": "anv/trtt: unset trtt->l3_addr if initialization fails",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c832ed6bd286abdc3de289e1f733e73b4aa7de3e",
+        "description": "anv/trtt: ensure all L3 entries are NULL-bound during init",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3845d0d39316bb8219bdedd5669ccc9e58fd166f",
+        "description": "anv/trtt: inline anv_trtt_init_queues_state()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6af1d1ae7fd45fd75e9b7e16b26a13d2cee4db79",
+        "description": "anv/trtt: extract anv_trtt_first_bind_init()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c366ef67bd9e45618bb16826fc2f60e2f949892",
+        "description": "anv/trtt: set every entry to NULL when we create an L2 table",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "537ada2308d2510fac85a0df5b0038dd53dd95ea",
+        "description": "nak: Phi coalescing via biased register coloring",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38f7ae52880dad10758bc420a43417db13a77bf9",
+        "description": "release: push 24.3 out two weeks",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff2c4e8f1153def7325a0239eb7afd1e44a36810",
+        "description": "zink: add CL CTS result",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0c9ee0f2b998f3fea3e4d7ef54a5e2ce5cf38002",
+        "description": "android: look for debug/vendor prefixed options",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4cb67cb07ae53dd47b261ce6a236899bf1cf7ea6",
+        "description": "intel/brw: Use whole 512-bit registers in constant combining on Xe2",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9e502265034848b7908afa9a974cc0d618e1197",
+        "description": "intel/brw: Delete more Gfx8 code from brw_fs_combine_constants",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dea61b739913fe85981cd3ef3ec563087c15b8da",
+        "description": "intel/brw: Fix register and builder size in emit_barrier() for Xe2",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c9eb8b289bb6fe891cae78377e94589299afeb4",
+        "description": "intel/brw: Make a ubld temporary in emit_barrier()",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a9d948878894660f97dd6d63618ced35400aec77",
+        "description": "intel/brw: Delete Gfx7-8 code from emit_barrier()",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c747c1e1f4f48b543a8ed8f7f7db32e5393d41a0",
+        "description": "intel/brw: Fix spill/fill count for load/store_scratch in SIMD32",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "58d6906f8ca0a9687e4906cc6be8256be8347e7b",
+        "description": "r300/ci: update ci expectations after piglit uprev",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "03a393d6caad6c332f8f2c0e9853ac6b8e6cbaee",
+        "description": "nak: Handle annotations in legalization",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36d9d11882aeb13c890ce51eb23c3ee0f4b833c5",
+        "description": "nak: Remove annotations before calc_instr_deps()",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e769a0620eac8852b16cb1916df46f00f6be8fd",
+        "description": "lavapipe: enable alpha-to-coverage dithering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad4635d6ef05ce6c825c4457a5cba1dd645348d4",
+        "description": "llvmpipe: implement alpha-to-coverage dithering",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "6d6d5b869c5a4afd7fb30c7a5b1def8fcc14d255",
         "description": "freedreno/cffdec: Add option to dump bindless descriptors",
         "nominated": false,
