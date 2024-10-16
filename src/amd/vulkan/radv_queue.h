@@ -67,6 +67,7 @@ struct radv_queue_state {
    struct radeon_cmdbuf *continue_preamble_cs;
    struct radeon_cmdbuf *gang_wait_preamble_cs;
    struct radeon_cmdbuf *gang_wait_postamble_cs;
+   struct radeon_cmdbuf *flush_postamble_cs; /* GFX6 only */
 
    /* the uses_shadow_regs here will be set only for general queue */
    bool uses_shadow_regs;

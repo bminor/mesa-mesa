@@ -1336,6 +1336,45 @@ radv_update_preambles(struct radv_queue_state *queue, struct radv_device *device
    return radv_update_preamble_cs(queue, device, &needs);
 }
 
+/* Creates a postamble CS that executes cache flush commands
+ * that we can use at the end of each submission.
+ *
+ * GFX6: The kernel flushes L2 before shaders are finished.
+ *       Therefore we need to wait for idle at the end of each submission.
+ */
+static VkResult
+radv_create_flush_postamble(struct radv_queue *queue)
+{
+   const struct radv_device *device = radv_queue_device(queue);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_ip_type ip = radv_queue_family_to_ring(pdev, queue->state.qf);
+   struct radeon_winsys *ws = device->ws;
+
+   struct radeon_cmdbuf *cs = ws->cs_create(ws, ip, false);
+   if (!cs)
+      return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+
+   radeon_check_space(ws, cs, 256);
+
+   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
+   enum radv_cmd_flush_bits flush_bits = RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_WB_L2;
+
+   if (ip == AMD_IP_GFX)
+      flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH;
+
+   enum rgp_flush_bits sqtt_flush_bits = 0;
+   radv_cs_emit_cache_flush(ws, cs, gfx_level, NULL, 0, queue->state.qf, flush_bits, &sqtt_flush_bits, 0);
+
+   VkResult r = ws->cs_finalize(cs);
+   if (r != VK_SUCCESS) {
+      ws->cs_destroy(cs);
+      return r;
+   }
+
+   queue->state.flush_postamble_cs = cs;
+   return VK_SUCCESS;
+}
+
 static VkResult
 radv_create_gang_wait_preambles_postambles(struct radv_queue *queue)
 {
@@ -1649,7 +1688,7 @@ radv_queue_submit_normal(struct radv_queue *queue, struct vk_queue_submit *submi
    unsigned num_postambles = 0;
    struct radeon_cmdbuf *initial_preambles[5] = {0};
    struct radeon_cmdbuf *continue_preambles[5] = {0};
-   struct radeon_cmdbuf *postambles[3] = {0};
+   struct radeon_cmdbuf *postambles[4] = {0};
 
    if (queue->state.qf == RADV_QUEUE_GENERAL || queue->state.qf == RADV_QUEUE_COMPUTE) {
       initial_preambles[num_initial_preambles++] =
@@ -1676,6 +1715,10 @@ radv_queue_submit_normal(struct radv_queue *queue, struct vk_queue_submit *submi
          continue_preambles[num_continue_preambles++] = perf_ctr_lock_cs;
          postambles[num_postambles++] = perf_ctr_unlock_cs;
       }
+   }
+
+   if (queue->state.flush_postamble_cs) {
+      postambles[num_postambles++] = queue->state.flush_postamble_cs;
    }
 
    const unsigned num_1q_initial_preambles = num_initial_preambles;
@@ -1930,6 +1973,13 @@ radv_queue_init(struct radv_device *device, struct radv_queue *queue, int idx,
          goto fail;
    }
 
+   if (pdev->info.gfx_level == GFX6 &&
+       (queue->state.qf == RADV_QUEUE_GENERAL || queue->state.qf == RADV_QUEUE_COMPUTE)) {
+      result = radv_create_flush_postamble(queue);
+      if (result != VK_SUCCESS)
+         goto fail;
+   }
+
    if (queue->state.qf == RADV_QUEUE_SPARSE) {
       queue->vk.driver_submit = radv_queue_sparse_submit;
       vk_queue_enable_submit_thread(&queue->vk);
@@ -1956,6 +2006,8 @@ radv_queue_state_finish(struct radv_queue_state *queue, struct radv_device *devi
       device->ws->cs_destroy(queue->gang_wait_preamble_cs);
    if (queue->gang_wait_postamble_cs)
       device->ws->cs_destroy(queue->gang_wait_postamble_cs);
+   if (queue->flush_postamble_cs)
+      device->ws->cs_destroy(queue->flush_postamble_cs);
    if (queue->descriptor_bo)
       radv_bo_destroy(device, NULL, queue->descriptor_bo);
    if (queue->scratch_bo) {
