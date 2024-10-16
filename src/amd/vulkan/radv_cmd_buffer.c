@@ -7342,7 +7342,6 @@ radv_EndCommandBuffer(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (cmd_buffer->qf == RADV_QUEUE_SPARSE)
       return vk_command_buffer_end(&cmd_buffer->vk);
@@ -7352,10 +7351,6 @@ radv_EndCommandBuffer(VkCommandBuffer commandBuffer)
    const bool is_gfx_or_ace = cmd_buffer->qf == RADV_QUEUE_GENERAL || cmd_buffer->qf == RADV_QUEUE_COMPUTE;
 
    if (is_gfx_or_ace) {
-      if (pdev->info.gfx_level == GFX6)
-         cmd_buffer->state.flush_bits |=
-            RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_WB_L2;
-
       /* Make sure to sync all pending active queries at the end of
        * command buffer.
        */
