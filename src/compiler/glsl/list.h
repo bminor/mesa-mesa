@@ -737,6 +737,10 @@ inline void exec_node::insert_before(exec_list *before)
 #define exec_node_data_backward(type, node, field) \
    (!exec_node_is_head_sentinel(node) ? exec_node_data(type, node, field) : NULL)
 
+/**
+ * Iterate over the list from head to tail. Removal is safe for all nodes except the current
+ * iteration's.
+ */
 #define foreach_list_typed(__type, __node, __field, __list)                     \
    for (__type * __node =                                                       \
          exec_node_data_forward(__type, (__list)->head_sentinel.next, __field); \
@@ -748,12 +752,20 @@ inline void exec_node::insert_before(exec_list *before)
    (__node) != NULL;                                                             \
    (__node) = exec_node_data_forward(__type, (__node)->__field.next, __field))
 
+/**
+ * Iterate over the list from tail to head. Removal is safe for all nodes except the current
+ * iteration's.
+ */
 #define foreach_list_typed_reverse(__type, __node, __field, __list)                 \
    for (__type * __node =                                                           \
            exec_node_data_backward(__type, (__list)->tail_sentinel.prev, __field);  \
         (__node) != NULL;                                                           \
         (__node) = exec_node_data_backward(__type, (__node)->__field.prev, __field))
 
+/**
+ * Iterate over the list from head to tail. Removal is safe for all nodes except the next
+ * iteration's. If the next iteration's node is removed and not inserted again, this loop exits.
+ */
 #define foreach_list_typed_safe(__type, __node, __field, __list)                    \
    for (__type * __node =                                                           \
            exec_node_data_forward(__type, (__list)->head_sentinel.next, __field),   \
@@ -763,6 +775,10 @@ inline void exec_node::insert_before(exec_list *before)
         (__node) = __next, __next = (__next && (__next)->__field.next) ?            \
            exec_node_data_forward(__type, (__next)->__field.next, __field) : NULL)
 
+/**
+ * Iterate over the list from tail to head. Removal is safe for all nodes except the next
+ * iteration's. If the next iteration's node is removed and not inserted again, this loop exits.
+ */
 #define foreach_list_typed_reverse_safe(__type, __node, __field, __list)            \
    for (__type * __node =                                                           \
            exec_node_data_backward(__type, (__list)->tail_sentinel.prev, __field),  \
