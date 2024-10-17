@@ -249,6 +249,9 @@ KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_single
 KHR-GL46.texture_lod_basic.lod_selection,Fail
 KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
 
+# a630-gles-asan
+asan-dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
+
 # GL tests above, Vulkan tests below
 
 
