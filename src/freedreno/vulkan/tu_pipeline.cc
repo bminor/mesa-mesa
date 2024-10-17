@@ -1711,6 +1711,8 @@ tu_pipeline_builder_compile_shaders(struct tu_pipeline_builder *builder,
                                            builder->create_info->pNext,
                                            stage_infos[stage]->pNext);
          tu_shader_key_robustness(&keys[stage], &rs);
+         if (builder->create_flags & VK_PIPELINE_CREATE_2_VIEW_INDEX_FROM_DEVICE_INDEX_BIT_KHR)
+            keys[stage].lower_view_index_to_device_index = true;
       }
    }
 

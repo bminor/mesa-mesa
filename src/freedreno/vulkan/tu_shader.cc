@@ -46,7 +46,9 @@ tu_spirv_to_nir(struct tu_device *dev,
    /* TODO these are made-up */
    const struct spirv_to_nir_options spirv_options = {
       /* ViewID is a sysval in geometry stages and an input in the FS */
-      .view_index_is_input = stage == MESA_SHADER_FRAGMENT,
+      .view_index_is_input =
+         stage == MESA_SHADER_FRAGMENT &&
+         !key->lower_view_index_to_device_index,
 
       /* Use 16-bit math for RelaxedPrecision ALU ops */
       .mediump_16bit_alu = true,
@@ -117,6 +119,9 @@ tu_spirv_to_nir(struct tu_device *dev,
 
    NIR_PASS_V(nir, nir_lower_system_values);
    NIR_PASS_V(nir, nir_lower_is_helper_invocation);
+
+   if (key->lower_view_index_to_device_index)
+      NIR_PASS_V(nir, nir_lower_view_index_to_device_index);
 
    struct ir3_shader_nir_options options;
    init_ir3_nir_options(&options, key);

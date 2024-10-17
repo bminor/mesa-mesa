@@ -111,6 +111,7 @@ struct tu_shader_key {
    uint8_t unscaled_input_fragcoord;
    bool robust_storage_access2;
    bool robust_uniform_access2;
+   bool lower_view_index_to_device_index;
    enum ir3_wavesize_option api_wavesize, real_wavesize;
 };
 
