@@ -1047,7 +1047,8 @@ bifrost_nir_specialize_idvs(nir_builder *b, nir_instr *instr, void *data)
 
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
-   if (intr->intrinsic != nir_intrinsic_store_output)
+   if (intr->intrinsic != nir_intrinsic_store_output &&
+       intr->intrinsic != nir_intrinsic_store_per_view_output)
       return false;
 
    if (bi_should_remove_store(intr, *idvs)) {
@@ -1127,11 +1128,12 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
                 bi_imm_u32(format), regfmt, nr - 1);
    } else if (b->shader->arch >= 9 && b->shader->idvs != BI_IDVS_NONE) {
       bi_index index = bi_preload(b, 59);
+      unsigned index_offset = 0;
       unsigned pos_attr_offset = 0;
       unsigned src_bit_sz = nir_src_bit_size(instr->src[0]);
 
       if (psiz || layer)
-         index = bi_iadd_imm_i32(b, index, 4);
+         index_offset += 4;
 
       if (layer) {
          assert(nr == 1 && src_bit_sz == 32);
@@ -1143,10 +1145,28 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
       if (psiz)
          assert(T_size == 16 && "should've been lowered");
 
+      bool varying = (b->shader->idvs == BI_IDVS_VARYING);
+
+      if (instr->intrinsic == nir_intrinsic_store_per_view_output) {
+         unsigned view_index = nir_src_as_uint(instr->src[1]);
+
+         if (varying) {
+            index_offset += view_index * 4;
+         } else {
+            /* We don't patch these offsets in the no_psiz variant, so if
+             * multiview is enabled we can't switch to the basic format by
+             * using no_psiz */
+            bool extended_position_fifo = b->shader->nir->info.outputs_written &
+               (VARYING_BIT_LAYER | VARYING_BIT_PSIZ);
+            unsigned position_fifo_stride = extended_position_fifo ? 8 : 4;
+            index_offset += view_index * position_fifo_stride;
+         }
+      }
+
+      if (index_offset != 0)
+         index = bi_iadd_imm_i32(b, index, index_offset);
       bi_index address = bi_lea_buf_imm(b, index);
       bi_emit_split_i32(b, a, address, 2);
-
-      bool varying = (b->shader->idvs == BI_IDVS_VARYING);
 
       bi_store(b, nr * src_bit_sz, data, a[0], a[1],
                varying ? BI_SEG_VARY : BI_SEG_POS,
@@ -1739,6 +1759,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       break;
 
    case nir_intrinsic_store_output:
+   case nir_intrinsic_store_per_view_output:
       if (stage == MESA_SHADER_FRAGMENT)
          bi_emit_fragment_out(b, instr);
       else if (stage == MESA_SHADER_VERTEX)
@@ -1978,6 +1999,7 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       bi_emit_derivative(b, dst, instr, 2, true);
       break;
 
+   case nir_intrinsic_load_view_index:
    case nir_intrinsic_load_layer_id:
       assert(b->shader->arch >= 9);
       bi_mov_i32_to(b, dst, bi_u8_to_u32(b, bi_byte(bi_preload(b, 62), 0)));

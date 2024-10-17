@@ -372,6 +372,9 @@ panvk_hash_graphics_state(struct vk_physical_device *device,
    _mesa_blake3_update(&blake3_ctx, &sample_shading_enable,
                        sizeof(sample_shading_enable));
 
+   _mesa_blake3_update(&blake3_ctx, &state->rp->view_mask,
+                       sizeof(state->rp->view_mask));
+
    _mesa_blake3_final(&blake3_ctx, blake3_out);
 }
 
@@ -457,6 +460,23 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    struct panvk_instance *instance =
       to_panvk_instance(dev->vk.physical->instance);
    gl_shader_stage stage = nir->info.stage;
+
+#if PAN_ARCH >= 10
+   if (stage == MESA_SHADER_VERTEX && compile_input->view_mask) {
+      nir_lower_multiview_options options = {
+         .view_mask = compile_input->view_mask,
+         .allowed_per_view_outputs = ~0
+      };
+      /* The only case where this should fail is with memory/image writes,
+       * which we don't support in vertex shaders */
+      assert(nir_can_lower_multiview(nir, options));
+      NIR_PASS(_, nir, nir_lower_multiview, options);
+      /* Pull output writes out of the loop and give them constant offsets for
+       * pan_lower_store_components */
+      NIR_PASS(_, nir, nir_lower_io_to_temporaries,
+               nir_shader_get_entrypoint(nir), true, false);
+   }
+#endif
 
    NIR_PASS(_, nir, panvk_per_arch(nir_lower_descriptors), dev, rs,
             set_layout_count, set_layouts, shader);
@@ -835,6 +855,7 @@ panvk_compile_shader(struct panvk_device *dev,
    struct panfrost_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_prod_id,
       .no_ubo_to_push = true,
+      .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
    };
 
    panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,

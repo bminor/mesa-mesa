@@ -105,6 +105,7 @@ struct panfrost_compile_inputs {
    } blend;
    bool no_idvs;
    bool no_ubo_to_push;
+   uint32_t view_mask;
 
    /* Used on Valhall.
     *

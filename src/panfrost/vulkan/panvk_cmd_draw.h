@@ -40,6 +40,7 @@ struct panvk_resolve_attachment {
 struct panvk_rendering_state {
    VkRenderingFlags flags;
    uint32_t layer_count;
+   uint32_t view_mask;
 
    enum vk_rp_attachment_flags bound_attachments;
    struct {

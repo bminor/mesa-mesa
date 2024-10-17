@@ -227,7 +227,10 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
    memset(&state->render.s_attachment, 0, sizeof(state->render.s_attachment));
    state->render.bound_attachments = 0;
 
-   state->render.layer_count = pRenderingInfo->layerCount;
+   cmdbuf->state.gfx.render.layer_count = pRenderingInfo->viewMask ?
+      util_last_bit(pRenderingInfo->viewMask) :
+      pRenderingInfo->layerCount;
+   cmdbuf->state.gfx.render.view_mask = pRenderingInfo->viewMask;
    *fbinfo = (struct pan_fb_info){
       .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
       .nr_samples = 1,
@@ -390,7 +393,7 @@ panvk_per_arch(cmd_resolve_attachments)(struct panvk_cmd_buffer *cmdbuf)
             .extent.height = fbinfo->extent.maxy - fbinfo->extent.miny + 1,
          },
       .layerCount = cmdbuf->state.gfx.render.layer_count,
-      .viewMask = 0,
+      .viewMask = cmdbuf->state.gfx.render.view_mask,
       .colorAttachmentCount = color_att_count,
       .pColorAttachments = color_atts,
       .pDepthAttachment = &z_att,

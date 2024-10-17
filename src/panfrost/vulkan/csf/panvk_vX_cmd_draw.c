@@ -1571,6 +1571,7 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
 
          cfg.secondary_shader = vs->info.vs.secondary_enable && fs != NULL;
          cfg.primitive_restart = ia->primitive_restart_enable;
+         cfg.view_mask = cmdbuf->state.gfx.render.view_mask;
       }
 
       cs_move32_to(b, cs_sr_reg32(b, 56), tiler_idvs_flags.opaque[0]);
@@ -1857,8 +1858,12 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
     * we decide to support layared+indirect, we'll need to pass the
     * layer_count info through the tiler descriptor, for instance by
     * re-using one of the word that's flagged 'ignored' in the descriptor
-    * (word 14:23). */
-   assert(cmdbuf->state.gfx.render.layer_count <= 1);
+    * (word 14:23).
+    *
+    * Multiview is limited to 8 layers, and so will always fit in one TD.
+    * Therefore layered rendering is allowed with multiview. */
+   assert(cmdbuf->state.gfx.render.layer_count <= 1 ||
+          cmdbuf->state.gfx.render.view_mask);
 
    /* MultiDrawIndirect (.maxDrawIndirectCount) needs additional changes. */
    assert(draw->indirect.draw_count == 1);
@@ -1978,7 +1983,10 @@ panvk_per_arch(cmd_inherit_render_state)(
           sizeof(cmdbuf->state.gfx.render.s_attachment));
    cmdbuf->state.gfx.render.bound_attachments = 0;
 
-   cmdbuf->state.gfx.render.layer_count = 0;
+   cmdbuf->state.gfx.render.view_mask = inheritance_info->viewMask;
+   cmdbuf->state.gfx.render.layer_count = inheritance_info->viewMask ?
+      util_last_bit(inheritance_info->viewMask) :
+      0;
    *fbinfo = (struct pan_fb_info){
       .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
       .nr_samples = inheritance_info->rasterizationSamples,
