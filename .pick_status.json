@@ -1274,7 +1274,7 @@
         "description": "util/vma: Fix util_vma_heap_get_max_free_continuous_size calculation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "df3ba95a2498447b037d0d8efbdf605be25ff8ff",
         "notes": null
