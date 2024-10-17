@@ -338,7 +338,6 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
    uint32_t wait_subqueue_mask = 0;
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       uint32_t sb_mask = src_stages_to_subqueue_sb_mask(i, src_stages);
-      assert((sb_mask != 0) == stages_cover_subqueue(i, src_stages));
       if (!sb_mask)
          continue;
 
