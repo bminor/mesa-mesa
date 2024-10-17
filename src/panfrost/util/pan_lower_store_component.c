@@ -32,6 +32,9 @@
  * location_frac, we'll need to lower to a single varying store that collects
  * all of the channels together. This is because the varying instruction on
  * Midgard and Bifrost is slot-based, writing out an entire vec4 slot at a time.
+ *
+ * NOTE: this expects all stores to be outside of control flow, and with
+ * constant offsets. It should be run after nir_lower_io_to_temporaries.
  */
 static bool
 lower_store_component(nir_builder *b, nir_intrinsic_instr *intr, void *data)
