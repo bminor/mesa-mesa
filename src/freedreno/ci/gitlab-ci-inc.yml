@@ -31,6 +31,38 @@
         *freedreno_core_file_list
       when: manual
 
+.freedreno-rules:
+  rules:
+    - !reference [.freedreno-common-rules, rules]
+    - !reference [.gl-rules, rules]
+    - changes: &freedreno_file_list
+        - src/freedreno/ir2/**/*
+        - src/gallium/drivers/freedreno/**/*
+        - src/gallium/winsys/freedreno/**/*
+      when: on_success
+
+.freedreno-manual-rules:
+  rules:
+    - !reference [.freedreno-common-manual-rules, rules]
+    - !reference [.gl-manual-rules, rules]
+    - changes: *freedreno_file_list
+      when: manual
+
+.turnip-rules:
+  rules:
+    - !reference [.freedreno-common-rules, rules]
+    - !reference [.vulkan-rules, rules]
+    - changes: &turnip_file_list
+        - src/freedreno/vulkan/**/*
+      when: on_success
+
+.turnip-manual-rules:
+  rules:
+    - !reference [.freedreno-common-manual-rules, rules]
+    - !reference [.vulkan-manual-rules, rules]
+    - changes: *turnip_file_list
+      when: manual
+
 
 # Two different farms (Google Freedreno and Collabora farm)
 .google-freedreno-rules:
