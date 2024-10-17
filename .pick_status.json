@@ -1844,7 +1844,7 @@
         "description": "dri: Fix hardware cursor for cards without modifier support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "361f3622587e5bc452a62dbd671969b713273b79",
         "notes": null
