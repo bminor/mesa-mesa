@@ -666,6 +666,36 @@ test_put_and_get_between_instances_with_eviction(const char *driver_id)
    disk_cache_destroy(cache[0]);
    disk_cache_destroy(cache[1]);
 }
+
+static void
+test_put_big_sized_entry_to_empty_cache(const char *driver_id)
+{
+   static uint8_t blob[4096];
+   uint8_t blob_key[20];
+   struct disk_cache *cache;
+   char *result;
+   size_t size;
+
+#ifdef SHADER_CACHE_DISABLE_BY_DEFAULT
+   setenv("MESA_SHADER_CACHE_DISABLE", "false", 1);
+#endif /* SHADER_CACHE_DISABLE_BY_DEFAULT */
+
+   setenv("MESA_SHADER_CACHE_MAX_SIZE", "1K", 1);
+   cache = disk_cache_create("test", driver_id, 0);
+
+   disk_cache_compute_key(cache, blob, sizeof(blob), blob_key);
+
+   disk_cache_put(cache, blob_key, blob, sizeof(blob), NULL);
+   disk_cache_wait_for_idle(cache);
+
+   result = (char *) disk_cache_get(cache, blob_key, &size);
+   EXPECT_NE(result, nullptr) << "disk_cache_get(cache) with existing item (pointer)";
+   EXPECT_EQ(size, sizeof(blob)) << "disk_cache_get of(cache) existing item (size)";
+
+   free(result);
+
+   disk_cache_destroy(cache);
+}
 #endif /* ENABLE_SHADER_CACHE */
 
 class Cache : public ::testing::Test {
@@ -785,6 +815,8 @@ TEST_F(Cache, Database)
    test_put_and_get_between_instances(driver_id);
 
    test_put_and_get_between_instances_with_eviction(driver_id);
+
+   test_put_big_sized_entry_to_empty_cache(driver_id);
 
    unsetenv("MESA_DISK_CACHE_DATABASE_NUM_PARTS");
 
