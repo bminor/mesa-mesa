@@ -512,7 +512,7 @@ panvk_per_arch(cmd_force_fb_preload)(struct panvk_cmd_buffer *cmdbuf,
       VkClearRect clear_rect = {
          .rect = render_info->renderArea,
          .baseArrayLayer = 0,
-         .layerCount = render_info->layerCount,
+         .layerCount = render_info->viewMask ? 1 : render_info->layerCount,
       };
 
       panvk_per_arch(CmdClearAttachments)(panvk_cmd_buffer_to_handle(cmdbuf),

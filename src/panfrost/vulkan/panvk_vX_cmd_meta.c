@@ -202,12 +202,14 @@ panvk_per_arch(CmdClearAttachments)(VkCommandBuffer commandBuffer,
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct panvk_cmd_meta_graphics_save_ctx save = {0};
    struct vk_meta_rendering_info render = {
-      .view_mask = 0,
+      .view_mask = cmdbuf->state.gfx.render.view_mask,
       .samples = fbinfo->nr_samples,
       .color_attachment_count = fbinfo->rt_count,
       .depth_attachment_format = cmdbuf->state.gfx.render.z_attachment.fmt,
       .stencil_attachment_format = cmdbuf->state.gfx.render.s_attachment.fmt,
    };
+   /* Multiview is not supported pre-v10 */
+   assert(cmdbuf->state.gfx.render.view_mask == 0 || PAN_ARCH >= 10);
 
    for (uint32_t i = 0; i < render.color_attachment_count; i++) {
        render.color_attachment_formats[i] =

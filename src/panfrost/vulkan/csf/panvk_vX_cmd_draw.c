@@ -639,6 +639,14 @@ prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
 }
 
 static uint32_t
+calc_enabled_layer_count(struct panvk_cmd_buffer *cmdbuf)
+{
+   return cmdbuf->state.gfx.render.view_mask ?
+      util_bitcount(cmdbuf->state.gfx.render.view_mask) :
+      cmdbuf->state.gfx.render.layer_count;
+}
+
+static uint32_t
 calc_fbd_size(struct panvk_cmd_buffer *cmdbuf)
 {
    const struct pan_fb_info *fb = &cmdbuf->state.gfx.render.fb.info;
@@ -651,8 +659,8 @@ calc_fbd_size(struct panvk_cmd_buffer *cmdbuf)
 static uint32_t
 calc_render_descs_size(struct panvk_cmd_buffer *cmdbuf)
 {
-   uint32_t fbd_count =
-      cmdbuf->state.gfx.render.layer_count * (1 + PANVK_IR_PASS_COUNT);
+   uint32_t fbd_count = calc_enabled_layer_count(cmdbuf) *
+      (1 + PANVK_IR_PASS_COUNT);
    uint32_t td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
                                     MAX_LAYERS_PER_TILER_DESC);
 
@@ -1033,8 +1041,8 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
       return VK_SUCCESS;
 
    uint32_t fbd_sz = calc_fbd_size(cmdbuf);
-   uint32_t fbds_sz =
-      fbd_sz * cmdbuf->state.gfx.render.layer_count * (1 + PANVK_IR_PASS_COUNT);
+   uint32_t fbds_sz = fbd_sz * calc_enabled_layer_count(cmdbuf) *
+      (1 + PANVK_IR_PASS_COUNT);
 
    cmdbuf->state.gfx.render.fbds = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, fbds_sz, pan_alignment(FRAMEBUFFER));
@@ -1070,7 +1078,7 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
    bool copy_fbds = simul_use && cmdbuf->state.gfx.render.tiler;
    struct panfrost_ptr fbds = cmdbuf->state.gfx.render.fbds;
    uint32_t fbd_flags = 0;
-   uint32_t fbd_ir_pass_offset = fbd_sz * cmdbuf->state.gfx.render.layer_count;
+   uint32_t fbd_ir_pass_offset = fbd_sz * calc_enabled_layer_count(cmdbuf);
 
    fbinfo->sample_positions =
       dev->sample_positions->addr.dev +
@@ -1085,11 +1093,18 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
    if (result != VK_SUCCESS)
       return result;
 
-   /* We prepare all FB descriptors upfront. */
-   for (uint32_t i = 0; i < cmdbuf->state.gfx.render.layer_count; i++) {
+   /* We prepare all FB descriptors upfront. For multiview, only create FBDs
+    * for enabled views. */
+   uint32_t view_mask_temp = cmdbuf->state.gfx.render.view_mask;
+   uint32_t enabled_layer_count = calc_enabled_layer_count(cmdbuf);
+   bool multiview = cmdbuf->state.gfx.render.view_mask;
+
+   for (uint32_t i = 0; i < enabled_layer_count; i++) {
+      uint32_t layer_idx = multiview ? u_bit_scan(&view_mask_temp) : i;
+
       uint32_t layer_offset = fbd_sz * i;
-      uint8_t new_fbd_flags =
-         prepare_fb_desc(cmdbuf, fbinfo, i, fbds.cpu + layer_offset);
+      uint32_t new_fbd_flags =
+         prepare_fb_desc(cmdbuf, fbinfo, layer_idx, fbds.cpu + layer_offset);
 
       /* Make sure all FBDs have the same flags. */
       assert(i == 0 || new_fbd_flags == fbd_flags);
@@ -1098,7 +1113,7 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
       for (uint32_t j = 0; j < PANVK_IR_PASS_COUNT; j++) {
          uint32_t ir_pass_offset = (1 + j) * fbd_ir_pass_offset;
          new_fbd_flags =
-            prepare_fb_desc(cmdbuf, &ir_fbinfos[j], i,
+            prepare_fb_desc(cmdbuf, &ir_fbinfos[j], layer_idx,
                             fbds.cpu + ir_pass_offset + layer_offset);
 
          /* Make sure all IR FBDs have the same flags. */
@@ -1132,7 +1147,7 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
       cs_move64_to(b, src_fbd_ptr, fbds.gpu);
       cs_move32_to(b, remaining_layers_in_td, MAX_LAYERS_PER_TILER_DESC);
 
-      cs_move32_to(b, layer_count, cmdbuf->state.gfx.render.layer_count);
+      cs_move32_to(b, layer_count, calc_enabled_layer_count(cmdbuf));
       cs_while(b, MALI_CS_CONDITION_GREATER, layer_count) {
          /* Our loop is copying 64-bytes at a time, so make sure the
           * framebuffer size is aligned on 64-bytes. */
@@ -2277,7 +2292,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    if (cmdbuf->state.gfx.render.layer_count > 1) {
       struct cs_index layer_count = cs_sr_reg32(b, 47);
 
-      cs_move32_to(b, layer_count, cmdbuf->state.gfx.render.layer_count);
+      cs_move32_to(b, layer_count, calc_enabled_layer_count(cmdbuf));
       cs_while(b, MALI_CS_CONDITION_GREATER, layer_count) {
          cs_trace_run_fragment(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                                false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
