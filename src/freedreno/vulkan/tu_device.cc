@@ -76,7 +76,7 @@ tu_device_get_cache_uuid(struct tu_physical_device *device, void *uuid)
    return 0;
 }
 
-#define TU_API_VERSION VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION)
+#define TU_API_VERSION VK_MAKE_VERSION(1, 4, VK_HEADER_VERSION)
 
 VKAPI_ATTR VkResult VKAPI_CALL
 tu_EnumerateInstanceVersion(uint32_t *pApiVersion)
@@ -770,12 +770,21 @@ tu_get_physical_device_properties_1_2(struct tu_physical_device *pdevice,
    memset(p->driverInfo, 0, sizeof(p->driverInfo));
    snprintf(p->driverInfo, VK_MAX_DRIVER_INFO_SIZE,
             "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
-   p->conformanceVersion = (VkConformanceVersion) {
-      .major = 1,
-      .minor = 2,
-      .subminor = 7,
-      .patch = 1,
-   };
+   if (pdevice->info->chip >= 7) {
+      p->conformanceVersion = (VkConformanceVersion) {
+         .major = 1,
+         .minor = 4,
+         .subminor = 0,
+         .patch = 0,
+      };
+   } else {
+      p->conformanceVersion = (VkConformanceVersion) {
+         .major = 1,
+         .minor = 2,
+         .subminor = 7,
+         .patch = 1,
+      };
+   }
 
    p->denormBehaviorIndependence =
       VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL;
@@ -1034,7 +1043,9 @@ tu_get_properties(struct tu_physical_device *pdevice,
 
    props->apiVersion =
       (pdevice->info->a6xx.has_hw_multiview || TU_DEBUG(NOCONFORM)) ?
-         TU_API_VERSION : VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION);
+         ((pdevice->info->chip >= 7) ? TU_API_VERSION :
+            VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION))
+         : VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION);
    props->driverVersion = vk_get_driver_version();
    props->vendorID = 0x5143;
    props->deviceID = pdevice->dev_id.chip_id;
