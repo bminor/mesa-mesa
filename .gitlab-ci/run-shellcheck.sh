@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-CHECKPATH=".gitlab-ci"
-export SCRIPTS_DIR="${CHECKPATH}"
+SCRIPTS_DIR="$(realpath "$(dirname "$0")")"
 
 is_bash() {
     [[ $1 == *.sh ]] && return 0
@@ -21,4 +20,4 @@ while IFS= read -r -d $'' file; do
             exit 1
         fi
     fi
-done < <(find $CHECKPATH -type f \! -path "./.git/*" -print0)
+done < <(find "$SCRIPTS_DIR" -type f \! -path "./.git/*" -print0)
