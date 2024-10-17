@@ -75,12 +75,13 @@ set_vsock_context || { echo "Could not generate crosvm vsock CID" >&2; exit 1; }
 
 # Securely pass the current variables to the crosvm environment
 echo "Variables passed through:"
-SCRIPT_DIR=$(readlink -en "${0%/*}")
-${SCRIPT_DIR}/common/generate-env.sh | tee ${VM_TEMP_DIR}/crosvm-env.sh
-cp ${SCRIPT_DIR}/setup-test-env.sh ${VM_TEMP_DIR}/setup-test-env.sh
+SCRIPTS_DIR=$(readlink -en "${0%/*}")
+${SCRIPTS_DIR}/common/generate-env.sh | tee ${VM_TEMP_DIR}/crosvm-env.sh
+cp ${SCRIPTS_DIR}/setup-test-env.sh ${VM_TEMP_DIR}/setup-test-env.sh
 
 # Set the crosvm-script as the arguments of the current script
-echo ". ${VM_TEMP_DIR}/setup-test-env.sh" > ${VM_TEMP_DIR}/crosvm-script.sh
+echo "export SCRIPTS_DIR=${SCRIPTS_DIR}" > ${VM_TEMP_DIR}/crosvm-script.sh
+echo ". ${VM_TEMP_DIR}/setup-test-env.sh" >> ${VM_TEMP_DIR}/crosvm-script.sh
 echo "$@" >> ${VM_TEMP_DIR}/crosvm-script.sh
 
 # Setup networking
@@ -96,7 +97,7 @@ unset DISPLAY
 unset XDG_RUNTIME_DIR
 
 CROSVM_KERN_ARGS="quiet console=null root=my_root rw rootfstype=virtiofs ip=192.168.30.2::192.168.30.1:255.255.255.0:crosvm:eth0"
-CROSVM_KERN_ARGS="${CROSVM_KERN_ARGS} init=${SCRIPT_DIR}/crosvm-init.sh -- ${VSOCK_STDOUT} ${VSOCK_STDERR} ${VM_TEMP_DIR}"
+CROSVM_KERN_ARGS="${CROSVM_KERN_ARGS} init=${SCRIPTS_DIR}/crosvm-init.sh -- ${VSOCK_STDOUT} ${VSOCK_STDERR} ${VM_TEMP_DIR}"
 
 [ "${CROSVM_GALLIUM_DRIVER}" = "llvmpipe" ] && \
     CROSVM_LIBGL_ALWAYS_SOFTWARE=true || CROSVM_LIBGL_ALWAYS_SOFTWARE=false
