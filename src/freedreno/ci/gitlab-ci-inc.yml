@@ -70,24 +70,14 @@
   rules:
     - !reference [.test, rules]
     - !reference [.freedreno-farm-rules, rules]
-    - !reference [.freedreno-common-rules, rules]
-    - !reference [.gl-rules, rules]
-    - changes: &freedreno_gl_file_list
-        - src/freedreno/ir2/**/*
-        - src/gallium/drivers/freedreno/**/*
-        - src/gallium/winsys/freedreno/**/*
-      when: on_success
+    - !reference [.freedreno-rules, rules]
 
 .collabora-freedreno-rules:
   stage: freedreno
   rules:
     - !reference [.test, rules]
     - !reference [.collabora-farm-rules, rules]
-    - !reference [.freedreno-common-rules, rules]
-    - !reference [.gl-rules, rules]
-    - changes:
-        *freedreno_gl_file_list
-      when: on_success
+    - !reference [.freedreno-rules, rules]
 
 .google-freedreno-manual-rules:
   stage: freedreno-postmerge
@@ -95,11 +85,7 @@
   rules:
     - !reference [.test, rules]
     - !reference [.freedreno-farm-manual-rules, rules]
-    - !reference [.freedreno-common-manual-rules, rules]
-    - !reference [.gl-manual-rules, rules]
-    - changes:
-        *freedreno_gl_file_list
-      when: manual
+    - !reference [.freedreno-manual-rules, rules]
 
 .collabora-freedreno-manual-rules:
   stage: freedreno-postmerge
@@ -107,11 +93,7 @@
   rules:
     - !reference [.test, rules]
     - !reference [.collabora-farm-manual-rules, rules]
-    - !reference [.freedreno-common-manual-rules, rules]
-    - !reference [.gl-manual-rules, rules]
-    - changes:
-        *freedreno_gl_file_list
-      when: manual
+    - !reference [.freedreno-manual-rules, rules]
 
 
 .google-turnip-rules:
@@ -119,21 +101,14 @@
   rules:
     - !reference [.test, rules]
     - !reference [.freedreno-farm-rules, rules]
-    - !reference [.freedreno-common-rules, rules]
-    - !reference [.vulkan-rules, rules]
-    - changes: &freedreno_vulkan_file_list
-        - src/freedreno/vulkan/**/*
-      when: on_success
+    - !reference [.turnip-rules, rules]
 
 .collabora-turnip-rules:
   stage: freedreno
   rules:
     - !reference [.test, rules]
     - !reference [.collabora-farm-rules, rules]
-    - !reference [.freedreno-common-rules, rules]
-    - !reference [.vulkan-rules, rules]
-    - changes: *freedreno_vulkan_file_list
-      when: on_success
+    - !reference [.turnip-rules, rules]
 
 .google-turnip-manual-rules:
   stage: freedreno-postmerge
@@ -141,11 +116,7 @@
   rules:
     - !reference [.test, rules]
     - !reference [.freedreno-farm-manual-rules, rules]
-    - !reference [.freedreno-common-manual-rules, rules]
-    - !reference [.vulkan-manual-rules, rules]
-    - changes:
-        *freedreno_vulkan_file_list
-      when: manual
+    - !reference [.turnip-manual-rules, rules]
 
 .collabora-turnip-manual-rules:
   stage: freedreno-postmerge
@@ -153,11 +124,7 @@
   rules:
     - !reference [.test, rules]
     - !reference [.collabora-farm-manual-rules, rules]
-    - !reference [.freedreno-common-manual-rules, rules]
-    - !reference [.vulkan-manual-rules, rules]
-    - changes:
-        *freedreno_vulkan_file_list
-      when: manual
+    - !reference [.turnip-manual-rules, rules]
 
 # For piglit and skqp test jobs that run both GL and VK tests.
 .google-freedreno-turnip-rules:
@@ -194,11 +161,7 @@
   rules:
     - !reference [.test, rules]
     - !reference [.valve-farm-manual-rules, rules]
-    - !reference [.freedreno-common-manual-rules, rules]
-    - !reference [.vulkan-manual-rules, rules]
-    - changes:
-        *freedreno_vulkan_file_list
-      when: manual
+    - !reference [.turnip-manual-rules, rules]
 
 .google-freedreno-rules-restricted:
   stage: freedreno
