@@ -299,6 +299,9 @@ struct fd_dev_info {
        * on every suspend/resume.
        */
       bool has_persistent_counter;
+
+      /* Whether only 256 vec4 constants are available for compute */
+      bool compute_constlen_quirk;
    } a7xx;
 };
 
