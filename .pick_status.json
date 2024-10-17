@@ -1214,7 +1214,7 @@
         "description": "freedreno: Add compute constlen quirk for X1-85",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b0d22461b945de597f39062a53e4f08d4b8559a2",
         "notes": null

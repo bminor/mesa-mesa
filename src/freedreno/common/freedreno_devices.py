@@ -863,6 +863,18 @@ a7xx_740v3 = A7XXProps(
         enable_tp_ubwc_flag_hint = True,
     )
 
+a7xx_x1_85 = A7XXProps(
+        stsc_duplication_quirk = True,
+        has_event_write_sample_count = True,
+        ubwc_unorm_snorm_int_compatible = True,
+        supports_ibo_ubwc = True,
+        fs_must_have_non_zero_constlen_quirk = True,
+        # Most devices with a740 have blob v6xx which doesn't have
+        # this hint set. Match them for better compatibility by default.
+        enable_tp_ubwc_flag_hint = False,
+        compute_constlen_quirk = True,
+    )
+
 a7xx_750 = A7XXProps(
         has_event_write_sample_count = True,
         load_inline_uniforms_via_preamble_ldgk = True,
@@ -1053,10 +1065,25 @@ add_gpus([
         GPUId(740), # Deprecated, used for dev kernels.
         GPUId(chip_id=0x43050a01, name="FD740"), # KGSL, no speedbin data
         GPUId(chip_id=0xffff43050a01, name="FD740"), # Default no-speedbin fallback
-        GPUId(chip_id=0xffff43050c01, name="Adreno X1-85"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
         [a7xx_base, a7xx_740],
+        num_ccu = 6,
+        tile_align_w = 96,
+        tile_align_h = 32,
+        num_vsc_pipes = 32,
+        cs_shared_mem_size = 32 * 1024,
+        wave_granularity = 2,
+        fibers_per_sp = 128 * 2 * 16,
+        magic_regs = a740_magic_regs,
+        raw_magic_regs = a740_raw_magic_regs,
+    ))
+
+add_gpus([
+        GPUId(chip_id=0xffff43050c01, name="Adreno X1-85"),
+    ], A6xxGPUInfo(
+        CHIP.A7XX,
+        [a7xx_base, a7xx_x1_85],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
