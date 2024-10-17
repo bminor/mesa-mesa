@@ -109,7 +109,7 @@ GENX(pan_select_crc_rt)(const struct pan_fb_info *fb, unsigned tile_size)
    int best_rt = -1;
 
    for (unsigned i = 0; i < fb->rt_count; i++) {
-      if (!fb->rts[i].view || fb->rts[0].discard ||
+      if (!fb->rts[i].view || fb->rts[i].discard ||
           !pan_image_view_has_crc(fb->rts[i].view))
          continue;
 
