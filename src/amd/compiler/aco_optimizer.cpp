@@ -1031,10 +1031,10 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
       return true;
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
                instr->opcode == aco_opcode::v_cvt_f32_i32) &&
-              sel.size() == 1 && !sel.sign_extend()) {
+              sel.size() == 1 && !sel.sign_extend() && !instr->usesModifiers()) {
       return true;
    } else if (instr->opcode == aco_opcode::v_lshlrev_b32 && instr->operands[0].isConstant() &&
-              sel.offset() == 0 &&
+              sel.offset() == 0 && !instr->usesModifiers() &&
               ((sel.size() == 2 && instr->operands[0].constantValue() >= 16u) ||
                (sel.size() == 1 && instr->operands[0].constantValue() >= 24u))) {
       return true;
@@ -1055,9 +1055,8 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
    } else if (instr->opcode == aco_opcode::s_pack_ll_b32_b16 && sel.size() == 2 &&
               (idx == 1 || ctx.program->gfx_level >= GFX11 || !sel.offset())) {
       return true;
-   } else if (sel.size() == 2 &&
-              ((instr->opcode == aco_opcode::s_pack_lh_b32_b16 && idx == 0) ||
-               (instr->opcode == aco_opcode::s_pack_hl_b32_b16 && idx == 1))) {
+   } else if (sel.size() == 2 && ((instr->opcode == aco_opcode::s_pack_lh_b32_b16 && idx == 0) ||
+                                  (instr->opcode == aco_opcode::s_pack_hl_b32_b16 && idx == 1))) {
       return true;
    } else if (instr->opcode == aco_opcode::p_extract) {
       SubdwordSel instrSel = parse_extract(instr.get());
@@ -1095,7 +1094,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
       /* full dword selection */
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
                instr->opcode == aco_opcode::v_cvt_f32_i32) &&
-              sel.size() == 1 && !sel.sign_extend()) {
+              sel.size() == 1 && !sel.sign_extend() && !instr->usesModifiers()) {
       switch (sel.offset()) {
       case 0: instr->opcode = aco_opcode::v_cvt_f32_ubyte0; break;
       case 1: instr->opcode = aco_opcode::v_cvt_f32_ubyte1; break;
@@ -1103,7 +1102,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
       case 3: instr->opcode = aco_opcode::v_cvt_f32_ubyte3; break;
       }
    } else if (instr->opcode == aco_opcode::v_lshlrev_b32 && instr->operands[0].isConstant() &&
-              sel.offset() == 0 &&
+              sel.offset() == 0 && !instr->usesModifiers() &&
               ((sel.size() == 2 && instr->operands[0].constantValue() >= 16u) ||
                (sel.size() == 1 && instr->operands[0].constantValue() >= 24u))) {
       /* The undesirable upper bits are already shifted out. */

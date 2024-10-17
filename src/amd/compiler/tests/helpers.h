@@ -98,7 +98,9 @@ aco::Temp fsat(aco::Temp src, aco::Builder b = bld);
 aco::Temp fmin(aco::Temp src0, aco::Temp src1, aco::Builder b = bld);
 aco::Temp fmax(aco::Temp src0, aco::Temp src1, aco::Builder b = bld);
 aco::Temp ext_ushort(aco::Temp src, unsigned idx, aco::Builder b = bld);
+aco::Temp ext_sshort(aco::Temp src, unsigned idx, aco::Builder b = bld);
 aco::Temp ext_ubyte(aco::Temp src, unsigned idx, aco::Builder b = bld);
+aco::Temp ext_sbyte(aco::Temp src, unsigned idx, aco::Builder b = bld);
 void emit_divergent_if_else(aco::Program* prog, aco::Builder& b, aco::Operand cond,
                             std::function<void()> then, std::function<void()> els);
 

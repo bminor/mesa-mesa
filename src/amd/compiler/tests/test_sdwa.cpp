@@ -557,3 +557,80 @@ BEGIN_TEST(optimize.sdwa.insert_modifiers)
       finish_opt_test();
    }
 END_TEST
+
+BEGIN_TEST(optimize.sdwa.special_case_valu)
+   //>> v1: %a, s1: %b = p_startpgm
+   if (!setup_cs("v1 s1", GFX10_3))
+      return;
+
+   Temp a = inputs[0];
+   Temp b = inputs[1];
+   Temp b_vgpr = bld.copy(bld.def(v1), b);
+
+   //! v1: %res0 = v_cvt_f32_ubyte0 %a
+   //! p_unit_test 0, %res0
+   writeout(0, bld.vop1(aco_opcode::v_cvt_f32_u32, bld.def(v1), ext_ubyte(a, 0)));
+
+   //! v1: %res1 = v_cvt_f32_ubyte1 %a
+   //! p_unit_test 1, %res1
+   writeout(1, bld.vop1(aco_opcode::v_cvt_f32_u32, bld.def(v1), ext_ubyte(a, 1)));
+
+   //! v1: %res2 = v_cvt_f32_ubyte2 %a
+   //! p_unit_test 2, %res2
+   writeout(2, bld.vop1(aco_opcode::v_cvt_f32_u32, bld.def(v1), ext_ubyte(a, 2)));
+
+   //! v1: %res3 = v_cvt_f32_ubyte3 %a
+   //! p_unit_test 3, %res3
+   writeout(3, bld.vop1(aco_opcode::v_cvt_f32_u32, bld.def(v1), ext_ubyte(a, 3)));
+
+   //! v1: %res4 = v_cvt_f32_u32 %a dst_sel:dword src0_sel:sbyte3
+   //! p_unit_test 4, %res4
+   writeout(4, bld.vop1(aco_opcode::v_cvt_f32_u32, bld.def(v1), ext_sbyte(a, 3)));
+
+   //! v1: %res5 = v_cvt_f32_u32 %a dst_sel:dword src0_sel:uword1
+   //! p_unit_test 5, %res5
+   writeout(5, bld.vop1(aco_opcode::v_cvt_f32_u32, bld.def(v1), ext_ushort(a, 1)));
+
+   //! v1: %res6_tmp = p_extract %b, 2, 8, 0
+   //! v1: %res6 = v_cvt_f32_u32 %res6_tmp dst_sel:dword src0_sel:sword1
+   //! p_unit_test 6, %res6
+   writeout(6,
+            bld.vop1(aco_opcode::v_cvt_f32_u32, bld.def(v1), ext_sshort(ext_ubyte(b_vgpr, 2), 1)));
+
+   //! v1: %res7 = v_lshlrev_b32 16, %a
+   //! p_unit_test 7, %res7
+   writeout(7,
+            bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(16), ext_ushort(a, 0)));
+
+   //! v1: %res8 = v_lshlrev_b32 24, %a
+   //! p_unit_test 8, %res8
+   writeout(8, bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(24), ext_ubyte(a, 0)));
+
+   //! v1: %res9 = v_lshlrev_b32 16, %a
+   //! p_unit_test 9, %res9
+   writeout(9,
+            bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(16), ext_sshort(a, 0)));
+
+   //! v1: %res10 = v_lshlrev_b32 24, %a
+   //! p_unit_test 10, %res10
+   writeout(10,
+            bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(24), ext_sbyte(a, 0)));
+
+   //! v1: %res11 = v_lshlrev_b32 16, %a dst_sel:dword src0_sel:dword src1_sel:uword1
+   //! p_unit_test 11, %res11
+   writeout(11,
+            bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(16), ext_ushort(a, 1)));
+
+   //! v1: %res12 = v_lshlrev_b32 24, %a dst_sel:dword src0_sel:dword src1_sel:ubyte1
+   //! p_unit_test 12, %res12
+   writeout(12,
+            bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(24), ext_ubyte(a, 1)));
+
+   //! v1: %res13_tmp = p_extract %b, 0, 16, 1
+   //! v1: %res13 = v_lshlrev_b32 16, %res13_tmp dst_sel:dword src0_sel:dword src1_sel:ubyte2
+   //! p_unit_test 13, %res13
+   writeout(13, bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(16),
+                         ext_ubyte(ext_sshort(b_vgpr, 0), 2)));
+
+   finish_opt_test();
+END_TEST
