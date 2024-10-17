@@ -69,6 +69,7 @@
 #endif
 
 #include "util/macros.h"
+#include "util/u_dl.h"
 #include "glsl_types.h"
 
 #include "spirv.h"
@@ -905,14 +906,7 @@ clc_compile_to_llvm_module(LLVMContext &llvm_ctx,
          ::llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(opencl_c_source, ARRAY_SIZE(opencl_c_source) - 1)).release());
    }
 #else
-
-   Dl_info info;
-   if (dladdr((void *)clang::CompilerInvocation::CreateFromArgs, &info) == 0) {
-      clc_error(logger, "Couldn't find libclang path.\n");
-      return {};
-   }
-
-   char *clang_path = realpath(info.dli_fname, NULL);
+   char *clang_path = util_dl_get_path_from_proc((const void *)clang::CompilerInvocation::CreateFromArgs);
    if (clang_path == nullptr) {
       clc_error(logger, "Couldn't find libclang path.\n");
       return {};
