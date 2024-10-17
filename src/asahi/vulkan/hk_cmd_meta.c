@@ -86,7 +86,7 @@ struct hk_meta_save {
    enum agx_visibility_mode occlusion;
    struct hk_push_descriptor_set push_desc0;
    VkQueryPipelineStatisticFlags pipeline_stats_flags;
-   uint8_t push[128];
+   uint8_t push[HK_MAX_PUSH_SIZE];
 };
 
 static void
