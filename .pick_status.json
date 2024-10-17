@@ -1974,7 +1974,7 @@
         "description": "zink: fix bo_export caching",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b0fe621459c1b02b658f05ebbaba3ca68a7830de",
         "notes": null
