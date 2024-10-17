@@ -1084,14 +1084,15 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
    } else if (sel.size() == 2 && ((instr->opcode == aco_opcode::s_pack_lh_b32_b16 && idx == 0) ||
                                   (instr->opcode == aco_opcode::s_pack_hl_b32_b16 && idx == 1))) {
       return true;
-   } else if (instr->opcode == aco_opcode::p_extract) {
+   } else if (instr->opcode == aco_opcode::p_extract ||
+              instr->opcode == aco_opcode::p_extract_vector) {
       if (ctx.program->gfx_level < GFX9 && !info.instr->operands[0].isOfType(RegType::vgpr) &&
           instr->definitions[0].regClass().is_subdword())
          return false;
 
       SubdwordSel instrSel = parse_extract(instr.get());
-      return apply_extract_twice(sel, instr->operands[idx].getTemp(), instrSel,
-                                 instr->definitions[0].getTemp()) != SubdwordSel();
+      return instrSel && apply_extract_twice(sel, instr->operands[idx].getTemp(), instrSel,
+                                             instr->definitions[0].getTemp());
    }
 
    return false;
@@ -1175,6 +1176,29 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
       instr->operands[2] = Operand::c32(new_sel.size() * 8u);
       instr->operands[3] = Operand::c32(new_sel.sign_extend());
       return;
+   } else if (instr->opcode == aco_opcode::p_extract_vector) {
+      SubdwordSel instrSel = parse_extract(instr.get());
+      SubdwordSel new_sel = apply_extract_twice(sel, instr->operands[idx].getTemp(), instrSel,
+                                                instr->definitions[0].getTemp());
+      assert(new_sel.size() <= 2);
+
+      if (new_sel.size() == instr->definitions[0].bytes()) {
+         instr->operands[1] = Operand::c32(new_sel.offset() / instr->definitions[0].bytes());
+         return;
+      } else {
+         /* parse_extract() only succeeds with p_extract_vector for VGPR definitions because there
+          * are no sub-dword SGPR regclasses. */
+         assert(instr->definitions[0].regClass().type() != RegType::sgpr);
+
+         Instruction* ext = create_instruction(aco_opcode::p_extract, Format::PSEUDO, 4, 1);
+         ext->definitions[0] = instr->definitions[0];
+         ext->operands[0] = instr->operands[0];
+         ext->operands[1] = Operand::c32(new_sel.offset() / new_sel.size());
+         ext->operands[2] = Operand::c32(new_sel.size() * 8u);
+         ext->operands[3] = Operand::c32(new_sel.sign_extend());
+         ext->pass_flags = instr->pass_flags;
+         instr.reset(ext);
+      }
    }
 
    /* These are the only labels worth keeping at the moment. */
@@ -3785,7 +3809,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    if (instr->isSDWA() || instr->isDPP())
       return;
 
-   if (instr->opcode == aco_opcode::p_extract) {
+   if (instr->opcode == aco_opcode::p_extract || instr->opcode == aco_opcode::p_extract_vector) {
       ssa_info& info = ctx.info[instr->operands[0].tempId()];
       if (info.is_extract() && can_apply_extract(ctx, instr, 0, info)) {
          apply_extract(ctx, instr, 0, info);
@@ -3794,7 +3818,8 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          instr->operands[0].setTemp(info.instr->operands[0].getTemp());
       }
 
-      apply_ds_extract(ctx, instr);
+      if (instr->opcode == aco_opcode::p_extract)
+         apply_ds_extract(ctx, instr);
    }
 
    /* TODO: There are still some peephole optimizations that could be done:
