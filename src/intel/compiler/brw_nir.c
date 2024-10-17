@@ -1019,12 +1019,6 @@ brw_preprocess_nir(const struct brw_compiler *compiler, nir_shader *nir,
 
    OPT(nir_lower_alu_to_scalar, NULL, NULL);
 
-   struct nir_opt_16bit_tex_image_options options = {
-      .rounding_mode = nir_rounding_mode_undef,
-      .opt_tex_dest_types = nir_type_float | nir_type_int | nir_type_uint,
-   };
-   OPT(nir_opt_16bit_tex_image, &options);
-
    if (nir->info.stage == MESA_SHADER_GEOMETRY)
       OPT(nir_lower_gs_intrinsics, 0);
 
@@ -1083,6 +1077,12 @@ brw_preprocess_nir(const struct brw_compiler *compiler, nir_shader *nir,
    OPT(nir_split_struct_vars, nir_var_function_temp);
 
    brw_nir_optimize(nir, devinfo);
+
+   struct nir_opt_16bit_tex_image_options options = {
+      .rounding_mode = nir_rounding_mode_undef,
+      .opt_tex_dest_types = nir_type_float | nir_type_int | nir_type_uint,
+   };
+   OPT(nir_opt_16bit_tex_image, &options);
 
    OPT(nir_lower_doubles, opts->softfp64, nir->options->lower_doubles_options);
    if (OPT(nir_lower_int64_float_conversions)) {
