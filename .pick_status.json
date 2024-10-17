@@ -4224,7 +4224,7 @@
         "description": "nir/lcssa: fix premature exit of loop after rematerializing derefs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "439e8c42cc4b46a8410e4afd8bc24fc3ed0ce1c8",
         "notes": null
