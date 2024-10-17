@@ -462,6 +462,9 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->shaderIntegerDotProduct             = true;
    features->maintenance4                        = true;
 
+   /* Vulkan 1.4 */
+   features->pushDescriptor = true;
+
    /* VK_KHR_compute_shader_derivatives */
    features->computeDerivativeGroupQuads = pdevice->info->chip >= 7;
    features->computeDerivativeGroupLinear = pdevice->info->chip >= 7;
@@ -1036,6 +1039,10 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->vendorID = 0x5143;
    props->deviceID = pdevice->dev_id.chip_id;
    props->deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+
+   /* Vulkan 1.4 */
+   props->dynamicRenderingLocalReadDepthStencilAttachments = true;
+   props->dynamicRenderingLocalReadMultisampledAttachments = true;
 
    /* sparse properties */
    props->sparseResidencyStandard2DBlockShape = { 0 };
