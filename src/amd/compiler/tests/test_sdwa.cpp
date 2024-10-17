@@ -634,3 +634,27 @@ BEGIN_TEST(optimize.sdwa.special_case_valu)
 
    finish_opt_test();
 END_TEST
+
+BEGIN_TEST(optimize.sdwa.extract_sgpr_limits)
+   //>> s1: %a = p_startpgm
+   if (!setup_cs("s1", GFX8))
+      return;
+
+   Temp a = inputs[0];
+   Temp a_vgpr = bld.copy(bld.def(v1), a);
+
+   /* The optimizer should make this VOP3 */
+   //! v1: %res0 = v_lshlrev_b32 16, %a
+   //! p_unit_test 0, %res0
+   writeout(
+      0, bld.vop2(aco_opcode::v_lshlrev_b32, bld.def(v1), Operand::c32(16), ext_ushort(a_vgpr, 0)));
+
+   /* Unsupported on GFX8 */
+   //! v1: %res1_tmp = p_extract %a, 0, 16, 0
+   //! v1b: %res1 = p_extract %res1_tmp, 0, 8, 0
+   //! p_unit_test 1, %res1
+   writeout(1, bld.pseudo(aco_opcode::p_extract, bld.def(v1b), ext_ushort(a_vgpr, 0),
+                          Operand::c32(0), Operand::c32(8), Operand::c32(false)));
+
+   finish_opt_test();
+END_TEST

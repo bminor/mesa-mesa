@@ -1057,6 +1057,10 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
                                   (instr->opcode == aco_opcode::s_pack_hl_b32_b16 && idx == 1))) {
       return true;
    } else if (instr->opcode == aco_opcode::p_extract) {
+      if (ctx.program->gfx_level < GFX9 && !info.instr->operands[0].isOfType(RegType::vgpr) &&
+          instr->definitions[0].regClass().is_subdword())
+         return false;
+
       SubdwordSel instrSel = parse_extract(instr.get());
 
       /* the outer offset must be within extracted range */
@@ -1088,7 +1092,7 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
 
    ctx.info[tmp.id()].label &= ~label_insert;
 
-   if (sel.size() == 4) {
+   if (sel.size() == 4 && tmp.type() == instr->operands[idx].regClass().type()) {
       /* full dword selection */
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
                instr->opcode == aco_opcode::v_cvt_f32_i32) &&
@@ -1104,6 +1108,8 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
               ((sel.size() == 2 && instr->operands[0].constantValue() >= 16u) ||
                (sel.size() == 1 && instr->operands[0].constantValue() >= 24u))) {
       /* The undesirable upper bits are already shifted out. */
+      if (!instr->isVOP3() && !info.instr->operands[0].isOfType(RegType::vgpr))
+         instr->format = asVOP3(instr->format);
       return;
    } else if (instr->opcode == aco_opcode::v_mul_u32_u24 && ctx.program->gfx_level >= GFX10 &&
               !instr->usesModifiers() && sel.size() == 2 && !sel.sign_extend() &&
