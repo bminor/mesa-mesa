@@ -1554,9 +1554,21 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
    const struct vk_input_assembly_state *ia = &dyns->ia;
    const struct vk_rasterization_state *rs = &dyns->rs;
    struct mali_primitive_flags_packed tiler_idvs_flags;
+
+   /* When drawing non-point primitives, we use the no_psiz variant which has
+    * point size writes patched out */
    bool writes_point_size =
       vs->info.vs.writes_point_size &&
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+   bool multiview = cmdbuf->state.gfx.render.view_mask;
+   bool writes_layer = vs->info.outputs_written & VARYING_BIT_LAYER;
+
+   /* Multiview shaders depend on the FIFO format for indexing per-view
+    * output writes. We don't currently patch these offsets in the no_psiz
+    * variant, so we still need the extended format even though the shader
+    * does not write point size. */
+   bool extended_fifo = writes_point_size || writes_layer ||
+                        (vs->info.vs.writes_point_size && multiview);
 
    bool dirty = gfx_state_dirty(cmdbuf, VS) || fs_user_dirty(cmdbuf) ||
                 dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||
@@ -1568,18 +1580,14 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
       pan_pack(&tiler_idvs_flags, PRIMITIVE_FLAGS, cfg) {
          cfg.draw_mode = translate_prim_topology(ia->primitive_topology);
 
-         if (writes_point_size) {
-            cfg.point_size_array_format = MALI_POINT_SIZE_ARRAY_FORMAT_FP16;
-            cfg.position_fifo_format = MALI_FIFO_FORMAT_EXTENDED;
-         } else {
-            cfg.point_size_array_format = MALI_POINT_SIZE_ARRAY_FORMAT_NONE;
-            cfg.position_fifo_format = MALI_FIFO_FORMAT_BASIC;
-         }
+         cfg.point_size_array_format = writes_point_size
+            ? MALI_POINT_SIZE_ARRAY_FORMAT_FP16
+            : MALI_POINT_SIZE_ARRAY_FORMAT_NONE;
+         cfg.layer_index_enable = writes_layer;
 
-         if (vs->info.outputs_written & VARYING_BIT_LAYER) {
-            cfg.layer_index_enable = true;
-            cfg.position_fifo_format = MALI_FIFO_FORMAT_EXTENDED;
-         }
+         cfg.position_fifo_format = extended_fifo
+            ? MALI_FIFO_FORMAT_EXTENDED
+            : MALI_FIFO_FORMAT_BASIC;
 
          cfg.low_depth_cull = cfg.high_depth_cull =
             vk_rasterization_state_depth_clip_enable(rs);
