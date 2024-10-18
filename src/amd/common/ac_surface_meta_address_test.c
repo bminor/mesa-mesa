@@ -660,6 +660,10 @@ static void run_cmask_address_test(const char *name, const struct radeon_info *i
    if (info->gfx_level >= GFX11)
       return;
 
+   /* The test doesn't support GFX8- */
+   if (info->gfx_level < GFX9)
+      return;
+
    /* The test coverage is reduced for Gitlab CI because it timeouts. */
    if (!full) {
       first_size = last_size = 0;
@@ -712,7 +716,7 @@ int main(int argc, char **argv)
       struct radeon_info info = { .drm_major = 0 };
       get_radeon_info(&info, &ac_fake_hw_db[i]);
 
-      if (info.gfx_level >= GFX12)
+      if (info.gfx_level < GFX9 || info.gfx_level >= GFX12)
          continue;
 
       run_dcc_address_test(ac_fake_hw_db[i].name, &info, full);

@@ -23,6 +23,31 @@
 
 typedef void (*gpu_init_func)(struct radeon_info *info);
 
+static void init_polaris12(struct radeon_info *info)
+{
+   info->family = CHIP_POLARIS12;
+   info->gfx_level = GFX8;
+   info->family_id = AMDGPU_FAMILY_VI;
+   info->chip_external_rev = 0x64;
+   info->use_display_dcc_unaligned = false;
+   info->use_display_dcc_with_retile_blit = false;
+   info->has_graphics = true;
+   info->tcc_cache_line_size = 64;
+   info->max_render_backends = 4;
+
+   uint32_t si_tile_mode_array[] = {
+      0x00800150, 0x00800950, 0x00801150, 0x00801950, 0x00802950,
+      0x00802948, 0x00802954, 0x00802954, 0x00000144, 0x02000148,
+      0x02000150, 0x06000154, 0x06000154, 0x02400148, 0x02400150,
+      0x02400170, 0x06400154, 0x06400154, 0x0040014c, 0x0100014c,
+      0x0100015c, 0x01000174, 0x01000164, 0x01000164, 0x0040015c,
+      0x01000160, 0x01000178, 0x02c00148, 0x02c00150, 0x06c00154,
+      0x06c00154, 0x00000000
+   };
+   memcpy(info->si_tile_mode_array, si_tile_mode_array, sizeof(si_tile_mode_array));
+   info->gb_addr_config = 0x22011002;
+}
+
 static void init_vega10(struct radeon_info *info)
 {
    info->family = CHIP_VEGA10;
@@ -168,6 +193,7 @@ struct ac_fake_hw {
 };
 
 static struct ac_fake_hw ac_fake_hw_db[] = {
+   {"polaris12", init_polaris12},
    {"vega10", init_vega10, 4, 2, 2, 2},
    {"vega10_diff_bank", init_vega10, 3, 2, 2, 2},
    {"vega10_diff_rb", init_vega10, 4, 2, 2, 0},
