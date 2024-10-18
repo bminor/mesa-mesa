@@ -859,6 +859,7 @@ if with_libbacktrace
 endif
 
 if with_platform_android
+  dep_android_ui = null_dep
   dep_android_mapper4 = null_dep
   if not with_android_stub
     dep_android = [
@@ -875,6 +876,9 @@ if with_platform_android
     endif
     if get_option('platform-sdk-version') >= 30
       dep_android_mapper4 = dependency('android.hardware.graphics.mapper', version : '>= 4.0', required : false)
+    endif
+    if get_option('platform-sdk-version') >= 35
+      dep_android_ui = dependency('ui', required : false)
     endif
   endif
   pre_args += '-DANDROID_API_LEVEL=' + get_option('platform-sdk-version').to_string()
