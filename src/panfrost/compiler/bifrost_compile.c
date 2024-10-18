@@ -3706,8 +3706,8 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
 
       switch (instr->src[i].src_type) {
       case nir_tex_src_coord: {
-         unsigned components =
-            nir_src_num_components(instr->src[i].src) - instr->is_array;
+         bool is_array = instr->is_array && instr->op != nir_texop_lod;
+         unsigned components = nir_tex_instr_src_size(instr, i) - is_array;
 
          if (instr->sampler_dim == GLSL_SAMPLER_DIM_CUBE) {
             sregs[VALHALL_TEX_SREG_X_COORD] = bi_emit_texc_cube_coord(
@@ -3725,9 +3725,8 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
                sregs[VALHALL_TEX_SREG_Z_COORD] = bi_extract(b, index, 2);
          }
 
-         if (instr->is_array) {
+         if (is_array)
             sregs[VALHALL_TEX_SREG_ARRAY] = bi_extract(b, index, components);
-         }
 
          break;
       }
@@ -3829,13 +3828,41 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
       src1 = texture;
    }
 
+   enum bi_dimension dim = valhall_tex_dimension(instr->sampler_dim);
+
+   if (instr->op == nir_texop_lod) {
+      assert(instr->def.num_components == 2 && instr->def.bit_size == 32);
+
+      bi_index res[2];
+
+      for (unsigned i = 0; i < 2; i++) {
+         bi_index grdesc = bi_temp(b->shader);
+         bi_instr *I = bi_tex_gradient_to(b, grdesc, idx, src0, src1, dim,
+                                          !narrow_indices, 1, sr_count);
+         I->derivative_enable = false;
+         I->force_delta_enable = false;
+         I->lod_clamp_disable = i != 0;
+         I->register_format = BI_REGISTER_FORMAT_U32;
+         bi_index lod = bi_s16_to_f32(b, bi_half(grdesc, 0));
+
+         lod = bi_fmul_f32(b, lod, bi_imm_f32(1.0f / 256));
+
+         if (i == 0)
+            lod = bi_fround_f32(b, lod, BI_ROUND_NONE);
+
+         res[i] = lod;
+      }
+
+      bi_make_vec_to(b, bi_def_index(&instr->def), res, NULL, 2, 32);
+      return;
+   }
+
    /* Only write the components that we actually read */
    unsigned mask = nir_def_components_read(&instr->def);
    unsigned comps_per_reg = instr->def.bit_size == 16 ? 2 : 1;
    unsigned res_size = DIV_ROUND_UP(util_bitcount(mask), comps_per_reg);
 
    enum bi_register_format regfmt = bi_reg_fmt_for_nir(instr->dest_type);
-   enum bi_dimension dim = valhall_tex_dimension(instr->sampler_dim);
    bi_index dest = bi_temp(b->shader);
 
    switch (instr->op) {
