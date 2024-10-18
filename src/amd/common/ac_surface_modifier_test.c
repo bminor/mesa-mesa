@@ -17,7 +17,7 @@
 #include "util/mesa-sha1.h"
 #include "addrlib/inc/addrinterface.h"
 
-#include "ac_surface_test_common.h"
+#include "ac_fake_hw_db.h"
 
 /*
  * The main goal of this test is making sure that we do
@@ -463,10 +463,12 @@ int main()
    struct u_vector test_entries;
    u_vector_init_pow2(&test_entries, 64, sizeof(struct test_entry));
 
-   for (unsigned i = 0; i < ARRAY_SIZE(testcases); ++i) {
-      struct radeon_info info = get_radeon_info(&testcases[i]);
+   for (unsigned i = 0; i < ARRAY_SIZE(ac_fake_hw_db); ++i) {
+      struct radeon_info info = { .drm_major = 0 };
 
-      run_modifier_test(&test_entries, testcases[i].name, &info);
+      get_radeon_info(&info, &ac_fake_hw_db[i]);
+
+      run_modifier_test(&test_entries, ac_fake_hw_db[i].name, &info);
    }
 
    qsort(u_vector_tail(&test_entries),
