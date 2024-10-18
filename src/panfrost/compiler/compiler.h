@@ -508,6 +508,10 @@ typedef struct {
          bool texel_offset;
          bool array_enable;
          bool integer_coordinates;
+         bool derivative_enable;
+         bool force_delta_enable;
+         bool lod_bias_disable;
+         bool lod_clamp_disable;
          enum bi_fetch_component fetch_component;
          enum bi_va_lod_mode va_lod_mode;
          enum bi_dimension dimension;
