@@ -513,7 +513,7 @@ get_device_properties(const struct panvk_instance *instance,
       .maxDrawIndexedIndexValue = UINT32_MAX,
       /* Make it one for now. */
       .maxDrawIndirectCount = 1,
-      .maxSamplerLodBias = 255,
+      .maxSamplerLodBias = (float)INT16_MAX / 256.0f,
       .maxSamplerAnisotropy = 16,
       .maxViewports = 1,
       /* Same as the framebuffer limit. */
