@@ -230,9 +230,7 @@ struct vpe *vpe_create(const struct vpe_init_data *params)
     vpe_priv->ops_support      = false;
     vpe_priv->scale_yuv_matrix = true;
 
-#ifdef VPE_BUILD_1_1
     vpe_priv->collaborate_sync_index = 0;
-#endif
 
     return &vpe_priv->pub;
 }
@@ -471,11 +469,9 @@ enum vpe_status vpe_check_support(
     dpp             = vpe_priv->resource.dpp[0];
     status          = VPE_STATUS_OK;
 
-#ifdef VPE_BUILD_1_1
     vpe_priv->collaboration_mode = param->collaboration_mode;
     vpe_priv->vpe_num_instance   = param->num_instances;
     verify_collaboration_mode(vpe_priv);
-#endif
 
     required_virtual_streams = get_required_virtual_stream_count(vpe_priv, param);
 
@@ -633,13 +629,11 @@ static bool validate_cached_param(struct vpe_priv *vpe_priv, const struct vpe_bu
        !(vpe_priv->init.debug.bg_color_fill_only == true && vpe_priv->num_streams == 1))
         return false;
 
-#ifdef VPE_BUILD_1_1
     if (vpe_priv->collaboration_mode != param->collaboration_mode)
         return false;
 
     if (param->num_instances > 0 && vpe_priv->vpe_num_instance != param->num_instances)
         return false;
-#endif
 
     for (i = 0; i < vpe_priv->num_input_streams; i++) {
         struct vpe_stream stream = param->streams[i];
@@ -785,21 +779,18 @@ enum vpe_status vpe_build_commands(
         vpe_bg_color_convert(vpe_priv->output_ctx.cs, vpe_priv->output_ctx.output_tf,
             &vpe_priv->output_ctx.bg_color, vpe_priv->stream_ctx[0].enable_3dlut);
 
-#ifdef VPE_BUILD_1_1
         if (vpe_priv->collaboration_mode == true) {
             status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
             if (status != VPE_STATUS_OK) {
                 vpe_log("failed in building collaborate sync cmd %d\n", (int)status);
             }
         }
-#endif
         for (cmd_idx = 0; cmd_idx < vpe_priv->vpe_cmd_vector->num_elements; cmd_idx++) {
             status = builder->build_vpe_cmd(vpe_priv, &curr_bufs, cmd_idx);
             if (status != VPE_STATUS_OK) {
                 vpe_log("failed in building vpe cmd %d\n", (int)status);
             }
 
-#ifdef VPE_BUILD_1_1
             cmd_info = vpe_vector_get(vpe_priv->vpe_cmd_vector, cmd_idx);
             if (cmd_info == NULL)
                 return VPE_STATUS_ERROR;
@@ -818,16 +809,13 @@ enum vpe_status vpe_build_commands(
                     }
                 }
             }
-#endif
         }
-#ifdef VPE_BUILD_1_1
         if (vpe_priv->collaboration_mode == true) {
             status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
             if (status != VPE_STATUS_OK) {
                 vpe_log("failed in building collaborate sync cmd %d\n", (int)status);
             }
         }
-#endif
     }
 
     if (status == VPE_STATUS_OK) {
