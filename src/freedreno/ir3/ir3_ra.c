@@ -2539,10 +2539,16 @@ calc_limit_pressure_for_cs_with_barrier(struct ir3_shader_variant *v,
 {
    const struct ir3_compiler *compiler = v->compiler;
 
+   bool double_threadsize = ir3_should_double_threadsize(v, 0);
    unsigned threads_per_wg;
+
    if (v->local_size_variable) {
-      /* We have to expect the worst case. */
-      threads_per_wg = compiler->max_variable_workgroup_size;
+      if (v->type == MESA_SHADER_KERNEL) {
+         threads_per_wg = compiler->threadsize_base * (double_threadsize ? 2 : 1);
+      } else {
+         /* We have to expect the worst case. */
+         threads_per_wg = compiler->max_variable_workgroup_size;
+      }
    } else {
       threads_per_wg = v->local_size[0] * v->local_size[1] * v->local_size[2];
    }
@@ -2555,7 +2561,6 @@ calc_limit_pressure_for_cs_with_barrier(struct ir3_shader_variant *v,
     * parts each could get.
     */
 
-   bool double_threadsize = ir3_should_double_threadsize(v, 0);
    unsigned waves_per_wg = DIV_ROUND_UP(
       threads_per_wg, compiler->threadsize_base * (double_threadsize ? 2 : 1) *
                          compiler->wave_granularity);
