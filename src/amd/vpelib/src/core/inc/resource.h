@@ -102,6 +102,10 @@ struct resource {
 
     enum vpe_status (*check_mirror_rotation_support)(const struct vpe_stream *stream);
 
+    enum vpe_status (*update_blnd_gamma)(struct vpe_priv *vpe_priv,
+        const struct vpe_build_param *param, const struct vpe_stream *stream,
+        struct transfer_func *blnd_tf);
+
     // Indicates the nominal range hdr input content should be in during processing.
     int internal_hdr_normalization;
 

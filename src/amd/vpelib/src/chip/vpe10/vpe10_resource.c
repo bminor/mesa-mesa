@@ -420,6 +420,7 @@ enum vpe_status vpe10_construct_resource(struct vpe_priv *vpe_priv, struct resou
     res->get_bufs_req                      = vpe10_get_bufs_req;
     res->check_bg_color_support            = vpe10_check_bg_color_support;
     res->check_mirror_rotation_support     = vpe10_check_mirror_rotation_support;
+    res->update_blnd_gamma                 = vpe10_update_blnd_gamma;
 
     return VPE_STATUS_OK;
 err:
@@ -1177,4 +1178,90 @@ enum vpe_status vpe10_check_mirror_rotation_support(const struct vpe_stream *str
         return VPE_STATUS_MIRROR_NOT_SUPPORTED;
 
     return VPE_STATUS_OK;
+}
+
+/* This function generates software points for the blnd gam programming block.
+   The logic for the blndgam/ogam programming sequence is a function of:
+   1. Output Range (Studio Full)
+   2. 3DLUT usage
+   3. Output format (HDR SDR)
+
+   SDR Out or studio range out
+      TM Case
+         BLNDGAM : NL -> NL*S + B
+         OGAM    : Bypass
+      Non TM Case
+         BLNDGAM : L -> NL*S + B
+         OGAM    : Bypass
+   Full range HDR Out
+      TM Case
+         BLNDGAM : NL -> L
+         OGAM    : L -> NL
+      Non TM Case
+         BLNDGAM : Bypass
+         OGAM    : L -> NL
+
+*/
+enum vpe_status vpe10_update_blnd_gamma(struct vpe_priv *vpe_priv,
+    const struct vpe_build_param *param, const struct vpe_stream *stream,
+    struct transfer_func *blnd_tf)
+{
+    struct output_ctx       *output_ctx;
+    struct vpe_color_space   tm_out_cs;
+    struct fixed31_32        x_scale       = vpe_fixpt_one;
+    struct fixed31_32        y_scale       = vpe_fixpt_one;
+    struct fixed31_32        y_bias        = vpe_fixpt_zero;
+    bool                     is_studio     = false;
+    bool                     can_bypass    = false;
+    bool                     lut3d_enabled = false;
+    enum color_space         cs            = COLOR_SPACE_2020_RGB_FULLRANGE;
+    enum color_transfer_func tf            = TRANSFER_FUNC_LINEAR;
+    enum vpe_status          status        = VPE_STATUS_OK;
+    const struct vpe_tonemap_params *tm_params     = &stream->tm_params;
+
+    is_studio = (param->dst_surface.cs.range == VPE_COLOR_RANGE_STUDIO);
+    output_ctx = &vpe_priv->output_ctx;
+    lut3d_enabled = tm_params->UID != 0 || tm_params->enable_3dlut;
+
+    if (stream->flags.geometric_scaling) {
+        vpe_color_update_degamma_tf(vpe_priv, tf, x_scale, y_scale, y_bias, true, blnd_tf);
+    } else {
+        if (is_studio) {
+
+            if (vpe_is_rgb8(param->dst_surface.format)) {
+                y_scale = STUDIO_RANGE_SCALE_8_BIT;
+                y_bias  = STUDIO_RANGE_FOOT_ROOM_8_BIT;
+            } else {
+                y_scale = STUDIO_RANGE_SCALE_10_BIT;
+                y_bias  = STUDIO_RANGE_FOOT_ROOM_10_BIT;
+            }
+        }
+        // If SDR out -> Blend should be NL
+        // If studio out -> No choice but to blend in NL
+        if (!vpe_is_HDR(output_ctx->tf) || (is_studio)) {
+            if (lut3d_enabled) {
+                tf = TRANSFER_FUNC_LINEAR;
+            } else {
+                tf = output_ctx->tf;
+            }
+
+            if (vpe_is_fp16(param->dst_surface.format)) {
+                y_scale = vpe_fixpt_mul_int(y_scale, CCCS_NORM);
+            }
+            vpe_color_update_regamma_tf(
+                vpe_priv, tf, x_scale, y_scale, y_bias, can_bypass, blnd_tf);
+        } else {
+
+            if (lut3d_enabled) {
+                vpe_color_build_tm_cs(tm_params, param->dst_surface, &tm_out_cs);
+                vpe_color_get_color_space_and_tf(&tm_out_cs, &cs, &tf);
+            } else {
+                can_bypass = true;
+            }
+
+            vpe_color_update_degamma_tf(
+                vpe_priv, tf, x_scale, y_scale, y_bias, can_bypass, blnd_tf);
+        }
+    }
+    return status;
 }

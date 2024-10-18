@@ -74,6 +74,18 @@ bool vpe_is_32bit_packed_rgb(enum vpe_surface_pixel_format format)
     }
 }
 
+bool vpe_is_8bit(enum vpe_surface_pixel_format format) {
+    return vpe_is_rgb8(format) ||
+           vpe_is_yuv420_8(format) ||
+    vpe_is_yuv444_8(format);
+}
+
+bool vpe_is_10bit(enum vpe_surface_pixel_format format) {
+    return vpe_is_rgb10(format) ||
+           vpe_is_yuv420_10(format) ||
+    vpe_is_yuv444_10(format);
+}
+
 bool vpe_is_rgb8(enum vpe_surface_pixel_format format)
 {
     switch (format) {

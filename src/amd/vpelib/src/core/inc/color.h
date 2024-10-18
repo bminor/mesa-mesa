@@ -58,6 +58,13 @@ enum color_depth {
     COLOR_DEPTH_COUNT
 };
 
+enum color_range_type {
+    COLOR_RANGE_FULL,
+    COLOR_RANGE_LIMITED_8BPC,
+    COLOR_RANGE_LIMITED_10BPC,
+    COLOR_RANGE_LIMITED_16BPC
+};
+
 enum color_transfer_func {
     TRANSFER_FUNC_UNKNOWN,
     TRANSFER_FUNC_SRGB,
@@ -279,6 +286,18 @@ enum vpe_status vpe_color_build_tm_cs(const struct vpe_tonemap_params *tm_params
 
 enum vpe_status vpe_color_update_3dlut(
     struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx, bool enable_3dlut);
+
+bool vpe_color_update_regamma_tf(struct vpe_priv *vpe_priv,
+    enum color_transfer_func output_transfer_function, struct fixed31_32 x_scale,
+    struct fixed31_32 y_scale, struct fixed31_32 y_bias, bool can_bypass,
+    struct transfer_func *output_tf);
+
+bool vpe_color_update_degamma_tf(struct vpe_priv *vpe_priv, enum color_transfer_func color_input_tf,
+    struct fixed31_32 x_scale, struct fixed31_32 y_scale, struct fixed31_32 y_bias, bool can_bypass,
+    struct transfer_func *input_tf);
+
+enum color_range_type vpe_get_range_type(
+    enum color_space color_space, enum vpe_surface_pixel_format format);
 
 #ifdef __cplusplus
 }

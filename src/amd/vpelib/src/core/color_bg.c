@@ -55,7 +55,6 @@ const double bt_2020_xyz_rgb_matrix[] = {
     0.053616587979668,    -0.130001864005497,     2.863535322904176
 };
 
-
 static struct csc_table bgcolor_to_rgbfull_table[COLOR_SPACE_MAX] = {
     [COLOR_SPACE_YCBCR601] =
         {
@@ -501,59 +500,11 @@ static void vpe_bg_inverse_gamut_remap(enum color_space output_cs,
 
 }
 
-static void inverse_output_csc(enum color_space output_cs, struct vpe_color* bg_color)
-{
-    enum color_space bgcolor_cs = COLOR_SPACE_YCBCR709;
-
-    switch (output_cs) {
-        // output is ycbr cs, follow output's setting
-    case COLOR_SPACE_YCBCR601:
-    case COLOR_SPACE_YCBCR709:
-    case COLOR_SPACE_YCBCR601_LIMITED:
-    case COLOR_SPACE_YCBCR709_LIMITED:
-    case COLOR_SPACE_2020_YCBCR:
-    case COLOR_SPACE_2020_YCBCR_LIMITED:
-        bgcolor_cs = output_cs;
-        break;
-        // output is RGB cs, follow output's range
-        // but need yuv to rgb csc
-    case COLOR_SPACE_SRGB_LIMITED:
-    case COLOR_SPACE_RGB601_LIMITED:
-        bgcolor_cs = COLOR_SPACE_YCBCR709_LIMITED;
-        break;
-    case COLOR_SPACE_2020_RGB_LIMITEDRANGE:
-        bgcolor_cs = COLOR_SPACE_2020_YCBCR_LIMITED;
-        break;
-    case COLOR_SPACE_SRGB:
-    case COLOR_SPACE_MSREF_SCRGB:
-    case COLOR_SPACE_RGB601:
-        bgcolor_cs = COLOR_SPACE_YCBCR709;
-        break;
-    case COLOR_SPACE_2020_RGB_FULLRANGE:
-        bgcolor_cs = COLOR_SPACE_2020_YCBCR;
-        break;
-    default:
-        // should revise the newly added CS
-        // and set corresponding bgcolor_cs accordingly
-        VPE_ASSERT(0);
-        bgcolor_cs = COLOR_SPACE_YCBCR709;
-        break;
-    }
-
-    // input is [0-0xffff]
-    // convert bg color to RGB full range for use inside pipe
-    bg_csc(bg_color, bgcolor_cs);
-}
-
 // To understand the logic for background color conversion,
 // please refer to vpe_update_output_gamma_sequence in color.c
 void vpe_bg_color_convert(
-    enum color_space output_cs, struct transfer_func *output_tf, struct vpe_color *bg_color, bool enable_3dlut)
+    enum color_space output_cs, struct transfer_func *output_tf, enum vpe_surface_pixel_format pixel_format, struct vpe_color *bg_color, bool enable_3dlut)
 {
-    // inverse OCSC
-    if (bg_color->is_ycbcr)
-        inverse_output_csc(output_cs, bg_color);
-
     if (output_tf->type != TF_TYPE_BYPASS) {
         // inverse degam
         if (output_tf->tf == TRANSFER_FUNC_PQ2084 && !is_limited_cs(output_cs))

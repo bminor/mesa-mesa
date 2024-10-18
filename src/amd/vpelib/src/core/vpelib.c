@@ -776,7 +776,7 @@ enum vpe_status vpe_build_commands(
          * the 3dlut enablement for the background color conversion
          * is used based on the information of the first stream.
          */
-        vpe_bg_color_convert(vpe_priv->output_ctx.cs, vpe_priv->output_ctx.output_tf,
+        vpe_bg_color_convert(vpe_priv->output_ctx.cs, vpe_priv->output_ctx.output_tf, vpe_priv->output_ctx.surface.format,
             &vpe_priv->output_ctx.bg_color, vpe_priv->stream_ctx[0].enable_3dlut);
 
         if (vpe_priv->collaboration_mode == true) {
