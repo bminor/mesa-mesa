@@ -8,6 +8,7 @@
 #include "ac_shader_util.h"
 #include "ac_debug.h"
 #include "ac_surface.h"
+#include "ac_fake_hw_db.h"
 
 #include "addrlib/src/amdgpu_asic_addr.h"
 #include "sid.h"
@@ -590,13 +591,10 @@ static void handle_env_var_force_family(struct radeon_info *info)
    if (!family)
       return;
 
-   for (unsigned i = CHIP_TAHITI; i < CHIP_LAST; i++) {
-      if (!strcmp(family, ac_get_llvm_processor_name(i))) {
-         /* Override family and gfx_level. */
-         info->family = i;
+   for (size_t i = 0; i < ARRAY_SIZE(ac_fake_hw_db); i++) {
+      if (!strcmp(family, ac_fake_hw_db[i].name)) {
+         get_radeon_info(info, &ac_fake_hw_db[i]);
          info->name = "NOOP";
-         info->gfx_level = ac_get_gfx_level(i);
-         info->family_id = ac_get_family_id(i);
          info->family_overridden = true;
          return;
       }
@@ -1197,7 +1195,8 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    }
 
    info->mc_arb_ramcfg = amdinfo.mc_arb_ramcfg;
-   info->gb_addr_config = amdinfo.gb_addr_cfg;
+   if (!info->family_overridden)
+      info->gb_addr_config = amdinfo.gb_addr_cfg;
    if (info->gfx_level >= GFX9) {
       if (!info->has_graphics && info->family >= CHIP_GFX940)
          info->gb_addr_config = 0;
@@ -1454,7 +1453,9 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->min_good_cu_per_sa =
       (info->num_cu / (info->num_se * info->max_sa_per_se * cu_group)) * cu_group;
 
-   memcpy(info->si_tile_mode_array, amdinfo.gb_tile_mode, sizeof(amdinfo.gb_tile_mode));
+   if (!info->family_overridden)
+      memcpy(info->si_tile_mode_array, amdinfo.gb_tile_mode, sizeof(amdinfo.gb_tile_mode));
+
    memcpy(info->cik_macrotile_mode_array, amdinfo.gb_macro_tile_mode,
           sizeof(amdinfo.gb_macro_tile_mode));
 
@@ -1684,7 +1685,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          info->attribute_ring_size_per_se = 1024 * 1024;
          num_prim_exports = 16368; /* also includes gs_alloc_req */
          num_pos_exports = 16384;
-      } else if (info->l3_cache_size_mb) {
+      } else if (info->l3_cache_size_mb || info->family_overridden) {
          info->attribute_ring_size_per_se = 1400 * 1024;
       } else {
          assert(info->num_se == 1);
