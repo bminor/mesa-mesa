@@ -1027,8 +1027,6 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
 
    if (!sel) {
       return false;
-   } else if (sel.size() == 4) {
-      return true;
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
                instr->opcode == aco_opcode::v_cvt_f32_i32) &&
               sel.size() == 1 && !sel.sign_extend() && !instr->usesModifiers()) {

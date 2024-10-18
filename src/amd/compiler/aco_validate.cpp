@@ -699,12 +699,10 @@ validate_ir(Program* program)
                unsigned data_bits = instr->operands[0].bytes() * 8u;
                unsigned op_bits = instr->operands[2].constantValue();
 
+               check(op_bits == 8 || op_bits == 16, "Size must be 8 or 16", instr.get());
                if (instr->opcode == aco_opcode::p_insert) {
-                  check(op_bits == 8 || op_bits == 16, "Size must be 8 or 16", instr.get());
                   check(op_bits < data_bits, "Size must be smaller than source", instr.get());
                } else if (instr->opcode == aco_opcode::p_extract) {
-                  check(op_bits == 8 || op_bits == 16 || op_bits == 32,
-                        "Size must be 8 or 16 or 32", instr.get());
                   check(data_bits >= op_bits, "Can't extract more bits than what the data has.",
                         instr.get());
                }
