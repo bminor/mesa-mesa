@@ -623,6 +623,17 @@ pvr_get_image_format_features2(const struct pvr_format *pvr_format,
    if (vk_format_is_scaled(vk_format))
       return 0;
 
+   switch (vk_format) {
+   default:
+      break;
+
+   case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
+   case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
+   case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
+   case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
+      return 0;
+   }
+
    if (pvr_get_tex_format(vk_format) != ROGUE_TEXSTATE_FORMAT_INVALID) {
       if (vk_tiling == VK_IMAGE_TILING_OPTIMAL) {
          const uint32_t first_component_size =
