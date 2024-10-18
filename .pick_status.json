@@ -484,7 +484,7 @@
         "description": "aco: fix 64bit extract_i8/extract_i16",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1f2518ef9fce84f23a2c42e8f76805d9610176d2",
         "notes": null

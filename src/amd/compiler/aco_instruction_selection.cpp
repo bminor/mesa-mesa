@@ -3842,26 +3842,38 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          index += swizzle * instr->def.bit_size / bits;
          bld.pseudo(aco_opcode::p_extract, Definition(dst), bld.def(s1, scc), Operand(vec),
                     Operand::c32(index), Operand::c32(bits), Operand::c32(is_signed));
+      } else if (dst.regClass() == s1) {
+         Temp src = get_alu_src(ctx, instr->src[0]);
+         bld.pseudo(aco_opcode::p_extract, Definition(dst), bld.def(s1, scc), Operand(src),
+                    Operand::c32(index), Operand::c32(bits), Operand::c32(is_signed));
+      } else if (dst.regClass() == s2) {
+         Temp src = get_alu_src(ctx, instr->src[0]);
+         aco_opcode op = is_signed ? aco_opcode::s_bfe_i64 : aco_opcode::s_bfe_u64;
+         Temp extract = bld.copy(bld.def(s1), Operand::c32((bits << 16) | (index * bits)));
+         bld.sop2(op, Definition(dst), bld.def(s1, scc), src, extract);
       } else {
+         assert(dst.regClass().type() == RegType::vgpr);
          Temp src = get_alu_src(ctx, instr->src[0]);
          Definition def(dst);
+
          if (dst.bytes() == 8) {
-            src = emit_extract_vector(ctx, src, index / comp, RegClass(src.type(), 1));
+            src = emit_extract_vector(ctx, src, index / comp, v1);
             index %= comp;
-            def = bld.def(src.type(), 1);
+            def = bld.def(v1);
          }
+
          assert(def.bytes() <= 4);
-         if (def.regClass() == s1) {
-            bld.pseudo(aco_opcode::p_extract, def, bld.def(s1, scc), Operand(src),
-                       Operand::c32(index), Operand::c32(bits), Operand::c32(is_signed));
-         } else {
-            src = emit_extract_vector(ctx, src, 0, def.regClass());
-            bld.pseudo(aco_opcode::p_extract, def, Operand(src), Operand::c32(index),
-                       Operand::c32(bits), Operand::c32(is_signed));
+         src = emit_extract_vector(ctx, src, 0, def.regClass());
+         bld.pseudo(aco_opcode::p_extract, def, Operand(src), Operand::c32(index),
+                    Operand::c32(bits), Operand::c32(is_signed));
+
+         if (dst.size() == 2) {
+            Temp lo = def.getTemp();
+            Operand hi = Operand::zero();
+            if (is_signed)
+               hi = bld.vop2(aco_opcode::v_ashrrev_i32, bld.def(v1), Operand::c32(31), lo);
+            bld.pseudo(aco_opcode::p_create_vector, Definition(dst), lo, hi);
          }
-         if (dst.size() == 2)
-            bld.pseudo(aco_opcode::p_create_vector, Definition(dst), def.getTemp(),
-                       Operand::zero());
       }
       break;
    }
