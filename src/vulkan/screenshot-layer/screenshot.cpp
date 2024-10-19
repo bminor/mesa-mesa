@@ -146,6 +146,7 @@ struct swapchain_data {
    VkFormat format;
 
    VkImage image;
+   uint32_t imageListSize;
 };
 
 static struct hash_table_u64 *vk_object_to_data = NULL;
@@ -182,6 +183,30 @@ static void unmap_object(uint64_t obj)
    simple_mtx_lock(&vk_object_to_data_mutex);
    _mesa_hash_table_u64_remove(vk_object_to_data, obj);
    simple_mtx_unlock(&vk_object_to_data_mutex);
+}
+
+void map_images(swapchain_data *data, VkImage *imageList, uint32_t size) {
+   data->imageListSize = size;
+   VkImage *image;
+   for (uint32_t index = 0; index < size; index++) {
+      image = (VkImage *) malloc(sizeof(VkImage));
+      *image = imageList[index];
+      map_object(HKEY(index), image);
+   }
+}
+
+void select_image_from_map(swapchain_data *data, uint32_t index) {
+   data->image = *(FIND(VkImage, index));
+}
+
+void unmap_images(swapchain_data *data) {
+   VkImage *image;
+   for (uint32_t index = 0; index < data->imageListSize; index++) {
+      image = FIND(VkImage, index);
+      free(image);
+      unmap_object(HKEY(index));
+   }
+   data->imageListSize = 0;
 }
 
 #define VK_CHECK(expr) \
@@ -595,11 +620,13 @@ static VkResult screenshot_GetSwapchainImagesKHR(
    VkResult result = vtable->GetSwapchainImagesKHR(device, swapchain, pCount, pSwapchainImages);
 
    loader_platform_thread_lock_mutex(&globalLock);
+   if (swapchain_data->imageListSize > 0)
+      unmap_images(swapchain_data);
    if (result == VK_SUCCESS) {
-      // Save only the first image from the first swapchain
+      // Save the images produced from the swapchain in a hash table
       if (*pCount > 0) {
             if(pSwapchainImages){
-               swapchain_data->image = pSwapchainImages[0];
+               map_images(swapchain_data, pSwapchainImages, *pCount);
          }
       }
    }
@@ -1045,7 +1072,7 @@ static bool write_image(
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &img_copy);
          generalMemoryBarrier.image = data.image3;
       }
-    }
+   }
 
    // The destination needs to be transitioned from the optimal copy format to
    // the format we can read with the CPU.
@@ -1238,6 +1265,32 @@ static VkResult screenshot_QueuePresentKHR(
    return result;
 }
 
+static VkResult screenshot_AcquireNextImageKHR(
+    VkDevice                                    device,
+    VkSwapchainKHR                              swapchain,
+    uint64_t                                    timeout,
+    VkSemaphore                                 semaphore,
+    VkFence                                     fence,
+    uint32_t*                                   pImageIndex)
+{
+   struct swapchain_data *swapchain_data =
+      FIND(struct swapchain_data, swapchain);
+   struct device_data *device_data = swapchain_data->device;
+
+   VkResult result = device_data->vtable.AcquireNextImageKHR(device, swapchain, timeout,
+                                                             semaphore, fence, pImageIndex);
+   loader_platform_thread_lock_mutex(&globalLock);
+
+   if (result == VK_SUCCESS) {
+      // Use the index given by AcquireNextImageKHR() to obtain the image we intend to copy.
+      if(pImageIndex){
+         select_image_from_map(swapchain_data, *pImageIndex);
+      }
+   }
+   loader_platform_thread_unlock_mutex(&globalLock);
+   return result;
+}
+
 static VkResult screenshot_CreateDevice(
     VkPhysicalDevice                            physicalDevice,
     const VkDeviceCreateInfo*                   pCreateInfo,
@@ -1355,6 +1408,7 @@ static const struct {
    ADD_HOOK(GetSwapchainImagesKHR),
    ADD_HOOK(DestroySwapchainKHR),
    ADD_HOOK(QueuePresentKHR),
+   ADD_HOOK(AcquireNextImageKHR),
 
    ADD_HOOK(CreateDevice),
    ADD_HOOK(DestroyDevice),
