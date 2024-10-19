@@ -61,8 +61,26 @@ brw_has_uip(const struct intel_device_info *devinfo, enum opcode opcode)
 static bool
 has_branch_ctrl(const struct intel_device_info *devinfo, enum opcode opcode)
 {
-   return opcode == BRW_OPCODE_IF ||
-          opcode == BRW_OPCODE_ELSE;
+   switch (opcode) {
+   case BRW_OPCODE_IF:
+   case BRW_OPCODE_ELSE:
+   case BRW_OPCODE_GOTO:
+   case BRW_OPCODE_BREAK:
+   case BRW_OPCODE_CALL:
+   case BRW_OPCODE_CALLA:
+   case BRW_OPCODE_CONTINUE:
+   case BRW_OPCODE_ENDIF:
+   case BRW_OPCODE_HALT:
+   case BRW_OPCODE_JMPI:
+   case BRW_OPCODE_RET:
+   case BRW_OPCODE_WHILE:
+   case BRW_OPCODE_BRC:
+   case BRW_OPCODE_BRD:
+      /* TODO: "join" should also be here if added */
+      return true;
+   default:
+      return false;
+   }
 }
 
 static bool
