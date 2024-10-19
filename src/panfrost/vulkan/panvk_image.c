@@ -45,8 +45,6 @@
 #include "vk_object.h"
 #include "vk_util.h"
 
-#define PANVK_MAX_PLANES 1
-
 static bool
 panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
 {
@@ -117,21 +115,12 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
    return mod == DRM_FORMAT_MOD_LINEAR;
 }
 
-static void
-panvk_image_apply_explicit_mod(
+static uint64_t
+panvk_image_get_explicit_mod(
    struct panvk_image *image,
    const VkImageDrmFormatModifierExplicitCreateInfoEXT *explicit)
 {
-   struct panvk_physical_device *phys_dev =
-      to_panvk_physical_device(image->vk.base.device->physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
    uint64_t mod = explicit->drmFormatModifier;
-
-   /* TODO: support arrays, 3D, multisample and depth-stencil. */
-   struct pan_image_explicit_layout plane0_layout = {
-      .offset = explicit->pPlaneLayouts[0].offset,
-      .row_stride = explicit->pPlaneLayouts[0].rowPitch,
-   };
 
    assert(!vk_format_is_depth_or_stencil(image->vk.format));
    assert(image->vk.samples == 1);
@@ -140,39 +129,31 @@ panvk_image_apply_explicit_mod(
    assert(explicit->drmFormatModifierPlaneCount == 1);
    assert(panvk_image_can_use_mod(image, mod));
 
-   image->pimage.layout.modifier = mod;
-   pan_image_layout_init(arch, &image->pimage.layout, &plane0_layout);
+   return mod;
 }
 
-static void
-panvk_image_select_mod_from_list(struct panvk_image *image,
-                                 const uint64_t *mods, uint32_t mod_count)
+static uint64_t
+panvk_image_get_mod_from_list(struct panvk_image *image,
+                              const uint64_t *mods, uint32_t mod_count)
 {
-   struct panvk_physical_device *phys_dev =
-      to_panvk_physical_device(image->vk.base.device->physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
-
    for (unsigned i = 0; i < PAN_MODIFIER_COUNT; ++i) {
       if (!panvk_image_can_use_mod(image, pan_best_modifiers[i]))
          continue;
 
       if (!mod_count ||
-          drm_find_modifier(pan_best_modifiers[i], mods, mod_count)) {
-         image->pimage.layout.modifier = pan_best_modifiers[i];
-         pan_image_layout_init(arch, &image->pimage.layout, NULL);
-         return;
-      }
+          drm_find_modifier(pan_best_modifiers[i], mods, mod_count))
+         return pan_best_modifiers[i];
    }
 
    /* If we reached that point without finding a proper modifier, there's
     * a serious issue. */
-   image->pimage.layout.modifier = DRM_FORMAT_MOD_INVALID;
    assert(!"Invalid modifier");
+   return DRM_FORMAT_MOD_INVALID;
 }
 
-static void
-panvk_image_select_mod(struct panvk_image *image,
-                       const VkImageCreateInfo *pCreateInfo)
+static uint64_t
+panvk_image_get_mod(struct panvk_image *image,
+                    const VkImageCreateInfo *pCreateInfo)
 {
    if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       const VkImageDrmFormatModifierListCreateInfoEXT *mod_list =
@@ -184,17 +165,71 @@ panvk_image_select_mod(struct panvk_image *image,
             IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
 
       if (explicit_mod)
-         panvk_image_apply_explicit_mod(image, explicit_mod);
-      else if (mod_list)
-         panvk_image_select_mod_from_list(image, mod_list->pDrmFormatModifiers,
-                                          mod_list->drmFormatModifierCount);
-      else
-         assert(!"Missing modifier info");
+         return panvk_image_get_explicit_mod(image, explicit_mod);
 
-      return;
+      if (mod_list)
+         return panvk_image_get_mod_from_list(image,
+                   mod_list->pDrmFormatModifiers,
+                   mod_list->drmFormatModifierCount);
+
+      assert(!"Missing modifier info");
    }
 
-   panvk_image_select_mod_from_list(image, NULL, 0);
+   return panvk_image_get_mod_from_list(image, NULL, 0);
+}
+
+static enum mali_texture_dimension
+panvk_image_type_to_mali_tex_dim(VkImageType type)
+{
+   switch (type) {
+   case VK_IMAGE_TYPE_1D:
+      return MALI_TEXTURE_DIMENSION_1D;
+   case VK_IMAGE_TYPE_2D:
+      return MALI_TEXTURE_DIMENSION_2D;
+   case VK_IMAGE_TYPE_3D:
+      return MALI_TEXTURE_DIMENSION_3D;
+   default:
+      unreachable("Invalid image type");
+   }
+}
+
+static void
+panvk_image_init_layouts(struct panvk_image *image,
+                         const VkImageCreateInfo *pCreateInfo)
+{
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(image->vk.base.device->physical);
+   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+   const VkImageDrmFormatModifierExplicitCreateInfoEXT *explicit_info =
+      vk_find_struct_const(
+         pCreateInfo->pNext,
+         IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
+
+   image->plane_count = vk_format_get_plane_count(pCreateInfo->format);
+
+   for (uint8_t plane = 0; plane < image->plane_count; plane++) {
+      struct pan_image_explicit_layout plane_layout;
+      if (explicit_info)
+         plane_layout = (struct pan_image_explicit_layout){
+            .offset = explicit_info->pPlaneLayouts[plane].offset,
+            .row_stride = explicit_info->pPlaneLayouts[plane].rowPitch,
+         };
+
+      image->planes[plane].layout = (struct pan_image_layout){
+         .format = vk_format_to_pipe_format(image->vk.format),
+         .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
+         .width = image->vk.extent.width,
+         .height = image->vk.extent.height,
+         .depth = image->vk.extent.depth,
+         .array_size = image->vk.array_layers,
+         .nr_samples = image->vk.samples,
+         .nr_slices = image->vk.mip_levels,
+      };
+
+      image->planes[plane].layout.modifier = image->vk.drm_format_mod;
+      pan_image_layout_init(arch, &image->planes[plane].layout,
+                            explicit_info ? &plane_layout : NULL);
+   }
 }
 
 static void
@@ -244,7 +279,7 @@ panvk_image_pre_mod_select_meta_adjustments(struct panvk_image *image)
 
    if ((image->vk.usage &
         (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) &&
-       util_format_is_compressed(image->pimage.layout.format)) {
+       vk_format_is_compressed(image->vk.format)) {
       /* We need to be able to create RGBA views of compressed formats for
        * vk_meta copies. */
       image->vk.create_flags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT |
@@ -255,23 +290,18 @@ panvk_image_pre_mod_select_meta_adjustments(struct panvk_image *image)
 static uint64_t
 panvk_image_get_total_size(const struct panvk_image *image)
 {
-   assert(util_format_get_num_planes(image->pimage.layout.format) == 1);
-   return image->pimage.layout.data_size;
+   uint64_t size = 0;
+   for (uint8_t plane = 0; plane < image->plane_count; plane++)
+      size += image->planes[plane].layout.data_size;
+   return size;
 }
 
-static enum mali_texture_dimension
-panvk_image_type_to_mali_tex_dim(VkImageType type)
+static bool
+is_disjoint(struct panvk_image *image)
 {
-   switch (type) {
-   case VK_IMAGE_TYPE_1D:
-      return MALI_TEXTURE_DIMENSION_1D;
-   case VK_IMAGE_TYPE_2D:
-      return MALI_TEXTURE_DIMENSION_2D;
-   case VK_IMAGE_TYPE_3D:
-      return MALI_TEXTURE_DIMENSION_3D;
-   default:
-      unreachable("Invalid image type");
-   }
+   assert(image->plane_count > 1 ||
+          !(image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT));
+   return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -296,17 +326,6 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    if (!image)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   image->pimage.layout = (struct pan_image_layout){
-      .format = vk_format_to_pipe_format(image->vk.format),
-      .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
-      .width = image->vk.extent.width,
-      .height = image->vk.extent.height,
-      .depth = image->vk.extent.depth,
-      .array_size = image->vk.array_layers,
-      .nr_samples = image->vk.samples,
-      .nr_slices = image->vk.mip_levels,
-   };
-
    /* Add any create/usage flags that might be needed for meta operations.
     * This is run before the modifier selection because some
     * usage/create_flags influence the modifier selection logic. */
@@ -314,9 +333,8 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
 
    /* Now that we've patched the create/usage flags, we can proceed with the
     * modifier selection. */
-   panvk_image_select_mod(image, pCreateInfo);
-
-   image->vk.drm_format_mod = image->pimage.layout.modifier;
+   image->vk.drm_format_mod = panvk_image_get_mod(image, pCreateInfo);
+   panvk_image_init_layouts(image, pCreateInfo);
 
    /*
     * From the Vulkan spec:
@@ -349,19 +367,6 @@ panvk_DestroyImage(VkDevice _device, VkImage _image,
    vk_image_destroy(&device->vk, pAllocator, &image->vk);
 }
 
-static unsigned
-panvk_plane_index(VkFormat format, VkImageAspectFlags aspect_mask)
-{
-   switch (aspect_mask) {
-   default:
-      return 0;
-   case VK_IMAGE_ASPECT_PLANE_1_BIT:
-      return 1;
-   case VK_IMAGE_ASPECT_PLANE_2_BIT:
-      return 2;
-   }
-}
-
 VKAPI_ATTR void VKAPI_CALL
 panvk_GetImageSubresourceLayout(VkDevice _device, VkImage _image,
                                 const VkImageSubresource *pSubresource,
@@ -374,13 +379,20 @@ panvk_GetImageSubresourceLayout(VkDevice _device, VkImage _image,
    assert(plane < PANVK_MAX_PLANES);
 
    const struct pan_image_slice_layout *slice_layout =
-      &image->pimage.layout.slices[pSubresource->mipLevel];
+      &image->planes[plane].layout.slices[pSubresource->mipLevel];
 
-   pLayout->offset = slice_layout->offset + (pSubresource->arrayLayer *
-                                             image->pimage.layout.array_stride);
+   uint64_t base_offset = 0;
+   if (!is_disjoint(image)) {
+      for (uint8_t plane_idx = 0; plane_idx < plane; plane_idx++)
+         base_offset += image->planes[plane_idx].layout.data_size;
+   }
+
+   pLayout->offset = base_offset +
+      slice_layout->offset + (pSubresource->arrayLayer *
+                              image->planes[plane].layout.array_stride);
    pLayout->size = slice_layout->size;
    pLayout->rowPitch = slice_layout->row_stride;
-   pLayout->arrayPitch = image->pimage.layout.array_stride;
+   pLayout->arrayPitch = image->planes[plane].layout.array_stride;
    pLayout->depthPitch = slice_layout->surface_stride;
 }
 
@@ -392,7 +404,15 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
    VK_FROM_HANDLE(panvk_image, image, pInfo->image);
 
    const uint64_t alignment = 4096;
-   const uint64_t size = panvk_image_get_total_size(image);
+   const VkImagePlaneMemoryRequirementsInfo *plane_info =
+      vk_find_struct_const(pInfo->pNext, IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO);
+   const bool disjoint = is_disjoint(image);
+   const VkImageAspectFlags aspects =
+      disjoint ? plane_info->planeAspect : image->vk.aspects;
+   uint8_t plane = panvk_plane_index(image->vk.format, aspects);
+   const uint64_t size =
+      disjoint ? image->planes[plane].layout.data_size :
+      panvk_image_get_total_size(image);
 
    pMemoryRequirements->memoryRequirements.memoryTypeBits = 1;
    pMemoryRequirements->memoryRequirements.alignment = alignment;
@@ -407,6 +427,37 @@ panvk_GetImageSparseMemoryRequirements2(
 {
    /* Sparse images are not yet supported. */
    *pSparseMemoryRequirementCount = 0;
+}
+
+static void
+panvk_image_plane_bind(struct pan_image *plane, struct pan_kmod_bo *bo,
+                       mali_ptr base, uint64_t offset)
+{
+   plane->data.base = base;
+   plane->data.offset = offset;
+   /* Reset the AFBC headers */
+   if (drm_is_afbc(plane->layout.modifier)) {
+      /* Transient CPU mapping */
+      void *bo_base = pan_kmod_bo_mmap(bo, 0, pan_kmod_bo_size(bo),
+                                       PROT_WRITE, MAP_SHARED, NULL);
+
+      assert(bo_base != MAP_FAILED);
+
+      for (unsigned layer = 0; layer < plane->layout.array_size;
+           layer++) {
+         for (unsigned level = 0; level < plane->layout.nr_slices;
+              level++) {
+            void *header = bo_base + plane->data.offset +
+                           (layer * plane->layout.array_stride) +
+                           plane->layout.slices[level].offset;
+            memset(header, 0,
+                   plane->layout.slices[level].afbc.header_size);
+         }
+      }
+
+      ASSERTED int ret = os_munmap(bo_base, pan_kmod_bo_size(bo));
+      assert(!ret);
+   }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -425,40 +476,33 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                                                    swapchain_info->imageIndex);
          VK_FROM_HANDLE(panvk_image, wsi_image, wsi_vk_image);
 
+         assert(image->plane_count == 1);
+         assert(wsi_image->plane_count == 1);
+
          image->bo = pan_kmod_bo_get(wsi_image->bo);
-         image->pimage.data.base = wsi_image->pimage.data.base;
-         image->pimage.data.offset = wsi_image->pimage.data.offset;
+         panvk_image_plane_bind(&image->planes[0], image->bo,
+                                wsi_image->planes[0].data.base,
+                                wsi_image->planes[0].data.offset);
       } else {
          VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
          assert(mem);
          image->bo = pan_kmod_bo_get(mem->bo);
-         image->pimage.data.base = mem->addr.dev;
-         image->pimage.data.offset = pBindInfos[i].memoryOffset;
-      }
-
-      /* Reset the AFBC headers */
-      if (drm_is_afbc(image->vk.drm_format_mod)) {
-         /* Transient CPU mapping */
-         void *base = pan_kmod_bo_mmap(image->bo, 0,
-                                       pan_kmod_bo_size(image->bo),
-                                       PROT_WRITE, MAP_SHARED, NULL);
-
-         assert(base != MAP_FAILED);
-
-         for (unsigned layer = 0; layer < image->pimage.layout.array_size;
-              layer++) {
-            for (unsigned level = 0; level < image->pimage.layout.nr_slices;
-                 level++) {
-               void *header = base + image->pimage.data.offset +
-                              (layer * image->pimage.layout.array_stride) +
-                              image->pimage.layout.slices[level].offset;
-               memset(header, 0,
-                      image->pimage.layout.slices[level].afbc.header_size);
+         uint64_t offset = pBindInfos[i].memoryOffset;
+         if (is_disjoint(image)) {
+            const VkBindImagePlaneMemoryInfo *plane_info =
+               vk_find_struct_const(pBindInfos[i].pNext,
+                                    BIND_IMAGE_PLANE_MEMORY_INFO);
+            uint8_t plane =
+               panvk_plane_index(image->vk.format, plane_info->planeAspect);
+            panvk_image_plane_bind(&image->planes[plane], image->bo,
+                                   mem->addr.dev, offset);
+         } else {
+            for (unsigned plane = 0; plane < image->plane_count; plane++) {
+               panvk_image_plane_bind(&image->planes[plane], image->bo,
+                                      mem->addr.dev, offset);
+               offset += image->planes[plane].layout.data_size;
             }
          }
-
-         ASSERTED int ret = os_munmap(base, pan_kmod_bo_size(image->bo));
-         assert(!ret);
       }
 
       pan_kmod_bo_put(old_bo);

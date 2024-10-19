@@ -89,16 +89,21 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    view->pview = (struct pan_image_view){
-      .planes[0] = &image->pimage,
       .format = vk_format_to_pipe_format(view->vk.view_format),
       .dim = panvk_view_type_to_mali_tex_dim(view->vk.view_type),
-      .nr_samples = image->pimage.layout.nr_samples,
+      .nr_samples = image->vk.samples,
       .first_level = view->vk.base_mip_level,
       .last_level = view->vk.base_mip_level + view->vk.level_count - 1,
       .first_layer = view->vk.base_array_layer,
       .last_layer = view->vk.base_array_layer + view->vk.layer_count - 1,
    };
    panvk_convert_swizzle(&view->vk.swizzle, view->pview.swizzle);
+
+   u_foreach_bit(aspect_bit, view->vk.aspects) {
+      uint8_t image_plane =
+         panvk_plane_index(image->vk.format, 1u << aspect_bit);
+      view->pview.planes[image_plane] = &image->planes[image_plane];
+   }
 
    /* We need to patch the view format when the image contains both
     * depth and stencil but the view only contains one of these components, so
@@ -212,10 +217,10 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
 
 #if PAN_ARCH <= 7
    if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
-      bool is_3d = image->pimage.layout.dim == MALI_TEXTURE_DIMENSION_3D;
-      unsigned offset = image->pimage.data.offset;
+      bool is_3d = image->planes[0].layout.dim == MALI_TEXTURE_DIMENSION_3D;
+      unsigned offset = image->planes[0].data.offset;
       offset +=
-         panfrost_texture_offset(&image->pimage.layout, view->pview.first_level,
+         panfrost_texture_offset(&image->planes[0].layout, view->pview.first_level,
                                  is_3d ? 0 : view->pview.first_layer,
                                  is_3d ? view->pview.first_layer : 0);
 
@@ -236,7 +241,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
          cfg.type = image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR
                        ? MALI_ATTRIBUTE_TYPE_3D_LINEAR
                        : MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
-         cfg.pointer = image->pimage.data.base + offset;
+         cfg.pointer = image->planes[0].data.base + offset;
          cfg.stride = fmt_blksize | (hw_fmt << 10);
          cfg.size = pan_kmod_bo_size(image->bo) - offset;
       }
@@ -252,10 +257,10 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
             view->pview.dim == MALI_TEXTURE_DIMENSION_3D
                ? extent.depth
                : (view->pview.last_layer - view->pview.first_layer + 1);
-         cfg.row_stride = image->pimage.layout.slices[level].row_stride;
+         cfg.row_stride = image->planes[0].layout.slices[level].row_stride;
          if (cfg.r_dimension > 1) {
             cfg.slice_stride =
-               panfrost_get_layer_stride(&image->pimage.layout, level);
+               panfrost_get_layer_stride(&image->planes[0].layout, level);
          }
       }
    }
