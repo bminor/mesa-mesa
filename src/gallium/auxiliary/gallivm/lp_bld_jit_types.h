@@ -147,7 +147,6 @@ struct lp_jit_resources {
    struct lp_jit_texture textures[PIPE_MAX_SHADER_SAMPLER_VIEWS];
    struct lp_jit_sampler samplers[PIPE_MAX_SAMPLERS];
    struct lp_jit_image images[PIPE_MAX_SHADER_IMAGES];
-   const float *aniso_filter_table;
 };
 
 enum {
@@ -156,7 +155,6 @@ enum {
    LP_JIT_RES_TEXTURES,
    LP_JIT_RES_SAMPLERS,
    LP_JIT_RES_IMAGES,
-   LP_JIT_RES_ANISO_FILTER_TABLE,
    LP_JIT_RES_COUNT,
 };
 
@@ -174,9 +172,6 @@ enum {
 
 #define lp_jit_resources_images(_gallivm, _type, _ptr)                   \
    lp_build_struct_get_ptr2(_gallivm, _type, _ptr, LP_JIT_RES_IMAGES, "images")
-
-#define lp_jit_resources_aniso_filter_table(_gallivm, _type, _ptr)       \
-   lp_build_struct_get2(_gallivm, _type, _ptr, LP_JIT_RES_ANISO_FILTER_TABLE, "aniso_filter_table")
 
 LLVMTypeRef
 lp_build_jit_resources_type(struct gallivm_state *gallivm);

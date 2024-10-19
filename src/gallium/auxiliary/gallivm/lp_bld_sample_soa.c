@@ -2187,9 +2187,6 @@ lp_build_sample_ms_offset(struct lp_build_context *int_coord_bld,
 
 static void
 lp_build_sample_aniso(struct lp_build_sample_context *bld,
-                      unsigned img_filter,
-                      unsigned mip_filter,
-                      bool is_gather,
                       const LLVMValueRef *coords,
                       const LLVMValueRef *offsets,
                       LLVMValueRef ilevel0,
@@ -2793,8 +2790,7 @@ lp_build_sample_general(struct lp_build_sample_context *bld,
    }
 
    if (sampler_state->aniso) {
-      lp_build_sample_aniso(bld, PIPE_TEX_FILTER_NEAREST, mip_filter,
-                            false, coords, offsets, ilevel0,
+      lp_build_sample_aniso(bld, coords, offsets, ilevel0,
                             ilevel1, lod_fpart, texels);
    } else if (min_filter == mag_filter) {
       /* no need to distinguish between minification and magnification */
@@ -3153,7 +3149,6 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                          const struct lp_derivatives *derivs, /* optional */
                          LLVMValueRef lod, /* optional */
                          LLVMValueRef ms_index, /* optional */
-                         LLVMValueRef aniso_filter_table,
                          LLVMValueRef *texel_out)
 {
    assert(static_texture_state);
@@ -3227,7 +3222,6 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
    bld.gallivm = gallivm;
    bld.resources_type = resources_type;
    bld.resources_ptr = resources_ptr;
-   bld.aniso_filter_table = aniso_filter_table;
    bld.static_sampler_state = &derived_sampler_state;
    bld.static_texture_state = static_texture_state;
    bld.dynamic_state = dynamic_state;
@@ -3654,7 +3648,6 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
          bld4.gallivm = bld.gallivm;
          bld4.resources_type = bld.resources_type;
          bld4.resources_ptr = bld.resources_ptr;
-         bld4.aniso_filter_table = aniso_filter_table;
          bld4.static_texture_state = bld.static_texture_state;
          bld4.static_sampler_state = bld.static_sampler_state;
          bld4.dynamic_state = bld.dynamic_state;
@@ -3858,8 +3851,7 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
                          unsigned sampler_index,
                          LLVMValueRef function,
                          unsigned num_args,
-                         unsigned sample_key,
-                         bool has_aniso_filter_table)
+                         unsigned sample_key)
 {
    LLVMBuilderRef old_builder;
    LLVMBasicBlockRef block;
@@ -3869,7 +3861,6 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
    LLVMValueRef ms_index = NULL;
    LLVMValueRef resources_ptr;
    LLVMValueRef thread_data_ptr = NULL;
-   LLVMValueRef aniso_filter_table = NULL;
    LLVMValueRef texel_out[4];
    struct lp_derivatives derivs;
    struct lp_derivatives *deriv_ptr = NULL;
@@ -3901,8 +3892,6 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
 
    /* "unpack" arguments */
    resources_ptr = LLVMGetParam(function, num_param++);
-   if (has_aniso_filter_table)
-      aniso_filter_table = LLVMGetParam(function, num_param++);
    if (need_cache) {
       thread_data_ptr = LLVMGetParam(function, num_param++);
    }
@@ -3966,7 +3955,6 @@ lp_build_sample_gen_func(struct gallivm_state *gallivm,
                             deriv_ptr,
                             lod,
                             ms_index,
-                            aniso_filter_table,
                             texel_out);
 
    LLVMBuildAggregateRet(gallivm->builder, texel_out, 4);
@@ -4046,8 +4034,6 @@ lp_build_sample_soa_func(struct gallivm_state *gallivm,
     */
 
    arg_types[num_param++] = LLVMTypeOf(params->resources_ptr);
-   if (params->aniso_filter_table)
-      arg_types[num_param++] = LLVMTypeOf(params->aniso_filter_table);
    if (need_cache) {
       arg_types[num_param++] = LLVMTypeOf(params->thread_data_ptr);
    }
@@ -4112,14 +4098,11 @@ lp_build_sample_soa_func(struct gallivm_state *gallivm,
                                sampler_index,
                                function,
                                num_param,
-                               sample_key,
-                               params->aniso_filter_table ? true : false);
+                               sample_key);
    }
 
    unsigned num_args = 0;
    args[num_args++] = params->resources_ptr;
-   if (params->aniso_filter_table)
-      args[num_args++] = params->aniso_filter_table;
    if (need_cache) {
       args[num_args++] = params->thread_data_ptr;
    }
@@ -4236,7 +4219,6 @@ lp_build_sample_soa(const struct lp_static_texture_state *static_texture_state,
                                params->derivs,
                                params->lod,
                                params->ms_index,
-                               params->aniso_filter_table,
                                params->texel);
    }
 }

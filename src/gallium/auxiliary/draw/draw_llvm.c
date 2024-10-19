@@ -610,9 +610,6 @@ generate_vs(struct draw_llvm_variant *variant,
    params.info = &llvm->draw->vs.vertex_shader->info;
    params.ssbo_ptr = ssbos_ptr;
    params.image = draw_image;
-   params.aniso_filter_table = lp_jit_resources_aniso_filter_table(variant->gallivm,
-                                                                   variant->resources_type,
-                                                                   resources_ptr);
 
    if (llvm->draw->vs.vertex_shader->state.ir.nir &&
        llvm->draw->vs.vertex_shader->state.type == PIPE_SHADER_IR_NIR) {
@@ -2464,10 +2461,6 @@ draw_gs_llvm_generate(struct draw_llvm *llvm,
    params.ssbo_ptr = ssbos_ptr;
    params.image = image;
    params.gs_vertex_streams = variant->shader->base.num_vertex_streams;
-   params.aniso_filter_table = lp_jit_resources_aniso_filter_table(gallivm,
-                                                                   variant->resources_type,
-                                                                   resources_ptr);
-
 
    if (llvm->draw->gs.geometry_shader->state.type == PIPE_SHADER_IR_TGSI)
       lp_build_tgsi_soa(variant->gallivm,
@@ -3125,9 +3118,6 @@ draw_tcs_llvm_generate(struct draw_llvm *llvm,
       params.image = image;
       params.coro = &coro_info;
       params.tcs_iface = &tcs_iface.base;
-      params.aniso_filter_table = lp_jit_resources_aniso_filter_table(gallivm,
-                                                                      variant->resources_type,
-                                                                      resources_ptr);
 
       lp_build_nir_soa(variant->gallivm,
                        llvm->draw->tcs.tess_ctrl_shader->state.ir.nir,
@@ -3657,7 +3647,6 @@ draw_tes_llvm_generate(struct draw_llvm *llvm,
       params.ssbo_ptr = ssbos_ptr;
       params.image = image;
       params.tes_iface = &tes_iface.base;
-      params.aniso_filter_table = lp_jit_resources_aniso_filter_table(gallivm, variant->resources_type, resources_ptr);
 
       lp_build_nir_soa(variant->gallivm,
                        llvm->draw->tes.tess_eval_shader->state.ir.nir,

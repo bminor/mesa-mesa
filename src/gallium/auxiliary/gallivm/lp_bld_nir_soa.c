@@ -3160,7 +3160,6 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
    bld.resources_ptr = params->resources_ptr;
    bld.thread_data_type = params->thread_data_type;
    bld.thread_data_ptr = params->thread_data_ptr;
-   bld.bld_base.aniso_filter_table = params->aniso_filter_table;
    bld.image = params->image;
    bld.shared_ptr = params->shared_ptr;
    bld.payload_ptr = params->payload_ptr;

@@ -296,7 +296,6 @@ lp_build_jit_resources_type(struct gallivm_state *gallivm)
                                                    PIPE_MAX_SAMPLERS);
    elem_types[LP_JIT_RES_IMAGES] = LLVMArrayType(image_type,
                                                  PIPE_MAX_SHADER_IMAGES);
-   elem_types[LP_JIT_RES_ANISO_FILTER_TABLE] = LLVMPointerType(LLVMFloatTypeInContext(gallivm->context), 0);
 
    resources_type = LLVMStructTypeInContext(gallivm->context, elem_types,
                                             ARRAY_SIZE(elem_types), 0);
@@ -316,9 +315,6 @@ lp_build_jit_resources_type(struct gallivm_state *gallivm)
    LP_CHECK_MEMBER_OFFSET(struct lp_jit_resources, images,
                           gallivm->target, resources_type,
                           LP_JIT_RES_IMAGES);
-   LP_CHECK_MEMBER_OFFSET(struct lp_jit_resources, aniso_filter_table,
-                          gallivm->target, resources_type,
-                          LP_JIT_RES_ANISO_FILTER_TABLE);
 
    return resources_type;
 }
@@ -801,8 +797,6 @@ lp_build_sample_function_type(struct gallivm_state *gallivm, uint32_t sample_key
 
    arg_types[num_params++] = LLVMInt64TypeInContext(gallivm->context);
    arg_types[num_params++] = LLVMInt64TypeInContext(gallivm->context);
-
-   arg_types[num_params++] = LLVMPointerType(LLVMFloatTypeInContext(gallivm->context), 0);
 
    for (unsigned i = 0; i < 4; i++)
       arg_types[num_params++] = coord_type;

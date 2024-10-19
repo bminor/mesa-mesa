@@ -118,7 +118,6 @@ struct lp_sampler_params
    const LLVMValueRef *offsets;
    LLVMValueRef ms_index;
    LLVMValueRef lod;
-   LLVMValueRef aniso_filter_table;
    const struct lp_derivatives *derivs;
    LLVMValueRef *texel;
 
@@ -512,8 +511,6 @@ struct lp_build_sample_context
    LLVMTypeRef resources_type;
    LLVMValueRef resources_ptr;
 
-   LLVMValueRef aniso_filter_table;
-
    LLVMValueRef resident;
 };
 
@@ -794,7 +791,6 @@ lp_build_sample_soa_code(struct gallivm_state *gallivm,
                          const struct lp_derivatives *derivs, /* optional */
                          LLVMValueRef lod, /* optional */
                          LLVMValueRef ms_index, /* optional */
-                         LLVMValueRef aniso_filter_table,
                          LLVMValueRef *texel_out);
 
 
@@ -923,7 +919,6 @@ LLVMValueRef lp_sample_load_mip_value(struct gallivm_state *gallivm,
                                       LLVMValueRef offsets,
                                       LLVMValueRef index1);
 
-const float *lp_build_sample_aniso_filter_table(void);
 #ifdef __cplusplus
 }
 #endif

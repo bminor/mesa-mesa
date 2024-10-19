@@ -453,8 +453,6 @@ llvm_middle_end_bind_parameters(struct draw_pt_middle_end *middle)
             llvm->jit_resources[shader_type].ssbos[i].u = (const uint32_t *)fake_const_buf;
          }
       }
-
-      llvm->jit_resources[shader_type].aniso_filter_table = lp_build_sample_aniso_filter_table();
    }
 
    llvm->vs_jit_context.planes =

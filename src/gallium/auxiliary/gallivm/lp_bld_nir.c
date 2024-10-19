@@ -2687,7 +2687,6 @@ visit_tex(struct lp_build_nir_context *bld_base, nir_tex_instr *instr)
    params.texel = texel;
    params.lod = explicit_lod;
    params.ms_index = ms_index;
-   params.aniso_filter_table = bld_base->aniso_filter_table;
    params.texture_resource = texture_resource;
    params.sampler_resource = sampler_resource;
    bld_base->tex(bld_base, &params);
