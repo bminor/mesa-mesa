@@ -55,6 +55,8 @@ run_bs(fs_visitor &s, bool allow_spilling)
 
    brw_allocate_registers(s, allow_spilling);
 
+   brw_fs_workaround_source_arf_before_eot(s);
+
    return !s.failed;
 }
 
