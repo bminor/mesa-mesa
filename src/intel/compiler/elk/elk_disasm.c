@@ -70,9 +70,26 @@ has_branch_ctrl(const struct intel_device_info *devinfo, enum elk_opcode opcode)
    if (devinfo->ver < 8)
       return false;
 
-   return opcode == ELK_OPCODE_IF ||
-          opcode == ELK_OPCODE_ELSE;
-          /* opcode == ELK_OPCODE_GOTO; */
+   switch (opcode) {
+   case ELK_OPCODE_IF:
+   case ELK_OPCODE_ELSE:
+   case ELK_OPCODE_GOTO:
+   case ELK_OPCODE_BREAK:
+   case ELK_OPCODE_CALL:
+   case ELK_OPCODE_CALLA:
+   case ELK_OPCODE_CONTINUE:
+   case ELK_OPCODE_ENDIF:
+   case ELK_OPCODE_HALT:
+   case ELK_OPCODE_JMPI:
+   case ELK_OPCODE_RET:
+   case ELK_OPCODE_WHILE:
+   case ELK_OPCODE_BRC:
+   case ELK_OPCODE_BRD:
+      /* TODO: "join" should also be here if added */
+      return true;
+   default:
+      return false;
+   }
 }
 
 static bool
