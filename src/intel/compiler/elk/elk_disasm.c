@@ -64,8 +64,8 @@ elk_has_uip(const struct intel_device_info *devinfo, enum elk_opcode opcode)
           opcode == ELK_OPCODE_HALT;
 }
 
-static bool
-has_branch_ctrl(const struct intel_device_info *devinfo, enum elk_opcode opcode)
+bool
+elk_has_branch_ctrl(const struct intel_device_info *devinfo, enum elk_opcode opcode)
 {
    if (devinfo->ver < 8)
       return false;
@@ -2000,7 +2000,7 @@ elk_disassemble_inst(FILE *file, const struct elk_isa_info *isa,
       err |= control(file, "thread control", thread_ctrl,
                      elk_inst_thread_control(devinfo, inst),
                      &space);
-      if (has_branch_ctrl(devinfo, opcode)) {
+      if (elk_has_branch_ctrl(devinfo, opcode)) {
          err |= control(file, "branch ctrl", branch_ctrl,
                         elk_inst_branch_control(devinfo, inst), &space);
       } else if (devinfo->ver >= 6) {
