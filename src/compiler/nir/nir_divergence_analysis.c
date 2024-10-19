@@ -39,6 +39,7 @@
 struct divergence_state {
    const gl_shader_stage stage;
    nir_shader *shader;
+   nir_function_impl *impl;
    nir_divergence_options options;
    nir_loop *loop;
    bool loop_all_invariant;
@@ -736,11 +737,15 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
                      src_divergent(instr->src[1], state);
       break;
 
+   case nir_intrinsic_load_param:
+      is_divergent =
+         !state->impl->function->params[nir_intrinsic_param_idx(instr)].is_uniform;
+      break;
+
    /* Intrinsics which are always divergent */
    case nir_intrinsic_inverse_ballot:
    case nir_intrinsic_load_color0:
    case nir_intrinsic_load_color1:
-   case nir_intrinsic_load_param:
    case nir_intrinsic_load_sample_id:
    case nir_intrinsic_load_sample_id_no_per_sample:
    case nir_intrinsic_load_sample_mask_in:
@@ -1432,6 +1437,7 @@ nir_divergence_analysis_impl(nir_function_impl *impl, nir_divergence_options opt
    struct divergence_state state = {
       .stage = impl->function->shader->info.stage,
       .shader = impl->function->shader,
+      .impl = impl,
       .options = options,
       .loop = NULL,
       .loop_all_invariant = false,
@@ -1466,6 +1472,7 @@ nir_vertex_divergence_analysis(nir_shader *shader)
    struct divergence_state state = {
       .stage = shader->info.stage,
       .shader = shader,
+      .impl = nir_shader_get_entrypoint(shader),
       .options = shader->options->divergence_analysis_options,
       .loop = NULL,
       .loop_all_invariant = false,

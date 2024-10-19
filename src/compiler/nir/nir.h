@@ -3585,6 +3585,12 @@ typedef struct {
 
    bool implicit_conversion_prohibited;
 
+   /* True if this parameter is not divergent. This is inverted to make
+    * parameters divergent by default unless explicitly specified
+    * otherwise.
+    */
+   bool is_uniform;
+
    nir_variable_mode mode;
 
    /* The type of the function param */
