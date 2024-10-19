@@ -157,6 +157,7 @@ void brw_init_codegen(const struct brw_isa_info *isa,
                       struct brw_codegen *p, void *mem_ctx);
 bool brw_has_jip(const struct intel_device_info *devinfo, enum opcode opcode);
 bool brw_has_uip(const struct intel_device_info *devinfo, enum opcode opcode);
+bool brw_has_branch_ctrl(const struct intel_device_info *devinfo, enum opcode opcode);
 const struct brw_shader_reloc *brw_get_shader_relocs(struct brw_codegen *p,
                                                      unsigned *num_relocs);
 const unsigned *brw_get_program( struct brw_codegen *p, unsigned *sz );

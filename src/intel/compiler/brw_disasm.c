@@ -58,8 +58,8 @@ brw_has_uip(const struct intel_device_info *devinfo, enum opcode opcode)
           opcode == BRW_OPCODE_HALT;
 }
 
-static bool
-has_branch_ctrl(const struct intel_device_info *devinfo, enum opcode opcode)
+bool
+brw_has_branch_ctrl(const struct intel_device_info *devinfo, enum opcode opcode)
 {
    switch (opcode) {
    case BRW_OPCODE_IF:
@@ -2574,7 +2574,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
                      (devinfo->ver >= 12 ? brw_inst_atomic_control(devinfo, inst) :
                                            brw_inst_thread_control(devinfo, inst)),
                      &space);
-      if (has_branch_ctrl(devinfo, opcode)) {
+      if (brw_has_branch_ctrl(devinfo, opcode)) {
          err |= control(file, "branch ctrl", branch_ctrl,
                         brw_inst_branch_control(devinfo, inst), &space);
       } else if (devinfo->ver < 20) {

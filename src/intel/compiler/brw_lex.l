@@ -281,6 +281,9 @@ nomask      	{ return MASK_DISABLE; }
 atomic       	{ return ATOMIC; }
 switch       	{ return SWITCH; }
 
+ /* Branch control */
+BranchCtrl	{ return BRANCH_CTRL; }
+
  /* Quarter Control */
 1[HNQ]       	{ }
 "2Q"	        { return QTR_2Q; }
