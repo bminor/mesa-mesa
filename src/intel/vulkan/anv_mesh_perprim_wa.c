@@ -114,7 +114,7 @@ anv_mesh_convert_attrs_prim_to_vert(struct nir_shader *nir,
              location >= VARYING_SLOT_VAR0);
 
       const struct glsl_type *type = var->type;
-      if (nir_is_arrayed_io(var, MESA_SHADER_MESH) || var->data.per_view) {
+      if (nir_is_arrayed_io(var, MESA_SHADER_MESH)) {
          assert(glsl_type_is_array(type));
          type = glsl_get_array_element(type);
       }

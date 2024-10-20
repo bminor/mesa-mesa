@@ -69,6 +69,7 @@ lower_point_size_mov(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    switch (intr->intrinsic) {
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_per_primitive_output: {
       nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
       if (sem.location != VARYING_SLOT_PSIZ)

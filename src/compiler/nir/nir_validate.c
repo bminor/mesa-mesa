@@ -618,6 +618,7 @@ validate_intrinsic_instr(nir_intrinsic_instr *instr, validate_state *state)
    case nir_intrinsic_load_interpolated_input:
    case nir_intrinsic_load_output:
    case nir_intrinsic_load_per_vertex_output:
+   case nir_intrinsic_load_per_view_output:
    case nir_intrinsic_load_per_primitive_output:
    case nir_intrinsic_load_push_constant:
       /* All memory load operations must load at least a byte */
@@ -652,6 +653,7 @@ validate_intrinsic_instr(nir_intrinsic_instr *instr, validate_state *state)
 
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
       if (state->shader->info.stage == MESA_SHADER_FRAGMENT)
          validate_assert(state, nir_src_bit_size(instr->src[0]) >= 8);
       else
@@ -1527,10 +1529,6 @@ validate_var_decl(nir_variable *var, nir_variable_mode valid_modes,
 
       const struct glsl_type *type = glsl_get_array_element(var->type);
       if (nir_is_arrayed_io(var, state->shader->info.stage)) {
-         if (var->data.per_view) {
-            assert(glsl_type_is_array(type));
-            type = glsl_get_array_element(type);
-         }
          assert(glsl_type_is_array(type));
          assert(glsl_type_is_scalar(glsl_get_array_element(type)));
       } else {

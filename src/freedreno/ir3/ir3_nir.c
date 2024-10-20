@@ -926,7 +926,8 @@ output_slot_used_for_binning(gl_varying_slot slot)
 static bool
 remove_nonbinning_output(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
-   if (intr->intrinsic != nir_intrinsic_store_output)
+   if (intr->intrinsic != nir_intrinsic_store_output &&
+       intr->intrinsic != nir_intrinsic_store_per_view_output)
       return false;
 
    nir_io_semantics io = nir_intrinsic_io_semantics(intr);

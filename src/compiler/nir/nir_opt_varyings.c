@@ -1495,14 +1495,17 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
    if (intr->intrinsic != nir_intrinsic_store_output &&
        intr->intrinsic != nir_intrinsic_load_output &&
        intr->intrinsic != nir_intrinsic_store_per_vertex_output &&
+       intr->intrinsic != nir_intrinsic_store_per_view_output &&
        intr->intrinsic != nir_intrinsic_store_per_primitive_output &&
        intr->intrinsic != nir_intrinsic_load_per_vertex_output &&
+       intr->intrinsic != nir_intrinsic_load_per_view_output &&
        intr->intrinsic != nir_intrinsic_load_per_primitive_output)
       return false;
 
    bool is_store =
       intr->intrinsic == nir_intrinsic_store_output ||
       intr->intrinsic == nir_intrinsic_store_per_vertex_output ||
+      intr->intrinsic == nir_intrinsic_store_per_view_output ||
       intr->intrinsic == nir_intrinsic_store_per_primitive_output;
 
    if (is_store) {

@@ -145,6 +145,7 @@ is_intrinsic_store(nir_intrinsic_op op)
 {
    switch (op) {
    case nir_intrinsic_store_output:
+   case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_scratch:
    case nir_intrinsic_store_ssbo:
    case nir_intrinsic_store_shared:

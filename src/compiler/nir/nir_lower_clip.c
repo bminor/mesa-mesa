@@ -165,6 +165,7 @@ find_output(nir_builder *b, unsigned location)
 
             if ((intr->intrinsic == nir_intrinsic_store_output ||
                  intr->intrinsic == nir_intrinsic_store_per_vertex_output ||
+                 intr->intrinsic == nir_intrinsic_store_per_view_output ||
                  intr->intrinsic == nir_intrinsic_store_per_primitive_output) &&
                 nir_intrinsic_io_semantics(intr).location == location) {
                assert(nir_src_is_const(*nir_get_io_offset_src(intr)));

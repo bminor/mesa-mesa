@@ -45,7 +45,8 @@ lower_point_size_intrin(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       nir_variable *var = nir_deref_instr_get_variable(deref);
       location = var->data.location;
       psiz_src = &intr->src[1];
-   } else if (intr->intrinsic == nir_intrinsic_store_output) {
+   } else if (intr->intrinsic == nir_intrinsic_store_output ||
+              intr->intrinsic == nir_intrinsic_store_per_view_output) {
       location = nir_intrinsic_io_semantics(intr).location;
       psiz_src = &intr->src[0];
    }

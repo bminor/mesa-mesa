@@ -128,6 +128,7 @@ lower_clip_plane_store_io(nir_builder *b, nir_intrinsic_instr *intr,
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_per_primitive_output:
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
       break;
    default:
       return false;

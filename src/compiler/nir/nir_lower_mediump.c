@@ -47,8 +47,10 @@ get_io_intrinsic(nir_instr *instr, nir_variable_mode modes,
       return modes & nir_var_shader_in ? intr : NULL;
    case nir_intrinsic_load_output:
    case nir_intrinsic_load_per_vertex_output:
+   case nir_intrinsic_load_per_view_output:
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
       *out_mode = nir_var_shader_out;
       return modes & nir_var_shader_out ? intr : NULL;
    default:

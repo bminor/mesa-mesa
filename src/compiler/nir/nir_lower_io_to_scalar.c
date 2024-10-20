@@ -290,6 +290,7 @@ nir_lower_io_to_scalar_instr(nir_builder *b, nir_instr *instr, void *data)
 
    if ((intr->intrinsic == nir_intrinsic_load_output ||
         intr->intrinsic == nir_intrinsic_load_per_vertex_output ||
+        intr->intrinsic == nir_intrinsic_load_per_view_output ||
         intr->intrinsic == nir_intrinsic_load_per_primitive_output) &&
        (state->mask & nir_var_shader_out) &&
        (!state->filter || state->filter(instr, state->filter_data))) {
@@ -308,6 +309,7 @@ nir_lower_io_to_scalar_instr(nir_builder *b, nir_instr *instr, void *data)
 
    if ((intr->intrinsic == nir_intrinsic_store_output ||
         intr->intrinsic == nir_intrinsic_store_per_vertex_output ||
+        intr->intrinsic == nir_intrinsic_store_per_view_output ||
         intr->intrinsic == nir_intrinsic_store_per_primitive_output) &&
        state->mask & nir_var_shader_out &&
        (!state->filter || state->filter(instr, state->filter_data))) {

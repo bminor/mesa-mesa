@@ -49,7 +49,7 @@ get_variable_io_mask(nir_variable *var, gl_shader_stage stage)
    assert(location < 64);
 
    const struct glsl_type *type = var->type;
-   if (nir_is_arrayed_io(var, stage) || var->data.per_view) {
+   if (nir_is_arrayed_io(var, stage)) {
       assert(glsl_type_is_array(type));
       type = glsl_get_array_element(type);
    }
@@ -337,7 +337,7 @@ get_unmoveable_components_masks(nir_shader *shader,
           var->data.location - VARYING_SLOT_VAR0 < MAX_VARYINGS_INCL_PATCH) {
 
          const struct glsl_type *type = var->type;
-         if (nir_is_arrayed_io(var, stage) || var->data.per_view) {
+         if (nir_is_arrayed_io(var, stage)) {
             assert(glsl_type_is_array(type));
             type = glsl_get_array_element(type);
          }
@@ -438,7 +438,7 @@ remap_slots_and_components(nir_shader *shader, nir_variable_mode mode,
           var->data.location - VARYING_SLOT_VAR0 < MAX_VARYINGS_INCL_PATCH) {
 
          const struct glsl_type *type = var->type;
-         if (nir_is_arrayed_io(var, stage) || var->data.per_view) {
+         if (nir_is_arrayed_io(var, stage)) {
             assert(glsl_type_is_array(type));
             type = glsl_get_array_element(type);
          }
@@ -578,7 +578,7 @@ gather_varying_component_info(nir_shader *producer, nir_shader *consumer,
             continue;
 
          const struct glsl_type *type = var->type;
-         if (nir_is_arrayed_io(var, producer->info.stage) || var->data.per_view) {
+         if (nir_is_arrayed_io(var, producer->info.stage)) {
             assert(glsl_type_is_array(type));
             type = glsl_get_array_element(type);
          }
@@ -641,8 +641,7 @@ gather_varying_component_info(nir_shader *producer, nir_shader *consumer,
 
          if (!vc_info->initialised) {
             const struct glsl_type *type = in_var->type;
-            if (nir_is_arrayed_io(in_var, consumer->info.stage) ||
-                in_var->data.per_view) {
+            if (nir_is_arrayed_io(in_var, consumer->info.stage)) {
                assert(glsl_type_is_array(type));
                type = glsl_get_array_element(type);
             }
@@ -1539,18 +1538,17 @@ nir_assign_io_var_locations(nir_shader *shader, nir_variable_mode mode,
             last_partial = false;
          }
 
-         /* per-view variables have an extra array dimension, which is ignored
-          * when counting user-facing slots (var->data.location), but *not*
-          * with driver slots (var->data.driver_location). That is, each user
-          * slot maps to multiple driver slots.
-          */
-         driver_size = glsl_count_attribute_slots(type, false);
-         if (var->data.per_view) {
-            assert(glsl_type_is_array(type));
-            var_size =
-               glsl_count_attribute_slots(glsl_get_array_element(type), false);
+         var_size = glsl_count_attribute_slots(type, false);
+         if (var->data.per_view &&
+             shader->options->per_view_unique_driver_locations) {
+            /* per-view variables have an extra array dimension, which is
+             * ignored when counting user-facing slots (var->data.location),
+             * but *not* with driver slots (var->data.driver_location). That
+             * is, each user slot maps to multiple driver slots. */
+            const struct glsl_type *array_type = var->type;
+            driver_size = glsl_count_attribute_slots(array_type, false);
          } else {
-            var_size = driver_size;
+            driver_size = var_size;
          }
       }
 

@@ -149,6 +149,7 @@ opt_undef_store(nir_intrinsic_instr *intrin)
       break;
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_per_primitive_output:
    case nir_intrinsic_store_ssbo:
    case nir_intrinsic_store_shared:

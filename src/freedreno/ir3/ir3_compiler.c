@@ -118,6 +118,8 @@ static const nir_shader_compiler_options ir3_base_options = {
 
    .divergence_analysis_options = nir_divergence_uniform_load_tears,
    .scalarize_ddx = true,
+
+   .per_view_unique_driver_locations = true,
 };
 
 struct ir3_compiler *

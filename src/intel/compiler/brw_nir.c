@@ -285,8 +285,10 @@ is_output(nir_intrinsic_instr *intrin)
 {
    return intrin->intrinsic == nir_intrinsic_load_output ||
           intrin->intrinsic == nir_intrinsic_load_per_vertex_output ||
+          intrin->intrinsic == nir_intrinsic_load_per_view_output ||
           intrin->intrinsic == nir_intrinsic_store_output ||
-          intrin->intrinsic == nir_intrinsic_store_per_vertex_output;
+          intrin->intrinsic == nir_intrinsic_store_per_vertex_output ||
+          intrin->intrinsic == nir_intrinsic_store_per_view_output;
 }
 
 
@@ -340,6 +342,56 @@ remap_patch_urb_offsets(nir_block *block, nir_builder *b,
       }
    }
    return true;
+}
+
+/* Replace store_per_view_output to plain store_output, mapping the view index
+ * to IO offset. Because we only use per-view outputs for position, the offset
+ * pitch is always 1. */
+static bool
+lower_per_view_outputs(nir_builder *b,
+                       nir_intrinsic_instr *intrin,
+                       UNUSED void *cb_data)
+{
+   if (intrin->intrinsic != nir_intrinsic_store_per_view_output &&
+       intrin->intrinsic != nir_intrinsic_load_per_view_output)
+      return false;
+
+   b->cursor = nir_before_instr(&intrin->instr);
+
+   nir_src *view_index = nir_get_io_arrayed_index_src(intrin);
+   nir_src *offset = nir_get_io_offset_src(intrin);
+
+   nir_def *new_offset = nir_iadd(b, view_index->ssa, offset->ssa);
+
+   nir_intrinsic_instr *new;
+   if (intrin->intrinsic == nir_intrinsic_store_per_view_output)
+      new = nir_store_output(b, intrin->src[0].ssa, new_offset);
+   else {
+      nir_def *new_def = nir_load_output(b, intrin->def.num_components,
+                                         intrin->def.bit_size, new_offset);
+      new = nir_instr_as_intrinsic(new_def->parent_instr);
+   }
+
+   nir_intrinsic_set_base(new, nir_intrinsic_base(intrin));
+   nir_intrinsic_set_range(new, nir_intrinsic_range(intrin));
+   nir_intrinsic_set_write_mask(new, nir_intrinsic_write_mask(intrin));
+   nir_intrinsic_set_component(new, nir_intrinsic_component(intrin));
+   nir_intrinsic_set_src_type(new, nir_intrinsic_src_type(intrin));
+   nir_intrinsic_set_io_semantics(new, nir_intrinsic_io_semantics(intrin));
+
+   if (intrin->intrinsic == nir_intrinsic_load_per_view_output)
+      nir_def_rewrite_uses(&intrin->def, &new->def);
+   nir_instr_remove(&intrin->instr);
+
+   return true;
+}
+
+static bool
+brw_nir_lower_per_view_outputs(nir_shader *nir)
+{
+   return nir_shader_intrinsics_pass(nir, lower_per_view_outputs,
+                                     nir_metadata_control_flow,
+                                     NULL);
 }
 
 void
@@ -640,6 +692,7 @@ brw_nir_lower_vue_outputs(nir_shader *nir)
 
    nir_lower_io(nir, nir_var_shader_out, type_size_vec4,
                 nir_lower_io_lower_64bit_to_32);
+   brw_nir_lower_per_view_outputs(nir);
 }
 
 void
@@ -1220,7 +1273,7 @@ brw_mesh_compact_io(nir_shader *mesh, nir_shader *frag)
       assert(location < ARRAY_SIZE(mapping));
 
       const struct glsl_type *type = var->type;
-      if (nir_is_arrayed_io(var, MESA_SHADER_MESH) || var->data.per_view) {
+      if (nir_is_arrayed_io(var, MESA_SHADER_MESH)) {
          assert(glsl_type_is_array(type));
          type = glsl_get_array_element(type);
       }
@@ -2253,7 +2306,7 @@ brw_nir_get_var_type(const struct nir_shader *nir, nir_variable *var)
    const struct glsl_type *type = var->interface_type;
    if (!type) {
       type = var->type;
-      if (nir_is_arrayed_io(var, nir->info.stage) || var->data.per_view) {
+      if (nir_is_arrayed_io(var, nir->info.stage)) {
          assert(glsl_type_is_array(type));
          type = glsl_get_array_element(type);
       }

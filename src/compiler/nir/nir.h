@@ -4377,6 +4377,15 @@ typedef struct nir_shader_compiler_options {
    /** Whether derivative intrinsics must be scalarized. */
    bool scalarize_ddx;
 
+   /**
+    * Assign a range of driver locations to per-view outputs, with unique
+    * slots for each view. If unset, per-view outputs will be treated
+    * similarly to other arrayed IO, and only slots for one view will be
+    * assigned. Regardless of this setting, per-view outputs are only assigned
+    * slots for one value in var->data.location.
+    */
+   bool per_view_unique_driver_locations;
+
    /** Options determining lowering and behavior of inputs and outputs. */
    nir_io_options io_options;
 

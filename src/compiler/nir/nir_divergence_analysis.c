@@ -418,6 +418,12 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
          unreachable("Invalid stage for load_output");
       }
       break;
+   case nir_intrinsic_load_per_view_output:
+      is_divergent = instr->src[0].ssa->divergent ||
+                     instr->src[1].ssa->divergent ||
+                     (stage == MESA_SHADER_TESS_CTRL &&
+                      !(options & nir_divergence_single_patch_per_tcs_subgroup));
+      break;
    case nir_intrinsic_load_per_vertex_output:
       /* TCS and NV_mesh_shader only (EXT_mesh_shader does not allow loading outputs). */
       assert(stage == MESA_SHADER_TESS_CTRL || stage == MESA_SHADER_MESH);

@@ -148,6 +148,14 @@ nir_is_arrayed_io(const nir_variable *var, gl_shader_stage stage)
    if (var->data.patch || !glsl_type_is_array(var->type))
       return false;
 
+   if (var->data.per_view) {
+      /* Nested arrayed outputs (both per-view and per-{vertex,primitive}) are
+       * unsupported. */
+      assert(stage == MESA_SHADER_VERTEX);
+      assert(var->data.mode == nir_var_shader_out);
+      return true;
+   }
+
    if (stage == MESA_SHADER_MESH) {
       /* NV_mesh_shader: this is flat array for the whole workgroup. */
       if (var->data.location == VARYING_SLOT_PRIMITIVE_INDICES)
@@ -352,8 +360,14 @@ emit_load(struct lower_io_state *state,
       }
       break;
    case nir_var_shader_out:
-      op = !array_index ? nir_intrinsic_load_output : var->data.per_primitive ? nir_intrinsic_load_per_primitive_output
-                                                                              : nir_intrinsic_load_per_vertex_output;
+      if (!array_index)
+         op = nir_intrinsic_load_output;
+      else if (var->data.per_primitive)
+         op = nir_intrinsic_load_per_primitive_output;
+      else if (var->data.per_view)
+         op = nir_intrinsic_load_per_view_output;
+      else
+         op = nir_intrinsic_load_per_vertex_output;
       break;
    case nir_var_uniform:
       op = nir_intrinsic_load_uniform;
@@ -495,9 +509,15 @@ emit_store(struct lower_io_state *state, nir_def *data,
    nir_builder *b = &state->builder;
 
    assert(var->data.mode == nir_var_shader_out);
-   nir_intrinsic_op op =
-      !array_index ? nir_intrinsic_store_output : var->data.per_primitive ? nir_intrinsic_store_per_primitive_output
-                                                                          : nir_intrinsic_store_per_vertex_output;
+   nir_intrinsic_op op;
+   if (!array_index)
+      op = nir_intrinsic_store_output;
+   else if (var->data.per_view)
+      op = nir_intrinsic_store_per_view_output;
+   else if (var->data.per_primitive)
+      op = nir_intrinsic_store_per_primitive_output;
+   else
+      op = nir_intrinsic_store_per_vertex_output;
 
    nir_intrinsic_instr *store =
       nir_intrinsic_instr_create(state->builder.shader, op);
@@ -2806,6 +2826,7 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_input_vertex:
    case nir_intrinsic_load_per_vertex_input:
    case nir_intrinsic_load_per_vertex_output:
+   case nir_intrinsic_load_per_view_output:
    case nir_intrinsic_load_per_primitive_output:
    case nir_intrinsic_load_interpolated_input:
    case nir_intrinsic_load_smem_amd:
@@ -2823,6 +2844,7 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
       return 1;
    case nir_intrinsic_store_ssbo:
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_per_primitive_output:
       return 2;
    default:
@@ -2849,9 +2871,11 @@ nir_get_io_arrayed_index_src_number(const nir_intrinsic_instr *instr)
    switch (instr->intrinsic) {
    case nir_intrinsic_load_per_vertex_input:
    case nir_intrinsic_load_per_vertex_output:
+   case nir_intrinsic_load_per_view_output:
    case nir_intrinsic_load_per_primitive_output:
       return 0;
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
    case nir_intrinsic_store_per_primitive_output:
       return 1;
    default:
@@ -2992,9 +3016,11 @@ is_output(nir_intrinsic_instr *intrin)
 {
    return intrin->intrinsic == nir_intrinsic_load_output ||
           intrin->intrinsic == nir_intrinsic_load_per_vertex_output ||
+          intrin->intrinsic == nir_intrinsic_load_per_view_output ||
           intrin->intrinsic == nir_intrinsic_load_per_primitive_output ||
           intrin->intrinsic == nir_intrinsic_store_output ||
           intrin->intrinsic == nir_intrinsic_store_per_vertex_output ||
+          intrin->intrinsic == nir_intrinsic_store_per_view_output ||
           intrin->intrinsic == nir_intrinsic_store_per_primitive_output;
 }
 
@@ -3003,6 +3029,7 @@ is_dual_slot(nir_intrinsic_instr *intrin)
 {
    if (intrin->intrinsic == nir_intrinsic_store_output ||
        intrin->intrinsic == nir_intrinsic_store_per_vertex_output ||
+       intrin->intrinsic == nir_intrinsic_store_per_view_output ||
        intrin->intrinsic == nir_intrinsic_store_per_primitive_output) {
       return nir_src_bit_size(intrin->src[0]) == 64 &&
              nir_src_num_components(intrin->src[0]) >= 3;
