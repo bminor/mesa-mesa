@@ -2887,7 +2887,7 @@ nir_get_io_offset_src(nir_intrinsic_instr *instr)
 }
 
 /**
- * Return the vertex index source number for a load/store per_vertex intrinsic or -1 if there's no offset.
+ * Return the array index source number for an arrayed load/store intrinsic or -1 if there's no offset.
  */
 int
 nir_get_io_arrayed_index_src_number(const nir_intrinsic_instr *instr)
@@ -2908,7 +2908,7 @@ nir_get_io_arrayed_index_src_number(const nir_intrinsic_instr *instr)
 }
 
 /**
- * Return the vertex index source for a load/store per_vertex intrinsic.
+ * Return the array index source for an arrayed load/store intrinsic.
  */
 nir_src *
 nir_get_io_arrayed_index_src(nir_intrinsic_instr *instr)
