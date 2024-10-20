@@ -40,6 +40,9 @@ extern "C" {
    SCREENSHOT_PARAM_CUSTOM(output_dir)                  \
    SCREENSHOT_PARAM_CUSTOM(help)
 
+#define LARGE_BUFFER_SIZE 16384  // 16 KB for large input strings
+#define STANDARD_BUFFER_SIZE 256
+
 enum screenshot_param_enabled {
 #define SCREENSHOT_PARAM_BOOL(name) SCREENSHOT_PARAM_ENABLED_##name,
 #define SCREENSHOT_PARAM_CUSTOM(name)

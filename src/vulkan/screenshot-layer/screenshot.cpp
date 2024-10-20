@@ -79,8 +79,6 @@ static inline void loader_platform_thread_delete_mutex(loader_platform_thread_mu
 static int globalLockInitialized = 0;
 static loader_platform_thread_mutex globalLock;
 
-uint32_t MAX_PATH_SIZE = 512;
-
 /* Mapped from VkInstace/VkPhysicalDevice */
 struct instance_data {
    struct vk_instance_dispatch_table vtable;
@@ -739,7 +737,7 @@ struct ThreadSaveData {
 void *writePNG(void *data) {
    struct ThreadSaveData *threadData = (struct ThreadSaveData*)data;
    FILE *file;
-   size_t length = sizeof(char[MAX_PATH_SIZE]);
+   size_t length = sizeof(char[LARGE_BUFFER_SIZE+STANDARD_BUFFER_SIZE]);
    const char *tmpStr = ".tmp";
    char *filename    = (char *)malloc(length);
    char *tmpFilename = (char *)malloc(length + 4); // Allow for ".tmp"
@@ -1193,8 +1191,8 @@ static VkResult screenshot_QueuePresentKHR(
          uint32_t path_size_used = 0;
          const char *SUFFIX = ".png";
          const char *TEMP_DIR = "/tmp/";
-         char full_path[MAX_PATH_SIZE];  // Let's increase to 512 to account for large files/paths
-         char filename[256] = "";
+         char full_path[LARGE_BUFFER_SIZE+STANDARD_BUFFER_SIZE] = "";
+         char filename[STANDARD_BUFFER_SIZE] = "";
          char frame_counter_str[11];
          bool rename_file = true;
          itoa(frame_counter, frame_counter_str);
@@ -1222,7 +1220,7 @@ static VkResult screenshot_QueuePresentKHR(
             strcat(filename, SUFFIX);
          }
          path_size_used += strlen(filename);
-         if(path_size_used <= MAX_PATH_SIZE) {
+         if(path_size_used <= LARGE_BUFFER_SIZE+STANDARD_BUFFER_SIZE) {
             strcat(full_path, filename);
             pSemaphoreWaitBeforePresent = pPresentInfo->pWaitSemaphores;
             semaphoreWaitBeforePresentCount = pPresentInfo->waitSemaphoreCount;
@@ -1241,7 +1239,7 @@ static VkResult screenshot_QueuePresentKHR(
                present_info.waitSemaphoreCount = 1;
             }
          } else {
-            LOG(DEBUG, "Cancelling screenshot due to excessive filepath size (max %u characters)\n", MAX_PATH_SIZE);
+            LOG(DEBUG, "Cancelling screenshot due to excessive filepath size (max %u characters)\n", LARGE_BUFFER_SIZE);
          }
       }
    }

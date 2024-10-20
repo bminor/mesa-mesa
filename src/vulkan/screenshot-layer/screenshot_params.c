@@ -182,7 +182,7 @@ parse_frames(const char *str)
    uint32_t range_delimit_count = 0;
    range_interval = 1;
    char *prev_delim = NULL;
-   char str_buf[256] = {0};
+   char str_buf[STANDARD_BUFFER_SIZE] = {0};
    char *str_buf_ptr;
    str_buf_ptr = str_buf;
    struct frame_list *list = (struct frame_list*)malloc(sizeof(struct frame_list));
@@ -300,13 +300,13 @@ parse_log_type(const char *str)
 static const char *
 parse_output_dir(const char *str)
 {
-   static char output_dir[256];
+   static char output_dir[LARGE_BUFFER_SIZE];
    strcpy(output_dir, str);
    uint32_t last_char_index = strlen(str)-1;
    // Ensure we're in bounds and the last character is '/'
    if (last_char_index > 0 &&
        str[last_char_index] != '/' &&
-       last_char_index < 254) {
+       last_char_index < LARGE_BUFFER_SIZE-1) {
       output_dir[last_char_index+1] = '/';
    }
    DIR *dir = opendir(output_dir);
@@ -370,7 +370,7 @@ parse_screenshot_env(struct screenshot_params *params,
 
    uint32_t num;
    const char *itr = env;
-   char key[256], value[256];
+   char key[STANDARD_BUFFER_SIZE], value[LARGE_BUFFER_SIZE];
 
    memset(params, 0, sizeof(*params));
 
