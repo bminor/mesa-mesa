@@ -956,7 +956,6 @@ cs_loop_conditional_continue(struct cs_builder *b, struct cs_loop *loop,
                              enum mali_cs_condition cond, struct cs_index val)
 {
    cs_flush_pending_if(b);
-   assert(cs_cur_block(b) == &loop->block);
    cs_branch_label(b, &loop->start, cond, val);
    cs_loop_diverge_ls_update(b, loop);
 }
@@ -966,7 +965,6 @@ cs_loop_conditional_break(struct cs_builder *b, struct cs_loop *loop,
                           enum mali_cs_condition cond, struct cs_index val)
 {
    cs_flush_pending_if(b);
-   assert(cs_cur_block(b) == &loop->block);
    cs_branch_label(b, &loop->end, cond, val);
    cs_loop_diverge_ls_update(b, loop);
 }
