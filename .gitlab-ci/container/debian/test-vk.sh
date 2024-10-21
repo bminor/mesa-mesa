@@ -48,14 +48,24 @@ EPHEMERAL=(
     python3-setuptools
     python3-wheel
     software-properties-common
-    wine64-tools
     xz-utils
 )
 
 DEPS=(
+    libfontconfig1
+    libglu1-mesa
+)
+
+if [ "$DEBIAN_ARCH" != "armhf" ]; then
+  # Wine isn't available on 32-bit ARM
+  EPHEMERAL+=(
+    wine64-tools
+  )
+  DEPS+=(
     wine
     wine64
-)
+  )
+fi
 
 apt-get update
 
@@ -106,17 +116,26 @@ rm -rf /VK-GL-CTS
 
 ############### Build Fossilize
 
+uncollapsed_section_switch fossilize "Building Fossilize"
+
 . .gitlab-ci/container/build-fossilize.sh
 
 ############### Build gfxreconstruct
 
-. .gitlab-ci/container/build-gfxreconstruct.sh
+# gfxreconstruct thinks that ARMv7-on-AArch64 is cross-compilation
+if [ "$DEBIAN_ARCH" != "armhf" ]; then
+  uncollapsed_section_switch gfxreconstruct "Building gfxreconstruct"
+  . .gitlab-ci/container/build-gfxreconstruct.sh
+fi
 
 ############### Build VKD3D-Proton
 
-. .gitlab-ci/container/setup-wine.sh "/vkd3d-proton-wine64"
-
-. .gitlab-ci/container/build-vkd3d-proton.sh
+# Wine isn't available on 32-bit ARM
+if [ "$DEBIAN_ARCH" != "armhf" ]; then
+  uncollapsed_section_switch proton "Installing Proton (Wine/D3DVK emulation)"
+  . .gitlab-ci/container/setup-wine.sh "/vkd3d-proton-wine64"
+  . .gitlab-ci/container/build-vkd3d-proton.sh
+fi
 
 ############### Uninstall the build software
 

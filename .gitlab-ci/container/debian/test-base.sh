@@ -198,7 +198,11 @@ fi
 
 ############### Build Crosvm
 
-. .gitlab-ci/container/build-crosvm.sh
+# crosvm build fails on ARMv7 due to Xlib type-size issues
+if [ "$DEBIAN_ARCH" != "armhf" ]; then
+  uncollapsed_section_switch crosvm "Building crosvm"
+  . .gitlab-ci/container/build-crosvm.sh
+fi
 
 ############### Build dEQP runner
 
