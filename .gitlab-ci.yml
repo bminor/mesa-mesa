@@ -36,6 +36,7 @@ workflow:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
         MESA_CI_PERFORMANCE_ENABLED: 1
         VALVE_INFRA_VANGOGH_JOB_PRIORITY: ""  # Empty tags are ignored by gitlab
+        JOB_PRIORITY: 75
         # fast-fail in merge pipelines: stop early if we get this many unexpected fails/crashes
         DEQP_RUNNER_MAX_FAILS: 40
         # Flag to advertise the CI scripts if we are in a merge pipeline
@@ -46,7 +47,6 @@ workflow:
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
       variables:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
-        JOB_PRIORITY: 50
     # pipeline for direct pushes that bypassed the CI
     - if: &is-direct-push $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $GITLAB_USER_LOGIN != "marge-bot"
       variables:
@@ -56,11 +56,9 @@ workflow:
     - if: $FORCE_KERNEL_TAG != null
       variables:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG}
-        JOB_PRIORITY: 50
     - if: $FORCE_KERNEL_TAG == null
       variables:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
-        JOB_PRIORITY: 50
 
 
 variables:
@@ -103,6 +101,7 @@ variables:
   MESA_SPIRV_LOG_LEVEL: error
   # Default priority for non-merge pipelines
   VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
+  JOB_PRIORITY: 50
 
 default:
   id_tokens:
