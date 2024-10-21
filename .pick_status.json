@@ -114,7 +114,7 @@
         "description": "panvk: fix descriptor set layout hash",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "73518dc169fc8d2b3cf8221d9244cba3d0e4bb16",
         "notes": null
