@@ -61,7 +61,7 @@ struct loop_info {
 struct use_info {
    uint32_t num_uses = 0;
    uint32_t last_use = 0;
-   float score() { return last_use / num_uses; }
+   float score() { return static_cast<float>(last_use) / static_cast<float>(num_uses); }
 };
 
 struct spill_ctx {
