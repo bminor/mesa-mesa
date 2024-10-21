@@ -217,20 +217,20 @@ dri_interop_flush_objects(struct dri_context *_ctx,
                            unsigned count, struct mesa_glinterop_export_in *objects,
                            struct mesa_glinterop_flush_out *out);
 
-PUBLIC __DRIimage *
+PUBLIC struct dri_image *
 dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
                                    int renderbuffer, void *loaderPrivate,
                                    unsigned *error);
 
 PUBLIC void
-dri2_destroy_image(__DRIimage *img);
+dri2_destroy_image(struct dri_image *img);
 
-PUBLIC __DRIimage *
+PUBLIC struct dri_image *
 dri2_create_from_texture(struct dri_context *dri_ctx, int target, unsigned texture,
                          int depth, int level, unsigned *error,
                          void *loaderPrivate);
 
-PUBLIC __DRIimage *
+PUBLIC struct dri_image *
 dri_create_image(struct dri_screen *screen,
                  int width, int height,
                  int format,
@@ -239,18 +239,18 @@ dri_create_image(struct dri_screen *screen,
                  unsigned int use,
                  void *loaderPrivate);
 PUBLIC GLboolean
-dri2_query_image(__DRIimage *image, int attrib, int *value);
-PUBLIC __DRIimage *
-dri2_dup_image(__DRIimage *image, void *loaderPrivate);
+dri2_query_image(struct dri_image *image, int attrib, int *value);
+PUBLIC struct dri_image *
+dri2_dup_image(struct dri_image *image, void *loaderPrivate);
 PUBLIC GLboolean
-dri2_validate_usage(__DRIimage *image, unsigned int use);
-PUBLIC __DRIimage *
+dri2_validate_usage(struct dri_image *image, unsigned int use);
+PUBLIC struct dri_image *
 dri2_from_names(struct dri_screen *screen, int width, int height, int fourcc,
                 int *names, int num_names, int *strides, int *offsets,
                 void *loaderPrivate);
-PUBLIC __DRIimage *
-dri2_from_planar(__DRIimage *image, int plane, void *loaderPrivate);
-PUBLIC __DRIimage *
+PUBLIC struct dri_image *
+dri2_from_planar(struct dri_image *image, int plane, void *loaderPrivate);
+PUBLIC struct dri_image *
 dri2_from_dma_bufs(struct dri_screen *screen,
                     int width, int height, int fourcc,
                     uint64_t modifier, int *fds, int num_fds,
@@ -263,18 +263,18 @@ dri2_from_dma_bufs(struct dri_screen *screen,
                     unsigned *error,
                     void *loaderPrivate);
 PUBLIC void
-dri2_blit_image(struct dri_context *ctx, __DRIimage *dst, __DRIimage *src,
+dri2_blit_image(struct dri_context *ctx, struct dri_image *dst, struct dri_image *src,
                 int dstx0, int dsty0, int dstwidth, int dstheight,
                 int srcx0, int srcy0, int srcwidth, int srcheight,
                 int flush_flag);
 PUBLIC int
 dri2_get_capabilities(struct dri_screen *_screen);
 PUBLIC void *
-dri2_map_image(struct dri_context *ctx, __DRIimage *image,
+dri2_map_image(struct dri_context *ctx, struct dri_image *image,
                int x0, int y0, int width, int height,
                unsigned int flags, int *stride, void **data);
 PUBLIC void
-dri2_unmap_image(struct dri_context *ctx, __DRIimage *image, void *data);
+dri2_unmap_image(struct dri_context *ctx, struct dri_image *image, void *data);
 PUBLIC bool
 dri_query_dma_buf_formats(struct dri_screen *_screen, int max, int *formats,
                            int *count);
@@ -286,7 +286,7 @@ PUBLIC bool
 dri2_query_dma_buf_format_modifier_attribs(struct dri_screen *_screen,
                                            uint32_t fourcc, uint64_t modifier,
                                            int attrib, uint64_t *value);
-PUBLIC __DRIimage *
+PUBLIC struct dri_image *
 dri_create_image_with_modifiers(struct dri_screen *screen,
                                  uint32_t width, uint32_t height,
                                  uint32_t dri_format, uint32_t dri_usage,
@@ -300,7 +300,7 @@ PUBLIC int
 driSWRastQueryBufferAge(struct dri_drawable *drawable);
 
 PUBLIC void
-dri2_set_in_fence_fd(__DRIimage *img, int fd);
+dri2_set_in_fence_fd(struct dri_image *img, int fd);
 
 PUBLIC bool
 dri2_query_compression_rates(struct dri_screen *_screen, const struct dri_config *config, int max,

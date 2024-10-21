@@ -960,7 +960,7 @@ get_surface_specific_modifiers(struct dri2_egl_surface *dri2_surf,
 }
 
 static void
-update_surface(struct dri2_egl_surface *dri2_surf, __DRIimage *dri_img)
+update_surface(struct dri2_egl_surface *dri2_surf, struct dri_image *dri_img)
 {
    int compression_rate;
 
@@ -1193,7 +1193,7 @@ get_back_bo(struct dri2_egl_surface *dri2_surf)
    if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu &&
        dri2_surf->back->linear_copy == NULL) {
       uint64_t linear_mod = DRM_FORMAT_MOD_LINEAR;
-      __DRIimage *linear_copy_display_gpu_image = NULL;
+      struct dri_image *linear_copy_display_gpu_image = NULL;
 
       if (dri2_dpy->dri_screen_display_gpu) {
          linear_copy_display_gpu_image = dri_create_image_with_modifiers(
@@ -1217,7 +1217,7 @@ get_back_bo(struct dri2_egl_surface *dri2_surf)
                num_planes = 1;
 
             for (i = 0; i < num_planes; i++) {
-               __DRIimage *image = dri2_from_planar(
+               struct dri_image *image = dri2_from_planar(
                   linear_copy_display_gpu_image, i, NULL);
 
                if (!image) {
@@ -1319,7 +1319,7 @@ get_back_bo(struct dri2_egl_surface *dri2_surf)
 static void
 back_bo_to_dri_buffer(struct dri2_egl_surface *dri2_surf, __DRIbuffer *buffer)
 {
-   __DRIimage *image;
+   struct dri_image *image;
    int name, pitch;
 
    image = dri2_surf->back->dri_image;
@@ -1460,7 +1460,7 @@ static const struct wl_callback_listener throttle_listener = {
 
 static struct wl_buffer *
 create_wl_buffer(struct dri2_egl_display *dri2_dpy,
-                 struct dri2_egl_surface *dri2_surf, __DRIimage *image)
+                 struct dri2_egl_surface *dri2_surf, struct dri_image *image)
 {
    struct wl_buffer *ret = NULL;
    EGLBoolean query;
@@ -1526,7 +1526,7 @@ create_wl_buffer(struct dri2_egl_display *dri2_dpy,
          wl_proxy_set_queue((struct wl_proxy *)params, dri2_surf->wl_queue);
 
       for (i = 0; i < num_planes; i++) {
-         __DRIimage *p_image;
+         struct dri_image *p_image;
          int stride, offset;
          int fd = -1;
 
@@ -1664,7 +1664,7 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    dri2_surf->back = NULL;
 
    if (!dri2_surf->current->wl_buffer) {
-      __DRIimage *image;
+      struct dri_image *image;
 
       if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu)
          image = dri2_surf->current->linear_copy;
@@ -1753,7 +1753,7 @@ dri2_wl_create_wayland_buffer_from_image(_EGLDisplay *disp, _EGLImage *img)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_image *dri2_img = dri2_egl_image(img);
-   __DRIimage *image = dri2_img->dri_image;
+   struct dri_image *image = dri2_img->dri_image;
    struct wl_buffer *buffer;
    int fourcc;
 

@@ -371,7 +371,7 @@ dri_image_drawable_get_buffers(struct dri_drawable *drawable,
                                unsigned statts_count);
 
 static void
-handle_in_fence(struct dri_context *ctx, __DRIimage *img)
+handle_in_fence(struct dri_context *ctx, struct dri_image *img)
 {
    struct pipe_context *pipe = ctx->st->pipe;
    struct pipe_fence_handle *fence;

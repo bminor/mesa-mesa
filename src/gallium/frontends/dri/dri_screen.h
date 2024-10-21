@@ -137,7 +137,7 @@ dri_screen_get_kopper(struct dri_screen *screen)
    return screen->kopper_loader;
 }
 
-struct __DRIimageRec {
+struct dri_image {
    struct pipe_resource *texture;
    unsigned level;
    unsigned layer;

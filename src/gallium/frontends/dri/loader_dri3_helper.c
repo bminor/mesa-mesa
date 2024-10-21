@@ -195,7 +195,7 @@ loader_dri3_blit_context_put(void)
  */
 static bool
 loader_dri3_blit_image(struct loader_dri3_drawable *draw,
-                       __DRIimage *dst, __DRIimage *src,
+                       struct dri_image *dst, struct dri_image *src,
                        int dstx0, int dsty0, int width, int height,
                        int srcx0, int srcy0, int flush_flag)
 {
@@ -1355,7 +1355,7 @@ has_supported_modifier(struct loader_dri3_drawable *draw, unsigned int format,
 
 /** loader_dri3_alloc_render_buffer
  *
- * Use the driver createImage function to construct a __DRIimage, then
+ * Use the driver createImage function to construct a struct dri_image, then
  * get a file descriptor for that and create an X pixmap from that
  *
  * Allocate an xshmfence for synchronization
@@ -1365,7 +1365,7 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
                          int width, int height, int depth)
 {
    struct loader_dri3_buffer *buffer;
-   __DRIimage *pixmap_buffer = NULL, *linear_buffer_display_gpu = NULL;
+   struct dri_image *pixmap_buffer = NULL, *linear_buffer_display_gpu = NULL;
    int format = loader_fourcc_to_image_format(fourcc);
    xcb_pixmap_t pixmap;
    xcb_sync_fence_t sync_fence;
@@ -1518,7 +1518,7 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
       num_planes = 1;
 
    for (i = 0; i < num_planes; i++) {
-      __DRIimage *image = dri2_from_planar(pixmap_buffer, i, NULL);
+      struct dri_image *image = dri2_from_planar(pixmap_buffer, i, NULL);
 
       if (!image) {
          assert(i == 0);
@@ -1759,7 +1759,7 @@ dri3_update_drawable(struct loader_dri3_drawable *draw)
    return true;
 }
 
-__DRIimage *
+struct dri_image *
 loader_dri3_create_image(xcb_connection_t *c,
                          xcb_dri3_buffer_from_pixmap_reply_t *bp_reply,
                          unsigned int fourcc,
@@ -1767,7 +1767,7 @@ loader_dri3_create_image(xcb_connection_t *c,
                          void *loaderPrivate)
 {
    int                                  *fds;
-   __DRIimage                           *image_planar, *ret;
+   struct dri_image                           *image_planar, *ret;
    int                                  stride, offset;
 
    /* Get an FD for the pixmap object
@@ -1777,7 +1777,7 @@ loader_dri3_create_image(xcb_connection_t *c,
    stride = bp_reply->stride;
    offset = 0;
 
-   /* createImageFromDmaBufs creates a wrapper __DRIimage structure which
+   /* createImageFromDmaBufs creates a wrapper struct dri_image structure which
     * can deal with multiple planes for things like Yuv images. So, once
     * we've gotten the planar wrapper, pull the single plane out of it and
     * discard the wrapper.
@@ -1806,14 +1806,14 @@ loader_dri3_create_image(xcb_connection_t *c,
 }
 
 #ifdef HAVE_X11_DRM
-__DRIimage *
+struct dri_image *
 loader_dri3_create_image_from_buffers(xcb_connection_t *c,
                                       xcb_dri3_buffers_from_pixmap_reply_t *bp_reply,
                                       unsigned int fourcc,
                                       struct dri_screen *dri_screen,
                                       void *loaderPrivate)
 {
-   __DRIimage                           *ret;
+   struct dri_image                           *ret;
    int                                  *fds;
    uint32_t                             *strides_in, *offsets_in;
    int                                   strides[4], offsets[4];
@@ -1848,12 +1848,12 @@ loader_dri3_create_image_from_buffers(xcb_connection_t *c,
 }
 #endif
 
-__DRIimage *
+struct dri_image *
 loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, struct dri_screen *screen,
                               unsigned fourcc, bool multiplanes_available,
                               int *width, int *height, void *loader_data)
 {
-   __DRIimage *image;
+   struct dri_image *image;
 #ifdef HAVE_X11_DRM
    if (multiplanes_available) {
       xcb_dri3_buffers_from_pixmap_cookie_t bps_cookie;
@@ -1892,7 +1892,7 @@ loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, str
 /** dri3_get_pixmap_buffer
  *
  * Get the DRM object for a pixmap from the X server and
- * wrap that with a __DRIimage structure using createImageFromDmaBufs
+ * wrap that with a struct dri_image structure using createImageFromDmaBufs
  */
 static struct loader_dri3_buffer *
 dri3_get_pixmap_buffer(struct dri_drawable *driDrawable, unsigned int fourcc,

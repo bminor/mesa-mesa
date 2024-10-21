@@ -42,7 +42,7 @@ enum loader_dri3_buffer_type {
 };
 
 struct loader_dri3_buffer {
-   __DRIimage   *image;
+   struct dri_image   *image;
    uint32_t     pixmap;
 
    /* default case: linear buffer allocated in render gpu vram.
@@ -50,7 +50,7 @@ struct loader_dri3_buffer {
     *           to render gpu. p2p case is enabled when driver name matches
     *           while creating screen in dri3_create_screen() function.
     */
-   __DRIimage   *linear_buffer;
+   struct dri_image   *linear_buffer;
 
    /* Synchronization between the client and X server is done using an
     * xshmfence that is mapped into an X server SyncFence. This lets the
@@ -249,7 +249,7 @@ loader_dri3_wait_x(struct loader_dri3_drawable *draw);
 PUBLIC void
 loader_dri3_wait_gl(struct loader_dri3_drawable *draw);
 
-PUBLIC __DRIimage *
+PUBLIC struct dri_image *
 loader_dri3_create_image(xcb_connection_t *c,
                          xcb_dri3_buffer_from_pixmap_reply_t *bp_reply,
                          unsigned int fourcc,
@@ -257,7 +257,7 @@ loader_dri3_create_image(xcb_connection_t *c,
                          void *loaderPrivate);
 
 #ifdef HAVE_X11_DRM
-PUBLIC __DRIimage *
+PUBLIC struct dri_image *
 loader_dri3_create_image_from_buffers(xcb_connection_t *c,
                                       xcb_dri3_buffers_from_pixmap_reply_t *bp_reply,
                                       unsigned int fourcc,
@@ -280,7 +280,7 @@ loader_dri3_swapbuffer_barrier(struct loader_dri3_drawable *draw);
 
 PUBLIC void
 loader_dri3_close_screen(struct dri_screen *dri_screen);
-__DRIimage *
+struct dri_image *
 loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, struct dri_screen *screen,
                               unsigned fourcc, bool multiplanes_available,
                               int *width, int *height, void *loader_data);

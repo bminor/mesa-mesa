@@ -252,7 +252,7 @@ const __DRI2fenceExtension dri2FenceExtension = {
    .get_fence_fd = dri_get_fence_fd,
 };
 
-__DRIimage *
+struct dri_image *
 dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
 				     int renderbuffer, void *loaderPrivate,
                                      unsigned *error)
@@ -262,7 +262,7 @@ dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
    struct pipe_context *p_ctx = st->pipe;
    struct gl_renderbuffer *rb;
    struct pipe_resource *tex;
-   __DRIimage *img;
+   struct dri_image *img;
 
    /* Wait for glthread to finish to get up-to-date GL object lookups. */
    _mesa_glthread_finish(st->ctx);
@@ -292,7 +292,7 @@ dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
       return NULL;
    }
 
-   img = CALLOC_STRUCT(__DRIimageRec);
+   img = CALLOC_STRUCT(dri_image);
    if (!img) {
       *error = __DRI_IMAGE_ERROR_BAD_ALLOC;
       return NULL;
@@ -321,7 +321,7 @@ dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
 }
 
 void
-dri2_destroy_image(__DRIimage *img)
+dri2_destroy_image(struct dri_image *img)
 {
    const __DRIimageLoaderExtension *imgLoader = img->screen->image.loader;
    const __DRIdri2LoaderExtension *dri2Loader = img->screen->dri2.loader;
@@ -343,12 +343,12 @@ dri2_destroy_image(__DRIimage *img)
 }
 
 
-__DRIimage *
+struct dri_image *
 dri2_create_from_texture(struct dri_context *dri_ctx, int target, unsigned texture,
                          int depth, int level, unsigned *error,
                          void *loaderPrivate)
 {
-   __DRIimage *img;
+   struct dri_image *img;
    struct st_context *st = dri_ctx->st;
    struct gl_context *ctx = st->ctx;
    struct pipe_context *p_ctx = st->pipe;
@@ -390,7 +390,7 @@ dri2_create_from_texture(struct dri_context *dri_ctx, int target, unsigned textu
       return NULL;
    }
 
-   img = CALLOC_STRUCT(__DRIimageRec);
+   img = CALLOC_STRUCT(dri_image);
    if (!img) {
       *error = __DRI_IMAGE_ERROR_BAD_ALLOC;
       return NULL;
@@ -726,7 +726,7 @@ dri_query_dma_buf_formats(struct dri_screen *screen, int max, int *formats,
 }
 
 
-__DRIimage *
+struct dri_image *
 dri_create_image_with_modifiers(struct dri_screen *screen,
                                  uint32_t width, uint32_t height,
                                  uint32_t dri_format, uint32_t dri_usage,
@@ -760,7 +760,7 @@ dri_create_image_with_modifiers(struct dri_screen *screen,
 }
 
 void
-dri_image_fence_sync(struct dri_context *ctx, __DRIimage *img)
+dri_image_fence_sync(struct dri_context *ctx, struct dri_image *img)
 {
    struct pipe_context *pipe = ctx->st->pipe;
    struct pipe_fence_handle *fence;

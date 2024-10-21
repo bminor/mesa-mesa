@@ -89,7 +89,7 @@ struct dri_drawable
 
    /* kopper */
    struct kopper_loader_info info;
-   __DRIimage   *image; //texture_from_pixmap
+   struct dri_image   *image; //texture_from_pixmap
    bool is_window;
    bool window_valid;
 

@@ -132,7 +132,7 @@ pipe_format_to_fourcc(enum pipe_format format)
 /** kopper_get_pixmap_buffer
  *
  * Get the DRM object for a pixmap from the X server and
- * wrap that with a __DRIimage structure using createImageFromDmaBufs
+ * wrap that with a struct dri_image structure using createImageFromDmaBufs
  */
 static struct pipe_resource *
 kopper_get_pixmap_buffer(struct dri_drawable *drawable,

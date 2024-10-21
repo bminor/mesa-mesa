@@ -73,7 +73,7 @@ dri_validate_egl_image(void *image, void *data)
    return dri->validate_image(image, dri->lookup_user_data);
 }
 
-static __DRIimage *
+static struct dri_image *
 dri_lookup_egl_image_validated(void *image, void *data)
 {
    struct gbm_dri_device *dri = data;
@@ -426,7 +426,7 @@ gbm_dri_bo_get_fd(struct gbm_bo *_bo)
 }
 
 static int
-get_number_planes(struct gbm_dri_device *dri, __DRIimage *image)
+get_number_planes(struct gbm_dri_device *dri, struct dri_image *image)
 {
    int num_planes = 0;
 
@@ -471,7 +471,7 @@ gbm_dri_bo_get_handle_for_plane(struct gbm_bo *_bo, int plane)
       return ret;
    }
 
-   __DRIimage *image = dri2_from_planar(bo->image, plane, NULL);
+   struct dri_image *image = dri2_from_planar(bo->image, plane, NULL);
    if (image) {
       dri2_query_image(image, __DRI_IMAGE_ATTRIB_HANDLE, &ret.s32);
       dri2_destroy_image(image);
@@ -510,7 +510,7 @@ gbm_dri_bo_get_plane_fd(struct gbm_bo *_bo, int plane)
       return -1;
    }
 
-   __DRIimage *image = dri2_from_planar(bo->image, plane, NULL);
+   struct dri_image *image = dri2_from_planar(bo->image, plane, NULL);
    if (image) {
       dri2_query_image(image, __DRI_IMAGE_ATTRIB_FD, &fd);
       dri2_destroy_image(image);
@@ -527,7 +527,7 @@ gbm_dri_bo_get_stride(struct gbm_bo *_bo, int plane)
 {
    struct gbm_dri_device *dri = gbm_dri_device(_bo->gbm);
    struct gbm_dri_bo *bo = gbm_dri_bo(_bo);
-   __DRIimage *image;
+   struct dri_image *image;
    int stride = 0;
 
    if (!dri->has_dmabuf_import) {
@@ -577,7 +577,7 @@ gbm_dri_bo_get_offset(struct gbm_bo *_bo, int plane)
       return 0;
    }
 
-   __DRIimage *image = dri2_from_planar(bo->image, plane, NULL);
+   struct dri_image *image = dri2_from_planar(bo->image, plane, NULL);
    if (image) {
       dri2_query_image(image, __DRI_IMAGE_ATTRIB_OFFSET, &offset);
       dri2_destroy_image(image);
@@ -640,7 +640,7 @@ gbm_dri_bo_import(struct gbm_device *gbm,
 {
    struct gbm_dri_device *dri = gbm_dri_device(gbm);
    struct gbm_dri_bo *bo;
-   __DRIimage *image;
+   struct dri_image *image;
    unsigned dri_use = 0;
    int gbm_format;
 

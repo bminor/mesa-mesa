@@ -380,7 +380,7 @@ dri2_release_buffer(__DRIbuffer *bPriv)
 }
 
 void
-dri2_set_in_fence_fd(__DRIimage *img, int fd)
+dri2_set_in_fence_fd(struct dri_image *img, int fd)
 {
    validate_fence_fd(fd);
    validate_fence_fd(img->in_fence_fd);
@@ -906,7 +906,7 @@ from_dri_compression_rate(enum __DRIFixedRateCompression rate)
    }
 }
 
-static __DRIimage *
+static struct dri_image *
 dri_create_image_from_winsys(struct dri_screen *screen,
                               int width, int height, const struct dri2_format_mapping *map,
                               int num_handles, struct winsys_handle *whandle,
@@ -914,7 +914,7 @@ dri_create_image_from_winsys(struct dri_screen *screen,
                               void *loaderPrivate)
 {
    struct pipe_screen *pscreen = screen->base.screen;
-   __DRIimage *img;
+   struct dri_image *img;
    struct pipe_resource templ;
    unsigned tex_usage = 0;
    int i;
@@ -1005,7 +1005,7 @@ dri_create_image_from_winsys(struct dri_screen *screen,
    if (!tex_usage)
       return NULL;
 
-   img = CALLOC_STRUCT(__DRIimageRec);
+   img = CALLOC_STRUCT(dri_image);
    if (!img)
       return NULL;
 
@@ -1111,7 +1111,7 @@ dri2_get_modifier_num_planes(struct dri_screen *screen,
    }
 }
 
-__DRIimage *
+struct dri_image *
 dri_create_image(struct dri_screen *screen,
                   int width, int height,
                   int format,
@@ -1122,7 +1122,7 @@ dri_create_image(struct dri_screen *screen,
 {
    const struct dri2_format_mapping *map = dri2_get_mapping_by_format(format);
    struct pipe_screen *pscreen = screen->base.screen;
-   __DRIimage *img;
+   struct dri_image *img;
    struct pipe_resource templ;
    unsigned tex_usage = 0;
    unsigned count = _count;
@@ -1186,7 +1186,7 @@ dri_create_image(struct dri_screen *screen,
    if (use & __DRI_IMAGE_USE_FRONT_RENDERING)
       tex_usage |= PIPE_BIND_USE_FRONT_RENDERING;
 
-   img = CALLOC_STRUCT(__DRIimageRec);
+   img = CALLOC_STRUCT(dri_image);
    if (!img)
       return NULL;
 
@@ -1229,7 +1229,7 @@ dri_create_image(struct dri_screen *screen,
 }
 
 static bool
-dri2_query_image_common(__DRIimage *image, int attrib, int *value)
+dri2_query_image_common(struct dri_image *image, int attrib, int *value)
 {
    switch (attrib) {
    case __DRI_IMAGE_ATTRIB_WIDTH:
@@ -1269,7 +1269,7 @@ dri2_query_image_common(__DRIimage *image, int attrib, int *value)
 }
 
 static bool
-dri2_query_image_by_resource_handle(__DRIimage *image, int attrib, int *value)
+dri2_query_image_by_resource_handle(struct dri_image *image, int attrib, int *value)
 {
    struct pipe_screen *pscreen = image->texture->screen;
    struct winsys_handle whandle;
@@ -1342,7 +1342,7 @@ dri2_query_image_by_resource_handle(__DRIimage *image, int attrib, int *value)
 }
 
 static bool
-dri2_resource_get_param(__DRIimage *image, enum pipe_resource_param param,
+dri2_resource_get_param(struct dri_image *image, enum pipe_resource_param param,
                         unsigned handle_usage, uint64_t *value)
 {
    struct pipe_screen *pscreen = image->texture->screen;
@@ -1358,7 +1358,7 @@ dri2_resource_get_param(__DRIimage *image, enum pipe_resource_param param,
 }
 
 static bool
-dri2_query_image_by_resource_param(__DRIimage *image, int attrib, int *value)
+dri2_query_image_by_resource_param(struct dri_image *image, int attrib, int *value)
 {
    enum pipe_resource_param param;
    uint64_t res_param;
@@ -1430,7 +1430,7 @@ dri2_query_image_by_resource_param(__DRIimage *image, int attrib, int *value)
 }
 
 GLboolean
-dri2_query_image(__DRIimage *image, int attrib, int *value)
+dri2_query_image(struct dri_image *image, int attrib, int *value)
 {
    if (dri2_query_image_common(image, attrib, value))
       return GL_TRUE;
@@ -1442,12 +1442,12 @@ dri2_query_image(__DRIimage *image, int attrib, int *value)
       return GL_FALSE;
 }
 
-__DRIimage *
-dri2_dup_image(__DRIimage *image, void *loaderPrivate)
+struct dri_image *
+dri2_dup_image(struct dri_image *image, void *loaderPrivate)
 {
-   __DRIimage *img;
+   struct dri_image *img;
 
-   img = CALLOC_STRUCT(__DRIimageRec);
+   img = CALLOC_STRUCT(dri_image);
    if (!img)
       return NULL;
 
@@ -1469,7 +1469,7 @@ dri2_dup_image(__DRIimage *image, void *loaderPrivate)
 }
 
 GLboolean
-dri2_validate_usage(__DRIimage *image, unsigned int use)
+dri2_validate_usage(struct dri_image *image, unsigned int use)
 {
    if (!image || !image->texture)
       return false;
@@ -1496,13 +1496,13 @@ dri2_validate_usage(__DRIimage *image, unsigned int use)
    return screen->check_resource_capability(screen, image->texture, bind);
 }
 
-__DRIimage *
+struct dri_image *
 dri2_from_names(struct dri_screen *screen, int width, int height, int fourcc,
                 int *names, int num_names, int *strides, int *offsets,
                 void *loaderPrivate)
 {
    const struct dri2_format_mapping *map = dri2_get_mapping_by_fourcc(fourcc);
-   __DRIimage *img;
+   struct dri_image *img;
    struct winsys_handle whandle;
 
    if (!map)
@@ -1531,10 +1531,10 @@ dri2_from_names(struct dri_screen *screen, int width, int height, int fourcc,
    return img;
 }
 
-__DRIimage *
-dri2_from_planar(__DRIimage *image, int plane, void *loaderPrivate)
+struct dri_image *
+dri2_from_planar(struct dri_image *image, int plane, void *loaderPrivate)
 {
-   __DRIimage *img;
+   struct dri_image *img;
 
    if (plane < 0) {
       return NULL;
@@ -1630,7 +1630,7 @@ dri2_query_dma_buf_format_modifier_attribs(struct dri_screen *screen,
    }
 }
 
-__DRIimage *
+struct dri_image *
 dri2_from_dma_bufs(struct dri_screen *screen,
                     int width, int height, int fourcc,
                     uint64_t modifier, int *fds, int num_fds,
@@ -1643,7 +1643,7 @@ dri2_from_dma_bufs(struct dri_screen *screen,
                     unsigned *error,
                     void *loaderPrivate)
 {
-   __DRIimage *img;
+   struct dri_image *img;
    const struct dri2_format_mapping *map = dri2_get_mapping_by_fourcc(fourcc);
 
    if (!screen->dmabuf_import) {
@@ -1769,7 +1769,7 @@ dri2_query_compression_modifiers(struct dri_screen *screen, uint32_t fourcc,
 }
 
 void
-dri2_blit_image(struct dri_context *ctx, __DRIimage *dst, __DRIimage *src,
+dri2_blit_image(struct dri_context *ctx, struct dri_image *dst, struct dri_image *src,
                 int dstx0, int dsty0, int dstwidth, int dstheight,
                 int srcx0, int srcy0, int srcwidth, int srcheight,
                 int flush_flag)
@@ -1822,7 +1822,7 @@ dri2_blit_image(struct dri_context *ctx, __DRIimage *dst, __DRIimage *src,
 }
 
 void *
-dri2_map_image(struct dri_context *ctx, __DRIimage *image,
+dri2_map_image(struct dri_context *ctx, struct dri_image *image,
                 int x0, int y0, int width, int height,
                 unsigned int flags, int *stride, void **data)
 {
@@ -1865,7 +1865,7 @@ dri2_map_image(struct dri_context *ctx, __DRIimage *image,
 }
 
 void
-dri2_unmap_image(struct dri_context *ctx, __DRIimage *image, void *data)
+dri2_unmap_image(struct dri_context *ctx, struct dri_image *image, void *data)
 {
    struct pipe_context *pipe = ctx->st->pipe;
 

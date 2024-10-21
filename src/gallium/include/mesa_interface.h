@@ -35,6 +35,7 @@ struct dri_screen;
 struct dri_context;
 struct dri_drawable;
 struct dri_config;
+struct dri_image;
 
 /**
  * Extension struct.  Drivers 'inherit' from this struct by embedding
@@ -933,25 +934,24 @@ enum __DRIFixedRateCompression {
 /* Available in version 16 */
 #define __DRI_IMAGE_FORMAT_MODIFIER_ATTRIB_PLANE_COUNT   0x0001
 
-typedef struct __DRIimageRec          __DRIimage;
 typedef struct {
     __DRIextension base;
 
-    void (*destroyImage)(__DRIimage *image);
+    void (*destroyImage)(struct dri_image *image);
 
-   unsigned char (*queryImage)(__DRIimage *image, int attrib, int *value);
+   unsigned char (*queryImage)(struct dri_image *image, int attrib, int *value);
 
    /**
-    * The new __DRIimage will share the content with the old one, see dup(2).
+    * The new struct dri_image will share the content with the old one, see dup(2).
     */
-   __DRIimage *(*dupImage)(__DRIimage *image, void *loaderPrivate);
+   struct dri_image *(*dupImage)(struct dri_image *image, void *loaderPrivate);
 
    /**
-    * Validate that a __DRIimage can be used a certain way.
+    * Validate that a struct dri_image can be used a certain way.
     *
     * \since 2
     */
-   unsigned char (*validateUsage)(__DRIimage *image, unsigned int use);
+   unsigned char (*validateUsage)(struct dri_image *image, unsigned int use);
 
    /**
     * Create an image from a series of GEM names; uses FourCC for format
@@ -959,7 +959,7 @@ typedef struct {
     *
     * \since 5
     */
-   __DRIimage *(*createImageFromNames)(struct dri_screen *screen,
+   struct dri_image *(*createImageFromNames)(struct dri_screen *screen,
                                        int width, int height, int fourcc,
                                        int *names, int num_names,
                                        int *strides, int *offsets,
@@ -967,20 +967,20 @@ typedef struct {
 
    /**
     * Create an image out of a sub-region of a parent image.  This
-    * entry point lets us create individual __DRIimages for different
+    * entry point lets us create individual dri_image structures for different
     * planes in a planar buffer (typically yuv), for example.  While a
     * sub-image shares the underlying buffer object with the parent
     * image and other sibling sub-images, the life times of parent and
     * sub-images are not dependent.  Destroying the parent or a
     * sub-image doesn't affect other images.  The underlying buffer
-    * object is free when no __DRIimage remains that references it.
+    * object is free when no struct dri_image remains that references it.
     *
     * Sub-images may overlap, but rendering to overlapping sub-images
     * is undefined.
     *
     * \since 5
     */
-    __DRIimage *(*fromPlanar)(__DRIimage *image, int plane,
+    struct dri_image *(*fromPlanar)(struct dri_image *image, int plane,
                               void *loaderPrivate);
 
     /**
@@ -988,7 +988,7 @@ typedef struct {
      *
      * \since 6
      */
-   __DRIimage *(*createImageFromTexture)(struct dri_context *context,
+   struct dri_image *(*createImageFromTexture)(struct dri_context *context,
                                          int target,
                                          unsigned texture,
                                          int depth,
@@ -997,7 +997,7 @@ typedef struct {
                                          void *loaderPrivate);
 
    /**
-    * Blit a part of a __DRIimage to another and flushes
+    * Blit a part of a struct dri_image to another and flushes
     *
     * flush_flag:
     *    0:                  no flush
@@ -1006,7 +1006,7 @@ typedef struct {
     *
     * \since 9
     */
-   void (*blitImage)(struct dri_context *context, __DRIimage *dst, __DRIimage *src,
+   void (*blitImage)(struct dri_context *context, struct dri_image *dst, struct dri_image *src,
                      int dstx0, int dsty0, int dstwidth, int dstheight,
                      int srcx0, int srcy0, int srcwidth, int srcheight,
                      int flush_flag);
@@ -1020,7 +1020,7 @@ typedef struct {
    int (*getCapabilities)(struct dri_screen *screen);
 
    /**
-    * Returns a map of the specified region of a __DRIimage for the specified usage.
+    * Returns a map of the specified region of a struct dri_image for the specified usage.
     *
     * flags may include __DRI_IMAGE_TRANSFER_READ, which will populate the
     * mapping with the current buffer content. If __DRI_IMAGE_TRANSFER_READ
@@ -1034,16 +1034,16 @@ typedef struct {
     *
     * \since 12
     */
-   void *(*mapImage)(struct dri_context *context, __DRIimage *image,
+   void *(*mapImage)(struct dri_context *context, struct dri_image *image,
                      int x0, int y0, int width, int height,
                      unsigned int flags, int *stride, void **data);
 
    /**
-    * Unmap a previously mapped __DRIimage
+    * Unmap a previously mapped struct dri_image
     *
     * \since 12
     */
-   void (*unmapImage)(struct dri_context *context, __DRIimage *image, void *data);
+   void (*unmapImage)(struct dri_context *context, struct dri_image *image, void *data);
 
    /*
     * dmabuf format query to support EGL_EXT_image_dma_buf_import_modifiers.
@@ -1113,7 +1113,7 @@ typedef struct {
     * \param error         will be set to one of __DRI_IMAGE_ERROR_xxx
     * \return the newly created image on success, or NULL otherwise
     */
-    __DRIimage *(*createImageFromRenderbuffer)(struct dri_context *context,
+    struct dri_image *(*createImageFromRenderbuffer)(struct dri_context *context,
                                                int renderbuffer,
                                                void *loaderPrivate,
                                                unsigned *error);
@@ -1123,7 +1123,7 @@ typedef struct {
     *
     * See __DRI_IMAGE_*_FLAG for valid definitions of flags.
     */
-   __DRIimage *(*createImageFromDmaBufs)(struct dri_screen *screen,
+   struct dri_image *(*createImageFromDmaBufs)(struct dri_screen *screen,
                                          int width, int height, int fourcc,
                                          uint64_t modifier,
                                          int *fds, int num_fds,
@@ -1149,11 +1149,9 @@ typedef struct {
     * Returns the new DRIimage. The chosen modifier can be obtained later on
     * and passed back to things like the kernel's AddFB2 interface.
     *
-    * \sa __DRIimageRec::createImage
-    *
     * \since 19
     */
-   __DRIimage *(*createImage)(struct dri_screen *screen,
+   struct dri_image *(*createImage)(struct dri_screen *screen,
                               int width, int height, int format,
                               const uint64_t *modifiers,
                               const unsigned int modifier_count,
@@ -1169,7 +1167,7 @@ typedef struct {
     *
     * \since 21
     */
-   void (*setInFenceFd)(__DRIimage *image, int fd);
+   void (*setInFenceFd)(struct dri_image *image, int fd);
 
    /*
     * Query supported compression rates for a given format for
@@ -1222,8 +1220,8 @@ typedef struct {
  * This extension must be implemented by the loader and passed to the
  * driver at screen creation time.  The EGLImage entry points in the
  * various client APIs take opaque EGLImage handles and use this
- * extension to map them to a __DRIimage.  At version 1, this
- * extensions allows mapping EGLImage pointers to __DRIimage pointers,
+ * extension to map them to a struct dri_image.  At version 1, this
+ * extensions allows mapping EGLImage pointers to struct dri_image pointers,
  * but future versions could support other EGLImage-like, opaque types
  * with new lookup functions.
  */
@@ -1242,7 +1240,7 @@ typedef struct {
     /**
      * Lookup EGLImage after validateEGLImage(). No lock in this function.
      */
-    __DRIimage *(*lookupEGLImageValidated)(void *image, void *loaderPrivate);
+    struct dri_image *(*lookupEGLImageValidated)(void *image, void *loaderPrivate);
 } __DRIimageLookupExtension;
 
 /**
@@ -1367,8 +1365,8 @@ enum __DRIimageBufferMask {
 
 struct __DRIimageList {
    uint32_t image_mask;
-   __DRIimage *back;
-   __DRIimage *front;
+   struct dri_image *back;
+   struct dri_image *front;
 };
 
 #define __DRI_IMAGE_LOADER "DRI_IMAGE_LOADER"

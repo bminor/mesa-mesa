@@ -566,7 +566,7 @@ dri2_validate_egl_image(void *image, void *data)
    return true;
 }
 
-__DRIimage *
+struct dri_image *
 dri2_lookup_egl_image_validated(void *image, void *data)
 {
    struct dri2_egl_image *dri2_img;
@@ -1867,7 +1867,7 @@ dri2_create_image(_EGLDisplay *disp, _EGLContext *ctx, EGLenum target,
 }
 
 _EGLImage *
-dri2_create_image_from_dri(_EGLDisplay *disp, __DRIimage *dri_image)
+dri2_create_image_from_dri(_EGLDisplay *disp, struct dri_image *dri_image)
 {
    struct dri2_egl_image *dri2_img;
 
@@ -1919,7 +1919,7 @@ dri2_create_image_khr_renderbuffer(_EGLDisplay *disp, _EGLContext *ctx,
 {
    struct dri2_egl_context *dri2_ctx = dri2_egl_context(ctx);
    GLuint renderbuffer = (GLuint)(uintptr_t)buffer;
-   __DRIimage *dri_image;
+   struct dri_image *dri_image;
 
    if (renderbuffer == 0) {
       _eglError(EGL_BAD_PARAMETER, "dri2_create_image_khr");
@@ -1948,10 +1948,10 @@ dri2_create_image_khr_renderbuffer(_EGLDisplay *disp, _EGLContext *ctx,
 #ifdef HAVE_WAYLAND_PLATFORM
 
 /* This structure describes how a wl_buffer maps to one or more
- * __DRIimages.  A wl_drm_buffer stores the wl_drm format code and the
+ * dri_image structures.  A wl_drm_buffer stores the wl_drm format code and the
  * offsets and strides of the planes in the buffer.  This table maps a
  * wl_drm format code to a description of the planes in the buffer
- * that lets us create a __DRIimage for each of the planes. */
+ * that lets us create a struct dri_image for each of the planes. */
 
 static const struct wl_drm_components_descriptor {
    uint32_t dri_components;
@@ -1973,7 +1973,7 @@ dri2_create_image_wayland_wl_buffer(_EGLDisplay *disp, _EGLContext *ctx,
    struct wl_drm_buffer *buffer;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    const struct wl_drm_components_descriptor *f;
-   __DRIimage *dri_image;
+   struct dri_image *dri_image;
    _EGLImageAttribs attrs;
    int32_t plane;
 
@@ -2160,7 +2160,7 @@ dri2_create_image_mesa_drm_buffer(_EGLDisplay *disp, _EGLContext *ctx,
    EGLint name, pitch;
    uint32_t fourcc;
    _EGLImageAttribs attrs;
-   __DRIimage *dri_image;
+   struct dri_image *dri_image;
 
    name = (EGLint)(uintptr_t)buffer;
 
@@ -2508,7 +2508,7 @@ dri2_create_image_dma_buf(_EGLDisplay *disp, _EGLContext *ctx,
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    _EGLImage *res;
    _EGLImageAttribs attrs;
-   __DRIimage *dri_image;
+   struct dri_image *dri_image;
    unsigned num_fds;
    int fds[DMA_BUF_MAX_PLANES];
    int pitches[DMA_BUF_MAX_PLANES];
@@ -2845,7 +2845,7 @@ dri2_wl_reference_buffer(void *user_data, uint32_t name, int fd,
 {
    _EGLDisplay *disp = user_data;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   __DRIimage *img;
+   struct dri_image *img;
    int dri_components = 0;
 
    if (fd == -1)

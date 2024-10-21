@@ -359,9 +359,9 @@ struct dri2_egl_surface {
 #ifdef HAVE_WAYLAND_PLATFORM
       struct wl_buffer *wl_buffer;
       bool wl_release;
-      __DRIimage *dri_image;
+      struct dri_image *dri_image;
       /* for is_different_gpu case. NULL else */
-      __DRIimage *linear_copy;
+      struct dri_image *linear_copy;
       /* for swrast */
       void *data;
       int data_size;
@@ -381,8 +381,8 @@ struct dri2_egl_surface {
    /* in-fence associated with buffer, -1 once passed down to dri layer: */
    int in_fence_fd;
 
-   __DRIimage *dri_image_back;
-   __DRIimage *dri_image_front;
+   struct dri_image *dri_image_back;
+   struct dri_image *dri_image_front;
 
    /* Used to record all the buffers created by ANativeWindow and their ages.
     * Allocate number of color_buffers based on query to android bufferqueue
@@ -397,7 +397,7 @@ struct dri2_egl_surface {
 #endif
 
    /* surfaceless and device */
-   __DRIimage *front;
+   struct dri_image *front;
    enum pipe_format visual;
 
    int out_fence_fd;
@@ -414,7 +414,7 @@ struct dri2_egl_config {
 
 struct dri2_egl_image {
    _EGLImage base;
-   __DRIimage *dri_image;
+   struct dri_image *dri_image;
 };
 
 struct dri2_egl_sync {
@@ -476,7 +476,7 @@ dri2_surface_get_dri_drawable(_EGLSurface *surf);
 GLboolean
 dri2_validate_egl_image(void *image, void *data);
 
-__DRIimage *
+struct dri_image *
 dri2_lookup_egl_image_validated(void *image, void *data);
 
 void
@@ -509,7 +509,7 @@ dri2_create_image_dma_buf(_EGLDisplay *disp, _EGLContext *ctx,
                           EGLClientBuffer buffer, const EGLint *attr_list);
 
 _EGLImage *
-dri2_create_image_from_dri(_EGLDisplay *disp, __DRIimage *dri_image);
+dri2_create_image_from_dri(_EGLDisplay *disp, struct dri_image *dri_image);
 
 #ifdef HAVE_X11_PLATFORM
 EGLBoolean

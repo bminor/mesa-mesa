@@ -45,7 +45,7 @@
 #include "loader.h"
 #include "dri_util.h"
 
-static __DRIimage *
+static struct dri_image *
 device_alloc_image(struct dri2_egl_display *dri2_dpy,
                    struct dri2_egl_surface *dri2_surf)
 {

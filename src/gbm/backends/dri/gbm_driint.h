@@ -64,7 +64,7 @@ struct gbm_dri_device {
    const __DRIextension **loader_extensions;
 
    GLboolean (*validate_image)(void *image, void *data);
-   __DRIimage *(*lookup_image_validated)(void *image, void *data);
+   struct dri_image *(*lookup_image_validated)(void *image, void *data);
    void *lookup_user_data;
 
    void (*flush_front_buffer)(struct dri_drawable * driDrawable, void *data);
@@ -100,7 +100,7 @@ struct gbm_dri_device {
 struct gbm_dri_bo {
    struct gbm_bo base;
 
-   __DRIimage *image;
+   struct dri_image *image;
 
    /* Used for cursors and the swrast front BO */
    uint32_t handle, size;

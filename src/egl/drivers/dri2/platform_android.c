@@ -51,7 +51,7 @@
 #include "platform_android.h"
 #include "dri_util.h"
 
-static __DRIimage *
+static struct dri_image *
 droid_create_image_from_buffer_info(
    struct dri2_egl_display *dri2_dpy, int width, int height,
    struct u_gralloc_buffer_basic_info *buf_info,
@@ -67,7 +67,7 @@ droid_create_image_from_buffer_info(
       color_info->vertical_siting, 0, &error, priv);
 }
 
-static __DRIimage *
+static struct dri_image *
 droid_create_image_from_native_buffer(_EGLDisplay *disp,
                                       struct ANativeWindowBuffer *buf,
                                       void *priv)
@@ -85,7 +85,7 @@ droid_create_image_from_native_buffer(_EGLDisplay *disp,
       .hal_format = buf->format,
       .pixel_stride = buf->stride,
    };
-   __DRIimage *img = NULL;
+   struct dri_image *img = NULL;
 
    if (u_gralloc_get_buffer_basic_info(dri2_dpy->gralloc, &gr_handle,
                                        &buf_info))
@@ -113,7 +113,7 @@ droid_create_image_from_native_buffer(_EGLDisplay *disp,
 }
 
 static void
-handle_in_fence_fd(struct dri2_egl_surface *dri2_surf, __DRIimage *img)
+handle_in_fence_fd(struct dri2_egl_surface *dri2_surf, struct dri_image *img)
 {
    _EGLDisplay *disp = dri2_surf->base.Resource.Display;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
@@ -728,7 +728,7 @@ dri2_create_image_android_native_buffer(_EGLDisplay *disp, _EGLContext *ctx,
       return NULL;
    }
 
-   __DRIimage *dri_image =
+   struct dri_image *dri_image =
       droid_create_image_from_native_buffer(disp, buf, buf);
 
    if (dri_image) {

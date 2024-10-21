@@ -505,7 +505,7 @@ dri_get_egl_image(struct pipe_frontend_screen *fscreen,
 {
    struct dri_screen *screen = (struct dri_screen *)fscreen;
    const __DRIimageLookupExtension *loader = screen->dri2.image;
-   __DRIimage *img = NULL;
+   struct dri_image *img = NULL;
    const struct dri2_format_mapping *map;
 
    img = loader->lookupEGLImageValidated(egl_image, screen->loaderPrivate);
