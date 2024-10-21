@@ -202,6 +202,8 @@ optimizations = [
    # floating point instruction, they should flush any input denormals and we
    # can replace -0.0 with 0.0 if the float execution mode allows it.
    (('fadd(is_only_used_as_float,nsz)', 'a', 0.0), a),
+   (('fadd(is_only_used_as_float)', a, '#b(is_negative_zero)'), a),
+   (('fadd', ('fneg', a), '#b(is_negative_zero)'), ('fneg', a)),
    (('iadd', a, 0), a),
    (('iadd_sat', a, 0), a),
    (('isub_sat', a, 0), a),
