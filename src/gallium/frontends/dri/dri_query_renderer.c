@@ -76,11 +76,9 @@ driQueryRendererIntegerCommon(struct dri_screen *screen, int param, unsigned int
 }
 
 int
-dri_query_renderer_integer(__DRIscreen *_screen, int param,
+dri_query_renderer_integer(struct dri_screen *screen, int param,
                             unsigned int *value)
 {
-   struct dri_screen *screen = dri_screen(_screen);
-
    switch (param) {
    case __DRI2_RENDERER_VENDOR_ID:
       value[0] =
@@ -125,11 +123,9 @@ dri_query_renderer_integer(__DRIscreen *_screen, int param,
 }
 
 int
-dri_query_renderer_string(__DRIscreen *_screen, int param,
+dri_query_renderer_string(struct dri_screen *screen, int param,
                            const char **value)
 {
-   struct dri_screen *screen = dri_screen(_screen);
-
    switch (param) {
    case __DRI2_RENDERER_VENDOR_ID:
       value[0] = screen->base.screen->get_vendor(screen->base.screen);

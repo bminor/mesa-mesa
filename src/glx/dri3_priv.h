@@ -74,7 +74,7 @@ struct dri3_screen {
     * (potentially not compatible), driScreenDisplayGPU will be NULL but
     * fd_display_gpu will still hold fd for display driver.
     */
-   __DRIscreen *driScreenDisplayGPU;
+   struct dri_screen *driScreenDisplayGPU;
 
    /* fd of the GPU used for rendering. */
    int fd_render_gpu;

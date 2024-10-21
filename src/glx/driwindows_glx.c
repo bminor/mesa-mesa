@@ -43,7 +43,7 @@ struct driwindows_config
 struct driwindows_screen
 {
    struct glx_screen base;
-   __DRIscreen *driScreen;
+   struct dri_screen *driScreen;
    int event_base;
    Bool copySubBuffer;
 };

@@ -63,7 +63,7 @@ struct __DRIkopperExtensionRec {
      * on-screen surfaces (eg X11 window) and trying to create a swapchain for
      * a pixmap is undefined.
      */
-    __DRIdrawable *(*createNewDrawable)(__DRIscreen *screen,
+    __DRIdrawable *(*createNewDrawable)(struct dri_screen *screen,
                                         const __DRIconfig *config,
                                         void *loaderPrivate,
                                         __DRIkopperDrawableInfo *info);

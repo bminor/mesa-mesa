@@ -1208,7 +1208,7 @@ dri_device_create(int fd, uint32_t gbm_backend_version)
    if (ret)
       goto err_dri;
 
-   struct dri_screen *screen = dri_screen(dri->screen);
+   struct dri_screen *screen = dri->screen;
    struct pipe_screen *pscreen = screen->base.screen;
 #ifdef HAVE_LIBDRM
    if (pscreen->get_param(pscreen, PIPE_CAP_DMABUF) & DRM_PRIME_CAP_IMPORT)

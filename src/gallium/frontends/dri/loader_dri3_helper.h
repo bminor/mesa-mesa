@@ -101,7 +101,7 @@ struct loader_dri3_vtable {
    void (*set_drawable_size)(struct loader_dri3_drawable *, int, int);
    bool (*in_current_context)(struct loader_dri3_drawable *);
    __DRIcontext *(*get_dri_context)(struct loader_dri3_drawable *);
-   __DRIscreen *(*get_dri_screen)(void);
+   struct dri_screen *(*get_dri_screen)(void);
    void (*flush_drawable)(struct loader_dri3_drawable *, unsigned);
 };
 
@@ -131,14 +131,14 @@ struct loader_dri3_drawable {
    /* Information about the GPU owning the buffer */
    bool multiplanes_available;
    bool prefer_back_buffer_reuse;
-   __DRIscreen *dri_screen_render_gpu;
+   struct dri_screen *dri_screen_render_gpu;
    /* dri_screen_display_gpu holds display GPU in case of prime gpu offloading else
     * dri_screen_render_gpu and dri_screen_display_gpu is same.
     * In case of prime gpu offloading, if display and render driver names are different
     * (potentially not compatible), dri_screen_display_gpu will be NULL but fd_display_gpu
     * will still hold fd for display driver.
     */
-   __DRIscreen *dri_screen_display_gpu;
+   struct dri_screen *dri_screen_display_gpu;
 
    /* SBC numbers are tracked by using the serial numbers
     * in the present request and complete events
@@ -200,8 +200,8 @@ PUBLIC int
 loader_dri3_drawable_init(xcb_connection_t *conn,
                           xcb_drawable_t drawable,
                           enum loader_dri3_drawable_type type,
-                          __DRIscreen *dri_screen_render_gpu,
-                          __DRIscreen *dri_screen_display_gpu,
+                          struct dri_screen *dri_screen_render_gpu,
+                          struct dri_screen *dri_screen_display_gpu,
                           bool is_multiplanes_available,
                           bool prefer_back_buffer_reuse,
                           const __DRIconfig *dri_config,
@@ -253,7 +253,7 @@ PUBLIC __DRIimage *
 loader_dri3_create_image(xcb_connection_t *c,
                          xcb_dri3_buffer_from_pixmap_reply_t *bp_reply,
                          unsigned int fourcc,
-                         __DRIscreen *dri_screen,
+                         struct dri_screen *dri_screen,
                          void *loaderPrivate);
 
 #ifdef HAVE_X11_DRM
@@ -261,7 +261,7 @@ PUBLIC __DRIimage *
 loader_dri3_create_image_from_buffers(xcb_connection_t *c,
                                       xcb_dri3_buffers_from_pixmap_reply_t *bp_reply,
                                       unsigned int fourcc,
-                                      __DRIscreen *dri_screen,
+                                      struct dri_screen *dri_screen,
                                       void *loaderPrivate);
 #endif
 PUBLIC int
@@ -279,9 +279,9 @@ PUBLIC void
 loader_dri3_swapbuffer_barrier(struct loader_dri3_drawable *draw);
 
 PUBLIC void
-loader_dri3_close_screen(__DRIscreen *dri_screen);
+loader_dri3_close_screen(struct dri_screen *dri_screen);
 __DRIimage *
-loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, __DRIscreen *screen,
+loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, struct dri_screen *screen,
                               unsigned fourcc, bool multiplanes_available,
                               int *width, int *height, void *loader_data);
 #endif

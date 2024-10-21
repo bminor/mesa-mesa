@@ -56,7 +56,7 @@ struct gbm_dri_device {
    bool has_dmabuf_export;
    bool has_compression_modifiers;
 
-   __DRIscreen *screen;
+   struct dri_screen *screen;
    __DRIcontext *context;
    mtx_t mutex;
 

@@ -131,19 +131,6 @@ struct dri_screen
    bool is_sw;
 };
 
-/** cast wrapper */
-static inline struct dri_screen *
-dri_screen(__DRIscreen * sPriv)
-{
-   return (struct dri_screen *)sPriv;
-}
-
-static inline __DRIscreen *
-opaque_dri_screen(struct dri_screen *screen)
-{
-   return (__DRIscreen *)screen;
-}
-
 static inline const __DRIkopperLoaderExtension *
 dri_screen_get_kopper(struct dri_screen *screen)
 {

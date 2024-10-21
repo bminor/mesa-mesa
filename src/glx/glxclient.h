@@ -524,7 +524,7 @@ struct glx_screen
      * Per screen direct rendering interface functions and data.
      */
    __GLXDRIscreen driScreen;
-   __DRIscreen *frontend_screen;
+   struct dri_screen *frontend_screen;
    const __DRIconfig **driver_configs;
 #endif
 

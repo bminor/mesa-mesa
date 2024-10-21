@@ -623,7 +623,7 @@ void
 dri2_setup_screen(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   struct dri_screen *screen = dri_screen(dri2_dpy->dri_screen_render_gpu);
+   struct dri_screen *screen = dri2_dpy->dri_screen_render_gpu;
    struct pipe_screen *pscreen = screen->base.screen;
    unsigned int api_mask = screen->api_mask;
 

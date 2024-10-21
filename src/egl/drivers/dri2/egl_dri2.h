@@ -232,14 +232,14 @@ struct dri2_egl_display {
 
    int dri2_major;
    int dri2_minor;
-   __DRIscreen *dri_screen_render_gpu;
+   struct dri_screen *dri_screen_render_gpu;
    /* dri_screen_display_gpu holds display GPU in case of prime gpu offloading
     * else dri_screen_render_gpu and dri_screen_display_gpu is same. In case of
     * prime gpu offloading, if display and render driver names are different
     * (potentially not compatible), dri_screen_display_gpu will be NULL but
     * fd_display_gpu will still hold fd for display driver.
     */
-   __DRIscreen *dri_screen_display_gpu;
+   struct dri_screen *dri_screen_display_gpu;
    bool own_dri_screen;
    const __DRIconfig **driver_configs;
    /* fd of the GPU used for rendering. */

@@ -149,10 +149,9 @@ dri_st_framebuffer_flush_swapbuffers(struct st_context *st,
  * This is called when we need to set up GL rendering to a new X window.
  */
 __DRIdrawable *
-dri_create_drawable(__DRIscreen *psp, const __DRIconfig *config,
+dri_create_drawable(struct dri_screen *screen, const __DRIconfig *config,
                     bool isPixmap, void *loaderPrivate)
 {
-   struct dri_screen *screen = dri_screen(psp);
    const struct gl_config *visual = &config->modes;
    struct dri_drawable *drawable = NULL;
 

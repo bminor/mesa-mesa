@@ -98,7 +98,7 @@ setupLoaderExtensions(struct dri_screen *screen,
  * It's used to create global state for the driver across contexts on the same
  * Display.
  */
-__DRIscreen *
+struct dri_screen *
 driCreateNewScreen3(int scrn, int fd,
                     const __DRIextension **loader_extensions,
                     enum dri_screen_type type,
@@ -186,7 +186,7 @@ driCreateNewScreen3(int scrn, int fd,
     if (screen->max_gl_es2_version >= 30)
        screen->api_mask |= (1 << __DRI_API_GLES3);
 
-    return opaque_dri_screen(screen);
+    return screen;
 }
 
 /**
@@ -196,7 +196,7 @@ driCreateNewScreen3(int scrn, int fd,
  * This function calls __DriverAPIRec::DestroyScreen on \p screenPrivate, calls
  * drmClose(), and finally frees \p screenPrivate.
  */
-void driDestroyScreen(__DRIscreen *psp)
+void driDestroyScreen(struct dri_screen *psp)
 {
     if (psp) {
         /* No interaction with the X-server is possible at this point.  This
@@ -204,7 +204,7 @@ void driDestroyScreen(__DRIscreen *psp)
          * stream open to the X-server anymore.
          */
 
-        dri_destroy_screen(dri_screen(psp));
+        dri_destroy_screen(psp);
     }
 }
 
@@ -423,7 +423,7 @@ validate_context_version(struct dri_screen *screen,
 /*@{*/
 
 __DRIcontext *
-driCreateContextAttribs(__DRIscreen *psp, int api,
+driCreateContextAttribs(struct dri_screen *screen, int api,
                         const __DRIconfig *config,
                         __DRIcontext *shared,
                         unsigned num_attribs,
@@ -431,7 +431,6 @@ driCreateContextAttribs(__DRIscreen *psp, int api,
                         unsigned *error,
                         void *data)
 {
-    struct dri_screen *screen = dri_screen(psp);
     const struct gl_config *modes = (config != NULL) ? &config->modes : NULL;
     gl_api mesa_api;
     struct __DriverContextConfig ctx_config;
@@ -609,7 +608,7 @@ driCreateContextAttribs(__DRIscreen *psp, int api,
 }
 
 static __DRIcontext *
-driCreateNewContextForAPI(__DRIscreen *screen, int api,
+driCreateNewContextForAPI(struct dri_screen *screen, int api,
                           const __DRIconfig *config,
                           __DRIcontext *shared, void *data)
 {
@@ -620,7 +619,7 @@ driCreateNewContextForAPI(__DRIscreen *screen, int api,
 }
 
 __DRIcontext *
-driCreateNewContext(__DRIscreen *screen, const __DRIconfig *config,
+driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config,
                     __DRIcontext *shared, void *data)
 {
     return driCreateNewContextForAPI(screen, __DRI_API_OPENGL,
@@ -721,10 +720,8 @@ driDestroyDrawable(__DRIdrawable *pdp)
 }
 
 static int
-dri2ConfigQueryb(__DRIscreen *psp, const char *var, unsigned char *val)
+dri2ConfigQueryb(struct dri_screen *screen, const char *var, unsigned char *val)
 {
-   struct dri_screen *screen = dri_screen(psp);
-
    if (!driCheckOption(&screen->optionCache, var, DRI_BOOL))
       return -1;
 
@@ -734,10 +731,8 @@ dri2ConfigQueryb(__DRIscreen *psp, const char *var, unsigned char *val)
 }
 
 static int
-dri2ConfigQueryi(__DRIscreen *psp, const char *var, int *val)
+dri2ConfigQueryi(struct dri_screen *screen, const char *var, int *val)
 {
-   struct dri_screen *screen = dri_screen(psp);
-
    if (!driCheckOption(&screen->optionCache, var, DRI_INT) &&
        !driCheckOption(&screen->optionCache, var, DRI_ENUM))
       return -1;
@@ -748,10 +743,8 @@ dri2ConfigQueryi(__DRIscreen *psp, const char *var, int *val)
 }
 
 static int
-dri2ConfigQueryf(__DRIscreen *psp, const char *var, float *val)
+dri2ConfigQueryf(struct dri_screen *screen, const char *var, float *val)
 {
-   struct dri_screen *screen = dri_screen(psp);
-
    if (!driCheckOption(&screen->optionCache, var, DRI_FLOAT))
       return -1;
 
@@ -761,10 +754,8 @@ dri2ConfigQueryf(__DRIscreen *psp, const char *var, float *val)
 }
 
 static int
-dri2ConfigQuerys(__DRIscreen *psp, const char *var, char **val)
+dri2ConfigQuerys(struct dri_screen *screen, const char *var, char **val)
 {
-   struct dri_screen *screen = dri_screen(psp);
-
    if (!driCheckOption(&screen->optionCache, var, DRI_STRING))
       return -1;
 
@@ -778,13 +769,11 @@ dri2ConfigQuerys(__DRIscreen *psp, const char *var, char **val)
  * \brief the DRI2ConfigQueryExtension configQueryb method
  */
 int
-dri2GalliumConfigQueryb(__DRIscreen *sPriv, const char *var,
+dri2GalliumConfigQueryb(struct dri_screen *screen, const char *var,
                         unsigned char *val)
 {
-   struct dri_screen *screen = dri_screen(sPriv);
-
    if (!driCheckOption(&screen->dev->option_cache, var, DRI_BOOL))
-      return dri2ConfigQueryb(sPriv, var, val);
+      return dri2ConfigQueryb(screen, var, val);
 
    *val = driQueryOptionb(&screen->dev->option_cache, var);
 
@@ -795,13 +784,11 @@ dri2GalliumConfigQueryb(__DRIscreen *sPriv, const char *var,
  * \brief the DRI2ConfigQueryExtension configQueryi method
  */
 int
-dri2GalliumConfigQueryi(__DRIscreen *sPriv, const char *var, int *val)
+dri2GalliumConfigQueryi(struct dri_screen *screen, const char *var, int *val)
 {
-   struct dri_screen *screen = dri_screen(sPriv);
-
    if (!driCheckOption(&screen->dev->option_cache, var, DRI_INT) &&
        !driCheckOption(&screen->dev->option_cache, var, DRI_ENUM))
-      return dri2ConfigQueryi(sPriv, var, val);
+      return dri2ConfigQueryi(screen, var, val);
 
     *val = driQueryOptioni(&screen->dev->option_cache, var);
 
@@ -812,12 +799,10 @@ dri2GalliumConfigQueryi(__DRIscreen *sPriv, const char *var, int *val)
  * \brief the DRI2ConfigQueryExtension configQueryf method
  */
 int
-dri2GalliumConfigQueryf(__DRIscreen *sPriv, const char *var, float *val)
+dri2GalliumConfigQueryf(struct dri_screen *screen, const char *var, float *val)
 {
-   struct dri_screen *screen = dri_screen(sPriv);
-
    if (!driCheckOption(&screen->dev->option_cache, var, DRI_FLOAT))
-      return dri2ConfigQueryf(sPriv, var, val);
+      return dri2ConfigQueryf(screen, var, val);
 
     *val = driQueryOptionf(&screen->dev->option_cache, var);
 
@@ -828,12 +813,10 @@ dri2GalliumConfigQueryf(__DRIscreen *sPriv, const char *var, float *val)
  * \brief the DRI2ConfigQueryExtension configQuerys method
  */
 int
-dri2GalliumConfigQuerys(__DRIscreen *sPriv, const char *var, char **val)
+dri2GalliumConfigQuerys(struct dri_screen *screen, const char *var, char **val)
 {
-   struct dri_screen *screen = dri_screen(sPriv);
-
    if (!driCheckOption(&screen->dev->option_cache, var, DRI_STRING))
-      return dri2ConfigQuerys(sPriv, var, val);
+      return dri2ConfigQuerys(screen, var, val);
 
     *val = driQueryOptionstr(&screen->dev->option_cache, var);
 
@@ -856,9 +839,9 @@ const __DRI2configQueryExtension dri2GalliumConfigQueryExtension = {
 
 
 unsigned int
-driGetAPIMask(__DRIscreen *screen)
+driGetAPIMask(struct dri_screen *screen)
 {
-    return dri_screen(screen)->api_mask;
+    return screen->api_mask;
 }
 
 /**
@@ -1030,7 +1013,7 @@ driImageFormatToSizedInternalGLFormat(uint32_t image_format)
    return GL_NONE;
 }
 
-static int dri_vblank_mode(__DRIscreen *driScreen)
+static int dri_vblank_mode(struct dri_screen *driScreen)
 {
    GLint vblank_mode = DRI_CONF_VBLANK_DEF_INTERVAL_1;
  
@@ -1039,7 +1022,7 @@ static int dri_vblank_mode(__DRIscreen *driScreen)
    return vblank_mode;
 }
  
-int dri_get_initial_swap_interval(__DRIscreen *driScreen)
+int dri_get_initial_swap_interval(struct dri_screen *driScreen)
 {
    int vblank_mode = dri_vblank_mode(driScreen);
  
@@ -1054,7 +1037,7 @@ int dri_get_initial_swap_interval(__DRIscreen *driScreen)
    }
 }
  
-bool dri_valid_swap_interval(__DRIscreen *driScreen, int interval)
+bool dri_valid_swap_interval(struct dri_screen *driScreen, int interval)
 {
    int vblank_mode = dri_vblank_mode(driScreen);
  
@@ -1075,14 +1058,13 @@ bool dri_valid_swap_interval(__DRIscreen *driScreen, int interval)
 }
 
 struct pipe_screen *
-dri_get_pipe_screen(__DRIscreen *driScreen)
+dri_get_pipe_screen(struct dri_screen *screen)
 {
-   struct dri_screen *screen = dri_screen(driScreen);
    return screen->base.screen;
 }
 
 int
-dri_get_screen_param(__DRIscreen *driScreen, enum pipe_cap param)
+dri_get_screen_param(struct dri_screen *driScreen, enum pipe_cap param)
 {
    struct pipe_screen *screen = dri_get_pipe_screen(driScreen);
    return screen->get_param(screen, param);

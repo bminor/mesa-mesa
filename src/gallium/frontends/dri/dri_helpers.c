@@ -78,9 +78,8 @@ struct dri2_fence {
 };
 
 unsigned
-dri_fence_get_caps(__DRIscreen *_screen)
+dri_fence_get_caps(struct dri_screen *driscreen)
 {
-   struct dri_screen *driscreen = dri_screen(_screen);
    struct pipe_screen *screen = driscreen->base.screen;
    unsigned caps = 0;
 
@@ -146,9 +145,8 @@ dri_create_fence_fd(__DRIcontext *_ctx, int fd)
 }
 
 int
-dri_get_fence_fd(__DRIscreen *_screen, void *_fence)
+dri_get_fence_fd(struct dri_screen *driscreen, void *_fence)
 {
-   struct dri_screen *driscreen = dri_screen(_screen);
    struct pipe_screen *screen = driscreen->base.screen;
    struct dri2_fence *fence = (struct dri2_fence*)_fence;
 
@@ -156,9 +154,8 @@ dri_get_fence_fd(__DRIscreen *_screen, void *_fence)
 }
 
 void *
-dri_get_fence_from_cl_event(__DRIscreen *_screen, intptr_t cl_event)
+dri_get_fence_from_cl_event(struct dri_screen *driscreen, intptr_t cl_event)
 {
-   struct dri_screen *driscreen = dri_screen(_screen);
    struct dri2_fence *fence;
 
    if (!dri2_load_opencl_interop(driscreen))
@@ -180,9 +177,8 @@ dri_get_fence_from_cl_event(__DRIscreen *_screen, intptr_t cl_event)
 }
 
 void
-dri_destroy_fence(__DRIscreen *_screen, void *_fence)
+dri_destroy_fence(struct dri_screen *driscreen, void *_fence)
 {
-   struct dri_screen *driscreen = dri_screen(_screen);
    struct pipe_screen *screen = driscreen->base.screen;
    struct dri2_fence *fence = (struct dri2_fence*)_fence;
 
@@ -702,10 +698,9 @@ dri2_yuv_dma_buf_supported(struct dri_screen *screen,
 }
 
 bool
-dri_query_dma_buf_formats(__DRIscreen *_screen, int max, int *formats,
+dri_query_dma_buf_formats(struct dri_screen *screen, int max, int *formats,
                            int *count)
 {
-   struct dri_screen *screen = dri_screen(_screen);
    struct pipe_screen *pscreen = screen->base.screen;
    int i, j;
 
@@ -736,7 +731,7 @@ dri_query_dma_buf_formats(__DRIscreen *_screen, int max, int *formats,
 
 
 __DRIimage *
-dri_create_image_with_modifiers(__DRIscreen *screen,
+dri_create_image_with_modifiers(struct dri_screen *screen,
                                  uint32_t width, uint32_t height,
                                  uint32_t dri_format, uint32_t dri_usage,
                                  const uint64_t *modifiers,

@@ -47,7 +47,7 @@
 struct loader_dri3_blit_context {
    simple_mtx_t mtx;
    __DRIcontext *ctx;
-   __DRIscreen *cur_screen;
+   struct dri_screen *cur_screen;
    const __DRIcoreExtension *core;
 };
 
@@ -363,8 +363,8 @@ int
 loader_dri3_drawable_init(xcb_connection_t *conn,
                           xcb_drawable_t drawable,
                           enum loader_dri3_drawable_type type,
-                          __DRIscreen *dri_screen_render_gpu,
-                          __DRIscreen *dri_screen_display_gpu,
+                          struct dri_screen *dri_screen_render_gpu,
+                          struct dri_screen *dri_screen_display_gpu,
                           bool multiplanes_available,
                           bool prefer_back_buffer_reuse,
                           const __DRIconfig *dri_config,
@@ -1763,7 +1763,7 @@ __DRIimage *
 loader_dri3_create_image(xcb_connection_t *c,
                          xcb_dri3_buffer_from_pixmap_reply_t *bp_reply,
                          unsigned int fourcc,
-                         __DRIscreen *dri_screen,
+                         struct dri_screen *dri_screen,
                          void *loaderPrivate)
 {
    int                                  *fds;
@@ -1810,7 +1810,7 @@ __DRIimage *
 loader_dri3_create_image_from_buffers(xcb_connection_t *c,
                                       xcb_dri3_buffers_from_pixmap_reply_t *bp_reply,
                                       unsigned int fourcc,
-                                      __DRIscreen *dri_screen,
+                                      struct dri_screen *dri_screen,
                                       void *loaderPrivate)
 {
    __DRIimage                           *ret;
@@ -1849,7 +1849,7 @@ loader_dri3_create_image_from_buffers(xcb_connection_t *c,
 #endif
 
 __DRIimage *
-loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, __DRIscreen *screen,
+loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, struct dri_screen *screen,
                               unsigned fourcc, bool multiplanes_available,
                               int *width, int *height, void *loader_data)
 {
@@ -1907,7 +1907,7 @@ dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
    int                                  width;
    int                                  height;
    int                                  fence_fd;
-   __DRIscreen                          *cur_screen;
+   struct dri_screen                          *cur_screen;
 
    if (buffer)
       return buffer;
@@ -2280,12 +2280,12 @@ loader_dri3_swapbuffer_barrier(struct loader_dri3_drawable *draw)
 
 /**
  * Perform any cleanup associated with a close screen operation.
- * \param dri_screen[in,out] Pointer to __DRIscreen about to be closed.
+ * \param dri_screen[in,out] Pointer to struct dri_screen about to be closed.
  *
  * This function destroys the screen's cached swap context if any.
  */
 void
-loader_dri3_close_screen(__DRIscreen *dri_screen)
+loader_dri3_close_screen(struct dri_screen *dri_screen)
 {
    simple_mtx_lock(&blit_context.mtx);
    if (blit_context.ctx && blit_context.cur_screen == dri_screen) {

@@ -32,6 +32,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+struct dri_screen;
+
 /**
  * \name DRI interface structures
  *
@@ -39,7 +41,6 @@
  * side library and the DRI (direct rendering infrastructure).
  */
 /*@{*/
-typedef struct __DRIscreenRec		__DRIscreen;
 typedef struct __DRIcontextRec		__DRIcontext;
 typedef struct __DRIdrawableRec		__DRIdrawable;
 typedef struct __DRIconfigRec		__DRIconfig;
@@ -171,12 +172,12 @@ struct __DRI2fenceExtensionRec {
     * Get a fence associated with the OpenCL event object.
     * This can be NULL, meaning that OpenCL interoperability is not supported.
     */
-   void *(*get_fence_from_cl_event)(__DRIscreen *screen, intptr_t cl_event);
+   void *(*get_fence_from_cl_event)(struct dri_screen *screen, intptr_t cl_event);
 
    /**
     * Destroy a fence.
     */
-   void (*destroy_fence)(__DRIscreen *screen, void *fence);
+   void (*destroy_fence)(struct dri_screen *screen, void *fence);
 
    /**
     * This function waits and doesn't return until the fence is signalled
@@ -210,7 +211,7 @@ struct __DRI2fenceExtensionRec {
     *
     * \since 2
     */
-   unsigned (*get_capabilities)(__DRIscreen *screen);
+   unsigned (*get_capabilities)(struct dri_screen *screen);
 
    /**
     * Create an fd (file descriptor) associated fence.  If the fence fd
@@ -237,7 +238,7 @@ struct __DRI2fenceExtensionRec {
     * \param screen  the screen associated with the fence
     * \param fence   the fence
     */
-   int (*get_fence_fd)(__DRIscreen *screen, void *fence);
+   int (*get_fence_fd)(struct dri_screen *screen, void *fence);
 };
 
 /**
@@ -515,15 +516,15 @@ struct __DRIcoreExtensionRec {
     __DRIextension base;
 
     /* Not used by the X server. */
-    __DRIscreen *(*createNewScreen)(int screen, int fd,
+    struct dri_screen *(*createNewScreen)(int screen, int fd,
 				    unsigned int sarea_handle,
 				    const __DRIextension **extensions,
 				    const __DRIconfig ***driverConfigs,
 				    void *loaderPrivate);
 
-    void (*destroyScreen)(__DRIscreen *screen);
+    void (*destroyScreen)(struct dri_screen *screen);
 
-    const __DRIextension **(*getExtensions)(__DRIscreen *screen);
+    const __DRIextension **(*getExtensions)(struct dri_screen *screen);
 
     /* Not used by the X server. */
     int (*getConfigAttrib)(const __DRIconfig *config,
@@ -535,7 +536,7 @@ struct __DRIcoreExtensionRec {
 			     unsigned int *attrib, unsigned int *value);
 
     /* Not used by the X server. */
-    __DRIdrawable *(*createNewDrawable)(__DRIscreen *screen,
+    __DRIdrawable *(*createNewDrawable)(struct dri_screen *screen,
 					const __DRIconfig *config,
 					unsigned int drawable_id,
 					unsigned int head,
@@ -548,7 +549,7 @@ struct __DRIcoreExtensionRec {
     void (*swapBuffers)(__DRIdrawable *drawable);
 
     /* Used by the X server in swrast mode. */
-    __DRIcontext *(*createNewContext)(__DRIscreen *screen,
+    __DRIcontext *(*createNewContext)(struct dri_screen *screen,
 				      const __DRIconfig *config,
 				      __DRIcontext *shared,
 				      void *loaderPrivate);
@@ -575,13 +576,13 @@ struct __DRIcoreExtensionRec {
 /** Common DRI function definitions, shared among DRI2 and Image extensions
  */
 
-typedef __DRIscreen *
+typedef struct dri_screen *
 (*__DRIcreateNewScreen2Func)(int screen, int fd,
                              const __DRIextension **extensions,
                              const __DRIextension **driver_extensions,
                              const __DRIconfig ***driver_configs,
                              void *loaderPrivate);
-typedef __DRIscreen *
+typedef struct dri_screen *
 (*__DRIcreateNewScreen3Func)(int screen, int fd,
                              const __DRIextension **extensions,
                              const __DRIextension **driver_extensions,
@@ -590,12 +591,12 @@ typedef __DRIscreen *
                              void *loaderPrivate);
 
 typedef __DRIdrawable *
-(*__DRIcreateNewDrawableFunc)(__DRIscreen *screen,
+(*__DRIcreateNewDrawableFunc)(struct dri_screen *screen,
                               const __DRIconfig *config,
                               void *loaderPrivate);
 
 typedef __DRIcontext *
-(*__DRIcreateContextAttribsFunc)(__DRIscreen *screen,
+(*__DRIcreateContextAttribsFunc)(struct dri_screen *screen,
                                  int api,
                                  const __DRIconfig *config,
                                  __DRIcontext *shared,
@@ -605,7 +606,7 @@ typedef __DRIcontext *
                                  void *loaderPrivate);
 
 typedef unsigned int
-(*__DRIgetAPIMaskFunc)(__DRIscreen *screen);
+(*__DRIgetAPIMaskFunc)(struct dri_screen *screen);
 
 /**
  * DRI2 Loader extension.
@@ -985,7 +986,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 5
     */
-   __DRIimage *(*createImageFromNames)(__DRIscreen *screen,
+   __DRIimage *(*createImageFromNames)(struct dri_screen *screen,
                                        int width, int height, int fourcc,
                                        int *names, int num_names,
                                        int *strides, int *offsets,
@@ -1043,7 +1044,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 10
     */
-   int (*getCapabilities)(__DRIscreen *screen);
+   int (*getCapabilities)(struct dri_screen *screen);
 
    /**
     * Returns a map of the specified region of a __DRIimage for the specified usage.
@@ -1086,7 +1087,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 15
     */
-   bool (*queryDmaBufFormats)(__DRIscreen *screen, int max, int *formats,
+   bool (*queryDmaBufFormats)(struct dri_screen *screen, int max, int *formats,
                               int *count);
 
    /*
@@ -1108,7 +1109,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 15
     */
-   bool (*queryDmaBufModifiers)(__DRIscreen *screen, int fourcc, int max,
+   bool (*queryDmaBufModifiers)(struct dri_screen *screen, int fourcc, int max,
                                 uint64_t *modifiers,
                                 unsigned int *external_only, int *count);
 
@@ -1126,7 +1127,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 16
     */
-   bool (*queryDmaBufFormatModifierAttribs)(__DRIscreen *screen,
+   bool (*queryDmaBufFormatModifierAttribs)(struct dri_screen *screen,
                                             uint32_t fourcc, uint64_t modifier,
                                             int attrib, uint64_t *value);
 
@@ -1149,7 +1150,7 @@ struct __DRIimageExtensionRec {
     *
     * See __DRI_IMAGE_*_FLAG for valid definitions of flags.
     */
-   __DRIimage *(*createImageFromDmaBufs)(__DRIscreen *screen,
+   __DRIimage *(*createImageFromDmaBufs)(struct dri_screen *screen,
                                          int width, int height, int fourcc,
                                          uint64_t modifier,
                                          int *fds, int num_fds,
@@ -1179,7 +1180,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 19
     */
-   __DRIimage *(*createImage)(__DRIscreen *screen,
+   __DRIimage *(*createImage)(struct dri_screen *screen,
                               int width, int height, int format,
                               const uint64_t *modifiers,
                               const unsigned int modifier_count,
@@ -1215,7 +1216,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 22
     */
-   bool (*queryCompressionRates)(__DRIscreen *screen, const __DRIconfig *config,
+   bool (*queryCompressionRates)(struct dri_screen *screen, const __DRIconfig *config,
                                  int max, enum __DRIFixedRateCompression *rates,
                                  int *count);
 
@@ -1238,7 +1239,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 22
     */
-   bool (*queryCompressionModifiers)(__DRIscreen *screen, uint32_t format,
+   bool (*queryCompressionModifiers)(struct dri_screen *screen, uint32_t format,
                                      enum __DRIFixedRateCompression rate,
                                      int max, uint64_t *modifiers, int *count);
 };
@@ -1281,10 +1282,10 @@ typedef struct __DRI2configQueryExtensionRec __DRI2configQueryExtension;
 struct __DRI2configQueryExtensionRec {
    __DRIextension base;
 
-   int (*configQueryb)(__DRIscreen *screen, const char *var, unsigned char *val);
-   int (*configQueryi)(__DRIscreen *screen, const char *var, int *val);
-   int (*configQueryf)(__DRIscreen *screen, const char *var, float *val);
-   int (*configQuerys)(__DRIscreen *screen, const char *var, char **val);
+   int (*configQueryb)(struct dri_screen *screen, const char *var, unsigned char *val);
+   int (*configQueryi)(struct dri_screen *screen, const char *var, int *val);
+   int (*configQueryf)(struct dri_screen *screen, const char *var, float *val);
+   int (*configQuerys)(struct dri_screen *screen, const char *var, char **val);
 };
 
 /**

@@ -156,7 +156,7 @@ kopper_get_pixmap_buffer(struct dri_drawable *drawable,
     */
    struct dri_screen *screen = drawable->screen;
 
-   drawable->image = loader_dri3_get_pixmap_buffer(conn, pixmap, opaque_dri_screen(screen),
+   drawable->image = loader_dri3_get_pixmap_buffer(conn, pixmap, screen,
                                                    fourcc, drawable->screen->dmabuf_import, &width, &height, drawable);
    if (!drawable->image)
       return NULL;

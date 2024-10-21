@@ -913,13 +913,12 @@ from_dri_compression_rate(enum __DRIFixedRateCompression rate)
 }
 
 static __DRIimage *
-dri_create_image_from_winsys(__DRIscreen *_screen,
+dri_create_image_from_winsys(struct dri_screen *screen,
                               int width, int height, const struct dri2_format_mapping *map,
                               int num_handles, struct winsys_handle *whandle,
                               unsigned bind,
                               void *loaderPrivate)
 {
-   struct dri_screen *screen = dri_screen(_screen);
    struct pipe_screen *pscreen = screen->base.screen;
    __DRIimage *img;
    struct pipe_resource templ;
@@ -1088,10 +1087,10 @@ dri_create_image_from_winsys(__DRIscreen *_screen,
 }
 
 static unsigned
-dri2_get_modifier_num_planes(__DRIscreen *_screen,
+dri2_get_modifier_num_planes(struct dri_screen *screen,
                              uint64_t modifier, int fourcc)
 {
-   struct pipe_screen *pscreen = dri_screen(_screen)->base.screen;
+   struct pipe_screen *pscreen = screen->base.screen;
    const struct dri2_format_mapping *map = dri2_get_mapping_by_fourcc(fourcc);
 
    if (!map)
@@ -1119,7 +1118,7 @@ dri2_get_modifier_num_planes(__DRIscreen *_screen,
 }
 
 __DRIimage *
-dri_create_image(__DRIscreen *_screen,
+dri_create_image(struct dri_screen *screen,
                   int width, int height,
                   int format,
                   const uint64_t *modifiers,
@@ -1128,7 +1127,6 @@ dri_create_image(__DRIscreen *_screen,
                   void *loaderPrivate)
 {
    const struct dri2_format_mapping *map = dri2_get_mapping_by_format(format);
-   struct dri_screen *screen = dri_screen(_screen);
    struct pipe_screen *pscreen = screen->base.screen;
    __DRIimage *img;
    struct pipe_resource templ;
@@ -1505,7 +1503,7 @@ dri2_validate_usage(__DRIimage *image, unsigned int use)
 }
 
 __DRIimage *
-dri2_from_names(__DRIscreen *screen, int width, int height, int fourcc,
+dri2_from_names(struct dri_screen *screen, int width, int height, int fourcc,
                 int *names, int num_names, int *strides, int *offsets,
                 void *loaderPrivate)
 {
@@ -1579,11 +1577,10 @@ dri2_from_planar(__DRIimage *image, int plane, void *loaderPrivate)
 }
 
 bool
-dri_query_dma_buf_modifiers(__DRIscreen *_screen, int fourcc, int max,
+dri_query_dma_buf_modifiers(struct dri_screen *screen, int fourcc, int max,
                              uint64_t *modifiers, unsigned int *external_only,
                              int *count)
 {
-   struct dri_screen *screen = dri_screen(_screen);
    struct pipe_screen *pscreen = screen->base.screen;
    const struct dri2_format_mapping *map = dri2_get_mapping_by_fourcc(fourcc);
    enum pipe_format format;
@@ -1617,11 +1614,10 @@ dri_query_dma_buf_modifiers(__DRIscreen *_screen, int fourcc, int max,
 }
 
 bool
-dri2_query_dma_buf_format_modifier_attribs(__DRIscreen *_screen,
+dri2_query_dma_buf_format_modifier_attribs(struct dri_screen *screen,
                                            uint32_t fourcc, uint64_t modifier,
                                            int attrib, uint64_t *value)
 {
-   struct dri_screen *screen = dri_screen(_screen);
    struct pipe_screen *pscreen = screen->base.screen;
 
    if (!pscreen->query_dmabuf_modifiers)
@@ -1629,7 +1625,7 @@ dri2_query_dma_buf_format_modifier_attribs(__DRIscreen *_screen,
 
    switch (attrib) {
    case __DRI_IMAGE_FORMAT_MODIFIER_ATTRIB_PLANE_COUNT: {
-      uint64_t mod_planes = dri2_get_modifier_num_planes(_screen, modifier,
+      uint64_t mod_planes = dri2_get_modifier_num_planes(screen, modifier,
                                                          fourcc);
       if (mod_planes > 0)
          *value = mod_planes;
@@ -1641,7 +1637,7 @@ dri2_query_dma_buf_format_modifier_attribs(__DRIscreen *_screen,
 }
 
 __DRIimage *
-dri2_from_dma_bufs(__DRIscreen *screen,
+dri2_from_dma_bufs(struct dri_screen *screen,
                     int width, int height, int fourcc,
                     uint64_t modifier, int *fds, int num_fds,
                     int *strides, int *offsets,
@@ -1656,7 +1652,7 @@ dri2_from_dma_bufs(__DRIscreen *screen,
    __DRIimage *img;
    const struct dri2_format_mapping *map = dri2_get_mapping_by_fourcc(fourcc);
 
-   if (!dri_screen(screen)->dmabuf_import) {
+   if (!screen->dmabuf_import) {
       if (error)
          *error = __DRI_IMAGE_ERROR_BAD_PARAMETER;
       return NULL;
@@ -1729,10 +1725,9 @@ exit:
 }
 
 bool
-dri2_query_compression_rates(__DRIscreen *_screen, const __DRIconfig *config, int max,
+dri2_query_compression_rates(struct dri_screen *screen, const __DRIconfig *config, int max,
                              enum __DRIFixedRateCompression *rates, int *count)
 {
-   struct dri_screen *screen = dri_screen(_screen);
    struct pipe_screen *pscreen = screen->base.screen;
    struct gl_config *gl_config = (struct gl_config *) config;
    enum pipe_format format = gl_config->color_format;
@@ -1754,11 +1749,10 @@ dri2_query_compression_rates(__DRIscreen *_screen, const __DRIconfig *config, in
 }
 
 bool
-dri2_query_compression_modifiers(__DRIscreen *_screen, uint32_t fourcc,
+dri2_query_compression_modifiers(struct dri_screen *screen, uint32_t fourcc,
                                  enum __DRIFixedRateCompression rate, int max,
                                  uint64_t *modifiers, int *count)
 {
-   struct dri_screen *screen = dri_screen(_screen);
    struct pipe_screen *pscreen = screen->base.screen;
    const struct dri2_format_mapping *map = dri2_get_mapping_by_fourcc(fourcc);
    uint32_t pipe_rate = from_dri_compression_rate(rate);
@@ -1893,10 +1887,8 @@ dri2_unmap_image(__DRIcontext *context, __DRIimage *image, void *data)
 }
 
 int
-dri2_get_capabilities(__DRIscreen *_screen)
+dri2_get_capabilities(struct dri_screen *screen)
 {
-   struct dri_screen *screen = dri_screen(_screen);
-
    return (screen->can_share_buffer ? __DRI_IMAGE_CAP_GLOBAL_NAMES : 0);
 }
 
@@ -1968,10 +1960,9 @@ dri_set_damage_region(__DRIdrawable *dPriv, unsigned int nrects, int *rects)
  * \brief the DRI2blobExtension set_cache_funcs method
  */
 void
-dri_set_blob_cache_funcs(__DRIscreen *sPriv, __DRIblobCacheSet set,
+dri_set_blob_cache_funcs(struct dri_screen *screen, __DRIblobCacheSet set,
                          __DRIblobCacheGet get)
 {
-   struct dri_screen *screen = dri_screen(sPriv);
    struct pipe_screen *pscreen = screen->base.screen;
 
    if (!pscreen->get_disk_shader_cache)
