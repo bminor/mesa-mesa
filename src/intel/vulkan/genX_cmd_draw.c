@@ -714,8 +714,7 @@ cmd_buffer_maybe_flush_rt_writes(struct anv_cmd_buffer *cmd_buffer,
       anv_add_pending_pipe_bits(cmd_buffer,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
-                                ANV_PIPE_STALL_AT_SCOREBOARD_BIT,
+                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT,
                                 "change RT due to shader outputs");
 #endif
    }

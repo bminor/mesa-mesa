@@ -3057,7 +3057,6 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
-            ANV_PIPE_PSS_STALL_SYNC_BIT |
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT);
 
 #elif GFX_VERx10 == 125
@@ -3080,7 +3079,6 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
-            ANV_PIPE_PSS_STALL_SYNC_BIT |
             ANV_PIPE_TILE_CACHE_FLUSH_BIT |
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
             ANV_PIPE_HDC_PIPELINE_FLUSH_BIT |
@@ -3151,7 +3149,6 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        */
       add_pending_pipe_bits_for_color_aux_op(
             cmd_buffer, next_aux_op,
-            ANV_PIPE_PSS_STALL_SYNC_BIT |
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT);
 
 #elif GFX_VERx10 == 120
@@ -5989,8 +5986,7 @@ void genX(CmdBeginRendering)(
       anv_add_pending_pipe_bits(cmd_buffer,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
-                                ANV_PIPE_STALL_AT_SCOREBOARD_BIT,
+                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT,
                                 "change RT");
    }
 #endif
