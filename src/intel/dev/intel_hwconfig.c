@@ -161,22 +161,24 @@ apply_hwconfig(const struct intel_device_info *devinfo)
 }
 
 /* If apply_hwconfig(devinfo) is true, then we apply the
- * hwconfig value.
+ * hwconfig value to the devinfo field, ``F``.
  *
  * For debug builds, if apply_hwconfig() is false, we will compare the
- * hwconfig value with the current value in the devinfo and log a warning
+ * hwconfig value, ``V``, with the current value in ``F`` and log a warning
  * message if they differ. This should help to make sure the values in our
  * devinfo structures match what hwconfig is specified.
  */
-#define DEVINFO_HWCONFIG(F, V)                                          \
+#define DEVINFO_HWCONFIG_KV(F, K, V)                                    \
    do {                                                                 \
       if (apply_hwconfig(devinfo))                                      \
          devinfo->F = V;                                                \
       else if (DEBUG_BUILD && devinfo->F != (V))                        \
          mesa_logw("%s (%u) != devinfo->%s (%u)",                       \
-                   key_to_name(item->key), (V), #F,                     \
+                   key_to_name(K), (V), #F,                             \
                    devinfo->F);                                         \
    } while (0)
+
+#define DEVINFO_HWCONFIG(F, I) DEVINFO_HWCONFIG_KV(F, (I)->key, (I)->val[0])
 
 static void
 apply_hwconfig_item(struct intel_device_info *devinfo,
@@ -198,22 +200,22 @@ apply_hwconfig_item(struct intel_device_info *devinfo,
    case INTEL_HWCONFIG_DEPRECATED_SLM_SIZE_IN_KB:
       break; /* ignore */
    case INTEL_HWCONFIG_MAX_NUM_EU_PER_DSS:
-      DEVINFO_HWCONFIG(max_eus_per_subslice, item->val[0]);
+      DEVINFO_HWCONFIG(max_eus_per_subslice, item);
       break;
    case INTEL_HWCONFIG_NUM_THREADS_PER_EU:
-      DEVINFO_HWCONFIG(num_thread_per_eu, item->val[0]);
+      DEVINFO_HWCONFIG(num_thread_per_eu, item);
       break;
    case INTEL_HWCONFIG_TOTAL_VS_THREADS:
-      DEVINFO_HWCONFIG(max_vs_threads, item->val[0]);
+      DEVINFO_HWCONFIG(max_vs_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_GS_THREADS:
-      DEVINFO_HWCONFIG(max_gs_threads, item->val[0]);
+      DEVINFO_HWCONFIG(max_gs_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_HS_THREADS:
-      DEVINFO_HWCONFIG(max_tcs_threads, item->val[0]);
+      DEVINFO_HWCONFIG(max_tcs_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_DS_THREADS:
-      DEVINFO_HWCONFIG(max_tes_threads, item->val[0]);
+      DEVINFO_HWCONFIG(max_tes_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_VS_THREADS_POCS:
       break; /* ignore */
@@ -221,11 +223,11 @@ apply_hwconfig_item(struct intel_device_info *devinfo,
       unsigned threads = item->val[0];
       if (devinfo->ver == 12)
          threads /= 2;
-      DEVINFO_HWCONFIG(max_threads_per_psd, threads);
+      DEVINFO_HWCONFIG_KV(max_threads_per_psd, item->key, threads);
       break;
    }
    case INTEL_HWCONFIG_URB_SIZE_PER_SLICE_IN_KB:
-      DEVINFO_HWCONFIG(urb.size, item->val[0]);
+      DEVINFO_HWCONFIG(urb.size, item);
       break;
    case INTEL_HWCONFIG_DEPRECATED_MAX_FILL_RATE:
    case INTEL_HWCONFIG_MAX_RCS:
