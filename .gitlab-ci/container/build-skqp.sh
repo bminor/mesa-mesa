@@ -12,7 +12,7 @@ set -uex
 
 SKQP_BRANCH=android-cts-12.1_r5
 
-SCRIPT_DIR=$(realpath "$(dirname "$0")")
+SCRIPT_DIR="$(pwd)/.gitlab-ci/container"
 SKQP_PATCH_DIR="${SCRIPT_DIR}/patches"
 BASE_ARGS_GN_FILE="${SCRIPT_DIR}/build-skqp_base.gn"
 
