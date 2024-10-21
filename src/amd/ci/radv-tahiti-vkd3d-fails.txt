@@ -1,1 +1,4 @@
 test_vbv_stride_edge_cases,Fail
+
+# vkd3d-proton bug (missing check for DGC ext)
+test_execute_indirect_state_vbo_offsets,Crash

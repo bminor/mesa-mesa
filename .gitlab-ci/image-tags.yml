@@ -29,8 +29,8 @@ variables:
 
    DEBIAN_TEST_ANDROID_TAG: "20241022-delete-mesa"
    DEBIAN_TEST_GL_TAG: "20241022-delete-mesa"
-   DEBIAN_TEST_VK_TAG: "20241022-delete-mesa"
-   KERNEL_ROOTFS_TAG: "20241022-delete-mesa"
+   DEBIAN_TEST_VK_TAG: "20241022-vkd3d"
+   KERNEL_ROOTFS_TAG: "20241022-vkd3d"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20241002-pyutils"
