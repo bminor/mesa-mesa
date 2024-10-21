@@ -437,7 +437,10 @@ anv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_stru
        * dispatch size paramters) is not L3 coherent.
        */
       if (!ANV_DEVINFO_HAS_COHERENT_L3_CS(cmd_buffer->device->info)) {
-         anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_DATA_CACHE_FLUSH_BIT,
+         anv_add_pending_pipe_bits(cmd_buffer,
+                                   VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                   VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR,
+                                   ANV_PIPE_DATA_CACHE_FLUSH_BIT,
                                    "copy dispatch size for dispatch");
          genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
       }
@@ -670,7 +673,10 @@ genX(CmdCopyAccelerationStructureKHR)(
     * dispatch paramters) is not L3 coherent.
     */
    if (!ANV_DEVINFO_HAS_COHERENT_L3_CS(cmd_buffer->device->info)) {
-      anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_DATA_CACHE_FLUSH_BIT,
+      anv_add_pending_pipe_bits(cmd_buffer,
+                                VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                ANV_PIPE_DATA_CACHE_FLUSH_BIT,
                                 "bvh size read for dispatch");
    }
 
@@ -720,6 +726,8 @@ genX(CmdCopyAccelerationStructureToMemoryKHR)(
     */
    if (!ANV_DEVINFO_HAS_COHERENT_L3_CS(cmd_buffer->device->info)) {
       anv_add_pending_pipe_bits(cmd_buffer,
+                                VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
                                 ANV_PIPE_DATA_CACHE_FLUSH_BIT,
                                 "bvh size read for dispatch");
    }

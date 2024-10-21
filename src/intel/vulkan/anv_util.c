@@ -75,19 +75,34 @@ __anv_perf_warn(struct anv_device *device,
 
 void
 anv_cmd_buffer_pending_pipe_debug(struct anv_cmd_buffer *cmd_buffer,
+                                  VkPipelineStageFlags2 src_stages,
+                                  VkPipelineStageFlags2 dst_stages,
                                   enum anv_pipe_bits bits,
                                   const char* reason)
 {
-   if (bits == 0)
+   if (bits == 0 && src_stages == 0 && dst_stages == 0)
       return;
 
    struct log_stream *stream = mesa_log_streami();
 
    mesa_log_stream_printf(stream, "acc: ");
 
-   mesa_log_stream_printf(stream, "bits: ");
+   mesa_log_stream_printf(stream, "src: ");
+   u_foreach_bit64(b, src_stages) {
+      mesa_log_stream_printf(stream, "%s,",
+                             vk_PipelineStageFlagBits2_to_str(BITFIELD_BIT(b)) +
+                             strlen("VK_PIPELINE_STAGE_2_"));
+   }
+   mesa_log_stream_printf(stream, " dst: ");
+   u_foreach_bit64(b, dst_stages) {
+      mesa_log_stream_printf(stream, "%s,",
+                             vk_PipelineStageFlagBits2_to_str(BITFIELD_BIT(b)) +
+                             strlen("VK_PIPELINE_STAGE_2_"));
+   }
+
+   mesa_log_stream_printf(stream, " bits: ");
    anv_dump_pipe_bits(bits, stream);
-   mesa_log_stream_printf(stream, "reason: %s", reason);
+   mesa_log_stream_printf(stream, " reason: %s", reason);
 
    mesa_log_stream_printf(stream, "\n");
 

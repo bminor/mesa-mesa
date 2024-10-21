@@ -1796,6 +1796,8 @@ anv_begin_companion_cmd_buffer_helper(struct anv_cmd_buffer **cmd_buffer,
     */
    if (prev_cmd_buffer->device->info->has_aux_map) {
       anv_add_pending_pipe_bits(prev_cmd_buffer->companion_rcs_cmd_buffer,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
                                  ANV_PIPE_AUX_TABLE_INVALIDATE_BIT,
                                  "new cmd buffer with aux-tt");
    }

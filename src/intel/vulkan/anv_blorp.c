@@ -667,7 +667,12 @@ void anv_CmdCopyImage2(
             anv_cmd_buffer_is_compute_queue(cmd_buffer) ?
             ANV_PIPE_HDC_PIPELINE_FLUSH_BIT :
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT;
-         anv_add_pending_pipe_bits(cmd_buffer, pipe_bits,
+         anv_add_pending_pipe_bits(cmd_buffer,
+                                   (batch.flags & BLORP_BATCH_USE_COMPUTE) ?
+                                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT :
+                                   VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                   pipe_bits,
                                    "Copy flush before astc emu");
 
          for (unsigned r = 0; r < pCopyImageInfo->regionCount; r++) {
@@ -819,7 +824,12 @@ void anv_CmdCopyBufferToImage2(
             anv_cmd_buffer_is_compute_queue(cmd_buffer) ?
             ANV_PIPE_HDC_PIPELINE_FLUSH_BIT :
             ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT;
-         anv_add_pending_pipe_bits(cmd_buffer, pipe_bits,
+         anv_add_pending_pipe_bits(cmd_buffer,
+                                   (batch.flags & BLORP_BATCH_USE_COMPUTE) ?
+                                   VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT :
+                                   VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                   VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                   pipe_bits,
                                    "Copy flush before astc emu");
 
          for (unsigned r = 0; r < pCopyBufferToImageInfo->regionCount; r++) {
@@ -1177,6 +1187,8 @@ anv_cmd_buffer_update_addr(
     * texture cache so we don't get anything stale.
     */
    anv_add_pending_pipe_bits(cmd_buffer,
+                             VK_PIPELINE_STAGE_2_HOST_BIT,
+                             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
                              ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT,
                              "before UpdateBuffer");
 
@@ -1886,6 +1898,8 @@ anv_fast_clear_depth_stencil(struct anv_cmd_buffer *cmd_buffer,
     * hangs when doing a clear with WM_HZ_OP.
     */
    anv_add_pending_pipe_bits(cmd_buffer,
+                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                              ANV_PIPE_DEPTH_CACHE_FLUSH_BIT |
                              ANV_PIPE_DEPTH_STALL_BIT,
                              "before clear hiz");
@@ -1913,6 +1927,8 @@ anv_fast_clear_depth_stencil(struct anv_cmd_buffer *cmd_buffer,
       unsigned wa_flush = cmd_buffer->device->info->verx10 >= 125 ?
                           ANV_PIPE_DATA_CACHE_FLUSH_BIT : 0;
       anv_add_pending_pipe_bits(cmd_buffer,
+                                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 ANV_PIPE_DEPTH_CACHE_FLUSH_BIT |
                                 ANV_PIPE_CS_STALL_BIT |
                                 ANV_PIPE_TILE_CACHE_FLUSH_BIT |
@@ -1955,6 +1971,8 @@ anv_fast_clear_depth_stencil(struct anv_cmd_buffer *cmd_buffer,
     */
    if (cmd_buffer->device->info->verx10 < 120) {
       anv_add_pending_pipe_bits(cmd_buffer,
+                                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 ANV_PIPE_DEPTH_CACHE_FLUSH_BIT |
                                 ANV_PIPE_DEPTH_STALL_BIT,
                                 "after clear hiz");
@@ -2565,6 +2583,8 @@ anv_image_clear_depth_stencil(struct anv_cmd_buffer *cmd_buffer,
     * cache before rendering to it.
     */
    anv_add_pending_pipe_bits(cmd_buffer,
+                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                              ANV_PIPE_DEPTH_CACHE_FLUSH_BIT |
                              ANV_PIPE_END_OF_PIPE_SYNC_BIT,
                              "before clear DS");
@@ -2584,6 +2604,8 @@ anv_image_clear_depth_stencil(struct anv_cmd_buffer *cmd_buffer,
     * cache before someone starts trying to do stencil on it.
     */
    anv_add_pending_pipe_bits(cmd_buffer,
+                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                              ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
                              ANV_PIPE_END_OF_PIPE_SYNC_BIT,
                              "after clear DS");

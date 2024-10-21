@@ -548,6 +548,10 @@ genX(cmd_buffer_emit_indirect_generated_draws_inring)(struct anv_cmd_buffer *cmd
    struct anv_gen_indirect_params *params = params_state.map;
 
    anv_add_pending_pipe_bits(cmd_buffer,
+                             gen_kernel->stage == MESA_SHADER_FRAGMENT ?
+                             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT :
+                             VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                             VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
 #if GFX_VER == 9
                              ANV_PIPE_VF_CACHE_INVALIDATE_BIT |
 #endif
@@ -597,6 +601,10 @@ genX(cmd_buffer_emit_indirect_generated_draws_inring)(struct anv_cmd_buffer *cmd
          anv_batch_current_address(&cmd_buffer->batch);
 
       anv_add_pending_pipe_bits(cmd_buffer,
+                                gen_kernel->stage == MESA_SHADER_FRAGMENT ?
+                                VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT :
+                                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
                                 ANV_PIPE_STALL_AT_SCOREBOARD_BIT |
                                 ANV_PIPE_CS_STALL_BIT,
                                 "after generated draws batch");
@@ -623,6 +631,8 @@ genX(cmd_buffer_emit_indirect_generated_draws_inring)(struct anv_cmd_buffer *cmd
       mi_ensure_write_fence(&b);
 
       anv_add_pending_pipe_bits(cmd_buffer,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
                                 ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT,
                                 "after generated draws batch increment");
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
@@ -645,6 +655,8 @@ genX(cmd_buffer_emit_indirect_generated_draws_inring)(struct anv_cmd_buffer *cmd
       mi_ensure_write_fence(&b);
 
       anv_add_pending_pipe_bits(cmd_buffer,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
                                 ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT,
                                 "after generated draws end");
 

@@ -4633,6 +4633,8 @@ struct anv_cmd_state {
    struct anv_cmd_compute_state                 compute;
    struct anv_cmd_ray_tracing_state             rt;
 
+   VkPipelineStageFlags2                        pending_src_stages;
+   VkPipelineStageFlags2                        pending_dst_stages;
    enum anv_pipe_bits                           pending_pipe_bits;
 
    /**
@@ -6766,21 +6768,30 @@ anv_dump_pipe_bits(enum anv_pipe_bits bits, struct log_stream *stream);
 
 void
 anv_cmd_buffer_pending_pipe_debug(struct anv_cmd_buffer *cmd_buffer,
+                                  VkPipelineStageFlags2 src_stages,
+                                  VkPipelineStageFlags2 dst_stages,
                                   enum anv_pipe_bits bits,
                                   const char* reason);
 
 static inline void
 anv_add_pending_pipe_bits(struct anv_cmd_buffer* cmd_buffer,
+                          VkPipelineStageFlags2 src_stages,
+                          VkPipelineStageFlags2 dst_stages,
                           enum anv_pipe_bits bits,
                           const char* reason)
 {
+   cmd_buffer->state.pending_src_stages |= src_stages;
+   cmd_buffer->state.pending_dst_stages |= dst_stages;
    cmd_buffer->state.pending_pipe_bits |= bits;
    if (unlikely(u_trace_enabled(&cmd_buffer->device->ds.trace_context))) {
       if (cmd_buffer->batch.pc_reasons_count < ARRAY_SIZE(cmd_buffer->batch.pc_reasons))
          cmd_buffer->batch.pc_reasons[cmd_buffer->batch.pc_reasons_count++] = reason;
    }
-   if (INTEL_DEBUG(DEBUG_PIPE_CONTROL))
-      anv_cmd_buffer_pending_pipe_debug(cmd_buffer, bits, reason);
+   if (INTEL_DEBUG(DEBUG_PIPE_CONTROL)) {
+      anv_cmd_buffer_pending_pipe_debug(cmd_buffer,
+                                        src_stages, dst_stages, bits,
+                                        reason);
+   }
 }
 
 struct anv_performance_configuration_intel {
