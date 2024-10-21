@@ -45,8 +45,11 @@
 #include <stdbool.h>
 
 struct pipe_screen;
-
 struct dri_screen;
+struct mesa_glinterop_device_info;
+struct mesa_glinterop_export_in;
+struct mesa_glinterop_export_out;
+struct mesa_glinterop_flush_out;
 
 #define __DRI_BACKEND_VTABLE "DRI_DriverVtable"
 
