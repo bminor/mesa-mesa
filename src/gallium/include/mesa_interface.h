@@ -34,6 +34,7 @@
 
 struct dri_screen;
 struct dri_context;
+struct dri_drawable;
 
 /**
  * \name DRI interface structures
@@ -42,7 +43,6 @@ struct dri_context;
  * side library and the DRI (direct rendering infrastructure).
  */
 /*@{*/
-typedef struct __DRIdrawableRec		__DRIdrawable;
 typedef struct __DRIconfigRec		__DRIconfig;
 
 typedef struct __DRIcoreExtensionRec		__DRIcoreExtension;
@@ -103,7 +103,7 @@ struct __DRItexBufferExtensionRec {
 
     /**
      * Method to override base texture image with the contents of a
-     * __DRIdrawable, including the required texture format attribute.
+     * struct dri_drawable, including the required texture format attribute.
      *
      * For GLX_EXT_texture_from_pixmap with AIGLX.  Used by the X server since
      * 2011.
@@ -113,7 +113,7 @@ struct __DRItexBufferExtensionRec {
     void (*setTexBuffer2)(struct dri_context *pDRICtx,
 			  int target,
 			  int format,
-			  __DRIdrawable *pDraw);
+			  struct dri_drawable *pDraw);
 };
 
 /**
@@ -276,7 +276,7 @@ struct __DRI2bufferDamageExtensionRec {
     * \param nrects   number of rectangles provided
     * \param rects    the array of rectangles, lower-left origin
     */
-   void (*set_damage_region)(__DRIdrawable *drawable, unsigned int nrects,
+   void (*set_damage_region)(struct dri_drawable *drawable, unsigned int nrects,
                              int *rects);
 };
 
@@ -309,21 +309,21 @@ struct __DRIswrastLoaderExtensionRec {
     /*
      * Drawable position and size
      */
-    void (*getDrawableInfo)(__DRIdrawable *drawable,
+    void (*getDrawableInfo)(struct dri_drawable *drawable,
 			    int *x, int *y, int *width, int *height,
 			    void *loaderPrivate);
 
     /**
      * Put image to drawable
      */
-    void (*putImage)(__DRIdrawable *drawable, int op,
+    void (*putImage)(struct dri_drawable *drawable, int op,
 		     int x, int y, int width, int height,
 		     char *data, void *loaderPrivate);
 
     /**
      * Get image from readable
      */
-    void (*getImage)(__DRIdrawable *readable,
+    void (*getImage)(struct dri_drawable *readable,
 		     int x, int y, int width, int height,
 		     char *data, void *loaderPrivate);
 
@@ -332,7 +332,7 @@ struct __DRIswrastLoaderExtensionRec {
      *
      * \since 2
      */
-    void (*putImage2)(__DRIdrawable *drawable, int op,
+    void (*putImage2)(struct dri_drawable *drawable, int op,
                       int x, int y, int width, int height, int stride,
                       char *data, void *loaderPrivate);
 
@@ -341,7 +341,7 @@ struct __DRIswrastLoaderExtensionRec {
      *
      * \since 3
      */
-   void (*getImage2)(__DRIdrawable *readable,
+   void (*getImage2)(struct dri_drawable *readable,
 		     int x, int y, int width, int height, int stride,
 		     char *data, void *loaderPrivate);
 
@@ -350,7 +350,7 @@ struct __DRIswrastLoaderExtensionRec {
      *
      * \since 4
      */
-    void (*putImageShm)(__DRIdrawable *drawable, int op,
+    void (*putImageShm)(struct dri_drawable *drawable, int op,
                         int x, int y, int width, int height, int stride,
                         int shmid, char *shmaddr, unsigned offset,
                         void *loaderPrivate);
@@ -359,7 +359,7 @@ struct __DRIswrastLoaderExtensionRec {
      *
      * \since 4
      */
-    void (*getImageShm)(__DRIdrawable *readable,
+    void (*getImageShm)(struct dri_drawable *readable,
                         int x, int y, int width, int height,
                         int shmid, void *loaderPrivate);
 
@@ -374,7 +374,7 @@ struct __DRIswrastLoaderExtensionRec {
      *
      * \since 5
      */
-    void (*putImageShm2)(__DRIdrawable *drawable, int op,
+    void (*putImageShm2)(struct dri_drawable *drawable, int op,
                          int x, int y,
                          int width, int height, int stride,
                          int shmid, char *shmaddr, unsigned offset,
@@ -389,7 +389,7 @@ struct __DRIswrastLoaderExtensionRec {
      *
      * \since 6
      */
-    unsigned char (*getImageShm2)(__DRIdrawable *readable,
+    unsigned char (*getImageShm2)(struct dri_drawable *readable,
                                   int x, int y, int width, int height,
                                   int shmid, void *loaderPrivate);
 };
@@ -536,17 +536,17 @@ struct __DRIcoreExtensionRec {
 			     unsigned int *attrib, unsigned int *value);
 
     /* Not used by the X server. */
-    __DRIdrawable *(*createNewDrawable)(struct dri_screen *screen,
+    struct dri_drawable *(*createNewDrawable)(struct dri_screen *screen,
 					const __DRIconfig *config,
 					unsigned int drawable_id,
 					unsigned int head,
 					void *loaderPrivate);
 
     /* Used by the X server */
-    void (*destroyDrawable)(__DRIdrawable *drawable);
+    void (*destroyDrawable)(struct dri_drawable *drawable);
 
     /* Used by the X server in swrast mode. */
-    void (*swapBuffers)(__DRIdrawable *drawable);
+    void (*swapBuffers)(struct dri_drawable *drawable);
 
     /* Used by the X server in swrast mode. */
     struct dri_context *(*createNewContext)(struct dri_screen *screen,
@@ -564,13 +564,13 @@ struct __DRIcoreExtensionRec {
 
     /* Used by the X server. */
     int (*bindContext)(struct dri_context *ctx,
-		       __DRIdrawable *pdraw,
-		       __DRIdrawable *pread);
+		       struct dri_drawable *pdraw,
+		       struct dri_drawable *pread);
 
     /* Used by the X server. */
     int (*unbindContext)(struct dri_context *ctx);
 
-    void (*swapBuffersWithDamage)(__DRIdrawable *drawable, int nrects, const int *rects);
+    void (*swapBuffersWithDamage)(struct dri_drawable *drawable, int nrects, const int *rects);
 };
 
 /** Common DRI function definitions, shared among DRI2 and Image extensions
@@ -590,7 +590,7 @@ typedef struct dri_screen *
                              bool implicit,
                              void *loaderPrivate);
 
-typedef __DRIdrawable *
+typedef struct dri_drawable *
 (*__DRIcreateNewDrawableFunc)(struct dri_screen *screen,
                               const __DRIconfig *config,
                               void *loaderPrivate);
@@ -647,7 +647,7 @@ enum dri_loader_cap {
 struct __DRIdri2LoaderExtensionRec {
     __DRIextension base;
 
-    __DRIbuffer *(*getBuffers)(__DRIdrawable *driDrawable,
+    __DRIbuffer *(*getBuffers)(struct dri_drawable *driDrawable,
 			       int *width, int *height,
 			       unsigned int *attachments, int count,
 			       int *out_count, void *loaderPrivate);
@@ -664,7 +664,7 @@ struct __DRIdri2LoaderExtensionRec {
      *
      * \since 2
      */
-    void (*flushFrontBuffer)(__DRIdrawable *driDrawable, void *loaderPrivate);
+    void (*flushFrontBuffer)(struct dri_drawable *driDrawable, void *loaderPrivate);
 
 
     /**
@@ -687,7 +687,7 @@ struct __DRIdri2LoaderExtensionRec {
      *
      * \since 3
      */
-    __DRIbuffer *(*getBuffersWithFormat)(__DRIdrawable *driDrawable,
+    __DRIbuffer *(*getBuffersWithFormat)(struct dri_drawable *driDrawable,
 					 int *width, int *height,
 					 unsigned int *attachments, int count,
 					 int *out_count, void *loaderPrivate);
@@ -1358,7 +1358,7 @@ enum __DRIimageBufferMask {
     * EGL_SINGLE_BUFFER.
     *
     * If buffer_mask contains __DRI_IMAGE_BUFFER_SHARED, then must contains no
-    * other bits. As a corollary, a __DRIdrawable that has a "shared" buffer
+    * other bits. As a corollary, a struct dri_drawable that has a "shared" buffer
     * has no front nor back buffer.
     *
     * The loader returns __DRI_IMAGE_BUFFER_SHARED in buffer_mask if and only
@@ -1378,7 +1378,7 @@ enum __DRIimageBufferMask {
     * buffer should appear promptly on the screen. It is different from
     * a front buffer in that its behavior is independent from the
     * GL_DRAW_BUFFER state. Specifically, if GL_DRAW_FRAMEBUFFER is 0 and the
-    * __DRIdrawable's buffer_mask is __DRI_IMAGE_BUFFER_SHARED, then all
+    * struct dri_drawable's buffer_mask is __DRI_IMAGE_BUFFER_SHARED, then all
     * rendering should appear promptly on the screen if GL_DRAW_BUFFER is not
     * GL_NONE.
     *
@@ -1419,7 +1419,7 @@ struct __DRIimageLoaderExtensionRec {
     *                           __DRIimageBufferMask.
     * \param buffers            Returned buffers
     */
-   int (*getBuffers)(__DRIdrawable *driDrawable,
+   int (*getBuffers)(struct dri_drawable *driDrawable,
                      unsigned int format,
                      uint32_t *stamp,
                      void *loaderPrivate,
@@ -1435,7 +1435,7 @@ struct __DRIimageLoaderExtensionRec {
      * \param driDrawable    Drawable whose front-buffer is to be flushed
      * \param loaderPrivate  Loader's private data
      */
-    void (*flushFrontBuffer)(__DRIdrawable *driDrawable, void *loaderPrivate);
+    void (*flushFrontBuffer)(struct dri_drawable *driDrawable, void *loaderPrivate);
 
     /**
      * Return a loader capability value. If the loader doesn't know the enum,
@@ -1456,7 +1456,7 @@ struct __DRIimageLoaderExtensionRec {
      *
      * \since 3
      */
-    void (*flushSwapBuffers)(__DRIdrawable *driDrawable, void *loaderPrivate);
+    void (*flushSwapBuffers)(struct dri_drawable *driDrawable, void *loaderPrivate);
 
     /**
      * Clean up any loader state associated with an image.
@@ -1554,7 +1554,7 @@ struct __DRImutableRenderBufferLoaderExtensionRec {
 
    /**
     * Inform the display engine (that is, SurfaceFlinger and/or hwcomposer)
-    * that the __DRIdrawable has new content.
+    * that the struct dri_drawable has new content.
     *
     * The display engine may ignore this call, for example, if it continually
     * refreshes and displays the buffer on every frame, as in
@@ -1569,7 +1569,7 @@ struct __DRImutableRenderBufferLoaderExtensionRec {
     * __DRIimageLoaderExtension::getBuffers(), must be
     * __DRI_IMAGE_BUFFER_SHARED.
     */
-   void (*displaySharedBuffer)(__DRIdrawable *drawable, int fence_fd,
+   void (*displaySharedBuffer)(struct dri_drawable *drawable, int fence_fd,
                                void *loaderPrivate);
 };
 

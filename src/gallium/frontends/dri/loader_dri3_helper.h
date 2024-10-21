@@ -117,7 +117,7 @@ enum loader_dri3_drawable_type {
 struct loader_dri3_drawable {
    xcb_connection_t *conn;
    xcb_screen_t *screen;
-   __DRIdrawable *dri_drawable;
+   struct dri_drawable *dri_drawable;
    xcb_drawable_t drawable;
    xcb_window_t window;
    xcb_xfixes_region_t region;
@@ -265,7 +265,7 @@ loader_dri3_create_image_from_buffers(xcb_connection_t *c,
                                       void *loaderPrivate);
 #endif
 PUBLIC int
-loader_dri3_get_buffers(__DRIdrawable *driDrawable,
+loader_dri3_get_buffers(struct dri_drawable *driDrawable,
                         unsigned int format,
                         uint32_t *stamp,
                         void *loaderPrivate,

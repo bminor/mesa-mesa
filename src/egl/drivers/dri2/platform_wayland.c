@@ -1401,7 +1401,7 @@ update_buffers_if_needed(struct dri2_egl_surface *dri2_surf)
 }
 
 static int
-image_get_buffers(__DRIdrawable *driDrawable, unsigned int format,
+image_get_buffers(struct dri_drawable *driDrawable, unsigned int format,
                   uint32_t *stamp, void *loaderPrivate, uint32_t buffer_mask,
                   struct __DRIimageList *buffers)
 {
@@ -1417,7 +1417,7 @@ image_get_buffers(__DRIdrawable *driDrawable, unsigned int format,
 }
 
 static void
-dri2_wl_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+dri2_wl_flush_front_buffer(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
    (void)driDrawable;
    (void)loaderPrivate;
@@ -1703,7 +1703,7 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
    if (dri2_dpy->fd_render_gpu != dri2_dpy->fd_display_gpu) {
       _EGLContext *ctx = _eglGetCurrentContext();
       struct dri2_egl_context *dri2_ctx = dri2_egl_context(ctx);
-      __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(draw);
+      struct dri_drawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(draw);
       dri2_blit_image(
          dri2_ctx->dri_context, dri2_surf->current->linear_copy,
          dri2_surf->current->dri_image, 0, 0, dri2_surf->base.Width,
@@ -2548,7 +2548,7 @@ dri2_wl_swrast_commit_backbuffer(struct dri2_egl_surface *dri2_surf)
 }
 
 static void
-dri2_wl_kopper_get_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w,
+dri2_wl_kopper_get_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w,
                                  int *h, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -2561,7 +2561,7 @@ dri2_wl_kopper_get_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w,
 }
 
 static void
-dri2_wl_swrast_get_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w,
+dri2_wl_swrast_get_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w,
                                  int *h, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -2574,7 +2574,7 @@ dri2_wl_swrast_get_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w,
 }
 
 static void
-dri2_wl_swrast_get_image(__DRIdrawable *read, int x, int y, int w, int h,
+dri2_wl_swrast_get_image(struct dri_drawable *read, int x, int y, int w, int h,
                          char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -2613,7 +2613,7 @@ dri2_wl_swrast_get_image(__DRIdrawable *read, int x, int y, int w, int h,
 }
 
 static void
-dri2_wl_swrast_put_image2(__DRIdrawable *draw, int op, int x, int y, int w,
+dri2_wl_swrast_put_image2(struct dri_drawable *draw, int op, int x, int y, int w,
                           int h, int stride, char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -2649,7 +2649,7 @@ dri2_wl_swrast_put_image2(__DRIdrawable *draw, int op, int x, int y, int w,
 }
 
 static void
-dri2_wl_swrast_put_image(__DRIdrawable *draw, int op, int x, int y, int w,
+dri2_wl_swrast_put_image(struct dri_drawable *draw, int op, int x, int y, int w,
                          int h, char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;

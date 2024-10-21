@@ -85,7 +85,7 @@ dri_lookup_egl_image_validated(void *image, void *data)
 }
 
 static void
-dri_flush_front_buffer(__DRIdrawable * driDrawable, void *data)
+dri_flush_front_buffer(struct dri_drawable * driDrawable, void *data)
 {
    struct gbm_dri_surface *surf = data;
    struct gbm_dri_device *dri = gbm_dri_device(surf->base.gbm);
@@ -109,7 +109,7 @@ dri_get_capability(void *loaderPrivate, enum dri_loader_cap cap)
 }
 
 static int
-image_get_buffers(__DRIdrawable *driDrawable,
+image_get_buffers(struct dri_drawable *driDrawable,
                   unsigned int format,
                   uint32_t *stamp,
                   void *loaderPrivate,
@@ -127,7 +127,7 @@ image_get_buffers(__DRIdrawable *driDrawable,
 }
 
 static void
-swrast_get_drawable_info(__DRIdrawable *driDrawable,
+swrast_get_drawable_info(struct dri_drawable *driDrawable,
                          int           *x,
                          int           *y,
                          int           *width,
@@ -143,7 +143,7 @@ swrast_get_drawable_info(__DRIdrawable *driDrawable,
 }
 
 static void
-swrast_put_image2(__DRIdrawable *driDrawable,
+swrast_put_image2(struct dri_drawable *driDrawable,
                   int            op,
                   int            x,
                   int            y,
@@ -163,7 +163,7 @@ swrast_put_image2(__DRIdrawable *driDrawable,
 }
 
 static void
-swrast_put_image(__DRIdrawable *driDrawable,
+swrast_put_image(struct dri_drawable *driDrawable,
                  int            op,
                  int            x,
                  int            y,
@@ -177,7 +177,7 @@ swrast_put_image(__DRIdrawable *driDrawable,
 }
 
 static void
-swrast_get_image(__DRIdrawable *driDrawable,
+swrast_get_image(struct dri_drawable *driDrawable,
                  int            x,
                  int            y,
                  int            width,

@@ -148,7 +148,7 @@ dri_st_framebuffer_flush_swapbuffers(struct st_context *st,
 /**
  * This is called when we need to set up GL rendering to a new X window.
  */
-__DRIdrawable *
+struct dri_drawable *
 dri_create_drawable(struct dri_screen *screen, const __DRIconfig *config,
                     bool isPixmap, void *loaderPrivate)
 {
@@ -192,7 +192,7 @@ dri_create_drawable(struct dri_screen *screen, const __DRIconfig *config,
       break;
    }
 
-   return opaque_dri_drawable(drawable);
+   return drawable;
 }
 
 static void
@@ -262,10 +262,9 @@ dri_drawable_validate_att(struct dri_context *ctx,
  */
 void
 dri_set_tex_buffer2(struct dri_context *ctx, GLint target,
-                    GLint format, __DRIdrawable *dPriv)
+                    GLint format, struct dri_drawable *drawable)
 {
    struct st_context *st = ctx->st;
-   struct dri_drawable *drawable = dri_drawable(dPriv);
    struct pipe_resource *pt;
 
    _mesa_glthread_finish(st->ctx);
@@ -473,11 +472,10 @@ notify_before_flush_cb(void* _args)
  */
 void
 dri_flush(struct dri_context *ctx,
-          __DRIdrawable *dPriv,
+          struct dri_drawable *drawable,
           unsigned flags,
           enum __DRI2throttleReason reason)
 {
-   struct dri_drawable *drawable = dri_drawable(dPriv);
    struct st_context *st;
    unsigned flush_flags;
    struct notify_before_flush_cb_args args = { 0 };
@@ -573,7 +571,7 @@ dri_flush(struct dri_context *ctx,
  * DRI2 flush extension.
  */
 void
-dri_flush_drawable(__DRIdrawable *dPriv)
+dri_flush_drawable(struct dri_drawable *dPriv)
 {
    struct dri_context *ctx = dri_get_current();
 
@@ -585,7 +583,7 @@ dri_flush_drawable(__DRIdrawable *dPriv)
  * dri_throttle - A DRI2ThrottleExtension throttling function.
  */
 void
-dri_throttle(struct dri_context *cPriv, __DRIdrawable *dPriv,
+dri_throttle(struct dri_context *cPriv, struct dri_drawable *dPriv,
              enum __DRI2throttleReason reason)
 {
    dri_flush(cPriv, dPriv, 0, reason);

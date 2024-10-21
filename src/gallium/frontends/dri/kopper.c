@@ -352,8 +352,7 @@ get_drawable_info(struct dri_drawable *drawable, int *x, int *y, int *w, int *h)
    const __DRIswrastLoaderExtension *loader = drawable->screen->swrast_loader;
 
    if (loader)
-      loader->getDrawableInfo(opaque_dri_drawable(drawable),
-                              x, y, w, h,
+      loader->getDrawableInfo(drawable, x, y, w, h,
                               drawable->loaderPrivate);
 }
 
@@ -453,8 +452,7 @@ get_image(struct dri_drawable *drawable, int x, int y, int width, int height, vo
 {
    const __DRIswrastLoaderExtension *loader = drawable->screen->swrast_loader;
 
-   loader->getImage(opaque_dri_drawable(drawable),
-                    x, y, width, height,
+   loader->getImage(drawable, x, y, width, height,
                     data, drawable->loaderPrivate);
 }
 
@@ -474,9 +472,9 @@ get_image_shm(struct dri_drawable *drawable, int x, int y, int width, int height
       return false;
 
    if (loader->base.version > 5 && loader->getImageShm2)
-      return loader->getImageShm2(opaque_dri_drawable(drawable), x, y, width, height, whandle.handle, drawable->loaderPrivate);
+      return loader->getImageShm2(drawable, x, y, width, height, whandle.handle, drawable->loaderPrivate);
 
-   loader->getImageShm(opaque_dri_drawable(drawable), x, y, width, height, whandle.handle, drawable->loaderPrivate);
+   loader->getImageShm(drawable, x, y, width, height, whandle.handle, drawable->loaderPrivate);
    return true;
 }
 
@@ -524,9 +522,8 @@ kopper_init_drawable(struct dri_drawable *drawable, bool isPixmap, int alphaBits
 }
 
 int64_t
-kopperSwapBuffersWithDamage(__DRIdrawable *dPriv, uint32_t flush_flags, int nrects, const int *rects)
+kopperSwapBuffersWithDamage(struct dri_drawable *drawable, uint32_t flush_flags, int nrects, const int *rects)
 {
-   struct dri_drawable *drawable = dri_drawable(dPriv);
    struct dri_context *ctx = dri_get_current();
    struct pipe_resource *ptex;
 
@@ -548,7 +545,7 @@ kopperSwapBuffersWithDamage(__DRIdrawable *dPriv, uint32_t flush_flags, int nrec
 
    drawable->texture_stamp = drawable->lastStamp - 1;
 
-   dri_flush(ctx, opaque_dri_drawable(drawable),
+   dri_flush(ctx, drawable,
              __DRI2_FLUSH_DRAWABLE | __DRI2_FLUSH_CONTEXT | flush_flags,
              __DRI2_THROTTLE_SWAPBUFFER);
 
@@ -578,7 +575,7 @@ kopperSwapBuffersWithDamage(__DRIdrawable *dPriv, uint32_t flush_flags, int nrec
 }
 
 int64_t
-kopperSwapBuffers(__DRIdrawable *dPriv, uint32_t flush_flags)
+kopperSwapBuffers(struct dri_drawable *dPriv, uint32_t flush_flags)
 {
    return kopperSwapBuffersWithDamage(dPriv, flush_flags, 0, NULL);
 }
@@ -587,7 +584,7 @@ static void
 kopper_swap_buffers_with_damage(struct dri_drawable *drawable, int nrects, const int *rects)
 {
 
-   kopperSwapBuffersWithDamage(opaque_dri_drawable(drawable), 0, nrects, rects);
+   kopperSwapBuffersWithDamage(drawable, 0, nrects, rects);
 }
 
 static void
@@ -597,9 +594,8 @@ kopper_swap_buffers(struct dri_drawable *drawable)
 }
 
 void
-kopperSetSwapInterval(__DRIdrawable *dPriv, int interval)
+kopperSetSwapInterval(struct dri_drawable *drawable, int interval)
 {
-   struct dri_drawable *drawable = dri_drawable(dPriv);
    struct dri_screen *screen = drawable->screen;
    struct pipe_resource *ptex = drawable->textures[ST_ATTACHMENT_BACK_LEFT] ?
                                 drawable->textures[ST_ATTACHMENT_BACK_LEFT] :
@@ -620,9 +616,8 @@ kopperSetSwapInterval(__DRIdrawable *dPriv, int interval)
 }
 
 int
-kopperQueryBufferAge(__DRIdrawable *dPriv)
+kopperQueryBufferAge(struct dri_drawable *drawable)
 {
-   struct dri_drawable *drawable = dri_drawable(dPriv);
    struct dri_context *ctx = dri_get_current();
    struct pipe_resource *ptex = drawable->textures[ST_ATTACHMENT_BACK_LEFT] ?
                                 drawable->textures[ST_ATTACHMENT_BACK_LEFT] :

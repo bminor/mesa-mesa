@@ -1003,7 +1003,7 @@ glXCreateGLXPixmap(Display * dpy, XVisualInfo * vis, Pixmap pixmap)
 
 #if defined(GLX_DIRECT_RENDERING) && !defined(GLX_USE_APPLEGL)
    do {
-      /* FIXME: Maybe delay __DRIdrawable creation until the drawable
+      /* FIXME: Maybe delay struct dri_drawable creation until the drawable
        * is actually bound to a context... */
 
       struct glx_screen *psc = GetGLXScreenConfigs(dpy, vis->screen);

@@ -294,7 +294,7 @@ dri3_wait_gl(struct glx_context *gc)
  * contents of its fake front buffer.
  */
 static void
-dri3_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+dri3_flush_front_buffer(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
    struct loader_dri3_drawable *draw = loaderPrivate;
    struct dri3_drawable *pdraw = loader_drawable_to_dri3_drawable(draw);
@@ -325,7 +325,7 @@ dri3_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
  * loader_dri_drawable.
  */
 static void
-dri3_flush_swap_buffers(__DRIdrawable *driDrawable, void *loaderPrivate)
+dri3_flush_swap_buffers(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
    struct loader_dri3_drawable *draw = loaderPrivate;
    struct dri3_drawable *pdraw = loader_drawable_to_dri3_drawable(draw);

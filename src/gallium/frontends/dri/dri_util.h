@@ -125,7 +125,7 @@ extern uint32_t
 driImageFormatToSizedInternalGLFormat(uint32_t image_format);
 PUBLIC unsigned int
 driGetAPIMask(struct dri_screen *screen);
-PUBLIC __DRIdrawable *
+PUBLIC struct dri_drawable *
 dri_create_drawable(struct dri_screen *psp, const __DRIconfig *config,
                     bool isPixmap, void *loaderPrivate);
 extern const __DRIimageDriverExtension driImageDriverExtension;
@@ -135,41 +135,41 @@ driGetConfigAttrib(const __DRIconfig *config, unsigned int attrib, unsigned int 
 PUBLIC int
 driIndexConfigAttrib(const __DRIconfig *config, int index, unsigned int *attrib, unsigned int *value);
 PUBLIC void
-driDestroyDrawable(__DRIdrawable *pdp);
+driDestroyDrawable(struct dri_drawable *drawable);
 PUBLIC void
-driSwapBuffers(__DRIdrawable *pdp);
+driSwapBuffers(struct dri_drawable *drawable);
 PUBLIC void
-driSwapBuffersWithDamage(__DRIdrawable *pdp, int nrects, const int *rects);
+driSwapBuffersWithDamage(struct dri_drawable *drawable, int nrects, const int *rects);
 PUBLIC struct dri_context *
 driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config, struct dri_context *shared, void *data);
 PUBLIC int
 driCopyContext(struct dri_context *dest, struct dri_context *src, unsigned long mask);
 PUBLIC void
 driDestroyContext(struct dri_context *ctx);
-PUBLIC int driBindContext(struct dri_context *ctx, __DRIdrawable *pdp, __DRIdrawable *prp);
+PUBLIC int driBindContext(struct dri_context *ctx, struct dri_drawable *draw, struct dri_drawable *read);
 PUBLIC int driUnbindContext(struct dri_context *ctx);
 
 
 PUBLIC int64_t
-kopperSwapBuffers(__DRIdrawable *dPriv, uint32_t flush_flags);
+kopperSwapBuffers(struct dri_drawable *dPriv, uint32_t flush_flags);
 PUBLIC int64_t
-kopperSwapBuffersWithDamage(__DRIdrawable *dPriv, uint32_t flush_flags, int nrects, const int *rects);
-PUBLIC __DRIdrawable *
+kopperSwapBuffersWithDamage(struct dri_drawable *drawable, uint32_t flush_flags, int nrects, const int *rects);
+PUBLIC struct dri_drawable *
 kopperCreateNewDrawable(struct dri_screen *psp,
                         const __DRIconfig *config,
                         void *data,
                         __DRIkopperDrawableInfo *info);
 PUBLIC void
-kopperSetSwapInterval(__DRIdrawable *dPriv, int interval);
+kopperSetSwapInterval(struct dri_drawable *drawable, int interval);
 PUBLIC int
-kopperQueryBufferAge(__DRIdrawable *dPriv);
+kopperQueryBufferAge(struct dri_drawable *drawable);
 
 PUBLIC void
-driswCopySubBuffer(__DRIdrawable *pdp, int x, int y, int w, int h);
+driswCopySubBuffer(struct dri_drawable *drawable, int x, int y, int w, int h);
 
 PUBLIC void
 dri_set_tex_buffer2(struct dri_context *ctx, GLint target,
-                    GLint format, __DRIdrawable *dPriv);
+                    GLint format, struct dri_drawable *drawable);
 
 PUBLIC int
 dri_query_renderer_string(struct dri_screen *_screen, int param,
@@ -179,14 +179,14 @@ dri_query_renderer_integer(struct dri_screen *_screen, int param,
                             unsigned int *value);
 
 PUBLIC void
-dri_flush_drawable(__DRIdrawable *dPriv);
+dri_flush_drawable(struct dri_drawable *dPriv);
 PUBLIC void
 dri_flush(struct dri_context *cPriv,
-          __DRIdrawable *dPriv,
+          struct dri_drawable *dPriv,
           unsigned flags,
           enum __DRI2throttleReason reason);
 PUBLIC void
-dri_invalidate_drawable(__DRIdrawable *dPriv);
+dri_invalidate_drawable(struct dri_drawable *drawable);
 
 PUBLIC int
 dri2GalliumConfigQueryb(struct dri_screen *sPriv, const char *var,
@@ -202,7 +202,7 @@ PUBLIC int dri_get_initial_swap_interval(struct dri_screen *driScreen);
 PUBLIC bool dri_valid_swap_interval(struct dri_screen *driScreen, int interval);
 
 PUBLIC void
-dri_throttle(struct dri_context *cPriv, __DRIdrawable *dPriv,
+dri_throttle(struct dri_context *cPriv, struct dri_drawable *dPriv,
              enum __DRI2throttleReason reason);
 
 PUBLIC int
@@ -297,7 +297,7 @@ PUBLIC int
 dri_query_compatible_render_only_device_fd(int kms_only_fd);
 
 PUBLIC int
-driSWRastQueryBufferAge(__DRIdrawable *pdp);
+driSWRastQueryBufferAge(struct dri_drawable *drawable);
 
 PUBLIC void
 dri2_set_in_fence_fd(__DRIimage *img, int fd);
@@ -311,7 +311,7 @@ dri2_query_compression_modifiers(struct dri_screen *_screen, uint32_t fourcc,
                                  uint64_t *modifiers, int *count);
 
 PUBLIC void
-dri_set_damage_region(__DRIdrawable *dPriv, unsigned int nrects, int *rects);
+dri_set_damage_region(struct dri_drawable *drawable, unsigned int nrects, int *rects);
 
 PUBLIC unsigned
 dri_fence_get_caps(struct dri_screen *screen);

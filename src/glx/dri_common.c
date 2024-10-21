@@ -770,7 +770,7 @@ Bool
 dri_bind_context(struct glx_context *context, GLXDrawable draw, GLXDrawable read)
 {
    __GLXDRIdrawable *pdraw, *pread;
-   __DRIdrawable *dri_draw = NULL, *dri_read = NULL;
+   struct dri_drawable *dri_draw = NULL, *dri_read = NULL;
 
    pdraw = driFetchDrawable(context, draw);
    pread = driFetchDrawable(context, read);

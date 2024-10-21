@@ -412,7 +412,7 @@ dri3_create_image_khr(_EGLDisplay *disp, _EGLContext *ctx, EGLenum target,
  * contents of its fake front buffer.
  */
 static void
-dri3_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+dri3_flush_front_buffer(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
    struct loader_dri3_drawable *draw = loaderPrivate;
    (void)driDrawable;
@@ -492,7 +492,7 @@ dri3_query_surface(_EGLDisplay *disp, _EGLSurface *surf, EGLint attribute,
    return _eglQuerySurface(disp, surf, attribute, value);
 }
 
-static __DRIdrawable *
+static struct dri_drawable *
 dri3_get_dri_drawable(_EGLSurface *surf)
 {
    struct dri3_egl_surface *dri3_surf = dri3_egl_surface(surf);

@@ -1895,7 +1895,7 @@ loader_dri3_get_pixmap_buffer(xcb_connection_t *conn, xcb_drawable_t pixmap, str
  * wrap that with a __DRIimage structure using createImageFromDmaBufs
  */
 static struct loader_dri3_buffer *
-dri3_get_pixmap_buffer(__DRIdrawable *driDrawable, unsigned int fourcc,
+dri3_get_pixmap_buffer(struct dri_drawable *driDrawable, unsigned int fourcc,
                        enum loader_dri3_buffer_type buffer_type,
                        struct loader_dri3_drawable *draw)
 {
@@ -1972,7 +1972,7 @@ no_buffer:
  * Find a front or back buffer, allocating new ones as necessary
  */
 static struct loader_dri3_buffer *
-dri3_get_buffer(__DRIdrawable *driDrawable,
+dri3_get_buffer(struct dri_drawable *driDrawable,
                 unsigned int fourcc,
                 enum loader_dri3_buffer_type buffer_type,
                 struct loader_dri3_drawable *draw)
@@ -2103,7 +2103,7 @@ dri3_get_buffer(__DRIdrawable *driDrawable,
  * when the application changes which buffers it needs
  */
 static void
-dri3_free_buffers(__DRIdrawable *driDrawable,
+dri3_free_buffers(struct dri_drawable *driDrawable,
                   enum loader_dri3_buffer_type buffer_type,
                   struct loader_dri3_drawable *draw)
 {
@@ -2137,7 +2137,7 @@ dri3_free_buffers(__DRIdrawable *driDrawable,
  * as needed.
  */
 int
-loader_dri3_get_buffers(__DRIdrawable *driDrawable,
+loader_dri3_get_buffers(struct dri_drawable *driDrawable,
                         unsigned int format,
                         uint32_t *stamp,
                         void *loaderPrivate,

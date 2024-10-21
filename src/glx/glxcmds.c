@@ -37,12 +37,12 @@
 #if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
 
 /**
- * Get the __DRIdrawable for the drawable associated with a GLXContext
+ * Get the struct dri_drawable for the drawable associated with a GLXContext
  *
  * \param dpy       The display associated with \c drawable.
- * \param drawable  GLXDrawable whose __DRIdrawable part is to be retrieved.
+ * \param drawable  GLXDrawable whose struct dri_drawable part is to be retrieved.
  * \param scrn_num  If non-NULL, the drawables screen is stored there
- * \returns  A pointer to the context's __DRIdrawable on success, or NULL if
+ * \returns  A pointer to the context's struct dri_drawable on success, or NULL if
  *           the drawable is not associated with a direct-rendering context.
  */
 _X_HIDDEN __GLXDRIdrawable *

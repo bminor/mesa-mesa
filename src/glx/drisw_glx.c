@@ -142,7 +142,7 @@ XDestroyDrawable(struct drisw_drawable * pdp, Display * dpy, XID drawable)
  */
 
 static void
-swrastGetDrawableInfo(__DRIdrawable * draw,
+swrastGetDrawableInfo(struct dri_drawable * draw,
                       int *x, int *y, int *w, int *h,
                       void *loaderPrivate)
 {
@@ -184,7 +184,7 @@ bytes_per_line(unsigned pitch_bits, unsigned mul)
 }
 
 static void
-swrastXPutImage(__DRIdrawable * draw, int op,
+swrastXPutImage(struct dri_drawable * draw, int op,
                 int srcx, int srcy, int x, int y,
                 int w, int h, int stride,
                 int shmid, char *data, void *loaderPrivate)
@@ -219,7 +219,7 @@ swrastXPutImage(__DRIdrawable * draw, int op,
 }
 
 static void
-swrastPutImageShm(__DRIdrawable * draw, int op,
+swrastPutImageShm(struct dri_drawable * draw, int op,
                   int x, int y, int w, int h, int stride,
                   int shmid, char *shmaddr, unsigned offset,
                   void *loaderPrivate)
@@ -235,7 +235,7 @@ swrastPutImageShm(__DRIdrawable * draw, int op,
 }
 
 static void
-swrastPutImageShm2(__DRIdrawable * draw, int op,
+swrastPutImageShm2(struct dri_drawable * draw, int op,
                    int x, int y,
                    int w, int h, int stride,
                    int shmid, char *shmaddr, unsigned offset,
@@ -252,7 +252,7 @@ swrastPutImageShm2(__DRIdrawable * draw, int op,
 }
 
 static void
-swrastPutImage2(__DRIdrawable * draw, int op,
+swrastPutImage2(struct dri_drawable * draw, int op,
                 int x, int y, int w, int h, int stride,
                 char *data, void *loaderPrivate)
 {
@@ -264,7 +264,7 @@ swrastPutImage2(__DRIdrawable * draw, int op,
 }
 
 static void
-swrastPutImage(__DRIdrawable * draw, int op,
+swrastPutImage(struct dri_drawable * draw, int op,
                int x, int y, int w, int h,
                char *data, void *loaderPrivate)
 {
@@ -276,7 +276,7 @@ swrastPutImage(__DRIdrawable * draw, int op,
 }
 
 static void
-swrastGetImage2(__DRIdrawable * read,
+swrastGetImage2(struct dri_drawable * read,
                 int x, int y, int w, int h, int stride,
                 char *data, void *loaderPrivate)
 {
@@ -305,7 +305,7 @@ swrastGetImage2(__DRIdrawable * read,
 }
 
 static void
-swrastGetImage(__DRIdrawable * read,
+swrastGetImage(struct dri_drawable * read,
                int x, int y, int w, int h,
                char *data, void *loaderPrivate)
 {
@@ -313,7 +313,7 @@ swrastGetImage(__DRIdrawable * read,
 }
 
 static GLboolean
-swrastGetImageShm2(__DRIdrawable * read,
+swrastGetImageShm2(struct dri_drawable * read,
                    int x, int y, int w, int h,
                    int shmid, void *loaderPrivate)
 {
@@ -343,7 +343,7 @@ swrastGetImageShm2(__DRIdrawable * read,
 }
 
 static void
-swrastGetImageShm(__DRIdrawable * read,
+swrastGetImageShm(struct dri_drawable * read,
                   int x, int y, int w, int h,
                   int shmid, void *loaderPrivate)
 {

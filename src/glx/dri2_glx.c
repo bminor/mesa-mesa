@@ -391,7 +391,7 @@ dri2_wait_gl(struct glx_context *gc)
  * contents of its fake front buffer.
  */
 static void
-dri2FlushFrontBuffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+dri2FlushFrontBuffer(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
    struct glx_display *priv;
    struct glx_context *gc;
@@ -540,7 +540,7 @@ dri2SwapBuffers(__GLXDRIdrawable *pdraw, int64_t target_msc, int64_t divisor,
 }
 
 static __DRIbuffer *
-dri2GetBuffers(__DRIdrawable * driDrawable,
+dri2GetBuffers(struct dri_drawable * driDrawable,
                int *width, int *height,
                unsigned int *attachments, int count,
                int *out_count, void *loaderPrivate)
@@ -563,7 +563,7 @@ dri2GetBuffers(__DRIdrawable * driDrawable,
 }
 
 static __DRIbuffer *
-dri2GetBuffersWithFormat(__DRIdrawable * driDrawable,
+dri2GetBuffersWithFormat(struct dri_drawable * driDrawable,
                          int *width, int *height,
                          unsigned int *attachments, int count,
                          int *out_count, void *loaderPrivate)

@@ -284,7 +284,7 @@ get_swrast_front_bo(struct dri2_egl_surface *dri2_surf)
 }
 
 static int
-dri2_drm_image_get_buffers(__DRIdrawable *driDrawable, unsigned int format,
+dri2_drm_image_get_buffers(struct dri_drawable *driDrawable, unsigned int format,
                            uint32_t *stamp, void *loaderPrivate,
                            uint32_t buffer_mask, struct __DRIimageList *buffers)
 {
@@ -302,7 +302,7 @@ dri2_drm_image_get_buffers(__DRIdrawable *driDrawable, unsigned int format,
 }
 
 static void
-dri2_drm_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+dri2_drm_flush_front_buffer(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
    (void)driDrawable;
    (void)loaderPrivate;
@@ -404,7 +404,7 @@ dri2_drm_authenticate(_EGLDisplay *disp, uint32_t id)
 }
 
 static void
-swrast_put_image2(__DRIdrawable *driDrawable, int op, int x, int y, int width,
+swrast_put_image2(struct dri_drawable *driDrawable, int op, int x, int y, int width,
                   int height, int stride, char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -447,7 +447,7 @@ swrast_put_image2(__DRIdrawable *driDrawable, int op, int x, int y, int width,
 }
 
 static void
-swrast_get_image(__DRIdrawable *driDrawable, int x, int y, int width,
+swrast_get_image(struct dri_drawable *driDrawable, int x, int y, int width,
                  int height, char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;

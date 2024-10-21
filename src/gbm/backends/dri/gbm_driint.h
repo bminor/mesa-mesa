@@ -67,14 +67,14 @@ struct gbm_dri_device {
    __DRIimage *(*lookup_image_validated)(void *image, void *data);
    void *lookup_user_data;
 
-   void (*flush_front_buffer)(__DRIdrawable * driDrawable, void *data);
-   int (*image_get_buffers)(__DRIdrawable *driDrawable,
+   void (*flush_front_buffer)(struct dri_drawable * driDrawable, void *data);
+   int (*image_get_buffers)(struct dri_drawable *driDrawable,
                             unsigned int format,
                             uint32_t *stamp,
                             void *loaderPrivate,
                             uint32_t buffer_mask,
                             struct __DRIimageList *buffers);
-   void (*swrast_put_image2)(__DRIdrawable *driDrawable,
+   void (*swrast_put_image2)(struct dri_drawable *driDrawable,
                              int            op,
                              int            x,
                              int            y,
@@ -83,7 +83,7 @@ struct gbm_dri_device {
                              int            stride,
                              char          *data,
                              void          *loaderPrivate);
-   void (*swrast_get_image)(__DRIdrawable *driDrawable,
+   void (*swrast_get_image)(struct dri_drawable *driDrawable,
                             int            x,
                             int            y,
                             int            width,

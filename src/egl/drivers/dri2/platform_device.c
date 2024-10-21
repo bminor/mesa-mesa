@@ -67,7 +67,7 @@ device_free_images(struct dri2_egl_surface *dri2_surf)
 }
 
 static int
-device_image_get_buffers(__DRIdrawable *driDrawable, unsigned int format,
+device_image_get_buffers(struct dri_drawable *driDrawable, unsigned int format,
                          uint32_t *stamp, void *loaderPrivate,
                          uint32_t buffer_mask, struct __DRIimageList *buffers)
 {
@@ -179,7 +179,7 @@ static const struct dri2_egl_display_vtbl dri2_device_display_vtbl = {
 };
 
 static void
-device_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+device_flush_front_buffer(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
 }
 

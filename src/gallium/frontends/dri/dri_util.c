@@ -662,8 +662,8 @@ driCopyContext(struct dri_context *dest, struct dri_context *src, unsigned long 
  * function.
  */
 int driBindContext(struct dri_context *ctx,
-                   __DRIdrawable *pdp,
-                   __DRIdrawable *prp)
+                   struct dri_drawable *draw,
+                   struct dri_drawable *read)
 {
    /*
     ** Assume error checking is done properly in glXMakeCurrent before
@@ -673,8 +673,7 @@ int driBindContext(struct dri_context *ctx,
     if (!ctx)
         return GL_FALSE;
 
-    return dri_make_current(ctx, dri_drawable(pdp),
-                            dri_drawable(prp));
+    return dri_make_current(ctx, draw, read);
 }
 
 /**
@@ -713,9 +712,9 @@ int driUnbindContext(struct dri_context *ctx)
 /*@}*/
 
 void
-driDestroyDrawable(__DRIdrawable *pdp)
+driDestroyDrawable(struct dri_drawable *drawable)
 {
-    dri_put_drawable(dri_drawable(pdp));
+    dri_put_drawable(drawable);
 }
 
 static int
@@ -850,29 +849,24 @@ driGetAPIMask(struct dri_screen *screen)
  * driver.
  */
 void
-driSwapBuffersWithDamage(__DRIdrawable *pdp, int nrects, const int *rects)
+driSwapBuffersWithDamage(struct dri_drawable *drawable, int nrects, const int *rects)
 {
-   struct dri_drawable *drawable = dri_drawable(pdp);
-
    assert(drawable->screen->swrast_loader);
 
    drawable->swap_buffers_with_damage(drawable, nrects, rects);
 }
 
 void
-driSwapBuffers(__DRIdrawable *pdp)
+driSwapBuffers(struct dri_drawable *drawable)
 {
-   struct dri_drawable *drawable = dri_drawable(pdp);
-
    assert(drawable->screen->swrast_loader);
 
    drawable->swap_buffers(drawable);
 }
 
 int
-driSWRastQueryBufferAge(__DRIdrawable *pdp)
+driSWRastQueryBufferAge(struct dri_drawable *drawable)
 {
-   struct dri_drawable *drawable = dri_drawable(pdp);
    return drawable->buffer_age;
 }
 

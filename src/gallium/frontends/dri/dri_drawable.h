@@ -115,20 +115,6 @@ struct dri_drawable
    void (*swap_buffers_with_damage)(struct dri_drawable *drawable, int nrects, const int *rects);
 };
 
-/* Typecast the opaque pointer to our own type. */
-static inline struct dri_drawable *
-dri_drawable(__DRIdrawable *drawable)
-{
-   return (struct dri_drawable *)drawable;
-}
-
-/* Typecast our own type to the opaque pointer. */
-static inline __DRIdrawable *
-opaque_dri_drawable(struct dri_drawable *drawable)
-{
-   return (__DRIdrawable *)drawable;
-}
-
 static inline void
 dri_get_drawable(struct dri_drawable *drawable)
 {
@@ -154,12 +140,12 @@ dri_pipe_blit(struct pipe_context *pipe,
 
 void
 dri_flush(struct dri_context *ctx,
-          __DRIdrawable *dPriv,
+          struct dri_drawable *drawable,
           unsigned flags,
           enum __DRI2throttleReason reason);
 
 void
-dri_flush_drawable(__DRIdrawable *dPriv);
+dri_flush_drawable(struct dri_drawable *dPriv);
 
 extern const __DRItexBufferExtension driTexBufferExtension;
 

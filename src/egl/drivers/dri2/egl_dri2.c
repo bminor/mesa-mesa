@@ -162,7 +162,7 @@ const __DRIuseInvalidateExtension use_invalidate = {
 };
 
 static void
-dri2_get_pbuffer_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w,
+dri2_get_pbuffer_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w,
                                int *h, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -180,7 +180,7 @@ dri2_get_bytes_per_pixel(struct dri2_egl_surface *dri2_surf)
 }
 
 static void
-dri2_put_image(__DRIdrawable *draw, int op, int x, int y, int w, int h,
+dri2_put_image(struct dri_drawable *draw, int op, int x, int y, int w, int h,
                char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -217,7 +217,7 @@ dri2_put_image(__DRIdrawable *draw, int op, int x, int y, int w, int h,
 }
 
 static void
-dri2_get_image(__DRIdrawable *read, int x, int y, int w, int h, char *data,
+dri2_get_image(struct dri_drawable *read, int x, int y, int w, int h, char *data,
                void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -1412,7 +1412,7 @@ dri2_make_current(_EGLDisplay *disp, _EGLSurface *dsurf, _EGLSurface *rsurf,
    _EGLContext *old_ctx;
    _EGLSurface *old_dsurf, *old_rsurf;
    _EGLSurface *tmp_dsurf, *tmp_rsurf;
-   __DRIdrawable *ddraw, *rdraw;
+   struct dri_drawable *ddraw, *rdraw;
    struct dri_context *cctx;
    EGLint egl_error = EGL_SUCCESS;
 
@@ -1541,7 +1541,7 @@ dri2_make_current(_EGLDisplay *disp, _EGLSurface *dsurf, _EGLSurface *rsurf,
    return EGL_TRUE;
 }
 
-__DRIdrawable *
+struct dri_drawable *
 dri2_surface_get_dri_drawable(_EGLSurface *surf)
 {
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
@@ -1615,7 +1615,7 @@ dri2_flush_drawable_for_swapbuffers_flags(
    enum __DRI2throttleReason throttle_reason)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(draw);
+   struct dri_drawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(draw);
 
    /* flush not available for swrast */
    if (dri2_dpy->swrast_not_kms)
@@ -1650,7 +1650,7 @@ static EGLBoolean
 dri2_swap_buffers(_EGLDisplay *disp, _EGLSurface *surf)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
+   struct dri_drawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
    _EGLContext *ctx = _eglGetCurrentContext();
    EGLBoolean ret;
 
@@ -1672,7 +1672,7 @@ dri2_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *surf,
                               const EGLint *rects, EGLint n_rects)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
+   struct dri_drawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
    _EGLContext *ctx = _eglGetCurrentContext();
    EGLBoolean ret;
 
@@ -1698,7 +1698,7 @@ dri2_swap_buffers_region(_EGLDisplay *disp, _EGLSurface *surf, EGLint numRects,
                          const EGLint *rects)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
-   __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
+   struct dri_drawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
    EGLBoolean ret;
 
    if (!dri2_dpy->vtbl->swap_buffers_region)
@@ -1719,7 +1719,7 @@ dri2_set_damage_region(_EGLDisplay *disp, _EGLSurface *surf, EGLint *rects,
                        EGLint n_rects)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display_lock(disp);
-   __DRIdrawable *drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
+   struct dri_drawable *drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
 
    if (!disp->Extensions.KHR_partial_update) {
       mtx_unlock(&dri2_dpy->lock);
@@ -1774,7 +1774,7 @@ dri2_wait_client(_EGLDisplay *disp, _EGLContext *ctx)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    _EGLSurface *surf = ctx->DrawSurface;
-   __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
+   struct dri_drawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
 
    /* FIXME: If EGL allows frontbuffer rendering for window surfaces,
     * we need to copy fake to real here.*/
@@ -1802,7 +1802,7 @@ dri2_bind_tex_image(_EGLDisplay *disp, _EGLSurface *surf, EGLint buffer)
    struct dri2_egl_context *dri2_ctx;
    _EGLContext *ctx;
    GLint format, target;
-   __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
+   struct dri_drawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
 
    ctx = _eglGetCurrentContext();
    dri2_ctx = dri2_egl_context(ctx);

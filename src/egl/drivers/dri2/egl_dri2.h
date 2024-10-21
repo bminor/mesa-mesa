@@ -172,7 +172,7 @@ struct dri2_egl_display_vtbl {
                               EGLint *numerator, EGLint *denominator);
 
    /* mandatory */
-   __DRIdrawable *(*get_dri_drawable)(_EGLSurface *surf);
+   struct dri_drawable *(*get_dri_drawable)(_EGLSurface *surf);
 
    /* optional */
    void (*close_screen_notify)(_EGLDisplay *disp);
@@ -320,7 +320,7 @@ struct dri2_egl_context {
 
 struct dri2_egl_surface {
    _EGLSurface base;
-   __DRIdrawable *dri_drawable;
+   struct dri_drawable *dri_drawable;
    __DRIbuffer buffers[5];
    bool have_fake_front;
 
@@ -470,7 +470,7 @@ dri2_create_screen(_EGLDisplay *disp);
 EGLBoolean
 dri2_setup_device(_EGLDisplay *disp, EGLBoolean software);
 
-__DRIdrawable *
+struct dri_drawable *
 dri2_surface_get_dri_drawable(_EGLSurface *surf);
 
 GLboolean

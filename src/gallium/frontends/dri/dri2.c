@@ -94,10 +94,8 @@ dri2_buffer(__DRIbuffer * driBufferPriv)
  *       EGL: wl_egl_window::resize_callback (called outside Mesa)
  */
 void
-dri_invalidate_drawable(__DRIdrawable *dPriv)
+dri_invalidate_drawable(struct dri_drawable *drawable)
 {
-   struct dri_drawable *drawable = dri_drawable(dPriv);
-
    drawable->lastStamp++;
    drawable->texture_mask = 0; /* mark all attachments as invalid */
 
@@ -199,13 +197,13 @@ dri2_drawable_get_buffers(struct dri_drawable *drawable,
 
    if (with_format) {
       num_attachments /= 2;
-      buffers = loader->getBuffersWithFormat(opaque_dri_drawable(drawable),
+      buffers = loader->getBuffersWithFormat(drawable,
             &drawable->w, &drawable->h,
             attachments, num_attachments,
             &num_buffers, drawable->loaderPrivate);
    }
    else {
-      buffers = loader->getBuffers(opaque_dri_drawable(drawable),
+      buffers = loader->getBuffers(drawable,
             &drawable->w, &drawable->h,
             attachments, num_attachments,
             &num_buffers, drawable->loaderPrivate);
@@ -270,7 +268,7 @@ dri_image_drawable_get_buffers(struct dri_drawable *drawable,
     *    st_manager_validate_framebuffers (part of st_validate_state)
     */
    return drawable->screen->image.loader->getBuffers(
-                                          opaque_dri_drawable(drawable),
+                                          drawable,
                                           color_format,
                                           (uint32_t *)&drawable->base.stamp,
                                           drawable->loaderPrivate, buffer_mask,
@@ -740,22 +738,19 @@ dri2_flush_frontbuffer(struct dri_context *ctx,
    }
 
    if (image) {
-      image->flushFrontBuffer(opaque_dri_drawable(drawable),
-                              drawable->loaderPrivate);
+      image->flushFrontBuffer(drawable, drawable->loaderPrivate);
       if (ctx->is_shared_buffer_bound) {
          if (fence)
             fence_fd = pipe->screen->fence_get_fd(pipe->screen, fence);
 
-         shared_buffer_loader->displaySharedBuffer(opaque_dri_drawable(drawable),
-                                                   fence_fd,
+         shared_buffer_loader->displaySharedBuffer(drawable, fence_fd,
                                                    drawable->loaderPrivate);
 
          pipe->screen->fence_reference(pipe->screen, &fence, NULL);
       }
    }
    else if (loader->flushFrontBuffer) {
-      loader->flushFrontBuffer(opaque_dri_drawable(drawable),
-                               drawable->loaderPrivate);
+      loader->flushFrontBuffer(drawable, drawable->loaderPrivate);
    }
 
    return true;
@@ -771,8 +766,7 @@ dri2_flush_swapbuffers(struct dri_context *ctx,
    const __DRIimageLoaderExtension *image = drawable->screen->image.loader;
 
    if (image && image->flushSwapBuffers) {
-      image->flushSwapBuffers(opaque_dri_drawable(drawable),
-                              drawable->loaderPrivate);
+      image->flushSwapBuffers(drawable, drawable->loaderPrivate);
    }
 }
 
@@ -1916,9 +1910,8 @@ dri_interop_flush_objects(struct dri_context *ctx,
  * \brief the DRI2bufferDamageExtension set_damage_region method
  */
 void
-dri_set_damage_region(__DRIdrawable *dPriv, unsigned int nrects, int *rects)
+dri_set_damage_region(struct dri_drawable *drawable, unsigned int nrects, int *rects)
 {
-   struct dri_drawable *drawable = dri_drawable(dPriv);
    struct pipe_box *boxes = NULL;
 
    if (nrects) {

@@ -111,7 +111,7 @@ swrastDestroyDrawable(struct dri2_egl_display *dri2_dpy,
 }
 
 static bool
-x11_get_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w, int *h,
+x11_get_drawable_info(struct dri_drawable *draw, int *x, int *y, int *w, int *h,
                       void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -144,7 +144,7 @@ x11_get_drawable_info(__DRIdrawable *draw, int *x, int *y, int *w, int *h,
 }
 
 static void
-swrastGetDrawableInfo(__DRIdrawable *draw, int *x, int *y, int *w, int *h,
+swrastGetDrawableInfo(struct dri_drawable *draw, int *x, int *y, int *w, int *h,
                       void *loaderPrivate)
 {
    *x = *y = *w = *h = 0;
@@ -152,7 +152,7 @@ swrastGetDrawableInfo(__DRIdrawable *draw, int *x, int *y, int *w, int *h,
 }
 
 static void
-swrastPutImage2(__DRIdrawable *draw, int op, int x, int y, int w, int h,
+swrastPutImage2(struct dri_drawable *draw, int op, int x, int y, int w, int h,
                 int stride, char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -217,7 +217,7 @@ swrastPutImage2(__DRIdrawable *draw, int op, int x, int y, int w, int h,
 }
 
 static void
-swrastPutImage(__DRIdrawable *draw, int op, int x, int y, int w, int h,
+swrastPutImage(struct dri_drawable *draw, int op, int x, int y, int w, int h,
                char *data, void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -226,7 +226,7 @@ swrastPutImage(__DRIdrawable *draw, int op, int x, int y, int w, int h,
 }
 
 static void
-swrastGetImage2(__DRIdrawable * read,
+swrastGetImage2(struct dri_drawable * read,
                 int x, int y, int w, int h, int stride,
                 char *data, void *loaderPrivate)
 {
@@ -266,7 +266,7 @@ swrastGetImage2(__DRIdrawable * read,
 }
 
 static void
-swrastGetImage(__DRIdrawable *read, int x, int y, int w, int h, char *data,
+swrastGetImage(struct dri_drawable *read, int x, int y, int w, int h, char *data,
                void *loaderPrivate)
 {
    struct dri2_egl_surface *dri2_surf = loaderPrivate;
@@ -275,7 +275,7 @@ swrastGetImage(__DRIdrawable *read, int x, int y, int w, int h, char *data,
 }
 
 static void
-swrastPutImageShm(__DRIdrawable * draw, int op,
+swrastPutImageShm(struct dri_drawable * draw, int op,
                   int x, int y, int w, int h, int stride,
                   int shmid, char *shmaddr, unsigned offset,
                   void *loaderPrivate)
@@ -326,7 +326,7 @@ swrastPutImageShm(__DRIdrawable * draw, int op,
 }
 
 static void
-swrastGetImageShm(__DRIdrawable * read,
+swrastGetImageShm(struct dri_drawable * read,
                   int x, int y, int w, int h,
                   int shmid, void *loaderPrivate)
 {
@@ -605,7 +605,7 @@ dri2_query_surface(_EGLDisplay *disp, _EGLSurface *surf, EGLint attribute,
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
    int x, y, w, h;
 
-   __DRIdrawable *drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
+   struct dri_drawable *drawable = dri2_dpy->vtbl->get_dri_drawable(surf);
 
    switch (attribute) {
    case EGL_WIDTH:
@@ -671,7 +671,7 @@ dri2_x11_process_buffers(struct dri2_egl_surface *dri2_surf,
 }
 
 static __DRIbuffer *
-dri2_x11_get_buffers(__DRIdrawable *driDrawable, int *width, int *height,
+dri2_x11_get_buffers(struct dri_drawable *driDrawable, int *width, int *height,
                      unsigned int *attachments, int count, int *out_count,
                      void *loaderPrivate)
 {
@@ -706,7 +706,7 @@ dri2_x11_get_buffers(__DRIdrawable *driDrawable, int *width, int *height,
 }
 
 static __DRIbuffer *
-dri2_x11_get_buffers_with_format(__DRIdrawable *driDrawable, int *width,
+dri2_x11_get_buffers_with_format(struct dri_drawable *driDrawable, int *width,
                                  int *height, unsigned int *attachments,
                                  int count, int *out_count, void *loaderPrivate)
 {
@@ -740,7 +740,7 @@ dri2_x11_get_buffers_with_format(__DRIdrawable *driDrawable, int *width,
 }
 
 static void
-dri2_x11_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+dri2_x11_flush_front_buffer(struct dri_drawable *driDrawable, void *loaderPrivate)
 {
    (void)driDrawable;
 

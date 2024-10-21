@@ -129,7 +129,7 @@ struct __GLXDRIdrawableRec
    unsigned long eventMask;
    int refcount;
 
-   __DRIdrawable *dri_drawable;
+   struct dri_drawable *dri_drawable;
 };
 
 /*
