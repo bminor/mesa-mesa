@@ -19,7 +19,7 @@ SPDX-License-Identifier: MIT
 </template>
 
 <template name="INSTR_LOAD_STORE">
-	{NAME}{COND}{SKPHP}{DENORM}{LOCAL}{TYPE}{LEFT_SHIFT}{PMODE}
+	{NAME}{SAT}{COND}{SKPHP}{DENORM}{LOCAL}{TYPE}{LEFT_SHIFT}{PMODE}
 </template>
 
 <enum name="#cond">
@@ -1480,6 +1480,11 @@ SPDX-License-Identifier: MIT
 
 <bitset name="img_load" extends="#instruction-load">
 	<pattern low="0" high="5">111001</pattern> <!-- OPC -->
+	<pattern pos="80">1</pattern> <!-- OPCODE_BIT6 -->
+</bitset>
+
+<bitset name="img_store" extends="#instruction-store">
+	<pattern low="0" high="5">111010</pattern> <!-- OPC -->
 	<pattern pos="80">1</pattern> <!-- OPCODE_BIT6 -->
 </bitset>
 
