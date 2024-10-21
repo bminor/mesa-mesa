@@ -28,7 +28,6 @@
 #ifndef MESA_INTERFACE_H
 #define MESA_INTERFACE_H
 
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -36,28 +35,7 @@ struct dri_screen;
 struct dri_context;
 struct dri_drawable;
 
-/**
- * \name DRI interface structures
- *
- * The following structures define the interface between the GLX client
- * side library and the DRI (direct rendering infrastructure).
- */
-/*@{*/
 typedef struct __DRIconfigRec		__DRIconfig;
-
-typedef struct __DRIcoreExtensionRec		__DRIcoreExtension;
-typedef struct __DRIextensionRec		__DRIextension;
-typedef struct __DRItexBufferExtensionRec	__DRItexBufferExtension;
-typedef struct __DRIbufferRec			__DRIbuffer;
-typedef struct __DRIdri2LoaderExtensionRec	__DRIdri2LoaderExtension;
-typedef struct __DRI2fenceExtensionRec          __DRI2fenceExtension;
-typedef struct __DRI2bufferDamageExtensionRec   __DRI2bufferDamageExtension;
-
-typedef struct __DRIimageLoaderExtensionRec     __DRIimageLoaderExtension;
-typedef struct __DRIimageDriverExtensionRec     __DRIimageDriverExtension;
-
-/*@}*/
-
 
 /**
  * Extension struct.  Drivers 'inherit' from this struct by embedding
@@ -78,10 +56,10 @@ typedef struct __DRIimageDriverExtensionRec     __DRIimageDriverExtension;
  * struct can be used at run-time to determine how to use the
  * extension.
  */
-struct __DRIextensionRec {
+typedef struct {
     const char *name;
     int version;
-};
+} __DRIextension;
 
 /**
  * The first set of extension are the screen extensions, returned by
@@ -98,7 +76,7 @@ struct __DRIextensionRec {
 #define __DRI_TEXTURE_FORMAT_RGBA        0x20DA
 
 #define __DRI_TEX_BUFFER "DRI_TexBuffer"
-struct __DRItexBufferExtensionRec {
+typedef struct {
     __DRIextension base;
 
     /**
@@ -114,7 +92,7 @@ struct __DRItexBufferExtensionRec {
 			  int target,
 			  int format,
 			  struct dri_drawable *pDraw);
-};
+} __DRItexBufferExtension;
 
 /**
  * Used by drivers that implement DRI2.  Version 3 is used by the X server.
@@ -160,7 +138,7 @@ typedef signed long
 #define __DRI_FENCE_CAP_NATIVE_FD 1
 /*@}*/
 
-struct __DRI2fenceExtensionRec {
+typedef struct {
    __DRIextension base;
 
    /**
@@ -239,7 +217,7 @@ struct __DRI2fenceExtensionRec {
     * \param fence   the fence
     */
    int (*get_fence_fd)(struct dri_screen *screen, void *fence);
-};
+} __DRI2fenceExtension;
 
 /**
  * Extension for limiting window system back buffer rendering to user-defined
@@ -247,7 +225,7 @@ struct __DRI2fenceExtensionRec {
  *
  * Not used by the X server.
  */
-struct __DRI2bufferDamageExtensionRec {
+typedef struct {
    __DRIextension base;
 
    /**
@@ -278,7 +256,7 @@ struct __DRI2bufferDamageExtensionRec {
     */
    void (*set_damage_region)(struct dri_drawable *drawable, unsigned int nrects,
                              int *rects);
-};
+} __DRI2bufferDamageExtension;
 
 /*@}*/
 
@@ -292,8 +270,6 @@ struct __DRI2bufferDamageExtensionRec {
  * constructor.
  */
 
-typedef struct __DRIswrastLoaderExtensionRec __DRIswrastLoaderExtension;
-
 #define __DRI_SWRAST_IMAGE_OP_DRAW	1
 #define __DRI_SWRAST_IMAGE_OP_SWAP	3
 
@@ -303,7 +279,7 @@ typedef struct __DRIswrastLoaderExtensionRec __DRIswrastLoaderExtension;
  * Version 1 is advertised by the X server.
  */
 #define __DRI_SWRAST_LOADER "DRI_SWRastLoader"
-struct __DRIswrastLoaderExtensionRec {
+typedef struct {
     __DRIextension base;
 
     /*
@@ -392,7 +368,7 @@ struct __DRIswrastLoaderExtensionRec {
     unsigned char (*getImageShm2)(struct dri_drawable *readable,
                                   int x, int y, int width, int height,
                                   int shmid, void *loaderPrivate);
-};
+} __DRIswrastLoaderExtension;
 
 /**
  * Invalidate loader extension.  The presence of this extension
@@ -410,10 +386,9 @@ struct __DRIswrastLoaderExtensionRec {
  */
 #define __DRI_USE_INVALIDATE "DRI_UseInvalidate"
 
-typedef struct __DRIuseInvalidateExtensionRec __DRIuseInvalidateExtension;
-struct __DRIuseInvalidateExtensionRec {
+typedef struct {
    __DRIextension base;
-};
+} __DRIuseInvalidateExtension;
 
 /**
  * Tokens for __DRIconfig attribs.  A number of attributes defined by
@@ -512,7 +487,7 @@ struct __DRIuseInvalidateExtensionRec {
  * Version >= 2 indicates that getConfigAttrib with __DRI_ATTRIB_SWAP_METHOD
  * returns a reliable value.  The X server requires v1 and uses v2.
  */
-struct __DRIcoreExtensionRec {
+typedef struct {
     __DRIextension base;
 
     /* Not used by the X server. */
@@ -571,7 +546,7 @@ struct __DRIcoreExtensionRec {
     int (*unbindContext)(struct dri_context *ctx);
 
     void (*swapBuffersWithDamage)(struct dri_drawable *drawable, int nrects, const int *rects);
-};
+} __DRIcoreExtension;
 
 /** Common DRI function definitions, shared among DRI2 and Image extensions
  */
@@ -625,13 +600,13 @@ typedef unsigned int
 #define __DRI_BUFFER_COUNT		9
 
 /* Used by the X server. */
-struct __DRIbufferRec {
+typedef struct {
     unsigned int attachment;
     unsigned int name;
     unsigned int pitch;
     unsigned int cpp;
     unsigned int flags;
-};
+} __DRIbuffer;
 
 /* The X server implements up to version 3 of the DRI2 loader. */
 #define __DRI_DRI2_LOADER "DRI_DRI2Loader"
@@ -644,7 +619,7 @@ enum dri_loader_cap {
    DRI_LOADER_CAP_FP16,
 };
 
-struct __DRIdri2LoaderExtensionRec {
+typedef struct {
     __DRIextension base;
 
     __DRIbuffer *(*getBuffers)(struct dri_drawable *driDrawable,
@@ -712,7 +687,7 @@ struct __DRIdri2LoaderExtensionRec {
      * \since 5
      */
     void (*destroyLoaderImageState)(void *loaderPrivate);
-};
+} __DRIdri2LoaderExtension;
 
 /**
  * This extension provides alternative screen, drawable and context
@@ -960,8 +935,7 @@ enum __DRIFixedRateCompression {
 #define __DRI_IMAGE_FORMAT_MODIFIER_ATTRIB_PLANE_COUNT   0x0001
 
 typedef struct __DRIimageRec          __DRIimage;
-typedef struct __DRIimageExtensionRec __DRIimageExtension;
-struct __DRIimageExtensionRec {
+typedef struct {
     __DRIextension base;
 
     void (*destroyImage)(__DRIimage *image);
@@ -1242,7 +1216,7 @@ struct __DRIimageExtensionRec {
    bool (*queryCompressionModifiers)(struct dri_screen *screen, uint32_t format,
                                      enum __DRIFixedRateCompression rate,
                                      int max, uint64_t *modifiers, int *count);
-};
+} __DRIimageExtension;
 
 
 /**
@@ -1256,8 +1230,7 @@ struct __DRIimageExtensionRec {
  */
 #define __DRI_IMAGE_LOOKUP "DRI_IMAGE_LOOKUP"
 
-typedef struct __DRIimageLookupExtensionRec __DRIimageLookupExtension;
-struct __DRIimageLookupExtensionRec {
+typedef struct {
     __DRIextension base;
 
     /**
@@ -1271,22 +1244,21 @@ struct __DRIimageLookupExtensionRec {
      * Lookup EGLImage after validateEGLImage(). No lock in this function.
      */
     __DRIimage *(*lookupEGLImageValidated)(void *image, void *loaderPrivate);
-};
+} __DRIimageLookupExtension;
 
 /**
  * This extension allows for common DRI2 options
  */
 #define __DRI2_CONFIG_QUERY "DRI_CONFIG_QUERY"
 
-typedef struct __DRI2configQueryExtensionRec __DRI2configQueryExtension;
-struct __DRI2configQueryExtensionRec {
+typedef struct {
    __DRIextension base;
 
    int (*configQueryb)(struct dri_screen *screen, const char *var, unsigned char *val);
    int (*configQueryi)(struct dri_screen *screen, const char *var, int *val);
    int (*configQueryf)(struct dri_screen *screen, const char *var, float *val);
    int (*configQuerys)(struct dri_screen *screen, const char *var, char **val);
-};
+} __DRI2configQueryExtension;
 
 /**
  * DRI config options extension.
@@ -1303,7 +1275,7 @@ struct __DRI2configQueryExtensionRec {
  */
 #define __DRI_CONFIG_OPTIONS "DRI_ConfigOptions"
 
-typedef struct __DRIconfigOptionsExtensionRec {
+typedef struct {
    __DRIextension base;
    const char *xml; /**< deprecated since v2, use getXml instead */
 
@@ -1402,7 +1374,7 @@ struct __DRIimageList {
 
 #define __DRI_IMAGE_LOADER "DRI_IMAGE_LOADER"
 
-struct __DRIimageLoaderExtensionRec {
+typedef struct {
     __DRIextension base;
 
    /**
@@ -1466,7 +1438,7 @@ struct __DRIimageLoaderExtensionRec {
      * \since 4
      */
     void (*destroyLoaderImageState)(void *loaderPrivate);
-};
+} __DRIimageLoaderExtension;
 
 /**
  * Main DRI3 interface extension.
@@ -1474,7 +1446,7 @@ struct __DRIimageLoaderExtensionRec {
  * Not used by the X server.
  */
 
-struct __DRIimageDriverExtensionRec {
+typedef struct {
    __DRIextension               base;
 
    /* Common DRI functions, shared with DRI2 */
@@ -1483,7 +1455,7 @@ struct __DRIimageDriverExtensionRec {
    __DRIcreateContextAttribsFunc        createContextAttribs;
    __DRIgetAPIMaskFunc                  getAPIMask;
    __DRIcreateNewScreen3Func            createNewScreen3;
-};
+} __DRIimageDriverExtension;
 
 /**
  * Background callable loader extension.
@@ -1493,8 +1465,7 @@ struct __DRIimageDriverExtensionRec {
  */
 #define __DRI_BACKGROUND_CALLABLE "DRI_BackgroundCallable"
 
-typedef struct __DRIbackgroundCallableExtensionRec __DRIbackgroundCallableExtension;
-struct __DRIbackgroundCallableExtensionRec {
+typedef struct {
    __DRIextension base;
 
    /**
@@ -1512,7 +1483,7 @@ struct __DRIbackgroundCallableExtensionRec {
     *
     * It is permissible for the driver to call this function from a
     * non-background thread (i.e. a thread that has already been bound to a
-    * context using __DRIcoreExtensionRec::bindContext()); when this happens,
+    * context using __DRIcoreExtension::bindContext()); when this happens,
     * the \c loaderPrivate pointer must be equal to the pointer that was
     * passed to the driver when the currently bound context was created.
     *
@@ -1534,7 +1505,7 @@ struct __DRIbackgroundCallableExtensionRec {
     * which context any callbacks are associated with.
     */
    unsigned char (*isThreadSafe)(void *loaderPrivate);
-};
+} __DRIbackgroundCallableExtension;
 
 /**
  * The loader portion of EGL_KHR_mutable_render_buffer.
@@ -1548,8 +1519,7 @@ struct __DRIbackgroundCallableExtensionRec {
  */
 #define __DRI_MUTABLE_RENDER_BUFFER_LOADER "DRI_MutableRenderBufferLoader"
 
-typedef struct __DRImutableRenderBufferLoaderExtensionRec __DRImutableRenderBufferLoaderExtension;
-struct __DRImutableRenderBufferLoaderExtensionRec {
+typedef struct {
    __DRIextension base;
 
    /**
@@ -1571,22 +1541,18 @@ struct __DRImutableRenderBufferLoaderExtensionRec {
     */
    void (*displaySharedBuffer)(struct dri_drawable *drawable, int fence_fd,
                                void *loaderPrivate);
-};
+} __DRImutableRenderBufferLoaderExtension;
 
 /* Mesa-internal interface between the GLX, GBM, and EGL DRI driver loaders, and
  * the gallium dri_util.c code.
  */
 
-typedef struct __DRImesaCoreExtensionRec __DRImesaCoreExtension;
-
 #define __DRI_MESA "DRI_Mesa"
-
-struct dri_screen;
 
 /**  Core struct that appears alongside __DRI_CORE for Mesa-internal usage.
  * Implemented in the top-level dri/drisw/kopper extension list.
  */
-struct __DRImesaCoreExtensionRec {
+typedef struct {
    __DRIextension base;
 
    /* Version string for verifying that the DRI driver is from the same build as
@@ -1611,6 +1577,6 @@ struct __DRImesaCoreExtensionRec {
     */
    /* version 2 */
    __DRIcreateNewScreen3Func createNewScreen3;
-};
+} __DRImesaCoreExtension;
 
 #endif /* MESA_INTERFACE_H */
