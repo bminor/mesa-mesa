@@ -48,13 +48,13 @@ typedef struct __GLXDRIconfigPrivateRec __GLXDRIconfigPrivate;
 struct __GLXDRIconfigPrivateRec
 {
    struct glx_config base;
-   const __DRIconfig *driConfig;
+   const struct dri_config *driConfig;
 };
 
 extern struct glx_config *driConvertConfigs(struct glx_config * modes,
-                                           const __DRIconfig ** configs);
+                                           const struct dri_config ** configs);
 
-extern void driDestroyConfigs(const __DRIconfig **configs);
+extern void driDestroyConfigs(const struct dri_config **configs);
 
 extern __GLXDRIdrawable *
 driFetchDrawable(struct glx_context *gc, GLXDrawable glxDrawable);

@@ -102,7 +102,7 @@ struct dri_screen *
 driCreateNewScreen3(int scrn, int fd,
                     const __DRIextension **loader_extensions,
                     enum dri_screen_type type,
-                    const __DRIconfig ***driver_configs, bool driver_name_is_inferred,
+                    const struct dri_config ***driver_configs, bool driver_name_is_inferred,
                     bool has_multibuffer, void *data)
 {
     struct dri_screen *screen;
@@ -222,7 +222,7 @@ void driDestroyScreen(struct dri_screen *psp)
  * indicated by the index.
  */
 static int
-driGetConfigAttribIndex(const __DRIconfig *config,
+driGetConfigAttribIndex(const struct dri_config *config,
                         unsigned int index, unsigned int *value)
 {
     switch (index + 1) {
@@ -343,7 +343,7 @@ driGetConfigAttribIndex(const __DRIconfig *config,
  * \return 1 for success, 0 for failure
  */
 int
-driGetConfigAttrib(const __DRIconfig *config,
+driGetConfigAttrib(const struct dri_config *config,
                    unsigned int attrib, unsigned int *value)
 {
     return driGetConfigAttribIndex(config, attrib - 1, value);
@@ -351,13 +351,13 @@ driGetConfigAttrib(const __DRIconfig *config,
 
 /**
  * Get a configuration attribute name and value, given an index.
- * \param index  which field of the __DRIconfig to query
+ * \param index  which field of the struct dri_config to query
  * \param attrib  returns the attribute name (one of the _DRI_ATTRIB_x tokens)
  * \param value  returns the attribute's value
  * \return 1 for success, 0 for failure
  */
 int
-driIndexConfigAttrib(const __DRIconfig *config, int index,
+driIndexConfigAttrib(const struct dri_config *config, int index,
                      unsigned int *attrib, unsigned int *value)
 {
     if (driGetConfigAttribIndex(config, index, value)) {
@@ -424,7 +424,7 @@ validate_context_version(struct dri_screen *screen,
 
 struct dri_context *
 driCreateContextAttribs(struct dri_screen *screen, int api,
-                        const __DRIconfig *config,
+                        const struct dri_config *config,
                         struct dri_context *shared,
                         unsigned num_attribs,
                         const uint32_t *attribs,
@@ -608,7 +608,7 @@ driCreateContextAttribs(struct dri_screen *screen, int api,
 
 static struct dri_context *
 driCreateNewContextForAPI(struct dri_screen *screen, int api,
-                          const __DRIconfig *config,
+                          const struct dri_config *config,
                           struct dri_context *shared, void *data)
 {
     unsigned error;
@@ -618,7 +618,7 @@ driCreateNewContextForAPI(struct dri_screen *screen, int api,
 }
 
 struct dri_context *
-driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config,
+driCreateNewContext(struct dri_screen *screen, const struct dri_config *config,
                     struct dri_context *shared, void *data)
 {
     return driCreateNewContextForAPI(screen, __DRI_API_OPENGL,

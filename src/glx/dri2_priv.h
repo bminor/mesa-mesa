@@ -42,7 +42,7 @@ extern "C" {
 struct dri2_screen {
    struct glx_screen base;
 
-   const __DRIconfig **driver_configs;
+   const struct dri_config **driver_configs;
 
    int fd;
 

@@ -183,7 +183,7 @@ dri2_wl_visual_idx_from_pipe_format(enum pipe_format pipe_format)
 }
 
 static int
-dri2_wl_visual_idx_from_config(const __DRIconfig *config)
+dri2_wl_visual_idx_from_config(const struct dri_config *config)
 {
    struct gl_config *gl_config = (struct gl_config *) config;
 
@@ -664,7 +664,7 @@ dri2_wl_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
    struct dri2_egl_surface *dri2_surf;
    struct zwp_linux_dmabuf_v1 *dmabuf_wrapper;
    int visual_idx;
-   const __DRIconfig *config;
+   const struct dri_config *config;
 
    if (!window) {
       _eglError(EGL_BAD_NATIVE_WINDOW, "dri2_create_surface");

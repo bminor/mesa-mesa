@@ -53,7 +53,7 @@ struct mesa_glinterop_flush_out;
 
 #define __DRI_BACKEND_VTABLE "DRI_DriverVtable"
 
-struct __DRIconfigRec {
+struct dri_config {
     struct gl_config modes;
 };
 
@@ -110,11 +110,11 @@ PUBLIC struct dri_screen *
 driCreateNewScreen3(int scrn, int fd,
                     const __DRIextension **loader_extensions,
                     enum dri_screen_type type,
-                    const __DRIconfig ***driver_configs, bool driver_name_is_inferred,
+                    const struct dri_config ***driver_configs, bool driver_name_is_inferred,
                     bool has_multibuffer, void *data);
 PUBLIC struct dri_context *
 driCreateContextAttribs(struct dri_screen *psp, int api,
-                        const __DRIconfig *config,
+                        const struct dri_config *config,
                         struct dri_context *shared,
                         unsigned num_attribs,
                         const uint32_t *attribs,
@@ -126,14 +126,14 @@ driImageFormatToSizedInternalGLFormat(uint32_t image_format);
 PUBLIC unsigned int
 driGetAPIMask(struct dri_screen *screen);
 PUBLIC struct dri_drawable *
-dri_create_drawable(struct dri_screen *psp, const __DRIconfig *config,
+dri_create_drawable(struct dri_screen *psp, const struct dri_config *config,
                     bool isPixmap, void *loaderPrivate);
 extern const __DRIimageDriverExtension driImageDriverExtension;
 PUBLIC void driDestroyScreen(struct dri_screen *psp);
 PUBLIC int
-driGetConfigAttrib(const __DRIconfig *config, unsigned int attrib, unsigned int *value);
+driGetConfigAttrib(const struct dri_config *config, unsigned int attrib, unsigned int *value);
 PUBLIC int
-driIndexConfigAttrib(const __DRIconfig *config, int index, unsigned int *attrib, unsigned int *value);
+driIndexConfigAttrib(const struct dri_config *config, int index, unsigned int *attrib, unsigned int *value);
 PUBLIC void
 driDestroyDrawable(struct dri_drawable *drawable);
 PUBLIC void
@@ -141,7 +141,7 @@ driSwapBuffers(struct dri_drawable *drawable);
 PUBLIC void
 driSwapBuffersWithDamage(struct dri_drawable *drawable, int nrects, const int *rects);
 PUBLIC struct dri_context *
-driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config, struct dri_context *shared, void *data);
+driCreateNewContext(struct dri_screen *screen, const struct dri_config *config, struct dri_context *shared, void *data);
 PUBLIC int
 driCopyContext(struct dri_context *dest, struct dri_context *src, unsigned long mask);
 PUBLIC void
@@ -156,7 +156,7 @@ PUBLIC int64_t
 kopperSwapBuffersWithDamage(struct dri_drawable *drawable, uint32_t flush_flags, int nrects, const int *rects);
 PUBLIC struct dri_drawable *
 kopperCreateNewDrawable(struct dri_screen *psp,
-                        const __DRIconfig *config,
+                        const struct dri_config *config,
                         void *data,
                         __DRIkopperDrawableInfo *info);
 PUBLIC void
@@ -303,7 +303,7 @@ PUBLIC void
 dri2_set_in_fence_fd(__DRIimage *img, int fd);
 
 PUBLIC bool
-dri2_query_compression_rates(struct dri_screen *_screen, const __DRIconfig *config, int max,
+dri2_query_compression_rates(struct dri_screen *_screen, const struct dri_config *config, int max,
                              enum __DRIFixedRateCompression *rates, int *count);
 PUBLIC bool
 dri2_query_compression_modifiers(struct dri_screen *_screen, uint32_t fourcc,

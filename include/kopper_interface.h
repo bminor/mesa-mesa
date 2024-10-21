@@ -64,7 +64,7 @@ struct __DRIkopperExtensionRec {
      * a pixmap is undefined.
      */
     struct dri_drawable *(*createNewDrawable)(struct dri_screen *screen,
-                                        const __DRIconfig *config,
+                                        const struct dri_config *config,
                                         void *loaderPrivate,
                                         __DRIkopperDrawableInfo *info);
     /* flags is a set of __DRI2_FLUSH_* flags */

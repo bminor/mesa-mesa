@@ -241,7 +241,7 @@ struct dri2_egl_display {
     */
    struct dri_screen *dri_screen_display_gpu;
    bool own_dri_screen;
-   const __DRIconfig **driver_configs;
+   const struct dri_config **driver_configs;
    /* fd of the GPU used for rendering. */
    int fd_render_gpu;
    /* fd of the GPU used for display. If the same GPU is used for display
@@ -409,7 +409,7 @@ struct dri2_egl_surface {
 
 struct dri2_egl_config {
    _EGLConfig base;
-   const __DRIconfig *dri_config[2][2];
+   const struct dri_config *dri_config[2][2];
 };
 
 struct dri2_egl_image {
@@ -480,15 +480,15 @@ __DRIimage *
 dri2_lookup_egl_image_validated(void *image, void *data);
 
 void
-dri2_get_shifts_and_sizes(const __DRIconfig *config, int *shifts,
+dri2_get_shifts_and_sizes(const struct dri_config *config, int *shifts,
                           unsigned int *sizes);
 
 enum pipe_format
 dri2_image_format_for_pbuffer_config(struct dri2_egl_display *dri2_dpy,
-                                     const __DRIconfig *config);
+                                     const struct dri_config *config);
 
 struct dri2_egl_config *
-dri2_add_config(_EGLDisplay *disp, const __DRIconfig *dri_config,
+dri2_add_config(_EGLDisplay *disp, const struct dri_config *dri_config,
                 EGLint surface_type, const EGLint *attr_list);
 
 void
@@ -599,7 +599,7 @@ dri2_flush_drawable_for_swapbuffers_flags(
 void
 dri2_flush_drawable_for_swapbuffers(_EGLDisplay *disp, _EGLSurface *draw);
 
-const __DRIconfig *
+const struct dri_config *
 dri2_get_dri_config(struct dri2_egl_config *conf, EGLint surface_type,
                     EGLenum colorspace);
 #include "dri_util.h"
@@ -634,7 +634,7 @@ dri2_fini_surface(_EGLSurface *surf);
 
 EGLBoolean
 dri2_create_drawable(struct dri2_egl_display *dri2_dpy,
-                     const __DRIconfig *config,
+                     const struct dri_config *config,
                      struct dri2_egl_surface *dri2_surf, void *loaderPrivate);
 
 static inline uint64_t

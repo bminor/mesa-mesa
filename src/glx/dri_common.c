@@ -92,7 +92,7 @@ scalarEqual(struct glx_config *mode, unsigned int attrib, unsigned int value)
 }
 
 static int
-driConfigEqual(struct glx_config *config, const __DRIconfig *driConfig)
+driConfigEqual(struct glx_config *config, const struct dri_config *driConfig)
 {
    unsigned int attrib, value, glxValue;
    int i;
@@ -186,7 +186,7 @@ driConfigEqual(struct glx_config *config, const __DRIconfig *driConfig)
 }
 
 static struct glx_config *
-createDriMode(struct glx_config *config, const __DRIconfig **driConfigs)
+createDriMode(struct glx_config *config, const struct dri_config **driConfigs)
 {
    __GLXDRIconfigPrivate *driConfig;
    int i;
@@ -210,7 +210,7 @@ createDriMode(struct glx_config *config, const __DRIconfig **driConfigs)
 }
 
 _X_HIDDEN struct glx_config *
-driConvertConfigs(struct glx_config *configs, const __DRIconfig **driConfigs)
+driConvertConfigs(struct glx_config *configs, const struct dri_config **driConfigs)
 {
    struct glx_config head, *tail, *m;
 
@@ -231,12 +231,12 @@ driConvertConfigs(struct glx_config *configs, const __DRIconfig **driConfigs)
 }
 
 _X_HIDDEN void
-driDestroyConfigs(const __DRIconfig **configs)
+driDestroyConfigs(const struct dri_config **configs)
 {
    int i;
 
    for (i = 0; configs[i]; i++)
-      free((__DRIconfig *) configs[i]);
+      free((struct dri_config *) configs[i]);
    free(configs);
 }
 
@@ -970,7 +970,7 @@ dri_bind_tex_image(__GLXDRIdrawable *base, int buffer, const int *attrib_list)
 bool
 dri_screen_init(struct glx_screen *psc, struct glx_display *priv, int screen, int fd, const __DRIextension **loader_extensions, bool driver_name_is_inferred)
 {
-   const __DRIconfig **driver_configs;
+   const struct dri_config **driver_configs;
    struct glx_config *configs = NULL, *visuals = NULL;
 
    if (!glx_screen_init(psc, screen, priv))

@@ -277,7 +277,7 @@ static const EGLint dri2_to_egl_attribute_map[__DRI_ATTRIB_MAX] = {
    [__DRI_ATTRIB_YINVERTED] = EGL_Y_INVERTED_NOK,
 };
 
-const __DRIconfig *
+const struct dri_config *
 dri2_get_dri_config(struct dri2_egl_config *conf, EGLint surface_type,
                     EGLenum colorspace)
 {
@@ -307,7 +307,7 @@ dri2_match_config(const _EGLConfig *conf, const _EGLConfig *criteria)
 }
 
 void
-dri2_get_shifts_and_sizes(const __DRIconfig *config, int *shifts,
+dri2_get_shifts_and_sizes(const struct dri_config *config, int *shifts,
                           unsigned int *sizes)
 {
    driGetConfigAttrib(config, __DRI_ATTRIB_RED_SHIFT,
@@ -326,14 +326,14 @@ dri2_get_shifts_and_sizes(const __DRIconfig *config, int *shifts,
 
 enum pipe_format
 dri2_image_format_for_pbuffer_config(struct dri2_egl_display *dri2_dpy,
-                                     const __DRIconfig *config)
+                                     const struct dri_config *config)
 {
    struct gl_config *gl_config = (struct gl_config *) config;
    return gl_config->color_format;
 }
 
 struct dri2_egl_config *
-dri2_add_config(_EGLDisplay *disp, const __DRIconfig *dri_config,
+dri2_add_config(_EGLDisplay *disp, const struct dri_config *dri_config,
                 EGLint surface_type, const EGLint *attr_list)
 {
    struct dri2_egl_config *conf;
@@ -1026,7 +1026,7 @@ dri2_display_destroy(_EGLDisplay *disp)
     */
    if (disp->Platform != _EGL_PLATFORM_DRM && dri2_dpy->driver_configs) {
       for (unsigned i = 0; dri2_dpy->driver_configs[i]; i++)
-         free((__DRIconfig *)dri2_dpy->driver_configs[i]);
+         free((struct dri_config *)dri2_dpy->driver_configs[i]);
       free(dri2_dpy->driver_configs);
    }
    free(dri2_dpy);
@@ -1213,7 +1213,7 @@ dri2_create_context(_EGLDisplay *disp, _EGLConfig *conf,
    struct dri2_egl_context *dri2_ctx_shared = dri2_egl_context(share_list);
    struct dri_context *shared = dri2_ctx_shared ? dri2_ctx_shared->dri_context : NULL;
    struct dri2_egl_config *dri2_config = dri2_egl_config(conf);
-   const __DRIconfig *dri_config;
+   const struct dri_config *dri_config;
    int api;
    unsigned error;
    unsigned num_attribs = NUM_ATTRIBS;
@@ -1386,7 +1386,7 @@ dri2_surf_update_fence_fd(_EGLContext *ctx, _EGLDisplay *disp,
 
 EGLBoolean
 dri2_create_drawable(struct dri2_egl_display *dri2_dpy,
-                     const __DRIconfig *config,
+                     const struct dri_config *config,
                      struct dri2_egl_surface *dri2_surf, void *loaderPrivate)
 {
    bool is_pixmap = dri2_surf->base.Type == EGL_PBUFFER_BIT ||
@@ -3342,7 +3342,7 @@ dri2_query_supported_compression_rates(_EGLDisplay *disp, _EGLConfig *config,
    enum __DRIFixedRateCompression dri_rates[rate_size];
 
    if (dri2_dpy->has_compression_modifiers) {
-      const __DRIconfig *dri_conf =
+      const struct dri_config *dri_conf =
          dri2_get_dri_config(conf, EGL_WINDOW_BIT, EGL_GL_COLORSPACE_LINEAR);
       if (!dri2_query_compression_rates(
              dri2_dpy->dri_screen_render_gpu, dri_conf, rate_size, dri_rates,

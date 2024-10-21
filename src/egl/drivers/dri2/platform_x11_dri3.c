@@ -158,7 +158,7 @@ dri3_create_surface(_EGLDisplay *disp, EGLint type, _EGLConfig *conf,
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_config *dri2_conf = dri2_egl_config(conf);
    struct dri3_egl_surface *dri3_surf;
-   const __DRIconfig *dri_config;
+   const struct dri_config *dri_config;
    xcb_drawable_t drawable;
 
    dri3_surf = calloc(1, sizeof *dri3_surf);

@@ -204,7 +204,7 @@ loader_dri3_drawable_init(xcb_connection_t *conn,
                           struct dri_screen *dri_screen_display_gpu,
                           bool is_multiplanes_available,
                           bool prefer_back_buffer_reuse,
-                          const __DRIconfig *dri_config,
+                          const struct dri_config *dri_config,
                           const struct loader_dri3_vtable *vtable,
                           struct loader_dri3_drawable*);
 

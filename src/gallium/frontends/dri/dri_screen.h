@@ -185,7 +185,7 @@ dri_fill_st_visual(struct st_visual *stvis,
 void
 dri_init_options(struct dri_screen *screen);
 
-const __DRIconfig **
+const struct dri_config **
 dri_init_screen(struct dri_screen *screen,
                 struct pipe_screen *pscreen,
                 bool has_multibuffer);

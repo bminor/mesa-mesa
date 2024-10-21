@@ -111,7 +111,7 @@ dri2_surfaceless_create_surface(_EGLDisplay *disp, EGLint type,
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_config *dri2_conf = dri2_egl_config(conf);
    struct dri2_egl_surface *dri2_surf;
-   const __DRIconfig *config;
+   const struct dri_config *config;
 
    /* Make sure to calloc so all pointers
     * are originally NULL.

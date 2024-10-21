@@ -98,7 +98,7 @@ has_free_buffers(struct gbm_surface *_surf)
 
 static bool
 dri2_drm_config_is_compatible(struct dri2_egl_display *dri2_dpy,
-                              const __DRIconfig *config,
+                              const struct dri_config *config,
                               struct gbm_surface *surface)
 {
    const struct gl_config *gl_config = (struct gl_config *) config;
@@ -141,7 +141,7 @@ dri2_drm_create_window_surface(_EGLDisplay *disp, _EGLConfig *conf,
    struct dri2_egl_surface *dri2_surf;
    struct gbm_surface *surface = native_surface;
    struct gbm_dri_surface *surf;
-   const __DRIconfig *config;
+   const struct dri_config *config;
 
    dri2_surf = calloc(1, sizeof *dri2_surf);
    if (!dri2_surf) {
@@ -498,7 +498,7 @@ drm_add_configs_for_visuals(_EGLDisplay *disp)
    memset(format_count, 0, num_visuals * sizeof(unsigned int));
 
    for (unsigned i = 0; dri2_dpy->driver_configs[i]; i++) {
-      const __DRIconfig *config = dri2_dpy->driver_configs[i];
+      const struct dri_config *config = dri2_dpy->driver_configs[i];
       struct gl_config *gl_config = (struct gl_config *) config;
 
       for (unsigned j = 0; j < num_visuals; j++) {

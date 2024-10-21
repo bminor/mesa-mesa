@@ -34,8 +34,7 @@
 struct dri_screen;
 struct dri_context;
 struct dri_drawable;
-
-typedef struct __DRIconfigRec		__DRIconfig;
+struct dri_config;
 
 /**
  * Extension struct.  Drivers 'inherit' from this struct by embedding
@@ -391,7 +390,7 @@ typedef struct {
 } __DRIuseInvalidateExtension;
 
 /**
- * Tokens for __DRIconfig attribs.  A number of attributes defined by
+ * Tokens for struct dri_config attribs.  A number of attributes defined by
  * GLX or EGL standards are not in the table, as they must be provided
  * by the loader.  For example, FBConfig ID or visual ID, drawable type.
  */
@@ -494,7 +493,7 @@ typedef struct {
     struct dri_screen *(*createNewScreen)(int screen, int fd,
 				    unsigned int sarea_handle,
 				    const __DRIextension **extensions,
-				    const __DRIconfig ***driverConfigs,
+				    const struct dri_config ***driverConfigs,
 				    void *loaderPrivate);
 
     void (*destroyScreen)(struct dri_screen *screen);
@@ -502,17 +501,17 @@ typedef struct {
     const __DRIextension **(*getExtensions)(struct dri_screen *screen);
 
     /* Not used by the X server. */
-    int (*getConfigAttrib)(const __DRIconfig *config,
+    int (*getConfigAttrib)(const struct dri_config *config,
 			   unsigned int attrib,
 			   unsigned int *value);
 
     /* Not used by the X server. */
-    int (*indexConfigAttrib)(const __DRIconfig *config, int index,
+    int (*indexConfigAttrib)(const struct dri_config *config, int index,
 			     unsigned int *attrib, unsigned int *value);
 
     /* Not used by the X server. */
     struct dri_drawable *(*createNewDrawable)(struct dri_screen *screen,
-					const __DRIconfig *config,
+					const struct dri_config *config,
 					unsigned int drawable_id,
 					unsigned int head,
 					void *loaderPrivate);
@@ -525,7 +524,7 @@ typedef struct {
 
     /* Used by the X server in swrast mode. */
     struct dri_context *(*createNewContext)(struct dri_screen *screen,
-				      const __DRIconfig *config,
+				      const struct dri_config *config,
 				      struct dri_context *shared,
 				      void *loaderPrivate);
 
@@ -555,25 +554,25 @@ typedef struct dri_screen *
 (*__DRIcreateNewScreen2Func)(int screen, int fd,
                              const __DRIextension **extensions,
                              const __DRIextension **driver_extensions,
-                             const __DRIconfig ***driver_configs,
+                             const struct dri_config ***driver_configs,
                              void *loaderPrivate);
 typedef struct dri_screen *
 (*__DRIcreateNewScreen3Func)(int screen, int fd,
                              const __DRIextension **extensions,
                              const __DRIextension **driver_extensions,
-                             const __DRIconfig ***driver_configs,
+                             const struct dri_config ***driver_configs,
                              bool implicit,
                              void *loaderPrivate);
 
 typedef struct dri_drawable *
 (*__DRIcreateNewDrawableFunc)(struct dri_screen *screen,
-                              const __DRIconfig *config,
+                              const struct dri_config *config,
                               void *loaderPrivate);
 
 typedef struct dri_context *
 (*__DRIcreateContextAttribsFunc)(struct dri_screen *screen,
                                  int api,
-                                 const __DRIconfig *config,
+                                 const struct dri_config *config,
                                  struct dri_context *shared,
                                  unsigned num_attribs,
                                  const uint32_t *attribs,
@@ -1190,7 +1189,7 @@ typedef struct {
     *
     * \since 22
     */
-   bool (*queryCompressionRates)(struct dri_screen *screen, const __DRIconfig *config,
+   bool (*queryCompressionRates)(struct dri_screen *screen, const struct dri_config *config,
                                  int max, enum __DRIFixedRateCompression *rates,
                                  int *count);
 
@@ -1565,7 +1564,7 @@ typedef struct {
    __DRIcreateContextAttribsFunc createContext;
 
    /* driver function for finishing initialization inside createNewScreen(). */
-   const __DRIconfig **(*initScreen)(struct dri_screen *screen, bool driver_name_is_inferred);
+   const struct dri_config **(*initScreen)(struct dri_screen *screen, bool driver_name_is_inferred);
 
    int (*queryCompatibleRenderOnlyDeviceFd)(int kms_only_fd);
 

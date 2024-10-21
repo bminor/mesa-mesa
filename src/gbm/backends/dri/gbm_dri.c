@@ -1149,7 +1149,7 @@ dri_destroy(struct gbm_device *gbm)
 
    driDestroyScreen(dri->screen);
    for (i = 0; dri->driver_configs[i]; i++)
-      free((__DRIconfig *) dri->driver_configs[i]);
+      free((struct dri_config *) dri->driver_configs[i]);
    free(dri->driver_configs);
    free(dri->driver_name);
 

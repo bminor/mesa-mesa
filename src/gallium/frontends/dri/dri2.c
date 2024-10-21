@@ -1719,7 +1719,7 @@ exit:
 }
 
 bool
-dri2_query_compression_rates(struct dri_screen *screen, const __DRIconfig *config, int max,
+dri2_query_compression_rates(struct dri_screen *screen, const struct dri_config *config, int max,
                              enum __DRIFixedRateCompression *rates, int *count)
 {
    struct pipe_screen *pscreen = screen->base.screen;

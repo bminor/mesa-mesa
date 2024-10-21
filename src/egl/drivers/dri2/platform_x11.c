@@ -418,7 +418,7 @@ dri2_x11_create_surface(_EGLDisplay *disp, EGLint type, _EGLConfig *conf,
    xcb_get_geometry_cookie_t cookie;
    xcb_get_geometry_reply_t *reply;
    xcb_generic_error_t *error;
-   const __DRIconfig *config;
+   const struct dri_config *config;
 
    dri2_surf = calloc(1, sizeof *dri2_surf);
    if (!dri2_surf) {
@@ -976,7 +976,7 @@ dri2_x11_add_configs_for_visuals(struct dri2_egl_display *dri2_dpy,
          };
 
          for (int j = 0; dri2_dpy->driver_configs[j]; j++) {
-            const __DRIconfig *config = dri2_dpy->driver_configs[j];
+            const struct dri_config *config = dri2_dpy->driver_configs[j];
             int shifts[4];
             unsigned int sizes[4];
 

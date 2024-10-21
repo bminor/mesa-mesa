@@ -525,7 +525,7 @@ struct glx_screen
      */
    __GLXDRIscreen driScreen;
    struct dri_screen *frontend_screen;
-   const __DRIconfig **driver_configs;
+   const struct dri_config **driver_configs;
 #endif
 
     /**
