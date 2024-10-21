@@ -25,6 +25,7 @@
 
 #include "genxml/gen_macros.h"
 #include "genxml/genX_pack.h"
+#include "genX_mi_builder.h"
 
 static int
 anv_get_max_vmv_range(StdVideoH264LevelIdc level)
@@ -2386,11 +2387,61 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
 }
 
+static void
+emit_query_mi_availability(struct mi_builder *b,
+                           struct anv_address addr,
+                           bool available)
+{
+   mi_store(b, mi_mem64(addr), mi_imm(available));
+}
+
+
+#if GFX_VER < 11
+#define MFC_BITSTREAM_BYTECOUNT_FRAME_REG       0x128A0
+#define HCP_BITSTREAM_BYTECOUNT_FRAME_REG       0x1E9A0
+#elif GFX_VER >= 11
+#define MFC_BITSTREAM_BYTECOUNT_FRAME_REG       0x1C08A0
+#define HCP_BITSTREAM_BYTECOUNT_FRAME_REG       0x1C28A0
+#endif
+
+static void
+handle_inline_query_end(struct anv_cmd_buffer *cmd_buffer,
+                        const VkVideoInlineQueryInfoKHR *inline_query)
+{
+   uint32_t reg_addr;
+   struct mi_builder b;
+   ANV_FROM_HANDLE(anv_query_pool, pool, inline_query->queryPool);
+   if (pool == VK_NULL_HANDLE)
+      return;
+   struct anv_address query_addr = {
+      .bo = pool->bo,
+      .offset = inline_query->firstQuery * pool->stride,
+   };
+
+   mi_builder_init(&b, cmd_buffer->device->info, &cmd_buffer->batch);
+   const uint32_t mocs = anv_mocs_for_address(cmd_buffer->device, &query_addr);
+   mi_builder_set_mocs(&b, mocs);
+
+   if (pool->codec & VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR) {
+      reg_addr = MFC_BITSTREAM_BYTECOUNT_FRAME_REG;
+   } else if (pool->codec & VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
+      reg_addr = HCP_BITSTREAM_BYTECOUNT_FRAME_REG;
+   } else {
+      unreachable("Invalid codec operation");
+   }
+
+   mi_store(&b, mi_mem64(anv_address_add(query_addr, 8)), mi_reg32(reg_addr));
+   emit_query_mi_availability(&b, query_addr, true);
+}
+
 void
 genX(CmdEncodeVideoKHR)(VkCommandBuffer commandBuffer,
                         const VkVideoEncodeInfoKHR *pEncodeInfo)
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+
+   const VkVideoInlineQueryInfoKHR *inline_query =
+      vk_find_struct_const(pEncodeInfo->pNext, VIDEO_INLINE_QUERY_INFO_KHR);
 
    switch (cmd_buffer->video.vid->vk.op) {
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
@@ -2402,4 +2453,7 @@ genX(CmdEncodeVideoKHR)(VkCommandBuffer commandBuffer,
    default:
       assert(0);
    }
+
+   if (inline_query)
+      handle_inline_query_end(cmd_buffer, inline_query);
 }
