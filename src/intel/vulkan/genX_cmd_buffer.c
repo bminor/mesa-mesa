@@ -73,7 +73,7 @@ convert_pc_to_bits(struct GENX(PIPE_CONTROL) *pc) {
 
 #define anv_debug_dump_pc(pc, reason) \
    if (INTEL_DEBUG(DEBUG_PIPE_CONTROL)) { \
-      fputs("pc: emit PC=( ", stdout); \
+      fputs("pc : emit PC=( ", stdout); \
       anv_dump_pipe_bits(convert_pc_to_bits(&(pc)), stdout);   \
       fprintf(stdout, ") reason: %s\n", reason); \
    }
@@ -1701,9 +1701,9 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
       bits &= ~ANV_PIPE_NEEDS_END_OF_PIPE_SYNC_BIT;
 
       if (INTEL_DEBUG(DEBUG_PIPE_CONTROL) && bits) {
-         fputs("pc: add ", stderr);
+         fputs("acc: add ", stdout);
          anv_dump_pipe_bits(ANV_PIPE_END_OF_PIPE_SYNC_BIT, stdout);
-         fprintf(stderr, "reason: Ensure flushes done before invalidate\n");
+         fprintf(stdout, "reason: Ensure flushes done before invalidate\n");
       }
    }
 

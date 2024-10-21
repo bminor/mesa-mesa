@@ -6257,19 +6257,19 @@ struct anv_video_session_params {
 void
 anv_dump_pipe_bits(enum anv_pipe_bits bits, FILE *f);
 
+void
+anv_cmd_buffer_pending_pipe_debug(struct anv_cmd_buffer *cmd_buffer,
+                                  enum anv_pipe_bits bits,
+                                  const char* reason);
+
 static inline void
 anv_add_pending_pipe_bits(struct anv_cmd_buffer* cmd_buffer,
                           enum anv_pipe_bits bits,
                           const char* reason)
 {
    cmd_buffer->state.pending_pipe_bits |= bits;
-   if (INTEL_DEBUG(DEBUG_PIPE_CONTROL) && bits) {
-      fputs("pc: add ", stdout);
-      anv_dump_pipe_bits(bits, stdout);
-      fprintf(stdout, "reason: %s\n", reason);
-   }
-   if (cmd_buffer->batch.pc_reasons_count < ARRAY_SIZE(cmd_buffer->batch.pc_reasons)) {
-      cmd_buffer->batch.pc_reasons[cmd_buffer->batch.pc_reasons_count++] = reason;
+   if (INTEL_DEBUG(DEBUG_PIPE_CONTROL)) {
+      anv_cmd_buffer_pending_pipe_debug(cmd_buffer, bits, reason);
    }
 }
 
