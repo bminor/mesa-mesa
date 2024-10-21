@@ -686,6 +686,9 @@ enum memory_logical_srcs {
    /** Coordinate/address/offset for where to access memory */
    MEMORY_LOGICAL_ADDRESS,
 
+   /** Xe2+: offset for where to access memory (as UD immediate) */
+   MEMORY_LOGICAL_ADDRESS_OFFSET,
+
    /** Dimensionality of the "address" source (as UD immediate) */
    MEMORY_LOGICAL_COORD_COMPONENTS,
 

@@ -322,7 +322,9 @@ static bool
 print_memory_logical_source(FILE *file, const brw_inst *inst, unsigned i)
 {
    if (inst->is_control_source(i)) {
-      assert(inst->src[i].file == IMM && inst->src[i].type == BRW_TYPE_UD);
+      assert(inst->src[i].file == IMM &&
+             (inst->src[i].type == BRW_TYPE_UD ||
+              inst->src[i].type == BRW_TYPE_D));
       assert(!inst->src[i].negate);
       assert(!inst->src[i].abs);
    }
@@ -352,6 +354,9 @@ print_memory_logical_source(FILE *file, const brw_inst *inst, unsigned i)
       return inst->src[i].file == BAD_FILE;
    case MEMORY_LOGICAL_ADDRESS:
       fprintf(file, " addr: ");
+      return false;
+   case MEMORY_LOGICAL_ADDRESS_OFFSET:
+      fprintf(file, " offset: ");
       return false;
    case MEMORY_LOGICAL_COORD_COMPONENTS:
       fprintf(file, " coord_comps:");

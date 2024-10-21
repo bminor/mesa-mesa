@@ -4701,6 +4701,7 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
       srcs[MEMORY_LOGICAL_DATA_SIZE] = brw_imm_ud(LSC_DATA_SIZE_D32);
       srcs[MEMORY_LOGICAL_COMPONENTS] = brw_imm_ud(3);
       srcs[MEMORY_LOGICAL_FLAGS] = brw_imm_ud(0);
+      srcs[MEMORY_LOGICAL_ADDRESS_OFFSET] = brw_imm_d(0);
 
       brw_inst *inst =
          bld.emit(SHADER_OPCODE_MEMORY_LOAD_LOGICAL,
@@ -6977,6 +6978,9 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
    srcs[MEMORY_LOGICAL_FLAGS] =
       brw_imm_ud(include_helpers ? MEMORY_FLAG_INCLUDE_HELPERS : 0);
    /* DATA0 and DATA1 are handled below */
+
+   /* Set the default address offset to 0 */
+   srcs[MEMORY_LOGICAL_ADDRESS_OFFSET] = brw_imm_d(0);
 
    switch (instr->intrinsic) {
    case nir_intrinsic_bindless_image_load:

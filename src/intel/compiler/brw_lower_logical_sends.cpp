@@ -1491,6 +1491,11 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
 
    const enum lsc_addr_size addr_size = lsc_addr_size_for_type(addr.type);
 
+   const brw_reg base_offset =
+      retype(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET], BRW_TYPE_UD);
+   /* TODO: setup the offset */
+   assert(base_offset.ud == 0);
+
    brw_reg payload = addr;
 
    if (addr.file != VGRF || !addr.is_contiguous()) {
@@ -1651,6 +1656,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    assert(inst->src[MEMORY_LOGICAL_COORD_COMPONENTS].file == IMM);
    assert(inst->src[MEMORY_LOGICAL_DATA_SIZE].file == IMM);
    assert(inst->src[MEMORY_LOGICAL_FLAGS].file == IMM);
+   assert(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].file == IMM);
 
    /* Get the logical send arguments. */
    const enum lsc_opcode op = (lsc_opcode)inst->src[MEMORY_LOGICAL_OPCODE].ud;
@@ -1672,6 +1678,9 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    const brw_reg data1 = inst->src[MEMORY_LOGICAL_DATA1];
    const bool has_side_effects = inst->has_side_effects();
    const bool has_dest = inst->dst.file != BAD_FILE && !inst->dst.is_null();
+   const brw_reg base_offset =
+      retype(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET], BRW_TYPE_UD);
+   assert(base_offset.ud == 0);
 
    /* Don't predicate scratch writes on the sample mask.  Otherwise,
     * FS helper invocations would load undefined values from scratch memory.
