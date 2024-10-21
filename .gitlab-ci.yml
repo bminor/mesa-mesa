@@ -47,24 +47,20 @@ workflow:
       variables:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
         JOB_PRIORITY: 50
-        VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
     # pipeline for direct pushes that bypassed the CI
     - if: &is-direct-push $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $GITLAB_USER_LOGIN != "marge-bot"
       variables:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
         JOB_PRIORITY: 40
-        VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
     # pre-merge or fork pipeline
     - if: $FORCE_KERNEL_TAG != null
       variables:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG}
         JOB_PRIORITY: 50
-        VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
     - if: $FORCE_KERNEL_TAG == null
       variables:
         KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
         JOB_PRIORITY: 50
-        VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
 
 
 variables:
@@ -105,6 +101,8 @@ variables:
   MESA_VK_ABORT_ON_DEVICE_LOSS: 1
   # Avoid the wall of "Unsupported SPIR-V capability" warnings in CI job log, hiding away useful output
   MESA_SPIRV_LOG_LEVEL: error
+  # Default priority for non-merge pipelines
+  VALVE_INFRA_VANGOGH_JOB_PRIORITY: priority:low
 
 default:
   id_tokens:
