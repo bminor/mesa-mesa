@@ -21,12 +21,13 @@
  * SOFTWARE.
  */
 
-#include "pan_afbc_cso.h"
+#include "pan_mod_conv_cso.h"
 #include "nir/pipe_nir.h"
 #include "nir_builder.h"
 #include "pan_context.h"
 #include "pan_resource.h"
 #include "pan_screen.h"
+#include "pan_shader.h"
 
 #define panfrost_afbc_add_info_ubo(name, b)                                    \
    nir_variable *info_ubo = nir_variable_create(                               \
@@ -41,6 +42,21 @@
       (b), 1, sizeof(((struct panfrost_afbc_##name##_info *)0)->field) * 8,    \
       nir_imm_int(b, 0),                                                       \
       nir_imm_int(b, offsetof(struct panfrost_afbc_##name##_info, field)),     \
+      .align_mul = 4, .range = ~0)
+
+#define panfrost_mtk_add_info_ubo(name, b)                                     \
+   nir_variable *info_ubo = nir_variable_create(                               \
+      b.shader, nir_var_mem_ubo,                                               \
+      glsl_array_type(glsl_uint_type(),                                        \
+                      sizeof(struct panfrost_mtk_##name##_info) / 4, 0),       \
+      "info_ubo");                                                             \
+   info_ubo->data.driver_location = 0;
+
+#define panfrost_mtk_get_info_field(name, b, field)                            \
+   nir_load_ubo(                                                               \
+      (b), 1, sizeof(((struct panfrost_mtk_##name##_info *)0)->field) * 8,     \
+      nir_imm_int(b, 0),                                                       \
+      nir_imm_int(b, offsetof(struct panfrost_mtk_##name##_info, field)),      \
       .align_mul = 4, .range = ~0)
 
 static nir_def *
@@ -197,7 +213,7 @@ copy_superblock(nir_builder *b, nir_def *dst, nir_def *dst_idx, nir_def *hdr_sz,
    panfrost_afbc_get_info_field(size, b, field)
 
 static nir_shader *
-panfrost_afbc_create_size_shader(struct panfrost_screen *screen, unsigned bpp,
+panfrost_create_afbc_size_shader(struct panfrost_screen *screen, unsigned bpp,
                                  unsigned align)
 {
    struct panfrost_device *dev = pan_device(&screen->base);
@@ -233,7 +249,7 @@ panfrost_afbc_create_size_shader(struct panfrost_screen *screen, unsigned bpp,
    panfrost_afbc_get_info_field(pack, b, field)
 
 static nir_shader *
-panfrost_afbc_create_pack_shader(struct panfrost_screen *screen, unsigned align,
+panfrost_create_afbc_pack_shader(struct panfrost_screen *screen, unsigned align,
                                  bool tiled)
 {
    nir_builder b = nir_builder_init_simple_shader(
@@ -260,64 +276,230 @@ panfrost_afbc_create_pack_shader(struct panfrost_screen *screen, unsigned align,
    return b.shader;
 }
 
-struct pan_afbc_shader_data *
-panfrost_afbc_get_shaders(struct panfrost_context *ctx,
-                          struct panfrost_resource *rsrc, unsigned align)
+#define panfrost_mtk_detile_get_info_field(b, field)                            \
+   panfrost_mtk_get_info_field(detile, b, field)
+
+static nir_def *
+pan_mtk_tiled_from_linear(nir_builder *b, nir_def *linear, nir_def *tiles_per_stride, nir_def *width)
+{
+   nir_def *tiled;
+   /* uvec2 tlc = uvec2(linear) >> uvec2(2u, 5u) */
+   nir_def *tlc = nir_ushr(b, linear,
+                           nir_imm_ivec2(b, 2, 5));
+
+   /* uvec2 txc = uvec2(linear) & uvec2(3u, 31u) */
+   nir_def *txc = nir_iand(b, linear,
+                           nir_imm_ivec2(b, 3, 31));
+
+   /* uint tlo = tlc.y * tiles_per_stride + tlc.x */
+   nir_def *tlo = nir_iadd(b,
+                           nir_imul(b,
+                                    nir_channel(b, tlc, 1),
+                                    tiles_per_stride),
+                           nir_channel(b, tlc, 0));
+   nir_def *txcx = nir_channel(b, txc, 0);
+   nir_def *txcy = nir_channel(b, txc, 1);
+   nir_def *txcytmp = nir_vec2(b, txcy,
+                               nir_ushr_imm(b, txcy, 1));
+
+   /* txo = (uvec2(txc.y, txc.y >> 1) << uvec2(2u)) | txc.xx */
+   nir_def *txo = nir_ior(b,
+                          nir_ishl_imm(b, txcytmp, 2),
+                          nir_vec2(b, txcx, txcx));
+
+   /* uvec2 off = (uvec2(tlo) << uvec2(7u, 6u)) | txo */
+   nir_def *off = nir_ior(b,
+                          nir_ishl(b,
+                                   nir_vec2(b, tlo, tlo),
+                                   nir_imm_ivec2(b, 7, 6)),
+                          txo);
+
+   /* convert to 2D coord
+    * tiled.xy = off % (width / 4, width / 4)
+    * tiled.zw = off / (width / 4, width / 4) */
+   nir_def *width4 = nir_ishl_imm(b, tiles_per_stride, 2);
+   width4 = nir_vec2(b, width4, width4);
+   nir_def *tiled_xy = nir_umod(b, off, width4);
+   nir_def *tiled_zw = nir_udiv(b, off, width4);
+   tiled = nir_vec4(b,
+                    nir_channel(b, tiled_xy, 0),
+                    nir_channel(b, tiled_xy, 1),
+                    nir_channel(b, tiled_zw, 0),
+                    nir_channel(b, tiled_zw, 1));
+
+   return tiled;
+}
+
+static nir_shader *
+panfrost_create_mtk_detile_shader(struct panfrost_screen *screen, unsigned align,
+                                  bool is_tiled)
+{
+   const struct panfrost_device *device = &screen->dev;
+   bool tint_yuv = (device->debug & PAN_DBG_YUV) != 0;
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_COMPUTE, screen->vtbl.get_compiler_options(),
+      "panfrost_mtk_detile");
+   b.shader->info.workgroup_size[0] = 4;
+   b.shader->info.workgroup_size[1] = 16;
+   b.shader->info.workgroup_size[2] = 1;
+
+   const struct glsl_type *image_type =
+      glsl_image_type(GLSL_SAMPLER_DIM_2D, /*is_array*/ false, GLSL_TYPE_UINT);
+
+   panfrost_mtk_add_info_ubo(detile, b);
+
+   nir_variable *y_tiled =
+      nir_variable_create(b.shader, nir_var_image, image_type, "y_tiled");
+   y_tiled->data.binding = 0;
+   y_tiled->data.image.format = PIPE_FORMAT_R8G8B8A8_UINT;
+   BITSET_SET(b.shader->info.images_used, 0);
+   nir_variable *uv_tiled =
+      nir_variable_create(b.shader, nir_var_image, image_type, "uv_tiled");
+   uv_tiled->data.binding = 1;
+   uv_tiled->data.image.format = PIPE_FORMAT_R8G8B8A8_UINT;
+   BITSET_SET(b.shader->info.images_used, 1);
+
+   nir_variable *y_linear =
+      nir_variable_create(b.shader, nir_var_image, image_type, "y_linear");
+   y_linear->data.binding = 2;
+   y_linear->data.image.format = PIPE_FORMAT_R8G8B8A8_UINT;
+   BITSET_SET(b.shader->info.images_used, 2);
+
+   nir_variable *uv_linear =
+      nir_variable_create(b.shader, nir_var_image, image_type, "uv_linear");
+   uv_linear->data.binding = 3;
+   uv_linear->data.image.format = PIPE_FORMAT_R8G8B8A8_UINT;
+   BITSET_SET(b.shader->info.images_used, 3);
+
+   nir_def *linear = nir_load_global_invocation_id(&b, 32);
+   nir_def *tiles_per_stride =
+      panfrost_mtk_detile_get_info_field(&b, tiles_per_stride);
+   nir_def *src_width = panfrost_mtk_detile_get_info_field(&b, src_width);
+
+   nir_def *zero = nir_imm_int(&b, 0);
+
+   nir_def *coord = nir_vec2(&b,
+                             nir_channel(&b, linear, 0),
+                             nir_channel(&b, linear, 1));
+
+   nir_def *tiled = pan_mtk_tiled_from_linear(&b, coord, tiles_per_stride, src_width);
+
+   nir_def *tiled_xz = nir_vec4(&b, nir_channel(&b, tiled, 0),
+                                nir_channel(&b, tiled, 2), zero, zero);
+   nir_def *tiled_yw = nir_vec4(&b, nir_channel(&b, tiled, 1),
+                                nir_channel(&b, tiled, 3), zero, zero);
+
+   nir_def *yval = nir_image_load(&b, 4, 32, zero, tiled_xz,
+                                  zero /* sample */, zero /* lod */,
+                                  .access = ACCESS_NON_WRITEABLE,
+                                  .image_dim = GLSL_SAMPLER_DIM_2D,
+                                  .image_array = false,
+                                  .dest_type = nir_type_uint32);
+   nir_def *uvval;
+
+   nir_def *dst_y_coord = nir_vec4(&b,
+                                   nir_channel(&b, coord, 0),
+                                   nir_channel(&b, coord, 1),
+                                   zero, zero);
+   /* store Y data */
+   nir_def *img_deref_st_y = nir_imm_int(&b, 2);
+   nir_image_store(&b, img_deref_st_y, dst_y_coord, zero /* sample */,
+                   yval, zero /* lod */,
+                   .access = ACCESS_NON_READABLE,
+                   .image_dim = GLSL_SAMPLER_DIM_2D,
+                   .image_array = false, .src_type = nir_type_uint32);
+
+   /* store UV data */
+   nir_def *odd_even_line = nir_iand_imm(&b,
+                                     nir_channel(&b, dst_y_coord, 1),
+                                     1);
+   nir_push_if(&b, nir_ieq_imm(&b, odd_even_line, 0));
+   {
+      if (tint_yuv) {
+         /* use just blue for chroma */
+         uvval = nir_imm_ivec4(&b, 0xc0, 0x80, 0xc0, 0x80);
+      } else {
+         nir_def *img_deref_uv = nir_imm_int(&b, 1);
+         uvval = nir_image_load(&b, 4, 32, img_deref_uv, tiled_yw,
+                                zero /* sample */, zero /* lod */,
+                                .access = ACCESS_NON_WRITEABLE,
+                                .image_dim = GLSL_SAMPLER_DIM_2D,
+                                .image_array = false,
+                                .dest_type = nir_type_uint32);
+      }
+      nir_def *dst_uv_coord = nir_ishr(&b, dst_y_coord,
+                                       nir_imm_ivec4(&b, 0, 1, 0, 0));
+      nir_def *img_deref_st_uv = nir_imm_int(&b, 3);
+      nir_image_store(&b, img_deref_st_uv, dst_uv_coord, zero /* sample */,
+                      uvval, zero /* lod */,
+                      .access = ACCESS_NON_READABLE,
+                      .image_dim = GLSL_SAMPLER_DIM_2D,
+                      .image_array = false, .src_type = nir_type_uint32);
+   }
+   nir_pop_if(&b, NULL);
+
+   return b.shader;
+}
+
+struct pan_mod_convert_shader_data *
+panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
+                                 struct panfrost_resource *rsrc, unsigned align)
 {
    struct pipe_context *pctx = &ctx->base;
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    bool tiled = rsrc->image.layout.modifier & AFBC_FORMAT_MOD_TILED;
-   struct pan_afbc_shader_key key = {
+   struct pan_mod_convert_shader_key key = {
       .bpp = util_format_get_blocksizebits(rsrc->base.format),
       .align = align,
       .tiled = tiled,
    };
 
-   pthread_mutex_lock(&ctx->afbc_shaders.lock);
+   pthread_mutex_lock(&ctx->mod_convert_shaders.lock);
    struct hash_entry *he =
-      _mesa_hash_table_search(ctx->afbc_shaders.shaders, &key);
-   struct pan_afbc_shader_data *shader = he ? he->data : NULL;
-   pthread_mutex_unlock(&ctx->afbc_shaders.lock);
+      _mesa_hash_table_search(ctx->mod_convert_shaders.shaders, &key);
+   struct pan_mod_convert_shader_data *shader = he ? he->data : NULL;
+   pthread_mutex_unlock(&ctx->mod_convert_shaders.lock);
 
    if (shader)
       return shader;
 
-   shader = rzalloc(ctx->afbc_shaders.shaders, struct pan_afbc_shader_data);
+   shader = rzalloc(ctx->mod_convert_shaders.shaders, struct pan_mod_convert_shader_data);
    shader->key = key;
-   _mesa_hash_table_insert(ctx->afbc_shaders.shaders, &shader->key, shader);
+   _mesa_hash_table_insert(ctx->mod_convert_shaders.shaders, &shader->key, shader);
 
 #define COMPILE_SHADER(name, ...)                                              \
    {                                                                           \
       nir_shader *nir =                                                        \
-         panfrost_afbc_create_##name##_shader(screen, __VA_ARGS__);            \
+         panfrost_create_##name##_shader(screen, __VA_ARGS__);            \
       nir->info.num_ubos = 1;                                                  \
       shader->name##_cso = pipe_shader_from_nir(pctx, nir);                    \
    }
 
-   COMPILE_SHADER(size, key.bpp, key.align);
-   COMPILE_SHADER(pack, key.align, key.tiled);
+   COMPILE_SHADER(afbc_size, key.bpp, key.align);
+   COMPILE_SHADER(afbc_pack, key.align, key.tiled);
+   COMPILE_SHADER(mtk_detile, key.bpp, key.align);
 
 #undef COMPILE_SHADER
 
-   pthread_mutex_lock(&ctx->afbc_shaders.lock);
-   _mesa_hash_table_insert(ctx->afbc_shaders.shaders, &shader->key, shader);
-   pthread_mutex_unlock(&ctx->afbc_shaders.lock);
+   pthread_mutex_lock(&ctx->mod_convert_shaders.lock);
+   _mesa_hash_table_insert(ctx->mod_convert_shaders.shaders, &shader->key, shader);
+   pthread_mutex_unlock(&ctx->mod_convert_shaders.lock);
 
    return shader;
 }
 
-DERIVE_HASH_TABLE(pan_afbc_shader_key);
+DERIVE_HASH_TABLE(pan_mod_convert_shader_key);
 
 void
 panfrost_afbc_context_init(struct panfrost_context *ctx)
 {
-   ctx->afbc_shaders.shaders = pan_afbc_shader_key_table_create(NULL);
-   pthread_mutex_init(&ctx->afbc_shaders.lock, NULL);
+   ctx->mod_convert_shaders.shaders = pan_mod_convert_shader_key_table_create(NULL);
+   pthread_mutex_init(&ctx->mod_convert_shaders.lock, NULL);
 }
 
 void
 panfrost_afbc_context_destroy(struct panfrost_context *ctx)
 {
-   _mesa_hash_table_destroy(ctx->afbc_shaders.shaders, NULL);
-   pthread_mutex_destroy(&ctx->afbc_shaders.lock);
+   _mesa_hash_table_destroy(ctx->mod_convert_shaders.shaders, NULL);
+   pthread_mutex_destroy(&ctx->mod_convert_shaders.lock);
 }

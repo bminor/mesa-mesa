@@ -28,7 +28,7 @@
 #define _LARGEFILE64_SOURCE 1
 #include <assert.h>
 #include <sys/mman.h>
-#include "pan_afbc_cso.h"
+#include "pan_mod_conv_cso.h"
 #include "pan_blend_cso.h"
 #include "pan_earlyzs.h"
 #include "pan_encoder.h"
@@ -209,7 +209,7 @@ struct panfrost_context {
 
    struct blitter_context *blitter;
 
-   struct pan_afbc_shaders afbc_shaders;
+   struct pan_mod_convert_shaders mod_convert_shaders;
 
    struct panfrost_blend_state *blend;
 

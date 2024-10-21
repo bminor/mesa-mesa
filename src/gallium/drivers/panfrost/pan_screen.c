@@ -51,6 +51,7 @@
 #include "pan_resource.h"
 #include "pan_screen.h"
 #include "pan_shader.h"
+#include "pan_texture.h"
 #include "pan_util.h"
 
 #include "pan_context.h"
@@ -376,6 +377,10 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
       if (drm_is_afrc(pan_best_modifiers[i]) && !afrc)
          continue;
 
+      if (drm_is_mtk_tiled(format, pan_best_modifiers[i]) &&
+          !panfrost_format_supports_mtk_tiled(format))
+         continue;
+
       if (test_modifier != DRM_FORMAT_MOD_INVALID &&
           test_modifier != pan_best_modifiers[i])
          continue;
@@ -384,7 +389,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
          modifiers[count] = pan_best_modifiers[i];
 
          if (external_only)
-            external_only[count] = false;
+            external_only[count] = drm_is_mtk_tiled(format, modifiers[count]);
       }
       count++;
    }

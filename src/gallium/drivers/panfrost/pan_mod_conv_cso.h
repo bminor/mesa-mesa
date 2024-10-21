@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#ifndef __PAN_AFBC_CSO_H__
-#define __PAN_AFBC_CSO_H__
+#ifndef __PAN_MOD_CONV_CSO_H__
+#define __PAN_MOD_CONV_CSO_H__
 
 #include "util/hash_table.h"
 
@@ -33,19 +33,20 @@ struct panfrost_context;
 struct panfrost_resource;
 struct panfrost_screen;
 
-struct pan_afbc_shader_key {
+struct pan_mod_convert_shader_key {
    unsigned bpp;
    unsigned align;
    bool tiled;
 };
 
-struct pan_afbc_shader_data {
-   struct pan_afbc_shader_key key;
-   void *size_cso;
-   void *pack_cso;
+struct pan_mod_convert_shader_data {
+   struct pan_mod_convert_shader_key key;
+   void *afbc_size_cso;
+   void *afbc_pack_cso;
+   void *mtk_detile_cso;
 };
 
-struct pan_afbc_shaders {
+struct pan_mod_convert_shaders {
    struct hash_table *shaders;
    pthread_mutex_t lock;
 };
@@ -70,11 +71,18 @@ struct panfrost_afbc_pack_info {
    uint32_t padding[3]; // FIXME
 } PACKED;
 
+struct panfrost_mtk_detile_info {
+   uint32_t tiles_per_stride;
+   uint32_t src_width;
+   uint32_t src_height;
+   uint32_t dst_stride;
+} PACKED;
+
 void panfrost_afbc_context_init(struct panfrost_context *ctx);
 void panfrost_afbc_context_destroy(struct panfrost_context *ctx);
 
-struct pan_afbc_shader_data *
-panfrost_afbc_get_shaders(struct panfrost_context *ctx,
-                          struct panfrost_resource *rsrc, unsigned align);
+struct pan_mod_convert_shader_data *
+panfrost_get_mod_convert_shaders(struct panfrost_context *ctx,
+                                 struct panfrost_resource *rsrc, unsigned align);
 
 #endif
