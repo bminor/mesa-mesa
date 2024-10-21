@@ -1714,7 +1714,7 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
    if (needs_cs_stall)
       bits |= ANV_PIPE_CS_STALL_BIT;
 
-#if GFX_VER >= 12
+#if GFX_VER >= 12 && GFX_VER < 20
    /* From the TGL PRM, Volume 2a, "PIPE_CONTROL":
     *
     *     "SW must follow below programming restrictions when programming
@@ -1928,7 +1928,7 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
       bits &= ~ANV_PIPE_INVALIDATE_BITS;
    }
 
-#if GFX_VER >= 12
+#if GFX_VER >= 12 && GFX_VER < 20
    bits |= defer_bits;
 #endif
 
