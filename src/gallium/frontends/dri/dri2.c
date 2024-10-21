@@ -1775,12 +1775,11 @@ dri2_query_compression_modifiers(struct dri_screen *screen, uint32_t fourcc,
 }
 
 void
-dri2_blit_image(__DRIcontext *context, __DRIimage *dst, __DRIimage *src,
+dri2_blit_image(struct dri_context *ctx, __DRIimage *dst, __DRIimage *src,
                 int dstx0, int dsty0, int dstwidth, int dstheight,
                 int srcx0, int srcy0, int srcwidth, int srcheight,
                 int flush_flag)
 {
-   struct dri_context *ctx = dri_context(context);
    struct pipe_context *pipe = ctx->st->pipe;
    struct pipe_screen *screen;
    struct pipe_fence_handle *fence;
@@ -1829,11 +1828,10 @@ dri2_blit_image(__DRIcontext *context, __DRIimage *dst, __DRIimage *src,
 }
 
 void *
-dri2_map_image(__DRIcontext *context, __DRIimage *image,
+dri2_map_image(struct dri_context *ctx, __DRIimage *image,
                 int x0, int y0, int width, int height,
                 unsigned int flags, int *stride, void **data)
 {
-   struct dri_context *ctx = dri_context(context);
    struct pipe_context *pipe = ctx->st->pipe;
    enum pipe_map_flags pipe_access = 0;
    struct pipe_transfer *trans;
@@ -1873,9 +1871,8 @@ dri2_map_image(__DRIcontext *context, __DRIimage *image,
 }
 
 void
-dri2_unmap_image(__DRIcontext *context, __DRIimage *image, void *data)
+dri2_unmap_image(struct dri_context *ctx, __DRIimage *image, void *data)
 {
-   struct dri_context *ctx = dri_context(context);
    struct pipe_context *pipe = ctx->st->pipe;
 
    /* Wait for glthread to finish because we can't use pipe_context from
@@ -1893,26 +1890,26 @@ dri2_get_capabilities(struct dri_screen *screen)
 }
 
 int
-dri_interop_query_device_info(__DRIcontext *_ctx,
+dri_interop_query_device_info(struct dri_context *ctx,
                                struct mesa_glinterop_device_info *out)
 {
-   return st_interop_query_device_info(dri_context(_ctx)->st, out);
+   return st_interop_query_device_info(ctx->st, out);
 }
 
 int
-dri_interop_export_object(__DRIcontext *_ctx,
+dri_interop_export_object(struct dri_context *ctx,
                            struct mesa_glinterop_export_in *in,
                            struct mesa_glinterop_export_out *out)
 {
-   return st_interop_export_object(dri_context(_ctx)->st, in, out);
+   return st_interop_export_object(ctx->st, in, out);
 }
 
 int
-dri_interop_flush_objects(__DRIcontext *_ctx,
+dri_interop_flush_objects(struct dri_context *ctx,
                            unsigned count, struct mesa_glinterop_export_in *objects,
                            struct mesa_glinterop_flush_out *out)
 {
-   return st_interop_flush_objects(dri_context(_ctx)->st, count, objects, out);
+   return st_interop_flush_objects(ctx->st, count, objects, out);
 }
 
 /**

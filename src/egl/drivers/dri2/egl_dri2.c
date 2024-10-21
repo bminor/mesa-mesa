@@ -1211,7 +1211,7 @@ dri2_create_context(_EGLDisplay *disp, _EGLConfig *conf,
    struct dri2_egl_context *dri2_ctx;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display_lock(disp);
    struct dri2_egl_context *dri2_ctx_shared = dri2_egl_context(share_list);
-   __DRIcontext *shared = dri2_ctx_shared ? dri2_ctx_shared->dri_context : NULL;
+   struct dri_context *shared = dri2_ctx_shared ? dri2_ctx_shared->dri_context : NULL;
    struct dri2_egl_config *dri2_config = dri2_egl_config(conf);
    const __DRIconfig *dri_config;
    int api;
@@ -1367,7 +1367,7 @@ static void
 dri2_surf_update_fence_fd(_EGLContext *ctx, _EGLDisplay *disp,
                           _EGLSurface *surf)
 {
-   __DRIcontext *dri_ctx = dri2_egl_context(ctx)->dri_context;
+   struct dri_context *dri_ctx = dri2_egl_context(ctx)->dri_context;
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
    struct dri2_egl_surface *dri2_surf = dri2_egl_surface(surf);
    int fence_fd = -1;
@@ -1413,7 +1413,7 @@ dri2_make_current(_EGLDisplay *disp, _EGLSurface *dsurf, _EGLSurface *rsurf,
    _EGLSurface *old_dsurf, *old_rsurf;
    _EGLSurface *tmp_dsurf, *tmp_rsurf;
    __DRIdrawable *ddraw, *rdraw;
-   __DRIcontext *cctx;
+   struct dri_context *cctx;
    EGLint egl_error = EGL_SUCCESS;
 
    if (!dri2_dpy)
@@ -1431,7 +1431,7 @@ dri2_make_current(_EGLDisplay *disp, _EGLSurface *dsurf, _EGLSurface *rsurf,
    }
 
    if (old_ctx) {
-      __DRIcontext *old_cctx = dri2_egl_context(old_ctx)->dri_context;
+      struct dri_context *old_cctx = dri2_egl_context(old_ctx)->dri_context;
       old_disp = old_ctx->Resource.Display;
       old_dri2_dpy = dri2_egl_display(old_disp);
 

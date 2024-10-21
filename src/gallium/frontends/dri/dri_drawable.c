@@ -261,10 +261,9 @@ dri_drawable_validate_att(struct dri_context *ctx,
  * These are used for GLX_EXT_texture_from_pixmap
  */
 void
-dri_set_tex_buffer2(__DRIcontext *pDRICtx, GLint target,
+dri_set_tex_buffer2(struct dri_context *ctx, GLint target,
                     GLint format, __DRIdrawable *dPriv)
 {
-   struct dri_context *ctx = dri_context(pDRICtx);
    struct st_context *st = ctx->st;
    struct dri_drawable *drawable = dri_drawable(dPriv);
    struct pipe_resource *pt;
@@ -473,12 +472,11 @@ notify_before_flush_cb(void* _args)
  * \param throttle_reason   the reason for throttling, 0 = no throttling
  */
 void
-dri_flush(__DRIcontext *cPriv,
+dri_flush(struct dri_context *ctx,
           __DRIdrawable *dPriv,
           unsigned flags,
           enum __DRI2throttleReason reason)
 {
-   struct dri_context *ctx = dri_context(cPriv);
    struct dri_drawable *drawable = dri_drawable(dPriv);
    struct st_context *st;
    unsigned flush_flags;
@@ -580,14 +578,14 @@ dri_flush_drawable(__DRIdrawable *dPriv)
    struct dri_context *ctx = dri_get_current();
 
    if (ctx)
-      dri_flush(opaque_dri_context(ctx), dPriv, __DRI2_FLUSH_DRAWABLE, -1);
+      dri_flush(ctx, dPriv, __DRI2_FLUSH_DRAWABLE, -1);
 }
 
 /**
  * dri_throttle - A DRI2ThrottleExtension throttling function.
  */
 void
-dri_throttle(__DRIcontext *cPriv, __DRIdrawable *dPriv,
+dri_throttle(struct dri_context *cPriv, __DRIdrawable *dPriv,
              enum __DRI2throttleReason reason)
 {
    dri_flush(cPriv, dPriv, 0, reason);

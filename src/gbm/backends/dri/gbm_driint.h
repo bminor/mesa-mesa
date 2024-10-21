@@ -57,7 +57,7 @@ struct gbm_dri_device {
    bool has_compression_modifiers;
 
    struct dri_screen *screen;
-   __DRIcontext *context;
+   struct dri_context *context;
    mtx_t mutex;
 
    const __DRIconfig   **driver_configs;

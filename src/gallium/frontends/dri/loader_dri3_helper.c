@@ -46,7 +46,7 @@
  */
 struct loader_dri3_blit_context {
    simple_mtx_t mtx;
-   __DRIcontext *ctx;
+   struct dri_context *ctx;
    struct dri_screen *cur_screen;
    const __DRIcoreExtension *core;
 };
@@ -149,7 +149,7 @@ dri3_get_red_mask_for_depth(struct loader_dri3_drawable *draw, int depth)
  * When the caller is done with the context (even if the context returned was
  * NULL), the caller must call loader_dri3_blit_context_put.
  */
-static __DRIcontext *
+static struct dri_context *
 loader_dri3_blit_context_get(struct loader_dri3_drawable *draw)
 {
    simple_mtx_lock(&blit_context.mtx);
@@ -199,7 +199,7 @@ loader_dri3_blit_image(struct loader_dri3_drawable *draw,
                        int dstx0, int dsty0, int width, int height,
                        int srcx0, int srcy0, int flush_flag)
 {
-   __DRIcontext *dri_context;
+   struct dri_context *dri_context;
    bool use_blit_context = false;
 
    dri_context = draw->vtable->get_dri_context(draw);
@@ -801,7 +801,7 @@ loader_dri3_flush(struct loader_dri3_drawable *draw,
                   enum __DRI2throttleReason throttle_reason)
 {
    /* NEED TO CHECK WHETHER CONTEXT IS NULL */
-   __DRIcontext *dri_context = draw->vtable->get_dri_context(draw);
+   struct dri_context *dri_context = draw->vtable->get_dri_context(draw);
 
    if (dri_context) {
       dri_flush(dri_context, draw->dri_drawable, flags, throttle_reason);

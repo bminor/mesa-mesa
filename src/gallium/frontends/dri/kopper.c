@@ -548,7 +548,7 @@ kopperSwapBuffersWithDamage(__DRIdrawable *dPriv, uint32_t flush_flags, int nrec
 
    drawable->texture_stamp = drawable->lastStamp - 1;
 
-   dri_flush(opaque_dri_context(ctx), opaque_dri_drawable(drawable),
+   dri_flush(ctx, opaque_dri_drawable(drawable),
              __DRI2_FLUSH_DRAWABLE | __DRI2_FLUSH_CONTEXT | flush_flags,
              __DRI2_THROTTLE_SWAPBUFFER);
 

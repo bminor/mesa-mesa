@@ -112,10 +112,10 @@ driCreateNewScreen3(int scrn, int fd,
                     enum dri_screen_type type,
                     const __DRIconfig ***driver_configs, bool driver_name_is_inferred,
                     bool has_multibuffer, void *data);
-PUBLIC __DRIcontext *
+PUBLIC struct dri_context *
 driCreateContextAttribs(struct dri_screen *psp, int api,
                         const __DRIconfig *config,
-                        __DRIcontext *shared,
+                        struct dri_context *shared,
                         unsigned num_attribs,
                         const uint32_t *attribs,
                         unsigned *error,
@@ -140,14 +140,14 @@ PUBLIC void
 driSwapBuffers(__DRIdrawable *pdp);
 PUBLIC void
 driSwapBuffersWithDamage(__DRIdrawable *pdp, int nrects, const int *rects);
-PUBLIC __DRIcontext *
-driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config, __DRIcontext *shared, void *data);
+PUBLIC struct dri_context *
+driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config, struct dri_context *shared, void *data);
 PUBLIC int
-driCopyContext(__DRIcontext *dest, __DRIcontext *src, unsigned long mask);
+driCopyContext(struct dri_context *dest, struct dri_context *src, unsigned long mask);
 PUBLIC void
-driDestroyContext(__DRIcontext *pcp);
-PUBLIC int driBindContext(__DRIcontext *pcp, __DRIdrawable *pdp, __DRIdrawable *prp);
-PUBLIC int driUnbindContext(__DRIcontext *pcp);
+driDestroyContext(struct dri_context *ctx);
+PUBLIC int driBindContext(struct dri_context *ctx, __DRIdrawable *pdp, __DRIdrawable *prp);
+PUBLIC int driUnbindContext(struct dri_context *ctx);
 
 
 PUBLIC int64_t
@@ -168,7 +168,7 @@ PUBLIC void
 driswCopySubBuffer(__DRIdrawable *pdp, int x, int y, int w, int h);
 
 PUBLIC void
-dri_set_tex_buffer2(__DRIcontext *pDRICtx, GLint target,
+dri_set_tex_buffer2(struct dri_context *ctx, GLint target,
                     GLint format, __DRIdrawable *dPriv);
 
 PUBLIC int
@@ -181,7 +181,7 @@ dri_query_renderer_integer(struct dri_screen *_screen, int param,
 PUBLIC void
 dri_flush_drawable(__DRIdrawable *dPriv);
 PUBLIC void
-dri_flush(__DRIcontext *cPriv,
+dri_flush(struct dri_context *cPriv,
           __DRIdrawable *dPriv,
           unsigned flags,
           enum __DRI2throttleReason reason);
@@ -202,31 +202,31 @@ PUBLIC int dri_get_initial_swap_interval(struct dri_screen *driScreen);
 PUBLIC bool dri_valid_swap_interval(struct dri_screen *driScreen, int interval);
 
 PUBLIC void
-dri_throttle(__DRIcontext *cPriv, __DRIdrawable *dPriv,
+dri_throttle(struct dri_context *cPriv, __DRIdrawable *dPriv,
              enum __DRI2throttleReason reason);
 
 PUBLIC int
-dri_interop_query_device_info(__DRIcontext *_ctx,
-                               struct mesa_glinterop_device_info *out);
+dri_interop_query_device_info(struct dri_context *ctx,
+                              struct mesa_glinterop_device_info *out);
 PUBLIC int
-dri_interop_export_object(__DRIcontext *_ctx,
-                           struct mesa_glinterop_export_in *in,
-                           struct mesa_glinterop_export_out *out);
+dri_interop_export_object(struct dri_context *ctx,
+                          struct mesa_glinterop_export_in *in,
+                          struct mesa_glinterop_export_out *out);
 PUBLIC int
-dri_interop_flush_objects(__DRIcontext *_ctx,
+dri_interop_flush_objects(struct dri_context *_ctx,
                            unsigned count, struct mesa_glinterop_export_in *objects,
                            struct mesa_glinterop_flush_out *out);
 
 PUBLIC __DRIimage *
-dri_create_image_from_renderbuffer(__DRIcontext *context,
-				     int renderbuffer, void *loaderPrivate,
-                                     unsigned *error);
+dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
+                                   int renderbuffer, void *loaderPrivate,
+                                   unsigned *error);
 
 PUBLIC void
 dri2_destroy_image(__DRIimage *img);
 
 PUBLIC __DRIimage *
-dri2_create_from_texture(__DRIcontext *context, int target, unsigned texture,
+dri2_create_from_texture(struct dri_context *dri_ctx, int target, unsigned texture,
                          int depth, int level, unsigned *error,
                          void *loaderPrivate);
 
@@ -263,18 +263,18 @@ dri2_from_dma_bufs(struct dri_screen *screen,
                     unsigned *error,
                     void *loaderPrivate);
 PUBLIC void
-dri2_blit_image(__DRIcontext *context, __DRIimage *dst, __DRIimage *src,
+dri2_blit_image(struct dri_context *ctx, __DRIimage *dst, __DRIimage *src,
                 int dstx0, int dsty0, int dstwidth, int dstheight,
                 int srcx0, int srcy0, int srcwidth, int srcheight,
                 int flush_flag);
 PUBLIC int
 dri2_get_capabilities(struct dri_screen *_screen);
 PUBLIC void *
-dri2_map_image(__DRIcontext *context, __DRIimage *image,
-                int x0, int y0, int width, int height,
-                unsigned int flags, int *stride, void **data);
+dri2_map_image(struct dri_context *ctx, __DRIimage *image,
+               int x0, int y0, int width, int height,
+               unsigned int flags, int *stride, void **data);
 PUBLIC void
-dri2_unmap_image(__DRIcontext *context, __DRIimage *image, void *data);
+dri2_unmap_image(struct dri_context *ctx, __DRIimage *image, void *data);
 PUBLIC bool
 dri_query_dma_buf_formats(struct dri_screen *_screen, int max, int *formats,
                            int *count);
@@ -316,9 +316,9 @@ dri_set_damage_region(__DRIdrawable *dPriv, unsigned int nrects, int *rects);
 PUBLIC unsigned
 dri_fence_get_caps(struct dri_screen *screen);
 PUBLIC void *
-dri_create_fence(__DRIcontext *_ctx);
+dri_create_fence(struct dri_context *ctx);
 PUBLIC void *
-dri_create_fence_fd(__DRIcontext *_ctx, int fd);
+dri_create_fence_fd(struct dri_context *_ctx, int fd);
 PUBLIC int
 dri_get_fence_fd(struct dri_screen *driscreen, void *_fence);
 PUBLIC void *
@@ -326,10 +326,10 @@ dri_get_fence_from_cl_event(struct dri_screen *driscreen, intptr_t cl_event);
 PUBLIC void
 dri_destroy_fence(struct dri_screen *driscreen, void *_fence);
 PUBLIC GLboolean
-dri_client_wait_sync(__DRIcontext *_ctx, void *_fence, unsigned flags,
+dri_client_wait_sync(struct dri_context *_ctx, void *_fence, unsigned flags,
                       uint64_t timeout);
 PUBLIC void
-dri_server_wait_sync(__DRIcontext *_ctx, void *_fence, unsigned flags);
+dri_server_wait_sync(struct dri_context *ctx, void *_fence, unsigned flags);
 
 PUBLIC void
 dri_set_blob_cache_funcs(struct dri_screen *screen, __DRIblobCacheSet set,

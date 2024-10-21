@@ -33,6 +33,7 @@
 #include <stdint.h>
 
 struct dri_screen;
+struct dri_context;
 
 /**
  * \name DRI interface structures
@@ -41,7 +42,6 @@ struct dri_screen;
  * side library and the DRI (direct rendering infrastructure).
  */
 /*@{*/
-typedef struct __DRIcontextRec		__DRIcontext;
 typedef struct __DRIdrawableRec		__DRIdrawable;
 typedef struct __DRIconfigRec		__DRIconfig;
 
@@ -110,7 +110,7 @@ struct __DRItexBufferExtensionRec {
      *
      * \since 2
      */
-    void (*setTexBuffer2)(__DRIcontext *pDRICtx,
+    void (*setTexBuffer2)(struct dri_context *pDRICtx,
 			  int target,
 			  int format,
 			  __DRIdrawable *pDraw);
@@ -166,7 +166,7 @@ struct __DRI2fenceExtensionRec {
    /**
     * Create and insert a fence into the command stream of the context.
     */
-   void *(*create_fence)(__DRIcontext *ctx);
+   void *(*create_fence)(struct dri_context *ctx);
 
    /**
     * Get a fence associated with the OpenCL event object.
@@ -188,7 +188,7 @@ struct __DRI2fenceExtensionRec {
     * \param flags   a combination of __DRI2_FENCE_FLAG_xxx flags
     * \param timeout the timeout in ns or __DRI2_FENCE_TIMEOUT_INFINITE
     */
-   unsigned char (*client_wait_sync)(__DRIcontext *ctx, void *fence,
+   unsigned char (*client_wait_sync)(struct dri_context *ctx, void *fence,
                                      unsigned flags, uint64_t timeout);
 
    /**
@@ -203,7 +203,7 @@ struct __DRI2fenceExtensionRec {
     * \param flags   a combination of __DRI2_FENCE_FLAG_xxx flags that make
     *                sense with this function (right now there are none)
     */
-   void (*server_wait_sync)(__DRIcontext *ctx, void *fence, unsigned flags);
+   void (*server_wait_sync)(struct dri_context *ctx, void *fence, unsigned flags);
 
    /**
     * Query for general capabilities of the driver that concern fences.
@@ -226,7 +226,7 @@ struct __DRI2fenceExtensionRec {
     * \param ctx     the context associated with the fence
     * \param fd      the fence fd or -1
     */
-   void *(*create_fence_fd)(__DRIcontext *ctx, int fd);
+   void *(*create_fence_fd)(struct dri_context *ctx, int fd);
 
    /**
     * For fences created with create_fence_fd(), after rendering is flushed,
@@ -549,26 +549,26 @@ struct __DRIcoreExtensionRec {
     void (*swapBuffers)(__DRIdrawable *drawable);
 
     /* Used by the X server in swrast mode. */
-    __DRIcontext *(*createNewContext)(struct dri_screen *screen,
+    struct dri_context *(*createNewContext)(struct dri_screen *screen,
 				      const __DRIconfig *config,
-				      __DRIcontext *shared,
+				      struct dri_context *shared,
 				      void *loaderPrivate);
 
     /* Used by the X server. */
-    int (*copyContext)(__DRIcontext *dest,
-		       __DRIcontext *src,
+    int (*copyContext)(struct dri_context *dest,
+		       struct dri_context *src,
 		       unsigned long mask);
 
     /* Used by the X server. */
-    void (*destroyContext)(__DRIcontext *context);
+    void (*destroyContext)(struct dri_context *context);
 
     /* Used by the X server. */
-    int (*bindContext)(__DRIcontext *ctx,
+    int (*bindContext)(struct dri_context *ctx,
 		       __DRIdrawable *pdraw,
 		       __DRIdrawable *pread);
 
     /* Used by the X server. */
-    int (*unbindContext)(__DRIcontext *ctx);
+    int (*unbindContext)(struct dri_context *ctx);
 
     void (*swapBuffersWithDamage)(__DRIdrawable *drawable, int nrects, const int *rects);
 };
@@ -595,11 +595,11 @@ typedef __DRIdrawable *
                               const __DRIconfig *config,
                               void *loaderPrivate);
 
-typedef __DRIcontext *
+typedef struct dri_context *
 (*__DRIcreateContextAttribsFunc)(struct dri_screen *screen,
                                  int api,
                                  const __DRIconfig *config,
-                                 __DRIcontext *shared,
+                                 struct dri_context *shared,
                                  unsigned num_attribs,
                                  const uint32_t *attribs,
                                  unsigned *error,
@@ -1015,7 +1015,7 @@ struct __DRIimageExtensionRec {
      *
      * \since 6
      */
-   __DRIimage *(*createImageFromTexture)(__DRIcontext *context,
+   __DRIimage *(*createImageFromTexture)(struct dri_context *context,
                                          int target,
                                          unsigned texture,
                                          int depth,
@@ -1033,7 +1033,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 9
     */
-   void (*blitImage)(__DRIcontext *context, __DRIimage *dst, __DRIimage *src,
+   void (*blitImage)(struct dri_context *context, __DRIimage *dst, __DRIimage *src,
                      int dstx0, int dsty0, int dstwidth, int dstheight,
                      int srcx0, int srcy0, int srcwidth, int srcheight,
                      int flush_flag);
@@ -1061,7 +1061,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 12
     */
-   void *(*mapImage)(__DRIcontext *context, __DRIimage *image,
+   void *(*mapImage)(struct dri_context *context, __DRIimage *image,
                      int x0, int y0, int width, int height,
                      unsigned int flags, int *stride, void **data);
 
@@ -1070,7 +1070,7 @@ struct __DRIimageExtensionRec {
     *
     * \since 12
     */
-   void (*unmapImage)(__DRIcontext *context, __DRIimage *image, void *data);
+   void (*unmapImage)(struct dri_context *context, __DRIimage *image, void *data);
 
    /*
     * dmabuf format query to support EGL_EXT_image_dma_buf_import_modifiers.
@@ -1140,7 +1140,7 @@ struct __DRIimageExtensionRec {
     * \param error         will be set to one of __DRI_IMAGE_ERROR_xxx
     * \return the newly created image on success, or NULL otherwise
     */
-    __DRIimage *(*createImageFromRenderbuffer)(__DRIcontext *context,
+    __DRIimage *(*createImageFromRenderbuffer)(struct dri_context *context,
                                                int renderbuffer,
                                                void *loaderPrivate,
                                                unsigned *error);

@@ -90,9 +90,8 @@ dri_fence_get_caps(struct dri_screen *driscreen)
 }
 
 void *
-dri_create_fence(__DRIcontext *_ctx)
+dri_create_fence(struct dri_context *ctx)
 {
-   struct dri_context *ctx = dri_context(_ctx);
    struct st_context *st = ctx->st;
    struct dri2_fence *fence = CALLOC_STRUCT(dri2_fence);
 
@@ -116,9 +115,8 @@ dri_create_fence(__DRIcontext *_ctx)
 }
 
 void *
-dri_create_fence_fd(__DRIcontext *_ctx, int fd)
+dri_create_fence_fd(struct dri_context *dri_ctx, int fd)
 {
-   struct dri_context *dri_ctx = dri_context(_ctx);
    struct st_context *st = dri_ctx->st;
    struct pipe_context *ctx = st->pipe;
    struct dri2_fence *fence = CALLOC_STRUCT(dri2_fence);
@@ -193,7 +191,7 @@ dri_destroy_fence(struct dri_screen *driscreen, void *_fence)
 }
 
 GLboolean
-dri_client_wait_sync(__DRIcontext *_ctx, void *_fence, unsigned flags,
+dri_client_wait_sync(struct dri_context *_ctx, void *_fence, unsigned flags,
                       uint64_t timeout)
 {
    struct dri2_fence *fence = (struct dri2_fence*)_fence;
@@ -220,9 +218,9 @@ dri_client_wait_sync(__DRIcontext *_ctx, void *_fence, unsigned flags,
 }
 
 void
-dri_server_wait_sync(__DRIcontext *_ctx, void *_fence, unsigned flags)
+dri_server_wait_sync(struct dri_context *_ctx, void *_fence, unsigned flags)
 {
-   struct st_context *st = dri_context(_ctx)->st;
+   struct st_context *st = _ctx->st;
    struct pipe_context *ctx = st->pipe;
    struct dri2_fence *fence = (struct dri2_fence*)_fence;
 
@@ -255,11 +253,10 @@ const __DRI2fenceExtension dri2FenceExtension = {
 };
 
 __DRIimage *
-dri_create_image_from_renderbuffer(__DRIcontext *context,
+dri_create_image_from_renderbuffer(struct dri_context *dri_ctx,
 				     int renderbuffer, void *loaderPrivate,
                                      unsigned *error)
 {
-   struct dri_context *dri_ctx = dri_context(context);
    struct st_context *st = dri_ctx->st;
    struct gl_context *ctx = st->ctx;
    struct pipe_context *p_ctx = st->pipe;
@@ -347,12 +344,11 @@ dri2_destroy_image(__DRIimage *img)
 
 
 __DRIimage *
-dri2_create_from_texture(__DRIcontext *context, int target, unsigned texture,
+dri2_create_from_texture(struct dri_context *dri_ctx, int target, unsigned texture,
                          int depth, int level, unsigned *error,
                          void *loaderPrivate)
 {
    __DRIimage *img;
-   struct dri_context *dri_ctx = dri_context(context);
    struct st_context *st = dri_ctx->st;
    struct gl_context *ctx = st->ctx;
    struct pipe_context *p_ctx = st->pipe;

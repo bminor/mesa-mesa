@@ -315,7 +315,7 @@ struct dri2_egl_display {
 
 struct dri2_egl_context {
    _EGLContext base;
-   __DRIcontext *dri_context;
+   struct dri_context *dri_context;
 };
 
 struct dri2_egl_surface {

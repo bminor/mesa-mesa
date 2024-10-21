@@ -422,10 +422,10 @@ validate_context_version(struct dri_screen *screen,
 /*****************************************************************/
 /*@{*/
 
-__DRIcontext *
+struct dri_context *
 driCreateContextAttribs(struct dri_screen *screen, int api,
                         const __DRIconfig *config,
-                        __DRIcontext *shared,
+                        struct dri_context *shared,
                         unsigned num_attribs,
                         const uint32_t *attribs,
                         unsigned *error,
@@ -602,15 +602,14 @@ driCreateContextAttribs(struct dri_screen *screen, int api,
 
     struct dri_context *ctx = dri_create_context(screen, mesa_api,
                                                  modes, &ctx_config, error,
-                                                 dri_context(shared),
-                                                 data);
-    return opaque_dri_context(ctx);
+                                                 shared, data);
+    return ctx;
 }
 
-static __DRIcontext *
+static struct dri_context *
 driCreateNewContextForAPI(struct dri_screen *screen, int api,
                           const __DRIconfig *config,
-                          __DRIcontext *shared, void *data)
+                          struct dri_context *shared, void *data)
 {
     unsigned error;
 
@@ -618,9 +617,9 @@ driCreateNewContextForAPI(struct dri_screen *screen, int api,
                                    &error, data);
 }
 
-__DRIcontext *
+struct dri_context *
 driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config,
-                    __DRIcontext *shared, void *data)
+                    struct dri_context *shared, void *data)
 {
     return driCreateNewContextForAPI(screen, __DRI_API_OPENGL,
                                      config, shared, data);
@@ -634,14 +633,14 @@ driCreateNewContext(struct dri_screen *screen, const __DRIconfig *config,
  * drmDestroyContext(), and finally frees \p contextPrivate.
  */
 void
-driDestroyContext(__DRIcontext *pcp)
+driDestroyContext(struct dri_context *ctx)
 {
-    if (pcp)
-        dri_destroy_context(dri_context(pcp));
+    if (ctx)
+        dri_destroy_context(ctx);
 }
 
 int
-driCopyContext(__DRIcontext *dest, __DRIcontext *src, unsigned long mask)
+driCopyContext(struct dri_context *dest, struct dri_context *src, unsigned long mask)
 {
     (void) dest;
     (void) src;
@@ -662,7 +661,7 @@ driCopyContext(__DRIcontext *dest, __DRIcontext *src, unsigned long mask)
  * for \c glXMakeCurrentReadSGI or GLX 1.3's \c glXMakeContextCurrent
  * function.
  */
-int driBindContext(__DRIcontext *pcp,
+int driBindContext(struct dri_context *ctx,
                    __DRIdrawable *pdp,
                    __DRIdrawable *prp)
 {
@@ -671,10 +670,10 @@ int driBindContext(__DRIcontext *pcp,
     ** calling driBindContext.
     */
 
-    if (!pcp)
+    if (!ctx)
         return GL_FALSE;
 
-    return dri_make_current(dri_context(pcp), dri_drawable(pdp),
+    return dri_make_current(ctx, dri_drawable(pdp),
                             dri_drawable(prp));
 }
 
@@ -694,21 +693,21 @@ int driBindContext(__DRIcontext *pcp,
  * While casting the opaque private pointers associated with the parameters
  * into their respective real types it also assures they are not \c NULL.
  */
-int driUnbindContext(__DRIcontext *pcp)
+int driUnbindContext(struct dri_context *ctx)
 {
     /*
     ** Assume error checking is done properly in glXMakeCurrent before
     ** calling driUnbindContext.
     */
 
-    if (pcp == NULL)
+    if (ctx == NULL)
         return GL_FALSE;
 
     /*
     ** Call dri_unbind_context before checking for valid drawables
     ** to handle surfaceless contexts properly.
     */
-    return dri_unbind_context(dri_context(pcp));
+    return dri_unbind_context(ctx);
 }
 
 /*@}*/

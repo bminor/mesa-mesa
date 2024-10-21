@@ -153,7 +153,7 @@ dri_pipe_blit(struct pipe_context *pipe,
               struct pipe_resource *src);
 
 void
-dri_flush(__DRIcontext *cPriv,
+dri_flush(struct dri_context *ctx,
           __DRIdrawable *dPriv,
           unsigned flags,
           enum __DRI2throttleReason reason);

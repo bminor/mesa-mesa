@@ -111,7 +111,7 @@ glx_dri3_in_current_context(struct loader_dri3_drawable *draw)
    return (pcp != &dummyContext) && pcp->psc == &psc->base;
 }
 
-static __DRIcontext *
+static struct dri_context *
 glx_dri3_get_dri_context(struct loader_dri3_drawable *draw)
 {
    struct glx_context *gc = __glXGetCurrentContext();

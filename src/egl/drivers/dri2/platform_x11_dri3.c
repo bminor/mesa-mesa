@@ -67,7 +67,7 @@ egl_dri3_in_current_context(struct loader_dri3_drawable *draw)
    return ctx->Resource.Display == dri3_surf->surf.base.Resource.Display;
 }
 
-static __DRIcontext *
+static struct dri_context *
 egl_dri3_get_dri_context(struct loader_dri3_drawable *draw)
 {
    _EGLContext *ctx = _eglGetCurrentContext();

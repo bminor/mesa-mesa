@@ -829,7 +829,7 @@ dri_create_context_attribs(struct glx_screen *base,
 {
    struct glx_context *pcp = NULL;
    __GLXDRIconfigPrivate *config = (__GLXDRIconfigPrivate *) config_base;
-   __DRIcontext *shared = NULL;
+   struct dri_context *shared = NULL;
 
    struct dri_ctx_attribs dca;
    uint32_t ctx_attribs[2 * 6];
