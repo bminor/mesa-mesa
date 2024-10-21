@@ -3323,11 +3323,14 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       ssa_info& info = ctx.info[op.tempId()];
       if (info.parent_instr->opcode == aco_opcode::v_pk_mul_f16 &&
           (info.parent_instr->operands[0].constantEquals(0x3C00) ||
-           info.parent_instr->operands[1].constantEquals(0x3C00))) {
+           info.parent_instr->operands[1].constantEquals(0x3C00) ||
+           info.parent_instr->operands[0].constantEquals(0xBC00) ||
+           info.parent_instr->operands[1].constantEquals(0xBC00))) {
 
          VALU_instruction* fneg = &info.parent_instr->valu();
 
-         unsigned fneg_src = fneg->operands[0].constantEquals(0x3C00);
+         unsigned fneg_src =
+            fneg->operands[0].constantEquals(0x3C00) || fneg->operands[0].constantEquals(0xBC00);
 
          if (fneg->opsel_lo[1 - fneg_src] || fneg->opsel_hi[1 - fneg_src])
             continue;
@@ -3351,6 +3354,10 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          bool opsel_hi = vop3p->opsel_hi[i];
          bool neg_lo = fneg->neg_lo[0] ^ fneg->neg_lo[1];
          bool neg_hi = fneg->neg_hi[0] ^ fneg->neg_hi[1];
+         bool neg_const = fneg->operands[1 - fneg_src].constantEquals(0xBC00);
+         /* Avoid ternary xor as it causes CI fails that can't be reproduced on other systems. */
+         neg_lo ^= neg_const;
+         neg_hi ^= neg_const;
          vop3p->neg_lo[i] ^= opsel_lo ? neg_hi : neg_lo;
          vop3p->neg_hi[i] ^= opsel_hi ? neg_hi : neg_lo;
          vop3p->opsel_lo[i] ^= opsel_lo ? !fneg->opsel_hi[fneg_src] : fneg->opsel_lo[fneg_src];
