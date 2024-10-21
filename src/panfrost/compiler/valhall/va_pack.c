@@ -936,7 +936,6 @@ va_pack_instr(const bi_instr *I)
       }
 
       hex |= (I->write_mask << 22);
-      hex |= ((uint64_t)va_pack_register_type(I)) << 26;
       hex |= ((uint64_t)I->dimension) << 28;
 
       break;
