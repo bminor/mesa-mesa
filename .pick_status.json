@@ -174,7 +174,7 @@
         "description": "radeonsi: move si_compute::global_buffers to si_context",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
