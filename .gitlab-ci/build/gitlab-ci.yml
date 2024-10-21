@@ -222,6 +222,7 @@ shader-db:
   extends:
     - .use-debian/x86_64_build
   rules:
+    - !reference [.never-post-merge-rules, rules]
     - !reference [.core-rules, rules]
     # Keep this list in sync with the drivers tested in run-shader-db.sh
     - !reference [.freedreno-common-rules, rules]
