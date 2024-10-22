@@ -454,7 +454,7 @@
         "description": "radv/video: Fix HEVC slice control",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "967e4e09dee81b93cfb30195ab5e1878aca9dbd0",
         "notes": null

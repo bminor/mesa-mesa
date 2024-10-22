@@ -593,16 +593,11 @@ radv_enc_slice_control_hevc(struct radv_cmd_buffer *cmd_buffer, const struct VkV
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   const struct VkVideoEncodeH265PictureInfoKHR *h265_picture_info =
-      vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H265_PICTURE_INFO_KHR);
-   const StdVideoEncodeH265PictureInfo *pic = h265_picture_info->pStdPictureInfo;
-   const StdVideoH265SequenceParameterSet *sps =
-      vk_video_find_h265_enc_std_sps(&cmd_buffer->video.params->vk, pic->pps_seq_parameter_set_id);
 
    uint32_t width_in_ctb, height_in_ctb, num_ctbs_in_slice;
 
-   width_in_ctb = sps->pic_width_in_luma_samples / 64;
-   height_in_ctb = sps->pic_height_in_luma_samples / 64;
+   width_in_ctb = DIV_ROUND_UP(enc_info->srcPictureResource.codedExtent.width, 64);
+   height_in_ctb = DIV_ROUND_UP(enc_info->srcPictureResource.codedExtent.height, 64);
    num_ctbs_in_slice = width_in_ctb * height_in_ctb;
    ENC_BEGIN;
    radeon_emit(cs, pdev->vcn_enc_cmds.slice_control_hevc);
