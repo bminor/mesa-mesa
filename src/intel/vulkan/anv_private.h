@@ -5166,7 +5166,6 @@ void anv_cmd_buffer_restore_state(struct anv_cmd_buffer *cmd_buffer,
 
 struct anv_event {
    struct vk_object_base                        base;
-   uint64_t                                     semaphore;
    struct anv_state                             state;
 };
 
