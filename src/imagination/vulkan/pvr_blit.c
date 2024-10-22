@@ -2102,8 +2102,7 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
             if (result != VK_SUCCESS)
                return;
 
-            if (clear_rect->baseArrayLayer != 0)
-               continue;
+            continue;
          }
 
          /* TODO: Allocate all the buffers in one go before the loop, and add
