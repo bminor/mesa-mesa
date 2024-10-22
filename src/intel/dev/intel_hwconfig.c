@@ -33,12 +33,6 @@
 
 #include "util/log.h"
 
-#ifdef NDEBUG
-#define DEBUG_BUILD false
-#else
-#define DEBUG_BUILD true
-#endif
-
 struct hwconfig {
    uint32_t key;
    uint32_t len;
@@ -160,6 +154,25 @@ apply_hwconfig(const struct intel_device_info *devinfo)
    return devinfo->verx10 >= 125;
 }
 
+static inline bool
+should_apply_hwconfig_item(const struct intel_device_info *devinfo,
+                           const char *devinfo_name, uint32_t devinfo_val,
+                           const uint32_t hwconfig_key, uint32_t hwconfig_val)
+{
+   if (apply_hwconfig(devinfo))
+      return true;
+
+#ifndef NDEBUG
+   if (devinfo_val != hwconfig_val) {
+      mesa_logw("%s (%u) != devinfo->%s (%u)",
+                key_to_name(hwconfig_key), hwconfig_val, devinfo_name,
+                devinfo_val);
+   }
+#endif
+
+   return false;
+}
+
 /* If apply_hwconfig(devinfo) is true, then we apply the
  * hwconfig value to the devinfo field, ``F``.
  *
@@ -170,12 +183,9 @@ apply_hwconfig(const struct intel_device_info *devinfo)
  */
 #define DEVINFO_HWCONFIG_KV(F, K, V)                                    \
    do {                                                                 \
-      if (apply_hwconfig(devinfo))                                      \
-         devinfo->F = V;                                                \
-      else if (DEBUG_BUILD && devinfo->F != (V))                        \
-         mesa_logw("%s (%u) != devinfo->%s (%u)",                       \
-                   key_to_name(K), (V), #F,                             \
-                   devinfo->F);                                         \
+      if (should_apply_hwconfig_item(devinfo, #F, devinfo->F, (K),      \
+                                     (V)))                              \
+         devinfo->F = (V);                                              \
    } while (0)
 
 #define DEVINFO_HWCONFIG(F, I) DEVINFO_HWCONFIG_KV(F, (I)->key, (I)->val[0])
