@@ -23,7 +23,7 @@ VkResult anv_CreateEvent(
    event->flags = pCreateInfo->flags;
    event->state = anv_state_pool_alloc(&device->dynamic_state_pool,
                                        sizeof(uint64_t), 8);
-   *(uint64_t *)event->state.map = VK_EVENT_RESET;
+   *(uint64_t *)event->state.map = 0;
 
    ANV_RMV(event_create, device, event, pCreateInfo->flags, false);
 
@@ -60,7 +60,7 @@ VkResult anv_GetEventStatus(
    if (vk_device_is_lost(&device->vk))
       return VK_ERROR_DEVICE_LOST;
 
-   return *(uint64_t *)event->state.map;
+   return *(uint64_t *)event->state.map ? VK_EVENT_SET : VK_EVENT_RESET;
 }
 
 VkResult anv_SetEvent(
@@ -69,7 +69,7 @@ VkResult anv_SetEvent(
 {
    ANV_FROM_HANDLE(anv_event, event, _event);
 
-   *(uint64_t *)event->state.map = VK_EVENT_SET;
+   *(uint64_t *)event->state.map = 1;
 
    return VK_SUCCESS;
 }
@@ -80,7 +80,7 @@ VkResult anv_ResetEvent(
 {
    ANV_FROM_HANDLE(anv_event, event, _event);
 
-   *(uint64_t *)event->state.map = VK_EVENT_RESET;
+   *(uint64_t *)event->state.map = 0;
 
    return VK_SUCCESS;
 }

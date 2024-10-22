@@ -6316,16 +6316,14 @@ void genX(CmdSetEvent2)(
       cmd_buffer_barrier_video(cmd_buffer, 1, pDependencyInfo,
                                anv_state_pool_state_address(
                                   &cmd_buffer->device->dynamic_state_pool,
-                                  event->state),
-                               VK_EVENT_SET);
+                                  event->state), 1);
       break;
 
    case INTEL_ENGINE_CLASS_COPY:
       cmd_buffer_barrier_blitter(cmd_buffer, 1, pDependencyInfo,
                                  anv_state_pool_state_address(
                                     &cmd_buffer->device->dynamic_state_pool,
-                                    event->state),
-                                 VK_EVENT_SET);
+                                    event->state), 1);
       break;
 
    case INTEL_ENGINE_CLASS_RENDER:
@@ -6347,8 +6345,7 @@ void genX(CmdSetEvent2)(
           cmd_buffer->state.current_pipeline, WriteImmediateData,
           anv_state_pool_state_address(&cmd_buffer->device->dynamic_state_pool,
                                        event->state),
-          VK_EVENT_SET, pc_bits,
-          "vkCmdSetEvent2");
+          1, pc_bits, "vkCmdSetEvent2");
       break;
    }
 
@@ -6365,6 +6362,10 @@ void genX(CmdResetEvent2)(
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    ANV_FROM_HANDLE(anv_event, event, _event);
 
+   /* Write a 0 as reset value, for PIPE_CONTROL/MI_FLUSH_DW we can write 1 as
+    * signal value. RESOURCE_BARRIER can write a non 0 value.
+    */
+
    switch (cmd_buffer->batch.engine_class) {
    case INTEL_ENGINE_CLASS_VIDEO:
    case INTEL_ENGINE_CLASS_COPY:
@@ -6373,7 +6374,7 @@ void genX(CmdResetEvent2)(
          flush.Address = anv_state_pool_state_address(
             &cmd_buffer->device->dynamic_state_pool,
             event->state);
-         flush.ImmediateData = VK_EVENT_RESET;
+         flush.ImmediateData = 0;
       }
       break;
 
@@ -6388,12 +6389,15 @@ void genX(CmdResetEvent2)(
          pc_bits |= ANV_PIPE_CS_STALL_BIT;
       }
 
+      /* We have to use PIPE_CONTROL here as RESOURCE_BARRIER cannot write a 0
+       * value.
+       */
       genX(batch_emit_pipe_control_write)
          (&cmd_buffer->batch, cmd_buffer->device->info,
           cmd_buffer->state.current_pipeline, WriteImmediateData,
           anv_state_pool_state_address(&cmd_buffer->device->dynamic_state_pool,
                                        event->state),
-          VK_EVENT_RESET,
+          0,
           pc_bits,
           "vkCmdResetEvent2");
       break;
@@ -6417,8 +6421,8 @@ void genX(CmdWaitEvents2)(
 
       anv_batch_emit(&cmd_buffer->batch, GENX(MI_SEMAPHORE_WAIT), sem) {
          sem.WaitMode            = PollingMode;
-         sem.CompareOperation    = COMPARE_SAD_EQUAL_SDD;
-         sem.SemaphoreDataDword  = VK_EVENT_SET;
+         sem.CompareOperation    = COMPARE_SAD_NOT_EQUAL_SDD;
+         sem.SemaphoreDataDword  = 0;
          sem.SemaphoreAddress    = anv_state_pool_state_address(
             &cmd_buffer->device->dynamic_state_pool,
             event->state);
