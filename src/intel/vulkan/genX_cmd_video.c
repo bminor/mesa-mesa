@@ -1186,6 +1186,8 @@ handle_inline_query_end(struct anv_cmd_buffer *cmd_buffer,
                         const VkVideoInlineQueryInfoKHR *inline_query)
 {
    ANV_FROM_HANDLE(anv_query_pool, pool, inline_query->queryPool);
+   if (pool == VK_NULL_HANDLE)
+      return;
 
    struct anv_address query_addr = {
       .bo = pool->bo,
