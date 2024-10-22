@@ -122,6 +122,8 @@ struct wsi_wl_display {
 
    dev_t main_device;
    bool same_gpu;
+
+   clockid_t presentation_clock_id;
 };
 
 struct wsi_wayland {
@@ -815,6 +817,18 @@ static const struct wl_shm_listener shm_listener = {
 };
 
 static void
+presentation_handle_clock_id(void* data, struct wp_presentation *wp_presentation, uint32_t clk_id)
+{
+   struct wsi_wl_display *display = data;
+
+   display->presentation_clock_id = clk_id;
+}
+
+static const struct wp_presentation_listener presentation_listener = {
+   presentation_handle_clock_id,
+};
+
+static void
 registry_handle_global(void *data, struct wl_registry *registry,
                        uint32_t name, const char *interface, uint32_t version)
 {
@@ -841,6 +855,7 @@ registry_handle_global(void *data, struct wl_registry *registry,
    if (strcmp(interface, wp_presentation_interface.name) == 0) {
       display->wp_presentation_notwrapped =
          wl_registry_bind(registry, name, &wp_presentation_interface, 1);
+      wp_presentation_add_listener(display->wp_presentation_notwrapped, &presentation_listener, display);
    } else if (strcmp(interface, wp_tearing_control_manager_v1_interface.name) == 0) {
       display->tearing_control_manager =
          wl_registry_bind(registry, name, &wp_tearing_control_manager_v1_interface, 1);
@@ -893,6 +908,7 @@ wsi_wl_display_init(struct wsi_wayland *wsi_wl,
    if (!u_vector_init(&display->formats, 8, sizeof(struct wsi_wl_format)))
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
+   display->presentation_clock_id = -1; // 0 is a valid clock ID
    display->wsi_wl = wsi_wl;
    display->wl_display = wl_display;
    display->sw = sw;
@@ -1998,7 +2014,7 @@ trace_present(const struct wsi_wl_present_id *id,
       buffer_name = stringify_wayland_id(surface->analytics.presenting);
       MESA_TRACE_TIMESTAMP_END(buffer_name ? buffer_name : "Wayland buffer",
                                surface->analytics.presentation_track_id,
-                               presentation_time);
+                               chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
       free(buffer_name);
    }
 
@@ -2009,7 +2025,7 @@ trace_present(const struct wsi_wl_present_id *id,
       MESA_TRACE_TIMESTAMP_BEGIN(buffer_name ? buffer_name : "Wayland buffer",
                                  surface->analytics.presentation_track_id,
                                  id->flow_id,
-                                 presentation_time);
+                                 chain->wsi_wl_surface->display->presentation_clock_id, presentation_time);
       free(buffer_name);
    }
 }
