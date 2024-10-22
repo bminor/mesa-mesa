@@ -7,7 +7,7 @@
 set -uex
 
 ANGLE_REV="76025caa1a059f464a2b0e8f879dbd4746f092b9"
-SCRIPTS_DIR="$(realpath "$(dirname "$0")/..")"
+SCRIPTS_DIR="$(pwd)/.gitlab-ci"
 ANGLE_PATCH_DIR="${SCRIPTS_DIR}/container/patches"
 
 # DEPOT tools
