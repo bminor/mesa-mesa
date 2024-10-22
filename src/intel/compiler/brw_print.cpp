@@ -671,6 +671,9 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
    if (is_send && inst->ex_desc)
       fprintf(file, "ExDesc 0x%08x ", inst->ex_desc);
 
+   if (is_send && inst->send_ex_desc_imm)
+      fprintf(file, "ExDescImmInst 0x%08x ", inst->offset);
+
    if (inst->sched.regdist || inst->sched.mode) {
       fprintf(file, "{ ");
       brw_print_swsb(file, s.devinfo, inst->sched);

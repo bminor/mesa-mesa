@@ -177,6 +177,11 @@ brw_generator::generate_send(brw_inst *inst,
    }
 
    if (ex_desc.file == IMM && ex_desc.ud == 0) {
+      /* An immediate extended descriptor value only happens when the extended
+       * descriptor is written indirectly (it already contains a SS/BSS
+       * surface handle)
+       */
+      assert(!inst->send_ex_desc_imm);
       brw_send_indirect_message(p, inst->sfid, dst, payload, desc, inst->eot, gather);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst, BRW_OPCODE_SENDC);
@@ -185,8 +190,10 @@ brw_generator::generate_send(brw_inst *inst,
        * also covers the dual-payload case because ex_mlen goes in ex_desc.
        */
       brw_send_indirect_split_message(p, inst->sfid, dst, payload, payload2,
-                                      desc, ex_desc, inst->ex_mlen,
-                                      inst->send_ex_bso, inst->eot, gather);
+                                      desc, ex_desc,
+                                      inst->send_ex_desc_imm ? inst->offset : 0,
+                                      inst->ex_mlen, inst->send_ex_bso,
+                                      inst->eot, gather);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst,
                              devinfo->ver >= 12 ? BRW_OPCODE_SENDC : BRW_OPCODE_SENDSC);

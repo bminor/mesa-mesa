@@ -1295,11 +1295,12 @@ lsc_fence_msg_desc_backup_routing(UNUSED const struct intel_device_info *devinfo
 }
 
 static inline uint32_t
-lsc_bti_ex_desc(const struct intel_device_info *devinfo, unsigned bti)
+lsc_bti_ex_desc(const struct intel_device_info *devinfo, unsigned bti,
+                unsigned base_offset)
 {
    assert(devinfo->has_lsc);
    return SET_BITS(bti, 31, 24) |
-          SET_BITS(0, 23, 12);  /* base offset */
+          SET_BITS(base_offset, 23, 12);  /* base offset */
 }
 
 static inline unsigned
@@ -1316,6 +1317,14 @@ lsc_bti_ex_desc_index(const struct intel_device_info *devinfo,
 {
    assert(devinfo->has_lsc);
    return GET_BITS(ex_desc, 31, 24);
+}
+
+static inline unsigned
+lsc_flat_ex_desc(const struct intel_device_info *devinfo,
+                 uint32_t base_offset)
+{
+   assert(devinfo->has_lsc);
+   return SET_BITS(base_offset, 31, 12);
 }
 
 static inline unsigned
@@ -1460,6 +1469,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
                                 struct brw_reg payload1,
                                 struct brw_reg desc,
                                 struct brw_reg ex_desc,
+                                uint32_t ex_desc_imm_inst,
                                 unsigned ex_mlen,
                                 bool ex_bso,
                                 bool eot,
@@ -1611,6 +1621,24 @@ next_offset(struct brw_codegen *p, void *store, int offset)
 
 /** Maximum SEND message length */
 #define BRW_MAX_MSG_LENGTH 15
+
+/** Offset encoding signed size limits (top bit is the sign) */
+#define LSC_ADDRESS_OFFSET_FLAT_BITS 20
+#define LSC_ADDRESS_OFFSET_SS_BITS   17
+#define LSC_ADDRESS_OFFSET_BTI_BITS  12
+
+static inline unsigned
+brw_max_immediate_offset_bits(enum lsc_addr_surface_type binding_type)
+{
+   static const unsigned max_bits[] = {
+      [LSC_ADDR_SURFTYPE_FLAT] = LSC_ADDRESS_OFFSET_FLAT_BITS,
+      [LSC_ADDR_SURFTYPE_BSS]  = LSC_ADDRESS_OFFSET_SS_BITS,
+      [LSC_ADDR_SURFTYPE_SS]   = LSC_ADDRESS_OFFSET_SS_BITS,
+      [LSC_ADDR_SURFTYPE_BTI]  = LSC_ADDRESS_OFFSET_BTI_BITS,
+   };
+   assert(binding_type <= LSC_ADDR_SURFTYPE_BTI);
+   return max_bits[binding_type];
+}
 
 #ifdef __cplusplus
 }

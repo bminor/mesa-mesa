@@ -1490,6 +1490,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
                                 struct brw_reg payload1,
                                 struct brw_reg desc,
                                 struct brw_reg ex_desc,
+                                uint32_t ex_desc_imm_inst,
                                 unsigned ex_mlen,
                                 bool ex_bso,
                                 bool eot,
@@ -1517,6 +1518,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
    }
 
    if (ex_desc.file == IMM) {
+      assert(ex_desc_imm_inst == 0);
       brw_eu_inst_set_send_sel_reg32_ex_desc(devinfo, send, 0);
       brw_eu_inst_set_sends_ex_desc(devinfo, send, ex_desc.ud, gather);
    } else {
@@ -1525,6 +1527,18 @@ brw_send_indirect_split_message(struct brw_codegen *p,
       brw_eu_inst_set_send_sel_reg32_ex_desc(devinfo, send, 1);
       brw_eu_inst_set_send_ex_desc_ia_subreg_nr(devinfo, send, phys_subnr(devinfo, ex_desc) >> 2);
 
+      if (ex_desc_imm_inst) {
+         /* Write the immediate extended descriptor immediate value, but only
+          * the part used for encoding an offset. This matches to bits
+          * 12:15-19:31 as described in BSpec 70586.
+          */
+         assert(devinfo->ver >= 20);
+         brw_eu_inst_set_bits(send, 127, 124, GET_BITS(ex_desc_imm_inst, 31, 28));
+         brw_eu_inst_set_bits(send, 97, 96, GET_BITS(ex_desc_imm_inst, 27, 26));
+         brw_eu_inst_set_bits(send, 65, 64, GET_BITS(ex_desc_imm_inst, 25, 24));
+         brw_eu_inst_set_bits(send, 47, 43, GET_BITS(ex_desc_imm_inst, 23, 19));
+         brw_eu_inst_set_bits(send, 39, 36, GET_BITS(ex_desc_imm_inst, 15, 12));
+      }
       if (devinfo->ver >= 20 && sfid == BRW_SFID_UGM)
          brw_eu_inst_set_bits(send, 103, 99, ex_mlen / reg_unit(devinfo));
    }

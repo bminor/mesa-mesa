@@ -29,6 +29,8 @@
 #include "brw_shader.h"
 #include "brw_builder.h"
 
+#include "util/bitpack_helpers.h"
+
 static void
 lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
 {
@@ -1396,14 +1398,26 @@ setup_surface_descriptors(const brw_builder &bld, brw_inst *inst, uint32_t desc,
 
 static void
 setup_lsc_surface_descriptors(const brw_builder &bld, brw_inst *inst,
-                              uint32_t desc, const brw_reg &surface)
+                              uint32_t desc, const brw_reg &surface,
+                              int32_t base_offset)
 {
    const ASSERTED intel_device_info *devinfo = bld.shader->devinfo;
    const brw_compiler *compiler = bld.shader->compiler;
 
+   assert(base_offset == 0 || devinfo->ver >= 20);
+
    inst->src[0] = brw_imm_ud(0); /* desc */
+   inst->src[1] = brw_imm_ud(0);
 
    enum lsc_addr_surface_type surf_type = lsc_msg_desc_addr_type(devinfo, desc);
+
+   unsigned max_imm_bits = brw_max_immediate_offset_bits(surf_type);
+   assert(base_offset >= u_intN_min(max_imm_bits));
+   assert(base_offset <= u_intN_max(max_imm_bits));
+
+   const unsigned base_offset_bits =
+      util_bitpack_sint(base_offset, 0, max_imm_bits - 1);
+
    switch (surf_type) {
    case LSC_ADDR_SURFTYPE_BSS:
       inst->send_ex_bso = compiler->extended_bindless_surface_offset;
@@ -1417,22 +1431,40 @@ setup_lsc_surface_descriptors(const brw_builder &bld, brw_inst *inst,
       /* Gfx20+ assumes ExBSO with UGM */
       if (devinfo->ver >= 20 && inst->sfid == BRW_SFID_UGM)
          inst->send_ex_bso = true;
+
+      /* We're already using the extended descriptor to hold the surface
+       * handle. But now the immediate extended descriptor bits in the
+       * instruction are unused, so this is where the HW design team thought
+       * it would be a good idea to store the immediate offset.
+       *
+       * This doesn't play well with the rest of our compiler that considers
+       * there is only one value for the extended descriptor. So here we stash
+       * the base offset in brw_inst::offset and flag the instruction for the
+       * generator to do the right thing with it.
+       */
+      if (base_offset) {
+         inst->send_ex_desc_imm = true;
+         inst->offset = SET_BITS(GET_BITS(base_offset_bits, 16, 4), 31, 19) |
+                        SET_BITS(GET_BITS(base_offset_bits, 3, 0), 15, 12);
+      }
       break;
 
    case LSC_ADDR_SURFTYPE_BTI:
       assert(surface.file != BAD_FILE);
       if (surface.file == IMM) {
-         inst->src[1] = brw_imm_ud(lsc_bti_ex_desc(devinfo, surface.ud));
+         inst->src[1] = brw_imm_ud(lsc_bti_ex_desc(devinfo, surface.ud,
+                                                   base_offset_bits));
       } else {
          const brw_builder ubld = bld.uniform();
-         brw_reg tmp = ubld.vgrf(BRW_TYPE_UD);
-         ubld.SHL(tmp, surface, brw_imm_ud(24));
+         brw_reg tmp = ubld.OR(
+            ubld.SHL(surface, brw_imm_ud(24)),
+            brw_imm_ud(base_offset << 12));
          inst->src[1] = component(tmp, 0);
       }
       break;
 
    case LSC_ADDR_SURFTYPE_FLAT:
-      inst->src[1] = brw_imm_ud(0);
+      inst->src[1] = brw_imm_ud(lsc_flat_ex_desc(devinfo, base_offset_bits));
       break;
 
    default:
@@ -1490,11 +1522,14 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       brw_type_with_size(data0.type, data_size_B * 8);
 
    const enum lsc_addr_size addr_size = lsc_addr_size_for_type(addr.type);
+   assert(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].file == IMM);
+   const int32_t base_offset = inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d;
 
-   const brw_reg base_offset =
-      retype(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET], BRW_TYPE_UD);
-   /* TODO: setup the offset */
-   assert(base_offset.ud == 0);
+   /**
+    * TGM messages cannot have a base offset
+    */
+   if (mode == MEMORY_MODE_TYPED)
+      assert(base_offset == 0);
 
    brw_reg payload = addr;
 
@@ -1596,7 +1631,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
                              transpose, cache_mode);
 
    /* Set up extended descriptors, fills src[0] and src[1]. */
-   setup_lsc_surface_descriptors(bld, inst, inst->desc, binding);
+   setup_lsc_surface_descriptors(bld, inst, inst->desc, binding, base_offset);
 
    inst->opcode = SHADER_OPCODE_SEND;
    inst->mlen = lsc_msg_addr_len(devinfo, addr_size,
@@ -1678,9 +1713,8 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    const brw_reg data1 = inst->src[MEMORY_LOGICAL_DATA1];
    const bool has_side_effects = inst->has_side_effects();
    const bool has_dest = inst->dst.file != BAD_FILE && !inst->dst.is_null();
-   const brw_reg base_offset =
-      retype(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET], BRW_TYPE_UD);
-   assert(base_offset.ud == 0);
+   assert(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].file == IMM &&
+          inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d == 0);
 
    /* Don't predicate scratch writes on the sample mask.  Otherwise,
     * FS helper invocations would load undefined values from scratch memory.
@@ -1986,7 +2020,7 @@ lower_lsc_varying_pull_constant_logical_send(const brw_builder &bld,
 
       setup_lsc_surface_descriptors(bld, inst, inst->desc,
                                     surface.file != BAD_FILE ?
-                                    surface : surface_handle);
+                                    surface : surface_handle, 0);
    } else {
       inst->desc =
          lsc_msg_desc(devinfo, LSC_OP_LOAD,
@@ -1999,7 +2033,7 @@ lower_lsc_varying_pull_constant_logical_send(const brw_builder &bld,
 
       setup_lsc_surface_descriptors(bld, inst, inst->desc,
                                     surface.file != BAD_FILE ?
-                                    surface : surface_handle);
+                                    surface : surface_handle, 0);
 
       /* The byte scattered messages can only read one dword at a time so
        * we have to duplicate the message 4 times to read the full vec4.
@@ -2746,7 +2780,7 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
          inst->resize_sources(3);
          setup_lsc_surface_descriptors(ubld, inst, inst->desc,
                                        surface.file != BAD_FILE ?
-                                       surface : surface_handle);
+                                       surface : surface_handle, 0);
          inst->src[2] = payload;
 
          s.invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS |

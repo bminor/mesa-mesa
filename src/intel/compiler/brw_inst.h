@@ -190,7 +190,7 @@ public:
           */
          unsigned rcount:4;
 
-         unsigned pad:5;
+         unsigned pad:4;
 
          bool predicate_inverse:1;
          bool writes_accumulator:1; /**< instruction implicitly writes accumulator */
@@ -205,6 +205,12 @@ public:
                               *   bindless surface offset (26bits instead of
                               *   20bits)
                               */
+         /**
+          * Only for SHADER_OPCODE_SEND, @offset field contains an immediate
+          * part of the extended descriptor that must be encoded in the
+          * instruction.
+          */
+         bool send_ex_desc_imm:1;
          /**
           * The predication mask applied to this instruction is guaranteed to
           * be uniform and a superset of the execution mask of the present block.
