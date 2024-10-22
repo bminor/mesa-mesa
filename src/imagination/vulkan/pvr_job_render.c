@@ -1342,6 +1342,9 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
        */
       value.dbias_is_int = PVR_HAS_ERN(dev_info, 42307) &&
                            pvr_zls_format_type_is_int(job->ds.zls_format);
+
+      if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support))
+         value.skip_init_hdrs = true;
    }
    /* FIXME: When pvr_setup_tiles_in_flight() is refactored it might be
     * possible to fully pack CR_ISP_CTL above rather than having to OR in part
@@ -1399,8 +1402,8 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    stream_ptr += pvr_cmd_length(CR_EVENT_PIXEL_PDS_DATA);
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
-      pvr_finishme(
-         "Emit isp_oclqry_stride when feature gpu_multicore_support is present");
+      if (device->pdevice->dev_runtime_info.core_count > 1)
+         pvr_finishme("Emit isp_oclqry_stride, core_count is greater than one");
       *stream_ptr = 0;
       stream_ptr++;
    }
@@ -1429,8 +1432,8 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
    stream_ptr++;
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
-      pvr_finishme(
-         "Emit execute_count when feature gpu_multicore_support is present");
+      if (device->pdevice->dev_runtime_info.core_count > 1)
+         pvr_finishme("Emit execute_count core_count is greater than one");
       *stream_ptr = 0;
       stream_ptr++;
    }

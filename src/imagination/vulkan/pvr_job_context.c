@@ -278,6 +278,7 @@ pvr_render_job_pt_programs_cleanup(struct pvr_device *device,
 }
 
 static void pvr_pds_ctx_sr_program_setup(
+   uint32_t core_count,
    bool cc_enable,
    uint64_t usc_program_upload_offset,
    uint8_t usc_temps,
@@ -286,17 +287,22 @@ static void pvr_pds_ctx_sr_program_setup(
 {
    /* The PDS task is the same for stores and loads. */
    *program_out = (struct pvr_pds_shared_storing_program){
-		.cc_enable = cc_enable,
-		.doutw_control = {
-			.dest_store = PDS_UNIFIED_STORE,
-			.num_const64 = 2,
-			.doutw_data = {
-				[0] = sr_addr.addr,
-				[1] = sr_addr.addr + ROGUE_LLS_SHARED_REGS_RESERVE_SIZE,
-			},
-			.last_instruction = false,
-		},
-	};
+               .cc_enable = cc_enable,
+               .doutw_control = {
+                       .dest_store = PDS_UNIFIED_STORE,
+                       .num_const64 = 2,
+                       .doutw_data = {
+                               [0] = sr_addr.addr,
+                               [1] = sr_addr.addr + ROGUE_LLS_SHARED_REGS_RESERVE_SIZE,
+                       },
+                       .last_instruction = false,
+               },
+       };
+
+   if (core_count > 1) {
+      pvr_finishme(
+         "Handle LLS_USC_SHARED_REGS_BUFFER_SIZE in DOUTW data_control");
+   }
 
    pvr_pds_setup_doutu(&program_out->usc_task.usc_task_control,
                        usc_program_upload_offset,
@@ -330,7 +336,8 @@ static VkResult pvr_pds_render_ctx_sr_program_create_and_upload(
    ASSERTED uint32_t *buffer_end;
    uint32_t code_offset;
 
-   pvr_pds_ctx_sr_program_setup(false,
+   pvr_pds_ctx_sr_program_setup(device->pdevice->dev_runtime_info.core_count,
+                                false,
                                 usc_program_upload_offset,
                                 usc_temps,
                                 sr_addr,
@@ -389,7 +396,8 @@ static VkResult pvr_pds_compute_ctx_sr_program_create_and_upload(
    uint32_t *buffer_ptr;
    uint32_t code_offset;
 
-   pvr_pds_ctx_sr_program_setup(PVR_HAS_ERN(dev_info, 35421),
+   pvr_pds_ctx_sr_program_setup(device->pdevice->dev_runtime_info.core_count,
+                                PVR_HAS_ERN(dev_info, 35421),
                                 usc_program_upload_offset,
                                 usc_temps,
                                 sr_addr,

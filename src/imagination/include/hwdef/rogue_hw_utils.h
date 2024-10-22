@@ -306,6 +306,10 @@ rogue_get_cdm_context_resume_buffer_size(const struct pvr_device_info *dev_info)
       const uint32_t cdm_context_resume_buffer_stride =
          ALIGN_POT(ROGUE_LLS_CDM_CONTEXT_RESUME_BUFFER_SIZE, cache_line_size);
 
+      /*
+       * TODO: Optimise buffer size based on the core_count,
+       * not max_num_cores
+       */
       return cdm_context_resume_buffer_stride * max_num_cores;
    }
 

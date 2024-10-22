@@ -357,6 +357,7 @@ pvr_get_tile_buffer_size_per_core(const struct pvr_device *device)
 uint32_t pvr_get_tile_buffer_size(const struct pvr_device *device)
 {
    /* On a multicore system duplicate the buffer for each core. */
+   /* TODO: Optimise tile buffer size to use core_count, not max_num_cores. */
    return pvr_get_tile_buffer_size_per_core(device) *
           rogue_get_max_num_cores(&device->pdevice->dev_info);
 }

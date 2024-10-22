@@ -126,8 +126,8 @@ pvr_submit_info_stream_init(struct pvr_compute_ctx *ctx,
    }
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
-      pvr_finishme(
-         "Emit execute_count when feature gpu_multicore_support is present");
+      if (device->pdevice->dev_runtime_info.core_count > 1)
+         pvr_finishme("Emit execute_count, core_count is greater than one");
       *stream_ptr = 0;
       stream_ptr++;
    }

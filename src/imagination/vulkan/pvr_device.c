@@ -301,6 +301,8 @@ static bool pvr_physical_device_get_properties(
    struct vk_properties *const properties)
 {
    const struct pvr_device_info *const dev_info = &pdevice->dev_info;
+   const struct pvr_device_runtime_info *dev_runtime_info =
+      &pdevice->dev_runtime_info;
 
    /* Default value based on the minimum value found in all existing cores. */
    const uint32_t max_multisample =
@@ -527,11 +529,20 @@ static bool pvr_physical_device_get_properties(
       .uniformTexelBufferOffsetSingleTexelAlignment = false,
    };
 
-   snprintf(properties->deviceName,
-            sizeof(properties->deviceName),
-            "PowerVR %s %s",
-            dev_info->ident.series_name,
-            dev_info->ident.public_name);
+   if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
+      snprintf(properties->deviceName,
+               sizeof(properties->deviceName),
+               "PowerVR %s %s MC%u",
+               dev_info->ident.series_name,
+               dev_info->ident.public_name,
+               dev_runtime_info->core_count);
+   } else {
+      snprintf(properties->deviceName,
+               sizeof(properties->deviceName),
+               "PowerVR %s %s",
+               dev_info->ident.series_name,
+               dev_info->ident.public_name);
+   }
 
    return true;
 }
