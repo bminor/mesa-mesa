@@ -458,15 +458,16 @@ radv_enc_session_init(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEn
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_video_session *vid = cmd_buffer->video.vid;
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   unsigned alignment = 16;
+   unsigned alignment_w = 16;
+   unsigned alignment_h = 16;
    if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
-      alignment = 64;
+      alignment_w = 64;
    }
 
    uint32_t w = enc_info->srcPictureResource.codedExtent.width;
    uint32_t h = enc_info->srcPictureResource.codedExtent.height;
-   uint32_t aligned_picture_width = align(w, alignment);
-   uint32_t aligned_picture_height = align(h, alignment);
+   uint32_t aligned_picture_width = align(w, alignment_w);
+   uint32_t aligned_picture_height = align(h, alignment_h);
    uint32_t padding_width = aligned_picture_width - w;
    uint32_t padding_height = aligned_picture_height - h;
 
