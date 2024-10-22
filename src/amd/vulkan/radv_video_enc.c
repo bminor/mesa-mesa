@@ -1355,6 +1355,7 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
    uint64_t chroma_va = va + src_img->planes[1].surface.u.gfx9.surf_offset;
    uint32_t pic_type;
    unsigned int slot_idx = 0xffffffff;
+   unsigned int max_layers = cmd_buffer->video.vid->rc_layer_control.max_num_temporal_layers;
 
    radv_cs_add_buffer(device->ws, cs, src_img->bindings[0].bo);
    if (h264_pic) {
@@ -1373,7 +1374,7 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
          pic_type = RENCODE_PICTURE_TYPE_I;
          break;
       }
-      radv_enc_layer_select(cmd_buffer, h264_pic->temporal_id);
+      radv_enc_layer_select(cmd_buffer, MIN2(h264_pic->temporal_id, max_layers));
    } else if (h265_pic) {
       switch (h265_pic->pic_type) {
       case STD_VIDEO_H265_PICTURE_TYPE_P:
@@ -1390,7 +1391,7 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
          pic_type = RENCODE_PICTURE_TYPE_I;
          break;
       }
-      radv_enc_layer_select(cmd_buffer, h265_pic->TemporalId);
+      radv_enc_layer_select(cmd_buffer, MIN2(h265_pic->TemporalId, max_layers));
    } else {
       assert(0);
       return;

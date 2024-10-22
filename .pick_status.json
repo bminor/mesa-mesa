@@ -434,7 +434,7 @@
         "description": "radv/video: Avoid selecting rc layer over maximum",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4a19047d329a49ed34fe05346ae1d298d2907e3e",
         "notes": null
