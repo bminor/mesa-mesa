@@ -1046,6 +1046,10 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
 
    if (!sel) {
       return false;
+   } else if (sel.size() == instr->operands[idx].bytes() && sel.size() == tmp.bytes() &&
+              tmp.type() == instr->operands[idx].regClass().type()) {
+      assert(tmp.type() != RegType::sgpr); /* No sub-dword SGPR regclasses */
+      return true;
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
                instr->opcode == aco_opcode::v_cvt_f32_i32) &&
               sel.size() == 1 && !sel.sign_extend() && !instr->usesModifiers()) {
@@ -1063,8 +1067,13 @@ can_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_i
       return true;
    } else if (idx < 2 && can_use_SDWA(ctx.program->gfx_level, instr, true) &&
               (tmp.type() == RegType::vgpr || ctx.program->gfx_level >= GFX9)) {
-      if (instr->isSDWA() && instr->sdwa().sel[idx] != SubdwordSel::dword)
-         return false;
+      if (instr->isSDWA()) {
+         /* TODO: if we knew how many bytes this operand actually uses, we could have smaller
+          * second_dst parameter and apply more sign-extended sels.
+          */
+         return apply_extract_twice(sel, instr->operands[idx].getTemp(), instr->sdwa().sel[idx],
+                                    Temp(0, v1)) != SubdwordSel();
+      }
       return true;
    } else if (instr->isVALU() && sel.size() == 2 && !instr->valu().opsel[idx] &&
               can_use_opsel(ctx.program->gfx_level, instr->opcode, idx)) {
@@ -1103,8 +1112,9 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
 
    ctx.info[tmp.id()].label &= ~label_insert;
 
-   if (sel.size() == 4 && tmp.type() == instr->operands[idx].regClass().type()) {
-      /* full dword selection */
+   if (sel.size() == instr->operands[idx].bytes() && sel.size() == tmp.bytes() &&
+       tmp.type() == instr->operands[idx].regClass().type()) {
+      /* extract is a no-op */
    } else if ((instr->opcode == aco_opcode::v_cvt_f32_u32 ||
                instr->opcode == aco_opcode::v_cvt_f32_i32) &&
               sel.size() == 1 && !sel.sign_extend() && !instr->usesModifiers()) {
@@ -1137,7 +1147,8 @@ apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr, unsigned idx, ssa_info&
    } else if (can_use_SDWA(ctx.program->gfx_level, instr, true) &&
               (tmp.type() == RegType::vgpr || ctx.program->gfx_level >= GFX9)) {
       convert_to_SDWA(ctx.program->gfx_level, instr);
-      instr->sdwa().sel[idx] = sel;
+      instr->sdwa().sel[idx] = apply_extract_twice(sel, instr->operands[idx].getTemp(),
+                                                   instr->sdwa().sel[idx], Temp(0, v1));
    } else if (instr->isVALU()) {
       if (sel.offset()) {
          instr->valu().opsel[idx] = true;
@@ -2042,15 +2053,16 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          ctx.info[instr->definitions[0].tempId()].set_canonicalized();
       break;
    case aco_opcode::p_extract: {
-      if (instr->definitions[0].bytes() == 4 && instr->operands[0].isTemp()) {
+      if (instr->operands[0].isTemp()) {
          ctx.info[instr->definitions[0].tempId()].set_extract(instr.get());
-         if (instr->operands[0].regClass() == v1 && parse_insert(instr.get()))
+         if (instr->definitions[0].bytes() == 4 && instr->operands[0].regClass() == v1 &&
+             parse_insert(instr.get()))
             ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
       }
       break;
    }
    case aco_opcode::p_insert: {
-      if (instr->operands[0].bytes() == 4 && instr->operands[0].isTemp()) {
+      if (instr->operands[0].isTemp()) {
          if (instr->operands[0].regClass() == v1)
             ctx.info[instr->operands[0].tempId()].set_insert(instr.get());
          if (parse_extract(instr.get()))

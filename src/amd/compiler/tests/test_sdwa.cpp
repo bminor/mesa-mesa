@@ -658,3 +658,44 @@ BEGIN_TEST(optimize.sdwa.extract_sgpr_limits)
 
    finish_opt_test();
 END_TEST
+
+BEGIN_TEST(optimize.sdwa.subdword_extract)
+   //>> v1: %a, v1: %b, s2: %c = p_startpgm
+   if (!setup_cs("v1 v1 s2", GFX10_3))
+      return;
+
+   Temp a = inputs[0];
+   Temp b = inputs[1];
+
+   //! v2b: %res0 = v_lshlrev_b16_e64 4, hi(%a)
+   //! p_unit_test 0, %res0
+   writeout(0, bld.vop3(aco_opcode::v_lshlrev_b16_e64, bld.def(v2b), Operand::c32(4),
+                        bld.pseudo(aco_opcode::p_extract, bld.def(v2b), a, Operand::c32(1),
+                                   Operand::c32(16), Operand::c32(false))));
+
+   //! v2b: %res1 = v_add_f16 %a, %b dst_sel:uword0 dst_preserve src0_sel:uword1 src1_sel:uword1
+   //! p_unit_test 1, %res1
+   writeout(1,
+            bld.vop2(aco_opcode::v_add_f16, bld.def(v2b),
+                     bld.pseudo(aco_opcode::p_extract_vector, bld.def(v2b), a, Operand::c32(1)),
+                     bld.pseudo(aco_opcode::p_extract_vector, bld.def(v2b), b, Operand::c32(1))));
+
+   //! v2b: %res2 = v_cndmask_b32 %a, %b, %c:vcc dst_sel:uword0 dst_preserve src0_sel:ubyte0 src1_sel:ubyte1
+   //! p_unit_test 2, %res2
+   writeout(2, bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v2b),
+                        bld.pseudo(aco_opcode::p_extract, bld.def(v2b), a, Operand::c32(0),
+                                   Operand::c32(8), Operand::c32(0)),
+                        bld.pseudo(aco_opcode::p_extract, bld.def(v2b), b, Operand::c32(1),
+                                   Operand::c32(8), Operand::c32(0)),
+                        inputs[2]));
+
+   //! v1b: %res3 = v_or_b32 %a, %b dst_sel:ubyte0 dst_preserve src0_sel:ubyte0 src1_sel:ubyte2
+   //! p_unit_test 3, %res3
+   writeout(3, bld.vop2(aco_opcode::v_or_b32, bld.def(v1b),
+                        bld.pseudo(aco_opcode::p_extract, bld.def(v1b), a, Operand::c32(0),
+                                   Operand::c32(16), Operand::c32(0)),
+                        bld.pseudo(aco_opcode::p_extract, bld.def(v1b), b, Operand::c32(1),
+                                   Operand::c32(16), Operand::c32(0))));
+
+   finish_opt_test();
+END_TEST
