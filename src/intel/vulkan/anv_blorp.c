@@ -513,6 +513,8 @@ static bool
 anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
                                struct anv_image *dst_image)
 {
+   const struct intel_device_info *devinfo = cmd_buffer->device->info;
+
    /* MSAA images have to be dealt with on the companion RCS command buffer
     * for both CCS && BCS engines.
     */
@@ -527,6 +529,21 @@ anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
    if (anv_cmd_buffer_is_blitter_queue(cmd_buffer) &&
        dst_image->emu_plane_format != VK_FORMAT_UNDEFINED)
       return true;
+
+   /* HSD 14021541470:
+    * The compression pairing bit on blitter engine is not programmed correctly
+    * for stencil resources. Fallback to RCS engine for performing a copy to
+    * workaround the issue.
+    */
+   if ((devinfo->verx10 == 125) &&
+       (dst_image->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT)) {
+
+      const uint32_t plane =
+         anv_image_aspect_to_plane(dst_image, VK_IMAGE_ASPECT_STENCIL_BIT);
+
+      if (isl_aux_usage_has_compression(dst_image->planes[plane].aux_usage))
+         return true;
+   }
 
    return false;
 }
