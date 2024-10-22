@@ -444,7 +444,7 @@
         "description": "radv/video: Report correct encodeInputPictureGranularity",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "54d499818ca9a004ba735635d328a1ed0ff010b6",
         "notes": null
