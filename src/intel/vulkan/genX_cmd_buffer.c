@@ -1645,6 +1645,8 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                               VkPipelineStageFlags2 src_stages,
                               VkPipelineStageFlags2 dst_stages,
                               enum anv_pipe_bits bits,
+                              struct anv_address signal_addr,
+                              struct anv_address wait_addr,
                               enum anv_pipe_bits *emitted_flush_bits)
 {
    /* What stage require a stall at pixel scoreboard */
@@ -1857,7 +1859,7 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                  ANV_PIPE_END_OF_PIPE_SYNC_BIT);
 
       uint32_t sync_op = NoWrite;
-      struct anv_address addr = ANV_NULL_ADDRESS;
+      struct anv_address addr = signal_addr;
 
       /* From Sandybridge PRM, volume 2, "1.7.3.1 Writing a Value to Memory":
        *
@@ -1887,12 +1889,15 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
       if (flush_bits & ANV_PIPE_END_OF_PIPE_SYNC_BIT) {
          flush_bits |= ANV_PIPE_CS_STALL_BIT;
          sync_op = WriteImmediateData;
-         addr = device->workaround_address;
+         if (anv_address_is_null(signal_addr))
+            addr = device->workaround_address;
       }
 
       /* Flush PC. */
       emit_pipe_control(batch, device->info, current_pipeline,
-                        sync_op, addr, 0, flush_bits);
+                        sync_op, addr,
+                        anv_address_is_null(addr) ? 0 : 1,
+                        flush_bits);
 
       /* If the caller wants to know what flushes have been emitted,
        * provide the bits based off the PIPE_CONTROL programmed bits.
@@ -1901,7 +1906,8 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
          *emitted_flush_bits = flush_bits;
 
       bits &= ~(ANV_PIPE_FLUSH_BITS | ANV_PIPE_STALL_BITS |
-                ANV_PIPE_END_OF_PIPE_SYNC_BIT);
+                ANV_PIPE_END_OF_PIPE_SYNC_BIT |
+                ANV_PIPE_END_OF_PIPE_SYNC_FORCE_FLUSH_L3_BIT);
    }
 
    if (bits & ANV_PIPE_INVALIDATE_BITS) {
@@ -2009,6 +2015,7 @@ genX(cmd_buffer_apply_pipe_flushes)(struct anv_cmd_buffer *cmd_buffer)
                                     cmd_buffer->device,
                                     cmd_buffer->state.current_pipeline,
                                     src_stages, dst_stages, bits,
+                                    ANV_NULL_ADDRESS, ANV_NULL_ADDRESS,
                                     &emitted_bits);
    anv_cmd_buffer_update_pending_query_bits(cmd_buffer, emitted_bits);
 
@@ -2703,6 +2710,7 @@ emit_pipe_control(struct anv_batch *batch,
       pipe.InstructionCacheInvalidateEnable =
          bits & ANV_PIPE_INSTRUCTION_CACHE_INVALIDATE_BIT;
 
+      assert(!anv_address_is_null(address) || post_sync_op == NoWrite);
       pipe.PostSyncOperation = post_sync_op;
       pipe.Address = address;
       pipe.DestinationAddressType = DAT_PPGTT;
@@ -6328,24 +6336,31 @@ void genX(CmdSetEvent2)(
 
    case INTEL_ENGINE_CLASS_RENDER:
    case INTEL_ENGINE_CLASS_COMPUTE: {
-      VkPipelineStageFlags2 src_stages =
-         vk_collect_dependency_info_src_stages(pDependencyInfo);
+      VkPipelineStageFlags2 src_stages, dst_stages;
+      enum anv_pipe_bits bits = 0;
+      cmd_buffer_accumulate_barrier_bits(cmd_buffer, 1, pDependencyInfo,
+                                         &src_stages, &dst_stages, &bits);
 
-      cmd_buffer->state.pending_pipe_bits |= ANV_PIPE_POST_SYNC_BIT;
-      genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
+      /* Only consider the flush bits, the wait part will do the invalidate.
+       */
+      bits &= ANV_PIPE_FLUSH_BITS;
 
-      enum anv_pipe_bits pc_bits = 0;
-      if (src_stages & ANV_PIPELINE_STAGE_PIPELINED_BITS) {
-         pc_bits |= ANV_PIPE_STALL_AT_SCOREBOARD_BIT;
-         pc_bits |= ANV_PIPE_CS_STALL_BIT;
-      }
+      /* To have the signal_addr written */
+      bits |= ANV_PIPE_END_OF_PIPE_SYNC_BIT;
 
-      genX(batch_emit_pipe_control_write)
-         (&cmd_buffer->batch, cmd_buffer->device->info,
-          cmd_buffer->state.current_pipeline, WriteImmediateData,
-          anv_state_pool_state_address(&cmd_buffer->device->dynamic_state_pool,
+      /* Need main memory coherency */
+      if ((event->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) == 0)
+         bits |= ANV_PIPE_END_OF_PIPE_SYNC_FORCE_FLUSH_L3_BIT;
+
+      genX(emit_apply_pipe_flushes)(&cmd_buffer->batch,
+                                    cmd_buffer->device,
+                                    cmd_buffer->state.current_pipeline,
+                                    src_stages, dst_stages, bits,
+                                    anv_state_pool_state_address(
+                                       &cmd_buffer->device->dynamic_state_pool,
                                        event->state),
-          1, pc_bits, "vkCmdSetEvent2");
+                                    ANV_NULL_ADDRESS,
+                                    NULL);
       break;
    }
 

@@ -4020,6 +4020,12 @@ enum anv_pipe_bits {
     */
    ANV_PIPE_POST_SYNC_BIT                    = (1 << 24),
 
+   /* This bit does not exist directly in PIPE_CONTROL. It indicates that the
+    * end-of-pipe write needs to be flushed out of L3. On Xe2+ this means that
+    * we cannot use RESOURCE_BARRIER to write that value since it'll stay in
+    * L3.
+    */
+   ANV_PIPE_END_OF_PIPE_SYNC_FORCE_FLUSH_L3_BIT = (1 << 25),
 };
 
 /* These bits track the state of buffer writes for queries. They get cleared
