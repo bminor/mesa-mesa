@@ -4222,7 +4222,9 @@ mask_is_transfer_write(const VkAccessFlags2 access)
 static void
 cmd_buffer_barrier_video(struct anv_cmd_buffer *cmd_buffer,
                          uint32_t n_dep_infos,
-                         const VkDependencyInfo *dep_infos)
+                         const VkDependencyInfo *dep_infos,
+                         struct anv_address signal_addr,
+                         uint64_t signal_value)
 {
    assert(anv_cmd_buffer_is_video_queue(cmd_buffer));
 
@@ -4302,7 +4304,7 @@ cmd_buffer_barrier_video(struct anv_cmd_buffer *cmd_buffer,
          break;
    }
 
-   if (flush_ccs || flush_llc) {
+   if (flush_ccs || flush_llc || !anv_address_is_null(signal_addr)) {
       anv_batch_emit(&cmd_buffer->batch, GENX(MI_FLUSH_DW), fd) {
 #if GFX_VERx10 >= 125
          fd.FlushCCS = flush_ccs;
@@ -4314,6 +4316,12 @@ cmd_buffer_barrier_video(struct anv_cmd_buffer *cmd_buffer,
           */
          fd.FlushLLC = flush_llc;
 #endif
+
+         if (!anv_address_is_null(signal_addr)) {
+            fd.PostSyncOperation = WriteImmediateData;
+            fd.Address = signal_addr;
+            fd.ImmediateData = signal_value;
+         }
       }
    }
 }
@@ -4321,7 +4329,9 @@ cmd_buffer_barrier_video(struct anv_cmd_buffer *cmd_buffer,
 static void
 cmd_buffer_barrier_blitter(struct anv_cmd_buffer *cmd_buffer,
                            uint32_t n_dep_infos,
-                           const VkDependencyInfo *dep_infos)
+                           const VkDependencyInfo *dep_infos,
+                           struct anv_address signal_addr,
+                           uint64_t signal_value)
 {
 #if GFX_VERx10 >= 125
    assert(anv_cmd_buffer_is_blitter_queue(cmd_buffer));
@@ -4414,7 +4424,7 @@ cmd_buffer_barrier_blitter(struct anv_cmd_buffer *cmd_buffer,
          break;
    }
 
-   if (flush_ccs || flush_llc) {
+   if (flush_ccs || flush_llc || !anv_address_is_null(signal_addr)) {
       /* Wa_16018063123 - emit fast color dummy blit before MI_FLUSH_DW. */
       if (INTEL_WA_16018063123_GFX_VER) {
          genX(batch_emit_fast_color_dummy_blit)(&cmd_buffer->batch,
@@ -4423,6 +4433,12 @@ cmd_buffer_barrier_blitter(struct anv_cmd_buffer *cmd_buffer,
       anv_batch_emit(&cmd_buffer->batch, GENX(MI_FLUSH_DW), fd) {
          fd.FlushCCS = flush_ccs;
          fd.FlushLLC = flush_llc;
+
+         if (!anv_address_is_null(signal_addr)) {
+            fd.PostSyncOperation = WriteImmediateData;
+            fd.Address = signal_addr;
+            fd.ImmediateData = signal_value;
+         }
       }
    }
 #endif
@@ -4774,11 +4790,13 @@ cmd_buffer_barrier(struct anv_cmd_buffer *cmd_buffer,
 {
    switch (cmd_buffer->batch.engine_class) {
    case INTEL_ENGINE_CLASS_VIDEO:
-      cmd_buffer_barrier_video(cmd_buffer, n_dep_infos, dep_infos);
+      cmd_buffer_barrier_video(cmd_buffer, n_dep_infos, dep_infos,
+                               ANV_NULL_ADDRESS, 0);
       break;
 
    case INTEL_ENGINE_CLASS_COPY:
-      cmd_buffer_barrier_blitter(cmd_buffer, n_dep_infos, dep_infos);
+      cmd_buffer_barrier_blitter(cmd_buffer, n_dep_infos, dep_infos,
+                                 ANV_NULL_ADDRESS, 0);
       break;
 
    case INTEL_ENGINE_CLASS_RENDER:
@@ -6295,14 +6313,19 @@ void genX(CmdSetEvent2)(
 
    switch (cmd_buffer->batch.engine_class) {
    case INTEL_ENGINE_CLASS_VIDEO:
+      cmd_buffer_barrier_video(cmd_buffer, 1, pDependencyInfo,
+                               anv_state_pool_state_address(
+                                  &cmd_buffer->device->dynamic_state_pool,
+                                  event->state),
+                               VK_EVENT_SET);
+      break;
+
    case INTEL_ENGINE_CLASS_COPY:
-      anv_batch_emit(&cmd_buffer->batch, GENX(MI_FLUSH_DW), flush) {
-         flush.PostSyncOperation = WriteImmediateData;
-         flush.Address = anv_state_pool_state_address(
-            &cmd_buffer->device->dynamic_state_pool,
-            event->state);
-         flush.ImmediateData = VK_EVENT_SET;
-      }
+      cmd_buffer_barrier_blitter(cmd_buffer, 1, pDependencyInfo,
+                                 anv_state_pool_state_address(
+                                    &cmd_buffer->device->dynamic_state_pool,
+                                    event->state),
+                                 VK_EVENT_SET);
       break;
 
    case INTEL_ENGINE_CLASS_RENDER:
