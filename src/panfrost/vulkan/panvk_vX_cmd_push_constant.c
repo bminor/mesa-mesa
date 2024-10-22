@@ -34,10 +34,10 @@ panvk_per_arch(CmdPushConstants2KHR)(
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
 
    if (pPushConstantsInfo->stageFlags & VK_SHADER_STAGE_ALL_GRAPHICS)
-      cmdbuf->state.gfx.push_uniforms = 0;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
 
    if (pPushConstantsInfo->stageFlags & VK_SHADER_STAGE_COMPUTE_BIT)
-      cmdbuf->state.compute.push_uniforms = 0;
+      compute_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
 
    memcpy(cmdbuf->state.push_constants.data + pPushConstantsInfo->offset,
           pPushConstantsInfo->pValues, pPushConstantsInfo->size);

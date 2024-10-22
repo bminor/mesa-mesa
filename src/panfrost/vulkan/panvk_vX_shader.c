@@ -1389,24 +1389,22 @@ panvk_cmd_bind_shader(struct panvk_cmd_buffer *cmd, const gl_shader_stage stage,
 {
    switch (stage) {
    case MESA_SHADER_COMPUTE:
-      cmd->state.compute.shader = shader;
-      memset(&cmd->state.compute.cs.desc, 0,
-             sizeof(cmd->state.compute.cs.desc));
+      if (cmd->state.compute.shader != shader) {
+         cmd->state.compute.shader = shader;
+         compute_state_set_dirty(cmd, CS);
+      }
       break;
    case MESA_SHADER_VERTEX:
-      cmd->state.gfx.vs.shader = shader;
-#if PAN_ARCH <= 7
-      cmd->state.gfx.linked = false;
-#endif
-      memset(&cmd->state.gfx.vs.desc, 0, sizeof(cmd->state.gfx.vs.desc));
+      if (cmd->state.gfx.vs.shader != shader) {
+         cmd->state.gfx.vs.shader = shader;
+         gfx_state_set_dirty(cmd, VS);
+      }
       break;
    case MESA_SHADER_FRAGMENT:
-      cmd->state.gfx.fs.shader = shader;
-#if PAN_ARCH <= 7
-      cmd->state.gfx.linked = false;
-      cmd->state.gfx.fs.rsd = 0;
-#endif
-      memset(&cmd->state.gfx.fs.desc, 0, sizeof(cmd->state.gfx.fs.desc));
+      if (cmd->state.gfx.fs.shader != shader) {
+         cmd->state.gfx.fs.shader = shader;
+         gfx_state_set_dirty(cmd, FS);
+      }
       break;
    default:
       assert(!"Unsupported stage");

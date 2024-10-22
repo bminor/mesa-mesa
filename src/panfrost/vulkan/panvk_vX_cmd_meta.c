@@ -65,16 +65,14 @@ panvk_per_arch(cmd_meta_compute_end)(
    if (memcmp(cmdbuf->state.push_constants.data, save_ctx->push_constants.data,
               sizeof(cmdbuf->state.push_constants.data))) {
       cmdbuf->state.push_constants = save_ctx->push_constants;
-      cmdbuf->state.compute.push_uniforms = 0;
-      cmdbuf->state.gfx.push_uniforms = 0;
+      compute_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 
    cmdbuf->state.compute.shader = save_ctx->cs.shader;
    cmdbuf->state.compute.cs.desc = save_ctx->cs.desc;
-
-#if PAN_ARCH >= 9
-   cmdbuf->state.compute.cs.desc.res_table = 0;
-#endif
+   compute_state_set_dirty(cmdbuf, CS);
+   compute_state_set_dirty(cmdbuf, DESC_STATE);
 }
 
 void
@@ -126,8 +124,8 @@ panvk_per_arch(cmd_meta_gfx_end)(
    if (memcmp(cmdbuf->state.push_constants.data, save_ctx->push_constants.data,
               sizeof(cmdbuf->state.push_constants.data))) {
       cmdbuf->state.push_constants = save_ctx->push_constants;
-      cmdbuf->state.compute.push_uniforms = 0;
-      cmdbuf->state.gfx.push_uniforms = 0;
+      compute_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 
    cmdbuf->state.gfx.fs.shader = save_ctx->fs.shader;
@@ -151,6 +149,11 @@ panvk_per_arch(cmd_meta_gfx_end)(
    memcpy(cmdbuf->vk.dynamic_graphics_state.dirty,
           cmdbuf->vk.dynamic_graphics_state.set,
           sizeof(cmdbuf->vk.dynamic_graphics_state.set));
+   gfx_state_set_dirty(cmdbuf, VS);
+   gfx_state_set_dirty(cmdbuf, FS);
+   gfx_state_set_dirty(cmdbuf, VB);
+   gfx_state_set_dirty(cmdbuf, DESC_STATE);
+   gfx_state_set_dirty(cmdbuf, RENDER_STATE);
 }
 
 VKAPI_ATTR void VKAPI_CALL

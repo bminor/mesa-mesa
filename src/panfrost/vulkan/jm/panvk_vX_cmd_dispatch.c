@@ -83,21 +83,25 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
    sysvals->local_group_size.y = shader->local_size.y;
    sysvals->local_group_size.z = shader->local_size.z;
 
-   result = panvk_per_arch(cmd_prepare_dyn_ssbos)(cmdbuf, desc_state, shader,
-                                                  cs_desc_state);
-   if (result != VK_SUCCESS)
-      return;
+   if (compute_state_dirty(cmdbuf, CS) ||
+       compute_state_dirty(cmdbuf, DESC_STATE)) {
+      result = panvk_per_arch(cmd_prepare_dyn_ssbos)(cmdbuf, desc_state, shader,
+                                                     cs_desc_state);
+      if (result != VK_SUCCESS)
+         return;
 
-   sysvals->desc.dyn_ssbos = cs_desc_state->dyn_ssbos;
+      sysvals->desc.dyn_ssbos = cs_desc_state->dyn_ssbos;
+   }
 
    for (uint32_t i = 0; i < MAX_SETS; i++) {
       if (shader->desc_info.used_set_mask & BITFIELD_BIT(i))
          sysvals->desc.sets[i] = desc_state->sets[i]->descs.dev;
    }
 
-   cmdbuf->state.compute.push_uniforms = 0;
+   /* We unconditionally update the sysvals, so push_uniforms is always dirty. */
+   compute_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
 
-   if (!cmdbuf->state.compute.push_uniforms) {
+   if (compute_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
       cmdbuf->state.compute.push_uniforms = panvk_per_arch(
          cmd_prepare_push_uniforms)(cmdbuf, &cmdbuf->state.compute.sysvals,
                                     sizeof(cmdbuf->state.compute.sysvals));
@@ -107,18 +111,22 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
 
    dispatch.push_uniforms = cmdbuf->state.compute.push_uniforms;
 
-   result = panvk_per_arch(cmd_prepare_shader_desc_tables)(
-      cmdbuf, desc_state, shader, cs_desc_state);
+   struct panfrost_ptr copy_desc_job = {0};
 
-   struct panfrost_ptr copy_desc_job;
-   result = panvk_per_arch(meta_get_copy_desc_job)(
-      cmdbuf, shader, &cmdbuf->state.compute.desc_state, cs_desc_state, 0,
-      &copy_desc_job);
-   if (result != VK_SUCCESS)
-      return;
+   if (compute_state_dirty(cmdbuf, CS) ||
+       compute_state_dirty(cmdbuf, DESC_STATE)) {
+      result = panvk_per_arch(cmd_prepare_shader_desc_tables)(
+         cmdbuf, desc_state, shader, cs_desc_state);
 
-   if (copy_desc_job.cpu)
-      util_dynarray_append(&batch->jobs, void *, copy_desc_job.cpu);
+      result = panvk_per_arch(meta_get_copy_desc_job)(
+         cmdbuf, shader, &cmdbuf->state.compute.desc_state, cs_desc_state, 0,
+         &copy_desc_job);
+      if (result != VK_SUCCESS)
+         return;
+
+      if (copy_desc_job.cpu)
+         util_dynarray_append(&batch->jobs, void *, copy_desc_job.cpu);
+   }
 
    struct panfrost_ptr job = panvk_cmd_alloc_desc(cmdbuf, COMPUTE_JOB);
    if (!job.gpu)
@@ -170,6 +178,7 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
    }
 
    panvk_per_arch(cmd_close_batch)(cmdbuf);
+   clear_dirty_after_dispatch(cmdbuf);
 }
 
 VKAPI_ATTR void VKAPI_CALL

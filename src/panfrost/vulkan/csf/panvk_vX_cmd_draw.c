@@ -104,19 +104,23 @@ emit_vs_attrib(const struct vk_vertex_attribute_state *attrib_info,
    }
 }
 
+static bool
+vs_driver_set_is_dirty(struct panvk_cmd_buffer *cmdbuf)
+{
+   return dyn_gfx_state_dirty(cmdbuf, VI) ||
+          dyn_gfx_state_dirty(cmdbuf, VI_BINDINGS_VALID) ||
+          dyn_gfx_state_dirty(cmdbuf, VI_BINDING_STRIDES) ||
+          gfx_state_dirty(cmdbuf, VB) || gfx_state_dirty(cmdbuf, VS) ||
+          gfx_state_dirty(cmdbuf, DESC_STATE);
+}
+
 static VkResult
 prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 {
-   struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
-   bool dirty = dyn_gfx_state_dirty(cmdbuf, VI) ||
-                dyn_gfx_state_dirty(cmdbuf, VI_BINDINGS_VALID) ||
-                dyn_gfx_state_dirty(cmdbuf, VI_BINDING_STRIDES) ||
-                cmdbuf->state.gfx.vb.dirty ||
-                !vs_desc_state->driver_set.dev_addr;
-
-   if (!dirty)
+   if (!vs_driver_set_is_dirty(cmdbuf))
       return VK_SUCCESS;
 
+   struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct vk_vertex_input_state *vi =
       cmdbuf->vk.dynamic_graphics_state.vi;
@@ -175,6 +179,7 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 
    vs_desc_state->driver_set.dev_addr = driver_set.gpu;
    vs_desc_state->driver_set.size = desc_count * PANVK_DESCRIPTOR_SIZE;
+   gfx_state_set_dirty(cmdbuf, DESC_STATE);
    return VK_SUCCESS;
 }
 
@@ -182,13 +187,9 @@ static VkResult
 prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 {
    struct panvk_shader_desc_state *fs_desc_state = &cmdbuf->state.gfx.fs.desc;
-
-   if (fs_desc_state->driver_set.dev_addr)
-      return VK_SUCCESS;
-
+   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
    const struct panvk_descriptor_state *desc_state =
       &cmdbuf->state.gfx.desc_state;
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
    uint32_t desc_count = fs->desc_info.dyn_bufs.count + 1;
    struct panfrost_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
@@ -206,6 +207,7 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 
    fs_desc_state->driver_set.dev_addr = driver_set.gpu;
    fs_desc_state->driver_set.size = desc_count * PANVK_DESCRIPTOR_SIZE;
+   gfx_state_set_dirty(cmdbuf, DESC_STATE);
    return VK_SUCCESS;
 }
 
@@ -221,9 +223,9 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
    struct vk_color_blend_state *cb = &cmdbuf->vk.dynamic_graphics_state.cb;
    const struct vk_rasterization_state *rs =
       &cmdbuf->vk.dynamic_graphics_state.rs;
-
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
-   if (sysvals->fs.multisampled != (fbinfo->nr_samples > 1)) {
+
+   if (gfx_state_dirty(cmdbuf, RENDER_STATE)) {
       sysvals->fs.multisampled = fbinfo->nr_samples > 1;
       cmdbuf->state.gfx.push_uniforms = 0;
    }
@@ -232,7 +234,7 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
       for (unsigned i = 0; i < ARRAY_SIZE(cb->blend_constants); i++)
          sysvals->blend.constants[i] =
             CLAMP(cb->blend_constants[i], 0.0f, 1.0f);
-      cmdbuf->state.gfx.push_uniforms = 0;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
@@ -294,8 +296,7 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
          /* Bump offset off-center if necessary, to not go out of range */
          sysvals->viewport.offset.z = CLAMP(z_offset, 0.0f, 1.0f);
       }
-
-      cmdbuf->state.gfx.push_uniforms = 0;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 }
 
@@ -399,40 +400,6 @@ translate_stencil_op(VkStencilOp in)
    default:
       unreachable("Invalid stencil op");
    }
-}
-
-static bool
-fs_required(struct panvk_cmd_buffer *cmdbuf)
-{
-   const struct pan_shader_info *fs_info =
-      cmdbuf->state.gfx.fs.shader ? &cmdbuf->state.gfx.fs.shader->info : NULL;
-   const struct vk_dynamic_graphics_state *dyns =
-      &cmdbuf->vk.dynamic_graphics_state;
-   const struct vk_color_blend_state *cb = &dyns->cb;
-
-   if (!fs_info)
-      return false;
-
-   /* If we generally have side effects */
-   if (fs_info->fs.sidefx)
-      return true;
-
-   /* If colour is written we need to execute */
-   for (unsigned i = 0; i < cb->attachment_count; ++i) {
-      if ((cb->color_write_enables & BITFIELD_BIT(i)) &&
-          cb->attachments[i].write_mask)
-         return true;
-   }
-
-   /* If alpha-to-coverage is enabled, we need to run the fragment shader even
-    * if we don't have a color attachment, so depth/stencil updates can be
-    * discarded if alpha, and thus coverage, is 0. */
-   if (dyns->ms.alpha_to_coverage_enable)
-      return true;
-
-   /* If depth is written and not implied we need to execute.
-    * TODO: Predicate on Z/S writes being enabled */
-   return (fs_info->fs.writes_depth || fs_info->fs.writes_stencil);
 }
 
 static enum mali_draw_mode
@@ -741,12 +708,11 @@ prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct vk_input_assembly_state *ia =
       &cmdbuf->vk.dynamic_graphics_state.ia;
-   mali_ptr pos_spd = get_pos_spd(cmdbuf);
    float primitive_size;
 
    if (!dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) &&
        !dyn_gfx_state_dirty(cmdbuf, RS_LINE_WIDTH) &&
-       cmdbuf->state.gfx.vs.spds.pos == pos_spd)
+       !gfx_state_dirty(cmdbuf, VS))
       return;
 
    switch (ia->primitive_topology) {
@@ -1073,15 +1039,14 @@ prepare_vs(struct panvk_cmd_buffer *cmdbuf)
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-   mali_ptr pos_spd = get_pos_spd(cmdbuf);
-   mali_ptr var_spd = panvk_priv_mem_dev_addr(vs->spds.var);
    bool upd_res_table = false;
 
-   if (!vs_desc_state->res_table) {
-      VkResult result = prepare_vs_driver_set(cmdbuf);
-      if (result != VK_SUCCESS)
-         return result;
+   VkResult result = prepare_vs_driver_set(cmdbuf);
+   if (result != VK_SUCCESS)
+      return result;
 
+   if (gfx_state_dirty(cmdbuf, VS) || gfx_state_dirty(cmdbuf, DESC_STATE) ||
+       vs_driver_set_is_dirty(cmdbuf)) {
       result = panvk_per_arch(cmd_prepare_shader_res_table)(cmdbuf, desc_state,
                                                             vs, vs_desc_state);
       if (result != VK_SUCCESS)
@@ -1094,36 +1059,29 @@ prepare_vs(struct panvk_cmd_buffer *cmdbuf)
       if (upd_res_table)
          cs_move64_to(b, cs_sr_reg64(b, 0), vs_desc_state->res_table);
 
-      if (pos_spd != cmdbuf->state.gfx.vs.spds.pos)
-         cs_move64_to(b, cs_sr_reg64(b, 16), pos_spd);
+      if (gfx_state_dirty(cmdbuf, VS) ||
+          dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY))
+         cs_move64_to(b, cs_sr_reg64(b, 16), get_pos_spd(cmdbuf));
 
-      if (var_spd != cmdbuf->state.gfx.vs.spds.var)
-         cs_move64_to(b, cs_sr_reg64(b, 18), var_spd);
+      if (gfx_state_dirty(cmdbuf, VS))
+         cs_move64_to(b, cs_sr_reg64(b, 18),
+                      panvk_priv_mem_dev_addr(vs->spds.var));
    }
 
    return VK_SUCCESS;
 }
 
-static inline uint64_t
-get_fs_spd(const struct panvk_shader *fs)
-{
-   return fs ? panvk_priv_mem_dev_addr(fs->spd) : 0;
-}
-
 static VkResult
 prepare_fs(struct panvk_cmd_buffer *cmdbuf)
 {
-   const struct panvk_shader *fs =
-      fs_required(cmdbuf) ? cmdbuf->state.gfx.fs.shader : NULL;
+   const struct panvk_shader *fs = get_fs(cmdbuf);
    struct panvk_shader_desc_state *fs_desc_state = &cmdbuf->state.gfx.fs.desc;
    struct panvk_descriptor_state *desc_state = &cmdbuf->state.gfx.desc_state;
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-   mali_ptr frag_spd = get_fs_spd(fs);
-   bool upd_res_table = false;
 
-   /* No need to setup the FS desc tables if the FS is not executed. */
-   if (fs && !fs_desc_state->res_table) {
+   if (fs &&
+       (gfx_state_dirty(cmdbuf, FS) || gfx_state_dirty(cmdbuf, DESC_STATE))) {
       VkResult result = prepare_fs_driver_set(cmdbuf);
       if (result != VK_SUCCESS)
          return result;
@@ -1132,22 +1090,14 @@ prepare_fs(struct panvk_cmd_buffer *cmdbuf)
                                                             fs, fs_desc_state);
       if (result != VK_SUCCESS)
          return result;
-
-      upd_res_table = true;
    }
 
-   /* If this is the first time we execute a RUN_IDVS, and no fragment
-    * shader is required, we still force an update of the make sure we don't
-    * inherit the value set by a previous command buffer. */
-   if (!fs_desc_state->res_table && !fs)
-      upd_res_table = true;
-
    cs_update_vt_ctx(b) {
-      if (upd_res_table)
-         cs_move64_to(b, cs_sr_reg64(b, 4), fs_desc_state->res_table);
-
-      if (cmdbuf->state.gfx.fs.spd != frag_spd)
-         cs_move64_to(b, cs_sr_reg64(b, 20), frag_spd);
+      if (fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, DESC_STATE))
+         cs_move64_to(b, cs_sr_reg64(b, 4), fs ? fs_desc_state->res_table : 0);
+      if (fs_user_dirty(cmdbuf))
+         cs_move64_to(b, cs_sr_reg64(b, 20),
+                      fs ? panvk_priv_mem_dev_addr(fs->spd) : 0);
    }
 
    return VK_SUCCESS;
@@ -1159,7 +1109,7 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
 
-   if (!cmdbuf->state.gfx.push_uniforms) {
+   if (gfx_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
       cmdbuf->state.gfx.push_uniforms = panvk_per_arch(
          cmd_prepare_push_uniforms)(cmdbuf, &cmdbuf->state.gfx.sysvals,
                                     sizeof(cmdbuf->state.gfx.sysvals));
@@ -1182,8 +1132,6 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
 static VkResult
 prepare_ds(struct panvk_cmd_buffer *cmdbuf)
 {
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
-   mali_ptr frag_spd = get_fs_spd(fs);
    bool dirty = dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_TEST_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_WRITE_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_COMPARE_OP) ||
@@ -1196,14 +1144,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_FACTORS) ||
-                /* fs_required() uses ms.alpha_to_coverage_enable
-                 * and vk_color_blend_state
-                 */
-                dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
-                dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-                dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-                dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
-                cmdbuf->state.gfx.fs.spd != frag_spd;
+                fs_user_dirty(cmdbuf);
 
    if (!dirty)
       return VK_SUCCESS;
@@ -1216,7 +1157,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
    const struct vk_rasterization_state *rs = &dyns->rs;
    bool test_s = has_stencil_att(cmdbuf) && ds->stencil.test_enable;
    bool test_z = has_depth_att(cmdbuf) && ds->depth.test_enable;
-   bool needs_fs = fs_required(cmdbuf);
+   const struct panvk_shader *fs = get_fs(cmdbuf);
 
    struct panfrost_ptr zsd = panvk_cmd_alloc_desc(cmdbuf, DEPTH_STENCIL);
    if (!zsd.gpu)
@@ -1240,7 +1181,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
          cfg.back_depth_pass = translate_stencil_op(ds->stencil.back.op.pass);
       }
 
-      cfg.stencil_from_shader = needs_fs ? fs->info.fs.writes_stencil : 0;
+      cfg.stencil_from_shader = fs ? fs->info.fs.writes_stencil : 0;
       cfg.front_write_mask = ds->stencil.front.write_mask;
       cfg.back_write_mask = ds->stencil.back.write_mask;
       cfg.front_value_mask = ds->stencil.front.compare_mask;
@@ -1274,17 +1215,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
 {
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
-
-   const struct panvk_shader *fs = NULL;
-   bool fs_is_dirty = false;
-   bool needs_fs = fs_required(cmdbuf);
-   if (needs_fs) {
-      fs = cmdbuf->state.gfx.fs.shader;
-      fs_is_dirty = cmdbuf->state.gfx.fs.spd != get_fs_spd(fs);
-   } else {
-      fs_is_dirty = cmdbuf->state.gfx.fs.spd != 0;
-   }
-
+   const struct panvk_shader *fs = get_fs(cmdbuf);
    bool dcd0_dirty =
       dyn_gfx_state_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||
       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
@@ -1301,21 +1232,11 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_OP) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
-      /* fs_required() uses vk_color_blend_state */
-      dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-      dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-      dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) || fs_is_dirty ||
-      cmdbuf->state.gfx.render.dirty;
+      fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, RENDER_STATE);
    bool dcd1_dirty = dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
                      dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
-                     /* fs_required() uses ms.alpha_to_coverage_enable
-                      * and vk_color_blend_state
-                      */
-                     dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
-                     dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-                     dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-                     dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
-                     fs_is_dirty || cmdbuf->state.gfx.render.dirty;
+                     fs_user_dirty(cmdbuf) ||
+                     gfx_state_dirty(cmdbuf, RENDER_STATE);
 
    const struct vk_dynamic_graphics_state *dyns =
       &cmdbuf->vk.dynamic_graphics_state;
@@ -1328,7 +1249,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
    if (dcd0_dirty) {
       struct mali_dcd_flags_0_packed dcd0;
       pan_pack(&dcd0, DCD_FLAGS_0, cfg) {
-         if (needs_fs) {
+         if (fs) {
             uint8_t rt_written = fs->info.outputs_written >> FRAG_RESULT_DATA0;
             uint8_t rt_mask = cmdbuf->state.gfx.render.bound_attachments &
                               MESA_VK_RP_ATTACHMENT_ANY_COLOR_BITS;
@@ -1374,7 +1295,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
                               ? dyns->ms.sample_mask
                               : UINT16_MAX;
 
-         if (needs_fs) {
+         if (fs) {
             cfg.render_target_mask =
                (fs->info.outputs_written >> FRAG_RESULT_DATA0) &
                cmdbuf->state.gfx.render.bound_attachments;
@@ -1393,7 +1314,7 @@ prepare_index_buffer(struct panvk_cmd_buffer *cmdbuf,
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
 
-   if (draw->index.size && cmdbuf->state.gfx.ib.dirty) {
+   if (draw->index.size && gfx_state_dirty(cmdbuf, IB)) {
       uint64_t ib_size =
          panvk_buffer_range(cmdbuf->state.gfx.ib.buffer,
                             cmdbuf->state.gfx.ib.offset, VK_WHOLE_SIZE);
@@ -1407,58 +1328,25 @@ prepare_index_buffer(struct panvk_cmd_buffer *cmdbuf,
 }
 
 static void
-clear_dirty(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
-{
-   const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
-   const struct panvk_shader *fs =
-      fs_required(cmdbuf) ? cmdbuf->state.gfx.fs.shader : NULL;
-
-   if (vs) {
-      cmdbuf->state.gfx.vs.spds.pos = get_pos_spd(cmdbuf);
-      cmdbuf->state.gfx.vs.spds.var = panvk_priv_mem_dev_addr(vs->spds.var);
-   }
-
-   cmdbuf->state.gfx.fs.spd = get_fs_spd(fs);
-
-   cmdbuf->state.gfx.vb.dirty = false;
-   if (draw->index.size)
-      cmdbuf->state.gfx.ib.dirty = false;
-
-   cmdbuf->state.gfx.render.dirty = false;
-   vk_dynamic_graphics_state_clear_dirty(&cmdbuf->vk.dynamic_graphics_state);
-}
-
-static void
 set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
                      struct panvk_draw_info *draw)
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
+   const struct panvk_shader *fs = get_fs(cmdbuf);
    const struct vk_dynamic_graphics_state *dyns =
       &cmdbuf->vk.dynamic_graphics_state;
    const struct vk_input_assembly_state *ia = &dyns->ia;
    const struct vk_rasterization_state *rs = &dyns->rs;
-
    struct mali_primitive_flags_packed tiler_idvs_flags;
    bool writes_point_size =
       vs->info.vs.writes_point_size &&
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
-   bool dirty =
-      get_pos_spd(cmdbuf) != cmdbuf->state.gfx.vs.spds.pos ||
-      panvk_priv_mem_dev_addr(vs->spds.var) != cmdbuf->state.gfx.vs.spds.var ||
-      /* fs_required() uses ms.alpha_to_coverage_enable
-       * and vk_color_blend_state
-       */
-      dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
-      dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-      dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-      dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
-      dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
-      dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
-      dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||
-      dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
-      cmdbuf->state.gfx.fs.spd != get_fs_spd(fs);
+   bool dirty = gfx_state_dirty(cmdbuf, VS) || fs_user_dirty(cmdbuf) ||
+                dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
+                dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE);
 
    if (dirty) {
       pan_pack(&tiler_idvs_flags, PRIMITIVE_FLAGS, cfg) {
@@ -1480,8 +1368,7 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
          cfg.low_depth_cull = cfg.high_depth_cull =
             vk_rasterization_state_depth_clip_enable(rs);
 
-         cfg.secondary_shader =
-            vs->info.vs.secondary_enable && fs_required(cmdbuf);
+         cfg.secondary_shader = vs->info.vs.secondary_enable && fs != NULL;
          cfg.primitive_restart = ia->primitive_restart_enable;
       }
 
@@ -1506,7 +1393,7 @@ static VkResult
 prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
+   const struct panvk_shader *fs = get_fs(cmdbuf);
    struct panvk_descriptor_state *desc_state = &cmdbuf->state.gfx.desc_state;
    bool idvs = vs->info.vs.idvs;
    VkResult result;
@@ -1537,10 +1424,13 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    uint32_t used_set_mask =
       vs->desc_info.used_set_mask | (fs ? fs->desc_info.used_set_mask : 0);
 
-   result =
-      panvk_per_arch(cmd_prepare_push_descs)(cmdbuf, desc_state, used_set_mask);
-   if (result != VK_SUCCESS)
-      return result;
+   if (gfx_state_dirty(cmdbuf, DESC_STATE) || gfx_state_dirty(cmdbuf, VS) ||
+       gfx_state_dirty(cmdbuf, FS)) {
+      result = panvk_per_arch(cmd_prepare_push_descs)(cmdbuf, desc_state,
+                                                      used_set_mask);
+      if (result != VK_SUCCESS)
+         return result;
+   }
 
    prepare_sysvals(cmdbuf);
 
@@ -1590,8 +1480,7 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       prepare_tiler_primitive_size(cmdbuf);
    }
 
-   clear_dirty(cmdbuf, draw);
-
+   clear_dirty_after_draw(cmdbuf);
    return VK_SUCCESS;
 }
 
@@ -1827,7 +1716,7 @@ panvk_cmd_init_render_state(struct panvk_cmd_buffer *cmdbuf,
 
    cmdbuf->state.gfx.render.flags = pRenderingInfo->flags;
 
-   cmdbuf->state.gfx.render.dirty = true;
+   gfx_state_set_dirty(cmdbuf, RENDER_STATE);
    memset(cmdbuf->state.gfx.render.fb.crc_valid, 0,
           sizeof(cmdbuf->state.gfx.render.fb.crc_valid));
    memset(&cmdbuf->state.gfx.render.color_attachments, 0,
@@ -2082,7 +1971,7 @@ panvk_per_arch(cmd_inherit_render_state)(
 
    cmdbuf->state.gfx.render.flags = inheritance_info->flags;
 
-   cmdbuf->state.gfx.render.dirty = true;
+   gfx_state_set_dirty(cmdbuf, RENDER_STATE);
    memset(cmdbuf->state.gfx.render.fb.crc_valid, 0,
           sizeof(cmdbuf->state.gfx.render.fb.crc_valid));
    memset(&cmdbuf->state.gfx.render.color_attachments, 0,
@@ -2632,9 +2521,7 @@ panvk_per_arch(CmdBindVertexBuffers)(VkCommandBuffer commandBuffer,
 
    cmdbuf->state.gfx.vb.count =
       MAX2(cmdbuf->state.gfx.vb.count, firstBinding + bindingCount);
-   memset(&cmdbuf->state.gfx.vs.desc.driver_set, 0,
-          sizeof(cmdbuf->state.gfx.vs.desc.driver_set));
-   cmdbuf->state.gfx.vb.dirty = true;
+   gfx_state_set_dirty(cmdbuf, VB);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -2648,5 +2535,5 @@ panvk_per_arch(CmdBindIndexBuffer)(VkCommandBuffer commandBuffer,
    cmdbuf->state.gfx.ib.buffer = buf;
    cmdbuf->state.gfx.ib.offset = offset;
    cmdbuf->state.gfx.ib.index_size = vk_index_type_to_bytes(indexType);
-   cmdbuf->state.gfx.ib.dirty = true;
+   gfx_state_set_dirty(cmdbuf, IB);
 }

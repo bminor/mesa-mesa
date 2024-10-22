@@ -810,15 +810,8 @@ panvk_cmd_invalidate_state(struct panvk_cmd_buffer *cmdbuf)
    memset(&cmdbuf->state.gfx, 0, sizeof(cmdbuf->state.gfx));
    cmdbuf->state.gfx.render = render_save;
 
-   cmdbuf->state.gfx.fs.desc.res_table = 0;
-   cmdbuf->state.gfx.fs.spd = 0;
-   cmdbuf->state.gfx.vs.desc.res_table = 0;
-   cmdbuf->state.gfx.vs.spds.pos = 0;
-   cmdbuf->state.gfx.vs.spds.var = 0;
-   cmdbuf->state.gfx.vb.dirty = true;
-   cmdbuf->state.gfx.ib.dirty = true;
-
    vk_dynamic_graphics_state_dirty_all(&cmdbuf->vk.dynamic_graphics_state);
+   gfx_state_set_all_dirty(cmdbuf);
 }
 
 VKAPI_ATTR void VKAPI_CALL

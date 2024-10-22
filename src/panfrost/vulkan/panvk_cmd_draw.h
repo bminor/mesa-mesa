@@ -61,8 +61,18 @@ struct panvk_rendering_state {
 #if PAN_ARCH >= 10
    struct panfrost_ptr fbds;
    mali_ptr tiler;
-   bool dirty;
 #endif
+};
+
+enum panvk_cmd_graphics_dirty_state {
+   PANVK_CMD_GRAPHICS_DIRTY_VS,
+   PANVK_CMD_GRAPHICS_DIRTY_FS,
+   PANVK_CMD_GRAPHICS_DIRTY_VB,
+   PANVK_CMD_GRAPHICS_DIRTY_IB,
+   PANVK_CMD_GRAPHICS_DIRTY_DESC_STATE,
+   PANVK_CMD_GRAPHICS_DIRTY_RENDER_STATE,
+   PANVK_CMD_GRAPHICS_DIRTY_PUSH_UNIFORMS,
+   PANVK_CMD_GRAPHICS_DIRTY_STATE_COUNT,
 };
 
 struct panvk_cmd_graphics_state {
@@ -77,7 +87,6 @@ struct panvk_cmd_graphics_state {
 
 #if PAN_ARCH <= 7
    struct panvk_shader_link link;
-   bool linked;
 #endif
 
    struct {
@@ -85,8 +94,6 @@ struct panvk_cmd_graphics_state {
       struct panvk_shader_desc_state desc;
 #if PAN_ARCH <= 7
       mali_ptr rsd;
-#else
-      mali_ptr spd;
 #endif
    } fs;
 
@@ -96,17 +103,12 @@ struct panvk_cmd_graphics_state {
 #if PAN_ARCH <= 7
       mali_ptr attribs;
       mali_ptr attrib_bufs;
-#else
-      struct {
-         mali_ptr pos, var;
-      } spds;
 #endif
    } vs;
 
    struct {
       struct panvk_attrib_buf bufs[MAX_VBS];
       unsigned count;
-      bool dirty;
    } vb;
 
    /* Index buffer */
@@ -114,7 +116,6 @@ struct panvk_cmd_graphics_state {
       struct panvk_buffer *buffer;
       uint64_t offset;
       uint8_t index_size;
-      bool dirty;
    } ib;
 
    struct {
@@ -132,11 +133,25 @@ struct panvk_cmd_graphics_state {
 #if PAN_ARCH >= 10
    mali_ptr tsd;
 #endif
+
+   BITSET_DECLARE(dirty, PANVK_CMD_GRAPHICS_DIRTY_STATE_COUNT);
 };
 
 #define dyn_gfx_state_dirty(__cmdbuf, __name)                                  \
    BITSET_TEST((__cmdbuf)->vk.dynamic_graphics_state.dirty,                    \
                MESA_VK_DYNAMIC_##__name)
+
+#define gfx_state_dirty(__cmdbuf, __name)                                      \
+   BITSET_TEST((__cmdbuf)->state.gfx.dirty, PANVK_CMD_GRAPHICS_DIRTY_##__name)
+
+#define gfx_state_set_dirty(__cmdbuf, __name)                                  \
+   BITSET_SET((__cmdbuf)->state.gfx.dirty, PANVK_CMD_GRAPHICS_DIRTY_##__name)
+
+#define gfx_state_clear_all_dirty(__cmdbuf)                                    \
+   BITSET_ZERO((__cmdbuf)->state.gfx.dirty)
+
+#define gfx_state_set_all_dirty(__cmdbuf)                                      \
+   BITSET_ONES((__cmdbuf)->state.gfx.dirty)
 
 static inline uint32_t
 panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
@@ -161,5 +176,75 @@ panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
 
    return hierarchy_mask;
 }
+
+static inline bool
+fs_required(const struct panvk_cmd_graphics_state *state,
+            const struct vk_dynamic_graphics_state *dyn_state)
+{
+   const struct pan_shader_info *fs_info =
+      state->fs.shader ? &state->fs.shader->info : NULL;
+   const struct vk_color_blend_state *cb = &dyn_state->cb;
+   const struct vk_rasterization_state *rs = &dyn_state->rs;
+
+   if (rs->rasterizer_discard_enable || !fs_info)
+      return false;
+
+   /* If we generally have side effects */
+   if (fs_info->fs.sidefx)
+      return true;
+
+   /* If colour is written we need to execute */
+   for (unsigned i = 0; i < cb->attachment_count; ++i) {
+      if ((cb->color_write_enables & BITFIELD_BIT(i)) &&
+          cb->attachments[i].write_mask)
+         return true;
+   }
+
+   /* If alpha-to-coverage is enabled, we need to run the fragment shader even
+    * if we don't have a color attachment, so depth/stencil updates can be
+    * discarded if alpha, and thus coverage, is 0. */
+   if (dyn_state->ms.alpha_to_coverage_enable)
+      return true;
+
+   /* If depth is written and not implied we need to execute.
+    * TODO: Predicate on Z/S writes being enabled */
+   return (fs_info->fs.writes_depth || fs_info->fs.writes_stencil);
+}
+
+#define get_fs(__cmdbuf)                                                       \
+   (fs_required(&(__cmdbuf)->state.gfx,                                        \
+                &(__cmdbuf)->vk.dynamic_graphics_state)                        \
+       ? (__cmdbuf)->state.gfx.fs.shader                                       \
+       : NULL)
+
+/* Anything that might change the value returned by get_fs() makes users of the
+ * fragment shader dirty, because not using the fragment shader (when
+ * fs_required() returns false) impacts various other things, like VS -> FS
+ * linking in the JM backend, or the update of the fragment shader pointer in
+ * the CSF backend. Call gfx_state_dirty(cmdbuf, FS) if you only care about
+ * fragment shader updates. */
+
+#define fs_user_dirty(__cmdbuf)                                                \
+   (gfx_state_dirty(cmdbuf, FS) ||                                             \
+    dyn_gfx_state_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||               \
+    dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||                        \
+    dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||                     \
+    dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||                             \
+    dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE))
+
+/* After a draw, all dirty flags are cleared except the FS dirty flag which
+ * needs to be set again if the draw didn't use the fragment shader. */
+
+#define clear_dirty_after_draw(__cmdbuf)                                       \
+   do {                                                                        \
+      bool __set_fs_dirty =                                                    \
+         (__cmdbuf)->state.gfx.fs.shader != get_fs(__cmdbuf);                  \
+      vk_dynamic_graphics_state_clear_dirty(                                   \
+         &(__cmdbuf)->vk.dynamic_graphics_state);                              \
+      gfx_state_clear_all_dirty(__cmdbuf);                                     \
+      desc_state_clear_all_dirty(&(__cmdbuf)->state.gfx.desc_state);           \
+      if (__set_fs_dirty)                                                      \
+         gfx_state_set_dirty(__cmdbuf, FS);                                    \
+   } while (0)
 
 #endif
