@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "util/macros.h"
 #include "agx_builder.h"
 #include "agx_compiler.h"
 #include "agx_minifloat.h"
@@ -187,6 +188,17 @@ agx_optimizer_inline_imm(agx_instr **defs, agx_instr *I)
          I->src[s] = agx_immediate(value);
       } else if (value_u16 == def->imm && agx_allows_16bit_immediate(I)) {
          I->src[s] = agx_abs(agx_immediate(value_u16));
+      } else if ((I->op == AGX_OPCODE_IADD || I->op == AGX_OPCODE_IMAD) &&
+                 s == agx_negate_src_index(I)) {
+         unsigned bits = agx_size_align_16(def->dest[0].size) * 16;
+         uint64_t mask = BITFIELD64_MASK(bits);
+         uint64_t negated = (-def->imm) & mask;
+         value = negated;
+
+         /* Try to negate the immediate */
+         if (value == negated) {
+            I->src[s] = agx_neg(agx_immediate(value));
+         }
       }
    }
 }

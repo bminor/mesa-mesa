@@ -1044,6 +1044,7 @@ agx_validate_ra(UNUSED agx_context *ctx)
 
 enum agx_size agx_split_width(const agx_instr *I);
 bool agx_allows_16bit_immediate(agx_instr *I);
+unsigned agx_negate_src_index(agx_instr *I);
 
 static inline bool
 agx_is_float_src(const agx_instr *I, unsigned s)
