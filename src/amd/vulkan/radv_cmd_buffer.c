@@ -3190,8 +3190,8 @@ radv_emit_line_width(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
-   radeon_set_context_reg(cmd_buffer->cs, R_028A08_PA_SU_LINE_CNTL,
-                          S_028A08_WIDTH(CLAMP(d->vk.rs.line.width * 8, 0, 0xFFFF)));
+   radeon_opt_set_context_reg(cmd_buffer, R_028A08_PA_SU_LINE_CNTL, RADV_TRACKED_PA_SU_LINE_CNTL,
+                              S_028A08_WIDTH(CLAMP(d->vk.rs.line.width * 8, 0, 0xFFFF)));
 }
 
 static void
@@ -3252,14 +3252,14 @@ radv_emit_line_stipple(struct radv_cmd_buffer *cmd_buffer)
    if (radv_primitive_topology_is_line_list(d->vk.ia.primitive_topology))
       auto_reset_cntl = 1;
 
-   radeon_set_context_reg(cmd_buffer->cs, R_028A0C_PA_SC_LINE_STIPPLE,
-                          S_028A0C_LINE_PATTERN(d->vk.rs.line.stipple.pattern) |
-                             S_028A0C_REPEAT_COUNT(d->vk.rs.line.stipple.factor - 1) |
-                             S_028A0C_AUTO_RESET_CNTL(pdev->info.gfx_level < GFX12 ? auto_reset_cntl : 0));
+   radeon_opt_set_context_reg(cmd_buffer, R_028A0C_PA_SC_LINE_STIPPLE, RADV_TRACKED_PA_SC_LINE_STIPPLE,
+                              S_028A0C_LINE_PATTERN(d->vk.rs.line.stipple.pattern) |
+                                 S_028A0C_REPEAT_COUNT(d->vk.rs.line.stipple.factor - 1) |
+                                 S_028A0C_AUTO_RESET_CNTL(pdev->info.gfx_level < GFX12 ? auto_reset_cntl : 0));
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(cmd_buffer->cs, R_028A44_PA_SC_LINE_STIPPLE_RESET,
-                             S_028A44_AUTO_RESET_CNTL(auto_reset_cntl));
+      radeon_opt_set_context_reg(cmd_buffer, R_028A44_PA_SC_LINE_STIPPLE_RESET, RADV_TRACKED_PA_SC_LINE_STIPPLE_RESET,
+                                 S_028A44_AUTO_RESET_CNTL(auto_reset_cntl));
    }
 }
 
@@ -3292,9 +3292,11 @@ radv_emit_culling(struct radv_cmd_buffer *cmd_buffer)
    }
 
    if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(cmd_buffer->cs, R_02881C_PA_SU_SC_MODE_CNTL, pa_su_sc_mode_cntl);
+      radeon_opt_set_context_reg(cmd_buffer, R_02881C_PA_SU_SC_MODE_CNTL, RADV_TRACKED_PA_SU_SC_MODE_CNTL,
+                                 pa_su_sc_mode_cntl);
    } else {
-      radeon_set_context_reg(cmd_buffer->cs, R_028814_PA_SU_SC_MODE_CNTL, pa_su_sc_mode_cntl);
+      radeon_opt_set_context_reg(cmd_buffer, R_028814_PA_SU_SC_MODE_CNTL, RADV_TRACKED_PA_SU_SC_MODE_CNTL,
+                                 pa_su_sc_mode_cntl);
    }
 }
 
@@ -3473,8 +3475,8 @@ radv_emit_clipping(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    bool depth_clip_enable = radv_get_depth_clip_enable(cmd_buffer);
 
-   radeon_set_context_reg(
-      cmd_buffer->cs, R_028810_PA_CL_CLIP_CNTL,
+   radeon_opt_set_context_reg(
+      cmd_buffer, R_028810_PA_CL_CLIP_CNTL, RADV_TRACKED_PA_CL_CLIP_CNTL,
       S_028810_DX_RASTERIZATION_KILL(d->vk.rs.rasterizer_discard_enable) |
          S_028810_ZCLIP_NEAR_DISABLE(!depth_clip_enable) | S_028810_ZCLIP_FAR_DISABLE(!depth_clip_enable) |
          S_028810_DX_CLIP_SPACE_DEF(!d->vk.vp.depth_clip_negative_one_to_one) | S_028810_DX_LINEAR_ATTR_CLIP_ENA(1));
@@ -5582,8 +5584,8 @@ radv_emit_line_rasterization_mode(struct radv_cmd_buffer *cmd_buffer)
    /* The DX10 diamond test is unnecessary with Vulkan and it decreases line rasterization
     * performance.
     */
-   radeon_set_context_reg(
-      cmd_buffer->cs, R_028BDC_PA_SC_LINE_CNTL,
+   radeon_opt_set_context_reg(
+      cmd_buffer, R_028BDC_PA_SC_LINE_CNTL, RADV_TRACKED_PA_SC_LINE_CNTL,
       S_028BDC_PERPENDICULAR_ENDCAP_ENA(radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR));
 }
 
