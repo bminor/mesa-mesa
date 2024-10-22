@@ -810,6 +810,7 @@ print_access(enum gl_access_qualifier access, print_state *state, const char *se
       { ACCESS_CP_GE_COHERENT_AMD, "cp-ge-coherent-amd" },
       { ACCESS_IN_BOUNDS_AGX, "in-bounds-agx" },
       { ACCESS_KEEP_SCALAR, "keep-scalar" },
+      { ACCESS_SMEM_AMD, "smem-amd" },
    };
 
    bool first = true;

@@ -1159,6 +1159,11 @@ enum gl_access_qualifier
     * shader where the API wants to copy all bytes that are resident.
     */
    ACCESS_KEEP_SCALAR = (1 << 15),
+
+   /**
+    * Indicates that this load will use SMEM.
+    */
+   ACCESS_SMEM_AMD = (1 << 16),
 };
 
 /**

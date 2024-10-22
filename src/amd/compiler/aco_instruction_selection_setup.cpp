@@ -376,6 +376,7 @@ init_context(isel_context* ctx, nir_shader* shader)
    }
 
    apply_nuw_to_offsets(ctx, impl);
+   ac_nir_flag_smem_for_loads(shader, ctx->program->gfx_level, false, true);
 
    /* sanitize control flow */
    sanitize_cf_list(impl, &impl->body);

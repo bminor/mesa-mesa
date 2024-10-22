@@ -6020,13 +6020,10 @@ load_buffer(isel_context* ctx, unsigned num_components, unsigned component_size,
 {
    Builder bld(ctx->program, ctx->block);
 
-   bool glc = access & (ACCESS_VOLATILE | ACCESS_COHERENT);
-
-   bool use_smem = dst.type() != RegType::vgpr && (ctx->options->gfx_level >= GFX8 || !glc) &&
-                   (access & ACCESS_CAN_REORDER);
-   if (use_smem)
+   bool use_smem = access & ACCESS_SMEM_AMD;
+   if (use_smem) {
       offset = bld.as_uniform(offset);
-   else {
+   } else {
       /* GFX6-7 are affected by a hw bug that prevents address clamping to
        * work correctly when the SGPR offset is used.
        */
@@ -6054,7 +6051,8 @@ visit_load_ubo(isel_context* ctx, nir_intrinsic_instr* instr)
 
    unsigned size = instr->def.bit_size / 8;
    load_buffer(ctx, instr->num_components, size, dst, rsrc, get_ssa_temp(ctx, instr->src[1].ssa),
-               nir_intrinsic_align_mul(instr), nir_intrinsic_align_offset(instr));
+               nir_intrinsic_align_mul(instr), nir_intrinsic_align_offset(instr),
+               nir_intrinsic_access(instr) | ACCESS_CAN_REORDER);
 }
 
 void
@@ -6084,7 +6082,7 @@ visit_load_constant(isel_context* ctx, nir_intrinsic_instr* instr)
                           Operand::c32(desc[3]));
    unsigned size = instr->def.bit_size / 8;
    load_buffer(ctx, instr->num_components, size, dst, rsrc, offset, nir_intrinsic_align_mul(instr),
-               nir_intrinsic_align_offset(instr));
+               nir_intrinsic_align_offset(instr), nir_intrinsic_access(instr) | ACCESS_CAN_REORDER);
 }
 
 /* Packs multiple Temps of different sizes in to a vector of v1 Temps.
@@ -6921,23 +6919,17 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
       num_components, component_size, align, false);
 
    unsigned access = nir_intrinsic_access(instr) | ACCESS_TYPE_LOAD;
-   bool glc = access & (ACCESS_VOLATILE | ACCESS_COHERENT);
-
-   /* VMEM stores don't update the SMEM cache and it's difficult to prove that
-    * it's safe to use SMEM */
-   bool can_use_smem = (access & ACCESS_NON_WRITEABLE) && byte_align_for_smem;
-   if (info.dst.type() == RegType::vgpr || (ctx->options->gfx_level < GFX8 && glc) ||
-       !can_use_smem) {
-      EmitLoadParameters params = global_load_params;
-      params.byte_align_loads = byte_align_for_vmem;
-      info.cache = get_cache_flags(ctx, access);
-      emit_load(ctx, bld, info, params);
-   } else {
+   if ((access & ACCESS_SMEM_AMD) && byte_align_for_smem) {
       if (info.resource.id())
          info.resource = bld.as_uniform(info.resource);
       info.offset = Operand(bld.as_uniform(info.offset));
       info.cache = get_cache_flags(ctx, access | ACCESS_TYPE_SMEM);
       emit_load(ctx, bld, info, smem_load_params);
+   } else {
+      EmitLoadParameters params = global_load_params;
+      params.byte_align_loads = byte_align_for_vmem;
+      info.cache = get_cache_flags(ctx, access);
+      emit_load(ctx, bld, info, params);
    }
 }
 

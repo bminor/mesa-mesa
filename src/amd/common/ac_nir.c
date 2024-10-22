@@ -1706,3 +1706,53 @@ ac_nir_varying_estimate_instr_cost(nir_instr *instr)
       unreachable("unexpected instr type");
    }
 }
+
+typedef struct {
+   enum amd_gfx_level gfx_level;
+   bool use_llvm;
+   bool after_lowering;
+} mem_access_cb_data;
+
+static bool
+use_smem_for_load(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
+{
+   const mem_access_cb_data *cb_data = (mem_access_cb_data *)cb_data_;
+
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_load_global:
+   case nir_intrinsic_load_global_constant:
+   case nir_intrinsic_load_global_amd:
+   case nir_intrinsic_load_constant:
+      if (cb_data->use_llvm)
+         return false;
+      break;
+   case nir_intrinsic_load_ubo:
+      break;
+   default:
+      return false;
+   }
+
+   if (intrin->def.divergent || (cb_data->after_lowering && intrin->def.bit_size < 32))
+      return false;
+
+   enum gl_access_qualifier access = nir_intrinsic_access(intrin);
+   bool glc = access & (ACCESS_VOLATILE | ACCESS_COHERENT);
+   bool reorder = nir_intrinsic_can_reorder(intrin) || ((access & ACCESS_NON_WRITEABLE) && !(access & ACCESS_VOLATILE));
+   if (!reorder || (glc && cb_data->gfx_level < GFX8))
+      return false;
+
+   nir_intrinsic_set_access(intrin, access | ACCESS_SMEM_AMD);
+   return true;
+}
+
+bool
+ac_nir_flag_smem_for_loads(nir_shader *shader, enum amd_gfx_level gfx_level, bool use_llvm, bool after_lowering)
+{
+   mem_access_cb_data cb_data = {
+      .gfx_level = gfx_level,
+      .use_llvm = use_llvm,
+      .after_lowering = after_lowering,
+   };
+   return nir_shader_intrinsics_pass(shader, &use_smem_for_load, nir_metadata_all, &cb_data);
+}
