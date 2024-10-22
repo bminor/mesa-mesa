@@ -14,6 +14,3 @@ test_vertex_id_dxil,Fail
 
 # msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 67.5.20.1: hangcheck detected gpu lockup rb 0!
 test_fence_wait_robustness,Crash
-
-# vkd3d-proton bug (missing check for DGC ext)
-test_execute_indirect_state_vbo_offsets,Crash
