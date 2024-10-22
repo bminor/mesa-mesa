@@ -334,9 +334,11 @@ fedora-release:
     - !reference [.build-for-tests-jobs]
   variables:
     BUILDTYPE: "release"
+    # array-bounds are pure non-LTO gcc buggy warning, verify after bump to F39
     C_ARGS: >
       -Wno-error=stringop-overflow
       -Wno-error=stringop-overread
+      -Wno-error=array-bounds
     CPP_ARGS: >
       -Wno-error=dangling-reference
       -Wno-error=overloaded-virtual
