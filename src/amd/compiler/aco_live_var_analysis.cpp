@@ -179,7 +179,7 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          if (!definition.isTemp()) {
             continue;
          }
-         if (definition.isPrecolored() && definition.physReg() == vcc)
+         if (definition.isFixed() && definition.physReg() == vcc)
             ctx.program->needs_vcc = true;
 
          const Temp temp = definition.getTemp();
@@ -311,6 +311,7 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
          continue;
       }
       Definition& definition = insn->definitions[0];
+      ctx.program->needs_vcc |= definition.isFixed() && definition.physReg() == vcc;
       const size_t n = live.erase(definition.tempId());
       if (n && (definition.isKill() || ctx.handled_once > block->index)) {
          Block::edge_vec& preds =
