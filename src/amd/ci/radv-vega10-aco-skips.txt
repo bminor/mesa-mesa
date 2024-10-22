@@ -1,0 +1,2 @@
+# This test can cause GPU hangs for very weird reasons, needs to be investigated.
+dEQP-VK.api.command_buffers.many_indirect_disps_on_secondary

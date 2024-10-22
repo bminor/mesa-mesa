@@ -16,7 +16,7 @@ set -uex -o pipefail
 # - the GL release produces `glcts`, and
 # - the GLES release produces `deqp-gles*` and `deqp-egl`
 
-DEQP_VK_VERSION=1.3.9.2
+DEQP_VK_VERSION=1.3.10.0
 DEQP_GL_VERSION=4.6.5.0
 DEQP_GLES_VERSION=3.2.11.0
 
@@ -28,14 +28,8 @@ DEQP_GLES_VERSION=3.2.11.0
 
 # shellcheck disable=SC2034
 vk_cts_commits_to_backport=(
-    # Fix sync issues in copy and blit tests
-    24f214d80a866c04745f6c3b5027a4b540568598
-
-    # Don't access out-of-bounds per-vertex attributes
-    6e36996fdf38b91bd08b97c1aa8ddb7601e43aae
-
-    # Remove some of FDM + DRLR tests
-    d712381852e7f90cdd0a0bac5e43ac10d9bb5241
+    # Remove multi-line test results in DRM format modifier tests
+    8c95af68a2a85cbdc7e1d9267ab029f73e9427d2
 )
 
 # shellcheck disable=SC2034

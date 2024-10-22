@@ -870,3 +870,7 @@ nir-stress=dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.unused_attac
 dEQP-VK.glsl.texture_functions.query.texturequerylod.isampler1d_fragment,Fail
 dEQP-VK.glsl.texture_functions.query.texturequerylod.sampler1d_float_fragment,Fail
 dEQP-VK.glsl.texture_functions.query.texturequerylod.usampler1d_fragment,Fail
+
+# New fails in 1.3.10.0
+dEQP-VK.ray_query.builtin.instancecustomindex.frag.aabbs,Crash
+dEQP-VK.ray_query.builtin.objecttoworld.frag.aabbs,Crash

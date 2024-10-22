@@ -26,5 +26,3 @@ dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag,Fail
 KHR-GL46.direct_state_access.renderbuffers_storage_multisample,Fail
 
 # GL tests above, Vulkan tests below
-
-
