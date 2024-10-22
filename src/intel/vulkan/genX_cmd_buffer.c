@@ -2547,17 +2547,17 @@ genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
    }
 
    if (trace_flush && batch->trace != NULL) {
-         trace_intel_end_stall(batch->trace, bits,
-                               anv_pipe_flush_bit_to_ds_stall_flag,
-                               batch->pc_reasons[0],
-                               batch->pc_reasons[1],
-                               batch->pc_reasons[2],
-                               batch->pc_reasons[3]);
-         batch->pc_reasons[0] = NULL;
-         batch->pc_reasons[1] = NULL;
-         batch->pc_reasons[2] = NULL;
-         batch->pc_reasons[3] = NULL;
-         batch->pc_reasons_count = 0;
+      trace_intel_end_stall(batch->trace, bits,
+                            anv_pipe_flush_bit_to_ds_stall_flag,
+                            batch->pc_reasons[0],
+                            batch->pc_reasons[1],
+                            batch->pc_reasons[2],
+                            batch->pc_reasons[3]);
+      batch->pc_reasons[0] = NULL;
+      batch->pc_reasons[1] = NULL;
+      batch->pc_reasons[2] = NULL;
+      batch->pc_reasons[3] = NULL;
+      batch->pc_reasons_count = 0;
    }
 }
 
