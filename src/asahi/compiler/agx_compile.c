@@ -3004,12 +3004,18 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
 
    NIR_PASS(progress, nir, nir_opt_uniform_atomics, true);
    NIR_PASS(progress, nir, nir_opt_uniform_subgroup, &subgroups_options);
-
-   /* The above create operations that need lowering/optimizing */
    if (progress) {
       NIR_PASS(_, nir, agx_nir_lower_subgroups);
-      NIR_PASS(_, nir, nir_opt_algebraic);
    }
+
+   /* The above create operations that need lowering/optimizing */
+   do {
+      progress = false;
+
+      NIR_PASS(progress, nir, nir_opt_algebraic);
+      NIR_PASS(progress, nir, nir_opt_constant_folding);
+      NIR_PASS(progress, nir, nir_opt_dce);
+   } while (progress);
 
    progress = false;
    NIR_PASS(progress, nir, agx_nir_lower_address);
