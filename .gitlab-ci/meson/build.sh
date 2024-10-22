@@ -117,12 +117,7 @@ case $CI_PIPELINE_SOURCE in
       fi
       ;;
     *)
-      # run Fedora with LTO in pre-merge for now
-      if [ "$CI_JOB_NAME" == "fedora-release" ]; then
-	      LTO=true
-      else
-	      LTO=false
-      fi
+      LTO=false
       ;;
 esac
 
