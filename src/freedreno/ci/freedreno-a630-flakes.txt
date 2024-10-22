@@ -346,3 +346,6 @@ KHR-GL46.gpu_shader_fp64.builtin.smoothstep_against_scalar_dvec2
 KHR-GL46.packed_pixels.varied_rectangle.rgba8i
 KHR-GL46.texture_view.view_classes
 KHR-GL46.draw_indirect.basic-mode-drawArrays-lines_adjacency
+
+# first noticed 2024-10-22
+KHR-GL46.sample_variables.mask.rgba32f.samples_4.mask_5
