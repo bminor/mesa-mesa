@@ -266,6 +266,7 @@ public:
                                                     elk_fs_inst *inst);
    void insert_gfx4_post_send_dependency_workarounds(elk_bblock_t *block,
                                                      elk_fs_inst *inst);
+   bool workaround_source_arf_before_eot();
    void vfail(const char *msg, va_list args);
    void fail(const char *msg, ...);
    void limit_dispatch_width(unsigned n, const char *msg);
