@@ -47,6 +47,7 @@ yaml-toml-shell-test:
   extends:
     - python-test
     - .no-auto-retry  # this job can't be flaky
+  stage: code-validation
   script:
     - echo "If your change looks right but this script rejects it, contact @eric (GitLab) / eric_engestrom (IRC)."
     - uncollapsed_section_start tomllint "tomllint"
