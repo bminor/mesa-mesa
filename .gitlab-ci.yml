@@ -33,7 +33,6 @@ workflow:
     # merge pipeline
     - if: &is-merge-attempt $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "merge_request_event"
       variables:
-        KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
         MESA_CI_PERFORMANCE_ENABLED: 1
         VALVE_INFRA_VANGOGH_JOB_PRIORITY: ""  # Empty tags are ignored by gitlab
         JOB_PRIORITY: 75
@@ -45,20 +44,10 @@ workflow:
     - if: &is-post-merge $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "push"
     # nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
-      variables:
-        KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
     # pipeline for direct pushes that bypassed the CI
     - if: &is-direct-push $CI_PROJECT_NAMESPACE == "mesa" && $CI_PIPELINE_SOURCE == "push" && $GITLAB_USER_LOGIN != "marge-bot"
       variables:
-        KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
         JOB_PRIORITY: 40
-    # pre-merge or fork pipeline
-    - if: $FORCE_KERNEL_TAG != null
-      variables:
-        KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG}
-    - if: $FORCE_KERNEL_TAG == null
-      variables:
-        KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${KERNEL_TAG}
 
 
 variables:
@@ -108,6 +97,10 @@ default:
     S3_JWT:
       aud: https://s3.freedesktop.org
   before_script:
+    - |
+      if [ -z "${KERNEL_IMAGE_BASE:-}" ]; then
+        export KERNEL_IMAGE_BASE="https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG:-$KERNEL_TAG}"
+      fi
     - >
       export SCRIPTS_DIR=$(mktemp -d) &&
       curl -L -s --retry 4 -f --retry-all-errors --retry-delay 60 -O --output-dir "${SCRIPTS_DIR}" "${CI_PROJECT_URL}/-/raw/${CI_COMMIT_SHA}/.gitlab-ci/setup-test-env.sh" &&

@@ -229,7 +229,6 @@
     VK_DRIVER: freedreno
     # force fixed kernel until 6.11 is switched officially
     FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
-    KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG}
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sc7180-trogdor-lazor-limozeen
 .lava-sc7180-trogdor-lazor-limozeen:arm64:
@@ -248,7 +247,6 @@
     VK_DRIVER: freedreno
     # force fixed kernel until 6.11 is switched officially
     FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
-    KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG}
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sm8350-hdk
 .lava-sm8350-hdk:arm64:
@@ -268,7 +266,6 @@
     VK_DRIVER: freedreno
     # force fixed kernel until 6.11 is switched officially
     FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
-    KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG}
 
 
 .google-freedreno-test:
@@ -283,7 +280,6 @@
     FARM: google
     # force fixed kernel until 6.11 is switched officially
     FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
-    KERNEL_IMAGE_BASE: https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG}
   script:
     - ./install/bare-metal/fastboot.sh
 
