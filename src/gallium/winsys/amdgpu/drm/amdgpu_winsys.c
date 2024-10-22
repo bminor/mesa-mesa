@@ -91,7 +91,6 @@ static void do_winsys_deinit(struct amdgpu_winsys *aws)
    if (util_queue_is_initialized(&aws->cs_queue))
       util_queue_destroy(&aws->cs_queue);
 
-   simple_mtx_destroy(&aws->bo_fence_lock);
    if (aws->bo_slabs.groups)
       pb_slabs_deinit(&aws->bo_slabs);
    pb_cache_deinit(&aws->bo_cache);
@@ -105,6 +104,7 @@ static void do_winsys_deinit(struct amdgpu_winsys *aws)
    ac_addrlib_destroy(aws->addrlib);
    amdgpu_device_deinitialize(aws->dev);
    drmSyncobjDestroy(aws->fd, aws->vm_timeline_syncobj);
+   simple_mtx_destroy(&aws->bo_fence_lock);
 
    FREE(aws);
 }
