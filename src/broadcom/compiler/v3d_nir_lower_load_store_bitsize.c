@@ -129,7 +129,7 @@ static nir_mem_access_size_align
 v3d_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
                   uint8_t input_bit_size, uint32_t align,
                   uint32_t align_offset, bool offset_is_const,
-                  const void *cb_data)
+                  enum gl_access_qualifier access, const void *cb_data)
 {
         /* we only support single component 32 bit load/stores on scratch */
         if (intrin == nir_intrinsic_load_scratch ||

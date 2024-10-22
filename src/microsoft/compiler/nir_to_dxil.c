@@ -6247,6 +6247,7 @@ lower_mem_access_bit_sizes_cb(nir_intrinsic_op intrin,
                               uint32_t align_mul,
                               uint32_t align_offset,
                               bool offset_is_const,
+                              enum gl_access_qualifier access,
                               const void *cb_data)
 {
    const struct lower_mem_bit_sizes_data *data = cb_data;

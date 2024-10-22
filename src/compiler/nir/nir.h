@@ -5913,6 +5913,7 @@ typedef nir_mem_access_size_align
                                         uint32_t align_mul,
                                         uint32_t align_offset,
                                         bool offset_is_const,
+                                        enum gl_access_qualifier,
                                         const void *cb_data);
 /* clang-format on */
 

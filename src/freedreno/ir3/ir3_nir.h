@@ -55,7 +55,8 @@ bool ir3_nir_lower_64b_regs(nir_shader *shader);
 
 nir_mem_access_size_align ir3_mem_access_size_align(
    nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, uint32_t align,
-   uint32_t align_offset, bool offset_is_const, const void *cb_data);
+   uint32_t align_offset, bool offset_is_const, enum gl_access_qualifier access,
+   const void *cb_data);
 
 bool ir3_nir_opt_branch_and_or_not(nir_shader *nir);
 bool ir3_optimize_loop(struct ir3_compiler *compiler,

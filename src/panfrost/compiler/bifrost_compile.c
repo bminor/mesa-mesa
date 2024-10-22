@@ -4721,7 +4721,7 @@ static nir_mem_access_size_align
 mem_access_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
                          uint8_t bit_size, uint32_t align_mul,
                          uint32_t align_offset, bool offset_is_const,
-                         const void *cb_data)
+                         enum gl_access_qualifier access, const void *cb_data)
 {
    uint32_t align = nir_combined_align(align_mul, align_offset);
    assert(util_is_power_of_two_nonzero(align));

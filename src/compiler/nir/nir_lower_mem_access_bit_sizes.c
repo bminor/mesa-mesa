@@ -159,6 +159,8 @@ lower_mem_load(nir_builder *b, nir_intrinsic_instr *intrin,
    const uint32_t align_mul = nir_intrinsic_align_mul(intrin);
    const uint32_t whole_align_offset = nir_intrinsic_align_offset(intrin);
    const uint32_t whole_align = nir_intrinsic_align(intrin);
+   const enum gl_access_qualifier access =
+      nir_intrinsic_has_access(intrin) ? nir_intrinsic_access(intrin) : 0;
    nir_src *offset_src = nir_get_io_offset_src(intrin);
    const bool offset_is_const = nir_src_is_const(*offset_src);
    nir_def *offset = offset_src->ssa;
@@ -166,7 +168,7 @@ lower_mem_load(nir_builder *b, nir_intrinsic_instr *intrin,
    nir_mem_access_size_align requested =
       mem_access_size_align_cb(intrin->intrinsic, bytes_read,
                                bit_size, align_mul, whole_align_offset,
-                               offset_is_const, cb_data);
+                               offset_is_const, access, cb_data);
 
    assert(requested.num_components > 0);
    assert(requested.bit_size > 0);
@@ -191,7 +193,7 @@ lower_mem_load(nir_builder *b, nir_intrinsic_instr *intrin,
          nir_combined_align(align_mul, chunk_align_offset);
       requested = mem_access_size_align_cb(intrin->intrinsic, bytes_left,
                                            bit_size, align_mul, chunk_align_offset,
-                                           offset_is_const, cb_data);
+                                           offset_is_const, access, cb_data);
 
       unsigned chunk_bytes;
       assert(requested.num_components > 0);
@@ -303,6 +305,8 @@ lower_mem_store(nir_builder *b, nir_intrinsic_instr *intrin,
    const uint32_t align_mul = nir_intrinsic_align_mul(intrin);
    const uint32_t whole_align_offset = nir_intrinsic_align_offset(intrin);
    const uint32_t whole_align = nir_intrinsic_align(intrin);
+   const enum gl_access_qualifier access =
+      nir_intrinsic_has_access(intrin) ? nir_intrinsic_access(intrin) : 0;
    nir_src *offset_src = nir_get_io_offset_src(intrin);
    const bool offset_is_const = nir_src_is_const(*offset_src);
    nir_def *offset = offset_src->ssa;
@@ -313,7 +317,7 @@ lower_mem_store(nir_builder *b, nir_intrinsic_instr *intrin,
    nir_mem_access_size_align requested =
       mem_access_size_align_cb(intrin->intrinsic, bytes_written,
                                bit_size, align_mul, whole_align_offset,
-                               offset_is_const, cb_data);
+                               offset_is_const, access, cb_data);
 
    assert(requested.num_components > 0);
    assert(requested.bit_size > 0);
@@ -353,7 +357,7 @@ lower_mem_store(nir_builder *b, nir_intrinsic_instr *intrin,
 
       requested = mem_access_size_align_cb(intrin->intrinsic, max_chunk_bytes,
                                            bit_size, align_mul, chunk_align_offset,
-                                           offset_is_const, cb_data);
+                                           offset_is_const, access, cb_data);
 
       uint32_t chunk_bytes = requested.num_components * (requested.bit_size / 8);
 
