@@ -155,12 +155,14 @@ apply_hwconfig(const struct intel_device_info *devinfo)
 }
 
 static inline bool
-should_apply_hwconfig_item(const struct intel_device_info *devinfo,
+should_apply_hwconfig_item(uint16_t always_apply_verx10,
+                           const struct intel_device_info *devinfo,
                            const char *devinfo_name, uint32_t devinfo_val,
                            const uint32_t hwconfig_key, uint32_t hwconfig_val)
 {
-   if (apply_hwconfig(devinfo))
-      return true;
+   if (apply_hwconfig(devinfo) &&
+       (devinfo->verx10 >= always_apply_verx10 || devinfo_val == 0))
+         return true;
 
 #ifndef NDEBUG
    if (devinfo_val != hwconfig_val) {
@@ -180,15 +182,20 @@ should_apply_hwconfig_item(const struct intel_device_info *devinfo,
  * hwconfig value, ``V``, with the current value in ``F`` and log a warning
  * message if they differ. This should help to make sure the values in our
  * devinfo structures match what hwconfig is specified.
+ *
+ * If ``devinfo->verx10 >= CVER``, then the hwconfig value is always be used.
+ * If ``devinfo->verx10 < CVER``, the hwconfig value is only used if
+ * devinfo->F is 0.
  */
-#define DEVINFO_HWCONFIG_KV(F, K, V)                                    \
+#define DEVINFO_HWCONFIG_KV(CVER, F, K, V)                              \
    do {                                                                 \
-      if (should_apply_hwconfig_item(devinfo, #F, devinfo->F, (K),      \
-                                     (V)))                              \
+      if (should_apply_hwconfig_item((CVER), devinfo, #F, devinfo->F,   \
+                                     (K), (V)))                         \
          devinfo->F = (V);                                              \
    } while (0)
 
-#define DEVINFO_HWCONFIG(F, I) DEVINFO_HWCONFIG_KV(F, (I)->key, (I)->val[0])
+#define DEVINFO_HWCONFIG(CVER, F, I)                                    \
+   DEVINFO_HWCONFIG_KV((CVER), F, (I)->key, (I)->val[0])
 
 static void
 apply_hwconfig_item(struct intel_device_info *devinfo,
@@ -210,22 +217,22 @@ apply_hwconfig_item(struct intel_device_info *devinfo,
    case INTEL_HWCONFIG_DEPRECATED_SLM_SIZE_IN_KB:
       break; /* ignore */
    case INTEL_HWCONFIG_MAX_NUM_EU_PER_DSS:
-      DEVINFO_HWCONFIG(max_eus_per_subslice, item);
+      DEVINFO_HWCONFIG(125, max_eus_per_subslice, item);
       break;
    case INTEL_HWCONFIG_NUM_THREADS_PER_EU:
-      DEVINFO_HWCONFIG(num_thread_per_eu, item);
+      DEVINFO_HWCONFIG(125, num_thread_per_eu, item);
       break;
    case INTEL_HWCONFIG_TOTAL_VS_THREADS:
-      DEVINFO_HWCONFIG(max_vs_threads, item);
+      DEVINFO_HWCONFIG(125, max_vs_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_GS_THREADS:
-      DEVINFO_HWCONFIG(max_gs_threads, item);
+      DEVINFO_HWCONFIG(125, max_gs_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_HS_THREADS:
-      DEVINFO_HWCONFIG(max_tcs_threads, item);
+      DEVINFO_HWCONFIG(125, max_tcs_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_DS_THREADS:
-      DEVINFO_HWCONFIG(max_tes_threads, item);
+      DEVINFO_HWCONFIG(125, max_tes_threads, item);
       break;
    case INTEL_HWCONFIG_TOTAL_VS_THREADS_POCS:
       break; /* ignore */
@@ -233,11 +240,11 @@ apply_hwconfig_item(struct intel_device_info *devinfo,
       unsigned threads = item->val[0];
       if (devinfo->ver == 12)
          threads /= 2;
-      DEVINFO_HWCONFIG_KV(max_threads_per_psd, item->key, threads);
+      DEVINFO_HWCONFIG_KV(125, max_threads_per_psd, item->key, threads);
       break;
    }
    case INTEL_HWCONFIG_URB_SIZE_PER_SLICE_IN_KB:
-      DEVINFO_HWCONFIG(urb.size, item);
+      DEVINFO_HWCONFIG(125, urb.size, item);
       break;
    case INTEL_HWCONFIG_DEPRECATED_MAX_FILL_RATE:
    case INTEL_HWCONFIG_MAX_RCS:

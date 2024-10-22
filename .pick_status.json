@@ -1414,7 +1414,7 @@
         "description": "intel/dev: Allow specifying a version when to always use hwconfig",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
