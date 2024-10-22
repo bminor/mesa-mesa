@@ -686,6 +686,15 @@ load_img_samples(nir_builder *b, nir_deref_instr *deref,
    return nir_iadd_imm(b, nir_u2u32(b, sample_count), 1);
 }
 
+static uint32_t
+get_desc_array_stride(const struct panvk_descriptor_set_binding_layout *layout)
+{
+   /* On Bifrost, descriptors are copied from the sets to the final
+    * descriptor tables which are per-type, making the stride one in
+    * this context. */
+   return PAN_ARCH >= 9 ? panvk_get_desc_stride(layout->type) : 1;
+}
+
 static bool
 lower_tex(nir_builder *b, nir_tex_instr *tex, const struct lower_desc_ctx *ctx)
 {
@@ -731,15 +740,21 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct lower_desc_ctx *ctx)
 
       uint32_t set, binding, index_imm, max_idx;
       nir_def *index_ssa;
-      get_resource_deref_binding(deref, &set, &binding, &index_imm, &index_ssa,
-                                 &max_idx);
+      get_resource_deref_binding(deref, &set, &binding, &index_imm, &index_ssa, &max_idx);
+
+      const struct panvk_descriptor_set_layout *set_layout =
+         get_set_layout(set, ctx);
+      const struct panvk_descriptor_set_binding_layout *bind_layout =
+         &set_layout->bindings[binding];
+      uint32_t desc_stride = get_desc_array_stride(bind_layout);
 
       tex->sampler_index =
          shader_desc_idx(set, binding, VK_DESCRIPTOR_TYPE_SAMPLER, ctx) +
-         index_imm;
+         index_imm * desc_stride;
 
       if (index_ssa != NULL) {
-         nir_tex_instr_add_src(tex, nir_tex_src_sampler_offset, index_ssa);
+         nir_def *offset = nir_imul_imm(b, index_ssa, desc_stride);
+         nir_tex_instr_add_src(tex, nir_tex_src_sampler_offset, offset);
       }
       progress = true;
    } else {
@@ -758,12 +773,19 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct lower_desc_ctx *ctx)
       get_resource_deref_binding(deref, &set, &binding, &index_imm, &index_ssa,
                                  &max_idx);
 
+      const struct panvk_descriptor_set_layout *set_layout =
+         get_set_layout(set, ctx);
+      const struct panvk_descriptor_set_binding_layout *bind_layout =
+         &set_layout->bindings[binding];
+      uint32_t desc_stride = get_desc_array_stride(bind_layout);
+
       tex->texture_index =
          shader_desc_idx(set, binding, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, ctx) +
-         index_imm;
+         index_imm * desc_stride;
 
       if (index_ssa != NULL) {
-         nir_tex_instr_add_src(tex, nir_tex_src_texture_offset, index_ssa);
+         nir_def *offset = nir_imul_imm(b, index_ssa, desc_stride);
+         nir_tex_instr_add_src(tex, nir_tex_src_texture_offset, offset);
       }
       progress = true;
    }
