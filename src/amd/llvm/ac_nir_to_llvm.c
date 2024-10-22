@@ -2891,6 +2891,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
    case nir_intrinsic_ddx_coarse:
    case nir_intrinsic_ddy_coarse:
       result = emit_ddxy(ctx, instr->intrinsic, get_src(ctx, instr->src[0]));
+      result = ac_to_integer(&ctx->ac, result);
       break;
    case nir_intrinsic_ballot:
    case nir_intrinsic_ballot_relaxed:
