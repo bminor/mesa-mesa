@@ -42,6 +42,10 @@ workflow:
         IS_MERGE_PIPELINE: 1
     # post-merge pipeline
     - if: &is-post-merge $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "push"
+    # Pre-merge pipeline
+    - if: &is-pre-merge $CI_PIPELINE_SOURCE == "merge_request_event"
+    # Push to a branch on a fork
+    - if: &is-fork-push $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
     # nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
     # pipeline for direct pushes that bypassed the CI
@@ -182,15 +186,6 @@ include:
   - local: '.gitlab-ci/test-source-dep.yml'
   - local: 'docs/gitlab-ci.yml'
   - local: 'src/**/ci/gitlab-ci.yml'
-
-
-# YAML anchors for rule conditions
-# --------------------------------
-.rules-anchors:
-  # Pre-merge pipeline
-  - &is-pre-merge '$CI_PIPELINE_SOURCE == "merge_request_event"'
-  # Push to a branch on a fork
-  - &is-fork-push '$CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"'
 
 
 # Rules applied to every job in the pipeline
