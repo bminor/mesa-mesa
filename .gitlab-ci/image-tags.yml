@@ -33,7 +33,7 @@ variables:
    DEBIAN_TEST_ANDROID_TAG: "20250210-libdrm"
    DEBIAN_TEST_GL_TAG: "20250204-fix-deqp"
    DEBIAN_TEST_VK_TAG: "20250204-fix-deqp"
-   KERNEL_ROOTFS_TAG: "20250206-right-angle"
+   KERNEL_ROOTFS_TAG: "20250212-angular"
 
    DEBIAN_PYUTILS_IMAGE: "debian/x86_64_pyutils"
    DEBIAN_PYUTILS_TAG: "20250129-lavacli"
