@@ -145,15 +145,23 @@ genX(cmd_buffer_flush_compute_state)(struct anv_cmd_buffer *cmd_buffer)
       genX(cmd_buffer_ensure_cfe_state)(cmd_buffer, prog_data->base.total_scratch);
 #endif
 
-#if GFX_VERx10 == 120
-      /* Normally we should not require any dirtying here, but for some reason
-       * on Gfx12.0, when running tests in parallel we see failures in the
-       * dEQP-VK.memory_model.* tests. This is likely a HW issue with push
+      /* Changing the pipeline affects the push constants layout (different
+       * amount of cross/per thread allocations). The allocation is also
+       * bounded to just the amount consummed by the pipeline (see
+       * anv_cmd_buffer_cs_push_constants). So we force the reallocation for
+       * every pipeline change.
+       *
+       * On Gfx12.0 we're also seeing failures in the dEQP-VK.memory_model.*
+       * tests when run in parallel. This is likely a HW issue with push
        * constants & context save/restore.
+       *
+       * TODO: optimize this on Gfx12.5+ where the shader is not using per
+       * thread allocations and is also pulling the data using SEND messages.
+       * We should be able to limit reallocations only the data actually
+       * changes.
        */
       cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_COMPUTE_BIT;
       comp_state->base.push_constants_data_dirty = true;
-#endif
    }
 
    cmd_buffer->state.descriptors_dirty |=
