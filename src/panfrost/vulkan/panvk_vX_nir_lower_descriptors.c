@@ -570,9 +570,10 @@ load_resource_deref_desc(nir_builder *b, nir_deref_instr *deref,
                           nir_iadd(b, set_base_addr, nir_u2u64(b, set_offset)),
                           desc_align, num_components, bit_size);
 #else
+   /* note that user sets start from index 1 */
    return nir_load_ubo(
       b, num_components, bit_size,
-      nir_imm_int(b, pan_res_handle(VALHALL_RESOURCE_TABLE_IDX, set)),
+      nir_imm_int(b, pan_res_handle(VALHALL_RESOURCE_TABLE_IDX, set + 1)),
       set_offset, .range = ~0u, .align_mul = PANVK_DESCRIPTOR_SIZE,
       .align_offset = desc_offset);
 #endif
