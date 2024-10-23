@@ -3875,8 +3875,8 @@ to upconvert to 32b float internally?
 		<!--
 			a618 GLES: color render target number being resolved for CCU_RESOLVE, 0x8 for depth, 0x9 for separate stencil.
 			a618 VK: 0x8 for depth CCU_RESOLVE, 0x9 for separate stencil, 0 otherwise.
-
-			We believe this is related to concurrent resolves
+			a7xx VK: 0x8 for depth, 0x9 for separate stencil, 0x0 to 0x7 used for concurrent resolves of color render
+			targets inside a given resolve group.
 		 -->
 		<bitfield name="BUFFER_ID" low="12" high="15"/>
 	</reg32>
@@ -4041,9 +4041,20 @@ to upconvert to 32b float internally?
 		<bitfield name="COLOR_OFFSET" low="23" high="31" shr="12" type="hex"/>
 		<!--TODO: valid mask 0xfffffc1f -->
 	</reg32>
+	<enum name="a7xx_concurrent_resolve_mode">
+		<value value="0x0" name="CONCURRENT_RESOLVE_MODE_DISABLED"/>
+		<value value="0x1" name="CONCURRENT_RESOLVE_MODE_1"/>
+		<value value="0x2" name="CONCURRENT_RESOLVE_MODE_2"/>
+	</enum>
+	<enum name="a7xx_concurrent_unresolve_mode">
+		<value value="0x0" name="CONCURRENT_UNRESOLVE_MODE_DISABLED"/>
+		<value value="0x1" name="CONCURRENT_UNRESOLVE_MODE_PARTIAL"/>
+		<value value="0x3" name="CONCURRENT_UNRESOLVE_MODE_FULL"/>
+	</enum>
 	<reg32 offset="0x8e07" name="RB_CCU_CNTL" usage="cmd" variants="A7XX-">
 		<bitfield name="GMEM_FAST_CLEAR_DISABLE" pos="0" type="boolean"/>
-		<bitfield name="CONCURRENT_RESOLVE" pos="2" type="boolean"/>
+		<bitfield name="CONCURRENT_RESOLVE_MODE" low="2" high="3" type="a7xx_concurrent_resolve_mode"/>
+		<bitfield name="CONCURRENT_UNRESOLVE_MODE" low="5" high="6" type="a7xx_concurrent_unresolve_mode"/>
 		<!-- rest of the bits were moved to RB_CCU_CNTL2 -->
 	</reg32>
 	<reg32 offset="0x8e08" name="RB_NC_MODE_CNTL">
