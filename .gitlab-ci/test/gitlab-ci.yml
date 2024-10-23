@@ -65,6 +65,7 @@ yaml-toml-shell-test:
       changes: &toml_lint_files
         - .gitlab-ci/test/gitlab-ci.yml
         - .gitlab-ci/**/*.sh
+        - .shellcheckrc
         - bin/toml_lint.py
         - src/**/ci/*.toml
       when: on_success

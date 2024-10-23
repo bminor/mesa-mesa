@@ -13,7 +13,7 @@ anyfailed=0
 
 while IFS= read -r -d $'' file; do
     if is_bash "$file" ; then
-        if ! shellcheck -x -W0 -s bash "$file"; then
+        if ! shellcheck "$file"; then
             anyfailed=1
         fi
     fi
