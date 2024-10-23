@@ -12,6 +12,16 @@
 
 #define MAX_CONFIG_BOS 4
 
+/*
+ * SWAP - swap value of @a and @b
+ */
+#define SWAP(a, b)                                                             \
+   do {                                                                        \
+      __typeof(a) __tmp = (a);                                                 \
+      (a) = (b);                                                               \
+      (b) = __tmp;                                                             \
+   } while (0)
+
 enum etna_job_type {
     ETNA_JOB_TYPE_NN,
     ETNA_JOB_TYPE_TP,
