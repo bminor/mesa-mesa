@@ -304,6 +304,33 @@ d3d12_video_encoder_destroy(struct pipe_video_codec *codec)
    delete pD3D12Enc;
 }
 
+static const char *
+d3d12_video_encoder_friendly_frame_type_h264(D3D12_VIDEO_ENCODER_FRAME_TYPE_H264 picType)
+{
+   switch (picType) {
+      case D3D12_VIDEO_ENCODER_FRAME_TYPE_H264_P_FRAME:
+      {
+         return "H264_P_FRAME";
+      } break;
+      case D3D12_VIDEO_ENCODER_FRAME_TYPE_H264_B_FRAME:
+      {
+         return "H264_B_FRAME";
+      } break;
+      case D3D12_VIDEO_ENCODER_FRAME_TYPE_H264_I_FRAME:
+      {
+         return "H264_I_FRAME";
+      } break;
+      case D3D12_VIDEO_ENCODER_FRAME_TYPE_H264_IDR_FRAME:
+      {
+         return "H264_IDR_FRAME";
+      } break;
+      default:
+      {
+         unreachable("Unsupported pipe_h2645_enc_picture_type");
+      } break;
+   }
+}
+
 void
 d3d12_video_encoder_update_picparams_tracking(struct d3d12_video_encoder *pD3D12Enc,
                                               struct pipe_video_buffer *  srcTexture,
@@ -339,7 +366,14 @@ d3d12_video_encoder_update_picparams_tracking(struct d3d12_video_encoder *pD3D12
       } break;
    }
 
-   pD3D12Enc->m_upDPBManager->begin_frame(currentPicParams, bUsedAsReference, picture);
+   uint64_t current_metadata_slot = (pD3D12Enc->m_fenceValue % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
+   debug_printf("d3d12_video_encoder_update_picparams_tracking submission saving snapshot for fenceValue %" PRIu64 " current_metadata_slot %" PRIu64 " - POC %d picture_type %s LayoutMode %d SlicesCount %d\n",
+                pD3D12Enc->m_fenceValue,
+                current_metadata_slot,
+                pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_encoderPicParamsDesc.m_H264PicData.PictureOrderCountNumber,
+                d3d12_video_encoder_friendly_frame_type_h264(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_encoderPicParamsDesc.m_H264PicData.FrameType),
+                pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_encoderSliceConfigMode,
+                pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_encoderSliceConfigDesc.m_SlicesPartition_H264.NumberOfSlicesPerFrame);
 }
 
 bool
@@ -2291,6 +2325,14 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
       { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(), 0 }
    };
 
+   debug_printf("DX12 EncodeFrame submission fenceValue %" PRIu64 " current_metadata_slot %" PRIu64 " - POC %d picture_type %s LayoutMode %d SlicesCount %d\n",
+                pD3D12Enc->m_fenceValue,
+                current_metadata_slot,
+                inputStreamArguments.PictureControlDesc.PictureControlCodecData.pH264PicData->PictureOrderCountNumber,
+                d3d12_video_encoder_friendly_frame_type_h264(inputStreamArguments.PictureControlDesc.PictureControlCodecData.pH264PicData->FrameType),
+                inputStreamArguments.SequenceControlDesc.SelectedLayoutMode,
+                inputStreamArguments.SequenceControlDesc.FrameSubregionsLayoutData.pSlicesPartition_H264 ? inputStreamArguments.SequenceControlDesc.FrameSubregionsLayoutData.pSlicesPartition_H264->NumberOfSlicesPerFrame : 1u);
+
    // Record EncodeFrame
    pD3D12Enc->m_spEncodeCommandList->EncodeFrame(pD3D12Enc->m_spVideoEncoder.Get(),
                                                  pD3D12Enc->m_spVideoEncoderHeap.Get(),
@@ -2629,6 +2671,13 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
 
       // Add padding between pre encode headers (e.g EncodeFrame driver offset alignment) and the first slice
       *output_buffer_size += pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersBytePadding;
+
+      debug_printf("D3D12 backend readback submission for frame with fence %" PRIu64 " current_metadata_slot %" PRIu64 " - PictureOrderCountNumber %d FrameType %s num_slice_descriptors %d\n",
+         requested_metadata_fence,
+         current_metadata_slot,
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_encoderPicParamsDesc.m_H264PicData.PictureOrderCountNumber,
+         d3d12_video_encoder_friendly_frame_type_h264(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_encoderPicParamsDesc.m_H264PicData.FrameType),
+         static_cast<uint32_t>(pSubregionsMetadata.size()));
 
       for (uint32_t i = 0; i < pSubregionsMetadata.size(); i++)
       {
