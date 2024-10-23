@@ -349,30 +349,41 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
       ++current_mod;                                         \
    }
 
+   const unsigned block_size_bits_64k = 16;
+   const unsigned block_size_bits_256k = 18;
+
+   const unsigned pipes = G_0098F8_NUM_PIPES(info->gb_addr_config);
+   const unsigned banks = G_0098F8_NUM_BANKS(info->gb_addr_config);
+   const unsigned se = G_0098F8_NUM_SHADER_ENGINES_GFX9(info->gb_addr_config);
+   const unsigned rb_per_se = G_0098F8_NUM_RB_PER_SE(info->gb_addr_config);
+   const unsigned pkrs = G_0098F8_NUM_PKRS(info->gb_addr_config);
+
    /* The modifiers have to be added in descending order of estimated
     * performance. The drivers will prefer modifiers that come earlier
     * in the list. */
    switch (info->gfx_level) {
    case GFX9: {
-      unsigned pipe_xor_bits = MIN2(G_0098F8_NUM_PIPES(info->gb_addr_config) +
-                                    G_0098F8_NUM_SHADER_ENGINES_GFX9(info->gb_addr_config), 8);
-      unsigned bank_xor_bits =  MIN2(G_0098F8_NUM_BANKS(info->gb_addr_config), 8 - pipe_xor_bits);
-      unsigned pipes = G_0098F8_NUM_PIPES(info->gb_addr_config);
-      unsigned rb = G_0098F8_NUM_RB_PER_SE(info->gb_addr_config) +
-                    G_0098F8_NUM_SHADER_ENGINES_GFX9(info->gb_addr_config);
+      unsigned pipe_xor_bits_64k = MIN2(pipes + se, block_size_bits_64k - 8);
+      unsigned bank_xor_bits_64k = MIN2(banks, block_size_bits_64k - 8 - pipe_xor_bits_64k);
 
-      uint64_t common_dcc = AMD_FMT_MOD_SET(DCC, 1) |
-                            AMD_FMT_MOD_SET(DCC_INDEPENDENT_64B, 1) |
-                            AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_64B) |
-                            AMD_FMT_MOD_SET(DCC_CONSTANT_ENCODE, info->has_dcc_constant_encode) |
-                            AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits) |
-                            AMD_FMT_MOD_SET(BANK_XOR_BITS, bank_xor_bits);
+      unsigned rb = rb_per_se + se;
+
+      uint64_t common_dcc =
+         AMD_FMT_MOD_SET(DCC, 1) |
+         AMD_FMT_MOD_SET(DCC_INDEPENDENT_64B, 1) |
+         AMD_FMT_MOD_SET(DCC_MAX_COMPRESSED_BLOCK, AMD_FMT_MOD_DCC_BLOCK_64B) |
+         AMD_FMT_MOD_SET(DCC_CONSTANT_ENCODE, info->has_dcc_constant_encode);
+
+      uint64_t dcc_64k =
+         common_dcc |
+         AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits_64k) |
+         AMD_FMT_MOD_SET(BANK_XOR_BITS, bank_xor_bits_64k);
 
       ADD_MOD(AMD_FMT_MOD |
               AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_D_X) |
               AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX9) |
               AMD_FMT_MOD_SET(DCC_PIPE_ALIGN, 1) |
-              common_dcc |
+              dcc_64k |
               AMD_FMT_MOD_SET(PIPE, pipes) |
               AMD_FMT_MOD_SET(RB, rb))
 
@@ -380,7 +391,7 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
               AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_S_X) |
               AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX9) |
               AMD_FMT_MOD_SET(DCC_PIPE_ALIGN, 1) |
-              common_dcc |
+              dcc_64k |
               AMD_FMT_MOD_SET(PIPE, pipes) |
               AMD_FMT_MOD_SET(RB, rb))
 
@@ -389,7 +400,7 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
             ADD_MOD(AMD_FMT_MOD |
                     AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_S_X) |
                     AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX9) |
-                    common_dcc);
+                    dcc_64k);
          }
 
 
@@ -397,7 +408,7 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
                  AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_S_X) |
                  AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX9) |
                  AMD_FMT_MOD_SET(DCC_RETILE, 1) |
-                 common_dcc |
+                 dcc_64k |
                  AMD_FMT_MOD_SET(PIPE, pipes) |
                  AMD_FMT_MOD_SET(RB, rb))
       }
@@ -406,14 +417,14 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
       ADD_MOD(AMD_FMT_MOD |
               AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_D_X) |
               AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX9) |
-              AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits) |
-              AMD_FMT_MOD_SET(BANK_XOR_BITS, bank_xor_bits));
+              AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits_64k) |
+              AMD_FMT_MOD_SET(BANK_XOR_BITS, bank_xor_bits_64k));
 
       ADD_MOD(AMD_FMT_MOD |
               AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_S_X) |
               AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX9) |
-              AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits) |
-              AMD_FMT_MOD_SET(BANK_XOR_BITS, bank_xor_bits));
+              AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits_64k) |
+              AMD_FMT_MOD_SET(BANK_XOR_BITS, bank_xor_bits_64k));
 
       ADD_MOD(AMD_FMT_MOD |
               AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_D) |
@@ -429,16 +440,18 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
    case GFX10:
    case GFX10_3: {
       bool rbplus = info->gfx_level >= GFX10_3;
-      unsigned pipe_xor_bits = G_0098F8_NUM_PIPES(info->gb_addr_config);
-      unsigned pkrs = rbplus ? G_0098F8_NUM_PKRS(info->gb_addr_config) : 0;
+
+      unsigned pipe_xor_bits_64k = MIN2(pipes, block_size_bits_64k - 8);
+      unsigned pkrs_64k =
+         rbplus ? MIN2(pkrs, block_size_bits_64k - 8 - pipe_xor_bits_64k) : 0;
 
       unsigned version = rbplus ? AMD_FMT_MOD_TILE_VER_GFX10_RBPLUS : AMD_FMT_MOD_TILE_VER_GFX10;
       uint64_t common_dcc = AMD_FMT_MOD_SET(TILE_VERSION, version) |
                             AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_R_X) |
                             AMD_FMT_MOD_SET(DCC, 1) |
                             AMD_FMT_MOD_SET(DCC_CONSTANT_ENCODE, 1) |
-                            AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits) |
-                            AMD_FMT_MOD_SET(PACKERS, pkrs);
+                            AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits_64k) |
+                            AMD_FMT_MOD_SET(PACKERS, pkrs_64k);
 
       ADD_MOD(AMD_FMT_MOD | common_dcc |
               AMD_FMT_MOD_SET(DCC_PIPE_ALIGN, 1) |
@@ -461,8 +474,8 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
       ADD_MOD(AMD_FMT_MOD |
               AMD_FMT_MOD_SET(TILE_VERSION, version) |
               AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX9_64K_R_X) |
-              AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits) |
-              AMD_FMT_MOD_SET(PACKERS, pkrs))
+              AMD_FMT_MOD_SET(PIPE_XOR_BITS, pipe_xor_bits_64k) |
+              AMD_FMT_MOD_SET(PACKERS, pkrs_64k))
 
       if (util_format_get_blocksizebits(format) != 32) {
          ADD_MOD(AMD_FMT_MOD |
@@ -480,9 +493,9 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
    case GFX11:
    case GFX11_5: {
       /* GFX11 has new microblock organization. No S modes for 2D. */
-      unsigned pipe_xor_bits = G_0098F8_NUM_PIPES(info->gb_addr_config);
-      unsigned pkrs = G_0098F8_NUM_PKRS(info->gb_addr_config);
-      unsigned num_pipes = 1 << pipe_xor_bits;
+      unsigned pipe_xor_bits_64k = MIN2(pipes, block_size_bits_64k - 8);
+      unsigned pipe_xor_bits_256k = MIN2(pipes, block_size_bits_256k - 8);
+      unsigned num_pipes = 1 << pipes;
 
       /* R_X swizzle modes are the best for rendering and DCC requires them. */
       for (unsigned i = 0; i < 2; i++) {
@@ -497,6 +510,9 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
          /* Disable 256K on APUs because it doesn't work with DAL. */
          if (!info->has_dedicated_vram && swizzle_r_x == AMD_FMT_MOD_TILE_GFX11_256K_R_X)
             continue;
+
+         unsigned pipe_xor_bits = swizzle_r_x == AMD_FMT_MOD_TILE_GFX11_256K_R_X ?
+            pipe_xor_bits_256k : pipe_xor_bits_64k;
 
          uint64_t modifier_r_x = AMD_FMT_MOD |
                                  AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX11) |
