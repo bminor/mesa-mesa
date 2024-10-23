@@ -844,7 +844,7 @@
         "description": "nir: fix shfr constant folding with zero src2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "08903bbe89ae5d6cab742b787a1f69b472ea803f",
         "notes": null
