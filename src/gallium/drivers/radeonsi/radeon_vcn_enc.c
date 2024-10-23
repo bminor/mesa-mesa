@@ -714,8 +714,6 @@ static void radeon_vcn_enc_hevc_get_param(struct radeon_encoder *enc,
 static void radeon_vcn_enc_av1_get_spec_misc_param(struct radeon_encoder *enc,
                                                    struct pipe_av1_enc_picture_desc *pic)
 {
-   struct si_screen *sscreen = (struct si_screen *)enc->screen;
-
    enc->enc_pic.av1_spec_misc.cdef_mode = pic->seq.seq_bits.enable_cdef;
    enc->enc_pic.av1_spec_misc.disable_cdf_update = pic->disable_cdf_update;
    enc->enc_pic.av1_spec_misc.disable_frame_end_update_cdf = pic->disable_frame_end_update_cdf;
@@ -749,15 +747,6 @@ static void radeon_vcn_enc_av1_get_spec_misc_param(struct radeon_encoder *enc,
       enc->enc_pic.av1_spec_misc.mv_precision = RENCODE_AV1_MV_PRECISION_FORCE_INTEGER_MV;
    else
       enc->enc_pic.av1_spec_misc.mv_precision = RENCODE_AV1_MV_PRECISION_ALLOW_HIGH_PRECISION;
-
-   if (sscreen->info.vcn_ip_version >= VCN_5_0_0) {
-      enc->enc_pic.av1.skip_mode_allowed = radeon_enc_av1_skip_mode_allowed(enc);
-      if (enc->enc_pic.av1.compound) {
-         enc->need_spec_misc =
-            !enc->enc_pic.av1.skip_mode_allowed != enc->enc_pic.av1_spec_misc.disallow_skip_mode;
-         enc->enc_pic.av1_spec_misc.disallow_skip_mode = !enc->enc_pic.av1.skip_mode_allowed;
-      }
-   }
 }
 
 static void radeon_vcn_enc_av1_get_rc_param(struct radeon_encoder *enc,
@@ -901,6 +890,23 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
       } else if (pic->ref_list0[1] != PIPE_H2645_LIST_REF_INVALID_ENTRY) {
          enc_pic->av1.compound = true; /* UNIDIR_COMP */
          enc_pic->av1_enc_params.lsm_reference_frame_index[1] = pic->ref_list0[1];
+      }
+
+      uint32_t skip_frames[2];
+      enc_pic->av1.skip_mode_allowed = radeon_enc_av1_skip_mode_allowed(enc, skip_frames);
+
+      if (enc_pic->av1.compound) {
+         bool disallow_skip_mode = enc_pic->av1_spec_misc.disallow_skip_mode;
+         enc_pic->av1_spec_misc.disallow_skip_mode = !enc_pic->av1.skip_mode_allowed;
+         /* Skip mode frames must match reference frames */
+         if (enc_pic->av1.skip_mode_allowed) {
+            enc_pic->av1_spec_misc.disallow_skip_mode =
+               skip_frames[0] != enc_pic->av1_enc_params.lsm_reference_frame_index[0] ||
+               skip_frames[1] != enc_pic->av1_enc_params.lsm_reference_frame_index[1];
+         }
+         enc->need_spec_misc = disallow_skip_mode != enc_pic->av1_spec_misc.disallow_skip_mode;
+      } else {
+         enc->need_spec_misc = false;
       }
    }
 

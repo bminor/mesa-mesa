@@ -398,7 +398,7 @@ bool radeon_enc_is_av1_uniform_tile (uint32_t nb_sb, uint32_t nb_tiles,
 void radeon_enc_av1_tile_layout (uint32_t nb_sb, uint32_t nb_tiles, uint32_t min_nb_sb,
                                  struct tile_1d_layout *p);
 
-bool radeon_enc_av1_skip_mode_allowed(struct radeon_encoder *enc);
+bool radeon_enc_av1_skip_mode_allowed(struct radeon_encoder *enc, uint32_t frames[2]);
 
 void radeon_enc_create_dpb_aux_buffers(struct radeon_encoder *enc,
                                        struct radeon_enc_dpb_buffer *buf);

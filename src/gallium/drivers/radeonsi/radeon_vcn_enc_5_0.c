@@ -831,7 +831,7 @@ static int32_t radeon_enc_av1_get_relative_dist(struct radeon_encoder *enc, uint
     return diff;
 }
 
-bool radeon_enc_av1_skip_mode_allowed(struct radeon_encoder *enc)
+bool radeon_enc_av1_skip_mode_allowed(struct radeon_encoder *enc, uint32_t frames[2])
 {
    if (enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_KEY ||
        enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_INTRA_ONLY ||
@@ -860,8 +860,12 @@ bool radeon_enc_av1_skip_mode_allowed(struct radeon_encoder *enc)
 
    if (forward_idx < 0)
       return false;
-   else if (backward_idx >= 0)
+
+   if (backward_idx >= 0) {
+      frames[0] = MIN2(forward_idx, backward_idx);
+      frames[1] = MAX2(forward_idx, backward_idx);
       return true;
+   }
 
    int32_t second_forward_idx = -1;
    uint32_t second_forward_hint;
@@ -876,7 +880,12 @@ bool radeon_enc_av1_skip_mode_allowed(struct radeon_encoder *enc)
       }
    }
 
-   return second_forward_idx >= 0;
+   if (second_forward_idx < 0)
+      return false;
+
+   frames[0] = MIN2(forward_idx, second_forward_idx);
+   frames[1] = MAX2(forward_idx, second_forward_idx);
+   return true;
 }
 
 static void radeon_enc_av1_frame_header(struct radeon_encoder *enc, bool frame_header)
@@ -912,7 +921,7 @@ static void radeon_enc_av1_frame_header(struct radeon_encoder *enc, bool frame_h
 
    if (enc->enc_pic.av1.skip_mode_allowed)
       /*  skip_mode_present  */
-      radeon_enc_code_fixed_bits(enc, 1, 1);
+      radeon_enc_code_fixed_bits(enc, !enc->enc_pic.av1_spec_misc.disallow_skip_mode, 1);
 
    /*  reduced_tx_set  */
    radeon_enc_code_fixed_bits(enc, 0, 1);
