@@ -13,6 +13,9 @@ etna_ml_calc_addition_sizes(unsigned *input_width, unsigned *input_height, unsig
 struct etna_bo *
 etna_ml_create_coeffs_v7(struct etna_ml_subgraph *subgraph, const struct etna_operation *operation, unsigned *cache_size);
 
+struct etna_bo *
+etna_ml_create_coeffs_v8(struct etna_ml_subgraph *subgraph, const struct etna_operation *operation, unsigned *cache_size);
+
 unsigned
 etna_ml_calculate_tiling(struct etna_context *ctx, const struct etna_operation *operation, unsigned *tile_width_out, unsigned *tile_height_out);
 

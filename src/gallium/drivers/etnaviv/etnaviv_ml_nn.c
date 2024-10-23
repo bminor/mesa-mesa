@@ -892,10 +892,17 @@ void
 etna_ml_compile_operation_nn(struct etna_ml_subgraph *subgraph, const struct etna_operation *operation,
                              struct etna_vip_instruction *instruction)
 {
+   struct pipe_context *pctx = subgraph->base.context;
+   struct etna_context *ctx = etna_context(pctx);
+   unsigned nn_core_version = ctx->screen->specs.nn_core_version;
    unsigned coef_cache_size;
 
    instruction->type = ETNA_JOB_TYPE_NN;
-   instruction->coefficients = etna_ml_create_coeffs_v7(subgraph, operation, &coef_cache_size);
+
+   if (nn_core_version == 7)
+      instruction->coefficients = etna_ml_create_coeffs_v7(subgraph, operation, &coef_cache_size);
+   else
+      instruction->coefficients = etna_ml_create_coeffs_v8(subgraph, operation, &coef_cache_size);
 
    struct pipe_resource *input = etna_ml_get_tensor(subgraph, operation->input_tensor);
    assert(input);
