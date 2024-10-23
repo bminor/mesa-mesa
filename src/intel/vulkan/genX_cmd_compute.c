@@ -380,6 +380,7 @@ emit_indirect_compute_walker(struct anv_cmd_buffer *cmd_buffer,
       .InterfaceDescriptor =
          get_interface_descriptor_data(cmd_buffer, shader, prog_data,
                                        &dispatch),
+      .EmitInlineParameter      = prog_data->uses_inline_data,
       .InlineData               = {
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 0] = UINT32_MAX,
          [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 1] = indirect_addr64 & 0xffffffff,
