@@ -44,7 +44,7 @@ tu_clone_trace(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 }
 
 template <chip CHIP>
-static void
+void
 tu_emit_raw_event_write(struct tu_cmd_buffer *cmd,
                         struct tu_cs *cs,
                         enum vgt_event_type event,
@@ -67,6 +67,7 @@ tu_emit_raw_event_write(struct tu_cmd_buffer *cmd,
       tu_cs_emit(cs, 0);
    }
 }
+TU_GENX(tu_emit_raw_event_write);
 
 template <chip CHIP>
 void
@@ -1241,6 +1242,8 @@ tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 
    tu6_emit_blit_scissor(cmd, cs, true);
 
+   struct tu_resolve_group resolve_group = {};
+
    /* Resolve should happen before store in case BLIT_EVENT_STORE_AND_CLEAR is
     * used for a store.
     */
@@ -1249,8 +1252,8 @@ tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
          uint32_t a = subpass->resolve_attachments[i].attachment;
          if (a != VK_ATTACHMENT_UNUSED) {
             uint32_t gmem_a = tu_subpass_get_attachment_to_resolve(subpass, i);
-            tu_store_gmem_attachment<CHIP>(cmd, cs, a, gmem_a, fb->layers,
-                                     subpass->multiview_mask, false);
+            tu_store_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, gmem_a,
+                                           fb->layers, subpass->multiview_mask, false);
          }
       }
    }
@@ -1259,11 +1262,13 @@ tu6_emit_tile_store(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       if (pass->attachments[a].gmem) {
          const bool cond_exec_allowed = cmd->state.tiling->binning_possible &&
                                         cmd->state.pass->has_cond_load_store;
-         tu_store_gmem_attachment<CHIP>(cmd, cs, a, a,
+         tu_store_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, a,
                                   fb->layers, subpass->multiview_mask,
                                   cond_exec_allowed);
       }
    }
+
+   tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
 
    if (pass->has_fdm)
       tu_cs_set_writeable(cs, false);
@@ -1295,10 +1300,20 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
        * change per-RP and don't require a WFI to take effect, only CCU inval/flush
        * events are required.
        */
-      tu_cs_emit_regs(cs, RB_CCU_CNTL(CHIP,
+
+      enum a7xx_concurrent_resolve_mode resolve_mode = CONCURRENT_RESOLVE_MODE_2;
+      if (TU_DEBUG(NO_CONCURRENT_RESOLVES))
+         resolve_mode = CONCURRENT_RESOLVE_MODE_DISABLED;
+
+      enum a7xx_concurrent_unresolve_mode unresolve_mode = CONCURRENT_UNRESOLVE_MODE_FULL;
+      if (TU_DEBUG(NO_CONCURRENT_UNRESOLVES))
+         unresolve_mode = CONCURRENT_UNRESOLVE_MODE_DISABLED;
+
+      tu_cs_emit_regs(cs, RB_CCU_CNTL(A7XX,
          .gmem_fast_clear_disable =
-            !dev->physical_device->info->a6xx.has_gmem_fast_clear,
-         .concurrent_resolve = dev->physical_device->info->a6xx.concurrent_resolve,
+           !dev->physical_device->info->a6xx.has_gmem_fast_clear,
+         .concurrent_resolve_mode = resolve_mode,
+         .concurrent_unresolve_mode = unresolve_mode,
       ));
    }
 
@@ -4467,7 +4482,7 @@ tu_subpass_barrier(struct tu_cmd_buffer *cmd_buffer,
 
 template <chip CHIP>
 static void
-tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd)
+tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd, struct tu_resolve_group *resolve_group)
 {
    struct tu_cs *cs = &cmd->draw_cs;
    uint32_t subpass_idx = cmd->state.subpass - cmd->state.pass->subpasses;
@@ -4498,7 +4513,8 @@ tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd)
             tu6_emit_blit_scissor(cmd, cs, true);
             emitted_scissor = true;
          }
-         tu_load_gmem_attachment<CHIP>(cmd, cs, i, cond_load_allowed, false);
+         tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, i,
+                                       cond_load_allowed, false);
       }
    }
 
@@ -4513,7 +4529,7 @@ tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd)
                tu6_emit_blit_scissor(cmd, cs, false);
                emitted_scissor = true;
             }
-            tu_clear_gmem_attachment<CHIP>(cmd, cs, i);
+            tu_clear_gmem_attachment<CHIP>(cmd, cs, resolve_group, i);
          }
       }
    }
@@ -4546,7 +4562,7 @@ tu_emit_subpass_begin_sysmem(struct tu_cmd_buffer *cmd)
 }
 
 static void
-tu7_emit_subpass_clear(struct tu_cmd_buffer *cmd)
+tu7_emit_subpass_clear(struct tu_cmd_buffer *cmd, struct tu_resolve_group *resolve_group)
 {
    if (cmd->state.render_area.extent.width == 0 ||
        cmd->state.render_area.extent.height == 0)
@@ -4564,7 +4580,7 @@ tu7_emit_subpass_clear(struct tu_cmd_buffer *cmd)
             tu6_emit_blit_scissor(cmd, cs, false);
             emitted_scissor = true;
          }
-         tu7_generic_clear_attachment(cmd, cs, i);
+         tu7_generic_clear_attachment(cmd, cs, resolve_group, i);
       }
    }
 }
@@ -4582,11 +4598,15 @@ tu_emit_subpass_begin(struct tu_cmd_buffer *cmd)
 {
    tu_fill_render_pass_state(&cmd->state.vk_rp, cmd->state.pass, cmd->state.subpass);
 
-   tu_emit_subpass_begin_gmem<CHIP>(cmd);
+   struct tu_resolve_group resolve_group = {};
+
+   tu_emit_subpass_begin_gmem<CHIP>(cmd, &resolve_group);
    tu_emit_subpass_begin_sysmem<CHIP>(cmd);
    if (cmd->device->physical_device->info->a7xx.has_generic_clear) {
-      tu7_emit_subpass_clear(cmd);
+      tu7_emit_subpass_clear(cmd, &resolve_group);
    }
+
+   tu_emit_resolve_group<CHIP>(cmd, &cmd->draw_cs, &resolve_group);
 
    tu6_emit_zs<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs);
    tu6_emit_mrt<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs);
@@ -4964,6 +4984,8 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
       if (subpass->resolve_attachments) {
          tu6_emit_blit_scissor(cmd, cs, true);
 
+         struct tu_resolve_group resolve_group = {};
+
          for (unsigned i = 0; i < subpass->resolve_count; i++) {
             uint32_t a = subpass->resolve_attachments[i].attachment;
             if (a == VK_ATTACHMENT_UNUSED)
@@ -4971,8 +4993,8 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
 
             uint32_t gmem_a = tu_subpass_get_attachment_to_resolve(subpass, i);
 
-            tu_store_gmem_attachment<CHIP>(cmd, cs, a, gmem_a, fb->layers,
-                                    subpass->multiview_mask, false);
+            tu_store_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, gmem_a,
+                                           fb->layers, subpass->multiview_mask, false);
 
             if (!pass->attachments[a].gmem)
                continue;
@@ -4981,8 +5003,10 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
             * if it is, should be doing a GMEM->GMEM resolve instead of GMEM->MEM->GMEM..
             */
             perf_debug(cmd->device, "TODO: missing GMEM->GMEM resolve path\n");
-            tu_load_gmem_attachment<CHIP>(cmd, cs, a, false, true);
+            tu_load_gmem_attachment<CHIP>(cmd, cs, &resolve_group, a, false, true);
          }
+
+         tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
       }
 
       tu_cond_exec_end(cs);

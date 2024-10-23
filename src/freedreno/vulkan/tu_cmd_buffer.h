@@ -681,6 +681,13 @@ enum fd_gpu_event : uint32_t;
 
 template <chip CHIP>
 void
+tu_emit_raw_event_write(struct tu_cmd_buffer *cmd,
+                        struct tu_cs *cs,
+                        enum vgt_event_type event,
+                        bool needs_seqno);
+
+template <chip CHIP>
+void
 tu_emit_event_write(struct tu_cmd_buffer *cmd,
                     struct tu_cs *cs,
                     enum fd_gpu_event event);
