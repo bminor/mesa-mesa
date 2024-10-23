@@ -90,7 +90,7 @@ rm -rf /tftp/*
 if echo "$BM_KERNEL" | grep -q http; then
   curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
       $BM_KERNEL -o /tftp/vmlinuz
-elif [ -n "${FORCE_KERNEL_TAG}" ]; then
+elif [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
   curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
     "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${BM_KERNEL}" -o /tftp/vmlinuz
   curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \

@@ -107,7 +107,7 @@ if echo "$BM_KERNEL $BM_DTB" | grep -q http; then
 
   cat kernel dtb > Image.gz-dtb
 
-elif [ -n "${FORCE_KERNEL_TAG}" ]; then
+elif [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
   curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
       "${FDO_HTTP_CACHE_URI:-}${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH}/${BM_KERNEL}" -o kernel
   curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \

@@ -101,7 +101,7 @@ default:
   before_script:
     - |
       if [ -z "${KERNEL_IMAGE_BASE:-}" ]; then
-        export KERNEL_IMAGE_BASE="https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${FORCE_KERNEL_TAG:-$KERNEL_TAG}"
+        export KERNEL_IMAGE_BASE="https://${S3_HOST}/${S3_KERNEL_BUCKET}/${KERNEL_REPO}/${EXTERNAL_KERNEL_TAG:-$KERNEL_TAG}"
       fi
     - >
       export SCRIPTS_DIR=$(mktemp -d) &&

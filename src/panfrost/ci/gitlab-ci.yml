@@ -229,7 +229,7 @@
     BOOT_METHOD: u-boot
     KERNEL_IMAGE_NAME: Image
     KERNEL_IMAGE_TYPE: "image"
-    FORCE_KERNEL_TAG: "v6.11-rc7-mesa-f9e9"
+    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-f9e9"
     RUNNER_TAG: mesa-ci-x86-64-lava-rk3588-rock-5b
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sun50i-h6-pine-h64
@@ -314,7 +314,7 @@ panfrost-t860-traces:arm64:
     - .panfrost-traces
   variables:
     # force fixed kernel until 6.11 is switched officially
-    FORCE_KERNEL_TAG: "v6.11-rc7-mesa-3fb8"
+    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-3fb8"
 
 
 panfrost-g52-gl:arm64:

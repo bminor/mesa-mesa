@@ -236,7 +236,7 @@
     RUNNER_TAG: mesa-ci-x86-64-lava-sc7180-trogdor-kingoftown
     VK_DRIVER: freedreno
     # force fixed kernel until 6.11 is switched officially
-    FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
+    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-c984"
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sc7180-trogdor-lazor-limozeen
 .lava-sc7180-trogdor-lazor-limozeen:arm64:
@@ -254,7 +254,7 @@
     RUNNER_TAG: mesa-ci-x86-64-lava-sc7180-trogdor-lazor-limozeen
     VK_DRIVER: freedreno
     # force fixed kernel until 6.11 is switched officially
-    FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
+    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-c984"
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sm8350-hdk
 .lava-sm8350-hdk:arm64:
@@ -273,7 +273,7 @@
     RUNNER_TAG: mesa-ci-x86-64-lava-sm8350-hdk
     VK_DRIVER: freedreno
     # force fixed kernel until 6.11 is switched officially
-    FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
+    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-c984"
 
 
 .google-freedreno-test:
@@ -287,7 +287,7 @@
     BM_CMDLINE: "ip=dhcp console=ttyMSM0,115200n8 $BM_KERNEL_EXTRA_ARGS root=/dev/nfs rw nfsrootdebug nfsroot=,tcp,nfsvers=4.2 init=/init $BM_KERNELARGS"
     FARM: google
     # force fixed kernel until 6.11 is switched officially
-    FORCE_KERNEL_TAG: "v6.11-rc7-mesa-c984"
+    EXTERNAL_KERNEL_TAG: "v6.11-rc7-mesa-c984"
   script:
     - ./install/bare-metal/fastboot.sh
 

@@ -104,7 +104,7 @@ if [ -f "${BM_BOOTFS}" ]; then
 fi
 
 # If BM_KERNEL and BM_DTS is present
-if [ -n "${FORCE_KERNEL_TAG}" ]; then
+if [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
   if [ -z "${BM_KERNEL}" ] || [ -z "${BM_DTB}" ]; then
     echo "This machine cannot be tested with external kernel since BM_KERNEL or BM_DTB missing!"
     exit 1
@@ -122,7 +122,7 @@ date +'%F %T'
 
 # Install kernel modules (it could be either in /lib/modules or
 # /usr/lib/modules, but we want to install in the latter)
-if [ -n "${FORCE_KERNEL_TAG}" ]; then
+if [ -n "${EXTERNAL_KERNEL_TAG}" ]; then
   tar --keep-directory-symlink --zstd -xf modules.tar.zst -C /nfs/
   rm modules.tar.zst &
 elif [ -n "${BM_BOOTFS}" ]; then
@@ -136,7 +136,7 @@ fi
 date +'%F %T'
 
 # Install kernel image + bootloader files
-if [ -n "${FORCE_KERNEL_TAG}" ] || [ -z "$BM_BOOTFS" ]; then
+if [ -n "${EXTERNAL_KERNEL_TAG}" ] || [ -z "$BM_BOOTFS" ]; then
   mv "${BM_KERNEL}" "${BM_DTB}.dtb" /tftp/
 else  # BM_BOOTFS
   rsync -aL --delete $BM_BOOTFS/boot/ /tftp/
