@@ -1124,6 +1124,16 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
          }
       }
 
+      /* If narrowing (e.g. 32 -> 16), don't do a D -> W or UD -> UW mov,
+       * instead just read the source as W/UW with a stride (discarding
+       * the top bits).  This avoids the need for the destination to be
+       * DWord aligned due to regioning restrictions.
+       */
+      if (brw_type_size_bits(result.type) < brw_type_size_bits(op[0].type)) {
+         const unsigned bits = brw_type_size_bits(result.type);
+         op[0] = subscript(op[0], brw_type_with_size(op[0].type, bits), 0);
+      }
+
       bld.MOV(result, op[0]);
       break;
    }
