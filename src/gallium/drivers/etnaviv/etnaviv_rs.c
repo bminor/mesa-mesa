@@ -277,6 +277,9 @@ etna_submit_rs_state(struct etna_context *ctx,
       /*20/21*/ EMIT_STATE(RS_KICKER, 0xbeebbeeb);
       etna_coalesce_end(stream, &coalesce);
    }
+
+   if (DBG_ENABLED(ETNA_DBG_DRAW_STALL))
+      etna_stall(stream, SYNC_RECIPIENT_FE, SYNC_RECIPIENT_PE);
 }
 
 /* Generate clear command for a surface (non-fast clear case) */
