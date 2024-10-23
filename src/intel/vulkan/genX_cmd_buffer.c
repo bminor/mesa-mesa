@@ -6873,20 +6873,67 @@ void genX(CmdWaitEvents2)(
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
 
+   VkPipelineStageFlags2 final_src_stages = 0, final_dst_stages = 0;
+   enum anv_pipe_bits final_invalidates = 0;
    for (uint32_t i = 0; i < eventCount; i++) {
       ANV_FROM_HANDLE(anv_event, event, pEvents[i]);
+      struct anv_address wait_addr =
+         anv_state_pool_state_address(
+            &cmd_buffer->device->dynamic_state_pool,
+            event->state);
+
+      VkPipelineStageFlags2 src_stages, dst_stages;
+      enum anv_pipe_bits bits;
+      cmd_buffer_accumulate_barrier_bits(cmd_buffer, 1, &pDependencyInfos[i],
+                                         &src_stages, &dst_stages, &bits);
+
+      if ((pDependencyInfos->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) == 0) {
+         /* Only consider the invalidate bits, the signal part will do the
+          * flushing.
+          *
+          * We cannot do this with VK_KHR_maintenance9's ASYMMETRIC_EVENT_BIT
+          * which allows the full barrier (with all access masks) to be only
+          * specified on the vkCmdWaitEvents2 entry point.
+          */
+         bits &= ANV_PIPE_INVALIDATE_BITS;
+      }
+
+      /* Need main memory coherency */
+      if ((event->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) == 0)
+         bits |= ANV_PIPE_END_OF_PIPE_SYNC_FORCE_FLUSH_L3_BIT;
+
+#if GFX_VER >= 20
+      if (can_use_resource_barrier(cmd_buffer->batch.engine_class,
+                                   src_stages, dst_stages, bits,
+                                   ANV_NULL_ADDRESS, wait_addr)) {
+         emit_resource_barrier(&cmd_buffer->batch,
+                               cmd_buffer->device->info,
+                               src_stages, dst_stages, bits,
+                               ANV_NULL_ADDRESS, wait_addr);
+         continue;
+      }
+#endif
 
       anv_batch_emit(&cmd_buffer->batch, GENX(MI_SEMAPHORE_WAIT), sem) {
          sem.WaitMode            = PollingMode;
          sem.CompareOperation    = COMPARE_SAD_NOT_EQUAL_SDD;
          sem.SemaphoreDataDword  = 0;
-         sem.SemaphoreAddress    = anv_state_pool_state_address(
-            &cmd_buffer->device->dynamic_state_pool,
-            event->state);
+         sem.SemaphoreAddress    = wait_addr;
       }
+
+      final_src_stages |= src_stages;
+      final_dst_stages |= dst_stages;
+      final_invalidates |= bits;
    }
 
-   cmd_buffer_barrier(cmd_buffer, eventCount, pDependencyInfos, "wait event");
+   if (final_src_stages != 0 ||
+       final_dst_stages != 0 ||
+       final_invalidates != 0) {
+      anv_add_pending_pipe_bits(cmd_buffer,
+                                final_src_stages, final_dst_stages,
+                                final_invalidates,
+                                "wait event");
+   }
 }
 
 VkResult genX(CmdSetPerformanceOverrideINTEL)(
