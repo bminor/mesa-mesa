@@ -1,5 +1,535 @@
 [
     {
+        "sha": "d5581b112452398e3e56ae0e9ab8f585b6374020",
+        "description": "aco/live_var_analysis: check isFixed() for definitions in order to set needs_vcc",
+        "nominated": false,
+        "nomination_type": 1,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "bb5eace0dc60b176bbc258f389856ec1b4cb7410",
+        "notes": null
+    },
+    {
+        "sha": "1f9b82bb2a3f4ffcf00d5820a52ea48d0c695a08",
+        "description": "nir/opt_algebraic: optimize -0.0 + a",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7dccaf6c3e7b31211afd99fbc62714a95615458a",
+        "description": "etnaviv: isa: Add img_store instruction",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3a5d40b1522e3e204aebc80b2e7d1919d4d37130",
+        "description": "radv: fix enabling/disabling user sample locations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0226922384496dd8f7482913c6e6cea472a2844c",
+        "description": "nir: add nir_gather_tcs_info, new gathering/analysis pass",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a871eabcedffb4f817033b393e25ce373d977b1a",
+        "description": "wsi/wayland/perfetto: supply presentation clock to perfetto",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2a34b492d8025c83cd0772d6c761ff2d24dabde9",
+        "description": "anv: Xe2+ doesn't need the special flush for sparse",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4aa3b2d3ad73fec9d1eea7a41233a707e1d640c8",
+        "notes": null
+    },
+    {
+        "sha": "dddd7655531557dcd1f46058561c6213ee5377a6",
+        "description": "anv: implement VF_STATISTICS emit for Wa_16012775297",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9465d6e3d7cb2925c63f2e6ed057de87f0699352",
+        "description": "iris: implement VF_STATISTICS emit for Wa_16012775297",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "562b80cf69af8a54caedfc35716e76226262b19b",
+        "description": "ci/build: Do not do LTO on any pre-merge job",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "72b5e4045b32ee526ceb336c65dabce310f87401",
+        "description": "ci/fedora: add workaround for buggy GCC warning triggered by r600",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c23f7a2562bbcc8b5dd7d3912b6f10bd60c875a8",
+        "description": "panvk: fix descriptor set layout hash",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "73518dc169fc8d2b3cf8221d9244cba3d0e4bb16",
+        "notes": null
+    },
+    {
+        "sha": "382e078659dd0ff718a1c3c2349f5f11300e3bfe",
+        "description": "panvk: remove unused is_sampler and is_texture",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ceefcbecd572992d4d01ce90a5bc49950c10b2ea",
+        "description": "gfxstream: move generate-gfxstream-vulkan.sh script",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b318fbbd4269e88159209d91d4ce64a660b778b1",
+        "description": "gfxstream: Check metal extension for external memory",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5da34ebee4d67622e3629bf3be891fcf9673663a",
+        "description": "aco/insert_exec: remove get_exec_op",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8d148401cba6a45e948aa26656b73714bd777b5f",
+        "description": "aco/ir: rework Operand equality to return true for equal fixed non-temp ops",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6716fb08d8289b5996332d10c8a8991c1d0537c4",
+        "description": "aco/insert_exec: remove unused includes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23fb0883eb956ffb7c0787922e1d43416faa6b28",
+        "description": "aco/insert_exec: untangle add_branch_code control flow",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de7d93196288bf607d015fb7bb9f773fddc4ea70",
+        "description": "aco/insert_exec: remove stray break_cond variable",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ade7f1a203814d9780bf06f84b62ef22033c9a22",
+        "description": "aco/insert_exec: replace pair with a named struct",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3054499ba4f552589056275d911590f35147fb0",
+        "description": "aco/insert_exec: don't pretend WQMState is a bit mask",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ed020031c6c37c3bacea8d0576096feaaf1e10e",
+        "description": "iris: Program async compute registers of STATE_COMPUTE_MODE in compute engine",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aa5b2c4165b894f0d01c2921dc03c1c193b56152",
+        "description": "anv: Set recommended values for gfx20 async compute registers in STATE_COMPUTE_MODE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2483f8f7cde9a8e2c22e5234764a258d7642f9bd",
+        "description": "intel/genxml: Do small fixes in gfx20 definition of STATE_COMPUTE_MODE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3efba707bf879f25f2e2a8c879b162734bdcf7c6",
+        "description": "anv: Set all async compute registers in STATE_COMPUTE_MODE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86ed5ec78e5d5c5ccf74b9ee86b9af22ecd02b8c",
+        "description": "intel/genxml: Append 'Z Async Throttle settings' to gfx125 definition of STATE_COMPUTE_MODE",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4adb652392591c8859ed8f69716a009d8d7fe29a",
+        "description": "frontends/va: Don't relock mutex in vlVaEndPicture",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2cb3c2e8d5e306bd64a303c3254dd80b9c49248f",
+        "description": "frontends/va: Fix parsing leb128 when using more than 4 bytes",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5edbecb8569d88e7faa28ca7a56eb5e1672a2dd0",
+        "notes": null
+    },
+    {
+        "sha": "91222671f161847b4352e07d88f5d1ab4843a734",
+        "description": "frontends/va: Fix NULL check in intra refresh params",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f9d1a50d8d02067a7356a8e095fe25a097654550",
+        "description": "frontends/va: Fix some small coverity issues",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "64ba87b68f818a92ec1cd60b4b31371610e255ca",
+        "description": "ci/fdno: Add flake seen in the wild",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ed84534d208e32e3dbfd245954121d2ab33266e",
+        "description": "ci/rpi: Add flakes seen in the wild",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7cd7631554f7ae13ee69f2d91d69f15447f16b23",
+        "description": "ci: uprev vkd3d-proton to 65b81403435576d882d9141ae3eb4a29373fba0e",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc0da4bdfc884da9e9f0c748a905427fe35b30c5",
+        "description": "ci: move comment into the appropriate section",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba789f2ce64f9c156a787b62167bb8cd65005d0a",
+        "description": "ci: move yaml-toml-shell-test out of build-for-tests stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef47cce51c7799d793f7f41696b12688c3247756",
+        "description": "aco/ra: always block register file for precolored operands",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "18e7e8d8f00a577f1d0c766dbf5f5af609e8f61a",
+        "description": "aco/ra: make use of Precolored flag",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb5eace0dc60b176bbc258f389856ec1b4cb7410",
+        "description": "aco/live_var_analysis: check for isPrecolored flag rather than isFixed",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e2705a9d85c7068f2cfd97b3c79f180b748418ee",
+        "description": "aco: set Precolored flag before register allocation",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2ed4b474acee40eeb30c9fe8ef47d1300e1fbe6",
+        "description": "aco: introduce 'isPrecolored' flag for Operand and Definition",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b33f47b4985b9fd83c6901dcb4534be92523780a",
+        "description": "radv: regroup and emit all DS related states in the same function",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8791e56b62a9057a2858c163f03bde7c6f6e5acf",
+        "description": "radv: track more redundant DB related registers",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2950d5582841f4e19b01b5abc872b9013732a4dd",
+        "description": "ci/skqp: Set $SKQP_ARCH from build-skqp.sh",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "abf7f1179611a228c16bcf0032444e73d2d26a5e",
+        "description": "ci: Use sections for test container builds",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b2ff9c9464f25e8a93023979c4c1352760874ce",
+        "description": "ci/skqp: Fix relative paths",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d03e67bbfcaa3f384b1edd6dacbb3cd32e6af6c",
+        "description": "ci/angle: Use relative paths",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff97a8b006ea64515096ad75374379173bcce80a",
+        "description": "ci/firmware: Allow calling firmware as sourced script",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24a9fe6655585c7668544f89ee1484112676e89a",
+        "description": "ci: Really remove Mesa drivers from rootfs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e1d3c2ffe52ade8602c4ae7f980e02e93a56a5f",
+        "description": "ci/mold: Use appropriate parallelism and strip binaries",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05b5701c01ce4f5374c03d270460269464a1f4d5",
+        "description": "ci/lava: Source setup-test-env",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68135b620c4211444f7b564c0f302d04befa6fb2",
+        "description": "ci: move rules from rules-anchors to workflow",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a9e11c2f09cb5571af44ad7dc9a29bfe7ab761cd",
+        "description": "ci: build KERNEL_IMAGE_BASE in before_script",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "0bffe8ec053f2a43795515b0f9c64cf98b5bd8b7",
         "description": "mesa_interface: rename __DRIimage to struct dri_image",
         "nominated": false,
