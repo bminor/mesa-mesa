@@ -1948,6 +1948,17 @@ emit_resource_barrier(struct anv_batch *batch,
       barrier_addr = wait_addr;
    }
 
+#if INTEL_WA_18037648410_GFX_VER
+   /*  "When setting VF invalidate as a flush bit in RESOURCE_BARRIER, ensure
+    *   that Geometry Stage bit is set in Signal field."
+    */
+   if (intel_needs_workaround(devinfo, 18037648410) &&
+       (bits & ANV_PIPE_VF_CACHE_INVALIDATE_BIT) &&
+       signal_stages == RESOURCE_BARRIER_STAGE_GPGPU) {
+      signal_stages |= RESOURCE_BARRIER_STAGE_GEOM;
+   }
+#endif
+
    if (bits & ANV_PIPE_RT_BTI_CHANGE) {
       /* We used to deal with RT BTI changes with a PIPE_CONTROL with the
        * following flags:
