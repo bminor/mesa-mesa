@@ -2071,7 +2071,7 @@ static void lp_build_skip_branch(struct lp_build_nir_context *bld_base, bool fla
    struct gallivm_state *gallivm = bld_base->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
 
-   LLVMValueRef exec_mask = mask_vec(bld_base);
+   LLVMValueRef exec_mask = mask_vec_with_helpers(bld_base);
 
    LLVMValueRef bitmask = LLVMBuildICmp(builder, LLVMIntNE, exec_mask, bld_base->uint_bld.zero, "");
    bitmask = LLVMBuildBitCast(builder, bitmask, LLVMIntTypeInContext(gallivm->context, bld_base->uint_bld.type.length), "");
