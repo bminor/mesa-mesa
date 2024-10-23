@@ -1700,9 +1700,9 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
     */
    case nir_op_ishl:
       if (instr->def.bit_size < 32) {
-         bld.SHL(result,
-                 op[0],
-                 bld.AND(op[1], brw_imm_ud(instr->def.bit_size - 1)));
+         bld.SHL(result, op[0],
+                 bld.AND(subscript(op[1], BRW_TYPE_UW, 0),
+                         brw_imm_uw(instr->def.bit_size - 1)));
       } else {
          bld.SHL(result, op[0], op[1]);
       }
@@ -1710,9 +1710,9 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       break;
    case nir_op_ishr:
       if (instr->def.bit_size < 32) {
-         bld.ASR(result,
-                 op[0],
-                 bld.AND(op[1], brw_imm_ud(instr->def.bit_size - 1)));
+         bld.ASR(result, op[0],
+                 bld.AND(subscript(op[1], BRW_TYPE_UW, 0),
+                         brw_imm_uw(instr->def.bit_size - 1)));
       } else {
          bld.ASR(result, op[0], op[1]);
       }
@@ -1720,9 +1720,9 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       break;
    case nir_op_ushr:
       if (instr->def.bit_size < 32) {
-         bld.SHR(result,
-                 op[0],
-                 bld.AND(op[1], brw_imm_ud(instr->def.bit_size - 1)));
+         bld.SHR(result, op[0],
+                 bld.AND(subscript(op[1], BRW_TYPE_UW, 0),
+                         brw_imm_uw(instr->def.bit_size - 1)));
       } else {
          bld.SHR(result, op[0], op[1]);
       }
