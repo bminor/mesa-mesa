@@ -2034,8 +2034,7 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
 
       ntb.ssa_values[def.index].is_scalar = is_scalar;
 
-      if (def.bit_size * bld.dispatch_width() < 8 * REG_SIZE)
-         bld.UNDEF(ntb.ssa_values[def.index]);
+      bld.emit_undef_for_partial_reg(ntb.ssa_values[def.index]);
 
       return ntb.ssa_values[def.index];
    } else {
