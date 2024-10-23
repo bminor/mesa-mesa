@@ -243,22 +243,50 @@ expand_depthwise(struct etna_ml_subgraph *subgraph, struct etna_operation *opera
 }
 
 static void
+reorder_for_hw_depthwise(struct etna_ml_subgraph *subgraph, struct etna_operation *operation)
+{
+   struct pipe_context *context = subgraph->base.context;
+   uint8_t *input = map_resource(operation->weight_tensor);
+   struct pipe_resource *output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT,
+                                                         pipe_buffer_size(operation->weight_tensor));
+   uint8_t (*output)[operation->weight_width * operation->weight_height] = (void *)map_resource(output_res);
+
+   for (int i = 0; i < operation->weight_height * operation->weight_width * operation->output_channels; i++) {
+      unsigned out_channel = i % operation->output_channels;
+
+      output[out_channel][i / operation->output_channels] = input[i];
+   }
+
+   pipe_resource_reference(&operation->weight_tensor, NULL);
+   operation->weight_tensor = output_res;
+}
+
+static void
 transpose(struct etna_ml_subgraph *subgraph, struct etna_operation *operation)
 {
    struct pipe_context *context = subgraph->base.context;
+   unsigned nn_core_version = etna_context(context)->screen->specs.nn_core_version;
    void *map = map_resource(operation->weight_tensor);
-   unsigned new_size = operation->output_channels * operation->weight_width * \
-                       operation->weight_height * operation->input_channels;
-   struct pipe_resource *output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT,
-                                                         new_size);
-   uint8_t *output = map_resource(output_res);
+   unsigned new_size;
+   struct pipe_resource *output_res;
+   uint8_t *output;
    unsigned output_channels = operation->output_channels;
    unsigned input_channels = operation->input_channels;
+
+   if (nn_core_version == 8 && operation->depthwise)
+      input_channels = 1;
+   else
+      input_channels = operation->input_channels;
 
    if (operation->addition) {
       output_channels = 1;
       input_channels = 2;
    }
+
+   new_size = operation->output_channels * operation->weight_width * \
+                     operation->weight_height * input_channels;
+   output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT, new_size);
+   output = map_resource(output_res);
 
    uint8_t (*input)[operation->weight_width][operation->weight_height][input_channels] = map;
    unsigned i = 0;
@@ -361,11 +389,44 @@ strided_to_normal(struct etna_ml_subgraph *subgraph, struct etna_operation *oper
    operation->weight_tensor = output_res;
 }
 
+static bool
+calc_pooling_first_pixel(struct etna_ml_subgraph *subgraph,
+                         const struct pipe_ml_operation *poperation)
+{
+   struct pipe_context *context = subgraph->base.context;
+   unsigned nn_core_version = etna_context(context)->screen->specs.nn_core_version;
+   unsigned input_width = poperation->input_tensor->dims[1];
+   unsigned input_channels = poperation->input_tensor->dims[3];
+
+   if (poperation->conv.stride_x == 1)
+      return false;
+
+   if (poperation->conv.depthwise)
+      return true;
+
+   if (nn_core_version < 8) {
+      if (poperation->conv.pointwise)
+         return true;
+   } else {
+      if (poperation->conv.pointwise && input_width >= 3 && input_channels > 1)
+         return true;
+
+      if (poperation->conv.pointwise && poperation->conv.padding_same)
+         return true;
+   }
+
+   return false;
+}
+
 void
 etna_ml_lower_convolution(struct etna_ml_subgraph *subgraph,
                           const struct pipe_ml_operation *poperation,
                           struct etna_operation *operation)
 {
+   struct pipe_context *context = subgraph->base.context;
+   struct etna_context *ctx = etna_context(context);
+   unsigned nn_core_version = ctx->screen->specs.nn_core_version;
+
    /* TODO: Support stride_x != stride_y */
    assert(poperation->conv.stride_x == poperation->conv.stride_y);
    assert(poperation->type == PIPE_ML_OPERATION_TYPE_CONVOLUTION);
@@ -374,8 +435,7 @@ etna_ml_lower_convolution(struct etna_ml_subgraph *subgraph,
    operation->addition = false;
    operation->depthwise = poperation->conv.depthwise;
    operation->pointwise = poperation->conv.pointwise;
-   operation->pooling_first_pixel = poperation->conv.stride_x > 1 && \
-      (poperation->conv.depthwise || poperation->conv.pointwise);
+   operation->pooling_first_pixel = calc_pooling_first_pixel(subgraph, poperation);
    operation->padding_same = poperation->conv.padding_same;
    operation->stride = poperation->conv.stride_x;
 
@@ -404,12 +464,13 @@ etna_ml_lower_convolution(struct etna_ml_subgraph *subgraph,
    if (operation->pointwise && operation->input_channels == 1)
       pointwise_to_2x2(subgraph, operation);
 
-   if (operation->depthwise && (operation->output_channels > 1 || operation->stride > 1)) {
-
-      if (operation->input_width < 8 && operation->input_width > 2)
-         operation->pooling_first_pixel = false;
-
-      expand_depthwise(subgraph, operation);
+   if (operation->depthwise) {
+      if (nn_core_version < 8 && (operation->output_channels > 1 || operation->stride > 1)) {
+         if (operation->input_width < 8 && operation->input_width > 2)
+            operation->pooling_first_pixel = false;
+         expand_depthwise(subgraph, operation);
+      } else if (operation->output_channels > 1)
+         reorder_for_hw_depthwise(subgraph, operation);
    }
 
    if (operation->stride > 1 && !operation->pooling_first_pixel)
@@ -595,7 +656,9 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    map->no_flush = nn_core_version == 8;
    map->rounding_mode = 0x1;
    map->partial_cache_data_unit = 0x0;
-   map->depthwise = 0x0;
+
+   if (nn_core_version == 8 && operation->depthwise)
+      map->depthwise = 0x1;
 
    map->unused0 = 0x0;
    map->unused1 = 0x0;
