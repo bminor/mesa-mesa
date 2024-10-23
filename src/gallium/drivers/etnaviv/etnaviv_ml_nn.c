@@ -795,6 +795,12 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
       }
    }
 
+   /* Caching is not supported yet on V8 */
+   if (nn_core_version == 8) {
+      map->kernel_caching_mode = SRAM_CACHE_MODE_NO_CACHE;
+      map->image_caching_mode = SRAM_CACHE_MODE_NO_CACHE;
+   }
+
    float conv_scale = (operation->input_scale * operation->weight_scale) / operation->output_scale;
    uint32_t scale_bits = fui(conv_scale);
    /* Taken from https://github.com/pytorch/QNNPACK/blob/master/src/qnnpack/requantization.h#L130 */
