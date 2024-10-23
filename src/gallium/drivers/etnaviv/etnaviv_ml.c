@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include "drm/etnaviv_drmif.h"
 #include <sys/time.h>
 
 #include "util/u_inlines.h"
@@ -299,21 +300,29 @@ etna_ml_subgraph_create(struct pipe_context *pcontext,
 }
 
 static void
-dump_buffer(struct etna_bo *bo, char *name, int operation_nr)
+dump_buffer(const uint32_t *ptr, unsigned size, char *name, int operation_nr, int suboperation_nr)
 {
    char buffer[255];
 
-   uint32_t *map = etna_bo_map(bo);
-   snprintf(buffer, sizeof(buffer), "mesa-%s-%08u.bin", name, operation_nr);
-   ML_DBG("Dumping buffer from 0x%lx (0x%x) to %s\n", map, etna_bo_gpu_va(bo), buffer);
+   snprintf(buffer, sizeof(buffer), "mesa-%s-%03u-%03u.bin", name, operation_nr, suboperation_nr);
+
+   ML_DBG("Dumping buffer from 0x%lx to %s\n", ptr, buffer);
+
    FILE *f = fopen(buffer, "wb");
    assert(f);
-   fwrite(map, 1, etna_bo_size(bo), f);
+   fwrite(ptr, 1, size, f);
    if(ferror(f)) {
       ML_DBG("Error in writing to file: %s\n", strerror(errno));
    }
    fflush(f);
    fclose(f);
+}
+
+static void
+dump_bo(struct etna_bo *bo, char *name, int operation_nr, int suboperation_nr)
+{
+   const uint32_t *map = etna_bo_map(bo);
+   dump_buffer(map, etna_bo_size(bo), name, operation_nr, suboperation_nr);
 }
 
 static void
@@ -388,7 +397,6 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
    }
 
    unsigned i = 0;
-   unsigned dump_id = 0;
    util_dynarray_foreach(&subgraph->operations, struct etna_vip_instruction, operation) {
       #if 0
       if (i == util_dynarray_num_elements(&subgraph->operations, struct etna_vip_instruction) - 1) {
@@ -409,14 +417,12 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
          switch (operation->type) {
             case ETNA_JOB_TYPE_TP:
                for (unsigned j = 0; j < tp_core_count && operation->configs[j]; j++) {
-                  dump_buffer(operation->configs[j], "tp", dump_id);
-                  dump_id++;
+                  dump_bo(operation->configs[j], "tp", i, j);
                }
                break;
             case ETNA_JOB_TYPE_NN:
-               dump_buffer(operation->configs[0], "nn", dump_id);
-               dump_buffer(operation->coefficients, "compressed", dump_id);
-               dump_id++;
+               dump_bo(operation->configs[0], "nn", i, 0);
+               dump_bo(operation->coefficients, "compressed", i, 0);
                break;
             default:
                unreachable("Unsupported ML operation type");
@@ -456,7 +462,24 @@ etna_ml_subgraph_invoke(struct pipe_context *pctx, struct pipe_ml_subgraph *psub
       if (DBG_ENABLED(ETNA_DBG_NPU_NO_BATCHING)) {
          ML_DBG("Running operation %d - %d\n", i, operation->type);
          close_batch(pctx);
+
+         if (DBG_ENABLED(ETNA_DBG_DUMP_SHADERS))
+            dump_buffer(ctx->stream->buffer, ctx->stream->offset * 4, "cmd", i, 0);
+
          pctx->flush(pctx, NULL, 0);
+
+         if (DBG_ENABLED(ETNA_DBG_DUMP_SHADERS)) {
+            struct pipe_transfer *transfer = NULL;
+
+            pipe_buffer_map(pctx, operation->input, PIPE_MAP_READ, &transfer);
+            dump_bo(etna_resource(operation->input)->bo, "input", i, 0);
+            pipe_buffer_unmap(pctx, transfer);
+
+            pipe_buffer_map(pctx, operation->output, PIPE_MAP_READ, &transfer);
+            dump_bo(etna_resource(operation->output)->bo, "output", i, 0);
+            pipe_buffer_unmap(pctx, transfer);
+         }
+
          stream = ctx->stream;
       }
 
@@ -504,23 +527,6 @@ etna_ml_subgraph_read_outputs(struct pipe_context *context, struct pipe_ml_subgr
    for (int i = 0; i < outputs_count; i++) {
       struct pipe_resource *res = etna_ml_get_tensor(subgraph, output_idxs[i]);
       pipe_buffer_read(context, res, 0, pipe_buffer_size(res), outputs[i]);
-   }
-
-   if (DBG_ENABLED(ETNA_DBG_DUMP_SHADERS)) {
-      unsigned i = 0;
-      util_dynarray_foreach(&subgraph->operations, struct etna_vip_instruction, operation) {
-         struct pipe_transfer *transfer = NULL;
-
-         pipe_buffer_map(context, operation->input, PIPE_MAP_READ, &transfer);
-         dump_buffer(etna_resource(operation->input)->bo, "input", i);
-         pipe_buffer_unmap(context, transfer);
-
-         pipe_buffer_map(context, operation->output, PIPE_MAP_READ, &transfer);
-         dump_buffer(etna_resource(operation->output)->bo, "output", i);
-         pipe_buffer_unmap(context, transfer);
-
-         i++;
-      }
    }
 }
 
