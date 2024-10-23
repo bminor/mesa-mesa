@@ -130,7 +130,10 @@ struct etna_nn_params {
    /* 18 */
    FIELD(out_image_circular_buf_size, 26) /* >> 6 */
    FIELD(per_channel_post_mul, 1)
-   FIELD(unused7, 5)
+   FIELD(unused7_0, 1)
+   FIELD(unused7_1, 1)
+   FIELD(unused7_2, 1)
+   FIELD(unused7_3, 2)
 
    /* 19 */
    FIELD(out_image_circular_buf_end_addr_plus_1, 26) /* >> 6 */
@@ -683,7 +686,10 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    map->unused4 = 0x0;
    map->unused5 = 0x0;
    map->unused6 = 0x0;
-   map->unused7 = 0x0;
+   map->unused7_0 = 0x0;
+   map->unused7_1 = 0x0;
+   map->unused7_2 = 0x0;
+   map->unused7_3 = 0x0;
    map->unused8 = 0x0;
    map->unused9 = 0x0;
    map->unused10 = 0x0;
@@ -714,28 +720,43 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    map->in_image_border_mode = 0x0;
    map->in_image_border_const = operation->input_zero_point;
 
-   if (operation->padding_same && operation->stride == 1 && weight_width > 2) {
-      if (weight_width < 5) {
-         map->in_image_x_offset = 0x7;
-         map->in_image_y_offset = 0x7;
-      } else {
-         map->in_image_x_offset = 0x6;
-         map->in_image_y_offset = 0x6;
+   if (operation->padding_same) {
+      if (operation->stride == 1 && weight_width > 2) {
+
+         if (weight_width < 5) {
+            map->in_image_x_offset = 0x7;
+            map->in_image_y_offset = 0x7;
+         } else {
+            map->in_image_x_offset = 0x6;
+            map->in_image_y_offset = 0x6;
+         }
+
+         map->in_image_x_offset_bit_3 = 0x1;
+         map->in_image_y_offset_bit_3 = 0x1;
+         map->unused7_2 = nn_core_version == 8;
+         map->unused7_3 = nn_core_version == 8;
+
+      } else if (operation->stride == 2 && weight_width > 2 && (input_width < 5 || (operation->depthwise && (weight_width == 5 || input_width == 5)))) {
+
+         if ((input_width <= 5 && weight_width < 5) ||
+            (input_width > 5 && weight_width >= 5)) {
+            map->in_image_x_offset = 0x7;
+            map->in_image_y_offset = 0x7;
+         } else {
+            map->in_image_x_offset = 0x6;
+            map->in_image_y_offset = 0x6;
+         }
+
+         map->in_image_x_offset_bit_3 = 0x1;
+         map->in_image_y_offset_bit_3 = 0x1;
+         map->unused7_2 = nn_core_version == 8;
+         map->unused7_3 = nn_core_version == 8;
       }
-      map->in_image_x_offset_bit_3 = 0x1;
-      map->in_image_y_offset_bit_3 = 0x1;
    } else {
       map->in_image_x_offset = 0x0;
       map->in_image_y_offset = 0x0;
       map->in_image_x_offset_bit_3 = 0x0;
       map->in_image_y_offset_bit_3 = 0x0;
-   }
-
-   if (operation->padding_same && operation->stride == 2 && weight_width == 5) {
-      map->in_image_x_offset = 0x7;
-      map->in_image_y_offset = 0x7;
-      map->in_image_x_offset_bit_3 = 0x1;
-      map->in_image_y_offset_bit_3 = 0x1;
    }
 
    struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
