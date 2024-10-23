@@ -1093,17 +1093,15 @@ void anv_CmdCopyBuffer2(
    anv_blorp_batch_finish(&batch);
 }
 
-
-void anv_CmdUpdateBuffer(
-    VkCommandBuffer                             commandBuffer,
-    VkBuffer                                    dstBuffer,
+void
+anv_cmd_buffer_update_addr(
+    struct anv_cmd_buffer*                      cmd_buffer,
+    struct anv_address                          address,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                dataSize,
-    const void*                                 pData)
+    const void*                                 pData,
+    bool                                        is_protected)
 {
-   ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
-   ANV_FROM_HANDLE(anv_buffer, dst_buffer, dstBuffer);
-
    struct blorp_batch batch;
    anv_blorp_batch_init(cmd_buffer, &batch,
                         cmd_buffer->state.current_pipeline ==
@@ -1144,13 +1142,13 @@ void anv_CmdUpdateBuffer(
                                                         false /* protected */)),
       };
       struct blorp_address dst = {
-         .buffer = dst_buffer->address.bo,
-         .offset = dst_buffer->address.offset + dstOffset,
-         .mocs = anv_mocs(cmd_buffer->device, dst_buffer->address.bo,
+         .buffer = address.bo,
+         .offset = address.offset + dstOffset,
+         .mocs = anv_mocs(cmd_buffer->device, address.bo,
                           get_usage_flag_for_cmd_buffer(
                              cmd_buffer,
                              true /* is_dest */,
-                             anv_buffer_is_protected(dst_buffer))),
+                             is_protected)),
       };
 
       blorp_buffer_copy(&batch, src, dst, copy_size);
@@ -1163,6 +1161,21 @@ void anv_CmdUpdateBuffer(
    anv_add_buffer_write_pending_bits(cmd_buffer, "update buffer");
 
    anv_blorp_batch_finish(&batch);
+}
+
+void anv_CmdUpdateBuffer(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    dstBuffer,
+    VkDeviceSize                                dstOffset,
+    VkDeviceSize                                dataSize,
+    const void*                                 pData)
+{
+   ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+   ANV_FROM_HANDLE(anv_buffer, dst_buffer, dstBuffer);
+
+   anv_cmd_buffer_update_addr(cmd_buffer, dst_buffer->address,
+                              dstOffset, dataSize, pData,
+                              anv_buffer_is_protected(dst_buffer));
 }
 
 void

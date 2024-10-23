@@ -5898,6 +5898,13 @@ anv_cmd_fill_buffer_addr(VkCommandBuffer cmd_buffer,
                          VkDeviceAddress dstAddr,
                          VkDeviceSize size,
                          uint32_t data);
+void
+anv_cmd_buffer_update_addr(struct anv_cmd_buffer *cmd_buffer,
+                           struct anv_address address,
+                           VkDeviceSize dstOffset,
+                           VkDeviceSize dataSize,
+                           const void* pData,
+                           bool is_protected);
 
 VkResult
 anv_cmd_buffer_ensure_rcs_companion(struct anv_cmd_buffer *cmd_buffer);
