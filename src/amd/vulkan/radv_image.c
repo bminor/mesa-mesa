@@ -1073,6 +1073,7 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
                                    VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) &&
        image->vk.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       info.surf_index = &device->image_mrt_offset_counter;
+      info.fmask_surf_index = &device->fmask_mrt_offset_counter;
    }
 
    return info;
