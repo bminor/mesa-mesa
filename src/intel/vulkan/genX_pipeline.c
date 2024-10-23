@@ -2202,7 +2202,7 @@ genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
        * Typically set to 0 to avoid prefetching on every thread dispatch.
        */
       .BindingTableEntryCount = devinfo->verx10 == 125 ?
-         0 : 1 + MIN2(pipeline->cs->bind_map.surface_count, 30),
+         0 : MIN2(pipeline->cs->bind_map.surface_count, 30),
       .BarrierEnable          = cs_prog_data->uses_barrier,
       .SharedLocalMemorySize  =
          intel_compute_slm_encode_size(GFX_VER, cs_prog_data->base.total_shared),
