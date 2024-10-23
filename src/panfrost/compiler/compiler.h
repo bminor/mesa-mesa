@@ -371,7 +371,7 @@ bi_is_value_equiv(bi_index left, bi_index right)
 
 #define BI_MAX_VEC   8
 #define BI_MAX_DESTS 4
-#define BI_MAX_SRCS  6
+#define BI_MAX_SRCS  8
 
 typedef struct {
    /* Must be first */

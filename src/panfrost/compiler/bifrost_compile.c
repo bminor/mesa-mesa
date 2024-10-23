@@ -3711,7 +3711,8 @@ enum valhall_tex_sreg {
    VALHALL_TEX_SREG_SHADOW = 5,
    VALHALL_TEX_SREG_OFFSETMS = 6,
    VALHALL_TEX_SREG_LOD = 7,
-   VALHALL_TEX_SREG_GRDESC = 8,
+   VALHALL_TEX_SREG_GRDESC0 = 8,
+   VALHALL_TEX_SREG_GRDESC1 = 9,
    VALHALL_TEX_SREG_COUNT,
 };
 
@@ -3723,12 +3724,15 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
 
    bool has_lod_mode = (instr->op == nir_texop_tex) ||
                        (instr->op == nir_texop_txl) ||
+                       (instr->op == nir_texop_txd) ||
                        (instr->op == nir_texop_txb);
 
    /* 32-bit indices to be allocated as consecutive staging registers */
    bi_index sregs[VALHALL_TEX_SREG_COUNT] = {};
    bi_index sampler = bi_imm_u32(instr->sampler_index);
    bi_index texture = bi_imm_u32(instr->texture_index);
+   bi_index ddx = bi_null();
+   bi_index ddy = bi_null();
 
    for (unsigned i = 0; i < instr->num_srcs; ++i) {
       bi_index index = bi_src_index(&instr->src[i].src);
@@ -3773,6 +3777,14 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
                bi_emit_texc_lod_88(b, index, sz == 16);
          }
          break;
+
+      case nir_tex_src_ddx:
+	 ddx = index;
+	 break;
+
+      case nir_tex_src_ddy:
+	 ddy = index;
+	 break;
 
       case nir_tex_src_bias:
          /* Upper 16-bits interpreted as a clamp, leave zero */
@@ -3819,19 +3831,6 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
       explicit_offset = true;
    }
 
-   /* Allocate staging registers contiguously by compacting the array. */
-   unsigned sr_count = 0;
-
-   for (unsigned i = 0; i < ARRAY_SIZE(sregs); ++i) {
-      if (!bi_is_null(sregs[i]))
-         sregs[sr_count++] = sregs[i];
-   }
-
-   bi_index idx = sr_count ? bi_temp(b->shader) : bi_null();
-
-   if (sr_count)
-      bi_make_vec_to(b, idx, sregs, NULL, sr_count, 32);
-
    bool narrow_indices = va_is_valid_const_narrow_index(texture) &&
                          va_is_valid_const_narrow_index(sampler);
 
@@ -3859,6 +3858,50 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
    }
 
    enum bi_dimension dim = valhall_tex_dimension(instr->sampler_dim);
+
+   if (!bi_is_null(ddx) || !bi_is_null(ddy)) {
+      unsigned coords_comp_count =
+         instr->coord_components -
+         (instr->is_array || instr->sampler_dim == GLSL_SAMPLER_DIM_CUBE);
+      assert(!bi_is_null(ddx) && !bi_is_null(ddy));
+
+      lod_mode = BI_VA_LOD_MODE_GRDESC;
+
+      bi_index derivs[6] = {
+         bi_extract(b, ddx, 0),
+         bi_extract(b, ddy, 0),
+         coords_comp_count > 1 ? bi_extract(b, ddx, 1) : bi_null(),
+         coords_comp_count > 1 ? bi_extract(b, ddy, 1) : bi_null(),
+         coords_comp_count > 2 ? bi_extract(b, ddx, 2) : bi_null(),
+         coords_comp_count > 2 ? bi_extract(b, ddy, 2) : bi_null(),
+      };
+      bi_index derivs_packed = bi_temp(b->shader);
+      bi_make_vec_to(b, derivs_packed, derivs, NULL, coords_comp_count * 2, 32);
+      bi_index grdesc = bi_temp(b->shader);
+      bi_instr *I = bi_tex_gradient_to(b, grdesc, derivs_packed, src0, src1, dim,
+                                       !narrow_indices, 3, coords_comp_count * 2);
+      I->derivative_enable = true;
+      I->force_delta_enable = false;
+      I->lod_clamp_disable = true;
+      I->lod_bias_disable = true;
+      I->register_format = BI_REGISTER_FORMAT_U32;
+
+      bi_emit_cached_split_i32(b, grdesc, 2);
+      sregs[VALHALL_TEX_SREG_GRDESC0] = bi_extract(b, grdesc, 0);
+      sregs[VALHALL_TEX_SREG_GRDESC1] = bi_extract(b, grdesc, 1);
+   }
+
+   /* Allocate staging registers contiguously by compacting the array. */
+   unsigned sr_count = 0;
+   for (unsigned i = 0; i < ARRAY_SIZE(sregs); ++i) {
+      if (!bi_is_null(sregs[i]))
+         sregs[sr_count++] = sregs[i];
+   }
+
+   bi_index idx = sr_count ? bi_temp(b->shader) : bi_null();
+
+   if (sr_count)
+      bi_make_vec_to(b, idx, sregs, NULL, sr_count, 32);
 
    if (instr->op == nir_texop_lod) {
       assert(instr->def.num_components == 2 && instr->def.bit_size == 32);
@@ -3897,8 +3940,9 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
 
    switch (instr->op) {
    case nir_texop_tex:
-   case nir_texop_txl:
    case nir_texop_txb:
+   case nir_texop_txl:
+   case nir_texop_txd:
       bi_tex_single_to(b, dest, idx, src0, src1, instr->is_array, dim, regfmt,
                        instr->is_shadow, explicit_offset, lod_mode,
                        !narrow_indices, mask, sr_count);
@@ -5192,7 +5236,8 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
                  .lower_txs_lod = true,
                  .lower_txp = ~0,
                  .lower_tg4_broadcom_swizzle = true,
-                 .lower_txd = true,
+                 .lower_txd_cube_map = true,
+                 .lower_txd = pan_arch(gpu_id) < 9,
                  .lower_invalid_implicit_lod = true,
                  .lower_index_to_offset = true,
               });
