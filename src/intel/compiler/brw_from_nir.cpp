@@ -1346,7 +1346,7 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       const uint32_t bit_size =  nir_src_bit_size(instr->src[0].src);
       if (bit_size != 32) {
          dest = bld.vgrf(op[0].type);
-         bld.UNDEF(dest);
+         bld.emit_undef_for_partial_reg(dest);
       }
 
       bld.CMP(dest, op[0], op[1], brw_cmod_for_nir_comparison(instr->op));
@@ -1382,7 +1382,7 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       const uint32_t bit_size = brw_type_size_bits(op[0].type);
       if (bit_size != 32) {
          dest = bld.vgrf(op[0].type);
-         bld.UNDEF(dest);
+         bld.emit_undef_for_partial_reg(dest);
       }
 
       bld.CMP(dest, op[0], op[1],
