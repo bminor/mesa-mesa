@@ -513,51 +513,6 @@ etna_ml_lower_add(struct etna_ml_subgraph *subgraph,
                                   operation->weight_scale);
 }
 
-#define MAX_TILE_WIDTH 64
-
-static unsigned
-calc_superblocks(struct etna_context *ctx, const struct etna_operation *operation, unsigned tile_y, unsigned interleave_mode)
-{
-   unsigned nn_core_count = etna_ml_get_core_info(ctx)->nn_core_count;
-   unsigned nn_accum_buffer_depth = etna_ml_get_core_info(ctx)->nn_accum_buffer_depth;
-   unsigned output_channels = operation->addition ? 1 : operation->output_channels;
-   unsigned kernels_per_core = DIV_ROUND_UP(output_channels, nn_core_count);
-   unsigned foo = (nn_accum_buffer_depth * interleave_mode) / tile_y;
-
-   if (operation->weight_width == 1)
-      foo = MIN2(foo, nn_accum_buffer_depth / 3);
-
-   foo = MIN2(foo, kernels_per_core);
-   foo = MIN2(foo, 127);
-
-   kernels_per_core = DIV_ROUND_UP(output_channels, nn_core_count * foo);
-   unsigned num_kernels = DIV_ROUND_UP(output_channels, kernels_per_core * nn_core_count);
-   unsigned superblocks = DIV_ROUND_UP(DIV_ROUND_UP(output_channels, nn_core_count), num_kernels);
-
-   return superblocks;
-}
-
-static unsigned
-calc_interleave_mode(unsigned tile_width, unsigned weight_height)
-{
-   unsigned mode = 8;
-
-   if (weight_height - 1 + tile_width > (MAX_TILE_WIDTH + 8) / 2)
-      return 1;
-
-   if (tile_width > MAX_TILE_WIDTH / 2)
-      mode = 1;
-   else if (tile_width > MAX_TILE_WIDTH / 4)
-      mode = 2;
-   else if (tile_width > MAX_TILE_WIDTH / 8)
-      mode = 4;
-
-   if (weight_height - 1 + tile_width > (MAX_TILE_WIDTH + 8) / 4)
-      return MIN2(mode, 4);
-
-   return MIN2(mode, 2);
-}
-
 void
 etna_ml_calc_addition_sizes(unsigned *input_width, unsigned *input_height, unsigned *input_channels,
                             unsigned *output_width, unsigned *output_height, unsigned *output_channels)
@@ -590,51 +545,14 @@ etna_ml_calc_addition_sizes(unsigned *input_width, unsigned *input_height, unsig
    *output_channels = 1;
 }
 
-unsigned
+static unsigned
 etna_ml_calculate_tiling(struct etna_context *ctx, const struct etna_operation *operation, unsigned *tile_width_out, unsigned *tile_height_out)
 {
-   unsigned nn_input_buffer_depth = etna_ml_get_core_info(ctx)->nn_input_buffer_depth;
-   unsigned nn_accum_buffer_depth = etna_ml_get_core_info(ctx)->nn_accum_buffer_depth;
-   unsigned input_width = operation->input_width;
-   unsigned input_height = operation->input_height;
-   unsigned input_channels = operation->input_channels;
-   unsigned output_width = operation->output_width;
-   unsigned output_height = operation->output_height;
-   unsigned output_channels = operation->output_channels;
-   unsigned tile_width;
-   unsigned tile_height;
-   unsigned superblocks;
-   unsigned interleave_mode;
-
-   if (operation->addition)
-      etna_ml_calc_addition_sizes(&input_width, &input_height, &input_channels,
-                                  &output_width, &output_height, &output_channels);
-
-   if (operation->pooling_first_pixel) {
-      output_width *= 2;
-      output_height *= 2;
-   }
-
-   tile_width = MIN2(output_width, 64);
-   interleave_mode = calc_interleave_mode(tile_width, operation->weight_height);
-
-   tile_height = nn_input_buffer_depth * interleave_mode - operation->weight_height + 1;
-   tile_height = MIN2(tile_height, interleave_mode * nn_accum_buffer_depth);
-   tile_height = MIN2(tile_height, output_height);
-
-   if (operation->stride > 1 && tile_height % 2 > 0)
-      tile_height -= 1;
-
-   tile_height = MAX2(tile_height, 1);
-   superblocks = calc_superblocks(ctx, operation, tile_height, interleave_mode);
-
-   if (tile_width_out)
-      *tile_width_out = tile_width;
-
-   if (tile_height_out)
-      *tile_height_out = tile_height;
-
-   return superblocks;
+   unsigned nn_core_version = ctx->screen->specs.nn_core_version;
+   if (nn_core_version == 7)
+      return etna_ml_calculate_tiling_v7(ctx, operation, tile_width_out, tile_height_out);
+   else
+      return etna_ml_calculate_tiling_v8(ctx, operation, tile_width_out, tile_height_out);
 }
 
 static struct etna_bo *

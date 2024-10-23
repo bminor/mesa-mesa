@@ -36,6 +36,143 @@ struct etna_nn_header_v8 {
    uint32_t stream_size[0];
 };
 
+#define MAX_TILE_WIDTH 64
+
+static unsigned
+calc_superblocks(struct etna_context *ctx, const struct etna_operation *operation, unsigned tile_x, unsigned tile_y, unsigned interleave_mode)
+{
+   unsigned nn_core_count = etna_ml_get_core_info(ctx)->nn_core_count;
+   struct etna_core_info *info = etna_gpu_get_core_info(ctx->screen->npu);
+   unsigned nn_accum_buffer_depth = info->npu.nn_accum_buffer_depth;
+   unsigned output_channels = operation->output_channels;
+   unsigned kernels_per_core = DIV_ROUND_UP(output_channels, nn_core_count);
+   unsigned tiles_per_core;
+
+   if (operation->weight_width == 1)
+      tiles_per_core = nn_accum_buffer_depth / DIV_ROUND_UP(tile_y, interleave_mode);
+   else {
+      unsigned tile_size = DIV_ROUND_UP(DIV_ROUND_UP(tile_y * tile_x, operation->stride), 64);
+      tiles_per_core = nn_accum_buffer_depth / (tile_size * operation->stride);
+   }
+
+   tiles_per_core = MIN2(tiles_per_core, (nn_accum_buffer_depth * 6) / 9);
+
+   tiles_per_core = MIN2(tiles_per_core, kernels_per_core);
+   tiles_per_core = MIN2(tiles_per_core, 127);
+
+   kernels_per_core = DIV_ROUND_UP(output_channels, nn_core_count * tiles_per_core);
+   unsigned num_kernels = DIV_ROUND_UP(output_channels, kernels_per_core * nn_core_count);
+
+   return DIV_ROUND_UP(DIV_ROUND_UP(output_channels, nn_core_count), num_kernels);
+}
+
+static unsigned
+calc_interleave_mode(struct etna_context *ctx, unsigned tile_width, unsigned weight_height)
+{
+   unsigned mode;
+
+   if (weight_height - 1 + tile_width > (MAX_TILE_WIDTH + 8) / 2)
+      return 1;
+
+   if (tile_width <= MAX_TILE_WIDTH / 2) {
+      if (MAX_TILE_WIDTH / 4 < tile_width)
+         mode = 2;
+      else
+         mode = 4;
+   } else
+      mode = 1;
+
+   if (weight_height - 1 + tile_width > (MAX_TILE_WIDTH + 8) / 4) {
+      if (mode >= 2) {
+         return 2;
+      }
+   } else {
+      if (mode >= 4) {
+         return 4;
+      }
+   }
+
+   if (tile_width <= MAX_TILE_WIDTH / 2) {
+      if (MAX_TILE_WIDTH / 4 < tile_width)
+         return 2;
+      else
+         return 4;
+   }
+
+   return 1;
+}
+
+unsigned
+etna_ml_calculate_tiling_v8(struct etna_context *ctx, const struct etna_operation *operation, unsigned *tile_width_out, unsigned *tile_height_out)
+{
+   unsigned nn_input_buffer_depth = etna_ml_get_core_info(ctx)->nn_input_buffer_depth;
+   unsigned nn_accum_buffer_depth = etna_ml_get_core_info(ctx)->nn_accum_buffer_depth;
+   unsigned input_width = operation->input_width;
+   unsigned input_height = operation->input_height;
+   unsigned input_channels = operation->input_channels;
+   unsigned output_width = operation->output_width;
+   unsigned output_height = operation->output_height;
+   unsigned output_channels = operation->output_channels;
+   unsigned tile_width;
+   unsigned tile_height;
+   unsigned superblocks;
+   unsigned interleave_mode;
+
+   if (operation->addition)
+      etna_ml_calc_addition_sizes(&input_width, &input_height, &input_channels,
+                                 &output_width, &output_height, &output_channels);
+
+   if (operation->pooling_first_pixel) {
+      output_width *= 2;
+      output_height *= 2;
+   }
+
+   tile_width = MIN2(output_width, 64);
+   interleave_mode = calc_interleave_mode(ctx, tile_width, operation->weight_height);
+
+   tile_height = nn_input_buffer_depth * interleave_mode - operation->weight_height + 1;
+   tile_height = MIN2(tile_height, interleave_mode * nn_accum_buffer_depth);
+   tile_height = MIN2(tile_height, output_height);
+
+   /* This gets us the best performance on MobileDet */
+   /* TODO: Find the optimal value, or at least let the user override it */
+   tile_height = MIN2(tile_height, 4);
+
+   if (operation->stride > 1 && tile_height % 2 > 0)
+      tile_height -= 1;
+
+   tile_height = MAX2(tile_height, 1);
+
+   superblocks = calc_superblocks(ctx, operation, tile_width, tile_height, interleave_mode);
+
+   if (tile_width_out)
+      *tile_width_out = tile_width;
+
+   if (tile_height_out)
+      *tile_height_out = tile_height;
+
+   return superblocks;
+}
+
+static void
+reorder_for_hw_depthwise(struct etna_ml_subgraph *subgraph, struct etna_operation *operation)
+{
+   struct pipe_context *context = subgraph->base.context;
+   uint8_t *input = map_resource(operation->weight_tensor);
+   struct pipe_resource *output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT,
+                                                         pipe_buffer_size(operation->weight_tensor));
+   uint8_t (*output)[operation->weight_width * operation->weight_height] = (void *)map_resource(output_res);
+
+   for (int i = 0; i < operation->weight_height * operation->weight_width * operation->output_channels; i++) {
+      unsigned out_channel = i % operation->output_channels;
+
+      output[out_channel][i / operation->output_channels] = input[i];
+   }
+
+   pipe_resource_reference(&operation->weight_tensor, NULL);
+   operation->weight_tensor = output_res;
+}
+
 struct bitstream {
    unsigned bits_in_buffer;
    uint64_t buffer;
@@ -594,7 +731,7 @@ fill_weights(struct etna_ml_subgraph *subgraph, const struct etna_operation *ope
    unsigned output_channels = operation->output_channels;
    unsigned nn_core_count = etna_ml_get_core_info(ctx)->nn_core_count;
    unsigned cores_used = MIN2(output_channels, nn_core_count);
-   unsigned superblocks = etna_ml_calculate_tiling(ctx, operation, NULL, NULL);
+   unsigned superblocks = etna_ml_calculate_tiling_v8(ctx, operation, NULL, NULL);
    unsigned full_superblock = DIV_ROUND_UP(output_channels, nn_core_count * superblocks);
 
    unsigned channel_per_superblock[superblocks];
