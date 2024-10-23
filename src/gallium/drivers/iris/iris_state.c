@@ -428,6 +428,8 @@ flush_before_state_base_change(struct iris_batch *batch)
     * insufficient, we need to ensure that any rendering operations from
     * other processes are definitely complete before we try to do our own
     * rendering.  It's a bit of a big hammer but it appears to work.
+    *
+    * Render target cache flush before SBA is required by Wa_18039438632.
     */
    iris_emit_end_of_pipe_sync(batch,
                               "change STATE_BASE_ADDRESS (flushes)",

@@ -252,6 +252,8 @@ genX(cmd_buffer_emit_state_base_address)(struct anv_cmd_buffer *cmd_buffer)
     * necessary prior to changing the surface state base address.  Without
     * this, we get GPU hangs when using multi-level command buffers which
     * clear depth, reset state base address, and then go render stuff.
+    *
+    * Render target cache flush before SBA is required by Wa_18039438632.
     */
    genx_batch_emit_pipe_control(&cmd_buffer->batch, device->info,
                                 cmd_buffer->state.current_pipeline,
