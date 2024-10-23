@@ -428,7 +428,7 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
    uint32_t num_workgroup_data[3];
    if (!anv_address_is_null(indirect_addr)) {
       uint64_t indirect_addr64 = anv_address_physical(indirect_addr);
-      num_workgroup_data[0] = 0xffffffff;
+      num_workgroup_data[0] = UINT32_MAX;
       num_workgroup_data[1] = indirect_addr64 & 0xffffffff;
       num_workgroup_data[2] = indirect_addr64 >> 32;
    } else {
