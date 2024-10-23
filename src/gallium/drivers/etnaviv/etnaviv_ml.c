@@ -70,13 +70,34 @@ etna_ml_get_core_info(struct etna_context *context) {
 }
 
 static bool
-needs_reshuffle(const struct pipe_ml_operation *poperation)
+needs_reshuffle(struct etna_ml_subgraph *subgraph, const struct pipe_ml_operation *poperation)
 {
+   struct pipe_context *context = subgraph->base.context;
+   struct etna_context *ctx = etna_context(context);
+   unsigned nn_core_version = ctx->screen->specs.nn_core_version;
    bool has_stride = poperation->conv.stride_x > 1 || poperation->conv.stride_y > 1;
    bool pointwise = poperation->conv.pointwise;
    unsigned input_width = poperation->input_tensor->dims[1];
 
-   return has_stride && !(poperation->conv.depthwise && (input_width > 5 || input_width < 3)) && !pointwise;
+   if (!has_stride)
+      return false;
+
+   if (nn_core_version < 8)
+      return !(poperation->conv.depthwise && (input_width > 5 || input_width < 3)) && !pointwise;
+   else {
+      unsigned input_channels = poperation->input_tensor->dims[3];
+
+      if (poperation->conv.depthwise)
+         return false;
+
+      if (poperation->conv.pointwise && input_width >= 3 && input_channels > 1)
+         return false;
+
+      if (poperation->conv.pointwise && poperation->conv.padding_same)
+         return false;
+
+      return true;
+   }
 }
 
 static void
@@ -130,7 +151,7 @@ lower_operations(struct etna_ml_subgraph *subgraph,
       switch(poperation->type) {
          case PIPE_ML_OPERATION_TYPE_CONVOLUTION: {
             unsigned input_tensor = poperation->input_tensor->index;
-            if (needs_reshuffle(poperation)) {
+            if (needs_reshuffle(subgraph, poperation)) {
                struct etna_operation *operation = calloc(1, sizeof(*operation));
                etna_ml_lower_reshuffle(subgraph, poperation, operation, &input_tensor);
                list_addtail(&operation->link, etna_operations);
