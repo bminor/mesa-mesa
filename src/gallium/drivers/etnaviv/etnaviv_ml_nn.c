@@ -586,13 +586,13 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
 
    struct etna_nn_params *map = etna_bo_map(bo);
    map->layer_type = 0x0;
-   map->no_z_offset = 0x0;
+   map->no_z_offset = nn_core_version == 8;
    map->prelu = 0x0;
    map->nn_layer_flush = 0x1;
    map->brick_mode = 0x0;
    map->brick_distance = 0x0;
    map->relu = 0x0;
-   map->no_flush = 0x0;
+   map->no_flush = nn_core_version == 8;
    map->rounding_mode = 0x1;
    map->partial_cache_data_unit = 0x0;
    map->depthwise = 0x0;
