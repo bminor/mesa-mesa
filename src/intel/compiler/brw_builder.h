@@ -462,7 +462,9 @@ public:
    brw_reg                                             \
    op(const brw_reg &src0, brw_inst **out = NULL) const \
    {                                                  \
-      brw_inst *inst = op(vgrf(src0.type), src0);      \
+      brw_reg dst = vgrf(src0.type);                  \
+      emit_undef_for_partial_reg(dst);                \
+      brw_inst *inst = op(dst, src0);                 \
       if (out) *out = inst;                           \
       return inst->dst;                               \
    }
@@ -479,7 +481,9 @@ public:
    {
       enum brw_reg_type inferred_dst_type =
          brw_type_larger_of(src0.type, src1.type);
-      brw_inst *inst = alu2(op, vgrf(inferred_dst_type), src0, src1);
+      brw_reg dst = vgrf(inferred_dst_type);
+      emit_undef_for_partial_reg(dst);
+      brw_inst *inst = alu2(op, dst, src0, src1);
       if (out) *out = inst;
       return inst->dst;
    }
