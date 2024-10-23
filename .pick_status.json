@@ -1004,7 +1004,7 @@
         "description": "radv: don't use v_mqsad_u32_u8 on gfx7",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c3c138b10f40c9225a6d00456620ba2bb1a72d98",
         "notes": null
