@@ -820,7 +820,6 @@ ir3_nir_lower_shuffle(nir_shader *nir, struct ir3_shader *shader)
       return false;
    }
 
-   nir_convert_to_lcssa(nir, true, true);
    nir_divergence_analysis(nir);
    return nir_shader_lower_instructions(nir, filter_shuffle, lower_shuffle,
                                         NULL);
