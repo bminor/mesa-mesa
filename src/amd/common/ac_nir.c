@@ -1758,8 +1758,13 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    if (is_load && bit_size == 8 && combined_align >= 2 && bytes % 2 == 0)
       bit_size = 16;
 
+   unsigned max_components = 4;
+   if (cb_data->use_llvm && access & (ACCESS_COHERENT | ACCESS_VOLATILE) &&
+       (intrin == nir_intrinsic_load_global || intrin == nir_intrinsic_store_global))
+      max_components = 1;
+
    nir_mem_access_size_align res;
-   res.num_components = MIN2(bytes / (bit_size / 8), 4);
+   res.num_components = MIN2(bytes / (bit_size / 8), max_components);
    res.bit_size = bit_size;
    res.align = MIN2(bit_size / 8, 4); /* 64-bit access only requires 4 byte alignment. */
    res.shift = nir_mem_access_shift_method_shift64;
@@ -1791,7 +1796,7 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    } else {
       res.num_components = DIV_ROUND_UP(bytes + max_pad, 4);
    }
-   res.num_components = MIN2(res.num_components, 4);
+   res.num_components = MIN2(res.num_components, max_components);
    res.bit_size = 32;
    res.align = 4;
    res.shift = is_smem ? res.shift : nir_mem_access_shift_method_bytealign_amd;

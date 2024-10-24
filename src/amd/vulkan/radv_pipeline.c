@@ -563,9 +563,6 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
                .allow_fp16 = gfx_level >= GFX9,
             });
 
-   if (radv_use_llvm_for_stage(pdev, stage->stage))
-      NIR_PASS_V(stage->nir, nir_lower_io_to_scalar, nir_var_mem_global, NULL, NULL);
-
    NIR_PASS(_, stage->nir, ac_nir_lower_global_access);
    NIR_PASS_V(stage->nir, ac_nir_lower_intrinsics_to_args, gfx_level, radv_select_hw_stage(&stage->info, gfx_level),
               &stage->args.ac);
