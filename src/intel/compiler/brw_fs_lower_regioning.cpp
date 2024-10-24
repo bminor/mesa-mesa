@@ -721,6 +721,38 @@ namespace {
    }
 
    /**
+    * Fast-path for very specific kinds of invalid regions.
+    *
+    * Gfx12.5+ does not allow moves of B or UB sources to floating-point
+    * destinations. This restriction can be resolved more efficiently than by
+    * the general lowering in lower_src_modifiers or lower_src_region.
+    */
+   void
+   lower_src_conversion(fs_visitor *v, bblock_t *block, fs_inst *inst)
+   {
+      const intel_device_info *devinfo = v->devinfo;
+      const fs_builder ibld = fs_builder(v, block, inst).scalar_group();
+
+      /* We only handle scalar conversions from small types for now. */
+      assert(is_uniform(inst->src[0]));
+
+      brw_reg tmp = ibld.vgrf(brw_type_with_size(inst->src[0].type, 32));
+      fs_inst *mov = ibld.MOV(tmp, inst->src[0]);
+
+      inst->src[0] = component(tmp, 0);
+
+      /* Assert that neither the added MOV nor the original instruction will need
+       * any additional lowering.
+       */
+      assert(!has_invalid_src_region(devinfo, mov, 0));
+      assert(!has_invalid_src_modifiers(devinfo, mov, 0));
+      assert(!has_invalid_dst_region(devinfo, mov));
+
+      assert(!has_invalid_src_region(devinfo, inst, 0));
+      assert(!has_invalid_src_modifiers(devinfo, inst, 0));
+   }
+
+   /**
     * Legalize the source and destination regioning controls of the specified
     * instruction.
     */
@@ -735,6 +767,11 @@ namespace {
 
       if (has_invalid_dst_region(devinfo, inst))
          progress |= lower_dst_region(v, block, inst);
+
+      if (has_invalid_src_conversion(devinfo, inst)) {
+         lower_src_conversion(v, block, inst);
+         progress = true;
+      }
 
       for (unsigned i = 0; i < inst->sources; i++) {
          if (has_invalid_src_modifiers(devinfo, inst, i))
