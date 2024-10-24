@@ -39,10 +39,6 @@ static bool do_winsys_init(struct amdgpu_winsys *aws,
    if (!ac_query_gpu_info(fd, aws->dev, &aws->info, false))
       goto fail;
 
-   /* TODO: Enable this once the kernel handles it efficiently. */
-   if (aws->info.has_dedicated_vram)
-      aws->info.has_local_buffers = false;
-
    aws->addrlib = ac_addrlib_create(&aws->info, &aws->info.max_alignment);
    if (!aws->addrlib) {
       fprintf(stderr, "amdgpu: Cannot create addrlib.\n");
@@ -64,6 +60,10 @@ static bool do_winsys_init(struct amdgpu_winsys *aws,
 
    for (unsigned i = 0; i < ARRAY_SIZE(aws->queues); i++)
       simple_mtx_init(&aws->queues[i].userq.lock, mtx_plain);
+
+   /* TODO: Enable this once the kernel handles it efficiently. */
+   if (aws->info.has_dedicated_vram && !aws->info.use_userq)
+      aws->info.has_local_buffers = false;
 
    return true;
 
