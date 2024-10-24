@@ -37,7 +37,7 @@ variables:
 
    ALPINE_X86_64_BUILD_TAG: "20250124-spirv-tools"
    ALPINE_X86_64_LAVA_SSH_TAG: "20250124-spirv-tools"
-   FEDORA_X86_64_BUILD_TAG: "20241122-sections"
+   FEDORA_X86_64_BUILD_TAG: "20250125-which"
 
    KERNEL_TAG: "v6.13-rc4-mesa-5e77"
    KERNEL_REPO: "gfx-ci/linux"
