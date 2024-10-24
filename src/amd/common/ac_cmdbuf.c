@@ -242,11 +242,6 @@ gfx6_init_graphics_preamble_state(const struct ac_preamble_state *state,
       ac_pm4_set_reg(pm4, R_008B10_PA_SC_LINE_STIPPLE_STATE, 0);
    }
 
-   /* If any sample location uses the -8 coordinate, the EXCLUSION fields should be set to 0. */
-   ac_pm4_set_reg(pm4, R_02882C_PA_SU_PRIM_FILTER_CNTL,
-                  S_02882C_XMAX_RIGHT_EXCLUSION(info->gfx_level >= GFX7) |
-                  S_02882C_YMAX_BOTTOM_EXCLUSION(info->gfx_level >= GFX7));
-
    if (info->gfx_level <= GFX7 || !info->has_clear_state) {
       ac_pm4_set_reg(pm4, R_028C58_VGT_VERTEX_REUSE_BLOCK_CNTL, 14);
       ac_pm4_set_reg(pm4, R_028C5C_VGT_OUT_DEALLOC_CNTL, 16);
@@ -479,10 +474,6 @@ gfx10_init_graphics_preamble_state(const struct ac_preamble_state *state,
    if (info->gfx_level >= GFX10_3)
       ac_pm4_set_reg(pm4, R_028750_SX_PS_DOWNCONVERT_CONTROL, 0xff);
 
-   /* If any sample location uses the -8 coordinate, the EXCLUSION fields should be set to 0. */
-   ac_pm4_set_reg(pm4, R_02882C_PA_SU_PRIM_FILTER_CNTL,
-                  S_02882C_XMAX_RIGHT_EXCLUSION(1) |
-                  S_02882C_YMAX_BOTTOM_EXCLUSION(1));
    ac_pm4_set_reg(pm4, R_028830_PA_SU_SMALL_PRIM_FILTER_CNTL,
                   S_028830_SMALL_PRIM_FILTER_ENABLE(1));
 
@@ -672,10 +663,6 @@ gfx12_init_graphics_preamble_state(const struct ac_preamble_state *state,
    ac_pm4_set_reg(pm4, R_028820_PA_CL_NANINF_CNTL, 0);
    ac_pm4_set_reg(pm4, R_028824_PA_SU_LINE_STIPPLE_CNTL, 0);
    ac_pm4_set_reg(pm4, R_028828_PA_SU_LINE_STIPPLE_SCALE, 0);
-   /* If any sample location uses the -8 coordinate, the EXCLUSION fields should be set to 0. */
-   ac_pm4_set_reg(pm4, R_02882C_PA_SU_PRIM_FILTER_CNTL,
-                  S_02882C_XMAX_RIGHT_EXCLUSION(1) |
-                  S_02882C_YMAX_BOTTOM_EXCLUSION(1));
    ac_pm4_set_reg(pm4, R_028830_PA_SU_SMALL_PRIM_FILTER_CNTL,
                   S_028830_SMALL_PRIM_FILTER_ENABLE(1) |
                   S_028830_SC_1XMSAA_COMPATIBLE_DISABLE(1) /* use sample locations even for MSAA 1x */);
