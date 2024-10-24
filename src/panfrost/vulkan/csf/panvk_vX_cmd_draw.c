@@ -1122,7 +1122,8 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_OP) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
-      fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, RENDER_STATE);
+      fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, RENDER_STATE) ||
+      gfx_state_dirty(cmdbuf, OQ);
    bool dcd1_dirty = dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
                      dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
                      fs_user_dirty(cmdbuf) ||
@@ -1150,7 +1151,8 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
 
             bool writes_zs = writes_z || writes_s;
             bool zs_always_passes = ds_test_always_passes(cmdbuf);
-            bool oq = false; /* TODO: Occlusion queries */
+            bool oq = cmdbuf->state.gfx.occlusion_query.mode !=
+                      MALI_OCCLUSION_MODE_DISABLED;
 
             struct pan_earlyzs_state earlyzs =
                pan_earlyzs_get(pan_earlyzs_analyze(&fs->info), writes_zs || oq,
@@ -1172,6 +1174,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
          cfg.cull_back_face = (rs->cull_mode & VK_CULL_MODE_BACK_BIT) != 0;
 
          cfg.multisample_enable = dyns->ms.rasterization_samples > 1;
+         cfg.occlusion_query = cmdbuf->state.gfx.occlusion_query.mode;
       }
 
       cs_update_vt_ctx(b)
@@ -1368,6 +1371,10 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       prepare_dcd(cmdbuf);
       prepare_vp(cmdbuf);
       prepare_tiler_primitive_size(cmdbuf);
+
+      if (gfx_state_dirty(cmdbuf, OQ))
+         cs_move64_to(b, cs_reg64(b, 46),
+                      cmdbuf->state.gfx.occlusion_query.ptr);
    }
 
    clear_dirty_after_draw(cmdbuf);

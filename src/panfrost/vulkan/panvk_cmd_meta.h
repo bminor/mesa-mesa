@@ -65,6 +65,8 @@ struct panvk_cmd_meta_graphics_save_ctx {
       const struct panvk_shader *shader;
       struct panvk_shader_desc_state desc;
    } vs;
+
+   struct panvk_occlusion_query_state occlusion_query;
 };
 
 void panvk_per_arch(cmd_meta_gfx_start)(

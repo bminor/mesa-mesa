@@ -313,7 +313,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
                 dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
                 dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
                 dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_ONE_ENABLE) ||
-                gfx_state_dirty(cmdbuf, FS) ||
+                gfx_state_dirty(cmdbuf, FS) || gfx_state_dirty(cmdbuf, OQ) ||
                 gfx_state_dirty(cmdbuf, RENDER_STATE);
 
    if (!dirty) {
@@ -382,7 +382,8 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
          bool writes_zs = writes_z || writes_s;
          bool zs_always_passes = ds_test_always_passes(cmdbuf);
-         bool oq = false; /* TODO: Occlusion queries */
+         bool oq = cmdbuf->state.gfx.occlusion_query.mode !=
+                   MALI_OCCLUSION_MODE_DISABLED;
 
          struct pan_earlyzs_state earlyzs =
             pan_earlyzs_get(pan_earlyzs_analyze(fs_info), writes_zs || oq,
@@ -1005,7 +1006,8 @@ panvk_emit_tiler_dcd(struct panvk_cmd_buffer *cmdbuf,
       cfg.textures = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_TEXTURE];
       cfg.samplers = fs_desc_state->tables[PANVK_BIFROST_DESC_TABLE_SAMPLER];
 
-      /* TODO: occlusion queries */
+      cfg.occlusion_query = cmdbuf->state.gfx.occlusion_query.mode;
+      cfg.occlusion = cmdbuf->state.gfx.occlusion_query.ptr;
    }
 }
 
@@ -1223,7 +1225,9 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
          return;
    }
 
-   bool needs_tiling = !rs->rasterizer_discard_enable;
+   bool active_occlusion =
+      cmdbuf->state.gfx.occlusion_query.mode != MALI_OCCLUSION_MODE_DISABLED;
+   bool needs_tiling = !rs->rasterizer_discard_enable || active_occlusion;
 
    if (!rs->rasterizer_discard_enable) {
       struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;

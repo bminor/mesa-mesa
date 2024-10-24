@@ -11,6 +11,7 @@
 #endif
 
 #include "panvk_blend.h"
+#include "panvk_cmd_oq.h"
 #include "panvk_entrypoints.h"
 #include "panvk_image.h"
 #include "panvk_image_view.h"
@@ -77,6 +78,7 @@ enum panvk_cmd_graphics_dirty_state {
    PANVK_CMD_GRAPHICS_DIRTY_FS,
    PANVK_CMD_GRAPHICS_DIRTY_VB,
    PANVK_CMD_GRAPHICS_DIRTY_IB,
+   PANVK_CMD_GRAPHICS_DIRTY_OQ,
    PANVK_CMD_GRAPHICS_DIRTY_DESC_STATE,
    PANVK_CMD_GRAPHICS_DIRTY_RENDER_STATE,
    PANVK_CMD_GRAPHICS_DIRTY_PUSH_UNIFORMS,
@@ -91,6 +93,7 @@ struct panvk_cmd_graphics_state {
       struct vk_sample_locations_state sl;
    } dynamic;
 
+   struct panvk_occlusion_query_state occlusion_query;
    struct panvk_graphics_sysvals sysvals;
 
 #if PAN_ARCH <= 7

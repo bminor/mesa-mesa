@@ -103,6 +103,12 @@ panvk_per_arch(cmd_meta_gfx_start)(
    save_ctx->dyn_state.all = cmdbuf->vk.dynamic_graphics_state;
    save_ctx->dyn_state.vi = cmdbuf->state.gfx.dynamic.vi;
    save_ctx->dyn_state.sl = cmdbuf->state.gfx.dynamic.sl;
+   save_ctx->occlusion_query = cmdbuf->state.gfx.occlusion_query;
+
+   /* Ensure occlusion queries are disabled */
+   cmdbuf->state.gfx.occlusion_query.ptr = 0;
+   cmdbuf->state.gfx.occlusion_query.mode = MALI_OCCLUSION_MODE_DISABLED;
+   gfx_state_set_dirty(cmdbuf, OQ);
 }
 
 void
@@ -146,12 +152,14 @@ panvk_per_arch(cmd_meta_gfx_end)(
    cmdbuf->vk.dynamic_graphics_state = save_ctx->dyn_state.all;
    cmdbuf->state.gfx.dynamic.vi = save_ctx->dyn_state.vi;
    cmdbuf->state.gfx.dynamic.sl = save_ctx->dyn_state.sl;
+   cmdbuf->state.gfx.occlusion_query = save_ctx->occlusion_query;
    memcpy(cmdbuf->vk.dynamic_graphics_state.dirty,
           cmdbuf->vk.dynamic_graphics_state.set,
           sizeof(cmdbuf->vk.dynamic_graphics_state.set));
    gfx_state_set_dirty(cmdbuf, VS);
    gfx_state_set_dirty(cmdbuf, FS);
    gfx_state_set_dirty(cmdbuf, VB);
+   gfx_state_set_dirty(cmdbuf, OQ);
    gfx_state_set_dirty(cmdbuf, DESC_STATE);
    gfx_state_set_dirty(cmdbuf, RENDER_STATE);
 }
