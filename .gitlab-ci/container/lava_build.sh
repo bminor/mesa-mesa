@@ -18,7 +18,7 @@ set -e
 set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
-export LLVM_VERSION="${LLVM_VERSION:=15}"
+: "${LLVM_VERSION:?llvm version not set!}"
 export FIRMWARE_FILES="${FIRMWARE_FILES}"
 export SKIP_UPDATE_FLUSTER_VECTORS=0
 

@@ -12,7 +12,7 @@ set -e
 set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
-export LLVM_VERSION="${LLVM_VERSION:=15}"
+: "${LLVM_VERSION:?llvm version not set!}"
 
 apt-get install -y ca-certificates
 sed -i -e 's/http:\/\/deb/https:\/\/deb/g' /etc/apt/sources.list.d/*

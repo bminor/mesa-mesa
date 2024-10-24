@@ -7,7 +7,7 @@ set -e
 
 set -o xtrace
 
-export LLVM_VERSION="${LLVM_VERSION:=15}"
+: "${LLVM_VERSION:?llvm version not set}"
 
 apt-get -y install ca-certificates
 sed -i -e 's/http:\/\/deb/https:\/\/deb/g' /etc/apt/sources.list.d/*
