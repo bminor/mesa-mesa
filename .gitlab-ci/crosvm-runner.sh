@@ -99,7 +99,7 @@ unset XDG_RUNTIME_DIR
 CROSVM_KERN_ARGS="quiet console=null root=my_root rw rootfstype=virtiofs ip=192.168.30.2::192.168.30.1:255.255.255.0:crosvm:eth0"
 CROSVM_KERN_ARGS="${CROSVM_KERN_ARGS} init=${SCRIPTS_DIR}/crosvm-init.sh -- ${VSOCK_STDOUT} ${VSOCK_STDERR} ${VM_TEMP_DIR}"
 
-[ "${CROSVM_GALLIUM_DRIVER}" = "llvmpipe" ] && \
+[ "${CROSVM_GALLIUM_DRIVER:-}" = "llvmpipe" ] && \
     CROSVM_LIBGL_ALWAYS_SOFTWARE=true || CROSVM_LIBGL_ALWAYS_SOFTWARE=false
 
 set +e -x
