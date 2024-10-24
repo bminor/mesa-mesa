@@ -171,35 +171,35 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
 
    struct vk_device_dispatch_table dispatch_table;
 
-   /* For secondary command buffer support, overwrite any command entrypoints
-    * in the main device-level dispatch table with
-    * vk_cmd_enqueue_unless_primary_Cmd*.
-    */
-   vk_device_dispatch_table_from_entrypoints(
-      &dispatch_table, &vk_cmd_enqueue_unless_primary_device_entrypoints, true);
+
+
+   if (PAN_ARCH <= 9) {
+      /* For secondary command buffer support, overwrite any command entrypoints
+       * in the main device-level dispatch table with
+       * vk_cmd_enqueue_unless_primary_Cmd*.
+       */
+      vk_device_dispatch_table_from_entrypoints(
+         &dispatch_table, &vk_cmd_enqueue_unless_primary_device_entrypoints, true);
+
+      /* Populate our primary cmd_dispatch table. */
+      vk_device_dispatch_table_from_entrypoints(
+         &device->cmd_dispatch, &panvk_per_arch(device_entrypoints), true);
+      vk_device_dispatch_table_from_entrypoints(&device->cmd_dispatch,
+                                                &panvk_device_entrypoints,
+                                                false);
+      vk_device_dispatch_table_from_entrypoints(&device->cmd_dispatch,
+		                                &vk_common_device_entrypoints,
+                                                false);
+   }
 
    vk_device_dispatch_table_from_entrypoints(
-      &dispatch_table, &panvk_per_arch(device_entrypoints), false);
+      &dispatch_table, &panvk_per_arch(device_entrypoints), PAN_ARCH > 9);
    vk_device_dispatch_table_from_entrypoints(&dispatch_table,
                                              &panvk_device_entrypoints, false);
    vk_device_dispatch_table_from_entrypoints(&dispatch_table,
                                              &wsi_device_entrypoints, false);
 
-   /* Populate our primary cmd_dispatch table. */
-   vk_device_dispatch_table_from_entrypoints(
-      &device->cmd_dispatch, &panvk_per_arch(device_entrypoints), true);
-   vk_device_dispatch_table_from_entrypoints(&device->cmd_dispatch,
-                                             &panvk_device_entrypoints, false);
-   vk_device_dispatch_table_from_entrypoints(
-      &device->cmd_dispatch, &vk_common_device_entrypoints, false);
-
-   /* vkCmdExecuteCommands is currently only implemented on v10+. The panvk
-    * implementation will not run if the vk_cmd_enqueue_unless_primary
-    * entrypoint is present in the dispatch table.
-    */
-   result = vk_device_init(&device->vk, &physical_device->vk,
-                           PAN_ARCH <= 9 ?
-                           &dispatch_table : &device->cmd_dispatch,
+   result = vk_device_init(&device->vk, &physical_device->vk, &dispatch_table,
                            pCreateInfo, pAllocator);
    if (result != VK_SUCCESS)
       goto err_free_dev;
