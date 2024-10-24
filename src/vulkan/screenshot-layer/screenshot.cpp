@@ -186,10 +186,10 @@ static void unmap_object(uint64_t obj)
 void map_images(swapchain_data *data, VkImage *imageList, uint32_t size) {
    data->imageListSize = size;
    VkImage *image;
+   image = (VkImage *)malloc(sizeof(VkImage) * size);
    for (uint32_t index = 0; index < size; index++) {
-      image = (VkImage *) malloc(sizeof(VkImage));
-      *image = imageList[index];
-      map_object(HKEY(index), image);
+      image[index] = imageList[index];
+      map_object(HKEY(index), &image[index]);
    }
 }
 
@@ -198,12 +198,15 @@ void select_image_from_map(swapchain_data *data, uint32_t index) {
 }
 
 void unmap_images(swapchain_data *data) {
-   VkImage *image;
+   VkImage *image, *first;
+   first = nullptr;
    for (uint32_t index = 0; index < data->imageListSize; index++) {
       image = FIND(VkImage, index);
-      free(image);
+      if (!first)
+         first = image;
       unmap_object(HKEY(index));
    }
+   free(first);
    data->imageListSize = 0;
 }
 
@@ -384,6 +387,7 @@ static struct swapchain_data *new_swapchain_data(VkSwapchainKHR swapchain,
 
 static void destroy_swapchain_data(struct swapchain_data *data)
 {
+   unmap_images(data);
    unmap_object(HKEY(data->swapchain));
    ralloc_free(data);
 }
@@ -618,6 +622,7 @@ static VkResult screenshot_GetSwapchainImagesKHR(
    VkResult result = vtable->GetSwapchainImagesKHR(device, swapchain, pCount, pSwapchainImages);
 
    loader_platform_thread_lock_mutex(&globalLock);
+   LOG(DEBUG, "Swapchain size: %d\n", *pCount);
    if (swapchain_data->imageListSize > 0)
       unmap_images(swapchain_data);
    if (result == VK_SUCCESS) {
@@ -742,100 +747,91 @@ void *writePNG(void *data) {
    char *filename    = (char *)malloc(length);
    char *tmpFilename = (char *)malloc(length + 4); // Allow for ".tmp"
    VkResult res;
-   png_byte **row_pointer;
-   threadData->pFramebuffer += threadData->srLayout.offset;
+   png_byte *row_pointer;
    png_infop info;
    png_struct* png;
+   uint64_t rowPitch = threadData->srLayout.rowPitch;
+   uint64_t start_time, end_time;
+   const int RGB_NUM_CHANNELS = 3;
    int localHeight = threadData->height;
    int localWidth = threadData->width;
-   bool checks_succeeded = true;
+   int matrixSize = localHeight * rowPitch;
+   bool checks_failed = true;
    memcpy(filename, threadData->filename, length);
    memcpy(tmpFilename, threadData->filename, length);
    strcat(tmpFilename, tmpStr);
    file = fopen(tmpFilename, "wb"); //create file for output
-   if (file) {
-      // TODO: Look into runtime version mismatch issue with some VK workloads
-      png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL); //create structure for write PNG_LIBPNG_VER_STRING
-      if (!png) {
-         LOG(ERROR, "Create write struct failed. VER_STRING=%s\n", PNG_LIBPNG_VER_STRING);
-         checks_succeeded = false;
-      } else {
-         info = png_create_info_struct(png);
-         if (!info) {
-            LOG(ERROR, "Create info struct failed\n");
-            checks_succeeded = false;
-         } else if (setjmp(png_jmpbuf(png))) {
-            LOG(ERROR, "setjmp() failed\n");
-            png_destroy_write_struct(&png, &info);
-            checks_succeeded = false;
-         }
-      }
-   } else {
+   if (!file) {
       LOG(ERROR, "Failed to open output file, '%s', error(%d): %s\n", tmpFilename, errno, strerror(errno));
-      checks_succeeded = false;
+      goto cleanup;
    }
-   if (checks_succeeded) {
-      threadData->device_data->vtable.WaitForFences(threadData->device_data->device, 1, &threadData->fence, VK_TRUE, UINT64_MAX);
-      auto start_time = get_time();
-      const int RGB_NUM_CHANNELS = 3;
-      row_pointer = (png_byte **)malloc(sizeof(png_byte *) * localHeight);
-      for (int y = 0; y < localHeight; y++) {
-         int char_counter = 0;
-         row_pointer[y] = (png_byte *)malloc(sizeof(png_byte) * RGB_NUM_CHANNELS * localWidth);
-         for (int x = 0; x < localWidth * RGB_NUM_CHANNELS; x += RGB_NUM_CHANNELS) {
-            memcpy(&row_pointer[y][x], &threadData->pFramebuffer[char_counter], RGB_NUM_CHANNELS * sizeof(png_byte));
-            char_counter += RGB_NUM_CHANNELS;
-         }
-         threadData->pFramebuffer += threadData->srLayout.rowPitch;
-      }
-      auto end_time = get_time();
-      print_time_difference(start_time, end_time);
-      // We've created all local copies of data,
-      // so let's signal main thread to continue
-      pthread_cond_signal(&ptCondition);
-      png_init_io(png, file); // Initialize file output
-      png_set_IHDR( // Set image properties
-         png,    // Pointer to png_struct
-         info,   // Pointer to info_struct
-         localWidth, // Image width
-         localHeight, // Image height
-         8,      // Color depth
-         PNG_COLOR_TYPE_RGB,
-         PNG_INTERLACE_NONE,
-         PNG_COMPRESSION_TYPE_DEFAULT,
-         PNG_FILTER_TYPE_DEFAULT
-         );
-      png_set_compression_level(png, 1);    // Z_BEST_SPEED=1
-      png_set_compression_strategy(png, 2); // Z_HUFFMAN_ONLY=2
-      png_set_filter(png, PNG_FILTER_TYPE_BASE, PNG_FILTER_SUB);
-      png_set_compression_mem_level(png, 9);
-      png_set_compression_buffer_size(png, 65536);
-      png_write_info(png, info);         // Write png image information to file
-      png_write_image(png, row_pointer); // Actually write image
-      png_write_end(png, NULL);          // End image writing
-      // Free memory for the nested arrays in the matrix
-      for (int y = 0; y < localHeight; y++) {
-         free(row_pointer[y]);
-      }
-      free(row_pointer);
+   // TODO: Look into runtime version mismatch issue with some VK workloads
+   png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL); //create structure for write PNG_LIBPNG_VER_STRING
+   if (!png) {
+      LOG(ERROR, "Create write struct failed. VER_STRING=%s\n", PNG_LIBPNG_VER_STRING);
+      goto cleanup;
+   }
+   info = png_create_info_struct(png);
+   if (!info) {
+      LOG(ERROR, "Create info struct failed\n");
+      goto cleanup;
+   }
+   if (setjmp(png_jmpbuf(png))) {
+      LOG(ERROR, "setjmp() failed\n");
+      goto cleanup;
+   }
+   threadData->device_data->vtable.WaitForFences(threadData->device_data->device, 1, &threadData->fence, VK_TRUE, UINT64_MAX);
+   threadData->pFramebuffer += threadData->srLayout.offset;
+   start_time = get_time();
+   row_pointer = (png_byte *)malloc(sizeof(png_byte) * matrixSize);
+   memcpy(row_pointer, threadData->pFramebuffer, matrixSize);
+   end_time = get_time();
+   print_time_difference(start_time, end_time);
+   // We've created all local copies of data,
+   // so let's signal main thread to continue
+   pthread_cond_signal(&ptCondition);
+   png_init_io(png, file); // Initialize file output
+   png_set_IHDR( // Set image properties
+      png,    // Pointer to png_struct
+      info,   // Pointer to info_struct
+      localWidth, // Image width
+      localHeight, // Image height
+      8,      // Color depth
+      PNG_COLOR_TYPE_RGB,
+      PNG_INTERLACE_NONE,
+      PNG_COMPRESSION_TYPE_DEFAULT,
+      PNG_FILTER_TYPE_DEFAULT
+      );
+   png_set_compression_level(png, 1);    // Z_BEST_SPEED=1
+   png_set_compression_strategy(png, 2); // Z_HUFFMAN_ONLY=2
+   png_set_filter(png, PNG_FILTER_TYPE_BASE, PNG_FILTER_SUB);
+   png_set_compression_mem_level(png, 9);
+   png_set_compression_buffer_size(png, 65536);
+   png_write_info(png, info);         // Write png image information to file
+   for (int y = 0; y < matrixSize; y+=rowPitch) {
+      png_write_row(png, &row_pointer[y]);
+   }
+   png_write_end(png, NULL);          // End image writing
+   free(row_pointer);
 
-      // Rename file, indicating completion, client should be
-      // checking for the final file exists.
-      if (rename(tmpFilename, filename) != 0 )
-         LOG(ERROR, "Could not rename from '%s' to '%s'\n", tmpFilename, filename);
-      else
-         LOG(INFO, "Successfully renamed from '%s' to '%s'\n", tmpFilename, filename);
-   } else {
+   // Rename file, indicating completion, client should be
+   // checking for the final file exists.
+   if (rename(tmpFilename, filename) != 0 )
+      LOG(ERROR, "Could not rename from '%s' to '%s'\n", tmpFilename, filename);
+   else
+      LOG(INFO, "Successfully renamed from '%s' to '%s'\n", tmpFilename, filename);
+   checks_failed = false;
+cleanup:
+   if (checks_failed)
       pthread_cond_signal(&ptCondition);
-   }
+   if (info)
+      png_destroy_write_struct(&png, &info);
    if (file)
       fclose(file);
-   if (filename) {
+   if (filename)
       free(filename);
-   }
-   if (tmpFilename) {
+   if (tmpFilename)
       free(tmpFilename);
-   }
    return nullptr;
 }
 
