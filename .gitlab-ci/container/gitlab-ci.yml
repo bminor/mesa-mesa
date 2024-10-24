@@ -179,6 +179,87 @@ debian/android_build:
   needs:
     - debian/android_build
 
+# Debian based ARM build image
+debian/arm64_build:
+  extends:
+    - .fdo.container-build@debian
+    - .container
+    - .debian-container-version
+  tags:
+    - aarch64
+  variables:
+    MESA_IMAGE_TAG: &debian-arm64_build "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
+
+.use-debian/arm64_build:
+  extends:
+    - .set-image
+  variables:
+    MESA_IMAGE_PATH: "debian/arm64_build"
+    MESA_IMAGE_TAG: *debian-arm64_build
+    MESA_ARTIFACTS_TAG: *debian-arm64_build
+  needs:
+    - debian/arm64_build
+
+# Alpine based x86_64 build image
+.alpine/x86_64_build-base:
+  extends:
+    - .fdo.container-build@alpine
+    - .container
+  variables:
+    FDO_DISTRIBUTION_VERSION: "edge"  # switch to 3.20 when gets released
+    FDO_BASE_IMAGE: alpine:$FDO_DISTRIBUTION_VERSION  # since cbuild ignores it
+
+# Alpine based x86_64 build image
+alpine/x86_64_build:
+  extends:
+    - .alpine/x86_64_build-base
+  variables:
+    MESA_IMAGE_TAG: &alpine-x86_64_build ${ALPINE_X86_64_BUILD_TAG}
+    LLVM_VERSION: &alpine-llvm_version 19
+  rules:
+    # Note: the next three lines must remain in that order, so that the rules
+    # in `linkcheck-docs` catch nightly pipelines before the rules in `pages`
+    # exclude them.
+    - !reference [linkcheck-docs, rules]
+    - !reference [pages, rules]
+    - !reference [test-docs, rules]
+    - !reference [.container, rules]
+
+.use-alpine/x86_64_build:
+  extends:
+    - .set-image
+  variables:
+    MESA_IMAGE_PATH: "alpine/x86_64_build"
+    MESA_IMAGE_TAG: *alpine-x86_64_build
+    LLVM_VERSION: *alpine-llvm_version
+  needs:
+    - alpine/x86_64_build
+
+# Alpine based x86_64 image for LAVA SSH dockerized client
+alpine/x86_64_lava_ssh_client:
+  extends:
+    - .alpine/x86_64_build-base
+  variables:
+    MESA_IMAGE_TAG: &alpine-x86_64_lava_ssh_client ${ALPINE_X86_64_LAVA_SSH_TAG}
+
+# Fedora based x86_64 build image
+fedora/x86_64_build:
+  extends:
+    - .fdo.container-build@fedora
+    - .container
+  variables:
+    FDO_DISTRIBUTION_VERSION: 41
+    MESA_IMAGE_TAG: &fedora-x86_64_build ${FEDORA_X86_64_BUILD_TAG}
+
+.use-fedora/x86_64_build:
+  extends:
+    - .set-image
+  variables:
+    MESA_IMAGE_PATH: "fedora/x86_64_build"
+    MESA_IMAGE_TAG: *fedora-x86_64_build
+  needs:
+    - fedora/x86_64_build
+
 # Debian based x86_64 test image base
 debian/x86_64_test-base:
   extends:
@@ -326,88 +407,6 @@ debian/arm64_test-vk:
     MESA_IMAGE_TAG: *debian-arm64_test-vk
   needs:
     - debian/arm64_test-vk
-
-# Debian based ARM build image
-debian/arm64_build:
-  extends:
-    - .fdo.container-build@debian
-    - .container
-    - .debian-container-version
-  tags:
-    - aarch64
-  variables:
-    MESA_IMAGE_TAG: &debian-arm64_build "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
-
-.use-debian/arm64_build:
-  extends:
-    - .set-image
-  variables:
-    MESA_IMAGE_PATH: "debian/arm64_build"
-    MESA_IMAGE_TAG: *debian-arm64_build
-    MESA_ARTIFACTS_TAG: *debian-arm64_build
-  needs:
-    - debian/arm64_build
-
-
-# Alpine based x86_64 build image
-.alpine/x86_64_build-base:
-  extends:
-    - .fdo.container-build@alpine
-    - .container
-  variables:
-    FDO_DISTRIBUTION_VERSION: "edge"  # switch to 3.20 when gets released
-    FDO_BASE_IMAGE: alpine:$FDO_DISTRIBUTION_VERSION  # since cbuild ignores it
-
-# Alpine based x86_64 build image
-alpine/x86_64_build:
-  extends:
-    - .alpine/x86_64_build-base
-  variables:
-    MESA_IMAGE_TAG: &alpine-x86_64_build ${ALPINE_X86_64_BUILD_TAG}
-    LLVM_VERSION: &alpine-llvm_version 19
-  rules:
-    # Note: the next three lines must remain in that order, so that the rules
-    # in `linkcheck-docs` catch nightly pipelines before the rules in `pages`
-    # exclude them.
-    - !reference [linkcheck-docs, rules]
-    - !reference [pages, rules]
-    - !reference [test-docs, rules]
-    - !reference [.container, rules]
-
-.use-alpine/x86_64_build:
-  extends:
-    - .set-image
-  variables:
-    MESA_IMAGE_PATH: "alpine/x86_64_build"
-    MESA_IMAGE_TAG: *alpine-x86_64_build
-    LLVM_VERSION: *alpine-llvm_version
-  needs:
-    - alpine/x86_64_build
-
-# Alpine based x86_64 image for LAVA SSH dockerized client
-alpine/x86_64_lava_ssh_client:
-  extends:
-    - .alpine/x86_64_build-base
-  variables:
-    MESA_IMAGE_TAG: &alpine-x86_64_lava_ssh_client ${ALPINE_X86_64_LAVA_SSH_TAG}
-
-# Fedora based x86_64 build image
-fedora/x86_64_build:
-  extends:
-    - .fdo.container-build@fedora
-    - .container
-  variables:
-    FDO_DISTRIBUTION_VERSION: 41
-    MESA_IMAGE_TAG: &fedora-x86_64_build ${FEDORA_X86_64_BUILD_TAG}
-
-.use-fedora/x86_64_build:
-  extends:
-    - .set-image
-  variables:
-    MESA_IMAGE_PATH: "fedora/x86_64_build"
-    MESA_IMAGE_TAG: *fedora-x86_64_build
-  needs:
-    - fedora/x86_64_build
 
 # Get firmware directly rather than using package versions.
 # Change KERNEL_ROOTFS_TAG to add firmware changes.
