@@ -77,7 +77,18 @@ void ir3_nir_lower_variant(struct ir3_shader_variant *so,
 void ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
                            struct ir3_const_state *const_state);
 uint32_t ir3_const_state_get_free_space(const struct ir3_shader_variant *v,
-                                        const struct ir3_const_state *const_state);
+                                        const struct ir3_const_state *const_state,
+                                        uint32_t align_vec4);
+void ir3_const_alloc(struct ir3_const_allocations *const_alloc,
+                     enum ir3_const_alloc_type type, uint32_t size_vec4,
+                     uint32_t align_vec4);
+void ir3_const_reserve_space(struct ir3_const_allocations *const_alloc,
+                             enum ir3_const_alloc_type type,
+                             uint32_t size_vec4, uint32_t align_vec4);
+void ir3_const_free_reserved_space(struct ir3_const_allocations *const_alloc,
+                                   enum ir3_const_alloc_type type);
+void ir3_const_alloc_all_reserved_space(struct ir3_const_allocations *const_alloc);
+
 bool ir3_nir_lower_load_constant(nir_shader *nir, struct ir3_shader_variant *v);
 void ir3_nir_analyze_ubo_ranges(nir_shader *nir, struct ir3_shader_variant *v);
 bool ir3_nir_lower_ubo_loads(nir_shader *nir, struct ir3_shader_variant *v);

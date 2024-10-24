@@ -185,6 +185,53 @@ struct ir3_driver_ubo {
    uint32_t size;
 };
 
+enum ir3_const_alloc_type {
+   /* Vulkan, push consts. */
+   IR3_CONST_ALLOC_PUSH_CONSTS = 0,
+   /* Vulkan, offsets required to calculate offsets of descriptors with dynamic
+    * offsets.
+    */
+   IR3_CONST_ALLOC_DYN_DESCRIPTOR_OFFSET = 1,
+   /* Vulkan, addresses of inline uniform buffers, to which we fallback when
+    * their size is unknown.
+    */
+   IR3_CONST_ALLOC_INLINE_UNIFORM_ADDRS = 2,
+   /* Common, stage-specific params uploaded by the driver/HW. */
+   IR3_CONST_ALLOC_DRIVER_PARAMS = 3,
+   /* Common, UBOs lowered to consts. */
+   IR3_CONST_ALLOC_UBO_RANGES = 4,
+   /* Common, consts produced by a preamble to be used in a main shader. */
+   IR3_CONST_ALLOC_PREAMBLE = 5,
+   /* Vulkan, inline uniforms loaded into consts in the preamble.*/
+   IR3_CONST_ALLOC_GLOBAL = 6,
+   /* OpenGL, pre-a6xx; pointers to UBOs */
+   IR3_CONST_ALLOC_UBO_PTRS = 7,
+   IR3_CONST_ALLOC_MAX = 8,
+};
+
+struct ir3_const_allocation {
+   uint32_t offset_vec4;
+   uint32_t size_vec4;
+
+   uint32_t reserved_size_vec4;
+   uint32_t reserved_align_vec4;
+};
+
+struct ir3_const_allocations {
+   struct ir3_const_allocation consts[IR3_CONST_ALLOC_MAX];
+   uint32_t max_const_offset_vec4;
+   uint32_t reserved_vec4;
+};
+
+static inline bool
+ir3_const_can_upload(const struct ir3_const_allocations *const_alloc,
+                     enum ir3_const_alloc_type type,
+                     uint32_t shader_const_size_vec4)
+{
+   return const_alloc->consts[type].size_vec4 > 0 &&
+          const_alloc->consts[type].offset_vec4 < shader_const_size_vec4;
+}
+
 /**
  * Describes the layout of shader consts in the const register file.
  *
@@ -192,8 +239,7 @@ struct ir3_driver_ubo {
  * that pointer size (ubo, etc) changes depending on generation.
  *
  *   + user consts: only used for turnip push consts
- *   + lowered UBO ranges
- *   + preamble consts
+ *   + Optional consts: ubo ranges, preamble, global, etc.
  *   + UBO addresses: turnip is bindless and these are wasted
  *   + image dimensions: a5xx only; needed to calculate pixel offset, but only
  *     for images that have image_{load,store,size,atomic*} intrinsics
@@ -228,11 +274,8 @@ struct ir3_const_state {
     */
    uint32_t required_consts_aligment_vec4;
 
-   int32_t constant_data_dynamic_offsets;
-
    struct {
-      /* user const start at zero */
-      unsigned ubo;
+      /* Required consts, cannot negotiate their size */
       unsigned image_dims;
       unsigned kernel_params;
       unsigned driver_param;
@@ -241,6 +284,8 @@ struct ir3_const_state {
       unsigned primitive_map;
       unsigned immediate;
    } offsets;
+
+   struct ir3_const_allocations allocs;
 
    struct {
       uint32_t mask;  /* bitmask of images that have image_store */
@@ -256,9 +301,6 @@ struct ir3_const_state {
    unsigned immediates_count;
    unsigned immediates_size;
    uint32_t *immediates;
-
-   unsigned preamble_size;
-   unsigned global_size;
 
    /* State of ubo access lowered to push consts: */
    struct ir3_ubo_analysis_state ubo_state;
@@ -555,7 +597,6 @@ struct ir3_shader_nir_options {
 };
 
 struct ir3_shader_options {
-   unsigned num_reserved_user_consts;
    /* What API-visible wavesizes are allowed. Even if only double wavesize is
     * allowed, we may still use the smaller wavesize "under the hood" and the
     * application simply sees the upper half as always disabled.
@@ -569,6 +610,9 @@ struct ir3_shader_options {
 
    uint32_t push_consts_base;
    uint32_t push_consts_dwords;
+
+   /* Some const allocations are required at API level. */
+   struct ir3_const_allocations const_allocs;
 
    struct ir3_shader_nir_options nir_options;
 };
@@ -1041,6 +1085,16 @@ ir3_max_const(const struct ir3_shader_variant *v)
 
 uint16_t ir3_const_find_imm(struct ir3_shader_variant *v, uint32_t imm);
 uint16_t ir3_const_add_imm(struct ir3_shader_variant *v, uint32_t imm);
+
+static inline unsigned
+ir3_const_reg(const struct ir3_const_state *const_state,
+              enum ir3_const_alloc_type type,
+              unsigned offset)
+{
+   unsigned n = const_state->allocs.consts[type].offset_vec4;
+   assert(const_state->allocs.consts[type].size_vec4 != 0);
+   return regid(n + offset / 4, offset % 4);
+}
 
 /* Return true if a variant may need to be recompiled due to exceeding the
  * maximum "safe" constlen.

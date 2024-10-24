@@ -188,7 +188,8 @@ ir3_emit_ubos(struct fd_context *ctx, const struct ir3_shader_variant *v,
               struct fd_ringbuffer *ring, struct fd_constbuf_stateobj *constbuf)
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset = const_state->offsets.ubo;
+   uint32_t offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_UBO_PTRS].offset_vec4;
 
    /* a6xx+ uses UBO state and ldc instead of pointers emitted in
     * const state and ldg:
@@ -196,7 +197,8 @@ ir3_emit_ubos(struct fd_context *ctx, const struct ir3_shader_variant *v,
    if (ctx->screen->gen >= 6)
       return;
 
-   if (v->constlen > offset) {
+   if (ir3_const_can_upload(&const_state->allocs, IR3_CONST_ALLOC_UBO_PTRS,
+                            v->constlen)) {
       uint32_t params = const_state->num_ubos;
       uint32_t offsets[params];
       struct fd_bo *bos[params];

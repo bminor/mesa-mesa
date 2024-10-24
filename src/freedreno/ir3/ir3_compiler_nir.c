@@ -1263,7 +1263,7 @@ emit_intrinsic_load_ubo(struct ir3_context *ctx, nir_intrinsic_instr *intr,
    struct ir3_builder *b = &ctx->build;
    struct ir3_instruction *base_lo, *base_hi, *addr, *src0, *src1;
    const struct ir3_const_state *const_state = ir3_const_state(ctx->so);
-   unsigned ubo = regid(const_state->offsets.ubo, 0);
+   unsigned ubo = ir3_const_reg(const_state, IR3_CONST_ALLOC_UBO_PTRS, 0);
    const unsigned ptrsz = ir3_pointer_size(ctx->compiler);
 
    int off = 0;
@@ -1283,9 +1283,10 @@ emit_intrinsic_load_ubo(struct ir3_context *ctx, nir_intrinsic_instr *intr,
        * at least big enough to cover all the UBO addresses, since the
        * assembler won't know what the max address reg is.
        */
-      ctx->so->constlen =
-         MAX2(ctx->so->constlen,
-              const_state->offsets.ubo + (ctx->s->info.num_ubos * ptrsz));
+      ctx->so->constlen = MAX2(
+         ctx->so->constlen,
+         const_state->allocs.consts[IR3_CONST_ALLOC_UBO_PTRS].offset_vec4 +
+            (ctx->s->info.num_ubos * ptrsz));
    }
 
    /* note: on 32bit gpu's base_hi is ignored and DCE'd */
@@ -2686,15 +2687,8 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
             if (ctx->compiler->has_scalar_alu && !intr->def.divergent)
                dst[i]->dsts[0]->flags |= IR3_REG_SHARED;
          }
-         /* NOTE: if relative addressing is used, we set
-          * constlen in the compiler (to worst-case value)
-          * since we don't know in the assembler what the max
-          * addr reg value can be:
-          */
-         ctx->so->constlen =
-            MAX2(ctx->so->constlen,
-                 ctx->so->shader_options.num_reserved_user_consts +
-                 const_state->ubo_state.size / 16);
+
+         ctx->has_relative_load_const_ir3 = true;
       }
       break;
 
@@ -5941,6 +5935,27 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       so->post_depth_coverage = true;
 
    ctx->so->per_samp = ctx->s->info.fs.uses_sample_shading;
+
+   if (ctx->has_relative_load_const_ir3) {
+      /* NOTE: if relative addressing is used, we set
+       * constlen in the compiler (to worst-case value)
+       * since we don't know in the assembler what the max
+       * addr reg value can be:
+       */
+      const struct ir3_const_state *const_state = ir3_const_state(ctx->so);
+      const enum ir3_const_alloc_type rel_const_srcs[] = {
+         IR3_CONST_ALLOC_INLINE_UNIFORM_ADDRS, IR3_CONST_ALLOC_UBO_RANGES,
+         IR3_CONST_ALLOC_PREAMBLE, IR3_CONST_ALLOC_GLOBAL};
+      for (int i = 0; i < ARRAY_SIZE(rel_const_srcs); i++) {
+         const struct ir3_const_allocation *const_alloc =
+            &const_state->allocs.consts[rel_const_srcs[i]];
+         if (const_alloc->size_vec4 > 0) {
+            ctx->so->constlen =
+               MAX2(ctx->so->constlen,
+                    const_alloc->offset_vec4 + const_alloc->size_vec4);
+         }
+      }
+   }
 
    if (ctx->so->type == MESA_SHADER_FRAGMENT &&
        compiler->fs_must_have_non_zero_constlen_quirk) {

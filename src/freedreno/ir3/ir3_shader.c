@@ -340,6 +340,7 @@ alloc_variant(struct ir3_shader *shader, const struct ir3_shader_key *key,
 
    if (!v->binning_pass) {
       v->const_state = rzalloc_size(v, sizeof(*v->const_state));
+      v->const_state->allocs = shader->options.const_allocs;
       v->const_state->push_consts_type = shader->options.push_consts_type;
       v->const_state->consts_ubo.idx = -1;
       v->const_state->driver_params_ubo.idx = -1;
@@ -754,6 +755,31 @@ output_name(struct ir3_shader_variant *so, int i)
    }
 }
 
+static const char *
+ir3_const_alloc_type_to_string(enum ir3_const_alloc_type type)
+{
+   switch (type) {
+   case IR3_CONST_ALLOC_PUSH_CONSTS:
+      return "push_consts";
+   case IR3_CONST_ALLOC_DYN_DESCRIPTOR_OFFSET:
+      return "dyn_descriptor_offset";
+   case IR3_CONST_ALLOC_INLINE_UNIFORM_ADDRS:
+      return "inline_uniform_addresses";
+   case IR3_CONST_ALLOC_DRIVER_PARAMS:
+      return "driver_params";
+   case IR3_CONST_ALLOC_UBO_RANGES:
+      return "ubo_ranges";
+   case IR3_CONST_ALLOC_PREAMBLE:
+      return "preamble";
+   case IR3_CONST_ALLOC_GLOBAL:
+      return "global";
+   case IR3_CONST_ALLOC_UBO_PTRS:
+      return "ubo_ptrs";
+   default:
+      return "unknown";
+   }
+}
+
 static void
 dump_const_state(struct ir3_shader_variant *so, FILE *out)
 {
@@ -763,8 +789,16 @@ dump_const_state(struct ir3_shader_variant *so, FILE *out)
    fprintf(out, "; num_ubos:           %u\n", cs->num_ubos);
    fprintf(out, "; num_driver_params:  %u\n", cs->num_driver_params);
    fprintf(out, "; offsets:\n");
-   if (cs->offsets.ubo != ~0)
-      fprintf(out, ";   ubo:              c%u.x\n", cs->offsets.ubo);
+
+   for (uint32_t i = 0; i < IR3_CONST_ALLOC_MAX; i++) {
+      if (cs->allocs.consts[i].size_vec4) {
+         fprintf(out, ";   %-26s c%u.x (%u vec4)\n",
+                 ir3_const_alloc_type_to_string(i),
+                 cs->allocs.consts[i].offset_vec4,
+                 cs->allocs.consts[i].size_vec4);
+      }
+   }
+
    if (cs->offsets.image_dims != ~0)
       fprintf(out, ";   image_dims:       c%u.x\n", cs->offsets.image_dims);
    if (cs->offsets.kernel_params != ~0)

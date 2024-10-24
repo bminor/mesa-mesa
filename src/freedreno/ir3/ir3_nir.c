@@ -1151,6 +1151,10 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
 
    progress |= OPT(s, ir3_nir_lower_io_offsets);
 
+   if (!so->binning_pass) {
+      ir3_const_alloc_all_reserved_space(&ir3_const_state_mut(so)->allocs);
+   }
+
    if (progress)
       ir3_optimize_loop(so->compiler, options, s);
 
@@ -1364,6 +1368,61 @@ ir3_align_constoff(struct ir3_const_state *const_state, unsigned constoff,
    return constoff;
 }
 
+void
+ir3_const_alloc(struct ir3_const_allocations *const_alloc,
+                enum ir3_const_alloc_type type, uint32_t size_vec4,
+                uint32_t align_vec4)
+{
+   struct ir3_const_allocation *alloc = &const_alloc->consts[type];
+   assert(alloc->size_vec4 == 0);
+
+   const_alloc->max_const_offset_vec4 =
+      align(const_alloc->max_const_offset_vec4, align_vec4);
+   alloc->size_vec4 = size_vec4;
+   alloc->offset_vec4 = const_alloc->max_const_offset_vec4;
+   const_alloc->max_const_offset_vec4 += size_vec4;
+}
+
+void
+ir3_const_reserve_space(struct ir3_const_allocations *const_alloc,
+                        enum ir3_const_alloc_type type, uint32_t size_vec4,
+                        uint32_t align_vec4)
+{
+   struct ir3_const_allocation *alloc = &const_alloc->consts[type];
+   assert(alloc->size_vec4 == 0 && alloc->reserved_size_vec4 == 0);
+
+   alloc->reserved_size_vec4 = size_vec4;
+   alloc->reserved_align_vec4 = align_vec4;
+   /* Be pessimistic here and assume the worst case alignment is needed */
+   const_alloc->reserved_vec4 += size_vec4 + align_vec4 - 1;
+}
+
+void
+ir3_const_free_reserved_space(struct ir3_const_allocations *const_alloc,
+                              enum ir3_const_alloc_type type)
+{
+   struct ir3_const_allocation *alloc = &const_alloc->consts[type];
+   assert(const_alloc->reserved_vec4 >= alloc->reserved_size_vec4);
+
+   const_alloc->reserved_vec4 -=
+      alloc->reserved_size_vec4 + alloc->reserved_align_vec4 - 1;
+   alloc->reserved_size_vec4 = 0;
+}
+
+void
+ir3_const_alloc_all_reserved_space(struct ir3_const_allocations *const_alloc)
+{
+   for (int i = 0; i < IR3_CONST_ALLOC_MAX; i++) {
+      if (const_alloc->consts[i].reserved_size_vec4 > 0) {
+         ir3_const_alloc(const_alloc, i,
+                         const_alloc->consts[i].reserved_size_vec4,
+                         const_alloc->consts[i].reserved_align_vec4);
+         const_alloc->consts[i].reserved_size_vec4 = 0;
+      }
+   }
+   const_alloc->reserved_vec4 = 0;
+}
+
 /* Sets up the variant-dependent constant state for the ir3_shader.  Note
  * that it is also used from ir3_nir_analyze_ubo_ranges() to figure out the
  * maximum number of driver params that would eventually be used, to leave
@@ -1374,6 +1433,7 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
                       struct ir3_const_state *const_state)
 {
    struct ir3_compiler *compiler = v->compiler;
+   unsigned ptrsz = ir3_pointer_size(compiler);
 
    memset(&const_state->offsets, ~0, sizeof(const_state->offsets));
    const_state->required_consts_aligment_vec4 = 1;
@@ -1388,16 +1448,8 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
    const_state->num_ubos = nir->info.num_ubos;
 
    assert((const_state->ubo_state.size % 16) == 0);
-   unsigned constoff = v->shader_options.num_reserved_user_consts +
-      const_state->ubo_state.size / 16 +
-      const_state->preamble_size +
-      const_state->global_size;
-   unsigned ptrsz = ir3_pointer_size(compiler);
 
-   if (const_state->num_ubos > 0 && compiler->gen < 6) {
-      const_state->offsets.ubo = constoff;
-      constoff += align(const_state->num_ubos * ptrsz, 4) / 4;
-   }
+   unsigned constoff = const_state->allocs.max_const_offset_vec4;
 
    if (const_state->image_dims.count > 0) {
       unsigned cnt = const_state->image_dims.count;
@@ -1482,9 +1534,12 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
 
 uint32_t
 ir3_const_state_get_free_space(const struct ir3_shader_variant *v,
-                               const struct ir3_const_state *const_state)
+                               const struct ir3_const_state *const_state,
+                               uint32_t align_vec4)
 {
-   uint32_t free_space_vec4 = ir3_max_const(v) - const_state->offsets.immediate;
+   uint32_t free_space_vec4 =
+      ir3_max_const(v) - align(const_state->offsets.immediate, align_vec4) -
+      const_state->allocs.reserved_vec4;
    free_space_vec4 =
       (free_space_vec4 / const_state->required_consts_aligment_vec4) *
       const_state->required_consts_aligment_vec4;

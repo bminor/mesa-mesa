@@ -826,7 +826,7 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
             const struct tu_pipeline_layout *layout,
             uint32_t read_only_input_attachments,
             bool dynamic_renderpass,
-            unsigned *reserved_consts_vec4_out)
+            struct ir3_const_allocations *const_allocs)
 {
    tu_shader->const_state.push_consts = (struct tu_push_constant_range) {
       .lo = 0,
@@ -848,9 +848,12 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
    }
 
    struct tu_const_state *const_state = &tu_shader->const_state;
-   unsigned reserved_consts_vec4 =
+   unsigned push_consts_vec4 =
       align(DIV_ROUND_UP(const_state->push_consts.dwords, 4),
             dev->compiler->const_upload_unit);
+
+   ir3_const_alloc(const_allocs, IR3_CONST_ALLOC_PUSH_CONSTS,
+                   push_consts_vec4, 1);
 
    bool unknown_dynamic_size = false;
    bool unknown_dynamic_offset = false;
@@ -867,9 +870,12 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
    }
 
    if (unknown_dynamic_offset) {
-      const_state->dynamic_offset_loc = reserved_consts_vec4 * 4;
+      const_state->dynamic_offset_loc =
+         const_allocs->max_const_offset_vec4 * 4;
       assert(dev->physical_device->reserved_set_idx >= 0);
-      reserved_consts_vec4 += DIV_ROUND_UP(dev->physical_device->reserved_set_idx, 4);
+      ir3_const_alloc(
+         const_allocs, IR3_CONST_ALLOC_DYN_DESCRIPTOR_OFFSET,
+         DIV_ROUND_UP(dev->physical_device->reserved_set_idx, 4), 1);
    } else {
       const_state->dynamic_offset_loc = UINT32_MAX;
    }
@@ -877,6 +883,7 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
    /* Reserve space for inline uniforms, so we can always load them from
     * constants and not setup a UBO descriptor for them.
     */
+   size_t ldgk_consts = 0;
    bool use_ldg_k =
       dev->physical_device->info->a7xx.load_inline_uniforms_via_preamble_ldgk;
    for (unsigned set = 0; set < layout->num_sets; set++) {
@@ -918,20 +925,23 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
 
          assert(const_state->num_inline_ubos < ARRAY_SIZE(const_state->ubos));
          unsigned size_vec4 = push_address ? 1 : DIV_ROUND_UP(binding->size, 16);
-         const_state->ubos[const_state->num_inline_ubos++] = (struct tu_inline_ubo) {
-            .base = set,
-            .offset = binding->offset,
-            .push_address = push_address,
-            .const_offset_vec4 = reserved_consts_vec4,
-            .size_vec4 = size_vec4,
-         };
+         const_state->ubos[const_state->num_inline_ubos++] =
+            (struct tu_inline_ubo) {
+               .base = set,
+               .offset = binding->offset,
+               .push_address = push_address,
+               .const_offset_vec4 =
+                  const_allocs->max_const_offset_vec4 + ldgk_consts,
+               .size_vec4 = size_vec4,
+            };
 
-         if (!use_ldg_k)
-            reserved_consts_vec4 += align(size_vec4, dev->compiler->const_upload_unit);
+         if (!use_ldg_k) {
+            ldgk_consts += align(size_vec4, dev->compiler->const_upload_unit);
+         }
       }
    }
 
-   *reserved_consts_vec4_out = reserved_consts_vec4;
+   ir3_const_alloc(const_allocs, IR3_CONST_ALLOC_INLINE_UNIFORM_ADDRS, ldgk_consts, 1);
 
    struct lower_instr_params params = {
       .dev = dev,
@@ -2527,10 +2537,10 @@ tu_shader_create(struct tu_device *dev,
       NIR_PASS_V(nir, nir_lower_mem_access_bit_sizes, &options);
    }
 
-   unsigned reserved_consts_vec4 = 0;
+   struct ir3_const_allocations const_allocs = {};
    NIR_PASS_V(nir, tu_lower_io, dev, shader, layout,
               key->read_only_input_attachments, key->dynamic_renderpass,
-              &reserved_consts_vec4);
+              &const_allocs);
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
@@ -2540,12 +2550,12 @@ tu_shader_create(struct tu_device *dev,
    ir3_finalize_nir(dev->compiler, &nir_options, nir);
 
    const struct ir3_shader_options options = {
-      .num_reserved_user_consts = reserved_consts_vec4,
       .api_wavesize = key->api_wavesize,
       .real_wavesize = key->real_wavesize,
       .push_consts_type = shader->const_state.push_consts.type,
       .push_consts_base = shader->const_state.push_consts.lo,
       .push_consts_dwords = shader->const_state.push_consts.dwords,
+      .const_allocs = const_allocs,
       .nir_options = nir_options,
    };
 
