@@ -312,8 +312,6 @@ struct lvp_image_view {
 struct lvp_sampler {
    struct vk_sampler vk;
    struct lp_descriptor desc;
-
-   struct lp_texture_handle *texture_handle;
 };
 
 struct lvp_descriptor_set_binding_layout {
