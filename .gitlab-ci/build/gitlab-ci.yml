@@ -10,7 +10,7 @@
     # something has gone wrong and the job will never terminate, so we should
     # instead timeout so that the retry mechanism can kick in.
     # A few exception are made, see overrides in the rest of this file.
-    BUILD_JOB_TIMEOUT: 30m
+    BUILD_JOB_TIMEOUT: 15m
   timeout: 1h
   # We don't want to download any previous job's artifacts
   dependencies: []
@@ -96,6 +96,7 @@ debian-testing:
     - .ci-deqp-artifacts
   stage: build-for-tests
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     UNWIND: "enabled"
     DRI_LOADERS: >
       -D glx=dri
@@ -129,6 +130,7 @@ debian-testing-asan:
     - debian-testing
   stage: build-for-tests
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     C_ARGS: >
       -Wno-error=stringop-truncation
     EXTRA_OPTION: >
@@ -159,6 +161,7 @@ debian-testing-msan:
     - debian-clang
   # `needs:` inherited from debian-clang
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     # l_undef is incompatible with msan
     EXTRA_OPTION:
       -D b_sanitize=memory
@@ -297,6 +300,7 @@ alpine-build-testing:
     - !reference [.use-alpine/x86_64_build, needs]
     - !reference [.build-for-tests-jobs]
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     BUILDTYPE: "release"
     C_ARGS: >
       -Wno-error=cpp
@@ -672,6 +676,7 @@ debian-clang-release:
   extends: debian-clang
   # `needs:` inherited from debian-clang
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     BUILDTYPE: "release"
     DRI_LOADERS: >
       -D glx=xlib
@@ -709,6 +714,7 @@ debian-vulkan:
     - !reference [.meson-build, needs]
     - !reference [.build-for-tests-jobs]
   variables:
+    BUILD_JOB_TIMEOUT: 30m
     BUILDTYPE: debug
     LLVM_VERSION: 15
     UNWIND: "disabled"
