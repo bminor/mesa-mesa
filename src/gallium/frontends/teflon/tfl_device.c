@@ -155,6 +155,12 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
       case kTfLiteBuiltinAdd:
          operation->type = PIPE_ML_OPERATION_TYPE_ADD;
          break;
+      case kTfLiteBuiltinConcatenation:
+         operation->type = PIPE_ML_OPERATION_TYPE_CONCATENATION;
+         break;
+      case kTfLiteBuiltinSplit:
+         operation->type = PIPE_ML_OPERATION_TYPE_SPLIT;
+         break;
       default:
          unreachable("Unsupported ML operation type");
    }
@@ -224,8 +230,14 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
          case PIPE_ML_OPERATION_TYPE_CONVOLUTION:
             teflon_debug("%-6s ", operations[i].conv.depthwise ? "DWCONV" : "CONV");
             break;
+         case PIPE_ML_OPERATION_TYPE_CONCATENATION:
+            teflon_debug("%-6s ", "CONCAT");
+            break;
          case PIPE_ML_OPERATION_TYPE_POOLING:
             teflon_debug("%-6s ", "POOL");
+            break;
+         case PIPE_ML_OPERATION_TYPE_SPLIT:
+            teflon_debug("%-6s ", "SPLIT");
             break;
       }
 
@@ -516,6 +528,36 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
          case kTfLiteBuiltinAdd:
             supported = true;
             break;
+         case kTfLiteBuiltinConcatenation: {
+            TfLiteConcatenationParams *params = node->builtin_data;
+            supported = true;
+
+            if (params->axis != 3 &&
+                params->axis != -1)
+               supported = false;
+
+            unsigned input_channels = context->tensors[node->inputs->data[0]].dims->data[3];
+            for (unsigned i = 1; i < node->inputs->size; i++)
+               if (input_channels != context->tensors[node->inputs->data[i]].dims->data[3])
+                  supported = false;
+
+            break;
+         }
+         case kTfLiteBuiltinSplit: {
+            int32_t axis = context->tensors[node->inputs->data[0]].data.i32[0];
+            supported = true;
+
+            if (axis != 3 &&
+                axis != -1)
+               supported = false;
+
+            unsigned output_channels = context->tensors[node->outputs->data[0]].dims->data[3];
+            for (unsigned i = 1; i < node->outputs->size; i++)
+               if (output_channels != context->tensors[node->outputs->data[i]].dims->data[3])
+                  supported = false;
+
+            break;
+         }
       }
 
       if (supported)
