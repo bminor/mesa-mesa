@@ -1056,6 +1056,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
                 is_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
                 is_dirty(cmdbuf, DS_STENCIL_REFERENCE) ||
                 is_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
+                is_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
                 is_dirty(cmdbuf, RS_DEPTH_BIAS_ENABLE) ||
                 is_dirty(cmdbuf, RS_DEPTH_BIAS_FACTORS) ||
                 /* fs_required() uses ms.alpha_to_coverage_enable
@@ -1110,6 +1111,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
       cfg.front_reference_value = ds->stencil.front.reference;
       cfg.back_reference_value = ds->stencil.back.reference;
 
+      cfg.depth_cull_enable = vk_rasterization_state_depth_clip_enable(rs);
       if (rs->depth_clamp_enable)
          cfg.depth_clamp_mode = MALI_DEPTH_CLAMP_MODE_BOUNDS;
 
@@ -1294,8 +1296,10 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
-   const struct vk_input_assembly_state *ia =
-      &cmdbuf->vk.dynamic_graphics_state.ia;
+   const struct vk_dynamic_graphics_state *dyns =
+      &cmdbuf->vk.dynamic_graphics_state;
+   const struct vk_input_assembly_state *ia = &dyns->ia;
+   const struct vk_rasterization_state *rs = &dyns->rs;
 
    struct mali_primitive_flags_packed tiler_idvs_flags;
    bool writes_point_size =
@@ -1312,6 +1316,8 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
                 is_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
                 is_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
                 is_dirty(cmdbuf, CB_WRITE_MASKS) ||
+                is_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
+                is_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
                 is_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||
                 is_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
                 cmdbuf->state.gfx.fs.spd != get_fs_spd(fs);
@@ -1332,6 +1338,9 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
             cfg.layer_index_enable = true;
             cfg.position_fifo_format = MALI_FIFO_FORMAT_EXTENDED;
          }
+
+         cfg.low_depth_cull = cfg.high_depth_cull =
+            vk_rasterization_state_depth_clip_enable(rs);
 
          cfg.secondary_shader =
             vs->info.vs.secondary_enable && fs_required(cmdbuf);
