@@ -966,6 +966,7 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
         screen->has_cache_flush =
                 v3d_has_feature(screen, DRM_V3D_PARAM_SUPPORTS_CACHE_FLUSH);
         screen->has_perfmon = v3d_has_feature(screen, DRM_V3D_PARAM_SUPPORTS_PERFMON);
+        screen->has_cpu_queue = v3d_has_feature(screen, DRM_V3D_PARAM_SUPPORTS_CPU_QUEUE);
 
         v3d_fence_screen_init(screen);
 
