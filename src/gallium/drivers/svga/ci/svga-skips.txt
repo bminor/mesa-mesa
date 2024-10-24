@@ -25,3 +25,7 @@ spec@ext_texture_array@fbo-depth-array stencil-layered-clear
 # low-freq intermittent tessellation failures
 spec@arb_tessellation_shader@execution@tcs-input@tcs-input-mat2
 spec@arb_tessellation_shader@execution@tcs-input@tcs-input-uvec2_2
+
+# uprev Piglit in Mesa
+spec@arb_tessellation_shader@execution@built-in-functions@tcs-degrees-vec4
+

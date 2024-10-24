@@ -1233,3 +1233,10 @@ arm32-dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_mirror_non_squ
 arm32-dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_clamp_non_square,Fail
 dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_mirror_non_square,Fail
 dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_clamp_non_square,Fail
+
+# uprev Piglit in Mesa
+spec@glsl-1.20@execution@vs-loop-uint-induction-var-1,Fail
+spec@glsl-1.20@execution@vs-loop-uint-induction-var-3,Fail
+spec@glsl-1.20@execution@vs-loop-uint-induction-var-2,Fail
+spec@glsl-1.20@execution@vs-loop-uint-induction-var-4,Fail
+
