@@ -268,7 +268,7 @@ lower_operations(struct etna_ml_subgraph *subgraph,
             if (needs_transpose(poperations, count, poperation)) {
                ML_DBG("Adding transpose for convolution operation.\n");
                struct etna_operation *operation = calloc(1, sizeof(*operation));
-               etna_ml_lower_transpose(subgraph, poperation, operation, &input_tensor);
+               etna_ml_lower_transpose(subgraph, poperation->input_tensors[0], operation, &input_tensor);
                list_addtail(&operation->link, etna_operations);
             }
 

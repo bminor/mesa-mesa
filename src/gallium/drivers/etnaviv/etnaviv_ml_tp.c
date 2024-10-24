@@ -536,7 +536,7 @@ create_reshuffle_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
 }
 
 static inline uint8_t
-etna_tensor_zero_point(struct pipe_tensor *tensor)
+etna_tensor_zero_point(const struct pipe_tensor *tensor)
 {
    if (tensor->is_signed) {
       assert(tensor->zero_point >= -128 && tensor->zero_point <= 127);
@@ -549,30 +549,31 @@ etna_tensor_zero_point(struct pipe_tensor *tensor)
 
 void
 etna_ml_lower_transpose(struct etna_ml_subgraph *subgraph,
-                        const struct pipe_ml_operation *first_operation,
+                        const struct pipe_tensor *input_tensor,
                         struct etna_operation *operation,
                         unsigned *output_tensor)
 {
    operation->type = ETNA_JOB_TYPE_TP;
    operation->tp_type = ETNA_ML_TP_TRANSPOSE;
 
-   operation->input_tensors[0] = first_operation->input_tensors[0]->index;
-   operation->input_width = first_operation->input_tensors[0]->dims[1];
-   operation->input_height = first_operation->input_tensors[0]->dims[2];
-   operation->input_channels = first_operation->input_tensors[0]->dims[3];
-   operation->input_zero_point = etna_tensor_zero_point(first_operation->input_tensors[0]);
-   operation->input_scale = first_operation->input_tensors[0]->scale;
+   operation->input_tensors[0] = input_tensor->index;
+   operation->input_count = 1;
+   operation->input_width = input_tensor->dims[1];
+   operation->input_height = input_tensor->dims[2];
+   operation->input_channels = input_tensor->dims[3];
+   operation->input_zero_point = etna_tensor_zero_point(input_tensor);
+   operation->input_scale = input_tensor->scale;
    operation->input_tensor_size = operation->input_width *
                                   operation->input_height *
                                   operation->input_channels;
 
    *output_tensor = etna_ml_allocate_tensor(subgraph);
    operation->output_tensor = *output_tensor;
-   operation->output_width = first_operation->input_tensors[0]->dims[1];
-   operation->output_height = first_operation->input_tensors[0]->dims[2];
-   operation->output_channels = first_operation->input_tensors[0]->dims[3];
-   operation->output_zero_point = etna_tensor_zero_point(first_operation->input_tensors[0]);
-   operation->output_scale = first_operation->input_tensors[0]->scale;
+   operation->output_width = operation->input_width;
+   operation->output_height = operation->input_height;
+   operation->output_channels = operation->input_channels;
+   operation->output_zero_point = operation->input_zero_point;
+   operation->output_scale = operation->input_scale;
 }
 
 void

@@ -7,7 +7,7 @@
 
 void
 etna_ml_lower_transpose(struct etna_ml_subgraph *subgraph,
-                        const struct pipe_ml_operation *first_operation,
+                        const struct pipe_tensor *input_tensor,
                         struct etna_operation *operation,
                         unsigned *output_tensor);
 
