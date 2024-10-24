@@ -1136,7 +1136,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    bool supported;
    bool realloc = false;
    bool apply_av1_fg = false;
-   enum pipe_format format;
    struct pipe_video_buffer **out_target;
    int output_id;
 
@@ -1198,17 +1197,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       realloc = true;
    }
 
-   format = screen->get_video_param(screen, context->decoder->profile,
-                                    context->decoder->entrypoint,
-                                    PIPE_VIDEO_CAP_PREFERED_FORMAT);
-
-   if (surf->buffer->buffer_format != format &&
-       surf->buffer->buffer_format == PIPE_FORMAT_NV12) {
-      /* check originally as NV12 only */
-      surf->templat.buffer_format = format;
-      realloc = true;
-   }
-
    if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_JPEG) {
       if (surf->buffer->buffer_format == PIPE_FORMAT_NV12 &&
           context->mjpeg.sampling_factor != MJPEG_SAMPLING_FACTOR_NV12) {
@@ -1251,15 +1239,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       else
          surf->templat.bind &= ~PIPE_BIND_PROTECTED;
       realloc = true;
-   }
-
-   if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_AV1 &&
-       surf->buffer->buffer_format == PIPE_FORMAT_NV12 &&
-       context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM) {
-      if (context->desc.av1.picture_parameter.bit_depth_idx == 1) {
-         surf->templat.buffer_format = PIPE_FORMAT_P010;
-         realloc = true;
-      }
    }
 
    if (realloc) {
