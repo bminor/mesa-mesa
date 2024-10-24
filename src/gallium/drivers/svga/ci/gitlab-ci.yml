@@ -25,13 +25,13 @@ vmware-vmx-piglit:x86_64:
     - .lava-piglit:x86_64
     - .vmware-rules
   timeout: 30m
+  parallel: 2
   variables:
     VISIBILITY_GROUP: "mesa-ci"
     GALLIUM_DRIVER: svga
     GPU_VERSION: svga
     PIGLIT_PLATFORM: mixed_glx_egl
     PIGLIT_PROFILES: gpu
-    PIGLIT_FRACTION: 2
     HWCI_START_WESTON: 1
     RUNNER_TAG: mesa-ci-x86-64-lava-vmware
     DEVICE_TYPE: x86
