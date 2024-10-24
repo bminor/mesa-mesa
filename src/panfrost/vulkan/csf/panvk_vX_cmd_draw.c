@@ -558,7 +558,7 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
             MAX2((int)viewport->y, (int)(viewport->y + viewport->height));
 
          assert(scissor->offset.x >= 0 && scissor->offset.y >= 0);
-         miny = MAX2(scissor->offset.x, minx);
+         minx = MAX2(scissor->offset.x, minx);
          miny = MAX2(scissor->offset.y, miny);
          maxx = MIN2(scissor->offset.x + scissor->extent.width, maxx);
          maxy = MIN2(scissor->offset.y + scissor->extent.height, maxy);
