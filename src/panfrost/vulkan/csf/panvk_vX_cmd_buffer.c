@@ -75,6 +75,39 @@ emit_tls(struct panvk_cmd_buffer *cmdbuf)
    }
 }
 
+/**
+ * Write all sync point updates to seqno registers and reset the relative sync
+ * points to 0.
+ */
+static void
+flush_sync_points(struct panvk_cmd_buffer *cmdbuf)
+{
+   for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->state.cs); i++) {
+      struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
+
+      if (!cs_is_valid(b)) {
+         vk_command_buffer_set_error(&cmdbuf->vk,
+                                     VK_ERROR_OUT_OF_DEVICE_MEMORY);
+         return;
+      }
+
+      cs_update_progress_seqno(b) {
+         for (uint32_t j = 0; j < PANVK_SUBQUEUE_COUNT; j++) {
+            uint32_t rel_sync_point = cmdbuf->state.cs[j].relative_sync_point;
+
+            if (!rel_sync_point)
+               continue;
+
+            cs_add64(b, cs_progress_seqno_reg(b, j), cs_progress_seqno_reg(b, j),
+                     rel_sync_point);
+         }
+      }
+   }
+
+   for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->state.cs); i++)
+      cmdbuf->state.cs[i].relative_sync_point = 0;
+}
+
 static void
 finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
 {
@@ -82,18 +115,6 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
    struct panvk_instance *instance =
       to_panvk_instance(dev->vk.physical->instance);
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
-
-   cs_update_progress_seqno(b) {
-      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-         uint32_t rel_sync_point = cmdbuf->state.cs[i].relative_sync_point;
-
-         if (!rel_sync_point)
-            continue;
-
-         cs_add64(b, cs_progress_seqno_reg(b, i), cs_progress_seqno_reg(b, i),
-                  rel_sync_point);
-      }
-   }
 
    /* We need a clean because descriptor/CS memory can be returned to the
     * command pool where they get recycled. If we don't clean dirty cache lines,
@@ -150,6 +171,7 @@ panvk_per_arch(EndCommandBuffer)(VkCommandBuffer commandBuffer)
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
 
    emit_tls(cmdbuf);
+   flush_sync_points(cmdbuf);
 
    for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->state.cs); i++) {
       struct cs_builder *b = &cmdbuf->state.cs[i].builder;
@@ -742,6 +764,10 @@ panvk_per_arch(CmdExecuteCommands)(VkCommandBuffer commandBuffer,
 
    if (commandBufferCount == 0)
       return;
+
+   /* Write out any pending seqno changes to registers before calling
+    * secondary command buffers. */
+   flush_sync_points(primary);
 
    for (uint32_t i = 0; i < commandBufferCount; i++) {
       VK_FROM_HANDLE(panvk_cmd_buffer, secondary, pCommandBuffers[i]);
