@@ -6395,7 +6395,10 @@ void genX(CmdResetEvent2)(
 
    case INTEL_ENGINE_CLASS_RENDER:
    case INTEL_ENGINE_CLASS_COMPUTE: {
-      cmd_buffer->state.pending_pipe_bits |= ANV_PIPE_POST_SYNC_BIT;
+      anv_add_pending_pipe_bits(cmd_buffer,
+                                stageMask, 0,
+                                ANV_PIPE_POST_SYNC_BIT,
+                                "event reset");
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
       enum anv_pipe_bits pc_bits = 0;
