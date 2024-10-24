@@ -2,7 +2,7 @@
 # non-zero-length and not starting with '#', will regex match to
 # delete lines from the test list.  Be careful.
 
-# Note normal merge CI also includes -merge-skips.txt, and that's where
+# Note normal merge CI also includes -slow-skips.txt, and that's where
 # "it's slow but would pass/fail/crash within a couple of minutes" skips should go.
 
 # Still running after 3 hours, time is spent in batch_draw_tracking().

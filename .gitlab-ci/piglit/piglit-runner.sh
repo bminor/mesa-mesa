@@ -78,8 +78,8 @@ if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
     PIGLIT_SKIPS="$PIGLIT_SKIPS $INSTALL/$GPU_VERSION-skips.txt"
 fi
 
-if [ -e "$INSTALL/$GPU_VERSION-merge-skips.txt" ] && [ -n "${IS_MERGE_PIPELINE:-}" ]; then
-    PIGLIT_SKIPS="$PIGLIT_SKIPS $INSTALL/$GPU_VERSION-merge-skips.txt"
+if [ -e "$INSTALL/$GPU_VERSION-slow-skips.txt" ] && [ -n "${IS_MERGE_PIPELINE:-}" ]; then
+    PIGLIT_SKIPS="$PIGLIT_SKIPS $INSTALL/$GPU_VERSION-slow-skips.txt"
 fi
 
 if [ "$PIGLIT_PLATFORM" != "gbm" ] ; then

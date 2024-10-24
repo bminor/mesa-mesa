@@ -10,7 +10,7 @@
         - src/freedreno/ci/$GPU_VERSION-fails.txt
         - src/freedreno/ci/$GPU_VERSION-flakes.txt
         - src/freedreno/ci/$GPU_VERSION-skips.txt
-        - src/freedreno/ci/$GPU_VERSION-merge-skips.txt
+        - src/freedreno/ci/$GPU_VERSION-slow-skips.txt
         - src/freedreno/ci/$PIGLIT_TRACES_FILE
         - src/freedreno/ci/$GPU_VERSION-vkd3d-fails.txt
         - src/freedreno/ci/$GPU_VERSION-vkd3d-flakes.txt
