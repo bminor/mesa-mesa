@@ -664,7 +664,8 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
             sscreen->info.ip[AMD_IP_VCN_ENC].num_queues))
          return 0;
 
-      if (sscreen->info.vcn_ip_version == VCN_4_0_3)
+      if (sscreen->info.vcn_ip_version == VCN_4_0_3 ||
+	  sscreen->info.vcn_ip_version == VCN_5_0_1)
 	 return 0;
 
       switch (param) {
@@ -1148,7 +1149,8 @@ static bool si_vid_is_format_supported(struct pipe_screen *screen, enum pipe_for
           (sscreen->info.vcn_ip_version >= VCN_2_0_0)) ||
           ((profile == PIPE_VIDEO_PROFILE_AV1_MAIN) &&
            (sscreen->info.vcn_ip_version >= VCN_4_0_0 &&
-            sscreen->info.vcn_ip_version != VCN_4_0_3))))
+            sscreen->info.vcn_ip_version != VCN_4_0_3 &&
+            sscreen->info.vcn_ip_version != VCN_5_0_1))))
       return (format == PIPE_FORMAT_P010 || format == PIPE_FORMAT_NV12);
 
 
