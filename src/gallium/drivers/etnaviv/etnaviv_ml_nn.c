@@ -9,6 +9,7 @@
 #include "etnaviv_context.h"
 #include "etnaviv_debug.h"
 #include "etnaviv_emit.h"
+#include "etnaviv_ml.h"
 #include "etnaviv_ml_nn.h"
 
 #define ETNA_NN_INT8 0

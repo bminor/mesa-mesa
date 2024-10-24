@@ -389,6 +389,30 @@ lower_operations(struct etna_ml_subgraph *subgraph,
 
             break;
          }
+         case PIPE_ML_OPERATION_TYPE_PAD: {
+            unsigned input_tensor = poperation->input_tensors[0]->index;
+
+            if (needs_transpose(poperations, count, poperation)) {
+               struct etna_operation *operation = calloc(1, sizeof(*operation));
+               etna_ml_lower_transpose(subgraph, poperation->input_tensors[0], operation, &input_tensor);
+               list_addtail(&operation->link, etna_operations);
+            }
+
+            ML_DBG("Adding pad operation.\n");
+            struct etna_operation *operation = calloc(1, sizeof(*operation));
+            etna_ml_lower_pad(subgraph, poperation, operation);
+            operation->input_tensors[0] = input_tensor;
+            list_addtail(&operation->link, etna_operations);
+
+            if (needs_detranspose(poperations, count, poperation)) {
+               struct etna_operation *detranspose = calloc(1, sizeof(*operation));
+               etna_ml_lower_detranspose(subgraph, operation, detranspose);
+               operation->output_tensors[0] = detranspose->input_tensors[0];
+               list_addtail(&detranspose->link, etna_operations);
+            }
+
+            break;
+         }
          default:
             unreachable("Unsupported ML operation type");
       }
@@ -469,6 +493,7 @@ count_tensors(const struct pipe_ml_operation *poperations,
          tensor_count = MAX2(tensor_count, poperation->conv.weight_tensor->index);
          tensor_count = MAX2(tensor_count, poperation->conv.bias_tensor->index);
          break;
+      case PIPE_ML_OPERATION_TYPE_PAD:
       case PIPE_ML_OPERATION_TYPE_ADD:
       case PIPE_ML_OPERATION_TYPE_CONCATENATION:
       case PIPE_ML_OPERATION_TYPE_SPLIT:

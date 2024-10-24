@@ -33,6 +33,7 @@ enum etna_ml_tp_type {
    ETNA_ML_TP_TRANSPOSE,
    ETNA_ML_TP_DETRANSPOSE,
    ETNA_ML_TP_RESHUFFLE,
+   ETNA_ML_TP_PAD,
 };
 
 struct etna_ml_subgraph {
@@ -48,6 +49,7 @@ struct etna_ml_subgraph {
 
 struct etna_vip_instruction {
    enum etna_job_type type;
+   enum etna_ml_tp_type tp_type;
 
    struct etna_bo *configs[MAX_CONFIG_BOS];
    struct etna_bo *coefficients;
