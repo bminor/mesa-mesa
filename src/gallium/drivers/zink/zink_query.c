@@ -662,7 +662,7 @@ get_query_result(struct pipe_context *pctx,
    unsigned flags = PIPE_MAP_READ;
 
    if (!wait)
-      flags |= PIPE_MAP_DONTBLOCK;
+      flags |= ZINK_MAP_QBO;
    if (query->base.flushed)
       /* this is not a context-safe operation; ensure map doesn't use slab alloc */
       flags |= PIPE_MAP_THREAD_SAFE;
