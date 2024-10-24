@@ -319,6 +319,7 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
    bool dirty =
       is_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||
       is_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
+      is_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
       is_dirty(cmdbuf, RS_DEPTH_BIAS_ENABLE) ||
       is_dirty(cmdbuf, RS_DEPTH_BIAS_FACTORS) ||
       is_dirty(cmdbuf, CB_LOGIC_OP_ENABLE) || is_dirty(cmdbuf, CB_LOGIC_OP) ||
@@ -435,8 +436,10 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
       cfg.multisample_misc.depth_write_mask = writes_z;
       cfg.multisample_misc.fixed_function_near_discard =
+      cfg.multisample_misc.fixed_function_far_discard =
+         vk_rasterization_state_depth_clip_enable(rs);
+      cfg.multisample_misc.fixed_function_depth_range_fixed =
          !rs->depth_clamp_enable;
-      cfg.multisample_misc.fixed_function_far_discard = !rs->depth_clamp_enable;
       cfg.multisample_misc.shader_depth_range_fixed = true;
 
       cfg.stencil_mask_misc.stencil_enable = test_s;
@@ -919,8 +922,10 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
                            const struct panvk_draw_info *draw, void *prim)
 {
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
-   const struct vk_input_assembly_state *ia =
-      &cmdbuf->vk.dynamic_graphics_state.ia;
+   const struct vk_dynamic_graphics_state *dyns =
+      &cmdbuf->vk.dynamic_graphics_state;
+   const struct vk_input_assembly_state *ia = &dyns->ia;
+   const struct vk_rasterization_state *rs = &dyns->rs;
    bool writes_point_size =
       vs->info.vs.writes_point_size &&
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -958,6 +963,9 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
          cfg.index_count = draw->vertex_count;
          cfg.index_type = MALI_INDEX_TYPE_NONE;
       }
+
+      cfg.low_depth_cull = cfg.high_depth_cull =
+         vk_rasterization_state_depth_clip_enable(rs);
 
       cfg.secondary_shader = secondary_shader;
    }
