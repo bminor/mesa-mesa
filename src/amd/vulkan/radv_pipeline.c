@@ -64,8 +64,10 @@ radv_pipeline_capture_shader_stats(const struct radv_device *device, VkPipelineC
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
+   /* Capture shader statistics when RGP is enabled to correlate shader hashes with Fossilize. */
    return (flags & VK_PIPELINE_CREATE_2_CAPTURE_STATISTICS_BIT_KHR) ||
-          (instance->debug_flags & RADV_DEBUG_DUMP_SHADER_STATS) || device->keep_shader_info;
+          (instance->debug_flags & RADV_DEBUG_DUMP_SHADER_STATS) || device->keep_shader_info ||
+          (instance->vk.trace_mode & RADV_TRACE_MODE_RGP);
 }
 
 void
