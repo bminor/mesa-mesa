@@ -625,7 +625,6 @@ static void calculate_yuv_matrix(struct vpe_color_adjustments *vpe_adjust,
 
     color_adjustments_to_fixed_point(
         vpe_adjust, ovl, &grph_cont, &grph_sat, &grph_bright, &sin_grph_hue, &cos_grph_hue);
-    grph_bright = vpe_fixpt_sub(grph_bright, lumaOffset);
 
     multiplier  = vpe_fixpt_mul(grph_cont, grph_sat); // contSat
 
