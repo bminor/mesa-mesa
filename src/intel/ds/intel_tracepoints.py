@@ -272,10 +272,46 @@ def define_tracepoints(args):
             bits.append(Arg(type='bool', name=a[1], var='__entry->flags & INTEL_DS_{0}_BIT'.format(a[0]), c_format='%u'))
         return bits
 
-    def stall_args(args):
+    def stall_args(stall_bits):
         fmt = ''
         exprs = []
-        for a in args:
+        for a in stall_bits:
+            fmt += '%s'
+            exprs.append('(__entry->flags & INTEL_DS_{0}_BIT) ? "+{1}" : ""'.format(a[0], a[1]))
+        fmt += ' : %s%s%s%s%s%s%s'
+        exprs.append('(__entry->reason1) ? __entry->reason1 : "unknown"')
+        exprs.append('(__entry->reason2) ? "; " : ""')
+        exprs.append('(__entry->reason2) ? __entry->reason2 : ""')
+        exprs.append('(__entry->reason3) ? "; " : ""')
+        exprs.append('(__entry->reason3) ? __entry->reason3 : ""')
+        exprs.append('(__entry->reason4) ? "; " : ""')
+        exprs.append('(__entry->reason4) ? __entry->reason4 : ""')
+        # To printout flags
+        # fmt += '(0x%08x)'
+        # exprs.append('__entry->flags')
+        fmt = [fmt]
+        fmt += exprs
+        return fmt
+
+    def barrier_args(stage_bits, stall_bits):
+        fmt = ''
+        exprs = []
+
+        fmt += '%s '
+        exprs.append('(__entry->type == INTEL_DS_BARRIER_TYPE_IMMEDIATE) ? "IMMEDIATE" : ' +
+                     '(__entry->type == INTEL_DS_BARRIER_TYPE_SIGNAL)    ? "SIGNAL" : ' +
+                     '(__entry->type == INTEL_DS_BARRIER_TYPE_WAIT)      ? "WAIT" : "unknown"')
+
+        for a in stages_bits:
+            fmt += '%s'
+            exprs.append('(__entry->signal_stages & INTEL_DS_STAGES_{0}_BIT) ? "+{1}" : ""'.format(a[0], a[1]))
+        fmt += '->'
+        for a in stages_bits:
+            fmt += '%s'
+            exprs.append('(__entry->wait_stages & INTEL_DS_STAGES_{0}_BIT) ? "+{1}" : ""'.format(a[0], a[1]))
+        fmt += ': '
+
+        for a in stall_bits:
             fmt += '%s'
             exprs.append('(__entry->flags & INTEL_DS_{0}_BIT) ? "+{1}" : ""'.format(a[0], a[1]))
         fmt += ' : %s%s%s%s%s%s%s'
@@ -310,6 +346,37 @@ def define_tracepoints(args):
                    ['PSS_STALL_SYNC',                'pss_stall'],
                    ['END_OF_PIPE',                   'eop'],
                    ['CCS_CACHE_FLUSH',               'ccs_flush']]
+
+    stages_bits = [['TOP',    'top'],
+                   ['GEOM',   'geom'],
+                   ['RASTER', 'raster'],
+                   ['DEPTH',  'depth'],
+                   ['PIXEL',  'pixel'],
+                   ['COLOR',  'color'],
+                   ['GPGPU',  'gpgpu']]
+
+    begin_end_tp('barrier',
+                 tp_args=[ArgStruct(type='uint8_t', var='type'),
+                          ArgStruct(type='uint32_t', var='signal_stages'),
+                          ArgStruct(type='uint32_t', var='wait_stages'),
+                          ArgStruct(type='intel_ds_stages_cb_t', var='decode_stage_cb'),
+                          ArgStruct(type='uint32_t', var='flags'),
+                          ArgStruct(type='intel_ds_stall_cb_t', var='decode_flags_cb'),
+                          ArgStruct(type='const char *', var='reason1'),
+                          ArgStruct(type='const char *', var='reason2'),
+                          ArgStruct(type='const char *', var='reason3'),
+                          ArgStruct(type='const char *', var='reason4'),],
+                 tp_struct=[Arg(type='uint8_t', name='type', var='type', c_format='0x%hhx'),
+                            Arg(type='uint8_t', name='signal_stages', var='decode_stage_cb(signal_stages)', c_format='0x%hhx'),
+                            Arg(type='uint8_t', name='wait_stages', var='decode_stage_cb(wait_stages)', c_format='0x%hhx'),
+                            Arg(type='uint32_t', name='flags', var='decode_flags_cb(flags)', c_format='0x%x'),
+                            Arg(type='const char *', name='reason1', var='reason1', c_format='%s'),
+                            Arg(type='const char *', name='reason2', var='reason2', c_format='%s'),
+                            Arg(type='const char *', name='reason3', var='reason3', c_format='%s'),
+                            Arg(type='const char *', name='reason4', var='reason4', c_format='%s'),],
+                 tp_print=barrier_args(stages_bits, stall_flags),
+                 tp_default_enabled=False,
+                 end_pipelined=False)
 
     begin_end_tp('stall',
                  tp_args=[ArgStruct(type='uint32_t', var='flags'),

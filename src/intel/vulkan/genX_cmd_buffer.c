@@ -1734,6 +1734,41 @@ anv_dump_rsc_barrier_body(const struct GENX(RESOURCE_BARRIER_BODY) body) {
    mesa_log_stream_destroy(stream);
 }
 
+static inline enum intel_ds_stages
+resource_barrier_stage_to_ds(uint8_t stages)
+{
+   enum intel_ds_stages ret = 0;
+
+   u_foreach_bit(b, stages) {
+      switch (BITFIELD_BIT(b)) {
+      case RESOURCE_BARRIER_STAGE_TOP:
+         ret |= INTEL_DS_STAGES_TOP_BIT;
+         break;
+      case RESOURCE_BARRIER_STAGE_GEOM:
+         ret |= INTEL_DS_STAGES_GEOM_BIT;
+         break;
+      case RESOURCE_BARRIER_STAGE_RASTER:
+         ret |= INTEL_DS_STAGES_RASTER_BIT;
+         break;
+      case RESOURCE_BARRIER_STAGE_DEPTH:
+         ret |= INTEL_DS_STAGES_DEPTH_BIT;
+         break;
+      case RESOURCE_BARRIER_STAGE_PIXEL:
+         ret |= INTEL_DS_STAGES_PIXEL_BIT;
+         break;
+      case RESOURCE_BARRIER_STAGE_COLOR:
+         ret |= INTEL_DS_STAGES_COLOR_BIT;
+         break;
+      case RESOURCE_BARRIER_STAGE_GPGPU:
+         ret |= INTEL_DS_STAGES_GPGPU_BIT;
+         break;
+      default:
+         UNREACHABLE("invalid barrier stage");
+      }
+   }
+   return ret;
+}
+
 ALWAYS_INLINE static enum GENX(RESOURCE_BARRIER_STAGE)
 resource_barrier_signal_stage(enum intel_engine_class engine_class,
                               const VkPipelineStageFlags2 vk_stages)
@@ -1928,6 +1963,8 @@ emit_resource_barrier(struct anv_batch *batch,
                       struct anv_address signal_addr,
                       struct anv_address wait_addr)
 {
+   trace_intel_begin_barrier(batch->trace);
+
    enum GENX(RESOURCE_BARRIER_STAGE) signal_stages =
       resource_barrier_signal_stage(batch->engine_class, src_stages);
    enum GENX(RESOURCE_BARRIER_STAGE) wait_stages =
@@ -2034,6 +2071,20 @@ emit_resource_barrier(struct anv_batch *batch,
 
       anv_dump_rsc_barrier_body(barrier.ResourceBarrierBody);
    }
+
+   trace_intel_end_barrier(batch->trace,
+                           barrier_type, signal_stages, wait_stages,
+                           resource_barrier_stage_to_ds,
+                           bits, anv_pipe_flush_bit_to_ds_stall_flag,
+                           batch->pc_reasons[0],
+                           batch->pc_reasons[1],
+                           batch->pc_reasons[2],
+                           batch->pc_reasons[3]);
+   batch->pc_reasons[0] = NULL;
+   batch->pc_reasons[1] = NULL;
+   batch->pc_reasons[2] = NULL;
+   batch->pc_reasons[3] = NULL;
+   batch->pc_reasons_count = 0;
 }
 
 #endif /* GFX_VER >= 20 */

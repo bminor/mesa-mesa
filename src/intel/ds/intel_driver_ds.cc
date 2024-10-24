@@ -307,42 +307,112 @@ end_event(struct intel_ds_queue *queue, uint64_t ts_ns,
    stage->start_ns[level] = 0;
 }
 
+static size_t
+snprintf_stages(char *buf, size_t buf_size,
+                enum intel_ds_barrier_type type,
+                enum intel_ds_stages signal_stages,
+                enum intel_ds_stages wait_stages)
+{
+   return
+      snprintf(buf, buf_size, "%s: %s%s%s%s%s%s%s->%s%s%s%s%s%s%s: ",
+               type == INTEL_DS_BARRIER_TYPE_IMMEDIATE ? "imm" :
+               type == INTEL_DS_BARRIER_TYPE_SIGNAL    ? "signal" :
+               type == INTEL_DS_BARRIER_TYPE_WAIT      ? "wait" : "unknown",
+               (signal_stages & INTEL_DS_STAGES_TOP_BIT)    ? "+top" : "",
+               (signal_stages & INTEL_DS_STAGES_GEOM_BIT)   ? "+geom" : "",
+               (signal_stages & INTEL_DS_STAGES_RASTER_BIT) ? "+rast" : "",
+               (signal_stages & INTEL_DS_STAGES_DEPTH_BIT)  ? "+ds" : "",
+               (signal_stages & INTEL_DS_STAGES_PIXEL_BIT)  ? "+pix" : "",
+               (signal_stages & INTEL_DS_STAGES_COLOR_BIT)  ? "+col" : "",
+               (signal_stages & INTEL_DS_STAGES_GPGPU_BIT)  ? "+cs" : "",
+               (wait_stages & INTEL_DS_STAGES_TOP_BIT)    ? "+top" : "",
+               (wait_stages & INTEL_DS_STAGES_GEOM_BIT)   ? "+geom" : "",
+               (wait_stages & INTEL_DS_STAGES_RASTER_BIT) ? "+rast" : "",
+               (wait_stages & INTEL_DS_STAGES_DEPTH_BIT)  ? "+ds" : "",
+               (wait_stages & INTEL_DS_STAGES_PIXEL_BIT)  ? "+pix" : "",
+               (wait_stages & INTEL_DS_STAGES_COLOR_BIT)  ? "+col" : "",
+               (wait_stages & INTEL_DS_STAGES_GPGPU_BIT)  ? "+cs" : "");
+}
+
+static size_t
+snprintf_flags(char *buf, size_t buf_size, enum intel_ds_stall_flag bits)
+{
+   return
+      snprintf(buf, buf_size, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               (bits & INTEL_DS_DEPTH_CACHE_FLUSH_BIT) ? "+depth_flush" : "",
+               (bits & INTEL_DS_DATA_CACHE_FLUSH_BIT) ? "+dc_flush" : "",
+               (bits & INTEL_DS_HDC_PIPELINE_FLUSH_BIT) ? "+hdc_flush" : "",
+               (bits & INTEL_DS_RENDER_TARGET_CACHE_FLUSH_BIT) ? "+rt_flush" : "",
+               (bits & INTEL_DS_TILE_CACHE_FLUSH_BIT) ? "+tile_flush" : "",
+               (bits & INTEL_DS_L3_FABRIC_FLUSH_BIT) ? "+l3_fabric_flush" : "",
+               (bits & INTEL_DS_STATE_CACHE_INVALIDATE_BIT) ? "+state_inv" : "",
+               (bits & INTEL_DS_CONST_CACHE_INVALIDATE_BIT) ? "+const_inv" : "",
+               (bits & INTEL_DS_VF_CACHE_INVALIDATE_BIT) ? "+vf_inv" : "",
+               (bits & INTEL_DS_TEXTURE_CACHE_INVALIDATE_BIT) ? "+tex_inv" : "",
+               (bits & INTEL_DS_INST_CACHE_INVALIDATE_BIT) ? "+inst_inv" : "",
+               (bits & INTEL_DS_STALL_AT_SCOREBOARD_BIT) ? "+pb_stall" : "",
+               (bits & INTEL_DS_DEPTH_STALL_BIT) ? "+depth_stall" : "",
+               (bits & INTEL_DS_CS_STALL_BIT) ? "+cs_stall" : "",
+               (bits & INTEL_DS_UNTYPED_DATAPORT_CACHE_FLUSH_BIT) ? "+udp_flush" : "",
+               (bits & INTEL_DS_END_OF_PIPE_BIT) ? "+eop" : "",
+               (bits & INTEL_DS_CCS_CACHE_FLUSH_BIT) ? "+ccs_flush" : "");
+}
+
+static size_t
+snprintf_reasons(char *buf, size_t buf_size,
+                 const char *r1, const char *r2,
+                 const char *r3, const char *r4)
+{
+   return
+      snprintf(buf, buf_size, ": %s%s%s%s%s%s%s",
+               r1 ? r1 : "unknown",
+               r2 ? "; " : "", r2 ? r2 : "",
+               r3 ? "; " : "", r3 ? r3 : "",
+               r4 ? "; " : "", r4 ? r4 : "");
+}
+
 static void
 custom_trace_payload_as_extra_end_stall(perfetto::protos::pbzero::GpuRenderStageEvent *event,
                                         const struct trace_intel_end_stall *payload)
 {
    char buf[256];
+   size_t buf_size = 0;
 
    {
       auto data = event->add_extra_data();
-      data->set_name("stall_reason");
+      data->set_name("reason");
 
-      snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s : %s%s%s%s%s%s%s",
-              (payload->flags & INTEL_DS_DEPTH_CACHE_FLUSH_BIT) ? "+depth_flush" : "",
-              (payload->flags & INTEL_DS_DATA_CACHE_FLUSH_BIT) ? "+dc_flush" : "",
-              (payload->flags & INTEL_DS_HDC_PIPELINE_FLUSH_BIT) ? "+hdc_flush" : "",
-              (payload->flags & INTEL_DS_RENDER_TARGET_CACHE_FLUSH_BIT) ? "+rt_flush" : "",
-              (payload->flags & INTEL_DS_TILE_CACHE_FLUSH_BIT) ? "+tile_flush" : "",
-              (payload->flags & INTEL_DS_L3_FABRIC_FLUSH_BIT) ? "+l3_fabric_flush" : "",
-              (payload->flags & INTEL_DS_STATE_CACHE_INVALIDATE_BIT) ? "+state_inv" : "",
-              (payload->flags & INTEL_DS_CONST_CACHE_INVALIDATE_BIT) ? "+const_inv" : "",
-              (payload->flags & INTEL_DS_VF_CACHE_INVALIDATE_BIT) ? "+vf_inv" : "",
-              (payload->flags & INTEL_DS_TEXTURE_CACHE_INVALIDATE_BIT) ? "+tex_inv" : "",
-              (payload->flags & INTEL_DS_INST_CACHE_INVALIDATE_BIT) ? "+inst_inv" : "",
-              (payload->flags & INTEL_DS_STALL_AT_SCOREBOARD_BIT) ? "+pb_stall" : "",
-              (payload->flags & INTEL_DS_DEPTH_STALL_BIT) ? "+depth_stall" : "",
-              (payload->flags & INTEL_DS_CS_STALL_BIT) ? "+cs_stall" : "",
-              (payload->flags & INTEL_DS_UNTYPED_DATAPORT_CACHE_FLUSH_BIT) ? "+udp_flush" : "",
-              (payload->flags & INTEL_DS_END_OF_PIPE_BIT) ? "+eop" : "",
-              (payload->flags & INTEL_DS_CCS_CACHE_FLUSH_BIT) ? "+ccs_flush" : "",
-              (payload->reason1) ? payload->reason1 : "unknown",
-              (payload->reason2) ? "; " : "",
-              (payload->reason2) ? payload->reason2 : "",
-              (payload->reason3) ? "; " : "",
-              (payload->reason3) ? payload->reason3 : "",
-              (payload->reason4) ? "; " : "",
-              (payload->reason4) ? payload->reason4 : "");
+      buf_size += snprintf_flags(buf + buf_size, sizeof(buf) - buf_size,
+                                 (enum intel_ds_stall_flag) payload->flags);
+      buf_size += snprintf_reasons(buf + buf_size, sizeof(buf) - buf_size,
+                                   payload->reason1, payload->reason2,
+                                   payload->reason3, payload->reason4);
+      assert(strlen(buf) > 0);
 
+      data->set_value(buf);
+   }
+}
+
+static void
+custom_trace_payload_as_extra_end_barrier(perfetto::protos::pbzero::GpuRenderStageEvent *event,
+                                          const struct trace_intel_end_barrier *payload)
+{
+   char buf[256];
+   size_t buf_size = 0;
+
+   {
+      auto data = event->add_extra_data();
+      data->set_name("reason");
+
+      buf_size += snprintf_stages(buf + buf_size, sizeof(buf) - buf_size,
+                                  (enum intel_ds_barrier_type) payload->type,
+                                  (enum intel_ds_stages) payload->signal_stages,
+                                  (enum intel_ds_stages) payload->wait_stages);
+      buf_size += snprintf_flags(buf + buf_size, sizeof(buf) - buf_size,
+                                 (enum intel_ds_stall_flag) payload->flags);
+      buf_size += snprintf_reasons(buf + buf_size, sizeof(buf) - buf_size,
+                                   payload->reason1, payload->reason2,
+                                   payload->reason3, payload->reason4);
       assert(strlen(buf) > 0);
 
       data->set_value(buf);
@@ -512,6 +582,34 @@ intel_ds_end_stall(struct intel_ds_device *device,
    end_event(flush->queue, ts_ns, INTEL_DS_QUEUE_STAGE_STALL,
              flush->submission_id, tp_idx, NULL, payload, indirect_data,
              (trace_payload_as_extra_func)custom_trace_payload_as_extra_end_stall);
+}
+
+void
+intel_ds_begin_barrier(struct intel_ds_device *device,
+                       uint64_t ts_ns,
+                       uint16_t tp_idx,
+                       const void *flush_data,
+                       const struct trace_intel_begin_barrier *payload,
+                       const void *indirect_data)
+{
+   const struct intel_ds_flush_data *flush =
+      (const struct intel_ds_flush_data *) flush_data;
+   begin_event(flush->queue, ts_ns, INTEL_DS_QUEUE_STAGE_STALL);
+}
+
+void
+intel_ds_end_barrier(struct intel_ds_device *device,
+                     uint64_t ts_ns,
+                     uint16_t tp_idx,
+                     const void *flush_data,
+                     const struct trace_intel_end_barrier *payload,
+                     const void *indirect_data)
+{
+   const struct intel_ds_flush_data *flush =
+      (const struct intel_ds_flush_data *) flush_data;
+   end_event(flush->queue, ts_ns, INTEL_DS_QUEUE_STAGE_STALL,
+             flush->submission_id, tp_idx, NULL, payload, indirect_data,
+             (trace_payload_as_extra_func)custom_trace_payload_as_extra_end_barrier);
 }
 
 uint64_t
