@@ -1133,7 +1133,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    vlVaSurface *surf;
    void *feedback = NULL;
    struct pipe_screen *screen;
-   bool supported;
    bool realloc = false;
    bool apply_av1_fg = false;
    struct pipe_video_buffer **out_target;
@@ -1183,19 +1182,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    context->mpeg4.frame_num++;
 
    screen = context->decoder->context->screen;
-   supported = screen->get_video_param(screen, context->decoder->profile,
-                                       context->decoder->entrypoint,
-                                       surf->buffer->interlaced ?
-                                       PIPE_VIDEO_CAP_SUPPORTS_INTERLACED :
-                                       PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE);
-
-   if (!supported) {
-      surf->templat.interlaced = screen->get_video_param(screen,
-                                       context->decoder->profile,
-                                       context->decoder->entrypoint,
-                                       PIPE_VIDEO_CAP_PREFERS_INTERLACED);
-      realloc = true;
-   }
 
    if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_JPEG) {
       if (surf->buffer->buffer_format == PIPE_FORMAT_NV12 &&
@@ -1247,24 +1233,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       if (vlVaHandleSurfaceAllocate(drv, surf, &surf->templat, NULL, 0) != VA_STATUS_SUCCESS) {
          mtx_unlock(&drv->mutex);
          return VA_STATUS_ERROR_ALLOCATION_FAILED;
-      }
-
-      if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
-         if (old_buf->interlaced) {
-            struct u_rect src_rect, dst_rect;
-
-            dst_rect.x0 = src_rect.x0 = 0;
-            dst_rect.y0 = src_rect.y0 = 0;
-            dst_rect.x1 = src_rect.x1 = surf->templat.width;
-            dst_rect.y1 = src_rect.y1 = surf->templat.height;
-            vl_compositor_yuv_deint_full(&drv->cstate, &drv->compositor,
-                                         old_buf, surf->buffer,
-                                         &src_rect, &dst_rect, VL_COMPOSITOR_WEAVE);
-         } else {
-            /* Can't convert from progressive to interlaced yet */
-            mtx_unlock(&drv->mutex);
-            return VA_STATUS_ERROR_INVALID_SURFACE;
-         }
       }
 
       old_buf->destroy(old_buf);
