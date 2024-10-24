@@ -237,7 +237,7 @@ Linux perf integration
 ~~~~~~~~~~~~~~~~~~~~~~
 
 On Linux, it is possible to have symbol resolution of JIT code with
-`Linux perf <https://perf.wiki.kernel.org/>`__:
+`Linux perf <https://perfwiki.github.io/main/>`__:
 
 ::
 
