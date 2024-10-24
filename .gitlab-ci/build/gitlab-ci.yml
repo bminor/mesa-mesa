@@ -60,7 +60,7 @@
   variables:
     LLVM_VERSION: 15
   script:
-    - .gitlab-ci/meson/build.sh
+    - &meson-build .gitlab-ci/meson/build.sh
 
 
 # Make sure this list stays the same as all the jobs with
@@ -117,7 +117,7 @@ debian-testing:
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
     LLVM_VERSION: 15
   script:
-    - .gitlab-ci/meson/build.sh
+    - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
   artifacts:
     reports:
@@ -212,9 +212,9 @@ debian-build-testing:
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,intel-ui,nir,nouveau,lima,panfrost,asahi
     LLVM_VERSION: 15
     S3_ARTIFACT_NAME: debian-build-testing
-  script: |
-    .gitlab-ci/meson/build.sh
-    .gitlab-ci/prepare-artifacts.sh
+  script:
+    - *meson-build
+    - .gitlab-ci/prepare-artifacts.sh
 
 shader-db:
   stage: code-validation
@@ -285,7 +285,7 @@ debian-release:
     BUILDTYPE: "release"
     S3_ARTIFACT_NAME: "mesa-x86_64-default-${BUILDTYPE}"
   script:
-    - .gitlab-ci/meson/build.sh
+    - *meson-build
     - 'if [ -n "$MESA_CI_PERFORMANCE_ENABLED" ]; then .gitlab-ci/prepare-artifacts.sh; fi'
 
 alpine-build-testing:
@@ -435,13 +435,19 @@ debian-android:
     ARTIFACTS_DEBUG_SYMBOLS: 1
     S3_ARTIFACT_NAME: mesa-x86_64-android-${BUILDTYPE}
   script:
-    - CROSS=aarch64-linux-android GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d VULKAN_DRIVERS=freedreno,broadcom,virtio .gitlab-ci/meson/build.sh
+    - export CROSS=aarch64-linux-android
+    - export GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d
+    - export VULKAN_DRIVERS=freedreno,broadcom,virtio
+    - *meson-build
     # x86_64 build:
     # Can't do Intel because gen_decoder.c currently requires libexpat, which
     # is not a dependency that AOSP wants to accept.  Can't do Radeon Gallium
     # drivers because they requires LLVM, which we don't have an Android build
     # of.
-    - CROSS=x86_64-linux-android GALLIUM_DRIVERS=iris,virgl VULKAN_DRIVERS=amd,intel .gitlab-ci/meson/build.sh
+    - export CROSS=x86_64-linux-android
+    - export GALLIUM_DRIVERS=iris,virgl
+    - export VULKAN_DRIVERS=amd,intel
+    - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
 
 .meson-cross:
@@ -494,7 +500,7 @@ debian-arm32:
     # tempfiles in our artifacts.
     ARTIFACTS_DEBUG_SYMBOLS: 1
   script:
-    - .gitlab-ci/meson/build.sh
+    - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
 
 debian-arm32-asan:
@@ -535,7 +541,7 @@ debian-arm64:
       -D gallium-rusticl=true
     S3_ARTIFACT_NAME: mesa-arm64-default-${BUILDTYPE}
   script:
-    - .gitlab-ci/meson/build.sh
+    - *meson-build
     - .gitlab-ci/prepare-artifacts.sh
 
 debian-arm64-asan:
@@ -582,7 +588,7 @@ debian-arm64-release:
       -Wno-error=stringop-truncation
       -Wno-error=stringop-overread
   script:
-    - .gitlab-ci/meson/build.sh
+    - *meson-build
     - 'if [ -n "$MESA_CI_PERFORMANCE_ENABLED" ]; then .gitlab-ci/prepare-artifacts.sh; fi'
 
 debian-no-libdrm:
