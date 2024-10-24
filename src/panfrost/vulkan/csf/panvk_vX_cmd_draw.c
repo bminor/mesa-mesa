@@ -1537,7 +1537,6 @@ panvk_per_arch(cmd_prepare_exec_cmd_for_draws)(
    VkResult result;
 
    if (secondary->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-      assert(primary->vk.render_pass);
       result = get_tiler_desc(primary);
       if (result != VK_SUCCESS)
          return;
@@ -1605,8 +1604,13 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       return;
 
    /* Layered indirect draw (VK_EXT_shader_viewport_index_layer) needs
-    * additional changes. */
-   assert(cmdbuf->state.gfx.render.layer_count == 1);
+    * additional changes. We allow layer_count == 0 because that happens
+    * when mixing dynamic rendering and secondary command buffers. Once
+    * we decide to support layared+indirect, we'll need to pass the
+    * layer_count info through the tiler descriptor, for instance by
+    * re-using one of the word that's flagged 'ignored' in the descriptor
+    * (word 14:23). */
+   assert(cmdbuf->state.gfx.render.layer_count <= 1);
 
    /* MultiDrawIndirect (.maxDrawIndirectCount) needs additional changes. */
    assert(draw->indirect.draw_count == 1);
