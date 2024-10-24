@@ -1168,6 +1168,8 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    apply_av1_fg = vlVaQueryApplyFilmGrainAV1(context, &output_id, &out_target);
 
    surf = handle_table_get(drv->htab, output_id);
+   if (surf && !surf->buffer && context->desc.base.protected_playback)
+      surf->templat.bind |= PIPE_BIND_PROTECTED;
    vlVaGetSurfaceBuffer(drv, surf);
    if (!surf || !surf->buffer) {
       mtx_unlock(&drv->mutex);
@@ -1219,12 +1221,8 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    }
 
    if ((bool)(surf->templat.bind & PIPE_BIND_PROTECTED) != context->desc.base.protected_playback) {
-      if (context->desc.base.protected_playback) {
-         surf->templat.bind |= PIPE_BIND_PROTECTED;
-      }
-      else
-         surf->templat.bind &= ~PIPE_BIND_PROTECTED;
-      realloc = true;
+      mtx_unlock(&drv->mutex);
+      return VA_STATUS_ERROR_INVALID_SURFACE;
    }
 
    if (realloc) {
