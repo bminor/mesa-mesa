@@ -1604,7 +1604,6 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
    }
 
    /* IB */
-   cs->chunk_ib[IB_MAIN].ib_bytes *= 4; /* Convert from dwords to bytes. */
    chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_IB;
    chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_ib) / 4;
    chunks[num_chunks].chunk_data = (uintptr_t)&cs->chunk_ib[IB_MAIN];
@@ -1618,25 +1617,13 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
       cs->chunk_ib[IB_MAIN].flags &= ~AMDGPU_IB_FLAGS_SECURE;
    }
 
-   bool noop = acs->noop;
-
-   if (noop && acs->ip_type == AMD_IP_GFX) {
-      /* Reduce the IB size and fill it with NOP to make it like an empty IB. */
-      unsigned noop_dw_size = aws->info.ip[AMD_IP_GFX].ib_pad_dw_mask + 1;
-      assert(cs->chunk_ib[IB_MAIN].ib_bytes / 4 >= noop_dw_size);
-
-      cs->ib_main_addr[0] = PKT3(PKT3_NOP, noop_dw_size - 2, 0);
-      cs->chunk_ib[IB_MAIN].ib_bytes = noop_dw_size * 4;
-      noop = false;
-   }
-
    assert(num_chunks <= ARRAY_SIZE(chunks));
 
    if (out_of_memory) {
       r = -ENOMEM;
    } else if (unlikely(acs->ctx->sw_status != PIPE_NO_RESET)) {
       r = -ECANCELED;
-   } else if (unlikely(noop)) {
+   } else if (unlikely(acs->noop) && acs->ip_type != AMD_IP_GFX) {
       r = 0;
    } else {
       /* Submit the command buffer.
@@ -1692,7 +1679,7 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
 
    /* If there was an error, signal the fence, because it won't be signalled
     * by the hardware. */
-   if (r || noop)
+   if (r || (unlikely(acs->noop) && acs->ip_type != AMD_IP_GFX))
       amdgpu_fence_signalled(cs->fence);
 
    if (unlikely(aws->info.has_fw_based_shadowing && acs->mcbp_fw_shadow_chunk.flags && r == 0))
@@ -1826,6 +1813,16 @@ static int amdgpu_cs_flush(struct radeon_cmdbuf *rcs,
       }
 
       amdgpu_cs_sync_flush(rcs);
+
+      cur->chunk_ib[IB_MAIN].ib_bytes *= 4; /* Convert from dwords to bytes. */
+      if (cs->noop && cs->ip_type == AMD_IP_GFX) {
+         /* Reduce the IB size and fill it with NOP to make it like an empty IB. */
+         unsigned noop_dw_size = aws->info.ip[AMD_IP_GFX].ib_pad_dw_mask + 1;
+         assert(cur->chunk_ib[IB_MAIN].ib_bytes / 4 >= noop_dw_size);
+
+         cur->ib_main_addr[0] = PKT3(PKT3_NOP, noop_dw_size - 2, 0);
+         cur->chunk_ib[IB_MAIN].ib_bytes = noop_dw_size * 4;
+      }
 
       /* Swap command streams. "cst" is going to be submitted. */
       rcs->csc = cs->csc = cs->cst;
