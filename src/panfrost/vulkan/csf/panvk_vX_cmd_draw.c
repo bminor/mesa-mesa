@@ -1050,7 +1050,6 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
    bool dirty = is_dirty(cmdbuf, DS_DEPTH_TEST_ENABLE) ||
                 is_dirty(cmdbuf, DS_DEPTH_WRITE_ENABLE) ||
                 is_dirty(cmdbuf, DS_DEPTH_COMPARE_OP) ||
-                is_dirty(cmdbuf, DS_DEPTH_COMPARE_OP) ||
                 is_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
                 is_dirty(cmdbuf, DS_STENCIL_OP) ||
                 is_dirty(cmdbuf, DS_STENCIL_COMPARE_MASK) ||
