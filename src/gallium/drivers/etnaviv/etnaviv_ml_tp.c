@@ -256,7 +256,7 @@ create_transpose_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
    map->in_image_y_size = operation->input_height;
    map->in_image_z_size = operation->input_width;
    map->in_image_stride = operation->input_channels;
-   map->in_image_slice = operation->input_width * operation->input_channels;
+   map->in_image_slice = operation->input_height * operation->input_channels;
    map->in_window_x_end = operation->input_channels - 1;
    map->in_window_y_end = operation->input_height - 1;
    map->in_tile_y_size = operation->input_height;
