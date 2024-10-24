@@ -263,10 +263,11 @@ create_transpose_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
    map->in_tile_y_inc = operation->input_height;
 
    struct pipe_resource *input = etna_ml_get_tensor(subgraph, operation->input_tensors[0]);
-   map->in_image_base_address = etna_bo_gpu_va(etna_resource(input)->bo);
+   unsigned offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
+   map->in_image_base_address = etna_bo_gpu_va(etna_resource(input)->bo) + offset;
 
    struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
-   unsigned offset = etna_ml_get_offset(subgraph, operation->output_tensor);
+   offset = etna_ml_get_offset(subgraph, operation->output_tensor);
    map->out_image_base_address = etna_bo_gpu_va(etna_resource(output)->bo) + offset;
 
    map->out_loop_1_inc = operation->input_width * operation->input_height;
@@ -312,10 +313,12 @@ create_detranspose_config(struct etna_ml_subgraph *subgraph, const struct etna_o
    map->in_tile_y_inc = 0x1;
 
    struct pipe_resource *input = etna_ml_get_tensor(subgraph, operation->input_tensors[0]);
-   map->in_image_base_address = etna_bo_gpu_va(etna_resource(input)->bo);
+   unsigned offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
+   map->in_image_base_address = etna_bo_gpu_va(etna_resource(input)->bo) + offset;
 
    struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
-   map->out_image_base_address = etna_bo_gpu_va(etna_resource(output)->bo);
+   offset = etna_ml_get_offset(subgraph, operation->output_tensor);
+   map->out_image_base_address = etna_bo_gpu_va(etna_resource(output)->bo) + offset;
 
    map->out_loop_0_inc = input_channels;
    map->out_loop_1_inc = 0x0;
