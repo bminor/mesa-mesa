@@ -879,6 +879,7 @@ a7xx_735 = A7XXProps(
         supports_ibo_ubwc = True,
         fs_must_have_non_zero_constlen_quirk = True,
         enable_tp_ubwc_flag_hint = True,
+        has_64b_ssbo_atomics = True,
     )
 
 a7xx_740 = A7XXProps(
@@ -911,6 +912,7 @@ a7xx_740v3 = A7XXProps(
         supports_ibo_ubwc = True,
         fs_must_have_non_zero_constlen_quirk = True,
         enable_tp_ubwc_flag_hint = True,
+        has_64b_ssbo_atomics = True,
     )
 
 a7xx_x1_85 = A7XXProps(
