@@ -129,10 +129,6 @@ spec@arb_draw_indirect@arb_draw_indirect-transform-feedback
 # Flaky since around 2021-03-22.  First appeared on an innocent mingw branch.
 spec@arb_depth_texture@fbo-clear-formats
 
-# Flaky since 2021-12-02, during piglit uprev with commit
-# 0ef03f824d1833a853d1a20b4be121089bb9246c
-spec@arb_draw_indirect@arb_draw_indirect-transform-feedback
-
 # Flaky since around 2021-05-21, the day after a piglit uprev reshuffled us.
 # *** gpu fault: ttbr0=000000001c941000 iova=000000010066a000 dir=READ type=TRANSLATION source=TP|VFD (0,0,0,1)
 spec@arb_map_buffer_range@map_invalidate_buffer_bit offset=0
@@ -172,7 +168,6 @@ spec@!opengl 1.1@masked-clear
 spec@!opengl 1.1@texsubimage
 spec@!opengl 3.0@gl30basic
 spec@arb_texture_multisample@texelfetch fs sampler2dms 4 1x71-501x71
-spec@egl 1.4@eglcreatepbuffersurface and then glclear
 spec@egl_nok_texture_from_pixmap@basic
 spec@ext_framebuffer_blit@fbo-sys-blit
 spec@ext_framebuffer_blit@fbo-sys-sub-blit
@@ -208,7 +203,6 @@ KHR-GL46.shader_image_load_store.basic-allTargets-atomic
 gmem-unaligned-dEQP-VK.renderpass.suballocation.load_store_op_none.depthstencil_d32_sfloat_s8_uint_load_op_depth_load_stencil_none_store_op_depth_store_stencil_none_stencil_write_off
 
 KHR-GL46.buffer_storage.map_persistent_dispatch
-KHR-GL46.buffer_storage.map_persistent_flush
 KHR-GL46.compute_shader.atomic-case1
 KHR-GL46.compute_shader.pipeline-gen-draw-commands
 KHR-GL46.compute_shader.resource-uniform
@@ -337,7 +331,6 @@ dEQP-EGL.functional.color_clears.multi_thread.gles2.rgb888_pbuffer
 wayland-dEQP-EGL.functional.fence_sync.valid.egl_fence_persistent_buffer
 
 # glcts update
-wayland-dEQP-EGL.functional.fence_sync.valid.egl_fence_persistent_buffer
 KHR-GL46.draw_indirect.basic-drawElements-xfbPaused
 KHR-GL46.draw_indirect.basic-drawArrays-xfbPaused
 KHR-GL46.texture_cube_map_array.sampling
