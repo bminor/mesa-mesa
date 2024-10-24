@@ -1,4 +1,4 @@
-# Skip some >1min tests in pre merge.  These will be covered in the nightly jobs.
+# Skip some >1min tests.  These will be covered in the full jobs.
 KHR-GL46.packed_pixels.varied_rectangle.*
 KHR-GL46.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_MaxPatchVertices_Position_PointSize
 KHR-Single-GL46.arrays_of_arrays_gl.SizedDeclarationsPrimitive

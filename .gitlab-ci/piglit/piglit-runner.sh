@@ -78,7 +78,7 @@ if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
     PIGLIT_SKIPS="$PIGLIT_SKIPS $INSTALL/$GPU_VERSION-skips.txt"
 fi
 
-if [ -e "$INSTALL/$GPU_VERSION-slow-skips.txt" ] && [ -n "${IS_MERGE_PIPELINE:-}" ]; then
+if [ -e "$INSTALL/$GPU_VERSION-slow-skips.txt" ] && [[ $CI_JOB_NAME != *full* ]]; then
     PIGLIT_SKIPS="$PIGLIT_SKIPS $INSTALL/$GPU_VERSION-slow-skips.txt"
 fi
 

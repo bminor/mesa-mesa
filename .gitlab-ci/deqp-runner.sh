@@ -123,7 +123,7 @@ if [ -e "$INSTALL/$GPU_VERSION-skips.txt" ]; then
     DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$GPU_VERSION-skips.txt"
 fi
 
-if [ -e "$INSTALL/$GPU_VERSION-slow-skips.txt" ] && [ -n "${IS_MERGE_PIPELINE:-}" ]; then
+if [ -e "$INSTALL/$GPU_VERSION-slow-skips.txt" ] && [[ $CI_JOB_NAME != *full* ]]; then
     DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$GPU_VERSION-slow-skips.txt"
 fi
 
