@@ -2489,20 +2489,9 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_ResetEvent(
    return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateSampler(
-   VkDevice                                    _device,
-   const VkSamplerCreateInfo*                  pCreateInfo,
-   const VkAllocationCallbacks*                pAllocator,
-   VkSampler*                                  pSampler)
+void
+lvp_sampler_init(struct lvp_device *device, struct lp_descriptor *desc, const VkSamplerCreateInfo *pCreateInfo, const struct vk_sampler *sampler)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   struct lvp_sampler *sampler;
-
-   sampler = vk_sampler_create(&device->vk, pCreateInfo,
-                               pAllocator, sizeof(*sampler));
-   if (!sampler)
-      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
    struct pipe_sampler_state state = {0};
    VkClearColorValue border_color =
       vk_sampler_border_color_value(pCreateInfo, NULL);
@@ -2528,16 +2517,33 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateSampler(
    STATIC_ASSERT((unsigned)VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE == (unsigned)PIPE_TEX_REDUCTION_WEIGHTED_AVERAGE);
    STATIC_ASSERT((unsigned)VK_SAMPLER_REDUCTION_MODE_MIN == (unsigned)PIPE_TEX_REDUCTION_MIN);
    STATIC_ASSERT((unsigned)VK_SAMPLER_REDUCTION_MODE_MAX == (unsigned)PIPE_TEX_REDUCTION_MAX);
-   state.reduction_mode = (enum pipe_tex_reduction_mode)sampler->vk.reduction_mode;
+   state.reduction_mode = (enum pipe_tex_reduction_mode)sampler->reduction_mode;
    memcpy(&state.border_color, &border_color, sizeof(border_color));
 
    simple_mtx_lock(&device->queue.lock);
    struct lp_texture_handle *texture_handle = (void *)(uintptr_t)device->queue.ctx->create_texture_handle(device->queue.ctx, NULL, &state);
-   sampler->desc.texture.sampler_index = texture_handle->sampler_index;
+   desc->texture.sampler_index = texture_handle->sampler_index;
    device->queue.ctx->delete_texture_handle(device->queue.ctx, (uint64_t)(uintptr_t)texture_handle);
    simple_mtx_unlock(&device->queue.lock);
 
-   lp_jit_sampler_from_pipe(&sampler->desc.sampler, &state);
+   lp_jit_sampler_from_pipe(&desc->sampler, &state);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateSampler(
+   VkDevice                                    _device,
+   const VkSamplerCreateInfo*                  pCreateInfo,
+   const VkAllocationCallbacks*                pAllocator,
+   VkSampler*                                  pSampler)
+{
+   LVP_FROM_HANDLE(lvp_device, device, _device);
+   struct lvp_sampler *sampler;
+
+   sampler = vk_sampler_create(&device->vk, pCreateInfo,
+                               pAllocator, sizeof(*sampler));
+   if (!sampler)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   lvp_sampler_init(device, &sampler->desc, pCreateInfo, &sampler->vk);
 
    *pSampler = lvp_sampler_to_handle(sampler);
 

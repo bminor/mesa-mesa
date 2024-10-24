@@ -769,6 +769,9 @@ lvp_vk_format_to_pipe_format(VkFormat format)
    }
 }
 
+void
+lvp_sampler_init(struct lvp_device *device, struct lp_descriptor *desc, const VkSamplerCreateInfo *pCreateInfo, const struct vk_sampler *sampler);
+
 static inline uint8_t
 lvp_image_aspects_to_plane(ASSERTED const struct lvp_image *image,
                            VkImageAspectFlags aspectMask)
