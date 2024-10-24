@@ -161,6 +161,16 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
       case kTfLiteBuiltinSplit:
          operation->type = PIPE_ML_OPERATION_TYPE_SPLIT;
          break;
+      case kTfLiteBuiltinPad: {
+         int32_t *paddings = tf_context->tensors[node->inputs->data[1]].data.data;
+
+         operation->type = PIPE_ML_OPERATION_TYPE_PAD;
+         operation->pad.before_x = paddings[2];
+         operation->pad.after_x = paddings[3];
+         operation->pad.before_y = paddings[4];
+         operation->pad.after_y = paddings[5];
+         break;
+      }
       default:
          unreachable("Unsupported ML operation type");
    }
@@ -238,6 +248,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
             break;
          case PIPE_ML_OPERATION_TYPE_SPLIT:
             teflon_debug("%-6s ", "SPLIT");
+            break;
+         case PIPE_ML_OPERATION_TYPE_PAD:
+            teflon_debug("%-6s ", "PAD");
             break;
       }
 
@@ -558,6 +571,18 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
                if (output_channels != context->tensors[node->outputs->data[i]].dims->data[3])
                   supported = false;
 
+            break;
+         }
+         case kTfLiteBuiltinPad: {
+            uint32_t *padding = context->tensors[node->inputs->data[1]].data.data;
+            supported = padding[0] == 0 &&
+                        padding[1] == 0 &&
+                        padding[2] == 1 &&
+                        padding[3] == 1 &&
+                        padding[4] == 1 &&
+                        padding[5] == 1 &&
+                        padding[6] == 0 &&
+                        padding[7] == 0;
             break;
          }
       }
