@@ -45,7 +45,6 @@ struct panvk_draw_info {
    struct {
       uint32_t size;
       uint32_t offset;
-      int32_t vertex_offset;
    } index;
 
    struct {
@@ -1469,11 +1468,11 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       return;
 
    cs_update_vt_ctx(b) {
-      cs_move32_to(b, cs_sr_reg32(b, 32), draw->vertex.base);
+      cs_move32_to(b, cs_sr_reg32(b, 32), 0);
       cs_move32_to(b, cs_sr_reg32(b, 33), draw->vertex.count);
       cs_move32_to(b, cs_sr_reg32(b, 34), draw->instance.count);
       cs_move32_to(b, cs_sr_reg32(b, 35), draw->index.offset);
-      cs_move32_to(b, cs_sr_reg32(b, 36), draw->index.vertex_offset);
+      cs_move32_to(b, cs_sr_reg32(b, 36), draw->vertex.base);
       cs_move32_to(b, cs_sr_reg32(b, 37), draw->instance.base);
    }
 
@@ -1567,7 +1566,7 @@ panvk_per_arch(CmdDrawIndexed)(VkCommandBuffer commandBuffer,
    struct panvk_draw_info draw = {
       .index.size = cmdbuf->state.gfx.ib.index_size,
       .index.offset = firstIndex,
-      .index.vertex_offset = vertexOffset,
+      .vertex.base = (uint32_t)vertexOffset,
       .vertex.count = indexCount,
       .instance.count = instanceCount,
       .instance.base = firstInstance,
