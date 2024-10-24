@@ -119,7 +119,7 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
    state->render.s_attachment.fmt = iview->vk.format;
    state->render.bound_attachments |= MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
 
-   if (drm_is_afbc(img->pimage.layout.modifier)) {
+   if (drm_is_afbc(img->vk.drm_format_mod)) {
       assert(fbinfo->zs.view.zs == &iview->pview || !fbinfo->zs.view.zs);
       fbinfo->zs.view.zs = &iview->pview;
    } else {

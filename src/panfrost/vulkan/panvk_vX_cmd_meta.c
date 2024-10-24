@@ -17,7 +17,7 @@ copy_to_image_use_gfx_pipeline(struct panvk_device *dev,
       return true;
 
    /* Writes to AFBC images must go through the graphics pipeline. */
-   if (drm_is_afbc(dst_img->pimage.layout.modifier))
+   if (drm_is_afbc(dst_img->vk.drm_format_mod))
       return true;
 
    return false;

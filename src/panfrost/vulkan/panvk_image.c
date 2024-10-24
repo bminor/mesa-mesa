@@ -437,7 +437,7 @@ panvk_BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
       }
 
       /* Reset the AFBC headers */
-      if (drm_is_afbc(image->pimage.layout.modifier)) {
+      if (drm_is_afbc(image->vk.drm_format_mod)) {
          /* Transient CPU mapping */
          void *base = pan_kmod_bo_mmap(image->bo, 0,
                                        pan_kmod_bo_size(image->bo),

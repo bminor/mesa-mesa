@@ -233,7 +233,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
          assert(fmt_blksize < BITFIELD_MASK(10));
          assert(hw_fmt < BITFIELD_MASK(22));
 
-         cfg.type = image->pimage.layout.modifier == DRM_FORMAT_MOD_LINEAR
+         cfg.type = image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR
                        ? MALI_ATTRIBUTE_TYPE_3D_LINEAR
                        : MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
          cfg.pointer = image->pimage.data.base + offset;
