@@ -59,8 +59,6 @@
     - .build-linux
     - .use-debian/x86_64_build
   stage: build-only
-  variables:
-    LLVM_VERSION: 15
   script:
     - &meson-build timeout --verbose ${BUILD_JOB_TIMEOUT_OVERRIDE:-$BUILD_JOB_TIMEOUT} .gitlab-ci/meson/build.sh
 
@@ -118,7 +116,6 @@ debian-testing:
       -D perfetto=true
       -D tools=drm-shim
     S3_ARTIFACT_NAME: mesa-x86_64-default-${BUILDTYPE}
-    LLVM_VERSION: 15
     RUN_MESON_TESTS: "false" # debian-build-testing already runs these
   script:
     - *meson-build
@@ -261,7 +258,6 @@ debian-build-testing:
       -D spirv-to-dxil=true
       -D osmesa=true
       -D tools=drm-shim,etnaviv,freedreno,glsl,intel,intel-ui,nir,nouveau,lima,panfrost,asahi
-    LLVM_VERSION: 15
     S3_ARTIFACT_NAME: debian-build-testing
   script:
     - *meson-build
@@ -306,7 +302,6 @@ debian-release:
     - !reference [.meson-build, needs]
     - !reference [.build-for-tests-jobs]
   variables:
-    LLVM_VERSION: 15
     UNWIND: "enabled"
     C_ARGS: >
       -Wno-error=stringop-overread
@@ -423,7 +418,6 @@ fedora-release:
       -D llvm=enabled
       -D microsoft-clc=disabled
       -D shared-llvm=enabled
-    LLVM_VERSION: ""
     UNWIND: "disabled"
     VULKAN_DRIVERS: "amd,asahi,broadcom,freedreno,imagination-experimental,intel,intel_hasvk"
 
@@ -470,7 +464,6 @@ debian-android:
       -D gallium-xa=disabled
       -D gallium-nine=false
       -D gallium-rusticl=false
-    LLVM_VERSION: "15"
     PKG_CONFIG_LIBDIR: "/disable/non/android/system/pc/files"
     HOST_BUILD_OPTIONS: >
       -D build-tests=false
@@ -703,7 +696,6 @@ debian-clang:
     - !reference [.build-for-tests-jobs]
   variables:
     BUILDTYPE: debug
-    LLVM_VERSION: 15
     UNWIND: "enabled"
     C_ARGS: >
       -Wno-error=constant-conversion
@@ -793,7 +785,6 @@ debian-vulkan:
   variables:
     BUILD_JOB_TIMEOUT: 30m
     BUILDTYPE: debug
-    LLVM_VERSION: 15
     UNWIND: "disabled"
     DRI_LOADERS: >
       -D glx=disabled
@@ -834,7 +825,6 @@ debian-x86_32:
     CROSS: i386
     VULKAN_DRIVERS: intel,amd,swrast,virtio,panfrost
     GALLIUM_DRIVERS: "iris,nouveau,r300,r600,radeonsi,llvmpipe,softpipe,virgl,zink,crocus,d3d12,panfrost"
-    LLVM_VERSION: 15
     DRI_LOADERS:
       -D glvnd=disabled
     EXTRA_OPTION: >
@@ -872,7 +862,6 @@ debian-s390x:
     BUILDTYPE: debug
     CROSS: s390x
     GALLIUM_DRIVERS: "llvmpipe,virgl,zink"
-    LLVM_VERSION: 15
     VULKAN_DRIVERS: "swrast,virtio"
     DRI_LOADERS:
       -D glvnd=disabled
