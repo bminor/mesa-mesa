@@ -65,6 +65,7 @@ enum radeon_bo_flag
   RADEON_FLAG_DISCARDABLE = (1 << 10),
   RADEON_FLAG_WINSYS_SLAB_BACKING = (1 << 11), /* only used by the winsys */
   RADEON_FLAG_GFX12_ALLOW_DCC = (1 << 12), /* allow DCC, VRAM only */
+  RADEON_FLAG_CLEAR_VRAM = (1 << 13),
 };
 
 static inline void
@@ -918,7 +919,7 @@ static inline int radeon_get_heap_index(enum radeon_bo_domain domain, enum radeo
    /* These are unsupported flags. */
    /* RADEON_FLAG_DRIVER_INTERNAL is ignored. It doesn't affect allocators. */
    if (flags & (RADEON_FLAG_NO_SUBALLOC | RADEON_FLAG_SPARSE |
-                RADEON_FLAG_DISCARDABLE))
+                RADEON_FLAG_DISCARDABLE | RADEON_FLAG_CLEAR_VRAM))
       return -1;
 
    int heap = 0;
