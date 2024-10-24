@@ -6197,11 +6197,13 @@ void genX(cmd_emit_timestamp)(struct anv_batch *batch,
       uint32_t dwords[GENX(COMPUTE_WALKER_length)];
 
       GENX(COMPUTE_WALKER_pack)(batch, dwords, &(struct GENX(COMPUTE_WALKER)) {
-            .PostSync = (struct GENX(POSTSYNC_DATA)) {
-               .Operation = WriteTimestamp,
-               .DestinationAddress = addr,
-               .MOCS = anv_mocs(device, NULL, 0),
-            },
+            .body = {
+               .PostSync = (struct GENX(POSTSYNC_DATA)) {
+                  .Operation = WriteTimestamp,
+                  .DestinationAddress = addr,
+                  .MOCS = anv_mocs(device, NULL, 0),
+               },
+            }
          });
 
       for (uint32_t i = 0; i < ARRAY_SIZE(dwords); i++) {

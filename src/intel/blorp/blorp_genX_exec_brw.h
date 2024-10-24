@@ -1653,43 +1653,42 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
    assert(cs_prog_data->local_size[2] == 1);
 
 #if GFX_VERx10 >= 125
-   assert(cs_prog_data->push.per_thread.regs == 0);
-   blorp_emit(batch, GENX(COMPUTE_WALKER), cw) {
-      cw.SIMDSize                       = dispatch.simd_size / 16;
-      cw.MessageSIMD                    = dispatch.simd_size / 16,
-      cw.LocalXMaximum                  = cs_prog_data->local_size[0] - 1;
-      cw.LocalYMaximum                  = cs_prog_data->local_size[1] - 1;
-      cw.LocalZMaximum                  = cs_prog_data->local_size[2] - 1;
-      cw.ThreadGroupIDStartingX         = group_x0;
-      cw.ThreadGroupIDStartingY         = group_y0;
-      cw.ThreadGroupIDStartingZ         = group_z0;
-      cw.ThreadGroupIDXDimension        = group_x1;
-      cw.ThreadGroupIDYDimension        = group_y1;
-      cw.ThreadGroupIDZDimension        = group_z1;
-      cw.ExecutionMask                  = 0xffffffff;
-      cw.PostSync.MOCS                  = isl_mocs(batch->blorp->isl_dev, 0, false);
+   uint32_t surfaces_offset = blorp_setup_binding_table(batch, params);
 
-      uint32_t surfaces_offset = blorp_setup_binding_table(batch, params);
+   uint32_t samplers_offset =
+      params->src.enabled ? blorp_emit_sampler_state(batch) : 0;
 
-      uint32_t samplers_offset =
-         params->src.enabled ? blorp_emit_sampler_state(batch) : 0;
+   uint32_t push_const_offset;
+   unsigned push_const_size;
+   blorp_get_compute_push_const(batch, params, dispatch.threads,
+                                &push_const_offset, &push_const_size);
+   struct GENX(COMPUTE_WALKER_BODY) body = {
+      .SIMDSize                       = dispatch.simd_size / 16,
+      .MessageSIMD                    = dispatch.simd_size / 16,
+      .LocalXMaximum                  = cs_prog_data->local_size[0] - 1,
+      .LocalYMaximum                  = cs_prog_data->local_size[1] - 1,
+      .LocalZMaximum                  = cs_prog_data->local_size[2] - 1,
+      .ThreadGroupIDStartingX         = group_x0,
+      .ThreadGroupIDStartingY         = group_y0,
+      .ThreadGroupIDStartingZ         = group_z0,
+      .ThreadGroupIDXDimension        = group_x1,
+      .ThreadGroupIDYDimension        = group_y1,
+      .ThreadGroupIDZDimension        = group_z1,
+      .ExecutionMask                  = 0xffffffff,
+      .PostSync.MOCS                  = isl_mocs(batch->blorp->isl_dev, 0, false),
 
-      uint32_t push_const_offset;
-      unsigned push_const_size;
-      blorp_get_compute_push_const(batch, params, dispatch.threads,
-                                   &push_const_offset, &push_const_size);
-      cw.IndirectDataStartAddress       = push_const_offset;
-      cw.IndirectDataLength             = push_const_size;
+      .IndirectDataStartAddress       = push_const_offset,
+      .IndirectDataLength             = push_const_size,
 
 #if GFX_VERx10 >= 125
-      cw.GenerateLocalID                = cs_prog_data->generate_local_id != 0;
-      cw.EmitLocal                      = cs_prog_data->generate_local_id;
-      cw.WalkOrder                      = cs_prog_data->walk_order;
-      cw.TileLayout = cs_prog_data->walk_order == INTEL_WALK_ORDER_YXZ ?
-                      TileY32bpe : Linear;
+      .GenerateLocalID                = cs_prog_data->generate_local_id != 0,
+      .EmitLocal                      = cs_prog_data->generate_local_id,
+      .WalkOrder                      = cs_prog_data->walk_order,
+      .TileLayout = cs_prog_data->walk_order == INTEL_WALK_ORDER_YXZ ?
+                    TileY32bpe : Linear,
 #endif
 
-      cw.InterfaceDescriptor = (struct GENX(INTERFACE_DESCRIPTOR_DATA)) {
+      .InterfaceDescriptor = (struct GENX(INTERFACE_DESCRIPTOR_DATA)) {
          .KernelStartPointer = params->cs_prog_kernel,
          .SamplerStatePointer = samplers_offset,
          .SamplerCount = params->src.enabled ? 1 : 0,
@@ -1704,7 +1703,12 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
                                                          dispatch.group_size,
                                                          dispatch.simd_size),
          .NumberOfBarriers = cs_prog_data->uses_barrier,
-      };
+      },
+   };
+
+   assert(cs_prog_data->push.per_thread.regs == 0);
+   blorp_emit(batch, GENX(COMPUTE_WALKER), cw) {
+      cw.body = body;
    }
 
 #else

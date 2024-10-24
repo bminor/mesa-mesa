@@ -660,9 +660,9 @@ iris_rewrite_compute_walker_pc(struct iris_batch *batch,
    uint32_t dwords[GENX(COMPUTE_WALKER_length)];
 
    _iris_pack_command(batch, GENX(COMPUTE_WALKER), dwords, cw) {
-      cw.PostSync.Operation          = WriteTimestamp;
-      cw.PostSync.DestinationAddress = addr;
-      cw.PostSync.MOCS               = iris_mocs(NULL, &screen->isl_dev, 0);
+      cw.body.PostSync.Operation = WriteTimestamp;
+      cw.body.PostSync.DestinationAddress = addr;
+      cw.body.PostSync.MOCS = iris_mocs(NULL, &screen->isl_dev, 0);
    }
 
    for (uint32_t i = 0; i < GENX(COMPUTE_WALKER_length); i++)
@@ -9012,29 +9012,33 @@ iris_upload_compute_walker(struct iris_context *ice,
 
       ice->utrace.last_compute_walker =
          iris_emit_dwords(batch, GENX(COMPUTE_WALKER_length));
+
+      struct GENX(COMPUTE_WALKER_BODY) body = {
+         .SIMDSize                       = dispatch.simd_size / 16,
+         .MessageSIMD                    = dispatch.simd_size / 16,
+         .LocalXMaximum                  = grid->block[0] - 1,
+         .LocalYMaximum                  = grid->block[1] - 1,
+         .LocalZMaximum                  = grid->block[2] - 1,
+         .ThreadGroupIDXDimension        = grid->grid[0],
+         .ThreadGroupIDYDimension        = grid->grid[1],
+         .ThreadGroupIDZDimension        = grid->grid[2],
+         .ExecutionMask                  = dispatch.right_mask,
+         .PostSync.MOCS                  = iris_mocs(NULL, &screen->isl_dev, 0),
+         .InterfaceDescriptor            = idd,
+
+#if GFX_VERx10 >= 125
+         .GenerateLocalID = cs_data->generate_local_id != 0,
+         .EmitLocal       = cs_data->generate_local_id,
+         .WalkOrder       = cs_data->walk_order,
+         .TileLayout = cs_data->walk_order == INTEL_WALK_ORDER_YXZ ?
+                       TileY32bpe : Linear,
+#endif
+      };
+
       _iris_pack_command(batch, GENX(COMPUTE_WALKER),
                          ice->utrace.last_compute_walker, cw) {
          cw.IndirectParameterEnable        = grid->indirect;
-         cw.SIMDSize                       = dispatch.simd_size / 16;
-         cw.MessageSIMD                    = dispatch.simd_size / 16;
-         cw.LocalXMaximum                  = grid->block[0] - 1;
-         cw.LocalYMaximum                  = grid->block[1] - 1;
-         cw.LocalZMaximum                  = grid->block[2] - 1;
-         cw.ThreadGroupIDXDimension        = grid->grid[0];
-         cw.ThreadGroupIDYDimension        = grid->grid[1];
-         cw.ThreadGroupIDZDimension        = grid->grid[2];
-         cw.ExecutionMask                  = dispatch.right_mask;
-         cw.PostSync.MOCS                  = iris_mocs(NULL, &screen->isl_dev, 0);
-         cw.InterfaceDescriptor            = idd;
-
-#if GFX_VERx10 >= 125
-         cw.GenerateLocalID = cs_data->generate_local_id != 0;
-         cw.EmitLocal       = cs_data->generate_local_id;
-         cw.WalkOrder       = cs_data->walk_order;
-         cw.TileLayout = cs_data->walk_order == INTEL_WALK_ORDER_YXZ ?
-                         TileY32bpe : Linear;
-#endif
-
+         cw.body                           = body;
          assert(iris_cs_push_const_total_size(shader, dispatch.threads) == 0);
       }
    }

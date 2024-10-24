@@ -143,17 +143,23 @@ genX(emit_execute)(executor_context *ec, const executor_params *params)
    emit_pipe_control(ec);
 
 #if GFX_VERx10 >= 125
-   executor_batch_emit(GENX(COMPUTE_WALKER), cw) {
+   struct GENX(COMPUTE_WALKER_BODY) body = {
 #if GFX_VERx10 >= 200
-      cw.SIMDSize                = 1;
-      cw.MessageSIMD             = 1;
+      .SIMDSize                = 1,
+      .MessageSIMD             = 1,
 #endif
-      cw.ThreadGroupIDXDimension = 1;
-      cw.ThreadGroupIDYDimension = 1;
-      cw.ThreadGroupIDZDimension = 1;
-      cw.ExecutionMask           = 0xFFFFFFFF;
-      cw.PostSync.MOCS           = mocs;
-      cw.InterfaceDescriptor     = desc;
+      .ThreadGroupIDXDimension = 1,
+      .ThreadGroupIDYDimension = 1,
+      .ThreadGroupIDZDimension = 1,
+      .ExecutionMask           = 0xFFFFFFFF,
+      .PostSync.MOCS           = mocs,
+      .InterfaceDescriptor     = desc,
+   };
+#endif
+
+#if GFX_VERx10 >= 125
+   executor_batch_emit(GENX(COMPUTE_WALKER), cw) {
+      cw.body = body;
    };
 #else
    uint32_t *idd = executor_alloc_bytes_aligned(&ec->bo.extra, 8 * 4, 256);

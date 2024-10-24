@@ -437,6 +437,37 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
       num_workgroup_data[2] = groupCountZ;
    }
 
+   struct GENX(COMPUTE_WALKER_BODY) body = {
+      .SIMDSize                       = dispatch.simd_size / 16,
+      .MessageSIMD                    = dispatch.simd_size / 16,
+      .IndirectDataStartAddress       = comp_state->base.push_constants_state.offset,
+      .IndirectDataLength             = comp_state->base.push_constants_state.alloc_size,
+      .GenerateLocalID                = prog_data->generate_local_id != 0,
+      .EmitLocal                      = prog_data->generate_local_id,
+      .WalkOrder                      = prog_data->walk_order,
+      .TileLayout = prog_data->walk_order == INTEL_WALK_ORDER_YXZ ?
+                    TileY32bpe : Linear,
+      .LocalXMaximum                  = prog_data->local_size[0] - 1,
+      .LocalYMaximum                  = prog_data->local_size[1] - 1,
+      .LocalZMaximum                  = prog_data->local_size[2] - 1,
+      .ThreadGroupIDXDimension        = groupCountX,
+      .ThreadGroupIDYDimension        = groupCountY,
+      .ThreadGroupIDZDimension        = groupCountZ,
+      .ExecutionMask                  = dispatch.right_mask,
+      .PostSync                       = {
+         .MOCS                        = anv_mocs(pipeline->base.device, NULL, 0),
+      },
+      .InterfaceDescriptor =
+         get_interface_descriptor_data(cmd_buffer, pipeline->cs,
+                                       prog_data, &dispatch),
+      .EmitInlineParameter            = prog_data->uses_inline_data,
+      .InlineData                     = {
+         [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 0] = num_workgroup_data[0],
+         [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 1] = num_workgroup_data[1],
+         [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 2] = num_workgroup_data[2],
+      }
+   };
+
    cmd_buffer->state.last_compute_walker =
       anv_batch_emitn(
          &cmd_buffer->batch,
@@ -444,38 +475,11 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
          GENX(COMPUTE_WALKER),
          .IndirectParameterEnable        = !anv_address_is_null(indirect_addr),
          .PredicateEnable                = predicate,
-         .SIMDSize                       = dispatch.simd_size / 16,
-         .MessageSIMD                    = dispatch.simd_size / 16,
-         .IndirectDataStartAddress       = comp_state->base.push_constants_state.offset,
-         .IndirectDataLength             = comp_state->base.push_constants_state.alloc_size,
+         .body                           = body,
 #if GFX_VERx10 == 125
          .SystolicModeEnable             = prog_data->uses_systolic,
 #endif
-         .GenerateLocalID                = prog_data->generate_local_id != 0,
-         .EmitLocal                      = prog_data->generate_local_id,
-         .WalkOrder                      = prog_data->walk_order,
-         .TileLayout = prog_data->walk_order == INTEL_WALK_ORDER_YXZ ?
-                       TileY32bpe : Linear,
-         .LocalXMaximum                  = prog_data->local_size[0] - 1,
-         .LocalYMaximum                  = prog_data->local_size[1] - 1,
-         .LocalZMaximum                  = prog_data->local_size[2] - 1,
-         .ThreadGroupIDXDimension        = groupCountX,
-         .ThreadGroupIDYDimension        = groupCountY,
-         .ThreadGroupIDZDimension        = groupCountZ,
-         .ExecutionMask                  = dispatch.right_mask,
-         .PostSync                       = {
-            .MOCS                        = anv_mocs(pipeline->base.device, NULL, 0),
-         },
-         .InterfaceDescriptor =
-            get_interface_descriptor_data(cmd_buffer, pipeline->cs,
-                                          prog_data, &dispatch),
-         .EmitInlineParameter            = prog_data->uses_inline_data,
-         .InlineData                     = {
-            [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 0] = num_workgroup_data[0],
-            [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 1] = num_workgroup_data[1],
-            [ANV_INLINE_PARAM_NUM_WORKGROUPS_OFFSET / 4 + 2] = num_workgroup_data[2],
-         });
-
+      );
 }
 
 #else /* #if GFX_VERx10 >= 125 */
@@ -724,32 +728,38 @@ genX(cmd_buffer_dispatch_kernel)(struct anv_cmd_buffer *cmd_buffer,
    struct intel_cs_dispatch_info dispatch =
       brw_cs_get_dispatch_info(devinfo, cs_prog_data, NULL);
 
-   anv_batch_emit(&cmd_buffer->batch, GENX(COMPUTE_WALKER), cw) {
-      cw.PredicateEnable                = false;
-      cw.SIMDSize                       = dispatch.simd_size / 16;
-      cw.MessageSIMD                    = dispatch.simd_size / 16;
-      cw.IndirectDataStartAddress       = indirect_data.offset;
-      cw.IndirectDataLength             = indirect_data.alloc_size;
-      cw.LocalXMaximum                  = cs_prog_data->local_size[0] - 1;
-      cw.LocalYMaximum                  = cs_prog_data->local_size[1] - 1;
-      cw.LocalZMaximum                  = cs_prog_data->local_size[2] - 1;
-      cw.ExecutionMask                  = dispatch.right_mask;
-      cw.PostSync.MOCS                  = cmd_buffer->device->isl_dev.mocs.internal;
-
-      if (global_size != NULL) {
-         cw.ThreadGroupIDXDimension     = global_size[0];
-         cw.ThreadGroupIDYDimension     = global_size[1];
-         cw.ThreadGroupIDZDimension     = global_size[2];
-      } else {
-         cw.IndirectParameterEnable     = true;
-      }
-
-      cw.InterfaceDescriptor =
+   struct GENX(COMPUTE_WALKER_BODY) body = {
+      .SIMDSize                       = dispatch.simd_size / 16,
+      .MessageSIMD                    = dispatch.simd_size / 16,
+      .IndirectDataStartAddress       = indirect_data.offset,
+      .IndirectDataLength             = indirect_data.alloc_size,
+      .LocalXMaximum                  = cs_prog_data->local_size[0] - 1,
+      .LocalYMaximum                  = cs_prog_data->local_size[1] - 1,
+      .LocalZMaximum                  = cs_prog_data->local_size[2] - 1,
+      .ExecutionMask                  = dispatch.right_mask,
+      .PostSync.MOCS                  = cmd_buffer->device->isl_dev.mocs.internal,
+      .InterfaceDescriptor =
          get_interface_descriptor_data(cmd_buffer,
                                        kernel->bin,
                                        cs_prog_data,
-                                       &dispatch);
+                                       &dispatch),
+   };
+
+   if (global_size != NULL) {
+      body.ThreadGroupIDXDimension     = global_size[0];
+      body.ThreadGroupIDYDimension     = global_size[1];
+      body.ThreadGroupIDZDimension     = global_size[2];
    }
+
+   cmd_buffer->state.last_compute_walker =
+      anv_batch_emitn(
+         &cmd_buffer->batch,
+         GENX(COMPUTE_WALKER_length),
+         GENX(COMPUTE_WALKER),
+         .IndirectParameterEnable = global_size == NULL,
+         .PredicateEnable = false,
+         .body = body,
+      );
 
    /* We just blew away the compute pipeline state */
    cmd_buffer->state.compute.pipeline_dirty = true;
@@ -1132,26 +1142,39 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
    struct intel_cs_dispatch_info dispatch =
       brw_cs_get_dispatch_info(device->info, cs_prog_data, NULL);
 
-   anv_batch_emit(&cmd_buffer->batch, GENX(COMPUTE_WALKER), cw) {
-      cw.IndirectParameterEnable        = params->is_launch_size_indirect;
-      cw.PredicateEnable                = cmd_buffer->state.conditional_render_enabled;
-      cw.SIMDSize                       = dispatch.simd_size / 16;
-      cw.MessageSIMD                    = dispatch.simd_size / 16;
-      cw.LocalXMaximum                  = (1 << local_size_log2[0]) - 1;
-      cw.LocalYMaximum                  = (1 << local_size_log2[1]) - 1;
-      cw.LocalZMaximum                  = (1 << local_size_log2[2]) - 1;
-      cw.ThreadGroupIDXDimension        = global_size[0];
-      cw.ThreadGroupIDYDimension        = global_size[1];
-      cw.ThreadGroupIDZDimension        = global_size[2];
-      cw.ExecutionMask                  = 0xff;
-      cw.EmitInlineParameter            = true;
-      cw.PostSync.MOCS                  = anv_mocs(pipeline->base.device, NULL, 0);
+   const gl_shader_stage s = MESA_SHADER_RAYGEN;
+   struct anv_state *surfaces = &cmd_buffer->state.binding_tables[s];
+   struct anv_state *samplers = &cmd_buffer->state.samplers[s];
+   struct brw_rt_raygen_trampoline_params trampoline_params = {
+      .rt_disp_globals_addr = anv_address_physical(rtdg_addr),
+      .raygen_bsr_addr =
+         params->is_sbt_indirect ?
+         (params->indirect_sbts_addr +
+          offsetof(VkTraceRaysIndirectCommand2KHR,
+                   raygenShaderRecordAddress)) :
+         params->raygen_sbt->deviceAddress,
+      .is_indirect = params->is_sbt_indirect,
+      .local_group_size_log2 = {
+         local_size_log2[0],
+         local_size_log2[1],
+         local_size_log2[2],
+      },
+   };
 
-      const gl_shader_stage s = MESA_SHADER_RAYGEN;
-      struct anv_device *device = cmd_buffer->device;
-      struct anv_state *surfaces = &cmd_buffer->state.binding_tables[s];
-      struct anv_state *samplers = &cmd_buffer->state.samplers[s];
-      cw.InterfaceDescriptor = (struct GENX(INTERFACE_DESCRIPTOR_DATA)) {
+   struct GENX(COMPUTE_WALKER_BODY) body =  {
+      .SIMDSize                       = dispatch.simd_size / 16,
+      .MessageSIMD                    = dispatch.simd_size / 16,
+      .LocalXMaximum                  = (1 << local_size_log2[0]) - 1,
+      .LocalYMaximum                  = (1 << local_size_log2[1]) - 1,
+      .LocalZMaximum                  = (1 << local_size_log2[2]) - 1,
+      .ThreadGroupIDXDimension        = global_size[0],
+      .ThreadGroupIDYDimension        = global_size[1],
+      .ThreadGroupIDZDimension        = global_size[2],
+      .ExecutionMask                  = 0xff,
+      .EmitInlineParameter            = true,
+      .PostSync.MOCS                  = anv_mocs(pipeline->base.device, NULL, 0),
+
+      .InterfaceDescriptor = (struct GENX(INTERFACE_DESCRIPTOR_DATA)) {
          .KernelStartPointer = device->rt_trampoline->kernel.offset,
          .SamplerStatePointer = samplers->offset,
          /* i965: DIV_ROUND_UP(CLAMP(stage_state->sampler_count, 0, 16), 4), */
@@ -1162,26 +1185,21 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
 #if INTEL_NEEDS_WA_14017794102
          .ThreadPreemption = false,
 #endif
-      };
+      },
+   };
 
-      struct brw_rt_raygen_trampoline_params trampoline_params = {
-         .rt_disp_globals_addr = anv_address_physical(rtdg_addr),
-         .raygen_bsr_addr =
-            params->is_sbt_indirect ?
-            (params->indirect_sbts_addr +
-             offsetof(VkTraceRaysIndirectCommand2KHR,
-                      raygenShaderRecordAddress)) :
-            params->raygen_sbt->deviceAddress,
-         .is_indirect = params->is_sbt_indirect,
-         .local_group_size_log2 = {
-            local_size_log2[0],
-            local_size_log2[1],
-            local_size_log2[2],
-         },
-      };
-      STATIC_ASSERT(sizeof(trampoline_params) == 32);
-      memcpy(cw.InlineData, &trampoline_params, sizeof(trampoline_params));
-   }
+   STATIC_ASSERT(sizeof(trampoline_params) == 32);
+   memcpy(body.InlineData, &trampoline_params, sizeof(trampoline_params));
+
+   cmd_buffer->state.last_compute_walker =
+      anv_batch_emitn(
+         &cmd_buffer->batch,
+         GENX(COMPUTE_WALKER_length),
+         GENX(COMPUTE_WALKER),
+         .IndirectParameterEnable  = params->is_launch_size_indirect,
+         .PredicateEnable          = cmd_buffer->state.conditional_render_enabled,
+         .body                     = body,
+      );
 
    trace_intel_end_rays(&cmd_buffer->trace,
                         params->launch_size[0],
