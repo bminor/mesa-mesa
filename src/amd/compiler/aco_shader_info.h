@@ -126,6 +126,7 @@ struct aco_shader_info {
       uint32_t num_interp;
       unsigned spi_ps_input_ena;
       unsigned spi_ps_input_addr;
+      bool has_prolog;
       bool has_epilog;
 
       /* OpenGL only */
