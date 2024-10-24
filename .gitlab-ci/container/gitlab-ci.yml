@@ -393,7 +393,7 @@ fedora/x86_64_build:
     - .fdo.container-build@fedora
     - .container
   variables:
-    FDO_DISTRIBUTION_VERSION: 38
+    FDO_DISTRIBUTION_VERSION: 41
     MESA_IMAGE_TAG: &fedora-x86_64_build ${FEDORA_X86_64_BUILD_TAG}
 
 .use-fedora/x86_64_build:

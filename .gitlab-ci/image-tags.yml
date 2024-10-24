@@ -37,7 +37,7 @@ variables:
 
    ALPINE_X86_64_BUILD_TAG: "20241106-wlproto2"
    ALPINE_X86_64_LAVA_SSH_TAG: "20241106-wlproto2"
-   FEDORA_X86_64_BUILD_TAG: "20241106-wlproto2"
+   FEDORA_X86_64_BUILD_TAG: "20241107-fc41"
    KERNEL_TAG: "v6.6.21-mesa-f8ea"
    KERNEL_REPO: "gfx-ci/linux"
    PKG_REPO_REV: "bca9635d"

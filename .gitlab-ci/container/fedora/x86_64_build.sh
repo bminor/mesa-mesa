@@ -74,6 +74,7 @@ DEPS=(
     python-unversioned-command
     python3-devel
     python3-mako
+    python3-packaging
     python3-ply
     python3-pycparser
     python3-yaml
