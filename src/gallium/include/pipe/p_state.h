@@ -1066,12 +1066,14 @@ struct pipe_ml_operation
    /**
     * Tensor used as input.
     */
-   struct pipe_tensor *input_tensor;
+   struct pipe_tensor **input_tensors;
+   unsigned input_count;
 
    /**
     * Tensor used as output.
     */
-   struct pipe_tensor *output_tensor;
+   struct pipe_tensor **output_tensors;
+   unsigned output_count;
 
    union {
       struct {
@@ -1135,12 +1137,6 @@ struct pipe_ml_operation
           */
          bool padding_same;
       } pooling;
-      struct {
-         /**
-          * Additional input tensor, to be added to the other one.
-          */
-         struct pipe_tensor *input_tensor;
-      } add;
    };
 };
 

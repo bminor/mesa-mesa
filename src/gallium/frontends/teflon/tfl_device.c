@@ -94,16 +94,22 @@ create_resource(struct pipe_context *context, TfLiteTensor tensor)
 }
 
 static void
-fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLiteNode *node, TfLiteRegistration *node_registration, struct pipe_ml_operation *operation, struct pipe_tensor *tensors)   
+fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLiteNode *node, TfLiteRegistration *node_registration, struct pipe_ml_operation *operation, struct pipe_tensor *tensors)
 {
-   TfLiteConvParams* params = (TfLiteConvParams*)node->builtin_data;
+   operation->input_count = node->inputs->size;
+   operation->input_tensors = calloc(operation->input_count, sizeof(void*));
+   for (unsigned i = 0; i < node->inputs->size; i++)
+      operation->input_tensors[i] = &tensors[node->inputs->data[i]];
 
-   operation->input_tensor = &tensors[node->inputs->data[0]];
-   operation->output_tensor = &tensors[node->outputs->data[0]];
+   operation->output_count = node->outputs->size;
+   operation->output_tensors = calloc(operation->output_count, sizeof(void*));
+   for (unsigned i = 0; i < node->outputs->size; i++)
+      operation->output_tensors[i] = &tensors[node->outputs->data[i]];
 
    switch(node_registration->builtin_code) {
       case kTfLiteBuiltinConv2d:
-      case kTfLiteBuiltinDepthwiseConv2d:
+      case kTfLiteBuiltinDepthwiseConv2d: {
+         TfLiteConvParams* params = (TfLiteConvParams*)node->builtin_data;
          operation->type = PIPE_ML_OPERATION_TYPE_CONVOLUTION;
          operation->conv.weight_tensor = &tensors[node->inputs->data[1]];
          operation->conv.bias_tensor = &tensors[node->inputs->data[2]];
@@ -114,12 +120,12 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
          operation->conv.pointwise = operation->conv.weight_tensor->dims[1] == 1 && \
                                      operation->conv.weight_tensor->dims[2] == 1;
          break;
+      }
       case kTfLiteBuiltinAveragePool2d:
          operation->type = PIPE_ML_OPERATION_TYPE_POOLING;
          break;
       case kTfLiteBuiltinAdd:
          operation->type = PIPE_ML_OPERATION_TYPE_ADD;
-         operation->add.input_tensor = &tensors[node->inputs->data[1]];
          break;
       default:
          unreachable("Unsupported ML operation type");
@@ -175,40 +181,35 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
    }
 
    teflon_debug("\n");
-   teflon_debug("%3s %-6s %3s %3s  %s\n", "idx", "type", "in", "out", "operation type-specific");
+   teflon_debug("%3s %-6s %25s %25s  %s\n", "idx", "type", "inputs", "outputs", "operation type-specific");
    teflon_debug("================================================================================================\n");
    for (int i = 0; i < operation_count; i++) {
+      teflon_debug("%3d ", i);
+
       switch(operations[i].type) {
-      case PIPE_ML_OPERATION_TYPE_ADD:
-         teflon_debug("%3d %-6s %3d %3d  in: %d",
-                     i,
-                     "ADD",
-                     operations[i].input_tensor->index,
-                     operations[i].output_tensor->index,
-                     operations[i].add.input_tensor->index);
-         break;
-      case PIPE_ML_OPERATION_TYPE_CONVOLUTION:
-         teflon_debug("%3d %-6s %3d %3d  w: %d b: %d stride: %d pad: %s",
-                     i,
-                     operations[i].conv.depthwise ? "DWCONV" : "CONV",
-                     operations[i].input_tensor->index,
-                     operations[i].output_tensor->index,
-                     operations[i].conv.weight_tensor->index,
-                     operations[i].conv.bias_tensor->index,
-                     operations[i].conv.stride_x,
-                     operations[i].conv.padding_same ? "SAME" : "VALID");
-         break;
-      case PIPE_ML_OPERATION_TYPE_POOLING:
-         teflon_debug("%3d %-6s %3d %3d  filter: %dx%d stride: %d pad: %s",
-                     i,
-                     "POOL",
-                     operations[i].input_tensor->index,
-                     operations[i].output_tensor->index,
-                     operations[i].pooling.filter_height,
-                     operations[i].pooling.filter_width,
-                     operations[i].pooling.stride_x,
-                     operations[i].pooling.padding_same ? "SAME" : "VALID");
-         break;
+         case PIPE_ML_OPERATION_TYPE_ADD:
+            teflon_debug("%-6s ", "ADD");
+            break;
+         case PIPE_ML_OPERATION_TYPE_CONVOLUTION:
+            teflon_debug("%-6s ", operations[i].conv.depthwise ? "DWCONV" : "CONV");
+            break;
+         case PIPE_ML_OPERATION_TYPE_POOLING:
+            teflon_debug("%-6s ", "POOL");
+            break;
+      }
+
+      for (unsigned j = 0; j < operations[i].input_count; j++) {
+         teflon_debug("%d", operations[i].input_tensors[j]->index);
+         if (j < operations[i].input_count - 1)
+            teflon_debug(",");
+      }
+
+      teflon_debug(" ");
+
+      for (unsigned j = 0; j < operations[i].output_count; j++) {
+         teflon_debug("%d", operations[i].output_tensors[j]->index);
+         if (j < operations[i].output_count - 1)
+            teflon_debug(",");
       }
 
       teflon_debug("\n");
@@ -325,18 +326,17 @@ partition_invoke(TfLiteContext *tf_context, TfLiteNode *node)
       start = (long)time.tv_sec * 1000 + (long)time.tv_nsec / 1000000;
    }
 
-   struct pipe_tensor input = {0};
-   /* FIXME: Support mutiple inputs */
-   fill_tensor(delegate, tf_context, &input, tsubgraph->input_tensors[0]);
-   context->ml_subgraph_invoke(context, subgraph, &input);
+   void **buffers = malloc(tsubgraph->input_count * sizeof(*buffers));
+   for (unsigned i = 0; i < tsubgraph->input_count; i++)
+      buffers[i] = tf_context->tensors[tsubgraph->input_tensors[i]].data.data;
+   context->ml_subgraph_invoke(context, subgraph, tsubgraph->input_count, tsubgraph->input_tensors, buffers);
+   free(buffers);
 
-   void **buffers = malloc(tsubgraph->output_count * sizeof(*buffers));
+   buffers = malloc(tsubgraph->output_count * sizeof(*buffers));
    for (unsigned i = 0; i < tsubgraph->output_count; i++)
       buffers[i] = tf_context->tensors[tsubgraph->output_tensors[i]].data.data;
    context->ml_subgraph_read_output(context, subgraph, tsubgraph->output_count, tsubgraph->output_tensors, buffers);
    free(buffers);
-
-   pipe_resource_reference(&input.resource, NULL);
 
    if (unlikely(debug_get_option_debug_teflon() & TEFLON_DEBUG_VERBOSE)) {
       struct timespec time;
