@@ -6,9 +6,6 @@ KHR-GL46.packed_pixels.rectangle.r8
 KHR-GL46.packed_pixels.rectangle.rgba32ui
 KHR-GL46.packed_pixels.rectangle.rgba8_snorm
 KHR-GL46.packed_pixels.varied_rectangle.*
-KHR-GL46.packed_pixels.varied_rectangle.rgb4
-KHR-GL46.packed_pixels.varied_rectangle.rgba12
-KHR-GL46.packed_pixels.varied_rectangle.rgba32i
 KHR-GL46.texture_buffer.texture_buffer_max_size
 KHR-GL46.texture_swizzle.smoke
 
