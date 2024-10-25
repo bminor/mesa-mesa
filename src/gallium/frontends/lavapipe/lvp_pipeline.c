@@ -505,6 +505,7 @@ lvp_shader_compile_to_ir(struct lvp_pipeline *pipeline,
    if (result == VK_SUCCESS) {
       struct lvp_shader *shader = &pipeline->shaders[stage];
       lvp_shader_init(shader, nir);
+      shader->push_constant_size = pipeline->layout->push_constant_size;
    }
    return result;
 }
@@ -830,8 +831,12 @@ lvp_graphics_pipeline_init(struct lvp_pipeline *pipeline,
             copy_shader_sanitized(&pipeline->shaders[MESA_SHADER_FRAGMENT], &p->shaders[MESA_SHADER_FRAGMENT]);
          }
          if (p->stages & layout_stages) {
-            if (!layout || (layout->vk.create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT))
+            if (!layout || (layout->vk.create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT)) {
                merge_layouts(&device->vk, pipeline, p->layout);
+               lvp_forall_gfx_stage(i) {
+                  pipeline->shaders[i].push_constant_size = pipeline->layout->push_constant_size;
+               }
+            }
          }
          pipeline->stages |= p->stages;
       }
@@ -1054,6 +1059,8 @@ lvp_compute_pipeline_init(struct lvp_pipeline *pipeline,
    if (!shader->inlines.can_inline)
       shader->shader_cso = lvp_shader_compile(pipeline->device, shader, nir_shader_clone(NULL, shader->pipeline_nir->nir), false);
    pipeline->compiled = true;
+   if (pipeline->layout)
+      shader->push_constant_size = pipeline->layout->push_constant_size;
    return VK_SUCCESS;
 }
 
@@ -1226,6 +1233,7 @@ create_shader_object(struct lvp_device *device, const VkShaderCreateInfoEXT *pCr
       pCreateInfo->pPushConstantRanges,
    };
    shader->layout = lvp_pipeline_layout_create(device, &pci, pAllocator);
+   shader->push_constant_size = shader->layout->push_constant_size;
 
    if (pCreateInfo->codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT)
       lvp_shader_lower(device, nir, shader->layout);

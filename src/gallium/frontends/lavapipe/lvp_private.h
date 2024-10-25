@@ -457,6 +457,7 @@ struct lvp_shader {
    } inlines;
    struct pipe_stream_output_info stream_output;
    struct blob blob; //preserved for GetShaderBinaryDataEXT
+   uint32_t push_constant_size;
 };
 
 enum lvp_pipeline_type {

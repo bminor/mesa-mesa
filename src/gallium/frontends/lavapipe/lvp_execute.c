@@ -598,12 +598,11 @@ static void emit_state(struct rendering_state *state)
 }
 
 static void
-handle_compute_shader(struct rendering_state *state, struct lvp_shader *shader, struct lvp_pipeline_layout *layout)
+handle_compute_shader(struct rendering_state *state, struct lvp_shader *shader)
 {
    state->shaders[MESA_SHADER_COMPUTE] = shader;
 
-   if ((layout->push_constant_stages & VK_SHADER_STAGE_COMPUTE_BIT) > 0)
-      state->has_pcbuf[MESA_SHADER_COMPUTE] = layout->push_constant_size > 0;
+   state->has_pcbuf[MESA_SHADER_COMPUTE] = shader->push_constant_size > 0;
 
    if (!state->has_pcbuf[MESA_SHADER_COMPUTE])
       state->pcbuf_dirty[MESA_SHADER_COMPUTE] = false;
@@ -621,7 +620,7 @@ static void handle_compute_pipeline(struct vk_cmd_queue_entry *cmd,
 {
    LVP_FROM_HANDLE(lvp_pipeline, pipeline, cmd->u.bind_pipeline.pipeline);
 
-   handle_compute_shader(state, &pipeline->shaders[MESA_SHADER_COMPUTE], pipeline->layout);
+   handle_compute_shader(state, &pipeline->shaders[MESA_SHADER_COMPUTE]);
 }
 
 static void handle_ray_tracing_pipeline(struct vk_cmd_queue_entry *cmd,
@@ -633,8 +632,7 @@ static void handle_ray_tracing_pipeline(struct vk_cmd_queue_entry *cmd,
 
    state->shaders[MESA_SHADER_RAYGEN] = shader;
 
-   if ((pipeline->layout->push_constant_stages & LVP_RAY_TRACING_STAGES) > 0)
-      state->has_pcbuf[MESA_SHADER_RAYGEN] = pipeline->layout->push_constant_size > 0;
+   state->has_pcbuf[MESA_SHADER_RAYGEN] = shader->push_constant_size > 0;
 
    if (!state->has_pcbuf[MESA_SHADER_RAYGEN])
       state->pcbuf_dirty[MESA_SHADER_RAYGEN] = false;
@@ -796,13 +794,11 @@ unbind_graphics_stages(struct rendering_state *state, VkShaderStageFlagBits shad
 }
 
 static void
-handle_graphics_layout(struct rendering_state *state, gl_shader_stage stage, struct lvp_pipeline_layout *layout)
+handle_graphics_pushconsts(struct rendering_state *state, gl_shader_stage stage, struct lvp_shader *shader)
 {
-   if (layout->push_constant_stages & BITFIELD_BIT(stage)) {
-      state->has_pcbuf[stage] = layout->push_constant_size > 0;
-      if (!state->has_pcbuf[stage])
-         state->pcbuf_dirty[stage] = false;
-   }
+   state->has_pcbuf[stage] = shader->push_constant_size > 0;
+   if (!state->has_pcbuf[stage])
+      state->pcbuf_dirty[stage] = false;
 }
 
 static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
@@ -823,7 +819,7 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
 
    handle_graphics_stages(state, pipeline->graphics_state.shader_stages, dynamic_tess_origin);
    lvp_forall_gfx_stage(sh) {
-      handle_graphics_layout(state, sh, pipeline->layout);
+      handle_graphics_pushconsts(state, sh, &pipeline->shaders[sh]);
    }
 
    /* rasterization state */
@@ -1136,7 +1132,15 @@ static void handle_pipeline(struct vk_cmd_queue_entry *cmd,
    } else if (pipeline->type == LVP_PIPELINE_EXEC_GRAPH) {
       state->exec_graph = pipeline;
    }
-   state->push_size[pipeline->type] = pipeline->layout->push_constant_size;
+   if (pipeline->layout) {
+      state->push_size[pipeline->type] = pipeline->layout->push_constant_size;
+   } else {
+      for (unsigned i = 0; i < ARRAY_SIZE(pipeline->shaders); i++)
+         if (pipeline->shaders[i].push_constant_size) {
+            state->push_size[pipeline->type] = pipeline->shaders[i].push_constant_size;
+            break;
+         }
+   }
 }
 
 static void handle_vertex_buffers2(struct vk_cmd_queue_entry *cmd,
@@ -3844,12 +3848,12 @@ handle_shaders(struct vk_cmd_queue_entry *cmd, struct rendering_state *state)
       unbind_graphics_stages(state, null_stages & all_gfx);
       handle_graphics_stages(state, vkstages & all_gfx, true);
       u_foreach_bit(i, new_stages) {
-         handle_graphics_layout(state, i, state->shaders[i]->layout);
+         handle_graphics_pushconsts(state, i, state->shaders[i]);
       }
    }
    /* ignore compute unbinds */
    if (new_stages & BITFIELD_BIT(MESA_SHADER_COMPUTE)) {
-      handle_compute_shader(state, state->shaders[MESA_SHADER_COMPUTE], state->shaders[MESA_SHADER_COMPUTE]->layout);
+      handle_compute_shader(state, state->shaders[MESA_SHADER_COMPUTE]);
    }
 
    if (gfx) {
@@ -4394,7 +4398,7 @@ dispatch_graph(struct rendering_state *state, const VkDispatchGraphInfoAMDX *inf
       for (uint32_t z = 0; z < dispatch.z; z++) {
          for (uint32_t y = 0; y < dispatch.y; y++) {
             for (uint32_t x = 0; x < dispatch.x; x++) {
-               handle_compute_shader(state, shader, pipeline->layout);
+               handle_compute_shader(state, shader);
                emit_compute_state(state);
 
                state->dispatch_info.grid_base[0] = x;
