@@ -1917,7 +1917,8 @@ resource_barrier_wait_stage(enum intel_engine_class engine_class,
 }
 
 ALWAYS_INLINE static bool
-can_use_resource_barrier(enum intel_engine_class engine_class,
+can_use_resource_barrier(const struct intel_device_info *devinfo,
+                         enum intel_engine_class engine_class,
                          VkPipelineStageFlags2 src_stages,
                          VkPipelineStageFlags2 dst_stages,
                          enum anv_pipe_bits bits,
@@ -1928,13 +1929,22 @@ can_use_resource_barrier(enum intel_engine_class engine_class,
        engine_class != INTEL_ENGINE_CLASS_COMPUTE)
       return false;
 
-   /* Currently disabled, we're not sure why it doesn't work. Using a
-    * RESOURCE_BARRIER with Type=Signal and an MI_SEMAPHORE_WAIT also doesn't
-    * work, so it looks like there is a problem with the flushing happening on
-    * the signal side.
+   /* Wa_18039014283:
+    *
+    * RESOURCE_BARRIER instructions with a Type=Signal, SignalStage=GPGPU are
+    * not functional. Since the main use case for this is VkEvent and VkEvent
+    * might not have exactly matching informations on both signal/wait sides
+    * (see
+    * https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCmdWaitEvents.html),
+    * this is somewhat unusable.
+    *
+    * We're also seeing other problems with this, for example with
+    * dEQP-VK.synchronization2.op.single_queue.event.write_blit_image_read_copy_image_to_buffer.image_128_r32_uint
+    * So HW might be more broken than expected.
     */
-   if (!anv_address_is_null(signal_addr) ||
-       !anv_address_is_null(wait_addr))
+   if (intel_needs_workaround(devinfo, 18039014283) &&
+       (!anv_address_is_null(signal_addr) ||
+        !anv_address_is_null(wait_addr)))
       return false;
 
    /* The HW doesn't support signaling from the top of pipeline */
@@ -2103,7 +2113,7 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                               enum anv_pipe_bits *emitted_flush_bits)
 {
 #if GFX_VER >= 20
-   if (can_use_resource_barrier(batch->engine_class,
+   if (can_use_resource_barrier(device->info, batch->engine_class,
                                 src_stages, dst_stages, bits,
                                 signal_addr, wait_addr)) {
       emit_resource_barrier(batch, device->info,
@@ -6954,7 +6964,8 @@ void genX(CmdWaitEvents2)(
          bits |= ANV_PIPE_END_OF_PIPE_SYNC_FORCE_FLUSH_L3_BIT;
 
 #if GFX_VER >= 20
-      if (can_use_resource_barrier(cmd_buffer->batch.engine_class,
+      if (can_use_resource_barrier(cmd_buffer->device->info,
+                                   cmd_buffer->batch.engine_class,
                                    src_stages, dst_stages, bits,
                                    ANV_NULL_ADDRESS, wait_addr)) {
          emit_resource_barrier(&cmd_buffer->batch,
