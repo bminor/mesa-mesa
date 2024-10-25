@@ -283,19 +283,6 @@ sources_not_null(const struct brw_isa_info *isa,
    return error_msg;
 }
 
-static struct string
-alignment_supported(const struct brw_isa_info *isa,
-                    const brw_hw_decoded_inst *inst)
-{
-   const struct intel_device_info *devinfo = isa->devinfo;
-   struct string error_msg = { .str = NULL, .len = 0 };
-
-   ERROR_IF(devinfo->ver >= 11 && inst->access_mode == BRW_ALIGN_16,
-            "Align16 not supported");
-
-   return error_msg;
-}
-
 static bool
 inst_uses_src_acc(const struct brw_isa_info *isa,
                   const brw_hw_decoded_inst *inst)
@@ -2228,6 +2215,9 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
    RETURN_ERROR_IF(inst->num_sources == 3 && inst->access_mode == BRW_ALIGN_1 && devinfo->ver == 9,
                    "Align1 mode not allowed on Gfx9 for 3-src instructions");
 
+   RETURN_ERROR_IF(inst->access_mode == BRW_ALIGN_16 && devinfo->ver >= 11,
+                   "Align16 mode doesn't exist on Gfx11+");
+
    enum instr_format {
       FORMAT_BASIC,
       FORMAT_BASIC_THREE_SRC,
@@ -2552,7 +2542,6 @@ brw_validate_instruction(const struct brw_isa_info *isa,
       if (error_msg.str == NULL) {
          CHECK(sources_not_null);
          CHECK(send_restrictions);
-         CHECK(alignment_supported);
          CHECK(general_restrictions_based_on_operand_types);
          CHECK(general_restrictions_on_region_parameters);
          CHECK(special_restrictions_for_mixed_float_mode);
