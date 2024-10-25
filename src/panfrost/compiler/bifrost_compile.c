@@ -1677,20 +1677,6 @@ bi_clper(bi_builder *b, bi_index s0, bi_index s1, enum bi_lane_op lop)
    }
 }
 
-static bool
-bi_nir_all_uses_fabs(nir_def *def)
-{
-   nir_foreach_use(use, def) {
-      nir_instr *instr = nir_src_parent_instr(use);
-
-      if (instr->type != nir_instr_type_alu ||
-          nir_instr_as_alu(instr)->op != nir_op_fabs)
-         return false;
-   }
-
-   return true;
-}
-
 static void
 bi_emit_derivative(bi_builder *b, bi_index dst, nir_intrinsic_instr *instr,
                    unsigned axis, bool coarse)
@@ -1702,7 +1688,7 @@ bi_emit_derivative(bi_builder *b, bi_index dst, nir_intrinsic_instr *instr,
    /* If all uses are fabs, the sign of the derivative doesn't matter. This is
     * inherently based on fine derivatives so we can't do it for coarse.
     */
-   if (bi_nir_all_uses_fabs(&instr->def) && !coarse) {
+   if (nir_def_all_uses_ignore_sign_bit(&instr->def) && !coarse) {
       left = s0;
       right = bi_clper(b, s0, bi_imm_u32(axis), BI_LANE_OP_XOR);
    } else {
