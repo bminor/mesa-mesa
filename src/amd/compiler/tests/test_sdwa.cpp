@@ -689,7 +689,7 @@ BEGIN_TEST(optimize.sdwa.subdword_extract)
                                    Operand::c32(8), Operand::c32(0)),
                         inputs[2]));
 
-   //! v1b: %res3 = v_or_b32 %a, %b dst_sel:ubyte0 dst_preserve src0_sel:uword0 src1_sel:ubyte2
+   //! v1b: %res3 = v_or_b32 %a, %b dst_sel:ubyte0 dst_preserve src0_sel:uword0 src1_sel:uword1
    //! p_unit_test 3, %res3
    writeout(3, bld.vop2(aco_opcode::v_or_b32, bld.def(v1b),
                         bld.pseudo(aco_opcode::p_extract, bld.def(v1b), a, Operand::c32(0),
@@ -703,9 +703,7 @@ BEGIN_TEST(optimize.sdwa.subdword_extract)
                         bld.pseudo(aco_opcode::p_extract, bld.def(v2b), a, Operand::c32(0),
                                    Operand::c32(8), Operand::c32(1))));
 
-   /* TODO incremental conversion to sdwa loses information if zero extend is actually necessary */
-   //! v2b: %tmp5 = p_extract %b, 1, 8, 1
-   //! v2b: %res5 = v_or_b32 %a, %tmp5 dst_sel:uword0 dst_preserve src0_sel:sbyte0 src1_sel:uword0
+   //! v2b: %res5 = v_or_b32 %a, %b dst_sel:uword0 dst_preserve src0_sel:sbyte0 src1_sel:sbyte1
    //! p_unit_test 5, %res5
    writeout(5, bld.vop2(aco_opcode::v_or_b32, bld.def(v2b),
                         bld.pseudo(aco_opcode::p_extract, bld.def(v2b), a, Operand::c32(0),
@@ -844,4 +842,42 @@ BEGIN_TEST(optimize.sdwa.extract_vector)
                            Operand::c32(1)));
 
    finish_opt_test();
+END_TEST
+
+BEGIN_TEST(optimizer.sdwa.lanemask_extract)
+   for (unsigned i = GFX10; i <= GFX11; i++) {
+      if (i == GFX10_3)
+         continue;
+
+      //>> v1: %a:v[0],  v1: %b:v[1], s1: %c:s[0] = p_startpgm
+      if (!setup_cs("v1 v1 s1", (amd_gfx_level)i, CHIP_UNKNOWN, "", 32))
+         continue;
+
+      Temp a = inputs[0];
+      Temp b = inputs[1];
+      Temp c = inputs[2];
+
+      //! s1: %mask0,  s1: %_:scc = p_extract %c, 0, 16, 0
+      //! v1: %res0 = v_cndmask_b32 %a, %b, %mask0
+      //! p_unit_test 0, %res0
+      Temp mask = ext_ushort(c, 0);
+      Temp bcsel = bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), a, b, mask);
+      writeout(0, bcsel);
+
+      //! s1: %mask1,  s1: %_:scc = p_extract %c, 2, 8, 1
+      //! v1: %res1 = v_cndmask_b32 %a, %b, %mask1
+      //! p_unit_test 1, %res1
+      mask = ext_sbyte(c, 2);
+      bcsel = bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), a, b, mask);
+      writeout(1, bcsel);
+
+      //! s1: %mask2,  s1: %_:scc = p_extract %c, 3, 8, 0
+      //! v1: %res2 = v_cndmask_b32 %a, %b, %mask2
+      //! p_unit_test 2, %res2
+      mask = ext_ubyte(c, 3);
+      bcsel = bld.vop2(aco_opcode::v_cndmask_b32, bld.def(v1), a, b, mask);
+      writeout(2, bcsel);
+
+      finish_opt_test();
+   }
 END_TEST
