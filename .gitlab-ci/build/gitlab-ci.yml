@@ -708,6 +708,7 @@ debian-clang:
       -Wno-error=overloaded-virtual
       -Wno-error=tautological-constant-out-of-range-compare
       -Wno-error=unused-private-field
+      -Wno-error=vla-cxx-extension
     DRI_LOADERS: >
       -D glx=dri
       -D gbm=enabled

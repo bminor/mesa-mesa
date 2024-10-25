@@ -183,6 +183,8 @@ CONTAINER_EPHEMERAL=(
 
 echo "deb [trusted=yes] https://gitlab.freedesktop.org/gfx-ci/ci-deb-repo/-/raw/${PKG_REPO_REV}/ ${FDO_DISTRIBUTION_VERSION%-*} main" | tee /etc/apt/sources.list.d/gfx-ci_.list
 
+. .gitlab-ci/container/debian/maybe-add-llvm-repo.sh
+
 apt-get update
 apt-get install -y --no-remove \
 		   -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' \
@@ -266,7 +268,8 @@ mmdebstrap \
     bookworm \
     "$ROOTFS/" \
     "http://deb.debian.org/debian" \
-    "deb [trusted=yes] https://gitlab.freedesktop.org/gfx-ci/ci-deb-repo/-/raw/${PKG_REPO_REV}/ ${FDO_DISTRIBUTION_VERSION%-*} main"
+    "deb [trusted=yes] https://gitlab.freedesktop.org/gfx-ci/ci-deb-repo/-/raw/${PKG_REPO_REV}/ ${FDO_DISTRIBUTION_VERSION%-*} main" \
+    "${LLVM_APT_REPO:-}"
 
 ############### Install mold
 . .gitlab-ci/container/build-mold.sh

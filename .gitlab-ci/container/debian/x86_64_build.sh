@@ -31,6 +31,7 @@ DEPS=(
     libarchive-dev
     libdrm-dev
     "libclang-cpp${LLVM_VERSION}-dev"
+    "libclang-rt-${LLVM_VERSION}-dev"
     libgbm-dev
     libglvnd-dev
     liblua5.3-dev

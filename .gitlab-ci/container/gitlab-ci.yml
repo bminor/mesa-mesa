@@ -72,7 +72,7 @@ debian/x86_64_build-base:
     - .debian-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_build-base "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
-    LLVM_VERSION: &debian-x86_64-llvm 15
+    LLVM_VERSION: &debian-x86_64-llvm 19
 
 .use-debian/x86_64_build-base:
   extends:
@@ -130,6 +130,7 @@ debian/ppc64el_build:
     - .use-debian/x86_64_build-base
   variables:
     MESA_IMAGE_TAG: &debian-ppc64el_build ${DEBIAN_BUILD_TAG}
+    LLVM_VERSION: &debian-ppc64el-llvm 15 # no LLVM packages for PPC
 
 .use-debian/ppc64el_build:
   extends:
@@ -138,7 +139,7 @@ debian/ppc64el_build:
     MESA_BASE_TAG: *debian-x86_64_build-base
     MESA_IMAGE_PATH: "debian/ppc64el_build"
     MESA_IMAGE_TAG: *debian-ppc64el_build
-    LLVM_VERSION: *debian-x86_64-llvm
+    LLVM_VERSION: *debian-ppc64el-llvm
   needs:
     - debian/ppc64el_build
 
@@ -148,6 +149,7 @@ debian/s390x_build:
     - .use-debian/x86_64_build-base
   variables:
     MESA_IMAGE_TAG: &debian-s390x_build ${DEBIAN_BUILD_TAG}
+    LLVM_VERSION: &debian-s390x-llvm 19
 
 .use-debian/s390x_build:
   extends:
@@ -156,7 +158,7 @@ debian/s390x_build:
     MESA_BASE_TAG: *debian-x86_64_build-base
     MESA_IMAGE_PATH: "debian/s390x_build"
     MESA_IMAGE_TAG: *debian-s390x_build
-    LLVM_VERSION: *debian-x86_64-llvm
+    LLVM_VERSION: *debian-s390x-llvm
   needs:
     - debian/s390x_build
 
@@ -200,7 +202,7 @@ debian/arm64_build:
     - aarch64
   variables:
     MESA_IMAGE_TAG: &debian-arm64_build "${DEBIAN_BASE_TAG}--${PKG_REPO_REV}"
-    LLVM_VERSION: &debian-arm64-llvm 15
+    LLVM_VERSION: &debian-arm64-llvm 19
 
 .use-debian/arm64_build:
   extends:
@@ -485,7 +487,7 @@ kernel+rootfs_arm32:
     - .firmware_arm32
   variables:
     DEBIAN_ARCH: "armhf"
-    LLVM_VERSION: *debian-arm64-llvm # these are tied together as arm32 is built within aarch64
+    LLVM_VERSION: &debian-arm32-llvm 15 # no armhf builds for LLVM
 
 # Cannot use anchors defined here from included files, so use extends: instead
 .use-kernel+rootfs-arm:

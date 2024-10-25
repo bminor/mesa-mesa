@@ -80,3 +80,6 @@ program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float16,
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float2,Fail
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float4,Fail
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float8,Fail
+
+# (file=input,line=0,column=0,index=0): Unresolved external reference to "_Z21convert_char4_sat_rteDv4_i".
+program@execute@vector-conversion,Fail
