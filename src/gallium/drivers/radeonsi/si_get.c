@@ -1066,7 +1066,8 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
       return true;
    case PIPE_VIDEO_CAP_ROI_CROP_DEC:
       if (codec == PIPE_VIDEO_FORMAT_JPEG &&
-          sscreen->info.vcn_ip_version == VCN_4_0_3)
+          (sscreen->info.vcn_ip_version == VCN_4_0_3 ||
+           sscreen->info.vcn_ip_version == VCN_5_0_1))
          return true;
       return false;
    case PIPE_VIDEO_CAP_SKIP_CLEAR_SURFACE:
@@ -1135,7 +1136,8 @@ static bool si_vid_is_format_supported(struct pipe_screen *screen, enum pipe_for
       case PIPE_FORMAT_R8G8B8A8_UNORM:
       case PIPE_FORMAT_A8R8G8B8_UNORM:
       case PIPE_FORMAT_R8_G8_B8_UNORM:
-         if (sscreen->info.vcn_ip_version == VCN_4_0_3)
+         if (sscreen->info.vcn_ip_version == VCN_4_0_3 ||
+             sscreen->info.vcn_ip_version == VCN_5_0_1)
             return true;
          else
             return false;
