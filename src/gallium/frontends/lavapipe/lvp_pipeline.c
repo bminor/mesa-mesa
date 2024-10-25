@@ -968,12 +968,7 @@ lvp_graphics_pipeline_create(
 
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
 
-   size_t size = 0;
-   const VkGraphicsPipelineShaderGroupsCreateInfoNV *groupinfo = vk_find_struct_const(pCreateInfo, GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV);
-   if (!group && groupinfo)
-      size += (groupinfo->groupCount + groupinfo->pipelineCount) * sizeof(VkPipeline);
-
-   pipeline = vk_zalloc(&device->vk.alloc, sizeof(*pipeline) + size, 8,
+   pipeline = vk_zalloc(&device->vk.alloc, sizeof(*pipeline), 8,
                          VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (pipeline == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -985,25 +980,6 @@ lvp_graphics_pipeline_create(
    if (result != VK_SUCCESS) {
       vk_free(&device->vk.alloc, pipeline);
       return result;
-   }
-   if (!group && groupinfo) {
-      VkGraphicsPipelineCreateInfo pci = *pCreateInfo;
-      for (unsigned i = 0; i < groupinfo->groupCount; i++) {
-         const VkGraphicsShaderGroupCreateInfoNV *g = &groupinfo->pGroups[i];
-         pci.pVertexInputState = g->pVertexInputState;
-         pci.pTessellationState = g->pTessellationState;
-         pci.pStages = g->pStages;
-         pci.stageCount = g->stageCount;
-         result = lvp_graphics_pipeline_create(_device, _cache, &pci, flags, &pipeline->groups[i], true);
-         if (result != VK_SUCCESS) {
-            lvp_pipeline_destroy(device, pipeline, false);
-            return result;
-         }
-         pipeline->num_groups++;
-      }
-      for (unsigned i = 0; i < groupinfo->pipelineCount; i++)
-         pipeline->groups[pipeline->num_groups + i] = groupinfo->pPipelines[i];
-      pipeline->num_groups_total = groupinfo->groupCount + groupinfo->pipelineCount;
    }
 
    VkPipelineCreationFeedbackCreateInfo *feedback = (void*)vk_find_struct_const(pCreateInfo->pNext, PIPELINE_CREATION_FEEDBACK_CREATE_INFO);

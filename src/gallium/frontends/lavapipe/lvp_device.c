@@ -275,7 +275,6 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
 #endif
    .GOOGLE_decorate_string                = true,
    .GOOGLE_hlsl_functionality1            = true,
-   .NV_device_generated_commands          = true,
 };
 
 static bool
@@ -648,9 +647,6 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .robustBufferAccess2 = true,
       .robustImageAccess2 = true,
       .nullDescriptor = true,
-
-      /* VK_NV_device_generated_commands */
-      .deviceGeneratedCommandsNV = true,
 
       /* VK_EXT_device_generated_commands */
       .deviceGeneratedCommands = true,
@@ -1056,20 +1052,12 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       /* VK_EXT_extended_dynamic_state3 */
       .dynamicPrimitiveTopologyUnrestricted = VK_TRUE,
 
-      /* VK_NV_device_generated_commands */
-      .maxGraphicsShaderGroupCount = 1<<12,
-      .maxIndirectSequenceCount = 1<<20,
-      .maxIndirectCommandsTokenCount = MAX_DGC_TOKENS,
-      .maxIndirectCommandsStreamCount = MAX_DGC_STREAMS,
-      .maxIndirectCommandsTokenOffset = 2047,
-      .maxIndirectCommandsStreamStride = 2048,
-      .minSequencesCountBufferOffsetAlignment = 4,
-      .minSequencesIndexBufferOffsetAlignment = 4,
-      .minIndirectCommandsBufferOffsetAlignment = 4,
-
       /* VK_EXT_device_generated_commands */
       .maxIndirectPipelineCount = 1<<12,
       .maxIndirectShaderObjectCount = 1<<12,
+      .maxIndirectSequenceCount = 1<<20,
+      .maxIndirectCommandsTokenCount = MAX_DGC_TOKENS,
+      .maxIndirectCommandsTokenOffset = 2047,
       .maxIndirectCommandsIndirectStride = 2048,
       .supportedIndirectCommandsInputModes = VK_INDIRECT_COMMANDS_INPUT_MODE_VULKAN_INDEX_BUFFER_EXT | VK_INDIRECT_COMMANDS_INPUT_MODE_DXGI_INDEX_BUFFER_EXT,
       .supportedIndirectCommandsShaderStages = VK_SHADER_STAGE_ALL,
