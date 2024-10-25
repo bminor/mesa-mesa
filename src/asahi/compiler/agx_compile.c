@@ -1756,20 +1756,17 @@ agx_fminmax_to(agx_builder *b, agx_index dst, agx_index s0, agx_index s1,
    assert(!nir_alu_instr_is_signed_zero_preserve(alu) &&
           "should've been lowered");
 
-   bool fmax = alu->op == nir_op_fmax;
+   assert((alu->def.bit_size == 16) ==
+             (alu->op == nir_op_fmin || alu->op == nir_op_fmax) &&
+          "fp32 should be lowered");
+
+   bool fmax = alu->op == nir_op_fmax || alu->op == nir_op_fmax_agx;
    enum agx_fcond fcond = fmax ? AGX_FCOND_GTN : AGX_FCOND_LTN;
 
-   /* Calculate min/max with the appropriate hardware instruction */
-   agx_index tmp = agx_fcmpsel(b, s0, s1, s0, s1, fcond);
-
-   /* G13 flushes fp32 denorms and preserves fp16 denorms. Since cmpsel
-    * preserves denorms, we need to canonicalize for fp32. Canonicalizing fp16
-    * would be harmless but wastes an instruction.
+   /* Calculate min/max with the appropriate hardware instruction. This will not
+    * handle denorms, but we were already lowered for that.
     */
-   if (alu->def.bit_size == 32)
-      return agx_fadd_to(b, dst, tmp, agx_negzero());
-   else
-      return agx_mov_to(b, dst, tmp);
+   return agx_fcmpsel_to(b, dst, s0, s1, s0, s1, fcond);
 }
 
 static agx_instr *
@@ -1893,6 +1890,8 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
 
    case nir_op_fmin:
    case nir_op_fmax:
+   case nir_op_fmin_agx:
+   case nir_op_fmax_agx:
       return agx_fminmax_to(b, dst, s0, s1, instr);
 
    case nir_op_imin:
@@ -3035,6 +3034,11 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
       } while (progress);
    }
 
+   /* Lower fmin/fmax before optimizing preambles so we can see across uniform
+    * expressions.
+    */
+   NIR_PASS(_, nir, agx_nir_lower_fminmax);
+
    if (preamble_size && (!(agx_compiler_debug & AGX_DBG_NOPREAMBLE)))
       NIR_PASS(_, nir, agx_nir_opt_preamble, preamble_size);
 
@@ -3048,7 +3052,12 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
    NIR_PASS(_, nir, nir_opt_peephole_select, 64, false, true);
    NIR_PASS(_, nir, nir_lower_int64);
 
+   /* We need to lower fmin/fmax again after nir_opt_algebraic_late due to f2fmp
+    * wackiness. This is usually a no-op but is required for correctness in
+    * GLES.
+    */
    NIR_PASS(_, nir, nir_opt_algebraic_late);
+   NIR_PASS(_, nir, agx_nir_lower_fminmax);
 
    /* Fuse add/sub/multiplies/shifts after running opt_algebraic_late to fuse
     * isub but before shifts are lowered.
