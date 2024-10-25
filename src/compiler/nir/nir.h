@@ -1569,8 +1569,7 @@ typedef struct nir_op_info {
    uint8_t output_size;
 
    /**
-    * The type of vector that the instruction outputs. Note that the
-    * staurate modifier is only allowed on outputs with the float type.
+    * The type of vector that the instruction outputs.
     */
    nir_alu_type output_type;
 
