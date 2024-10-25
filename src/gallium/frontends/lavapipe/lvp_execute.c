@@ -4498,7 +4498,7 @@ bind_db_samplers(struct rendering_state *state, enum lvp_pipeline_type pipeline_
       return;
    }
    uint8_t *db = state->desc_buffer_addrs[buffer_index] + state->desc_buffer_offsets[pipeline_type][set].offset;
-   uint8_t did_update = 0;
+   uint32_t did_update = 0;
    for (uint32_t binding_index = 0; binding_index < set_layout->binding_count; binding_index++) {
       const struct lvp_descriptor_set_binding_layout *bind_layout = &set_layout->binding[binding_index];
       if (!bind_layout->immutable_samplers)
