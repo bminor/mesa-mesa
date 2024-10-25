@@ -200,7 +200,7 @@ xe_compute_topology(struct intel_device_info * devinfo,
       devinfo->max_slices = 1;
       devinfo->max_subslices_per_slice = 6;
    }
-   devinfo->max_eus_per_subslice = 16;
+   devinfo->max_eus_per_subslice = __builtin_popcount(*eu_per_dss_mask);
    devinfo->subslice_slice_stride = DIV_ROUND_UP(devinfo->max_slices, 8);
    devinfo->eu_slice_stride = DIV_ROUND_UP(devinfo->max_eus_per_subslice * devinfo->max_subslices_per_slice, 8);
    devinfo->eu_subslice_stride = DIV_ROUND_UP(devinfo->max_eus_per_subslice, 8);
