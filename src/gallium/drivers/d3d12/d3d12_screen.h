@@ -54,8 +54,12 @@ enum resource_dimension
 };
 
 struct d3d12_memory_info {
-   uint64_t usage;
-   uint64_t budget;
+   uint64_t usage_local;
+   uint64_t budget_local;
+   uint64_t usage_nonlocal;
+   uint64_t budget_nonlocal;
+   uint64_t usage;    // local + nonlocal
+   uint64_t budget;   // local + nonlocal
 };
 
 struct d3d12_screen {
@@ -133,7 +137,8 @@ struct d3d12_screen {
    uint32_t subsys_id;
    uint32_t revision;
    uint64_t driver_version;
-   uint64_t memory_size_megabytes;
+   uint64_t memory_device_size_megabytes;
+   uint64_t memory_system_size_megabytes;
    float timestamp_multiplier;
    bool have_load_at_vertex;
    bool support_shader_images;

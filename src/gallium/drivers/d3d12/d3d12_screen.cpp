@@ -120,7 +120,7 @@ d3d12_get_video_mem(struct pipe_screen *pscreen)
 {
    struct d3d12_screen* screen = d3d12_screen(pscreen);
 
-   return screen->memory_size_megabytes;
+   return screen->memory_device_size_megabytes + screen->memory_system_size_megabytes;
 }
 
 static int
