@@ -1706,6 +1706,21 @@ nir_def_all_uses_are_fsat(const nir_def *def)
    return true;
 }
 
+bool
+nir_def_all_uses_ignore_sign_bit(const nir_def *def)
+{
+   nir_foreach_use(use, def) {
+      if (nir_src_is_if(use))
+         return false;
+      nir_instr *instr = nir_src_parent_instr(use);
+
+      if (instr->type != nir_instr_type_alu ||
+          nir_instr_as_alu(instr)->op != nir_op_fabs)
+         return false;
+   }
+   return true;
+}
+
 nir_block *
 nir_block_unstructured_next(nir_block *block)
 {
