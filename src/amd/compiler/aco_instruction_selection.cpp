@@ -8544,18 +8544,9 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       Temp src = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[0].ssa));
       Temp dst = get_ssa_temp(ctx, &instr->def);
 
-      bool only_used_by_abs = true;
-      nir_foreach_use (use, &instr->def) {
-         nir_instr* use_instr = nir_src_parent_instr(use);
-
-         if (use_instr->type != nir_instr_type_alu ||
-             nir_instr_as_alu(use_instr)->op != nir_op_fabs)
-            only_used_by_abs = false;
-      }
-
       uint16_t dpp_ctrl1, dpp_ctrl2;
       if (instr->intrinsic == nir_intrinsic_ddx_fine) {
-         if (only_used_by_abs) {
+         if (nir_def_all_uses_ignore_sign_bit(&instr->def)) {
             dpp_ctrl1 = dpp_quad_perm(1, 0, 3, 2);
             dpp_ctrl2 = dpp_quad_perm(0, 1, 2, 3);
          } else {
@@ -8563,7 +8554,7 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
             dpp_ctrl2 = dpp_quad_perm(1, 1, 3, 3);
          }
       } else if (instr->intrinsic == nir_intrinsic_ddy_fine) {
-         if (only_used_by_abs) {
+         if (nir_def_all_uses_ignore_sign_bit(&instr->def)) {
             dpp_ctrl1 = dpp_quad_perm(2, 3, 0, 1);
             dpp_ctrl2 = dpp_quad_perm(0, 1, 2, 3);
          } else {
