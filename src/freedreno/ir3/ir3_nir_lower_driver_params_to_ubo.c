@@ -13,6 +13,10 @@ static nir_def *
 load_primitive_map_ubo(nir_builder *b, struct ir3_shader_variant *v,
                        unsigned components, unsigned offset)
 {
+   if (v->binning_pass) {
+      return ir3_load_shared_driver_ubo(
+         b, components, &ir3_const_state(v)->primitive_map_ubo, offset);
+   }
    struct ir3_const_state *const_state = ir3_const_state_mut(v);
    return ir3_load_driver_ubo(b, components, &const_state->primitive_map_ubo,
                               offset);
@@ -22,6 +26,10 @@ static nir_def *
 load_primitive_param_ubo(nir_builder *b, struct ir3_shader_variant *v,
                          unsigned components, unsigned offset)
 {
+   if (v->binning_pass) {
+      return ir3_load_shared_driver_ubo(
+         b, components, &ir3_const_state(v)->primitive_param_ubo, offset);
+   }
    struct ir3_const_state *const_state = ir3_const_state_mut(v);
    return ir3_load_driver_ubo(b, components, &const_state->primitive_param_ubo,
                               offset);
@@ -31,6 +39,10 @@ static nir_def *
 load_driver_params_ubo(nir_builder *b, struct ir3_shader_variant *v,
                        unsigned components, unsigned offset)
 {
+   if (v->binning_pass) {
+      return ir3_load_shared_driver_ubo(
+         b, components, &ir3_const_state(v)->driver_params_ubo, offset);
+   }
    struct ir3_const_state *const_state = ir3_const_state_mut(v);
    return ir3_load_driver_ubo(b, components, &const_state->driver_params_ubo,
                               offset);

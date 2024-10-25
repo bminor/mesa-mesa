@@ -13,6 +13,9 @@
 #include "ir3_nir.h"
 #include "ir3_shader.h"
 
+/* For use by binning_pass shaders, where const_state is const, but expected
+ * to be already set up when we compiled the corresponding non-binning variant
+ */
 nir_def *
 ir3_get_shared_driver_ubo(nir_builder *b, const struct ir3_driver_ubo *ubo)
 {
@@ -78,6 +81,30 @@ ir3_update_driver_ubo(nir_shader *nir, const struct ir3_driver_ubo *ubo, const c
    var->data.driver_location = ubo->idx;
 }
 
+static nir_def *
+load_driver_ubo(nir_builder *b, unsigned components, nir_def *ubo, unsigned offset)
+{
+   return nir_load_ubo(b, components, 32, ubo,
+                       nir_imm_int(b, offset * sizeof(uint32_t)),
+                       .align_mul = 16,
+                       .align_offset = (offset % 4) * sizeof(uint32_t),
+                       .range_base = offset * sizeof(uint32_t),
+                       .range = components * sizeof(uint32_t));
+}
+
+/* For use by binning_pass shaders, where const_state is const, but expected
+ * to be already set up when we compiled the corresponding non-binning variant
+ */
+nir_def *
+ir3_load_shared_driver_ubo(nir_builder *b, unsigned components,
+                           const struct ir3_driver_ubo *ubo,
+                           unsigned offset)
+{
+   assert(ubo->size >= MAX2(ubo->size, offset + components));
+
+   return load_driver_ubo(b, components, ir3_get_shared_driver_ubo(b, ubo), offset);
+}
+
 nir_def *
 ir3_load_driver_ubo(nir_builder *b, unsigned components,
                     struct ir3_driver_ubo *ubo,
@@ -85,12 +112,7 @@ ir3_load_driver_ubo(nir_builder *b, unsigned components,
 {
    ubo->size = MAX2(ubo->size, offset + components);
 
-   return nir_load_ubo(b, components, 32, ir3_get_driver_ubo(b, ubo),
-                       nir_imm_int(b, offset * sizeof(uint32_t)),
-                       .align_mul = 16,
-                       .align_offset = (offset % 4) * sizeof(uint32_t),
-                       .range_base = offset * sizeof(uint32_t),
-                       .range = components * sizeof(uint32_t));
+   return load_driver_ubo(b, components, ir3_get_driver_ubo(b, ubo), offset);
 }
 
 nir_def *
