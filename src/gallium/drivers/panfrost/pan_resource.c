@@ -1659,6 +1659,11 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
          dst_slice->row_stride = dst_stride * AFBC_HEADER_BYTES_PER_TILE;
          dst_slice->surface_stride = dst_slice->afbc.surface_stride;
          dst_slice->size = dst_slice->afbc.surface_stride;
+
+         /* We can't write to AFBC-packed resource, so there is no reason to
+          * keep CRC data around */
+         dst_slice->crc.offset = 0;
+         dst_slice->crc.size = 0;
       }
       total_size += dst_slice->afbc.surface_stride;
    }
@@ -1694,6 +1699,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    panfrost_bo_unreference(prsrc->bo);
    prsrc->bo = dst;
    prsrc->image.data.base = dst->ptr.gpu;
+   prsrc->image.layout.crc = false;
+   prsrc->valid.crc = false;
    panfrost_bo_unreference(metadata_bo);
 }
 
