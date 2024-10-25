@@ -392,8 +392,8 @@ panfrost_should_pack_afbc(struct panfrost_device *dev,
           drm_is_afbc(prsrc->image.layout.modifier) &&
           (prsrc->image.layout.modifier & AFBC_FORMAT_MOD_SPARSE) &&
           (prsrc->base.bind & ~valid_binding) == 0 &&
-          !prsrc->modifier_constant && prsrc->base.width0 >= 32 &&
-          prsrc->base.height0 >= 32;
+          !prsrc->modifier_constant && prsrc->base.array_size == 1 &&
+          prsrc->base.width0 >= 32 && prsrc->base.height0 >= 32 ;
 }
 
 static bool
@@ -1597,6 +1597,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
    struct panfrost_bo *metadata_bo;
    unsigned metadata_offsets[PIPE_MAX_TEXTURE_LEVELS];
 
+   assert(prsrc->base.array_size == 1);
+
    uint64_t src_modifier = prsrc->image.layout.modifier;
    uint64_t dst_modifier =
       src_modifier & ~(AFBC_FORMAT_MOD_TILED | AFBC_FORMAT_MOD_SPARSE);
@@ -1683,6 +1685,8 @@ panfrost_pack_afbc(struct panfrost_context *ctx,
                              metadata_offsets[level], level);
       prsrc->image.layout.slices[level] = *slice;
    }
+   prsrc->image.layout.array_stride = new_size;
+   prsrc->image.layout.data_size = new_size;
 
    panfrost_flush_batches_accessing_rsrc(ctx, prsrc, "AFBC compaction flush");
 
