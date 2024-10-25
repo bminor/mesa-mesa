@@ -81,15 +81,13 @@ lower_driver_param_to_ubo(nir_builder *b, nir_intrinsic_instr *intr, void *in)
    case nir_intrinsic_load_tess_factor_base_ir3:
       result = load_primitive_param_ubo(b, v, components, 6);
       break;
-   /* These are still loaded using CP_LOAD_STATE for compatibility with indirect
-    * draws where the CP does a CP_LOAD_STATE for us internally:
-    */
-   case nir_intrinsic_load_draw_id:
-   case nir_intrinsic_load_base_vertex:
-   case nir_intrinsic_load_first_vertex:
-   case nir_intrinsic_load_base_instance:
-      return false;
    default: {
+      /* On current hw these are still pushed the old way for VS, because of
+       * the way SQE patches draw_id/base_vertex/first_vertex/base_instance.
+       */
+      if (v->type == MESA_SHADER_VERTEX)
+         return false;
+
       struct driver_param_info param_info;
       if (!ir3_get_driver_param_info(b->shader, intr, &param_info))
          return false;
