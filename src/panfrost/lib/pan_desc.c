@@ -812,15 +812,25 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          bool full = !fb->extent.minx && !fb->extent.miny &&
                      fb->extent.maxx == (fb->width - 1) &&
                      fb->extent.maxy == (fb->height - 1);
+         bool clean_tile_write = fb->rts[crc_rt].clear;
+
+#if PAN_ARCH >= 6
+         clean_tile_write |= pan_force_clean_write_rt(fb->rts[crc_rt].view, tile_size);
+#endif
+
+         /* If the CRC was valid it stays valid, if it wasn't, we must ensure
+          * the render operation covers the full frame, and clean tiles are
+          * pushed to memory. */
+         bool new_valid = *valid | (full && clean_tile_write);
 
          cfg.crc_read_enable = *valid;
 
          /* If the data is currently invalid, still write CRC
           * data if we are doing a full write, so that it is
           * valid for next time. */
-         cfg.crc_write_enable = *valid || full;
+         cfg.crc_write_enable = new_valid;
 
-         *valid |= full;
+         *valid = new_valid;
       }
 
 #if PAN_ARCH >= 9
