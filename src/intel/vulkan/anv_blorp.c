@@ -535,9 +535,9 @@ anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
     * for stencil resources. Fallback to RCS engine for performing a copy to
     * workaround the issue.
     */
-   if ((devinfo->verx10 == 125) &&
+   if (anv_cmd_buffer_is_blitter_queue(cmd_buffer) &&
+       (devinfo->verx10 == 125) &&
        (dst_image->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT)) {
-
       const uint32_t plane =
          anv_image_aspect_to_plane(dst_image, VK_IMAGE_ASPECT_STENCIL_BIT);
 
