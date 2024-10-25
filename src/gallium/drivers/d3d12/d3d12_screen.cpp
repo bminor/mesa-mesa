@@ -368,6 +368,11 @@ d3d12_get_param_default(struct pipe_screen *pscreen, enum pipe_cap param)
    case PIPE_CAP_SAMPLER_VIEW_TARGET:
       return screen->opts12.RelaxedFormatCastingSupported;
 
+#ifndef _GAMING_XBOX
+   case PIPE_CAP_QUERY_MEMORY_INFO:
+      return 1;
+#endif
+
    default:
       return u_pipe_screen_get_param_defaults(pscreen, param);
    }
@@ -1353,6 +1358,43 @@ static void* d3d12_fence_get_win32_handle(struct pipe_screen *pscreen,
 }
 #endif
 
+static void
+d3d12_query_memory_info(struct pipe_screen *pscreen, struct pipe_memory_info *info)
+{
+   struct d3d12_screen *screen = d3d12_screen(pscreen);
+
+   // megabytes to kilobytes
+   if (screen->architecture.UMA) {
+      /* https://asawicki.info/news_1755_untangling_direct3d_12_memory_heap_types_and_pools
+         All allocations are made in D3D12_MEMORY_POOL_L0 and they increase the usage of
+         DXGI_MEMORY_SEGMENT_GROUP_LOCAL, as there is only one unified memory and it's all "local" to the GPU.
+       */
+      info->total_device_memory =
+         (screen->memory_device_size_megabytes << 10) + (screen->memory_system_size_megabytes << 10);
+      info->total_staging_memory = 0;
+   } else {
+      info->total_device_memory = (screen->memory_device_size_megabytes << 10);
+      info->total_staging_memory = (screen->memory_system_size_megabytes << 10);
+   }
+
+   d3d12_memory_info m;
+   screen->get_memory_info(screen, &m);
+   // bytes to kilobytes
+   if (m.budget_local > m.usage_local) {
+      info->avail_device_memory = (m.budget_local - m.usage_local) / 1024;
+   } else {
+      info->avail_device_memory = 0;
+   }
+   if (m.budget_nonlocal > m.usage_nonlocal) {
+      info->avail_staging_memory = (m.budget_nonlocal - m.usage_nonlocal) / 1024;
+   } else {
+      info->avail_staging_memory = 0;
+   }
+
+   info->device_memory_evicted = screen->total_bytes_evicted / 1024;
+   info->nr_device_memory_evictions = screen->num_evictions;
+}
+
 bool
 d3d12_init_screen_base(struct d3d12_screen *screen, struct sw_winsys *winsys, LUID *adapter_luid)
 {
@@ -1402,6 +1444,7 @@ d3d12_init_screen_base(struct d3d12_screen *screen, struct sw_winsys *winsys, LU
 #ifdef _WIN32
    screen->base.fence_get_win32_handle = d3d12_fence_get_win32_handle;
 #endif
+   screen->base.query_memory_info = d3d12_query_memory_info;
 
    screen->d3d12_mod = util_dl_open(
       UTIL_DL_PREFIX
