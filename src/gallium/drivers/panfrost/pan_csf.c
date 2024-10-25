@@ -580,6 +580,7 @@ csf_check_ctx_state_and_reinit(struct panfrost_context *ctx)
                                ? PIPE_INNOCENT_CONTEXT_RESET
                                : PIPE_GUILTY_CONTEXT_RESET);
 
+   mesa_loge("Group became unusable, re-initializing context");
    panfrost_context_reinit(ctx);
 }
 
