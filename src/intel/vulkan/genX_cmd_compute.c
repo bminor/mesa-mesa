@@ -1132,7 +1132,7 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
                                       pipeline->base.scratch_size);
          btd.ScratchSpaceBuffer = scratch_surf >> ANV_SCRATCH_SPACE_SHIFT(GFX_VER);
       }
-#if INTEL_NEEDS_WA_14017794102
+#if INTEL_NEEDS_WA_14017794102 || INTEL_NEEDS_WA_14023061436
       btd.BTDMidthreadpreemption = false;
 #endif
    }
@@ -1184,7 +1184,7 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
          .BindingTablePointer = surfaces->offset,
          .NumberofThreadsinGPGPUThreadGroup = 1,
          .BTDMode = true,
-#if INTEL_NEEDS_WA_14017794102
+#if INTEL_NEEDS_WA_14017794102 || INTEL_NEEDS_WA_14023061436
          .ThreadPreemption = false,
 #endif
       },
