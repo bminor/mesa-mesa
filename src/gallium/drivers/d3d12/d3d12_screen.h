@@ -84,6 +84,8 @@ struct d3d12_screen {
    struct list_head residency_list;
    ID3D12Fence *residency_fence;
    uint64_t residency_fence_value;
+   unsigned num_evictions;
+   uint64_t total_bytes_evicted;
 
    struct list_head context_list;
    unsigned context_id_list[16];
