@@ -562,6 +562,12 @@ optimizations.extend([
      ('ubfe', a, b, ('bit_count', c)),
      'options->has_bfe && !options->avoid_ternary_with_two_constants'),
 
+    (('iand@32', ('ushr@32', a, b), ('bfm', c, 0)),
+     ('ubfe', a, b, c), 'options->has_bfe'),
+
+    (('ushr', ('iand', a, ('bfm', c, b)), b),
+     ('ubfe', a, b, c), 'options->has_bfe'),
+
     # Collapse two bitfield extracts with constant operands into a single one.
     (('ubfe', ('ubfe', a, '#b', '#c'), '#d', '#e'),
      ubfe_ubfe(a, b, c, d, e)),
