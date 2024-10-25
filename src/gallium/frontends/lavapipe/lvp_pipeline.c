@@ -350,7 +350,7 @@ lvp_ycbcr_conversion_lookup(const void *data, uint32_t set, uint32_t binding, ui
 
 /* pipeline is NULL for shader objects. */
 static void
-lvp_shader_lower(struct lvp_device *pdevice, struct lvp_pipeline *pipeline, nir_shader *nir, struct lvp_pipeline_layout *layout)
+lvp_shader_lower(struct lvp_device *pdevice, nir_shader *nir, struct lvp_pipeline_layout *layout)
 {
    if (nir->info.stage != MESA_SHADER_TESS_CTRL)
       NIR_PASS_V(nir, remove_barriers, nir->info.stage == MESA_SHADER_COMPUTE || nir->info.stage == MESA_SHADER_MESH || nir->info.stage == MESA_SHADER_TASK);
@@ -398,9 +398,6 @@ lvp_shader_lower(struct lvp_device *pdevice, struct lvp_pipeline *pipeline, nir_
    NIR_PASS_V(nir, nir_lower_explicit_io,
               nir_var_mem_global | nir_var_mem_constant,
               nir_address_format_64bit_global);
-
-   if (nir->info.stage == MESA_SHADER_COMPUTE)
-      lvp_lower_exec_graph(pipeline, nir);
 
    NIR_PASS(_, nir, nir_vk_lower_ycbcr_tex, lvp_ycbcr_conversion_lookup, layout);
 
@@ -477,8 +474,11 @@ lvp_spirv_to_nir(struct lvp_pipeline *pipeline, const VkPipelineShaderStageCreat
                  nir_shader **out_nir)
 {
    VkResult result = compile_spirv(pipeline->device, pipeline->flags, sinfo, out_nir);
-   if (result == VK_SUCCESS)
-      lvp_shader_lower(pipeline->device, pipeline, *out_nir, pipeline->layout);
+   if (result == VK_SUCCESS) {
+      if (pipeline->type == LVP_PIPELINE_EXEC_GRAPH)
+         lvp_lower_exec_graph(pipeline, *out_nir);
+      lvp_shader_lower(pipeline->device, *out_nir, pipeline->layout);
+   }
 
    return result;
 }
@@ -1252,7 +1252,7 @@ create_shader_object(struct lvp_device *device, const VkShaderCreateInfoEXT *pCr
    shader->layout = lvp_pipeline_layout_create(device, &pci, pAllocator);
 
    if (pCreateInfo->codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT)
-      lvp_shader_lower(device, NULL, nir, shader->layout);
+      lvp_shader_lower(device, nir, shader->layout);
 
    lvp_shader_init(shader, nir);
 
