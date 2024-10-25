@@ -1714,9 +1714,21 @@ nir_def_all_uses_ignore_sign_bit(const nir_def *def)
          return false;
       nir_instr *instr = nir_src_parent_instr(use);
 
-      if (instr->type != nir_instr_type_alu ||
-          nir_instr_as_alu(instr)->op != nir_op_fabs)
+      if (instr->type != nir_instr_type_alu)
          return false;
+
+      nir_alu_instr *alu = nir_instr_as_alu(instr);
+      if (alu->op == nir_op_fabs) {
+         continue;
+      } else if (alu->op == nir_op_fmul || alu->op == nir_op_ffma) {
+         nir_alu_src *alu_src = list_entry(use, nir_alu_src, src);
+         unsigned src_index = alu_src - alu->src;
+         /* a * a doesn't care about sign of a. */
+         if (src_index < 2 && nir_alu_srcs_equal(alu, alu, 0, 1))
+            continue;
+      }
+
+      return false;
    }
    return true;
 }
