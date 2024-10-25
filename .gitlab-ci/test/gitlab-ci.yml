@@ -309,6 +309,8 @@ yaml-toml-shell-test:
     - |
       set -eux
 
+      section_start b2c_kernel_boot "Booting hardware device"
+
       # Useful as a hook point for runner admins. You may edit the
       # config.toml for the Gitlab runner and use a bind-mount to
       # populate the hook script with some executable commands. This
