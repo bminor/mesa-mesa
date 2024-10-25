@@ -181,6 +181,15 @@ panfrost_pool_alloc_aligned(struct panfrost_pool *pool, size_t sz,
       .gpu = bo->ptr.gpu + offset,
    };
 
+   struct panfrost_device *dev = bo->dev;
+
+   /* The first 32MB are reserved, so pick a dumb address from there. */
+   if (dev->fault_injection_rate &&
+       !(random() % dev->fault_injection_rate)) {
+      ret.gpu =
+         0x1a7af00ull & ~((uint64_t)util_next_power_of_two(alignment) - 1);
+   }
+
    return ret;
 }
 PAN_POOL_ALLOCATOR(struct panfrost_pool, panfrost_pool_alloc_aligned)

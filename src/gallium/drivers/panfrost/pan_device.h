@@ -131,6 +131,9 @@ struct panfrost_device {
    /* debug flags, see pan_util.h how to interpret */
    unsigned debug;
 
+   /* The GPU fault injection rate. If zero, no faults are injected. */
+   unsigned fault_injection_rate;
+
    struct renderonly *ro;
 
    pthread_mutex_t bo_map_lock;
