@@ -49,9 +49,6 @@ static nir_def *
 brw_nir_lower_load_uniforms_impl(nir_builder *b, nir_instr *instr,
                                  void *data)
 {
-   const struct intel_device_info *devinfo =
-      (const struct intel_device_info *)data;
-
    assert(instr->type == nir_instr_type_intrinsic);
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
    assert(intrin->intrinsic == nir_intrinsic_load_uniform);
@@ -62,7 +59,7 @@ brw_nir_lower_load_uniforms_impl(nir_builder *b, nir_instr *instr,
          BRW_TASK_MESH_PUSH_CONSTANTS_START_DW * 4 +
          nir_intrinsic_base(intrin) + nir_src_as_uint(intrin->src[0]);
       int range = intrin->def.num_components * intrin->def.bit_size / 8;
-      if ((offset + range) <= (int)(REG_SIZE * reg_unit(devinfo))) {
+      if ((offset + range) <= (int)(BRW_TASK_MESH_INLINE_DATA_SIZE_DW * 4)) {
          return nir_load_inline_data_intel(b,
                                            intrin->def.num_components,
                                            intrin->def.bit_size,
