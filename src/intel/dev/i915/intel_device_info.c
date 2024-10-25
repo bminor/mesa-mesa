@@ -554,14 +554,6 @@ bool intel_device_info_i915_get_info_from_fd(int fd, struct intel_device_info *d
    void *hwconfig_blob;
    int32_t len;
 
-   hwconfig_blob = intel_device_info_i915_query_hwconfig(fd, &len);
-   if (hwconfig_blob) {
-      if (intel_hwconfig_process_table(devinfo, hwconfig_blob, len))
-         intel_device_info_update_after_hwconfig(devinfo);
-
-      free(hwconfig_blob);
-   }
-
    int val;
    if (getparam(fd, I915_PARAM_CS_TIMESTAMP_FREQUENCY, &val))
       devinfo->timestamp_frequency = val;
@@ -583,6 +575,14 @@ bool intel_device_info_i915_get_info_from_fd(int fd, struct intel_device_info *d
        * will be wrong, affecting GPU metrics. In this case, fail silently.
        */
       getparam_topology(devinfo, fd);
+   }
+
+   hwconfig_blob = intel_device_info_i915_query_hwconfig(fd, &len);
+   if (hwconfig_blob) {
+      if (intel_hwconfig_process_table(devinfo, hwconfig_blob, len))
+         intel_device_info_update_after_hwconfig(devinfo);
+
+      free(hwconfig_blob);
    }
 
    intel_device_info_i915_query_regions(devinfo, fd, false);
