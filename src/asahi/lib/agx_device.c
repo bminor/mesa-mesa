@@ -636,7 +636,8 @@ agx_destroy_command_queue(struct agx_device *dev, uint32_t queue_id)
       .queue_id = queue_id,
    };
 
-   return drmIoctl(dev->fd, DRM_IOCTL_ASAHI_QUEUE_DESTROY, &queue_destroy);
+   return asahi_simple_ioctl(dev, DRM_IOCTL_ASAHI_QUEUE_DESTROY,
+                             &queue_destroy);
 }
 
 int
