@@ -31,7 +31,9 @@ function error {
     RED="\e[0;31m"
     ENDCOLOR="\e[0m"
     # we force the following to be not in a section
-    _section_end $CURRENT_SECTION
+    if [ -n "${CURRENT_SECTION:-}" ]; then
+      _section_end $CURRENT_SECTION
+    fi
 
     CURR_MINSEC=$(get_current_minsec)
     echo -e "\n${RED}[${CURR_MINSEC}] ERROR: $*${ENDCOLOR}\n"
