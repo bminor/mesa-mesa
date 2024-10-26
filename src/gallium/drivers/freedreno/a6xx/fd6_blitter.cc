@@ -198,6 +198,7 @@ can_do_blit(const struct pipe_blit_info *info)
    assert(info->dst.box.depth >= 0);
 
    fail_if(info->dst.resource->nr_samples > 1);
+   fail_if(info->src.resource->nr_samples > 1);
 
    fail_if(info->window_rectangle_include);
 

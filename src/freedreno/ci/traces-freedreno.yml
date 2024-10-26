@@ -106,10 +106,10 @@ traces:
       label: [unsupported]
     freedreno-a618:
       label: [skip, flakes]
-      checksum: 50d4bd01756ffe70aee5f8401f7a6ce4
+      checksum: 17c6a6dd333514b125cc18282ce24ba8
       text: https://gitlab.freedesktop.org/mesa/mesa/-/issues/8337
     freedreno-a630:
-      checksum: 50d4bd01756ffe70aee5f8401f7a6ce4
+      checksum: 17c6a6dd333514b125cc18282ce24ba8
     zink-a618:
       label: [skip, flakes]
       checksum: 59e37d2dca80caedd9494114d64c676c
@@ -193,9 +193,9 @@ traces:
     freedreno-a530:
       label: [skip, flakes]
     freedreno-a618:
-      checksum: c8608d54cc6298476a2b60686d152dbc
+      checksum: 1b9a79f0088a3ddb5723f217d37cee74
     freedreno-a630:
-      checksum: c8608d54cc6298476a2b60686d152dbc
+      checksum: 1b9a79f0088a3ddb5723f217d37cee74
     zink-a618:
       checksum: e4e5415f7a81a6bd14b7ff8f67083cbf
     zink-a630:
