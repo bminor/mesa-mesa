@@ -121,6 +121,22 @@ class LAVAJobDefinition:
         yaml.dump(self.generate_lava_yaml_payload(), job_stream)
         return job_stream.getvalue()
 
+    def consume_lava_tags_args(self, values: dict[str, Any]):
+        # python-fire parses --lava-tags without arguments as True
+        if isinstance(self.job_submitter.lava_tags, tuple):
+            values["tags"] = self.job_submitter.lava_tags
+        # python-fire parses "tag-1,tag2" as str and "tag1,tag2" as tuple
+        # even if the -- --separator is something other than '-'
+        elif isinstance(self.job_submitter.lava_tags, str):
+            # Split string tags by comma, removing any trailing commas
+            values["tags"] = self.job_submitter.lava_tags.rstrip(",").split(",")
+        # Ensure tags are always a list of non-empty strings
+        if "tags" in values:
+            values["tags"] = [tag for tag in values["tags"] if tag]
+        # Remove empty tags
+        if "tags" in values and not values["tags"]:
+            del values["tags"]
+
     def generate_metadata(self) -> dict[str, Any]:
         # General metadata and permissions
         values = {
@@ -150,8 +166,7 @@ class LAVAJobDefinition:
             },
         }
 
-        if self.job_submitter.lava_tags:
-            values["tags"] = self.job_submitter.lava_tags.split(",")
+        self.consume_lava_tags_args(values)
 
         # QEMU lava jobs mandate proper arch value in the context
         if self.job_submitter.boot_method == "qemu-nfs":
