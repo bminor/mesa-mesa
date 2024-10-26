@@ -14,7 +14,7 @@
         "description": "brw/emit: Add correct 3-source instruction assertions for each platform",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7bed11fbdebbd70cf12d1ff55d15db7231b7e9ad",
         "notes": null
