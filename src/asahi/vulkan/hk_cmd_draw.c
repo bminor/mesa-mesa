@@ -1166,7 +1166,7 @@ hk_gs_in_prim(struct hk_cmd_buffer *cmd)
    struct hk_api_shader *tes = gfx->shaders[MESA_SHADER_TESS_EVAL];
 
    if (tes != NULL)
-      return tes->variants[HK_GS_VARIANT_RAST].info.ts.out_prim;
+      return gfx->tess.prim;
    else
       return vk_conv_topology(dyn->ia.primitive_topology);
 }
@@ -1290,25 +1290,22 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_shader *tcs = hk_only_variant(gfx->shaders[MESA_SHADER_TESS_CTRL]);
-   struct hk_shader *tes = hk_any_variant(gfx->shaders[MESA_SHADER_TESS_EVAL]);
 
    struct libagx_tess_args args = {
       .heap = hk_geometry_state(cmd),
-      .tcs_stride_el = tcs->info.tcs.output_stride / 4,
+      .tcs_stride_el = tcs->info.tess.tcs_output_stride / 4,
       .statistic = hk_pipeline_stat_addr(
          cmd,
          VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT),
 
       .input_patch_size = dyn->ts.patch_control_points,
-      .output_patch_size = tcs->info.tcs.output_patch_size,
-      .tcs_patch_constants = tcs->info.tcs.nr_patch_outputs,
-      .tcs_per_vertex_outputs = tcs->info.tcs.per_vertex_outputs,
+      .output_patch_size = tcs->info.tess.tcs_output_patch_size,
+      .tcs_patch_constants = tcs->info.tess.tcs_nr_patch_outputs,
+      .tcs_per_vertex_outputs = tcs->info.tess.tcs_per_vertex_outputs,
    };
 
    bool with_counts = hk_tess_needs_prefix_sum(cmd, draw);
-
-   uint32_t draw_stride_el =
-      with_counts ? 5 : (tes->info.ts.point_mode ? 4 : 6);
+   uint32_t draw_stride_el = with_counts ? 5 : (gfx->tess.info.points ? 4 : 6);
    size_t draw_stride_B = draw_stride_el * sizeof(uint32_t);
 
    /* heap is allocated by hk_geometry_state */
@@ -1371,7 +1368,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       /* Allocate 3x indirect global+local grids for VS/TCS/tess */
       uint32_t grid_stride = sizeof(uint32_t) * 6;
       args.grids = hk_pool_alloc(cmd, grid_stride * 3, 4).gpu;
-      gfx->tess_grids = args.grids;
+      gfx->tess.grids = args.grids;
 
       struct hk_shader *vs = hk_bound_sw_vs(gfx);
       args.vertex_outputs = vs->b.info.outputs;
@@ -1394,7 +1391,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       }
    }
 
-   gfx->tess_out_draws = args.out_draws;
+   gfx->tess.out_draws = args.out_draws;
    memcpy(out, &args, sizeof(args));
 }
 
@@ -1644,12 +1641,12 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
 
    struct hk_shader *vs = hk_bound_sw_vs(gfx);
    struct hk_shader *tcs = hk_only_variant(gfx->shaders[MESA_SHADER_TESS_CTRL]);
-   struct hk_shader *tes = hk_any_variant(gfx->shaders[MESA_SHADER_TESS_EVAL]);
 
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
    uint32_t input_patch_size = dyn->ts.patch_control_points;
    bool with_counts = hk_tess_needs_prefix_sum(cmd, draw);
    uint64_t state = gfx->descriptors.root.draw.tess_params;
+   struct hk_tess_info info = gfx->tess.info;
 
    hk_ensure_cs_has_space(cmd, cs, 0x2000 /*XXX*/);
 
@@ -1663,7 +1660,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
       perf_debug(dev, "Indirect tessellation");
 
       struct agx_tess_setup_indirect_key key = {
-         .point_mode = tes->info.ts.point_mode,
+         .point_mode = info.points,
          .with_counts = with_counts,
       };
 
@@ -1678,14 +1675,14 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
                            hk_grid(1, 1, 1));
 
       uint32_t grid_stride = sizeof(uint32_t) * 6;
-      grid_vs = hk_grid_indirect_local(gfx->tess_grids + 0 * grid_stride);
-      grid_tcs = hk_grid_indirect_local(gfx->tess_grids + 1 * grid_stride);
-      grid_tess = hk_grid_indirect_local(gfx->tess_grids + 2 * grid_stride);
+      grid_vs = hk_grid_indirect_local(gfx->tess.grids + 0 * grid_stride);
+      grid_tcs = hk_grid_indirect_local(gfx->tess.grids + 1 * grid_stride);
+      grid_tess = hk_grid_indirect_local(gfx->tess.grids + 2 * grid_stride);
    } else {
       uint32_t patches = draw.b.count[0] / input_patch_size;
       grid_vs = grid_tcs = draw.b;
 
-      grid_tcs.count[0] = patches * tcs->info.tcs.output_patch_size;
+      grid_tcs.count[0] = patches * tcs->info.tess.tcs_output_patch_size;
       grid_tess = hk_grid(patches * draw.b.count[1], 1, 1);
 
       /* TCS invocation counter increments once per-patch */
@@ -1719,26 +1716,25 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
 
    hk_dispatch_with_usc(
       dev, cs, tcs, hk_upload_usc_words(cmd, tcs, tcs->only_linked), grid_tcs,
-      hk_grid(tcs->info.tcs.output_patch_size, 1, 1));
+      hk_grid(tcs->info.tess.tcs_output_patch_size, 1, 1));
 
    /* If the domain is flipped, we need to flip the winding order */
-   bool ccw = tes->info.ts.ccw;
+   bool ccw = info.ccw;
    ccw ^= dyn->ts.domain_origin == VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
 
    enum libagx_tess_partitioning partitioning =
-      tes->info.ts.spacing == TESS_SPACING_EQUAL
-         ? LIBAGX_TESS_PARTITIONING_INTEGER
-      : tes->info.ts.spacing == TESS_SPACING_FRACTIONAL_ODD
+      info.spacing == TESS_SPACING_EQUAL ? LIBAGX_TESS_PARTITIONING_INTEGER
+      : info.spacing == TESS_SPACING_FRACTIONAL_ODD
          ? LIBAGX_TESS_PARTITIONING_FRACTIONAL_ODD
          : LIBAGX_TESS_PARTITIONING_FRACTIONAL_EVEN;
 
    enum libagx_tess_output_primitive prim =
-      tes->info.ts.point_mode ? LIBAGX_TESS_OUTPUT_POINT
-      : ccw                   ? LIBAGX_TESS_OUTPUT_TRIANGLE_CCW
-                              : LIBAGX_TESS_OUTPUT_TRIANGLE_CW;
+      info.points ? LIBAGX_TESS_OUTPUT_POINT
+      : ccw       ? LIBAGX_TESS_OUTPUT_TRIANGLE_CCW
+                  : LIBAGX_TESS_OUTPUT_TRIANGLE_CW;
 
    struct agx_tessellator_key key = {
-      .prim = tes->info.ts.mode,
+      .prim = info.mode,
       .output_primitive = prim,
       .partitioning = partitioning,
    };
@@ -1790,7 +1786,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
       .range = dev->heap->size,
    };
 
-   struct hk_draw out = hk_draw_indexed_indirect(gfx->tess_out_draws, range,
+   struct hk_draw out = hk_draw_indexed_indirect(gfx->tess.out_draws, range,
                                                  AGX_INDEX_SIZE_U32, false);
    out.raw = !with_counts;
    return out;
@@ -3349,6 +3345,29 @@ hk_flush_gfx_state(struct hk_cmd_buffer *cmd, uint32_t draw_id,
       hk_cmd_buffer_dirty_all(cmd);
    }
 #endif
+
+   /* Merge tess info before GS construction since that depends on
+    * gfx->tess.prim
+    */
+   if ((IS_SHADER_DIRTY(TESS_CTRL) || IS_SHADER_DIRTY(TESS_EVAL)) &&
+       gfx->shaders[MESA_SHADER_TESS_CTRL]) {
+      struct hk_api_shader *tcs = gfx->shaders[MESA_SHADER_TESS_CTRL];
+      struct hk_api_shader *tes = gfx->shaders[MESA_SHADER_TESS_EVAL];
+      struct hk_shader *tese = hk_any_variant(tes);
+      struct hk_shader *tesc = hk_only_variant(tcs);
+
+      gfx->tess.info =
+         hk_tess_info_merge(tese->info.tess.info, tesc->info.tess.info);
+
+      /* Determine primitive based on the merged state */
+      if (gfx->tess.info.points) {
+         gfx->tess.prim = MESA_PRIM_POINTS;
+      } else if (gfx->tess.info.mode == TESS_PRIMITIVE_ISOLINES) {
+         gfx->tess.prim = MESA_PRIM_LINES;
+      } else {
+         gfx->tess.prim = MESA_PRIM_TRIANGLES;
+      }
+   }
 
    /* TODO: Try to reduce draw overhead of this */
    hk_handle_passthrough_gs(cmd, draw);

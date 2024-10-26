@@ -261,8 +261,12 @@ struct hk_graphics_state {
    bool generate_primitive_id;
 
    /* Tessellation state */
-   uint64_t tess_out_draws;
-   uint64_t tess_grids;
+   struct {
+      uint64_t out_draws;
+      uint64_t grids;
+      struct hk_tess_info info;
+      enum mesa_prim prim;
+   } tess;
 
    /* Needed by vk_command_buffer::dynamic_graphics_state */
    struct vk_vertex_input_state _dynamic_vi;

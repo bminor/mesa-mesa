@@ -826,28 +826,26 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
 
       NIR_PASS(_, nir, agx_nir_lower_fs_active_samples_to_register);
       NIR_PASS(_, nir, agx_nir_lower_interpolation);
-   } else if (sw_stage == MESA_SHADER_TESS_EVAL) {
-      shader->info.ts.ccw = nir->info.tess.ccw;
-      shader->info.ts.point_mode = nir->info.tess.point_mode;
-      shader->info.ts.spacing = nir->info.tess.spacing;
-      shader->info.ts.mode = nir->info.tess._primitive_mode;
+   } else if (sw_stage == MESA_SHADER_TESS_EVAL ||
+              sw_stage == MESA_SHADER_TESS_CTRL) {
 
-      if (nir->info.tess.point_mode) {
-         shader->info.ts.out_prim = MESA_PRIM_POINTS;
-      } else if (nir->info.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES) {
-         shader->info.ts.out_prim = MESA_PRIM_LINES;
+      shader->info.tess.info.ccw = nir->info.tess.ccw;
+      shader->info.tess.info.points = nir->info.tess.point_mode;
+      shader->info.tess.info.spacing = nir->info.tess.spacing;
+      shader->info.tess.info.mode = nir->info.tess._primitive_mode;
+
+      if (sw_stage == MESA_SHADER_TESS_CTRL) {
+         shader->info.tess.tcs_output_patch_size =
+            nir->info.tess.tcs_vertices_out;
+         shader->info.tess.tcs_per_vertex_outputs =
+            agx_tcs_per_vertex_outputs(nir);
+         shader->info.tess.tcs_nr_patch_outputs =
+            util_last_bit(nir->info.patch_outputs_written);
+         shader->info.tess.tcs_output_stride = agx_tcs_output_stride(nir);
       } else {
-         shader->info.ts.out_prim = MESA_PRIM_TRIANGLES;
+         /* This destroys info so it needs to happen after the gather */
+         NIR_PASS(_, nir, agx_nir_lower_tes, dev->dev.libagx, hw);
       }
-
-      /* This destroys info so it needs to happen after the gather */
-      NIR_PASS(_, nir, agx_nir_lower_tes, dev->dev.libagx, hw);
-   } else if (sw_stage == MESA_SHADER_TESS_CTRL) {
-      shader->info.tcs.output_patch_size = nir->info.tess.tcs_vertices_out;
-      shader->info.tcs.per_vertex_outputs = agx_tcs_per_vertex_outputs(nir);
-      shader->info.tcs.nr_patch_outputs =
-         util_last_bit(nir->info.patch_outputs_written);
-      shader->info.tcs.output_stride = agx_tcs_output_stride(nir);
    }
 
    uint64_t outputs = nir->info.outputs_written;
