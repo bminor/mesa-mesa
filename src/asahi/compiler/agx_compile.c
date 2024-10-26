@@ -614,6 +614,31 @@ agx_emit_load_vary(agx_builder *b, agx_index dest, nir_intrinsic_instr *instr)
    agx_emit_cached_split(b, dest, components);
 }
 
+static void
+agx_wait_pixel_mask(agx_builder *b, uint32_t mask)
+{
+   /* Background programs do not need to wait as they are the eldest pixels */
+   if (b->shader->key->fs.ignore_tib_dependencies) {
+      assert(b->shader->nir->info.internal);
+      return;
+   }
+
+   /* No need to wait twice on a fence */
+   mask &= ~b->shader->already_pixel_waited;
+   if (mask == 0) {
+      return;
+   }
+
+   agx_wait_pix(b, mask);
+
+   /* Only mark the fence as waited if we're not in control flow. Eventually we
+    * should do something smarter with a dataflow.
+    */
+   if (b->shader->total_nesting == 0) {
+      b->shader->already_pixel_waited |= mask;
+   }
+}
+
 static agx_instr *
 agx_emit_local_store_pixel(agx_builder *b, nir_intrinsic_instr *instr)
 {
@@ -621,13 +646,7 @@ agx_emit_local_store_pixel(agx_builder *b, nir_intrinsic_instr *instr)
 
    /* TODO: Reverse-engineer interactions with MRT */
    if (b->shader->stage == MESA_SHADER_FRAGMENT) {
-      if (b->shader->key->fs.ignore_tib_dependencies) {
-         assert(b->shader->nir->info.internal && "only for clear shaders");
-      } else if (b->shader->did_writeout) {
-         agx_wait_pix(b, 0x0004);
-      } else {
-         agx_wait_pix(b, 0x000C);
-      }
+      agx_wait_pixel_mask(b, 0xC);
    }
 
    /* Compact the registers according to the mask */
@@ -641,7 +660,6 @@ agx_emit_local_store_pixel(agx_builder *b, nir_intrinsic_instr *instr)
    agx_index collected = agx_emit_collect(b, compact_count, compacted);
    agx_index coords = explicit ? agx_src_index(&instr->src[2]) : agx_null();
 
-   b->shader->did_writeout = true;
    b->shader->out->tag_write_disable = false;
    return agx_st_tile(b, collected, agx_src_index(&instr->src[1]), coords,
                       agx_format_for_pipe(nir_intrinsic_format(instr)),
@@ -655,10 +673,6 @@ agx_emit_store_zs(agx_builder *b, nir_intrinsic_instr *instr)
    unsigned base = nir_intrinsic_base(instr);
    bool write_z = base & 1;
    bool write_s = base & 2;
-
-   /* TODO: Handle better */
-   assert(!b->shader->key->fs.ignore_tib_dependencies && "not used");
-   agx_wait_pix(b, 0x0001);
 
    agx_index z = agx_src_index(&instr->src[1]);
    agx_index s = agx_src_index(&instr->src[2]);
@@ -679,6 +693,7 @@ agx_emit_store_zs(agx_builder *b, nir_intrinsic_instr *instr)
     */
    b->shader->out->writes_sample_mask = true;
 
+   agx_wait_pixel_mask(b, 0x1);
    return agx_zs_emit(b, agx_src_index(&instr->src[0]), zs, base);
 }
 
@@ -686,10 +701,7 @@ static void
 agx_emit_local_load_pixel(agx_builder *b, agx_index dest,
                           nir_intrinsic_instr *instr)
 {
-   /* TODO: Reverse-engineer interactions with MRT */
-   assert(!b->shader->key->fs.ignore_tib_dependencies && "invalid usage");
-   agx_wait_pix(b, 0x0008);
-   b->shader->did_writeout = true;
+   agx_wait_pixel_mask(b, 0x8);
 
    unsigned nr_comps = instr->def.num_components;
    agx_ld_tile_to(b, dest, agx_src_index(&instr->src[0]), agx_null(),
@@ -1352,7 +1364,7 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
          nir_src_is_const(instr->src[1]) && nir_src_as_uint(instr->src[1]) == 0;
 
       if (!no_tests)
-         agx_wait_pix(b, 0x0001);
+         agx_wait_pixel_mask(b, 0x1);
 
       return agx_sample_mask(b, agx_src_index(&instr->src[0]),
                              agx_src_index(&instr->src[1]));
@@ -1529,11 +1541,7 @@ agx_emit_intrinsic(agx_builder *b, nir_intrinsic_instr *instr)
    }
 
    case nir_intrinsic_begin_invocation_interlock: {
-      if (!b->shader->did_writeout &&
-          !b->shader->key->fs.ignore_tib_dependencies)
-         agx_wait_pix(b, 0x000C);
-
-      b->shader->did_writeout = true;
+      agx_wait_pixel_mask(b, 0xC);
       return NULL;
    }
 

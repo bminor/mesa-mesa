@@ -492,8 +492,8 @@ typedef struct {
    /* Does the shader statically use scratch memory? */
    bool any_scratch;
 
-   /* I don't really understand how writeout ops work yet */
-   bool did_writeout;
+   /* Mask of pixel fences we've definitely already waited for. */
+   uint16_t already_pixel_waited;
 
    /* Has r0l been zeroed yet due to control flow? */
    bool any_cf;
