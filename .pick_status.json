@@ -2064,7 +2064,7 @@
         "description": "freedreno/a6xx: Stop exposing MSAA image load/store harder",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e277b1318253a4776babf587c76c7bac534a6de9",
         "notes": null
