@@ -12394,7 +12394,8 @@ get_arg_fixed(const struct ac_shader_args* args, struct ac_arg arg)
 unsigned
 load_vb_descs(Builder& bld, PhysReg dest, Operand base, unsigned start, unsigned max)
 {
-   unsigned count = MIN2((bld.program->dev.sgpr_limit - dest.reg()) / 4u, max);
+   unsigned sgpr_limit = get_addr_sgpr_from_waves(bld.program, bld.program->min_waves);
+   unsigned count = MIN2((sgpr_limit - dest.reg()) / 4u, max);
    for (unsigned i = 0; i < count;) {
       unsigned size = 1u << util_logbase2(MIN2(count - i, 4));
 
@@ -12929,6 +12930,9 @@ select_vs_prolog(Program* program, const struct aco_vs_prolog_info* pinfo, ac_sh
    program->workgroup_size = 64;
    calc_min_waves(program);
 
+   /* Addition on GFX6-8 requires a carry-out (we use VCC) */
+   program->needs_vcc = program->gfx_level <= GFX8;
+
    Builder bld(program, block);
 
    block->instructions.reserve(16 + pinfo->num_attributes * 4);
@@ -13181,8 +13185,6 @@ select_vs_prolog(Program* program, const struct aco_vs_prolog_info* pinfo, ac_sh
    bld.sop1(aco_opcode::s_setpc_b64, continue_pc);
 
    program->config->float_mode = program->blocks[0].fp_mode.val;
-   /* addition on GFX6-8 requires a carry-out (we use VCC) */
-   program->needs_vcc = program->gfx_level <= GFX8;
    program->config->num_vgprs = std::min<uint16_t>(get_vgpr_alloc(program, num_vgprs), 256);
    program->config->num_sgprs = get_sgpr_alloc(program, num_sgprs);
 }
