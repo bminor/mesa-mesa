@@ -5,15 +5,20 @@
 
 shopt -s expand_aliases
 
-function _x_off {
+function _x_store_state {
     if [[ "$-" == *"x"* ]]; then
       state_x=1
-      set +x
     else
       state_x=0
     fi
 }
+_x_store_state
+alias x_store_state='{ _x_store_state; } >/dev/null 2>/dev/null'
 
+function _x_off {
+    x_store_state
+    set +x
+}
 alias x_off='{ _x_off; } >/dev/null 2>/dev/null'
 
 # TODO: implement x_on !
@@ -102,6 +107,7 @@ function _uncollapsed_section_switch {
 }
 alias uncollapsed_section_switch="x_off; _uncollapsed_section_switch"
 
+export -f _x_store_state
 export -f _x_off
 export -f get_current_minsec
 export -f error
