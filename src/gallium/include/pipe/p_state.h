@@ -56,6 +56,8 @@
 extern "C" {
 #endif
 
+struct nir_shader;
+
 /**
  * Implementation limits
  */
@@ -301,7 +303,7 @@ struct pipe_shader_state
    const struct tgsi_token *tokens;
    union {
       void *native;
-      void *nir;
+      struct nir_shader *nir;
    } ir;
    struct pipe_stream_output_info stream_output;
 };
