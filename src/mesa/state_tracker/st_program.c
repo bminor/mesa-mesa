@@ -497,7 +497,7 @@ st_translate_stream_output_info(struct gl_program *prog)
  * Creates a driver shader from a NIR shader.  Takes ownership of the
  * passed nir_shader.
  */
-struct pipe_shader_state *
+void *
 st_create_nir_shader(struct st_context *st, struct pipe_shader_state *state)
 {
    struct pipe_context *pipe = st->pipe;
@@ -511,7 +511,7 @@ st_create_nir_shader(struct st_context *st, struct pipe_shader_state *state)
       nir_print_shader(nir, stderr);
    }
 
-   struct pipe_shader_state *shader;
+   void *shader;
    switch (stage) {
    case MESA_SHADER_VERTEX:
       shader = pipe->create_vs_state(pipe, state);
