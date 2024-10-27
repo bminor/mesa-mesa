@@ -274,7 +274,7 @@ agxdecode_usc(struct agxdecode_ctx *ctx, const uint8_t *map,
 {
    enum agx_sampler_states *sampler_states = data;
    enum agx_usc_control type = map[0];
-   uint8_t buf[8192];
+   uint8_t buf[3072];
 
    bool extended_samplers =
       (sampler_states != NULL) &&

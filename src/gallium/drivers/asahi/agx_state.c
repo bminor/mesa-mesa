@@ -380,7 +380,6 @@ agx_create_rs_state(struct pipe_context *ctx,
    agx_pack(so->cull, CULL, cfg) {
       cfg.cull_front = cso->cull_face & PIPE_FACE_FRONT;
       cfg.cull_back = cso->cull_face & PIPE_FACE_BACK;
-      cfg.front_face_ccw = cso->front_ccw;
       cfg.depth_clip = cso->depth_clip_near;
       cfg.depth_clamp = !cso->depth_clip_near;
       cfg.flat_shading_vertex =
@@ -1621,8 +1620,12 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       struct asahi_vs_shader_key *key = &key_->vs;
 
-      NIR_PASS(_, nir, agx_nir_lower_vs_input_to_prolog,
-               attrib_components_read);
+      if (nir->info.vs.tes_agx) {
+         NIR_PASS(_, nir, agx_nir_lower_tes, dev->libagx, key->hw);
+      } else {
+         NIR_PASS(_, nir, agx_nir_lower_vs_input_to_prolog,
+                  attrib_components_read);
+      }
 
       if (key->hw) {
          NIR_PASS(_, nir, agx_nir_lower_point_size, true);
@@ -1884,7 +1887,8 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
    so->type = pipe_shader_type_from_mesa(nir->info.stage);
 
    if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
-      NIR_PASS(_, nir, agx_nir_lower_tes, dev->libagx, true);
+      nir->info.stage = MESA_SHADER_VERTEX;
+      nir->info.vs.tes_agx = true;
    }
 
    blob_init(&so->serialized_nir);
@@ -2154,9 +2158,10 @@ asahi_fast_link(struct agx_context *ctx, struct agx_uncompiled_shader *so,
          ctx, agx_nir_fs_epilog, &key->epilog.fs, sizeof(key->epilog.fs), false,
          true, 0, false);
 
+   } else if (so->type == MESA_SHADER_TESS_EVAL) {
+      /* No prolog/epilog needed */
    } else {
-      assert(so->type == MESA_SHADER_VERTEX ||
-             so->type == MESA_SHADER_TESS_EVAL);
+      assert(so->type == MESA_SHADER_VERTEX);
 
       prolog = agx_build_meta_shader_internal(
          ctx, agx_nir_vs_prolog, &key->prolog.vs, sizeof(key->prolog.vs), true,
@@ -3649,6 +3654,7 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
       .output_select = varyings_dirty,
       .varying_counts_32 = varyings_dirty,
       .varying_counts_16 = varyings_dirty,
+      /* Also dirty with tess but agx_draw_patches dirties RS for that */
       .cull = IS_DIRTY(RS),
       .cull_2 = varyings_dirty,
       .fragment_shader =
@@ -3743,8 +3749,17 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
                           VARYING_COUNTS);
    }
 
-   if (dirty.cull)
-      agx_ppp_push_packed(&ppp, ctx->rast->cull, CULL);
+   if (dirty.cull) {
+      agx_ppp_push_merged(&ppp, CULL, cfg, ctx->rast->cull) {
+         cfg.front_face_ccw = ctx->rast->base.front_ccw;
+
+         if (ctx->in_tess && !ctx->gs) {
+            /* Yes, OpenGL is backwards. Deal with it. */
+            cfg.front_face_ccw ^=
+               !ctx->stage[MESA_SHADER_TESS_EVAL].shader->tess.ccw;
+         }
+      }
+   }
 
    if (dirty.cull_2) {
       agx_ppp_push(&ppp, CULL_2, cfg) {
@@ -4631,6 +4646,10 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .points_mode = point_mode,
    };
 
+   if (!point_mode && tes->tess.primitive != TESS_PRIMITIVE_ISOLINES) {
+      args.ccw = !tes->tess.ccw;
+   }
+
    memcpy(&args.tess_level_outer_default, ctx->default_outer_level,
           sizeof(ctx->default_outer_level));
    memcpy(&args.tess_level_inner_default, ctx->default_inner_level,
@@ -4748,9 +4767,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    struct agx_tessellator_key key = {
       .prim = mode,
-
-      /* Yes, OpenGL is backwards. */
-      .ccw = !tes->tess.ccw,
    };
 
    /* Generate counts */
@@ -4770,6 +4786,9 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    /* Now we can tessellate */
    agx_launch_with_uploaded_data(batch, &tess_grid, agx_nir_tessellate, &key,
                                  sizeof(key), state);
+
+   /* Face culling state needs to be specialized for tess */
+   ctx->dirty |= AGX_DIRTY_RS;
 
    /* Run TES as VS */
    void *vs_cso = ctx->stage[PIPE_SHADER_VERTEX].shader;

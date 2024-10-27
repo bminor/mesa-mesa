@@ -96,7 +96,6 @@ struct INDEX_PATCH_CONTEXT2 {
 };
 
 struct CHWTessellator {
-   bool cw;
    enum libagx_tess_mode mode;
    uint index_bias;
 
@@ -345,10 +344,9 @@ static void
 DefineClockwiseTriangle(private struct CHWTessellator *ctx, int index0,
                         int index1, int index2, int indexStorageBaseOffset)
 {
-   // inputs a clockwise triangle, stores a CW or CCW triangle per state state
    DefineIndex(ctx, index0, indexStorageBaseOffset);
-   DefineIndex(ctx, ctx->cw ? index1 : index2, indexStorageBaseOffset + 1);
-   DefineIndex(ctx, ctx->cw ? index2 : index1, indexStorageBaseOffset + 2);
+   DefineIndex(ctx, index1, indexStorageBaseOffset + 1);
+   DefineIndex(ctx, index2, indexStorageBaseOffset + 2);
 }
 
 static uint32_t
@@ -741,7 +739,7 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
 
 void
 libagx_tess_isoline(constant struct libagx_tess_args *p,
-                    enum libagx_tess_mode mode, bool ccw, uint patch)
+                    enum libagx_tess_mode mode, uint patch)
 {
    enum libagx_tess_partitioning partitioning = p->partitioning;
 
@@ -840,7 +838,7 @@ libagx_tess_isoline(constant struct libagx_tess_args *p,
 
 void
 libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
-                bool ccw, uint patch)
+                uint patch)
 {
    enum libagx_tess_partitioning partitioning = p->partitioning;
 
@@ -851,7 +849,6 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
    float insideTessFactor_f = factors[4];
 
    struct CHWTessellator ctx;
-   ctx.cw = !ccw;
    ctx.Point = NULL;
    ctx.Index = NULL;
    ctx.mode = mode;
@@ -1172,7 +1169,7 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
 
 void
 libagx_tess_quad(constant struct libagx_tess_args *p,
-                 enum libagx_tess_mode mode, bool ccw, uint patch)
+                 enum libagx_tess_mode mode, uint patch)
 {
    enum libagx_tess_partitioning partitioning = p->partitioning;
    global float *factors = tess_factors(p, patch);
@@ -1187,7 +1184,6 @@ libagx_tess_quad(constant struct libagx_tess_args *p,
 
    // TODO: fix designated initializer optimization in NIR
    struct CHWTessellator ctx;
-   ctx.cw = !ccw;
    ctx.Point = NULL;
    ctx.Index = NULL;
    ctx.mode = mode;

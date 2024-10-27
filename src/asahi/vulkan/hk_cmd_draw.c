@@ -1285,6 +1285,12 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       .points_mode = gfx->tess.info.points,
    };
 
+   if (!args.points_mode && gfx->tess.info.mode != TESS_PRIMITIVE_ISOLINES) {
+      args.ccw = gfx->tess.info.ccw;
+      args.ccw ^=
+         dyn->ts.domain_origin == VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
+   }
+
    uint32_t draw_stride_el = 5;
    size_t draw_stride_B = draw_stride_el * sizeof(uint32_t);
 
@@ -1672,13 +1678,8 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
       dev, cs, tcs, hk_upload_usc_words(cmd, tcs, tcs->only_linked), grid_tcs,
       hk_grid(tcs->info.tess.tcs_output_patch_size, 1, 1));
 
-   /* If the domain is flipped, we need to flip the winding order */
-   bool ccw = info.ccw;
-   ccw ^= dyn->ts.domain_origin == VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
-
    struct agx_tessellator_key key = {
       .prim = info.mode,
-      .ccw = ccw,
    };
 
    /* Generate counts */
@@ -2345,11 +2346,13 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
       .output_select = hw_vs_dirty || linked_fs_dirty || varyings_dirty,
       .varying_counts_32 = varyings_dirty,
       .varying_counts_16 = varyings_dirty,
-      .cull =
-         IS_DIRTY(RS_CULL_MODE) || IS_DIRTY(RS_RASTERIZER_DISCARD_ENABLE) ||
-         IS_DIRTY(RS_FRONT_FACE) || IS_DIRTY(RS_DEPTH_CLIP_ENABLE) ||
-         IS_DIRTY(RS_DEPTH_CLAMP_ENABLE) || IS_DIRTY(RS_LINE_MODE) ||
-         IS_DIRTY(IA_PRIMITIVE_TOPOLOGY) || (gfx->dirty & HK_DIRTY_PROVOKING),
+      .cull = IS_DIRTY(RS_CULL_MODE) ||
+              IS_DIRTY(RS_RASTERIZER_DISCARD_ENABLE) ||
+              IS_DIRTY(RS_FRONT_FACE) || IS_DIRTY(RS_DEPTH_CLIP_ENABLE) ||
+              IS_DIRTY(RS_DEPTH_CLAMP_ENABLE) || IS_DIRTY(RS_LINE_MODE) ||
+              IS_DIRTY(IA_PRIMITIVE_TOPOLOGY) ||
+              (gfx->dirty & HK_DIRTY_PROVOKING) || IS_SHADER_DIRTY(TESS_CTRL) ||
+              IS_SHADER_DIRTY(TESS_EVAL) || IS_DIRTY(TS_DOMAIN_ORIGIN),
       .cull_2 = varyings_dirty,
 
       /* With a null FS, the fragment shader PPP word is ignored and doesn't
@@ -2509,6 +2512,14 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
          cfg.cull_front = dyn->rs.cull_mode & VK_CULL_MODE_FRONT_BIT;
          cfg.cull_back = dyn->rs.cull_mode & VK_CULL_MODE_BACK_BIT;
          cfg.front_face_ccw = dyn->rs.front_face != VK_FRONT_FACE_CLOCKWISE;
+
+         if (gfx->shaders[MESA_SHADER_TESS_CTRL] &&
+             !gfx->shaders[MESA_SHADER_GEOMETRY]) {
+            cfg.front_face_ccw ^= gfx->tess.info.ccw;
+            cfg.front_face_ccw ^= dyn->ts.domain_origin ==
+                                  VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
+         }
+
          cfg.flat_shading_vertex = translate_ppp_vertex(gfx->provoking);
          cfg.rasterizer_discard = dyn->rs.rasterizer_discard_enable;
 

@@ -44,6 +44,18 @@ libagx_tes_buffer(constant struct libagx_tess_args *p)
 uint32_t
 libagx_load_tes_index(constant struct libagx_tess_args *p, uint32_t index)
 {
+   /* Swap second and third vertices of each triangle to flip winding order
+    * dynamically if needed.
+    */
+   if (p->ccw) {
+      uint id = index % 3;
+
+      if (id == 1)
+         index++;
+      else if (id == 2)
+         index--;
+   }
+
    return p->index_buffer[index];
 }
 
