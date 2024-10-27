@@ -29,7 +29,7 @@
  * bits are linear. So we interleave as much as possible, and then add what's
  * remaining. Finally, layers are strided linear and added at the end.
  */
-uint
+static uint
 index_metadata(uint3 c, uint width, uint height, uint layer_stride)
 {
    uint major_coord = width > height ? c.x : c.y;
@@ -48,7 +48,7 @@ index_metadata(uint3 c, uint width, uint height, uint layer_stride)
  * The following two helpers convert a coordinate in samples into a coordinate
  * in pixels and a sample ID, respectively. They each assume that samples > 1.
  */
-int4
+static int4
 decompose_px(int4 c, uint samples)
 {
    if (samples == 4)
@@ -59,7 +59,7 @@ decompose_px(int4 c, uint samples)
    return c;
 }
 
-uint
+static uint
 sample_id(int4 c, uint samples)
 {
    if (samples == 4)
