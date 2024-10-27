@@ -22,7 +22,6 @@
 
 #include "geometry.h"
 #include "tessellator.h"
-#include <agx_pack.h>
 
 #if 0
 #include <math.h>
@@ -154,50 +153,6 @@ libagx_draw(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
       p->counts[patch] = count;
    }
 
-   if (mode == LIBAGX_TESS_MODE_VDM) {
-      uint32_t elsize_B = sizeof(uint16_t);
-      uint32_t alloc_B = libagx_heap_alloc(p->heap, elsize_B * count);
-      uint64_t ib = ((uintptr_t)p->heap->heap) + alloc_B;
-
-      global uint32_t *desc = p->out_draws + (patch * 6);
-      agx_pack(&desc[0], INDEX_LIST, cfg) {
-         cfg.index_buffer_hi = (ib >> 32);
-         cfg.primitive = lines ? AGX_PRIMITIVE_LINES : AGX_PRIMITIVE_TRIANGLES;
-         cfg.restart_enable = false;
-         cfg.index_size = AGX_INDEX_SIZE_U16;
-         cfg.index_buffer_size_present = true;
-         cfg.index_buffer_present = true;
-         cfg.index_count_present = true;
-         cfg.instance_count_present = true;
-         cfg.start_present = true;
-         cfg.unk_1_present = false;
-         cfg.indirect_buffer_present = false;
-         cfg.unk_2_present = false;
-      }
-
-      agx_pack(&desc[1], INDEX_LIST_BUFFER_LO, cfg) {
-         cfg.buffer_lo = ib & 0xffffffff;
-      }
-
-      agx_pack(&desc[2], INDEX_LIST_COUNT, cfg) {
-         cfg.count = count;
-      }
-
-      agx_pack(&desc[3], INDEX_LIST_INSTANCES, cfg) {
-         cfg.count = 1;
-      }
-
-      agx_pack(&desc[4], INDEX_LIST_START, cfg) {
-         cfg.start = patch * LIBAGX_TES_PATCH_ID_STRIDE;
-      }
-
-      agx_pack(&desc[5], INDEX_LIST_BUFFER_SIZE, cfg) {
-         cfg.size = align(count * 2, 4);
-      }
-
-      return (global void *)ib;
-   }
-
    if (mode == LIBAGX_TESS_MODE_WITH_COUNTS) {
       /* The index buffer is already allocated, get a pointer inside it.
        * p->counts has had an inclusive prefix sum hence the subtraction.
@@ -216,47 +171,16 @@ static void
 libagx_draw_points(private struct CHWTessellator *ctx,
                    constant struct libagx_tess_args *p, uint patch, uint count)
 {
-   if (ctx->mode == LIBAGX_TESS_MODE_VDM) {
-      /* Generate a non-indexed draw for points mode tessellation. */
-      global uint32_t *desc = p->out_draws + (patch * 4);
-      agx_pack(&desc[0], INDEX_LIST, cfg) {
-         cfg.index_buffer_hi = 0;
-         cfg.primitive = AGX_PRIMITIVE_POINTS;
-         cfg.restart_enable = false;
-         cfg.index_size = 0;
-         cfg.index_buffer_size_present = false;
-         cfg.index_buffer_present = false;
-         cfg.index_count_present = true;
-         cfg.instance_count_present = true;
-         cfg.start_present = true;
-         cfg.unk_1_present = false;
-         cfg.indirect_buffer_present = false;
-         cfg.unk_2_present = false;
-      }
+   /* For points mode with a single draw, we need to generate a trivial index
+    * buffer to stuff in the patch ID in the right place.
+    */
+   global uint32_t *indices = libagx_draw(p, ctx->mode, false, patch, count);
 
-      agx_pack(&desc[1], INDEX_LIST_COUNT, cfg) {
-         cfg.count = count;
-      }
+   if (ctx->mode == LIBAGX_TESS_MODE_COUNT)
+      return;
 
-      agx_pack(&desc[2], INDEX_LIST_INSTANCES, cfg) {
-         cfg.count = 1;
-      }
-
-      agx_pack(&desc[3], INDEX_LIST_START, cfg) {
-         cfg.start = patch * LIBAGX_TES_PATCH_ID_STRIDE;
-      }
-   } else {
-      /* For points mode with a single draw, we need to generate a trivial index
-       * buffer to stuff in the patch ID in the right place.
-       */
-      global uint32_t *indices = libagx_draw(p, ctx->mode, false, patch, count);
-
-      if (ctx->mode == LIBAGX_TESS_MODE_COUNT)
-         return;
-
-      for (int i = 0; i < count; ++i) {
-         indices[i] = ctx->index_bias + i;
-      }
+   for (int i = 0; i < count; ++i) {
+      indices[i] = ctx->index_bias + i;
    }
 }
 
@@ -268,14 +192,6 @@ libagx_draw_empty(constant struct libagx_tess_args *p,
 {
    if (mode == LIBAGX_TESS_MODE_COUNT) {
       p->counts[patch] = 0;
-   } else if (mode == LIBAGX_TESS_MODE_VDM) {
-      uint32_t words = (output_primitive == LIBAGX_TESS_OUTPUT_POINT) ? 4 : 6;
-      global uint32_t *desc = p->out_draws + (patch * words);
-      uint32_t nop_token = AGX_VDM_BLOCK_TYPE_BARRIER << 29;
-
-      for (uint32_t i = 0; i < words; ++i) {
-         desc[i] = nop_token;
-      }
    }
 }
 

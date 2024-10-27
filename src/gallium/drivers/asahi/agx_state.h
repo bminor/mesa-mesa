@@ -689,7 +689,6 @@ struct agx_context {
    bool is_noop;
 
    bool in_tess;
-   bool in_generated_vdm;
 
    struct blitter_context *blitter;
    struct asahi_blitter compute_blitter;

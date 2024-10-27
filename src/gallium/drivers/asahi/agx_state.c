@@ -4592,10 +4592,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
                        : LIBAGX_TESS_OUTPUT_TRIANGLE_CW;
 
    struct agx_bo *draw_bo = NULL;
-   bool with_counts =
-      indirect || ctx->stage[MESA_SHADER_GEOMETRY].shader != NULL;
-   size_t draw_stride =
-      ((!with_counts && point_mode) ? 4 : 6) * sizeof(uint32_t);
+   size_t draw_stride = 5 * sizeof(uint32_t);
 
    struct agx_batch *batch = agx_get_batch(ctx);
    agx_batch_init_state(batch);
@@ -4679,18 +4676,10 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       alloc += unrolled_patches * 4;
 
       uint32_t count_offs = alloc;
-      if (with_counts)
-         alloc += unrolled_patches * sizeof(uint32_t);
+      alloc += unrolled_patches * sizeof(uint32_t);
 
       uint32_t draw_offs = alloc;
-
-      if (with_counts) {
-         alloc += draw_stride;
-      } else {
-         /* Padding added because VDM overreads */
-         alloc +=
-            (draw_stride * unrolled_patches) + (AGX_VDM_BARRIER_LENGTH + 0x800);
-      }
+      alloc += draw_stride;
 
       struct agx_ptr blob =
          agx_pool_alloc_aligned_with_bo(&batch->pool, alloc, 4, &draw_bo);
@@ -4700,18 +4689,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       args.coord_allocs = blob.gpu + patch_coord_offs;
       args.nr_patches = unrolled_patches;
       args.out_draws = blob.gpu + draw_offs;
-
-      if (with_counts) {
-         args.counts = blob.gpu + count_offs;
-      } else {
-         /* Arrange so we return after all generated draws */
-         uint8_t *ret =
-            (uint8_t *)blob.cpu + draw_offs + (draw_stride * unrolled_patches);
-
-         agx_pack(ret, VDM_BARRIER, cfg) {
-            cfg.returns = true;
-         }
-      }
+      args.counts = blob.gpu + count_offs;
 
       unsigned vb_size = libagx_tcs_in_size(draws->count * info->instance_count,
                                             batch->uniforms.vertex_outputs);
@@ -4747,13 +4725,9 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
       batch->uniforms.vertex_output_buffer_ptr = args.vertex_output_buffer_ptr;
 
-      if (with_counts) {
-         args.out_draws = agx_pool_alloc_aligned_with_bo(
-                             &batch->pool, draw_stride, 4, &draw_bo)
-                             .gpu;
-      } else {
-         unreachable("need an extra indirection...");
-      }
+      args.out_draws =
+         agx_pool_alloc_aligned_with_bo(&batch->pool, draw_stride, 4, &draw_bo)
+            .gpu;
    }
 
    uint64_t state =
@@ -4763,7 +4737,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       const struct agx_grid indirect_grid = agx_grid_direct(1, 1, 1, 1, 1, 1);
       struct agx_tess_setup_indirect_key indirect_key = {
          .point_mode = point_mode,
-         .with_counts = with_counts,
       };
 
       agx_launch_with_uploaded_data(batch, &indirect_grid,
@@ -4782,23 +4755,19 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .output_primitive = prim,
    };
 
-   if (with_counts) {
-      /* Generate counts */
-      key.mode = LIBAGX_TESS_MODE_COUNT;
-      agx_launch_with_uploaded_data(batch, &tess_grid, agx_nir_tessellate, &key,
-                                    sizeof(key), state);
+   /* Generate counts */
+   key.mode = LIBAGX_TESS_MODE_COUNT;
+   agx_launch_with_uploaded_data(batch, &tess_grid, agx_nir_tessellate, &key,
+                                 sizeof(key), state);
 
-      /* Prefix sum counts, allocating index buffer space. */
-      const struct agx_grid prefix_sum_grid =
-         agx_grid_direct(1024, 1, 1, 1024, 1, 1);
+   /* Prefix sum counts, allocating index buffer space. */
+   const struct agx_grid prefix_sum_grid =
+      agx_grid_direct(1024, 1, 1, 1024, 1, 1);
 
-      agx_launch_with_uploaded_data(batch, &prefix_sum_grid,
-                                    agx_nir_prefix_sum_tess, NULL, 0, state);
+   agx_launch_with_uploaded_data(batch, &prefix_sum_grid,
+                                 agx_nir_prefix_sum_tess, NULL, 0, state);
 
-      key.mode = LIBAGX_TESS_MODE_WITH_COUNTS;
-   } else {
-      key.mode = LIBAGX_TESS_MODE_VDM;
-   }
+   key.mode = LIBAGX_TESS_MODE_WITH_COUNTS;
 
    /* Now we can tessellate */
    agx_launch_with_uploaded_data(batch, &tess_grid, agx_nir_tessellate, &key,
@@ -4809,12 +4778,11 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    void *tes_cso = ctx->stage[PIPE_SHADER_TESS_EVAL].shader;
    ctx->base.bind_vs_state(&ctx->base, tes_cso);
    ctx->in_tess = true;
-   ctx->in_generated_vdm = !with_counts;
 
    struct pipe_draw_info draw_info = {
       .mode = out_prim,
-      .index_size = with_counts ? 4 : (point_mode ? 0 : 2),
-      .index.resource = (!with_counts && point_mode) ? NULL : ctx->heap,
+      .index_size = 4,
+      .index.resource = ctx->heap,
       .instance_count = 1,
    };
 
@@ -4832,7 +4800,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    /* Restore vertex state */
    ctx->base.bind_vs_state(&ctx->base, vs_cso);
-   ctx->in_generated_vdm = false;
    ctx->in_tess = false;
 
    if (unbind_tcs_when_done) {
@@ -5221,75 +5188,63 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
 
    uint8_t *out = agx_encode_state(batch, batch->vdm.current);
 
-   if (ctx->in_generated_vdm) {
+   if (info->index_size && info->primitive_restart) {
+      agx_push(out, VDM_STATE, cfg)
+         cfg.restart_index_present = true;
+
+      agx_push(out, VDM_STATE_RESTART_INDEX, cfg)
+         cfg.value = info->restart_index;
+   }
+
+   agx_push(out, INDEX_LIST, cfg) {
+      cfg.primitive = agx_primitive_for_pipe(info->mode);
+
+      if (indirect != NULL) {
+         cfg.indirect_buffer_present = true;
+      } else {
+         cfg.instance_count_present = true;
+         cfg.index_count_present = true;
+         cfg.start_present = true;
+      }
+
+      if (info->index_size) {
+         cfg.restart_enable = info->primitive_restart;
+         cfg.index_buffer_hi = (ib >> 32);
+         cfg.index_size = agx_translate_index_size(info->index_size);
+         cfg.index_buffer_present = true;
+         cfg.index_buffer_size_present = true;
+      }
+   }
+
+   if (info->index_size) {
+      agx_push(out, INDEX_LIST_BUFFER_LO, cfg) {
+         cfg.buffer_lo = ib & BITFIELD_MASK(32);
+      }
+   }
+
+   if (indirect) {
       struct agx_resource *indirect_rsrc = agx_resource(indirect->buffer);
       uint64_t address = indirect_rsrc->bo->va->addr + indirect->offset;
 
-      agx_push(out, VDM_STREAM_LINK, cfg) {
-         cfg.target_lo = address & BITFIELD_MASK(32);
-         cfg.target_hi = address >> 32;
-         cfg.with_return = true;
+      agx_push(out, INDEX_LIST_INDIRECT_BUFFER, cfg) {
+         cfg.address_hi = address >> 32;
+         cfg.address_lo = address & BITFIELD_MASK(32);
       }
    } else {
+      agx_push(out, INDEX_LIST_COUNT, cfg)
+         cfg.count = draws->count;
 
-      if (info->index_size && info->primitive_restart) {
-         agx_push(out, VDM_STATE, cfg)
-            cfg.restart_index_present = true;
+      agx_push(out, INDEX_LIST_INSTANCES, cfg)
+         cfg.count = info->instance_count;
 
-         agx_push(out, VDM_STATE_RESTART_INDEX, cfg)
-            cfg.value = info->restart_index;
+      agx_push(out, INDEX_LIST_START, cfg) {
+         cfg.start = info->index_size ? draws->index_bias : draws->start;
       }
+   }
 
-      agx_push(out, INDEX_LIST, cfg) {
-         cfg.primitive = agx_primitive_for_pipe(info->mode);
-
-         if (indirect != NULL) {
-            cfg.indirect_buffer_present = true;
-         } else {
-            cfg.instance_count_present = true;
-            cfg.index_count_present = true;
-            cfg.start_present = true;
-         }
-
-         if (info->index_size) {
-            cfg.restart_enable = info->primitive_restart;
-            cfg.index_buffer_hi = (ib >> 32);
-            cfg.index_size = agx_translate_index_size(info->index_size);
-            cfg.index_buffer_present = true;
-            cfg.index_buffer_size_present = true;
-         }
-      }
-
-      if (info->index_size) {
-         agx_push(out, INDEX_LIST_BUFFER_LO, cfg) {
-            cfg.buffer_lo = ib & BITFIELD_MASK(32);
-         }
-      }
-
-      if (indirect) {
-         struct agx_resource *indirect_rsrc = agx_resource(indirect->buffer);
-         uint64_t address = indirect_rsrc->bo->va->addr + indirect->offset;
-
-         agx_push(out, INDEX_LIST_INDIRECT_BUFFER, cfg) {
-            cfg.address_hi = address >> 32;
-            cfg.address_lo = address & BITFIELD_MASK(32);
-         }
-      } else {
-         agx_push(out, INDEX_LIST_COUNT, cfg)
-            cfg.count = draws->count;
-
-         agx_push(out, INDEX_LIST_INSTANCES, cfg)
-            cfg.count = info->instance_count;
-
-         agx_push(out, INDEX_LIST_START, cfg) {
-            cfg.start = info->index_size ? draws->index_bias : draws->start;
-         }
-      }
-
-      if (info->index_size) {
-         agx_push(out, INDEX_LIST_BUFFER_SIZE, cfg) {
-            cfg.size = ib_extent;
-         }
+   if (info->index_size) {
+      agx_push(out, INDEX_LIST_BUFFER_SIZE, cfg) {
+         cfg.size = ib_extent;
       }
    }
 

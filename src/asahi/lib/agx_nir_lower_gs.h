@@ -61,10 +61,8 @@ static_assert(sizeof(struct agx_tessellator_key) == 4, "padded");
 
 struct agx_tess_setup_indirect_key {
    bool point_mode;
-   bool with_counts;
-   bool padding[2];
 };
-static_assert(sizeof(struct agx_tess_setup_indirect_key) == 4, "padded");
+static_assert(sizeof(struct agx_tess_setup_indirect_key) == 1, "padded");
 
 void agx_nir_tessellate(struct nir_builder *b, const void *key);
 

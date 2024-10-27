@@ -1585,10 +1585,9 @@ agx_nir_tess_setup_indirect(nir_builder *b, const void *data)
    const struct agx_tess_setup_indirect_key *key = data;
 
    nir_def *params = nir_load_preamble(b, 1, 64, .base = 0);
-   nir_def *with_counts = nir_imm_bool(b, key->with_counts);
    nir_def *point_mode = nir_imm_bool(b, key->point_mode);
 
-   libagx_tess_setup_indirect(b, params, with_counts, point_mode);
+   libagx_tess_setup_indirect(b, params, point_mode);
 }
 
 void

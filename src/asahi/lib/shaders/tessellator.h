@@ -25,9 +25,6 @@ enum libagx_tess_mode {
 
    /* Tessellate using the count buffers to allocate indices */
    LIBAGX_TESS_MODE_WITH_COUNTS,
-
-   /* Tessellate without count buffers by generating VDM index list words */
-   LIBAGX_TESS_MODE_VDM,
 };
 
 struct libagx_tess_point {
@@ -51,8 +48,7 @@ struct libagx_tess_args {
     */
    GLOBAL(uint32_t) coord_allocs;
 
-   /* Space for output draws from the tessellator. Either API draw calls or
-    * VDM control words, depending on the mode. */
+   /* Space for output draws from the tessellator. API draw calls. */
    GLOBAL(uint32_t) out_draws;
 
    /* Tessellation control shader output buffer. */

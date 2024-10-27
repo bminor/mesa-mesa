@@ -129,8 +129,7 @@ libagx_tess_level_inner_default(constant struct libagx_tess_args *p)
 }
 
 void
-libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool with_counts,
-                           bool point_mode)
+libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool point_mode)
 {
    uint count = p->indirect[0], instance_count = p->indirect[1];
    unsigned in_patches = count / p->input_patch_size;
@@ -140,9 +139,7 @@ libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool with_counts,
       *(p->tcs_statistic) += in_patches;
    }
 
-   size_t draw_stride =
-      ((!with_counts && point_mode) ? 4 : 6) * sizeof(uint32_t);
-
+   size_t draw_stride = 5 * sizeof(uint32_t);
    unsigned unrolled_patches = in_patches * instance_count;
 
    uint32_t alloc = 0;
@@ -153,8 +150,7 @@ libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool with_counts,
    alloc += unrolled_patches * 4;
 
    uint32_t count_offs = alloc;
-   if (with_counts)
-      alloc += unrolled_patches * sizeof(uint32_t);
+   alloc += unrolled_patches * sizeof(uint32_t);
 
    uint vb_offs = alloc;
    uint vb_size = libagx_tcs_in_size(count * instance_count, p->vertex_outputs);
@@ -170,22 +166,7 @@ libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool with_counts,
    p->nr_patches = unrolled_patches;
 
    *(p->vertex_output_buffer_ptr) = (uintptr_t)(blob + vb_offs);
-
-   if (with_counts) {
-      p->counts = (global uint32_t *)(blob + count_offs);
-   } else {
-#if 0
-      /* Arrange so we return after all generated draws. agx_pack would be nicer
-       * here but designated initializers lead to scratch access...
-       */
-      global uint32_t *ret =
-         (global uint32_t *)(blob + draw_offs +
-                             (draw_stride * unrolled_patches));
-
-      *ret = (AGX_VDM_BLOCK_TYPE_BARRIER << 29) | /* with return */ (1u << 27);
-#endif
-      /* TODO */
-   }
+   p->counts = (global uint32_t *)(blob + count_offs);
 
    global struct agx_ia_state *ia = p->ia;
    ia->verts_per_instance = count;

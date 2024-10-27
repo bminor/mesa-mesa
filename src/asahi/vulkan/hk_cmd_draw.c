@@ -78,11 +78,6 @@ struct hk_draw {
    uint32_t index_bias;
    uint32_t start_instance;
 
-   /* Indicates that the indirect draw consists of raw VDM commands and should
-    * be stream linked to. Used to accelerate tessellation.
-    */
-   bool raw;
-
    /* Set within hk_draw() but here so geometry/tessellation can override */
    bool restart;
    enum agx_index_size index_size;
@@ -100,9 +95,6 @@ print_draw(struct hk_draw d, FILE *fp)
       fprintf(fp, " index_size=%u", agx_index_size_to_B(d.index_size));
    else
       fprintf(fp, " non-indexed");
-
-   if (d.raw)
-      fprintf(fp, " raw");
 
    if (d.restart)
       fprintf(fp, " restart");
@@ -1262,26 +1254,6 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct hk_draw draw)
    return hk_pool_upload(cmd, &params, sizeof(params), 8);
 }
 
-/*
- * Tessellation has a fast path where the tessellator generates a VDM Index List
- * command per patch, as well as a slow path using prefix sums to generate a
- * single combined API draw. We need the latter if tessellation is fed into
- * another software stage (geometry shading), or if we need accurate primitive
- * IDs in the linked fragment shader (since that would require a prefix sum
- * anyway).
- *
- * The indirect tess path currently only supports indexed, but that part of
- * libagx is on life support until I get to a wholesale replacement.
- */
-static bool
-hk_tess_needs_prefix_sum(struct hk_cmd_buffer *cmd, struct hk_draw draw)
-{
-   struct hk_graphics_state *gfx = &cmd->state.gfx;
-
-   return gfx->shaders[MESA_SHADER_GEOMETRY] || gfx->generate_primitive_id ||
-          draw.b.indirect;
-}
-
 static void
 hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
                       struct hk_draw draw)
@@ -1312,8 +1284,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       .partitioning = partitioning,
    };
 
-   bool with_counts = hk_tess_needs_prefix_sum(cmd, draw);
-   uint32_t draw_stride_el = with_counts ? 5 : (gfx->tess.info.points ? 4 : 6);
+   uint32_t draw_stride_el = 5;
    size_t draw_stride_B = draw_stride_el * sizeof(uint32_t);
 
    /* heap is allocated by hk_geometry_state */
@@ -1334,19 +1305,11 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       alloc += unrolled_patches * 4 * 32;
 
       uint32_t count_offs = alloc;
-      if (with_counts)
-         alloc += unrolled_patches * sizeof(uint32_t) * 32;
+      alloc += unrolled_patches * sizeof(uint32_t) * 32;
 
+      /* Single API draw */
       uint32_t draw_offs = alloc;
-
-      if (with_counts) {
-         /* Single API draw */
-         alloc += draw_stride_B;
-      } else {
-         /* Padding added because VDM overreads */
-         alloc += (draw_stride_B * unrolled_patches) +
-                  (AGX_VDM_BARRIER_LENGTH + 0x800);
-      }
+      alloc += draw_stride_B;
 
       struct agx_ptr blob = hk_pool_alloc(cmd, alloc, 4);
       args.tcs_buffer = blob.gpu + tcs_out_offs;
@@ -1354,18 +1317,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       args.coord_allocs = blob.gpu + patch_coord_offs;
       args.nr_patches = unrolled_patches;
       args.out_draws = blob.gpu + draw_offs;
-
-      if (with_counts) {
-         args.counts = blob.gpu + count_offs;
-      } else {
-         /* Arrange so we return after all generated draws */
-         uint8_t *ret = (uint8_t *)blob.cpu + draw_offs +
-                        (draw_stride_B * unrolled_patches);
-
-         agx_pack(ret, VDM_BARRIER, cfg) {
-            cfg.returns = true;
-         }
-      }
+      args.counts = blob.gpu + count_offs;
    } else {
       args.tcs_statistic = hk_pipeline_stat_addr(
          cmd,
@@ -1384,12 +1336,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
          gfx->root +
          offsetof(struct hk_root_descriptor_table, draw.vertex_output_buffer);
       args.ia = gfx->descriptors.root.draw.input_assembly;
-
-      if (with_counts) {
-         args.out_draws = hk_pool_alloc(cmd, draw_stride_B, 4).gpu;
-      } else {
-         unreachable("need an extra indirection...");
-      }
+      args.out_draws = hk_pool_alloc(cmd, draw_stride_B, 4).gpu;
 
       if (draw.indexed) {
          args.in_index_buffer = draw.index.addr;
@@ -1652,7 +1599,6 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
 
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
    uint32_t input_patch_size = dyn->ts.patch_control_points;
-   bool with_counts = hk_tess_needs_prefix_sum(cmd, draw);
    uint64_t state = gfx->descriptors.root.draw.tess_params;
    struct hk_tess_info info = gfx->tess.info;
 
@@ -1669,7 +1615,6 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
 
       struct agx_tess_setup_indirect_key key = {
          .point_mode = info.points,
-         .with_counts = with_counts,
       };
 
       struct hk_shader *tsi =
@@ -1740,36 +1685,30 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
       .output_primitive = prim,
    };
 
-   if (with_counts) {
-      perf_debug(dev, "Tessellation with counts");
+   /* Generate counts */
+   key.mode = LIBAGX_TESS_MODE_COUNT;
+   {
+      struct hk_shader *tess =
+         hk_meta_kernel(dev, agx_nir_tessellate, &key, sizeof(key));
 
-      /* Generate counts */
-      key.mode = LIBAGX_TESS_MODE_COUNT;
-      {
-         struct hk_shader *tess =
-            hk_meta_kernel(dev, agx_nir_tessellate, &key, sizeof(key));
-
-         hk_dispatch_with_usc(
-            dev, cs, tess,
-            hk_upload_usc_words_kernel(cmd, tess, &state, sizeof(state)),
-            grid_tess, hk_grid(64, 1, 1));
-      }
-
-      /* Prefix sum counts, allocating index buffer space. */
-      {
-         struct hk_shader *sum =
-            hk_meta_kernel(dev, agx_nir_prefix_sum_tess, NULL, 0);
-
-         hk_dispatch_with_usc(
-            dev, cs, sum,
-            hk_upload_usc_words_kernel(cmd, sum, &state, sizeof(state)),
-            hk_grid(1024, 1, 1), hk_grid(1024, 1, 1));
-      }
-
-      key.mode = LIBAGX_TESS_MODE_WITH_COUNTS;
-   } else {
-      key.mode = LIBAGX_TESS_MODE_VDM;
+      hk_dispatch_with_usc(
+         dev, cs, tess,
+         hk_upload_usc_words_kernel(cmd, tess, &state, sizeof(state)),
+         grid_tess, hk_grid(64, 1, 1));
    }
+
+   /* Prefix sum counts, allocating index buffer space. */
+   {
+      struct hk_shader *sum =
+         hk_meta_kernel(dev, agx_nir_prefix_sum_tess, NULL, 0);
+
+      hk_dispatch_with_usc(
+         dev, cs, sum,
+         hk_upload_usc_words_kernel(cmd, sum, &state, sizeof(state)),
+         hk_grid(1024, 1, 1), hk_grid(1024, 1, 1));
+   }
+
+   key.mode = LIBAGX_TESS_MODE_WITH_COUNTS;
 
    /* Now we can tessellate */
    {
@@ -1787,10 +1726,8 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
       .range = dev->heap->size,
    };
 
-   struct hk_draw out = hk_draw_indexed_indirect(gfx->tess.out_draws, range,
-                                                 AGX_INDEX_SIZE_U32, false);
-   out.raw = !with_counts;
-   return out;
+   return hk_draw_indexed_indirect(gfx->tess.out_draws, range,
+                                   AGX_INDEX_SIZE_U32, false);
 }
 
 void
@@ -3558,21 +3495,6 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct hk_draw draw_)
 
       if (tess) {
          draw = hk_launch_tess(cmd, ccs, draw);
-
-         if (draw.raw) {
-            assert(!geom);
-            assert(draw.b.indirect);
-
-            agx_push(out, VDM_STREAM_LINK, cfg) {
-               cfg.target_lo = draw.b.ptr & BITFIELD_MASK(32);
-               cfg.target_hi = draw.b.ptr >> 32;
-               cfg.with_return = true;
-            }
-
-            cs->current = out;
-            cs->stats.cmds++;
-            continue;
-         }
       }
 
       if (geom) {
