@@ -607,9 +607,9 @@ struct agx_oq_heap;
 
 struct agx_context {
    struct pipe_context base;
-   struct agx_compiled_shader *vs, *fs, *gs, *tcs, *tes;
+   struct agx_compiled_shader *vs, *fs, *gs, *tcs;
    struct {
-      struct agx_linked_shader *vs, *tcs, *tes, *gs, *fs;
+      struct agx_linked_shader *vs, *fs;
    } linked;
    uint32_t dirty;
 
