@@ -2030,11 +2030,6 @@ static inline bool util_rast_prim_is_triangles(unsigned prim)
    return ((1 << prim) & UTIL_ALL_PRIM_TRIANGLE_MODES) != 0;
 }
 
-static inline bool util_rast_prim_is_lines_or_triangles(unsigned prim)
-{
-   return ((1 << prim) & (UTIL_ALL_PRIM_LINE_MODES | UTIL_ALL_PRIM_TRIANGLE_MODES)) != 0;
-}
-
 static inline void si_need_gfx_cs_space(struct si_context *ctx, unsigned num_draws)
 {
    struct radeon_cmdbuf *cs = &ctx->gfx_cs;
