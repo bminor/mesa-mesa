@@ -43,8 +43,13 @@ libagx_txs(constant struct agx_texture_packed *ptr, uint16_t lod,
       size.y = size.z;
 
    /* Adjust for LOD, do not adjust array size */
-   for (uint c = 0; c < (nr_comps - (uint)is_array); ++c)
-      size[c] = max(size[c] >> lod, 1u);
+   size.x = max(size.x >> lod, 1u);
+
+   if (nr_comps - (uint)is_array >= 2)
+      size.y = max(size.y >> lod, 1u);
+
+   if (nr_comps - (uint)is_array >= 3)
+      size.z = max(size.z >> lod, 1u);
 
    /* Cube maps have equal width and height, we save some instructions by only
     * reading one. Dead code elimination will remove the redundant instructions.
