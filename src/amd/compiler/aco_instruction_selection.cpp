@@ -8362,6 +8362,12 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       emit_load_frag_coord(ctx, get_ssa_temp(ctx, &instr->def), 4);
       break;
    }
+   case nir_intrinsic_load_pixel_coord: {
+      Temp dst = get_ssa_temp(ctx, &instr->def);
+      bld.copy(Definition(dst), get_arg(ctx, ctx->args->pos_fixed_pt));
+      emit_split_vector(ctx, dst, 2);
+      break;
+   }
    case nir_intrinsic_load_frag_shading_rate:
       emit_load_frag_shading_rate(ctx, get_ssa_temp(ctx, &instr->def));
       break;
