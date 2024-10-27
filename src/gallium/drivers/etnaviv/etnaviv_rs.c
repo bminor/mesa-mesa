@@ -683,6 +683,7 @@ etna_try_rs_blit(struct pipe_context *pctx,
       return false;
 
    if (blit_info->scissor_enable ||
+       blit_info->swizzle_enable ||
        blit_info->dst.box.depth != blit_info->src.box.depth ||
        blit_info->dst.box.depth != 1) {
       return false;

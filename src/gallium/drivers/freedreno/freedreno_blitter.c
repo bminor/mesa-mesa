@@ -439,7 +439,7 @@ fd_resource_copy_region(struct pipe_context *pctx, struct pipe_resource *dst,
       info.mask = util_format_get_mask(src->format);
       info.filter = PIPE_TEX_FILTER_NEAREST;
       info.scissor_enable = 0;
-
+      info.swizzle_enable = 0;
       if (ctx->blit(ctx, &info))
          return;
    }

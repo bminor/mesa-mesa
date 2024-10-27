@@ -824,6 +824,7 @@ static bool do_hardware_msaa_resolve(struct pipe_context *ctx,
 	    util_is_format_compatible(util_format_description(info->src.format),
 				      util_format_description(info->dst.format)) &&
 	    !info->scissor_enable &&
+	    !info->swizzle_enable &&
 	    (info->mask & PIPE_MASK_RGBA) == PIPE_MASK_RGBA &&
 	    dst_width == info->src.resource->width0 &&
 	    dst_height == info->src.resource->height0 &&

@@ -235,6 +235,7 @@ asahi_compute_blit_supported(const struct pipe_blit_info *info)
    return (info->src.box.depth == info->dst.box.depth) && !info->alpha_blend &&
           !info->num_window_rectangles && !info->sample0_only &&
           !info->scissor_enable && !info->window_rectangle_include &&
+          !info->swizzle_enable &&
           info->src.resource->nr_samples <= 1 &&
           info->dst.resource->nr_samples <= 1 &&
           !util_format_is_depth_and_stencil(info->src.format) &&
@@ -597,6 +598,7 @@ try_copy_via_blit(struct pipe_context *pctx, struct pipe_resource *dst,
       .mask = util_format_get_mask(src->format),
       .filter = PIPE_TEX_FILTER_NEAREST,
       .scissor_enable = 0,
+      .swizzle_enable = 0,
    };
 
    /* snorm formats don't round trip, so don't use them for copies */

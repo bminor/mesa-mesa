@@ -61,6 +61,7 @@ resolve_supported(const struct pipe_blit_info *info)
 
    if (info->filter != PIPE_TEX_FILTER_NEAREST ||
        info->scissor_enable ||
+       info->swizzle_enable ||
        info->num_window_rectangles > 0 ||
        info->alpha_blend)
       return false;
@@ -162,7 +163,7 @@ direct_copy_supported(struct d3d12_screen *screen,
                       const struct pipe_blit_info *info,
                       bool have_predication)
 {
-   if (info->scissor_enable || info->alpha_blend ||
+   if (info->scissor_enable || info->alpha_blend || info->swizzle_enable ||
        (have_predication && info->render_condition_enable) ||
        MAX2(info->src.resource->nr_samples, 1) != MAX2(info->dst.resource->nr_samples, 1)) {
       return false;

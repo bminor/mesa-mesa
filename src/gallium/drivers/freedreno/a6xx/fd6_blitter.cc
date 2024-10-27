@@ -210,6 +210,7 @@ can_do_blit(const struct pipe_blit_info *info)
    /* The blitter can't handle the needed swizzle gymnastics to convert
     * to/from L/A formats:
     */
+   fail_if(info->swizzle_enable);
    if (info->src.format != info->dst.format) {
       fail_if(util_format_is_luminance(info->dst.format));
       fail_if(util_format_is_alpha(info->dst.format));

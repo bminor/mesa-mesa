@@ -1171,6 +1171,7 @@ bool si_msaa_resolve_blit_via_CB(struct pipe_context *ctx, const struct pipe_bli
 
    /* Check the remaining requirements for hw resolve. */
    if (util_max_layer(info->dst.resource, info->dst.level) == 0 && !info->scissor_enable &&
+       !info->swizzle_enable &&
        (info->mask & PIPE_MASK_RGBA) == PIPE_MASK_RGBA &&
        resolve_formats_compatible(info->src.format, info->dst.format,
                                   src->swap_rgb_to_bgr, &need_rgb_to_bgr) &&
