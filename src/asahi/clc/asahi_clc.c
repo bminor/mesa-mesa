@@ -556,7 +556,7 @@ main(int argc, char **argv)
    /* Serialize NIR for embedding */
    struct blob blob;
    blob_init(&blob);
-   nir_serialize(&blob, nir, false /* strip */);
+   nir_serialize(&blob, nir, true /* strip */);
    print_u32_data(fp, prefix, "nir", (const uint32_t *)blob.data, blob.size);
    blob_finish(&blob);
 
