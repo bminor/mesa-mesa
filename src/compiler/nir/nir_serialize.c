@@ -525,8 +525,8 @@ union packed_instr {
       unsigned no_signed_wrap : 1;
       unsigned no_unsigned_wrap : 1;
       unsigned padding : 1;
-      /* Reg: writemask; SSA: swizzles for 2 srcs */
-      unsigned writemask_or_two_swizzles : 4;
+      /* Swizzles for 2 srcs */
+      unsigned two_swizzles : 4;
       unsigned op : 9;
       unsigned packed_src_ssa_16bit : 1;
       /* Scalarized ALUs always have the same header. */
@@ -692,7 +692,7 @@ is_alu_src_ssa_16bit(write_ctx *ctx, const nir_alu_instr *alu)
 
       for (unsigned chan = 0; chan < src_components; chan++) {
          /* The swizzles for src0.x and src1.x are stored
-          * in writemask_or_two_swizzles for SSA ALUs.
+          * in two_swizzles for SSA ALUs.
           */
          if (i < 2 && chan == 0 && alu->src[i].swizzle[chan] < 4)
             continue;
@@ -724,9 +724,9 @@ write_alu(write_ctx *ctx, const nir_alu_instr *alu)
 
    if (header.alu.packed_src_ssa_16bit) {
       /* For packed srcs of SSA ALUs, this field stores the swizzles. */
-      header.alu.writemask_or_two_swizzles = alu->src[0].swizzle[0];
+      header.alu.two_swizzles = alu->src[0].swizzle[0];
       if (num_srcs > 1)
-         header.alu.writemask_or_two_swizzles |= alu->src[1].swizzle[0] << 2;
+         header.alu.two_swizzles |= alu->src[1].swizzle[0] << 2;
    }
 
    write_def(ctx, &alu->def, header, alu->instr.type);
@@ -825,9 +825,9 @@ read_alu(read_ctx *ctx, union packed_instr header)
    }
 
    if (header.alu.packed_src_ssa_16bit) {
-      alu->src[0].swizzle[0] = header.alu.writemask_or_two_swizzles & 0x3;
+      alu->src[0].swizzle[0] = header.alu.two_swizzles & 0x3;
       if (num_srcs > 1)
-         alu->src[1].swizzle[0] = header.alu.writemask_or_two_swizzles >> 2;
+         alu->src[1].swizzle[0] = header.alu.two_swizzles >> 2;
    }
 
    return alu;
