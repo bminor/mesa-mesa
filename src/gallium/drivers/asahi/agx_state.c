@@ -4586,11 +4586,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    enum libagx_tess_partitioning partitioning =
       (enum libagx_tess_partitioning)pspacing;
 
-   enum libagx_tess_output_primitive prim =
-      point_mode       ? LIBAGX_TESS_OUTPUT_POINT
-      : !tes->tess.ccw ? LIBAGX_TESS_OUTPUT_TRIANGLE_CCW
-                       : LIBAGX_TESS_OUTPUT_TRIANGLE_CW;
-
    struct agx_bo *draw_bo = NULL;
    size_t draw_stride = 5 * sizeof(uint32_t);
 
@@ -4633,6 +4628,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .tcs_per_vertex_outputs = tcs->tess.per_vertex_outputs,
       .patch_coord_buffer = agx_resource(ctx->heap)->bo->va->addr,
       .partitioning = partitioning,
+      .points_mode = point_mode,
    };
 
    memcpy(&args.tess_level_outer_default, ctx->default_outer_level,
@@ -4752,7 +4748,9 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    struct agx_tessellator_key key = {
       .prim = mode,
-      .output_primitive = prim,
+
+      /* Yes, OpenGL is backwards. */
+      .ccw = !tes->tess.ccw,
    };
 
    /* Generate counts */

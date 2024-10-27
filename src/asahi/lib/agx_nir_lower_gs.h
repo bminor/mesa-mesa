@@ -52,10 +52,10 @@ struct agx_unroll_restart_key {
 void agx_nir_unroll_restart(struct nir_builder *b, const void *key);
 
 struct agx_tessellator_key {
-   enum tess_primitive_mode prim                      : 8;
-   enum libagx_tess_output_primitive output_primitive : 8;
-   enum libagx_tess_mode mode                         : 8;
-   unsigned pad                                       : 8;
+   enum tess_primitive_mode prim : 8;
+   enum libagx_tess_mode mode    : 8;
+   bool ccw;
+   unsigned pad : 8;
 };
 static_assert(sizeof(struct agx_tessellator_key) == 4, "padded");
 

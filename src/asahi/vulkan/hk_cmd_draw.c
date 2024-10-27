@@ -1282,6 +1282,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       .tcs_patch_constants = tcs->info.tess.tcs_nr_patch_outputs,
       .tcs_per_vertex_outputs = tcs->info.tess.tcs_per_vertex_outputs,
       .partitioning = partitioning,
+      .points_mode = gfx->tess.info.points,
    };
 
    uint32_t draw_stride_el = 5;
@@ -1675,14 +1676,9 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
    bool ccw = info.ccw;
    ccw ^= dyn->ts.domain_origin == VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
 
-   enum libagx_tess_output_primitive prim =
-      info.points ? LIBAGX_TESS_OUTPUT_POINT
-      : ccw       ? LIBAGX_TESS_OUTPUT_TRIANGLE_CCW
-                  : LIBAGX_TESS_OUTPUT_TRIANGLE_CW;
-
    struct agx_tessellator_key key = {
       .prim = info.mode,
-      .output_primitive = prim,
+      .ccw = ccw,
    };
 
    /* Generate counts */

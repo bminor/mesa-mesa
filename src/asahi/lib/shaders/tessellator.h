@@ -13,12 +13,6 @@ enum libagx_tess_partitioning {
    LIBAGX_TESS_PARTITIONING_INTEGER,
 };
 
-enum libagx_tess_output_primitive {
-   LIBAGX_TESS_OUTPUT_POINT,
-   LIBAGX_TESS_OUTPUT_TRIANGLE_CW,
-   LIBAGX_TESS_OUTPUT_TRIANGLE_CCW,
-};
-
 enum libagx_tess_mode {
    /* Do not actually tessellate, just write the index counts */
    LIBAGX_TESS_MODE_COUNT,
@@ -130,9 +124,11 @@ struct libagx_tess_args {
    /* Number of patches being tessellated */
    uint32_t nr_patches;
 
-   /* Partitioning. This affects per-patch setup code but not the hot
-    * tessellation loop so we make it dynamic to reduce tessellator variants.
+   /* Partitioning and points mode. These affect per-patch setup code but not
+    * the hot tessellation loop so we make them dynamic to reduce tessellator
+    * variants.
     */
    enum libagx_tess_partitioning partitioning;
+   uint32_t points_mode;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 49 * 4);
+AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 50 * 4);
