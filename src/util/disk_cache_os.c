@@ -1005,7 +1005,10 @@ disk_cache_enabled()
                  "use MESA_SHADER_CACHE_DISABLE instead ***\n");
    }
 
-   if (debug_get_bool_option(envvar_name, disable_by_default))
+   if (debug_get_bool_option(envvar_name, disable_by_default) ||
+       /* MESA_GLSL_DISABLE_IO_OPT must disable the cache to get expected
+        * results because it only takes effect on a cache miss. */
+       debug_get_bool_option("MESA_GLSL_DISABLE_IO_OPT", false))
       return false;
 
    return true;

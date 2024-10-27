@@ -3859,9 +3859,12 @@ typedef enum {
    nir_io_has_intrinsics = BITFIELD_BIT(16),
 
    /**
-    * Run nir_opt_varyings in the GLSL linker.
+    * Don't run nir_opt_varyings and nir_opt_vectorize_io.
+    *
+    * This option is deprecated and is a hack. DO NOT USE.
+    * Use MESA_GLSL_DISABLE_IO_OPT=1 instead.
     */
-   nir_io_glsl_opt_varyings = BITFIELD_BIT(17),
+   nir_io_dont_optimize = BITFIELD_BIT(17),
 } nir_io_options;
 
 typedef enum {
