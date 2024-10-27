@@ -133,5 +133,10 @@ struct libagx_tess_args {
 
    /* Number of patches being tessellated */
    uint32_t nr_patches;
+
+   /* Partitioning. This affects per-patch setup code but not the hot
+    * tessellation loop so we make it dynamic to reduce tessellator variants.
+    */
+   enum libagx_tess_partitioning partitioning;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 48 * 4);
+AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 49 * 4);

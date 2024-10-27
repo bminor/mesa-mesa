@@ -829,10 +829,11 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
 void
 libagx_tess_isoline(constant struct libagx_tess_args *p,
                     enum libagx_tess_mode mode,
-                    enum libagx_tess_partitioning partitioning,
                     enum libagx_tess_output_primitive output_primitive,
                     uint patch)
 {
+   enum libagx_tess_partitioning partitioning = p->partitioning;
+
    bool lineDensityOdd;
    bool lineDetailOdd;
    TESS_FACTOR_CONTEXT lineDensityTessFactorCtx;
@@ -928,10 +929,10 @@ libagx_tess_isoline(constant struct libagx_tess_args *p,
 
 void
 libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
-
-                enum libagx_tess_partitioning partitioning,
                 enum libagx_tess_output_primitive output_primitive, uint patch)
 {
+   enum libagx_tess_partitioning partitioning = p->partitioning;
+
    global float *factors = tess_factors(p, patch);
    float tessFactor_Ueq0 = factors[0];
    float tessFactor_Veq0 = factors[1];
@@ -1261,9 +1262,9 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
 void
 libagx_tess_quad(constant struct libagx_tess_args *p,
                  enum libagx_tess_mode mode,
-                 enum libagx_tess_partitioning partitioning,
                  enum libagx_tess_output_primitive output_primitive, uint patch)
 {
+   enum libagx_tess_partitioning partitioning = p->partitioning;
    global float *factors = tess_factors(p, patch);
 
    float tessFactor_Ueq0 = factors[0];

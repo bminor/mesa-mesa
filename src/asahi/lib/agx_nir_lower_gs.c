@@ -1567,15 +1567,14 @@ agx_nir_tessellate(nir_builder *b, const void *data)
    nir_def *params = nir_load_preamble(b, 1, 64, .base = 0);
    nir_def *patch = nir_channel(b, nir_load_global_invocation_id(b, 32), 0);
    nir_def *mode = nir_imm_int(b, key->mode);
-   nir_def *partitioning = nir_imm_int(b, key->partitioning);
    nir_def *output_prim = nir_imm_int(b, key->output_primitive);
 
    if (key->prim == TESS_PRIMITIVE_ISOLINES)
-      libagx_tess_isoline(b, params, mode, partitioning, output_prim, patch);
+      libagx_tess_isoline(b, params, mode, output_prim, patch);
    else if (key->prim == TESS_PRIMITIVE_TRIANGLES)
-      libagx_tess_tri(b, params, mode, partitioning, output_prim, patch);
+      libagx_tess_tri(b, params, mode, output_prim, patch);
    else if (key->prim == TESS_PRIMITIVE_QUADS)
-      libagx_tess_quad(b, params, mode, partitioning, output_prim, patch);
+      libagx_tess_quad(b, params, mode, output_prim, patch);
    else
       unreachable("invalid tess primitive");
 }

@@ -4635,6 +4635,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .tcs_patch_constants = tcs->tess.nr_patch_outputs,
       .tcs_per_vertex_outputs = tcs->tess.per_vertex_outputs,
       .patch_coord_buffer = agx_resource(ctx->heap)->bo->va->addr,
+      .partitioning = partitioning,
    };
 
    memcpy(&args.tess_level_outer_default, ctx->default_outer_level,
@@ -4779,7 +4780,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    struct agx_tessellator_key key = {
       .prim = mode,
       .output_primitive = prim,
-      .partitioning = partitioning,
    };
 
    if (with_counts) {

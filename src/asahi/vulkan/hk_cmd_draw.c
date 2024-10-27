@@ -1291,6 +1291,13 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_shader *tcs = hk_only_variant(gfx->shaders[MESA_SHADER_TESS_CTRL]);
 
+   enum libagx_tess_partitioning partitioning =
+      gfx->tess.info.spacing == TESS_SPACING_EQUAL
+         ? LIBAGX_TESS_PARTITIONING_INTEGER
+      : gfx->tess.info.spacing == TESS_SPACING_FRACTIONAL_ODD
+         ? LIBAGX_TESS_PARTITIONING_FRACTIONAL_ODD
+         : LIBAGX_TESS_PARTITIONING_FRACTIONAL_EVEN;
+
    struct libagx_tess_args args = {
       .heap = hk_geometry_state(cmd),
       .tcs_stride_el = tcs->info.tess.tcs_output_stride / 4,
@@ -1302,6 +1309,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
       .output_patch_size = tcs->info.tess.tcs_output_patch_size,
       .tcs_patch_constants = tcs->info.tess.tcs_nr_patch_outputs,
       .tcs_per_vertex_outputs = tcs->info.tess.tcs_per_vertex_outputs,
+      .partitioning = partitioning,
    };
 
    bool with_counts = hk_tess_needs_prefix_sum(cmd, draw);
@@ -1722,12 +1730,6 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
    bool ccw = info.ccw;
    ccw ^= dyn->ts.domain_origin == VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
 
-   enum libagx_tess_partitioning partitioning =
-      info.spacing == TESS_SPACING_EQUAL ? LIBAGX_TESS_PARTITIONING_INTEGER
-      : info.spacing == TESS_SPACING_FRACTIONAL_ODD
-         ? LIBAGX_TESS_PARTITIONING_FRACTIONAL_ODD
-         : LIBAGX_TESS_PARTITIONING_FRACTIONAL_EVEN;
-
    enum libagx_tess_output_primitive prim =
       info.points ? LIBAGX_TESS_OUTPUT_POINT
       : ccw       ? LIBAGX_TESS_OUTPUT_TRIANGLE_CCW
@@ -1736,7 +1738,6 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
    struct agx_tessellator_key key = {
       .prim = info.mode,
       .output_primitive = prim,
-      .partitioning = partitioning,
    };
 
    if (with_counts) {
