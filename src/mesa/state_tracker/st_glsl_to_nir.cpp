@@ -737,8 +737,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
       prog->info.num_abos = old_info.num_abos;
 
       if (prog->info.stage == MESA_SHADER_VERTEX) {
-         if (prog->nir->info.io_lowered &&
-             prog->nir->options->io_options & nir_io_glsl_opt_varyings) {
+         if (prog->nir->info.io_lowered) {
             prog->info.inputs_read = prog->nir->info.inputs_read;
             prog->DualSlotInputs = prog->nir->info.dual_slot_inputs;
          } else {
@@ -909,18 +908,6 @@ st_finalize_nir(struct st_context *st, struct gl_program *prog,
 
    st_nir_assign_varying_locations(st, nir);
    st_nir_assign_uniform_locations(st->ctx, prog, nir);
-
-   /* Lower load_deref/store_deref of inputs and outputs.
-    * This depends on st_nir_assign_varying_locations.
-    *
-    * TODO: remove this once nir_io_glsl_opt_varyings is enabled by default.
-    */
-   if (!is_draw_shader && nir->options->io_options & nir_io_glsl_lower_derefs &&
-       !(nir->options->io_options & nir_io_glsl_opt_varyings)) {
-      nir_lower_io_passes(nir, false);
-      NIR_PASS(_, nir, nir_remove_dead_variables,
-                 nir_var_shader_in | nir_var_shader_out, NULL);
-   }
 
    /* Set num_uniforms in number of attribute slots (vec4s) */
    nir->num_uniforms = DIV_ROUND_UP(prog->Parameters->NumParameterValues, 4);

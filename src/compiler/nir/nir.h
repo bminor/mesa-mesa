@@ -3843,13 +3843,7 @@ typedef enum {
    nir_io_glsl_lower_derefs = BITFIELD_BIT(16),
 
    /**
-    * Run nir_opt_varyings in the GLSL linker. If false, optimize varyings
-    * the old way and lower IO later.
-    *
-    * nir_io_lower_to_intrinsics must be set for this to take effect.
-    *
-    * TODO: remove this and default to enabled once we are sure that this
-    * codepath is solid.
+    * Run nir_opt_varyings in the GLSL linker.
     */
    nir_io_glsl_opt_varyings = BITFIELD_BIT(17),
 } nir_io_options;
