@@ -2107,6 +2107,7 @@ radv_consider_force_vrs(const struct radv_graphics_state_key *gfx_state, const s
     */
    nir_shader *fs_shader = fs_stage->nir;
    if (fs_shader && (BITSET_TEST(fs_shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) ||
+                     BITSET_TEST(fs_shader->info.system_values_read, SYSTEM_VALUE_PIXEL_COORD) ||
                      fs_shader->info.fs.sample_interlock_ordered || fs_shader->info.fs.sample_interlock_unordered ||
                      fs_shader->info.fs.pixel_interlock_ordered || fs_shader->info.fs.pixel_interlock_unordered)) {
       return false;

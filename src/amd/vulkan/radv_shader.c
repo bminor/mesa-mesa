@@ -3393,7 +3393,8 @@ radv_compute_spi_ps_input(const struct radv_physical_device *pdev, const struct 
                   S_0286CC_LINEAR_CENTROID_ENA(info->ps.reads_linear_centroid) |
                   S_0286CC_LINEAR_SAMPLE_ENA(info->ps.reads_linear_sample) |
                   S_0286CC_PERSP_PULL_MODEL_ENA(info->ps.reads_barycentric_model) |
-                  S_0286CC_FRONT_FACE_ENA(info->ps.reads_front_face);
+                  S_0286CC_FRONT_FACE_ENA(info->ps.reads_front_face) |
+                  S_0286CC_POS_FIXED_PT_ENA(info->ps.reads_pixel_coord);
 
    if (info->ps.reads_frag_coord_mask || info->ps.reads_sample_pos_mask) {
       uint8_t mask = info->ps.reads_frag_coord_mask | info->ps.reads_sample_pos_mask;
