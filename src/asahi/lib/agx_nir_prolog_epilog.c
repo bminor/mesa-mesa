@@ -451,6 +451,13 @@ agx_nir_fs_epilog(nir_builder *b, const void *key_)
       NIR_PASS(_, b->shader, agx_nir_lower_to_per_sample);
       NIR_PASS(_, b->shader, agx_nir_lower_fs_active_samples_to_register);
 
+      /* Lower the resulting discards. Done in agx_nir_lower_monolithic_msaa for
+       * the pixel shaded path.
+       */
+      if (key->blend.alpha_to_coverage) {
+         NIR_PASS(_, b->shader, agx_nir_lower_sample_mask);
+      }
+
       /* Ensure the sample ID is preserved in register. We do this late since it
        * has to go in the last block, and the above passes might add control
        * flow when lowering.
