@@ -36,7 +36,7 @@ anv-adl:
 anv-adl-full:
   extends:
     - anv-adl
-    - .intel-manual-rules
+    - .anv-manual-rules
   variables:
     DEQP_SUITE: anv-adl-full
     JOB_TIMEOUT: 90
