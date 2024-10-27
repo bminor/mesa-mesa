@@ -3834,13 +3834,13 @@ typedef enum {
     */
    nir_io_vectorizer_ignores_types = BITFIELD_BIT(6),
 
-   /* Options affecting the GLSL compiler are below. */
+   /* Options affecting the GLSL compiler or Gallium are below. */
 
    /**
     * Lower load_deref/store_deref to load_input/store_output/etc. intrinsics.
-    * This is only affects GLSL compilation.
+    * This is only affects GLSL compilation and Gallium.
     */
-   nir_io_glsl_lower_derefs = BITFIELD_BIT(16),
+   nir_io_has_intrinsics = BITFIELD_BIT(16),
 
    /**
     * Run nir_opt_varyings in the GLSL linker.

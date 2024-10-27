@@ -1508,7 +1508,7 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
       nir_shader *nir = shader->Program->nir;
 
       if (nir->info.stage == MESA_SHADER_COMPUTE ||
-          !(nir->options->io_options & nir_io_glsl_lower_derefs))
+          !(nir->options->io_options & nir_io_has_intrinsics))
          return;
 
       shaders[num_shaders] = nir;
