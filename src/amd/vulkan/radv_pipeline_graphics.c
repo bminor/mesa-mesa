@@ -2665,6 +2665,15 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
       unsigned rast_prim = radv_get_rasterization_prim(stages, gfx_state);
 
       NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_lower_fs_barycentric, gfx_state, rast_prim);
+
+      /* frag_depth = gl_FragCoord.z broadcasts to all samples of the fragment shader invocation,
+       * so only optimize it away if we know there is only one sample per invocation.
+       * Because we don't know if sample shading is used with factor 1.0f, this means
+       * we only optimize single sampled shaders.
+       */
+      if ((gfx_state->lib_flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) &&
+          !gfx_state->dynamic_rasterization_samples && gfx_state->ms.rasterization_samples == 0)
+         NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, nir_opt_fragdepth);
    }
 
    if (stages[MESA_SHADER_VERTEX].nir && !gfx_state->vs.has_prolog)
