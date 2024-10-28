@@ -454,7 +454,7 @@
         "description": "brw/algebraic: Constant folding for BROADCAST and SHUFFLE",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "04e17832782983853299ac616caea8567abbd71f",
         "notes": null
