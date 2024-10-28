@@ -513,6 +513,34 @@ csf_attach_sync_points(struct panfrost_batch *batch, uint32_t vm_sync_handle,
 }
 
 static void
+update_reset_status(struct panfrost_context *ctx,
+                    enum pipe_reset_status new_status)
+{
+   switch (new_status) {
+   case PIPE_GUILTY_CONTEXT_RESET:
+      /* Guilty reset overrides everything. */
+      ctx->csf.reset_status = new_status;
+      break;
+   case PIPE_UNKNOWN_CONTEXT_RESET:
+      /* Preserve guilty reset, override otherwise. */
+      if (ctx->csf.reset_status != PIPE_GUILTY_CONTEXT_RESET)
+         ctx->csf.reset_status = new_status;
+      break;
+   case PIPE_INNOCENT_CONTEXT_RESET:
+      /* Preserve guilty/unknown resets, override otherwise. */
+      if (ctx->csf.reset_status != PIPE_GUILTY_CONTEXT_RESET &&
+          ctx->csf.reset_status != PIPE_UNKNOWN_CONTEXT_RESET)
+         ctx->csf.reset_status = new_status;
+      break;
+   case PIPE_NO_RESET:
+      break;
+   default:
+      assert(!"Invalid reset status");
+      break;
+   }
+}
+
+static void
 csf_check_ctx_state_and_reinit(struct panfrost_context *ctx)
 {
    struct panfrost_device *dev = pan_device(ctx->base.screen);
@@ -524,13 +552,17 @@ csf_check_ctx_state_and_reinit(struct panfrost_context *ctx)
    ret = pan_kmod_ioctl(panfrost_device_fd(dev),
                         DRM_IOCTL_PANTHOR_GROUP_GET_STATE, &state);
    if (ret) {
+      update_reset_status(ctx, PIPE_UNKNOWN_CONTEXT_RESET);
       mesa_loge("DRM_IOCTL_PANTHOR_GROUP_GET_STATE failed (err=%d)", errno);
       return;
    }
 
    /* Context is still usable. This was a transient error. */
-   if (state.state == 0)
+   if (!(state.state & (DRM_PANTHOR_GROUP_STATE_FATAL_FAULT |
+                        DRM_PANTHOR_GROUP_STATE_TIMEDOUT))) {
+      update_reset_status(ctx, PIPE_NO_RESET);
       return;
+   }
 
    /* If the VM is unusable, we can't do much, as this is shared between all
     * contexts, and restoring the VM state is non-trivial.
@@ -539,6 +571,14 @@ csf_check_ctx_state_and_reinit(struct panfrost_context *ctx)
       mesa_loge("VM became unusable, we can't reset the context");
       assert(!"VM became unusable, we can't reset the context");
    }
+
+   /* DRM_PANTHOR_GROUP_STATE_INNOCENT only exists since panthor 1.3, which
+    * means we consider all resets as guilty until that point, but that
+    * should be fine.
+    */
+   update_reset_status(ctx, state.state & DRM_PANTHOR_GROUP_STATE_INNOCENT
+                               ? PIPE_INNOCENT_CONTEXT_RESET
+                               : PIPE_GUILTY_CONTEXT_RESET);
 
    panfrost_context_reinit(ctx);
 }
@@ -1431,6 +1471,17 @@ get_panthor_group_priority(struct panfrost_context *ctx)
    return PANTHOR_GROUP_PRIORITY_MEDIUM;
 }
 
+static enum pipe_reset_status
+get_device_reset_status(struct pipe_context *pctx)
+{
+   struct panfrost_context *ctx = pan_context(pctx);
+   enum pipe_reset_status reset_status = ctx->csf.reset_status;
+
+   /* Reset the status before returning. */
+   ctx->csf.reset_status = PIPE_NO_RESET;
+   return reset_status;
+}
+
 int
 GENX(csf_init_context)(struct panfrost_context *ctx)
 {
@@ -1576,6 +1627,8 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
 
    panfrost_bo_unreference(cs_bo);
 
+   ctx->csf.reset_status = PIPE_NO_RESET;
+   ctx->base.get_device_reset_status = get_device_reset_status;
    ctx->csf.is_init = true;
    return 0;
 err_g_submit:

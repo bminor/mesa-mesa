@@ -87,6 +87,8 @@ struct panfrost_csf_context {
       struct panfrost_bo *desc_bo;
    } heap;
 
+   enum pipe_reset_status reset_status;
+
    /* Temporary geometry buffer. Used as a FIFO by the tiler. */
    struct panfrost_bo *tmp_geom_bo;
 

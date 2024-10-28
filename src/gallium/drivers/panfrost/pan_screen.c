@@ -676,6 +676,8 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    caps->texture_multisample = true;
    caps->surface_sample_count = true;
 
+   caps->device_reset_status_query = dev->arch >= 10;
+
    caps->sampler_view_target = true;
    caps->clip_halfz = true;
    caps->polygon_offset_clamp = true;
