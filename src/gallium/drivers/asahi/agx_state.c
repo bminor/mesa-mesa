@@ -2485,6 +2485,7 @@ agx_delete_compiled_shader(struct agx_device *dev,
    if (so->gs_copy)
       agx_delete_compiled_shader(dev, so->gs_copy);
 
+   free(so->b.binary);
    agx_bo_unreference(dev, so->bo);
    FREE(so);
 }
