@@ -11,10 +11,10 @@
 
 struct agx_cf_binding {
    /* Base coefficient register */
-   unsigned cf_base;
+   uint8_t cf_base;
 
    /* Slot being bound */
-   gl_varying_slot slot;
+   gl_varying_slot slot : 8;
 
    /* First component bound.
     *
@@ -30,6 +30,8 @@ struct agx_cf_binding {
 
    /* Perspective correct interpolation */
    bool perspective : 1;
+
+   uint8_t pad;
 };
 
 /* Conservative bound, * 4 due to offsets (TODO: maybe worth eliminating
