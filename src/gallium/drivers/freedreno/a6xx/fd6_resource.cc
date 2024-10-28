@@ -24,11 +24,15 @@
  * it can be tiled doesn't mean it can be compressed.
  */
 static bool
-ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt)
+ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_samples)
 {
    const struct fd_dev_info *info = fd_screen(pscreen)->info;
 
    switch (pfmt) {
+   case PIPE_FORMAT_Z24X8_UNORM:
+      /* MSAA+UBWC does not work without FMT6_Z24_UINT_S8_UINT: */
+      return info->a6xx.has_z24uint_s8uint || (nr_samples <= 1);
+
    case PIPE_FORMAT_X24S8_UINT:
    case PIPE_FORMAT_Z24_UNORM_S8_UINT:
       /* We can't sample stencil with UBWC on a630, and we may need to be able
@@ -114,7 +118,7 @@ can_do_ubwc(struct pipe_resource *prsc)
       return false;
    if (prsc->target != PIPE_TEXTURE_2D)
       return false;
-   if (!ok_ubwc_format(prsc->screen, prsc->format))
+   if (!ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
       return false;
    return true;
 }
@@ -189,7 +193,7 @@ fd6_check_valid_format(struct fd_resource *rsc, enum pipe_format format)
    if (!rsc->layout.ubwc)
       return FORMAT_OK;
 
-   if (ok_ubwc_format(rsc->b.b.screen, format) &&
+   if (ok_ubwc_format(rsc->b.b.screen, format, rsc->b.b.nr_samples) &&
        valid_ubwc_format_cast(rsc, format))
       return FORMAT_OK;
 
@@ -285,7 +289,7 @@ fd6_setup_slices(struct fd_resource *rsc)
    if (!FD_DBG(NOLRZ) && has_depth(prsc->format) && !is_z32(prsc->format))
       setup_lrz<CHIP>(rsc);
 
-   if (rsc->layout.ubwc && !ok_ubwc_format(prsc->screen, prsc->format))
+   if (rsc->layout.ubwc && !ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
       rsc->layout.ubwc = false;
 
    fdl6_layout(&rsc->layout, prsc->format, fd_resource_nr_samples(prsc),
@@ -361,7 +365,10 @@ fd6_is_format_supported(struct pipe_screen *pscreen,
    case DRM_FORMAT_MOD_LINEAR:
       return true;
    case DRM_FORMAT_MOD_QCOM_COMPRESSED:
-      return ok_ubwc_format(pscreen, fmt);
+      /* screen->is_format_supported() is used only for dma-buf modifier queries,
+       * so no super-sampled images:
+       */
+      return ok_ubwc_format(pscreen, fmt, 0);
    case DRM_FORMAT_MOD_QCOM_TILED3:
       return fd6_tile_mode_for_format(fmt) == TILE6_3;
    default:
