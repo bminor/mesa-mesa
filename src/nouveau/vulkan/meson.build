@@ -102,6 +102,14 @@ nvk_deps = [
   idep_vulkan_wsi_headers,
 ]
 
+nvk_flags = []
+
+if with_platform_android
+  nvk_deps += [dep_android, idep_u_gralloc]
+  nvk_flags += '-DVK_USE_PLATFORM_ANDROID_KHR'
+  nvk_files += files('nvk_android.c')
+endif
+
 libnvk = static_library(
   'nvk',
   [
@@ -118,13 +126,14 @@ libnvk = static_library(
   ],
   link_with : [libnouveau_codegen],
   dependencies : [nvk_deps, idep_nouveau_codegen],
+  c_args : [no_override_init_args, nvk_flags],
   gnu_symbol_visibility : 'hidden',
 )
 
 libvulkan_nouveau = shared_library(
   'vulkan_nouveau',
   link_whole : [libnvk],
-  link_args: [ld_args_build_id],
+  link_args: [ld_args_build_id, ld_args_bsymbolic, ld_args_gc_sections],
   gnu_symbol_visibility : 'hidden',
   install : true,
 )
