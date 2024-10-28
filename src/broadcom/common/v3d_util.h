@@ -29,6 +29,12 @@
 #include "compiler/shader_enums.h"
 #include "util/format/u_formats.h"
 
+#if USE_V3D_SIMULATOR
+#  include "simulator/v3d_simulator.h"
+#else
+#  include "xf86drm.h"
+#endif
+
 uint32_t
 v3d_csd_choose_workgroups_per_supergroup(struct v3d_device_info *devinfo,
                                          bool has_subgroups,
@@ -80,4 +86,13 @@ uint32_t
 v3d_compute_rt_row_row_stride_128_bits(uint32_t tile_width,
                                        uint32_t bpp);
 
+static inline int
+v3d_ioctl(int fd, unsigned long request, void *arg)
+{
+#if USE_V3D_SIMULATOR
+        return v3d_simulator_ioctl(fd, request, arg);
+#else
+        return drmIoctl(fd, request, arg);
+#endif
+}
 #endif
