@@ -2499,6 +2499,16 @@ agx_delete_uncompiled_shader(struct agx_device *dev,
    }
 
    _mesa_hash_table_destroy(so->variants, NULL);
+
+   if (so->linked_shaders) {
+      hash_table_foreach(so->linked_shaders, ent) {
+         struct agx_linked_shader *link = ent->data;
+         agx_bo_unreference(dev, link->bo);
+      }
+
+      _mesa_hash_table_destroy(so->linked_shaders, NULL);
+   }
+
    blob_finish(&so->serialized_nir);
    blob_finish(&so->early_serialized_nir);
 
