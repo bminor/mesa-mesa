@@ -35,6 +35,22 @@
 #  include "xf86drm.h"
 #endif
 
+/* Helper to call hw ver specific functions */
+#define v3d_X(devinfo, thing) ({                                \
+        __typeof(&v3d42_##thing) v3d_X_thing;                   \
+        switch (devinfo->ver) {                                 \
+        case 42:                                                \
+                v3d_X_thing = &v3d42_##thing;                   \
+                break;                                          \
+        case 71:                                                \
+                v3d_X_thing = &v3d71_##thing;                   \
+                break;                                          \
+        default:                                                \
+                unreachable("Unsupported hardware generation"); \
+        }                                                       \
+        v3d_X_thing;                                            \
+})
+
 uint32_t
 v3d_csd_choose_workgroups_per_supergroup(struct v3d_device_info *devinfo,
                                          bool has_subgroups,
