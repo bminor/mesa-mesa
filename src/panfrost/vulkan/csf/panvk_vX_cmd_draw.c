@@ -1116,7 +1116,7 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
 
       if (fs)
          cfg.depth_source = pan_depth_source(&fs->info);
-      cfg.depth_write_enable = ds->depth.write_enable;
+      cfg.depth_write_enable = test_z && ds->depth.write_enable;
       cfg.depth_bias_enable = rs->depth_bias.enable;
       cfg.depth_function = test_z ? translate_compare_func(ds->depth.compare_op)
                                   : MALI_FUNC_ALWAYS;
