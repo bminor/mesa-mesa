@@ -1494,7 +1494,7 @@
         "description": "lp: Only close udmabuf handle if its valid",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4cfaf10c10598ff705af988d8261fb8fcffb5c59",
         "notes": null
