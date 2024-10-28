@@ -125,8 +125,6 @@ pass(agx_context *ctx, void *memctx)
     */
    qsort(flat, flat_count, sizeof(*flat), priority_compare);
 
-   ctx->out->rodata.base_uniform = ctx->out->push_count;
-
    /* Promote as many constants as we can */
    for (unsigned i = 0; i < flat_count; ++i) {
       struct constant_info *info = flat[i];
@@ -137,6 +135,14 @@ pass(agx_context *ctx, void *memctx)
       unsigned new_count = uniform + info->align_16;
       if (new_count > AGX_NUM_UNIFORMS)
          break;
+
+      /* Set the base for the first constant. This avoids uploading an extra
+       * zero if we needed to pad, compared to doing this before the loop. Same
+       * shader code, but slightly more efficient USC record.
+       */
+      if (i == 0) {
+         ctx->out->rodata.base_uniform = uniform;
+      }
 
       info->uniform = uniform;
       info->promoted = true;
