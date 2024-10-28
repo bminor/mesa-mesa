@@ -818,6 +818,7 @@ blorp_emit_ps_config(struct blorp_batch *batch,
          unreachable("Invalid fast clear op");
       }
 
+#if GFX_VERx10 == 120
       /* The RENDER_SURFACE_STATE page for TGL says:
        *
        *   For an 8 bpp surface with NUM_MULTISAMPLES = 1, Surface Width not
@@ -829,11 +830,6 @@ blorp_emit_ps_config(struct blorp_batch *batch,
        * Due to the surface layout parameters, if LOD0's width isn't a
        * multiple of 64px, LOD1 and LOD2+ will share CCS elements. Assert that
        * these operations aren't occurring on these LODs.
-       *
-       * We don't explicitly check for TGL+ because the restriction is
-       * technically applicable to all hardware. Platforms prior to TGL don't
-       * support CCS on 8 bpp surfaces. So, these unaligned fast clear
-       * operations shouldn't be occurring prior to TGL as well.
        */
       if (isl_format_get_layout(params->dst.surf.format)->bpb == 8 &&
           params->dst.surf.logical_level0_px.width % 64 != 0 &&
@@ -842,6 +838,24 @@ blorp_emit_ps_config(struct blorp_batch *batch,
          assert(params->num_samples == 1);
          assert(!ps.RenderTargetFastClearEnable);
       }
+
+      /* From the TGL BSpec 44930 (r47128):
+       *
+       *   Compression of 3D Ys surfaces with 64 or 128 bpp is not supported
+       *   in Gen12. Moreover, "Render Target Fast-clear Enable" command is
+       *   not supported for any 3D Ys surfaces. except when Surface is a
+       *   Procdural Texture.
+       *
+       * It's not clear where the exception applies, but either way, we don't
+       * support Procedural Textures.
+       */
+      if (params->dst.surf.dim == ISL_SURF_DIM_3D &&
+          params->dst.surf.tiling == ISL_TILING_ICL_Ys &&
+          isl_format_get_layout(params->dst.surf.format)->bpb >= 64) {
+         assert(params->dst.aux_usage != ISL_AUX_USAGE_CCS_D);
+         assert(!ps.RenderTargetFastClearEnable);
+      }
+#endif
 
       if (prog_data) {
          intel_set_ps_dispatch_state(&ps, devinfo, prog_data,
