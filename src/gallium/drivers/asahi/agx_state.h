@@ -579,7 +579,9 @@ struct asahi_blit_key {
    enum pipe_format src_format, dst_format;
    bool array;
    bool aligned;
+   bool pad[2];
 };
+static_assert(sizeof(struct asahi_blit_key) == 12, "packed");
 
 DERIVE_HASH_TABLE(asahi_blit_key);
 
