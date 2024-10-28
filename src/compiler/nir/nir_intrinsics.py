@@ -1527,6 +1527,11 @@ system_value("sample_positions_pan", 1, bit_sizes=[64])
 # In a fragment shader, is the framebuffer single-sampled? 0/~0 bool
 system_value("multisampled_pan", 1, bit_sizes=[32])
 
+# In a vertex shader, a bitfield of varying slots that use noperspective
+# interpolation in the linked fragment shader. Since special slots cannot be
+# noperspective, this is 32 bits and starts from VARYING_SLOT_VAR0.
+system_value("noperspective_varyings_pan", 1, bit_sizes=[32])
+
 # R600 specific instrincs
 #
 # location where the tesselation data is stored in LDS
