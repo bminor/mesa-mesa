@@ -276,13 +276,15 @@ static uint32_t
 d3d12_video_encode_supported_references_per_frame_structures(const D3D12_VIDEO_ENCODER_CODEC &codec,
                                                              D3D12_VIDEO_ENCODER_PROFILE_DESC profile,
                                                              ID3D12VideoDevice3 *pD3D12VideoDevice,
-                                                             struct d3d12_encode_codec_support& codecSupport)
+                                                             struct d3d12_encode_codec_support& codecSupport,
+                                                             uint32_t& maxLongTermReferences)
 {
    uint32_t supportedMaxRefFrames = 0u;
-
    D3D12_FEATURE_DATA_VIDEO_ENCODER_CODEC_PICTURE_CONTROL_SUPPORT capPictureControlData = {};
    capPictureControlData.NodeIndex = 0;
    capPictureControlData.Codec = codec;
+
+   maxLongTermReferences = 0u;
 
    if(codec == D3D12_VIDEO_ENCODER_CODEC_H264) {
       D3D12_VIDEO_ENCODER_CODEC_PICTURE_CONTROL_SUPPORT_H264 h264PictureControl = {};
@@ -309,6 +311,8 @@ d3d12_video_encode_supported_references_per_frame_structures(const D3D12_VIDEO_E
                                          MaxL0ReferencesForB ? MaxL0ReferencesForB : UINT_MAX);
          uint32_t maxRefForL1 = capPictureControlData.PictureSupport.pH264Support->MaxL1ReferencesForB;
          supportedMaxRefFrames = (maxRefForL0 & 0xffff) | ((maxRefForL1 & 0xffff) << 16);
+
+         maxLongTermReferences = capPictureControlData.PictureSupport.pH264Support->MaxLongTermReferences;
       }
    } else if(codec == D3D12_VIDEO_ENCODER_CODEC_HEVC) {
       D3D12_VIDEO_ENCODER_CODEC_PICTURE_CONTROL_SUPPORT_HEVC hevcPictureControl = {};
@@ -335,6 +339,8 @@ d3d12_video_encode_supported_references_per_frame_structures(const D3D12_VIDEO_E
                                          MaxL0ReferencesForB ? MaxL0ReferencesForB : UINT_MAX);
          uint32_t maxRefForL1 = capPictureControlData.PictureSupport.pHEVCSupport->MaxL1ReferencesForB;
          supportedMaxRefFrames = (maxRefForL0 & 0xffff) | ((maxRefForL1 & 0xffff) << 16);
+
+         maxLongTermReferences = capPictureControlData.PictureSupport.pHEVCSupport->MaxLongTermReferences;
       }
    }
    else if(codec == D3D12_VIDEO_ENCODER_CODEC_AV1){
@@ -850,6 +856,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                uint32_t &maxSlices,
                                uint32_t &supportedSliceStructures,
                                uint32_t &maxReferencesPerFrame,
+                               uint32_t &maxLongTermReferences,
                                struct d3d12_encode_codec_support& codecSupport,
                                uint32_t &isRCMaxFrameSizeSupported,
                                uint32_t &maxQualityLevels,
@@ -946,7 +953,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                d3d12_video_encode_supported_references_per_frame_structures(codecDesc,
                                                                             profile,
                                                                             spD3D12VideoDevice.Get(),
-                                                                            codecSupport);
+                                                                            codecSupport,
+                                                                            maxLongTermReferences);
 
             memset(&roi_support, 0, sizeof(roi_support));
             roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
@@ -1003,7 +1011,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                d3d12_video_encode_supported_references_per_frame_structures(codecDesc,
                                                                             d3d12_profile,
                                                                             spD3D12VideoDevice.Get(),
-                                                                            codecSupport);
+                                                                            codecSupport,
+                                                                            maxLongTermReferences);
 
             supportsProfile = d3d12_video_encode_get_hevc_codec_support(codecDesc,
                                                                         profDesc,
@@ -1262,7 +1271,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                d3d12_video_encode_supported_references_per_frame_structures(codecDesc,
                                                                             d3d12_profile,
                                                                             spD3D12VideoDevice.Get(),
-                                                                            codecSupport);
+                                                                            codecSupport,
+                                                                            maxLongTermReferences);
 
             supportsProfile = d3d12_video_encode_get_av1_codec_support(codecDesc,
                                                                         profDesc,
@@ -1788,6 +1798,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    uint32_t maxSlices = 0u;
    uint32_t supportedSliceStructures = 0u;
    uint32_t maxReferencesPerFrame = 0u;
+   uint32_t maxLongTermReferenceFrame = 0u;
    uint32_t isRCMaxFrameSizeSupported = 0u;
    uint32_t maxQualityLevels = 0u;
    uint32_t max_tile_rows = 0u;
@@ -1855,6 +1866,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_SURFACE_ALIGNMENT:
       case PIPE_VIDEO_CAP_ENC_HEVC_RANGE_EXTENSION_SUPPORT:
       case PIPE_VIDEO_CAP_ENC_HEVC_RANGE_EXTENSION_FLAGS_SUPPORT:
+      case PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -1865,6 +1877,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             maxSlices,
                                             supportedSliceStructures,
                                             maxReferencesPerFrame,
+                                            maxLongTermReferenceFrame,
                                             codec_specific_support,
                                             isRCMaxFrameSizeSupported,
                                             maxQualityLevels,
@@ -1902,6 +1915,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return codec_specific_support.h264_support.disable_dbk_filter_mode_flags;
                } else if (param == PIPE_VIDEO_CAP_ENC_MAX_REFERENCES_PER_FRAME) {
                   return maxReferencesPerFrame;
+               } else if (param == PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME) {
+                  return maxLongTermReferenceFrame;
                } else if (param == PIPE_VIDEO_CAP_ENC_INTRA_REFRESH_MAX_DURATION) {
                   return maxIRDuration;
                } else if (param == PIPE_VIDEO_CAP_ENC_INTRA_REFRESH) {
@@ -2011,6 +2026,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    uint32_t maxSlices = 0u;
    uint32_t supportedSliceStructures = 0u;
    uint32_t maxReferencesPerFrame = 0u;
+   uint32_t maxLongTermReferenceFrame = 0u;
    uint32_t isRCMaxFrameSizeSupported = 0u;
    uint32_t maxQualityLevels = 0u;
    uint32_t max_tile_rows = 0u;
@@ -2028,6 +2044,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       maxSlices,
                                       supportedSliceStructures,
                                       maxReferencesPerFrame,
+                                      maxLongTermReferenceFrame,
                                       codec_specific_support,
                                       isRCMaxFrameSizeSupported,
                                       maxQualityLevels,
