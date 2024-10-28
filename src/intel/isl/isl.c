@@ -3184,12 +3184,6 @@ isl_surf_supports_ccs(const struct isl_device *dev,
          /* Single-sampled color can't have MCS or HiZ */
          assert(hiz_or_mcs_surf == NULL || hiz_or_mcs_surf->size_B == 0);
 
-         /* Wa_1406738321: 3D textures need a blit to a new surface
-          * in order to perform a resolve. For now, just disable CCS on TGL.
-          */
-         if (dev->info->verx10 == 120 && surf->dim == ISL_SURF_DIM_3D)
-            return false;
-
          /* From Bspec 49252, Render Decompression:
           *
           *    "Compressed displayable surfaces must be 16KB aligned and have
