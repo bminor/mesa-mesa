@@ -764,6 +764,7 @@ static d3d12_video_encode_get_h264_codec_support(const D3D12_VIDEO_ENCODER_PROFI
    return true;
 }
 
+#if VIDEO_CODEC_H265ENC
 bool
 static d3d12_video_encode_get_hevc_codec_support ( const D3D12_VIDEO_ENCODER_CODEC &argCodec,
                                                    const D3D12_VIDEO_ENCODER_PROFILE_DESC &argTargetProfile,
@@ -837,6 +838,7 @@ static d3d12_video_encode_get_hevc_codec_support ( const D3D12_VIDEO_ENCODER_COD
    memset(&supportedCaps, 0, sizeof(D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC));
    return false;
 }
+#endif // VIDEO_CODEC_H265ENC
 
 static bool
 d3d12_has_video_encode_support(struct pipe_screen *pscreen,
