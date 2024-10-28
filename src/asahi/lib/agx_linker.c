@@ -106,7 +106,6 @@ agx_fast_link(struct agx_linked_shader *linked, struct agx_device *dev,
       if (!part)
          continue;
 
-      assert(part->info.main_offset == 0);
       size += part->info.main_size;
 
       nr_gprs = MAX2(nr_gprs, part->info.nr_gprs);
@@ -148,7 +147,8 @@ agx_fast_link(struct agx_linked_shader *linked, struct agx_device *dev,
          continue;
 
       size_t sz = part->info.main_size;
-      memcpy((uint8_t *)linked->bo->map + offset, part->binary, sz);
+      memcpy((uint8_t *)linked->bo->map + offset,
+             part->binary + part->info.main_offset, sz);
       offset += sz;
    }
 

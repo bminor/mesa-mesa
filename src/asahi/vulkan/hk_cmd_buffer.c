@@ -638,8 +638,7 @@ hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
    enum pipe_shader_type sw_stage = s->info.stage;
    enum pipe_shader_type hw_stage = s->b.info.stage;
 
-   unsigned constant_push_ranges =
-      DIV_ROUND_UP(s->b.info.immediate_size_16, 64);
+   unsigned constant_push_ranges = DIV_ROUND_UP(s->b.info.rodata.size_16, 64);
    unsigned push_ranges = 2;
    unsigned stage_ranges = 3;
 
@@ -721,9 +720,7 @@ hk_upload_usc_words_kernel(struct hk_cmd_buffer *cmd, struct hk_shader *s,
    assert(s->b.info.scratch_size == 0 && "you shouldn't be spilling!");
    assert(s->b.info.preamble_scratch_size == 0 && "you shouldn't be spilling!");
 
-   unsigned constant_push_ranges =
-      DIV_ROUND_UP(s->b.info.immediate_size_16, 64);
-
+   unsigned constant_push_ranges = DIV_ROUND_UP(s->b.info.rodata.size_16, 64);
    size_t usc_size = agx_usc_size(constant_push_ranges + 7);
    struct agx_ptr t = hk_pool_usc_alloc(cmd, usc_size, 64);
    if (!t.cpu)

@@ -137,3 +137,19 @@ agx_usc_shared_non_fragment(struct agx_usc_builder *b,
       agx_usc_shared_none(b);
    }
 }
+
+static inline void
+agx_usc_immediates(struct agx_usc_builder *b, struct agx_shader_info *info,
+                   uint64_t base_addr)
+{
+   uint16_t size_16 = info->rodata.size_16;
+
+   for (unsigned range = 0; range < DIV_ROUND_UP(size_16, 64); ++range) {
+      unsigned offset = 64 * range;
+      assert(offset < size_16);
+
+      agx_usc_uniform(b, info->rodata.base_uniform + offset,
+                      MIN2(64, size_16 - offset),
+                      base_addr + info->rodata.offset + (offset * 2));
+   }
+}

@@ -2929,30 +2929,6 @@ agx_update_descriptors(struct agx_batch *batch, struct agx_compiled_shader *cs)
       agx_pool_upload_aligned(&batch->pool, unif, sizeof(*unif), 16);
 }
 
-static void
-agx_usc_immediates(struct agx_usc_builder *b, struct agx_batch *batch,
-                   struct agx_compiled_shader *cs)
-{
-   unsigned constant_push_ranges =
-      DIV_ROUND_UP(cs->b.info.immediate_size_16, 64);
-
-   if (cs->b.info.immediate_size_16) {
-      /* XXX: do ahead of time */
-      uint64_t ptr =
-         agx_pool_upload_aligned(&batch->pool, cs->b.info.immediates,
-                                 cs->b.info.immediate_size_16 * 2, 64);
-
-      for (unsigned range = 0; range < constant_push_ranges; ++range) {
-         unsigned offset = 64 * range;
-         assert(offset < cs->b.info.immediate_size_16);
-
-         agx_usc_uniform(b, cs->b.info.immediate_base_uniform + offset,
-                         MIN2(64, cs->b.info.immediate_size_16 - offset),
-                         ptr + (offset * 2));
-      }
-   }
-}
-
 static uint32_t
 agx_build_pipeline(struct agx_batch *batch, struct agx_compiled_shader *cs,
                    struct agx_linked_shader *linked,
@@ -2961,8 +2937,7 @@ agx_build_pipeline(struct agx_batch *batch, struct agx_compiled_shader *cs,
 {
    struct agx_context *ctx = batch->ctx;
    struct agx_device *dev = agx_device(ctx->base.screen);
-   unsigned constant_push_ranges =
-      DIV_ROUND_UP(cs->b.info.immediate_size_16, 64);
+   unsigned constant_push_ranges = DIV_ROUND_UP(cs->b.info.rodata.size_16, 64);
 
    size_t usc_size =
       agx_usc_size(constant_push_ranges + cs->push_range_count + 2);
@@ -3007,7 +2982,9 @@ agx_build_pipeline(struct agx_batch *batch, struct agx_compiled_shader *cs,
                       table_ptr + cs->push[i].offset);
    }
 
-   agx_usc_immediates(&b, batch, cs);
+   if (cs->bo) {
+      agx_usc_immediates(&b, &cs->b.info, cs->bo->va->addr);
+   }
 
    uint32_t max_scratch_size =
       MAX2(cs->b.info.scratch_size, cs->b.info.preamble_scratch_size);
@@ -3091,7 +3068,7 @@ agx_build_internal_usc(struct agx_batch *batch, struct agx_compiled_shader *cs,
    struct agx_usc_builder b = agx_usc_builder(t.cpu, usc_size);
 
    agx_usc_uniform(&b, 0, 4, agx_pool_upload(&batch->pool, &data, 8));
-   agx_usc_immediates(&b, batch, cs);
+   agx_usc_immediates(&b, &cs->b.info, cs->bo->va->addr);
 
    if (needs_sampler) {
       /* TODO: deduplicate */
@@ -3325,9 +3302,10 @@ agx_build_bg_eot(struct agx_batch *batch, bool store, bool partial_render)
    struct agx_device *dev = agx_device(ctx->base.screen);
    struct agx_bg_eot_shader *shader = agx_get_bg_eot_shader(&ctx->bg_eot, &key);
    agx_batch_add_bo(batch, shader->bo);
+   assert(shader->info.rodata.size_16 == 0);
 
    agx_usc_pack(&b, SHADER, cfg) {
-      cfg.code = agx_usc_addr(dev, shader->ptr);
+      cfg.code = agx_usc_addr(dev, shader->ptr + shader->info.main_offset);
       cfg.unk_2 = 0;
    }
 

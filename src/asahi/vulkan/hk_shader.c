@@ -734,17 +734,16 @@ hk_lower_nir(struct hk_device *dev, nir_shader *nir,
 static void
 hk_upload_shader(struct hk_device *dev, struct hk_shader *shader)
 {
-   if (shader->b.info.has_preamble) {
-      unsigned offs = shader->b.info.preamble_offset;
-      assert(offs < shader->b.info.binary_size);
-
-      size_t size = shader->b.info.binary_size - offs;
+   if (shader->b.info.has_preamble || shader->b.info.rodata.size_16) {
+      /* TODO: Do we wnat to compact? Revisit when we rework prolog/epilogs. */
+      size_t size = shader->b.info.binary_size;
       assert(size > 0);
 
       shader->bo = agx_bo_create(&dev->dev, size, 0,
                                  AGX_BO_EXEC | AGX_BO_LOW_VA, "Preamble");
-      memcpy(shader->bo->map, shader->b.binary + offs, size);
-      shader->preamble_addr = shader->bo->va->addr;
+      memcpy(shader->bo->map, shader->b.binary, size);
+      shader->preamble_addr =
+         shader->bo->va->addr + shader->b.info.preamble_offset;
    }
 
    if (!shader->linked.ht) {
@@ -1489,22 +1488,8 @@ hk_fast_link(struct hk_device *dev, bool fragment, struct hk_shader *main,
    /* Now that we've linked, bake the USC words to bind this program */
    struct agx_usc_builder b = agx_usc_builder(s->usc.data, sizeof(s->usc.data));
 
-   if (main && main->b.info.immediate_size_16) {
-      unreachable("todo");
-#if 0
-      /* XXX: do ahead of time */
-      uint64_t ptr = agx_pool_upload_aligned(
-         &cmd->pool, s->b.info.immediates, s->b.info.immediate_size_16 * 2, 64);
-
-      for (unsigned range = 0; range < constant_push_ranges; ++range) {
-         unsigned offset = 64 * range;
-         assert(offset < s->b.info.immediate_size_16);
-
-         agx_usc_uniform(&b, s->b.info.immediate_base_uniform + offset,
-                         MIN2(64, s->b.info.immediate_size_16 - offset),
-                         ptr + (offset * 2));
-      }
-#endif
+   if (main && main->b.info.rodata.size_16) {
+      agx_usc_immediates(&b, &main->b.info, main->bo->va->addr);
    }
 
    agx_usc_push_packed(&b, UNIFORM, dev->rodata.image_heap);

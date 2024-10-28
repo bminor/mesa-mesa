@@ -125,7 +125,7 @@ pass(agx_context *ctx, void *memctx)
     */
    qsort(flat, flat_count, sizeof(*flat), priority_compare);
 
-   ctx->out->immediate_base_uniform = ctx->out->push_count;
+   ctx->out->rodata.base_uniform = ctx->out->push_count;
 
    /* Promote as many constants as we can */
    for (unsigned i = 0; i < flat_count; ++i) {
@@ -143,11 +143,11 @@ pass(agx_context *ctx, void *memctx)
       ctx->out->push_count = new_count;
 
       unsigned size_B = info->align_16 * 2;
-      memcpy(&ctx->out->immediates[uniform - ctx->out->immediate_base_uniform],
-             &info->value, size_B);
+      unsigned uniform_offs = uniform - ctx->out->rodata.base_uniform;
+      assert(uniform_offs < ARRAY_SIZE(ctx->rodata));
+      memcpy(&ctx->rodata[uniform_offs], &info->value, size_B);
 
-      ctx->out->immediate_size_16 =
-         new_count - ctx->out->immediate_base_uniform;
+      ctx->out->rodata.size_16 = new_count - ctx->out->rodata.base_uniform;
    }
 
    /* Promote in the IR */

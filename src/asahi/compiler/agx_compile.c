@@ -52,6 +52,21 @@ DEBUG_GET_ONCE_FLAGS_OPTION(agx_compiler_debug, "AGX_MESA_DEBUG",
 
 int agx_compiler_debug = 0;
 
+/*
+ * Pad binary to a given alignment and return aligned offset into the binary.
+ */
+static unsigned
+agx_pad_binary(struct util_dynarray *dyn, uint32_t align)
+{
+   if (dyn->size % align) {
+      unsigned ngrow = align - (dyn->size % align);
+      memset(util_dynarray_grow_bytes(dyn, ngrow, 1), 0, ngrow);
+   }
+
+   assert((dyn->size % align) == 0);
+   return dyn->size;
+}
+
 uint64_t
 agx_get_compiler_debug(void)
 {
@@ -3535,15 +3550,19 @@ agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
    if (agx_should_dump(nir, AGX_DBG_SHADERS))
       agx_print_shader(ctx, stdout);
 
-   /* Pad binary */
-   if (binary->size % AGX_CODE_ALIGN) {
-      unsigned ngrow = AGX_CODE_ALIGN - (binary->size % AGX_CODE_ALIGN);
-      memset(util_dynarray_grow_bytes(binary, ngrow, 1), 0, ngrow);
+   /* Upload constants before the binary instead after to reduce the chance they
+    * get prefetched into the i-cache, when we want them only in the d-cache.
+    * Also helps fill the padding space for small preambles.
+    */
+   if (ctx->out->rodata.size_16 && !impl->function->is_preamble) {
+      ctx->out->rodata.offset = agx_pad_binary(binary, 4);
+      unsigned size_16 = ctx->out->rodata.size_16;
+
+      uint16_t *ro = util_dynarray_grow(binary, uint16_t, size_16);
+      memcpy(ro, ctx->rodata, size_16 * 2);
    }
 
-   unsigned offset = binary->size;
-   assert((offset % AGX_CODE_ALIGN) == 0);
-
+   unsigned offset = agx_pad_binary(binary, AGX_CODE_ALIGN);
    agx_pack_binary(ctx, binary);
 
    unsigned nr_gprs = ctx->max_reg + 1;

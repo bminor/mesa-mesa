@@ -135,10 +135,19 @@ struct agx_shader_info {
    /* Output mask set during driver lowering */
    uint64_t outputs;
 
-   /* Immediate data that must be uploaded and mapped as uniform registers */
-   unsigned immediate_base_uniform;
-   unsigned immediate_size_16;
-   uint16_t immediates[512];
+   /* There may be constants in the binary. The driver must map these to uniform
+    * registers as specified hre.
+    */
+   struct {
+      /* Offset in the binary */
+      uint32_t offset;
+
+      /* Base uniform to map constants */
+      uint16_t base_uniform;
+
+      /* Number of 16-bit constants to map contiguously there */
+      uint16_t size_16;
+   } rodata;
 };
 
 struct agx_shader_part {
