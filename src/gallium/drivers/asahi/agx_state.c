@@ -5235,8 +5235,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    }
 
    if (indirect) {
-      struct agx_resource *indirect_rsrc = agx_resource(indirect->buffer);
-      uint64_t address = indirect_rsrc->bo->va->addr + indirect->offset;
+      uint64_t address = agx_indirect_buffer_ptr(batch, indirect);
 
       agx_push(out, INDEX_LIST_INDIRECT_BUFFER, cfg) {
          cfg.address_hi = address >> 32;
