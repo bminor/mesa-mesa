@@ -542,7 +542,7 @@ main(int argc, char **argv)
       agx_compile_shader_nir(b.shader, &key, NULL, &compiled);
 
       print_u32_data(fp, "libagx_g13", "helper", compiled.binary,
-                     compiled.binary_size);
+                     compiled.info.binary_size);
       free(compiled.binary);
       ralloc_free(b.shader);
 

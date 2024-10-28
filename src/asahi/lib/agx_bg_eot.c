@@ -51,8 +51,8 @@ agx_compile_bg_eot_shader(struct agx_bg_eot_cache *cache, nir_shader *shader,
    agx_compile_shader_nir(shader, key, NULL, &bin);
 
    res->info = bin.info;
-   res->ptr = agx_pool_upload_aligned_with_bo(&cache->pool, bin.binary,
-                                              bin.binary_size, 128, &res->bo);
+   res->ptr = agx_pool_upload_aligned_with_bo(
+      &cache->pool, bin.binary, bin.info.binary_size, 128, &res->bo);
    free(bin.binary);
    ralloc_free(shader);
 

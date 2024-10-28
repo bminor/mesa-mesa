@@ -66,6 +66,7 @@ static_assert(sizeof(struct agx_interp_info) == 16, "packed");
 
 struct agx_shader_info {
    enum pipe_shader_type stage;
+   uint32_t binary_size;
 
    union agx_varyings varyings;
 
@@ -143,7 +144,6 @@ struct agx_shader_info {
 struct agx_shader_part {
    struct agx_shader_info info;
    void *binary;
-   size_t binary_size;
 };
 
 #define AGX_MAX_RTS (8)

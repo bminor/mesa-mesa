@@ -3837,5 +3837,5 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
    }
 
    out->binary = binary.data;
-   out->binary_size = binary.size;
+   info->binary_size = binary.size;
 }

@@ -736,9 +736,9 @@ hk_upload_shader(struct hk_device *dev, struct hk_shader *shader)
 {
    if (shader->b.info.has_preamble) {
       unsigned offs = shader->b.info.preamble_offset;
-      assert(offs < shader->b.binary_size);
+      assert(offs < shader->b.info.binary_size);
 
-      size_t size = shader->b.binary_size - offs;
+      size_t size = shader->b.info.binary_size - offs;
       assert(size > 0);
 
       shader->bo = agx_bo_create(&dev->dev, size, 0,
@@ -896,7 +896,7 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
       simple_mtx_unlock(lock);
 
    shader->code_ptr = shader->b.binary;
-   shader->code_size = shader->b.binary_size;
+   shader->code_size = shader->b.info.binary_size;
 
    shader->info.stage = sw_stage;
    shader->info.clip_distance_array_size = nir->info.clip_distance_array_size;
@@ -1250,7 +1250,7 @@ hk_deserialize_shader(struct hk_device *dev, struct blob_reader *blob,
    shader->info = info;
    shader->code_size = code_size;
    shader->data_size = data_size;
-   shader->b.binary_size = code_size;
+   shader->b.info.binary_size = code_size;
 
    shader->code_ptr = malloc(code_size);
    if (shader->code_ptr == NULL)

@@ -1572,11 +1572,12 @@ agx_compile_nir(struct agx_device *dev, nir_shader *nir,
 
    agx_compile_shader_nir(nir, &key, debug, &compiled->b);
 
-   if (compiled->b.binary_size && !secondary) {
-      compiled->bo = agx_bo_create(dev, compiled->b.binary_size, 0,
+   if (compiled->b.info.binary_size && !secondary) {
+      compiled->bo = agx_bo_create(dev, compiled->b.info.binary_size, 0,
                                    AGX_BO_EXEC | AGX_BO_LOW_VA, "Executable");
 
-      memcpy(compiled->bo->map, compiled->b.binary, compiled->b.binary_size);
+      memcpy(compiled->bo->map, compiled->b.binary,
+             compiled->b.info.binary_size);
    }
 
    return compiled;
