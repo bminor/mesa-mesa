@@ -39,6 +39,7 @@ void v3dX(create_texture_shader_state_bo)(struct v3d_context *v3d,
                                           struct v3d_sampler_view *so);
 
 void v3dX(bcl_epilogue)(struct v3d_context *v3d, struct v3d_job *job);
+void v3dX(job_emit_enable_double_buffer)(struct v3d_job *job);
 
 const struct v3d_format *v3dX(get_format_desc)(enum pipe_format f);
 void v3dX(get_internal_type_bpp_for_output_format)(uint32_t format,

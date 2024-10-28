@@ -376,7 +376,7 @@ v3d_get_job(struct v3d_context *v3d,
                 }
         }
 
-       job->double_buffer = V3D_DBG(DOUBLE_BUFFER) && !job->msaa;
+       job->double_buffer = false;
 
         memcpy(&job->key, &local_key, sizeof(local_key));
         _mesa_hash_table_insert(v3d->jobs, &job->key, job);
@@ -543,6 +543,52 @@ alloc_tile_state(struct v3d_job *job)
                                        "TSDA");
 }
 
+static void
+enable_double_buffer_mode(struct v3d_job *job)
+{
+        /* For now we only allow double-buffer mode through envvar */
+        if (!V3D_DBG(DOUBLE_BUFFER))
+                return;
+
+        /* MSAA is not compatible with double buffering */
+        if (job->msaa)
+                return;
+
+        /* Tile loads are serialized against stores, in which case we don't get
+         * any benefits from enabling double-buffer and would just pay the price
+         * of a smaller tile size instead. Similarly, we only benefit from
+         * double-buffer if we have tile stores, as the point of this mode is
+         * to execute rendering of a new tile while we store the previous one to
+         * hide latency on the tile store operation.
+         */
+        if (job->load)
+                return;
+
+        if (!job->store)
+               return;
+
+        /* Enable double-buffer mode.
+         *
+         * This will reduce the tile size so we need to recompute state
+         * that depends on this and rewrite the TILE_BINNING_MODE_CFG
+         * we emitted earlier in the CL.
+         */
+        job->double_buffer = true;
+        v3d_get_tile_buffer_size(&job->v3d->screen->devinfo,
+                                 job->msaa, job->double_buffer,
+                                 job->nr_cbufs, job->cbufs, job->bbuf,
+                                 &job->tile_desc.width, &job->tile_desc.height,
+                                 &job->internal_bpp);
+
+        job->tile_desc.draw_x = DIV_ROUND_UP(job->draw_width,
+                                             job->tile_desc.width);
+        job->tile_desc.draw_y = DIV_ROUND_UP(job->draw_height,
+                                             job->tile_desc.height);
+
+        struct v3d_device_info *devinfo = &job->v3d->screen->devinfo;
+        v3d_X(devinfo, job_emit_enable_double_buffer)(job);
+}
+
 /**
  * Submits the job to the kernel and then reinitializes it.
  */
@@ -566,6 +612,8 @@ v3d_job_submit(struct v3d_context *v3d, struct v3d_job *job)
 
         if (job->needs_primitives_generated)
                 v3d_ensure_prim_counts_allocated(v3d);
+
+        enable_double_buffer_mode(job);
 
         alloc_tile_state(job);
 

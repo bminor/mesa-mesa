@@ -501,7 +501,7 @@ v3d_tlb_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
         bool msaa = (info->src.resource->nr_samples > 1 ||
                      info->dst.resource->nr_samples > 1);
 
-        bool double_buffer = V3D_DBG(DOUBLE_BUFFER) && !msaa;
+        bool double_buffer = false;
 
         uint32_t tile_width, tile_height, max_bpp;
         v3d_get_tile_buffer_size(devinfo, msaa, double_buffer,
