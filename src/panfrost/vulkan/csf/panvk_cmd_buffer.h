@@ -26,6 +26,7 @@
 
 #define MAX_VBS 16
 #define MAX_RTS 8
+#define MAX_LAYERS_PER_TILER_DESC 8
 
 struct panvk_cs_sync32 {
    uint32_t seqno;
@@ -45,9 +46,43 @@ struct panvk_cs_desc_ringbuf {
    uint32_t pad;
 };
 
+enum panvk_incremental_rendering_pass {
+   PANVK_IR_FIRST_PASS,
+   PANVK_IR_MIDDLE_PASS,
+   PANVK_IR_LAST_PASS,
+   PANVK_IR_PASS_COUNT
+};
+
+static inline uint32_t
+get_tiler_oom_handler_idx(bool has_zs_ext, uint32_t rt_count)
+{
+   assert(rt_count >= 1 && rt_count <= MAX_RTS);
+   uint32_t idx = has_zs_ext * MAX_RTS + (rt_count - 1);
+   assert(idx < 2 * MAX_RTS);
+   return idx;
+}
+
+static inline uint32_t
+get_fbd_size(bool has_zs_ext, uint32_t rt_count)
+{
+   assert(rt_count >= 1 && rt_count <= MAX_RTS);
+   uint32_t fbd_size = pan_size(FRAMEBUFFER);
+   if (has_zs_ext)
+      fbd_size += pan_size(ZS_CRC_EXTENSION);
+   fbd_size += pan_size(RENDER_TARGET) * rt_count;
+   return fbd_size;
+}
+
 /* 512k of render descriptors that can be used when
  * VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT is set on the command buffer. */
 #define RENDER_DESC_RINGBUF_SIZE (512 * 1024)
+
+/* Helper defines to get specific fields in the tiler_oom_ctx. */
+#define TILER_OOM_CTX_FIELD_OFFSET(_name)                                      \
+   offsetof(struct panvk_cs_subqueue_context, tiler_oom_ctx._name)
+#define TILER_OOM_CTX_FBDPTR_OFFSET(_pass)                                     \
+   (TILER_OOM_CTX_FIELD_OFFSET(fbds) +                                         \
+    (PANVK_IR_##_pass##_PASS * sizeof(mali_ptr)))
 
 struct panvk_cs_subqueue_context {
    uint64_t syncobjs;
@@ -58,6 +93,13 @@ struct panvk_cs_subqueue_context {
       uint64_t tiler_heap;
       uint64_t geom_buf;
    } render;
+   struct {
+      uint32_t counter;
+      mali_ptr fbds[PANVK_IR_PASS_COUNT];
+      uint32_t td_count;
+      uint32_t layer_count;
+      mali_ptr reg_dump_addr;
+   } tiler_oom_ctx;
    uint64_t debug_syncobjs;
 } __attribute__((aligned(64)));
 

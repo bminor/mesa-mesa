@@ -214,6 +214,8 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
       .syncobjs = panvk_priv_mem_dev_addr(queue->syncobjs),
       .debug_syncobjs = panvk_priv_mem_dev_addr(queue->debug_syncobjs),
       .iter_sb = 0,
+      .tiler_oom_ctx.reg_dump_addr =
+         panvk_priv_mem_dev_addr(queue->tiler_oom_regs_save),
    };
 
    /* We use the geometry buffer for our temporary CS buffer. */
@@ -321,6 +323,7 @@ cleanup_queue(struct panvk_queue *queue)
 
    finish_render_desc_ringbuf(queue);
 
+   panvk_pool_free_mem(&queue->tiler_oom_regs_save);
    panvk_pool_free_mem(&queue->debug_syncobjs);
    panvk_pool_free_mem(&queue->syncobjs);
 }
@@ -354,6 +357,17 @@ init_queue(struct panvk_queue *queue)
                                "Failed to allocate subqueue sync objects");
          goto err_cleanup_queue;
       }
+   }
+
+   /* Allocate space to store up to 128 registers. */
+   alloc_info.size = 128 * sizeof(uint32_t);
+   alloc_info.alignment = sizeof(uint32_t);
+   queue->tiler_oom_regs_save =
+      panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
+   if (!panvk_priv_mem_host_addr(queue->tiler_oom_regs_save)) {
+      result = panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                            "Failed to allocate tiler oom register save area");
+      goto err_cleanup_queue;
    }
 
    result = init_render_desc_ringbuf(queue);

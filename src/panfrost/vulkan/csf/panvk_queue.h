@@ -58,6 +58,7 @@ struct panvk_queue {
    struct panvk_desc_ringbuf render_desc_ringbuf;
    struct panvk_priv_mem syncobjs;
    struct panvk_priv_mem debug_syncobjs;
+   struct panvk_priv_mem tiler_oom_regs_save;
 
    struct panvk_subqueue subqueues[PANVK_SUBQUEUE_COUNT];
 };

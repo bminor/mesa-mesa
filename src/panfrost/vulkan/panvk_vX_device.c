@@ -1,5 +1,6 @@
 /*
  * Copyright © 2021 Collabora Ltd.
+ * Copyright © 2024 Arm Ltd.
  *
  * Derived from tu_image.c which is:
  * Copyright © 2016 Red Hat.
@@ -314,6 +315,12 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
 
    panfrost_upload_sample_positions(device->sample_positions->addr.host);
 
+#if PAN_ARCH >= 10
+   result = panvk_per_arch(init_tiler_oom)(device);
+   if (result != VK_SUCCESS)
+      goto err_free_priv_bos;
+#endif
+
    vk_device_set_drm_fd(&device->vk, device->kmod.dev->fd);
 
    result = panvk_meta_init(device);
@@ -365,6 +372,7 @@ err_finish_queues:
    panvk_meta_cleanup(device);
 
 err_free_priv_bos:
+   panvk_priv_bo_unref(device->tiler_oom.handlers_bo);
    panvk_priv_bo_unref(device->sample_positions);
    panvk_priv_bo_unref(device->tiler_heap);
    panvk_device_cleanup_mempools(device);
@@ -398,6 +406,7 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
    }
 
    panvk_meta_cleanup(device);
+   panvk_priv_bo_unref(device->tiler_oom.handlers_bo);
    panvk_priv_bo_unref(device->tiler_heap);
    panvk_priv_bo_unref(device->sample_positions);
    panvk_device_cleanup_mempools(device);

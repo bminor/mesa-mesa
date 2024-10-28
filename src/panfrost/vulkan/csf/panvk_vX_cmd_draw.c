@@ -643,21 +643,16 @@ calc_fbd_size(struct panvk_cmd_buffer *cmdbuf)
 {
    const struct pan_fb_info *fb = &cmdbuf->state.gfx.render.fb.info;
    bool has_zs_ext = fb->zs.view.zs || fb->zs.view.s;
-   uint32_t fbd_size = pan_size(FRAMEBUFFER);
+   uint32_t rt_count = MAX2(fb->rt_count, 1);
 
-   if (has_zs_ext)
-      fbd_size += pan_size(ZS_CRC_EXTENSION);
-
-   fbd_size += pan_size(RENDER_TARGET) * MAX2(fb->rt_count, 1);
-   return fbd_size;
+   return get_fbd_size(has_zs_ext, rt_count);
 }
-
-#define MAX_LAYERS_PER_TILER_DESC 8
 
 static uint32_t
 calc_render_descs_size(struct panvk_cmd_buffer *cmdbuf)
 {
-   uint32_t fbd_count = cmdbuf->state.gfx.render.layer_count;
+   uint32_t fbd_count =
+      cmdbuf->state.gfx.render.layer_count * (1 + PANVK_IR_PASS_COUNT);
    uint32_t td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
                                     MAX_LAYERS_PER_TILER_DESC);
 
@@ -928,7 +923,8 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
 }
 
 static uint8_t
-prepare_fb_desc(struct panvk_cmd_buffer *cmdbuf, uint32_t layer, void *fbd)
+prepare_fb_desc(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
+                uint32_t layer, void *fbd)
 {
    struct pan_tiler_context tiler_ctx = {
       .valhall.layer_offset = layer - (layer % MAX_LAYERS_PER_TILER_DESC),
@@ -941,8 +937,80 @@ prepare_fb_desc(struct panvk_cmd_buffer *cmdbuf, uint32_t layer, void *fbd)
          cmdbuf->state.gfx.render.tiler + (td_idx * pan_size(TILER_CONTEXT));
    }
 
-   return GENX(pan_emit_fbd)(&cmdbuf->state.gfx.render.fb.info, layer, NULL,
-                             &tiler_ctx, fbd);
+   return GENX(pan_emit_fbd)(fbinfo, layer, NULL, &tiler_ctx, fbd);
+}
+
+static VkResult
+prepare_incremental_rendering_fbinfos(
+   struct panvk_cmd_buffer *cmdbuf, const struct pan_fb_info *fbinfo,
+   struct pan_fb_info ir_fbinfos[PANVK_IR_PASS_COUNT])
+{
+   /* First incremental rendering pass: don't discard result */
+
+   struct pan_fb_info *ir_fb = &ir_fbinfos[PANVK_IR_FIRST_PASS];
+
+   memcpy(ir_fb, fbinfo, sizeof(*ir_fb));
+   for (unsigned i = 0; i < fbinfo->rt_count; i++)
+      ir_fb->rts[i].discard = false;
+   ir_fb->zs.discard.z = false;
+   ir_fb->zs.discard.s = false;
+
+   /* Subsequent incremental rendering passes: preload old content and don't
+    * discard result */
+
+   struct pan_fb_info *prev_ir_fb = ir_fb;
+   ir_fb = &ir_fbinfos[PANVK_IR_MIDDLE_PASS];
+   memcpy(ir_fb, prev_ir_fb, sizeof(*ir_fb));
+
+   bool preload_changed = false;
+
+   for (unsigned i = 0; i < fbinfo->rt_count; i++) {
+      if (fbinfo->rts[i].view && !fbinfo->rts[i].preload) {
+         ir_fb->rts[i].preload = true;
+         preload_changed = true;
+      }
+
+      if (ir_fb->rts[i].clear) {
+         ir_fb->rts[i].clear = false;
+         preload_changed = true;
+      }
+   }
+   if (fbinfo->zs.view.zs && !fbinfo->zs.preload.z && !fbinfo->zs.preload.s) {
+      ir_fb->zs.preload.z = true;
+      ir_fb->zs.preload.s = true;
+      preload_changed = true;
+   } else if (fbinfo->zs.view.s && !fbinfo->zs.preload.s) {
+      ir_fb->zs.preload.s = true;
+      preload_changed = true;
+   }
+
+   if (ir_fb->zs.clear.z || ir_fb->zs.clear.s) {
+      ir_fb->zs.clear.z = false;
+      ir_fb->zs.clear.s = false;
+      preload_changed = true;
+   }
+
+   if (preload_changed) {
+      memset(&ir_fb->bifrost.pre_post.dcds, 0x0,
+             sizeof(ir_fb->bifrost.pre_post.dcds));
+      VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf, ir_fb);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   /* Last incremental rendering pass: preload previous content and deal with
+    * results as specified by user */
+
+   prev_ir_fb = ir_fb;
+   ir_fb = &ir_fbinfos[PANVK_IR_LAST_PASS];
+   memcpy(ir_fb, prev_ir_fb, sizeof(*ir_fb));
+
+   for (unsigned i = 0; i < fbinfo->rt_count; i++)
+      ir_fb->rts[i].discard = fbinfo->rts[i].discard;
+   ir_fb->zs.discard.z = fbinfo->zs.discard.z;
+   ir_fb->zs.discard.s = fbinfo->zs.discard.s;
+
+   return VK_SUCCESS;
 }
 
 static VkResult
@@ -956,7 +1024,8 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
       return VK_SUCCESS;
 
    uint32_t fbd_sz = calc_fbd_size(cmdbuf);
-   uint32_t fbds_sz = fbd_sz * cmdbuf->state.gfx.render.layer_count;
+   uint32_t fbds_sz =
+      fbd_sz * cmdbuf->state.gfx.render.layer_count * (1 + PANVK_IR_PASS_COUNT);
 
    cmdbuf->state.gfx.render.fbds = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, fbds_sz, pan_alignment(FRAMEBUFFER));
@@ -992,6 +1061,7 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
    bool copy_fbds = simul_use && cmdbuf->state.gfx.render.tiler;
    struct panfrost_ptr fbds = cmdbuf->state.gfx.render.fbds;
    uint32_t fbd_flags = 0;
+   uint32_t fbd_ir_pass_offset = fbd_sz * cmdbuf->state.gfx.render.layer_count;
 
    fbinfo->sample_positions =
       dev->sample_positions->addr.dev +
@@ -1001,14 +1071,30 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
    if (result != VK_SUCCESS)
       return result;
 
+   struct pan_fb_info ir_fbinfos[PANVK_IR_PASS_COUNT];
+   result = prepare_incremental_rendering_fbinfos(cmdbuf, fbinfo, ir_fbinfos);
+   if (result != VK_SUCCESS)
+      return result;
+
    /* We prepare all FB descriptors upfront. */
    for (uint32_t i = 0; i < cmdbuf->state.gfx.render.layer_count; i++) {
-      uint32_t new_fbd_flags =
-         prepare_fb_desc(cmdbuf, i, fbds.cpu + (fbd_sz * i));
+      uint32_t layer_offset = fbd_sz * i;
+      uint8_t new_fbd_flags =
+         prepare_fb_desc(cmdbuf, fbinfo, i, fbds.cpu + layer_offset);
 
       /* Make sure all FBDs have the same flags. */
       assert(i == 0 || new_fbd_flags == fbd_flags);
       fbd_flags = new_fbd_flags;
+
+      for (uint32_t j = 0; j < PANVK_IR_PASS_COUNT; j++) {
+         uint32_t ir_pass_offset = (1 + j) * fbd_ir_pass_offset;
+         new_fbd_flags =
+            prepare_fb_desc(cmdbuf, &ir_fbinfos[j], i,
+                            fbds.cpu + ir_pass_offset + layer_offset);
+
+         /* Make sure all IR FBDs have the same flags. */
+         assert(new_fbd_flags == fbd_flags);
+      }
    }
 
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
@@ -1019,6 +1105,9 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
       struct cs_index layer_count = cs_sr_reg32(b, 47);
       struct cs_index src_fbd_ptr = cs_sr_reg64(b, 48);
       struct cs_index remaining_layers_in_td = cs_sr_reg32(b, 50);
+      struct cs_index pass_count = cs_sr_reg32(b, 51);
+      struct cs_index pass_src_fbd_ptr = cs_sr_reg64(b, 52);
+      struct cs_index pass_dst_fbd_ptr = cs_sr_reg64(b, 54);
       uint32_t td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
                                        MAX_LAYERS_PER_TILER_DESC);
 
@@ -1040,19 +1129,28 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
           * framebuffer size is aligned on 64-bytes. */
          assert(fbd_sz == ALIGN_POT(fbd_sz, 64));
 
-         for (uint32_t fbd_off = 0; fbd_off < fbd_sz; fbd_off += 64) {
-            if (fbd_off == 0) {
-               cs_load_to(b, cs_scratch_reg_tuple(b, 0, 14), src_fbd_ptr,
-                          BITFIELD_MASK(14), fbd_off);
-               cs_add64(b, cs_scratch_reg64(b, 14), cur_tiler, 0);
-            } else {
-               cs_load_to(b, cs_scratch_reg_tuple(b, 0, 16), src_fbd_ptr,
-                          BITFIELD_MASK(16), fbd_off);
+         cs_move32_to(b, pass_count, PANVK_IR_PASS_COUNT);
+         cs_add64(b, pass_src_fbd_ptr, src_fbd_ptr, 0);
+         cs_add64(b, pass_dst_fbd_ptr, dst_fbd_ptr, 0);
+         /* Copy FBDs the regular pass as well as IR passes. */
+         cs_while(b, MALI_CS_CONDITION_GEQUAL, pass_count) {
+            for (uint32_t fbd_off = 0; fbd_off < fbd_sz; fbd_off += 64) {
+               if (fbd_off == 0) {
+                  cs_load_to(b, cs_scratch_reg_tuple(b, 0, 14),
+                             pass_src_fbd_ptr, BITFIELD_MASK(14), fbd_off);
+                  cs_add64(b, cs_scratch_reg64(b, 14), cur_tiler, 0);
+               } else {
+                  cs_load_to(b, cs_scratch_reg_tuple(b, 0, 16),
+                             pass_src_fbd_ptr, BITFIELD_MASK(16), fbd_off);
+               }
+               cs_wait_slot(b, SB_ID(LS), false);
+               cs_store(b, cs_scratch_reg_tuple(b, 0, 16), pass_dst_fbd_ptr,
+                        BITFIELD_MASK(16), fbd_off);
+               cs_wait_slot(b, SB_ID(LS), false);
             }
-            cs_wait_slot(b, SB_ID(LS), false);
-            cs_store(b, cs_scratch_reg_tuple(b, 0, 16), dst_fbd_ptr,
-                     BITFIELD_MASK(16), fbd_off);
-            cs_wait_slot(b, SB_ID(LS), false);
+            cs_add64(b, pass_src_fbd_ptr, pass_src_fbd_ptr, fbd_ir_pass_offset);
+            cs_add64(b, pass_dst_fbd_ptr, pass_dst_fbd_ptr, fbd_ir_pass_offset);
+            cs_add32(b, pass_count, pass_count, -1);
          }
 
          cs_add64(b, src_fbd_ptr, src_fbd_ptr, fbd_sz);
@@ -1992,14 +2090,65 @@ wait_finish_tiling(struct panvk_cmd_buffer *cmdbuf)
                   vt_sync_addr);
 }
 
+static uint32_t
+calc_tiler_oom_handler_idx(struct panvk_cmd_buffer *cmdbuf)
+{
+   const struct pan_fb_info *fb = &cmdbuf->state.gfx.render.fb.info;
+   bool has_zs_ext = fb->zs.view.zs || fb->zs.view.s;
+   uint32_t rt_count = MAX2(fb->rt_count, 1);
+
+   return get_tiler_oom_handler_idx(has_zs_ext, rt_count);
+}
+
+static void
+setup_tiler_oom_ctx(struct panvk_cmd_buffer *cmdbuf)
+{
+   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
+
+   uint32_t td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
+                                    MAX_LAYERS_PER_TILER_DESC);
+   uint32_t fbd_sz = calc_fbd_size(cmdbuf);
+   uint32_t fbd_ir_pass_offset = fbd_sz * cmdbuf->state.gfx.render.layer_count;
+
+   struct cs_index counter = cs_scratch_reg32(b, 1);
+   cs_move32_to(b, counter, 0);
+   cs_store32(b, counter, cs_subqueue_ctx_reg(b),
+              TILER_OOM_CTX_FIELD_OFFSET(counter));
+
+   struct cs_index fbd_first = cs_scratch_reg64(b, 2);
+   cs_add64(b, fbd_first, cs_sr_reg64(b, 40),
+            (1 + PANVK_IR_FIRST_PASS) * fbd_ir_pass_offset);
+   cs_store64(b, fbd_first, cs_subqueue_ctx_reg(b),
+              TILER_OOM_CTX_FBDPTR_OFFSET(FIRST));
+   struct cs_index fbd_middle = cs_scratch_reg64(b, 4);
+   cs_add64(b, fbd_middle, cs_sr_reg64(b, 40),
+            (1 + PANVK_IR_MIDDLE_PASS) * fbd_ir_pass_offset);
+   cs_store64(b, fbd_middle, cs_subqueue_ctx_reg(b),
+              TILER_OOM_CTX_FBDPTR_OFFSET(MIDDLE));
+   struct cs_index fbd_last = cs_scratch_reg64(b, 6);
+   cs_add64(b, fbd_last, cs_sr_reg64(b, 40),
+            (1 + PANVK_IR_LAST_PASS) * fbd_ir_pass_offset);
+   cs_store64(b, fbd_last, cs_subqueue_ctx_reg(b),
+              TILER_OOM_CTX_FBDPTR_OFFSET(LAST));
+
+   struct cs_index td_count_reg = cs_scratch_reg32(b, 8);
+   cs_move32_to(b, td_count_reg, td_count);
+   cs_store32(b, td_count_reg, cs_subqueue_ctx_reg(b),
+              TILER_OOM_CTX_FIELD_OFFSET(td_count));
+   struct cs_index layer_count = cs_scratch_reg32(b, 9);
+   cs_move32_to(b, layer_count, cmdbuf->state.gfx.render.layer_count);
+   cs_store32(b, layer_count, cs_subqueue_ctx_reg(b),
+              TILER_OOM_CTX_FIELD_OFFSET(layer_count));
+
+   cs_wait_slot(b, SB_ID(LS), false);
+}
+
 static VkResult
 issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 {
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
-
-   /* Wait for the tiling to be done before submitting the fragment job. */
-   wait_finish_tiling(cmdbuf);
 
    /* Reserve a scoreboard for the fragment job. */
    panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
@@ -2028,11 +2177,56 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
     * descriptors are constant (no need to patch them at runtime). */
    bool free_render_descs = simul_use && needs_tiling;
    uint32_t fbd_sz = calc_fbd_size(cmdbuf);
+   uint32_t fbd_ir_pass_offset = fbd_sz * cmdbuf->state.gfx.render.layer_count;
    uint32_t td_count = 0;
    if (needs_tiling) {
       td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
                               MAX_LAYERS_PER_TILER_DESC);
    }
+
+   /* Update the Tiler OOM context */
+   setup_tiler_oom_ctx(cmdbuf);
+
+   /* Enable the oom handler before waiting for the vertex/tiler work.
+    * At this point, the tiler oom context has been set up with the correct
+    * state for this renderpass, so it's safe to enable. */
+   struct cs_index addr_reg = cs_scratch_reg64(b, 0);
+   struct cs_index length_reg = cs_scratch_reg32(b, 2);
+   uint32_t handler_idx = calc_tiler_oom_handler_idx(cmdbuf);
+   mali_ptr handler_addr = dev->tiler_oom.handlers_bo->addr.dev +
+                           handler_idx * dev->tiler_oom.handler_stride;
+   cs_move64_to(b, addr_reg, handler_addr);
+   cs_move32_to(b, length_reg, dev->tiler_oom.handler_stride);
+   cs_set_exception_handler(b, MALI_CS_EXCEPTION_TYPE_TILER_OOM, addr_reg,
+                            length_reg);
+
+   /* Wait for the tiling to be done before submitting the fragment job. */
+   wait_finish_tiling(cmdbuf);
+
+   /* Disable the oom handler once the vertex/tiler work has finished.
+    * We need to disable the handler at this point as the vertex/tiler subqueue
+    * might continue on to the next renderpass and hit an out-of-memory
+    * exception prior to the fragment subqueue setting up the tiler oom context
+    * for the next renderpass.
+    * By disabling the handler here, any exception will be left pending until a
+    * new hander is registered, at which point the correct state has been set
+    * up. */
+   cs_move64_to(b, addr_reg, 0);
+   cs_move32_to(b, length_reg, 0);
+   cs_set_exception_handler(b, MALI_CS_EXCEPTION_TYPE_TILER_OOM, addr_reg,
+                            length_reg);
+
+   /* Pick the correct set of FBDs based on whether an incremental render
+    * occurred. */
+   struct cs_index counter = cs_scratch_reg32(b, 0);
+   cs_load32_to(
+      b, counter, cs_subqueue_ctx_reg(b),
+      offsetof(struct panvk_cs_subqueue_context, tiler_oom_ctx.counter));
+   cs_wait_slot(b, SB_ID(LS), false);
+   cs_if(b, MALI_CS_CONDITION_GREATER, counter)
+      cs_update_frag_ctx(b)
+         cs_add64(b, cs_sr_reg64(b, 40), cs_sr_reg64(b, 40),
+                  (1 + PANVK_IR_LAST_PASS) * fbd_ir_pass_offset);
 
    cs_req_res(b, CS_FRAG_RES);
    if (cmdbuf->state.gfx.render.layer_count > 1) {

@@ -746,9 +746,6 @@ dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.interface_blocks.flat,Fa
 dEQP-VK.spirv_assembly.instruction.graphics.opquantize.too_small_frag,Fail
 dEQP-VK.spirv_assembly.instruction.graphics.opquantize.too_small_vert,Fail
 
-dEQP-VK.api.command_buffers.record_many_draws_primary_2,Crash
-dEQP-VK.api.command_buffers.record_many_draws_secondary_2,Crash
-
 dEQP-VK.pipeline.fast_linked_library.max_varyings.test_vertex_io_between_vertex_fragment,Fail
 dEQP-VK.pipeline.fast_linked_library.multisample.alpha_to_coverage_no_color_attachment.samples_4.alpha_opaque,Fail
 dEQP-VK.pipeline.fast_linked_library.multisample.alpha_to_coverage_unused_attachment.samples_4.alpha_invisible,Fail
