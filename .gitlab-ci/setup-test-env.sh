@@ -21,7 +21,10 @@ function _x_off {
 }
 alias x_off='{ _x_off; } >/dev/null 2>/dev/null'
 
-# TODO: implement x_on !
+function _x_restore {
+  [ $state_x -eq 0 ] || set -x
+}
+alias x_restore='{ _x_restore; } >/dev/null 2>/dev/null'
 
 export JOB_START_S=$(date -u +"%s" -d "${CI_JOB_STARTED_AT:?}")
 
@@ -42,7 +45,7 @@ function error {
 
     CURR_MINSEC=$(get_current_minsec)
     echo -e "\n${RED}[${CURR_MINSEC}] ERROR: $*${ENDCOLOR}\n"
-    [ "$state_x" -eq 0 ] || set -x
+    x_restore
 }
 
 function trap_err {
@@ -60,30 +63,32 @@ function _build_section_start {
 
     CURR_MINSEC=$(get_current_minsec)
     echo -e "\n\e[0Ksection_start:$(date +%s):$section_name$section_params\r\e[0K${CYAN}[${CURR_MINSEC}] $*${ENDCOLOR}\n"
+    x_restore
 }
 alias build_section_start="x_off; _build_section_start"
 
 function _section_start {
     _build_section_start "[collapsed=true]" $*
-    [ "$state_x" -eq 0 ] || set -x
+    x_restore
 }
 alias section_start="x_off; _section_start"
 
 function _uncollapsed_section_start {
     _build_section_start "" $*
-    [ "$state_x" -eq 0 ] || set -x
+    x_restore
 }
 alias uncollapsed_section_start="x_off; _uncollapsed_section_start"
 
 function _build_section_end {
     echo -e "\e[0Ksection_end:$(date +%s):$1\r\e[0K"
     CURRENT_SECTION=""
+    x_restore
 }
 alias build_section_end="x_off; _build_section_end"
 
 function _section_end {
     _build_section_end $*
-    [ "$state_x" -eq 0 ] || set -x
+    x_restore
 }
 alias section_end="x_off; _section_end"
 
@@ -93,7 +98,7 @@ function _section_switch {
 	_build_section_end $CURRENT_SECTION
     fi
     _build_section_start "[collapsed=true]" $*
-    [ "$state_x" -eq 0 ] || set -x
+    x_restore
 }
 alias section_switch="x_off; _section_switch"
 
@@ -103,12 +108,13 @@ function _uncollapsed_section_switch {
 	_build_section_end $CURRENT_SECTION
     fi
     _build_section_start "" $*
-    [ "$state_x" -eq 0 ] || set -x
+    x_restore
 }
 alias uncollapsed_section_switch="x_off; _uncollapsed_section_switch"
 
 export -f _x_store_state
 export -f _x_off
+export -f _x_restore
 export -f get_current_minsec
 export -f error
 export -f trap_err
