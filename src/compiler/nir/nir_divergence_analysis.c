@@ -789,7 +789,9 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_global_atomic:
    case nir_intrinsic_global_atomic_swap:
    case nir_intrinsic_global_atomic_amd:
+   case nir_intrinsic_global_atomic_agx:
    case nir_intrinsic_global_atomic_swap_amd:
+   case nir_intrinsic_global_atomic_swap_agx:
    case nir_intrinsic_global_atomic_2x32:
    case nir_intrinsic_global_atomic_swap_2x32:
    case nir_intrinsic_global_atomic_ir3:
