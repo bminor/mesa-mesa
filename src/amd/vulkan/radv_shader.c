@@ -670,7 +670,7 @@ radv_consider_culling(const struct radv_physical_device *pdev, struct nir_shader
       max_ps_params = 12; /* GFX10.3 and newer discrete GPUs. */
 
    /* TODO: consider other heuristics here, such as PS execution time */
-   if (util_bitcount64(ps_inputs_read & ~VARYING_BIT_POS) > max_ps_params)
+   if (util_bitcount64(ps_inputs_read) > max_ps_params)
       return false;
 
    /* Only triangle culling is supported. */
