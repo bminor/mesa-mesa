@@ -43,9 +43,9 @@ kperfmon_create(struct v3dv_device *device,
              &pool->perfmon.counters[i * DRM_V3D_MAX_PERF_COUNTERS],
              req.ncounters);
 
-      int ret = v3dv_ioctl(device->pdevice->render_fd,
-                           DRM_IOCTL_V3D_PERFMON_CREATE,
-                           &req);
+      int ret = v3d_ioctl(device->pdevice->render_fd,
+                          DRM_IOCTL_V3D_PERFMON_CREATE,
+                          &req);
       if (ret)
          mesa_loge("Failed to create perfmon for query %d: %s\n", query,
                    strerror(errno));
@@ -68,9 +68,9 @@ kperfmon_destroy(struct v3dv_device *device,
          .id = pool->queries[query].perf.kperfmon_ids[i]
       };
 
-      int ret = v3dv_ioctl(device->pdevice->render_fd,
-                           DRM_IOCTL_V3D_PERFMON_DESTROY,
-                           &req);
+      int ret = v3d_ioctl(device->pdevice->render_fd,
+                          DRM_IOCTL_V3D_PERFMON_DESTROY,
+                          &req);
 
       if (ret) {
          mesa_loge("Failed to destroy perfmon %u: %s\n",
@@ -650,9 +650,9 @@ write_performance_query_result(struct v3dv_device *device,
                                    DRM_V3D_MAX_PERF_COUNTERS])
       };
 
-      int ret = v3dv_ioctl(device->pdevice->render_fd,
-                           DRM_IOCTL_V3D_PERFMON_GET_VALUES,
-                           &req);
+      int ret = v3d_ioctl(device->pdevice->render_fd,
+                          DRM_IOCTL_V3D_PERFMON_GET_VALUES,
+                          &req);
 
       if (ret) {
          mesa_loge("failed to get perfmon values: %s\n", strerror(errno));

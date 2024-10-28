@@ -741,7 +741,7 @@ v3d_has_feature(struct v3dv_physical_device *device, enum drm_v3d_param feature)
    struct drm_v3d_get_param p = {
       .param = feature,
    };
-   if (v3dv_ioctl(device->render_fd, DRM_IOCTL_V3D_GET_PARAM, &p) != 0)
+   if (v3d_ioctl(device->render_fd, DRM_IOCTL_V3D_GET_PARAM, &p) != 0)
       return false;
    return p.value;
 }
@@ -1318,7 +1318,7 @@ create_physical_device(struct v3dv_instance *instance,
    device->render_fd = render_fd;
    device->display_fd = primary_fd;
 
-   if (!v3d_get_device_info(device->render_fd, &device->devinfo, &v3dv_ioctl)) {
+   if (!v3d_get_device_info(device->render_fd, &device->devinfo, &v3d_ioctl)) {
       result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
                          "Failed to get info from device.");
       goto fail;
@@ -1979,7 +1979,7 @@ device_free_wsi_dumb(int32_t display_fd, int32_t dumb_handle)
    struct drm_mode_destroy_dumb destroy_dumb = {
       .handle = dumb_handle,
    };
-   if (v3dv_ioctl(display_fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy_dumb)) {
+   if (v3d_ioctl(display_fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy_dumb)) {
       mesa_loge("destroy dumb object %d: %s\n", dumb_handle, strerror(errno));
    }
 }
@@ -2060,7 +2060,7 @@ device_import_bo(struct v3dv_device *device,
    struct drm_v3d_get_bo_offset get_offset = {
       .handle = handle,
    };
-   ret = v3dv_ioctl(render_fd, DRM_IOCTL_V3D_GET_BO_OFFSET, &get_offset);
+   ret = v3d_ioctl(render_fd, DRM_IOCTL_V3D_GET_BO_OFFSET, &get_offset);
    if (ret)
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
    assert(get_offset.offset != 0);
@@ -2104,7 +2104,7 @@ device_alloc_for_wsi(struct v3dv_device *device,
    };
 
    int err;
-   err = v3dv_ioctl(display_fd, DRM_IOCTL_MODE_CREATE_DUMB, &create_dumb);
+   err = v3d_ioctl(display_fd, DRM_IOCTL_MODE_CREATE_DUMB, &create_dumb);
    if (err < 0)
       goto fail_create;
 

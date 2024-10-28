@@ -2552,16 +2552,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(v3dv_render_pass, base, VkRenderPass,
 VK_DEFINE_NONDISP_HANDLE_CASTS(v3dv_sampler, base, VkSampler,
                                VK_OBJECT_TYPE_SAMPLER)
 
-static inline int
-v3dv_ioctl(int fd, unsigned long request, void *arg)
-{
-#if USE_V3D_SIMULATOR
-   return v3d_simulator_ioctl(fd, request, arg);
-#else
-   return drmIoctl(fd, request, arg);
-#endif
-}
-
 /* Flags OOM conditions in command buffer state.
  *
  * Note: notice that no-op jobs don't have a command buffer reference.
