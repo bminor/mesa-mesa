@@ -3205,20 +3205,19 @@ isl_surf_supports_ccs(const struct isl_device *dev,
                return false;
          }
 
-         /* BSpec 44930: (Gfx12, Gfx12.5)
+         /* From BSpec 44930,
           *
-          *    "Compression of 3D Ys surfaces with 64 or 128 bpp is not supported
-          *     in Gen12. Moreover, "Render Target Fast-clear Enable" command is
-          *     not supported for any 3D Ys surfaces. except when Surface is a
-          *     Procdural Texture."
+          *    "Compression of 3D Ys surfaces with 64 or 128 bpp is not
+          *    supported in Gen12. Moreover, "Render Target Fast-clear Enable"
+          *    command is not supported for any 3D Ys surfaces. except when
+          *    Surface is a Procdural Texture."
           *
-          * Since the note applies to MTL, we apply this to TILE64 too.
+          * It's not clear where the exception applies, but either way, we
+          * don't support Procedural Textures.
           */
-         uint32_t format_bpb = isl_format_get_layout(surf->format)->bpb;
          if (surf->dim == ISL_SURF_DIM_3D &&
-             (surf->tiling == ISL_TILING_ICL_Ys ||
-              isl_tiling_is_64(surf->tiling)) &&
-             (format_bpb == 64 || format_bpb == 128))
+             surf->tiling == ISL_TILING_ICL_Ys &&
+             isl_format_get_layout(surf->format)->bpb >= 64)
             return false;
       }
    } else if (ISL_GFX_VER(dev) < 12) {
