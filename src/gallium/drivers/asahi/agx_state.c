@@ -2558,6 +2558,19 @@ agx_init_meta_shaders(struct agx_context *ctx)
       _mesa_hash_table_create(ctx, meta_key_hash, meta_key_equal);
 }
 
+static void
+agx_destroy_compute_blitter(struct pipe_context *ctx, struct asahi_blitter *bl)
+{
+   hash_table_foreach(bl->blit_cs, ent) {
+      ctx->delete_compute_state(ctx, ent->data);
+   }
+
+   ctx->delete_sampler_state(ctx, bl->sampler[0]);
+   ctx->delete_sampler_state(ctx, bl->sampler[1]);
+
+   _mesa_hash_table_destroy(bl->blit_cs, NULL);
+}
+
 void
 agx_destroy_meta_shaders(struct agx_context *ctx)
 {
@@ -2566,6 +2579,7 @@ agx_destroy_meta_shaders(struct agx_context *ctx)
       agx_delete_compiled_shader(dev, ent->data);
    }
 
+   agx_destroy_compute_blitter(&ctx->base, &ctx->compute_blitter);
    _mesa_hash_table_destroy(ctx->generic_meta, NULL);
 }
 
