@@ -234,7 +234,7 @@ agx_pack_local_base(const agx_instr *I, agx_index index, unsigned *flags)
       return 0;
    } else if (index.type == AGX_INDEX_UNIFORM) {
       *flags = 1 | ((index.value >> 8) << 1);
-      return index.value & BITFIELD_MASK(7);
+      return index.value & BITFIELD_MASK(8);
    } else {
       assert_register_is_aligned(I, index);
       *flags = 0;
