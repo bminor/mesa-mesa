@@ -452,9 +452,6 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
    if (unlikely(!cs_is_valid(b)))
       return false;
 
-   /* Make sure the instruction sequence fits in a single chunk. */
-   assert(b->cur_chunk.buffer.capacity >= num_instrs);
-
    /* Lazy root chunk allocation. */
    if (unlikely(!b->root_chunk.buffer.cpu)) {
       b->root_chunk.buffer = b->conf.alloc_buffer(b->conf.cookie);
@@ -464,6 +461,9 @@ cs_reserve_instrs(struct cs_builder *b, uint32_t num_instrs)
          return false;
       }
    }
+
+   /* Make sure the instruction sequence fits in a single chunk. */
+   assert(b->cur_chunk.buffer.capacity >= num_instrs);
 
    /* If the current chunk runs out of space, allocate a new one and jump to it.
     * We actually do this a few instructions before running out, because the
