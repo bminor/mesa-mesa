@@ -14,7 +14,7 @@
 typedef struct
 {
    nir_def *w_reflection;
-   nir_def *all_w_negative;
+   nir_def *all_w_negative_or_zero_or_nan;
    nir_def *any_w_negative;
 } position_w_info;
 
@@ -22,15 +22,17 @@ static void
 analyze_position_w(nir_builder *b, nir_def *pos[][4], unsigned num_vertices,
                    position_w_info *w_info)
 {
-   w_info->all_w_negative = nir_imm_true(b);
+   w_info->all_w_negative_or_zero_or_nan = nir_imm_true(b);
    w_info->w_reflection = nir_imm_false(b);
    w_info->any_w_negative = nir_imm_false(b);
 
    for (unsigned i = 0; i < num_vertices; ++i) {
       nir_def *neg_w = nir_flt_imm(b, pos[i][3], 0.0f);
+      nir_def *neg_or_zero_or_nan_w = nir_fgeu(b, nir_imm_float(b, 0.0f), pos[i][3]);
+
       w_info->w_reflection = nir_ixor(b, neg_w, w_info->w_reflection);
       w_info->any_w_negative = nir_ior(b, neg_w, w_info->any_w_negative);
-      w_info->all_w_negative = nir_iand(b, neg_w, w_info->all_w_negative);
+      w_info->all_w_negative_or_zero_or_nan = nir_iand(b, neg_or_zero_or_nan_w, w_info->all_w_negative_or_zero_or_nan);
    }
 }
 
@@ -131,7 +133,7 @@ ac_nir_cull_triangle(nir_builder *b,
                      void *state)
 {
    nir_def *accepted = initially_accepted;
-   accepted = nir_iand(b, accepted, nir_inot(b, w_info->all_w_negative));
+   accepted = nir_iand(b, accepted, nir_inot(b, w_info->all_w_negative_or_zero_or_nan));
    accepted = nir_iand(b, accepted, nir_inot(b, cull_face_triangle(b, pos, w_info)));
 
    nir_def *bbox_accepted = NULL;
@@ -303,7 +305,7 @@ ac_nir_cull_line(nir_builder *b,
                  void *state)
 {
    nir_def *accepted = initially_accepted;
-   accepted = nir_iand(b, accepted, nir_inot(b, w_info->all_w_negative));
+   accepted = nir_iand(b, accepted, nir_inot(b, w_info->all_w_negative_or_zero_or_nan));
 
    nir_def *bbox_accepted = NULL;
 
