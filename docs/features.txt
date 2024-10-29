@@ -423,7 +423,7 @@ we DO NOT WANT implementations of these extensions for Mesa.
   GL_ARB_shadow_ambient                                 Superseded by GL_ARB_fragment_program
   GL_ARB_vertex_blend                                   Superseded by GL_ARB_vertex_program
 
-Vulkan 1.0 -- all DONE: anv, dzn, lvp, nvk, radv, tu, v3dv, vn
+Vulkan 1.0 -- all DONE: anv, dzn, lvp, nvk, panvk, radv, tu, v3dv, vn
 
 Vulkan 1.1 -- all DONE: anv, lvp, nvk, radv, tu, vn
 
