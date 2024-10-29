@@ -8967,8 +8967,11 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
 
       bld.pseudo(aco_opcode::p_demote_to_helper, cond);
 
+      /* Perform the demote in WQM so that it doesn't make exec empty. WQM should last until at
+       * least the next top-level block.
+       */
       if (ctx->block->loop_nest_depth || ctx->cf_info.parent_if.is_divergent)
-         ctx->cf_info.exec.potentially_empty_discard = true;
+         set_wqm(ctx);
 
       ctx->block->kind |= block_kind_uses_discard;
       ctx->program->needs_exact = true;

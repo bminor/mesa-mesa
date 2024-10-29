@@ -852,7 +852,7 @@ END_TEST
  *    if (uniform) {
  *       break
  *    }
- *    discard_if
+ *    terminate_if
  * }
  * b = phi a
  */
@@ -874,7 +874,7 @@ BEGIN_TEST(isel.cf.hidden_break)
       //>> BB4
       //! /* logical preds: BB3, / linear preds: BB3, / kind: uniform, continue_or_break, discard, */
 
-      nir_discard_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 5));
+      nir_terminate_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 5));
    }
    nir_pop_loop(nb, NULL);
 
@@ -896,7 +896,7 @@ END_TEST
  *       a = loop_invariant_sgpr
  *       break
  *    }
- *    discard_if
+ *    terminate_if
  * }
  * use(a)
  */
@@ -927,7 +927,7 @@ BEGIN_TEST(isel.cf.hidden_break_no_lcssa)
       //! s1: %val_invert_phi = p_linear_phi %val, %val_header_phi
       //>> BB9
       //! /* logical preds: BB7, / linear preds: BB7, BB8, / kind: uniform, continue_or_break, merge, discard, */
-      nir_discard_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 2));
+      nir_terminate_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 2));
    }
    nir_pop_loop(nb, NULL);
 
@@ -944,7 +944,7 @@ END_TEST
 /**
  * loop {
  *    use(phi(, a))
- *    discard_if
+ *    terminate_if
  *    loop {
  *       if (uniform) {
  *          a = loop_invariant_sgpr
@@ -976,7 +976,7 @@ BEGIN_TEST(isel.cf.hidden_break_no_lcssa_header_phi)
       nir_phi_instr_add_src(phi, init->parent_instr->block, init);
       nir_unit_test_amd(nb, &phi->def, .base = 1);
 
-      nir_discard_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 2));
+      nir_terminate_if(nb, nir_unit_test_divergent_amd(nb, 1, 1, .base = 2));
 
       //>> BB2
       //! /* logical preds: BB1, BB5, / linear preds: BB1, BB7, / kind: uniform, loop-header, */
