@@ -3490,6 +3490,8 @@ bi_emit_texc(bi_builder *b, nir_tex_instr *instr)
    /* 32-bit indices to be allocated as consecutive staging registers */
    bi_index dregs[BIFROST_TEX_DREG_COUNT] = {};
    bi_index cx = bi_null(), cy = bi_null();
+   bi_index ddx = bi_null();
+   bi_index ddy = bi_null();
 
    for (unsigned i = 0; i < instr->num_srcs; ++i) {
       bi_index index = bi_src_index(&instr->src[i].src);
@@ -3542,6 +3544,14 @@ bi_emit_texc(bi_builder *b, nir_tex_instr *instr)
             dregs[BIFROST_TEX_DREG_LOD] = bi_emit_texc_lod_cube(b, index);
          }
 
+         break;
+
+      case nir_tex_src_ddx:
+         ddx = index;
+         break;
+
+      case nir_tex_src_ddy:
+         ddy = index;
          break;
 
       case nir_tex_src_bias:
@@ -3642,6 +3652,50 @@ bi_emit_texc(bi_builder *b, nir_tex_instr *instr)
 
       mode |= (BIFROST_TEXTURE_OPERATION_SINGLE << 2);
       desc.sampler_index_or_mode = mode;
+   }
+
+   if (!bi_is_null(ddx) || !bi_is_null(ddy)) {
+      assert(!bi_is_null(ddx) && !bi_is_null(ddy));
+      struct bifrost_texture_operation gropdesc = {
+         .sampler_index_or_mode = desc.sampler_index_or_mode,
+         .index = desc.index,
+         .immediate_indices = desc.immediate_indices,
+         .op = BIFROST_TEX_OP_GRDESC_DER,
+         .offset_or_bias_disable = true,
+         .shadow_or_clamp_disable = true,
+         .array = false,
+         .dimension = desc.dimension,
+         .format = desc.format,
+         .mask = desc.mask,
+      };
+
+      unsigned coords_comp_count =
+         instr->coord_components -
+         (instr->is_array || instr->sampler_dim == GLSL_SAMPLER_DIM_CUBE);
+      bi_index derivs[4];
+      unsigned sr_count = 0;
+
+      if (coords_comp_count > 2)
+         derivs[sr_count++] = bi_extract(b, ddx, 2);
+      derivs[sr_count++] = bi_extract(b, ddy, 0);
+      if (coords_comp_count > 1)
+         derivs[sr_count++] = bi_extract(b, ddy, 1);
+      if (coords_comp_count > 2)
+         derivs[sr_count++] = bi_extract(b, ddy, 2);
+
+      bi_index derivs_packed = bi_temp(b->shader);
+      bi_make_vec_to(b, derivs_packed, derivs, NULL, sr_count, 32);
+      bi_index grdesc = bi_temp(b->shader);
+      bi_instr *I =
+         bi_texc_to(b, grdesc, derivs_packed, bi_extract(b, ddx, 0),
+                    coords_comp_count > 1 ? bi_extract(b, ddx, 1) : bi_zero(),
+                    bi_imm_u32(gropdesc.packed), true, sr_count, 0);
+      I->register_format = BI_REGISTER_FORMAT_U32;
+
+      bi_emit_cached_split_i32(b, grdesc, 4);
+
+      dregs[BIFROST_TEX_DREG_LOD] = bi_extract(b, grdesc, 0);
+      desc.lod_or_fetch = BIFROST_LOD_MODE_EXPLICIT;
    }
 
    /* Allocate staging registers contiguously by compacting the array. */
@@ -5237,7 +5291,6 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
                  .lower_txp = ~0,
                  .lower_tg4_broadcom_swizzle = true,
                  .lower_txd_cube_map = true,
-                 .lower_txd = pan_arch(gpu_id) < 9,
                  .lower_invalid_implicit_lod = true,
                  .lower_index_to_offset = true,
               });
