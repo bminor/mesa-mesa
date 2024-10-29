@@ -496,13 +496,13 @@ v3d_get_compiled_shader(struct v3d_context *v3d,
 
                 int program_id = uncompiled->program_id;
                 uint64_t *qpu_insts;
-                uint32_t shader_size;
 
                 qpu_insts = v3d_compile(v3d->screen->compiler, key,
                                         &shader->prog_data.base, s,
                                         v3d_shader_debug_output,
                                         v3d,
-                                        program_id, variant_id, &shader_size);
+                                        program_id, variant_id,
+                                        &shader->qpu_size);
 
                 /* qpu_insts being NULL can happen if the register allocation
                  * failed. At this point we can't really trigger an OpenGL API
@@ -513,14 +513,14 @@ v3d_get_compiled_shader(struct v3d_context *v3d,
                 assert(qpu_insts);
                 ralloc_steal(shader, shader->prog_data.base);
 
-                if (shader_size) {
-                        u_upload_data(v3d->state_uploader, 0, shader_size, 8,
+                if (shader->qpu_size) {
+                        u_upload_data(v3d->state_uploader, 0, shader->qpu_size, 8,
                                       qpu_insts, &shader->offset, &shader->resource);
                 }
 
 #ifdef ENABLE_SHADER_CACHE
                 v3d_disk_cache_store(v3d, key, uncompiled,
-                                     shader, qpu_insts, shader_size);
+                                     shader, qpu_insts, shader->qpu_size);
 #endif
 
                 free(qpu_insts);

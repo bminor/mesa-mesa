@@ -232,6 +232,7 @@ struct v3d_uncompiled_shader {
 struct v3d_compiled_shader {
         struct pipe_resource *resource;
         uint32_t offset;
+        uint32_t qpu_size;
 
         union {
                 struct v3d_prog_data *base;
