@@ -505,6 +505,44 @@ v3d_read_and_accumulate_primitive_counters(struct v3d_context *v3d)
         }
 }
 
+static void
+alloc_tile_state(struct v3d_job *job)
+{
+        assert(!job->tile_alloc && !job->tile_state);
+
+        /* The PTB will request the tile alloc initial size per tile at start
+         * of tile binning.
+         */
+        uint32_t tile_alloc_size =
+                MAX2(job->num_layers, 1) * job->tile_desc.draw_x *
+                job->tile_desc.draw_y * 64;
+
+        /* The PTB allocates in aligned 4k chunks after the initial setup. */
+        tile_alloc_size = align(tile_alloc_size, 4096);
+
+        /* Include the first two chunk allocations that the PTB does so that
+         * we definitely clear the OOM condition before triggering one (the HW
+         * won't trigger OOM during the first allocations).
+         */
+        tile_alloc_size += 8192;
+
+        /* For performance, allocate some extra initial memory after the PTB's
+         * minimal allocations, so that we hopefully don't have to block the
+         * GPU on the kernel handling an OOM signal.
+         */
+        tile_alloc_size += 512 * 1024;
+
+        job->tile_alloc = v3d_bo_alloc(job->v3d->screen, tile_alloc_size,
+                                       "tile_alloc");
+        uint32_t tsda_per_tile_size = 256;
+        job->tile_state = v3d_bo_alloc(job->v3d->screen,
+                                       MAX2(job->num_layers, 1) *
+                                       job->tile_desc.draw_y *
+                                       job->tile_desc.draw_x *
+                                       tsda_per_tile_size,
+                                       "TSDA");
+}
+
 /**
  * Submits the job to the kernel and then reinitializes it.
  */
@@ -528,6 +566,8 @@ v3d_job_submit(struct v3d_context *v3d, struct v3d_job *job)
 
         if (job->needs_primitives_generated)
                 v3d_ensure_prim_counts_allocated(v3d);
+
+        alloc_tile_state(job);
 
         v3d_X(devinfo, emit_rcl)(job);
 
