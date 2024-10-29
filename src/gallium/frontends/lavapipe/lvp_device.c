@@ -153,6 +153,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .KHR_maintenance5                      = true,
    .KHR_maintenance6                      = true,
    .KHR_maintenance7                      = true,
+   .KHR_maintenance8                      = true,
    .KHR_map_memory2                       = true,
    .KHR_multiview                         = true,
    .KHR_push_descriptor                   = true,
@@ -716,6 +717,8 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
 
       /* maintenance7 */
       .maintenance7 = true,
+      /* maintenance8 */
+      .maintenance8 = true,
 
       /* VK_KHR_shader_maximal_reconvergence */
       .shaderMaximalReconvergence = true,
