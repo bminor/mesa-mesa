@@ -1595,7 +1595,7 @@
     <field name="State Cache Invalidation Enable" dword="1" bits="2:2" type="bool" />
     <field name="Constant Cache Invalidation Enable" dword="1" bits="3:3" type="bool" />
     <field name="VF Cache Invalidation Enable" dword="1" bits="4:4" type="bool" />
-    <field name="DC Flush Enable" dword="1" bits="5:5" type="bool" />
+    <field name="Force Device Coherency" dword="1" bits="5:5" type="bool" />
     <field name="Pipe Control Flush Enable" dword="1" bits="7:7" type="bool" />
     <field name="Notify Enable" dword="1" bits="8:8" type="bool" />
     <field name="Indirect State Pointers Disable" dword="1" bits="9:9" type="bool" />

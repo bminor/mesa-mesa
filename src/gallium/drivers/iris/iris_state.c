@@ -10421,7 +10421,12 @@ iris_emit_raw_pipe_control(struct iris_batch *batch,
 #endif
       pc.LRIPostSyncOperation = NoLRIOperation;
       pc.PipeControlFlushEnable = flags & PIPE_CONTROL_FLUSH_ENABLE;
+#if GFX_VER >= 20
+      pc.ForceDeviceCoherency = flags & (PIPE_CONTROL_TILE_CACHE_FLUSH |
+                                         PIPE_CONTROL_DATA_CACHE_FLUSH);
+#else
       pc.DCFlushEnable = flags & PIPE_CONTROL_DATA_CACHE_FLUSH;
+#endif
       pc.StoreDataIndex = 0;
       pc.CommandStreamerStallEnable = flags & PIPE_CONTROL_CS_STALL;
 #if GFX_VERx10 < 125

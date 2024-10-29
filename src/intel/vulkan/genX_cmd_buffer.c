@@ -55,7 +55,12 @@ static enum anv_pipe_bits
 convert_pc_to_bits(struct GENX(PIPE_CONTROL) *pc) {
    enum anv_pipe_bits bits = 0;
    bits |= (pc->DepthCacheFlushEnable) ?  ANV_PIPE_DEPTH_CACHE_FLUSH_BIT : 0;
+#if GFX_VER >= 20
+   bits |= (pc->ForceDeviceCoherency) ? (ANV_PIPE_DATA_CACHE_FLUSH_BIT |
+                                         ANV_PIPE_TILE_CACHE_FLUSH_BIT) : 0;
+#else
    bits |= (pc->DCFlushEnable) ?  ANV_PIPE_DATA_CACHE_FLUSH_BIT : 0;
+#endif
 #if GFX_VERx10 >= 125
    bits |= (pc->PSSStallSyncEnable) ?  ANV_PIPE_PSS_STALL_SYNC_BIT : 0;
 #endif
@@ -2678,7 +2683,12 @@ emit_pipe_control(struct anv_batch *batch,
       pipe.HDCPipelineFlushEnable = bits & ANV_PIPE_HDC_PIPELINE_FLUSH_BIT;
 #endif
       pipe.DepthCacheFlushEnable = bits & ANV_PIPE_DEPTH_CACHE_FLUSH_BIT;
+#if GFX_VER >= 20
+      pipe.ForceDeviceCoherency = bits & (ANV_PIPE_TILE_CACHE_FLUSH_BIT |
+                                          ANV_PIPE_DATA_CACHE_FLUSH_BIT);
+#else
       pipe.DCFlushEnable = bits & ANV_PIPE_DATA_CACHE_FLUSH_BIT;
+#endif
       pipe.RenderTargetCacheFlushEnable =
          bits & ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT;
 
@@ -3278,7 +3288,9 @@ genX(cmd_buffer_set_protected_memory)(struct anv_cmd_buffer *cmd_buffer,
    }
    anv_batch_emit(&cmd_buffer->batch, GENX(PIPE_CONTROL), pc) {
       pc.PipeControlFlushEnable = true;
+#if GFX_VER < 20
       pc.DCFlushEnable = true;
+#endif
       pc.RenderTargetCacheFlushEnable = true;
       pc.CommandStreamerStallEnable = true;
       if (enabled)
