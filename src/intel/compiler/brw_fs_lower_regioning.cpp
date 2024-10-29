@@ -320,7 +320,7 @@ namespace {
 
       return (has_dst_aligned_region_restriction(devinfo, inst) &&
               !is_uniform(inst->src[i]) &&
-              (byte_stride(inst->src[i]) != byte_stride(inst->dst) ||
+              (byte_stride(inst->src[i]) != required_src_byte_stride(devinfo, inst, i) ||
                src_byte_offset != dst_byte_offset)) ||
              (has_subdword_integer_region_restriction(devinfo, inst) &&
               (byte_stride(inst->src[i]) != required_src_byte_stride(devinfo, inst, i) ||
@@ -628,34 +628,38 @@ namespace {
       ibld.UNDEF(tmp);
       tmp = horiz_stride(tmp, stride);
 
-      /* Emit a series of 32-bit integer copies from the temporary into the
-       * original destination.
-       */
-      const brw_reg_type raw_type = brw_int_type(MIN2(brw_type_size_bytes(tmp.type), 4),
-                                                 false);
-      const unsigned n = brw_type_size_bytes(tmp.type) / brw_type_size_bytes(raw_type);
-
-      if (inst->predicate && inst->opcode != BRW_OPCODE_SEL) {
-         /* Note that in general we cannot simply predicate the copies on the
-          * same flag register as the original instruction, since it may have
-          * been overwritten by the instruction itself.  Instead initialize
-          * the temporary with the previous contents of the destination
-          * register.
+      if (!inst->dst.is_null()) {
+         /* Emit a series of 32-bit integer copies from the temporary into the
+          * original destination.
           */
+         const brw_reg_type raw_type =
+            brw_int_type(MIN2(brw_type_size_bytes(tmp.type), 4), false);
+
+         const unsigned n =
+            brw_type_size_bytes(tmp.type) / brw_type_size_bytes(raw_type);
+
+         if (inst->predicate && inst->opcode != BRW_OPCODE_SEL) {
+            /* Note that in general we cannot simply predicate the copies on
+             * the same flag register as the original instruction, since it
+             * may have been overwritten by the instruction itself.  Instead
+             * initialize the temporary with the previous contents of the
+             * destination register.
+             */
+            for (unsigned j = 0; j < n; j++)
+               ibld.MOV(subscript(tmp, raw_type, j),
+                        subscript(inst->dst, raw_type, j));
+         }
+
          for (unsigned j = 0; j < n; j++)
-            ibld.MOV(subscript(tmp, raw_type, j),
-                     subscript(inst->dst, raw_type, j));
+            ibld.at(block, inst->next).MOV(subscript(inst->dst, raw_type, j),
+                                           subscript(tmp, raw_type, j));
+
+         /* If the destination was an accumulator, after lowering it will be a
+          * GRF. Clear writes_accumulator for the instruction.
+          */
+         if (inst->dst.is_accumulator())
+            inst->writes_accumulator = false;
       }
-
-      for (unsigned j = 0; j < n; j++)
-         ibld.at(block, inst->next).MOV(subscript(inst->dst, raw_type, j),
-                                        subscript(tmp, raw_type, j));
-
-      /* If the destination was an accumulator, after lowering it will be a
-       * GRF. Clear writes_accumulator for the instruction.
-       */
-      if (inst->dst.is_accumulator())
-         inst->writes_accumulator = false;
 
       /* Point the original instruction at the temporary, making sure to keep
        * any destination modifiers in the instruction.
