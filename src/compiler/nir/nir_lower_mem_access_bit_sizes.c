@@ -126,7 +126,7 @@ lower_mem_load(nir_builder *b, nir_intrinsic_instr *intrin,
 
          uint64_t align_mask = requested.align - 1;
          nir_def *chunk_offset = nir_iadd_imm(b, offset, chunk_start);
-         nir_def *pad = nir_iand_imm(b, chunk_offset, align_mask);
+         nir_def *pad = nir_u2u32(b, nir_iand_imm(b, chunk_offset, align_mask));
          chunk_offset = nir_iand_imm(b, chunk_offset, ~align_mask);
 
          nir_intrinsic_instr *load =
