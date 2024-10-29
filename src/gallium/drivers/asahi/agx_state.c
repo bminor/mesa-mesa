@@ -4275,9 +4275,6 @@ agx_draw_without_restart(struct agx_batch *batch,
       &batch->pool, 5 * sizeof(uint32_t) * indirect->draw_count, 4,
       &out_draws_rsrc.bo);
 
-   struct agx_resource *indirect_rsrc = agx_resource(indirect->buffer);
-   agx_batch_reads(batch, indirect_rsrc);
-
    struct agx_restart_unroll_params unroll = {
       .heap = agx_batch_geometry_state(batch),
       .index_buffer = ib,
@@ -4285,7 +4282,7 @@ agx_draw_without_restart(struct agx_batch *batch,
       .restart_index = info->restart_index,
       .index_buffer_size_el = ib_extent / info->index_size,
       .flatshade_first = batch->ctx->rast->base.flatshade_first,
-      .draws = indirect_rsrc->bo->va->addr + indirect->offset,
+      .draws = agx_indirect_buffer_ptr(batch, indirect),
    };
 
    /* Unroll the index buffer for each draw */
@@ -4502,9 +4499,7 @@ agx_upload_draw_params(struct agx_batch *batch,
                        const struct pipe_draw_info *info)
 {
    if (indirect) {
-      struct agx_resource *indirect_rsrc = agx_resource(indirect->buffer);
-      uint64_t address = indirect_rsrc->bo->va->addr + indirect->offset;
-      agx_batch_reads(batch, indirect_rsrc);
+      uint64_t address = agx_indirect_buffer_ptr(batch, indirect);
 
       /* To implement draw parameters, we use the last 2 words of the
        * indirect draw descriptor. Offset by 3 words for indexed draw (5
@@ -5483,7 +5478,7 @@ agx_launch_grid(struct pipe_context *pipe, const struct pipe_grid_info *info)
    if (ctx->pipeline_statistics[PIPE_STAT_QUERY_CS_INVOCATIONS]) {
       unsigned blocksize = info->block[0] * info->block[1] * info->block[2];
 
-      if (info->indirect) {
+      if (indirect) {
          struct libagx_cs_invocation_params p = {
             .grid = indirect,
             .local_size_threads = blocksize,
@@ -5519,12 +5514,9 @@ agx_launch_grid(struct pipe_context *pipe, const struct pipe_grid_info *info)
       .local[2] = info->block[2],
    };
 
-   if (info->indirect) {
-      struct agx_resource *indirect = agx_resource(info->indirect);
-      agx_batch_reads(batch, indirect);
-
+   if (indirect) {
       grid.mode = AGX_CDM_MODE_INDIRECT_GLOBAL;
-      grid.indirect = indirect->bo->va->addr + info->indirect_offset;
+      grid.indirect = indirect;
    } else {
       grid.mode = AGX_CDM_MODE_DIRECT;
 
