@@ -54,7 +54,7 @@
         "description": "nvk: Fix uninitialized var warnings in host_copy",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6c5420cd30a97096ecb6854c70b923bf990915c6",
         "notes": null
