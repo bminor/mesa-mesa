@@ -10,6 +10,7 @@
 #include "radv_pipeline_rt.h"
 #include "radv_queue.h"
 #include "radv_shader.h"
+#include "radv_spm.h"
 #include "radv_sqtt.h"
 #include "vk_common_entrypoints.h"
 #include "vk_semaphore.h"
@@ -672,6 +673,7 @@ radv_handle_sqtt(VkQueue _queue)
 
    if (device->sqtt_enabled) {
       struct ac_sqtt_trace sqtt_trace = {0};
+      struct ac_spm_trace spm_trace;
 
       radv_end_sqtt(queue);
       device->sqtt_enabled = false;
@@ -679,12 +681,7 @@ radv_handle_sqtt(VkQueue _queue)
       /* TODO: Do something better than this whole sync. */
       device->vk.dispatch_table.QueueWaitIdle(_queue);
 
-      if (radv_get_sqtt_trace(queue, &sqtt_trace)) {
-         struct ac_spm_trace spm_trace;
-
-         if (device->spm.bo)
-            ac_spm_get_trace(&device->spm, &spm_trace);
-
+      if (radv_get_sqtt_trace(queue, &sqtt_trace) && (!device->spm.bo || radv_get_spm_trace(queue, &spm_trace))) {
          ac_dump_rgp_capture(&pdev->info, &sqtt_trace, device->spm.bo ? &spm_trace : NULL);
       } else {
          /* Trigger a new capture if the driver failed to get
