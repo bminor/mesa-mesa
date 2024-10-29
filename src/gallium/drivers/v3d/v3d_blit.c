@@ -530,8 +530,6 @@ v3d_tlb_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                                           src_surf);
         job->msaa = msaa;
         job->double_buffer = double_buffer;
-        job->tile_width = tile_width;
-        job->tile_height = tile_height;
         job->internal_bpp = max_bpp;
         job->draw_min_x = info->dst.box.x;
         job->draw_min_y = info->dst.box.y;
@@ -547,10 +545,13 @@ v3d_tlb_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
          */
         job->draw_width = MIN2(dst_surf->width, src_surf->width);
         job->draw_height = MIN2(dst_surf->height, src_surf->height);
-        job->draw_tiles_x = DIV_ROUND_UP(job->draw_width,
-                                         job->tile_width);
-        job->draw_tiles_y = DIV_ROUND_UP(job->draw_height,
-                                         job->tile_height);
+
+        job->tile_desc.width = tile_width;
+        job->tile_desc.height = tile_height;
+        job->tile_desc.draw_x = DIV_ROUND_UP(job->draw_width,
+                                             job->tile_desc.width);
+        job->tile_desc.draw_y = DIV_ROUND_UP(job->draw_height,
+                                             job->tile_desc.height);
 
         job->needs_flush = true;
         job->num_layers = info->dst.box.depth;

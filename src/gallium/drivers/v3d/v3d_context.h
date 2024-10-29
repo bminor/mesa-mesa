@@ -427,11 +427,13 @@ struct v3d_job {
 
         /** @} */
         /** @{ Tile information, depending on MSAA and float color buffer. */
-        uint32_t draw_tiles_x; /** @< Number of tiles wide for framebuffer. */
-        uint32_t draw_tiles_y; /** @< Number of tiles high for framebuffer. */
+        struct {
+                uint32_t draw_x; /** @< Number of tiles wide for framebuffer. */
+                uint32_t draw_y; /** @< Number of tiles high for framebuffer. */
+                uint32_t width;  /** @< Width of a tile. */
+                uint32_t height; /** @< Height of a tile. */
+        } tile_desc;
 
-        uint32_t tile_width; /** @< Width of a tile. */
-        uint32_t tile_height; /** @< Height of a tile. */
         /** maximum internal_bpp of all color render targets. */
         uint32_t internal_bpp;
 

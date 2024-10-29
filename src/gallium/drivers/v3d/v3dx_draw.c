@@ -58,7 +58,8 @@ v3dX(start_binning)(struct v3d_context *v3d, struct v3d_job *job)
          * of tile binning.
          */
         uint32_t tile_alloc_size =
-                MAX2(job->num_layers, 1) * job->draw_tiles_x * job->draw_tiles_y * 64;
+                MAX2(job->num_layers, 1) * job->tile_desc.draw_x *
+                job->tile_desc.draw_y * 64;
 
         /* The PTB allocates in aligned 4k chunks after the initial setup. */
         tile_alloc_size = align(tile_alloc_size, 4096);
@@ -80,8 +81,8 @@ v3dX(start_binning)(struct v3d_context *v3d, struct v3d_job *job)
         uint32_t tsda_per_tile_size = 256;
         job->tile_state = v3d_bo_alloc(v3d->screen,
                                        MAX2(job->num_layers, 1) *
-                                       job->draw_tiles_y *
-                                       job->draw_tiles_x *
+                                       job->tile_desc.draw_y *
+                                       job->tile_desc.draw_x *
                                        tsda_per_tile_size,
                                        "TSDA");
 
@@ -100,8 +101,8 @@ v3dX(start_binning)(struct v3d_context *v3d, struct v3d_job *job)
                 config.width_in_pixels = job->draw_width;
                 config.height_in_pixels = job->draw_height;
 
-                config.log2_tile_width = log2_tile_size(job->tile_width);
-                config.log2_tile_height = log2_tile_size(job->tile_height);
+                config.log2_tile_width = log2_tile_size(job->tile_desc.width);
+                config.log2_tile_height = log2_tile_size(job->tile_desc.height);
 
                 /* FIXME: ideallly we would like next assert on the packet header (as is
                  * general, so also applies to GL). We would need to expand
