@@ -81,7 +81,6 @@ v3dX(start_binning)(struct v3d_context *v3d, struct v3d_job *job)
                 assert(config.log2_tile_width == config.log2_tile_height ||
                        config.log2_tile_width == config.log2_tile_height + 1);
         }
-
 #endif
 
 #if V3D_VERSION == 42
