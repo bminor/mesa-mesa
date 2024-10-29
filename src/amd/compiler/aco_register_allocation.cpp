@@ -30,11 +30,15 @@ void add_subdword_definition(Program* program, aco_ptr<Instruction>& instr, Phys
                              bool allow_16bit_write);
 
 struct parallelcopy {
-   constexpr parallelcopy(Operand op_, Definition def_) : op(op_), def(def_)
+   constexpr parallelcopy(Operand op_, Definition def_) : op(op_), def(def_), skip_renaming(false)
+   {}
+   constexpr parallelcopy(Operand op_, Definition def_, bool skip_renaming_)
+       : op(op_), def(def_), skip_renaming(skip_renaming_)
    {}
 
    Operand op;
    Definition def;
+   bool skip_renaming;
 };
 
 struct assignment {
@@ -823,7 +827,7 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
    /* clear operands */
    for (parallelcopy& copy : parallelcopies) {
       /* the definitions with id are not from this function and already handled */
-      if (copy.def.isTemp())
+      if (copy.def.isTemp() || copy.skip_renaming)
          continue;
       reg_file.clear(copy.op);
    }
@@ -896,9 +900,9 @@ update_renames(ra_ctx& ctx, RegisterFile& reg_file, std::vector<parallelcopy>& p
 
             /* Fix the kill flags */
             if (first[omit_renaming])
-               op.setFirstKill(omit_renaming || op.isKill());
+               op.setFirstKill((omit_renaming && !copy.skip_renaming) || op.isKill());
             else
-               op.setKill(omit_renaming || op.isKill());
+               op.setKill((omit_renaming && !copy.skip_renaming) || op.isKill());
             first[omit_renaming] = false;
 
             if (omit_renaming)
@@ -3026,11 +3030,15 @@ emit_parallel_copy_internal(ra_ctx& ctx, std::vector<parallelcopy>& parallelcopy
       pc->definitions[i] = parallelcopy[i].def;
       assert(pc->operands[i].size() == pc->definitions[i].size());
 
-      /* it might happen that the operand is already renamed. we have to restore the
-       * original name. */
-      auto it = ctx.orig_names.find(pc->operands[i].tempId());
-      Temp orig = it != ctx.orig_names.end() ? it->second : pc->operands[i].getTemp();
-      add_rename(ctx, orig, pc->definitions[i].getTemp());
+      if (!parallelcopy[i].skip_renaming) {
+         /* it might happen that the operand is already renamed. we have to restore the
+          * original name. */
+         auto it =
+            ctx.orig_names.find(pc->operands[i].tempId());
+         Temp orig = it != ctx.orig_names.end() ? it->second : pc->operands[i].getTemp();
+         add_rename(
+         ctx, orig, pc->definitions[i].getTemp());
+      }
    }
 
    if (temp_in_scc && (may_swap_sgprs || linear_vgpr)) {
