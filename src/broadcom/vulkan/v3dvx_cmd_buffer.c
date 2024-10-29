@@ -63,7 +63,8 @@ v3dX(job_emit_enable_double_buffer)(struct v3dv_job *job)
    config.maximum_bpp_of_all_render_targets = tiling->internal_bpp;
 #endif
 #if V3D_VERSION >= 71
-      unreachable("HW generation 71 not supported yet.");
+   config.log2_tile_width = log2_tile_size(tiling->tile_width);
+   config.log2_tile_height = log2_tile_size(tiling->tile_height);
 #endif
 
    uint8_t *rewrite_addr = (uint8_t *)job->bcl_tile_binning_mode_ptr;
