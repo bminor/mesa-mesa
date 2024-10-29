@@ -704,6 +704,27 @@ lower_interpolate_at(nir_intrinsic_instr *intrin, struct lower_io_state *state,
    return load;
 }
 
+/**
+ * Convert a compact view index emitted by nir_lower_multiview to an absolute
+ * view index.
+ */
+static nir_def *
+uncompact_view_index(nir_builder *b, nir_src compact_index_src)
+{
+   /* We require nir_lower_io_to_temporaries when using absolute view indices,
+    * which ensures index is constant */
+   assert(nir_src_is_const(compact_index_src));
+   unsigned compact_index = nir_src_as_uint(compact_index_src);
+
+   unsigned view_index;
+   uint32_t view_mask = b->shader->info.view_mask;
+   for (unsigned i = 0; i <= compact_index; i++) {
+      view_index = u_bit_scan(&view_mask);
+   }
+
+   return nir_imm_int(b, view_index);
+}
+
 static bool
 nir_lower_io_block(nir_block *block,
                    struct lower_io_state *state)
@@ -788,6 +809,9 @@ nir_lower_io_block(nir_block *block,
       offset = get_io_offset(b, deref, is_arrayed ? &array_index : NULL,
                              state->type_size, &component_offset,
                              bindless_type_size);
+
+      if (!options->compact_view_index && array_index && var->data.per_view)
+         array_index = uncompact_view_index(b, nir_src_for_ssa(array_index));
 
       nir_def *replacement = NULL;
 

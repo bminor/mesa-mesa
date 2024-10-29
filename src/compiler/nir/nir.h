@@ -4386,6 +4386,20 @@ typedef struct nir_shader_compiler_options {
     */
    bool per_view_unique_driver_locations;
 
+   /**
+    * Emit nir_intrinsic_store_per_view_output with compacted view indices
+    * rather than absolute view indices. When using compacted indices, the Nth
+    * index refers to the Nth enabled view, not the Nth absolute view. For
+    * example, with view mask 0b1010, compacted index 0 is absolute index 1,
+    * and compacted index 1 is absolute index 3. Note that compacted view
+    * indices do not correspond directly to gl_ViewIndex.
+    *
+    * If compact_view_index is unset, per-view indices must be constant before
+    * nir_lower_io. This can be guaranteed by calling nir_lower_io_temporaries
+    * first.
+    */
+   bool compact_view_index;
+
    /** Options determining lowering and behavior of inputs and outputs. */
    nir_io_options io_options;
 

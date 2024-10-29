@@ -182,6 +182,8 @@ nir_lower_multiview(nir_shader *shader, nir_lower_multiview_options options)
    assert(shader->info.stage != MESA_SHADER_FRAGMENT);
    int view_count = util_bitcount(options.view_mask);
 
+   shader->info.view_mask = options.view_mask;
+
    nir_function_impl *entrypoint = nir_shader_get_entrypoint(shader);
 
    /* Update per-view outputs to refer to arrays. */

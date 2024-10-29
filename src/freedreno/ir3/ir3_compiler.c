@@ -120,6 +120,7 @@ static const nir_shader_compiler_options ir3_base_options = {
    .scalarize_ddx = true,
 
    .per_view_unique_driver_locations = true,
+   .compact_view_index = true,
 };
 
 struct ir3_compiler *

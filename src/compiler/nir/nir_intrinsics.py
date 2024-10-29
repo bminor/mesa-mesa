@@ -1183,9 +1183,9 @@ load("output", [1], [BASE, RANGE, COMPONENT, DEST_TYPE, IO_SEMANTICS], flags=[CA
 # src[] = { vertex, offset }.
 load("per_vertex_output", [1, 1], [BASE, RANGE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE])
 # src[] = { view_index, offset }.
-# view_index is "compacted", meaning it is the index of the Nth *enabled* view,
-# not the Nth absolute view. See the nir_lower_multiview docs for a more
-# detailed explanation.
+# when nir_shader_compiler_options::compact_view_index is set, the view_index
+# src refers to the Nth enabled view, and do not correspond directly to
+# gl_ViewIndex. See the compact_view_index docs for more details.
 load("per_view_output", [1, 1], [BASE, RANGE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE])
 # src[] = { primitive, offset }.
 load("per_primitive_output", [1, 1], [BASE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE])
