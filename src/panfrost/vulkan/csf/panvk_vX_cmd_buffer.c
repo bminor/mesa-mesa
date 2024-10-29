@@ -329,8 +329,8 @@ collect_cache_flush_info(enum panvk_subqueue_id subqueue,
 static void
 collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
                 VkPipelineStageFlags2 src_stages,
-                VkPipelineStageFlags2 dst_stages, VkAccessFlags src_access,
-                VkAccessFlags dst_access, struct panvk_cs_deps *deps)
+                VkPipelineStageFlags2 dst_stages, VkAccessFlags2 src_access,
+                VkAccessFlags2 dst_access, struct panvk_cs_deps *deps)
 {
    if (src_stages_need_draw_flush(src_stages) && cmdbuf->state.gfx.render.tiler)
       deps->needs_draw_flush = true;
