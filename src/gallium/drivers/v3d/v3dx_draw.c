@@ -96,6 +96,8 @@ v3dX(start_binning)(struct v3d_context *v3d, struct v3d_job *job)
         }
 
         assert(!job->msaa || !job->double_buffer);
+        job->bcl_tile_binning_mode_ptr = cl_start(&job->bcl);
+
 #if V3D_VERSION >= 71
         cl_emit(&job->bcl, TILE_BINNING_MODE_CFG, config) {
                 config.width_in_pixels = job->draw_width;

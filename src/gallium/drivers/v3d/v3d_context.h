@@ -536,6 +536,13 @@ struct v3d_job {
          */
         uint32_t tf_draw_calls_queued;
 
+
+        /* A pointer to the location of the TILE_BINNING_MODE_CFG packet so we
+         * can rewrite it to enable double-buffer mode by the time we have
+         * enough info about the job to make that decision.
+         */
+        struct v3d_cl_out *bcl_tile_binning_mode_ptr;
+
         struct v3d_job_key key;
 };
 
