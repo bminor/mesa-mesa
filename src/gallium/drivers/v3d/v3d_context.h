@@ -40,6 +40,7 @@
 #include "drm-uapi/v3d_drm.h"
 #include "v3d_screen.h"
 #include "broadcom/common/v3d_limits.h"
+#include "broadcom/common/v3d_util.h"
 
 #include "broadcom/simulator/v3d_simulator.h"
 #include "broadcom/compiler/v3d_compiler.h"
@@ -474,8 +475,16 @@ struct v3d_job {
         float clear_z;
         uint8_t clear_s;
 
+        /* If we found anything in the job that is not compatible with
+         * double-buffer mode
+         */
+        bool can_use_double_buffer;
+
         /* If TLB double-buffering is enabled for this job */
         bool double_buffer;
+
+        /* Tracks score for double-buffer mode heuristic */
+        struct v3d_double_buffer_score double_buffer_score;
 
         /**
          * Set if some drawing (triangles, blits, or just a glClear()) has

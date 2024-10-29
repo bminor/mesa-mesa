@@ -376,7 +376,12 @@ v3d_get_job(struct v3d_context *v3d,
                 }
         }
 
-       job->double_buffer = false;
+        /* By default we disable double buffer but we allow it to be enabled
+         * later on (except for msaa) if we don't find any other reason
+         * to disable it.
+         */
+        job->can_use_double_buffer = !job->msaa && V3D_DBG(DOUBLE_BUFFER);
+        job->double_buffer = false;
 
         memcpy(&job->key, &local_key, sizeof(local_key));
         _mesa_hash_table_insert(v3d->jobs, &job->key, job);
@@ -546,13 +551,14 @@ alloc_tile_state(struct v3d_job *job)
 static void
 enable_double_buffer_mode(struct v3d_job *job)
 {
-        /* For now we only allow double-buffer mode through envvar */
-        if (!V3D_DBG(DOUBLE_BUFFER))
+        /* Don't enable if we have seen incompatibilities */
+        if (!job->can_use_double_buffer)
                 return;
 
-        /* MSAA is not compatible with double buffering */
-        if (job->msaa)
-                return;
+         /* For now we only allow double buffer via envvar and only for jobs
+          * that are not MSAA, which is incompatible.
+          */
+        assert(V3D_DBG(DOUBLE_BUFFER) && !job->msaa);
 
         /* Tile loads are serialized against stores, in which case we don't get
          * any benefits from enabling double-buffer and would just pay the price
@@ -566,6 +572,9 @@ enable_double_buffer_mode(struct v3d_job *job)
 
         if (!job->store)
                return;
+
+        if (!v3d_double_buffer_score_ok(&job->double_buffer_score))
+              return;
 
         /* Enable double-buffer mode.
          *

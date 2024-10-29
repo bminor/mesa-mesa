@@ -530,6 +530,7 @@ v3d_tlb_blit(struct pipe_context *pctx, struct pipe_blit_info *info)
                                           src_surf);
         job->msaa = msaa;
         job->double_buffer = double_buffer;
+        job->can_use_double_buffer = !job->msaa && V3D_DBG(DOUBLE_BUFFER);
         job->internal_bpp = max_bpp;
         job->draw_min_x = info->dst.box.x;
         job->draw_min_y = info->dst.box.y;

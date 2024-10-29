@@ -1035,6 +1035,25 @@ v3d_check_compiled_shaders(struct v3d_context *v3d)
 }
 
 static void
+update_double_buffer_score(struct v3d_job *job, uint32_t vertex_count)
+{
+        if (!job->can_use_double_buffer)
+                return;
+
+        if (job->v3d->prog.gs) {
+                job->can_use_double_buffer = false;
+                return;
+        }
+
+        struct v3d_compiled_shader *vs = job->v3d->prog.vs;
+        struct v3d_compiled_shader *fs = job->v3d->prog.fs;
+        v3d_update_double_buffer_score(vertex_count,
+                                       vs->qpu_size, fs->qpu_size,
+                                       vs->prog_data.base, fs->prog_data.base,
+                                       &job->double_buffer_score);
+}
+
+static void
 v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
              unsigned drawid_offset,
              const struct pipe_draw_indirect_info *indirect,
@@ -1387,6 +1406,11 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
                         job->store |= bit;
                 v3d_job_add_bo(job, rsc->bo);
         }
+
+        if (indirect && indirect->buffer)
+                job->can_use_double_buffer = false;
+        else
+                update_double_buffer_score(job, draws[0].count * info->instance_count);
 
         if (job->referenced_size > 768 * 1024 * 1024) {
                 perf_debug("Flushing job with %dkb to try to free up memory\n",
