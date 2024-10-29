@@ -924,7 +924,7 @@
         "description": "perfetto: fix macos compile",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a871eabcedffb4f817033b393e25ce373d977b1a",
         "notes": null
