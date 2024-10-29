@@ -23,13 +23,11 @@ struct ssa_elimination_ctx {
     * for each block. */
    std::vector<std::vector<phi_info_item>> logical_phi_info;
    std::vector<std::vector<phi_info_item>> linear_phi_info;
-   std::vector<bool> empty_blocks;
    std::vector<bool> blocks_incoming_exec_used;
    Program* program;
 
    ssa_elimination_ctx(Program* program_)
        : logical_phi_info(program_->blocks.size()), linear_phi_info(program_->blocks.size()),
-         empty_blocks(program_->blocks.size(), true),
          blocks_incoming_exec_used(program_->blocks.size(), true), program(program_)
    {}
 };
@@ -56,7 +54,6 @@ collect_phi_info(ssa_elimination_ctx& ctx)
             auto& info_vec = phi->opcode == aco_opcode::p_phi ? ctx.logical_phi_info[pred_idx]
                                                               : ctx.linear_phi_info[pred_idx];
             info_vec.push_back({phi->definitions[0], phi->operands[i]});
-            ctx.empty_blocks[pred_idx] = false;
          }
       }
    }
@@ -390,8 +387,7 @@ try_merge_break_with_continue(ssa_elimination_ctx& ctx, Block* block)
    }
 
    /* merge block: copy to exec, logical_start, logical_end, branch */
-   if (merge->instructions.size() != 4 || !ctx.logical_phi_info[merge->index].empty() ||
-       !ctx.linear_phi_info[merge->index].empty() || !is_empty_block(merge, true))
+   if (merge->instructions.size() != 4 || !is_empty_block(merge, true))
       return;
 
    aco_ptr<Instruction>& execwrite = merge->instructions[0];
@@ -409,8 +405,6 @@ try_merge_break_with_continue(ssa_elimination_ctx& ctx, Block* block)
        (*execsrc_it)->operands[0].physReg() != execwrite->operands[0].physReg() ||
        (*execsrc_it)->operands[1].physReg() != exec)
       return;
-
-   assert(ctx.linear_phi_info[block->index].empty());
 
    /* Move s_andn2 to the merge block. */
    merge->instructions.insert(merge->instructions.begin(), std::move(*execsrc_it));
@@ -515,25 +509,6 @@ try_insert_saveexec_out_of_loop(ssa_elimination_ctx& ctx, Block* block, Instruct
       }
 
       if (instr_accesses(instr, saved_exec, true) || instr_writes_exec(instr))
-         return false;
-   }
-
-   for (const auto& successor_phi_info : ctx.linear_phi_info[cont->index]) {
-      if (regs_intersect(successor_phi_info.def, saved_exec) ||
-          regs_intersect(successor_phi_info.def, Definition(exec, lm)))
-         return false;
-   }
-
-   /* check that saved_exec is not needed by phis in the pre-header. */
-   for (const auto& successor_phi_info : ctx.linear_phi_info[preheader->index]) {
-      if (regs_intersect(successor_phi_info.def, saved_exec) ||
-          regs_intersect(successor_phi_info.op, saved_exec) ||
-          regs_intersect(successor_phi_info.def, Definition(exec, lm)))
-         return false;
-   }
-
-   for (const auto& successor_phi_info : ctx.logical_phi_info[preheader->index]) {
-      if (regs_intersect(successor_phi_info.op, saved_exec))
          return false;
    }
 
@@ -762,23 +737,10 @@ eliminate_useless_exec_writes_in_block(ssa_elimination_ctx& ctx, Block& block)
       /* Last block of a program with succeed shader part should respect final exec write. */
       exec_write_used = true;
    } else {
-      bool copy_to_exec = false;
-      bool copy_from_exec = false;
-
-      for (const auto& successor_phi_info : ctx.linear_phi_info[block.index]) {
-         copy_to_exec |= successor_phi_info.def.physReg() == exec;
-         copy_from_exec |= successor_phi_info.op.physReg() == exec;
-      }
-
-      if (copy_from_exec)
-         exec_write_used = true;
-      else if (copy_to_exec)
-         exec_write_used = false;
-      else
-         /* blocks_incoming_exec_used is initialized to true, so this is correct even for loops. */
-         exec_write_used =
-            std::any_of(block.linear_succs.begin(), block.linear_succs.end(),
-                        [&ctx](int succ_idx) { return ctx.blocks_incoming_exec_used[succ_idx]; });
+      /* blocks_incoming_exec_used is initialized to true, so this is correct even for loops. */
+      exec_write_used =
+         std::any_of(block.linear_succs.begin(), block.linear_succs.end(),
+                     [&ctx](int succ_idx) { return ctx.blocks_incoming_exec_used[succ_idx]; });
    }
 
    /* Collect information about the branching sequence. */
@@ -799,9 +761,7 @@ eliminate_useless_exec_writes_in_block(ssa_elimination_ctx& ctx, Block& block)
          break;
 
       /* See if the current instruction needs or writes exec. */
-      bool needs_exec =
-         needs_exec_mask(instr.get()) ||
-         (instr->opcode == aco_opcode::p_logical_end && !ctx.logical_phi_info[block.index].empty());
+      bool needs_exec = needs_exec_mask(instr.get());
       bool writes_exec = instr_writes_exec(instr.get());
 
       /* See if we found an unused exec write. */
@@ -877,9 +837,6 @@ jump_threading(ssa_elimination_ctx& ctx)
 
       if (block->kind & block_kind_break)
          try_merge_break_with_continue(ctx, block);
-
-      if (!ctx.empty_blocks[i])
-         continue;
 
       if (block->kind & block_kind_invert) {
          try_remove_invert_block(ctx, block);
