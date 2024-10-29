@@ -31,6 +31,7 @@
   */
 
 
+#include "nir_builder.h"
 #include "main/errors.h"
 
 #include "main/hash.h"
@@ -700,6 +701,19 @@ lower_ucp(struct st_context *st,
    }
 }
 
+static bool
+force_persample_shading(struct nir_builder *b, nir_intrinsic_instr *intr,
+                        void *data)
+{
+   if (intr->intrinsic == nir_intrinsic_load_barycentric_pixel ||
+       intr->intrinsic == nir_intrinsic_load_barycentric_centroid) {
+      intr->intrinsic = nir_intrinsic_load_barycentric_sample;
+      return true;
+   }
+
+   return false;
+}
+
 static struct st_common_variant *
 st_create_common_variant(struct st_context *st,
                          struct gl_program *prog,
@@ -984,8 +998,13 @@ st_create_fp_variant(struct st_context *st,
 
    if (key->persample_shading) {
       nir_shader *shader = state.ir.nir;
-      nir_foreach_shader_in_variable(var, shader)
-         var->data.sample = true;
+      if (shader->info.io_lowered) {
+         nir_shader_intrinsics_pass(shader, force_persample_shading,
+                                    nir_metadata_all, NULL);
+      } else {
+         nir_foreach_shader_in_variable(var, shader)
+            var->data.sample = true;
+      }
 
       /* In addition to requiring per-sample interpolation, sample shading
        * changes the behaviour of gl_SampleMaskIn, so we need per-sample shading
