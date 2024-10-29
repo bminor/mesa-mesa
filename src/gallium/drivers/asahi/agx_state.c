@@ -5306,6 +5306,8 @@ agx_launch_internal(struct agx_batch *batch, const struct agx_grid *grid,
    struct agx_context *ctx = batch->ctx;
    struct agx_device *dev = agx_device(ctx->base.screen);
 
+   agx_batch_add_bo(batch, cs->bo);
+
    /* TODO: Ensure space if we allow multiple kernels in a batch */
    uint8_t *out = batch->cdm.current;
 
@@ -5429,8 +5431,6 @@ agx_launch(struct agx_batch *batch, const struct agx_grid *grid,
       agx_batch_writes(batch, buffer, 0);
       batch->incoherent_writes = true;
    }
-
-   agx_batch_add_bo(batch, cs->bo);
 
    agx_update_descriptors(batch, cs);
    agx_upload_uniforms(batch);
