@@ -907,10 +907,10 @@ ssa_elimination(Program* program)
    /* Collect information about every phi-instruction */
    collect_phi_info(ctx);
 
-   /* eliminate empty blocks */
-   jump_threading(ctx);
-
    /* insert parallelcopies from SSA elimination */
    insert_parallelcopies(ctx);
+
+   /* eliminate empty blocks */
+   jump_threading(ctx);
 }
 } // namespace aco
