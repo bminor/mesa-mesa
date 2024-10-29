@@ -13,8 +13,8 @@ if test -x /usr/bin/ccache; then
 
     export CCACHE_COMPILERCHECK=content
     export CCACHE_COMPRESS=true
-    export CCACHE_DIR=/cache/$CI_PROJECT_NAME/ccache
-    export PATH=$CCACHE_PATH:$PATH
+    export CCACHE_DIR="/cache/$CI_PROJECT_NAME/ccache"
+    export PATH="$CCACHE_PATH:$PATH"
 
     # CMake ignores $PATH, so we have to force CC/GCC to the ccache versions.
     export CC="${CCACHE_PATH}/gcc"
