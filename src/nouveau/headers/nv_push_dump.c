@@ -20,6 +20,7 @@
 #include "clc997.h"
 #include "clcb97.h"
 
+#include "clc5b0.h"
 #include "cla0c0.h"
 #include "clb0c0.h"
 #include "clc0c0.h"

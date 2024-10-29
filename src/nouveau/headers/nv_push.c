@@ -22,6 +22,7 @@
 #include "nv_push_clc3c0.h"
 #include "nv_push_clc597.h"
 #include "nv_push_clc5c0.h"
+#include "nv_push_clc5b0.h"
 #include "nv_push_clc697.h"
 #include "nv_push_clc6c0.h"
 #include "nv_push_clc797.h"
@@ -221,6 +222,9 @@ vk_push_print(FILE *fp, const struct nv_push *push,
                   else
                      mthd_name = P_PARSE_NV90B5_MTHD(mthd);
                   break;
+               case 0xb0:
+                  mthd_name = P_PARSE_NVC5B0_MTHD(mthd);
+                  break;
                default:
                   mthd_name = "unknown method";
                   break;
@@ -275,6 +279,9 @@ vk_push_print(FILE *fp, const struct nv_push *push,
                else
                   P_DUMP_NV90B5_MTHD_DATA(fp, mthd, value, "\t\t");
                break;
+            case 0xb0:
+                  P_DUMP_NVC5B0_MTHD_DATA(fp, mthd, value, "\t\t");
+                  break;
             default:
                fprintf(fp, "%s.VALUE = 0x%x\n", "\t\t", value);
                break;
