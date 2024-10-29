@@ -2184,8 +2184,10 @@ asahi_fast_link(struct agx_context *ctx, struct agx_uncompiled_shader *so,
 }
 
 static bool
-agx_update_vs(struct agx_context *ctx, unsigned index_size_B)
+agx_update_vs(struct agx_batch *batch, unsigned index_size_B)
 {
+   struct agx_context *ctx = batch->ctx;
+
    /* Only proceed if the shader or anything the key depends on changes
     *
     * vb_mask, attributes, vertex_buffers: VERTEX
@@ -2229,6 +2231,10 @@ agx_update_vs(struct agx_context *ctx, unsigned index_size_B)
 
    ctx->linked.vs =
       asahi_fast_link(ctx, ctx->stage[PIPE_SHADER_VERTEX].shader, &link_key);
+
+   agx_batch_add_bo(batch, ctx->vs->bo);
+   if (ctx->linked.vs)
+      agx_batch_add_bo(batch, ctx->linked.vs->bo);
 
    return old != ctx->linked.vs;
 }
@@ -2401,6 +2407,11 @@ agx_update_fs(struct agx_batch *batch)
 
    ctx->linked.fs =
       asahi_fast_link(ctx, ctx->stage[PIPE_SHADER_FRAGMENT].shader, &link_key);
+
+   if (ctx->fs->bo)
+      agx_batch_add_bo(batch, ctx->fs->bo);
+
+   agx_batch_add_bo(batch, ctx->linked.fs->bo);
 
    return old != ctx->linked.fs;
 }
@@ -4654,15 +4665,13 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    unsigned tess_wg_size = 64;
 
    agx_upload_vbos(batch);
-   agx_update_vs(ctx, info->index_size);
+   agx_update_vs(batch, info->index_size);
    agx_update_tcs(ctx, info);
    /* XXX */
    ctx->stage[PIPE_SHADER_TESS_CTRL].dirty = ~0;
    ctx->stage[PIPE_SHADER_TESS_EVAL].dirty = ~0;
    agx_update_descriptors(batch, ctx->vs);
    agx_update_descriptors(batch, ctx->tcs);
-   agx_batch_add_bo(batch, ctx->vs->bo);
-   agx_batch_add_bo(batch, ctx->linked.vs->bo);
 
    batch->uniforms.vertex_outputs = ctx->vs->b.info.outputs;
 
@@ -5005,13 +5014,9 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    batch->reduced_prim = reduced_prim;
 
    /* Update shaders first so we can use them after */
-   if (agx_update_vs(ctx, info->index_size)) {
+   if (agx_update_vs(batch, info->index_size)) {
       ctx->dirty |= AGX_DIRTY_VS | AGX_DIRTY_VS_PROG;
       ctx->stage[PIPE_SHADER_VERTEX].dirty = ~0;
-
-      agx_batch_add_bo(batch, ctx->vs->bo);
-      if (ctx->linked.vs)
-         agx_batch_add_bo(batch, ctx->linked.vs->bo);
    } else if (ctx->stage[PIPE_SHADER_VERTEX].dirty ||
               (ctx->dirty & AGX_DIRTY_VERTEX))
       ctx->dirty |= AGX_DIRTY_VS;
@@ -5055,11 +5060,6 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    if (agx_update_fs(batch)) {
       ctx->dirty |= AGX_DIRTY_FS | AGX_DIRTY_FS_PROG;
       ctx->stage[PIPE_SHADER_FRAGMENT].dirty = ~0;
-
-      if (ctx->fs->bo)
-         agx_batch_add_bo(batch, ctx->fs->bo);
-
-      agx_batch_add_bo(batch, ctx->linked.fs->bo);
    } else if ((ctx->stage[PIPE_SHADER_FRAGMENT].dirty) ||
               (ctx->dirty & (AGX_DIRTY_BLEND_COLOR | AGX_DIRTY_SAMPLE_MASK))) {
       ctx->dirty |= AGX_DIRTY_FS;
