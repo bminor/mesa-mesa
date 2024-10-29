@@ -5021,6 +5021,10 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
               (ctx->dirty & AGX_DIRTY_VERTEX))
       ctx->dirty |= AGX_DIRTY_VS;
 
+   /* This is subtle. But agx_update_vs will be true at least once per batch. */
+   assert(agx_batch_uses_bo(batch, ctx->vs->bo));
+   assert(!ctx->linked.vs || agx_batch_uses_bo(batch, ctx->linked.vs->bo));
+
    agx_update_gs(ctx, info, indirect);
 
    if (ctx->gs) {
@@ -5064,6 +5068,10 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
               (ctx->dirty & (AGX_DIRTY_BLEND_COLOR | AGX_DIRTY_SAMPLE_MASK))) {
       ctx->dirty |= AGX_DIRTY_FS;
    }
+
+   /* This is subtle. But agx_update_fs will be true at least once per batch. */
+   assert(!ctx->fs->bo || agx_batch_uses_bo(batch, ctx->fs->bo));
+   assert(agx_batch_uses_bo(batch, ctx->linked.fs->bo));
 
    if (ctx->linked.vs->uses_base_param || ctx->gs) {
       agx_upload_draw_params(batch, indirect, draws, info);
