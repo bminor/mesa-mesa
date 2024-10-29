@@ -114,7 +114,10 @@ opt_selects = [
 
 # When the ior/iand is used multiple times, we can instead fuse the other way.
 opt_selects.extend([
+        (('iand', ('inot', 'a@1'), b), ('bcsel', a, False, b)),
         (('iand', 'a@1', b), ('bcsel', a, b, False)),
+
+        (('ior', ('inot', 'a@1'), b), ('bcsel', a, b, True)),
         (('ior', 'a@1', b), ('bcsel', a, True, b)),
 ])
 
