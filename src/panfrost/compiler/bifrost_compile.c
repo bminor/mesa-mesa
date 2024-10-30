@@ -3667,10 +3667,8 @@ bi_emit_texc(bi_builder *b, nir_tex_instr *instr)
          desc.shadow_or_clamp_disable = i != 0;
 
          bi_index grdesc = bi_temp(b->shader);
-         uint32_t desc_u = 0;
-         memcpy(&desc_u, &desc, sizeof(desc_u));
-         bi_instr *I = bi_texc_to(b, grdesc, sr, cx, cy, bi_imm_u32(desc_u),
-                                  false, sr_count, 0);
+         bi_instr *I = bi_texc_to(b, grdesc, sr, cx, cy,
+                                  bi_imm_u32(desc.packed), false, sr_count, 0);
          I->register_format = BI_REGISTER_FORMAT_U32;
 
          bi_emit_cached_split_i32(b, grdesc, 4);
@@ -3691,10 +3689,8 @@ bi_emit_texc(bi_builder *b, nir_tex_instr *instr)
 
    bi_index dst = bi_temp(b->shader);
 
-   uint32_t desc_u = 0;
-   memcpy(&desc_u, &desc, sizeof(desc_u));
    bi_instr *I =
-      bi_texc_to(b, dst, sr, cx, cy, bi_imm_u32(desc_u),
+      bi_texc_to(b, dst, sr, cx, cy, bi_imm_u32(desc.packed),
                  !nir_tex_instr_has_implicit_derivative(instr), sr_count, 0);
    I->register_format = bi_reg_fmt_for_nir(instr->dest_type);
 
