@@ -592,7 +592,6 @@ v3d_job_submit(struct v3d_context *v3d, struct v3d_job *job)
 
         if (!V3D_DBG(NORAST)) {
                 int ret;
-
                 ret = v3d_ioctl(v3d->fd, DRM_IOCTL_V3D_SUBMIT_CL, &job->submit);
                 static bool warned = false;
                 if (ret && !warned) {
@@ -602,6 +601,10 @@ v3d_job_submit(struct v3d_context *v3d, struct v3d_job *job)
                 } else if (!ret) {
                         if (v3d->active_perfmon)
                                 v3d->active_perfmon->job_submitted = true;
+                        if (V3D_DBG(SYNC)) {
+                                drmSyncobjWait(v3d->fd, &v3d->out_sync, 1, INT64_MAX,
+                                               DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, NULL);
+                        }
                 }
 
                 /* If we are submitting a job in the middle of transform

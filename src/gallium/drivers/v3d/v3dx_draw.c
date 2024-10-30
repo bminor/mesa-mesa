@@ -1601,6 +1601,10 @@ v3d_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
                 } else if (!ret) {
                         if (v3d->active_perfmon)
                                 v3d->active_perfmon->job_submitted = true;
+                        if (V3D_DBG(SYNC)) {
+                                drmSyncobjWait(v3d->fd, &v3d->out_sync, 1, INT64_MAX,
+                                               DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, NULL);
+                        }
                 }
         }
 
