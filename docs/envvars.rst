@@ -1487,6 +1487,11 @@ RADV driver environment variables
 
    enable/disable SQTT/RGP queue events (enabled by default)
 
+.. envvar:: RADV_TRAP_HANDLER
+
+   enable/disable the experimental trap handler for debugging GPU hangs on GFX8
+   (disabled by default)
+
 .. envvar:: RADV_RRA_TRACE_VALIDATE
 
    enable validation of captured acceleration structures. Can be
