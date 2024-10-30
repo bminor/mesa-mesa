@@ -384,7 +384,7 @@
         "description": "vulkan/rmv: Correctly set heap size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "845792db735893a4e42a0cf7949464bed2180eea",
         "notes": null
