@@ -185,6 +185,7 @@ get_device_extensions(const struct panvk_physical_device *device,
                       struct vk_device_extension_table *ext)
 {
    *ext = (struct vk_device_extension_table){
+      .KHR_16bit_storage = true,
       .KHR_bind_memory2 = true,
       .KHR_buffer_device_address = true,
       .KHR_copy_commands2 = true,
@@ -260,7 +261,7 @@ get_features(const struct panvk_physical_device *device,
 
       /* Vulkan 1.1 */
       .storageBuffer16BitAccess = false,
-      .uniformAndStorageBuffer16BitAccess = false,
+      .uniformAndStorageBuffer16BitAccess = true,
       .storagePushConstant16 = false,
       .storageInputOutput16 = false,
       .multiview = false,
