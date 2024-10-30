@@ -1982,7 +1982,7 @@ agx_emit_alu(agx_builder *b, nir_alu_instr *instr)
          return agx_asr_to(b, dst, ishl16, agx_immediate(8));
       } else {
          assert(s0.size == AGX_SIZE_16 && "other conversions lowered");
-         return agx_iadd_to(b, dst, s0, i0, 0);
+         return agx_signext_to(b, dst, s0);
       }
    }
 
