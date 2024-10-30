@@ -197,6 +197,8 @@ agx_resource_from_handle(struct pipe_screen *pscreen,
    pipe_reference_init(&prsc->reference, 1);
    prsc->screen = pscreen;
 
+   prsc->bind |= PIPE_BIND_SHARED;
+
    rsc->bo = agx_bo_import(dev, whandle->handle);
    /* Sometimes an import can fail e.g. on an invalid buffer fd, out of
     * memory space to mmap it etc.
