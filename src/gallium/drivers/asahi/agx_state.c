@@ -4872,10 +4872,26 @@ agx_legalize_feedback_loops(struct agx_context *ctx)
 
                if (rsrc->layout.tiling == AIL_TILING_TWIDDLED_COMPRESSED) {
                   /* Decompress if we can and shadow if we can't. */
-                  if (rsrc->base.bind & PIPE_BIND_SHARED)
-                     unreachable("TODO");
-                  else
+                  if (rsrc->base.bind & PIPE_BIND_SHARED) {
+                     struct agx_batch *batch = agx_get_batch(ctx);
+
+                     /* If we already did in-place decompression for this one */
+                     if (batch->feedback & (PIPE_CLEAR_COLOR0 << i))
+                        continue;
+
+                     /* Use our current context batch. If it already touched
+                      * this buffer, that will have been flushed above.
+                      */
+                     agx_decompress_inplace(batch, ctx->framebuffer.cbufs[cb],
+                                            "Texture feedback loop");
+
+                     /* Mark it as a feedback cbuf, so it will be written to
+                      * uncompressed despite having a compressed layout.
+                      */
+                     batch->feedback |= PIPE_CLEAR_COLOR0 << i;
+                  } else {
                      agx_decompress(ctx, rsrc, "Texture feedback loop");
+                  }
                }
 
                /* Not required by the spec, just for debug */
