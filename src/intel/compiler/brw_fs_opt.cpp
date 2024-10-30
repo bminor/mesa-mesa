@@ -156,18 +156,20 @@ brw_fs_optimize(fs_visitor &s)
    progress = false;
    OPT(brw_fs_lower_derivatives);
    OPT(brw_fs_lower_regioning);
-   if (progress) {
-      /* Try both copy propagation passes.  The defs one will likely not be
-       * able to handle everything at this point.
-       */
-      const bool cp1 = OPT(brw_fs_opt_copy_propagation_defs);
-      const bool cp2 = OPT(brw_fs_opt_copy_propagation);
-      if (cp1 || cp2) {
-         OPT(brw_fs_opt_combine_constants);
-      }
-      OPT(brw_fs_opt_dead_code_eliminate);
+
+   /* Try both copy propagation passes.  The defs one will likely not be
+    * able to handle everything at this point.
+    */
+   const bool cp1 = OPT(brw_fs_opt_copy_propagation_defs);
+   const bool cp2 = OPT(brw_fs_opt_copy_propagation);
+   if (cp1 || cp2)
+      OPT(brw_fs_opt_combine_constants);
+
+   OPT(brw_fs_opt_dead_code_eliminate);
+   OPT(brw_fs_opt_register_coalesce);
+
+   if (progress)
       OPT(brw_fs_lower_simd_width);
-   }
 
    OPT(brw_fs_lower_sends_overlapping_payload);
 
