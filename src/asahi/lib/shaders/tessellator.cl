@@ -1274,6 +1274,8 @@ libagx_tess_quad(constant struct libagx_tess_args *p,
             DefineClockwiseTriangle(&ctx, 1, 2, 3, /*indexStorageOffset*/ 3);
          } else {
             libagx_draw_points(&ctx, p, patch, 4);
+            if (mode == LIBAGX_TESS_MODE_COUNT)
+               return;
          }
 
          global struct libagx_tess_point *points =
