@@ -1492,6 +1492,20 @@ RADV driver environment variables
    enable/disable the experimental trap handler for debugging GPU hangs on GFX8
    (disabled by default)
 
+.. envvar:: RADV_TRAP_HANDLER_EXCP
+
+  a comma-separated list of named flags to configure the trap handler
+  exceptions, see the list below:
+
+  ``mem_viol``
+    enable memory violation exception
+  ``float_div_by_zero``
+    enable floating point division by zero exception
+  ``float_overflow``
+    enable floating point overflow exception
+  ``float_underflow``
+    enable floating point underflow exception
+
 .. envvar:: RADV_RRA_TRACE_VALIDATE
 
    enable validation of captured acceleration structures. Can be

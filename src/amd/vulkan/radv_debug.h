@@ -81,6 +81,13 @@ enum {
    RADV_PERFTEST_VIDEO_ENCODE = 1u << 16,
 };
 
+enum {
+   RADV_TRAP_EXCP_MEM_VIOL = 1u << 0,
+   RADV_TRAP_EXCP_FLOAT_DIV_BY_ZERO = 1u << 1,
+   RADV_TRAP_EXCP_FLOAT_OVERFLOW = 1u << 2,
+   RADV_TRAP_EXCP_FLOAT_UNDERFLOW = 1u << 3,
+};
+
 bool radv_init_trace(struct radv_device *device);
 void radv_finish_trace(struct radv_device *device);
 

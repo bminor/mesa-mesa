@@ -1889,6 +1889,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
                                const struct radv_shader_args *args)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    struct ac_shader_config *config = &binary->config;
 
    if (binary->type == RADV_BINARY_TYPE_RTLD) {
@@ -1940,6 +1941,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
           (pdev->info.gfx_level < GFX10 && num_shared_vgprs == 0));
    unsigned num_shared_vgpr_blocks = num_shared_vgprs / 8;
    unsigned excp_en = 0, excp_en_msb = 0;
+   bool dx10_clamp = pdev->info.gfx_level < GFX12;
 
    config->num_vgprs = num_vgprs;
    config->num_sgprs = num_sgprs;
@@ -1949,11 +1951,24 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
                    S_00B12C_TRAP_PRESENT(trap_enabled);
 
    if (trap_enabled) {
-      /* Configure the shader exceptions like memory violation, etc.
-       * TODO: Enable (and validate) more exceptions.
-       */
-      excp_en = 1 << 8;     /* mem_viol for the graphics stages */
-      excp_en_msb = 1 << 1; /* mem_viol for the compute stage */
+      /* Configure the shader exceptions like memory violation, etc. */
+      if (instance->trap_excp_flags & RADV_TRAP_EXCP_MEM_VIOL) {
+         excp_en |= 1 << 8;     /* for the graphics stages */
+         excp_en_msb |= 1 << 1; /* for the compute stage */
+      }
+
+      if (instance->trap_excp_flags & RADV_TRAP_EXCP_FLOAT_DIV_BY_ZERO)
+         excp_en |= 1 << 2;
+      if (instance->trap_excp_flags & RADV_TRAP_EXCP_FLOAT_OVERFLOW)
+         excp_en |= 1 << 3;
+      if (instance->trap_excp_flags & RADV_TRAP_EXCP_FLOAT_UNDERFLOW)
+         excp_en |= 1 << 4;
+
+      if (instance->trap_excp_flags &
+          (RADV_TRAP_EXCP_FLOAT_DIV_BY_ZERO | RADV_TRAP_EXCP_FLOAT_OVERFLOW | RADV_TRAP_EXCP_FLOAT_UNDERFLOW)) {
+         /* It seems needed to disable DX10_CLAMP, otherwise the float exceptions aren't thrown. */
+         dx10_clamp = false;
+      }
    }
 
    if (!pdev->use_ngg_streamout) {
@@ -1962,8 +1977,8 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
                        S_00B12C_SO_EN(!!info->so.num_outputs);
    }
 
-   config->rsrc1 = S_00B848_VGPRS((num_vgprs - 1) / (info->wave_size == 32 ? 8 : 4)) |
-                   S_00B848_DX10_CLAMP(pdev->info.gfx_level < GFX12) | S_00B848_FLOAT_MODE(config->float_mode);
+   config->rsrc1 = S_00B848_VGPRS((num_vgprs - 1) / (info->wave_size == 32 ? 8 : 4)) | S_00B848_DX10_CLAMP(dx10_clamp) |
+                   S_00B848_FLOAT_MODE(config->float_mode);
 
    if (pdev->info.gfx_level >= GFX10) {
       config->rsrc2 |= S_00B22C_USER_SGPR_MSB_GFX10(args->num_user_sgprs >> 5);
