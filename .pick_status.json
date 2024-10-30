@@ -514,7 +514,7 @@
         "description": "radv: Flush L2 cache for non-L2-coherent images in EndCommandBuffer.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7c62f6fa01d7c0d9d7eabec1c545950af20d0c92",
         "notes": null
