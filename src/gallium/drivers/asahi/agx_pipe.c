@@ -114,7 +114,7 @@ agx_resource_debug(struct agx_resource *res, const char *msg)
 
    agx_msg(
       "%s%s %dx%dx%d %dL %d/%dM %dS M:%llx %s %s%s S:0x%llx LS:0x%llx CS:0x%llx "
-      "Base=0x%llx Size=0x%llx Meta=0x%llx/0x%llx (%s) %s%s%s%s%s%sfd:%d(%d) @ %p\n",
+      "Base=0x%llx Size=0x%llx Meta=0x%llx/0x%llx (%s) %s%s%s%s%s%sfd:%d(%d) B:%x @ %p\n",
       msg ?: "", util_format_short_name(res->base.format), res->base.width0,
       res->base.height0, res->base.depth0, res->base.array_size,
       res->base.last_level, res->layout.levels, res->layout.sample_count_sa,
@@ -135,7 +135,7 @@ agx_resource_debug(struct agx_resource *res, const char *msg)
       res->bo->flags & AGX_BO_WRITEBACK ? "WB " : "",
       res->bo->flags & AGX_BO_SHAREABLE ? "SA " : "",
       res->bo->flags & AGX_BO_READONLY ? "RO " : "", res->bo->prime_fd, ino,
-      res);
+      res->base.bind, res);
 }
 
 static void
