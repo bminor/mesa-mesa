@@ -468,6 +468,24 @@ agx_optimizer_bitop(agx_instr **defs, agx_instr *I)
    }
 }
 
+/*
+ * Fuse sign-extends into addition-like instructions:
+ */
+static void
+agx_optimizer_signext(agx_instr **defs, agx_instr *I)
+{
+   agx_foreach_ssa_src(I, s) {
+      agx_index src = I->src[s];
+      agx_instr *def = defs[src.value];
+
+      if (def == NULL || def->op != AGX_OPCODE_SIGNEXT)
+         continue;
+
+      agx_replace_src(I, s, def->src[0]);
+      assert(!I->src[s].abs && "sign-extended");
+   }
+}
+
 void
 agx_optimizer_forward(agx_context *ctx)
 {
@@ -504,6 +522,8 @@ agx_optimizer_forward(agx_context *ctx)
          agx_optimizer_ballot(ctx, defs, I);
       } else if (I->op == AGX_OPCODE_BITOP) {
          agx_optimizer_bitop(defs, I);
+      } else if (I->op == AGX_OPCODE_IADD) {
+         agx_optimizer_signext(defs, I);
       }
    }
 
