@@ -3256,7 +3256,9 @@ agx_build_bg_eot(struct agx_batch *batch, bool store, bool partial_render)
          /* The tilebuffer is already in sRGB space if needed. Do not convert */
          view.format = util_format_linear(view.format);
 
-         agx_batch_upload_pbe(batch, pbe.cpu, &view, true, true, false, false);
+         bool no_compress = batch->feedback & (PIPE_CLEAR_COLOR0 << rt);
+         agx_batch_upload_pbe(batch, pbe.cpu, &view, true, true, false,
+                              no_compress);
 
          agx_usc_pack(&b, TEXTURE, cfg) {
             cfg.start = rt;
