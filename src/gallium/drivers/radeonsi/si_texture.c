@@ -1394,17 +1394,9 @@ si_texture_create_with_modifier(struct pipe_screen *screen,
     */
    bool tc_compatible_htile = is_zs && !is_flushed_depth &&
                               !(sscreen->debug_flags & DBG(NO_HYPERZ)) &&
-                              sscreen->info.has_tc_compatible_htile;
-   if (sscreen->info.gfx_level < GFX11) {
-      tc_compatible_htile &=
-         /* There are issues with TC-compatible HTILE on Tonga (and
-          * Iceland is the same design), and documented bug workarounds
-          * don't help. For example, this fails:
-          *   piglit/bin/tex-miplevel-selection 'texture()' 2DShadow -auto
-          */
-         sscreen->info.family != CHIP_TONGA && sscreen->info.family != CHIP_ICELAND &&
-         templ->flags & PIPE_RESOURCE_FLAG_TEXTURING_MORE_LIKELY;
-   }
+                              sscreen->info.has_tc_compatible_htile &&
+                              (sscreen->info.gfx_level >= GFX11 ||
+                               templ->flags & PIPE_RESOURCE_FLAG_TEXTURING_MORE_LIKELY);
 
    enum radeon_surf_mode tile_mode = si_choose_tiling(sscreen, templ, tc_compatible_htile);
 

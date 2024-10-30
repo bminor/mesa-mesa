@@ -75,12 +75,6 @@ radv_use_tc_compat_htile_for_image(struct radv_device *device, const VkImageCrea
    if (!pdev->info.has_tc_compatible_htile)
       return false;
 
-   /* TC-compat HTILE looks broken on Tonga (and Iceland is the same design) and the documented bug
-    * workarounds don't help.
-    */
-   if (pdev->info.family == CHIP_TONGA || pdev->info.family == CHIP_ICELAND)
-      return false;
-
    if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR)
       return false;
 
