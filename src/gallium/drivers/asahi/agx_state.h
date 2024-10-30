@@ -1244,3 +1244,6 @@ agx_texture_buffer_size_el(enum pipe_format format, uint32_t size)
 
    return MIN2(AGX_TEXTURE_BUFFER_MAX_SIZE, size / blocksize);
 }
+
+void agx_decompress_inplace(struct agx_batch *batch, struct pipe_surface *surf,
+                            const char *reason);

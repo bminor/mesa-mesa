@@ -3483,40 +3483,7 @@ agx_batch_init_state(struct agx_batch *batch)
             continue;
 
          if (true || (rsrc->base.bind & PIPE_BIND_SHARED)) {
-            struct agx_context *ctx = batch->ctx;
-            struct agx_device *dev = agx_device(ctx->base.screen);
-
-            perf_debug(dev, "Decompressing in-place");
-
-            if (!batch->cdm.bo)
-               batch->cdm = agx_encoder_allocate(batch, dev);
-
-            struct agx_ptr data = agx_pool_alloc_aligned(
-               &batch->pool, sizeof(struct libagx_decompress_push), 64);
-            struct libagx_decompress_push *push = data.cpu;
-            agx_fill_decompress_push(push, layout, surf->u.tex.first_layer,
-                                     level, agx_map_texture_gpu(rsrc, 0));
-
-            struct pipe_sampler_view sampler_view =
-               sampler_view_for_surface(surf);
-            sampler_view.target = PIPE_TEXTURE_2D_ARRAY;
-            struct pipe_image_view view = image_view_for_surface(surf);
-            agx_pack_texture(&push->compressed, rsrc, surf->format,
-                             &sampler_view);
-            agx_batch_upload_pbe(batch, &push->uncompressed, &view, false, true,
-                                 true, true);
-
-            struct agx_grid grid = agx_grid_direct(
-               ail_metadata_width_tl(layout, level) * 32,
-               ail_metadata_height_tl(layout, level),
-               surf->u.tex.last_layer - surf->u.tex.first_layer + 1, 32, 1, 1);
-
-            struct agx_decompress_key key = {
-               .nr_samples = layout->sample_count_sa,
-            };
-
-            agx_launch_with_uploaded_data(batch, &grid, agx_nir_decompress,
-                                          &key, sizeof(key), data.gpu);
+            agx_decompress_inplace(batch, surf, "Render target spilled");
          } else {
             agx_decompress(batch->ctx, rsrc, "Render target spilled");
          }
@@ -5620,6 +5587,47 @@ agx_set_global_binding(struct pipe_context *pipe, unsigned first,
 }
 
 void agx_init_state_functions(struct pipe_context *ctx);
+
+void
+agx_decompress_inplace(struct agx_batch *batch, struct pipe_surface *surf,
+                       const char *reason)
+{
+   struct agx_context *ctx = batch->ctx;
+   struct agx_device *dev = agx_device(ctx->base.screen);
+   struct agx_resource *rsrc = agx_resource(surf->texture);
+   struct ail_layout *layout = &rsrc->layout;
+   unsigned level = surf->u.tex.level;
+
+   perf_debug(dev, "Decompressing in-place due to: %s", reason);
+
+   if (!batch->cdm.bo)
+      batch->cdm = agx_encoder_allocate(batch, dev);
+
+   struct agx_ptr data = agx_pool_alloc_aligned(
+      &batch->pool, sizeof(struct libagx_decompress_push), 64);
+   struct libagx_decompress_push *push = data.cpu;
+   agx_fill_decompress_push(push, layout, surf->u.tex.first_layer, level,
+                            agx_map_texture_gpu(rsrc, 0));
+
+   struct pipe_sampler_view sampler_view = sampler_view_for_surface(surf);
+   sampler_view.target = PIPE_TEXTURE_2D_ARRAY;
+   struct pipe_image_view view = image_view_for_surface(surf);
+   agx_pack_texture(&push->compressed, rsrc, surf->format, &sampler_view);
+   agx_batch_upload_pbe(batch, &push->uncompressed, &view, false, true, true,
+                        true);
+
+   struct agx_grid grid = agx_grid_direct(
+      ail_metadata_width_tl(layout, level) * 32,
+      ail_metadata_height_tl(layout, level),
+      surf->u.tex.last_layer - surf->u.tex.first_layer + 1, 32, 1, 1);
+
+   struct agx_decompress_key key = {
+      .nr_samples = layout->sample_count_sa,
+   };
+
+   agx_launch_with_uploaded_data(batch, &grid, agx_nir_decompress, &key,
+                                 sizeof(key), data.gpu);
+}
 
 void
 agx_init_state_functions(struct pipe_context *ctx)
