@@ -238,7 +238,7 @@ static int si_init_surface(struct si_screen *sscreen, struct radeon_surf *surfac
          surface->u.gfx9.color.dcc_data_format = ac_get_cb_format(sscreen->info.gfx_level, format);
       }
 
-      if (surface->modifier == DRM_FORMAT_MOD_INVALID &&
+      if (modifier == DRM_FORMAT_MOD_INVALID &&
           (ptex->bind & PIPE_BIND_CONST_BW ||
            sscreen->debug_flags & DBG(NO_DCC) ||
            (ptex->bind & PIPE_BIND_SCANOUT && sscreen->debug_flags & DBG(NO_DISPLAY_DCC))))
