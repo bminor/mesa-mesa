@@ -684,6 +684,7 @@ custom_decodes = {
     "vkDestroyShaderModule": emit_global_state_wrapped_decoding,
     "vkCreatePipelineCache": emit_global_state_wrapped_decoding,
     "vkDestroyPipelineCache": emit_global_state_wrapped_decoding,
+    "vkCreateComputePipelines": emit_global_state_wrapped_decoding,
     "vkCreateGraphicsPipelines": emit_global_state_wrapped_decoding,
     "vkDestroyPipeline": emit_global_state_wrapped_decoding,
 
