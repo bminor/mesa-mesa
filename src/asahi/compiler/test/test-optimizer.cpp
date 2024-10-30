@@ -305,7 +305,7 @@ TEST_F(Optimizer, IntCopypropDoesntConvert)
    NEGCASE32({
       agx_index cvt = agx_temp(b->shader, AGX_SIZE_32);
       agx_mov_to(b, cvt, hx);
-      agx_xor_to(b, out, cvt, wy);
+      agx_fmul_to(b, out, cvt, wy);
    });
 }
 
