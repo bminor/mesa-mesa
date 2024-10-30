@@ -1939,7 +1939,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
    assert((pdev->info.gfx_level >= GFX10 && num_shared_vgprs % 8 == 0) ||
           (pdev->info.gfx_level < GFX10 && num_shared_vgprs == 0));
    unsigned num_shared_vgpr_blocks = num_shared_vgprs / 8;
-   unsigned excp_en = 0;
+   unsigned excp_en = 0, excp_en_msb = 0;
 
    config->num_vgprs = num_vgprs;
    config->num_sgprs = num_sgprs;
@@ -1952,7 +1952,8 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
       /* Configure the shader exceptions like memory violation, etc.
        * TODO: Enable (and validate) more exceptions.
        */
-      excp_en = 1 << 8; /* mem_viol */
+      excp_en = 1 << 8;     /* mem_viol for the graphics stages */
+      excp_en_msb = 1 << 1; /* mem_viol for the compute stage */
    }
 
    if (!pdev->use_ngg_streamout) {
@@ -2097,7 +2098,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
                                                : info->cs.uses_thread_id[1] ? 1
                                                                             : 0) |
                        S_00B84C_TG_SIZE_EN(info->cs.uses_local_invocation_idx) | S_00B84C_LDS_SIZE(config->lds_size) |
-                       S_00B84C_EXCP_EN(excp_en);
+                       S_00B84C_EXCP_EN(excp_en) | S_00B84C_EXCP_EN_MSB(excp_en_msb);
       config->rsrc3 |= S_00B8A0_SHARED_VGPR_CNT(num_shared_vgpr_blocks);
 
       break;
