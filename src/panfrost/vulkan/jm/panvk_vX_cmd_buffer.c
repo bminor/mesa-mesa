@@ -142,8 +142,8 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
                                     pan_sample_pattern(fbinfo->nr_samples));
 
       if (batch->vtc_jc.first_tiler) {
-         VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf);
-	 if (result != VK_SUCCESS)
+         VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf, fbinfo);
+         if (result != VK_SUCCESS)
             return;
       }
 

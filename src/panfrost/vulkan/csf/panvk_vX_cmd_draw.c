@@ -997,7 +997,7 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
       dev->sample_positions->addr.dev +
       panfrost_sample_positions_offset(pan_sample_pattern(fbinfo->nr_samples));
 
-   VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf);
+   VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf, fbinfo);
    if (result != VK_SUCCESS)
       return result;
 

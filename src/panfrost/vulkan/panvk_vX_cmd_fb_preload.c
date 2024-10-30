@@ -210,10 +210,8 @@ out:
 }
 
 static VkResult
-alloc_pre_post_dcds(struct panvk_cmd_buffer *cmdbuf)
+alloc_pre_post_dcds(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo)
 {
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
-
    if (fbinfo->bifrost.pre_post.dcds.gpu)
       return VK_SUCCESS;
 
@@ -244,12 +242,10 @@ get_reg_fmt(nir_alu_type type)
 }
 
 static void
-fill_textures(struct panvk_cmd_buffer *cmdbuf,
+fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
               const struct panvk_fb_preload_shader_key *key,
               struct mali_texture_packed *textures)
 {
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
-
    if (key->aspects == VK_IMAGE_ASPECT_COLOR_BIT) {
       for (unsigned i = 0; i < fbinfo->rt_count; i++) {
          struct panvk_image_view *iview =
@@ -286,11 +282,10 @@ fill_textures(struct panvk_cmd_buffer *cmdbuf,
 }
 
 static void
-fill_bds(struct panvk_cmd_buffer *cmdbuf,
+fill_bds(struct pan_fb_info *fbinfo,
          const struct panvk_fb_preload_shader_key *key,
          struct mali_blend_packed *bds)
 {
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    uint32_t bd_count = MAX2(fbinfo->rt_count, 1);
 
    for (unsigned i = 0; i < bd_count; i++) {
@@ -329,11 +324,10 @@ fill_bds(struct panvk_cmd_buffer *cmdbuf,
 
 #if PAN_ARCH <= 7
 static VkResult
-cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
+cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
              const struct panvk_fb_preload_shader_key *key)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct panvk_internal_shader *shader = NULL;
 
    VkResult result = get_preload_shader(dev, key, &shader);
@@ -399,7 +393,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
             key->aspects == VK_IMAGE_ASPECT_COLOR_BIT;
    }
 
-   fill_bds(cmdbuf, key, rsd.cpu + pan_size(RENDERER_STATE));
+   fill_bds(fbinfo, key, rsd.cpu + pan_size(RENDERER_STATE));
 
    struct panvk_batch *batch = cmdbuf->cur_batch;
    uint16_t minx = 0, miny = 0, maxx, maxy;
@@ -438,9 +432,9 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
    if (!textures.cpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   fill_textures(cmdbuf, key, textures.cpu);
+   fill_textures(cmdbuf, fbinfo, key, textures.cpu);
 
-   result = alloc_pre_post_dcds(cmdbuf);
+   result = alloc_pre_post_dcds(cmdbuf, fbinfo);
    if (result != VK_SUCCESS)
       return result;
 
@@ -526,11 +520,10 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
 }
 #else
 static VkResult
-cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
+cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
              struct panvk_fb_preload_shader_key *key)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct panvk_internal_shader *shader = NULL;
 
    VkResult result = get_preload_shader(dev, key, &shader);
@@ -564,10 +557,10 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
       cfg.magnify_nearest = true;
    }
 
-   fill_textures(cmdbuf, key, descs.cpu + PANVK_DESCRIPTOR_SIZE);
+   fill_textures(cmdbuf, fbinfo, key, descs.cpu + PANVK_DESCRIPTOR_SIZE);
 
    if (key->aspects == VK_IMAGE_ASPECT_COLOR_BIT)
-      fill_bds(cmdbuf, key, bds.cpu);
+      fill_bds(fbinfo, key, bds.cpu);
 
    struct panfrost_ptr res_table = panvk_cmd_alloc_desc(cmdbuf, RESOURCE);
    if (!res_table.cpu)
@@ -614,7 +607,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
       cfg.depth_cull_enable = false;
    }
 
-   result = alloc_pre_post_dcds(cmdbuf);
+   result = alloc_pre_post_dcds(cmdbuf, fbinfo);
    if (result != VK_SUCCESS)
       return result;
 
@@ -673,10 +666,9 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
 #endif
 
 static VkResult
-cmd_preload_zs_attachments(struct panvk_cmd_buffer *cmdbuf)
+cmd_preload_zs_attachments(struct panvk_cmd_buffer *cmdbuf,
+                           struct pan_fb_info *fbinfo)
 {
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
-
    if (!fbinfo->zs.preload.s && !fbinfo->zs.preload.z)
       return VK_SUCCESS;
 
@@ -707,13 +699,13 @@ cmd_preload_zs_attachments(struct panvk_cmd_buffer *cmdbuf)
       assert(key.view_type == view_type);
    }
 
-   return cmd_emit_dcd(cmdbuf, &key);
+   return cmd_emit_dcd(cmdbuf, fbinfo, &key);
 }
 
 static VkResult
-cmd_preload_color_attachments(struct panvk_cmd_buffer *cmdbuf)
+cmd_preload_color_attachments(struct panvk_cmd_buffer *cmdbuf,
+                              struct pan_fb_info *fbinfo)
 {
-   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct panvk_fb_preload_shader_key key = {
       .type = PANVK_META_OBJECT_KEY_FB_PRELOAD_SHADER,
       .samples = fbinfo->nr_samples,
@@ -745,15 +737,16 @@ cmd_preload_color_attachments(struct panvk_cmd_buffer *cmdbuf)
    if (!needs_preload)
       return VK_SUCCESS;
 
-   return cmd_emit_dcd(cmdbuf, &key);
+   return cmd_emit_dcd(cmdbuf, fbinfo, &key);
 }
 
 VkResult
-panvk_per_arch(cmd_fb_preload)(struct panvk_cmd_buffer *cmdbuf)
+panvk_per_arch(cmd_fb_preload)(struct panvk_cmd_buffer *cmdbuf,
+                               struct pan_fb_info *fbinfo)
 {
-   VkResult result = cmd_preload_color_attachments(cmdbuf);
+   VkResult result = cmd_preload_color_attachments(cmdbuf, fbinfo);
    if (result != VK_SUCCESS)
       return result;
 
-   return cmd_preload_zs_attachments(cmdbuf);
+   return cmd_preload_zs_attachments(cmdbuf, fbinfo);
 }
