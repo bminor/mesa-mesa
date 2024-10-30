@@ -1437,6 +1437,7 @@ Converter::getMemAccessSizeAlign(nir_intrinsic_op intrin,
       .num_components = (uint8_t) (bytes / (bit_size / 8)),
       .bit_size = (uint8_t) bit_size,
       .align = (uint16_t) bytes,
+      .shift = nir_mem_access_shift_method_scalar,
    };
 }
 

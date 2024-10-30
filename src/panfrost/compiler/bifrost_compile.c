@@ -4768,6 +4768,7 @@ mem_access_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
       .num_components = num_comps,
       .bit_size = bit_size,
       .align = bit_size / 8,
+      .shift = nir_mem_access_shift_method_scalar,
    };
 }
 

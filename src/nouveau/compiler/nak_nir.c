@@ -857,6 +857,7 @@ nak_mem_access_size_align(nir_intrinsic_op intrin,
             .bit_size = 32,
             .num_components = 1,
             .align = 4,
+            .shift = nir_mem_access_shift_method_scalar,
          };
       } else {
          assert(align == 1);
@@ -864,6 +865,7 @@ nak_mem_access_size_align(nir_intrinsic_op intrin,
             .bit_size = 8,
             .num_components = 1,
             .align = 1,
+            .shift = nir_mem_access_shift_method_scalar,
          };
       }
    } else if (chunk_bytes < 4) {
@@ -871,12 +873,14 @@ nak_mem_access_size_align(nir_intrinsic_op intrin,
          .bit_size = chunk_bytes * 8,
          .num_components = 1,
          .align = chunk_bytes,
+         .shift = nir_mem_access_shift_method_scalar,
       };
    } else {
       return (nir_mem_access_size_align) {
          .bit_size = 32,
          .num_components = chunk_bytes / 4,
          .align = chunk_bytes,
+         .shift = nir_mem_access_shift_method_scalar,
       };
    }
 }

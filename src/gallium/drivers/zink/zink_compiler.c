@@ -5728,12 +5728,14 @@ mem_access_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
          .num_components = MIN2(bytes / align, 4),
          .bit_size = align * 8,
          .align = align,
+         .shift = nir_mem_access_shift_method_scalar,
       };
    } else {
       return (nir_mem_access_size_align){
          .num_components = MIN2(bytes / (bit_size / 8), 4),
          .bit_size = bit_size,
          .align = bit_size / 8,
+         .shift = nir_mem_access_shift_method_scalar,
       };
    }
 }
@@ -5753,6 +5755,7 @@ mem_access_scratch_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
       .num_components = MIN2(bytes / (bit_size / 8), 4),
       .bit_size = bit_size,
       .align = bit_size / 8,
+      .shift = nir_mem_access_shift_method_scalar,
    };
 }
 

@@ -138,6 +138,7 @@ v3d_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
                         .num_components = 1,
                         .bit_size = 32,
                         .align = 4,
+                        .shift = nir_mem_access_shift_method_scalar,
                 };
         }
 
@@ -177,6 +178,7 @@ v3d_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
                 .num_components = num_components,
                 .bit_size = bit_size,
                 .align = (bit_size / 8) * (num_components == 3 ? 4 : num_components),
+                .shift = nir_mem_access_shift_method_scalar,
         };
 }
 

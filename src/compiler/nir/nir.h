@@ -5882,10 +5882,27 @@ bool nir_lower_explicit_io(nir_shader *shader,
                            nir_variable_mode modes,
                            nir_address_format);
 
+typedef enum {
+   /* Use open-coded funnel shifts for each component. */
+   nir_mem_access_shift_method_scalar,
+   /* Prefer to use 64-bit shifts to do the same with less instructions. Useful
+    * if 64-bit shifts are cheap.
+    */
+   nir_mem_access_shift_method_shift64,
+   /* If nir_op_alignbyte_amd can be used, this is the best option with just a
+    * single nir_op_alignbyte_amd for each 32-bit components.
+    */
+   nir_mem_access_shift_method_bytealign_amd,
+} nir_mem_access_shift_method;
+
 typedef struct {
    uint8_t num_components;
    uint8_t bit_size;
    uint16_t align;
+   /* If a load's alignment is increased, this specifies how the data should be
+    * shifted before converting to the original bit size.
+    */
+   nir_mem_access_shift_method shift;
 } nir_mem_access_size_align;
 
 /* clang-format off */
