@@ -389,6 +389,10 @@
  *    * 32-bit transform feedback only
  *    * 16-bit transform feedback only
  *
+ *    When the driver/hw can't mix different interpolation qualifiers
+ *    in the same vec4, the interpolated groups are further split into 6
+ *    groups, one for each qualifier.
+ *
  *    Then, all scalar varyings are relocated into new slots, starting from
  *    VAR0.x and increasing the scalar slot offset in 32-bit or 16-bit
  *    increments. Rules:
@@ -509,26 +513,78 @@
 enum fs_vec4_type {
    FS_VEC4_TYPE_NONE = 0,
    FS_VEC4_TYPE_FLAT,
-   FS_VEC4_TYPE_INTERP_FP32,
-   FS_VEC4_TYPE_INTERP_FP16,
-   FS_VEC4_TYPE_INTERP_COLOR,
    FS_VEC4_TYPE_INTERP_EXPLICIT,
    FS_VEC4_TYPE_INTERP_EXPLICIT_STRICT,
    FS_VEC4_TYPE_PER_PRIMITIVE,
+   /* When nir_io_has_flexible_input_interpolation_except_flat is set: */
+   FS_VEC4_TYPE_INTERP_FP32,
+   FS_VEC4_TYPE_INTERP_FP16,
+   FS_VEC4_TYPE_INTERP_COLOR, /* only for glShadeModel, i.e. INTERP_MODE_NONE */
+   /* When nir_io_has_flexible_input_interpolation_except_flat is not set: */
+   FS_VEC4_TYPE_INTERP_FP32_PERSP_PIXEL,
+   FS_VEC4_TYPE_INTERP_FP32_PERSP_CENTROID,
+   FS_VEC4_TYPE_INTERP_FP32_PERSP_SAMPLE,
+   FS_VEC4_TYPE_INTERP_FP32_LINEAR_PIXEL,
+   FS_VEC4_TYPE_INTERP_FP32_LINEAR_CENTROID,
+   FS_VEC4_TYPE_INTERP_FP32_LINEAR_SAMPLE,
+   FS_VEC4_TYPE_INTERP_FP16_PERSP_PIXEL,
+   FS_VEC4_TYPE_INTERP_FP16_PERSP_CENTROID,
+   FS_VEC4_TYPE_INTERP_FP16_PERSP_SAMPLE,
+   FS_VEC4_TYPE_INTERP_FP16_LINEAR_PIXEL,
+   FS_VEC4_TYPE_INTERP_FP16_LINEAR_CENTROID,
+   FS_VEC4_TYPE_INTERP_FP16_LINEAR_SAMPLE,
+   FS_VEC4_TYPE_INTERP_COLOR_PIXEL,    /* only for glShadeModel, i.e. INTERP_MODE_NONE */
+   FS_VEC4_TYPE_INTERP_COLOR_CENTROID, /* same */
+   FS_VEC4_TYPE_INTERP_COLOR_SAMPLE,   /* same */
+};
+
+enum {
+   PERSP_PIXEL,
+   PERSP_CENTROID,
+   PERSP_SAMPLE,
+   LINEAR_PIXEL,
+   LINEAR_CENTROID,
+   LINEAR_SAMPLE,
+   NUM_INTERP_QUALIFIERS,
+};
+
+enum {
+   COLOR_PIXEL,
+   COLOR_CENTROID,
+   COLOR_SAMPLE,
+   NUM_COLOR_QUALIFIERS,
 };
 
 #if PRINT_RELOCATE_SLOT
 static const char *fs_vec4_type_strings[] = {
    "NONE",
    "FLAT",
-   "INTERP_FP32",
-   "INTERP_FP16",
-   "INTERP_COLOR",
    "INTERP_EXPLICIT",
    "INTERP_EXPLICIT_STRICT",
    "PER_PRIMITIVE",
+   "INTERP_FP32",
+   "INTERP_FP16",
+   "INTERP_COLOR",
+   "INTERP_FP32_PERSP_PIXEL",
+   "INTERP_FP32_PERSP_CENTROID",
+   "INTERP_FP32_PERSP_SAMPLE",
+   "INTERP_FP32_LINEAR_PIXEL",
+   "INTERP_FP32_LINEAR_CENTROID",
+   "INTERP_FP32_LINEAR_SAMPLE",
+   "INTERP_FP16_PERSP_PIXEL",
+   "INTERP_FP16_PERSP_CENTROID",
+   "INTERP_FP16_PERSP_SAMPLE",
+   "INTERP_FP16_LINEAR_PIXEL",
+   "INTERP_FP16_LINEAR_CENTROID",
+   "INTERP_FP16_LINEAR_SAMPLE",
+   "INTERP_COLOR_PIXEL",
+   "INTERP_COLOR_CENTROID",
+   "INTERP_COLOR_SAMPLE",
 };
 #endif // PRINT_RELOCATE_SLOT
+
+typedef BITSET_WORD INTERP_QUAL_BITSET[NUM_INTERP_QUALIFIERS][BITSET_WORDS(NUM_SCALAR_SLOTS)];
+typedef BITSET_WORD COLOR_QUAL_BITSET[NUM_COLOR_QUALIFIERS][BITSET_WORDS(NUM_SCALAR_SLOTS)];
 
 static unsigned
 get_scalar_16bit_slot(nir_io_semantics sem, unsigned component)
@@ -598,6 +654,7 @@ struct linkage_info {
    bool can_move_uniforms;
    bool can_move_ubos;
    bool can_mix_convergent_flat_with_interpolated;
+   bool has_flexible_interp;
    bool always_interpolate_convergent_fs_inputs;
 
    gl_shader_stage producer_stage;
@@ -667,6 +724,13 @@ struct linkage_info {
    /* Color interpolation unqualified (follows the flat-shade state). */
    BITSET_DECLARE(color32_mask, NUM_SCALAR_SLOTS);
 
+   /* A separate bitmask for each qualifier when
+    * nir_io_has_flexible_input_interpolation_except_flat is not set.
+    */
+   INTERP_QUAL_BITSET interp_fp32_qual_masks;
+   INTERP_QUAL_BITSET interp_fp16_qual_masks;
+   COLOR_QUAL_BITSET color32_qual_masks;
+
    /* Mask of output components that have only one store instruction, or if
     * they have multiple store instructions, all those instructions store
     * the same value. If the output has multiple vertices, all vertices store
@@ -701,6 +765,12 @@ struct linkage_info {
 #define BITSET_TEST32(m, b) \
    (BITSET_TEST(m, (b) & ~0x1) || BITSET_TEST(m, ((b) & ~0x1) + 1))
 
+#define BITSET3_TEST_ANY(bitsets, b) (BITSET_TEST((bitsets)[0], (b)) || \
+                                      BITSET_TEST((bitsets)[1], (b)) || \
+                                      BITSET_TEST((bitsets)[2], (b)))
+#define BITSET6_TEST_ANY(bitsets, b) (BITSET3_TEST_ANY((bitsets), (b)) || \
+                                      BITSET3_TEST_ANY(&(bitsets)[3], (b)))
+
 static void
 print_linkage(struct linkage_info *linkage)
 {
@@ -725,6 +795,10 @@ print_linkage(struct linkage_info *linkage)
           !BITSET_TEST(linkage->no_varying16_mask, i) &&
           !BITSET_TEST(linkage->interp_fp32_mask, i) &&
           !BITSET_TEST(linkage->interp_fp16_mask, i) &&
+          !BITSET6_TEST_ANY(linkage->interp_fp32_qual_masks, i) &&
+          !BITSET6_TEST_ANY(linkage->interp_fp16_qual_masks, i) &&
+          !BITSET_TEST(linkage->color32_mask, i) &&
+          !BITSET3_TEST_ANY(linkage->color32_qual_masks, i) &&
           !BITSET_TEST(linkage->flat32_mask, i) &&
           !BITSET_TEST(linkage->flat16_mask, i) &&
           !BITSET_TEST(linkage->interp_explicit32_mask, i) &&
@@ -738,7 +812,7 @@ print_linkage(struct linkage_info *linkage)
           !BITSET_TEST(linkage->output_equal_mask, i))
          continue;
 
-      printf("  %7s.%c.%s: num_slots=%2u%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+      printf("  %7s.%c.%s: num_slots=%2u%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
              gl_varying_slot_name_for_stage(vec4_slot(i),
                                             linkage->producer_stage) + 13,
              "xyzw"[(i / 2) % 4],
@@ -753,7 +827,23 @@ print_linkage(struct linkage_info *linkage)
              BITSET_TEST(linkage->no_varying32_mask, i) ? " no_varying32" : "",
              BITSET_TEST(linkage->no_varying16_mask, i) ? " no_varying16" : "",
              BITSET_TEST(linkage->interp_fp32_mask, i) ? " interp_fp32" : "",
+             BITSET_TEST(linkage->interp_fp32_qual_masks[0], i) ? " interp_fp32_persp_pixel" : "",
+             BITSET_TEST(linkage->interp_fp32_qual_masks[1], i) ? " interp_fp32_persp_centroid" : "",
+             BITSET_TEST(linkage->interp_fp32_qual_masks[2], i) ? " interp_fp32_persp_sample" : "",
+             BITSET_TEST(linkage->interp_fp32_qual_masks[3], i) ? " interp_fp32_linear_pixel" : "",
+             BITSET_TEST(linkage->interp_fp32_qual_masks[4], i) ? " interp_fp32_linear_centroid" : "",
+             BITSET_TEST(linkage->interp_fp32_qual_masks[5], i) ? " interp_fp32_linear_sample" : "",
              BITSET_TEST(linkage->interp_fp16_mask, i) ? " interp_fp16" : "",
+             BITSET_TEST(linkage->interp_fp16_qual_masks[0], i) ? " interp_fp16_persp_pixel" : "",
+             BITSET_TEST(linkage->interp_fp16_qual_masks[1], i) ? " interp_fp16_persp_centroid" : "",
+             BITSET_TEST(linkage->interp_fp16_qual_masks[2], i) ? " interp_fp16_persp_sample" : "",
+             BITSET_TEST(linkage->interp_fp16_qual_masks[3], i) ? " interp_fp16_linear_pixel" : "",
+             BITSET_TEST(linkage->interp_fp16_qual_masks[4], i) ? " interp_fp16_linear_centroid" : "",
+             BITSET_TEST(linkage->interp_fp16_qual_masks[5], i) ? " interp_fp16_linear_sample" : "",
+             BITSET_TEST(linkage->color32_mask, i) ? " color32" : "",
+             BITSET_TEST(linkage->color32_qual_masks[0], i) ? " color32_pixel" : "",
+             BITSET_TEST(linkage->color32_qual_masks[1], i) ? " color32_centroid" : "",
+             BITSET_TEST(linkage->color32_qual_masks[2], i) ? " color32_sample" : "",
              BITSET_TEST(linkage->flat32_mask, i) ? " flat32" : "",
              BITSET_TEST(linkage->flat16_mask, i) ? " flat16" : "",
              BITSET_TEST(linkage->interp_explicit32_mask, i) ? " interp_explicit32" : "",
@@ -780,6 +870,10 @@ slot_disable_optimizations_and_compaction(struct linkage_info *linkage,
    BITSET_CLEAR(linkage->convergent16_mask, i);
    BITSET_CLEAR(linkage->interp_fp32_mask, i);
    BITSET_CLEAR(linkage->interp_fp16_mask, i);
+   for (unsigned b = 0; b < NUM_INTERP_QUALIFIERS; b++) {
+      BITSET_CLEAR(linkage->interp_fp32_qual_masks[b], i);
+      BITSET_CLEAR(linkage->interp_fp16_qual_masks[b], i);
+   }
    BITSET_CLEAR(linkage->flat32_mask, i);
    BITSET_CLEAR(linkage->flat16_mask, i);
    BITSET_CLEAR(linkage->interp_explicit32_mask, i);
@@ -793,6 +887,8 @@ slot_disable_optimizations_and_compaction(struct linkage_info *linkage,
    BITSET_CLEAR(linkage->no_varying32_mask, i);
    BITSET_CLEAR(linkage->no_varying16_mask, i);
    BITSET_CLEAR(linkage->color32_mask, i);
+   for (unsigned b = 0; b < NUM_COLOR_QUALIFIERS; b++)
+      BITSET_CLEAR(linkage->color32_qual_masks[b], i);
 }
 
 static void
@@ -871,6 +967,45 @@ color_uses_shade_model(struct linkage_info *linkage, unsigned i)
    }
 
    return false;
+}
+
+static enum fs_vec4_type
+get_interp_vec4_type(struct linkage_info *linkage, unsigned slot,
+                     nir_intrinsic_instr *load)
+{
+   assert(!linkage->has_flexible_interp);
+   assert(load->intrinsic == nir_intrinsic_load_interpolated_input);
+
+   nir_intrinsic_instr *baryc =
+      nir_instr_as_intrinsic(load->src[0].ssa->parent_instr);
+   enum fs_vec4_type base;
+
+   if (color_uses_shade_model(linkage, slot))
+      base = FS_VEC4_TYPE_INTERP_COLOR_PIXEL;
+   else if (load->def.bit_size == 32)
+      base = FS_VEC4_TYPE_INTERP_FP32_PERSP_PIXEL;
+   else if (load->def.bit_size == 16)
+      base = FS_VEC4_TYPE_INTERP_FP16_PERSP_PIXEL;
+   else
+      unreachable("invalid load_interpolated_input type");
+
+   bool linear = nir_intrinsic_interp_mode(baryc) == INTERP_MODE_NOPERSPECTIVE;
+
+   if (linear)
+      base += 3;
+
+   switch (baryc->intrinsic) {
+   case nir_intrinsic_load_barycentric_pixel:
+   case nir_intrinsic_load_barycentric_at_offset:
+   case nir_intrinsic_load_barycentric_at_sample:
+      return base;
+   case nir_intrinsic_load_barycentric_centroid:
+      return base + 1;
+   case nir_intrinsic_load_barycentric_sample:
+      return base + 2;
+   default:
+      unreachable("unexpected barycentric intrinsic");
+   }
 }
 
 static bool
@@ -1180,14 +1315,18 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
             fs_vec4_type = FS_VEC4_TYPE_INTERP_EXPLICIT;
          break;
       case nir_intrinsic_load_interpolated_input:
-         if (color_uses_shade_model(linkage, slot))
-            fs_vec4_type = FS_VEC4_TYPE_INTERP_COLOR;
-         else if (intr->def.bit_size == 32)
-            fs_vec4_type = FS_VEC4_TYPE_INTERP_FP32;
-         else if (intr->def.bit_size == 16)
-            fs_vec4_type = FS_VEC4_TYPE_INTERP_FP16;
-         else
-            unreachable("invalid load_interpolated_input type");
+         if (linkage->has_flexible_interp) {
+            if (color_uses_shade_model(linkage, slot))
+               fs_vec4_type = FS_VEC4_TYPE_INTERP_COLOR;
+            else if (intr->def.bit_size == 32)
+               fs_vec4_type = FS_VEC4_TYPE_INTERP_FP32;
+            else if (intr->def.bit_size == 16)
+               fs_vec4_type = FS_VEC4_TYPE_INTERP_FP16;
+            else
+               unreachable("invalid load_interpolated_input type");
+         } else {
+            fs_vec4_type = get_interp_vec4_type(linkage, slot, intr);
+         }
          break;
       default:
          unreachable("unexpected input load intrinsic");
@@ -1215,52 +1354,107 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
 
    /* Record inputs that can be compacted. */
    if (linkage->consumer_stage == MESA_SHADER_FRAGMENT) {
-      switch (intr->intrinsic) {
-      case nir_intrinsic_load_input:
+      unsigned i;
+      assert(intr->def.bit_size == 32 || intr->def.bit_size == 16);
+
+      switch (fs_vec4_type) {
+      case FS_VEC4_TYPE_FLAT:
          if (intr->def.bit_size == 32)
             BITSET_SET(linkage->flat32_mask, slot);
-         else if (intr->def.bit_size == 16)
-            BITSET_SET(linkage->flat16_mask, slot);
          else
-            unreachable("invalid load_input type");
+            BITSET_SET(linkage->flat16_mask, slot);
          break;
-      case nir_intrinsic_load_per_primitive_input:
+      case FS_VEC4_TYPE_INTERP_EXPLICIT:
+         if (intr->def.bit_size == 32)
+            BITSET_SET(linkage->interp_explicit32_mask, slot);
+         else
+            BITSET_SET(linkage->interp_explicit16_mask, slot);
+         break;
+      case FS_VEC4_TYPE_INTERP_EXPLICIT_STRICT:
+         if (intr->def.bit_size == 32)
+            BITSET_SET(linkage->interp_explicit_strict32_mask, slot);
+         else
+            BITSET_SET(linkage->interp_explicit_strict16_mask, slot);
+         break;
+      case FS_VEC4_TYPE_PER_PRIMITIVE:
          if (intr->def.bit_size == 32)
             BITSET_SET(linkage->per_primitive32_mask, slot);
-         else if (intr->def.bit_size == 16)
+         else
             BITSET_SET(linkage->per_primitive16_mask, slot);
-         else
-            unreachable("invalid load_input type");
          break;
-      case nir_intrinsic_load_input_vertex:
-         if (sem.interp_explicit_strict) {
-            if (intr->def.bit_size == 32)
-               BITSET_SET(linkage->interp_explicit_strict32_mask, slot);
-            else if (intr->def.bit_size == 16)
-               BITSET_SET(linkage->interp_explicit_strict16_mask, slot);
-            else
-               unreachable("invalid load_input_vertex type");
+
+      case FS_VEC4_TYPE_INTERP_FP32:
+         BITSET_SET(linkage->interp_fp32_mask, slot);
+         break;
+      case FS_VEC4_TYPE_INTERP_FP16:
+         BITSET_SET(linkage->interp_fp16_mask, slot);
+         break;
+      case FS_VEC4_TYPE_INTERP_COLOR:
+         BITSET_SET(linkage->color32_mask, slot);
+         break;
+
+      case FS_VEC4_TYPE_INTERP_FP32_PERSP_PIXEL:
+      case FS_VEC4_TYPE_INTERP_FP32_PERSP_CENTROID:
+      case FS_VEC4_TYPE_INTERP_FP32_PERSP_SAMPLE:
+      case FS_VEC4_TYPE_INTERP_FP32_LINEAR_PIXEL:
+      case FS_VEC4_TYPE_INTERP_FP32_LINEAR_CENTROID:
+      case FS_VEC4_TYPE_INTERP_FP32_LINEAR_SAMPLE:
+         i = fs_vec4_type - FS_VEC4_TYPE_INTERP_FP32_PERSP_PIXEL;
+         BITSET_SET(linkage->interp_fp32_qual_masks[i], slot);
+         break;
+
+      case FS_VEC4_TYPE_INTERP_FP16_PERSP_PIXEL:
+      case FS_VEC4_TYPE_INTERP_FP16_PERSP_CENTROID:
+      case FS_VEC4_TYPE_INTERP_FP16_PERSP_SAMPLE:
+      case FS_VEC4_TYPE_INTERP_FP16_LINEAR_PIXEL:
+      case FS_VEC4_TYPE_INTERP_FP16_LINEAR_CENTROID:
+      case FS_VEC4_TYPE_INTERP_FP16_LINEAR_SAMPLE:
+         i = fs_vec4_type - FS_VEC4_TYPE_INTERP_FP16_PERSP_PIXEL;
+         BITSET_SET(linkage->interp_fp16_qual_masks[i], slot);
+         break;
+
+      case FS_VEC4_TYPE_INTERP_COLOR_PIXEL:
+      case FS_VEC4_TYPE_INTERP_COLOR_CENTROID:
+      case FS_VEC4_TYPE_INTERP_COLOR_SAMPLE:
+         i = fs_vec4_type - FS_VEC4_TYPE_INTERP_COLOR_PIXEL;
+         BITSET_SET(linkage->color32_qual_masks[i], slot);
+         break;
+
+      case FS_VEC4_TYPE_NONE:
+         unreachable("unexpected fs_vec4_type");
+      }
+
+      if (!linkage->has_flexible_interp &&
+          intr->intrinsic == nir_intrinsic_load_interpolated_input) {
+         /* interpolateAtCentroid can occur simultaneously with any other
+          * qualifier. If centroid is flagged with any other qualifier,
+          * unflag centroid. Even though we track such outputs as the other
+          * qualifier, the load_barycentric_centroid intrinsic must be
+          * preserved by all optimizations. The only case when it's not
+          * preserved is when the input is convergent, in which case
+          * all qualifiers have the same behavior and we opportunistically
+          * change it during compaction.
+          */
+         if (color_uses_shade_model(linkage, slot)) {
+            if (BITSET_TEST(linkage->color32_qual_masks[COLOR_CENTROID], slot) &&
+                (BITSET_TEST(linkage->color32_qual_masks[COLOR_PIXEL], slot) ||
+                 BITSET_TEST(linkage->color32_qual_masks[COLOR_SAMPLE], slot)))
+               BITSET_CLEAR(linkage->color32_qual_masks[COLOR_CENTROID], slot);
          } else {
-            if (intr->def.bit_size == 32)
-               BITSET_SET(linkage->interp_explicit32_mask, slot);
-            else if (intr->def.bit_size == 16)
-               BITSET_SET(linkage->interp_explicit16_mask, slot);
-            else
-               unreachable("invalid load_input_vertex type");
+            INTERP_QUAL_BITSET *bitsets =
+               intr->def.bit_size == 32 ? &linkage->interp_fp32_qual_masks :
+                                          &linkage->interp_fp16_qual_masks;
+
+            if (BITSET_TEST((*bitsets)[PERSP_CENTROID], slot) &&
+                (BITSET_TEST((*bitsets)[PERSP_PIXEL], slot) ||
+                 BITSET_TEST((*bitsets)[PERSP_SAMPLE], slot)))
+               BITSET_CLEAR((*bitsets)[PERSP_CENTROID], slot);
+
+            if (BITSET_TEST((*bitsets)[LINEAR_CENTROID], slot) &&
+                (BITSET_TEST((*bitsets)[LINEAR_PIXEL], slot) ||
+                 BITSET_TEST((*bitsets)[LINEAR_SAMPLE], slot)))
+               BITSET_CLEAR((*bitsets)[LINEAR_CENTROID], slot);
          }
-         break;
-      case nir_intrinsic_load_interpolated_input:
-         if (color_uses_shade_model(linkage, slot))
-            BITSET_SET(linkage->color32_mask, slot);
-         else if (intr->def.bit_size == 32)
-            BITSET_SET(linkage->interp_fp32_mask, slot);
-         else if (intr->def.bit_size == 16)
-            BITSET_SET(linkage->interp_fp16_mask, slot);
-         else
-            unreachable("invalid load_interpolated_input type");
-         break;
-      default:
-         unreachable("unexpected input load intrinsic");
       }
    } else {
       if (intr->def.bit_size == 32)
@@ -1558,8 +1752,10 @@ tidy_up_convergent_varyings(struct linkage_info *linkage)
        */
       BITSET_FOREACH_SET(i, linkage->convergent32_mask, NUM_SCALAR_SLOTS) {
          if (!BITSET_TEST(linkage->interp_fp32_mask, i) &&
+             !BITSET_TEST(linkage->color32_mask, i) &&
              !BITSET_TEST(linkage->flat32_mask, i) &&
-             !BITSET_TEST(linkage->color32_mask, i)) {
+             !BITSET6_TEST_ANY(linkage->interp_fp32_qual_masks, i) &&
+             !BITSET3_TEST_ANY(linkage->color32_qual_masks, i)) {
             /* Clear the flag - not used by FS. */
             BITSET_CLEAR(linkage->convergent32_mask, i);
          } else if ((!linkage->can_mix_convergent_flat_with_interpolated &&
@@ -1571,13 +1767,19 @@ tidy_up_convergent_varyings(struct linkage_info *linkage)
          } else {
             /* Keep it convergent. */
             BITSET_CLEAR(linkage->interp_fp32_mask, i);
+            for (unsigned b = 0; b < NUM_INTERP_QUALIFIERS; b++)
+               BITSET_CLEAR(linkage->interp_fp32_qual_masks[b], i);
             BITSET_CLEAR(linkage->color32_mask, i);
+            for (unsigned b = 0; b < NUM_COLOR_QUALIFIERS; b++)
+               BITSET_CLEAR(linkage->color32_qual_masks[b], i);
             BITSET_CLEAR(linkage->flat32_mask, i);
          }
       }
+
       BITSET_FOREACH_SET(i, linkage->convergent16_mask, NUM_SCALAR_SLOTS) {
          if (!BITSET_TEST(linkage->interp_fp16_mask, i) &&
-             !BITSET_TEST(linkage->flat16_mask, i)) {
+             !BITSET_TEST(linkage->flat16_mask, i) &&
+             !BITSET6_TEST_ANY(linkage->interp_fp16_qual_masks, i)) {
             /* Clear the flag - not used by FS. */
             BITSET_CLEAR(linkage->convergent16_mask, i);
          } else if ((!linkage->can_mix_convergent_flat_with_interpolated &&
@@ -1589,6 +1791,8 @@ tidy_up_convergent_varyings(struct linkage_info *linkage)
          } else {
             /* Keep it convergent. */
             BITSET_CLEAR(linkage->interp_fp16_mask, i);
+            for (unsigned b = 0; b < NUM_INTERP_QUALIFIERS; b++)
+               BITSET_CLEAR(linkage->interp_fp16_qual_masks[b], i);
             BITSET_CLEAR(linkage->flat16_mask, i);
          }
       }
@@ -2293,7 +2497,7 @@ enum var_qualifier {
    QUAL_VAR_INTERP_ANY,
    QUAL_COLOR_INTERP_ANY,
    QUAL_COLOR_SHADEMODEL_ANY,
-   /* When nir_io_has_flexible_input_interpolation_except_flat is unset: */
+   /* When nir_io_has_flexible_input_interpolation_except_flat is not set: */
    QUAL_VAR_PERSP_PIXEL,
    QUAL_VAR_PERSP_CENTROID,
    QUAL_VAR_PERSP_SAMPLE,
@@ -2342,13 +2546,31 @@ get_input_qualifier(struct linkage_info *linkage, unsigned i)
    nir_intrinsic_instr *baryc =
       nir_instr_as_intrinsic(load->src[0].ssa->parent_instr);
 
-   if (linkage->consumer_builder.shader->options->io_options &
-       nir_io_has_flexible_input_interpolation_except_flat) {
+   if (linkage->has_flexible_interp) {
       if (is_color) {
          return nir_intrinsic_interp_mode(baryc) == INTERP_MODE_NONE ?
                    QUAL_COLOR_SHADEMODEL_ANY : QUAL_COLOR_INTERP_ANY;
       } else {
          return QUAL_VAR_INTERP_ANY;
+      }
+   }
+
+   /* If interpolateAt{Centroid,Offset,Sample} is used, see if there is
+    * another load that doesn't use those, so that we get the real qualifier.
+    */
+   if (baryc->intrinsic == nir_intrinsic_load_barycentric_centroid ||
+       baryc->intrinsic == nir_intrinsic_load_barycentric_at_offset ||
+       baryc->intrinsic == nir_intrinsic_load_barycentric_at_sample) {
+      list_for_each_entry(struct list_node, iter, &slot->consumer.loads, head) {
+         nir_intrinsic_instr *bar =
+            nir_instr_as_intrinsic(iter->instr->src[0].ssa->parent_instr);
+
+         if (bar->intrinsic != nir_intrinsic_load_barycentric_centroid &&
+             bar->intrinsic != nir_intrinsic_load_barycentric_at_offset &&
+             bar->intrinsic != nir_intrinsic_load_barycentric_at_sample) {
+            baryc = bar;
+            break;
+         }
       }
    }
 
@@ -3194,9 +3416,14 @@ try_move_postdominator(struct linkage_info *linkage,
       if (alu_interp == FLAG_INTERP_CONVERGENT) {
          mask = new_bit_size == 16 ? linkage->convergent16_mask
                                    : linkage->convergent32_mask;
-      } else {
+      } else if (linkage->has_flexible_interp) {
          mask = new_bit_size == 16 ? linkage->interp_fp16_mask
                                    : linkage->interp_fp32_mask;
+      } else {
+         /* The index of the qualifier is encoded in alu_interp, so extract it. */
+         unsigned i = (alu_interp - FLAG_INTERP_PERSP_PIXEL) >> 5;
+         mask = new_bit_size == 16 ? linkage->interp_fp16_qual_masks[i]
+                                   : linkage->interp_fp32_qual_masks[i];
       }
    } else if (linkage->consumer_stage == MESA_SHADER_TESS_EVAL &&
               alu_interp > FLAG_INTERP_FLAT) {
@@ -3275,7 +3502,7 @@ try_move_postdominator(struct linkage_info *linkage,
    assert(!BITSET_TEST(linkage->no_varying16_mask, slot_index));
 
    /* Re-set the category of the new scalar input. This will cause
-    * the compaction to treat it as a different type, so that it will move it
+    * the compaction to treat it as a different type, so that it will be moved
     * into the vec4 that has compatible interpolation qualifiers.
     *
     * This shouldn't be done if any of the interp masks are not set, which
@@ -3283,12 +3510,18 @@ try_move_postdominator(struct linkage_info *linkage,
     */
    if (BITSET_TEST(linkage->interp_fp32_mask, slot_index) ||
        BITSET_TEST(linkage->interp_fp16_mask, slot_index) ||
+       BITSET6_TEST_ANY(linkage->interp_fp32_qual_masks, slot_index) ||
+       BITSET6_TEST_ANY(linkage->interp_fp16_qual_masks, slot_index) ||
        BITSET_TEST(linkage->flat32_mask, slot_index) ||
        BITSET_TEST(linkage->flat16_mask, slot_index) ||
        BITSET_TEST(linkage->convergent32_mask, slot_index) ||
        BITSET_TEST(linkage->convergent16_mask, slot_index)) {
       BITSET_CLEAR(linkage->interp_fp32_mask, slot_index);
+      for (unsigned i = 0; i < NUM_INTERP_QUALIFIERS; i++)
+         BITSET_CLEAR(linkage->interp_fp32_qual_masks[i], slot_index);
       BITSET_CLEAR(linkage->interp_fp16_mask, slot_index);
+      for (unsigned i = 0; i < NUM_INTERP_QUALIFIERS; i++)
+         BITSET_CLEAR(linkage->interp_fp16_qual_masks[i], slot_index);
       BITSET_CLEAR(linkage->flat16_mask, slot_index);
       BITSET_CLEAR(linkage->flat32_mask, slot_index);
       BITSET_CLEAR(linkage->convergent16_mask, slot_index);
@@ -3779,14 +4012,16 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
                    intr->intrinsic != nir_intrinsic_load_per_primitive_input);
          }
 
+         if (intr->intrinsic != nir_intrinsic_load_interpolated_input)
+            continue;
+
          /* This path is used when promoting convergent interpolated
           * inputs to flat. Replace load_interpolated_input with load_input.
           */
-         if (intr->intrinsic == nir_intrinsic_load_interpolated_input &&
-             (fs_vec4_type == FS_VEC4_TYPE_FLAT ||
-              /* Promote all convergent loads to flat if the driver supports it. */
-              (convergent &&
-               linkage->can_mix_convergent_flat_with_interpolated))) {
+         if (fs_vec4_type == FS_VEC4_TYPE_FLAT ||
+             /* Promote all convergent loads to flat if the driver supports it. */
+             (convergent &&
+              linkage->can_mix_convergent_flat_with_interpolated)) {
             assert(instruction_lists[i] == &slot->consumer.loads);
             nir_builder *b = &linkage->consumer_builder;
 
@@ -3819,6 +4054,76 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
                      build_convert_inf_to_nan(b, store->src[0].ssa);
                   nir_src_rewrite(&store->src[0], repl);
                }
+            }
+            continue;
+         }
+
+         /* We are packing convergent inputs with any other interpolated
+          * inputs in the same vec4, but the interpolation qualifier might not
+          * be the same between the two. Set the qualifier of the convergent
+          * input to match the input it's being packed with.
+          */
+         if (!linkage->has_flexible_interp && convergent) {
+            enum fs_vec4_type current_vec4_type =
+               get_interp_vec4_type(linkage, i, intr);
+
+            /* Make the interpolation qualifier match the slot where we are
+             * moving this input.
+             */
+            if (current_vec4_type != fs_vec4_type) {
+               nir_builder *b = &linkage->consumer_builder;
+               nir_def *baryc;
+
+               b->cursor = nir_before_instr(&intr->instr);
+
+               switch (fs_vec4_type) {
+               case FS_VEC4_TYPE_INTERP_FP32_PERSP_PIXEL:
+               case FS_VEC4_TYPE_INTERP_FP16_PERSP_PIXEL:
+                  baryc = nir_load_barycentric_pixel(b, 32,
+                             .interp_mode = INTERP_MODE_SMOOTH);
+                  break;
+               case FS_VEC4_TYPE_INTERP_FP32_PERSP_CENTROID:
+               case FS_VEC4_TYPE_INTERP_FP16_PERSP_CENTROID:
+                  baryc = nir_load_barycentric_centroid(b, 32,
+                             .interp_mode = INTERP_MODE_SMOOTH);
+                  break;
+               case FS_VEC4_TYPE_INTERP_FP32_PERSP_SAMPLE:
+               case FS_VEC4_TYPE_INTERP_FP16_PERSP_SAMPLE:
+                  baryc = nir_load_barycentric_sample(b, 32,
+                             .interp_mode = INTERP_MODE_SMOOTH);
+                  break;
+               case FS_VEC4_TYPE_INTERP_FP32_LINEAR_PIXEL:
+               case FS_VEC4_TYPE_INTERP_FP16_LINEAR_PIXEL:
+                  baryc = nir_load_barycentric_pixel(b, 32,
+                             .interp_mode = INTERP_MODE_NOPERSPECTIVE);
+                  break;
+               case FS_VEC4_TYPE_INTERP_FP32_LINEAR_CENTROID:
+               case FS_VEC4_TYPE_INTERP_FP16_LINEAR_CENTROID:
+                  baryc = nir_load_barycentric_centroid(b, 32,
+                             .interp_mode = INTERP_MODE_NOPERSPECTIVE);
+                  break;
+               case FS_VEC4_TYPE_INTERP_FP32_LINEAR_SAMPLE:
+               case FS_VEC4_TYPE_INTERP_FP16_LINEAR_SAMPLE:
+                  baryc = nir_load_barycentric_sample(b, 32,
+                             .interp_mode = INTERP_MODE_NOPERSPECTIVE);
+                  break;
+               case FS_VEC4_TYPE_INTERP_COLOR_PIXEL:
+                  baryc = nir_load_barycentric_pixel(b, 32,
+                             .interp_mode = INTERP_MODE_NONE);
+                  break;
+               case FS_VEC4_TYPE_INTERP_COLOR_CENTROID:
+                  baryc = nir_load_barycentric_centroid(b, 32,
+                             .interp_mode = INTERP_MODE_NONE);
+                  break;
+               case FS_VEC4_TYPE_INTERP_COLOR_SAMPLE:
+                  baryc = nir_load_barycentric_sample(b, 32,
+                             .interp_mode = INTERP_MODE_NONE);
+                  break;
+               default:
+                  unreachable("invalid qualifier");
+               }
+
+               nir_src_rewrite(&intr->src[0], baryc);
             }
          }
       }
@@ -3965,7 +4270,7 @@ fs_assign_slots(struct linkage_info *linkage,
  * \param flat_mask           The list of flat slots to assign locations for.
  * \param convergent_mask     The list of slots that have convergent output
  *                            stores.
- * \param sized_interp_type   One of FS_VEC4_TYPE_INTERP_{FP32, FP16, COLOR}.
+ * \param sized_interp_type   One of FS_VEC4_TYPE_INTERP_{FP32, FP16, COLOR}*.
  * \param slot_size           1 for 16 bits, 2 for 32 bits
  * \param color_channel_rotate Assign color channels starting with this index,
  *                            e.g. 2 assigns channels in the zwxy order.
@@ -4051,6 +4356,106 @@ fs_assign_slot_groups(struct linkage_info *linkage,
                    color_channel_rotate, progress);
 }
 
+/**
+ * Same as fs_assign_slot_groups, but don't mix different interpolation
+ * qualifiers in the same vec4.
+ */
+static void
+fs_assign_slot_groups_separate_qual(struct linkage_info *linkage,
+                                    BITSET_WORD *assigned_mask,
+                                    uint8_t assigned_fs_vec4_type[NUM_TOTAL_VARYING_SLOTS],
+                                    INTERP_QUAL_BITSET *interp_masks,
+                                    BITSET_WORD *flat_mask,
+                                    BITSET_WORD *convergent_mask,
+                                    COLOR_QUAL_BITSET *color_interp_masks,
+                                    enum fs_vec4_type sized_interp_type_base,
+                                    unsigned slot_size,
+                                    bool assign_colors,
+                                    unsigned color_channel_rotate,
+                                    nir_opt_varyings_progress *progress)
+{
+   unsigned unused_interp_slots[NUM_INTERP_QUALIFIERS] = {0};
+   unsigned unused_color_slots[NUM_COLOR_QUALIFIERS] = {0};
+
+   /* Put interpolated slots first. */
+   for (unsigned i = 0; i < NUM_INTERP_QUALIFIERS; i++) {
+      unused_interp_slots[i] =
+         fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
+                         (*interp_masks)[i], sized_interp_type_base + i,
+                         slot_size, NUM_SCALAR_SLOTS, false, assign_colors,
+                         color_channel_rotate, progress);
+   }
+
+   if (color_interp_masks) {
+      for (unsigned i = 0; i < NUM_COLOR_QUALIFIERS; i++) {
+         unused_color_slots[i] =
+            fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
+                            (*color_interp_masks)[i],
+                            FS_VEC4_TYPE_INTERP_COLOR_PIXEL + i,
+                            slot_size, NUM_SCALAR_SLOTS, false, assign_colors,
+                            color_channel_rotate, progress);
+      }
+   }
+
+   /* Put flat slots next.
+    * Note that only flat vec4 slots can have both 32-bit and 16-bit types
+    * packed in the same vec4. 32-bit flat inputs are packed first, followed
+    * by 16-bit flat inputs.
+    */
+   unsigned unused_flat_slots =
+      fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
+                      flat_mask, FS_VEC4_TYPE_FLAT,
+                      slot_size, NUM_SCALAR_SLOTS, false, assign_colors,
+                      color_channel_rotate, progress);
+
+   /* Take the inputs with convergent values and assign them as follows.
+    * Since they can be assigned as both interpolated and flat, we can
+    * choose. We prefer them to be flat, but if interpolated vec4s have
+    * unused components, try to fill those before starting a new flat vec4.
+    *
+    * First, fill the unused components of flat (if any) with convergent
+    * inputs.
+    */
+   if (!linkage->always_interpolate_convergent_fs_inputs &&
+       unused_flat_slots) {
+      fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
+                      convergent_mask, FS_VEC4_TYPE_FLAT,
+                      slot_size, unused_flat_slots, true, assign_colors,
+                      color_channel_rotate, progress);
+   }
+
+   /* Then fill the unused components of interpolated slots (if any) with
+    * convergent inputs.
+    */
+   for (unsigned i = 0; i < NUM_INTERP_QUALIFIERS; i++) {
+      if (unused_interp_slots[i]) {
+         fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
+                         convergent_mask, sized_interp_type_base + i,
+                         slot_size, unused_interp_slots[i], true,
+                         assign_colors, color_channel_rotate, progress);
+      }
+   }
+
+   for (unsigned i = 0; i < NUM_COLOR_QUALIFIERS; i++) {
+      if (unused_color_slots[i]) {
+         fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
+                         convergent_mask, FS_VEC4_TYPE_INTERP_COLOR_PIXEL + i,
+                         slot_size, unused_color_slots[i], true, assign_colors,
+                         color_channel_rotate, progress);
+      }
+   }
+
+   /* Then make the remaining convergent inputs flat. */
+   fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
+                   convergent_mask,
+                   linkage->always_interpolate_convergent_fs_inputs ?
+                      (slot_size == 2 ? FS_VEC4_TYPE_INTERP_FP32_LINEAR_PIXEL :
+                                        FS_VEC4_TYPE_INTERP_FP16_LINEAR_PIXEL) :
+                      FS_VEC4_TYPE_FLAT,
+                   slot_size, NUM_SCALAR_SLOTS, true, assign_colors,
+                   color_channel_rotate, progress);
+}
+
 static void
 vs_tcs_tes_gs_assign_slots(struct linkage_info *linkage,
                            BITSET_WORD *input_mask,
@@ -4120,16 +4525,34 @@ compact_varyings(struct linkage_info *linkage,
       BITSET_DECLARE(assigned_mask, NUM_SCALAR_SLOTS);
       BITSET_ZERO(assigned_mask);
 
-      fs_assign_slot_groups(linkage, assigned_mask, assigned_fs_vec4_type,
-                            linkage->interp_fp32_mask, linkage->flat32_mask,
-                            linkage->convergent32_mask, NULL,
-                            FS_VEC4_TYPE_INTERP_FP32, 2, false, 0, progress);
+      if (linkage->has_flexible_interp) {
+         /* This codepath packs convergent varyings with both interpolated and
+          * flat, whichever has free space.
+          */
+         fs_assign_slot_groups(linkage, assigned_mask, assigned_fs_vec4_type,
+                               linkage->interp_fp32_mask, linkage->flat32_mask,
+                               linkage->convergent32_mask, NULL,
+                               FS_VEC4_TYPE_INTERP_FP32, 2, false, 0, progress);
 
-      /* Now do the same thing, but for 16-bit inputs. */
-      fs_assign_slot_groups(linkage, assigned_mask, assigned_fs_vec4_type,
-                            linkage->interp_fp16_mask, linkage->flat16_mask,
-                            linkage->convergent16_mask, NULL,
-                            FS_VEC4_TYPE_INTERP_FP16, 1, false, 0, progress);
+         /* Now do the same thing, but for 16-bit inputs. */
+         fs_assign_slot_groups(linkage, assigned_mask, assigned_fs_vec4_type,
+                               linkage->interp_fp16_mask, linkage->flat16_mask,
+                               linkage->convergent16_mask, NULL,
+                               FS_VEC4_TYPE_INTERP_FP16, 1, false, 0, progress);
+      } else {
+         /* Basically the same as above. */
+         fs_assign_slot_groups_separate_qual(
+                  linkage, assigned_mask, assigned_fs_vec4_type,
+                  &linkage->interp_fp32_qual_masks, linkage->flat32_mask,
+                  linkage->convergent32_mask, NULL,
+                  FS_VEC4_TYPE_INTERP_FP32_PERSP_PIXEL, 2, false, 0, progress);
+
+         fs_assign_slot_groups_separate_qual(
+                  linkage, assigned_mask, assigned_fs_vec4_type,
+                  &linkage->interp_fp16_qual_masks, linkage->flat16_mask,
+                  linkage->convergent16_mask, NULL,
+                  FS_VEC4_TYPE_INTERP_FP16_PERSP_PIXEL, 1, false, 0, progress);
+      }
 
       /* Assign INTERP_MODE_EXPLICIT. Both FP32 and FP16 can occupy the same
        * slot because the vertex data is passed to FS as-is.
@@ -4184,6 +4607,17 @@ compact_varyings(struct linkage_info *linkage,
          !BITSET_TEST_RANGE_INSIDE_WORD(linkage->xfb32_only_mask, col0,
                                         col0 + 15, 0);
 
+      for (unsigned i = 0; i < NUM_INTERP_QUALIFIERS; i++) {
+         has_colors |=
+            !BITSET_TEST_RANGE_INSIDE_WORD(linkage->interp_fp32_qual_masks[i],
+                                           col0, col0 + 15, 0);
+      }
+      for (unsigned i = 0; i < NUM_COLOR_QUALIFIERS; i++) {
+         has_colors |=
+            !BITSET_TEST_RANGE_INSIDE_WORD(linkage->color32_qual_masks[i],
+                                           col0, col0 + 15, 0);
+      }
+
       if (has_colors) {
          unsigned color_channel_rotate = 0;
 
@@ -4193,11 +4627,20 @@ compact_varyings(struct linkage_info *linkage,
                DIV_ROUND_UP(BITSET_LAST_BIT(assigned_mask), 2) % 4;
          }
 
-         fs_assign_slot_groups(linkage, assigned_mask, assigned_fs_vec4_type,
-                               linkage->interp_fp32_mask, linkage->flat32_mask,
-                               linkage->convergent32_mask, linkage->color32_mask,
-                               FS_VEC4_TYPE_INTERP_FP32, 2, true,
-                               color_channel_rotate, progress);
+         if (linkage->has_flexible_interp) {
+            fs_assign_slot_groups(linkage, assigned_mask, assigned_fs_vec4_type,
+                                  linkage->interp_fp32_mask, linkage->flat32_mask,
+                                  linkage->convergent32_mask, linkage->color32_mask,
+                                  FS_VEC4_TYPE_INTERP_FP32, 2, true,
+                                  color_channel_rotate, progress);
+         } else {
+            fs_assign_slot_groups_separate_qual(
+                     linkage, assigned_mask, assigned_fs_vec4_type,
+                     &linkage->interp_fp32_qual_masks, linkage->flat32_mask,
+                     linkage->convergent32_mask, &linkage->color32_qual_masks,
+                     FS_VEC4_TYPE_INTERP_FP32_PERSP_PIXEL, 2, true,
+                     color_channel_rotate, progress);
+         }
 
          /* Put transform-feedback-only outputs last. */
          fs_assign_slots(linkage, assigned_mask, NULL,
@@ -4274,6 +4717,10 @@ init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
          consumer->info.stage == MESA_SHADER_FRAGMENT &&
          consumer->options->io_options &
          nir_io_mix_convergent_flat_with_interpolated,
+      .has_flexible_interp =
+         consumer->info.stage == MESA_SHADER_FRAGMENT &&
+         consumer->options->io_options &
+         nir_io_has_flexible_input_interpolation_except_flat,
       .always_interpolate_convergent_fs_inputs =
          consumer->info.stage == MESA_SHADER_FRAGMENT &&
          consumer->options->io_options &
