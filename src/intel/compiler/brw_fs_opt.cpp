@@ -116,8 +116,11 @@ brw_fs_optimize(fs_visitor &s)
    OPT(brw_fs_workaround_nomask_control_flow);
 
    if (progress) {
-      if (!OPT(brw_fs_opt_copy_propagation_defs))
-         OPT(brw_fs_opt_copy_propagation);
+      /* Do both forms of copy propagation because it is important to
+       * eliminate as many cases of load_payload-of-load_payload as possible.
+       */
+      OPT(brw_fs_opt_copy_propagation_defs);
+      OPT(brw_fs_opt_copy_propagation);
 
       /* Run after logical send lowering to give it a chance to CSE the
        * LOAD_PAYLOAD instructions created to construct the payloads of
