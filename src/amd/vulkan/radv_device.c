@@ -643,11 +643,11 @@ radv_device_init_trap_handler(struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (!radv_trap_handler_enabled())
+   if (!pdev->info.has_trap_handler_support)
       return VK_SUCCESS;
 
-   /* TODO: Add support for more hardware. */
-   assert(pdev->info.gfx_level == GFX8);
+   if (!radv_trap_handler_enabled())
+      return VK_SUCCESS;
 
    fprintf(stderr, "**********************************************************************\n");
    fprintf(stderr, "* WARNING: RADV_TRAP_HANDLER is experimental and only for debugging! *\n");
