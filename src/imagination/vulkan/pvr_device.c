@@ -513,8 +513,8 @@ static bool pvr_physical_device_get_properties(
       .conformanceVersion = {
          .major = 1,
          .minor = 3,
-         .subminor = 4,
-         .patch = 1,
+         .subminor = 8,
+         .patch = 4,
       },
 
       /* Vulkan 1.2 / VK_KHR_timeline_semaphore */
