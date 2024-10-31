@@ -191,7 +191,12 @@ can_do_blit(const struct pipe_blit_info *info)
 
    fail_if(!ok_dims(info->src.resource, &info->src.box, info->src.level));
 
-   fail_if(!ok_dims(info->dst.resource, &info->dst.box, info->dst.level));
+   /* We _shouldn't_ be getting negative dst coords, but do as a result of
+    * y-flip in do_blit_framebuffer().  See
+    * dEQP-GLES31.functional.primitive_bounding_box.blit_fbo.blit_fbo_to_default
+    */
+   fail_if(info->dst.box.x < 0);
+   fail_if(info->dst.box.y < 0);
 
    assert(info->dst.box.width >= 0);
    assert(info->dst.box.height >= 0);
