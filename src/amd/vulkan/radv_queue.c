@@ -700,10 +700,8 @@ radv_emit_compute(struct radv_device *device, struct radeon_cmdbuf *cs, bool is_
    ac_pm4_set_reg(pm4, R_00B814_COMPUTE_START_Y, 0);
    ac_pm4_set_reg(pm4, R_00B818_COMPUTE_START_Z, 0);
 
-   if (device->tma_bo) {
+   if (pdev->info.gfx_level == GFX8 && device->tma_bo) {
       uint64_t tba_va, tma_va;
-
-      assert(pdev->info.gfx_level == GFX8);
 
       tba_va = radv_shader_get_va(device->trap_handler_shader);
       tma_va = radv_buffer_get_va(device->tma_bo);
@@ -866,10 +864,8 @@ radv_emit_graphics(struct radv_device *device, struct radeon_cmdbuf *cs)
                                 S_028818_VPORT_Z_SCALE_ENA(1) | S_028818_VPORT_Z_OFFSET_ENA(1));
    }
 
-   if (device->tma_bo) {
+   if (pdev->info.gfx_level == GFX8 && device->tma_bo) {
       uint64_t tba_va, tma_va;
-
-      assert(pdev->info.gfx_level == GFX8);
 
       tba_va = radv_shader_get_va(device->trap_handler_shader);
       tma_va = radv_buffer_get_va(device->tma_bo);
