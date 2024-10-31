@@ -179,8 +179,9 @@ cs_program_emit(struct fd_ringbuffer *ring, struct kernel *kernel)
               HLSQ_CONTROL_5_REG(CHIP, .dword = 0x0000fc00), );
    }
 
+   uint32_t shared_size = MAX2(((int)v->shared_size - 1) / 1024, 1);
    OUT_PKT4(ring, REG_A6XX_SP_CS_UNKNOWN_A9B1, 1);
-   OUT_RING(ring, A6XX_SP_CS_UNKNOWN_A9B1_SHARED_SIZE(1) |
+   OUT_RING(ring, A6XX_SP_CS_UNKNOWN_A9B1_SHARED_SIZE(shared_size) |
                   A6XX_SP_CS_UNKNOWN_A9B1_UNK6);
 
    if (CHIP == A6XX && a6xx_backend->info->a6xx.has_lpac) {

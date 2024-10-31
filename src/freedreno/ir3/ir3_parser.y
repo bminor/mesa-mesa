@@ -362,6 +362,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_A_OUT
 %token <tok> T_A_TEX
 %token <tok> T_A_PVTMEM
+%token <tok> T_A_LOCALMEM
 %token <tok> T_A_EARLYPREAMBLE
 /* todo, re-add @sampler/@uniform/@varying if needed someday */
 
@@ -761,6 +762,7 @@ header:            localsize_header
 |                  out_header
 |                  tex_header
 |                  pvtmem_header
+|                  localmem_header
 |                  earlypreamble_header
 
 const_val:         T_FLOAT   { $$ = fui($1); }
@@ -832,6 +834,8 @@ numwg_header:      T_A_NUMWG '(' T_CONSTANT ')' {
 branchstack_header: T_A_BRANCHSTACK const_val { variant->branchstack = $2; }
 
 pvtmem_header: T_A_PVTMEM const_val { variant->pvtmem_size = $2; }
+
+localmem_header: T_A_LOCALMEM const_val { variant->shared_size = $2; }
 
 earlypreamble_header: T_A_EARLYPREAMBLE { variant->early_preamble = 1; }
 
