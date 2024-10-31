@@ -439,7 +439,12 @@ get_device_properties(const struct panvk_instance *instance,
        * requirements.
        */
       .maxPushConstantsSize = 128,
-      /* There's no HW limit here. Should we advertize something smaller? */
+      /* On our kernel drivers we're limited by the available memory rather
+       * than available allocations. This is better expressed through memory
+       * properties and budget queries, and by returning
+       * VK_ERROR_OUT_OF_DEVICE_MEMORY when applicable, rather than
+       * this limit.
+       */
       .maxMemoryAllocationCount = UINT32_MAX,
       /* Again, no hardware limit, but most drivers seem to advertive 64k. */
       .maxSamplerAllocationCount = 64 * 1024,
