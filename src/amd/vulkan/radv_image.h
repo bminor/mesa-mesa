@@ -27,6 +27,7 @@ static const VkImageUsageFlags RADV_IMAGE_USAGE_WRITE_BITS =
 struct radv_image_plane {
    VkFormat format;
    struct radeon_surf surface;
+   uint32_t first_mip_pipe_misaligned; /* GFX10-GFX11.5 */
 };
 
 struct radv_image_binding {

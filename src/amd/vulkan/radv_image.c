@@ -867,61 +867,11 @@ radv_image_alloc_values(const struct radv_device *device, struct radv_image *ima
  * which requires to invalidate L2.
  */
 static bool
-radv_image_is_pipe_misaligned(const struct radv_device *device, const struct radv_image *image)
+radv_image_is_pipe_misaligned(const struct radv_image *image)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radeon_info *gpu_info = &pdev->info;
-   int log2_samples = util_logbase2(image->vk.samples);
-
-   assert(gpu_info->gfx_level >= GFX10);
-
-   /* Add a special case for mips in the metadata mip-tail for GFX11. */
-   if (pdev->info.gfx_level >= GFX11) {
-      if (image->vk.mip_levels > 1 && (radv_image_has_dcc(image) || radv_image_has_htile(image))) {
-         for (unsigned i = 0; i < image->plane_count; ++i) {
-            const struct radeon_surf *surf = &image->planes[i].surface;
-
-            if (surf->num_meta_levels != image->vk.mip_levels)
-               return true;
-         }
-      }
-   }
-
    for (unsigned i = 0; i < image->plane_count; ++i) {
-      VkFormat fmt = radv_image_get_plane_format(pdev, image, i);
-      int log2_bpp = util_logbase2(vk_format_get_blocksize(fmt));
-      int log2_bpp_and_samples;
-
-      if (gpu_info->gfx_level >= GFX10_3) {
-         log2_bpp_and_samples = log2_bpp + log2_samples;
-      } else {
-         if (vk_format_has_depth(image->vk.format) && image->vk.array_layers >= 8) {
-            log2_bpp = 2;
-         }
-
-         log2_bpp_and_samples = MIN2(6, log2_bpp + log2_samples);
-      }
-
-      int num_pipes = G_0098F8_NUM_PIPES(gpu_info->gb_addr_config);
-      int overlap = MAX2(0, log2_bpp_and_samples + num_pipes - 8);
-
-      if (vk_format_has_depth(image->vk.format)) {
-         if (radv_image_is_tc_compat_htile(image) && (pdev->info.tcc_rb_non_coherent || overlap)) {
-            return true;
-         }
-      } else {
-         int max_compressed_frags = G_0098F8_MAX_COMPRESSED_FRAGS(gpu_info->gb_addr_config);
-         int log2_samples_frag_diff = MAX2(0, log2_samples - max_compressed_frags);
-         int samples_overlap = MIN2(log2_samples, overlap);
-
-         /* TODO: It shouldn't be necessary if the image has DCC but
-          * not readable by shader.
-          */
-         if ((radv_image_has_dcc(image) || radv_image_is_tc_compat_cmask(image)) &&
-             (pdev->info.tcc_rb_non_coherent || (samples_overlap > log2_samples_frag_diff))) {
-            return true;
-         }
-      }
+      if (image->planes[i].first_mip_pipe_misaligned != UINT32_MAX)
+         return true;
    }
 
    return false;
@@ -935,7 +885,7 @@ radv_image_is_l2_coherent(const struct radv_device *device, const struct radv_im
    if (pdev->info.gfx_level >= GFX12) {
       return true; /* Everything is coherent with TC L2. */
    } else if (pdev->info.gfx_level >= GFX10) {
-      return !radv_image_is_pipe_misaligned(device, image);
+      return !radv_image_is_pipe_misaligned(image);
    } else if (pdev->info.gfx_level == GFX9) {
       if (image->vk.samples == 1 &&
           (image->vk.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
@@ -1099,6 +1049,70 @@ radv_surface_init(struct radv_physical_device *pdev, const struct ac_surf_info *
    ac_compute_surface(pdev->addrlib, &pdev->info, &config, mode, surf);
 }
 
+/* Return the first mip level which is pipe-misaligned with metadata, UINT32_MAX means no mips are
+ * affected and zero means all mips.
+ */
+static uint32_t
+radv_image_get_first_mip_pipe_misaligned(const struct radv_device *device, const struct radv_image *image,
+                                         uint32_t plane_id)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const int log2_samples = util_logbase2(image->vk.samples);
+   uint32_t first_mip = UINT32_MAX;
+
+   /* Add a special case for mips in the metadata mip-tail for GFX11. */
+   if (pdev->info.gfx_level >= GFX11) {
+      if (image->vk.mip_levels > 1 && (radv_image_has_dcc(image) || radv_image_has_htile(image))) {
+         first_mip = image->planes[plane_id].surface.num_meta_levels;
+      }
+   }
+
+   VkFormat fmt = radv_image_get_plane_format(pdev, image, plane_id);
+   int log2_bpp = util_logbase2(vk_format_get_blocksize(fmt));
+   int log2_bpp_and_samples;
+
+   if (pdev->info.gfx_level >= GFX10_3) {
+      log2_bpp_and_samples = log2_bpp + log2_samples;
+   } else {
+      if (vk_format_has_depth(image->vk.format) && image->vk.array_layers >= 8) {
+         log2_bpp = 2;
+      }
+
+      log2_bpp_and_samples = MIN2(6, log2_bpp + log2_samples);
+   }
+
+   int num_pipes = G_0098F8_NUM_PIPES(pdev->info.gb_addr_config);
+   int overlap = MAX2(0, log2_bpp_and_samples + num_pipes - 8);
+
+   if (vk_format_has_depth(image->vk.format)) {
+      if (radv_image_is_tc_compat_htile(image) && (pdev->info.tcc_rb_non_coherent || overlap)) {
+         first_mip = 0;
+      }
+   } else {
+      int max_compressed_frags = G_0098F8_MAX_COMPRESSED_FRAGS(pdev->info.gb_addr_config);
+      int log2_samples_frag_diff = MAX2(0, log2_samples - max_compressed_frags);
+      int samples_overlap = MIN2(log2_samples, overlap);
+
+      /* TODO: It shouldn't be necessary if the image has DCC but
+       * not readable by shader.
+       */
+      if ((radv_image_has_dcc(image) || radv_image_is_tc_compat_cmask(image)) &&
+          (pdev->info.tcc_rb_non_coherent || (samples_overlap > log2_samples_frag_diff))) {
+         first_mip = 0;
+      }
+   }
+
+   return first_mip;
+}
+
+static void
+radv_image_init_first_mip_pipe_misaligned(const struct radv_device *device, struct radv_image *image)
+{
+   for (uint32_t i = 0; i < image->plane_count; i++) {
+      image->planes[i].first_mip_pipe_misaligned = radv_image_get_first_mip_pipe_misaligned(device, image, i);
+   }
+}
+
 VkResult
 radv_image_create_layout(struct radv_device *device, struct radv_image_create_info create_info,
                          const struct VkImageDrmFormatModifierExplicitCreateInfoEXT *mod_info,
@@ -1205,6 +1219,9 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
    }
 
    image->tc_compatible_cmask = radv_image_has_cmask(image) && radv_use_tc_compat_cmask_for_image(device, image);
+
+   if (pdev->info.gfx_level >= GFX10 && pdev->info.gfx_level < GFX12)
+      radv_image_init_first_mip_pipe_misaligned(device, image);
 
    image->l2_coherent = radv_image_is_l2_coherent(device, image);
 
