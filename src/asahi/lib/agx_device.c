@@ -797,3 +797,15 @@ agx_get_driver_uuid(void *uuid)
    assert(SHA1_DIGEST_LENGTH >= UUID_SIZE);
    memcpy(uuid, sha1, UUID_SIZE);
 }
+
+unsigned
+agx_get_num_cores(const struct agx_device *dev)
+{
+   unsigned n = 0;
+
+   for (unsigned cl = 0; cl < dev->params.num_clusters_total; cl++) {
+      n += util_bitcount(dev->params.core_masks[cl]);
+   }
+
+   return n;
+}

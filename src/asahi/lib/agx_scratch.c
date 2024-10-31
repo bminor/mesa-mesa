@@ -289,10 +289,7 @@ agx_scratch_init(struct agx_device *dev, struct agx_scratch *scratch)
 #ifdef SCRATCH_DEBUG_CORES
    scratch->num_cores = SCRATCH_DEBUG_CORES;
 #else
-   scratch->num_cores = 0;
-   for (unsigned cl = 0; cl < dev->params.num_clusters_total; cl++) {
-      scratch->num_cores += util_bitcount(dev->params.core_masks[cl]);
-   }
+   scratch->num_cores = agx_get_num_cores(dev);
 #endif
 }
 

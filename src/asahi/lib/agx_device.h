@@ -194,6 +194,7 @@ agx_gpu_time_to_ns(struct agx_device *dev, uint64_t gpu_time)
 
 void agx_get_device_uuid(const struct agx_device *dev, void *uuid);
 void agx_get_driver_uuid(void *uuid);
+unsigned agx_get_num_cores(const struct agx_device *dev);
 
 struct agx_va *agx_va_alloc(struct agx_device *dev, uint32_t size_B,
                             uint32_t align_B, enum agx_va_flags flags,
