@@ -944,6 +944,7 @@ radv_dump_faulty_shader(struct radv_device *device, uint64_t faulty_pc)
       return;
 
    start_addr = radv_shader_get_va(shader);
+   start_addr &= ((1ull << 48) - 1);
    end_addr = start_addr + shader->code_size;
    instr_offset = faulty_pc - start_addr;
 
