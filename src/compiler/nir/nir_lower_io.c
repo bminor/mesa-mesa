@@ -282,6 +282,29 @@ is_medium_precision(const nir_shader *shader, const nir_variable *var)
           var->data.precision == GLSL_PRECISION_LOW;
 }
 
+static enum glsl_interp_mode
+get_interp_mode(const nir_variable *var)
+{
+   unsigned interp_mode = var->data.interpolation;
+
+   /* INTERP_MODE_NONE is an artifact of OpenGL. Change it to SMOOTH
+    * to enable CSE between load_barycentric_pixel(NONE->SMOOTH) and
+    * load_barycentric_pixel(SMOOTH), which also enables IO vectorization when
+    * one component originally had NONE and an adjacent component had SMOOTH.
+    *
+    * Color varyings must preserve NONE. NONE for colors means that
+    * glShadeModel determines the interpolation mode.
+    */
+   if (var->data.location != VARYING_SLOT_COL0 &&
+       var->data.location != VARYING_SLOT_COL1 &&
+       var->data.location != VARYING_SLOT_BFC0 &&
+       var->data.location != VARYING_SLOT_BFC1 &&
+       interp_mode == INTERP_MODE_NONE)
+      return INTERP_MODE_SMOOTH;
+
+   return interp_mode;
+}
+
 static nir_def *
 emit_load(struct lower_io_state *state,
           nir_def *array_index, nir_variable *var, nir_def *offset,
@@ -316,7 +339,7 @@ emit_load(struct lower_io_state *state,
                bary_op = nir_intrinsic_load_barycentric_pixel;
 
             barycentric = nir_load_barycentric(&state->builder, bary_op,
-                                               var->data.interpolation);
+                                               get_interp_mode(var));
             op = nir_intrinsic_load_interpolated_input;
          }
       } else {
@@ -629,7 +652,7 @@ lower_interpolate_at(nir_intrinsic_instr *intrin, struct lower_io_state *state,
       nir_intrinsic_instr_create(state->builder.shader, bary_op);
 
    nir_def_init(&bary_setup->instr, &bary_setup->def, 2, 32);
-   nir_intrinsic_set_interp_mode(bary_setup, var->data.interpolation);
+   nir_intrinsic_set_interp_mode(bary_setup, get_interp_mode(var));
 
    if (intrin->intrinsic == nir_intrinsic_interp_deref_at_sample ||
        intrin->intrinsic == nir_intrinsic_interp_deref_at_offset ||
