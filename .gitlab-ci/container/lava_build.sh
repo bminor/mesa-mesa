@@ -114,6 +114,7 @@ fi
 
 # no need to remove these at end, image isn't saved at the end
 CONTAINER_EPHEMERAL=(
+    arch-test
     automake
     bc
     "clang-${LLVM_VERSION}"

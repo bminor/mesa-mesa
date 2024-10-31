@@ -62,6 +62,7 @@ DEPS=(
     libxtensor-dev
     libxxf86vm-dev
     libwayland-egl-backend-dev
+    "llvm-${LLVM_VERSION}-dev"
     make
     ninja-build
     openssh-server
