@@ -54,7 +54,7 @@ static uint32_t
 i915_gem_create(struct iris_bufmgr *bufmgr,
                 const struct intel_memory_class_instance **regions,
                 uint16_t regions_count, uint64_t size,
-                enum iris_heap heap, unsigned alloc_flags)
+                enum iris_heap heap, enum bo_alloc_flags alloc_flags)
 {
    const struct intel_device_info *devinfo =
       iris_bufmgr_get_device_info(bufmgr);
@@ -415,7 +415,7 @@ i915_batch_submit(struct iris_batch *batch)
 }
 
 static bool
-i915_gem_vm_bind(struct iris_bo *bo, unsigned flags)
+i915_gem_vm_bind(struct iris_bo *bo, enum bo_alloc_flags flags)
 {
    /*
     * i915 does not support VM_BIND yet. The binding operation happens at

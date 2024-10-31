@@ -367,33 +367,35 @@ struct iris_bo {
    };
 };
 
-/* No special attributes. */
-#define BO_ALLOC_PLAIN           0
-/* Content is set to 0, only done in cache and slabs code paths. */
-#define BO_ALLOC_ZEROED          (1<<0)
-/* Allocate a cached and coherent BO, this has a performance cost in
- * integrated platforms without LLC.
- * Should only be used in BOs that will be written and read from CPU often.
- */
-#define BO_ALLOC_CACHED_COHERENT (1<<1)
-/* Place BO only on smem. */
-#define BO_ALLOC_SMEM            (1<<2)
-/* BO can be sent to display. */
-#define BO_ALLOC_SCANOUT         (1<<3)
-/* No sub-allocation(slabs). */
-#define BO_ALLOC_NO_SUBALLOC     (1<<4)
-/* Place BO only on lmem. */
-#define BO_ALLOC_LMEM            (1<<5)
-/* Content is protected, can't be mapped and needs special handling.  */
-#define BO_ALLOC_PROTECTED       (1<<6)
-/* BO can be exported to other applications. */
-#define BO_ALLOC_SHARED          (1<<7)
-/* BO will be captured in the KMD error dump. */
-#define BO_ALLOC_CAPTURE         (1<<8)
-/* Can be mapped. */
-#define BO_ALLOC_CPU_VISIBLE     (1<<9)
-/* BO content is compressed. */
-#define BO_ALLOC_COMPRESSED      (1<<10)
+enum bo_alloc_flags {
+   /* No special attributes. */
+   BO_ALLOC_PLAIN = 0,
+   /* Content is set to 0, only done in cache and slabs code paths. */
+   BO_ALLOC_ZEROED = (1<<0),
+   /* Allocate a cached and coherent BO, this has a performance cost in
+    * integrated platforms without LLC.
+    * Should only be used in BOs that will be written and read from CPU often.
+    */
+   BO_ALLOC_CACHED_COHERENT = (1<<1),
+   /* Place BO only on smem. */
+   BO_ALLOC_SMEM = (1<<2),
+   /* BO can be sent to display. */
+   BO_ALLOC_SCANOUT = (1<<3),
+   /* No sub-allocation(slabs). */
+   BO_ALLOC_NO_SUBALLOC = (1<<4),
+   /* Place BO only on lmem. */
+   BO_ALLOC_LMEM = (1<<5),
+   /* Content is protected, can't be mapped and needs special handling.  */
+   BO_ALLOC_PROTECTED = (1<<6),
+   /* BO can be exported to other applications. */
+   BO_ALLOC_SHARED = (1<<7),
+   /* BO will be captured in the KMD error dump. */
+   BO_ALLOC_CAPTURE = (1<<8),
+   /* Can be mapped. */
+   BO_ALLOC_CPU_VISIBLE = (1<<9),
+   /* BO content is compressed. */
+   BO_ALLOC_COMPRESSED = (1<<10),
+};
 
 /**
  * Allocate a buffer object.
@@ -407,7 +409,7 @@ struct iris_bo *iris_bo_alloc(struct iris_bufmgr *bufmgr,
                               uint64_t size,
                               uint32_t alignment,
                               enum iris_memory_zone memzone,
-                              unsigned flags);
+                              enum bo_alloc_flags flags);
 
 struct iris_bo *
 iris_bo_create_userptr(struct iris_bufmgr *bufmgr, const char *name,

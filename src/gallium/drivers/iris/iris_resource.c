@@ -462,7 +462,7 @@ iris_resource_disable_aux(struct iris_resource *res)
    res->aux.state = NULL;
 }
 
-static unsigned
+static enum bo_alloc_flags
 iris_resource_alloc_flags(const struct iris_screen *screen,
                           const struct pipe_resource *templ,
                           struct iris_resource *res)
@@ -1027,7 +1027,7 @@ static bool
 iris_resource_image_is_pat_compressible(const struct iris_screen *screen,
                                         const struct pipe_resource *templ,
                                         struct iris_resource *res,
-                                        unsigned flags)
+                                        enum bo_alloc_flags flags)
 {
    assert(templ->target != PIPE_BUFFER);
 
@@ -1126,7 +1126,7 @@ iris_resource_create_for_image(struct pipe_screen *pscreen,
    const char *name = "miptree";
    enum iris_memory_zone memzone = IRIS_MEMZONE_OTHER;
 
-   unsigned flags = iris_resource_alloc_flags(screen, templ, res);
+   enum bo_alloc_flags flags = iris_resource_alloc_flags(screen, templ, res);
 
    if (iris_resource_image_is_pat_compressible(screen, templ, res, flags))
       flags |= BO_ALLOC_COMPRESSED;
@@ -1999,7 +1999,7 @@ iris_invalidate_buffer(struct iris_context *ice, struct iris_resource *res)
       return false;
 
    struct iris_bo *old_bo = res->bo;
-   unsigned flags = old_bo->real.protected ? BO_ALLOC_PROTECTED : BO_ALLOC_PLAIN;
+   enum bo_alloc_flags flags = old_bo->real.protected ? BO_ALLOC_PROTECTED : BO_ALLOC_PLAIN;
    struct iris_bo *new_bo =
       iris_bo_alloc(screen->bufmgr, res->bo->name, res->base.b.width0,
                     iris_buffer_alignment(res->base.b.width0),

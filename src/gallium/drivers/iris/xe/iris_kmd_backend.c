@@ -39,7 +39,7 @@ static uint32_t
 xe_gem_create(struct iris_bufmgr *bufmgr,
               const struct intel_memory_class_instance **regions,
               uint16_t regions_count, uint64_t size,
-              enum iris_heap heap_flags, unsigned alloc_flags)
+              enum iris_heap heap_flags, enum bo_alloc_flags alloc_flags)
 {
    struct drm_xe_ext_set_property pxp_ext = {
       .base.name = DRM_XE_GEM_CREATE_EXTENSION_SET_PROPERTY,
@@ -109,7 +109,7 @@ xe_gem_mmap(struct iris_bufmgr *bufmgr, struct iris_bo *bo)
 }
 
 static inline int
-xe_gem_vm_bind_op(struct iris_bo *bo, uint32_t op, unsigned iris_flags)
+xe_gem_vm_bind_op(struct iris_bo *bo, uint32_t op, enum bo_alloc_flags iris_flags)
 {
    struct iris_bufmgr *bufmgr = bo->bufmgr;
    struct intel_bind_timeline *bind_timeline = iris_bufmgr_get_bind_timeline(bufmgr);
@@ -169,7 +169,7 @@ xe_gem_vm_bind_op(struct iris_bo *bo, uint32_t op, unsigned iris_flags)
 }
 
 static bool
-xe_gem_vm_bind(struct iris_bo *bo, unsigned flags)
+xe_gem_vm_bind(struct iris_bo *bo, enum bo_alloc_flags flags)
 {
    return xe_gem_vm_bind_op(bo, DRM_XE_VM_BIND_OP_MAP, flags) == 0;
 }
