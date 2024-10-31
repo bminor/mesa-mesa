@@ -12408,7 +12408,7 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
 {
-   assert(options->gfx_level == GFX8);
+   assert(options->gfx_level >= GFX8 && options->gfx_level <= GFX10_3);
 
    init_program(program, compute_cs, info, options->gfx_level, options->family, options->wgp_mode,
                 config);
@@ -12429,16 +12429,39 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
 
    Builder bld(ctx.program, ctx.block);
 
-   /* Load the buffer descriptor from TMA. */
-   bld.smem(aco_opcode::s_load_dwordx4, Definition(PhysReg{ttmp4}, s4), Operand(PhysReg{tma}, s2),
-            Operand::zero());
-
    ac_hw_cache_flags cache_glc;
    cache_glc.value = ac_glc;
 
-   /* Store TTMP0-TTMP1. */
-   bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(PhysReg{ttmp4}, s4), Operand::zero(),
-            Operand(PhysReg{ttmp0}, s2), memory_sync_info(), cache_glc);
+   if (ctx.program->gfx_level >= GFX9) {
+      /* Get TMA. */
+      bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp10}, s1),
+               ((32 - 1) << 11) | 18);
+      bld.sop2(aco_opcode::s_lshl_b32, Definition(PhysReg{ttmp10}, s1), Definition(scc, s1),
+               Operand(PhysReg{ttmp10}, s1), Operand::c32(8u));
+      bld.copy(Definition(PhysReg{ttmp11}, s1),
+               Operand::c32((unsigned)ctx.options->address32_hi));
+
+      /* Load the buffer descriptor from TMA. */
+      bld.smem(aco_opcode::s_load_dwordx4, Definition(PhysReg{ttmp4}, s4),
+               Operand(PhysReg{ttmp10}, s2), Operand::c32(0u));
+
+      /* Store TTMP0-TTMP1. */
+      bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{108}, s1) /* ttmp0 */);
+      bld.copy(Definition(PhysReg{257}, v1) /* v1 */, Operand(PhysReg{109}, s1) /* ttmp1 */);
+
+      bld.mubuf(aco_opcode::buffer_store_dwordx2, Operand(PhysReg{ttmp4}, s4), Operand(v1),
+                Operand::c32(0u), Operand(PhysReg{256}, v2) /* v[0-1] */, 0 /* offset */,
+                false /* offen */, false /* idxen */, /* addr64 */ false,
+                /* disable_wqm */ false, cache_glc);
+   } else {
+      /* Load the buffer descriptor from TMA. */
+      bld.smem(aco_opcode::s_load_dwordx4, Definition(PhysReg{ttmp4}, s4), Operand(PhysReg{tma}, s2),
+               Operand::zero());
+
+      /* Store TTMP0-TTMP1. */
+      bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(PhysReg{ttmp4}, s4), Operand::zero(),
+               Operand(PhysReg{ttmp0}, s2), memory_sync_info(), cache_glc);
+   }
 
    uint32_t hw_regs_idx[] = {
       2, /* HW_REG_STATUS */
@@ -12454,9 +12477,18 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
       bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp8}, s1),
                ((32 - 1) << 11) | hw_regs_idx[i]);
 
-      bld.smem(aco_opcode::s_buffer_store_dword, Operand(PhysReg{ttmp4}, s4),
-               Operand::c32(8u + i * 4), Operand(PhysReg{ttmp8}, s1), memory_sync_info(),
-               cache_glc);
+      if (ctx.program->gfx_level >= GFX9) {
+         bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{ttmp8}, s1));
+
+         bld.mubuf(aco_opcode::buffer_store_dword, Operand(PhysReg{ttmp4}, s4), Operand(v1),
+                   Operand::c32(8u + i * 4), Operand(PhysReg{256}, v1) /* v0 */, 0 /* offset */,
+                   false /* offen */, false /* idxen */, /* addr64 */ false,
+                   /* disable_wqm */ false, cache_glc);
+      } else {
+         bld.smem(aco_opcode::s_buffer_store_dword, Operand(PhysReg{ttmp4}, s4),
+                  Operand::c32(8u + i * 4), Operand(PhysReg{ttmp8}, s1), memory_sync_info(),
+                  cache_glc);
+      }
    }
 
    program->config->float_mode = program->blocks[0].fp_mode.val;
