@@ -3805,13 +3805,7 @@ radv_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct r
 
    if (pdev->info.gfx_level >= GFX11 ? G_028C78_FDCC_ENABLE(cb_fdcc_control) : G_028C70_DCC_ENABLE(cb_color_info)) {
       /* Drawing with DCC enabled also compresses colorbuffers. */
-      VkImageSubresourceRange range = {
-         .aspectMask = iview->vk.aspects,
-         .baseMipLevel = iview->vk.base_mip_level,
-         .levelCount = iview->vk.level_count,
-         .baseArrayLayer = iview->vk.base_array_layer,
-         .layerCount = iview->vk.layer_count,
-      };
+      VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
 
       radv_update_dcc_metadata(cmd_buffer, image, &range, true);
    }
@@ -4156,13 +4150,7 @@ static void
 radv_update_tc_compat_zrange_metadata(struct radv_cmd_buffer *cmd_buffer, const struct radv_image_view *iview,
                                       VkClearDepthStencilValue ds_clear_value)
 {
-   VkImageSubresourceRange range = {
-      .aspectMask = iview->vk.aspects,
-      .baseMipLevel = iview->vk.base_mip_level,
-      .levelCount = iview->vk.level_count,
-      .baseArrayLayer = iview->vk.base_array_layer,
-      .layerCount = iview->vk.layer_count,
-   };
+   VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
    uint32_t cond_val;
 
    /* Conditionally set DB_Z_INFO.ZRANGE_PRECISION to 0 when the last
@@ -4180,13 +4168,7 @@ void
 radv_update_ds_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const struct radv_image_view *iview,
                               VkClearDepthStencilValue ds_clear_value, VkImageAspectFlags aspects)
 {
-   VkImageSubresourceRange range = {
-      .aspectMask = iview->vk.aspects,
-      .baseMipLevel = iview->vk.base_mip_level,
-      .levelCount = iview->vk.level_count,
-      .baseArrayLayer = iview->vk.base_array_layer,
-      .layerCount = iview->vk.layer_count,
-   };
+   VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
    struct radv_image *image = iview->image;
 
    assert(radv_htile_enabled(image, range.baseMipLevel));
@@ -4369,13 +4351,7 @@ radv_update_color_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const struc
                                  uint32_t color_values[2])
 {
    struct radv_image *image = iview->image;
-   VkImageSubresourceRange range = {
-      .aspectMask = iview->vk.aspects,
-      .baseMipLevel = iview->vk.base_mip_level,
-      .levelCount = iview->vk.level_count,
-      .baseArrayLayer = iview->vk.base_array_layer,
-      .layerCount = iview->vk.layer_count,
-   };
+   VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
 
    assert(radv_image_has_cmask(image) || radv_dcc_enabled(image, iview->vk.base_mip_level));
 
@@ -8859,13 +8835,7 @@ radv_handle_color_fbfetch_output(struct radv_cmd_buffer *cmd_buffer, uint32_t in
    if (d->vk.ial.color_map[color_att_idx] != color_att_idx)
       return;
 
-   const VkImageSubresourceRange range = {
-      .aspectMask = att->iview->vk.aspects,
-      .baseMipLevel = att->iview->vk.base_mip_level,
-      .levelCount = att->iview->vk.level_count,
-      .baseArrayLayer = att->iview->vk.base_array_layer,
-      .layerCount = att->iview->vk.layer_count,
-   };
+   const VkImageSubresourceRange range = vk_image_view_subresource_range(&att->iview->vk);
 
    /* Consider previous rendering work for WAW hazards. */
    cmd_buffer->state.flush_bits |= radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
@@ -8908,13 +8878,7 @@ radv_handle_depth_fbfetch_output(struct radv_cmd_buffer *cmd_buffer)
    if (d->vk.ial.depth_att == MESA_VK_ATTACHMENT_UNUSED && d->vk.ial.stencil_att == MESA_VK_ATTACHMENT_UNUSED)
       return;
 
-   const VkImageSubresourceRange range = {
-      .aspectMask = att->iview->vk.aspects,
-      .baseMipLevel = att->iview->vk.base_mip_level,
-      .levelCount = att->iview->vk.level_count,
-      .baseArrayLayer = att->iview->vk.base_array_layer,
-      .layerCount = att->iview->vk.layer_count,
-   };
+   const VkImageSubresourceRange range = vk_image_view_subresource_range(&att->iview->vk);
 
    /* Consider previous rendering work for WAW hazards. */
    cmd_buffer->state.flush_bits |=
