@@ -85,7 +85,7 @@ libagx_helper(void)
       }
 
       default:
-         *(global uint32_t *)(0xdead0000 | (op << 8)) = 0;
+         *(global uint32_t *)((uintptr_t)(0xdead0000 | (op << 8))) = 0;
          nir_fence_helper_exit_agx();
          return;
       }
