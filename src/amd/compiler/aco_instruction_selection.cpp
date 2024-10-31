@@ -12452,7 +12452,7 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    for (unsigned i = 0; i < ARRAY_SIZE(hw_regs_idx); i++) {
       /* "((size - 1) << 11) | register" */
       bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp8}, s1),
-               ((20 - 1) << 11) | hw_regs_idx[i]);
+               ((32 - 1) << 11) | hw_regs_idx[i]);
 
       bld.smem(aco_opcode::s_buffer_store_dword, Operand(PhysReg{ttmp4}, s4),
                Operand::c32(8u + i * 4), Operand(PhysReg{ttmp8}, s1), memory_sync_info(),
