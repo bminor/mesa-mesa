@@ -140,7 +140,7 @@ static const enum pc_di_primtype primtypes[] = {
    [MESA_PRIM_TRIANGLES_ADJACENCY]         = DI_PT_TRI_ADJ,
    [MESA_PRIM_TRIANGLE_STRIP_ADJACENCY]    = DI_PT_TRISTRIP_ADJ,
    [MESA_PRIM_PATCHES]                     = DI_PT_PATCHES0,
-   [MESA_PRIM_COUNT]                         = DI_PT_RECTLIST,  /* internal clear blits */
+   [MESA_PRIM_COUNT]                       = DI_PT_RECTLIST,  /* internal clear blits */
 };
 /* clang-format on */
 
