@@ -446,8 +446,11 @@ get_device_properties(const struct panvk_instance *instance,
        * this limit.
        */
       .maxMemoryAllocationCount = UINT32_MAX,
-      /* Again, no hardware limit, but most drivers seem to advertive 64k. */
-      .maxSamplerAllocationCount = 64 * 1024,
+      /* On Mali, VkSampler objects do not use any resources other than host
+       * memory and host address space, availability of which can change
+       * significantly over time.
+       */
+      .maxSamplerAllocationCount = UINT32_MAX,
       /* A cache line. */
       .bufferImageGranularity = 64,
       /* Sparse binding not supported yet. */
