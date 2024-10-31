@@ -894,7 +894,7 @@ radv_image_is_pipe_misaligned(const struct radv_device *device, const struct rad
       int overlap = MAX2(0, log2_bpp_and_samples + num_pipes - 8);
 
       if (vk_format_has_depth(image->vk.format)) {
-         if (radv_image_is_tc_compat_htile(image) && overlap) {
+         if (radv_image_is_tc_compat_htile(image) && (pdev->info.tcc_rb_non_coherent || overlap)) {
             return true;
          }
       } else {
@@ -906,7 +906,7 @@ radv_image_is_pipe_misaligned(const struct radv_device *device, const struct rad
           * not readable by shader.
           */
          if ((radv_image_has_dcc(image) || radv_image_is_tc_compat_cmask(image)) &&
-             (samples_overlap > log2_samples_frag_diff)) {
+             (pdev->info.tcc_rb_non_coherent || (samples_overlap > log2_samples_frag_diff))) {
             return true;
          }
       }
@@ -935,7 +935,7 @@ radv_image_is_l2_coherent(const struct radv_device *device, const struct radv_im
          }
       }
 
-      return !pdev->info.tcc_rb_non_coherent && !radv_image_is_pipe_misaligned(device, image);
+      return !radv_image_is_pipe_misaligned(device, image);
    } else if (pdev->info.gfx_level == GFX9) {
       if (image->vk.samples == 1 &&
           (image->vk.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
