@@ -1299,9 +1299,6 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
 
    if (!draw.b.indirect) {
       unsigned in_patches = draw.b.count[0] / args.input_patch_size;
-      if (in_patches == 0)
-         unreachable("todo: drop the draw?");
-
       unsigned unrolled_patches = in_patches * draw.b.count[1];
 
       uint32_t alloc = 0;
