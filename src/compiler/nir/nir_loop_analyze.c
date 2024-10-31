@@ -1620,4 +1620,7 @@ nir_loop_analyze_impl(nir_function_impl *impl,
    nir_index_ssa_defs(impl);
    foreach_list_typed(nir_cf_node, node, node, &impl->body)
       process_loops(node, indirect_mask, force_unroll_sampler_indirect);
+
+   impl->loop_analysis_indirect_mask = indirect_mask;
+   impl->loop_analysis_force_unroll_sampler_indirect = force_unroll_sampler_indirect;
 }
