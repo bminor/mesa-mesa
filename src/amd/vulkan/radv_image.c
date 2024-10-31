@@ -867,25 +867,36 @@ radv_image_alloc_values(const struct radv_device *device, struct radv_image *ima
  * which requires to invalidate L2.
  */
 static bool
-radv_image_is_pipe_misaligned(const struct radv_image *image)
+radv_image_is_pipe_misaligned(const struct radv_image *image, const VkImageSubresourceRange *range)
 {
    for (unsigned i = 0; i < image->plane_count; ++i) {
-      if (image->planes[i].first_mip_pipe_misaligned != UINT32_MAX)
-         return true;
+      const uint32_t first_mip_pipe_misaligned = image->planes[i].first_mip_pipe_misaligned;
+
+      if (range) {
+         if (range->baseMipLevel + range->levelCount - 1 >= first_mip_pipe_misaligned)
+            return true;
+      } else {
+         /* Be conservative when the range is unknown because it's not possible to know which mips
+          * are used.
+          */
+         if (first_mip_pipe_misaligned != UINT32_MAX)
+            return true;
+      }
    }
 
    return false;
 }
 
-static bool
-radv_image_is_l2_coherent(const struct radv_device *device, const struct radv_image *image)
+bool
+radv_image_is_l2_coherent(const struct radv_device *device, const struct radv_image *image,
+                          const VkImageSubresourceRange *range)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (pdev->info.gfx_level >= GFX12) {
       return true; /* Everything is coherent with TC L2. */
    } else if (pdev->info.gfx_level >= GFX10) {
-      return !radv_image_is_pipe_misaligned(image);
+      return !radv_image_is_pipe_misaligned(image, range);
    } else if (pdev->info.gfx_level == GFX9) {
       if (image->vk.samples == 1 &&
           (image->vk.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
@@ -1222,8 +1233,6 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
 
    if (pdev->info.gfx_level >= GFX10 && pdev->info.gfx_level < GFX12)
       radv_image_init_first_mip_pipe_misaligned(device, image);
-
-   image->l2_coherent = radv_image_is_l2_coherent(device, image);
 
    image->support_comp_to_single = radv_image_use_comp_to_single(device, image);
 

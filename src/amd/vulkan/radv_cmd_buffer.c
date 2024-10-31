@@ -6572,10 +6572,12 @@ enum radv_cmd_flush_bits
 radv_src_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 src_stages, VkAccessFlags2 src_flags,
                       const struct radv_image *image, const VkImageSubresourceRange *range)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+
    src_flags = vk_expand_src_access_flags2(src_stages, src_flags);
 
    bool has_CB_meta = true, has_DB_meta = true;
-   bool image_is_coherent = image ? image->l2_coherent : false;
+   bool image_is_coherent = image ? radv_image_is_l2_coherent(device, image, range) : false;
    enum radv_cmd_flush_bits flush_bits = 0;
 
    if (image) {
@@ -6645,7 +6647,7 @@ radv_dst_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 
    bool has_CB_meta = true, has_DB_meta = true;
    enum radv_cmd_flush_bits flush_bits = 0;
    bool flush_CB = true, flush_DB = true;
-   bool image_is_coherent = image ? image->l2_coherent : false;
+   bool image_is_coherent = image ? radv_image_is_l2_coherent(device, image, range) : false;
    bool flush_L2_metadata = false;
 
    dst_flags = vk_expand_dst_access_flags2(dst_stages, dst_flags);
@@ -9106,6 +9108,7 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
 static void
 radv_mark_noncoherent_rb(struct radv_cmd_buffer *cmd_buffer)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_rendering_state *render = &cmd_buffer->state.render;
 
    /* Have to be conservative in cmdbuffers with inherited attachments. */
@@ -9115,13 +9118,27 @@ radv_mark_noncoherent_rb(struct radv_cmd_buffer *cmd_buffer)
    }
 
    for (uint32_t i = 0; i < render->color_att_count; i++) {
-      if (render->color_att[i].iview && !render->color_att[i].iview->image->l2_coherent) {
+      const struct radv_image_view *iview = render->color_att[i].iview;
+
+      if (!iview)
+         continue;
+
+      const VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
+
+      if (!radv_image_is_l2_coherent(device, iview->image, &range)) {
          cmd_buffer->state.rb_noncoherent_dirty = true;
          return;
       }
    }
-   if (render->ds_att.iview && !render->ds_att.iview->image->l2_coherent)
-      cmd_buffer->state.rb_noncoherent_dirty = true;
+
+   const struct radv_image_view *iview = render->ds_att.iview;
+
+   if (iview) {
+      const VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
+
+      if (!radv_image_is_l2_coherent(device, iview->image, &range))
+         cmd_buffer->state.rb_noncoherent_dirty = true;
+   }
 }
 
 static VkImageLayout
