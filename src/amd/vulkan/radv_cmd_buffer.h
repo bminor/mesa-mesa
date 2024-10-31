@@ -737,10 +737,12 @@ void radv_update_color_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const 
 unsigned radv_instance_rate_prolog_index(unsigned num_attributes, uint32_t instance_rate_inputs);
 
 enum radv_cmd_flush_bits radv_src_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 src_stages,
-                                               VkAccessFlags2 src_flags, const struct radv_image *image);
+                                               VkAccessFlags2 src_flags, const struct radv_image *image,
+                                               const VkImageSubresourceRange *range);
 
 enum radv_cmd_flush_bits radv_dst_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 dst_stages,
-                                               VkAccessFlags2 dst_flags, const struct radv_image *image);
+                                               VkAccessFlags2 dst_flags, const struct radv_image *image,
+                                               const VkImageSubresourceRange *range);
 
 struct radv_resolve_barrier {
    VkPipelineStageFlags2 src_stage_mask;

@@ -6570,7 +6570,7 @@ can_skip_buffer_l2_flushes(struct radv_device *device)
 
 enum radv_cmd_flush_bits
 radv_src_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 src_stages, VkAccessFlags2 src_flags,
-                      const struct radv_image *image)
+                      const struct radv_image *image, const VkImageSubresourceRange *range)
 {
    src_flags = vk_expand_src_access_flags2(src_stages, src_flags);
 
@@ -6638,7 +6638,7 @@ radv_src_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 
 
 enum radv_cmd_flush_bits
 radv_dst_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 dst_stages, VkAccessFlags2 dst_flags,
-                      const struct radv_image *image)
+                      const struct radv_image *image, const VkImageSubresourceRange *range)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -6747,12 +6747,18 @@ radv_emit_resolve_barrier(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       if (!iview)
          continue;
 
+      const VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
+
       cmd_buffer->state.flush_bits |=
-         radv_src_access_flush(cmd_buffer, barrier->src_stage_mask, barrier->src_access_mask, iview->image);
+         radv_src_access_flush(cmd_buffer, barrier->src_stage_mask, barrier->src_access_mask, iview->image, &range);
    }
    if (render->ds_att.iview) {
-      cmd_buffer->state.flush_bits |= radv_src_access_flush(cmd_buffer, barrier->src_stage_mask,
-                                                            barrier->src_access_mask, render->ds_att.iview->image);
+      struct radv_image_view *iview = render->ds_att.iview;
+
+      const VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
+
+      cmd_buffer->state.flush_bits |= radv_src_access_flush(
+         cmd_buffer, barrier->src_stage_mask, barrier->src_access_mask, render->ds_att.iview->image, &range);
    }
 
    radv_stage_flush(cmd_buffer, barrier->src_stage_mask);
@@ -6762,12 +6768,18 @@ radv_emit_resolve_barrier(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       if (!iview)
          continue;
 
+      const VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
+
       cmd_buffer->state.flush_bits |=
-         radv_dst_access_flush(cmd_buffer, barrier->dst_stage_mask, barrier->dst_access_mask, iview->image);
+         radv_dst_access_flush(cmd_buffer, barrier->dst_stage_mask, barrier->dst_access_mask, iview->image, &range);
    }
    if (render->ds_att.iview) {
-      cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, barrier->dst_stage_mask,
-                                                            barrier->dst_access_mask, render->ds_att.iview->image);
+      struct radv_image_view *iview = render->ds_att.iview;
+
+      const VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
+
+      cmd_buffer->state.flush_bits |=
+         radv_dst_access_flush(cmd_buffer, barrier->dst_stage_mask, barrier->dst_access_mask, iview->image, &range);
    }
 
    radv_gang_barrier(cmd_buffer, barrier->src_stage_mask, barrier->dst_stage_mask);
@@ -7352,7 +7364,7 @@ radv_EndCommandBuffer(VkCommandBuffer commandBuffer)
        */
       if (cmd_buffer->state.rb_noncoherent_dirty && !can_skip_buffer_l2_flushes(device))
          cmd_buffer->state.flush_bits |= radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                                               VK_ACCESS_2_TRANSFER_WRITE_BIT, NULL);
+                                                               VK_ACCESS_2_TRANSFER_WRITE_BIT, NULL, NULL);
 
       /* Since NGG streamout uses GDS, we need to make GDS idle when
        * we leave the IB, otherwise another process might overwrite
@@ -8838,8 +8850,9 @@ radv_handle_color_fbfetch_output(struct radv_cmd_buffer *cmd_buffer, uint32_t in
    const VkImageSubresourceRange range = vk_image_view_subresource_range(&att->iview->vk);
 
    /* Consider previous rendering work for WAW hazards. */
-   cmd_buffer->state.flush_bits |= radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, att->iview->image);
+   cmd_buffer->state.flush_bits |=
+      radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                            att->iview->image, &range);
 
    /* Force a transition to FEEDBACK_LOOP_OPTIMAL to decompress DCC. */
    radv_handle_image_transition(cmd_buffer, att->iview->image, att->layout,
@@ -8850,7 +8863,7 @@ radv_handle_color_fbfetch_output(struct radv_cmd_buffer *cmd_buffer, uint32_t in
 
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(
       cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-      VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, att->iview->image);
+      VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT, att->iview->image, &range);
 
    cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
 }
@@ -8883,7 +8896,7 @@ radv_handle_depth_fbfetch_output(struct radv_cmd_buffer *cmd_buffer)
    /* Consider previous rendering work for WAW hazards. */
    cmd_buffer->state.flush_bits |=
       radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, att->iview->image);
+                            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, att->iview->image, &range);
 
    /* Force a transition to FEEDBACK_LOOP_OPTIMAL to decompress HTILE. */
    radv_handle_image_transition(cmd_buffer, att->iview->image, att->layout,
@@ -8895,7 +8908,7 @@ radv_handle_depth_fbfetch_output(struct radv_cmd_buffer *cmd_buffer)
 
    cmd_buffer->state.flush_bits |= radv_dst_access_flush(
       cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-      VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT, att->iview->image);
+      VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT, att->iview->image, &range);
 
    cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
 }
@@ -12205,8 +12218,9 @@ radv_trace_trace_rays(struct radv_cmd_buffer *cmd_buffer, const VkTraceRaysIndir
 
    cmd_buffer->state.flush_bits |=
       RADV_CMD_FLAG_INV_SCACHE | RADV_CMD_FLAG_CS_PARTIAL_FLUSH |
-      radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_WRITE_BIT, NULL) |
-      radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT, NULL);
+      radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_WRITE_BIT, NULL,
+                            NULL) |
+      radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT, NULL, NULL);
 
    radv_update_buffer_cp(cmd_buffer,
                          device->rra_trace.ray_history_addr + offsetof(struct radv_ray_history_header, dispatch_index),
@@ -12427,15 +12441,15 @@ radv_initialize_htile(struct radv_cmd_buffer *cmd_buffer, struct radv_image *ima
    /* Transitioning from LAYOUT_UNDEFINED layout not everyone is consistent
     * in considering previous rendering work for WAW hazards. */
    state->flush_bits |= radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                              VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, image);
+                                              VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, image, range);
 
    if (image->planes[0].surface.has_stencil &&
        !(range->aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
       /* Flush caches before performing a separate aspect initialization because it's a
        * read-modify-write operation.
        */
-      state->flush_bits |=
-         radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT, image);
+      state->flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                                 VK_ACCESS_2_SHADER_READ_BIT, image, range);
    }
 
    state->flush_bits |= radv_clear_htile(cmd_buffer, image, range, htile_value);
@@ -12558,7 +12572,7 @@ radv_init_color_image_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_i
     * consistent in considering previous rendering work for WAW hazards.
     */
    cmd_buffer->state.flush_bits |= radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, image);
+                                                         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, image, range);
 
    if (radv_image_has_cmask(image)) {
       static const uint32_t cmask_clear_values[4] = {0xffffffff, 0xdddddddd, 0xeeeeeeee, 0xffffffff};
@@ -12811,17 +12825,17 @@ radv_barrier(struct radv_cmd_buffer *cmd_buffer, uint32_t dep_count, const VkDep
       for (uint32_t i = 0; i < dep_info->memoryBarrierCount; i++) {
          const VkMemoryBarrier2 *barrier = &dep_info->pMemoryBarriers[i];
          src_stage_mask |= barrier->srcStageMask;
-         src_flush_bits |= radv_src_access_flush(cmd_buffer, barrier->srcStageMask, barrier->srcAccessMask, NULL);
+         src_flush_bits |= radv_src_access_flush(cmd_buffer, barrier->srcStageMask, barrier->srcAccessMask, NULL, NULL);
          dst_stage_mask |= barrier->dstStageMask;
-         dst_flush_bits |= radv_dst_access_flush(cmd_buffer, barrier->dstStageMask, barrier->dstAccessMask, NULL);
+         dst_flush_bits |= radv_dst_access_flush(cmd_buffer, barrier->dstStageMask, barrier->dstAccessMask, NULL, NULL);
       }
 
       for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; i++) {
          const VkBufferMemoryBarrier2 *barrier = &dep_info->pBufferMemoryBarriers[i];
          src_stage_mask |= barrier->srcStageMask;
-         src_flush_bits |= radv_src_access_flush(cmd_buffer, barrier->srcStageMask, barrier->srcAccessMask, NULL);
+         src_flush_bits |= radv_src_access_flush(cmd_buffer, barrier->srcStageMask, barrier->srcAccessMask, NULL, NULL);
          dst_stage_mask |= barrier->dstStageMask;
-         dst_flush_bits |= radv_dst_access_flush(cmd_buffer, barrier->dstStageMask, barrier->dstAccessMask, NULL);
+         dst_flush_bits |= radv_dst_access_flush(cmd_buffer, barrier->dstStageMask, barrier->dstAccessMask, NULL, NULL);
       }
 
       for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; i++) {
@@ -12829,9 +12843,11 @@ radv_barrier(struct radv_cmd_buffer *cmd_buffer, uint32_t dep_count, const VkDep
          VK_FROM_HANDLE(radv_image, image, barrier->image);
 
          src_stage_mask |= barrier->srcStageMask;
-         src_flush_bits |= radv_src_access_flush(cmd_buffer, barrier->srcStageMask, barrier->srcAccessMask, image);
+         src_flush_bits |= radv_src_access_flush(cmd_buffer, barrier->srcStageMask, barrier->srcAccessMask, image,
+                                                 &barrier->subresourceRange);
          dst_stage_mask |= barrier->dstStageMask;
-         dst_flush_bits |= radv_dst_access_flush(cmd_buffer, barrier->dstStageMask, barrier->dstAccessMask, image);
+         dst_flush_bits |= radv_dst_access_flush(cmd_buffer, barrier->dstStageMask, barrier->dstAccessMask, image,
+                                                 &barrier->subresourceRange);
       }
    }
 

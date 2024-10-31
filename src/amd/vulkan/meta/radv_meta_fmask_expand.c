@@ -134,9 +134,6 @@ radv_expand_fmask_image_inplace(struct radv_cmd_buffer *cmd_buffer, struct radv_
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
-   cmd_buffer->state.flush_bits |=
-      radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT, image);
-
    radv_image_view_init(&iview, device,
                         &(VkImageViewCreateInfo){
                            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -153,6 +150,11 @@ radv_expand_fmask_image_inplace(struct radv_cmd_buffer *cmd_buffer, struct radv_
                               },
                         },
                         NULL);
+
+   const VkImageSubresourceRange range = vk_image_view_subresource_range(&iview.vk);
+
+   cmd_buffer->state.flush_bits |= radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                                         VK_ACCESS_2_SHADER_READ_BIT, image, &range);
 
    radv_meta_push_descriptor_set(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, device->meta_state.fmask_expand.p_layout,
                                  0, 2,
@@ -185,8 +187,8 @@ radv_expand_fmask_image_inplace(struct radv_cmd_buffer *cmd_buffer, struct radv_
    radv_meta_restore(&saved_state, cmd_buffer);
 
    cmd_buffer->state.flush_bits |=
-      RADV_CMD_FLAG_CS_PARTIAL_FLUSH |
-      radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, VK_ACCESS_2_SHADER_WRITE_BIT, image);
+      RADV_CMD_FLAG_CS_PARTIAL_FLUSH | radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                                                             VK_ACCESS_2_SHADER_WRITE_BIT, image, &range);
 
    /* Re-initialize FMASK in fully expanded mode. */
    cmd_buffer->state.flush_bits |= radv_init_fmask(cmd_buffer, image, subresourceRange);
