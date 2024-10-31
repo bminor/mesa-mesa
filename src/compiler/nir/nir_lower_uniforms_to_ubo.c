@@ -84,7 +84,7 @@ nir_lower_uniforms_to_ubo_instr(nir_builder *b, nir_instr *instr, void *data)
          int multiplier = state->dword_packed ? 4 : 16;
          load_result = nir_load_ubo(b, intr->num_components, intr->def.bit_size,
                                     ubo_idx,
-                                    nir_iadd_imm(b, nir_imul_imm(b, uniform_offset, multiplier),
+                                    nir_iadd_imm(b, nir_amul_imm(b, uniform_offset, multiplier),
                                                  nir_intrinsic_base(intr) * multiplier));
          nir_intrinsic_instr *load = nir_instr_as_intrinsic(load_result->parent_instr);
 
