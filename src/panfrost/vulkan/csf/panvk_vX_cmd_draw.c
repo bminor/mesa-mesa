@@ -464,26 +464,89 @@ translate_prim_topology(VkPrimitiveTopology in)
 }
 
 static void
-force_fb_preload(struct panvk_cmd_buffer *cmdbuf)
+force_fb_preload(struct panvk_cmd_buffer *cmdbuf,
+                 const VkRenderingInfo *render_info)
 {
-   for (unsigned i = 0; i < cmdbuf->state.gfx.render.fb.info.rt_count; i++) {
-      if (cmdbuf->state.gfx.render.fb.info.rts[i].view) {
-         cmdbuf->state.gfx.render.fb.info.rts[i].clear = false;
-         cmdbuf->state.gfx.render.fb.info.rts[i].preload = true;
+   /* We force preloading for all active attachments when the render area is
+    * unaligned or when a barrier flushes prior draw calls in the middle of a
+    * render pass.  The two cases can be distinguished by whether a
+    * render_info is provided.
+    *
+    * When the render area is unaligned, we force preloading to preserve
+    * contents falling outside of the render area.  We also make sure the
+    * initial attachment clears are performed.
+    */
+   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+   VkClearAttachment clear_atts[MAX_RTS + 2];
+   uint32_t clear_att_count = 0;
+
+   if (!cmdbuf->state.gfx.render.bound_attachments)
+      return;
+
+   for (unsigned i = 0; i < fbinfo->rt_count; i++) {
+      if (!fbinfo->rts[i].view)
+         continue;
+
+      fbinfo->rts[i].preload = true;
+
+      if (fbinfo->rts[i].clear) {
+         if (render_info) {
+            const VkRenderingAttachmentInfo *att =
+               &render_info->pColorAttachments[i];
+
+            clear_atts[clear_att_count++] = (VkClearAttachment){
+               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+               .colorAttachment = i,
+               .clearValue = att->clearValue,
+            };
+         }
+         fbinfo->rts[i].clear = false;
       }
    }
 
-   if (cmdbuf->state.gfx.render.fb.info.zs.view.zs) {
-      cmdbuf->state.gfx.render.fb.info.zs.clear.z = false;
-      cmdbuf->state.gfx.render.fb.info.zs.preload.z = true;
+   if (fbinfo->zs.view.zs) {
+      fbinfo->zs.preload.z = true;
+
+      if (fbinfo->zs.clear.z) {
+         if (render_info) {
+            const VkRenderingAttachmentInfo *att =
+               render_info->pDepthAttachment;
+
+            clear_atts[clear_att_count++] = (VkClearAttachment){
+               .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+               .clearValue = att->clearValue,
+            };
+         }
+         fbinfo->zs.clear.z = false;
+      }
    }
 
-   if (cmdbuf->state.gfx.render.fb.info.zs.view.s ||
-       (cmdbuf->state.gfx.render.fb.info.zs.view.zs &&
-        util_format_is_depth_and_stencil(
-           cmdbuf->state.gfx.render.fb.info.zs.view.zs->format))) {
-      cmdbuf->state.gfx.render.fb.info.zs.clear.s = false;
-      cmdbuf->state.gfx.render.fb.info.zs.preload.s = true;
+   if (fbinfo->zs.view.s ||
+       (fbinfo->zs.view.zs &&
+        util_format_is_depth_and_stencil(fbinfo->zs.view.zs->format))) {
+      fbinfo->zs.preload.s = true;
+
+      if (fbinfo->zs.clear.s) {
+         const VkRenderingAttachmentInfo *att = render_info->pStencilAttachment;
+
+         clear_atts[clear_att_count++] = (VkClearAttachment){
+            .aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT,
+            .clearValue = att->clearValue,
+         };
+         fbinfo->zs.clear.s = false;
+      }
+   }
+
+   if (clear_att_count) {
+      VkClearRect clear_rect = {
+         .rect = render_info->renderArea,
+         .baseArrayLayer = 0,
+         .layerCount = render_info->layerCount,
+      };
+
+      panvk_per_arch(CmdClearAttachments)(panvk_cmd_buffer_to_handle(cmdbuf),
+                                          clear_att_count, clear_atts, 1,
+                                          &clear_rect);
    }
 }
 
@@ -1962,74 +2025,8 @@ preload_render_area_border(struct panvk_cmd_buffer *cmdbuf,
        (fbinfo->extent.maxy % 32) == 31);
 
    /* If the render area is aligned on a 32x32 section, we're good. */
-   if (render_area_is_32x32_aligned)
-      return;
-
-   /* We force preloading for all active attachments to preserve content falling
-    * outside the render area, but we need to compensate with attachment clears
-    * for attachments that were initially cleared.
-    */
-   uint32_t bound_atts = cmdbuf->state.gfx.render.bound_attachments;
-   VkClearAttachment clear_atts[MAX_RTS + 2];
-   uint32_t clear_att_count = 0;
-
-   for (uint32_t i = 0; i < render_info->colorAttachmentCount; i++) {
-      if (bound_atts & MESA_VK_RP_ATTACHMENT_COLOR_BIT(i)) {
-         if (fbinfo->rts[i].clear) {
-            const VkRenderingAttachmentInfo *att =
-               &render_info->pColorAttachments[i];
-
-            clear_atts[clear_att_count++] = (VkClearAttachment){
-               .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-               .colorAttachment = i,
-               .clearValue = att->clearValue,
-            };
-         }
-
-         fbinfo->rts[i].preload = true;
-         fbinfo->rts[i].clear = false;
-      }
-   }
-
-   if (bound_atts & MESA_VK_RP_ATTACHMENT_DEPTH_BIT) {
-      if (fbinfo->zs.clear.z) {
-         const VkRenderingAttachmentInfo *att = render_info->pDepthAttachment;
-
-         clear_atts[clear_att_count++] = (VkClearAttachment){
-            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-            .clearValue = att->clearValue,
-         };
-      }
-
-      fbinfo->zs.preload.z = true;
-      fbinfo->zs.clear.z = false;
-   }
-
-   if (bound_atts & MESA_VK_RP_ATTACHMENT_STENCIL_BIT) {
-      if (fbinfo->zs.clear.s) {
-         const VkRenderingAttachmentInfo *att = render_info->pStencilAttachment;
-
-         clear_atts[clear_att_count++] = (VkClearAttachment){
-            .aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT,
-            .clearValue = att->clearValue,
-         };
-      }
-
-      fbinfo->zs.preload.s = true;
-      fbinfo->zs.clear.s = false;
-   }
-
-   if (clear_att_count) {
-      VkClearRect clear_rect = {
-         .rect = render_info->renderArea,
-         .baseArrayLayer = 0,
-         .layerCount = render_info->layerCount,
-      };
-
-      panvk_per_arch(CmdClearAttachments)(panvk_cmd_buffer_to_handle(cmdbuf),
-                                          clear_att_count, clear_atts, 1,
-                                          &clear_rect);
-   }
+   if (!render_area_is_32x32_aligned)
+      force_fb_preload(cmdbuf, render_info);
 }
 
 void
@@ -2542,7 +2539,7 @@ panvk_per_arch(cmd_flush_draws)(struct panvk_cmd_buffer *cmdbuf)
 
    flush_tiling(cmdbuf);
    issue_fragment_jobs(cmdbuf);
-   force_fb_preload(cmdbuf);
+   force_fb_preload(cmdbuf, NULL);
    memset(&cmdbuf->state.gfx.render.fbds, 0,
           sizeof(cmdbuf->state.gfx.render.fbds));
    cmdbuf->state.gfx.render.tiler = 0;
