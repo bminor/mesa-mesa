@@ -7,9 +7,9 @@ shopt -s expand_aliases
 
 function _x_store_state {
     if [[ "$-" == *"x"* ]]; then
-      state_x=1
+      previous_state_x=1
     else
-      state_x=0
+      previous_state_x=0
     fi
 }
 _x_store_state
@@ -22,7 +22,7 @@ function _x_off {
 alias x_off='{ _x_off; } >/dev/null 2>/dev/null'
 
 function _x_restore {
-  [ $state_x -eq 0 ] || set -x
+  [ $previous_state_x -eq 0 ] || set -x
 }
 alias x_restore='{ _x_restore; } >/dev/null 2>/dev/null'
 
