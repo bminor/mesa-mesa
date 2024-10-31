@@ -71,12 +71,12 @@ prepended_input_args = []
 foreach input_arg : libagx_shader_files
   prepended_input_args += ['--in', input_arg]
 endforeach
-libagx_shaders = custom_target(
-  'libagx_shaders.h',
+libagx_spv = custom_target(
+  'libagx.spv',
   input : libagx_shader_files,
-  output : 'libagx_shaders.h',
+  output : 'libagx.spv',
   command : [
-    prog_asahi_clc, '--prefix', 'libagx_shaders',
+    prog_mesa_clc,
     prepended_input_args, '-o', '@OUTPUT@', '--',
     '-cl-std=cl2.0', '-D__OPENCL_VERSION__=200',
     '-I' + join_paths(meson.current_source_dir(), '.'),
@@ -85,7 +85,19 @@ libagx_shaders = custom_target(
     '-I' + join_paths(meson.current_build_dir(), '../genxml'),
     ],
   env: ['MESA_SHADER_CACHE_DISABLE=true'],
-  depends : [prog_asahi_clc, agx_pack],
+  depends : [prog_mesa_clc, agx_pack],
+)
+
+libagx_shaders = custom_target(
+  'libagx_shaders.h',
+  input : libagx_spv,
+  output : 'libagx_shaders.h',
+  command : [
+    prog_asahi_clc, '--prefix', 'libagx_shaders',
+    '--in', libagx_spv, '-o', '@OUTPUT@'
+  ],
+  env: ['MESA_SHADER_CACHE_DISABLE=true'],
+  depends : [prog_asahi_clc],
 )
 
 libasahi_lib = static_library(
