@@ -46,6 +46,9 @@ Dependencies
 ++++++++++++
 
 Following are the dependencies you would need to install on linux to build and install mesa main. You can install these packages using your linux distibutions' package manager.
+On Debian, Ubuntu and similar, ``sudo apt-get build-dep mesa`` installs
+most of these with just one command. On Fedora and similar, ``sudo dnf
+builddep mesa`` does the same.
 
 .. note::
    All these dependencies are for latest linux distros and is tested on ubuntu-24 only for now.
