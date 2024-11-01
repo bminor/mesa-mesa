@@ -3300,13 +3300,36 @@ to upconvert to 32b float internally?
 	<reg32 offset="0x80f0" name="GRAS_SC_WINDOW_SCISSOR_TL" type="a6xx_reg_xy" usage="rp_blit"/>
 	<reg32 offset="0x80f1" name="GRAS_SC_WINDOW_SCISSOR_BR" type="a6xx_reg_xy" usage="rp_blit"/>
 
-	<!-- 0x80f4 - 0x80fa are used for VK_KHR_fragment_shading_rate -->
-	<reg64 offset="0x80f4" name="GRAS_UNKNOWN_80F4" variants="A7XX-" usage="cmd"/>
-	<reg64 offset="0x80f5" name="GRAS_UNKNOWN_80F5" variants="A7XX-" usage="cmd"/>
-	<reg64 offset="0x80f6" name="GRAS_UNKNOWN_80F6" variants="A7XX-" usage="cmd"/>
-	<reg64 offset="0x80f8" name="GRAS_UNKNOWN_80F8" variants="A7XX-" usage="cmd"/>
-	<reg64 offset="0x80f9" name="GRAS_UNKNOWN_80F9" variants="A7XX-" usage="cmd"/>
-	<reg64 offset="0x80fa" name="GRAS_UNKNOWN_80FA" variants="A7XX-" usage="cmd"/>
+	<enum name="a6xx_fsr_combiner">
+		<value value="0" name="FSR_COMBINER_OP_KEEP"/>
+		<value value="1" name="FSR_COMBINER_OP_REPLACE"/>
+		<value value="2" name="FSR_COMBINER_OP_MIN"/>
+		<value value="3" name="FSR_COMBINER_OP_MAX"/>
+		<value value="4" name="FSR_COMBINER_OP_MUL"/>
+	</enum>
+
+	<reg32 offset="0x80f4" name="GRAS_FSR_CONFIG" variants="A7XX-" usage="rp_blit">
+		<bitfield name="PIPELINE_FSR_ENABLE" pos="0" type="boolean"/>
+		<bitfield name="FRAG_SIZE_X" low="1" high="2" type="uint"/>
+		<bitfield name="FRAG_SIZE_Y" low="3" high="4" type="uint"/>
+		<bitfield name="COMBINER_OP_1" low="5" high="7" type="a6xx_fsr_combiner"/>
+		<bitfield name="COMBINER_OP_2" low="8" high="10" type="a6xx_fsr_combiner"/>
+		<bitfield name="ATTACHMENT_FSR_ENABLE" pos="13" type="boolean"/>
+		<bitfield name="PRIMITIVE_FSR_ENABLE" pos="20" type="boolean"/>
+	</reg32>
+	<reg32 offset="0x80f5" name="GRAS_FSR_BUFFER_DESC" variants="A7XX-" usage="rp_blit">
+		<bitfield name="LAYERED" pos="0" type="boolean"/>
+		<bitfield name="TILE_MODE" low="1" high="2" type="a6xx_tile_mode"/>
+	</reg32>
+	<reg32 offset="0x80f6" name="GRAS_FSR_BUFFER_SIZE" variants="A7XX-" usage="rp_blit">
+		<bitfield name="WIDTH" low="0" high="15" type="uint"/>
+		<bitfield name="HEIGHT" low="16" high="31" type="uint"/>
+	</reg32>
+	<reg64 offset="0x80f8" name="GRAS_FSR_BUFFER_BASE" variants="A7XX-" type="waddress" usage="rp_blit"/>
+	<reg32 offset="0x80fa" name="GRAS_FSR_BUFFER_PITCH" variants="A7XX-" usage="rp_blit">
+		<bitfield name="PITCH" shr="6" low="0" high="7" type="uint"/>
+		<bitfield name="ARRAY_PITCH" shr="6" low="10" high="28" type="uint"/>
+	</reg32>
 
 	<enum name="a6xx_lrz_dir_status">
 		<value value="0x1" name="LRZ_DIR_LE"/>
@@ -3919,7 +3942,13 @@ to upconvert to 32b float internally?
 		<bitfield name="PITCH" low="0" high="10" shr="6" type="uint"/>
 		<bitfield name="ARRAY_PITCH" low="11" high="23" shr="7" type="uint"/>
 	</reg32>
-	<reg32 offset="0x88f4" name="RB_UNKNOWN_88F4" low="0" high="2"/>
+
+	<reg32 offset="0x88f4" name="RB_FSR_CONFIG" usage="rp_blit">
+		<bitfield name="UNK2" pos="2" type="boolean"/>
+		<bitfield name="PIPELINE_FSR_ENABLE" pos="4" type="boolean"/>
+		<bitfield name="ATTACHMENT_FSR_ENABLE" pos="5" type="boolean"/>
+		<bitfield name="PRIMITIVE_FSR_ENABLE" pos="18" type="boolean"/>
+	</reg32>
 	<!-- Connected to VK_EXT_fragment_density_map? -->
 	<reg32 offset="0x88f5" name="RB_UNKNOWN_88F5" variants="A7XX-"/>
 	<!-- 0x88f6-0x88ff invalid -->
@@ -5505,8 +5534,11 @@ to upconvert to 32b float internally?
 		<bitfield name="DITHER_MODE_MRT7" low="14" high="15" type="adreno_rb_dither_mode"/>
 	</reg32>
 
-	<!-- Used in VK_KHR_fragment_shading_rate -->
-	<reg32 offset="0xa9ad" name="HLSQ_UNKNOWN_A9AD" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0xa9ad" name="SP_FSR_CONFIG" variants="A7XX-" usage="rp_blit">
+		<bitfield name="PIPELINE_FSR_ENABLE" pos="0" type="boolean"/>
+		<bitfield name="ATTACHMENT_FSR_ENABLE" pos="1" type="boolean"/>
+		<bitfield name="PRIMITIVE_FSR_ENABLE" pos="3" type="boolean"/>
+	</reg32>
 
 	<reg32 offset="0xa9ae" name="HLSQ_UNKNOWN_A9AE" variants="A7XX-" usage="rp_blit">
 		<bitfield name="SYSVAL_REGS_COUNT" low="0" high="7" type="uint"/>

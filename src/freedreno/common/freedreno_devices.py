@@ -952,9 +952,9 @@ a730_raw_magic_regs = [
         [A6XXRegs.REG_A7XX_RB_UNKNOWN_88F5,   0x00000000],
 
         # Shading rate group
-        [A6XXRegs.REG_A6XX_RB_UNKNOWN_88F4,   0x00000000],
-        [A6XXRegs.REG_A7XX_HLSQ_UNKNOWN_A9AD, 0x00000000],
-        [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_80F4, 0x00000000],
+        [A6XXRegs.REG_A6XX_RB_FSR_CONFIG,   0x00000000],
+        [A6XXRegs.REG_A7XX_SP_FSR_CONFIG, 0x00000000],
+        [A6XXRegs.REG_A7XX_GRAS_FSR_CONFIG, 0x00000000],
     ]
 
 a740_magic_regs = dict(
@@ -1022,11 +1022,11 @@ a740_raw_magic_regs = [
         [A6XXRegs.REG_A7XX_RB_UNKNOWN_8C34,   0x00000000],
 
         # Shading rate group
-        [A6XXRegs.REG_A6XX_RB_UNKNOWN_88F4,   0x00000000],
-        [A6XXRegs.REG_A7XX_HLSQ_UNKNOWN_A9AD, 0x00000000],
+        [A6XXRegs.REG_A6XX_RB_FSR_CONFIG,   0x00000000],
+        [A6XXRegs.REG_A7XX_SP_FSR_CONFIG, 0x00000000],
         [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_8008, 0x00000000],
-        [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_80F4, 0x00000000],
-        [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_80F5, 0x00000000],
+        [A6XXRegs.REG_A7XX_GRAS_FSR_CONFIG, 0x00000000],
+        [A6XXRegs.REG_A7XX_GRAS_FSR_BUFFER_DESC, 0x00000000],
     ]
 
 add_gpus([
@@ -1138,10 +1138,10 @@ add_gpus([
             [A6XXRegs.REG_A7XX_RB_UNKNOWN_8C34,   0x00000000],
 
             # Shading rate group
-            [A6XXRegs.REG_A6XX_RB_UNKNOWN_88F4,   0x00000000],
-            [A6XXRegs.REG_A7XX_HLSQ_UNKNOWN_A9AD, 0x00000000],
+            [A6XXRegs.REG_A6XX_RB_FSR_CONFIG,   0x00000000],
+            [A6XXRegs.REG_A7XX_SP_FSR_CONFIG, 0x00000000],
             [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_8008, 0x00000000],
-            [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_80F4, 0x00000000],
+            [A6XXRegs.REG_A7XX_GRAS_FSR_CONFIG, 0x00000000],
         ],
     ))
 
@@ -1240,10 +1240,10 @@ add_gpus([
             [A6XXRegs.REG_A7XX_RB_UNKNOWN_88F5,   0x00000000],
 
             # Shading rate group
-            [A6XXRegs.REG_A6XX_RB_UNKNOWN_88F4,   0x00000000],
-            [A6XXRegs.REG_A7XX_HLSQ_UNKNOWN_A9AD, 0x00000000],
-            [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_80F4, 0x00000000],
-            [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_80F5, 0x00000000],
+            [A6XXRegs.REG_A6XX_RB_FSR_CONFIG,   0x00000000],
+            [A6XXRegs.REG_A7XX_SP_FSR_CONFIG, 0x00000000],
+            [A6XXRegs.REG_A7XX_GRAS_FSR_CONFIG, 0x00000000],
+            [A6XXRegs.REG_A7XX_GRAS_FSR_BUFFER_DESC, 0x00000000],
         ],
     ))
 
@@ -1350,10 +1350,10 @@ add_gpus([
             [A6XXRegs.REG_A7XX_RB_UNKNOWN_8C34,   0x00000000],
 
             # Shading rate group
-            [A6XXRegs.REG_A6XX_RB_UNKNOWN_88F4,   0x00000000],
-            [A6XXRegs.REG_A7XX_HLSQ_UNKNOWN_A9AD, 0x00000000],
+            [A6XXRegs.REG_A6XX_RB_FSR_CONFIG,   0x00000000],
+            [A6XXRegs.REG_A7XX_SP_FSR_CONFIG, 0x00000000],
             [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_8008, 0x00000000],
-            [A6XXRegs.REG_A7XX_GRAS_UNKNOWN_80F4, 0x00000000],
+            [A6XXRegs.REG_A7XX_GRAS_FSR_CONFIG, 0x00000000],
 
             [0x930a, 0],
             [0x960a, 1],
