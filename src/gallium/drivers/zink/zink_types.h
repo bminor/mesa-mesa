@@ -241,9 +241,8 @@ enum zink_debug {
    ZINK_DEBUG_NOBGC = (1<<16),
    ZINK_DEBUG_MEM = (1<<17),
    ZINK_DEBUG_QUIET = (1<<18),
-   ZINK_DEBUG_IOOPT = (1<<19),
-   ZINK_DEBUG_NOPC = (1<<20),
-   ZINK_DEBUG_MSAAOPT = (1<<21),
+   ZINK_DEBUG_NOPC = (1<<19),
+   ZINK_DEBUG_MSAAOPT = (1<<20),
 };
 
 enum zink_pv_emulation_primitive {
@@ -1485,7 +1484,6 @@ struct zink_screen {
       bool lower_robustImageAccess2;
       bool needs_zs_shader_swizzle;
       bool needs_sanitised_layer;
-      bool io_opt;
       bool broken_const;
       bool broken_demote;
    } driver_compiler_workarounds;

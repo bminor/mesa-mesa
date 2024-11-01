@@ -285,7 +285,7 @@ traces:
     freedreno-a630:
       checksum: 95bbb55cc2d59dc9523120f49a2adf5d
     zink-a618:
-      checksum: f83f7ad4b147607e2a7de65a48f8ed4d
+      checksum: 95bbb55cc2d59dc9523120f49a2adf5d
     zink-a630:
       checksum: f83f7ad4b147607e2a7de65a48f8ed4d
 

@@ -1330,20 +1330,8 @@ zink_screen_init_compiler(struct zink_screen *screen)
       screen->nir_options.max_unroll_iterations_fp64 = 32;
    }
 
-   if (screen->driver_compiler_workarounds.io_opt) {
-      switch (zink_driverid(screen)) {
-      case VK_DRIVER_ID_MESA_RADV:
-      case VK_DRIVER_ID_AMD_OPEN_SOURCE:
-      case VK_DRIVER_ID_AMD_PROPRIETARY:
-         screen->nir_options.varying_expression_max_cost = amd_varying_expression_max_cost;
-         break;
-      default:
-         mesa_logw("zink: instruction costs not implemented for this implementation!");
-         screen->nir_options.varying_expression_max_cost = amd_varying_expression_max_cost;
-      }
-   } else {
-      screen->nir_options.io_options |= nir_io_dont_optimize;
-   }
+   /* XXX: do any drivers need different estimates? */
+   screen->nir_options.varying_expression_max_cost = amd_varying_expression_max_cost;
 
    /*
        The OpFRem and OpFMod instructions use cheap approximations of remainder,

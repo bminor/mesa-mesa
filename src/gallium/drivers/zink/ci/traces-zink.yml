@@ -6,9 +6,9 @@ traces-db:
 traces:
   0ad/0ad-v2.trace:
     gl-zink-anv-adl:
-      checksum: 90483dd55b41141664c2fcf6fa055500
+      checksum: 0d04e54fa259d407433a7925c739900a
     gl-zink-anv-tgl:
-      checksum: 90483dd55b41141664c2fcf6fa055500
+      checksum: 0d04e54fa259d407433a7925c739900a
 
   behdad-glyphy/glyphy-v2.trace:
     gl-zink-anv-adl:
@@ -67,15 +67,15 @@ traces:
 
   gputest/pixmark-julia-fp32-v2.trace:
     gl-zink-anv-adl:
-      checksum: fbf5e44a6f46684b84e5bb5ad6d36c67
+      checksum: 83a21aa3f856af2d38e8be8391f58611
     gl-zink-anv-tgl:
-      checksum: fbf5e44a6f46684b84e5bb5ad6d36c67
+      checksum: 83a21aa3f856af2d38e8be8391f58611
 
   gputest/pixmark-julia-fp64-v2.trace:
     gl-zink-anv-adl:
-      checksum: 1760aea00af985b8cd902128235b08f6
+      checksum: 0f1ba3336186d0f24144903ff7a428c3
     gl-zink-anv-tgl:
-      checksum: 1760aea00af985b8cd902128235b08f6
+      checksum: 0f1ba3336186d0f24144903ff7a428c3
 
   gputest/pixmark-volplosion-v2.trace:
     gl-zink-anv-adl:
@@ -261,9 +261,9 @@ traces:
 
   valve/half-life-2-v2.trace:
     gl-zink-anv-adl:
-      checksum: 8deac48993e4515589a7165e8bd14f25
+      checksum: 01392d862e0535e317e8744b5f9fe7a2
     gl-zink-anv-tgl:
-      checksum: 8deac48993e4515589a7165e8bd14f25
+      checksum: 01392d862e0535e317e8744b5f9fe7a2
 
   valve/portal-2-v2.trace:
     gl-zink-anv-adl:
