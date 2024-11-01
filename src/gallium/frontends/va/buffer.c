@@ -543,23 +543,6 @@ vlVaSyncBuffer(VADriverContextP ctx, VABufferID buf_id, uint64_t timeout_ns)
    if (!drv)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
 
-   /* Some apps like ffmpeg check for vaSyncBuffer to be present
-      to do async enqueuing of multiple vaEndPicture encode calls
-      before calling vaSyncBuffer with a pre-defined latency
-      If vaSyncBuffer is not implemented, they fallback to the
-      usual synchronous pairs of { vaEndPicture + vaSyncSurface }
-
-      As this might require the driver to support multiple
-      operations and/or store multiple feedback values before sync
-      fallback to backward compatible behaviour unless driver
-      explicitly supports PIPE_VIDEO_CAP_ENC_SUPPORTS_ASYNC_OPERATION
-   */
-   if (!drv->pipe->screen->get_video_param(drv->pipe->screen,
-                              PIPE_VIDEO_PROFILE_UNKNOWN,
-                              PIPE_VIDEO_ENTRYPOINT_ENCODE,
-                              PIPE_VIDEO_CAP_ENC_SUPPORTS_ASYNC_OPERATION))
-      return VA_STATUS_ERROR_UNIMPLEMENTED;
-
    mtx_lock(&drv->mutex);
    buf = handle_table_get(drv->htab, buf_id);
 
