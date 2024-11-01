@@ -12438,6 +12438,11 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    ac_hw_cache_flags cache_glc;
    cache_glc.value = ac_glc;
 
+   /* Clear the current wave exception, this is required to re-enable VALU
+    * instructions in this wave. Seems to be only needed for float exceptions.
+    */
+   bld.vop1(aco_opcode::v_clrexcp);
+
    if (ctx.program->gfx_level >= GFX9) {
       /* Get TMA. */
       bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp10}, s1),
