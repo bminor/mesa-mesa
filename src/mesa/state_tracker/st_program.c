@@ -512,6 +512,11 @@ st_create_nir_shader(struct st_context *st, struct pipe_shader_state *state)
    nir_shader *nir = state->ir.nir;
    gl_shader_stage stage = nir->info.stage;
 
+   /* Renumber SSA defs to make it easier to run diff on printed NIR. */
+   nir_foreach_function_impl(impl, nir) {
+      nir_index_ssa_defs(impl);
+   }
+
    if (ST_DEBUG & DEBUG_PRINT_IR) {
       fprintf(stderr, "NIR before handing off to driver:\n");
       nir_print_shader(nir, stderr);
@@ -752,6 +757,54 @@ force_persample_shading(struct nir_builder *b, nir_intrinsic_instr *intr,
    return false;
 }
 
+static int
+xfb_compare_dst_offset(const void *a, const void *b)
+{
+   const struct pipe_stream_output *var0 = (const struct pipe_stream_output*)a;
+   const struct pipe_stream_output *var1 = (const struct pipe_stream_output*)b;
+
+   if (var0->output_buffer != var1->output_buffer)
+      return var0->output_buffer > var1->output_buffer ? 1 : -1;
+
+   return var0->dst_offset - var1->dst_offset;
+}
+
+static void
+get_stream_output_info_from_nir(nir_shader *nir,
+                                struct pipe_stream_output_info *info)
+{
+   /* Get pipe_stream_output_info from NIR. Only used by IO variables. */
+   nir_xfb_info *xfb = nir->xfb_info;
+   memset(info, 0, sizeof(*info));
+
+   if (!xfb)
+      return;
+
+   info->num_outputs = xfb->output_count;
+
+   for (unsigned i = 0; i < 4; i++)
+      info->stride[i] = nir->info.xfb_stride[i];
+
+   for (unsigned i = 0; i < xfb->output_count; i++) {
+      struct pipe_stream_output *out = &info->output[i];
+
+      assert(!xfb->outputs[i].high_16bits);
+
+      out->register_index =
+         util_bitcount64(nir->info.outputs_written &
+                         BITFIELD64_MASK(xfb->outputs[i].location));
+      out->start_component = xfb->outputs[i].component_offset;
+      out->num_components = util_bitcount(xfb->outputs[i].component_mask);
+      out->output_buffer = xfb->outputs[i].buffer;
+      out->dst_offset = xfb->outputs[i].offset / 4;
+      out->stream = xfb->buffer_to_stream[out->output_buffer];
+   }
+
+   /* Intel requires that xfb outputs are sorted by dst_offset. */
+   qsort(info->output, info->num_outputs, sizeof(info->output[0]),
+         xfb_compare_dst_offset);
+}
+
 static struct st_common_variant *
 st_create_common_variant(struct st_context *st,
                          struct gl_program *prog,
@@ -812,7 +865,26 @@ st_create_common_variant(struct st_context *st,
    if (finalize || !st->allow_st_finalize_nir_twice || key->is_draw_shader) {
       st_finalize_nir(st, prog, prog->shader_program, state.ir.nir, false,
                       key->is_draw_shader);
+   }
 
+   /* This should be after all passes that touch IO. */
+   if (state.ir.nir->info.io_lowered &&
+       (!(state.ir.nir->options->io_options & nir_io_has_intrinsics) ||
+        key->is_draw_shader)) {
+      assert(!state.stream_output.num_outputs || state.ir.nir->xfb_info);
+      get_stream_output_info_from_nir(state.ir.nir, &state.stream_output);
+      NIR_PASS(_, state.ir.nir, st_nir_unlower_io_to_vars);
+
+      if (state.ir.nir->info.stage == MESA_SHADER_TESS_CTRL &&
+          state.ir.nir->options->compact_arrays &&
+          state.ir.nir->options->vectorize_tess_levels)
+         NIR_PASS(_, state.ir.nir, nir_vectorize_tess_levels);
+
+      gl_nir_opts(state.ir.nir);
+      finalize = true;
+   }
+
+   if (finalize || !st->allow_st_finalize_nir_twice || key->is_draw_shader) {
       struct pipe_screen *screen = st->screen;
       if (!key->is_draw_shader && screen->finalize_nir) {
          char *msg = screen->finalize_nir(screen, state.ir.nir);
@@ -1175,6 +1247,14 @@ st_create_fp_variant(struct st_context *st,
    if (!fp->shader_program && ~key->depth_textures & fp->ShadowSamplers) {
       NIR_PASS(_, state.ir.nir, nir_remove_tex_shadow,
                  ~key->depth_textures & fp->ShadowSamplers);
+      finalize = true;
+   }
+
+   /* This should be after all passes that touch IO. */
+   if (state.ir.nir->info.io_lowered &&
+       !(state.ir.nir->options->io_options & nir_io_has_intrinsics)) {
+      NIR_PASS(_, state.ir.nir, st_nir_unlower_io_to_vars);
+      gl_nir_opts(state.ir.nir);
       finalize = true;
    }
 
