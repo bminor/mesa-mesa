@@ -4402,5 +4402,14 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
    if (progress & nir_progress_consumer)
       nir_validate_shader(consumer, "nir_opt_varyings");
 
+   if (consumer->info.stage == MESA_SHADER_FRAGMENT) {
+      /* We have called nir_vertex_divergence_analysis on the producer here.
+       * We need to reset the divergent field to true, otherwise it will be
+       * garbage after some other passes are run, and then we end up failing
+       * assertions in some passes because src is divergent and dst isn't.
+       */
+      nir_clear_divergence_info(producer);
+   }
+
    return progress;
 }

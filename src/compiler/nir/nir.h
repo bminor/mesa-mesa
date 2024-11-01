@@ -6715,6 +6715,7 @@ void nir_divergence_analysis_impl(nir_function_impl *impl, nir_divergence_option
 void nir_divergence_analysis(nir_shader *shader);
 void nir_vertex_divergence_analysis(nir_shader *shader);
 bool nir_has_divergent_loop(nir_shader *shader);
+void nir_clear_divergence_info(nir_shader *nir);
 
 void
 nir_rewrite_uses_to_load_reg(struct nir_builder *b, nir_def *old,
