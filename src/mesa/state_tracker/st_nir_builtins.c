@@ -39,9 +39,6 @@ st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
    if (stage == MESA_SHADER_FRAGMENT)
       nir->info.fs.untyped_color_outputs = true;
 
-   NIR_PASS(_, nir, nir_lower_global_vars_to_local);
-   NIR_PASS(_, nir, nir_split_var_copies);
-   NIR_PASS(_, nir, nir_lower_var_copies);
    NIR_PASS(_, nir, nir_lower_system_values);
 
    struct nir_lower_compute_system_values_options cs_options = {
@@ -50,14 +47,6 @@ st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
    };
    NIR_PASS(_, nir, nir_lower_compute_system_values, &cs_options);
 
-   if (nir->options->lower_to_scalar) {
-      nir_variable_mode mask =
-          (stage > MESA_SHADER_VERTEX ? nir_var_shader_in : 0) |
-          (stage < MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
-
-      NIR_PASS(_, nir, nir_lower_io_to_scalar_early, mask);
-   }
-
    if (st->lower_rect_tex) {
       const struct nir_lower_tex_options opts = { .lower_rect = true, };
       NIR_PASS(_, nir, nir_lower_tex, &opts);
@@ -65,9 +54,6 @@ st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    nir_recompute_io_bases(nir, nir_var_shader_in | nir_var_shader_out);
-
-   st_nir_assign_vs_in_locations(nir);
-   st_nir_assign_varying_locations(st, nir);
 
    st_nir_lower_samplers(screen, nir, NULL, NULL);
    st_nir_lower_uniforms(st, nir);

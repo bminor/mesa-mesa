@@ -349,21 +349,7 @@ st_release_program(struct st_context *st, struct gl_program **p)
 void
 st_finalize_nir_before_variants(struct nir_shader *nir)
 {
-   NIR_PASS(_, nir, nir_split_var_copies);
-   NIR_PASS(_, nir, nir_lower_var_copies);
-   if (nir->options->lower_all_io_to_temps ||
-       nir->options->lower_all_io_to_elements ||
-       nir->info.stage == MESA_SHADER_VERTEX ||
-       nir->info.stage == MESA_SHADER_GEOMETRY) {
-      NIR_PASS(_, nir, nir_lower_io_arrays_to_elements_no_indirects, false);
-   } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, nir, nir_lower_io_arrays_to_elements_no_indirects, true);
-   }
-
-   /* st_nir_assign_vs_in_locations requires correct shader info. */
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
-
-   st_nir_assign_vs_in_locations(nir);
 }
 
 static void
@@ -374,14 +360,6 @@ st_prog_to_nir_postprocess(struct st_context *st, nir_shader *nir,
 
    NIR_PASS(_, nir, nir_lower_reg_intrinsics_to_ssa);
    nir_validate_shader(nir, "after st/ptn lower_reg_intrinsics_to_ssa");
-
-   /* Lower outputs to temporaries to avoid reading from output variables (which
-    * is permitted by the language but generally not implemented in HW).
-    */
-   NIR_PASS(_, nir, nir_lower_io_to_temporaries,
-               nir_shader_get_entrypoint(nir),
-               true, false);
-   NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
    NIR_PASS(_, nir, st_nir_lower_wpos_ytransform, prog, screen);
    NIR_PASS(_, nir, nir_lower_system_values);
@@ -723,10 +701,6 @@ lower_ucp(struct st_context *st,
          NIR_PASS(_, nir, nir_lower_clip_gs, ucp_enables,
                     can_compact, clipplane_state);
       }
-
-      NIR_PASS(_, nir, nir_lower_io_to_temporaries,
-                 nir_shader_get_entrypoint(nir), true, false);
-      NIR_PASS(_, nir, nir_lower_global_vars_to_local);
    }
 }
 
@@ -1075,10 +1049,6 @@ st_create_fp_variant(struct st_context *st,
    if (fp->ati_fs) {
       if (key->fog) {
          NIR_PASS(_, state.ir.nir, st_nir_lower_fog, key->fog, fp->Parameters);
-         NIR_PASS(_, state.ir.nir, nir_lower_io_to_temporaries,
-            nir_shader_get_entrypoint(state.ir.nir),
-            true, false);
-         nir_lower_global_vars_to_local(state.ir.nir);
       }
 
       NIR_PASS(_, state.ir.nir, st_nir_lower_atifs_samplers, key->texture_index);
@@ -1111,13 +1081,8 @@ st_create_fp_variant(struct st_context *st,
 
    if (key->persample_shading) {
       nir_shader *shader = state.ir.nir;
-      if (shader->info.io_lowered) {
-         nir_shader_intrinsics_pass(shader, force_persample_shading,
-                                    nir_metadata_all, NULL);
-      } else {
-         nir_foreach_shader_in_variable(var, shader)
-            var->data.sample = true;
-      }
+      nir_shader_intrinsics_pass(shader, force_persample_shading,
+                                 nir_metadata_all, NULL);
 
       /* In addition to requiring per-sample interpolation, sample shading
        * changes the behaviour of gl_SampleMaskIn, so we need per-sample shading
@@ -1251,8 +1216,7 @@ st_create_fp_variant(struct st_context *st,
    assert(state.ir.nir->info.io_lowered);
 
    /* This should be after all passes that touch IO. */
-   if (state.ir.nir->info.io_lowered &&
-       !(state.ir.nir->options->io_options & nir_io_has_intrinsics)) {
+   if (!(state.ir.nir->options->io_options & nir_io_has_intrinsics)) {
       /* Some lowering passes can leave dead code behind, but dead IO intrinsics
        * are still counted as enabled IO, which breaks things.
        */
