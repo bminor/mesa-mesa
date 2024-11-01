@@ -1338,29 +1338,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
                            context->decoder->entrypoint,
                            PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME))
       context->decoder->flush(context->decoder);
-   else {
-      if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE &&
-         u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_MPEG4_AVC) {
-         int idr_period = context->desc.h264enc.gop_size / context->gop_coeff;
-         int p_remain_in_idr = idr_period - context->desc.h264enc.frame_num;
-         surf->frame_num_cnt = context->desc.h264enc.frame_num_cnt;
-         surf->force_flushed = false;
-         if (context->first_single_submitted) {
-            context->decoder->flush(context->decoder);
-            context->first_single_submitted = false;
-            surf->force_flushed = true;
-         }
-         if (p_remain_in_idr == 1) {
-            if ((context->desc.h264enc.frame_num_cnt % 2) != 0) {
-               context->decoder->flush(context->decoder);
-               context->first_single_submitted = true;
-            }
-            else
-               context->first_single_submitted = false;
-            surf->force_flushed = true;
-         }
-      }
-   }
 
    if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
       switch (u_reduce_video_profile(context->templat.profile)) {

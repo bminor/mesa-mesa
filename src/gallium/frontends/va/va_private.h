@@ -410,7 +410,6 @@ typedef struct {
    struct vl_deint_filter *deint;
    vlVaBuffer *coded_buf;
    int target_id;
-   bool first_single_submitted;
    int gop_coeff;
    bool needs_begin_frame;
    void *blit_cs;
@@ -441,9 +440,6 @@ typedef struct vlVaSurface {
    vlVaContext *ctx;
    vlVaBuffer *coded_buf;
    void *feedback;
-   unsigned int frame_num_cnt;
-   bool force_flushed;
-   struct pipe_video_buffer *obsolete_buf;
    bool full_range;
    struct pipe_fence_handle *fence;
    struct vlVaSurface *efc_surface; /* input surface for EFC */

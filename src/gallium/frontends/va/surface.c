@@ -198,31 +198,11 @@ _vlVaSyncSurface(VADriverContextP ctx, VASurfaceID render_target, uint64_t timeo
    if (context->decoder->fence_wait)
       ret = context->decoder->fence_wait(context->decoder, surf->fence, timeout_ns);
 
-   if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE && surf->feedback) {
-      if (!drv->pipe->screen->get_video_param(drv->pipe->screen,
-                              context->decoder->profile,
-                              context->decoder->entrypoint,
-                              PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME)) {
-         if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_MPEG4_AVC) {
-            int frame_diff;
-            if (context->desc.h264enc.frame_num_cnt >= surf->frame_num_cnt)
-               frame_diff = context->desc.h264enc.frame_num_cnt - surf->frame_num_cnt;
-            else
-               frame_diff = 0xFFFFFFFF - surf->frame_num_cnt + 1 + context->desc.h264enc.frame_num_cnt;
-            if ((frame_diff == 0) &&
-               (surf->force_flushed == false) &&
-               (context->desc.h264enc.frame_num_cnt % 2 != 0)) {
-               context->decoder->flush(context->decoder);
-               context->first_single_submitted = true;
-            }
-         }
-      }
-      if (ret) {
-         context->decoder->get_feedback(context->decoder, surf->feedback, &(surf->coded_buf->coded_size), &(surf->coded_buf->extended_metadata));
-         surf->feedback = NULL;
-         surf->coded_buf->feedback = NULL;
-         surf->coded_buf->associated_encode_input_surf = VA_INVALID_ID;
-      }
+   if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE && surf->feedback && ret) {
+      context->decoder->get_feedback(context->decoder, surf->feedback, &(surf->coded_buf->coded_size), &(surf->coded_buf->extended_metadata));
+      surf->feedback = NULL;
+      surf->coded_buf->feedback = NULL;
+      surf->coded_buf->associated_encode_input_surf = VA_INVALID_ID;
    }
    mtx_unlock(&drv->mutex);
    return ret ? VA_STATUS_SUCCESS : VA_STATUS_ERROR_TIMEDOUT;
