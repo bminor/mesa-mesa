@@ -64,8 +64,6 @@ GetDesc(ID3D12VideoDecoderHeap *heap)
 */
 const bool D3D12_VIDEO_ENC_CBR_FORCE_VBV_EQUAL_BITRATE = debug_get_bool_option("D3D12_VIDEO_ENC_CBR_FORCE_VBV_EQUAL_BITRATE", false);
 
-const bool D3D12_VIDEO_ENC_ASYNC = debug_get_bool_option("D3D12_VIDEO_ENC_ASYNC", true);
-
 /**
  * This indicates how many in-flight encode commands can happen before blocking on the next request
  */

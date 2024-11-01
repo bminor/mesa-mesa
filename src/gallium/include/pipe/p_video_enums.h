@@ -119,15 +119,6 @@ enum pipe_video_cap
       to kick off the work in the device
    */
    PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME = 32,
-
-   /*
-      If reported by the driver, then multiple p_video_codec encode
-      operations can be asynchronously enqueued (and also flushed)
-      with different feedback values in the device before get_feedback
-      is called on them to synchronize. The device can block on begin_frame
-      when it has reached its maximum async depth capacity
-   */
-   PIPE_VIDEO_CAP_ENC_SUPPORTS_ASYNC_OPERATION = 33,
    PIPE_VIDEO_CAP_MIN_WIDTH = 34,
    PIPE_VIDEO_CAP_MIN_HEIGHT = 35,
    PIPE_VIDEO_CAP_ENC_RATE_CONTROL_QVBR = 36,
