@@ -516,6 +516,10 @@ needed to fix build error messages.
    [binaries]
    c = '/usr/bin/gcc'
    cpp = '/usr/bin/g++'
+   # ccache is not automatically used when specifying [binaries].
+   # To accelerate cross-compilation as much as native compilation:
+   # c =   ['ccache', 'gcc']
+   # cpp = ['ccache', 'g++']
    ar = '/usr/bin/gcc-ar'
    strip = '/usr/bin/strip'
    pkg-config = '/usr/bin/pkg-config-32'
