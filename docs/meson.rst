@@ -528,7 +528,7 @@ needed to fix build error messages.
    # pkg-config instead, like the ARM and Windows examples below:
    # pkg-config = 'i686-redhat-linux-gnu-pkg-config'
 
-   [properties]
+   [built-in options]
    c_args = ['-m32']
    c_link_args = ['-m32']
    cpp_args = ['-m32']
