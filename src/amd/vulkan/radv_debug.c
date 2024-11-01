@@ -978,35 +978,39 @@ radv_dump_faulty_shader(struct radv_device *device, uint64_t faulty_pc)
    free(instructions);
 }
 
-struct radv_sq_hw_reg {
-   uint32_t status;
-   uint32_t trap_sts;
-   uint32_t hw_id;
-   uint32_t gpr_alloc;
-   uint32_t ib_sts;
+struct radv_trap_handler_layout {
+   uint32_t ttmp0;
+   uint32_t ttmp1;
+
+   struct {
+      uint32_t status;
+      uint32_t trap_sts;
+      uint32_t hw_id1;
+      uint32_t gpr_alloc;
+      uint32_t ib_sts;
+   } sq_wave_regs;
 };
 
 static void
-radv_dump_sq_hw_regs(struct radv_device *device)
+radv_dump_sq_hw_regs(struct radv_device *device, const struct radv_trap_handler_layout *layout)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    enum radeon_family family = pdev->info.family;
-   struct radv_sq_hw_reg *regs = (struct radv_sq_hw_reg *)&device->tma_ptr[6];
 
    fprintf(stderr, "\nHardware registers:\n");
    if (pdev->info.gfx_level >= GFX10) {
-      ac_dump_reg(stderr, gfx_level, family, R_000408_SQ_WAVE_STATUS, regs->status, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_00040C_SQ_WAVE_TRAPSTS, regs->trap_sts, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_00045C_SQ_WAVE_HW_ID1, regs->hw_id, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_000414_SQ_WAVE_GPR_ALLOC, regs->gpr_alloc, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_00041C_SQ_WAVE_IB_STS, regs->ib_sts, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_000408_SQ_WAVE_STATUS, layout->sq_wave_regs.status, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_00040C_SQ_WAVE_TRAPSTS, layout->sq_wave_regs.trap_sts, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_00045C_SQ_WAVE_HW_ID1, layout->sq_wave_regs.hw_id1, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_000414_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gpr_alloc, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_00041C_SQ_WAVE_IB_STS, layout->sq_wave_regs.ib_sts, ~0);
    } else {
-      ac_dump_reg(stderr, gfx_level, family, R_000048_SQ_WAVE_STATUS, regs->status, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_00004C_SQ_WAVE_TRAPSTS, regs->trap_sts, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_000050_SQ_WAVE_HW_ID, regs->hw_id, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_000054_SQ_WAVE_GPR_ALLOC, regs->gpr_alloc, ~0);
-      ac_dump_reg(stderr, gfx_level, family, R_00005C_SQ_WAVE_IB_STS, regs->ib_sts, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_000048_SQ_WAVE_STATUS, layout->sq_wave_regs.status, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_00004C_SQ_WAVE_TRAPSTS, layout->sq_wave_regs.trap_sts, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_000050_SQ_WAVE_HW_ID, layout->sq_wave_regs.hw_id1, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_000054_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gpr_alloc, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_00005C_SQ_WAVE_IB_STS, layout->sq_wave_regs.ib_sts, ~0);
    }
    fprintf(stderr, "\n\n");
 }
@@ -1017,6 +1021,7 @@ radv_check_trap_handler(struct radv_queue *queue)
    enum amd_ip_type ring = radv_queue_ring(queue);
    struct radv_device *device = radv_queue_device(queue);
    struct radeon_winsys *ws = device->ws;
+   const struct radv_trap_handler_layout *layout = (struct radv_trap_handler_layout *)&device->tma_ptr[4];
 
    /* Wait for the context to be idle in a finite time. */
    ws->ctx_wait_idle(queue->hw_ctx, ring, queue->vk.index_in_family);
@@ -1025,19 +1030,19 @@ radv_check_trap_handler(struct radv_queue *queue)
     * looking at ttmp0 which should be non-zero if a shader exception
     * happened.
     */
-   if (!device->tma_ptr[4])
+   if (!layout->ttmp0)
       return;
 
 #if 0
-	fprintf(stderr, "tma_ptr:\n");
-	for (unsigned i = 0; i < 10; i++)
-		fprintf(stderr, "tma_ptr[%d]=0x%x\n", i, device->tma_ptr[i]);
+   fprintf(stderr, "tma_ptr:\n");
+   for (unsigned i = 0; i < 10; i++)
+      fprintf(stderr, "tma_ptr[%d]=0x%x\n", i, device->tma_ptr[i]);
 #endif
 
-   radv_dump_sq_hw_regs(device);
+   radv_dump_sq_hw_regs(device, layout);
 
-   uint32_t ttmp0 = device->tma_ptr[4];
-   uint32_t ttmp1 = device->tma_ptr[5];
+   uint32_t ttmp0 = layout->ttmp0;
+   uint32_t ttmp1 = layout->ttmp1;
 
    /* According to the ISA docs, 3.10 Trap and Exception Registers:
     *
