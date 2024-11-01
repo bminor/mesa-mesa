@@ -101,11 +101,17 @@ intel_measure_init(struct intel_measure_device *device)
       const char *batch_size_s = strstr(env_copy, "batch_size=");
       const char *buffer_size_s = strstr(env_copy, "buffer_size=");
       const char *cpu_s = strstr(env_copy, "cpu");
+      const char *no_ogl = strstr(env_copy, "nogl");
       while (true) {
          char *sep = strrchr(env_copy, ',');
          if (sep == NULL)
             break;
          *sep = '\0';
+      }
+
+      if (no_ogl && device->type == INTEL_MEASURE_DEVICE_OGL) {
+         config.enabled = false;
+         return;
       }
 
       if (filename && __normal_user()) {
