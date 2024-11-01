@@ -265,6 +265,9 @@ tu_physical_device_get_format_properties(
    if (vk_format == VK_FORMAT_D32_SFLOAT_S8_UINT)
       linear = 0;
 
+   if (vk_format == VK_FORMAT_R8_UINT)
+      optimal |= VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+
 end:
    out_properties->linearTilingFeatures = linear;
    out_properties->optimalTilingFeatures = optimal;
@@ -509,6 +512,14 @@ tu_get_image_format_properties(
       if (!(format_feature_flags &
             (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
              VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))) {
+         return tu_image_unsupported_format(pImageFormatProperties);
+      }
+   }
+
+   if (image_usage &
+       VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) {
+      if (!(format_feature_flags &
+            VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
          return tu_image_unsupported_format(pImageFormatProperties);
       }
    }

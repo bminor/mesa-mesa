@@ -166,6 +166,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .KHR_external_semaphore = true,
       .KHR_external_semaphore_fd = true,
       .KHR_format_feature_flags2 = true,
+      .KHR_fragment_shading_rate = device->info->a6xx.has_attachment_shading_rate,
       .KHR_get_memory_requirements2 = true,
       .KHR_global_priority = true,
       .KHR_image_format_list = true,
@@ -467,6 +468,11 @@ tu_get_features(struct tu_physical_device *pdevice,
 
    /* VK_KHR_dynamic_rendering_local_read */
    features->dynamicRenderingLocalRead = true;
+
+   /* VK_KHR_fragment_shading_rate */
+   features->pipelineFragmentShadingRate = pdevice->info->a6xx.has_attachment_shading_rate;
+   features->primitiveFragmentShadingRate = pdevice->info->a7xx.has_primitive_shading_rate;
+   features->attachmentFragmentShadingRate = pdevice->info->a6xx.has_attachment_shading_rate;
 
    /* VK_KHR_index_type_uint8 */
    features->indexTypeUint8 = true;
@@ -1045,6 +1051,34 @@ tu_get_properties(struct tu_physical_device *pdevice,
    /* VK_KHR_compute_shader_derivatives */
    props->meshAndTaskShaderDerivatives = false;
 
+   /* VK_KHR_fragment_shading_rate */
+   if (pdevice->info->a6xx.has_attachment_shading_rate) {
+      props->minFragmentShadingRateAttachmentTexelSize = {8, 8};
+      props->maxFragmentShadingRateAttachmentTexelSize = {8, 8};
+   } else {
+      props->minFragmentShadingRateAttachmentTexelSize = {0, 0};
+      props->maxFragmentShadingRateAttachmentTexelSize = {0, 0};
+   }
+   props->maxFragmentShadingRateAttachmentTexelSizeAspectRatio = 1;
+   props->primitiveFragmentShadingRateWithMultipleViewports =
+      pdevice->info->a7xx.has_primitive_shading_rate;
+   /* A7XX TODO: dEQP-VK.fragment_shading_rate.*.srlayered.* are failing
+    * for some reason.
+    */
+   props->layeredShadingRateAttachments = false;
+   props->fragmentShadingRateNonTrivialCombinerOps = true;
+   props->maxFragmentSize = {4, 4};
+   props->maxFragmentSizeAspectRatio = 4;
+   props->maxFragmentShadingRateCoverageSamples = 16;
+   props->maxFragmentShadingRateRasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+   props->fragmentShadingRateWithShaderDepthStencilWrites = true;
+   props->fragmentShadingRateWithSampleMask = true;
+   props->fragmentShadingRateWithShaderSampleMask = true;
+   props->fragmentShadingRateWithConservativeRasterization = false;
+   props->fragmentShadingRateWithFragmentShaderInterlock = false;
+   props->fragmentShadingRateWithCustomSampleLocations = true;
+   props->fragmentShadingRateStrictMultiplyCombiner = true;
+
    /* VK_KHR_push_descriptor */
    props->maxPushDescriptors = MAX_PUSH_DESCRIPTORS;
 
@@ -1189,7 +1223,7 @@ tu_get_properties(struct tu_physical_device *pdevice,
    /* VK_KHR_maintenance6 */
    props->blockTexelViewCompatibleMultipleLayers = true;
    props->maxCombinedImageSamplerDescriptorCount = 1;
-   props->fragmentShadingRateClampCombinerInputs = false; /* TODO */
+   props->fragmentShadingRateClampCombinerInputs = true;
 
    /* VK_EXT_host_image_copy */
 
@@ -1768,6 +1802,39 @@ tu_GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice pdev,
          break;
       }
    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+tu_GetPhysicalDeviceFragmentShadingRatesKHR(
+   VkPhysicalDevice physicalDevice,
+   uint32_t *pFragmentShadingRateCount,
+   VkPhysicalDeviceFragmentShadingRateKHR *pFragmentShadingRates)
+{
+   VK_OUTARRAY_MAKE_TYPED(VkPhysicalDeviceFragmentShadingRateKHR, out,
+                          pFragmentShadingRates, pFragmentShadingRateCount);
+
+#define append_rate(w, h, s)                                                        \
+   {                                                                                \
+      VkPhysicalDeviceFragmentShadingRateKHR rate = {                               \
+         .sType =                                                                   \
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_PROPERTIES_KHR, \
+         .sampleCounts = s,                                                         \
+         .fragmentSize = { .width = w, .height = h },                               \
+      };                                                                            \
+      vk_outarray_append_typed(VkPhysicalDeviceFragmentShadingRateKHR, &out,        \
+                               r) *r = rate;                                        \
+   }
+
+   append_rate(4, 4, VK_SAMPLE_COUNT_1_BIT);
+   append_rate(4, 2, VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT);
+   append_rate(2, 2, VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT);
+   append_rate(2, 1, VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT);
+   append_rate(1, 2, VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT);
+   append_rate(1, 1, ~0);
+
+#undef append_rate
+
+   return vk_outarray_status(&out);
 }
 
 static VkResult

@@ -803,11 +803,20 @@ tu_cs_emit_draw_state(struct tu_cs *cs, uint32_t id, struct tu_draw_state state)
       enable_mask = CP_SET_DRAW_STATE__0_SYSMEM;
       break;
    case TU_DRAW_STATE_DYNAMIC + TU_DYNAMIC_STATE_PRIM_MODE_SYSMEM:
-      /* By also applying the state during binning we ensure that there
-       * is no rotation applied, by previous A6XX_GRAS_SC_CNTL::rotation.
-       */
-      enable_mask =
-         CP_SET_DRAW_STATE__0_SYSMEM | CP_SET_DRAW_STATE__0_BINNING;
+      if (!cs->device->physical_device->info->a6xx.has_coherent_ubwc_flag_caches) {
+         /* By also applying the state during binning we ensure that there
+         * is no rotation applied, by previous A6XX_GRAS_SC_CNTL::rotation.
+         */
+         enable_mask =
+            CP_SET_DRAW_STATE__0_SYSMEM | CP_SET_DRAW_STATE__0_BINNING;
+      } else {
+         static_assert(TU_DYNAMIC_STATE_PRIM_MODE_SYSMEM ==
+                       TU_DYNAMIC_STATE_A7XX_FRAGMENT_SHADING_RATE);
+         enable_mask = CP_SET_DRAW_STATE__0_GMEM |
+                       CP_SET_DRAW_STATE__0_SYSMEM |
+                       CP_SET_DRAW_STATE__0_BINNING;
+      }
+
       break;
    default:
       enable_mask = CP_SET_DRAW_STATE__0_GMEM |
@@ -2542,6 +2551,7 @@ tu_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    cmd_buffer->state.max_vbs_bound = 0;
 
    cmd_buffer->vsc_initialized = false;
+   cmd_buffer->prev_fsr_is_null = false;
 
    ralloc_free(cmd_buffer->patchpoints_ctx);
    cmd_buffer->patchpoints_ctx = NULL;
@@ -3709,6 +3719,17 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
       cmd->state.dirty |= TU_CMD_DIRTY_FEEDBACK_LOOPS | TU_CMD_DIRTY_LRZ;
    }
 
+   if (pipeline->program.writes_shading_rate !=
+          cmd->state.pipeline_writes_shading_rate ||
+       pipeline->program.reads_shading_rate !=
+          cmd->state.pipeline_reads_shading_rate) {
+      cmd->state.pipeline_writes_shading_rate =
+         pipeline->program.writes_shading_rate;
+      cmd->state.pipeline_reads_shading_rate =
+         pipeline->program.reads_shading_rate;
+      cmd->state.dirty |= TU_CMD_DIRTY_SHADING_RATE;
+   }
+
    bool raster_order_attachment_access =
       pipeline->output.raster_order_attachment_access ||
       pipeline->ds.raster_order_attachment_access;
@@ -4586,6 +4607,49 @@ tu7_emit_subpass_clear(struct tu_cmd_buffer *cmd, struct tu_resolve_group *resol
    }
 }
 
+static void
+tu7_emit_subpass_shading_rate(struct tu_cmd_buffer *cmd,
+                              const struct tu_subpass *subpass,
+                              struct tu_cs *cs)
+{
+   if (subpass->fsr_attachment == VK_ATTACHMENT_UNUSED) {
+      tu_cs_emit_regs(cs, A7XX_GRAS_FSR_BUFFER_DESC(),
+                      A7XX_GRAS_FSR_BUFFER_SIZE());
+      tu_cs_emit_regs(cs, A7XX_GRAS_FSR_BUFFER_PITCH());
+      tu_cs_emit_regs(cs, A7XX_GRAS_FSR_BUFFER_BASE());
+      /* We need to invalidate cache when changing to NULL FSR attachment, but
+       * only once.
+       */
+      if (!cmd->prev_fsr_is_null) {
+         tu_emit_raw_event_write<A7XX>(cmd, cs, LRZ_Q_CACHE_INVALIDATE,
+                                       false);
+         cmd->prev_fsr_is_null = true;
+      }
+      return;
+   }
+
+   const struct tu_image_view *iview =
+      cmd->state.attachments[subpass->fsr_attachment];
+   assert(iview->vk.format == VK_FORMAT_R8_UINT);
+
+   tu_cs_emit_regs(
+      cs,
+      A7XX_GRAS_FSR_BUFFER_DESC(.layered = true,
+                                .tile_mode =
+                                   (a6xx_tile_mode) iview->image->layout[0]
+                                      .tile_mode, ),
+      A7XX_GRAS_FSR_BUFFER_SIZE(.width = iview->view.width,
+                                .height = iview->view.height));
+   tu_cs_emit_regs(
+      cs, A7XX_GRAS_FSR_BUFFER_PITCH(.pitch = iview->view.pitch,
+                                     .array_pitch = iview->view.layer_size));
+   tu_cs_emit_regs(cs,
+                   A7XX_GRAS_FSR_BUFFER_BASE(.qword = iview->view.base_addr));
+
+   tu_emit_raw_event_write<A7XX>(cmd, cs, LRZ_Q_CACHE_INVALIDATE, false);
+   cmd->prev_fsr_is_null = false;
+}
+
 /* emit loads, clears, and mrt/zs/msaa/ubwc state for the subpass that is
  * starting (either at vkCmdBeginRenderPass2() or vkCmdNextSubpass2())
  *
@@ -4612,6 +4676,10 @@ tu_emit_subpass_begin(struct tu_cmd_buffer *cmd)
    tu6_emit_zs<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs);
    tu6_emit_mrt<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs);
    tu6_emit_render_cntl<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs, false);
+
+   if (CHIP >= A7XX) {
+      tu7_emit_subpass_shading_rate(cmd, cmd->state.subpass, &cmd->draw_cs);
+   }
 
    tu_set_input_attachments(cmd, cmd->state.subpass);
 
@@ -4786,6 +4854,15 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
    if (cmd->dynamic_pass.has_fdm)
       cmd->patchpoints_ctx = ralloc_context(NULL);
+
+   a = cmd->dynamic_subpass.fsr_attachment;
+   if (a != VK_ATTACHMENT_UNUSED) {
+      const VkRenderingFragmentShadingRateAttachmentInfoKHR *fsr_info =
+         vk_find_struct_const(pRenderingInfo->pNext,
+                              RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR);
+      VK_FROM_HANDLE(tu_image_view, view, fsr_info->imageView);
+      cmd->state.attachments[a] = view;
+   }
 
    tu_choose_gmem_layout(cmd);
 

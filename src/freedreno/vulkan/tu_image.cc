@@ -662,6 +662,13 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
                                                TILE6_LINEAR) != WZYX)
       image->force_linear_tile = true;
 
+   /* Some kind of HW limitation. */
+   if (pCreateInfo->usage &
+          VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR &&
+       image->vk.extent.width < 16) {
+      image->force_linear_tile = true;
+   }
+
    if (image->force_linear_tile ||
        !ubwc_possible(device, image->vk.format, pCreateInfo->imageType,
                       pCreateInfo->usage, image->vk.stencil_usage,
