@@ -484,6 +484,31 @@ of those, as they'll have the right values for your system:
 -  `meson-cross-x86-linux-gnu <https://aur.archlinux.org/packages/meson-cross-x86-linux-gnu>`__
 -  `meson-cross-aarch64-linux-gnu <https://github.com/dcbaker/archlinux-meson-cross-aarch64-linux-gnu>`__
 
+Cross-compilation requires cross-compiled versions of the same build
+dependencies listed at the top of this page.
+
+On Debian, Ubuntu and similar, the command ``sudo apt-rdepends
+--build-depends --follow=DEPENDS mesa`` provides a complete and
+up-to-date list of all build dependencies. Append the ``:i386`` suffix
+(or your desired architecture) to package names and install the ones you
+need like this: ``sudo apt install libwayland-dev:i386 libelf-dev:i386
+...``
+
+On Fedora and similar, try ``sudo setarch i686 dnf builddep mesa``. If
+that fails, ``sudo dnf builddep mesa`` prints all native dependencies
+even when they are already installed. Replace the ``.x86_64`` suffix
+with ``.686`` (or your desired architecture) and install the ones you
+need.
+
+You do not need a cross-compiled version of the dependencies like
+``python3``, ``bison``, ``flex``, ``bindgen``,...  that are *used only at
+build time*. Some unnecessary ones may even confuse your system
+configuration. Also, remember that some dependencies are optional
+depending on how you configure your ``meson setup ...`` command - this
+is not specific to cross-compilation; see details above. So you may want
+to proceed with trial-and-error and install only cross-compiled packages
+needed to fix build error messages.
+
 32-bit build on x86 linux:
 
 .. code-block:: ini
