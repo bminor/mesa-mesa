@@ -68,6 +68,9 @@ struct intel_measure_config {
    /* Stderr, or optionally set with INTEL_MEASURE=file={path{ */
    FILE                      *file;
 
+   /* Defer log file create until first write */
+   char                      *deferred_create_filename;
+
    /* Events that will be measured.  Set only one flag, with
     * INTEL_MEASURE=[draw,rt,shader,batch,frame] */
    enum intel_measure_events  flags;
