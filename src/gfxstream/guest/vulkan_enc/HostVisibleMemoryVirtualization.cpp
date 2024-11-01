@@ -16,10 +16,6 @@ using android::base::SubAllocator;
 namespace gfxstream {
 namespace vk {
 
-bool isHostVisible(const VkPhysicalDeviceMemoryProperties* memoryProps, uint32_t index) {
-    return memoryProps->memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-}
-
 CoherentMemory::CoherentMemory(VirtGpuResourceMappingPtr blobMapping, uint64_t size,
                                VkDevice device, VkDeviceMemory memory)
     : mSize(size), mBlobMapping(blobMapping), mDevice(device), mMemory(memory) {

@@ -268,6 +268,10 @@ bool descriptorBindingIsImmutableSampler(VkDescriptorSet dstSet, uint32_t dstBin
     return as_goldfish_VkDescriptorSet(dstSet)->reified->bindingIsImmutableSampler[dstBinding];
 }
 
+static bool isHostVisible(const VkPhysicalDeviceMemoryProperties* memoryProps, uint32_t index) {
+    return memoryProps->memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+}
+
 VkDescriptorImageInfo ResourceTracker::filterNonexistentSampler(
     const VkDescriptorImageInfo& inputInfo) {
     VkSampler sampler = inputInfo.sampler;
