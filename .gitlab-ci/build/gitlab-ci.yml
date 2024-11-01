@@ -340,10 +340,13 @@ fedora-release:
   variables:
     BUILDTYPE: "release"
     # array-bounds are pure non-LTO gcc buggy warning
+    # maybe-uninitialized is misfiring in nir_lower_gs_intrinsics.c, and
+    # a "maybe" warning should never be an error anyway.
     C_ARGS: >
       -Wno-error=stringop-overflow
       -Wno-error=stringop-overread
       -Wno-error=array-bounds
+      -Wno-error=maybe-uninitialized
     CPP_ARGS: >
       -Wno-error=dangling-reference
       -Wno-error=overloaded-virtual
