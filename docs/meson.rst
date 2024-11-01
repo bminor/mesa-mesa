@@ -522,8 +522,11 @@ needed to fix build error messages.
    # cpp = ['ccache', 'g++']
    ar = '/usr/bin/gcc-ar'
    strip = '/usr/bin/strip'
-   pkg-config = '/usr/bin/pkg-config-32'
    llvm-config = '/usr/bin/llvm-config32'
+   pkg-config = '/usr/bin/pkg-config-32'
+   # As of version 40, Fedora uses a full target platform prefix for
+   # pkg-config instead, like the ARM and Windows examples below:
+   # pkg-config = 'i686-redhat-linux-gnu-pkg-config'
 
    [properties]
    c_args = ['-m32']
