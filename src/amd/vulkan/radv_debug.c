@@ -982,6 +982,7 @@ struct radv_sq_hw_reg {
    uint32_t status;
    uint32_t trap_sts;
    uint32_t hw_id;
+   uint32_t gpr_alloc;
    uint32_t ib_sts;
 };
 
@@ -998,11 +999,13 @@ radv_dump_sq_hw_regs(struct radv_device *device)
       ac_dump_reg(stderr, gfx_level, family, R_000408_SQ_WAVE_STATUS, regs->status, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_00040C_SQ_WAVE_TRAPSTS, regs->trap_sts, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_00045C_SQ_WAVE_HW_ID1, regs->hw_id, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_000414_SQ_WAVE_GPR_ALLOC, regs->gpr_alloc, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_00041C_SQ_WAVE_IB_STS, regs->ib_sts, ~0);
    } else {
       ac_dump_reg(stderr, gfx_level, family, R_000048_SQ_WAVE_STATUS, regs->status, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_00004C_SQ_WAVE_TRAPSTS, regs->trap_sts, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_000050_SQ_WAVE_HW_ID, regs->hw_id, ~0);
+      ac_dump_reg(stderr, gfx_level, family, R_000054_SQ_WAVE_GPR_ALLOC, regs->gpr_alloc, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_00005C_SQ_WAVE_IB_STS, regs->ib_sts, ~0);
    }
    fprintf(stderr, "\n\n");

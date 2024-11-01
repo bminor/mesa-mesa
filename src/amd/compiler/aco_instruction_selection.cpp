@@ -12444,6 +12444,7 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
       2, /* HW_REG_STATUS */
       3, /* HW_REG_TRAP_STS */
       4, /* HW_REG_HW_ID */
+      5, /* WH_REG_GPR_ALLOC */
       7, /* HW_REG_IB_STS */
    };
 
