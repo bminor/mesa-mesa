@@ -98,9 +98,8 @@ tu6_lazy_emit_tessfactor_addr(struct tu_cmd_buffer *cmd)
    cmd->state.tessfactor_addr_set = true;
 }
 
-template <chip CHIP>
 static void
-tu6_lazy_emit_vsc(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+tu6_lazy_init_vsc(struct tu_cmd_buffer *cmd)
 {
    struct tu_device *dev = cmd->device;
    uint32_t num_vsc_pipes = dev->physical_device->info->num_vsc_pipes;
@@ -136,23 +135,30 @@ tu6_lazy_emit_vsc(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 
    tu_get_scratch_bo(dev, size0 + num_vsc_pipes * 4, &vsc_bo);
 
+   cmd->vsc_draw_strm_va = vsc_bo->iova + cmd->vsc_prim_strm_pitch * num_vsc_pipes;
+   cmd->vsc_draw_strm_size_va = vsc_bo->iova + size0;
+   cmd->vsc_prim_strm_va = vsc_bo->iova;
+}
+
+template <chip CHIP>
+static void
+tu_emit_vsc(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+{
    if (CHIP == A6XX) {
       tu_cs_emit_regs(cs,
-                     A6XX_VSC_DRAW_STRM_SIZE_ADDRESS(.bo = vsc_bo, .bo_offset = size0));
+                     A6XX_VSC_DRAW_STRM_SIZE_ADDRESS(.qword = cmd->vsc_draw_strm_size_va));
       tu_cs_emit_regs(cs,
-                     A6XX_VSC_PRIM_STRM_ADDRESS(.bo = vsc_bo));
+                     A6XX_VSC_PRIM_STRM_ADDRESS(.qword = cmd->vsc_prim_strm_va));
       tu_cs_emit_regs(
-         cs, A6XX_VSC_DRAW_STRM_ADDRESS(.bo = vsc_bo,
-                                       .bo_offset = cmd->vsc_prim_strm_pitch *
-                                                   num_vsc_pipes));
+         cs, A6XX_VSC_DRAW_STRM_ADDRESS(.qword = cmd->vsc_draw_strm_va));
    } else {
       tu_cs_emit_pkt7(cs, CP_SET_PSEUDO_REG, 3 * 3);
       tu_cs_emit(cs, A6XX_CP_SET_PSEUDO_REG__0_PSEUDO_REG(DRAW_STRM_ADDRESS));
-      tu_cs_emit_qw(cs, vsc_bo->iova + cmd->vsc_prim_strm_pitch * num_vsc_pipes);
+      tu_cs_emit_qw(cs, cmd->vsc_draw_strm_va);
       tu_cs_emit(cs, A6XX_CP_SET_PSEUDO_REG__0_PSEUDO_REG(DRAW_STRM_SIZE_ADDRESS));
-      tu_cs_emit_qw(cs, vsc_bo->iova + size0);
+      tu_cs_emit_qw(cs, cmd->vsc_draw_strm_size_va);
       tu_cs_emit(cs, A6XX_CP_SET_PSEUDO_REG__0_PSEUDO_REG(PRIM_STRM_ADDRESS));
-      tu_cs_emit_qw(cs, vsc_bo->iova);
+      tu_cs_emit_qw(cs, cmd->vsc_prim_strm_va);
    }
 
    cmd->vsc_initialized = true;
@@ -2121,8 +2127,22 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    if (use_hw_binning(cmd)) {
       if (!cmd->vsc_initialized) {
-         tu6_lazy_emit_vsc<CHIP>(cmd, cs);
+         tu6_lazy_init_vsc(cmd);
       }
+
+      /* We always emit VSC before each renderpass, because due to
+       * skipsaverestore the underlying VSC registers may have become
+       * invalid. Normally we'd need to WFI before setting these non-context
+       * registers, but we should be safe because we're only setting it to the
+       * same value it had before.
+       *
+       * TODO: On a6xx, we have to emit this per-bin or make the amble include
+       * these registers, because CP_SET_BIN_DATA5_OFFSET will use the
+       * register instead of the pseudo register and its value won't survive
+       * across preemptions. The blob seems to take the second approach and
+       * emits the preamble lazily.
+       */
+      tu_emit_vsc<CHIP>(cmd, cs);
 
       tu6_emit_bin_size<CHIP>(cs, tiling->tile0.width, tiling->tile0.height,
                               {
