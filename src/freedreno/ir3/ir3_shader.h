@@ -703,6 +703,7 @@ struct ir3_shader_variant {
       bool half : 1;
    } outputs[32 + 2]; /* +POSITION +PSIZE */
    bool writes_pos, writes_smask, writes_psize, writes_viewport, writes_stencilref;
+   bool writes_shading_rate;
 
    /* Size in dwords of all outputs for VS, size of entire patch for HS. */
    uint32_t output_size;
@@ -715,7 +716,7 @@ struct ir3_shader_variant {
     * offset, and in bytes for all other stages.
     * +POSITION, +PSIZE, ... - see shader_io_get_unique_index
     */
-   unsigned output_loc[12 + 32];
+   unsigned output_loc[13 + 32];
 
    /* attributes (VS) / varyings (FS):
     * Note that sysval's should come *after* normal inputs.
@@ -740,6 +741,7 @@ struct ir3_shader_variant {
       bool flat       : 1;
    } inputs[32 + 2]; /* +POSITION +FACE */
    bool reads_primid;
+   bool reads_shading_rate;
 
    /* sum of input components (scalar).  For frag shaders, it only counts
     * the varying inputs:

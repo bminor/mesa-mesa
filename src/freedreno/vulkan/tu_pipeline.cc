@@ -902,8 +902,11 @@ tu6_emit_vpc(struct tu_cs *cs,
       ir3_find_output_regid(last_shader, VARYING_SLOT_CLIP_DIST1);
    uint32_t flags_regid = gs ?
       ir3_find_output_regid(gs, VARYING_SLOT_GS_VERTEX_FLAGS_IR3) : 0;
+   const uint32_t shading_rate_regid =
+      ir3_find_output_regid(last_shader, VARYING_SLOT_PRIMITIVE_SHADING_RATE);
 
    uint32_t pointsize_loc = 0xff, position_loc = 0xff, layer_loc = 0xff, view_loc = 0xff;
+   uint32_t shading_rate_loc = 0xff;
 
    if (layer_regid != regid(63, 0)) {
       layer_loc = linkage.max_loc;
@@ -913,6 +916,12 @@ tu6_emit_vpc(struct tu_cs *cs,
    if (view_regid != regid(63, 0)) {
       view_loc = linkage.max_loc;
       ir3_link_add(&linkage, VARYING_SLOT_VIEWPORT, view_regid, 0x1, linkage.max_loc);
+   }
+
+   if (shading_rate_regid != regid(63, 0)) {
+      shading_rate_loc = linkage.max_loc;
+      ir3_link_add(&linkage, VARYING_SLOT_PRIMITIVE_SHADING_RATE,
+                   shading_rate_regid, 0x1, linkage.max_loc);
    }
 
    unsigned extra_pos = 0;
@@ -1026,7 +1035,8 @@ tu6_emit_vpc(struct tu_cs *cs,
                         CONDREG(layer_regid, A6XX_PC_VS_OUT_CNTL_LAYER) |
                         CONDREG(view_regid, A6XX_PC_VS_OUT_CNTL_VIEW) |
                         COND(primid, A6XX_PC_VS_OUT_CNTL_PRIMITIVE_ID) |
-                        A6XX_PC_VS_OUT_CNTL_CLIP_MASK(clip_cull_mask));
+                        A6XX_PC_VS_OUT_CNTL_CLIP_MASK(clip_cull_mask) |
+                        CONDREG(shading_rate_regid, A6XX_PC_VS_OUT_CNTL_SHADINGRATE));
       } else {
          tu_cs_emit(cs, COND(primid, A6XX_PC_VS_OUT_CNTL_PRIMITIVE_ID));
       }
@@ -1043,11 +1053,11 @@ tu6_emit_vpc(struct tu_cs *cs,
    tu_cs_emit_pkt4(cs, cfg->reg_vpc_xs_layer_cntl, 1);
    tu_cs_emit(cs, A6XX_VPC_VS_LAYER_CNTL_LAYERLOC(layer_loc) |
                   A6XX_VPC_VS_LAYER_CNTL_VIEWLOC(view_loc) |
-                  0xff0000);
+                  A6XX_VPC_VS_LAYER_CNTL_SHADINGRATELOC(shading_rate_loc));
    tu_cs_emit_pkt4(cs, cfg->reg_vpc_xs_layer_cntl_v2, 1);
    tu_cs_emit(cs, A6XX_VPC_VS_LAYER_CNTL_LAYERLOC(layer_loc) |
                   A6XX_VPC_VS_LAYER_CNTL_VIEWLOC(view_loc) |
-                  0xff0000);
+                  A6XX_VPC_VS_LAYER_CNTL_SHADINGRATELOC(shading_rate_loc));
 
    tu_cs_emit_pkt4(cs, cfg->reg_gras_xs_layer_cntl, 1);
    tu_cs_emit(cs, CONDREG(layer_regid, A6XX_GRAS_GS_LAYER_CNTL_WRITES_LAYER) |
@@ -2293,6 +2303,8 @@ tu_emit_program_state(struct tu_cs *sub_cs,
       !last_shader->writes_viewport &&
       shaders[MESA_SHADER_FRAGMENT]->fs.has_fdm &&
       dev->physical_device->info->a6xx.has_per_view_viewport;
+   prog->writes_shading_rate = last_shader->writes_shading_rate;
+   prog->reads_shading_rate = fs->reads_shading_rate;
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_vertex_input_state[] = {

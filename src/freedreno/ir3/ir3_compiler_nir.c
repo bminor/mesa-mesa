@@ -2918,6 +2918,15 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
          }
       }
       break;
+   case nir_intrinsic_load_frag_shading_rate: {
+      if (!ctx->frag_shading_rate) {
+         ctx->so->reads_shading_rate = true;
+         ctx->frag_shading_rate =
+            create_sysval_input(ctx, SYSTEM_VALUE_FRAG_SHADING_RATE, 0x1);
+      }
+      dst[0] = ctx->frag_shading_rate;
+      break;
+   }
    case nir_intrinsic_load_base_workgroup_id:
       for (int i = 0; i < dest_components; i++) {
          dst[i] = create_driver_param(ctx, IR3_DP_CS(base_group_x) + i);
@@ -5024,6 +5033,9 @@ setup_output(struct ir3_context *ctx, nir_intrinsic_instr *intr)
          break;
       case VARYING_SLOT_VIEWPORT:
          so->writes_viewport = true;
+         break;
+      case VARYING_SLOT_PRIMITIVE_SHADING_RATE:
+         so->writes_shading_rate = true;
          break;
       case VARYING_SLOT_PRIMITIVE_ID:
       case VARYING_SLOT_GS_VERTEX_FLAGS_IR3:

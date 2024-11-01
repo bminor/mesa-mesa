@@ -101,6 +101,8 @@ struct tu_program_state
       unsigned dynamic_descriptor_offsets[MAX_SETS];
 
       bool per_view_viewport;
+      bool writes_shading_rate;
+      bool reads_shading_rate;
 };
 
 struct tu_pipeline_executable {

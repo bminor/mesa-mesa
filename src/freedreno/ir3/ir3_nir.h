@@ -30,6 +30,8 @@ bool ir3_nir_move_varying_inputs(nir_shader *shader);
 int ir3_nir_coord_offset(nir_def *ssa);
 bool ir3_nir_lower_tex_prefetch(nir_shader *shader);
 bool ir3_nir_lower_layer_id(nir_shader *shader);
+bool ir3_nir_lower_frag_shading_rate(nir_shader *shader);
+bool ir3_nir_lower_primitive_shading_rate(nir_shader *shader);
 
 void ir3_nir_lower_to_explicit_output(nir_shader *shader,
                                       struct ir3_shader_variant *v,

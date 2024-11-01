@@ -948,6 +948,7 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
    case MESA_SHADER_VERTEX:
       dump_output(out, so, VARYING_SLOT_POS, "pos");
       dump_output(out, so, VARYING_SLOT_PSIZ, "psize");
+      dump_output(out, so, VARYING_SLOT_PRIMITIVE_SHADING_RATE, "shading_rate");
       break;
    case MESA_SHADER_FRAGMENT:
       dump_reg(out, "pos (ij_pixel)",

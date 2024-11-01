@@ -1583,7 +1583,7 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
 {
    uint32_t face_regid, coord_regid, zwcoord_regid, samp_id_regid;
    uint32_t ij_regid[IJ_COUNT];
-   uint32_t smask_in_regid;
+   uint32_t smask_in_regid, shading_rate_regid;
 
    bool sample_shading = fs->per_samp | fs->key.sample_shading;
    bool enable_varyings = fs->total_in > 0;
@@ -1593,6 +1593,7 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
    face_regid      = ir3_find_sysval_regid(fs, SYSTEM_VALUE_FRONT_FACE);
    coord_regid     = ir3_find_sysval_regid(fs, SYSTEM_VALUE_FRAG_COORD);
    zwcoord_regid   = VALIDREG(coord_regid) ? coord_regid + 2 : regid(63, 0);
+   shading_rate_regid = ir3_find_sysval_regid(fs, SYSTEM_VALUE_FRAG_SHADING_RATE);
    for (unsigned i = 0; i < ARRAY_SIZE(ij_regid); i++)
       ij_regid[i] = ir3_find_sysval_regid(fs, SYSTEM_VALUE_BARYCENTRIC_PERSP_PIXEL + i);
 
@@ -1647,7 +1648,8 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
                          .ij_linear_sample = ij_regid[IJ_LINEAR_SAMPLE],
                          .xycoordregid = coord_regid,
                          .zwcoordregid = zwcoord_regid),
-      HLSQ_CONTROL_5_REG(CHIP, .dword = 0xfcfc), );
+      HLSQ_CONTROL_5_REG(CHIP, .linelengthregid = 0xfc,
+                         .foveationqualityregid = shading_rate_regid), );
 
    if (CHIP >= A7XX) {
       uint32_t sysval_regs = 0;
@@ -1660,7 +1662,8 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
          }
       }
 
-      for (uint32_t sysval : { face_regid, samp_id_regid, smask_in_regid }) {
+      for (uint32_t sysval : { face_regid, samp_id_regid, smask_in_regid,
+                               shading_rate_regid }) {
          if (VALIDREG(sysval))
             sysval_regs += 1;
       }
@@ -1719,7 +1722,8 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
          CONDREG(samp_id_regid, A6XX_RB_RENDER_CONTROL1_SAMPLEID) |
          CONDREG(ij_regid[IJ_PERSP_CENTER_RHW], A6XX_RB_RENDER_CONTROL1_CENTERRHW) |
          COND(fs->post_depth_coverage, A6XX_RB_RENDER_CONTROL1_POSTDEPTHCOVERAGE)  |
-         COND(fs->frag_face, A6XX_RB_RENDER_CONTROL1_FACENESS));
+         COND(fs->frag_face, A6XX_RB_RENDER_CONTROL1_FACENESS) |
+         CONDREG(shading_rate_regid, A6XX_RB_RENDER_CONTROL1_FOVEATION));
 
    tu_cs_emit_pkt4(cs, REG_A6XX_RB_SAMPLE_CNTL, 1);
    tu_cs_emit(cs, COND(sample_shading, A6XX_RB_SAMPLE_CNTL_PER_SAMP_MODE));
