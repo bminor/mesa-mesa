@@ -303,7 +303,6 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
    compiler->nir_options.has_iadd3 = dev_info->a6xx.has_sad;
 
    if (compiler->gen >= 6) {
-      compiler->nir_options.vectorize_io = true,
       compiler->nir_options.force_indirect_unrolling = nir_var_all,
       compiler->nir_options.lower_device_index_to_zero = true;
 

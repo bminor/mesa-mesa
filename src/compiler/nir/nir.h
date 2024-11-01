@@ -3985,8 +3985,8 @@ typedef struct nir_shader_compiler_options {
    bool lower_insert_byte;
    bool lower_insert_word;
 
+   /* TODO: this flag is potentially useless, remove? */
    bool lower_all_io_to_temps;
-   bool lower_all_io_to_elements;
 
    /* Indicates that the driver only has zero-based vertex id */
    bool vertex_id_zero_based;
@@ -4097,11 +4097,6 @@ typedef struct nir_shader_compiler_options {
     */
    bool lower_mul_32x16;
 
-   /**
-    * Should IO be re-vectorized?  Some scalar ISAs still operate on vec4's
-    * for IO purposes and would prefer loads/stores be vectorized.
-    */
-   bool vectorize_io;
    bool vectorize_tess_levels;
    bool lower_to_scalar;
    nir_instr_filter_cb lower_to_scalar_filter;
@@ -6984,10 +6979,6 @@ bool nir_opt_ray_queries(nir_shader *shader);
 bool nir_opt_ray_query_ranges(nir_shader *shader);
 
 void nir_sweep(nir_shader *shader);
-
-void nir_remap_dual_slot_attributes(nir_shader *shader,
-                                    uint64_t *dual_slot_inputs);
-uint64_t nir_get_single_slot_attribs_mask(uint64_t attribs, uint64_t dual_slot);
 
 nir_intrinsic_op nir_intrinsic_from_system_value(gl_system_value val);
 gl_system_value nir_system_value_from_intrinsic(nir_intrinsic_op intrin);

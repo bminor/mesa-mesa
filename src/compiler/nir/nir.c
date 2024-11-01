@@ -2596,50 +2596,6 @@ nir_system_value_from_intrinsic(nir_intrinsic_op intrin)
    }
 }
 
-/* OpenGL utility method that remaps the location attributes if they are
- * doubles. Not needed for vulkan due the differences on the input location
- * count for doubles on vulkan vs OpenGL
- *
- * The bitfield returned in dual_slot is one bit for each double input slot in
- * the original OpenGL single-slot input numbering.  The mapping from old
- * locations to new locations is as follows:
- *
- *    new_loc = loc + util_bitcount(dual_slot & BITFIELD64_MASK(loc))
- */
-void
-nir_remap_dual_slot_attributes(nir_shader *shader, uint64_t *dual_slot)
-{
-   assert(shader->info.stage == MESA_SHADER_VERTEX);
-
-   *dual_slot = 0;
-   nir_foreach_shader_in_variable(var, shader) {
-      if (glsl_type_is_dual_slot(glsl_without_array(var->type))) {
-         unsigned slots = glsl_count_attribute_slots(var->type, true);
-         *dual_slot |= BITFIELD64_MASK(slots) << var->data.location;
-      }
-   }
-
-   nir_foreach_shader_in_variable(var, shader) {
-      var->data.location +=
-         util_bitcount64(*dual_slot & BITFIELD64_MASK(var->data.location));
-   }
-}
-
-/* Returns an attribute mask that has been re-compacted using the given
- * dual_slot mask.
- */
-uint64_t
-nir_get_single_slot_attribs_mask(uint64_t attribs, uint64_t dual_slot)
-{
-   while (dual_slot) {
-      unsigned loc = u_bit_scan64(&dual_slot);
-      /* mask of all bits up to and including loc */
-      uint64_t mask = BITFIELD64_MASK(loc + 1);
-      attribs = (attribs & mask) | ((attribs & ~mask) >> 1);
-   }
-   return attribs;
-}
-
 void
 nir_rewrite_image_intrinsic(nir_intrinsic_instr *intrin, nir_def *src,
                             bool bindless)

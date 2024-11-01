@@ -3614,7 +3614,6 @@ nvir_nir_shader_compiler_options(int chipset, uint8_t shader_type)
    op.lower_insert_byte = true;
    op.lower_insert_word = true;
    op.lower_all_io_to_temps = false;
-   op.lower_all_io_to_elements = false;
    op.vertex_id_zero_based = false;
    op.lower_base_vertex = false;
    op.lower_helper_invocation = false;
@@ -3627,7 +3626,6 @@ nvir_nir_shader_compiler_options(int chipset, uint8_t shader_type)
    op.lower_uadd_sat = true; // TODO
    op.lower_usub_sat = true; // TODO
    op.lower_iadd_sat = true; // TODO
-   op.vectorize_io = false;
    op.lower_to_scalar = false;
    op.unify_interfaces = false;
    op.lower_mul_2x32_64 = true; // TODO
