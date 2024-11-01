@@ -261,11 +261,6 @@ static void rvce_begin_frame(struct pipe_video_codec *encoder, struct pipe_video
       struct si_screen *sscreen = (struct si_screen *)encoder->context->screen;
       unsigned cpb_size;
 
-      /* TODO enable B frame with dual instance */
-      if ((sscreen->info.family >= CHIP_TONGA) && (enc->base.max_references == 1) &&
-            (sscreen->info.vce_harvest_config == 0))
-         enc->dual_inst = true;
-
       enc->cpb_num = get_cpb_num(enc, enc->pic.seq.level_idc);
       if (!enc->cpb_num)
          return;
@@ -345,8 +340,7 @@ static int rvce_end_frame(struct pipe_video_codec *encoder, struct pipe_video_bu
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
    struct rvce_cpb_slot *slot = list_entry(enc->cpb_slots.prev, struct rvce_cpb_slot, list);
 
-   if (!enc->dual_inst || enc->bs_idx > 1)
-      flush(enc, picture->flush_flags, enc->dual_inst ? NULL : picture->fence);
+   flush(enc, picture->flush_flags, picture->fence);
 
    /* update the CPB backtrack with the just encoded frame */
    slot->picture_type = enc->pic.picture_type;

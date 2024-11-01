@@ -165,10 +165,7 @@ void si_vce_52_get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_
    enc->enc_pic.ref_idx_l0 = pic->ref_idx_l0_list[0];
    enc->enc_pic.ref_idx_l1 = pic->ref_idx_l1_list[0];
    enc->enc_pic.not_referenced = pic->not_referenced;
-   if (enc->dual_inst)
-      enc->enc_pic.addrmode_arraymode_disrdo_distwoinstants = 0x00000201;
-   else
-      enc->enc_pic.addrmode_arraymode_disrdo_distwoinstants = 0x01000201;
+   enc->enc_pic.addrmode_arraymode_disrdo_distwoinstants = 0x01000201;
    enc->enc_pic.is_idr = (pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR);
 }
 
@@ -208,20 +205,10 @@ static void encode(struct rvce_encoder *enc)
 {
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
    signed luma_offset, chroma_offset, bs_offset;
-   unsigned dep, bs_idx = enc->bs_idx++;
+   unsigned bs_idx = enc->bs_idx++;
    int i;
 
-   if (enc->dual_inst) {
-      if (bs_idx == 0)
-         dep = 1;
-      else if (enc->enc_pic.picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR)
-         dep = 0;
-      else
-         dep = 2;
-   } else
-      dep = 0;
-
-   enc->task_info(enc, 0x00000003, dep, 0, bs_idx);
+   enc->task_info(enc, 0x00000003, 0, 0, bs_idx);
 
    RVCE_BEGIN(0x05000001);                                      // context buffer
    RVCE_READWRITE(enc->cpb.res->buf, enc->cpb.res->domains, 0); // encodeContextAddressHi/Lo
