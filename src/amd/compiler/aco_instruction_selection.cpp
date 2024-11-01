@@ -12476,6 +12476,7 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
       5, /* WH_REG_GPR_ALLOC */
       7, /* HW_REG_IB_STS */
    };
+   uint32_t offset = 8;
 
    /* Store some hardware registers. */
    for (unsigned i = 0; i < ARRAY_SIZE(hw_regs_idx); i++) {
@@ -12487,14 +12488,28 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
          bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{ttmp8}, s1));
 
          bld.mubuf(aco_opcode::buffer_store_dword, Operand(PhysReg{ttmp4}, s4), Operand(v1),
-                   Operand::c32(8u + i * 4), Operand(PhysReg{256}, v1) /* v0 */, 0 /* offset */,
+                   Operand::c32(offset), Operand(PhysReg{256}, v1) /* v0 */, 0 /* offset */,
                    false /* offen */, false /* idxen */, /* addr64 */ false,
                    /* disable_wqm */ false, cache_glc);
       } else {
          bld.smem(aco_opcode::s_buffer_store_dword, Operand(PhysReg{ttmp4}, s4),
-                  Operand::c32(8u + i * 4), Operand(PhysReg{ttmp8}, s1), memory_sync_info(),
-                  cache_glc);
+                  Operand::c32(offset), Operand(PhysReg{ttmp8}, s1), memory_sync_info(), cache_glc);
       }
+
+      offset += 4;
+   }
+
+   /* Dump all SGPRs. */
+   for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {
+      bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{i}, s1));
+      bld.copy(Definition(PhysReg{ttmp8}, s1), Operand::c32(offset));
+
+      bld.mubuf(aco_opcode::buffer_store_dword, Operand(PhysReg{ttmp4}, s4), Operand(v1),
+                Operand(PhysReg{ttmp8}, s1), Operand(PhysReg{256}, v1) /* v0 */, 0 /* offset */,
+                false /* offen */, false /* idxen */, /* addr64 */ false,
+                /* disable_wqm */ false, cache_glc);
+
+      offset += 4;
    }
 
    program->config->float_mode = program->blocks[0].fp_mode.val;

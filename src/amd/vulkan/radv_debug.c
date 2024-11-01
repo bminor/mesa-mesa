@@ -978,6 +978,8 @@ radv_dump_faulty_shader(struct radv_device *device, uint64_t faulty_pc)
    free(instructions);
 }
 
+#define MAX_SGPRS 108
+
 struct radv_trap_handler_layout {
    uint32_t ttmp0;
    uint32_t ttmp1;
@@ -989,6 +991,8 @@ struct radv_trap_handler_layout {
       uint32_t gpr_alloc;
       uint32_t ib_sts;
    } sq_wave_regs;
+
+   uint32_t sgprs[MAX_SGPRS];
 };
 
 static void
@@ -1011,6 +1015,17 @@ radv_dump_sq_hw_regs(struct radv_device *device, const struct radv_trap_handler_
       ac_dump_reg(stderr, gfx_level, family, R_000050_SQ_WAVE_HW_ID, layout->sq_wave_regs.hw_id1, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_000054_SQ_WAVE_GPR_ALLOC, layout->sq_wave_regs.gpr_alloc, ~0);
       ac_dump_reg(stderr, gfx_level, family, R_00005C_SQ_WAVE_IB_STS, layout->sq_wave_regs.ib_sts, ~0);
+   }
+   fprintf(stderr, "\n\n");
+}
+
+static void
+radv_dump_sgprs(const struct radv_trap_handler_layout *layout)
+{
+   fprintf(stderr, "\nSGPRS:\n");
+   for (uint32_t i = 0; i < MAX_SGPRS; i += 4) {
+      fprintf(stderr, "s[%d-%d]={0x%08x, 0x%08x, 0x%08x, 0x%08x}\n", i, i + 3, layout->sgprs[i], layout->sgprs[i + 1],
+              layout->sgprs[i + 2], layout->sgprs[i + 3]);
    }
    fprintf(stderr, "\n\n");
 }
@@ -1040,6 +1055,7 @@ radv_check_trap_handler(struct radv_queue *queue)
 #endif
 
    radv_dump_sq_hw_regs(device, layout);
+   radv_dump_sgprs(layout);
 
    uint32_t ttmp0 = layout->ttmp0;
    uint32_t ttmp1 = layout->ttmp1;
