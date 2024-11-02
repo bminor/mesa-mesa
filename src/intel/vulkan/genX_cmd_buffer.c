@@ -1150,7 +1150,7 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
        */
       must_init_fast_clear_state = devinfo->ver < 20;
 
-      if (image->planes[plane].aux_usage == ISL_AUX_USAGE_MCS ||
+      if (isl_aux_usage_has_mcs(image->planes[plane].aux_usage) ||
           devinfo->has_illegal_ccs_values) {
 
          must_init_aux_surface = true;
