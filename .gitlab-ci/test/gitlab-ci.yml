@@ -241,9 +241,6 @@ yaml-toml-shell-test:
     - !reference [.required-for-hardware-jobs, needs]
 
 .baremetal-arm64-asan-test:
-  extends:
-    - .baremetal-test
-    - .use-debian/baremetal_arm64_test
   variables:
     DEQP_RUNNER_OPTIONS: "--env LD_PRELOAD=libasan.so.8:/install/lib/libdlclose-skip.so"
     S3_ARTIFACT_NAME: mesa-arm64-asan-debugoptimized
