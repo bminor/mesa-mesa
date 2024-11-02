@@ -3830,6 +3830,12 @@ typedef enum {
     */
    nir_io_vectorizer_ignores_types = BITFIELD_BIT(6),
 
+   /**
+    * Whether nir_opt_varyings should never promote convergent FS inputs
+    * to flat.
+    */
+   nir_io_always_interpolate_convergent_fs_inputs = BITFIELD_BIT(7),
+
    /* Options affecting the GLSL compiler or Gallium are below. */
 
    /**

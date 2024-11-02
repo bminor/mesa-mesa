@@ -334,4 +334,5 @@ static const nir_shader_compiler_options agx_nir_options = {
    .compact_arrays = true,
    .discard_is_demote = true,
    .scalarize_ddx = true,
+   .io_options = nir_io_always_interpolate_convergent_fs_inputs,
 };

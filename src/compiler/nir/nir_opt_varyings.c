@@ -598,6 +598,7 @@ struct linkage_info {
    bool can_move_uniforms;
    bool can_move_ubos;
    bool can_mix_convergent_flat_with_interpolated;
+   bool always_interpolate_convergent_fs_inputs;
 
    gl_shader_stage producer_stage;
    gl_shader_stage consumer_stage;
@@ -4021,7 +4022,8 @@ fs_assign_slot_groups(struct linkage_info *linkage,
     * the unused components of interpolated (if any), and then make
     * the remaining convergent inputs flat.
     */
-   if (unused_flat_slots) {
+   if (!linkage->always_interpolate_convergent_fs_inputs &&
+       unused_flat_slots) {
       fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
                       convergent_mask, FS_VEC4_TYPE_FLAT,
                       slot_size, unused_flat_slots, true, assign_colors,
@@ -4040,7 +4042,11 @@ fs_assign_slot_groups(struct linkage_info *linkage,
                       color_channel_rotate, progress);
    }
    fs_assign_slots(linkage, assigned_mask, assigned_fs_vec4_type,
-                   convergent_mask, FS_VEC4_TYPE_FLAT,
+                   convergent_mask,
+                   linkage->always_interpolate_convergent_fs_inputs ?
+                      (slot_size == 2 ? FS_VEC4_TYPE_INTERP_FP32 :
+                                        FS_VEC4_TYPE_INTERP_FP16) :
+                      FS_VEC4_TYPE_FLAT,
                    slot_size, NUM_SCALAR_SLOTS, true, assign_colors,
                    color_channel_rotate, progress);
 }
@@ -4260,6 +4266,10 @@ init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
          consumer->info.stage == MESA_SHADER_FRAGMENT &&
          consumer->options->io_options &
          nir_io_mix_convergent_flat_with_interpolated,
+      .always_interpolate_convergent_fs_inputs =
+         consumer->info.stage == MESA_SHADER_FRAGMENT &&
+         consumer->options->io_options &
+         nir_io_always_interpolate_convergent_fs_inputs,
       .producer_stage = producer->info.stage,
       .consumer_stage = consumer->info.stage,
       .producer_builder =
