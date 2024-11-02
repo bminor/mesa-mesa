@@ -451,6 +451,7 @@ vlVaCreateContext(VADriverContextP ctx, VAConfigID config_id, int picture_width,
    }
 
    context->surfaces = _mesa_set_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
+   context->buffers = _mesa_set_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
 
    mtx_lock(&drv->mutex);
    *context_id = handle_table_add(drv->htab, context);
@@ -489,6 +490,18 @@ vlVaDestroyContext(VADriverContextP ctx, VAContextID context_id)
       }
    }
    _mesa_set_destroy(context->surfaces, NULL);
+
+   set_foreach(context->buffers, entry) {
+      vlVaBuffer *buf = (vlVaBuffer *)entry->key;
+      assert(buf->ctx == context);
+      vlVaGetBufferFeedback(buf);
+      buf->ctx = NULL;
+      if (buf->fence && context->decoder && context->decoder->destroy_fence) {
+         context->decoder->destroy_fence(context->decoder, buf->fence);
+         buf->fence = NULL;
+      }
+   }
+   _mesa_set_destroy(context->buffers, NULL);
 
    if (context->decoder) {
       if (context->desc.base.entry_point == PIPE_VIDEO_ENTRYPOINT_ENCODE) {

@@ -364,11 +364,12 @@ typedef struct {
    struct pipe_enc_feedback_metadata extended_metadata;
    struct pipe_video_buffer *derived_image_buffer;
    void *feedback;
-   VASurfaceID associated_encode_input_surf;
-   VAContextID ctx;
+   struct vlVaContext *ctx;
+   struct vlVaSurface *coded_surf;
+   struct pipe_fence_handle *fence;
 } vlVaBuffer;
 
-typedef struct {
+typedef struct vlVaContext {
    struct pipe_video_codec templat, *decoder;
    struct pipe_video_buffer *target;
    union {
@@ -416,6 +417,7 @@ typedef struct {
    int packed_header_type;
    bool packed_header_emulation_bytes;
    struct set *surfaces;
+   struct set *buffers;
    unsigned slice_data_offset;
    bool have_slice_params;
 
@@ -439,7 +441,6 @@ typedef struct vlVaSurface {
    struct util_dynarray subpics; /* vlVaSubpicture */
    vlVaContext *ctx;
    vlVaBuffer *coded_buf;
-   void *feedback;
    bool full_range;
    struct pipe_fence_handle *fence;
    struct vlVaSurface *efc_surface; /* input surface for EFC */
@@ -564,6 +565,7 @@ VAStatus vlVaHandleSurfaceAllocate(vlVaDriver *drv, vlVaSurface *surface, struct
 struct pipe_video_buffer *vlVaGetSurfaceBuffer(vlVaDriver *drv, vlVaSurface *surface);
 void vlVaAddRawHeader(struct util_dynarray *headers, uint8_t type, uint32_t size, uint8_t *buf,
                       bool is_slice, uint32_t emulation_bytes_start);
+void vlVaGetBufferFeedback(vlVaBuffer *buf);
 void vlVaSetSurfaceContext(vlVaDriver *drv, vlVaSurface *surf, vlVaContext *context);
 void vlVaGetReferenceFrame(vlVaDriver *drv, VASurfaceID surface_id, struct pipe_video_buffer **ref_frame);
 void vlVaHandlePictureParameterBufferMPEG12(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);

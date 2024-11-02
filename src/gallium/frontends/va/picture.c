@@ -70,6 +70,21 @@ vlVaSetSurfaceContext(vlVaDriver *drv, vlVaSurface *surf, vlVaContext *context)
    _mesa_set_add(surf->ctx->surfaces, surf);
 }
 
+static void
+vlVaSetBufferContext(vlVaDriver *drv, vlVaBuffer *buf, vlVaContext *context)
+{
+   if (buf->ctx == context)
+      return;
+
+   if (buf->ctx) {
+      assert(_mesa_set_search(buf->ctx->buffers, buf));
+      _mesa_set_remove_key(buf->ctx->buffers, buf);
+   }
+
+   buf->ctx = context;
+   _mesa_set_add(buf->ctx->buffers, buf);
+}
+
 VAStatus
 vlVaBeginPicture(VADriverContextP ctx, VAContextID context_id, VASurfaceID render_target)
 {
@@ -103,8 +118,16 @@ vlVaBeginPicture(VADriverContextP ctx, VAContextID context_id, VASurfaceID rende
       return VA_STATUS_ERROR_INVALID_SURFACE;
    }
 
+   if (surf->coded_buf) {
+      surf->coded_buf->coded_surf = NULL;
+      surf->coded_buf = NULL;
+   }
+
+   /* Encode only reads from the surface and doesn't set surface fence. */
+   if (context->templat.entrypoint != PIPE_VIDEO_ENTRYPOINT_ENCODE)
+      vlVaSetSurfaceContext(drv, surf, context);
+
    context->target_id = render_target;
-   vlVaSetSurfaceContext(drv, surf, context);
    context->target = surf->buffer;
    context->mjpeg.sampling_factor = 0;
 
@@ -1270,9 +1293,9 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    }
 
    if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
-      context->desc.base.fence = &surf->fence;
       struct pipe_screen *screen = context->decoder->context->screen;
       coded_buf = context->coded_buf;
+      context->desc.base.fence = &coded_buf->fence;
       if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_MPEG4_AVC)
          context->desc.h264enc.frame_num_cnt++;
 
@@ -1299,6 +1322,11 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
             return VA_STATUS_ERROR_INVALID_SURFACE;
       }
 
+      if (coded_buf->coded_surf)
+         coded_buf->coded_surf->coded_buf = NULL;
+      vlVaGetBufferFeedback(coded_buf);
+      vlVaSetBufferContext(drv, coded_buf, context);
+
       int driver_metadata_support = drv->pipe->screen->get_video_param(drv->pipe->screen,
                                                                        context->decoder->profile,
                                                                        context->decoder->entrypoint,
@@ -1314,10 +1342,8 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       context->decoder->encode_bitstream(context->decoder, context->target,
                                          coded_buf->derived_surface.resource, &feedback);
       coded_buf->feedback = feedback;
-      coded_buf->ctx = context_id;
-      surf->feedback = feedback;
+      coded_buf->coded_surf = surf;
       surf->coded_buf = coded_buf;
-      coded_buf->associated_encode_input_surf = context->target_id;
    } else if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM) {
       context->desc.base.fence = &surf->fence;
    } else if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_PROCESSING) {

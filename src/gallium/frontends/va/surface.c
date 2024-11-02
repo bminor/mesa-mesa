@@ -138,6 +138,8 @@ vlVaDestroySurfaces(VADriverContextP ctx, VASurfaceID *surface_list, int num_sur
             drv->efc_count = -1;
          }
       }
+      if (surf->coded_buf)
+         surf->coded_buf->coded_surf = NULL;
       util_dynarray_fini(&surf->subpics);
       FREE(surf);
       handle_table_remove(drv->htab, surface_list[i]);
@@ -153,6 +155,7 @@ _vlVaSyncSurface(VADriverContextP ctx, VASurfaceID render_target, uint64_t timeo
    vlVaDriver *drv;
    vlVaContext *context;
    vlVaSurface *surf;
+   struct pipe_fence_handle *fence;
 
    if (!ctx)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -168,19 +171,26 @@ _vlVaSyncSurface(VADriverContextP ctx, VASurfaceID render_target, uint64_t timeo
       return VA_STATUS_ERROR_INVALID_SURFACE;
    }
 
+   if (surf->coded_buf) {
+      context = surf->coded_buf->ctx;
+      fence = surf->coded_buf->fence;
+   } else {
+      context = surf->ctx;
+      fence = surf->fence;
+   }
+
    /* This is checked before getting the context below as
     * surf->ctx is only set in begin_frame
     * and not when the surface is created
     * Some apps try to sync/map the surface right after creation and
     * would get VA_STATUS_ERROR_INVALID_CONTEXT
     */
-   if (!surf->buffer || (!surf->feedback && !surf->fence)) {
+   if (!surf->buffer || !fence) {
       // No outstanding encode/decode operation: nothing to do.
       mtx_unlock(&drv->mutex);
       return VA_STATUS_SUCCESS;
    }
 
-   context = surf->ctx;
    if (!context) {
       mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -191,19 +201,7 @@ _vlVaSyncSurface(VADriverContextP ctx, VASurfaceID render_target, uint64_t timeo
       return VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
    }
 
-   /* If driver does not implement fence_wait assume no
-    * async work needed to be waited on and return success
-    */
-   int ret = (context->decoder->fence_wait) ? 0 : 1;
-   if (context->decoder->fence_wait)
-      ret = context->decoder->fence_wait(context->decoder, surf->fence, timeout_ns);
-
-   if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE && surf->feedback && ret) {
-      context->decoder->get_feedback(context->decoder, surf->feedback, &(surf->coded_buf->coded_size), &(surf->coded_buf->extended_metadata));
-      surf->feedback = NULL;
-      surf->coded_buf->feedback = NULL;
-      surf->coded_buf->associated_encode_input_surf = VA_INVALID_ID;
-   }
+   int ret = context->decoder->fence_wait(context->decoder, fence, timeout_ns);
    mtx_unlock(&drv->mutex);
    return ret ? VA_STATUS_SUCCESS : VA_STATUS_ERROR_TIMEDOUT;
 }
@@ -228,6 +226,7 @@ vlVaQuerySurfaceStatus(VADriverContextP ctx, VASurfaceID render_target, VASurfac
    vlVaDriver *drv;
    vlVaSurface *surf;
    vlVaContext *context;
+   struct pipe_fence_handle *fence;
 
    if (!ctx)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -244,20 +243,27 @@ vlVaQuerySurfaceStatus(VADriverContextP ctx, VASurfaceID render_target, VASurfac
       return VA_STATUS_ERROR_INVALID_SURFACE;
    }
 
+   if (surf->coded_buf) {
+      context = surf->coded_buf->ctx;
+      fence = surf->coded_buf->fence;
+   } else {
+      context = surf->ctx;
+      fence = surf->fence;
+   }
+
    /* This is checked before getting the context below as
     * surf->ctx is only set in begin_frame
     * and not when the surface is created
     * Some apps try to sync/map the surface right after creation and
     * would get VA_STATUS_ERROR_INVALID_CONTEXT
     */
-   if (!surf->buffer || (!surf->feedback && !surf->fence)) {
+   if (!surf->buffer || !fence) {
       // No outstanding encode/decode operation: nothing to do.
       *status = VASurfaceReady;
       mtx_unlock(&drv->mutex);
       return VA_STATUS_SUCCESS;
    }
 
-   context = surf->ctx;
    if (!context) {
       mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -268,16 +274,7 @@ vlVaQuerySurfaceStatus(VADriverContextP ctx, VASurfaceID render_target, VASurfac
       return VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
    }
 
-   /* If driver does not implement fence_wait assume no
-    * async work needed to be waited on and return surface ready
-    */
-   int ret = (context->decoder->fence_wait) ? 0 : 1;
-
-   if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE && !surf->feedback)
-      ret = 1;
-   else if (context->decoder->fence_wait)
-      ret = context->decoder->fence_wait(context->decoder, surf->fence, 0);
-
+   int ret = context->decoder->fence_wait(context->decoder, fence, 0);
    mtx_unlock(&drv->mutex);
 
    if (ret)
