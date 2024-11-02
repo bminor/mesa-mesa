@@ -891,12 +891,26 @@ add_aux_surface_if_supported(struct anv_device *device,
       if (!ok)
          return VK_SUCCESS;
 
-      image->planes[plane].aux_usage = ISL_AUX_USAGE_MCS;
+      if (isl_surf_supports_ccs(&device->isl_dev,
+                                &image->planes[plane].primary_surface.isl,
+                                &image->planes[plane].aux_surface.isl)) {
+         image->planes[plane].aux_usage = ISL_AUX_USAGE_MCS_CCS;
+      } else {
+         image->planes[plane].aux_usage = ISL_AUX_USAGE_MCS;
+      }
 
       result = add_surface(device, image, &image->planes[plane].aux_surface,
                            binding, ANV_OFFSET_IMPLICIT);
       if (result != VK_SUCCESS)
          return result;
+
+      if (anv_image_plane_uses_aux_map(device, image, plane)) {
+         result = add_compression_control_buffer(device, image, plane,
+                                                 binding,
+                                                 ANV_OFFSET_IMPLICIT);
+         if (result != VK_SUCCESS)
+            return result;
+      }
 
       if (device->info->ver <= 12)
          return add_aux_state_tracking_buffer(device, image, aux_state_offset,
@@ -2809,9 +2823,12 @@ anv_bind_image_memory(struct anv_device *device,
       anv_perf_warn(VK_LOG_OBJS(&image->vk.base),
                     "BO lacks CCS support. Disabling the CCS aux usage.");
 
-      if (image->planes[p].aux_surface.memory_range.size > 0) {
-         assert(image->planes[p].aux_usage == ISL_AUX_USAGE_HIZ_CCS ||
-                image->planes[p].aux_usage == ISL_AUX_USAGE_HIZ_CCS_WT);
+      if (image->planes[p].aux_usage == ISL_AUX_USAGE_MCS_CCS) {
+         assert(image->planes[p].aux_surface.memory_range.size);
+         image->planes[p].aux_usage = ISL_AUX_USAGE_MCS;
+      } else if (image->planes[p].aux_usage == ISL_AUX_USAGE_HIZ_CCS ||
+                 image->planes[p].aux_usage == ISL_AUX_USAGE_HIZ_CCS_WT) {
+         assert(image->planes[p].aux_surface.memory_range.size);
          image->planes[p].aux_usage = ISL_AUX_USAGE_HIZ;
       } else {
          assert(image->planes[p].aux_usage == ISL_AUX_USAGE_CCS_E ||
@@ -3230,6 +3247,7 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
          break;
 
       case ISL_AUX_USAGE_MCS:
+      case ISL_AUX_USAGE_MCS_CCS:
          if (!anv_can_sample_mcs_with_clear(devinfo, image))
             clear_supported = false;
          break;
@@ -3278,6 +3296,7 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
       }
 
    case ISL_AUX_USAGE_MCS:
+   case ISL_AUX_USAGE_MCS_CCS:
       assert(aux_supported);
       if (clear_supported) {
          return ISL_AUX_STATE_COMPRESSED_CLEAR;
