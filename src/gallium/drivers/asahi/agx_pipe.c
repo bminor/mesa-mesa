@@ -1856,6 +1856,8 @@ agx_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
       priority = 2;
    else if (flags & PIPE_CONTEXT_PRIORITY_HIGH)
       priority = 1;
+   else if (flags & PIPE_CONTEXT_PRIORITY_REALTIME)
+      priority = 0;
 
    ctx->queue_id = agx_create_command_queue(agx_device(screen),
                                             DRM_ASAHI_QUEUE_CAP_RENDER |
@@ -2205,7 +2207,7 @@ agx_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
 
    case PIPE_CAP_CONTEXT_PRIORITY_MASK:
       return PIPE_CONTEXT_PRIORITY_LOW | PIPE_CONTEXT_PRIORITY_MEDIUM |
-             PIPE_CONTEXT_PRIORITY_HIGH;
+             PIPE_CONTEXT_PRIORITY_HIGH | PIPE_CONTEXT_PRIORITY_REALTIME;
 
    default:
       return u_pipe_screen_get_param_defaults(pscreen, param);
