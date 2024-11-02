@@ -665,7 +665,8 @@ uintptr_t
 libagx_vertex_output_address(uintptr_t buffer, uint64_t mask, uint vtx,
                              gl_varying_slot location)
 {
-   return buffer + libagx_tcs_in_offs(vtx, location, mask);
+   /* Written like this to let address arithmetic work */
+   return buffer + ((uintptr_t)libagx_tcs_in_offs_el(vtx, location, mask)) * 16;
 }
 
 uintptr_t

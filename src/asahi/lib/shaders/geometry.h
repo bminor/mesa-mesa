@@ -217,14 +217,21 @@ AGX_STATIC_ASSERT(sizeof(struct agx_geometry_params) == 82 * 4);
  * TODO: compact.
  */
 static inline uint
-libagx_tcs_in_offs(uint vtx, gl_varying_slot location,
-                   uint64_t crosslane_vs_out_mask)
+libagx_tcs_in_offs_el(uint vtx, gl_varying_slot location,
+                      uint64_t crosslane_vs_out_mask)
 {
    uint base = vtx * libagx_popcount(crosslane_vs_out_mask);
    uint offs = libagx_popcount(crosslane_vs_out_mask &
                                (((uint64_t)(1) << location) - 1));
 
-   return (base + offs) * 16;
+   return base + offs;
+}
+
+static inline uint
+libagx_tcs_in_offs(uint vtx, gl_varying_slot location,
+                   uint64_t crosslane_vs_out_mask)
+{
+   return libagx_tcs_in_offs_el(vtx, location, crosslane_vs_out_mask) * 16;
 }
 
 static inline uint
@@ -247,34 +254,50 @@ libagx_tcs_in_size(uint32_t vertices_in_patch, uint64_t crosslane_vs_out_mask)
  * Bounding boxes are ignored.
  */
 static inline uint
-libagx_tcs_out_offs(uint vtx_id, gl_varying_slot location, uint nr_patch_out,
-                    uint64_t vtx_out_mask)
+libagx_tcs_out_offs_el(uint vtx_id, gl_varying_slot location, uint nr_patch_out,
+                       uint64_t vtx_out_mask)
 {
    uint off = 0;
    if (location == VARYING_SLOT_TESS_LEVEL_OUTER)
       return off;
 
-   off += 4 * sizeof(float);
+   off += 4;
    if (location == VARYING_SLOT_TESS_LEVEL_INNER)
       return off;
 
-   off += 2 * sizeof(float);
+   off += 2;
    if (location >= VARYING_SLOT_PATCH0)
-      return off + (16 * (location - VARYING_SLOT_PATCH0));
+      return off + (4 * (location - VARYING_SLOT_PATCH0));
 
    /* Anything else is a per-vtx output */
-   off += 16 * nr_patch_out;
-   off += 16 * vtx_id * libagx_popcount(vtx_out_mask);
+   off += 4 * nr_patch_out;
+   off += 4 * vtx_id * libagx_popcount(vtx_out_mask);
 
    uint idx = libagx_popcount(vtx_out_mask & (((uint64_t)(1) << location) - 1));
-   return off + (16 * idx);
+   return off + (4 * idx);
+}
+
+static inline uint
+libagx_tcs_out_offs(uint vtx_id, gl_varying_slot location, uint nr_patch_out,
+                    uint64_t vtx_out_mask)
+{
+   return libagx_tcs_out_offs_el(vtx_id, location, nr_patch_out, vtx_out_mask) *
+          4;
+}
+
+static inline uint
+libagx_tcs_out_stride_el(uint nr_patch_out, uint out_patch_size,
+                         uint64_t vtx_out_mask)
+{
+   return libagx_tcs_out_offs_el(out_patch_size, 0, nr_patch_out, vtx_out_mask);
 }
 
 static inline uint
 libagx_tcs_out_stride(uint nr_patch_out, uint out_patch_size,
                       uint64_t vtx_out_mask)
 {
-   return libagx_tcs_out_offs(out_patch_size, 0, nr_patch_out, vtx_out_mask);
+   return libagx_tcs_out_stride_el(nr_patch_out, out_patch_size, vtx_out_mask) *
+          4;
 }
 
 /* In a tess eval shader, stride for hw vertex ID */

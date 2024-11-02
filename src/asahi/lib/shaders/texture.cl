@@ -222,7 +222,12 @@ libagx_texture_load_rgb32(constant struct agx_texture_packed *ptr, uint coord,
                           bool is_float)
 {
    agx_unpack(NULL, ptr, TEXTURE, d);
-   constant uint3 *data = (constant uint3 *)(d.address + 12 * coord);
+
+   /* This is carefully written to let us do the * 3 with a 32-bit operation but
+    * still use the free 64-bit add-extend-shift for the rest.
+    */
+   uint64_t addr = d.address + ((uint64_t)(coord * 3)) * 4;
+   constant uint3 *data = (constant uint3 *)addr;
 
    return (uint4)(*data, is_float ? as_uint(1.0f) : 1);
 }

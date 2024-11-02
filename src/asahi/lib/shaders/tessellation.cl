@@ -71,13 +71,16 @@ libagx_tcs_out_address(constant struct libagx_tess_args *p, uint patch_id,
                        uint vtx_id, gl_varying_slot location, uint nr_patch_out,
                        uint out_patch_size, uint64_t vtx_out_mask)
 {
-   uint stride =
-      libagx_tcs_out_stride(nr_patch_out, out_patch_size, vtx_out_mask);
+   uint stride_el =
+      libagx_tcs_out_stride_el(nr_patch_out, out_patch_size, vtx_out_mask);
 
-   uint offs =
-      libagx_tcs_out_offs(vtx_id, location, nr_patch_out, vtx_out_mask);
+   uint offs_el =
+      libagx_tcs_out_offs_el(vtx_id, location, nr_patch_out, vtx_out_mask);
 
-   return (uintptr_t)(p->tcs_buffer) + (patch_id * stride) + offs;
+   offs_el += patch_id * stride_el;
+
+   /* Written to match the AGX addressing mode */
+   return (uintptr_t)(p->tcs_buffer) + (((uintptr_t)offs_el) << 2);
 }
 
 static uint
