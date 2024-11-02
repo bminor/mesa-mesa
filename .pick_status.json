@@ -1,5 +1,575 @@
 [
     {
+        "sha": "ab1479ae6a845d2c7beeb0fed6e2153cc2b16c5e",
+        "description": "pipe: Remove PIPE_VIDEO_CAP_ENC_SUPPORTS_ASYNC_OPERATION",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "baa96bce45d03aedebba8ef93a10e819e3b5dcee",
+        "description": "frontends/va: Stop using PIPE_VIDEO_CAP_ENC_SUPPORTS_ASYNC_OPERATION",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa65224c86b0bd15527382dd3cb8afec814db372",
+        "description": "frontends/va: Remove H264 encode delayed flush",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d6c08a434561429107e494c058885796b9e188b1",
+        "description": "radeonsi/vce: Remove dual instance support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c63d7a916d2396eca25c0796431ba631ad3a2e8",
+        "description": "r600: fix sfn_nir_legalize_image_load_store cubearray behavior",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "27f51577774149d788adc2e3221a1b2b733ebb9f",
+        "notes": null
+    },
+    {
+        "sha": "4a931ec9eb542a84e1e7826c434ebf214db2798c",
+        "description": "asahi/clc: ingest spir-v",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f31b4519167f80b8c98a6b5e2814d8384ac857bb",
+        "description": "clc: add mesa_clc tool",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "478b5aa050ed20ac0f165dc263353cac34285632",
+        "description": "vulkan/screenshot-layer: Remove extraneous malloc operations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b60969ec2886782c5ccd3c26dbcb33b016d1e3b",
+        "description": "vulkan/screenshot-layer: Fix memory leaks",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1438cb5c2590eb1098c683f2fe1d7dd04880833c",
+        "description": "vulkan/screenshot-layer: Increase buffer sizes",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "461e1f985f4c1d89b27566e83a6a4b2a48174ccf",
+        "description": "vulkan/screenshot-layer: Fix image index selection",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5fd0b634d4de5ac33c6714ffa3a1239db6aadebc",
+        "description": "zink: add VVL for RADV jobs",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "01608a4067b9919ebef77e65a75e1b7a56dc75c3",
+        "description": "zink: stop leaking precompiled generated tcs",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f7636b611a352bca2beb041c9c1c908e1927d1b6",
+        "description": "radv: add a struct that describes the trap handler layout",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49682fc0cb6c5f400f5d9e8f258c38b988141400",
+        "description": "radv,aco: save SQ_WAVE_GPR_ALLOC from the trap handler",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "31fc3199ddbcc97547b1e6fd6edfa90528afc73b",
+        "description": "radv: fix dumping the faulty shader detected by the trap handler on GFX9+",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7b4da7f736a517b67088ae4ef94da49c9dbed832",
+        "description": "radv: only emit the TBA/TMA registers on GFX8",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "930395c5e44e47e92d5613b9664993aa514ba177",
+        "description": "radv: check for has_trap_handler_support instead of asserting",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e27ba67d334fc1db4fc9dac0f704d5b0519a6884",
+        "description": "ac: add ac_gpu_info::has_trap_handler_support",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b23cc8c1d39c419b025870159083f444eca7c465",
+        "description": "radv: add missing L2 non-coherent image case for mipmaps with DCC/HTILE on GFX11",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c9ade8c3b53fe1ae9467d19b43bc605ea4fba6de",
+        "description": "radeonsi/vcn: Enable VCN4 AV1 encode WA",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d94bf1ef9452458d675805d7f8c57c9ec174eba",
+        "description": "freedreno,computerator: add support for local memory",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ca883505e29870c7ae8929049397b9ef85666e9",
+        "description": "brw: add a NOP in between WHILE instructions on LNL",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a39d6f5003bf520fc0e1e70acbbf86c2f019c520",
+        "description": "freedreno/ci: remove redundant skip files",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eef0b09939fc71c019051845c017357a63b308a7",
+        "description": "freedreno/a6xx: Random whitespace fix",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49dd40247d903a4e79b4986d9be59604802177f8",
+        "description": "freedreno/a6xx: Don't check dst coords",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39fab9b2405e628124116a78eb744f2ddfc00594",
+        "description": "intel/dev: Set L3 bank count for Xe2+ from Xe KMD",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d5b574b8d4d94fd0dae65fe0b0d504aac0e2f08",
+        "description": "ci/lava: Fix LAVA job definition tests",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc86b73bbe82918b30ab9d7ad4702c08abdef51d",
+        "description": "ci/lava: Fix lava-tags parsing",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce78dcb24edcb80491bbb6b50dada28a512900a6",
+        "description": "ci/lava: Refactor is-rootfs-uploaded function",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f44970173da70dcc472e33cc6a44a46e436cef0e",
+        "description": "ci/lava: Provide list of overlays to submitter",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f32a2de26d63892bb2ea5e83603c5daa19d73f70",
+        "description": "ci/lava: Provide LAVA rootfs URL directly",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b3839c9c7943ee02be8442190ddb028ef097582",
+        "description": "ci/lava: Use LAVA rootfs overlays for build/per-job",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "021d7d8b775ba650982cf58748751c2425315ffb",
+        "description": "ci/lava: Remove duplicate build download",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "01f329ec824823467e8bf5aac0a2f97636faf1ae",
+        "description": "radv/ci: skip dEQP-VK.api.command_buffers.many_indirect_disps_on_secondary",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "62622c6523aa12bab696b1b659b79e018322948a",
+        "description": "panvk: enable KHR_16bit_storage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "77e59eefc16055f0b6fff0f1ed6ddd9eafbd6ac1",
+        "description": "radv: add an option to configure the trap handler exceptions",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75d979cdfb8d2ee36d75383444ea8b37e2c514e9",
+        "description": "docs: add missing RADV_TRAP_HANDLER",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b5a0f57bae177d091497acea4b88e32fefb0e09",
+        "description": "radv: fix configuring the memory violation exception for the compute stage",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e474d4ebeef40ac9d5dabe3a032dd0c5b02824f6",
+        "description": "panvk: add support for VK_KHR_timeline_semaphore",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "287a4f4701955fcab8a66dda39cb955af6387523",
+        "description": "panvk/jm: assert that the submit mode is not threaded",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60ade50d2daf956345c6e31c8bf7e704107e84eb",
+        "description": "Revert \"panvk: Set the submit mode to THREADED_ON_DEMAND\"",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "aedb00ca083e370bdf22ae04bda34426bffb6bb4",
+        "notes": null
+    },
+    {
+        "sha": "d3eb43215566c8beb28c7dba7c98e3f30f038547",
+        "description": "panvk: remove an incorrect assert in collect_cs_deps",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1485b5659ab9f9ac3b27962c91173000ce79cad0",
+        "description": "anv: update some of the indirect invalidations",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb224370b6fcda7f73be99d94c98096569b2e2ba",
+        "description": "anv: avoid L3 fabric flush in pipeline barriers",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e3814dee1ac0f90771b921a4f6f5aed10f06e8d4",
+        "notes": null
+    },
+    {
+        "sha": "98ff271c5a3643a1cbbaf070896cf6a22a45c2c8",
+        "description": "util/primconvert: Avoid OoB with improbable draws",
+        "nominated": true,
+        "nomination_type": 0,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "506b9a5ff531c9f0326f0f42879b4089cc70cd42",
+        "description": "nir/divergence_analysis: add AGX atomics",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a84abce84bf324906ddb352d8cb91dadacf6f854",
+        "description": "docs: add sha sum for 24.2.6",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e0c05642a3120318fe270fc7f32cc6bb987c3939",
+        "description": "docs: update calendar for 24.2.6",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9c83969181fabe4e3b4daa44cee402183060282",
+        "description": "docs: add release notes for 24.2.6",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff442e49b392f5c1eff938afb90463b913f08b20",
+        "description": "Uprev Piglit to c2b31333926a6171c3c02d182b756efad7770410",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96b95c84279e3bb8c0dcebfb0e811bf2b8633fc6",
+        "description": "radv: Flush L2 cache for non-L2-coherent images in EndCommandBuffer.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7c62f6fa01d7c0d9d7eabec1c545950af20d0c92",
+        "notes": null
+    },
+    {
+        "sha": "7015e22cb67e633495946306a4982c62318195d7",
+        "description": "ac/nir: cull triangles/lines when all W positions are zero/NaN",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "322a83f321ccd503e51f91ad03fbfb483ac5bab8",
+        "description": "ci/build: lower most job's timeout from 30 to 15 min",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6425b6e3d4a29ae6a5b47864c68deb5723dfe6df",
+        "description": "ci/build: handle build timeout ourselves to give more time to nightly LTO builds",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5f82fdff5d96d9b202da3e1dca3a8ce7366f1f3",
+        "description": "ci/build: deduplicate meson build command",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3533716f95d77e35103562b8edee864ffc16a18",
+        "description": "ir3: Fix detection of nontrivial continues",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0fa93fb6626b4270ec0086d34a336046addd4462",
+        "notes": null
+    },
+    {
         "sha": "c245609b641ad914a931ad2b3fd930ed8d065e07",
         "description": "docs/features: mark off more panvk extensions",
         "nominated": false,
