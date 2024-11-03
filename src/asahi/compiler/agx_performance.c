@@ -126,6 +126,11 @@ agx_estimate_cycles(agx_context *ctx)
 
       if (alu.unit == IC) {
          est.ic += alu.tp * 2;
+
+         /* In addition to the IC work, IC ops appear to be dispatched along
+          * with SCIB.
+          */
+         est.f_scib += 1;
       } else if (alu.unit) {
          est.f_scib += alu.tp;
       } else {
