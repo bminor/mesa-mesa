@@ -27,6 +27,7 @@
 #include <sys/mman.h>
 
 #include "drm-uapi/v3d_drm.h"
+#include "util/perf/cpu_trace.h"
 #include "util/u_memory.h"
 
 /* Default max size of the bo cache, in MB.
@@ -313,6 +314,7 @@ v3dv_bo_wait(struct v3dv_device *device,
              struct v3dv_bo *bo,
              uint64_t timeout_ns)
 {
+   MESA_TRACE_FUNC();
    struct drm_v3d_wait_bo wait = {
       .handle = bo->handle,
       .timeout_ns = timeout_ns,

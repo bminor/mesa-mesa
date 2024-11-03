@@ -23,6 +23,7 @@
 
 #include "broadcom/common/v3d_csd.h"
 #include "v3dv_private.h"
+#include "util/perf/cpu_trace.h"
 #include "util/u_pack_color.h"
 #include "vk_common_entrypoints.h"
 #include "vk_util.h"
@@ -785,6 +786,7 @@ v3dv_job_init(struct v3dv_job *job,
               struct v3dv_cmd_buffer *cmd_buffer,
               int32_t subpass_idx)
 {
+   MESA_TRACE_FUNC();
    assert(job);
 
    /* Make sure we haven't made this new job current before calling here */
@@ -1109,6 +1111,7 @@ VKAPI_ATTR VkResult VKAPI_CALL
 v3dv_BeginCommandBuffer(VkCommandBuffer commandBuffer,
                         const VkCommandBufferBeginInfo *pBeginInfo)
 {
+   MESA_TRACE_FUNC();
    V3DV_FROM_HANDLE(v3dv_cmd_buffer, cmd_buffer, commandBuffer);
 
    /* If this is the first vkBeginCommandBuffer, we must initialize the
@@ -1885,6 +1888,7 @@ v3dv_CmdEndRenderPass2(VkCommandBuffer commandBuffer,
 VKAPI_ATTR VkResult VKAPI_CALL
 v3dv_EndCommandBuffer(VkCommandBuffer commandBuffer)
 {
+   MESA_TRACE_FUNC();
    V3DV_FROM_HANDLE(v3dv_cmd_buffer, cmd_buffer, commandBuffer);
 
    if (cmd_buffer->state.oom)
