@@ -263,6 +263,10 @@ bool agx_nir_lower_interpolation(nir_shader *s);
 bool agx_nir_lower_cull_distance_vs(struct nir_shader *s);
 bool agx_nir_lower_cull_distance_fs(struct nir_shader *s,
                                     unsigned nr_distances);
+bool agx_mem_vectorize_cb(unsigned align_mul, unsigned align_offset,
+                          unsigned bit_size, unsigned num_components,
+                          unsigned hole_size, nir_intrinsic_instr *low,
+                          nir_intrinsic_instr *high, void *data);
 
 void agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
                             struct util_debug_callback *debug,

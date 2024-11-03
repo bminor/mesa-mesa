@@ -2830,11 +2830,11 @@ agx_optimize_loop_nir(nir_shader *nir)
    } while (progress);
 }
 
-static bool
-mem_vectorize_cb(unsigned align_mul, unsigned align_offset, unsigned bit_size,
-                 unsigned num_components, unsigned hole_size,
-                 nir_intrinsic_instr *low, nir_intrinsic_instr *high,
-                 void *data)
+bool
+agx_mem_vectorize_cb(unsigned align_mul, unsigned align_offset,
+                     unsigned bit_size, unsigned num_components,
+                     unsigned hole_size, nir_intrinsic_instr *low,
+                     nir_intrinsic_instr *high, void *data)
 {
    if (hole_size)
       return false;
@@ -3003,7 +3003,7 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
    NIR_PASS(_, nir, nir_opt_load_store_vectorize,
             &(const nir_load_store_vectorize_options){
                .modes = nir_var_mem_global | nir_var_mem_constant,
-               .callback = mem_vectorize_cb,
+               .callback = agx_mem_vectorize_cb,
             });
    NIR_PASS(_, nir, nir_lower_pack);
 

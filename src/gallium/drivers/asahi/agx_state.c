@@ -1868,6 +1868,19 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
       so->info.cull_distance_size = nir->info.cull_distance_array_size;
    }
 
+   /* Vectorize SSBOs before lowering them, since it is significantly harder to
+    * vectorize the lowered code.
+    */
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
+   NIR_PASS(_, nir, nir_copy_prop);
+
+   NIR_PASS(
+      _, nir, nir_opt_load_store_vectorize,
+      &(const nir_load_store_vectorize_options){
+         .modes = nir_var_mem_global | nir_var_mem_constant | nir_var_mem_ssbo,
+         .callback = agx_mem_vectorize_cb,
+      });
+
    NIR_PASS(_, nir, agx_nir_lower_texture, true);
    NIR_PASS(_, nir, nir_lower_ssbo, NULL);
 
