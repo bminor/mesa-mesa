@@ -177,6 +177,10 @@ enum pipe_video_cap
     * Video encode max long term references supported
     */
    PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME = 55,
+   /*
+    * Video encode max DPB size supported
+    */
+   PIPE_VIDEO_CAP_ENC_MAX_DPB_CAPACITY = 56,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags
