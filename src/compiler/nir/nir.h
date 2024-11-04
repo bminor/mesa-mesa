@@ -990,7 +990,6 @@ typedef enum ENUM_PACKED {
    nir_instr_type_undef,
    nir_instr_type_phi,
    nir_instr_type_parallel_copy,
-   nir_instr_type_debug_info,
 } nir_instr_type;
 
 typedef struct nir_instr {
@@ -1002,6 +1001,12 @@ typedef struct nir_instr {
     * flags.  For instance, DCE uses this to store the "dead/live" info.
     */
    uint8_t pass_flags;
+
+   /* Equal to nir_shader::has_debug_info and intended to be used by
+    * functions that deal with debug information but do not have access to
+    * the nir_shader.
+    */
+   bool has_debug_info;
 
    /** generic instruction index. */
    uint32_t index;
@@ -2722,40 +2727,34 @@ typedef struct {
    struct exec_list entries;
 } nir_parallel_copy_instr;
 
-typedef enum nir_debug_info_type {
-   nir_debug_info_src_loc,
-   nir_debug_info_string,
-} nir_debug_info_type;
+/* This struct contains metadata for correlating the final nir shader
+ * (after many lowering and optimization passes) with the source spir-v
+ * or glsl. To avoid adding unnecessary overhead when the driver does not
+ * preserve non-semantic information (which is the common case), debug
+ * information is allocated before the instruction:
+ * 
+ * +-------------------+-----------+--------------------------------+
+ * | Debug information | nir_instr | Instruction type specific data |
+ * +-------------------+-----------+--------------------------------+
+ * 
+ * This is only allocated if nir_shader::has_debug_info is set. Accesses
+ * to nir_instr_debug_info should therefore check nir_shader::has_debug_info
+ * or nir_instr::has_debug_info.
+ */
+typedef struct nir_instr_debug_info {
+   /* Path to the source file this instruction originates from. */
+   char *filename;
+   /* 0 if uninitialized. */
+   uint32_t line;
+   uint32_t column;
+   uint32_t spirv_offset;
 
-typedef enum nir_debug_info_source {
-   nir_debug_info_spirv,
-   nir_debug_info_nir,
-} nir_debug_info_source;
+   /* Line in the output of nir_print_shader. 0 if uninitialized. */
+   uint32_t nir_line;
 
-typedef struct nir_debug_info_instr {
+   /* The nir_instr has to be the last field since it has a varying size. */
    nir_instr instr;
-
-   nir_debug_info_type type;
-
-   union {
-      struct {
-         nir_src filename;
-         /* 0 if only the spirv_offset is available. */
-         uint32_t line;
-         uint32_t column;
-
-         uint32_t spirv_offset;
-
-         nir_debug_info_source source;
-      } src_loc;
-
-      uint16_t string_length;
-   };
-
-   nir_def def;
-
-   char string[];
-} nir_debug_info_instr;
+} nir_instr_debug_info;
 
 NIR_DEFINE_CAST(nir_instr_as_alu, nir_instr, nir_alu_instr, instr,
                 type, nir_instr_type_alu)
@@ -2778,9 +2777,6 @@ NIR_DEFINE_CAST(nir_instr_as_phi, nir_instr, nir_phi_instr, instr,
 NIR_DEFINE_CAST(nir_instr_as_parallel_copy, nir_instr,
                 nir_parallel_copy_instr, instr,
                 type, nir_instr_type_parallel_copy)
-NIR_DEFINE_CAST(nir_instr_as_debug_info, nir_instr,
-                nir_debug_info_instr, instr,
-                type, nir_instr_type_debug_info)
 
 #define NIR_DEFINE_SRC_AS_CONST(type, suffix)                 \
    static inline type                                         \
@@ -4516,6 +4512,8 @@ typedef struct nir_shader {
 
    unsigned printf_info_count;
    u_printf_info *printf_info;
+
+   bool has_debug_info;
 } nir_shader;
 
 #define nir_foreach_function(func, shader) \
@@ -4739,10 +4737,6 @@ nir_phi_src *nir_phi_instr_add_src(nir_phi_instr *instr,
                                    nir_block *pred, nir_def *src);
 
 nir_parallel_copy_instr *nir_parallel_copy_instr_create(nir_shader *shader);
-
-nir_debug_info_instr *nir_debug_info_instr_create(nir_shader *shader,
-                                                  nir_debug_info_type type,
-                                                  uint32_t string_length);
 
 nir_undef_instr *nir_undef_instr_create(nir_shader *shader,
                                         unsigned num_components,
@@ -5031,6 +5025,16 @@ nir_cursor nir_instr_free_and_dce(nir_instr *instr);
 
 nir_def *nir_instr_def(nir_instr *instr);
 
+/* Return the debug information associated with this instruction,
+ * assuming the parent shader has debug info.
+ */
+static ALWAYS_INLINE nir_instr_debug_info *
+nir_instr_get_debug_info(nir_instr *instr)
+{
+   assert(instr->has_debug_info);
+   return container_of(instr, nir_instr_debug_info, instr);
+}
+
 typedef bool (*nir_foreach_def_cb)(nir_def *def, void *state);
 typedef bool (*nir_foreach_src_cb)(nir_src *src, void *state);
 static inline bool nir_foreach_src(nir_instr *instr, nir_foreach_src_cb cb, void *state);
@@ -5053,7 +5057,6 @@ NIR_SRC_AS_(alu_instr, nir_alu_instr, nir_instr_type_alu, nir_instr_as_alu)
 NIR_SRC_AS_(intrinsic, nir_intrinsic_instr,
             nir_instr_type_intrinsic, nir_instr_as_intrinsic)
 NIR_SRC_AS_(deref, nir_deref_instr, nir_instr_type_deref, nir_instr_as_deref)
-NIR_SRC_AS_(debug_info, nir_debug_info_instr, nir_instr_type_debug_info, nir_instr_as_debug_info)
 
 const char *nir_src_as_string(nir_src src);
 

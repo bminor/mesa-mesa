@@ -1110,7 +1110,6 @@ instr_is_loop_invariant(nir_instr *instr, struct divergence_state *state)
    switch (instr->type) {
    case nir_instr_type_load_const:
    case nir_instr_type_undef:
-   case nir_instr_type_debug_info:
    case nir_instr_type_jump:
       return true;
    case nir_instr_type_intrinsic:
@@ -1146,8 +1145,6 @@ update_instr_divergence(nir_instr *instr, struct divergence_state *state)
       return visit_def(&nir_instr_as_undef(instr)->def, state);
    case nir_instr_type_deref:
       return visit_deref(state->shader, nir_instr_as_deref(instr), state);
-   case nir_instr_type_debug_info:
-      return false;
    case nir_instr_type_call:
       return false;
    case nir_instr_type_jump:

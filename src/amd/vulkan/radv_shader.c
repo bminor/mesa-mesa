@@ -375,6 +375,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
          .force_ssbo_non_uniform = pdev->cache_key.ssbo_non_uniform,
          .lower_terminate_to_discard = pdev->cache_key.lower_terminate_to_discard,
          .emit_debug_break = !!device->trap_handler_shader,
+         .debug_info = !!(instance->debug_flags & RADV_DEBUG_NIR_DEBUG_INFO),
       };
       nir = spirv_to_nir(spirv, stage->spirv.size / 4, spec_entries, num_spec_entries, stage->stage, stage->entrypoint,
                          &spirv_options, &pdev->nir_options[stage->stage]);

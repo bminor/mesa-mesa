@@ -6119,31 +6119,27 @@ vtn_handle_body_instruction(struct vtn_builder *b, SpvOp opcode,
                             const uint32_t *w, unsigned count)
 {
    if (b->options->debug_info) {
-      nir_debug_info_instr *instr =
-         nir_debug_info_instr_create(b->shader, nir_debug_info_src_loc, 0);
-      instr->src_loc.spirv_offset = b->spirv_offset;
-      instr->src_loc.source = nir_debug_info_spirv;
+      /* Insert a nop to attach debug info to the cursor of the builder.
+       * This should not affect compilation since the nop will be eliminated
+       * in spirv_to_nir.
+       */
+      nir_intrinsic_instr *nop = nir_nop(&b->nb);
+
+      nir_instr_debug_info *info = nir_instr_get_debug_info(&nop->instr);
+      info->spirv_offset = b->spirv_offset;
 
       if (b->file) {
-         nir_def *filename;
          struct hash_entry *he = _mesa_hash_table_search(b->strings, b->file);
          if (he) {
-            filename = he->data;
+            info->filename = he->data;
          } else {
-            nir_builder _b = nir_builder_at(nir_before_cf_list(&b->nb.impl->body));
-            filename = nir_build_string(&_b, b->file);
-            _mesa_hash_table_insert(b->strings, b->file, filename);
+            info->filename = ralloc_strdup(b->shader, b->file);
+            _mesa_hash_table_insert(b->strings, b->file, info->filename);
          }
 
-         instr->src_loc.filename = nir_src_for_ssa(filename);
-         /* Make sure line is at least 1 since 0 is reserved for spirv_offset-only
-          * source locations.
-          */
-         instr->src_loc.line = MAX2(b->line, 1);
-         instr->src_loc.column = b->col;
+         info->line = b->line;
+         info->column = b->col;
       }
-
-      nir_builder_instr_insert(&b->nb, &instr->instr);
    }
 
    switch (opcode) {
@@ -6929,6 +6925,7 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    b->shader->info.subgroup_size = options->subgroup_size;
    b->shader->info.float_controls_execution_mode = options->float_controls_execution_mode;
    b->shader->info.cs.shader_index = options->shader_index;
+   b->shader->has_debug_info = options->debug_info;
    _mesa_blake3_compute(words, word_count * sizeof(uint32_t), b->shader->info.source_blake3);
 
    /* Skip the SPIR-V header, handled at vtn_create_builder */
@@ -7166,6 +7163,9 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
 
    nir_shader *shader = b->shader;
    ralloc_free(b);
+
+   if (shader->has_debug_info)
+      nir_print_shader(shader, stdout);
 
    return shader;
 }

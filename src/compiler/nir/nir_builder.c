@@ -313,17 +313,6 @@ nir_build_tex_deref_instr(nir_builder *build, nir_texop op,
 }
 
 nir_def *
-nir_build_string(nir_builder *build, const char *value)
-{
-   nir_debug_info_instr *instr =
-      nir_debug_info_instr_create(build->shader, nir_debug_info_string, strlen(value));
-   memcpy(instr->string, value, instr->string_length);
-   nir_def_init(&instr->instr, &instr->def, 1, nir_get_ptr_bitsize(build->shader));
-   nir_builder_instr_insert(build, &instr->instr);
-   return &instr->def;
-}
-
-nir_def *
 nir_vec_scalars(nir_builder *build, nir_scalar *comp, unsigned num_components)
 {
    nir_op op = nir_op_vec(num_components);
@@ -384,6 +373,23 @@ void
 nir_builder_instr_insert(nir_builder *build, nir_instr *instr)
 {
    nir_instr_insert(build->cursor, instr);
+
+   if (unlikely(build->shader->has_debug_info &&
+                (build->cursor.option == nir_cursor_before_instr ||
+                 build->cursor.option == nir_cursor_after_instr))) {
+      nir_instr_debug_info *cursor_info = nir_instr_get_debug_info(build->cursor.instr);
+      nir_instr_debug_info *instr_info = nir_instr_get_debug_info(instr);
+
+      if (!instr_info->line)
+         instr_info->line = cursor_info->line;
+      if (!instr_info->column)
+         instr_info->column = cursor_info->column;
+      if (!instr_info->spirv_offset)
+         instr_info->spirv_offset = cursor_info->spirv_offset;
+      if (!instr_info->filename)
+         instr_info->filename = cursor_info->filename;
+   }
+
 
    /* Move the cursor forward. */
    build->cursor = nir_after_instr(instr);

@@ -4173,9 +4173,6 @@ emit_block(struct ntv_context *ctx, struct nir_block *block)
       case nir_instr_type_deref:
          emit_deref(ctx, nir_instr_as_deref(instr));
          break;
-      case nir_instr_type_debug_info:
-         unreachable("nir_instr_type_debug_info not supported");
-         break;
       }
    }
 }
