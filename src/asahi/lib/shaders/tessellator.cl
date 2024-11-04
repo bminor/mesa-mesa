@@ -337,9 +337,12 @@ static void
 DefineClockwiseTriangle(private struct CHWTessellator *ctx, int index0,
                         int index1, int index2, int indexStorageBaseOffset)
 {
-   DefineIndex(ctx, index0, indexStorageBaseOffset);
-   DefineIndex(ctx, index1, indexStorageBaseOffset + 1);
-   DefineIndex(ctx, index2, indexStorageBaseOffset + 2);
+   index0 = PatchIndexValue(ctx, index0);
+   index1 = PatchIndexValue(ctx, index1);
+   index2 = PatchIndexValue(ctx, index2);
+
+   vstore3(ctx->index_bias + (uint3)(index0, index1, index2), 0,
+           (global uint *)ctx->Index + indexStorageBaseOffset);
 }
 
 static uint32_t
