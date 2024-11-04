@@ -50,6 +50,8 @@ opt_frag_pos(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
       case nir_op_f2u16:
       case nir_op_f2u32:
       case nir_op_f2u64:
+      case nir_op_ftrunc:
+      case nir_op_ffloor:
          continue;
       default:
          return false;
@@ -70,7 +72,8 @@ opt_frag_pos(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
       nir_alu_instr *use_instr = nir_instr_as_alu(nir_src_parent_instr(use));
 
       /* load_frag_coord is always positive, so we should never sign extend here. */
-      nir_alu_type dst_type = nir_type_uint | use_instr->def.bit_size;
+      bool needs_float = use_instr->op == nir_op_ffloor || use_instr->op == nir_op_ftrunc;
+      nir_alu_type dst_type = (needs_float ? nir_type_float : nir_type_uint) | use_instr->def.bit_size;
       use_instr->op = nir_type_conversion_op(nir_type_uint16, dst_type, nir_rounding_mode_undef);
    }
 
