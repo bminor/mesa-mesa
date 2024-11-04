@@ -189,6 +189,12 @@ for s in range(1, 5):
         (('ishl', a, s), iaddshl(0, a, s)),
     ]
 
+# If the above rules failed, we have a large constant shift on the IC unit.
+# Might as well fuse an add to form an imad, if we're on the IC anyway.
+fuse_imad += [
+    (('iadd', a, ('ishl(is_used_once)', b, '#c')), imad(b, ('ishl', 1, c), a)),
+]
+
 # Discard lowering generates this pattern, clean it up
 ixor_bcsel = [
    (('ixor', ('bcsel', a, '#b', '#c'), '#d'),
