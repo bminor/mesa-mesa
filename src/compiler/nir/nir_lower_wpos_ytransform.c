@@ -59,13 +59,6 @@ get_transform(lower_wpos_ytransform_state *state)
    return state->transform;
 }
 
-/* NIR equiv of TGSI CMP instruction: */
-static nir_def *
-nir_cmp(nir_builder *b, nir_def *src0, nir_def *src1, nir_def *src2)
-{
-   return nir_bcsel(b, nir_flt_imm(b, src0, 0.0), src1, src2);
-}
-
 /* see emit_wpos_adjustment() in st_mesa_to_tgsi.c */
 static void
 emit_wpos_adjustment(lower_wpos_ytransform_state *state,
@@ -73,12 +66,10 @@ emit_wpos_adjustment(lower_wpos_ytransform_state *state,
                      float adjX, float adjY[2])
 {
    nir_builder *b = &state->b;
-   nir_def *wpos_temp_x = NULL, *wpos_temp_y = NULL, *wpos_temp, *wpos_input[4] = {NULL};
    nir_def *wpostrans = get_transform(state);
 
    unsigned c = 0;
-   const nir_intrinsic_info *info = &nir_intrinsic_infos[intr->intrinsic];
-   if (info->index_map[NIR_INTRINSIC_COMPONENT]) {
+   if (nir_intrinsic_has_component(intr)) {
       c = nir_intrinsic_component(intr);
       /* this pass only alters the first two components */
       if (c > 1)
@@ -86,59 +77,44 @@ emit_wpos_adjustment(lower_wpos_ytransform_state *state,
    }
 
    b->cursor = nir_after_instr(&intr->instr);
+   nir_def *wpos[4] = { NULL };
    for (unsigned i = 0; i < intr->num_components; i++)
-      wpos_input[i + c] = nir_channel(b, &intr->def, i);
+      wpos[i + c] = nir_channel(b, &intr->def, i);
 
    /* First, apply the coordinate shift: */
-   if (adjX || adjY[0] || adjY[1]) {
-      if (wpos_input[0])
-         wpos_temp_x = nir_fadd(b, wpos_input[0], nir_imm_float(b, adjX));
-      if (wpos_input[1] && adjY[0] != adjY[1]) {
-         /* Adjust the y coordinate by adjY[1] or adjY[0] respectively
-          * depending on whether inversion is actually going to be applied
-          * or not, which is determined by testing against the inversion
-          * state variable used below, which will be either +1 or -1.
-          */
-         nir_def *adj_temp = nir_cmp(b,
-                                     nir_channel(b, wpostrans, invert ? 2 : 0),
-                                     nir_imm_float(b, adjY[0]),
-                                     nir_imm_float(b, adjY[1]));
+   if (wpos[0] && adjX)
+      wpos[0] = nir_fadd_imm(b, wpos[0], adjX);
 
-         wpos_temp_y = nir_fadd(b, wpos_input[1], adj_temp);
-      } else if (wpos_input[1]) {
-         wpos_temp_y = nir_fadd(b, wpos_input[1], nir_imm_float(b, adjY[0]));
-      }
-   } else {
-      /* MOV wpos_temp, input[wpos]
+   if (wpos[1] && adjY[0] != adjY[1]) {
+      /* Adjust the y coordinate by adjY[1] or adjY[0] respectively
+       * depending on whether inversion is actually going to be applied
+       * or not, which is determined by testing against the inversion
+       * state variable used below, which will be either +1 or -1.
        */
-      wpos_temp_x = wpos_input[0];
-      wpos_temp_y = wpos_input[1];
+      nir_def *cond = nir_flt_imm(b, nir_channel(b, wpostrans, invert ? 2 : 0), 0.0);
+      nir_def *adj_temp = nir_bcsel(b, cond,
+                                    nir_imm_float(b, adjY[0]),
+                                    nir_imm_float(b, adjY[1]));
+
+      wpos[1] = nir_fadd(b, wpos[1], adj_temp);
+   } else if (wpos[1] && adjY[0]) {
+      wpos[1] = nir_fadd_imm(b, wpos[1], adjY[0]);
    }
 
-   if (wpos_temp_y) {
+   if (wpos[1]) {
       /* Now the conditional y flip: STATE_FB_WPOS_Y_TRANSFORM.xy/zw will be
       * inversion/identity, or the other way around if we're drawing to an FBO.
       */
-      if (invert) {
-         /* wpos_temp.y = wpos_temp * wpostrans.xxxx + wpostrans.yyyy */
-         wpos_temp_y = nir_fadd(b, nir_fmul(b, wpos_temp_y, nir_channel(b, wpostrans, 0)),
-                              nir_channel(b, wpostrans, 1));
-      } else {
-         /* wpos_temp.y = wpos_temp * wpostrans.zzzz + wpostrans.wwww */
-         wpos_temp_y = nir_fadd(b, nir_fmul(b, wpos_temp_y, nir_channel(b, wpostrans, 2)),
-                              nir_channel(b, wpostrans, 3));
-      }
+      unsigned base = invert ? 0 : 2;
+      /* wpos.y = wpos.y * trans.x/z + trans.y/w */
+      wpos[1] = nir_ffma(b, wpos[1], nir_channel(b, wpostrans, base),
+                         nir_channel(b, wpostrans, base + 1));
    }
 
-   wpos_input[0] = wpos_temp_x;
-   wpos_input[1] = wpos_temp_y;
-   wpos_temp = intr->num_components > 1 ?
-               nir_vec(b, &wpos_input[c], intr->num_components) :
-               wpos_input[c];
+   nir_def *new_wpos = nir_vec(b, &wpos[c], intr->num_components);
 
-   nir_def_rewrite_uses_after(&intr->def,
-                              wpos_temp,
-                              wpos_temp->parent_instr);
+   nir_def_rewrite_uses_after(&intr->def, new_wpos,
+                              new_wpos->parent_instr);
 }
 
 static void
