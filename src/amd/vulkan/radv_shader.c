@@ -3051,6 +3051,8 @@ radv_create_trap_handler_shader(struct radv_device *device)
    nir_builder b = radv_meta_init_shader(device, stage, "meta_trap_handler");
 
    info.wave_size = 64;
+   info.workgroup_size = 64;
+   info.stage = MESA_SHADER_COMPUTE;
    info.type = RADV_SHADER_TYPE_TRAP_HANDLER;
 
    struct radv_shader_args args;
