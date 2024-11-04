@@ -12414,7 +12414,7 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
 {
-   assert(options->gfx_level >= GFX8 && options->gfx_level <= GFX10_3);
+   assert(options->gfx_level >= GFX8 && options->gfx_level <= GFX11);
 
    init_program(program, compute_cs, info, options->gfx_level, options->family, options->wgp_mode,
                 config);
@@ -12438,15 +12438,22 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    ac_hw_cache_flags cache_glc;
    cache_glc.value = ac_glc;
 
-   /* Clear the current wave exception, this is required to re-enable VALU
-    * instructions in this wave. Seems to be only needed for float exceptions.
-    */
-   bld.vop1(aco_opcode::v_clrexcp);
+   if (options->gfx_level < GFX11) {
+      /* Clear the current wave exception, this is required to re-enable VALU
+       * instructions in this wave. Seems to be only needed for float exceptions.
+       */
+      bld.vop1(aco_opcode::v_clrexcp);
+   }
 
    if (ctx.program->gfx_level >= GFX9) {
       /* Get TMA. */
-      bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp10}, s1),
-               ((32 - 1) << 11) | 18);
+      if (ctx.program->gfx_level >= GFX11) {
+         bld.sop1(aco_opcode::s_sendmsg_rtn_b32, Definition(PhysReg{ttmp10}, s1),
+                  Operand::c32(sendmsg_rtn_get_tma));
+      } else {
+         bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp10}, s1), ((32 - 1) << 11) | 18);
+      }
+
       bld.sop2(aco_opcode::s_lshl_b32, Definition(PhysReg{ttmp10}, s1), Definition(scc, s1),
                Operand(PhysReg{ttmp10}, s1), Operand::c32(8u));
       bld.copy(Definition(PhysReg{ttmp11}, s1),
