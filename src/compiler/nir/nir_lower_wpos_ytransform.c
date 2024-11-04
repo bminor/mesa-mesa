@@ -255,17 +255,15 @@ lower_interp_deref_or_load_baryc_at_offset(lower_wpos_ytransform_state *state,
                                            unsigned offset_src)
 {
    nir_builder *b = &state->b;
-   nir_def *offset;
-   nir_def *flip_y;
    nir_def *wpostrans = get_transform(state);
 
    b->cursor = nir_before_instr(&intr->instr);
 
-   offset = intr->src[offset_src].ssa;
-   flip_y = nir_fmul(b, nir_channel(b, offset, 1),
-                     nir_channel(b, wpostrans, 0));
-   nir_src_rewrite(&intr->src[offset_src],
-                   nir_vec2(b, nir_channel(b, offset, 0), flip_y));
+   nir_def *offset = intr->src[offset_src].ssa;
+   nir_def *flip_y = nir_fmul(b, nir_channel(b, offset, 1),
+                              nir_channel(b, wpostrans, 0));
+   offset = nir_vector_insert_imm(b, offset, flip_y, 1);
+   nir_src_rewrite(&intr->src[offset_src], offset);
 }
 
 static void
