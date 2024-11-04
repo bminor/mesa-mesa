@@ -54,7 +54,7 @@
         "description": "dril: Fixup order of pixel formats in drilConfigs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec7afd2c24c6afa6a5c80da4f80e0b799580e12a",
         "notes": null
