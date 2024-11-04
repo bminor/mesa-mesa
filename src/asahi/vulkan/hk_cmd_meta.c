@@ -444,7 +444,7 @@ static nir_shader *
 build_image_copy_shader(const struct vk_meta_image_copy_key *key)
 {
    nir_builder build =
-      nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, NULL, "vk-meta-copy");
+      nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, NULL, "hk-meta-copy");
 
    nir_builder *b = &build;
    b->shader->info.workgroup_size[0] = TILE_WIDTH;
