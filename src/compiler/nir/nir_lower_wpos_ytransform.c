@@ -278,10 +278,9 @@ lower_load_sample_pos(lower_wpos_ytransform_state *state,
    nir_def *scale = nir_channel(b, wpostrans, 0);
    nir_def *neg_scale = nir_channel(b, wpostrans, 2);
    /* Either y or 1-y for scale equal to 1 or -1 respectively. */
-   nir_def *flipped_y =
-      nir_fadd(b, nir_fmax(b, neg_scale, nir_imm_float(b, 0.0)),
-               nir_fmul(b, nir_channel(b, pos, 1), scale));
-   nir_def *flipped_pos = nir_vec2(b, nir_channel(b, pos, 0), flipped_y);
+   nir_def *flipped_y = nir_ffma(b, nir_channel(b, pos, 1), scale,
+                                 nir_fmax(b, neg_scale, nir_imm_float(b, 0.0)));
+   nir_def *flipped_pos = nir_vector_insert_imm(b, pos, flipped_y, 1);
 
    nir_def_rewrite_uses_after(&intr->def, flipped_pos,
                               flipped_pos->parent_instr);
