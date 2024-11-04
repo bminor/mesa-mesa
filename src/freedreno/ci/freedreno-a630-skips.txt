@@ -14,3 +14,6 @@ spec@egl 1.4@egl-copy-buffers
 # uprev Piglit in Mesa
 spec@egl_khr_gl_colorspace@srgb
 spec@egl_khr_gl_colorspace@linear
+
+# Leaky in VK-GL-cts
+asan-dEQP-VK.binding_model

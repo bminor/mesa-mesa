@@ -5,6 +5,7 @@ caselists = ["/deqp/mustpass/vk-main.txt"]
 skips = ["install/freedreno-a6xx-skips.txt"]
 fraction = 1000
 renderer_check = "Turnip Adreno .* 630"
+prefix = "asan-"
 [deqp.env]
 # Disable leak checking as of CTS 1.3.3.0 because the CTS itself leaks memory
 ASAN_OPTIONS = "detect_leaks=0"
