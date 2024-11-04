@@ -38,8 +38,7 @@ typedef struct {
    const nir_lower_wpos_ytransform_options *options;
    nir_shader *shader;
    nir_builder b;
-   nir_variable *transform;
-   nir_def *load;
+   nir_def *transform;
 } lower_wpos_ytransform_state;
 
 static nir_def *
@@ -55,11 +54,10 @@ get_transform(lower_wpos_ytransform_state *state)
                                                     state->options->state_tokens);
 
       var->data.how_declared = nir_var_hidden;
-      state->transform = var;
       state->b.cursor = nir_before_impl(nir_shader_get_entrypoint(state->b.shader));
-      state->load = nir_load_var(&state->b, state->transform);
+      state->transform = nir_load_var(&state->b, var);
    }
-   return state->load;
+   return state->transform;
 }
 
 /* NIR equiv of TGSI CMP instruction: */
