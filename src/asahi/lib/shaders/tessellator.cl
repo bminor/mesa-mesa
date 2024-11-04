@@ -305,13 +305,10 @@ PatchIndexValue(private struct CHWTessellator *ctx, int index)
             return index + ctx->IndexPatchCtx.insidePointIndexDeltaToRealValue;
       }
    } else if (ctx->bUsingPatchedIndices2) {
-      if (index >= ctx->IndexPatchCtx2.baseIndexToInvert) {
-         if (index == ctx->IndexPatchCtx2.cornerCaseBadValue)
-            return ctx->IndexPatchCtx2.cornerCaseReplacementValue;
-         else
-            return ctx->IndexPatchCtx2.indexInversionEndPoint - index;
-      } else if (index == ctx->IndexPatchCtx2.cornerCaseBadValue) {
+      if (index == ctx->IndexPatchCtx2.cornerCaseBadValue) {
          return ctx->IndexPatchCtx2.cornerCaseReplacementValue;
+      } else if (index >= ctx->IndexPatchCtx2.baseIndexToInvert) {
+         return ctx->IndexPatchCtx2.indexInversionEndPoint - index;
       }
    }
 
