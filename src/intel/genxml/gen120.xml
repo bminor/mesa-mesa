@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <genxml name="TGL" gen="12">
-  <import name="gen11.xml">
+  <import name="gen110.xml">
     <exclude name="3DSTATE_CPS" />
     <exclude name="L3CNTLREG" />
     <exclude name="PERFCNT1" />

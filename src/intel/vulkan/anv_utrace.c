@@ -26,7 +26,7 @@
 
 #include "common/intel_debug_identifier.h"
 #include "ds/intel_tracepoints.h"
-#include "genxml/gen9_pack.h"
+#include "genxml/gen90_pack.h"
 #include "perf/intel_perf.h"
 #include "util/perf/cpu_trace.h"
 

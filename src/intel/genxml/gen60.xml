@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <genxml name="SNB" gen="6">
-  <import name="gen5.xml">
+  <import name="gen50.xml">
     <exclude name="3DSTATE_CONSTANT_COLOR" />
     <exclude name="3DSTATE_GLOBAL_DEPTH_OFFSET_CLAMP" />
     <exclude name="3DSTATE_PIPELINED_POINTERS" />

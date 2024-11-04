@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <genxml name="IVB" gen="7">
-  <import name="gen6.xml">
+  <import name="gen60.xml">
     <exclude name="3DSTATE_BINDING_TABLE_POINTERS" />
     <exclude name="3DSTATE_GS_SVB_INDEX" />
     <exclude name="3DSTATE_SAMPLER_STATE_POINTERS" />

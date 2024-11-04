@@ -50,7 +50,7 @@
 #include "i915/anv_device.h"
 #include "xe/anv_device.h"
 
-#include "genxml/gen7_pack.h"
+#include "genxml/gen70_pack.h"
 #include "genxml/genX_bits.h"
 
 static void

@@ -22,7 +22,7 @@
  */
 
 #include "anv_private.h"
-#include "genxml/gen8_pack.h"
+#include "genxml/gen80_pack.h"
 
 static bool
 lookup_blorp_shader(struct blorp_batch *batch,

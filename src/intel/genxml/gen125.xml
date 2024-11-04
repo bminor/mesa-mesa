@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <genxml name="GFX125" gen="12.5">
-  <import name="gen12.xml">
+  <import name="gen120.xml">
     <exclude name="3D_CHICKEN3" />
     <exclude name="GPGPU_WALKER" />
     <exclude name="GT_MODE" />
