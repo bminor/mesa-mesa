@@ -32,6 +32,39 @@
 #define TOKEN(t) (ir3_yylval.tok = t)
 extern YYSTYPE ir3_yylval;
 extern void *ir3_parser_dead_ctx;
+extern char *current_line;
+
+const char *input_buffer = NULL;
+size_t input_buffer_len = 256;
+
+/**
+ * Return up to max_size chars from the current input_buffer.  Reads a new
+ * line into the input_buffer if it is currently empty.
+ */
+static size_t yy_input(char *buf, size_t max_size)
+{
+  if (!input_buffer)
+    current_line = malloc(input_buffer_len);
+
+  if (!input_buffer || !strlen(input_buffer)) {
+    if (getline(&current_line, &input_buffer_len, ir3_yyin) < 0) {
+      if (ferror(ir3_yyin))
+        fprintf(stderr, "Could not read input:\n");
+    } else {
+      input_buffer = current_line;
+    }
+  }
+
+  size_t to_copy = MIN2(max_size, strlen(input_buffer));
+  memcpy(buf, input_buffer, to_copy);
+  input_buffer += to_copy;
+
+  return to_copy;
+}
+
+#define YY_INPUT(buf, result, max_size) \
+  result = yy_input(buf, max_size);
+
 
 void ir3_yyset_input(FILE *f);
 
@@ -39,6 +72,8 @@ void ir3_yyset_input(FILE *f)
 {
 	YY_FLUSH_BUFFER;
 	ir3_yyin = f;
+	if (input_buffer)
+		input_buffer = "";
 }
 
 static int parse_wrmask(const char *src)

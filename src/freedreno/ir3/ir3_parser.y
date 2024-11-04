@@ -72,6 +72,8 @@ static struct hash_table *labels;
 
 void *ir3_parser_dead_ctx;
 
+char* current_line;
+
 static struct {
 	unsigned flags;
 	unsigned repeat;
@@ -297,7 +299,7 @@ int yyparse(void);
 
 static void yyerror(const char *error)
 {
-	fprintf(stderr, "error at line %d: %s\n", ir3_yyget_lineno(), error);
+	fprintf(stderr, "error at line %d: %s\n%s\n", ir3_yyget_lineno(), error, current_line);
 }
 
 struct ir3 * ir3_parse(struct ir3_shader_variant *v,
