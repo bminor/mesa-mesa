@@ -341,21 +341,24 @@ repack_invocations_in_workgroup(nir_builder *b, nir_def *input_bool,
 
    const unsigned num_lds_dwords = DIV_ROUND_UP(max_num_waves, 4);
    assert(num_lds_dwords <= 2);
+   const unsigned ballot = 1;
 
    nir_def *wave_id = nir_load_subgroup_id(b);
-   nir_def *lds_offset = nir_iadd(b, lds_addr_base, wave_id);
    nir_def *dont_care = nir_undef(b, 1, num_lds_dwords * 32);
-   nir_if *if_first_lane = nir_push_if(b, nir_elect(b, 1));
+   nir_def *packed_counts = NULL;
 
-   nir_store_shared(b, nir_u2u8(b, surviving_invocations_in_current_wave), lds_offset);
+   nir_if *if_use_lds = nir_push_if(b, nir_inverse_ballot(b, 1, nir_imm_intN_t(b, ballot, wave_size)));
+   {
+      nir_def *store_byte = nir_u2u8(b, surviving_invocations_in_current_wave);
+      nir_def *lds_offset = nir_iadd(b, lds_addr_base, wave_id);
+      nir_store_shared(b, store_byte, lds_offset);
 
-   nir_barrier(b, .execution_scope=SCOPE_WORKGROUP, .memory_scope=SCOPE_WORKGROUP,
-                         .memory_semantics=NIR_MEMORY_ACQ_REL, .memory_modes=nir_var_mem_shared);
+      nir_barrier(b, .execution_scope = SCOPE_WORKGROUP, .memory_scope = SCOPE_WORKGROUP,
+                     .memory_semantics = NIR_MEMORY_ACQ_REL, .memory_modes = nir_var_mem_shared);
 
-   nir_def *packed_counts =
-      nir_load_shared(b, 1, num_lds_dwords * 32, lds_addr_base, .align_mul = 8u);
-
-   nir_pop_if(b, if_first_lane);
+      packed_counts = nir_load_shared(b, 1, num_lds_dwords * 32, lds_addr_base, .align_mul = 8u);
+   }
+   nir_pop_if(b, if_use_lds);
 
    packed_counts = nir_if_phi(b, packed_counts, dont_care);
 
