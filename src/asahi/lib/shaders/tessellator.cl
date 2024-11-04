@@ -329,15 +329,8 @@ static void
 DefineIndex(private struct CHWTessellator *ctx, int index,
             int indexStorageOffset)
 {
-   int patched = PatchIndexValue(ctx, index);
-
-   if (ctx->mode == LIBAGX_TESS_MODE_WITH_COUNTS) {
-      global uint32_t *indices = (global uint32_t *)ctx->Index;
-      indices[indexStorageOffset] = ctx->index_bias + patched;
-   } else {
-      global uint16_t *indices = (global uint16_t *)ctx->Index;
-      indices[indexStorageOffset] = patched;
-   }
+   global uint32_t *indices = (global uint32_t *)ctx->Index;
+   indices[indexStorageOffset] = ctx->index_bias + PatchIndexValue(ctx, index);
 }
 
 static void
