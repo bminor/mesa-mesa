@@ -539,7 +539,8 @@ anv_formats_ccs_e_compatible(const struct intel_device_info *devinfo,
                                     format, vk_tiling, fmt_list))
          return false;
 
-      if (vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+      if ((vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
+          vk_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
          if (devinfo->verx10 < 125)
             return false;
 
