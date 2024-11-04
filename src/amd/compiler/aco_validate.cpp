@@ -379,7 +379,8 @@ validate_ir(Program* program)
                     instr->operands[i].regClass().is_subdword() && !instr->operands[i].isFixed()))
                   check(!valu.opsel[i], "Unexpected opsel for operand", instr.get());
             }
-            if (instr->definitions[0].regClass().is_subdword() && !instr->definitions[0].isFixed())
+            if (!instr->definitions.empty() && instr->definitions[0].regClass().is_subdword() &&
+                !instr->definitions[0].isFixed())
                check(!valu.opsel[3], "Unexpected opsel for sub-dword definition", instr.get());
          } else if (instr->opcode == aco_opcode::v_fma_mixlo_f16 ||
                     instr->opcode == aco_opcode::v_fma_mixhi_f16 ||
@@ -493,8 +494,9 @@ validate_ir(Program* program)
                   check(instr->definitions[0].regClass().type() == RegType::sgpr,
                         "Wrong Definition type for VALU instruction", instr.get());
                } else {
-                  check(instr->definitions[0].regClass().type() == RegType::vgpr,
-                        "Wrong Definition type for VALU instruction", instr.get());
+                  if (!instr->definitions.empty())
+                     check(instr->definitions[0].regClass().type() == RegType::vgpr,
+                           "Wrong Definition type for VALU instruction", instr.get());
                }
 
                unsigned num_sgprs = 0;
