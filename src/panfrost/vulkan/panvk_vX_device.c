@@ -153,6 +153,46 @@ panvk_meta_cleanup(struct panvk_device *device)
 /* Always reserve the lower 32MB. */
 #define PANVK_VA_RESERVE_BOTTOM 0x2000000ull
 
+static enum pan_kmod_group_allow_priority_flags
+global_priority_to_group_allow_priority_flag(
+   enum VkQueueGlobalPriorityKHR priority)
+{
+   switch (priority) {
+   case VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR:
+      return PAN_KMOD_GROUP_ALLOW_PRIORITY_LOW;
+   case VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR:
+      return PAN_KMOD_GROUP_ALLOW_PRIORITY_MEDIUM;
+   case VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR:
+      return PAN_KMOD_GROUP_ALLOW_PRIORITY_HIGH;
+   case VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR:
+      return PAN_KMOD_GROUP_ALLOW_PRIORITY_REALTIME;
+   default:
+      unreachable("Invalid global priority");
+   }
+}
+
+static VkResult
+check_global_priority(const struct panvk_physical_device *phys_dev,
+                      const VkDeviceQueueCreateInfo *create_info)
+{
+   const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
+      vk_find_struct_const(create_info->pNext,
+                           DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR);
+   const enum VkQueueGlobalPriorityKHR priority =
+      priority_info ? priority_info->globalPriority
+                    : VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
+
+   enum pan_kmod_group_allow_priority_flags requested_prio =
+      global_priority_to_group_allow_priority_flag(priority);
+   enum pan_kmod_group_allow_priority_flags allowed_prio_mask =
+      phys_dev->kmod.props.allowed_group_priorities_mask;
+
+   if (requested_prio & allowed_prio_mask)
+      return VK_SUCCESS;
+
+   return VK_ERROR_NOT_PERMITTED_KHR;
+}
+
 VkResult
 panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
                               const VkDeviceCreateInfo *pCreateInfo,
@@ -280,6 +320,11 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
       const VkDeviceQueueCreateInfo *queue_create =
          &pCreateInfo->pQueueCreateInfos[i];
+
+      result = check_global_priority(physical_device, queue_create);
+      if (result != VK_SUCCESS)
+         goto err_finish_queues;
+
       uint32_t qfi = queue_create->queueFamilyIndex;
       device->queues[qfi] =
          vk_alloc(&device->vk.alloc,

@@ -201,6 +201,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_external_semaphore = true,
       .KHR_external_semaphore_fd = true,
       .KHR_get_memory_requirements2 = true,
+      .KHR_global_priority = true,
       .KHR_image_format_list = true,
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
@@ -222,6 +223,8 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_custom_border_color = true,
       .EXT_depth_clip_enable = true,
       .EXT_external_memory_dma_buf = true,
+      .EXT_global_priority = true,
+      .EXT_global_priority_query = true,
       .EXT_graphics_pipeline_library = true,
       .EXT_image_drm_format_modifier = true,
       .EXT_index_type_uint8 = true,
@@ -343,6 +346,9 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_EXT_graphics_pipeline_library */
       .graphicsPipelineLibrary = true,
+
+      /* VK_KHR_global_priority */
+      .globalPriorityQuery = true,
 
       /* VK_EXT_index_type_uint8 */
       .indexTypeUint8 = true,
@@ -895,17 +901,46 @@ static const VkQueueFamilyProperties panvk_queue_family_properties = {
    .minImageTransferGranularity = {1, 1, 1},
 };
 
+static void
+panvk_fill_global_priority(const struct panvk_physical_device *physical_device,
+                           VkQueueFamilyGlobalPriorityPropertiesKHR *prio)
+{
+   enum pan_kmod_group_allow_priority_flags prio_mask =
+      physical_device->kmod.props.allowed_group_priorities_mask;
+   uint32_t prio_idx = 0;
+
+   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_LOW)
+      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
+
+   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_MEDIUM)
+      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
+
+   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_HIGH)
+      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR;
+
+   if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_REALTIME)
+      prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR;
+
+   prio->priorityCount = prio_idx;
+}
+
 VKAPI_ATTR void VKAPI_CALL
 panvk_GetPhysicalDeviceQueueFamilyProperties2(
    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
    VkQueueFamilyProperties2 *pQueueFamilyProperties)
 {
+   VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkQueueFamilyProperties2, out, pQueueFamilyProperties,
                           pQueueFamilyPropertyCount);
 
    vk_outarray_append_typed(VkQueueFamilyProperties2, &out, p)
    {
       p->queueFamilyProperties = panvk_queue_family_properties;
+
+      VkQueueFamilyGlobalPriorityPropertiesKHR *prio =
+         vk_find_struct(p->pNext, QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_KHR);
+      if (prio)
+         panvk_fill_global_priority(physical_device, prio);
    }
 }
 

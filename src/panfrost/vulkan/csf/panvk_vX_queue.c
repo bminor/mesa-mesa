@@ -361,7 +361,8 @@ err_cleanup_queue:
 }
 
 static VkResult
-create_group(struct panvk_queue *queue)
+create_group(struct panvk_queue *queue,
+             enum drm_panthor_group_priority group_priority)
 {
    const struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
    const struct panvk_physical_device *phys_dev =
@@ -393,7 +394,7 @@ create_group(struct panvk_queue *queue)
       .max_fragment_cores =
          util_bitcount64(phys_dev->kmod.props.shader_present),
       .max_tiler_cores = 1,
-      .priority = PANTHOR_GROUP_PRIORITY_MEDIUM,
+      .priority = group_priority,
       .queues = DRM_PANTHOR_OBJ_ARRAY(ARRAY_SIZE(qc), qc),
       .vm_id = pan_kmod_vm_handle(dev->kmod.vm),
    };
@@ -699,6 +700,30 @@ out:
    return result;
 }
 
+static enum drm_panthor_group_priority
+get_panthor_group_priority(const VkDeviceQueueCreateInfo *create_info)
+{
+   const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
+      vk_find_struct_const(create_info->pNext,
+                           DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR);
+   const enum VkQueueGlobalPriorityKHR priority =
+      priority_info ? priority_info->globalPriority
+                    : VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
+
+   switch (priority) {
+   case VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR:
+      return PANTHOR_GROUP_PRIORITY_LOW;
+   case VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR:
+      return PANTHOR_GROUP_PRIORITY_MEDIUM;
+   case VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR:
+      return PANTHOR_GROUP_PRIORITY_HIGH;
+   case VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR:
+      return PANTHOR_GROUP_PRIORITY_REALTIME;
+   default:
+      unreachable("Invalid global priority");
+   }
+}
+
 VkResult
 panvk_per_arch(queue_init)(struct panvk_device *dev, struct panvk_queue *queue,
                            int idx, const VkDeviceQueueCreateInfo *create_info)
@@ -718,7 +743,7 @@ panvk_per_arch(queue_init)(struct panvk_device *dev, struct panvk_queue *queue,
    if (result != VK_SUCCESS)
       goto err_destroy_syncobj;
 
-   result = create_group(queue);
+   result = create_group(queue, get_panthor_group_priority(create_info));
    if (result != VK_SUCCESS)
       goto err_cleanup_tiler;
 

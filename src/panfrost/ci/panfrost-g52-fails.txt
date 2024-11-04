@@ -2665,6 +2665,12 @@ dEQP-VK.texture.filtering.3d.formats.d32_sfloat_s8_uint_stencil.d32_sfloat_s8_ui
 dEQP-VK.api.device_init.create_device_unsupported_features.shader_draw_parameters_features,Fail
 dEQP-VK.api.device_init.create_device_unsupported_features.protected_memory_features,Fail
 
+# CTS bug, works fine if Vulkan 1.1 is forced
+dEQP-VK.api.device_init.create_device_global_priority.basic,Fail
+dEQP-VK.api.device_init.create_device_global_priority_khr.basic,Fail
+dEQP-VK.api.device_init.create_device_global_priority_query.basic,Fail
+dEQP-VK.api.device_init.create_device_global_priority_query_khr.basic,Fail
+
 # CmdDrawIndirect not supported yet
 dEQP-VK.api.command_buffers.many_indirect_draws_on_secondary,Crash
 
