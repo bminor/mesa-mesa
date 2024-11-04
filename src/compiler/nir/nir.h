@@ -4327,6 +4327,12 @@ typedef struct nir_shader_compiler_options {
 
    bool driver_functions;
 
+   /**
+    * If true, the driver will call nir_lower_int64 itself and the frontend
+    * should not do so. This may enable better optimization around address
+    * modes.
+    */
+   bool late_lower_int64;
    nir_lower_int64_options lower_int64_options;
    nir_lower_doubles_options lower_doubles_options;
    nir_divergence_options divergence_analysis_options;
