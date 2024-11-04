@@ -29,9 +29,6 @@
  * gl_FbWposYTransform uniform is inserted (with the specified state-slots)
  * and additional instructions are inserted to transform gl_FragCoord (and
  * ddy src arg).
- *
- * This is based on the logic in emit_wpos()/emit_wpos_adjustment() in TGSI
- * compiler.
  */
 
 typedef struct {
@@ -59,7 +56,6 @@ get_transform(lower_wpos_ytransform_state *state)
    return state->transform;
 }
 
-/* see emit_wpos_adjustment() in st_mesa_to_tgsi.c */
 static bool
 emit_wpos_adjustment(lower_wpos_ytransform_state *state,
                      nir_intrinsic_instr *intr, bool invert,
