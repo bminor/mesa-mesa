@@ -1966,6 +1966,8 @@ optimizations.extend([
    (('u2u32', ('imul(is_used_once)', 'a@64', b)),
     ('imul', ('u2u32', a), ('u2u32', b))),
 
+   (('u2f32', ('u2u64', 'a@32')), ('u2f32', a)),
+
    # Redundant trip through 8-bit
    (('i2i16', ('u2u8', ('iand', 'a@16', 1))), ('iand', 'a@16', 1)),
    (('u2u16', ('u2u8', ('iand', 'a@16', 1))), ('iand', 'a@16', 1)),
