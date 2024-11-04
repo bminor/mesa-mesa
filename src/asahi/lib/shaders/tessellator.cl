@@ -334,8 +334,8 @@ DefineIndex(private struct CHWTessellator *ctx, int index,
 }
 
 static void
-DefineClockwiseTriangle(private struct CHWTessellator *ctx, int index0,
-                        int index1, int index2, int indexStorageBaseOffset)
+DefineTriangle(private struct CHWTessellator *ctx, int index0, int index1,
+               int index2, int indexStorageBaseOffset)
 {
    index0 = PatchIndexValue(ctx, index0);
    index1 = PatchIndexValue(ctx, index1);
@@ -456,7 +456,8 @@ StitchRegular(private struct CHWTessellator *ctx, bool bTrapezoid,
    int insidePoint = insideEdgePointBaseOffset;
    int outsidePoint = outsideEdgePointBaseOffset;
    if (bTrapezoid) {
-      DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint, baseIndexOffset);
+      DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                     baseIndexOffset);
       baseIndexOffset += 3;
       outsidePoint++;
    }
@@ -465,11 +466,12 @@ StitchRegular(private struct CHWTessellator *ctx, bool bTrapezoid,
    case DIAGONALS_INSIDE_TO_OUTSIDE:
       // Diagonals pointing from inside edge forward towards outside edge
       for (p = 0; p < numInsideEdgePoints - 1; p++) {
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint, outsidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint, outsidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
 
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
-                                 baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
          outsidePoint++;
@@ -480,20 +482,22 @@ StitchRegular(private struct CHWTessellator *ctx, bool bTrapezoid,
 
       // First half
       for (p = 0; p < numInsideEdgePoints / 2 - 1; p++) {
-         DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint, baseIndexOffset);
+         DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                        baseIndexOffset);
          baseIndexOffset += 3;
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
-                                 baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
          outsidePoint++;
       }
 
       // Middle
-      DefineClockwiseTriangle(ctx, outsidePoint, insidePoint + 1, insidePoint, baseIndexOffset);
+      DefineTriangle(ctx, outsidePoint, insidePoint + 1, insidePoint,
+                     baseIndexOffset);
       baseIndexOffset += 3;
-      DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint + 1,
-                              baseIndexOffset);
+      DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint + 1,
+                     baseIndexOffset);
       baseIndexOffset += 3;
       insidePoint++;
       outsidePoint++;
@@ -501,10 +505,11 @@ StitchRegular(private struct CHWTessellator *ctx, bool bTrapezoid,
 
       // Second half
       for (; p < numInsideEdgePoints; p++) {
-         DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint, baseIndexOffset);
+         DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                        baseIndexOffset);
          baseIndexOffset += 3;
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
-                                 baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
          outsidePoint++;
@@ -514,10 +519,11 @@ StitchRegular(private struct CHWTessellator *ctx, bool bTrapezoid,
       // First half, diagonals pointing from outside of outside edge to inside of
       // inside edge
       for (p = 0; p < numInsideEdgePoints / 2; p++) {
-         DefineClockwiseTriangle(ctx, outsidePoint, insidePoint + 1, insidePoint, baseIndexOffset);
+         DefineTriangle(ctx, outsidePoint, insidePoint + 1, insidePoint,
+                        baseIndexOffset);
          baseIndexOffset += 3;
-         DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint + 1,
-                                 baseIndexOffset);
+         DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
          outsidePoint++;
@@ -525,10 +531,11 @@ StitchRegular(private struct CHWTessellator *ctx, bool bTrapezoid,
       // Second half, diagonals pointing from inside of inside edge to outside of
       // outside edge
       for (; p < numInsideEdgePoints - 1; p++) {
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint, outsidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint, outsidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
-                                 baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint + 1, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
          outsidePoint++;
@@ -536,7 +543,8 @@ StitchRegular(private struct CHWTessellator *ctx, bool bTrapezoid,
       break;
    }
    if (bTrapezoid) {
-      DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint, baseIndexOffset);
+      DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                     baseIndexOffset);
       baseIndexOffset += 3;
    }
 }
@@ -652,8 +660,8 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
    // since we don't start the loop at 0 below, we need a special case.
    if (0 < outsideNumHalfTessFactorPoints) {
       // Advance outside
-      DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
-                              baseIndexOffset);
+      DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                     baseIndexOffset);
       baseIndexOffset += 3;
       outsidePoint++;
    }
@@ -663,15 +671,15 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
 
       if (bound < insideNumHalfTessFactorPoints) {
          // Advance inside
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint,
-                                 insidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
       }
       if (bound < outsideNumHalfTessFactorPoints) {
          // Advance outside
-         DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1,
-                                 insidePoint, baseIndexOffset);
+         DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          outsidePoint++;
       }
@@ -681,24 +689,24 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
        insideEdgeTessFactorOdd) {
       if (insideEdgeTessFactorOdd == outsideTessFactorOdd) {
          // Quad in the middle
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint,
-                                 insidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
-         DefineClockwiseTriangle(ctx, insidePoint + 1, outsidePoint,
-                                 outsidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint + 1, outsidePoint, outsidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
          outsidePoint++;
       } else if (!insideEdgeTessFactorOdd) {
          // Triangle pointing inside
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint,
-                                 outsidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint, outsidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          outsidePoint++;
       } else {
          // Triangle pointing outside
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint,
-                                 insidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
       }
@@ -710,15 +718,15 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
 
       if (bound < outsideNumHalfTessFactorPoints) {
          // Advance outside
-         DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1,
-                                 insidePoint, baseIndexOffset);
+         DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          outsidePoint++;
       }
       if (bound < insideNumHalfTessFactorPoints) {
          // Advance inside
-         DefineClockwiseTriangle(ctx, insidePoint, outsidePoint,
-                                 insidePoint + 1, baseIndexOffset);
+         DefineTriangle(ctx, insidePoint, outsidePoint, insidePoint + 1,
+                        baseIndexOffset);
          baseIndexOffset += 3;
          insidePoint++;
       }
@@ -726,8 +734,8 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
    // Below case is not needed if we didn't optimize loop above and made it run
    // from 31 down to 0.
    if (0 < outsideNumHalfTessFactorPoints) {
-      DefineClockwiseTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
-                              baseIndexOffset);
+      DefineTriangle(ctx, outsidePoint, outsidePoint + 1, insidePoint,
+                     baseIndexOffset);
       baseIndexOffset += 3;
       outsidePoint++;
    }
@@ -931,8 +939,8 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
          if (!p->points_mode) {
             ctx.Index = libagx_draw(p, mode, false, patch, 3);
 
-            DefineClockwiseTriangle(&ctx, 0, 1, 2,
-                                    /*indexStorageBaseOffset*/ 0);
+            DefineTriangle(&ctx, 0, 1, 2,
+                           /*indexStorageBaseOffset*/ 0);
          } else {
             libagx_draw_points(&ctx, p, patch, 3);
          }
@@ -1155,9 +1163,9 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
       }
       if (insideTessFactorOdd) {
          // Triangulate center (a single triangle)
-         DefineClockwiseTriangle(&ctx, outsideEdgePointBaseOffset,
-                                 outsideEdgePointBaseOffset + 1,
-                                 outsideEdgePointBaseOffset + 2, NumIndices);
+         DefineTriangle(&ctx, outsideEdgePointBaseOffset,
+                        outsideEdgePointBaseOffset + 1,
+                        outsideEdgePointBaseOffset + 2, NumIndices);
          NumIndices += 3;
       }
    }
@@ -1266,8 +1274,8 @@ libagx_tess_quad(constant struct libagx_tess_args *p,
             if (mode == LIBAGX_TESS_MODE_COUNT)
                return;
 
-            DefineClockwiseTriangle(&ctx, 0, 1, 3, /*indexStorageOffset*/ 0);
-            DefineClockwiseTriangle(&ctx, 1, 2, 3, /*indexStorageOffset*/ 3);
+            DefineTriangle(&ctx, 0, 1, 3, /*indexStorageOffset*/ 0);
+            DefineTriangle(&ctx, 1, 2, 3, /*indexStorageOffset*/ 3);
          } else {
             libagx_draw_points(&ctx, p, patch, 4);
             if (mode == LIBAGX_TESS_MODE_COUNT)
