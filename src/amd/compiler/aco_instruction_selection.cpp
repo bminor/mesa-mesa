@@ -5736,11 +5736,6 @@ emit_load_frag_coord(isel_context* ctx, Temp dst, unsigned num_components)
       else
          vec->operands[i] = Operand(v1);
    }
-   if (G_0286CC_POS_W_FLOAT_ENA(ctx->program->config->spi_ps_input_ena)) {
-      assert(num_components == 4);
-      vec->operands[3] =
-         bld.vop1(aco_opcode::v_rcp_f32, bld.def(v1), get_arg(ctx, ctx->args->frag_pos[3]));
-   }
 
    for (Operand& op : vec->operands)
       op = op.isUndefined() ? Operand::zero() : op;

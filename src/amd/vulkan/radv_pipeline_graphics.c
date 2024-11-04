@@ -2667,6 +2667,8 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
 
       NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_lower_fs_barycentric, gfx_state, rast_prim);
 
+      NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, nir_lower_fragcoord_wtrans);
+
       /* frag_depth = gl_FragCoord.z broadcasts to all samples of the fragment shader invocation,
        * so only optimize it away if we know there is only one sample per invocation.
        * Because we don't know if sample shading is used with factor 1.0f, this means

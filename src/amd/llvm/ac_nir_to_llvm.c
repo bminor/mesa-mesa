@@ -2873,8 +2873,7 @@ emit_load_frag_coord(struct ac_nir_context *ctx)
 {
    LLVMValueRef values[4] = {
       ac_get_arg(&ctx->ac, ctx->args->frag_pos[0]), ac_get_arg(&ctx->ac, ctx->args->frag_pos[1]),
-      ac_get_arg(&ctx->ac, ctx->args->frag_pos[2]),
-      ac_build_fdiv(&ctx->ac, ctx->ac.f32_1, ac_get_arg(&ctx->ac, ctx->args->frag_pos[3]))};
+      ac_get_arg(&ctx->ac, ctx->args->frag_pos[2]), ac_get_arg(&ctx->ac, ctx->args->frag_pos[3])};
 
    return ac_to_integer(&ctx->ac, ac_build_gather_values(&ctx->ac, values, 4));
 }
