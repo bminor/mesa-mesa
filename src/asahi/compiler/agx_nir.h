@@ -9,7 +9,11 @@
 
 struct nir_shader;
 
+bool agx_nir_lower_address(struct nir_shader *shader);
 bool agx_nir_lower_algebraic_late(struct nir_shader *shader);
+bool agx_nir_cleanup_amul(struct nir_shader *shader);
+bool agx_nir_fuse_lea(struct nir_shader *shader);
+bool agx_nir_lower_lea(struct nir_shader *shader);
 bool agx_nir_fuse_selects(struct nir_shader *shader);
 bool agx_nir_fuse_algebraic_late(struct nir_shader *shader);
 bool agx_nir_fence_images(struct nir_shader *shader);

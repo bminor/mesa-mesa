@@ -2825,7 +2825,6 @@ agx_optimize_loop_nir(nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
       NIR_PASS(progress, nir, nir_opt_undef);
-      NIR_PASS(progress, nir, nir_opt_shrink_vectors, true);
       NIR_PASS(progress, nir, nir_opt_loop_unroll);
    } while (progress);
 }
@@ -3006,6 +3005,14 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
                .callback = agx_mem_vectorize_cb,
             });
    NIR_PASS(_, nir, nir_lower_pack);
+   NIR_PASS(_, nir, nir_opt_algebraic);
+
+   /* Lower addressing modes. The sooner we do this, the sooner we get rid of
+    * amul/aadd instructions and can let nir_opt_algebraic do its job. But we
+    * want to vectorize first since nir_opt_load_store_vectorize doesn't know
+    * how to handle our loads.
+    */
+   NIR_PASS(_, nir, agx_nir_lower_address);
 
    NIR_PASS_V(nir, nir_divergence_analysis);
    bool progress = false;
@@ -3033,7 +3040,6 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
    } while (progress);
 
    progress = false;
-   NIR_PASS(progress, nir, agx_nir_lower_address);
 
    /* If address lowering made progress, clean up before forming preambles.
     * Otherwise the optimized preambles might just be constants! Do it before
