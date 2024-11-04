@@ -36,7 +36,6 @@
 
 typedef struct {
    const nir_lower_wpos_ytransform_options *options;
-   nir_shader *shader;
    nir_builder b;
    nir_def *transform;
 } lower_wpos_ytransform_state;
@@ -48,7 +47,7 @@ get_transform(lower_wpos_ytransform_state *state)
       /* NOTE: name must be prefixed w/ "gl_" to trigger slot based
        * special handling in uniform setup:
        */
-      nir_variable *var = nir_state_variable_create(state->shader,
+      nir_variable *var = nir_state_variable_create(state->b.shader,
                                                     glsl_vec4_type(),
                                                     "gl_FbWposYTransform",
                                                     state->options->state_tokens);
@@ -146,6 +145,7 @@ static void
 lower_fragcoord(lower_wpos_ytransform_state *state, nir_intrinsic_instr *intr)
 {
    const nir_lower_wpos_ytransform_options *options = state->options;
+   const struct shader_info *info = &state->b.shader->info;
    float adjX = 0.0f;
    float adjY[2] = { 0.0f, 0.0f };
    bool invert = false;
@@ -180,7 +180,7 @@ lower_fragcoord(lower_wpos_ytransform_state *state, nir_intrinsic_instr *intr)
     * u,h -> l,i: (99.5 + 0.5) * -1 + 100 = 0
     */
 
-   if (state->shader->info.fs.origin_upper_left) {
+   if (info->fs.origin_upper_left) {
       /* Fragment shader wants origin in upper-left */
       if (options->fs_coord_origin_upper_left) {
          /* the driver supports upper-left origin */
@@ -202,7 +202,7 @@ lower_fragcoord(lower_wpos_ytransform_state *state, nir_intrinsic_instr *intr)
       }
    }
 
-   if (state->shader->info.fs.pixel_center_integer) {
+   if (info->fs.pixel_center_integer) {
       /* Fragment shader wants pixel center integer */
       if (options->fs_coord_pixel_center_integer) {
          /* the driver supports pixel center integer */
@@ -339,7 +339,6 @@ nir_lower_wpos_ytransform(nir_shader *shader,
 {
    lower_wpos_ytransform_state state = {
       .options = options,
-      .shader = shader,
    };
 
    assert(shader->info.stage == MESA_SHADER_FRAGMENT);
