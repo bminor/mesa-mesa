@@ -4168,6 +4168,13 @@ typedef struct nir_shader_compiler_options {
    bool has_iadd3;
 
    /**
+    * Backend supports amul and would like them generated whenever
+    * possible. This is stronger than has_imul24 for amul, but does not imply
+    * support for imul24.
+    */
+   bool has_amul;
+
+   /**
     * Backend supports imul24, and would like to use it (when possible)
     * for address/offset calculation.  If true, driver should call
     * nir_lower_amul().  (If not set, amul will automatically be lowered
