@@ -138,3 +138,5 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-modifiers
 
 spec@arb_timer_query@query gl_timestamp
 spec@egl_chromium_sync_control@conformance
+
+KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_2d_multisample_*

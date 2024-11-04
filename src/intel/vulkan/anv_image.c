@@ -432,23 +432,14 @@ can_fast_clear_with_non_zero_color(const struct intel_device_info *devinfo,
    return true;
 }
 
-/**
- * Return true if the storage image could be used with atomics.
- *
- * If the image was created with an explicit format, we check it for typed
- * atomic support.  If MUTABLE_FORMAT_BIT is set, then we check the optional
- * format list, seeing if /any/ of the formats support typed atomics.  If no
- * list is supplied, we fall back to using the bpb, as the application could
- * make an image view with a format that does use atomics.
- */
 static bool
-storage_image_format_supports_atomic(const struct intel_device_info *devinfo,
-                                     VkImageCreateFlags create_flags,
-                                     enum isl_format format,
-                                     VkImageTiling vk_tiling,
-                                     const VkImageFormatListCreateInfo *fmt_list)
+image_may_use_r32_view(VkImageCreateFlags create_flags,
+                       VkFormat vk_format,
+                       const VkImageFormatListCreateInfo *fmt_list)
 {
-   if (isl_format_supports_typed_atomics(devinfo, format))
+   if (vk_format == VK_FORMAT_R32_SINT ||
+       vk_format == VK_FORMAT_R32_UINT ||
+       vk_format == VK_FORMAT_R32_SFLOAT)
       return true;
 
    if (!(create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT))
@@ -456,23 +447,16 @@ storage_image_format_supports_atomic(const struct intel_device_info *devinfo,
 
    if (fmt_list) {
       for (uint32_t i = 0; i < fmt_list->viewFormatCount; i++) {
-         if (fmt_list->pViewFormats[i] == VK_FORMAT_UNDEFINED)
-            continue;
-
-         enum isl_format view_format =
-            anv_get_isl_format(devinfo, fmt_list->pViewFormats[i],
-                               VK_IMAGE_ASPECT_COLOR_BIT, vk_tiling);
-
-         if (isl_format_supports_typed_atomics(devinfo, view_format))
+         if (fmt_list->pViewFormats[i] == VK_FORMAT_R32_SINT ||
+             fmt_list->pViewFormats[i] == VK_FORMAT_R32_UINT ||
+             fmt_list->pViewFormats[i] == VK_FORMAT_R32_SFLOAT)
             return true;
       }
 
       return false;
    }
 
-   /* No explicit format list.  Any 16/32/64bpp format could be used with atomics. */
-   unsigned bpb = isl_format_get_layout(format)->bpb;
-   return bpb == 16 || bpb == 32 || bpb == 64;
+   return vk_format_get_blocksizebits(vk_format) == 32;
 }
 
 static bool
@@ -538,32 +522,31 @@ anv_formats_ccs_e_compatible(const struct intel_device_info *devinfo,
       if (!formats_ccs_e_compatible(devinfo, create_flags, aspect,
                                     format, vk_tiling, fmt_list))
          return false;
+   }
 
-      if ((vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
-          vk_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-         if (devinfo->ver == 12) {
-            /* From the TGL Bspec 44930 (r47128):
-             *
-             *    "Memory atomic operation on compressed data is not supported
-             *     in Gen12 E2E compression. Result of such operation is
-             *     undefined.
-             *
-             *     Software should ensure at the time of the Atomic operation
-             *     the surface is resolved (uncompressed) state."
-             *
-             * On gfx12.0, compression is not supported with atomic
-             * operations. On gfx12.5, the support is there, but it's slow
-             * (see HSD 1406337848).
-             */
-            if (storage_image_format_supports_atomic(devinfo, create_flags,
-                                                     format, vk_tiling,
-                                                     fmt_list))
-               return false;
-
-         } else if (devinfo->ver <= 11) {
-            /* Storage accesses are not supported on compressed surfaces. */
+   if ((vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
+       vk_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+      assert(vk_format_aspects(vk_format) == VK_IMAGE_ASPECT_COLOR_BIT);
+      if (devinfo->ver == 12) {
+         /* From the TGL Bspec 44930 (r47128):
+          *
+          *    "Memory atomic operation on compressed data is not supported
+          *     in Gen12 E2E compression. Result of such operation is
+          *     undefined.
+          *
+          *     Software should ensure at the time of the Atomic operation
+          *     the surface is resolved (uncompressed) state."
+          *
+          * On gfx12.0, compression is not supported with atomic
+          * operations. On gfx12.5, the support is there, but it's slow
+          * (see HSD 1406337848).
+          */
+         if (image_may_use_r32_view(create_flags, vk_format, fmt_list))
             return false;
-         }
+
+      } else if (devinfo->ver <= 11) {
+         /* Storage accesses are not supported on compressed surfaces. */
+         return false;
       }
    }
 
