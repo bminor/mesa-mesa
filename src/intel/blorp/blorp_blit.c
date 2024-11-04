@@ -909,7 +909,10 @@ bit_cast_color(struct nir_builder *b, nir_def *color,
                                     BITFIELD_MASK(chan_bits));
 
          if (dst_fmtl->channels_array[c].type == ISL_UNORM) {
-            chans[c] = nir_format_unorm_to_float(b, chans[c], &chan_bits);
+            chans[c] =
+               dst_fmtl->format == ISL_FORMAT_R24_UNORM_X8_TYPELESS ?
+               nir_format_unorm_to_float_precise(b, chans[c], &chan_bits) :
+               nir_format_unorm_to_float(b, chans[c], &chan_bits);
 
             /* Don't touch the alpha channel */
             if (c < 3 && dst_fmtl->colorspace == ISL_COLORSPACE_SRGB)
@@ -2880,7 +2883,6 @@ blorp_copy_get_formats(const struct isl_device *isl_dev,
    if (ISL_GFX_VER(isl_dev) >= 8 &&
        isl_surf_usage_is_depth(src_surf->usage)) {
       /* In order to use HiZ, we have to use the real format for the source.
-       * Depth <-> Color copies are not allowed.
        */
       *src_view_format = src_surf->format;
       *dst_view_format = src_surf->format;
@@ -2891,6 +2893,21 @@ blorp_copy_get_formats(const struct isl_device *isl_dev,
        */
       *src_view_format = dst_surf->format;
       *dst_view_format = dst_surf->format;
+
+      /* Some generations like Gfx9/11 have a CCS_E dependent on the
+       * bits-per-channel of the format. If we reinterpret a R32 source image
+       * as D24_UNORM we'll read invalid data from the sampler.
+       *
+       * Instead keep the source as R32_UINT (so it stays bits-per-channel
+       * compatible according to the VK_KHR_maintenance8 copy operations
+       * compatibility format list) and have the shader do a conversion
+       * to a floating point value out of 24bits of data to write into the
+       * depth output.
+       */
+      if (dst_surf->format == ISL_FORMAT_R24_UNORM_X8_TYPELESS &&
+          src_surf->format != ISL_FORMAT_R24_UNORM_X8_TYPELESS) {
+         *src_view_format = ISL_FORMAT_R32_UINT;
+      }
    } else if (isl_surf_usage_is_depth_or_stencil(src_surf->usage) ||
               isl_surf_usage_is_depth_or_stencil(dst_surf->usage)) {
       assert(src_fmtl->bpb == dst_fmtl->bpb);

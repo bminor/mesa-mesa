@@ -36,6 +36,8 @@ extern "C" {
 struct brw_compiler;
 struct elk_compiler;
 
+typedef struct nir_shader nir_shader;
+
 enum blorp_op {
    BLORP_OP_BLIT,
    BLORP_OP_COPY,
@@ -79,6 +81,8 @@ struct blorp_context {
    struct blorp_compiler *compiler;
 
    bool enable_tbimr;
+
+   nir_shader *(*get_fp64_nir)(struct blorp_context *context);
 
    void (*upload_dynamic_state)(struct blorp_context *context,
                                 const void *data, uint32_t size,
@@ -247,6 +251,7 @@ blorp_blit(struct blorp_batch *batch,
 enum isl_format
 blorp_copy_get_color_format(const struct isl_device *isl_dev,
                             enum isl_format surf_format);
+
 void
 blorp_copy_get_formats(const struct isl_device *isl_dev,
                        const struct isl_surf *src_surf,
