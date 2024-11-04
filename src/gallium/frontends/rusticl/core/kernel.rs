@@ -939,7 +939,7 @@ fn compile_nir_variant(
         shared_address_format,
     );
 
-    if nir_options.lower_int64_options.0 != 0 {
+    if nir_options.lower_int64_options.0 != 0 && !nir_options.late_lower_int64 {
         nir_pass!(nir, nir_lower_int64);
     }
 
