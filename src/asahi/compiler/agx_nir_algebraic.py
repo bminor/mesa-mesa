@@ -176,6 +176,10 @@ for s in range(1, 5):
         (imad(a, b, ('ishl(is_used_once)', c, s)), ('imadshl_agx', a, b, c, s)),
         (imsub(a, b, ('ishl(is_used_once)', c, s)), ('imsubshl_agx', a, b, c, s)),
 
+        # The above but after the below shift lowering
+        (imad(a, b, ('imadshl_agx(is_used_once)', 0, 1, c, s)), ('imadshl_agx', a, b, c, s)),
+        (imsub(a, b, ('imadshl_agx(is_used_once)', 0, 1, c, s)), ('imsubshl_agx', a, b, c, s)),
+
         # a + (a << s) = a + a * (1 << s) = a * (1 + (1 << s))
         (('imul', a, 1 + (1 << s)), iaddshl(a, a, s)),
 
