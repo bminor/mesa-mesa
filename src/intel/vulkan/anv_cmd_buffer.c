@@ -437,6 +437,7 @@ anv_cmd_buffer_set_ray_query_buffer(struct anv_cmd_buffer *cmd_buffer,
                                     VkShaderStageFlags stages)
 {
    struct anv_device *device = cmd_buffer->device;
+   uint8_t idx = anv_get_ray_query_bo_index(cmd_buffer);
 
    uint64_t ray_shadow_size =
       align64(brw_rt_ray_queries_shadow_stacks_size(device->info,
@@ -447,9 +448,9 @@ anv_cmd_buffer_set_ray_query_buffer(struct anv_cmd_buffer *cmd_buffer,
         cmd_buffer->state.ray_query_shadow_bo->size < ray_shadow_size)) {
       unsigned shadow_size_log2 = MAX2(util_logbase2_ceil(ray_shadow_size), 16);
       unsigned bucket = shadow_size_log2 - 16;
-      assert(bucket < ARRAY_SIZE(device->ray_query_shadow_bos));
+      assert(bucket < ARRAY_SIZE(device->ray_query_shadow_bos[0]));
 
-      struct anv_bo *bo = p_atomic_read(&device->ray_query_shadow_bos[bucket]);
+      struct anv_bo *bo = p_atomic_read(&device->ray_query_shadow_bos[idx][bucket]);
       if (bo == NULL) {
          struct anv_bo *new_bo;
          VkResult result = anv_device_alloc_bo(device, "RT queries shadow",
@@ -462,7 +463,7 @@ anv_cmd_buffer_set_ray_query_buffer(struct anv_cmd_buffer *cmd_buffer,
             return;
          }
 
-         bo = p_atomic_cmpxchg(&device->ray_query_shadow_bos[bucket], NULL, new_bo);
+         bo = p_atomic_cmpxchg(&device->ray_query_shadow_bos[idx][bucket], NULL, new_bo);
          if (bo != NULL) {
             anv_device_release_bo(device, new_bo);
          } else {
@@ -477,9 +478,9 @@ anv_cmd_buffer_set_ray_query_buffer(struct anv_cmd_buffer *cmd_buffer,
    }
 
    /* Add the HW buffer to the list of BO used. */
-   assert(device->ray_query_bo);
+   assert(device->ray_query_bo[idx]);
    anv_reloc_list_add_bo(cmd_buffer->batch.relocs,
-                         device->ray_query_bo);
+                         device->ray_query_bo[idx]);
 
    /* Fill the push constants & mark them dirty. */
    struct anv_address ray_query_globals_addr =

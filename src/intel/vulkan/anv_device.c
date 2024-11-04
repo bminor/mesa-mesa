@@ -313,6 +313,7 @@ VkResult anv_CreateDevice(
    ANV_FROM_HANDLE(anv_physical_device, physical_device, physicalDevice);
    VkResult result;
    struct anv_device *device;
+   bool device_has_compute_queue = false;
 
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
 
@@ -323,6 +324,10 @@ VkResult anv_CreateDevice(
    for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
       if (pCreateInfo->pQueueCreateInfos[i].flags & ~VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)
          return vk_error(physical_device, VK_ERROR_INITIALIZATION_FAILED);
+
+      const struct anv_queue_family *family =
+         &physical_device->queue.families[pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex];
+      device_has_compute_queue |= family->engine_class == INTEL_ENGINE_CLASS_COMPUTE;
    }
 
    device = vk_zalloc2(&physical_device->instance->vk.alloc, pAllocator,
@@ -754,9 +759,21 @@ VkResult anv_CreateDevice(
                                    ray_queries_size,
                                    ANV_BO_ALLOC_INTERNAL,
                                    0 /* explicit_address */,
-                                   &device->ray_query_bo);
+                                   &device->ray_query_bo[0]);
       if (result != VK_SUCCESS)
          goto fail_dummy_aux_bo;
+
+      /* We need a separate ray query bo for CCS engine with Wa_14022863161. */
+      if (intel_needs_workaround(device->isl_dev.info, 14022863161) &&
+          device_has_compute_queue) {
+         result = anv_device_alloc_bo(device, "ray queries",
+                                      ray_queries_size,
+                                      ANV_BO_ALLOC_INTERNAL,
+                                      0 /* explicit_address */,
+                                      &device->ray_query_bo[1]);
+         if (result != VK_SUCCESS)
+            goto fail_ray_query_bo;
+      }
    }
 
    result = anv_device_init_trivial_batch(device);
@@ -1009,8 +1026,10 @@ VkResult anv_CreateDevice(
  fail_trivial_batch:
    anv_device_release_bo(device, device->trivial_batch_bo);
  fail_ray_query_bo:
-   if (device->ray_query_bo)
-      anv_device_release_bo(device, device->ray_query_bo);
+   for (unsigned i = 0; i < ARRAY_SIZE(device->ray_query_bo); i++) {
+      if (device->ray_query_bo[i])
+         anv_device_release_bo(device, device->ray_query_bo[i]);
+   }
  fail_dummy_aux_bo:
    if (device->dummy_aux_bo)
       anv_device_release_bo(device, device->dummy_aux_bo);
@@ -1149,11 +1168,14 @@ void anv_DestroyDevice(
    anv_scratch_pool_finish(device, &device->protected_scratch_pool);
 
    if (device->vk.enabled_extensions.KHR_ray_query) {
-      for (unsigned i = 0; i < ARRAY_SIZE(device->ray_query_shadow_bos); i++) {
-         if (device->ray_query_shadow_bos[i] != NULL)
-            anv_device_release_bo(device, device->ray_query_shadow_bos[i]);
+      for (unsigned i = 0; i < ARRAY_SIZE(device->ray_query_bo); i++) {
+         for (unsigned j = 0; j < ARRAY_SIZE(device->ray_query_shadow_bos[0]); j++) {
+            if (device->ray_query_shadow_bos[i][j] != NULL)
+               anv_device_release_bo(device, device->ray_query_shadow_bos[i][j]);
+         }
+         if (device->ray_query_bo[i])
+            anv_device_release_bo(device, device->ray_query_bo[i]);
       }
-      anv_device_release_bo(device, device->ray_query_bo);
    }
    anv_device_release_bo(device, device->workaround_bo);
    if (device->dummy_aux_bo)
