@@ -936,7 +936,14 @@ set_image_clear_color(struct anv_cmd_buffer *cmd_buffer,
 {
    for (int i = 0; i < image->num_view_formats; i++) {
       union isl_color_value clear_color;
-      isl_color_value_unpack(&clear_color, image->view_formats[i], pixel);
+      if (image->view_formats[i] == ISL_FORMAT_RAW) {
+         /* Only used for cross aspect copies (color <-> depth/stencil) */
+         assert(vk_format_get_blocksize(image->vk.format) <= 32);
+         assert(vk_format_is_color_depth_stencil_capable(image->vk.format));
+         memcpy(clear_color.u32, pixel, sizeof(clear_color.u32));
+      } else {
+         isl_color_value_unpack(&clear_color, image->view_formats[i], pixel);
+      }
 
       UNUSED union isl_color_value sample_color = clear_color;
       if (isl_format_is_srgb(image->view_formats[i])) {

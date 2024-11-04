@@ -5518,7 +5518,7 @@ struct anv_image {
     * Assuming all view formats have the same bits-per-channel, we support the
     * largest number of variations which may exist.
     */
-   enum isl_format view_formats[5];
+   enum isl_format view_formats[6];
    unsigned num_view_formats;
 
    /**

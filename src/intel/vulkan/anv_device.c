@@ -904,8 +904,7 @@ VkResult anv_CreateDevice(
    }
 
    /* The device (currently is ICL/TGL) does not have float64 support. */
-   if (!device->info->has_64bit_float &&
-      device->physical->instance->fp64_workaround_enabled)
+   if (!device->info->has_64bit_float)
       anv_load_fp64_shader(device);
 
    if (INTEL_DEBUG(DEBUG_SHADER_PRINT)) {

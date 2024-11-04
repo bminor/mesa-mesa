@@ -1810,8 +1810,11 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
          const enum isl_format blorp_copy_format =
             blorp_copy_get_color_format(&device->isl_dev, image_format);
          add_image_view_format(image, blorp_copy_format);
+
+         if (vk_format_is_color_depth_stencil_capable(image->vk.format))
+            add_image_view_format(image, ISL_FORMAT_RAW);
       } else {
-         /* We don't have a helper for depth-stencil formats. */
+         /* We don't have a blorp_copy format query for depth-stencil formats. */
          mark_image_view_formats_incomplete(image);
       }
    }
