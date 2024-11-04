@@ -1337,18 +1337,14 @@ libagx_tess_quad(constant struct libagx_tess_args *p,
          // don't include end, since next edge starts with it.
          int endPoint = numPointsForOutsideEdge[edge] - 1;
          for (int p = 0; p < endPoint; p++, pointOffset++) {
-            FXP fxpParam;
             int q =
                ((edge == 1) || (edge == 2)) ? p : endPoint - p; // reverse order
-            fxpParam = PlacePointIn1D(&outsideTessFactorCtx[edge],
-                                      outsideTessFactorOdd[edge], q);
-            if (odd) {
-               DefinePoint(&ctx.Point[pointOffset], fxpParam,
-                           (edge == 3) ? FXP_ONE : 0);
-            } else {
-               DefinePoint(&ctx.Point[pointOffset], (edge == 2) ? FXP_ONE : 0,
-                           fxpParam);
-            }
+            FXP fxpParam = PlacePointIn1D(&outsideTessFactorCtx[edge],
+                                          outsideTessFactorOdd[edge], q);
+
+            FXP u = odd ? fxpParam : ((edge == 2) ? FXP_ONE : 0);
+            FXP v = odd ? ((edge == 3) ? FXP_ONE : 0) : fxpParam;
+            DefinePoint(&ctx.Point[pointOffset], u, v);
          }
       }
 
@@ -1378,16 +1374,15 @@ libagx_tess_quad(constant struct libagx_tess_args *p,
                      pointOffset++) // don't include end: next edge starts with
                                     // it.
             {
+               bool odd_ = odd[1];
                int q = ((edge == 1) || (edge == 2))
                           ? p
-                          : endPoint[odd[1]] - (p - startPoint);
-               FXP fxpParam = PlacePointIn1D(&insideTessFactorCtx[odd[1]],
-                                             insideTessFactorOdd[odd[1]], q);
-               if (odd[1]) {
-                  DefinePoint(&ctx.Point[pointOffset], fxpPerpParam, fxpParam);
-               } else {
-                  DefinePoint(&ctx.Point[pointOffset], fxpParam, fxpPerpParam);
-               }
+                          : endPoint[odd_] - (p - startPoint);
+               FXP fxpParam = PlacePointIn1D(&insideTessFactorCtx[odd_],
+                                             insideTessFactorOdd[odd_], q);
+               DefinePoint(&ctx.Point[pointOffset],
+                           odd_ ? fxpPerpParam : fxpParam,
+                           odd_ ? fxpParam : fxpPerpParam);
             }
          }
       }
