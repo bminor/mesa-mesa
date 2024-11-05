@@ -88,40 +88,33 @@ cull_frustrum(nir_builder *b, nir_def *bbox_min[2], nir_def *bbox_max[2])
 }
 
 static nir_def *
-cull_small_primitive_triangle(nir_builder *b, nir_def *bbox_min[2], nir_def *bbox_max[2],
-                              nir_def *prim_is_small_else)
+cull_small_primitive_triangle(nir_builder *b, nir_def *bbox_min[2], nir_def *bbox_max[2])
 {
-   nir_def *prim_is_small = NULL;
+   nir_def *vp = nir_load_cull_triangle_viewport_xy_scale_and_offset_amd(b);
+   nir_def *small_prim_precision = nir_load_cull_small_triangle_precision_amd(b);
+   nir_def *rejected = nir_imm_false(b);
 
-   nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_triangles_enabled_amd(b));
-   {
-      nir_def *vp = nir_load_cull_triangle_viewport_xy_scale_and_offset_amd(b);
-      nir_def *small_prim_precision = nir_load_cull_small_triangle_precision_amd(b);
-      prim_is_small = prim_is_small_else;
+   for (unsigned chan = 0; chan < 2; ++chan) {
+      nir_def *vp_scale = nir_channel(b, vp, chan);
+      nir_def *vp_translate = nir_channel(b, vp, 2 + chan);
 
-      for (unsigned chan = 0; chan < 2; ++chan) {
-         nir_def *vp_scale = nir_channel(b, vp, chan);
-         nir_def *vp_translate = nir_channel(b, vp, 2 + chan);
+      /* Convert the position to screen-space coordinates. */
+      nir_def *min = nir_ffma(b, bbox_min[chan], vp_scale, vp_translate);
+      nir_def *max = nir_ffma(b, bbox_max[chan], vp_scale, vp_translate);
 
-         /* Convert the position to screen-space coordinates. */
-         nir_def *min = nir_ffma(b, bbox_min[chan], vp_scale, vp_translate);
-         nir_def *max = nir_ffma(b, bbox_max[chan], vp_scale, vp_translate);
+      /* Scale the bounding box according to precision. */
+      min = nir_fsub(b, min, small_prim_precision);
+      max = nir_fadd(b, max, small_prim_precision);
 
-         /* Scale the bounding box according to precision. */
-         min = nir_fsub(b, min, small_prim_precision);
-         max = nir_fadd(b, max, small_prim_precision);
+      /* Determine if the bbox intersects the sample point, by checking if the min and max round to the same int. */
+      min = nir_fround_even(b, min);
+      max = nir_fround_even(b, max);
 
-         /* Determine if the bbox intersects the sample point, by checking if the min and max round to the same int. */
-         min = nir_fround_even(b, min);
-         max = nir_fround_even(b, max);
-
-         nir_def *rounded_to_eq = nir_feq(b, min, max);
-         prim_is_small = nir_ior(b, prim_is_small, rounded_to_eq);
-      }
+      nir_def *rounded_to_eq = nir_feq(b, min, max);
+      rejected = nir_ior(b, rejected, rounded_to_eq);
    }
-   nir_pop_if(b, if_cull_small_prims);
 
-   return nir_if_phi(b, prim_is_small, prim_is_small_else);
+   return rejected;
 }
 
 static nir_def *
@@ -144,10 +137,17 @@ ac_nir_cull_triangle(nir_builder *b,
       calc_bbox_triangle(b, pos, bbox_min, bbox_max);
 
       nir_def *prim_outside_view = cull_frustrum(b, bbox_min, bbox_max);
-      nir_def *prim_invisible =
-         cull_small_primitive_triangle(b, bbox_min, bbox_max, prim_outside_view);
+      nir_def *bbox_rejected = prim_outside_view;
 
-      bbox_accepted = nir_ior(b, nir_inot(b, prim_invisible), w_info->any_w_negative);
+      nir_if *if_cull_small_prims = nir_push_if(b, nir_load_cull_small_triangles_enabled_amd(b));
+      {
+         nir_def *small_prim_rejected = cull_small_primitive_triangle(b, bbox_min, bbox_max);
+         bbox_rejected = nir_ior(b, bbox_rejected, small_prim_rejected);
+      }
+      nir_pop_if(b, if_cull_small_prims);
+
+      bbox_rejected = nir_if_phi(b, bbox_rejected, prim_outside_view);
+      bbox_accepted = nir_ior(b, nir_inot(b, bbox_rejected), w_info->any_w_negative);
 
       /* for caller which need to react when primitive is accepted */
       if (accept_func) {
