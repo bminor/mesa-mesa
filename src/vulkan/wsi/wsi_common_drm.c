@@ -280,7 +280,7 @@ wsi_create_image_explicit_sync_drm(const struct wsi_swapchain *chain,
    }
 
    for (uint32_t i = 0; i < WSI_ES_COUNT; i++) {
-      ret = drmSyncobjFDToHandle(device->drm_fd, image->explicit_sync[i].fd, &image->explicit_sync[i].handle);
+      ret = device->sync->fd_to_handle(device->sync, image->explicit_sync[i].fd, &image->explicit_sync[i].handle);
       if (ret != 0)
          return VK_ERROR_FEATURE_NOT_PRESENT;
    }
@@ -297,7 +297,7 @@ wsi_destroy_image_explicit_sync_drm(const struct wsi_swapchain *chain,
 
    for (uint32_t i = 0; i < WSI_ES_COUNT; i++) {
       if (image->explicit_sync[i].handle != 0) {
-         drmSyncobjDestroy(device->drm_fd, image->explicit_sync[i].handle);
+         device->sync->destroy(device->sync, image->explicit_sync[i].handle);
          image->explicit_sync[i].handle = 0;
       }
 
@@ -364,17 +364,17 @@ wsi_create_sync_for_image_syncobj(const struct wsi_swapchain *chain,
     * surrogate handle.
     */
    for (uint32_t i = 0; i < WSI_ES_COUNT; i++) {
-      if (drmSyncobjCreate(device->drm_fd, 0, &tmp_handles[i])) {
+      if (device->sync->create(device->sync, 0, &tmp_handles[i])) {
          result = vk_errorf(NULL, VK_ERROR_OUT_OF_DEVICE_MEMORY, "Failed to create temp syncobj. Errno: %d - %s", errno, strerror(errno));
          goto fail;
       }
 
-      if (drmSyncobjTransfer(device->drm_fd, tmp_handles[i], 0,
-                             image->explicit_sync[i].handle, image->explicit_sync[i].timeline, 0)) {
+      if (device->sync->transfer(device->sync, tmp_handles[i], 0,
+                                 image->explicit_sync[i].handle, image->explicit_sync[i].timeline, 0)) {
          result = vk_errorf(NULL, VK_ERROR_OUT_OF_DEVICE_MEMORY, "Failed to transfer syncobj. Was the timeline point materialized? Errno: %d - %s", errno, strerror(errno));
          goto fail;
       }
-      if (drmSyncobjExportSyncFile(device->drm_fd, tmp_handles[i], &sync_file_fds[i])) {
+      if (device->sync->export_sync_file(device->sync, tmp_handles[i], &sync_file_fds[i])) {
          result = vk_errorf(NULL, VK_ERROR_OUT_OF_DEVICE_MEMORY, "Failed to export sync file. Errno: %d - %s", errno, strerror(errno));
          goto fail;
       }
@@ -403,7 +403,7 @@ fail:
 done:
    for (uint32_t i = 0; i < WSI_ES_COUNT; i++) {
       if (tmp_handles[i])
-         drmSyncobjDestroy(device->drm_fd, tmp_handles[i]);
+         device->sync->destroy(device->sync, tmp_handles[i]);
    }
    for (uint32_t i = 0; i < WSI_ES_COUNT; i++) {
       if (sync_file_fds[i] >= 0)
@@ -885,7 +885,7 @@ wsi_drm_images_explicit_sync_state(struct vk_device *device, int count, uint32_t
       handles[i * WSI_ES_COUNT + WSI_ES_RELEASE] = image->explicit_sync[WSI_ES_RELEASE].handle;
    }
 
-   int ret = drmSyncobjQuery(device->drm_fd, handles, points, count * WSI_ES_COUNT);
+   int ret = device->sync->query(device->sync, handles, points, count * WSI_ES_COUNT, 0);
    if (ret)
       goto done;
 
@@ -899,9 +899,9 @@ wsi_drm_images_explicit_sync_state(struct vk_device *device, int count, uint32_t
          flags[i] |= WSI_ES_STATE_RELEASE_SIGNALLED | WSI_ES_STATE_RELEASE_MATERIALIZED;
       } else {
          uint32_t first_signalled;
-         ret = drmSyncobjTimelineWait(device->drm_fd, &handles[i * WSI_ES_COUNT + WSI_ES_RELEASE],
-                                      &image->explicit_sync[WSI_ES_RELEASE].timeline, 1, 0,
-                                      DRM_SYNCOBJ_WAIT_FLAGS_WAIT_AVAILABLE, &first_signalled);
+         ret = device->sync->timeline_wait(device->sync, &handles[i * WSI_ES_COUNT + WSI_ES_RELEASE],
+                                           &image->explicit_sync[WSI_ES_RELEASE].timeline, 1, 0,
+                                           DRM_SYNCOBJ_WAIT_FLAGS_WAIT_AVAILABLE, &first_signalled);
          if (ret == 0)
             flags[i] |= WSI_ES_STATE_RELEASE_MATERIALIZED;
       }
@@ -989,10 +989,10 @@ wsi_drm_wait_for_explicit_sync_release(struct wsi_swapchain *chain,
     * We will forward the GPU signal to the VkSemaphore/VkFence of the acquire.
     */
    uint32_t first_signalled;
-   ret = drmSyncobjTimelineWait(device->drm_fd, handles, points, unacquired_image_count,
-                                wsi_drm_rel_timeout_to_abs(rel_timeout_ns),
-                                DRM_SYNCOBJ_WAIT_FLAGS_WAIT_AVAILABLE,
-                                &first_signalled);
+   ret = device->sync->timeline_wait(device->sync, handles, points, unacquired_image_count,
+                                     wsi_drm_rel_timeout_to_abs(rel_timeout_ns),
+                                     DRM_SYNCOBJ_WAIT_FLAGS_WAIT_AVAILABLE,
+                                     &first_signalled);
 
    /* Return the first image that materialized. */
    if (ret != 0)

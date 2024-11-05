@@ -54,6 +54,8 @@ vk_sync_as_drm_syncobj(struct vk_sync *sync)
    return container_of(sync, struct vk_drm_syncobj, base);
 }
 
+struct util_sync_provider;
+struct vk_sync_type vk_drm_syncobj_get_type_from_provider(struct util_sync_provider *sync);
 struct vk_sync_type vk_drm_syncobj_get_type(int drm_fd);
 
 #ifdef __cplusplus

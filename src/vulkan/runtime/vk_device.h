@@ -32,6 +32,7 @@
 #include "util/list.h"
 #include "util/simple_mtx.h"
 #include "util/u_atomic.h"
+#include "util/u_sync_provider.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -241,7 +242,7 @@ struct vk_device {
                                       struct vk_sync **sync_out);
 
    /* Set by vk_device_set_drm_fd() */
-   int drm_fd;
+   struct util_sync_provider *sync;
 
    /** Implicit pipeline cache, or NULL */
    struct vk_pipeline_cache *mem_cache;
@@ -355,7 +356,7 @@ vk_device_init(struct vk_device *device,
 static inline void
 vk_device_set_drm_fd(struct vk_device *device, int drm_fd)
 {
-   device->drm_fd = drm_fd;
+   device->sync = util_sync_provider_drm(drm_fd);
 }
 
 /** Tears down a vk_device

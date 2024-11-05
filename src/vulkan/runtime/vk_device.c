@@ -187,7 +187,6 @@ vk_device_init(struct vk_device *device,
 
    list_inithead(&device->queues);
 
-   device->drm_fd = -1;
    device->mem_cache = NULL;
 
    device->timeline_mode = get_timeline_mode(physical_device);
@@ -277,6 +276,9 @@ vk_device_finish(struct vk_device *device)
 {
    /* Drivers should tear down their own queues */
    assert(list_is_empty(&device->queues));
+
+   if (device->sync)
+      device->sync->finalize(device->sync);
 
    vk_device_memory_report_finish(device);
    vk_memory_trace_finish(device);
