@@ -93,10 +93,6 @@ struct radeon_enc_pic {
       } av1;
    };
 
-   unsigned crop_left;
-   unsigned crop_right;
-   unsigned crop_top;
-   unsigned crop_bottom;
    unsigned pic_width_in_luma_samples;
    unsigned pic_height_in_luma_samples;
    unsigned bit_depth_luma_minus8;
@@ -237,6 +233,7 @@ struct radeon_encoder {
    struct pb_buffer_lean *handle;
    struct radeon_surf *luma;
    struct radeon_surf *chroma;
+   struct pipe_video_buffer *source;
 
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;

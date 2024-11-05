@@ -216,20 +216,44 @@ static void radeon_vcn_enc_get_latency_param(struct radeon_encoder *enc)
       sscreen->debug_flags & DBG(LOW_LATENCY_ENCODE) ? 1000 : 0;
 }
 
-static void radeon_vcn_enc_h264_get_cropping_param(struct radeon_encoder *enc,
-                                                   struct pipe_h264_enc_picture_desc *pic)
+static void radeon_vcn_enc_h264_get_session_param(struct radeon_encoder *enc,
+                                                  struct pipe_h264_enc_picture_desc *pic)
 {
+   if (enc->enc_pic.session_init.aligned_picture_width)
+      return;
+
+   uint32_t align_width = PIPE_H264_MB_SIZE;
+   uint32_t align_height = PIPE_H264_MB_SIZE;
+
+   enc->enc_pic.session_init.encode_standard = RENCODE_ENCODE_STANDARD_H264;
+   enc->enc_pic.session_init.aligned_picture_width = align(enc->base.width, align_width);
+   enc->enc_pic.session_init.aligned_picture_height = align(enc->base.height, align_height);
+
+   uint32_t padding_width = 0;
+   uint32_t padding_height = 0;
+   uint32_t max_padding_width = align_width - 2;
+   uint32_t max_padding_height = align_height - 2;
+
+   if (enc->enc_pic.session_init.aligned_picture_width > enc->source->width)
+      padding_width = enc->enc_pic.session_init.aligned_picture_width - enc->source->width;
+   if (enc->enc_pic.session_init.aligned_picture_height > enc->source->height)
+      padding_height = enc->enc_pic.session_init.aligned_picture_height - enc->source->height;
+
+   /* Input surface can be smaller if the difference is within padding bounds. */
+   if (padding_width > max_padding_width || padding_height > max_padding_height)
+      RADEON_ENC_ERR("Input surface size doesn't match aligned size\n");
+
    if (pic->seq.enc_frame_cropping_flag) {
-      enc->enc_pic.crop_left = pic->seq.enc_frame_crop_left_offset;
-      enc->enc_pic.crop_right = pic->seq.enc_frame_crop_right_offset;
-      enc->enc_pic.crop_top = pic->seq.enc_frame_crop_top_offset;
-      enc->enc_pic.crop_bottom = pic->seq.enc_frame_crop_bottom_offset;
-   } else {
-      enc->enc_pic.crop_left = 0;
-      enc->enc_pic.crop_right = 0;
-      enc->enc_pic.crop_top = 0;
-      enc->enc_pic.crop_bottom = 0;
+      uint32_t pad_w =
+         (pic->seq.enc_frame_crop_left_offset + pic->seq.enc_frame_crop_right_offset) * 2;
+      uint32_t pad_h =
+         (pic->seq.enc_frame_crop_top_offset + pic->seq.enc_frame_crop_bottom_offset) * 2;
+      padding_width = CLAMP(pad_w, padding_width, max_padding_width);
+      padding_height = CLAMP(pad_h, padding_height, max_padding_height);
    }
+
+   enc->enc_pic.session_init.padding_width = padding_width;
+   enc->enc_pic.session_init.padding_height = padding_height;
 }
 
 static void radeon_vcn_enc_h264_get_dbk_param(struct radeon_encoder *enc,
@@ -490,7 +514,7 @@ static void radeon_vcn_enc_h264_get_param(struct radeon_encoder *enc,
       }
    }
 
-   radeon_vcn_enc_h264_get_cropping_param(enc, pic);
+   radeon_vcn_enc_h264_get_session_param(enc, pic);
    radeon_vcn_enc_h264_get_dbk_param(enc, pic);
    radeon_vcn_enc_h264_get_rc_param(enc, pic);
    radeon_vcn_enc_h264_get_spec_misc_param(enc, pic);
@@ -505,20 +529,44 @@ static void radeon_vcn_enc_h264_get_param(struct radeon_encoder *enc,
    radeon_vcn_enc_quality_modes(enc, &pic->quality_modes);
 }
 
-static void radeon_vcn_enc_hevc_get_cropping_param(struct radeon_encoder *enc,
-                                                   struct pipe_h265_enc_picture_desc *pic)
+static void radeon_vcn_enc_hevc_get_session_param(struct radeon_encoder *enc,
+                                                  struct pipe_h265_enc_picture_desc *pic)
 {
+   if (enc->enc_pic.session_init.aligned_picture_width)
+      return;
+
+   uint32_t align_width = PIPE_H265_ENC_CTB_SIZE;
+   uint32_t align_height = 16;
+
+   enc->enc_pic.session_init.encode_standard = RENCODE_ENCODE_STANDARD_HEVC;
+   enc->enc_pic.session_init.aligned_picture_width = align(enc->base.width, align_width);
+   enc->enc_pic.session_init.aligned_picture_height = align(enc->base.height, align_height);
+
+   uint32_t padding_width = 0;
+   uint32_t padding_height = 0;
+   uint32_t max_padding_width = align_width - 2;
+   uint32_t max_padding_height = align_height - 2;
+
+   if (enc->enc_pic.session_init.aligned_picture_width > enc->source->width)
+      padding_width = enc->enc_pic.session_init.aligned_picture_width - enc->source->width;
+   if (enc->enc_pic.session_init.aligned_picture_height > enc->source->height)
+      padding_height = enc->enc_pic.session_init.aligned_picture_height - enc->source->height;
+
+   /* Input surface can be smaller if the difference is within padding bounds. */
+   if (padding_width > max_padding_width || padding_height > max_padding_height)
+      RADEON_ENC_ERR("Input surface size doesn't match aligned size\n");
+
    if (pic->seq.conformance_window_flag) {
-      enc->enc_pic.crop_left = pic->seq.conf_win_left_offset;
-      enc->enc_pic.crop_right = pic->seq.conf_win_right_offset;
-      enc->enc_pic.crop_top = pic->seq.conf_win_top_offset;
-      enc->enc_pic.crop_bottom = pic->seq.conf_win_bottom_offset;
-   } else {
-      enc->enc_pic.crop_left = 0;
-      enc->enc_pic.crop_right = 0;
-      enc->enc_pic.crop_top = 0;
-      enc->enc_pic.crop_bottom = 0;
+      uint32_t pad_w =
+         (pic->seq.conf_win_left_offset + pic->seq.conf_win_right_offset) * 2;
+      uint32_t pad_h =
+         (pic->seq.conf_win_top_offset + pic->seq.conf_win_bottom_offset) * 2;
+      padding_width = CLAMP(pad_w, padding_width, max_padding_width);
+      padding_height = CLAMP(pad_h, padding_height, max_padding_height);
    }
+
+   enc->enc_pic.session_init.padding_width = padding_width;
+   enc->enc_pic.session_init.padding_height = padding_height;
 }
 
 static void radeon_vcn_enc_hevc_get_dbk_param(struct radeon_encoder *enc,
@@ -696,7 +744,7 @@ static void radeon_vcn_enc_hevc_get_param(struct radeon_encoder *enc,
       }
    }
 
-   radeon_vcn_enc_hevc_get_cropping_param(enc, pic);
+   radeon_vcn_enc_hevc_get_session_param(enc, pic);
    radeon_vcn_enc_hevc_get_dbk_param(enc, pic);
    radeon_vcn_enc_hevc_get_rc_param(enc, pic);
    radeon_vcn_enc_hevc_get_slice_ctrl_param(enc, pic);
@@ -709,6 +757,63 @@ static void radeon_vcn_enc_hevc_get_param(struct radeon_encoder *enc,
    radeon_vcn_enc_hevc_get_spec_misc_param(enc, pic);
    radeon_vcn_enc_get_latency_param(enc);
    radeon_vcn_enc_quality_modes(enc, &pic->quality_modes);
+}
+
+static void radeon_vcn_enc_av1_get_session_param(struct radeon_encoder *enc,
+                                                 struct pipe_av1_enc_picture_desc *pic)
+{
+   struct si_screen *sscreen = (struct si_screen *)enc->screen;
+
+   if (enc->enc_pic.session_init.aligned_picture_width)
+      return;
+
+   enc->enc_pic.session_init.encode_standard = RENCODE_ENCODE_STANDARD_AV1;
+
+   uint32_t width = enc->enc_pic.pic_width_in_luma_samples;
+   uint32_t height = enc->enc_pic.pic_height_in_luma_samples;
+   uint32_t align_width, align_height;
+
+   if (sscreen->info.vcn_ip_version < VCN_5_0_0) {
+      align_width = PIPE_AV1_ENC_SB_SIZE;
+      align_height = 16;
+      enc->enc_pic.session_init.aligned_picture_width = align(width, align_width);
+      enc->enc_pic.session_init.aligned_picture_height = align(height, align_height);
+      if (!(height % 8) && (height % 16))
+         enc->enc_pic.session_init.aligned_picture_height = height + 2;
+      enc->enc_pic.av1.coded_width = enc->enc_pic.session_init.aligned_picture_width;
+      enc->enc_pic.av1.coded_height = enc->enc_pic.session_init.aligned_picture_height;
+      if (sscreen->info.vcn_ip_version == VCN_4_0_2 ||
+          sscreen->info.vcn_ip_version == VCN_4_0_5 ||
+          sscreen->info.vcn_ip_version == VCN_4_0_6)
+         enc->enc_pic.session_init.WA_flags = 1;
+   } else {
+      align_width = 8;
+      align_height = 2;
+      enc->enc_pic.session_init.aligned_picture_width = align(width, align_width);
+      enc->enc_pic.session_init.aligned_picture_height = align(height, align_height);
+      enc->enc_pic.av1.coded_width = width;
+      enc->enc_pic.av1.coded_height = height;
+   }
+
+   uint32_t padding_width = 0;
+   uint32_t padding_height = 0;
+   uint32_t max_padding_width = align_width - 2;
+   uint32_t max_padding_height = align_height - 2;
+
+   if (enc->enc_pic.session_init.aligned_picture_width > enc->source->width)
+      padding_width = enc->enc_pic.session_init.aligned_picture_width - enc->source->width;
+   if (enc->enc_pic.session_init.aligned_picture_height > enc->source->height)
+      padding_height = enc->enc_pic.session_init.aligned_picture_height - enc->source->height;
+
+   /* Input surface can be smaller if the difference is within padding bounds. */
+   if (padding_width > max_padding_width || padding_height > max_padding_height)
+      RADEON_ENC_ERR("Input surface size doesn't match aligned size\n");
+
+   padding_width = MAX2(padding_width, enc->enc_pic.session_init.aligned_picture_width - width);
+   padding_height = MAX2(padding_height, enc->enc_pic.session_init.aligned_picture_height - height);
+
+   enc->enc_pic.session_init.padding_width = padding_width;
+   enc->enc_pic.session_init.padding_height = padding_height;
 }
 
 static void radeon_vcn_enc_av1_get_spec_misc_param(struct radeon_encoder *enc,
@@ -919,6 +1024,7 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
       }
    }
 
+   radeon_vcn_enc_av1_get_session_param(enc, pic);
    radeon_vcn_enc_av1_get_spec_misc_param(enc, pic);
    radeon_vcn_enc_av1_get_rc_param(enc, pic);
    radeon_vcn_enc_av1_get_tile_config(enc, pic);
@@ -1326,6 +1432,7 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
    struct vl_video_buffer *vid_buf = (struct vl_video_buffer *)source;
    unsigned dpb_slots = 0;
 
+   enc->source = source;
    enc->need_rate_control = false;
    enc->need_rc_per_pic = false;
 

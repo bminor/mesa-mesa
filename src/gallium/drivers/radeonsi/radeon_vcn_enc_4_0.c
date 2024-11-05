@@ -60,65 +60,6 @@ static void radeon_enc_op_preset(struct radeon_encoder *enc)
 
 static void radeon_enc_session_init(struct radeon_encoder *enc)
 {
-   struct si_screen *sscreen = (struct si_screen *)enc->screen;
-   uint32_t av1_height = enc->enc_pic.pic_height_in_luma_samples;
-
-   switch (u_reduce_video_profile(enc->base.profile)) {
-      case PIPE_VIDEO_FORMAT_MPEG4_AVC:
-         enc->enc_pic.session_init.encode_standard = RENCODE_ENCODE_STANDARD_H264;
-         enc->enc_pic.session_init.aligned_picture_width = align(enc->base.width, 16);
-         enc->enc_pic.session_init.aligned_picture_height = align(enc->base.height, 16);
-
-         enc->enc_pic.session_init.padding_width =
-            (enc->enc_pic.crop_left + enc->enc_pic.crop_right) * 2;
-         enc->enc_pic.session_init.padding_height =
-            (enc->enc_pic.crop_top + enc->enc_pic.crop_bottom) * 2;
-         break;
-      case PIPE_VIDEO_FORMAT_HEVC:
-         enc->enc_pic.session_init.encode_standard = RENCODE_ENCODE_STANDARD_HEVC;
-         enc->enc_pic.session_init.aligned_picture_width = align(enc->base.width, 64);
-         enc->enc_pic.session_init.aligned_picture_height = align(enc->base.height, 16);
-         enc->enc_pic.session_init.padding_width =
-            (enc->enc_pic.crop_left + enc->enc_pic.crop_right) * 2;
-         enc->enc_pic.session_init.padding_height =
-            (enc->enc_pic.crop_top + enc->enc_pic.crop_bottom) * 2;
-         break;
-      case PIPE_VIDEO_FORMAT_AV1:
-         enc->enc_pic.session_init.encode_standard = RENCODE_ENCODE_STANDARD_AV1;
-         enc->enc_pic.session_init.aligned_picture_width =
-                              align(enc->enc_pic.pic_width_in_luma_samples, 64);
-         enc->enc_pic.session_init.aligned_picture_height =
-                                 align(enc->enc_pic.pic_height_in_luma_samples, 16);
-         if (!(av1_height % 8) && (av1_height % 16) && !(enc->enc_pic.enable_render_size))
-            enc->enc_pic.session_init.aligned_picture_height = av1_height + 2;
-
-         enc->enc_pic.av1.coded_width = enc->enc_pic.session_init.aligned_picture_width;
-         enc->enc_pic.av1.coded_height = enc->enc_pic.session_init.aligned_picture_height;
-
-         enc->enc_pic.session_init.padding_width =
-            enc->enc_pic.session_init.aligned_picture_width -
-            enc->enc_pic.pic_width_in_luma_samples;
-         enc->enc_pic.session_init.padding_height =
-            enc->enc_pic.session_init.aligned_picture_height - av1_height;
-
-         if (enc->enc_pic.enable_render_size)
-            enc->enc_pic.enable_render_size =
-                           (enc->enc_pic.session_init.aligned_picture_width !=
-                            enc->enc_pic.render_width) ||
-                           (enc->enc_pic.session_init.aligned_picture_height !=
-                            enc->enc_pic.render_height);
-
-         if (sscreen->info.vcn_ip_version == VCN_4_0_2 ||
-             sscreen->info.vcn_ip_version == VCN_4_0_5 ||
-             sscreen->info.vcn_ip_version == VCN_4_0_6)
-            enc->enc_pic.session_init.WA_flags = 1;
-
-         break;
-      default:
-         assert(0);
-         break;
-   }
-
    enc->enc_pic.session_init.slice_output_enabled = 0;
    enc->enc_pic.session_init.display_remote = 0;
    enc->enc_pic.session_init.pre_encode_mode = enc->enc_pic.quality_modes.pre_encode_mode;
