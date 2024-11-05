@@ -1516,7 +1516,7 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
                                consts->Program[i].MaxUniformComponents);
       max_ubos = MIN2(max_ubos, consts->Program[i].MaxUniformBlocks);
       num_shaders++;
-      optimize_io &= nir->options->io_options & nir_io_glsl_opt_varyings;
+      optimize_io &= !!(nir->options->io_options & nir_io_glsl_opt_varyings);
    }
 
    /* Lower IO derefs to load and store intrinsics. */
