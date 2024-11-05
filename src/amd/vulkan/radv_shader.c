@@ -669,6 +669,8 @@ radv_consider_culling(const struct radv_physical_device *pdev, struct nir_shader
 
    if (pdev->info.gfx_level >= GFX10_3 && pdev->info.has_dedicated_vram)
       max_ps_params = 12; /* GFX10.3 and newer discrete GPUs. */
+   else if (pdev->info.gfx_level == GFX10 && pdev->info.has_dedicated_vram)
+      max_ps_params = 12;
 
    /* TODO: consider other heuristics here, such as PS execution time */
    if (util_bitcount64(ps_inputs_read) > max_ps_params)
