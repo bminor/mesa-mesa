@@ -288,8 +288,11 @@ d3d12_video_encoder_references_manager_hevc::begin_frame(D3D12_VIDEO_ENCODER_PIC
       // and set IsRefUsedByCurrentPic accordingly
       auto endItL0 = hevcPic->ref_list0 + (hevcPic->num_ref_idx_l0_active_minus1 + 1);
       bool bReferencesFromL0 = std::find(hevcPic->ref_list0, endItL0, i) != endItL0;
-      auto endItL1 = hevcPic->ref_list1 + (hevcPic->num_ref_idx_l1_active_minus1 + 1);
-      bool bReferencesFromL1 = std::find(hevcPic->ref_list1, endItL1, i) != endItL1;
+      bool bReferencesFromL1 = false;
+      if (d3d12_video_encoder_convert_frame_type_hevc(hevcPic->picture_type) == D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC_B_FRAME) {
+         auto endItL1 = hevcPic->ref_list1 + (hevcPic->num_ref_idx_l1_active_minus1 + 1);
+         bReferencesFromL1 = std::find(hevcPic->ref_list1, endItL1, i) != endItL1;
+      }
       m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors[i].IsRefUsedByCurrentPic =
          bReferencesFromL0 || bReferencesFromL1;
 
