@@ -8,8 +8,8 @@
 #include <stddef.h>
 #include <string.h>
 
-namespace android {
-namespace base {
+namespace gfxstream {
+namespace aemu {
 
 // A generic memory allocator interface which could be used to allocate
 // a certain size of memory region, or memory region for arrays / strings.
@@ -55,5 +55,5 @@ class Allocator {
     }
 };
 
-}  // namespace base
-}  // namespace android
+}  // namespace aemu
+}  // namespace gfxstream

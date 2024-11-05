@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "aemu/base/files/Stream.h"
+#include "Stream.h"
 
 #include <assert.h>
 #include <string.h>
 
-namespace android {
-namespace base {
+namespace gfxstream {
+namespace aemu {
 
 void Stream::putByte(uint8_t value) { write(&value, 1U); }
 
@@ -208,5 +208,12 @@ void Stream::fromBe64(uint8_t* v) {
     memcpy(v, &value, sizeof(uint64_t));
 }
 
-}  // namespace base
-}  // namespace android
+void saveStringArray(Stream* stream, const char* const* strings, uint32_t count) {
+    stream->putBe32(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        stream->putString(strings[i]);
+    }
+}
+
+}  // namespace aemu
+}  // namespace gfxstream

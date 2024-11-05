@@ -10,10 +10,8 @@
 
 #include <string>
 
-#include "aemu/base/msvc.h"
-
-namespace android {
-namespace base {
+namespace gfxstream {
+namespace aemu {
 
 // Abstract interface to byte streams of all kind.
 // This is mainly used to implement disk serialization.
@@ -109,5 +107,7 @@ class Stream {
     static void fromBe64(uint8_t*);
 };
 
-}  // namespace base
-}  // namespace android
+void saveStringArray(Stream* stream, const char* const* strings, uint32_t count);
+
+}  // namespace aemu
+}  // namespace gfxstream

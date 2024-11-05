@@ -2,7 +2,7 @@
  * Copyright 2018 Google
  * SPDX-License-Identifier: MIT
  */
-#include "aemu/base/ring_buffer.h"
+#include "ring_buffer.h"
 
 #include <errno.h>
 #include <string.h>

@@ -4,6 +4,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -169,3 +173,7 @@ void ring_buffer_consumer_hung_up(struct ring_buffer* r);
 
 // Convenient function to reschedule thread
 void ring_buffer_yield();
+
+#ifdef __cplusplus
+}
+#endif

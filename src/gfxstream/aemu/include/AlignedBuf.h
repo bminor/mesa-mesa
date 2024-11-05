@@ -19,7 +19,7 @@
 #include <malloc.h>
 #endif
 
-namespace android {
+namespace gfxstream {
 
 /**
  * Do not abuse this by using any complicated T. Use it for POD or primitives
@@ -147,4 +147,4 @@ class AlignedBuf {
 void* aligned_buf_alloc(size_t align, size_t size);
 void aligned_buf_free(void* buf);
 
-}  // namespace android
+}  // namespace gfxstream

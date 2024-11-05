@@ -9,11 +9,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include "aemu/base/AlignedBuf.h"
-#include "aemu/base/Allocator.h"
+#include "AlignedBuf.h"
+#include "Allocator.h"
 
-namespace android {
-namespace base {
+namespace gfxstream {
+namespace aemu {
 
 // Class to make it easier to set up memory regions where it is fast
 // to allocate buffers AND we don't care about freeing individual pieces,
@@ -65,5 +65,5 @@ class BumpPool : public Allocator {
     bool mNeedRealloc = false;
 };
 
-}  // namespace base
-}  // namespace android
+}  // namespace aemu
+}  // namespace gfxstream
