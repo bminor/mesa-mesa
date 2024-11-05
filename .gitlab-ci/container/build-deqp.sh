@@ -139,7 +139,7 @@ if [ "${DEQP_API}" = 'GLES' ]; then
         -DDEQP_TARGET=android \
         -DCMAKE_BUILD_TYPE=Release \
         ${EXTRA_CMAKE_ARGS:-}
-    mold --run ninja modules/egl/deqp-egl
+    ninja modules/egl/deqp-egl
     mv /deqp/modules/egl/deqp-egl /deqp/modules/egl/deqp-egl-android
   else
     # When including EGL/X11 testing, do that build first and save off its
@@ -148,14 +148,14 @@ if [ "${DEQP_API}" = 'GLES' ]; then
         -DDEQP_TARGET=x11_egl_glx \
         -DCMAKE_BUILD_TYPE=Release \
         ${EXTRA_CMAKE_ARGS:-}
-    mold --run ninja modules/egl/deqp-egl
+    ninja modules/egl/deqp-egl
     mv /deqp/modules/egl/deqp-egl /deqp/modules/egl/deqp-egl-x11
 
     cmake -S /VK-GL-CTS -B . -G Ninja \
         -DDEQP_TARGET=wayland \
         -DCMAKE_BUILD_TYPE=Release \
         ${EXTRA_CMAKE_ARGS:-}
-    mold --run ninja modules/egl/deqp-egl
+    ninja modules/egl/deqp-egl
     mv /deqp/modules/egl/deqp-egl /deqp/modules/egl/deqp-egl-wayland
   fi
 fi
@@ -191,7 +191,7 @@ if [ "${DEQP_TARGET}" != 'android' ]; then
   deqp_build_targets+=(testlog-to-junit)
 fi
 
-mold --run ninja "${deqp_build_targets[@]}"
+ninja "${deqp_build_targets[@]}"
 
 if [ "${DEQP_TARGET}" != 'android' ]; then
     # Copy out the mustpass lists we want.

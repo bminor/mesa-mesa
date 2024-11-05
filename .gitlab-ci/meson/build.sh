@@ -160,11 +160,7 @@ meson configure
 
 uncollapsed_section_switch meson-build "meson: build"
 
-if command -V mold &> /dev/null ; then
-    mold --run ninja
-else
-    ninja
-fi
+ninja
 
 
 uncollapsed_section_switch meson-test "meson: test"
