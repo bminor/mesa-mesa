@@ -2134,7 +2134,8 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
 
    /* TODO: Investigate if NGG culling helps on GFX11. */
    pdev->use_ngg_culling = pdev->use_ngg && pdev->info.max_render_backends > 1 &&
-                           (pdev->info.gfx_level == GFX10_3 || (instance->perftest_flags & RADV_PERFTEST_NGGC)) &&
+                           (pdev->info.gfx_level == GFX10_3 || pdev->info.gfx_level == GFX10 ||
+                            (instance->perftest_flags & RADV_PERFTEST_NGGC)) &&
                            !(instance->debug_flags & RADV_DEBUG_NO_NGGC);
 
    pdev->use_ngg_streamout = pdev->info.gfx_level >= GFX11;
