@@ -332,13 +332,6 @@ unsigned int radeon_enc_write_sps_hevc(struct radeon_encoder *enc, uint8_t *out)
       radeon_enc_code_ue(enc, sps->conf_win_right_offset);
       radeon_enc_code_ue(enc, sps->conf_win_top_offset);
       radeon_enc_code_ue(enc, sps->conf_win_bottom_offset);
-   } else if (pic->session_init.padding_width  != 0 ||
-              pic->session_init.padding_height != 0) {
-      radeon_enc_code_fixed_bits(enc, 0x1, 1);
-      radeon_enc_code_ue(enc, 0);
-      radeon_enc_code_ue(enc, pic->session_init.padding_width / 2);
-      radeon_enc_code_ue(enc, 0);
-      radeon_enc_code_ue(enc, pic->session_init.padding_height / 2);
    } else
       radeon_enc_code_fixed_bits(enc, 0x0, 1);
 
