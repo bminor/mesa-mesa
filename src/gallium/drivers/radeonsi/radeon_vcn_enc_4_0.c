@@ -691,10 +691,8 @@ static void radeon_enc_av1_encode_params(struct radeon_encoder *enc)
       assert(0); /* never come to this condition */
    }
 
-   if (enc->luma->meta_offset) {
-      RVID_ERR("DCC surfaces not supported.\n");
-      assert(false);
-   }
+   if (enc->luma->meta_offset)
+      RADEON_ENC_ERR("DCC surfaces not supported.\n");
 
    enc->enc_pic.enc_params.input_pic_luma_pitch = enc->luma->u.gfx9.surf_pitch;
    enc->enc_pic.enc_params.input_pic_chroma_pitch = enc->chroma ?

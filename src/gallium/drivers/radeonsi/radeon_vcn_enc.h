@@ -49,6 +49,12 @@
       }                                                                                          \
    } while(0)
 
+#define RADEON_ENC_ERR(fmt, args...)                                                             \
+   do {                                                                                          \
+      enc->error = true;                                                                         \
+      fprintf(stderr, "EE %s:%d %s VCN - " fmt, __FILE__, __LINE__, __func__, ##args);           \
+   } while(0)
+
 typedef void (*radeon_enc_get_buffer)(struct pipe_resource *resource, struct pb_buffer_lean **handle,
                                       struct radeon_surf **surface);
 
@@ -268,6 +274,8 @@ struct radeon_encoder {
    unsigned dpb_slots;
    unsigned roi_size;
    unsigned metadata_size;
+
+   bool error;
 
    enum {
       DPB_LEGACY = 0,

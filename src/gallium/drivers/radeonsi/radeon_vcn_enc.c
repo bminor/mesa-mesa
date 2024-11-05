@@ -1051,7 +1051,7 @@ static int setup_cdf(struct radeon_encoder *enc)
                                enc->cdf,
                                VCN_ENC_AV1_DEFAULT_CDF_SIZE,
                                PIPE_USAGE_DYNAMIC)) {
-      RVID_ERR("Can't create CDF buffer.\n");
+      RADEON_ENC_ERR("Can't create CDF buffer.\n");
       goto error;
    }
 
@@ -1374,7 +1374,7 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
       if (!enc->cdf) {
          enc->cdf = CALLOC_STRUCT(rvid_buffer);
          if (setup_cdf(enc)) {
-            RVID_ERR("Can't create cdf buffer.\n");
+            RADEON_ENC_ERR("Can't create cdf buffer.\n");
             goto error;
          }
       }
@@ -1389,7 +1389,7 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
       if (setup_dpb(enc, dpb_slots)) {
          if (!enc->dpb ||
              !si_vid_create_buffer(enc->screen, enc->dpb, enc->dpb_size, PIPE_USAGE_DEFAULT)) {
-            RVID_ERR("Can't create DPB buffer.\n");
+            RADEON_ENC_ERR("Can't create DPB buffer.\n");
             goto error;
          }
       }
@@ -1399,7 +1399,7 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
       enc->meta = CALLOC_STRUCT(rvid_buffer);
       if (!enc->meta ||
           !si_vid_create_buffer(enc->screen, enc->meta, enc->metadata_size, PIPE_USAGE_DEFAULT)) {
-         RVID_ERR("Can't create meta buffer.\n");
+         RADEON_ENC_ERR("Can't create meta buffer.\n");
          goto error;
       }
    }
@@ -1407,12 +1407,12 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
    if (dpb_slots > enc->dpb_slots) {
       setup_dpb(enc, dpb_slots);
       if (!si_vid_resize_buffer(enc->base.context, &enc->cs, enc->dpb, enc->dpb_size, NULL)) {
-         RVID_ERR("Can't resize DPB buffer.\n");
+         RADEON_ENC_ERR("Can't resize DPB buffer.\n");
          goto error;
       }
       if (sscreen->info.vcn_ip_version >= VCN_5_0_0 && enc->metadata_size &&
           !si_vid_resize_buffer(enc->base.context, &enc->cs, enc->meta, enc->metadata_size, NULL)) {
-         RVID_ERR("Can't resize meta buffer.\n");
+         RADEON_ENC_ERR("Can't resize meta buffer.\n");
          goto error;
       }
    }
@@ -1424,12 +1424,12 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
          enc->roi_size = roi_buffer_size(enc);
          if (!enc->roi || !enc->roi_size ||
              !si_vid_create_buffer(enc->screen, enc->roi, enc->roi_size, PIPE_USAGE_DYNAMIC)) {
-            RVID_ERR("Can't create ROI buffer.\n");
+            RADEON_ENC_ERR("Can't create ROI buffer.\n");
             goto error;
          }
       }
       if(generate_roi_map(enc)) {
-         RVID_ERR("Can't form roi map.\n");
+         RADEON_ENC_ERR("Can't form roi map.\n");
          goto error;
       }
    }
@@ -1454,7 +1454,7 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
       if (!enc->si ||
           !enc->stream_handle ||
           !si_vid_create_buffer(enc->screen, enc->si, 128 * 1024, PIPE_USAGE_DEFAULT)) {
-         RVID_ERR("Can't create session buffer.\n");
+         RADEON_ENC_ERR("Can't create session buffer.\n");
          goto error;
       }
       si_vid_create_buffer(enc->screen, &fb, 4096, PIPE_USAGE_STAGING);
@@ -1563,7 +1563,7 @@ static void *radeon_vcn_enc_encode_headers(struct radeon_encoder *enc)
    uint8_t *ptr = enc->ws->buffer_map(enc->ws, enc->bs_handle, &enc->cs,
                                       PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
    if (!ptr) {
-      RVID_ERR("Can't map bs buffer.\n");
+      RADEON_ENC_ERR("Can't map bs buffer.\n");
       FREE(data);
       return NULL;
    }
@@ -1610,6 +1610,9 @@ static void radeon_enc_encode_bitstream(struct pipe_video_codec *encoder,
    struct radeon_encoder *enc = (struct radeon_encoder *)encoder;
    struct vl_video_buffer *vid_buf = (struct vl_video_buffer *)source;
 
+   if (enc->error)
+      return;
+
    enc->get_buffer(destination, &enc->bs_handle, NULL);
    enc->bs_size = destination->width0;
    enc->bs_offset = 0;
@@ -1617,7 +1620,7 @@ static void radeon_enc_encode_bitstream(struct pipe_video_codec *encoder,
    *fb = enc->fb = CALLOC_STRUCT(rvid_buffer);
 
    if (!si_vid_create_buffer(enc->screen, enc->fb, 4096, PIPE_USAGE_STAGING)) {
-      RVID_ERR("Can't create feedback buffer.\n");
+      RADEON_ENC_ERR("Can't create feedback buffer.\n");
       return;
    }
 
@@ -1626,7 +1629,7 @@ static void radeon_enc_encode_bitstream(struct pipe_video_codec *encoder,
    if (vid_buf->base.statistics_data) {
       enc->get_buffer(vid_buf->base.statistics_data, &enc->stats, NULL);
       if (enc->stats->size < sizeof(rvcn_encode_stats_type_0_t)) {
-         RVID_ERR("Encoder statistics output buffer is too small.\n");
+         RADEON_ENC_ERR("Encoder statistics output buffer is too small.\n");
          enc->stats = NULL;
       }
       vid_buf->base.statistics_data = NULL;
@@ -1642,6 +1645,10 @@ static int radeon_enc_end_frame(struct pipe_video_codec *encoder, struct pipe_vi
                                 struct pipe_picture_desc *picture)
 {
    struct radeon_encoder *enc = (struct radeon_encoder *)encoder;
+
+   if (enc->error)
+      return -1;
+
    return flush(enc, picture->flush_flags, picture->fence);
 }
 
@@ -1769,20 +1776,20 @@ void radeon_enc_create_dpb_aux_buffers(struct radeon_encoder *enc, struct radeon
 
    buf->fcb = CALLOC_STRUCT(rvid_buffer);
    if (!buf->fcb || !si_vid_create_buffer(enc->screen, buf->fcb, fcb_size, PIPE_USAGE_DEFAULT)) {
-      RVID_ERR("Can't create fcb buffer!\n");
+      RADEON_ENC_ERR("Can't create fcb buffer!\n");
       return;
    }
 
    if (enc->enc_pic.quality_modes.pre_encode_mode) {
       buf->pre = CALLOC_STRUCT(rvid_buffer);
       if (!buf->pre || !si_vid_create_buffer(enc->screen, buf->pre, recon_size, PIPE_USAGE_DEFAULT)) {
-         RVID_ERR("Can't create preenc buffer!\n");
+         RADEON_ENC_ERR("Can't create preenc buffer!\n");
          return;
       }
 
       buf->pre_fcb = CALLOC_STRUCT(rvid_buffer);
       if (!buf->pre_fcb || !si_vid_create_buffer(enc->screen, buf->pre_fcb, fcb_size, PIPE_USAGE_DEFAULT)) {
-         RVID_ERR("Can't create preenc fcb buffer!\n");
+         RADEON_ENC_ERR("Can't create preenc fcb buffer!\n");
          return;
       }
    }
@@ -1806,7 +1813,7 @@ static struct pipe_video_buffer *radeon_enc_create_dpb_buffer(struct pipe_video_
 
    struct pipe_video_buffer *buf = enc->base.context->create_video_buffer(enc->base.context, templat);
    if (!buf) {
-      RVID_ERR("Can't create dpb buffer!\n");
+      RADEON_ENC_ERR("Can't create dpb buffer!\n");
       return NULL;
    }
 
@@ -1858,7 +1865,7 @@ struct pipe_video_codec *radeon_create_encoder(struct pipe_context *context,
    if (!ws->cs_create(&enc->cs,
        (sctx->vcn_has_ctx) ? ((struct si_context *)enc->ectx)->ctx : sctx->ctx,
        AMD_IP_VCN_ENC, radeon_enc_cs_flush, enc)) {
-      RVID_ERR("Can't get command submission context.\n");
+      RADEON_ENC_ERR("Can't get command submission context.\n");
       goto error;
    }
 
