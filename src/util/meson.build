@@ -238,6 +238,11 @@ deps_for_libmesa_util = [
   idep_mesautilformat,
 ]
 
+if dep_libdrm.found()
+  files_mesa_util += files('u_sync_provider.c', 'u_sync_provider.h')
+  deps_for_libmesa_util += dep_libdrm
+endif
+
 if with_platform_android
   deps_for_libmesa_util += dep_android
   files_debug_stack = files('u_debug_stack_android.cpp')
