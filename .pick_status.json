@@ -1234,7 +1234,7 @@
         "description": "intel: Fix a typo in intel_device_info.c:has_get_tiling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "762e601f776e7d692f49c328e526e6e2c3b14345",
         "notes": null
