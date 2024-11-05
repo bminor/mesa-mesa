@@ -1486,7 +1486,12 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
          break;
       case nir_var_mem_global:
          assert(addr_format_is_global(addr_format, mode));
-         op = get_load_global_op_from_addr_format(addr_format);
+
+         if (nir_intrinsic_has_access(intrin) &&
+             (nir_intrinsic_access(intrin) & ACCESS_CAN_REORDER))
+            op = get_load_global_constant_op_from_addr_format(addr_format);
+         else
+            op = get_load_global_op_from_addr_format(addr_format);
          break;
       case nir_var_uniform:
          assert(addr_format_is_offset(addr_format, mode));
