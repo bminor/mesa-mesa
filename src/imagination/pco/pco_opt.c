@@ -265,6 +265,79 @@ static inline bool fwd_prop(pco_shader *shader)
 }
 
 /**
+ * \brief Tries to propagate a comp instruction referencing hw registers.
+ *
+ * \param[in] src Source to match for replacement.
+ * \param[in] repl Replacement hw register reference.
+ * \param[in] from Instruction to try and propagate from.
+ * \return True if propagation was successful.
+ */
+static inline bool try_prop_hw_comp(pco_ref src, pco_ref repl, pco_instr *from)
+{
+   bool progress = false;
+
+   pco_foreach_instr_in_func_from (instr, from) {
+      pco_foreach_instr_src_ssa (psrc, instr) {
+         if (psrc->val != src.val)
+            continue;
+
+         /* Propagate the source. */
+         pco_ref _repl = repl;
+         if (psrc->flr)
+            _repl = pco_ref_flr(_repl);
+         else if (psrc->abs)
+            _repl = pco_ref_abs(_repl);
+
+         _repl.neg ^= psrc->neg;
+
+         /* TODO: types? */
+         *psrc = _repl;
+
+         progress = true;
+      }
+   }
+
+   return progress;
+}
+
+/**
+ * \brief Pass to propagate comp instructions referencing hw registers.
+ *
+ * \param[in,out] shader PCO shader.
+ * \return True if any hw reg propagations were performed.
+ */
+static inline bool prop_hw_comps(pco_shader *shader)
+{
+   bool progress = false;
+   pco_foreach_func_in_shader (func, shader) {
+      pco_foreach_instr_in_func_safe (instr, func) {
+         if (instr->op != PCO_OP_COMP)
+            continue;
+
+         pco_ref vec_src = instr->src[0];
+         if (pco_ref_is_ssa(vec_src))
+            continue;
+
+         pco_ref dest = instr->dest[0];
+         assert(pco_ref_is_ssa(dest));
+
+         unsigned offset = pco_ref_get_imm(instr->src[1]);
+
+         /* Construct a replacement scalar reference. */
+         pco_ref repl = vec_src;
+         repl = pco_ref_chans(repl, 1);
+         repl = pco_ref_offset(repl, offset);
+
+         progress |= try_prop_hw_comp(dest, repl, instr);
+
+         pco_instr_delete(instr);
+      }
+   }
+
+   return progress;
+}
+
+/**
  * \brief Performs shader optimizations.
  *
  * \param[in,out] shader PCO shader.
@@ -275,6 +348,11 @@ bool pco_opt(pco_shader *shader)
    bool progress = false;
    progress |= back_prop(shader);
    progress |= fwd_prop(shader);
+   /* TODO: Track whether there are any comp instructions referencing hw
+    * registers resulting from the previous passes, and only run prop_hw_comps
+    * if this is the case.
+    */
+   progress |= prop_hw_comps(shader);
    return progress;
 }
 
