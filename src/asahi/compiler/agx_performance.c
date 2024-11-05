@@ -85,6 +85,7 @@ struct alu_timing op_timings[] = {
 
    [AGX_OPCODE_IMAD]          = { IC, 3, 2 },
    [AGX_OPCODE_BFI]           = { IC, 3, 2 },
+   [AGX_OPCODE_BFEIL]         = { IC, 3, 2 },
    [AGX_OPCODE_EXTR]          = { IC, 3, 2 },
    [AGX_OPCODE_ASR]           = { IC, 3, 2 },
    [AGX_OPCODE_FLOOR]         = { IC, 3, 2 },
