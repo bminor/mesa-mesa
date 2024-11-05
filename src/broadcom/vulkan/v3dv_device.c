@@ -867,7 +867,7 @@ get_device_properties(const struct v3dv_physical_device *device,
       (UINT32_MAX - sizeof(struct v3dv_descriptor_set)) /
       sizeof(struct v3dv_descriptor);
    const uint32_t max_gpu_descriptors =
-      (UINT32_MAX / v3dv_X(device, max_descriptor_bo_size)());
+      (UINT32_MAX / v3d_X((&device->devinfo), max_descriptor_bo_size)());
 
    VkSubgroupFeatureFlags subgroup_ops = VK_SUBGROUP_FEATURE_BASIC_BIT;
    if (device->devinfo.ver >= 71) {
@@ -1873,14 +1873,14 @@ v3dv_CreateDevice(VkPhysicalDevice physicalDevice,
 
 
 #if MESA_DEBUG
-   v3dv_X(device, device_check_prepacked_sizes)();
+   v3d_X((&device->devinfo), device_check_prepacked_sizes)();
 #endif
    init_device_meta(device);
    v3dv_bo_cache_init(device);
    v3dv_pipeline_cache_init(&device->default_pipeline_cache, device, 0,
                             device->instance->default_pipeline_cache_enabled);
    device->default_attribute_float =
-      v3dv_X(device, create_default_attribute_values)(device, NULL);
+      v3d_X((&device->devinfo), create_default_attribute_values)(device, NULL);
 
    device->device_address_mem_ctx = ralloc_context(NULL);
    util_dynarray_init(&device->device_address_bo_list,
@@ -2966,7 +2966,7 @@ v3dv_CreateSampler(VkDevice _device,
       }
    }
 
-   v3dv_X(device, pack_sampler_state)(device, sampler, pCreateInfo, bc_info);
+   v3d_X((&device->devinfo), pack_sampler_state)(device, sampler, pCreateInfo, bc_info);
 
    *pSampler = v3dv_sampler_to_handle(sampler);
 

@@ -1182,7 +1182,7 @@ queue_create_noop_job(struct v3dv_queue *queue)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
    v3dv_job_init(queue->noop_job, V3DV_JOB_TYPE_GPU_CL, device, NULL, -1);
 
-   v3dv_X(device, job_emit_noop)(queue->noop_job);
+   v3d_X((&device->devinfo), job_emit_noop)(queue->noop_job);
 
    /* We use no-op jobs to signal semaphores/fences. These jobs needs to be
     * serialized across all hw queues to comply with Vulkan's signal operation
@@ -1236,7 +1236,7 @@ v3dv_queue_driver_submit(struct vk_queue *vk_queue,
       list_for_each_entry_safe(struct v3dv_job, job,
                                &cmd_buffer->jobs, list_link) {
          if (job->suspending) {
-            job = v3dv_X(job->device,
+            job = v3d_X((&job->device->devinfo),
                          cmd_buffer_prepare_suspend_job_for_submit)(job);
             if (!job)
                return VK_ERROR_OUT_OF_DEVICE_MEMORY;
@@ -1251,7 +1251,7 @@ v3dv_queue_driver_submit(struct vk_queue *vk_queue,
          if (job->resuming) {
             assert(first_suspend_job);
             assert(current_suspend_job);
-            v3dv_X(job->device, job_patch_resume_address)(first_suspend_job,
+            v3d_X((&job->device->devinfo), job_patch_resume_address)(first_suspend_job,
                                                           current_suspend_job,
                                                           job);
             current_suspend_job = NULL;

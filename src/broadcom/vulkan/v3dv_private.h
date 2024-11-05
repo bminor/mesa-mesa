@@ -2589,22 +2589,6 @@ u64_compare(const void *key1, const void *key2)
    return memcmp(key1, key2, sizeof(uint64_t)) == 0;
 }
 
-/* Helper to call hw ver specific functions */
-#define v3dv_X(device, thing) ({                      \
-   __typeof(&v3d42_##thing) v3d_X_thing;              \
-   switch (device->devinfo.ver) {                     \
-   case 42:                                           \
-      v3d_X_thing = &v3d42_##thing;                   \
-      break;                                          \
-   case 71:                                           \
-      v3d_X_thing = &v3d71_##thing;                   \
-      break;                                          \
-   default:                                           \
-      unreachable("Unsupported hardware generation"); \
-   }                                                  \
-   v3d_X_thing;                                       \
-})
-
 /* v3d_macros from common requires v3dX and V3DX definitions. Below we need to
  * define v3dX for each version supported, because when we compile code that
  * is not version-specific, all version-specific macros need to be already

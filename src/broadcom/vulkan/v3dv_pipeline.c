@@ -2816,7 +2816,7 @@ pipeline_init_dynamic_state(struct v3dv_device *device,
       /* FIXME: right now we don't support multiViewport so viewporst[0] would
        * work now, but would need to change if we allow multiple viewports.
        */
-      v3dv_X(device, viewport_compute_xform)(&dyn->vp.viewports[0],
+      v3d_X((&device->devinfo), viewport_compute_xform)(&dyn->vp.viewports[0],
                                              v3dv_dyn->viewport.scale[0],
                                              v3dv_dyn->viewport.translate[0]);
 
@@ -2920,7 +2920,7 @@ pipeline_init(struct v3dv_pipeline *pipeline,
    if (depth_clip_control)
       pipeline->negative_one_to_one = depth_clip_control->negativeOneToOne;
 
-   v3dv_X(device, pipeline_pack_state)(pipeline, cb_info, ds_info,
+   v3d_X((&device->devinfo), pipeline_pack_state)(pipeline, cb_info, ds_info,
                                        rs_info, pv_info, ls_info,
                                        ms_info,
                                        &pipeline_state);
@@ -2945,11 +2945,11 @@ pipeline_init(struct v3dv_pipeline *pipeline,
       vk_find_struct_const(vi_info->pNext,
                            PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT);
 
-   v3dv_X(device, pipeline_pack_compile_state)(pipeline, vi_info, vd_info);
+   v3d_X((&device->devinfo), pipeline_pack_compile_state)(pipeline, vi_info, vd_info);
 
-   if (v3dv_X(device, pipeline_needs_default_attribute_values)(pipeline)) {
+   if (v3d_X((&device->devinfo), pipeline_needs_default_attribute_values)(pipeline)) {
       pipeline->default_attribute_values =
-         v3dv_X(pipeline->device, create_default_attribute_values)(pipeline->device, pipeline);
+         v3d_X((&pipeline->device->devinfo), create_default_attribute_values)(pipeline->device, pipeline);
 
       if (!pipeline->default_attribute_values)
          return VK_ERROR_OUT_OF_DEVICE_MEMORY;
