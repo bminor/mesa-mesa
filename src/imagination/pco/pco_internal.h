@@ -86,16 +86,23 @@ typedef struct _pco_func pco_func;
 typedef struct _pco_block pco_block;
 typedef struct _pco_instr pco_instr;
 
+#define PCO_REF_VAL_BITS (32U)
+
+#define PCO_REF_IDX_NUM_BITS (2U)
+#define PCO_REF_IDX_OFFSET_BITS (8U)
+#define PCO_REF_IDX_PAD_BITS \
+   (PCO_REF_VAL_BITS - (PCO_REF_IDX_NUM_BITS + PCO_REF_IDX_OFFSET_BITS))
+
 /** PCO reference index. */
 typedef struct PACKED _pco_ref {
    /** Reference value. */
    union PACKED {
-      unsigned val : 32;
+      unsigned val : PCO_REF_VAL_BITS;
 
       struct PACKED {
-         unsigned num : 2; /** Index register number. */
-         unsigned offset : 8; /** Offset. */
-         unsigned _pad : 22;
+         unsigned num : PCO_REF_IDX_NUM_BITS; /** Index register number. */
+         unsigned offset : PCO_REF_IDX_OFFSET_BITS; /** Offset. */
+         unsigned _pad : PCO_REF_IDX_PAD_BITS;
       } idx_reg;
    };
 
@@ -1814,6 +1821,42 @@ static inline pco_ref pco_ref_neg(pco_ref ref)
 static inline pco_ref pco_ref_elem(pco_ref ref, enum pco_elem elem)
 {
    ref.elem = elem;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference to set the number of channels.
+ *
+ * \param[in] ref Base reference.
+ * \param[in] chans New number of channels.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_chans(pco_ref ref, unsigned chans)
+{
+   ref.chans = chans - 1;
+   return ref;
+}
+
+/**
+ * \brief Updates a reference value with the provided offset.
+ *
+ * \param[in] ref Base reference.
+ * \param[in] offset Offset to apply.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_offset(pco_ref ref, signed offset)
+{
+   int64_t val = pco_ref_is_idx_reg(ref) ? ref.idx_reg.offset : ref.val;
+   val += offset;
+
+   if (pco_ref_is_idx_reg(ref)) {
+      assert(util_last_bit64(val) <= PCO_REF_IDX_OFFSET_BITS);
+      ref.idx_reg.offset = val;
+   } else {
+      assert(util_last_bit64(val) <= PCO_REF_VAL_BITS);
+      ref.val = val;
+   }
+
    return ref;
 }
 
