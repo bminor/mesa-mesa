@@ -278,7 +278,6 @@ class CerealGenerator(OutputGenerator):
         self.featureSupported = False
         self.supportedModules = None
 
-        self.guestBaseLibDirPrefix = "aemu/base"
         self.baseLibDirPrefix = "aemu/base"
         self.utilsHeaderDirPrefix = "utils"
 
@@ -316,8 +315,8 @@ class IOStream;
 #include "%s.h"
 #include "gfxstream/guest/IOStream.h"
 
-#include "{self.guestBaseLibDirPrefix}/AlignedBuf.h"
-#include "{self.guestBaseLibDirPrefix}/BumpPool.h"
+#include "AlignedBuf.h"
+#include "BumpPool.h"
 
 #include "goldfish_vk_marshaling_guest.h"
 #include "goldfish_vk_reserved_marshaling_guest.h"
@@ -417,9 +416,9 @@ using android::base::BumpPool;
 """
         poolIncludeGuest = f"""
 #include "goldfish_vk_private_defs.h"
-#include "{self.guestBaseLibDirPrefix}/BumpPool.h"
-using android::base::Allocator;
-using android::base::BumpPool;
+#include "BumpPool.h"
+using gfxstream::aemu::Allocator;
+using gfxstream::aemu::BumpPool;
 // Stuff we are not going to use but if included,
 // will cause compile errors. These are Android Vulkan
 // required extensions, but the approach will be to

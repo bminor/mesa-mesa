@@ -26,15 +26,15 @@ lib_vulkan_gfxstream = shared_library(
    include_directories: [inc_vulkan_headers, inc_guest_iostream,
                          inc_vulkan_enc, inc_platform_virtgpu,
                          inc_gfxstream_vk_stubs, inc_goldfish_address_space,
-                         inc_include, inc_src,
+                         inc_include, inc_src, inc_aemu,
                          inc_platform_virtgpu, inc_connection_manager],
    link_with: [libgfxstream_vk_stubs, libvulkan_wsi, libplatform_virtgpu,
-               libconnection_manager],
+               libconnection_manager, libaemu],
    link_args: [vulkan_icd_link_args, ld_args_bsymbolic, ld_args_gc_sections],
    link_depends: vulkan_icd_link_depends,
    dependencies: [dependency('libdrm'), idep_vulkan_wsi_headers,
                   idep_vulkan_lite_runtime, idep_vulkan_util_headers,
-                  idep_vulkan_wsi, dep_valgrind, aemu_base_dep],
+                  idep_vulkan_wsi, dep_valgrind],
    install: true,
 )
 

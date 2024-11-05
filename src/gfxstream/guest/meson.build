@@ -27,7 +27,6 @@ gfxstream_guest_args += '-DVK_GFXSTREAM_STRUCTURE_TYPE_EXT'
 dl_dep = cc.find_library('dl', required: false)
 drm_dep = dependency('libdrm')
 thread_dep = dependency('threads')
-aemu_base_dep = dependency('aemu_base')
 
 with_kumquat = false
 virtgpu_kumquat_dep = dependency('virtgpu_kumquat_ffi', required: false)
