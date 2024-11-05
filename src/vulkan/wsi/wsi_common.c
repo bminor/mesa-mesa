@@ -2265,3 +2265,15 @@ wsi_device_supports_explicit_sync(struct wsi_device *device)
       (device->timeline_semaphore_export_handle_types &
        VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
 }
+
+VKAPI_ATTR void VKAPI_CALL
+wsi_SetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount,
+                      const VkSwapchainKHR* pSwapchains,
+                      const VkHdrMetadataEXT* pMetadata)
+{
+   for (uint32_t i = 0; i < swapchainCount; i++) {
+      VK_FROM_HANDLE(wsi_swapchain, swapchain, pSwapchains[i]);
+      if (swapchain->set_hdr_metadata)
+         swapchain->set_hdr_metadata(swapchain, pMetadata);
+   }
+}

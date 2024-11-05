@@ -140,6 +140,11 @@ struct wsi_wl_display {
    bool same_gpu;
 
    clockid_t presentation_clock_id;
+
+   struct {
+      bool mastering_display_primaries;
+      bool extended_target_volume;
+   } color_features;
 };
 
 struct wsi_wayland {
@@ -191,9 +196,14 @@ struct wsi_wl_surface {
    struct wp_linux_drm_syncobj_surface_v1 *wl_syncobj_surface;
 
    struct vk_instance *instance;
-   struct wp_color_management_surface_v1 *color_surface;
-   int color_surface_refcount;
-   VkColorSpaceKHR colorspace;
+
+   struct {
+      struct wp_color_management_surface_v1 *color_surface;
+      int color_surface_refcount;
+      VkColorSpaceKHR colorspace;
+      VkHdrMetadataEXT hdr_metadata;
+      bool has_hdr_metadata;
+   } color;
 };
 
 struct wsi_wl_swapchain {
@@ -244,7 +254,11 @@ struct wsi_wl_swapchain {
       unsigned int refresh_nsec;
    } present_ids;
 
-   VkColorSpaceKHR colorspace;
+   struct {
+      VkColorSpaceKHR colorspace;
+      VkHdrMetadataEXT hdr_metadata;
+      bool has_hdr_metadata;
+   } color;
 
    struct wsi_wl_image images[0];
 };
@@ -917,58 +931,69 @@ struct Colorspace {
    VkColorSpaceKHR colorspace;
    enum wp_color_manager_v1_primaries primaries;
    enum wp_color_manager_v1_transfer_function tf;
+   bool should_use_hdr_metadata;
 };
 struct Colorspace colorspace_mapping[] = {
    {
       .colorspace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB,
+      .should_use_hdr_metadata = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB,
+      .should_use_hdr_metadata = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
+      .should_use_hdr_metadata = true,
    },
    {
       .colorspace = VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_DISPLAY_P3,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
+      .should_use_hdr_metadata = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_BT709_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
+      .should_use_hdr_metadata = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_BT709_NONLINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_BT1886,
+      .should_use_hdr_metadata = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_BT2020_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
+      .should_use_hdr_metadata = false,
    },
    {
       .colorspace = VK_COLOR_SPACE_HDR10_ST2084_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ,
+      .should_use_hdr_metadata = true,
    },
    /* VK_COLOR_SPACE_DOLBYVISION_EXT is left out because it's deprecated */
    {
       .colorspace = VK_COLOR_SPACE_HDR10_HLG_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG,
+      .should_use_hdr_metadata = true,
    },
    {
       .colorspace = VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_ADOBE_RGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR,
+      .should_use_hdr_metadata = false,
    },
    /* VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT is left out because there's no
     * exactly matching transfer function in the Wayland protocol */
@@ -977,6 +1002,7 @@ struct Colorspace colorspace_mapping[] = {
       .colorspace = VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT,
       .primaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB,
       .tf = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_SRGB,
+      .should_use_hdr_metadata = true,
    },
    /* VK_COLOR_SPACE_DISPLAY_NATIVE_AMD isn't supported */
    /* VK_COLORSPACE_SRGB_NONLINEAR_KHR is just an alias */
@@ -1033,7 +1059,17 @@ color_management_handle_supported_features(void *data,
                                            struct wp_color_manager_v1 *color_manager,
                                            unsigned int feature)
 {
-   /* We don't use any non-default features yet. */
+   struct wsi_wl_display *display = data;
+   switch (feature) {
+   case WP_COLOR_MANAGER_V1_FEATURE_SET_MASTERING_DISPLAY_PRIMARIES:
+      display->color_features.mastering_display_primaries = true;
+      break;
+   case WP_COLOR_MANAGER_V1_FEATURE_EXTENDED_TARGET_VOLUME:
+      display->color_features.extended_target_volume = true;
+      break;
+   default:
+      break;
+   }
 }
 
 static void
@@ -1111,9 +1147,9 @@ needs_color_surface(VkColorSpaceKHR colorspace)
 static void
 wsi_wl_surface_add_color_refcount(struct wsi_wl_surface *wsi_surface)
 {
-   wsi_surface->color_surface_refcount++;
-   if (wsi_surface->color_surface_refcount == 1) {
-      wsi_surface->color_surface =
+   wsi_surface->color.color_surface_refcount++;
+   if (wsi_surface->color.color_surface_refcount == 1) {
+      wsi_surface->color.color_surface =
          wp_color_manager_v1_get_surface(wsi_surface->display->color_manager, wsi_surface->surface);
    }
 }
@@ -1121,11 +1157,28 @@ wsi_wl_surface_add_color_refcount(struct wsi_wl_surface *wsi_surface)
 static void
 wsi_wl_surface_remove_color_refcount(struct wsi_wl_surface *wsi_surface)
 {
-   wsi_surface->color_surface_refcount--;
-   if (wsi_surface->color_surface_refcount == 0) {
-      wp_color_management_surface_v1_destroy(wsi_surface->color_surface);
-      wsi_surface->color_surface = NULL;
+   wsi_surface->color.color_surface_refcount--;
+   if (wsi_surface->color.color_surface_refcount == 0) {
+      wp_color_management_surface_v1_destroy(wsi_surface->color.color_surface);
+      wsi_surface->color.color_surface = NULL;
    }
+}
+
+static bool
+compare_hdr_metadata(struct VkHdrMetadataEXT *l, struct VkHdrMetadataEXT *r)
+{
+   return l->displayPrimaryRed.x == r->displayPrimaryRed.x
+       && l->displayPrimaryRed.y == r->displayPrimaryRed.y
+       && l->displayPrimaryGreen.x == r->displayPrimaryGreen.x
+       && l->displayPrimaryGreen.y == r->displayPrimaryGreen.y
+       && l->displayPrimaryBlue.x == r->displayPrimaryBlue.x
+       && l->displayPrimaryBlue.y == r->displayPrimaryBlue.y
+       && l->whitePoint.x == r->whitePoint.x
+       && l->whitePoint.y == r->whitePoint.y
+       && l->maxLuminance == r->maxLuminance
+       && l->minLuminance == r->minLuminance
+       && l->maxContentLightLevel == r->maxContentLightLevel
+       && l->maxFrameAverageLightLevel == r->maxFrameAverageLightLevel;
 }
 
 static VkResult
@@ -1137,29 +1190,43 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
    /* we need the color management extension for
     * everything except sRGB and PASS_THROUGH */
    if (!display->color_manager) {
-      if (chain->colorspace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ||
-          chain->colorspace == VK_COLOR_SPACE_PASS_THROUGH_EXT) {
+      if (chain->color.colorspace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ||
+          chain->color.colorspace == VK_COLOR_SPACE_PASS_THROUGH_EXT) {
          return VK_SUCCESS;
       } else {
          return VK_ERROR_SURFACE_LOST_KHR;
       }
    }
 
-   bool new_color_surface = !surface->color_surface;
-   bool needs_color_surface_new = needs_color_surface(chain->colorspace);
-   bool needs_color_surface_old = needs_color_surface(surface->colorspace);
+   bool new_color_surface = !surface->color.color_surface;
+   bool needs_color_surface_new = needs_color_surface(chain->color.colorspace);
+   bool needs_color_surface_old = needs_color_surface(surface->color.colorspace);
    if ((new_color_surface || !needs_color_surface_old) && needs_color_surface_new) {
       wsi_wl_surface_add_color_refcount(surface);
    } else if (needs_color_surface_old && !needs_color_surface_new) {
       wsi_wl_surface_remove_color_refcount(surface);
    }
 
-   if (!new_color_surface && surface->colorspace == chain->colorspace)
+   bool should_use_hdr_metadata = chain->color.has_hdr_metadata;
+   for (int i = 0; i < ARRAY_SIZE(colorspace_mapping); i++) {
+      if (colorspace_mapping[i].colorspace == chain->color.colorspace) {
+         should_use_hdr_metadata &= colorspace_mapping[i].should_use_hdr_metadata;
+         break;
+      }
+   }
+
+   if (!new_color_surface &&
+       surface->color.colorspace == chain->color.colorspace &&
+       surface->color.has_hdr_metadata == should_use_hdr_metadata &&
+       compare_hdr_metadata(&surface->color.hdr_metadata, &chain->color.hdr_metadata)) {
       return VK_SUCCESS;
+   }
 
    /* failure is fatal, so this potentially being wrong
       in that case doesn't matter */
-   surface->colorspace = chain->colorspace;
+   surface->color.colorspace = chain->color.colorspace;
+   surface->color.hdr_metadata = chain->color.hdr_metadata;
+   surface->color.has_hdr_metadata = should_use_hdr_metadata;
    if (!needs_color_surface_new)
       return VK_SUCCESS;
 
@@ -1172,7 +1239,7 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
    unsigned int primaries = 0;
    unsigned int tf = 0;
    for (int i = 0; i < ARRAY_SIZE(colorspace_mapping); i++) {
-      if (colorspace_mapping[i].colorspace == chain->colorspace) {
+      if (colorspace_mapping[i].colorspace == chain->color.colorspace) {
          primaries = colorspace_mapping[i].primaries;
          tf = colorspace_mapping[i].tf;
       }
@@ -1183,6 +1250,29 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
 
    wp_image_description_creator_params_v1_set_primaries_named(creator, primaries);
    wp_image_description_creator_params_v1_set_tf_named(creator, tf);
+   if (should_use_hdr_metadata && display->color_features.extended_target_volume) {
+      uint32_t max_cll = round(chain->color.hdr_metadata.maxContentLightLevel);
+      uint32_t max_fall = round(chain->color.hdr_metadata.maxFrameAverageLightLevel);
+      wp_image_description_creator_params_v1_set_max_cll(creator, max_cll);
+      wp_image_description_creator_params_v1_set_max_fall(creator, max_fall);
+      if (display->color_features.mastering_display_primaries) {
+         uint32_t red_x = round(chain->color.hdr_metadata.displayPrimaryRed.x * 1000000);
+         uint32_t red_y = round(chain->color.hdr_metadata.displayPrimaryRed.y * 1000000);
+         uint32_t green_x = round(chain->color.hdr_metadata.displayPrimaryGreen.x * 1000000);
+         uint32_t green_y = round(chain->color.hdr_metadata.displayPrimaryGreen.y * 1000000);
+         uint32_t blue_x = round(chain->color.hdr_metadata.displayPrimaryBlue.x * 1000000);
+         uint32_t blue_y = round(chain->color.hdr_metadata.displayPrimaryBlue.y * 1000000);
+         uint32_t white_x = round(chain->color.hdr_metadata.whitePoint.x * 1000000);
+         uint32_t white_y = round(chain->color.hdr_metadata.whitePoint.y * 1000000);
+         wp_image_description_creator_params_v1_set_mastering_display_primaries(creator, red_x, red_y,
+                                                                                green_x, green_y,
+                                                                                blue_x, blue_y,
+                                                                                white_x, white_y);
+         uint32_t min_lum = round(chain->color.hdr_metadata.minLuminance * 10000);
+         uint32_t max_lum = round(chain->color.hdr_metadata.maxLuminance);
+         wp_image_description_creator_params_v1_set_mastering_luminance(creator, min_lum, max_lum);
+      }
+   }
 
    wl_proxy_set_queue((struct wl_proxy *) creator, display->queue);
 
@@ -1202,7 +1292,7 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
    if (status == failed)
       return VK_ERROR_SURFACE_LOST_KHR;
 
-   wp_color_management_surface_v1_set_image_description(chain->wsi_wl_surface->color_surface,
+   wp_color_management_surface_v1_set_image_description(chain->wsi_wl_surface->color.color_surface,
                                                         image_desc,
                                                         WP_COLOR_MANAGER_V1_RENDER_INTENT_PERCEPTUAL);
    wp_image_description_v1_destroy(image_desc);
@@ -1210,6 +1300,14 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
    return VK_SUCCESS;
 }
 
+static void
+wsi_wl_swapchain_set_hdr_metadata(struct wsi_swapchain *wsi_chain,
+                                  const VkHdrMetadataEXT* pMetadata)
+{
+   struct wsi_wl_swapchain *chain = (struct wsi_wl_swapchain *)wsi_chain;
+   chain->color.hdr_metadata = *pMetadata;
+   chain->color.has_hdr_metadata = true;
+}
 
 static void
 presentation_handle_clock_id(void* data, struct wp_presentation *wp_presentation, uint32_t clk_id)
@@ -1876,8 +1974,8 @@ wsi_wl_surface_destroy(VkIcdSurfaceBase *icd_surface, VkInstance _instance,
       dmabuf_feedback_fini(&wsi_wl_surface->pending_dmabuf_feedback);
    }
 
-   if (wsi_wl_surface->color_surface)
-      wp_color_management_surface_v1_destroy(wsi_wl_surface->color_surface);
+   if (wsi_wl_surface->color.color_surface)
+      wp_color_management_surface_v1_destroy(wsi_wl_surface->color.color_surface);
 
    if (wsi_wl_surface->surface)
       wl_proxy_wrapper_destroy(wsi_wl_surface->surface);
@@ -2202,7 +2300,7 @@ wsi_CreateWaylandSurfaceKHR(VkInstance _instance,
    surface->surface = pCreateInfo->surface;
 
    wsi_wl_surface->instance = instance;
-   wsi_wl_surface->colorspace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+   wsi_wl_surface->color.colorspace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
    *pSurface = VkIcdSurfaceBase_to_handle(&surface->base);
 
@@ -3186,7 +3284,7 @@ wsi_wl_swapchain_chain_free(struct wsi_wl_swapchain *chain,
       wl_callback_destroy(chain->frame);
    if (chain->tearing_control)
       wp_tearing_control_v1_destroy(chain->tearing_control);
-   if (needs_color_surface(chain->colorspace) && wsi_wl_surface->color_surface) {
+   if (needs_color_surface(chain->color.colorspace) && wsi_wl_surface->color.color_surface) {
       wsi_wl_surface_remove_color_refcount(wsi_wl_surface);
    }
 
@@ -3353,7 +3451,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
                                                           WP_TEARING_CONTROL_V1_PRESENTATION_HINT_ASYNC);
    }
 
-   chain->colorspace = pCreateInfo->imageColorSpace;
+   chain->color.colorspace = pCreateInfo->imageColorSpace;
 
    enum wsi_wl_buffer_type buffer_type;
    struct wsi_base_image_params *image_params = NULL;
@@ -3427,6 +3525,7 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    chain->base.wait_for_present = wsi_wl_swapchain_wait_for_present;
    chain->base.present_mode = present_mode;
    chain->base.image_count = num_images;
+   chain->base.set_hdr_metadata = wsi_wl_swapchain_set_hdr_metadata;
    chain->extent = pCreateInfo->imageExtent;
    chain->vk_format = pCreateInfo->imageFormat;
    chain->buffer_type = buffer_type;
