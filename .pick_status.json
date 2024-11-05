@@ -554,7 +554,7 @@
         "description": "vulkan/runtime: fix allocation failure handling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "93d0c66b27f440faa7ce3d2ec2f51135137c07ac",
         "notes": null
