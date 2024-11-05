@@ -344,7 +344,7 @@
         "description": "asahi: fix a2c with sample shading, harder",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9bbe93d158915f5b4b0904c12e52d393dc30f4ae",
         "notes": null
