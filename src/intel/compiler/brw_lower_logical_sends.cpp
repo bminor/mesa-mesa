@@ -1589,9 +1589,13 @@ emit_a64_oword_block_header(const fs_builder &bld, const brw_reg &addr)
    brw_reg expanded_addr = addr;
    if (addr.file == UNIFORM) {
       /* We can't do stride 1 with the UNIFORM file, it requires stride 0 */
-      expanded_addr = ubld.vgrf(BRW_TYPE_UQ);
-      expanded_addr.stride = 0;
-      ubld.MOV(expanded_addr, retype(addr, BRW_TYPE_UQ));
+      fs_builder ubld1 = ubld.group(1, 0);
+
+      brw_reg tmp = ubld1.vgrf(BRW_TYPE_UQ);
+      ubld1.UNDEF(tmp);
+
+      expanded_addr = component(tmp, 0);
+      ubld1.MOV(expanded_addr, retype(addr, BRW_TYPE_UQ));
    }
 
    brw_reg header = ubld.vgrf(BRW_TYPE_UD);
