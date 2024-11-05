@@ -650,6 +650,7 @@ impl CopyPropPass {
                     Op::IAdd3X(add) => {
                         !add.overflow[0].is_none() || !add.overflow[1].is_none()
                     }
+                    Op::Lea(lea) => !lea.overflow.is_none(),
                     _ => false,
                 };
 
@@ -658,7 +659,9 @@ impl CopyPropPass {
                     let mut src_type = src_types[i];
                     if force_alu_src_type {
                         src_type = match src_type {
-                            SrcType::B32 | SrcType::I32 => SrcType::ALU,
+                            SrcType::ALU | SrcType::B32 | SrcType::I32 => {
+                                SrcType::ALU
+                            }
                             SrcType::Carry | SrcType::Pred => src_type,
                             _ => panic!("Unhandled src_type"),
                         };

@@ -726,6 +726,37 @@ fn test_op_isetp() {
 }
 
 #[test]
+fn test_op_lea() {
+    if RunSingleton::get().sm.sm() >= 70 {
+        let src_mods = [
+            (SrcMod::None, SrcMod::None),
+            (SrcMod::INeg, SrcMod::None),
+            (SrcMod::None, SrcMod::INeg),
+        ];
+
+        for (intermediate_mod, b_mod) in src_mods {
+            for shift in 0..32 {
+                for dst_high in [false, true] {
+                    let mut op = OpLea {
+                        dst: Dst::None,
+                        overflow: Dst::None,
+                        a: 0.into(),
+                        b: 0.into(),
+                        a_high: 0.into(),
+                        shift,
+                        dst_high,
+                        intermediate_mod,
+                    };
+                    op.b.src_mod = b_mod;
+
+                    test_foldable_op(op);
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn test_op_lop2() {
     if RunSingleton::get().sm.sm() < 70 {
         let logic_ops =

@@ -3785,6 +3785,82 @@ impl_display_for_op!(OpISetP);
 
 #[repr(C)]
 #[derive(Clone, SrcsAsSlice, DstsAsSlice)]
+pub struct OpLea {
+    #[dst_type(GPR)]
+    pub dst: Dst,
+
+    #[dst_type(Pred)]
+    pub overflow: Dst,
+
+    #[src_type(ALU)]
+    pub a: Src,
+
+    #[src_type(I32)]
+    pub b: Src,
+
+    #[src_type(ALU)]
+    pub a_high: Src, // High 32-bits of a if .dst_high is set
+
+    pub shift: u8,
+    pub dst_high: bool,
+    pub intermediate_mod: SrcMod, // Modifier for shifted temporary (a << shift)
+}
+
+impl Foldable for OpLea {
+    fn fold(&self, _sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
+        let a = f.get_u32_src(self, &self.a);
+        let mut b = f.get_u32_src(self, &self.b);
+        let a_high = f.get_u32_src(self, &self.a_high);
+
+        let mut overflow = false;
+
+        let mut shift_result = if self.dst_high {
+            let a = a as u64;
+            let a_high = a_high as u64;
+            let a = (a_high << 32) | a;
+
+            (a >> (32 - self.shift)) as u32
+        } else {
+            a << self.shift
+        };
+
+        if self.intermediate_mod.is_ineg() {
+            let o;
+            (shift_result, o) = u32::overflowing_add(!shift_result, 1);
+            overflow |= o;
+        }
+
+        if self.b.src_mod.is_ineg() {
+            let o;
+            (b, o) = u32::overflowing_add(!b, 1);
+            overflow |= o;
+        }
+
+        let (dst, o) = u32::overflowing_add(shift_result, b);
+        overflow |= o;
+
+        f.set_u32_dst(self, &self.dst, dst as u32);
+        f.set_pred_dst(self, &self.overflow, overflow);
+    }
+}
+
+impl DisplayOp for OpLea {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "lea")?;
+        if self.dst_high {
+            write!(f, ".hi")?;
+        }
+        write!(f, " {} {} {}", self.a, self.shift, self.b)?;
+        if self.dst_high {
+            write!(f, " {}", self.a_high)?;
+        }
+        Ok(())
+    }
+}
+impl_display_for_op!(OpLea);
+
+#[repr(C)]
+#[derive(Clone, SrcsAsSlice, DstsAsSlice)]
 pub struct OpLop2 {
     #[dst_type(GPR)]
     pub dst: Dst,
@@ -6234,6 +6310,7 @@ pub enum Op {
     IMul(OpIMul),
     IMnMx(OpIMnMx),
     ISetP(OpISetP),
+    Lea(OpLea),
     Lop2(OpLop2),
     Lop3(OpLop3),
     PopC(OpPopC),
@@ -6727,6 +6804,7 @@ impl Instr {
             | Op::IMad64(_)
             | Op::IMnMx(_)
             | Op::ISetP(_)
+            | Op::Lea(_)
             | Op::Lop2(_)
             | Op::Lop3(_)
             | Op::Shf(_)
