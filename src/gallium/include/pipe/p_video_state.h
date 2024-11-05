@@ -1381,8 +1381,8 @@ struct pipe_av1_enc_picture_desc
    uint16_t frame_width_sb;
    uint16_t frame_height_sb;
    uint16_t upscaled_width;
-   uint16_t render_width;
-   uint16_t render_height;
+   uint16_t render_width_minus_1;
+   uint16_t render_height_minus_1;
    uint32_t interpolation_filter;
    uint8_t tx_mode;
    uint8_t compound_reference_mode;

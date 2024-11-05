@@ -468,9 +468,9 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, bool frame_h
       radeon_enc_code_fixed_bits(enc, av1->enable_render_size ? 1 : 0, 1);
       if (av1->enable_render_size) {
          /*  render_width_minus_1  */
-         radeon_enc_code_fixed_bits(enc, av1->render_width, 16);
+         radeon_enc_code_fixed_bits(enc, av1->render_width_minus_1, 16);
          /*  render_height_minus_1  */
-         radeon_enc_code_fixed_bits(enc, av1->render_height, 16);
+         radeon_enc_code_fixed_bits(enc, av1->render_height_minus_1, 16);
       }
       if (!enc->enc_pic.disable_screen_content_tools &&
             (enc->enc_pic.av1_spec_misc.palette_mode_enable || enc->enc_pic.force_integer_mv))
@@ -511,9 +511,9 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, bool frame_h
          radeon_enc_code_fixed_bits(enc, av1->enable_render_size ? 1 : 0, 1);
          if (av1->enable_render_size) {
             /*  render_width_minus_1  */
-            radeon_enc_code_fixed_bits(enc, av1->render_width, 16);
+            radeon_enc_code_fixed_bits(enc, av1->render_width_minus_1, 16);
             /*  render_height_minus_1  */
-            radeon_enc_code_fixed_bits(enc, av1->render_height, 16);
+            radeon_enc_code_fixed_bits(enc, av1->render_height_minus_1, 16);
          }
       }
 
