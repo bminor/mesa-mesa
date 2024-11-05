@@ -12514,11 +12514,10 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    /* Dump all SGPRs. */
    for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {
       bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{i}, s1));
-      bld.copy(Definition(PhysReg{ttmp8}, s1), Operand::c32(offset));
 
       bld.mubuf(aco_opcode::buffer_store_dword, Operand(PhysReg{ttmp4}, s4), Operand(v1),
-                Operand(PhysReg{ttmp8}, s1), Operand(PhysReg{256}, v1) /* v0 */, 0 /* offset */,
-                false /* offen */, false /* idxen */, /* addr64 */ false,
+                Operand::c32(0u), Operand(PhysReg{256}, v1) /* v0 */, offset, false /* offen */,
+                false /* idxen */, /* addr64 */ false,
                 /* disable_wqm */ false, cache_glc);
 
       offset += 4;
