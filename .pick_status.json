@@ -454,7 +454,7 @@
         "description": "brw/copy: Don't copy propagate through smaller entry dest size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e3f502e0074cc0b9d5a6807fa900b240cf7e0fc6",
         "notes": null
