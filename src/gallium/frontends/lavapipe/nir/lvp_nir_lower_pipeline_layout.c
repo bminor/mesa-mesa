@@ -22,9 +22,7 @@
  */
 
 #include "lvp_private.h"
-#include "nir.h"
-#include "nir_builder.h"
-#include "lvp_lower_vulkan_resource.h"
+#include "lvp_nir.h"
 
 static bool
 lower_vulkan_resource_index(const nir_instr *instr, const void *data_cb)

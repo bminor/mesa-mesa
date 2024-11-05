@@ -6,12 +6,9 @@
 
 #include "lvp_private.h"
 #include "lvp_acceleration_structure.h"
-#include "lvp_nir_ray_tracing.h"
+#include "nir/lvp_nir.h"
 
 #include "vk_pipeline.h"
-
-#include "nir.h"
-#include "nir_builder.h"
 
 #include "spirv/spirv.h"
 

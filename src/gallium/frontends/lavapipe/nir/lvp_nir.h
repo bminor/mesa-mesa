@@ -102,4 +102,20 @@ struct lvp_ray_traversal_args {
  */
 nir_def *lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *args);
 
+struct lvp_device;
+struct lvp_pipeline;
+struct lvp_pipeline_layout;
+
+bool lvp_lower_exec_graph(struct lvp_pipeline *pipeline, nir_shader *nir);
+
+bool lvp_lower_input_attachments(nir_shader *shader, bool use_fragcoord_sysval);
+
+void lvp_lower_pipeline_layout(const struct lvp_device *device,
+                               struct lvp_pipeline_layout *layout,
+                               nir_shader *shader);
+
+bool lvp_nir_lower_ray_queries(struct nir_shader *shader);
+
+bool lvp_nir_lower_sparse_residency(struct nir_shader *shader);
+
 #endif

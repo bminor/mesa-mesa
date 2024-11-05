@@ -31,7 +31,7 @@
 #include "spirv/nir_spirv.h"
 #include "nir/nir_builder.h"
 #include "nir/nir_serialize.h"
-#include "lvp_lower_vulkan_resource.h"
+#include "nir/lvp_nir.h"
 #include "pipe/p_state.h"
 #include "pipe/p_context.h"
 #include "nir/nir_xfb_info.h"
