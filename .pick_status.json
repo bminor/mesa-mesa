@@ -704,7 +704,7 @@
         "description": "radeonsi/vcn: Use correct frame context buffer for preencode on VCN5",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3c5fe03b92c4c645b0327734433d109edfe983c8",
         "notes": null
