@@ -389,7 +389,10 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
    char *msg = NULL;
    if (st->allow_st_finalize_nir_twice) {
       st_serialize_base_nir(prog, nir);
-      msg = st_finalize_nir(st, prog, shader_program, nir, true, true, false);
+      st_finalize_nir(st, prog, shader_program, nir, true, false);
+
+      if (screen->finalize_nir)
+         msg = screen->finalize_nir(screen, nir);
    }
 
    if (st->ctx->_Shader->Flags & GLSL_DUMP) {
@@ -881,12 +884,10 @@ st_nir_lower_uniforms(struct st_context *st, nir_shader *nir)
 /* Last third of preparing nir from glsl, which happens after shader
  * variant lowering.
  */
-char *
+void
 st_finalize_nir(struct st_context *st, struct gl_program *prog,
-                struct gl_shader_program *shader_program,
-                nir_shader *nir, bool finalize_by_driver,
-                bool is_before_variants,
-                bool is_draw_shader)
+                struct gl_shader_program *shader_program, nir_shader *nir,
+                bool is_before_variants, bool is_draw_shader)
 {
    struct pipe_screen *screen = st->screen;
 
@@ -925,12 +926,6 @@ st_finalize_nir(struct st_context *st, struct gl_program *prog,
    st_nir_lower_samplers(screen, nir, shader_program, prog);
    if (!is_draw_shader && !screen->get_param(screen, PIPE_CAP_NIR_IMAGES_AS_DEREF))
       NIR_PASS(_, nir, gl_nir_lower_images, false);
-
-   char *msg = NULL;
-   if (!is_draw_shader && finalize_by_driver && screen->finalize_nir)
-      msg = screen->finalize_nir(screen, nir);
-
-   return msg;
 }
 
 /**
