@@ -2793,3 +2793,7 @@ dEQP-VK.api.info.unsupported_image_usage.optimal.input_attachment_eac_r11_snorm_
 dEQP-VK.api.info.unsupported_image_usage.optimal.input_attachment_etc2_r8g8b8a1_unorm_block,Fail
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.1_sample,Fail
 dEQP-VK.wsi.xcb.swapchain.simulate_oom.image_extent,Crash
+
+# New with sampleRateShading
+dEQP-VK.pipeline.monolithic.multisample_shader_builtin.write_sample_mask.1_samples,Fail
+dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.linear_interpolation.offset_max_1_sample,Fail

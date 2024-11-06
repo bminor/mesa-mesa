@@ -1160,6 +1160,7 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
 
             cfg.pixel_kill_operation = earlyzs.kill;
             cfg.zs_update_operation = earlyzs.update;
+            cfg.evaluate_per_sample = fs->info.fs.sample_shading;
          } else {
             cfg.allow_forward_pixel_to_kill = true;
             cfg.allow_forward_pixel_to_be_killed = true;
