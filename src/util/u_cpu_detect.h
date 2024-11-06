@@ -88,8 +88,6 @@ struct util_cpu_caps_t {
    unsigned cacheline;
 
    unsigned has_intel:1;
-   unsigned has_mmx:1;
-   unsigned has_mmx2:1;
    unsigned has_sse:1;
    unsigned has_sse2:1;
    unsigned has_sse3:1;
