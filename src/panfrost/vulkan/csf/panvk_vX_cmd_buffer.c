@@ -349,7 +349,7 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
       if (!stages_cover_subqueue(i, dst_stages))
          continue;
 
-      deps->dst[i].wait_subqueue_mask |= wait_subqueue_mask & ~BITFIELD_BIT(i);
+      deps->dst[i].wait_subqueue_mask |= wait_subqueue_mask;
    }
 }
 
@@ -425,8 +425,14 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
       panvk_per_arch(cmd_flush_draws)(cmdbuf);
 
    uint32_t wait_subqueue_mask = 0;
-   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
+   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
+      /* no need to perform both types of waits on the same subqueue */
+      if (deps.src[i].wait_sb_mask)
+         deps.dst[i].wait_subqueue_mask &= ~BITFIELD_BIT(i);
+      assert(!(deps.dst[i].wait_subqueue_mask & BITFIELD_BIT(i)));
+
       wait_subqueue_mask |= deps.dst[i].wait_subqueue_mask;
+   }
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       if (!deps.src[i].wait_sb_mask)
