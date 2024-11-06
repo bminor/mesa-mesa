@@ -1409,7 +1409,9 @@ dest_regs(struct ir3_instruction *instr)
 static inline bool
 is_reg_gpr(const struct ir3_register *reg)
 {
-   if ((reg_num(reg) == REG_A0) || (reg->flags & IR3_REG_PREDICATE))
+   if (reg->flags & (IR3_REG_CONST | IR3_REG_IMMED | IR3_REG_PREDICATE))
+      return false;
+   if (reg_num(reg) == REG_A0)
       return false;
    if (!(reg->flags & (IR3_REG_SSA | IR3_REG_RELATIV)) &&
        reg->num == INVALID_REG)
@@ -1533,16 +1535,6 @@ static inline bool
 conflicts(struct ir3_register *a, struct ir3_register *b)
 {
    return (a && b) && (a->def != b->def);
-}
-
-static inline bool
-reg_gpr(struct ir3_register *r)
-{
-   if (r->flags & (IR3_REG_CONST | IR3_REG_IMMED | IR3_REG_PREDICATE))
-      return false;
-   if (reg_num(r) == REG_A0)
-      return false;
-   return true;
 }
 
 static inline bool
