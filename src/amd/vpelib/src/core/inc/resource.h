@@ -168,6 +168,8 @@ void vpe_frontend_config_callback(
 void vpe_backend_config_callback(
     void *ctx, uint64_t cfg_base_gpu, uint64_t cfg_base_cpu, uint64_t size, uint32_t pipe_idx);
 
+bool vpe_rec_is_equal(struct vpe_rect rec1, struct vpe_rect rec2);
+
 #ifdef __cplusplus
 }
 #endif

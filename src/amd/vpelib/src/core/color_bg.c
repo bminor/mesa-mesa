@@ -208,7 +208,7 @@ static void set_gamut_remap_matrix(double* res, enum color_space src_cs, enum co
 
 }
 
-static bool bg_csc(struct vpe_color *bg_color, enum color_space cs)
+bool vpe_bg_csc(struct vpe_color *bg_color, enum color_space cs)
 {
     struct csc_table *entry             = &bgcolor_to_rgbfull_table[cs];
     float             csc_final[3]      = {0};
@@ -250,33 +250,12 @@ static bool bg_csc(struct vpe_color *bg_color, enum color_space cs)
     return output_is_clipped;
 }
 
-static inline bool is_global_bg_blend_applied(struct stream_ctx *stream_ctx) {
+bool vpe_is_global_bg_blend_applied(struct stream_ctx *stream_ctx)
+{
 
     return (stream_ctx->stream.blend_info.blending)  &&
         (stream_ctx->stream.blend_info.global_alpha) &&
         (stream_ctx->stream.blend_info.global_alpha_value != 1.0);
-}
-
-/*
-    In order to support background color fill correctly, we need to do studio -> full range conversion
-    before the blend block. However, there is also a requirement for HDR output to be blended in linear space.
-    Hence, if we have PQ out and studio range, we need to make sure no blenidng will occur. Othewise the job
-    is invalid.
-
-*/
-static enum vpe_status is_valid_blend(const struct vpe_priv *vpe_priv, struct vpe_color *bg_color) {
-
-    enum vpe_status status = VPE_STATUS_OK;
-    const struct vpe_color_space *vcs = &vpe_priv->output_ctx.surface.cs;
-    struct stream_ctx *stream_ctx = vpe_priv->stream_ctx;  //Only need to check the first stream.
-
-    if ((vcs->range == VPE_COLOR_RANGE_STUDIO) &&
-        (vcs->tf == VPE_TF_PQ) &&
-        ((stream_ctx->stream.surface_info.cs.encoding == VPE_PIXEL_ENCODING_RGB) ||
-            is_global_bg_blend_applied(stream_ctx)))
-        status = VPE_STATUS_BG_COLOR_OUT_OF_RANGE;
-
-    return status;
 }
 
 struct gamma_coefs {
@@ -502,65 +481,17 @@ static void vpe_bg_inverse_gamut_remap(enum color_space output_cs,
 
 // To understand the logic for background color conversion,
 // please refer to vpe_update_output_gamma_sequence in color.c
-void vpe_bg_color_convert(
-    enum color_space output_cs, struct transfer_func *output_tf, enum vpe_surface_pixel_format pixel_format, struct vpe_color *bg_color, bool enable_3dlut)
+void vpe_bg_color_convert(enum color_space output_cs, struct transfer_func *output_tf,
+    enum vpe_surface_pixel_format pixel_format, struct vpe_color *mpc_bg_color,
+    struct vpe_color *opp_bg_color, bool enable_3dlut)
 {
     if (output_tf->type != TF_TYPE_BYPASS) {
         // inverse degam
         if (output_tf->tf == TRANSFER_FUNC_PQ2084 && !is_limited_cs(output_cs))
-            vpe_bg_degam(output_tf, bg_color);
+            vpe_bg_degam(output_tf, mpc_bg_color);
         // inverse gamut remap
         if (enable_3dlut)
-            vpe_bg_inverse_gamut_remap(output_cs, output_tf, bg_color);
+            vpe_bg_inverse_gamut_remap(output_cs, output_tf, mpc_bg_color);
     }
     // for TF_TYPE_BYPASS, bg color should be programmed to mpc as linear
-}
-
-enum vpe_status vpe_bg_color_outside_cs_gamut(
-    const struct vpe_priv *vpe_priv, struct vpe_color *bg_color)
-{
-    enum color_space         cs;
-    enum color_transfer_func tf;
-    struct vpe_color         bg_color_copy = *bg_color;
-    const struct vpe_color_space *vcs      = &vpe_priv->output_ctx.surface.cs;
-
-    vpe_color_get_color_space_and_tf(vcs, &cs, &tf);
-
-    if ((bg_color->is_ycbcr)) {
-        // using the bg_color_copy instead as bg_csc will modify it
-        // we should not do modification in checking stage
-        // otherwise validate_cached_param() will fail
-        if (bg_csc(&bg_color_copy, cs)) {
-            return VPE_STATUS_BG_COLOR_OUT_OF_RANGE;
-        }
-    }
-    return VPE_STATUS_OK;
-}
-
-static inline bool is_target_rect_equal_to_dest_rect(const struct vpe_priv *vpe_priv)
-{
-    const struct vpe_rect *target_rect = &vpe_priv->output_ctx.target_rect;
-    const struct vpe_rect *dst_rect = &vpe_priv->stream_ctx[0].stream.scaling_info.dst_rect;
-
-    return (target_rect->height == dst_rect ->height) && (target_rect->width  == dst_rect ->width) &&
-           (target_rect->x == dst_rect ->x) && (target_rect->y == dst_rect ->y);
-}
-
-// These two checks are only necessary for VPE1.0 and contain a lot of quirks to work around VPE 1.0
-// limitations.
-enum vpe_status vpe_is_valid_bg_color(const struct vpe_priv *vpe_priv, struct vpe_color *bg_color) {
-
-    enum vpe_status status = VPE_STATUS_OK;
-
-    /* no need for background filling as for target rect equal to dest rect */
-    if (is_target_rect_equal_to_dest_rect(vpe_priv)) {
-        return VPE_STATUS_OK;
-    }
-
-    status = is_valid_blend(vpe_priv, bg_color);
-
-    if (status == VPE_STATUS_OK)
-        status = vpe_bg_color_outside_cs_gamut(vpe_priv, bg_color);
-
-    return status;
 }

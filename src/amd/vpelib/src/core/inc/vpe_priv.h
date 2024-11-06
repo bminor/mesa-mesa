@@ -166,7 +166,8 @@ struct stream_ctx {
 struct output_ctx {
     // stores the paramters built for generating vpep configs
     struct vpe_surface_info    surface;
-    struct vpe_color           bg_color;
+    struct vpe_color           mpc_bg_color;
+    struct vpe_color           opp_bg_color;
     struct vpe_rect            target_rect;
     enum vpe_alpha_mode        alpha_mode;
     struct vpe_clamping_params clamping_params;

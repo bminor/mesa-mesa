@@ -496,11 +496,6 @@ bool vpe10_check_h_mirror_support(bool *input_mirror, bool *output_mirror)
     return true;
 }
 
-enum vpe_status vpe10_check_bg_color_support(struct vpe_priv* vpe_priv, struct vpe_color* bg_color)
-{
-    return vpe_is_valid_bg_color(vpe_priv, bg_color);
-}
-
 void vpe10_calculate_dst_viewport_and_active(
     struct segment_ctx *segment_ctx, uint32_t max_seg_width)
 {
@@ -917,14 +912,14 @@ int32_t vpe10_program_backend(
         if (vpe_is_fp16(surface_info->format)) {
             if (vpe_priv->output_ctx.alpha_mode == VPE_ALPHA_BGCOLOR)
                 vpe_convert_from_float_to_fp16(
-                    (double)vpe_priv->output_ctx.bg_color.rgba.a, &alpha_16);
+                    (double)vpe_priv->output_ctx.mpc_bg_color.rgba.a, &alpha_16);
             else
                 vpe_convert_from_float_to_fp16(1.0, &alpha_16);
 
             opp_dig_bypass = true;
         } else {
             if (vpe_priv->output_ctx.alpha_mode == VPE_ALPHA_BGCOLOR)
-                alpha_16 = (uint16_t)(vpe_priv->output_ctx.bg_color.rgba.a * 0xffff);
+                alpha_16 = (uint16_t)(vpe_priv->output_ctx.mpc_bg_color.rgba.a * 0xffff);
             else
                 alpha_16 = 0xffff;
         }
@@ -1042,7 +1037,7 @@ void vpe10_create_stream_ops_config(struct vpe_priv *vpe_priv, uint32_t pipe_idx
             vpe_priv->output_ctx.output_tf, vpe_priv->output_ctx.surface.format,
             false); // 3DLUT should only affect input visual confirm
     } else {
-        blndcfg.bg_color = vpe_priv->output_ctx.bg_color;
+        blndcfg.bg_color = vpe_priv->output_ctx.mpc_bg_color;
     }
     blndcfg.global_gain          = 0xff;
     blndcfg.pre_multiplied_alpha = false;
@@ -1263,5 +1258,67 @@ enum vpe_status vpe10_update_blnd_gamma(struct vpe_priv *vpe_priv,
                 vpe_priv, tf, x_scale, y_scale, y_bias, can_bypass, blnd_tf);
         }
     }
+    return status;
+}
+
+static enum vpe_status bg_color_outside_cs_gamut(
+    const struct vpe_priv *vpe_priv, struct vpe_color *bg_color)
+{
+    enum color_space              cs;
+    enum color_transfer_func      tf;
+    struct vpe_color              bg_color_copy = *bg_color;
+    const struct vpe_color_space *vcs           = &vpe_priv->output_ctx.surface.cs;
+
+    vpe_color_get_color_space_and_tf(vcs, &cs, &tf);
+
+    if ((bg_color->is_ycbcr)) {
+        // using the bg_color_copy instead as bg_csc will modify it
+        // we should not do modification in checking stage
+        // otherwise validate_cached_param() will fail
+        if (vpe_bg_csc(&bg_color_copy, cs)) {
+            return VPE_STATUS_BG_COLOR_OUT_OF_RANGE;
+        }
+    }
+    return VPE_STATUS_OK;
+}
+
+/*
+    In order to support background color fill correctly, we need to do studio -> full range
+    conversion before the blend block. However, there is also a requirement for HDR output to be
+    blended in linear space. Hence, if we have PQ out and studio range, we need to make sure no
+    blending will occur. Otherwise the job is invalid.
+
+*/
+static enum vpe_status is_valid_blend(const struct vpe_priv *vpe_priv, struct vpe_color *bg_color)
+{
+
+    enum vpe_status               status = VPE_STATUS_OK;
+    const struct vpe_color_space *vcs    = &vpe_priv->output_ctx.surface.cs;
+    struct stream_ctx *stream_ctx = vpe_priv->stream_ctx; // Only need to check the first stream.
+
+    if ((vcs->range == VPE_COLOR_RANGE_STUDIO) && (vcs->tf == VPE_TF_PQ) &&
+        ((stream_ctx->stream.surface_info.cs.encoding == VPE_PIXEL_ENCODING_RGB) ||
+            vpe_is_global_bg_blend_applied(stream_ctx)))
+        status = VPE_STATUS_BG_COLOR_OUT_OF_RANGE;
+
+    return status;
+}
+
+enum vpe_status vpe10_check_bg_color_support(struct vpe_priv *vpe_priv, struct vpe_color *bg_color)
+{
+
+    enum vpe_status status = VPE_STATUS_OK;
+
+    /* no need for background filling as for target rect equal to dest rect */
+    if (vpe_rec_is_equal(vpe_priv->output_ctx.target_rect,
+            vpe_priv->stream_ctx[0].stream.scaling_info.dst_rect)) {
+        return VPE_STATUS_OK;
+    }
+
+    status = is_valid_blend(vpe_priv, bg_color);
+
+    if (status == VPE_STATUS_OK)
+        status = bg_color_outside_cs_gamut(vpe_priv, bg_color);
+
     return status;
 }

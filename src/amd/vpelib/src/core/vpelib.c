@@ -542,7 +542,8 @@ enum vpe_status vpe_check_support(
         // output resource preparation for further checking (cache the result)
         output_ctx                     = &vpe_priv->output_ctx;
         output_ctx->surface            = param->dst_surface;
-        output_ctx->bg_color           = param->bg_color;
+        output_ctx->mpc_bg_color       = param->bg_color;
+        output_ctx->opp_bg_color       = param->bg_color;
         output_ctx->target_rect        = param->target_rect;
         output_ctx->alpha_mode         = param->alpha_mode;
         output_ctx->flags.hdr_metadata = param->flags.hdr_metadata;
@@ -576,7 +577,7 @@ enum vpe_status vpe_check_support(
         // if the bg_color support is false, there is a flag to verify if the bg_color falls in the
         // output gamut
         if (!vpe_priv->pub.caps->bg_color_check_support) {
-            status = vpe_priv->resource.check_bg_color_support(vpe_priv, &output_ctx->bg_color);
+            status = vpe_priv->resource.check_bg_color_support(vpe_priv, &output_ctx->mpc_bg_color);
             if (status != VPE_STATUS_OK) {
                 vpe_log(
                     "failed in checking the background color versus the output color space %d\n",
@@ -649,7 +650,10 @@ static bool validate_cached_param(struct vpe_priv *vpe_priv, const struct vpe_bu
     if (output_ctx->alpha_mode != param->alpha_mode)
         return false;
 
-    if (memcmp(&output_ctx->bg_color, &param->bg_color, sizeof(struct vpe_color)))
+    if (memcmp(&output_ctx->mpc_bg_color, &param->bg_color, sizeof(struct vpe_color)))
+        return false;
+
+    if (memcmp(&output_ctx->opp_bg_color, &param->bg_color, sizeof(struct vpe_color)))
         return false;
 
     if (memcmp(&output_ctx->target_rect, &param->target_rect, sizeof(struct vpe_rect)))
@@ -776,8 +780,9 @@ enum vpe_status vpe_build_commands(
          * the 3dlut enablement for the background color conversion
          * is used based on the information of the first stream.
          */
-        vpe_bg_color_convert(vpe_priv->output_ctx.cs, vpe_priv->output_ctx.output_tf, vpe_priv->output_ctx.surface.format,
-            &vpe_priv->output_ctx.bg_color, vpe_priv->stream_ctx[0].enable_3dlut);
+        vpe_bg_color_convert(vpe_priv->output_ctx.cs, vpe_priv->output_ctx.output_tf,
+            vpe_priv->output_ctx.surface.format, &vpe_priv->output_ctx.mpc_bg_color,
+            &vpe_priv->output_ctx.opp_bg_color, vpe_priv->stream_ctx[0].enable_3dlut);
 
         if (vpe_priv->collaboration_mode == true) {
             status = builder->build_collaborate_sync_cmd(vpe_priv, &curr_bufs);
