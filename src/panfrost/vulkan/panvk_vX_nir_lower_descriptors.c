@@ -1017,6 +1017,10 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
    for (uint32_t i = 0; i < PANVK_BIFROST_DESC_TABLE_COUNT; i++)
       copy_count += desc_info->others[i].count;
 #else
+   /* Dummy sampler comes after the vertex attributes. */
+   uint32_t dummy_sampler_idx = nir->info.stage == MESA_SHADER_VERTEX ? 16 : 0;
+   desc_info->dummy_sampler_handle = pan_res_handle(0, dummy_sampler_idx);
+
    copy_count = desc_info->dyn_bufs.count + desc_info->dyn_bufs.count;
 #endif
 
@@ -1040,6 +1044,9 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
       desc_info->others[i].count = 0;
    }
 #else
+   /* Dynamic buffers come after the dummy sampler. */
+   desc_info->dyn_bufs_start = dummy_sampler_idx + 1;
+
    desc_info->dyn_bufs.map = rzalloc_array(ctx->ht, uint32_t, copy_count);
    assert(desc_info->dyn_bufs.map);
 #endif
@@ -1055,15 +1062,6 @@ create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
       he->data = fill_copy_descs_for_binding(ctx, src.set, src.binding,
                                              src.subdesc, desc_count);
    }
-
-#if PAN_ARCH >= 9
-   /* Dummy sampler comes after the vertex attributes. */
-   uint32_t dummy_sampler_idx = nir->info.stage == MESA_SHADER_VERTEX ? 16 : 0;
-   desc_info->dummy_sampler_handle = pan_res_handle(0, dummy_sampler_idx);
-
-   /* Dynamic buffers come after the dummy sampler. */
-   desc_info->dyn_bufs_start = dummy_sampler_idx + 1;
-#endif
 }
 
 /* TODO: Texture instructions support bindless through DTSEL_IMM(63),
