@@ -33,9 +33,8 @@ lib_vulkan_gfxstream = shared_library(
    link_args: [vulkan_icd_link_args, ld_args_bsymbolic, ld_args_gc_sections],
    link_depends: vulkan_icd_link_depends,
    dependencies: [dependency('libdrm'), idep_vulkan_wsi_headers,
-                  idep_vulkan_runtime_headers, idep_vulkan_runtime,
-                  idep_vulkan_util_headers, idep_vulkan_wsi, dep_valgrind,
-                  aemu_base_dep],
+                  idep_vulkan_lite_runtime, idep_vulkan_util_headers,
+                  idep_vulkan_wsi, dep_valgrind, aemu_base_dep],
    install: true,
 )
 
