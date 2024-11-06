@@ -2053,7 +2053,6 @@ dep_xcb_dri3 = null_dep
 dep_dri2proto = null_dep
 dep_glproto = null_dep
 dep_xxf86vm = null_dep
-dep_xcb_dri3 = null_dep
 dep_xcb_present = null_dep
 dep_xcb_sync = null_dep
 dep_xcb_xfixes = null_dep
