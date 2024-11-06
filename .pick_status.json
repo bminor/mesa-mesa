@@ -64,7 +64,7 @@
         "description": "vulkan/wsi/wayland: Use X11-style image count strategy when using FIFO.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d052b0201ee651cdce1f25aefb41d1b9b6b6a6dd",
         "notes": null
