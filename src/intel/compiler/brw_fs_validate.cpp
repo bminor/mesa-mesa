@@ -280,155 +280,241 @@ brw_fs_validate(const fs_visitor &s)
 
    s.cfg->validate(_mesa_shader_stage_to_abbrev(s.stage));
 
-   foreach_block_and_inst (block, fs_inst, inst, s.cfg) {
-      brw_validate_instruction_phase(s, inst);
+   foreach_block(block, s.cfg) {
+      foreach_inst_in_block (fs_inst, inst, block) {
+         brw_validate_instruction_phase(s, inst);
 
-      switch (inst->opcode) {
-      case SHADER_OPCODE_SEND:
-         fsv_assert(is_uniform(inst->src[0]) && is_uniform(inst->src[1]));
-         break;
+         switch (inst->opcode) {
+         case SHADER_OPCODE_SEND:
+            fsv_assert(is_uniform(inst->src[0]) && is_uniform(inst->src[1]));
+            break;
 
-      case BRW_OPCODE_MOV:
-         fsv_assert(inst->sources == 1);
-         break;
+         case BRW_OPCODE_MOV:
+            fsv_assert(inst->sources == 1);
+            break;
 
-      case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
-      case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
-      case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
-         validate_memory_logical(s, inst);
-         break;
+         case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
+         case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
+         case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
+            validate_memory_logical(s, inst);
+            break;
 
-      default:
-         break;
-      }
+         default:
+            break;
+         }
 
-      /* On Xe2, the "write the accumulator in addition to the explicit
-       * destination" bit no longer exists. Try to catch uses of this feature
-       * earlier in the process.
-       */
-      if (devinfo->ver >= 20 && inst->writes_accumulator) {
-         fsv_assert(inst->dst.is_accumulator() ||
-                    inst->opcode == BRW_OPCODE_ADDC ||
-                    inst->opcode == BRW_OPCODE_MACH ||
-                    inst->opcode == BRW_OPCODE_SUBB);
-      }
+         /* On Xe2, the "write the accumulator in addition to the explicit
+          * destination" bit no longer exists. Try to catch uses of this
+          * feature earlier in the process.
+          */
+         if (devinfo->ver >= 20 && inst->writes_accumulator) {
+            fsv_assert(inst->dst.is_accumulator() ||
+                       inst->opcode == BRW_OPCODE_ADDC ||
+                       inst->opcode == BRW_OPCODE_MACH ||
+                       inst->opcode == BRW_OPCODE_SUBB);
+         }
 
-      if (inst->is_3src(s.compiler)) {
-         const unsigned integer_sources =
-            brw_type_is_int(inst->src[0].type) +
-            brw_type_is_int(inst->src[1].type) +
-            brw_type_is_int(inst->src[2].type);
-         const unsigned float_sources =
-            brw_type_is_float(inst->src[0].type) +
-            brw_type_is_float(inst->src[1].type) +
-            brw_type_is_float(inst->src[2].type);
+         if (inst->is_3src(s.compiler)) {
+            const unsigned integer_sources =
+               brw_type_is_int(inst->src[0].type) +
+               brw_type_is_int(inst->src[1].type) +
+               brw_type_is_int(inst->src[2].type);
+            const unsigned float_sources =
+               brw_type_is_float(inst->src[0].type) +
+               brw_type_is_float(inst->src[1].type) +
+               brw_type_is_float(inst->src[2].type);
 
-         fsv_assert((integer_sources == 3 && float_sources == 0) ||
-                    (integer_sources == 0 && float_sources == 3));
+            fsv_assert((integer_sources == 3 && float_sources == 0) ||
+                       (integer_sources == 0 && float_sources == 3));
 
-         if (devinfo->ver >= 10) {
-            for (unsigned i = 0; i < 3; i++) {
-               if (inst->src[i].file == IMM)
-                  continue;
+            if (devinfo->ver >= 10) {
+               for (unsigned i = 0; i < 3; i++) {
+                  if (inst->src[i].file == IMM)
+                     continue;
 
-               switch (inst->src[i].vstride) {
-               case BRW_VERTICAL_STRIDE_0:
-               case BRW_VERTICAL_STRIDE_4:
-               case BRW_VERTICAL_STRIDE_8:
-               case BRW_VERTICAL_STRIDE_16:
-                  break;
+                  switch (inst->src[i].vstride) {
+                  case BRW_VERTICAL_STRIDE_0:
+                  case BRW_VERTICAL_STRIDE_4:
+                  case BRW_VERTICAL_STRIDE_8:
+                  case BRW_VERTICAL_STRIDE_16:
+                     break;
 
-               case BRW_VERTICAL_STRIDE_1:
-                  fsv_assert_lte(12, devinfo->ver);
-                  break;
+                  case BRW_VERTICAL_STRIDE_1:
+                     fsv_assert_lte(12, devinfo->ver);
+                     break;
 
                case BRW_VERTICAL_STRIDE_2:
                   fsv_assert_lte(devinfo->ver, 11);
                   break;
 
-               default:
-                  fsv_assert(!"invalid vstride");
-                  break;
+                  default:
+                     fsv_assert(!"invalid vstride");
+                     break;
+                  }
                }
-            }
-         } else if (s.grf_used != 0) {
-            /* Only perform the pre-Gfx10 checks after register allocation has
-             * occured.
-             *
-             * Many passes (e.g., constant copy propagation) will genenerate
-             * invalid 3-source instructions with the expectation that later
-             * passes (e.g., combine constants) will fix them.
-             */
-            for (unsigned i = 0; i < 3; i++) {
-               fsv_assert_ne(inst->src[i].file, IMM);
-
-               /* A stride of 1 (the usual case) or 0, with a special
-                * "repctrl" bit, is allowed. The repctrl bit doesn't work for
-                * 64-bit datatypes, so if the source type is 64-bit then only
-                * a stride of 1 is allowed. From the Broadwell PRM, Volume 7
-                * "3D Media GPGPU", page 944:
+            } else if (s.grf_used != 0) {
+               /* Only perform the pre-Gfx10 checks after register allocation
+                * has occured.
                 *
-                *    This is applicable to 32b datatypes and 16b datatype. 64b
-                *    datatypes cannot use the replicate control.
+                * Many passes (e.g., constant copy propagation) will
+                * genenerate invalid 3-source instructions with the
+                * expectation that later passes (e.g., combine constants) will
+                * fix them.
                 */
-               const unsigned stride_in_bytes = byte_stride(inst->src[i]);
-               const unsigned size_in_bytes = brw_type_size_bytes(inst->src[i].type);
-               if (stride_in_bytes == 0) {
-                  /* If the source is_scalar, then the stride will be
-                   * converted to <4;4,1> in brw_lower_scalar_fp64_MAD after
-                   * SIMD splitting.
+               for (unsigned i = 0; i < 3; i++) {
+                  fsv_assert_ne(inst->src[i].file, IMM);
+
+                  /* A stride of 1 (the usual case) or 0, with a special
+                   * "repctrl" bit, is allowed. The repctrl bit doesn't work
+                   * for 64-bit datatypes, so if the source type is 64-bit
+                   * then only a stride of 1 is allowed. From the Broadwell
+                   * PRM, Volume 7 "3D Media GPGPU", page 944:
+                   *
+                   *    This is applicable to 32b datatypes and 16b datatype.
+                   *    64b datatypes cannot use the replicate control.
                    */
-                  if (!inst->src[i].is_scalar)
-                     fsv_assert_lte(size_in_bytes, 4);
-               } else {
-                  fsv_assert_eq(stride_in_bytes, size_in_bytes);
+                  const unsigned stride_in_bytes = byte_stride(inst->src[i]);
+                  const unsigned size_in_bytes = brw_type_size_bytes(inst->src[i].type);
+                  if (stride_in_bytes == 0) {
+                     /* If the source is_scalar, then the stride will be
+                      * converted to <4;4,1> in brw_lower_scalar_fp64_MAD
+                      * after SIMD splitting.
+                      */
+                     if (!inst->src[i].is_scalar)
+                        fsv_assert_lte(size_in_bytes, 4);
+                  } else {
+                     fsv_assert_eq(stride_in_bytes, size_in_bytes);
+                  }
                }
             }
          }
-      }
 
-      if (inst->dst.file == VGRF) {
-         fsv_assert_lte(inst->dst.offset / REG_SIZE + regs_written(inst),
-                        s.alloc.sizes[inst->dst.nr]);
+         if (inst->dst.file == VGRF) {
+            fsv_assert_lte(inst->dst.offset / REG_SIZE + regs_written(inst),
+                           s.alloc.sizes[inst->dst.nr]);
 
-         if (inst->exec_size > 1)
-            fsv_assert_ne(inst->dst.stride, 0);
-      }
-
-      for (unsigned i = 0; i < inst->sources; i++) {
-         if (inst->src[i].file == VGRF) {
-            fsv_assert_lte(inst->src[i].offset / REG_SIZE + regs_read(devinfo, inst, i),
-                           s.alloc.sizes[inst->src[i].nr]);
+            if (inst->exec_size > 1)
+               fsv_assert_ne(inst->dst.stride, 0);
          }
-      }
 
-      /* Accumulator Registers, bspec 47251:
-       *
-       * "When destination is accumulator with offset 0, destination
-       * horizontal stride must be 1."
-       */
-      if (intel_needs_workaround(devinfo, 14014617373) &&
-          inst->dst.is_accumulator() &&
-          phys_subnr(devinfo, inst->dst) == 0) {
-         fsv_assert_eq(inst->dst.hstride, 1);
-      }
-
-      if (inst->is_math() && intel_needs_workaround(devinfo, 22016140776)) {
-         /* Wa_22016140776:
-          *
-          *    Scalar broadcast on HF math (packed or unpacked) must not be
-          *    used.  Compiler must use a mov instruction to expand the scalar
-          *    value to a vector before using in a HF (packed or unpacked)
-          *    math operation.
-          *
-          * Since copy propagation knows about this restriction, nothing
-          * should be able to generate these invalid source strides. Detect
-          * potential problems sooner rather than later.
-          */
          for (unsigned i = 0; i < inst->sources; i++) {
-            fsv_assert(inst->src[i].is_scalar ||
-                       !is_uniform(inst->src[i]) ||
-                       inst->src[i].type != BRW_TYPE_HF);
+            if (inst->src[i].file == VGRF) {
+               fsv_assert_lte(inst->src[i].offset / REG_SIZE + regs_read(devinfo, inst, i),
+                              s.alloc.sizes[inst->src[i].nr]);
+            }
+         }
+
+         /* Accumulator Registers, bspec 47251:
+          *
+          * "When destination is accumulator with offset 0, destination
+          * horizontal stride must be 1."
+          */
+         if (intel_needs_workaround(devinfo, 14014617373) &&
+             inst->dst.is_accumulator() &&
+             phys_subnr(devinfo, inst->dst) == 0) {
+            fsv_assert_eq(inst->dst.hstride, 1);
+         }
+
+         if (inst->is_math() && intel_needs_workaround(devinfo, 22016140776)) {
+            /* Wa_22016140776:
+             *
+             *    Scalar broadcast on HF math (packed or unpacked) must not be
+             *    used. Compiler must use a mov instruction to expand the
+             *    scalar value to a vector before using in a HF (packed or
+             *    unpacked) math operation.
+             *
+             * Since copy propagation knows about this restriction, nothing
+             * should be able to generate these invalid source strides. Detect
+             * potential problems sooner rather than later.
+             */
+            if (devinfo->ver >= 20 && inst->writes_accumulator) {
+               fsv_assert(inst->dst.is_accumulator() ||
+                          inst->opcode == BRW_OPCODE_ADDC ||
+                          inst->opcode == BRW_OPCODE_MACH ||
+                          inst->opcode == BRW_OPCODE_SUBB);
+            }
+
+            if (inst->is_3src(s.compiler)) {
+               const unsigned integer_sources =
+                  brw_type_is_int(inst->src[0].type) +
+                  brw_type_is_int(inst->src[1].type) +
+                  brw_type_is_int(inst->src[2].type);
+               const unsigned float_sources =
+                  brw_type_is_float(inst->src[0].type) +
+                  brw_type_is_float(inst->src[1].type) +
+                  brw_type_is_float(inst->src[2].type);
+
+               fsv_assert((integer_sources == 3 && float_sources == 0) ||
+                          (integer_sources == 0 && float_sources == 3));
+
+               if (devinfo->ver >= 10) {
+                  for (unsigned i = 0; i < 3; i++) {
+                     if (inst->src[i].file == IMM)
+                        continue;
+
+                     switch (inst->src[i].vstride) {
+                     case BRW_VERTICAL_STRIDE_0:
+                     case BRW_VERTICAL_STRIDE_4:
+                     case BRW_VERTICAL_STRIDE_8:
+                     case BRW_VERTICAL_STRIDE_16:
+                        break;
+
+                     case BRW_VERTICAL_STRIDE_1:
+                        fsv_assert_lte(12, devinfo->ver);
+                        break;
+
+                     case BRW_VERTICAL_STRIDE_2:
+                        fsv_assert_lte(devinfo->ver, 11);
+                        break;
+
+                     default:
+                        fsv_assert(!"invalid vstride");
+                        break;
+                     }
+                  }
+               } else if (s.grf_used != 0) {
+                  /* Only perform the pre-Gfx10 checks after register
+                   * allocation has occured.
+                   *
+                   * Many passes (e.g., constant copy propagation) will
+                   * genenerate invalid 3-source instructions with the
+                   * expectation that later passes (e.g., combine constants)
+                   * will fix them.
+                   */
+                  for (unsigned i = 0; i < 3; i++) {
+                     fsv_assert_ne(inst->src[i].file, IMM);
+
+                     /* A stride of 1 (the usual case) or 0, with a special
+                      * "repctrl" bit, is allowed. The repctrl bit doesn't
+                      * work for 64-bit datatypes, so if the source type is
+                      * 64-bit then only a stride of 1 is allowed. From the
+                      * Broadwell PRM, Volume 7 "3D Media GPGPU", page 944:
+                      *
+                      *    This is applicable to 32b datatypes and 16b
+                      *    datatype. 64b datatypes cannot use the replicate
+                      *    control.
+                      */
+                     const unsigned stride_in_bytes = byte_stride(inst->src[i]);
+                     const unsigned size_in_bytes = brw_type_size_bytes(inst->src[i].type);
+                     if (stride_in_bytes == 0) {
+                        fsv_assert_lte(size_in_bytes, 4);
+                     } else {
+                        fsv_assert_eq(stride_in_bytes, size_in_bytes);
+                     }
+                  }
+               }
+            }
+
+            if (inst->dst.file == VGRF) {
+               fsv_assert_lte(inst->dst.offset / REG_SIZE + regs_written(inst),
+                              s.alloc.sizes[inst->dst.nr]);
+            }
+
+            for (unsigned i = 0; i < inst->sources; i++) {
+               fsv_assert(inst->src[i].is_scalar ||
+                          !is_uniform(inst->src[i]) ||
+                          inst->src[i].type != BRW_TYPE_HF);
+            }
          }
       }
    }
