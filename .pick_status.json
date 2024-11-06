@@ -504,7 +504,7 @@
         "description": "etnaviv/nn: Fix use of etna_core_info",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "92a6f697d589c926edf712ca40a7742ce7d187d7",
         "notes": null
