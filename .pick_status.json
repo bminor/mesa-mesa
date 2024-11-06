@@ -384,7 +384,7 @@
         "description": "anv: fix extent computation in image->image host copies",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0317c448727b2558a3748b7d621d6006de5ba51b",
         "notes": null
