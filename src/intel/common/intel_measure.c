@@ -116,8 +116,7 @@ intel_measure_init(struct intel_measure_device *device)
 
       if (filename && __normal_user()) {
          filename += 5;
-         config.deferred_create_filename = malloc(strlen(filename));
-         strcpy(config.deferred_create_filename, filename);
+         config.deferred_create_filename = strdup(filename);
       }
 
       if (start_frame_s) {
