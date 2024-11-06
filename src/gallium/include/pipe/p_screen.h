@@ -67,6 +67,7 @@ struct u_transfer_helper;
 struct pipe_screen;
 struct util_queue_fence;
 struct pipe_video_buffer;
+struct nir_shader;
 
 typedef struct pipe_vertex_state *
    (*pipe_create_vertex_state_func)(struct pipe_screen *screen,
@@ -640,7 +641,7 @@ struct pipe_screen {
     * The driver may return a non-NULL string to trigger GLSL link failure
     * and logging of that message in the GLSL linker log.
     */
-   char *(*finalize_nir)(struct pipe_screen *screen, void *nir);
+   char *(*finalize_nir)(struct pipe_screen *screen, struct nir_shader *nir);
 
    /*Separated memory/resource allocations interfaces for Vulkan */
 

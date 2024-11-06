@@ -602,7 +602,7 @@ static const void *noop_get_compiler_options(struct pipe_screen *pscreen,
    return screen->get_compiler_options(screen, ir, shader);
 }
 
-static char *noop_finalize_nir(struct pipe_screen *pscreen, void *nir)
+static char *noop_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *nir)
 {
    struct pipe_screen *screen = ((struct noop_pipe_screen*)pscreen)->oscreen;
 

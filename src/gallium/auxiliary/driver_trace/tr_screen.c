@@ -1179,7 +1179,7 @@ trace_screen_get_timestamp(struct pipe_screen *_screen)
 }
 
 static char *
-trace_screen_finalize_nir(struct pipe_screen *_screen, void *nir)
+trace_screen_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
 {
    struct pipe_screen *screen = trace_screen(_screen)->screen;
 

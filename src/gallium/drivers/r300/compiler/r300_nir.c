@@ -272,10 +272,8 @@ r300_check_control_flow(nir_shader *s)
 }
 
 char *
-r300_finalize_nir(struct pipe_screen *pscreen, void *nir)
+r300_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *s)
 {
-   nir_shader *s = nir;
-
    r300_optimize_nir(s, pscreen);
 
    /* st_program.c's parameter list optimization requires that future nir

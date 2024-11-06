@@ -6453,10 +6453,9 @@ zink_shader_init(struct zink_screen *screen, struct zink_shader *zs)
 }
 
 char *
-zink_shader_finalize(struct pipe_screen *pscreen, void *nirptr)
+zink_shader_finalize(struct pipe_screen *pscreen, struct nir_shader *nir)
 {
    struct zink_screen *screen = zink_screen(pscreen);
-   nir_shader *nir = nirptr;
 
    nir_lower_tex_options tex_opts = {
       .lower_invalid_implicit_lod = true,

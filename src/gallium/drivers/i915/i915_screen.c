@@ -253,10 +253,8 @@ i915_check_control_flow(nir_shader *s)
 }
 
 static char *
-i915_finalize_nir(struct pipe_screen *pscreen, void *nir)
+i915_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *s)
 {
-   nir_shader *s = nir;
-
    if (s->info.stage == MESA_SHADER_FRAGMENT)
       i915_optimize_nir(s);
 

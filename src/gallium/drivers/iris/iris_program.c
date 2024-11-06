@@ -3700,10 +3700,9 @@ iris_bind_cs_state(struct pipe_context *ctx, void *state)
 }
 
 static char *
-iris_finalize_nir(struct pipe_screen *_screen, void *nirptr)
+iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
 {
    struct iris_screen *screen = (struct iris_screen *)_screen;
-   struct nir_shader *nir = (struct nir_shader *) nirptr;
    const struct intel_device_info *devinfo = screen->devinfo;
 
    NIR_PASS_V(nir, iris_fix_edge_flags);

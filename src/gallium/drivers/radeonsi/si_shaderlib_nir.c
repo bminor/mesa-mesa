@@ -15,7 +15,7 @@
 
 void *si_create_shader_state(struct si_context *sctx, nir_shader *nir)
 {
-   sctx->b.screen->finalize_nir(sctx->b.screen, (void*)nir);
+   sctx->b.screen->finalize_nir(sctx->b.screen, nir);
    return pipe_shader_from_nir(&sctx->b, nir);
 }
 
