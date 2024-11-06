@@ -933,13 +933,10 @@ _util_cpu_detect_once(void)
       cpuid(0x80000000, regs);
 
       if (regs[0] >= 0x80000001) {
-
          cpuid(0x80000001, regs2);
 
          util_cpu_caps.has_mmx  |= (regs2[3] >> 23) & 1;
          util_cpu_caps.has_mmx2 |= (regs2[3] >> 22) & 1;
-         util_cpu_caps.has_3dnow = (regs2[3] >> 31) & 1;
-         util_cpu_caps.has_3dnow_ext = (regs2[3] >> 30) & 1;
 
          util_cpu_caps.has_xop = util_cpu_caps.has_avx &&
                                  ((regs2[2] >> 11) & 1);
@@ -1001,8 +998,6 @@ _util_cpu_detect_once(void)
       printf("util_cpu_caps.has_avx2 = %u\n", util_cpu_caps.has_avx2);
       printf("util_cpu_caps.has_f16c = %u\n", util_cpu_caps.has_f16c);
       printf("util_cpu_caps.has_popcnt = %u\n", util_cpu_caps.has_popcnt);
-      printf("util_cpu_caps.has_3dnow = %u\n", util_cpu_caps.has_3dnow);
-      printf("util_cpu_caps.has_3dnow_ext = %u\n", util_cpu_caps.has_3dnow_ext);
       printf("util_cpu_caps.has_xop = %u\n", util_cpu_caps.has_xop);
       printf("util_cpu_caps.has_altivec = %u\n", util_cpu_caps.has_altivec);
       printf("util_cpu_caps.has_vsx = %u\n", util_cpu_caps.has_vsx);

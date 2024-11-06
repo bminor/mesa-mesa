@@ -101,8 +101,6 @@ struct util_cpu_caps_t {
    unsigned has_avx2:1;
    unsigned has_f16c:1;
    unsigned has_fma:1;
-   unsigned has_3dnow:1;
-   unsigned has_3dnow_ext:1;
    unsigned has_xop:1;
    unsigned has_altivec:1;
    unsigned has_vsx:1;
