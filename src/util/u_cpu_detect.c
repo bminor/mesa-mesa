@@ -923,11 +923,6 @@ _util_cpu_detect_once(void)
          }
       }
 
-      if (regs[1] == 0x756e6547 && regs[2] == 0x6c65746e && regs[3] == 0x49656e69) {
-         /* GenuineIntel */
-         util_cpu_caps.has_intel = 1;
-      }
-
       cpuid(0x80000000, regs);
 
       if (regs[0] >= 0x80000001) {

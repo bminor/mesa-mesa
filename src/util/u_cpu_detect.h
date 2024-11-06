@@ -87,7 +87,6 @@ struct util_cpu_caps_t {
    int x86_cpu_type;
    unsigned cacheline;
 
-   unsigned has_intel:1;
    unsigned has_sse:1;
    unsigned has_sse2:1;
    unsigned has_sse3:1;
