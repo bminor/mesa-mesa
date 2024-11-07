@@ -165,7 +165,6 @@ fill_tensor(struct teflon_delegate *delegate, TfLiteContext *tf_context, struct 
 {
    struct pipe_context *context = delegate->context;
    TfLiteTensor tf_tensor = tf_context->tensors[index];
-   const TfLiteAffineQuantization *quant = (const TfLiteAffineQuantization *)tf_tensor.quantization.params;
 
    if (tf_tensor.type == kTfLiteNoType)
       return; /* Placeholder tensor */
@@ -175,8 +174,12 @@ fill_tensor(struct teflon_delegate *delegate, TfLiteContext *tf_context, struct 
 
    tensor->index = index;
    memcpy(tensor->dims, tf_tensor.dims->data, tf_tensor.dims->size * sizeof(*tensor->dims));
-   tensor->scale = quant->scale->data[0];
-   tensor->zero_point = quant->zero_point->data[0];
+
+   if (tf_tensor.quantization.type == kTfLiteAffineQuantization) {
+      const TfLiteAffineQuantization *quant = (const TfLiteAffineQuantization *)tf_tensor.quantization.params;
+      tensor->scale = quant->scale->data[0];
+      tensor->zero_point = quant->zero_point->data[0];
+   }
 
    switch(tf_tensor.type) {
       case kTfLiteUInt8:
