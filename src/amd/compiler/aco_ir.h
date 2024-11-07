@@ -1987,10 +1987,6 @@ struct Block {
    uint16_t divergent_if_logical_depth = 0;
    uint16_t uniform_if_depth = 0;
 
-   /* this information is needed for predecessors to blocks with phis when
-    * moving out of ssa */
-   bool scc_live_out = false;
-
    Block() : index(0) {}
 };
 
