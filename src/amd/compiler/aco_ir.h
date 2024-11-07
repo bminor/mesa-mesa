@@ -423,8 +423,10 @@ static constexpr PhysReg flat_scr_lo{102}; /* GFX8-GFX9, encoded differently on 
 static constexpr PhysReg flat_scr_hi{103}; /* GFX8-GFX9, encoded differently on GFX6-7 */
 static constexpr PhysReg vcc{106};
 static constexpr PhysReg vcc_hi{107};
-static constexpr PhysReg tba{108}; /* GFX6-GFX8 */
-static constexpr PhysReg tma{110}; /* GFX6-GFX8 */
+static constexpr PhysReg tba_lo{108}; /* GFX6-GFX8 */
+static constexpr PhysReg tba_hi{109}; /* GFX6-GFX8 */
+static constexpr PhysReg tma_lo{110}; /* GFX6-GFX8 */
+static constexpr PhysReg tma_hi{111}; /* GFX6-GFX8 */
 static constexpr PhysReg ttmp0{112};
 static constexpr PhysReg ttmp1{113};
 static constexpr PhysReg ttmp2{114};

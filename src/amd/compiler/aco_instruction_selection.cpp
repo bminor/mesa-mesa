@@ -12498,7 +12498,7 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
                 /* disable_wqm */ false, cache_glc);
    } else {
       /* Load the buffer descriptor from TMA. */
-      bld.smem(aco_opcode::s_load_dwordx4, Definition(tma_rsrc, s4), Operand(PhysReg{tma}, s2),
+      bld.smem(aco_opcode::s_load_dwordx4, Definition(tma_rsrc, s4), Operand(PhysReg{tma_lo}, s2),
                Operand::zero());
 
       /* Store TTMP0-TTMP1. */
