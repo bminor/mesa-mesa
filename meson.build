@@ -2037,6 +2037,15 @@ if with_platform_wayland
   endif
 endif
 
+# Even if we find OpenMP, Gitlab CI fails to link with gcc/i386 and clang/anyarch.
+dep_openmp = null_dep
+if host_machine.cpu_family() == 'x86_64' and cc.get_id() == 'gcc'
+  dep_openmp = dependency('openmp', required : false)
+  if dep_openmp.found()
+    pre_args += ['-DHAVE_OPENMP']
+  endif
+endif
+
 dep_x11 = null_dep
 dep_xext = null_dep
 dep_xfixes = null_dep
@@ -2056,15 +2065,6 @@ dep_xshmfence = null_dep
 dep_xcb_xrandr = null_dep
 dep_xcb_shm = null_dep
 dep_xlib_xrandr = null_dep
-dep_openmp = null_dep
-
-# Even if we find OpenMP, Gitlab CI fails to link with gcc/i386 and clang/anyarch.
-if host_machine.cpu_family() == 'x86_64' and cc.get_id() == 'gcc'
-  dep_openmp = dependency('openmp', required : false)
-  if dep_openmp.found()
-    pre_args += ['-DHAVE_OPENMP']
-  endif
-endif
 
 with_dri3_explicit_sync = false
 with_xcb_keysyms = false
