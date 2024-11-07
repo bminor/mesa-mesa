@@ -329,6 +329,7 @@ spec@glsl-4.20@execution@conversion@frag-conversion-implicit-mat4-dmat4-zero-sig
 # Random flakes, unkown when they started appearing
 dEQP-EGL.functional.color_clears.multi_thread.gles2.rgb888_pbuffer
 wayland-dEQP-EGL.functional.fence_sync.valid.egl_fence_persistent_buffer
+dEQP-EGL.functional.fence_sync.valid.egl_fence_persistent_buffer
 
 # glcts update
 KHR-GL46.draw_indirect.basic-drawElements-xfbPaused
