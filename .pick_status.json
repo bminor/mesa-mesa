@@ -1124,7 +1124,7 @@
         "description": "panvk: ensure res table is restored after meta",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5067921349a9830eeac3414e47f11119cfae9291",
         "notes": null
