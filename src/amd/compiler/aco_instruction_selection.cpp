@@ -12506,8 +12506,8 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
                Operand(ttmp0_reg, s2), memory_sync_info(), cache_glc);
    }
 
-   uint32_t hw_regs_idx[] = {
-      2, /* HW_REG_STATUS */
+   /* Store some hardware registers. */
+   const uint32_t hw_regs_idx[] = {
       3, /* HW_REG_TRAP_STS */
       4, /* HW_REG_HW_ID */
       5, /* WH_REG_GPR_ALLOC */
@@ -12515,7 +12515,10 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    };
    uint32_t offset = 8;
 
-   /* Store some hardware registers. */
+   /* Store saved SQ_WAVE_STATUS which can change inside the trap. */
+   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_wave_status, s1), offset);
+   offset += 4;
+
    for (unsigned i = 0; i < ARRAY_SIZE(hw_regs_idx); i++) {
       /* "((size - 1) << 11) | register" */
       bld.sopk(aco_opcode::s_getreg_b32, Definition(ttmp0_reg, s1),
