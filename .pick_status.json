@@ -84,7 +84,7 @@
         "description": "etnaviv: Fix incorrect pipe_nn creation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a4653587cc434e8dbaa2b06cd18c8132ab611f78",
         "notes": null
