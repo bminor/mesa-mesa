@@ -15,6 +15,7 @@
 #include "genxml/cs_builder.h"
 
 #include "panvk_cmd_desc_state.h"
+#include "panvk_cmd_draw.h"
 #include "panvk_cmd_push_constant.h"
 #include "panvk_queue.h"
 
@@ -314,97 +315,6 @@ struct panvk_cmd_compute_state {
    struct {
       struct panvk_shader_desc_state desc;
    } cs;
-};
-
-struct panvk_attrib_buf {
-   mali_ptr address;
-   unsigned size;
-};
-
-struct panvk_resolve_attachment {
-   VkResolveModeFlagBits mode;
-   struct panvk_image_view *dst_iview;
-};
-
-struct panvk_rendering_state {
-   VkRenderingFlags flags;
-   uint32_t layer_count;
-
-   enum vk_rp_attachment_flags bound_attachments;
-   struct {
-      struct panvk_image_view *iviews[MAX_RTS];
-      VkFormat fmts[MAX_RTS];
-      uint8_t samples[MAX_RTS];
-      struct panvk_resolve_attachment resolve[MAX_RTS];
-   } color_attachments;
-
-   struct pan_image_view zs_pview;
-
-   struct {
-      struct panvk_image_view *iview;
-      VkFormat fmt;
-      struct panvk_resolve_attachment resolve;
-   } z_attachment, s_attachment;
-
-   struct {
-      struct pan_fb_info info;
-      bool crc_valid[MAX_RTS];
-   } fb;
-
-   struct panfrost_ptr fbds;
-   mali_ptr tiler;
-   bool dirty;
-};
-
-struct panvk_cmd_graphics_state {
-   struct panvk_descriptor_state desc_state;
-
-   struct {
-      struct vk_vertex_input_state vi;
-      struct vk_sample_locations_state sl;
-   } dynamic;
-
-   struct panvk_graphics_sysvals sysvals;
-
-   struct panvk_shader_link link;
-   bool linked;
-
-   struct {
-      const struct panvk_shader *shader;
-      struct panvk_shader_desc_state desc;
-      mali_ptr spd;
-   } fs;
-
-   struct {
-      const struct panvk_shader *shader;
-      struct panvk_shader_desc_state desc;
-      struct {
-         mali_ptr pos, var;
-      } spds;
-   } vs;
-
-   struct {
-      struct panvk_attrib_buf bufs[MAX_VBS];
-      unsigned count;
-      bool dirty;
-   } vb;
-
-   /* Index buffer */
-   struct {
-      struct panvk_buffer *buffer;
-      uint64_t offset;
-      uint8_t index_size;
-      bool dirty;
-   } ib;
-
-   struct {
-      struct panvk_blend_info info;
-   } cb;
-
-   struct panvk_rendering_state render;
-
-   mali_ptr push_uniforms;
-   mali_ptr tsd;
 };
 
 struct panvk_cmd_buffer {
