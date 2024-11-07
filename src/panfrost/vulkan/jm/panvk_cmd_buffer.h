@@ -15,6 +15,7 @@
 #include "vulkan/runtime/vk_command_buffer.h"
 
 #include "panvk_cmd_desc_state.h"
+#include "panvk_cmd_dispatch.h"
 #include "panvk_cmd_draw.h"
 #include "panvk_cmd_push_constant.h"
 #include "panvk_descriptor_set.h"
@@ -70,18 +71,6 @@ enum panvk_cmd_event_op_type {
 struct panvk_cmd_event_op {
    enum panvk_cmd_event_op_type type;
    struct panvk_event *event;
-};
-
-struct panvk_cmd_compute_state {
-   struct panvk_descriptor_state desc_state;
-   const struct panvk_shader *shader;
-   struct panvk_compute_sysvals sysvals;
-   mali_ptr push_uniforms;
-#if PAN_ARCH <= 7
-   struct {
-      struct panvk_shader_desc_state desc;
-   } cs;
-#endif
 };
 
 struct panvk_cmd_buffer {

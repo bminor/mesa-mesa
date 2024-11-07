@@ -15,6 +15,7 @@
 #include "genxml/cs_builder.h"
 
 #include "panvk_cmd_desc_state.h"
+#include "panvk_cmd_dispatch.h"
 #include "panvk_cmd_draw.h"
 #include "panvk_cmd_push_constant.h"
 #include "panvk_queue.h"
@@ -305,16 +306,6 @@ struct panvk_tls_state {
    struct panfrost_ptr desc;
    struct pan_tls_info info;
    unsigned max_wg_count;
-};
-
-struct panvk_cmd_compute_state {
-   struct panvk_descriptor_state desc_state;
-   const struct panvk_shader *shader;
-   struct panvk_compute_sysvals sysvals;
-   mali_ptr push_uniforms;
-   struct {
-      struct panvk_shader_desc_state desc;
-   } cs;
 };
 
 struct panvk_cmd_buffer {
