@@ -1672,24 +1672,27 @@ cs_nop(struct cs_builder *b)
    cs_emit(b, NOP, I) {};
 }
 
+struct cs_exception_handler_ctx {
+   uint64_t addr;
+   uint8_t sb_slot;
+};
+
 struct cs_exception_handler {
    struct cs_block block;
    struct cs_dirty_tracker dirty;
-   uint64_t backup_addr;
-   uint8_t sb_slot;
+   struct cs_exception_handler_ctx ctx;
 };
 
 static inline struct cs_exception_handler *
 cs_exception_handler_start(struct cs_builder *b,
                            struct cs_exception_handler *handler,
-                           uint64_t backup_addr, uint8_t sb_slot)
+                           struct cs_exception_handler_ctx ctx)
 {
    assert(cs_cur_block(b) == NULL);
    assert(b->conf.dirty_tracker == NULL);
 
    *handler = (struct cs_exception_handler){
-      .backup_addr = backup_addr,
-      .sb_slot = sb_slot,
+      .ctx = ctx,
    };
 
    cs_block_start(b, &handler->block);
@@ -1761,7 +1764,7 @@ cs_exception_handler_end(struct cs_builder *b,
    if (num_ranges > 0) {
       unsigned offset = 0;
 
-      cs_move64_to(b, addr_reg, handler->backup_addr);
+      cs_move64_to(b, addr_reg, handler->ctx.addr);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -1770,7 +1773,7 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->sb_slot, false);
+      cs_wait_slot(b, handler->ctx.sb_slot, false);
    }
 
    /* Now that the preamble is emitted, we can flush the instructions we have in
@@ -1788,6 +1791,6 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->sb_slot, false);
+      cs_wait_slot(b, handler->ctx.sb_slot, false);
    }
 }

@@ -110,14 +110,19 @@ csf_oom_handler_init(struct panfrost_context *ctx)
       .capacity = panfrost_bo_size(cs_bo) / sizeof(uint64_t),
    };
    struct cs_builder b;
-   struct cs_exception_handler handler;
    const struct cs_builder_conf conf = {
       .nr_registers = 96,
       .nr_kernel_registers = 4,
       .reg_perm = (dev->debug & PAN_DBG_CS) ? csf_reg_perm_cb : NULL,
    };
    cs_builder_init(&b, &conf, queue);
-   cs_exception_handler_start(&b, &handler, reg_save_bo->ptr.gpu, 0);
+
+   struct cs_exception_handler_ctx handler_ctx = {
+      .addr = reg_save_bo->ptr.gpu,
+      .sb_slot = 0,
+   };
+   struct cs_exception_handler handler;
+   cs_exception_handler_start(&b, &handler, handler_ctx);
 
    struct cs_index tiler_oom_ctx = cs_reg64(&b, TILER_OOM_CTX_REG);
    struct cs_index counter = cs_reg32(&b, 47);
