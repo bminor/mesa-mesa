@@ -12434,6 +12434,13 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    ac_hw_cache_flags cache_glc;
    cache_glc.value = ac_glc;
 
+   const uint32_t ttmp0_idx = ctx.program->gfx_level >= GFX9 ? 108 : 112;
+   PhysReg ttmp0_reg{ttmp0_idx};
+   PhysReg ttmp1_reg{ttmp0_idx + 1};
+   PhysReg ttmp2_reg{ttmp0_idx + 2};
+   PhysReg ttmp3_reg{ttmp0_idx + 3};
+   PhysReg tma_rsrc{ttmp0_idx + 4}; /* s4 */
+
    if (options->gfx_level < GFX11) {
       /* Clear the current wave exception, this is required to re-enable VALU
        * instructions in this wave. Seems to be only needed for float exceptions.
@@ -12444,37 +12451,35 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    if (ctx.program->gfx_level >= GFX9) {
       /* Get TMA. */
       if (ctx.program->gfx_level >= GFX11) {
-         bld.sop1(aco_opcode::s_sendmsg_rtn_b32, Definition(PhysReg{ttmp10}, s1),
+         bld.sop1(aco_opcode::s_sendmsg_rtn_b32, Definition(ttmp2_reg, s1),
                   Operand::c32(sendmsg_rtn_get_tma));
       } else {
-         bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp10}, s1), ((32 - 1) << 11) | 18);
+         bld.sopk(aco_opcode::s_getreg_b32, Definition(ttmp2_reg, s1), ((32 - 1) << 11) | 18);
       }
 
-      bld.sop2(aco_opcode::s_lshl_b32, Definition(PhysReg{ttmp10}, s1), Definition(scc, s1),
-               Operand(PhysReg{ttmp10}, s1), Operand::c32(8u));
-      bld.copy(Definition(PhysReg{ttmp11}, s1),
-               Operand::c32((unsigned)ctx.options->address32_hi));
+      bld.sop2(aco_opcode::s_lshl_b32, Definition(ttmp2_reg, s1), Definition(scc, s1),
+               Operand(ttmp2_reg, s1), Operand::c32(8u));
+      bld.copy(Definition(ttmp3_reg, s1), Operand::c32((unsigned)ctx.options->address32_hi));
 
       /* Load the buffer descriptor from TMA. */
-      bld.smem(aco_opcode::s_load_dwordx4, Definition(PhysReg{ttmp4}, s4),
-               Operand(PhysReg{ttmp10}, s2), Operand::c32(0u));
+      bld.smem(aco_opcode::s_load_dwordx4, Definition(tma_rsrc, s4), Operand(ttmp2_reg, s2),
+               Operand::c32(0u));
 
       /* Store TTMP0-TTMP1. */
-      bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{108}, s1) /* ttmp0 */);
-      bld.copy(Definition(PhysReg{257}, v1) /* v1 */, Operand(PhysReg{109}, s1) /* ttmp1 */);
+      bld.copy(Definition(PhysReg{256}, v2) /* v[0-1] */, Operand(ttmp0_reg, s2));
 
-      bld.mubuf(aco_opcode::buffer_store_dwordx2, Operand(PhysReg{ttmp4}, s4), Operand(v1),
+      bld.mubuf(aco_opcode::buffer_store_dwordx2, Operand(tma_rsrc, s4), Operand(v1),
                 Operand::c32(0u), Operand(PhysReg{256}, v2) /* v[0-1] */, 0 /* offset */,
                 false /* offen */, false /* idxen */, /* addr64 */ false,
                 /* disable_wqm */ false, cache_glc);
    } else {
       /* Load the buffer descriptor from TMA. */
-      bld.smem(aco_opcode::s_load_dwordx4, Definition(PhysReg{ttmp4}, s4), Operand(PhysReg{tma}, s2),
+      bld.smem(aco_opcode::s_load_dwordx4, Definition(tma_rsrc, s4), Operand(PhysReg{tma}, s2),
                Operand::zero());
 
       /* Store TTMP0-TTMP1. */
-      bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(PhysReg{ttmp4}, s4), Operand::zero(),
-               Operand(PhysReg{ttmp0}, s2), memory_sync_info(), cache_glc);
+      bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(tma_rsrc, s4), Operand::zero(),
+               Operand(ttmp0_reg, s2), memory_sync_info(), cache_glc);
    }
 
    uint32_t hw_regs_idx[] = {
@@ -12489,19 +12494,19 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    /* Store some hardware registers. */
    for (unsigned i = 0; i < ARRAY_SIZE(hw_regs_idx); i++) {
       /* "((size - 1) << 11) | register" */
-      bld.sopk(aco_opcode::s_getreg_b32, Definition(PhysReg{ttmp8}, s1),
+      bld.sopk(aco_opcode::s_getreg_b32, Definition(ttmp0_reg, s1),
                ((32 - 1) << 11) | hw_regs_idx[i]);
 
       if (ctx.program->gfx_level >= GFX9) {
-         bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{ttmp8}, s1));
+         bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(ttmp0_reg, s1));
 
-         bld.mubuf(aco_opcode::buffer_store_dword, Operand(PhysReg{ttmp4}, s4), Operand(v1),
+         bld.mubuf(aco_opcode::buffer_store_dword, Operand(tma_rsrc, s4), Operand(v1),
                    Operand::c32(offset), Operand(PhysReg{256}, v1) /* v0 */, 0 /* offset */,
                    false /* offen */, false /* idxen */, /* addr64 */ false,
                    /* disable_wqm */ false, cache_glc);
       } else {
-         bld.smem(aco_opcode::s_buffer_store_dword, Operand(PhysReg{ttmp4}, s4),
-                  Operand::c32(offset), Operand(PhysReg{ttmp8}, s1), memory_sync_info(), cache_glc);
+         bld.smem(aco_opcode::s_buffer_store_dword, Operand(tma_rsrc, s4), Operand::c32(offset),
+                  Operand(ttmp0_reg, s1), memory_sync_info(), cache_glc);
       }
 
       offset += 4;
@@ -12511,7 +12516,7 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {
       bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{i}, s1));
 
-      bld.mubuf(aco_opcode::buffer_store_dword, Operand(PhysReg{ttmp4}, s4), Operand(v1),
+      bld.mubuf(aco_opcode::buffer_store_dword, Operand(tma_rsrc, s4), Operand(v1),
                 Operand::c32(0u), Operand(PhysReg{256}, v1) /* v0 */, offset, false /* offen */,
                 false /* idxen */, /* addr64 */ false,
                 /* disable_wqm */ false, cache_glc);
