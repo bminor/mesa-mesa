@@ -1242,12 +1242,12 @@ ir3_get_driver_param_info(const nir_shader *shader, nir_intrinsic_instr *intr,
       param_info->offset = IR3_DP_CS(local_group_size_x);
       break;
    case nir_intrinsic_load_subgroup_size:
-      assert(shader->info.stage == MESA_SHADER_COMPUTE ||
-             shader->info.stage == MESA_SHADER_FRAGMENT);
       if (shader->info.stage == MESA_SHADER_COMPUTE) {
          param_info->offset = IR3_DP_CS(subgroup_size);
-      } else {
+      } else if (shader->info.stage == MESA_SHADER_FRAGMENT) {
          param_info->offset = IR3_DP_FS(subgroup_size);
+      } else {
+         return false;
       }
       break;
    case nir_intrinsic_load_subgroup_id_shift_ir3:
@@ -1476,9 +1476,12 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
 
    assert((const_state->ubo_state.size % 16) == 0);
 
-   ir3_alloc_driver_params(&const_state->allocs,
-                           &const_state->num_driver_params, compiler,
-                           v->type);
+   /* IR3_CONST_ALLOC_DRIVER_PARAMS could have been allocated earlier. */
+   if (const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].size_vec4 == 0) {
+      ir3_alloc_driver_params(&const_state->allocs,
+                              &const_state->num_driver_params, compiler,
+                              v->type);
+   }
 
    if (const_state->image_dims.count > 0) {
       ir3_const_reserve_space(&const_state->allocs, IR3_CONST_ALLOC_IMAGE_DIMS,

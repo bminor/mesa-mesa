@@ -1474,6 +1474,14 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    if (phys_dev->info->a6xx.has_early_preamble) {
       tu_cs_emit_regs(cs, A6XX_SP_FS_CTRL_REG0());
    }
+
+   /* Workaround for draw state with constlen not being applied for
+    * zero-instance draw calls. See IR3_CONST_ALLOC_DRIVER_PARAMS allocation
+    * for more info.
+    */
+   tu_cs_emit_pkt4(
+      cs, CHIP == A6XX ? REG_A6XX_HLSQ_VS_CNTL : REG_A7XX_HLSQ_VS_CNTL, 1);
+   tu_cs_emit(cs, A6XX_HLSQ_VS_CNTL_CONSTLEN(8) | A6XX_HLSQ_VS_CNTL_ENABLED);
 }
 
 /* Set always-identical registers used specifically for GMEM */

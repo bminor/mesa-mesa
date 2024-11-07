@@ -836,6 +836,24 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
             bool dynamic_renderpass,
             struct ir3_const_allocations *const_allocs)
 {
+   /* Allocate driver params as early as possible as a workaround for the
+    * following case:
+    * - CP_DRAW_INDIRECT_MULTI_1_DST_OFF apparently tries to upload consts
+    *   even when there are 0 instances.
+    * - With zero instances, the draw state for VS constlen is not applied.
+    * - constlen therefor uses stale value and if
+    *   CP_DRAW_INDIRECT_MULTI_1_DST_OFF is higher than 0x3f - GPU hangs.
+    *
+    * To not rely on undefined behaviour, we will always allocate enough space
+    * to upload driver params.
+    */
+   if (shader->info.stage == MESA_SHADER_VERTEX) {
+      uint32_t num_driver_params =
+         ir3_nir_scan_driver_consts(dev->compiler, shader, nullptr);
+      ir3_alloc_driver_params(const_allocs, &num_driver_params, dev->compiler,
+                              shader->info.stage);
+   }
+
    struct tu_const_state *const_state = &tu_shader->const_state;
    const_state->push_consts = (struct tu_push_constant_range) {
       .lo_dwords = 0,

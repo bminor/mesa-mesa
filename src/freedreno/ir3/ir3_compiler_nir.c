@@ -5966,6 +5966,10 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       so->constlen = MAX2(so->constlen, 4);
    }
 
+   if (ctx->so->type == MESA_SHADER_VERTEX && ctx->compiler->gen >= 6) {
+      so->constlen = MAX2(so->constlen, 8);
+   }
+
    if (gl_shader_stage_is_compute(so->type)) {
       so->cs.local_invocation_id =
          ir3_find_sysval_regid(so, SYSTEM_VALUE_LOCAL_INVOCATION_ID);
