@@ -12461,9 +12461,17 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    PhysReg ttmp3_reg{ttmp0_idx + 3};
    PhysReg tma_rsrc{ttmp0_idx + 4}; /* s4 */
    PhysReg save_wave_status{ttmp0_idx + 8};
+   PhysReg save_m0{ttmp0_idx + 9};
+   PhysReg save_exec_lo{ttmp0_idx + 10};
+   PhysReg save_exec_hi{ttmp0_idx + 11};
 
    /* Save SQ_WAVE_STATUS because SCC needs to be restored. */
    bld.sopk(aco_opcode::s_getreg_b32, Definition(save_wave_status, s1), ((32 - 1) << 11) | 2);
+
+   /* Save m0 and exec. */
+   bld.copy(Definition(save_m0, s1), Operand(m0, s1));
+   bld.copy(Definition(save_exec_lo, s1), Operand(exec_lo, s1));
+   bld.copy(Definition(save_exec_hi, s1), Operand(exec_hi, s1));
 
    if (options->gfx_level < GFX11) {
       /* Clear the current wave exception, this is required to re-enable VALU
@@ -12527,6 +12535,14 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
       dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(ttmp0_reg, s1), offset);
       offset += 4;
    }
+
+   /* Dump shader registers (m0, exec). */
+   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_m0, s1), offset);
+   offset += 4;
+   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_exec_lo, s1), offset);
+   offset += 4;
+   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_exec_hi, s1), offset);
+   offset += 4;
 
    /* Dump all SGPRs. */
    for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {

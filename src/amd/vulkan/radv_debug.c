@@ -1008,6 +1008,9 @@ struct radv_trap_handler_layout {
       uint32_t ib_sts;
    } sq_wave_regs;
 
+   uint32_t m0;
+   uint32_t exec_lo;
+   uint32_t exec_hi;
    uint32_t sgprs[MAX_SGPRS];
 };
 
@@ -1036,8 +1039,14 @@ radv_dump_sq_hw_regs(struct radv_device *device, const struct radv_trap_handler_
 }
 
 static void
-radv_dump_sgprs(const struct radv_trap_handler_layout *layout, FILE *f)
+radv_dump_shader_regs(const struct radv_trap_handler_layout *layout, FILE *f)
 {
+   fprintf(f, "\nShader registers:\n");
+
+   fprintf(f, "m0: 0x%08x\n", layout->m0);
+   fprintf(f, "exec_lo: 0x%08x\n", layout->exec_lo);
+   fprintf(f, "exec_hi: 0x%08x\n", layout->exec_hi);
+
    fprintf(f, "\nSGPRS:\n");
    for (uint32_t i = 0; i < MAX_SGPRS; i += 4) {
       fprintf(f, "s[%d-%d]={0x%08x, 0x%08x, 0x%08x, 0x%08x}\n", i, i + 3, layout->sgprs[i], layout->sgprs[i + 1],
@@ -1089,7 +1098,7 @@ radv_check_trap_handler(struct radv_queue *queue)
 #endif
 
    radv_dump_sq_hw_regs(device, layout, f);
-   radv_dump_sgprs(layout, f);
+   radv_dump_shader_regs(layout, f);
 
    uint32_t ttmp0 = layout->ttmp0;
    uint32_t ttmp1 = layout->ttmp1;
