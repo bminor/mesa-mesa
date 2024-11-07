@@ -123,67 +123,66 @@ csf_oom_handler_init(struct panfrost_context *ctx)
       .ls_sb_slot = 0,
    };
    struct cs_exception_handler handler;
-   cs_exception_handler_start(&b, &handler, handler_ctx);
 
-   struct cs_index tiler_oom_ctx = cs_reg64(&b, TILER_OOM_CTX_REG);
-   struct cs_index counter = cs_reg32(&b, 47);
-   struct cs_index zero = cs_reg64(&b, 48);
-   struct cs_index flush_id = cs_reg32(&b, 48);
-   struct cs_index tiler_ctx = cs_reg64(&b, 50);
-   struct cs_index completed_top = cs_reg64(&b, 52);
-   struct cs_index completed_bottom = cs_reg64(&b, 54);
-   struct cs_index completed_chunks = cs_reg_tuple(&b, 52, 4);
+   cs_exception_handler_def(&b, &handler, handler_ctx) {
+      struct cs_index tiler_oom_ctx = cs_reg64(&b, TILER_OOM_CTX_REG);
+      struct cs_index counter = cs_reg32(&b, 47);
+      struct cs_index zero = cs_reg64(&b, 48);
+      struct cs_index flush_id = cs_reg32(&b, 48);
+      struct cs_index tiler_ctx = cs_reg64(&b, 50);
+      struct cs_index completed_top = cs_reg64(&b, 52);
+      struct cs_index completed_bottom = cs_reg64(&b, 54);
+      struct cs_index completed_chunks = cs_reg_tuple(&b, 52, 4);
 
-   /* Use different framebuffer descriptor depending on whether incremental
-    * rendering has already been triggered */
-   cs_load32_to(&b, counter, tiler_oom_ctx, FIELD_OFFSET(counter));
-   cs_wait_slot(&b, 0, false);
-   cs_if(&b, MALI_CS_CONDITION_GREATER, counter) {
-      cs_load64_to(&b, cs_reg64(&b, 40), tiler_oom_ctx, FBD_OFFSET(MIDDLE));
+      /* Use different framebuffer descriptor depending on whether incremental
+       * rendering has already been triggered */
+      cs_load32_to(&b, counter, tiler_oom_ctx, FIELD_OFFSET(counter));
+      cs_wait_slot(&b, 0, false);
+      cs_if(&b, MALI_CS_CONDITION_GREATER, counter) {
+         cs_load64_to(&b, cs_reg64(&b, 40), tiler_oom_ctx, FBD_OFFSET(MIDDLE));
+      }
+      cs_else(&b) {
+         cs_load64_to(&b, cs_reg64(&b, 40), tiler_oom_ctx, FBD_OFFSET(FIRST));
+      }
+
+      cs_load32_to(&b, cs_reg32(&b, 42), tiler_oom_ctx, FIELD_OFFSET(bbox_min));
+      cs_load32_to(&b, cs_reg32(&b, 43), tiler_oom_ctx, FIELD_OFFSET(bbox_max));
+      cs_move64_to(&b, cs_reg64(&b, 44), 0);
+      cs_move32_to(&b, cs_reg32(&b, 46), 0);
+      cs_wait_slot(&b, 0, false);
+
+      /* Run the fragment job and wait */
+      cs_set_scoreboard_entry(&b, 3, 0);
+      cs_run_fragment(&b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+      cs_wait_slot(&b, 3, false);
+
+      /* Increment counter */
+      cs_add32(&b, counter, counter, 1);
+      cs_store32(&b, counter, tiler_oom_ctx, FIELD_OFFSET(counter));
+
+      /* Load completed chunks */
+      cs_load64_to(&b, tiler_ctx, tiler_oom_ctx, FIELD_OFFSET(tiler_desc));
+      cs_wait_slot(&b, 0, false);
+      cs_load_to(&b, completed_chunks, tiler_ctx, BITFIELD_MASK(4), 10 * 4);
+      cs_wait_slot(&b, 0, false);
+
+      cs_finish_fragment(&b, false, completed_top, completed_bottom, cs_now());
+
+      /* Zero out polygon list, completed_top and completed_bottom */
+      cs_move64_to(&b, zero, 0);
+      cs_store64(&b, zero, tiler_ctx, 0);
+      cs_store64(&b, zero, tiler_ctx, 10 * 4);
+      cs_store64(&b, zero, tiler_ctx, 12 * 4);
+
+      /* We need to flush the texture caches so future preloads see the new
+       * content. */
+      cs_flush_caches(&b, MALI_CS_FLUSH_MODE_NONE, MALI_CS_FLUSH_MODE_NONE,
+                      true, flush_id, cs_defer(0, 0));
+
+      cs_wait_slot(&b, 0, false);
+
+      cs_set_scoreboard_entry(&b, 2, 0);
    }
-   cs_else(&b) {
-      cs_load64_to(&b, cs_reg64(&b, 40), tiler_oom_ctx, FBD_OFFSET(FIRST));
-   }
-
-   cs_load32_to(&b, cs_reg32(&b, 42), tiler_oom_ctx, FIELD_OFFSET(bbox_min));
-   cs_load32_to(&b, cs_reg32(&b, 43), tiler_oom_ctx, FIELD_OFFSET(bbox_max));
-   cs_move64_to(&b, cs_reg64(&b, 44), 0);
-   cs_move32_to(&b, cs_reg32(&b, 46), 0);
-   cs_wait_slot(&b, 0, false);
-
-   /* Run the fragment job and wait */
-   cs_set_scoreboard_entry(&b, 3, 0);
-   cs_run_fragment(&b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
-   cs_wait_slot(&b, 3, false);
-
-   /* Increment counter */
-   cs_add32(&b, counter, counter, 1);
-   cs_store32(&b, counter, tiler_oom_ctx, FIELD_OFFSET(counter));
-
-   /* Load completed chunks */
-   cs_load64_to(&b, tiler_ctx, tiler_oom_ctx, FIELD_OFFSET(tiler_desc));
-   cs_wait_slot(&b, 0, false);
-   cs_load_to(&b, completed_chunks, tiler_ctx, BITFIELD_MASK(4), 10 * 4);
-   cs_wait_slot(&b, 0, false);
-
-   cs_finish_fragment(&b, false, completed_top, completed_bottom, cs_now());
-
-   /* Zero out polygon list, completed_top and completed_bottom */
-   cs_move64_to(&b, zero, 0);
-   cs_store64(&b, zero, tiler_ctx, 0);
-   cs_store64(&b, zero, tiler_ctx, 10 * 4);
-   cs_store64(&b, zero, tiler_ctx, 12 * 4);
-
-   /* We need to flush the texture caches so future preloads see the new
-    * content. */
-   cs_flush_caches(&b, MALI_CS_FLUSH_MODE_NONE, MALI_CS_FLUSH_MODE_NONE, true,
-                   flush_id, cs_defer(0, 0));
-
-   cs_wait_slot(&b, 0, false);
-
-   cs_set_scoreboard_entry(&b, 2, 0);
-
-   cs_exception_handler_end(&b, &handler);
 
    assert(cs_is_valid(&b));
    cs_finish(&b);

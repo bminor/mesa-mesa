@@ -1811,3 +1811,9 @@ cs_exception_handler_end(struct cs_builder *b,
    for (; num_instrs < padded_num_instrs; num_instrs++)
       cs_nop(b);
 }
+
+#define cs_exception_handler_def(__b, __handler, __ctx)                        \
+   for (struct cs_exception_handler *__ehandler =                              \
+           cs_exception_handler_start(__b, __handler, __ctx);                  \
+        __ehandler != NULL;                                                    \
+        cs_exception_handler_end(__b, __handler), __ehandler = NULL)
