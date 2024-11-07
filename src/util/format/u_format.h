@@ -1287,7 +1287,7 @@ util_format_get_plane_format(enum pipe_format format, unsigned plane)
    case PIPE_FORMAT_Y8_U8_V8_440_UNORM:
       return PIPE_FORMAT_R8_UNORM;
    case PIPE_FORMAT_NV12:
-   case PIPE_FORMAT_Y8_U8V8_422_UNORM:
+   case PIPE_FORMAT_NV16:
       return !plane ? PIPE_FORMAT_R8_UNORM : PIPE_FORMAT_RG88_UNORM;
    case PIPE_FORMAT_NV21:
       return !plane ? PIPE_FORMAT_R8_UNORM : PIPE_FORMAT_GR88_UNORM;
@@ -1321,7 +1321,7 @@ util_format_get_plane_width(enum pipe_format format, unsigned plane,
    case PIPE_FORMAT_P016:
    case PIPE_FORMAT_P030:
    case PIPE_FORMAT_Y8_U8_V8_422_UNORM:
-   case PIPE_FORMAT_Y8_U8V8_422_UNORM:
+   case PIPE_FORMAT_NV16:
    case PIPE_FORMAT_Y16_U16_V16_420_UNORM:
    case PIPE_FORMAT_Y16_U16_V16_422_UNORM:
    case PIPE_FORMAT_Y16_U16V16_422_UNORM:
