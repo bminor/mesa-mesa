@@ -604,32 +604,30 @@ emit_divergent_if_else(Program* prog, aco::Builder& b, Operand cond, std::functi
    b.reset(if_block);
    Temp saved_exec = b.sop1(Builder::s_and_saveexec, b.def(b.lm, saved_exec_reg),
                             Definition(scc, s1), Definition(exec, b.lm), cond, Operand(exec, b.lm));
-   b.branch(aco_opcode::p_cbranch_nz, Definition(vcc, bld.lm), then_logical->index,
-            then_linear->index);
+   b.branch(aco_opcode::p_cbranch_nz, then_logical->index, then_linear->index);
 
    b.reset(then_logical);
    b.pseudo(aco_opcode::p_logical_start);
    then();
    b.pseudo(aco_opcode::p_logical_end);
-   b.branch(aco_opcode::p_branch, Definition(vcc, bld.lm), invert->index);
+   b.branch(aco_opcode::p_branch, invert->index);
 
    b.reset(then_linear);
-   b.branch(aco_opcode::p_branch, Definition(vcc, bld.lm), invert->index);
+   b.branch(aco_opcode::p_branch, invert->index);
 
    b.reset(invert);
    b.sop2(Builder::s_andn2, Definition(exec, bld.lm), Definition(scc, s1),
           Operand(saved_exec, saved_exec_reg), Operand(exec, bld.lm));
-   b.branch(aco_opcode::p_cbranch_nz, Definition(vcc, bld.lm), else_logical->index,
-            else_linear->index);
+   b.branch(aco_opcode::p_cbranch_nz, else_logical->index, else_linear->index);
 
    b.reset(else_logical);
    b.pseudo(aco_opcode::p_logical_start);
    els();
    b.pseudo(aco_opcode::p_logical_end);
-   b.branch(aco_opcode::p_branch, Definition(vcc, bld.lm), endif_block->index);
+   b.branch(aco_opcode::p_branch, endif_block->index);
 
    b.reset(else_linear);
-   b.branch(aco_opcode::p_branch, Definition(vcc, bld.lm), endif_block->index);
+   b.branch(aco_opcode::p_branch, endif_block->index);
 
    b.reset(endif_block);
    b.pseudo(aco_opcode::p_parallelcopy, Definition(exec, bld.lm),

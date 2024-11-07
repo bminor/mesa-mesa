@@ -3063,38 +3063,12 @@ register_allocation(Program* program, ra_test_policy policy)
       get_regs_for_phis(ctx, block, register_file, instructions,
                         program->live.live_in[block.index]);
 
-      /* If this is a merge block, the state of the register file at the branch instruction of the
-       * predecessors corresponds to the state after phis at the merge block. So, we allocate a
-       * register for the predecessor's branch definitions as if there was a phi.
-       */
-      if (!block.linear_preds.empty() &&
-          (block.linear_preds.size() != 1 ||
-           program->blocks[block.linear_preds[0]].linear_succs.size() == 1)) {
-         PhysReg br_reg = get_reg_phi(ctx, program->live.live_in[block.index], register_file,
-                                      instructions, block, ctx.phi_dummy, Temp(0, s2));
-         for (unsigned pred : block.linear_preds) {
-            aco_ptr<Instruction>& br = program->blocks[pred].instructions.back();
-
-            assert(br->definitions.size() == 1 && br->definitions[0].regClass() == s2 &&
-                   br->definitions[0].isKill());
-
-            br->definitions[0].setFixed(br_reg);
-         }
-      }
-
       /* Handle all other instructions of the block */
       auto NonPhi = [](aco_ptr<Instruction>& instr) -> bool { return instr && !is_phi(instr); };
       auto instr_it = std::find_if(block.instructions.begin(), block.instructions.end(), NonPhi);
       for (; instr_it != block.instructions.end(); ++instr_it) {
          aco_ptr<Instruction>& instr = *instr_it;
          std::vector<std::pair<Operand, Definition>> parallelcopy;
-
-         if (instr->opcode == aco_opcode::p_branch) {
-            /* unconditional branches are handled after phis of the target */
-            instructions.emplace_back(std::move(instr));
-            break;
-         }
-
          assert(!is_phi(instr));
 
          /* handle operands */

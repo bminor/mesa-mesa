@@ -637,8 +637,8 @@ add_branch_code(exec_ctx& ctx, Block* block)
 
       if (need_parallelcopy)
          bld.copy(Definition(exec, bld.lm), ctx.info[idx].exec.back().op);
-      bld.branch(aco_opcode::p_cbranch_nz, bld.def(s2), Operand(exec, bld.lm),
-                 block->linear_succs[1], block->linear_succs[0]);
+      bld.branch(aco_opcode::p_cbranch_nz, Operand(exec, bld.lm), block->linear_succs[1],
+                 block->linear_succs[0]);
    } else if (block->kind & block_kind_uniform) {
       Pseudo_branch_instruction& branch = block->instructions.back()->branch();
       if (branch.opcode == aco_opcode::p_branch) {
@@ -671,7 +671,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
       /* add next current exec to the stack */
       ctx.info[idx].exec.emplace_back(Operand(exec, bld.lm), mask_type);
 
-      Builder::Result r = bld.branch(aco_opcode::p_cbranch_z, bld.def(s2), Operand(exec, bld.lm),
+      Builder::Result r = bld.branch(aco_opcode::p_cbranch_z, Operand(exec, bld.lm),
                                      block->linear_succs[1], block->linear_succs[0]);
       r->branch().rarely_taken = branch->branch().rarely_taken;
       r->branch().never_taken = branch->branch().never_taken;
@@ -685,7 +685,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
       bld.sop2(Builder::s_andn2, Definition(exec, bld.lm), bld.def(s1, scc), orig_exec,
                Operand(exec, bld.lm));
 
-      Builder::Result r = bld.branch(aco_opcode::p_cbranch_z, bld.def(s2), Operand(exec, bld.lm),
+      Builder::Result r = bld.branch(aco_opcode::p_cbranch_z, Operand(exec, bld.lm),
                                      block->linear_succs[1], block->linear_succs[0]);
       r->branch().rarely_taken = branch->branch().rarely_taken;
       r->branch().never_taken = branch->branch().never_taken;
@@ -713,7 +713,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
          bld.copy(Definition(exec, bld.lm), Operand::zero(bld.lm.bytes()));
       }
 
-      bld.branch(aco_opcode::p_cbranch_nz, bld.def(s2), bld.scc(cond), block->linear_succs[1],
+      bld.branch(aco_opcode::p_cbranch_nz, bld.scc(cond), block->linear_succs[1],
                  block->linear_succs[0]);
    } else if (block->kind & block_kind_continue) {
       assert(block->instructions.back()->opcode == aco_opcode::p_branch);
@@ -739,7 +739,7 @@ add_branch_code(exec_ctx& ctx, Block* block)
          bld.copy(Definition(exec, bld.lm), Operand::zero(bld.lm.bytes()));
       }
 
-      bld.branch(aco_opcode::p_cbranch_nz, bld.def(s2), bld.scc(cond), block->linear_succs[1],
+      bld.branch(aco_opcode::p_cbranch_nz, bld.scc(cond), block->linear_succs[1],
                  block->linear_succs[0]);
    } else {
       unreachable("unknown/invalid block type");

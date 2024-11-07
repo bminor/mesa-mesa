@@ -352,7 +352,6 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
    }
 
    block->live_in_demand = new_demand;
-   block->live_in_demand.sgpr += 2; /* Add 2 SGPRs for potential long-jumps. */
    block->register_demand.update(block->live_in_demand);
    ctx.program->max_reg_demand.update(block->register_demand);
    ctx.handled_once = std::min(ctx.handled_once, block->index);

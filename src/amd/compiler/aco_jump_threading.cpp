@@ -322,8 +322,6 @@ try_merge_break_with_continue(jump_threading_ctx& ctx, Block* block)
 
    merge->instructions.back()->branch().target[0] = merge->index;
    std::swap(merge->instructions.back(), block->instructions.back());
-   std::swap(merge->instructions.back()->definitions[0],
-             block->instructions.back()->definitions[0]);
 
    block->linear_succs.clear();
    block->linear_succs.push_back(merge->index);
