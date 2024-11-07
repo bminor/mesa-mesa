@@ -1,6 +1,4 @@
 spec@arb_gpu_shader_int64@execution@indirect-array-two-accesses,Fail
-spec@arb_separate_shader_objects@execution@layout-location-block-with-struct-member,Crash
-spec@arb_separate_shader_objects@execution@layout-location-struct-mixed-with-implicitly-assigned-varying,Crash
 spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-07,Fail
 spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-cumulative,Fail
 spec@arb_tessellation_shader@execution@gs-primitiveid-instanced,Fail

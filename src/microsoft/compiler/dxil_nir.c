@@ -1621,8 +1621,13 @@ dxil_reassign_driver_locations(nir_shader* s, nir_variable_mode modes,
    unsigned driver_loc = 0, driver_patch_loc = 0;
    nir_foreach_variable_with_modes(var, s, modes) {
       /* Overlap patches with non-patch */
-      var->data.driver_location = var->data.patch ?
-         driver_patch_loc++ : driver_loc++;
+      unsigned *loc = var->data.patch ? &driver_patch_loc : &driver_loc;
+      var->data.driver_location = *loc;
+
+      const struct glsl_type *type = var->type;
+      if (nir_is_arrayed_io(var, s->info.stage) && glsl_type_is_array(type))
+         type = glsl_get_array_element(type);
+      *loc += glsl_count_vec4_slots(type, false, false);
    }
 }
 
@@ -2324,7 +2329,7 @@ set_input_bits(struct dxil_module *mod, nir_intrinsic_instr *intr, BITSET_WORD *
    nir_src *row_src = intr->intrinsic == nir_intrinsic_load_per_vertex_input ? &intr->src[1] : &intr->src[0];
    bool is_patch_constant = mod->shader_kind == DXIL_DOMAIN_SHADER && intr->intrinsic == nir_intrinsic_load_input;
    const struct dxil_signature_record *sig_rec = is_patch_constant ?
-      &mod->patch_consts[nir_intrinsic_base(intr)] :
+      &mod->patch_consts[mod->patch_mappings[nir_intrinsic_base(intr)]] :
       &mod->inputs[mod->input_mappings[nir_intrinsic_base(intr)]];
    if (is_patch_constant) {
       /* Redirect to the second I/O table */
@@ -2356,8 +2361,8 @@ set_output_bits(struct dxil_module *mod, nir_intrinsic_instr *intr, BITSET_WORD 
    nir_src *row_src = intr->intrinsic == nir_intrinsic_store_per_vertex_output ? &intr->src[2] : &intr->src[1];
    bool is_patch_constant = mod->shader_kind == DXIL_HULL_SHADER && intr->intrinsic == nir_intrinsic_store_output;
    const struct dxil_signature_record *sig_rec = is_patch_constant ?
-      &mod->patch_consts[nir_intrinsic_base(intr)] :
-      &mod->outputs[nir_intrinsic_base(intr)];
+      &mod->patch_consts[mod->patch_mappings[nir_intrinsic_base(intr)]] :
+      &mod->outputs[mod->output_mappings[nir_intrinsic_base(intr)]];
    for (uint32_t component = 0; component < intr->num_components; ++component) {
       uint32_t base_element = 0;
       uint32_t num_elements = sig_rec->num_elements;
