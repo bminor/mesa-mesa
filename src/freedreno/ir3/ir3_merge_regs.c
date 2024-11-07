@@ -17,20 +17,20 @@
  * The merged registers are used for three purposes:
  *
  * 1. We always use the same pvtmem slot for spilling all SSA defs in each
- * merge set. This prevents us from having to insert memory-to-memory copies
- * in the spiller and makes sure we don't insert unecessary copies.
+ *    merge set. This prevents us from having to insert memory-to-memory copies
+ *    in the spiller and makes sure we don't insert unecessary copies.
  * 2. When two values are live at the same time, part of the same merge
- * set, and they overlap each other in the merge set, they always occupy
- * overlapping physical registers in RA. This reduces register pressure and
- * copies in several important scenarios:
- *	- When sources of a collect are used later by something else, we don't
- *	have to introduce copies.
- *	- We can handle sequences of extracts that "explode" a vector into its
- *	components without any additional copying.
+ *    set, and they overlap each other in the merge set, they always occupy
+ *    overlapping physical registers in RA. This reduces register pressure and
+ *    copies in several important scenarios:
+ *	   - When sources of a collect are used later by something else, we don't
+ *	     have to introduce copies.
+ *	   - We can handle sequences of extracts that "explode" a vector into its
+ *	     components without any additional copying.
  * 3. We use the merge sets for affinities in register allocation: That is, we
- * try to allocate all the definitions in the same merge set to the
- * same/compatible registers. This helps us e.g. allocate sources of a collect
- * to contiguous registers without too much special code in RA.
+ *    try to allocate all the definitions in the same merge set to the
+ *    same/compatible registers. This helps us e.g. allocate sources of a collect
+ *    to contiguous registers without too much special code in RA.
  *
  * In a "normal" register allocator, or when spilling, we'd just merge
  * registers in the same merge set to the same register, but with SSA-based
