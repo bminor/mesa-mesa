@@ -12406,6 +12406,26 @@ select_program(Program* program, unsigned shader_count, struct nir_shader* const
 }
 
 void
+dump_sgpr_to_mem(isel_context* ctx, Operand rsrc, Operand data, uint32_t offset)
+{
+   Builder bld(ctx->program, ctx->block);
+
+   ac_hw_cache_flags cache_glc;
+   cache_glc.value = ac_glc;
+
+   if (ctx->program->gfx_level >= GFX9) {
+      bld.copy(Definition(PhysReg{256}, v1) /* v0 */, data);
+
+      bld.mubuf(aco_opcode::buffer_store_dword, Operand(rsrc), Operand(v1), Operand::c32(0u),
+                Operand(PhysReg{256}, v1) /* v0 */, offset, false /* offen */, false /* idxen */,
+                /* addr64 */ false, /* disable_wqm */ false, cache_glc);
+   } else {
+      bld.smem(aco_opcode::s_buffer_store_dword, Operand(rsrc), Operand::c32(offset), data,
+               memory_sync_info(), cache_glc);
+   }
+}
+
+void
 select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shader_config* config,
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
@@ -12501,35 +12521,13 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
       bld.sopk(aco_opcode::s_getreg_b32, Definition(ttmp0_reg, s1),
                ((32 - 1) << 11) | hw_regs_idx[i]);
 
-      if (ctx.program->gfx_level >= GFX9) {
-         bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(ttmp0_reg, s1));
-
-         bld.mubuf(aco_opcode::buffer_store_dword, Operand(tma_rsrc, s4), Operand(v1),
-                   Operand::c32(offset), Operand(PhysReg{256}, v1) /* v0 */, 0 /* offset */,
-                   false /* offen */, false /* idxen */, /* addr64 */ false,
-                   /* disable_wqm */ false, cache_glc);
-      } else {
-         bld.smem(aco_opcode::s_buffer_store_dword, Operand(tma_rsrc, s4), Operand::c32(offset),
-                  Operand(ttmp0_reg, s1), memory_sync_info(), cache_glc);
-      }
-
+      dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(ttmp0_reg, s1), offset);
       offset += 4;
    }
 
    /* Dump all SGPRs. */
    for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {
-      if (ctx.program->gfx_level >= GFX9) {
-         bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{i}, s1));
-
-         bld.mubuf(aco_opcode::buffer_store_dword, Operand(tma_rsrc, s4), Operand(v1),
-                   Operand::c32(0u), Operand(PhysReg{256}, v1) /* v0 */, offset, false /* offen */,
-                   false /* idxen */, /* addr64 */ false,
-                   /* disable_wqm */ false, cache_glc);
-      } else {
-         bld.smem(aco_opcode::s_buffer_store_dword, Operand(tma_rsrc, s4), Operand::c32(offset),
-                  Operand(PhysReg{i}, s1), memory_sync_info(), cache_glc);
-      }
-
+      dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(PhysReg{i}, s1), offset);
       offset += 4;
    }
 
