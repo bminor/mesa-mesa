@@ -29,14 +29,12 @@ panvk_GetBufferOpaqueCaptureAddress(VkDevice _device,
 }
 
 VKAPI_ATTR void VKAPI_CALL
-panvk_GetBufferMemoryRequirements2(VkDevice device,
-                                   const VkBufferMemoryRequirementsInfo2 *pInfo,
-                                   VkMemoryRequirements2 *pMemoryRequirements)
+panvk_GetDeviceBufferMemoryRequirements(VkDevice device,
+                                        const VkDeviceBufferMemoryRequirements *pInfo,
+                                        VkMemoryRequirements2 *pMemoryRequirements)
 {
-   VK_FROM_HANDLE(panvk_buffer, buffer, pInfo->buffer);
-
    const uint64_t align = 64;
-   const uint64_t size = align64(buffer->vk.size, align);
+   const uint64_t size = align64(pInfo->pCreateInfo->size, align);
 
    pMemoryRequirements->memoryRequirements.memoryTypeBits = 1;
    pMemoryRequirements->memoryRequirements.alignment = align;
