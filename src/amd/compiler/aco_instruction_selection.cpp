@@ -12518,12 +12518,17 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
 
    /* Dump all SGPRs. */
    for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {
-      bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{i}, s1));
+      if (ctx.program->gfx_level >= GFX9) {
+         bld.copy(Definition(PhysReg{256}, v1) /* v0 */, Operand(PhysReg{i}, s1));
 
-      bld.mubuf(aco_opcode::buffer_store_dword, Operand(tma_rsrc, s4), Operand(v1),
-                Operand::c32(0u), Operand(PhysReg{256}, v1) /* v0 */, offset, false /* offen */,
-                false /* idxen */, /* addr64 */ false,
-                /* disable_wqm */ false, cache_glc);
+         bld.mubuf(aco_opcode::buffer_store_dword, Operand(tma_rsrc, s4), Operand(v1),
+                   Operand::c32(0u), Operand(PhysReg{256}, v1) /* v0 */, offset, false /* offen */,
+                   false /* idxen */, /* addr64 */ false,
+                   /* disable_wqm */ false, cache_glc);
+      } else {
+         bld.smem(aco_opcode::s_buffer_store_dword, Operand(tma_rsrc, s4), Operand::c32(offset),
+                  Operand(PhysReg{i}, s1), memory_sync_info(), cache_glc);
+      }
 
       offset += 4;
    }
