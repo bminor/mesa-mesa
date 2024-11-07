@@ -43,7 +43,7 @@ BEGIN_TEST(assembler.branch_3f)
    //! BB0:
    //! s_branch BB1                                                ; bf820040
    //! s_nop 0                                                     ; bf800000
-   bld.sopp(aco_opcode::s_branch, Definition(PhysReg(0), s2), 1);
+   bld.sopp(aco_opcode::s_branch, 1);
 
    for (unsigned i = 0; i < 0x3f; i++)
       bld.vop1(aco_opcode::v_nop);
@@ -61,7 +61,7 @@ BEGIN_TEST(assembler.long_jump.unconditional_forwards)
 
    //!BB0:
    //! s_branch 16369                                              ; bf823ff1
-   bld.sopp(aco_opcode::s_branch, Definition(PhysReg(0), s2), 2);
+   bld.sopp(aco_opcode::s_branch, 2);
 
    bld.reset(program->create_and_insert_block());
 
@@ -93,7 +93,7 @@ BEGIN_TEST(assembler.long_jump.conditional_forwards)
       //! BB0:
       //~gfx10! s_cbranch_scc0 16369                                  ; bf843ff1
       //~gfx12! s_cbranch_scc0 16368                                  ; bfa13ff0
-      bld.sopp(aco_opcode::s_cbranch_scc0, Definition(PhysReg(0), s2), 2);
+      bld.sopp(aco_opcode::s_cbranch_scc0, 2);
 
       bld.reset(program->create_and_insert_block());
 
@@ -136,7 +136,7 @@ BEGIN_TEST(assembler.long_jump.unconditional_backwards)
    //! s_nop 0                                                     ; bf800000
    //! (then repeated 16399 times)
    //! s_branch 49134                                              ; bf82bfee
-   bld.sopp(aco_opcode::s_branch, Definition(PhysReg(0), s2), 0);
+   bld.sopp(aco_opcode::s_branch, 0);
 
    //! BB1:
    //! s_endpgm                                                    ; bf810000
@@ -164,7 +164,7 @@ BEGIN_TEST(assembler.long_jump.conditional_backwards)
    //! s_nop 0                                                     ; bf800000
    //!(then repeated 16399 times)
    //! s_cbranch_execnz 49134                                      ; bf89bfee
-   bld.sopp(aco_opcode::s_cbranch_execnz, Definition(PhysReg(0), s2), 0);
+   bld.sopp(aco_opcode::s_cbranch_execnz, 0);
 
    //! BB1:
    //! s_endpgm                                                    ; bf810000
@@ -181,7 +181,7 @@ BEGIN_TEST(assembler.long_jump.constaddr)
       return;
 
    //>> s_branch 16369                                              ; bf823ff1
-   bld.sopp(aco_opcode::s_branch, Definition(PhysReg(0), s2), 2);
+   bld.sopp(aco_opcode::s_branch, 2);
 
    bld.reset(program->create_and_insert_block());
 

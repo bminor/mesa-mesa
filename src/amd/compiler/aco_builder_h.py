@@ -555,7 +555,7 @@ formats = [("pseudo", [Format.PSEUDO], list(itertools.product(range(5), range(6)
            ("sop1", [Format.SOP1], [(0, 1), (1, 0), (1, 1), (2, 1), (3, 2)]),
            ("sop2", [Format.SOP2], itertools.product([1, 2], [2, 3])),
            ("sopk", [Format.SOPK], itertools.product([0, 1, 2], [0, 1])),
-           ("sopp", [Format.SOPP], itertools.product([0, 1], [0, 1])),
+           ("sopp", [Format.SOPP], [(0, 0), (0, 1)]),
            ("sopc", [Format.SOPC], [(1, 2)]),
            ("smem", [Format.SMEM], [(0, 4), (0, 3), (1, 0), (1, 3), (1, 2), (1, 1), (0, 0)]),
            ("ds", [Format.DS], [(1, 0), (1, 1), (1, 2), (1, 3), (0, 3), (0, 4)]),
