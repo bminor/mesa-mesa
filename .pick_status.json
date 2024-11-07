@@ -1214,7 +1214,7 @@
         "description": "intel/rt: fix ray_query stack address calculation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6c84cbd8c95e93df0298042fea9ea0de336f2eb1",
         "notes": null
