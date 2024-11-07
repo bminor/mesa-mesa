@@ -15,7 +15,7 @@ VKD3D_PROTON_BUILD_DIR="/vkd3d-proton-build"
 function build_arch {
   local arch="$1"
 
-  meson                                    \
+  meson setup                              \
         -Denable_tests=true                \
         --buildtype release                \
         --prefix "$VKD3D_PROTON_DST_DIR"   \
