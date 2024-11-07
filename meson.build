@@ -2066,6 +2066,16 @@ dep_xcb_xrandr = null_dep
 dep_xcb_shm = null_dep
 dep_xlib_xrandr = null_dep
 
+dep_dri2proto_version = '>= 2.8'
+dep_glproto_version = '>= 1.4.14'
+dep_xcb_dri2_version = '>= 1.8'
+dep_xcb_dri3_version = '>= 1.13'
+dep_xcb_glx_version = '>= 1.8.1'
+dep_xcb_present_version = '>= 1.13'
+dep_xfixes_version = '>= 2.0'
+dep_xlib_xrandr_version = '>= 1.3'
+dep_xshmfence_version = '>= 1.1'
+
 with_dri3_explicit_sync = false
 with_xcb_keysyms = false
 if with_platform_x11
@@ -2077,8 +2087,8 @@ if with_platform_x11
   elif with_glx == 'dri'
     dep_x11 = dependency('x11')
     dep_xext = dependency('xext')
-    dep_xfixes = dependency('xfixes', version : '>= 2.0')
-    dep_xcb_glx = dependency('xcb-glx', version : '>= 1.8.1')
+    dep_xfixes = dependency('xfixes', version : dep_xfixes_version)
+    dep_xcb_glx = dependency('xcb-glx', version : dep_xcb_glx_version)
     dep_xcb_shm = dependency('xcb-shm')
   elif with_gallium_rusticl
     # needed for GL sharing extension
@@ -2093,31 +2103,31 @@ if with_platform_x11
       pre_args += '-DXCB_KEYSYMS_AVAILABLE'
     endif
     dep_x11_xcb = dependency('x11-xcb')
-    dep_xcb_dri2 = dependency('xcb-dri2', version : '>= 1.8', required : with_x11_dri2)
+    dep_xcb_dri2 = dependency('xcb-dri2', version : dep_xcb_dri2_version, required : with_x11_dri2)
     if with_dri_platform == 'drm' and not dep_libdrm.found()
       error('libdrm required for gallium video statetrackers when using x11')
     endif
   endif
   if with_dri_platform == 'drm'
-    dep_xcb_dri2 = dependency('xcb-dri2', version : '>= 1.8', required : with_x11_dri2)
+    dep_xcb_dri2 = dependency('xcb-dri2', version : dep_xcb_dri2_version, required : with_x11_dri2)
 
-    dep_xcb_dri3 = dependency('xcb-dri3', version : '>= 1.13')
-    dep_xcb_present = dependency('xcb-present', version : '>= 1.13')
+    dep_xcb_dri3 = dependency('xcb-dri3', version : dep_xcb_dri3_version)
+    dep_xcb_present = dependency('xcb-present', version : dep_xcb_present_version)
     if (dep_xcb_dri3.version().version_compare('>= 1.17') and
         dep_xcb_present.version().version_compare('>= 1.17'))
       with_dri3_explicit_sync = true
     endif
     dep_xcb_shm = dependency('xcb-shm')
     dep_xcb_sync = dependency('xcb-sync')
-    dep_xshmfence = dependency('xshmfence', version : '>= 1.1')
+    dep_xshmfence = dependency('xshmfence', version : dep_xshmfence_version)
     pre_args += '-DHAVE_X11_DRM'
   endif
   if with_glx == 'dri' or with_glx == 'xlib'
-    dep_glproto = dependency('glproto', version : '>= 1.4.14')
+    dep_glproto = dependency('glproto', version : dep_glproto_version)
   endif
   if with_glx == 'dri'
     if with_dri_platform == 'drm'
-      dep_dri2proto = dependency('dri2proto', version : '>= 2.8')
+      dep_dri2proto = dependency('dri2proto', version : dep_dri2proto_version)
       if with_glx_direct
         dep_xxf86vm = dependency('xxf86vm')
       endif
@@ -2130,16 +2140,16 @@ if with_platform_x11
     dep_xcb_xfixes = dependency('xcb-xfixes')
   endif
   if with_any_vk
-    dep_xcb_dri3 = dependency('xcb-dri3', version : '>= 1.13')
-    dep_xcb_present = dependency('xcb-present', version : '>= 1.13')
+    dep_xcb_dri3 = dependency('xcb-dri3', version : dep_xcb_dri3_version)
+    dep_xcb_present = dependency('xcb-present', version : dep_xcb_present_version)
     dep_xcb_shm = dependency('xcb-shm')
-    dep_xshmfence = dependency('xshmfence', version : '>= 1.1')
+    dep_xshmfence = dependency('xshmfence', version : dep_xshmfence_version)
   endif
   if with_xlib_lease or with_any_vk
     dep_xcb_xrandr = dependency('xcb-randr')
   endif
   if with_xlib_lease
-    dep_xlib_xrandr = dependency('xrandr', version : '>= 1.3')
+    dep_xlib_xrandr = dependency('xrandr', version : dep_xlib_xrandr_version)
   endif
 endif
 
