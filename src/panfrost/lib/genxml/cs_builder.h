@@ -1757,7 +1757,13 @@ cs_exception_handler_end(struct cs_builder *b,
     * instructions as well as the preamble and postamble.
     * Adding 4 instructions (2x wait_slot and the move for the address) as
     * the move might actually be translated to two MOVE32 instructions. */
-   if (!cs_reserve_instrs(b, num_instrs + (num_ranges * 2) + 4))
+   num_instrs += (num_ranges * 2) + 4;
+
+   /* Align things on a cache-line in case the buffer contains more than one
+    * exception handler (64 bytes = 8 instructions). */
+   uint32_t padded_num_instrs = ALIGN_POT(num_instrs, 8);
+
+   if (!cs_reserve_instrs(b, padded_num_instrs))
       return;
 
    /* Preamble: backup modified registers */
@@ -1793,4 +1799,8 @@ cs_exception_handler_end(struct cs_builder *b,
 
       cs_wait_slot(b, handler->ctx.sb_slot, false);
    }
+
+   /* Fill the rest of the buffer with NOPs. */
+   for (; num_instrs < padded_num_instrs; num_instrs++)
+      cs_nop(b);
 }
