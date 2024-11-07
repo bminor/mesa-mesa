@@ -888,7 +888,8 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
       unsigned max_levels = tiler_features.max_levels;
       assert(max_levels >= 2);
 
-      cfg.hierarchy_mask = panvk_select_tiler_hierarchy_mask(cmdbuf);
+      cfg.hierarchy_mask =
+         panvk_select_tiler_hierarchy_mask(phys_dev, &cmdbuf->state.gfx);
       cfg.fb_width = cmdbuf->state.gfx.render.fb.info.width;
       cfg.fb_height = cmdbuf->state.gfx.render.fb.info.height;
 

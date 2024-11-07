@@ -225,6 +225,8 @@ panvk_per_arch(cmd_prepare_tiler_context)(struct panvk_cmd_buffer *cmdbuf,
                                           uint32_t layer_idx)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(cmdbuf->vk.base.device->physical);
    struct panvk_batch *batch = cmdbuf->cur_batch;
    mali_ptr tiler_desc;
 
@@ -253,7 +255,8 @@ panvk_per_arch(cmd_prepare_tiler_context)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    pan_pack(&batch->tiler.ctx_templ, TILER_CONTEXT, cfg) {
-      cfg.hierarchy_mask = panvk_select_tiler_hierarchy_mask(cmdbuf);
+      cfg.hierarchy_mask =
+         panvk_select_tiler_hierarchy_mask(phys_dev, &cmdbuf->state.gfx);
       cfg.fb_width = fbinfo->width;
       cfg.fb_height = fbinfo->height;
       cfg.heap = batch->tiler.heap_desc.gpu;
