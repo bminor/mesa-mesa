@@ -118,8 +118,9 @@ csf_oom_handler_init(struct panfrost_context *ctx)
    cs_builder_init(&b, &conf, queue);
 
    struct cs_exception_handler_ctx handler_ctx = {
-      .addr = reg_save_bo->ptr.gpu,
-      .sb_slot = 0,
+      .ctx_reg = cs_reg64(&b, TILER_OOM_CTX_REG),
+      .dump_addr_offset = offsetof(struct pan_csf_tiler_oom_ctx, dump_addr),
+      .ls_sb_slot = 0,
    };
    struct cs_exception_handler handler;
    cs_exception_handler_start(&b, &handler, handler_ctx);
@@ -1009,6 +1010,7 @@ emit_tiler_oom_context(struct cs_builder *b, struct panfrost_batch *batch)
    ctx->counter = 0;
    ctx->bbox_min = (batch->miny << 16) | batch->minx;
    ctx->bbox_max = ((batch->maxy - 1) << 16) | (batch->maxx - 1);
+   ctx->dump_addr = batch->ctx->csf.tiler_oom_handler.save_bo->ptr.gpu;
 
    for (unsigned i = 0; i < PAN_INCREMENTAL_RENDERING_PASS_COUNT; ++i)
       ctx->fbds[i] = alloc_fbd(batch);

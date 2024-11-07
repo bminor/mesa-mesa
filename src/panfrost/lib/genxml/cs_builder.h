@@ -1673,8 +1673,9 @@ cs_nop(struct cs_builder *b)
 }
 
 struct cs_exception_handler_ctx {
-   uint64_t addr;
-   uint8_t sb_slot;
+   struct cs_index ctx_reg;
+   unsigned dump_addr_offset;
+   uint8_t ls_sb_slot;
 };
 
 struct cs_exception_handler {
@@ -1770,7 +1771,9 @@ cs_exception_handler_end(struct cs_builder *b,
    if (num_ranges > 0) {
       unsigned offset = 0;
 
-      cs_move64_to(b, addr_reg, handler->ctx.addr);
+      cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
+                   handler->ctx.dump_addr_offset);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
 
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
@@ -1779,7 +1782,7 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->ctx.sb_slot, false);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
    }
 
    /* Now that the preamble is emitted, we can flush the instructions we have in
@@ -1790,6 +1793,10 @@ cs_exception_handler_end(struct cs_builder *b,
    if (num_ranges > 0) {
       unsigned offset = 0;
 
+      cs_load64_to(b, addr_reg, handler->ctx.ctx_reg,
+                   handler->ctx.dump_addr_offset);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
+
       for (unsigned i = 0; i < num_ranges; ++i) {
          unsigned reg_count = util_bitcount(masks[i]);
 
@@ -1797,7 +1804,7 @@ cs_exception_handler_end(struct cs_builder *b,
          offset += reg_count * 4;
       }
 
-      cs_wait_slot(b, handler->ctx.sb_slot, false);
+      cs_wait_slot(b, handler->ctx.ls_sb_slot, false);
    }
 
    /* Fill the rest of the buffer with NOPs. */

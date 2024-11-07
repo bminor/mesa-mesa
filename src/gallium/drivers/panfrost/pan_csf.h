@@ -54,6 +54,9 @@ struct pan_csf_tiler_oom_ctx {
 
    /* Tiler descriptor address */
    mali_ptr tiler_desc;
+
+   /* Address of the region reserved for saving registers. */
+   mali_ptr dump_addr;
 } PACKED;
 
 struct panfrost_csf_batch {
