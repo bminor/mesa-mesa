@@ -37,6 +37,7 @@ dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type
 dEQP-VK.spirv_assembly.type.scalar.i8.shift_left_logical_shift16_tesse
 dEQP-VK.ssbo.phys.layout.3_level_unsized_array.scalar.column_major_mat4x3_comp_access
 dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0022
+dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0101
 dEQP-VK.synchronization.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0121
 dEQP-VK.synchronization.implicit.timeline_semaphore.write_ssbo_vertex_read_copy_buffer.buffer_16384.2222
 dEQP-VK.synchronization2.basic.timeline_semaphore.one_queue
