@@ -132,6 +132,10 @@ struct panvk_cmd_graphics_state {
 #endif
 };
 
+#define dyn_gfx_state_dirty(__cmdbuf, __name)                                  \
+   BITSET_TEST((__cmdbuf)->vk.dynamic_graphics_state.dirty,                    \
+               MESA_VK_DYNAMIC_##__name)
+
 static inline uint32_t
 panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
                                   const struct panvk_cmd_graphics_state *state)

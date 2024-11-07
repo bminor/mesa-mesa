@@ -65,10 +65,6 @@ struct panvk_draw_info {
    } indirect;
 };
 
-#define is_dirty(__cmdbuf, __name)                                             \
-   BITSET_TEST((__cmdbuf)->vk.dynamic_graphics_state.dirty,                    \
-               MESA_VK_DYNAMIC_##__name)
-
 static void
 emit_vs_attrib(const struct vk_vertex_attribute_state *attrib_info,
                const struct vk_vertex_binding_state *buf_info,
@@ -112,8 +108,9 @@ static VkResult
 prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
 {
    struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
-   bool dirty = is_dirty(cmdbuf, VI) || is_dirty(cmdbuf, VI_BINDINGS_VALID) ||
-                is_dirty(cmdbuf, VI_BINDING_STRIDES) ||
+   bool dirty = dyn_gfx_state_dirty(cmdbuf, VI) ||
+                dyn_gfx_state_dirty(cmdbuf, VI_BINDINGS_VALID) ||
+                dyn_gfx_state_dirty(cmdbuf, VI_BINDING_STRIDES) ||
                 cmdbuf->state.gfx.vb.dirty ||
                 !vs_desc_state->driver_set.dev_addr;
 
@@ -231,15 +228,16 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
       cmdbuf->state.gfx.push_uniforms = 0;
    }
 
-   if (is_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
+   if (dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
       for (unsigned i = 0; i < ARRAY_SIZE(cb->blend_constants); i++)
          sysvals->blend.constants[i] =
             CLAMP(cb->blend_constants[i], 0.0f, 1.0f);
       cmdbuf->state.gfx.push_uniforms = 0;
    }
 
-   if (is_dirty(cmdbuf, VP_VIEWPORTS) || is_dirty(cmdbuf, RS_CULL_MODE) ||
-       is_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
+   if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
       VkViewport *viewport = &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
 
       /* Upload the viewport scale. Defined as (px/2, py/2, pz) at the start of
@@ -627,14 +625,15 @@ index_size_to_index_type(uint32_t size)
 static VkResult
 prepare_blend(struct panvk_cmd_buffer *cmdbuf)
 {
-   bool dirty =
-      is_dirty(cmdbuf, CB_LOGIC_OP_ENABLE) || is_dirty(cmdbuf, CB_LOGIC_OP) ||
-      is_dirty(cmdbuf, MS_ALPHA_TO_ONE_ENABLE) ||
-      is_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-      is_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-      is_dirty(cmdbuf, CB_BLEND_ENABLES) ||
-      is_dirty(cmdbuf, CB_BLEND_EQUATIONS) ||
-      is_dirty(cmdbuf, CB_WRITE_MASKS) || is_dirty(cmdbuf, CB_BLEND_CONSTANTS);
+   bool dirty = dyn_gfx_state_dirty(cmdbuf, CB_LOGIC_OP_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_LOGIC_OP) ||
+                dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_ONE_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_BLEND_ENABLES) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_BLEND_EQUATIONS) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS);
 
    if (!dirty)
       return VK_SUCCESS;
@@ -674,7 +673,8 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
       &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
    const VkRect2D *scissor = &cmdbuf->vk.dynamic_graphics_state.vp.scissors[0];
 
-   if (is_dirty(cmdbuf, VP_VIEWPORTS) || is_dirty(cmdbuf, VP_SCISSORS)) {
+   if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
+       dyn_gfx_state_dirty(cmdbuf, VP_SCISSORS)) {
       uint64_t scissor_box;
       pan_pack(&scissor_box, SCISSOR, cfg) {
 
@@ -709,8 +709,9 @@ prepare_vp(struct panvk_cmd_buffer *cmdbuf)
       cs_move64_to(b, cs_sr_reg64(b, 42), scissor_box);
    }
 
-   if (is_dirty(cmdbuf, VP_VIEWPORTS) || is_dirty(cmdbuf, RS_CULL_MODE) ||
-       is_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
+   if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
       struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
 
       float z_min = sysvals->viewport.offset.z;
@@ -743,8 +744,8 @@ prepare_tiler_primitive_size(struct panvk_cmd_buffer *cmdbuf)
    mali_ptr pos_spd = get_pos_spd(cmdbuf);
    float primitive_size;
 
-   if (!is_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) &&
-       !is_dirty(cmdbuf, RS_LINE_WIDTH) &&
+   if (!dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) &&
+       !dyn_gfx_state_dirty(cmdbuf, RS_LINE_WIDTH) &&
        cmdbuf->state.gfx.vs.spds.pos == pos_spd)
       return;
 
@@ -1183,25 +1184,25 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
 {
    const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
    mali_ptr frag_spd = get_fs_spd(fs);
-   bool dirty = is_dirty(cmdbuf, DS_DEPTH_TEST_ENABLE) ||
-                is_dirty(cmdbuf, DS_DEPTH_WRITE_ENABLE) ||
-                is_dirty(cmdbuf, DS_DEPTH_COMPARE_OP) ||
-                is_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
-                is_dirty(cmdbuf, DS_STENCIL_OP) ||
-                is_dirty(cmdbuf, DS_STENCIL_COMPARE_MASK) ||
-                is_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
-                is_dirty(cmdbuf, DS_STENCIL_REFERENCE) ||
-                is_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
-                is_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
-                is_dirty(cmdbuf, RS_DEPTH_BIAS_ENABLE) ||
-                is_dirty(cmdbuf, RS_DEPTH_BIAS_FACTORS) ||
+   bool dirty = dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_TEST_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_WRITE_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_COMPARE_OP) ||
+                dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_OP) ||
+                dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_COMPARE_MASK) ||
+                dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
+                dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_REFERENCE) ||
+                dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_BIAS_FACTORS) ||
                 /* fs_required() uses ms.alpha_to_coverage_enable
                  * and vk_color_blend_state
                  */
-                is_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
-                is_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-                is_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-                is_dirty(cmdbuf, CB_WRITE_MASKS) ||
+                dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
+                dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
                 cmdbuf->state.gfx.fs.spd != frag_spd;
 
    if (!dirty)
@@ -1284,36 +1285,37 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf)
       fs_is_dirty = cmdbuf->state.gfx.fs.spd != 0;
    }
 
-   bool dcd0_dirty = is_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||
-                     is_dirty(cmdbuf, RS_CULL_MODE) ||
-                     is_dirty(cmdbuf, RS_FRONT_FACE) ||
-                     is_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
-                     is_dirty(cmdbuf, MS_SAMPLE_MASK) ||
-                     is_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
-                     is_dirty(cmdbuf, MS_ALPHA_TO_ONE_ENABLE) ||
-                     /* writes_depth() uses vk_depth_stencil_state */
-                     is_dirty(cmdbuf, DS_DEPTH_TEST_ENABLE) ||
-                     is_dirty(cmdbuf, DS_DEPTH_WRITE_ENABLE) ||
-                     is_dirty(cmdbuf, DS_DEPTH_COMPARE_OP) ||
-                     /* writes_stencil() uses vk_depth_stencil_state */
-                     is_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
-                     is_dirty(cmdbuf, DS_STENCIL_OP) ||
-                     is_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
-                     /* fs_required() uses vk_color_blend_state */
-                     is_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-                     is_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-                     is_dirty(cmdbuf, CB_WRITE_MASKS) || fs_is_dirty ||
-                     cmdbuf->state.gfx.render.dirty;
-   bool dcd1_dirty = is_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
-                     is_dirty(cmdbuf, MS_SAMPLE_MASK) ||
+   bool dcd0_dirty =
+      dyn_gfx_state_dirty(cmdbuf, RS_RASTERIZER_DISCARD_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
+      dyn_gfx_state_dirty(cmdbuf, RS_FRONT_FACE) ||
+      dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
+      dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
+      dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_ONE_ENABLE) ||
+      /* writes_depth() uses vk_depth_stencil_state */
+      dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_TEST_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_WRITE_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, DS_DEPTH_COMPARE_OP) ||
+      /* writes_stencil() uses vk_depth_stencil_state */
+      dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_OP) ||
+      dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
+      /* fs_required() uses vk_color_blend_state */
+      dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
+      dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
+      dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) || fs_is_dirty ||
+      cmdbuf->state.gfx.render.dirty;
+   bool dcd1_dirty = dyn_gfx_state_dirty(cmdbuf, MS_RASTERIZATION_SAMPLES) ||
+                     dyn_gfx_state_dirty(cmdbuf, MS_SAMPLE_MASK) ||
                      /* fs_required() uses ms.alpha_to_coverage_enable
                       * and vk_color_blend_state
                       */
-                     is_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
-                     is_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-                     is_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-                     is_dirty(cmdbuf, CB_WRITE_MASKS) || fs_is_dirty ||
-                     cmdbuf->state.gfx.render.dirty;
+                     dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
+                     dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
+                     dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
+                     dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
+                     fs_is_dirty || cmdbuf->state.gfx.render.dirty;
 
    const struct vk_dynamic_graphics_state *dyns =
       &cmdbuf->vk.dynamic_graphics_state;
@@ -1442,21 +1444,21 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
       vs->info.vs.writes_point_size &&
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
-   bool dirty = get_pos_spd(cmdbuf) != cmdbuf->state.gfx.vs.spds.pos ||
-                panvk_priv_mem_dev_addr(vs->spds.var) !=
-                   cmdbuf->state.gfx.vs.spds.var ||
-                /* fs_required() uses ms.alpha_to_coverage_enable
-                 * and vk_color_blend_state
-                 */
-                is_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
-                is_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
-                is_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
-                is_dirty(cmdbuf, CB_WRITE_MASKS) ||
-                is_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
-                is_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
-                is_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||
-                is_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
-                cmdbuf->state.gfx.fs.spd != get_fs_spd(fs);
+   bool dirty =
+      get_pos_spd(cmdbuf) != cmdbuf->state.gfx.vs.spds.pos ||
+      panvk_priv_mem_dev_addr(vs->spds.var) != cmdbuf->state.gfx.vs.spds.var ||
+      /* fs_required() uses ms.alpha_to_coverage_enable
+       * and vk_color_blend_state
+       */
+      dyn_gfx_state_dirty(cmdbuf, MS_ALPHA_TO_COVERAGE_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, CB_ATTACHMENT_COUNT) ||
+      dyn_gfx_state_dirty(cmdbuf, CB_COLOR_WRITE_ENABLES) ||
+      dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
+      dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLIP_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||
+      dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
+      cmdbuf->state.gfx.fs.spd != get_fs_spd(fs);
 
    if (dirty) {
       pan_pack(&tiler_idvs_flags, PRIMITIVE_FLAGS, cfg) {
