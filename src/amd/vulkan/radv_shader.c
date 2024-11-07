@@ -2966,8 +2966,7 @@ radv_aco_build_shader_binary(void **bin, const struct ac_shader_config *config, 
 static void
 radv_fill_nir_compiler_options(struct radv_nir_compiler_options *options, struct radv_device *device,
                                const struct radv_graphics_state_key *gfx_state, bool should_use_wgp,
-                               bool can_dump_shader, bool is_meta_shader, bool keep_shader_info,
-                               bool keep_statistic_info)
+                               bool can_dump_shader, bool keep_shader_info, bool keep_statistic_info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
@@ -3095,8 +3094,8 @@ radv_shader_nir_to_asm(struct radv_device *device, struct radv_shader_stage *pl_
 
    struct radv_nir_compiler_options options = {0};
    radv_fill_nir_compiler_options(&options, device, gfx_state, radv_should_use_wgp_mode(device, stage, info),
-                                  radv_can_dump_shader(device, shaders[0], false), is_meta_shader(shaders[0]),
-                                  keep_shader_info, keep_statistic_info);
+                                  radv_can_dump_shader(device, shaders[0], false), keep_shader_info,
+                                  keep_statistic_info);
 
    struct radv_shader_binary *binary =
       shader_compile(device, shaders, shader_count, stage, info, &pl_stage->args, &pl_stage->key, &options);
@@ -3129,7 +3128,7 @@ radv_create_trap_handler_shader(struct radv_device *device)
    struct radv_shader_info info = {0};
    struct radv_nir_compiler_options options = {0};
    radv_fill_nir_compiler_options(&options, device, NULL, radv_should_use_wgp_mode(device, stage, &info), false, false,
-                                  false, false);
+                                  false);
 
    nir_builder b = radv_meta_init_shader(device, stage, "meta_trap_handler");
 
@@ -3183,7 +3182,7 @@ radv_create_rt_prolog(struct radv_device *device)
    struct radv_shader_args in_args = {0};
    struct radv_shader_args out_args = {0};
    struct radv_nir_compiler_options options = {0};
-   radv_fill_nir_compiler_options(&options, device, NULL, false, instance->debug_flags & RADV_DEBUG_DUMP_PROLOGS, false,
+   radv_fill_nir_compiler_options(&options, device, NULL, false, instance->debug_flags & RADV_DEBUG_DUMP_PROLOGS,
                                   radv_device_fault_detection_enabled(device), false);
    struct radv_shader_info info = {0};
    info.stage = MESA_SHADER_COMPUTE;
@@ -3247,7 +3246,7 @@ radv_create_vs_prolog(struct radv_device *device, const struct radv_vs_prolog_ke
    struct radv_shader_part *prolog;
    struct radv_shader_args args = {0};
    struct radv_nir_compiler_options options = {0};
-   radv_fill_nir_compiler_options(&options, device, NULL, false, instance->debug_flags & RADV_DEBUG_DUMP_PROLOGS, false,
+   radv_fill_nir_compiler_options(&options, device, NULL, false, instance->debug_flags & RADV_DEBUG_DUMP_PROLOGS,
                                   radv_device_fault_detection_enabled(device), false);
 
    struct radv_shader_info info = {0};
@@ -3315,7 +3314,7 @@ radv_create_ps_epilog(struct radv_device *device, const struct radv_ps_epilog_ke
    struct radv_shader_part *epilog;
    struct radv_shader_args args = {0};
    struct radv_nir_compiler_options options = {0};
-   radv_fill_nir_compiler_options(&options, device, NULL, false, instance->debug_flags & RADV_DEBUG_DUMP_EPILOGS, false,
+   radv_fill_nir_compiler_options(&options, device, NULL, false, instance->debug_flags & RADV_DEBUG_DUMP_EPILOGS,
                                   radv_device_fault_detection_enabled(device), false);
 
    struct radv_shader_info info = {0};
