@@ -60,6 +60,7 @@ enum {
    RADV_DEBUG_NO_ESO = 1ull << 44,
    RADV_DEBUG_PSO_CACHE_STATS = 1ull << 45,
    RADV_DEBUG_NIR_DEBUG_INFO = 1ull << 46,
+   RADV_DEBUG_DUMP_TRAP_HANDLER = 1ull << 47,
 };
 
 enum {

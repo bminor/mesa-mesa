@@ -1329,6 +1329,8 @@ RADV driver environment variables
       force all allocated buffers to be referenced in submissions
    ``checkir``
       validate the LLVM IR before LLVM compiles the shader
+   ``dump_trap_handler``
+      dump the trap handler shader
    ``epilogs``
       dump fragment shader epilogs
    ``extra_md``

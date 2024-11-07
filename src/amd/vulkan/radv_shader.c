@@ -3123,12 +3123,16 @@ radv_shader_generate_debug_info(struct radv_device *device, bool dump_shader, bo
 struct radv_shader *
 radv_create_trap_handler_shader(struct radv_device *device)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    gl_shader_stage stage = MESA_SHADER_COMPUTE;
    struct radv_shader_stage_key stage_key = {0};
    struct radv_shader_info info = {0};
    struct radv_nir_compiler_options options = {0};
-   radv_fill_nir_compiler_options(&options, device, NULL, radv_should_use_wgp_mode(device, stage, &info), false, false,
-                                  false);
+   const bool dump_shader = !!(instance->debug_flags & RADV_DEBUG_DUMP_TRAP_HANDLER);
+
+   radv_fill_nir_compiler_options(&options, device, NULL, radv_should_use_wgp_mode(device, stage, &info), dump_shader,
+                                  false, false);
 
    nir_builder b = radv_meta_init_shader(device, stage, "meta_trap_handler");
 
@@ -3144,6 +3148,9 @@ radv_create_trap_handler_shader(struct radv_device *device)
    struct radv_shader *shader;
    radv_shader_create_uncached(device, binary, false, NULL, &shader);
 
+   radv_shader_generate_debug_info(device, dump_shader, false, binary, shader, &b.shader, 1, &info);
+
+   free(shader->disasm_string);
    ralloc_free(b.shader);
    free(binary);
 
@@ -3442,7 +3449,7 @@ radv_get_shader_name(const struct radv_shader_info *info, gl_shader_stage stage)
    case MESA_SHADER_FRAGMENT:
       return "Pixel Shader";
    case MESA_SHADER_COMPUTE:
-      return "Compute Shader";
+      return info->type == RADV_SHADER_TYPE_TRAP_HANDLER ? "Trap Handler Shader" : "Compute Shader";
    case MESA_SHADER_MESH:
       return "Mesh Shader as NGG";
    case MESA_SHADER_TASK:
