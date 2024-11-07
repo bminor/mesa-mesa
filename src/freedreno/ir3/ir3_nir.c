@@ -1358,16 +1358,6 @@ ir3_nir_scan_driver_consts(struct ir3_compiler *compiler, nir_shader *shader, st
    }
 }
 
-static unsigned
-ir3_align_constoff(struct ir3_const_state *const_state, unsigned constoff,
-                   unsigned aligment)
-{
-   constoff = align(constoff, aligment);
-   const_state->required_consts_aligment_vec4 =
-      MAX2(const_state->required_consts_aligment_vec4, aligment);
-   return constoff;
-}
-
 void
 ir3_const_alloc(struct ir3_const_allocations *const_alloc,
                 enum ir3_const_alloc_type type, uint32_t size_vec4,
@@ -1436,7 +1426,6 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
    unsigned ptrsz = ir3_pointer_size(compiler);
 
    memset(&const_state->offsets, ~0, sizeof(const_state->offsets));
-   const_state->required_consts_aligment_vec4 = 1;
 
    ir3_nir_scan_driver_consts(compiler, nir, const_state);
 
@@ -1449,6 +1438,34 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
 
    assert((const_state->ubo_state.size % 16) == 0);
 
+   /* IR3_CONST_ALLOC_DRIVER_PARAMS could have been allocated earlier. */
+   if (const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].size_vec4 == 0) {
+      ir3_nir_scan_driver_consts(compiler, nir, const_state);
+      if (const_state->num_driver_params > 0) {
+        /* num_driver_params in dwords.  we only need to align to vec4s for the
+         * common case of immediate constant uploads, but for indirect dispatch
+         * the constants may also be indirect and so we have to align the area in
+         * const space to that requirement.
+         */
+         const_state->num_driver_params = align(const_state->num_driver_params, 4);
+         unsigned upload_unit = 1;
+         if (v->type == MESA_SHADER_COMPUTE ||
+            (const_state->num_driver_params >= IR3_DP_VS(vtxid_base))) {
+            upload_unit = compiler->const_upload_unit;
+         }
+
+         /* offset cannot be 0 for vs params loaded by CP_DRAW_INDIRECT_MULTI */
+         if (v->type == MESA_SHADER_VERTEX && compiler->gen >= 6)
+            const_state->allocs.max_const_offset_vec4 =
+               MAX2(const_state->allocs.max_const_offset_vec4, 1);
+
+         uint32_t driver_params_size_vec4 =
+            align(const_state->num_driver_params / 4, upload_unit);
+         ir3_const_alloc(&const_state->allocs, IR3_CONST_ALLOC_DRIVER_PARAMS,
+                         driver_params_size_vec4, upload_unit);
+      }
+   }
+
    unsigned constoff = const_state->allocs.max_const_offset_vec4;
 
    if (const_state->image_dims.count > 0) {
@@ -1460,29 +1477,6 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
    if (v->type == MESA_SHADER_KERNEL) {
       const_state->offsets.kernel_params = constoff;
       constoff += align(v->cs.req_input_mem, 4) / 4;
-   }
-
-   if (const_state->num_driver_params > 0) {
-      /* num_driver_params in dwords.  we only need to align to vec4s for the
-       * common case of immediate constant uploads, but for indirect dispatch
-       * the constants may also be indirect and so we have to align the area in
-       * const space to that requirement.
-       */
-      const_state->num_driver_params = align(const_state->num_driver_params, 4);
-      unsigned upload_unit = 1;
-      if (v->type == MESA_SHADER_COMPUTE ||
-          (const_state->num_driver_params >= IR3_DP_VS(vtxid_base))) {
-         upload_unit = compiler->const_upload_unit;
-      }
-
-      /* offset cannot be 0 for vs params loaded by CP_DRAW_INDIRECT_MULTI */
-      if (v->type == MESA_SHADER_VERTEX && compiler->gen >= 6)
-         constoff = MAX2(constoff, 1);
-      constoff = ir3_align_constoff(const_state, constoff, upload_unit);
-
-      const_state->offsets.driver_param = constoff;
-
-      constoff += align(const_state->num_driver_params / 4, upload_unit);
    }
 
    if ((v->type == MESA_SHADER_VERTEX) && (compiler->gen < 5) &&
@@ -1540,8 +1534,5 @@ ir3_const_state_get_free_space(const struct ir3_shader_variant *v,
    uint32_t free_space_vec4 =
       ir3_max_const(v) - align(const_state->offsets.immediate, align_vec4) -
       const_state->allocs.reserved_vec4;
-   free_space_vec4 =
-      (free_space_vec4 / const_state->required_consts_aligment_vec4) *
-      const_state->required_consts_aligment_vec4;
    return free_space_vec4;
 }

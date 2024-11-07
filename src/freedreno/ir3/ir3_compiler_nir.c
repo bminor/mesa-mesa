@@ -176,9 +176,8 @@ create_driver_param(struct ir3_context *ctx, uint32_t dp)
 {
    /* first four vec4 sysval's reserved for UBOs: */
    /* NOTE: dp is in scalar, but there can be >4 dp components: */
-   const struct ir3_const_state *const_state = ir3_const_state(ctx->so);
-   unsigned n = const_state->offsets.driver_param;
-   unsigned r = regid(n + dp / 4, dp % 4);
+   unsigned r = ir3_const_reg(ir3_const_state(ctx->so),
+                              IR3_CONST_ALLOC_DRIVER_PARAMS, dp);
    return create_uniform(&ctx->build, r);
 }
 
@@ -189,7 +188,8 @@ create_driver_param_indirect(struct ir3_context *ctx, uint32_t dp,
    /* first four vec4 sysval's reserved for UBOs: */
    /* NOTE: dp is in scalar, but there can be >4 dp components: */
    const struct ir3_const_state *const_state = ir3_const_state(ctx->so);
-   unsigned n = const_state->offsets.driver_param;
+   unsigned n =
+      const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
    return create_uniform_indirect(&ctx->build, n * 4 + dp, TYPE_U32, address);
 }
 
@@ -3050,8 +3050,8 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
          }
          ctx->so->constlen =
             MAX2(ctx->so->constlen,
-                 const_state->offsets.driver_param + param / 4 +
-                 nir_intrinsic_range(intr));
+                 const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4 +
+                    param / 4 + nir_intrinsic_range(intr));
       }
       break;
    }

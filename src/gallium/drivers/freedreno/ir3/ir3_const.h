@@ -469,7 +469,8 @@ ir3_emit_driver_params(const struct ir3_shader_variant *v,
    assert(v->need_driver_params);
 
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset = const_state->offsets.driver_param;
+   uint32_t offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
 
    /* Only emit as many params as needed, i.e. up to the highest enabled UCP
     * plane. However a binning pass may drop even some of these, so limit to
@@ -544,7 +545,13 @@ ir3_emit_hs_driver_params(const struct ir3_shader_variant *v,
    assert(v->need_driver_params);
 
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset = const_state->offsets.driver_param;
+   if (!ir3_const_can_upload(&const_state->allocs,
+                             IR3_CONST_ALLOC_DRIVER_PARAMS,
+                             v->constlen))
+      return;
+
+   uint32_t offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
    struct ir3_driver_params_tcs hs_params = ir3_build_driver_params_tcs(ctx);
 
    const uint32_t hs_params_size =
@@ -623,11 +630,14 @@ ir3_emit_cs_driver_params(const struct ir3_shader_variant *v,
 
    /* emit compute-shader driver-params: */
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset = const_state->offsets.driver_param;
+   uint32_t offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
    uint32_t size =
       align(MIN2(const_state->num_driver_params, (v->constlen - offset) * 4), 16);
 
-   if (v->constlen > offset) {
+   if (size > 0 &&
+       ir3_const_can_upload(&const_state->allocs, IR3_CONST_ALLOC_DRIVER_PARAMS,
+                            v->constlen)) {
       ring_wfi(ctx->batch, ring);
 
       struct ir3_driver_params_cs compute_params = ir3_build_driver_params_cs(v, info);

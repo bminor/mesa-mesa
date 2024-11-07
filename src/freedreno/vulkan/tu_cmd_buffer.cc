@@ -5499,10 +5499,13 @@ fs_params_offset(struct tu_cmd_buffer *cmd)
    if (const_state->num_driver_params <= IR3_DP_FS_DYNAMIC)
       return 0;
 
-   if (const_state->offsets.driver_param + IR3_DP_FS_DYNAMIC / 4 >= link->constlen)
+   uint32_t param_offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
+
+   if (param_offset + IR3_DP_FS_DYNAMIC / 4 >= link->constlen)
       return 0;
 
-   return const_state->offsets.driver_param + IR3_DP_FS_DYNAMIC / 4;
+   return param_offset + IR3_DP_FS_DYNAMIC / 4;
 }
 
 static uint32_t
@@ -6006,7 +6009,11 @@ vs_params_offset(struct tu_cmd_buffer *cmd)
       &cmd->state.program.link[MESA_SHADER_VERTEX];
    const struct ir3_const_state *const_state = &link->const_state;
 
-   if (const_state->offsets.driver_param >= link->constlen)
+   uint32_t param_offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
+
+   if (!ir3_const_can_upload(&const_state->allocs,
+                             IR3_CONST_ALLOC_DRIVER_PARAMS, link->constlen))
       return 0;
 
    /* this layout is required by CP_DRAW_INDIRECT_MULTI */
@@ -6015,9 +6022,9 @@ vs_params_offset(struct tu_cmd_buffer *cmd)
    STATIC_ASSERT(IR3_DP_VS(instid_base) == 2);
 
    /* 0 means disabled for CP_DRAW_INDIRECT_MULTI */
-   assert(const_state->offsets.driver_param != 0);
+   assert(param_offset != 0);
 
-   return const_state->offsets.driver_param;
+   return param_offset;
 }
 
 static void
@@ -6576,8 +6583,11 @@ tu_emit_compute_driver_params(struct tu_cmd_buffer *cmd,
       tu_cs_emit_qw(cs, iova | ((uint64_t)A6XX_UBO_1_SIZE(size_vec4s) << 32));
 
    } else {
-      uint32_t offset = const_state->offsets.driver_param;
-      if (variant->constlen <= offset)
+      uint32_t offset =
+         const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
+      if (!ir3_const_can_upload(&const_state->allocs,
+                                IR3_CONST_ALLOC_DRIVER_PARAMS,
+                                variant->constlen))
          return;
 
       uint32_t num_consts = MIN2(const_state->num_driver_params,

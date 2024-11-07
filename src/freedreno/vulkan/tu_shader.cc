@@ -1400,7 +1400,8 @@ tu6_emit_xs(struct tu_cs *cs,
       int size_vec4s = DIV_ROUND_UP(size, 4);
       tu_cs_emit_qw(cs, iova | ((uint64_t)A6XX_UBO_1_SIZE(size_vec4s) << 32));
    } else if (stage == MESA_SHADER_FRAGMENT && const_state->num_driver_params > 0) {
-      uint32_t base = const_state->offsets.driver_param;
+      uint32_t base =
+         const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].offset_vec4;
       int32_t size = DIV_ROUND_UP(MAX2(const_state->num_driver_params, 4), 4);
       size = MAX2(MIN2(size + base, xs->constlen) - base, 0);
 

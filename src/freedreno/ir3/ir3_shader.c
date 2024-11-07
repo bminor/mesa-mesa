@@ -130,7 +130,8 @@ ir3_shader_assemble(struct ir3_shader_variant *v)
    v->constlen = MAX2(v->constlen, info->max_const + 1);
 
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   if ((v->constlen > const_state->offsets.driver_param) ||
+   if (ir3_const_can_upload(&const_state->allocs, IR3_CONST_ALLOC_DRIVER_PARAMS,
+                            v->constlen) ||
        (const_state->driver_params_ubo.idx >= 0))
       v->need_driver_params = true;
 
@@ -803,8 +804,6 @@ dump_const_state(struct ir3_shader_variant *so, FILE *out)
       fprintf(out, ";   image_dims:       c%u.x\n", cs->offsets.image_dims);
    if (cs->offsets.kernel_params != ~0)
       fprintf(out, ";   kernel_params:    c%u.x\n", cs->offsets.kernel_params);
-   if (cs->offsets.driver_param != ~0)
-      fprintf(out, ";   driver_param:     c%u.x\n", cs->offsets.driver_param);
    if (cs->offsets.tfbo != ~0)
       fprintf(out, ";   tfbo:             c%u.x\n", cs->offsets.tfbo);
    if (cs->offsets.primitive_param != ~0)

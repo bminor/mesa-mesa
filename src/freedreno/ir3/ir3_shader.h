@@ -268,17 +268,10 @@ struct ir3_const_state {
    struct ir3_driver_ubo driver_params_ubo;
    struct ir3_driver_ubo primitive_map_ubo, primitive_param_ubo;
 
-   /* Optional const allocations (preamble, UBO, etc.) may shift the required
-    * consts more than they expect. The free space for optional allocations
-    * should respect required_consts_aligment_vec4.
-    */
-   uint32_t required_consts_aligment_vec4;
-
    struct {
       /* Required consts, cannot negotiate their size */
       unsigned image_dims;
       unsigned kernel_params;
-      unsigned driver_param;
       unsigned tfbo;
       unsigned primitive_param;
       unsigned primitive_map;
