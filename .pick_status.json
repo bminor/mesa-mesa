@@ -444,7 +444,7 @@
         "description": "meson: bump spirv-tools version needed to v2022.1",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c60a421f0c2357fe13636f0d51f21e7be25b625e",
         "notes": null
