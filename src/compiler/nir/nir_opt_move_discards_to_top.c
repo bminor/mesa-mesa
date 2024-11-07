@@ -49,14 +49,8 @@ add_src_to_worklist(nir_src *src, void *worklist)
 
    if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-      if (intrin->intrinsic == nir_intrinsic_load_deref) {
-         nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-         if (!nir_deref_mode_is_one_of(deref, nir_var_read_only_modes))
-            return false;
-      } else if (!(nir_intrinsic_infos[intrin->intrinsic].flags &
-                   NIR_INTRINSIC_CAN_REORDER)) {
+      if (!nir_intrinsic_can_reorder(intrin))
          return false;
-      }
    }
 
    /* Set pass_flags and remember the instruction to add it's own sources and for potential
