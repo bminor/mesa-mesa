@@ -130,7 +130,7 @@ radv_emulate_rt(const struct radv_physical_device *pdev)
 static VkConformanceVersion
 radv_get_conformance_version(const struct radv_physical_device *pdev)
 {
-   VkConformanceVersion conformance_version;
+   VkConformanceVersion conformance_version = {0}; /* Non-conformant by default */
 
    if (pdev->info.gfx_level == GFX10_3) {
       conformance_version = (VkConformanceVersion){
@@ -147,13 +147,22 @@ radv_get_conformance_version(const struct radv_physical_device *pdev)
          .patch = 1,
       };
    } else {
-      /* Non-conformat products. */
-      conformance_version = (VkConformanceVersion){
-         .major = 0,
-         .minor = 0,
-         .subminor = 0,
-         .patch = 0,
-      };
+      /* GFX6-7 */
+      switch (pdev->info.family) {
+      case CHIP_TAHITI:
+      case CHIP_PITCAIRN:
+      case CHIP_OLAND:
+      case CHIP_BONAIRE:
+         conformance_version = (VkConformanceVersion){
+            .major = 1,
+            .minor = 3,
+            .subminor = 9,
+            .patch = 2,
+         };
+         break;
+      default:
+         break;
+      }
    }
 
    return conformance_version;
