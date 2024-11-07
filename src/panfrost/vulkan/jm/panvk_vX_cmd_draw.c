@@ -1367,7 +1367,6 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 
    /* Clear the dirty flags all at once */
    vk_dynamic_graphics_state_clear_dirty(&cmdbuf->vk.dynamic_graphics_state);
-   cmdbuf->state.gfx.dirty = 0;
 }
 
 static unsigned

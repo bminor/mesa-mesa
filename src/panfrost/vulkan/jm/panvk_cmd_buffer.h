@@ -121,8 +121,6 @@ struct panvk_cmd_graphics_state {
       struct vk_sample_locations_state sl;
    } dynamic;
 
-   uint32_t dirty;
-
    struct panvk_graphics_sysvals sysvals;
 
    struct panvk_shader_link link;
@@ -155,7 +153,6 @@ struct panvk_cmd_graphics_state {
       struct panvk_buffer *buffer;
       uint64_t offset;
       uint8_t index_size;
-      uint32_t first_vertex, base_vertex, base_instance;
    } ib;
 
    struct panvk_rendering_state render;

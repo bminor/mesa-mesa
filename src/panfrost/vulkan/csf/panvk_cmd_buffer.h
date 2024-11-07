@@ -394,7 +394,6 @@ struct panvk_cmd_graphics_state {
       struct panvk_buffer *buffer;
       uint64_t offset;
       uint8_t index_size;
-      uint32_t first_vertex, base_vertex, base_instance;
       bool dirty;
    } ib;
 
