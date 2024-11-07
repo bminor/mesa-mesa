@@ -767,6 +767,15 @@ namespace {
       const intel_device_info *devinfo = v->devinfo;
       bool progress = false;
 
+      /* BROADCAST is special. It's destination region is a bit of a lie, and
+       * it gets lower in brw_eu_emit. For the purposes of region
+       * restrictions, let's assume that the final code emission will do the
+       * right thing. Doing a bunch of shuffling here is only going to make a
+       * mess of things.
+       */
+      if (inst->opcode == SHADER_OPCODE_BROADCAST)
+         return false;
+
       if (has_invalid_dst_modifiers(devinfo, inst))
          progress |= lower_dst_modifiers(v, block, inst);
 
