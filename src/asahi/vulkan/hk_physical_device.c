@@ -617,7 +617,16 @@ hk_get_device_properties(const struct agx_device *dev,
       .maxImageArrayLayers = 2048,
       .maxTexelBufferElements = AGX_TEXTURE_BUFFER_MAX_SIZE,
       .maxUniformBufferRange = 65536,
-      .maxStorageBufferRange = UINT32_MAX,
+
+      /* From a hardware perspective, storage buffers are lowered to global
+       * address arithmetic so there is no hard limit. However, making efficient
+       * use of the hardware addressing modes depends on no signed wrapping in
+       * any `amul` operations, which are themselves bounded by
+       * maxStorageBufferRange. Therefore, limit storage buffers to INT32_MAX
+       * bytes instead of UINT32_MAX. This is believed to be acceptable for
+       * Direct3D.
+       */
+      .maxStorageBufferRange = INT32_MAX,
       .maxPushConstantsSize = HK_MAX_PUSH_SIZE,
       .maxMemoryAllocationCount = 4096,
       .maxSamplerAllocationCount = 4000,
