@@ -1250,7 +1250,7 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
 
    wp_image_description_creator_params_v1_set_primaries_named(creator, primaries);
    wp_image_description_creator_params_v1_set_tf_named(creator, tf);
-   if (should_use_hdr_metadata && display->color_features.extended_target_volume) {
+   if (should_use_hdr_metadata) {
       uint32_t max_cll = round(chain->color.hdr_metadata.maxContentLightLevel);
       uint32_t max_fall = round(chain->color.hdr_metadata.maxFrameAverageLightLevel);
       wp_image_description_creator_params_v1_set_max_cll(creator, max_cll);
@@ -1289,8 +1289,17 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
       if (ret < 0)
          return VK_ERROR_OUT_OF_DATE_KHR;
    }
-   if (status == failed)
-      return VK_ERROR_SURFACE_LOST_KHR;
+   if (status == failed) {
+      wp_image_description_v1_destroy(image_desc);
+      if (!display->color_features.extended_target_volume && should_use_hdr_metadata) {
+         /* VK_EXT_hdr_metadata doesn't specify if or how the metadata is used,
+          * so it's fine to try again without it. */
+         chain->color.has_hdr_metadata = false;
+         return wsi_wl_swapchain_update_colorspace(chain);
+      } else {
+         return VK_ERROR_SURFACE_LOST_KHR;
+      }
+   }
 
    wp_color_management_surface_v1_set_image_description(chain->wsi_wl_surface->color.color_surface,
                                                         image_desc,
