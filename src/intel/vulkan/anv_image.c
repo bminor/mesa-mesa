@@ -541,16 +541,29 @@ anv_formats_ccs_e_compatible(const struct intel_device_info *devinfo,
 
       if ((vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
           vk_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-         if (devinfo->verx10 < 125)
-            return false;
+         if (devinfo->ver == 12) {
+            /* From the TGL Bspec 44930 (r47128):
+             *
+             *    "Memory atomic operation on compressed data is not supported
+             *     in Gen12 E2E compression. Result of such operation is
+             *     undefined.
+             *
+             *     Software should ensure at the time of the Atomic operation
+             *     the surface is resolved (uncompressed) state."
+             *
+             * On gfx12.0, compression is not supported with atomic
+             * operations. On gfx12.5, the support is there, but it's slow
+             * (see HSD 1406337848).
+             */
+            if (storage_image_format_supports_atomic(devinfo, create_flags,
+                                                     format, vk_tiling,
+                                                     fmt_list))
+               return false;
 
-         /* Disable compression when surface can be potentially used for
-          * atomic operation.
-          */
-         if (storage_image_format_supports_atomic(devinfo, create_flags,
-                                                  format, vk_tiling,
-                                                  fmt_list))
+         } else if (devinfo->ver <= 11) {
+            /* Storage accesses are not supported on compressed surfaces. */
             return false;
+         }
       }
    }
 
