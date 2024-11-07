@@ -12440,6 +12440,10 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
    PhysReg ttmp2_reg{ttmp0_idx + 2};
    PhysReg ttmp3_reg{ttmp0_idx + 3};
    PhysReg tma_rsrc{ttmp0_idx + 4}; /* s4 */
+   PhysReg save_wave_status{ttmp0_idx + 8};
+
+   /* Save SQ_WAVE_STATUS because SCC needs to be restored. */
+   bld.sopk(aco_opcode::s_getreg_b32, Definition(save_wave_status, s1), ((32 - 1) << 11) | 2);
 
    if (options->gfx_level < GFX11) {
       /* Clear the current wave exception, this is required to re-enable VALU
@@ -12523,6 +12527,10 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
 
       offset += 4;
    }
+
+   /* Restore SCC which is the first bit of SQ_WAVE_STATUS. */
+   bld.sopc(aco_opcode::s_bitcmp1_b32, bld.def(s1, scc), Operand(save_wave_status, s1),
+            Operand::c32(0u));
 
    program->config->float_mode = program->blocks[0].fp_mode.val;
 
