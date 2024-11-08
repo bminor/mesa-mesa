@@ -21,5 +21,5 @@ lib_goldfish_address_space = static_library(
                          inc_aemu,
                          inc_src],
    link_with: [libplatform_virtgpu],
-   dependencies: drm_dep
+   dependencies: dep_libdrm
 )
