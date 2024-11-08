@@ -12455,6 +12455,8 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
 {
+   uint32_t offset = 0;
+
    assert(options->gfx_level >= GFX8 && options->gfx_level <= GFX11);
 
    init_program(program, compute_cs, info, options->gfx_level, options->family, options->wgp_mode,
@@ -12505,6 +12507,8 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       bld.vop1(aco_opcode::v_clrexcp);
    }
 
+   offset = offsetof(struct aco_trap_handler_layout, ttmp0);
+
    if (ctx.program->gfx_level >= GFX9) {
       /* Get TMA. */
       if (ctx.program->gfx_level >= GFX11) {
@@ -12526,7 +12530,7 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       bld.copy(Definition(PhysReg{256}, v2) /* v[0-1] */, Operand(ttmp0_reg, s2));
 
       bld.mubuf(aco_opcode::buffer_store_dwordx2, Operand(tma_rsrc, s4), Operand(v1),
-                Operand::c32(0u), Operand(PhysReg{256}, v2) /* v[0-1] */, 0 /* offset */,
+                Operand::c32(0u), Operand(PhysReg{256}, v2) /* v[0-1] */, offset /* offset */,
                 false /* offen */, false /* idxen */, /* addr64 */ false,
                 /* disable_wqm */ false, cache_glc);
    } else {
@@ -12535,7 +12539,7 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
                Operand::zero());
 
       /* Store TTMP0-TTMP1. */
-      bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(tma_rsrc, s4), Operand::zero(),
+      bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(tma_rsrc, s4), Operand::c32(offset),
                Operand(ttmp0_reg, s2), memory_sync_info(), cache_glc);
    }
 
@@ -12548,7 +12552,8 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       6, /* WH_REG_LDS_ALLOC */
       7, /* HW_REG_IB_STS */
    };
-   uint32_t offset = 8;
+
+   offset = offsetof(struct aco_trap_handler_layout, sq_wave_regs.status);
 
    /* Store saved SQ_WAVE_STATUS which can change inside the trap. */
    dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_wave_status, s1), offset);
@@ -12563,6 +12568,8 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       offset += 4;
    }
 
+   assert(offset == offsetof(struct aco_trap_handler_layout, m0));
+
    /* Dump shader registers (m0, exec). */
    dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_m0, s1), offset);
    offset += 4;
@@ -12570,6 +12577,8 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    offset += 4;
    dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_exec_hi, s1), offset);
    offset += 4;
+
+   assert(offset == offsetof(struct aco_trap_handler_layout, sgprs[0]));
 
    /* Dump all SGPRs. */
    for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {

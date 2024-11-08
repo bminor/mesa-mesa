@@ -994,30 +994,8 @@ radv_dump_faulty_shader(struct radv_device *device, uint64_t faulty_pc, FILE *f)
    free(instructions);
 }
 
-#define MAX_SGPRS 108
-
-struct radv_trap_handler_layout {
-   uint32_t ttmp0;
-   uint32_t ttmp1;
-
-   struct {
-      uint32_t status;
-      uint32_t mode;
-      uint32_t trap_sts;
-      uint32_t hw_id1;
-      uint32_t gpr_alloc;
-      uint32_t lds_alloc;
-      uint32_t ib_sts;
-   } sq_wave_regs;
-
-   uint32_t m0;
-   uint32_t exec_lo;
-   uint32_t exec_hi;
-   uint32_t sgprs[MAX_SGPRS];
-};
-
 static void
-radv_dump_sq_hw_regs(struct radv_device *device, const struct radv_trap_handler_layout *layout, FILE *f)
+radv_dump_sq_hw_regs(struct radv_device *device, const struct aco_trap_handler_layout *layout, FILE *f)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    enum amd_gfx_level gfx_level = pdev->info.gfx_level;
@@ -1045,7 +1023,7 @@ radv_dump_sq_hw_regs(struct radv_device *device, const struct radv_trap_handler_
 }
 
 static void
-radv_dump_shader_regs(const struct radv_trap_handler_layout *layout, FILE *f)
+radv_dump_shader_regs(const struct aco_trap_handler_layout *layout, FILE *f)
 {
    fprintf(f, "\nShader registers:\n");
 
@@ -1067,7 +1045,7 @@ radv_check_trap_handler(struct radv_queue *queue)
    enum amd_ip_type ring = radv_queue_ring(queue);
    struct radv_device *device = radv_queue_device(queue);
    struct radeon_winsys *ws = device->ws;
-   const struct radv_trap_handler_layout *layout = (struct radv_trap_handler_layout *)&device->tma_ptr[4];
+   const struct aco_trap_handler_layout *layout = (struct aco_trap_handler_layout *)&device->tma_ptr[4];
 
    /* Wait for the context to be idle in a finite time. */
    ws->ctx_wait_idle(queue->hw_ctx, ring, queue->vk.index_in_family);
