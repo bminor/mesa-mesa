@@ -356,7 +356,8 @@ def emit_impl(typeInfo, api, cgen):
             if p.isNonDispatchableHandleType():
                 cgen.stmt("%s boxed = unboxed_to_boxed_non_dispatchable_%s(%s[i])" % (p.typeName, p.typeName, access))
             else:
-                cgen.stmt("%s boxed = unboxed_to_boxed_%s(%s[i])" % (p.typeName, p.typeName, access))
+                cgen.line("// %s is already boxed, no need to box again" % p.paramName)
+                cgen.stmt("%s boxed = %s(%s[i])" % (p.typeName, p.typeName, access))
             if is_modify_operation(api, p):
                 cgen.stmt("mReconstruction.forEachHandleAddModifyApi((const uint64_t*)(&boxed), 1, apiHandle)")
             else: # is clear modifier operation
