@@ -18,7 +18,7 @@ chown root.kvm /dev/kvm
 
 /etc/init.d/cuttlefish-host-resources start
 
-cd /cuttlefish
+pushd /cuttlefish
 
 # Add a function to perform some tasks when exiting the script
 function my_atexit()
@@ -39,10 +39,31 @@ function my_atexit()
 trap 'my_atexit' EXIT
 trap 'exit 2' HUP INT PIPE TERM
 
-launch_cvd --verbosity=DEBUG --report_anonymous_usage_stats=n --cpus=8 --memory_mb=8192 --gpu_mode="$ANDROID_GPU_MODE" --daemon --enable_minimal_mode=true --guest_enforce_security=false --use_overlay=false
+ulimit -S -n 32768
+
+# Clean up state of previous run
+rm -rf  /cuttlefish/cuttlefish
+rm -rf  /cuttlefish/.cache
+rm -rf  /cuttlefish/.cuttlefish_config.json
+
+launch_cvd \
+  -daemon \
+  -verbosity=VERBOSE \
+  -file_verbosity=VERBOSE \
+  -use_overlay=false \
+  -enable_bootanimation=false \
+  -enable_minimal_mode=true \
+  -guest_enforce_security=false \
+  -report_anonymous_usage_stats=no \
+  -gpu_mode="$ANDROID_GPU_MODE" \
+  -cpus=${FDO_CI_CONCURRENT:-4} \
+  -memory_mb 8192 \
+  -kernel_path="$HOME/bzImage" \
+  -initramfs_path="$HOME/initramfs.img"
+
 sleep 1
 
-cd -
+popd
 
 adb connect vsock:3:5555
 ADB="adb -s vsock:3:5555"

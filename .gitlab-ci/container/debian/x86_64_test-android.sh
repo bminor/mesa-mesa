@@ -97,6 +97,15 @@ curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
 tar -xzvf cvd-host_package.tar.gz
 rm cvd-host_package.tar.gz
 
+AOSP_KERNEL_PROJECT_PATH=ao2/aosp-kernel-manifest
+AOSP_KERNEL_BUILD_VERSION_TAGS=common-android14-6.1-venus
+AOSP_KERNEL_BUILD_NUMBER=20241107.001
+
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
+  -o bzImage "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/bzImage"
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
+  -o initramfs.img "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/initramfs.img"
+
 popd
 
 ############### Building and installing Debian package ...
