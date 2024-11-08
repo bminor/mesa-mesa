@@ -837,6 +837,12 @@ interpret_ceu_jump(struct pandecode_context *ctx, struct queue_ctx *qctx,
 
    /* Map the entire subqueue now */
    uint64_t address = ((uint64_t)address_hi << 32) | address_lo;
+   /* Return if the jump is for an exception handler that's set to zero */
+   if (qctx->in_exception_handler && (!address || !length)) {
+      qctx->in_exception_handler = false;
+      qctx->call_stack_depth--;
+      return true;
+   }
    uint64_t *cs = pandecode_fetch_gpu_mem(ctx, address, length);
 
    qctx->ip = cs;
@@ -979,8 +985,6 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
 
    case MALI_CS_OPCODE_SET_EXCEPTION_HANDLER: {
       pan_unpack(bytes, CS_SET_EXCEPTION_HANDLER, I);
-
-      if (!I.address) return true;
 
       assert(qctx->call_stack_depth < MAX_CALL_STACK_DEPTH);
 
