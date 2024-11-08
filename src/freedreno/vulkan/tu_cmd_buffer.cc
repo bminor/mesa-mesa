@@ -4414,8 +4414,8 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                      const struct tu_image_view *, pass->attachment_count);
    vk_multialloc_add(&ma, &cmd->state.clear_values, VkClearValue,
                      pRenderPassBegin->clearValueCount);
-   if (!vk_multialloc_alloc(&ma, &cmd->vk.pool->alloc,
-                            VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)) {
+   if (ma.size && !vk_multialloc_alloc(&ma, &cmd->vk.pool->alloc,
+                                       VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)) {
       vk_command_buffer_set_error(&cmd->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
       return;
    }

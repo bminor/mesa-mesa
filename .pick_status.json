@@ -614,7 +614,7 @@
         "description": "tu: Fix potential alloc of 0 size",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4cfd021e3f74fd75e7998cae5697a1ba598237d6",
         "notes": null
