@@ -1049,7 +1049,7 @@ radv_dump_shader_regs(const struct radv_trap_handler_layout *layout, FILE *f)
 
    fprintf(f, "\nSGPRS:\n");
    for (uint32_t i = 0; i < MAX_SGPRS; i += 4) {
-      fprintf(f, "s[%d-%d]={0x%08x, 0x%08x, 0x%08x, 0x%08x}\n", i, i + 3, layout->sgprs[i], layout->sgprs[i + 1],
+      fprintf(f, "s[%d-%d] = { %08x, %08x, %08x, %08x }\n", i, i + 3, layout->sgprs[i], layout->sgprs[i + 1],
               layout->sgprs[i + 2], layout->sgprs[i + 3]);
    }
    fprintf(f, "\n\n");
