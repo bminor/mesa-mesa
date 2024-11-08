@@ -604,7 +604,7 @@
         "description": "nir: Fix `no_lower_set` leak on early return",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7e986e5f045a0e9da3ee64970a89d89907d0fcb4",
         "notes": null
