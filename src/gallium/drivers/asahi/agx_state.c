@@ -3510,7 +3510,8 @@ agx_batch_init_state(struct agx_batch *batch)
          if (agx_resource_valid(rsrc, level))
             batch->load |= PIPE_CLEAR_COLOR0 << i;
 
-         agx_batch_writes(batch, rsrc, batch->key.cbufs[i]->u.tex.level);
+         agx_batch_writes(batch, rsrc, level);
+         assert(agx_resource_valid(rsrc, level));
       }
    }
 
