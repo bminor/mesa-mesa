@@ -3075,11 +3075,11 @@ agx_build_pipeline(struct agx_batch *batch, struct agx_compiled_shader *cs,
 }
 
 static uint32_t
-agx_build_internal_usc(struct agx_batch *batch, struct agx_compiled_shader *cs,
-                       uint64_t data)
+agx_build_internal_usc(struct agx_batch *batch, struct agx_shader_info *info,
+                       uint64_t addr, uint64_t data)
 {
    struct agx_device *dev = agx_device(batch->ctx->base.screen);
-   bool needs_sampler = cs->b.info.uses_txf;
+   bool needs_sampler = info->uses_txf;
    size_t usc_size = agx_usc_size(12 + (needs_sampler ? 1 : 0));
 
    struct agx_ptr t =
@@ -3088,7 +3088,7 @@ agx_build_internal_usc(struct agx_batch *batch, struct agx_compiled_shader *cs,
    struct agx_usc_builder b = agx_usc_builder(t.cpu, usc_size);
 
    agx_usc_uniform(&b, 0, 4, agx_pool_upload(&batch->pool, &data, 8));
-   agx_usc_immediates(&b, &cs->b.info, cs->bo->va->addr);
+   agx_usc_immediates(&b, info, addr);
 
    if (needs_sampler) {
       /* TODO: deduplicate */
@@ -3104,10 +3104,10 @@ agx_build_internal_usc(struct agx_batch *batch, struct agx_compiled_shader *cs,
       }
    }
 
-   assert(cs->b.info.scratch_size == 0 && "internal kernels don't spill");
-   assert(cs->b.info.preamble_scratch_size == 0 && "internal doesn't spill");
+   assert(info->scratch_size == 0 && "internal kernels don't spill");
+   assert(info->preamble_scratch_size == 0 && "internal doesn't spill");
 
-   unsigned local_size = cs->b.info.local_size;
+   unsigned local_size = info->local_size;
 
    agx_usc_pack(&b, SHARED, cfg) {
       cfg.layout = AGX_SHARED_LAYOUT_VERTEX_COMPUTE;
@@ -3116,19 +3116,18 @@ agx_build_internal_usc(struct agx_batch *batch, struct agx_compiled_shader *cs,
    }
 
    agx_usc_pack(&b, SHADER, cfg) {
-      cfg.code = agx_usc_addr(dev, cs->bo->va->addr + cs->b.info.main_offset);
+      cfg.code = agx_usc_addr(dev, addr + info->main_offset);
       cfg.unk_2 = 3;
    }
 
    agx_usc_pack(&b, REGISTERS, cfg) {
-      cfg.register_count = cs->b.info.nr_gprs;
+      cfg.register_count = info->nr_gprs;
       cfg.spill_size = 0;
    }
 
-   if (cs->b.info.has_preamble) {
+   if (info->has_preamble) {
       agx_usc_pack(&b, PRESHADER, cfg) {
-         cfg.code =
-            agx_usc_addr(dev, cs->bo->va->addr + cs->b.info.preamble_offset);
+         cfg.code = agx_usc_addr(dev, addr + info->preamble_offset);
       }
    } else {
       agx_usc_pack(&b, NO_PRESHADER, cfg)
@@ -3147,7 +3146,9 @@ agx_launch_with_uploaded_data(struct agx_batch *batch,
    struct agx_compiled_shader *cs = agx_build_meta_shader_internal(
       batch->ctx, builder, key, key_size, false, false, 0, true);
 
-   uint32_t usc = agx_build_internal_usc(batch, cs, data);
+   uint32_t usc =
+      agx_build_internal_usc(batch, &cs->b.info, cs->bo->va->addr, data);
+
    agx_launch_internal(batch, grid, cs, PIPE_SHADER_COMPUTE, usc);
 }
 
