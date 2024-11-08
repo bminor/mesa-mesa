@@ -1973,6 +1973,8 @@ TEST_F(cmod_propagation_test, not_to_or)
     * 0: or.z.f0(8)    dest  src0  src1
     */
 
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+   EXPECT_PROGRESS(brw_opt_algebraic, bld);
    EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
 
    exp.OR(dest, src0, src1)->conditional_mod = BRW_CONDITIONAL_Z;
@@ -1995,6 +1997,8 @@ TEST_F(cmod_propagation_test, not_to_and)
    bld.AND(dest, src0, src1);
    bld.NOT(bld.null_reg_ud(), dest)->conditional_mod = BRW_CONDITIONAL_NZ;
 
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+   EXPECT_PROGRESS(brw_opt_algebraic, bld);
    EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
 
    exp.AND(dest, src0, src1)->conditional_mod = BRW_CONDITIONAL_Z;
@@ -2090,6 +2094,8 @@ TEST_F(cmod_propagation_test, not_to_or_intervening_flag_read_compatible_value)
    set_predicate(BRW_PREDICATE_NORMAL, bld.SEL(dest1, src2, zero));
    set_condmod(BRW_CONDITIONAL_NZ,     bld.NOT(bld.null_reg_ud(), dest0));
 
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+   EXPECT_PROGRESS(brw_opt_algebraic, bld);
    EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
 
    set_condmod(BRW_CONDITIONAL_Z,      exp.OR(dest0, src0, src1));
@@ -2163,6 +2169,8 @@ TEST_F(cmod_propagation_test, not_to_or_intervening_mismatch_flag_write)
       ->flag_subreg = 1;
    set_condmod(BRW_CONDITIONAL_NZ, bld.NOT(bld.null_reg_ud(), dest0));
 
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+   EXPECT_PROGRESS(brw_opt_algebraic, bld);
    EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
 
    set_condmod(BRW_CONDITIONAL_Z, exp.OR(dest0, src0, src1));
@@ -2193,6 +2201,8 @@ TEST_F(cmod_propagation_test, not_to_or_intervening_mismatch_flag_read)
       ->flag_subreg = 1;
    set_condmod(BRW_CONDITIONAL_NZ, bld.NOT(bld.null_reg_ud(), dest0));
 
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+   EXPECT_PROGRESS(brw_opt_algebraic, bld);
    EXPECT_PROGRESS(brw_opt_cmod_propagation, bld);
 
    exp.OR(dest0, src0, src1)->conditional_mod = BRW_CONDITIONAL_Z;
