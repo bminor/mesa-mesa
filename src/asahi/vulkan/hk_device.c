@@ -452,6 +452,10 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
    agx_scratch_init(&dev->dev, &dev->scratch.fs);
    agx_scratch_init(&dev->dev, &dev->scratch.cs);
 
+   u_rwlock_init(&dev->external_bos.lock);
+   util_dynarray_init(&dev->external_bos.counts, NULL);
+   util_dynarray_init(&dev->external_bos.list, NULL);
+
    return VK_SUCCESS;
 
 fail_mem_cache:
@@ -490,6 +494,10 @@ hk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
 
    if (!dev)
       return;
+
+   util_dynarray_fini(&dev->external_bos.counts);
+   util_dynarray_fini(&dev->external_bos.list);
+   u_rwlock_destroy(&dev->external_bos.lock);
 
    hk_device_finish_meta(dev);
    hk_destroy_internal_shaders(dev, &dev->kernels, false);

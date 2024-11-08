@@ -272,7 +272,7 @@ max_commands_per_submit(struct hk_device *dev)
 }
 
 static VkResult
-queue_submit_single(struct agx_device *dev, struct drm_asahi_submit *submit)
+queue_submit_single(struct hk_device *dev, struct drm_asahi_submit *submit)
 {
    /* Currently we don't use the result buffer or implicit sync */
    struct agx_submit_virt virt = {
@@ -280,7 +280,17 @@ queue_submit_single(struct agx_device *dev, struct drm_asahi_submit *submit)
       .extres_count = 0,
    };
 
-   int ret = dev->ops.submit(dev, submit, &virt);
+   if (dev->dev.is_virtio) {
+      u_rwlock_rdlock(&dev->external_bos.lock);
+      virt.extres_count = util_dynarray_num_elements(
+         &dev->external_bos.list, struct asahi_ccmd_submit_res);
+      virt.extres = util_dynarray_begin(&dev->external_bos.list);
+   }
+
+   int ret = dev->dev.ops.submit(&dev->dev, submit, &virt);
+
+   if (dev->dev.is_virtio)
+      u_rwlock_rdunlock(&dev->external_bos.lock);
 
    /* XXX: don't trap */
    if (ret) {
@@ -348,7 +358,7 @@ queue_submit_looped(struct hk_device *dev, struct drm_asahi_submit *submit)
          .out_sync_count = last ? submit->out_sync_count : 0,
       };
 
-      VkResult result = queue_submit_single(&dev->dev, &submit_ioctl);
+      VkResult result = queue_submit_single(dev, &submit_ioctl);
       if (result != VK_SUCCESS)
          return result;
 
@@ -520,7 +530,7 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
    };
 
    if (command_count <= max_commands_per_submit(dev))
-      return queue_submit_single(&dev->dev, &submit_ioctl);
+      return queue_submit_single(dev, &submit_ioctl);
    else
       return queue_submit_looped(dev, &submit_ioctl);
 }
