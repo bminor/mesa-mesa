@@ -26,6 +26,7 @@ intel_shader_files = files(
   'generate_draws_iris.cl',
   'memcpy.cl',
   'query_copy.cl',
+  'util.cl',
 )
 
 prepended_input_args = []

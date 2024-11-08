@@ -104,6 +104,8 @@ endforeach
 
 genX_cl_included_symbols = [
   # instructions
+  '3DSTATE_DS',
+  '3DSTATE_HS',
   '3DSTATE_INDEX_BUFFER',
   '3DSTATE_VERTEX_BUFFERS',
   '3DPRIMITIVE',

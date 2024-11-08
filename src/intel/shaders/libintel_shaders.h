@@ -62,6 +62,10 @@ enum anv_generated_draw_flags {
    ANV_GENERATED_FLAG_RING_MODE      = BITFIELD_BIT(5),
    /* Whether TBIMR tile-based rendering shall be enabled. */
    ANV_GENERATED_FLAG_TBIMR          = BITFIELD_BIT(6),
+   /* Wa_16011107343 */
+   ANV_GENERATED_FLAG_WA_16011107343 = BITFIELD_BIT(7),
+   /* Wa_22018402687 */
+   ANV_GENERATED_FLAG_WA_22018402687 = BITFIELD_BIT(8),
 };
 
 /**
@@ -122,6 +126,10 @@ void genX(write_draw)(global uint32_t *dst_ptr,
                       bool uses_base,
                       bool uses_draw_id,
                       uint32_t mocs);
+
+void genX(copy_data)(global void *dst_ptr,
+                     global void *src_ptr,
+                     uint32_t size);
 
 #endif /* __OPENCL_VERSION__ */
 

@@ -3,6 +3,7 @@
  */
 
 #include "libintel_shaders.h"
+#include "dev/intel_wa.h"
 
 static void end_generated_draws(global void *dst_ptr,
                                 uint32_t item_idx,
@@ -35,6 +36,7 @@ static void end_generated_draws(global void *dst_ptr,
 
 void
 genX(libanv_write_draw)(global void *dst_base,
+                        global void *wa_insts_ptr,
                         global void *indirect_base,
                         global void *draw_id_base,
                         uint32_t indirect_stride,
@@ -62,8 +64,28 @@ genX(libanv_write_draw)(global void *dst_base,
       bool uses_tbimr = (flags & ANV_GENERATED_FLAG_TBIMR) != 0;
       bool uses_base = (flags & ANV_GENERATED_FLAG_BASE) != 0;
       bool uses_drawid = (flags & ANV_GENERATED_FLAG_DRAWID) != 0;
+      uint32_t inst_offset_B = 0;
 
-      genX(write_draw)(dst_ptr, indirect_ptr, draw_id_ptr,
+#if INTEL_WA_16011107343_GFX_VER
+      if (flags & ANV_GENERATED_FLAG_WA_16011107343) {
+         genX(copy_data)(dst_ptr + inst_offset_B,
+                         wa_insts_ptr + inst_offset_B,
+                         GENX(3DSTATE_HS_length) * 4);
+         inst_offset_B += GENX(3DSTATE_HS_length) * 4;
+      }
+#endif
+
+#if INTEL_WA_22018402687_GFX_VER
+      if (flags & ANV_GENERATED_FLAG_WA_22018402687) {
+         genX(copy_data)(dst_ptr + inst_offset_B,
+                         wa_insts_ptr + inst_offset_B,
+                         GENX(3DSTATE_DS_length) * 4);
+         inst_offset_B += GENX(3DSTATE_DS_length) * 4;
+      }
+#endif
+
+      genX(write_draw)(dst_ptr + inst_offset_B,
+                       indirect_ptr, draw_id_ptr,
                        draw_id, instance_multiplier,
                        is_indexed, is_predicated,
                        uses_tbimr, uses_base, uses_drawid,

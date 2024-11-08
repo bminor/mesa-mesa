@@ -293,7 +293,11 @@ anv_device_get_internal_shader(struct anv_device *device,
                           * 2 * (2 loads + 3 stores) +
                           * 3 stores
                           */
-                         14),
+                         14) +
+         /* 3 loads + 3 stores */
+         (intel_needs_workaround(device->info, 16011107343) ? 6 : 0) +
+         /* 3 loads + 3 stores */
+         (intel_needs_workaround(device->info, 22018402687) ? 6 : 0),
       },
       [ANV_INTERNAL_KERNEL_COPY_QUERY_RESULTS_COMPUTE] = {
          .key        = {

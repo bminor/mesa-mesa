@@ -33,6 +33,9 @@ struct PACKED anv_gen_indirect_params {
    /* Indirect data buffer address (only used on Gfx9) */
    uint64_t indirect_data_addr;
 
+   /* Pointers to workaround instructions */
+   uint64_t wa_insts_addr;
+
    /* Stride between each elements of the indirect data buffer */
    uint32_t indirect_data_stride;
 
