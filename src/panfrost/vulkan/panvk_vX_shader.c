@@ -1160,6 +1160,7 @@ panvk_shader_get_executable_internal_representations(
    return incomplete_text ? VK_INCOMPLETE : vk_outarray_status(&out);
 }
 
+#if PAN_ARCH <= 7
 static mali_pixel_format
 get_varying_format(gl_shader_stage stage, gl_varying_slot loc,
                    enum pipe_format pfmt)
@@ -1296,14 +1297,6 @@ panvk_per_arch(link_shaders)(struct panvk_pool *desc_pool,
    assert(vs);
    assert(vs->info.stage == MESA_SHADER_VERTEX);
 
-   if (PAN_ARCH >= 9) {
-      /* No need to calculate varying stride if there's no fragment shader. */
-      if (fs)
-         link->buf_strides[PANVK_VARY_BUF_GENERAL] =
-            MAX2(fs->info.varyings.input_count, vs->info.varyings.output_count);
-      return VK_SUCCESS;
-   }
-
    collect_varyings_info(vs->info.varyings.output,
                          vs->info.varyings.output_count, &out_vars);
 
@@ -1379,6 +1372,7 @@ panvk_per_arch(link_shaders)(struct panvk_pool *desc_pool,
    memcpy(link->buf_strides, buf_strides, sizeof(link->buf_strides));
    return VK_SUCCESS;
 }
+#endif
 
 static const struct vk_shader_ops panvk_shader_ops = {
    .destroy = panvk_shader_destroy,
@@ -1401,13 +1395,15 @@ panvk_cmd_bind_shader(struct panvk_cmd_buffer *cmd, const gl_shader_stage stage,
       break;
    case MESA_SHADER_VERTEX:
       cmd->state.gfx.vs.shader = shader;
+#if PAN_ARCH <= 7
       cmd->state.gfx.linked = false;
+#endif
       memset(&cmd->state.gfx.vs.desc, 0, sizeof(cmd->state.gfx.vs.desc));
       break;
    case MESA_SHADER_FRAGMENT:
       cmd->state.gfx.fs.shader = shader;
-      cmd->state.gfx.linked = false;
 #if PAN_ARCH <= 7
+      cmd->state.gfx.linked = false;
       cmd->state.gfx.fs.rsd = 0;
 #endif
       memset(&cmd->state.gfx.fs.desc, 0, sizeof(cmd->state.gfx.fs.desc));

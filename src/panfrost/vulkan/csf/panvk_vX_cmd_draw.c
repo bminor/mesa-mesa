@@ -1516,16 +1516,6 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    /* FIXME: support non-IDVS. */
    assert(idvs);
 
-   if (!cmdbuf->state.gfx.linked) {
-      result = panvk_per_arch(link_shaders)(&cmdbuf->desc_pool, vs, fs,
-                                            &cmdbuf->state.gfx.link);
-      if (result != VK_SUCCESS) {
-         vk_command_buffer_set_error(&cmdbuf->vk, result);
-         return result;
-      }
-      cmdbuf->state.gfx.linked = true;
-   }
-
    result = update_tls(cmdbuf);
    if (result != VK_SUCCESS)
       return result;

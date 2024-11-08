@@ -167,18 +167,19 @@ struct panvk_shader {
    const char *asm_str;
 };
 
+static inline mali_ptr
+panvk_shader_get_dev_addr(const struct panvk_shader *shader)
+{
+   return shader != NULL ? panvk_priv_mem_dev_addr(shader->code_mem) : 0;
+}
+
+#if PAN_ARCH <= 7
 struct panvk_shader_link {
    struct {
       struct panvk_priv_mem attribs;
    } vs, fs;
    unsigned buf_strides[PANVK_VARY_BUF_MAX];
 };
-
-static inline mali_ptr
-panvk_shader_get_dev_addr(const struct panvk_shader *shader)
-{
-   return shader != NULL ? panvk_priv_mem_dev_addr(shader->code_mem) : 0;
-}
 
 VkResult panvk_per_arch(link_shaders)(struct panvk_pool *desc_pool,
                                       const struct panvk_shader *vs,
@@ -191,6 +192,7 @@ panvk_shader_link_cleanup(struct panvk_shader_link *link)
    panvk_pool_free_mem(&link->vs.attribs);
    panvk_pool_free_mem(&link->fs.attribs);
 }
+#endif
 
 bool panvk_per_arch(nir_lower_descriptors)(
    nir_shader *nir, struct panvk_device *dev,

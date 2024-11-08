@@ -75,8 +75,10 @@ struct panvk_cmd_graphics_state {
 
    struct panvk_graphics_sysvals sysvals;
 
+#if PAN_ARCH <= 7
    struct panvk_shader_link link;
    bool linked;
+#endif
 
    struct {
       const struct panvk_shader *shader;
