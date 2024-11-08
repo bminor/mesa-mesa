@@ -1693,7 +1693,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
       if ((!vbase || vbase->dispatch_width < 32) &&
           max_dispatch_width >= 32 &&
-          INTEL_SIMD(FS, 32)) {
+          INTEL_SIMD(FS, 32) &&
+          !prog_data->base.ray_queries) {
          /* Try a SIMD32 compile */
          v32 = std::make_unique<fs_visitor>(compiler, &params->base, key,
                                             prog_data, nir, 32, 1,
