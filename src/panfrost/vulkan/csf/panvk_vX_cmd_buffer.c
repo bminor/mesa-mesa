@@ -497,13 +497,12 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
    }
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      if (!deps.src[i].wait_sb_mask)
-         continue;
 
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
       struct panvk_cs_state *cs_state = &cmdbuf->state.cs[i];
 
-      cs_wait_slots(b, deps.src[i].wait_sb_mask, false);
+      if (deps.src[i].wait_sb_mask)
+         cs_wait_slots(b, deps.src[i].wait_sb_mask, false);
 
       struct panvk_cache_flush_info cache_flush = deps.src[i].cache_flush;
       if (cache_flush.l2 != MALI_CS_FLUSH_MODE_NONE ||
@@ -520,6 +519,8 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
       if (wait_subqueue_mask & BITFIELD_BIT(i)) {
          struct cs_index sync_addr = cs_scratch_reg64(b, 0);
          struct cs_index add_val = cs_scratch_reg64(b, 2);
+
+         assert(deps.src[i].wait_sb_mask);
 
          cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
                       offsetof(struct panvk_cs_subqueue_context, syncobjs));
