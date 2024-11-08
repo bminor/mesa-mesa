@@ -809,6 +809,14 @@ vtn_handle_non_semantic_instruction(struct vtn_builder *b, SpvOp ext_opcode,
    return true;
 }
 
+static bool
+vtn_handle_non_semantic_debug_break_instruction(struct vtn_builder *b, SpvOp ext_opcode,
+                                                const uint32_t *w, unsigned count)
+{
+   nir_debug_break(&b->nb);
+   return true;
+}
+
 static void
 vtn_handle_extension(struct vtn_builder *b, SpvOp opcode,
                      const uint32_t *w, unsigned count)
@@ -833,6 +841,9 @@ vtn_handle_extension(struct vtn_builder *b, SpvOp opcode,
          val->ext_handler = vtn_handle_amd_shader_explicit_vertex_parameter_instruction;
       } else if (strcmp(ext, "OpenCL.std") == 0) {
          val->ext_handler = vtn_handle_opencl_instruction;
+      } else if ((strcmp(ext, "NonSemantic.DebugBreak") == 0)
+                && (b->options && b->options->emit_debug_break)) {
+         val->ext_handler = vtn_handle_non_semantic_debug_break_instruction;
       } else if (strstr(ext, "NonSemantic.") == ext) {
          val->ext_handler = vtn_handle_non_semantic_instruction;
       } else {
