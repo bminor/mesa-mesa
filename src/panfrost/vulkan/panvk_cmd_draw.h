@@ -11,12 +11,20 @@
 #endif
 
 #include "panvk_blend.h"
+#include "panvk_entrypoints.h"
+#include "panvk_image.h"
+#include "panvk_image_view.h"
 #include "panvk_physical_device.h"
+
+#include "vk_command_buffer.h"
+#include "vk_format.h"
 
 #include "pan_props.h"
 
 #define MAX_VBS 16
 #define MAX_RTS 8
+
+struct panvk_cmd_buffer;
 
 struct panvk_attrib_buf {
    mali_ptr address;
@@ -246,5 +254,19 @@ fs_required(const struct panvk_cmd_graphics_state *state,
       if (__set_fs_dirty)                                                      \
          gfx_state_set_dirty(__cmdbuf, FS);                                    \
    } while (0)
+
+void
+panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
+                                      const VkRenderingInfo *pRenderingInfo);
+
+void
+panvk_per_arch(cmd_force_fb_preload)(struct panvk_cmd_buffer *cmdbuf,
+                                     const VkRenderingInfo *render_info);
+
+void
+panvk_per_arch(cmd_preload_render_area_border)(struct panvk_cmd_buffer *cmdbuf,
+                                               const VkRenderingInfo *render_info);
+
+void panvk_per_arch(cmd_resolve_attachments)(struct panvk_cmd_buffer *cmdbuf);
 
 #endif
