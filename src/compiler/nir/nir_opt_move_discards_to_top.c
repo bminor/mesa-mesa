@@ -26,16 +26,23 @@
 #include "nir_builder.h"
 #include "nir_control_flow.h"
 
-#define MOVE_INSTR_FLAG            1
-#define STOP_PROCESSING_INSTR_FLAG 2
+#define MAX_DISCARDS               254
+#define MOVE_INSTR_FLAG(i)         ((i) + 1)
+#define STOP_PROCESSING_INSTR_FLAG 255
+
+struct move_discard_state {
+   struct util_dynarray worklist;
+   unsigned discard_id;
+};
 
 /** Check recursively if the source can be moved to the top of the shader.
  *  Sets instr->pass_flags to MOVE_INSTR_FLAG and adds the instr
  *  to the given worklist
  */
 static bool
-add_src_to_worklist(nir_src *src, void *worklist)
+add_src_to_worklist(nir_src *src, void *state_)
 {
+   struct move_discard_state *state = state_;
    nir_instr *instr = src->ssa->parent_instr;
    if (instr->pass_flags)
       return true;
@@ -80,8 +87,8 @@ add_src_to_worklist(nir_src *src, void *worklist)
    /* Set pass_flags and remember the instruction to add it's own sources and for potential
     * cleanup.
     */
-   instr->pass_flags = MOVE_INSTR_FLAG;
-   util_dynarray_append(worklist, nir_instr *, instr);
+   instr->pass_flags = MOVE_INSTR_FLAG(state->discard_id);
+   util_dynarray_append(&state->worklist, nir_instr *, instr);
 
    return true;
 }
@@ -95,46 +102,50 @@ add_src_to_worklist(nir_src *src, void *worklist)
  * Demote are handled the same way, except that they can still be moved up
  * when implicit derivatives are used.
  */
-static bool
-try_move_discard(nir_intrinsic_instr *discard)
+static void
+try_move_discard(nir_intrinsic_instr *discard, unsigned *next_discard_id)
 {
    /* We require the discard to be in the top level of control flow.  We
     * could, in theory, move discards that are inside ifs or loops but that
     * would be a lot more work.
     */
    if (discard->instr.block->cf_node.parent->type != nir_cf_node_function)
-      return false;
+      return;
 
-   discard->instr.pass_flags = MOVE_INSTR_FLAG;
+   if (*next_discard_id == MAX_DISCARDS)
+      return;
+
+   discard->instr.pass_flags = MOVE_INSTR_FLAG(*next_discard_id);
 
    /* Build the set of all instructions discard depends on to be able to
     * clear the flags in case the discard cannot be moved.
     */
    nir_instr *work_[64];
-   struct util_dynarray work;
-   util_dynarray_init_from_stack(&work, work_, sizeof(work_));
-   util_dynarray_append(&work, nir_instr *, &discard->instr);
+   struct move_discard_state state;
+   state.discard_id = *next_discard_id;
+   util_dynarray_init_from_stack(&state.worklist, work_, sizeof(work_));
+   util_dynarray_append(&state.worklist, nir_instr *, &discard->instr);
 
    unsigned next = 0;
    bool can_move_discard = true;
-   while (next < util_dynarray_num_elements(&work, nir_instr *) && can_move_discard) {
-      nir_instr *instr = *util_dynarray_element(&work, nir_instr *, next);
+   while (next < util_dynarray_num_elements(&state.worklist, nir_instr *) && can_move_discard) {
+      nir_instr *instr = *util_dynarray_element(&state.worklist, nir_instr *, next);
       next++;
       /* Instead of removing instructions from the worklist, we keep them so that the
        * flags can be cleared if we fail.
        */
-      can_move_discard = nir_foreach_src(instr, add_src_to_worklist, &work);
+      can_move_discard = nir_foreach_src(instr, add_src_to_worklist, &state.worklist);
    }
 
    if (!can_move_discard) {
       /* Moving the discard is impossible: clear the flags */
-      util_dynarray_foreach(&work, nir_instr *, instr)
+      util_dynarray_foreach(&state.worklist, nir_instr *, instr)
          (*instr)->pass_flags = 0;
+   } else {
+      (*next_discard_id)++;
    }
 
-   util_dynarray_fini(&work);
-
-   return can_move_discard;
+   util_dynarray_fini(&state.worklist);
 }
 
 static bool
@@ -142,7 +153,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
 {
    bool progress = false;
    bool consider_terminates = true;
-   bool moved = false;
+   unsigned next_discard_id = 0;
 
    /* Walk through the instructions and look for a discard that we can move
     * to the top of the program.  If we hit any operation along the way that
@@ -225,7 +236,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
                }
             FALLTHROUGH;
             case nir_intrinsic_demote_if:
-               moved = moved || try_move_discard(intrin);
+               try_move_discard(intrin, &next_discard_id);
                break;
             default:
                break;
@@ -250,23 +261,28 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
    }
 break_all:
 
-   if (moved) {
-      /* Walk the list of instructions and move the discard/demote and
-       * everything it depends on to the top.  We walk the instruction list
-       * here because it ensures that everything stays in its original order.
-       * This provides stability for the algorithm and ensures that we don't
-       * accidentally get dependencies out-of-order.
-       */
-      nir_cursor cursor = nir_before_impl(impl);
+   /* Walk the list of instructions and move the discard/demote and
+    * everything it depends on to the top.  We walk the instruction list
+    * here because it ensures that everything stays in its original order.
+    * This provides stability for the algorithm and ensures that we don't
+    * accidentally get dependencies out-of-order.
+    */
+   nir_cursor cursor = nir_before_impl(impl);
+   for (unsigned i = 0; i < next_discard_id; i++) {
       nir_foreach_block(block, impl) {
+         bool stop = false;
          nir_foreach_instr_safe(instr, block) {
-            if (instr->pass_flags == STOP_PROCESSING_INSTR_FLAG)
-               return progress;
-            if (instr->pass_flags == MOVE_INSTR_FLAG) {
+            if (instr->pass_flags == STOP_PROCESSING_INSTR_FLAG) {
+               stop = true;
+               break;
+            }
+            if (instr->pass_flags == MOVE_INSTR_FLAG(i)) {
                progress |= nir_instr_move(cursor, instr);
                cursor = nir_after_instr(instr);
             }
          }
+         if (stop)
+            break;
       }
    }
 
