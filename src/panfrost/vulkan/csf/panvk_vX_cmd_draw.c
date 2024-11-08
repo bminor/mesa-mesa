@@ -1386,6 +1386,11 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    if (!panvk_priv_mem_dev_addr(vs->spds.pos_points))
       return;
 
+   /* Needs to be done before get_fs() is called because it depends on
+    * fs.required being initialized. */
+   cmdbuf->state.gfx.fs.required =
+      fs_required(&cmdbuf->state.gfx, &cmdbuf->vk.dynamic_graphics_state);
+
    result = prepare_draw(cmdbuf, draw);
    if (result != VK_SUCCESS)
       return;
@@ -1509,6 +1514,11 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    /* If there's no vertex shader, we can skip the draw. */
    if (!panvk_priv_mem_dev_addr(vs->spds.pos_points))
       return;
+
+   /* Needs to be done before get_fs() is called because it depends on
+    * fs.required being initialized. */
+   cmdbuf->state.gfx.fs.required =
+      fs_required(&cmdbuf->state.gfx, &cmdbuf->vk.dynamic_graphics_state);
 
    /* Layered indirect draw (VK_EXT_shader_viewport_index_layer) needs
     * additional changes. We allow layer_count == 0 because that happens

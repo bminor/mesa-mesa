@@ -100,6 +100,7 @@ struct panvk_cmd_graphics_state {
    struct {
       const struct panvk_shader *shader;
       struct panvk_shader_desc_state desc;
+      bool required;
 #if PAN_ARCH <= 7
       mali_ptr rsd;
 #endif
@@ -219,9 +220,20 @@ fs_required(const struct panvk_cmd_graphics_state *state,
    return (fs_info->fs.writes_depth || fs_info->fs.writes_stencil);
 }
 
+static inline bool
+cached_fs_required(ASSERTED const struct panvk_cmd_graphics_state *state,
+                   ASSERTED const struct vk_dynamic_graphics_state *dyn_state,
+                   bool cached_value)
+{
+   /* Make sure the cached value was properly initialized. */
+   assert(fs_required(state, dyn_state) == cached_value);
+   return cached_value;
+}
+
 #define get_fs(__cmdbuf)                                                       \
-   (fs_required(&(__cmdbuf)->state.gfx,                                        \
-                &(__cmdbuf)->vk.dynamic_graphics_state)                        \
+   (cached_fs_required(&(__cmdbuf)->state.gfx,                                 \
+                       &(__cmdbuf)->vk.dynamic_graphics_state,                 \
+                       (__cmdbuf)->state.gfx.fs.required)                      \
        ? (__cmdbuf)->state.gfx.fs.shader                                       \
        : NULL)
 
