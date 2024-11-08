@@ -91,6 +91,8 @@ enum panvk_sb_ids {
 #define SB_ID(nm)       PANVK_SB_##nm
 #define SB_ITER(x)      (PANVK_SB_ITER_START + (x))
 #define SB_WAIT_ITER(x) BITFIELD_BIT(PANVK_SB_ITER_START + (x))
+#define SB_ALL_ITERS_MASK                                                      \
+   BITFIELD_RANGE(PANVK_SB_ITER_START, PANVK_SB_ITER_COUNT)
 #define SB_ALL_MASK     BITFIELD_MASK(8)
 
 static inline uint32_t

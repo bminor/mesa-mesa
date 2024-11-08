@@ -214,6 +214,66 @@ get_subqueue_stages(enum panvk_subqueue_id subqueue)
 }
 
 static void
+add_execution_dependency(uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
+                         VkPipelineStageFlags2 src_stages,
+                         VkPipelineStageFlags2 dst_stages)
+{
+   /* convert stages to subqueues */
+   uint32_t src_subqueues = 0;
+   uint32_t dst_subqueues = 0;
+   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
+      const VkPipelineStageFlags2 subqueue_stages = get_subqueue_stages(i);
+      if (src_stages & subqueue_stages)
+         src_subqueues |= BITFIELD_BIT(i);
+      if (dst_stages & subqueue_stages)
+         dst_subqueues |= BITFIELD_BIT(i);
+   }
+
+   const bool dst_host = dst_stages & VK_PIPELINE_STAGE_2_HOST_BIT;
+
+   /* nothing to wait */
+   if (!src_subqueues || (!dst_subqueues && !dst_host))
+      return;
+
+   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
+      if (!(dst_subqueues & BITFIELD_BIT(i)))
+         continue;
+
+      /* each dst subqueue should wait for all src subqueues */
+      uint32_t wait_mask = src_subqueues;
+
+      switch (i) {
+      case PANVK_SUBQUEUE_VERTEX_TILER:
+         /* Indirect draw buffers are read from the command stream, and
+          * load/store operations are synchronized with the LS scoreboard
+          * immediately after the read, so no need to wait in that case.
+          */
+         if ((src_stages & get_subqueue_stages(i)) ==
+             VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT)
+            wait_mask &= ~BITFIELD_BIT(i);
+         break;
+      default:
+         break;
+      }
+
+      wait_masks[i] |= wait_mask;
+   }
+
+   /* The host does not wait for src subqueues.  All src subqueues should
+    * self-wait instead.
+    *
+    * Also, our callers currently expect src subqueues to self-wait when there
+    * are dst subqueues.  Until that changes, make all src subqueues self-wait.
+    */
+   if (dst_host || dst_subqueues) {
+      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
+         if (src_subqueues & BITFIELD_BIT(i))
+            wait_masks[i] |= BITFIELD_BIT(i);
+      }
+   }
+}
+
+static void
 add_memory_dependency(struct panvk_cache_flush_info *cache_flush,
                       VkAccessFlags2 src_access, VkAccessFlags2 dst_access)
 {
@@ -265,45 +325,30 @@ add_memory_dependency(struct panvk_cache_flush_info *cache_flush,
 }
 
 static bool
-src_stages_need_draw_flush(VkPipelineStageFlags2 stages)
+should_split_render_pass(const uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT])
 {
-   static const VkPipelineStageFlags2 draw_flush_stage_mask =
-      VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-      VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
-      VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT |
-      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT |
-      VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT |
-      VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
-
-   return (stages & draw_flush_stage_mask) != 0;
-}
-
-static bool
-stages_cover_subqueue(enum panvk_subqueue_id subqueue,
-                      VkPipelineStageFlags2 stages)
-{
-   return (stages & get_subqueue_stages(subqueue)) != 0;
-}
-
-static uint32_t
-src_stages_to_subqueue_sb_mask(enum panvk_subqueue_id subqueue,
-                               VkPipelineStageFlags2 stages)
-{
-   if (!stages_cover_subqueue(subqueue, stages))
-      return 0;
-
-   /* Indirect draw buffers are read from the command stream, and load/store
-    * operations are synchronized with the LS scoreboad immediately after the
-    * read, so no need to wait in that case.
+   /* From the Vulkan 1.3.301 spec:
+    *
+    *    VUID-vkCmdPipelineBarrier-None-07892
+    *
+    *    "If vkCmdPipelineBarrier is called within a render pass instance, the
+    *    source and destination stage masks of any memory barriers must only
+    *    include graphics pipeline stages"
+    *
+    * We only consider the tiler and the fragment subqueues here.
     */
-   if (subqueue == PANVK_SUBQUEUE_VERTEX_TILER &&
-       stages == VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT)
-      return 0;
 
-   /* We need to wait for all previously submitted jobs, and given the
-    * iterator scoreboard is a moving target, we just wait for the
-    * whole dynamic scoreboard range. */
-   return BITFIELD_RANGE(PANVK_SB_ITER_START, PANVK_SB_ITER_COUNT);
+   /* split if the tiler subqueue waits for the fragment subqueue */
+   if (wait_masks[PANVK_SUBQUEUE_VERTEX_TILER] &
+       BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT))
+      return true;
+
+   /* split if the fragment subqueue self-waits */
+   if (wait_masks[PANVK_SUBQUEUE_FRAGMENT] &
+       BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT))
+      return true;
+
+   return false;
 }
 
 static void
@@ -326,26 +371,25 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
                 VkPipelineStageFlags2 dst_stages, VkAccessFlags2 src_access,
                 VkAccessFlags2 dst_access, struct panvk_cs_deps *deps)
 {
-   if (src_stages_need_draw_flush(src_stages) && cmdbuf->state.gfx.render.tiler)
+   uint32_t wait_masks[PANVK_SUBQUEUE_COUNT] = {0};
+   add_execution_dependency(wait_masks, src_stages, dst_stages);
+
+   if (cmdbuf->state.gfx.render.tiler && should_split_render_pass(wait_masks))
       deps->needs_draw_flush = true;
 
-   uint32_t wait_subqueue_mask = 0;
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      uint32_t sb_mask = src_stages_to_subqueue_sb_mask(i, src_stages);
-      if (!sb_mask)
-         continue;
+      if (wait_masks[i] & BITFIELD_BIT(i)) {
+         /* We need to self-wait for all previously submitted jobs, and given
+          * the iterator scoreboard is a moving target, we just wait for the
+          * whole dynamic scoreboard range.
+          */
+         deps->src[i].wait_sb_mask |= SB_ALL_ITERS_MASK;
+      }
 
-      deps->src[i].wait_sb_mask |= sb_mask;
       collect_cache_flush_info(i, &deps->src[i].cache_flush, src_access,
                                dst_access);
-      wait_subqueue_mask |= BITFIELD_BIT(i);
-   }
 
-   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      if (!stages_cover_subqueue(i, dst_stages))
-         continue;
-
-      deps->dst[i].wait_subqueue_mask |= wait_subqueue_mask;
+      deps->dst[i].wait_subqueue_mask |= wait_masks[i];
    }
 }
 
