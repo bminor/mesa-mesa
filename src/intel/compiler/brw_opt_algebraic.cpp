@@ -489,6 +489,29 @@ brw_opt_algebraic(brw_shader &s)
             }
          }
          break;
+
+      case BRW_OPCODE_NOT:
+         /*    not.nz    null, g17
+          *
+          * becomes
+          *
+          *    mov.z     null, g17
+          *
+          * These are equivalent, but the latter is easier for cmod prop.
+          */
+         if (inst->dst.is_null() &&
+             inst->conditional_mod != BRW_CONDITIONAL_NONE) {
+            assert(!inst->src[0].abs);
+
+            if (!inst->src[0].negate)
+               inst->conditional_mod = brw_negate_cmod(inst->conditional_mod);
+
+            inst->opcode = BRW_OPCODE_MOV;
+            inst->src[0].negate = false;
+            progress = true;
+         }
+         break;
+
       case BRW_OPCODE_OR:
          if (inst->src[0].equals(inst->src[1]) || inst->src[1].is_zero()) {
             /* On Gfx8+, the OR instruction can have a source modifier that
