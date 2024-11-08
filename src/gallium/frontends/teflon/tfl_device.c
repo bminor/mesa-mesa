@@ -171,6 +171,12 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
          operation->pad.after_y = paddings[5];
          break;
       }
+      case kTfLiteBuiltinFullyConnected: {
+         operation->type = PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED;
+         operation->fcon.weight_tensor = &tensors[node->inputs->data[1]];
+         operation->fcon.bias_tensor = &tensors[node->inputs->data[2]];
+         break;
+      }
       default:
          unreachable("Unsupported ML operation type");
    }
@@ -251,6 +257,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
             break;
          case PIPE_ML_OPERATION_TYPE_PAD:
             teflon_debug("%-6s ", "PAD");
+            break;
+         case PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED:
+            teflon_debug("%-6s ", "FCON");
             break;
       }
 
@@ -585,6 +594,9 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
                         padding[7] == 0;
             break;
          }
+         case kTfLiteBuiltinFullyConnected:
+            supported = true;
+            break;
       }
 
       if (supported)
