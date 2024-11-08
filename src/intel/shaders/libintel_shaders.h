@@ -12,6 +12,7 @@
 #include "util/macros.h"
 
 #else
+#define PRAGMA_POISON(param)
 #define BITFIELD_BIT(i) (1u << i)
 
 typedef ulong uint64_t;
