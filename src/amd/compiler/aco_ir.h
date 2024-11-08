@@ -2223,8 +2223,7 @@ void init_program(Program* program, Stage stage, const struct aco_shader_info* i
 void select_program(Program* program, unsigned shader_count, struct nir_shader* const* shaders,
                     ac_shader_config* config, const struct aco_compiler_options* options,
                     const struct aco_shader_info* info, const struct ac_shader_args* args);
-void select_trap_handler_shader(Program* program, struct nir_shader* shader,
-                                ac_shader_config* config,
+void select_trap_handler_shader(Program* program, ac_shader_config* config,
                                 const struct aco_compiler_options* options,
                                 const struct aco_shader_info* info,
                                 const struct ac_shader_args* args);

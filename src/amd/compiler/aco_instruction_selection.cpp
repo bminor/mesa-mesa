@@ -12451,7 +12451,7 @@ dump_sgpr_to_mem(isel_context* ctx, Operand rsrc, Operand data, uint32_t offset)
 }
 
 void
-select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shader_config* config,
+select_trap_handler_shader(Program* program, ac_shader_config* config,
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
 {

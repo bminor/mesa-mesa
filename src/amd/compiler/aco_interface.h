@@ -72,6 +72,10 @@ void aco_compile_ps_prolog(const struct aco_compiler_options* options,
                            const struct ac_shader_args* args,
                            aco_shader_part_callback* build_prolog, void** binary);
 
+void aco_compile_trap_handler(const struct aco_compiler_options* options,
+                              const struct aco_shader_info* info, const struct ac_shader_args* args,
+                              aco_callback* build_binary, void** binary);
+
 uint64_t aco_get_codegen_flags();
 
 bool aco_is_gpu_supported(const struct radeon_info* info);
