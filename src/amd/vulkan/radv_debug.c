@@ -893,6 +893,7 @@ radv_trap_handler_init(struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_winsys *ws = device->ws;
+   uint32_t desc[4];
    VkResult result;
 
    /* Create the trap handler shader and upload it like other shaders. */
@@ -922,10 +923,9 @@ radv_trap_handler_init(struct radv_device *device)
       return false;
 
    /* Upload a buffer descriptor to store various info from the trap. */
-   uint64_t tma_va = radv_buffer_get_va(device->tma_bo) + 16;
-   uint32_t desc[4];
+   uint64_t tma_va = radv_buffer_get_va(device->tma_bo) + sizeof(desc);
 
-   ac_build_raw_buffer_descriptor(pdev->info.gfx_level, tma_va, TMA_BO_SIZE, desc);
+   ac_build_raw_buffer_descriptor(pdev->info.gfx_level, tma_va, TMA_BO_SIZE - sizeof(desc), desc);
 
    memcpy(device->tma_ptr, desc, sizeof(desc));
 
