@@ -624,7 +624,7 @@
         "description": "tu: Fix push_set host memory leak on command buffer reset",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "03294e1dd1cd0e3de2bfe45e91765ee56d217d4a",
         "notes": null
