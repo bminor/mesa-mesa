@@ -12541,9 +12541,11 @@ select_trap_handler_shader(Program* program, struct nir_shader* shader, ac_shade
 
    /* Store some hardware registers. */
    const uint32_t hw_regs_idx[] = {
+      1, /* HW_REG_MODE */
       3, /* HW_REG_TRAP_STS */
       4, /* HW_REG_HW_ID */
       5, /* WH_REG_GPR_ALLOC */
+      6, /* WH_REG_LDS_ALLOC */
       7, /* HW_REG_IB_STS */
    };
    uint32_t offset = 8;
