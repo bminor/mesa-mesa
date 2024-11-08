@@ -1194,7 +1194,7 @@
         "description": "ci: use quiet alias for commands",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d69bd583655974922e965e76a8f703c67d661b17",
         "notes": null

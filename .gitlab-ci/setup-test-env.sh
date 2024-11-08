@@ -50,13 +50,13 @@ function _build_section_start {
 alias build_section_start="x_off; _build_section_start"
 
 function _section_start {
-    _build_section_start "[collapsed=true]" $*
+    build_section_start "[collapsed=true]" $*
     x_restore
 }
 alias section_start="x_off; _section_start"
 
 function _uncollapsed_section_start {
-    _build_section_start "" $*
+    build_section_start "" $*
     x_restore
 }
 alias uncollapsed_section_start="x_off; _uncollapsed_section_start"
@@ -69,7 +69,7 @@ function _build_section_end {
 alias build_section_end="x_off; _build_section_end"
 
 function _section_end {
-    _build_section_end $*
+    build_section_end $*
     x_restore
 }
 alias section_end="x_off; _section_end"
@@ -77,9 +77,10 @@ alias section_end="x_off; _section_end"
 function _section_switch {
     if [ -n "$CURRENT_SECTION" ]
     then
-	_build_section_end $CURRENT_SECTION
+        build_section_end $CURRENT_SECTION
+        x_off
     fi
-    _build_section_start "[collapsed=true]" $*
+    build_section_start "[collapsed=true]" $*
     x_restore
 }
 alias section_switch="x_off; _section_switch"
@@ -87,9 +88,10 @@ alias section_switch="x_off; _section_switch"
 function _uncollapsed_section_switch {
     if [ -n "$CURRENT_SECTION" ]
     then
-	_build_section_end $CURRENT_SECTION
+        build_section_end $CURRENT_SECTION
+        x_off
     fi
-    _build_section_start "" $*
+    build_section_start "" $*
     x_restore
 }
 alias uncollapsed_section_switch="x_off; _uncollapsed_section_switch"
@@ -122,7 +124,8 @@ function error {
     ENDCOLOR="\e[0m"
     # we force the following to be not in a section
     if [ -n "${CURRENT_SECTION:-}" ]; then
-      _section_end $CURRENT_SECTION
+      section_end $CURRENT_SECTION
+      x_off
     fi
 
     CURR_MINSEC=$(get_current_minsec)
