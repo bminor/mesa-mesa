@@ -46,20 +46,22 @@ typedef struct VkDrawIndirectCommand {
 /**
  * Flags for generated_draws.cl
  */
-#define ANV_GENERATED_FLAG_INDEXED    BITFIELD_BIT(0)
-#define ANV_GENERATED_FLAG_PREDICATED BITFIELD_BIT(1)
-/* Only used on Gfx9, means the pipeline is using gl_DrawID */
-#define ANV_GENERATED_FLAG_DRAWID     BITFIELD_BIT(2)
-/* Only used on Gfx9, means the pipeline is using gl_BaseVertex or
- * gl_BaseInstance
- */
-#define ANV_GENERATED_FLAG_BASE       BITFIELD_BIT(3)
-/* Whether the count is indirect  */
-#define ANV_GENERATED_FLAG_COUNT      BITFIELD_BIT(4)
-/* Whether the generation shader writes to the ring buffer */
-#define ANV_GENERATED_FLAG_RING_MODE  BITFIELD_BIT(5)
-/* Whether TBIMR tile-based rendering shall be enabled. */
-#define ANV_GENERATED_FLAG_TBIMR      BITFIELD_BIT(6)
+enum anv_generated_draw_flags {
+   ANV_GENERATED_FLAG_INDEXED        = BITFIELD_BIT(0),
+   ANV_GENERATED_FLAG_PREDICATED     = BITFIELD_BIT(1),
+   /* Only used on Gfx9, means the pipeline is using gl_DrawID */
+   ANV_GENERATED_FLAG_DRAWID         = BITFIELD_BIT(2),
+   /* Only used on Gfx9, means the pipeline is using gl_BaseVertex or
+    * gl_BaseInstance
+    */
+   ANV_GENERATED_FLAG_BASE           = BITFIELD_BIT(3),
+   /* Whether the count is indirect  */
+   ANV_GENERATED_FLAG_COUNT          = BITFIELD_BIT(4),
+   /* Whether the generation shader writes to the ring buffer */
+   ANV_GENERATED_FLAG_RING_MODE      = BITFIELD_BIT(5),
+   /* Whether TBIMR tile-based rendering shall be enabled. */
+   ANV_GENERATED_FLAG_TBIMR          = BITFIELD_BIT(6),
+};
 
 /**
  * Flags for query_copy.cl

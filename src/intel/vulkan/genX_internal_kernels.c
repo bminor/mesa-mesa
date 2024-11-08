@@ -74,6 +74,8 @@ genX(call_internal_shader)(nir_builder *b, enum anv_internal_kernel_name shader_
          load_param(b, 32, struct anv_gen_indirect_params, instance_multiplier),
          load_param(b, 32, struct anv_gen_indirect_params, max_draw_count),
          load_param(b, 32, struct anv_gen_indirect_params, flags),
+         load_param(b, 32, struct anv_gen_indirect_params, mocs),
+         load_param(b, 32, struct anv_gen_indirect_params, cmd_primitive_size),
          load_param(b, 32, struct anv_gen_indirect_params, ring_count),
          load_param(b, 64, struct anv_gen_indirect_params, gen_addr),
          load_param(b, 64, struct anv_gen_indirect_params, end_addr),

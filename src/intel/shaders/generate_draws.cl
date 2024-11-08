@@ -8,10 +8,9 @@ static void end_generated_draws(global void *dst_ptr,
                                 uint32_t item_idx,
                                 uint32_t draw_id, uint32_t draw_count,
                                 uint32_t ring_count, uint32_t max_draw_count,
-                                uint32_t flags,
+                                uint32_t flags, uint32_t _3dprim_size_B,
                                 uint64_t gen_addr, uint64_t end_addr)
 {
-   uint32_t _3dprim_size_B = ((flags >> 16) & 0xff) * 4;
    bool indirect_count = (flags & ANV_GENERATED_FLAG_COUNT) != 0;
    bool ring_mode = (flags & ANV_GENERATED_FLAG_RING_MODE) != 0;
    /* We can have an indirect draw count = 0. */
@@ -44,12 +43,13 @@ genX(libanv_write_draw)(global void *dst_base,
                         uint32_t instance_multiplier,
                         uint32_t max_draw_count,
                         uint32_t flags,
+                        uint32_t mocs,
+                        uint32_t _3dprim_size_B,
                         uint32_t ring_count,
                         uint64_t gen_addr,
                         uint64_t end_addr,
                         uint32_t item_idx)
 {
-   uint32_t _3dprim_size_B = ((flags >> 16) & 0xff) * 4;
    uint32_t draw_id = draw_base + item_idx;
    uint32_t draw_count = *_draw_count;
    global void *dst_ptr = dst_base + item_idx * _3dprim_size_B;
@@ -62,7 +62,6 @@ genX(libanv_write_draw)(global void *dst_base,
       bool uses_tbimr = (flags & ANV_GENERATED_FLAG_TBIMR) != 0;
       bool uses_base = (flags & ANV_GENERATED_FLAG_BASE) != 0;
       bool uses_drawid = (flags & ANV_GENERATED_FLAG_DRAWID) != 0;
-      uint32_t mocs = (flags >> 8) & 0xff;
 
       genX(write_draw)(dst_ptr, indirect_ptr, draw_id_ptr,
                        draw_id, instance_multiplier,
@@ -72,6 +71,7 @@ genX(libanv_write_draw)(global void *dst_base,
    }
 
    end_generated_draws(dst_ptr, item_idx, draw_id, draw_count,
-                       ring_count, max_draw_count, flags,
+                       ring_count, max_draw_count,
+                       flags, _3dprim_size_B,
                        gen_addr, end_addr);
 }
