@@ -9204,6 +9204,10 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       ctx->program->needs_exact = true;
       break;
    }
+   case nir_intrinsic_debug_break: {
+      bld.sopp(aco_opcode::s_trap, 1u);
+      break;
+   }
    case nir_intrinsic_first_invocation: {
       bld.sop1(Builder::s_ff1_i32, Definition(get_ssa_temp(ctx, &instr->def)),
                Operand(exec, bld.lm));
