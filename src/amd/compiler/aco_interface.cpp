@@ -90,7 +90,7 @@ get_disasm_string(Program* program, std::vector<uint32_t>& code, unsigned exec_s
 
 static std::string
 aco_postprocess_shader(const struct aco_compiler_options* options,
-                       const struct aco_shader_info* info, std::unique_ptr<Program>& program)
+                       std::unique_ptr<Program>& program)
 {
    std::string llvm_ir;
 
@@ -100,34 +100,32 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
    ASSERTED bool is_valid = validate_cfg(program.get());
    assert(is_valid);
 
-   if (!info->is_trap_handler_shader) {
-      dominator_tree(program.get());
-      lower_phis(program.get());
+   dominator_tree(program.get());
+   lower_phis(program.get());
 
-      if (program->gfx_level <= GFX7)
-         lower_subdword(program.get());
+   if (program->gfx_level <= GFX7)
+      lower_subdword(program.get());
 
-      validate(program.get());
+   validate(program.get());
 
-      /* Optimization */
-      if (!options->optimisations_disabled) {
-         if (!(debug_flags & DEBUG_NO_VN))
-            value_numbering(program.get());
-         if (!(debug_flags & DEBUG_NO_OPT))
-            optimize(program.get());
-      }
-
-      /* cleanup and exec mask handling */
-      setup_reduce_temp(program.get());
-      insert_exec_mask(program.get());
-      validate(program.get());
-
-      /* spilling and scheduling */
-      live_var_analysis(program.get());
-      if (program->collect_statistics)
-         collect_presched_stats(program.get());
-      spill(program.get());
+   /* Optimization */
+   if (!options->optimisations_disabled) {
+      if (!(debug_flags & DEBUG_NO_VN))
+         value_numbering(program.get());
+      if (!(debug_flags & DEBUG_NO_OPT))
+         optimize(program.get());
    }
+
+   /* cleanup and exec mask handling */
+   setup_reduce_temp(program.get());
+   insert_exec_mask(program.get());
+   validate(program.get());
+
+   /* spilling and scheduling */
+   live_var_analysis(program.get());
+   if (program->collect_statistics)
+      collect_presched_stats(program.get());
+   spill(program.get());
 
    if (options->record_ir) {
       char* data = NULL;
@@ -147,32 +145,30 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
    if ((debug_flags & DEBUG_LIVE_INFO) && options->dump_shader)
       aco_print_program(program.get(), stderr, print_live_vars | print_kill);
 
-   if (!info->is_trap_handler_shader) {
-      if (!options->optimisations_disabled && !(debug_flags & DEBUG_NO_SCHED))
-         schedule_program(program.get());
-      validate(program.get());
+   if (!options->optimisations_disabled && !(debug_flags & DEBUG_NO_SCHED))
+      schedule_program(program.get());
+   validate(program.get());
 
-      /* Register Allocation */
-      register_allocation(program.get());
+   /* Register Allocation */
+   register_allocation(program.get());
 
-      if (validate_ra(program.get())) {
-         aco_print_program(program.get(), stderr);
-         abort();
-      } else if (options->dump_shader) {
-         aco_print_program(program.get(), stderr);
-      }
-
-      validate(program.get());
-
-      /* Optimization */
-      if (!options->optimisations_disabled && !(debug_flags & DEBUG_NO_OPT)) {
-         optimize_postRA(program.get());
-         validate(program.get());
-      }
-
-      ssa_elimination(program.get());
-      jump_threading(program.get());
+   if (validate_ra(program.get())) {
+      aco_print_program(program.get(), stderr);
+      abort();
+   } else if (options->dump_shader) {
+      aco_print_program(program.get(), stderr);
    }
+
+   validate(program.get());
+
+   /* Optimization */
+   if (!options->optimisations_disabled && !(debug_flags & DEBUG_NO_OPT)) {
+      optimize_postRA(program.get());
+      validate(program.get());
+   }
+
+   ssa_elimination(program.get());
+   jump_threading(program.get());
 
    /* Lower to HW Instructions */
    lower_to_hw_instr(program.get());
@@ -232,7 +228,7 @@ aco_compile_shader_part(const struct aco_compiler_options* options,
    /* Instruction selection */
    select_shader_part(program.get(), pinfo, &config, options, info, args);
 
-   aco_postprocess_shader(options, info, program);
+   aco_postprocess_shader(options, program);
 
    /* assembly */
    std::vector<uint32_t> code;
@@ -271,7 +267,7 @@ aco_compile_shader(const struct aco_compiler_options* options, const struct aco_
    /* Instruction Selection */
    select_program(program.get(), shader_count, shaders, &config, options, info, args);
 
-   std::string llvm_ir = aco_postprocess_shader(options, info, program);
+   std::string llvm_ir = aco_postprocess_shader(options, program);
 
    /* assembly */
    std::vector<uint32_t> code;
@@ -420,7 +416,15 @@ aco_compile_trap_handler(const struct aco_compiler_options* options,
 
    select_trap_handler_shader(program.get(), &config, options, info, args);
 
-   aco_postprocess_shader(options, info, program);
+   if (options->dump_preoptir)
+      aco_print_program(program.get(), stderr);
+   validate(program.get());
+
+   lower_to_hw_instr(program.get());
+   validate(program.get());
+
+   insert_waitcnt(program.get());
+   insert_NOPs(program.get());
 
    /* assembly */
    std::vector<uint32_t> code;
