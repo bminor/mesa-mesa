@@ -2904,7 +2904,7 @@
         "description": "nir/opt_move_discards_to_top: use nir_tex_instr_has_implicit_derivative",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "48158636bf1b0e62ebab4835e1f474866a34c6fe",
         "notes": null
