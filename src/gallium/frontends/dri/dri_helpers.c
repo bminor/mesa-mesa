@@ -690,12 +690,34 @@ dri2_get_pipe_format_for_dri_format(int format)
    return PIPE_FORMAT_NONE;
 }
 
+static enum pipe_format
+alt_pipe_format(enum pipe_format yuv_fmt)
+{
+   switch(yuv_fmt) {
+   case PIPE_FORMAT_NV12:
+      return PIPE_FORMAT_R8_G8B8_420_UNORM;
+   case PIPE_FORMAT_NV16:
+      return PIPE_FORMAT_R8_G8B8_422_UNORM;
+   case PIPE_FORMAT_NV21:
+      return PIPE_FORMAT_R8_B8G8_420_UNORM;
+   case PIPE_FORMAT_NV15:
+      return PIPE_FORMAT_R10_G10B10_420_UNORM;
+   case PIPE_FORMAT_NV20:
+      return PIPE_FORMAT_R10_G10B10_422_UNORM;
+   default:
+      return yuv_fmt;
+   }
+}
+
 bool
 dri2_yuv_dma_buf_supported(struct dri_screen *screen,
                            const struct dri2_format_mapping *map)
 {
    struct pipe_screen *pscreen = screen->base.screen;
 
+   if (pscreen->is_format_supported(pscreen, alt_pipe_format(map->pipe_format),
+                                    screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW))
+      return true;
    for (unsigned i = 0; i < map->nplanes; i++) {
       if (!pscreen->is_format_supported(pscreen,
             dri2_get_pipe_format_for_dri_format(map->planes[i].dri_format),
