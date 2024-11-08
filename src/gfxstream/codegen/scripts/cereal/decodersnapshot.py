@@ -128,6 +128,31 @@ def extract_deps_vkAllocateCommandBuffers(param, access, lenExpr, api, cgen):
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)%s, %s, (uint64_t)(uintptr_t)%s)" % \
               (access, lenExpr, "unboxed_to_boxed_non_dispatchable_VkCommandPool(pAllocateInfo->commandPool)"))
 
+def extract_deps_vkAllocateDescriptorSets(param, access, lenExpr, api, cgen):
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)%s, %s, (uint64_t)(uintptr_t)%s)" % \
+              (access, lenExpr, "unboxed_to_boxed_non_dispatchable_VkDescriptorPool(pAllocateInfo->descriptorPool)"))
+
+def extract_deps_vkUpdateDescriptorSets(param, access, lenExpr, api, cgen):
+    cgen.beginFor("uint32_t i = 0", "i < descriptorWriteCount", "++i")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkDescriptorSet( pDescriptorWrites[i].dstSet))")
+    cgen.beginFor("uint32_t j = 0", "j < pDescriptorWrites[i].descriptorCount", "++j")
+    cgen.beginIf("(pDescriptorWrites[i].pImageInfo)")
+    cgen.beginIf("pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkSampler( pDescriptorWrites[i].pImageInfo[j].sampler))")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkImageView( pDescriptorWrites[i].pImageInfo[j].imageView))")
+    cgen.endIf()
+    cgen.beginIf("pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER")
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkSampler( pDescriptorWrites[i].pImageInfo[j].sampler))")
+    cgen.endIf()
+    cgen.endIf()
+    cgen.beginIf("pDescriptorWrites[i].pBufferInfo");
+    cgen.beginIf("pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER");
+    cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)(&handle), 1, (uint64_t)(uintptr_t)unboxed_to_boxed_non_dispatchable_VkBuffer( pDescriptorWrites[i].pBufferInfo[j].buffer))")
+    cgen.endIf()
+    cgen.endIf()
+    cgen.endFor()
+    cgen.endFor()
+
 def extract_deps_vkCreateImageView(param, access, lenExpr, api, cgen):
     cgen.stmt("mReconstruction.addHandleDependency((const uint64_t*)%s, %s, (uint64_t)(uintptr_t)%s, VkReconstruction::CREATED, VkReconstruction::BOUND_MEMORY)" % \
               (access, lenExpr, "unboxed_to_boxed_non_dispatchable_VkImage(pCreateInfo->image)"))
@@ -164,12 +189,14 @@ def extract_deps_vkBindBufferMemory(param, access, lenExpr, api, cgen):
 
 specialCaseDependencyExtractors = {
     "vkAllocateCommandBuffers" : extract_deps_vkAllocateCommandBuffers,
+    "vkAllocateDescriptorSets" : extract_deps_vkAllocateDescriptorSets,
     "vkAllocateMemory" : extract_deps_vkAllocateMemory,
     "vkCreateImageView" : extract_deps_vkCreateImageView,
     "vkCreateGraphicsPipelines" : extract_deps_vkCreateGraphicsPipelines,
     "vkCreateFramebuffer" : extract_deps_vkCreateFramebuffer,
     "vkBindImageMemory": extract_deps_vkBindImageMemory,
     "vkBindBufferMemory": extract_deps_vkBindBufferMemory,
+    "vkUpdateDescriptorSets" : extract_deps_vkUpdateDescriptorSets,
 }
 
 apiSequences = {
@@ -231,6 +258,10 @@ apiModifies = {
     "vkEndCommandBuffer" : ["commandBuffer"],
 }
 
+apiActions = {
+    "vkUpdateDescriptorSets" : ["pDescriptorWrites"],
+}
+
 apiClearModifiers = {
     "vkResetCommandBuffer" : ["commandBuffer"],
 }
@@ -243,7 +274,6 @@ delayedDestroys = [
 # Thus we should not snapshot their "create" commands.
 skipCreatorSnapshotTypes = [
     "VkQueue", # created by vkCreateDevice
-    "VkDescriptorSet", # created by vkCreateDescriptorPool
 ]
 
 def is_state_change_operation(api, param):
@@ -257,10 +287,18 @@ def is_state_change_operation(api, param):
 def get_target_state(api, param):
     if param.isCreatedBy(api):
         return "VkReconstruction::CREATED"
+    if api.name in apiActions:
+        return "VkReconstruction::CREATED"
     if api.name in apiChangeState:
         if param.paramName == apiChangeState[api.name].vk_object:
             return apiChangeState[api.name].state
     return None
+
+def is_action_operation(api, param):
+    if api.name in apiActions:
+        if param.paramName in apiActions[api.name]:
+            return True
+    return False
 
 def is_modify_operation(api, param):
     if api.name in apiModifies:
@@ -344,7 +382,24 @@ def emit_impl(typeInfo, api, cgen):
             if lenAccessGuard is not None:
                 cgen.endIf()
 
-        if is_modify_operation(api, p) or is_clear_modifier_operation(api, p):
+        if is_action_operation(api, p):
+            cgen.stmt("android::base::AutoLock lock(mLock)")
+            cgen.line("// %s action" % p.paramName)
+            cgen.stmt("VkDecoderGlobalState* m_state = VkDecoderGlobalState::get()")
+            cgen.beginIf("m_state->batchedDescriptorSetUpdateEnabled()")
+            cgen.stmt("return")
+            cgen.endIf();
+            cgen.stmt("uint64_t handle = m_state->newGlobalVkGenericHandle()")
+            cgen.stmt("mReconstruction.addHandles((const uint64_t*)(&handle), 1)");
+            cgen.stmt("auto apiHandle = mReconstruction.createApiInfo()")
+            cgen.stmt("auto apiInfo = mReconstruction.getApiInfo(apiHandle)")
+            cgen.stmt("mReconstruction.setApiTrace(apiInfo, OP_%s, snapshotTraceBegin, snapshotTraceBytes)" % api.name)
+            if api.name in specialCaseDependencyExtractors:
+                specialCaseDependencyExtractors[api.name](p, None, None, api, cgen)
+            cgen.stmt(f"mReconstruction.forEachHandleAddApi((const uint64_t*)(&handle), 1, apiHandle, {get_target_state(api, p)})")
+            cgen.stmt("mReconstruction.setCreatedHandlesForApi(apiHandle, (const uint64_t*)(&handle), 1)")
+
+        elif is_modify_operation(api, p) or is_clear_modifier_operation(api, p):
             cgen.stmt("android::base::AutoLock lock(mLock)")
             cgen.line("// %s modify" % p.paramName)
             cgen.stmt("auto apiHandle = mReconstruction.createApiInfo()")
