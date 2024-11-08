@@ -123,7 +123,7 @@ static bool
 opt_move_discards_to_top_impl(nir_function_impl *impl)
 {
    bool progress = false;
-   bool consider_discards = true;
+   bool consider_terminates = true;
    bool moved = false;
 
    /* Walk through the instructions and look for a discard that we can move
@@ -153,7 +153,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
          case nir_instr_type_tex: {
             nir_tex_instr *tex = nir_instr_as_tex(instr);
             if (nir_tex_instr_has_implicit_derivative(tex))
-               consider_discards = false;
+               consider_terminates = false;
             continue;
          }
 
@@ -177,7 +177,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
             case nir_intrinsic_ddy:
             case nir_intrinsic_ddy_fine:
             case nir_intrinsic_ddy_coarse:
-               consider_discards = false;
+               consider_terminates = false;
                break;
             case nir_intrinsic_vote_any:
             case nir_intrinsic_vote_all:
@@ -200,7 +200,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
                instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
                goto break_all;
             case nir_intrinsic_terminate_if:
-               if (!consider_discards) {
+               if (!consider_terminates) {
                   /* assume that a shader either uses terminate or demote, but not both */
                   instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
                   goto break_all;
