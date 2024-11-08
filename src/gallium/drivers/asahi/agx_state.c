@@ -2697,7 +2697,6 @@ sampler_count(struct agx_context *ctx, enum pipe_shader_type stage)
 
 static inline enum agx_sampler_states
 translate_sampler_state_count(struct agx_context *ctx,
-                              struct agx_compiled_shader *cs,
                               enum pipe_shader_type stage)
 {
    /* Clamp to binding table maximum, anything larger will be bindless */
@@ -3592,7 +3591,7 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
          cfg.preshader_register_count = vs->b.info.nr_preamble_gprs;
          cfg.texture_state_register_count = agx_nr_tex_descriptors(batch, vs);
          cfg.sampler_state_register_count =
-            translate_sampler_state_count(ctx, vs, vs->stage);
+            translate_sampler_state_count(ctx, vs->stage);
       }
 
       agx_push(out, VDM_STATE_VERTEX_SHADER_WORD_1, cfg) {
@@ -3782,7 +3781,7 @@ agx_encode_state(struct agx_batch *batch, uint8_t *out)
          cfg.texture_state_register_count =
             agx_nr_tex_descriptors(batch, ctx->fs);
          cfg.sampler_state_register_count =
-            translate_sampler_state_count(ctx, ctx->fs, PIPE_SHADER_FRAGMENT);
+            translate_sampler_state_count(ctx, PIPE_SHADER_FRAGMENT);
          cfg.cf_binding_count = ctx->linked.fs->cf.nr_bindings;
       }
 
@@ -5334,7 +5333,7 @@ agx_launch_internal(struct agx_batch *batch, const struct agx_grid *grid,
       cfg.preshader_register_count = cs->b.info.nr_preamble_gprs;
       cfg.texture_state_register_count = agx_nr_tex_descriptors(batch, cs);
       cfg.sampler_state_register_count =
-         translate_sampler_state_count(ctx, cs, stage);
+         translate_sampler_state_count(ctx, stage);
    }
 
    agx_push(out, CDM_LAUNCH_WORD_1, cfg) {
