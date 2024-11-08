@@ -119,7 +119,6 @@ if [ -z "${RESULTS_DIR:-}" ]; then
 fi
 
 function error {
-    x_off 2>/dev/null
     RED="\e[0;31m"
     ENDCOLOR="\e[0m"
     # we force the following to be not in a section
@@ -134,6 +133,7 @@ function error {
 }
 
 function trap_err {
+    x_off
     error ${CURRENT_SECTION:-'unknown-section'}: ret code: $*
 }
 
