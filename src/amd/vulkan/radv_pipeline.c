@@ -608,7 +608,16 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
          .opt_srcs_options_count = separate_g16 ? 2 : 1,
          .opt_srcs_options = opt_srcs_options,
       };
-      NIR_PASS(_, stage->nir, nir_opt_16bit_tex_image, &opt_16bit_options);
+      bool run_copy_prop = false;
+      NIR_PASS(run_copy_prop, stage->nir, nir_opt_16bit_tex_image, &opt_16bit_options);
+
+      /* Optimizing 16bit texture/image dests leaves scalar moves that stops
+       * nir_opt_vectorize from vectorzing the alu uses of them.
+       */
+      if (run_copy_prop) {
+         NIR_PASS(_, stage->nir, nir_copy_prop);
+         NIR_PASS(_, stage->nir, nir_opt_dce);
+      }
 
       if (!stage->key.optimisations_disabled &&
           ((stage->nir->info.bit_sizes_int | stage->nir->info.bit_sizes_float) & 16)) {
