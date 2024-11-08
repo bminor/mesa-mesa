@@ -29,8 +29,6 @@
 #include "sid.h"
 #include "spirv/nir_spirv.h"
 
-#define TMA_BO_SIZE 4096
-
 #define COLOR_RESET  "\033[0m"
 #define COLOR_RED    "\033[31m"
 #define COLOR_GREEN  "\033[1;32m"
@@ -895,6 +893,7 @@ radv_trap_handler_init(struct radv_device *device)
    struct radeon_winsys *ws = device->ws;
    uint32_t desc[4];
    VkResult result;
+   uint32_t size;
 
    /* Create the trap handler shader and upload it like other shaders. */
    device->trap_handler_shader = radv_create_trap_handler_shader(device);
@@ -907,8 +906,11 @@ radv_trap_handler_init(struct radv_device *device)
    if (result != VK_SUCCESS)
       return false;
 
+   /* Compute the TMA BO size. */
+   size = sizeof(desc) + sizeof(struct aco_trap_handler_layout);
+
    result = radv_bo_create(
-      device, NULL, TMA_BO_SIZE, 256, RADEON_DOMAIN_VRAM,
+      device, NULL, size, 256, RADEON_DOMAIN_VRAM,
       RADEON_FLAG_CPU_ACCESS | RADEON_FLAG_NO_INTERPROCESS_SHARING | RADEON_FLAG_ZERO_VRAM | RADEON_FLAG_32BIT,
       RADV_BO_PRIORITY_SCRATCH, 0, true, &device->tma_bo);
    if (result != VK_SUCCESS)
@@ -925,7 +927,7 @@ radv_trap_handler_init(struct radv_device *device)
    /* Upload a buffer descriptor to store various info from the trap. */
    uint64_t tma_va = radv_buffer_get_va(device->tma_bo) + sizeof(desc);
 
-   ac_build_raw_buffer_descriptor(pdev->info.gfx_level, tma_va, TMA_BO_SIZE - sizeof(desc), desc);
+   ac_build_raw_buffer_descriptor(pdev->info.gfx_level, tma_va, size - sizeof(desc), desc);
 
    memcpy(device->tma_ptr, desc, sizeof(desc));
 
