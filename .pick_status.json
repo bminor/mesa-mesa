@@ -2894,7 +2894,7 @@
         "description": "nir: fix return value of nir_instr_move for some cases",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f97fb1fa55ca7580d6a6192f5588dc590479d15a",
         "notes": null
