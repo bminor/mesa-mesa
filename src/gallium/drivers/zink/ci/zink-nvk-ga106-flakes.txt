@@ -40,6 +40,7 @@ dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_srgb8_a
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_rgba_astc_4x4_khr.texture2d_array_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_srgb8_alpha8_astc_12x10_khr.texture2d_array_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32ui_srgb8_alpha8_astc_10x6_khr.texture2d_to_texture2d_array
+dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.srgb8_alpha8_astc_10x8_khr_rgba32i.texture2d_array_to_texture3d
 dEQP-GLES31.functional.image_load_store.3d.atomic.or_r32ui_return_value
 dEQP-GLES31.functional.image_load_store.3d.store.rgba16ui
 dEQP-GLES31.functional.texture.format.sized.cube_array.depth_component32f_npot
@@ -58,6 +59,7 @@ spec@!opengl 2.0@attribs
 spec@!opengl 2.0@tex3d-npot
 spec@arb_bindless_texture@execution@images@uniform-struct
 spec@arb_color_buffer_float@gl_rgba16f-render
+spec@arb_color_buffer_float@gl_rgba8-render-fog
 spec@arb_color_buffer_float@gl_rgba8-render-sanity
 spec@arb_color_buffer_float@gl_rgba8_snorm-render
 spec@arb_color_buffer_float@gl_rgba8_snorm-render-fog
