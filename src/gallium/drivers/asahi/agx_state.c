@@ -3148,7 +3148,7 @@ agx_launch_with_uploaded_data(struct agx_batch *batch,
    uint32_t usc =
       agx_build_internal_usc(batch, &cs->b.info, cs->bo->va->addr, data);
 
-   agx_launch_internal(batch, grid, cs, PIPE_SHADER_COMPUTE, usc);
+   agx_launch_internal(batch, grid, cs, &cs->b.info, PIPE_SHADER_COMPUTE, usc);
 }
 
 void
@@ -5316,22 +5316,25 @@ agx_texture_barrier(struct pipe_context *pipe, unsigned flags)
 
 void
 agx_launch_internal(struct agx_batch *batch, const struct agx_grid *grid,
-                    struct agx_compiled_shader *cs, enum pipe_shader_type stage,
-                    uint32_t usc)
+                    struct agx_compiled_shader *cs,
+                    const struct agx_shader_info *info,
+                    enum pipe_shader_type stage, uint32_t usc)
 {
    struct agx_context *ctx = batch->ctx;
    struct agx_device *dev = agx_device(ctx->base.screen);
 
-   agx_batch_add_bo(batch, cs->bo);
+   if (cs)
+      agx_batch_add_bo(batch, cs->bo);
 
    /* TODO: Ensure space if we allow multiple kernels in a batch */
    uint8_t *out = batch->cdm.current;
 
    agx_push(out, CDM_LAUNCH_WORD_0, cfg) {
       cfg.mode = grid->mode;
-      cfg.uniform_register_count = cs->b.info.push_count;
-      cfg.preshader_register_count = cs->b.info.nr_preamble_gprs;
-      cfg.texture_state_register_count = agx_nr_tex_descriptors(batch, cs);
+      cfg.uniform_register_count = info->push_count;
+      cfg.preshader_register_count = info->nr_preamble_gprs;
+      cfg.texture_state_register_count =
+         cs ? agx_nr_tex_descriptors(batch, cs) : 0;
       cfg.sampler_state_register_count =
          translate_sampler_state_count(ctx, stage);
    }
@@ -5467,7 +5470,7 @@ agx_launch(struct agx_batch *batch, const struct agx_grid *grid,
    uint32_t usc = agx_build_pipeline(batch, cs, linked, PIPE_SHADER_COMPUTE,
                                      variable_shared_mem, subgroups_per_core);
 
-   agx_launch_internal(batch, grid, cs, stage, usc);
+   agx_launch_internal(batch, grid, cs, &cs->b.info, stage, usc);
 }
 
 static void

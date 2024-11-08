@@ -846,6 +846,7 @@ void agx_launch_with_data(struct agx_batch *batch, const struct agx_grid *grid,
 
 void agx_launch_internal(struct agx_batch *batch, const struct agx_grid *grid,
                          struct agx_compiled_shader *cs,
+                         const struct agx_shader_info *info,
                          enum pipe_shader_type stage, uint32_t usc);
 
 void agx_launch(struct agx_batch *batch, const struct agx_grid *grid,
