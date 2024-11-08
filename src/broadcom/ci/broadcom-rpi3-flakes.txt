@@ -6,6 +6,7 @@ dEQP-GLES2.functional.clipping.triangle_vertex.clip_three.clip_pos_x_and_neg_x_n
 arm32-dEQP-GLES2.functional.shaders.random.texture.vertex.44
 arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.l8_nicest
 arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgb565_nicest
+arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgba4444_nicest
 arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgba5551_nicest
 
 glx@glx-multi-window-single-context
