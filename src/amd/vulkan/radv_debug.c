@@ -927,7 +927,22 @@ radv_trap_handler_init(struct radv_device *device)
    /* Upload a buffer descriptor to store various info from the trap. */
    uint64_t tma_va = radv_buffer_get_va(device->tma_bo) + sizeof(desc);
 
-   ac_build_raw_buffer_descriptor(pdev->info.gfx_level, tma_va, size - sizeof(desc), desc);
+   const struct ac_buffer_state ac_state = {
+      .va = tma_va,
+      .size = size - sizeof(desc),
+      .format = PIPE_FORMAT_R32_FLOAT,
+      .swizzle =
+         {
+            PIPE_SWIZZLE_X,
+            PIPE_SWIZZLE_Y,
+            PIPE_SWIZZLE_Z,
+            PIPE_SWIZZLE_W,
+         },
+      .gfx10_oob_select = V_008F0C_OOB_SELECT_RAW,
+      .stride = 4, /* Used for VGPRs dump. */
+   };
+
+   ac_build_buffer_descriptor(pdev->info.gfx_level, &ac_state, desc);
 
    memcpy(device->tma_ptr, desc, sizeof(desc));
 

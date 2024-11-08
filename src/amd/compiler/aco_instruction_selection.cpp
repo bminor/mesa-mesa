@@ -12451,6 +12451,53 @@ dump_sgpr_to_mem(isel_context* ctx, Operand rsrc, Operand data, uint32_t offset)
 }
 
 void
+save_or_restore_vgprs(isel_context* ctx, Operand rsrc, bool save)
+{
+   Builder bld(ctx->program, ctx->block);
+   uint32_t offset = offsetof(struct aco_trap_handler_layout, saved_vgprs[0]);
+
+   ac_hw_cache_flags cache_glc;
+   cache_glc.value = ac_glc;
+
+   PhysReg rsrc_word3(rsrc.physReg() + 3);
+
+   /* Set ADD_TID_ENABLE to enable thread indexing. */
+   bld.sop2(aco_opcode::s_or_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
+            Operand(rsrc_word3, s1), Operand::c32(1 << 23));
+
+   for (uint32_t i = 0; i < NUM_SAVED_VGPRS; i++) {
+      if (save) {
+         bld.mubuf(aco_opcode::buffer_store_dword, Operand(rsrc), Operand(v1), Operand::c32(0u),
+                   Operand(PhysReg{256 + i}, v1) /* v0 */, offset, false /* offen */,
+                   false /* idxen */,
+                   /* addr64 */ false, /* disable_wqm */ false, cache_glc);
+      } else {
+         bld.mubuf(aco_opcode::buffer_load_dword, Definition(PhysReg{256 + i}, v1), Operand(rsrc),
+                   Operand(v1), Operand::c32(0u), offset, false /* offen */, false /* idxen */,
+                   /* addr64 */ false, /* disable_wqm */ false, cache_glc);
+      }
+
+      offset += 256;
+   }
+
+   /* Clear ADD_TID_ENABLE. */
+   bld.sop2(aco_opcode::s_andn2_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
+            Operand(rsrc_word3, s1), Operand::c32(1 << 23));
+}
+
+void
+save_vgprs_to_mem(isel_context* ctx, Operand rsrc)
+{
+   save_or_restore_vgprs(ctx, rsrc, true);
+}
+
+void
+restore_vgprs_from_mem(isel_context* ctx, Operand rsrc)
+{
+   save_or_restore_vgprs(ctx, rsrc, false);
+}
+
+void
 select_trap_handler_shader(Program* program, ac_shader_config* config,
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
@@ -12526,6 +12573,9 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       bld.smem(aco_opcode::s_load_dwordx4, Definition(tma_rsrc, s4), Operand(ttmp2_reg, s2),
                Operand::c32(0u));
 
+      /* Save VGPRS that needs to be restored. */
+      save_vgprs_to_mem(&ctx, Operand(tma_rsrc, s4));
+
       /* Store TTMP0-TTMP1. */
       bld.copy(Definition(PhysReg{256}, v2) /* v[0-1] */, Operand(ttmp0_reg, s2));
 
@@ -12584,6 +12634,11 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    for (uint32_t i = 0; i < program->dev.sgpr_limit; i++) {
       dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(PhysReg{i}, s1), offset);
       offset += 4;
+   }
+
+   if (ctx.program->gfx_level >= GFX9) {
+      /* Restore VGPRS. */
+      restore_vgprs_from_mem(&ctx, Operand(tma_rsrc, s4));
    }
 
    /* Restore SCC which is the first bit of SQ_WAVE_STATUS. */
