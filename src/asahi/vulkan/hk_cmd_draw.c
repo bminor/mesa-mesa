@@ -892,7 +892,8 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
                   hk_meta_kernel(dev, agx_nir_decompress, &key, sizeof(key));
 
                uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &data.gpu, 8);
-               hk_dispatch_with_usc(dev, cs, s, usc, grid, hk_grid(32, 1, 1));
+               hk_dispatch_with_usc(dev, cs, &s->b.info, usc, grid,
+                                    hk_grid(32, 1, 1));
             }
          }
       }
@@ -1479,8 +1480,8 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    uint64_t params = hk_pool_upload(cmd, &ia, sizeof(ia), 8);
    uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &params, sizeof(params));
-   hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(1024 * draw_count, 1, 1),
-                        hk_grid(1024, 1, 1));
+   hk_dispatch_with_usc(dev, cs, &s->b.info, usc,
+                        hk_grid(1024 * draw_count, 1, 1), hk_grid(1024, 1, 1));
 
    struct hk_addr_range out_index = {
       .addr = dev->heap->va->addr,
@@ -1537,7 +1538,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       uint64_t push = hk_upload_gsi_params(cmd, draw);
       uint32_t usc = hk_upload_usc_words_kernel(cmd, gsi, &push, sizeof(push));
 
-      hk_dispatch_with_usc(dev, cs, gsi, usc, hk_grid(1, 1, 1),
+      hk_dispatch_with_usc(dev, cs, &gsi->b.info, usc, hk_grid(1, 1, 1),
                            hk_grid(1, 1, 1));
 
       uint64_t geometry_params = desc->root.draw.geometry_params;
@@ -1553,7 +1554,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    /* Launch the vertex shader first */
    hk_reserve_scratch(cmd, cs, vs);
-   hk_dispatch_with_usc(dev, cs, vs,
+   hk_dispatch_with_usc(dev, cs, &vs->b.info,
                         hk_upload_usc_words(cmd, vs,
                                             vs->info.stage == MESA_SHADER_VERTEX
                                                ? gfx->linked[MESA_SHADER_VERTEX]
@@ -1629,7 +1630,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
       uint32_t usc =
          hk_upload_usc_words_kernel(cmd, tsi, &state, sizeof(state));
 
-      hk_dispatch_with_usc(dev, cs, tsi, usc, hk_grid(1, 1, 1),
+      hk_dispatch_with_usc(dev, cs, &tsi->b.info, usc, hk_grid(1, 1, 1),
                            hk_grid(1, 1, 1));
 
       uint32_t grid_stride = sizeof(uint32_t) * 6;
@@ -1658,7 +1659,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
          uint64_t push = hk_pool_upload(cmd, &args, sizeof(args), 8);
          uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &push, sizeof(push));
 
-         hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(1, 1, 1),
+         hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(1, 1, 1),
                               hk_grid(1, 1, 1));
       }
    }
@@ -1668,13 +1669,13 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
    hk_reserve_scratch(cmd, cs, tcs);
 
    hk_dispatch_with_usc(
-      dev, cs, vs,
+      dev, cs, &vs->b.info,
       hk_upload_usc_words(cmd, vs, gfx->linked[MESA_SHADER_VERTEX]), grid_vs,
       hk_grid(64, 1, 1));
 
    hk_dispatch_with_usc(
-      dev, cs, tcs, hk_upload_usc_words(cmd, tcs, tcs->only_linked), grid_tcs,
-      hk_grid(tcs->info.tess.tcs_output_patch_size, 1, 1));
+      dev, cs, &tcs->b.info, hk_upload_usc_words(cmd, tcs, tcs->only_linked),
+      grid_tcs, hk_grid(tcs->info.tess.tcs_output_patch_size, 1, 1));
 
    struct agx_tessellator_key key = {
       .prim = info.mode,
@@ -1687,7 +1688,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
          hk_meta_kernel(dev, agx_nir_tessellate, &key, sizeof(key));
 
       hk_dispatch_with_usc(
-         dev, cs, tess,
+         dev, cs, &tess->b.info,
          hk_upload_usc_words_kernel(cmd, tess, &state, sizeof(state)),
          grid_tess, hk_grid(64, 1, 1));
    }
@@ -1698,7 +1699,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
          hk_meta_kernel(dev, agx_nir_prefix_sum_tess, NULL, 0);
 
       hk_dispatch_with_usc(
-         dev, cs, sum,
+         dev, cs, &sum->b.info,
          hk_upload_usc_words_kernel(cmd, sum, &state, sizeof(state)),
          hk_grid(1024, 1, 1), hk_grid(1024, 1, 1));
    }
@@ -1711,7 +1712,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
          hk_meta_kernel(dev, agx_nir_tessellate, &key, sizeof(key));
 
       hk_dispatch_with_usc(
-         dev, cs, tess,
+         dev, cs, &tess->b.info,
          hk_upload_usc_words_kernel(cmd, tess, &state, sizeof(state)),
          grid_tess, hk_grid(64, 1, 1));
    }
@@ -3441,7 +3442,7 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw,
    uint64_t push = hk_pool_upload(cmd, &args, sizeof(args), 8);
    uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &push, sizeof(push));
 
-   hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(wg_size, 1, 1),
+   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(wg_size, 1, 1),
                         hk_grid(wg_size, 1, 1));
 }
 
@@ -3803,7 +3804,7 @@ hk_draw_indirect_count(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    uint64_t push_ = hk_pool_upload(cmd, &push, sizeof(push), 8);
    uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &push_, sizeof(push_));
 
-   hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(maxDrawCount, 1, 1),
+   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(maxDrawCount, 1, 1),
                         hk_grid(1, 1, 1));
 
    if (indexed) {
@@ -3936,7 +3937,7 @@ hk_begin_end_xfb(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
       uint64_t push = hk_pool_upload(cmd, &params, sizeof(params), 8);
       uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &push, sizeof(push));
 
-      hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(copies, 1, 1),
+      hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(copies, 1, 1),
                            hk_grid(copies, 1, 1));
    }
 }

@@ -764,7 +764,7 @@ hk_grid_indirect_local(uint64_t ptr)
 }
 
 void hk_dispatch_with_usc(struct hk_device *dev, struct hk_cs *cs,
-                          struct hk_shader *s, uint32_t usc,
+                          struct agx_shader_info *info, uint32_t usc,
                           struct hk_grid grid, struct hk_grid local_size);
 
 static inline void
@@ -776,7 +776,7 @@ hk_dispatch_with_local_size(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    uint32_t usc = hk_upload_usc_words(cmd, s, s->only_linked);
 
    hk_reserve_scratch(cmd, cs, s);
-   hk_dispatch_with_usc(dev, cs, s, usc, grid, local_size);
+   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, grid, local_size);
 }
 
 static inline void

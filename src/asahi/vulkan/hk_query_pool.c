@@ -238,7 +238,7 @@ hk_dispatch_imm_writes(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
       util_dynarray_num_elements(&cs->imm_writes, struct libagx_imm_write);
    assert(count > 0);
 
-   hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(count, 1, 1),
+   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(count, 1, 1),
                         hk_grid(32, 1, 1));
 }
 
@@ -281,7 +281,8 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
    struct hk_write_params params = {.address = address, .value = value};
    uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &params, sizeof(params));
 
-   hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(1, 1, 1), hk_grid(1, 1, 1));
+   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(1, 1, 1),
+                        hk_grid(1, 1, 1));
 }
 
 /**
@@ -632,6 +633,6 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
 
    struct hk_shader *s = hk_meta_kernel(dev, hk_nir_copy_query, NULL, 0);
    uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &push, sizeof(push));
-   hk_dispatch_with_usc(dev, cs, s, usc, hk_grid(queryCount, 1, 1),
+   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(queryCount, 1, 1),
                         hk_grid(1, 1, 1));
 }
