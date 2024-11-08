@@ -213,6 +213,57 @@ get_subqueue_stages(enum panvk_subqueue_id subqueue)
    }
 }
 
+static void
+add_memory_dependency(struct panvk_cache_flush_info *cache_flush,
+                      VkAccessFlags2 src_access, VkAccessFlags2 dst_access)
+{
+   /* Note on the cache organization:
+    *
+    * - L2 cache is unified, so all changes to this cache are automatically
+    *   visible to all GPU sub-components (shader cores, tiler, ...). This
+    *   means we only need to flush when the host (AKA CPU) is involved.
+    * - LS caches (which are basically just read-write L1 caches) are coherent
+    *   with each other and with the L2 cache, so again, we only need to flush
+    *   when the host is involved.
+    * - Other read-only L1 caches (like the ones in front of the texture unit)
+    *   are not coherent with the LS or L2 caches, and thus need to be
+    *   invalidated any time a write happens.
+    *
+    * Translating to the Vulkan memory model:
+    *
+    * - The device domain is the L2 cache.
+    * - An availability operation from device writes to the device domain is
+    *   nop.
+    * - A visibility operation from the device domain to device accesses that
+    *   are coherent with L2/LS is nop.
+    * - A visibility operation from the device domain to device accesses that
+    *   are incoherent with L2/LS invalidates the other RO L1 caches.
+    * - A host-to-device domain operation invalidates all caches.
+    * - A device-to-host domain operation flushes L2/LS.
+    */
+   const VkAccessFlags2 ro_l1_access =
+      VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT |
+      VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+      VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+
+   /* visibility op */
+   if (dst_access & ro_l1_access)
+      cache_flush->others |= true;
+
+   /* host-to-device domain op */
+   if (src_access & VK_ACCESS_2_HOST_WRITE_BIT) {
+      cache_flush->l2 |= MALI_CS_FLUSH_MODE_CLEAN_AND_INVALIDATE;
+      cache_flush->lsc |= MALI_CS_FLUSH_MODE_CLEAN_AND_INVALIDATE;
+      cache_flush->others |= true;
+   }
+
+   /* device-to-host domain op */
+   if (dst_access & (VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)) {
+      cache_flush->l2 |= MALI_CS_FLUSH_MODE_CLEAN;
+      cache_flush->lsc |= MALI_CS_FLUSH_MODE_CLEAN;
+   }
+}
+
 static bool
 src_stages_need_draw_flush(VkPipelineStageFlags2 stages)
 {
@@ -258,77 +309,15 @@ src_stages_to_subqueue_sb_mask(enum panvk_subqueue_id subqueue,
 static void
 collect_cache_flush_info(enum panvk_subqueue_id subqueue,
                          struct panvk_cache_flush_info *cache_flush,
-                         VkPipelineStageFlags2 src_stages,
-                         VkPipelineStageFlags2 dst_stages,
                          VkAccessFlags2 src_access, VkAccessFlags2 dst_access)
 {
-   static const VkAccessFlags2 dev_writes[PANVK_SUBQUEUE_COUNT] = {
-      [PANVK_SUBQUEUE_VERTEX_TILER] =
-         VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT,
-      [PANVK_SUBQUEUE_FRAGMENT] =
-         VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT |
-         VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
-         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-         VK_ACCESS_2_TRANSFER_WRITE_BIT,
-      [PANVK_SUBQUEUE_COMPUTE] =
-         VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT,
-   };
-   static const VkAccessFlags2 dev_reads[PANVK_SUBQUEUE_COUNT] = {
-      [PANVK_SUBQUEUE_VERTEX_TILER] =
-         VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_2_INDEX_READ_BIT |
-         VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_2_UNIFORM_READ_BIT |
-         VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
-         VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-      [PANVK_SUBQUEUE_FRAGMENT] =
-         VK_ACCESS_2_UNIFORM_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT |
-         VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-         VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
-         VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-      [PANVK_SUBQUEUE_COMPUTE] = VK_ACCESS_2_UNIFORM_READ_BIT |
-                                 VK_ACCESS_2_TRANSFER_READ_BIT |
-                                 VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |
-                                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-   };
+   /* limit access to the subqueue and host */
+   const VkPipelineStageFlags2 subqueue_stages =
+      get_subqueue_stages(subqueue) | VK_PIPELINE_STAGE_2_HOST_BIT;
+   src_access = vk_filter_src_access_flags2(subqueue_stages, src_access);
+   dst_access = vk_filter_dst_access_flags2(subqueue_stages, dst_access);
 
-   /* Note on the cache organization:
-    * - L2 cache is unified, so all changes to this cache are automatically
-    *   visible to all GPU sub-components (shader cores, tiler, ...). This
-    *   means we only need to flush when the host (AKA CPU) is involved.
-    * - LS caches (which are basically just read-write L1 caches) are coherent
-    *   with each other and with the L2 cache, so again, we only need to flush
-    *   when the host is involved.
-    * - Other read-only L1 caches (like the ones in front of the texture unit)
-    *   are not coherent with the LS or L2 caches, and thus need to be
-    *   invalidated any time a write happens.
-    */
-
-#define ACCESS_HITS_RO_L1_CACHE                                                \
-   (VK_ACCESS_2_SHADER_SAMPLED_READ_BIT |                                      \
-    VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT |                                    \
-    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |                            \
-    VK_ACCESS_2_TRANSFER_READ_BIT)
-
-   if ((dev_writes[subqueue] & src_access) &&
-       (dev_reads[subqueue] & ACCESS_HITS_RO_L1_CACHE & dst_access))
-      cache_flush->others |= true;
-
-   /* If the host wrote something, we need to clean/invalidate everything. */
-   if ((src_stages & VK_PIPELINE_STAGE_2_HOST_BIT) &&
-       (src_access & VK_ACCESS_2_HOST_WRITE_BIT) &&
-       ((dev_reads[subqueue] | dev_writes[subqueue]) & dst_access)) {
-      cache_flush->l2 |= MALI_CS_FLUSH_MODE_CLEAN_AND_INVALIDATE;
-      cache_flush->lsc |= MALI_CS_FLUSH_MODE_CLEAN_AND_INVALIDATE;
-      cache_flush->others |= true;
-   }
-
-   /* If the host needs to read something we wrote, we need to clean
-    * everything. */
-   if ((dst_stages & VK_PIPELINE_STAGE_2_HOST_BIT) &&
-       (dst_access & VK_ACCESS_2_HOST_READ_BIT) &&
-       (dev_writes[subqueue] & src_access)) {
-      cache_flush->l2 |= MALI_CS_FLUSH_MODE_CLEAN;
-      cache_flush->lsc |= MALI_CS_FLUSH_MODE_CLEAN;
-   }
+   add_memory_dependency(cache_flush, src_access, dst_access);
 }
 
 static void
@@ -347,8 +336,8 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
          continue;
 
       deps->src[i].wait_sb_mask |= sb_mask;
-      collect_cache_flush_info(i, &deps->src[i].cache_flush, src_stages,
-                               dst_stages, src_access, dst_access);
+      collect_cache_flush_info(i, &deps->src[i].cache_flush, src_access,
+                               dst_access);
       wait_subqueue_mask |= BITFIELD_BIT(i);
    }
 
