@@ -111,7 +111,7 @@ export -f _uncollapsed_section_switch
 [ -n "${XDG_RUNTIME_DIR:-}" ] || export XDG_RUNTIME_DIR="$(mktemp -p "$PWD" -d xdg-runtime-XXXXXX)"
 
 if [ -z "${RESULTS_DIR:-}" ]; then
-	export RESULTS_DIR="$(pwd)/results"
+	export RESULTS_DIR="${PWD%/}/results"
 	if [ -e "${RESULTS_DIR}" ]; then
 		rm -rf "${RESULTS_DIR}"
 	fi
