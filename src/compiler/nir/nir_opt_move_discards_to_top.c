@@ -21,10 +21,10 @@
  * IN THE SOFTWARE.
  */
 
+#include "util/u_dynarray.h"
 #include "nir.h"
 #include "nir_builder.h"
 #include "nir_control_flow.h"
-#include "nir_worklist.h"
 
 #define MOVE_INSTR_FLAG            1
 #define STOP_PROCESSING_INSTR_FLAG 2
@@ -34,7 +34,7 @@
  *  to the given worklist
  */
 static bool
-can_move_src(nir_src *src, void *worklist)
+add_src_to_worklist(nir_src *src, void *worklist)
 {
    nir_instr *instr = src->ssa->parent_instr;
    if (instr->pass_flags)
@@ -59,13 +59,12 @@ can_move_src(nir_src *src, void *worklist)
       }
    }
 
-   /* set pass_flags and remember the instruction for potential cleanup */
+   /* Set pass_flags and remember the instruction to add it's own sources and for potential
+    * cleanup.
+    */
    instr->pass_flags = MOVE_INSTR_FLAG;
-   nir_instr_worklist_push_tail(worklist, instr);
+   util_dynarray_append(worklist, nir_instr *, instr);
 
-   if (!nir_foreach_src(instr, can_move_src, worklist)) {
-      return false;
-   }
    return true;
 }
 
@@ -88,23 +87,34 @@ try_move_discard(nir_intrinsic_instr *discard)
    if (discard->instr.block->cf_node.parent->type != nir_cf_node_function)
       return false;
 
+   discard->instr.pass_flags = MOVE_INSTR_FLAG;
+
    /* Build the set of all instructions discard depends on to be able to
     * clear the flags in case the discard cannot be moved.
     */
-   nir_instr_worklist *work = nir_instr_worklist_create();
-   if (!work)
-      return false;
-   discard->instr.pass_flags = MOVE_INSTR_FLAG;
+   nir_instr *work_[64];
+   struct util_dynarray work;
+   util_dynarray_init_from_stack(&work, work_, sizeof(work_));
+   util_dynarray_append(&work, nir_instr *, &discard->instr);
 
-   bool can_move_discard = can_move_src(&discard->src[0], work);
-   if (!can_move_discard) {
-      /* Moving the discard is impossible: clear the flags */
-      discard->instr.pass_flags = 0;
-      nir_foreach_instr_in_worklist(instr, work)
-         instr->pass_flags = 0;
+   unsigned next = 0;
+   bool can_move_discard = true;
+   while (next < util_dynarray_num_elements(&work, nir_instr *) && can_move_discard) {
+      nir_instr *instr = *util_dynarray_element(&work, nir_instr *, next);
+      next++;
+      /* Instead of removing instructions from the worklist, we keep them so that the
+       * flags can be cleared if we fail.
+       */
+      can_move_discard = nir_foreach_src(instr, add_src_to_worklist, &work);
    }
 
-   nir_instr_worklist_destroy(work);
+   if (!can_move_discard) {
+      /* Moving the discard is impossible: clear the flags */
+      util_dynarray_foreach(&work, nir_instr *, instr)
+         (*instr)->pass_flags = 0;
+   }
+
+   util_dynarray_fini(&work);
 
    return can_move_discard;
 }
