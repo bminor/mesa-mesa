@@ -510,7 +510,7 @@ hk_get_device_features(
 
 #ifdef HK_USE_WSI_PLATFORM
       /* VK_EXT_swapchain_maintenance1 */
-      .swapchainMaintenance1 = false,
+      .swapchainMaintenance1 = true,
 #endif
 
       /* VK_EXT_image_view_min_lod */
