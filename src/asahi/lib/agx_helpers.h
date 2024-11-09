@@ -271,17 +271,6 @@ agx_calculate_vbo_clamp(uint64_t vbuf, uint64_t sink, enum pipe_format format,
    }
 }
 
-static struct agx_device_key
-agx_gather_device_key(struct agx_device *dev)
-{
-   return (struct agx_device_key){
-      .needs_g13x_coherency = (dev->params.gpu_generation == 13 &&
-                               dev->params.num_clusters_total > 1) ||
-                              dev->params.num_dies > 1,
-      .soft_fault = agx_has_soft_fault(dev),
-   };
-}
-
 static void
 agx_fill_decompress_push(struct libagx_decompress_push *push,
                          struct ail_layout *layout, unsigned layer,
