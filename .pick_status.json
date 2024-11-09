@@ -84,7 +84,7 @@
         "description": "intel/fs/xe2: Fix up subdword integer region restriction with strided byte src and packed byte dst.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "217d412360762803bc9941ba5171ca0be2c5332b",
         "notes": null
