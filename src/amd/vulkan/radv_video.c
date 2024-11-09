@@ -429,7 +429,6 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
       return result;
    }
 
-   vid->interlaced = false;
    vid->dpb_type = DPB_MAX_RES;
 
    switch (vid->vk.op) {
@@ -1987,7 +1986,7 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    decode->dt_tiling_mode = 0;
    decode->dt_swizzle_mode = luma->surface.u.gfx9.swizzle_mode;
    decode->dt_array_mode = pdev->vid_addr_gfx_mode;
-   decode->dt_field_mode = vid->interlaced ? 1 : 0;
+   decode->dt_field_mode = 0;
    decode->dt_surf_tile_config = 0;
    decode->dt_uv_surf_tile_config = 0;
 
@@ -1997,14 +1996,9 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
       dt_array_idx * luma->surface.u.gfx9.surf_slice_size;
    decode->dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset +
       dt_array_idx * chroma->surface.u.gfx9.surf_slice_size;
+   decode->dt_luma_bottom_offset = decode->dt_luma_top_offset;
+   decode->dt_chroma_bottom_offset = decode->dt_chroma_top_offset;
 
-   if (decode->dt_field_mode) {
-      decode->dt_luma_bottom_offset = luma->surface.u.gfx9.surf_offset + luma->surface.u.gfx9.surf_slice_size;
-      decode->dt_chroma_bottom_offset = chroma->surface.u.gfx9.surf_offset + chroma->surface.u.gfx9.surf_slice_size;
-   } else {
-      decode->dt_luma_bottom_offset = decode->dt_luma_top_offset;
-      decode->dt_chroma_bottom_offset = decode->dt_chroma_top_offset;
-   }
    if (vid->stream_type == RDECODE_CODEC_AV1)
       decode->db_pitch_uv = chroma->surface.u.gfx9.surf_pitch * chroma->surface.blk_w;
 
@@ -2472,15 +2466,8 @@ ruvd_dec_message_decode(struct radv_device *device, struct radv_video_session *v
          dt_array_idx * luma->surface.u.gfx9.surf_slice_size;
       msg->body.decode.dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset +
          dt_array_idx * chroma->surface.u.gfx9.surf_slice_size;
-      if (msg->body.decode.dt_field_mode) {
-         msg->body.decode.dt_luma_bottom_offset =
-            luma->surface.u.gfx9.surf_offset + luma->surface.u.gfx9.surf_slice_size;
-         msg->body.decode.dt_chroma_bottom_offset =
-            chroma->surface.u.gfx9.surf_offset + chroma->surface.u.gfx9.surf_slice_size;
-      } else {
-         msg->body.decode.dt_luma_bottom_offset = msg->body.decode.dt_luma_top_offset;
-         msg->body.decode.dt_chroma_bottom_offset = msg->body.decode.dt_chroma_top_offset;
-      }
+      msg->body.decode.dt_luma_bottom_offset = msg->body.decode.dt_luma_top_offset;
+      msg->body.decode.dt_chroma_bottom_offset = msg->body.decode.dt_chroma_top_offset;
       msg->body.decode.dt_surf_tile_config = 0;
    } else {
       msg->body.decode.dt_pitch = luma->surface.u.legacy.level[0].nblk_x * luma->surface.blk_w;
@@ -2505,14 +2492,8 @@ ruvd_dec_message_decode(struct radv_device *device, struct radv_video_session *v
       msg->body.decode.dt_luma_top_offset = texture_offset_legacy(&luma->surface, dt_array_idx);
       if (chroma)
          msg->body.decode.dt_chroma_top_offset = texture_offset_legacy(&chroma->surface, dt_array_idx);
-      if (msg->body.decode.dt_field_mode) {
-         msg->body.decode.dt_luma_bottom_offset = texture_offset_legacy(&luma->surface, 1);
-         if (chroma)
-            msg->body.decode.dt_chroma_bottom_offset = texture_offset_legacy(&chroma->surface, 1);
-      } else {
-         msg->body.decode.dt_luma_bottom_offset = msg->body.decode.dt_luma_top_offset;
-         msg->body.decode.dt_chroma_bottom_offset = msg->body.decode.dt_chroma_top_offset;
-      }
+      msg->body.decode.dt_luma_bottom_offset = msg->body.decode.dt_luma_top_offset;
+      msg->body.decode.dt_chroma_bottom_offset = msg->body.decode.dt_chroma_top_offset;
 
       if (chroma) {
          assert(luma->surface.u.legacy.bankw == chroma->surface.u.legacy.bankw);
