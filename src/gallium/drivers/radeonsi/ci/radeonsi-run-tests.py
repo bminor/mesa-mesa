@@ -155,6 +155,18 @@ parser.add_argument(
     default=0,
     help="Select GPU (0..{})".format(len(available_gpus) - 1),
 )
+parser.add_argument(
+    "--llvmpipe", dest="llvmpipe", help="Test llvmpipe", action="store_true"
+)
+parser.add_argument(
+    "--softpipe", dest="softpipe", help="Test softpipe", action="store_true"
+)
+parser.add_argument(
+    "--virgl", dest="virgl", help="Test virgl", action="store_true"
+)
+parser.add_argument(
+    "--zink", dest="zink", help="Test zink", action="store_true"
+)
 
 args = parser.parse_args(sys.argv[1:])
 piglit_path = args.piglit_path
@@ -170,9 +182,6 @@ else:
     if not args.piglit_path or not args.glcts_path:
         parser.print_help()
         sys.exit(0)
-
-base = args.baseline
-skips = os.path.join(os.path.dirname(__file__), "skips.csv")
 
 env = os.environ.copy()
 
@@ -192,8 +201,6 @@ for line in p.stdout.decode().split("\n"):
             print("Expecting deqp-runner 0.9.0+ version (got {})".format(".".join(s)))
             sys.exit(1)
 
-env["PIGLIT_PLATFORM"] = "gbm"
-
 if "DRI_PRIME" in env:
     print("Don't use DRI_PRIME. Instead use --gpu N")
     del env["DRI_PRIME"]
@@ -209,29 +216,65 @@ gpu_name = "unknown"
 gpu_name_full = ""
 gfx_level = -1
 
-amd_debug = env["AMD_DEBUG"] if "AMD_DEBUG" in env else ""
-env["AMD_DEBUG"] = "info"
+assert args.llvmpipe + args.softpipe + args.virgl + args.zink <= 1
+is_amd = args.llvmpipe + args.softpipe + args.virgl + args.zink == 0
+
+if args.llvmpipe:
+    env["LIBGL_ALWAYS_SOFTWARE"] = '1'
+    baseline = "../../llvmpipe/ci/llvmpipe-fails.txt"
+    flakes_lists = ["../../llvmpipe/ci/llvmpipe-flakes.txt"]
+    skips_list = "../../llvmpipe/ci/llvmpipe-skips.txt"
+elif args.softpipe:
+    env["LIBGL_ALWAYS_SOFTWARE"] = '1'
+    env["GALLIUM_DRIVER"] = 'softpipe'
+    baseline = "../../softpipe/ci/softpipe-fails.txt"
+    flakes_lists = ["../../softpipe/ci/softpipe-flakes.txt"]
+    skips_list = "../../softpipe/ci/softpipe-skips.txt"
+elif args.virgl:
+    env["PIGLIT_PLATFORM"] = "gbm"
+    baseline = ''
+    flakes_lists = []
+    skips_list = "skips.csv"
+elif args.zink:
+    env["PIGLIT_PLATFORM"] = "gbm"
+    env["MESA_LOADER_DRIVER_OVERRIDE"] = 'zink'
+    baseline = "../../zink/ci/zink-radv-navi31-fails.txt"
+    flakes_lists = ["../../zink/ci/zink-radv-navi31-flakes.txt"]
+    skips_list = "../../zink/ci/zink-radv-navi31-skips.txt"
+else:
+    env["PIGLIT_PLATFORM"] = "gbm"
+    skips_list = "skips.csv"
+
+if not is_amd and baseline:
+    baseline = os.path.normpath(os.path.join(os.path.dirname(__file__), baseline))
+skips_list = os.path.normpath(os.path.join(os.path.dirname(__file__), skips_list))
+env_glinfo = dict(env)
+env_glinfo["AMD_DEBUG"] = "info"
+
 p = subprocess.run(
     ["./glinfo"],
     capture_output="True",
     cwd=os.path.join(piglit_path, "bin"),
     check=True,
-    env=env,
+    env=env_glinfo,
 )
-del env["AMD_DEBUG"]
-env["AMD_DEBUG"] = amd_debug
 
 for line in p.stdout.decode().split("\n"):
     if "GL_RENDER" in line:
         line = line.split("=")[1]
-        gpu_name_full = "(".join(line.split("(")[:-1]).strip()
-        gpu_name = line.replace("(TM)", "").split("(")[1].split(",")[1].lower().strip()
+        renderer = line
+        if is_amd:
+            gpu_name_full = "(".join(line.split("(")[:-1]).strip()
+            gpu_name = line.replace("(TM)", "").split("(")[1].split(",")[1].lower().strip()
         break
     elif "gfx_level" in line:
         gfx_level = int(line.split("=")[1])
 
 output_folder = args.output_folder
-print_green("Tested GPU: '{}' ({}) {}".format(gpu_name_full, gpu_name, gpu_device))
+if is_amd:
+    print_green("Tested GPU: '{}' ({}) {}".format(gpu_name_full, gpu_name, gpu_device))
+else:
+    print_green("Renderer: '{}'".format(renderer))
 print_green("Output folder: '{}'".format(output_folder))
 
 count = 1
@@ -245,7 +288,7 @@ logfile = open(os.path.join(output_folder, "{}-run-tests.log".format(gpu_name)),
 
 spin = itertools.cycle("-\\|/")
 
-shutil.copy(skips, output_folder)
+shutil.copy(skips_list, output_folder)
 skips = os.path.join(output_folder, "skips.csv")
 if not args.slow:
     # Exclude these 4 tests slow tests
@@ -346,7 +389,7 @@ def select_baseline(basepath, gfx_level, gpu_name):
 
     # select the best baseline we can find
     # 1. exact match
-    exact = os.path.join(base, "{}-{}-fail.csv".format(gfx_level_str, gpu_name))
+    exact = os.path.join(basepath, "{}-{}-fail.csv".format(gfx_level_str, gpu_name))
     if os.path.exists(exact):
         return exact
     # 2. any baseline with the same gfx_level
@@ -355,7 +398,7 @@ def select_baseline(basepath, gfx_level, gpu_name):
         for subdir, dirs, files in os.walk(basepath):
             for file in files:
                 if file.find(gfx_level_str) == 0 and file.endswith("-fail.csv"):
-                    return os.path.join(base, file)
+                    return os.path.join(basepath, file)
         # No match. Try an earlier class
         gfx_level = gfx_level - 1
         gfx_level_str = gfx_level_to_str(gfx_level)
@@ -363,17 +406,20 @@ def select_baseline(basepath, gfx_level, gpu_name):
     return exact
 
 
+if is_amd:
+    baseline = select_baseline(args.baseline, gfx_level, gpu_name)
+
 success = True
-baseline = select_baseline(base, gfx_level, gpu_name)
 filters_args = parse_test_filters(args.include_tests, baseline)
 flakes = [
-    f
+    os.path.normpath(f)
     for f in (
-        os.path.join(base, g)
-        for g in [
+        os.path.join(args.baseline, g)
+        for g in
+        ([
             "radeonsi-flakes.csv",
             "{}-{}-flakes.csv".format(gfx_level_to_str(gfx_level), gpu_name),
-        ]
+        ] if is_amd else flakes_lists)
     )
     if os.path.exists(f)
 ]
@@ -383,6 +429,7 @@ for f in flakes:
 
 if os.path.exists(baseline):
     print_yellow("Baseline: {}".format(baseline))
+print_yellow("Skips: {}".format(skips_list))
 if flakes_args:
     print_yellow("Flakes: {}".format(flakes_args))
 
@@ -435,18 +482,48 @@ if args.glcts:
         "100",
         "--deqp",
         "{}/build/external/openglcts/modules/glcts".format(glcts_path),
-        "--caselist",
-        "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-main.txt".format(
-            glcts_path
-        ),
-        "--caselist",
-        "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl46-khr-single.txt".format(
-            glcts_path
-        ),
-        "--caselist",
-        "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-gtf-main.txt".format(
-            glcts_path
-        ),
+    ]
+
+    if is_amd or args.zink:
+        cmd += [
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-main.txt".format(glcts_path),
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl46-khr-single.txt".format(glcts_path),
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl46-gtf-main.txt".format(glcts_path),
+        ]
+    elif args.llvmpipe:
+        cmd += [
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-main.txt".format(glcts_path),
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl45-khr-single.txt".format(glcts_path),
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl45-gtf-main.txt".format(glcts_path),
+        ]
+    elif args.virgl:
+        cmd += [
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-main.txt".format(glcts_path),
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/4.6.1.x/gl43-khr-single.txt".format(glcts_path),
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl43-gtf-main.txt".format(glcts_path),
+        ]
+    elif args.softpipe:
+        # KHR-GL33.info.renderer crashes with softpipe.
+        #cmd += [
+        #    "--caselist",
+        #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-main.txt".format(glcts_path),
+        #    "--caselist",
+        #    "{}/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/4.6.1.x/gl33-gtf-main.txt".format(glcts_path),
+        #]
+        pass
+    else:
+        assert False
+
+    cmd += [
         "--output",
         out,
         "--skips",
@@ -491,10 +568,17 @@ if args.escts:
         "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles31-khr-main.txt".format(
             glcts_path
         ),
-        "--caselist",
-        "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles32-khr-main.txt".format(
-            glcts_path
-        ),
+    ]
+
+    if not args.softpipe:
+        cmd += [
+            "--caselist",
+            "{}/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/3.2.6.x/gles32-khr-main.txt".format(
+                glcts_path
+            ),
+        ]
+
+    cmd += [
         "--output",
         out,
         "--skips",
