@@ -24,6 +24,7 @@
 struct radv_amdgpu_winsys {
    struct radeon_winsys base;
    amdgpu_device_handle dev;
+   int fd;
 
    struct radeon_info info;
 

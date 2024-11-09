@@ -71,7 +71,7 @@ fail:
 static void do_winsys_deinit(struct amdgpu_winsys *aws)
 {
    if (aws->reserve_vmid)
-      amdgpu_vm_unreserve_vmid(aws->dev, 0);
+      ac_drm_vm_unreserve_vmid(aws->fd, 0);
 
    for (unsigned i = 0; i < ARRAY_SIZE(aws->queues); i++) {
       for (unsigned j = 0; j < ARRAY_SIZE(aws->queues[i].fences); j++)
@@ -156,7 +156,7 @@ static uint64_t amdgpu_query_value(struct radeon_winsys *rws,
                                    enum radeon_value_id value)
 {
    struct amdgpu_winsys *aws = amdgpu_winsys(rws);
-   struct amdgpu_heap_info heap;
+   struct amdgpu_heap_info heap = {0};
    uint64_t retval = 0;
 
    switch (value) {
@@ -177,7 +177,7 @@ static uint64_t amdgpu_query_value(struct radeon_winsys *rws,
    case RADEON_NUM_MAPPED_BUFFERS:
       return aws->num_mapped_buffers;
    case RADEON_TIMESTAMP:
-      amdgpu_query_info(aws->dev, AMDGPU_INFO_TIMESTAMP, 8, &retval);
+      ac_drm_query_info(aws->fd, AMDGPU_INFO_TIMESTAMP, 8, &retval);
       return retval;
    case RADEON_NUM_GFX_IBS:
       return aws->num_gfx_IBs;
@@ -188,32 +188,32 @@ static uint64_t amdgpu_query_value(struct radeon_winsys *rws,
    case RADEON_GFX_IB_SIZE_COUNTER:
       return aws->gfx_ib_size_counter;
    case RADEON_NUM_BYTES_MOVED:
-      amdgpu_query_info(aws->dev, AMDGPU_INFO_NUM_BYTES_MOVED, 8, &retval);
+      ac_drm_query_info(aws->fd, AMDGPU_INFO_NUM_BYTES_MOVED, 8, &retval);
       return retval;
    case RADEON_NUM_EVICTIONS:
-      amdgpu_query_info(aws->dev, AMDGPU_INFO_NUM_EVICTIONS, 8, &retval);
+      ac_drm_query_info(aws->fd, AMDGPU_INFO_NUM_EVICTIONS, 8, &retval);
       return retval;
    case RADEON_NUM_VRAM_CPU_PAGE_FAULTS:
-      amdgpu_query_info(aws->dev, AMDGPU_INFO_NUM_VRAM_CPU_PAGE_FAULTS, 8, &retval);
+      ac_drm_query_info(aws->fd, AMDGPU_INFO_NUM_VRAM_CPU_PAGE_FAULTS, 8, &retval);
       return retval;
    case RADEON_VRAM_USAGE:
-      amdgpu_query_heap_info(aws->dev, AMDGPU_GEM_DOMAIN_VRAM, 0, &heap);
+      ac_drm_query_heap_info(aws->fd, AMDGPU_GEM_DOMAIN_VRAM, 0, &heap);
       return heap.heap_usage;
    case RADEON_VRAM_VIS_USAGE:
-      amdgpu_query_heap_info(aws->dev, AMDGPU_GEM_DOMAIN_VRAM,
+      ac_drm_query_heap_info(aws->fd, AMDGPU_GEM_DOMAIN_VRAM,
                              AMDGPU_GEM_CREATE_CPU_ACCESS_REQUIRED, &heap);
       return heap.heap_usage;
    case RADEON_GTT_USAGE:
-      amdgpu_query_heap_info(aws->dev, AMDGPU_GEM_DOMAIN_GTT, 0, &heap);
+      ac_drm_query_heap_info(aws->fd, AMDGPU_GEM_DOMAIN_GTT, 0, &heap);
       return heap.heap_usage;
    case RADEON_GPU_TEMPERATURE:
-      amdgpu_query_sensor_info(aws->dev, AMDGPU_INFO_SENSOR_GPU_TEMP, 4, &retval);
+      ac_drm_query_sensor_info(aws->fd, AMDGPU_INFO_SENSOR_GPU_TEMP, 4, &retval);
       return retval;
    case RADEON_CURRENT_SCLK:
-      amdgpu_query_sensor_info(aws->dev, AMDGPU_INFO_SENSOR_GFX_SCLK, 4, &retval);
+      ac_drm_query_sensor_info(aws->fd, AMDGPU_INFO_SENSOR_GFX_SCLK, 4, &retval);
       return retval;
    case RADEON_CURRENT_MCLK:
-      amdgpu_query_sensor_info(aws->dev, AMDGPU_INFO_SENSOR_GFX_MCLK, 4, &retval);
+      ac_drm_query_sensor_info(aws->fd, AMDGPU_INFO_SENSOR_GFX_MCLK, 4, &retval);
       return retval;
    case RADEON_CS_THREAD_TIME:
       return util_queue_get_thread_time_nano(&aws->cs_queue, 0);
@@ -227,7 +227,7 @@ static bool amdgpu_read_registers(struct radeon_winsys *rws,
 {
    struct amdgpu_winsys *aws = amdgpu_winsys(rws);
 
-   return amdgpu_read_mm_registers(aws->dev, reg_offset / 4, num_registers,
+   return ac_drm_read_mm_registers(aws->fd, reg_offset / 4, num_registers,
                                    0xffffffff, 0, out) == 0;
 }
 
@@ -325,7 +325,7 @@ amdgpu_cs_set_pstate(struct radeon_cmdbuf *rcs, enum radeon_ctx_pstate pstate)
       return false;
 
    uint32_t amdgpu_pstate = radeon_to_amdgpu_pstate(pstate);
-   return amdgpu_cs_ctx_stable_pstate(cs->ctx->ctx,
+   return ac_drm_cs_ctx_stable_pstate(cs->aws->fd, cs->ctx->ctx_handle,
       AMDGPU_CTX_OP_SET_STABLE_PSTATE, amdgpu_pstate, NULL) == 0;
 }
 
@@ -505,7 +505,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
       _mesa_hash_table_insert(dev_tab, dev, aws);
 
       if (aws->reserve_vmid) {
-         r = amdgpu_vm_reserve_vmid(dev, 0);
+         r = ac_drm_vm_reserve_vmid(aws->fd, 0);
          if (r) {
             amdgpu_winsys_destroy_locked(&sws->base, true);
             simple_mtx_unlock(&dev_tab_mutex);

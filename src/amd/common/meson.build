@@ -71,6 +71,7 @@ amd_common_files = files(
   'ac_descriptors.h',
   'ac_formats.c',
   'ac_formats.h',
+  'ac_linux_drm.h',
   'ac_shadowed_regs.c',
   'ac_shadowed_regs.h',
   'ac_spm.c',
@@ -111,6 +112,12 @@ amd_common_files = files(
   'ac_vcn_dec.c',
   'ac_vcn_enc.c',
 )
+
+if not with_platform_windows
+  amd_common_files += files(
+    'ac_linux_drm.c',
+  )
+endif
 
 if dep_elf.found()
   amd_common_files += files(
