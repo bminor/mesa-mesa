@@ -34,8 +34,8 @@ typedef void *drmDevicePtr;
 #include <io.h>
 #else
 #include <amdgpu.h>
-#include <xf86drm.h>
 #include "drm-uapi/amdgpu_drm.h"
+#include "util/os_drm.h"
 #include "winsys/amdgpu/radv_amdgpu_winsys_public.h"
 #endif
 #include "winsys/null/radv_null_winsys_public.h"
@@ -2076,7 +2076,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
                                            .return_size = sizeof(accel_working),
                                            .query = AMDGPU_INFO_ACCEL_WORKING};
 
-         if (drmCommandWrite(master_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info)) < 0 ||
+         if (drm_ioctl_write(master_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info)) < 0 ||
              !accel_working) {
             close(master_fd);
             master_fd = -1;

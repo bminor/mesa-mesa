@@ -3,14 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "util/os_drm.h"
 #include "ac_linux_drm.h"
 #include "util/u_math.h"
 
-#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <xf86drm.h>
 
 int ac_drm_bo_set_metadata(int device_fd, uint32_t bo_handle, struct amdgpu_bo_metadata *info)
 {
@@ -29,7 +28,7 @@ int ac_drm_bo_set_metadata(int device_fd, uint32_t bo_handle, struct amdgpu_bo_m
       memcpy(args.data.data, info->umd_metadata, info->size_metadata);
    }
 
-   return drmCommandWriteRead(device_fd, DRM_AMDGPU_GEM_METADATA, &args, sizeof(args));
+   return drm_ioctl_write_read(device_fd, DRM_AMDGPU_GEM_METADATA, &args, sizeof(args));
 }
 
 int ac_drm_bo_query_info(int device_fd, uint32_t bo_handle, struct amdgpu_bo_info *info)
@@ -47,7 +46,7 @@ int ac_drm_bo_query_info(int device_fd, uint32_t bo_handle, struct amdgpu_bo_inf
    metadata.handle = bo_handle;
    metadata.op = AMDGPU_GEM_METADATA_OP_GET_METADATA;
 
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_GEM_METADATA, &metadata, sizeof(metadata));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_GEM_METADATA, &metadata, sizeof(metadata));
    if (r)
       return r;
 
@@ -59,7 +58,7 @@ int ac_drm_bo_query_info(int device_fd, uint32_t bo_handle, struct amdgpu_bo_inf
    gem_op.op = AMDGPU_GEM_OP_GET_GEM_CREATE_INFO;
    gem_op.value = (uintptr_t)&bo_info;
 
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_GEM_OP, &gem_op, sizeof(gem_op));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_GEM_OP, &gem_op, sizeof(gem_op));
    if (r)
       return r;
 
@@ -109,7 +108,7 @@ int ac_drm_bo_wait_for_idle(int device_fd, uint32_t bo_handle, uint64_t timeout_
    args.in.handle = bo_handle;
    args.in.timeout = amdgpu_cs_calculate_timeout(timeout_ns);
 
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_GEM_WAIT_IDLE, &args, sizeof(args));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_GEM_WAIT_IDLE, &args, sizeof(args));
 
    if (r == 0) {
       *busy = args.out.status;
@@ -148,7 +147,7 @@ int ac_drm_bo_va_op_raw(int device_fd, uint32_t bo_handle, uint64_t offset, uint
    va.offset_in_bo = offset;
    va.map_size = size;
 
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_GEM_VA, &va, sizeof(va));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_GEM_VA, &va, sizeof(va));
 
    return r;
 }
@@ -174,7 +173,7 @@ int ac_drm_cs_ctx_create2(int device_fd, uint32_t priority, uint32_t *ctx_handle
    args.in.op = AMDGPU_CTX_OP_ALLOC_CTX;
    args.in.priority = priority;
 
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
    if (r)
       return r;
 
@@ -190,7 +189,7 @@ int ac_drm_cs_ctx_free(int device_fd, uint32_t ctx_handle)
    memset(&args, 0, sizeof(args));
    args.in.op = AMDGPU_CTX_OP_FREE_CTX;
    args.in.ctx_id = ctx_handle;
-   return drmCommandWriteRead(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
+   return drm_ioctl_write_read(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
 }
 
 int ac_drm_cs_ctx_stable_pstate(int device_fd, uint32_t ctx_handle, uint32_t op, uint32_t flags,
@@ -206,7 +205,7 @@ int ac_drm_cs_ctx_stable_pstate(int device_fd, uint32_t ctx_handle, uint32_t op,
    args.in.op = op;
    args.in.ctx_id = ctx_handle;
    args.in.flags = flags;
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
    if (!r && out_flags)
       *out_flags = args.out.pstate.flags;
    return r;
@@ -223,7 +222,7 @@ int ac_drm_cs_query_reset_state2(int device_fd, uint32_t ctx_handle, uint64_t *f
    memset(&args, 0, sizeof(args));
    args.in.op = AMDGPU_CTX_OP_QUERY_STATE2;
    args.in.ctx_id = ctx_handle;
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_CTX, &args, sizeof(args));
    if (!r)
       *flags = args.out.state.flags;
    return r;
@@ -248,7 +247,7 @@ static int amdgpu_ioctl_wait_cs(int device_fd, uint32_t ctx_handle, unsigned ip,
    else
       args.in.timeout = amdgpu_cs_calculate_timeout(timeout_ns);
 
-   r = drmIoctl(device_fd, DRM_IOCTL_AMDGPU_WAIT_CS, &args);
+   r = drm_ioctl(device_fd, DRM_IOCTL_AMDGPU_WAIT_CS, &args);
    if (r)
       return -errno;
 
@@ -364,7 +363,7 @@ int ac_drm_cs_submit_raw2(int device_fd, uint32_t ctx_handle, uint32_t bo_list_h
    cs.in.ctx_id = ctx_handle;
    cs.in.bo_list_handle = bo_list_handle;
    cs.in.num_chunks = num_chunks;
-   r = drmCommandWriteRead(device_fd, DRM_AMDGPU_CS, &cs, sizeof(cs));
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_CS, &cs, sizeof(cs));
    if (!r && seq_no)
       *seq_no = cs.out.handle;
    return r;
@@ -386,7 +385,7 @@ int ac_drm_query_info(int device_fd, unsigned info_id, unsigned size, void *valu
    request.return_size = size;
    request.query = info_id;
 
-   return drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_read_mm_registers(int device_fd, unsigned dword_offset, unsigned count,
@@ -403,7 +402,7 @@ int ac_drm_read_mm_registers(int device_fd, unsigned dword_offset, unsigned coun
    request.read_mmr_reg.instance = instance;
    request.read_mmr_reg.flags = flags;
 
-   return drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_query_hw_ip_count(int device_fd, unsigned type, uint32_t *count)
@@ -416,7 +415,7 @@ int ac_drm_query_hw_ip_count(int device_fd, unsigned type, uint32_t *count)
    request.query = AMDGPU_INFO_HW_IP_COUNT;
    request.query_hw_ip.type = type;
 
-   return drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_query_hw_ip_info(int device_fd, unsigned type, unsigned ip_instance,
@@ -431,7 +430,7 @@ int ac_drm_query_hw_ip_info(int device_fd, unsigned type, unsigned ip_instance,
    request.query_hw_ip.type = type;
    request.query_hw_ip.ip_instance = ip_instance;
 
-   return drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_query_firmware_version(int device_fd, unsigned fw_type, unsigned ip_instance,
@@ -449,7 +448,7 @@ int ac_drm_query_firmware_version(int device_fd, unsigned fw_type, unsigned ip_i
    request.query_fw.ip_instance = ip_instance;
    request.query_fw.index = index;
 
-   r = drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   r = drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
    if (r)
       return r;
 
@@ -595,7 +594,7 @@ int ac_drm_query_sensor_info(int device_fd, unsigned sensor_type, unsigned size,
    request.query = AMDGPU_INFO_SENSOR;
    request.sensor_info.type = sensor_type;
 
-   return drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_query_video_caps_info(int device_fd, unsigned cap_type, unsigned size, void *value)
@@ -608,7 +607,7 @@ int ac_drm_query_video_caps_info(int device_fd, unsigned cap_type, unsigned size
    request.query = AMDGPU_INFO_VIDEO_CAPS;
    request.sensor_info.type = cap_type;
 
-   return drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_query_gpuvm_fault_info(int device_fd, unsigned size, void *value)
@@ -620,7 +619,7 @@ int ac_drm_query_gpuvm_fault_info(int device_fd, unsigned size, void *value)
    request.return_size = size;
    request.query = AMDGPU_INFO_GPUVM_FAULT;
 
-   return drmCommandWrite(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
 }
 
 int ac_drm_vm_reserve_vmid(int device_fd, uint32_t flags)
@@ -630,7 +629,7 @@ int ac_drm_vm_reserve_vmid(int device_fd, uint32_t flags)
    vm.in.op = AMDGPU_VM_OP_RESERVE_VMID;
    vm.in.flags = flags;
 
-   return drmCommandWriteRead(device_fd, DRM_AMDGPU_VM, &vm, sizeof(vm));
+   return drm_ioctl_write_read(device_fd, DRM_AMDGPU_VM, &vm, sizeof(vm));
 }
 
 int ac_drm_vm_unreserve_vmid(int device_fd, uint32_t flags)
@@ -640,5 +639,5 @@ int ac_drm_vm_unreserve_vmid(int device_fd, uint32_t flags)
    vm.in.op = AMDGPU_VM_OP_UNRESERVE_VMID;
    vm.in.flags = flags;
 
-   return drmCommandWriteRead(device_fd, DRM_AMDGPU_VM, &vm, sizeof(vm));
+   return drm_ioctl_write_read(device_fd, DRM_AMDGPU_VM, &vm, sizeof(vm));
 }

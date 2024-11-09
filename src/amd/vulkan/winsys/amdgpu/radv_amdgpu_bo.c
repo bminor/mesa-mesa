@@ -23,6 +23,7 @@
 #include <sys/mman.h>
 #include "ac_linux_drm.h"
 
+#include "util/os_drm.h"
 #include "util/os_time.h"
 #include "util/u_atomic.h"
 #include "util/u_math.h"
@@ -558,7 +559,7 @@ radv_amdgpu_winsys_bo_map(struct radeon_winsys *_ws, struct radeon_winsys_bo *_b
    memset(&args, 0, sizeof(args));
    args.in.handle = bo->bo_handle;
 
-   int ret = drmCommandWriteRead(radv_amdgpu_winsys(_ws)->fd, DRM_AMDGPU_GEM_MMAP, &args, sizeof(args));
+   int ret = drm_ioctl_write_read(radv_amdgpu_winsys(_ws)->fd, DRM_AMDGPU_GEM_MMAP, &args, sizeof(args));
    if (ret)
       return NULL;
 

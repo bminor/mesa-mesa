@@ -9,6 +9,7 @@
 
 #include "amdgpu_cs.h"
 
+#include "util/os_drm.h"
 #include "util/hash_table.h"
 #include "util/os_time.h"
 #include "util/u_hash_table.h"
@@ -216,7 +217,7 @@ void amdgpu_bo_destroy(struct amdgpu_winsys *aws, struct pb_buffer_lean *_buf)
       if (entry) {
          struct drm_gem_close args = { .handle = (uintptr_t)entry->data };
 
-         drmIoctl(sws_iter->fd, DRM_IOCTL_GEM_CLOSE, &args);
+         drm_ioctl(sws_iter->fd, DRM_IOCTL_GEM_CLOSE, &args);
          _mesa_hash_table_remove(sws_iter->kms_handles, entry);
       }
    }

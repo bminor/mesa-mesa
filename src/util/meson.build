@@ -70,6 +70,7 @@ files_mesa_util = files(
   'mesa-sha1.h',
   'mesa-blake3.c',
   'mesa-blake3.h',
+  'os_drm.h',
   'os_time.c',
   'os_time.h',
   'os_file.c',

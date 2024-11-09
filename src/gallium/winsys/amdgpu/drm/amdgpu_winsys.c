@@ -9,6 +9,7 @@
 
 #include "amdgpu_cs.h"
 
+#include "util/os_drm.h"
 #include "util/os_file.h"
 #include "util/os_misc.h"
 #include "util/u_cpu_detect.h"
@@ -262,7 +263,7 @@ static bool amdgpu_winsys_unref(struct radeon_winsys *rws)
 
       hash_table_foreach(sws->kms_handles, entry) {
          args.handle = (uintptr_t)entry->data;
-         drmIoctl(sws->fd, DRM_IOCTL_GEM_CLOSE, &args);
+         drm_ioctl(sws->fd, DRM_IOCTL_GEM_CLOSE, &args);
       }
       _mesa_hash_table_destroy(sws->kms_handles, NULL);
    }
