@@ -434,7 +434,7 @@
         "description": "radv/video: Fix DPB tier2 surface params",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3e2c768aa860f96074df73cd3171960e76f5c312",
         "notes": null

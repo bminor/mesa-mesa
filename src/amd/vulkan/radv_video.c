@@ -2085,13 +2085,14 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
 
    decode->decode_flags = 1;
    dynamic_dpb_t2->dpbConfigFlags = 0;
-   dynamic_dpb_t2->dpbLumaPitch = luma->surface.u.gfx9.surf_pitch;
-   dynamic_dpb_t2->dpbLumaAlignedHeight = luma->surface.u.gfx9.surf_height;
-   dynamic_dpb_t2->dpbLumaAlignedSize = luma->surface.u.gfx9.surf_slice_size;
 
-   dynamic_dpb_t2->dpbChromaPitch = chroma->surface.u.gfx9.surf_pitch;
-   dynamic_dpb_t2->dpbChromaAlignedHeight = chroma->surface.u.gfx9.surf_height;
-   dynamic_dpb_t2->dpbChromaAlignedSize = chroma->surface.u.gfx9.surf_slice_size;
+   dynamic_dpb_t2->dpbLumaPitch = dpb->planes[0].surface.u.gfx9.surf_pitch;
+   dynamic_dpb_t2->dpbLumaAlignedHeight = dpb->planes[0].surface.u.gfx9.surf_height;
+   dynamic_dpb_t2->dpbLumaAlignedSize = dpb->planes[0].surface.u.gfx9.surf_slice_size;
+
+   dynamic_dpb_t2->dpbChromaPitch = dpb->planes[1].surface.u.gfx9.surf_pitch;
+   dynamic_dpb_t2->dpbChromaAlignedHeight = dpb->planes[1].surface.u.gfx9.surf_height;
+   dynamic_dpb_t2->dpbChromaAlignedSize = dpb->planes[1].surface.u.gfx9.surf_slice_size;
 
    return true;
 }
