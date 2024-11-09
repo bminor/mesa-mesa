@@ -4269,7 +4269,6 @@ agx_draw_without_restart(struct agx_batch *batch,
 
    struct agx_unroll_restart_key key = {
       .prim = info->mode,
-      .index_size_B = info->index_size,
    };
 
    /* Allocate output indirect draw descriptors. This is exact. */
@@ -4286,6 +4285,7 @@ agx_draw_without_restart(struct agx_batch *batch,
       .index_buffer_size_el = ib_extent / info->index_size,
       .flatshade_first = batch->ctx->rast->base.flatshade_first,
       .draws = agx_indirect_buffer_ptr(batch, indirect),
+      .index_size_B = info->index_size,
    };
 
    /* Unroll the index buffer for each draw */

@@ -332,88 +332,91 @@ setup_unroll_for_draw(global struct agx_restart_unroll_params *p,
    return (global uchar *)heap->heap + old_heap_bottom_B;
 }
 
-#define UNROLL(INDEX, suffix)                                                  \
-   kernel void libagx_unroll_restart_##suffix(                                 \
-      global struct agx_restart_unroll_params *p, enum mesa_prim mode,         \
-      uint draw, uint tid)                                                     \
-   {                                                                           \
-      /* For an indirect multidraw, we are dispatched maxDraws times and       \
-       * terminate trailing invocations.                                       \
-       */                                                                      \
-      if (p->count && draw >= *(p->count))                                     \
-         return;                                                               \
-                                                                               \
-      constant uint *in_draw =                                                 \
-         (constant uint *)(p->draws + (draw * p->draw_stride));                \
-                                                                               \
-      uint count = in_draw[0];                                                 \
-                                                                               \
-      local uintptr_t out_ptr, in_ptr;                                         \
-      if (tid == 0) {                                                          \
-         out_ptr = (uintptr_t)setup_unroll_for_draw(p, in_draw, draw, mode,    \
-                                                    sizeof(INDEX));            \
-                                                                               \
-         /* Accessed thru local mem because NIR deref is too aggressive */     \
-         in_ptr = (uintptr_t)(libagx_index_buffer(                             \
-            p->index_buffer, p->index_buffer_size_el, in_draw[2],              \
-            sizeof(INDEX), p->zero_sink));                                     \
-      }                                                                        \
-                                                                               \
-      barrier(CLK_LOCAL_MEM_FENCE);                                            \
-      global INDEX *out = (global INDEX *)out_ptr;                             \
-                                                                               \
-      local uint scratch[32];                                                  \
-                                                                               \
-      uint out_prims = 0;                                                      \
-      INDEX restart_idx = p->restart_index;                                    \
-      bool flatshade_first = p->flatshade_first;                               \
-                                                                               \
-      uint needle = 0;                                                         \
-      uint per_prim = mesa_vertices_per_prim(mode);                            \
-      while (needle < count) {                                                 \
-         /* Search for next restart or the end. Lanes load in parallel. */     \
-         uint next_restart = needle;                                           \
-         for (;;) {                                                            \
-            uint idx = next_restart + tid;                                     \
-            bool restart =                                                     \
-               idx >= count || libagx_load_index_buffer_internal(              \
-                                  in_ptr, p->index_buffer_size_el, idx,        \
-                                  sizeof(INDEX)) == restart_idx;               \
-                                                                               \
-            uint next_offs = first_true_thread_in_workgroup(restart, scratch); \
-                                                                               \
-            next_restart += next_offs;                                         \
-            if (next_offs < 1024)                                              \
-               break;                                                          \
-         }                                                                     \
-                                                                               \
-         /* Emit up to the next restart. Lanes output in parallel */           \
-         uint subcount = next_restart - needle;                                \
-         uint subprims = u_decomposed_prims_for_vertices(mode, subcount);      \
-         uint out_prims_base = out_prims;                                      \
-         for (uint i = tid; i < subprims; i += 1024) {                         \
-            for (uint vtx = 0; vtx < per_prim; ++vtx) {                        \
-               uint id = libagx_vertex_id_for_topology(mode, flatshade_first,  \
-                                                       i, vtx, subprims);      \
-               uint offset = needle + id;                                      \
-                                                                               \
-               out[((out_prims_base + i) * per_prim) + vtx] =                  \
-                  libagx_load_index_buffer_internal(                           \
-                     in_ptr, p->index_buffer_size_el, offset, sizeof(INDEX));  \
-            }                                                                  \
-         }                                                                     \
-                                                                               \
-         out_prims += subprims;                                                \
-         needle = next_restart + 1;                                            \
-      }                                                                        \
-                                                                               \
-      if (tid == 0)                                                            \
-         p->out_draws[(5 * draw) + 0] = out_prims * per_prim;                  \
+kernel void
+libagx_unroll_restart(global struct agx_restart_unroll_params *p,
+                      enum mesa_prim mode, uint draw, uint tid)
+{
+   /* For an indirect multidraw, we are dispatched maxDraws times and
+    * terminate trailing invocations.
+    */
+   if (p->count && draw >= *(p->count))
+      return;
+
+   constant uint *in_draw =
+      (constant uint *)(p->draws + (draw * p->draw_stride));
+
+   uint count = in_draw[0];
+
+   local uintptr_t out_ptr, in_ptr;
+   if (tid == 0) {
+      out_ptr = (uintptr_t)setup_unroll_for_draw(p, in_draw, draw, mode,
+                                                 p->index_size_B);
+
+      /* Accessed thru local mem because NIR deref is too aggressive */
+      in_ptr = (uintptr_t)(libagx_index_buffer(
+         p->index_buffer, p->index_buffer_size_el, in_draw[2], p->index_size_B,
+         p->zero_sink));
    }
 
-UNROLL(uchar, u8)
-UNROLL(ushort, u16)
-UNROLL(uint, u32)
+   barrier(CLK_LOCAL_MEM_FENCE);
+   global uint32_t *out_32 = (global uint32_t *)out_ptr;
+   global uint16_t *out_16 = (global uint16_t *)out_ptr;
+   global uint8_t *out_8 = (global uint8_t *)out_ptr;
+
+   local uint scratch[32];
+
+   uint out_prims = 0;
+   uint32_t restart_idx = p->restart_index;
+   bool flatshade_first = p->flatshade_first;
+
+   uint needle = 0;
+   uint per_prim = mesa_vertices_per_prim(mode);
+   while (needle < count) {
+      /* Search for next restart or the end. Lanes load in parallel. */
+      uint next_restart = needle;
+      for (;;) {
+         uint idx = next_restart + tid;
+         bool restart = idx >= count || libagx_load_index_buffer_internal(
+                                           in_ptr, p->index_buffer_size_el, idx,
+                                           p->index_size_B) == restart_idx;
+
+         uint next_offs = first_true_thread_in_workgroup(restart, scratch);
+
+         next_restart += next_offs;
+         if (next_offs < 1024)
+            break;
+      }
+
+      /* Emit up to the next restart. Lanes output in parallel */
+      uint subcount = next_restart - needle;
+      uint subprims = u_decomposed_prims_for_vertices(mode, subcount);
+      uint out_prims_base = out_prims;
+      for (uint i = tid; i < subprims; i += 1024) {
+         for (uint vtx = 0; vtx < per_prim; ++vtx) {
+            uint id = libagx_vertex_id_for_topology(mode, flatshade_first, i,
+                                                    vtx, subprims);
+            uint offset = needle + id;
+
+            uint x = ((out_prims_base + i) * per_prim) + vtx;
+            uint y = libagx_load_index_buffer_internal(
+               in_ptr, p->index_buffer_size_el, offset, p->index_size_B);
+
+            if (p->index_size_B == 4)
+               out_32[x] = y;
+            else if (p->index_size_B == 2)
+               out_16[x] = y;
+            else
+               out_8[x] = y;
+         }
+      }
+
+      out_prims += subprims;
+      needle = next_restart + 1;
+   }
+
+   if (tid == 0)
+      p->out_draws[(5 * draw) + 0] = out_prims * per_prim;
+}
 
 uint
 libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i)

@@ -1548,14 +1548,7 @@ agx_nir_unroll_restart(nir_builder *b, const void *data)
    nir_def *lane = nir_channel(b, nir_load_local_invocation_id(b), 0);
    nir_def *mode = nir_imm_int(b, key->prim);
 
-   if (key->index_size_B == 1)
-      libagx_unroll_restart_u8(b, ia, mode, draw, lane);
-   else if (key->index_size_B == 2)
-      libagx_unroll_restart_u16(b, ia, mode, draw, lane);
-   else if (key->index_size_B == 4)
-      libagx_unroll_restart_u32(b, ia, mode, draw, lane);
-   else
-      unreachable("invalid index size");
+   libagx_unroll_restart(b, ia, mode, draw, lane);
 }
 
 void

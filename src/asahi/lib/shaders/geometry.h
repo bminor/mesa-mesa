@@ -60,6 +60,9 @@ struct agx_restart_unroll_params {
    /* Input index buffer size in elements */
    uint32_t index_buffer_size_el;
 
+   /* Size of an index in bytes */
+   uint32_t index_size_B;
+
    /* Stride for the draw descriptor array */
    uint32_t draw_stride;
 
@@ -69,7 +72,7 @@ struct agx_restart_unroll_params {
     */
    uint32_t flatshade_first;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct agx_restart_unroll_params) == 17 * 4);
+AGX_STATIC_ASSERT(sizeof(struct agx_restart_unroll_params) == 18 * 4);
 
 struct agx_gs_setup_indirect_params {
    /* Index buffer if present. */

@@ -1456,8 +1456,9 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Next, we unroll the index buffer used by the indirect draw */
    struct agx_unroll_restart_key key = {
       .prim = vk_conv_topology(dyn->ia.primitive_topology),
-      .index_size_B = agx_index_size_to_B(draw.index_size),
    };
+
+   uint32_t index_size_B = agx_index_size_to_B(draw.index_size);
 
    struct agx_restart_unroll_params ia = {
       .heap = hk_geometry_state(cmd),
@@ -1467,10 +1468,11 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       .out_draws = hk_pool_alloc(cmd, 5 * sizeof(uint32_t) * draw_count, 4).gpu,
       .max_draws = 1 /* TODO: MDI */,
       .restart_index = gfx->index.restart,
-      .index_buffer_size_el = draw.index.range / key.index_size_B,
+      .index_buffer_size_el = draw.index.range / index_size_B,
       .flatshade_first =
          dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
       .zero_sink = dev->rodata.zero_sink,
+      .index_size_B = index_size_B,
    };
 
    struct hk_shader *s =

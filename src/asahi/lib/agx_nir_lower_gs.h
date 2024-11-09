@@ -46,7 +46,6 @@ void agx_nir_gs_setup_indirect(struct nir_builder *b, const void *key);
 
 struct agx_unroll_restart_key {
    enum mesa_prim prim;
-   unsigned index_size_B;
 };
 
 void agx_nir_unroll_restart(struct nir_builder *b, const void *key);
