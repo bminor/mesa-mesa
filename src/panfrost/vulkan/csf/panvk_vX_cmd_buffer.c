@@ -385,6 +385,12 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
       if (should_split_render_pass(wait_masks)) {
          deps->needs_draw_flush = true;
       } else {
+         /* skip the tiler subqueue self-wait because we use the same
+          * scoreboard slot for the idvs jobs
+          */
+         wait_masks[PANVK_SUBQUEUE_VERTEX_TILER] &=
+            ~BITFIELD_BIT(PANVK_SUBQUEUE_VERTEX_TILER);
+
          /* skip the fragment subqueue self-wait because we emit the fragment
           * job at the end of the render pass and there is nothing to wait yet
           */
