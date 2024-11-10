@@ -252,6 +252,12 @@ add_execution_dependency(uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
              VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT)
             wait_mask &= ~BITFIELD_BIT(i);
          break;
+      case PANVK_SUBQUEUE_FRAGMENT:
+         /* The fragment subqueue always waits for the tiler subqueue already.
+          * Explicit waits can be skipped.
+          */
+         wait_mask &= ~BITFIELD_BIT(PANVK_SUBQUEUE_VERTEX_TILER);
+         break;
       default:
          break;
       }
@@ -444,12 +450,6 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
    }
-
-   /* The draw flush will add a vertex -> fragment dependency, so we can skip
-    * the one described in the deps. */
-   if (out->needs_draw_flush)
-      out->dst[PANVK_SUBQUEUE_FRAGMENT].wait_subqueue_mask &=
-         ~BITFIELD_BIT(PANVK_SUBQUEUE_VERTEX_TILER);
 }
 
 VKAPI_ATTR void VKAPI_CALL
