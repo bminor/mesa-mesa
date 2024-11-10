@@ -380,8 +380,18 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
    uint32_t wait_masks[PANVK_SUBQUEUE_COUNT] = {0};
    add_execution_dependency(wait_masks, src_stages, dst_stages);
 
-   if (cmdbuf->state.gfx.render.tiler && should_split_render_pass(wait_masks))
-      deps->needs_draw_flush = true;
+   /* within a render pass */
+   if (cmdbuf->state.gfx.render.tiler) {
+      if (should_split_render_pass(wait_masks)) {
+         deps->needs_draw_flush = true;
+      } else {
+         /* skip the fragment subqueue self-wait because we emit the fragment
+          * job at the end of the render pass and there is nothing to wait yet
+          */
+         wait_masks[PANVK_SUBQUEUE_FRAGMENT] &=
+            ~BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT);
+      }
+   }
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       if (wait_masks[i] & BITFIELD_BIT(i)) {
