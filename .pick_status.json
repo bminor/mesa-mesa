@@ -784,7 +784,7 @@
         "description": "anv: Align anv_descriptor_pool::host_mem",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2570a58bcdf30d699b89323fef60692093dee7ea",
         "notes": null
