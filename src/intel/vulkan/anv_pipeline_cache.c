@@ -287,8 +287,8 @@ anv_shader_bin_create(struct anv_device *device,
                       INTEL_DEBUG(DEBUG_SHADER_PRINT) ?
                       brw_stage_prog_data_printf_string_size(prog_data_in) : 0);
 
-   if (!vk_multialloc_alloc(&ma, &device->vk.alloc,
-                            VK_SYSTEM_ALLOCATION_SCOPE_DEVICE))
+   if (!vk_multialloc_zalloc(&ma, &device->vk.alloc,
+                             VK_SYSTEM_ALLOCATION_SCOPE_DEVICE))
       return NULL;
 
    memcpy(obj_key_data, key_data, key_size);
@@ -406,14 +406,13 @@ anv_shader_bin_create(struct anv_device *device,
    typed_memcpy(prog_data_relocs, prog_data_in->relocs,
                 prog_data_in->num_relocs);
    prog_data->relocs = prog_data_relocs;
-   memset(prog_data_param, 0,
-          prog_data->nr_params * sizeof(*prog_data_param));
    prog_data->param = prog_data_param;
    prog_data->printf_info = printf_infos;
    shader->prog_data = prog_data;
    shader->prog_data_size = prog_data_size;
 
    assert(num_stats <= ARRAY_SIZE(shader->stats));
+   assert((stats != NULL) || (num_stats == 0));
    typed_memcpy(shader->stats, stats, num_stats);
    shader->num_stats = num_stats;
 

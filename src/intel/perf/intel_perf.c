@@ -1536,8 +1536,10 @@ intel_perf_init_metrics(struct intel_perf_config *perf_cfg,
       load_oa_metrics(perf_cfg, drm_fd, devinfo);
 
    /* sort query groups by name */
-   qsort(perf_cfg->queries, perf_cfg->n_queries,
-         sizeof(perf_cfg->queries[0]), intel_perf_compare_query_names);
+   if (perf_cfg->queries != NULL) {
+      qsort(perf_cfg->queries, perf_cfg->n_queries,
+            sizeof(perf_cfg->queries[0]), intel_perf_compare_query_names);
+   }
 
    build_unique_counter_list(perf_cfg);
 

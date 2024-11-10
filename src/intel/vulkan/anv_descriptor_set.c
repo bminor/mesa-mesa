@@ -693,7 +693,10 @@ VkResult anv_CreateDescriptorSetLayout(
    }
 
    /* Initialize all samplers to 0 */
-   memset(samplers, 0, immutable_sampler_count * sizeof(*samplers));
+   assert((samplers == NULL) == (immutable_sampler_count == 0));
+   if (samplers != NULL) {
+      memset(samplers, 0, immutable_sampler_count * sizeof(*samplers));
+   }
 
    uint32_t buffer_view_count = 0;
    uint32_t dynamic_offset_count = 0;
@@ -2699,20 +2702,27 @@ void anv_UpdateDescriptorSets(
           *    - RENDER_SURFACE_STATE
           *    - SAMPLER_STATE
           */
-         memcpy(dst->desc_surface_mem.map +
-                dst_layout->descriptor_surface_offset +
-                (copy->dstArrayElement + j) * dst_layout->descriptor_surface_stride,
-                src->desc_surface_mem.map +
-                src_layout->descriptor_surface_offset +
-                (copy->srcArrayElement + j) * src_layout->descriptor_surface_stride,
-                copy_surface_element_size);
-         memcpy(dst->desc_sampler_mem.map +
-                dst_layout->descriptor_sampler_offset +
-                (copy->dstArrayElement + j) * dst_layout->descriptor_sampler_stride,
-                src->desc_sampler_mem.map +
-                src_layout->descriptor_sampler_offset +
-                (copy->srcArrayElement + j) * src_layout->descriptor_sampler_stride,
-                copy_sampler_element_size);
+         assert((dst->desc_surface_mem.map == NULL) == (src->desc_surface_mem.map == NULL));
+         if (dst->desc_surface_mem.map) {
+            memcpy(dst->desc_surface_mem.map +
+                   dst_layout->descriptor_surface_offset +
+                   (copy->dstArrayElement + j) * dst_layout->descriptor_surface_stride,
+                   src->desc_surface_mem.map +
+                   src_layout->descriptor_surface_offset +
+                   (copy->srcArrayElement + j) * src_layout->descriptor_surface_stride,
+                   copy_surface_element_size);
+         }
+
+         assert((dst->desc_sampler_mem.map == NULL) == (src->desc_sampler_mem.map == NULL));
+         if (dst->desc_sampler_mem.map) {
+            memcpy(dst->desc_sampler_mem.map +
+                   dst_layout->descriptor_sampler_offset +
+                   (copy->dstArrayElement + j) * dst_layout->descriptor_sampler_stride,
+                   src->desc_sampler_mem.map +
+                   src_layout->descriptor_sampler_offset +
+                   (copy->srcArrayElement + j) * src_layout->descriptor_sampler_stride,
+                   copy_sampler_element_size);
+         }
 
          /* Copy the CPU side data anv_descriptor */
          *dst_desc = *src_desc;
