@@ -331,7 +331,8 @@ add_memory_dependency(struct panvk_cache_flush_info *cache_flush,
 }
 
 static bool
-should_split_render_pass(const uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT])
+should_split_render_pass(const uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
+                         VkAccessFlags2 src_access, VkAccessFlags2 dst_access)
 {
    /* From the Vulkan 1.3.301 spec:
     *
@@ -349,9 +350,14 @@ should_split_render_pass(const uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT])
        BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT))
       return true;
 
-   /* split if the fragment subqueue self-waits */
-   if (wait_masks[PANVK_SUBQUEUE_FRAGMENT] &
-       BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT))
+   /* split if the fragment subqueue self-waits with a feedback loop, because
+    * we lower subpassLoad to texelFetch
+    */
+   if ((wait_masks[PANVK_SUBQUEUE_FRAGMENT] &
+        BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT)) &&
+       (src_access & (VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                      VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)) &&
+       (dst_access & VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT))
       return true;
 
    return false;
@@ -382,7 +388,7 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
 
    /* within a render pass */
    if (cmdbuf->state.gfx.render.tiler) {
-      if (should_split_render_pass(wait_masks)) {
+      if (should_split_render_pass(wait_masks, src_access, dst_access)) {
          deps->needs_draw_flush = true;
       } else {
          /* skip the tiler subqueue self-wait because we use the same
