@@ -41,8 +41,10 @@ dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_rgba_as
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_srgb8_alpha8_astc_12x10_khr.texture2d_array_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32ui_srgb8_alpha8_astc_10x6_khr.texture2d_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.srgb8_alpha8_astc_10x8_khr_rgba32i.texture2d_array_to_texture3d
+dEQP-GLES31.functional.geometry_shading.instanced.geometry_output_different_32_invocations
 dEQP-GLES31.functional.image_load_store.3d.atomic.or_r32ui_return_value
 dEQP-GLES31.functional.image_load_store.3d.store.rgba16ui
+dEQP-GLES31.functional.program_uniform.by_pointer.render.basic.mat4x3_row_major_fragment
 dEQP-GLES31.functional.texture.format.sized.cube_array.depth_component32f_npot
 
 # All the double tests in this group seem to be flaky
