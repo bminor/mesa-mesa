@@ -48,4 +48,5 @@ dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy
 dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0213
 dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0231
 dEQP-VK.synchronization2.implicit.timeline_semaphore.write_copy_buffer_read_copy_buffer.buffer_16384.0331
+dEQP-VK.synchronization2.implicit.timeline_semaphore.write_ssbo_vertex_read_copy_buffer.buffer_16384.2022
 dEQP-VK.texture.shadow.cube.linear.less_d24_unorm_s8_uint

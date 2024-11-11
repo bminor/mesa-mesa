@@ -4,8 +4,10 @@ dEQP-GLES2.functional.clipping.triangle_vertex.clip_three.clip_neg_x_and_pos_x_n
 dEQP-GLES2.functional.clipping.triangle_vertex.clip_three.clip_pos_x_and_neg_x_neg_y_pos_z_and_neg_x_pos_y_neg_z
 
 arm32-dEQP-GLES2.functional.shaders.random.texture.vertex.44
+arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.a8_nicest
 arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.l8_nicest
 arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgb565_nicest
+arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgb888_nicest
 arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgba4444_nicest
 arm32-dEQP-GLES2.functional.texture.mipmap.cube.generate.rgba5551_nicest
 
