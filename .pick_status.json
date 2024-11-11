@@ -44,7 +44,7 @@
         "description": "Revert \"util: Use persistent array of index entries\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "031f2c2a691d9fbb84ea6146eeeda09d4a4d05a6",
         "notes": null
