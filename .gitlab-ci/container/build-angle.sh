@@ -30,7 +30,7 @@ angle_patch_files=(
 )
 for patch in "${angle_patch_files[@]}"; do
   echo "Apply patch to ANGLE from ${patch}"
-  GIT_COMMITTER_DATE=$(date -d@0) git am < "${ANGLE_PATCH_DIR}/${patch}"
+  GIT_COMMITTER_DATE="$(LC_TIME=C date -d@0)" git am < "${ANGLE_PATCH_DIR}/${patch}"
 done
 
 {
