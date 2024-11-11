@@ -288,6 +288,12 @@ for s_ in range(1, 5):
                                   ('amul', 'c@32', ('ishr', d, s))), s)),
     ]
 
+# 8-bit rules are lowest precedence since we really like to fuse shifts
+fuse_lea += [
+    (('iadd', a, ('u2u64', 'b@32')), ('ulea_agx', a, b, 0)),
+    (('iadd', a, ('i2i64', 'b@32')), ('ilea_agx', a, b, 0)),
+]
+
 # After lowering address arithmetic, the various address arithmetic opcodes are
 # no longer useful. Lower them to regular arithmetic to let nir_opt_algebraic
 # take over.
