@@ -479,12 +479,19 @@ validate_ir(Program* program)
                if (program->gfx_level >= GFX10 && !is_shift64)
                   const_bus_limit = 2;
 
-               uint32_t scalar_mask =
-                  instr->isVOP3() || instr->isVOP3P() || instr->isVINTERP_INREG() ? 0x7 : 0x5;
-               if (instr->isSDWA())
+               uint32_t scalar_mask;
+               if (instr->isVOP3() || instr->isVOP3P() || instr->isVINTERP_INREG())
+                  scalar_mask = 0x7;
+               else if (instr->isSDWA())
                   scalar_mask = program->gfx_level >= GFX9 ? 0x7 : 0x4;
                else if (instr->isDPP())
                   scalar_mask = 0x4;
+               else if (instr->opcode == aco_opcode::v_movrels_b32 ||
+                        instr->opcode == aco_opcode::v_movrelsd_b32 ||
+                        instr->opcode == aco_opcode::v_movrelsd_2_b32)
+                  scalar_mask = 0x2;
+               else
+                  scalar_mask = 0x5;
 
                if (instr->isVOPC() || instr->opcode == aco_opcode::v_readfirstlane_b32 ||
                    instr->opcode == aco_opcode::v_readlane_b32 ||
