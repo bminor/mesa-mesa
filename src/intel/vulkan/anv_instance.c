@@ -263,7 +263,7 @@ PFN_vkVoidFunction anv_GetInstanceProcAddr(
     const char*                                 pName)
 {
    ANV_FROM_HANDLE(anv_instance, instance, _instance);
-   return vk_instance_get_proc_addr(&instance->vk,
+   return vk_instance_get_proc_addr(instance ? &instance->vk : NULL,
                                     &anv_instance_entrypoints,
                                     pName);
 }
