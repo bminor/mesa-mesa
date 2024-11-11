@@ -221,7 +221,7 @@ vk_image_usage_to_format_features(VkImageUsageFlagBits usage_flag)
 }
 
 static bool
-hk_can_compress(struct agx_device *dev, VkFormat format, unsigned plane,
+hk_can_compress(const struct agx_device *dev, VkFormat format, unsigned plane,
                 unsigned width, unsigned height, unsigned samples,
                 VkImageCreateFlagBits flags, VkImageUsageFlagBits usage,
                 const void *pNext)
@@ -297,8 +297,8 @@ hk_can_compress(struct agx_device *dev, VkFormat format, unsigned plane,
    return true;
 }
 
-static bool
-hk_can_compress_format(struct agx_device *dev, VkFormat format)
+bool
+hk_can_compress_format(const struct agx_device *dev, VkFormat format)
 {
    /* Check compressability of a sufficiently large image of the same
     * format, since we don't have dimensions here. This is lossy for

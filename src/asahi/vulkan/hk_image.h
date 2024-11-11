@@ -129,3 +129,6 @@ hk_image_aspects_to_plane(const struct hk_image *image,
       return 2;
    }
 }
+
+struct agx_device;
+bool hk_can_compress_format(const struct agx_device *dev, VkFormat format);
