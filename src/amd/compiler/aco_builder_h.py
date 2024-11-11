@@ -567,7 +567,7 @@ formats = [("pseudo", [Format.PSEUDO], list(itertools.product(range(5), range(6)
            ("branch", [Format.PSEUDO_BRANCH], itertools.product([1], [0, 1])),
            ("barrier", [Format.PSEUDO_BARRIER], [(0, 0)]),
            ("reduction", [Format.PSEUDO_REDUCTION], [(3, 3)]),
-           ("vop1", [Format.VOP1], [(0, 0), (1, 1), (2, 2)]),
+           ("vop1", [Format.VOP1], [(0, 0), (1, 1), (1, 2), (2, 2)]),
            ("vop1_sdwa", [Format.VOP1, Format.SDWA], [(1, 1)]),
            ("vop2", [Format.VOP2], itertools.product([1, 2], [2, 3])),
            ("vop2_sdwa", [Format.VOP2, Format.SDWA], itertools.product([1, 2], [2, 3])),
