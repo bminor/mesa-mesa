@@ -95,19 +95,43 @@ is_meta_shader(nir_shader *nir)
    return nir && nir->info.internal;
 }
 
+static uint64_t
+radv_dump_flag_for_stage(const gl_shader_stage stage)
+{
+   switch (stage) {
+   case MESA_SHADER_VERTEX:
+      return RADV_DEBUG_DUMP_VS;
+   case MESA_SHADER_TESS_CTRL:
+      return RADV_DEBUG_DUMP_TCS;
+   case MESA_SHADER_TESS_EVAL:
+      return RADV_DEBUG_DUMP_TES;
+   case MESA_SHADER_GEOMETRY:
+      return RADV_DEBUG_DUMP_GS;
+   case MESA_SHADER_FRAGMENT:
+      return RADV_DEBUG_DUMP_PS;
+   case MESA_SHADER_TASK:
+      return RADV_DEBUG_DUMP_TASK;
+   case MESA_SHADER_MESH:
+      return RADV_DEBUG_DUMP_MESH;
+   default:
+      return RADV_DEBUG_DUMP_CS;
+   }
+}
+
 bool
 radv_can_dump_shader(struct radv_device *device, nir_shader *nir)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
-   if (!(instance->debug_flags & RADV_DEBUG_DUMP_SHADERS))
-      return false;
+   if (is_meta_shader(nir))
+      return instance->debug_flags & RADV_DEBUG_DUMP_META_SHADERS;
 
-   if (is_meta_shader(nir) && !(instance->debug_flags & RADV_DEBUG_DUMP_META_SHADERS))
-      return false;
+   uint64_t flags = RADV_DEBUG_DUMP_SHADERS;
+   if (nir)
+      flags |= radv_dump_flag_for_stage(nir->info.stage);
 
-   return true;
+   return instance->debug_flags & flags;
 }
 
 bool
@@ -3093,9 +3117,13 @@ radv_shader_nir_to_asm(struct radv_device *device, struct radv_shader_stage *pl_
    gl_shader_stage stage = shaders[shader_count - 1]->info.stage;
    struct radv_shader_info *info = &pl_stage->info;
 
+   bool dump_shader = false;
+   for (unsigned i = 0; i < shader_count; ++i)
+      dump_shader |= radv_can_dump_shader(device, shaders[i]);
+
    struct radv_nir_compiler_options options = {0};
    radv_fill_nir_compiler_options(&options, device, gfx_state, radv_should_use_wgp_mode(device, stage, info),
-                                  radv_can_dump_shader(device, shaders[0]), keep_shader_info, keep_statistic_info);
+                                  dump_shader, keep_shader_info, keep_statistic_info);
 
    struct radv_shader_binary *binary =
       shader_compile(device, shaders, shader_count, stage, info, &pl_stage->args, &pl_stage->key, &options);

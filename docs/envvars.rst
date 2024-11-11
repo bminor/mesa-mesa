@@ -1416,6 +1416,22 @@ RADV driver environment variables
       synchronize shaders after all draws/dispatches
    ``zerovram``
       initialize all memory allocated in VRAM as zero
+   ``vs``
+      Dump vertex shaders.
+   ``tcs``
+      Dump tessellation control shaders.
+   ``tes``
+      Dump tessellation evaluation shaders.
+   ``gs``
+      Dump geometry shaders.
+   ``ps``
+      Dump fragment shaders.
+   ``task``
+      Dump task shaders.
+   ``mesh``
+      Dump mesh shaders.
+   ``cs``
+      Dump compute (and ray tracing) shaders.
 
 .. envvar:: RADV_FORCE_FAMILY
 

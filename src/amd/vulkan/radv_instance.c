@@ -74,6 +74,14 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"psocachestats", RADV_DEBUG_PSO_CACHE_STATS},
                                                           {"nirdebuginfo", RADV_DEBUG_NIR_DEBUG_INFO},
                                                           {"dump_trap_handler", RADV_DEBUG_DUMP_TRAP_HANDLER},
+                                                          {"vs", RADV_DEBUG_DUMP_VS},
+                                                          {"tcs", RADV_DEBUG_DUMP_TCS},
+                                                          {"tes", RADV_DEBUG_DUMP_TES},
+                                                          {"gs", RADV_DEBUG_DUMP_GS},
+                                                          {"ps", RADV_DEBUG_DUMP_PS},
+                                                          {"task", RADV_DEBUG_DUMP_TASK},
+                                                          {"mesh", RADV_DEBUG_DUMP_MESH},
+                                                          {"cs", RADV_DEBUG_DUMP_CS},
                                                           {NULL, 0}};
 
 const char *

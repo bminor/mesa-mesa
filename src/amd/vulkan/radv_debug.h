@@ -61,6 +61,14 @@ enum {
    RADV_DEBUG_PSO_CACHE_STATS = 1ull << 45,
    RADV_DEBUG_NIR_DEBUG_INFO = 1ull << 46,
    RADV_DEBUG_DUMP_TRAP_HANDLER = 1ull << 47,
+   RADV_DEBUG_DUMP_VS = 1ull << 48,
+   RADV_DEBUG_DUMP_TCS = 1ull << 49,
+   RADV_DEBUG_DUMP_TES = 1ull << 50,
+   RADV_DEBUG_DUMP_GS = 1ull << 51,
+   RADV_DEBUG_DUMP_PS = 1ull << 52,
+   RADV_DEBUG_DUMP_TASK = 1ull << 53,
+   RADV_DEBUG_DUMP_MESH = 1ull << 54,
+   RADV_DEBUG_DUMP_CS = 1ull << 55,
 };
 
 enum {
