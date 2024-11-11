@@ -301,7 +301,7 @@ libagx_atomic_alloc(global struct agx_geometry_state *heap, uint size_B)
  * sets up most of the new draw descriptor.
  */
 static global void *
-setup_unroll_for_draw(global struct agx_restart_unroll_params *p,
+setup_unroll_for_draw(constant struct agx_restart_unroll_params *p,
                       constant uint *in_draw, uint draw, enum mesa_prim mode,
                       uint index_size_B)
 {
@@ -333,7 +333,7 @@ setup_unroll_for_draw(global struct agx_restart_unroll_params *p,
 }
 
 kernel void
-libagx_unroll_restart(global struct agx_restart_unroll_params *p,
+libagx_unroll_restart(constant struct agx_restart_unroll_params *p,
                       enum mesa_prim mode, uint draw, uint tid)
 {
    /* For an indirect multidraw, we are dispatched maxDraws times and
