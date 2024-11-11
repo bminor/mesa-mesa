@@ -334,7 +334,7 @@
         "description": "nvk/cmd_buffer: Pass count to set_root_array",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b2d85ca36f9522689f55f2193936507b74af094d",
         "notes": null

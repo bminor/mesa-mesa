@@ -726,7 +726,7 @@ nvk_bind_descriptor_sets(struct nvk_cmd_buffer *cmd,
    assert(next_dyn_offset <= info->dynamicOffsetCount);
 
    nvk_descriptor_state_set_root_array(cmd, desc, dynamic_buffers,
-                                       dyn_buffer_start, dyn_buffer_end,
+                                       dyn_buffer_start, dyn_buffer_end - dyn_buffer_start,
                                        &dynamic_buffers[dyn_buffer_start]);
 
    /* We need to set everything above first_set because later calls to
