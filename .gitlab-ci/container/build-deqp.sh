@@ -55,6 +55,11 @@ vk_cts_patch_files=(
 
 # shellcheck disable=SC2034
 gl_cts_commits_to_backport=(
+  # Add #include <cmath> in deMath.h when being compiled by C++
+  71808fe7d0a640dfd703e845d93ba1c5ab751055
+  # Revert "Add #include <cmath> in deMath.h when being compiled by C++ compiler"
+  # This also adds an alternative fix along with the revert.
+  6164879a0acce258637d261592a9c395e564b361
 )
 
 # shellcheck disable=SC2034
@@ -71,6 +76,11 @@ fi
 # shellcheck disable=SC2034
 # GLES builds also EGL
 gles_cts_commits_to_backport=(
+  # Add #include <cmath> in deMath.h when being compiled by C++
+  71808fe7d0a640dfd703e845d93ba1c5ab751055
+  # Revert "Add #include <cmath> in deMath.h when being compiled by C++ compiler"
+  # This also adds an alternative fix along with the revert.
+  6164879a0acce258637d261592a9c395e564b361
 )
 
 # shellcheck disable=SC2034
