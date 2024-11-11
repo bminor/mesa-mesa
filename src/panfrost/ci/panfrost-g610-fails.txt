@@ -272,13 +272,6 @@ dEQP-VK.texture.filtering.3d.formats.d32_sfloat_s8_uint_stencil.d32_sfloat_s8_ui
 dEQP-VK.api.device_init.create_device_unsupported_features.shader_draw_parameters_features,Fail
 dEQP-VK.api.device_init.create_device_unsupported_features.protected_memory_features,Fail
 
-# vk.getPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags, &properties): VK_ERROR_FORMAT_NOT_SUPPORTED
-dEQP-VK.texture.explicit_lod.2d.formats.b4g4r4a4_unorm_pack16_linear,Fail
-dEQP-VK.texture.explicit_lod.2d.formats.b4g4r4a4_unorm_pack16_nearest,Fail
-
-# Missing optimalTilingFeatures VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT|VK_FORMAT_FEATURE_BLIT_SRC_BIT|VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT
-dEQP-VK.api.info.format_properties.b4g4r4a4_unorm_pack16,Fail
-
 # CTS bug, works fine if Vulkan 1.1 is forced
 dEQP-VK.api.device_init.create_device_global_priority.basic,Fail
 dEQP-VK.api.device_init.create_device_global_priority_khr.basic,Fail

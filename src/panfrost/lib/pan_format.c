@@ -101,6 +101,7 @@ const struct pan_blendable_format
 
       BFMT(R4G4B4A4_UNORM, R4G4B4A4),
       BFMT(B4G4R4A4_UNORM, R4G4B4A4),
+      BFMT(A4R4G4B4_UNORM, R4G4B4A4),
       BFMT(A4B4G4R4_UNORM, R4G4B4A4),
 
       BFMT(R10G10B10A2_UNORM, R10G10B10A2),
@@ -422,6 +423,8 @@ const struct panfrost_format GENX(panfrost_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(R16G16B16_UINT,          RGB16UI,         RGB1, L, V___),
    FMT(R4G4B4A4_UNORM,          RGBA4_UNORM,     RGBA, L, VTR_),
    FMT(B4G4R4A4_UNORM,          RGBA4_UNORM,     BGRA, L, VTR_),
+   FMT(A4R4G4B4_UNORM,          RGBA4_UNORM,     ARGB, L, VTR_),
+   FMT(A4B4G4R4_UNORM,          RGBA4_UNORM,     ABGR, L, VTR_),
    FMT(R16G16B16A16_UNORM,      RGBA16_UNORM,    RGBA, L, VTR_),
    FMT(B8G8R8A8_UNORM,          RGBA8_UNORM,     BGRA, L, VTR_),
    FMT(B8G8R8X8_UNORM,          RGBA8_UNORM,     BGR1, L, VTR_),
