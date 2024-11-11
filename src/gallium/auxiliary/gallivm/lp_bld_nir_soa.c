@@ -1099,23 +1099,6 @@ lp_offset_in_range(struct lp_build_nir_soa_context *bld,
    return LLVMBuildAnd(gallivm->builder, fetch_in_bounds, fetch_non_negative, "");
 }
 
-static LLVMValueRef
-build_resource_to_scalar(struct lp_build_nir_soa_context *bld, LLVMValueRef resource)
-{
-   struct gallivm_state *gallivm = bld->base.gallivm;
-
-   LLVMValueRef invocation = first_active_invocation(bld);
-
-   LLVMValueRef set = LLVMBuildExtractValue(gallivm->builder, resource, 0, "");
-   set = LLVMBuildExtractElement(gallivm->builder, set, invocation, "");
-
-   LLVMValueRef binding = LLVMBuildExtractValue(gallivm->builder, resource, 1, "");
-   binding = LLVMBuildExtractElement(gallivm->builder, binding, invocation, "");
-
-   LLVMValueRef components[2] = { set, binding };
-   return lp_nir_array_build_gather_values(gallivm->builder, components, 2);
-}
-
 static void emit_load_ubo(struct lp_build_nir_soa_context *bld,
                           unsigned nc,
                           unsigned bit_size,
@@ -1124,9 +1107,6 @@ static void emit_load_ubo(struct lp_build_nir_soa_context *bld,
                           LLVMValueRef offset,
                           LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
 {
-   if (LLVMGetTypeKind(LLVMTypeOf(index)) == LLVMArrayTypeKind)
-      index = build_resource_to_scalar(bld, index);
-
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
    struct lp_build_context *uint_bld = &bld->uint_bld;
@@ -1185,6 +1165,18 @@ static void emit_load_ubo(struct lp_build_nir_soa_context *bld,
    }
 }
 
+static LLVMValueRef
+load_ubo_base_addr(struct lp_build_nir_soa_context *bld, LLVMValueRef index)
+{
+   struct gallivm_state *gallivm = bld->base.gallivm;
+
+   index = LLVMBuildExtractElement(gallivm->builder, index, first_active_invocation(bld), "");
+
+   LLVMValueRef base = lp_llvm_buffer_base(gallivm, bld->consts_ptr, index, LP_MAX_TGSI_CONST_BUFFERS);
+   base = LLVMBuildPtrToInt(gallivm->builder, base, LLVMInt64TypeInContext(gallivm->context), "");
+   return lp_build_broadcast_scalar(&bld->int64_bld, base);
+}
+
 static void
 emit_load_const(struct lp_build_nir_soa_context *bld,
                 const nir_load_const_instr *instr,
@@ -1215,30 +1207,10 @@ ssbo_base_pointer(struct lp_build_nir_soa_context *bld,
    struct gallivm_state *gallivm = bld->base.gallivm;
    uint32_t shift_val = bit_size_to_shift_size(bit_size);
 
-   LLVMValueRef ssbo_idx;
-   LLVMValueRef buffers;
-   uint32_t buffers_limit;
-   if (LLVMGetTypeKind(LLVMTypeOf(index)) == LLVMArrayTypeKind) {
-      LLVMValueRef set = LLVMBuildExtractValue(gallivm->builder, index, 0, "");
-      set = LLVMBuildExtractElement(gallivm->builder, set, invocation, "");
+   LLVMValueRef ssbo_idx = LLVMBuildExtractElement(gallivm->builder, index, invocation, "");
 
-      LLVMValueRef binding = LLVMBuildExtractValue(gallivm->builder, index, 1, "");
-      binding = LLVMBuildExtractElement(gallivm->builder, binding, invocation, "");
-
-      LLVMValueRef components[2] = { set, binding };
-      ssbo_idx = lp_nir_array_build_gather_values(gallivm->builder, components, 2);
-
-      buffers = bld->consts_ptr;
-      buffers_limit = LP_MAX_TGSI_CONST_BUFFERS;
-   } else {
-      ssbo_idx = LLVMBuildExtractElement(gallivm->builder, index, invocation, "");
-
-      buffers = bld->ssbo_ptr;
-      buffers_limit = LP_MAX_TGSI_SHADER_BUFFERS;
-   }
-
-   LLVMValueRef ssbo_size_ptr = lp_llvm_buffer_num_elements(gallivm, buffers, ssbo_idx, buffers_limit);
-   LLVMValueRef ssbo_ptr = lp_llvm_buffer_base(gallivm, buffers, ssbo_idx, buffers_limit);
+   LLVMValueRef ssbo_size_ptr = lp_llvm_buffer_num_elements(gallivm, bld->ssbo_ptr, ssbo_idx, LP_MAX_TGSI_SHADER_BUFFERS);
+   LLVMValueRef ssbo_ptr = lp_llvm_buffer_base(gallivm, bld->ssbo_ptr, ssbo_idx, LP_MAX_TGSI_SHADER_BUFFERS);
    if (bounds)
       *bounds = LLVMBuildAShr(gallivm->builder, ssbo_size_ptr, lp_build_const_int32(gallivm, shift_val), "");
 
@@ -1647,7 +1619,8 @@ static void emit_image_op(struct lp_build_nir_soa_context *bld,
                                                            first_active_invocation(bld), "");
 
    if (params->resource)
-      params->resource = build_resource_to_scalar(bld, params->resource);
+      params->resource = LLVMBuildExtractElement(gallivm->builder, params->resource,
+                                                 first_active_invocation(bld), "");
 
    bld->image->emit_op(bld->image,
                        bld->base.gallivm,
@@ -1775,10 +1748,12 @@ static void emit_tex(struct lp_build_nir_soa_context *bld,
    }
 
    if (params->texture_resource)
-      params->texture_resource = build_resource_to_scalar(bld, params->texture_resource);
+      params->texture_resource = LLVMBuildExtractElement(gallivm->builder, params->texture_resource,
+                                                         first_active_invocation(bld), "");
 
    if (params->sampler_resource)
-      params->sampler_resource = build_resource_to_scalar(bld, params->sampler_resource);
+      params->sampler_resource = LLVMBuildExtractElement(gallivm->builder, params->sampler_resource,
+                                                         first_active_invocation(bld), "");
 
    params->type = bld->base.type;
    bld->sampler->emit_tex_sample(bld->sampler,
@@ -1799,7 +1774,8 @@ static void emit_tex_size(struct lp_build_nir_soa_context *bld,
 
    params->exec_mask = mask_vec(bld);
    if (params->resource)
-      params->resource = build_resource_to_scalar(bld, params->resource);
+      params->resource = LLVMBuildExtractElement(bld->base.gallivm->builder, params->resource,
+                                                 first_active_invocation(bld), "");
 
    bld->sampler->emit_size_query(bld->sampler,
                                  bld->base.gallivm,
@@ -4156,8 +4132,7 @@ visit_load_ssbo(struct lp_build_nir_soa_context *bld,
                 LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
 {
    LLVMValueRef idx = get_src(bld, instr->src[0]);
-   if (nir_src_num_components(instr->src[0]) == 1)
-      idx = cast_type(bld, idx, nir_type_uint, 32);
+   idx = cast_type(bld, idx, nir_type_uint, nir_src_bit_size(instr->src[0]));
 
    LLVMValueRef offset = get_src(bld, instr->src[1]);
 
@@ -4175,8 +4150,7 @@ visit_store_ssbo(struct lp_build_nir_soa_context *bld,
    LLVMValueRef val = get_src(bld, instr->src[0]);
 
    LLVMValueRef idx = get_src(bld, instr->src[1]);
-   if (nir_src_num_components(instr->src[1]) == 1)
-      idx = cast_type(bld, idx, nir_type_uint, 32);
+   idx = cast_type(bld, idx, nir_type_uint, nir_src_bit_size(instr->src[1]));
 
    LLVMValueRef offset = get_src(bld, instr->src[2]);
    int writemask = instr->const_index[0];
@@ -4194,8 +4168,7 @@ visit_get_ssbo_size(struct lp_build_nir_soa_context *bld,
                     LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
 {
    LLVMValueRef idx = get_src(bld, instr->src[0]);
-   if (nir_src_num_components(instr->src[0]) == 1)
-      idx = cast_type(bld, idx, nir_type_uint, 32);
+   idx = cast_type(bld, idx, nir_type_uint, nir_src_bit_size(instr->src[0]));
 
    struct lp_build_context *bld_broad = &bld->uint_bld;
 
@@ -4211,8 +4184,7 @@ visit_ssbo_atomic(struct lp_build_nir_soa_context *bld,
                   LLVMValueRef result[NIR_MAX_VEC_COMPONENTS])
 {
    LLVMValueRef idx = get_src(bld, instr->src[0]);
-   if (nir_src_num_components(instr->src[0]) == 1)
-      idx = cast_type(bld, idx, nir_type_uint, 32);
+   idx = cast_type(bld, idx, nir_type_uint, nir_src_bit_size(instr->src[0]));
 
    LLVMValueRef offset = get_src(bld, instr->src[1]);
    LLVMValueRef val = get_src(bld, instr->src[2]);
@@ -4228,7 +4200,7 @@ visit_ssbo_atomic(struct lp_build_nir_soa_context *bld,
 static void
 img_params_init_resource(struct lp_build_nir_soa_context *bld, struct lp_img_params *params, nir_src src)
 {
-   if (nir_src_num_components(src) == 1) {
+   if (nir_src_bit_size(src) < 64) {
       if (nir_src_is_const(src))
          params->image_index = nir_src_as_int(src);
       else
@@ -4243,7 +4215,7 @@ img_params_init_resource(struct lp_build_nir_soa_context *bld, struct lp_img_par
 static void
 sampler_size_params_init_resource(struct lp_build_nir_soa_context *bld, struct lp_sampler_size_query_params *params, nir_src src)
 {
-   if (nir_src_num_components(src) == 1) {
+   if (nir_src_bit_size(src) < 64) {
       if (nir_src_is_const(src))
          params->texture_unit = nir_src_as_int(src);
       else
@@ -5207,6 +5179,10 @@ visit_intrinsic(struct lp_build_nir_soa_context *bld,
       else
          result[0] = lp_build_ddy(float_bld, src);
 
+      break;
+   }
+   case nir_intrinsic_load_const_buf_base_addr_lvp: {
+      result[0] = load_ubo_base_addr(bld, get_src(bld, instr->src[0]));
       break;
    }
    default:

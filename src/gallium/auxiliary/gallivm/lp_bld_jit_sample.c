@@ -174,16 +174,12 @@ lp_bld_llvm_sampler_soa_emit_fetch_texel(const struct lp_build_sampler_soa *base
       struct lp_build_if_state if_state;
       lp_build_if(&if_state, gallivm, any_active);
 
-      LLVMValueRef consts = lp_jit_resources_constants(gallivm, params->resources_type, params->resources_ptr);
-
-      LLVMValueRef texture_descriptor = lp_llvm_descriptor_base(gallivm, consts, params->texture_resource, LP_MAX_TGSI_CONST_BUFFERS);
-
       enum lp_sampler_op_type op_type = (params->sample_key & LP_SAMPLER_OP_TYPE_MASK) >> LP_SAMPLER_OP_TYPE_SHIFT;
       uint32_t functions_offset = op_type == LP_SAMPLER_OP_FETCH ? offsetof(struct lp_texture_functions, fetch_functions)
                                                                  : offsetof(struct lp_texture_functions, sample_functions);
 
       LLVMValueRef texture_base_ptr = load_texture_functions_ptr(
-         gallivm, texture_descriptor, offsetof(struct lp_descriptor, functions), functions_offset);
+         gallivm, params->texture_resource, offsetof(struct lp_descriptor, functions), functions_offset);
 
       LLVMTypeRef texture_function_type = lp_build_sample_function_type(gallivm, params->sample_key);
       LLVMTypeRef texture_function_ptr_type = LLVMPointerType(texture_function_type, 0);
@@ -200,7 +196,7 @@ lp_bld_llvm_sampler_soa_emit_fetch_texel(const struct lp_build_sampler_soa *base
          texture_functions = texture_base;
          sampler_desc_ptr = LLVMGetUndef(LLVMInt64TypeInContext(gallivm->context));
       } else {
-         sampler_desc_ptr = lp_llvm_descriptor_base(gallivm, consts, params->sampler_resource, LP_MAX_TGSI_CONST_BUFFERS);
+         sampler_desc_ptr = params->sampler_resource;
 
          LLVMValueRef sampler_index_offset = lp_build_const_int64(gallivm, offsetof(struct lp_descriptor, texture.sampler_index));
          LLVMValueRef sampler_index_ptr = LLVMBuildAdd(builder, sampler_desc_ptr, sampler_index_offset, "");
@@ -222,7 +218,7 @@ lp_bld_llvm_sampler_soa_emit_fetch_texel(const struct lp_build_sampler_soa *base
       LLVMValueRef args[LP_MAX_TEX_FUNC_ARGS];
       uint32_t num_args = 0;
 
-      args[num_args++] = texture_descriptor;
+      args[num_args++] = params->texture_resource;
       args[num_args++] = sampler_desc_ptr;
 
       LLVMTypeRef coord_type;
@@ -351,15 +347,11 @@ lp_bld_llvm_sampler_soa_emit_size_query(const struct lp_build_sampler_soa *base,
       struct lp_build_if_state if_state;
       lp_build_if(&if_state, gallivm, any_active);
 
-      LLVMValueRef consts = lp_jit_resources_constants(gallivm, params->resources_type, params->resources_ptr);
-
-      LLVMValueRef texture_descriptor = lp_llvm_descriptor_base(gallivm, consts, params->resource, LP_MAX_TGSI_CONST_BUFFERS);
-
       uint32_t functions_offset = params->samples_only ? offsetof(struct lp_texture_functions, samples_function)
                                                        : offsetof(struct lp_texture_functions, size_function);
 
       LLVMValueRef texture_base_ptr = load_texture_functions_ptr(
-         gallivm, texture_descriptor, offsetof(struct lp_descriptor, functions), functions_offset);
+         gallivm, params->resource, offsetof(struct lp_descriptor, functions), functions_offset);
 
       LLVMTypeRef texture_function_type = lp_build_size_function_type(gallivm, params);
       LLVMTypeRef texture_function_ptr_type = LLVMPointerType(texture_function_type, 0);
@@ -371,7 +363,7 @@ lp_bld_llvm_sampler_soa_emit_size_query(const struct lp_build_sampler_soa *base,
       LLVMValueRef args[LP_MAX_TEX_FUNC_ARGS];
       uint32_t num_args = 0;
 
-      args[num_args++] = texture_descriptor;
+      args[num_args++] = params->resource;
 
       if (!params->samples_only)
          args[num_args++] = params->explicit_lod;
@@ -461,18 +453,11 @@ lp_bld_llvm_image_soa_emit_op(const struct lp_build_image_soa *base,
 
       LLVMValueRef any_active = LLVMBuildICmp(builder, LLVMIntNE, bitmask, LLVMConstInt(bitmask_type, 0, false), "any_active");
 
-      LLVMValueRef binding_index = LLVMBuildExtractValue(builder, params->resource, 1, "");
-      LLVMValueRef inbounds = LLVMBuildICmp(builder, LLVMIntSGE, binding_index, lp_build_const_int32(gallivm, 0), "inbounds");
-
       struct lp_build_if_state if_state;
-      lp_build_if(&if_state, gallivm, LLVMBuildAnd(builder, any_active, inbounds, ""));
-
-      LLVMValueRef consts = lp_jit_resources_constants(gallivm, params->resources_type, params->resources_ptr);
-
-      LLVMValueRef image_descriptor = lp_llvm_descriptor_base(gallivm, consts, params->resource, LP_MAX_TGSI_CONST_BUFFERS);
+      lp_build_if(&if_state, gallivm, any_active);
 
       LLVMValueRef image_base_ptr = load_texture_functions_ptr(
-         gallivm, image_descriptor, offsetof(struct lp_descriptor, functions),
+         gallivm, params->resource, offsetof(struct lp_descriptor, functions),
          offsetof(struct lp_texture_functions, image_functions));
 
       LLVMTypeRef image_function_type = lp_build_image_function_type(gallivm, params, params->ms_index);
@@ -500,7 +485,7 @@ lp_bld_llvm_image_soa_emit_op(const struct lp_build_image_soa *base,
       LLVMValueRef args[LP_MAX_TEX_FUNC_ARGS] = { 0 };
       uint32_t num_args = 0;
 
-      args[num_args++] = image_descriptor;
+      args[num_args++] = params->resource;
 
       if (params->img_op != LP_IMG_LOAD && params->img_op != LP_IMG_LOAD_SPARSE)
          args[num_args++] = params->exec_mask;
@@ -598,9 +583,7 @@ lp_bld_llvm_image_soa_emit_size_query(const struct lp_build_image_soa *base,
 
    if (params->resource) {
       LLVMValueRef old_texture = gallivm->texture_descriptor;
-
-      LLVMValueRef consts = lp_jit_resources_constants(gallivm, params->resources_type, params->resources_ptr);
-      gallivm->texture_descriptor = lp_llvm_descriptor_base(gallivm, consts, params->resource, LP_MAX_TGSI_CONST_BUFFERS);
+      gallivm->texture_descriptor = params->resource;
 
       enum pipe_format format = params->format;
       if (format == PIPE_FORMAT_NONE)

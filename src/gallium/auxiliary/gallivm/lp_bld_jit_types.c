@@ -93,17 +93,16 @@ lp_llvm_buffer_member(struct gallivm_state *gallivm,
    LLVMTypeRef buffer_type = lp_build_create_jit_buffer_type(gallivm);
 
    LLVMValueRef ptr;
-   if (LLVMGetTypeKind(LLVMTypeOf(buffers_offset)) == LLVMArrayTypeKind) {
-      LLVMValueRef desc_ptr = lp_llvm_descriptor_base(gallivm, buffers_ptr, buffers_offset, buffers_limit);
+   if (LLVMGetTypeKind(LLVMTypeOf(buffers_offset)) == LLVMIntegerTypeKind &&
+       LLVMGetIntTypeWidth(LLVMTypeOf(buffers_offset)) == 64) {
+      LLVMTypeRef ptr_type = LLVMPointerType(buffer_type, 0);
+      ptr = LLVMBuildIntToPtr(builder, buffers_offset, ptr_type, "");
 
-      LLVMTypeRef buffer_ptr_type = LLVMPointerType(buffer_type, 0);
-      desc_ptr = LLVMBuildIntToPtr(builder, desc_ptr, buffer_ptr_type, "");
+      LLVMValueRef indices[2];
+      indices[0] = lp_build_const_int32(gallivm, 0);
+      indices[1] = lp_build_const_int32(gallivm, member_index);
 
-      LLVMValueRef indices[2] = {
-         lp_build_const_int32(gallivm, 0),
-         lp_build_const_int32(gallivm, member_index),
-      };
-      ptr = LLVMBuildGEP2(builder, buffer_type, desc_ptr, indices, ARRAY_SIZE(indices), "");
+      ptr = LLVMBuildGEP2(builder, buffer_type, ptr, indices, ARRAY_SIZE(indices), "");
    } else {
       LLVMValueRef indices[3];
 
