@@ -96,7 +96,7 @@ is_meta_shader(nir_shader *nir)
 }
 
 bool
-radv_can_dump_shader(struct radv_device *device, nir_shader *nir, bool meta_shader)
+radv_can_dump_shader(struct radv_device *device, nir_shader *nir)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
@@ -104,7 +104,7 @@ radv_can_dump_shader(struct radv_device *device, nir_shader *nir, bool meta_shad
    if (!(instance->debug_flags & RADV_DEBUG_DUMP_SHADERS))
       return false;
 
-   if ((is_meta_shader(nir) || meta_shader) && !(instance->debug_flags & RADV_DEBUG_DUMP_META_SHADERS))
+   if (is_meta_shader(nir) && !(instance->debug_flags & RADV_DEBUG_DUMP_META_SHADERS))
       return false;
 
    return true;
@@ -3095,8 +3095,7 @@ radv_shader_nir_to_asm(struct radv_device *device, struct radv_shader_stage *pl_
 
    struct radv_nir_compiler_options options = {0};
    radv_fill_nir_compiler_options(&options, device, gfx_state, radv_should_use_wgp_mode(device, stage, info),
-                                  radv_can_dump_shader(device, shaders[0], false), keep_shader_info,
-                                  keep_statistic_info);
+                                  radv_can_dump_shader(device, shaders[0]), keep_shader_info, keep_statistic_info);
 
    struct radv_shader_binary *binary =
       shader_compile(device, shaders, shader_count, stage, info, &pl_stage->args, &pl_stage->key, &options);

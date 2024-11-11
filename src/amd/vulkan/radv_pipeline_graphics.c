@@ -2240,6 +2240,8 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
       gs_info->outinfo.vs_output_param_offset, gs_info->outinfo.param_exports, false, false, false,
       gs_info->force_vrs_per_vertex, &output_info);
 
+   nir->info.internal = true;
+
    nir_validate_shader(nir, "after ac_nir_create_gs_copy_shader");
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
@@ -2270,7 +2272,7 @@ radv_create_gs_copy_shader(struct radv_device *device, struct vk_pipeline_cache 
    NIR_PASS_V(nir, radv_nir_lower_abi, pdev->info.gfx_level, &gs_copy_stage, gfx_state, pdev->info.address32_hi);
 
    struct radv_graphics_pipeline_key key = {0};
-   bool dump_shader = radv_can_dump_shader(device, nir, true);
+   bool dump_shader = radv_can_dump_shader(device, nir);
 
    if (dump_shader)
       simple_mtx_lock(&instance->shader_dump_mtx);
@@ -2334,7 +2336,7 @@ radv_graphics_shaders_nir_to_asm(struct radv_device *device, struct vk_pipeline_
 
       int64_t stage_start = os_time_get_nano();
 
-      bool dump_shader = radv_can_dump_shader(device, nir_shaders[0], false);
+      bool dump_shader = radv_can_dump_shader(device, nir_shaders[0]);
 
       if (dump_shader) {
          simple_mtx_lock(&instance->shader_dump_mtx);

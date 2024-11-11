@@ -434,7 +434,7 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
          radv_gather_unused_args(stage_info, shaders[i]);
    }
 
-   bool dump_shader = radv_can_dump_shader(device, shaders[0], false);
+   bool dump_shader = radv_can_dump_shader(device, shaders[0]);
    bool replayable =
       pipeline->base.base.create_flags & VK_PIPELINE_CREATE_2_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
 

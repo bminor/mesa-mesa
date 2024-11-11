@@ -118,7 +118,7 @@ radv_compile_cs(struct radv_device *device, struct vk_pipeline_cache *cache, str
    /* Postprocess NIR. */
    radv_postprocess_nir(device, NULL, cs_stage);
 
-   bool dump_shader = radv_can_dump_shader(device, cs_stage->nir, false);
+   bool dump_shader = radv_can_dump_shader(device, cs_stage->nir);
 
    if (dump_shader) {
       simple_mtx_lock(&instance->shader_dump_mtx);
