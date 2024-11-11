@@ -420,6 +420,9 @@ aco_compile_trap_handler(const struct aco_compiler_options* options,
       aco_print_program(program.get(), stderr);
    validate(program.get());
 
+   insert_exec_mask(program.get());
+   validate(program.get());
+
    lower_to_hw_instr(program.get());
    validate(program.get());
 

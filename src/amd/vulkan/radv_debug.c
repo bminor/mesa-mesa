@@ -1039,8 +1039,25 @@ radv_dump_sq_hw_regs(struct radv_device *device, const struct aco_trap_handler_l
    fprintf(f, "\n\n");
 }
 
+static uint32_t
+radv_get_vgpr_size(const struct radv_device *device, const struct aco_trap_handler_layout *layout)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   uint32_t vgpr_size;
+
+   if (pdev->info.gfx_level >= GFX11) {
+      vgpr_size = G_000414_VGPR_SIZE_GFX11(layout->sq_wave_regs.gpr_alloc);
+   } else if (pdev->info.gfx_level >= GFX10) {
+      vgpr_size = G_000414_VGPR_SIZE_GFX10(layout->sq_wave_regs.gpr_alloc);
+   } else {
+      vgpr_size = G_000054_VGPR_SIZE_GFX6(layout->sq_wave_regs.gpr_alloc);
+   }
+
+   return vgpr_size;
+}
+
 static void
-radv_dump_shader_regs(const struct aco_trap_handler_layout *layout, FILE *f)
+radv_dump_shader_regs(const struct radv_device *device, const struct aco_trap_handler_layout *layout, FILE *f)
 {
    fprintf(f, "\nShader registers:\n");
 
@@ -1053,6 +1070,28 @@ radv_dump_shader_regs(const struct aco_trap_handler_layout *layout, FILE *f)
       fprintf(f, "s[%d-%d] = { %08x, %08x, %08x, %08x }\n", i, i + 3, layout->sgprs[i], layout->sgprs[i + 1],
               layout->sgprs[i + 2], layout->sgprs[i + 3]);
    }
+   fprintf(f, "\n\n");
+
+   const uint32_t vgpr_size = radv_get_vgpr_size(device, layout);
+   const uint32_t num_vgprs = (vgpr_size + 1) * 4 /* 4-VGPR granularity */;
+
+   assert(num_vgprs < MAX_VGPRS);
+
+   fprintf(f, "VGPRS:\n");
+   fprintf(f, "             ");
+   for (uint32_t i = 0; i < 64; i++) {
+      fprintf(f, " t%02u     ", i);
+   }
+   fprintf(f, "\n");
+   for (uint32_t i = 0; i < num_vgprs; i++) {
+      fprintf(f, "    [%3u] = {", i);
+
+      for (uint32_t j = 0; j < 64; j++) {
+         fprintf(f, " %08x", layout->vgprs[i * 64 + j]);
+      }
+      fprintf(f, " }\n");
+   }
+
    fprintf(f, "\n\n");
 }
 
@@ -1099,7 +1138,7 @@ radv_check_trap_handler(struct radv_queue *queue)
 #endif
 
    radv_dump_sq_hw_regs(device, layout, f);
-   radv_dump_shader_regs(layout, f);
+   radv_dump_shader_regs(device, layout, f);
 
    uint32_t ttmp0 = layout->ttmp0;
    uint32_t ttmp1 = layout->ttmp1;

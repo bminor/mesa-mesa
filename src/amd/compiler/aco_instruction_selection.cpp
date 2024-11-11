@@ -12293,6 +12293,91 @@ restore_vgprs_from_mem(isel_context* ctx, Operand rsrc)
 }
 
 void
+dump_vgprs_to_mem(isel_context* ctx, Builder& bld, Operand rsrc)
+{
+   const uint32_t ttmp0_idx = ctx->program->gfx_level >= GFX9 ? 108 : 112;
+   const uint32_t base_offset = offsetof(struct aco_trap_handler_layout, vgprs[0]);
+
+   ac_hw_cache_flags cache_glc;
+   cache_glc.value = ac_glc;
+
+   PhysReg num_vgprs{ttmp0_idx + 2};
+   PhysReg soffset{ttmp0_idx + 3};
+
+   enable_thread_indexing(ctx, rsrc);
+
+   /* Determine the number of vgprs to dump in a 4-VGPR granularity. */
+   const uint32_t vgpr_size_offset = ctx->program->gfx_level >= GFX11 ? 12 : 8;
+   const uint32_t vgpr_size_width = ctx->program->gfx_level >= GFX10 ? 8 : 6;
+
+   bld.sopk(aco_opcode::s_getreg_b32, Definition(num_vgprs, s1),
+            ((32 - 1) << 11) | 5 /* GPR_ALLOC */);
+   bld.sop2(aco_opcode::s_bfe_u32, Definition(num_vgprs, s1), bld.def(s1, scc),
+            Operand(num_vgprs, s1), Operand::c32((vgpr_size_width << 16) | vgpr_size_offset));
+   bld.sop2(aco_opcode::s_add_u32, Definition(num_vgprs, s1), bld.def(s1, scc),
+            Operand(num_vgprs, s1), Operand::c32(1u));
+   bld.sop2(aco_opcode::s_lshl_b32, Definition(num_vgprs, s1), bld.def(s1, scc),
+            Operand(num_vgprs, s1), Operand::c32(2u));
+   bld.sop2(aco_opcode::s_mul_i32, Definition(num_vgprs, s1), Operand::c32(256),
+            Operand(num_vgprs, s1));
+
+   /* Initialize m0/soffset to zero. */
+   bld.copy(Definition(m0, s1), Operand::c32(0u));
+   bld.copy(Definition(soffset, s1), Operand::c32(0u));
+
+   if (ctx->program->gfx_level < GFX10) {
+      /* Enable VGPR indexing with m0 as source index. */
+      bld.sopc(aco_opcode::s_set_gpr_idx_on, Definition(m0, s1), Operand(m0, s1),
+               Operand(PhysReg{1}, s1) /* SRC0 mode */);
+   }
+
+   loop_context lc;
+   begin_loop(ctx, &lc);
+   {
+      bld.reset(ctx->block);
+
+      /* Move from a relative source addr (v0 = v[0 + m0]). */
+      if (ctx->program->gfx_level >= GFX10) {
+         bld.vop1(aco_opcode::v_movrels_b32, Definition(PhysReg{256}, v1),
+                  Operand(PhysReg{256}, v1), Operand(m0, s1));
+      } else {
+         bld.vop1(aco_opcode::v_mov_b32, Definition(PhysReg{256}, v1), Operand(PhysReg{256}, v1));
+      }
+
+      bld.mubuf(aco_opcode::buffer_store_dword, Operand(rsrc), Operand(v1),
+                Operand(PhysReg{soffset}, s1), Operand(PhysReg{256}, v1) /* v0 */, base_offset,
+                false /* offen */, false /* idxen */,
+                /* addr64 */ false, /* disable_wqm */ false, cache_glc);
+
+      /* Increase m0 and the offset assuming it's wave64. */
+      bld.sop2(aco_opcode::s_add_u32, Definition(m0, s1), bld.def(s1, scc), Operand(m0, s1),
+               Operand::c32(1u));
+      bld.sop2(aco_opcode::s_add_u32, Definition(soffset, s1), bld.def(s1, scc),
+               Operand(soffset, s1), Operand::c32(256u));
+
+      const Temp cond = bld.sopc(aco_opcode::s_cmp_ge_u32, bld.def(s1, scc), Operand(soffset, s1),
+                                 Operand(num_vgprs, s1));
+
+      if_context loop_break;
+      begin_uniform_if_then(ctx, &loop_break, cond);
+      {
+         emit_loop_break(ctx);
+      }
+      begin_uniform_if_else(ctx, &loop_break);
+      end_uniform_if(ctx, &loop_break);
+   }
+   end_loop(ctx, &lc);
+   bld.reset(ctx->block);
+
+   if (ctx->program->gfx_level < GFX10) {
+      /* Disable VGPR indexing. */
+      bld.sopp(aco_opcode::s_set_gpr_idx_off);
+   }
+
+   disable_thread_indexing(ctx, rsrc);
+}
+
+void
 select_trap_handler_shader(Program* program, ac_shader_config* config,
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
@@ -12373,6 +12458,9 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       /* Save VGPRS that needs to be restored. */
       save_vgprs_to_mem(&ctx, Operand(tma_rsrc, s4));
 
+      /* Dump VGPRs. */
+      dump_vgprs_to_mem(&ctx, bld, Operand(tma_rsrc, s4));
+
       /* Store TTMP0-TTMP1. */
       bld.copy(Definition(PhysReg{256}, v2) /* v[0-1] */, Operand(ttmp0_reg, s2));
 
@@ -12387,6 +12475,9 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
 
       /* Save VGPRS that needs to be restored. */
       save_vgprs_to_mem(&ctx, Operand(tma_rsrc, s4));
+
+      /* Dump VGPRs. */
+      dump_vgprs_to_mem(&ctx, bld, Operand(tma_rsrc, s4));
 
       /* Store TTMP0-TTMP1. */
       bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(tma_rsrc, s4), Operand::c32(offset),

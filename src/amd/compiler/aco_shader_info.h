@@ -197,6 +197,7 @@ struct aco_symbol {
 };
 
 #define MAX_SGPRS 108
+#define MAX_VGPRS       256
 #define NUM_SAVED_VGPRS 2
 
 struct aco_trap_handler_layout {
@@ -219,6 +220,7 @@ struct aco_trap_handler_layout {
    uint32_t exec_lo;
    uint32_t exec_hi;
    uint32_t sgprs[MAX_SGPRS];
+   uint32_t vgprs[MAX_VGPRS * 64];
 };
 
 #ifdef __cplusplus
