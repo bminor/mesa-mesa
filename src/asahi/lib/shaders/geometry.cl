@@ -347,21 +347,21 @@ libagx_unroll_restart(constant struct agx_restart_unroll_params *p,
 
    uint count = in_draw[0];
 
-   local uintptr_t out_ptr, in_ptr;
+   local uintptr_t out_ptr;
    if (tid == 0) {
       out_ptr = (uintptr_t)setup_unroll_for_draw(p, in_draw, draw, mode,
                                                  p->index_size_B);
 
-      /* Accessed thru local mem because NIR deref is too aggressive */
-      in_ptr = (uintptr_t)(libagx_index_buffer(
-         p->index_buffer, p->index_buffer_size_el, in_draw[2], p->index_size_B,
-         p->zero_sink));
    }
 
    barrier(CLK_LOCAL_MEM_FENCE);
    global uint32_t *out_32 = (global uint32_t *)out_ptr;
    global uint16_t *out_16 = (global uint16_t *)out_ptr;
    global uint8_t *out_8 = (global uint8_t *)out_ptr;
+
+   uintptr_t in_ptr = (uintptr_t)(libagx_index_buffer(
+      p->index_buffer, p->index_buffer_size_el, in_draw[2], p->index_size_B,
+      p->zero_sink));
 
    local uint scratch[32];
 
