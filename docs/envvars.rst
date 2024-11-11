@@ -1396,6 +1396,8 @@ RADV driver environment variables
       dump LLVM IR before any optimizations
    ``prologs``
       dump vertex shader prologs
+   ``psocachestats``
+     dump PSO cache stats (hits/misses) to verify precompilation of shaders
    ``shaders``
       dump shaders
    ``shaderstats``
