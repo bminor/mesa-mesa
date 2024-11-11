@@ -54,7 +54,7 @@
         "description": "Revert \"util/mesa-db: Further simplify mesa_db_compact\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "92893309bcc0c1a9ab9eab844a896d99cbc4b4e2",
         "notes": null
