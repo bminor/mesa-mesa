@@ -97,6 +97,31 @@ radv_amdgpu_winsys_rebuild_bo_list(struct radv_amdgpu_winsys_bo *bo)
    return VK_SUCCESS;
 }
 
+static void
+radv_amdgpu_log_va_op(struct radv_amdgpu_winsys *ws,
+                      struct radv_amdgpu_winsys_bo *bo, uint64_t offset, uint64_t size,
+                      uint64_t virtual_va)
+{
+   struct radv_amdgpu_winsys_bo_log *bo_log = NULL;
+
+   if (!ws->debug_log_bos)
+      return;
+
+   bo_log = calloc(1, sizeof(*bo_log));
+   if (!bo_log)
+      return;
+
+   bo_log->va = virtual_va;
+   bo_log->size = size;
+   bo_log->timestamp = os_time_get_nano();
+   bo_log->virtual_mapping = 1;
+   bo_log->mapped_va = bo ? (bo->base.va + offset) : 0;
+
+   u_rwlock_wrlock(&ws->log_bo_list_lock);
+   list_addtail(&bo_log->list, &ws->log_bo_list);
+   u_rwlock_wrunlock(&ws->log_bo_list_lock);
+}
+
 static VkResult
 radv_amdgpu_winsys_bo_virtual_bind(struct radeon_winsys *_ws, struct radeon_winsys_bo *_parent, uint64_t offset,
                                    uint64_t size, struct radeon_winsys_bo *_bo, uint64_t bo_offset)
@@ -119,8 +144,10 @@ radv_amdgpu_winsys_bo_virtual_bind(struct radeon_winsys *_ws, struct radeon_wins
    if (bo) {
       r =
          radv_amdgpu_bo_va_op(ws, bo->bo_handle, bo_offset, size, parent->base.va + offset, 0, 0, AMDGPU_VA_OP_REPLACE);
+      radv_amdgpu_log_va_op(ws, bo, bo_offset, size, parent->base.va + offset);
    } else {
       r = radv_amdgpu_bo_va_op(ws, 0, 0, size, parent->base.va + offset, 0, AMDGPU_VM_PAGE_PRT, AMDGPU_VA_OP_REPLACE);
+      radv_amdgpu_log_va_op(ws, NULL, 0, size, parent->base.va + offset);
    }
 
    if (r) {
@@ -249,7 +276,7 @@ radv_amdgpu_log_bo(struct radv_amdgpu_winsys *ws, struct radv_amdgpu_winsys_bo *
    if (!ws->debug_log_bos)
       return;
 
-   bo_log = malloc(sizeof(*bo_log));
+   bo_log = calloc(1, sizeof(*bo_log));
    if (!bo_log)
       return;
 
@@ -1046,9 +1073,19 @@ radv_amdgpu_dump_bo_log(struct radeon_winsys *_ws, FILE *file)
 
    u_rwlock_rdlock(&ws->log_bo_list_lock);
    LIST_FOR_EACH_ENTRY (bo_log, &ws->log_bo_list, list) {
-      fprintf(file, "timestamp=%llu, VA=%.16llx-%.16llx, destroyed=%d, is_virtual=%d\n", (long long)bo_log->timestamp,
-              (long long)radv_amdgpu_canonicalize_va(bo_log->va),
-              (long long)radv_amdgpu_canonicalize_va(bo_log->va + bo_log->size), bo_log->destroyed, bo_log->is_virtual);
+      if (bo_log->virtual_mapping) {
+         fprintf(file, "timestamp=%llu, VA=%.16llx-%.16llx, mapped_to=%.16llx\n",
+                 (long long)bo_log->timestamp,
+                 (long long)radv_amdgpu_canonicalize_va(bo_log->va),
+                 (long long)radv_amdgpu_canonicalize_va(bo_log->va + bo_log->size),
+                 (long long)radv_amdgpu_canonicalize_va(bo_log->mapped_va));
+      } else {
+         fprintf(file, "timestamp=%llu, VA=%.16llx-%.16llx, destroyed=%d, is_virtual=%d\n",
+                 (long long)bo_log->timestamp,
+                 (long long)radv_amdgpu_canonicalize_va(bo_log->va),
+                 (long long)radv_amdgpu_canonicalize_va(bo_log->va + bo_log->size), bo_log->destroyed,
+                 bo_log->is_virtual);
+      }
    }
    u_rwlock_rdunlock(&ws->log_bo_list_lock);
 }
