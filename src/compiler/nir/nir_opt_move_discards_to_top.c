@@ -49,8 +49,32 @@ add_src_to_worklist(nir_src *src, void *worklist)
 
    if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-      if (!nir_intrinsic_can_reorder(intrin))
-         return false;
+      switch (intrin->intrinsic) {
+      /* Increasing the set of active invocations is safe for these intrinsics, which is
+       * all that moving it to the top does. This is because the read from inactive
+       * invocations is undefined.
+       */
+      case nir_intrinsic_quad_swizzle_amd:
+         /* If FI=0, then these intrinsics return 0 for inactive invocations. */
+         if (!nir_intrinsic_fetch_inactive(intrin))
+            return false;
+         FALLTHROUGH;
+      case nir_intrinsic_ddx:
+      case nir_intrinsic_ddy:
+      case nir_intrinsic_ddx_fine:
+      case nir_intrinsic_ddy_fine:
+      case nir_intrinsic_ddx_coarse:
+      case nir_intrinsic_ddy_coarse:
+      case nir_intrinsic_quad_broadcast:
+      case nir_intrinsic_quad_swap_horizontal:
+      case nir_intrinsic_quad_swap_vertical:
+      case nir_intrinsic_quad_swap_diagonal:
+         break;
+      default:
+         if (!nir_intrinsic_can_reorder(intrin))
+            return false;
+         break;
+      }
    }
 
    /* Set pass_flags and remember the instruction to add it's own sources and for potential
