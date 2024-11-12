@@ -306,7 +306,9 @@ struct vk_pipeline_cache_header {
 
 #define typed_memcpy(dest, src, count) do { \
    STATIC_ASSERT(sizeof(*(src)) == sizeof(*(dest))); \
-   memcpy((dest), (src), (count) * sizeof(*(src))); \
+   if ((dest) != NULL && (src) != NULL && (count) > 0) { \
+       memcpy((dest), (src), (count) * sizeof(*(src))); \
+   } \
 } while (0)
 
 static inline gl_shader_stage
