@@ -460,6 +460,9 @@ typedef struct vlVaSurface {
    struct pipe_fence_handle *pipe_fence; /* pipe_context fence */
    struct vlVaSurface *efc_surface; /* input surface for EFC */
    bool is_dpb;
+   unsigned int strides[3];
+   unsigned int offsets[3];
+   unsigned int data_size;
 } vlVaSurface;
 
 typedef struct {
