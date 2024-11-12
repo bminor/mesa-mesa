@@ -171,7 +171,7 @@ nvk_meta_end(struct nvk_cmd_buffer *cmd,
    default:
       unreachable("Unknown descriptor set type");
    }
-   nvk_cmd_dirty_cbufs_for_descriptors(cmd, ~0, 0, 1, 0, 0);
+   nvk_cmd_dirty_cbufs_for_descriptors(cmd, ~0, 0, 1);
 
    /* Restore set_dynaic_buffer_start because meta binding set 0 can disturb
     * all dynamic buffers starts for all sets.

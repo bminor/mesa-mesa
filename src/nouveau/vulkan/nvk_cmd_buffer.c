@@ -617,8 +617,7 @@ nvk_cmd_bind_shaders(struct vk_command_buffer *vk_cmd,
 void
 nvk_cmd_dirty_cbufs_for_descriptors(struct nvk_cmd_buffer *cmd,
                                     VkShaderStageFlags stages,
-                                    uint32_t sets_start, uint32_t sets_end,
-                                    uint32_t dyn_start, uint32_t dyn_end)
+                                    uint32_t sets_start, uint32_t sets_end)
 {
    if (!(stages & NVK_VK_GRAPHICS_STAGE_BITS))
       return;
@@ -765,8 +764,7 @@ nvk_bind_descriptor_sets(struct nvk_cmd_buffer *cmd,
                                        set_dynamic_buffer_start);
 
    nvk_cmd_dirty_cbufs_for_descriptors(cmd, info->stageFlags, info->firstSet,
-                                       info->firstSet + info->descriptorSetCount,
-                                       dyn_buffer_start, dyn_buffer_end);
+                                       info->firstSet + info->descriptorSetCount);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -832,8 +830,7 @@ nvk_set_descriptor_buffer_offsets(struct nvk_cmd_buffer *cmd,
 
    nvk_cmd_dirty_cbufs_for_descriptors(cmd, info->stageFlags,
                                        info->firstSet,
-                                       info->firstSet + info->setCount,
-                                       0, 0);
+                                       info->firstSet + info->setCount);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -954,7 +951,7 @@ nvk_push_descriptor_set(struct nvk_cmd_buffer *cmd,
                                   info->pDescriptorWrites);
 
    nvk_cmd_dirty_cbufs_for_descriptors(cmd, info->stageFlags,
-                                       info->set, info->set + 1, 0, 0);
+                                       info->set, info->set + 1);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -1158,5 +1155,5 @@ nvk_CmdPushDescriptorSetWithTemplate2KHR(
    /* We don't know the actual set of stages here so assume everything */
    nvk_cmd_dirty_cbufs_for_descriptors(cmd, NVK_VK_GRAPHICS_STAGE_BITS |
                                             VK_SHADER_STAGE_COMPUTE_BIT,
-                                       set, set + 1, 0, 0);
+                                       set, set + 1);
 }

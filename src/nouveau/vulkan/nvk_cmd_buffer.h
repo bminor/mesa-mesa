@@ -297,8 +297,7 @@ void nvk_cmd_bind_compute_shader(struct nvk_cmd_buffer *cmd,
 
 void nvk_cmd_dirty_cbufs_for_descriptors(struct nvk_cmd_buffer *cmd,
                                          VkShaderStageFlags stages,
-                                         uint32_t sets_start, uint32_t sets_end,
-                                         uint32_t dyn_start, uint32_t dyn_end);
+                                         uint32_t sets_start, uint32_t sets_end);
 void nvk_cmd_bind_vertex_buffer(struct nvk_cmd_buffer *cmd, uint32_t vb_idx,
                                 struct nvk_addr_range addr_range);
 
