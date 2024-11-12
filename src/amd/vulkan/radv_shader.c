@@ -127,11 +127,10 @@ radv_can_dump_shader(struct radv_device *device, nir_shader *nir)
    if (is_meta_shader(nir))
       return instance->debug_flags & RADV_DEBUG_DUMP_META_SHADERS;
 
-   uint64_t flags = RADV_DEBUG_DUMP_SHADERS;
-   if (nir)
-      flags |= radv_dump_flag_for_stage(nir->info.stage);
+   if (!nir)
+      return false;
 
-   return instance->debug_flags & flags;
+   return instance->debug_flags & radv_dump_flag_for_stage(nir->info.stage);
 }
 
 bool
@@ -3002,8 +3001,7 @@ radv_fill_nir_compiler_options(struct radv_nir_compiler_options *options, struct
    options->wgp_mode = should_use_wgp;
    options->info = &pdev->info;
    options->dump_shader = can_dump_shader;
-   options->dump_ir =
-      options->dump_shader && instance->debug_flags & (RADV_DEBUG_DUMP_BACKEND_IR | RADV_DEBUG_DUMP_SHADERS);
+   options->dump_ir = options->dump_shader && (instance->debug_flags & RADV_DEBUG_DUMP_BACKEND_IR);
    options->dump_preoptir = options->dump_shader && instance->debug_flags & RADV_DEBUG_PREOPTIR;
    options->record_asm = keep_shader_info || options->dump_shader;
    options->record_ir = keep_shader_info;
@@ -3146,7 +3144,7 @@ radv_shader_generate_debug_info(struct radv_device *device, bool dump_shader, bo
       const struct radv_physical_device *pdev = radv_device_physical(device);
       const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
-      if (instance->debug_flags & (RADV_DEBUG_DUMP_ASM | RADV_DEBUG_DUMP_SHADERS)) {
+      if (instance->debug_flags & RADV_DEBUG_DUMP_ASM) {
          fprintf(stderr, "%s", radv_get_shader_name(info, shaders[0]->info.stage));
          for (int i = 1; i < shader_count; ++i)
             fprintf(stderr, " + %s", radv_get_shader_name(info, shaders[i]->info.stage));
