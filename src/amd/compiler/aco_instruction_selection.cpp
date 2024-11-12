@@ -12331,16 +12331,14 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    PhysReg tma_rsrc{ttmp0_idx + 4}; /* s4 */
    PhysReg save_wave_status{ttmp0_idx + 8};
    PhysReg save_m0{ttmp0_idx + 9};
-   PhysReg save_exec_lo{ttmp0_idx + 10};
-   PhysReg save_exec_hi{ttmp0_idx + 11};
+   PhysReg save_exec{ttmp0_idx + 10}; /* s2 */
 
    /* Save SQ_WAVE_STATUS because SCC needs to be restored. */
    bld.sopk(aco_opcode::s_getreg_b32, Definition(save_wave_status, s1), ((32 - 1) << 11) | 2);
 
    /* Save m0 and exec. */
    bld.copy(Definition(save_m0, s1), Operand(m0, s1));
-   bld.copy(Definition(save_exec_lo, s1), Operand(exec_lo, s1));
-   bld.copy(Definition(save_exec_hi, s1), Operand(exec_hi, s1));
+   bld.copy(Definition(save_exec, bld.lm), Operand(exec, bld.lm));
 
    if (options->gfx_level < GFX11) {
       /* Clear the current wave exception, this is required to re-enable VALU
@@ -12418,9 +12416,9 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    /* Dump shader registers (m0, exec). */
    dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_m0, s1), offset);
    offset += 4;
-   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_exec_lo, s1), offset);
+   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_exec, s1), offset);
    offset += 4;
-   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_exec_hi, s1), offset);
+   dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(save_exec.advance(4), s1), offset);
    offset += 4;
 
    assert(offset == offsetof(struct aco_trap_handler_layout, sgprs[0]));
