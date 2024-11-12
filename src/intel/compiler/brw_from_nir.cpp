@@ -837,11 +837,6 @@ try_emit_b2fi_of_inot(nir_to_brw_state &ntb, const brw_builder &bld,
                       brw_reg result,
                       nir_alu_instr *instr)
 {
-   const intel_device_info *devinfo = bld.shader->devinfo;
-
-   if (devinfo->verx10 >= 125)
-      return false;
-
    nir_alu_instr *inot_instr = nir_src_as_alu_instr(instr->src[0].src);
 
    if (inot_instr == NULL || inot_instr->op != nir_op_inot)
