@@ -3548,6 +3548,12 @@ anv_layout_to_fast_clear_type(const struct intel_device_info * const devinfo,
    if (image->planes[plane].aux_usage == ISL_AUX_USAGE_NONE)
       return ANV_FAST_CLEAR_NONE;
 
+   /* Bspec 57340 (r68483) has no fast-clear rectangle for linear surfaces. */
+   if (image->planes[plane].primary_surface.isl.tiling == ISL_TILING_LINEAR) {
+      assert(devinfo->ver >= 20);
+      return ANV_FAST_CLEAR_NONE;
+   }
+
    /* Xe2+ platforms don't have fast clear type and can always support
     * arbitrary fast-clear values.
     */
