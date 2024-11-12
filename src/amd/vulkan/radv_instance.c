@@ -370,6 +370,25 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
    instance->trap_excp_flags = parse_debug_string(getenv("RADV_TRAP_HANDLER_EXCP"), radv_trap_excp_options);
    instance->profile_pstate = radv_parse_pstate(debug_get_option("RADV_PROFILE_PSTATE", "peak"));
 
+   const uint64_t shader_stage_flags = RADV_DEBUG_DUMP_VS | RADV_DEBUG_DUMP_TCS | RADV_DEBUG_DUMP_TES |
+                                       RADV_DEBUG_DUMP_GS | RADV_DEBUG_DUMP_PS | RADV_DEBUG_DUMP_TASK |
+                                       RADV_DEBUG_DUMP_MESH | RADV_DEBUG_DUMP_CS;
+
+   const uint64_t compilation_stage_flags = RADV_DEBUG_DUMP_SPIRV | RADV_DEBUG_DUMP_NIR | RADV_DEBUG_DUMP_PREOPT_IR |
+                                            RADV_DEBUG_DUMP_BACKEND_IR | RADV_DEBUG_DUMP_ASM;
+
+   if ((instance->debug_flags & shader_stage_flags) && !(instance->debug_flags & compilation_stage_flags)) {
+      /* When shader stages are specified but compilation stages aren't:
+       * use a default set of compilation stages.
+       */
+      instance->debug_flags |= RADV_DEBUG_DUMP_NIR | RADV_DEBUG_DUMP_BACKEND_IR | RADV_DEBUG_DUMP_ASM;
+   } else if (!(instance->debug_flags & shader_stage_flags) && (instance->debug_flags & compilation_stage_flags)) {
+      /* When compilation stages are specified but shader stages aren't:
+       * dump all shader stages.
+       */
+      instance->debug_flags |= shader_stage_flags;
+   }
+
    /* When RADV_FORCE_FAMILY is set, the driver creates a null
     * device that allows to test the compiler without having an
     * AMDGPU instance.
