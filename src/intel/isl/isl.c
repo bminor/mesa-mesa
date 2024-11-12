@@ -3736,6 +3736,12 @@ _isl_surf_info_supports_ccs(const struct isl_device *dev,
    if (ISL_GFX_VER(dev) <= 11 && isl_surf_usage_is_depth_or_stencil(usage))
       return false;
 
+   /* If the surface will be used for transfering data between the GPU and
+    * CPU, compression would only introduce expensive resolves.
+    */
+   if (usage & ISL_SURF_USAGE_STAGING_BIT)
+      return false;
+
    if (usage & ISL_SURF_USAGE_DISABLE_AUX_BIT)
       return false;
 
@@ -3753,21 +3759,35 @@ isl_surf_supports_ccs(const struct isl_device *dev,
    if (!_isl_surf_info_supports_ccs(dev, surf->format, surf->usage))
       return false;
 
-   /* From the Ivy Bridge PRM, Vol2 Part1 11.7 "MCS Buffer for Render
-    * Target(s)", beneath the "Fast Color Clear" bullet (p326):
-    *
-    *     - Support is limited to tiled render targets.
-    *
-    * From the BSpec (44930) for Gfx12:
-    *
-    *    Linear CCS is only allowed for Untyped Buffers but only via HDC
-    *    Data-Port messages.
-    *
-    * We never use untyped messages on surfaces created by ISL on Gfx9+ so
-    * this means linear is out on Gfx12+ as well.
-    */
-   if (surf->tiling == ISL_TILING_LINEAR)
-      return false;
+   if (surf->tiling == ISL_TILING_LINEAR) {
+      /* From the Ivy Bridge PRM, Vol2 Part1 11.7 "MCS Buffer for Render
+       * Target(s)", beneath the "Fast Color Clear" bullet (p326):
+       *
+       *     - Support is limited to tiled render targets.
+       *
+       * From the BSpec 44930 (r47128) for Gfx12:
+       *
+       *    Linear CCS is only allowed for Untyped Buffers but only via HDC
+       *    Data-Port messages.
+       *
+       * We never use untyped messages on surfaces created by ISL on Gfx9+ so
+       * this means linear is out on Gfx12 as well.
+       */
+       if (ISL_GFX_VER(dev) <= 12)
+          return false;
+
+      /* From the Bspec 71650 (r59764) for Xe2:
+       *
+       *    3 SW  must disable or resolve compression
+       *       Display: Access to anything except Tile4 Framebuffers...
+       *          [...]
+       *          Linear/TileX Framebuffers
+       *
+       * Instead of resolving, disable compression on linear display surfaces.
+       */
+      if (isl_surf_usage_is_display(surf->usage))
+         return false;
+   }
 
    /* From the SKL PRMs, Volume 7: MCS Buffer for Render Target(s),
     *

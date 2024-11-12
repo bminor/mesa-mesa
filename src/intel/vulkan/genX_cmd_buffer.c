@@ -1171,9 +1171,9 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
          final_fast_clear : ANV_FAST_CLEAR_NONE;
    }
 
-   assert(image->planes[plane].primary_surface.isl.tiling != ISL_TILING_LINEAR);
-
-   /* The following layouts are equivalent for non-linear images. */
+   /* The following layouts are equivalent for non-linear images and
+    * for images not bound to host-visible memory.
+    */
    const bool initial_layout_undefined =
       initial_layout == VK_IMAGE_LAYOUT_UNDEFINED ||
       initial_layout == VK_IMAGE_LAYOUT_PREINITIALIZED;
