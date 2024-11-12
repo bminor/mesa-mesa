@@ -14,7 +14,7 @@ export EGL_PLATFORM=surfaceless
 
 syslogd
 
-chown root.kvm /dev/kvm
+chown root:kvm /dev/kvm
 
 /etc/init.d/cuttlefish-host-resources start
 
