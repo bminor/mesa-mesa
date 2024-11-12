@@ -413,6 +413,12 @@ lower_operations(struct etna_ml_subgraph *subgraph,
 
             break;
          }
+         case PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED: {
+            struct etna_operation *operation = calloc(1, sizeof(*operation));
+            etna_ml_lower_fully_connected(subgraph, poperation, operation);
+            list_addtail(&operation->link, etna_operations);
+            break;
+         }
          default:
             unreachable("Unsupported ML operation type");
       }
@@ -492,6 +498,10 @@ count_tensors(const struct pipe_ml_operation *poperations,
       case PIPE_ML_OPERATION_TYPE_CONVOLUTION:
          tensor_count = MAX2(tensor_count, poperation->conv.weight_tensor->index);
          tensor_count = MAX2(tensor_count, poperation->conv.bias_tensor->index);
+         break;
+      case PIPE_ML_OPERATION_TYPE_FULLY_CONNECTED:
+         tensor_count = MAX2(tensor_count, poperation->fcon.weight_tensor->index);
+         tensor_count = MAX2(tensor_count, poperation->fcon.bias_tensor->index);
          break;
       case PIPE_ML_OPERATION_TYPE_PAD:
       case PIPE_ML_OPERATION_TYPE_ADD:

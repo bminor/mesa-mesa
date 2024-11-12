@@ -71,6 +71,7 @@ struct etna_operation {
    bool addition;
    bool depthwise;
    bool pointwise;
+   bool fully_connected;
    bool pooling_first_pixel;
    bool padding_same;
    bool relu;
