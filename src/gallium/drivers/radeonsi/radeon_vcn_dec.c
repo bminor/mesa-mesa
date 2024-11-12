@@ -2684,26 +2684,7 @@ static bool radeon_has_video_preferred_gfx12_swizzle_mode(struct radeon_decoder 
 
    return true;
 }
-/**
- * update render list when target buffer got updated, use the existing
- * index and update the new buffer to associate with it.
- */
-static void radeon_dec_update_render_list(struct pipe_video_codec *decoder,
-                                          struct pipe_video_buffer *old,
-                                          struct pipe_video_buffer *updated)
-{
-   struct radeon_decoder *dec = (struct radeon_decoder *)decoder;
-   void *index = vl_video_buffer_get_associated_data(old, decoder);
 
-   vl_video_buffer_set_associated_data(updated, decoder, index,
-                                       old->destroy_associated_data);
-   for (int i = 0; i < ARRAY_SIZE(dec->render_pic_list); ++i) {
-      if (dec->render_pic_list[i] == old) {
-         dec->render_pic_list[i] = updated;
-         break;
-      }
-   }
-}
 /**
  * create and HW decoder
  */
@@ -2779,7 +2760,6 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
    dec->base.flush = radeon_dec_flush;
    dec->base.fence_wait = radeon_dec_fence_wait;
    dec->base.destroy_fence = radeon_dec_destroy_fence;
-   dec->base.update_decoder_target =  radeon_dec_update_render_list;
 
    dec->stream_type = stream_type;
    dec->stream_handle = si_vid_alloc_stream_handle();
