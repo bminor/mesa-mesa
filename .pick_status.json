@@ -694,7 +694,7 @@
         "description": "ir3,tu: include ir3 debug flags in shader hash key",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c323848b0b70686e856d69699356b8cd71ddb6c8",
         "notes": null
