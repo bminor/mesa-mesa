@@ -311,9 +311,9 @@ static VAStatus vlVaVidEngineBlit(vlVaDriver *drv, vlVaContext *context,
       context->desc.vidproc.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020;
    else if (param->output_color_standard == VAProcColorStandardExplicit) {
       context->desc.vidproc.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_EXPLICIT;
-      context->desc.vidproc.out_color_primaries = param->input_color_properties.colour_primaries;
-      context->desc.vidproc.out_transfer_characteristics = param->input_color_properties.transfer_characteristics;
-      context->desc.vidproc.out_matrix_coefficients = param->input_color_properties.matrix_coefficients;
+      context->desc.vidproc.out_color_primaries = param->output_color_properties.colour_primaries;
+      context->desc.vidproc.out_transfer_characteristics = param->output_color_properties.transfer_characteristics;
+      context->desc.vidproc.out_matrix_coefficients = param->output_color_properties.matrix_coefficients;
    }
 
    // Output surface color range
