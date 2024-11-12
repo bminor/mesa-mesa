@@ -1483,7 +1483,7 @@ tu_hash_shaders(unsigned char *hash,
       }
    }
    _mesa_sha1_update(&ctx, &state, sizeof(state));
-   enum ir3_shader_debug ir3_debug_key = ir3_shader_debug;
+   enum ir3_shader_debug ir3_debug_key = ir3_shader_debug_hash_key();
    _mesa_sha1_update(&ctx, &ir3_debug_key, sizeof(ir3_debug_key));
    _mesa_sha1_final(&ctx, hash);
 }
@@ -1503,7 +1503,7 @@ tu_hash_compute(unsigned char *hash,
       _mesa_sha1_update(&ctx, layout->sha1, sizeof(layout->sha1));
 
    tu_hash_stage(&ctx, pipeline_flags, stage, NULL, key);
-   enum ir3_shader_debug ir3_debug_key = ir3_shader_debug;
+   enum ir3_shader_debug ir3_debug_key = ir3_shader_debug_hash_key();
    _mesa_sha1_update(&ctx, &ir3_debug_key, sizeof(ir3_debug_key));
 
    _mesa_sha1_final(&ctx, hash);

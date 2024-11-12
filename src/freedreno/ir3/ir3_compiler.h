@@ -378,6 +378,21 @@ ir3_debug_print(struct ir3 *ir, const char *when)
    }
 }
 
+/* Return the debug flags that influence shader codegen and should be included
+ * in the hash key. Note that we use a deny list so that we don't accidentally
+ * forget to include new flags.
+ */
+static inline enum ir3_shader_debug
+ir3_shader_debug_hash_key()
+{
+   return (enum ir3_shader_debug)(
+      ir3_shader_debug &
+      ~(IR3_DBG_SHADER_VS | IR3_DBG_SHADER_TCS | IR3_DBG_SHADER_TES |
+        IR3_DBG_SHADER_GS | IR3_DBG_SHADER_FS | IR3_DBG_SHADER_CS |
+        IR3_DBG_DISASM | IR3_DBG_OPTMSGS | IR3_DBG_NOCACHE |
+        IR3_DBG_SHADER_INTERNAL | IR3_DBG_SCHEDMSGS | IR3_DBG_RAMSGS));
+}
+
 ENDC;
 
 #endif /* IR3_COMPILER_H_ */
