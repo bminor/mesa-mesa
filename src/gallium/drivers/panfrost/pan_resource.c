@@ -805,7 +805,7 @@ panfrost_resource_create_with_modifier(struct pipe_screen *screen,
          renderonly_scanout_for_resource(&scanout_tmpl, dev->ro, &handle);
 
       if (!so->scanout) {
-         fprintf(stderr, "Failed to create scanout resource\n");
+         mesa_loge("Failed to create scanout resource\n");
          FREE(so);
          return NULL;
       }

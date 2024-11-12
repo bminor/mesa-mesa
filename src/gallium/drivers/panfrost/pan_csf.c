@@ -551,8 +551,7 @@ csf_submit_wait_and_dump(struct panfrost_batch *batch,
    }
 
    if (crash) {
-      fprintf(stderr, "Incomplete job or timeout\n");
-      fflush(NULL);
+      mesa_loge("Incomplete job or timeout\n");
       abort();
    }
 }

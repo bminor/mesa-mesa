@@ -148,7 +148,7 @@ panfrost_pool_alloc_aligned(struct panfrost_pool *pool, size_t sz,
       offset = ROUND_DOWN_TO(aligned - sz, alignment);
 
       if (mprotect(bo->ptr.cpu + aligned, PAN_GUARD_SIZE, PROT_NONE) == -1)
-         perror("mprotect");
+         mesa_loge("mprotect failed: %s", strerror(errno));
 
       pool->transient_bo = NULL;
    }

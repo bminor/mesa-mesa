@@ -668,7 +668,7 @@ panfrost_batch_submit(struct panfrost_context *ctx,
 
    ret = screen->vtbl.submit_batch(batch, &fb);
    if (ret)
-      fprintf(stderr, "panfrost_batch_submit failed: %d\n", ret);
+      mesa_loge("panfrost_batch_submit failed: %d\n", ret);
 
    /* We must reset the damage info of our render targets here even
     * though a damage reset normally happens when the DRI layer swaps

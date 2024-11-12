@@ -1430,9 +1430,7 @@ panvk_index_minmax_search(struct panvk_cmd_buffer *cmdbuf, uint32_t start,
    assert(cmdbuf->state.gfx.ib.buffer->host_ptr);
 
    if (!(instance->debug_flags & PANVK_DEBUG_NO_KNOWN_WARN)) {
-      fprintf(
-         stderr,
-         "WARNING: Crawling index buffers from the CPU isn't valid in Vulkan\n");
+      mesa_logw("Crawling index buffers from the CPU isn't valid in Vulkan\n");
    }
 
    *max = 0;

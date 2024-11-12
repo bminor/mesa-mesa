@@ -343,8 +343,8 @@ panfrost_bo_mmap(struct panfrost_bo *bo)
                                   PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
    if (bo->ptr.cpu == MAP_FAILED) {
       bo->ptr.cpu = NULL;
-      fprintf(stderr, "mmap failed: result=%p size=0x%llx\n", bo->ptr.cpu,
-              (long long)panfrost_bo_size(bo));
+      mesa_loge("mmap failed: result=%p size=0x%llx\n", bo->ptr.cpu,
+                (long long)panfrost_bo_size(bo));
    }
 }
 
@@ -355,7 +355,7 @@ panfrost_bo_munmap(struct panfrost_bo *bo)
       return;
 
    if (os_munmap((void *)(uintptr_t)bo->ptr.cpu, panfrost_bo_size(bo))) {
-      perror("munmap");
+      mesa_loge("munmap failed: %s", strerror(errno));
       abort();
    }
 
