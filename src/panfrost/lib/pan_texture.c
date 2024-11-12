@@ -314,6 +314,10 @@ panfrost_clump_format(enum pipe_format format)
       case PIPE_FORMAT_R8_G8_B8_420_UNORM:
       case PIPE_FORMAT_R8_B8_G8_420_UNORM:
          return MALI_CLUMP_FORMAT_Y8_UV8_420;
+      case PIPE_FORMAT_R10_G10B10_420_UNORM:
+         return MALI_CLUMP_FORMAT_Y10_UV10_420;
+      case PIPE_FORMAT_R10_G10B10_422_UNORM:
+         return MALI_CLUMP_FORMAT_Y10_UV10_422;
       default:
          unreachable("unhandled clump format");
       }

@@ -380,7 +380,13 @@ format_minimum_alignment(unsigned arch, enum pipe_format format, uint64_t mod)
    case PIPE_FORMAT_G8_B8R8_420_UNORM:
    case PIPE_FORMAT_R8_G8_B8_420_UNORM:
    case PIPE_FORMAT_R8_B8_G8_420_UNORM:
+   case PIPE_FORMAT_R8_G8B8_422_UNORM:
+   case PIPE_FORMAT_R8_B8G8_422_UNORM:
       return 16;
+   /* the 10 bit formats have even looser alignment */
+   case PIPE_FORMAT_R10_G10B10_420_UNORM:
+   case PIPE_FORMAT_R10_G10B10_422_UNORM:
+      return 1;
    default:
       return 64;
    }
