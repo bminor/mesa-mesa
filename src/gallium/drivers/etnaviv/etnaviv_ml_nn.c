@@ -646,6 +646,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);
 
    struct etna_nn_params *map = etna_bo_map(bo);
+   memset(map, 0, sizeof(*map));
    map->layer_type = 0x0;
    map->no_z_offset = nn_core_version == 8;
    map->prelu = 0x0;
@@ -733,11 +734,6 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
          map->unused7_2 = nn_core_version == 8;
          map->unused7_3 = nn_core_version == 8;
       }
-   } else {
-      map->in_image_x_offset = 0x0;
-      map->in_image_y_offset = 0x0;
-      map->in_image_x_offset_bit_3 = 0x0;
-      map->in_image_y_offset_bit_3 = 0x0;
    }
 
    struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
