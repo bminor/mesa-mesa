@@ -142,7 +142,7 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
       free(data);
    }
 
-   if ((debug_flags & DEBUG_LIVE_INFO) && options->dump_shader)
+   if ((debug_flags & DEBUG_LIVE_INFO) && options->dump_ir)
       aco_print_program(program.get(), stderr, print_live_vars | print_kill);
 
    if (!options->optimisations_disabled && !(debug_flags & DEBUG_NO_SCHED))
@@ -155,7 +155,7 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
    if (validate_ra(program.get())) {
       aco_print_program(program.get(), stderr);
       abort();
-   } else if (options->dump_shader) {
+   } else if (options->dump_ir) {
       aco_print_program(program.get(), stderr);
    }
 
@@ -235,10 +235,8 @@ aco_compile_shader_part(const struct aco_compiler_options* options,
    bool append_endpgm = !(options->is_opengl && is_prolog);
    unsigned exec_size = emit_program(program.get(), code, NULL, append_endpgm);
 
-   bool get_disasm = options->dump_shader || options->record_ir;
-
    std::string disasm;
-   if (get_disasm)
+   if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
    (*build_binary)(binary, config.num_sgprs, config.num_vgprs, code.data(), code.size(),
@@ -281,10 +279,8 @@ aco_compile_shader(const struct aco_compiler_options* options, const struct aco_
    if (program->collect_statistics)
       collect_postasm_stats(program.get(), code);
 
-   bool get_disasm = options->dump_shader || options->record_ir;
-
    std::string disasm;
-   if (get_disasm)
+   if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
    size_t stats_size = 0;
@@ -323,7 +319,7 @@ aco_compile_rt_prolog(const struct aco_compiler_options* options,
    if (program->gfx_level >= GFX11)
       combine_delay_alu(program.get());
 
-   if (options->dump_shader)
+   if (options->dump_ir)
       aco_print_program(program.get(), stderr);
 
    /* assembly */
@@ -331,10 +327,8 @@ aco_compile_rt_prolog(const struct aco_compiler_options* options,
    code.reserve(align(program->blocks[0].instructions.size() * 2, 16));
    unsigned exec_size = emit_program(program.get(), code);
 
-   bool get_disasm = options->dump_shader || options->record_ir;
-
    std::string disasm;
-   if (get_disasm)
+   if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
    (*build_prolog)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), program->statistics, 0,
@@ -363,7 +357,7 @@ aco_compile_vs_prolog(const struct aco_compiler_options* options,
    if (program->gfx_level >= GFX10)
       form_hard_clauses(program.get());
 
-   if (options->dump_shader)
+   if (options->dump_ir)
       aco_print_program(program.get(), stderr);
 
    /* assembly */
@@ -371,10 +365,8 @@ aco_compile_vs_prolog(const struct aco_compiler_options* options,
    code.reserve(align(program->blocks[0].instructions.size() * 2, 16));
    unsigned exec_size = emit_program(program.get(), code);
 
-   bool get_disasm = options->dump_shader || options->record_ir;
-
    std::string disasm;
-   if (get_disasm)
+   if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
    (*build_prolog)(binary, config.num_sgprs, config.num_vgprs, code.data(), code.size(),
@@ -434,10 +426,8 @@ aco_compile_trap_handler(const struct aco_compiler_options* options,
    code.reserve(align(program->blocks[0].instructions.size() * 2, 16));
    unsigned exec_size = emit_program(program.get(), code);
 
-   bool get_disasm = options->dump_shader || options->record_ir;
-
    std::string disasm;
-   if (get_disasm)
+   if (options->record_asm)
       disasm = get_disasm_string(program.get(), code, exec_size);
 
    (*build_binary)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), program->statistics, 0,

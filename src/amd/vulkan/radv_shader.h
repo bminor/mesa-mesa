@@ -176,7 +176,9 @@ struct radv_graphics_pipeline_key {
 struct radv_nir_compiler_options {
    bool robust_buffer_access_llvm;
    bool dump_shader;
+   bool dump_ir;
    bool dump_preoptir;
+   bool record_asm;
    bool record_ir;
    bool record_stats;
    bool check_ir;

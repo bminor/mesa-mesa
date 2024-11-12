@@ -138,8 +138,9 @@ enum aco_compiler_debug_level {
 };
 
 struct aco_compiler_options {
-   bool dump_shader;
+   bool dump_ir;
    bool dump_preoptir;
+   bool record_asm;
    bool record_ir;
    bool record_stats;
    bool has_ls_vgpr_init_bug;

@@ -94,8 +94,9 @@ static inline void
 radv_aco_convert_opts(struct aco_compiler_options *aco_info, const struct radv_nir_compiler_options *radv,
                       const struct radv_shader_args *radv_args, const struct radv_shader_stage_key *stage_key)
 {
-   ASSIGN_FIELD(dump_shader);
+   ASSIGN_FIELD(dump_ir);
    ASSIGN_FIELD(dump_preoptir);
+   ASSIGN_FIELD(record_asm);
    ASSIGN_FIELD(record_ir);
    ASSIGN_FIELD(record_stats);
    ASSIGN_FIELD(enable_mrt_output_nan_fixup);
