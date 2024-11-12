@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # The relative paths in this file only become valid at runtime.
 # shellcheck disable=SC1091
+#
+# When changing this file, you need to bump the following
+# .gitlab-ci/image-tags.yml tags:
+# DEBIAN_TEST_ANDROID_TAG
 
 set -e
 
