@@ -2257,6 +2257,26 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen)
    c->screen = screen;
    c->lower_fabs = !is_r500 && s->info.stage == MESA_SHADER_VERTEX;
 
+   if (s->info.stage == MESA_SHADER_FRAGMENT) {
+      if (is_r500) {
+         NIR_PASS_V(s, r300_transform_fs_trig_input);
+      }
+   } else if (r300_screen(screen)->caps.has_tcl) {
+      if (is_r500) {
+         /* Only nine should set both NTT shader name and
+          * use_legacy_math_rules and D3D9 already mandates
+          * the proper range for the trigonometric inputs.
+          */
+         if (!s->info.use_legacy_math_rules || !(s->info.name && !strcmp("TTN", s->info.name))) {
+            NIR_PASS_V(s, r300_transform_vs_trig_input);
+         }
+      } else {
+         if (r300_screen(screen)->caps.is_r400) {
+            NIR_PASS_V(s, r300_transform_vs_trig_input);
+         }
+      }
+   }
+
    /* Lower array indexing on FS inputs.  Since we don't set
     * ureg->supports_any_inout_decl_range, the TGSI input decls will be split to
     * elements by ureg, and so dynamically indexing them would be invalid.
