@@ -160,34 +160,33 @@ load_clipdist_input(nir_builder *b, nir_variable *in, int location_offset,
 static nir_def *
 find_output(nir_builder *b, unsigned location)
 {
-   nir_def *def = NULL;
-   nir_def *components[4] = {NULL};
-   nir_instr *first = NULL;
-   unsigned found = 0;
+   nir_def *comp[4] = {NULL};
+   nir_instr *last_comp = NULL;
+
    nir_foreach_function_impl(impl, b->shader) {
-      nir_foreach_block_reverse(block, impl) {
-         nir_def *new_def = NULL;
-         nir_foreach_instr_reverse_safe(instr, block) {
+      nir_foreach_block(block, impl) {
+         nir_foreach_instr_safe(instr, block) {
             if (instr->type != nir_instr_type_intrinsic)
                continue;
-            nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-            if ((intr->intrinsic == nir_intrinsic_store_output ||
-               intr->intrinsic == nir_intrinsic_store_per_vertex_output ||
-               intr->intrinsic == nir_intrinsic_store_per_primitive_output) &&
-               nir_intrinsic_io_semantics(intr).location == location) {
-               assert(nir_src_is_const(*nir_get_io_offset_src(intr)));
 
-               int wrmask = nir_intrinsic_write_mask(intr);
-               if (intr->num_components == 4 && wrmask == 0xf) {
-                  new_def = intr->src[0].ssa;
-               } else {
-                  int c = nir_intrinsic_component(intr);
-                  assert(intr->num_components == 1 && wrmask == 0x1);
-                  assert(!components[c]);
-                  components[c] = intr->src[0].ssa;
-                  if (!first)
-                     first = &intr->instr;
-                  found++;
+            nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+            if ((intr->intrinsic == nir_intrinsic_store_output ||
+                 intr->intrinsic == nir_intrinsic_store_per_vertex_output ||
+                 intr->intrinsic == nir_intrinsic_store_per_primitive_output) &&
+                nir_intrinsic_io_semantics(intr).location == location) {
+               assert(nir_src_is_const(*nir_get_io_offset_src(intr)));
+               unsigned component = nir_intrinsic_component(intr);
+               unsigned wrmask = nir_intrinsic_write_mask(intr);
+
+               u_foreach_bit(i, wrmask) {
+                  unsigned index = component + i;
+
+                  /* Each component should be written only once. */
+                  assert(!comp[index]);
+                  b->cursor = nir_before_instr(&intr->instr);
+                  comp[index] = nir_channel(b, intr->src[0].ssa, i);
+                  last_comp = comp[index]->parent_instr;
                }
 
                /* Remove it because it's going to be replaced by CLIP_DIST. */
@@ -195,27 +194,20 @@ find_output(nir_builder *b, unsigned location)
                   nir_instr_remove(instr);
             }
          }
-         assert(!(new_def && def));
-         if (!def)
-            def = new_def;
-#if !MESA_DEBUG
-         /* for debug builds, scan entire shader to assert
-          * if output is written multiple times.  For release
-          * builds just assume all is well and bail when we
-          * find first:
-          */
-         if (def || found == 4)
-            break;
-#endif
       }
    }
-   assert(def || found == 4);
-   if (found) {
-      b->cursor = nir_after_instr(first);
-      def = nir_vec(b, components, 4);
+
+   if (!last_comp)
+      return NULL;
+
+   b->cursor = nir_after_instr(last_comp);
+
+   for (unsigned i = 0; i < 4; i++) {
+      if (!comp[i])
+         comp[i] = nir_undef(b, 1, 32);
    }
 
-   return def;
+   return nir_vec(b, comp, 4);
 }
 
 static bool
