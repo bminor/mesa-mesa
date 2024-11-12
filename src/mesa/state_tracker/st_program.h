@@ -84,6 +84,12 @@ st_get_external_sampler_key(struct st_context *st, struct gl_program *prog)
          continue;
 
       switch (format) {
+      case PIPE_FORMAT_NV16:
+         if (stObj->pt->format == PIPE_FORMAT_R8_G8B8_422_UNORM) {
+            key.lower_yuv |= (1 << unit);
+            break;
+         }
+         FALLTHROUGH;
       case PIPE_FORMAT_NV12:
          if (stObj->pt->format == PIPE_FORMAT_R8_G8B8_420_UNORM) {
             key.lower_yuv |= (1 << unit);
