@@ -673,7 +673,7 @@ nvk_bind_descriptor_sets(struct nvk_cmd_buffer *cmd,
                                        0, NVK_MAX_SETS,
                                        set_dynamic_buffer_start);
 
-   /* Fro the Vulkan 1.3.275 spec:
+   /* From the Vulkan 1.3.275 spec:
     *
     *    "When binding a descriptor set (see Descriptor Set Binding) to
     *    set number N...

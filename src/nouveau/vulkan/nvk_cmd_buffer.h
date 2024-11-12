@@ -53,7 +53,7 @@ struct nvk_root_descriptor_table {
    struct nvk_buffer_address sets[NVK_MAX_SETS];
 
    /* For each descriptor set, the index in dynamic_buffers where that set's
-    * the dynamic buffers start. This is maintained for every set, regardless
+    * dynamic buffers start. This is maintained for every set, regardless
     * of whether or not anything is bound there.
     */
    uint8_t set_dynamic_buffer_start[NVK_MAX_SETS];
