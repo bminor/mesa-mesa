@@ -71,6 +71,8 @@ can_fast_clear_color(struct iris_context *ice,
                      enum isl_format render_format,
                      union isl_color_value color)
 {
+   const struct intel_device_info *devinfo =
+      ((struct iris_screen *)ice->ctx.screen)->devinfo;
    struct iris_resource *res = (void *) p_res;
 
    if (INTEL_DEBUG(DEBUG_NO_FAST_CLEAR))
@@ -78,6 +80,12 @@ can_fast_clear_color(struct iris_context *ice,
 
    if (!isl_aux_usage_has_fast_clears(res->aux.usage))
       return false;
+
+   /* Bspec 57340 (r68483) has no fast-clear rectangle for linear surfaces. */
+   if (res->surf.tiling == ISL_TILING_LINEAR) {
+      assert(devinfo->ver >= 20);
+      return false;
+   }
 
    /* Check for partial clear */
    if (box->x > 0 || box->y > 0 ||
@@ -138,8 +146,6 @@ can_fast_clear_color(struct iris_context *ice,
    }
 
    /* Wa_18020603990 - slow clear surfaces up to 256x256, 32bpp. */
-   const struct intel_device_info *devinfo =
-      ((struct iris_screen *)ice->ctx.screen)->devinfo;
    if (intel_needs_workaround(devinfo, 18020603990)) {
       if (isl_format_get_layout(res->surf.format)->bpb <= 32 &&
           res->surf.logical_level0_px.w <= 256 &&
