@@ -1689,9 +1689,10 @@ iris_flush_resource(struct pipe_context *ctx, struct pipe_resource *resource)
                            !(res->base.b.bind & PIPE_BIND_SHARED);
    bool need_reallocate = !iris_bo_is_real(res->bo) || need_pat_resolve;
    if (need_reallocate) {
-      assert(!(res->base.b.bind & PIPE_BIND_SHARED));
-      iris_reallocate_resource_inplace(ice, res, PIPE_BIND_SHARED);
-      assert(res->base.b.bind & PIPE_BIND_SHARED);
+      const unsigned dmabuf_bind = PIPE_BIND_SHARED | PIPE_BIND_SCANOUT;
+      assert((res->base.b.bind & dmabuf_bind) == 0);
+      iris_reallocate_resource_inplace(ice, res, dmabuf_bind);
+      assert((res->base.b.bind & dmabuf_bind) == dmabuf_bind);
    }
 
    iris_resource_prepare_access(ice, res,
