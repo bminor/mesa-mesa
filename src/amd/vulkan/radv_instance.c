@@ -84,6 +84,7 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"cs", RADV_DEBUG_DUMP_CS},
                                                           {"nir", RADV_DEBUG_DUMP_NIR},
                                                           {"asm", RADV_DEBUG_DUMP_ASM},
+                                                          {"ir", RADV_DEBUG_DUMP_BACKEND_IR},
                                                           {NULL, 0}};
 
 const char *

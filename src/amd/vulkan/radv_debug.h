@@ -71,6 +71,7 @@ enum {
    RADV_DEBUG_DUMP_CS = 1ull << 55,
    RADV_DEBUG_DUMP_NIR = 1ull << 56,
    RADV_DEBUG_DUMP_ASM = 1ull << 57,
+   RADV_DEBUG_DUMP_BACKEND_IR = 1ull << 58,
 };
 
 enum {

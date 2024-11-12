@@ -3002,7 +3002,8 @@ radv_fill_nir_compiler_options(struct radv_nir_compiler_options *options, struct
    options->wgp_mode = should_use_wgp;
    options->info = &pdev->info;
    options->dump_shader = can_dump_shader;
-   options->dump_ir = options->dump_shader;
+   options->dump_ir =
+      options->dump_shader && instance->debug_flags & (RADV_DEBUG_DUMP_BACKEND_IR | RADV_DEBUG_DUMP_SHADERS);
    options->dump_preoptir = options->dump_shader && instance->debug_flags & RADV_DEBUG_PREOPTIR;
    options->record_asm = keep_shader_info || options->dump_shader;
    options->record_ir = keep_shader_info;
