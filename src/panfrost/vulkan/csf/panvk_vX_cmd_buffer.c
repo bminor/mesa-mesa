@@ -161,6 +161,16 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
       }
    }
 
+   if ((instance->debug_flags & PANVK_DEBUG_CS) &&
+       cmdbuf->vk.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+      cs_update_cmdbuf_regs(b) {
+         /* Poison all cmdbuf registers to make sure we don't inherit state from
+          * a previously executed cmdbuf. */
+         for (uint32_t i = 0; i <= PANVK_CS_REG_SCRATCH_END; i++)
+            cs_move32_to(b, cs_reg32(b, i), 0xdead | i << 24);
+      }
+   }
+
    cs_finish(&cmdbuf->state.cs[subqueue].builder);
 }
 

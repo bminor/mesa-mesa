@@ -302,6 +302,10 @@ panvk_cs_reg_whitelist(frag_ctx, PANVK_CS_REG_RANGE(RUN_FRAGMENT_SR));
 panvk_cs_reg_whitelist(vt_ctx, PANVK_CS_REG_RANGE(RUN_IDVS_SR));
 #define cs_update_vt_ctx(__b) panvk_cs_reg_upd_ctx(__b, vt_ctx)
 
+panvk_cs_reg_whitelist(cmdbuf_regs, {PANVK_CS_REG_RUN_IDVS_SR_START,
+                                     PANVK_CS_REG_SCRATCH_END});
+#define cs_update_cmdbuf_regs(__b) panvk_cs_reg_upd_ctx(__b, cmdbuf_regs)
+
 struct panvk_tls_state {
    struct panfrost_ptr desc;
    struct pan_tls_info info;
