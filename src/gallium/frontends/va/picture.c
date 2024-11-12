@@ -1137,6 +1137,7 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    bool apply_av1_fg = false;
    struct pipe_video_buffer **out_target;
    int output_id;
+   enum pipe_format target_format;
 
    if (!ctx)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -1202,8 +1203,9 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       *out_target = surf->buffer;
    }
 
+   target_format = context->target->buffer_format;
+
    if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_ENCODE) {
-      struct pipe_screen *screen = context->decoder->context->screen;
       coded_buf = context->coded_buf;
       context->desc.base.fence = &coded_buf->fence;
       if (u_reduce_video_profile(context->templat.profile) == PIPE_VIDEO_FORMAT_MPEG4_AVC)
@@ -1221,16 +1223,7 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
          context->desc.base.output_format = surf->buffer->buffer_format;
       }
       context->desc.base.input_full_range = surf->full_range;
-
-      if (screen->is_video_target_buffer_supported &&
-          !screen->is_video_target_buffer_supported(screen,
-                                                    context->desc.base.output_format,
-                                                    context->target,
-                                                    context->decoder->profile,
-                                                    context->decoder->entrypoint)) {
-            mtx_unlock(&drv->mutex);
-            return VA_STATUS_ERROR_INVALID_SURFACE;
-      }
+      target_format = context->desc.base.output_format;
 
       if (coded_buf->coded_surf)
          coded_buf->coded_surf->coded_buf = NULL;
@@ -1258,6 +1251,16 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
       context->desc.base.fence = &surf->fence;
    } else if (context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_PROCESSING) {
       context->desc.base.fence = &surf->fence;
+   }
+
+   if (screen->is_video_target_buffer_supported &&
+       !screen->is_video_target_buffer_supported(screen,
+                                                 target_format,
+                                                 context->target,
+                                                 context->decoder->profile,
+                                                 context->decoder->entrypoint)) {
+      mtx_unlock(&drv->mutex);
+      return VA_STATUS_ERROR_INVALID_SURFACE;
    }
 
    /* when there are external handles, we can't set PIPE_FLUSH_ASYNC */
