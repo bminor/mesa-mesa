@@ -589,6 +589,9 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
    nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
    ac_nir_get_tess_io_info(nir, &tcs_info, ~0ull, ~0, map_output, true, &info->tcs.io_info);
 
+   info->tcs.spacing = nir->info.tess.spacing;
+   info->tcs.ccw = nir->info.tess.ccw;
+   info->tcs.point_mode = nir->info.tess.point_mode;
    info->tcs.tcs_vertices_out = nir->info.tess.tcs_vertices_out;
    info->tcs.tes_inputs_read = ~0ULL;
    info->tcs.tes_patch_inputs_read = ~0ULL;

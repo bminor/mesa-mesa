@@ -6179,6 +6179,7 @@ radv_emit_tess_domain_origin_state(struct radv_cmd_buffer *cmd_buffer)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_shader *tes = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_TESS_EVAL);
+   const struct radv_shader *tcs = cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL];
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned type = 0, partitioning = 0;
    unsigned topology;
@@ -6200,7 +6201,10 @@ radv_emit_tess_domain_origin_state(struct radv_cmd_buffer *cmd_buffer)
       UNREACHABLE("Invalid tess primitive type");
    }
 
-   switch (tes->info.tes.spacing) {
+   const uint32_t tess_spacing =
+      tes->info.tes.spacing == TESS_SPACING_UNSPECIFIED ? tcs->info.tcs.spacing : tes->info.tes.spacing;
+
+   switch (tess_spacing) {
    case TESS_SPACING_EQUAL:
       partitioning = V_028B6C_PART_INTEGER;
       break;
@@ -6214,12 +6218,14 @@ radv_emit_tess_domain_origin_state(struct radv_cmd_buffer *cmd_buffer)
       UNREACHABLE("Invalid tess spacing type");
    }
 
-   if (tes->info.tes.point_mode) {
+   const bool point_mode = tes->info.tes.point_mode | tcs->info.tcs.point_mode;
+
+   if (point_mode) {
       topology = V_028B6C_OUTPUT_POINT;
    } else if (tes->info.tes._primitive_mode == TESS_PRIMITIVE_ISOLINES) {
       topology = V_028B6C_OUTPUT_LINE;
    } else {
-      bool ccw = tes->info.tes.ccw;
+      bool ccw = tes->info.tes.ccw | tcs->info.tcs.ccw;
 
       if (d->vk.ts.domain_origin != VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT) {
          ccw = !ccw;

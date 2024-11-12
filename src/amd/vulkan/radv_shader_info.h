@@ -241,6 +241,9 @@ struct radv_shader_info {
       uint32_t tcs_vertices_out;
       uint32_t lds_size;         /* in bytes */
       uint8_t num_linked_inputs; /* Number of reserved per-vertex input slots in LDS. */
+      enum gl_tess_spacing spacing;
+      bool ccw;
+      bool point_mode;
       bool tes_reads_tess_factors : 1;
    } tcs;
    struct {
