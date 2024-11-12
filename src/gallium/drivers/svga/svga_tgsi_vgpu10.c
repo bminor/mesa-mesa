@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998-2024 Broadcom. All Rights Reserved.
+ * Copyright (c) 1998-2025 Broadcom. All Rights Reserved.
  * The term “Broadcom” refers to Broadcom Inc.
  * and/or its subsidiaries.
  * SPDX-License-Identifier: MIT
@@ -9292,7 +9292,16 @@ opcode_has_dbl_dst(unsigned opcode)
    case TGSI_OPCODE_I2D:
    case TGSI_OPCODE_U2D:
    case TGSI_OPCODE_DFMA:
-      // XXX more TBD
+   case TGSI_OPCODE_DTRUNC:
+   case TGSI_OPCODE_DCEIL:
+   case TGSI_OPCODE_DROUND:
+   case TGSI_OPCODE_DSSG:
+   case TGSI_OPCODE_DLDEXP:
+   case TGSI_OPCODE_DMAD:
+   case TGSI_OPCODE_DDIV:
+   case TGSI_OPCODE_DRCP:
+   case TGSI_OPCODE_DSQRT:
+   case TGSI_OPCODE_DRSQ:
       return true;
    default:
       return false;
@@ -9332,6 +9341,7 @@ opcode_has_dbl_src(unsigned opcode)
    case TGSI_OPCODE_DFLR:
    case TGSI_OPCODE_DROUND:
    case TGSI_OPCODE_DSSG:
+   case TGSI_OPCODE_DDIV:
       return true;
    default:
       return false;
