@@ -119,10 +119,14 @@ radv_compile_cs(struct radv_device *device, struct vk_pipeline_cache *cache, str
    radv_postprocess_nir(device, NULL, cs_stage);
 
    bool dump_shader = radv_can_dump_shader(device, cs_stage->nir);
+   bool dump_nir = dump_shader && (instance->debug_flags & (RADV_DEBUG_DUMP_NIR | RADV_DEBUG_DUMP_SHADERS));
 
    if (dump_shader) {
       simple_mtx_lock(&instance->shader_dump_mtx);
-      nir_print_shader(cs_stage->nir, stderr);
+
+      if (dump_nir) {
+         nir_print_shader(cs_stage->nir, stderr);
+      }
    }
 
    char *nir_string = NULL;

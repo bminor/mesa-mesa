@@ -2340,10 +2340,15 @@ radv_graphics_shaders_nir_to_asm(struct radv_device *device, struct vk_pipeline_
       for (unsigned i = 0; i < shader_count; ++i)
          dump_shader |= radv_can_dump_shader(device, nir_shaders[i]);
 
+      bool dump_nir = dump_shader && (instance->debug_flags & (RADV_DEBUG_DUMP_NIR | RADV_DEBUG_DUMP_SHADERS));
+
       if (dump_shader) {
          simple_mtx_lock(&instance->shader_dump_mtx);
-         for (uint32_t i = 0; i < shader_count; i++)
-            nir_print_shader(nir_shaders[i], stderr);
+
+         if (dump_nir) {
+            for (uint32_t i = 0; i < shader_count; i++)
+               nir_print_shader(nir_shaders[i], stderr);
+         }
       }
 
       char *nir_string = NULL;

@@ -69,6 +69,7 @@ enum {
    RADV_DEBUG_DUMP_TASK = 1ull << 53,
    RADV_DEBUG_DUMP_MESH = 1ull << 54,
    RADV_DEBUG_DUMP_CS = 1ull << 55,
+   RADV_DEBUG_DUMP_NIR = 1ull << 56,
 };
 
 enum {
