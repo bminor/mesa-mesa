@@ -36,7 +36,7 @@
 #include "common/intel_tiled_render.h"
 #include "compiler/brw_prim.h"
 
-const uint32_t genX(vk_to_intel_blend)[] = {
+static const uint32_t vk_to_intel_blend[] = {
    [VK_BLEND_FACTOR_ZERO]                    = BLENDFACTOR_ZERO,
    [VK_BLEND_FACTOR_ONE]                     = BLENDFACTOR_ONE,
    [VK_BLEND_FACTOR_SRC_COLOR]               = BLENDFACTOR_SRC_COLOR,
@@ -58,12 +58,84 @@ const uint32_t genX(vk_to_intel_blend)[] = {
    [VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA]    = BLENDFACTOR_INV_SRC1_ALPHA,
 };
 
-static const uint32_t genX(vk_to_intel_blend_op)[] = {
+static const uint32_t vk_to_intel_blend_op[] = {
    [VK_BLEND_OP_ADD]                         = BLENDFUNCTION_ADD,
    [VK_BLEND_OP_SUBTRACT]                    = BLENDFUNCTION_SUBTRACT,
    [VK_BLEND_OP_REVERSE_SUBTRACT]            = BLENDFUNCTION_REVERSE_SUBTRACT,
    [VK_BLEND_OP_MIN]                         = BLENDFUNCTION_MIN,
    [VK_BLEND_OP_MAX]                         = BLENDFUNCTION_MAX,
+};
+
+static const uint32_t vk_to_intel_cullmode[] = {
+   [VK_CULL_MODE_NONE]                       = CULLMODE_NONE,
+   [VK_CULL_MODE_FRONT_BIT]                  = CULLMODE_FRONT,
+   [VK_CULL_MODE_BACK_BIT]                   = CULLMODE_BACK,
+   [VK_CULL_MODE_FRONT_AND_BACK]             = CULLMODE_BOTH
+};
+
+static const uint32_t vk_to_intel_fillmode[] = {
+   [VK_POLYGON_MODE_FILL]                    = FILL_MODE_SOLID,
+   [VK_POLYGON_MODE_LINE]                    = FILL_MODE_WIREFRAME,
+   [VK_POLYGON_MODE_POINT]                   = FILL_MODE_POINT,
+};
+
+static const uint32_t vk_to_intel_front_face[] = {
+   [VK_FRONT_FACE_COUNTER_CLOCKWISE]         = 1,
+   [VK_FRONT_FACE_CLOCKWISE]                 = 0
+};
+
+static const uint32_t vk_to_intel_logic_op[] = {
+   [VK_LOGIC_OP_COPY]                        = LOGICOP_COPY,
+   [VK_LOGIC_OP_CLEAR]                       = LOGICOP_CLEAR,
+   [VK_LOGIC_OP_AND]                         = LOGICOP_AND,
+   [VK_LOGIC_OP_AND_REVERSE]                 = LOGICOP_AND_REVERSE,
+   [VK_LOGIC_OP_AND_INVERTED]                = LOGICOP_AND_INVERTED,
+   [VK_LOGIC_OP_NO_OP]                       = LOGICOP_NOOP,
+   [VK_LOGIC_OP_XOR]                         = LOGICOP_XOR,
+   [VK_LOGIC_OP_OR]                          = LOGICOP_OR,
+   [VK_LOGIC_OP_NOR]                         = LOGICOP_NOR,
+   [VK_LOGIC_OP_EQUIVALENT]                  = LOGICOP_EQUIV,
+   [VK_LOGIC_OP_INVERT]                      = LOGICOP_INVERT,
+   [VK_LOGIC_OP_OR_REVERSE]                  = LOGICOP_OR_REVERSE,
+   [VK_LOGIC_OP_COPY_INVERTED]               = LOGICOP_COPY_INVERTED,
+   [VK_LOGIC_OP_OR_INVERTED]                 = LOGICOP_OR_INVERTED,
+   [VK_LOGIC_OP_NAND]                        = LOGICOP_NAND,
+   [VK_LOGIC_OP_SET]                         = LOGICOP_SET,
+};
+
+static const uint32_t vk_to_intel_compare_op[] = {
+   [VK_COMPARE_OP_NEVER]                        = PREFILTEROP_NEVER,
+   [VK_COMPARE_OP_LESS]                         = PREFILTEROP_LESS,
+   [VK_COMPARE_OP_EQUAL]                        = PREFILTEROP_EQUAL,
+   [VK_COMPARE_OP_LESS_OR_EQUAL]                = PREFILTEROP_LEQUAL,
+   [VK_COMPARE_OP_GREATER]                      = PREFILTEROP_GREATER,
+   [VK_COMPARE_OP_NOT_EQUAL]                    = PREFILTEROP_NOTEQUAL,
+   [VK_COMPARE_OP_GREATER_OR_EQUAL]             = PREFILTEROP_GEQUAL,
+   [VK_COMPARE_OP_ALWAYS]                       = PREFILTEROP_ALWAYS,
+};
+
+static const uint32_t vk_to_intel_stencil_op[] = {
+   [VK_STENCIL_OP_KEEP]                         = STENCILOP_KEEP,
+   [VK_STENCIL_OP_ZERO]                         = STENCILOP_ZERO,
+   [VK_STENCIL_OP_REPLACE]                      = STENCILOP_REPLACE,
+   [VK_STENCIL_OP_INCREMENT_AND_CLAMP]          = STENCILOP_INCRSAT,
+   [VK_STENCIL_OP_DECREMENT_AND_CLAMP]          = STENCILOP_DECRSAT,
+   [VK_STENCIL_OP_INVERT]                       = STENCILOP_INVERT,
+   [VK_STENCIL_OP_INCREMENT_AND_WRAP]           = STENCILOP_INCR,
+   [VK_STENCIL_OP_DECREMENT_AND_WRAP]           = STENCILOP_DECR,
+};
+
+static const uint32_t vk_to_intel_primitive_type[] = {
+   [VK_PRIMITIVE_TOPOLOGY_POINT_LIST]                    = _3DPRIM_POINTLIST,
+   [VK_PRIMITIVE_TOPOLOGY_LINE_LIST]                     = _3DPRIM_LINELIST,
+   [VK_PRIMITIVE_TOPOLOGY_LINE_STRIP]                    = _3DPRIM_LINESTRIP,
+   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST]                 = _3DPRIM_TRILIST,
+   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP]                = _3DPRIM_TRISTRIP,
+   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN]                  = _3DPRIM_TRIFAN,
+   [VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY]      = _3DPRIM_LINELIST_ADJ,
+   [VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY]     = _3DPRIM_LINESTRIP_ADJ,
+   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY]  = _3DPRIM_TRILIST_ADJ,
+   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY] = _3DPRIM_TRISTRIP_ADJ,
 };
 
 static void
@@ -258,12 +330,132 @@ want_stencil_pma_fix(struct anv_cmd_buffer *cmd_buffer,
           wm_prog_data->computed_depth_mode != PSCDEPTH_OFF;
 }
 
+static inline bool
+anv_rasterization_aa_mode(VkPolygonMode raster_mode,
+                          VkLineRasterizationModeKHR line_mode)
+{
+   if (raster_mode == VK_POLYGON_MODE_LINE &&
+       line_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR)
+      return true;
+   return false;
+}
+
+static inline VkLineRasterizationModeKHR
+anv_line_rasterization_mode(VkLineRasterizationModeKHR line_mode,
+                            unsigned rasterization_samples)
+{
+   if (line_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR) {
+      if (rasterization_samples > 1) {
+         return VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR;
+      } else {
+         return VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR;
+      }
+   }
+   return line_mode;
+}
+
+/** Returns the final polygon mode for rasterization
+ *
+ * This function takes into account polygon mode, primitive topology and the
+ * different shader stages which might generate their own type of primitives.
+ */
+static inline VkPolygonMode
+anv_raster_polygon_mode(const struct anv_graphics_pipeline *pipeline,
+                        VkPolygonMode polygon_mode,
+                        VkPrimitiveTopology primitive_topology)
+{
+   if (anv_pipeline_is_mesh(pipeline)) {
+      switch (get_mesh_prog_data(pipeline)->primitive_type) {
+      case MESA_PRIM_POINTS:
+         return VK_POLYGON_MODE_POINT;
+      case MESA_PRIM_LINES:
+         return VK_POLYGON_MODE_LINE;
+      case MESA_PRIM_TRIANGLES:
+         return polygon_mode;
+      default:
+         unreachable("invalid primitive type for mesh");
+      }
+   } else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_GEOMETRY)) {
+      switch (get_gs_prog_data(pipeline)->output_topology) {
+      case _3DPRIM_POINTLIST:
+         return VK_POLYGON_MODE_POINT;
+
+      case _3DPRIM_LINELIST:
+      case _3DPRIM_LINESTRIP:
+      case _3DPRIM_LINELOOP:
+         return VK_POLYGON_MODE_LINE;
+
+      case _3DPRIM_TRILIST:
+      case _3DPRIM_TRIFAN:
+      case _3DPRIM_TRISTRIP:
+      case _3DPRIM_RECTLIST:
+      case _3DPRIM_QUADLIST:
+      case _3DPRIM_QUADSTRIP:
+      case _3DPRIM_POLYGON:
+         return polygon_mode;
+      }
+      unreachable("Unsupported GS output topology");
+   } else if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL)) {
+      switch (get_tes_prog_data(pipeline)->output_topology) {
+      case INTEL_TESS_OUTPUT_TOPOLOGY_POINT:
+         return VK_POLYGON_MODE_POINT;
+
+      case INTEL_TESS_OUTPUT_TOPOLOGY_LINE:
+         return VK_POLYGON_MODE_LINE;
+
+      case INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CW:
+      case INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CCW:
+         return polygon_mode;
+      }
+      unreachable("Unsupported TCS output topology");
+   } else {
+      switch (primitive_topology) {
+      case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+         return VK_POLYGON_MODE_POINT;
+
+      case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+      case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+      case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+      case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
+         return VK_POLYGON_MODE_LINE;
+
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+         return polygon_mode;
+
+      default:
+         unreachable("Unsupported primitive topology");
+      }
+   }
+}
+
+static inline bool
+anv_is_dual_src_blend_factor(VkBlendFactor factor)
+{
+   return factor == VK_BLEND_FACTOR_SRC1_COLOR ||
+          factor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
+          factor == VK_BLEND_FACTOR_SRC1_ALPHA ||
+          factor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+}
+
+static inline bool
+anv_is_dual_src_blend_equation(const struct vk_color_blend_attachment_state *cb)
+{
+   return anv_is_dual_src_blend_factor(cb->src_color_blend_factor) &&
+          anv_is_dual_src_blend_factor(cb->dst_color_blend_factor) &&
+          anv_is_dual_src_blend_factor(cb->src_alpha_blend_factor) &&
+          anv_is_dual_src_blend_factor(cb->dst_alpha_blend_factor);
+}
+
 static void
-genX(rasterization_mode)(VkPolygonMode raster_mode,
-                         VkLineRasterizationModeKHR line_mode,
-                         float line_width,
-                         uint32_t *api_mode,
-                         bool *msaa_rasterization_enable)
+anv_rasterization_mode(VkPolygonMode raster_mode,
+                       VkLineRasterizationModeKHR line_mode,
+                       float line_width,
+                       uint32_t *api_mode,
+                       bool *msaa_rasterization_enable)
 {
    if (raster_mode == VK_POLYGON_MODE_LINE) {
       /* Unfortunately, configuring our line rasterization hardware on gfx8
@@ -718,7 +910,7 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
       if (anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL))
          topology = _3DPRIM_PATCHLIST(dyn->ts.patch_control_points);
       else
-         topology = genX(vk_to_intel_primitive_type)[dyn->ia.primitive_topology];
+         topology = vk_to_intel_primitive_type[dyn->ia.primitive_topology];
 
       gfx->primitive_topology = topology;
 
@@ -835,13 +1027,13 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
                                      dyn->ms.rasterization_samples);
 
       const VkPolygonMode dynamic_raster_mode =
-         genX(raster_polygon_mode)(pipeline,
-                                   dyn->rs.polygon_mode,
-                                   dyn->ia.primitive_topology);
+         anv_raster_polygon_mode(pipeline,
+                                 dyn->rs.polygon_mode,
+                                 dyn->ia.primitive_topology);
 
-      genX(rasterization_mode)(dynamic_raster_mode,
-                               line_mode, dyn->rs.line.width,
-                               &api_mode, &msaa_raster_enable);
+      anv_rasterization_mode(dynamic_raster_mode,
+                             line_mode, dyn->rs.line.width,
+                             &api_mode, &msaa_raster_enable);
 
      /* From the Browadwell PRM, Volume 2, documentation for
       * 3DSTATE_RASTER, "Antialiasing Enable":
@@ -870,16 +1062,16 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
       SET(RASTER, raster.APIMode, api_mode);
       SET(RASTER, raster.DXMultisampleRasterizationEnable, msaa_raster_enable);
       SET(RASTER, raster.AntialiasingEnable, aa_enable);
-      SET(RASTER, raster.CullMode, genX(vk_to_intel_cullmode)[dyn->rs.cull_mode]);
-      SET(RASTER, raster.FrontWinding, genX(vk_to_intel_front_face)[dyn->rs.front_face]);
+      SET(RASTER, raster.CullMode, vk_to_intel_cullmode[dyn->rs.cull_mode]);
+      SET(RASTER, raster.FrontWinding, vk_to_intel_front_face[dyn->rs.front_face]);
       SET(RASTER, raster.GlobalDepthOffsetEnableSolid, dyn->rs.depth_bias.enable);
       SET(RASTER, raster.GlobalDepthOffsetEnableWireframe, dyn->rs.depth_bias.enable);
       SET(RASTER, raster.GlobalDepthOffsetEnablePoint, dyn->rs.depth_bias.enable);
       SET(RASTER, raster.GlobalDepthOffsetConstant, dyn->rs.depth_bias.constant);
       SET(RASTER, raster.GlobalDepthOffsetScale, dyn->rs.depth_bias.slope);
       SET(RASTER, raster.GlobalDepthOffsetClamp, dyn->rs.depth_bias.clamp);
-      SET(RASTER, raster.FrontFaceFillMode, genX(vk_to_intel_fillmode)[dyn->rs.polygon_mode]);
-      SET(RASTER, raster.BackFaceFillMode, genX(vk_to_intel_fillmode)[dyn->rs.polygon_mode]);
+      SET(RASTER, raster.FrontFaceFillMode, vk_to_intel_fillmode[dyn->rs.polygon_mode]);
+      SET(RASTER, raster.BackFaceFillMode, vk_to_intel_fillmode[dyn->rs.polygon_mode]);
       SET(RASTER, raster.ViewportZFarClipTestEnable, depth_clip_enable);
       SET(RASTER, raster.ViewportZNearClipTestEnable, depth_clip_enable);
       SET(RASTER, raster.ConservativeRasterizationEnable,
@@ -942,25 +1134,25 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
       SET(WM_DEPTH_STENCIL, ds.DepthTestEnable, opt_ds.depth.test_enable);
       SET(WM_DEPTH_STENCIL, ds.DepthBufferWriteEnable, opt_ds.depth.write_enable);
       SET(WM_DEPTH_STENCIL, ds.DepthTestFunction,
-                            genX(vk_to_intel_compare_op)[opt_ds.depth.compare_op]);
+                            vk_to_intel_compare_op[opt_ds.depth.compare_op]);
       SET(WM_DEPTH_STENCIL, ds.StencilTestEnable, opt_ds.stencil.test_enable);
       SET(WM_DEPTH_STENCIL, ds.StencilBufferWriteEnable, opt_ds.stencil.write_enable);
       SET(WM_DEPTH_STENCIL, ds.StencilFailOp,
-                            genX(vk_to_intel_stencil_op)[opt_ds.stencil.front.op.fail]);
+                            vk_to_intel_stencil_op[opt_ds.stencil.front.op.fail]);
       SET(WM_DEPTH_STENCIL, ds.StencilPassDepthPassOp,
-                            genX(vk_to_intel_stencil_op)[opt_ds.stencil.front.op.pass]);
+                            vk_to_intel_stencil_op[opt_ds.stencil.front.op.pass]);
       SET(WM_DEPTH_STENCIL, ds.StencilPassDepthFailOp,
-                            genX(vk_to_intel_stencil_op)[opt_ds.stencil.front.op.depth_fail]);
+                            vk_to_intel_stencil_op[opt_ds.stencil.front.op.depth_fail]);
       SET(WM_DEPTH_STENCIL, ds.StencilTestFunction,
-                            genX(vk_to_intel_compare_op)[opt_ds.stencil.front.op.compare]);
+                            vk_to_intel_compare_op[opt_ds.stencil.front.op.compare]);
       SET(WM_DEPTH_STENCIL, ds.BackfaceStencilFailOp,
-                            genX(vk_to_intel_stencil_op)[opt_ds.stencil.back.op.fail]);
+                            vk_to_intel_stencil_op[opt_ds.stencil.back.op.fail]);
       SET(WM_DEPTH_STENCIL, ds.BackfaceStencilPassDepthPassOp,
-                            genX(vk_to_intel_stencil_op)[opt_ds.stencil.back.op.pass]);
+                            vk_to_intel_stencil_op[opt_ds.stencil.back.op.pass]);
       SET(WM_DEPTH_STENCIL, ds.BackfaceStencilPassDepthFailOp,
-                            genX(vk_to_intel_stencil_op)[opt_ds.stencil.back.op.depth_fail]);
+                            vk_to_intel_stencil_op[opt_ds.stencil.back.op.depth_fail]);
       SET(WM_DEPTH_STENCIL, ds.BackfaceStencilTestFunction,
-                            genX(vk_to_intel_compare_op)[opt_ds.stencil.back.op.compare]);
+                            vk_to_intel_compare_op[opt_ds.stencil.back.op.compare]);
 
 #if GFX_VER == 9
       const bool pma = want_stencil_pma_fix(cmd_buffer, dyn, &opt_ds);
@@ -1135,7 +1327,7 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
           *   UNDEFINED"
           */
          SET(BLEND_STATE, blend.rts[rt].LogicOpFunction,
-                          genX(vk_to_intel_logic_op)[dyn->cb.logic_op]);
+                          vk_to_intel_logic_op[dyn->cb.logic_op]);
          SET(BLEND_STATE, blend.rts[rt].LogicOpEnable, dyn->cb.logic_op_enable);
 
          SET(BLEND_STATE, blend.rts[rt].ColorClampRange, COLORCLAMP_RTFORMAT);
@@ -1144,10 +1336,10 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
 
          /* Setup blend equation. */
          SET(BLEND_STATE, blend.rts[rt].ColorBlendFunction,
-                          genX(vk_to_intel_blend_op)[
+                          vk_to_intel_blend_op[
                              dyn->cb.attachments[att].color_blend_op]);
          SET(BLEND_STATE, blend.rts[rt].AlphaBlendFunction,
-                          genX(vk_to_intel_blend_op)[
+                          vk_to_intel_blend_op[
                              dyn->cb.attachments[att].alpha_blend_op]);
 
          if (dyn->cb.attachments[att].src_color_blend_factor !=
@@ -1194,9 +1386,9 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
             SourceBlendFactor = BLENDFACTOR_ONE;
             DestinationBlendFactor = BLENDFACTOR_ONE;
          } else {
-            SourceBlendFactor = genX(vk_to_intel_blend)[
+            SourceBlendFactor = vk_to_intel_blend[
                dyn->cb.attachments[att].src_color_blend_factor];
-            DestinationBlendFactor = genX(vk_to_intel_blend)[
+            DestinationBlendFactor = vk_to_intel_blend[
                dyn->cb.attachments[att].dst_color_blend_factor];
          }
 
@@ -1205,9 +1397,9 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
             SourceAlphaBlendFactor = BLENDFACTOR_ONE;
             DestinationAlphaBlendFactor = BLENDFACTOR_ONE;
          } else {
-            SourceAlphaBlendFactor = genX(vk_to_intel_blend)[
+            SourceAlphaBlendFactor = vk_to_intel_blend[
                dyn->cb.attachments[att].src_alpha_blend_factor];
-            DestinationAlphaBlendFactor = genX(vk_to_intel_blend)[
+            DestinationAlphaBlendFactor = vk_to_intel_blend[
                dyn->cb.attachments[att].dst_alpha_blend_factor];
          }
 

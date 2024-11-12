@@ -46,20 +46,6 @@ struct anv_trtt_bind;
 typedef struct nir_builder nir_builder;
 typedef struct nir_shader nir_shader;
 
-extern const uint32_t genX(vk_to_intel_cullmode)[];
-
-extern const uint32_t genX(vk_to_intel_front_face)[];
-
-extern const uint32_t genX(vk_to_intel_primitive_type)[];
-
-extern const uint32_t genX(vk_to_intel_compare_op)[];
-
-extern const uint32_t genX(vk_to_intel_stencil_op)[];
-
-extern const uint32_t genX(vk_to_intel_logic_op)[];
-
-extern const uint32_t genX(vk_to_intel_fillmode)[];
-
 void genX(init_physical_device_state)(struct anv_physical_device *device);
 
 VkResult genX(init_device_state)(struct anv_device *device);
@@ -281,11 +267,6 @@ genX(batch_emit_post_3dprimitive_was)(struct anv_batch *batch,
 
 void genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
                                             struct anv_device *device);
-
-VkPolygonMode
-genX(raster_polygon_mode)(const struct anv_graphics_pipeline *pipeline,
-                          VkPolygonMode polygon_mode,
-                          VkPrimitiveTopology primitive_topology);
 
 void
 genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
