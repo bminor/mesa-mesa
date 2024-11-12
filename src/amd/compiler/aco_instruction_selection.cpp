@@ -12434,6 +12434,10 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       restore_vgprs_from_mem(&ctx, Operand(tma_rsrc, s4));
    }
 
+   /* Restore m0 and exec. */
+   bld.copy(Definition(m0, s1), Operand(save_m0, s1));
+   bld.copy(Definition(exec, bld.lm), Operand(save_exec, bld.lm));
+
    /* Restore SCC which is the first bit of SQ_WAVE_STATUS. */
    bld.sopc(aco_opcode::s_bitcmp1_b32, bld.def(s1, scc), Operand(save_wave_status, s1),
             Operand::c32(0u));
