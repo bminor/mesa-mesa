@@ -324,7 +324,7 @@
         "description": "nvk: Fix invalidation of NVK_CBUF_TYPE_DYNAMIC_UBO",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "091a945b57995a0184bf83085e2dc5b5e8fa619b",
         "notes": null
