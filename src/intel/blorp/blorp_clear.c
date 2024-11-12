@@ -840,7 +840,7 @@ blorp_clear(struct blorp_batch *batch,
          assert(params.dst.surf.levels == 1);
          assert(params.dst.surf.samples == 1);
          assert(params.dst.tile_x_sa == 0 || params.dst.tile_y_sa == 0);
-         assert(params.dst.aux_usage == ISL_AUX_USAGE_NONE);
+         assert(params.dst.aux_surf.size_B == 0);
 
          /* max_image_width rounded down to a multiple of 3 */
          const unsigned max_fake_rgb_width = (max_image_width / 3) * 3;

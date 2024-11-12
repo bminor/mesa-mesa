@@ -3260,9 +3260,6 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
    const enum isl_aux_usage aux_usage = image->planes[plane].aux_usage;
    assert(aux_usage != ISL_AUX_USAGE_NONE);
 
-   /* All images that use an auxiliary surface are required to be tiled. */
-   assert(image->planes[plane].primary_surface.isl.tiling != ISL_TILING_LINEAR);
-
    /* Handle a few special cases */
    switch (layout) {
    /* Invalid layouts */
@@ -3272,8 +3269,8 @@ anv_layout_to_aux_state(const struct intel_device_info * const devinfo,
    /* Undefined layouts
     *
     * The pre-initialized layout is equivalent to the undefined layout for
-    * optimally-tiled images.  We can only do color compression (CCS or HiZ)
-    * on tiled images.
+    * optimally-tiled images and for images not bound to host-visible memory.
+    * We only do compression on images that have one or both properties.
     */
    case VK_IMAGE_LAYOUT_UNDEFINED:
    case VK_IMAGE_LAYOUT_PREINITIALIZED:
