@@ -39,7 +39,7 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"spirv", RADV_DEBUG_DUMP_SPIRV},
                                                           {"zerovram", RADV_DEBUG_ZERO_VRAM},
                                                           {"syncshaders", RADV_DEBUG_SYNC_SHADERS},
-                                                          {"preoptir", RADV_DEBUG_PREOPTIR},
+                                                          {"preoptir", RADV_DEBUG_DUMP_PREOPT_IR},
                                                           {"nodynamicbounds", RADV_DEBUG_NO_DYNAMIC_BOUNDS},
                                                           {"info", RADV_DEBUG_INFO},
                                                           {"startup", RADV_DEBUG_STARTUP},

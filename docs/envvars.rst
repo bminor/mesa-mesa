@@ -1395,7 +1395,7 @@ RADV driver environment variables
    ``novrsflatshading``
       disable VRS for flat shading (only on GFX10.3+)
    ``preoptir``
-      dump LLVM IR before any optimizations
+      Dump backend IR (ACO or LLVM) before any optimizations.
    ``prologs``
       dump vertex shader prologs
    ``psocachestats``
