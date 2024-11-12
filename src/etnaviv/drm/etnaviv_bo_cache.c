@@ -185,6 +185,7 @@ int etna_bo_cache_free(struct etna_bo_cache *cache, struct etna_bo *bo)
 
 		bo->free_time = time.tv_sec;
 		VG_BO_RELEASE(bo);
+		assert(!list_is_linked(&bo->list));
 		list_addtail(&bo->list, &bucket->list);
 		etna_bo_cache_cleanup(cache, time.tv_sec);
 

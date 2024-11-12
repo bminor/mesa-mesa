@@ -118,6 +118,7 @@ void etna_bo_free(struct etna_bo *bo) {
 	if (dev->use_softpin) {
 		etna_bo_cleanup_zombies(dev);
 		VG_BO_RELEASE(bo);
+		assert(!list_is_linked(&bo->list));
 		list_addtail(&bo->list, &dev->zombie_list);
 	} else {
 		_etna_bo_free(bo);
