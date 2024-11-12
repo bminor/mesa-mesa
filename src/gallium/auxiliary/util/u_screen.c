@@ -565,6 +565,7 @@ u_pipe_screen_get_param_defaults(struct pipe_screen *pscreen,
    case PIPE_CAP_SHADER_SUBGROUP_SUPPORTED_STAGES:
    case PIPE_CAP_SHADER_SUBGROUP_SUPPORTED_FEATURES:
    case PIPE_CAP_SHADER_SUBGROUP_QUAD_ALL_STAGES:
+   case PIPE_CAP_CALL_FINALIZE_NIR_IN_LINKER:
       return 0;
 
    default:

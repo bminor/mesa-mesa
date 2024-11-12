@@ -625,7 +625,8 @@ st_create_context_priv(struct gl_context *ctx, struct pipe_context *pipe,
       screen->get_param(screen, PIPE_CAP_CONDITIONAL_RENDER);
    st->lower_rect_tex =
       !screen->get_param(screen, PIPE_CAP_TEXRECT);
-   st->allow_st_finalize_nir_twice = screen->finalize_nir != NULL;
+   st->allow_st_finalize_nir_twice =
+      screen->get_param(screen, PIPE_CAP_CALL_FINALIZE_NIR_IN_LINKER);
 
    st->has_hw_atomics =
       screen->get_shader_param(screen, PIPE_SHADER_FRAGMENT,

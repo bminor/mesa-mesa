@@ -653,6 +653,7 @@ The integer capabilities:
 * ``PIPE_CAP_SHADER_SUBGROUP_SUPPORTED_FEATURES``: Bitmask of shader subgroup features listed in :ext:`GL_KHR_shader_subgroup`.
 * ``PIPE_CAP_SHADER_SUBGROUP_QUAD_ALL_STAGES``: Whether shader subgroup quad operations are supported by shader stages other than fragment shader.
 * ``PIPE_CAP_MULTIVIEW``: Whether multiview rendering of array textures is supported. A return of ``1`` indicates support for OVR_multiview, and ``2`` additionally supports OVR_multiview2. 
+* ``PIPE_CAP_CALL_FINALIZE_NIR_IN_LINKER``: Whether `pipe_screen::finalize_nir` can be called in the GLSL linker before the NIR is stored in the shader cache. It's always called again after st/mesa adds code for shader variants. It must be 1 if the driver wants to report compile failures to the GLSL linker. It must be 0 if two consecutive `finalize_nir` calls on the same shader can break it, or if `finalize_nir` can't handle NIR that isn't fully lowered for the driver, or if `finalize_nir` breaks passes that st/mesa runs after it. Setting it to 1 is generally safe for drivers that expose nir_io_has_intrinsics and that don't enable any optional shader variants in st/mesa. Since it's difficult to support, any future refactoring can change it to 0.
 
 
 .. _pipe_capf:

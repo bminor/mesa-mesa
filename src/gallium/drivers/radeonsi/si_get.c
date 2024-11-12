@@ -178,6 +178,7 @@ static int si_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
    case PIPE_CAP_NULL_TEXTURES:
    case PIPE_CAP_HAS_CONST_BW:
    case PIPE_CAP_CL_GL_SHARING:
+   case PIPE_CAP_CALL_FINALIZE_NIR_IN_LINKER:
       return 1;
 
    /* Tahiti and Verde only: reduction mode is unsupported due to a bug

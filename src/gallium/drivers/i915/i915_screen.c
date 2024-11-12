@@ -413,6 +413,7 @@ i915_get_param(struct pipe_screen *screen, enum pipe_cap cap)
    case PIPE_CAP_USER_VERTEX_BUFFERS:
    case PIPE_CAP_MIXED_COLOR_DEPTH_BITS:
    case PIPE_CAP_TGSI_TEXCOORD:
+   case PIPE_CAP_CALL_FINALIZE_NIR_IN_LINKER:
       return 1;
 
    case PIPE_CAP_TEXTURE_TRANSFER_MODES:
