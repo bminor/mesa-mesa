@@ -1434,6 +1434,8 @@ RADV driver environment variables
       Dump compute (and ray tracing) shaders.
    ``nir``
       Dump NIR for selected shader stages.
+   ``asm``
+      Dump shader disassembly for selected shader stages.
 
 .. envvar:: RADV_FORCE_FAMILY
 

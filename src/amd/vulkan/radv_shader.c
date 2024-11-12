@@ -3142,11 +3142,16 @@ radv_shader_generate_debug_info(struct radv_device *device, bool dump_shader, bo
       radv_capture_shader_executable_info(device, shader, shaders, shader_count, binary);
 
    if (dump_shader) {
-      fprintf(stderr, "%s", radv_get_shader_name(info, shaders[0]->info.stage));
-      for (int i = 1; i < shader_count; ++i)
-         fprintf(stderr, " + %s", radv_get_shader_name(info, shaders[i]->info.stage));
+      const struct radv_physical_device *pdev = radv_device_physical(device);
+      const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
-      fprintf(stderr, "\ndisasm:\n%s\n", shader->disasm_string);
+      if (instance->debug_flags & (RADV_DEBUG_DUMP_ASM | RADV_DEBUG_DUMP_SHADERS)) {
+         fprintf(stderr, "%s", radv_get_shader_name(info, shaders[0]->info.stage));
+         for (int i = 1; i < shader_count; ++i)
+            fprintf(stderr, " + %s", radv_get_shader_name(info, shaders[i]->info.stage));
+
+         fprintf(stderr, "\ndisasm:\n%s\n", shader->disasm_string);
+      }
    }
 }
 

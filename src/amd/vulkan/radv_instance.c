@@ -83,6 +83,7 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"mesh", RADV_DEBUG_DUMP_MESH},
                                                           {"cs", RADV_DEBUG_DUMP_CS},
                                                           {"nir", RADV_DEBUG_DUMP_NIR},
+                                                          {"asm", RADV_DEBUG_DUMP_ASM},
                                                           {NULL, 0}};
 
 const char *
