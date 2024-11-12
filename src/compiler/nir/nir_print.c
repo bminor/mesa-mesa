@@ -837,8 +837,10 @@ print_var_decl(nir_variable *var, print_state *state)
    const char *const per_view = (var->data.per_view) ? "per_view " : "";
    const char *const per_primitive = (var->data.per_primitive) ? "per_primitive " : "";
    const char *const ray_query = (var->data.ray_query) ? "ray_query " : "";
-   fprintf(fp, "%s%s%s%s%s%s%s%s%s %s ",
-           bindless, cent, samp, patch, inv, per_view, per_primitive, ray_query,
+   const char *const fb_fetch = var->data.fb_fetch_output ? "fb_fetch_output " : "";
+   fprintf(fp, "%s%s%s%s%s%s%s%s%s%s %s ",
+           bindless, cent, samp, patch, inv, per_view, per_primitive,
+           ray_query, fb_fetch,
            get_variable_mode_str(var->data.mode, false),
            glsl_interp_mode_name(var->data.interpolation));
 
