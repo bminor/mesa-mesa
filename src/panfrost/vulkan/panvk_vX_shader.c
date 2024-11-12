@@ -48,7 +48,6 @@
 #include "vk_shader_module.h"
 
 #include "compiler/bifrost_nir.h"
-#include "util/pan_lower_framebuffer.h"
 #include "pan_shader.h"
 
 #include "vk_log.h"
