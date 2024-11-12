@@ -482,7 +482,7 @@ dri_convert_glx_attribs(unsigned num_attribs, const uint32_t *attribs,
             dca->reset = __DRI_CTX_RESET_LOSE_CONTEXT;
             break;
          default:
-            return BadValue;
+            return BadMatch;
          }
          break;
       case GLX_CONTEXT_RELEASE_BEHAVIOR_ARB:

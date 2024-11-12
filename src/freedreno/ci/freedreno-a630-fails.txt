@@ -18,7 +18,6 @@ dEQP-GLES31.functional.texture.border_clamp.range_clamp.linear_float_color,Fail
 
 glx@glx_arb_create_context_es2_profile@invalid opengl es version,Fail
 glx@glx_arb_create_context_no_error@no error,Fail
-glx@glx_arb_create_context_robustness@invalid reset notification strategy,Fail
 glx@glx-make-current,Fail
 glx@glx-multi-window-single-context,Fail
 
