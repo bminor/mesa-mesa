@@ -117,7 +117,12 @@ panvk_query_is_available(struct panvk_query_pool *pool, uint32_t query)
 {
    struct panvk_query_available_obj *available =
       panvk_query_available_host_addr(pool, query);
+
+#if PAN_ARCH >= 10
+   return p_atomic_read(&available->sync_obj.seqno) != 0;
+#else
    return p_atomic_read(&available->value) != 0;
+#endif
 }
 
 static VkResult

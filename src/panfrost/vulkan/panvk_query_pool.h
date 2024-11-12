@@ -15,12 +15,20 @@
 #include "panvk_mempool.h"
 #include "vk_query_pool.h"
 
+#if PAN_ARCH >= 10
+#include "panvk_cmd_buffer.h"
+#endif
+
 struct panvk_query_report {
    uint64_t value;
 };
 
 struct panvk_query_available_obj {
+#if PAN_ARCH >= 10
+   struct panvk_cs_sync32 sync_obj;
+#else
    uint32_t value;
+#endif
 };
 
 static_assert(sizeof(struct panvk_query_report) == 8,
