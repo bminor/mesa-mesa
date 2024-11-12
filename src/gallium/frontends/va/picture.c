@@ -1133,7 +1133,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    vlVaSurface *surf;
    void *feedback = NULL;
    struct pipe_screen *screen;
-   bool realloc = false;
    bool apply_av1_fg = false;
    struct pipe_video_buffer **out_target;
    int output_id;
@@ -1189,18 +1188,6 @@ vlVaEndPicture(VADriverContextP ctx, VAContextID context_id)
    if ((bool)(surf->templat.bind & PIPE_BIND_PROTECTED) != context->desc.base.protected_playback) {
       mtx_unlock(&drv->mutex);
       return VA_STATUS_ERROR_INVALID_SURFACE;
-   }
-
-   if (realloc) {
-      struct pipe_video_buffer *old_buf = surf->buffer;
-
-      if (vlVaHandleSurfaceAllocate(drv, surf, &surf->templat, NULL, 0) != VA_STATUS_SUCCESS) {
-         mtx_unlock(&drv->mutex);
-         return VA_STATUS_ERROR_ALLOCATION_FAILED;
-      }
-
-      old_buf->destroy(old_buf);
-      *out_target = surf->buffer;
    }
 
    target_format = context->target->buffer_format;
