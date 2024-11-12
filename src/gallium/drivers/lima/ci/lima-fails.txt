@@ -592,9 +592,6 @@ spec@ext_texture_compression_s3tc@compressedteximage gl_compressed_srgb_alpha_s3
 spec@ext_texture_compression_s3tc@compressedteximage gl_compressed_srgb_alpha_s3tc_dxt5_ext,Fail
 spec@ext_texture_compression_s3tc@compressedteximage gl_compressed_srgb_s3tc_dxt1_ext,Fail
 
-# Expects that some format/internal_format combinations should be supported when they currently aren't.
-spec@arb_clear_texture@arb_clear_texture-supported-formats,Fail
-
 # Precision issue when lowering GL_RGB16 and GL_RGBA16
 spec@arb_clear_texture@arb_clear_texture-sized-formats,Fail
 

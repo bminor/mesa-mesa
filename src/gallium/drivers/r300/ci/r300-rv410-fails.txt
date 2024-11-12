@@ -589,7 +589,6 @@ spec@!opengl 2.1@pbo@test_polygon_stip,Fail
 spec@!opengl 2.1@polygon-stipple-fs,Fail
 
 spec@arb_clear_texture@arb_clear_texture-float,Fail
-spec@arb_clear_texture@arb_clear_texture-supported-formats,Fail
 
 spec@arb_color_buffer_float@gl_rgba16f-render-sanity,Fail
 spec@arb_color_buffer_float@gl_rgba16f-render-sanity-fog,Fail
