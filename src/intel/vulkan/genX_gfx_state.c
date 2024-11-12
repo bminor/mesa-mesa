@@ -2264,8 +2264,18 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_RASTER)) {
-      anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_RASTER),
-                           pipeline, partial.raster, raster) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_RASTER), raster) {
+         /* For details on 3DSTATE_RASTER multisample state, see the BSpec
+          * table "Multisample Modes State".
+          *
+          * NOTE: 3DSTATE_RASTER::ForcedSampleCount affects the SKL PMA fix
+          * computations. If we ever set this bit to a different value, they
+          * will need to be updated accordingly.
+          */
+         raster.ForcedSampleCount = FSC_NUMRASTSAMPLES_0;
+         raster.ForceMultisampling = false;
+         raster.ScissorRectangleEnable = true;
+
          SET(raster, raster, APIMode);
          SET(raster, raster, DXMultisampleRasterizationEnable);
          SET(raster, raster, AntialiasingEnable);

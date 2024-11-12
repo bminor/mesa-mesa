@@ -764,20 +764,6 @@ emit_rs_state(struct anv_graphics_pipeline *pipeline,
          sf.PointWidth = 1.0;
       }
    }
-
-   anv_pipeline_emit(pipeline, partial.raster, GENX(3DSTATE_RASTER), raster) {
-      /* For details on 3DSTATE_RASTER multisample state, see the BSpec table
-       * "Multisample Modes State".
-       */
-      /* NOTE: 3DSTATE_RASTER::ForcedSampleCount affects the BDW and SKL PMA fix
-       * computations.  If we ever set this bit to a different value, they will
-       * need to be updated accordingly.
-       */
-      raster.ForcedSampleCount = FSC_NUMRASTSAMPLES_0;
-      raster.ForceMultisampling = false;
-
-      raster.ScissorRectangleEnable = true;
-   }
 }
 
 static void
