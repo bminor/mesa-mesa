@@ -1421,6 +1421,20 @@ static VAProcColorStandardType vpp_output_color_standards[] = {
    VAProcColorStandardBT709
 };
 
+static VAProcColorStandardType vpp_input_color_standards_extends[] = {
+   VAProcColorStandardBT601,
+   VAProcColorStandardBT709,
+   VAProcColorStandardBT2020,
+   VAProcColorStandardExplicit
+};
+
+static VAProcColorStandardType vpp_output_color_standards_extends[] = {
+   VAProcColorStandardBT601,
+   VAProcColorStandardBT709,
+   VAProcColorStandardBT2020,
+   VAProcColorStandardExplicit
+};
+
 VAStatus
 vlVaQueryVideoProcPipelineCaps(VADriverContextP ctx, VAContextID context,
                                VABufferID *filters, unsigned int num_filters,
@@ -1441,10 +1455,6 @@ vlVaQueryVideoProcPipelineCaps(VADriverContextP ctx, VAContextID context,
    pipeline_cap->filter_flags = 0;
    pipeline_cap->num_forward_references = 0;
    pipeline_cap->num_backward_references = 0;
-   pipeline_cap->num_input_color_standards = ARRAY_SIZE(vpp_input_color_standards);
-   pipeline_cap->input_color_standards = vpp_input_color_standards;
-   pipeline_cap->num_output_color_standards = ARRAY_SIZE(vpp_output_color_standards);
-   pipeline_cap->output_color_standards = vpp_output_color_standards;
 
    struct pipe_screen *pscreen = VL_VA_PSCREEN(ctx);
    uint32_t pipe_orientation_flags = pscreen->get_video_param(pscreen,
@@ -1465,6 +1475,23 @@ vlVaQueryVideoProcPipelineCaps(VADriverContextP ctx, VAContextID context,
       pipeline_cap->mirror_flags |= VA_MIRROR_HORIZONTAL;
    if(pipe_orientation_flags & PIPE_VIDEO_VPP_FLIP_VERTICAL)
       pipeline_cap->mirror_flags |= VA_MIRROR_VERTICAL;
+
+   if (pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN, PIPE_VIDEO_ENTRYPOINT_PROCESSING,
+                                PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_INPUT)) {
+      pipeline_cap->num_input_color_standards = ARRAY_SIZE(vpp_input_color_standards_extends);
+      pipeline_cap->input_color_standards = vpp_input_color_standards_extends;
+   } else {
+      pipeline_cap->num_input_color_standards = ARRAY_SIZE(vpp_input_color_standards);
+      pipeline_cap->input_color_standards = vpp_input_color_standards;
+   }
+   if (pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN, PIPE_VIDEO_ENTRYPOINT_PROCESSING,
+                                PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_OUTPUT)) {
+      pipeline_cap->num_output_color_standards = ARRAY_SIZE(vpp_output_color_standards_extends);
+      pipeline_cap->output_color_standards = vpp_output_color_standards_extends;
+   } else {
+      pipeline_cap->num_output_color_standards = ARRAY_SIZE(vpp_output_color_standards);
+      pipeline_cap->output_color_standards = vpp_output_color_standards;
+   }
 
    pipeline_cap->max_input_width = pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN,
                                                             PIPE_VIDEO_ENTRYPOINT_PROCESSING,

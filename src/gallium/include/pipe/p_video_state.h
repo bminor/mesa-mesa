@@ -1977,6 +1977,14 @@ struct pipe_vpp_desc
    enum pipe_video_vpp_color_standard_type out_colors_standard;
    enum pipe_video_vpp_color_range out_color_range;
    enum pipe_video_vpp_chroma_siting out_chroma_siting;
+
+   enum pipe_video_vpp_color_primaries in_color_primaries;
+   enum pipe_video_vpp_transfer_characteristic in_transfer_characteristics;
+   enum pipe_video_vpp_matrix_coefficients in_matrix_coefficients;
+
+   enum pipe_video_vpp_color_primaries out_color_primaries;
+   enum pipe_video_vpp_transfer_characteristic out_transfer_characteristics;
+   enum pipe_video_vpp_matrix_coefficients out_matrix_coefficients;
 };
 
 

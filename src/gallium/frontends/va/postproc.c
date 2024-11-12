@@ -274,6 +274,12 @@ static VAStatus vlVaVidEngineBlit(vlVaDriver *drv, vlVaContext *context,
       context->desc.vidproc.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709;
    else if (param->surface_color_standard == VAProcColorStandardBT2020)
       context->desc.vidproc.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020;
+   else if (param->surface_color_standard == VAProcColorStandardExplicit) {
+      context->desc.vidproc.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_EXPLICIT;
+      context->desc.vidproc.in_color_primaries = param->input_color_properties.colour_primaries;
+      context->desc.vidproc.in_transfer_characteristics = param->input_color_properties.transfer_characteristics;
+      context->desc.vidproc.in_matrix_coefficients = param->input_color_properties.matrix_coefficients;
+   }
 
    // Input surface color range
    context->desc.vidproc.in_color_range = PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_NONE;
@@ -303,6 +309,12 @@ static VAStatus vlVaVidEngineBlit(vlVaDriver *drv, vlVaContext *context,
       context->desc.vidproc.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709;
    else if (param->output_color_standard == VAProcColorStandardBT2020)
       context->desc.vidproc.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020;
+   else if (param->output_color_standard == VAProcColorStandardExplicit) {
+      context->desc.vidproc.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_EXPLICIT;
+      context->desc.vidproc.out_color_primaries = param->input_color_properties.colour_primaries;
+      context->desc.vidproc.out_transfer_characteristics = param->input_color_properties.transfer_characteristics;
+      context->desc.vidproc.out_matrix_coefficients = param->input_color_properties.matrix_coefficients;
+   }
 
    // Output surface color range
    context->desc.vidproc.out_color_range = PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_NONE;
