@@ -333,16 +333,20 @@ panfrost_bo_cache_evict_all(struct panfrost_device *dev)
    pthread_mutex_unlock(&dev->bo_cache.lock);
 }
 
-void
+int
 panfrost_bo_mmap(struct panfrost_bo *bo)
 {
    if (bo->ptr.cpu)
-      return;
+      return 0;
 
    bo->ptr.cpu = pan_kmod_bo_mmap(bo->kmod_bo, 0, panfrost_bo_size(bo),
                                   PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
-   if (bo->ptr.cpu == MAP_FAILED)
+   if (bo->ptr.cpu == MAP_FAILED) {
       bo->ptr.cpu = NULL;
+      return -1;
+   }
+
+   return 0;
 }
 
 static void
