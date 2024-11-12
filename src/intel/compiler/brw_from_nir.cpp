@@ -853,21 +853,30 @@ try_emit_b2fi_of_inot(nir_to_brw_state &ntb, const brw_builder &bld,
     * The source restriction is just because I was lazy about generating the
     * constant below.
     */
-   if (instr->def.bit_size != 32 ||
-       nir_src_bit_size(inot_instr->src[0].src) != 32)
+   if (nir_src_bit_size(inot_instr->src[0].src) != 32)
       return false;
 
    /* b2[fi](inot(a)) maps a=0 => 1, a=-1 => 0.  Since a can only be 0 or -1,
-    * this is float(1 + a).
+    * this is either intBitsToFloat(~a & ONE_POINT_ZERO) or (~a & 1).
     */
+   brw_reg one;
+   switch (instr->op) {
+   case nir_op_b2f32:
+      one = brw_imm_ud(0x3f800000);
+      break;
+   case nir_op_b2i32:
+      one = brw_imm_ud(1);
+      break;
+   default:
+      return false;
+   }
+
    brw_reg op;
 
    prepare_alu_destination_and_sources(ntb, bld, inot_instr, &op, false);
 
-   /* Ignore the saturate modifier, if there is one.  The result of the
-    * arithmetic can only be 0 or 1, so the clamping will do nothing anyway.
-    */
-   bld.ADD(result, op, brw_imm_d(1));
+   op.negate = true;
+   bld.AND(retype(result, one.type), op, one);
 
    return true;
 }
