@@ -357,7 +357,6 @@ static VAStatus vlVaPostProcBlit(vlVaDriver *drv, vlVaContext *context,
    struct pipe_surface **dst_surfaces;
    struct u_rect src_rect;
    struct u_rect dst_rect;
-   bool scale = false;
    bool grab = false;
    unsigned i, src_num_planes, dst_num_planes;
 
@@ -375,28 +374,9 @@ static VAStatus vlVaPostProcBlit(vlVaDriver *drv, vlVaContext *context,
        !src->interlaced)
       grab = true;
 
-   if ((src->width != dst->width || src->height != dst->height) &&
-       (src->interlaced && dst->interlaced))
-      scale = true;
-
    src_surfaces = src->get_surfaces(src);
    if (!src_surfaces || !src_surfaces[0])
       return VA_STATUS_ERROR_INVALID_SURFACE;
-
-   if (scale || (src->interlaced != dst->interlaced && dst->interlaced)) {
-      vlVaSurface *surf;
-
-      surf = handle_table_get(drv->htab, context->target_id);
-      if (!surf)
-         return VA_STATUS_ERROR_INVALID_SURFACE;
-      surf->templat.interlaced = false;
-      dst->destroy(dst);
-
-      if (vlVaHandleSurfaceAllocate(drv, surf, &surf->templat, NULL, 0) != VA_STATUS_SUCCESS)
-         return VA_STATUS_ERROR_ALLOCATION_FAILED;
-
-      dst = context->target = surf->buffer;
-   }
 
    dst_surfaces = dst->get_surfaces(dst);
    if (!dst_surfaces || !dst_surfaces[0])
@@ -429,15 +409,6 @@ static VAStatus vlVaPostProcBlit(vlVaDriver *drv, vlVaContext *context,
       vl_compositor_yuv_deint_full(&drv->cstate, &drv->compositor,
                                    src, dst, &src_rect, &dst_rect,
                                    VL_COMPOSITOR_NONE);
-
-      return VA_STATUS_SUCCESS;
-   }
-
-   if (src->interlaced != dst->interlaced) {
-      deinterlace = deinterlace ? deinterlace : VL_COMPOSITOR_WEAVE;
-      vl_compositor_yuv_deint_full(&drv->cstate, &drv->compositor,
-                                   src, dst, &src_rect, &dst_rect,
-                                   deinterlace);
 
       return VA_STATUS_SUCCESS;
    }
@@ -547,7 +518,7 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    VARectangle def_src_region, def_dst_region;
    const VARectangle *src_region, *dst_region;
    VAProcPipelineParameterBuffer *param;
-   struct pipe_video_buffer *src, *dst;
+   struct pipe_video_buffer *src;
    vlVaSurface *src_surface, *dst_surface;
    unsigned i;
    struct pipe_screen *pscreen;
@@ -618,21 +589,6 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    }
 
    src = src_surface->buffer;
-   dst = dst_surface->buffer;
-
-   /* convert the destination buffer to progressive if we're deinterlacing
-      otherwise we might end up deinterlacing twice */
-   if (param->num_filters && dst->interlaced) {
-      vlVaSurface *surf;
-      surf = dst_surface;
-      surf->templat.interlaced = false;
-      dst->destroy(dst);
-
-      if (vlVaHandleSurfaceAllocate(drv, surf, &surf->templat, NULL, 0) != VA_STATUS_SUCCESS)
-         return VA_STATUS_ERROR_ALLOCATION_FAILED;
-
-      dst = context->target = surf->buffer;
-   }
 
    for (i = 0; i < param->num_filters; i++) {
       vlVaBuffer *buf = handle_table_get(drv->htab, param->filters[i]);

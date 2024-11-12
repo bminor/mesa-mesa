@@ -1250,9 +1250,9 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
 
    if (!modifiers)
       templat.interlaced =
-         pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN,
-                                  PIPE_VIDEO_ENTRYPOINT_BITSTREAM,
-                                  PIPE_VIDEO_CAP_PREFERS_INTERLACED);
+         !pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN,
+                                   PIPE_VIDEO_ENTRYPOINT_BITSTREAM,
+                                   PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE);
 
 #ifndef _WIN32
    if (expected_fourcc != VA_FOURCC_NV12 || memory_attribute || prime_desc)
@@ -1650,30 +1650,8 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
    }
 
    if (surf->buffer->interlaced) {
-      struct pipe_video_buffer *interlaced = surf->buffer;
-      struct u_rect src_rect, dst_rect;
-
-      surf->templat.interlaced = false;
-
-      ret = vlVaHandleSurfaceAllocate(drv, surf, &surf->templat, NULL, 0);
-      if (ret != VA_STATUS_SUCCESS) {
-         mtx_unlock(&drv->mutex);
-         return VA_STATUS_ERROR_ALLOCATION_FAILED;
-      }
-
-      src_rect.x0 = dst_rect.x0 = 0;
-      src_rect.y0 = dst_rect.y0 = 0;
-      src_rect.x1 = dst_rect.x1 = surf->templat.width;
-      src_rect.y1 = dst_rect.y1 = surf->templat.height;
-
-      vl_compositor_yuv_deint_full(&drv->cstate, &drv->compositor,
-                                   interlaced, surf->buffer,
-                                   &src_rect, &dst_rect,
-                                   VL_COMPOSITOR_WEAVE);
-      if (interlaced->codec && interlaced->codec->update_decoder_target)
-         interlaced->codec->update_decoder_target(interlaced->codec, interlaced, surf->buffer);
-
-      interlaced->destroy(interlaced);
+      mtx_unlock(&drv->mutex);
+      return VA_STATUS_ERROR_INVALID_SURFACE;
    }
 
    surfaces = surf->buffer->get_surfaces(surf->buffer);

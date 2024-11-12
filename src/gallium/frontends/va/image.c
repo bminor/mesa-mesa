@@ -259,19 +259,6 @@ vlVaDeriveImage(VADriverContextP ctx, VASurfaceID surface, VAImage *image)
    unsigned stride = 0;
    unsigned offset = 0;
 
-   /* This function is used by some programs to test for hardware decoding, but on
-    * AMD devices, the buffers default to interlaced, which causes this function to fail.
-    * Some programs expect this function to fail, while others, assume this means
-    * hardware acceleration is not available and give up without trying the fall-back
-    * vaCreateImage + vaPutImage
-    */
-   const char *proc = util_get_process_name();
-   const char *derive_interlaced_allowlist[] = {
-         "vlc",
-         "h264encode",
-         "hevcencode"
-   };
-
    if (!ctx)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
 
@@ -294,22 +281,15 @@ vlVaDeriveImage(VADriverContextP ctx, VASurfaceID surface, VAImage *image)
    }
 
    if (surf->buffer->interlaced) {
-      for (i = 0; i < ARRAY_SIZE(derive_interlaced_allowlist); i++)
-         if ((strcmp(derive_interlaced_allowlist[i], proc) == 0))
-            break;
+      status = VA_STATUS_ERROR_OPERATION_FAILED;
+      goto exit_on_error;
+   }
 
-      if (i >= ARRAY_SIZE(derive_interlaced_allowlist) ||
-          !screen->get_video_param(screen, PIPE_VIDEO_PROFILE_UNKNOWN,
-                                   PIPE_VIDEO_ENTRYPOINT_BITSTREAM,
-                                   PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE)) {
-         status = VA_STATUS_ERROR_OPERATION_FAILED;
-         goto exit_on_error;
-      }
-   } else if (util_format_get_num_planes(surf->buffer->buffer_format) >= 2 &&
-              (!screen->get_video_param(screen, PIPE_VIDEO_PROFILE_UNKNOWN,
-                                       PIPE_VIDEO_ENTRYPOINT_BITSTREAM,
-                                       PIPE_VIDEO_CAP_SUPPORTS_CONTIGUOUS_PLANES_MAP) ||
-               !surf->buffer->contiguous_planes)) {
+   if (util_format_get_num_planes(surf->buffer->buffer_format) >= 2 &&
+       (!screen->get_video_param(screen, PIPE_VIDEO_PROFILE_UNKNOWN,
+                                         PIPE_VIDEO_ENTRYPOINT_BITSTREAM,
+                                         PIPE_VIDEO_CAP_SUPPORTS_CONTIGUOUS_PLANES_MAP) ||
+        !surf->buffer->contiguous_planes)) {
       status = VA_STATUS_ERROR_OPERATION_FAILED;
       goto exit_on_error;
    }
@@ -397,54 +377,8 @@ vlVaDeriveImage(VADriverContextP ctx, VASurfaceID surface, VAImage *image)
                img->offsets[1] = 0;
       }
 
-      if (surf->buffer->interlaced) {
-         struct u_rect src_rect, dst_rect;
-         struct pipe_video_buffer new_template;
-
-         new_template = surf->templat;
-         new_template.interlaced = false;
-         new_buffer = drv->pipe->create_video_buffer(drv->pipe, &new_template);
-
-         /* not all devices support non-interlaced buffers */
-         if (!new_buffer) {
-            status = VA_STATUS_ERROR_OPERATION_FAILED;
-            goto exit_on_error;
-         }
-
-         /* convert the interlaced to the progressive */
-         src_rect.x0 = dst_rect.x0 = 0;
-         src_rect.x1 = dst_rect.x1 = surf->templat.width;
-         src_rect.y0 = dst_rect.y0 = 0;
-         src_rect.y1 = dst_rect.y1 = surf->templat.height;
-
-         vl_compositor_yuv_deint_full(&drv->cstate, &drv->compositor,
-                           surf->buffer, new_buffer,
-                           &src_rect, &dst_rect,
-                           VL_COMPOSITOR_WEAVE);
-
-         /* recalculate the values now that we have a new surface */
-         memset(buf_resources, 0, sizeof(buf_resources));
-         new_buffer->get_resources(new_buffer, buf_resources);
-         if (screen->resource_get_info) {
-            screen->resource_get_info(screen, buf_resources[0], &img->pitches[0],
-                                    &img->offsets[0]);
-            if (!img->pitches[0])
-               img->offsets[0] = 0;
-
-            screen->resource_get_info(screen, buf_resources[1], &img->pitches[1],
-                                    &img->offsets[1]);
-            if (!img->pitches[1])
-               img->offsets[1] = 0;
-         }
-
-         w = align(new_buffer->width, 2);
-         h = align(new_buffer->height, 2);
-      }
-
       img->num_planes = 2;
       if(screen->resource_get_info) {
-         /* Note this block might use h and w from the recalculated size if it entered
-            the interlaced branch above.*/
          img->data_size  = (img->pitches[0] * h) + (img->pitches[1] * h / 2);
       } else {
          /* Use stride = w as default if screen->resource_get_info was not available */
