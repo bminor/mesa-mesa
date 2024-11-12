@@ -124,7 +124,7 @@ static struct etna_bo *find_in_bucket(struct etna_bo_bucket *bucket, uint32_t fl
 
 		/* check if the first BO with matching flags is idle */
 		if (etna_bo_is_idle(bo)) {
-			list_delinit(&bo->list);
+			list_del(&bo->list);
 			goto out_unlock;
 		}
 
