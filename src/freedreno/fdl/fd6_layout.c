@@ -101,10 +101,11 @@ fdl6_tile_alignment(struct fdl_layout *layout, uint32_t *heightalign)
  *  piglit/bin/texelFetch fs sampler3D 100x100x8
  */
 bool
-fdl6_layout(struct fdl_layout *layout, enum pipe_format format,
-            uint32_t nr_samples, uint32_t width0, uint32_t height0,
-            uint32_t depth0, uint32_t mip_levels, uint32_t array_size,
-            bool is_3d, struct fdl_explicit_layout *explicit_layout)
+fdl6_layout(struct fdl_layout *layout, const struct fd_dev_info *info,
+            enum pipe_format format, uint32_t nr_samples, uint32_t width0,
+            uint32_t height0, uint32_t depth0, uint32_t mip_levels,
+            uint32_t array_size, bool is_3d,
+            struct fdl_explicit_layout *explicit_layout)
 {
    uint32_t offset = 0, heightalign;
    uint32_t ubwc_blockwidth, ubwc_blockheight;

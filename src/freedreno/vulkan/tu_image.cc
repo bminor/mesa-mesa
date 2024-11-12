@@ -542,7 +542,7 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
       layout->tile_mode = tile_mode;
       layout->ubwc = image->ubwc_enabled;
 
-      if (!fdl6_layout(layout, format,
+      if (!fdl6_layout(layout, &device->physical_device->dev_info, format,
                        image->vk.samples,
                        width0, height0,
                        image->vk.extent.depth,

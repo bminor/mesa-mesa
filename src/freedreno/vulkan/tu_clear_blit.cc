@@ -2903,6 +2903,7 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
          vk_image_subresource_layer_count(&src_image->vk,
                                           &info->srcSubresource);
       fdl6_layout(&staging_layout,
+                  &cmd->device->physical_device->dev_info,
                   src_format,
                   src_image->layout[0].nr_samples,
                   extent.width,
