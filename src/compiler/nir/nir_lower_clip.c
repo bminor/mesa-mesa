@@ -101,7 +101,7 @@ store_clipdist_output(nir_builder *b, nir_variable *out, int location, int locat
    unsigned num_slots = b->shader->info.clip_distance_array_size;
    nir_io_semantics semantics = {
       .location = location,
-      .num_slots = num_slots,
+      .num_slots = b->shader->options->compact_arrays ? num_slots : 1,
    };
 
    if (location == VARYING_SLOT_CLIP_DIST1 || location_offset)
@@ -167,7 +167,7 @@ find_output(nir_builder *b, unsigned location)
    nir_foreach_function_impl(impl, b->shader) {
       nir_foreach_block_reverse(block, impl) {
          nir_def *new_def = NULL;
-         nir_foreach_instr_reverse(instr, block) {
+         nir_foreach_instr_reverse_safe(instr, block) {
             if (instr->type != nir_instr_type_intrinsic)
                continue;
             nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
@@ -189,6 +189,10 @@ find_output(nir_builder *b, unsigned location)
                      first = &intr->instr;
                   found++;
                }
+
+               /* Remove it because it's going to be replaced by CLIP_DIST. */
+               if (location == VARYING_SLOT_CLIP_VERTEX)
+                  nir_instr_remove(instr);
             }
          }
          assert(!(new_def && def));
@@ -329,14 +333,13 @@ lower_clip_outputs(nir_builder *b, nir_variable *position,
          if (ucp_enables & 0xf0)
             nir_store_var(b, out[1], nir_vec(b, &clipdist[4], 4), 0xf);
       } else if (use_clipdist_array) {
-         /* always emit first half of array */
-
+         /* Always emit the first vec4. */
          store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 0, &clipdist[0], use_clipdist_array);
          if (ucp_enables & 0xf0)
             store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 1, &clipdist[4], use_clipdist_array);
       } else {
-         if (ucp_enables & 0x0f)
-            store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 0, &clipdist[0], use_clipdist_array);
+         /* Always emit the first vec4. */
+         store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 0, &clipdist[0], use_clipdist_array);
          if (ucp_enables & 0xf0)
             store_clipdist_output(b, out[1], VARYING_SLOT_CLIP_DIST1, 0, &clipdist[4], use_clipdist_array);
       }
