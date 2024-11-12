@@ -147,8 +147,8 @@ process_hwconfig_table(struct intel_device_info *devinfo,
    assert(current == end);
 }
 
-static inline bool
-apply_hwconfig(const struct intel_device_info *devinfo)
+bool
+intel_hwconfig_is_required(const struct intel_device_info *devinfo)
 {
    /* returns is true when the platform should apply hwconfig values */
    return devinfo->verx10 >= 125;
@@ -172,7 +172,7 @@ should_apply_hwconfig_item(uint16_t always_apply_verx10,
                            const struct intel_device_info *devinfo,
                            uint32_t devinfo_val)
 {
-   assert(apply_hwconfig(devinfo));
+   assert(intel_hwconfig_is_required(devinfo));
    if ((devinfo->verx10 >= always_apply_verx10 || devinfo_val == 0))
       return true;
 
@@ -337,10 +337,10 @@ bool
 intel_hwconfig_process_table(struct intel_device_info *devinfo,
                              void *data, int32_t len)
 {
-   if (apply_hwconfig(devinfo))
+   if (intel_hwconfig_is_required(devinfo))
       process_hwconfig_table(devinfo, data, len, apply_hwconfig_item);
 
-   return apply_hwconfig(devinfo);
+   return true;
 }
 
 static void

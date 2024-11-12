@@ -1849,6 +1849,16 @@ intel_device_info_calc_engine_prefetch(const struct intel_device_info *devinfo,
    return 512;
 }
 
+static void
+intel_device_info_update_after_hwconfig(struct intel_device_info *devinfo)
+{
+   /* After applying hwconfig values, some items need to be recalculated. */
+   devinfo->max_cs_threads =
+      devinfo->max_eus_per_subslice * devinfo->num_thread_per_eu;
+
+   intel_device_info_update_cs_workgroup_threads(devinfo);
+}
+
 bool
 intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo, int min_ver, int max_ver)
 {
@@ -1943,6 +1953,8 @@ intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo, int min
       return false;
    }
 
+   if (intel_hwconfig_is_required(devinfo))
+      intel_device_info_update_after_hwconfig(devinfo);
    intel_device_info_adjust_memory(devinfo);
 
    /* Gfx7 and older do not support EU/Subslice info */
@@ -1982,16 +1994,6 @@ bool intel_device_info_update_memory_info(struct intel_device_info *devinfo, int
    if (ret)
       intel_device_info_adjust_memory(devinfo);
    return ret;
-}
-
-void
-intel_device_info_update_after_hwconfig(struct intel_device_info *devinfo)
-{
-   /* After applying hwconfig values, some items need to be recalculated. */
-   devinfo->max_cs_threads =
-      devinfo->max_eus_per_subslice * devinfo->num_thread_per_eu;
-
-   intel_device_info_update_cs_workgroup_threads(devinfo);
 }
 
 enum intel_wa_steppings

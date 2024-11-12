@@ -346,8 +346,8 @@ intel_device_info_xe_get_info_from_fd(int fd, struct intel_device_info *devinfo)
    if (!xe_query_topology(fd, devinfo))
          return false;
 
-   if (xe_query_process_hwconfig(fd, devinfo))
-      intel_device_info_update_after_hwconfig(devinfo);
+   if (!xe_query_process_hwconfig(fd, devinfo))
+      return false;
 
    devinfo->has_context_isolation = true;
    devinfo->has_mmap_offset = true;

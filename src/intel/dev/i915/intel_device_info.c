@@ -579,8 +579,7 @@ bool intel_device_info_i915_get_info_from_fd(int fd, struct intel_device_info *d
 
    hwconfig_blob = intel_device_info_i915_query_hwconfig(fd, &len);
    if (hwconfig_blob) {
-      if (intel_hwconfig_process_table(devinfo, hwconfig_blob, len))
-         intel_device_info_update_after_hwconfig(devinfo);
+      intel_hwconfig_process_table(devinfo, hwconfig_blob, len);
 
       free(hwconfig_blob);
    }
