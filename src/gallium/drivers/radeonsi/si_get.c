@@ -1158,7 +1158,9 @@ static bool si_vid_is_target_buffer_supported(struct pipe_screen *screen,
 
    switch (entrypoint) {
    case PIPE_VIDEO_ENTRYPOINT_BITSTREAM:
-      return !is_dcc && !is_format_conversion;
+      if (is_dcc || is_format_conversion)
+         return false;
+      break;
 
    case PIPE_VIDEO_ENTRYPOINT_ENCODE:
       if (is_dcc)
@@ -1183,19 +1185,20 @@ static bool si_vid_is_target_buffer_supported(struct pipe_screen *screen,
              sscreen->debug_flags & DBG(NO_EFC))
             return false;
 
-         if (input_8bit)
-            return format == PIPE_FORMAT_NV12;
-         else if (input_10bit)
-            return format == PIPE_FORMAT_NV12 || format == PIPE_FORMAT_P010;
-         else
+         if (input_8bit && format != PIPE_FORMAT_NV12)
+            return false;
+         if (input_10bit && format != PIPE_FORMAT_NV12 && format != PIPE_FORMAT_P010)
             return false;
       }
-
-      return true;
+      break;
 
    default:
-      return !is_format_conversion;
+      if (is_format_conversion)
+         return false;
+      break;
    }
+
+   return si_vid_is_format_supported(screen, format, profile, entrypoint);
 }
 
 static unsigned get_max_threads_per_block(struct si_screen *screen, enum pipe_shader_ir ir_type)
