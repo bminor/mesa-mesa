@@ -294,7 +294,7 @@
         "description": "glsl/nir: fix function cloning at link time",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cbfc225e2bda2c8627a4580fa3a9b63bfb7133e0",
         "notes": null
