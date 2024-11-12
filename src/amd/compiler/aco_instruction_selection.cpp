@@ -12336,9 +12336,13 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
    /* Save SQ_WAVE_STATUS because SCC needs to be restored. */
    bld.sopk(aco_opcode::s_getreg_b32, Definition(save_wave_status, s1), ((32 - 1) << 11) | 2);
 
-   /* Save m0 and exec. */
+   /* Save m0. */
    bld.copy(Definition(save_m0, s1), Operand(m0, s1));
-   bld.copy(Definition(save_exec, bld.lm), Operand(exec, bld.lm));
+
+   /* Save exec and use all invocations from the wave. */
+   bld.sop1(Builder::s_or_saveexec, Definition(save_exec, bld.lm), Definition(scc, s1),
+            Definition(exec, bld.lm), Operand::c32_or_c64(-1u, bld.lm == s2),
+            Operand(exec, bld.lm));
 
    if (options->gfx_level < GFX11) {
       /* Clear the current wave exception, this is required to re-enable VALU
