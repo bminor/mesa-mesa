@@ -447,7 +447,8 @@ Struct("intel_device_info",
 
         Member("unsigned", "max_cs_threads",
                comment=dedent("""\
-               Maximum Compute Shader threads.
+               Maximum Compute Shader threads per subslice.
+               Actual maximum compute shader threads is max_cs_threads * subslices.
 
                Thread count * number of EUs per subslice""")),
 
