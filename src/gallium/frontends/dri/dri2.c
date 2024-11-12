@@ -856,6 +856,26 @@ static const struct dri2_format_mapping g8r8_b8r8_mapping = {
      { 0, 1, 0, __DRI_IMAGE_FORMAT_ABGR8888 } }
 };
 
+static const struct dri2_format_mapping r10_g10b10_mapping = {
+   DRM_FORMAT_NV15,
+   __DRI_IMAGE_FORMAT_NONE,
+   __DRI_IMAGE_COMPONENTS_Y_UV,
+   PIPE_FORMAT_R10_G10B10_420_UNORM,
+   2,
+   { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE },
+     { 1, 1, 1, __DRI_IMAGE_FORMAT_NONE } }
+};
+
+static const struct dri2_format_mapping r10_g10b10_mapping_422 = {
+   DRM_FORMAT_NV20,
+   __DRI_IMAGE_FORMAT_NONE,
+   __DRI_IMAGE_COMPONENTS_Y_UV,
+   PIPE_FORMAT_R10_G10B10_422_UNORM,
+   2,
+   { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE },
+     { 1, 1, 0, __DRI_IMAGE_FORMAT_NONE } }
+};
+
 static enum __DRIFixedRateCompression
 to_dri_compression_rate(uint32_t rate)
 {
@@ -941,6 +961,21 @@ dri_create_image_from_winsys(struct dri_screen *screen,
        pscreen->is_format_supported(pscreen, PIPE_FORMAT_R8_B8G8_420_UNORM,
                                     screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
       map = &r8_b8g8_mapping;
+      tex_usage |= PIPE_BIND_SAMPLER_VIEW;
+   }
+
+   /* For NV15, see if we have support for sampling r10_g10b10 */
+   if (!tex_usage && map->pipe_format == PIPE_FORMAT_NV15 &&
+       pscreen->is_format_supported(pscreen, PIPE_FORMAT_R10_G10B10_420_UNORM,
+                                    screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
+      map = &r10_g10b10_mapping;
+      tex_usage |= PIPE_BIND_SAMPLER_VIEW;
+   }
+
+   if (!tex_usage && map->pipe_format == PIPE_FORMAT_NV20 &&
+       pscreen->is_format_supported(pscreen, PIPE_FORMAT_R10_G10B10_422_UNORM,
+                                    screen->target, 0, 0, PIPE_BIND_SAMPLER_VIEW)) {
+      map = &r10_g10b10_mapping_422;
       tex_usage |= PIPE_BIND_SAMPLER_VIEW;
    }
 

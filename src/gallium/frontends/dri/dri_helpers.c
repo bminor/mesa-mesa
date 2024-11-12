@@ -550,6 +550,18 @@ static const struct dri2_format_mapping dri2_format_table[] = {
         { { 0, 0, 0, __DRI_IMAGE_FORMAT_R8 },
           { 1, 1, 1, __DRI_IMAGE_FORMAT_GR88 } } },
 
+      /* 10 bit 4:2:0 and 4:2:2 formats; the components
+         are tightly packed, so the planes don't correspond
+         to any native DRI format */
+      { DRM_FORMAT_NV15,          __DRI_IMAGE_FORMAT_NONE,
+        __DRI_IMAGE_COMPONENTS_Y_UV,      PIPE_FORMAT_NV15, 2,
+        { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE },
+          { 1, 1, 1, __DRI_IMAGE_FORMAT_NONE } } },
+      { DRM_FORMAT_NV20,          __DRI_IMAGE_FORMAT_NONE,
+        __DRI_IMAGE_COMPONENTS_Y_UV,      PIPE_FORMAT_NV20, 2,
+        { { 0, 0, 0, __DRI_IMAGE_FORMAT_NONE },
+          { 1, 1, 0, __DRI_IMAGE_FORMAT_NONE } } },
+
       { DRM_FORMAT_P010,          __DRI_IMAGE_FORMAT_NONE,
         __DRI_IMAGE_COMPONENTS_Y_UV,      PIPE_FORMAT_P010, 2,
         { { 0, 0, 0, __DRI_IMAGE_FORMAT_R16 },

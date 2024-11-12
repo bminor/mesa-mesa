@@ -96,6 +96,12 @@ st_get_external_sampler_key(struct st_context *st, struct gl_program *prog)
             break;
          }
          FALLTHROUGH;
+      case PIPE_FORMAT_NV15:
+         if (stObj->pt->format == PIPE_FORMAT_R10_G10B10_420_UNORM) {
+            key.lower_yuv |= (1 << unit);
+            break;
+         }
+         FALLTHROUGH;
       case PIPE_FORMAT_P010:
       case PIPE_FORMAT_P012:
       case PIPE_FORMAT_P016:
@@ -109,6 +115,12 @@ st_get_external_sampler_key(struct st_context *st, struct gl_program *prog)
          }
          key.lower_nv21 |= (1 << unit);
          break;
+      case PIPE_FORMAT_NV20:
+         if (stObj->pt->format == PIPE_FORMAT_R10_G10B10_422_UNORM) {
+            key.lower_yuv |= (1 << unit);
+            break;
+         }
+         FALLTHROUGH;
       case PIPE_FORMAT_IYUV:
          if (stObj->pt->format == PIPE_FORMAT_R8_G8_B8_420_UNORM ||
              stObj->pt->format == PIPE_FORMAT_R8_B8_G8_420_UNORM) {
