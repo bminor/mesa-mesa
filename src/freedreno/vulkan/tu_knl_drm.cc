@@ -122,6 +122,8 @@ msm_submit_add_entries(struct tu_device *device, void *_submit,
    struct tu_msm_queue_submit *submit =
       (struct tu_msm_queue_submit *)_submit;
 
+   bool has_vm_bind = device->physical_device->has_vm_bind;
+
    struct drm_msm_gem_submit_cmd *cmds = (struct drm_msm_gem_submit_cmd *)
       util_dynarray_grow(&submit->commands, struct drm_msm_gem_submit_cmd,
                          num_entries);
@@ -132,12 +134,15 @@ msm_submit_add_entries(struct tu_device *device, void *_submit,
 
    for (unsigned i = 0; i < num_entries; i++) {
       cmds[i].type = MSM_SUBMIT_CMD_BUF;
-      cmds[i].submit_idx = entries[i].bo->submit_bo_list_idx;
-      cmds[i].submit_offset = entries[i].offset;
+      cmds[i].submit_idx = has_vm_bind ? 0 : entries[i].bo->submit_bo_list_idx;
+      cmds[i].submit_offset = has_vm_bind ? 0 : entries[i].offset;
       cmds[i].size = entries[i].size;
       cmds[i].pad = 0;
       cmds[i].nr_relocs = 0;
-      cmds[i].relocs = 0;
+      if (has_vm_bind)
+         cmds[i].iova = entries[i].bo->iova + entries[i].offset;
+      else
+         cmds[i].relocs = 0;
       bos[i] = entries[i].bo;
    }
 }

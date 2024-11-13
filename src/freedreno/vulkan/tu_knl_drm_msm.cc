@@ -18,6 +18,7 @@
 #include "util/u_debug.h"
 #include "util/u_process.h"
 #include "util/hash_table.h"
+#include "util/libsync.h"
 
 #include "tu_cmd_buffer.h"
 #include "tu_cs.h"
@@ -142,6 +143,12 @@ tu_drm_set_param(int fd, uint32_t param, uint64_t value, uint32_t len)
    return ret;
 }
 
+static int
+tu_try_enable_vm_bind(int fd)
+{
+   return tu_drm_set_param(fd, MSM_PARAM_EN_VM_BIND, 1, 0);
+}
+
 static void
 tu_drm_set_debuginfo(int fd)
 {
@@ -240,9 +247,34 @@ msm_device_init(struct tu_device *dev)
             "failed to open device %s", dev->physical_device->fd_path);
    }
 
+   int ret;
+   if (dev->physical_device->has_vm_bind) {
+      ret = tu_try_enable_vm_bind(fd);
+      if (ret != 0) {
+         return vk_startup_errorf(dev->physical_device->instance,
+                                  VK_ERROR_INITIALIZATION_FAILED,
+                                  "Failed to enable VM_BIND mode: %d", ret);
+      }
+
+      struct drm_msm_submitqueue submit_req = {
+         .flags = MSM_SUBMITQUEUE_VM_BIND,
+      };
+
+      ret = drmCommandWriteRead(fd, DRM_MSM_SUBMITQUEUE_NEW, &submit_req,
+                                sizeof(submit_req));
+      if (ret != 0) {
+         close(fd);
+         return vk_startup_errorf(dev->physical_device->instance,
+                                  VK_ERROR_INITIALIZATION_FAILED,
+                                  "Failed to create VM_BIND queue: %d", ret);
+      }
+
+      dev->vm_bind_queue_id = submit_req.id;
+   }
+
    tu_drm_set_debuginfo(fd);
 
-   int ret = tu_drm_get_param(fd, MSM_PARAM_FAULTS, &dev->fault_count);
+   ret = tu_drm_get_param(fd, MSM_PARAM_FAULTS, &dev->fault_count);
    if (ret != 0) {
       close(fd);
       return vk_startup_errorf(dev->physical_device->instance,
@@ -525,35 +557,74 @@ tu_allocate_kernel_iova(struct tu_device *dev,
 }
 
 static VkResult
-tu_bo_init(struct tu_device *dev,
-           struct vk_object_base *base,
-           struct tu_bo *bo,
-           uint32_t gem_handle,
-           uint64_t size,
-           uint64_t client_iova,
-           enum tu_bo_alloc_flags flags,
-           const char *name)
+tu_map_vm_bind(struct tu_device *dev, uint32_t map_op, uint32_t map_op_flags,
+               uint64_t iova, uint32_t gem_handle, uint64_t bo_offset,
+               uint64_t range)
 {
-   VkResult result = VK_SUCCESS;
-   uint64_t iova = 0;
+   struct drm_msm_vm_bind req = {
+      .flags = MSM_VM_BIND_FENCE_FD_OUT,
+      .nr_ops = 1,
+      .queue_id = dev->vm_bind_queue_id,
+      .op_stride = sizeof(drm_msm_vm_bind_op),
+      .op = {
+         .op = map_op,
+         .handle = gem_handle,
+         .obj_offset = bo_offset,
+         .iova = iova,
+         .range = range,
+         .flags = map_op_flags,
+      },
+   };
 
-   assert(!client_iova || dev->physical_device->has_set_iova);
+   int ret = drmCommandWriteRead(dev->fd,
+                                 DRM_MSM_VM_BIND,
+                                 &req, sizeof(req));
 
-   if (dev->physical_device->has_set_iova) {
-      result = msm_allocate_userspace_iova_locked(dev, gem_handle, size,
-                                                  client_iova, flags, &iova);
-   } else {
-      result = tu_allocate_kernel_iova(dev, gem_handle, &iova);
-   }
+   /* When failing to map a BO, the kernel marks the VM as dead */
+   if (ret)
+      return vk_device_set_lost(&dev->vk, "BO map failed: %m");
 
-   if (result != VK_SUCCESS) {
-      tu_gem_close(dev, gem_handle);
+   int old_fence;
+   u_rwlock_wrlock(&dev->vm_bind_fence_lock);
+   old_fence = dev->vm_bind_fence_fd;
+   dev->vm_bind_fence_fd = req.fence_fd;
+   u_rwlock_wrunlock(&dev->vm_bind_fence_lock);
+
+   if (old_fence != -1)
+      close(old_fence);
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+msm_allocate_vm_bind(struct tu_device *dev,
+                     uint32_t gem_handle,
+                     uint64_t size,
+                     uint64_t client_iova,
+                     enum tu_bo_alloc_flags flags,
+                     uint64_t *iova)
+{
+   VkResult result;
+
+   *iova = 0;
+
+   result = tu_allocate_userspace_iova(dev, size, client_iova, flags, iova);
+
+   if (result != VK_SUCCESS)
       return result;
-   }
 
-   name = tu_debug_bos_add(dev, size, name);
+   uint32_t map_op_flags = 0;
+   if (flags & TU_BO_ALLOC_ALLOW_DUMP)
+      map_op_flags |= MSM_VM_BIND_OP_DUMP;
+   return tu_map_vm_bind(dev, MSM_VM_BIND_OP_MAP, map_op_flags, *iova,
+                         gem_handle, 0, size);
+}
 
-   mtx_lock(&dev->bo_mutex);
+static VkResult
+tu_bo_add_to_bo_list(struct tu_device *dev,
+                     uint32_t gem_handle, uint32_t flags, uint64_t iova,
+                     uint32_t *bo_list_idx)
+{
    uint32_t idx = dev->submit_bo_count++;
 
    /* grow the bo list if needed */
@@ -564,10 +635,6 @@ tu_bo_init(struct tu_device *dev,
                     8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
       if (!new_ptr) {
          dev->submit_bo_count--;
-         mtx_unlock(&dev->bo_mutex);
-         if (dev->physical_device->has_set_iova)
-            util_vma_heap_free(&dev->vma, iova, size);
-         tu_gem_close(dev, gem_handle);
          return VK_ERROR_OUT_OF_HOST_MEMORY;
       }
 
@@ -588,6 +655,58 @@ tu_bo_init(struct tu_device *dev,
    if (implicit_sync)
       dev->implicit_sync_bo_count++;
 
+   *bo_list_idx = idx;
+   return VK_SUCCESS;
+}
+
+static VkResult
+tu_bo_init(struct tu_device *dev,
+           struct vk_object_base *base,
+           struct tu_bo *bo,
+           uint32_t gem_handle,
+           uint64_t size,
+           uint64_t client_iova,
+           enum tu_bo_alloc_flags flags,
+           const char *name)
+{
+   VkResult result = VK_SUCCESS;
+   uint64_t iova = 0;
+
+   assert(!client_iova || dev->physical_device->has_set_iova);
+
+   if (dev->physical_device->has_vm_bind) {
+      result = msm_allocate_vm_bind(dev, gem_handle, size, client_iova, flags,
+                                    &iova);
+   } else if (dev->physical_device->has_set_iova) {
+      result = msm_allocate_userspace_iova_locked(dev, gem_handle, size,
+                                                  client_iova, flags, &iova);
+   } else {
+      result = tu_allocate_kernel_iova(dev, gem_handle, &iova);
+   }
+
+   if (result != VK_SUCCESS) {
+      tu_gem_close(dev, gem_handle);
+      return result;
+   }
+
+   name = tu_debug_bos_add(dev, size, name);
+
+   uint32_t idx = 0;
+
+   if (!dev->physical_device->has_vm_bind) {
+      mtx_lock(&dev->bo_mutex);
+
+      result = tu_bo_add_to_bo_list(dev, gem_handle, flags, iova, &idx);
+      if (result != VK_SUCCESS) {
+         mtx_unlock(&dev->bo_mutex);
+         if (dev->physical_device->has_set_iova)
+            util_vma_heap_free(&dev->vma, iova, size);
+         tu_gem_close(dev, gem_handle);
+         return result;
+      }
+   }
+
+   bool implicit_sync = flags & TU_BO_ALLOC_IMPLICIT_SYNC;
    *bo = (struct tu_bo) {
       .gem_handle = gem_handle,
       .size = size,
@@ -599,7 +718,8 @@ tu_bo_init(struct tu_device *dev,
       .base = base,
    };
 
-   mtx_unlock(&dev->bo_mutex);
+   if (!dev->physical_device->has_vm_bind)
+      mtx_unlock(&dev->bo_mutex);
 
    tu_dump_bo_init(dev, bo);
 
@@ -681,6 +801,9 @@ msm_bo_init(struct tu_device *dev,
 
    if (flags & TU_BO_ALLOC_GPU_READ_ONLY)
       req.flags |= MSM_BO_GPU_READONLY;
+
+   if (dev->physical_device->has_vm_bind && !(flags & TU_BO_ALLOC_SHAREABLE))
+      req.flags |= MSM_BO_NO_SHARE;
 
    int ret = drmCommandWriteRead(dev->fd,
                                  DRM_MSM_GEM_NEW, &req, sizeof(req));
@@ -809,9 +932,14 @@ msm_bo_map(struct tu_device *dev, struct tu_bo *bo, void *placed_addr)
 static void
 msm_bo_allow_dump(struct tu_device *dev, struct tu_bo *bo)
 {
-   mtx_lock(&dev->bo_mutex);
-   dev->submit_bo_list[bo->submit_bo_list_idx].flags |= MSM_SUBMIT_BO_DUMP;
-   mtx_unlock(&dev->bo_mutex);
+   if (dev->physical_device->has_vm_bind) {
+      tu_map_vm_bind(dev, MSM_VM_BIND_OP_MAP, MSM_VM_BIND_OP_DUMP,
+                     bo->iova, bo->gem_handle, 0, bo->size);
+   } else {
+      mtx_lock(&dev->bo_mutex);
+      dev->submit_bo_list[bo->submit_bo_list_idx].flags |= MSM_SUBMIT_BO_DUMP;
+      mtx_unlock(&dev->bo_mutex);
+   }
 }
 
 
@@ -854,6 +982,23 @@ msm_bo_get_metadata(struct tu_device *dev, struct tu_bo *bo,
 }
 
 static void
+msm_bo_gem_close(struct tu_device *dev, struct tu_bo *bo)
+{
+   /* Our BO structs are stored in a sparse array in the physical device,
+    * so we don't want to free the BO pointer, instead we want to reset it
+    * to 0, to signal that array entry as being free.
+    */
+   uint32_t gem_handle = bo->gem_handle;
+   memset(bo, 0, sizeof(*bo));
+
+   struct drm_gem_close req = {
+      .handle = gem_handle,
+   };
+
+   drmIoctl(dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
+}
+
+static void
 msm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
 {
    assert(bo->gem_handle);
@@ -875,23 +1020,27 @@ msm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
 
    TU_RMV(bo_destroy, dev, bo);
 
-   tu_bo_list_del(dev, bo);
+   if (dev->physical_device->has_vm_bind) {
+      tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, bo->iova, 0, 0,
+                     bo->size);
 
-   if (dev->physical_device->has_set_iova) {
+      mtx_lock(&dev->bo_mutex);
+      if (bo->implicit_sync)
+         dev->implicit_sync_bo_count--;
+      mtx_unlock(&dev->bo_mutex);
+
+      mtx_lock(&dev->vma_mutex);
+      util_vma_heap_free(&dev->vma, bo->iova, bo->size);
+      mtx_unlock(&dev->vma_mutex);
+
+      msm_bo_gem_close(dev, bo);
+   } else if (dev->physical_device->has_set_iova) {
+      tu_bo_list_del(dev, bo);
       tu_bo_make_zombie(dev, bo);
    } else {
-      /* Our BO structs are stored in a sparse array in the physical device,
-       * so we don't want to free the BO pointer, instead we want to reset it
-       * to 0, to signal that array entry as being free.
-       */
-      uint32_t gem_handle = bo->gem_handle;
-      memset(bo, 0, sizeof(*bo));
+      tu_bo_list_del(dev, bo);
 
-      struct drm_gem_close req = {
-         .handle = gem_handle,
-      };
-
-      drmIoctl(dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
+      msm_bo_gem_close(dev, bo);
    }
 
    u_rwlock_rdunlock(&dev->dma_bo_lock);
@@ -912,6 +1061,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    uint64_t gpu_offset = 0;
    uint32_t entry_count =
       util_dynarray_num_elements(&submit->commands, struct drm_msm_gem_submit_cmd);
+   bool has_vm_bind = queue->device->physical_device->has_vm_bind;
 #if HAVE_PERFETTO
    struct tu_perfetto_clocks clocks;
    uint64_t start_ts = tu_perfetto_begin_submit();
@@ -967,39 +1117,47 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    if (signal_count)
       flags |= MSM_SUBMIT_SYNCOBJ_OUT;
 
-   mtx_lock(&queue->device->bo_mutex);
+   if (has_vm_bind) {
+      u_rwlock_rdlock(&queue->device->vm_bind_fence_lock);
 
-   /* MSM_SUBMIT_NO_IMPLICIT skips having the scheduler wait on the previous dma
-    * fences attached to the BO (such as from the window system server's command
-    * queue) before submitting the job. Our fence will always get attached to
-    * the BO, because it gets used for synchronization for the shrinker.
-    *
-    * If the flag is not set, then the kernel falls back to checking each BO's
-    * MSM_SUBMIT_NO_IMPLICIT flag for its implicit sync handling.
-    *
-    * As of kernel 6.0, the core wsi code will be generating appropriate syncobj
-    * export-and-waits/signal-and-imports for implict syncing (on implicit sync
-    * WSI backends) and not allocating any
-    * wsi_memory_allocate_info->implicit_sync BOs from the driver. However, on
-    * older kernels with that flag set, we have to submit without NO_IMPLICIT
-    * set to do have the kernel do pre-submit waits on whatever the last fence
-    * was.
-    */
-   if (queue->device->implicit_sync_bo_count == 0)
-      flags |= MSM_SUBMIT_NO_IMPLICIT;
+      if (queue->device->vm_bind_fence_fd != -1)
+         flags |= MSM_SUBMIT_FENCE_FD_IN;
+   } else {
+      mtx_lock(&queue->device->bo_mutex);
 
-   /* drm_msm_gem_submit_cmd requires index of bo which could change at any
-    * time when bo_mutex is not locked. So we update the index here under the
-    * lock.
-    */
-   util_dynarray_foreach (&submit->commands, struct drm_msm_gem_submit_cmd,
-                          cmd) {
-      unsigned i = cmd -
-         util_dynarray_element(&submit->commands,
-                               struct drm_msm_gem_submit_cmd, 0);
-      struct tu_bo **bo = util_dynarray_element(&submit->command_bos,
-                                                struct tu_bo *, i);
-      cmd->submit_idx = (*bo)->submit_bo_list_idx;
+      /* MSM_SUBMIT_NO_IMPLICIT skips having the scheduler wait on the
+       * previous dma fences attached to the BO (such as from the window
+       * system server's command queue) before submitting the job. Our fence
+       * will always get attached to the BO, because it gets used for
+       * synchronization for the shrinker.
+       *
+       * If the flag is not set, then the kernel falls back to checking each
+       * BO's MSM_SUBMIT_NO_IMPLICIT flag for its implicit sync handling.
+       *
+       * As of kernel 6.0, the core wsi code will be generating appropriate
+       * syncobj export-and-waits/signal-and-imports for implict syncing (on
+       * implicit sync WSI backends) and not allocating any
+       * wsi_memory_allocate_info->implicit_sync BOs from the driver. However,
+       * on older kernels with that flag set, we have to submit without
+       * NO_IMPLICIT set to do have the kernel do pre-submit waits on whatever
+       * the last fence was.
+       */
+      if (queue->device->implicit_sync_bo_count == 0)
+         flags |= MSM_SUBMIT_NO_IMPLICIT;
+
+      /* drm_msm_gem_submit_cmd requires index of bo which could change at any
+       * time when bo_mutex is not locked. So we update the index here under the
+       * lock.
+       */
+      util_dynarray_foreach (&submit->commands, struct drm_msm_gem_submit_cmd,
+                             cmd) {
+         unsigned i = cmd -
+            util_dynarray_element(&submit->commands,
+                                  struct drm_msm_gem_submit_cmd, 0);
+         struct tu_bo **bo = util_dynarray_element(&submit->command_bos,
+                                                   struct tu_bo *, i);
+         cmd->submit_idx = (*bo)->submit_bo_list_idx;
+      }
    }
 
    req = (struct drm_msm_gem_submit) {
@@ -1008,6 +1166,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       .nr_cmds = entry_count,
       .bos = (uint64_t)(uintptr_t) queue->device->submit_bo_list,
       .cmds = (uint64_t)(uintptr_t)submit->commands.data,
+      .fence_fd = queue->device->vm_bind_fence_fd,
       .queueid = queue->msm_queue_id,
       .in_syncobjs = (uint64_t)(uintptr_t)in_syncobjs,
       .out_syncobjs = (uint64_t)(uintptr_t)out_syncobjs,
@@ -1023,7 +1182,10 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
                               &req, sizeof(req));
    }
 
-   mtx_unlock(&queue->device->bo_mutex);
+   if (has_vm_bind)
+      u_rwlock_rdunlock(&queue->device->vm_bind_fence_lock);
+   else
+      mtx_unlock(&queue->device->bo_mutex);
 
    if (ret) {
       result = vk_device_set_lost(&queue->device->vk, "submit failed: %m");
@@ -1110,6 +1272,8 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
 
    device->instance = instance;
    device->local_fd = fd;
+
+   device->has_vm_bind = tu_try_enable_vm_bind(fd) == 0;
 
    if (tu_drm_get_gpu_id(device, &device->dev_id.gpu_id)) {
       result = vk_startup_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,

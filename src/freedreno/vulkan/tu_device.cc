@@ -2612,7 +2612,9 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    mtx_init(&device->event_mutex, mtx_plain);
    mtx_init(&device->trace_mutex, mtx_plain);
    u_rwlock_init(&device->dma_bo_lock);
+   u_rwlock_init(&device->vm_bind_fence_lock);
    pthread_mutex_init(&device->submit_mutex, NULL);
+   device->vm_bind_fence_fd = -1;
 
    if (physical_device->has_set_iova) {
       mtx_init(&device->vma_mutex, mtx_plain);
@@ -2693,8 +2695,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    /* Initialize sparse array for refcounting imported BOs */
    util_sparse_array_init(&device->bo_map, sizeof(struct tu_bo), 512);
 
-   if (physical_device->has_set_iova) {
-      STATIC_ASSERT(TU_MAX_QUEUE_FAMILIES == 1);
+   if (physical_device->has_set_iova && !physical_device->has_vm_bind) {
       if (!u_vector_init(&device->zombie_vmas, 64,
                          sizeof(struct tu_zombie_vma))) {
          result = vk_startup_errorf(physical_device->instance,
@@ -3036,6 +3037,9 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
 
    tu_bo_finish(device, device->global_bo);
 
+   if (device->vm_bind_fence_fd != -1)
+      close(device->vm_bind_fence_fd);
+
    if (device->null_accel_struct_bo)
       tu_bo_finish(device, device->null_accel_struct_bo);
 
@@ -3064,6 +3068,7 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
 
    util_sparse_array_finish(&device->bo_map);
    u_rwlock_destroy(&device->dma_bo_lock);
+   u_rwlock_destroy(&device->vm_bind_fence_lock);
 
    u_vector_finish(&device->zombie_vmas);
 

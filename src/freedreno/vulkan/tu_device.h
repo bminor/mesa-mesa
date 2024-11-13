@@ -121,6 +121,7 @@ struct tu_physical_device
 
    bool has_set_iova;
    bool has_raytracing;
+   bool has_vm_bind;
    uint64_t va_start;
    uint64_t va_size;
 
@@ -376,6 +377,9 @@ struct tu_device
    mtx_t bo_mutex;
    /* protects imported BOs creation/freeing */
    struct u_rwlock dma_bo_lock;
+   int vm_bind_fence_fd;
+   /* protects vm_bind_fence_fd */
+   struct u_rwlock vm_bind_fence_lock;
 
    /* Tracking of name -> size allocated for TU_DEBUG_BOS */
    struct hash_table *bo_sizes;
@@ -449,6 +453,9 @@ struct tu_device
    bool use_lrz;
 
    struct fd_rd_output rd_output;
+
+   /* This is an internal queue for mapping/unmapping non-sparse BOs */
+   uint32_t vm_bind_queue_id;
 };
 VK_DEFINE_HANDLE_CASTS(tu_device, vk.base, VkDevice, VK_OBJECT_TYPE_DEVICE)
 
