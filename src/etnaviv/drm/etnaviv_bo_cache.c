@@ -76,7 +76,7 @@ void etna_bo_cache_cleanup(struct etna_bo_cache *cache, time_t time)
 		struct etna_bo *bo;
 
 		while (!list_is_empty(&bucket->list)) {
-			bo = list_entry(bucket->list.next, struct etna_bo, list);
+			bo = list_first_entry(&bucket->list, struct etna_bo, list);
 
 			/* keep things in cache for at least 1 second: */
 			if (time && ((time - bo->free_time) <= 1))
