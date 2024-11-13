@@ -101,7 +101,6 @@ struct lp_jit_sampler
    float max_lod;
    float lod_bias;
    float border_color[4];
-   float max_aniso;
 };
 
 enum {
@@ -109,7 +108,6 @@ enum {
    LP_JIT_SAMPLER_MAX_LOD,
    LP_JIT_SAMPLER_LOD_BIAS,
    LP_JIT_SAMPLER_BORDER_COLOR,
-   LP_JIT_SAMPLER_MAX_ANISO,
    LP_JIT_SAMPLER_NUM_FIELDS  /* number of fields above */
 };
 

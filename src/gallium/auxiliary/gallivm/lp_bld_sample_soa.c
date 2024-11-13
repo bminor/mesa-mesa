@@ -2243,7 +2243,7 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
 
    /* Number of samples used for averaging. */
    LLVMValueRef N = lp_build_iceil(coord_bld, lp_build_max(coord_bld, rho_x, rho_y));
-   N = lp_build_min(int_coord_bld, N, lp_build_const_int_vec(gallivm, int_coord_bld->type, 16));
+   N = lp_build_min(int_coord_bld, N, lp_build_const_int_vec(gallivm, int_coord_bld->type, bld->static_sampler_state->aniso));
    LLVMValueRef wave_max_N = NULL;
    for (uint32_t i = 0; i < coord_bld->type.length; i++) {
       LLVMValueRef invocation_N = LLVMBuildExtractElement(builder, N, lp_build_const_int32(gallivm, i), "");
@@ -2424,14 +2424,6 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
     */
    if (min_filter != mag_filter ||
        mip_filter != PIPE_TEX_MIPFILTER_NONE || is_lodq) {
-      LLVMValueRef max_aniso = NULL;
-
-      if (aniso)
-         max_aniso = bld->dynamic_state->max_aniso(bld->gallivm,
-                                                   bld->resources_type,
-                                                   bld->resources_ptr,
-                                                   sampler_index);
-
       /* Need to compute lod either to choose mipmap levels or to
        * distinguish between minification/magnification with one mipmap level.
        */
@@ -2441,7 +2433,7 @@ lp_build_sample_common(struct lp_build_sample_context *bld,
                             first_level_vec,
                             coords[0], coords[1], coords[2],
                             derivs, lod_bias, explicit_lod,
-                            mip_filter, max_aniso, lod,
+                            mip_filter, lod,
                             &lod_ipart, lod_fpart, lod_pos_or_zero);
       if (is_lodq) {
          last_level = lp_build_sub(&bld->int_bld, last_level, first_level);

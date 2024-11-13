@@ -220,7 +220,8 @@ lp_sampler_static_sampler_state(struct lp_static_sampler_state *state,
    state->min_mip_filter    = sampler->min_mip_filter;
    state->seamless_cube_map = sampler->seamless_cube_map;
    state->reduction_mode    = sampler->reduction_mode;
-   state->aniso = sampler->max_anisotropy > 1.0f;
+   if (sampler->max_anisotropy > 1)
+      state->aniso = sampler->max_anisotropy;
 
    if (sampler->max_lod > 0.0f) {
       state->max_lod_pos = 1;
@@ -267,8 +268,7 @@ static LLVMValueRef
 lp_build_pmin(struct lp_build_sample_context *bld,
               LLVMValueRef first_level,
               LLVMValueRef s,
-              LLVMValueRef t,
-              LLVMValueRef max_aniso)
+              LLVMValueRef t)
 {
    struct gallivm_state *gallivm = bld->gallivm;
    LLVMBuilderRef builder = bld->gallivm->builder;
@@ -287,8 +287,6 @@ lp_build_pmin(struct lp_build_sample_context *bld,
 
    int_size = lp_build_minify(int_size_bld, bld->int_size, first_level, true);
    float_size = lp_build_int_to_float(float_size_bld, int_size);
-   max_aniso = lp_build_broadcast_scalar(coord_bld, max_aniso);
-   max_aniso = lp_build_mul(coord_bld, max_aniso, max_aniso);
 
    static const unsigned char swizzle01[] = { /* no-op swizzle */
       0, 1,
@@ -329,12 +327,15 @@ lp_build_pmin(struct lp_build_sample_context *bld,
    LLVMValueRef pmax2 = lp_build_max(coord_bld, px2, py2);
    LLVMValueRef pmin2 = lp_build_min(coord_bld, px2, py2);
 
-   LLVMValueRef temp = lp_build_mul(coord_bld, pmin2, max_aniso);
+   LLVMValueRef temp = lp_build_mul(
+      coord_bld, pmin2, lp_build_const_vec(gallivm, coord_bld->type, bld->static_sampler_state->aniso *
+                                           bld->static_sampler_state->aniso));
 
    LLVMValueRef comp = lp_build_compare(gallivm, coord_bld->type, PIPE_FUNC_GREATER,
                                         pmax2, temp);
 
-   LLVMValueRef pmin2_alt = lp_build_div(coord_bld, pmax2, max_aniso);
+   LLVMValueRef pmin2_alt = lp_build_div(coord_bld, pmax2,
+      lp_build_const_vec(gallivm, coord_bld->type, bld->static_sampler_state->aniso));
 
    pmin2 = lp_build_select(coord_bld, comp, pmin2_alt, pmin2);
 
@@ -815,7 +816,6 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
                       LLVMValueRef lod_bias, /* optional */
                       LLVMValueRef explicit_lod, /* optional */
                       enum pipe_tex_mipfilter mip_filter,
-                      LLVMValueRef max_aniso,
                       LLVMValueRef *out_lod,
                       LLVMValueRef *out_lod_ipart,
                       LLVMValueRef *out_lod_fpart,
@@ -871,7 +871,7 @@ lp_build_lod_selector(struct lp_build_sample_context *bld,
 
          if (bld->static_sampler_state->aniso &&
              !explicit_lod) {
-            rho = lp_build_pmin(bld, first_level, s, t, max_aniso);
+            rho = lp_build_pmin(bld, first_level, s, t);
             rho_squared = true;
          } else {
             rho = lp_build_rho(bld, first_level, s, t, r, derivs);
