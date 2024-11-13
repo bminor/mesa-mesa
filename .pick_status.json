@@ -94,7 +94,7 @@
         "description": "nir/nir_opt_offsets: Do not fold load/store with const offset > max",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
