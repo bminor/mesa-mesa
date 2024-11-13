@@ -47,6 +47,7 @@ workflow:
     # nightly pipeline
     - if: &is-scheduled-pipeline $CI_PIPELINE_SOURCE == "schedule"
       variables:
+        JOB_PRIORITY: 45
         # (some) nightly builds perform LTO, so they take much longer than the
         # short timeout allowed in other pipelines.
         # Note: 0 = infinity = gitlab's job `timeout:` applies, which is 1h
