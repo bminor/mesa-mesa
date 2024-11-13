@@ -639,16 +639,16 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
       assert(isl_is_pow2(isl_format_get_layout(info->view->format)->bpb));
       assert(info->surf->levels == 1);
       assert(info->surf->logical_level0_px.array_len == 1);
-      assert(info->aux_usage == ISL_AUX_USAGE_NONE);
 
-      if (GFX_VER >= 8) {
-         /* Broadwell added more rules. */
-         assert(info->surf->samples == 1);
-         if (isl_format_get_layout(info->view->format)->bpb == 8)
-            assert(info->x_offset_sa % 16 == 0);
-         if (isl_format_get_layout(info->view->format)->bpb == 16)
-            assert(info->x_offset_sa % 8 == 0);
-      }
+#if GFX_VER >= 8
+      /* Broadwell added more rules. */
+      assert(info->surf->samples == 1);
+      assert(isl_encode_aux_mode[info->aux_usage] == AUX_NONE);
+      if (isl_format_get_layout(info->view->format)->bpb == 8)
+         assert(info->x_offset_sa % 16 == 0);
+      if (isl_format_get_layout(info->view->format)->bpb == 16)
+         assert(info->x_offset_sa % 8 == 0);
+#endif
 
 #if GFX_VER >= 7
       s.SurfaceArray = false;
