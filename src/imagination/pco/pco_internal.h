@@ -20,6 +20,7 @@
 #include "pco_ops.h"
 #include "spirv/nir_spirv.h"
 #include "util/compiler.h"
+#include "util/hash_table.h"
 #include "util/macros.h"
 #include "util/list.h"
 #include "util/u_dynarray.h"
@@ -293,6 +294,8 @@ typedef struct _pco_func {
 
    unsigned num_params;
    pco_ref *params;
+
+   struct hash_table_u64 *vec_comps;
 
    unsigned next_ssa; /** Next SSA node index. */
    unsigned next_instr; /** Next instruction index. */
@@ -1848,6 +1851,25 @@ static inline bool pco_igrp_dests_unset(pco_igrp *igrp)
          return false;
 
    return true;
+}
+
+/**
+ * \brief Iterates backwards to find the parent instruction of a source.
+ *
+ * \param[in] src The source whose parent is to be found.
+ * \param[in] from The instruction to start iterating back from.
+ * \return The parent instruction if found, else NULL.
+ */
+static inline pco_instr *find_parent_instr_from(pco_ref src, pco_instr *from)
+{
+   pco_foreach_instr_in_func_from_rev (instr, from) {
+      pco_foreach_instr_dest_ssa (pdest, instr) {
+         if (pco_refs_are_equal(*pdest, src))
+            return instr;
+      }
+   }
+
+   return NULL;
 }
 
 /* Common hw constants. */

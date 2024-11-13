@@ -13,6 +13,7 @@
 #include "compiler/glsl_types.h"
 #include "pco.h"
 #include "pco_internal.h"
+#include "util/hash_table.h"
 #include "util/list.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
@@ -158,6 +159,8 @@ pco_func *pco_func_create(pco_shader *shader,
       func->params =
          rzalloc_array_size(func, sizeof(*func->params), num_params);
    }
+
+   func->vec_comps = _mesa_hash_table_u64_create(func);
 
    return func;
 }

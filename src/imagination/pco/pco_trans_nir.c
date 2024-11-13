@@ -42,6 +42,29 @@ static pco_block *trans_cf_nodes(trans_ctx *tctx,
                                  struct exec_list *nir_cf_node_list);
 
 /**
+ * \brief Splits a vector destination into scalar components.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] dest Instruction destination.
+ */
+static void split_dest_comps(trans_ctx *tctx, pco_ref dest)
+{
+   unsigned chans = pco_ref_get_chans(dest);
+   assert(chans > 1);
+
+   pco_func *func = tctx->func;
+   pco_instr **comps =
+      rzalloc_array_size(func->vec_comps, sizeof(*comps), chans);
+
+   for (unsigned u = 0; u < chans; ++u) {
+      pco_ref comp = pco_ref_new_ssa(func, pco_ref_get_bits(dest), 1);
+      comps[u] = pco_comp(&tctx->b, comp, dest, pco_ref_val16(u));
+   }
+
+   _mesa_hash_table_u64_insert(func->vec_comps, dest.val, comps);
+}
+
+/**
  * \brief Translates a NIR def into a PCO reference.
  *
  * \param[in] def The nir def.
@@ -99,7 +122,7 @@ static inline pco_ref pco_ref_nir_src_t(const nir_src *src, trans_ctx *tctx)
 
 /**
  * \brief Translates a NIR alu src into a PCO reference with type information,
- *        extracting and building vectors as needed.
+ *        extracting from and/or building new vectors as needed.
  *
  * \param[in] src The nir src.
  * \param[in,out] tctx Translation context.
@@ -115,30 +138,33 @@ pco_ref_nir_alu_src_t(const nir_alu_instr *alu, unsigned src, trans_ctx *tctx)
    bool seq_comps =
       nir_is_sequential_comp_swizzle((uint8_t *)alu_src->swizzle, chans);
    pco_ref ref = pco_ref_nir_src_t(&alu_src->src, tctx);
-   unsigned swizzle0 = alu_src->swizzle[0];
+   uint8_t swizzle0 = alu_src->swizzle[0];
 
    /* Multiple channels, but referencing the entire vector; return as-is. */
    if (!swizzle0 && seq_comps && chans == nir_src_num_components(alu_src->src))
       return ref;
 
-   /* One channel; just extract it. */
-   pco_ref var = pco_ref_new_ssa(tctx->func, pco_ref_get_bits(ref), chans);
-   if (chans == 1) {
-      pco_ref comp = pco_ref_val16(swizzle0);
-      pco_comp(&tctx->b, var, ref, comp);
-      return var;
-   }
+   pco_instr **comps =
+      _mesa_hash_table_u64_search(tctx->func->vec_comps, ref.val);
+   assert(comps);
 
-   /* Multiple channels; extract each into a vec. */
-   pco_ref chan_comps[NIR_MAX_VEC_COMPONENTS] = { 0 };
-   for (unsigned u = 0; u < chans; ++u) {
-      pco_ref comp = pco_ref_val16(alu_src->swizzle[u]);
-      chan_comps[u] = pco_ref_new_ssa(tctx->func, pco_ref_get_bits(ref), 1);
-      pco_comp(&tctx->b, chan_comps[u], ref, comp);
-   }
+   /* One channel; just return its component. */
+   if (chans == 1)
+      return comps[swizzle0]->dest[0];
 
-   pco_vec(&tctx->b, var, chans, chan_comps);
-   return var;
+   /* Multiple channels, either a partial vec and/or swizzling; we need to build
+    * a new vec for this.
+    */
+   pco_ref vec_comps[NIR_MAX_VEC_COMPONENTS] = { 0 };
+   for (unsigned u = 0; u < chans; ++u)
+      vec_comps[u] = comps[alu_src->swizzle[u]]->dest[0];
+
+   pco_ref vec = pco_ref_new_ssa(tctx->func, pco_ref_get_bits(ref), chans);
+   pco_vec(&tctx->b, vec, chans, vec_comps);
+
+   split_dest_comps(tctx, vec);
+
+   return vec;
 }
 
 /**
@@ -276,29 +302,165 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    for (unsigned s = 0; s < info->num_srcs; ++s)
       src[s] = pco_ref_nir_src_t(&intr->src[s], tctx);
 
+   pco_instr *instr;
    switch (intr->intrinsic) {
    case nir_intrinsic_load_input:
       if (tctx->stage == MESA_SHADER_VERTEX)
-         return trans_load_input_vs(tctx, intr, dest);
+         instr = trans_load_input_vs(tctx, intr, dest);
       else if (tctx->stage == MESA_SHADER_FRAGMENT)
-         return trans_load_input_fs(tctx, intr, dest);
+         instr = trans_load_input_fs(tctx, intr, dest);
+      else
+         unreachable("Unsupported stage for \"nir_intrinsic_load_input\".");
       break;
 
    case nir_intrinsic_store_output:
       if (tctx->stage == MESA_SHADER_VERTEX)
-         return trans_store_output_vs(tctx, intr, src[0]);
+         instr = trans_store_output_vs(tctx, intr, src[0]);
       else if (tctx->stage == MESA_SHADER_FRAGMENT)
-         return trans_store_output_fs(tctx, intr, src[0]);
+         instr = trans_store_output_fs(tctx, intr, src[0]);
+      else
+         unreachable("Unsupported stage for \"nir_intrinsic_store_output\".");
       break;
 
    default:
+      printf("Unsupported intrinsic: \"");
+      nir_print_instr(&intr->instr, stdout);
+      printf("\"\n");
+      unreachable();
       break;
    }
 
-   printf("Unsupported intrinsic: \"");
-   nir_print_instr(&intr->instr, stdout);
-   printf("\"\n");
-   unreachable();
+   if (!pco_ref_is_scalar(dest))
+      split_dest_comps(tctx, dest);
+
+   return instr;
+}
+
+/**
+ * \brief Attempts to collate a vector within a vector.
+ *
+ * If a vector references another vector in its entirety in order/without
+ * swizzling, we try to store a reference to said vector rather than its
+ * individual components.
+ *
+ * \param[in] src The source/vector channel to start checking from.
+ * \param[in] from The instruction the vector components are from.
+ * \param[in] vec The potential vector reference from the parent instruction.
+ * \param[in] vec_chans The number of sources/vector channels.
+ * \return The number of collated sources, or 0 if collation failed.
+ */
+static pco_ref
+try_collate_vec(pco_ref *src, pco_instr *from, pco_ref vec, unsigned vec_chans)
+{
+   /* Skip the first one since it's our reference (and we already know its
+    * component is 0.
+    */
+   for (unsigned s = 1; s < vec_chans; ++s) {
+      pco_instr *parent_instr = find_parent_instr_from(src[s], from);
+      assert(parent_instr);
+
+      if (parent_instr->op != PCO_OP_COMP)
+         return pco_ref_null();
+
+      pco_ref comp_src = parent_instr->src[0];
+      unsigned comp_idx = pco_ref_get_imm(parent_instr->src[1]);
+      ASSERTED unsigned chans = pco_ref_get_chans(comp_src);
+
+      if (!pco_refs_are_equal(comp_src, vec))
+         return pco_ref_null();
+
+      assert(chans == vec_chans);
+
+      if (comp_idx != s)
+         return pco_ref_null();
+   }
+
+   return vec;
+}
+
+/**
+ * \brief Attempts to collate vector sources.
+ *
+ * \param[in] tctx Translation context.
+ * \param[in] dest Instruction destination.
+ * \param[in] num_srcs The number of sources/vector channels.
+ * \param[in] src The sources/vector components.
+ * \return The number of collated sources, or 0 if collation failed.
+ */
+static unsigned try_collate_vec_srcs(trans_ctx *tctx,
+                                     unsigned num_srcs,
+                                     pco_ref *src,
+                                     pco_ref *collated_src)
+{
+   bool collated_vector = false;
+   unsigned num_srcs_collated = 0;
+   pco_instr *from = pco_cursor_instr(tctx->b.cursor);
+
+   for (unsigned s = 0; s < num_srcs; ++s) {
+      pco_instr *parent_instr = find_parent_instr_from(src[s], from);
+      assert(parent_instr);
+
+      /* This is a purely scalar source; append it and continue. */
+      if (parent_instr->op != PCO_OP_COMP) {
+         collated_src[num_srcs_collated++] = src[s];
+         continue;
+      }
+
+      pco_ref comp_src = parent_instr->src[0];
+      unsigned comp_idx = pco_ref_get_imm(parent_instr->src[1]);
+      unsigned chans = pco_ref_get_chans(comp_src);
+
+      /* We have a vector source, but it either:
+       * - doesn't start from the first element
+       * - is bigger than the remaining channels of *this* vec
+       * so it's impossible for it to be contained in its entirety;
+       * append the component and continue.
+       */
+      if (comp_idx != 0 || chans > (num_srcs - s)) {
+         collated_src[num_srcs_collated++] = src[s];
+         continue;
+      }
+
+      /* We have a candidate for an entire vector to be inserted. */
+      pco_ref collated_ref = try_collate_vec(&src[s], from, comp_src, chans);
+      if (pco_ref_is_null(collated_ref)) {
+         collated_src[num_srcs_collated++] = src[s];
+         continue;
+      }
+
+      /* We were successful, record this and increment accordingly. */
+      collated_src[num_srcs_collated++] = collated_ref;
+
+      s += chans - 1;
+      collated_vector |= true;
+   }
+
+   return collated_vector ? num_srcs_collated : 0;
+}
+
+/**
+ * \brief Translates a NIR vec instruction into PCO, attempting collation.
+ *
+ * \param[in] tctx Translation context.
+ * \param[in] dest Instruction destination.
+ * \param[in] num_srcs The number of sources/vector components.
+ * \param[in] src The sources/vector components.
+ * \return The PCO instruction.
+ */
+static pco_instr *pco_trans_nir_vec(trans_ctx *tctx,
+                                    pco_ref dest,
+                                    unsigned num_srcs,
+                                    pco_ref *src)
+
+{
+   /* If a vec contains entire other vecs, try to reference them directly. */
+   pco_ref collated_src[NIR_MAX_VEC_COMPONENTS] = { 0 };
+   unsigned num_srcs_collated =
+      try_collate_vec_srcs(tctx, num_srcs, src, collated_src);
+   if (!num_srcs_collated)
+      return pco_vec(&tctx->b, dest, num_srcs, src);
+
+   return pco_vec(&tctx->b, dest, num_srcs_collated, collated_src);
 }
 
 /**
@@ -314,32 +476,37 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    unsigned num_srcs = info->num_inputs;
 
    pco_ref dest = pco_ref_nir_def_t(&alu->def, tctx);
-   UNUSED unsigned chans = pco_ref_get_chans(dest);
 
    pco_ref src[NIR_MAX_VEC_COMPONENTS] = { 0 };
    for (unsigned s = 0; s < num_srcs; ++s)
       src[s] = pco_ref_nir_alu_src_t(alu, s, tctx);
 
+   pco_instr *instr;
    switch (alu->op) {
    case nir_op_fneg:
-      return pco_mov(&tctx->b, dest, pco_ref_neg(src[0]));
+      instr = pco_mov(&tctx->b, dest, pco_ref_neg(src[0]));
+      break;
 
    case nir_op_fadd:
-      return pco_fadd(&tctx->b, dest, src[0], src[1]);
+      instr = pco_fadd(&tctx->b, dest, src[0], src[1]);
+      break;
 
    case nir_op_fmul:
-      return pco_fmul(&tctx->b, dest, src[0], src[1]);
+      instr = pco_fmul(&tctx->b, dest, src[0], src[1]);
+      break;
 
    case nir_op_ffma:
-      return pco_fmad(&tctx->b, dest, src[0], src[1], src[2]);
+      instr = pco_fmad(&tctx->b, dest, src[0], src[1], src[2]);
+      break;
 
    case nir_op_pack_unorm_4x8:
-      return pco_pck(&tctx->b,
-                     dest,
-                     src[0],
-                     .rpt = 4,
-                     .pck_fmt = PCO_PCK_FMT_U8888,
-                     .scale = true);
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .rpt = 4,
+                      .pck_fmt = PCO_PCK_FMT_U8888,
+                      .scale = true);
+      break;
 
    case nir_op_vec2:
    case nir_op_vec3:
@@ -347,16 +514,20 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    case nir_op_vec5:
    case nir_op_vec8:
    case nir_op_vec16:
-      return pco_vec(&tctx->b, dest, num_srcs, src);
+      instr = pco_trans_nir_vec(tctx, dest, num_srcs, src);
+      break;
 
    default:
-      break;
+      printf("Unsupported alu instruction: \"");
+      nir_print_instr(&alu->instr, stdout);
+      printf("\"\n");
+      unreachable();
    }
 
-   printf("Unsupported alu instruction: \"");
-   nir_print_instr(&alu->instr, stdout);
-   printf("\"\n");
-   unreachable();
+   if (!pco_ref_is_scalar(dest))
+      split_dest_comps(tctx, dest);
+
+   return instr;
 }
 
 /**
@@ -379,7 +550,12 @@ static pco_instr *trans_const(trans_ctx *tctx, nir_load_const_instr *nconst)
    pco_ref dest = pco_ref_nir_def_t(&nconst->def, tctx);
    pco_ref imm = pco_ref_imm(val, pco_bits(num_bits), pco_ref_get_dtype(dest));
 
-   return pco_movi32(&tctx->b, dest, imm);
+   pco_instr *instr = pco_movi32(&tctx->b, dest, imm);
+
+   if (!pco_ref_is_scalar(dest))
+      split_dest_comps(tctx, dest);
+
+   return instr;
 }
 
 /**
