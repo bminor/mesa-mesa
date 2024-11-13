@@ -273,12 +273,8 @@ static inline bool fwd_prop(pco_shader *shader)
 bool pco_opt(pco_shader *shader)
 {
    bool progress = false;
-
-   pco_index(shader);
-
    progress |= back_prop(shader);
    progress |= fwd_prop(shader);
-
    return progress;
 }
 
@@ -314,7 +310,6 @@ bool pco_dce(pco_shader *shader)
    bool progress = false;
    BITSET_WORD *ssa_used;
 
-   pco_index(shader);
    pco_foreach_func_in_shader (func, shader) {
       ssa_used = rzalloc_array_size(NULL,
                                     sizeof(*ssa_used),
@@ -347,9 +342,6 @@ bool pco_dce(pco_shader *shader)
 
       ralloc_free(ssa_used);
    }
-
-   if (progress)
-      pco_index(shader);
 
    return progress;
 }

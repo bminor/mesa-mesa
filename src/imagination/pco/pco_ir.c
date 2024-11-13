@@ -33,6 +33,9 @@ static inline bool pco_should_skip_pass(const char *pass)
          UNUSED bool _;                                       \
          progress = true;                                     \
                                                               \
+         if (PCO_DEBUG(REINDEX))                              \
+            pco_index(shader, false);                         \
+                                                              \
          pco_validate_shader(shader, "after " #pass);         \
                                                               \
          if (pco_should_print_shader_pass(shader))            \

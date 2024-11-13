@@ -50,6 +50,7 @@ void pco_setup_nir_options(const struct pvr_device_info *dev_info,
 /* Debug. */
 enum pco_debug {
    PCO_DEBUG_VAL_SKIP = BITFIELD64_BIT(0),
+   PCO_DEBUG_REINDEX = BITFIELD64_BIT(1),
 };
 
 extern uint64_t pco_debug;
@@ -279,6 +280,15 @@ typedef struct _pco_loop {
    unsigned index; /** Loop index. */
 } pco_loop;
 
+#define VEC_USER_MULTI ((void *)(~0ULL))
+
+/** PCO vector information. */
+typedef struct _pco_vec_info {
+   pco_instr *instr; /** Vector producer. */
+   pco_instr **comps; /** Array of vector components. */
+   pco_instr *vec_user; /** Vector user, or none, or multi. */
+} pco_vec_info;
+
 /** PCO function. */
 typedef struct _pco_func {
    struct list_head link; /** Link in pco_shader::funcs. */
@@ -295,7 +305,7 @@ typedef struct _pco_func {
    unsigned num_params;
    pco_ref *params;
 
-   struct hash_table_u64 *vec_comps;
+   struct hash_table_u64 *vec_infos;
 
    unsigned next_ssa; /** Next SSA node index. */
    unsigned next_instr; /** Next instruction index. */
@@ -1095,7 +1105,7 @@ bool pco_const_imms(pco_shader *shader);
 bool pco_dce(pco_shader *shader);
 bool pco_end(pco_shader *shader);
 bool pco_group_instrs(pco_shader *shader);
-bool pco_index(pco_shader *shader);
+bool pco_index(pco_shader *shader, bool skip_ssa);
 bool pco_nir_pfo(nir_shader *nir);
 bool pco_nir_pvi(nir_shader *nir);
 bool pco_opt(pco_shader *shader);

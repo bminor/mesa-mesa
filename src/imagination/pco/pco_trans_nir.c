@@ -45,23 +45,27 @@ static pco_block *trans_cf_nodes(trans_ctx *tctx,
  * \brief Splits a vector destination into scalar components.
  *
  * \param[in,out] tctx Translation context.
+ * \param[in] instr Instruction producing the vector destination.
  * \param[in] dest Instruction destination.
  */
-static void split_dest_comps(trans_ctx *tctx, pco_ref dest)
+static void split_dest_comps(trans_ctx *tctx, pco_instr *instr, pco_ref dest)
 {
    unsigned chans = pco_ref_get_chans(dest);
    assert(chans > 1);
 
    pco_func *func = tctx->func;
-   pco_instr **comps =
-      rzalloc_array_size(func->vec_comps, sizeof(*comps), chans);
+
+   pco_vec_info *vec_info = rzalloc_size(func->vec_infos, sizeof(*vec_info));
+   vec_info->instr = instr;
+   vec_info->comps =
+      rzalloc_array_size(vec_info, sizeof(*vec_info->comps), chans);
 
    for (unsigned u = 0; u < chans; ++u) {
       pco_ref comp = pco_ref_new_ssa(func, pco_ref_get_bits(dest), 1);
-      comps[u] = pco_comp(&tctx->b, comp, dest, pco_ref_val16(u));
+      vec_info->comps[u] = pco_comp(&tctx->b, comp, dest, pco_ref_val16(u));
    }
 
-   _mesa_hash_table_u64_insert(func->vec_comps, dest.val, comps);
+   _mesa_hash_table_u64_insert(func->vec_infos, dest.val, vec_info);
 }
 
 /**
@@ -144,25 +148,25 @@ pco_ref_nir_alu_src_t(const nir_alu_instr *alu, unsigned src, trans_ctx *tctx)
    if (!swizzle0 && seq_comps && chans == nir_src_num_components(alu_src->src))
       return ref;
 
-   pco_instr **comps =
-      _mesa_hash_table_u64_search(tctx->func->vec_comps, ref.val);
-   assert(comps);
+   pco_vec_info *vec_info =
+      _mesa_hash_table_u64_search(tctx->func->vec_infos, ref.val);
+   assert(vec_info);
 
    /* One channel; just return its component. */
    if (chans == 1)
-      return comps[swizzle0]->dest[0];
+      return vec_info->comps[swizzle0]->dest[0];
 
    /* Multiple channels, either a partial vec and/or swizzling; we need to build
     * a new vec for this.
     */
-   pco_ref vec_comps[NIR_MAX_VEC_COMPONENTS] = { 0 };
+   pco_ref comps[NIR_MAX_VEC_COMPONENTS] = { 0 };
    for (unsigned u = 0; u < chans; ++u)
-      vec_comps[u] = comps[alu_src->swizzle[u]]->dest[0];
+      comps[u] = vec_info->comps[alu_src->swizzle[u]]->dest[0];
 
    pco_ref vec = pco_ref_new_ssa(tctx->func, pco_ref_get_bits(ref), chans);
-   pco_vec(&tctx->b, vec, chans, vec_comps);
+   pco_instr *instr = pco_vec(&tctx->b, vec, chans, comps);
 
-   split_dest_comps(tctx, vec);
+   split_dest_comps(tctx, instr, vec);
 
    return vec;
 }
@@ -331,7 +335,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    }
 
    if (!pco_ref_is_scalar(dest))
-      split_dest_comps(tctx, dest);
+      split_dest_comps(tctx, instr, dest);
 
    return instr;
 }
@@ -432,7 +436,7 @@ static unsigned try_collate_vec_srcs(trans_ctx *tctx,
       collated_src[num_srcs_collated++] = collated_ref;
 
       s += chans - 1;
-      collated_vector |= true;
+      collated_vector = true;
    }
 
    return collated_vector ? num_srcs_collated : 0;
@@ -460,7 +464,23 @@ static pco_instr *pco_trans_nir_vec(trans_ctx *tctx,
    if (!num_srcs_collated)
       return pco_vec(&tctx->b, dest, num_srcs, src);
 
-   return pco_vec(&tctx->b, dest, num_srcs_collated, collated_src);
+   pco_instr *instr = pco_vec(&tctx->b, dest, num_srcs_collated, collated_src);
+
+   /* Record the collated vectors. */
+   for (unsigned s = 0; s < num_srcs_collated; ++s) {
+      if (pco_ref_is_scalar(collated_src[s]))
+         continue;
+
+      pco_vec_info *vec_info =
+         _mesa_hash_table_u64_search(tctx->func->vec_infos,
+                                     collated_src[s].val);
+      assert(vec_info);
+
+      /* Skip if there are multiple users. */
+      vec_info->vec_user = vec_info->vec_user ? VEC_USER_MULTI : instr;
+   }
+
+   return instr;
 }
 
 /**
@@ -525,7 +545,7 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    }
 
    if (!pco_ref_is_scalar(dest))
-      split_dest_comps(tctx, dest);
+      split_dest_comps(tctx, instr, dest);
 
    return instr;
 }
@@ -540,20 +560,37 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
 static pco_instr *trans_const(trans_ctx *tctx, nir_load_const_instr *nconst)
 {
    unsigned num_bits = nconst->def.bit_size;
-   unsigned comps = nconst->def.num_components;
+   unsigned chans = nconst->def.num_components;
 
    /* TODO: support more bit sizes/components. */
    assert(num_bits == 32);
-   assert(comps == 1);
-   uint64_t val = nir_const_value_as_uint(nconst->value[0], num_bits);
 
    pco_ref dest = pco_ref_nir_def_t(&nconst->def, tctx);
-   pco_ref imm = pco_ref_imm(val, pco_bits(num_bits), pco_ref_get_dtype(dest));
 
-   pco_instr *instr = pco_movi32(&tctx->b, dest, imm);
+   if (pco_ref_is_scalar(dest)) {
+      assert(chans == 1);
 
-   if (!pco_ref_is_scalar(dest))
-      split_dest_comps(tctx, dest);
+      uint64_t val = nir_const_value_as_uint(nconst->value[0], num_bits);
+      pco_ref imm =
+         pco_ref_imm(val, pco_bits(num_bits), pco_ref_get_dtype(dest));
+
+      return pco_movi32(&tctx->b, dest, imm);
+   }
+
+   pco_ref comps[NIR_MAX_VEC_COMPONENTS] = { 0 };
+   for (unsigned c = 0; c < chans; ++c) {
+      comps[c] = pco_ref_new_ssa(tctx->func, pco_ref_get_bits(dest), 1);
+
+      uint64_t val = nir_const_value_as_uint(nconst->value[c], num_bits);
+      pco_ref imm =
+         pco_ref_imm(val, pco_bits(num_bits), pco_ref_get_dtype(dest));
+
+      pco_movi32(&tctx->b, comps[c], imm);
+   }
+
+   pco_instr *instr = pco_vec(&tctx->b, dest, chans, comps);
+
+   split_dest_comps(tctx, instr, dest);
 
    return instr;
 }

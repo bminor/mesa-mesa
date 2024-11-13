@@ -160,7 +160,7 @@ pco_func *pco_func_create(pco_shader *shader,
          rzalloc_array_size(func, sizeof(*func->params), num_params);
    }
 
-   func->vec_comps = _mesa_hash_table_u64_create(func);
+   func->vec_infos = _mesa_hash_table_u64_create(func);
 
    return func;
 }

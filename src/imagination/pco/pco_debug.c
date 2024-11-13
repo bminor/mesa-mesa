@@ -24,6 +24,7 @@
 
 static const struct debug_named_value pco_debug_options[] = {
    { "val_skip", PCO_DEBUG_VAL_SKIP, "Skip IR validation." },
+   { "reindex", PCO_DEBUG_REINDEX, "Reindex IR at the end of each pass." },
    DEBUG_NAMED_VALUE_END,
 };
 

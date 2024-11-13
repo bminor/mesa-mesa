@@ -43,8 +43,5 @@ bool pco_schedule(pco_shader *shader)
       }
    }
 
-   if (progress)
-      pco_index(shader);
-
    return progress;
 }

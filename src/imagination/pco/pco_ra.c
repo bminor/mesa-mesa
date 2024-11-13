@@ -282,8 +282,6 @@ bool pco_ra(pco_shader *shader)
 {
    assert(!shader->is_grouped);
 
-   pco_index(shader);
-
    unsigned hw_temps = rogue_get_temps(shader->ctx->dev_info);
    /* TODO:
     * unsigned opt_temps = rogue_get_optimal_temps(shader->ctx->dev_info);

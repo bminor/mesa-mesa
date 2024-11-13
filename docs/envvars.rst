@@ -1998,6 +1998,9 @@ PowerVR driver environment variables
    ``val_skip``
       Skip IR validation.
 
+   ``reindex``
+      Reindex IR at the end of each pass.
+
 .. envvar:: PCO_SKIP_PASSES
 
    A comma-separated list of passes to skip.
