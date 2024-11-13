@@ -34,7 +34,8 @@
  * "Coordinate Transformation" of the OpenGL ES 3.2 full specification.
  *
  * This pass must run before lower_vars/lower_io such that derefs are
- * still in place.
+ * still in place. This pass must run after lower_io_to_temporaries so
+ * that the transformed position is not visible to user code.
  */
 
 #include "nir/nir.h"
