@@ -176,12 +176,6 @@ struct wsi_wl_surface {
       uint64_t presentation_track_id;
    } analytics;
 
-   uint64_t last_target_time;
-   uint64_t displayed_time;
-   bool valid_refresh_nsec;
-   unsigned int refresh_nsec;
-   uint64_t display_time_error;
-   uint64_t display_time_correction;
    struct zwp_linux_dmabuf_feedback_v1 *wl_dmabuf_feedback;
    struct dmabuf_feedback dmabuf_feedback, pending_dmabuf_feedback;
 
@@ -223,6 +217,13 @@ struct wsi_wl_swapchain {
       /* Fallback when wp_presentation is not supported */
       struct wl_surface *surface;
       bool dispatch_in_progress;
+
+      uint64_t display_time_error;
+      uint64_t display_time_correction;
+      uint64_t last_target_time;
+      uint64_t displayed_time;
+      bool valid_refresh_nsec;
+      unsigned int refresh_nsec;
    } present_ids;
 
    struct wsi_wl_image images[0];
@@ -1798,8 +1799,6 @@ static VkResult wsi_wl_surface_init(struct wsi_wl_surface *wsi_wl_surface,
 
    wsi_wl_surface_analytics_init(wsi_wl_surface, pAllocator);
 
-   wsi_wl_surface->valid_refresh_nsec = false;
-   wsi_wl_surface->refresh_nsec = 0;
    return VK_SUCCESS;
 
 fail:
@@ -2161,7 +2160,7 @@ wsi_wl_presentation_update_present_id(struct wsi_wl_present_id *id)
    if (id->present_id > id->chain->present_ids.max_completed)
       id->chain->present_ids.max_completed = id->present_id;
 
-   id->chain->wsi_wl_surface->display_time_correction -= id->correction;
+   id->chain->present_ids.display_time_correction -= id->correction;
    wl_list_remove(&id->link);
    mtx_unlock(&id->chain->present_ids.lock);
    vk_free(id->alloc, id);
@@ -2214,29 +2213,30 @@ presentation_handle_presented(void *data,
    MESA_TRACE_FUNC_FLOW(&id->flow_id);
 
    struct wsi_wl_swapchain *chain = id->chain;
-   struct wsi_wl_surface *surface = chain->wsi_wl_surface;
    uint64_t target_time = id->target_time;
 
-   surface->refresh_nsec = refresh;
 
    presentation_ts.tv_sec = ((uint64_t)tv_sec_hi << 32) + tv_sec_lo;
    presentation_ts.tv_nsec = tv_nsec;
    presentation_time = timespec_to_nsec(&presentation_ts);
    trace_present(id, presentation_time);
 
-   if (!surface->valid_refresh_nsec) {
-      surface->valid_refresh_nsec = true;
-      surface->last_target_time = presentation_time;
+   mtx_lock(&chain->present_ids.lock);
+   chain->present_ids.refresh_nsec = refresh;
+   if (!chain->present_ids.valid_refresh_nsec) {
+      chain->present_ids.valid_refresh_nsec = true;
+      chain->present_ids.last_target_time = presentation_time;
       target_time = presentation_time;
    }
 
-   if (presentation_time > surface->displayed_time)
-      surface->displayed_time = presentation_time;
+   if (presentation_time > chain->present_ids.displayed_time)
+      chain->present_ids.displayed_time = presentation_time;
 
    if (target_time && presentation_time > target_time)
-      surface->display_time_error = presentation_time - target_time;
+      chain->present_ids.display_time_error = presentation_time - target_time;
    else
-      surface->display_time_error = 0;
+      chain->present_ids.display_time_error = 0;
+   mtx_unlock(&chain->present_ids.lock);
 
    wsi_wl_presentation_update_present_id(id);
    wp_presentation_feedback_destroy(feedback);
@@ -2250,15 +2250,16 @@ presentation_handle_discarded(void *data,
 
    MESA_TRACE_FUNC_FLOW(&id->flow_id);
    struct wsi_wl_swapchain *chain = id->chain;
-   struct wsi_wl_surface *surface = chain->wsi_wl_surface;
 
-   if (!surface->valid_refresh_nsec) {
+   mtx_lock(&chain->present_ids.lock);
+   if (!chain->present_ids.valid_refresh_nsec) {
       /* We've started occluded, so make up some safe values to throttle us */
-      surface->displayed_time = os_time_get_nano();
-      surface->last_target_time = surface->displayed_time;
-      surface->refresh_nsec = 16666666;
-      surface->valid_refresh_nsec = true;
+      chain->present_ids.displayed_time = os_time_get_nano();
+      chain->present_ids.last_target_time = chain->present_ids.displayed_time;
+      chain->present_ids.refresh_nsec = 16666666;
+      chain->present_ids.valid_refresh_nsec = true;
    }
+   mtx_unlock(&chain->present_ids.lock);
 
    wsi_wl_presentation_update_present_id(id);
    wp_presentation_feedback_destroy(feedback);
@@ -2298,23 +2299,23 @@ static const struct wl_callback_listener frame_listener = {
    frame_handle_done,
 };
 
+/* The present_ids lock must be held */
 static bool
 set_timestamp(struct wsi_wl_swapchain *chain,
               uint64_t *timestamp,
               uint64_t *correction)
 {
-   struct wsi_wl_surface *surface = chain->wsi_wl_surface;
    uint64_t target;
    struct timespec target_ts;
    uint64_t refresh;
    uint64_t displayed_time;
    int32_t error = 0;
 
-   if (!surface->valid_refresh_nsec)
+   if (!chain->present_ids.valid_refresh_nsec)
       return false;
 
-   displayed_time = surface->displayed_time;
-   refresh = surface->refresh_nsec;
+   displayed_time = chain->present_ids.displayed_time;
+   refresh = chain->present_ids.refresh_nsec;
 
    /* If refresh is 0, presentation feedback has informed us we have no
     * fixed refresh cycle. In that case we can't generate sensible
@@ -2335,10 +2336,11 @@ set_timestamp(struct wsi_wl_swapchain *chain,
     * running tally of how much correction we're applying and remove
     * it as corrected frames are retired.
     */
-   if (surface->display_time_error > surface->display_time_correction)
-      error = surface->display_time_error - surface->display_time_correction;
+   if (chain->present_ids.display_time_error > chain->present_ids.display_time_correction)
+      error = chain->present_ids.display_time_error -
+              chain->present_ids.display_time_correction;
 
-   target = surface->last_target_time;
+   target = chain->present_ids.last_target_time;
    if (error > 0)  {
       target += (error / refresh) * refresh;
       *correction = (error / refresh) * refresh;
@@ -2346,7 +2348,7 @@ set_timestamp(struct wsi_wl_swapchain *chain,
       *correction = 0;
    }
 
-   surface->display_time_correction += *correction;
+   chain->present_ids.display_time_correction += *correction;
    target = next_phase_locked_time(displayed_time,
                                    refresh,
                                    target);
@@ -2358,7 +2360,7 @@ set_timestamp(struct wsi_wl_swapchain *chain,
                                     (uint64_t)target_ts.tv_sec >> 32, target_ts.tv_sec,
                                     target_ts.tv_nsec);
 
-   surface->last_target_time = target;
+   chain->present_ids.last_target_time = target;
    *timestamp = target;
    return true;
 }
@@ -2462,13 +2464,13 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
 
       id->submission_time = os_time_get_nano();
 
+      mtx_lock(&chain->present_ids.lock);
+
       if (mode_fifo && chain->fifo && chain->commit_timer) {
          timestamped = set_timestamp(chain, &id->target_time, &id->correction);
-         if (timestamped || !wsi_wl_surface->valid_refresh_nsec)
+         if (timestamped || !chain->present_ids.valid_refresh_nsec)
             need_legacy_throttling = false;
       }
-
-      mtx_lock(&chain->present_ids.lock);
 
       if (chain->present_ids.wp_presentation) {
          id->feedback = wp_presentation_feedback(chain->present_ids.wp_presentation,
@@ -3022,6 +3024,9 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
          goto fail_free_wl_images;
       chain->images[i].busy = false;
    }
+
+   chain->present_ids.valid_refresh_nsec = false;
+   chain->present_ids.refresh_nsec = 0;
 
    *swapchain_out = &chain->base;
 
