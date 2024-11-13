@@ -19,7 +19,6 @@ dEQP-VK.binding_model.shader_access.primary_cmd_buf.bind.sampler_immutable.fragm
 dEQP-VK.binding_model.shader_access.primary_cmd_buf.bind.with_template.sampler_immutable.tess_eval.multiple_arbitrary_descriptors.2d
 
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_vk_primitive_topology_point_list
-dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.vertex_attribute_divisor.ext.static_pipeline.draw_indexed.non_zero.16
 
 dEQP-VK.dynamic_rendering.graphics_pipeline_library.dedicated_allocation.formats.r16g16b16a16_uint.input.dont_care.store.self_dep_draw
 

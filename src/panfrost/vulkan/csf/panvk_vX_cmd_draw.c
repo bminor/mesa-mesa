@@ -89,6 +89,12 @@ emit_vs_attrib(const struct vk_vertex_attribute_state *attrib_info,
       } else if (buf_info->divisor == 1) {
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_1D;
          cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_INSTANCE;
+      } else if (buf_info->divisor == 0) {
+         cfg.attribute_type = MALI_ATTRIBUTE_TYPE_1D;
+         /* HW doesn't support a zero divisor, but we can achieve the same by
+          * not using a divisor and setting the stride to zero */
+         cfg.frequency = MALI_ATTRIBUTE_FREQUENCY_INSTANCE;
+         cfg.stride = 0;
       } else if (util_is_power_of_two_or_zero(buf_info->divisor)) {
          /* Per-instance, POT divisor */
          cfg.attribute_type = MALI_ATTRIBUTE_TYPE_1D_POT_DIVISOR;

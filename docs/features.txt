@@ -556,7 +556,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_KHR_surface_protected_capabilities                 DONE (anv, lvp, nvk, radv, tu, v3dv, vn)
   VK_KHR_swapchain                                      DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_swapchain_mutable_format                       DONE (anv, hasvk, lvp, nvk, radv, tu, v3dv, vn)
-  VK_KHR_vertex_attribute_divisor                       DONE (anv, nvk, radv, tu, v3dv)
+  VK_KHR_vertex_attribute_divisor                       DONE (anv, nvk, panvk, radv, tu, v3dv)
   VK_KHR_wayland_surface                                DONE (anv, dzn, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_workgroup_memory_explicit_layout               DONE (anv, nvk, hasvk, radv, tu, v3dv)
   VK_KHR_win32_keyed_mutex                              not started
@@ -645,7 +645,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_EXT_surface_maintenance1                           DONE (anv, lvp, nvk, radv, tu, v3dv)
   VK_EXT_swapchain_maintenance1                         DONE (anv, lvp, nvk, radv, tu, v3dv)
   VK_EXT_transform_feedback                             DONE (anv, hasvk, lvp, nvk, radv, tu, vn)
-  VK_EXT_vertex_attribute_divisor                       DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
+  VK_EXT_vertex_attribute_divisor                       DONE (anv, dzn, hasvk, lvp, nvk, radv, tu, v3dv, vn)
   VK_EXT_vertex_input_dynamic_state                     DONE (anv, lvp, nvk, radv, tu, vn)
   VK_EXT_ycbcr_image_arrays                             DONE (anv, hasvk, lvp, nvk, radv)
   VK_ANDROID_external_memory_android_hardware_buffer    DONE (anv, radv, tu, vn)

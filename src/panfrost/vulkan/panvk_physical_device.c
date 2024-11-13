@@ -225,6 +225,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_synchronization2 = true,
       .KHR_timeline_semaphore = true,
       .KHR_variable_pointers = true,
+      .KHR_vertex_attribute_divisor = true,
       .KHR_zero_initialize_workgroup_memory = true,
       .EXT_buffer_device_address = true,
       .EXT_custom_border_color = true,
@@ -244,7 +245,6 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_sampler_filter_minmax = arch >= 10,
       .EXT_shader_module_identifier = true,
       .EXT_tooling_info = true,
-      .EXT_vertex_attribute_divisor = true,
       .GOOGLE_decorate_string = true,
       .GOOGLE_hlsl_functionality1 = true,
       .GOOGLE_user_type = true,
@@ -370,7 +370,7 @@ get_features(const struct panvk_physical_device *device,
       /* VK_KHR_index_type_uint8 */
       .indexTypeUint8 = true,
 
-      /* VK_EXT_vertex_attribute_divisor */
+      /* VK_KHR_vertex_attribute_divisor */
       .vertexAttributeInstanceRateDivisor = true,
       .vertexAttributeInstanceRateZeroDivisor = true,
 
