@@ -685,7 +685,7 @@ SOPC = {
    ("s_bitcmp0_b64",    dst(SCC), src(2, 1), op(0x0e)),
    ("s_bitcmp1_b64",    dst(SCC), src(2, 1), op(0x0f)),
    ("s_setvskip",       dst(), src(1, 1), op(0x10, gfx10=-1)),
-   ("s_set_gpr_idx_on", dst(M0), src(1, 1, M0), op(gfx8=0x11, gfx10=-1)),
+   ("s_set_gpr_idx_on", dst(M0), src(1, 1), op(gfx8=0x11, gfx10=-1)),
    ("s_cmp_eq_u64",     dst(SCC), src(2, 2), op(gfx8=0x12, gfx11=0x10)),
    ("s_cmp_lg_u64",     dst(SCC), src(2, 2), op(gfx8=0x13, gfx11=0x11)),
    ("s_cmp_lt_f32",     dst(SCC), src(1, 1), op(gfx11=0x41), InstrClass.SFPU),
