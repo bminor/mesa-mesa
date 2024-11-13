@@ -2498,6 +2498,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
 
    if (mode_fifo && chain->fifo) {
       wp_fifo_v1_set_barrier(chain->fifo);
+      wp_fifo_v1_wait_barrier(chain->fifo);
 
       /* If our surface is occluded and we're using vkWaitForPresentKHR,
        * we can end up waiting forever. The FIFO condition and the time
@@ -2512,10 +2513,26 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
        * receives presented feedback and the FIFO one blocks further
        * updates until the next refresh.
        */
-      if (timestamped)
+      if (timestamped) {
          wl_surface_commit(wsi_wl_surface->surface);
-
-      wp_fifo_v1_wait_barrier(chain->fifo);
+         /* Once we're in a steady state, we'd only need one of these
+          * barrier waits. However, the first time we use a timestamp
+          * we need both of our content updates to wait. The first
+          * needs to wait to avoid potentially provoking a feedback
+          * discarded event for the previous untimed content update,
+          * the second to prevent provoking a discard event for the
+          * timed update we've just made.
+          *
+          * Before the transition, we would only have a single content
+          * update per call, which would contain a barrier wait. After
+          * that, we would only need a barrier wait in the empty content
+          * update.
+          *
+          * Instead of statefully tracking the transition across calls to
+          * this function, just put a barrier wait in every content update.
+          */
+         wp_fifo_v1_wait_barrier(chain->fifo);
+      }
    }
    wl_surface_commit(wsi_wl_surface->surface);
    wl_display_flush(wsi_wl_surface->display->wl_display);

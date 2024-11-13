@@ -14,7 +14,7 @@
         "description": "vulkan/wsi/wayland: Avoid spurious discard event at startup",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c26ab1aee1dd9a06e17744de7ab6a54530b47ca5",
         "notes": null
