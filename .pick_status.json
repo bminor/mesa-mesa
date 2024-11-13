@@ -74,7 +74,7 @@
         "description": "radv: fix ignoring src stage mask when dst stage mask is BOTTOM_OF_PIPE",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
