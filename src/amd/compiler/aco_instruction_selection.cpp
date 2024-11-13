@@ -12446,6 +12446,36 @@ dump_sgpr_to_mem(isel_context* ctx, Operand rsrc, Operand data, uint32_t offset)
 }
 
 void
+enable_thread_indexing(isel_context* ctx, Operand rsrc)
+{
+   Builder bld(ctx->program, ctx->block);
+   PhysReg rsrc_word3(rsrc.physReg() + 3);
+
+   bld.sop2(aco_opcode::s_or_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
+            Operand(rsrc_word3, s1), Operand::c32(S_008F0C_ADD_TID_ENABLE(1)));
+   if (ctx->program->gfx_level < GFX10) {
+      /* This is part of the stride if ADD_TID_ENABLE=1. */
+      bld.sop2(aco_opcode::s_and_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
+               Operand(rsrc_word3, s1), Operand::c32(C_008F0C_DATA_FORMAT));
+   }
+}
+
+void
+disable_thread_indexing(isel_context* ctx, Operand rsrc)
+{
+   Builder bld(ctx->program, ctx->block);
+   PhysReg rsrc_word3(rsrc.physReg() + 3);
+
+   bld.sop2(aco_opcode::s_and_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
+            Operand(rsrc_word3, s1), Operand::c32(C_008F0C_ADD_TID_ENABLE));
+   if (ctx->program->gfx_level < GFX10) {
+      bld.sop2(aco_opcode::s_or_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
+               Operand(rsrc_word3, s1),
+               Operand::c32(S_008F0C_DATA_FORMAT(V_008F0C_BUF_DATA_FORMAT_32)));
+   }
+}
+
+void
 save_or_restore_vgprs(isel_context* ctx, Operand rsrc, bool save)
 {
    Builder bld(ctx->program, ctx->block);
@@ -12454,11 +12484,7 @@ save_or_restore_vgprs(isel_context* ctx, Operand rsrc, bool save)
    ac_hw_cache_flags cache_glc;
    cache_glc.value = ac_glc;
 
-   PhysReg rsrc_word3(rsrc.physReg() + 3);
-
-   /* Set ADD_TID_ENABLE to enable thread indexing. */
-   bld.sop2(aco_opcode::s_or_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
-            Operand(rsrc_word3, s1), Operand::c32(1 << 23));
+   enable_thread_indexing(ctx, rsrc);
 
    for (uint32_t i = 0; i < NUM_SAVED_VGPRS; i++) {
       if (save) {
@@ -12475,9 +12501,7 @@ save_or_restore_vgprs(isel_context* ctx, Operand rsrc, bool save)
       offset += 256;
    }
 
-   /* Clear ADD_TID_ENABLE. */
-   bld.sop2(aco_opcode::s_andn2_b32, Definition(rsrc_word3, s1), bld.def(s1, scc),
-            Operand(rsrc_word3, s1), Operand::c32(1 << 23));
+   disable_thread_indexing(ctx, rsrc);
 }
 
 void
