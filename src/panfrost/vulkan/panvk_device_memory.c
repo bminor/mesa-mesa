@@ -13,6 +13,33 @@
 
 #include "vk_log.h"
 
+static void *
+panvk_memory_mmap(struct panvk_device_memory *mem)
+{
+   if (!mem->addr.host) {
+      void *addr = pan_kmod_bo_mmap(mem->bo, 0, pan_kmod_bo_size(mem->bo),
+                                    PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
+      if (addr == MAP_FAILED)
+         return NULL;
+
+      mem->addr.host = addr;
+   }
+
+   return mem->addr.host;
+}
+
+static void
+panvk_memory_munmap(struct panvk_device_memory *mem)
+{
+   if (mem->addr.host) {
+      ASSERTED int ret =
+         os_munmap((void *)mem->addr.host, pan_kmod_bo_size(mem->bo));
+
+      assert(!ret);
+      mem->addr.host = NULL;
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_AllocateMemory(VkDevice _device,
                      const VkMemoryAllocateInfo *pAllocateInfo,
@@ -230,14 +257,12 @@ panvk_MapMemory2KHR(VkDevice _device, const VkMemoryMapInfoKHR *pMemoryMapInfo,
       return panvk_errorf(device, VK_ERROR_MEMORY_MAP_FAILED,
                           "Memory object already mapped.");
 
-   void *addr = pan_kmod_bo_mmap(mem->bo, 0, pan_kmod_bo_size(mem->bo),
-                                 PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
-   if (addr == MAP_FAILED)
+   void *addr = panvk_memory_mmap(mem);
+   if (!addr)
       return panvk_errorf(device, VK_ERROR_MEMORY_MAP_FAILED,
                           "Memory object couldn't be mapped.");
 
-   mem->addr.host = addr;
-   *ppData = mem->addr.host + offset;
+   *ppData = addr + offset;
    return VK_SUCCESS;
 }
 
@@ -247,13 +272,7 @@ panvk_UnmapMemory2KHR(VkDevice _device,
 {
    VK_FROM_HANDLE(panvk_device_memory, mem, pMemoryUnmapInfo->memory);
 
-   if (mem->addr.host) {
-      ASSERTED int ret =
-         os_munmap((void *)mem->addr.host, pan_kmod_bo_size(mem->bo));
-
-      assert(!ret);
-      mem->addr.host = NULL;
-   }
+   panvk_memory_munmap(mem);
 
    return VK_SUCCESS;
 }
