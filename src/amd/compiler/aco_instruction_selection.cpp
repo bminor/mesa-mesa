@@ -12385,6 +12385,9 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       bld.smem(aco_opcode::s_load_dwordx4, Definition(tma_rsrc, s4), Operand(PhysReg{tma_lo}, s2),
                Operand::zero());
 
+      /* Save VGPRS that needs to be restored. */
+      save_vgprs_to_mem(&ctx, Operand(tma_rsrc, s4));
+
       /* Store TTMP0-TTMP1. */
       bld.smem(aco_opcode::s_buffer_store_dwordx2, Operand(tma_rsrc, s4), Operand::c32(offset),
                Operand(ttmp0_reg, s2), memory_sync_info(), cache_glc);
@@ -12433,10 +12436,8 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       offset += 4;
    }
 
-   if (ctx.program->gfx_level >= GFX9) {
-      /* Restore VGPRS. */
-      restore_vgprs_from_mem(&ctx, Operand(tma_rsrc, s4));
-   }
+   /* Restore VGPRS. */
+   restore_vgprs_from_mem(&ctx, Operand(tma_rsrc, s4));
 
    /* Restore m0 and exec. */
    bld.copy(Definition(m0, s1), Operand(save_m0, s1));
