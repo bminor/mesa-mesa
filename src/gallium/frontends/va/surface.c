@@ -52,6 +52,10 @@
 #include "drm-uapi/drm_fourcc.h"
 #endif
 
+#ifndef VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3
+#define VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3      0x08000000
+#endif
+
 VAStatus
 vlVaCreateSurfaces(VADriverContextP ctx, int width, int height, int format,
                    int num_surfaces, VASurfaceID *surfaces)
@@ -626,6 +630,9 @@ vlVaQuerySurfaceAttributes(VADriverContextP ctx, VAConfigID config_id,
          VA_SURFACE_ATTRIB_MEM_TYPE_D3D12_RESOURCE;
 #else
          VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME |
+#if VA_CHECK_VERSION(1, 21, 0)
+         VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3 |
+#endif
          VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2;
 #endif
    i++;
@@ -818,9 +825,9 @@ fail:
 }
 
 static VAStatus
-surface_from_prime_2(VADriverContextP ctx, vlVaSurface *surface,
-                     VADRMPRIMESurfaceDescriptor *desc,
-                     struct pipe_video_buffer *templat)
+surface_from_prime(VADriverContextP ctx, vlVaSurface *surface,
+                   VADRMPRIMESurfaceDescriptor *desc, int mem_type,
+                   struct pipe_video_buffer *templat)
 {
    vlVaDriver *drv;
    struct pipe_screen *pscreen;
@@ -1150,6 +1157,7 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
 #else
          case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME:
          case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2:
+         case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3:
 #endif
             memory_type = attrib_list[i].value.value.i;
             break;
@@ -1161,7 +1169,8 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
          if (attrib_list[i].value.type != VAGenericValueTypePointer)
             return VA_STATUS_ERROR_INVALID_PARAMETER;
 #ifndef _WIN32
-         if (memory_type == VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2)
+         if (memory_type == VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2 ||
+             memory_type == VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3)
             prime_desc = (VADRMPRIMESurfaceDescriptor *)attrib_list[i].value.value.p;
 #else
          else if (memory_type == VA_SURFACE_ATTRIB_MEM_TYPE_NTHANDLE ||
@@ -1212,6 +1221,7 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
       expected_fourcc = memory_attribute->pixel_format;
       break;
    case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2:
+   case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3:
       if (!prime_desc)
          return VA_STATUS_ERROR_INVALID_PARAMETER;
 
@@ -1288,7 +1298,8 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
          break;
 
       case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2:
-         vaStatus = surface_from_prime_2(ctx, surf, prime_desc, &templat);
+      case VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3:
+         vaStatus = surface_from_prime(ctx, surf, prime_desc, memory_type, &templat);
          if (vaStatus != VA_STATUS_SUCCESS)
             goto free_surf;
          break;
@@ -1612,7 +1623,8 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
       return VA_STATUS_ERROR_INVALID_SURFACE;
 #else
    int i, p;
-   if (mem_type != VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2)
+   if (mem_type != VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2 &&
+       mem_type != VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3)
       return VA_STATUS_ERROR_UNSUPPORTED_MEMORY_TYPE;
 #endif
 
@@ -1743,6 +1755,17 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
    } else {
       desc->num_layers = p;
    }
+
+#if VA_CHECK_VERSION(1, 21, 0)
+   if (mem_type == VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_3) {
+      VADRMPRIME3SurfaceDescriptor *desc3 = descriptor;
+      memset(desc3->reserved, 0, sizeof(desc3->reserved));
+      desc3->flags = 0;
+      if (surf->templat.bind & PIPE_BIND_PROTECTED)
+         desc3->flags |= VA_SURFACE_EXTBUF_DESC_PROTECTED;
+   }
+#endif
+
 #endif
 
    drv->has_external_handles = true;
