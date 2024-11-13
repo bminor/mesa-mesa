@@ -27,6 +27,7 @@
 #include "util/macros.h"
 #include "common/v3d_device_info.h"
 #include "compiler/shader_enums.h"
+#include "broadcom/compiler/v3d_compiler.h"
 #include "util/format/u_formats.h"
 
 uint32_t
@@ -79,4 +80,35 @@ log2_tile_size(uint32_t size)
 uint32_t
 v3d_compute_rt_row_row_stride_128_bits(uint32_t tile_width,
                                        uint32_t bpp);
+
+struct v3d_double_buffer_score {
+        uint32_t geom;
+        uint32_t render;
+};
+
+void
+v3d_update_double_buffer_score(uint32_t vertex_count,
+                               uint32_t vs_qpu_size,
+                               uint32_t fs_qpu_size,
+                               struct v3d_prog_data *vs,
+                               struct v3d_prog_data *fs,
+                               struct v3d_double_buffer_score *score);
+
+static inline bool
+v3d_double_buffer_score_ok(struct v3d_double_buffer_score *score)
+{
+        /* Double buffer decreases tile size, which increases
+         * VS invocations so too much geometry is not good.
+         */
+        if (score->geom > 200000)
+                return false;
+
+        /* We want enough rendering work to be able to hide
+         * latency from tile stores.
+         */
+        if (score->render < 200)
+                return false;
+        return true;
+}
+
 #endif
