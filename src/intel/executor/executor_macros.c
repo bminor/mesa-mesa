@@ -323,9 +323,9 @@ executor_macro_read(executor_context *ec, char **src, char *line)
 
    case 200: {
       ralloc_asprintf_append(src,
-         "mul(8)          g127<1>UD  %s<1;1,0>UD    0x4UW     { align1 @1 1Q };\n"
-         "add(8)          g127<1>UD  g127<1;1,0>UD  0x%08xUD  { align1 @1 1Q };\n"
-         "send(8)         %sUD       g127UD         nullUD    0x02100500 0x00000000\n"
+         "mul(16)         g127<1>UD  %s<1;1,0>UD    0x4UW     { align1 @1 1Q };\n"
+         "add(16)         g127<1>UD  g127<1;1,0>UD  0x%08xUD  { align1 @1 1Q };\n"
+         "send(16)        %sUD       g127UD         nullUD    0x02100500 0x00000000\n"
          "    ugm MsgDesc: ( load, a32, d32, x, L1STATE_L3MOCS dst_len = 1, "
          "                   src0_len = 1, flat ) src1_len = 0  base_offset 0 "
          "    { align1 1Q A@1 $1 };\n",
