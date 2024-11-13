@@ -194,6 +194,8 @@ panvk_FreeMemory(VkDevice _device, VkDeviceMemory _mem,
          os_munmap(mem->debug.host_mapping, pan_kmod_bo_size(mem->bo));
    }
 
+   panvk_memory_munmap(mem);
+
    struct pan_kmod_vm_op op = {
       .type = PAN_KMOD_VM_OP_TYPE_UNMAP,
       .va = {
