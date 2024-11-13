@@ -1056,6 +1056,62 @@ radv_device_init_msaa(struct radv_device *device)
       radv_get_sample_position(device, 8, i, device->sample_locations_8x[i]);
 }
 
+static void
+radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAllocator)
+{
+   radv_device_finish_perf_counter(device);
+
+   radv_device_finish_tools(device);
+
+   if (device->gfx_init)
+      radv_bo_destroy(device, NULL, device->gfx_init);
+
+   radv_device_finish_notifier(device);
+   radv_device_finish_vs_prologs(device);
+   if (device->ps_epilogs.ops)
+      radv_shader_part_cache_finish(device, &device->ps_epilogs);
+   radv_device_finish_border_color(device);
+   radv_device_finish_vrs_image(device);
+
+   for (unsigned i = 0; i < RADV_MAX_QUEUE_FAMILIES; i++) {
+      for (unsigned q = 0; q < device->queue_count[i]; q++)
+         radv_queue_finish(&device->queues[i][q]);
+      if (device->queue_count[i])
+         vk_free(&device->vk.alloc, device->queues[i]);
+   }
+   if (device->private_sdma_queue != VK_NULL_HANDLE) {
+      radv_queue_finish(device->private_sdma_queue);
+      vk_free(&device->vk.alloc, device->private_sdma_queue);
+   }
+
+   _mesa_hash_table_destroy(device->rt_handles, NULL);
+
+   radv_device_finish_meta(device);
+
+   radv_device_finish_memory_cache(device);
+
+   radv_destroy_shader_upload_queue(device);
+
+   for (unsigned i = 0; i < RADV_NUM_HW_CTX; i++) {
+      if (device->hw_ctx[i])
+         device->ws->ctx_destroy(device->hw_ctx[i]);
+   }
+
+   mtx_destroy(&device->overallocation_mutex);
+   simple_mtx_destroy(&device->ctx_roll_mtx);
+   simple_mtx_destroy(&device->pstate_mtx);
+   simple_mtx_destroy(&device->trace_mtx);
+   simple_mtx_destroy(&device->rt_handles_mtx);
+   simple_mtx_destroy(&device->pso_cache_stats_mtx);
+
+   radv_destroy_shader_arenas(device);
+   if (device->capture_replay_arena_vas)
+      _mesa_hash_table_u64_destroy(device->capture_replay_arena_vas);
+
+   vk_device_finish(&device->vk);
+   vk_free(&device->vk.alloc, device);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice)
@@ -1139,7 +1195,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
 
       result = device->ws->ctx_create(device->ws, priority, &device->hw_ctx[priority]);
       if (result != VK_SUCCESS)
-         goto fail_queue;
+         goto fail;
    }
 
    for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
@@ -1152,7 +1208,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
                                       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
       if (!device->queues[qfi]) {
          result = VK_ERROR_OUT_OF_HOST_MEMORY;
-         goto fail_queue;
+         goto fail;
       }
 
       device->queue_count[qfi] = queue_create->queueCount;
@@ -1160,7 +1216,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
       for (unsigned q = 0; q < queue_create->queueCount; q++) {
          result = radv_queue_init(device, &device->queues[qfi][q], q, queue_create, global_priority);
          if (result != VK_SUCCESS)
-            goto fail_queue;
+            goto fail;
       }
    }
    device->private_sdma_queue = VK_NULL_HANDLE;
@@ -1256,7 +1312,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
 
    result = radv_device_init_meta(device);
    if (result != VK_SUCCESS)
-      goto fail_meta;
+      goto fail;
 
    radv_device_init_msaa(device);
 
@@ -1264,14 +1320,14 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    if (device->vk.enabled_features.customBorderColors) {
       result = radv_device_init_border_color(device);
       if (result != VK_SUCCESS)
-         goto fail_meta;
+         goto fail;
    }
 
    if (device->vk.enabled_features.vertexInputDynamicState || device->vk.enabled_features.graphicsPipelineLibrary ||
        device->vk.enabled_features.shaderObject) {
       result = radv_device_init_vs_prologs(device);
       if (result != VK_SUCCESS)
-         goto fail_meta;
+         goto fail;
    }
 
    if (device->vk.enabled_features.graphicsPipelineLibrary || device->vk.enabled_features.shaderObject ||
@@ -1281,7 +1337,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
        device->vk.enabled_features.extendedDynamicState3ColorBlendEquation) {
       if (!radv_shader_part_cache_init(&device->ps_epilogs, &ps_epilog_ops)) {
          result = VK_ERROR_OUT_OF_HOST_MEMORY;
-         goto fail_meta;
+         goto fail;
       }
    }
 
@@ -1291,7 +1347,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    if (!device->vk.disable_internal_cache) {
       result = radv_device_init_memory_cache(device);
       if (result != VK_SUCCESS)
-         goto fail_meta;
+         goto fail;
    }
 
    device->force_aniso = MIN2(16, (int)debug_get_num_option("RADV_TEX_ANISO", -1));
@@ -1302,7 +1358,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    if (device->vk.enabled_features.performanceCounterQueryPools) {
       result = radv_device_init_perf_counter(device);
       if (result != VK_SUCCESS)
-         goto fail_cache;
+         goto fail;
    }
 
    if (device->vk.enabled_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
@@ -1317,52 +1373,8 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    *pDevice = radv_device_to_handle(device);
    return VK_SUCCESS;
 
-fail_cache:
-   radv_device_finish_memory_cache(device);
-fail_meta:
-   radv_device_finish_meta(device);
 fail:
-   radv_device_finish_perf_counter(device);
-
-   radv_device_finish_tools(device);
-
-   if (device->gfx_init)
-      radv_bo_destroy(device, NULL, device->gfx_init);
-
-   radv_device_finish_notifier(device);
-   radv_device_finish_vs_prologs(device);
-   if (device->ps_epilogs.ops)
-      radv_shader_part_cache_finish(device, &device->ps_epilogs);
-   radv_device_finish_border_color(device);
-
-   radv_destroy_shader_upload_queue(device);
-
-fail_queue:
-   for (unsigned i = 0; i < RADV_MAX_QUEUE_FAMILIES; i++) {
-      for (unsigned q = 0; q < device->queue_count[i]; q++)
-         radv_queue_finish(&device->queues[i][q]);
-      if (device->queue_count[i])
-         vk_free(&device->vk.alloc, device->queues[i]);
-   }
-
-   for (unsigned i = 0; i < RADV_NUM_HW_CTX; i++) {
-      if (device->hw_ctx[i])
-         device->ws->ctx_destroy(device->hw_ctx[i]);
-   }
-
-   radv_destroy_shader_arenas(device);
-
-   _mesa_hash_table_destroy(device->rt_handles, NULL);
-
-   simple_mtx_destroy(&device->ctx_roll_mtx);
-   simple_mtx_destroy(&device->pstate_mtx);
-   simple_mtx_destroy(&device->trace_mtx);
-   simple_mtx_destroy(&device->rt_handles_mtx);
-   simple_mtx_destroy(&device->pso_cache_stats_mtx);
-   mtx_destroy(&device->overallocation_mutex);
-
-   vk_device_finish(&device->vk);
-   vk_free(&device->vk.alloc, device);
+   radv_destroy_device(device, pAllocator);
    return result;
 }
 
@@ -1374,57 +1386,7 @@ radv_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    if (!device)
       return;
 
-   radv_device_finish_perf_counter(device);
-
-   radv_device_finish_tools(device);
-
-   if (device->gfx_init)
-      radv_bo_destroy(device, NULL, device->gfx_init);
-
-   radv_device_finish_notifier(device);
-   radv_device_finish_vs_prologs(device);
-   if (device->ps_epilogs.ops)
-      radv_shader_part_cache_finish(device, &device->ps_epilogs);
-   radv_device_finish_border_color(device);
-   radv_device_finish_vrs_image(device);
-
-   for (unsigned i = 0; i < RADV_MAX_QUEUE_FAMILIES; i++) {
-      for (unsigned q = 0; q < device->queue_count[i]; q++)
-         radv_queue_finish(&device->queues[i][q]);
-      if (device->queue_count[i])
-         vk_free(&device->vk.alloc, device->queues[i]);
-   }
-   if (device->private_sdma_queue != VK_NULL_HANDLE) {
-      radv_queue_finish(device->private_sdma_queue);
-      vk_free(&device->vk.alloc, device->private_sdma_queue);
-   }
-
-   _mesa_hash_table_destroy(device->rt_handles, NULL);
-
-   radv_device_finish_meta(device);
-
-   radv_device_finish_memory_cache(device);
-
-   radv_destroy_shader_upload_queue(device);
-
-   for (unsigned i = 0; i < RADV_NUM_HW_CTX; i++) {
-      if (device->hw_ctx[i])
-         device->ws->ctx_destroy(device->hw_ctx[i]);
-   }
-
-   mtx_destroy(&device->overallocation_mutex);
-   simple_mtx_destroy(&device->ctx_roll_mtx);
-   simple_mtx_destroy(&device->pstate_mtx);
-   simple_mtx_destroy(&device->trace_mtx);
-   simple_mtx_destroy(&device->rt_handles_mtx);
-   simple_mtx_destroy(&device->pso_cache_stats_mtx);
-
-   radv_destroy_shader_arenas(device);
-   if (device->capture_replay_arena_vas)
-      _mesa_hash_table_u64_destroy(device->capture_replay_arena_vas);
-
-   vk_device_finish(&device->vk);
-   vk_free(&device->vk.alloc, device);
+   radv_destroy_device(device, pAllocator);
 }
 
 VKAPI_ATTR void VKAPI_CALL
