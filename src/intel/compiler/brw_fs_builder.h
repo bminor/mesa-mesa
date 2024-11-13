@@ -813,6 +813,10 @@ namespace brw {
       fs_inst *WHILE()    { return emit(BRW_OPCODE_WHILE); }
       fs_inst *CONTINUE() { return emit(BRW_OPCODE_CONTINUE); }
 
+      bool has_writemask_all() const {
+         return force_writemask_all;
+      }
+
    private:
       /**
        * Workaround for negation of UD registers.  See comment in

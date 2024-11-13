@@ -773,7 +773,7 @@ fs_reg_alloc::emit_unspill(const fs_builder &bld,
          /* LSC is limited to SIMD16 load/store but we can load more using
           * transpose messages.
           */
-         const bool use_transpose = bld.dispatch_width() > 16;
+         const bool use_transpose = bld.dispatch_width() > 16 || bld.has_writemask_all();
          const fs_builder ubld = use_transpose ? bld.exec_all().group(1, 0) : bld;
          brw_reg offset;
          if (use_transpose) {
