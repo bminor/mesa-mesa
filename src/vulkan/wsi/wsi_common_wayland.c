@@ -279,9 +279,6 @@ next_phase_locked_time(uint64_t base, uint64_t period, uint64_t from)
    if (base == 0)
       return from;
 
-   if (period == 0)
-      period = 16666666;
-
    /* If our time base is in the future (which can happen when using
     * presentation feedback events), target the next possible
     * presentation time.
@@ -289,13 +286,31 @@ next_phase_locked_time(uint64_t base, uint64_t period, uint64_t from)
    if (base >= from)
       return base + period;
 
-   /* Round up our cycle count so imprecision in feedback times doesn't
-    * lead to a time just after a refresh and a time just before the
-    * following refresh producing the same cycle count.
+   /* The presentation time extension recommends that the compositor
+    * use a clock with "precision of one millisecond or better",
+    * so we shouldn't rely on these times being perfectly precise.
+    *
+    * Additionally, some compositors round off feedback times
+    * internally, (eg: to microsecond precision), so our times can
+    * have some jitter in either direction.
+    *
+    * We need to be especially careful not to miss an opportunity
+    * to display by calculating a cycle too far into the future.
+    * This will cause delays in frame presentation.
+    *
+    * If we choose a cycle too soon, fifo barrier will still keep
+    * the pace properly, except in the case of occluded surfaces -
+    * but occluded surfaces don't move their base time in response
+    * to presentation events, so there is no jitter and the math
+    * is more forgiving. That case just needs to monotonically
+    * increase.
+    *
+    * We fairly arbitrarily use period / 4 here to try to stay
+    * well away from rounding up too far, but to also avoid
+    * scheduling too soon if the time values are imprecise.
     */
-   cycles = (from - base + period - 1) / period;
-   target = base + cycles * period;
-
+   cycles = (from - base + period / 4) / period;
+   target = base + (cycles + 1) * period;
    return target;
 }
 
