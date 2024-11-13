@@ -264,7 +264,7 @@ get_features(const struct panvk_physical_device *device,
       .shaderInt64 = true,
 
       /* Vulkan 1.1 */
-      .storageBuffer16BitAccess = false,
+      .storageBuffer16BitAccess = true,
       .uniformAndStorageBuffer16BitAccess = true,
       .storagePushConstant16 = false,
       .storageInputOutput16 = false,
