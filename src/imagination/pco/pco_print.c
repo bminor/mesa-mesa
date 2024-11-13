@@ -35,7 +35,7 @@ typedef struct _pco_print_state {
 } pco_print_state;
 
 /* Forward declarations. */
-static void pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node);
+static void _pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node);
 static void pco_print_block_name(pco_print_state *state, pco_block *block);
 static void
 pco_print_func_sig(pco_print_state *state, pco_func *func, bool call);
@@ -245,7 +245,7 @@ static void pco_print_ref_color(pco_print_state *state, pco_ref ref)
  * \param[in] state Print state.
  * \param[in] ref PCO reference.
  */
-static void pco_print_ref(pco_print_state *state, pco_ref ref)
+static void _pco_print_ref(pco_print_state *state, pco_ref ref)
 {
    pco_print_ref_color(state, ref);
    pco_printf(state, "%s", pco_ref_type_str(ref.type));
@@ -263,7 +263,7 @@ static void pco_print_ref(pco_print_state *state, pco_ref ref)
       break;
 
    case PCO_REF_TYPE_IDX_REG:
-      pco_print_ref(state, pco_ref_get_idx_pointee(ref));
+      _pco_print_ref(state, pco_ref_get_idx_pointee(ref));
       pco_print_ref_color(state, ref);
       pco_printf(state, "[idx%u", ref.idx_reg.num);
       break;
@@ -350,7 +350,7 @@ static void pco_print_phi_src(pco_print_state *state, pco_phi_src *phi_src)
 {
    pco_print_block_name(state, phi_src->pred);
    pco_printf(state, ": ");
-   pco_print_ref(state, phi_src->ref);
+   _pco_print_ref(state, phi_src->ref);
 }
 
 /**
@@ -421,7 +421,7 @@ static void pco_print_instr_mods(pco_print_state *state,
  * \param[in] state Print state.
  * \param[in] instr PCO instruction.
  */
-static void pco_print_instr(pco_print_state *state, pco_instr *instr)
+static void _pco_print_instr(pco_print_state *state, pco_instr *instr)
 {
    const struct pco_op_info *info = &pco_op_info[instr->op];
 
@@ -448,7 +448,7 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
       if (printed)
          pco_printf(state, ",");
       pco_printf(state, " ");
-      pco_print_ref(state, instr->dest[d]);
+      _pco_print_ref(state, instr->dest[d]);
       printed = true;
    }
 
@@ -492,7 +492,7 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
       if (printed)
          pco_printf(state, ",");
       pco_printf(state, " ");
-      pco_print_ref(state, instr->src[s]);
+      _pco_print_ref(state, instr->src[s]);
       printed = true;
    }
    pco_printf(state, ";");
@@ -507,7 +507,7 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
             pco_printf(state, ",");
          pco_printf(state, " ");
 
-         pco_print_ref(state, instr->dest[d]);
+         _pco_print_ref(state, instr->dest[d]);
          pco_printf(state, ":");
          pco_print_ref_spec(state, instr->dest[d]);
 
@@ -519,9 +519,6 @@ static void pco_print_instr(pco_print_state *state, pco_instr *instr)
 
    if (state->verbose && instr->comment)
       pco_printf(state, " /* %s */", instr->comment);
-
-   if (!state->is_grouped)
-      pco_printf(state, "\n");
 }
 
 /**
@@ -597,7 +594,7 @@ pco_print_igrp_srcs(pco_print_state *state, pco_igrp *igrp, bool upper)
          pco_printf(state, ", ");
 
       pco_printf(state, "s%u = ", u + offset);
-      pco_print_ref(state, *src);
+      _pco_print_ref(state, *src);
       printed = true;
    }
 }
@@ -620,7 +617,7 @@ static void pco_print_igrp_iss(pco_print_state *state, pco_igrp *igrp)
          pco_printf(state, ", ");
 
       pco_printf(state, "is%u = ", u);
-      pco_print_ref(state, *iss);
+      _pco_print_ref(state, *iss);
       printed = true;
    }
 }
@@ -643,7 +640,7 @@ static void pco_print_igrp_dests(pco_print_state *state, pco_igrp *igrp)
          pco_printf(state, ", ");
 
       pco_printf(state, "w%u = ", u);
-      pco_print_ref(state, *dest);
+      _pco_print_ref(state, *dest);
       printed = true;
    }
 }
@@ -654,7 +651,7 @@ static void pco_print_igrp_dests(pco_print_state *state, pco_igrp *igrp)
  * \param[in] state Print state.
  * \param[in] igrp PCO instruction group.
  */
-static void pco_print_igrp(pco_print_state *state, pco_igrp *igrp)
+static void _pco_print_igrp(pco_print_state *state, pco_igrp *igrp)
 {
    bool printed = false;
 
@@ -777,7 +774,7 @@ static void pco_print_igrp(pco_print_state *state, pco_igrp *igrp)
 
       pco_print_phase(state, igrp->hdr.alutype, phase);
       pco_printf(state, ": ");
-      pco_print_instr(state, igrp->instrs[phase]);
+      _pco_print_instr(state, igrp->instrs[phase]);
 
       if (state->verbose) {
          pco_printf(state, " /* ");
@@ -861,11 +858,12 @@ static void pco_print_block(pco_print_state *state, pco_block *block)
 
    if (state->is_grouped) {
       pco_foreach_igrp_in_block (igrp, block) {
-         pco_print_igrp(state, igrp);
+         _pco_print_igrp(state, igrp);
       }
    } else {
       pco_foreach_instr_in_block (instr, block) {
-         pco_print_instr(state, instr);
+         _pco_print_instr(state, instr);
+         pco_printf(state, "\n");
       }
    }
 
@@ -894,12 +892,12 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
    pco_printfi(state, "if ");
    pco_print_if_name(state, pif);
    pco_printfi(state, " (");
-   pco_print_ref(state, pif->cond);
+   _pco_print_ref(state, pif->cond);
    pco_printf(state, ") {\n");
    ++state->indent;
 
    pco_foreach_cf_node_in_if_then (cf_node, pif) {
-      pco_print_cf_node(state, cf_node);
+      _pco_print_cf_node(state, cf_node);
    }
 
    --state->indent;
@@ -912,7 +910,7 @@ static void pco_print_if(pco_print_state *state, pco_if *pif)
    ++state->indent;
 
    pco_foreach_cf_node_in_if_else (cf_node, pif) {
-      pco_print_cf_node(state, cf_node);
+      _pco_print_cf_node(state, cf_node);
    }
 
    --state->indent;
@@ -944,7 +942,7 @@ static void pco_print_loop(pco_print_state *state, pco_loop *loop)
    ++state->indent;
 
    pco_foreach_cf_node_in_loop (cf_node, loop) {
-      pco_print_cf_node(state, cf_node);
+      _pco_print_cf_node(state, cf_node);
    }
 
    --state->indent;
@@ -1017,7 +1015,7 @@ static void pco_print_func(pco_print_state *state, pco_func *func)
    pco_printfi(state, "{\n");
 
    pco_foreach_cf_node_in_func (cf_node, func) {
-      pco_print_cf_node(state, cf_node);
+      _pco_print_cf_node(state, cf_node);
    }
 
    pco_printfi(state, "}\n");
@@ -1029,7 +1027,7 @@ static void pco_print_func(pco_print_state *state, pco_func *func)
  * \param[in] state Print state.
  * \param[in] cf_node PCO control flow node.
  */
-static void pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node)
+static void _pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node)
 {
    switch (cf_node->type) {
    case PCO_CF_NODE_TYPE_BLOCK:
@@ -1057,7 +1055,7 @@ static void pco_print_cf_node(pco_print_state *state, pco_cf_node *cf_node)
  * \param[in] state Print state.
  * \param[in] shader PCO shader.
  */
-static void pco_print_shader_info(pco_print_state *state, pco_shader *shader)
+static void _pco_print_shader_info(pco_print_state *state, pco_shader *shader)
 {
    if (shader->name)
       pco_printfi(state, "name: \"%s\"\n", shader->name);
@@ -1086,9 +1084,9 @@ void pco_print_shader(pco_shader *shader, FILE *fp, const char *when)
    if (when)
       fprintf(fp, "shader ir %s:\n", when);
    else
-      fputs("shader ir:", fp);
+      fputs("shader ir:\n", fp);
 
-   pco_print_shader_info(&state, shader);
+   _pco_print_shader_info(&state, shader);
 
    pco_foreach_func_in_shader (func, shader) {
       pco_print_func(&state, func);
@@ -1117,10 +1115,121 @@ void pco_print_binary(pco_shader *shader, FILE *fp, const char *when)
    else
       fputs("shader binary:", fp);
 
-   pco_print_shader_info(&state, shader);
+   _pco_print_shader_info(&state, shader);
 
    return u_hexdump(fp,
                     pco_shader_binary_data(shader),
                     pco_shader_binary_size(shader),
                     false);
+}
+
+/**
+ * \brief Print PCO reference (wrapper).
+ *
+ * \param[in] shader PCO shader.
+ * \param[in] ref PCO reference.
+ */
+void pco_print_ref(pco_shader *shader, pco_ref ref)
+{
+   pco_print_state state = {
+      .fp = stdout,
+      .shader = shader,
+      .indent = 0,
+      .is_grouped = shader->is_grouped,
+      .verbose = false,
+   };
+   return _pco_print_ref(&state, ref);
+}
+
+/**
+ * \brief Print PCO instruction (wrapper).
+ *
+ * \param[in] shader PCO shader.
+ * \param[in] instr PCO instruction.
+ */
+void pco_print_instr(pco_shader *shader, pco_instr *instr)
+{
+   pco_print_state state = {
+      .fp = stdout,
+      .shader = shader,
+      .indent = 0,
+      .is_grouped = shader->is_grouped,
+      .verbose = false,
+   };
+   return _pco_print_instr(&state, instr);
+}
+
+/**
+ * \brief Print PCO instruction group (wrapper).
+ *
+ * \param[in] shader PCO shader.
+ * \param[in] igrp PCO instruction group.
+ */
+void pco_print_igrp(pco_shader *shader, pco_igrp *igrp)
+{
+   pco_print_state state = {
+      .fp = stdout,
+      .shader = shader,
+      .indent = 0,
+      .is_grouped = shader->is_grouped,
+      .verbose = false,
+   };
+   return _pco_print_igrp(&state, igrp);
+}
+
+/**
+ * \brief Print PCO control flow node name (wrapper).
+ *
+ * \param[in] shader PCO shader.
+ * \param[in] cf_node PCO control flow node.
+ */
+void pco_print_cf_node_name(pco_shader *shader, pco_cf_node *cf_node)
+{
+   pco_print_state state = {
+      .fp = stdout,
+      .shader = shader,
+      .indent = 0,
+      .is_grouped = shader->is_grouped,
+      .verbose = false,
+   };
+
+   switch (cf_node->type) {
+   case PCO_CF_NODE_TYPE_BLOCK:
+      pco_printf(&state, "block ");
+      return pco_print_block_name(&state, pco_cf_node_as_block(cf_node));
+
+   case PCO_CF_NODE_TYPE_IF:
+      pco_printf(&state, "if ");
+      return pco_print_if_name(&state, pco_cf_node_as_if(cf_node));
+
+   case PCO_CF_NODE_TYPE_LOOP:
+      pco_printf(&state, "loop ");
+      return pco_print_loop_name(&state, pco_cf_node_as_loop(cf_node));
+
+   case PCO_CF_NODE_TYPE_FUNC:
+      pco_printf(&state, "func");
+      return pco_print_func_sig(&state, pco_cf_node_as_func(cf_node), true);
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
+ * \brief Print PCO shader info (wrapper).
+ *
+ * \param[in] shader PCO shader.
+ */
+void pco_print_shader_info(pco_shader *shader)
+{
+   pco_print_state state = {
+      .fp = stdout,
+      .shader = shader,
+      .indent = 0,
+      .is_grouped = shader->is_grouped,
+      .verbose = false,
+   };
+   return _pco_print_shader_info(&state, shader);
 }

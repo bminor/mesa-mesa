@@ -1864,4 +1864,11 @@ static inline bool pco_igrp_dests_unset(pco_igrp *igrp)
 /** Float 1. */
 #define pco_fone pco_ref_hwreg(64, PCO_REG_CLASS_CONST)
 
+/* Printing. */
+void pco_print_ref(pco_shader *shader, pco_ref ref);
+void pco_print_instr(pco_shader *shader, pco_instr *instr);
+void pco_print_igrp(pco_shader *shader, pco_igrp *igrp);
+void pco_print_cf_node_name(pco_shader *shader, pco_cf_node *cf_node);
+void pco_print_shader_info(pco_shader *shader);
+
 #endif /* PCO_INTERNAL_H */
