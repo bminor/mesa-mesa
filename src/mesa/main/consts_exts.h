@@ -950,8 +950,6 @@ struct gl_constants
 
    bool HasFBFetch;
 
-   bool CombinedClipCullDistanceArrays;
-
    bool PointSizeFixed;
 
    /** Wether or not glBitmap uses red textures rather than alpha */

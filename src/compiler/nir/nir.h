@@ -3865,6 +3865,15 @@ typedef enum {
     * Use MESA_GLSL_DISABLE_IO_OPT=1 instead.
     */
    nir_io_dont_optimize = BITFIELD_BIT(17),
+
+   /**
+    * Whether clip and cull distance arrays should be separate. If this is not
+    * set, cull distances will be moved into VARYING_SLOT_CLIP_DISTn after clip
+    * distances, and shader_info::clip_distance_array_size will be the index
+    * of the first cull distance. nir_lower_clip_cull_distance_arrays does
+    * that.
+    */
+   nir_io_separate_clip_cull_distance_arrays = BITFIELD_BIT(18),
 } nir_io_options;
 
 typedef enum {
