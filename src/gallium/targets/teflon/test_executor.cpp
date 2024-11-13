@@ -251,6 +251,91 @@ add_generate_model(int input_size,
 }
 
 static void
+patch_fully_connected(unsigned operation_index,
+                      tflite::ModelT *model,
+                      int input_size,
+                      int output_channels,
+                      bool is_signed)
+{
+   unsigned input_index;
+   unsigned weights_index;
+   unsigned bias_index;
+   unsigned output_index;
+   unsigned weights_buffer_index;
+   unsigned bias_buffer_index;
+
+   auto subgraph = model->subgraphs[0];
+
+   /* Operation */
+   auto value = new tflite::FullyConnectedOptionsT();
+   subgraph->operators[operation_index]->builtin_options.value = value;
+
+   input_index = subgraph->operators[operation_index]->inputs.data()[0];
+   weights_index = subgraph->operators[operation_index]->inputs.data()[1];
+   bias_index = subgraph->operators[operation_index]->inputs.data()[2];
+   output_index = subgraph->operators[operation_index]->outputs.data()[0];
+
+   /* Input */
+   auto input_tensor = subgraph->tensors[input_index];
+   input_tensor->shape.data()[0] = 1;
+   input_tensor->shape.data()[1] = input_size;
+   input_tensor->type = is_signed ? tflite::TensorType_INT8 : tflite::TensorType_UINT8;
+
+   /* Bias */
+   auto bias_tensor = subgraph->tensors[bias_index];
+   bias_buffer_index = bias_tensor->buffer;
+   bias_tensor->shape.data()[0] = output_channels;
+
+   auto bias_data = &model->buffers[bias_buffer_index]->data;
+   xt::xarray<int32_t> bias_array = xt::random::randint<int32_t>({output_channels}, -20000, 20000);
+   bias_data->resize(bias_array.size() * sizeof(int32_t));
+   memcpy(bias_data->data(), bias_array.data(), bias_array.size() * sizeof(int32_t));
+
+   /* Weight */
+   auto weight_tensor = subgraph->tensors[weights_index];
+   weights_buffer_index = weight_tensor->buffer;
+   weight_tensor->shape.data()[0] = output_channels;
+   weight_tensor->shape.data()[1] = input_size;
+   weight_tensor->type = is_signed ? tflite::TensorType_INT8 : tflite::TensorType_UINT8;
+
+   auto weights_data = &model->buffers[weights_buffer_index]->data;
+   std::vector<int> weight_shape;
+   weight_shape = {output_channels, input_size};
+
+   xt::xarray<uint8_t> weights_array = xt::random::randint<uint8_t>(weight_shape, 0, 255);
+   weights_data->resize(weights_array.size());
+   memcpy(weights_data->data(), weights_array.data(), weights_array.size());
+
+   /* Output */
+   auto output_tensor = subgraph->tensors[output_index];
+   output_tensor->shape.data()[0] = 1;
+   output_tensor->shape.data()[1] = output_channels;
+   output_tensor->type = is_signed ? tflite::TensorType_INT8 : tflite::TensorType_UINT8;
+}
+
+void *
+fully_connected_generate_model(int input_size,
+                               int output_channels,
+                               bool is_signed,
+                               size_t *buf_size)
+{
+   void *buf;
+   tflite::ModelT model;
+   read_model("fully_connected.tflite", model);
+
+   patch_fully_connected(0, &model, input_size, output_channels, is_signed);
+
+   flatbuffers::FlatBufferBuilder builder;
+   builder.Finish(tflite::Model::Pack(builder, &model), "TFL3");
+
+   *buf_size = builder.GetSize();
+   buf = malloc(*buf_size);
+   memcpy(buf, builder.GetBufferPointer(), builder.GetSize());
+
+   return buf;
+}
+
+static void
 tflite_error_cb(void *user_data, const char *format, va_list args)
 {
    vfprintf(stderr, format, args);

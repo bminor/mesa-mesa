@@ -31,6 +31,11 @@ void *add_generate_model(int input_size,
                          bool depthwise,
                          size_t *buf_size);
 
+void *fully_connected_generate_model(int input_size,
+                                     int output_channels,
+                                     bool is_signed,
+                                     size_t *buf_size);
+
 void run_model(TfLiteModel *model, enum executor executor, void ***input, size_t *num_inputs,
                void ***output, size_t **output_sizes, TfLiteType **output_types,
                size_t *num_outputs, std::string cache_dir);

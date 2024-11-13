@@ -17,6 +17,7 @@
 #define TEST_CONV2D           1
 #define TEST_DEPTHWISE        1
 #define TEST_ADD              1
+#define TEST_FULLY_CONNECTED  1
 #define TEST_MOBILENETV1      1
 #define TEST_MOBILEDET        1
 #define TEST_YOLOX            1
@@ -35,6 +36,8 @@ std::vector<int> dw_channels{1, 32, 120, 128, 256};
 std::vector<int> dw_weight_size{3, 5};
 std::vector<int> weight_size{1, 3, 5};
 std::vector<int> input_size{3, 5, 8, 80, 112};
+std::vector<int> fc_channels{23, 46, 128, 256, 512};
+std::vector<int> fc_size{128, 1280, 25088, 62720};
 
 static void
 set_seed(unsigned seed)
@@ -223,6 +226,41 @@ test_add(int input_size, int weight_size, int input_channels, int output_channel
    free(buf);
 }
 
+void
+test_fully_connected(int input_size, int output_channels, bool is_signed, int seed)
+{
+   void *buf = NULL;
+   size_t buf_size;
+   std::ostringstream cache_dir, model_cache;
+   cache_dir << "/var/cache/teflon_tests/fc_" << input_size << "_" << output_channels << "_" << is_signed << "_" << seed;
+   model_cache << cache_dir.str() << "/"
+               << "model.tflite";
+
+   set_seed(seed);
+
+   if (cache_is_enabled()) {
+      if (access(model_cache.str().c_str(), F_OK) == 0) {
+         buf = read_buf(model_cache.str().c_str(), &buf_size);
+      }
+   }
+
+   if (buf == 0) {
+      buf = fully_connected_generate_model(input_size, output_channels, is_signed, &buf_size);
+
+      if (cache_is_enabled()) {
+         if (access(cache_dir.str().c_str(), F_OK) != 0) {
+            ASSERT_TRUE(std::filesystem::create_directories(cache_dir.str().c_str()));
+         }
+         std::ofstream file(model_cache.str().c_str(), std::ios::out | std::ios::binary);
+         file.write(reinterpret_cast<const char *>(buf), buf_size);
+         file.close();
+      }
+   }
+
+   test_model(buf, buf_size, cache_dir.str(), TOLERANCE);
+   free(buf);
+}
+
 #if TEST_CONV2D
 
 class Conv2D : public testing::TestWithParam<std::tuple<bool, bool, int, int, int, int, int>> {};
@@ -380,6 +418,41 @@ TEST_P(AddQuant, Op)
 INSTANTIATE_TEST_SUITE_P(
    , AddQuant,
    ::testing::Range(0, 100));
+
+#endif
+
+#if TEST_FULLY_CONNECTED
+
+class FullyConnected : public testing::TestWithParam<std::tuple<bool, int, int>> {};
+
+TEST_P(FullyConnected, Op)
+{
+   test_fully_connected(
+             std::get<2>(GetParam()),
+             std::get<1>(GetParam()),
+             std::get<0>(GetParam()),
+             4);
+}
+
+static inline std::string
+FullyConnectedTestCaseName(
+   const testing::TestParamInfo<std::tuple<bool, int, int>> &info)
+{
+   std::string name = "";
+
+   name += "input_size_" + std::to_string(std::get<2>(info.param));
+   name += "_output_channels_" + std::to_string(std::get<1>(info.param));
+   name += "_is_signed_" + std::to_string(std::get<0>(info.param));
+
+   return name;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+   , FullyConnected,
+   ::testing::Combine(::testing::ValuesIn(is_signed),
+                      ::testing::ValuesIn(output_channels),
+                      ::testing::ValuesIn(fc_size)),
+   FullyConnectedTestCaseName);
 
 #endif
 
