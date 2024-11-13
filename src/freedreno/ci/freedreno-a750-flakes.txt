@@ -24,6 +24,7 @@ dEQP-GLES31.functional.ssbo.layout.random.arrays_of_arrays.4
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.row_major_mediump_mat4
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.highp_int
 dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.lowp_ivec3
+dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.row_major_highp_mat4
 dEQP-GLES31.functional.ssbo.layout.single_struct_array.per_block_buffer.std430
 
 
