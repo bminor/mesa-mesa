@@ -536,3 +536,8 @@ spec@ext_texture_srgb@texwrap formats-s3tc bordercolor-swizzled@GL_COMPRESSED_SR
 spec@ext_texture_srgb@texwrap formats-s3tc bordercolor-swizzled@GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT- swizzled- border color only,Fail
 spec@ext_texture_srgb@texwrap formats-s3tc bordercolor-swizzled@GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT- swizzled- border color only,Fail
 spec@ext_texture_srgb@texwrap formats-s3tc bordercolor-swizzled@GL_COMPRESSED_SRGB_S3TC_DXT1_EXT- swizzled- border color only,Fail
+
+# These are llvmpipe crashes when running virgl on top of llvmpipe
+spec@glsl-1.50@execution@geometry@dynamic_input_array_index,Crash
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs,Crash
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs,Crash

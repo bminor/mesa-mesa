@@ -1052,17 +1052,6 @@ spec@glsl-1.10@execution@temp-array-indexing@glsl-vs-vec4-indexing-temp-src-in-l
 spec@glsl-1.10@execution@temp-array-indexing@glsl-vs-vec4-indexing-temp-src-in-nested-loop-combined,Fail
 spec@glsl-1.10@execution@temp-array-indexing@glsl-vs-vec4-indexing-temp-src-in-nested-loop-inner,Fail
 spec@glsl-1.10@execution@temp-array-indexing@glsl-vs-vec4-indexing-temp-src-in-nested-loop-outer,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-varying-array-mat3-index-col-row-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-col-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-col-row-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-row-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-row-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-col-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-rd,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-row-wr,Fail
-spec@glsl-1.10@execution@variable-indexing@vs-varying-array-mat3-index-wr,Fail
 spec@glsl-1.10@execution@varying-packing@simple float array,Fail
 spec@glsl-1.10@execution@varying-packing@simple float separate,Fail
 spec@glsl-1.10@execution@varying-packing@simple mat2 array,Fail
@@ -1272,15 +1261,6 @@ spec@glsl-1.20@execution@glsl-fs-frontfacing,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 1dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2dshadow,Fail
 spec@glsl-1.20@execution@uniform-initializer@fs-mat4-array,Fail
-spec@glsl-1.20@execution@variable-indexing@fs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@fs-varying-array-mat3-index-col-row-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-row-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-row-wr,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-wr,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-row-rd,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-row-wr,Fail
-spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-wr,Fail
 
 spec@intel_performance_query@intel_performance_query-issue_2235,Fail
 

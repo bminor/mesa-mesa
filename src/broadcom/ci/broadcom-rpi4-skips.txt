@@ -315,3 +315,6 @@ asan-KHR-GL31.ext_texture_shadow_lod.texturelodoffset.sampler2darrayshadow_verte
 
 # CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5362
 asan-dEQP-VK.pipeline.monolithic.logic_op.r8g8_uint.equivalent
+
+# This times out
+spec@glsl-1.40@execution@tf-no-position

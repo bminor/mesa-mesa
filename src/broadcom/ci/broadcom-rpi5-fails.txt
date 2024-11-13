@@ -235,30 +235,6 @@ spec@glsl-1.10@execution@glsl-fs-inline-explosion,Crash
 spec@glsl-1.10@execution@glsl-vs-inline-explosion,Crash
 spec@glsl-1.10@execution@loops@glsl-fs-unroll-explosion,Crash
 spec@glsl-1.10@execution@loops@glsl-vs-unroll-explosion,Crash
-spec@glsl-1.10@execution@varying-packing@simple int array,Crash
-spec@glsl-1.10@execution@varying-packing@simple int arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple int separate,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec2 array,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec2 arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec2 separate,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec3 array,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec3 arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec3 separate,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec4 array,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec4 arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple ivec4 separate,Crash
-spec@glsl-1.10@execution@varying-packing@simple uint array,Crash
-spec@glsl-1.10@execution@varying-packing@simple uint arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple uint separate,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec2 array,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec2 arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec2 separate,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec3 array,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec3 arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec3 separate,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec4 array,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec4 arrays_of_arrays,Crash
-spec@glsl-1.10@execution@varying-packing@simple uvec4 separate,Crash
 spec@glsl-1.20@compiler@invalid-vec4-array-to-vec3-array-conversion.vert,Fail
 spec@glsl-1.20@execution@clipping@vs-clip-vertex-primitives,Fail
 spec@glsl-1.20@execution@fs-underflow-mul-compare-zero,Fail

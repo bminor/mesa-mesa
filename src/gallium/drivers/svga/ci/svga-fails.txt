@@ -419,7 +419,6 @@ spec@arb_tessellation_shader@execution@barrier-patch,Fail
 spec@arb_tessellation_shader@execution@invocation-counting-even,Fail
 spec@arb_tessellation_shader@execution@invocation-counting-odd,Fail
 spec@arb_tessellation_shader@execution@tcs-primitiveid,Fail
-spec@arb_tessellation_shader@execution@tcs-tes-max-in-out-components,Fail
 spec@arb_tessellation_shader@execution@tcs-tes-max-in-out-patch-components,Fail
 spec@arb_tessellation_shader@execution@tes-input@tes-input-gl_clipdistance,Fail
 spec@arb_tessellation_shader@execution@tesslevels-indirect,Fail
@@ -454,7 +453,6 @@ spec@arb_tessellation_shader@execution@variable-indexing@tes-patch-input-array-v
 spec@arb_tessellation_shader@execution@variable-indexing@tes-patch-input-array-vec2-index-rd,Fail
 spec@arb_tessellation_shader@execution@variable-indexing@tes-patch-input-array-vec3-index-rd,Fail
 spec@arb_tessellation_shader@execution@variable-indexing@tes-patch-input-array-vec4-index-rd,Fail
-spec@arb_tessellation_shader@execution@vs-tes-max-in-out-components,Fail
 spec@arb_texture_buffer_object@texture-buffer-size-clamp,Fail
 spec@arb_texture_buffer_object@texture-buffer-size-clamp@r8ui_texture_buffer_size_via_image,Fail
 spec@arb_texture_buffer_object@texture-buffer-size-clamp@r8ui_texture_buffer_size_via_sampler,Fail
