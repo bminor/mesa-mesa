@@ -1074,13 +1074,16 @@ radv_dump_shader_regs(const struct radv_device *device, const struct aco_trap_ha
 
    const uint32_t vgpr_size = radv_get_vgpr_size(device, layout);
    const uint32_t num_vgprs = (vgpr_size + 1) * 4 /* 4-VGPR granularity */;
+   const uint64_t exec = layout->exec_lo | (uint64_t)layout->exec_hi << 32;
 
    assert(num_vgprs < MAX_VGPRS);
 
    fprintf(f, "VGPRS:\n");
    fprintf(f, "             ");
    for (uint32_t i = 0; i < 64; i++) {
-      fprintf(f, " t%02u     ", i);
+      const bool live = exec & BITFIELD64_BIT(i);
+
+      fprintf(f, live ? " t%02u     " : " (t%02u)   ", i);
    }
    fprintf(f, "\n");
    for (uint32_t i = 0; i < num_vgprs; i++) {
