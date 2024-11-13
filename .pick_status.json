@@ -394,7 +394,7 @@
         "description": "brw: allocate physical register sizes for spilling",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "aa494cbacf3bfa57163bbed8b5552ad25434e713",
         "notes": null
