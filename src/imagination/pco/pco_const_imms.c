@@ -188,7 +188,7 @@ bool pco_const_imms(pco_shader *shader)
             continue;
 
          pco_builder b =
-            pco_builder_create(func, pco_cursor_after_instr(instr));
+            pco_builder_create(func, pco_cursor_before_instr(instr));
 
          pco_ref dest = instr->dest[0];
          pco_ref const_reg =
@@ -196,12 +196,14 @@ bool pco_const_imms(pco_shader *shader)
 
          if (!const_reg_def->flr && !const_reg_def->neg) {
             pco_mov(&b, dest, const_reg);
+         } else if (!const_reg_def->flr && const_reg_def->neg) {
+            pco_neg(&b, dest, const_reg);
+         } else if (const_reg_def->flr && !const_reg_def->neg) {
+            pco_flr(&b, dest, const_reg);
          } else {
-            if (const_reg_def->flr)
-               const_reg = pco_ref_flr(const_reg);
-
-            if (const_reg_def->neg)
-               const_reg = pco_ref_neg(const_reg);
+            /* TODO: use floor and neg mods when support for > 1 is added. */
+            const_reg = pco_ref_flr(const_reg);
+            const_reg = pco_ref_neg(const_reg);
 
             pco_fadd(&b, dest, const_reg, pco_zero);
          }

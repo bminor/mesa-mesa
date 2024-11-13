@@ -16,6 +16,7 @@
 #include "util/bitset.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
+#include "util/u_dynarray.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -25,6 +26,163 @@ struct pco_use {
    pco_instr *instr;
    pco_ref *psrc;
 };
+
+/** Shared optimization context. */
+struct pco_opt_ctx {
+   void *mem_ctx;
+   struct util_dynarray mods;
+};
+
+/**
+ * \brief Prepares modifiers and their users for propagation.
+ *
+ * Instructions with commutative sources may use a modifier in the source which
+ * can't have said modifier applied to it, e.g. fadd can have {abs,neg,flr} set
+ * in src0, but src1 only supports abs.
+ *
+ * \param[in,out] shader PCO shader.
+ * \param[in,out] ctx Shared optimization context.
+ * \return True if any instructions were modified.
+ */
+static inline bool prep_mods(pco_shader *shader, struct pco_opt_ctx *ctx)
+{
+   bool progress = false;
+
+   util_dynarray_init(&ctx->mods, ctx->mem_ctx);
+
+   /* TODO: support for more modifiers/ops. */
+   /* TODO: support cases where > 1 modifier can be applied (e.g. .abs.neg),
+    * and where modifiers might need to be applied on more than one source.
+    */
+   pco_foreach_func_in_shader (func, shader) {
+      pco_foreach_instr_in_func_safe (mod, func) {
+         if (mod->op != PCO_OP_NEG && mod->op != PCO_OP_ABS &&
+             mod->op != PCO_OP_FLR)
+            continue;
+
+         pco_foreach_instr_in_func_from (instr, mod) {
+            if (instr->op != PCO_OP_FADD && instr->op != PCO_OP_FMUL)
+               continue;
+
+            pco_ref *match_src = NULL;
+            pco_ref *other_src = NULL;
+            pco_foreach_instr_src (psrc, instr) {
+               if (!pco_ref_is_ssa(*psrc) || psrc->val != mod->dest[0].val)
+                  other_src = psrc;
+               else
+                  match_src = psrc;
+            }
+
+            /* Instruction doesn't use the mod. */
+            if (!match_src)
+               continue;
+
+            /* Mod used in *both* sources; swapping would do nothing. */
+            if (!other_src)
+               continue;
+
+            unsigned match_src_index = match_src - instr->src;
+            unsigned other_src_index = other_src - instr->src;
+
+            bool match_has_mod = false;
+            bool other_has_mod = false;
+
+            switch (mod->op) {
+            case PCO_OP_NEG:
+               match_has_mod = pco_instr_src_has_neg(instr, match_src_index);
+               other_has_mod = pco_instr_src_has_neg(instr, other_src_index);
+               break;
+
+            case PCO_OP_ABS:
+               match_has_mod = pco_instr_src_has_abs(instr, match_src_index);
+               other_has_mod = pco_instr_src_has_abs(instr, other_src_index);
+               break;
+
+            case PCO_OP_FLR:
+               match_has_mod = pco_instr_src_has_flr(instr, match_src_index);
+               other_has_mod = pco_instr_src_has_flr(instr, other_src_index);
+               break;
+
+            default:
+               unreachable();
+            }
+
+            /* Source can already have the mod set. */
+            if (match_has_mod)
+               continue;
+
+            /* Other source can't have the mod set either. */
+            if (!other_has_mod)
+               continue;
+
+            /* Swap the sources. */
+            pco_ref tmp = *match_src;
+            *match_src = *other_src;
+            *other_src = tmp;
+
+            progress = true;
+         }
+
+         /* Rewrite the mod op to a mov. */
+         pco_ref src = mod->src[0];
+         switch (mod->op) {
+         case PCO_OP_NEG:
+            src = pco_ref_neg(src);
+            break;
+
+         case PCO_OP_ABS:
+            src = pco_ref_abs(src);
+            break;
+
+         case PCO_OP_FLR:
+            src = pco_ref_flr(src);
+            break;
+
+         default:
+            unreachable();
+         }
+
+         pco_builder b = pco_builder_create(func, pco_cursor_before_instr(mod));
+         pco_instr *mov = pco_mov(&b, mod->dest[0], src);
+         util_dynarray_append(&ctx->mods, pco_instr *, mov);
+         pco_instr_delete(mod);
+
+         progress = true;
+      }
+   }
+
+   return progress;
+}
+
+/**
+ * \brief Lowers modifiers to hardware instructions.
+ *
+ * \param[in,out] shader PCO shader.
+ * \param[in,out] ctx Shared optimization context.
+ * \return True if any instructions were modified.
+ */
+static inline bool lower_mods(pco_shader *shader, struct pco_opt_ctx *ctx)
+{
+   bool progress = false;
+
+   util_dynarray_foreach (&ctx->mods, pco_instr *, pmod) {
+      pco_instr *mod = *pmod;
+
+      pco_builder b =
+         pco_builder_create(mod->parent_func, pco_cursor_before_instr(mod));
+
+      if (mod->src[0].flr)
+         pco_fadd(&b, mod->dest[0], mod->src[0], pco_zero);
+      else
+         pco_mbyp0(&b, mod->dest[0], mod->src[0]);
+
+      pco_instr_delete(mod);
+
+      progress = true;
+   }
+
+   return progress;
+}
 
 /**
  * \brief Checks if an instruction can be back-propagated.
@@ -346,6 +504,9 @@ static inline bool prop_hw_comps(pco_shader *shader)
 bool pco_opt(pco_shader *shader)
 {
    bool progress = false;
+   struct pco_opt_ctx ctx = { .mem_ctx = ralloc_context(NULL) };
+
+   progress |= prep_mods(shader, &ctx);
    progress |= back_prop(shader);
    progress |= fwd_prop(shader);
    /* TODO: Track whether there are any comp instructions referencing hw
@@ -353,6 +514,10 @@ bool pco_opt(pco_shader *shader)
     * if this is the case.
     */
    progress |= prop_hw_comps(shader);
+
+   progress |= lower_mods(shader, &ctx);
+
+   ralloc_free(ctx.mem_ctx);
    return progress;
 }
 

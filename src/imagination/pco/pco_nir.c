@@ -402,7 +402,6 @@ static bool varyings_match(nir_variable *out_var, nir_variable *in_var)
  * \param[in,out] producer NIR producer shader.
  * \param[in,out] consumer NIR consumer shader.
  */
-PUBLIC
 void pco_rev_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
 {
    /* TODO */
