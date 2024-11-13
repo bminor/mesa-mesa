@@ -23,19 +23,6 @@ dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.vertex_attribute_divisor.ext.sta
 
 dEQP-VK.dynamic_rendering.graphics_pipeline_library.dedicated_allocation.formats.r16g16b16a16_uint.input.dont_care.store.self_dep_draw
 
-dEQP-VK.glsl.440.linkage.varying.component.frag_out.ivec4.as_ivec3_int
-dEQP-VK.glsl.440.linkage.varying.component.frag_out.vec4.as_vec3_float
-dEQP-VK.glsl.440.linkage.varying.component.vert_in.vec2.as_float_float
-dEQP-VK.glsl.440.linkage.varying.component.vert_in.vec3.as_vec2_float
-dEQP-VK.glsl.440.linkage.varying.component.vert_in.vec4.as_float_vec2_float
-dEQP-VK.glsl.440.linkage.varying.component.vert_in.vec4.as_float_vec3
-dEQP-VK.glsl.440.linkage.varying.component.vert_in.vec4.as_vec2_vec2
-dEQP-VK.glsl.440.linkage.varying.component.vert_out_frag_in.ivec4.as_int_int_int_int
-dEQP-VK.glsl.440.linkage.varying.component.vert_out_frag_in.ivec4.as_ivec2_int_int
-dEQP-VK.glsl.440.linkage.varying.component.vert_out_frag_in.ivec4.as_ivec3_int
-dEQP-VK.glsl.440.linkage.varying.component.vert_out_frag_in.vec4.as_float_float_float_float
-dEQP-VK.glsl.440.linkage.varying.component.vert_out_frag_in.vec4.as_float_vec3
-
 dEQP-VK.glsl.arrays.declaration.implicit_size_float_vec3_fragment
 
 dEQP-VK.glsl.conversions.matrix_combine.bool_float_int_bool_float_int_to_mat2x3_fragment
