@@ -907,7 +907,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    int ret;
    struct tu_msm_queue_submit *submit =
       (struct tu_msm_queue_submit *)_submit;
-   struct drm_msm_gem_submit_syncobj *in_syncobjs, *out_syncobjs;
+   struct drm_msm_syncobj *in_syncobjs, *out_syncobjs;
    struct drm_msm_gem_submit req;
    uint64_t gpu_offset = 0;
    uint32_t entry_count =
@@ -920,7 +920,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    uint32_t flags = MSM_PIPE_3D0;
 
    /* Allocate without wait timeline semaphores */
-   in_syncobjs = (struct drm_msm_gem_submit_syncobj *) vk_zalloc(
+   in_syncobjs = (struct drm_msm_syncobj *) vk_zalloc(
       &queue->device->vk.alloc,
       wait_count * sizeof(*in_syncobjs), 8,
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
@@ -931,7 +931,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    }
 
    /* Allocate with signal timeline semaphores considered */
-   out_syncobjs = (struct drm_msm_gem_submit_syncobj *) vk_zalloc(
+   out_syncobjs = (struct drm_msm_syncobj *) vk_zalloc(
       &queue->device->vk.alloc,
       signal_count * sizeof(*out_syncobjs), 8,
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
@@ -944,7 +944,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    for (uint32_t i = 0; i < wait_count; i++) {
       struct vk_sync *sync = waits[i].sync;
 
-      in_syncobjs[i] = (struct drm_msm_gem_submit_syncobj) {
+      in_syncobjs[i] = (struct drm_msm_syncobj) {
          .handle = vk_sync_as_drm_syncobj(sync)->syncobj,
          .flags = 0,
          .point = waits[i].wait_value,
@@ -954,7 +954,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
    for (uint32_t i = 0; i < signal_count; i++) {
       struct vk_sync *sync = signals[i].sync;
 
-      out_syncobjs[i] = (struct drm_msm_gem_submit_syncobj) {
+      out_syncobjs[i] = (struct drm_msm_syncobj) {
          .handle = vk_sync_as_drm_syncobj(sync)->syncobj,
          .flags = 0,
          .point = signals[i].signal_value,
@@ -1013,7 +1013,7 @@ msm_queue_submit(struct tu_queue *queue, void *_submit,
       .out_syncobjs = (uint64_t)(uintptr_t)out_syncobjs,
       .nr_in_syncobjs = wait_count,
       .nr_out_syncobjs = signal_count,
-      .syncobj_stride = sizeof(struct drm_msm_gem_submit_syncobj),
+      .syncobj_stride = sizeof(struct drm_msm_syncobj),
    };
 
    {
