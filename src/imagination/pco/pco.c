@@ -162,6 +162,8 @@ pco_func *pco_func_create(pco_shader *shader,
 
    func->vec_infos = _mesa_hash_table_u64_create(func);
 
+   func->enc_offset = ~0U;
+
    return func;
 }
 

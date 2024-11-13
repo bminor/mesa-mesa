@@ -323,6 +323,8 @@ typedef struct _pco_func {
    unsigned next_loop; /** Next loop index. */
 
    unsigned temps; /** Number of temps allocated. */
+
+   unsigned enc_offset; /** Encoding offset. */
 } pco_func;
 
 /** PCO shader. */

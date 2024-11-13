@@ -57,8 +57,9 @@ static inline unsigned pco_encode_align(struct util_dynarray *buf,
  *
  * \param[in,out] buf Binary buffer.
  * \param[in] igrp PCO instruction group.
+ * \return The number of bytes encoded.
  */
-static void pco_encode_igrp(struct util_dynarray *buf, pco_igrp *igrp)
+static unsigned pco_encode_igrp(struct util_dynarray *buf, pco_igrp *igrp)
 {
    uint8_t *ptr;
    unsigned bytes_encoded = 0;
@@ -101,6 +102,8 @@ static void pco_encode_igrp(struct util_dynarray *buf, pco_igrp *igrp)
    bytes_encoded += pco_encode_align(buf, igrp);
 
    assert(bytes_encoded == igrp->enc.len.total);
+
+   return bytes_encoded;
 }
 
 /**
@@ -115,10 +118,12 @@ void pco_encode_ir(pco_ctx *ctx, pco_shader *shader)
 
    util_dynarray_init(&shader->binary.buf, shader);
 
+   unsigned bytes_encoded = 0;
    pco_foreach_func_in_shader (func, shader) {
+      func->enc_offset = bytes_encoded;
       pco_foreach_block_in_func (block, func) {
          pco_foreach_igrp_in_block (igrp, block) {
-            pco_encode_igrp(&shader->binary.buf, igrp);
+            bytes_encoded += pco_encode_igrp(&shader->binary.buf, igrp);
          }
       }
    }
