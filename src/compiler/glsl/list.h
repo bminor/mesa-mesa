@@ -753,47 +753,47 @@ inline void exec_node::insert_before(exec_list *before)
  * Iterate over the list from head to tail. Removal is safe for all nodes except the current
  * iteration's.
  */
-#define foreach_list_typed(__type, __node, __field, __list)             \
-   for (__type * __node = exec_node_data_head(__type, __list, __field); \
-   __node != NULL;                                                      \
-   __node = exec_node_data_next(__type, __node, __field))
+#define foreach_list_typed(type, node, field, list)           \
+   for (type * node = exec_node_data_head(type, list, field); \
+   node != NULL;                                              \
+   node = exec_node_data_next(type, node, field))
 
-#define foreach_list_typed_from(__type, __node, __field, __list, __start)     \
-   for (__type * __node = exec_node_data_forward(__type, (__start), __field); \
-   __node != NULL;                                                            \
-   __node = exec_node_data_next(__type, __node, __field))
+#define foreach_list_typed_from(type, node, field, list, __start)     \
+   for (type * node = exec_node_data_forward(type, (__start), field); \
+   node != NULL;                                                      \
+   node = exec_node_data_next(type, node, field))
 
 /**
  * Iterate over the list from tail to head. Removal is safe for all nodes except the current
  * iteration's.
  */
-#define foreach_list_typed_reverse(__type, __node, __field, __list)     \
-   for (__type * __node = exec_node_data_tail(__type, __list, __field); \
-        __node != NULL;                                                 \
-        __node = exec_node_data_prev(__type, __node, __field))
+#define foreach_list_typed_reverse(type, node, field, list)   \
+   for (type * node = exec_node_data_tail(type, list, field); \
+        node != NULL;                                         \
+        node = exec_node_data_prev(type, node, field))
 
 /**
  * Iterate over the list from head to tail. Removal is safe for all nodes except the next
  * iteration's. If the next iteration's node is removed and not inserted again, this loop exits.
  */
-#define foreach_list_typed_safe(__type, __node, __field, __list)        \
-   for (__type * __node = exec_node_data_head(__type, __list, __field), \
-               * __next = __node ?                                      \
-           exec_node_data_next(__type, __node, __field) : NULL;         \
-        __node != NULL;                                                 \
-        __node = __next, __next = (__next && __next->__field.next) ?    \
-           exec_node_data_next(__type, __next, __field) : NULL)
+#define foreach_list_typed_safe(type, node, field, list)         \
+   for (type * node = exec_node_data_head(type, list, field),    \
+             * __next = node ?                                   \
+           exec_node_data_next(type, node, field) : NULL;        \
+        node != NULL;                                            \
+        node = __next, __next = (__next && __next->field.next) ? \
+           exec_node_data_next(type, __next, field) : NULL)
 
 /**
  * Iterate over the list from tail to head. Removal is safe for all nodes except the next
  * iteration's. If the next iteration's node is removed and not inserted again, this loop exits.
  */
-#define foreach_list_typed_reverse_safe(__type, __node, __field, __list) \
-   for (__type * __node = exec_node_data_tail(__type, __list, __field),  \
-               * __prev = __node ?                                       \
-           exec_node_data_prev(__type, __node, __field) : NULL;          \
-        __node != NULL;                                                  \
-        __node = __prev, __prev = (__prev && __prev->__field.prev) ?     \
-           exec_node_data_prev(__type, __prev, __field) : NULL)
+#define foreach_list_typed_reverse_safe(type, node, field, list) \
+   for (type * node = exec_node_data_tail(type, list, field),    \
+             * __prev = node ?                                   \
+           exec_node_data_prev(type, node, field) : NULL;        \
+        node != NULL;                                            \
+        node = __prev, __prev = (__prev && __prev->field.prev) ? \
+           exec_node_data_prev(type, __prev, field) : NULL)
 
 #endif /* LIST_CONTAINER_H */
