@@ -585,7 +585,6 @@ dEQP-VK.draw.renderpass.multiple_interpolation.separate.no_sample_decoration.4_s
 dEQP-VK.draw.renderpass.multiple_interpolation.structured.no_sample_decoration.1_sample,Fail
 dEQP-VK.draw.renderpass.multiple_interpolation.structured.no_sample_decoration.4_samples,Fail
 
-dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap,Fail
 dEQP-VK.memory.pipeline_barrier.host_write_index_buffer.1048576,Crash
 dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.1048576,Crash
 dEQP-VK.memory.pipeline_barrier.host_write_vertex_buffer.65536_vertex_buffer_stride_2,Crash

@@ -121,6 +121,3 @@ dEQP-VK.ssbo.phys.layout.basic_unsized_array.std430.row_major_mat4_store_cols
 dEQP-VK.ssbo.phys.layout.random.all_per_block_buffers.22
 dEQP-VK.ssbo.phys.layout.random.all_per_block_buffers.22
 dEQP-VK.ssbo.phys.layout.random.all_shared_buffer.3
-
-# Cause a big memory pressure (causing other tests to fail) but still fail most of the time, this needs investigation.
-dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap

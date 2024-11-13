@@ -2684,8 +2684,6 @@ dEQP-VK.api.info.format_properties.b4g4r4a4_unorm_pack16,Fail
 dEQP-VK.device_group.afr,Fail
 dEQP-VK.device_group.afr_sys,Fail
 
-dEQP-VK.memory.mapping.suballocation.full.variable.implicit_unmap,Fail
-
 dEQP-VK.draw.renderpass.indexed_draw.draw_indexed_triangle_list_offset_negative_large_with_alloc_offset,Fail
 dEQP-VK.draw.renderpass.indexed_draw.draw_indexed_triangle_list_offset_negative_large_with_bind_offset_with_alloc_offset,Fail
 dEQP-VK.draw.renderpass.indexed_draw.draw_indexed_triangle_list_with_alloc_offset,Fail
