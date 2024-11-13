@@ -244,10 +244,7 @@ set_default_tp_config(struct etna_tp_params *map)
 static struct etna_bo *
 create_transpose_config(struct etna_ml_subgraph *subgraph, const struct etna_operation *operation)
 {
-   struct etna_context *ctx = etna_context(subgraph->base.context);
-   struct etna_bo *bo = etna_bo_new(ctx->screen->dev,
-                                    sizeof(struct etna_tp_params),
-                                    DRM_ETNA_GEM_CACHE_WC);
+   struct etna_bo *bo = etna_ml_create_bo(subgraph->base.context, sizeof(struct etna_tp_params));
 
    etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);
 
@@ -293,13 +290,10 @@ create_transpose_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
 static struct etna_bo *
 create_detranspose_config(struct etna_ml_subgraph *subgraph, const struct etna_operation *operation)
 {
-   struct etna_context *ctx = etna_context(subgraph->base.context);
    unsigned input_width = operation->input_width;
    unsigned input_height = operation->input_height;
    unsigned input_channels = operation->input_channels;
-   struct etna_bo *bo = etna_bo_new(ctx->screen->dev,
-                                    sizeof(struct etna_tp_params),
-                                    DRM_ETNA_GEM_CACHE_WC);
+   struct etna_bo *bo = etna_ml_create_bo(subgraph->base.context, sizeof(struct etna_tp_params));
 
    etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);
 
@@ -416,10 +410,7 @@ static struct etna_bo *
 create_reshuffle_config(struct etna_ml_subgraph *subgraph, const struct etna_operation *operation,
                         unsigned tp_core, unsigned tp_cores_used)
 {
-   struct etna_context *ctx = etna_context(subgraph->base.context);
-   struct etna_bo *bo = etna_bo_new(ctx->screen->dev,
-                                 sizeof(struct etna_tp_params),
-                                 DRM_ETNA_GEM_CACHE_WC);
+   struct etna_bo *bo = etna_ml_create_bo(subgraph->base.context, sizeof(struct etna_tp_params));
    unsigned input_width = operation->input_width;
    unsigned input_height = operation->input_height;
    unsigned output_width = operation->output_width;

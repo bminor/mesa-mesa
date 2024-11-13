@@ -191,8 +191,7 @@ pointwise_to_2x2(struct etna_ml_subgraph *subgraph, struct etna_operation *opera
    struct pipe_context *context = subgraph->base.context;
    uint8_t *input = map_resource(operation->weight_tensor);
    unsigned new_size = operation->output_channels * 2 * 2 * operation->input_channels;
-   struct pipe_resource *output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT,
-                                                         new_size);
+   struct pipe_resource *output_res = etna_ml_create_resource(context, new_size);
    uint8_t *output = map_resource(output_res);
 
    for (unsigned channel = 0; channel < operation->output_channels; channel++) {
@@ -218,8 +217,7 @@ expand_depthwise(struct etna_ml_subgraph *subgraph, struct etna_operation *opera
    struct pipe_context *context = subgraph->base.context;
    uint8_t *input = map_resource(operation->weight_tensor);
    unsigned new_size = operation->output_channels * operation->weight_width * operation->weight_height * operation->input_channels;
-   struct pipe_resource *output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT,
-                                                         new_size);
+   struct pipe_resource *output_res = etna_ml_create_resource(context, new_size);
    uint8_t *output = map_resource(output_res);
 
    /* Lower depthwise convolution to regular convolution, as the hardware doesn't support those */
@@ -247,8 +245,7 @@ reorder_for_hw_depthwise(struct etna_ml_subgraph *subgraph, struct etna_operatio
 {
    struct pipe_context *context = subgraph->base.context;
    uint8_t *input = map_resource(operation->weight_tensor);
-   struct pipe_resource *output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT,
-                                                         pipe_buffer_size(operation->weight_tensor));
+   struct pipe_resource *output_res = etna_ml_create_resource(context, pipe_buffer_size(operation->weight_tensor));
    uint8_t (*output)[operation->weight_width * operation->weight_height] = (void *)map_resource(output_res);
 
    for (int i = 0; i < operation->weight_height * operation->weight_width * operation->output_channels; i++) {
@@ -285,7 +282,7 @@ transpose(struct etna_ml_subgraph *subgraph, struct etna_operation *operation)
 
    new_size = operation->output_channels * operation->weight_width * \
                      operation->weight_height * input_channels;
-   output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT, new_size);
+   output_res = etna_ml_create_resource(context, new_size);
    output = map_resource(output_res);
 
    uint8_t (*input)[operation->weight_width][operation->weight_height][input_channels] = map;
@@ -379,7 +376,7 @@ strided_to_normal(struct etna_ml_subgraph *subgraph, struct etna_operation *oper
    operation->weight_height = DIV_ROUND_UP(operation->weight_height, operation->stride);
 
    new_size = operation->output_channels * operation->weight_width * operation->weight_height * operation->input_channels;
-   output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT, new_size);
+   output_res = etna_ml_create_resource(context, new_size);
    output = map_resource(output_res);
 
    unsigned wdims_out[4] = {operation->output_channels, operation->weight_width, operation->weight_height, operation->input_channels};
@@ -556,7 +553,7 @@ etna_ml_lower_add(struct etna_ml_subgraph *subgraph,
    operation->output_zero_point = poperation->output_tensor->zero_point;
    operation->output_scale = poperation->output_tensor->scale;
 
-   operation->weight_tensor = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT, 8);
+   operation->weight_tensor = etna_ml_create_resource(context, 8);
    operation->weight_width = 2;
    operation->weight_height = 2;
    operation->weight_zero_point = 0x0;
@@ -564,10 +561,9 @@ etna_ml_lower_add(struct etna_ml_subgraph *subgraph,
    operation->addition_offset = compute_addition_offset(poperation->add.input_tensor->scale, poperation->input_tensor->scale, operation->weight_scale);
 
    uint8_t *weight_map = map_resource(operation->weight_tensor);
-   memset(weight_map, 0, pipe_buffer_size(operation->weight_tensor));
    weight_map[0] = compute_weight_add(poperation->add.input_tensor->scale, poperation->input_tensor->scale, operation->weight_scale);
 
-   operation->bias_tensor = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT, 4);
+   operation->bias_tensor = etna_ml_create_resource(context, 4);
    int32_t *bias_map = map_resource(operation->bias_tensor);
    bias_map[0] = compute_bias_add(poperation->add.input_tensor->scale, poperation->input_tensor->scale,
                                   poperation->add.input_tensor->zero_point, poperation->input_tensor->zero_point,
@@ -624,9 +620,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    unsigned nn_core_count = etna_ml_get_core_info(ctx)->nn_core_count;
    unsigned nn_core_version = ctx->screen->specs.nn_core_version;
    unsigned oc_sram_size = etna_ml_get_core_info(ctx)->on_chip_sram_size;
-   struct etna_bo *bo = etna_bo_new(ctx->screen->dev,
-                                    sizeof(struct etna_nn_params),
-                                    DRM_ETNA_GEM_CACHE_WC);
+   struct etna_bo *bo = etna_ml_create_bo(context, sizeof(struct etna_nn_params));
    unsigned input_width = operation->input_width;
    unsigned input_height = operation->input_height;
    unsigned input_channels = operation->input_channels;
@@ -646,7 +640,6 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
    etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);
 
    struct etna_nn_params *map = etna_bo_map(bo);
-   memset(map, 0, sizeof(*map));
    map->layer_type = 0x0;
    map->no_z_offset = nn_core_version == 8;
    map->prelu = 0x0;

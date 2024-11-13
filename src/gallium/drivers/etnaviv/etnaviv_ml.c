@@ -56,14 +56,41 @@ etna_ml_create_tensor(struct etna_ml_subgraph *subgraph, unsigned idx, unsigned 
       return;
    }
 
-   res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT, size);
+   res = etna_ml_create_resource(context, size);
    tensors[idx] = res;
 
    ML_DBG("created resource %p for tensor %d with size %d\n", res, idx, size);
 }
 
+struct etna_bo *
+etna_ml_create_bo(struct pipe_context *pctx, size_t size)
+{
+   struct etna_context *ctx = etna_context(pctx);
+   struct etna_bo *bo = etna_bo_new(ctx->screen->dev,
+                                    size,
+                                    DRM_ETNA_GEM_CACHE_WC);
+
+   etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);
+   struct etna_nn_params *map = etna_bo_map(bo);
+   memset(map, 0, size);
+   etna_bo_cpu_fini(bo);
+
+   return bo;
+}
+
+struct pipe_resource *
+etna_ml_create_resource(struct pipe_context *pctx, size_t size)
+{
+   struct pipe_resource *res = pipe_buffer_create(pctx->screen, 0, PIPE_USAGE_DEFAULT, size);
+   void *ptr = etna_bo_map(etna_resource(res)->bo);
+   memset(ptr, 0, pipe_buffer_size(res));
+
+   return res;
+}
+
 struct etna_core_npu_info *
-etna_ml_get_core_info(struct etna_context *context) {
+etna_ml_get_core_info(struct etna_context *context)
+{
    struct etna_screen *screen = context->screen;
    struct etna_core_info *info = etna_gpu_get_core_info(screen->npu);
    return &info->npu;

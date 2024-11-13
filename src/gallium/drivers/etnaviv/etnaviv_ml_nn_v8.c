@@ -159,8 +159,7 @@ reorder_for_hw_depthwise(struct etna_ml_subgraph *subgraph, struct etna_operatio
 {
    struct pipe_context *context = subgraph->base.context;
    uint8_t *input = map_resource(operation->weight_tensor);
-   struct pipe_resource *output_res = pipe_buffer_create(context->screen, 0, PIPE_USAGE_DEFAULT,
-                                                         pipe_buffer_size(operation->weight_tensor));
+   struct pipe_resource *output_res = etna_ml_create_resource(context, pipe_buffer_size(operation->weight_tensor));
    uint8_t (*output)[operation->weight_width * operation->weight_height] = (void *)map_resource(output_res);
 
    for (int i = 0; i < operation->weight_height * operation->weight_width * operation->output_channels; i++) {
@@ -697,7 +696,7 @@ create_bo(struct etna_ml_subgraph *subgraph, const struct etna_operation *operat
    unsigned tail_size = 64;
    max_size = header_size + cores_used * body_size + tail_size;
 
-   return etna_bo_new(ctx->screen->dev, max_size, DRM_ETNA_GEM_CACHE_WC);
+   return etna_ml_create_bo(context, max_size);
 }
 
 static void
@@ -806,7 +805,6 @@ etna_ml_create_coeffs_v8(struct etna_ml_subgraph *subgraph, const struct etna_op
    uint8_t symbol_map[8];
 
    etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);
-   memset(header, 0, sizeof(*header));
 
    calculate_symbol_map(subgraph, operation, symbol_map);
    header->symbol_map = pack_symbol_map(symbol_map);

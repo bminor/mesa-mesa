@@ -529,14 +529,11 @@ etna_ml_create_coeffs_v7(struct etna_ml_subgraph *subgraph, const struct etna_op
    bo_size = calculate_weight_bo_size(subgraph, operation);
    zrl_bits = calculate_zrl_bits(subgraph, operation);
 
-   struct etna_bo *compressed = etna_bo_new(ctx->screen->dev,
-                                            bo_size,
-                                            DRM_ETNA_GEM_CACHE_WC);
+   struct etna_bo *compressed = etna_ml_create_bo(context, bo_size);
 
    etna_bo_cpu_prep(compressed, DRM_ETNA_PREP_WRITE);
 
    uint32_t *map = etna_bo_map(compressed);
-   memset(map, 0, bo_size);
 
    uint32_t *header = map;
    map += header_size / 4;
