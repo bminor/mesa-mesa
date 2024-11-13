@@ -140,6 +140,8 @@ struct pan_fb_info {
 
    /* Optimal tile buffer size. */
    unsigned tile_buf_budget;
+   unsigned tile_size;
+   unsigned cbuf_allocation;
 
    /* Sample position array. */
    mali_ptr sample_positions;
@@ -182,6 +184,8 @@ pan_sample_pattern(unsigned samples)
    }
 }
 #endif
+
+void GENX(pan_select_tile_size)(struct pan_fb_info *fb);
 
 void GENX(pan_emit_tls)(const struct pan_tls_info *info, void *out);
 

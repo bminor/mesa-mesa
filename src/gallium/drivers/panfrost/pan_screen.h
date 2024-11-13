@@ -107,6 +107,9 @@ struct panfrost_vtable {
 
    void (*emit_write_timestamp)(struct panfrost_batch *batch,
                                 struct panfrost_resource *dst, unsigned offset);
+
+   /* Select the tile size and calculate the color buffer allocation size */
+   void (*select_tile_size)(struct pan_fb_info *fb);
 };
 
 struct panfrost_screen {

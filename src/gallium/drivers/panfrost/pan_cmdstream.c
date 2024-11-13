@@ -3977,6 +3977,7 @@ GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
    screen->vtbl.afbc_size = panfrost_afbc_size;
    screen->vtbl.afbc_pack = panfrost_afbc_pack;
    screen->vtbl.emit_write_timestamp = emit_write_timestamp;
+   screen->vtbl.select_tile_size = GENX(pan_select_tile_size);
 
    GENX(pan_fb_preload_cache_init)
    (&dev->fb_preload_cache, panfrost_device_gpu_id(dev), &dev->blend_shaders,

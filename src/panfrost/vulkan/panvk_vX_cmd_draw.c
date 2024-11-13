@@ -10,6 +10,8 @@
 #include "panvk_cmd_meta.h"
 #include "panvk_entrypoints.h"
 
+#include "pan_desc.h"
+
 static void
 render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,
                                   const VkRenderingAttachmentInfo *att,
@@ -266,6 +268,8 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
    }
 
    assert(fbinfo->width && fbinfo->height);
+
+   GENX(pan_select_tile_size)(fbinfo);
 }
 
 void

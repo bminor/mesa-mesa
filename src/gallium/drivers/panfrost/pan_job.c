@@ -454,6 +454,7 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
                           bool reserve)
 {
    struct panfrost_device *dev = pan_device(batch->ctx->base.screen);
+   struct panfrost_screen *screen = pan_screen(batch->ctx->base.screen);
 
    memset(fb, 0, sizeof(*fb));
    memset(rts, 0, sizeof(*rts) * 8);
@@ -606,6 +607,8 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
       fb->zs.preload.z = !fb->zs.clear.z && valid;
       fb->zs.preload.s = !fb->zs.clear.s && valid;
    }
+
+   screen->vtbl.select_tile_size(fb);
 }
 
 static void
