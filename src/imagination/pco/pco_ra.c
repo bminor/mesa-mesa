@@ -31,11 +31,10 @@ struct live_range {
    unsigned end;
 };
 
-/** Vector user. */
-struct vec_user {
-   pco_instr *instr;
-   unsigned src;
-   pco_instr *vec;
+/** Vector override information. */
+struct vec_override {
+   pco_ref ref;
+   unsigned offset;
 };
 
 /**
@@ -55,10 +54,6 @@ static bool pco_ra_func(pco_func *func,
    /* TODO: support multiple functions and calls. */
    assert(func->type == PCO_FUNC_TYPE_ENTRYPOINT);
 
-   /* No registers to allocate. */
-   if (!func->next_ssa)
-      return false;
-
    /* TODO: loop lifetime extension.
     * TODO: track successors/predecessors.
     */
@@ -71,6 +66,10 @@ static bool pco_ra_func(pco_func *func,
       }
    }
 
+   /* No registers to allocate. */
+   if (!ssa_bits)
+      return false;
+
    /* 64-bit SSA should've been lowered by now. */
    assert(!(ssa_bits & (1 << PCO_BITS_64)));
 
@@ -81,12 +80,75 @@ static bool pco_ra_func(pco_func *func,
    struct ra_regs *ra_regs =
       ra_alloc_reg_set(func, allocable_temps, !only_32bit);
 
+   /* Overrides for vector coalescing. */
+   struct hash_table_u64 *overrides = _mesa_hash_table_u64_create(ra_regs);
+   pco_foreach_instr_in_func_rev (instr, func) {
+      if (instr->op != PCO_OP_VEC)
+         continue;
+
+      pco_ref dest = instr->dest[0];
+      unsigned offset = 0;
+
+      struct vec_override *src_override =
+         _mesa_hash_table_u64_search(overrides, dest.val);
+
+      if (src_override) {
+         dest = src_override->ref;
+         offset += src_override->offset;
+      }
+
+      pco_foreach_instr_src (psrc, instr) {
+         /* TODO: skip if vector producer is used by multiple things in a way
+          * that doesn't allow coalescing. */
+         /* TODO: can NIR scalarise things so that the only remaining vectors
+          * can be used in this way? */
+
+         if (pco_ref_is_ssa(*psrc)) {
+            /* Make sure this hasn't already been overridden somewhere else! */
+            assert(!_mesa_hash_table_u64_search(overrides, psrc->val));
+
+            struct vec_override *src_override =
+               rzalloc_size(overrides, sizeof(*src_override));
+            src_override->ref = dest;
+            src_override->offset = offset;
+
+            _mesa_hash_table_u64_insert(overrides, psrc->val, src_override);
+         }
+
+         offset += pco_ref_get_chans(*psrc);
+      }
+   }
+
+   /* Overrides for vector component uses. */
+   pco_foreach_instr_in_func (instr, func) {
+      if (instr->op != PCO_OP_COMP)
+         continue;
+
+      pco_ref dest = instr->dest[0];
+      pco_ref src = instr->src[0];
+      unsigned offset = pco_ref_get_imm(instr->src[1]);
+
+      assert(pco_ref_is_ssa(src));
+      assert(pco_ref_is_ssa(dest));
+
+      struct vec_override *src_override =
+         rzalloc_size(overrides, sizeof(*src_override));
+      src_override->ref = src;
+      src_override->offset = offset;
+      _mesa_hash_table_u64_insert(overrides, dest.val, src_override);
+   }
+
    /* Allocate classes. */
    struct hash_table_u64 *ra_classes = _mesa_hash_table_u64_create(ra_regs);
    pco_foreach_instr_in_func (instr, func) {
       pco_foreach_instr_dest_ssa (pdest, instr) {
          unsigned chans = pco_ref_get_chans(*pdest);
+         /* TODO: bitset instead of search? */
          if (_mesa_hash_table_u64_search(ra_classes, chans))
+            continue;
+
+         /* Skip if collated. */
+         if (_mesa_hash_table_u64_search(overrides, pdest->val))
             continue;
 
          struct ra_class *ra_class = ra_alloc_contig_reg_class(ra_regs, chans);
@@ -113,26 +175,43 @@ static bool pco_ra_func(pco_func *func,
    struct live_range *live_ranges =
       rzalloc_array_size(ra_regs, sizeof(*live_ranges), func->next_ssa);
 
-   for (unsigned u = 0; u < func->next_ssa; ++u) {
+   for (unsigned u = 0; u < func->next_ssa; ++u)
       live_ranges[u].start = ~0U;
-   }
 
    pco_foreach_instr_in_func (instr, func) {
       pco_foreach_instr_dest_ssa (pdest, instr) {
-         assert(live_ranges[pdest->val].start == ~0U);
-         live_ranges[pdest->val].start = instr->index;
+         pco_ref dest = *pdest;
+         struct vec_override *override =
+            _mesa_hash_table_u64_search(overrides, dest.val);
 
-         unsigned chans = pco_ref_get_chans(*pdest);
+         if (override)
+            dest = override->ref;
+
+         live_ranges[dest.val].start =
+            MIN2(live_ranges[dest.val].start, instr->index);
+
+         if (override)
+            continue;
+
+         /* Set class if it hasn't already been set up in an override. */
+         unsigned chans = pco_ref_get_chans(dest);
          struct ra_class *ra_class =
             _mesa_hash_table_u64_search(ra_classes, chans);
          assert(ra_class);
 
-         ra_set_node_class(ra_graph, pdest->val, ra_class);
+         ra_set_node_class(ra_graph, dest.val, ra_class);
       }
 
       pco_foreach_instr_src_ssa (psrc, instr) {
-         live_ranges[psrc->val].end =
-            MAX2(live_ranges[psrc->val].end, instr->index);
+         pco_ref src = *psrc;
+         struct vec_override *override =
+            _mesa_hash_table_u64_search(overrides, src.val);
+
+         if (override)
+            src = override->ref;
+
+         live_ranges[src.val].end =
+            MAX2(live_ranges[src.val].end, instr->index);
       }
    }
 
@@ -140,7 +219,8 @@ static bool pco_ra_func(pco_func *func,
    for (unsigned ssa0 = 0; ssa0 < func->next_ssa; ++ssa0) {
       for (unsigned ssa1 = ssa0 + 1; ssa1 < func->next_ssa; ++ssa1) {
          /* If the live ranges overlap, the register nodes interfere. */
-         if (!(live_ranges[ssa0].start >= live_ranges[ssa1].end ||
+         if ((live_ranges[ssa0].start != ~0U && live_ranges[ssa1].end != ~0U) &&
+             !(live_ranges[ssa0].start >= live_ranges[ssa1].end ||
                live_ranges[ssa1].start >= live_ranges[ssa0].end)) {
             ra_add_node_interference(ra_graph, ssa0, ssa1);
          }
@@ -151,123 +231,116 @@ static bool pco_ra_func(pco_func *func,
    assert(allocated);
    /* TODO: spilling. */
 
-   /* Collect info on users of vec ops. */
-   struct util_dynarray vec_users;
-   struct util_dynarray vecs;
-   BITSET_WORD *instrs_using_vecs =
-      rzalloc_array_size(ra_regs,
-                         sizeof(*instrs_using_vecs),
-                         BITSET_WORDS(func->next_instr));
-   BITSET_WORD *instrs_using_multi_vecs =
-      rzalloc_array_size(ra_regs,
-                         sizeof(*instrs_using_multi_vecs),
-                         BITSET_WORDS(func->next_instr));
+   if (PCO_DEBUG_PRINT(RA)) {
+      printf("RA live ranges:\n");
+      for (unsigned u = 0; u < func->next_ssa; ++u)
+         printf("  %%%u: %u, %u\n", u, live_ranges[u].start, live_ranges[u].end);
 
-   util_dynarray_init(&vec_users, ra_regs);
-   util_dynarray_init(&vecs, ra_regs);
-
-   pco_foreach_instr_in_func (vec, func) {
-      if (vec->op != PCO_OP_VEC)
-         continue;
-
-      util_dynarray_append(&vecs, pco_instr *, vec);
-
-      const pco_ref vec_dest = vec->dest[0];
-      assert(pco_ref_is_ssa(vec_dest));
-
-      pco_foreach_instr_in_func_from (instr, vec) {
-         pco_foreach_instr_src_ssa (psrc, instr) {
-            if (psrc->val != vec_dest.val)
-               continue;
-
-            /* TODO: for now we're just supporting instructions producing
-             * scalars (or with no outputs).
-             * */
-            assert(!instr->num_dests ||
-                   (instr->num_dests == 1 &&
-                    pco_ref_get_chans(instr->dest[0]) == 1));
-
-            if (BITSET_TEST(instrs_using_vecs, instr->index))
-               BITSET_SET(instrs_using_multi_vecs, instr->index);
-
-            BITSET_SET(instrs_using_vecs, instr->index);
-
-            struct vec_user vec_user = {
-               .instr = instr,
-               .src = psrc - instr->src,
-               .vec = vec,
-            };
-            util_dynarray_append(&vec_users, struct vec_user, vec_user);
+      if (_mesa_hash_table_u64_num_entries(overrides)) {
+         printf("RA overrides:\n");
+         hash_table_u64_foreach (overrides, entry) {
+            struct vec_override *override = entry.data;
+            printf("  %%%lu: ref = ", entry.key);
+            pco_print_ref(func->parent_shader, override->ref);
+            printf(", offset = %u\n", override->offset);
          }
+         printf("\n");
       }
    }
 
-   /* TODO: support this. */
-   assert(__bitset_is_empty(instrs_using_multi_vecs,
-                            BITSET_WORDS(func->next_instr)));
-
-   /* Replace SSA regs with allocated temps. */
+   /* Replace SSA regs with allocated registers. */
    unsigned temps = 0;
+   unsigned vtxins = 0;
+   unsigned interns = 0;
    pco_foreach_instr_in_func_safe (instr, func) {
+      if (PCO_DEBUG_PRINT(RA))
+         pco_print_shader(func->parent_shader, stdout, "ra debug");
+
+      /* Insert movs for scalar components of super vecs. */
+      if (instr->op == PCO_OP_VEC) {
+         pco_builder b =
+            pco_builder_create(func, pco_cursor_before_instr(instr));
+
+         struct vec_override *override =
+            _mesa_hash_table_u64_search(overrides, instr->dest[0].val);
+
+         unsigned offset = override ? override->offset : 0;
+
+         unsigned temp_dest_base =
+            override ? ra_get_node_reg(ra_graph, override->ref.val) + offset
+                     : ra_get_node_reg(ra_graph, instr->dest[0].val);
+
+         pco_foreach_instr_src (psrc, instr) {
+            if (pco_ref_is_ssa(*psrc)) {
+               assert(_mesa_hash_table_u64_search(overrides, psrc->val));
+            } else {
+               unsigned chans = pco_ref_get_chans(*psrc);
+
+               for (unsigned u = 0; u < chans; ++u) {
+                  pco_ref dest = pco_ref_hwreg(temp_dest_base + offset + u,
+                                               PCO_REG_CLASS_TEMP);
+                  pco_ref src = pco_ref_chans(*psrc, 1);
+                  src = pco_ref_offset(src, u);
+
+                  pco_mbyp0(&b, dest, src);
+               }
+
+               temps = MAX2(temps, temp_dest_base + offset + chans);
+            }
+
+            offset += pco_ref_get_chans(*psrc);
+         }
+
+         pco_instr_delete(instr);
+         continue;
+      } else if (instr->op == PCO_OP_COMP) {
+         pco_instr_delete(instr);
+         continue;
+      }
+
       pco_foreach_instr_dest_ssa (pdest, instr) {
+         struct vec_override *override =
+            _mesa_hash_table_u64_search(overrides, pdest->val);
+
+         unsigned val = ra_get_node_reg(ra_graph, pdest->val);
+         unsigned dest_temps = val + pco_ref_get_chans(*pdest);
+         if (override) {
+            val = ra_get_node_reg(ra_graph, override->ref.val);
+            dest_temps = val + pco_ref_get_chans(override->ref);
+            val += override->offset;
+         }
+
          pdest->type = PCO_REF_TYPE_REG;
          pdest->reg_class = PCO_REG_CLASS_TEMP;
-         pdest->val = ra_get_node_reg(ra_graph, pdest->val);
-         temps = MAX2(temps, pdest->val + pco_ref_get_chans(*pdest));
+         pdest->val = val;
+         temps = MAX2(temps, dest_temps);
       }
 
       pco_foreach_instr_src_ssa (psrc, instr) {
+         struct vec_override *override =
+            _mesa_hash_table_u64_search(overrides, psrc->val);
+
+         unsigned val =
+            override
+               ? ra_get_node_reg(ra_graph, override->ref.val) + override->offset
+               : ra_get_node_reg(ra_graph, psrc->val);
+
          psrc->type = PCO_REF_TYPE_REG;
          psrc->reg_class = PCO_REG_CLASS_TEMP;
-         psrc->val = ra_get_node_reg(ra_graph, psrc->val);
+         psrc->val = val;
       }
-   }
-
-   /* Scalarize the users of any vec ops that haven't been consumed in
-    * other passes; no point wasting regs with copies unless it's unavoidable.
-    */
-   /* TODO: distinguish between and support instructions that need vecs/can't be
-    * scalarized, e.g. sample data words.
-    */
-   /* TODO: try and do this in a separate earlier pass, taking into account the
-    * cost/benefit analysis of scalarizing.
-    */
-   util_dynarray_foreach (&vec_users, struct vec_user, vec_user) {
-      pco_instr *instr = vec_user->instr;
-      pco_instr *vec = vec_user->vec;
-
-      switch (instr->op) {
-      case PCO_OP_UVSW_WRITE: {
-         assert(vec_user->src == 0);
-         assert(pco_instr_get_rpt(instr) == vec->num_srcs);
-
-         pco_builder b =
-            pco_builder_create(func, pco_cursor_after_instr(instr));
-         uint8_t vtxout_base_addr = pco_ref_get_imm(instr->src[1]);
-
-         for (unsigned s = 0; s < vec->num_srcs; ++s)
-            pco_uvsw_write(&b, vec->src[s], pco_ref_val8(vtxout_base_addr + s));
-
-         break;
-      }
-
-      default:
-         unreachable();
-      }
-
-      pco_instr_delete(instr);
-   }
-
-   /* TODO: process/fold comp ops as well? */
-
-   /* Drop vec ops. */
-   util_dynarray_foreach (&vecs, pco_instr *, vec) {
-      pco_instr_delete(*vec);
    }
 
    ralloc_free(ra_regs);
 
    func->temps = temps;
+
+   if (PCO_DEBUG_PRINT(RA)) {
+      printf("RA allocated %u temps, %u vtxins, %u interns.\n",
+             temps,
+             vtxins,
+             interns);
+   }
 
    return true;
 }
@@ -281,6 +354,9 @@ static bool pco_ra_func(pco_func *func,
 bool pco_ra(pco_shader *shader)
 {
    assert(!shader->is_grouped);
+
+   /* Instruction indices need to be ordered for live ranges. */
+   pco_index(shader, true);
 
    unsigned hw_temps = rogue_get_temps(shader->ctx->dev_info);
    /* TODO:

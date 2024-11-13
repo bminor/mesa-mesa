@@ -2028,6 +2028,8 @@ PowerVR driver environment variables
       Print the resulting binary.
    ``verbose``
       Print verbose IR.
+   ``ra``
+      Print register alloc info.
 
 .. envvar:: PCO_COLOR
 

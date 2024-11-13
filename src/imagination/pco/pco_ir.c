@@ -56,6 +56,9 @@ void pco_process_ir(pco_ctx *ctx, pco_shader *shader)
    PCO_PASS(_, shader, pco_const_imms);
    PCO_PASS(_, shader, pco_opt);
    PCO_PASS(_, shader, pco_dce);
+   /* TODO: schedule after RA instead as e.g. vecs may no longer be the first
+    * time a drc result is used.
+    */
    PCO_PASS(_, shader, pco_schedule);
    PCO_PASS(_, shader, pco_ra);
    PCO_PASS(_, shader, pco_end);
