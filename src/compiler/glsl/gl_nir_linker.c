@@ -1484,6 +1484,22 @@ get_varying_nir_var_mask(nir_shader *nir)
           (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
 }
 
+static nir_opt_varyings_progress
+optimize_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
+                  unsigned max_uniform_comps, unsigned max_ubos)
+{
+   nir_opt_varyings_progress progress =
+      nir_opt_varyings(producer, consumer, spirv, max_uniform_comps,
+                       max_ubos);
+
+   if (progress & nir_progress_producer)
+      gl_nir_opts(producer);
+   if (progress & nir_progress_consumer)
+      gl_nir_opts(consumer);
+
+   return progress;
+}
+
 /**
  * Lower load_deref and store_deref on input/output variables to load_input
  * and store_output intrinsics, and perform varying optimizations and
@@ -1568,36 +1584,17 @@ gl_nir_lower_optimize_varyings(const struct gl_constants *consts,
     */
    unsigned highest_changed_producer = 0;
    for (unsigned i = 0; i < num_shaders - 1; i++) {
-      nir_shader *producer = shaders[i];
-      nir_shader *consumer = shaders[i + 1];
-
-      nir_opt_varyings_progress progress =
-         nir_opt_varyings(producer, consumer, spirv, max_uniform_comps,
-                          max_ubos);
-
-      if (progress & nir_progress_producer) {
-         gl_nir_opts(producer);
+      if (optimize_varyings(shaders[i], shaders[i + 1], spirv,
+                            max_uniform_comps, max_ubos) & nir_progress_producer)
          highest_changed_producer = i;
-      }
-      if (progress & nir_progress_consumer)
-         gl_nir_opts(consumer);
    }
 
    /* Optimize varyings from the highest changed producer to the first
     * shader.
     */
    for (unsigned i = highest_changed_producer; i > 0; i--) {
-      nir_shader *producer = shaders[i - 1];
-      nir_shader *consumer = shaders[i];
-
-      nir_opt_varyings_progress progress =
-         nir_opt_varyings(producer, consumer, spirv, max_uniform_comps,
-                          max_ubos);
-
-      if (progress & nir_progress_producer)
-         gl_nir_opts(producer);
-      if (progress & nir_progress_consumer)
-         gl_nir_opts(consumer);
+      optimize_varyings(shaders[i - 1], shaders[i], spirv, max_uniform_comps,
+                        max_ubos);
    }
 
    /* Final cleanups. */
