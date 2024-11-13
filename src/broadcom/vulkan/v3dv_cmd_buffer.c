@@ -532,15 +532,7 @@ job_should_enable_double_buffer(struct v3dv_job *job)
    if (!job->can_use_double_buffer)
       return false;
 
-   /* Too much geometry processing */
-   if (job->double_buffer_score.geom > 2000000)
-      return false;
-
-   /* Too little rendering to make up for tile store latency */
-   if (job->double_buffer_score.render < 100000)
-      return false;
-
-   return true;
+   return v3d_double_buffer_score_ok(&job->double_buffer_score);
 }
 
 static void
@@ -2916,34 +2908,18 @@ job_update_double_buffer_score(struct v3dv_job *job,
       return;
    }
 
-   /* Keep track of vertex processing: too much geometry processing would not
-    * be good for double-buffer.
-    */
-   struct v3dv_shader_variant *vs_bin =
-      pipeline->shared_data->variants[BROADCOM_SHADER_VERTEX_BIN];
-   assert(vs_bin);
-   uint32_t geom_score = vertex_count * compute_prog_score(vs_bin);
-
    struct v3dv_shader_variant *vs =
       pipeline->shared_data->variants[BROADCOM_SHADER_VERTEX];
    assert(vs);
-   uint32_t vs_score = vertex_count * compute_prog_score(vs);
-   geom_score += vs_score;
 
-   job->double_buffer_score.geom += geom_score;
-
-   /* Compute pixel rendering cost.
-    *
-    * We estimate that on average a draw would render 0.2% of the pixels in
-    * the render area. That would be a 64x64 region in a 1920x1080 area.
-    */
    struct v3dv_shader_variant *fs =
       pipeline->shared_data->variants[BROADCOM_SHADER_FRAGMENT];
    assert(fs);
-   uint32_t pixel_count = 0.002f * render_area->width * render_area->height;
-   uint32_t render_score = vs_score + pixel_count * compute_prog_score(fs);
 
-   job->double_buffer_score.render += render_score;
+   v3d_update_double_buffer_score(vertex_count,
+                                  vs->qpu_insts_size, fs->qpu_insts_size,
+                                  vs->prog_data.base, fs->prog_data.base,
+                                  &job->double_buffer_score);
 }
 
 void

@@ -1190,12 +1190,7 @@ struct v3dv_job {
    /* This structure keeps track of various scores to inform a heuristic
     * for double-buffer mode.
     */
-   struct {
-      /* Cost of geometry shading */
-      uint32_t geom;
-      /* Cost of shader rendering */
-      uint32_t render;
-   } double_buffer_score;
+   struct v3d_double_buffer_score double_buffer_score;
 
    /* We only need to allocate tile state for all layers if the binner
     * writes primitives to layers other than the first. This can only be
