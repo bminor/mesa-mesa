@@ -2931,6 +2931,17 @@ emit_barrier(isel_context* ctx, nir_intrinsic_instr* instr)
                exec_scope);
 }
 
+/* The two 32 wide halves of a gfx10+ wave64 LDS instruction might be executed interleaved
+ * with LDS instructions from the other CU in WGP mode.
+ */
+bool
+lds_potential_non_atomic_split(isel_context* ctx, unsigned access)
+{
+   return ctx->options->gfx_level >= GFX10 && ctx->program->wave_size == 64 &&
+          ctx->program->workgroup_size > 64 && ctx->program->wgp_mode &&
+          ((access & ACCESS_ATOMIC) || !ctx->shader->info.assume_no_data_races);
+}
+
 void
 visit_load_shared(isel_context* ctx, nir_intrinsic_instr* instr)
 {
@@ -2974,14 +2985,11 @@ visit_load_shared(isel_context* ctx, nir_intrinsic_instr* instr)
       ds->operands.pop_back();
 
    if (def.getTemp() != dst) {
-      /* The 2 separate loads for gfx10+ wave64 can see different values, even for uniform
-       * addresses, if another wave writes LDS in between. Use v_readfirstlane instead of
-       * p_as_uniform in order to avoid copy-propagation.
+      /* Use v_readfirstlane instead of p_as_uniform in order to avoid copy-propagation of
+       * potentially divergent value.
        */
-      bool atomic = nir_intrinsic_access(instr) & ACCESS_ATOMIC;
       bool readfirstlane_for_uniform =
-         ctx->options->gfx_level >= GFX10 && ctx->program->wave_size == 64 &&
-         ctx->program->workgroup_size > 64 && (atomic || !ctx->shader->info.assume_no_data_races);
+         lds_potential_non_atomic_split(ctx, nir_intrinsic_access(instr));
       emit_vector_as_uniform(ctx, def.getTemp(), dst, readfirstlane_for_uniform);
    }
 
@@ -3188,12 +3196,10 @@ visit_shared_append(isel_context* ctx, nir_intrinsic_instr* instr)
       ds = bld.ds(op, Definition(tmp), m, address);
    ds->ds().sync = memory_sync_info(storage_shared, semantic_atomicrmw);
 
-   /* In wave64 for hw with native wave32, ds_append seems to be split in a load for the low half
-    * and an atomic for the high half, and other LDS instructions can be scheduled between the two.
-    * Which means the result of the low half is unusable because it might be out of date.
+   /* If there is a write to the same LDS address between the split halves, only the second half
+    * will read the correct result.
     */
-   if (ctx->program->gfx_level >= GFX10 && ctx->program->wave_size == 64 &&
-       ctx->program->workgroup_size > 64) {
+   if (lds_potential_non_atomic_split(ctx, ACCESS_ATOMIC)) {
       Temp last_lane = bld.sop1(aco_opcode::s_flbit_i32_b64, bld.def(s1), Operand(exec, s2));
       last_lane = bld.sop2(aco_opcode::s_sub_u32, bld.def(s1), bld.def(s1, scc), Operand::c32(63),
                            last_lane);
@@ -3243,11 +3249,8 @@ visit_access_shared2_amd(isel_context* ctx, nir_intrinsic_instr* instr)
       Temp dst = get_ssa_temp(ctx, &instr->def);
       if (dst.type() == RegType::sgpr) {
          /* Similar to load_shared. */
-         bool atomic = nir_intrinsic_access(instr) & ACCESS_ATOMIC;
-         bool readfirstlane_for_uniform = ctx->options->gfx_level >= GFX10 &&
-                                          ctx->program->wave_size == 64 &&
-                                          ctx->program->workgroup_size > 64 &&
-                                          (atomic || !ctx->shader->info.assume_no_data_races);
+         bool readfirstlane_for_uniform =
+            lds_potential_non_atomic_split(ctx, nir_intrinsic_access(instr));
 
          emit_split_vector(ctx, ds->definitions[0].getTemp(), dst.size());
          Temp comp[4];
