@@ -1395,6 +1395,9 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
          if (io.fb_fetch_output)
             fprintf(fp, " fbfetch");
 
+         if (io.fb_fetch_output_coherent)
+            fprintf(fp, " coherent");
+
          if (io.per_view)
             fprintf(fp, " perview");
 

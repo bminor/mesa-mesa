@@ -789,7 +789,8 @@ validate_intrinsic_instr(nir_intrinsic_instr *instr, validate_state *state)
                       state->shader->info.stage == MESA_SHADER_TESS_CTRL);
       validate_assert(state,
                       (!sem.dual_source_blend_index &&
-                       !sem.fb_fetch_output) ||
+                       !sem.fb_fetch_output &&
+                       !sem.fb_fetch_output_coherent) ||
                       state->shader->info.stage == MESA_SHADER_FRAGMENT);
       validate_assert(state,
                       !sem.gs_streams ||

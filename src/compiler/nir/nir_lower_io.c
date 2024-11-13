@@ -389,6 +389,10 @@ emit_load(struct lower_io_state *state,
       semantics.location = var->data.location;
       semantics.num_slots = get_number_of_slots(state, var);
       semantics.fb_fetch_output = var->data.fb_fetch_output;
+      if (semantics.fb_fetch_output) {
+         semantics.fb_fetch_output_coherent =
+            !!(var->data.access & ACCESS_COHERENT);
+      }
       semantics.medium_precision = is_medium_precision(b->shader, var);
       semantics.high_dvec2 = high_dvec2;
       /* "per_vertex" is misnamed. It means "explicit interpolation with

@@ -2025,6 +2025,7 @@ typedef struct nir_io_semantics {
    unsigned num_slots : 6; /* max 32, may be pessimistic with const indexing */
    unsigned dual_source_blend_index : 1;
    unsigned fb_fetch_output : 1;  /* for GL_KHR_blend_equation_advanced */
+   unsigned fb_fetch_output_coherent : 1;
    unsigned gs_streams : 8;       /* xxyyzzww: 2-bit stream index for each component */
    unsigned medium_precision : 1; /* GLSL mediump qualifier */
    unsigned per_view : 1;
@@ -2042,7 +2043,6 @@ typedef struct nir_io_semantics {
    unsigned no_sysval_output : 1; /* whether this system value output has no
                                      effect due to current pipeline states */
    unsigned interp_explicit_strict : 1; /* preserve original vertex order */
-   unsigned _pad : 1;
 } nir_io_semantics;
 
 /* Transform feedback info for 2 outputs. nir_intrinsic_store_output contains
