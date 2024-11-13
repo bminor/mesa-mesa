@@ -70,6 +70,11 @@ GENX(jm_cleanup_batch)(struct panfrost_batch *batch)
 
 int GENX(jm_submit_batch)(struct panfrost_batch *batch);
 
+static inline void
+GENX(jm_prepare_tiler)(struct panfrost_batch *batch, struct pan_fb_info *fb)
+{
+}
+
 void GENX(jm_preload_fb)(struct panfrost_batch *batch, struct pan_fb_info *fb);
 void GENX(jm_emit_fbds)(struct panfrost_batch *batch, struct pan_fb_info *fb,
                         struct pan_tls_info *tls);

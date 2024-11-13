@@ -612,6 +612,64 @@ out_free_syncops:
    return ret;
 }
 
+static mali_ptr
+csf_get_tiler_desc(struct panfrost_batch *batch)
+{
+   if (batch->tiler_ctx.valhall.desc)
+      return batch->tiler_ctx.valhall.desc;
+
+   struct panfrost_ptr t =
+      pan_pool_alloc_desc(&batch->pool.base, TILER_CONTEXT);
+
+   batch->csf.pending_tiler_desc = t.cpu;
+   batch->tiler_ctx.valhall.desc = t.gpu;
+   return batch->tiler_ctx.valhall.desc;
+}
+
+static void
+csf_emit_tiler_desc(struct panfrost_batch *batch, const struct pan_fb_info *fb)
+{
+   struct panfrost_context *ctx = batch->ctx;
+   struct panfrost_device *dev = pan_device(ctx->base.screen);
+
+   if (!batch->csf.pending_tiler_desc)
+      return;
+
+   pan_pack(batch->csf.pending_tiler_desc, TILER_CONTEXT, tiler) {
+      unsigned max_levels = dev->tiler_features.max_levels;
+      assert(max_levels >= 2);
+
+      /* TODO: Select hierarchy mask more effectively */
+      tiler.hierarchy_mask = (max_levels >= 8) ? 0xFF : 0x28;
+
+      /* For large framebuffers, disable the smallest bin size to
+       * avoid pathological tiler memory usage. Required to avoid OOM
+       * on dEQP-GLES31.functional.fbo.no_attachments.maximums.all on
+       * Mali-G57.
+       */
+      if (MAX2(batch->key.width, batch->key.height) >= 4096)
+         tiler.hierarchy_mask &= ~1;
+
+      tiler.fb_width = batch->key.width;
+      tiler.fb_height = batch->key.height;
+      tiler.heap = batch->ctx->csf.heap.desc_bo->ptr.gpu;
+      tiler.sample_pattern =
+         pan_sample_pattern(util_framebuffer_get_num_samples(&batch->key));
+      tiler.first_provoking_vertex =
+         batch->first_provoking_vertex == U_TRISTATE_YES;
+      tiler.geometry_buffer = ctx->csf.tmp_geom_bo->ptr.gpu;
+      tiler.geometry_buffer_size = ctx->csf.tmp_geom_bo->kmod_bo->size;
+   }
+
+   batch->csf.pending_tiler_desc = 0;
+}
+
+void
+GENX(csf_prepare_tiler)(struct panfrost_batch *batch, struct pan_fb_info *fb)
+{
+   csf_emit_tiler_desc(batch, fb);
+}
+
 void
 GENX(csf_preload_fb)(struct panfrost_batch *batch, struct pan_fb_info *fb)
 {
@@ -927,47 +985,6 @@ GENX(csf_launch_xfb)(struct panfrost_batch *batch,
 
    /* XXX: Choose correctly */
    cs_run_compute(b, 1, MALI_TASK_AXIS_Z, false, cs_shader_res_sel(0, 0, 0, 0));
-}
-
-static mali_ptr
-csf_get_tiler_desc(struct panfrost_batch *batch)
-{
-   struct panfrost_context *ctx = batch->ctx;
-   struct panfrost_device *dev = pan_device(ctx->base.screen);
-
-   if (batch->tiler_ctx.valhall.desc)
-      return batch->tiler_ctx.valhall.desc;
-
-   struct panfrost_ptr t =
-      pan_pool_alloc_desc(&batch->pool.base, TILER_CONTEXT);
-   pan_pack(t.cpu, TILER_CONTEXT, tiler) {
-      unsigned max_levels = dev->tiler_features.max_levels;
-      assert(max_levels >= 2);
-
-      /* TODO: Select hierarchy mask more effectively */
-      tiler.hierarchy_mask = (max_levels >= 8) ? 0xFF : 0x28;
-
-      /* For large framebuffers, disable the smallest bin size to
-       * avoid pathological tiler memory usage. Required to avoid OOM
-       * on dEQP-GLES31.functional.fbo.no_attachments.maximums.all on
-       * Mali-G57.
-       */
-      if (MAX2(batch->key.width, batch->key.height) >= 4096)
-         tiler.hierarchy_mask &= ~1;
-
-      tiler.fb_width = batch->key.width;
-      tiler.fb_height = batch->key.height;
-      tiler.heap = batch->ctx->csf.heap.desc_bo->ptr.gpu;
-      tiler.sample_pattern =
-         pan_sample_pattern(util_framebuffer_get_num_samples(&batch->key));
-      tiler.first_provoking_vertex =
-         batch->first_provoking_vertex == U_TRISTATE_YES;
-      tiler.geometry_buffer = ctx->csf.tmp_geom_bo->ptr.gpu;
-      tiler.geometry_buffer_size = ctx->csf.tmp_geom_bo->kmod_bo->size;
-   }
-
-   batch->tiler_ctx.valhall.desc = t.gpu;
-   return batch->tiler_ctx.valhall.desc;
 }
 
 static void

@@ -3931,6 +3931,7 @@ init_polygon_list(struct panfrost_batch *batch)
 static int
 submit_batch(struct panfrost_batch *batch, struct pan_fb_info *fb)
 {
+   JOBX(prepare_tiler)(batch, fb);
    JOBX(preload_fb)(batch, fb);
    init_polygon_list(batch);
 

@@ -74,6 +74,8 @@ struct panfrost_csf_batch {
    struct panfrost_pool cs_chunk_pool;
 
    struct panfrost_ptr tiler_oom_ctx;
+
+   void *pending_tiler_desc;
 };
 
 struct panfrost_csf_context {
@@ -114,6 +116,8 @@ void GENX(csf_init_batch)(struct panfrost_batch *batch);
 void GENX(csf_cleanup_batch)(struct panfrost_batch *batch);
 int GENX(csf_submit_batch)(struct panfrost_batch *batch);
 
+void GENX(csf_prepare_tiler)(struct panfrost_batch *batch,
+                             struct pan_fb_info *fb);
 void GENX(csf_preload_fb)(struct panfrost_batch *batch, struct pan_fb_info *fb);
 void GENX(csf_emit_fbds)(struct panfrost_batch *batch, struct pan_fb_info *fb,
                          struct pan_tls_info *tls);
