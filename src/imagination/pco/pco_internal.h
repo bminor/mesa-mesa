@@ -1225,6 +1225,7 @@ bool pco_nir_lower_algebraic(nir_shader *shader);
 bool pco_nir_lower_algebraic_late(nir_shader *shader);
 bool pco_nir_lower_vk(nir_shader *shader, pco_common_data *common);
 bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs);
+bool pco_nir_point_size(nir_shader *shader);
 bool pco_nir_pvi(nir_shader *shader, pco_vs_data *vs);
 bool pco_opt(pco_shader *shader);
 bool pco_ra(pco_shader *shader);

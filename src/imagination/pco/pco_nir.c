@@ -219,6 +219,15 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, pco_nir_pfo, &data->fs);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
+      NIR_PASS(_,
+               nir,
+               nir_lower_point_size,
+               PVR_POINT_SIZE_RANGE_MIN,
+               PVR_POINT_SIZE_RANGE_MAX);
+
+      if (!nir->info.internal)
+         NIR_PASS(_, nir, pco_nir_point_size);
+
       NIR_PASS(_, nir, pco_nir_pvi, &data->vs);
    }
 

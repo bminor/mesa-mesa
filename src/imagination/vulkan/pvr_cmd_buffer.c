@@ -4095,8 +4095,6 @@ static void pvr_setup_output_select(struct pvr_cmd_buffer *const cmd_buffer)
 {
    const struct pvr_graphics_pipeline *const gfx_pipeline =
       cmd_buffer->state.gfx_pipeline;
-   struct vk_dynamic_graphics_state *const dynamic_state =
-      &cmd_buffer->vk.dynamic_graphics_state;
    struct ROGUE_TA_STATE_HEADER *const header = &cmd_buffer->state.emit_header;
    struct pvr_ppp_state *const ppp_state = &cmd_buffer->state.ppp_state;
    const pco_data *const vs_data = &gfx_pipeline->vs_data;
@@ -4106,9 +4104,7 @@ static void pvr_setup_output_select(struct pvr_cmd_buffer *const cmd_buffer)
 
    const pco_range *varyings = vs_data->vs.varyings;
 
-   const bool has_point_size = dynamic_state->ia.primitive_topology ==
-                                  VK_PRIMITIVE_TOPOLOGY_POINT_LIST &&
-                               varyings[VARYING_SLOT_PSIZ].count > 0;
+   const bool has_point_size = varyings[VARYING_SLOT_PSIZ].count > 0;
 
    const bool has_viewport = varyings[VARYING_SLOT_VIEWPORT].count > 0;
 
