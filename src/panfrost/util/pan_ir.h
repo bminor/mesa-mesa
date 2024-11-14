@@ -281,6 +281,9 @@ struct pan_shader_info {
       struct pan_shader_varying input[PAN_MAX_VARYINGS];
       unsigned output_count;
       struct pan_shader_varying output[PAN_MAX_VARYINGS];
+
+      /* Bitfield of noperspective varyings, starting at VARYING_SLOT_VAR0 */
+      uint32_t noperspective;
    } varyings;
 
    /* UBOs to push to Register Mapped Uniforms (Midgard) or Fast Access
