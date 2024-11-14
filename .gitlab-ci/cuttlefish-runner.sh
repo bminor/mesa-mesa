@@ -156,7 +156,7 @@ set +e
 $ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; ./deqp-runner \
     suite \
     --suite /data/deqp-$DEQP_SUITE.toml \
-    --output $RESULTS \
+    --output $AOSP_RESULTS \
     --skips /data/all-skips.txt $DEQP_SKIPS \
     --flakes /data/$GPU_VERSION-flakes.txt \
     --testlog-to-xml /deqp-tools/testlog-to-xml \
@@ -168,7 +168,7 @@ EXIT_CODE=$?
 set -e
 section_switch cuttlefish_results "cuttlefish: gathering the results"
 
-$ADB pull $RESULTS $RESULTS_DIR
+$ADB pull $AOSP_RESULTS $RESULTS_DIR
 
 section_end cuttlefish_results
 exit $EXIT_CODE
