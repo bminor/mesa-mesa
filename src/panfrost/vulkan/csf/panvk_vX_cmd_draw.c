@@ -231,10 +231,17 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf,
    const struct vk_rasterization_state *rs =
       &cmdbuf->vk.dynamic_graphics_state.rs;
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
 
    if (gfx_state_dirty(cmdbuf, RENDER_STATE)) {
       sysvals->fs.multisampled = fbinfo->nr_samples > 1;
       gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   uint32_t noperspective_varyings = fs ? fs->info.varyings.noperspective : 0;
+   if (sysvals->vs.noperspective_varyings != noperspective_varyings) {
+      sysvals->vs.noperspective_varyings = noperspective_varyings;
+      cmdbuf->state.gfx.push_uniforms = 0;
    }
 
    if (dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
