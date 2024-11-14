@@ -225,6 +225,12 @@ prepare_sysvals(struct panvk_cmd_buffer *cmdbuf)
    const struct vk_rasterization_state *rs =
       &cmdbuf->vk.dynamic_graphics_state.rs;
 
+   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+   if (sysvals->fs.multisampled != (fbinfo->nr_samples > 1)) {
+      sysvals->fs.multisampled = fbinfo->nr_samples > 1;
+      cmdbuf->state.gfx.push_uniforms = 0;
+   }
+
    if (is_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
       for (unsigned i = 0; i < ARRAY_SIZE(cb->blend_constants); i++)
          sysvals->blend.constants[i] =
