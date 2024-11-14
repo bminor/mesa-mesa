@@ -823,10 +823,10 @@ static void radeon_enc_av1_quantization_params(struct radeon_encoder *enc)
 
 static int32_t radeon_enc_av1_get_relative_dist(struct radeon_encoder *enc, uint32_t a, uint32_t b)
 {
-    uint32_t diff = a - b;
-    uint32_t m = 1 << (enc->enc_pic.av1.desc->seq.order_hint_bits - 1);
-    diff = (diff & (m - 1)) - (diff & m);
-    return diff;
+   uint32_t diff = a - b;
+   uint32_t m = 1 << (enc->enc_pic.av1.desc->seq.order_hint_bits - 1);
+   diff = (diff & (m - 1)) - (diff & m);
+   return diff;
 }
 
 bool radeon_enc_av1_skip_mode_allowed(struct radeon_encoder *enc, uint32_t frames[2])
