@@ -16,8 +16,6 @@ syslogd
 
 chown root:kvm /dev/kvm
 
-/etc/init.d/cuttlefish-host-resources start
-
 pushd /cuttlefish
 
 # Add a function to perform some tasks when exiting the script
