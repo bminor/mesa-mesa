@@ -344,7 +344,7 @@
         "description": "bi: Execute nir_opt_algebraic after nir_lower_pack",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3904cfabd6ab20c709103ce051de2ce1ac915eab",
         "notes": null
