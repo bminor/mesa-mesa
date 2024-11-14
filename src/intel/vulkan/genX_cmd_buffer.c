@@ -2584,12 +2584,12 @@ genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
 /* Set preemption on/off. */
 void
 genX(batch_set_preemption)(struct anv_batch *batch,
-                           const struct intel_device_info *devinfo,
+                           struct anv_device *device,
                            uint32_t current_pipeline,
                            bool value)
 {
 #if INTEL_WA_16013994831_GFX_VER
-   if (!intel_needs_workaround(devinfo, 16013994831))
+   if (!intel_needs_workaround(device->info, 16013994831))
       return;
 
    anv_batch_write_reg(batch, GENX(CS_CHICKEN1), cc1) {
@@ -2598,7 +2598,7 @@ genX(batch_set_preemption)(struct anv_batch *batch,
    }
 
    /* Wa_16013994831 - we need to insert CS_STALL and 250 noops. */
-   genx_batch_emit_pipe_control(batch, devinfo, current_pipeline,
+   genx_batch_emit_pipe_control(batch, device->info, current_pipeline,
                                 ANV_PIPE_CS_STALL_BIT);
 
    for (unsigned i = 0; i < 250; i++)
@@ -2613,7 +2613,7 @@ genX(cmd_buffer_set_preemption)(struct anv_cmd_buffer *cmd_buffer, bool value)
    if (cmd_buffer->state.gfx.object_preemption == value)
       return;
 
-   genX(batch_set_preemption)(&cmd_buffer->batch, cmd_buffer->device->info,
+   genX(batch_set_preemption)(&cmd_buffer->batch, cmd_buffer->device,
                               cmd_buffer->state.current_pipeline,
                               value);
    cmd_buffer->state.gfx.object_preemption = value;
