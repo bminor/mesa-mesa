@@ -164,6 +164,73 @@ struct NOP_ctx_gfx10 {
    }
 };
 
+template <int Max> struct RegCounterMap {
+   void inc() { base++; }
+   void set(PhysReg reg) { update(reg, 0); }
+
+   uint8_t get(PhysReg reg)
+   {
+      if (present.test(reg.reg() & 0x7F)) {
+         for (entry& e : list) {
+            if (e.reg == reg.reg())
+               return MIN2(base - e.val, Max);
+         }
+      }
+      return Max;
+   }
+
+   void reset()
+   {
+      present.reset();
+      list.clear();
+      base = 0;
+   }
+
+   void join_min(const RegCounterMap& other)
+   {
+      for (const entry& e : other.list) {
+         int idx = other.base - e.val;
+         if (idx >= Max)
+            continue;
+
+         update(e.reg, idx);
+      }
+   }
+
+   void update(uint16_t reg, int idx)
+   {
+      int16_t val = base - idx;
+      for (entry& e : list) {
+         if (e.reg == reg) {
+            e.val = MAX2(e.val, val);
+            return;
+         }
+      }
+      list.push_back(entry{reg, val});
+      present.set(reg & 0x7F);
+   }
+
+   bool operator==(const RegCounterMap& other) const
+   {
+      /* Two maps with different bases could also be equal, but for our use case,
+       * i.e. checking for changes at loop headers, this is sufficient since we
+       * always join the predecessors into an empty map with base=0.
+       */
+      return base == other.base && list == other.list;
+   }
+
+private:
+   struct entry {
+      uint16_t reg;
+      int16_t val;
+      bool operator==(const entry& other) const { return reg == other.reg && val == other.val; }
+   };
+
+   std::bitset<128> present;
+   std::vector<entry> list;
+   int base = 0;
+};
+
 template <int Start, int Size, int Max> struct CounterMap {
 public:
    int base = 0;
@@ -263,8 +330,8 @@ struct NOP_ctx_gfx11 {
    std::bitset<256> vgpr_used_by_ds;
 
    /* VALUTransUseHazard */
-   VGPRCounterMap<15> valu_since_wr_by_trans;
-   VGPRCounterMap<2> trans_since_wr_by_trans;
+   RegCounterMap<6> valu_since_wr_by_trans;
+   RegCounterMap<2> trans_since_wr_by_trans;
 
    /* VALUMaskWriteHazard */
    std::bitset<128> sgpr_read_by_valu_as_lanemask;
@@ -1449,8 +1516,9 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
          if (op.physReg().reg() < 256)
             continue;
          for (unsigned i = 0; i < op.size(); i++) {
-            num_valu = std::min(num_valu, ctx.valu_since_wr_by_trans.get(op.physReg(), i));
-            num_trans = std::min(num_trans, ctx.trans_since_wr_by_trans.get(op.physReg(), i));
+            PhysReg reg = op.physReg().advance(i * 4);
+            num_valu = std::min(num_valu, ctx.valu_since_wr_by_trans.get(reg));
+            num_trans = std::min(num_trans, ctx.trans_since_wr_by_trans.get(reg));
          }
       }
       if (num_trans <= 1 && num_valu <= 5) {
@@ -1500,8 +1568,11 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
 
          if (is_trans) {
             for (Definition& def : instr->definitions) {
-               ctx.valu_since_wr_by_trans.set(def.physReg(), def.bytes());
-               ctx.trans_since_wr_by_trans.set(def.physReg(), def.bytes());
+               for (unsigned i = 0; i < def.size(); i++) {
+                  PhysReg reg = def.physReg().advance(i * 4);
+                  ctx.valu_since_wr_by_trans.set(reg);
+                  ctx.trans_since_wr_by_trans.set(reg);
+               }
             }
          }
 
