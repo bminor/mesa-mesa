@@ -1308,7 +1308,9 @@ panfrost_map_constant_buffer_cpu(struct panfrost_context *ctx,
    struct panfrost_resource *rsrc = pan_resource(cb->buffer);
 
    if (rsrc) {
-      panfrost_bo_mmap(rsrc->bo);
+      if (panfrost_bo_mmap(rsrc->bo))
+         return NULL;
+
       panfrost_flush_writer(ctx, rsrc, "CPU constant buffer mapping");
       panfrost_bo_wait(rsrc->bo, INT64_MAX, false);
 

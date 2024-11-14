@@ -409,8 +409,12 @@ panfrost_bo_create(struct panfrost_device *dev, size_t size, uint32_t flags,
     * never map since we don't care about their contents; they're purely
     * for GPU-internal use. But we do trace them anyway. */
 
-   if (!(flags & (PAN_BO_INVISIBLE | PAN_BO_DELAY_MMAP)))
-      panfrost_bo_mmap(bo);
+   if (!(flags & (PAN_BO_INVISIBLE | PAN_BO_DELAY_MMAP))) {
+      if (panfrost_bo_mmap(bo)) {
+         panfrost_bo_free(bo);
+         return NULL;
+      }
+   }
 
    p_atomic_set(&bo->refcnt, 1);
 
@@ -510,8 +514,8 @@ panfrost_bo_import(struct panfrost_device *dev, int fd)
       p_atomic_set(&bo->refcnt, 1);
 
       /* mmap imported BOs when PAN_MESA_DEBUG=dump */
-      if (dev->debug & PAN_DBG_DUMP)
-         panfrost_bo_mmap(bo);
+      if ((dev->debug & PAN_DBG_DUMP) && panfrost_bo_mmap(bo))
+         mesa_loge("failed to mmap");
    } else {
       /* bo->refcnt == 0 can happen if the BO
        * was being released but panfrost_bo_import() acquired the
