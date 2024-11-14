@@ -208,6 +208,8 @@ panfrost_get_batch_for_fbo(struct panfrost_context *ctx)
    /* If not, look up the job */
    struct panfrost_batch *batch =
       panfrost_get_batch(ctx, &ctx->pipe_framebuffer);
+   if (!batch)
+      return NULL;
 
    /* Set this job as the current FBO job. Will be reset when updating the
     * FB state and when submitting or releasing a job.
@@ -704,6 +706,9 @@ panfrost_flush_all_batches(struct panfrost_context *ctx, const char *reason)
       perf_debug(ctx, "Flushing everything due to: %s", reason);
 
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
+   if (!batch)
+      return;
+
    panfrost_batch_submit(ctx, batch);
 
    for (unsigned i = 0; i < PAN_MAX_BATCHES; i++) {

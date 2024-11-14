@@ -3069,6 +3069,8 @@ prepare_draw(struct pipe_context *pipe, const struct pipe_draw_info *info)
 
    /* Do some common setup */
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
+   if (!batch)
+      return NULL;
 
    /* Don't add too many jobs to a single batch. Job manager hardware has a
     * hard limit of 65536 jobs per job chain. Given a draw issues a maximum
@@ -3076,13 +3078,18 @@ prepare_draw(struct pipe_context *pipe, const struct pipe_draw_info *info)
     * could use 65536 / 3 as a limit, but we choose a smaller soft limit
     * (arbitrary) to avoid the risk of timeouts. This might not be a good
     * idea. */
-   if (unlikely(batch->draw_count > 10000))
+   if (unlikely(batch->draw_count > 10000)) {
       batch = panfrost_get_fresh_batch_for_fbo(ctx, "Too many draws");
+      if (!batch)
+         return NULL;
+   }
 
    enum mesa_prim reduced_prim = u_reduced_prim(info->mode);
 
    if (unlikely(!panfrost_compatible_batch_state(batch, reduced_prim))) {
       batch = panfrost_get_fresh_batch_for_fbo(ctx, "State change");
+      if (!batch)
+         return NULL;
 
       ASSERTED bool succ = panfrost_compatible_batch_state(batch, reduced_prim);
       assert(succ && "must be able to set state for a fresh batch");
@@ -3121,6 +3128,11 @@ panfrost_draw_indirect(struct pipe_context *pipe,
    }
 
    struct panfrost_batch *batch = prepare_draw(pipe, info);
+   if (!batch) {
+      mesa_loge("prepare_draw failed");
+      return;
+   }
+
    struct pipe_draw_info tmp_info = *info;
 
    panfrost_batch_read_rsrc(batch, pan_resource(indirect->buffer),
@@ -3165,6 +3177,11 @@ panfrost_multi_draw_direct(struct pipe_context *pipe,
 {
    struct panfrost_context *ctx = pan_context(pipe);
    struct panfrost_batch *batch = prepare_draw(pipe, info);
+   if (!batch) {
+      mesa_loge("prepare_draw failed");
+      return;
+   }
+
    struct pipe_draw_info tmp_info = *info;
    unsigned drawid = drawid_offset;
 

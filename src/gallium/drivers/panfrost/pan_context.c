@@ -69,6 +69,8 @@ panfrost_clear(struct pipe_context *pipe, unsigned buffers,
     */
    struct panfrost_context *ctx = pan_context(pipe);
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
+   if (!batch)
+      return;
 
    /* At the start of the batch, we can clear for free */
    if (batch->draw_count == 0) {

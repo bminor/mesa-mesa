@@ -1845,6 +1845,11 @@ panfrost_invalidate_resource(struct pipe_context *pctx,
    struct panfrost_batch *batch = panfrost_get_batch_for_fbo(ctx);
    struct panfrost_resource *rsrc = pan_resource(prsrc);
 
+   if (!batch) {
+      mesa_loge("panfrost_invalidate_resource failed");
+      return;
+   }
+
    rsrc->constant_stencil = true;
 
    /* Handle the glInvalidateFramebuffer case */
