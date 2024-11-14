@@ -1256,7 +1256,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
 
    result = radv_device_init_meta(device);
    if (result != VK_SUCCESS)
-      goto fail;
+      goto fail_meta;
 
    radv_device_init_msaa(device);
 
@@ -1264,14 +1264,14 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    if (device->vk.enabled_features.customBorderColors) {
       result = radv_device_init_border_color(device);
       if (result != VK_SUCCESS)
-         goto fail;
+         goto fail_meta;
    }
 
    if (device->vk.enabled_features.vertexInputDynamicState || device->vk.enabled_features.graphicsPipelineLibrary ||
        device->vk.enabled_features.shaderObject) {
       result = radv_device_init_vs_prologs(device);
       if (result != VK_SUCCESS)
-         goto fail;
+         goto fail_meta;
    }
 
    if (device->vk.enabled_features.graphicsPipelineLibrary || device->vk.enabled_features.shaderObject ||
@@ -1281,7 +1281,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
        device->vk.enabled_features.extendedDynamicState3ColorBlendEquation) {
       if (!radv_shader_part_cache_init(&device->ps_epilogs, &ps_epilog_ops)) {
          result = VK_ERROR_OUT_OF_HOST_MEMORY;
-         goto fail;
+         goto fail_meta;
       }
    }
 
