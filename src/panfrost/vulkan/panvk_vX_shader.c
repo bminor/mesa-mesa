@@ -485,6 +485,20 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                  nir_address_format_32bit_offset);
    }
 
+   if (nir->info.zero_initialize_shared_memory && nir->info.shared_size > 0) {
+      /* Align everything up to 16 bytes to take advantage of load store
+       * vectorization. */
+      nir->info.shared_size = align(nir->info.shared_size, 16);
+      NIR_PASS(_, nir, nir_zero_initialize_shared_memory, nir->info.shared_size,
+               16);
+
+      /* We need to call lower_compute_system_values again because
+       * nir_zero_initialize_shared_memory generates load_invocation_id which
+       * has to be lowered to load_invocation_index.
+       */
+      NIR_PASS(_, nir, nir_lower_compute_system_values, NULL);
+   }
+
    if (stage == MESA_SHADER_VERTEX) {
       /* We need the driver_location to match the vertex attribute location,
        * so we can use the attribute layout described by
