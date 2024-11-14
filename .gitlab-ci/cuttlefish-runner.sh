@@ -115,6 +115,8 @@ $ADB shell rm -f /vendor/lib/egl/libGLESv1_CM_emulation.so
 $ADB shell rm -f /vendor/lib/egl/libGLESv2_angle.so
 $ADB shell rm -f /vendor/lib/egl/libGLESv2_emulation.so
 
+$ADB shell rm -f /vendor/lib/hw/vulkan.*
+
 # replace on /vendor/lib64
 
 $ADB push /mesa-android/install/lib/libgallium_dri.so /vendor/lib64/libgallium_dri.so
@@ -123,11 +125,11 @@ $ADB push /mesa-android/install/lib/libEGL.so /vendor/lib64/egl/libEGL_mesa.so
 $ADB push /mesa-android/install/lib/libGLESv1_CM.so /vendor/lib64/egl/libGLESv1_CM_mesa.so
 $ADB push /mesa-android/install/lib/libGLESv2.so /vendor/lib64/egl/libGLESv2_mesa.so
 
-$ADB shell rm -f /vendor/lib64/egl/libEGL_angle.so
+$ADB push /mesa-android/install/lib/libvulkan_lvp.so /vendor/lib64/hw/vulkan.lvp.so
+$ADB push /mesa-android/install/lib/libvulkan_virtio.so /vendor/lib64/hw/vulkan.virtio.so
+
 $ADB shell rm -f /vendor/lib64/egl/libEGL_emulation.so
-$ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_angle.so
 $ADB shell rm -f /vendor/lib64/egl/libGLESv1_CM_emulation.so
-$ADB shell rm -f /vendor/lib64/egl/libGLESv2_angle.so
 $ADB shell rm -f /vendor/lib64/egl/libGLESv2_emulation.so
 
 # Check what GLES implementation Surfaceflinger is using before copying the new mesa libraries
