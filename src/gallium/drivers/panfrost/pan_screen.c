@@ -950,7 +950,11 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
       debug_get_flags_option("PAN_MESA_DEBUG", panfrost_debug_options, 0);
    screen->max_afbc_packing_ratio = debug_get_num_option(
       "PAN_MAX_AFBC_PACKING_RATIO", DEFAULT_MAX_AFBC_PACKING_RATIO);
-   panfrost_open_device(screen, fd, dev);
+
+   if (panfrost_open_device(screen, fd, dev)) {
+      ralloc_free(screen);
+      return NULL;
+   }
 
    if (dev->debug & PAN_DBG_NO_AFBC)
       dev->has_afbc = false;
