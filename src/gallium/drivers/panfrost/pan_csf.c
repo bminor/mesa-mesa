@@ -92,17 +92,19 @@ csf_update_tiler_oom_ctx(struct cs_builder *b, uint64_t addr)
     (PAN_INCREMENTAL_RENDERING_##_pass##_PASS * sizeof(struct panfrost_ptr)) + \
     offsetof(struct panfrost_ptr, gpu))
 
-static void
+static int
 csf_oom_handler_init(struct panfrost_context *ctx)
 {
+   struct panfrost_bo *cs_bo = NULL, *reg_save_bo = NULL;
    struct panfrost_device *dev = pan_device(ctx->base.screen);
-   struct panfrost_bo *cs_bo =
-      panfrost_bo_create(dev, 4096, 0, "Temporary CS buffer");
-   assert(cs_bo);
 
-   struct panfrost_bo *reg_save_bo =
+   cs_bo =
+      panfrost_bo_create(dev, 4096, 0, "Temporary CS buffer");
+   reg_save_bo =
       panfrost_bo_create(dev, 4096, 0, "reg save bo");
-   assert(reg_save_bo);
+
+   if (!cs_bo || !reg_save_bo)
+      goto fail;
 
    struct cs_buffer queue = {
       .cpu = cs_bo->ptr.cpu,
@@ -189,6 +191,17 @@ csf_oom_handler_init(struct panfrost_context *ctx)
    ctx->csf.tiler_oom_handler.cs_bo = cs_bo;
    ctx->csf.tiler_oom_handler.length = handler.length * sizeof(uint64_t);
    ctx->csf.tiler_oom_handler.save_bo = reg_save_bo;
+
+   return 0;
+
+fail:
+   if (cs_bo)
+      panfrost_bo_unreference(cs_bo);
+
+   if (reg_save_bo)
+      panfrost_bo_unreference(reg_save_bo);
+
+   return -1;
 }
 
 #undef FBD_OFFSET
@@ -1437,7 +1450,8 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    if (cs_bo == NULL)
       goto err_tiler_heap_cs_bo;
 
-   csf_oom_handler_init(ctx);
+   if (csf_oom_handler_init(ctx))
+      goto err_g_submit;
 
    struct cs_buffer init_buffer = {
       .cpu = cs_bo->ptr.cpu,
