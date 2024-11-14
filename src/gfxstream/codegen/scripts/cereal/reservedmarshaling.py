@@ -114,7 +114,10 @@ class VulkanReservedMarshalingCodegen(VulkanTypeIterator):
             else:
                 pass
 
-            streamNamespace = "gfxstream::aemu"
+            if self.variant == "guest":
+                streamNamespace = "gfxstream::aemu"
+            else:
+                streamNamespace = "android::base"
             if self.direction == "write":
                 self.cgen.stmt("%s::Stream::%s((uint8_t*)*%s)" % (streamNamespace, streamMethod, varname))
             else:
@@ -970,7 +973,10 @@ class VulkanReservedMarshaling(VulkanWrapperGenerator):
 
         cgen.line("// known or null extension struct")
 
-        streamNamespace = "gfxstream::aemu"
+        if self.variant == "guest":
+            streamNamespace = "gfxstream::aemu"
+        else:
+            streamNamespace = "android::base"
 
         if direction == "write":
             cgen.stmt("memcpy(*%s, &%s, sizeof(uint32_t));" % (self.ptrVarName, sizeVar))
