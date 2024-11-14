@@ -17,6 +17,7 @@
 #include "hwdef/rogue_hw_utils.h"
 #include "pco.h"
 #include "pco_common.h"
+#include "pco_data.h"
 #include "pco_ops.h"
 #include "spirv/nir_spirv.h"
 #include "util/compiler.h"
@@ -339,6 +340,8 @@ typedef struct _pco_shader {
 
    struct list_head funcs; /** List of functions. */
    unsigned next_func; /** Next function index. */
+
+   pco_data data; /** Shader data. */
 
    struct {
       struct util_dynarray buf; /** Shader binary. */
@@ -1116,8 +1119,8 @@ bool pco_dce(pco_shader *shader);
 bool pco_end(pco_shader *shader);
 bool pco_group_instrs(pco_shader *shader);
 bool pco_index(pco_shader *shader, bool skip_ssa);
-bool pco_nir_pfo(nir_shader *nir);
-bool pco_nir_pvi(nir_shader *nir);
+bool pco_nir_pfo(nir_shader *nir, pco_fs_data *fs);
+bool pco_nir_pvi(nir_shader *nir, pco_vs_data *vs);
 bool pco_opt(pco_shader *shader);
 bool pco_ra(pco_shader *shader);
 bool pco_schedule(pco_shader *shader);

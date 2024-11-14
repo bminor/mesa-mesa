@@ -3366,9 +3366,11 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
       case PVR_PDS_CONST_MAP_ENTRY_TYPE_DOUTU_ADDRESS: {
          const struct pvr_const_map_entry_doutu_address *const doutu_addr =
             (struct pvr_const_map_entry_doutu_address *)entries;
+
+         const pco_data *const vs_data = &state->gfx_pipeline->vs_data;
          const pvr_dev_addr_t exec_addr =
             PVR_DEV_ADDR_OFFSET(vertex_state->bo->dev_addr,
-                                vertex_state->entry_offset);
+                                vs_data->common.entry_offset);
          uint64_t addr = 0ULL;
 
          pvr_set_usc_execution_address64(&addr, exec_addr.addr);
@@ -4769,19 +4771,10 @@ pvr_update_draw_state(struct pvr_cmd_buffer_state *const state,
 static uint32_t pvr_calc_shared_regs_count(
    const struct pvr_graphics_pipeline *const gfx_pipeline)
 {
-   const struct pvr_pipeline_stage_state *const vertex_state =
-      &gfx_pipeline->shader_state.vertex.stage_state;
-
-   uint32_t shared_regs = vertex_state->const_shared_reg_count +
-                          vertex_state->const_shared_reg_offset;
+   uint32_t shared_regs = gfx_pipeline->vs_data.common.shareds;
 
    if (gfx_pipeline->shader_state.fragment.bo) {
-      const struct pvr_pipeline_stage_state *const fragment_state =
-         &gfx_pipeline->shader_state.fragment.stage_state;
-
-      uint32_t fragment_regs = fragment_state->const_shared_reg_count +
-                               fragment_state->const_shared_reg_offset;
-
+      uint32_t fragment_regs = gfx_pipeline->fs_data.common.shareds;
       shared_regs = MAX2(shared_regs, fragment_regs);
    }
 
@@ -4797,8 +4790,7 @@ pvr_emit_dirty_pds_state(const struct pvr_cmd_buffer *const cmd_buffer,
    const struct pvr_stage_allocation_descriptor_state
       *const vertex_descriptor_state =
          &state->gfx_pipeline->shader_state.vertex.descriptor_state;
-   const struct pvr_pipeline_stage_state *const vertex_stage_state =
-      &state->gfx_pipeline->shader_state.vertex.stage_state;
+   const pco_data *const vs_data = &state->gfx_pipeline->vs_data;
    struct pvr_csb *const csb = &sub_cmd->control_stream;
 
    if (!vertex_descriptor_state->pds_info.code_size_in_dwords)
@@ -4810,7 +4802,7 @@ pvr_emit_dirty_pds_state(const struct pvr_cmd_buffer *const cmd_buffer,
       state0.usc_target = ROGUE_VDMCTRL_USC_TARGET_ALL;
 
       state0.usc_common_size =
-         DIV_ROUND_UP(vertex_stage_state->const_shared_reg_count << 2,
+         DIV_ROUND_UP(vs_data->common.shareds,
                       ROGUE_VDMCTRL_PDS_STATE0_USC_COMMON_SIZE_UNIT_SIZE);
 
       state0.pds_data_size = DIV_ROUND_UP(
@@ -4835,21 +4827,33 @@ static void pvr_setup_output_select(struct pvr_cmd_buffer *const cmd_buffer)
 {
    const struct pvr_graphics_pipeline *const gfx_pipeline =
       cmd_buffer->state.gfx_pipeline;
-   const struct pvr_vertex_shader_state *const vertex_state =
-      &gfx_pipeline->shader_state.vertex;
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
    struct ROGUE_TA_STATE_HEADER *const header = &cmd_buffer->state.emit_header;
    struct pvr_ppp_state *const ppp_state = &cmd_buffer->state.ppp_state;
+   const pco_data *const vs_data = &gfx_pipeline->vs_data;
+   const pco_data *const fs_data = &gfx_pipeline->fs_data;
    uint32_t output_selects;
+   uint32_t varying[2];
 
-   /* TODO: Handle vertex and fragment shader state flags. */
+   const pco_range *varyings = vs_data->vs.varyings;
+
+   const bool has_point_size = dynamic_state->ia.primitive_topology ==
+                                  VK_PRIMITIVE_TOPOLOGY_POINT_LIST &&
+                               varyings[VARYING_SLOT_PSIZ].count > 0;
+
+   const bool has_viewport = varyings[VARYING_SLOT_VIEWPORT].count > 0;
+
+   const bool has_layer = varyings[VARYING_SLOT_LAYER].count > 0;
 
    pvr_csb_pack (&output_selects, TA_OUTPUT_SEL, state) {
-      state.rhw_pres = true;
-      state.vtxsize = DIV_ROUND_UP(vertex_state->vertex_output_size, 4U);
-      state.psprite_size_pres = (dynamic_state->ia.primitive_topology ==
-                                 VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+      state.rhw_pres = fs_data->fs.uses.w;
+      state.tsp_unclamped_z_pres = fs_data->fs.uses.z;
+
+      state.vtxsize = vs_data->vs.vtxouts;
+      state.psprite_size_pres = has_point_size;
+      state.vpt_tgt_pres = has_viewport;
+      state.render_tgt_pres = has_layer;
    }
 
    if (ppp_state->output_selects != output_selects) {
@@ -4857,13 +4861,25 @@ static void pvr_setup_output_select(struct pvr_cmd_buffer *const cmd_buffer)
       header->pres_outselects = true;
    }
 
-   if (ppp_state->varying_word[0] != vertex_state->varying[0]) {
-      ppp_state->varying_word[0] = vertex_state->varying[0];
+   pvr_csb_pack (&varying[0], TA_STATE_VARYING0, varying0) {
+      varying0.f32_linear = vs_data->vs.f32_smooth;
+      varying0.f32_flat = vs_data->vs.f32_flat;
+      varying0.f32_npc = vs_data->vs.f32_npc;
+   }
+
+   if (ppp_state->varying_word[0] != varying[0]) {
+      ppp_state->varying_word[0] = varying[0];
       header->pres_varying_word0 = true;
    }
 
-   if (ppp_state->varying_word[1] != vertex_state->varying[1]) {
-      ppp_state->varying_word[1] = vertex_state->varying[1];
+   pvr_csb_pack (&varying[1], TA_STATE_VARYING1, varying1) {
+      varying1.f16_linear = vs_data->vs.f16_smooth;
+      varying1.f16_flat = vs_data->vs.f16_flat;
+      varying1.f16_npc = vs_data->vs.f16_npc;
+   }
+
+   if (ppp_state->varying_word[1] != varying[1]) {
+      ppp_state->varying_word[1] = varying[1];
       header->pres_varying_word1 = true;
    }
 }
@@ -5402,15 +5418,16 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
                                   struct pvr_sub_cmd_gfx *const sub_cmd)
 {
    struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
+   const pco_data *const fs_data = &state->gfx_pipeline->fs_data;
 
-   const struct pvr_fragment_shader_state *const fragment =
+   const struct pvr_fragment_shader_state *const fragment_shader_state =
       &state->gfx_pipeline->shader_state.fragment;
    const struct pvr_stage_allocation_descriptor_state *descriptor_shader_state =
-      &fragment->descriptor_state;
+      &fragment_shader_state->descriptor_state;
    const struct pvr_pipeline_stage_state *fragment_state =
-      &fragment->stage_state;
+      &fragment_shader_state->stage_state;
    const struct pvr_pds_upload *pds_coeff_program =
-      &fragment->pds_coeff_program;
+      &fragment_shader_state->pds_coeff_program;
 
    const struct pvr_physical_device *pdevice = cmd_buffer->device->pdevice;
    struct ROGUE_TA_STATE_HEADER *const header = &state->emit_header;
@@ -5425,7 +5442,7 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
                    ROGUE_TA_STATE_PDS_SIZEINFO1_PDS_VARYINGSIZE_UNIT_SIZE);
 
    const uint32_t usc_varying_size =
-      DIV_ROUND_UP(fragment_state->coefficient_size,
+      DIV_ROUND_UP(fs_data->common.coeffs,
                    ROGUE_TA_STATE_PDS_SIZEINFO1_USC_VARYINGSIZE_UNIT_SIZE);
 
    const uint32_t pds_temp_size =
@@ -5433,7 +5450,7 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
                    ROGUE_TA_STATE_PDS_SIZEINFO1_PDS_TEMPSIZE_UNIT_SIZE);
 
    const uint32_t usc_shared_size =
-      DIV_ROUND_UP(fragment_state->const_shared_reg_count,
+      DIV_ROUND_UP(fs_data->common.shareds,
                    ROGUE_TA_STATE_PDS_SIZEINFO2_USC_SHAREDSIZE_UNIT_SIZE);
 
    const uint32_t max_tiles_in_flight =
@@ -5453,7 +5470,7 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
                  TA_STATE_PDS_SHADERBASE,
                  shader_base) {
       const struct pvr_pds_upload *const pds_upload =
-         &fragment->pds_fragment_program;
+         &fragment_shader_state->pds_fragment_program;
 
       shader_base.addr = PVR_DEV_ADDR(pds_upload->data_offset);
    }
@@ -6010,7 +6027,7 @@ pvr_emit_dirty_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
    if (!dynamic_state->rs.rasterizer_discard_enable &&
        state->dirty.fragment_descriptors &&
        state->gfx_pipeline->shader_state.fragment.bo &&
-       !state->gfx_pipeline->shader_state.fragment.stage_state.empty_program) {
+       !state->gfx_pipeline->fs_data.common.uses.empty) {
       pvr_setup_fragment_state_pointers(cmd_buffer, sub_cmd);
    }
 
@@ -6127,22 +6144,16 @@ static void pvr_emit_dirty_vdm_state(struct pvr_cmd_buffer *const cmd_buffer,
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
    const struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
-   const struct pvr_vertex_shader_state *const vertex_shader_state =
-      &state->gfx_pipeline->shader_state.vertex;
+   const pco_data *const vs_data = &state->gfx_pipeline->vs_data;
    struct pvr_csb *const csb = &sub_cmd->control_stream;
-   uint32_t vs_output_size;
    uint32_t max_instances;
    uint32_t cam_size;
 
    /* CAM Calculations and HW state take vertex size aligned to DWORDS. */
-   vs_output_size =
-      DIV_ROUND_UP(vertex_shader_state->vertex_output_size,
-                   ROGUE_VDMCTRL_VDM_STATE4_VS_OUTPUT_SIZE_UNIT_SIZE);
-
-   assert(vs_output_size <= max_user_vertex_output_components);
+   assert(vs_data->vs.vtxouts <= max_user_vertex_output_components);
 
    pvr_calculate_vertex_cam_size(dev_info,
-                                 vs_output_size,
+                                 vs_data->vs.vtxouts,
                                  true,
                                  &cam_size,
                                  &max_instances);
@@ -6210,8 +6221,8 @@ static void pvr_emit_dirty_vdm_state(struct pvr_cmd_buffer *const cmd_buffer,
    }
 
    if (header.vs_other_present) {
-      const uint32_t usc_unified_store_size_in_bytes =
-         vertex_shader_state->vertex_input_size << 2;
+      const uint32_t usc_unified_store_size_in_bytes = vs_data->common.vtxins
+                                                       << 2;
 
       pvr_csb_emit (csb, VDMCTRL_VDM_STATE3, state3) {
          state3.vs_pds_code_base_addr =
@@ -6219,7 +6230,7 @@ static void pvr_emit_dirty_vdm_state(struct pvr_cmd_buffer *const cmd_buffer,
       }
 
       pvr_csb_emit (csb, VDMCTRL_VDM_STATE4, state4) {
-         state4.vs_output_size = vs_output_size;
+         state4.vs_output_size = vs_data->vs.vtxouts;
       }
 
       pvr_csb_emit (csb, VDMCTRL_VDM_STATE5, state5) {
@@ -6246,10 +6257,7 @@ static VkResult pvr_validate_draw_state(struct pvr_cmd_buffer *cmd_buffer)
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
    const struct pvr_graphics_pipeline *const gfx_pipeline = state->gfx_pipeline;
-   const struct pvr_pipeline_stage_state *const fragment_state =
-      &gfx_pipeline->shader_state.fragment.stage_state;
-   const struct pvr_pipeline_stage_state *const vertex_state =
-      &gfx_pipeline->shader_state.vertex.stage_state;
+   const pco_data *const fs_data = &gfx_pipeline->fs_data;
    struct pvr_sub_cmd_gfx *sub_cmd;
    bool fstencil_writemask_zero;
    bool bstencil_writemask_zero;
@@ -6282,7 +6290,7 @@ static VkResult pvr_validate_draw_state(struct pvr_cmd_buffer *cmd_buffer)
    if (PVR_HAS_FEATURE(&cmd_buffer->device->pdevice->dev_info,
                        compute_overlap)) {
       uint32_t coefficient_size =
-         DIV_ROUND_UP(fragment_state->coefficient_size,
+         DIV_ROUND_UP(fs_data->common.coeffs,
                       ROGUE_TA_STATE_PDS_SIZEINFO1_USC_VARYINGSIZE_UNIT_SIZE);
 
       if (coefficient_size >
@@ -6290,10 +6298,10 @@ static VkResult pvr_validate_draw_state(struct pvr_cmd_buffer *cmd_buffer)
          sub_cmd->disable_compute_overlap = true;
    }
 
-   sub_cmd->frag_uses_atomic_ops |= fragment_state->uses_atomic_ops;
-   sub_cmd->frag_has_side_effects |= fragment_state->has_side_effects;
-   sub_cmd->frag_uses_texture_rw |= fragment_state->uses_texture_rw;
-   sub_cmd->vertex_uses_texture_rw |= vertex_state->uses_texture_rw;
+   sub_cmd->frag_uses_atomic_ops |= fs_data->common.uses.atomics;
+   sub_cmd->frag_has_side_effects |= fs_data->common.uses.side_effects;
+   sub_cmd->frag_uses_texture_rw |= false;
+   sub_cmd->vertex_uses_texture_rw |= false;
 
    sub_cmd->job.get_vis_results = state->vis_test_enabled;
 
@@ -6656,8 +6664,8 @@ static void pvr_emit_vdm_index_list(struct pvr_cmd_buffer *cmd_buffer,
                                     uint32_t stride)
 {
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
-   const bool vertex_shader_has_side_effects =
-      state->gfx_pipeline->shader_state.vertex.stage_state.has_side_effects;
+
+   const pco_data *const vs_data = &state->gfx_pipeline->vs_data;
    struct ROGUE_VDMCTRL_INDEX_LIST0 list_hdr = { pvr_cmd_header(
       VDMCTRL_INDEX_LIST0) };
    pvr_dev_addr_t index_buffer_addr = PVR_DEV_ADDR_INVALID;
@@ -6695,7 +6703,7 @@ static void pvr_emit_vdm_index_list(struct pvr_cmd_buffer *cmd_buffer,
    list_hdr.degen_cull_enable =
       PVR_HAS_FEATURE(&cmd_buffer->device->pdevice->dev_info,
                       vdm_degenerate_culling) &&
-      !vertex_shader_has_side_effects;
+      !vs_data->common.uses.side_effects;
 
    if (state->draw_state.draw_indirect) {
       assert(buffer);

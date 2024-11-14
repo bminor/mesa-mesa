@@ -377,6 +377,8 @@ bool pco_ra(pco_shader *shader)
                               allocable_temps,
                               allocable_vtxins,
                               allocable_interns);
+
+      shader->data.common.temps = MAX2(shader->data.common.temps, func->temps);
    }
 
    return progress;

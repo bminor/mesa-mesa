@@ -40,26 +40,6 @@
 #include "vk_log.h"
 #include "vk_render_pass.h"
 
-/*****************************************************************************
-  PDS pre-baked program generation parameters and variables.
-*****************************************************************************/
-/* These would normally be produced by the compiler or other code. We're using
- * them for now just to speed up things. All of these should eventually be
- * removed.
- */
-
-static const struct {
-   /* Indicates the amount of temporaries for the shader. */
-   uint32_t temp_count;
-   enum pvr_msaa_mode msaa_mode;
-   /* Indicates the presence of PHAS instruction. */
-   bool has_phase_rate_change;
-} pvr_pds_fragment_program_params = {
-   .temp_count = 0,
-   .msaa_mode = PVR_MSAA_MODE_PIXEL,
-   .has_phase_rate_change = false,
-};
-
 static inline bool pvr_subpass_has_msaa_input_attachment(
    struct pvr_render_subpass *subpass,
    const VkRenderPassCreateInfo2 *pCreateInfo)
@@ -330,14 +310,20 @@ pvr_generate_load_op_shader(struct pvr_device *device,
    if (result != VK_SUCCESS)
       return result;
 
-   result = pvr_pds_fragment_program_create_and_upload(
-      device,
-      allocator,
-      load_op->usc_frag_prog_bo,
-      pvr_pds_fragment_program_params.temp_count,
-      pvr_pds_fragment_program_params.msaa_mode,
-      pvr_pds_fragment_program_params.has_phase_rate_change,
-      &load_op->pds_frag_prog);
+   /* TODO: amend this once the hardcoded shaders have been removed. */
+   struct pvr_fragment_shader_state fragment_state = {
+      .bo = load_op->usc_frag_prog_bo,
+      .sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+      .pds_fragment_program = load_op->pds_frag_prog,
+   };
+
+   result = pvr_pds_fragment_program_create_and_upload(device,
+                                                       allocator,
+                                                       NULL,
+                                                       &fragment_state);
+   load_op->usc_frag_prog_bo = fragment_state.bo;
+   load_op->pds_frag_prog = fragment_state.pds_fragment_program;
+
    if (result != VK_SUCCESS)
       goto err_free_usc_frag_prog_bo;
 

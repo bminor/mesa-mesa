@@ -288,11 +288,11 @@ void pco_instr_delete(pco_instr *instr)
 }
 
 /**
- * \brief Returns the number of temps allocated to the entrypoint function.
+ * \brief Returns the shader data.
  *
  * \param[in] shader PCO shader.
  */
-unsigned pco_shader_temps(pco_shader *shader)
+pco_data *pco_shader_data(pco_shader *shader)
 {
-   return pco_entrypoint(shader)->temps;
+   return &shader->data;
 }

@@ -142,6 +142,9 @@ void pco_shader_finalize(pco_ctx *ctx, pco_shader *shader)
 {
    puts("finishme: pco_shader_finalize");
 
+   pco_func *entry = pco_entrypoint(shader);
+   shader->data.common.entry_offset = entry->enc_offset;
+
    if (pco_should_print_binary(shader))
       pco_print_binary(shader, stdout, "after finalizing");
 }

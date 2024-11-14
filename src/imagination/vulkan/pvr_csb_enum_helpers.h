@@ -109,27 +109,6 @@ pvr_zls_format_type_is_int(enum ROGUE_CR_ZLS_FORMAT_TYPE type)
 }
 
 /******************************************************************************
-   PDS
- ******************************************************************************/
-
-/* clang-format off */
-static inline enum ROGUE_PDSINST_DOUTU_SAMPLE_RATE
-pvr_pdsinst_doutu_sample_rate(enum pvr_msaa_mode msaa_mode)
-/* clang-format on */
-{
-   switch (msaa_mode) {
-   case PVR_MSAA_MODE_PIXEL:
-      return ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
-   case PVR_MSAA_MODE_SELECTIVE:
-      return ROGUE_PDSINST_DOUTU_SAMPLE_RATE_SELECTIVE;
-   case PVR_MSAA_MODE_FULL:
-      return ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL;
-   default:
-      unreachable("Undefined MSAA mode.");
-   }
-}
-
-/******************************************************************************
    PBESTATE
  ******************************************************************************/
 

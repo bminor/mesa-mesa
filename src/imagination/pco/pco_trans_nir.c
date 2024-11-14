@@ -12,6 +12,7 @@
 
 #include "compiler/glsl/list.h"
 #include "compiler/shader_enums.h"
+#include "hwdef/rogue_hw_defs.h"
 #include "pco.h"
 #include "pco_builder.h"
 #include "pco_internal.h"
@@ -182,21 +183,25 @@ pco_ref_nir_alu_src_t(const nir_alu_instr *alu, unsigned src, trans_ctx *tctx)
 static pco_instr *
 trans_load_input_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
-   puts("finishme: trans_load_input_vs");
+   ASSERTED unsigned base = nir_intrinsic_base(intr);
+   assert(!base);
 
-   /* unsigned base = nir_intrinsic_base(intr); */
-   unsigned base =
-      nir_intrinsic_io_semantics(intr).location - VERT_ATTRIB_GENERIC0;
+   ASSERTED nir_alu_type type = nir_intrinsic_dest_type(intr);
+   assert(type == nir_type_float32);
+   /* TODO: f16 support. */
+
+   ASSERTED const nir_src offset = intr->src[0];
+   assert(nir_src_as_uint(offset) == 0);
+
+   gl_vert_attrib location = nir_intrinsic_io_semantics(intr).location;
    unsigned component = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(dest);
 
-   const nir_src offset = intr->src[0];
-   assert(nir_src_as_uint(offset) == 0);
+   const pco_range *range = &tctx->shader->data.vs.attribs[location];
+   assert(component + chans <= range->count);
 
-   /* TODO NEXT: Wrong! Do properly! */
-   unsigned vtxin_offset = (4 * base) + component;
-   pco_ref src = pco_ref_hwreg_vec(vtxin_offset, PCO_REG_CLASS_VTXIN, chans);
-
+   pco_ref src =
+      pco_ref_hwreg_vec(range->start + component, PCO_REG_CLASS_VTXIN, chans);
    return pco_mov(&tctx->b, dest, src, .rpt = chans);
 }
 
@@ -211,34 +216,28 @@ trans_load_input_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 static pco_instr *
 trans_store_output_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 {
-   puts("finishme: trans_store_output_vs");
+   ASSERTED unsigned base = nir_intrinsic_base(intr);
+   assert(!base);
 
-   /* unsigned base = nir_intrinsic_base(intr); */
+   ASSERTED nir_alu_type type = nir_intrinsic_src_type(intr);
+   assert(type == nir_type_float32);
+   /* TODO: f16 support. */
 
-   unsigned location = nir_intrinsic_io_semantics(intr).location;
-   unsigned base;
-   switch (location) {
-   case VARYING_SLOT_POS:
-      base = 0;
-      break;
+   ASSERTED const nir_src offset = intr->src[1];
+   assert(nir_src_as_uint(offset) == 0);
 
-   case VARYING_SLOT_VAR0 ... VARYING_SLOT_VAR31:
-      base = location - VARYING_SLOT_VAR0 + 1;
-      break;
-
-   default:
-      unreachable();
-   }
-
+   gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
    unsigned component = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(src);
 
-   const nir_src offset = intr->src[1];
-   assert(nir_src_as_uint(offset) == 0);
+   /* Only contiguous write masks supported. */
+   ASSERTED unsigned write_mask = nir_intrinsic_write_mask(intr);
+   assert(write_mask == BITFIELD_MASK(chans));
 
-   /* TODO NEXT: Wrong! Do properly! */
-   pco_ref vtxout_addr = pco_ref_val8((4 * base) + component);
+   const pco_range *range = &tctx->shader->data.vs.varyings[location];
+   assert(component + chans <= range->count);
 
+   pco_ref vtxout_addr = pco_ref_val8(range->start + component);
    return pco_uvsw_write(&tctx->b, src, vtxout_addr, .rpt = chans);
 }
 
@@ -253,8 +252,7 @@ trans_store_output_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 static pco_instr *
 trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
-   puts("finishme: trans_load_input_fs");
-
+   pco_fs_data *fs_data = &tctx->shader->data.fs;
    ASSERTED unsigned base = nir_intrinsic_base(intr);
    assert(!base);
 
@@ -264,34 +262,116 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    const nir_src offset = intr->src[0];
    assert(nir_src_as_uint(offset) == 0);
 
-   /* TODO NEXT: Wrong! Do properly! */
-   unsigned loc_offset =
-      nir_intrinsic_io_semantics(intr).location - VARYING_SLOT_VAR0;
-   /* TEMP: +1 to skip over wcoeffs */
-   unsigned coeffs_index = 4 * (loc_offset + component + 1);
-   unsigned wcoeffs_index = 0;
+   struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
+   gl_varying_slot location = io_semantics.location;
 
-   pco_ref coeffs =
-      pco_ref_hwreg_vec(coeffs_index, PCO_REG_CLASS_COEFF, 4 * chans);
-   pco_ref wcoeffs = pco_ref_hwreg_vec(wcoeffs_index, PCO_REG_CLASS_COEFF, 4);
+   nir_variable *var = nir_find_variable_with_location(tctx->shader->nir,
+                                                       nir_var_shader_in,
+                                                       location);
+
+   enum pco_itr_mode itr_mode = PCO_ITR_MODE_PIXEL;
+   assert(!(var->data.sample && var->data.centroid));
+   if (var->data.sample)
+      itr_mode = PCO_ITR_MODE_SAMPLE;
+   else if (var->data.centroid)
+      itr_mode = PCO_ITR_MODE_CENTROID;
+
+   if (location == VARYING_SLOT_POS) {
+      /* Only scalar supported for now. */
+      /* TODO: support vector for zw. */
+      assert(chans == 1);
+
+      /* TODO: support packing/partial vars. */
+      assert(!var->data.location_frac);
+
+      assert(var->data.interpolation == INTERP_MODE_NOPERSPECTIVE);
+
+      /* Special case: x and y are loaded from special registers. */
+      /* TODO: select appropriate regs if sample rate shading. */
+      switch (component) {
+      case 0: /* x */
+         return pco_mov(&tctx->b,
+                        dest,
+                        pco_ref_hwreg(PCO_SR_X_P, PCO_REG_CLASS_SPEC));
+
+      case 1: /* y */
+         return pco_mov(&tctx->b,
+                        dest,
+                        pco_ref_hwreg(PCO_SR_Y_P, PCO_REG_CLASS_SPEC));
+
+      case 2:
+         assert(fs_data->uses.z);
+         component = 0;
+         break;
+
+      case 3:
+         assert(fs_data->uses.w);
+         component = fs_data->uses.z ? 1 : 0;
+         break;
+
+      default:
+         unreachable();
+      }
+   }
+
+   const pco_range *range = &fs_data->varyings[location];
+   assert(component + (ROGUE_USC_COEFFICIENT_SET_SIZE * chans) <= range->count);
+
+   unsigned coeffs_index =
+      range->start + (ROGUE_USC_COEFFICIENT_SET_SIZE * component);
+
+   pco_ref coeffs = pco_ref_hwreg_vec(coeffs_index,
+                                      PCO_REG_CLASS_COEFF,
+                                      ROGUE_USC_COEFFICIENT_SET_SIZE * chans);
    pco_ref itr_count = pco_ref_val16(chans);
 
-   if (PVR_HAS_FEATURE(tctx->pco_ctx->dev_info, usc_itrsmp_enhanced)) {
-      return pco_ditrp(&tctx->b,
-                       dest,
-                       pco_ref_drc(PCO_DRC_0),
-                       coeffs,
-                       wcoeffs,
-                       itr_count,
-                       .itr_mode = PCO_ITR_MODE_PIXEL);
-   } else {
-      return pco_fitrp(&tctx->b,
-                       dest,
-                       pco_ref_drc(PCO_DRC_0),
-                       coeffs,
-                       wcoeffs,
-                       itr_count,
-                       .itr_mode = PCO_ITR_MODE_PIXEL);
+   bool usc_itrsmp_enhanced =
+      PVR_HAS_FEATURE(tctx->pco_ctx->dev_info, usc_itrsmp_enhanced);
+
+   switch (var->data.interpolation) {
+   case INTERP_MODE_SMOOTH: {
+      assert(fs_data->uses.w);
+
+      unsigned wcoeffs_index = fs_data->uses.z ? ROGUE_USC_COEFFICIENT_SET_SIZE
+                                               : 0;
+
+      pco_ref wcoeffs = pco_ref_hwreg_vec(wcoeffs_index,
+                                          PCO_REG_CLASS_COEFF,
+                                          ROGUE_USC_COEFFICIENT_SET_SIZE);
+
+      return usc_itrsmp_enhanced ? pco_ditrp(&tctx->b,
+                                             dest,
+                                             pco_ref_drc(PCO_DRC_0),
+                                             coeffs,
+                                             wcoeffs,
+                                             itr_count,
+                                             .itr_mode = itr_mode)
+                                 : pco_fitrp(&tctx->b,
+                                             dest,
+                                             pco_ref_drc(PCO_DRC_0),
+                                             coeffs,
+                                             wcoeffs,
+                                             itr_count,
+                                             .itr_mode = itr_mode);
+   }
+
+   case INTERP_MODE_NOPERSPECTIVE:
+      return usc_itrsmp_enhanced ? pco_ditr(&tctx->b,
+                                            dest,
+                                            pco_ref_drc(PCO_DRC_0),
+                                            coeffs,
+                                            itr_count,
+                                            .itr_mode = itr_mode)
+                                 : pco_fitr(&tctx->b,
+                                            dest,
+                                            pco_ref_drc(PCO_DRC_0),
+                                            coeffs,
+                                            itr_count,
+                                            .itr_mode = itr_mode);
+
+   default:
+      /* Should have been previously lowered. */
+      unreachable();
    }
 }
 
@@ -306,21 +386,26 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 static pco_instr *
 trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 {
+   ASSERTED unsigned base = nir_intrinsic_base(intr);
+   assert(!base);
+
    assert(pco_ref_is_scalar(src));
-   puts("finishme: trans_store_output_fs");
+   unsigned component = nir_intrinsic_component(intr);
 
-   bool is_reg_store = nir_src_is_const(intr->src[1]);
-   unsigned base = nir_intrinsic_base(intr);
+   ASSERTED const nir_src offset = intr->src[1];
+   assert(nir_src_as_uint(offset) == 0);
 
-   if (is_reg_store) {
-      /* TODO NEXT: Wrong! Do properly! */
-      pco_ref dest = pco_ref_hwreg(base, PCO_REG_CLASS_PIXOUT);
-      /* TODO NEXT: optimize this to be propagated (backwards?) */
-      /* return pco_mbyp0(&tctx->b, dest, src, .olchk = true); */
-      return pco_mov(&tctx->b, dest, src, .olchk = true);
-   }
+   gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
 
-   unreachable();
+   const pco_range *range = &tctx->shader->data.fs.outputs[location];
+   assert(component < range->count);
+
+   ASSERTED bool output_reg = tctx->shader->data.fs.output_reg[location];
+   assert(output_reg);
+   /* TODO: tile buffer support. */
+
+   pco_ref dest = pco_ref_hwreg(range->start + component, PCO_REG_CLASS_PIXOUT);
+   return pco_mov(&tctx->b, dest, src, .olchk = true);
 }
 
 /**
@@ -804,12 +889,18 @@ static pco_block *trans_cf_nodes(trans_ctx *tctx,
  *
  * \param[in] ctx PCO compiler context.
  * \param[in] nir NIR shader.
+ * \param[in] data Shader-specific data.
  * \param[in] mem_ctx Ralloc memory allocation context.
  * \return The PCO shader.
  */
-pco_shader *pco_trans_nir(pco_ctx *ctx, nir_shader *nir, void *mem_ctx)
+pco_shader *
+pco_trans_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data, void *mem_ctx)
 {
    pco_shader *shader = pco_shader_create(ctx, nir, mem_ctx);
+
+   if (data)
+      memcpy(&shader->data, data, sizeof(*data));
+
    trans_ctx tctx = {
       .pco_ctx = ctx,
       .shader = shader,

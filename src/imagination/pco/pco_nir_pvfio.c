@@ -10,6 +10,8 @@
  * \brief PCO NIR per-vertex/fragment input/output passes.
  */
 
+#include "compiler/glsl_types.h"
+#include "compiler/shader_enums.h"
 #include "nir.h"
 #include "nir_builder.h"
 #include "pco.h"
@@ -25,6 +27,7 @@
 /** Per-fragment output pass state. */
 struct pfo_state {
    struct util_dynarray stores; /** List of fragment stores. */
+   pco_fs_data *fs; /** Fragment-specific data. */
 };
 
 /**
@@ -49,6 +52,36 @@ static inline nir_intrinsic_instr *is_intr(nir_instr *instr,
       return NULL;
 
    return intr;
+}
+
+/**
+ * \brief Returns the GLSL base type equivalent of a pipe format.
+ *
+ * \param[in] format Pipe format.
+ * \return The GLSL base type, or GLSL_TYPE_ERROR if unsupported/invalid.
+ */
+static inline enum glsl_base_type base_type_from_fmt(enum pipe_format format)
+{
+   const struct util_format_description *desc = util_format_description(format);
+   int chan = util_format_get_first_non_void_channel(format);
+   if (chan < 0)
+      return GLSL_TYPE_ERROR;
+
+   switch (desc->channel[chan].type) {
+   case UTIL_FORMAT_TYPE_UNSIGNED:
+      return GLSL_TYPE_UINT;
+
+   case UTIL_FORMAT_TYPE_SIGNED:
+      return GLSL_TYPE_INT;
+
+   case UTIL_FORMAT_TYPE_FLOAT:
+      return GLSL_TYPE_FLOAT;
+
+   default:
+      break;
+   }
+
+   return GLSL_TYPE_ERROR;
 }
 
 /**
@@ -89,31 +122,48 @@ static bool lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
       assert(nir_src_num_components(*value) == 4);
       assert(nir_src_bit_size(*value) == 32);
 
-      /* Update the type of the stored variable. */
-      nir_variable *var = nir_find_variable_with_location(
-         b->shader,
-         nir_var_shader_out,
-         nir_intrinsic_io_semantics(intr).location);
+      struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
+      gl_frag_result location = io_semantics.location;
 
-      var->type = glsl_uint_type();
+      enum pipe_format format = state->fs->output_formats[location];
+
+      unsigned format_bits = util_format_get_blocksizebits(format);
+      assert(!(format_bits % 32));
+
+      /* Update the type of the stored variable. */
+      nir_variable *var = nir_find_variable_with_location(b->shader,
+                                                          nir_var_shader_out,
+                                                          location);
+      assert(var);
+
+      var->type = glsl_simple_explicit_type(base_type_from_fmt(format),
+                                            format_bits / 32,
+                                            1,
+                                            0,
+                                            false,
+                                            0);
 
       b->cursor = nir_after_block(
          nir_impl_last_block(nir_shader_get_entrypoint(b->shader)));
 
       /* Emit and track the new store. */
-      /* TODO NEXT: base is calculated to be the register offset. */
-      nir_intrinsic_instr *store =
-         nir_store_output(b,
-                          nir_pack_unorm_4x8(b, value->ssa),
-                          offset->ssa,
-                          .base = nir_intrinsic_base(intr),
-                          .write_mask = 1,
-                          .component = 0,
-                          .src_type = nir_type_uint32,
-                          .io_semantics = nir_intrinsic_io_semantics(intr),
-                          .io_xfb = nir_intrinsic_io_xfb(intr),
-                          .io_xfb2 = nir_intrinsic_io_xfb2(intr));
-      util_dynarray_append(&state->stores, nir_intrinsic_instr *, store);
+      /* TODO: support other formats. */
+      if (format == PIPE_FORMAT_R8G8B8A8_UNORM) {
+         nir_intrinsic_instr *store =
+            nir_store_output(b,
+                             nir_pack_unorm_4x8(b, value->ssa),
+                             offset->ssa,
+                             .base = nir_intrinsic_base(intr),
+                             .write_mask = 1,
+                             .component = 0,
+                             .src_type = nir_type_uint32,
+                             .io_semantics = io_semantics,
+                             .io_xfb = nir_intrinsic_io_xfb(intr),
+                             .io_xfb2 = nir_intrinsic_io_xfb2(intr));
+         util_dynarray_append(&state->stores, nir_intrinsic_instr *, store);
+      } else {
+         unreachable();
+      }
 
       /* Remove the old store. */
       b->cursor = nir_instr_remove(instr);
@@ -128,13 +178,14 @@ static bool lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
  * \brief Per-fragment output pass.
  *
  * \param[in,out] nir NIR shader.
+ * \param[in,out] fs Fragment shader-specific data.
  * \return True if the pass made progress.
  */
-bool pco_nir_pfo(nir_shader *nir)
+bool pco_nir_pfo(nir_shader *nir, pco_fs_data *fs)
 {
    assert(nir->info.stage == MESA_SHADER_FRAGMENT);
 
-   struct pfo_state state = {};
+   struct pfo_state state = { .fs = fs };
    util_dynarray_init(&state.stores, NULL);
 
    bool progress =
@@ -149,9 +200,10 @@ bool pco_nir_pfo(nir_shader *nir)
  * \brief Per-vertex input pass.
  *
  * \param[in,out] nir NIR shader.
+ * \param[in,out] vs Vertex shader-specific data.
  * \return True if the pass made progress.
  */
-bool pco_nir_pvi(nir_shader *nir)
+bool pco_nir_pvi(nir_shader *nir, pco_vs_data *vs)
 {
    assert(nir->info.stage == MESA_SHADER_VERTEX);
 

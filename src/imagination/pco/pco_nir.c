@@ -10,6 +10,7 @@
  * \brief NIR-specific functions.
  */
 
+#include "nir/nir_builder.h"
 #include "pco.h"
 #include "pco_internal.h"
 
@@ -141,12 +142,31 @@ static uint8_t vectorize_filter(const nir_instr *instr, UNUSED const void *data)
 }
 
 /**
+ * \brief Filters for a varying position load_input in frag shaders.
+ *
+ * \param[in] instr Instruction.
+ * \param[in] data User data.
+ * \return True if the instruction was found.
+ */
+static bool frag_pos_filter(const nir_instr *instr, UNUSED const void *data)
+{
+   assert(instr->type == nir_instr_type_intrinsic);
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   if (intr->intrinsic != nir_intrinsic_load_input)
+      return false;
+
+   return nir_intrinsic_io_semantics(intr).location == VARYING_SLOT_POS;
+}
+
+/**
  * \brief Lowers a NIR shader.
  *
  * \param[in] ctx PCO compiler context.
  * \param[in,out] nir NIR shader.
+ * \param[in,out] data Shader data.
  */
-void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
+void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 {
    NIR_PASS(_,
             nir,
@@ -163,9 +183,9 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
             nir_var_shader_in | nir_var_shader_out);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, nir, pco_nir_pfo);
+      NIR_PASS(_, nir, pco_nir_pfo, &data->fs);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
-      NIR_PASS(_, nir, pco_nir_pvi);
+      NIR_PASS(_, nir, pco_nir_pvi, &data->vs);
    }
 
    /* TODO: this should happen in the linking stage to cull unused I/O. */
@@ -196,10 +216,26 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
       NIR_PASS(_, nir, nir_opt_cse);
    } while (progress);
 
-   NIR_PASS(_,
-            nir,
-            nir_opt_vectorize_io,
-            nir_var_shader_in | nir_var_shader_out);
+   nir_variable_mode vec_modes = nir_var_shader_in;
+   /* Fragment shader needs scalar writes after pfo. */
+   if (nir->info.stage != MESA_SHADER_FRAGMENT)
+      vec_modes |= nir_var_shader_out;
+
+   NIR_PASS(_, nir, nir_opt_vectorize_io, vec_modes);
+
+   /* Special case for frag coords:
+    * - x,y come from (non-consecutive) special regs - always scalar.
+    * - z,w are iterated and driver will make sure they're consecutive.
+    *   - TODO: keep scalar for now, but add pass to vectorize.
+    */
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      NIR_PASS(_,
+               nir,
+               nir_lower_io_to_scalar,
+               nir_var_shader_in,
+               frag_pos_filter,
+               NULL);
+   }
 
    NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
 
@@ -220,12 +256,87 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir)
 }
 
 /**
+ * \brief Gather fragment shader data pass.
+ *
+ * \param[in] b NIR builder.
+ * \param[in] intr NIR intrinsic instruction.
+ * \param[in,out] cb_data Callback data.
+ * \return True if the shader was modified (always return false).
+ */
+static bool gather_fs_data_pass(UNUSED struct nir_builder *b,
+                                nir_intrinsic_instr *intr,
+                                void *cb_data)
+{
+   /* Check whether the shader accesses z/w. */
+   if (intr->intrinsic != nir_intrinsic_load_input)
+      return false;
+
+   struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
+   if (io_semantics.location != VARYING_SLOT_POS)
+      return false;
+
+   unsigned component = nir_intrinsic_component(intr);
+   unsigned chans = intr->def.num_components;
+
+   pco_data *data = cb_data;
+
+   data->fs.uses.z |= (component + chans > 2);
+   data->fs.uses.w |= (component + chans > 3);
+
+   return false;
+}
+
+/**
+ * \brief Gathers fragment shader data.
+ *
+ * \param[in] nir NIR shader.
+ * \param[in,out] data Shader data.
+ */
+static void gather_fs_data(nir_shader *nir, pco_data *data)
+{
+   nir_shader_intrinsics_pass(nir, gather_fs_data_pass, nir_metadata_all, data);
+
+   /* If any inputs use smooth shading, then w is needed. */
+   if (!data->fs.uses.w) {
+      nir_foreach_shader_in_variable (var, nir) {
+         if (var->data.interpolation > INTERP_MODE_SMOOTH)
+            continue;
+
+         data->fs.uses.w = true;
+         break;
+      }
+   }
+}
+
+/**
+ * \brief Gathers shader data.
+ *
+ * \param[in] nir NIR shader.
+ * \param[in,out] data Shader data.
+ */
+static void gather_data(nir_shader *nir, pco_data *data)
+{
+   switch (nir->info.stage) {
+   case MESA_SHADER_FRAGMENT:
+      return gather_fs_data(nir, data);
+
+   case MESA_SHADER_VERTEX:
+      /* TODO */
+      break;
+
+   default:
+      unreachable();
+   }
+}
+
+/**
  * \brief Runs post-processing passes on a NIR shader.
  *
  * \param[in] ctx PCO compiler context.
  * \param[in,out] nir NIR shader.
+ * \param[in,out] data Shader data.
  */
-void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir)
+void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 {
    NIR_PASS(_, nir, nir_move_vec_src_uses_to_dest, false);
 
@@ -237,6 +348,8 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir)
    }
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
+
+   gather_data(nir, data);
 
    if (pco_should_print_nir(nir)) {
       puts("after pco_postprocess_nir:");
@@ -253,6 +366,9 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir)
  */
 void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
 {
+   /* TODO */
+   puts("finishme: pco_link_nir");
+
    if (pco_should_print_nir(producer)) {
       puts("producer after pco_link_nir:");
       nir_print_shader(producer, stdout);
@@ -262,6 +378,61 @@ void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
       puts("consumer after pco_link_nir:");
       nir_print_shader(consumer, stdout);
    }
+}
 
-   puts("finishme: pco_link_nir");
+/**
+ * \brief Checks whether two varying variables are the same.
+ *
+ * \param[in] out_var The first varying being compared.
+ * \param[in] in_var The second varying being compared.
+ * \return True if the varyings match.
+ */
+static bool varyings_match(nir_variable *out_var, nir_variable *in_var)
+{
+   return in_var->data.location == out_var->data.location &&
+          in_var->data.location_frac == out_var->data.location_frac &&
+          in_var->type == out_var->type;
+}
+
+/**
+ * \brief Performs reverse linking optimizations on consecutive NIR shader
+ * stages.
+ *
+ * \param[in] ctx PCO compiler context.
+ * \param[in,out] producer NIR producer shader.
+ * \param[in,out] consumer NIR consumer shader.
+ */
+PUBLIC
+void pco_rev_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
+{
+   /* TODO */
+   puts("finishme: pco_rev_link_nir");
+
+   /* Propagate back/adjust the interpolation qualifiers. */
+   nir_foreach_shader_in_variable (in_var, consumer) {
+      if (in_var->data.location == VARYING_SLOT_POS ||
+          in_var->data.location == VARYING_SLOT_PNTC) {
+         in_var->data.interpolation = INTERP_MODE_NOPERSPECTIVE;
+      } else if (in_var->data.interpolation == INTERP_MODE_NONE) {
+         in_var->data.interpolation = INTERP_MODE_SMOOTH;
+      }
+
+      nir_foreach_shader_out_variable (out_var, producer) {
+         if (!varyings_match(out_var, in_var))
+            continue;
+
+         out_var->data.interpolation = in_var->data.interpolation;
+         break;
+      }
+   }
+
+   if (pco_should_print_nir(producer)) {
+      puts("producer after pco_rev_link_nir:");
+      nir_print_shader(producer, stdout);
+   }
+
+   if (pco_should_print_nir(consumer)) {
+      puts("consumer after pco_rev_link_nir:");
+      nir_print_shader(consumer, stdout);
+   }
 }
