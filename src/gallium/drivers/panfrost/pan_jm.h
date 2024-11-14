@@ -61,7 +61,8 @@ GENX(jm_cleanup_context)(struct panfrost_context *ctx)
 {
 }
 
-void GENX(jm_init_batch)(struct panfrost_batch *batch);
+int
+GENX(jm_init_batch)(struct panfrost_batch *batch);
 
 static inline void
 GENX(jm_cleanup_batch)(struct panfrost_batch *batch)

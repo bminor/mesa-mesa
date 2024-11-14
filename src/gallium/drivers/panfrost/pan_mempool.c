@@ -54,7 +54,8 @@ panfrost_pool_alloc_backing(struct panfrost_pool *pool, size_t bo_sz)
     */
    struct panfrost_bo *bo =
       panfrost_bo_create(pool->dev, bo_sz, pool->create_flags, pool->label);
-   assert(bo);
+   if (!bo)
+      return NULL;
 
    if (pool->owned)
       util_dynarray_append(&pool->bos, struct panfrost_bo *, bo);
@@ -67,7 +68,7 @@ panfrost_pool_alloc_backing(struct panfrost_pool *pool, size_t bo_sz)
    return bo;
 }
 
-void
+int
 panfrost_pool_init(struct panfrost_pool *pool, void *memctx,
                    struct panfrost_device *dev, unsigned create_flags,
                    size_t slab_size, const char *label, bool prealloc,
@@ -83,8 +84,12 @@ panfrost_pool_init(struct panfrost_pool *pool, void *memctx,
    if (owned)
       util_dynarray_init(&pool->bos, memctx);
 
-   if (prealloc)
-      panfrost_pool_alloc_backing(pool, pool->base.slab_size);
+   if (prealloc) {
+      if (panfrost_pool_alloc_backing(pool, pool->base.slab_size) == NULL)
+         return -1;
+   }
+
+   return 0;
 }
 
 void
@@ -143,6 +148,9 @@ panfrost_pool_alloc_aligned(struct panfrost_pool *pool, size_t sz,
       unsigned bo_size = aligned + PAN_GUARD_SIZE;
 
       bo = panfrost_pool_alloc_backing(pool, bo_size);
+      if (!bo)
+         return (struct panfrost_ptr){0};
+
       memset(bo->ptr.cpu, 0xbb, bo_size);
 
       /* Place the object as close as possible to the protected
@@ -160,6 +168,9 @@ panfrost_pool_alloc_aligned(struct panfrost_pool *pool, size_t sz,
    if (unlikely(bo == NULL || (offset + sz) >= pool->base.slab_size)) {
       bo = panfrost_pool_alloc_backing(
          pool, ALIGN_POT(MAX2(pool->base.slab_size, sz), 4096));
+      if (!bo)
+         return (struct panfrost_ptr){0};
+
       offset = 0;
    }
 

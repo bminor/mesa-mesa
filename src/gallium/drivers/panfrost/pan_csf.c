@@ -211,14 +211,15 @@ alloc_fbd(struct panfrost_batch *batch)
       PAN_DESC_ARRAY(MAX2(batch->key.nr_cbufs, 1), RENDER_TARGET));
 }
 
-void
+int
 GENX(csf_init_batch)(struct panfrost_batch *batch)
 {
    struct panfrost_device *dev = pan_device(batch->ctx->base.screen);
 
    /* Initialize the CS chunk pool. */
-   panfrost_pool_init(&batch->csf.cs_chunk_pool, NULL, dev, 0, 32768,
-                      "CS chunk pool", false, true);
+   if (panfrost_pool_init(&batch->csf.cs_chunk_pool, NULL, dev, 0, 32768,
+                          "CS chunk pool", false, true))
+      return -1;
 
    if (dev->debug & PAN_DBG_CS) {
       /* Load/store tracker if extra checks are enabled. */
@@ -229,6 +230,9 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
 
    /* Allocate and bind the command queue */
    struct cs_buffer queue = csf_alloc_cs_buffer(batch);
+   if (!queue.gpu)
+      return -1;
+
    const struct cs_builder_conf conf = {
       .nr_registers = 96,
       .nr_kernel_registers = 4,
@@ -249,8 +253,14 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
    cs_set_scoreboard_entry(b, 2, 0);
 
    batch->framebuffer = alloc_fbd(batch);
+   if (!batch->framebuffer.gpu)
+      return -1;
 
    batch->tls = pan_pool_alloc_desc(&batch->pool.base, LOCAL_STORAGE);
+   if (!batch->tls.cpu)
+      return -1;
+
+   return 0;
 }
 
 static void
@@ -312,6 +322,9 @@ csf_emit_batch_end(struct panfrost_batch *batch)
    if (dev->debug & PAN_DBG_SYNC) {
       /* Get the CS state */
       batch->csf.cs.state = pan_pool_alloc_aligned(&batch->pool.base, 8, 8);
+      if (!batch->csf.cs.state.cpu)
+         return -1;
+
       memset(batch->csf.cs.state.cpu, ~0, 8);
       cs_move64_to(b, cs_reg64(b, 90), batch->csf.cs.state.gpu);
       cs_store_state(b, cs_reg64(b, 90), 0, MALI_CS_STATE_ERROR_STATUS,

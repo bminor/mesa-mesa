@@ -75,7 +75,7 @@ struct panfrost_vtable {
    void (*context_cleanup)(struct panfrost_context *ctx);
 
    /* Device-dependent initialization/cleanup of a panfrost_batch */
-   void (*init_batch)(struct panfrost_batch *batch);
+   int (*init_batch)(struct panfrost_batch *batch);
    void (*cleanup_batch)(struct panfrost_batch *batch);
 
    /* Device-dependent submission of a panfrost_batch */

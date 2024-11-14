@@ -684,6 +684,9 @@ panfrost_emit_frag_shader_meta(struct panfrost_batch *batch)
                                     PAN_DESC_ARRAY(rt_count, BLEND));
 #endif
 
+   if (!xfer.cpu)
+      return 0;
+
    mali_ptr blend_shaders[PIPE_MAX_COLOR_BUFS] = {0};
    panfrost_get_blend_shaders(batch, blend_shaders);
 
@@ -750,6 +753,9 @@ panfrost_emit_viewport(struct panfrost_batch *batch)
 #if PAN_ARCH <= 7
    struct panfrost_ptr T = pan_pool_alloc_desc(&batch->pool.base, VIEWPORT);
 
+   if (!T.cpu)
+      return 0;
+
    pan_pack(T.cpu, VIEWPORT, cfg) {
       cfg.scissor_minimum_x = minx;
       cfg.scissor_minimum_y = miny;
@@ -792,8 +798,11 @@ panfrost_emit_depth_stencil(struct panfrost_batch *batch)
 
    struct panfrost_ptr T =
       pan_pool_alloc_desc(&batch->pool.base, DEPTH_STENCIL);
-   struct mali_depth_stencil_packed dynamic;
 
+   if (!T.cpu)
+      return 0;
+
+   struct mali_depth_stencil_packed dynamic;
    pan_pack(&dynamic, DEPTH_STENCIL, cfg) {
       cfg.front_reference_value = ctx->stencil_ref.ref_value[0];
       cfg.back_reference_value = ctx->stencil_ref.ref_value[back_enab ? 1 : 0];
@@ -831,6 +840,9 @@ panfrost_emit_blend_valhall(struct panfrost_batch *batch)
    struct panfrost_ptr T =
       pan_pool_alloc_desc_array(&batch->pool.base, rt_count, BLEND);
 
+   if (!T.cpu)
+      return 0;
+
    mali_ptr blend_shaders[PIPE_MAX_COLOR_BUFS] = {0};
    panfrost_get_blend_shaders(batch, blend_shaders);
 
@@ -857,6 +869,10 @@ panfrost_emit_vertex_buffers(struct panfrost_batch *batch)
    unsigned buffer_count = util_last_bit(ctx->vb_mask);
    struct panfrost_ptr T =
       pan_pool_alloc_desc_array(&batch->pool.base, buffer_count, BUFFER);
+
+   if (!T.cpu)
+      return 0;
+
    struct mali_buffer_packed *buffers = T.cpu;
 
    memset(buffers, 0, sizeof(*buffers) * buffer_count);
@@ -1402,6 +1418,9 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
    struct panfrost_ptr transfer =
       pan_pool_alloc_aligned(&batch->pool.base, sys_size, 16);
 
+   if (!transfer.cpu)
+      return 0;
+
    /* Upload sysvals requested by the shader */
    uint8_t *sysvals = alloca(sys_size);
    panfrost_upload_sysvals(batch, sysvals, transfer.gpu, ss, stage);
@@ -1422,6 +1441,10 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
    ubos = pan_pool_alloc_desc_array(&batch->pool.base, ubo_count + 1,
                                     UNIFORM_BUFFER);
 #endif
+
+   if (!ubos.cpu)
+      return 0;
+
    memset(ubos.cpu, 0, desc_size * (ubo_count + 1));
 
    if (buffer_count)
@@ -1455,6 +1478,9 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
    struct panfrost_ptr push_transfer =
       pan_pool_alloc_aligned(&batch->pool.base, ss->info.push.count * 4, 16);
 
+   if (!push_transfer.cpu)
+      return 0;
+
    uint32_t *push_cpu = (uint32_t *)push_transfer.cpu;
    *push_constants = push_transfer.gpu;
 
@@ -1479,6 +1505,9 @@ panfrost_emit_const_buf(struct panfrost_batch *batch,
          (src.ubo == sysval_ubo)
             ? sysvals
             : panfrost_map_constant_buffer_cpu(ctx, buf, src.ubo);
+
+      if (!mapped_ubo)
+         return 0;
 
       /* TODO: Is there any benefit to combining ranges */
       memcpy(push_cpu + i, (uint8_t *)mapped_ubo + src.offset, 4);
@@ -1651,6 +1680,12 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
 
    struct panfrost_pool *pool = so->pool ?: &ctx->descs;
    struct panfrost_ptr payload = pan_pool_alloc_aligned(&pool->base, size, 64);
+
+   if (!payload.cpu) {
+      mesa_loge("panfrost_create_sampler_view_bo failed");
+      return;
+   }
+
    so->state = panfrost_pool_take_ref(&ctx->descs, payload.gpu);
 
    void *tex = (PAN_ARCH >= 6) ? &so->bifrost_descriptor : payload.cpu;
@@ -1732,6 +1767,10 @@ panfrost_emit_texture_descriptors(struct panfrost_batch *batch,
 #if PAN_ARCH >= 6
    struct panfrost_ptr T =
       pan_pool_alloc_desc_array(&batch->pool.base, alloc_count, TEXTURE);
+
+   if (!T.cpu)
+      return 0;
+
    struct mali_texture_packed *out = (struct mali_texture_packed *)T.cpu;
 
    for (int i = 0; i < actual_count; ++i) {
@@ -1802,6 +1841,10 @@ panfrost_emit_sampler_descriptors(struct panfrost_batch *batch,
 
    struct panfrost_ptr T = pan_pool_alloc_desc_array(
       &batch->pool.base, ctx->sampler_count[stage], SAMPLER);
+
+   if (!T.cpu)
+      return 0;
+
    struct mali_sampler_packed *out = (struct mali_sampler_packed *)T.cpu;
 
    for (unsigned i = 0; i < ctx->sampler_count[stage]; ++i) {
@@ -2524,6 +2567,12 @@ panfrost_emit_varying_descriptor(struct panfrost_batch *batch,
    unsigned count = util_bitcount(present);
    struct panfrost_ptr T =
       pan_pool_alloc_desc_array(&batch->pool.base, count + 1, ATTRIBUTE_BUFFER);
+
+   if (!T.cpu) {
+      mesa_loge("panfrost_emit_varying_descriptor failed");
+      return;
+   }
+
    struct mali_attribute_buffer_packed *varyings =
       (struct mali_attribute_buffer_packed *)T.cpu;
 

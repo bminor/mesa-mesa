@@ -281,6 +281,9 @@ panfrost_emit_resources(struct panfrost_batch *batch,
     */
    T = pan_pool_alloc_aligned(&batch->pool.base, nr_tables * pan_size(RESOURCE),
                               64);
+   if (!T.cpu)
+      return 0;
+
    memset(T.cpu, 0, nr_tables * pan_size(RESOURCE));
 
    panfrost_make_resource_table(T, PAN_TABLE_UBO, batch->uniform_buffers[stage],

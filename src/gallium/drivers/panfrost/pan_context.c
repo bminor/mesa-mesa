@@ -1089,11 +1089,13 @@ panfrost_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
    gallium->stream_uploader = u_upload_create_default(gallium);
    gallium->const_uploader = gallium->stream_uploader;
 
-   panfrost_pool_init(&ctx->descs, ctx, dev, 0, 4096, "Descriptors", true,
-                      false);
+   if (panfrost_pool_init(&ctx->descs, ctx, dev, 0, 4096, "Descriptors", true,
+                          false) ||
 
-   panfrost_pool_init(&ctx->shaders, ctx, dev, PAN_BO_EXECUTE, 4096, "Shaders",
-                      true, false);
+       panfrost_pool_init(&ctx->shaders, ctx, dev, PAN_BO_EXECUTE, 4096,
+                          "Shaders", true, false)) {
+      goto failed;
+   }
 
    ctx->blitter = util_blitter_create(gallium);
 
@@ -1117,12 +1119,14 @@ panfrost_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
 
    ret = pan_screen(screen)->vtbl.context_init(ctx);
 
-   if (ret) {
-      gallium->destroy(gallium);
-      return NULL;
-   }
+   if (ret)
+      goto failed;
 
    return gallium;
+
+failed:
+   gallium->destroy(gallium);
+   return NULL;
 }
 
 void

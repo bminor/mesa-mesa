@@ -38,7 +38,7 @@
 #error "JM helpers are only used for gen < 10"
 #endif
 
-void
+int
 GENX(jm_init_batch)(struct panfrost_batch *batch)
 {
    /* Reserve the framebuffer and local storage descriptors */
@@ -50,12 +50,17 @@ GENX(jm_init_batch)(struct panfrost_batch *batch)
          &batch->pool.base, PAN_DESC(FRAMEBUFFER), PAN_DESC(ZS_CRC_EXTENSION),
          PAN_DESC_ARRAY(MAX2(batch->key.nr_cbufs, 1), RENDER_TARGET));
 #endif
+   if (!batch->framebuffer.gpu)
+      return -1;
 
 #if PAN_ARCH >= 6
    batch->tls = pan_pool_alloc_desc(&batch->pool.base, LOCAL_STORAGE);
 #else
    /* On Midgard, the TLS is embedded in the FB descriptor */
    batch->tls = batch->framebuffer;
+
+   if (!batch->tls.cpu)
+      return -1;
 
 #if PAN_ARCH == 5
    struct mali_framebuffer_pointer_packed ptr;
@@ -68,6 +73,8 @@ GENX(jm_init_batch)(struct panfrost_batch *batch)
    batch->tls.gpu = ptr.opaque[0];
 #endif
 #endif
+
+   return 0;
 }
 
 static int
@@ -963,6 +970,11 @@ GENX(jm_launch_draw)(struct panfrost_batch *batch,
    } else {
       vertex = pan_pool_alloc_desc(&batch->pool.base, COMPUTE_JOB);
       tiler = pan_pool_alloc_desc(&batch->pool.base, TILER_JOB);
+   }
+
+   if ((!idvs && !vertex.cpu) || !tiler.cpu) {
+      mesa_loge("jm_launch_draw failed");
+      return;
    }
 
 #if PAN_ARCH == 9

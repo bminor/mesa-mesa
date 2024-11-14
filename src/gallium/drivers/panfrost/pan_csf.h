@@ -115,7 +115,7 @@ struct pipe_draw_start_count_bias;
 int GENX(csf_init_context)(struct panfrost_context *ctx);
 void GENX(csf_cleanup_context)(struct panfrost_context *ctx);
 
-void GENX(csf_init_batch)(struct panfrost_batch *batch);
+int GENX(csf_init_batch)(struct panfrost_batch *batch);
 void GENX(csf_cleanup_batch)(struct panfrost_batch *batch);
 int GENX(csf_submit_batch)(struct panfrost_batch *batch);
 
@@ -126,7 +126,7 @@ void GENX(csf_emit_fbds)(struct panfrost_batch *batch, struct pan_fb_info *fb,
                          struct pan_tls_info *tls);
 void GENX(csf_emit_fragment_job)(struct panfrost_batch *batch,
                                  const struct pan_fb_info *pfb);
-void GENX(csf_emit_batch_end)(struct panfrost_batch *batch);
+int GENX(csf_emit_batch_end)(struct panfrost_batch *batch);
 void GENX(csf_launch_xfb)(struct panfrost_batch *batch,
                           const struct pipe_draw_info *info, unsigned count);
 void GENX(csf_launch_grid)(struct panfrost_batch *batch,

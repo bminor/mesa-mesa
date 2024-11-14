@@ -70,7 +70,7 @@ panfrost_batch_add_surface(struct panfrost_batch *batch,
    }
 }
 
-static void
+static int
 panfrost_batch_init(struct panfrost_context *ctx,
                     const struct pipe_framebuffer_state *key,
                     struct panfrost_batch *batch)
@@ -92,21 +92,23 @@ panfrost_batch_init(struct panfrost_context *ctx,
 
    /* Preallocate the main pool, since every batch has at least one job
     * structure so it will be used */
-   panfrost_pool_init(&batch->pool, NULL, dev, 0, 65536, "Batch pool", true,
-                      true);
+   if (panfrost_pool_init(&batch->pool, NULL, dev, 0, 65536, "Batch pool",
+                          true, true))
+      return -1;
 
    /* Don't preallocate the invisible pool, since not every batch will use
     * the pre-allocation, particularly if the varyings are larger than the
     * preallocation and a reallocation is needed after anyway. */
-   panfrost_pool_init(&batch->invisible_pool, NULL, dev, PAN_BO_INVISIBLE,
-                      65536, "Varyings", false, true);
+   if (panfrost_pool_init(&batch->invisible_pool, NULL, dev,
+                          PAN_BO_INVISIBLE, 65536, "Varyings", false, true))
+      return -1;
 
    for (unsigned i = 0; i < batch->key.nr_cbufs; ++i)
       panfrost_batch_add_surface(batch, batch->key.cbufs[i]);
 
    panfrost_batch_add_surface(batch, batch->key.zsbuf);
 
-   screen->vtbl.init_batch(batch);
+   return screen->vtbl.init_batch(batch);
 }
 
 static void
@@ -184,7 +186,13 @@ panfrost_get_batch(struct panfrost_context *ctx,
       panfrost_batch_submit(ctx, batch);
    }
 
-   panfrost_batch_init(ctx, key, batch);
+   if (panfrost_batch_init(ctx, key, batch)) {
+      mesa_loge("panfrost_batch_init failed");
+      panfrost_batch_cleanup(ctx, batch);
+      /* prevent this batch from being reused without initializing */
+      batch->seqnum = 0;
+      return NULL;
+   }
 
    unsigned batch_idx = panfrost_batch_idx(batch);
    BITSET_SET(ctx->batches.active, batch_idx);

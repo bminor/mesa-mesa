@@ -70,7 +70,10 @@ pan_pool_upload_aligned(struct pan_pool *pool, const void *data, size_t sz,
                         unsigned alignment)
 {
    struct panfrost_ptr transfer = pan_pool_alloc_aligned(pool, sz, alignment);
-   memcpy(transfer.cpu, data, sz);
+
+   if (transfer.cpu)
+      memcpy(transfer.cpu, data, sz);
+
    return transfer.gpu;
 }
 

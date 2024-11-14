@@ -89,10 +89,10 @@ panfrost_pool_take_ref(struct panfrost_pool *pool, mali_ptr ptr)
    };
 }
 
-void panfrost_pool_init(struct panfrost_pool *pool, void *memctx,
-                        struct panfrost_device *dev, unsigned create_flags,
-                        size_t slab_size, const char *label, bool prealloc,
-                        bool owned);
+int panfrost_pool_init(struct panfrost_pool *pool, void *memctx,
+                       struct panfrost_device *dev, unsigned create_flags,
+                       size_t slab_size, const char *label, bool prealloc,
+                       bool owned);
 
 void panfrost_pool_cleanup(struct panfrost_pool *pool);
 

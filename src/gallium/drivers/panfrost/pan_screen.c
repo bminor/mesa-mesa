@@ -1021,10 +1021,14 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
 
    panfrost_disk_cache_init(screen);
 
-   panfrost_pool_init(&screen->mempools.bin, NULL, dev, PAN_BO_EXECUTE, 4096,
-                      "Preload shaders", false, true);
-   panfrost_pool_init(&screen->mempools.desc, NULL, dev, 0, 65536,
-                      "Preload RSDs", false, true);
+   if (panfrost_pool_init(&screen->mempools.bin, NULL, dev, PAN_BO_EXECUTE,
+                          4096, "Preload shaders", false, true) ||
+       panfrost_pool_init(&screen->mempools.desc, NULL, dev, 0, 65536,
+                          "Preload RSDs", false, true)) {
+      panfrost_destroy_screen(&(screen->base));
+      return NULL;
+   }
+
    if (dev->arch == 4)
       panfrost_cmdstream_screen_init_v4(screen);
    else if (dev->arch == 5)
