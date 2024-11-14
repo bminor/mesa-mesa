@@ -12871,10 +12871,11 @@ radv_barrier(struct radv_cmd_buffer *cmd_buffer, uint32_t dep_count, const VkDep
       has_image_transitions |= dep_info->imageMemoryBarrierCount > 0;
    }
 
-   /* Only optimize BOTTOM_OF_PIPE as dst when there is no image layout transitions because it might
+   /* Only optimize BOTTOM_OF_PIPE/NONE as dst when there is no image layout transitions because it might
     * need to synchronize.
     */
-   if (has_image_transitions || dst_stage_mask != VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT)
+   if (has_image_transitions ||
+       (dst_stage_mask != VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT && dst_stage_mask != VK_PIPELINE_STAGE_2_NONE))
       radv_stage_flush(cmd_buffer, src_stage_mask);
    cmd_buffer->state.flush_bits |= src_flush_bits;
 
