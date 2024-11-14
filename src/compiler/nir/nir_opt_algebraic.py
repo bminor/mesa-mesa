@@ -3444,6 +3444,8 @@ late_optimizations.extend([
    # optimization in these stages.  See bugzilla #111490.  In tessellation
    # stages applications seem to use 'precise' when necessary, so allow the
    # optimization in those stages.
+   (('~fadd', ('ffma(is_used_once)', a, b, ('ffma(is_used_once)', c, d, ('ffma', e, 'f', ('fmul(is_used_once)', 'g(is_not_const_and_not_fsign)', 'h(is_not_const_and_not_fsign)')))), 'i(is_not_const)'),
+    ('ffma', a, b, ('ffma', c, d, ('ffma', e, 'f', ('ffma', 'g', 'h', 'i')))), '(info->stage != MESA_SHADER_VERTEX && info->stage != MESA_SHADER_GEOMETRY) && !options->intel_vec4'),
    (('~fadd', ('ffma(is_used_once)', a, b, ('ffma', c, d, ('fmul(is_used_once)', 'e(is_not_const_and_not_fsign)', 'f(is_not_const_and_not_fsign)'))), 'g(is_not_const)'),
     ('ffma', a, b, ('ffma', c, d, ('ffma', e, 'f', 'g'))), '(info->stage != MESA_SHADER_VERTEX && info->stage != MESA_SHADER_GEOMETRY) && !options->intel_vec4'),
    (('~fadd', ('ffma(is_used_once)', a, b, ('fmul(is_used_once)', 'c(is_not_const_and_not_fsign)', 'd(is_not_const_and_not_fsign)') ), 'e(is_not_const)'),
