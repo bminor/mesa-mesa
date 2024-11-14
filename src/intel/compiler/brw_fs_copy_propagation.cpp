@@ -1070,30 +1070,6 @@ try_constant_propagate_value(brw_reg val, brw_reg_type dst_type,
       }
       break;
 
-   case BRW_OPCODE_ADD3:
-      /* add3 can have a single imm16 source. Proceed if the source type is
-       * already W or UW or the value can be coerced to one of those types.
-       */
-      if (val.type == BRW_TYPE_W || val.type == BRW_TYPE_UW)
-         ; /* Nothing to do. */
-      else if (val.ud <= 0xffff)
-         val = brw_imm_uw(val.ud);
-      else if (val.d >= -0x8000 && val.d <= 0x7fff)
-         val = brw_imm_w(val.d);
-      else
-         break;
-
-      if (arg == 2) {
-         inst->src[arg] = val;
-         progress = true;
-      } else if (inst->src[2].file != IMM) {
-         inst->src[arg] = inst->src[2];
-         inst->src[2] = val;
-         progress = true;
-      }
-
-      break;
-
    case BRW_OPCODE_CMP:
       if (arg == 1) {
          inst->src[arg] = val;
@@ -1178,6 +1154,7 @@ try_constant_propagate_value(brw_reg val, brw_reg_type dst_type,
 
    case SHADER_OPCODE_INT_QUOTIENT:
    case SHADER_OPCODE_INT_REMAINDER:
+   case BRW_OPCODE_ADD3:
    case BRW_OPCODE_AND:
    case BRW_OPCODE_ASR:
    case BRW_OPCODE_BFE:
@@ -1283,14 +1260,26 @@ can_propagate_from(fs_inst *inst)
 }
 
 static void
+swap_srcs(fs_inst *inst, unsigned a, unsigned b)
+{
+   const auto tmp = inst->src[a];
+   inst->src[a] = inst->src[b];
+   inst->src[b] = tmp;
+}
+
+static void
 commute_immediates(fs_inst *inst)
 {
-   /* ADD3 can only have the immediate as src0. */
+   /* ADD3 can have the immediate as src0 or src2. Using one or the other
+    * consistently makes assembly dumps more readable, so we arbitrarily
+    * prefer src0.
+    */
    if (inst->opcode == BRW_OPCODE_ADD3) {
-      if (inst->src[2].file == IMM) {
-         const auto src0 = inst->src[0];
-         inst->src[0] = inst->src[2];
-         inst->src[2] = src0;
+      if (inst->src[1].file == IMM) {
+         if (inst->src[0].file != IMM)
+            swap_srcs(inst, 0, 1);
+         else if (inst->src[2].file != IMM)
+            swap_srcs(inst, 1, 2);
       }
    }
 

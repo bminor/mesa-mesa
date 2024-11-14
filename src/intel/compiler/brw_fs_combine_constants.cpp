@@ -1022,11 +1022,10 @@ can_promote_src_as_imm(const struct intel_device_info *devinfo, fs_inst *inst,
    bool can_promote = false;
 
    /* Experiment shows that we can only support src0 as immediate for MAD on
-    * Gfx12. ADD3 can use src0 or src2 in Gfx12.5, but constant propagation
-    * only propagates into src0. It's possible that src2 works for W or UW MAD
-    * on Gfx12.5.
+    * Gfx12. ADD3 can use src0 or src2 in Gfx12.5. It's possible that src2
+    * works for W or UW MAD on Gfx12.5.
     */
-   if (inst->opcode == BRW_OPCODE_BFE) {
+   if (inst->opcode == BRW_OPCODE_BFE || inst->opcode == BRW_OPCODE_ADD3) {
       if (src_idx == 1)
          return false;
    } else {
