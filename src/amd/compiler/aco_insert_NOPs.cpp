@@ -186,6 +186,15 @@ template <int Max> struct RegCounterMap {
       base = 0;
    }
 
+   bool empty()
+   {
+      for (entry& e : list) {
+         if (base - e.val < Max)
+            return false;
+      }
+      return true;
+   }
+
    void join_min(const RegCounterMap& other)
    {
       for (const entry& e : other.list) {
@@ -231,93 +240,6 @@ private:
    int base = 0;
 };
 
-template <int Start, int Size, int Max> struct CounterMap {
-public:
-   int base = 0;
-   BITSET_DECLARE(resident, Size);
-   int val[Size];
-
-   /* Initializes all counters to Max. */
-   CounterMap() { BITSET_ZERO(resident); }
-
-   /* Increase all counters, clamping at Max. */
-   void inc() { base++; }
-
-   /* Set counter to 0. */
-   void set(unsigned idx)
-   {
-      val[idx] = -base;
-      BITSET_SET(resident, idx);
-   }
-
-   void set(PhysReg reg, unsigned bytes)
-   {
-      if (reg.reg() < Start)
-         return;
-
-      unsigned size = MIN2(DIV_ROUND_UP(bytes, 4), Start + Size - reg.reg());
-      for (unsigned i = 0; i < size; i++)
-         set(reg.reg() - Start + i);
-   }
-
-   /* Reset all counters to Max. */
-   void reset()
-   {
-      base = 0;
-      BITSET_ZERO(resident);
-   }
-
-   void reset(PhysReg reg, unsigned bytes)
-   {
-      if (reg.reg() < Start)
-         return;
-
-      unsigned size = MIN2(DIV_ROUND_UP(bytes, 4), Start + Size - reg.reg());
-      for (unsigned i = 0; i < size; i++)
-         BITSET_CLEAR(resident, reg.reg() - Start + i);
-   }
-
-   uint8_t get(unsigned idx)
-   {
-      return BITSET_TEST(resident, idx) ? MIN2(val[idx] + base, Max) : Max;
-   }
-
-   uint8_t get(PhysReg reg, unsigned offset = 0)
-   {
-      assert(reg.reg() >= Start);
-      return get(reg.reg() - Start + offset);
-   }
-
-   void join_min(const CounterMap& other)
-   {
-      unsigned i;
-      BITSET_FOREACH_SET (i, other.resident, Size) {
-         if (BITSET_TEST(resident, i))
-            val[i] = MIN2(val[i] + base, other.val[i] + other.base) - base;
-         else
-            val[i] = other.val[i] + other.base - base;
-      }
-      BITSET_OR(resident, resident, other.resident);
-   }
-
-   bool operator==(const CounterMap& other) const
-   {
-      if (!BITSET_EQUAL(resident, other.resident))
-         return false;
-
-      unsigned i;
-      BITSET_FOREACH_SET (i, other.resident, Size) {
-         if (MIN2(val[i] + base, Max) != MIN2(other.val[i] + other.base, Max))
-            return false;
-      }
-      return true;
-   }
-
-   unsigned size() const { return Size; }
-};
-
-template <int Max> using VGPRCounterMap = CounterMap<256, 256, Max>;
-
 struct NOP_ctx_gfx11 {
    /* VcmpxPermlaneHazard */
    bool has_Vcmpx = false;
@@ -342,7 +264,7 @@ struct NOP_ctx_gfx11 {
 
    /* VALUReadSGPRHazard */
    std::bitset<m0.reg() / 2> sgpr_read_by_valu; /* SGPR pairs, excluding null, exec, m0 and scc */
-   CounterMap<0, m0.reg(), 11> sgpr_read_by_valu_then_wr_by_salu;
+   RegCounterMap<11> sgpr_read_by_valu_then_wr_by_salu;
 
    void join(const NOP_ctx_gfx11& other)
    {
@@ -1610,9 +1532,8 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
                break;
 
             for (unsigned i = 0; i < op.size(); i++) {
-               unsigned reg = op.physReg() + i;
-               if (reg < ctx.sgpr_read_by_valu_then_wr_by_salu.size() &&
-                   ctx.sgpr_read_by_valu_then_wr_by_salu.get(reg) < expiry_count) {
+               PhysReg reg = op.physReg().advance(i * 4);
+               if (reg <= m0 && ctx.sgpr_read_by_valu_then_wr_by_salu.get(reg) < expiry_count) {
                   bld.sopp(aco_opcode::s_waitcnt_depctr, 0xfffe);
                   sa_sdst = 0;
                   break;
@@ -1636,7 +1557,7 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
          }
       } else if (instr->isSALU() && !instr->definitions.empty()) {
          for (unsigned i = 0; i < instr->definitions[0].size(); i++) {
-            unsigned def_reg = instr->definitions[0].physReg() + i;
+            PhysReg def_reg = instr->definitions[0].physReg().advance(i * 4);
             if ((def_reg / 2) < ctx.sgpr_read_by_valu.size() && ctx.sgpr_read_by_valu[def_reg / 2])
                ctx.sgpr_read_by_valu_then_wr_by_salu.set(def_reg);
          }
@@ -1799,10 +1720,9 @@ resolve_all_gfx11(State& state, NOP_ctx_gfx11& ctx,
 
    /* VALUReadSGPRHazard */
    if (state.program->gfx_level >= GFX12) {
-      for (unsigned i = 0; i < ctx.sgpr_read_by_valu_then_wr_by_salu.size(); i++) {
-         if (ctx.sgpr_read_by_valu_then_wr_by_salu.get(i) < 11)
-            waitcnt_depctr &= 0xfffe;
-      }
+      if (!ctx.sgpr_read_by_valu_then_wr_by_salu.empty())
+         waitcnt_depctr &= 0xfffe;
+
       ctx.sgpr_read_by_valu_then_wr_by_salu.reset();
    }
 
