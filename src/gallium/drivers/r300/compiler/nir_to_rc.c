@@ -2278,8 +2278,11 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen)
    NIR_PASS_V(s, nir_to_rc_lower_tex);
 
    bool progress;
-
-   NIR_PASS_V(s, nir_opt_constant_folding);
+   do {
+      progress = false;
+      NIR_PASS(progress, s, nir_opt_algebraic);
+      NIR_PASS(progress, s, nir_opt_constant_folding);
+   } while (progress);
 
    do {
       progress = false;
