@@ -452,6 +452,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       is_divergent |= !(options & nir_divergence_single_prim_per_subgroup);
       break;
    case nir_intrinsic_load_instance_id:
+   case nir_intrinsic_load_instance_index:
       is_divergent = !state->vertex_divergence;
       break;
    case nir_intrinsic_load_primitive_id:

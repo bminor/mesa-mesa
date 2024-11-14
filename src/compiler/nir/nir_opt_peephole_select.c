@@ -166,6 +166,7 @@ block_check_for_allowed_instrs(nir_block *block, unsigned *count,
          case nir_intrinsic_load_first_vertex:
          case nir_intrinsic_load_base_instance:
          case nir_intrinsic_load_instance_id:
+         case nir_intrinsic_load_instance_index:
          case nir_intrinsic_load_draw_id:
          case nir_intrinsic_load_num_workgroups:
          case nir_intrinsic_load_workgroup_id:
