@@ -994,7 +994,7 @@
         "description": "anv: remove unused/misleading/wrong parameters from the RT trampoline",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "97b17aa0b1b6d36d41c48a712865add7050c9c77",
         "notes": null
