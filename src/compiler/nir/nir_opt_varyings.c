@@ -3774,6 +3774,32 @@ try_move_postdominator(struct linkage_info *linkage,
           * in final_slot)
           */
          remove_all_stores_and_clear_slot(linkage, slot_index, progress);
+      } else {
+         /* If a load has 2 uses and one of those uses is moved into the previous
+          * shader, making that "use" dead, the load and its associated store
+          * can't be removed because there is still one use remaining. However,
+          * there are actually 2 uses remaining because the use that is dead isn't
+          * removed from NIR, but is left dangling there.
+          *
+          * When we run this optimization again and make the second use dead,
+          * which makes the load dead, the output store in the producer isn't removed
+          * because the post-dominator of the second use doesn't post-dominate
+          * the load because we left the first use dangling there.
+          *
+          * To fix that, we could run DCE, but that would be costly because we would
+          * need to re-gather all IO. Instead, remove dead uses by replacing them
+          * with undef here, so that when this code motion pass is entered again,
+          * the load has its number of uses reduced and the corresponding output store
+          * will be removed by the code above.
+          */
+         nir_foreach_use_safe(src, nir_instr_def(load)) {
+            if (nir_instr_dominates_use(postdom_state, postdom,
+                                        nir_src_parent_instr(src))) {
+               nir_src_rewrite(src, nir_undef(&linkage->consumer_builder,
+                                              src->ssa->num_components,
+                                              src->ssa->bit_size));
+            }
+         }
       }
    }
 
