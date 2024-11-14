@@ -1124,7 +1124,7 @@ static uint32_t
 tu_xs_get_immediates_packet_size_dwords(const struct ir3_shader_variant *xs)
 {
    const struct ir3_const_state *const_state = ir3_const_state(xs);
-   uint32_t base = const_state->offsets.immediate;
+   uint32_t base = const_state->allocs.max_const_offset_vec4;
    int32_t size = DIV_ROUND_UP(const_state->immediates_count, 4);
 
    /* truncate size to avoid writing constants that shader
@@ -1332,7 +1332,7 @@ tu6_emit_xs(struct tu_cs *cs,
    /* emit immediates */
 
    const struct ir3_const_state *const_state = ir3_const_state(xs);
-   uint32_t base = const_state->offsets.immediate;
+   uint32_t base = const_state->allocs.max_const_offset_vec4;
    unsigned immediate_size = tu_xs_get_immediates_packet_size_dwords(xs);
 
    if (immediate_size > 0) {

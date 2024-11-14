@@ -28,7 +28,7 @@
 static uint16_t
 const_imm_index_to_reg(const struct ir3_const_state *const_state, unsigned i)
 {
-   return i + (4 * const_state->offsets.immediate);
+   return i + (4 * const_state->allocs.max_const_offset_vec4);
 }
 
 uint16_t
@@ -69,7 +69,8 @@ ir3_const_add_imm(struct ir3_shader_variant *v, uint32_t imm)
    /* Add on a new immediate to be pushed, if we have space left in the
     * constbuf.
     */
-   if (const_state->offsets.immediate + const_state->immediates_count / 4 >=
+   if (const_state->allocs.max_const_offset_vec4 +
+          const_state->immediates_count / 4 >=
        ir3_max_const(v)) {
       return INVALID_CONST_REG;
    }
@@ -776,6 +777,16 @@ ir3_const_alloc_type_to_string(enum ir3_const_alloc_type type)
       return "global";
    case IR3_CONST_ALLOC_UBO_PTRS:
       return "ubo_ptrs";
+   case IR3_CONST_ALLOC_IMAGE_DIMS:
+      return "image_dims";
+   case IR3_CONST_ALLOC_KERNEL_PARAMS:
+      return "kernel_params";
+   case IR3_CONST_ALLOC_TFBO:
+      return "tfbo";
+   case IR3_CONST_ALLOC_PRIMITIVE_PARAM:
+      return "primitive_param";
+   case IR3_CONST_ALLOC_PRIMITIVE_MAP:
+      return "primitive_map";
    default:
       return "unknown";
    }
@@ -800,16 +811,6 @@ dump_const_state(struct ir3_shader_variant *so, FILE *out)
       }
    }
 
-   if (cs->offsets.image_dims != ~0)
-      fprintf(out, ";   image_dims:       c%u.x\n", cs->offsets.image_dims);
-   if (cs->offsets.kernel_params != ~0)
-      fprintf(out, ";   kernel_params:    c%u.x\n", cs->offsets.kernel_params);
-   if (cs->offsets.tfbo != ~0)
-      fprintf(out, ";   tfbo:             c%u.x\n", cs->offsets.tfbo);
-   if (cs->offsets.primitive_param != ~0)
-      fprintf(out, ";   primitive_params: c%u.x\n", cs->offsets.primitive_param);
-   if (cs->offsets.primitive_map != ~0)
-      fprintf(out, ";   primitive_map:    c%u.x\n", cs->offsets.primitive_map);
    fprintf(out, "; ubo_state:\n");
    fprintf(out, ";   num_enabled:      %u\n", us->num_enabled);
    for (unsigned i = 0; i < us->num_enabled; i++) {
@@ -912,7 +913,8 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
 
    const struct ir3_const_state *const_state = ir3_const_state(so);
    for (i = 0; i < DIV_ROUND_UP(const_state->immediates_count, 4); i++) {
-      fprintf(out, "@const(c%d.x)\t", const_state->offsets.immediate + i);
+      fprintf(out, "@const(c%d.x)\t",
+              const_state->allocs.max_const_offset_vec4 + i);
       fprintf(out, "0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
               const_state->immediates[i * 4 + 0],
               const_state->immediates[i * 4 + 1],

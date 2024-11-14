@@ -619,10 +619,10 @@ tu6_emit_const(struct tu_cs *cs, uint32_t opcode, enum tu_geom_consts_type type,
       uint32_t base;
       switch (type) {
       case TU_CONSTS_PRIMITIVE_MAP:
-         base = const_state->offsets.primitive_map;
+         base = const_state->allocs.consts[IR3_CONST_ALLOC_PRIMITIVE_MAP].offset_vec4;
          break;
       case TU_CONSTS_PRIMITIVE_PARAM:
-         base = const_state->offsets.primitive_param;
+         base = const_state->allocs.consts[IR3_CONST_ALLOC_PRIMITIVE_PARAM].offset_vec4;
          break;
       default:
          unreachable("bad consts type");

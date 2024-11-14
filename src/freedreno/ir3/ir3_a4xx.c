@@ -215,7 +215,7 @@ get_image_offset(struct ir3_context *ctx, const nir_intrinsic_instr *instr,
       const struct ir3_const_state *const_state = ir3_const_state(ctx->so);
       assert(const_state->image_dims.mask & (1 << index));
 
-      cb = regid(const_state->offsets.image_dims, 0) +
+      cb = ir3_const_reg(const_state, IR3_CONST_ALLOC_IMAGE_DIMS, 0) +
          const_state->image_dims.off[index];
    } else {
       index += ctx->s->info.num_ssbos;

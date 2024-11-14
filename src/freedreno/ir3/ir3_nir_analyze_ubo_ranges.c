@@ -560,8 +560,7 @@ ir3_nir_lower_const_global_loads(nir_shader *nir, struct ir3_shader_variant *v)
       global_offset =
          const_state->allocs.consts[IR3_CONST_ALLOC_GLOBAL].offset_vec4 * 16;
    } else {
-      struct ir3_const_state *const_state = ir3_const_state_mut(v);
-      ir3_setup_const_state(nir, v, const_state);
+      const struct ir3_const_state *const_state = ir3_const_state(v);
       global_offset = const_state->allocs.max_const_offset_vec4 * 16;
       max_upload =
          ir3_const_state_get_free_space(v, const_state, 1) * 16;
@@ -643,10 +642,9 @@ ir3_nir_analyze_ubo_ranges(nir_shader *nir, struct ir3_shader_variant *v)
    /* Limit our uploads to the amount of constant buffer space available in
     * the hardware, minus what the shader compiler may need for various
     * driver params.  We do this UBO-to-push-constant before the real
-    * allocation of the driver params' const space, because UBO pointers can
+    * allocation of the UBO pointers' const space, because UBO pointers can
     * be driver params but this pass usually eliminatings them.
     */
-   ir3_setup_const_state(nir, v, const_state);
    const uint32_t max_upload =
       ir3_const_state_get_free_space(v, const_state, align_vec4) * 16;
 

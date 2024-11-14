@@ -245,8 +245,10 @@ ir3_emit_image_dims(struct fd_screen *screen,
                     struct fd_shaderimg_stateobj *si)
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset = const_state->offsets.image_dims;
-   if (v->constlen > offset) {
+   uint32_t offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_IMAGE_DIMS].offset_vec4;
+   if (ir3_const_can_upload(&const_state->allocs, IR3_CONST_ALLOC_IMAGE_DIMS,
+                            v->constlen)) {
       uint32_t dims[align(const_state->image_dims.count, 4)];
       unsigned mask = const_state->image_dims.mask;
 
@@ -297,7 +299,7 @@ ir3_emit_immediates(const struct ir3_shader_variant *v,
                     struct fd_ringbuffer *ring)
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t base = const_state->offsets.immediate;
+   uint32_t base = const_state->allocs.max_const_offset_vec4;
    int size = DIV_ROUND_UP(const_state->immediates_count, 4);
 
    /* truncate size to avoid writing constants that shader
@@ -324,7 +326,13 @@ ir3_emit_link_map(const struct ir3_shader_variant *producer,
                   struct fd_ringbuffer *ring)
 {
    const struct ir3_const_state *const_state = ir3_const_state(consumer);
-   uint32_t base = const_state->offsets.primitive_map;
+   if (!ir3_const_can_upload(&const_state->allocs,
+                             IR3_CONST_ALLOC_PRIMITIVE_MAP,
+                             consumer->constlen))
+      return;
+
+   uint32_t base =
+      const_state->allocs.consts[IR3_CONST_ALLOC_PRIMITIVE_MAP].offset_vec4;
    int size = DIV_ROUND_UP(consumer->input_size, 4);
 
    /* truncate size to avoid writing constants that shader
@@ -347,8 +355,10 @@ emit_tfbos(struct fd_context *ctx, const struct ir3_shader_variant *v,
 {
    /* streamout addresses after driver-params: */
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset = const_state->offsets.tfbo;
-   if (v->constlen > offset) {
+   uint32_t offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_TFBO].offset_vec4;
+   if (ir3_const_can_upload(&const_state->allocs, IR3_CONST_ALLOC_TFBO,
+                            v->constlen)) {
       struct fd_streamout_stateobj *so = &ctx->streamout;
       const struct ir3_stream_output_info *info = &v->stream_output;
       uint32_t params = 4;
@@ -423,8 +433,10 @@ emit_kernel_params(struct fd_context *ctx, const struct ir3_shader_variant *v,
    assert_dt
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
-   uint32_t offset = const_state->offsets.kernel_params;
-   if (v->constlen > offset) {
+   uint32_t offset =
+      const_state->allocs.consts[IR3_CONST_ALLOC_KERNEL_PARAMS].offset_vec4;
+   if (ir3_const_can_upload(&const_state->allocs, IR3_CONST_ALLOC_KERNEL_PARAMS,
+                            v->constlen)) {
       ring_wfi(ctx->batch, ring);
       emit_const_user(ring, v, offset * 4,
                       align(v->cs.req_input_mem, 4),

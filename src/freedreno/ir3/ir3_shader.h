@@ -206,7 +206,24 @@ enum ir3_const_alloc_type {
    IR3_CONST_ALLOC_GLOBAL = 6,
    /* OpenGL, pre-a6xx; pointers to UBOs */
    IR3_CONST_ALLOC_UBO_PTRS = 7,
-   IR3_CONST_ALLOC_MAX = 8,
+   /* OpenGL, a5xx only; needed to calculate pixel offset, but only
+    * for images that have image_{load,store,size,atomic*} intrinsics.
+    */
+   IR3_CONST_ALLOC_IMAGE_DIMS = 8,
+   /* OpenCL */
+   IR3_CONST_ALLOC_KERNEL_PARAMS = 9,
+   /* OpenGL, TFBO addresses only for vs on a3xx/a4xx */
+   IR3_CONST_ALLOC_TFBO = 10,
+   /* Common, stage-dependent primitive params:
+    *  vs, gs: uvec4(primitive_stride, vertex_stride, 0, 0)
+    *  hs, ds: uvec4(primitive_stride, vertex_stride,
+    *                patch_stride, patch_vertices_in)
+    *          uvec4(tess_param_base, tess_factor_base)
+    */
+   IR3_CONST_ALLOC_PRIMITIVE_PARAM = 11,
+   /* Common, mapping from varying location to offset. */
+   IR3_CONST_ALLOC_PRIMITIVE_MAP = 12,
+   IR3_CONST_ALLOC_MAX = 13,
 };
 
 struct ir3_const_allocation {
@@ -232,30 +249,30 @@ ir3_const_can_upload(const struct ir3_const_allocations *const_alloc,
           const_alloc->consts[type].offset_vec4 < shader_const_size_vec4;
 }
 
+struct ir3_const_image_dims {
+   uint32_t mask;  /* bitmask of images that have image_store */
+   uint32_t count; /* number of consts allocated */
+   /* three const allocated per image which has image_store:
+      *  + cpp         (bytes per pixel)
+      *  + pitch       (y pitch)
+      *  + array_pitch (z pitch)
+      */
+   uint32_t off[IR3_MAX_SHADER_IMAGES];
+};
+
 /**
- * Describes the layout of shader consts in the const register file.
+ * Describes the layout of shader consts in the const register file
+ * and additional info about individual allocations.
  *
- * Layout of constant registers, each section aligned to vec4.  Note
- * that pointer size (ubo, etc) changes depending on generation.
+ * Each consts section is aligned to vec4. Note that pointer
+ * size (ubo, etc) changes depending on generation.
  *
- *   + user consts: only used for turnip push consts
- *   + Optional consts: ubo ranges, preamble, global, etc.
- *   + UBO addresses: turnip is bindless and these are wasted
- *   + image dimensions: a5xx only; needed to calculate pixel offset, but only
- *     for images that have image_{load,store,size,atomic*} intrinsics
- *   + kernel params: cl only
- *   + driver params: these are stage-dependent; see ir3_driver_param
- *   + TFBO addresses: only for vs on a3xx/a4xx
- *   + primitive params: these are stage-dependent
- *       vs, gs: uvec4(primitive_stride, vertex_stride, 0, 0)
- *       hs, ds: uvec4(primitive_stride, vertex_stride,
- *                     patch_stride, patch_vertices_in)
- *               uvec4(tess_param_base, tess_factor_base)
- *   + primitive map
- *   + lowered immediates
- *
- * Immediates go last mostly because they are inserted in the CP pass
- * after the nir -> ir3 frontend.
+ * The consts allocation flow is as follows:
+ * 1) Turnip/Freedreno allocates consts required by corresponding API,
+ *    e.g. push const, inline uniforms, etc. Then passes ir3_const_allocations
+ *    into IR3.
+ * 2) ir3_setup_const_state allocates consts with non-negotiable size.
+ * 3) IR3 lowerings afterwards allocate from the free space left.
  *
  * Note UBO size in bytes should be aligned to vec4
  */
@@ -268,28 +285,9 @@ struct ir3_const_state {
    struct ir3_driver_ubo driver_params_ubo;
    struct ir3_driver_ubo primitive_map_ubo, primitive_param_ubo;
 
-   struct {
-      /* Required consts, cannot negotiate their size */
-      unsigned image_dims;
-      unsigned kernel_params;
-      unsigned tfbo;
-      unsigned primitive_param;
-      unsigned primitive_map;
-      unsigned immediate;
-   } offsets;
-
    struct ir3_const_allocations allocs;
 
-   struct {
-      uint32_t mask;  /* bitmask of images that have image_store */
-      uint32_t count; /* number of consts allocated */
-      /* three const allocated per image which has image_store:
-       *  + cpp         (bytes per pixel)
-       *  + pitch       (y pitch)
-       *  + array_pitch (z pitch)
-       */
-      uint32_t off[IR3_MAX_SHADER_IMAGES];
-   } image_dims;
+   struct ir3_const_image_dims image_dims;
 
    unsigned immediates_count;
    unsigned immediates_size;

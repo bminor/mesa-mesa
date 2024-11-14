@@ -1110,6 +1110,10 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
    if (so->compiler->load_shader_consts_via_preamble)
       progress |= OPT(s, ir3_nir_lower_driver_params_to_ubo, so);
 
+   if (!so->binning_pass) {
+      ir3_setup_const_state(s, so, ir3_const_state_mut(so));
+   }
+
    /* Do the preamble before analysing UBO ranges, because it's usually
     * higher-value and because it can result in eliminating some indirect UBO
     * accesses where otherwise we'd have to push the whole range. However we
@@ -1221,13 +1225,6 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
    }
 
    nir_sweep(s);
-
-   /* Binning pass variants re-use  the const_state of the corresponding
-    * draw pass shader, so that same const emit can be re-used for both
-    * passes:
-    */
-   if (!so->binning_pass)
-      ir3_setup_const_state(s, so, ir3_const_state_mut(so));
 }
 
 bool
@@ -1299,9 +1296,11 @@ ir3_get_driver_param_info(const nir_shader *shader, nir_intrinsic_instr *intr,
    return true;
 }
 
-static void
-ir3_nir_scan_driver_consts(struct ir3_compiler *compiler, nir_shader *shader, struct ir3_const_state *layout)
+uint32_t
+ir3_nir_scan_driver_consts(struct ir3_compiler *compiler, nir_shader *shader,
+                           struct ir3_const_image_dims *image_dims)
 {
+   uint32_t num_driver_params = 0;
    nir_foreach_function (function, shader) {
       if (!function->impl)
          continue;
@@ -1314,32 +1313,34 @@ ir3_nir_scan_driver_consts(struct ir3_compiler *compiler, nir_shader *shader, st
             nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
             unsigned idx;
 
-            switch (intr->intrinsic) {
-            case nir_intrinsic_image_atomic:
-            case nir_intrinsic_image_atomic_swap:
-            case nir_intrinsic_image_load:
-            case nir_intrinsic_image_store:
-            case nir_intrinsic_image_size:
-               /* a4xx gets these supplied by the hw directly (maybe CP?) */
-               if (compiler->gen == 5 &&
-                   !(intr->intrinsic == nir_intrinsic_image_load &&
-                     !(nir_intrinsic_access(intr) & ACCESS_COHERENT))) {
-                  idx = nir_src_as_uint(intr->src[0]);
-                  if (layout->image_dims.mask & (1 << idx))
-                     break;
-                  layout->image_dims.mask |= (1 << idx);
-                  layout->image_dims.off[idx] = layout->image_dims.count;
-                  layout->image_dims.count += 3; /* three const per */
+            if (image_dims) {
+               switch (intr->intrinsic) {
+               case nir_intrinsic_image_atomic:
+               case nir_intrinsic_image_atomic_swap:
+               case nir_intrinsic_image_load:
+               case nir_intrinsic_image_store:
+               case nir_intrinsic_image_size:
+                  /* a4xx gets these supplied by the hw directly (maybe CP?) */
+                  if (compiler->gen == 5 &&
+                     !(intr->intrinsic == nir_intrinsic_image_load &&
+                        !(nir_intrinsic_access(intr) & ACCESS_COHERENT))) {
+                     idx = nir_src_as_uint(intr->src[0]);
+                     if (image_dims->mask & (1 << idx))
+                        break;
+                     image_dims->mask |= (1 << idx);
+                     image_dims->off[idx] = image_dims->count;
+                     image_dims->count += 3; /* three const per */
+                  }
+                  break;
+               default:
+                  break;
                }
-               break;
-            default:
-               break;
             }
 
             struct driver_param_info param_info;
             if (ir3_get_driver_param_info(shader, intr, &param_info)) {
-               layout->num_driver_params =
-                  MAX2(layout->num_driver_params,
+               num_driver_params =
+                  MAX2(num_driver_params,
                        param_info.offset + nir_intrinsic_dest_components(intr));
             }
          }
@@ -1353,9 +1354,11 @@ ir3_nir_scan_driver_consts(struct ir3_compiler *compiler, nir_shader *shader, st
     */
    if (!compiler->has_shared_regfile &&
          shader->info.stage == MESA_SHADER_COMPUTE) {
-      layout->num_driver_params =
-         MAX2(layout->num_driver_params, IR3_DP_CS(workgroup_id_z) + 1);
+      num_driver_params =
+         MAX2(num_driver_params, IR3_DP_CS(workgroup_id_z) + 1);
    }
+
+   return num_driver_params;
 }
 
 void
@@ -1413,10 +1416,46 @@ ir3_const_alloc_all_reserved_space(struct ir3_const_allocations *const_alloc)
    const_alloc->reserved_vec4 = 0;
 }
 
-/* Sets up the variant-dependent constant state for the ir3_shader.  Note
- * that it is also used from ir3_nir_analyze_ubo_ranges() to figure out the
- * maximum number of driver params that would eventually be used, to leave
- * space for this function to allocate the driver params.
+void
+ir3_alloc_driver_params(struct ir3_const_allocations *const_alloc,
+                        uint32_t *num_driver_params,
+                        struct ir3_compiler *compiler,
+                        gl_shader_stage shader_stage)
+{
+   if (*num_driver_params == 0)
+      return;
+
+   /* num_driver_params in dwords.  we only need to align to vec4s for the
+    * common case of immediate constant uploads, but for indirect dispatch
+    * the constants may also be indirect and so we have to align the area in
+    * const space to that requirement.
+    */
+   *num_driver_params = align(*num_driver_params, 4);
+   unsigned upload_unit = 1;
+   if (shader_stage == MESA_SHADER_COMPUTE ||
+       (*num_driver_params >= IR3_DP_VS(vtxid_base))) {
+      upload_unit = compiler->const_upload_unit;
+   }
+
+   /* offset cannot be 0 for vs params loaded by CP_DRAW_INDIRECT_MULTI */
+   if (shader_stage == MESA_SHADER_VERTEX && compiler->gen >= 6)
+      const_alloc->max_const_offset_vec4 =
+         MAX2(const_alloc->max_const_offset_vec4, 1);
+
+   uint32_t driver_params_size_vec4 =
+      align(*num_driver_params / 4, upload_unit);
+   ir3_const_alloc(const_alloc, IR3_CONST_ALLOC_DRIVER_PARAMS,
+                   driver_params_size_vec4, upload_unit);
+}
+
+/* Sets up the variant-dependent constant state for the ir3_shader.
+ * The consts allocation flow is as follows:
+ * 1) Turnip/Freedreno allocates consts required by corresponding API,
+ *    e.g. push const, inline uniforms, etc. Then passes ir3_const_allocations
+ *    into IR3.
+ * 2) ir3_setup_const_state pre-allocates consts with non-negotiable size.
+ * 3) IR3 lowerings afterwards allocate from the free space left.
+ * 4) Allocate offsets for consts from step 2)
  */
 void
 ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
@@ -1425,9 +1464,8 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
    struct ir3_compiler *compiler = v->compiler;
    unsigned ptrsz = ir3_pointer_size(compiler);
 
-   memset(&const_state->offsets, ~0, sizeof(const_state->offsets));
-
-   ir3_nir_scan_driver_consts(compiler, nir, const_state);
+   const_state->num_driver_params =
+      ir3_nir_scan_driver_consts(compiler, nir, &const_state->image_dims);
 
    if ((compiler->gen < 5) && (v->stream_output.num_outputs > 0)) {
       const_state->num_driver_params =
@@ -1438,92 +1476,56 @@ ir3_setup_const_state(nir_shader *nir, struct ir3_shader_variant *v,
 
    assert((const_state->ubo_state.size % 16) == 0);
 
-   /* IR3_CONST_ALLOC_DRIVER_PARAMS could have been allocated earlier. */
-   if (const_state->allocs.consts[IR3_CONST_ALLOC_DRIVER_PARAMS].size_vec4 == 0) {
-      ir3_nir_scan_driver_consts(compiler, nir, const_state);
-      if (const_state->num_driver_params > 0) {
-        /* num_driver_params in dwords.  we only need to align to vec4s for the
-         * common case of immediate constant uploads, but for indirect dispatch
-         * the constants may also be indirect and so we have to align the area in
-         * const space to that requirement.
-         */
-         const_state->num_driver_params = align(const_state->num_driver_params, 4);
-         unsigned upload_unit = 1;
-         if (v->type == MESA_SHADER_COMPUTE ||
-            (const_state->num_driver_params >= IR3_DP_VS(vtxid_base))) {
-            upload_unit = compiler->const_upload_unit;
-         }
-
-         /* offset cannot be 0 for vs params loaded by CP_DRAW_INDIRECT_MULTI */
-         if (v->type == MESA_SHADER_VERTEX && compiler->gen >= 6)
-            const_state->allocs.max_const_offset_vec4 =
-               MAX2(const_state->allocs.max_const_offset_vec4, 1);
-
-         uint32_t driver_params_size_vec4 =
-            align(const_state->num_driver_params / 4, upload_unit);
-         ir3_const_alloc(&const_state->allocs, IR3_CONST_ALLOC_DRIVER_PARAMS,
-                         driver_params_size_vec4, upload_unit);
-      }
-   }
-
-   unsigned constoff = const_state->allocs.max_const_offset_vec4;
+   ir3_alloc_driver_params(&const_state->allocs,
+                           &const_state->num_driver_params, compiler,
+                           v->type);
 
    if (const_state->image_dims.count > 0) {
-      unsigned cnt = const_state->image_dims.count;
-      const_state->offsets.image_dims = constoff;
-      constoff += align(cnt, 4) / 4;
+      ir3_const_reserve_space(&const_state->allocs, IR3_CONST_ALLOC_IMAGE_DIMS,
+                              align(const_state->image_dims.count, 4) / 4, 1);
    }
 
-   if (v->type == MESA_SHADER_KERNEL) {
-      const_state->offsets.kernel_params = constoff;
-      constoff += align(v->cs.req_input_mem, 4) / 4;
+   if (v->type == MESA_SHADER_KERNEL && v->cs.req_input_mem) {
+      ir3_const_reserve_space(&const_state->allocs,
+                              IR3_CONST_ALLOC_KERNEL_PARAMS,
+                              align(v->cs.req_input_mem, 4) / 4, 1);
    }
 
    if ((v->type == MESA_SHADER_VERTEX) && (compiler->gen < 5) &&
        v->stream_output.num_outputs > 0) {
-      const_state->offsets.tfbo = constoff;
-      constoff += align(IR3_MAX_SO_BUFFERS * ptrsz, 4) / 4;
+      ir3_const_reserve_space(&const_state->allocs, IR3_CONST_ALLOC_TFBO,
+                              align(IR3_MAX_SO_BUFFERS * ptrsz, 4) / 4, 1);
    }
 
    if (!compiler->load_shader_consts_via_preamble) {
       switch (v->type) {
       case MESA_SHADER_TESS_CTRL:
       case MESA_SHADER_TESS_EVAL:
-         const_state->offsets.primitive_param = constoff;
-         constoff += 2;
-
-         const_state->offsets.primitive_map = constoff;
+         ir3_const_reserve_space(&const_state->allocs,
+                                 IR3_CONST_ALLOC_PRIMITIVE_PARAM, 2, 1);
          break;
       case MESA_SHADER_GEOMETRY:
-         const_state->offsets.primitive_param = constoff;
-         constoff += 1;
-
-         const_state->offsets.primitive_map = constoff;
+         ir3_const_reserve_space(&const_state->allocs,
+                                 IR3_CONST_ALLOC_PRIMITIVE_PARAM, 1, 1);
          break;
       default:
          break;
       }
    }
 
-   switch (v->type) {
-   case MESA_SHADER_VERTEX:
-      const_state->offsets.primitive_param = constoff;
-      constoff += 1;
-      break;
-   case MESA_SHADER_TESS_CTRL:
-   case MESA_SHADER_TESS_EVAL:
-      constoff += DIV_ROUND_UP(v->input_size, 4);
-      break;
-   case MESA_SHADER_GEOMETRY:
-      constoff += DIV_ROUND_UP(v->input_size, 4);
-      break;
-   default:
-      break;
+   if (v->type == MESA_SHADER_VERTEX) {
+      ir3_const_reserve_space(&const_state->allocs,
+                              IR3_CONST_ALLOC_PRIMITIVE_PARAM, 1, 1);
    }
 
-   const_state->offsets.immediate = constoff;
+   if ((v->type == MESA_SHADER_TESS_CTRL || v->type == MESA_SHADER_TESS_EVAL ||
+        v->type == MESA_SHADER_GEOMETRY)) {
+      ir3_const_reserve_space(&const_state->allocs,
+                              IR3_CONST_ALLOC_PRIMITIVE_MAP,
+                              DIV_ROUND_UP(v->input_size, 4), 1);
+   }
 
-   assert(constoff <= ir3_max_const(v));
+   assert(const_state->allocs.max_const_offset_vec4 <= ir3_max_const(v));
 }
 
 uint32_t
@@ -1531,8 +1533,9 @@ ir3_const_state_get_free_space(const struct ir3_shader_variant *v,
                                const struct ir3_const_state *const_state,
                                uint32_t align_vec4)
 {
-   uint32_t free_space_vec4 =
-      ir3_max_const(v) - align(const_state->offsets.immediate, align_vec4) -
-      const_state->allocs.reserved_vec4;
+   uint32_t aligned_offset_vec4 =
+      align(const_state->allocs.max_const_offset_vec4, align_vec4);
+   uint32_t free_space_vec4 = ir3_max_const(v) - aligned_offset_vec4 -
+                              const_state->allocs.reserved_vec4;
    return free_space_vec4;
 }

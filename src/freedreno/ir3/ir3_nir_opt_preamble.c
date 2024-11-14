@@ -287,8 +287,7 @@ ir3_nir_opt_preamble(nir_shader *nir, struct ir3_shader_variant *v)
       max_size =
          const_state->allocs.consts[IR3_CONST_ALLOC_PREAMBLE].size_vec4 * 4;
    } else {
-      struct ir3_const_state *const_state = ir3_const_state_mut(v);
-      ir3_setup_const_state(nir, v, const_state);
+      const struct ir3_const_state *const_state = ir3_const_state(v);
       max_size = ir3_const_state_get_free_space(
                     v, const_state, v->compiler->const_upload_unit) * 4;
    }

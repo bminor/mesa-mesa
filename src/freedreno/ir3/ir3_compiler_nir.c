@@ -1344,7 +1344,7 @@ emit_intrinsic_load_kernel_input(struct ir3_context *ctx,
    const struct ir3_const_state *const_state = ir3_const_state(ctx->so);
    struct ir3_builder *b = &ctx->build;
    unsigned offset = nir_intrinsic_base(intr);
-   unsigned p = regid(const_state->offsets.kernel_params, 0);
+   unsigned p = ir3_const_reg(const_state, IR3_CONST_ALLOC_KERNEL_PARAMS, 0);
 
    struct ir3_instruction *src0 = ir3_get_src(ctx, &intr->src[0])[0];
 
@@ -2600,8 +2600,10 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    }
 
    const struct ir3_const_state *const_state = ir3_const_state(ctx->so);
-   const unsigned primitive_param = const_state->offsets.primitive_param * 4;
-   const unsigned primitive_map = const_state->offsets.primitive_map * 4;
+   const unsigned primitive_param =
+      const_state->allocs.consts[IR3_CONST_ALLOC_PRIMITIVE_PARAM].offset_vec4 * 4;
+   const unsigned primitive_map =
+      const_state->allocs.consts[IR3_CONST_ALLOC_PRIMITIVE_MAP].offset_vec4 * 4;
 
    switch (intr->intrinsic) {
    case nir_intrinsic_decl_reg:
@@ -4732,7 +4734,9 @@ emit_stream_out(struct ir3_context *ctx)
       unsigned stride = strmout->stride[i];
       struct ir3_instruction *base, *off;
 
-      base = create_uniform(&ctx->build, regid(const_state->offsets.tfbo, i));
+      base = create_uniform(
+         &ctx->build,
+         ir3_const_reg(const_state, IR3_CONST_ALLOC_TFBO, i));
 
       /* 24-bit should be enough: */
       off = ir3_MUL_U24(&ctx->build, vtxcnt, 0,
