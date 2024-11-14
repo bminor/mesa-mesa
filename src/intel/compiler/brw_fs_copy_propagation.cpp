@@ -1283,6 +1283,12 @@ commute_immediates(fs_inst *inst)
       }
    }
 
+   /* MAD can only have mutliplicand immediate in src2. */
+   if (inst->opcode == BRW_OPCODE_MAD) {
+      if (inst->src[1].file == IMM && inst->src[2].file != IMM)
+         swap_srcs(inst, 1, 2);
+   }
+
    /* If only one of the sources of a 2-source, commutative instruction (e.g.,
     * AND) is immediate, it must be src1. If both are immediate, opt_algebraic
     * should fold it away.
