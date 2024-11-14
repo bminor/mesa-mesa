@@ -138,6 +138,12 @@ enum_map(OM_PCK_FMT.t, F_PCK_FORMAT, [
    ('one', 'one'),
 ])
 
+enum_map(OM_SCHED.t, F_SCHED_CTRL, [
+   ('none', 'none'),
+   ('swap', 'swap'),
+   ('wdf', 'wdf'),
+])
+
 # Op/ISA mapping.
 class OpMap(object):
    def __init__(self, name, cop_name, igrp_mappings, encode_variants):
@@ -763,4 +769,70 @@ op_map(O_NOP_END,
    isa_ops=[
       ('ctrl', [(I_NOP, [])]),
    ]
+)
+
+op_map(O_DITR,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'ditr'),
+   ]),
+   isa_ops=[
+      ('ctrl', [
+         (I_DITR, [
+            ('dest', ('pco_ref_get_temp', 'dest[0]')), # TODO NEXT: validate whether or not indexed registers can be used for srcs/dests.
+
+            ('coff', ('pco_ref_get_coeff', 'src[1]')),
+            ('p', 'none'),
+
+            ('woff', 0),
+            ('mode', OM_ITR_MODE),
+
+            ('count', ('pco_ref_get_imm', 'src[2]')),
+            ('coff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', 'src[1]')),
+            ('woff_idx_ctrl', 'none'),
+
+            ('f16', OM_F16),
+            ('sched_ctrl', OM_SCHED),
+            ('drc', ('pco_ref_get_drc', 'src[0]')),
+            ('sat', OM_SAT),
+         ])
+      ])
+   ],
+)
+
+op_map(O_DITRP,
+   hdr=(I_IGRP_HDR_CONTROL, [
+      ('olchk', False),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('miscctl', False),
+      ('ctrlop', 'ditr'),
+   ]),
+   isa_ops=[
+      ('ctrl', [
+         (I_DITR, [
+            ('dest', ('pco_ref_get_temp', 'dest[0]')), # TODO NEXT: validate whether or not indexed registers can be used for srcs/dests.
+
+            ('coff', ('pco_ref_get_coeff', 'src[1]')),
+            ('p', 'iter_mul'),
+
+            ('woff', ('pco_ref_get_coeff', 'src[2]')),
+            ('mode', OM_ITR_MODE),
+
+            ('count', ('pco_ref_get_imm', 'src[3]')),
+            ('coff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', 'src[1]')),
+            ('woff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', 'src[2]')),
+
+            ('f16', OM_F16),
+            ('sched_ctrl', OM_SCHED),
+            ('drc', ('pco_ref_get_drc', 'src[0]')),
+            ('sat', OM_SAT),
+         ])
+      ])
+   ],
 )

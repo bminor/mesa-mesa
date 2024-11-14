@@ -1358,6 +1358,66 @@ static inline enum pco_reg_class pco_ref_get_reg_class(pco_ref ref)
 }
 
 /**
+ * \brief Returns the register index of a reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Register index.
+ */
+static inline unsigned pco_ref_get_reg_index(pco_ref ref)
+{
+   assert(pco_ref_is_reg(ref) || pco_ref_is_idx_reg(ref));
+
+   unsigned index = pco_ref_is_idx_reg(ref) ? ref.idx_reg.offset : ref.val;
+   assert(index < 256);
+
+   return index;
+}
+
+/**
+ * \brief Returns the register index control of a reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Register index control.
+ */
+static inline enum pco_idx_ctrl pco_ref_get_reg_idx_ctrl(pco_ref ref)
+{
+   assert(pco_ref_is_reg(ref) || pco_ref_is_idx_reg(ref));
+
+   if (pco_ref_is_reg(ref))
+      return PCO_IDX_CTRL_NONE;
+
+   return PCO_IDX_CTRL_IDX0 + ref.idx_reg.num;
+}
+
+/**
+ * \brief Returns the temp register index from its reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Temp index.
+ */
+static inline unsigned pco_ref_get_temp(pco_ref ref)
+{
+   assert(pco_ref_is_reg(ref));
+   assert(pco_ref_get_reg_class(ref) == PCO_REG_CLASS_TEMP);
+
+   return pco_ref_get_reg_index(ref);
+}
+
+/**
+ * \brief Returns the coefficient register index from its reference type.
+ *
+ * \param[in] ref Reference.
+ * \return Coefficient index.
+ */
+static inline unsigned pco_ref_get_coeff(pco_ref ref)
+{
+   assert(pco_ref_is_reg(ref));
+   assert(pco_ref_get_reg_class(ref) == PCO_REG_CLASS_COEFF);
+
+   return pco_ref_get_reg_index(ref);
+}
+
+/**
  * \brief Returns the I/O from its reference type.
  *
  * \param[in] ref Reference.
