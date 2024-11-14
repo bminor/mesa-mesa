@@ -8,8 +8,8 @@ section_start cuttlefish_setup "cuttlefish: setup"
 set -xe
 
 export HOME=/cuttlefish
-export PATH=$PATH:/cuttlefish/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${CI_PROJECT_DIR}/install/lib/:/cuttlefish/lib64
+export PATH=/cuttlefish/bin:$PATH
+export LD_LIBRARY_PATH=/cuttlefish/lib64:${CI_PROJECT_DIR}/install/lib:$LD_LIBRARY_PATH
 export EGL_PLATFORM=surfaceless
 
 syslogd
