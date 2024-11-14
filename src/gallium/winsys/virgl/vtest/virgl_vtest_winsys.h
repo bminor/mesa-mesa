@@ -79,9 +79,6 @@ struct virgl_vtest_cmd_buf {
    unsigned cres;
    struct virgl_winsys *ws;
    struct virgl_hw_res **res_bo;
-
-   char                        is_handle_added[512];
-   unsigned                    reloc_indices_hashlist[512];
 };
 
 static inline struct virgl_hw_res *
