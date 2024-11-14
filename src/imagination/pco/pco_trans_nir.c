@@ -184,7 +184,9 @@ trans_load_input_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
    puts("finishme: trans_load_input_vs");
 
-   unsigned base = nir_intrinsic_base(intr);
+   /* unsigned base = nir_intrinsic_base(intr); */
+   unsigned base =
+      nir_intrinsic_io_semantics(intr).location - VERT_ATTRIB_GENERIC0;
    unsigned component = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(dest);
 
@@ -211,7 +213,23 @@ trans_store_output_vs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
 {
    puts("finishme: trans_store_output_vs");
 
-   unsigned base = nir_intrinsic_base(intr);
+   /* unsigned base = nir_intrinsic_base(intr); */
+
+   unsigned location = nir_intrinsic_io_semantics(intr).location;
+   unsigned base;
+   switch (location) {
+   case VARYING_SLOT_POS:
+      base = 0;
+      break;
+
+   case VARYING_SLOT_VAR0 ... VARYING_SLOT_VAR31:
+      base = location - VARYING_SLOT_VAR0 + 1;
+      break;
+
+   default:
+      unreachable();
+   }
+
    unsigned component = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(src);
 
@@ -237,27 +255,44 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
    puts("finishme: trans_load_input_fs");
 
-   UNUSED unsigned base = nir_intrinsic_base(intr);
-   UNUSED unsigned component = nir_intrinsic_component(intr);
+   ASSERTED unsigned base = nir_intrinsic_base(intr);
+   assert(!base);
+
+   unsigned component = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(dest);
 
    const nir_src offset = intr->src[0];
    assert(nir_src_as_uint(offset) == 0);
 
    /* TODO NEXT: Wrong! Do properly! */
-   unsigned coeffs_index =
-      4 * ((nir_intrinsic_io_semantics(intr).location - VARYING_SLOT_VAR0) + 1);
-   pco_ref coeffs = pco_ref_hwreg_vec(coeffs_index, PCO_REG_CLASS_COEFF, 4);
-   pco_ref wcoeffs = pco_ref_hwreg_vec(0, PCO_REG_CLASS_COEFF, 4);
+   unsigned loc_offset =
+      nir_intrinsic_io_semantics(intr).location - VARYING_SLOT_VAR0;
+   /* TEMP: +1 to skip over wcoeffs */
+   unsigned coeffs_index = 4 * (loc_offset + component + 1);
+   unsigned wcoeffs_index = 0;
+
+   pco_ref coeffs =
+      pco_ref_hwreg_vec(coeffs_index, PCO_REG_CLASS_COEFF, 4 * chans);
+   pco_ref wcoeffs = pco_ref_hwreg_vec(wcoeffs_index, PCO_REG_CLASS_COEFF, 4);
    pco_ref itr_count = pco_ref_val16(chans);
 
-   return pco_fitrp(&tctx->b,
-                    dest,
-                    pco_ref_drc(PCO_DRC_0),
-                    coeffs,
-                    wcoeffs,
-                    itr_count,
-                    .itr_mode = PCO_ITR_MODE_PIXEL);
+   if (PVR_HAS_FEATURE(tctx->pco_ctx->dev_info, usc_itrsmp_enhanced)) {
+      return pco_ditrp(&tctx->b,
+                       dest,
+                       pco_ref_drc(PCO_DRC_0),
+                       coeffs,
+                       wcoeffs,
+                       itr_count,
+                       .itr_mode = PCO_ITR_MODE_PIXEL);
+   } else {
+      return pco_fitrp(&tctx->b,
+                       dest,
+                       pco_ref_drc(PCO_DRC_0),
+                       coeffs,
+                       wcoeffs,
+                       itr_count,
+                       .itr_mode = PCO_ITR_MODE_PIXEL);
+   }
 }
 
 /**
