@@ -213,6 +213,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_shader_expect_assume = true,
       .KHR_shader_non_semantic_info = true,
+      .KHR_shader_relaxed_extended_instruction = true,
       .KHR_storage_buffer_storage_class = true,
 #ifdef PANVK_USE_WSI_PLATFORM
       .KHR_swapchain = true,
@@ -379,6 +380,9 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
+
+      /* VK_KHR_shader_relaxed_extended_instruction */
+      .shaderRelaxedExtendedInstruction = true,
 
       /* VK_KHR_shader_expect_assume */
       .shaderExpectAssume = true,
