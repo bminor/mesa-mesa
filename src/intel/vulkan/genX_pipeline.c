@@ -166,12 +166,12 @@ vertex_element_comp_control(enum isl_format format, unsigned comp)
    }
 }
 
-void
-genX(emit_vertex_input)(struct anv_batch *batch,
-                        uint32_t *vertex_element_dws,
-                        struct anv_graphics_pipeline *pipeline,
-                        const struct vk_vertex_input_state *vi,
-                        bool emit_in_pipeline)
+static void
+emit_ves_vf_instancing(struct anv_batch *batch,
+                       uint32_t *vertex_element_dws,
+                       struct anv_graphics_pipeline *pipeline,
+                       const struct vk_vertex_input_state *vi,
+                       bool emit_in_pipeline)
 {
    const struct anv_device *device = pipeline->base.base.device;
    const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);
@@ -275,6 +275,41 @@ genX(emit_vertex_input)(struct anv_batch *batch,
    }
 }
 
+void
+genX(batch_emit_vertex_input)(struct anv_batch *batch,
+                              struct anv_device *device,
+                              struct anv_graphics_pipeline *pipeline,
+                              const struct vk_vertex_input_state *vi)
+{
+   const uint32_t ve_count =
+      pipeline->vs_input_elements + pipeline->svgs_count;
+   const uint32_t num_dwords = 1 + 2 * MAX2(1, ve_count);
+   uint32_t *p = anv_batch_emitn(batch, num_dwords,
+                                 GENX(3DSTATE_VERTEX_ELEMENTS));
+   if (p == NULL)
+      return;
+
+   if (ve_count == 0) {
+      memcpy(p + 1, device->physical->empty_vs_input,
+             sizeof(device->physical->empty_vs_input));
+   } else if (ve_count == pipeline->vertex_input_elems) {
+      /* MESA_VK_DYNAMIC_VI is not dynamic for this pipeline, so everything is
+       * in pipeline->vertex_input_data and we can just memcpy
+       */
+      memcpy(p + 1, pipeline->vertex_input_data, 4 * 2 * ve_count);
+      anv_batch_emit_pipeline_state(batch, pipeline, final.vf_instancing);
+   } else {
+      assert(pipeline->final.vf_instancing.len == 0);
+      /* Use dyn->vi to emit the dynamic VERTEX_ELEMENT_STATE input. */
+      emit_ves_vf_instancing(batch, p + 1, pipeline, vi,
+                             false /* emit_in_pipeline */);
+      /* Then append the VERTEX_ELEMENT_STATE for the draw parameters */
+      memcpy(p + 1 + 2 * pipeline->vs_input_elements,
+             pipeline->vertex_input_data,
+             4 * 2 * pipeline->vertex_input_elems);
+   }
+}
+
 static void
 emit_vertex_input(struct anv_graphics_pipeline *pipeline,
                   const struct vk_graphics_pipeline_state *state,
@@ -284,9 +319,9 @@ emit_vertex_input(struct anv_graphics_pipeline *pipeline,
     * everything in gfx8_cmd_buffer.c
     */
    if (!BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_VI)) {
-      genX(emit_vertex_input)(NULL,
-                              pipeline->vertex_input_data,
-                              pipeline, vi, true /* emit_in_pipeline */);
+      emit_ves_vf_instancing(NULL,
+                             pipeline->vertex_input_data,
+                             pipeline, vi, true /* emit_in_pipeline */);
    }
 
    const struct brw_vs_prog_data *vs_prog_data = get_vs_prog_data(pipeline);

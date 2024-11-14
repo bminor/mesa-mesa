@@ -2178,35 +2178,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VERTEX_INPUT)) {
-      const uint32_t ve_count =
-         pipeline->vs_input_elements + pipeline->svgs_count;
-      const uint32_t num_dwords = 1 + 2 * MAX2(1, ve_count);
-      uint32_t *p = anv_batch_emitn(&cmd_buffer->batch, num_dwords,
-                                    GENX(3DSTATE_VERTEX_ELEMENTS));
-
-      if (p) {
-         if (ve_count == 0) {
-            memcpy(p + 1, cmd_buffer->device->physical->empty_vs_input,
-                   sizeof(cmd_buffer->device->physical->empty_vs_input));
-         } else if (ve_count == pipeline->vertex_input_elems) {
-            /* MESA_VK_DYNAMIC_VI is not dynamic for this pipeline, so
-             * everything is in pipeline->vertex_input_data and we can just
-             * memcpy
-             */
-            memcpy(p + 1, pipeline->vertex_input_data, 4 * 2 * ve_count);
-            anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline,
-                                          final.vf_instancing);
-         } else {
-            assert(pipeline->final.vf_instancing.len == 0);
-            /* Use dyn->vi to emit the dynamic VERTEX_ELEMENT_STATE input. */
-            genX(emit_vertex_input)(&cmd_buffer->batch, p + 1,
-                                    pipeline, dyn->vi, false /* emit_in_pipeline */);
-            /* Then append the VERTEX_ELEMENT_STATE for the draw parameters */
-            memcpy(p + 1 + 2 * pipeline->vs_input_elements,
-                   pipeline->vertex_input_data,
-                   4 * 2 * pipeline->vertex_input_elems);
-         }
-      }
+      genX(batch_emit_vertex_input)(&cmd_buffer->batch, device,
+                                    pipeline, dyn->vi);
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_TE)) {
