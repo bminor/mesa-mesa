@@ -5,6 +5,7 @@
 
 #include "brw_fs.h"
 #include "brw_fs_builder.h"
+#include "util/half_float.h"
 
 using namespace brw;
 
@@ -37,6 +38,26 @@ src_as_uint(const brw_reg &src)
    }
 }
 
+static double
+src_as_float(const brw_reg &src)
+{
+   assert(src.file == IMM);
+
+   switch (src.type) {
+   case BRW_TYPE_HF:
+      return _mesa_half_to_float((uint16_t)src.d);
+
+   case BRW_TYPE_F:
+      return src.f;
+
+   case BRW_TYPE_DF:
+      return src.df;
+
+   default:
+      unreachable("Invalid float type.");
+   }
+}
+
 static brw_reg
 brw_imm_for_type(uint64_t value, enum brw_reg_type type)
 {
@@ -62,6 +83,55 @@ brw_imm_for_type(uint64_t value, enum brw_reg_type type)
    default:
       unreachable("Invalid integer type.");
    }
+}
+
+/**
+ * Converts a MAD to an ADD by folding the multiplicand sources.
+ */
+static void
+fold_multiplicands_of_MAD(fs_inst *inst)
+{
+   assert(inst->opcode == BRW_OPCODE_MAD);
+   assert (inst->src[1].file == IMM &&
+           inst->src[2].file == IMM &&
+           !brw_type_is_vector_imm(inst->src[1].type) &&
+           !brw_type_is_vector_imm(inst->src[2].type));
+
+   if (brw_type_is_int(inst->src[1].type)) {
+      const uint64_t imm1 = src_as_uint(inst->src[1]);
+      const uint64_t imm2 = src_as_uint(inst->src[2]);
+
+      brw_reg product = brw_imm_ud(imm1 * imm2);
+
+      inst->src[1] = retype(product,
+                            brw_type_larger_of(inst->src[1].type,
+                                               inst->src[2].type));
+   } else {
+      const double product = src_as_float(inst->src[1]) *
+         src_as_float(inst->src[2]);
+
+      switch (brw_type_larger_of(inst->src[1].type,
+                                 inst->src[2].type)) {
+      case BRW_TYPE_HF:
+         inst->src[1] = retype(brw_imm_w(_mesa_float_to_half(product)),
+                               BRW_TYPE_HF);
+         break;
+
+      case BRW_TYPE_F:
+         inst->src[1] = brw_imm_f(product);
+         break;
+
+      case BRW_TYPE_DF:
+         unreachable("float64 should be impossible.");
+         break;
+
+      default:
+         unreachable("Invalid float type.");
+      }
+   }
+
+   inst->opcode = BRW_OPCODE_ADD;
+   inst->resize_sources(2);
 }
 
 bool
@@ -114,6 +184,25 @@ brw_constant_fold_instruction(const intel_device_info *devinfo, fs_inst *inst)
          inst->opcode = BRW_OPCODE_MOV;
          inst->src[0] = brw_imm_for_type(src0 & src1, inst->dst.type);
          inst->resize_sources(1);
+         progress = true;
+         break;
+      }
+
+      break;
+
+   case BRW_OPCODE_MAD:
+      if (inst->src[1].file == IMM &&
+          inst->src[2].file == IMM &&
+          inst->src[3].file == IMM &&
+          !brw_type_is_vector_imm(inst->src[1].type) &&
+          !brw_type_is_vector_imm(inst->src[2].type) &&
+          !brw_type_is_vector_imm(inst->src[3].type)) {
+         fold_multiplicands_of_MAD(inst);
+         assert(inst->opcode == BRW_OPCODE_ADD);
+
+         ASSERTED bool folded = brw_constant_fold_instruction(devinfo, inst);
+         assert(folded);
+
          progress = true;
          break;
       }
@@ -560,6 +649,25 @@ brw_fs_opt_algebraic(fs_visitor &s)
          }
          break;
       case BRW_OPCODE_MAD:
+         if (brw_constant_fold_instruction(devinfo, inst)) {
+            progress = true;
+            break;
+         }
+
+         if (inst->src[1].file == IMM &&
+             inst->src[2].file == IMM &&
+             !brw_type_is_vector_imm(inst->src[1].type) &&
+             !brw_type_is_vector_imm(inst->src[2].type)) {
+            fold_multiplicands_of_MAD(inst);
+
+            /* This could result in (x + 0). For floats, we want to leave this
+             * as an ADD so that a subnormal x will get flushed to zero.
+             */
+            assert(inst->opcode == BRW_OPCODE_ADD);
+            progress = true;
+            break;
+         }
+
          if (inst->src[0].type != BRW_TYPE_F ||
              inst->src[1].type != BRW_TYPE_F ||
              inst->src[2].type != BRW_TYPE_F)
