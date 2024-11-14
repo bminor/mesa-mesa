@@ -543,14 +543,8 @@ si_vpe_set_surface_info(struct vpe_video_processor *vpeproc,
    /* Set up surface pitch, plane address, color space */
    si_vpe_set_plane_info(vpeproc, process_properties, surfaces, which_surface, surface_info);
 
-   /* VAAPI does not provide swizzle info right now.
-    * Swizzle mode is strongly releated to hardware DMA design,
-    * intel-vaapi-driver/i965_drv_video.c also does not handle swizzle information,
-    * maybe this is the reason why it is not currently supported.
-    *
-    * Just default to linear or none temporarily.
-    */
-   surface_info->swizzle               = VPE_SW_LINEAR;
+   struct si_texture *tex = (struct si_texture *)surfaces[0]->texture;
+   surface_info->swizzle               = tex->surface.u.gfx9.swizzle_mode;
 
    struct vpe_plane_dcc_param *dcc_param = &surface_info->dcc;
    dcc_param->enable                   = false;
