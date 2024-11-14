@@ -1013,10 +1013,14 @@ supports_src_as_imm(const struct intel_device_info *devinfo, const fs_inst *inst
       case 110:
          /* For Gfx11, experiments seem to show that HF mixed with F is not
           * allowed in src0 or src2. It is possible that src1 is allowed, but
-          * that cannot have an immediate value. W (or UW) immediate mixed
-          * with other integer sizes can occur in either src0 or src2.
+          * that cannot have an immediate value. Experiments seem to show that
+          * HF immediate can only ever be src0.
+          *
+          * W (or UW) immediate mixed with other integer sizes can occur in
+          * either src0 or src2.
           */
-         return src_idx != 1 && brw_type_is_int(inst->src[src_idx].type);
+         return (src_idx == 0 && inst->src[src_idx].type != BRW_TYPE_F) ||
+                (src_idx == 2 && brw_type_is_int(inst->src[src_idx].type));
 
       case 120:
          /* For Gfx12, experiments seem to show that HF immediate mixed with F
