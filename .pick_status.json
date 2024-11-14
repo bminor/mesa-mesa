@@ -1,5 +1,315 @@
 [
     {
+        "sha": "b8d253b30c0a8c1878f2429f0a4df0a068bbf0aa",
+        "description": "vulkan/screenshot-layer: Add region command option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "45c0ef3bb48a9c8d3c8d10ab3a39e3dd27ceb772",
+        "description": "radv: dump SPIR-V and NIR for the faulty shader detected with the trap",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9149488a9dcc96314814bea5365db0fa1aa0f2ad",
+        "description": "radv: mark live invocations when dumping VGPRS with the trap handler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e037ac2a916225919492801c0c0bb3f528cb1a1",
+        "description": "aco/gfx8: use ds_swizzle_b32 rotate mode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fdc1c61306ddf72713b06aeaa963517636f02072",
+        "description": "Revert \"util: Use persistent array of index entries\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "031f2c2a691d9fbb84ea6146eeeda09d4a4d05a6",
+        "notes": null
+    },
+    {
+        "sha": "66d68263f8fe2fff70bccdb91f700e58a9e8019c",
+        "description": "Revert \"util/mesa-db: Further simplify mesa_db_compact\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "92893309bcc0c1a9ab9eab844a896d99cbc4b4e2",
+        "notes": null
+    },
+    {
+        "sha": "5cfd841ddaa2c5b7c38725595f1a3cd6c964ceab",
+        "description": "anv: fix descriptor asserts",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b6d11ba5b41eed6c9f897b832194d146dce896be",
+        "notes": null
+    },
+    {
+        "sha": "07f44ecd31335c2f4b62cb5a641740d8058e0b1e",
+        "description": "rpi4/ci: mark another flaky timeline_semaphore test",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c3e2927fecd1b81b225828dd4256c660df1f2a8",
+        "description": "docs/features: mark VK_EXT_scalar_block_layout as supported for vc7+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b501cbf153552a27c9a58554716288609337b491",
+        "description": "nir/nir_opt_offsets: Do not fold load/store with const offset > max",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73d513c5be2f0cd2ca8f3c0aca0a536cabc8df58",
+        "description": "vulkan/rmv: Correctly set heap size",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "845792db735893a4e42a0cf7949464bed2180eea",
+        "notes": null
+    },
+    {
+        "sha": "a21cd8c5b623e9b8b199518331a148835844660f",
+        "description": "brw: allocate physical register sizes for spilling",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "aa494cbacf3bfa57163bbed8b5552ad25434e713",
+        "notes": null
+    },
+    {
+        "sha": "d13bcd1dafac0c3e3907b8d7b6c884225be5dd13",
+        "description": "pan/ci: Move g610-vk jobs to post-merge CI",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dcfc956521834ec325fa8f528b8c9118bdf63331",
+        "description": "radv/video: Override pic_init_qp_minus26 in PPS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d166bb5dd116fcb41bfbf4be724021e21b926f5e",
+        "description": "radv/video: Use 64x16 alignment for HEVC encode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1c1a33b35a0ae14bff0ecd03255a7dab3399f1c",
+        "description": "radv/video: Avoid selecting rc layer over maximum",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4a19047d329a49ed34fe05346ae1d298d2907e3e",
+        "notes": null
+    },
+    {
+        "sha": "e941acfb9d055f2cef4bc2f21166e7c2c4821099",
+        "description": "radv/video: Report correct encodeInputPictureGranularity",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "54d499818ca9a004ba735635d328a1ed0ff010b6",
+        "notes": null
+    },
+    {
+        "sha": "e4ec135d8bbd94ef552c94fe1d09cf326417b14d",
+        "description": "radv/video: Fix HEVC slice control",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "967e4e09dee81b93cfb30195ab5e1878aca9dbd0",
+        "notes": null
+    },
+    {
+        "sha": "6a121f150750f0a3316a317274b14a4d0ac077f6",
+        "description": "radv/video: Fix H264 slice control",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "54d499818ca9a004ba735635d328a1ed0ff010b6",
+        "notes": null
+    },
+    {
+        "sha": "15ea28b835e5655a2a48d730a62a19036868ee4f",
+        "description": "intel/executor: Fix exec_size in @read macro for Xe2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3a14d7b913313552a4224834cd760836f6aaf8c",
+        "description": "intel: Avoid unaligned pointer access",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f3e24f4f3636937d49ed615340a88b648cfb220",
+        "description": "anv: Avoid null ptr dereference",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6d11ba5b41eed6c9f897b832194d146dce896be",
+        "description": "anv: Protect memcpy/memset/qsort calls against NULL arguments",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e544214d508672d5e766a27102699d403440286",
+        "description": "vulkan: Skip memcpy() call if passed null pointers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d21f7f75ff38ed26769235daf98af4a18b02f0ab",
+        "description": "llvmpipe: align with u_cpu_detect struct changes",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "962b996d4c569835e0c453a60bb4680d432d30f1",
+        "description": "util: drop XOP detection code",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4b45b61fef6e0f3325888c190e6e557d8948b31a",
+        "notes": null
+    },
+    {
+        "sha": "ca947e1295a8aedd4b7f09ca89ab285156b1309e",
+        "description": "util: Drop ancient Intel CPU detection",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a78c2bf2a41252045f7bb695d02d75fcd73a3957",
+        "description": "util: Remove MMX/MMXext detection code",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae85e6920c18c6f850c22e183f2f740c45b69ad3",
+        "description": "util: Drop 3Dnow optimisation leftovers",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a3218e65d1e52469421226a17f2ba91a6b3e4bb8",
+        "notes": null
+    },
+    {
+        "sha": "59b25492795eb415b8d894b2238cb6bcc6b17169",
+        "description": "glsl/nir: fix function cloning at link time",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "cbfc225e2bda2c8627a4580fa3a9b63bfb7133e0",
+        "notes": null
+    },
+    {
+        "sha": "6a6e37728d8e2229c69d4b3a652680916e515e97",
+        "description": "turnip/ci: document regression",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "b0c9789bc1ed808d29f642e9445599dc85896444",
         "description": "docs: add sha sum for 24.2.7",
         "nominated": false,
