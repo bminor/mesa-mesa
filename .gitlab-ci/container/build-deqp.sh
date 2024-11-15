@@ -37,6 +37,9 @@ DEQP_GLES_VERSION=3.2.11.0
 main_cts_commits_to_backport=(
     # If you find yourself wanting to add something in here, consider whether
     # bumping DEQP_MAIN_COMMIT is not a better solution :)
+
+    # Build testlog-* and other tools also on Android
+    0fcd87248f83a2174e5c938cb105dc2da03f3683
 )
 
 # shellcheck disable=SC2034
