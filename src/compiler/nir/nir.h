@@ -3836,6 +3836,20 @@ typedef enum {
     */
    nir_io_always_interpolate_convergent_fs_inputs = BITFIELD_BIT(7),
 
+   /**
+    * Whether the first assigned color channel component should be equal to
+    * the first unused VARn component.
+    *
+    * For example, if the first unused VARn channel is VAR0.z, color channels
+    * are assigned in this order:
+    *       COL0.z, COL0.w, COL0.x, COL0.y, COL1.z, COL1.w, COL1.x, COL1.y
+    *
+    * This allows certain drivers to merge outputs if each output sets
+    * different components, for example 2 outputs writing VAR0.xy and COL0.z
+    * will only use 1 HW output.
+    */
+   nir_io_compaction_rotates_color_channels = BITFIELD_BIT(8),
+
    /* Options affecting the GLSL compiler or Gallium are below. */
 
    /**

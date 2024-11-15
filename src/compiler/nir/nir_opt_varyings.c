@@ -4182,8 +4182,13 @@ compact_varyings(struct linkage_info *linkage,
          !BITSET_TEST_RANGE_INSIDE_WORD(linkage->xfb32_only_mask, col0, 16, 0);
 
       if (has_colors) {
-         unsigned color_channel_rotate =
-            DIV_ROUND_UP(BITSET_LAST_BIT(assigned_mask), 2) % 4;
+         unsigned color_channel_rotate = 0;
+
+         if (linkage->consumer_builder.shader->options->io_options &
+             nir_io_compaction_rotates_color_channels) {
+            color_channel_rotate =
+               DIV_ROUND_UP(BITSET_LAST_BIT(assigned_mask), 2) % 4;
+         }
 
          fs_assign_slot_groups(linkage, assigned_mask, assigned_fs_vec4_type,
                                linkage->interp_fp32_mask, linkage->flat32_mask,
