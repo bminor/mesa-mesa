@@ -534,7 +534,7 @@
         "description": "util: drop XOP detection code",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "4b45b61fef6e0f3325888c190e6e557d8948b31a",
         "notes": null
