@@ -6,4 +6,5 @@ hypothesis==6.67.1
 mock==5.1.0
 polars==0.19.3
 pytest==7.4.2
+pytest-asyncio==0.21.0
 pytest-cov==3.0.0
