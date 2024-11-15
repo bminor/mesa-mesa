@@ -176,7 +176,7 @@ tu_cs_add_bo(struct tu_cs *cs, uint32_t size)
    bos->bos[bos->bo_count++] = new_bo;
 
    cs->start = cs->cur = cs->reserved_end = (uint32_t *) new_bo->map;
-   cs->end = cs->start + new_bo->size / sizeof(uint32_t);
+   cs->end = cs->start + size;
 
    return VK_SUCCESS;
 }
