@@ -43,13 +43,6 @@ vk_cts_commits_to_backport=(
 vk_cts_patch_files=(
 )
 
-if [ "${DEQP_TARGET}" = 'android' ]; then
-  vk_cts_patch_files+=(
-    build-deqp-vk_Allow-running-on-Android-from-the-command-line.patch
-    build-deqp-vk_Android-prints-to-stdout-instead-of-logcat.patch
-  )
-fi
-
 # shellcheck disable=SC2034
 gl_cts_commits_to_backport=(
 )
