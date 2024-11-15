@@ -404,10 +404,6 @@ static bool pvr_physical_device_get_properties(
    const uint32_t uvs_pba_entries =
       PVR_GET_FEATURE_VALUE(dev_info, uvs_pba_entries, 160);
 
-   /* Default value based on the minimum value found in all existing cores. */
-   const uint32_t num_user_clip_planes =
-      PVR_GET_FEATURE_VALUE(dev_info, num_user_clip_planes, 8);
-
    const uint32_t sub_pixel_precision =
       PVR_HAS_FEATURE(dev_info, simple_internal_parameter_format) ? 4U : 8U;
 
@@ -551,9 +547,9 @@ static bool pvr_physical_device_get_properties(
 
       .viewportSubPixelBits = 0,
       .minMemoryMapAlignment = pdevice->ws->page_size,
-      .minTexelBufferOffsetAlignment = 16U,
-      .minUniformBufferOffsetAlignment = 4U,
-      .minStorageBufferOffsetAlignment = 4U,
+      .minTexelBufferOffsetAlignment = PVR_TEXEL_BUFFER_OFFSET_ALIGNMENT,
+      .minUniformBufferOffsetAlignment = PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
+      .minStorageBufferOffsetAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
 
       .minTexelOffset = -8,
       .maxTexelOffset = 7U,
@@ -580,9 +576,12 @@ static bool pvr_physical_device_get_properties(
       .maxSampleMaskWords = 1U,
       .timestampComputeAndGraphics = false,
       .timestampPeriod = 0.0f,
-      .maxClipDistances = num_user_clip_planes,
-      .maxCullDistances = num_user_clip_planes,
-      .maxCombinedClipAndCullDistances = num_user_clip_planes,
+
+      /* Requires shaderClipDistance */
+      .maxClipDistances = 0U,
+      .maxCullDistances = 0U,
+      .maxCombinedClipAndCullDistances = 0U,
+
       .discreteQueuePriorities = 2U,
       .pointSizeRange[0] = 1.0f,
       .pointSizeRange[1] = 511.0f,

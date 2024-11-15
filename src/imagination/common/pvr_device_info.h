@@ -268,7 +268,6 @@ struct pvr_device_features {
    bool has_max_usc_tasks : 1;
    bool has_num_clusters : 1;
    bool has_num_raster_pipes : 1;
-   bool has_num_user_clip_planes : 1;
    bool has_paired_tiles : 1;
    bool has_pbe2_in_xe : 1;
    bool has_pbe_filterable_f16 : 1;
@@ -318,7 +317,6 @@ struct pvr_device_features {
    uint32_t max_usc_tasks;
    uint32_t num_clusters;
    uint32_t num_raster_pipes;
-   uint32_t num_user_clip_planes;
    uint32_t simple_parameter_format_version;
    uint32_t slc_cache_line_size_bits;
    uint32_t tile_size_x;

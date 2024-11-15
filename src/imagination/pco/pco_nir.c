@@ -13,12 +13,16 @@
 #include "nir/nir_builder.h"
 #include "pco.h"
 #include "pco_internal.h"
+#include "pvr_limits.h"
 
 #include <stdio.h>
 
 /** Base/common SPIR-V to NIR options. */
 static const struct spirv_to_nir_options pco_base_spirv_options = {
    .environment = NIR_SPIRV_VULKAN,
+
+   .min_ubo_alignment = PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
+   .min_ssbo_alignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
 };
 
 /** Base/common NIR options. */

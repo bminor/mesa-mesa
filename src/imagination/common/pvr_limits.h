@@ -56,6 +56,12 @@
  */
 #define PVR_MAX_VERTEX_INPUT_BINDINGS 16U
 
+#define PVR_TEXEL_BUFFER_OFFSET_ALIGNMENT 16U
+#define PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT 4U
+#define PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT 4U
+
+#define PVR_MAX_USER_PLANES 8U
+
 /* We need one RenderTarget per supported MSAA mode as each render target
  * contains state that is dependent on the sample count of the render that is
  * rendering to it.

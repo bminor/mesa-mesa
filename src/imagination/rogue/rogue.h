@@ -37,8 +37,8 @@
 /* clang-format on */
 
 #include "pvr_types.h"
+#include "common/pvr_limits.h"
 #include "csbgen/rogue_hwdefs.h"
-#include "vulkan/pvr_limits.h"
 #include "vulkan/pvr_common.h"
 
 #include "compiler/nir/nir.h"
