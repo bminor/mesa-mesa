@@ -564,7 +564,7 @@
         "description": "util: Drop 3Dnow optimisation leftovers",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "a3218e65d1e52469421226a17f2ba91a6b3e4bb8",
         "notes": null
