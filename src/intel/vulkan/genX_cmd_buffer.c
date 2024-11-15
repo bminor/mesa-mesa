@@ -6365,41 +6365,6 @@ genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
 #endif
 }
 
-void
-genX(urb_workaround)(struct anv_cmd_buffer *cmd_buffer,
-                     const struct intel_urb_config *urb_cfg)
-{
-#if INTEL_NEEDS_WA_16014912113
-   const struct intel_urb_config *current =
-      &cmd_buffer->state.gfx.urb_cfg;
-   if (intel_urb_setup_changed(urb_cfg, current, MESA_SHADER_TESS_EVAL) &&
-       current->size[0] != 0) {
-      for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
-#if GFX_VER >= 12
-         anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
-            urb._3DCommandSubOpcode             += i;
-            urb.VSURBEntryAllocationSize        = current->size[i] - 1;
-            urb.VSURBStartingAddressSlice0      = current->start[i];
-            urb.VSURBStartingAddressSliceN      = current->start[i];
-            urb.VSNumberofURBEntriesSlice0      = i == 0 ? 256 : 0;
-            urb.VSNumberofURBEntriesSliceN      = i == 0 ? 256 : 0;
-         }
-#else
-         anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_URB_VS), urb) {
-            urb._3DCommandSubOpcode      += i;
-            urb.VSURBStartingAddress      = current->start[i];
-            urb.VSURBEntryAllocationSize  = current->size[i] - 1;
-            urb.VSNumberofURBEntries      = i == 0 ? 256 : 0;
-         }
-#endif
-      }
-      anv_batch_emit(&cmd_buffer->batch, GENX(PIPE_CONTROL), pc) {
-         pc.HDCPipelineFlushEnable = true;
-      }
-   }
-#endif
-}
-
 struct anv_state
 genX(cmd_buffer_begin_companion_rcs_syncpoint)(
       struct anv_cmd_buffer   *cmd_buffer)

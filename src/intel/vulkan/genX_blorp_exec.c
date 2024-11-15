@@ -267,7 +267,10 @@ blorp_pre_emit_urb_config(struct blorp_batch *blorp_batch,
                           struct intel_urb_config *urb_cfg)
 {
    struct anv_cmd_buffer *cmd_buffer = blorp_batch->driver_batch;
-   genX(urb_workaround)(cmd_buffer, urb_cfg);
+   if (genX(need_wa_16014912113)(&cmd_buffer->state.gfx.urb_cfg, urb_cfg)) {
+      genX(batch_emit_wa_16014912113)(&cmd_buffer->batch,
+                                      &cmd_buffer->state.gfx.urb_cfg);
+   }
 
    /* Update urb config. */
    memcpy(&cmd_buffer->state.gfx.urb_cfg, urb_cfg,

@@ -463,8 +463,7 @@ genX(emit_urb_setup)(struct anv_device *device, struct anv_batch *batch,
                         &constrained);
 
 #if INTEL_NEEDS_WA_16014912113
-      if (intel_urb_setup_changed(urb_cfg_in, urb_cfg_out,
-          MESA_SHADER_TESS_EVAL) && urb_cfg_in->size[0] != 0) {
+      if (genX(need_wa_16014912113)(urb_cfg_in, urb_cfg_out)) {
          for (int i = 0; i <= MESA_SHADER_GEOMETRY; i++) {
 #if GFX_VER >= 12
             anv_batch_emit(batch, GENX(3DSTATE_URB_ALLOC_VS), urb) {
