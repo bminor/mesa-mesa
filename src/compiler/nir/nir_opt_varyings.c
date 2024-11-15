@@ -4173,13 +4173,16 @@ compact_varyings(struct linkage_info *linkage,
       /* Set whether the shader contains any color varyings. */
       unsigned col0 = VARYING_SLOT_COL0 * 8;
       bool has_colors =
-         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->interp_fp32_mask, col0, 16,
-                                        0) ||
-         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->convergent32_mask, col0, 16,
-                                        0) ||
-         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->color32_mask, col0, 16, 0) ||
-         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->flat32_mask, col0, 16, 0) ||
-         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->xfb32_only_mask, col0, 16, 0);
+         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->interp_fp32_mask, col0,
+                                        col0 + 15, 0) ||
+         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->convergent32_mask, col0,
+                                        col0 + 15, 0) ||
+         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->color32_mask, col0,
+                                        col0 + 15, 0) ||
+         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->flat32_mask, col0,
+                                        col0 + 15, 0) ||
+         !BITSET_TEST_RANGE_INSIDE_WORD(linkage->xfb32_only_mask, col0,
+                                        col0 + 15, 0);
 
       if (has_colors) {
          unsigned color_channel_rotate = 0;
