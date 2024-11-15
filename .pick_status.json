@@ -2384,7 +2384,7 @@
         "description": "pipe_loader: Fix pipe_i915 with the dynamic loader",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "87392385b59d37cec9eee7ff3b733300d72a6789",
         "notes": null
