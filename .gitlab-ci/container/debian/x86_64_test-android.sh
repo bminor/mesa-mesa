@@ -68,6 +68,11 @@ DEQP_TARGET="android" \
 EXTRA_CMAKE_ARGS="-DDEQP_TARGET_TOOLCHAIN=ndk-modern -DANDROID_NDK_PATH=/$ndk -DANDROID_ABI=x86_64 -DDE_ANDROID_API=28" \
 . .gitlab-ci/container/build-deqp.sh
 
+DEQP_API=VK \
+DEQP_TARGET="android" \
+EXTRA_CMAKE_ARGS="-DDEQP_ANDROID_EXE=ON -DDEQP_TARGET_TOOLCHAIN=ndk-modern -DANDROID_NDK_PATH=/$ndk -DANDROID_ABI=x86_64 -DDE_ANDROID_API=28" \
+. .gitlab-ci/container/build-deqp.sh
+
 rm -rf /VK-GL-CTS
 
 ############### Downloading Cuttlefish resources ...
