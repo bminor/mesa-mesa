@@ -51,6 +51,7 @@ safe_ioctl(int fd, unsigned long request, void *arg)
 
 static int
 kgsl_submitqueue_new(struct tu_device *dev,
+                     enum tu_queue_type type,
                      int priority,
                      uint32_t *queue_id)
 {

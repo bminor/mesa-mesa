@@ -12,12 +12,19 @@
 
 #include "tu_common.h"
 
+enum tu_queue_type
+{
+   TU_QUEUE_GFX,
+   TU_QUEUE_SPARSE,
+};
+
 struct tu_queue
 {
    struct vk_queue vk;
 
    struct tu_device *device;
 
+   enum tu_queue_type type;
    uint32_t msm_queue_id;
    uint32_t priority;
 

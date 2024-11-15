@@ -228,6 +228,29 @@ tu_bo_set_metadata(struct tu_device *dev, struct tu_bo *bo,
    dev->instance->knl->bo_set_metadata(dev, bo, metadata, metadata_size);
 }
 
+VkResult
+tu_sparse_vma_init(struct tu_device *dev,
+                   struct vk_object_base *base,
+                   struct tu_sparse_vma *out_vma,
+                   uint64_t *out_iova,
+                   enum tu_sparse_vma_flags flags,
+                   uint64_t size, uint64_t client_iova)
+{
+   size = align64(size, os_page_size);
+
+   out_vma->flags = flags;
+   return dev->instance->knl->sparse_vma_init(dev, base, out_vma, out_iova,
+                                              flags, size, client_iova);
+
+}
+
+void
+tu_sparse_vma_finish(struct tu_device *dev,
+                     struct tu_sparse_vma *vma)
+{
+   dev->instance->knl->sparse_vma_finish(dev, vma);
+}
+
 int
 tu_bo_get_metadata(struct tu_device *dev, struct tu_bo *bo,
                    void *metadata, uint32_t metadata_size)
@@ -280,10 +303,11 @@ tu_device_check_status(struct vk_device *vk_device)
 
 int
 tu_drm_submitqueue_new(struct tu_device *dev,
+                       enum tu_queue_type type,
                        int priority,
                        uint32_t *queue_id)
 {
-   return dev->instance->knl->submitqueue_new(dev, priority, queue_id);
+   return dev->instance->knl->submitqueue_new(dev, type, priority, queue_id);
 }
 
 void
@@ -311,6 +335,19 @@ tu_submit_add_entries(struct tu_device *dev, void *submit,
 {
    return dev->instance->knl->submit_add_entries(dev, submit, entries,
                                                  num_entries);
+}
+
+void
+tu_submit_add_bind(struct tu_device *dev,
+                   void *_submit,
+                   struct tu_sparse_vma *vma, uint64_t vma_offset,
+                   struct tu_bo *bo, uint64_t bo_offset,
+                   uint64_t size)
+{
+   assert(vma_offset % 4096 == 0);
+   assert(bo_offset % 4096 == 0);
+   return dev->instance->knl->submit_add_bind(dev, _submit, vma, vma_offset,
+                                              bo, bo_offset, size);
 }
 
 VkResult

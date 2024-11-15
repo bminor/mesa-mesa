@@ -346,6 +346,7 @@ virtio_device_check_status(struct tu_device *device)
 
 static int
 virtio_submitqueue_new(struct tu_device *dev,
+                       enum tu_queue_type type,
                        int priority,
                        uint32_t *queue_id)
 {

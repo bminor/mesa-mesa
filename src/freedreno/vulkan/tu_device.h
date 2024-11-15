@@ -122,6 +122,10 @@ struct tu_physical_device
    bool has_set_iova;
    bool has_raytracing;
    bool has_vm_bind;
+   /* Whether a sparse queue can be created. */
+   bool has_sparse;
+   /* Whether TU_SPARSE_VMA_MAP_ZERO can be used. */
+   bool has_sparse_prr;
    uint64_t va_start;
    uint64_t va_size;
 
