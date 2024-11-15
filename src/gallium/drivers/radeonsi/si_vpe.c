@@ -546,6 +546,10 @@ si_vpe_set_surface_info(struct vpe_video_processor *vpeproc,
    struct si_texture *tex = (struct si_texture *)surfaces[0]->texture;
    surface_info->swizzle               = tex->surface.u.gfx9.swizzle_mode;
 
+   /* DCC not supported */
+   if (tex->surface.meta_offset)
+      return VPE_STATUS_NOT_SUPPORTED;
+
    struct vpe_plane_dcc_param *dcc_param = &surface_info->dcc;
    dcc_param->enable                   = false;
    dcc_param->meta_pitch               = 0;
@@ -758,19 +762,21 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
       return 1;
    }
 
-   si_vpe_set_surface_info(vpeproc,
-                           process_properties,
-                           vpeproc->src_surfaces,
-                           USE_SRC_SURFACE, 
-                           &build_param->streams[0].surface_info);
+   if (si_vpe_set_surface_info(vpeproc,
+                               process_properties,
+                               vpeproc->src_surfaces,
+                               USE_SRC_SURFACE,
+                               &build_param->streams[0].surface_info) != VPE_STATUS_OK)
+      return 1;
 
    si_vpe_set_stream(process_properties, &build_param->streams[0]);
 
-   si_vpe_set_surface_info(vpeproc,
-                           process_properties,
-                           vpeproc->dst_surfaces,
-                           USE_DST_SURFACE, 
-                           &build_param->dst_surface);
+   if (si_vpe_set_surface_info(vpeproc,
+                               process_properties,
+                               vpeproc->dst_surfaces,
+                               USE_DST_SURFACE,
+                               &build_param->dst_surface) != VPE_STATUS_OK)
+      return 1;
 
    if (process_properties->background_color) {
       build_param->target_rect.x = 0;
