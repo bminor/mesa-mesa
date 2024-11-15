@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <cstring>
 #include <dlfcn.h>
+#include <filesystem>
+#include <fstream>
 #include <stdio.h>
 #include <vector>
 #include <gtest/gtest.h>
@@ -157,7 +160,7 @@ patch_conv2d(unsigned operation_index,
       output_tensor->quantization->zero_point[0] -= 128;
 }
 
-std::vector<uint8_t>
+void *
 conv2d_generate_model(int input_size,
                       int weight_size,
                       int input_channels,
@@ -165,8 +168,10 @@ conv2d_generate_model(int input_size,
                       int stride,
                       bool padding_same,
                       bool is_signed,
-                      bool depthwise)
+                      bool depthwise,
+                      size_t *buf_size)
 {
+   void *buf;
    tflite::ModelT model;
    read_model("conv2d.tflite", model);
 
@@ -175,7 +180,11 @@ conv2d_generate_model(int input_size,
    flatbuffers::FlatBufferBuilder builder;
    builder.Finish(tflite::Model::Pack(builder, &model), "TFL3");
 
-   return {builder.GetBufferPointer(), builder.GetBufferPointer() + builder.GetSize()};
+   *buf_size = builder.GetSize();
+   buf = malloc(*buf_size);
+   memcpy(buf, builder.GetBufferPointer(), builder.GetSize());
+
+   return buf;
 }
 
 static void
@@ -199,7 +208,7 @@ patch_quant_for_add(tflite::ModelT *model, bool is_signed)
       input_tensor->quantization->zero_point[0] -= 128;
 }
 
-std::vector<uint8_t>
+void *
 add_generate_model(int input_size,
                    int weight_size,
                    int input_channels,
@@ -207,8 +216,10 @@ add_generate_model(int input_size,
                    int stride,
                    bool padding_same,
                    bool is_signed,
-                   bool depthwise)
+                   bool depthwise,
+                   size_t *buf_size)
 {
+   void *buf;
    tflite::ModelT model;
    read_model("add.tflite", model);
 
@@ -232,7 +243,11 @@ add_generate_model(int input_size,
    flatbuffers::FlatBufferBuilder builder;
    builder.Finish(tflite::Model::Pack(builder, &model), "TFL3");
 
-   return {builder.GetBufferPointer(), builder.GetBufferPointer() + builder.GetSize()};
+   *buf_size = builder.GetSize();
+   buf = malloc(*buf_size);
+   memcpy(buf, builder.GetBufferPointer(), builder.GetSize());
+
+   return buf;
 }
 
 static void
@@ -269,13 +284,41 @@ load_delegate()
    assert(tflite_plugin_destroy_delegate);
 }
 
-std::vector<std::vector<uint8_t>>
-run_model(TfLiteModel *model, enum executor executor, std::vector<std::vector<uint8_t>> &input)
+bool
+cache_is_enabled(void)
+{
+   return getenv("TEFLON_ENABLE_CACHE");
+}
+
+void *
+read_buf(const char *path, size_t *buf_size)
+{
+   FILE *f = fopen(path, "rb");
+   if (f == NULL)
+      return NULL;
+
+   fseek(f, 0, SEEK_END);
+   long fsize = ftell(f);
+   fseek(f, 0, SEEK_SET);
+
+   void *buf = malloc(fsize);
+   fread(buf, fsize, 1, f);
+
+   fclose(f);
+
+   if(buf_size != NULL)
+      *buf_size = fsize;
+
+   return buf;
+}
+
+void
+run_model(TfLiteModel *model, enum executor executor, void ***input, size_t *num_inputs,
+          void ***output, size_t **output_sizes, TfLiteType **output_types,
+          size_t *num_outputs, std::string cache_dir)
 {
    TfLiteDelegate *delegate = NULL;
    TfLiteInterpreterOptions *options = TfLiteInterpreterOptionsCreate();
-   bool generate_random_input = input.empty();
-   std::vector<std::vector<uint8_t>> output;
 
    if (executor == EXECUTOR_NPU) {
       load_delegate();
@@ -290,41 +333,97 @@ run_model(TfLiteModel *model, enum executor executor, std::vector<std::vector<ui
 
    TfLiteInterpreterAllocateTensors(interpreter);
 
-   unsigned input_tensors = TfLiteInterpreterGetInputTensorCount(interpreter);
-   for (unsigned i = 0; i < input_tensors; i++) {
+   *num_inputs = TfLiteInterpreterGetInputTensorCount(interpreter);
+   if (*input == NULL)
+      *input = (void**)calloc(*num_inputs, sizeof(*input));
+   for (unsigned i = 0; i < *num_inputs; i++) {
       TfLiteTensor *input_tensor = TfLiteInterpreterGetInputTensor(interpreter, i);
+      std::ostringstream input_cache;
+      input_cache << cache_dir << "/" << "input-" << i << ".data";
 
-      if (generate_random_input) {
-         std::vector<size_t> shape;
+      if ((*input)[i] == NULL) {
+         if (cache_is_enabled())
+            (*input)[i] = read_buf(input_cache.str().c_str(), NULL);
+         if ((*input)[i] == NULL) {
+            (*input)[i] = malloc(input_tensor->bytes);
 
-         shape.resize(input_tensor->dims->size);
-         for (int j = 0; j < input_tensor->dims->size; j++)
-            shape[j] = input_tensor->dims->data[j];
+            std::vector<size_t> shape;
 
-         xt::xarray<uint8_t> a = xt::random::randint<uint8_t>(shape, 0, 255);
-         input.push_back({a.begin(), a.end()});
+            shape.resize(input_tensor->dims->size);
+            for (int j = 0; j < input_tensor->dims->size; j++)
+               shape[j] = input_tensor->dims->data[j];
+
+            switch (input_tensor->type) {
+               case kTfLiteFloat32: {
+                  xt::xarray<float_t> a = xt::random::rand<float_t>(shape);
+                  memcpy((*input)[i], a.data(), input_tensor->bytes);
+                  break;
+               }
+               default: {
+                  xt::xarray<uint8_t> a = xt::random::randint<uint8_t>(shape, 0, 255);
+                  memcpy((*input)[i], a.data(), input_tensor->bytes);
+                  break;
+               }
+            }
+
+            if (cache_is_enabled()) {
+               if (!std::filesystem::exists(cache_dir))
+                  std::filesystem::create_directory(cache_dir);
+
+               std::ofstream file(input_cache.str().c_str(), std::ios::out | std::ios::binary);
+               file.write(reinterpret_cast<const char *>((*input)[i]), input_tensor->bytes);
+               file.close();
+            }
+         }
       }
 
-      TfLiteTensorCopyFromBuffer(input_tensor, input[i].data(), input_tensor->bytes);
+      TfLiteTensorCopyFromBuffer(input_tensor, (*input)[i], input_tensor->bytes);
    }
 
-   EXPECT_EQ(TfLiteInterpreterInvoke(interpreter), kTfLiteOk);
+   std::ostringstream output_cache;
+   output_cache << cache_dir << "/" << "output-" << 0 << ".data";
 
-   unsigned output_tensors = TfLiteInterpreterGetOutputTensorCount(interpreter);
-   for (unsigned i = 0; i < output_tensors; i++) {
+   if (executor == EXECUTOR_NPU || !cache_is_enabled() || !std::filesystem::exists(output_cache.str())) {
+      EXPECT_EQ(TfLiteInterpreterInvoke(interpreter), kTfLiteOk);
+   }
+
+   *num_outputs = TfLiteInterpreterGetOutputTensorCount(interpreter);
+   *output = (void**)malloc(sizeof(*output) * *num_outputs);
+   *output_sizes = (size_t*)malloc(sizeof(*output_sizes) * *num_outputs);
+   *output_types = (TfLiteType*)malloc(sizeof(*output_types) * *num_outputs);
+   for (unsigned i = 0; i < *num_outputs; i++) {
       const TfLiteTensor *output_tensor = TfLiteInterpreterGetOutputTensor(interpreter, i);
+      output_cache.str("");
+      output_cache << cache_dir << "/" << "output-" << i << ".data";
+      (*output_types)[i] = output_tensor->type;
 
-      std::vector<uint8_t> out;
-      out.resize(output_tensor->bytes);
-      EXPECT_EQ(TfLiteTensorCopyToBuffer(output_tensor, out.data(), output_tensor->bytes), kTfLiteOk);
+      if (executor == EXECUTOR_CPU && cache_is_enabled() && std::filesystem::exists(output_cache.str())) {
+         (*output)[i] = read_buf(output_cache.str().c_str(), NULL);
+      } else {
+         (*output)[i] = malloc(output_tensor->bytes);
+         EXPECT_EQ(TfLiteTensorCopyToBuffer(output_tensor, (*output)[i], output_tensor->bytes), kTfLiteOk);
 
-      output.push_back(out);
+         if (cache_is_enabled() && executor == EXECUTOR_CPU) {
+            std::ofstream file = std::ofstream(output_cache.str().c_str(), std::ios::out | std::ios::binary);
+            file.write(reinterpret_cast<const char *>((*output)[i]), output_tensor->bytes);
+            file.close();
+         }
+      }
+
+      switch (output_tensor->type) {
+         case kTfLiteFloat32: {
+            (*output_sizes)[i] = output_tensor->bytes / 4;
+            break;
+         }
+         default: {
+            (*output_sizes)[i] = output_tensor->bytes;
+            break;
+         }
+      }
    }
 
    TfLiteInterpreterDelete(interpreter);
    if (executor == EXECUTOR_NPU)
       tflite_plugin_destroy_delegate(delegate);
    TfLiteInterpreterOptionsDelete(options);
-
-   return output;
 }
