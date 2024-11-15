@@ -434,8 +434,31 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
 static void
 normalize_dependency(VkPipelineStageFlags2 *src_stages,
                      VkPipelineStageFlags2 *dst_stages,
-                     VkAccessFlags2 *src_access, VkAccessFlags2 *dst_access)
+                     VkAccessFlags2 *src_access, VkAccessFlags2 *dst_access,
+                     uint32_t src_qfi, uint32_t dst_qfi)
 {
+   /* queue family acquire operation */
+   switch (src_qfi) {
+   case VK_QUEUE_FAMILY_EXTERNAL:
+      /* no execution dependency and no availability operation */
+      *src_stages = VK_PIPELINE_STAGE_2_NONE;
+      *src_access = VK_ACCESS_2_NONE;
+      break;
+   default:
+      break;
+   }
+
+   /* queue family release operation */
+   switch (dst_qfi) {
+   case VK_QUEUE_FAMILY_EXTERNAL:
+      /* no execution dependency and no visibility operation */
+      *dst_stages = VK_PIPELINE_STAGE_2_NONE;
+      *dst_access = VK_ACCESS_2_NONE;
+      break;
+   default:
+      break;
+   }
+
    *src_stages = vk_expand_pipeline_stage_flags2(*src_stages);
    *dst_stages = vk_expand_pipeline_stage_flags2(*dst_stages);
 
@@ -456,7 +479,8 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
       VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
       VkAccessFlags2 src_access = barrier->srcAccessMask;
       VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access);
+      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access,
+                           VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
@@ -468,7 +492,9 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
       VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
       VkAccessFlags2 src_access = barrier->srcAccessMask;
       VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access);
+      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access,
+                           barrier->srcQueueFamilyIndex,
+                           barrier->dstQueueFamilyIndex);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
@@ -480,7 +506,9 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
       VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
       VkAccessFlags2 src_access = barrier->srcAccessMask;
       VkAccessFlags2 dst_access = barrier->dstAccessMask;
-      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access);
+      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access,
+                           barrier->srcQueueFamilyIndex,
+                           barrier->dstQueueFamilyIndex);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
