@@ -431,6 +431,18 @@ collect_cs_deps(struct panvk_cmd_buffer *cmdbuf,
    }
 }
 
+static void
+normalize_dependency(VkPipelineStageFlags2 *src_stages,
+                     VkPipelineStageFlags2 *dst_stages,
+                     VkAccessFlags2 *src_access, VkAccessFlags2 *dst_access)
+{
+   *src_stages = vk_expand_pipeline_stage_flags2(*src_stages);
+   *dst_stages = vk_expand_pipeline_stage_flags2(*dst_stages);
+
+   *src_access = vk_filter_src_access_flags2(*src_stages, *src_access);
+   *dst_access = vk_filter_dst_access_flags2(*dst_stages, *dst_access);
+}
+
 void
 panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
                             const VkDependencyInfo *in,
@@ -440,14 +452,11 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
 
    for (uint32_t i = 0; i < in->memoryBarrierCount; i++) {
       const VkMemoryBarrier2 *barrier = &in->pMemoryBarriers[i];
-      VkPipelineStageFlags2 src_stages =
-         vk_expand_pipeline_stage_flags2(barrier->srcStageMask);
-      VkPipelineStageFlags2 dst_stages =
-         vk_expand_pipeline_stage_flags2(barrier->dstStageMask);
-      VkAccessFlags2 src_access =
-         vk_filter_src_access_flags2(src_stages, barrier->srcAccessMask);
-      VkAccessFlags2 dst_access =
-         vk_filter_dst_access_flags2(dst_stages, barrier->dstAccessMask);
+      VkPipelineStageFlags2 src_stages = barrier->srcStageMask;
+      VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
+      VkAccessFlags2 src_access = barrier->srcAccessMask;
+      VkAccessFlags2 dst_access = barrier->dstAccessMask;
+      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
@@ -455,14 +464,11 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
 
    for (uint32_t i = 0; i < in->bufferMemoryBarrierCount; i++) {
       const VkBufferMemoryBarrier2 *barrier = &in->pBufferMemoryBarriers[i];
-      VkPipelineStageFlags2 src_stages =
-         vk_expand_pipeline_stage_flags2(barrier->srcStageMask);
-      VkPipelineStageFlags2 dst_stages =
-         vk_expand_pipeline_stage_flags2(barrier->dstStageMask);
-      VkAccessFlags2 src_access =
-         vk_filter_src_access_flags2(src_stages, barrier->srcAccessMask);
-      VkAccessFlags2 dst_access =
-         vk_filter_dst_access_flags2(dst_stages, barrier->dstAccessMask);
+      VkPipelineStageFlags2 src_stages = barrier->srcStageMask;
+      VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
+      VkAccessFlags2 src_access = barrier->srcAccessMask;
+      VkAccessFlags2 dst_access = barrier->dstAccessMask;
+      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
@@ -470,14 +476,11 @@ panvk_per_arch(get_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
 
    for (uint32_t i = 0; i < in->imageMemoryBarrierCount; i++) {
       const VkImageMemoryBarrier2 *barrier = &in->pImageMemoryBarriers[i];
-      VkPipelineStageFlags2 src_stages =
-         vk_expand_pipeline_stage_flags2(barrier->srcStageMask);
-      VkPipelineStageFlags2 dst_stages =
-         vk_expand_pipeline_stage_flags2(barrier->dstStageMask);
-      VkAccessFlags2 src_access =
-         vk_filter_src_access_flags2(src_stages, barrier->srcAccessMask);
-      VkAccessFlags2 dst_access =
-         vk_filter_dst_access_flags2(dst_stages, barrier->dstAccessMask);
+      VkPipelineStageFlags2 src_stages = barrier->srcStageMask;
+      VkPipelineStageFlags2 dst_stages = barrier->dstStageMask;
+      VkAccessFlags2 src_access = barrier->srcAccessMask;
+      VkAccessFlags2 dst_access = barrier->dstAccessMask;
+      normalize_dependency(&src_stages, &dst_stages, &src_access, &dst_access);
 
       collect_cs_deps(cmdbuf, src_stages, dst_stages, src_access, dst_access,
                       out);
