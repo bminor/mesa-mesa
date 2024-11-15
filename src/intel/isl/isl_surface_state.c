@@ -763,7 +763,14 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
 #endif
 #if GFX_VER == 12
       s.MemoryCompressionEnable = info->aux_usage == ISL_AUX_USAGE_MC;
-
+#endif
+#if GFX_VERx10 == 125
+      /* In the ACM PRMs, the programming notes under
+       * RENDER_SURFACE_STATE::MemoryCompressionEnable state that the
+       * following bit must be set for media compression.
+       */
+      s.DecompressInL3 = info->aux_usage == ISL_AUX_USAGE_MC;
+#elif GFX_VERx10 == 120
       /* The Tiger Lake PRM for RENDER_SURFACE_STATE::DecompressInL3 says:
        *
        *    When this field is set to 1h, the associated compressible surface,
