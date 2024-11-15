@@ -1094,6 +1094,28 @@ radv_dump_shader_regs(const struct radv_device *device, const struct aco_trap_ha
    fprintf(f, "\n\n");
 }
 
+static void
+radv_dump_lds(const struct radv_device *device, const struct aco_trap_handler_layout *layout, FILE *f)
+{
+   uint32_t lds_size = G_000058_LDS_SIZE(layout->sq_wave_regs.lds_alloc);
+
+   if (!lds_size)
+      return;
+
+   /* Compute the LDS size in dwords. */
+   lds_size *= 64;
+
+   fprintf(f, "LDS:\n");
+
+   for (uint32_t i = 0; i < lds_size; i += 8) {
+      fprintf(f, "lds[%d-%d] = { %08x, %08x, %08x, %08x, %08x, %08x, %08x, %08x }\n", i, i + 7, layout->lds[i],
+              layout->lds[i + 1], layout->lds[i + 2], layout->lds[i + 3], layout->lds[i + 4], layout->lds[i + 5],
+              layout->lds[i + 6], layout->lds[i + 7]);
+   }
+
+   fprintf(f, "\n\n");
+}
+
 void
 radv_check_trap_handler(struct radv_queue *queue)
 {
@@ -1138,6 +1160,7 @@ radv_check_trap_handler(struct radv_queue *queue)
 
    radv_dump_sq_hw_regs(device, layout, f);
    radv_dump_shader_regs(device, layout, f);
+   radv_dump_lds(device, layout, f);
 
    uint32_t ttmp0 = layout->ttmp0;
    uint32_t ttmp1 = layout->ttmp1;

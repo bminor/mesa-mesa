@@ -12378,6 +12378,103 @@ dump_vgprs_to_mem(isel_context* ctx, Builder& bld, Operand rsrc)
 }
 
 void
+dump_lds_to_mem(isel_context* ctx, Builder& bld, Operand rsrc)
+{
+   const uint32_t ttmp0_idx = ctx->program->gfx_level >= GFX9 ? 108 : 112;
+   const uint32_t base_offset = offsetof(struct aco_trap_handler_layout, lds[0]);
+
+   ac_hw_cache_flags cache_glc;
+   cache_glc.value = ac_glc;
+
+   PhysReg lds_size{ttmp0_idx + 2};
+   PhysReg soffset{ttmp0_idx + 3};
+
+   enable_thread_indexing(ctx, rsrc);
+
+   /* Determine the LDS size. */
+   const uint32_t lds_size_offset = 12;
+   const uint32_t lds_size_width = 9;
+
+   bld.sopk(aco_opcode::s_getreg_b32, Definition(lds_size, s1),
+            ((lds_size_width - 1) << 11) | (lds_size_offset << 6) | 6 /* LDS_ALLOC */);
+   Temp lds_size_non_zero =
+      bld.sopc(aco_opcode::s_cmp_lg_i32, bld.def(s1, scc), Operand(lds_size, s1), Operand::c32(0));
+
+   if_context ic;
+   begin_uniform_if_then(ctx, &ic, lds_size_non_zero);
+   {
+      bld.reset(ctx->block);
+
+      /* Wait for other waves in the same threadgroup. */
+      bld.sopp(aco_opcode::s_barrier, 0u);
+
+      /* Compute the LDS size in bytes (64 dw * 4). */
+      bld.sop2(aco_opcode::s_lshl_b32, Definition(lds_size, s1), bld.def(s1, scc),
+               Operand(lds_size, s1), Operand::c32(8u));
+
+      /* Add the base offset because this is used to exit the loop. */
+      bld.sop2(aco_opcode::s_add_u32, Definition(lds_size, s1), bld.def(s1, scc),
+               Operand(lds_size, s1), Operand::c32(base_offset));
+
+      /* Initialize soffset to base offset. */
+      bld.copy(Definition(soffset, s1), Operand::c32(base_offset));
+
+      /* Compute the LDS offset from the thread ID. */
+      bld.vop3(aco_opcode::v_mbcnt_lo_u32_b32, Definition(PhysReg{256}, v1), Operand::c32(-1u),
+               Operand::c32(0u));
+      bld.vop3(aco_opcode::v_mbcnt_hi_u32_b32_e64, Definition(PhysReg{256}, v1), Operand::c32(-1u),
+               Operand(PhysReg{256}, v1));
+      bld.vop2(aco_opcode::v_mul_u32_u24, Definition(PhysReg{256}, v1), Operand::c32(4u),
+               Operand(PhysReg{256}, v1));
+
+      Operand m = load_lds_size_m0(bld);
+
+      loop_context lc;
+      begin_loop(ctx, &lc);
+      {
+         bld.reset(ctx->block);
+
+         if (ctx->program->gfx_level >= GFX9) {
+            bld.ds(aco_opcode::ds_read_b32, Definition(PhysReg{257}, v1), Operand(PhysReg{256}, v1),
+                   0);
+         } else {
+            bld.ds(aco_opcode::ds_read_b32, Definition(PhysReg{257}, v1), Operand(PhysReg{256}, v1),
+                   m, 0);
+         }
+
+         bld.mubuf(aco_opcode::buffer_store_dword, Operand(rsrc), Operand(v1),
+                   Operand(PhysReg{soffset}, s1), Operand(PhysReg{257}, v1) /* v0 */,
+                   0 /* offset */, false /* offen */, false /* idxen */,
+                   /* addr64 */ false, /* disable_wqm */ false, cache_glc);
+
+         /* Increase v0 and the offset assuming it's wave64. */
+         bld.vop3(aco_opcode::v_mad_u32_u24, Definition(PhysReg{256}, v1), Operand::c32(4u),
+                  Operand::c32(64u), Operand(PhysReg{256}, v1));
+         bld.sop2(aco_opcode::s_add_u32, Definition(soffset, s1), bld.def(s1, scc),
+                  Operand(soffset, s1), Operand::c32(256u));
+
+         const Temp cond = bld.sopc(aco_opcode::s_cmp_ge_u32, bld.def(s1, scc),
+                                    Operand(soffset, s1), Operand(lds_size, s1));
+
+         if_context loop_break;
+         begin_uniform_if_then(ctx, &loop_break, cond);
+         {
+            emit_loop_break(ctx);
+         }
+         begin_uniform_if_else(ctx, &loop_break);
+         end_uniform_if(ctx, &loop_break);
+      }
+      end_loop(ctx, &lc);
+      bld.reset(ctx->block);
+   }
+   begin_uniform_if_else(ctx, &ic);
+   end_uniform_if(ctx, &ic);
+   bld.reset(ctx->block);
+
+   disable_thread_indexing(ctx, rsrc);
+}
+
+void
 select_trap_handler_shader(Program* program, ac_shader_config* config,
                            const struct aco_compiler_options* options,
                            const struct aco_shader_info* info, const struct ac_shader_args* args)
@@ -12526,6 +12623,9 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
       dump_sgpr_to_mem(&ctx, Operand(tma_rsrc, s4), Operand(PhysReg{i}, s1), offset);
       offset += 4;
    }
+
+   /* Dump LDS. */
+   dump_lds_to_mem(&ctx, bld, Operand(tma_rsrc, s4));
 
    /* Restore VGPRS. */
    restore_vgprs_from_mem(&ctx, Operand(tma_rsrc, s4));
