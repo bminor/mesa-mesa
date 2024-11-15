@@ -289,7 +289,7 @@ if [ "$DEQP_API" != tools ]; then
 
     # Compress the caselists, since Vulkan's in particular are gigantic; higher
     # compression levels provide no real measurable benefit.
-    zstd -1 --rm mustpass/*.txt
+    zstd -f -1 --rm mustpass/*.txt
 fi
 
 if [ "$DEQP_API" = tools ]; then
