@@ -9,7 +9,7 @@ import os
 import xmlrpc.client
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
-from itertools import islice, repeat
+from itertools import cycle, islice, repeat
 from pathlib import Path
 from typing import Generator
 from unittest.mock import MagicMock, patch
@@ -507,3 +507,42 @@ def test_job_combined_status(
 
         assert STRUCTURAL_LOG["job_combined_status"] == expected_combined_status
         assert STRUCTURAL_LOG["job_exit_code"] == job_exit_code
+
+
+SUBMIT_SCENARIOS = {
+    "submit job pass": (cycle(mock_logs(result="pass", exit_code=0)), does_not_raise(), 0),
+    "submit job fails": (
+        cycle(mock_logs(result="fail", exit_code=1)),
+        pytest.raises(SystemExit),
+        1,
+    ),
+    "user interrupts the script": (
+        (jobs_logs_response(), KeyboardInterrupt, jobs_logs_response()),
+        pytest.raises(SystemExit),
+        1,
+    ),
+    "job finishes without hwci response": (
+        (jobs_logs_response(), jobs_logs_response()),
+        pytest.raises(SystemExit),
+        1,
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "test_log, expectation, exit_code",
+    SUBMIT_SCENARIOS.values(),
+    ids=SUBMIT_SCENARIOS.keys(),
+)
+def test_submission_exit_code(
+    request, mock_proxy, lava_job_submitter, test_log, expectation, exit_code
+):
+    lava_job_submitter._LAVAJobSubmitter__prepare_submission = MagicMock()
+    proxy = mock_proxy(side_effect=test_log)
+    lava_job_submitter.proxy = proxy
+
+    with expectation as e:
+        lava_job_submitter.submit()
+        # If the job fails, there should be a SystemExit exception
+        if e:
+            assert e.value.code == exit_code
