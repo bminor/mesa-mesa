@@ -668,10 +668,6 @@ brw_fs_opt_algebraic(fs_visitor &s)
             break;
          }
 
-         if (inst->src[0].type != BRW_TYPE_F ||
-             inst->src[1].type != BRW_TYPE_F ||
-             inst->src[2].type != BRW_TYPE_F)
-            break;
          if (inst->src[1].is_one()) {
             inst->opcode = BRW_OPCODE_ADD;
             inst->src[1] = inst->src[2];
