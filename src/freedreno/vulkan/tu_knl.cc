@@ -281,11 +281,37 @@ tu_drm_submitqueue_close(struct tu_device *dev, uint32_t queue_id)
    dev->instance->knl->submitqueue_close(dev, queue_id);
 }
 
-VkResult
-tu_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
+void *
+tu_submit_create(struct tu_device *dev)
 {
-   struct tu_queue *queue = container_of(vk_queue, struct tu_queue, vk);
-   return queue->device->instance->knl->queue_submit(queue, submit);
+   return dev->instance->knl->submit_create(dev);
+}
+
+void
+tu_submit_finish(struct tu_device *dev, void *submit)
+{
+   return dev->instance->knl->submit_finish(dev, submit);
+}
+
+void
+tu_submit_add_entries(struct tu_device *dev, void *submit,
+                      struct tu_cs_entry *entries,
+                      unsigned num_entries)
+{
+   return dev->instance->knl->submit_add_entries(dev, submit, entries,
+                                                 num_entries);
+}
+
+VkResult
+tu_queue_submit(struct tu_queue *queue, void *submit,
+                struct vk_sync_wait *waits, uint32_t wait_count,
+                struct vk_sync_signal *signals, uint32_t signal_count,
+                struct tu_u_trace_submission_data *u_trace_submission_data)
+{
+   return queue->device->instance->knl->queue_submit(queue, submit,
+                                                     waits, wait_count,
+                                                     signals, signal_count,
+                                                     u_trace_submission_data);
 }
 
 /**

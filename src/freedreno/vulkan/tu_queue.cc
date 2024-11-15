@@ -9,6 +9,8 @@
 
 #include "tu_queue.h"
 
+#include "tu_cmd_buffer.h"
+#include "tu_dynamic_rendering.h"
 #include "tu_knl.h"
 #include "tu_device.h"
 
@@ -49,6 +51,125 @@ tu_get_submitqueue_priority(const struct tu_physical_device *pdevice,
    return priority;
 }
 
+static VkResult
+queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
+{
+   struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
+   struct tu_device *device = queue->device;
+   bool u_trace_enabled = u_trace_should_process(&queue->device->trace_context);
+
+   uint32_t perf_pass_index =
+      device->perfcntrs_pass_cs_entries ? vk_submit->perf_pass_index : ~0;
+
+   if (TU_DEBUG(LOG_SKIP_GMEM_OPS))
+      tu_dbg_log_gmem_load_store_skips(device);
+
+   pthread_mutex_lock(&device->submit_mutex);
+
+   struct tu_cmd_buffer **cmd_buffers =
+      (struct tu_cmd_buffer **) vk_submit->command_buffers;
+   uint32_t cmdbuf_count = vk_submit->command_buffer_count;
+
+   VkResult result =
+      tu_insert_dynamic_cmdbufs(device, &cmd_buffers, &cmdbuf_count);
+   if (result != VK_SUCCESS)
+      return result;
+
+   bool has_trace_points = false;
+   static_assert(offsetof(struct tu_cmd_buffer, vk) == 0,
+                 "vk must be first member of tu_cmd_buffer");
+   for (unsigned i = 0; i < vk_submit->command_buffer_count; i++) {
+      if (u_trace_enabled && u_trace_has_points(&cmd_buffers[i]->trace))
+         has_trace_points = true;
+   }
+
+   struct tu_u_trace_submission_data *u_trace_submission_data = NULL;
+
+   void *submit = tu_submit_create(device);
+   if (!submit)
+      goto fail_create_submit;
+
+   if (has_trace_points) {
+      tu_u_trace_submission_data_create(
+         device, cmd_buffers, cmdbuf_count, &u_trace_submission_data);
+   }
+
+   for (uint32_t i = 0; i < cmdbuf_count; i++) {
+      struct tu_cmd_buffer *cmd_buffer = cmd_buffers[i];
+      struct tu_cs *cs = &cmd_buffer->cs;
+
+      if (perf_pass_index != ~0) {
+         struct tu_cs_entry *perf_cs_entry =
+            &cmd_buffer->device->perfcntrs_pass_cs_entries[perf_pass_index];
+
+         tu_submit_add_entries(device, submit, perf_cs_entry, 1);
+      }
+
+      tu_submit_add_entries(device, submit, cs->entries,
+                            cs->entry_count);
+
+      if (u_trace_submission_data &&
+          u_trace_submission_data->cmd_trace_data[i].timestamp_copy_cs) {
+         struct tu_cs_entry *trace_cs_entry =
+            &u_trace_submission_data->cmd_trace_data[i]
+                .timestamp_copy_cs->entries[0];
+         tu_submit_add_entries(device, submit, trace_cs_entry, 1);
+      }
+   }
+
+   if (tu_autotune_submit_requires_fence(cmd_buffers, cmdbuf_count)) {
+      struct tu_cs *autotune_cs = tu_autotune_on_submit(
+         device, &device->autotune, cmd_buffers, cmdbuf_count);
+      tu_submit_add_entries(device, submit, autotune_cs->entries,
+                            autotune_cs->entry_count);
+   }
+
+   result =
+      tu_queue_submit(queue, submit, vk_submit->waits, vk_submit->wait_count,
+                      vk_submit->signals, vk_submit->signal_count,
+                      u_trace_submission_data);
+
+   if (result != VK_SUCCESS) {
+      pthread_mutex_unlock(&device->submit_mutex);
+      goto out;
+   }
+
+   tu_debug_bos_print_stats(device);
+
+   if (u_trace_submission_data) {
+      u_trace_submission_data->submission_id = device->submit_count;
+
+      for (uint32_t i = 0; i < u_trace_submission_data->cmd_buffer_count; i++) {
+         bool free_data = i == u_trace_submission_data->last_buffer_with_tracepoints;
+         if (u_trace_submission_data->cmd_trace_data[i].trace)
+            u_trace_flush(u_trace_submission_data->cmd_trace_data[i].trace,
+                          u_trace_submission_data, queue->device->vk.current_frame,
+                          free_data);
+
+         if (!u_trace_submission_data->cmd_trace_data[i].timestamp_copy_cs) {
+            /* u_trace is owned by cmd_buffer */
+            u_trace_submission_data->cmd_trace_data[i].trace = NULL;
+         }
+      }
+   }
+
+   device->submit_count++;
+
+   pthread_mutex_unlock(&device->submit_mutex);
+   pthread_cond_broadcast(&queue->device->timeline_cond);
+
+   u_trace_context_process(&device->trace_context, false);
+
+out:
+   tu_submit_finish(device, submit);
+
+fail_create_submit:
+   if (cmd_buffers != (struct tu_cmd_buffer **) vk_submit->command_buffers)
+      vk_free(&queue->device->vk.alloc, cmd_buffers);
+
+   return result;
+}
+
 VkResult
 tu_queue_init(struct tu_device *device,
               struct tu_queue *queue,
@@ -77,7 +198,7 @@ tu_queue_init(struct tu_device *device,
 
    queue->device = device;
    queue->priority = priority;
-   queue->vk.driver_submit = tu_queue_submit;
+   queue->vk.driver_submit = queue_submit;
 
    int ret = tu_drm_submitqueue_new(device, priority, &queue->msm_queue_id);
    if (ret)
