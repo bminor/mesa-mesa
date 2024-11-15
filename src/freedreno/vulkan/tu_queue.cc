@@ -9,8 +9,10 @@
 
 #include "tu_queue.h"
 
+#include "tu_buffer.h"
 #include "tu_cmd_buffer.h"
 #include "tu_dynamic_rendering.h"
+#include "tu_image.h"
 #include "tu_knl.h"
 #include "tu_device.h"
 
@@ -19,11 +21,12 @@
 static int
 tu_get_submitqueue_priority(const struct tu_physical_device *pdevice,
                             VkQueueGlobalPriorityKHR global_priority,
+                            enum tu_queue_type type,
                             bool global_priority_query)
 {
    if (global_priority_query) {
       VkQueueFamilyGlobalPriorityPropertiesKHR props;
-      tu_physical_device_get_global_priority_properties(pdevice, &props);
+      tu_physical_device_get_global_priority_properties(pdevice, type, &props);
 
       bool valid = false;
       for (uint32_t i = 0; i < props.priorityCount; i++) {
@@ -36,6 +39,10 @@ tu_get_submitqueue_priority(const struct tu_physical_device *pdevice,
       if (!valid)
          return -1;
    }
+
+   /* drm/msm requires a priority of 0 */
+   if (type == TU_QUEUE_SPARSE)
+      return 0;
 
    /* Valid values are from 0 to (pdevice->submitqueue_priority_count - 1),
     * with 0 being the highest priority.
@@ -253,9 +260,75 @@ fail_create_submit:
    return result;
 }
 
+static VkResult
+queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
+{
+   struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
+   struct tu_device *device = queue->device;
+
+   pthread_mutex_lock(&device->submit_mutex);
+
+   void *submit = tu_submit_create(device);
+   if (!submit)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   for (uint32_t i = 0; i < vk_submit->buffer_bind_count; i++) {
+      const VkSparseBufferMemoryBindInfo *bind = &vk_submit->buffer_binds[i];
+      VK_FROM_HANDLE(tu_buffer, buffer, bind->buffer);
+
+      for (uint32_t j = 0; j < bind->bindCount; j++) {
+         const VkSparseMemoryBind *range = &bind->pBinds[j];
+         VK_FROM_HANDLE(tu_device_memory, mem, range->memory);
+
+         tu_submit_add_bind(queue->device, submit,
+                            &buffer->vma, range->resourceOffset,
+                            mem ? mem->bo : NULL,
+                            mem ? range->memoryOffset : 0,
+                            range->size);
+      }
+   }
+
+   for (uint32_t i = 0; i < vk_submit->image_opaque_bind_count; i++) {
+      const VkSparseImageOpaqueMemoryBindInfo *bind =
+         &vk_submit->image_opaque_binds[i];
+      VK_FROM_HANDLE(tu_image, image, bind->image);
+
+      for (uint32_t j = 0; j < bind->bindCount; j++) {
+         const VkSparseMemoryBind *range = &bind->pBinds[j];
+         VK_FROM_HANDLE(tu_device_memory, mem, range->memory);
+
+         tu_submit_add_bind(queue->device, submit,
+                            &image->vma, range->resourceOffset,
+                            mem ? mem->bo : NULL,
+                            mem ? range->memoryOffset : 0,
+                            range->size);
+      }
+   }
+
+   VkResult result =
+      tu_queue_submit(queue, submit, vk_submit->waits, vk_submit->wait_count,
+                      vk_submit->signals, vk_submit->signal_count,
+                      NULL);
+
+   if (result != VK_SUCCESS) {
+      pthread_mutex_unlock(&device->submit_mutex);
+      goto out;
+   }
+
+   device->submit_count++;
+
+   pthread_mutex_unlock(&device->submit_mutex);
+   pthread_cond_broadcast(&queue->device->timeline_cond);
+
+out:
+   tu_submit_finish(device, submit);
+
+   return result;
+}
 VkResult
 tu_queue_init(struct tu_device *device,
               struct tu_queue *queue,
+              enum tu_queue_type type,
               int idx,
               const VkDeviceQueueCreateInfo *create_info)
 {
@@ -268,7 +341,7 @@ tu_queue_init(struct tu_device *device,
        VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR);
 
    const int priority = tu_get_submitqueue_priority(
-         device->physical_device, global_priority,
+         device->physical_device, global_priority, type,
          device->vk.enabled_features.globalPriorityQuery);
    if (priority < 0) {
       return vk_startup_errorf(device->instance, VK_ERROR_INITIALIZATION_FAILED,
@@ -281,10 +354,11 @@ tu_queue_init(struct tu_device *device,
 
    queue->device = device;
    queue->priority = priority;
-   queue->vk.driver_submit = queue_submit;
-   queue->type = TU_QUEUE_GFX;
+   queue->vk.driver_submit =
+      (type == TU_QUEUE_SPARSE) ? queue_submit_sparse : queue_submit;
+   queue->type = type;
 
-   int ret = tu_drm_submitqueue_new(device, TU_QUEUE_GFX, priority, &queue->msm_queue_id);
+   int ret = tu_drm_submitqueue_new(device, type, priority, &queue->msm_queue_id);
    if (ret)
       return vk_startup_errorf(device->instance, VK_ERROR_INITIALIZATION_FAILED,
                                "submitqueue create failed");

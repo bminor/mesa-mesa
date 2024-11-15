@@ -878,6 +878,37 @@ tu_CreateImage(VkDevice _device,
          goto fail;
    }
 
+   if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+      struct tu_instance *instance = device->physical_device->instance;
+      BITMASK_ENUM(tu_sparse_vma_flags) flags = 0;
+
+      uint64_t client_address = 0;
+      if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)
+         flags |= TU_SPARSE_VMA_MAP_ZERO;
+      if (pCreateInfo->flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)
+         flags |= TU_SPARSE_VMA_REPLAYABLE;
+
+      const VkOpaqueCaptureDescriptorDataCreateInfoEXT *replay_info =
+         vk_find_struct_const(pCreateInfo->pNext,
+                              OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT);
+      if (replay_info && replay_info->opaqueCaptureDescriptorData) {
+         flags |= TU_SPARSE_VMA_REPLAYABLE;
+         client_address =
+            *(const uint64_t *)replay_info->opaqueCaptureDescriptorData;
+      }
+
+      result = tu_sparse_vma_init(device, &image->vk.base, &image->vma,
+                                  &image->iova, flags, image->total_size,
+                                  client_address);
+
+      if (result != VK_SUCCESS)
+         goto fail;
+
+      vk_address_binding_report(&instance->vk, &image->vk.base,
+                                image->iova, image->total_size,
+                                VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
+   }
+
    TU_RMV(image_create, device, image);
 
 #ifdef HAVE_PERFETTO
@@ -909,6 +940,10 @@ tu_DestroyImage(VkDevice _device,
 #ifdef HAVE_PERFETTO
    tu_perfetto_log_destroy_image(device, image);
 #endif
+
+   if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+      tu_sparse_vma_finish(device, &image->vma);
+   }
 
    if (image->iova)
       vk_address_binding_report(&instance->vk, &image->vk.base,
@@ -1009,9 +1044,13 @@ static void
 tu_get_image_memory_requirements(struct tu_device *dev, struct tu_image *image,
                                  VkMemoryRequirements2 *pMemoryRequirements)
 {
+   uint32_t alignment = image->layout[0].base_align;
+   if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)
+      alignment = MAX2(alignment, os_page_size);
+
    pMemoryRequirements->memoryRequirements = (VkMemoryRequirements) {
       .size = image->total_size,
-      .alignment = image->layout[0].base_align,
+      .alignment = alignment,
       .memoryTypeBits = (1 << dev->physical_device->memory.type_count) - 1,
    };
 
@@ -1208,4 +1247,18 @@ tu_fragment_density_map_sample(const struct tu_image_view *fdm,
    pipe_swizzle_4f(density, density_src, fdm->swizzle);
    area->width = 1.0f / density[0];
    area->height = 1.0f / density[1];
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+tu_GetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
+                                          const VkImageCaptureDescriptorDataInfoEXT *pInfo,
+                                          void *pData)
+{
+   VK_FROM_HANDLE(tu_image, image, pInfo->image);
+
+   /* Save the image iova so that when replaying sparse images have a
+    * consistent iova and therefore consistent descriptor contents.
+    */
+   *(uint64_t *)pData = image->iova;
+   return VK_SUCCESS;
 }
