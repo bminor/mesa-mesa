@@ -605,6 +605,7 @@ static int eg_surface_init_1d(struct radeon_surface_manager *surf_man,
                               struct radeon_surface *surf,
                               struct radeon_surface_level *level,
                               unsigned bpe,
+                              unsigned align_maginify,
                               uint64_t offset, unsigned start_level)
 {
     uint32_t xalign, yalign, zalign, tilew;
@@ -613,7 +614,7 @@ static int eg_surface_init_1d(struct radeon_surface_manager *surf_man,
     /* compute alignment */
     tilew = 8;
     xalign = surf_man->hw_info.group_bytes / (tilew * bpe * surf->nsamples);
-    xalign = MAX2(tilew, xalign);
+    xalign = MAX2(tilew, xalign * align_maginify);
     yalign = tilew;
     zalign = 1;
     if (surf->flags & RADEON_SURF_SCANOUT) {
@@ -645,7 +646,8 @@ static int eg_surface_init_1d(struct radeon_surface_manager *surf_man,
 static int eg_surface_init_2d(struct radeon_surface_manager *surf_man,
                               struct radeon_surface *surf,
                               struct radeon_surface_level *level,
-                              unsigned bpe, unsigned tile_split,
+                              unsigned bpe, unsigned align_magnify,
+                              unsigned tile_split,
                               uint64_t offset, unsigned start_level)
 {
     unsigned tilew, tileh, tileb;
@@ -684,7 +686,7 @@ static int eg_surface_init_2d(struct radeon_surface_manager *surf_man,
         level[i].mode = RADEON_SURF_MODE_2D;
         eg_surf_minify(surf, level+i, bpe, i, slice_pt, mtilew, mtileh, mtileb, offset);
         if (level[i].mode == RADEON_SURF_MODE_1D) {
-            return eg_surface_init_1d(surf_man, surf, level, bpe, offset, i);
+            return eg_surface_init_1d(surf_man, surf, level, bpe, align_magnify, offset, i);
         }
         /* level0 and first mipmap need to have alignment */
         offset = surf->bo_size;
@@ -786,16 +788,28 @@ static int eg_surface_init_1d_miptrees(struct radeon_surface_manager *surf_man,
     /* Old libdrm_macros.headers didn't have stencil_level in it. This prevents crashes. */
     struct radeon_surface_level tmp[RADEON_SURF_MAX_LEVEL];
     struct radeon_surface_level *stencil_level =
-        (surf->flags & RADEON_SURF_HAS_SBUFFER_MIPTREE) ? surf->stencil_level : tmp;
+          (surf->flags & RADEON_SURF_HAS_SBUFFER_MIPTREE) ? surf->stencil_level : tmp;
 
-    r = eg_surface_init_1d(surf_man, surf, surf->level, surf->bpe, 0, 0);
+    /* With certain sizes the depth and the stencil texture end up being of
+     * different block sizes which later results in wrong rendering for npot
+     * textures. Inflate the alignment requirement for the depth surface by
+     * its bpe in order to make it allocate a texture that is of the same
+     * block size like the stencil texture (The rules used here are deducted by
+     * running dEQP tests and piglits) */
+    int magnify_align = is_depth_stencil &&
+                        ((surf->npix_x < 32)  ||
+                         (!util_is_power_of_two_or_zero(surf->npix_x) &&
+                           !surf->last_level));
+
+    r = eg_surface_init_1d(surf_man, surf, surf->level, surf->bpe,
+                           magnify_align ? surf->bpe : 1, 0, 0);
     if (r)
         return r;
 
     if (is_depth_stencil) {
-        r = eg_surface_init_1d(surf_man, surf, stencil_level, 1,
-                               surf->bo_size, 0);
-        surf->stencil_offset = stencil_level[0].offset;
+       r = eg_surface_init_1d(surf_man, surf, stencil_level, 1, 1,
+                              surf->bo_size, 0);
+       surf->stencil_offset = stencil_level[0].offset;
     }
     return r;
 }
@@ -810,15 +824,25 @@ static int eg_surface_init_2d_miptrees(struct radeon_surface_manager *surf_man,
     struct radeon_surface_level *stencil_level =
         (surf->flags & RADEON_SURF_HAS_SBUFFER_MIPTREE) ? surf->stencil_level : tmp;
 
+    /* Inflate the alignment requirement for npot textures to insure that
+     * stencil and depth texture have the same block size. Use this only in
+     * the 1d code path that uses the non-specific minify. */
+    int magnify_align = is_depth_stencil &&
+                        ((surf->npix_x < 32)  ||
+                         (!util_is_power_of_two_or_zero(surf->npix_x) &&
+                          !surf->last_level));
+
     r = eg_surface_init_2d(surf_man, surf, surf->level, surf->bpe,
+                           magnify_align ? surf->bpe : 1,
                            surf->tile_split, 0, 0);
     if (r)
         return r;
 
     if (is_depth_stencil) {
-        r = eg_surface_init_2d(surf_man, surf, stencil_level, 1,
-                               surf->stencil_tile_split, surf->bo_size, 0);
-        surf->stencil_offset = stencil_level[0].offset;
+       r = eg_surface_init_2d(surf_man, surf, stencil_level, 1, 1,
+                              surf->stencil_tile_split, surf->bo_size, 0);
+       surf->stencil_offset = stencil_level[0].offset;
+
     }
     return r;
 }
