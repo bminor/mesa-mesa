@@ -367,7 +367,7 @@ run_model(TfLiteModel *model, enum executor executor, void ***input, size_t *num
             }
 
             if (cache_is_enabled()) {
-               if (!std::filesystem::exists(cache_dir))
+               if (!cache_dir.empty() && !std::filesystem::exists(cache_dir))
                   std::filesystem::create_directory(cache_dir);
 
                std::ofstream file(input_cache.str().c_str(), std::ios::out | std::ios::binary);

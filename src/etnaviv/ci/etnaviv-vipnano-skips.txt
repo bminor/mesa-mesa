@@ -36,3 +36,5 @@ YoloXParam.Op/yolox026
 YoloXParam.Op/yolox035
 YoloXParam.Op/yolox038
 YoloXParam.Op/yolox041
+
+FullyConnected.Op/*
