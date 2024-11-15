@@ -305,6 +305,8 @@ DEQP_TARGET=surfaceless \
 DEQP_TARGET=default \
 . .gitlab-ci/container/build-deqp.sh
 
+rm -rf /VK-GL-CTS
+
 mv /deqp $ROOTFS/.
 
 

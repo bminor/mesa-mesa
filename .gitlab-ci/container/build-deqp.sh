@@ -93,10 +93,12 @@ case "${DEQP_API}" in
   GLES) DEQP_VERSION="opengl-es-cts-$DEQP_GLES_VERSION";;
 esac
 
-mkdir /VK-GL-CTS
+mkdir -p /VK-GL-CTS
 pushd /VK-GL-CTS
-git init
-git remote add origin https://github.com/KhronosGroup/VK-GL-CTS.git
+[ -e .git ] || {
+  git init
+  git remote add origin https://github.com/KhronosGroup/VK-GL-CTS.git
+}
 git fetch --depth 1 origin "$DEQP_VERSION"
 git checkout FETCH_HEAD
 DEQP_COMMIT=$(git rev-parse FETCH_HEAD)
@@ -256,7 +258,6 @@ if [ "${DEQP_API}" = 'GLES' ]; then
   ${STRIP_CMD:-strip} modules/*/deqp-*
 fi
 du -sh ./*
-rm -rf /VK-GL-CTS
 popd
 
 section_end deqp-$deqp_api

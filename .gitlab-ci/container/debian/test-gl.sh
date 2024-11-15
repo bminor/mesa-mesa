@@ -112,6 +112,8 @@ DEQP_API=GLES \
 DEQP_TARGET=surfaceless \
 . .gitlab-ci/container/build-deqp.sh
 
+rm -rf /VK-GL-CTS
+
 ############### Build apitrace
 
 . .gitlab-ci/container/build-apitrace.sh

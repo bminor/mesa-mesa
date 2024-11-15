@@ -108,6 +108,8 @@ DEQP_API=VK \
 DEQP_TARGET=default \
 . .gitlab-ci/container/build-deqp.sh
 
+rm -rf /VK-GL-CTS
+
 ############### Build apitrace
 
 . .gitlab-ci/container/build-apitrace.sh
