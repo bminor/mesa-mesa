@@ -4034,6 +4034,15 @@ typedef struct nir_shader_compiler_options {
    bool lower_base_vertex;
 
    /**
+    * Whether the driver wants to work with instance_index instead of
+    * instance_id.
+    *
+    * When set, instance_id will be lowered to instance_index - base_instance.
+    * Otherwise, instance_index will be lowered to instance_id + base_instance.
+    */
+   bool supports_instance_index;
+
+   /**
     * If enabled, gl_HelperInvocation will be lowered as:
     *
     *   !((1 << sample_id) & sample_mask_in))
