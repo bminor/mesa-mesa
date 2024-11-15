@@ -4234,7 +4234,7 @@
         "description": "nir/algebraic: check bit sizes in lowered unpack(pack()) optimization",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "894f7f438745f4f76ea21391a89752ce601f7e2d",
         "notes": null
