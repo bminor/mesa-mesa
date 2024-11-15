@@ -444,6 +444,11 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
       *src_stages = VK_PIPELINE_STAGE_2_NONE;
       *src_access = VK_ACCESS_2_NONE;
       break;
+   case VK_QUEUE_FAMILY_FOREIGN_EXT:
+      /* treat the foreign queue as the host */
+      *src_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
+      *src_access = VK_ACCESS_2_HOST_WRITE_BIT;
+      break;
    default:
       break;
    }
@@ -454,6 +459,11 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
       /* no execution dependency and no visibility operation */
       *dst_stages = VK_PIPELINE_STAGE_2_NONE;
       *dst_access = VK_ACCESS_2_NONE;
+      break;
+   case VK_QUEUE_FAMILY_FOREIGN_EXT:
+      /* treat the foreign queue as the host */
+      *dst_stages = VK_PIPELINE_STAGE_2_HOST_BIT;
+      *dst_access = VK_ACCESS_2_HOST_WRITE_BIT;
       break;
    default:
       break;
