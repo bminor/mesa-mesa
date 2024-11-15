@@ -4244,7 +4244,7 @@
         "description": "nir/algebraic: fix iabs(ishr(iabs(a), b)) optimization",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2b76de9b5dd58c444c194d4c77ef9d9643ae5ca6",
         "notes": null
