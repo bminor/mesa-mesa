@@ -27,6 +27,7 @@ import sys
 a = 'a'
 b = 'b'
 c = 'c'
+s = 's'
 
 # common conditions to improve readability
 volta = 'nak->sm >= 70 && nak->sm < 75'
@@ -38,6 +39,9 @@ algebraic_lowering = [
     (('umin', 'a', 'b'), ('bcsel', ('ult', a, b), a, b), volta),
     (('umax', 'a', 'b'), ('bcsel', ('ult', a, b), b, a), volta),
     (('iadd', 'a@64', ('ineg', 'b@64')), ('isub', a, b)),
+
+    (('iadd(is_used_by_non_ldc_nv)', 'a@32', ('ishl', 'b@32', '#s@32')),
+        ('lea_nv', a, b, s), 'nak->sm >= 70'),
 ]
 
 def main():

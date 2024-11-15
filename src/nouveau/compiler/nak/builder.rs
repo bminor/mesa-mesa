@@ -612,6 +612,24 @@ pub trait SSABuilder: Builder {
         dst
     }
 
+    fn lea(&mut self, a: Src, b: Src, shift: u8) -> SSARef {
+        let dst = self.alloc_ssa(RegFile::GPR, 1);
+        assert!(self.sm() >= 70);
+
+        self.push_op(OpLea {
+            dst: dst.into(),
+            overflow: Dst::None,
+            a: a,
+            b: b,
+            a_high: 0.into(),
+            dst_high: false,
+            shift: shift % 32,
+            intermediate_mod: SrcMod::None,
+        });
+
+        dst
+    }
+
     fn lop2(&mut self, op: LogicOp2, x: Src, y: Src) -> SSARef {
         let dst = if x.is_predicate() {
             self.alloc_ssa(RegFile::Pred, 1)
