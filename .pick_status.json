@@ -5634,7 +5634,7 @@
         "description": "vulkan: Avoid pointer aliasing",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "476dc3c050dfb34e5fbc534db8eede88cf5e2c7c",
         "notes": null
