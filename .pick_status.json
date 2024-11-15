@@ -1394,7 +1394,7 @@
         "description": "r600: fix the evergreen sampler when the minification and the magnification are not identical",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5278436d6742fc2065aa72ae5cd4c41eb89f9c92",
         "notes": null
