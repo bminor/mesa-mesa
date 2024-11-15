@@ -687,7 +687,7 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
       for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
          if (debug_syncs[i].seqno != debug_sync_points[i] ||
              debug_syncs[i].error != 0)
-            assert(!"Incomplete job or timeout\n");
+            vk_queue_set_lost(&queue->vk, "Incomplete job or timeout");
       }
    }
 
