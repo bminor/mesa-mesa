@@ -90,6 +90,11 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
 
 void panvk_per_arch(destroy_device)(struct panvk_device *device,
                                     const VkAllocationCallbacks *pAllocator);
+
+#if PAN_ARCH >= 10
+VkResult panvk_per_arch(device_check_status)(struct vk_device *vk_dev);
+#endif
+
 #endif
 
 #endif

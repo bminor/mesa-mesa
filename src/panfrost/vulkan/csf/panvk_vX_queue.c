@@ -779,3 +779,23 @@ panvk_per_arch(queue_finish)(struct panvk_queue *queue)
    drmSyncobjDestroy(dev->vk.drm_fd, queue->syncobj_handle);
    vk_queue_finish(&queue->vk);
 }
+
+VkResult
+panvk_per_arch(queue_check_status)(struct panvk_queue *queue)
+{
+   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+   struct drm_panthor_group_get_state state = {
+      .group_handle = queue->group_handle,
+   };
+
+   int ret =
+      drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_GET_STATE, &state);
+   if (!ret && !state.state)
+      return VK_SUCCESS;
+
+   vk_queue_set_lost(&queue->vk,
+                     "group state: err=%d, state=0x%x, fatal_queues=0x%x", ret,
+                     state.state, state.fatal_queues);
+
+   return VK_ERROR_DEVICE_LOST;
+}
