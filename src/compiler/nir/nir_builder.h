@@ -768,6 +768,15 @@ nir_channel(nir_builder *b, nir_def *def, unsigned c)
 }
 
 static inline nir_def *
+nir_channel_or_undef(nir_builder *b, nir_def *def, signed int channel)
+{
+   if (channel >= 0 && channel < def->num_components)
+      return nir_channel(b, def, channel);
+   else
+      return nir_undef(b, 1, def->bit_size);
+}
+
+static inline nir_def *
 nir_channels(nir_builder *b, nir_def *def, nir_component_mask_t mask)
 {
    unsigned num_channels = 0, swizzle[NIR_MAX_VEC_COMPONENTS] = { 0 };

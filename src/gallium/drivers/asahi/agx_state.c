@@ -1473,15 +1473,6 @@ agx_nir_lower_clip_m1_1(nir_builder *b, nir_intrinsic_instr *intr,
    return true;
 }
 
-static nir_def *
-nir_channel_or_undef(nir_builder *b, nir_def *def, signed int channel)
-{
-   if (channel >= 0 && channel < def->num_components)
-      return nir_channel(b, def, channel);
-   else
-      return nir_undef(b, 1, def->bit_size);
-}
-
 /*
  * To implement point sprites, we'll replace TEX0...7 with point coordinate
  * reads as required. However, the .zw needs to read back 0.0/1.0. This pass

@@ -13,15 +13,6 @@ struct opts {
    bool point_coord_is_sysval;
 };
 
-static nir_def *
-nir_channel_or_undef(nir_builder *b, nir_def *def, signed int channel)
-{
-   if (channel >= 0 && channel < def->num_components)
-      return nir_channel(b, def, channel);
-   else
-      return nir_undef(b, def->bit_size, 1);
-}
-
 static bool
 pass(nir_builder *b, nir_instr *instr, void *data)
 {
