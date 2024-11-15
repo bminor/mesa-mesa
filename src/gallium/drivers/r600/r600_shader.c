@@ -436,6 +436,17 @@ void *r600_create_vertex_fetch_shader(struct pipe_context *ctx,
 
 		if (unlikely(r = r600_bytecode_add_vtx(&bc, &vtx)))
 			goto fail;
+
+		if (unlikely(rctx->b.gfx_level >= EVERGREEN &&
+			     desc->nr_channels == 3 &&
+			     (format == FMT_8_8_8_8 ||
+			      format == FMT_16_16_16_16 ||
+			      format == FMT_16_16_16_16_FLOAT))) {
+			if (format == FMT_8_8_8_8)
+				shader->width_correction[elements[i].vertex_buffer_index] = 4 - 3;
+			else
+				shader->width_correction[elements[i].vertex_buffer_index] = 8 - 6;
+		}
 	}
 
 	r600_bytecode_add_cfinst(&bc, CF_OP_RET);
