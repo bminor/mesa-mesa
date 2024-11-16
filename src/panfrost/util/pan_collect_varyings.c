@@ -183,8 +183,8 @@ collect_noperspective_varyings_fs(UNUSED nir_builder *b,
    return false;
 }
 
-static uint32_t
-nir_collect_noperspective_varyings_fs(nir_shader *s)
+uint32_t
+pan_nir_collect_noperspective_varyings_fs(nir_shader *s)
 {
    assert(s->info.stage == MESA_SHADER_FRAGMENT);
 
@@ -233,5 +233,6 @@ pan_nir_collect_varyings(nir_shader *s, struct pan_shader_info *info)
       info->varyings.input_count = count;
 
    if (s->info.stage == MESA_SHADER_FRAGMENT)
-      info->varyings.noperspective = nir_collect_noperspective_varyings_fs(s);
+      info->varyings.noperspective =
+         pan_nir_collect_noperspective_varyings_fs(s);
 }

@@ -121,7 +121,6 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
                                         bit_size, num_comps);
       break;
    case nir_intrinsic_load_noperspective_varyings_pan:
-      /* TODO: lower this to a constant with monolithic pipelines */
       /* TODO: use a VS epilog specialized on constant noperspective_varyings
        * with VK_EXT_graphics_pipeline_libraries and VK_EXT_shader_object */
       assert(b->shader->info.stage == MESA_SHADER_VERTEX);
@@ -495,6 +494,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 uint32_t set_layout_count,
                 struct vk_descriptor_set_layout *const *set_layouts,
                 const struct vk_pipeline_robustness_state *rs,
+                uint32_t *noperspective_varyings,
                 const struct panfrost_compile_inputs *compile_input,
                 struct panvk_shader *shader)
 {
@@ -605,6 +605,10 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
     */
    if (PAN_ARCH < 9 && stage == MESA_SHADER_VERTEX)
       NIR_PASS(_, nir, pan_lower_image_index, MAX_VS_ATTRIBS);
+
+   if (noperspective_varyings && stage == MESA_SHADER_VERTEX)
+      NIR_PASS(_, nir, pan_nir_lower_static_noperspective,
+               *noperspective_varyings);
 
    NIR_PASS(_, nir, nir_shader_instructions_pass, panvk_lower_sysvals,
             nir_metadata_control_flow, NULL);
@@ -880,6 +884,7 @@ static VkResult
 panvk_compile_shader(struct panvk_device *dev,
                      struct vk_shader_compile_info *info,
                      const struct vk_graphics_pipeline_state *state,
+                     uint32_t *noperspective_varyings,
                      const VkAllocationCallbacks *pAllocator,
                      struct vk_shader **shader_out)
 {
@@ -908,7 +913,7 @@ panvk_compile_shader(struct panvk_device *dev,
       nir->info.fs.uses_sample_shading = true;
 
    panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
-                   info->robustness, &inputs, shader);
+                   info->robustness, noperspective_varyings, &inputs, shader);
 
    result = panvk_compile_nir(dev, nir, info->flags, &inputs, shader);
 
@@ -937,11 +942,20 @@ panvk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
                       struct vk_shader **shaders_out)
 {
    struct panvk_device *dev = to_panvk_device(vk_dev);
+   bool use_static_noperspective = false;
+   uint32_t noperspective_varyings = 0;
    VkResult result;
-   uint32_t i;
+   int32_t i;
 
-   for (i = 0; i < shader_count; i++) {
-      result = panvk_compile_shader(dev, &infos[i], state, pAllocator,
+   /* Vulkan runtime passes us shaders in stage order, so the FS will always
+    * be last if it exists. Iterate shaders in reverse order to ensure FS is
+    * processed before VS. */
+   for (i = shader_count - 1; i >= 0; i--) {
+      uint32_t *noperspective_varyings_ptr =
+         use_static_noperspective ? &noperspective_varyings : NULL;
+      result = panvk_compile_shader(dev, &infos[i], state,
+                                    noperspective_varyings_ptr,
+                                    pAllocator,
                                     &shaders_out[i]);
 
       /* Clean up NIR for the current shader */
@@ -949,6 +963,16 @@ panvk_compile_shaders(struct vk_device *vk_dev, uint32_t shader_count,
 
       if (result != VK_SUCCESS)
          goto err_cleanup;
+
+      /* If we are linking VS and FS, we can use the static interpolation
+       * qualifiers from the FS in the VS. */
+      if (infos[i].nir->info.stage == MESA_SHADER_FRAGMENT) {
+         struct panvk_shader *shader =
+            container_of(shaders_out[i], struct panvk_shader, vk);
+
+         use_static_noperspective = true;
+         noperspective_varyings = shader->info.varyings.noperspective;
+      }
    }
 
    /* TODO: If we get multiple shaders here, we can perform part of the link

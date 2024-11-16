@@ -401,6 +401,7 @@ bool pan_lower_xfb(nir_shader *nir);
 
 bool pan_lower_image_index(nir_shader *shader, unsigned vs_img_attrib_offset);
 
+uint32_t pan_nir_collect_noperspective_varyings_fs(nir_shader *s);
 void pan_nir_collect_varyings(nir_shader *s, struct pan_shader_info *info);
 
 /*
