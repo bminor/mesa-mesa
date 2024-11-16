@@ -2124,7 +2124,7 @@
         "description": "zink+nvk/ci: fix deqp binary used for gles tests",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5a6ffd1420cecb9d060f386120b94d9b5eafc22e",
         "notes": null
