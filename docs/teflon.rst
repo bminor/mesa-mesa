@@ -25,17 +25,17 @@ Mesa contains a TensorFlow Lite delegate that can make use of NPUs to accelerate
      - UINT8
      - http://download.tensorflow.org/models/mobilenet_v1_2018_08_02/mobilenet_v1_1.0_224_quant.tgz
      - Fully supported
-     - ~15 ms
+     - ~6.6 ms
    * - MobileNet V2
      - UINT8
      - https://storage.googleapis.com/mobilenet_v2/checkpoints/quantized_v2_224_100.tgz
      - Fully supported
-     - ~15.5 ms
+     - ~6.9 ms
    * - SSDLite MobileDet
      - UINT8
      - https://raw.githubusercontent.com/google-coral/test_data/master/ssdlite_mobiledet_coco_qat_postprocess.tflite
      - Fully supported
-     - ~53 ms
+     - ~24.8 ms
 
 Build
 -----
