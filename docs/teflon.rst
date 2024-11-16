@@ -12,6 +12,9 @@ Mesa contains a TensorFlow Lite delegate that can make use of NPUs to accelerate
    * - Etnaviv
      - ``VeriSilicon VIPNano-QI.7120``
      - ``Amlogic A311D on Libre Computer AML-A311D-CC Alta and Khadas VIM3``
+   * - Etnaviv
+     - ``VeriSilicon VIPNano-SI+.8002``
+     - ``NXP iMX8M Plus on Toradex Verdin SoM``
 
 .. list-table:: Tested models
    :header-rows: 1
@@ -21,21 +24,25 @@ Mesa contains a TensorFlow Lite delegate that can make use of NPUs to accelerate
      - Link (may be outdated)
      - Status
      - Inference speed on AML-A311D-CC Alta
+     - Inference speed on Verdin iMX8M Plus
    * - MobileNet V1
      - UINT8
      - http://download.tensorflow.org/models/mobilenet_v1_2018_08_02/mobilenet_v1_1.0_224_quant.tgz
      - Fully supported
      - ~6.6 ms
+     - ~7.9 ms
    * - MobileNet V2
      - UINT8
      - https://storage.googleapis.com/mobilenet_v2/checkpoints/quantized_v2_224_100.tgz
      - Fully supported
      - ~6.9 ms
+     - ~8.0 ms
    * - SSDLite MobileDet
      - UINT8
      - https://raw.githubusercontent.com/google-coral/test_data/master/ssdlite_mobiledet_coco_qat_postprocess.tflite
      - Fully supported
      - ~24.8 ms
+     - ~24.4 ms
 
 Build
 -----
@@ -61,26 +68,7 @@ Example instructions:
 Install runtime dependencies
 ----------------------------
 
-Your board should have booted into a mainline 6.7 or greater kernel and have the etnaviv driver loaded. You will also need to enable the NPU device in the device tree by means of an overlay or by a change such as the below (and rebuild the DTB):
-
-.. code-block:: diff
-
-   diff --git a/arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3.dts b/arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3.dts
-   index 4aa2b20bfbf2..4e8266056bca 100644
-   --- a/arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3.dts
-   +++ b/arch/arm64/boot/dts/amlogic/meson-g12b-a311d-khadas-vim3.dts
-   @@ -50,6 +50,10 @@ galcore {
-         };
-   };
-   
-   +&npu {
-   +       status = "okay";
-   +};
-   +
-   /*
-   * The VIM3 on-board  MCU can mux the PCIe/USB3.0 shared differential
-   * lines using a FUSB340TMX USB 3.1 SuperSpeed Data Switch between
-
+Your board should have booted into a mainline 6.7 (6.8 for the i.MX8MP) or greater kernel.
 
 .. code-block:: console
 
