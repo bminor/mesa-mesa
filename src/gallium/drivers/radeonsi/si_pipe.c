@@ -1406,7 +1406,7 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
 	  sscreen->info.gfx_level >= GFX10) {
 	 /* Only bin draws that have no CONTEXT and SH register changes between
 	  * them because higher settings cause hangs. We've only been able to
-	  * reproduce hangs on smaller chips (e.g. Navi24, GFX1103), though all
+	  * reproduce hangs on smaller chips (e.g. Navi24, Phoenix), though all
 	  * chips might have them. What we see may be due to a driver bug.
 	  */
          sscreen->pbb_context_states_per_bin = 1;

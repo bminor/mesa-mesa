@@ -751,8 +751,8 @@ ChipFamily Gfx11Lib::HwlConvertChipFamily(
                 m_settings.isGfx1150 = 1;
             }
             break;
-        case FAMILY_GFX1103:
-            m_settings.isGfx1103 = 1;
+        case FAMILY_PHX:
+            m_settings.isPhoenix = 1;
             break;
         default:
             ADDR_ASSERT(!"Unknown chip family");
@@ -1751,7 +1751,7 @@ UINT_32 Gfx11Lib::GetValidDisplaySwizzleModes(
         swModeMask = Dcn32SwModeMask;
 
         if (false
-            || (m_settings.isGfx1103)
+            || (m_settings.isPhoenix)
             || (m_settings.isGfx1150)
            )
         {

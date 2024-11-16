@@ -895,11 +895,11 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          identify_chip(NAVI32);
          identify_chip(NAVI33);
          break;
-      case FAMILY_GFX1103:
-         identify_chip(GFX1103_R1);
-         identify_chip(GFX1103_R2);
-         identify_chip2(GFX1103_R1X, GFX1103_R1);
-         identify_chip2(GFX1103_R2X, GFX1103_R2);
+      case FAMILY_PHX:
+         identify_chip2(PHOENIX1, PHOENIX);
+         identify_chip(PHOENIX2);
+         identify_chip2(HAWK_POINT1, PHOENIX);
+         identify_chip2(HAWK_POINT2, PHOENIX2);
          break;
       case FAMILY_GFX1150:
          identify_chip(GFX1150);
@@ -1188,7 +1188,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          info->l2_cache_size = info->num_tcc_blocks * 256 * 1024;
          break;
       case CHIP_REMBRANDT:
-      case CHIP_GFX1103_R1:
+      case CHIP_PHOENIX:
          info->l2_cache_size = info->num_tcc_blocks * 512 * 1024;
          break;
       }

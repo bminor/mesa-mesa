@@ -119,11 +119,13 @@ enum radeon_family
    CHIP_NAVI31,         /* Radeon 7900 */
    CHIP_NAVI32,         /* Radeon 7800, 7700 */
    CHIP_NAVI33,         /* Radeon 7600, 7700S (mobile) */
-   CHIP_GFX1103_R1,
-   CHIP_GFX1103_R2,
+   CHIP_PHOENIX,        /* Ryzen Z1 Extreme, Ryzen 7040, Ryzen 8040 */
+   CHIP_PHOENIX2,       /* Ryzen Z1, Ryzen 8040 */
+   /* GFX11.5 (RDNA 3.5) */
    CHIP_GFX1150,
    CHIP_GFX1151,
    CHIP_GFX1152,
+   /* GFX12 (RDNA 4) */
    CHIP_GFX1200,
    CHIP_GFX1201,
    CHIP_LAST,

@@ -1409,7 +1409,7 @@ ac_set_mutable_cb_surface_fields(const struct radeon_info *info, const struct ac
          cb->cb_dcc_control |= S_028C78_DISABLE_CONSTANT_ENCODE_REG(1) |
                                S_028C78_FDCC_ENABLE(1);
 
-         if (info->family >= CHIP_GFX1103_R2) {
+         if (info->family >= CHIP_PHOENIX2) {
             cb->cb_dcc_control |= S_028C78_ENABLE_MAX_COMP_FRAG_OVERRIDE(1) |
                                   S_028C78_MAX_COMP_FRAGS(state->num_samples >= 4);
          }
