@@ -268,27 +268,25 @@ summarize_repack(nir_builder *b, nir_def *packed_counts, unsigned num_lds_dwords
    bool use_dot = b->shader->options->has_udot_4x8;
 
    if (num_lds_dwords == 1) {
-      nir_def *dot_op = !use_dot ? NULL : nir_ushr(b, nir_ushr(b, nir_imm_int(b, 0x01010101), shift), shift);
-
       /* Broadcast the packed data we read from LDS (to the first 16 lanes, but we only care up to num_waves). */
       nir_def *packed = nir_lane_permute_16_amd(b, packed_counts, nir_imm_int(b, 0), nir_imm_int(b, 0));
 
       /* Horizontally add the packed bytes. */
       if (use_dot) {
+         nir_def *dot_op = nir_ushr(b, nir_ushr(b, nir_imm_int(b, 0x01010101), shift), shift);
          return nir_udot_4x8_uadd(b, packed, dot_op, nir_imm_int(b, 0));
       } else {
          nir_def *sad_op = nir_ishl(b, nir_ishl(b, packed, shift), shift);
          return nir_msad_4x8(b, sad_op, nir_imm_int(b, 0), nir_imm_int(b, 0));
       }
    } else if (num_lds_dwords == 2) {
-      nir_def *dot_op = !use_dot ? NULL : nir_ushr(b, nir_ushr(b, nir_imm_int64(b, 0x0101010101010101), shift), shift);
-
       /* Broadcast the packed data we read from LDS (to the first 16 lanes, but we only care up to num_waves). */
       nir_def *packed_dw0 = nir_lane_permute_16_amd(b, nir_unpack_64_2x32_split_x(b, packed_counts), nir_imm_int(b, 0), nir_imm_int(b, 0));
       nir_def *packed_dw1 = nir_lane_permute_16_amd(b, nir_unpack_64_2x32_split_y(b, packed_counts), nir_imm_int(b, 0), nir_imm_int(b, 0));
 
       /* Horizontally add the packed bytes. */
       if (use_dot) {
+         nir_def *dot_op = nir_ushr(b, nir_ushr(b, nir_imm_int64(b, 0x0101010101010101), shift), shift);
          nir_def *sum = nir_udot_4x8_uadd(b, packed_dw0, nir_unpack_64_2x32_split_x(b, dot_op), nir_imm_int(b, 0));
          return nir_udot_4x8_uadd(b, packed_dw1, nir_unpack_64_2x32_split_y(b, dot_op), sum);
       } else {
