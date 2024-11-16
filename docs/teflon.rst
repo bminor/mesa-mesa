@@ -82,13 +82,26 @@ Your board should have booted into a mainline 6.7 (6.8 for the i.MX8MP) or great
    # Install TensorFlow Lite Python package (as non-root)
    ~ $ python3.10 -m pip install --break-system-packages tflite-runtime==2.13.0
 
+   # For the classification.py script mentioned below, you will need PIL
+   ~ $ python3.10 -m pip install --break-system-packages pillow
+
 Do some inference with MobileNetV1
 ----------------------------------
+
+Run the above for a quick way of checking that the setup is correct and the NPU is accelerating the inference. It assumes you have followed the steps above so Python 3.10 and dependencies have been installed, and assumes that Mesa was built to the `./build` directory.
+
+You can use any image that prominently features one of the objects in the `src/gallium/frontends/teflon/tests/labels_mobilenet_quant_v1_224.txt` file.
+
+This example script has been based from the code in https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/examples/python.
 
 .. code-block:: console
 
    ~ $ cd mesa/
-   mesa $ TEFLON_DEBUG=verbose ETNA_MESA_DEBUG=ml_dbgs python3.10 src/gallium/frontends/teflon/tests/classification.py -i ~/tensorflow/assets/grace_hopper.bmp -m src/gallium/targets/teflon/tests/mobilenet_v1_1.0_224_quant.tflite -l src/gallium/frontends/teflon/tests/labels_mobilenet_quant_v1_224.txt -e build/src/gallium/targets/teflon/libteflon.so
+   mesa $ TEFLON_DEBUG=verbose ETNA_MESA_DEBUG=ml_dbgs python3.10 src/gallium/frontends/teflon/tests/classification.py \
+          -i ~/tensorflow/assets/grace_hopper.bmp \
+          -m src/gallium/targets/teflon/tests/mobilenet_v1_1.0_224_quant.tflite \
+          -l src/gallium/frontends/teflon/tests/labels_mobilenet_quant_v1_224.txt \
+          -e build/src/gallium/targets/teflon/libteflon.so
 
    Loading external delegate from build/src/gallium/targets/teflon/libteflon.so with args: {}
    Teflon delegate: loaded etnaviv driver
