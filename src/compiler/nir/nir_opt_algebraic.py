@@ -1833,29 +1833,48 @@ optimizations.extend([
 
    (('ult', 0, 'a(is_gt_zero)'), True),
    (('ult', a, 0), False),
+])
 
-   # Packing and then unpacking does nothing
-   (('unpack_64_2x32_split_x', ('pack_64_2x32_split', a, b)), a),
-   (('unpack_64_2x32_split_y', ('pack_64_2x32_split', a, b)), b),
-   (('unpack_64_2x32_split_x', ('pack_64_2x32', a)), 'a.x'),
-   (('unpack_64_2x32_split_y', ('pack_64_2x32', a)), 'a.y'),
-   (('unpack_64_2x32_split_x', ('u2u64', 'a@32')), a),
-   (('unpack_64_2x32_split_y', ('u2u64', a)), 0),
-   (('unpack_64_2x32_split_x', ('i2i64', 'a@32')), a),
-   (('unpack_64_2x32_split_y', ('i2i64(is_used_once)', 'a@32')), ('ishr', a, 31)),
-   (('unpack_64_2x32', ('pack_64_2x32_split', a, b)), ('vec2', a, b)),
-   (('unpack_64_2x32', ('pack_64_2x32', a)), a),
+# Packing and then unpacking does nothing
+for pack, bits, compbits in [('pack_64_2x32', 64, 32), ('pack_32_2x16', 32, 16)]:
+    unpack = 'un' + pack
+    optimizations += [
+        ((unpack + '_split_x', (pack + '_split', a, b)), a),
+        ((unpack + '_split_y', (pack + '_split', a, b)), b),
+        ((unpack + '_split_x', (pack, a)), 'a.x'),
+        ((unpack + '_split_y', (pack, a)), 'a.y'),
+        ((unpack + '_split_x', ('u2u' + str(bits), 'a@' + str(compbits))), a),
+        ((unpack + '_split_x', ('i2i' + str(bits), 'a@' + str(compbits))), a),
+        ((unpack + '_split_y', ('i2i' + str(bits) + '(is_used_once)', 'a@' + str(compbits))), ('ishr', a, compbits - 1)),
+        ((unpack, (pack + '_split', a, b)), ('vec2', a, b)),
+        ((unpack, (pack, a)), a),
+        ((pack + '_split', (unpack + '_split_x', a), (unpack + '_split_y', a)), a),
+        ((pack, ('vec2', (unpack + '_split_x', a), (unpack + '_split_y', a))), a),
+        ((pack, (unpack, a)), a),
+    ]
+
+optimizations.extend([
+   (('unpack_64_2x32_split_y', ('u2u64', 'a@1')), 0),
+   (('unpack_64_2x32_split_y', ('u2u64', 'a@8')), 0),
+   (('unpack_64_2x32_split_y', ('u2u64', 'a@16')), 0),
+   (('unpack_64_2x32_split_y', ('u2u64', 'a@32')), 0), # Don't do that for u64 -> u64
    (('unpack_double_2x32_dxil', ('pack_double_2x32_dxil', a)), a),
-   (('pack_64_2x32_split', ('unpack_64_2x32_split_x', a),
-                           ('unpack_64_2x32_split_y', a)), a),
-   (('pack_64_2x32', ('vec2', ('unpack_64_2x32_split_x', a),
-                              ('unpack_64_2x32_split_y', a))), a),
-   (('pack_64_2x32', ('unpack_64_2x32', a)), a),
    (('pack_double_2x32_dxil', ('unpack_double_2x32_dxil', a)), a),
 
    (('unpack_64_4x16', ('pack_64_4x16', a)), a),
+   (('pack_64_4x16', ('unpack_64_4x16', a)), a),
+   (('unpack_32_4x8', ('pack_32_4x8', a)), a),
+   (('pack_32_4x8', ('unpack_32_4x8', a)), a),
+
    (('unpack_64_4x16', ('pack_64_2x32', ('vec2', ('pack_32_2x16_split', a, b), ('pack_32_2x16_split', c, d)))), ('vec4', a, b, c, d)),
    (('unpack_64_4x16', ('pack_64_2x32_split', ('pack_32_2x16_split', a, b), ('pack_32_2x16_split', c, d))), ('vec4', a, b, c, d)),
+
+   (('pack_64_2x32_split', ('pack_32_2x16_split', a, b), ('pack_32_2x16_split', c, d)),
+    ('pack_64_4x16', ('vec4', a, b, c, d)), '!options->lower_pack_64_4x16'),
+   (('pack_64_2x32', ('vec2', ('pack_32_2x16_split', a, b), ('pack_32_2x16_split', c, d))),
+    ('pack_64_4x16', ('vec4', a, b, c, d)), '!options->lower_pack_64_4x16'),
+   (('pack_64_2x32', ('vec2', ('pack_32_2x16', ('vec2', a, b)), ('pack_32_2x16', ('vec2', c, d)))),
+    ('pack_64_4x16', ('vec4', a, b, c, d)), '!options->lower_pack_64_4x16'),
 
    # Comparing two halves of an unpack separately.  While this optimization
    # should be correct for non-constant values, it's less obvious that it's
@@ -1927,16 +1946,6 @@ optimizations.extend([
    (('ubfe', a, 16, 16), ('extract_u16', a, 1), '!options->lower_extract_word'),
    (('ibfe', a,  0, 16), ('extract_i16', a, 0), '!options->lower_extract_word'),
    (('ibfe', a, 16, 16), ('extract_i16', a, 1), '!options->lower_extract_word'),
-
-   # Collapse nop packing.
-   (('unpack_32_4x8', ('pack_32_4x8', a)), a),
-   (('unpack_32_2x16', ('pack_32_2x16', a)), a),
-   (('unpack_64_4x16', ('pack_64_4x16', a)), a),
-   (('unpack_64_2x32', ('pack_64_2x32', a)), a),
-   (('pack_32_4x8', ('unpack_32_4x8', a)), a),
-   (('pack_32_2x16', ('unpack_32_2x16', a)), a),
-   (('pack_64_4x16', ('unpack_64_4x16', a)), a),
-   (('pack_64_2x32', ('unpack_64_2x32', a)), a),
 
    # Packing a u8vec4 to write to an SSBO.
    (('ior', ('ishl', ('u2u32', 'a@8'), 24), ('ior', ('ishl', ('u2u32', 'b@8'), 16), ('ior', ('ishl', ('u2u32', 'c@8'), 8), ('u2u32', 'd@8')))),
