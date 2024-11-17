@@ -7,7 +7,7 @@
 #include "util/bitscan.h"
 #include "util/macros.h"
 #include "agx_nir_lower_gs.h"
-#include "libagx_shaders.h"
+#include "libagx.h"
 #include "nir.h"
 #include "nir_builder.h"
 #include "nir_builder_opcodes.h"

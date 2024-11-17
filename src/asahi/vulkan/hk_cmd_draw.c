@@ -29,7 +29,7 @@
 #include "hk_shader.h"
 
 #include "asahi/genxml/agx_pack.h"
-#include "asahi/lib/libagx_shaders.h"
+#include "asahi/lib/libagx.h"
 #include "asahi/lib/shaders/draws.h"
 #include "asahi/lib/shaders/geometry.h"
 #include "shaders/query.h"

@@ -15,7 +15,7 @@
 #include "util/macros.h"
 #include "util/ralloc.h"
 #include "util/u_math.h"
-#include "libagx_shaders.h"
+#include "libagx.h"
 #include "nir.h"
 #include "nir_builder_opcodes.h"
 #include "nir_intrinsics.h"

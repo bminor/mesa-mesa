@@ -4,13 +4,9 @@
  */
 
 #include "agx_scratch.h"
-#include "asahi/compiler/agx_compile.h"
 #include "shaders/helper.h"
-#include "util/u_hexdump.h"
 #include "agx_bo.h"
 #include "libagx_shaders.h"
-#include "nir.h"
-#include "nir_builder_opcodes.h"
 
 #define AGX_ADDR_SHIFT        8
 #define AGX_THREADS_PER_GROUP 32

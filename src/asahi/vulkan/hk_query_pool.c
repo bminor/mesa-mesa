@@ -22,7 +22,7 @@
 #include "vk_pipeline.h"
 
 #include "asahi/lib/agx_bo.h"
-#include "asahi/lib/libagx_shaders.h"
+#include "asahi/lib/libagx.h"
 #include "asahi/lib/shaders/query.h"
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"

@@ -69,6 +69,7 @@ hk_deps = [
   idep_vulkan_wsi,
   idep_vulkan_wsi_headers,
   idep_agx_pack,
+  idep_libagx,
 ]
 
 libhk = static_library(

@@ -406,8 +406,6 @@ main(int argc, char **argv)
       exec_node_remove(&func->node);
    }
 
-   spirv_library_to_nir_builder(fp, spirv_map, spirv_len / 4, &spirv_options);
-
    /* Serialize NIR for embedding */
    struct blob blob;
    blob_init(&blob);

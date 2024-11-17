@@ -88,6 +88,19 @@ libagx_spv = custom_target(
   depends : [prog_mesa_clc, agx_pack],
 )
 
+libagx_h = custom_target(
+  'libagx.h',
+  input : libagx_spv,
+  output : 'libagx.h',
+  command : [prog_vtn_bindgen, libagx_spv, '@OUTPUT@'],
+  depends : [prog_vtn_bindgen],
+)
+
+idep_libagx = declare_dependency(
+  sources : [libagx_h],
+  include_directories : include_directories('.'),
+)
+
 libagx_shaders = custom_target(
   'libagx_shaders.h',
   input : libagx_spv,
@@ -107,7 +120,7 @@ libasahi_lib = static_library(
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
   link_with: [libasahi_decode, libvdrm],
-  dependencies: [dep_libdrm, dep_valgrind, idep_nir, idep_mesautil],
+  dependencies: [dep_libdrm, dep_valgrind, idep_nir, idep_mesautil, idep_libagx],
   build_by_default : false,
 )
 
