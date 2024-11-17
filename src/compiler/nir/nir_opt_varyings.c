@@ -2332,26 +2332,17 @@ src_is_uniform_expression(nir_src *src, void *data)
 static bool
 is_uniform_expression(nir_instr *instr, struct is_uniform_expr_state *state)
 {
-   const nir_shader_compiler_options *options =
-      state->linkage->producer_builder.shader->options;
-
    switch (instr->type) {
    case nir_instr_type_load_const:
    case nir_instr_type_undef:
       return true;
 
    case nir_instr_type_alu:
-      state->cost += options->varying_estimate_instr_cost ?
-                        options->varying_estimate_instr_cost(instr) : 1;
-      return nir_foreach_src(instr, src_is_uniform_expression, state);
+      break;
 
    case nir_instr_type_intrinsic:
-      if (nir_instr_as_intrinsic(instr)->intrinsic ==
-          nir_intrinsic_load_deref) {
-         state->cost += options->varying_estimate_instr_cost ?
-                           options->varying_estimate_instr_cost(instr) : 1;
-         return nir_foreach_src(instr, src_is_uniform_expression, state);
-      }
+      if (nir_instr_as_intrinsic(instr)->intrinsic == nir_intrinsic_load_deref)
+         break;
       return false;
 
    case nir_instr_type_deref:
@@ -2360,6 +2351,17 @@ is_uniform_expression(nir_instr *instr, struct is_uniform_expr_state *state)
    default:
       return false;
    }
+
+   if (!instr->pass_flags) {
+      const nir_shader_compiler_options *options =
+         state->linkage->producer_builder.shader->options;
+
+      state->cost += options->varying_estimate_instr_cost ?
+                        options->varying_estimate_instr_cost(instr) : 1;
+      instr->pass_flags = 1;
+      return nir_foreach_src(instr, src_is_uniform_expression, state);
+   }
+   return true;
 }
 
 /**
@@ -2376,9 +2378,6 @@ propagate_uniform_expressions(struct linkage_info *linkage,
 {
    unsigned i;
 
-   /* Clear pass_flags, which is used by clone_ssa. */
-   nir_shader_clear_pass_flags(linkage->consumer_builder.shader);
-
    /* Find uniform expressions. If there are multiple stores, they should all
     * store the same value. That's guaranteed by output_equal_mask.
     */
@@ -2394,6 +2393,11 @@ propagate_uniform_expressions(struct linkage_info *linkage,
          .linkage = linkage,
          .cost = 0,
       };
+
+      /* Clear pass_flags, which is used to prevent adding the cost of
+       * the same instruction multiple times.
+       */
+      nir_shader_clear_pass_flags(linkage->producer_builder.shader);
 
       if (!is_uniform_expression(slot->producer.value, &state))
          continue;
@@ -2432,6 +2436,9 @@ propagate_uniform_expressions(struct linkage_info *linkage,
              (i % 8 == 6 && value != 1))
             continue;
       }
+
+      /* Clear pass_flags, which is used by clone_ssa. */
+      nir_shader_clear_pass_flags(linkage->producer_builder.shader);
 
       /* Replace all loads. Do that for both input and output loads. */
       for (unsigned list_index = 0; list_index < 2; list_index++) {
