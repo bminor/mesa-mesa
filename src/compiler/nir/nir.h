@@ -3635,6 +3635,11 @@ typedef struct nir_function {
    bool should_inline;
    bool dont_inline; /* from SPIR-V */
 
+   /* Static workgroup size, if this is a kernel function in a library of OpenCL
+    * kernels. Normally, the size in the shader info is used instead.
+    */
+   unsigned workgroup_size[3];
+
    /**
     * Is this function a subroutine type declaration
     * e.g. subroutine void type1(float arg1);

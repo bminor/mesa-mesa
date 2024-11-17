@@ -2348,6 +2348,13 @@ print_function(nir_function *function, print_state *state)
                        function->is_entrypoint ? " (entrypoint)" : "");
    /* clang-format on */
 
+   if (function->workgroup_size[0]) {
+      fprintf(fp, " (%ux%ux%u)",
+              function->workgroup_size[0],
+              function->workgroup_size[1],
+              function->workgroup_size[2]);
+   }
+
    fprintf(fp, "\n");
 
    if (function->impl != NULL) {

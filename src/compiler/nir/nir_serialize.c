@@ -1971,9 +1971,17 @@ write_function(write_ctx *ctx, const nir_function *fxn)
       flags |= 0x40;
    if (fxn->is_tmp_globals_wrapper)
       flags |= 0x80;
+   if (fxn->workgroup_size[0] || fxn->workgroup_size[1] || fxn->workgroup_size[2])
+      flags |= 0x100;
    blob_write_uint32(ctx->blob, flags);
    if (fxn->name)
       blob_write_string(ctx->blob, fxn->name);
+
+   if (flags & 0x100) {
+      blob_write_uint32(ctx->blob, fxn->workgroup_size[0]);
+      blob_write_uint32(ctx->blob, fxn->workgroup_size[1]);
+      blob_write_uint32(ctx->blob, fxn->workgroup_size[2]);
+   }
 
    blob_write_uint32(ctx->blob, fxn->subroutine_index);
    blob_write_uint32(ctx->blob, fxn->num_subroutine_types);
@@ -2017,6 +2025,12 @@ read_function(read_ctx *ctx)
    char *name = has_name ? blob_read_string(ctx->blob) : NULL;
 
    nir_function *fxn = nir_function_create(ctx->nir, name);
+
+   if (flags & 0x100) {
+      fxn->workgroup_size[0] = blob_read_uint32(ctx->blob);
+      fxn->workgroup_size[1] = blob_read_uint32(ctx->blob);
+      fxn->workgroup_size[2] = blob_read_uint32(ctx->blob);
+   }
 
    fxn->subroutine_index = blob_read_uint32(ctx->blob);
    fxn->num_subroutine_types = blob_read_uint32(ctx->blob);

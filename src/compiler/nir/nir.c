@@ -507,6 +507,9 @@ nir_function_create(nir_shader *shader, const char *name)
    func->subroutine_index = 0;
    func->num_subroutine_types = 0;
    func->subroutine_types = NULL;
+   func->workgroup_size[0] = 0;
+   func->workgroup_size[1] = 0;
+   func->workgroup_size[2] = 0;
 
    /* Only meaningful for shader libraries, so don't export by default. */
    func->is_exported = false;
