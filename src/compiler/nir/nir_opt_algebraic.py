@@ -1849,6 +1849,7 @@ for pack, bits, compbits in [('pack_64_2x32', 64, 32), ('pack_32_2x16', 32, 16)]
         ((unpack, (pack + '_split', a, b)), ('vec2', a, b)),
         ((unpack, (pack, a)), a),
         ((pack + '_split', (unpack + '_split_x', a), (unpack + '_split_y', a)), a),
+        ((pack + '_split', (unpack, a), (unpack + '.y', a)), a),
         ((pack, ('vec2', (unpack + '_split_x', a), (unpack + '_split_y', a))), a),
         ((pack, (unpack, a)), a),
     ]
