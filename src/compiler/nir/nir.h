@@ -4479,6 +4479,14 @@ typedef struct nir_shader {
 #define nir_foreach_function_safe(func, shader) \
    foreach_list_typed_safe(nir_function, func, node, &(shader)->functions)
 
+#define nir_foreach_entrypoint(func, lib) \
+   nir_foreach_function(func, lib)        \
+      if (func->is_entrypoint)
+
+#define nir_foreach_entrypoint_safe(func, lib) \
+   nir_foreach_function_safe(func, lib)        \
+      if (func->is_entrypoint)
+
 static inline nir_function *
 nir_foreach_function_with_impl_first(const nir_shader *shader)
 {
