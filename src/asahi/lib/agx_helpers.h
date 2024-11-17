@@ -8,8 +8,7 @@
 #include <stdbool.h>
 #include "asahi/compiler/agx_compile.h"
 #include "asahi/layout/layout.h"
-#include "shaders/compression.h"
-#include "agx_device.h"
+#include "asahi/libagx/compression.h"
 #include "agx_pack.h"
 #include "agx_ppp.h"
 

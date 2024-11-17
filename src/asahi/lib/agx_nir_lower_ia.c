@@ -4,9 +4,9 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "shaders/geometry.h"
+#include "libagx/geometry.h"
+#include "libagx/libagx.h"
 #include "agx_nir_lower_gs.h"
-#include "libagx.h"
 #include "nir.h"
 
 /*

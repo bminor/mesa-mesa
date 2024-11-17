@@ -4,7 +4,7 @@
  * Copyright 2022-2023 Collabora Ltd. and Red Hat Inc.
  * SPDX-License-Identifier: MIT
  */
-#include "shaders/query.h"
+#include "libagx/query.h"
 #include "vulkan/vulkan_core.h"
 #include "agx_helpers.h"
 #include "agx_linker.h"

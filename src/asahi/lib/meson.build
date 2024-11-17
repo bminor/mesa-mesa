@@ -34,22 +34,6 @@ libasahi_decode_files = files(
   'decode.c',
 )
 
-libagx_shader_files = files(
-  'shaders/libagx.h',
-  'shaders/compression.cl',
-  'shaders/draws.cl',
-  'shaders/draws.h',
-  'shaders/geometry.cl',
-  'shaders/geometry.h',
-  'shaders/query.cl',
-  'shaders/query.h',
-  'shaders/tessellation.cl',
-  'shaders/tessellator.cl',
-  'shaders/tessellator.h',
-  'shaders/texture.cl',
-  'shaders/helper.cl',
-)
-
 libasahi_decode = static_library(
   'asahi_decode',
   [libasahi_decode_files, agx_pack],
@@ -65,40 +49,6 @@ libasahi_decode_shared = shared_library(
   dependencies : [dep_valgrind, idep_mesautil],
   c_args : [no_override_init_args],
   build_by_default : with_tools.contains('asahi'),
-)
-
-prepended_input_args = []
-foreach input_arg : libagx_shader_files
-  prepended_input_args += ['--in', input_arg]
-endforeach
-libagx_spv = custom_target(
-  'libagx.spv',
-  input : libagx_shader_files,
-  output : 'libagx.spv',
-  command : [
-    prog_mesa_clc,
-    prepended_input_args, '-o', '@OUTPUT@', '--',
-    '-cl-std=cl2.0', '-D__OPENCL_VERSION__=200',
-    '-I' + join_paths(meson.current_source_dir(), '.'),
-    '-I' + join_paths(meson.current_source_dir(), '../../'),
-    '-I' + join_paths(meson.current_source_dir(), 'shaders'),
-    '-I' + join_paths(meson.current_build_dir(), '../genxml'),
-    ],
-  env: ['MESA_SHADER_CACHE_DISABLE=true'],
-  depends : [prog_mesa_clc, agx_pack],
-)
-
-libagx_h = custom_target(
-  'libagx.h',
-  input : libagx_spv,
-  output : 'libagx.h',
-  command : [prog_vtn_bindgen, libagx_spv, '@OUTPUT@'],
-  depends : [prog_vtn_bindgen],
-)
-
-idep_libagx = declare_dependency(
-  sources : [libagx_h],
-  include_directories : include_directories('.'),
 )
 
 libagx_shaders = custom_target(

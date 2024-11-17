@@ -8,7 +8,6 @@
 
 #include "agx_bg_eot.h"
 #include "agx_helpers.h"
-#include "agx_opcodes.h"
 #include "agx_scratch.h"
 #include "hk_cmd_buffer.h"
 #include "hk_descriptor_table.h"
@@ -20,9 +19,8 @@
 #include "asahi/genxml/agx_pack.h"
 #include "asahi/lib/agx_bo.h"
 #include "asahi/lib/agx_device.h"
-#include "asahi/lib/shaders/geometry.h"
+#include "asahi/libagx/geometry.h"
 #include "util/hash_table.h"
-#include "util/os_file.h"
 #include "util/ralloc.h"
 #include "util/simple_mtx.h"
 #include "vulkan/vulkan_core.h"

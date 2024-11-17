@@ -4,7 +4,7 @@
  */
 
 #include "agx_scratch.h"
-#include "shaders/helper.h"
+#include "libagx/helper.h"
 #include "agx_bo.h"
 #include "libagx_shaders.h"
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "shaders/tessellator.h"
 #include "geometry.h"
+#include "tessellator.h"
 
 /* Compatible with util/u_math.h */
 static inline uint

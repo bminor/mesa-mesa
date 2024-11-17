@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "shaders/tessellator.h"
+#include "libagx/tessellator.h"
 #include "nir.h"
 #include "shader_enums.h"
 

@@ -12,18 +12,13 @@
 #include "hk_cmd_buffer.h"
 #include "hk_device.h"
 #include "hk_entrypoints.h"
-#include "hk_event.h"
-#include "hk_physical_device.h"
 #include "hk_shader.h"
 
-#include "shader_enums.h"
 #include "vk_common_entrypoints.h"
-#include "vk_meta.h"
-#include "vk_pipeline.h"
 
 #include "asahi/lib/agx_bo.h"
-#include "asahi/lib/libagx.h"
-#include "asahi/lib/shaders/query.h"
+#include "asahi/libagx/libagx.h"
+#include "asahi/libagx/query.h"
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
 
