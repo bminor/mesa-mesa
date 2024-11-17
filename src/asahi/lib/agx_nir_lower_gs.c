@@ -22,12 +22,6 @@
 #include "nir_xfb_info.h"
 #include "shader_enums.h"
 
-/* Marks a transform feedback store, which must not be stripped from the
- * prepass since that's where the transform feedback happens. Chosen as a
- * vendored flag not to alias other flags we'll see.
- */
-#define ACCESS_XFB (ACCESS_IS_SWIZZLED_AMD)
-
 enum gs_counter {
    GS_COUNTER_VERTICES = 0,
    GS_COUNTER_PRIMITIVES,
@@ -860,10 +854,9 @@ write_xfb(nir_builder *b, struct lower_gs_state *state, unsigned stream,
             nir_imm_int(b, buffer), nir_imm_int(b, stride),
             nir_imm_int(b, output.offset));
 
-         nir_build_store_global(
-            b, nir_channels(b, value, output.component_mask), addr,
-            .align_mul = 4, .write_mask = nir_component_mask(count),
-            .access = ACCESS_XFB);
+         nir_store_global(b, addr, 4,
+                          nir_channels(b, value, output.component_mask),
+                          nir_component_mask(count));
       }
    }
 
