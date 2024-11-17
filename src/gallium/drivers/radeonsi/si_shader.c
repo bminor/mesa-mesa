@@ -1874,7 +1874,11 @@ static bool si_lower_io_to_mem(struct si_shader *shader, nir_shader *nir)
       if (nir->info.tess._primitive_mode == TESS_PRIMITIVE_UNSPECIFIED)
          nir->info.tess._primitive_mode = key->ge.opt.tes_prim_mode;
 
-      NIR_PASS_V(nir, ac_nir_lower_hs_outputs_to_mem, si_map_io_driver_location,
+      nir_tcs_info tcs_info;
+      nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode,
+                          nir->info.tess.spacing);
+
+      NIR_PASS_V(nir, ac_nir_lower_hs_outputs_to_mem, &tcs_info, si_map_io_driver_location,
                  sel->screen->info.gfx_level,
                  ~0ULL, ~0U, /* no TES inputs filter */
                  shader->wave_size);

@@ -1223,7 +1223,7 @@ ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
 }
 
 void
-ac_nir_lower_hs_outputs_to_mem(nir_shader *shader,
+ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
                                ac_nir_map_io_driver_location map,
                                enum amd_gfx_level gfx_level,
                                uint64_t tes_inputs_read,
@@ -1234,14 +1234,12 @@ ac_nir_lower_hs_outputs_to_mem(nir_shader *shader,
 
    lower_tess_io_state state = {
       .gfx_level = gfx_level,
+      .tcs_info = *info,
       .tes_inputs_read = tes_inputs_read,
       .tes_patch_inputs_read = tes_patch_inputs_read,
       .tcs_out_patch_fits_subgroup = wave_size % shader->info.tess.tcs_vertices_out == 0,
       .map_io = map,
    };
-
-   nir_gather_tcs_info(shader, &state.tcs_info, shader->info.tess._primitive_mode,
-                       shader->info.tess.spacing);
 
    if (state.tcs_info.all_invocations_define_tess_levels) {
       nir_function_impl *impl = nir_shader_get_entrypoint(shader);

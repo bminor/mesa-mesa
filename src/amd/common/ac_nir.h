@@ -93,7 +93,7 @@ ac_nir_lower_hs_inputs_to_mem(nir_shader *shader,
                               uint64_t tcs_inputs_via_lds);
 
 void
-ac_nir_lower_hs_outputs_to_mem(nir_shader *shader,
+ac_nir_lower_hs_outputs_to_mem(nir_shader *shader, const nir_tcs_info *info,
                                ac_nir_map_io_driver_location map,
                                enum amd_gfx_level gfx_level,
                                uint64_t tes_inputs_read,

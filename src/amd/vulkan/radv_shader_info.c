@@ -633,9 +633,8 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
                        const struct radv_graphics_state_key *gfx_state, struct radv_shader_info *info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   nir_tcs_info tcs_info;
 
-   nir_gather_tcs_info(nir, &tcs_info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
+   nir_gather_tcs_info(nir, &info->tcs.info, nir->info.tess._primitive_mode, nir->info.tess.spacing);
 
    info->tcs.tcs_outputs_read = nir->info.outputs_read;
    info->tcs.tcs_outputs_written = nir->info.outputs_written;
@@ -644,7 +643,6 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
    info->tcs.tcs_vertices_out = nir->info.tess.tcs_vertices_out;
    info->tcs.tes_inputs_read = ~0ULL;
    info->tcs.tes_patch_inputs_read = ~0ULL;
-   info->tcs.all_invocations_define_tess_levels = tcs_info.all_invocations_define_tess_levels;
 
    if (!info->inputs_linked)
       info->tcs.num_linked_inputs = util_last_bit64(radv_gather_unlinked_io_mask(nir->info.inputs_read));
@@ -660,7 +658,7 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
       radv_get_tess_wg_info(pdev, &nir->info, gfx_state->ts.patch_control_points,
                             /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
                             info->tcs.num_linked_inputs, info->tcs.num_linked_outputs,
-                            info->tcs.num_linked_patch_outputs, tcs_info.all_invocations_define_tess_levels,
+                            info->tcs.num_linked_patch_outputs, info->tcs.info.all_invocations_define_tess_levels,
                             &info->num_tess_patches, &info->tcs.num_lds_blocks);
    }
 }

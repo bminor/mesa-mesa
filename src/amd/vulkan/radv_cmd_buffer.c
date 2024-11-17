@@ -3508,8 +3508,9 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
       radv_get_tess_wg_info(pdev, &tcs_info, d->vk.ts.patch_control_points,
                             /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
                             vs->info.vs.num_linked_outputs, tcs->info.tcs.num_linked_outputs,
-                            tcs->info.tcs.num_linked_patch_outputs, tcs->info.tcs.all_invocations_define_tess_levels,
-                            &cmd_buffer->state.tess_num_patches, &cmd_buffer->state.tess_lds_size);
+                            tcs->info.tcs.num_linked_patch_outputs,
+                            tcs->info.tcs.info.all_invocations_define_tess_levels, &cmd_buffer->state.tess_num_patches,
+                            &cmd_buffer->state.tess_lds_size);
    }
 
    ls_hs_config = S_028B58_NUM_PATCHES(cmd_buffer->state.tess_num_patches) |

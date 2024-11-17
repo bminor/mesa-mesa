@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "nir.h"
 #include "radv_constants.h"
 #include "radv_shader_args.h"
 
@@ -245,7 +246,7 @@ struct radv_shader_info {
       uint8_t num_linked_outputs;         /* Number of reserved per-vertex output slots in VRAM. */
       uint8_t num_linked_patch_outputs;   /* Number of reserved per-patch output slots in VRAM. */
       bool tes_reads_tess_factors : 1;
-      bool all_invocations_define_tess_levels : 1;
+      nir_tcs_info info;
    } tcs;
    struct {
       enum mesa_prim output_prim;
