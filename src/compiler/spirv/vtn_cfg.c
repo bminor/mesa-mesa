@@ -280,6 +280,17 @@ vtn_cfg_handle_prepass_instruction(struct vtn_builder *b, SpvOp opcode,
       func->dont_inline = b->func->control & SpvFunctionControlDontInlineMask;
       func->is_exported = b->func->linkage == SpvLinkageTypeExport;
 
+      /* This is a bit subtle: if we are compiling a non-library, we will have
+       * exactly one entrypoint. But in library mode, we can have 0, 1, or even
+       * multiple entrypoints. This is OK.
+       *
+       * So, we set is_entrypoint for libraries here (plumbing OpEntryPoint),
+       * but set is_entrypoint elsewhere for graphics shaders.
+       */
+      if (b->options->create_library) {
+         func->is_entrypoint = val->is_entrypoint;
+      }
+
       func->num_params = num_params;
       func->params = rzalloc_array(b->shader, nir_parameter, num_params);
 
