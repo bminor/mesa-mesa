@@ -1907,6 +1907,9 @@ print_call_instr(nir_call_instr *instr, print_state *state)
       if (i != 0)
          fprintf(fp, ", ");
 
+      if (instr->callee->params[i].name)
+         fprintf(fp, "%s ", instr->callee->params[i].name);
+
       print_src(&instr->params[i], state, nir_type_invalid);
    }
 }
