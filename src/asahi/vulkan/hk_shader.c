@@ -36,9 +36,10 @@
 #include "vk_ycbcr_conversion.h"
 
 #include "asahi/compiler/agx_compile.h"
+#include "asahi/compiler/agx_nir.h"
+#include "asahi/compiler/agx_nir_texture.h"
 #include "asahi/lib/agx_abi.h"
 #include "asahi/lib/agx_linker.h"
-#include "asahi/lib/agx_nir_passes.h"
 #include "asahi/lib/agx_tilebuffer.h"
 #include "asahi/lib/agx_uvs.h"
 #include "compiler/spirv/nir_spirv.h"

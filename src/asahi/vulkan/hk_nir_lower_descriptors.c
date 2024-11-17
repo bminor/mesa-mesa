@@ -6,8 +6,7 @@
  */
 #include "pipe/p_defines.h"
 #include "vulkan/vulkan_core.h"
-#include "agx_nir_passes.h"
-#include "agx_pack.h"
+#include "agx_nir_texture.h"
 #include "hk_cmd_buffer.h"
 #include "hk_descriptor_set.h"
 #include "hk_descriptor_set_layout.h"
@@ -16,7 +15,6 @@
 #include "nir.h"
 #include "nir_builder.h"
 #include "nir_builder_opcodes.h"
-#include "nir_deref.h"
 #include "nir_intrinsics.h"
 #include "nir_intrinsics_indices.h"
 #include "shader_enums.h"

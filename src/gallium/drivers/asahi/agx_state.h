@@ -33,7 +33,7 @@
 #include "util/u_range.h"
 #include "agx_bg_eot.h"
 #include "agx_helpers.h"
-#include "agx_nir_passes.h"
+#include "agx_nir_texture.h"
 
 #ifdef __GLIBC__
 #include <errno.h>

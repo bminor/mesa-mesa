@@ -5,8 +5,9 @@
 
 #include "agx_bg_eot.h"
 #include "agx_compile.h"
-#include "agx_device.h" /* for AGX_MEMORY_TYPE_SHADER */
-#include "agx_nir_passes.h"
+#include "agx_device.h"
+#include "agx_nir.h"
+#include "agx_nir_texture.h"
 #include "agx_tilebuffer.h"
 #include "nir.h"
 #include "nir_builder.h"

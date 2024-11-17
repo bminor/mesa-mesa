@@ -8,9 +8,10 @@
 
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
-#include "libagx/libagx.h"
-#include "agx_nir_passes.h"
+#include "agx_nir.h"
+#include "agx_nir_texture.h"
 #include "glsl_types.h"
+#include "libagx.h"
 #include "nir_builder_opcodes.h"
 #include "nir_builtin_builder.h"
 #include "nir_intrinsics.h"
