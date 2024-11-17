@@ -7235,11 +7235,20 @@ func_to_nir_builder(FILE *fp, struct vtn_function *func)
    fprintf(fp, "      func->params = rzalloc_array(b->shader, nir_parameter, func->num_params);\n");
 
    for (unsigned i = 0; i < nir_func->num_params; ++i) {
+      nir_parameter param = nir_func->params[i];
+
       fprintf(fp, "\n");
-      fprintf(fp, "      func->params[%u].bit_size = %u;\n", i,
-              nir_func->params[i].bit_size);
+      fprintf(fp, "      func->params[%u].bit_size = %u;\n", i, param.bit_size);
       fprintf(fp, "      func->params[%u].num_components = %u;\n", i,
-              nir_func->params[i].num_components);
+              param.num_components);
+
+      if (returns && i == 0) {
+         fprintf(fp, "      func->params[%u].is_return = true;\n", i);
+      }
+
+      if (param.name) {
+         fprintf(fp, "      func->params[%u].name = \"%s\";\n", i, param.name);
+      }
    }
 
    fprintf(fp, "   }\n\n");
