@@ -23,21 +23,6 @@
 #include "geometry.h"
 #include "tessellator.h"
 
-#if 0
-#include <math.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include "util/macros.h"
-#define min(x, y) (x < y ? x : y)
-#define max(x, y) (x > y ? x : y)
-#define clz(x)    (x ? __builtin_clz(x) : (8 * sizeof(x)))
-#define clamp(x, y, z) (x < y ? y : x > z ? z : x)
-#define align(x, y)    ALIGN_POT(x, y)
-#else
-#define assert(x)
-#endif
-
 #define LIBAGX_TESS_MIN_ISOLINE_DENSITY_TESSELLATION_FACTOR 1.0f
 #define LIBAGX_TESS_MAX_ISOLINE_DENSITY_TESSELLATION_FACTOR 64.0f
 
@@ -1004,7 +989,6 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
 
             FXP fxpParam = PlacePointIn1D(&outsideTessFactorCtx[edge],
                                           outsideTessFactorOdd[edge], q);
-            bool first = edge == 0;
             DefinePoint(&ctx.Point[pointOffset], (edge == 0) ? 0 : fxpParam,
                         (edge == 0)   ? fxpParam
                         : (edge == 2) ? FXP_ONE - fxpParam
@@ -1079,7 +1063,6 @@ libagx_tess_tri(constant struct libagx_tess_args *p, enum libagx_tess_mode mode,
 
       int NumIndices = 0;
       {
-         assert(numRings >= 2 && "invariant");
          int OuterPoints = numPointsForOutsideEdge[0] +
                            numPointsForOutsideEdge[1] +
                            numPointsForOutsideEdge[2];
@@ -1428,9 +1411,6 @@ libagx_tess_quad(constant struct libagx_tess_args *p,
 
       /* Calculate # of indices so we can allocate */
       {
-         /* numPointsForInsideTessFactor >= 3 so numRings >= 2 */
-         assert(numRings >= 2);
-
          /* Handle main case */
          int OuterPoints =
             numPointsForOutsideEdge[0] + numPointsForOutsideEdge[1] +
@@ -1450,9 +1430,6 @@ libagx_tess_quad(constant struct libagx_tess_args *p,
 
          /* Handle degenerate ring */
          if (insideTessFactorOdd[m]) {
-            assert(numPointsForInsideTessFactor[M] >=
-                   numPointsForInsideTessFactor[m]);
-
             NumIndices += 12 * ((numPointsForInsideTessFactor[M] >> 1) -
                                 (numPointsForInsideTessFactor[m] >> 1));
             NumIndices += (insideTessFactorOdd[M] ? 6 : 12);
