@@ -7216,7 +7216,7 @@ func_to_nir_builder(FILE *fp, struct vtn_function *func)
    fprintf(fp, "      func = nir_function_create(b->shader, \"%s\");\n",
            nir_func->name);
    fprintf(fp, "      func->num_params = %u;\n", nir_func->num_params);
-   fprintf(fp, "      func->params = ralloc_array(b->shader, nir_parameter, func->num_params);\n");
+   fprintf(fp, "      func->params = rzalloc_array(b->shader, nir_parameter, func->num_params);\n");
 
    for (unsigned i = 0; i < nir_func->num_params; ++i) {
       fprintf(fp, "\n");
