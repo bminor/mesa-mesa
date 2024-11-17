@@ -227,6 +227,10 @@ optimizations = [
    (('ior', ('ior', a, b), ('ior(is_used_once)', a, c)), ('ior', ('ior', a, b), c)),
    (('iand', ('ior(is_used_once)', a, b), ('ior(is_used_once)', a, c)), ('ior', a, ('iand', b, c))),
    (('ior', ('iand(is_used_once)', a, b), ('iand(is_used_once)', a, c)), ('iand', a, ('ior', b, c))),
+   # (a & b) | (a | c)  =>  ((a & b) | a) | c  =>  a | c
+   (('ior', ('iand', a, b), ('ior', a, c)), ('ior', a, c)),
+   # (a & b) & (a | c)  =>  b & (a & (a | c))  =>  b & a
+   (('iand', ('iand', a, b), ('ior', a, c)), ('iand', a, b)),
    (('ieq', ('iand', a, '#b(is_pos_power_of_two)'), b), ('ine', ('iand', a, b), 0)),
    (('ine', ('iand', a, '#b(is_pos_power_of_two)'), b), ('ieq', ('iand', a, b), 0)),
    (('ieq', ('ushr(is_used_once)', a, '#b'), 0), ('ult', a, ('ishl', 1, b))),
