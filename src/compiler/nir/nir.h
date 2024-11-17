@@ -3650,6 +3650,9 @@ typedef struct {
 
    /* The type of the function param */
    const struct glsl_type *type;
+
+   /* Name if known, null if unknown */
+   const char *name;
 } nir_parameter;
 
 typedef struct nir_function {

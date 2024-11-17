@@ -684,7 +684,7 @@ nir_visitor::create_function(ir_function_signature *ir)
 
    func->num_params = ir->parameters.length() +
                       (ir->return_type != &glsl_type_builtin_void);
-   func->params = ralloc_array(shader, nir_parameter, func->num_params);
+   func->params = rzalloc_array(shader, nir_parameter, func->num_params);
 
    unsigned np = 0;
    if (ir->return_type != &glsl_type_builtin_void) {

@@ -280,7 +280,7 @@ vtn_cfg_handle_prepass_instruction(struct vtn_builder *b, SpvOp opcode,
       func->is_exported = b->func->linkage == SpvLinkageTypeExport;
 
       func->num_params = num_params;
-      func->params = ralloc_array(b->shader, nir_parameter, num_params);
+      func->params = rzalloc_array(b->shader, nir_parameter, num_params);
 
       unsigned idx = 0;
       if (func_type->return_type->base_type != vtn_base_type_void) {

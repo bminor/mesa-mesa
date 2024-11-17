@@ -708,6 +708,11 @@ nir_function_clone(nir_shader *ns, const nir_function *fxn)
    if (fxn->num_params) {
       nfxn->params = ralloc_array(ns, nir_parameter, fxn->num_params);
       memcpy(nfxn->params, fxn->params, sizeof(nir_parameter) * fxn->num_params);
+
+      for (unsigned i = 0; i < fxn->num_params; ++i) {
+         if (fxn->params[i].name)
+            nfxn->params[i].name = ralloc_strdup(ns, fxn->params[i].name);
+      }
    }
    nfxn->is_entrypoint = fxn->is_entrypoint;
    nfxn->is_preamble = fxn->is_preamble;
