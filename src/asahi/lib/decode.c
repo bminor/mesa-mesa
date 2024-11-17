@@ -847,6 +847,18 @@ agxdecode_image_heap(struct agxdecode_ctx *ctx, uint64_t heap,
    free(map);
 }
 
+static void
+agxdecode_helper(struct agxdecode_ctx *ctx, const char *prefix, uint64_t helper)
+{
+   if (helper & 1) {
+      fprintf(agxdecode_dump_stream, "%s helper program:\n", prefix);
+      uint8_t buf[1024];
+      agx_disassemble(
+         buf, agxdecode_fetch_gpu_array(ctx, decode_usc(ctx, helper & ~1), buf),
+         agxdecode_dump_stream);
+   }
+}
+
 void
 agxdecode_drm_cmd_render(struct agxdecode_ctx *ctx,
                          struct drm_asahi_params_global *params,
@@ -926,6 +938,9 @@ agxdecode_drm_cmd_render(struct agxdecode_ctx *ctx,
       DUMP_FIELD((&fragment_attachments[i]), "0x%llx", size);
       DUMP_FIELD((&fragment_attachments[i]), "0x%llx", pointer);
    }
+
+   agxdecode_helper(ctx, "Vertex", c->vertex_helper_program);
+   agxdecode_helper(ctx, "Fragment", c->fragment_helper_program);
 }
 
 void
@@ -943,15 +958,7 @@ agxdecode_drm_cmd_compute(struct agxdecode_ctx *ctx,
    DUMP_FIELD(c, "0x%x", cmd_id);
 
    agxdecode_sampler_heap(ctx, c->sampler_array, c->sampler_count);
-
-   if (c->helper_program & 1) {
-      fprintf(agxdecode_dump_stream, "Helper program:\n");
-      uint8_t buf[1024];
-      agx_disassemble(buf,
-                      agxdecode_fetch_gpu_array(
-                         ctx, decode_usc(ctx, c->helper_program & ~1), buf),
-                      agxdecode_dump_stream);
-   }
+   agxdecode_helper(ctx, "Compute", c->helper_program);
 }
 
 static void
