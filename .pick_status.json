@@ -2114,7 +2114,7 @@
         "description": "zink+radv/ci: fix deqp binary used for gles tests",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "14279087fb37b2869e6abfbc571ecc69184b5fe1",
         "notes": null
