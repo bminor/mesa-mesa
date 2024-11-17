@@ -1748,8 +1748,8 @@ static bool kill_ps_outputs_cb(struct nir_builder *b, nir_instr *instr, void *_k
    }
 
    /* Color outputs. */
-   unsigned comp_mask = BITFIELD_MASK(intr->num_components);
-   assert(nir_intrinsic_component(intr) == 0);
+   unsigned component = nir_intrinsic_component(intr);
+   unsigned comp_mask = BITFIELD_RANGE(component, intr->num_components);
    unsigned cb_shader_mask = ac_get_cb_shader_mask(key->ps.part.epilog.spi_shader_col_format);
 
    /* Preserve alpha if ALPHA_TESTING is enabled. */
@@ -1779,7 +1779,7 @@ static bool kill_ps_outputs_cb(struct nir_builder *b, nir_instr *instr, void *_k
    nir_def *new_value = intr->src[0].ssa;
    nir_def *undef = nir_undef(b, 1, new_value->bit_size);
 
-   unsigned kill_mask = ~output_mask & comp_mask;
+   unsigned kill_mask = (~output_mask & comp_mask) >> component;
    u_foreach_bit(i, kill_mask) {
       new_value = nir_vector_insert_imm(b, new_value, undef, i);
    }
