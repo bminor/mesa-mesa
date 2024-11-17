@@ -77,6 +77,25 @@ spirv2nir = executable(
   install : with_tools.contains('nir'),
 )
 
+# Due to the cross build issues in current meson, we only build vtn_bindgen when
+# building drivers that need it.
+#
+# XXX: Build by default once https://github.com/mesonbuild/meson/pull/12022
+# ships.
+if with_gallium_asahi or with_asahi_vk
+   prog_vtn_bindgen = executable(
+     'vtn_bindgen',
+     ['vtn_bindgen.c'],
+     include_directories : [inc_include, inc_src],
+     c_args : [c_msvc_compat_args, no_override_init_args],
+     dependencies : [idep_vtn, idep_mesautil],
+     # If we can run host binaries directly, just build vtn_bindgen for the host.
+     # Most commonly this happens when doing a cross compile from an x86_64 build
+     # machine to an x86 host
+     native : not meson.can_run_host_binaries(),
+   )
+endif
+
 if with_tests
   test(
     'spirv_tests',
