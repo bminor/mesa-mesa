@@ -4554,7 +4554,7 @@
         "description": "radeonsi: fix gl_FrontFace elimination when one side is culled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "55d81214c9d800c0667337808a82143ebab17c1a",
         "notes": null
