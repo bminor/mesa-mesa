@@ -2339,9 +2339,10 @@ print_function(nir_function *function, print_state *state)
    fprintf(fp, ")");
 
    /* clang-format off */
-   fprintf(fp, "%s%s", function->dont_inline ? " (noinline)" :
+   fprintf(fp, "%s%s%s", function->dont_inline ? " (noinline)" :
                        function->should_inline ? " (inline)" : "",
-                       function->is_exported ? " (exported)" : "");
+                       function->is_exported ? " (exported)" : "",
+                       function->is_entrypoint ? " (entrypoint)" : "");
    /* clang-format on */
 
    fprintf(fp, "\n");
