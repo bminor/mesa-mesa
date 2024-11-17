@@ -2315,12 +2315,33 @@ print_function(nir_function *function, print_state *state)
 {
    FILE *fp = state->fp;
 
+   fprintf(fp, "decl_function %s (", function->name);
+
+   for (unsigned i = 0; i < function->num_params; ++i) {
+      if (i != 0) {
+         fprintf(fp, ", ");
+      }
+
+      nir_parameter param = function->params[i];
+
+      fprintf(fp, "%u", param.bit_size);
+      if (param.num_components != 1) {
+         fprintf(fp, "x%u", param.num_components);
+      }
+
+      if (param.name) {
+         fprintf(fp, " %s", param.name);
+      } else if (param.is_return) {
+         fprintf(fp, " return");
+      }
+   }
+
+   fprintf(fp, ")");
+
    /* clang-format off */
-   fprintf(fp, "decl_function %s (%d params)%s%s", function->name,
-           function->num_params,
-           function->dont_inline ? " (noinline)" :
-           function->should_inline ? " (inline)" : "",
-           function->is_exported ? " (exported)" : "");
+   fprintf(fp, "%s%s", function->dont_inline ? " (noinline)" :
+                       function->should_inline ? " (inline)" : "",
+                       function->is_exported ? " (exported)" : "");
    /* clang-format on */
 
    fprintf(fp, "\n");
