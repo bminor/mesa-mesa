@@ -2236,6 +2236,9 @@ v3dv_AllocateMemory(VkDevice _device,
           * fd or dmabuf, which don't have special requirements for us.
           */
          break;
+      case VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID:
+         /* This case is handled in the common code */
+         break;
       default:
          vk_debug_ignored_stype(ext->sType);
          break;
