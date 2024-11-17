@@ -654,7 +654,7 @@
         "description": "ac/gpu_info: Fix missing prototype mingw error",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "246051ebc6878ff980fe52f9d31ac08abf6943ee",
         "notes": null
