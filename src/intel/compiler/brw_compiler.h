@@ -859,25 +859,23 @@ static inline bool
 brw_wm_prog_data_is_persample(const struct brw_wm_prog_data *prog_data,
                               enum intel_msaa_flags pushed_msaa_flags)
 {
-   if (pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC) {
-      if (!(pushed_msaa_flags & INTEL_MSAA_FLAG_MULTISAMPLE_FBO))
-         return false;
+   if (prog_data->persample_dispatch != BRW_SOMETIMES)
+      return prog_data->persample_dispatch;
 
-      if (prog_data->sample_shading)
-         assert(pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH);
+   assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
 
-      if (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH)
-         assert(prog_data->persample_dispatch != BRW_NEVER);
-      else
-         assert(prog_data->persample_dispatch != BRW_ALWAYS);
+   if (!(pushed_msaa_flags & INTEL_MSAA_FLAG_MULTISAMPLE_FBO))
+      return false;
 
-      return (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH) != 0;
-   }
+   if (prog_data->sample_shading)
+      assert(pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH);
 
-   assert(prog_data->persample_dispatch == BRW_ALWAYS ||
-          prog_data->persample_dispatch == BRW_NEVER);
+   if (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH)
+      assert(prog_data->persample_dispatch != BRW_NEVER);
+   else
+      assert(prog_data->persample_dispatch != BRW_ALWAYS);
 
-   return prog_data->persample_dispatch;
+   return (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH) != 0;
 }
 
 static inline uint32_t
@@ -889,12 +887,13 @@ wm_prog_data_barycentric_modes(const struct brw_wm_prog_data *prog_data,
    /* In the non dynamic case, we can just return the computed modes from
     * compilation time.
     */
-   if (!(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC))
+   if (prog_data->persample_dispatch != BRW_SOMETIMES)
       return modes;
 
+   assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
+
    if (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_INTERP) {
-      assert(prog_data->persample_dispatch == BRW_ALWAYS ||
-             (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH));
+      assert(pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH);
 
       /* Making dynamic per-sample interpolation work is a bit tricky.  The
        * hardware will hang if SAMPLE is requested but per-sample dispatch is
@@ -976,19 +975,17 @@ static inline bool
 brw_wm_prog_data_is_coarse(const struct brw_wm_prog_data *prog_data,
                            enum intel_msaa_flags pushed_msaa_flags)
 {
-   if (pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC) {
-      if (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES)
-         assert(prog_data->coarse_pixel_dispatch != BRW_NEVER);
-      else
-         assert(prog_data->coarse_pixel_dispatch != BRW_ALWAYS);
+   if (prog_data->coarse_pixel_dispatch != BRW_SOMETIMES)
+      return prog_data->coarse_pixel_dispatch;
 
-      return pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES;
-   }
+   assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
 
-   assert(prog_data->coarse_pixel_dispatch == BRW_ALWAYS ||
-          prog_data->coarse_pixel_dispatch == BRW_NEVER);
+   if (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES)
+      assert(prog_data->coarse_pixel_dispatch != BRW_NEVER);
+   else
+      assert(prog_data->coarse_pixel_dispatch != BRW_ALWAYS);
 
-   return prog_data->coarse_pixel_dispatch;
+   return (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES) != 0;
 }
 
 struct brw_push_const_block {
