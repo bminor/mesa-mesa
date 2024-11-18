@@ -70,6 +70,10 @@ struct panvk_rendering_state {
 #if PAN_ARCH >= 10
    struct panfrost_ptr fbds;
    mali_ptr tiler;
+
+   /* When a secondary command buffer has to flush draws, it disturbs the
+    * inherited context, and the primary command buffer needs to know. */
+   bool invalidate_inherited_ctx;
 #endif
 };
 

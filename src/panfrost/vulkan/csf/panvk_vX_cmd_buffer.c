@@ -161,8 +161,14 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
       }
    }
 
+   /* If this is a secondary command buffer, we don't poison the reg file to
+    * preserve the render pass context. We also don't poison the reg file if the
+    * last render pass was suspended. In practice we could preserve only the
+    * registers that matter, but this is a debug feature so let's keep things
+    * simple with this all-or-nothing approach. */
    if ((instance->debug_flags & PANVK_DEBUG_CS) &&
-       cmdbuf->vk.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+       cmdbuf->vk.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
+       !(cmdbuf->state.gfx.render.flags & VK_RENDERING_SUSPENDING_BIT)) {
       cs_update_cmdbuf_regs(b) {
          /* Poison all cmdbuf registers to make sure we don't inherit state from
           * a previously executed cmdbuf. */
@@ -901,6 +907,23 @@ panvk_per_arch(CmdExecuteCommands)(VkCommandBuffer commandBuffer,
             cs_move32_to(prim_b, size, cs_root_chunk_size(sec_b));
             cs_call(prim_b, addr, size);
          }
+      }
+
+      /* We need to propagate the suspending state of the secondary command
+       * buffer if we want to avoid poisoning the reg file when the secondary
+       * command buffer suspended the render pass. */
+      if (secondary->state.gfx.render.flags & VK_RENDERING_SUSPENDING_BIT)
+         primary->state.gfx.render.flags = secondary->state.gfx.render.flags;
+
+      /* If the render context we passed to the secondary command buffer got
+       * invalidated, reset the FB/tiler descs and treat things as if we
+       * suspended the render pass, since those descriptors have been
+       * re-emitted by the secondary command buffer already. */
+      if (secondary->state.gfx.render.invalidate_inherited_ctx) {
+         memset(&primary->state.gfx.render.fbds, 0,
+                sizeof(primary->state.gfx.render.fbds));
+         primary->state.gfx.render.tiler = 0;
+         primary->state.gfx.render.flags |= VK_RENDERING_RESUMING_BIT;
       }
    }
 

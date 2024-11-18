@@ -723,9 +723,21 @@ cs_render_desc_ringbuf_move_ptr(struct cs_builder *b, uint32_t size)
    cs_wait_slot(b, SB_ID(LS), false);
 }
 
+static bool
+inherits_render_ctx(struct panvk_cmd_buffer *cmdbuf)
+{
+   return (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
+           (cmdbuf->flags &
+            VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) ||
+          (cmdbuf->state.gfx.render.flags & VK_RENDERING_RESUMING_BIT);
+}
+
 static VkResult
 get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
 {
+   assert(cmdbuf->state.gfx.render.invalidate_inherited_ctx ||
+          !inherits_render_ctx(cmdbuf));
+
    if (cmdbuf->state.gfx.render.tiler)
       return VK_SUCCESS;
 
@@ -910,22 +922,181 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
    return VK_SUCCESS;
 }
 
+static uint8_t
+prepare_fb_desc(struct panvk_cmd_buffer *cmdbuf, uint32_t layer, void *fbd)
+{
+   struct pan_tiler_context tiler_ctx = {
+      .valhall.layer_offset = layer - (layer % MAX_LAYERS_PER_TILER_DESC),
+   };
+
+   if (!(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+      uint32_t td_idx = layer / MAX_LAYERS_PER_TILER_DESC;
+
+      tiler_ctx.valhall.desc =
+         cmdbuf->state.gfx.render.tiler + (td_idx * pan_size(TILER_CONTEXT));
+   }
+
+   return GENX(pan_emit_fbd)(&cmdbuf->state.gfx.render.fb.info, layer, NULL,
+                             &tiler_ctx, fbd);
+}
+
 static VkResult
 get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
 {
+   assert(cmdbuf->state.gfx.render.invalidate_inherited_ctx ||
+          !inherits_render_ctx(cmdbuf));
+
    if (cmdbuf->state.gfx.render.fbds.gpu ||
        !cmdbuf->state.gfx.render.layer_count)
       return VK_SUCCESS;
 
-   uint32_t fbds_sz =
-      calc_fbd_size(cmdbuf) * cmdbuf->state.gfx.render.layer_count;
+   uint32_t fbd_sz = calc_fbd_size(cmdbuf);
+   uint32_t fbds_sz = fbd_sz * cmdbuf->state.gfx.render.layer_count;
 
    cmdbuf->state.gfx.render.fbds = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, fbds_sz, pan_alignment(FRAMEBUFFER));
    if (!cmdbuf->state.gfx.render.fbds.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+   bool simul_use =
+      cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+   /* The only bit we patch in FBDs is the tiler pointer. If tiler is not
+    * involved (clear job) or if the update can happen in place (not
+    * simultaneous use of the command buffer), we can avoid the
+    * copy.
+    *
+    * According to VUID-VkSubmitInfo2KHR-commandBuffer-06192 and
+    * VUID-VkSubmitInfo2KHR-commandBuffer-06010, suspend/resume operations
+    * can't cross the vkQueueSubmit2() boundary, so no need to dynamically
+    * allocate descriptors in that case:
+    * "
+    *   If any commandBuffer member of an element of pCommandBufferInfos
+    *   contains any suspended render pass instances, they must be resumed by a
+    *   render pass instance later in submission order within
+    *   pCommandBufferInfos.
+    *
+    *   If any commandBuffer member of an element of pCommandBufferInfos
+    *   contains any resumed render pass instances, they must be suspended by a
+    *   render pass instance earlier in submission order within
+    *   pCommandBufferInfos.
+    * "
+    */
+   bool copy_fbds = simul_use && cmdbuf->state.gfx.render.tiler;
+   struct panfrost_ptr fbds = cmdbuf->state.gfx.render.fbds;
+   uint32_t fbd_flags = 0;
+
+   fbinfo->sample_positions =
+      dev->sample_positions->addr.dev +
+      panfrost_sample_positions_offset(pan_sample_pattern(fbinfo->nr_samples));
+
+   VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf);
+   if (result != VK_SUCCESS)
+      return result;
+
+   /* We prepare all FB descriptors upfront. */
+   for (uint32_t i = 0; i < cmdbuf->state.gfx.render.layer_count; i++) {
+      uint32_t new_fbd_flags =
+         prepare_fb_desc(cmdbuf, i, fbds.cpu + (fbd_sz * i));
+
+      /* Make sure all FBDs have the same flags. */
+      assert(i == 0 || new_fbd_flags == fbd_flags);
+      fbd_flags = new_fbd_flags;
+   }
+
+   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
+
+   if (copy_fbds) {
+      struct cs_index cur_tiler = cs_sr_reg64(b, 38);
+      struct cs_index dst_fbd_ptr = cs_sr_reg64(b, 40);
+      struct cs_index layer_count = cs_sr_reg32(b, 47);
+      struct cs_index src_fbd_ptr = cs_sr_reg64(b, 48);
+      struct cs_index remaining_layers_in_td = cs_sr_reg32(b, 50);
+      uint32_t td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
+                                       MAX_LAYERS_PER_TILER_DESC);
+
+      cs_update_frag_ctx(b) {
+         cs_load64_to(b, cur_tiler, cs_subqueue_ctx_reg(b),
+                      offsetof(struct panvk_cs_subqueue_context,
+                               render.desc_ringbuf.ptr));
+         cs_wait_slot(b, SB_ID(LS), false);
+         cs_add64(b, dst_fbd_ptr, cur_tiler,
+                  pan_size(TILER_CONTEXT) * td_count);
+      }
+
+      cs_move64_to(b, src_fbd_ptr, fbds.gpu);
+      cs_move32_to(b, remaining_layers_in_td, MAX_LAYERS_PER_TILER_DESC);
+
+      cs_move32_to(b, layer_count, cmdbuf->state.gfx.render.layer_count);
+      cs_while(b, MALI_CS_CONDITION_GREATER, layer_count) {
+         /* Our loop is copying 64-bytes at a time, so make sure the
+          * framebuffer size is aligned on 64-bytes. */
+         assert(fbd_sz == ALIGN_POT(fbd_sz, 64));
+
+         for (uint32_t fbd_off = 0; fbd_off < fbd_sz; fbd_off += 64) {
+            if (fbd_off == 0) {
+               cs_load_to(b, cs_scratch_reg_tuple(b, 0, 14), src_fbd_ptr,
+                          BITFIELD_MASK(14), fbd_off);
+               cs_add64(b, cs_scratch_reg64(b, 14), cur_tiler, 0);
+            } else {
+               cs_load_to(b, cs_scratch_reg_tuple(b, 0, 16), src_fbd_ptr,
+                          BITFIELD_MASK(16), fbd_off);
+            }
+            cs_wait_slot(b, SB_ID(LS), false);
+            cs_store(b, cs_scratch_reg_tuple(b, 0, 16), dst_fbd_ptr,
+                     BITFIELD_MASK(16), fbd_off);
+            cs_wait_slot(b, SB_ID(LS), false);
+         }
+
+         cs_add64(b, src_fbd_ptr, src_fbd_ptr, fbd_sz);
+         cs_update_frag_ctx(b)
+            cs_add64(b, dst_fbd_ptr, dst_fbd_ptr, fbd_sz);
+
+         cs_add32(b, remaining_layers_in_td, remaining_layers_in_td, -1);
+         cs_add32(b, layer_count, layer_count, -1);
+         cs_if(b, MALI_CS_CONDITION_LEQUAL, remaining_layers_in_td) {
+            cs_update_frag_ctx(b)
+               cs_add64(b, cur_tiler, cur_tiler, pan_size(TILER_CONTEXT));
+            cs_move32_to(b, remaining_layers_in_td,
+                         MAX_LAYERS_PER_TILER_DESC);
+         }
+      }
+
+      cs_update_frag_ctx(b) {
+         uint32_t full_td_count =
+            cmdbuf->state.gfx.render.layer_count / MAX_LAYERS_PER_TILER_DESC;
+
+         /* If the last tiler descriptor is not full, cur_tiler points to the
+          * last tiler descriptor, not the FBD that follows. */
+         if (full_td_count < td_count)
+            cs_add64(b, dst_fbd_ptr, cur_tiler,
+                     fbd_flags + pan_size(TILER_CONTEXT));
+         else
+            cs_add64(b, dst_fbd_ptr, cur_tiler, fbd_flags);
+
+         cs_add64(b, cur_tiler, cur_tiler,
+                  -(full_td_count * pan_size(TILER_CONTEXT)));
+      }
+   } else {
+      cs_update_frag_ctx(b) {
+         cs_move64_to(b, cs_sr_reg64(b, 40), fbds.gpu | fbd_flags);
+         cs_move64_to(b, cs_sr_reg64(b, 38), cmdbuf->state.gfx.render.tiler);
+      }
+   }
+
    return VK_SUCCESS;
+}
+
+static VkResult
+get_render_ctx(struct panvk_cmd_buffer *cmdbuf)
+{
+   VkResult result = get_tiler_desc(cmdbuf);
+   if (result != VK_SUCCESS)
+      return result;
+
+   return get_fb_descs(cmdbuf);
 }
 
 static VkResult
@@ -1308,13 +1479,8 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    if (result != VK_SUCCESS)
       return result;
 
-   if (cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY ||
-       !(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-      result = get_tiler_desc(cmdbuf);
-      if (result != VK_SUCCESS)
-         return result;
-
-      result = get_fb_descs(cmdbuf);
+   if (!inherits_render_ctx(cmdbuf)) {
+      result = get_render_ctx(cmdbuf);
       if (result != VK_SUCCESS)
          return result;
    }
@@ -1479,12 +1645,9 @@ panvk_per_arch(cmd_prepare_exec_cmd_for_draws)(
 {
    VkResult result;
 
-   if (secondary->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-      result = get_tiler_desc(primary);
-      if (result != VK_SUCCESS)
-         return;
-
-      result = get_fb_descs(primary);
+   if ((secondary->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) &&
+       !inherits_render_ctx(primary)) {
+      result = get_render_ctx(primary);
       if (result != VK_SUCCESS)
          return;
    }
@@ -1730,42 +1893,25 @@ panvk_per_arch(CmdBeginRendering)(VkCommandBuffer commandBuffer,
    struct panvk_cmd_graphics_state *state = &cmdbuf->state.gfx;
    bool resuming = pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT;
 
-   /* When resuming from a suspended pass, the state should be unchanged. */
-   if (resuming)
-      state->render.flags = pRenderingInfo->flags;
-   else
-      panvk_per_arch(cmd_init_render_state)(cmdbuf, pRenderingInfo);
+   panvk_per_arch(cmd_init_render_state)(cmdbuf, pRenderingInfo);
 
    /* If we're not resuming, the FBD should be NULL. */
    assert(!state->render.fbds.gpu || resuming);
 
    if (!resuming)
       panvk_per_arch(cmd_preload_render_area_border)(cmdbuf, pRenderingInfo);
-}
 
-static uint8_t
-prepare_fb_desc(struct panvk_cmd_buffer *cmdbuf, uint32_t layer, void *fbd)
-{
-   struct pan_tiler_context tiler_ctx = {
-      .valhall.layer_offset = layer - (layer % MAX_LAYERS_PER_TILER_DESC),
-   };
-
-   return GENX(pan_emit_fbd)(&cmdbuf->state.gfx.render.fb.info, layer, NULL,
-                             &tiler_ctx, fbd);
 }
 
 static void
 flush_tiling(struct panvk_cmd_buffer *cmdbuf)
 {
-   if (!cmdbuf->state.gfx.render.fbds.gpu)
-      return;
-
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
 
    struct cs_index render_ctx = cs_scratch_reg64(b, 2);
 
-   if (cmdbuf->state.gfx.render.tiler) {
+   if (cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf)) {
       /* Flush the tiling operations and signal the internal sync object. */
       cs_req_res(b, CS_TILER_RES);
       cs_finish_tiling(b, false);
@@ -1824,9 +1970,6 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
 static void
 wait_finish_tiling(struct panvk_cmd_buffer *cmdbuf)
 {
-   if (!cmdbuf->state.gfx.render.tiler)
-      return;
-
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
    struct cs_index vt_sync_addr = cs_scratch_reg64(b, 0);
    struct cs_index vt_sync_point = cs_scratch_reg64(b, 2);
@@ -1847,10 +1990,6 @@ wait_finish_tiling(struct panvk_cmd_buffer *cmdbuf)
 static VkResult
 issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 {
-   if (!cmdbuf->state.gfx.render.fbds.gpu)
-      return VK_SUCCESS;
-
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
 
@@ -1868,10 +2007,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
                    (fbinfo->extent.maxy << 16) | fbinfo->extent.maxx);
    }
 
-   fbinfo->sample_positions =
-      dev->sample_positions->addr.dev +
-      panfrost_sample_positions_offset(pan_sample_pattern(fbinfo->nr_samples));
-
    bool simul_use =
       cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
@@ -1879,93 +2014,34 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
     * involved (clear job) or if the update can happen in place (not
     * simultaneous use of the command buffer), we can avoid the
     * copy. */
-   bool copy_fbds = simul_use && cmdbuf->state.gfx.render.tiler;
+   bool needs_tiling =
+      cmdbuf->state.gfx.render.tiler || inherits_render_ctx(cmdbuf);
+
+   /* If the command buffer can run in parallel on different queues, we need
+    * to make sure each instance has its own descriptors, unless tiling is
+    * not needed (AKA RUN_FRAGMENT used for clears), because then the FBD
+    * descriptors are constant (no need to patch them at runtime). */
+   bool free_render_descs = simul_use && needs_tiling;
    uint32_t fbd_sz = calc_fbd_size(cmdbuf);
-   struct panfrost_ptr fbds = cmdbuf->state.gfx.render.fbds;
-   uint8_t fbd_flags = 0;
-
-   VkResult result = panvk_per_arch(cmd_fb_preload)(cmdbuf);
-   if (result != VK_SUCCESS)
-      return result;
-
-   /* We prepare all FB descriptors upfront. */
-   for (uint32_t i = 0; i < cmdbuf->state.gfx.render.layer_count; i++) {
-      uint32_t new_fbd_flags =
-         prepare_fb_desc(cmdbuf, i, fbds.cpu + (fbd_sz * i));
-
-      /* Make sure all FBDs have the same flags. */
-      assert(i == 0 || new_fbd_flags == fbd_flags);
-      fbd_flags = new_fbd_flags;
-   }
-
-   struct cs_index layer_count = cs_sr_reg32(b, 47);
-   struct cs_index fbd_ptr = cs_sr_reg64(b, 48);
-   struct cs_index tiler_ptr = cs_sr_reg64(b, 50);
-   struct cs_index cur_tiler = cs_sr_reg64(b, 52);
-   struct cs_index remaining_layers_in_td = cs_sr_reg32(b, 54);
-   struct cs_index src_fbd_ptr = cs_sr_reg64(b, 56);
-
    uint32_t td_count = 0;
-   if (cmdbuf->state.gfx.render.tiler) {
+   if (needs_tiling) {
       td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
                               MAX_LAYERS_PER_TILER_DESC);
    }
 
-   if (copy_fbds) {
-      cs_load64_to(
-         b, tiler_ptr, cs_subqueue_ctx_reg(b),
-         offsetof(struct panvk_cs_subqueue_context, render.desc_ringbuf.ptr));
-      cs_wait_slot(b, SB_ID(LS), false);
-
-      cs_add64(b, fbd_ptr, tiler_ptr, pan_size(TILER_CONTEXT) * td_count);
-      cs_move64_to(b, src_fbd_ptr, fbds.gpu);
-   } else {
-      cs_move64_to(b, fbd_ptr, fbds.gpu);
-      if (cmdbuf->state.gfx.render.tiler)
-         cs_move64_to(b, tiler_ptr, cmdbuf->state.gfx.render.tiler);
-   }
-
-
-   if (cmdbuf->state.gfx.render.tiler) {
-      cs_add64(b, cur_tiler, tiler_ptr, 0);
-      cs_move32_to(b, remaining_layers_in_td, MAX_LAYERS_PER_TILER_DESC);
-   }
-
-   cs_move32_to(b, layer_count, cmdbuf->state.gfx.render.layer_count);
-
    cs_req_res(b, CS_FRAG_RES);
-   cs_while(b, MALI_CS_CONDITION_GREATER, layer_count) {
-      if (copy_fbds) {
-         for (uint32_t fbd_off = 0; fbd_off < fbd_sz; fbd_off += 64) {
-            cs_load_to(b, cs_scratch_reg_tuple(b, 0, 16), src_fbd_ptr,
-                       BITFIELD_MASK(16), fbd_off);
-            cs_wait_slot(b, SB_ID(LS), false);
-            cs_store(b, cs_scratch_reg_tuple(b, 0, 16), fbd_ptr,
-                     BITFIELD_MASK(16), fbd_off);
-            cs_wait_slot(b, SB_ID(LS), false);
-         }
+   if (cmdbuf->state.gfx.render.layer_count > 1) {
+      struct cs_index layer_count = cs_sr_reg32(b, 47);
 
-         cs_add64(b, src_fbd_ptr, src_fbd_ptr, fbd_sz);
+      cs_move32_to(b, layer_count, cmdbuf->state.gfx.render.layer_count);
+      cs_while(b, MALI_CS_CONDITION_GREATER, layer_count) {
+         cs_run_fragment(b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+         cs_add32(b, layer_count, layer_count, -1);
+         cs_update_frag_ctx(b)
+            cs_add64(b, cs_sr_reg64(b, 40), cs_sr_reg64(b, 40), fbd_sz);
       }
-
-      if (cmdbuf->state.gfx.render.tiler) {
-         cs_store64(b, cur_tiler, fbd_ptr, 56);
-         cs_wait_slot(b, SB_ID(LS), false);
-      }
-
-      cs_update_frag_ctx(b)
-         cs_add64(b, cs_sr_reg64(b, 40), fbd_ptr, fbd_flags);
-
+   } else {
       cs_run_fragment(b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
-      cs_add64(b, fbd_ptr, fbd_ptr, fbd_sz);
-      cs_add32(b, layer_count, layer_count, -1);
-      if (cmdbuf->state.gfx.render.tiler) {
-         cs_add32(b, remaining_layers_in_td, remaining_layers_in_td, -1);
-         cs_if(b, MALI_CS_CONDITION_LEQUAL, remaining_layers_in_td) {
-            cs_add64(b, cur_tiler, cur_tiler, pan_size(TILER_CONTEXT));
-            cs_move32_to(b, remaining_layers_in_td, MAX_LAYERS_PER_TILER_DESC);
-         }
-      }
    }
    cs_req_res(b, 0);
 
@@ -1975,9 +2051,11 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_index add_val = cs_scratch_reg64(b, 4);
    struct cs_index release_sz = cs_scratch_reg32(b, 5);
    struct cs_index ringbuf_sync_addr = cs_scratch_reg64(b, 6);
+
    struct cs_index completed = cs_scratch_reg_tuple(b, 10, 4);
    struct cs_index completed_top = cs_scratch_reg64(b, 10);
    struct cs_index completed_bottom = cs_scratch_reg64(b, 12);
+   struct cs_index cur_tiler = cs_sr_reg64(b, 38);
    struct cs_index tiler_count = cs_sr_reg32(b, 47);
 
    cs_move64_to(b, add_val, 1);
@@ -1985,7 +2063,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
               BITFIELD_MASK(3),
               offsetof(struct panvk_cs_subqueue_context, syncobjs));
 
-   if (copy_fbds) {
+   if (free_render_descs) {
       cs_move32_to(b, release_sz, calc_render_descs_size(cmdbuf));
       cs_load64_to(b, ringbuf_sync_addr, cs_subqueue_ctx_reg(b),
                    offsetof(struct panvk_cs_subqueue_context,
@@ -1997,7 +2075,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    cs_add64(b, sync_addr, sync_addr,
             PANVK_SUBQUEUE_FRAGMENT * sizeof(struct panvk_cs_sync64));
    cs_move32_to(b, tiler_count, td_count);
-   cs_add64(b, cur_tiler, tiler_ptr, 0);
 
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
@@ -2014,12 +2091,13 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
             cs_wait_slot(b, SB_ID(LS), false);                                 \
             cs_finish_fragment(b, false, completed_top, completed_bottom,      \
                                async);                                         \
-            cs_add64(b, cur_tiler, cur_tiler, pan_size(TILER_CONTEXT));        \
+            cs_update_frag_ctx(b)                                              \
+               cs_add64(b, cur_tiler, cur_tiler, pan_size(TILER_CONTEXT));     \
             cs_add32(b, tiler_count, tiler_count, -1);                         \
          }                                                                     \
          cs_frag_end(b, async);                                                \
       }                                                                        \
-      if (copy_fbds) {                                                         \
+      if (free_render_descs) {                                                 \
          cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, release_sz,            \
                        ringbuf_sync_addr, async);                              \
       }                                                                        \
@@ -2041,15 +2119,12 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    cs_wait_slot(b, SB_ID(LS), false);
 
    /* Update the ring buffer position. */
-   if (copy_fbds)
+   if (free_render_descs)
       cs_render_desc_ringbuf_move_ptr(b, calc_render_descs_size(cmdbuf));
 
    /* Update the frag seqno. */
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_FRAGMENT].relative_sync_point;
 
-   memset(&cmdbuf->state.gfx.render.fbds, 0,
-          sizeof(cmdbuf->state.gfx.render.fbds));
-   cmdbuf->state.gfx.render.tiler = 0;
 
    return VK_SUCCESS;
 }
@@ -2058,37 +2133,61 @@ void
 panvk_per_arch(cmd_flush_draws)(struct panvk_cmd_buffer *cmdbuf)
 {
    /* If there was no draw queued, we don't need to force a preload. */
-   if (!cmdbuf->state.gfx.render.fbds.gpu)
-      return;
+   if (cmdbuf->state.gfx.render.fbds.gpu || inherits_render_ctx(cmdbuf)) {
+      flush_tiling(cmdbuf);
+      issue_fragment_jobs(cmdbuf);
+      memset(&cmdbuf->state.gfx.render.fbds, 0,
+             sizeof(cmdbuf->state.gfx.render.fbds));
+      cmdbuf->state.gfx.render.tiler = 0;
 
-   flush_tiling(cmdbuf);
-   issue_fragment_jobs(cmdbuf);
-   memset(&cmdbuf->state.gfx.render.fbds, 0,
-          sizeof(cmdbuf->state.gfx.render.fbds));
-   cmdbuf->state.gfx.render.tiler = 0;
+      panvk_per_arch(cmd_force_fb_preload)(cmdbuf, NULL);
 
-   panvk_per_arch(cmd_force_fb_preload)(cmdbuf, NULL);
+      /* We inherited the render context, and need to let the primary command
+       * buffer know that it's changed. */
+      cmdbuf->state.gfx.render.invalidate_inherited_ctx = true;
+
+      /* Re-emit the FB/Tiler descs if we inherited them. */
+      if (inherits_render_ctx(cmdbuf))
+         get_render_ctx(cmdbuf);
+   }
 }
 
 VKAPI_ATTR void VKAPI_CALL
 panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
+   bool suspending = cmdbuf->state.gfx.render.flags & VK_RENDERING_SUSPENDING_BIT;
 
-   if (!(cmdbuf->state.gfx.render.flags & VK_RENDERING_SUSPENDING_BIT)) {
+   if (!suspending) {
       struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
       bool clear = fbinfo->zs.clear.z | fbinfo->zs.clear.s;
       for (unsigned i = 0; i < fbinfo->rt_count; i++)
          clear |= fbinfo->rts[i].clear;
 
-      if (clear) {
+      if (clear && !inherits_render_ctx(cmdbuf)) {
          VkResult result = get_fb_descs(cmdbuf);
          if (result != VK_SUCCESS)
             return;
       }
 
-      flush_tiling(cmdbuf);
-      issue_fragment_jobs(cmdbuf);
-      panvk_per_arch(cmd_resolve_attachments)(cmdbuf);
+      if (cmdbuf->state.gfx.render.fbds.gpu || inherits_render_ctx(cmdbuf)) {
+         flush_tiling(cmdbuf);
+         issue_fragment_jobs(cmdbuf);
+      }
+   } else if (!inherits_render_ctx(cmdbuf)) {
+      /* If we're suspending the render pass and we didn't inherit the render
+       * context, we need to emit it now, so it's available when the render pass
+       * is resumed. */
+      VkResult result = get_render_ctx(cmdbuf);
+      if (result != VK_SUCCESS)
+         return;
    }
+
+   memset(&cmdbuf->state.gfx.render.fbds, 0,
+          sizeof(cmdbuf->state.gfx.render.fbds));
+   cmdbuf->state.gfx.render.tiler = 0;
+
+   /* If we're not suspending, we need to resolve attachments. */
+   if (!suspending)
+      panvk_per_arch(cmd_resolve_attachments)(cmdbuf);
 }

@@ -108,8 +108,12 @@ enum panvk_cs_regs {
    PANVK_CS_REG_RUN_IDVS_SR_START = 0,
    PANVK_CS_REG_RUN_IDVS_SR_END = 60,
 
-   /* RUN_FRAGMENT staging regs. */
-   PANVK_CS_REG_RUN_FRAGMENT_SR_START = 40,
+   /* RUN_FRAGMENT staging regs.
+    * SW ABI:
+    * - r38:39 contain the pointer to the first tiler descriptor. This is
+    *   needed to gather completed heap chunks after a run_fragment.
+    */
+   PANVK_CS_REG_RUN_FRAGMENT_SR_START = 38,
    PANVK_CS_REG_RUN_FRAGMENT_SR_END = 46,
 
    /* RUN_COMPUTE staging regs. */
