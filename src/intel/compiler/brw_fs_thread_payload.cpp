@@ -173,12 +173,12 @@ setup_fs_payload_gfx20(fs_thread_payload &payload,
 
    for (unsigned j = 0; j < v.dispatch_width / payload_width; j++) {
       /* R2-13: Barycentric interpolation coordinates.  These appear
-       * in the same order that they appear in the brw_barycentric_mode
+       * in the same order that they appear in the intel_barycentric_mode
        * enum.  Each set of coordinates occupies 2 64B registers per
        * SIMD16 half.  Coordinates only appear if they were enabled
        * using the "Barycentric Interpolation Mode" bits in WM_STATE.
        */
-      for (int i = 0; i < BRW_BARYCENTRIC_MODE_COUNT; ++i) {
+      for (int i = 0; i < INTEL_BARYCENTRIC_MODE_COUNT; ++i) {
          if (prog_data->barycentric_interp_modes & (1 << i)) {
             payload.barycentric_coord_reg[i][j] = payload.num_regs;
             payload.num_regs += payload_width / 4;
@@ -267,13 +267,13 @@ setup_fs_payload_gfx9(fs_thread_payload &payload,
 
    for (unsigned j = 0; j < v.dispatch_width / payload_width; j++) {
       /* R3-26: barycentric interpolation coordinates.  These appear in the
-       * same order that they appear in the brw_barycentric_mode enum.  Each
+       * same order that they appear in the intel_barycentric_mode enum.  Each
        * set of coordinates occupies 2 registers if dispatch width == 8 and 4
        * registers if dispatch width == 16.  Coordinates only appear if they
        * were enabled using the "Barycentric Interpolation Mode" bits in
        * WM_STATE.
        */
-      for (int i = 0; i < BRW_BARYCENTRIC_MODE_COUNT; ++i) {
+      for (int i = 0; i < INTEL_BARYCENTRIC_MODE_COUNT; ++i) {
          if (prog_data->barycentric_interp_modes & (1 << i)) {
             payload.barycentric_coord_reg[i][j] = payload.num_regs;
             payload.num_regs += payload_width / 4;

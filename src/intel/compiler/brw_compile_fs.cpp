@@ -503,7 +503,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
       const fs_builder ubld = bld.exec_all().group(16, 0);
       bool loaded_flag = false;
 
-      for (int i = 0; i < BRW_BARYCENTRIC_MODE_COUNT; ++i) {
+      for (int i = 0; i < INTEL_BARYCENTRIC_MODE_COUNT; ++i) {
          if (!(wm_prog_data->barycentric_interp_modes & BITFIELD_BIT(i)))
             continue;
 
@@ -514,12 +514,12 @@ brw_emit_interpolation_setup(fs_visitor &s)
           * requested or not.
           */
          int sample_mode;
-         if (BITFIELD_BIT(i) & BRW_BARYCENTRIC_NONPERSPECTIVE_BITS) {
+         if (BITFIELD_BIT(i) & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS) {
             sample_mode = util_last_bit(wm_prog_data->barycentric_interp_modes &
-                                        BRW_BARYCENTRIC_NONPERSPECTIVE_BITS) - 1;
+                                        INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS) - 1;
          } else {
             sample_mode = util_last_bit(wm_prog_data->barycentric_interp_modes &
-                                        BRW_BARYCENTRIC_PERSPECTIVE_BITS) - 1;
+                                        INTEL_BARYCENTRIC_PERSPECTIVE_BITS) - 1;
          }
          assert(wm_prog_data->barycentric_interp_modes &
                 BITFIELD_BIT(sample_mode));
@@ -546,14 +546,14 @@ brw_emit_interpolation_setup(fs_visitor &s)
       }
    }
 
-   for (int i = 0; i < BRW_BARYCENTRIC_MODE_COUNT; ++i) {
+   for (int i = 0; i < INTEL_BARYCENTRIC_MODE_COUNT; ++i) {
       s.delta_xy[i] = fetch_barycentric_reg(
          bld, payload.barycentric_coord_reg[i]);
    }
 
    uint32_t centroid_modes = wm_prog_data->barycentric_interp_modes &
-      (1 << BRW_BARYCENTRIC_PERSPECTIVE_CENTROID |
-       1 << BRW_BARYCENTRIC_NONPERSPECTIVE_CENTROID);
+      (1 << INTEL_BARYCENTRIC_PERSPECTIVE_CENTROID |
+       1 << INTEL_BARYCENTRIC_NONPERSPECTIVE_CENTROID);
 
    if (devinfo->needs_unlit_centroid_workaround && centroid_modes) {
       /* Get the pixel/sample mask into f0 so that we know which
@@ -566,7 +566,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
                  retype(brw_vec1_grf(1 + i, 7), BRW_TYPE_UW));
       }
 
-      for (int i = 0; i < BRW_BARYCENTRIC_MODE_COUNT; ++i) {
+      for (int i = 0; i < INTEL_BARYCENTRIC_MODE_COUNT; ++i) {
          if (!(centroid_modes & (1 << i)))
             continue;
 
@@ -654,12 +654,12 @@ brw_emit_repclear_shader(fs_visitor &s)
 /**
  * Turn one of the two CENTROID barycentric modes into PIXEL mode.
  */
-static enum brw_barycentric_mode
-centroid_to_pixel(enum brw_barycentric_mode bary)
+static enum intel_barycentric_mode
+centroid_to_pixel(enum intel_barycentric_mode bary)
 {
-   assert(bary == BRW_BARYCENTRIC_PERSPECTIVE_CENTROID ||
-          bary == BRW_BARYCENTRIC_NONPERSPECTIVE_CENTROID);
-   return (enum brw_barycentric_mode) ((unsigned) bary - 1);
+   assert(bary == INTEL_BARYCENTRIC_PERSPECTIVE_CENTROID ||
+          bary == INTEL_BARYCENTRIC_NONPERSPECTIVE_CENTROID);
+   return (enum intel_barycentric_mode) ((unsigned) bary - 1);
 }
 
 static void
@@ -928,11 +928,11 @@ is_used_in_not_interp_frag_coord(nir_def *def)
 
 /**
  * Return a bitfield where bit n is set if barycentric interpolation mode n
- * (see enum brw_barycentric_mode) is needed by the fragment shader.
+ * (see enum intel_barycentric_mode) is needed by the fragment shader.
  *
  * We examine the load_barycentric intrinsics rather than looking at input
  * variables so that we catch interpolateAtCentroid() messages too, which
- * also need the BRW_BARYCENTRIC_[NON]PERSPECTIVE_CENTROID mode set up.
+ * also need the INTEL_BARYCENTRIC_[NON]PERSPECTIVE_CENTROID mode set up.
  */
 static unsigned
 brw_compute_barycentric_interp_modes(const struct intel_device_info *devinfo,
@@ -964,7 +964,7 @@ brw_compute_barycentric_interp_modes(const struct intel_device_info *devinfo,
                continue;
 
             nir_intrinsic_op bary_op = intrin->intrinsic;
-            enum brw_barycentric_mode bary =
+            enum intel_barycentric_mode bary =
                brw_barycentric_mode(key, intrin);
 
             barycentric_interp_modes |= 1 << bary;
@@ -981,7 +981,7 @@ brw_compute_barycentric_interp_modes(const struct intel_device_info *devinfo,
 
 /**
  * Return a bitfield where bit n is set if barycentric interpolation
- * mode n (see enum brw_barycentric_mode) is needed by the fragment
+ * mode n (see enum intel_barycentric_mode) is needed by the fragment
  * shader barycentric intrinsics that take an explicit offset or
  * sample as argument.
  */
@@ -1135,7 +1135,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
     */
    if (prog_data->persample_dispatch == INTEL_NEVER) {
       prog_data->barycentric_interp_modes &=
-         ~BITFIELD_BIT(BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE);
+         ~BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE);
    }
 
    if (devinfo->ver >= 20) {
@@ -1143,16 +1143,16 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
          brw_compute_offset_barycentric_interp_modes(key, shader);
 
       prog_data->uses_npc_bary_coefficients =
-         offset_bary_modes & BRW_BARYCENTRIC_NONPERSPECTIVE_BITS;
+         offset_bary_modes & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS;
       prog_data->uses_pc_bary_coefficients =
-         offset_bary_modes & ~BRW_BARYCENTRIC_NONPERSPECTIVE_BITS;
+         offset_bary_modes & ~INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS;
       prog_data->uses_sample_offsets =
-         offset_bary_modes & ((1 << BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE) |
-                              (1 << BRW_BARYCENTRIC_NONPERSPECTIVE_SAMPLE));
+         offset_bary_modes & ((1 << INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE) |
+                              (1 << INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE));
    }
 
    prog_data->uses_nonperspective_interp_modes =
-      (prog_data->barycentric_interp_modes & BRW_BARYCENTRIC_NONPERSPECTIVE_BITS) ||
+      (prog_data->barycentric_interp_modes & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS) ||
       prog_data->uses_npc_bary_coefficients;
 
    /* The current VK_EXT_graphics_pipeline_library specification requires

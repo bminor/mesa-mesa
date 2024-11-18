@@ -206,7 +206,7 @@ struct fs_thread_payload : public thread_payload {
    uint8_t dest_depth_reg[2];
    uint8_t sample_pos_reg[2];
    uint8_t sample_mask_in_reg[2];
-   uint8_t barycentric_coord_reg[BRW_BARYCENTRIC_MODE_COUNT][2];
+   uint8_t barycentric_coord_reg[INTEL_BARYCENTRIC_MODE_COUNT][2];
 
    uint8_t depth_w_coef_reg;
    uint8_t pc_bary_coef_reg;
@@ -442,7 +442,7 @@ public:
    brw_reg pixel_z;
    brw_reg wpos_w;
    brw_reg pixel_w;
-   brw_reg delta_xy[BRW_BARYCENTRIC_MODE_COUNT];
+   brw_reg delta_xy[INTEL_BARYCENTRIC_MODE_COUNT];
    brw_reg final_gs_vertex_count;
    brw_reg control_data_bits;
    brw_reg invocation_id;
@@ -592,8 +592,8 @@ void shuffle_from_32bit_read(const brw::fs_builder &bld,
                              uint32_t first_component,
                              uint32_t components);
 
-enum brw_barycentric_mode brw_barycentric_mode(const struct brw_wm_prog_key *key,
-                                               nir_intrinsic_instr *intr);
+enum intel_barycentric_mode brw_barycentric_mode(const struct brw_wm_prog_key *key,
+                                                 nir_intrinsic_instr *intr);
 
 uint32_t brw_fb_write_msg_control(const fs_inst *inst,
                                   const struct brw_wm_prog_data *prog_data);

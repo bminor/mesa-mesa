@@ -583,24 +583,6 @@ brw_stage_prog_data_add_printf(struct brw_stage_prog_data *prog_data,
                                void *mem_ctx,
                                const u_printf_info *print);
 
-enum brw_barycentric_mode {
-   BRW_BARYCENTRIC_PERSPECTIVE_PIXEL       = 0,
-   BRW_BARYCENTRIC_PERSPECTIVE_CENTROID    = 1,
-   BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE      = 2,
-   BRW_BARYCENTRIC_NONPERSPECTIVE_PIXEL    = 3,
-   BRW_BARYCENTRIC_NONPERSPECTIVE_CENTROID = 4,
-   BRW_BARYCENTRIC_NONPERSPECTIVE_SAMPLE   = 5,
-   BRW_BARYCENTRIC_MODE_COUNT              = 6
-};
-#define BRW_BARYCENTRIC_PERSPECTIVE_BITS \
-   ((1 << BRW_BARYCENTRIC_PERSPECTIVE_PIXEL) | \
-    (1 << BRW_BARYCENTRIC_PERSPECTIVE_CENTROID) | \
-    (1 << BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE))
-#define BRW_BARYCENTRIC_NONPERSPECTIVE_BITS \
-   ((1 << BRW_BARYCENTRIC_NONPERSPECTIVE_PIXEL) | \
-    (1 << BRW_BARYCENTRIC_NONPERSPECTIVE_CENTROID) | \
-    (1 << BRW_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))
-
 enum brw_pixel_shader_computed_depth_mode {
    BRW_PSCDEPTH_OFF   = 0, /* PS does not compute depth */
    BRW_PSCDEPTH_ON    = 1, /* PS computes depth; no guarantee about value */
@@ -897,24 +879,24 @@ wm_prog_data_barycentric_modes(const struct brw_wm_prog_data *prog_data,
        * which one we replace.  The important thing is that we keep the number
        * of barycentrics in each [non]perspective grouping the same.
        */
-      if ((modes & BRW_BARYCENTRIC_PERSPECTIVE_BITS) &&
-          !(modes & BITFIELD_BIT(BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE))) {
+      if ((modes & INTEL_BARYCENTRIC_PERSPECTIVE_BITS) &&
+          !(modes & BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE))) {
          int sample_mode =
-            util_last_bit(modes & BRW_BARYCENTRIC_PERSPECTIVE_BITS) - 1;
+            util_last_bit(modes & INTEL_BARYCENTRIC_PERSPECTIVE_BITS) - 1;
          assert(modes & BITFIELD_BIT(sample_mode));
 
          modes &= ~BITFIELD_BIT(sample_mode);
-         modes |= BITFIELD_BIT(BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE);
+         modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE);
       }
 
-      if ((modes & BRW_BARYCENTRIC_NONPERSPECTIVE_BITS) &&
-          !(modes & BITFIELD_BIT(BRW_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))) {
+      if ((modes & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS) &&
+          !(modes & BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))) {
          int sample_mode =
-            util_last_bit(modes & BRW_BARYCENTRIC_NONPERSPECTIVE_BITS) - 1;
+            util_last_bit(modes & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS) - 1;
          assert(modes & BITFIELD_BIT(sample_mode));
 
          modes &= ~BITFIELD_BIT(sample_mode);
-         modes |= BITFIELD_BIT(BRW_BARYCENTRIC_NONPERSPECTIVE_SAMPLE);
+         modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE);
       }
    } else {
       /* If we're not using per-sample interpolation, we need to disable the
@@ -926,8 +908,8 @@ wm_prog_data_barycentric_modes(const struct brw_wm_prog_data *prog_data,
        *    "MSDISPMODE_PERSAMPLE is required in order to select Perspective
        *     Sample or Non-perspective Sample barycentric coordinates."
        */
-      uint32_t sample_bits = (BITFIELD_BIT(BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE) |
-                              BITFIELD_BIT(BRW_BARYCENTRIC_NONPERSPECTIVE_SAMPLE));
+      uint32_t sample_bits = (BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE) |
+                              BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE));
       uint32_t requested_sample = modes & sample_bits;
       modes &= ~sample_bits;
       /*
@@ -949,10 +931,10 @@ wm_prog_data_barycentric_modes(const struct brw_wm_prog_data *prog_data,
        * barycentric.
        */
       if (requested_sample) {
-         if (requested_sample & BITFIELD_BIT(BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE))
-            modes |= BITFIELD_BIT(BRW_BARYCENTRIC_PERSPECTIVE_PIXEL);
-         if (requested_sample & BITFIELD_BIT(BRW_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))
-            modes |= BITFIELD_BIT(BRW_BARYCENTRIC_NONPERSPECTIVE_PIXEL);
+         if (requested_sample & BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE))
+            modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_PIXEL);
+         if (requested_sample & BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))
+            modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_PIXEL);
       }
    }
 

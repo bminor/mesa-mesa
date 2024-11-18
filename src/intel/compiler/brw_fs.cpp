@@ -845,7 +845,7 @@ fs_visitor::import_uniforms(fs_visitor *v)
    this->uniforms = v->uniforms;
 }
 
-enum brw_barycentric_mode
+enum intel_barycentric_mode
 brw_barycentric_mode(const struct brw_wm_prog_key *key,
                      nir_intrinsic_instr *intr)
 {
@@ -864,15 +864,15 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
        * payload is not affected.
        */
       bary = key->persample_interp == INTEL_SOMETIMES ?
-             BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE :
-             BRW_BARYCENTRIC_PERSPECTIVE_PIXEL;
+             INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE :
+             INTEL_BARYCENTRIC_PERSPECTIVE_PIXEL;
       break;
    case nir_intrinsic_load_barycentric_centroid:
-      bary = BRW_BARYCENTRIC_PERSPECTIVE_CENTROID;
+      bary = INTEL_BARYCENTRIC_PERSPECTIVE_CENTROID;
       break;
    case nir_intrinsic_load_barycentric_sample:
    case nir_intrinsic_load_barycentric_at_sample:
-      bary = BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE;
+      bary = INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE;
       break;
    default:
       unreachable("invalid intrinsic");
@@ -881,7 +881,7 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
    if (mode == INTERP_MODE_NOPERSPECTIVE)
       bary += 3;
 
-   return (enum brw_barycentric_mode) bary;
+   return (enum intel_barycentric_mode) bary;
 }
 
 /**
