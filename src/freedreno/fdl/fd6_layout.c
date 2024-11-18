@@ -26,6 +26,9 @@ void
 fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
                          uint32_t *blockwidth, uint32_t *blockheight)
 {
+   /* UBWC compression for cpp above 32 isn't supported,
+    * and using zero blocksize will effectively disable it.
+    */
    static const struct {
       uint8_t width;
       uint8_t height;
@@ -36,7 +39,8 @@ fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
       {  8, 4 }, /* cpp = 8 */
       {  4, 4 }, /* cpp = 16 */
       {  4, 2 }, /* cpp = 32 */
-      {  0, 0 }, /* cpp = 64 (TODO) */
+      {  0, 0 }, /* cpp = 64 */
+      {  0, 0 }, /* cpp = 128 */
    };
 
    /* special case for r8g8: */
@@ -62,6 +66,9 @@ fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
       } else if (layout->nr_samples == 4) {
          *blockwidth = 4;
          *blockheight = 4;
+      } else if (layout->nr_samples == 8) {
+         *blockwidth = 4;
+         *blockheight = 2;
       } else {
          unreachable("bad nr_samples");
       }

@@ -459,10 +459,11 @@ tu_get_image_format_properties(
        !(info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) &&
        !(info->usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
       sampleCounts |= VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT;
-      /* note: most operations support 8 samples (GMEM render/resolve do at least)
-       * but some do not (which ones?), just disable 8 samples completely,
-       * (no 8x msaa matches the blob driver behavior)
-       */
+
+      /* a7xx supports 8x MSAA except for 128-bit formats. */
+      if (physical_device->info->chip >= A7XX &&
+          vk_format_get_blocksizebits(info->format) <= 64)
+         sampleCounts |= VK_SAMPLE_COUNT_8_BIT;
    }
 
    /* From the Vulkan 1.3.206 spec:

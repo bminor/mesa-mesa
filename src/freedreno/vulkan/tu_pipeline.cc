@@ -2755,7 +2755,7 @@ static unsigned
 tu6_sample_locations_size(struct tu_device *dev, bool enable,
                           const struct vk_sample_locations_state *samp_loc)
 {
-   return 6 + (enable ? 6 : 0);
+   return 6 + (enable ? 9 : 0);
 }
 
 template <chip CHIP>
@@ -2781,7 +2781,7 @@ tu6_emit_sample_locations(struct tu_cs *cs, bool enable,
    assert(samp_loc->grid_size.width == 1);
    assert(samp_loc->grid_size.height == 1);
 
-   uint32_t sample_locations = 0;
+   uint64_t sample_locations = 0;
    for (uint32_t i = 0; i < samp_loc->per_pixel; i++) {
       /* From VkSampleLocationEXT:
        *
@@ -2796,18 +2796,18 @@ tu6_emit_sample_locations(struct tu_cs *cs, bool enable,
                       SAMPLE_LOCATION_MAX);
 
       sample_locations |=
-         (A6XX_RB_SAMPLE_LOCATION_0_SAMPLE_0_X(x) |
-          A6XX_RB_SAMPLE_LOCATION_0_SAMPLE_0_Y(y)) << i*8;
+         ((uint64_t)(A6XX_RB_SAMPLE_LOCATION_0_SAMPLE_0_X(x) |
+                     A6XX_RB_SAMPLE_LOCATION_0_SAMPLE_0_Y(y))) << i*8;
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SAMPLE_LOCATION_0, 1);
-   tu_cs_emit(cs, sample_locations);
+   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SAMPLE_LOCATION_0, 2);
+   tu_cs_emit_qw(cs, sample_locations);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_SAMPLE_LOCATION_0, 1);
-   tu_cs_emit(cs, sample_locations);
+   tu_cs_emit_pkt4(cs, REG_A6XX_RB_SAMPLE_LOCATION_0, 2);
+   tu_cs_emit_qw(cs, sample_locations);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_SP_TP_SAMPLE_LOCATION_0, 1);
-   tu_cs_emit(cs, sample_locations);
+   tu_cs_emit_pkt4(cs, REG_A6XX_SP_TP_SAMPLE_LOCATION_0, 2);
+   tu_cs_emit_qw(cs, sample_locations);
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_depth_bias_state[] = {
