@@ -184,9 +184,9 @@ libagx_vertex_id_for_tri_adj_class(enum mesa_prim mode, uint prim, uint vert,
    }
 }
 
-uint
-libagx_vertex_id_for_topology(enum mesa_prim mode, bool flatshade_first,
-                              uint prim, uint vert, uint num_prims)
+static uint
+vertex_id_for_topology(enum mesa_prim mode, bool flatshade_first, uint prim,
+                       uint vert, uint num_prims)
 {
    switch (mode) {
    case MESA_PRIM_POINTS:
@@ -393,8 +393,8 @@ libagx_unroll_restart(constant struct agx_restart_unroll_params *p,
       uint out_prims_base = out_prims;
       for (uint i = tid; i < subprims; i += 1024) {
          for (uint vtx = 0; vtx < per_prim; ++vtx) {
-            uint id = libagx_vertex_id_for_topology(mode, flatshade_first, i,
-                                                    vtx, subprims);
+            uint id =
+               vertex_id_for_topology(mode, flatshade_first, i, vtx, subprims);
             uint offset = needle + id;
 
             uint x = ((out_prims_base + i) * per_prim) + vtx;
