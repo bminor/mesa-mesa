@@ -3661,6 +3661,9 @@ typedef struct nir_function {
    const struct glsl_type **subroutine_types;
 
    int subroutine_index;
+
+   /* A temporary for passes to use for storing flags. */
+   uint32_t pass_flags;
 } nir_function;
 
 typedef enum {
