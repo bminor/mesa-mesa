@@ -12,7 +12,6 @@
 #include "nir_serialize.h"
 
 #include <fcntl.h>
-#include <getopt.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
@@ -283,67 +282,18 @@ print_u32_data(FILE *fp, const char *prefix, const char *arr_name,
    fprintf(fp, "\n};\n");
 }
 
-static void
-print_usage(char *exec_name, FILE *f)
-{
-   fprintf(
-      f,
-      "Usage: %s [options] -- [clang args]\n"
-      "Options:\n"
-      "  -h  --help              Print this help.\n"
-      "      --prefix <prefix>   Prefix for variable names in generated C code.\n"
-      "  -o, --out <filename>    Specify the output filename.\n"
-      "  -i, --in <filename>     Specify one input filename. Accepted multiple times.\n"
-      "  -s, --spv <filename>    Specify the output filename for spirv.\n"
-      "  -v, --verbose           Print more information during compilation.\n",
-      exec_name);
-}
-
-#define OPT_PREFIX 1000
-
 int
 main(int argc, char **argv)
 {
-   static struct option long_options[] = {
-      {"help", no_argument, 0, 'h'},
-      {"prefix", required_argument, 0, OPT_PREFIX},
-      {"in", required_argument, 0, 'i'},
-      {"out", required_argument, 0, 'o'},
-      {"verbose", no_argument, 0, 'v'},
-      {0, 0, 0, 0},
-   };
+   if (argc != 3) {
+      fprintf(stderr, "Usage: %s [input spir-v] [output header]\n", argv[0]);
+      return 1;
+   }
 
-   char *infile = NULL, *outfile = NULL, *prefix = NULL;
+   const char *infile = argv[1];
+   const char *outfile = argv[2];
+
    void *mem_ctx = ralloc_context(NULL);
-
-   int ch;
-   while ((ch = getopt_long(argc, argv, "he:p:i:o:v", long_options, NULL)) !=
-          -1) {
-      switch (ch) {
-      case 'h':
-         print_usage(argv[0], stdout);
-         return 0;
-      case 'o':
-         outfile = optarg;
-         break;
-      case 'i':
-         infile = optarg;
-         break;
-      case OPT_PREFIX:
-         prefix = optarg;
-         break;
-      default:
-         fprintf(stderr, "Unrecognized option \"%s\".\n", optarg);
-         print_usage(argv[0], stderr);
-         return 1;
-      }
-   }
-
-   if (infile == NULL || outfile == NULL || prefix == NULL) {
-      fprintf(stderr, "Missing required argument.\n");
-      print_usage(argv[0], stderr);
-      return -1;
-   }
 
    int fd = open(infile, O_RDONLY);
    if (fd < 0) {
@@ -362,10 +312,7 @@ main(int argc, char **argv)
       return 1;
    }
 
-   FILE *fp = stdout;
-   if (outfile != NULL)
-      fp = fopen(outfile, "w");
-
+   FILE *fp = fopen(outfile, "w");
    glsl_type_singleton_init_or_ref();
 
    fprintf(fp, "/*\n");
@@ -410,14 +357,11 @@ main(int argc, char **argv)
    struct blob blob;
    blob_init(&blob);
    nir_serialize(&blob, nir, true /* strip */);
-   print_u32_data(fp, prefix, "nir", (const uint32_t *)blob.data, blob.size);
+   print_u32_data(fp, "libagx", "nir", (const uint32_t *)blob.data, blob.size);
    blob_finish(&blob);
 
    glsl_type_singleton_decref();
-
-   if (fp != stdout)
-      fclose(fp);
-
+   fclose(fp);
    ralloc_free(mem_ctx);
    return 0;
 }

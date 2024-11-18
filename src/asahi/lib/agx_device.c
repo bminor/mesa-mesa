@@ -570,8 +570,7 @@ agx_open_device(void *memctx, struct agx_device *dev)
 
    glsl_type_singleton_init_or_ref();
    struct blob_reader blob;
-   blob_reader_init(&blob, (void *)libagx_shaders_nir,
-                    sizeof(libagx_shaders_nir));
+   blob_reader_init(&blob, (void *)libagx_nir, sizeof(libagx_nir));
    dev->libagx = nir_deserialize(memctx, &agx_nir_options, &blob);
 
    dev->helper = agx_build_helper(dev);
