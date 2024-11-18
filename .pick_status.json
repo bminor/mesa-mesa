@@ -464,7 +464,7 @@
         "description": "brw/emit: Fix typo in recently added ADD3 assertion",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c1c09e3c4a0fedd777442828efefb672e99b8dbc",
         "notes": null
