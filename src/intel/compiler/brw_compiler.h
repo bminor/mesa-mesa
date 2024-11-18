@@ -829,133 +829,26 @@ static inline bool
 brw_wm_prog_data_is_persample(const struct brw_wm_prog_data *prog_data,
                               enum intel_msaa_flags pushed_msaa_flags)
 {
-   if (prog_data->persample_dispatch != INTEL_SOMETIMES)
-      return prog_data->persample_dispatch;
-
-   assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
-
-   if (!(pushed_msaa_flags & INTEL_MSAA_FLAG_MULTISAMPLE_FBO))
-      return false;
-
-   if (prog_data->sample_shading)
-      assert(pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH);
-
-   if (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH)
-      assert(prog_data->persample_dispatch != INTEL_NEVER);
-   else
-      assert(prog_data->persample_dispatch != INTEL_ALWAYS);
-
-   return (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH) != 0;
+   return intel_fs_is_persample(prog_data->persample_dispatch,
+                                prog_data->sample_shading,
+                                pushed_msaa_flags);
 }
 
 static inline uint32_t
 wm_prog_data_barycentric_modes(const struct brw_wm_prog_data *prog_data,
                                enum intel_msaa_flags pushed_msaa_flags)
 {
-   uint32_t modes = prog_data->barycentric_interp_modes;
-
-   /* In the non dynamic case, we can just return the computed modes from
-    * compilation time.
-    */
-   if (prog_data->persample_dispatch != INTEL_SOMETIMES)
-      return modes;
-
-   assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
-
-   if (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_INTERP) {
-      assert(pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH);
-
-      /* Making dynamic per-sample interpolation work is a bit tricky.  The
-       * hardware will hang if SAMPLE is requested but per-sample dispatch is
-       * not enabled.  This means we can't preemptively add SAMPLE to the
-       * barycentrics bitfield.  Instead, we have to add it late and only
-       * on-demand.  Annoyingly, changing the number of barycentrics requested
-       * changes the whole PS shader payload so we very much don't want to do
-       * that.  Instead, if the dynamic per-sample interpolation flag is set,
-       * we check to see if SAMPLE was requested and, if not, replace the
-       * highest barycentric bit in the [non]perspective grouping (CENTROID,
-       * if it exists, else PIXEL) with SAMPLE.  The shader will stomp all the
-       * barycentrics in the shader with SAMPLE so it really doesn't matter
-       * which one we replace.  The important thing is that we keep the number
-       * of barycentrics in each [non]perspective grouping the same.
-       */
-      if ((modes & INTEL_BARYCENTRIC_PERSPECTIVE_BITS) &&
-          !(modes & BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE))) {
-         int sample_mode =
-            util_last_bit(modes & INTEL_BARYCENTRIC_PERSPECTIVE_BITS) - 1;
-         assert(modes & BITFIELD_BIT(sample_mode));
-
-         modes &= ~BITFIELD_BIT(sample_mode);
-         modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE);
-      }
-
-      if ((modes & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS) &&
-          !(modes & BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))) {
-         int sample_mode =
-            util_last_bit(modes & INTEL_BARYCENTRIC_NONPERSPECTIVE_BITS) - 1;
-         assert(modes & BITFIELD_BIT(sample_mode));
-
-         modes &= ~BITFIELD_BIT(sample_mode);
-         modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE);
-      }
-   } else {
-      /* If we're not using per-sample interpolation, we need to disable the
-       * per-sample bits.
-       *
-       * SKL PRMs, Volume 2a: Command Reference: Instructions,
-       * 3DSTATE_WM:Barycentric Interpolation Mode:
-
-       *    "MSDISPMODE_PERSAMPLE is required in order to select Perspective
-       *     Sample or Non-perspective Sample barycentric coordinates."
-       */
-      uint32_t sample_bits = (BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE) |
-                              BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE));
-      uint32_t requested_sample = modes & sample_bits;
-      modes &= ~sample_bits;
-      /*
-       * If the shader requested some sample modes and we have to disable
-       * them, make sure we add back the pixel variant back to not mess up the
-       * thread payload.
-       *
-       * Why does this works out? Because of the ordering in the thread payload :
-       *
-       *   R7:10  Perspective Centroid Barycentric
-       *   R11:14 Perspective Sample Barycentric
-       *   R15:18 Linear Pixel Location Barycentric
-       *
-       * In the backend when persample dispatch is dynamic, we always select
-       * the sample barycentric and turn off the pixel location (even if
-       * requested through intrinsics). That way when we dynamically select
-       * pixel or sample dispatch, the barycentric always match, since the
-       * pixel location barycentric register offset will align with the sample
-       * barycentric.
-       */
-      if (requested_sample) {
-         if (requested_sample & BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_SAMPLE))
-            modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_PERSPECTIVE_PIXEL);
-         if (requested_sample & BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_SAMPLE))
-            modes |= BITFIELD_BIT(INTEL_BARYCENTRIC_NONPERSPECTIVE_PIXEL);
-      }
-   }
-
-   return modes;
+   return intel_fs_barycentric_modes(prog_data->persample_dispatch,
+                                     prog_data->barycentric_interp_modes,
+                                     pushed_msaa_flags);
 }
 
 static inline bool
 brw_wm_prog_data_is_coarse(const struct brw_wm_prog_data *prog_data,
                            enum intel_msaa_flags pushed_msaa_flags)
 {
-   if (prog_data->coarse_pixel_dispatch != INTEL_SOMETIMES)
-      return prog_data->coarse_pixel_dispatch;
-
-   assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
-
-   if (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES)
-      assert(prog_data->coarse_pixel_dispatch != INTEL_NEVER);
-   else
-      assert(prog_data->coarse_pixel_dispatch != INTEL_ALWAYS);
-
-   return (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES) != 0;
+   return intel_fs_is_coarse(prog_data->coarse_pixel_dispatch,
+                             pushed_msaa_flags);
 }
 
 struct brw_push_const_block {
