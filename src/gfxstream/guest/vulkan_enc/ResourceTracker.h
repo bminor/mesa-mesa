@@ -758,9 +758,9 @@ class ResourceTracker {
         uint64_t coherentMemorySize = 0;
         uint64_t coherentMemoryOffset = 0;
 
-#if defined(__ANDROID__)
+#if DETECT_OS_ANDROID
         GoldfishAddressSpaceBlockPtr goldfishBlock = nullptr;
-#endif  // defined(__ANDROID__)
+#endif  // DETECT_OS_ANDROID
         CoherentMemoryPtr coherentMemory = nullptr;
         VirtGpuResourcePtr blobPtr = nullptr;
     };
@@ -894,9 +894,9 @@ class ResourceTracker {
 
     struct GfxStreamVkFeatureInfo mFeatureInfo = {};
 
-#if defined(__ANDROID__)
+#if DETECT_OS_ANDROID
     std::unique_ptr<GoldfishAddressSpaceBlockProvider> mGoldfishAddressSpaceBlockProvider;
-#endif  // defined(__ANDROID__)
+#endif  // DETECT_OS_ANDROID
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     std::unique_ptr<gfxstream::Gralloc> mGralloc = nullptr;

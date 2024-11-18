@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include "HostVisibleMemoryVirtualization.h"
+#include "util/detect_os.h"
 
 #include <set>
 
@@ -20,14 +21,14 @@ CoherentMemory::CoherentMemory(VirtGpuResourceMappingPtr blobMapping, uint64_t s
     mBaseAddr = blobMapping->asRawPtr();
 }
 
-#if defined(__ANDROID__)
+#if DETECT_OS_ANDROID
 CoherentMemory::CoherentMemory(GoldfishAddressSpaceBlockPtr block, uint64_t gpuAddr, uint64_t size,
                                VkDevice device, VkDeviceMemory memory)
     : mSize(size), mBlock(block), mDevice(device), mMemory(memory) {
     mHeap = u_mmInit(0, kHostVisibleHeapSize);
     mBaseAddr = (uint8_t*)block->mmap(gpuAddr);
 }
-#endif  // defined(__ANDROID__)
+#endif  // DETECT_OS_ANDROID
 
 CoherentMemory::~CoherentMemory() {
     ResourceTracker::getThreadLocalEncoder()->vkFreeMemorySyncGOOGLE(mDevice, mMemory, nullptr,

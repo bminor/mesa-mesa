@@ -9,6 +9,7 @@
 #include "VirtGpu.h"
 #include "goldfish_address_space.h"
 #include "util/u_mm.h"
+#include "util/detect_os.h"
 
 constexpr uint64_t kMegaByte = 1048576;
 
@@ -31,10 +32,10 @@ class CoherentMemory {
     CoherentMemory(VirtGpuResourceMappingPtr blobMapping, uint64_t size, VkDevice device,
                    VkDeviceMemory memory);
 
-#if defined(__ANDROID__)
+#if DETECT_OS_ANDROID
     CoherentMemory(GoldfishAddressSpaceBlockPtr block, uint64_t gpuAddr, uint64_t size,
                    VkDevice device, VkDeviceMemory memory);
-#endif  // defined(__ANDROID__)
+#endif  // DETECT_OS_ANDROID
 
     ~CoherentMemory();
 

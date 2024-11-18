@@ -1421,12 +1421,12 @@ void ResourceTracker::setupFeatures(const struct GfxStreamVkFeatureInfo* feature
     }
 
     mFeatureInfo = *features;
-#if defined(__ANDROID__)
+#if DETECT_OS_ANDROID
     if (mFeatureInfo.hasDirectMem) {
         mGoldfishAddressSpaceBlockProvider.reset(
             new GoldfishAddressSpaceBlockProvider(GoldfishAddressSpaceSubdeviceType::NoSubdevice));
     }
-#endif  // defined(__ANDROID__)
+#endif  // DETECT_OS_ANDROID
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
     if (mFeatureInfo.hasVulkan) {
@@ -2903,7 +2903,7 @@ CoherentMemoryPtr ResourceTracker::createCoherentMemory(
     VkEncoder* enc, VkResult& res) {
     CoherentMemoryPtr coherentMemory = nullptr;
 
-#if defined(__ANDROID__)
+#if DETECT_OS_ANDROID
     if (mFeatureInfo.hasDirectMem) {
         uint64_t gpuAddr = 0;
         GoldfishAddressSpaceBlockPtr block = nullptr;
@@ -2931,7 +2931,7 @@ CoherentMemoryPtr ResourceTracker::createCoherentMemory(
                 block, gpuAddr, hostAllocationInfo.allocationSize, device, mem);
         }
     } else
-#endif  // defined(__ANDROID__)
+#endif  // DETECT_OS_ANDROID
         if (mFeatureInfo.hasVirtioGpuNext) {
             struct VirtGpuCreateBlob createBlob = {0};
             uint64_t hvaSizeId[3];
@@ -6353,7 +6353,7 @@ VkResult ResourceTracker::on_vkMapMemoryIntoAddressSpaceGOOGLE_pre(void*, VkResu
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-#if defined(__ANDROID__)
+#if DETECT_OS_ANDROID
     auto& memInfo = it->second;
 
     GoldfishAddressSpaceBlockPtr block = std::make_shared<GoldfishAddressSpaceBlock>();
