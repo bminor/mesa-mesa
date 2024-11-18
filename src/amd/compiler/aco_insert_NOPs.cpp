@@ -1252,6 +1252,10 @@ handle_valu_partial_forwarding_hazard_instr(VALUPartialForwardingHazardGlobalSta
                                             VALUPartialForwardingHazardBlockState& block_state,
                                             aco_ptr<Instruction>& instr)
 {
+   /* Check if there is already a hazard found on some other control flow path. */
+   if (global_state.hazard_found)
+      return true;
+
    if (instr->isSALU() && !instr->definitions.empty()) {
       if (block_state.state == written_after_exec_write && instr->writes_exec())
          block_state.state = exec_written;
