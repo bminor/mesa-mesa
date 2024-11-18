@@ -4624,7 +4624,7 @@
         "description": "radv: add a new drirc option to disable DCC for mips and enable it for RDR2",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
