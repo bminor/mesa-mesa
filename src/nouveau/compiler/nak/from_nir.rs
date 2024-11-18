@@ -23,6 +23,7 @@ fn init_info_from_nir(nak: &nak_compiler, nir: &nir_shader) -> ShaderInfo {
     ShaderInfo {
         num_gprs: 0,
         num_instrs: 0,
+        num_static_cycles: 0,
         num_control_barriers: 0,
         slm_size: nir.scratch_size,
         max_crs_depth: 0,

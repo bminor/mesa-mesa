@@ -140,6 +140,9 @@ struct nak_shader_info {
    /** Number of instructions used */
    uint32_t num_instrs;
 
+   /** Number of cycles used by fixed-latency instructions */
+   uint32_t num_static_cycles;
+
    /** Size of shader local (scratch) memory */
    uint32_t slm_size;
 

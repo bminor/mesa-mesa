@@ -1248,6 +1248,14 @@ nvk_shader_get_executable_statistics(
    }
 
    vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
+      WRITE_STR(stat->name, "Static cycle count");
+      WRITE_STR(stat->description,
+                "Total cycles used by fixed-latency instructions in this shader");
+      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
+      stat->value.u64 = shader->info.num_static_cycles;
+   }
+
+   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
       WRITE_STR(stat->name, "Code Size");
       WRITE_STR(stat->description,
                 "Size of the compiled shader binary, in bytes");
