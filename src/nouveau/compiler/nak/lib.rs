@@ -16,6 +16,8 @@ mod opt_bar_prop;
 mod opt_copy_prop;
 mod opt_crs;
 mod opt_dce;
+mod opt_instr_sched_common;
+mod opt_instr_sched_postpass;
 mod opt_jump_thread;
 mod opt_lop;
 mod opt_out;

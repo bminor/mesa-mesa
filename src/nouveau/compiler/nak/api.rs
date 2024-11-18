@@ -439,6 +439,7 @@ fn nak_compile_shader_internal(
 
     s.remove_annotations();
 
+    pass!(s, opt_instr_sched_postpass);
     pass!(s, calc_instr_deps);
 
     s.gather_info();
