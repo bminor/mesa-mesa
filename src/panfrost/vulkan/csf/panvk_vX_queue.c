@@ -187,6 +187,15 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
    unsigned debug = instance->debug_flags;
    struct panvk_cs_sync64 *syncobjs = panvk_priv_mem_host_addr(queue->syncobjs);
 
+   if (debug & PANVK_DEBUG_TRACE) {
+      subq->reg_file =
+         vk_zalloc(&dev->vk.alloc, sizeof(uint32_t) * 256, sizeof(uint64_t),
+                   VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+      if (!subq->reg_file)
+         return panvk_errorf(dev->vk.physical, VK_ERROR_OUT_OF_HOST_MEMORY,
+                             "Failed to allocate reg file cache");
+   }
+
    struct panvk_pool_alloc_info alloc_info = {
       .size = sizeof(struct panvk_cs_subqueue_context),
       .alignment = 64,
@@ -290,10 +299,9 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
                           "SyncobjWait failed: %m");
 
    if (debug & PANVK_DEBUG_TRACE) {
-      uint32_t regs[256] = {0};
-
       pandecode_cs(dev->debug.decode_ctx, qsubmit.stream_addr,
-                   qsubmit.stream_size, phys_dev->kmod.props.gpu_prod_id, regs);
+                   qsubmit.stream_size, phys_dev->kmod.props.gpu_prod_id,
+                   subq->reg_file);
       pandecode_next_frame(dev->debug.decode_ctx);
    }
 
@@ -303,8 +311,12 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
 static void
 cleanup_queue(struct panvk_queue *queue)
 {
-   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
+   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+
+   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       panvk_pool_free_mem(&queue->subqueues[i].context);
+      vk_free(&dev->vk.alloc, queue->subqueues[i].reg_file);
+   }
 
    finish_render_desc_ringbuf(queue);
 
@@ -653,12 +665,6 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
             continue;
 
          uint32_t subqueue = qsubmits[i].queue_index;
-         uint32_t regs[256] = {0};
-         uint64_t ctx =
-            panvk_priv_mem_dev_addr(queue->subqueues[subqueue].context);
-
-         regs[PANVK_CS_REG_SUBQUEUE_CTX_START] = ctx;
-         regs[PANVK_CS_REG_SUBQUEUE_CTX_START + 1] = ctx >> 32;
 
          simple_mtx_lock(&dev->debug.decode_ctx->lock);
          pandecode_dump_file_open(dev->debug.decode_ctx);
@@ -667,7 +673,7 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
          simple_mtx_unlock(&dev->debug.decode_ctx->lock);
          pandecode_cs(dev->debug.decode_ctx, qsubmits[i].stream_addr,
                       qsubmits[i].stream_size, phys_dev->kmod.props.gpu_prod_id,
-                      regs);
+                      queue->subqueues[subqueue].reg_file);
       }
    }
 

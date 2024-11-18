@@ -36,6 +36,7 @@ struct panvk_tiler_heap {
 
 struct panvk_subqueue {
    struct panvk_priv_mem context;
+   uint32_t *reg_file;
 };
 
 struct panvk_desc_ringbuf {
