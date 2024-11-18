@@ -104,8 +104,6 @@ PIGLIT_OPTS="-DPIGLIT_USE_WAFFLE=ON
 
 ############### Build dEQP VK
 
-uncollapsed_section_switch deqp "Building Vulkan CTS (dEQP)"
-
 DEQP_API=VK \
 DEQP_TARGET=default \
 . .gitlab-ci/container/build-deqp.sh

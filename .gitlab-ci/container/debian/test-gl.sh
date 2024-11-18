@@ -104,13 +104,9 @@ PIGLIT_OPTS="-DPIGLIT_USE_WAFFLE=ON
 
 ############### Build dEQP GL
 
-uncollapsed_section_switch piglit_gl "Building dEQP for GL"
-
 DEQP_API=GL \
 DEQP_TARGET=surfaceless \
 . .gitlab-ci/container/build-deqp.sh
-
-uncollapsed_section_switch piglit_gles "Building dEQP for GLES"
 
 DEQP_API=GLES \
 DEQP_TARGET=surfaceless \

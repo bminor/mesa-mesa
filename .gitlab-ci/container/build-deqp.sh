@@ -10,6 +10,11 @@
 
 set -uex -o pipefail
 
+# shellcheck disable=SC2153
+deqp_api=${DEQP_API,,}
+
+uncollapsed_section_start deqp-$deqp_api "Building dEQP $DEQP_API"
+
 # See `deqp_build_targets` below for which release is used to produce which
 # binary. Unless this comment has bitrotten:
 # - the VK release produces `deqp-vk`,
@@ -96,9 +101,6 @@ git clone \
 pushd /VK-GL-CTS
 
 mkdir -p /deqp
-
-# shellcheck disable=SC2153
-deqp_api=${DEQP_API,,}
 
 cts_commits_to_backport="${deqp_api}_cts_commits_to_backport[@]"
 for commit in "${!cts_commits_to_backport}"
@@ -259,3 +261,5 @@ fi
 du -sh ./*
 rm -rf /VK-GL-CTS
 popd
+
+section_end deqp-$deqp_api
