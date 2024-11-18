@@ -3580,8 +3580,8 @@ emit_non_coherent_fb_read(nir_to_brw_state &ntb, const fs_builder &bld, const br
     * shouldn't be necessary to recompile based on whether the framebuffer is
     * CMS or UMS.
     */
-   assert(wm_key->multisample_fbo == BRW_ALWAYS ||
-          wm_key->multisample_fbo == BRW_NEVER);
+   assert(wm_key->multisample_fbo == INTEL_ALWAYS ||
+          wm_key->multisample_fbo == INTEL_NEVER);
    if (wm_key->multisample_fbo &&
        ntb.system_values[SYSTEM_VALUE_SAMPLE_ID].file == BAD_FILE)
       ntb.system_values[SYSTEM_VALUE_SAMPLE_ID] = emit_sampleid_setup(ntb);
@@ -3807,7 +3807,7 @@ emit_samplepos_setup(nir_to_brw_state &ntb)
    const fs_builder abld = bld.annotate("compute sample position");
    brw_reg pos = abld.vgrf(BRW_TYPE_F, 2);
 
-   if (wm_prog_data->persample_dispatch == BRW_NEVER) {
+   if (wm_prog_data->persample_dispatch == INTEL_NEVER) {
       /* From ARB_sample_shading specification:
        * "When rendering to a non-multisample buffer, or if multisample
        *  rasterization is disabled, gl_SamplePosition will always be
@@ -3842,7 +3842,7 @@ emit_samplepos_setup(nir_to_brw_state &ntb)
       abld.MUL(offset(pos, abld, i), tmp_f, brw_imm_f(1 / 16.0f));
    }
 
-   if (wm_prog_data->persample_dispatch == BRW_SOMETIMES) {
+   if (wm_prog_data->persample_dispatch == INTEL_SOMETIMES) {
       check_dynamic_msaa_flag(abld, wm_prog_data,
                               INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH);
       for (unsigned i = 0; i < 2; i++) {
@@ -3869,7 +3869,7 @@ emit_sampleid_setup(nir_to_brw_state &ntb)
    const fs_builder abld = bld.annotate("compute sample id");
    brw_reg sample_id = abld.vgrf(BRW_TYPE_UD);
 
-   assert(key->multisample_fbo != BRW_NEVER);
+   assert(key->multisample_fbo != INTEL_NEVER);
 
    /* Sample ID comes in as 4-bit numbers in g1.0:
     *
@@ -3916,7 +3916,7 @@ emit_sampleid_setup(nir_to_brw_state &ntb)
 
    abld.AND(sample_id, tmp, brw_imm_w(0xf));
 
-   if (key->multisample_fbo == BRW_SOMETIMES) {
+   if (key->multisample_fbo == INTEL_SOMETIMES) {
       check_dynamic_msaa_flag(abld, wm_prog_data,
                               INTEL_MSAA_FLAG_MULTISAMPLE_FBO);
       set_predicate(BRW_PREDICATE_NORMAL,
@@ -3936,12 +3936,12 @@ emit_samplemaskin_setup(nir_to_brw_state &ntb)
    struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
 
    /* The HW doesn't provide us with expected values. */
-   assert(wm_prog_data->coarse_pixel_dispatch != BRW_ALWAYS);
+   assert(wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS);
 
    brw_reg coverage_mask =
       fetch_payload_reg(bld, s.fs_payload().sample_mask_in_reg, BRW_TYPE_UD);
 
-   if (wm_prog_data->persample_dispatch == BRW_NEVER)
+   if (wm_prog_data->persample_dispatch == INTEL_NEVER)
       return coverage_mask;
 
    /* gl_SampleMaskIn[] comes from two sources: the input coverage mask,
@@ -3963,7 +3963,7 @@ emit_samplemaskin_setup(nir_to_brw_state &ntb)
    brw_reg enabled_mask = abld.SHL(one, ntb.system_values[SYSTEM_VALUE_SAMPLE_ID]);
    brw_reg mask = abld.AND(enabled_mask, coverage_mask);
 
-   if (wm_prog_data->persample_dispatch == BRW_ALWAYS)
+   if (wm_prog_data->persample_dispatch == INTEL_ALWAYS)
       return mask;
 
    check_dynamic_msaa_flag(abld, wm_prog_data,
@@ -3987,7 +3987,7 @@ emit_shading_rate_setup(nir_to_brw_state &ntb)
    /* Coarse pixel shading size fields overlap with other fields of not in
     * coarse pixel dispatch mode, so report 0 when that's not the case.
     */
-   if (wm_prog_data->coarse_pixel_dispatch == BRW_NEVER)
+   if (wm_prog_data->coarse_pixel_dispatch == INTEL_NEVER)
       return brw_imm_ud(0);
 
    const fs_builder abld = bld.annotate("compute fragment shading rate");
@@ -4008,7 +4008,7 @@ emit_shading_rate_setup(nir_to_brw_state &ntb)
 
    brw_reg rate = abld.OR(abld.SHL(int_rate_x, brw_imm_ud(2)), int_rate_y);
 
-   if (wm_prog_data->coarse_pixel_dispatch == BRW_ALWAYS)
+   if (wm_prog_data->coarse_pixel_dispatch == INTEL_ALWAYS)
       return rate;
 
    check_dynamic_msaa_flag(abld, wm_prog_data,
@@ -4379,7 +4379,7 @@ fs_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
 
          brw_reg flag_reg;
          struct brw_wm_prog_key *wm_prog_key = (struct brw_wm_prog_key *) s.key;
-         if (wm_prog_key->multisample_fbo == BRW_SOMETIMES) {
+         if (wm_prog_key->multisample_fbo == INTEL_SOMETIMES) {
             struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
 
             check_dynamic_msaa_flag(bld.exec_all().group(8, 0),

@@ -90,7 +90,7 @@ brw_do_emit_fb_writes(fs_visitor &s, int nr_color_regions, bool replicate_alpha)
        * it if null_rt is enabled.
        */
       const bool use_null_rt =
-         key->alpha_to_coverage == BRW_NEVER &&
+         key->alpha_to_coverage == INTEL_NEVER &&
          !prog_data->uses_omask;
 
       /* Even if there's no color buffers enabled, we still need to send
@@ -196,7 +196,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
    brw_reg int_sample_offset_x, int_sample_offset_y; /* Used on Gen12HP+ */
    brw_reg int_sample_offset_xy; /* Used on Gen8+ */
    brw_reg half_int_sample_offset_x, half_int_sample_offset_y;
-   if (wm_prog_data->coarse_pixel_dispatch != BRW_ALWAYS) {
+   if (wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS) {
       /* The thread payload only delivers subspan locations (ss0, ss1,
        * ss2, ...). Since subspans covers 2x2 pixels blocks, we need to
        * generate 4 pixel coordinates out of each subspan location. We do this
@@ -245,7 +245,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
    brw_reg int_coarse_offset_x, int_coarse_offset_y; /* Used on Gen12HP+ */
    brw_reg int_coarse_offset_xy; /* Used on Gen8+ */
    brw_reg half_int_coarse_offset_x, half_int_coarse_offset_y;
-   if (wm_prog_data->coarse_pixel_dispatch != BRW_NEVER) {
+   if (wm_prog_data->coarse_pixel_dispatch != INTEL_NEVER) {
       /* In coarse pixel dispatch we have to do the same ADD instruction that
        * we do in normal per pixel dispatch, except this time we're not adding
        * 1 in each direction, but instead the coarse pixel size.
@@ -295,7 +295,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
    brw_reg int_pixel_offset_xy; /* Used on Gen8+ */
    brw_reg half_int_pixel_offset_x, half_int_pixel_offset_y;
    switch (wm_prog_data->coarse_pixel_dispatch) {
-   case BRW_NEVER:
+   case INTEL_NEVER:
       int_pixel_offset_x = int_sample_offset_x;
       int_pixel_offset_y = int_sample_offset_y;
       int_pixel_offset_xy = int_sample_offset_xy;
@@ -303,7 +303,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
       half_int_pixel_offset_y = half_int_sample_offset_y;
       break;
 
-   case BRW_SOMETIMES: {
+   case INTEL_SOMETIMES: {
       const fs_builder dbld =
          abld.exec_all().group(MIN2(16, s.dispatch_width) * 2, 0);
 
@@ -342,7 +342,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
       break;
    }
 
-   case BRW_ALWAYS:
+   case INTEL_ALWAYS:
       int_pixel_offset_x = int_coarse_offset_x;
       int_pixel_offset_y = int_coarse_offset_y;
       int_pixel_offset_xy = int_coarse_offset_xy;
@@ -376,12 +376,12 @@ brw_emit_interpolation_setup(fs_visitor &s)
                   brw_reg(stride(suboffset(gi_uw, 5), 2, 8, 0)),
                   int_pixel_offset_y);
 
-         if (wm_prog_data->coarse_pixel_dispatch != BRW_NEVER) {
+         if (wm_prog_data->coarse_pixel_dispatch != INTEL_NEVER) {
             fs_inst *addx = dbld.ADD(int_pixel_x, int_pixel_x,
                                      horiz_stride(half_int_pixel_offset_x, 0));
             fs_inst *addy = dbld.ADD(int_pixel_y, int_pixel_y,
                                      horiz_stride(half_int_pixel_offset_y, 0));
-            if (wm_prog_data->coarse_pixel_dispatch != BRW_ALWAYS) {
+            if (wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS) {
                addx->predicate = BRW_PREDICATE_NORMAL;
                addy->predicate = BRW_PREDICATE_NORMAL;
             }
@@ -418,7 +418,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
 
    abld = bld.annotate("compute pos.z");
    brw_reg coarse_z;
-   if (wm_prog_data->coarse_pixel_dispatch != BRW_NEVER &&
+   if (wm_prog_data->coarse_pixel_dispatch != INTEL_NEVER &&
        wm_prog_data->uses_depth_w_coefficients) {
       /* In coarse pixel mode, the HW doesn't interpolate Z coordinate
        * properly. In the same way we have to add the coarse pixel size to
@@ -469,10 +469,10 @@ brw_emit_interpolation_setup(fs_visitor &s)
       brw_reg sample_z = s.pixel_z;
 
       switch (wm_prog_data->coarse_pixel_dispatch) {
-      case BRW_NEVER:
+      case INTEL_NEVER:
          break;
 
-      case BRW_SOMETIMES:
+      case INTEL_SOMETIMES:
          assert(wm_prog_data->uses_src_depth);
          assert(wm_prog_data->uses_depth_w_coefficients);
          s.pixel_z = abld.vgrf(BRW_TYPE_F);
@@ -482,7 +482,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
                        abld.SEL(s.pixel_z, coarse_z, sample_z));
          break;
 
-      case BRW_ALWAYS:
+      case INTEL_ALWAYS:
          assert(!wm_prog_data->uses_src_depth);
          assert(wm_prog_data->uses_depth_w_coefficients);
          s.pixel_z = coarse_z;
@@ -497,7 +497,7 @@ brw_emit_interpolation_setup(fs_visitor &s)
       abld.emit(SHADER_OPCODE_RCP, s.wpos_w, s.pixel_w);
    }
 
-   if (wm_key->persample_interp == BRW_SOMETIMES) {
+   if (wm_key->persample_interp == INTEL_SOMETIMES) {
       assert(!devinfo->needs_unlit_centroid_workaround);
 
       const fs_builder ubld = bld.exec_all().group(16, 0);
@@ -678,7 +678,7 @@ calculate_urb_setup(const struct intel_device_info *devinfo,
       nir->info.inputs_read & ~nir->info.per_primitive_inputs;
 
    /* Figure out where each of the incoming setup attributes lands. */
-   if (key->mesh_input != BRW_NEVER) {
+   if (key->mesh_input != INTEL_NEVER) {
       /* Per-Primitive Attributes are laid out by Hardware before the regular
        * attributes, so order them like this to make easy later to map setup
        * into real HW registers.
@@ -1082,12 +1082,12 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
       shader->info.fs.uses_sample_shading ||
       shader->info.outputs_read;
 
-   assert(key->multisample_fbo != BRW_NEVER ||
-          key->persample_interp == BRW_NEVER);
+   assert(key->multisample_fbo != INTEL_NEVER ||
+          key->persample_interp == INTEL_NEVER);
 
    prog_data->persample_dispatch = key->persample_interp;
    if (prog_data->sample_shading)
-      prog_data->persample_dispatch = BRW_ALWAYS;
+      prog_data->persample_dispatch = INTEL_ALWAYS;
 
    /* We can only persample dispatch if we have a multisample FBO */
    prog_data->persample_dispatch = MIN2(prog_data->persample_dispatch,
@@ -1112,7 +1112,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
     * persample dispatch, we hard-code it to 0.5.
     */
    prog_data->uses_pos_offset =
-      prog_data->persample_dispatch != BRW_NEVER &&
+      prog_data->persample_dispatch != INTEL_NEVER &&
       (BITSET_TEST(shader->info.system_values_read,
                    SYSTEM_VALUE_SAMPLE_POS) ||
        BITSET_TEST(shader->info.system_values_read,
@@ -1133,7 +1133,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
     * So cleanup any potentially set sample barycentric mode when not in per
     * sample dispatch.
     */
-   if (prog_data->persample_dispatch == BRW_NEVER) {
+   if (prog_data->persample_dispatch == INTEL_NEVER) {
       prog_data->barycentric_interp_modes &=
          ~BITFIELD_BIT(BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE);
    }
@@ -1158,21 +1158,21 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
    /* The current VK_EXT_graphics_pipeline_library specification requires
     * coarse to specified at compile time. But per sample interpolation can be
     * dynamic. So we should never be in a situation where coarse &
-    * persample_interp are both respectively true & BRW_ALWAYS.
+    * persample_interp are both respectively true & INTEL_ALWAYS.
     *
     * Coarse will dynamically turned off when persample_interp is active.
     */
-   assert(!key->coarse_pixel || key->persample_interp != BRW_ALWAYS);
+   assert(!key->coarse_pixel || key->persample_interp != INTEL_ALWAYS);
 
    prog_data->coarse_pixel_dispatch =
-      brw_sometimes_invert(prog_data->persample_dispatch);
+      intel_sometimes_invert(prog_data->persample_dispatch);
    if (!key->coarse_pixel ||
        prog_data->uses_omask ||
        prog_data->sample_shading ||
        prog_data->uses_sample_mask ||
        (prog_data->computed_depth_mode != BRW_PSCDEPTH_OFF) ||
        prog_data->computed_stencil) {
-      prog_data->coarse_pixel_dispatch = BRW_NEVER;
+      prog_data->coarse_pixel_dispatch = INTEL_NEVER;
    }
 
    /* ICL PRMs, Volume 9: Render Engine, Shared Functions Pixel Interpolater,
@@ -1202,7 +1202,7 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
     * interpolater message at sample.
     */
    if (intel_nir_pulls_at_sample(shader))
-      prog_data->coarse_pixel_dispatch = BRW_NEVER;
+      prog_data->coarse_pixel_dispatch = INTEL_NEVER;
 
    /* We choose to always enable VMask prior to XeHP, as it would cause
     * us to lose out on the eliminate_find_live_channel() optimization.
@@ -1210,16 +1210,16 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
    prog_data->uses_vmask = devinfo->verx10 < 125 ||
                            shader->info.fs.needs_quad_helper_invocations ||
                            shader->info.uses_wide_subgroup_intrinsics ||
-                           prog_data->coarse_pixel_dispatch != BRW_NEVER;
+                           prog_data->coarse_pixel_dispatch != INTEL_NEVER;
 
    prog_data->uses_src_w =
       BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD);
    prog_data->uses_src_depth =
       BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) &&
-      prog_data->coarse_pixel_dispatch != BRW_ALWAYS;
+      prog_data->coarse_pixel_dispatch != INTEL_ALWAYS;
    prog_data->uses_depth_w_coefficients = prog_data->uses_pc_bary_coefficients ||
       (BITSET_TEST(shader->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) &&
-       prog_data->coarse_pixel_dispatch != BRW_NEVER);
+       prog_data->coarse_pixel_dispatch != INTEL_NEVER);
 
    calculate_urb_setup(devinfo, key, prog_data, shader, mue_map);
    brw_compute_flat_inputs(prog_data, shader);
@@ -1541,7 +1541,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
     *  "If Pixel Shader outputs oMask, AlphaToCoverage is disabled in
     *   hardware, regardless of the state setting for this feature."
     */
-   if (key->alpha_to_coverage != BRW_NEVER) {
+   if (key->alpha_to_coverage != INTEL_NEVER) {
       /* Run constant fold optimization in order to get the correct source
        * offset to determine render target 0 store instruction in
        * emit_alpha_to_coverage pass.

@@ -15,6 +15,19 @@
 extern "C" {
 #endif
 
+/** A tri-state value to track states that are potentially dynamic */
+enum intel_sometimes {
+   INTEL_NEVER = 0,
+   INTEL_SOMETIMES,
+   INTEL_ALWAYS
+};
+
+static inline enum intel_sometimes
+intel_sometimes_invert(enum intel_sometimes x)
+{
+   return (enum intel_sometimes)((int)INTEL_ALWAYS - (int)x);
+}
+
 enum intel_msaa_flags {
    /** Must be set whenever any dynamic MSAA is used
     *

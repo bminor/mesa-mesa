@@ -294,18 +294,6 @@ struct brw_mesh_prog_key
    unsigned padding:31;
 };
 
-enum brw_sometimes {
-   BRW_NEVER = 0,
-   BRW_SOMETIMES,
-   BRW_ALWAYS
-};
-
-static inline enum brw_sometimes
-brw_sometimes_invert(enum brw_sometimes x)
-{
-   return (enum brw_sometimes)((int)BRW_ALWAYS - (int)x);
-}
-
 /** The program key for Fragment/Pixel Shaders. */
 struct brw_wm_prog_key {
    struct brw_base_prog_key base;
@@ -317,7 +305,7 @@ struct brw_wm_prog_key {
    bool flat_shade:1;
    unsigned nr_color_regions:5;
    bool alpha_test_replicate_alpha:1;
-   enum brw_sometimes alpha_to_coverage:2;
+   enum intel_sometimes alpha_to_coverage:2;
    bool clamp_fragment_color:1;
 
    bool force_dual_color_blend:1;
@@ -330,13 +318,13 @@ struct brw_wm_prog_key {
     * us to run per-sample.  Even when running per-sample due to gl_SampleID,
     * we may still interpolate unqualified inputs at the pixel center.
     */
-   enum brw_sometimes persample_interp:2;
+   enum intel_sometimes persample_interp:2;
 
    /* Whether or not we are running on a multisampled framebuffer */
-   enum brw_sometimes multisample_fbo:2;
+   enum intel_sometimes multisample_fbo:2;
 
    /* Whether the preceding shader stage is mesh */
-   enum brw_sometimes mesh_input:2;
+   enum intel_sometimes mesh_input:2;
 
    bool coherent_fb_fetch:1;
    bool ignore_sample_mask_out:1;
@@ -691,18 +679,18 @@ struct brw_wm_prog_data {
    float min_sample_shading;
 
    /** Should this shader be dispatched per-sample */
-   enum brw_sometimes persample_dispatch;
+   enum intel_sometimes persample_dispatch;
 
    /**
     * Shader is ran at the coarse pixel shading dispatch rate (3DSTATE_CPS).
     */
-   enum brw_sometimes coarse_pixel_dispatch;
+   enum intel_sometimes coarse_pixel_dispatch;
 
    /**
     * Shader writes the SampleMask and this is AND-ed with the API's
     * SampleMask to generate a new coverage mask.
     */
-   enum brw_sometimes alpha_to_coverage;
+   enum intel_sometimes alpha_to_coverage;
 
    unsigned msaa_flags_param;
 
@@ -859,7 +847,7 @@ static inline bool
 brw_wm_prog_data_is_persample(const struct brw_wm_prog_data *prog_data,
                               enum intel_msaa_flags pushed_msaa_flags)
 {
-   if (prog_data->persample_dispatch != BRW_SOMETIMES)
+   if (prog_data->persample_dispatch != INTEL_SOMETIMES)
       return prog_data->persample_dispatch;
 
    assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
@@ -871,9 +859,9 @@ brw_wm_prog_data_is_persample(const struct brw_wm_prog_data *prog_data,
       assert(pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH);
 
    if (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH)
-      assert(prog_data->persample_dispatch != BRW_NEVER);
+      assert(prog_data->persample_dispatch != INTEL_NEVER);
    else
-      assert(prog_data->persample_dispatch != BRW_ALWAYS);
+      assert(prog_data->persample_dispatch != INTEL_ALWAYS);
 
    return (pushed_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH) != 0;
 }
@@ -887,7 +875,7 @@ wm_prog_data_barycentric_modes(const struct brw_wm_prog_data *prog_data,
    /* In the non dynamic case, we can just return the computed modes from
     * compilation time.
     */
-   if (prog_data->persample_dispatch != BRW_SOMETIMES)
+   if (prog_data->persample_dispatch != INTEL_SOMETIMES)
       return modes;
 
    assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
@@ -975,15 +963,15 @@ static inline bool
 brw_wm_prog_data_is_coarse(const struct brw_wm_prog_data *prog_data,
                            enum intel_msaa_flags pushed_msaa_flags)
 {
-   if (prog_data->coarse_pixel_dispatch != BRW_SOMETIMES)
+   if (prog_data->coarse_pixel_dispatch != INTEL_SOMETIMES)
       return prog_data->coarse_pixel_dispatch;
 
    assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
 
    if (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES)
-      assert(prog_data->coarse_pixel_dispatch != BRW_NEVER);
+      assert(prog_data->coarse_pixel_dispatch != INTEL_NEVER);
    else
-      assert(prog_data->coarse_pixel_dispatch != BRW_ALWAYS);
+      assert(prog_data->coarse_pixel_dispatch != INTEL_ALWAYS);
 
    return (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES) != 0;
 }

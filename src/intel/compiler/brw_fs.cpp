@@ -863,7 +863,7 @@ brw_barycentric_mode(const struct brw_wm_prog_key *key,
        * interpolation. We'll dynamically remap things so that the FS thread
        * payload is not affected.
        */
-      bary = key->persample_interp == BRW_SOMETIMES ?
+      bary = key->persample_interp == INTEL_SOMETIMES ?
              BRW_BARYCENTRIC_PERSPECTIVE_SAMPLE :
              BRW_BARYCENTRIC_PERSPECTIVE_PIXEL;
       break;
@@ -1848,4 +1848,3 @@ namespace brw {
       inst->conditional_mod = BRW_CONDITIONAL_NZ;
    }
 }
-

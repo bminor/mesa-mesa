@@ -686,9 +686,9 @@ update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
    /* If we have any dynamic bits here, we might need to update the value
     * in the push constant for the shader.
     */
-   if (wm_prog_data->coarse_pixel_dispatch != BRW_SOMETIMES &&
-       wm_prog_data->persample_dispatch != BRW_SOMETIMES &&
-       wm_prog_data->alpha_to_coverage != BRW_SOMETIMES)
+   if (wm_prog_data->coarse_pixel_dispatch != INTEL_SOMETIMES &&
+       wm_prog_data->persample_dispatch != INTEL_SOMETIMES &&
+       wm_prog_data->alpha_to_coverage != INTEL_SOMETIMES)
       return;
 
    enum intel_msaa_flags fs_msaa_flags = INTEL_MSAA_FLAG_ENABLE_DYNAMIC;
@@ -697,7 +697,7 @@ update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
       fs_msaa_flags |= INTEL_MSAA_FLAG_MULTISAMPLE_FBO;
 
       if (wm_prog_data->sample_shading) {
-         assert(wm_prog_data->persample_dispatch != BRW_NEVER);
+         assert(wm_prog_data->persample_dispatch != INTEL_NEVER);
          fs_msaa_flags |= INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH;
       }
       if ((pipeline->sample_shading_enable &&
@@ -708,7 +708,7 @@ update_fs_msaa_flags(struct anv_gfx_dynamic_state *hw_state,
       }
    }
 
-   if (wm_prog_data->coarse_pixel_dispatch == BRW_SOMETIMES &&
+   if (wm_prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES &&
        !(fs_msaa_flags & INTEL_MSAA_FLAG_PERSAMPLE_DISPATCH)) {
       fs_msaa_flags |= INTEL_MSAA_FLAG_COARSE_PI_MSG |
                        INTEL_MSAA_FLAG_COARSE_RT_WRITES;
