@@ -562,7 +562,7 @@ brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
       /* Having two immediate sources is allowed, but this should have been
        * converted to a regular ADD by brw_fs_opt_algebraic.
        */
-      assert(opcode == BRW_OPCODE_ADD3 ||
+      assert(opcode != BRW_OPCODE_ADD3 ||
              !(src0.file == IMM && src2.file == IMM));
    }
 
