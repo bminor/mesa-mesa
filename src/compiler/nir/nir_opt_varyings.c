@@ -495,6 +495,7 @@
 
 #include "nir.h"
 #include "nir_builder.h"
+#include "util/hash_table.h"
 #include "util/u_math.h"
 #include "util/u_memory.h"
 
@@ -665,6 +666,9 @@ struct linkage_info {
 
    /* Memory context for linear_alloc_child (fast allocation). */
    void *linear_mem_ctx;
+
+   /* Hash table for efficient cloning instructions between shaders. */
+   struct hash_table *clones_ht;
 
    /* If any component of a vec4 slot is accessed indirectly, this is its
     * FS vec4 qualifier type, which is either FLAT, FP32, or FP16.
@@ -2198,15 +2202,24 @@ get_stored_value_for_load(struct linkage_info *linkage, nir_instr *instr)
 
 /* Clone the SSA, which can be in a different shader. */
 static nir_def *
-clone_ssa(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
+clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
 {
+   struct hash_entry *entry = _mesa_hash_table_search(linkage->clones_ht,
+                                                      ssa->parent_instr);
+   if (entry)
+      return entry->data;
+
+   nir_def *clone = NULL;
+
    switch (ssa->parent_instr->type) {
    case nir_instr_type_load_const:
-      return nir_build_imm(b, ssa->num_components, ssa->bit_size,
-                           nir_instr_as_load_const(ssa->parent_instr)->value);
+      clone = nir_build_imm(b, ssa->num_components, ssa->bit_size,
+                            nir_instr_as_load_const(ssa->parent_instr)->value);
+      break;
 
    case nir_instr_type_undef:
-      return nir_undef(b, ssa->num_components, ssa->bit_size);
+      clone = nir_undef(b, ssa->num_components, ssa->bit_size);
+      break;
 
    case nir_instr_type_alu: {
       nir_alu_instr *alu = nir_instr_as_alu(ssa->parent_instr);
@@ -2224,9 +2237,9 @@ clone_ssa(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
       assert(num_srcs <= ARRAY_SIZE(src));
 
       for (unsigned i = 0; i < num_srcs; i++)
-         src[i] = clone_ssa(linkage, b, alu->src[i].src.ssa);
+         src[i] = clone_ssa_impl(linkage, b, alu->src[i].src.ssa);
 
-      nir_def *clone = nir_build_alu(b, alu->op, src[0], src[1], src[2], src[3]);
+      clone = nir_build_alu(b, alu->op, src[0], src[1], src[2], src[3]);
       nir_alu_instr *alu_clone = nir_instr_as_alu(clone->parent_instr);
 
       alu_clone->exact = alu->exact;
@@ -2239,8 +2252,7 @@ clone_ssa(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
          memcpy(alu_clone->src[i].swizzle, alu->src[i].swizzle,
                 NIR_MAX_VEC_COMPONENTS);
       }
-
-      return clone;
+      break;
    }
 
    case nir_instr_type_intrinsic: {
@@ -2272,7 +2284,8 @@ clone_ssa(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
          nir_deref_instr *load_uniform_deref =
             nir_clone_deref_instr(b, var, deref);
 
-         return nir_load_deref(b, load_uniform_deref);
+         clone = nir_load_deref(b, load_uniform_deref);
+         break;
       }
 
       case nir_intrinsic_load_input:
@@ -2284,17 +2297,35 @@ clone_ssa(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
           * from the consumer in the producer.
           */
          assert(&linkage->producer_builder == b);
-         return get_stored_value_for_load(linkage, &intr->instr);
+         clone = get_stored_value_for_load(linkage, &intr->instr);
+         break;
       }
 
       default:
          unreachable("unexpected intrinsic");
       }
+      break;
    }
 
    default:
       unreachable("unexpected instruction type");
    }
+
+   _mesa_hash_table_insert(linkage->clones_ht, ssa->parent_instr, clone);
+   return clone;
+}
+
+static nir_def *
+clone_ssa(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
+{
+   assert(!linkage->clones_ht);
+   linkage->clones_ht = _mesa_pointer_hash_table_create(NULL);
+
+   nir_def *clone = clone_ssa_impl(linkage, b, ssa);
+
+   _mesa_hash_table_destroy(linkage->clones_ht, NULL);
+   linkage->clones_ht = NULL;
+   return clone;
 }
 
 /******************************************************************
