@@ -215,7 +215,8 @@ INSTANTIATE_TEST_SUITE_P(
       CompactParams{ 110, BRW_ALIGN_1 },
       CompactParams{ 120, BRW_ALIGN_1 },
       CompactParams{ 125, BRW_ALIGN_1 },
-      CompactParams{ 200, BRW_ALIGN_1 }
+      CompactParams{ 200, BRW_ALIGN_1 },
+      CompactParams{ 300, BRW_ALIGN_1 }
    ),
    get_compact_params_name);
 

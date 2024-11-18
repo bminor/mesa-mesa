@@ -52,6 +52,7 @@ static const struct intel_gfx_info {
    { "mtl", },
    { "lnl", },
    { "bmg", },
+   { "ptl", },
 };
 
 class validation_test: public ::testing::TestWithParam<struct intel_gfx_info> {
