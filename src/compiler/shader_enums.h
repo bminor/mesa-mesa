@@ -1613,6 +1613,20 @@ typedef enum {
 
 const char *mesa_scope_name(mesa_scope scope);
 
+/* This is defined here to be available to OpenCL */
+enum glsl_sampler_dim {
+   GLSL_SAMPLER_DIM_1D = 0,
+   GLSL_SAMPLER_DIM_2D,
+   GLSL_SAMPLER_DIM_3D,
+   GLSL_SAMPLER_DIM_CUBE,
+   GLSL_SAMPLER_DIM_RECT,
+   GLSL_SAMPLER_DIM_BUF,
+   GLSL_SAMPLER_DIM_EXTERNAL,
+   GLSL_SAMPLER_DIM_MS,
+   GLSL_SAMPLER_DIM_SUBPASS, /* for vulkan input attachments */
+   GLSL_SAMPLER_DIM_SUBPASS_MS, /* for multisampled vulkan input attachments */
+};
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

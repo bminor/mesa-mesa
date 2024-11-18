@@ -232,19 +232,6 @@ glsl_signed_base_type_of(enum glsl_base_type type)
    }
 }
 
-enum glsl_sampler_dim {
-   GLSL_SAMPLER_DIM_1D = 0,
-   GLSL_SAMPLER_DIM_2D,
-   GLSL_SAMPLER_DIM_3D,
-   GLSL_SAMPLER_DIM_CUBE,
-   GLSL_SAMPLER_DIM_RECT,
-   GLSL_SAMPLER_DIM_BUF,
-   GLSL_SAMPLER_DIM_EXTERNAL,
-   GLSL_SAMPLER_DIM_MS,
-   GLSL_SAMPLER_DIM_SUBPASS, /* for vulkan input attachments */
-   GLSL_SAMPLER_DIM_SUBPASS_MS, /* for multisampled vulkan input attachments */
-};
-
 int
 glsl_get_sampler_dim_coordinate_components(enum glsl_sampler_dim dim);
 
