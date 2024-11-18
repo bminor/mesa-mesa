@@ -642,10 +642,16 @@ custom_decodes = {
     "vkBindBufferMemory2KHR" : emit_global_state_wrapped_decoding,
 
     "vkCreateDevice" : emit_global_state_wrapped_decoding,
-    "vkGetDeviceQueue" : emit_global_state_wrapped_decoding,
     "vkDestroyDevice" : emit_global_state_wrapped_decoding,
 
+    "vkGetDeviceQueue" : emit_global_state_wrapped_decoding,
     "vkGetDeviceQueue2" : emit_global_state_wrapped_decoding,
+
+    "vkGetPhysicalDeviceQueueFamilyProperties" : emit_global_state_wrapped_decoding,
+    "vkGetPhysicalDeviceQueueFamilyProperties2" : emit_global_state_wrapped_decoding,
+
+    "vkQueueBindSparse" : emit_global_state_wrapped_decoding,
+    "vkQueuePresentKHR" : emit_global_state_wrapped_decoding,
 
     "vkBindImageMemory" : emit_global_state_wrapped_decoding,
     "vkBindImageMemory2" : emit_global_state_wrapped_decoding,
