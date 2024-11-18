@@ -699,13 +699,67 @@ cmd_buffer_maybe_flush_rt_writes(struct anv_cmd_buffer *cmd_buffer,
 }
 
 ALWAYS_INLINE static void
+cmd_buffer_flush_vertex_buffers(struct anv_cmd_buffer *cmd_buffer,
+                                uint32_t vb_emit)
+{
+   const struct vk_dynamic_graphics_state *dyn =
+      &cmd_buffer->vk.dynamic_graphics_state;
+   const uint32_t num_buffers = __builtin_popcount(vb_emit);
+   const uint32_t num_dwords = 1 + num_buffers * 4;
+   uint32_t *p = anv_batch_emitn(&cmd_buffer->batch, num_dwords,
+                                 GENX(3DSTATE_VERTEX_BUFFERS));
+   uint32_t i = 0;
+   u_foreach_bit(vb, vb_emit) {
+      struct anv_buffer *buffer = cmd_buffer->state.vertex_bindings[vb].buffer;
+      uint32_t offset = cmd_buffer->state.vertex_bindings[vb].offset;
+
+      struct GENX(VERTEX_BUFFER_STATE) state;
+      if (buffer) {
+         uint32_t stride = dyn->vi_binding_strides[vb];
+         UNUSED uint32_t size = cmd_buffer->state.vertex_bindings[vb].size;
+
+         state = (struct GENX(VERTEX_BUFFER_STATE)) {
+            .VertexBufferIndex = vb,
+
+            .MOCS = anv_mocs(cmd_buffer->device, buffer->address.bo,
+                             ISL_SURF_USAGE_VERTEX_BUFFER_BIT),
+            .AddressModifyEnable = true,
+            .BufferPitch = stride,
+            .BufferStartingAddress = anv_address_add(buffer->address, offset),
+            .NullVertexBuffer = offset >= buffer->vk.size,
+#if GFX_VER >= 12
+            .L3BypassDisable = true,
+#endif
+
+            .BufferSize = size,
+         };
+      } else {
+         state = (struct GENX(VERTEX_BUFFER_STATE)) {
+            .VertexBufferIndex = vb,
+            .NullVertexBuffer = true,
+            .MOCS = anv_mocs(cmd_buffer->device, NULL,
+                             ISL_SURF_USAGE_VERTEX_BUFFER_BIT),
+         };
+      }
+
+#if GFX_VER == 9
+      genX(cmd_buffer_set_binding_for_gfx8_vb_flush)(cmd_buffer, vb,
+                                                     state.BufferStartingAddress,
+                                                     state.BufferSize);
+#endif
+
+      GENX(VERTEX_BUFFER_STATE_pack)(&cmd_buffer->batch, &p[1 + i * 4], &state);
+      i++;
+   }
+}
+
+ALWAYS_INLINE static void
 genX(cmd_buffer_flush_gfx_state)(struct anv_cmd_buffer *cmd_buffer)
 {
    struct anv_graphics_pipeline *pipeline =
       anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline);
    const struct vk_dynamic_graphics_state *dyn =
       &cmd_buffer->vk.dynamic_graphics_state;
-   uint32_t *p;
 
    assert((pipeline->base.base.active_stages & VK_SHADER_STAGE_COMPUTE_BIT) == 0);
 
@@ -749,57 +803,9 @@ genX(cmd_buffer_flush_gfx_state)(struct anv_cmd_buffer *cmd_buffer)
       vb_emit |= dyn->vi->bindings_valid;
 
    if (vb_emit) {
-      const uint32_t num_buffers = __builtin_popcount(vb_emit);
-      const uint32_t num_dwords = 1 + num_buffers * 4;
-
-      p = anv_batch_emitn(&cmd_buffer->batch, num_dwords,
-                          GENX(3DSTATE_VERTEX_BUFFERS));
-      uint32_t i = 0;
-      u_foreach_bit(vb, vb_emit) {
-         struct anv_buffer *buffer = cmd_buffer->state.vertex_bindings[vb].buffer;
-         uint32_t offset = cmd_buffer->state.vertex_bindings[vb].offset;
-
-         struct GENX(VERTEX_BUFFER_STATE) state;
-         if (buffer) {
-            uint32_t stride = dyn->vi_binding_strides[vb];
-            UNUSED uint32_t size = cmd_buffer->state.vertex_bindings[vb].size;
-
-            state = (struct GENX(VERTEX_BUFFER_STATE)) {
-               .VertexBufferIndex = vb,
-
-               .MOCS = anv_mocs(cmd_buffer->device, buffer->address.bo,
-                                ISL_SURF_USAGE_VERTEX_BUFFER_BIT),
-               .AddressModifyEnable = true,
-               .BufferPitch = stride,
-               .BufferStartingAddress = anv_address_add(buffer->address, offset),
-               .NullVertexBuffer = offset >= buffer->vk.size,
-#if GFX_VER >= 12
-               .L3BypassDisable = true,
-#endif
-
-               .BufferSize = size,
-            };
-         } else {
-            state = (struct GENX(VERTEX_BUFFER_STATE)) {
-               .VertexBufferIndex = vb,
-               .NullVertexBuffer = true,
-               .MOCS = anv_mocs(cmd_buffer->device, NULL,
-                                ISL_SURF_USAGE_VERTEX_BUFFER_BIT),
-            };
-         }
-
-#if GFX_VER == 9
-         genX(cmd_buffer_set_binding_for_gfx8_vb_flush)(cmd_buffer, vb,
-                                                        state.BufferStartingAddress,
-                                                        state.BufferSize);
-#endif
-
-         GENX(VERTEX_BUFFER_STATE_pack)(&cmd_buffer->batch, &p[1 + i * 4], &state);
-         i++;
-      }
+      cmd_buffer_flush_vertex_buffers(cmd_buffer, vb_emit);
+      cmd_buffer->state.gfx.vb_dirty &= ~vb_emit;
    }
-
-   cmd_buffer->state.gfx.vb_dirty &= ~vb_emit;
 
    const bool any_dynamic_state_dirty =
       vk_dynamic_graphics_state_any_dirty(dyn);
