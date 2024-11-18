@@ -4344,7 +4344,7 @@
         "description": "nir: Get correct number of components",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5ef2b8f1f2ebcdb4ffe5c98b3f4f48e584cb4b22",
         "notes": null
