@@ -40,18 +40,21 @@ uint32_t nir_load_helper_arg_lo_agx(void);
 uint32_t nir_load_helper_arg_hi_agx(void);
 void nir_fence_helper_exit_agx(void);
 
-uint4 nir_bindless_image_load_array(uint2 handle, int4 coord);
-void nir_bindless_image_store_array(uint2 handle, int4 coord, uint4 datum);
-uint4 nir_bindless_image_load_ms_array(uint2 handle, int4 coord, uint sample);
-void nir_bindless_image_store_ms_array(uint2 handle, int4 coord, uint sample,
-                                       uint4 datum);
+uint4 nir_bindless_image_load(uint2 handle, int4 coord, uint sample, uint lod,
+                              uint image_dim, uint image_array, uint format,
+                              uint access, uint dest_type);
+
+void nir_bindless_image_store(uint2 handle, int4 coord, uint sample,
+                              uint4 datum, uint lod, uint image_dim,
+                              uint image_array, uint format, uint access,
+                              uint src_type);
 
 uint libagx_load_index_buffer_internal(uintptr_t index_buffer,
                                        uint32_t index_buffer_range_el, uint id,
                                        uint index_size);
 
 /* I have no idea why CL doesn't have this */
-uint ballot(bool cond);
+uint nir_ballot(bool cond);
 
 #define _S(x)            #x
 #define AGX_PASTE_(x, y) x##y

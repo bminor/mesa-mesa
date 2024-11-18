@@ -2,6 +2,8 @@
  * Copyright 2024 Valve Corporation
  * SPDX-License-Identifier: MIT
  */
+#include "compiler/nir/nir_defines.h"
+#include "compiler/shader_enums.h"
 #include "agx_pack.h"
 #include "compression.h"
 #include "libagx.h"
@@ -97,11 +99,15 @@ libagx_decompress(constant struct libagx_decompress_push *push, uint3 coord_tl,
    for (uint i = 0; i < 8; ++i) {
       int4 c_sa = img_coord_sa + (int4)(i, 0, 0, 0);
       if (samples == 1) {
-         texels[i] = nir_bindless_image_load_array(HANDLE(compressed), c_sa);
+         texels[i] = nir_bindless_image_load(
+            HANDLE(compressed), c_sa, 0, 0, GLSL_SAMPLER_DIM_2D, true, 0,
+            ACCESS_IN_BOUNDS_AGX, nir_type_uint32);
       } else {
          int4 dec_px = decompose_px(c_sa, samples);
-         texels[i] = nir_bindless_image_load_ms_array(
-            HANDLE(compressed), dec_px, sample_id(c_sa, samples));
+         texels[i] = nir_bindless_image_load(
+            HANDLE(compressed), dec_px, sample_id(c_sa, samples), 0,
+            GLSL_SAMPLER_DIM_MS, true, 0, ACCESS_IN_BOUNDS_AGX,
+            nir_type_uint32);
       }
    }
 
@@ -111,11 +117,16 @@ libagx_decompress(constant struct libagx_decompress_push *push, uint3 coord_tl,
    for (uint i = 0; i < 8; ++i) {
       int4 c_sa = img_coord_sa + (int4)(i, 0, 0, 0);
       if (samples == 1) {
-         nir_bindless_image_store_array(HANDLE(uncompressed), c_sa, texels[i]);
+         nir_bindless_image_store(HANDLE(uncompressed), c_sa, 0, texels[i], 0,
+                                  GLSL_SAMPLER_DIM_2D, true, 0,
+                                  ACCESS_NON_READABLE, nir_type_uint32);
       } else {
          int4 dec_px = decompose_px(c_sa, samples);
-         nir_bindless_image_store_ms_array(HANDLE(uncompressed), dec_px,
-                                           sample_id(c_sa, samples), texels[i]);
+
+         nir_bindless_image_store(HANDLE(uncompressed), dec_px,
+                                  sample_id(c_sa, samples), texels[i], 0,
+                                  GLSL_SAMPLER_DIM_MS, true, 0,
+                                  ACCESS_NON_READABLE, nir_type_uint32);
       }
    }
 

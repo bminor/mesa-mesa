@@ -276,10 +276,10 @@ static uint
 first_true_thread_in_workgroup(bool cond, local uint *scratch)
 {
    barrier(CLK_LOCAL_MEM_FENCE);
-   scratch[get_sub_group_id()] = ballot(cond);
+   scratch[get_sub_group_id()] = nir_ballot(cond);
    barrier(CLK_LOCAL_MEM_FENCE);
 
-   uint first_group = ctz(ballot(scratch[get_sub_group_local_id()]));
+   uint first_group = ctz(nir_ballot(scratch[get_sub_group_local_id()]));
    uint off = ctz(first_group < 32 ? scratch[first_group] : 0);
    return (first_group * 32) + off;
 }

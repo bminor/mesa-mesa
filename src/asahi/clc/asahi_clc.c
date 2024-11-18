@@ -28,109 +28,6 @@ static const struct spirv_to_nir_options spirv_options = {
    .create_library = true,
 };
 
-static bool
-lower_builtins(nir_builder *b, nir_instr *instr, void *data)
-{
-   if (instr->type != nir_instr_type_call)
-      return false;
-
-   nir_call_instr *call = nir_instr_as_call(instr);
-   nir_function *func = call->callee;
-
-   if (strcmp(func->name, "nir_interleave_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_store_deref(
-         b, nir_src_as_deref(call->params[0]),
-         nir_interleave_agx(b, call->params[1].ssa, call->params[2].ssa), 1);
-
-      return true;
-   } else if (strcmp(func->name, "nir_doorbell_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_doorbell_agx(b, call->params[0].ssa);
-      return true;
-   } else if (strcmp(func->name, "nir_stack_map_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_stack_map_agx(b, call->params[0].ssa, call->params[1].ssa);
-      return true;
-   } else if (strcmp(func->name, "nir_stack_unmap_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_store_deref(b, nir_src_as_deref(call->params[0]),
-                      nir_stack_unmap_agx(b, call->params[1].ssa), 1);
-      return true;
-   } else if (strcmp(func->name, "nir_load_core_id_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_store_deref(b, nir_src_as_deref(call->params[0]),
-                      nir_load_core_id_agx(b), 1);
-      return true;
-   } else if (strcmp(func->name, "nir_load_helper_op_id_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_store_deref(b, nir_src_as_deref(call->params[0]),
-                      nir_load_helper_op_id_agx(b, 1, 32), 1);
-      return true;
-   } else if (strcmp(func->name, "nir_load_helper_arg_lo_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_store_deref(b, nir_src_as_deref(call->params[0]),
-                      nir_load_helper_arg_lo_agx(b, 1, 32), 1);
-      return true;
-   } else if (strcmp(func->name, "nir_load_helper_arg_hi_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_store_deref(b, nir_src_as_deref(call->params[0]),
-                      nir_load_helper_arg_hi_agx(b, 1, 32), 1);
-      return true;
-   } else if (strcmp(func->name, "ballot") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_store_deref(b, nir_src_as_deref(call->params[0]),
-                      nir_ballot(b, 1, 32, call->params[1].ssa), 1);
-      return true;
-   } else if (strcmp(func->name, "nir_fence_helper_exit_agx") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-      nir_fence_helper_exit_agx(b);
-      return true;
-   } else if (strcmp(func->name, "nir_bindless_image_load_array") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-
-      nir_def *texel = nir_bindless_image_load(
-         b, 4, 32, call->params[1].ssa, call->params[2].ssa, nir_imm_int(b, 0),
-         nir_imm_int(b, 0), .image_array = true,
-         .image_dim = GLSL_SAMPLER_DIM_2D, .dest_type = nir_type_uint32,
-         .access = ACCESS_IN_BOUNDS_AGX);
-
-      nir_store_deref(b, nir_src_as_deref(call->params[0]), texel, 0xf);
-      return true;
-   } else if (strcmp(func->name, "nir_bindless_image_store_array") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-
-      nir_bindless_image_store(
-         b, call->params[0].ssa, call->params[1].ssa, nir_imm_int(b, 0),
-         call->params[2].ssa, nir_imm_int(b, 0), .image_array = true,
-         .image_dim = GLSL_SAMPLER_DIM_2D, .src_type = nir_type_uint32,
-         .access = ACCESS_NON_READABLE);
-      return true;
-   } else if (strcmp(func->name, "nir_bindless_image_load_ms_array") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-
-      nir_def *texel = nir_bindless_image_load(
-         b, 4, 32, call->params[1].ssa, call->params[2].ssa,
-         call->params[3].ssa, nir_imm_int(b, 0), .image_array = true,
-         .image_dim = GLSL_SAMPLER_DIM_MS, .dest_type = nir_type_uint32,
-         .access = ACCESS_IN_BOUNDS_AGX);
-
-      nir_store_deref(b, nir_src_as_deref(call->params[0]), texel, 0xf);
-      return true;
-   } else if (strcmp(func->name, "nir_bindless_image_store_ms_array") == 0) {
-      b->cursor = nir_instr_remove(&call->instr);
-
-      nir_bindless_image_store(
-         b, call->params[0].ssa, call->params[1].ssa, call->params[2].ssa,
-         call->params[3].ssa, nir_imm_int(b, 0), .image_array = true,
-         .image_dim = GLSL_SAMPLER_DIM_MS, .src_type = nir_type_uint32,
-         .access = ACCESS_NON_READABLE);
-      return true;
-   }
-
-   return false;
-}
-
 /* Standard optimization loop */
 static void
 optimize(nir_shader *nir)
@@ -180,7 +77,7 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size)
    ralloc_steal(memctx, nir);
 
    NIR_PASS(_, nir, nir_lower_system_values);
-   nir_shader_instructions_pass(nir, lower_builtins, nir_metadata_none, NULL);
+   NIR_PASS(_, nir, nir_lower_calls_to_builtins);
 
    /* We have to lower away local constant initializers right before we
     * inline functions.  That way they get properly initialized at the top
