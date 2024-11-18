@@ -521,7 +521,8 @@ elk_nir_lower_fs_inputs(nir_shader *nir,
    }
 
    nir_lower_io(nir, nir_var_shader_in, elk_type_size_vec4,
-                nir_lower_io_lower_64bit_to_32);
+                nir_lower_io_lower_64bit_to_32 |
+                nir_lower_io_use_interpolated_input_intrinsics);
 
    if (key->multisample_fbo == ELK_NEVER) {
       nir_lower_single_sampled(nir);

@@ -3430,7 +3430,7 @@ Converter::run()
    NIR_PASS_V(nir, nir_lower_vars_to_ssa);
 
    NIR_PASS_V(nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-              type_size, (nir_lower_io_options)0);
+              type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
    NIR_PASS_V(nir, nir_lower_subgroups, &subgroup_options);
 
@@ -3630,7 +3630,6 @@ nvir_nir_shader_compiler_options(int chipset, uint8_t shader_type)
    op.vectorize_io = false;
    op.lower_to_scalar = false;
    op.unify_interfaces = false;
-   op.use_interpolated_input_intrinsics = true;
    op.lower_mul_2x32_64 = true; // TODO
    op.has_rotate32 = (chipset >= NVISA_GV100_CHIPSET);
    op.has_imul24 = false;

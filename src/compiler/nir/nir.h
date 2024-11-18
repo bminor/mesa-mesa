@@ -4174,19 +4174,11 @@ typedef struct nir_shader_compiler_options {
    bool unify_interfaces;
 
    /**
-    * Should nir_lower_io() create load_interpolated_input intrinsics?
-    *
-    * If not, it generates regular load_input intrinsics and interpolation
-    * information must be inferred from the list of input nir_variables.
-    */
-   bool use_interpolated_input_intrinsics;
-
-   /**
     * Whether nir_lower_io() will lower interpolateAt functions to
     * load_interpolated_input intrinsics.
     *
-    * Unlike use_interpolated_input_intrinsics this will only lower these
-    * functions and leave input load intrinsics untouched.
+    * Unlike nir_lower_io_use_interpolated_input_intrinsics this will only
+    * lower these functions and leave input load intrinsics untouched.
     */
    bool lower_interpolate_at;
 
@@ -5753,6 +5745,14 @@ typedef enum {
     * dvec4 can be DCE'd independently without affecting the other half.
     */
    nir_lower_io_lower_64bit_to_32_new = (1 << 2),
+
+   /**
+    * Should nir_lower_io() create load_interpolated_input intrinsics?
+    *
+    * If not, it generates regular load_input intrinsics and interpolation
+    * information must be inferred from the list of input nir_variables.
+    */
+   nir_lower_io_use_interpolated_input_intrinsics = (1 << 3),
 } nir_lower_io_options;
 bool nir_lower_io(nir_shader *shader,
                   nir_variable_mode modes,
@@ -6579,7 +6579,7 @@ bool nir_lower_clip_gs(nir_shader *shader, unsigned ucp_enables,
                        bool use_clipdist_array,
                        const gl_state_index16 clipplane_state_tokens[][STATE_LENGTH]);
 bool nir_lower_clip_fs(nir_shader *shader, unsigned ucp_enables,
-                       bool use_clipdist_array);
+                       bool use_clipdist_array, bool use_load_interp);
 
 bool nir_lower_clip_cull_distance_to_vec4s(nir_shader *shader);
 bool nir_lower_clip_cull_distance_arrays(nir_shader *nir);

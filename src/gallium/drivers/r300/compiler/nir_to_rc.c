@@ -2272,7 +2272,7 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen)
    }
 
    NIR_PASS_V(s, nir_lower_io, nir_var_shader_in | nir_var_shader_out, type_size,
-              (nir_lower_io_options)0);
+              nir_lower_io_use_interpolated_input_intrinsics);
 
    nir_to_rc_lower_txp(s);
    NIR_PASS_V(s, nir_to_rc_lower_tex);

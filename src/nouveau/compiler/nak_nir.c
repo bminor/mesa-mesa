@@ -1002,7 +1002,8 @@ nak_postprocess_nir(nir_shader *nir,
       OPT(nir, nir_lower_indirect_derefs,
           nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
       OPT(nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-          type_size_vec4, nir_lower_io_lower_64bit_to_32_new);
+          type_size_vec4, nir_lower_io_lower_64bit_to_32_new |
+          nir_lower_io_use_interpolated_input_intrinsics);
       OPT(nir, nir_opt_constant_folding);
       OPT(nir, nak_nir_lower_fs_inputs, nak, fs_key);
       OPT(nir, nak_nir_lower_fs_outputs);

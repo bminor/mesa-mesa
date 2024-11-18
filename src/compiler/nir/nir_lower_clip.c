@@ -122,7 +122,7 @@ store_clipdist_output(nir_builder *b, nir_variable *out, int location, int locat
 
 static void
 load_clipdist_input(nir_builder *b, nir_variable *in, int location_offset,
-                    nir_def **val)
+                    nir_def **val, bool use_load_interp)
 {
    nir_io_semantics semantics = {
       .location = in->data.location,
@@ -130,7 +130,7 @@ load_clipdist_input(nir_builder *b, nir_variable *in, int location_offset,
    };
 
    nir_def *load;
-   if (b->shader->options->use_interpolated_input_intrinsics) {
+   if (use_load_interp) {
       /* TODO: use sample when per-sample shading? */
       nir_def *barycentric = nir_load_barycentric(
          b, nir_intrinsic_load_barycentric_pixel, INTERP_MODE_NONE);
@@ -468,21 +468,21 @@ nir_lower_clip_gs(nir_shader *shader, unsigned ucp_enables,
 
 static void
 lower_clip_fs(nir_function_impl *impl, unsigned ucp_enables,
-              nir_variable **in, bool use_clipdist_array)
+              nir_variable **in, bool use_clipdist_array, bool use_load_interp)
 {
    nir_def *clipdist[MAX_CLIP_PLANES];
    nir_builder b = nir_builder_at(nir_before_impl(impl));
 
    if (!use_clipdist_array) {
       if (ucp_enables & 0x0f)
-         load_clipdist_input(&b, in[0], 0, &clipdist[0]);
+         load_clipdist_input(&b, in[0], 0, &clipdist[0], use_load_interp);
       if (ucp_enables & 0xf0)
-         load_clipdist_input(&b, in[1], 0, &clipdist[4]);
+         load_clipdist_input(&b, in[1], 0, &clipdist[4], use_load_interp);
    } else {
       if (ucp_enables & 0x0f)
-         load_clipdist_input(&b, in[0], 0, &clipdist[0]);
+         load_clipdist_input(&b, in[0], 0, &clipdist[0], use_load_interp);
       if (ucp_enables & 0xf0)
-         load_clipdist_input(&b, in[0], 1, &clipdist[4]);
+         load_clipdist_input(&b, in[0], 1, &clipdist[4], use_load_interp);
    }
    b.shader->info.inputs_read |= update_mask(ucp_enables);
 
@@ -528,7 +528,7 @@ fs_has_clip_dist_input_var(nir_shader *shader, nir_variable **io_vars,
  */
 bool
 nir_lower_clip_fs(nir_shader *shader, unsigned ucp_enables,
-                  bool use_clipdist_array)
+                  bool use_clipdist_array, bool use_load_interp)
 {
    nir_variable *in[2] = { 0 };
 
@@ -548,8 +548,10 @@ nir_lower_clip_fs(nir_shader *shader, unsigned ucp_enables,
       assert(use_clipdist_array);
 
    nir_foreach_function_with_impl(function, impl, shader) {
-      if (!strcmp(function->name, "main"))
-         lower_clip_fs(impl, ucp_enables, in, use_clipdist_array);
+      if (!strcmp(function->name, "main")) {
+         lower_clip_fs(impl, ucp_enables, in, use_clipdist_array,
+                       use_load_interp);
+      }
    }
 
    return true;

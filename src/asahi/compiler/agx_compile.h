@@ -320,7 +320,6 @@ static const nir_shader_compiler_options agx_nir_options = {
    .lower_device_index_to_zero = true,
    .lower_hadd = true,
    .vectorize_io = true,
-   .use_interpolated_input_intrinsics = true,
    .has_amul = true,
    .has_isub = true,
    .support_16bit_alu = true,

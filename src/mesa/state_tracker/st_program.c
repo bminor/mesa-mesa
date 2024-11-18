@@ -660,7 +660,6 @@ static const struct nir_shader_compiler_options draw_nir_options = {
    .lower_int64_options = nir_lower_imul_2x32_64,
    .lower_doubles_options = nir_lower_dround_even,
    .max_unroll_iterations = 32,
-   .use_interpolated_input_intrinsics = true,
    .lower_to_scalar = true,
    .lower_uniforms_to_ubo = true,
    .lower_vector_cmp = true,

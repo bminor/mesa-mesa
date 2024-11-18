@@ -89,7 +89,6 @@ static const nir_shader_compiler_options sp_compiler_options = {
    .lower_vector_cmp = true,
    .lower_int64_options = nir_lower_imul_2x32_64,
    .max_unroll_iterations = 32,
-   .use_interpolated_input_intrinsics = true,
 
    /* TGSI doesn't have a semantic for local or global index, just local and
     * workgroup id.

@@ -1832,7 +1832,8 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
    so->info.nr_bindful_images = BITSET_LAST_BIT(nir->info.images_used);
 
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-            glsl_type_size, nir_lower_io_lower_64bit_to_32);
+            glsl_type_size, nir_lower_io_lower_64bit_to_32 |
+            nir_lower_io_use_interpolated_input_intrinsics);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       struct agx_interp_info interp = agx_gather_interp_info(nir);

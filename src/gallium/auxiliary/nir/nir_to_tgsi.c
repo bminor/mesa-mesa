@@ -3920,7 +3920,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
    }
 
    NIR_PASS_V(s, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-              type_size, (nir_lower_io_options)0);
+              type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
    nir_to_tgsi_lower_txp(s);
    NIR_PASS_V(s, nir_to_tgsi_lower_tex);
@@ -4081,7 +4081,6 @@ static const nir_shader_compiler_options nir_to_tgsi_compiler_options = {
    .lower_usub_sat = true,
    .lower_vector_cmp = true,
    .lower_int64_options = nir_lower_imul_2x32_64,
-   .use_interpolated_input_intrinsics = true,
 
    /* TGSI doesn't have a semantic for local or global index, just local and
     * workgroup id.

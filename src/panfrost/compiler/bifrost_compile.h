@@ -89,7 +89,6 @@ void bifrost_compile_shader_nir(nir_shader *nir,
       .fuse_ffma16 = true,                                                     \
       .fuse_ffma32 = true,                                                     \
       .fuse_ffma64 = true,                                                     \
-      .use_interpolated_input_intrinsics = true,                               \
                                                                                \
       .lower_uniforms_to_ubo = true,                                           \
                                                                                \

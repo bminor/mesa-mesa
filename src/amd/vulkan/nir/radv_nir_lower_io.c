@@ -63,7 +63,7 @@ radv_nir_lower_io(struct radv_device *device, nir_shader *nir)
       NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out, type_size_vec4, nir_lower_io_lower_64bit_to_32);
    } else {
       NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out, type_size_vec4,
-               nir_lower_io_lower_64bit_to_32);
+               nir_lower_io_lower_64bit_to_32 | nir_lower_io_use_interpolated_input_intrinsics);
    }
 
    /* This pass needs actual constants */

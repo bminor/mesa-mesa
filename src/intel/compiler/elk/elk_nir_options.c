@@ -25,7 +25,6 @@
    .lower_device_index_to_zero = true,                                        \
    .vectorize_io = true,                                                      \
    .vectorize_tess_levels = true,                                             \
-   .use_interpolated_input_intrinsics = true,                                 \
    .scalarize_ddx = true,                                                     \
    .lower_insert_byte = true,                                                 \
    .lower_insert_word = true,                                                 \

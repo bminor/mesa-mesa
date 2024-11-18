@@ -148,7 +148,8 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
       }
 
       if (key->fs.clip_plane_enable) {
-         NIR_PASS_V(s, nir_lower_clip_fs, key->fs.clip_plane_enable, false);
+         NIR_PASS_V(s, nir_lower_clip_fs, key->fs.clip_plane_enable, false,
+                    true);
       }
 
       if (key->fs.line_smooth) {
