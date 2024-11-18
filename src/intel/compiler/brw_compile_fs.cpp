@@ -453,8 +453,8 @@ brw_emit_interpolation_setup(fs_visitor &s)
       abld.MOV(f_cps_height, u32_cps_height);
 
       /* Center in the middle of the coarse pixel. */
-      abld.MAD(float_pixel_x, float_pixel_x, brw_imm_f(0.5f), f_cps_width);
-      abld.MAD(float_pixel_y, float_pixel_y, brw_imm_f(0.5f), f_cps_height);
+      abld.MAD(float_pixel_x, float_pixel_x, f_cps_width, brw_imm_f(0.5f));
+      abld.MAD(float_pixel_y, float_pixel_y, f_cps_height, brw_imm_f(0.5f));
 
       coarse_z = abld.vgrf(BRW_TYPE_F);
       abld.MAD(coarse_z, z_c0, z_cx, float_pixel_x);
