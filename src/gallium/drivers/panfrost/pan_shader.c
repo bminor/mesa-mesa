@@ -156,6 +156,10 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
                panfrost_device_gpu_id(dev) < 0x700);
    }
 
+   if (s->info.stage == MESA_SHADER_VERTEX)
+      NIR_PASS(_, s, pan_nir_lower_static_noperspective,
+               key->vs.noperspective_varyings);
+
    NIR_PASS(_, s, panfrost_nir_lower_sysvals, dev->arch, &out->sysvals);
 
    /* Lower resource indices */
@@ -223,6 +227,17 @@ panfrost_shader_get(struct pipe_screen *pscreen,
 }
 
 static void
+panfrost_build_vs_key(struct panfrost_context *ctx,
+                      struct panfrost_vs_key *key,
+                      struct panfrost_uncompiled_shader *uncompiled)
+{
+   struct panfrost_uncompiled_shader *fs = ctx->uncompiled[MESA_SHADER_FRAGMENT];
+
+   assert(fs != NULL && "too early");
+   key->noperspective_varyings = fs->noperspective_varyings;
+}
+
+static void
 panfrost_build_fs_key(struct panfrost_context *ctx,
                       struct panfrost_fs_key *key,
                       struct panfrost_uncompiled_shader *uncompiled)
@@ -280,9 +295,16 @@ panfrost_build_key(struct panfrost_context *ctx,
 {
    const nir_shader *nir = uncompiled->nir;
 
-   /* We don't currently have vertex shader variants */
-   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+   switch (nir->info.stage) {
+   case MESA_SHADER_VERTEX:
+      panfrost_build_vs_key(ctx, &key->vs, uncompiled);
+      break;
+   case MESA_SHADER_FRAGMENT:
       panfrost_build_fs_key(ctx, &key->fs, uncompiled);
+      break;
+   default:
+      break;
+   }
 }
 
 static struct panfrost_compiled_shader *
@@ -329,7 +351,8 @@ panfrost_update_shader_variant(struct panfrost_context *ctx,
       return;
 
    /* We need linking information, defer this */
-   if (type == PIPE_SHADER_FRAGMENT && !ctx->uncompiled[PIPE_SHADER_VERTEX])
+   if ((type == PIPE_SHADER_FRAGMENT && !ctx->uncompiled[PIPE_SHADER_VERTEX]) ||
+       (type == PIPE_SHADER_VERTEX && !ctx->uncompiled[PIPE_SHADER_FRAGMENT]))
       return;
 
    /* Also defer, happens with GALLIUM_HUD */
@@ -375,6 +398,10 @@ static void
 panfrost_bind_fs_state(struct pipe_context *pctx, void *hwcso)
 {
    panfrost_bind_shader_state(pctx, hwcso, PIPE_SHADER_FRAGMENT);
+
+   /* Vertex shaders are linked with fragment shaders */
+   struct panfrost_context *ctx = pan_context(pctx);
+   panfrost_update_shader_variant(ctx, PIPE_SHADER_VERTEX);
 }
 
 static void *
@@ -415,6 +442,10 @@ panfrost_create_shader_state(struct pipe_context *pctx,
    struct panfrost_device *dev = pan_device(pctx->screen);
    pan_shader_preprocess(nir, panfrost_device_gpu_id(dev));
 
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      so->noperspective_varyings =
+         pan_nir_collect_noperspective_varyings_fs(nir);
+
    /* Vertex shaders get passed images through the vertex attribute descriptor
     * array. We need to add an offset to all image intrinsics so they point
     * to the right attribute.
@@ -431,7 +462,7 @@ panfrost_create_shader_state(struct pipe_context *pctx,
 
    if (so->nir->xfb_info) {
       so->xfb = calloc(1, sizeof(struct panfrost_compiled_shader));
-      so->xfb->key.vs_is_xfb = true;
+      so->xfb->key.vs.is_xfb = true;
 
       panfrost_shader_get(ctx->base.screen, &ctx->shaders, &ctx->descs, so,
                           &ctx->base.debug, so->xfb, 0);
