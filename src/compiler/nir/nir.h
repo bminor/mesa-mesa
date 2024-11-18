@@ -6461,6 +6461,44 @@ nir_verts_in_output_prim(nir_shader *gs)
    return mesa_vertices_per_prim(gs->info.gs.output_primitive);
 }
 
+typedef struct {
+   struct {
+      /* The list of instructions that affect this output including the output
+       * store itself. If NULL, the output isn't stored.
+       */
+      nir_instr **instr_list;
+      unsigned num_instr;
+   } output[NUM_TOTAL_VARYING_SLOTS];
+} nir_output_deps;
+
+void nir_gather_output_dependencies(nir_shader *nir, nir_output_deps *deps);
+void nir_free_output_dependencies(nir_output_deps *deps);
+
+typedef struct {
+   struct {
+      /* Per component mask of input slots. */
+      BITSET_DECLARE(inputs, NUM_TOTAL_VARYING_SLOTS * 8);
+      bool defined;
+      bool uses_ssbo_reads;
+      bool uses_image_reads;
+   } output[NUM_TOTAL_VARYING_SLOTS];
+} nir_input_to_output_deps;
+
+void nir_gather_input_to_output_dependencies(nir_shader *nir,
+                                             nir_input_to_output_deps *out_deps);
+void nir_print_input_to_output_deps(nir_input_to_output_deps *deps,
+                                    nir_shader *nir, FILE *f);
+
+typedef struct {
+   /* 1 bit per 16-bit component. */
+   BITSET_DECLARE(pos_only, NUM_TOTAL_VARYING_SLOTS * 8);
+   BITSET_DECLARE(var_only, NUM_TOTAL_VARYING_SLOTS * 8);
+   BITSET_DECLARE(both, NUM_TOTAL_VARYING_SLOTS * 8);
+} nir_output_clipper_var_groups;
+
+void nir_gather_output_clipper_var_groups(nir_shader *nir,
+                                          nir_output_clipper_var_groups *groups);
+
 #include "nir_inline_helpers.h"
 
 #ifdef __cplusplus

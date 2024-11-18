@@ -221,6 +221,7 @@ util_dynarray_append_dynarray(struct util_dynarray *buf,
 #define util_dynarray_top(buf, type) *util_dynarray_top_ptr(buf, type)
 #define util_dynarray_pop_ptr(buf, type) ((type*)((char*)(buf)->data + ((buf)->size -= sizeof(type))))
 #define util_dynarray_pop(buf, type) *util_dynarray_pop_ptr(buf, type)
+#define util_dynarray_last_ptr(buf, type) ((type*)((char*)(buf)->data + ((buf)->size - sizeof(type))))
 #define util_dynarray_contains(buf, type) ((buf)->size >= sizeof(type))
 #define util_dynarray_element(buf, type, idx) ((type*)(buf)->data + (idx))
 #define util_dynarray_begin(buf) ((buf)->data)
