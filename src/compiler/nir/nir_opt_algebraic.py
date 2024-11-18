@@ -1976,6 +1976,12 @@ optimizations.extend([
 
    (('u2f32', ('u2u64', 'a@32')), ('u2f32', a)),
 
+   # UINT32_MAX < a just checks the high half of a 64-bit value. This occurs
+   # when lowering convert_uint_sat(ulong). Although the replacement is more
+   # instructions, it replaces a 64-bit instruction with a 32-bit instruction
+   # and a move that will likely be coalesced.
+   (('ult', 0xffffffff, 'a@64'), ('ine', ('unpack_64_2x32_split_y', a), 0)),
+
    # Redundant trip through 8-bit
    (('i2i16', ('u2u8', ('iand', 'a@16', 1))), ('iand', 'a@16', 1)),
    (('u2u16', ('u2u8', ('iand', 'a@16', 1))), ('iand', 'a@16', 1)),
