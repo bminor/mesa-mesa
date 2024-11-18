@@ -164,6 +164,7 @@ static struct {
    case 120: gfx12_ ##func(__VA_ARGS__); break;             \
    case 125: gfx125_##func(__VA_ARGS__); break;             \
    case 200: gfx20_ ##func(__VA_ARGS__); break;             \
+   case 300: gfx30_ ##func(__VA_ARGS__); break;             \
    default: unreachable("Unsupported hardware generation"); \
    }
 
