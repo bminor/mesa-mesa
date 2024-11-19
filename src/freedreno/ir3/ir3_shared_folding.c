@@ -72,6 +72,12 @@ try_shared_folding(struct ir3_instruction *mov, void *mem_ctx)
          return false;
    } else if (src->opc == OPC_LDC) {
       src->flags &= ~IR3_INSTR_U;
+   } else if (src->opc == OPC_MOV) {
+      /* This catches cases like:
+       * cov.f32f16 sssa_1, c0.x
+       * mov.u16u16 ssa_2, sssa_1
+       * The cov can directly write to a non-shared reg.
+       */
    } else {
       return false;
    }
