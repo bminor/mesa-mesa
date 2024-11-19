@@ -151,16 +151,22 @@ brw_set_src0(struct brw_codegen *p, brw_inst *inst, struct brw_reg reg)
    if (devinfo->ver >= 12 &&
        (brw_inst_opcode(p->isa, inst) == BRW_OPCODE_SEND ||
         brw_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDC)) {
-      assert(reg.file != IMM);
+      assert(reg.file == ARF || reg.file == FIXED_GRF);
       assert(reg.address_mode == BRW_ADDRESS_DIRECT);
-      assert(reg.subnr == 0);
       assert(has_scalar_region(reg) ||
              (reg.hstride == BRW_HORIZONTAL_STRIDE_1 &&
               reg.vstride == reg.width + 1));
       assert(!reg.negate && !reg.abs);
+
       brw_inst_set_send_src0_reg_file(devinfo, inst, reg.file);
       brw_inst_set_src0_da_reg_nr(devinfo, inst, phys_nr(devinfo, reg));
 
+      if (reg.file == ARF && reg.nr == BRW_ARF_SCALAR) {
+         assert(reg.subnr % 2 == 0);
+         brw_inst_set_send_src0_subreg_nr(devinfo, inst, reg.subnr / 2);
+      } else {
+         assert(reg.subnr == 0);
+      }
    } else if (brw_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDS ||
               brw_inst_opcode(p->isa, inst) == BRW_OPCODE_SENDSC) {
       assert(reg.file == FIXED_GRF);

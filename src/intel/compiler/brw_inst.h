@@ -718,6 +718,11 @@ FC(send_src1_len,             /* 9+ */ -1, -1, /* 12+ */ 103,  99, devinfo->verx
 FF(send_src1_reg_file,        /* 9+ */ 36, 36, /* 12+ */  98,  98)
 FF(send_dst_reg_file,         /* 9+ */ 35, 35, /* 12+ */  50,  50)
 FC(send_ex_bso,               /* 9+ */ -1, -1, /* 12+ */  39,  39, devinfo->verx10 >= 125)
+
+/* When using scalar register for src0, this replaces src1_len, which is
+ * always zero.
+ */
+FC(send_src0_subreg_nr,       /* 9+ */ -1, -1, /* 12+ */ 103,  99, devinfo->verx10 >= 300)
 /** @} */
 
 /* Message descriptor bits */

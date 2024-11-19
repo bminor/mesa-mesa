@@ -477,7 +477,7 @@ add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type t
 /* register type */
 %token <integer> GENREG ADDRREG ACCREG FLAGREG NOTIFYREG STATEREG
 %token <integer> CONTROLREG IPREG PERFORMANCEREG THREADREG CHANNELENABLEREG
-%token <integer> MASKREG
+%token <integer> MASKREG SCALARREG
 
 %token <integer> INTEGER
 %token <llint> LONG
@@ -525,7 +525,7 @@ add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type t
 %type <integer> swizzle
 
 /* registers */
-%type <reg> accreg addrreg channelenablereg controlreg flagreg ipreg
+%type <reg> accreg addrreg channelenablereg controlreg flagreg ipreg scalarreg
 %type <reg> notifyreg nullreg performancereg threadcontrolreg statereg maskreg
 %type <integer> subregnum
 
@@ -552,6 +552,7 @@ add_label(struct brw_codegen *p, const char* label_name, enum instr_label_type t
 %token <integer> REG_DIST_LONG
 %token <integer> REG_DIST_ALL
 %token <integer> REG_DIST_MATH
+%token <integer> REG_DIST_SCALAR
 %token <integer> SBID_ALLOC
 %token <integer> SBID_WAIT_SRC
 %token <integer> SBID_WAIT_DST
@@ -954,6 +955,42 @@ sendinstruction:
 
 		brw_pop_insn_state(p);
 	}
+	| predicate sendsopcode execsize dst GENREGFILE LSQUARE scalarreg RSQUARE desc ex_desc sharedfunction msgdesc instoptions
+	{
+                assert(p->devinfo->ver >= 30);
+
+		i965_asm_set_instruction_options(p, $13);
+		brw_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
+		brw_set_dest(p, brw_last_inst, $4);
+		brw_set_src0(p, brw_last_inst, $7);
+		brw_set_src1(p, brw_last_inst, brw_null_reg());
+
+		if ($9.file == IMM) {
+			brw_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 0);
+			brw_inst_set_send_desc(p->devinfo, brw_last_inst, $9.ud);
+		} else {
+			brw_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 1);
+		}
+
+		if ($10.file == IMM) {
+			brw_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 0);
+			brw_inst_set_sends_ex_desc(p->devinfo, brw_last_inst, $10.ud, true);
+		} else {
+			brw_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 1);
+			brw_inst_set_send_ex_desc_ia_subreg_nr(p->devinfo, brw_last_inst, $10.subnr >> 2);
+		}
+
+		brw_inst_set_sfid(p->devinfo, brw_last_inst, $11);
+		brw_inst_set_eot(p->devinfo, brw_last_inst, $13.end_of_thread);
+		brw_inst_set_group(p->devinfo, brw_last_inst, $13.chan_offset);
+
+		if ($12.ex_bso) {
+			brw_inst_set_send_ex_bso(p->devinfo, brw_last_inst, 1);
+                        /* Not settings src1 length, as its implied zero. */
+		}
+
+		brw_pop_insn_state(p);
+	}
 	;
 
 sendop:
@@ -1296,6 +1333,7 @@ dstoperandex_typed:
 	| notifyreg
 	| performancereg
 	| statereg
+	| scalarreg
 	;
 
 dstreg:
@@ -1444,6 +1482,7 @@ srcarcoperandex_typed:
 	| ipreg
 	| maskreg
 	| statereg
+	| scalarreg
 	;
 
 indirectsrcoperand:
@@ -1611,6 +1650,18 @@ notifyreg:
 		$$.subnr = $2;
 	}
 	;
+
+scalarreg:
+	SCALARREG subregnum
+	{
+		if ($2 > 31)
+			error(&@2, "Scalar sub register number %d"
+			           " out of range\n", $2);
+
+		$$.file = ARF;
+		$$.nr = BRW_ARF_SCALAR;
+		$$.subnr = $2;
+	}
 
 statereg:
 	STATEREG subregnum
@@ -2068,6 +2119,12 @@ depinfo:
 		memset(&$$, 0, sizeof($$));
 		$$.regdist = $1;
 		$$.pipe = TGL_PIPE_MATH;
+	}
+	| REG_DIST_SCALAR
+	{
+		memset(&$$, 0, sizeof($$));
+		$$.regdist = $1;
+		$$.pipe = TGL_PIPE_SCALAR;
 	}
 	| SBID_ALLOC
 	{

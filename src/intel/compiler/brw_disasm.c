@@ -838,6 +838,9 @@ reg(FILE *file, unsigned _reg_file, unsigned _reg_nr)
       case BRW_ARF_STATE:
          format(file, "sr%d", _reg_nr & 0x0f);
          break;
+      case BRW_ARF_SCALAR:
+         format(file, "s%d", _reg_nr & 0x0f);
+         break;
       case BRW_ARF_CONTROL:
          format(file, "cr%d", _reg_nr & 0x0f);
          break;
@@ -1663,7 +1666,13 @@ src0(FILE *file, const struct brw_isa_info *isa, const brw_inst *inst)
    const struct intel_device_info *devinfo = isa->devinfo;
 
    if (is_split_send(devinfo, brw_inst_opcode(isa, inst))) {
-      if (devinfo->ver >= 12) {
+      if (devinfo->ver >= 30 &&
+         brw_inst_send_src0_reg_file(devinfo, inst) == ARF) {
+         format(file, "r[");
+         reg(file, ARF, brw_inst_src0_da_reg_nr(devinfo, inst));
+         format(file, ".%u]", (unsigned)brw_inst_send_src0_subreg_nr(devinfo, inst) * 2);
+         return 0;
+      } else if (devinfo->ver >= 12) {
          return src_sends_da(file,
                              devinfo,
                              BRW_TYPE_UD,
@@ -2116,6 +2125,8 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
       bool has_imm_desc = false, has_imm_ex_desc = false;
       uint32_t imm_desc = 0, imm_ex_desc = 0;
       if (is_split_send(devinfo, opcode)) {
+         const bool is_send_gather =
+            devinfo->ver >= 30 && brw_inst_send_src0_reg_file(devinfo, inst) == ARF;
          pad(file, 64);
          if (brw_inst_send_sel_reg32_desc(devinfo, inst)) {
             /* show the indirect descriptor source */
@@ -2133,7 +2144,7 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
                                     brw_inst_send_ex_desc_ia_subreg_nr(devinfo, inst));
          } else {
             has_imm_ex_desc = true;
-            imm_ex_desc = brw_inst_sends_ex_desc(devinfo, inst, false);
+            imm_ex_desc = brw_inst_sends_ex_desc(devinfo, inst, is_send_gather);
             fprintf(file, "0x%08"PRIx32, imm_ex_desc);
          }
       } else {
