@@ -118,8 +118,6 @@ DEQP_TARGET=default \
 
 ############### Build gfxreconstruct
 
-uncollapsed_section_switch gfxreconstruct "Building gfxreconstruct"
-
 . .gitlab-ci/container/build-gfxreconstruct.sh
 
 ############### Build VKD3D-Proton
