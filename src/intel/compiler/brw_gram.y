@@ -936,7 +936,7 @@ sendinstruction:
 
 		if ($8.file == IMM) {
 			brw_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 0);
-			brw_inst_set_sends_ex_desc(p->devinfo, brw_last_inst, $8.ud);
+			brw_inst_set_sends_ex_desc(p->devinfo, brw_last_inst, $8.ud, false);
 		} else {
 			brw_inst_set_send_sel_reg32_ex_desc(p->devinfo, brw_last_inst, 1);
 			brw_inst_set_send_ex_desc_ia_subreg_nr(p->devinfo, brw_last_inst, $8.subnr >> 2);

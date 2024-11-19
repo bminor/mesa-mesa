@@ -333,7 +333,7 @@ send_restrictions(const struct brw_isa_info *isa,
 
          unsigned ex_mlen = 1;
          if (!brw_inst_send_sel_reg32_ex_desc(devinfo, inst->raw)) {
-            const uint32_t ex_desc = brw_inst_sends_ex_desc(devinfo, inst->raw);
+            const uint32_t ex_desc = brw_inst_sends_ex_desc(devinfo, inst->raw, false);
             ex_mlen = brw_message_ex_desc_ex_mlen(devinfo, ex_desc) /
                       reg_unit(devinfo);
          }

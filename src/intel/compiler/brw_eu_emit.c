@@ -354,7 +354,7 @@ brw_set_desc_ex(struct brw_codegen *p, brw_inst *inst,
                                   IMM, BRW_TYPE_UD);
    brw_inst_set_send_desc(devinfo, inst, desc);
    if (devinfo->ver >= 9)
-      brw_inst_set_send_ex_desc(devinfo, inst, ex_desc);
+      brw_inst_set_send_ex_desc(devinfo, inst, ex_desc, false);
 }
 
 static void
@@ -1595,7 +1595,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
 
    if (ex_desc.file == IMM) {
       brw_inst_set_send_sel_reg32_ex_desc(devinfo, send, 0);
-      brw_inst_set_sends_ex_desc(devinfo, send, ex_desc.ud);
+      brw_inst_set_sends_ex_desc(devinfo, send, ex_desc.ud, false);
    } else {
       assert(ex_desc.file == ARF);
       assert(ex_desc.nr == BRW_ARF_ADDRESS);

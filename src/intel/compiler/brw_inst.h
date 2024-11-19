@@ -784,14 +784,26 @@ brw_inst_send_desc(const struct intel_device_info *devinfo,
  */
 static inline void
 brw_inst_set_send_ex_desc(const struct intel_device_info *devinfo,
-                          brw_inst *inst, uint32_t value)
+                          brw_inst *inst, uint32_t value, bool gather)
 {
+   assert(!gather || devinfo->ver >= 30);
+
    if (devinfo->ver >= 12) {
       brw_inst_set_bits(inst, 127, 124, GET_BITS(value, 31, 28));
       brw_inst_set_bits(inst, 97, 96, GET_BITS(value, 27, 26));
       brw_inst_set_bits(inst, 65, 64, GET_BITS(value, 25, 24));
       brw_inst_set_bits(inst, 47, 35, GET_BITS(value, 23, 11));
-      brw_inst_set_bits(inst, 103, 99, GET_BITS(value, 10, 6));
+
+      /* SEND gather uses these bits for src0 subreg nr, so they
+       * are not part of the ex_desc.
+       */
+      if (gather) {
+         assert(devinfo->ver >= 30);
+         assert(GET_BITS(value, 10, 6) == 0);
+      } else {
+         brw_inst_set_bits(inst, 103, 99, GET_BITS(value, 10, 6));
+      }
+
       assert(GET_BITS(value, 5, 0) == 0);
    } else {
       assert(devinfo->ver >= 9);
@@ -814,10 +826,10 @@ brw_inst_set_send_ex_desc(const struct intel_device_info *devinfo,
  */
 static inline void
 brw_inst_set_sends_ex_desc(const struct intel_device_info *devinfo,
-                           brw_inst *inst, uint32_t value)
+                           brw_inst *inst, uint32_t value, bool gather)
 {
    if (devinfo->ver >= 12) {
-      brw_inst_set_send_ex_desc(devinfo, inst, value);
+      brw_inst_set_send_ex_desc(devinfo, inst, value, gather);
    } else {
       brw_inst_set_bits(inst, 95, 80, GET_BITS(value, 31, 16));
       assert(GET_BITS(value, 15, 10) == 0);
@@ -833,14 +845,16 @@ brw_inst_set_sends_ex_desc(const struct intel_device_info *devinfo,
  */
 static inline uint32_t
 brw_inst_send_ex_desc(const struct intel_device_info *devinfo,
-                      const brw_inst *inst)
+                      const brw_inst *inst, bool gather)
 {
+   assert(!gather || devinfo->ver >= 30);
+
    if (devinfo->ver >= 12) {
       return (brw_inst_bits(inst, 127, 124) << 28 |
               brw_inst_bits(inst, 97, 96) << 26 |
               brw_inst_bits(inst, 65, 64) << 24 |
               brw_inst_bits(inst, 47, 35) << 11 |
-              brw_inst_bits(inst, 103, 99) << 6);
+              (!gather ? brw_inst_bits(inst, 103, 99) << 6 : 0));
    } else {
       assert(devinfo->ver >= 9);
       return (brw_inst_bits(inst, 94, 91) << 28 |
@@ -857,11 +871,12 @@ brw_inst_send_ex_desc(const struct intel_device_info *devinfo,
  */
 static inline uint32_t
 brw_inst_sends_ex_desc(const struct intel_device_info *devinfo,
-                       const brw_inst *inst)
+                       const brw_inst *inst, bool gather)
 {
    if (devinfo->ver >= 12) {
-      return brw_inst_send_ex_desc(devinfo, inst);
+      return brw_inst_send_ex_desc(devinfo, inst, gather);
    } else {
+      assert(!gather);
       return (brw_inst_bits(inst, 95, 80) << 16 |
               brw_inst_bits(inst, 67, 64) << 6);
    }
