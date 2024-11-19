@@ -155,13 +155,16 @@ AOSP_RESULTS=/data/results
 uncollapsed_section_switch cuttlefish_test "cuttlefish: testing"
 
 set +e
-$ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; ./deqp-runner \
+$ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; \
+  XDG_CACHE_HOME=/data/local/tmp \
+  ./deqp-runner \
     suite \
     --suite /data/deqp-$DEQP_SUITE.toml \
     --output $AOSP_RESULTS \
     --skips /data/all-skips.txt $DEQP_SKIPS \
     --flakes /data/$GPU_VERSION-flakes.txt \
     --testlog-to-xml /data/testlog-to-xml \
+    --shader-cache-dir /data/local/tmp \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $(( CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
     --jobs ${FDO_CI_CONCURRENT:-4}"
