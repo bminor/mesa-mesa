@@ -114,8 +114,6 @@ DEQP_TARGET=default \
 
 ############### Build Fossilize
 
-uncollapsed_section_switch fossilize "Building Fossilize"
-
 . .gitlab-ci/container/build-fossilize.sh
 
 ############### Build gfxreconstruct
