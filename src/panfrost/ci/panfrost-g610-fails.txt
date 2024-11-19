@@ -470,8 +470,6 @@ dEQP-VK.api.info.unsupported_image_usage.optimal.input_attachment_r8g8_snorm,Fai
 dEQP-VK.api.info.unsupported_image_usage.optimal.input_attachment_r8g8b8a8_snorm,Fail
 dEQP-VK.api.info.unsupported_image_usage.optimal.input_attachment_s8_uint,Fail
 
-dEQP-VK.compute.pipeline.device_group.dispatch_base,Fail
-
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.1_sample,Fail
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.4_samples,Fail
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.structured.no_sample_decoration.1_sample,Fail

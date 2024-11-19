@@ -245,6 +245,9 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    }
 
    struct panvk_compute_sysvals *sysvals = &cmdbuf->state.compute.sysvals;
+   sysvals->base.x = info->baseGroupX;
+   sysvals->base.y = info->baseGroupY;
+   sysvals->base.z = info->baseGroupZ;
    /* If indirect, sysvals->num_work_groups will be written by the CS */
    if (!indirect) {
       sysvals->num_work_groups.x = info->direct.groupCountX;
