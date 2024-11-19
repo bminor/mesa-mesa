@@ -7,6 +7,7 @@
 
 #include "compiler/nir/nir.h"
 #include "util/u_dynarray.h"
+#include "util/u_tristate.h"
 #include "shader_enums.h"
 
 struct agx_cf_binding {
@@ -203,7 +204,7 @@ struct agx_device_key {
    /* Does the target GPU need explicit cluster coherency for atomics?
     * Only used on G13X.
     */
-   bool needs_g13x_coherency;
+   enum u_tristate needs_g13x_coherency;
 
    /* Is soft fault enabled? This is technically system-wide policy set by the
     * kernel, but that's functionally a hardware feature.
