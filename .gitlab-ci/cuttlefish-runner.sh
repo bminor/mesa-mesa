@@ -63,10 +63,9 @@ sleep 1
 
 popd
 
-adb connect vsock:3:5555
-ADB="adb -s vsock:3:5555"
+ADB=adb
 
-$ADB root
+$ADB wait-for-device root
 sleep 1
 $ADB shell echo Hi from Android
 # shellcheck disable=SC2035
