@@ -210,6 +210,20 @@ struct drm_amdgpu_info_hw_ip {
    uint32_t available_rings;
    uint32_t ip_discovery_version;
 };
+
+struct drm_amdgpu_info_uq_fw_areas_gfx {
+   uint32_t shadow_size;
+   uint32_t shadow_alignment;
+   uint32_t csa_size;
+   uint32_t csa_alignment;
+};
+
+struct drm_amdgpu_info_uq_fw_areas {
+   union {
+      struct drm_amdgpu_info_uq_fw_areas_gfx gfx;
+   };
+};
+
 typedef struct _drmPciBusInfo {
    uint16_t domain;
    uint8_t bus;
@@ -1658,7 +1672,21 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          device_info.ids_flags & AMDGPU_IDS_FLAGS_CONFORMANT_TRUNC_COORD;
    }
 
-   if (info->gfx_level >= GFX11 && device_info.shadow_size > 0) {
+   if (info->gfx_level >= GFX11 && debug_get_bool_option("AMD_USERQ", false)) {
+      struct drm_amdgpu_info_uq_fw_areas fw_info;
+
+      r = ac_drm_query_uq_fw_area_info(fd, AMDGPU_HW_IP_GFX, 0, &fw_info);
+      if (r) {
+         fprintf(stderr, "amdgpu: amdgpu_query_uq_fw_area_info() failed.\n");
+         return false;
+      }
+
+      info->has_fw_based_shadowing = true;
+      info->fw_based_mcbp.shadow_size = fw_info.gfx.shadow_size;
+      info->fw_based_mcbp.shadow_alignment = fw_info.gfx.shadow_alignment;
+      info->fw_based_mcbp.csa_size = fw_info.gfx.csa_size;
+      info->fw_based_mcbp.csa_alignment = fw_info.gfx.csa_alignment;
+   } else if (info->gfx_level >= GFX11 && device_info.shadow_size > 0) {
       info->has_fw_based_shadowing = true;
       info->fw_based_mcbp.shadow_size = device_info.shadow_size;
       info->fw_based_mcbp.shadow_alignment = device_info.shadow_alignment;
