@@ -1712,8 +1712,7 @@ struct Export_instruction : public Instruction {
 static_assert(sizeof(Export_instruction) == sizeof(Instruction) + 4, "Unexpected padding");
 
 struct Pseudo_instruction : public Instruction {
-   PhysReg scratch_sgpr; /* might not be valid if it's not needed */
-   bool tmp_in_scc;
+   PhysReg scratch_sgpr;   /* might not be valid if it's not needed */
    bool needs_scratch_reg; /* if scratch_sgpr/scc can be written, initialized by RA. */
 };
 static_assert(sizeof(Pseudo_instruction) == sizeof(Instruction) + 4, "Unexpected padding");

@@ -2043,7 +2043,6 @@ handle_pseudo(ra_ctx& ctx, const RegisterFile& reg_file, Instruction* instr)
       return;
 
    instr->pseudo().needs_scratch_reg = true;
-   instr->pseudo().tmp_in_scc = reg_file[scc];
 
    if (!reg_file[scc]) {
       instr->pseudo().scratch_sgpr = scc;
@@ -2322,7 +2321,6 @@ get_regs_for_phis(ra_ctx& ctx, Block& block, RegisterFile& register_file,
       }
 
       for (aco_ptr<Instruction>& phi : instructions) {
-         phi->pseudo().tmp_in_scc = register_file[scc];
          phi->pseudo().scratch_sgpr = scratch_reg;
          phi->pseudo().needs_scratch_reg = true;
       }
@@ -3000,7 +2998,6 @@ emit_parallel_copy_internal(ra_ctx& ctx, std::vector<std::pair<Operand, Definiti
       handle_pseudo(ctx, tmp_file, pc.get());
    } else {
       pc->pseudo().needs_scratch_reg = may_swap_sgprs || linear_vgpr;
-      pc->pseudo().tmp_in_scc = false;
       pc->pseudo().scratch_sgpr = scc;
    }
 

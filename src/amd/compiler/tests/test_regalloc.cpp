@@ -554,12 +554,13 @@ BEGIN_TEST(regalloc.linear_vgpr.compact_for_future_def)
 
       finish_ra_test(ra_test_policy());
 
-      //~gfx8_cbranch>> lv1: %ltmp2_2:v[29] = p_parallelcopy %ltmp2:v[28] scc:1 scratch:s1
-      //~gfx8_branch>> lv1: %ltmp2_2:v[29] = p_parallelcopy %ltmp2:v[28] scc:0 scratch:s253
+      //~gfx8_cbranch>> lv1: %ltmp2_2:v[29] = p_parallelcopy %ltmp2:v[28] needs_scratch:1 scratch:s1
+      //~gfx8_branch>> lv1: %ltmp2_2:v[29] = p_parallelcopy %ltmp2:v[28] needs_scratch:1 scratch:s253
       aco_ptr<Instruction>& parallelcopy = program->blocks[0].instructions[6];
       aco_print_instr(program->gfx_level, parallelcopy.get(), output);
       if (parallelcopy->isPseudo()) {
-         fprintf(output, " scc:%u scratch:s%u\n", parallelcopy->pseudo().tmp_in_scc,
+         fprintf(output, " needs_scratch:%d scratch:s%u\n",
+                 parallelcopy->pseudo().needs_scratch_reg,
                  parallelcopy->pseudo().scratch_sgpr.reg());
       } else {
          fprintf(output, "\n");

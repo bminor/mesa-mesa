@@ -81,8 +81,7 @@ insert_parallelcopies(ssa_elimination_ctx& ctx)
          pc->operands[i] = phi_info.op;
          i++;
       }
-      /* this shouldn't be needed since we're only copying vgprs */
-      pc->pseudo().tmp_in_scc = false;
+      pc->pseudo().needs_scratch_reg = false;
       block.instructions.insert(it, std::move(pc));
    }
 
@@ -102,7 +101,6 @@ insert_parallelcopies(ssa_elimination_ctx& ctx)
          pc->operands[i] = phi_info.op;
          i++;
       }
-      pc->pseudo().tmp_in_scc = succ.instructions[0]->pseudo().tmp_in_scc;
       pc->pseudo().scratch_sgpr = succ.instructions[0]->pseudo().scratch_sgpr;
       pc->pseudo().needs_scratch_reg = succ.instructions[0]->pseudo().needs_scratch_reg;
       auto it = std::prev(block.instructions.end());

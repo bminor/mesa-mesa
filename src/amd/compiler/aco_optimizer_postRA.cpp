@@ -139,8 +139,6 @@ save_reg_writes(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
                 ctx.instr_idx_by_regs[ctx.current_block->index].begin() + r + dw_size, idx);
    }
    if (instr->isPseudo() && instr->pseudo().needs_scratch_reg) {
-      if (!instr->pseudo().tmp_in_scc)
-         ctx.instr_idx_by_regs[ctx.current_block->index][scc] = overwritten_unknown_instr;
       ctx.instr_idx_by_regs[ctx.current_block->index][instr->pseudo().scratch_sgpr] =
          overwritten_unknown_instr;
    }

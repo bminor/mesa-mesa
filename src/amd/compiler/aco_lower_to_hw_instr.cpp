@@ -1711,7 +1711,7 @@ handle_operands(std::map<PhysReg, copy_operation>& copy_map, lower_context* ctx,
       if (it->second.def.physReg() == scc)
          writes_scc = true;
 
-      assert(!pi->tmp_in_scc || !(it->second.def.physReg() == pi->scratch_sgpr));
+      assert(!pi->needs_scratch_reg || it->second.def.physReg() != pi->scratch_sgpr);
 
       /* if src and dst reg are the same, remove operation */
       if (it->first == it->second.op.physReg()) {
@@ -1753,7 +1753,7 @@ handle_operands(std::map<PhysReg, copy_operation>& copy_map, lower_context* ctx,
    }
 
    /* first, handle paths in the location transfer graph */
-   bool preserve_scc = pi->tmp_in_scc && !writes_scc;
+   bool preserve_scc = pi->needs_scratch_reg && pi->scratch_sgpr != scc && !writes_scc;
    bool skip_partial_copies = true;
    for (auto it = copy_map.begin();;) {
       if (copy_map.empty()) {
@@ -2056,23 +2056,24 @@ handle_operands_linear_vgpr(std::map<PhysReg, copy_operation>& copy_map, lower_c
    std::map<PhysReg, copy_operation> second_map(copy_map);
    handle_operands(second_map, ctx, gfx_level, pi);
 
-   bool tmp_in_scc = pi->tmp_in_scc;
-   if (tmp_in_scc) {
-      bld.sop1(aco_opcode::s_mov_b32, Definition(pi->scratch_sgpr, s1), Operand(scc, s1));
-      pi->tmp_in_scc = false;
+   assert(pi->needs_scratch_reg);
+   PhysReg scratch_sgpr = pi->scratch_sgpr;
+   if (scratch_sgpr != scc) {
+      bld.sop1(aco_opcode::s_mov_b32, Definition(scratch_sgpr, s1), Operand(scc, s1));
+      pi->scratch_sgpr = scc;
    }
    bld.sop1(Builder::s_not, Definition(exec, bld.lm), Definition(scc, s1), Operand(exec, bld.lm));
 
    handle_operands(copy_map, ctx, gfx_level, pi);
 
    bld.sop1(Builder::s_not, Definition(exec, bld.lm), Definition(scc, s1), Operand(exec, bld.lm));
-   if (tmp_in_scc) {
-      bld.sopc(aco_opcode::s_cmp_lg_i32, Definition(scc, s1), Operand(pi->scratch_sgpr, s1),
+   if (scratch_sgpr != scc) {
+      bld.sopc(aco_opcode::s_cmp_lg_i32, Definition(scc, s1), Operand(scratch_sgpr, s1),
                Operand::zero());
-      pi->tmp_in_scc = true;
+      pi->scratch_sgpr = scratch_sgpr;
    }
 
-   ctx->program->statistics[aco_statistic_copies] += tmp_in_scc ? 4 : 2;
+   ctx->program->statistics[aco_statistic_copies] += scratch_sgpr == scc ? 2 : 4;
 }
 
 void
