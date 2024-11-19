@@ -1897,8 +1897,12 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_index cur_tiler = cs_sr_reg64(b, 52);
    struct cs_index remaining_layers_in_td = cs_sr_reg32(b, 54);
    struct cs_index src_fbd_ptr = cs_sr_reg64(b, 56);
-   uint32_t td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
-                                    MAX_LAYERS_PER_TILER_DESC);
+
+   uint32_t td_count = 0;
+   if (cmdbuf->state.gfx.render.tiler) {
+      td_count = DIV_ROUND_UP(cmdbuf->state.gfx.render.layer_count,
+                              MAX_LAYERS_PER_TILER_DESC);
+   }
 
    if (copy_fbds) {
       cs_load64_to(
@@ -1991,24 +1995,29 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    cs_match(b, iter_sb, cmp_scratch) {
 #define CASE(x)                                                                \
    cs_case(b, x) {                                                             \
-      if (cmdbuf->state.gfx.render.tiler) {                                    \
+      const struct cs_async_op async =                                         \
+         cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC));                      \
+      if (td_count == 1) {                                                     \
+         cs_load_to(b, completed, cur_tiler, BITFIELD_MASK(4), 40);            \
+         cs_wait_slot(b, SB_ID(LS), false);                                    \
+         cs_finish_fragment(b, true, completed_top, completed_bottom, async);  \
+      } else if (td_count > 1) {                                               \
          cs_while(b, MALI_CS_CONDITION_GREATER, tiler_count) {                 \
             cs_load_to(b, completed, cur_tiler, BITFIELD_MASK(4), 40);         \
             cs_wait_slot(b, SB_ID(LS), false);                                 \
-            cs_finish_fragment(                                                \
-               b, true, completed_top, completed_bottom,                       \
-               cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));               \
+            cs_finish_fragment(b, false, completed_top, completed_bottom,      \
+                               async);                                         \
             cs_add64(b, cur_tiler, cur_tiler, pan_size(TILER_CONTEXT));        \
             cs_add32(b, tiler_count, tiler_count, -1);                         \
          }                                                                     \
+         cs_frag_end(b, async);                                                \
       }                                                                        \
       if (copy_fbds) {                                                         \
          cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, release_sz,            \
-                       ringbuf_sync_addr,                                      \
-                       cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));       \
+                       ringbuf_sync_addr, async);                              \
       }                                                                        \
       cs_sync64_add(b, true, MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,       \
-                    cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));          \
+                    async);                                                    \
       cs_move32_to(b, iter_sb, next_iter_sb(x));                               \
    }
 

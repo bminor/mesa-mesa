@@ -1391,22 +1391,6 @@ dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.interface_blocks.flat,Fa
 dEQP-VK.spirv_assembly.instruction.graphics.opquantize.too_small_frag,Fail
 dEQP-VK.spirv_assembly.instruction.graphics.opquantize.too_small_vert,Fail
 
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_linear_mipmap_linear_clamp,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_linear_mipmap_linear_repeat,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_linear_mipmap_nearest_clamp,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_linear_mipmap_nearest_repeat,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_nearest_mipmap_linear_repeat,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_nearest_mipmap_nearest_clamp,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_linear_nearest_mipmap_nearest_repeat,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_linear_mipmap_linear_clamp,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_linear_mipmap_linear_repeat,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_linear_mipmap_nearest_clamp,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_linear_mipmap_nearest_repeat,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_nearest_mipmap_linear_clamp,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_nearest_mipmap_linear_repeat,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_nearest_mipmap_nearest_clamp,Crash
-dEQP-VK.texture.explicit_lod.2d.sizes.128x128_nearest_nearest_mipmap_nearest_repeat,Crash
-
 dEQP-VK.api.command_buffers.record_many_draws_primary_2,Crash
 dEQP-VK.api.command_buffers.record_many_draws_secondary_2,Crash
 
