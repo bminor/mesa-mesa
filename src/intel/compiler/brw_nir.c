@@ -1592,9 +1592,9 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
    };
 
    if (robust_flags & BRW_ROBUSTNESS_UBO)
-      options.robust_modes |= nir_var_mem_ubo | nir_var_mem_global;
+      options.robust_modes |= nir_var_mem_ubo;
    if (robust_flags & BRW_ROBUSTNESS_SSBO)
-      options.robust_modes |= nir_var_mem_ssbo | nir_var_mem_global;
+      options.robust_modes |= nir_var_mem_ssbo;
 
    OPT(nir_opt_load_store_vectorize, &options);
 
