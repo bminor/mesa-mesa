@@ -311,6 +311,9 @@ enum hk_cs_type {
 struct hk_cs {
    struct list_head node;
 
+   /* Parent command buffer. Convenience. */
+   struct hk_cmd_buffer *cmd;
+
    /* Data master */
    enum hk_cs_type type;
 
@@ -522,6 +525,7 @@ hk_cmd_buffer_get_cs_general(struct hk_cmd_buffer *cmd, struct hk_cs **ptr,
       /* Allocate hk_cs for the new stream */
       struct hk_cs *cs = malloc(sizeof(*cs));
       *cs = (struct hk_cs){
+         .cmd = cmd,
          .type = compute ? HK_CS_CDM : HK_CS_VDM,
          .addr = root.gpu,
          .start = root.cpu,
