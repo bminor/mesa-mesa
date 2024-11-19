@@ -672,11 +672,12 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_workgroup_num_input_primitives_amd:
       replacement = ac_nir_unpack_arg(b, &args->ac, args->ac.gs_tg_info, 22, 9);
       break;
-   case nir_intrinsic_load_initial_edgeflags_amd:
-      if (shader->key.ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES ||
-          (shader->selector->stage == MESA_SHADER_VERTEX &&
-           shader->selector->info.base.vs.blit_sgprs_amd)) {
-         /* Line primitives and blits don't need edge flags. */
+   case nir_intrinsic_load_initial_edgeflags_amd: {
+      unsigned output_prim = si_get_output_prim_simplified(sel, &shader->key);
+
+      /* Points, lines, and rectangles don't need edge flags. */
+      if (output_prim == MESA_PRIM_POINTS || output_prim == MESA_PRIM_LINES ||
+          output_prim == SI_PRIM_RECTANGLE_LIST) {
          replacement = nir_imm_int(b, 0);
       } else if (shader->selector->stage == MESA_SHADER_VERTEX) {
          if (sel->screen->info.gfx_level >= GFX12) {
@@ -694,13 +695,13 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
             replacement = nir_iand_imm(b, tmp, 0x20080200);
          }
       } else {
-         /* Edge flags are always enabled when polygon mode is enabled, so we always have to
-          * return valid edge flags if the primitive type is not lines and if we are not blitting
-          * because the shader doesn't know when polygon mode is enabled.
+         /* TES and GS: Edge flags are always enabled by the rasterizer state when polygon mode is
+          * enabled, so set all edge flags to 1 for triangles.
           */
          replacement = nir_imm_int(b, ac_get_all_edge_flag_bits(sel->screen->info.gfx_level));
       }
       break;
+   }
    case nir_intrinsic_load_packed_passthrough_primitive_amd:
       replacement = ac_nir_load_arg(b, &args->ac, args->ac.gs_vtx_offset[0]);
       break;
