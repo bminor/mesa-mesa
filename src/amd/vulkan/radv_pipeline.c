@@ -70,6 +70,18 @@ radv_pipeline_capture_shader_stats(const struct radv_device *device, VkPipelineC
           (instance->vk.trace_mode & RADV_TRACE_MODE_RGP);
 }
 
+bool
+radv_pipeline_skip_shaders_cache(const struct radv_device *device, const struct radv_pipeline *pipeline)
+{
+   const bool keep_executable_info = radv_pipeline_capture_shaders(device, pipeline->create_flags);
+
+   /* Skip the shaders cache when any of the below are true:
+    * - shaders are captured because it's for debugging purposes
+    * - binaries are captured for later uses
+    */
+   return keep_executable_info || (pipeline->create_flags & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR);
+}
+
 void
 radv_pipeline_init(struct radv_device *device, struct radv_pipeline *pipeline, enum radv_pipeline_type type)
 {

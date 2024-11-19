@@ -909,12 +909,11 @@ radv_rt_pipeline_compile(struct radv_device *device, const VkRayTracingPipelineC
                          struct radv_serialized_shader_arena_block *capture_replay_blocks,
                          const VkPipelineCreationFeedbackCreateInfo *creation_feedback)
 {
-   const bool keep_executable_info = radv_pipeline_capture_shaders(device, pipeline->base.base.create_flags);
+   bool skip_shaders_cache = radv_pipeline_skip_shaders_cache(device, &pipeline->base.base);
    const bool emit_ray_history = !!device->rra_trace.ray_history_buffer;
    VkPipelineCreationFeedback pipeline_feedback = {
       .flags = VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT,
    };
-   bool skip_shaders_cache = false;
    VkResult result = VK_SUCCESS;
 
    int64_t pipeline_start = os_time_get_nano();
@@ -923,15 +922,11 @@ radv_rt_pipeline_compile(struct radv_device *device, const VkRayTracingPipelineC
    pipeline->base.base.pipeline_hash = *(uint64_t *)pipeline->base.base.sha1;
 
    /* Skip the shaders cache when any of the below are true:
-    * - shaders are captured because it's for debugging purposes
-    * - binaries are captured for later uses
     * - ray history is enabled
     * - group handles are saved and reused on a subsequent run (ie. capture/replay)
     */
-   if (keep_executable_info || emit_ray_history ||
-       (pipeline->base.base.create_flags &
-        (VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR |
-         VK_PIPELINE_CREATE_2_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR))) {
+   if (emit_ray_history || (pipeline->base.base.create_flags &
+                            VK_PIPELINE_CREATE_2_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
       skip_shaders_cache = true;
    }
 

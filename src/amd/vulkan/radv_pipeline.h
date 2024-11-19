@@ -76,6 +76,8 @@ bool radv_shader_need_indirect_descriptor_sets(const struct radv_shader *shader)
 
 bool radv_pipeline_capture_shader_stats(const struct radv_device *device, VkPipelineCreateFlags2KHR flags);
 
+bool radv_pipeline_skip_shaders_cache(const struct radv_device *device, const struct radv_pipeline *pipeline);
+
 void radv_pipeline_init(struct radv_device *device, struct radv_pipeline *pipeline, enum radv_pipeline_type type);
 
 void radv_pipeline_destroy(struct radv_device *device, struct radv_pipeline *pipeline,

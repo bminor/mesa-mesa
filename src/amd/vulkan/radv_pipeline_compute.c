@@ -183,11 +183,11 @@ radv_compute_pipeline_compile(const VkComputePipelineCreateInfo *pCreateInfo, st
    struct radv_shader_binary *cs_binary = NULL;
    bool keep_executable_info = radv_pipeline_capture_shaders(device, pipeline->base.create_flags);
    bool keep_statistic_info = radv_pipeline_capture_shader_stats(device, pipeline->base.create_flags);
+   const bool skip_shaders_cache = radv_pipeline_skip_shaders_cache(device, &pipeline->base);
    struct radv_shader_stage cs_stage = {0};
    VkPipelineCreationFeedback pipeline_feedback = {
       .flags = VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT,
    };
-   bool skip_shaders_cache = false;
    VkResult result = VK_SUCCESS;
 
    int64_t pipeline_start = os_time_get_nano();
@@ -195,14 +195,6 @@ radv_compute_pipeline_compile(const VkComputePipelineCreateInfo *pCreateInfo, st
    radv_compute_pipeline_hash(device, pCreateInfo, pipeline->base.sha1);
 
    pipeline->base.pipeline_hash = *(uint64_t *)pipeline->base.sha1;
-
-   /* Skip the shaders cache when any of the below are true:
-    * - shaders are captured because it's for debugging purposes
-    * - binaries are captured for later uses
-    */
-   if (keep_executable_info || (pipeline->base.create_flags & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR)) {
-      skip_shaders_cache = true;
-   }
 
    bool found_in_application_cache = true;
    if (!skip_shaders_cache &&
