@@ -116,8 +116,6 @@ DEQP_TARGET=surfaceless \
 
 ############### Build validation layer for zink
 
-uncollapsed_section_switch vvl "Building Vulkan validation layers"
-
 . .gitlab-ci/container/build-vulkan-validation.sh
 
 ############### Build nine tests
