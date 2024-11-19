@@ -87,12 +87,13 @@ $ADB shell setenforce 0
 
 # deqp
 
-$ADB push /deqp-gles/modules/egl/deqp-egl-android /data/.
-$ADB push /deqp-gles/assets/gl_cts/data/mustpass/egl/aosp_mustpass/3.2.6.x/egl-main.txt /data/
-$ADB push /deqp-vk/external/vulkancts/modules/vulkan/* /data/.
-$ADB push /deqp-vk/mustpass/vk-main.txt.zst /data/.
-$ADB push /deqp-tools/* /data/.
-$ADB push /deqp-runner/deqp-runner /data/.
+$ADB shell mkdir -p /data/deqp
+$ADB push /deqp-gles/modules/egl/deqp-egl-android /data/deqp
+$ADB push /deqp-gles/assets/gl_cts/data/mustpass/egl/aosp_mustpass/3.2.6.x/egl-main.txt /data/deqp
+$ADB push /deqp-vk/external/vulkancts/modules/vulkan/* /data/deqp
+$ADB push /deqp-vk/mustpass/vk-main.txt.zst /data/deqp
+$ADB push /deqp-tools/* /data/deqp
+$ADB push /deqp-runner/deqp-runner /data/deqp
 
 # download Android Mesa from S3
 MESA_ANDROID_ARTIFACT_URL=https://${PIPELINE_ARTIFACTS_BASE}/${S3_ANDROID_ARTIFACT_NAME}.tar.zst
@@ -101,9 +102,9 @@ mkdir /mesa-android
 tar -C /mesa-android -xvf ${S3_ANDROID_ARTIFACT_NAME}.tar.zst
 rm "${S3_ANDROID_ARTIFACT_NAME}.tar.zst" &
 
-$ADB push /mesa-android/install/all-skips.txt /data/.
-$ADB push "/mesa-android/install/$GPU_VERSION-flakes.txt" /data/.
-$ADB push "/mesa-android/install/deqp-$DEQP_SUITE.toml" /data/.
+$ADB push /mesa-android/install/all-skips.txt /data/deqp
+$ADB push "/mesa-android/install/$GPU_VERSION-flakes.txt" /data/deqp
+$ADB push "/mesa-android/install/deqp-$DEQP_SUITE.toml" /data/deqp
 
 # remove 32 bits libs from /vendor/lib
 
@@ -151,7 +152,7 @@ if ! printf "%s" "$MESA_RUNTIME_VERSION" | grep "${MESA_BUILD_VERSION}$"; then
     exit 1
 fi
 
-AOSP_RESULTS=/data/results
+AOSP_RESULTS=/data/deqp/results
 uncollapsed_section_switch cuttlefish_test "cuttlefish: testing"
 
 set +e
@@ -159,11 +160,11 @@ $ADB shell "mkdir ${AOSP_RESULTS}; cd ${AOSP_RESULTS}/..; \
   XDG_CACHE_HOME=/data/local/tmp \
   ./deqp-runner \
     suite \
-    --suite /data/deqp-$DEQP_SUITE.toml \
+    --suite /data/deqp/deqp-$DEQP_SUITE.toml \
     --output $AOSP_RESULTS \
-    --skips /data/all-skips.txt $DEQP_SKIPS \
-    --flakes /data/$GPU_VERSION-flakes.txt \
-    --testlog-to-xml /data/testlog-to-xml \
+    --skips /data/deqp/all-skips.txt $DEQP_SKIPS \
+    --flakes /data/deqp/$GPU_VERSION-flakes.txt \
+    --testlog-to-xml /data/deqp/testlog-to-xml \
     --shader-cache-dir /data/local/tmp \
     --fraction-start ${CI_NODE_INDEX:-1} \
     --fraction $(( CI_NODE_TOTAL * ${DEQP_FRACTION:-1})) \
