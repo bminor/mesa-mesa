@@ -301,14 +301,17 @@ cs_to_reg_tuple(struct cs_index idx, ASSERTED unsigned expected_size)
 }
 
 static inline unsigned
-cs_src_tuple(struct cs_builder *b, struct cs_index src, ASSERTED unsigned count)
+cs_src_tuple(struct cs_builder *b, struct cs_index src, ASSERTED unsigned count,
+             uint16_t mask)
 {
    unsigned reg = cs_to_reg_tuple(src, count);
 
    if (unlikely(b->conf.reg_perm)) {
       for (unsigned i = reg; i < reg + count; i++) {
-         assert((b->conf.reg_perm(b, i) & CS_REG_RD) ||
-                !"Trying to read a restricted register");
+         if (mask & BITFIELD_BIT(i - reg)) {
+            assert((b->conf.reg_perm(b, i) & CS_REG_RD) ||
+                   !"Trying to read a restricted register");
+         }
       }
    }
 
@@ -316,7 +319,8 @@ cs_src_tuple(struct cs_builder *b, struct cs_index src, ASSERTED unsigned count)
 
    if (unlikely(ls_tracker)) {
       for (unsigned i = reg; i < reg + count; i++) {
-         if (BITSET_TEST(ls_tracker->pending_loads, i))
+         if ((mask & BITFIELD_BIT(i - reg)) &&
+             BITSET_TEST(ls_tracker->pending_loads, i))
             assert(!"register used as a source before flushing loads\n");
       }
    }
@@ -327,24 +331,27 @@ cs_src_tuple(struct cs_builder *b, struct cs_index src, ASSERTED unsigned count)
 static inline unsigned
 cs_src32(struct cs_builder *b, struct cs_index src)
 {
-   return cs_src_tuple(b, src, 1);
+   return cs_src_tuple(b, src, 1, BITFIELD_MASK(1));
 }
 
 static inline unsigned
 cs_src64(struct cs_builder *b, struct cs_index src)
 {
-   return cs_src_tuple(b, src, 2);
+   return cs_src_tuple(b, src, 2, BITFIELD_MASK(2));
 }
 
 static inline unsigned
-cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count)
+cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count,
+             uint16_t mask)
 {
    unsigned reg = cs_to_reg_tuple(dst, count);
 
    if (unlikely(b->conf.reg_perm)) {
       for (unsigned i = reg; i < reg + count; i++) {
-         assert((b->conf.reg_perm(b, i) & CS_REG_WR) ||
-                !"Trying to write a restricted register");
+         if (mask & BITFIELD_BIT(i - reg)) {
+            assert((b->conf.reg_perm(b, i) & CS_REG_WR) ||
+                   !"Trying to write a restricted register");
+         }
       }
    }
 
@@ -352,15 +359,18 @@ cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count)
 
    if (unlikely(ls_tracker)) {
       for (unsigned i = reg; i < reg + count; i++) {
-         if (BITSET_TEST(ls_tracker->pending_stores, i))
+         if ((mask & BITFIELD_BIT(i - reg)) &&
+             BITSET_TEST(ls_tracker->pending_stores, i))
             assert(
                !"register reused as a destination before flushing stores\n");
       }
    }
 
    if (unlikely(b->conf.dirty_tracker)) {
-      for (unsigned i = reg; i < reg + count; i++)
-         BITSET_SET(b->conf.dirty_tracker->regs, i);
+      for (unsigned i = reg; i < reg + count; i++) {
+         if (mask & BITFIELD_BIT(i - reg))
+            BITSET_SET(b->conf.dirty_tracker->regs, i);
+      }
    }
 
    return reg;
@@ -369,13 +379,13 @@ cs_dst_tuple(struct cs_builder *b, struct cs_index dst, ASSERTED unsigned count)
 static inline unsigned
 cs_dst32(struct cs_builder *b, struct cs_index dst)
 {
-   return cs_dst_tuple(b, dst, 1);
+   return cs_dst_tuple(b, dst, 1, BITFIELD_MASK(1));
 }
 
 static inline unsigned
 cs_dst64(struct cs_builder *b, struct cs_index dst)
 {
-   return cs_dst_tuple(b, dst, 2);
+   return cs_dst_tuple(b, dst, 2, BITFIELD_MASK(2));
 }
 
 static inline struct cs_index
@@ -1202,7 +1212,7 @@ cs_load_to(struct cs_builder *b, struct cs_index dest, struct cs_index address,
            unsigned mask, int offset)
 {
    unsigned count = util_last_bit(mask);
-   unsigned base_reg = cs_dst_tuple(b, dest, count);
+   unsigned base_reg = cs_dst_tuple(b, dest, count, mask);
 
    cs_emit(b, LOAD_MULTIPLE, I) {
       I.base_register = base_reg;
@@ -1238,7 +1248,7 @@ cs_store(struct cs_builder *b, struct cs_index data, struct cs_index address,
          unsigned mask, int offset)
 {
    unsigned count = util_last_bit(mask);
-   unsigned base_reg = cs_src_tuple(b, data, count);
+   unsigned base_reg = cs_src_tuple(b, data, count, mask);
 
    cs_emit(b, STORE_MULTIPLE, I) {
       I.base_register = base_reg;
@@ -1503,7 +1513,8 @@ cs_trace_point(struct cs_builder *b, struct cs_index regs,
                struct cs_async_op async)
 {
    cs_emit(b, TRACE_POINT, I) {
-      I.base_register = cs_src_tuple(b, regs, regs.size);
+      I.base_register =
+         cs_src_tuple(b, regs, regs.size, BITFIELD_MASK(regs.size));
       I.register_count = regs.size;
       cs_apply_async(I, async);
    }
