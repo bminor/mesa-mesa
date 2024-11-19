@@ -136,6 +136,9 @@ struct agx_shader_info {
    /* Output mask set during driver lowering */
    uint64_t outputs;
 
+   /* Workgroup size */
+   uint16_t workgroup_size[3];
+
    /* There may be constants in the binary. The driver must map these to uniform
     * registers as specified hre.
     */
