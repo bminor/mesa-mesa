@@ -1172,8 +1172,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
       device->vk.enabled_extensions.EXT_buffer_device_address ||
       device->vk.enabled_extensions.KHR_buffer_device_address ||
       device->vk.enabled_extensions.KHR_ray_tracing_pipeline ||
-      device->vk.enabled_extensions.KHR_acceleration_structure ||
-      device->vk.enabled_extensions.VALVE_descriptor_set_host_mapping;
+      device->vk.enabled_extensions.KHR_acceleration_structure;
 
    radv_init_shader_arenas(device);
 
