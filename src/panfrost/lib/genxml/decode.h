@@ -80,6 +80,7 @@ __pandecode_fetch_gpu_mem(struct pandecode_context *ctx, uint64_t gpu_va,
    if (!mem) {
       fprintf(stderr, "Access to unknown memory %" PRIx64 " in %s:%d\n", gpu_va,
               filename, line);
+      fflush(ctx->dump_stream);
       assert(0);
    }
 
