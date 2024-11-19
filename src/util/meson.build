@@ -153,6 +153,7 @@ files_mesa_util = files(
   'u_cpu_detect.h',
   'u_printf.c',
   'u_printf.h',
+  'u_tristate.h',
   'u_worklist.c',
   'u_worklist.h',
   'vl_vlc.h',
