@@ -137,8 +137,6 @@ fi
 
 ############### Build mold
 
-uncollapsed_section_switch mold "Building mold linker"
-
 . .gitlab-ci/container/build-mold.sh
 
 ############### Build LLVM-SPIRV translator

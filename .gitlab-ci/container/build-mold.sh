@@ -10,6 +10,8 @@ set -ex
 # FEDORA_X86_64_BUILD_TAG
 # KERNEL_ROOTFS_TAG
 
+uncollapsed_section_start mold "Building mold"
+
 MOLD_VERSION="2.32.0"
 
 git clone -b v"$MOLD_VERSION" --single-branch --depth 1 https://github.com/rui314/mold.git
@@ -26,3 +28,5 @@ find /usr/bin \( -name '*-ld' -o -name 'ld' \) \
 
 popd
 rm -rf mold
+
+section_end mold
