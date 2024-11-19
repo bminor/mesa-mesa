@@ -18,7 +18,7 @@ unsigned gfx10_ngg_get_vertices_per_prim(struct si_shader *shader)
       if (info->base.vs.blit_sgprs_amd) {
          /* Blits always use axis-aligned rectangles with 3 vertices. */
          return 3;
-      } else if (shader->key.ge.opt.ngg_culling & SI_NGG_CULL_LINES)
+      } else if (shader->key.ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES)
          return 2;
       else {
          /* The shader compiler replaces 0 with 3. The generated code will be correct regardless

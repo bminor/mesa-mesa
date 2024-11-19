@@ -1365,7 +1365,7 @@ unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_s
       return MESA_PRIM_TRIANGLES;
    }
 
-   if (key->ge.opt.ngg_culling & SI_NGG_CULL_LINES)
+   if (key->ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES)
       return MESA_PRIM_LINES;
 
    return MESA_PRIM_TRIANGLES; /* worst case for all callers */

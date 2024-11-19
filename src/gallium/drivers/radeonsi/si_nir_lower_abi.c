@@ -673,7 +673,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = ac_nir_unpack_arg(b, &args->ac, args->ac.gs_tg_info, 22, 9);
       break;
    case nir_intrinsic_load_initial_edgeflags_amd:
-      if (shader->key.ge.opt.ngg_culling & SI_NGG_CULL_LINES ||
+      if (shader->key.ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES ||
           (shader->selector->stage == MESA_SHADER_VERTEX &&
            shader->selector->info.base.vs.blit_sgprs_amd)) {
          /* Line primitives and blits don't need edge flags. */

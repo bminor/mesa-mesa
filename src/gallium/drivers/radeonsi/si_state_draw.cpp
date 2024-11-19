@@ -2249,10 +2249,11 @@ static void si_draw(struct pipe_context *ctx,
          if (util_prim_is_lines(sctx->current_rast_prim)) {
             /* Overwrite it to mask out face cull flags. */
             ngg_culling = rs->ngg_cull_flags_lines;
+            ngg_culling |= SI_NGG_CULL_VS_LINES;
          } else {
             ngg_culling = sctx->viewport0_y_inverted ? rs->ngg_cull_flags_tris_y_inverted :
                                                        rs->ngg_cull_flags_tris;
-            assert(ngg_culling); /* rasterizer state should always set this to non-zero */
+            ngg_culling |= SI_NGG_CULL_VS_TRIANGLES;
          }
 
          if (ngg_culling != old_ngg_culling) {

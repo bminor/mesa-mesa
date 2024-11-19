@@ -328,10 +328,13 @@ enum
    MAX_SI_VS_BLIT_SGPRS = 10, /* +1 for the attribute ring address */
 };
 
-#define SI_NGG_CULL_TRIANGLES                (1 << 0)   /* this implies W, view.xy, and small prim culling */
-#define SI_NGG_CULL_BACK_FACE                (1 << 1)   /* back faces */
-#define SI_NGG_CULL_FRONT_FACE               (1 << 2)   /* front faces */
-#define SI_NGG_CULL_LINES                    (1 << 3)   /* the primitive type is lines */
+/* The following two are only set for vertex shaders that cull.
+ * TES and GS get the primitive type from shader_info.
+ */
+#define SI_NGG_CULL_VS_TRIANGLES             (1 << 0)   /* this implies W, view.xy, and small prim culling */
+#define SI_NGG_CULL_VS_LINES                 (1 << 1)   /* this implies W and view.xy culling */
+#define SI_NGG_CULL_BACK_FACE                (1 << 2)   /* back faces */
+#define SI_NGG_CULL_FRONT_FACE               (1 << 3)   /* front faces */
 #define SI_NGG_CULL_SMALL_LINES_DIAMOND_EXIT (1 << 4)   /* cull small lines according to the diamond exit rule */
 #define SI_NGG_CULL_CLIP_PLANE_ENABLE(enable) (((enable) & 0xff) << 5)
 #define SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(x)  (((x) >> 5) & 0xff)
@@ -1118,7 +1121,7 @@ static inline bool gfx10_edgeflags_have_effect(struct si_shader *shader)
 {
    if (shader->selector->stage == MESA_SHADER_VERTEX &&
        !shader->selector->info.base.vs.blit_sgprs_amd &&
-       !(shader->key.ge.opt.ngg_culling & SI_NGG_CULL_LINES))
+       !(shader->key.ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES))
       return true;
 
    return false;
