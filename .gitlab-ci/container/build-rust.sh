@@ -5,6 +5,8 @@
 
 set -ex
 
+uncollapsed_section_start rust "Building Rust toolchain"
+
 # cargo (and rustup) wants to store stuff in $HOME/.cargo, and binaries in
 # $HOME/.cargo/bin.  Make bin a link to a public bin directory so the commands
 # are just available to all build jobs.
@@ -34,3 +36,5 @@ linker = "arm-linux-gnueabihf-gcc"
 [target.aarch64-unknown-linux-gnu]
 linker = "aarch64-linux-gnu-gcc"
 EOF
+
+section_end rust

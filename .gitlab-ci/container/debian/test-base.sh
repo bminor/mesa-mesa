@@ -155,8 +155,6 @@ uncollapsed_section_switch wayland "Building Wayland"
 
 ############### Install Rust toolchain
 
-uncollapsed_section_switch rust "Installing Rust toolchain"
-
 . .gitlab-ci/container/build-rust.sh
 
 ############### Build Crosvm
