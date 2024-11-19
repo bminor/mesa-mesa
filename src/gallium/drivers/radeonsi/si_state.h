@@ -678,8 +678,6 @@ void si_update_ps_inputs_read_or_disabled(struct si_context *sctx);
 void si_update_vrs_flat_shading(struct si_context *sctx);
 unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_shader_key *key,
                            bool return_unknown);
-unsigned si_get_output_prim_simplified(const struct si_shader_selector *sel,
-                                       const union si_shader_key *key);
 unsigned si_get_num_vertices_per_output_prim(struct si_shader *shader);
 bool si_update_ngg(struct si_context *sctx);
 void si_vs_ps_key_update_rast_prim_smooth_stipple(struct si_context *sctx);

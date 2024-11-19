@@ -1548,7 +1548,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
        * for the GL_LINE polygon mode to skip rendering lines on inner edges.
        */
       if (gs_info->uses_invocationid ||
-          (gfx10_edgeflags_have_effect(shader) && !gfx10_is_ngg_passthrough(shader)))
+          (gfx10_has_variable_edgeflags(shader) && !gfx10_is_ngg_passthrough(shader)))
          gs_vgpr_comp_cnt = 3; /* VGPR3 contains InvocationID, edge flags. */
       else if ((gs_stage == MESA_SHADER_GEOMETRY && gs_info->uses_primid) ||
                (gs_stage == MESA_SHADER_VERTEX && shader->key.ge.mono.u.vs_export_prim_id))

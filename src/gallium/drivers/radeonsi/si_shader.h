@@ -1080,6 +1080,8 @@ void gfx9_get_gs_info(struct si_shader_selector *es, struct si_shader_selector *
 bool gfx10_is_ngg_passthrough(struct si_shader *shader);
 unsigned si_shader_lshs_vertex_stride(struct si_shader *ls);
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader);
+unsigned si_get_output_prim_simplified(const struct si_shader_selector *sel,
+                                       const union si_shader_key *key);
 
 /* Inline helpers. */
 
@@ -1117,19 +1119,17 @@ static inline bool si_shader_uses_bindless_images(struct si_shader_selector *sel
    return selector ? selector->info.uses_bindless_images : false;
 }
 
-static inline bool gfx10_edgeflags_have_effect(struct si_shader *shader)
+static inline bool gfx10_has_variable_edgeflags(struct si_shader *shader)
 {
-   if (shader->selector->stage == MESA_SHADER_VERTEX &&
-       !shader->selector->info.base.vs.blit_sgprs_amd &&
-       !(shader->key.ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES))
-      return true;
+   unsigned output_prim = si_get_output_prim_simplified(shader->selector, &shader->key);
 
-   return false;
+   return shader->selector->stage == MESA_SHADER_VERTEX &&
+          (output_prim == MESA_PRIM_TRIANGLES || output_prim == MESA_PRIM_UNKNOWN);
 }
 
 static inline bool gfx10_ngg_writes_user_edgeflags(struct si_shader *shader)
 {
-   return gfx10_edgeflags_have_effect(shader) &&
+   return gfx10_has_variable_edgeflags(shader) &&
           shader->selector->info.writes_edgeflag;
 }
 
