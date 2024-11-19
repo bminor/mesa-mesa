@@ -961,7 +961,7 @@ csf_get_tiler_desc(struct panfrost_batch *batch)
       tiler.sample_pattern =
          pan_sample_pattern(util_framebuffer_get_num_samples(&batch->key));
       tiler.first_provoking_vertex =
-         pan_tristate_get(batch->first_provoking_vertex);
+         batch->first_provoking_vertex == U_TRISTATE_YES;
       tiler.geometry_buffer = ctx->csf.tmp_geom_bo->ptr.gpu;
       tiler.geometry_buffer_size = ctx->csf.tmp_geom_bo->kmod_bo->size;
    }

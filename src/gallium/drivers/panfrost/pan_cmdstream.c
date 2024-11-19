@@ -3024,7 +3024,7 @@ panfrost_compatible_batch_state(struct panfrost_batch *batch,
    struct pipe_rasterizer_state *rast = &ctx->rasterizer->base;
 
    if (reduced_prim == MESA_PRIM_LINES &&
-       !pan_tristate_set(&batch->line_smoothing, rast->line_smooth))
+       !u_tristate_set(&batch->line_smoothing, rast->line_smooth))
       return false;
 
    /* Only applies on Valhall */
@@ -3038,9 +3038,9 @@ panfrost_compatible_batch_state(struct panfrost_batch *batch,
     * provoking vertex doesn't matter for points.
     */
    if (reduced_prim == MESA_PRIM_POINTS)
-      return pan_tristate_set(&batch->sprite_coord_origin, coord);
+      return u_tristate_set(&batch->sprite_coord_origin, coord);
    else
-      return pan_tristate_set(&batch->first_provoking_vertex, first);
+      return u_tristate_set(&batch->first_provoking_vertex, first);
 }
 
 static struct panfrost_batch *

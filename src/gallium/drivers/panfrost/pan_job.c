@@ -468,10 +468,11 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
    fb->extent.maxx = batch->maxx - 1;
    fb->extent.maxy = batch->maxy - 1;
    fb->nr_samples = util_framebuffer_get_num_samples(&batch->key);
-   fb->force_samples = pan_tristate_get(batch->line_smoothing) ? 16 : 0;
+   fb->force_samples = (batch->line_smoothing == U_TRISTATE_YES) ? 16 : 0;
    fb->rt_count = batch->key.nr_cbufs;
-   fb->sprite_coord_origin = pan_tristate_get(batch->sprite_coord_origin);
-   fb->first_provoking_vertex = pan_tristate_get(batch->first_provoking_vertex);
+   fb->sprite_coord_origin = (batch->sprite_coord_origin == U_TRISTATE_YES);
+   fb->first_provoking_vertex =
+      (batch->first_provoking_vertex == U_TRISTATE_YES);
 
    static const unsigned char id_swz[] = {
       PIPE_SWIZZLE_X,

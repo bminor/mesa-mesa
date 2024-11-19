@@ -435,7 +435,7 @@ jm_emit_tiler_desc(struct panfrost_batch *batch)
          pan_sample_pattern(util_framebuffer_get_num_samples(&batch->key));
 #if PAN_ARCH >= 9
       tiler.first_provoking_vertex =
-         pan_tristate_get(batch->first_provoking_vertex);
+         batch->first_provoking_vertex == U_TRISTATE_YES;
 #endif
    }
 

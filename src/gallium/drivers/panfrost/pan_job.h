@@ -28,57 +28,12 @@
 
 #include "pipe/p_state.h"
 #include "util/u_dynarray.h"
+#include "util/u_tristate.h"
 #include "pan_csf.h"
 #include "pan_desc.h"
 #include "pan_jm.h"
 #include "pan_mempool.h"
 #include "pan_resource.h"
-
-/* Simple tri-state data structure. In the default "don't care" state, the value
- * may be set to true or false. However, once the value is set, it must not be
- * changed. Declared inside of a struct to prevent casting to bool, which is an
- * error. The getter needs to be used instead.
- */
-struct pan_tristate {
-   enum {
-      PAN_TRISTATE_DONTCARE,
-      PAN_TRISTATE_FALSE,
-      PAN_TRISTATE_TRUE,
-   } v;
-};
-
-/*
- * Try to set a tristate value to a desired boolean value. Returns whether the
- * operation is successful.
- */
-static inline bool
-pan_tristate_set(struct pan_tristate *state, bool value)
-{
-   switch (state->v) {
-   case PAN_TRISTATE_DONTCARE:
-      state->v = value ? PAN_TRISTATE_TRUE : PAN_TRISTATE_FALSE;
-      return true;
-
-   case PAN_TRISTATE_FALSE:
-      return (value == false);
-
-   case PAN_TRISTATE_TRUE:
-      return (value == true);
-
-   default:
-      unreachable("Invalid tristate value");
-   }
-}
-
-/*
- * Read the boolean value of a tristate. Return value undefined in the don't
- * care state.
- */
-static inline bool
-pan_tristate_get(struct pan_tristate state)
-{
-   return (state.v == PAN_TRISTATE_TRUE);
-}
 
 /* A panfrost_batch corresponds to a bound FBO we're rendering to,
  * collecting over multiple draws. */
@@ -207,11 +162,11 @@ struct panfrost_batch {
    /* On Valhall, these are properties of the batch. On Bifrost, they are
     * per draw.
     */
-   struct pan_tristate sprite_coord_origin;
-   struct pan_tristate first_provoking_vertex;
+   enum u_tristate sprite_coord_origin;
+   enum u_tristate first_provoking_vertex;
 
    /** This one is always on the batch */
-   struct pan_tristate line_smoothing;
+   enum u_tristate line_smoothing;
 
    /* Number of effective draws in the batch. Draws with rasterization disabled
     * don't count as effective draws. It's basically the number of IDVS or
