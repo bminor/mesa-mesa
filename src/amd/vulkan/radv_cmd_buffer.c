@@ -2566,7 +2566,6 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
    const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
    const struct radv_vs_output_info *outinfo = &last_vgt_shader->info.outinfo;
-   const bool mesh = last_vgt_shader->info.stage == MESA_SHADER_MESH;
    const bool gfx11plus = pdev->info.gfx_level >= GFX11;
    const enum radv_ps_in_type per_prim = gfx11plus ? radv_ps_in_per_prim_gfx11 : radv_ps_in_per_prim_gfx103;
 
@@ -2585,24 +2584,17 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
    input_mask_to_ps_inputs(outinfo, ps, ps->info.ps.input_mask, ps_input_cntl, &ps_offset, radv_ps_in_flat);
 
    /* Potentially per-primitive PS inputs */
-   if (!mesh) {
-      if (ps->info.ps.prim_id_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, radv_ps_in_flat);
-
-      if (ps->info.ps.layer_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_LAYER, ps_input_cntl, &ps_offset, true, radv_ps_in_flat);
-
-      if (ps->info.ps.viewport_index_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, radv_ps_in_flat);
-   } else {
-      if (ps->info.ps.prim_id_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, per_prim);
-
-      if (ps->info.ps.layer_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_LAYER, ps_input_cntl, &ps_offset, true, per_prim);
-
-      if (ps->info.ps.viewport_index_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, per_prim);
+   if (ps->info.ps.prim_id_input) {
+      const enum radv_ps_in_type t = outinfo->export_prim_id_per_primitive ? per_prim : radv_ps_in_flat;
+      slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, t);
+   }
+   if (ps->info.ps.layer_input) {
+      const enum radv_ps_in_type t = outinfo->writes_layer_per_primitive ? per_prim : radv_ps_in_flat;
+      slot_to_ps_input(outinfo, VARYING_SLOT_LAYER, ps_input_cntl, &ps_offset, true, t);
+   }
+   if (ps->info.ps.viewport_index_input) {
+      const enum radv_ps_in_type t = outinfo->writes_viewport_index_per_primitive ? per_prim : radv_ps_in_flat;
+      slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, t);
    }
 
    /* Per-primitive PS inputs: the HW needs these to be last. */
