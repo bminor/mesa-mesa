@@ -172,7 +172,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
       view->mem = panvk_pool_alloc_mem(&device->mempools.rw, alloc_info);
       if (!panvk_priv_mem_host_addr(view->mem)) {
          result = panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
-	 goto err_destroy_iview;
+         goto err_destroy_iview;
       }
 
       struct panfrost_ptr ptr = {
