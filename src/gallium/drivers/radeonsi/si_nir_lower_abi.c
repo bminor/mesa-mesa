@@ -254,7 +254,7 @@ static void preload_reusable_variables(nir_builder *b, struct lower_abi_state *s
 static nir_def *get_num_vertices_per_prim(nir_builder *b, struct lower_abi_state *s)
 {
    struct si_shader_args *args = s->args;
-   unsigned num_vertices = gfx10_ngg_get_vertices_per_prim(s->shader);
+   unsigned num_vertices = si_get_num_vertices_per_output_prim(s->shader);
 
    if (num_vertices)
       return nir_imm_int(b, num_vertices);

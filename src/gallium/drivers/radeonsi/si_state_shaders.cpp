@@ -1377,6 +1377,47 @@ unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_s
       return MESA_PRIM_TRIANGLES; /* worst case for all callers */
 }
 
+/* Return a simplified primitive type, e.g. don't return *_STRIP and *_FAN.
+ * This returns MESA_PRIM_UNKNOWN if the primitive type is not known at compile time.
+ */
+unsigned si_get_output_prim_simplified(const struct si_shader_selector *sel,
+                                       const union si_shader_key *key)
+{
+   if (sel->stage == MESA_SHADER_GEOMETRY) {
+      if (util_rast_prim_is_triangles(sel->info.base.gs.output_primitive))
+         return MESA_PRIM_TRIANGLES;
+      else if (util_prim_is_lines(sel->info.base.gs.output_primitive))
+         return MESA_PRIM_LINES;
+      else
+         return MESA_PRIM_POINTS;
+   }
+
+   if (sel->stage == MESA_SHADER_VERTEX && sel->info.base.vs.blit_sgprs_amd)
+      return SI_PRIM_RECTANGLE_LIST;
+
+   /* It's the same as the input primitive type for VS and TES. */
+   return si_get_input_prim(sel, key, true);
+}
+
+unsigned si_get_num_vertices_per_output_prim(struct si_shader *shader)
+{
+   unsigned prim = si_get_output_prim_simplified(shader->selector, &shader->key);
+
+   switch (prim) {
+   case MESA_PRIM_TRIANGLES:
+   case SI_PRIM_RECTANGLE_LIST:
+      return 3;
+   case MESA_PRIM_LINES:
+      return 2;
+   case MESA_PRIM_POINTS:
+      return 1;
+   case MESA_PRIM_UNKNOWN:
+      return 0;
+   default:
+      unreachable("unexpected prim type");
+   }
+}
+
 static unsigned si_get_vs_out_cntl(const struct si_shader_selector *sel,
                                    const struct si_shader *shader, bool ngg)
 {

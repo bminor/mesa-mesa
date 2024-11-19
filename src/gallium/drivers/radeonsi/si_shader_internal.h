@@ -117,7 +117,6 @@ void si_get_ps_epilog_args(struct si_shader_args *args,
                            struct ac_arg *sample_mask);
 
 /* gfx10_shader_ngg.c */
-unsigned gfx10_ngg_get_vertices_per_prim(struct si_shader *shader);
 bool gfx10_ngg_export_prim_early(struct si_shader *shader);
 unsigned gfx10_ngg_get_scratch_dw_size(struct si_shader *shader);
 bool gfx10_ngg_calculate_subgroup_info(struct si_shader *shader);

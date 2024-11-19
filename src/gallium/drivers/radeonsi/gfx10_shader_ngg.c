@@ -8,38 +8,6 @@
 #include "si_query.h"
 #include "si_shader_internal.h"
 
-unsigned gfx10_ngg_get_vertices_per_prim(struct si_shader *shader)
-{
-   const struct si_shader_info *info = &shader->selector->info;
-
-   if (shader->selector->stage == MESA_SHADER_GEOMETRY)
-      return mesa_vertices_per_prim(info->base.gs.output_primitive);
-   else if (shader->selector->stage == MESA_SHADER_VERTEX) {
-      if (info->base.vs.blit_sgprs_amd) {
-         /* Blits always use axis-aligned rectangles with 3 vertices. */
-         return 3;
-      } else if (shader->key.ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES)
-         return 2;
-      else {
-         /* The shader compiler replaces 0 with 3. The generated code will be correct regardless
-          * of the draw primitive type, but it's less efficient.
-          *
-          * Computing prim export values for non-existent vertices has no effect.
-          */
-         return 0; /* unknown */
-      }
-   } else {
-      assert(shader->selector->stage == MESA_SHADER_TESS_EVAL);
-
-      if (info->base.tess.point_mode)
-         return 1;
-      else if (info->base.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES)
-         return 2;
-      else
-         return 3;
-   }
-}
-
 bool gfx10_ngg_export_prim_early(struct si_shader *shader)
 {
    struct si_shader_selector *sel = shader->selector;
