@@ -149,8 +149,6 @@ uncollapsed_section_switch llvmspv "Building LLVM-SPIRV-Translator"
 
 ############### Build libclc
 
-uncollapsed_section_switch libclc "Building libclc"
-
 . .gitlab-ci/container/build-libclc.sh
 
 ############### Build Wayland
