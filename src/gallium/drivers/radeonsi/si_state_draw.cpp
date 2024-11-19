@@ -2255,12 +2255,12 @@ static void si_draw(struct pipe_context *ctx,
 
          if (util_prim_is_lines(sctx->current_rast_prim)) {
             /* Overwrite it to mask out face cull flags. */
-            ngg_culling = rs->ngg_cull_flags_lines;
-            ngg_culling |= SI_NGG_CULL_VS_LINES;
+            ngg_culling = rs->ngg_cull_flags_lines |
+                          (!HAS_TESS && !HAS_GS ? SI_NGG_CULL_VS_LINES : 0);
          } else {
-            ngg_culling = sctx->viewport0_y_inverted ? rs->ngg_cull_flags_tris_y_inverted :
-                                                       rs->ngg_cull_flags_tris;
-            ngg_culling |= SI_NGG_CULL_VS_TRIANGLES;
+            ngg_culling = (sctx->viewport0_y_inverted ? rs->ngg_cull_flags_tris_y_inverted :
+                                                        rs->ngg_cull_flags_tris) |
+                          (!HAS_TESS && !HAS_GS ? SI_NGG_CULL_VS_TRIANGLES : 0);
          }
 
          if (ngg_culling != old_ngg_culling) {
