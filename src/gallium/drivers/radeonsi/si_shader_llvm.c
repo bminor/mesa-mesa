@@ -623,7 +623,7 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
     * compaction is enabled.
     */
    if (is_nogs_ngg_stage &&
-       (si_shader_uses_streamout(shader) || shader->key.ge.opt.ngg_culling)) {
+       (si_shader_uses_streamout(shader) || si_shader_culling_enabled(shader))) {
       LLVMTypeRef asi32 = LLVMArrayType(ctx->ac.i32, gfx10_ngg_get_scratch_dw_size(shader));
       ctx->gs_ngg_scratch = (struct ac_llvm_pointer) {
          .value = LLVMAddGlobalInAddressSpace(ctx->ac.module, asi32, "ngg_scratch",
@@ -659,7 +659,7 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
        */
       if (ctx->screen->info.gfx_level == GFX10 &&
           (ctx->stage == MESA_SHADER_VERTEX || ctx->stage == MESA_SHADER_TESS_EVAL) &&
-          shader->key.ge.as_ngg && !shader->key.ge.as_es && !shader->key.ge.opt.ngg_culling)
+          shader->key.ge.as_ngg && !shader->key.ge.as_es && !si_shader_culling_enabled(shader))
          ac_build_s_barrier(&ctx->ac, ctx->stage);
 
       LLVMValueRef thread_enabled = NULL;

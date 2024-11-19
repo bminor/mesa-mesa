@@ -1911,7 +1911,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir)
       .gfx_level = sel->screen->info.gfx_level,
       .max_workgroup_size = si_get_max_workgroup_size(shader),
       .wave_size = shader->wave_size,
-      .can_cull = !!key->ge.opt.ngg_culling,
+      .can_cull = si_shader_culling_enabled(shader),
       .disable_streamout = !si_shader_uses_streamout(shader),
       .vs_output_param_offset = shader->info.vs_output_param_offset,
       .has_param_exports = shader->info.nr_param_exports,

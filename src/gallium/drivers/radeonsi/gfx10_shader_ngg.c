@@ -35,7 +35,7 @@ unsigned gfx10_ngg_get_scratch_dw_size(struct si_shader *shader)
                                       si_get_max_workgroup_size(shader),
                                       shader->wave_size,
                                       si_shader_uses_streamout(shader),
-                                      shader->key.ge.opt.ngg_culling) / 4;
+                                      si_shader_culling_enabled(shader)) / 4;
 }
 
 /**
@@ -119,7 +119,7 @@ retry_select_mode:
          si_shader_uses_streamout(shader),
          shader->key.ge.mono.u.vs_export_prim_id,
          gfx10_ngg_writes_user_edgeflags(shader),
-         shader->key.ge.opt.ngg_culling,
+         si_shader_culling_enabled(shader),
          uses_instance_id,
          uses_primitive_id) / 4;
    }

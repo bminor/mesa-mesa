@@ -95,7 +95,7 @@ unsigned si_determine_wave_size(struct si_screen *sscreen, struct si_shader *sha
     */
    if (stage <= MESA_SHADER_GEOMETRY &&
        (sscreen->info.gfx_level == GFX10 || sscreen->info.gfx_level == GFX10_3) &&
-       !(sscreen->info.gfx_level == GFX10 && shader->key.ge.opt.ngg_culling))
+       !(sscreen->info.gfx_level == GFX10 && si_shader_culling_enabled(shader)))
       return 32;
 
    /* Divergent loops in Wave64 can end up having too many iterations in one half of the wave
@@ -1186,7 +1186,7 @@ bool gfx10_is_ngg_passthrough(struct si_shader *shader)
     *
     * NGG passthrough still allows the use of LDS.
     */
-   return sel->stage != MESA_SHADER_GEOMETRY && !shader->key.ge.opt.ngg_culling;
+   return sel->stage != MESA_SHADER_GEOMETRY && !si_shader_culling_enabled(shader);
 }
 
 template <enum si_has_tess HAS_TESS>
@@ -1624,14 +1624,14 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
    } else {
       unsigned late_alloc_wave64, cu_mask;
 
-      ac_compute_late_alloc(&sscreen->info, true, shader->key.ge.opt.ngg_culling,
+      ac_compute_late_alloc(&sscreen->info, true, si_shader_culling_enabled(shader),
                             shader->config.scratch_bytes_per_wave > 0,
                             &late_alloc_wave64, &cu_mask);
 
       /* Oversubscribe PC. This improves performance when there are too many varyings. */
       unsigned oversub_pc_lines, oversub_pc_factor = 1;
 
-      if (shader->key.ge.opt.ngg_culling) {
+      if (si_shader_culling_enabled(shader)) {
          /* Be more aggressive with NGG culling. */
          if (shader->info.nr_param_exports > 4)
             oversub_pc_factor = 4;

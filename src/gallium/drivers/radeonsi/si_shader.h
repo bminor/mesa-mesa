@@ -1150,6 +1150,11 @@ static inline bool si_shader_uses_discard(struct si_shader *shader)
           shader->key.ps.part.epilog.alpha_func != PIPE_FUNC_ALWAYS;
 }
 
+static inline bool si_shader_culling_enabled(struct si_shader *shader)
+{
+   return !!shader->key.ge.opt.ngg_culling;
+}
+
 #ifdef __cplusplus
 }
 #endif

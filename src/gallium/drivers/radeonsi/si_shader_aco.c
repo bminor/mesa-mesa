@@ -80,7 +80,7 @@ si_fill_aco_shader_info(struct si_shader *shader, struct aco_shader_info *info,
    info->hw_stage = si_select_hw_stage(stage, key, gfx_level);
 
    if (stage <= MESA_SHADER_GEOMETRY && key->ge.as_ngg && !key->ge.as_es) {
-      info->has_ngg_culling = key->ge.opt.ngg_culling;
+      info->has_ngg_culling = si_shader_culling_enabled(shader);
       info->has_ngg_early_prim_export = gfx10_ngg_export_prim_early(shader);
    }
 
