@@ -4174,7 +4174,7 @@
         "description": "anv: prevent access to destroyed vk_sync objects post submission",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "36ea90a3619f86e9bf0b51e2b0c28b213e08083d",
         "notes": null
