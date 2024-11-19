@@ -1064,6 +1064,8 @@ opcode("b32csel", 0, tuint, [0, 0, 0],
        [tbool32, tuint, tuint], False, selection, "src0 ? src1 : src2",
        description = csel_description.format("a 32-bit", "0 vs ~0"))
 
+triop("icsel_eqz", tint, selection, "(src0 == 0) ? src1 : src2")
+
 triop("i32csel_gt", tint32, selection, "(src0 > 0) ? src1 : src2")
 triop("i32csel_ge", tint32, selection, "(src0 >= 0) ? src1 : src2")
 

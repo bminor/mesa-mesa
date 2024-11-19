@@ -922,6 +922,7 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
       set_cat2_condition(dst.rpts, dst_sz, IR3_COND_GE);
       break;
 
+   case nir_op_icsel_eqz:
    case nir_op_bcsel: {
       struct ir3_instruction_rpt conds;
 
@@ -965,12 +966,19 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
          conds.rpts[rpt] = cond;
       }
 
+      if (alu->op == nir_op_icsel_eqz) {
+         struct ir3_instruction_rpt tmp = src[1];
+         src[1] = src[2];
+         src[2] = tmp;
+      }
+
       if (is_half(src[1].rpts[0]))
          dst = ir3_SEL_B16_rpt(b, dst_sz, src[1], 0, conds, 0, src[2], 0);
       else
          dst = ir3_SEL_B32_rpt(b, dst_sz, src[1], 0, conds, 0, src[2], 0);
       break;
    }
+
    case nir_op_bit_count: {
       if (ctx->compiler->gen < 5 ||
           (src[0].rpts[0]->dsts[0]->flags & IR3_REG_HALF)) {

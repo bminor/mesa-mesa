@@ -4180,6 +4180,10 @@ typedef struct nir_shader_compiler_options {
 
    /* Backend supports fused comapre against zero and csel */
    bool has_fused_comp_and_csel;
+   /* Backend supports fused int eq/ne against zero and csel. */
+   bool has_icsel_eqz64;
+   bool has_icsel_eqz32;
+   bool has_icsel_eqz16;
 
    /* Backend supports fneo, fequ, fltu, fgeu. */
    bool has_fneo_fcmpu;
