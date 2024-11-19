@@ -4857,7 +4857,6 @@ struct anv_graphics_pipeline {
    /* Fully backed instructions, ready to be emitted in the anv_cmd_buffer */
    struct {
       struct anv_gfx_state_ptr                  urb;
-      struct anv_gfx_state_ptr                  vf_statistics;
       struct anv_gfx_state_ptr                  vf_sgvs;
       struct anv_gfx_state_ptr                  vf_sgvs_2;
       struct anv_gfx_state_ptr                  vf_sgvs_instancing;

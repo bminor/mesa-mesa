@@ -1568,15 +1568,6 @@ emit_3dstate_ps_extra(struct anv_graphics_pipeline *pipeline,
 }
 
 static void
-emit_3dstate_vf_statistics(struct anv_graphics_pipeline *pipeline)
-{
-   anv_pipeline_emit(pipeline, final.vf_statistics,
-                     GENX(3DSTATE_VF_STATISTICS), vfs) {
-      vfs.StatisticsEnable = true;
-   }
-}
-
-static void
 compute_kill_pixel(struct anv_graphics_pipeline *pipeline,
                    const struct vk_multisample_state *ms,
                    const struct vk_graphics_pipeline_state *state)
@@ -1884,8 +1875,6 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
       vfg.PatchBatchSizeMultiplier = 31;
    }
 #endif
-
-   emit_3dstate_vf_statistics(pipeline);
 
    if (anv_pipeline_is_primitive(pipeline)) {
       emit_vertex_input(pipeline, state, state->vi);

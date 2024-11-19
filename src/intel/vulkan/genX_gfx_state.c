@@ -1927,8 +1927,11 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
                                               final.ds, protected);
    }
 
-   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VF_STATISTICS))
-      anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.vf_statistics);
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_VF_STATISTICS)) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_VF_STATISTICS), vfs) {
+         vfs.StatisticsEnable = true;
+      }
+   }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SBE))
       anv_batch_emit_pipeline_state(&cmd_buffer->batch, pipeline, final.sbe);
