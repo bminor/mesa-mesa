@@ -149,8 +149,6 @@ fi
 
 ############### Build Wayland
 
-uncollapsed_section_switch wayland "Building Wayland"
-
 . .gitlab-ci/container/build-wayland.sh
 
 ############### Install Rust toolchain
