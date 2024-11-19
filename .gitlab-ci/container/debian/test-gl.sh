@@ -84,8 +84,6 @@ apt-get install -y --no-remove "${DEPS[@]}" "${EPHEMERAL[@]}" \
 
 ############### Build piglit
 
-uncollapsed_section_switch piglit "Building Piglit"
-
 PIGLIT_OPTS="-DPIGLIT_USE_WAFFLE=ON
 	     -DPIGLIT_USE_GBM=ON
 	     -DPIGLIT_USE_WAYLAND=ON

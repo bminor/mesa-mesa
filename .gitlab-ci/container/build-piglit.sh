@@ -2,6 +2,8 @@
 # shellcheck disable=SC2086 # we want word splitting
 set -uex
 
+uncollapsed_section_start piglit "Building piglit"
+
 # When changing this file, you need to bump the following
 # .gitlab-ci/image-tags.yml tags:
 # DEBIAN_TEST_GL_TAG
@@ -32,3 +34,5 @@ if [ "${PIGLIT_BUILD_TARGETS:-}" = "piglit_replayer" ]; then
          -exec rm -rf {} \; 2>/dev/null
 fi
 popd
+
+section_end piglit

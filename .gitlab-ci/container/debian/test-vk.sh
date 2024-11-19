@@ -82,8 +82,6 @@ apt-get install -y --no-remove --no-install-recommends \
 
 ############### Build piglit replayer
 
-uncollapsed_section_switch piglit "Building Piglit for Vulkan (traces only)"
-
 # We don't run any _piglit_ Vulkan tests in the containers.
 PIGLIT_OPTS="-DPIGLIT_USE_WAFFLE=ON
 	     -DPIGLIT_USE_GBM=OFF
