@@ -786,7 +786,9 @@ nir_instr_set_add_or_rewrite(struct set *instr_set, nir_instr *instr,
          nir_instr_as_alu(match)->fp_fast_math |= nir_instr_as_alu(instr)->fp_fast_math;
       }
 
-      nir_def_rewrite_uses(def, new_def);
+      assert(!def == !new_def);
+      if (def)
+         nir_def_rewrite_uses(def, new_def);
 
       return match;
    } else {
