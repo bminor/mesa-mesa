@@ -783,6 +783,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       options.early_prim_export = info->has_ngg_early_prim_export;
       options.passthrough = info->is_ngg_passthrough;
       options.export_primitive_id = info->outinfo.export_prim_id;
+      options.export_primitive_id_per_prim = info->outinfo.export_prim_id_per_primitive;
       options.instance_rate_inputs = gfx_state->vi.instance_rate_inputs << VERT_ATTRIB_GENERIC0;
 
       NIR_PASS_V(nir, ac_nir_lower_ngg_nogs, &options);
@@ -2162,7 +2163,9 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
       if (pdev->info.gfx_level >= GFX12) {
          if (info->gs.vertices_in >= 4) {
             gs_vgpr_comp_cnt = 2; /* VGPR2 contains offsets 3-5 */
-         } else if (info->uses_prim_id || (es_stage == MESA_SHADER_VERTEX && info->outinfo.export_prim_id)) {
+         } else if (info->uses_prim_id ||
+                    (es_stage == MESA_SHADER_VERTEX &&
+                     (info->outinfo.export_prim_id || info->outinfo.export_prim_id_per_primitive))) {
             gs_vgpr_comp_cnt = 1; /* VGPR1 contains PrimitiveID. */
          } else {
             gs_vgpr_comp_cnt = 0; /* VGPR0 contains offsets 0-2, GS invocation ID. */
@@ -2184,7 +2187,9 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
 
          if (info->uses_invocation_id) {
             gs_vgpr_comp_cnt = 3; /* VGPR3 contains InvocationID. */
-         } else if (info->uses_prim_id || (es_stage == MESA_SHADER_VERTEX && info->outinfo.export_prim_id)) {
+         } else if (info->uses_prim_id ||
+                    (es_stage == MESA_SHADER_VERTEX &&
+                     (info->outinfo.export_prim_id || info->outinfo.export_prim_id_per_primitive))) {
             gs_vgpr_comp_cnt = 2; /* VGPR2 contains PrimitiveID. */
          } else if (need_gs_vtx_offset2) {
             gs_vgpr_comp_cnt = 1; /* VGPR1 contains offsets 2, 3 */

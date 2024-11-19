@@ -435,12 +435,21 @@ radv_set_vs_output_param(struct radv_device *device, const struct nir_shader *ni
 
    memset(outinfo->vs_output_param_offset, AC_EXP_PARAM_UNDEFINED, sizeof(outinfo->vs_output_param_offset));
 
+   /* Implicit primitive ID for VS and TES is added by ac_nir_lower_legacy_vs / ac_nir_lower_ngg,
+    * it can be configured as either a per-vertex or per-primitive output depending on the GPU.
+    */
+   const bool implicit_prim_id_per_prim =
+      export_prim_id && info->is_ngg && pdev->info.gfx_level >= GFX10_3 && nir->info.stage == MESA_SHADER_VERTEX;
+   const bool implicit_prim_id_per_vertex =
+      export_prim_id && !implicit_prim_id_per_prim &&
+      (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL);
+
    unsigned total_param_exports = 0;
 
    /* Per-vertex outputs */
    assign_outinfo_params(outinfo, per_vtx_mask, &total_param_exports, 0);
 
-   if (export_prim_id && (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL)) {
+   if (implicit_prim_id_per_vertex) {
       /* Mark the primitive ID as output when it's implicitly exported by VS or TES. */
       if (outinfo->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID] == AC_EXP_PARAM_UNDEFINED)
          outinfo->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID] = total_param_exports++;
@@ -461,6 +470,14 @@ radv_set_vs_output_param(struct radv_device *device, const struct nir_shader *ni
     * so if there aren't any, we have to offset per-primitive params by 1.
     */
    const unsigned extra_offset = !!(total_param_exports == 0 && pdev->info.gfx_level >= GFX11);
+
+   if (implicit_prim_id_per_prim) {
+      /* Mark the primitive ID as output when it's implicitly exported by VS. */
+      if (outinfo->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID] == AC_EXP_PARAM_UNDEFINED)
+         outinfo->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID] = extra_offset + total_param_exports++;
+
+      outinfo->export_prim_id_per_primitive = true;
+   }
 
    /* Per-primitive outputs: the HW needs these to be last. */
    assign_outinfo_params(outinfo, per_prim_mask, &total_param_exports, extra_offset);
