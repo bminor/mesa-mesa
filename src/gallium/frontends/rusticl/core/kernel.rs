@@ -22,6 +22,7 @@ use spirv::SpirvKernelInfo;
 use std::cmp;
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::ffi::CStr;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::ops::Index;
@@ -1692,12 +1693,14 @@ impl Kernel {
         self.kernel_info.subgroup_size
     }
 
-    pub fn arg_name(&self, idx: cl_uint) -> &String {
-        &self.kernel_info.args[idx as usize].spirv.name
+    pub fn arg_name(&self, idx: cl_uint) -> Option<&CStr> {
+        let name = &self.kernel_info.args[idx as usize].spirv.name;
+        name.is_empty().not().then_some(name)
     }
 
-    pub fn arg_type_name(&self, idx: cl_uint) -> &String {
-        &self.kernel_info.args[idx as usize].spirv.type_name
+    pub fn arg_type_name(&self, idx: cl_uint) -> Option<&CStr> {
+        let type_name = &self.kernel_info.args[idx as usize].spirv.type_name;
+        type_name.is_empty().not().then_some(type_name)
     }
 
     pub fn priv_mem_size(&self, dev: &Device) -> cl_ulong {

@@ -15,6 +15,7 @@ use rusticl_proc_macros::cl_entrypoint;
 use rusticl_proc_macros::cl_info_entrypoint;
 
 use std::cmp;
+use std::ffi::CStr;
 use std::mem::{self, MaybeUninit};
 use std::os::raw::c_void;
 use std::ptr;
@@ -61,8 +62,16 @@ impl CLInfoObj<cl_kernel_arg_info, cl_uint> for cl_kernel {
             CL_KERNEL_ARG_ADDRESS_QUALIFIER => {
                 cl_prop::<cl_kernel_arg_address_qualifier>(kernel.address_qualifier(idx))
             }
-            CL_KERNEL_ARG_NAME => cl_prop::<&str>(kernel.arg_name(idx)),
-            CL_KERNEL_ARG_TYPE_NAME => cl_prop::<&str>(kernel.arg_type_name(idx)),
+            CL_KERNEL_ARG_NAME => cl_prop::<&CStr>(
+                kernel
+                    .arg_name(idx)
+                    .ok_or(CL_KERNEL_ARG_INFO_NOT_AVAILABLE)?,
+            ),
+            CL_KERNEL_ARG_TYPE_NAME => cl_prop::<&CStr>(
+                kernel
+                    .arg_type_name(idx)
+                    .ok_or(CL_KERNEL_ARG_INFO_NOT_AVAILABLE)?,
+            ),
             CL_KERNEL_ARG_TYPE_QUALIFIER => {
                 cl_prop::<cl_kernel_arg_type_qualifier>(kernel.type_qualifier(idx))
             }
