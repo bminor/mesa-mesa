@@ -1214,7 +1214,7 @@
         "description": "anv: Fix feature pipelineProtectedAccess",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0b5408f9fc22c430f37a31014c6d5fd8530981f8",
         "notes": null
