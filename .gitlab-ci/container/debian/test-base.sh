@@ -126,6 +126,8 @@ pip3 install --break-system-packages git+http://gitlab.freedesktop.org/freedeskt
 # Needed for manipulation with traces yaml files.
 pip3 install --break-system-packages yq
 
+section_end debian_setup
+
 ############### Download prebuilt kernel
 
 if [ "$DEBIAN_ARCH" = amd64 ]; then
@@ -172,3 +174,5 @@ apt-get purge -y "${EPHEMERAL[@]}"
 rm -rf /root/.rustup
 
 . .gitlab-ci/container/container_post_build.sh
+
+section_end debian_cleanup

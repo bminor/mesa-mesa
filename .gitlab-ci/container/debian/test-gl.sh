@@ -82,6 +82,8 @@ apt-get install -y --no-remove "${DEPS[@]}" "${EPHEMERAL[@]}" \
 
 . .gitlab-ci/container/container_pre_build.sh
 
+section_end debian_setup
+
 ############### Build piglit
 
 PIGLIT_OPTS="-DPIGLIT_USE_WAFFLE=ON
@@ -129,3 +131,5 @@ uncollapsed_section_switch debian_cleanup "Cleaning up base Debian system"
 apt-get purge -y "${EPHEMERAL[@]}"
 
 . .gitlab-ci/container/container_post_build.sh
+
+section_end debian_cleanup

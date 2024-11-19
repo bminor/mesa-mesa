@@ -80,6 +80,8 @@ apt-get install -y --no-remove --no-install-recommends \
 
 . .gitlab-ci/container/container_pre_build.sh
 
+section_end debian_setup
+
 ############### Build piglit replayer
 
 # We don't run any _piglit_ Vulkan tests in the containers.
@@ -131,3 +133,5 @@ uncollapsed_section_switch debian_cleanup "Cleaning up base Debian system"
 apt-get purge -y "${EPHEMERAL[@]}"
 
 . .gitlab-ci/container/container_post_build.sh
+
+section_end debian_cleanup
