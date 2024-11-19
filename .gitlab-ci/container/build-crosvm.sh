@@ -3,6 +3,8 @@
 
 set -uex
 
+uncollapsed_section_start crosvm "Building crosvm"
+
 git config --global user.email "mesa@example.com"
 git config --global user.name "Mesa CI"
 
@@ -42,3 +44,5 @@ CROSVM_USE_SYSTEM_MINIGBM=1 CROSVM_USE_SYSTEM_VIRGLRENDERER=1 RUSTFLAGS='-L nati
 popd
 
 rm -rf /platform/crosvm
+
+section_end crosvm

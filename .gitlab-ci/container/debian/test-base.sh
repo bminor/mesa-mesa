@@ -167,7 +167,6 @@ uncollapsed_section_switch rust "Installing Rust toolchain"
 
 ############### Build Crosvm
 
-uncollapsed_section_switch crosvm "Building crosvm"
 . .gitlab-ci/container/build-crosvm.sh
 
 ############### Build dEQP runner
