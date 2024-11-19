@@ -261,31 +261,51 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
    }
 break_all:
 
+   if (next_discard_id == 0)
+      return false;
+
    /* Walk the list of instructions and move the discard/demote and
     * everything it depends on to the top.  We walk the instruction list
     * here because it ensures that everything stays in its original order.
     * This provides stability for the algorithm and ensures that we don't
     * accidentally get dependencies out-of-order.
     */
-   nir_cursor cursor = nir_before_impl(impl);
-   for (unsigned i = 0; i < next_discard_id; i++) {
-      nir_foreach_block(block, impl) {
-         bool stop = false;
-         nir_foreach_instr_safe(instr, block) {
-            if (instr->pass_flags == STOP_PROCESSING_INSTR_FLAG) {
-               stop = true;
-               break;
-            }
-            if (instr->pass_flags == MOVE_INSTR_FLAG(i)) {
-               progress |= nir_instr_move(cursor, instr);
-               cursor = nir_after_instr(instr);
-            }
-         }
-         if (stop)
+   BITSET_DECLARE(cursors_valid, MAX_DISCARDS) = { 1u };
+   nir_cursor cursors_[32];
+   struct util_dynarray cursors;
+   util_dynarray_init_from_stack(&cursors, cursors_, sizeof(cursors_));
+   if (!util_dynarray_resize(&cursors, nir_cursor, next_discard_id))
+      return false;
+
+   *util_dynarray_element(&cursors, nir_cursor, 0) = nir_before_impl(impl);
+
+   nir_foreach_block(block, impl) {
+      bool stop = false;
+      nir_foreach_instr_safe(instr, block) {
+         if (instr->pass_flags == 0)
+            continue;
+
+         if (instr->pass_flags == STOP_PROCESSING_INSTR_FLAG) {
+            stop = true;
             break;
+         }
+
+         unsigned index = instr->pass_flags - 1;
+         nir_cursor *cursor = util_dynarray_element(&cursors, nir_cursor, index);
+         if (!BITSET_TEST(cursors_valid, index)) {
+            unsigned prev_idx = BITSET_LAST_BIT_BEFORE(cursors_valid, index) - 1;
+            *cursor = *util_dynarray_element(&cursors, nir_cursor, prev_idx);
+            BITSET_SET(cursors_valid, index);
+         }
+
+         progress |= nir_instr_move(*cursor, instr);
+         *cursor = nir_after_instr(instr);
       }
+      if (stop)
+         break;
    }
 
+   util_dynarray_fini(&cursors);
    return progress;
 }
 
