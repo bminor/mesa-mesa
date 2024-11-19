@@ -879,10 +879,14 @@ static unsigned si_get_ia_multi_vgt_param(struct si_context *sctx,
    key.u.prim = prim;
    key.u.uses_instancing = !IS_DRAW_VERTEX_STATE &&
                            ((indirect && indirect->buffer) || instance_count > 1);
-   key.u.multi_instances_smaller_than_primgroup =
-      num_instanced_prims_less_than<IS_DRAW_VERTEX_STATE>(indirect, prim, min_vertex_count,
-                                                          instance_count, primgroup_size,
-                                                          sctx->patch_vertices);
+   if (GFX_VERSION == GFX7 || GFX_VERSION == GFX8) {
+      key.u.multi_instances_smaller_than_primgroup =
+         num_instanced_prims_less_than<IS_DRAW_VERTEX_STATE>(indirect, prim, min_vertex_count,
+                                                             instance_count, primgroup_size,
+                                                             sctx->patch_vertices);
+   } else {
+      key.u.multi_instances_smaller_than_primgroup = 0;
+   }
    key.u.primitive_restart = !IS_DRAW_VERTEX_STATE && primitive_restart;
    key.u.count_from_stream_output = !IS_DRAW_VERTEX_STATE && indirect &&
                                     indirect->count_from_stream_output;
@@ -2171,13 +2175,16 @@ static void si_draw(struct pipe_context *ctx,
       }
       total_direct_count = INT_MAX; /* just set something other than 0 to enable shader culling */
    } else {
-      total_direct_count = min_direct_count = draws[0].count;
+      total_direct_count = draws[0].count;
+      if (GFX_VERSION == GFX7 || GFX_VERSION == GFX8)
+         min_direct_count = draws[0].count;
 
       for (unsigned i = 1; i < num_draws; i++) {
          unsigned count = draws[i].count;
 
          total_direct_count += count;
-         min_direct_count = MIN2(min_direct_count, count);
+         if (GFX_VERSION == GFX7 || GFX_VERSION == GFX8)
+            min_direct_count = MIN2(min_direct_count, count);
       }
    }
 
