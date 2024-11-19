@@ -171,8 +171,6 @@ uncollapsed_section_switch rust "Installing Rust toolchain"
 
 ############### Build dEQP runner
 
-uncollapsed_section_switch deqpr "Building deqp-runner"
-
 . .gitlab-ci/container/build-deqp-runner.sh
 
 ############### Uninstall the build software
