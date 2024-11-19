@@ -140,6 +140,22 @@ panvk_per_arch(CreateSampler)(VkDevice _device,
          cfg.maximum_anisotropy = pCreateInfo->maxAnisotropy;
          cfg.lod_algorithm = MALI_LOD_ALGORITHM_ANISOTROPIC;
       }
+
+#if PAN_ARCH >= 10
+      switch (sampler->vk.reduction_mode) {
+      case VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE:
+         cfg.reduction_mode = MALI_REDUCTION_MODE_AVERAGE;
+         break;
+      case VK_SAMPLER_REDUCTION_MODE_MIN:
+         cfg.reduction_mode = MALI_REDUCTION_MODE_MINIMUM;
+         break;
+      case VK_SAMPLER_REDUCTION_MODE_MAX:
+         cfg.reduction_mode = MALI_REDUCTION_MODE_MAXIMUM;
+         break;
+      default:
+         unreachable("Invalid reduction mode");
+      }
+#endif
    }
 
    *pSampler = panvk_sampler_to_handle(sampler);

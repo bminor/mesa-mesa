@@ -473,7 +473,7 @@ Vulkan 1.2 -- all DONE: anv, nvk, tu, vn
   VK_KHR_vulkan_memory_model                            DONE (anv, hasvk, lvp, nvk, radv, tu, v3dv, vn)
   VK_EXT_descriptor_indexing                            DONE (anv, dzn, lvp, nvk, radv, tu, vn)
   VK_EXT_host_query_reset                               DONE (anv, hasvk, lvp, nvk, pvr, radv, tu, v3dv, vn)
-  VK_EXT_sampler_filter_minmax                          DONE (anv, lvp, nvk, radv, tu, vn)
+  VK_EXT_sampler_filter_minmax                          DONE (anv, lvp, nvk, panvk/v10+, radv, tu, vn)
   VK_EXT_scalar_block_layout                            DONE (anv, dzn, hasvk, lvp, nvk, pvr, radv/gfx7+, tu, vn, v3dv/vc7+)
   VK_EXT_separate_stencil_usage                         DONE (anv, dzn, hasvk, lvp, nvk, radv, tu, v3dv, vn)
   VK_EXT_shader_viewport_index_layer                    DONE (anv, hasvk, lvp, nvk, radv, tu, vn)

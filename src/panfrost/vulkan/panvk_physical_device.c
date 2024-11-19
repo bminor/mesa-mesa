@@ -184,6 +184,8 @@ static void
 get_device_extensions(const struct panvk_physical_device *device,
                       struct vk_device_extension_table *ext)
 {
+   const unsigned arch = pan_arch(device->kmod.props.gpu_prod_id);
+
    *ext = (struct vk_device_extension_table){
       .KHR_16bit_storage = true,
       .KHR_bind_memory2 = true,
@@ -236,6 +238,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_pipeline_creation_feedback = true,
       .EXT_private_data = true,
       .EXT_queue_family_foreign = true,
+      .EXT_sampler_filter_minmax = arch >= 10,
       .EXT_shader_module_identifier = true,
       .EXT_tooling_info = true,
       .EXT_vertex_attribute_divisor = true,
@@ -315,7 +318,7 @@ get_features(const struct panvk_physical_device *device,
       .descriptorBindingVariableDescriptorCount = false,
       .runtimeDescriptorArray = false,
 
-      .samplerFilterMinmax = false,
+      .samplerFilterMinmax = arch >= 10,
       .scalarBlockLayout = false,
       .imagelessFramebuffer = false,
       .uniformBufferStandardLayout = false,
@@ -712,9 +715,8 @@ get_device_properties(const struct panvk_instance *instance,
       .maxDescriptorSetUpdateAfterBindSampledImages = 0,
       .maxDescriptorSetUpdateAfterBindStorageImages = 0,
       .maxDescriptorSetUpdateAfterBindInputAttachments = 0,
-      /* XXX: VK_EXT_sampler_filter_minmax */
-      .filterMinmaxSingleComponentFormats = false,
-      .filterMinmaxImageComponentMapping = false,
+      .filterMinmaxSingleComponentFormats = arch >= 10,
+      .filterMinmaxImageComponentMapping = arch >= 10,
       .maxTimelineSemaphoreValueDifference = INT64_MAX,
       .framebufferIntegerColorSampleCounts = sample_counts,
 
