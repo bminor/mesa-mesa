@@ -19,8 +19,7 @@ write_query_result(uintptr_t dst_addr, int32_t idx, bool is_64, uint64_t result)
    }
 }
 
-/* TODO: Optimize workgroup size */
-KERNEL(1)
+KERNEL(32)
 libagx_copy_query(global uint32_t *availability, global uint64_t *results,
                   global uint16_t *oq_index, uint64_t dst_addr,
                   uint64_t dst_stride, uint32_t first_query, uint16_t partial,
