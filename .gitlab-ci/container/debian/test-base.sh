@@ -143,8 +143,6 @@ uncollapsed_section_switch mold "Building mold linker"
 
 ############### Build LLVM-SPIRV translator
 
-uncollapsed_section_switch llvmspv "Building LLVM-SPIRV-Translator"
-
 . .gitlab-ci/container/build-llvm-spirv.sh
 
 ############### Build libclc
