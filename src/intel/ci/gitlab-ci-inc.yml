@@ -296,6 +296,7 @@
     DEVICE_TYPE: acer-chromebox-cxi4-puff
     FDO_CI_CONCURRENT: 9
     GPU_VERSION: iris-cml
+    HWCI_KERNEL_MODULES: i915
     RUNNER_TAG: mesa-ci-x86-64-lava-acer-chromebox-cxi4-puff
 
 
