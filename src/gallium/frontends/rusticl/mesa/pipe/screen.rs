@@ -295,7 +295,7 @@ impl PipeScreen {
         }
     }
 
-    pub fn driver_name(&self) -> String {
+    pub fn driver_name(&self) -> &CStr {
         self.ldev.driver_name()
     }
 

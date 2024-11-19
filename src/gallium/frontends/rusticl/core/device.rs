@@ -751,7 +751,7 @@ impl Device {
             pipe_loader_device_type::NUM_PIPE_LOADER_DEVICE_TYPES => CL_DEVICE_TYPE_CUSTOM,
         };
 
-        if internal && res == CL_DEVICE_TYPE_GPU && self.screen.driver_name() != "zink" {
+        if internal && res == CL_DEVICE_TYPE_GPU && self.screen.driver_name() != c"zink" {
             res |= CL_DEVICE_TYPE_DEFAULT;
         }
 
