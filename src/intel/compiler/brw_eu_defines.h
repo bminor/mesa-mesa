@@ -895,6 +895,9 @@ operator|=(tgl_sbid_mode &x, tgl_sbid_mode y)
  * the hardware to infer the pipeline based on the source types of the
  * instruction.  TGL_PIPE_ALL can be used when synchronization with all ALU
  * pipelines is intended.
+ *
+ * Xe3 adds TGL_PIPE_SCALAR for a very specific use case (writing immediates
+ * to scalar register).
  */
 enum tgl_pipe {
    TGL_PIPE_NONE = 0,
@@ -902,6 +905,7 @@ enum tgl_pipe {
    TGL_PIPE_INT,
    TGL_PIPE_LONG,
    TGL_PIPE_MATH,
+   TGL_PIPE_SCALAR,
    TGL_PIPE_ALL
 };
 
@@ -989,6 +993,7 @@ tgl_swsb_encode(const struct intel_device_info *devinfo,
          swsb.pipe == TGL_PIPE_INT ? 0x18 :
          swsb.pipe == TGL_PIPE_LONG ? 0x20 :
          swsb.pipe == TGL_PIPE_MATH ? 0x28 :
+         swsb.pipe == TGL_PIPE_SCALAR ? 0x30 :
          swsb.pipe == TGL_PIPE_ALL ? 0x8 : 0;
       return pipe | swsb.regdist;
 

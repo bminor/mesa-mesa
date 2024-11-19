@@ -651,7 +651,8 @@ brw_print_swsb(FILE *f, const struct intel_device_info *devinfo, const tgl_swsb 
                swsb.pipe == TGL_PIPE_INT ? "I" :
                swsb.pipe == TGL_PIPE_LONG ? "L" :
                swsb.pipe == TGL_PIPE_ALL ? "A"  :
-               swsb.pipe == TGL_PIPE_MATH ? "M" : "" ),
+               swsb.pipe == TGL_PIPE_MATH ? "M" :
+               swsb.pipe == TGL_PIPE_SCALAR ? "S" : "" ),
               swsb.regdist);
    }
 
