@@ -90,10 +90,8 @@ __gen_address_offset(address addr, uint64_t offset)
 
 class mi_builder_test : public ::testing::Test {
 public:
-   mi_builder_test();
-   ~mi_builder_test();
-
-   void SetUp();
+   void SetUp() override;
+   void TearDown() override;
 
    void *emit_dwords(int num_dwords);
    void submit_batch();
@@ -134,26 +132,26 @@ public:
       return mi_mem32(out_addr(offset));
    }
 
-   int fd;
-   uint32_t ctx_id;
+   int fd = -1;
+   uint32_t ctx_id = 0;
    intel_device_info devinfo;
 
-   uint32_t batch_bo_handle;
+   uint32_t batch_bo_handle = 0;
 #if GFX_VER >= 8
    uint64_t batch_bo_addr;
 #endif
    uint32_t batch_offset;
-   void *batch_map;
+   void *batch_map = NULL;
 
 #if GFX_VER < 8
    std::vector<drm_i915_gem_relocation_entry> relocs;
 #endif
 
-   uint32_t data_bo_handle;
+   uint32_t data_bo_handle = 0;
 #if GFX_VER >= 8
    uint64_t data_bo_addr;
 #endif
-   void *data_map;
+   void *data_map = NULL;
    char *input;
    char *output;
    uint64_t canary;
@@ -162,15 +160,6 @@ public:
 
    mi_builder b;
 };
-
-mi_builder_test::mi_builder_test() :
-  fd(-1)
-{ }
-
-mi_builder_test::~mi_builder_test()
-{
-   close(fd);
-}
 
 // 1 MB of batch should be enough for anyone, right?
 #define BATCH_BO_SIZE (256 * 4096)
@@ -181,6 +170,7 @@ mi_builder_test::SetUp()
 {
    drmDevicePtr devices[8];
    int max_devices = drmGetDevices2(0, devices, 8);
+   ASSERT_GT(max_devices, 0);
 
    int i;
    for (i = 0; i < max_devices; i++) {
@@ -208,12 +198,12 @@ mi_builder_test::SetUp()
             continue;
          }
 
-
          /* Found a device! */
          break;
       }
    }
    ASSERT_TRUE(i < max_devices) << "Failed to find a DRM device";
+   drmFreeDevices(devices, max_devices);
 
    ASSERT_TRUE(intel_gem_create_context(fd, &ctx_id)) << strerror(errno);
 
@@ -324,6 +314,45 @@ mi_builder_test::SetUp()
    mi_builder_init(&b, &devinfo, this);
    const uint32_t mocs = isl_mocs(&isl_dev, 0, false);
    mi_builder_set_mocs(&b, mocs);
+}
+
+void
+mi_builder_test::TearDown()
+{
+   int err;
+
+   if (data_map) {
+      err = munmap(data_map, DATA_BO_SIZE);
+      EXPECT_EQ(err, 0) << "unmap data bo failed";
+   }
+
+   if (data_bo_handle) {
+      struct drm_gem_close gem_close = { .handle = data_bo_handle };
+      err = intel_ioctl(fd, DRM_IOCTL_GEM_CLOSE, &gem_close);
+      EXPECT_EQ(err, 0) << "close data bo failed";
+   }
+
+   if (batch_map) {
+      err = munmap(batch_map, BATCH_BO_SIZE);
+      EXPECT_EQ(err, 0) << "unmmap batch bo failed";
+   }
+
+   if (batch_bo_handle) {
+      struct drm_gem_close gem_close = { .handle = batch_bo_handle };
+      intel_ioctl(fd, DRM_IOCTL_GEM_CLOSE, &gem_close);
+      EXPECT_EQ(err, 0) << "close batch bo failed";
+   }
+
+   if (ctx_id) {
+      struct drm_i915_gem_context_destroy destroy = {
+         .ctx_id = ctx_id,
+      };
+      err = intel_ioctl(fd, DRM_IOCTL_I915_GEM_CONTEXT_DESTROY, &destroy);
+      EXPECT_EQ(err, 0) << "context destroy failed";
+   }
+
+   if (fd != -1)
+      close(fd);
 }
 
 void *
