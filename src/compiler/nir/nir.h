@@ -4566,6 +4566,7 @@ nir_shader_get_function_for_name(const nir_shader *shader, const char *name)
  */
 void nir_remove_non_entrypoints(nir_shader *shader);
 void nir_remove_non_exported(nir_shader *shader);
+void nir_fixup_is_exported(nir_shader *shader);
 
 nir_shader *nir_shader_create(void *mem_ctx,
                               gl_shader_stage stage,
