@@ -29,12 +29,15 @@
 #include <gtest/gtest.h>
 
 #include "c99_compat.h"
+#include "common/xe/intel_engine.h"
 #include "common/intel_gem.h"
+#include "dev/intel_debug.h"
 #include "dev/intel_device_info.h"
 #include "dev/intel_kmd.h"
 #include "intel_gem.h"
 #include "isl/isl.h"
 #include "drm-uapi/i915_drm.h"
+#include "drm-uapi/xe_drm.h"
 #include "genxml/gen_macros.h"
 #include "util/macros.h"
 
@@ -137,11 +140,14 @@ public:
    intel_device_info devinfo;
 
    uint32_t batch_bo_handle = 0;
-#if GFX_VER >= 8
    uint64_t batch_bo_addr;
-#endif
    uint32_t batch_offset;
    void *batch_map = NULL;
+
+   struct {
+      uint32_t vm_id = 0;
+      uint32_t queue_id = 0;
+   } xe;
 
    struct {
       uint32_t ctx_id = 0;
@@ -151,10 +157,9 @@ public:
    } i915;
 
    uint32_t data_bo_handle = 0;
-#if GFX_VER >= 8
    uint64_t data_bo_addr;
-#endif
    void *data_map = NULL;
+
    char *input;
    char *output;
    uint64_t canary;
@@ -207,6 +212,8 @@ mi_builder_test::SetUp()
          break;
       }
    }
+
+   drmFreeDevices(devices, max_devices);
    ASSERT_TRUE(i < max_devices) << "Failed to find a DRM device";
    drmFreeDevices(devices, max_devices);
 
@@ -303,7 +310,89 @@ mi_builder_test::SetUp()
          data_map = (void *)(uintptr_t)gem_mmap.addr_ptr;
       }
    } else {
-      assert(!"TODO: Add Xe KMD support.");
+      assert(devinfo.kmd_type == INTEL_KMD_TYPE_XE);
+
+      int err;
+
+      struct drm_xe_vm_create create = {
+         .flags = DRM_XE_VM_CREATE_FLAG_SCRATCH_PAGE,
+      };
+      err = intel_ioctl(fd, DRM_IOCTL_XE_VM_CREATE, &create);
+      ASSERT_EQ(err, 0) << strerror(err);
+      xe.vm_id = create.vm_id;
+
+      struct drm_xe_engine_class_instance instance = {};
+
+      struct intel_query_engine_info *engines_info = xe_engine_get_info(fd);
+      assert(engines_info);
+
+      bool found_engine = false;
+      for (uint32_t i = 0; i < engines_info->num_engines; i++) {
+         struct intel_engine_class_instance *e = &engines_info->engines[i];
+         if (e->engine_class == INTEL_ENGINE_CLASS_RENDER) {
+            instance.engine_class = DRM_XE_ENGINE_CLASS_RENDER;
+            instance.engine_instance = e->engine_instance;
+            instance.gt_id = e->gt_id;
+            found_engine = true;
+            break;
+         }
+      }
+      ASSERT_TRUE(found_engine);
+      free(engines_info);
+
+      struct drm_xe_exec_queue_create queue_create = {
+         .width          = 1,
+         .num_placements = 1,
+         .vm_id          = xe.vm_id,
+         .instances      = (uintptr_t)&instance,
+      };
+      err = intel_ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_CREATE, &queue_create);
+      ASSERT_EQ(err, 0) << strerror(err);
+      xe.queue_id = queue_create.exec_queue_id;
+
+      // Create the batch buffer.
+      {
+         struct drm_xe_gem_create gem_create = {
+            .size        = BATCH_BO_SIZE,
+            .placement   = 1u << devinfo.mem.sram.mem.instance,
+            .cpu_caching = DRM_XE_GEM_CPU_CACHING_WB,
+         };
+         err = intel_ioctl(fd, DRM_IOCTL_XE_GEM_CREATE, &gem_create);
+         ASSERT_EQ(err, 0) << strerror(err);
+         batch_bo_handle = gem_create.handle;
+         batch_bo_addr = 0x10000000;
+
+         struct drm_xe_gem_mmap_offset mm = {
+            .handle = batch_bo_handle,
+         };
+         err = intel_ioctl(fd, DRM_IOCTL_XE_GEM_MMAP_OFFSET, &mm);
+         ASSERT_EQ(err, 0) << strerror(err);
+         batch_map = mmap(NULL, BATCH_BO_SIZE, PROT_READ | PROT_WRITE,
+                          MAP_SHARED, fd, mm.offset);
+         ASSERT_NE(batch_map, MAP_FAILED) << strerror(errno);
+      }
+
+      // Create the data buffer.
+      {
+         struct drm_xe_gem_create gem_create = {
+            .size        = DATA_BO_SIZE,
+            .placement   = 1u << devinfo.mem.sram.mem.instance,
+            .cpu_caching = DRM_XE_GEM_CPU_CACHING_WB,
+         };
+         err = intel_ioctl(fd, DRM_IOCTL_XE_GEM_CREATE, &gem_create);
+         ASSERT_EQ(err, 0) << strerror(err);
+         data_bo_handle = gem_create.handle;
+         data_bo_addr = 0x20000000;
+
+         struct drm_xe_gem_mmap_offset mm = {
+            .handle = data_bo_handle,
+         };
+         err = intel_ioctl(fd, DRM_IOCTL_XE_GEM_MMAP_OFFSET, &mm);
+         ASSERT_EQ(err, 0) << strerror(err);
+         data_map = mmap(NULL, DATA_BO_SIZE, PROT_READ | PROT_WRITE,
+                          MAP_SHARED, fd, mm.offset);
+         ASSERT_NE(data_map, MAP_FAILED) << strerror(errno);
+      }
    }
 
    // Start the batch at zero
@@ -361,7 +450,23 @@ mi_builder_test::TearDown()
          EXPECT_EQ(err, 0) << "context destroy failed";
       }
    } else {
-      assert(!"TODO: Add Xe KMD support.");
+      assert(devinfo.kmd_type == INTEL_KMD_TYPE_XE);
+
+      if (xe.queue_id) {
+         struct drm_xe_exec_queue_destroy queue_destroy = {
+            .exec_queue_id = xe.queue_id,
+         };
+         err = intel_ioctl(fd, DRM_IOCTL_XE_EXEC_QUEUE_DESTROY, &queue_destroy);
+         EXPECT_EQ(err, 0) << "queue_destroy failure";
+      }
+
+      if (xe.vm_id) {
+         struct drm_xe_vm_destroy destroy = {
+            .vm_id = xe.vm_id,
+         };
+         err = intel_ioctl(fd, DRM_IOCTL_XE_VM_DESTROY, &destroy);
+         EXPECT_EQ(err, 0) << "vm_destroy failure";
+      }
    }
 
    if (fd != -1)
@@ -434,7 +539,84 @@ mi_builder_test::submit_batch()
       ASSERT_EQ(drmIoctl(fd, DRM_IOCTL_I915_GEM_WAIT,
                          (void *)&gem_wait), 0) << strerror(errno);
    } else {
-      assert(!"TODO: Add Xe KMD support.");
+      assert(devinfo.kmd_type == INTEL_KMD_TYPE_XE);
+
+      int err;
+
+      uint32_t sync_handles[2] = {};
+      for (int i = 0; i < 2; i++) {
+         struct drm_syncobj_create sync_create = {};
+         err = intel_ioctl(fd, DRM_IOCTL_SYNCOBJ_CREATE, &sync_create);
+         ASSERT_EQ(err, 0) << strerror(err);
+         sync_handles[i] = sync_create.handle;
+      }
+
+      struct drm_xe_vm_bind_op bind_ops[] = {
+         {
+            .obj       = batch_bo_handle,
+            .pat_index = devinfo.pat.cached_coherent.index,
+            .range     = BATCH_BO_SIZE,
+            .addr      = batch_bo_addr,
+            .op        = DRM_XE_VM_BIND_OP_MAP,
+            .flags     = DRM_XE_VM_BIND_FLAG_READONLY,
+         },
+         {
+            .obj       = data_bo_handle,
+            .pat_index = devinfo.pat.cached_coherent.index,
+            .range     = DATA_BO_SIZE,
+            .addr      = data_bo_addr,
+            .op        = DRM_XE_VM_BIND_OP_MAP,
+         },
+      };
+
+      struct drm_xe_sync bind_syncs[] = {
+         {
+            .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
+            .flags  = DRM_XE_SYNC_FLAG_SIGNAL,
+            .handle = sync_handles[0],
+         },
+      };
+
+      struct drm_xe_vm_bind bind = {
+         .vm_id           = xe.vm_id,
+         .num_binds       = ARRAY_SIZE(bind_ops),
+         .vector_of_binds = (uintptr_t)bind_ops,
+         .num_syncs       = 1,
+         .syncs           = (uintptr_t)bind_syncs,
+      };
+
+      err = intel_ioctl(fd, DRM_IOCTL_XE_VM_BIND, &bind);
+      ASSERT_EQ(err, 0) << strerror(err);
+
+      struct drm_xe_sync exec_syncs[] = {
+         {
+            .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
+            .handle = sync_handles[0],
+         },
+         {
+            .type   = DRM_XE_SYNC_TYPE_SYNCOBJ,
+            .flags  = DRM_XE_SYNC_FLAG_SIGNAL,
+            .handle = sync_handles[1],
+         }
+      };
+
+      struct drm_xe_exec exec = {
+         .exec_queue_id    = xe.queue_id,
+         .num_syncs        = 2,
+         .syncs            = (uintptr_t)exec_syncs,
+         .address          = batch_bo_addr,
+         .num_batch_buffer = 1,
+      };
+      err = intel_ioctl(fd, DRM_IOCTL_XE_EXEC, &exec);
+      ASSERT_EQ(err, 0) << strerror(err);
+
+      struct drm_syncobj_wait wait = {
+         .handles       = (uintptr_t)&sync_handles[1],
+         .timeout_nsec  = INT64_MAX,
+         .count_handles = 1,
+      };
+      err = intel_ioctl(fd, DRM_IOCTL_SYNCOBJ_WAIT, &wait);
+      ASSERT_EQ(err, 0) << strerror(err);
    }
 }
 
