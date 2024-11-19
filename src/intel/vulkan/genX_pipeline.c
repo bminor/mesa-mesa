@@ -767,22 +767,6 @@ emit_rs_state(struct anv_graphics_pipeline *pipeline,
 }
 
 static void
-emit_ms_state(struct anv_graphics_pipeline *pipeline,
-              const struct vk_multisample_state *ms)
-{
-   anv_pipeline_emit(pipeline, partial.ms, GENX(3DSTATE_MULTISAMPLE), ms) {
-      ms.PixelLocation              = CENTER;
-
-      /* The PRM says that this bit is valid only for DX9:
-       *
-       *    SW can choose to set this bit only for DX9 API. DX10/OGL API's
-       *    should not have any effect by setting or not setting this bit.
-       */
-      ms.PixelPositionOffsetEnable  = false;
-   }
-}
-
-static void
 emit_3dstate_clip(struct anv_graphics_pipeline *pipeline,
                   const struct vk_input_assembly_state *ia,
                   const struct vk_viewport_state *vp,
@@ -1859,7 +1843,6 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
 
    emit_rs_state(pipeline, state->ia, state->rs, state->ms, state->rp,
                  urb_deref_block_size);
-   emit_ms_state(pipeline, state->ms);
    compute_kill_pixel(pipeline, state->ms, state);
 
    emit_3dstate_clip(pipeline, state->ia, state->vp, state->rs);

@@ -2296,8 +2296,16 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_MULTISAMPLE)) {
-      anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_MULTISAMPLE),
-                           pipeline, partial.ms, ms) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_MULTISAMPLE), ms) {
+         ms.PixelLocation              = CENTER;
+
+         /* The PRM says that this bit is valid only for DX9:
+          *
+          *    SW can choose to set this bit only for DX9 API. DX10/OGL API's
+          *    should not have any effect by setting or not setting this bit.
+          */
+         ms.PixelPositionOffsetEnable  = false;
+
          SET(ms, ms, NumberofMultisamples);
       }
    }

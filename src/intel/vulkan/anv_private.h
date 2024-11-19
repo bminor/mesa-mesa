@@ -4891,7 +4891,6 @@ struct anv_graphics_pipeline {
    struct {
       struct anv_gfx_state_ptr                  clip;
       struct anv_gfx_state_ptr                  sf;
-      struct anv_gfx_state_ptr                  ms;
       struct anv_gfx_state_ptr                  ps_extra;
       struct anv_gfx_state_ptr                  wm;
       struct anv_gfx_state_ptr                  so;
