@@ -1535,17 +1535,15 @@ radv_graphics_shaders_link_varyings_second(struct radv_shader_stage *producer_st
       NIR_PASS(_, consumer, nir_opt_vectorize_io, nir_var_shader_in);
    }
 
-   /* Recompute driver locations of PS inputs
-    * because the backend compiler relies on their driver locations.
-    */
-   if (consumer->info.stage == MESA_SHADER_FRAGMENT)
-      nir_recompute_io_bases(consumer, nir_var_shader_in);
-
    /* Gather shader info; at least the I/O info likely changed
     * and changes to only the I/O info are not reflected in nir_opt_varyings_progress.
     */
    nir_shader_gather_info(producer, nir_shader_get_entrypoint(producer));
    nir_shader_gather_info(consumer, nir_shader_get_entrypoint(consumer));
+
+   /* Recompute intrinsic bases of PS inputs in order to remove gaps. */
+   if (consumer->info.stage == MESA_SHADER_FRAGMENT)
+      radv_recompute_fs_input_bases(consumer);
 
    /* Recreate XFB info from intrinsics (nir_opt_varyings may have changed it). */
    if (producer->xfb_info) {

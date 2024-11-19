@@ -2573,17 +2573,6 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
    uint32_t ps_input_cntl[32];
    unsigned ps_offset = 0;
 
-   if (!mesh) {
-      if (ps->info.ps.prim_id_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, radv_ps_in_flat);
-
-      if (ps->info.ps.layer_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_LAYER, ps_input_cntl, &ps_offset, true, radv_ps_in_flat);
-
-      if (ps->info.ps.viewport_index_input)
-         slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, radv_ps_in_flat);
-   }
-
    if (ps->info.ps.has_pcoord)
       ps_input_cntl[ps_offset++] = S_028644_PT_SPRITE_TEX(1) | S_028644_OFFSET(0x20);
 
@@ -2595,8 +2584,17 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
 
    input_mask_to_ps_inputs(outinfo, ps, ps->info.ps.input_mask, ps_input_cntl, &ps_offset, radv_ps_in_flat);
 
-   /* Per-primitive PS inputs: the HW needs these to be last. */
-   if (mesh) {
+   /* Potentially per-primitive PS inputs */
+   if (!mesh) {
+      if (ps->info.ps.prim_id_input)
+         slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, radv_ps_in_flat);
+
+      if (ps->info.ps.layer_input)
+         slot_to_ps_input(outinfo, VARYING_SLOT_LAYER, ps_input_cntl, &ps_offset, true, radv_ps_in_flat);
+
+      if (ps->info.ps.viewport_index_input)
+         slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, radv_ps_in_flat);
+   } else {
       if (ps->info.ps.prim_id_input)
          slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, per_prim);
 
@@ -2607,6 +2605,7 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
          slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, per_prim);
    }
 
+   /* Per-primitive PS inputs: the HW needs these to be last. */
    input_mask_to_ps_inputs(outinfo, ps, ps->info.ps.input_per_primitive_mask, ps_input_cntl, &ps_offset, per_prim);
 
    if (pdev->info.gfx_level >= GFX12) {
