@@ -142,6 +142,7 @@ typedef struct {
    bool passthrough;
    bool use_edgeflags;
    bool export_primitive_id;
+   bool export_primitive_id_per_prim;
    uint32_t instance_rate_inputs;
    uint32_t user_clip_plane_enable_mask;
 
