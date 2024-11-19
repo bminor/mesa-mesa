@@ -229,10 +229,8 @@ if [ "${DEQP_TARGET}" != 'android' ]; then
 
     # Save *some* executor utils, but otherwise strip things down
     # to reduct deqp build size:
-    mkdir /deqp/executor.save
-    cp /deqp/executor/testlog-to-* /deqp/executor.save
+    mv /deqp/executor/testlog-to-* /deqp
     rm -rf /deqp/executor
-    mv /deqp/executor.save /deqp/executor
 fi
 
 # Compress the caselists, since Vulkan's in particular are gigantic; higher
