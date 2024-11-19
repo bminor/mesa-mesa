@@ -4178,7 +4178,7 @@ typedef struct nir_shader_compiler_options {
     * to imul with masked inputs and iadd */
    bool has_umad24;
 
-   /* Backend supports fused comapre against zero and csel */
+   /* Backend supports fused compare against zero and csel */
    bool has_fused_comp_and_csel;
    /* Backend supports fused int eq/ne against zero and csel. */
    bool has_icsel_eqz64;
