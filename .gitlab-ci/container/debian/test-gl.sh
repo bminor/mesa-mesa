@@ -124,8 +124,6 @@ uncollapsed_section_switch vvl "Building Vulkan validation layers"
 
 ############### Build nine tests
 
-uncollapsed_section_switch nine "Building Nine tests"
-
 . .gitlab-ci/container/build-ninetests.sh
 
 ############### Uninstall the build software
