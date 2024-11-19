@@ -3874,7 +3874,7 @@
         "description": "panfrost: use 64-bits for layout calculations",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d5ed77800e04fee670dbc1091d98490e4fa470ce",
         "notes": null
