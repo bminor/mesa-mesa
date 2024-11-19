@@ -186,7 +186,7 @@ PipeFormatToVaFourcc(enum pipe_format p_format)
    case PIPE_FORMAT_UYVY:
       return VA_FOURCC('U','Y','V','Y');
    case PIPE_FORMAT_YUYV:
-      return VA_FOURCC('Y','U','Y','V');
+      return VA_FOURCC('Y','U','Y','2');
    case PIPE_FORMAT_B8G8R8A8_UNORM:
       return VA_FOURCC('B','G','R','A');
    case PIPE_FORMAT_R8G8B8A8_UNORM:
