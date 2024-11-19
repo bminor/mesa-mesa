@@ -346,8 +346,6 @@ bool nir_load_store_vectorize_test::mem_vectorize_callback(
 {
    nir_load_store_vectorize_test *test = (nir_load_store_vectorize_test *)data;
 
-   assert(hole_size <= 4);
-
    if (hole_size > test->max_hole_size ||
        (!test->overfetch && !nir_num_components_valid(num_components)))
       return false;

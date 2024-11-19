@@ -1326,13 +1326,14 @@ vectorize_sorted_entries(struct vectorize_ctx *ctx, nir_function_impl *impl,
          struct entry *second = low->index < high->index ? high : low;
 
          uint64_t diff = high->offset_signed - low->offset_signed;
-         /* Allow overfetching by 4 bytes, which can be rejected
-          * by the callback if needed.
+         /* Allow overfetching by 28 bytes, which can be rejected by the
+          * callback if needed.  Driver callbacks will likely want to
+          * restrict this to a smaller value, say 4 bytes (or none).
           */
          unsigned max_hole =
             first->is_store ||
             (ctx->options->has_shared2_amd &&
-             get_variable_mode(first) == nir_var_mem_shared) ? 0 : 4;
+             get_variable_mode(first) == nir_var_mem_shared) ? 0 : 28;
          unsigned low_size = get_bit_size(low) / 8u * low->num_components;
          bool separate = diff > max_hole + low_size;
 
