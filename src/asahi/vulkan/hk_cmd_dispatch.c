@@ -182,9 +182,9 @@ dispatch(struct hk_cmd_buffer *cmd, struct hk_grid grid)
       cmd, VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT);
 
    if (stat) {
-      uint32_t local_size_threads = s->info.cs.local_size[0] *
-                                    s->info.cs.local_size[1] *
-                                    s->info.cs.local_size[2];
+      uint32_t local_size_threads = (uint32_t)s->b.info.workgroup_size[0] *
+                                    (uint32_t)s->b.info.workgroup_size[1] *
+                                    (uint32_t)s->b.info.workgroup_size[2];
 
       struct libagx_cs_invocation_params p = {
          .grid = cmd->state.cs.descriptors.root.cs.group_count_addr,

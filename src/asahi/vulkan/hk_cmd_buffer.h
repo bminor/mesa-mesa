@@ -795,8 +795,8 @@ hk_dispatch(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_shader *s,
    assert(s->info.stage == MESA_SHADER_COMPUTE);
 
    struct hk_grid local_size =
-      hk_grid(s->info.cs.local_size[0], s->info.cs.local_size[1],
-              s->info.cs.local_size[2]);
+      hk_grid(s->b.info.workgroup_size[0], s->b.info.workgroup_size[1],
+              s->b.info.workgroup_size[2]);
 
    if (!grid.indirect) {
       grid.count[0] *= local_size.count[0];

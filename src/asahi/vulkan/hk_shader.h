@@ -76,13 +76,6 @@ struct hk_shader_info {
       } vs;
 
       struct {
-         /* Local workgroup size */
-         uint16_t local_size[3];
-
-         uint8_t _pad[26];
-      } cs;
-
-      struct {
          struct agx_interp_info interp;
          struct agx_fs_epilog_link_info epilog_key;
 

@@ -903,11 +903,6 @@ hk_compile_nir(struct hk_device *dev, const VkAllocationCallbacks *pAllocator,
    shader->info.cull_distance_array_size = nir->info.cull_distance_array_size;
    shader->b.info.outputs = outputs;
 
-   if (sw_stage == MESA_SHADER_COMPUTE) {
-      for (unsigned i = 0; i < 3; ++i)
-         shader->info.cs.local_size[i] = nir->info.workgroup_size[i];
-   }
-
    if (xfb_info) {
       assert(xfb_info->output_count < ARRAY_SIZE(shader->info.xfb_outputs));
 
