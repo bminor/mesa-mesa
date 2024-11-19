@@ -898,7 +898,7 @@ get_features(const struct anv_physical_device *pdevice,
       .dynamicRenderingLocalRead = true,
 
       /* VK_EXT_pipeline_protected_access */
-      .pipelineProtectedAccess = true,
+      .pipelineProtectedAccess = pdevice->has_protected_contexts,
 
       /* VK_EXT_host_image_copy */
       .hostImageCopy = true,
