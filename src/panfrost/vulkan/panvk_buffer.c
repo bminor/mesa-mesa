@@ -44,9 +44,14 @@ panvk_GetBufferMemoryRequirements2(VkDevice device,
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
-panvk_BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
+panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
                         const VkBindBufferMemoryInfo *pBindInfos)
 {
+   VK_FROM_HANDLE(panvk_device, device, _device);
+   const struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(device->vk.physical);
+   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_prod_id);
+
    for (uint32_t i = 0; i < bindInfoCount; ++i) {
       VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
       VK_FROM_HANDLE(panvk_buffer, buffer, pBindInfos[i].buffer);
@@ -64,7 +69,7 @@ panvk_BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
        *
        * Make sure this goes away as soon as we fixed indirect draws.
        */
-      if (buffer->vk.usage & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) {
+      if (arch < 9 && (buffer->vk.usage & VK_BUFFER_USAGE_INDEX_BUFFER_BIT)) {
          VkDeviceSize offset = pBindInfos[i].memoryOffset;
          VkDeviceSize pgsize = getpagesize();
          off_t map_start = offset & ~(pgsize - 1);

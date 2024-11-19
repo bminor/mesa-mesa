@@ -1426,6 +1426,8 @@ panvk_index_minmax_search(struct panvk_cmd_buffer *cmdbuf, uint32_t start,
    void *ptr =
       cmdbuf->state.gfx.ib.buffer->host_ptr + cmdbuf->state.gfx.ib.offset;
 
+   assert(PAN_ARCH < 9 && cmdbuf->state.gfx.ib.buffer->host_ptr);
+
    assert(cmdbuf->state.gfx.ib.buffer);
    assert(cmdbuf->state.gfx.ib.buffer->bo);
    assert(cmdbuf->state.gfx.ib.buffer->host_ptr);
