@@ -3601,6 +3601,11 @@ draw_tes_llvm_generate(struct draw_llvm *llvm,
    system_values.vertices_in = lp_build_broadcast_scalar(&bldvec, patch_vertices_in);
 
    if (variant->key.primid_needed) {
+      /* In a fragment shader, it (gl_PrimitiveID) will contain the [...] value that would have been
+       * presented as input to the geometry shader had it been present.
+       * https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-builtin-variables
+       * Store the primitive ID as-if the geometry shader did `gl_PrimitiveID = gl_PrimitiveIDIn`.
+       */
       int slot = variant->key.primid_output;
       for (unsigned i = 0; i < 4; i++) {
          outputs[slot][i] = lp_build_alloca(gallivm, lp_build_int_vec_type(gallivm, tes_type), "primid");
