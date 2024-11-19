@@ -780,6 +780,11 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
       cfg.layer_offset = 0;
    }
 
+   /* When simul_use=true, the tiler descriptors are allocated from the
+    * descriptor ringbuf. We set state.gfx.render.tiler to a non-NULL
+    * value to satisfy the is_tiler_desc_allocated() tests, but we want
+    * it to point to a faulty address so that we can easily detect if it's
+    * used in the command stream/framebuffer descriptors. */
    cmdbuf->state.gfx.render.tiler =
       simul_use ? 0xdeadbeefdeadbeefull : tiler_desc.gpu;
 
