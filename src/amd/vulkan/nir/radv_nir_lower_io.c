@@ -86,7 +86,19 @@ radv_recompute_fs_input_bases_callback(UNUSED nir_builder *b, nir_intrinsic_inst
    if (location_bit & s->always_per_vertex) {
       new_base = util_bitcount64(s->always_per_vertex & location_mask);
    } else if (location_bit & s->potentially_per_primitive) {
-      new_base = s->num_always_per_vertex + util_bitcount64(s->potentially_per_primitive & location_mask);
+      new_base = s->num_always_per_vertex;
+
+      switch (location_bit) {
+      case VARYING_BIT_LAYER:
+         break;
+      case VARYING_BIT_VIEWPORT:
+         new_base += !!(s->potentially_per_primitive & VARYING_BIT_LAYER);
+         break;
+      case VARYING_BIT_PRIMITIVE_ID:
+         new_base += !!(s->potentially_per_primitive & VARYING_BIT_LAYER) +
+                     !!(s->potentially_per_primitive & VARYING_BIT_VIEWPORT);
+         break;
+      }
    } else if (location_bit & s->always_per_primitive) {
       new_base = s->num_always_per_vertex + s->num_potentially_per_primitive +
                  util_bitcount64(s->always_per_primitive & location_mask);
