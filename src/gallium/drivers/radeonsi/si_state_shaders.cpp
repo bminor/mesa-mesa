@@ -1352,7 +1352,8 @@ static void gfx12_emit_shader_ngg(struct si_context *sctx, unsigned index)
                              shader->ngg.spi_shader_pgm_rsrc4_gs);
 }
 
-unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_shader_key *key)
+unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_shader_key *key,
+                           bool return_unknown)
 {
    if (gs->stage == MESA_SHADER_GEOMETRY)
       return gs->info.base.gs.input_primitive;
@@ -1365,10 +1366,15 @@ unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_s
       return MESA_PRIM_TRIANGLES;
    }
 
+   assert(gs->stage == MESA_SHADER_VERTEX);
+
    if (key->ge.opt.ngg_culling & SI_NGG_CULL_VS_LINES)
       return MESA_PRIM_LINES;
 
-   return MESA_PRIM_TRIANGLES; /* worst case for all callers */
+   if (return_unknown)
+      return MESA_PRIM_UNKNOWN;
+   else
+      return MESA_PRIM_TRIANGLES; /* worst case for all callers */
 }
 
 static unsigned si_get_vs_out_cntl(const struct si_shader_selector *sel,
@@ -1437,7 +1443,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
    bool es_enable_prim_id = shader->key.ge.mono.u.vs_export_prim_id || es_info->uses_primid;
    unsigned gs_num_invocations = gs_sel->stage == MESA_SHADER_GEOMETRY ?
                                     CLAMP(gs_info->base.gs.invocations, 1, 32) : 0;
-   unsigned input_prim = si_get_input_prim(gs_sel, &shader->key);
+   unsigned input_prim = si_get_input_prim(gs_sel, &shader->key, false);
    bool break_wave_at_eoi = false;
 
    struct si_pm4_state *pm4 = si_get_shader_pm4_state(shader, NULL);

@@ -676,7 +676,8 @@ int si_shader_select(struct pipe_context *ctx, struct si_shader_ctx_state *state
 void si_vs_key_update_inputs(struct si_context *sctx);
 void si_update_ps_inputs_read_or_disabled(struct si_context *sctx);
 void si_update_vrs_flat_shading(struct si_context *sctx);
-unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_shader_key *key);
+unsigned si_get_input_prim(const struct si_shader_selector *gs, const union si_shader_key *key,
+                           bool return_unknown);
 bool si_update_ngg(struct si_context *sctx);
 void si_vs_ps_key_update_rast_prim_smooth_stipple(struct si_context *sctx);
 void si_ps_key_update_framebuffer(struct si_context *sctx);
