@@ -120,8 +120,6 @@ DEQP_TARGET=default \
 
 ############### Build VKD3D-Proton
 
-uncollapsed_section_switch proton "Installing Proton (Wine/D3DVK emulation)"
-
 . .gitlab-ci/container/setup-wine.sh "/vkd3d-proton-wine64"
 
 . .gitlab-ci/container/build-vkd3d-proton.sh
