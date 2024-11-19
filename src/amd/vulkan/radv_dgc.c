@@ -2527,7 +2527,9 @@ build_dgc_prepare_shader(struct radv_device *dev, struct radv_indirect_command_l
 
       if (layout->push_constant_mask) {
          const VkShaderStageFlags stages =
-            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_MESH_BIT_EXT;
+            (layout->vk.dgc_info & (BITFIELD_BIT(MESA_VK_DGC_RT) | BITFIELD_BIT(MESA_VK_DGC_DISPATCH)))
+               ? VK_SHADER_STAGE_COMPUTE_BIT
+               : (VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_MESH_BIT_EXT);
 
          dgc_emit_push_constant(&cmd_buf, stream_addr, sequence_id, stages);
       }
