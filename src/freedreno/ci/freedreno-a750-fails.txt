@@ -98,7 +98,3 @@ program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float16,
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float2,Fail
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float4,Fail
 program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float8,Fail
-
-# regression in a commit in the range b36a7ce0...f2f4206d
-dEQP-VK.pipeline.monolithic.framebuffer_attachment.2d_array_32x32_48x48_4_ms,Fail
-dEQP-VK.pipeline.pipeline_library.framebuffer_attachment.2d_array_32x32_48x48_4_ms,Fail

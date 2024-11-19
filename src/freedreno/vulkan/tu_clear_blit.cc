@@ -3751,7 +3751,8 @@ tu_CmdClearColorImage(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(tu_image, image, image_h);
 
-   if (use_generic_clear_for_image_clear(cmd, image)) {
+   bool use_generic_clear = use_generic_clear_for_image_clear(cmd, image);
+   if (use_generic_clear) {
       /* Generic clear doesn't go through CCU (or other caches). */
       cmd->state.cache.flush_bits |=
          TU_CMD_FLAG_CCU_INVALIDATE_COLOR | TU_CMD_FLAG_WAIT_FOR_IDLE;
@@ -3766,6 +3767,13 @@ tu_CmdClearColorImage(VkCommandBuffer commandBuffer,
    }
 
    tu_emit_resolve_group<CHIP>(cmd, &cmd->cs, &resolve_group);
+   if (use_generic_clear) {
+      /* This will emit CCU_RESOLVE_CLEAN which will ensure any future resolves
+       * proceed only after the just-emitted generic clears are complete.
+       */
+      cmd->state.cache.flush_bits |= TU_CMD_FLAG_BLIT_CACHE_CLEAN;
+      tu_emit_cache_flush<CHIP>(cmd);
+   }
 }
 TU_GENX(tu_CmdClearColorImage);
 
@@ -3781,7 +3789,8 @@ tu_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(tu_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(tu_image, image, image_h);
 
-   if (use_generic_clear_for_image_clear(cmd, image)) {
+   bool use_generic_clear = use_generic_clear_for_image_clear(cmd, image);
+   if (use_generic_clear) {
       /* Generic clear doesn't go through CCU (or other caches). */
       cmd->state.cache.flush_bits |= TU_CMD_FLAG_CCU_INVALIDATE_COLOR |
                                      TU_CMD_FLAG_CCU_INVALIDATE_DEPTH |
@@ -3813,6 +3822,13 @@ tu_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
    }
 
    tu_emit_resolve_group<CHIP>(cmd, &cmd->cs, &resolve_group);
+   if (use_generic_clear) {
+      /* This will emit CCU_RESOLVE_CLEAN which will ensure any future resolves
+       * proceed only after the just-emitted generic clears are complete.
+       */
+      cmd->state.cache.flush_bits |= TU_CMD_FLAG_BLIT_CACHE_CLEAN;
+      tu_emit_cache_flush<CHIP>(cmd);
+   }
 
    tu_lrz_clear_depth_image<CHIP>(cmd, image, pDepthStencil, rangeCount, pRanges);
 }
