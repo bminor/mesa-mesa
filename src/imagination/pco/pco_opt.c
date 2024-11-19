@@ -44,7 +44,8 @@ struct pco_opt_ctx {
  * \param[in,out] ctx Shared optimization context.
  * \return True if any instructions were modified.
  */
-static inline bool prep_mods(pco_shader *shader, struct pco_opt_ctx *ctx)
+static inline bool pco_opt_prep_mods(pco_shader *shader,
+                                     struct pco_opt_ctx *ctx)
 {
    bool progress = false;
 
@@ -161,7 +162,8 @@ static inline bool prep_mods(pco_shader *shader, struct pco_opt_ctx *ctx)
  * \param[in,out] ctx Shared optimization context.
  * \return True if any instructions were modified.
  */
-static inline bool lower_mods(pco_shader *shader, struct pco_opt_ctx *ctx)
+static inline bool pco_opt_lower_mods(pco_shader *shader,
+                                      struct pco_opt_ctx *ctx)
 {
    bool progress = false;
 
@@ -276,7 +278,7 @@ static inline bool try_back_prop_instr(struct pco_use *uses, pco_instr *instr)
  * \param[in,out] shader PCO shader.
  * \return True if any back-propagations were performed.
  */
-static inline bool back_prop(pco_shader *shader)
+static inline bool pco_opt_back_prop(pco_shader *shader)
 {
    bool progress = false;
    struct pco_use *uses;
@@ -400,7 +402,7 @@ static inline bool try_fwd_prop_instr(pco_instr **writes, pco_instr *instr)
  * \param[in,out] shader PCO shader.
  * \return True if any forward-propagations were performed.
  */
-static inline bool fwd_prop(pco_shader *shader)
+static inline bool pco_opt_fwd_prop(pco_shader *shader)
 {
    bool progress = false;
    pco_instr **writes;
@@ -464,7 +466,7 @@ static inline bool try_prop_hw_comp(pco_ref src, pco_ref repl, pco_instr *from)
  * \param[in,out] shader PCO shader.
  * \return True if any hw reg propagations were performed.
  */
-static inline bool prop_hw_comps(pco_shader *shader)
+static inline bool pco_opt_prop_hw_comps(pco_shader *shader)
 {
    bool progress = false;
    pco_foreach_func_in_shader (func, shader) {
@@ -506,17 +508,17 @@ bool pco_opt(pco_shader *shader)
    bool progress = false;
    struct pco_opt_ctx ctx = { .mem_ctx = ralloc_context(NULL) };
 
-   progress |= prep_mods(shader, &ctx);
-   progress |= back_prop(shader);
-   progress |= fwd_prop(shader);
+   PCO_PASS(progress, shader, pco_opt_prep_mods, &ctx);
+   PCO_PASS(progress, shader, pco_opt_back_prop);
+   PCO_PASS(progress, shader, pco_opt_fwd_prop);
    /* TODO: Track whether there are any comp instructions referencing hw
-    * registers resulting from the previous passes, and only run prop_hw_comps
-    * if this is the case.
+    * registers resulting from the previous passes, and only run
+    * pco_opt_prop_hw_comps if this is the case.
     */
-   progress |= prop_hw_comps(shader);
 
-   progress |= lower_mods(shader, &ctx);
+   PCO_PASS(progress, shader, pco_opt_prop_hw_comps);
 
+   PCO_PASS(progress, shader, pco_opt_lower_mods, &ctx);
    ralloc_free(ctx.mem_ctx);
    return progress;
 }

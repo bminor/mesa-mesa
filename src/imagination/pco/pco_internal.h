@@ -24,6 +24,7 @@
 #include "util/hash_table.h"
 #include "util/macros.h"
 #include "util/list.h"
+#include "util/u_debug.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
 
@@ -2149,6 +2150,32 @@ static inline pco_instr *find_parent_instr_from(pco_ref src, pco_instr *from)
 
    return NULL;
 }
+
+static inline bool pco_should_skip_pass(const char *pass)
+{
+   return comma_separated_list_contains(pco_skip_passes, pass);
+}
+
+#define PCO_PASS(progress, shader, pass, ...)                 \
+   do {                                                       \
+      if (pco_should_skip_pass(#pass)) {                      \
+         fprintf(stdout, "Skipping pass '%s'\n", #pass);      \
+         break;                                               \
+      }                                                       \
+                                                              \
+      if (pass(shader, ##__VA_ARGS__)) {                      \
+         UNUSED bool _;                                       \
+         progress = true;                                     \
+                                                              \
+         if (PCO_DEBUG(REINDEX))                              \
+            pco_index(shader, false);                         \
+                                                              \
+         pco_validate_shader(shader, "after " #pass);         \
+                                                              \
+         if (pco_should_print_shader_pass(shader))            \
+            pco_print_shader(shader, stdout, "after " #pass); \
+      }                                                       \
+   } while (0)
 
 /* Common hw constants. */
 
