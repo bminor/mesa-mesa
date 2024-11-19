@@ -3375,3 +3375,165 @@ TEST_P(validation_test, dpas_src_subreg_nr)
       clear_instructions(p);
    }
 }
+
+static brw_reg
+brw_s0(enum brw_reg_type type, unsigned subnr)
+{
+   return brw_make_reg(ARF,
+                       BRW_ARF_SCALAR,
+                       subnr,
+                       0,
+                       0,
+                       type,
+                       BRW_VERTICAL_STRIDE_0,
+                       BRW_WIDTH_1,
+                       BRW_HORIZONTAL_STRIDE_0,
+                       BRW_SWIZZLE_XYZW,
+                       WRITEMASK_XYZW);
+}
+
+static brw_reg
+brw_s0_with_region(enum brw_reg_type type, unsigned subnr, unsigned v, unsigned w, unsigned h)
+{
+   return brw_make_reg(ARF,
+                       BRW_ARF_SCALAR,
+                       subnr,
+                       0,
+                       0,
+                       type,
+                       cvt(v),
+                       cvt(w)-1,
+                       cvt(h),
+                       BRW_SWIZZLE_XYZW,
+                       WRITEMASK_XYZW);
+}
+
+static brw_reg
+brw_grf(enum brw_reg_type type, unsigned nr, unsigned subnr, unsigned v, unsigned w, unsigned h)
+{
+   return brw_make_reg(FIXED_GRF,
+                       nr,
+                       subnr,
+                       0,
+                       0,
+                       type,
+                       cvt(v),
+                       cvt(w)-1,
+                       cvt(h),
+                       BRW_SWIZZLE_XYZW,
+                       WRITEMASK_XYZW);
+}
+
+TEST_P(validation_test, scalar_register_restrictions)
+{
+   /* Restrictions from BSpec 71168 (r55736). */
+
+   if (devinfo.ver < 30)
+      return;
+
+   const brw_reg null_ud = retype(brw_null_reg(), BRW_TYPE_UD);
+
+   struct test {
+      enum opcode opcode;
+      unsigned exec_size;
+      struct {
+         enum brw_conditional_mod cmod;
+      } opts;
+      brw_reg dst, src0, src1;
+      bool expected_result;
+   };
+
+   static const struct test tests[] = {
+      { BRW_OPCODE_MOV,  8, {}, brw_s0(BRW_TYPE_UD, 0), brw_grf(BRW_TYPE_UD, 1, 0, 1,1,0), {}, true },
+
+      /* When destination, opcode must be MOV. */
+      { BRW_OPCODE_NOT,  8, {}, brw_s0(BRW_TYPE_UD, 0), brw_grf(BRW_TYPE_UD, 1, 0, 1,1,0), {}, false },
+      { BRW_OPCODE_ADD,  8, {}, brw_s0(BRW_TYPE_UD, 0), brw_grf(BRW_TYPE_UD, 1, 0, 1,1,0), brw_imm_ud(1), false },
+
+      /* Source and destination types must match. */
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UQ, 0), brw_imm_uq(0x000036161836341E), {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UQ, 0), brw_imm_ud(0x1836341E),         {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UQ, 0), brw_imm_uw(0x341E),             {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UD, 0), brw_imm_uq(0x000036161836341E), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UD, 0), brw_imm_ud(0x1836341E),         {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UD, 0), brw_imm_uw(0x341E),             {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UW, 0), brw_imm_uq(0x000036161836341E), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UW, 0), brw_imm_ud(0x1836341E),         {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UW, 0), brw_imm_uw(0x341E),             {}, true  },
+
+      /* When destination, must be integers of size 16, 32 or 64. */
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_B, 0),  brw_grf(BRW_TYPE_B,  1, 0, 0,1,0), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UB, 0), brw_grf(BRW_TYPE_UB, 1, 0, 0,1,0), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_W, 0),  brw_grf(BRW_TYPE_W,  1, 0, 0,1,0), {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UW, 0), brw_grf(BRW_TYPE_UW, 1, 0, 0,1,0), {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_D, 0),  brw_grf(BRW_TYPE_D,  1, 0, 0,1,0), {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UD, 0), brw_grf(BRW_TYPE_UD, 1, 0, 0,1,0), {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_Q, 0),  brw_grf(BRW_TYPE_Q,  1, 0, 0,1,0), {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UQ, 0), brw_grf(BRW_TYPE_UQ, 1, 0, 0,1,0), {}, true },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_F, 0),  brw_grf(BRW_TYPE_F,  1, 0, 0,1,0), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_HF, 0), brw_grf(BRW_TYPE_HF, 1, 0, 0,1,0), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_DF, 0), brw_grf(BRW_TYPE_DF, 1, 0, 0,1,0), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_V, 0),  brw_grf(BRW_TYPE_V,  1, 0, 0,1,0), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UV, 0), brw_grf(BRW_TYPE_UV, 1, 0, 0,1,0), {}, false },
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_VF, 0), brw_grf(BRW_TYPE_VF, 1, 0, 0,1,0), {}, false },
+
+      /* When destination with immediate source, execution size must be 1. */
+      { BRW_OPCODE_MOV,  8, {}, brw_s0(BRW_TYPE_UW, 0), brw_imm_uw(0x1234), {}, false },
+
+      /* When destination with with immediate source, conditional modifier cannot be used. */
+      { BRW_OPCODE_MOV,  1, {.cmod = BRW_CONDITIONAL_Z}, brw_s0(BRW_TYPE_UW, 0), brw_imm_uw(0x341E),                {}, false  },
+      { BRW_OPCODE_MOV,  1, {.cmod = BRW_CONDITIONAL_Z}, brw_s0(BRW_TYPE_UW, 0), brw_grf(BRW_TYPE_UW, 1, 0, 0,1,0), {}, true },
+
+      /* When source is scalar, destination must not be scalar. */
+      { BRW_OPCODE_MOV,  1, {}, brw_s0(BRW_TYPE_UW, 0), brw_s0(BRW_TYPE_UW, 4), {}, false },
+
+      /* When source of MOV is scalar, it must be a broadcast. */
+      { BRW_OPCODE_MOV,  8, {}, brw_grf(BRW_TYPE_UW, 1, 0, 1,1,0), brw_s0_with_region(BRW_TYPE_UW, 0, 0,1,0), {}, true },
+      { BRW_OPCODE_MOV,  8, {}, brw_grf(BRW_TYPE_UW, 1, 0, 1,1,0), brw_s0_with_region(BRW_TYPE_UW, 0, 1,1,0), {}, false },
+      { BRW_OPCODE_MOV,  8, {}, brw_grf(BRW_TYPE_UW, 1, 0, 1,1,0), brw_s0_with_region(BRW_TYPE_UW, 0, 8,8,1), {}, false },
+
+      /* When source 0 of SEND/SENDC is scalar, source 1 must be null. */
+      { BRW_OPCODE_SEND,  16, {}, null_ud, brw_s0(BRW_TYPE_UD, 0), null_ud, true },
+      { BRW_OPCODE_SENDC, 16, {}, null_ud, brw_s0(BRW_TYPE_UD, 0), null_ud, true },
+      { BRW_OPCODE_SEND,  16, {}, null_ud, brw_s0(BRW_TYPE_UD, 0), brw_grf(BRW_TYPE_UD, 1, 0, 0,1,0), false },
+      { BRW_OPCODE_SENDC, 16, {}, null_ud, brw_s0(BRW_TYPE_UD, 0), brw_grf(BRW_TYPE_UD, 1, 0, 0,1,0), false },
+
+      /* When source is a scalar register, it must be on source 0. */
+      { BRW_OPCODE_SEND,  16, {}, null_ud, brw_grf(BRW_TYPE_UD, 0, 0, 0,1,0), brw_grf(BRW_TYPE_UD, 2, 0, 0,1,0), true },
+      { BRW_OPCODE_SEND,  16, {}, null_ud, brw_grf(BRW_TYPE_UD, 0, 0, 0,1,0), brw_s0(BRW_TYPE_UD, 0),            false },
+   };
+
+   for (unsigned i = 0; i < ARRAY_SIZE(tests); i++) {
+      const struct test &t = tests[i];
+
+      switch (tests[i].opcode) {
+      case BRW_OPCODE_ADD:
+         brw_ADD(p, t.dst, t.src0, t.src1);
+         break;
+      case BRW_OPCODE_NOT:
+         brw_NOT(p, t.dst, t.src0);
+         break;
+      case BRW_OPCODE_MOV:
+         brw_MOV(p, t.dst, t.src0);
+         break;
+      case BRW_OPCODE_SEND:
+      case BRW_OPCODE_SENDC: {
+         brw_inst *send = brw_next_insn(p, tests[i].opcode);
+         brw_set_dest(p, send, t.dst);
+         brw_set_src0(p, send, t.src0);
+         brw_set_src1(p, send, t.src1);
+         break;
+      }
+      default:
+         unreachable("unexpected opcode in tests");
+      }
+
+      brw_inst_set_exec_size(&devinfo, last_inst, cvt(t.exec_size) - 1);
+      brw_inst_set_cond_modifier(&devinfo, last_inst, t.opts.cmod);
+
+      EXPECT_EQ(t.expected_result, validate(p)) <<
+         "test vector index = " << i;
+
+      clear_instructions(p);
+   }
+}

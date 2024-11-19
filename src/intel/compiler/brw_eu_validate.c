@@ -1605,11 +1605,16 @@ special_requirements_for_handling_double_precision_data_types(
                   "source and destination are not supported except for "
                   "broadcast of a scalar.");
 
+         /* NOTE: Expanded this to include Scalar.  See documentation issue
+          * open in https://gfxspecs.intel.com/Predator/Home/Index/56640.
+          */
          ERROR_IF((address_mode == BRW_ADDRESS_DIRECT && file == ARF &&
+                   reg != BRW_ARF_SCALAR &&
                    reg != BRW_ARF_NULL && !(reg >= BRW_ARF_ACCUMULATOR && reg < BRW_ARF_FLAG)) ||
                   (inst->dst.file == ARF &&
+                   dst_reg != BRW_ARF_SCALAR &&
                    dst_reg != BRW_ARF_NULL && (dst_reg & 0xF0) != BRW_ARF_ACCUMULATOR),
-                  "Explicit ARF registers except null and accumulator must not "
+                  "Explicit ARF registers except null, accumulator, and scalar must not "
                   "be used.");
       }
 
@@ -2164,6 +2169,87 @@ send_descriptor_restrictions(const struct brw_isa_info *isa,
    return error_msg;
 }
 
+static struct string
+scalar_register_restrictions(const struct brw_isa_info *isa,
+                             const brw_hw_decoded_inst *inst)
+{
+   const struct intel_device_info *devinfo = isa->devinfo;
+   struct string error_msg = { .str = NULL, .len = 0 };
+
+   /* Restrictions from BSpec 71168 (r55736). */
+
+   if (devinfo->ver >= 30) {
+      if (inst->dst.file == ARF && inst->dst.nr == BRW_ARF_SCALAR) {
+         switch (inst->opcode) {
+         case BRW_OPCODE_MOV: {
+            unsigned dst_size_bits = brw_type_size_bits(inst->dst.type);
+            ERROR_IF(inst->dst.type != inst->src[0].type,
+                     "When destination is scalar register, "
+                     "source and destination data-types must be the same.");
+            ERROR_IF(!brw_type_is_int(inst->dst.type) || (dst_size_bits != 16 &&
+                                                          dst_size_bits != 32 &&
+                                                          dst_size_bits != 64),
+                     "When destination is scalar register, "
+                     "it must be an integer with size 16, 32, or 64 bits.");
+            if (inst->src[0].file == IMM) {
+               ERROR_IF(inst->exec_size != 1,
+                        "When destination is scalar register with immediate source, "
+                        "execution size must be 1.");
+               ERROR_IF(inst->cond_modifier != BRW_CONDITIONAL_NONE,
+                        "When destination is scalar register with immediate source, "
+                        "conditional modifier must not be used.");
+            }
+            ERROR_IF((inst->dst.subnr / 32) != ((inst->dst.subnr + brw_type_size_bytes(inst->dst.type)) / 32),
+                     "When destination is scalar register, it must not span across "
+                     "the lower to upper 8 dword boundary of the register.");
+            break;
+         }
+
+         default:
+            ERROR("When destination is scalar register, opcode must be MOV.");
+            break;
+         }
+      }
+
+      if (inst->src[0].file == ARF && inst->src[0].nr == BRW_ARF_SCALAR) {
+         switch (inst->opcode) {
+         case BRW_OPCODE_MOV: {
+            ERROR_IF(inst->dst.file == ARF && inst->dst.nr == BRW_ARF_SCALAR,
+                     "When source is a scalar register, destination must not be a scalar register.");
+            ERROR_IF(!src_has_scalar_region(inst, 0),
+                     "When source is a scalar register and opcode is MOV, the scalar (broadcast) regioning must be used.");
+            break;
+         }
+
+         case BRW_OPCODE_SEND:
+         case BRW_OPCODE_SENDC: {
+            ERROR_IF(!src1_is_null(inst),
+                     "When source is a scalar and opcode is a SEND or SENDC, Src1 must be NULL.");
+            break;
+         }
+
+         default:
+            ERROR("When source is a scalar register, opcode must be MOV, SEND, or SENDC.");
+            break;
+         }
+      }
+
+      if ((inst->src[1].file == ARF && inst->src[1].nr == BRW_ARF_SCALAR) ||
+          (inst->src[2].file == ARF && inst->src[2].nr == BRW_ARF_SCALAR)) {
+         ERROR("When source is a scalar register, it must be on Source 0.");
+      }
+   } else {
+      assert(devinfo->ver < 30);
+      if ((inst->dst.file == ARF && inst->dst.nr == BRW_ARF_SCALAR) ||
+          (inst->src[0].file == ARF && inst->src[0].nr == BRW_ARF_SCALAR) ||
+          (inst->src[1].file == ARF && inst->src[1].nr == BRW_ARF_SCALAR) ||
+          (inst->src[2].file == ARF && inst->src[2].nr == BRW_ARF_SCALAR))
+         ERROR("Scalar register not available before Gfx30.");
+   }
+
+   return error_msg;
+}
+
 static unsigned
 VSTRIDE_3SRC(unsigned vstride)
 {
@@ -2562,6 +2648,7 @@ brw_validate_instruction(const struct brw_isa_info *isa,
          CHECK(special_requirements_for_handling_double_precision_data_types);
          CHECK(instruction_restrictions);
          CHECK(send_descriptor_restrictions);
+         CHECK(scalar_register_restrictions);
       }
 
 #undef CHECK
