@@ -110,8 +110,6 @@ DEQP_TARGET=default \
 
 ############### Build apitrace
 
-uncollapsed_section_switch apitrace "Building apitrace"
-
 . .gitlab-ci/container/build-apitrace.sh
 
 ############### Build Fossilize
