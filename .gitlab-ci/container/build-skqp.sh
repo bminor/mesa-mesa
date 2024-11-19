@@ -10,6 +10,8 @@
 
 set -uex
 
+uncollapsed_section_start skqp "Building skqp"
+
 SKQP_BRANCH=android-cts-12.1_r5
 
 SCRIPT_DIR="$(pwd)/.gitlab-ci/container"
@@ -98,3 +100,5 @@ popd
 rm -Rf "${SKIA_DIR}"
 
 set +ex
+
+section_end skqp

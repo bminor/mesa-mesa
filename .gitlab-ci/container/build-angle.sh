@@ -6,6 +6,8 @@
 
 set -uex
 
+uncollapsed_section_start angle "Building angle"
+
 ANGLE_REV="76025caa1a059f464a2b0e8f879dbd4746f092b9"
 SCRIPTS_DIR="$(pwd)/.gitlab-ci"
 ANGLE_PATCH_DIR="${SCRIPTS_DIR}/container/patches"
@@ -97,3 +99,5 @@ rm -rf out
 popd
 rm -rf /depot-tools
 rm -rf /angle-build
+
+section_end angle
