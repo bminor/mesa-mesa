@@ -187,11 +187,9 @@ case "${DEQP_API}" in
     # deqp-egl also comes from this build, but it is handled separately above.
     ;;
 esac
-if [ "${DEQP_TARGET}" != 'android' ]; then
-  deqp_build_targets+=(testlog-to-xml)
-  deqp_build_targets+=(testlog-to-csv)
-  deqp_build_targets+=(testlog-to-junit)
-fi
+deqp_build_targets+=(testlog-to-xml)
+deqp_build_targets+=(testlog-to-csv)
+deqp_build_targets+=(testlog-to-junit)
 
 ninja "${deqp_build_targets[@]}"
 
@@ -230,12 +228,12 @@ if [ "${DEQP_TARGET}" != 'android' ]; then
     # Compress the caselists, since Vulkan's in particular are gigantic; higher
     # compression levels provide no real measurable benefit.
     zstd -1 --rm /deqp/mustpass/*.txt
-
-    # Save *some* executor utils, but otherwise strip things down
-    # to reduct deqp build size:
-    mv /deqp/executor/testlog-to-* /deqp
-    rm -rf /deqp/executor
 fi
+
+# Save *some* executor utils, but otherwise strip things down
+# to reduct deqp build size:
+mv /deqp/executor/testlog-to-* /deqp
+rm -rf /deqp/executor
 
 # Remove other mustpass files, since we saved off the ones we wanted to conventient locations above.
 rm -rf /deqp/external/**/mustpass/
