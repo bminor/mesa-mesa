@@ -1351,9 +1351,11 @@ nir_instr_def(nir_instr *instr)
    case nir_instr_type_undef:
       return &nir_instr_as_undef(instr)->def;
 
+   case nir_instr_type_debug_info:
+      return &nir_instr_as_debug_info(instr)->def;
+
    case nir_instr_type_call:
    case nir_instr_type_jump:
-   case nir_instr_type_debug_info:
       return NULL;
    }
 
