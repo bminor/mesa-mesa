@@ -17,7 +17,7 @@ unsafe impl CLInfo<cl_platform_info> for cl_platform_id {
         match q {
             CL_PLATFORM_EXTENSIONS => v.write::<&str>(PLATFORM_EXTENSION_STR),
             CL_PLATFORM_EXTENSIONS_WITH_VERSION => {
-                v.write::<Vec<cl_name_version>>(PLATFORM_EXTENSIONS.to_vec())
+                v.write::<&[cl_name_version]>(&PLATFORM_EXTENSIONS)
             }
             CL_PLATFORM_HOST_TIMER_RESOLUTION => v.write::<cl_ulong>(1),
             CL_PLATFORM_ICD_SUFFIX_KHR => v.write::<&CStr>(c"MESA"),
