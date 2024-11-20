@@ -496,7 +496,8 @@ prepare_blend(struct panvk_cmd_buffer *cmdbuf)
                 dyn_gfx_state_dirty(cmdbuf, CB_BLEND_ENABLES) ||
                 dyn_gfx_state_dirty(cmdbuf, CB_BLEND_EQUATIONS) ||
                 dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
-                dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS);
+                dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS) ||
+                fs_user_dirty(cmdbuf) || gfx_state_dirty(cmdbuf, RENDER_STATE);
 
    if (!dirty)
       return VK_SUCCESS;
