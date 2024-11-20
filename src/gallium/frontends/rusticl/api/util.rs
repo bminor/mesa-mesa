@@ -153,6 +153,47 @@ impl<'a> CLInfoValue<'a> {
 
         Ok(Self::finish())
     }
+
+    /// Similar to `write` with the only difference that instead of a precomputed value, this can
+    /// take an iterator instead.
+    ///
+    /// This is useful when the data to be returned isn't cheap to compute or not already available.
+    ///
+    /// When the application only asks for the size of the result, the iterator isn't advanced at
+    /// all, only its length is used.
+    pub fn write_iter<T: CLProp<Output = T> + Copy>(
+        self,
+        iter: impl ExactSizeIterator<Item = T>,
+    ) -> CLResult<CLInfoRes> {
+        let count = iter.len();
+        let bytes = count * mem::size_of::<T::Output>();
+
+        // param_value is a pointer to memory where the appropriate result being queried is
+        // returned. If param_value is NULL, it is ignored.
+        if let Some(param_value) = self.param_value {
+            // CL_INVALID_VALUE [...] if size in bytes specified by param_value_size is < size of
+            // return type as specified in the Context Attributes table and param_value is not a
+            // NULL value.
+            if param_value.len() < bytes {
+                return Err(CL_INVALID_VALUE);
+            }
+
+            let out =
+                unsafe { cl_slice::from_raw_parts_mut(param_value.as_mut_ptr().cast(), count)? };
+
+            for (item, out) in zip(iter, out.iter_mut()) {
+                *out = item;
+            }
+        }
+
+        // param_value_size_ret returns the actual size in bytes of data being queried by
+        // param_name. If param_value_size_ret is NULL, it is ignored.
+        if let Some(param_value_size_ret) = self.param_value_size_ret {
+            param_value_size_ret.write(bytes);
+        }
+
+        Ok(Self::finish())
+    }
 }
 
 /// # Safety
