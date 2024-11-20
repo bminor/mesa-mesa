@@ -59,6 +59,16 @@ lp_build_opt_nir(struct nir_shader *nir)
       NIR_PASS_V(nir, nir_lower_task_shader, ts_opts);
    }
 
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      bool demote_progress = false;
+      NIR_PASS(demote_progress, nir, nir_lower_terminate_to_demote);
+      if (demote_progress) {
+         NIR_PASS(_, nir, nir_lower_halt_to_return);
+         NIR_PASS(_, nir, nir_lower_returns);
+         NIR_PASS(_, nir, nir_opt_dead_cf);
+      }
+   }
+
    NIR_PASS_V(nir, nir_lower_flrp, 16|32|64, true);
    NIR_PASS_V(nir, nir_lower_fp16_casts, nir_lower_fp16_all | nir_lower_fp16_split_fp64);
 

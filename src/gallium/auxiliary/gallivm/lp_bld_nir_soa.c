@@ -78,7 +78,7 @@ lp_nir_instr_src_divergent(nir_instr *instr, uint32_t src_index)
       case nir_intrinsic_store_deref:
       case nir_intrinsic_store_shared:
       case nir_intrinsic_store_task_payload:
-      case nir_intrinsic_terminate_if:
+      case nir_intrinsic_demote_if:
       case nir_intrinsic_ballot:
       case nir_intrinsic_vote_all:
       case nir_intrinsic_vote_any:
@@ -4569,7 +4569,7 @@ visit_discard(struct lp_build_nir_soa_context *bld,
    LLVMBuilderRef builder = bld->base.gallivm->builder;
 
    LLVMValueRef cond = NULL;
-   if (instr->intrinsic == nir_intrinsic_terminate_if) {
+   if (instr->intrinsic == nir_intrinsic_demote_if) {
       cond = get_src(bld, &instr->src[0], 0);
       cond = LLVMBuildSExt(builder, cond, bld->uint_bld.vec_type, "");
    }
@@ -5016,8 +5016,8 @@ visit_intrinsic(struct lp_build_nir_soa_context *bld,
    case nir_intrinsic_load_helper_invocation:
       emit_helper_invocation(bld, &result[0]);
       break;
-   case nir_intrinsic_terminate_if:
-   case nir_intrinsic_terminate:
+   case nir_intrinsic_demote_if:
+   case nir_intrinsic_demote:
       visit_discard(bld, instr);
       break;
    case nir_intrinsic_emit_vertex:

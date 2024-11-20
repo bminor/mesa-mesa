@@ -162,27 +162,6 @@ remove_barriers(nir_shader *nir, bool is_compute)
 }
 
 static bool
-lower_demote_impl(nir_builder *b, nir_intrinsic_instr *intr, void *data)
-{
-   if (intr->intrinsic == nir_intrinsic_demote) {
-      intr->intrinsic = nir_intrinsic_terminate;
-      return true;
-   }
-   if (intr->intrinsic == nir_intrinsic_demote_if) {
-      intr->intrinsic = nir_intrinsic_terminate_if;
-      return true;
-   }
-   return false;
-}
-
-static bool
-lower_demote(nir_shader *nir)
-{
-   return nir_shader_intrinsics_pass(nir, lower_demote_impl,
-                                     nir_metadata_dominance, NULL);
-}
-
-static bool
 find_tex(const nir_instr *instr, const void *data_cb)
 {
    if (instr->type == nir_instr_type_tex)
@@ -370,7 +349,6 @@ lvp_shader_lower(struct lvp_device *pdevice, nir_shader *nir, struct lvp_pipelin
       lvp_lower_input_attachments(nir, false);
    NIR_PASS_V(nir, nir_lower_system_values);
    NIR_PASS_V(nir, nir_lower_is_helper_invocation);
-   NIR_PASS_V(nir, lower_demote);
 
    const struct nir_lower_compute_system_values_options compute_system_values = {0};
    NIR_PASS_V(nir, nir_lower_compute_system_values, &compute_system_values);
