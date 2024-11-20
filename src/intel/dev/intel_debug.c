@@ -115,6 +115,7 @@ static const struct debug_control debug_control[] = {
    { "reg-pressure", DEBUG_REG_PRESSURE },
    { "shader-print", DEBUG_SHADER_PRINT },
    { "cl-quiet",     DEBUG_CL_QUIET },
+   { "no-send-gather", DEBUG_NO_SEND_GATHER },
    { NULL,    0 }
 };
 

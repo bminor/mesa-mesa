@@ -7,6 +7,8 @@
 #include "brw_fs.h"
 #include "brw_builder.h"
 
+#include "dev/intel_debug.h"
+
 using namespace brw;
 
 void
@@ -112,6 +114,9 @@ brw_optimize(fs_visitor &s)
          OPT(brw_opt_copy_propagation);
       }
    }
+
+   if (s.devinfo->ver >= 30)
+      OPT(brw_opt_send_to_send_gather);
 
    OPT(brw_opt_split_sends);
    OPT(brw_workaround_nomask_control_flow);
@@ -560,6 +565,83 @@ brw_opt_remove_extra_rounding_modes(fs_visitor &s)
 
    if (progress)
       s.invalidate_analysis(DEPENDENCY_INSTRUCTIONS);
+
+   return progress;
+}
+
+bool
+brw_opt_send_to_send_gather(fs_visitor &s)
+{
+   const intel_device_info *devinfo = s.devinfo;
+   bool progress = false;
+
+   assert(devinfo->ver >= 30);
+
+   const unsigned unit = reg_unit(devinfo);
+   assert(unit == 2);
+
+   unsigned count = 0;
+
+   foreach_block_and_inst_safe(block, fs_inst, inst, s.cfg) {
+      if (inst->opcode != SHADER_OPCODE_SEND)
+         continue;
+
+      /* For 1-2 registers, send-gather offers no benefits over split-send. */
+      if (inst->mlen + inst->ex_mlen <= 2 * unit)
+         continue;
+
+      assert(inst->mlen % unit == 0);
+      assert(inst->ex_mlen % unit == 0);
+
+      struct {
+         brw_reg src;
+         unsigned phys_len;
+      } payload[2] = {
+         { inst->src[2], inst->mlen / unit },
+         { inst->src[3], inst->ex_mlen / unit },
+      };
+
+      const unsigned num_payload_sources = payload[0].phys_len + payload[1].phys_len;
+
+      /* Limited by Src0.Length in the SEND instruction. */
+      if (num_payload_sources > 15)
+         continue;
+
+      if (INTEL_DEBUG(DEBUG_NO_SEND_GATHER)) {
+         count++;
+         continue;
+      }
+
+      inst->resize_sources(3 + num_payload_sources);
+      /* Sources 0 and 1 remain the same.  Source 2 will be filled
+       * after register allocation.
+       */
+      inst->src[2] = {};
+
+      int idx = 3;
+      for (unsigned p = 0; p < ARRAY_SIZE(payload); p++) {
+         for (unsigned i = 0; i < payload[p].phys_len; i++) {
+            inst->src[idx++] = byte_offset(payload[p].src,
+                                           i * reg_unit(devinfo) * REG_SIZE);
+         }
+      }
+      assert(idx == inst->sources);
+
+      inst->opcode = SHADER_OPCODE_SEND_GATHER;
+      inst->mlen = 0;
+      inst->ex_mlen = 0;
+
+      progress = true;
+   }
+
+   if (INTEL_DEBUG(DEBUG_NO_SEND_GATHER)) {
+      fprintf(stderr, "Ignored %u opportunities to try SEND_GATHER in %s shader.\n",
+              count, _mesa_shader_stage_to_string(s.stage));
+   }
+
+   if (progress)
+      s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DETAIL |
+                            DEPENDENCY_INSTRUCTION_DATA_FLOW);
 
    return progress;
 }

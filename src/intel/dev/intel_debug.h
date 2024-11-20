@@ -106,6 +106,7 @@ extern uint64_t intel_debug;
 #define DEBUG_BVH_BLAS_IR_AS      (1ull << 58)
 #define DEBUG_BVH_TLAS_IR_AS      (1ull << 59)
 #define DEBUG_BVH_NO_BUILD        (1ull << 60)
+#define DEBUG_NO_SEND_GATHER      (1ull << 61)
 
 #define DEBUG_ANY                 (~0ull)
 
@@ -115,7 +116,8 @@ extern uint64_t intel_debug;
 /* These flags may affect program generation */
 #define DEBUG_DISK_CACHE_MASK \
    (DEBUG_NO_DUAL_OBJECT_GS | DEBUG_SPILL_FS | \
-   DEBUG_SPILL_VEC4 | DEBUG_NO_COMPACTION | DEBUG_DO32 | DEBUG_SOFT64)
+   DEBUG_SPILL_VEC4 | DEBUG_NO_COMPACTION | DEBUG_DO32 | DEBUG_SOFT64 | \
+   DEBUG_NO_SEND_GATHER)
 
 /* Flags to determine what bvh to dump out */
 #define DEBUG_BVH_ANV (DEBUG_BVH_BLAS | DEBUG_BVH_TLAS)
