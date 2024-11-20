@@ -201,14 +201,6 @@ visit_undef_use(nir_src *src, struct visit_info *info)
          if (&alu->src[i].src != src)
             continue;
 
-         if (nir_op_is_selection(alu->op) && i != 0) {
-            /* nir_opt_algebraic can eliminate a select opcode only if src0 is
-             * a constant. If the undef use is src1 or src2, it will be
-             * handled by opt_undef_csel.
-             */
-            continue;
-         }
-
          info->replace_undef_with_constant = true;
          if (nir_op_infos[alu->op].input_types[i] & nir_type_float &&
              alu->op != nir_op_fmulz &&
@@ -233,9 +225,13 @@ visit_undef_use(nir_src *src, struct visit_info *info)
  * to be eliminated by nir_opt_algebraic. 0 would not eliminate the FP opcode.
  */
 static bool
-replace_ssa_undef(nir_builder *b, nir_instr *instr,
-                  const struct undef_options *options)
+replace_ssa_undef(nir_builder *b, nir_instr *instr, void *data)
 {
+   if (instr->type != nir_instr_type_undef)
+      return false;
+
+   const struct undef_options *options = data;
+
    nir_undef_instr *undef = nir_instr_as_undef(instr);
    struct visit_info info = {0};
 
@@ -267,13 +263,9 @@ replace_ssa_undef(nir_builder *b, nir_instr *instr,
 }
 
 static bool
-nir_opt_undef_instr(nir_builder *b, nir_instr *instr, void *data)
+opt_undef_uses(nir_builder *b, nir_instr *instr, void *data)
 {
-   const struct undef_options *options = data;
-
-   if (instr->type == nir_instr_type_undef) {
-      return replace_ssa_undef(b, instr, options);
-   } else if (instr->type == nir_instr_type_alu) {
+   if (instr->type == nir_instr_type_alu) {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
       return opt_undef_csel(b, alu) ||
              opt_undef_vecN(b, alu);
@@ -322,8 +314,14 @@ nir_opt_undef(nir_shader *shader)
    if (shader->info.use_legacy_math_rules)
       options.disallow_undef_to_nan = true;
 
-   return nir_shader_instructions_pass(shader,
-                                       nir_opt_undef_instr,
-                                       nir_metadata_control_flow,
-                                       &options);
+   bool progress = nir_shader_instructions_pass(shader,
+                                                opt_undef_uses,
+                                                nir_metadata_control_flow,
+                                                &options);
+   progress |= nir_shader_instructions_pass(shader,
+                                            replace_ssa_undef,
+                                            nir_metadata_control_flow,
+                                            &options);
+
+   return progress;
 }
