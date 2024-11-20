@@ -1466,6 +1466,11 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
 
    s.debug_optimizer(nir, "lowered_vgrfs_to_fixed_grfs", 96, pass_num++);
 
+   if (s.devinfo->ver >= 30) {
+      brw_lower_send_gather(s);
+      s.debug_optimizer(nir, "lower_send_gather", 96, pass_num++);
+   }
+
    brw_shader_phase_update(s, BRW_SHADER_PHASE_AFTER_REGALLOC);
 
    if (s.last_scratch > 0) {

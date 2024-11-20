@@ -533,6 +533,7 @@ bool brw_lower_regioning(fs_visitor &s);
 bool brw_lower_scalar_fp64_MAD(fs_visitor &s);
 bool brw_lower_scoreboard(fs_visitor &s);
 bool brw_lower_send_descriptors(fs_visitor &s);
+bool brw_lower_send_gather(fs_visitor &s);
 bool brw_lower_sends_overlapping_payload(fs_visitor &s);
 bool brw_lower_simd_width(fs_visitor &s);
 bool brw_lower_src_modifiers(fs_visitor &s, bblock_t *block, fs_inst *inst, unsigned i);

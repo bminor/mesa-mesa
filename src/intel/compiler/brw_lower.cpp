@@ -757,6 +757,92 @@ brw_lower_vgrfs_to_fixed_grfs(fs_visitor &s)
                          DEPENDENCY_VARIABLES);
 }
 
+static brw_reg
+brw_s0(enum brw_reg_type type, unsigned subnr)
+{
+   return brw_make_reg(ARF,
+                       BRW_ARF_SCALAR,
+                       subnr,
+                       0,
+                       0,
+                       type,
+                       BRW_VERTICAL_STRIDE_0,
+                       BRW_WIDTH_1,
+                       BRW_HORIZONTAL_STRIDE_0,
+                       BRW_SWIZZLE_XYZW,
+                       WRITEMASK_XYZW);
+}
+
+static bool
+brw_lower_send_gather_inst(fs_visitor &s, bblock_t *block, fs_inst *inst)
+{
+   const intel_device_info *devinfo = s.devinfo;
+   assert(devinfo->ver >= 30);
+
+   const unsigned unit = reg_unit(devinfo);
+   assert(unit == 2);
+
+   assert(inst->opcode == SHADER_OPCODE_SEND_GATHER);
+   assert(inst->sources > 2);
+   assert(inst->src[2].file == BAD_FILE);
+
+   unsigned count = 0;
+   uint8_t regs[16] = {};
+
+   const unsigned num_payload_sources = inst->sources - 3;
+   assert(num_payload_sources > 0);
+
+   /* Limited by Src0.Length in the SEND instruction. */
+   assert(num_payload_sources < 16);
+
+   for (unsigned i = 3; i < inst->sources; i++) {
+      assert(inst->src[i].file == FIXED_GRF);
+      assert(inst->src[i].nr % reg_unit(devinfo) == 0);
+
+      unsigned nr = phys_nr(devinfo, inst->src[i]);
+      assert(nr <= UINT8_MAX);
+      regs[count++] = nr;
+   }
+
+   /* Fill out ARF scalar register with the physical register numbers
+    * and use SEND_GATHER.
+    */
+   brw_builder ubld = brw_builder(&s, block, inst).group(1, 0).exec_all();
+   for (unsigned q = 0; q < DIV_ROUND_UP(count, 8); q++) {
+      uint64_t v = 0;
+      for (unsigned i = 0; i < 8; i++) {
+         const uint64_t reg = regs[(q * 8) + i];
+         v |= reg << (8 * i);
+      }
+      ubld.MOV(brw_s0(BRW_TYPE_UQ, q), brw_imm_uq(v));
+   }
+
+   inst->src[2] = brw_s0(BRW_TYPE_UD, 0);
+   inst->mlen = count * unit;
+
+   return true;
+}
+
+bool
+brw_lower_send_gather(fs_visitor &s)
+{
+   assert(s.devinfo->ver >= 30);
+   assert(s.grf_used || !"Must be called after register allocation");
+
+   bool progress = false;
+
+   foreach_block_and_inst(block, fs_inst, inst, s.cfg) {
+      if (inst->opcode == SHADER_OPCODE_SEND_GATHER)
+         progress |= brw_lower_send_gather_inst(s, block, inst);
+   }
+
+   if (progress)
+      s.invalidate_analysis(DEPENDENCY_INSTRUCTION_DATA_FLOW |
+                            DEPENDENCY_VARIABLES);
+
+   return progress;
+}
+
 bool
 brw_lower_load_subgroup_invocation(fs_visitor &s)
 {
