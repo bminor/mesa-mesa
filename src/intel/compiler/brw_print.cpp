@@ -611,13 +611,14 @@ brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *fi
       if (inst->src[i].file != IMM && !omit_src_type_and_region) {
          unsigned stride;
          if (inst->src[i].file == ARF || inst->src[i].file == FIXED_GRF) {
-            unsigned hstride = inst->src[i].hstride;
-            stride = (hstride == 0 ? 0 : (1 << (hstride - 1)));
+            fprintf(file, "<%u,%u,%u>", inst->src[i].vstride == 0 ? 0 : (1 << (inst->src[i].vstride - 1)),
+                                        1 << inst->src[i].width,
+                                        inst->src[i].hstride == 0 ? 0 : (1 << (inst->src[i].hstride - 1)));
          } else {
             stride = inst->src[i].stride;
+            if (stride != 1)
+               fprintf(file, "<%u>", stride);
          }
-         if (stride != 1)
-            fprintf(file, "<%u>", stride);
 
          fprintf(file, ":%s", brw_reg_type_to_letters(inst->src[i].type));
       }
