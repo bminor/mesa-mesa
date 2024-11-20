@@ -53,11 +53,11 @@ unsafe impl CLInfo<cl_gl_context_info> for GLCtxManager {
             }
             CL_DEVICES_FOR_GL_CONTEXT_KHR => {
                 // TODO: support multiple devices
-                let devs = get_dev_for_uuid(info.device_uuid)
-                    .iter()
-                    .map(|&d| cl_device_id::from_ptr(d))
-                    .collect();
-                v.write::<Vec<cl_device_id>>(devs)
+                v.write_iter::<cl_device_id>(
+                    get_dev_for_uuid(info.device_uuid)
+                        .iter()
+                        .map(|&d| cl_device_id::from_ptr(d)),
+                )
             }
             _ => Err(CL_INVALID_VALUE),
         }
