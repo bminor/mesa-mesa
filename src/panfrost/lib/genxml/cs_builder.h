@@ -1683,6 +1683,8 @@ struct cs_exception_handler {
    struct cs_dirty_tracker dirty;
    struct cs_exception_handler_ctx ctx;
    unsigned dump_size;
+   uint64_t address;
+   uint32_t length;
 };
 
 static inline struct cs_exception_handler *
@@ -1770,6 +1772,9 @@ cs_exception_handler_end(struct cs_builder *b,
    if (!cs_reserve_instrs(b, padded_num_instrs))
       return;
 
+   handler->address =
+      b->cur_chunk.buffer.gpu + (b->cur_chunk.pos * sizeof(uint64_t));
+
    /* Preamble: backup modified registers */
    if (num_ranges > 0) {
       unsigned offset = 0;
@@ -1813,6 +1818,8 @@ cs_exception_handler_end(struct cs_builder *b,
    /* Fill the rest of the buffer with NOPs. */
    for (; num_instrs < padded_num_instrs; num_instrs++)
       cs_nop(b);
+
+   handler->length = padded_num_instrs;
 }
 
 #define cs_exception_handler_def(__b, __handler, __ctx)                        \
