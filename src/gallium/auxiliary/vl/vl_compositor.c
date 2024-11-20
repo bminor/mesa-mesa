@@ -330,11 +330,13 @@ static void
 set_yuv_layer(struct vl_compositor_state *s, struct vl_compositor *c,
               unsigned layer, struct pipe_video_buffer *buffer,
               struct u_rect *src_rect, struct u_rect *dst_rect,
-              bool y, enum vl_compositor_deinterlace deinterlace)
+              enum vl_compositor_plane plane,
+              enum vl_compositor_deinterlace deinterlace)
 {
    struct pipe_sampler_view **sampler_views;
    float half_a_line;
    unsigned i;
+   bool y = plane == VL_COMPOSITOR_PLANE_Y;
 
    assert(s && c && buffer);
 
@@ -379,8 +381,15 @@ set_yuv_layer(struct vl_compositor_state *s, struct vl_compositor *c,
 
    case VL_COMPOSITOR_NONE:
       if (c->pipe_cs_composit_supported) {
-          s->layers[layer].cs = (y) ? c->cs_yuv.progressive.y : c->cs_yuv.progressive.uv;
-          break;
+         if (plane == VL_COMPOSITOR_PLANE_Y)
+            s->layers[layer].cs = c->cs_yuv.progressive.y;
+         else if (plane == VL_COMPOSITOR_PLANE_U)
+            s->layers[layer].cs = c->cs_yuv.progressive.u;
+         else if (plane == VL_COMPOSITOR_PLANE_V)
+            s->layers[layer].cs = c->cs_yuv.progressive.v;
+         else if (plane == VL_COMPOSITOR_PLANE_UV)
+            s->layers[layer].cs = c->cs_yuv.progressive.uv;
+         break;
       }
       FALLTHROUGH;
 
@@ -396,10 +405,12 @@ set_yuv_layer(struct vl_compositor_state *s, struct vl_compositor *c,
 static void
 set_rgb_to_yuv_layer(struct vl_compositor_state *s, struct vl_compositor *c,
                      unsigned layer, struct pipe_sampler_view *v,
-                     struct u_rect *src_rect, struct u_rect *dst_rect, bool y)
+                     struct u_rect *src_rect, struct u_rect *dst_rect,
+                     enum vl_compositor_plane plane)
 {
-   assert(s && c && v);
+   bool y = plane == VL_COMPOSITOR_PLANE_Y;
 
+   assert(s && c && v);
    assert(layer < VL_COMPOSITOR_MAX_LAYERS);
 
    if (!init_shaders(c))
@@ -407,9 +418,16 @@ set_rgb_to_yuv_layer(struct vl_compositor_state *s, struct vl_compositor *c,
 
    s->used_layers |= 1 << layer;
 
-   if (c->pipe_cs_composit_supported)
-      s->layers[layer].cs = y ? c->cs_rgb_yuv.y : c->cs_rgb_yuv.uv;
-   else if (c->pipe_gfx_supported)
+   if (c->pipe_cs_composit_supported) {
+      if (plane == VL_COMPOSITOR_PLANE_Y)
+         s->layers[layer].cs = c->cs_rgb_yuv.y;
+      else if (plane == VL_COMPOSITOR_PLANE_U)
+         s->layers[layer].cs = c->cs_rgb_yuv.u;
+      else if (plane == VL_COMPOSITOR_PLANE_V)
+         s->layers[layer].cs = c->cs_rgb_yuv.v;
+      else if (plane == VL_COMPOSITOR_PLANE_UV)
+         s->layers[layer].cs = c->cs_rgb_yuv.uv;
+   } else if (c->pipe_gfx_supported)
       s->layers[layer].fs = y ? c->fs_rgb_yuv.y : c->fs_rgb_yuv.uv;
 
    s->layers[layer].samplers[0] = c->sampler_linear;
@@ -711,20 +729,26 @@ vl_compositor_yuv_deint_full(struct vl_compositor_state *s,
    dst_surfaces = dst->get_surfaces(dst);
    vl_compositor_clear_layers(s);
 
-   set_yuv_layer(s, c, 0, src, src_rect, NULL, true, deinterlace);
+   set_yuv_layer(s, c, 0, src, src_rect, NULL, VL_COMPOSITOR_PLANE_Y, deinterlace);
    vl_compositor_set_layer_dst_area(s, 0, dst_rect);
    vl_compositor_render(s, c, dst_surfaces[0], NULL, false);
 
-   if (dst_rect) {
-      dst_rect->x0 /= 2;
-      dst_rect->y0 /= 2;
-      dst_rect->x1 /= 2;
-      dst_rect->y1 /= 2;
-   }
+   if (dst_surfaces[1]) {
+      dst_rect->x0 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x0);
+      dst_rect->x1 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x1);
+      dst_rect->y0 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y0);
+      dst_rect->y1 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y1);
+      set_yuv_layer(s, c, 0, src, src_rect, NULL, dst_surfaces[2] ? VL_COMPOSITOR_PLANE_U :
+                    VL_COMPOSITOR_PLANE_UV, deinterlace);
+      vl_compositor_set_layer_dst_area(s, 0, dst_rect);
+      vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
 
-   set_yuv_layer(s, c, 0, src, src_rect, NULL, false, deinterlace);
-   vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-   vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
+      if (dst_surfaces[2]) {
+         set_yuv_layer(s, c, 0, src, src_rect, NULL, VL_COMPOSITOR_PLANE_V, deinterlace);
+         vl_compositor_set_layer_dst_area(s, 0, dst_rect);
+         vl_compositor_render(s, c, dst_surfaces[2], NULL, false);
+      }
+   }
 
    s->pipe->flush(s->pipe, NULL, 0);
 }
@@ -749,20 +773,27 @@ vl_compositor_convert_rgb_to_yuv(struct vl_compositor_state *s,
 
    vl_compositor_clear_layers(s);
 
-   set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, true);
+   set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, VL_COMPOSITOR_PLANE_Y);
    vl_compositor_set_layer_dst_area(s, 0, dst_rect);
    vl_compositor_render(s, c, dst_surfaces[0], NULL, false);
 
-   if (dst_rect) {
-      dst_rect->x0 /= 2;
-      dst_rect->y0 /= 2;
-      dst_rect->x1 /= 2;
-      dst_rect->y1 /= 2;
+   if (dst_surfaces[1]) {
+      dst_rect->x0 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x0);
+      dst_rect->x1 = util_format_get_plane_width(dst->buffer_format, 1, dst_rect->x1);
+      dst_rect->y0 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y0);
+      dst_rect->y1 = util_format_get_plane_height(dst->buffer_format, 1, dst_rect->y1);
+      set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, dst_surfaces[2] ? VL_COMPOSITOR_PLANE_U :
+                           VL_COMPOSITOR_PLANE_UV);
+      vl_compositor_set_layer_dst_area(s, 0, dst_rect);
+      vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
+
+      if (dst_surfaces[2]) {
+         set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, VL_COMPOSITOR_PLANE_V);
+         vl_compositor_set_layer_dst_area(s, 0, dst_rect);
+         vl_compositor_render(s, c, dst_surfaces[2], NULL, false);
+      }
    }
 
-   set_rgb_to_yuv_layer(s, c, 0, sv, src_rect, NULL, false);
-   vl_compositor_set_layer_dst_area(s, 0, dst_rect);
-   vl_compositor_render(s, c, dst_surfaces[1], NULL, false);
    pipe_sampler_view_reference(&sv, NULL);
 
    s->pipe->flush(s->pipe, NULL, 0);

@@ -339,20 +339,25 @@ static void *create_video_buffer_shader(struct vl_compositor *c)
    return cs_create_shader_state(c, &s);
 }
 
-static void *create_yuv_progressive_shader(struct vl_compositor *c, bool y)
+static void *create_yuv_progressive_shader(struct vl_compositor *c, enum vl_compositor_plane plane)
 {
    struct cs_shader s = {
-      .name = y ? "yuv_progressive_y" : "yuv_progressive_uv",
+      .name = "yuv_progressive",
       .num_samplers = 3,
    };
    nir_builder *b = &s.b;
 
    nir_def *ipos = cs_create_shader(c, &s);
-   nir_def *pos = cs_tex_coords(&s, ipos, y ? COORDS_LUMA : COORDS_CHROMA);
+   nir_def *pos = cs_tex_coords(&s, ipos, plane == VL_COMPOSITOR_PLANE_Y ? COORDS_LUMA : COORDS_CHROMA);
 
    nir_def *color;
-   if (y) {
-      color = nir_channel(b, cs_fetch_texel(&s, pos, 0), 0);
+   if (plane != VL_COMPOSITOR_PLANE_UV) {
+      unsigned c = 0;
+      if (plane == VL_COMPOSITOR_PLANE_U)
+         c = 1;
+      else if (plane == VL_COMPOSITOR_PLANE_V)
+         c = 2;
+      color = nir_channel(b, cs_fetch_texel(&s, pos, c), c);
    } else {
       nir_def *col1 = cs_fetch_texel(&s, pos, 1);
       nir_def *col2 = cs_fetch_texel(&s, pos, 2);
@@ -364,10 +369,10 @@ static void *create_yuv_progressive_shader(struct vl_compositor *c, bool y)
    return cs_create_shader_state(c, &s);
 }
 
-static void *create_rgb_yuv_shader(struct vl_compositor *c, bool y)
+static void *create_rgb_yuv_shader(struct vl_compositor *c, enum vl_compositor_plane plane)
 {
    struct cs_shader s = {
-      .name = y ? "rgb_yuv_y" : "rgb_yuv_uv",
+      .name = "rgb_yuv",
       .num_samplers = 1,
    };
    nir_builder *b = &s.b;
@@ -375,7 +380,7 @@ static void *create_rgb_yuv_shader(struct vl_compositor *c, bool y)
    nir_def *ipos = cs_create_shader(c, &s);
    nir_def *color = NULL;
 
-   if (y) {
+   if (plane == VL_COMPOSITOR_PLANE_Y) {
       nir_def *pos = cs_tex_coords(&s, ipos, COORDS_LUMA);
       color = cs_fetch_texel(&s, pos, 0);
    } else {
@@ -426,8 +431,13 @@ static void *create_rgb_yuv_shader(struct vl_compositor *c, bool y)
 
    color = nir_vector_insert_imm(b, color, s.fone, 3);
 
-   if (y) {
-      color = cs_color_space_conversion(&s, color, 0);
+   if (plane != VL_COMPOSITOR_PLANE_UV) {
+      unsigned c = 0;
+      if (plane == VL_COMPOSITOR_PLANE_U)
+         c = 1;
+      else if (plane == VL_COMPOSITOR_PLANE_V)
+         c = 2;
+      color = cs_color_space_conversion(&s, color, c);
    } else {
       nir_def *col1 = cs_color_space_conversion(&s, color, 1);
       nir_def *col2 = cs_color_space_conversion(&s, color, 2);
@@ -832,20 +842,26 @@ bool vl_compositor_cs_init_shaders(struct vl_compositor *c)
 
         c->cs_yuv.weave.y = create_weave_shader(c, false, true);
         c->cs_yuv.weave.uv = create_weave_shader(c, false, false);
-        c->cs_yuv.progressive.y = create_yuv_progressive_shader(c, true);
-        c->cs_yuv.progressive.uv = create_yuv_progressive_shader(c, false);
+        c->cs_yuv.progressive.y = create_yuv_progressive_shader(c, VL_COMPOSITOR_PLANE_Y);
+        c->cs_yuv.progressive.uv = create_yuv_progressive_shader(c, VL_COMPOSITOR_PLANE_UV);
+        c->cs_yuv.progressive.u = create_yuv_progressive_shader(c, VL_COMPOSITOR_PLANE_U);
+        c->cs_yuv.progressive.v = create_yuv_progressive_shader(c, VL_COMPOSITOR_PLANE_V);
         if (!c->cs_yuv.weave.y || !c->cs_yuv.weave.uv) {
                 debug_printf("Unable to create YCbCr i-to-YCbCr p deint compute shader.\n");
                 return false;
         }
-        if (!c->cs_yuv.progressive.y || !c->cs_yuv.progressive.uv) {
+        if (!c->cs_yuv.progressive.y || !c->cs_yuv.progressive.uv ||
+            !c->cs_yuv.progressive.u || !c->cs_yuv.progressive.v) {
                 debug_printf("Unable to create YCbCr p-to-NV12 compute shader.\n");
                 return false;
         }
 
-        c->cs_rgb_yuv.y = create_rgb_yuv_shader(c, true);
-        c->cs_rgb_yuv.uv = create_rgb_yuv_shader(c, false);
-        if (!c->cs_rgb_yuv.y || !c->cs_rgb_yuv.uv) {
+        c->cs_rgb_yuv.y = create_rgb_yuv_shader(c, VL_COMPOSITOR_PLANE_Y);
+        c->cs_rgb_yuv.uv = create_rgb_yuv_shader(c, VL_COMPOSITOR_PLANE_UV);
+        c->cs_rgb_yuv.u = create_rgb_yuv_shader(c, VL_COMPOSITOR_PLANE_U);
+        c->cs_rgb_yuv.v = create_rgb_yuv_shader(c, VL_COMPOSITOR_PLANE_V);
+        if (!c->cs_rgb_yuv.y || !c->cs_rgb_yuv.uv ||
+            !c->cs_rgb_yuv.u || !c->cs_rgb_yuv.v) {
                 debug_printf("Unable to create RGB-to-NV12 compute shader.\n");
                 return false;
         }
@@ -869,8 +885,16 @@ void vl_compositor_cs_cleanup_shaders(struct vl_compositor *c)
                 c->pipe->delete_compute_state(c->pipe, c->cs_yuv.progressive.y);
         if (c->cs_yuv.progressive.uv)
                 c->pipe->delete_compute_state(c->pipe, c->cs_yuv.progressive.uv);
+        if (c->cs_yuv.progressive.u)
+                c->pipe->delete_compute_state(c->pipe, c->cs_yuv.progressive.u);
+        if (c->cs_yuv.progressive.v)
+                c->pipe->delete_compute_state(c->pipe, c->cs_yuv.progressive.v);
         if (c->cs_rgb_yuv.y)
                 c->pipe->delete_compute_state(c->pipe, c->cs_rgb_yuv.y);
         if (c->cs_rgb_yuv.uv)
                 c->pipe->delete_compute_state(c->pipe, c->cs_rgb_yuv.uv);
+        if (c->cs_rgb_yuv.u)
+                c->pipe->delete_compute_state(c->pipe, c->cs_rgb_yuv.u);
+        if (c->cs_rgb_yuv.v)
+                c->pipe->delete_compute_state(c->pipe, c->cs_rgb_yuv.v);
 }
