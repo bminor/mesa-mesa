@@ -1682,6 +1682,7 @@ struct cs_exception_handler {
    struct cs_block block;
    struct cs_dirty_tracker dirty;
    struct cs_exception_handler_ctx ctx;
+   unsigned dump_size;
 };
 
 static inline struct cs_exception_handler *
@@ -1753,6 +1754,8 @@ cs_exception_handler_end(struct cs_builder *b,
       num_ranges++;
       last = pos + range;
    }
+
+   handler->dump_size = BITSET_COUNT(handler->dirty.regs) * sizeof(uint32_t);
 
    /* Make sure the current chunk is able to accommodate the block
     * instructions as well as the preamble and postamble.
