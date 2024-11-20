@@ -657,6 +657,7 @@ struct linkage_info {
    bool can_mix_convergent_flat_with_interpolated;
    bool has_flexible_interp;
    bool always_interpolate_convergent_fs_inputs;
+   bool group_tes_inputs_into_pos_var_groups;
 
    gl_shader_stage producer_stage;
    gl_shader_stage consumer_stage;
@@ -4973,9 +4974,62 @@ compact_varyings(struct linkage_info *linkage,
    if (linkage->consumer_stage == MESA_SHADER_TESS_EVAL) {
       unsigned patch_slot_index = VARYING_SLOT_PATCH0 * 8;
 
-      vs_tcs_tes_gs_assign_slots_2sets(linkage, linkage->flat32_mask,
-                                       linkage->flat16_mask, &slot_index,
-                                       &patch_slot_index, progress);
+      if (linkage->group_tes_inputs_into_pos_var_groups) {
+         /* TES inputs are divided into 3 groups:
+          * - those that only determine POS and CLIP outputs of TES
+          * - those that determine both POS/CLIP outputs and other outputs of TES
+          * - those that only determine all other outputs of TES
+          *
+          * TES inputs from each group are grouped together.
+          * This should be gathered after inter-shader code motion.
+          */
+         nir_output_clipper_var_groups tes_masks32, tes_masks16;
+
+         /* Required by nir_gather_output_clipper_var_groups: */
+         NIR_PASS(_, linkage->consumer_builder.shader, nir_convert_to_lcssa, true, true);
+         nir_gather_output_clipper_var_groups(linkage->consumer_builder.shader,
+                                              &tes_masks32);
+         memcpy(&tes_masks16, &tes_masks32, sizeof(tes_masks16));
+
+         /* Reduce the masks to only contain 32-bit or 16-bit inputs. */
+         BITSET_AND(tes_masks32.pos_only, tes_masks32.pos_only, linkage->flat32_mask);
+         BITSET_AND(tes_masks32.both, tes_masks32.both, linkage->flat32_mask);
+         BITSET_AND(tes_masks32.var_only, tes_masks32.var_only, linkage->flat32_mask);
+
+         BITSET_AND(tes_masks16.pos_only, tes_masks16.pos_only, linkage->flat16_mask);
+         BITSET_AND(tes_masks16.both, tes_masks16.both, linkage->flat16_mask);
+         BITSET_AND(tes_masks16.var_only, tes_masks16.var_only, linkage->flat16_mask);
+
+         /* Reduce flat masks to only contain inputs not used by any outputs.
+          * Such inputs can only be used by memory stores. Then add the flat
+          * masks to var_only.
+          */
+         BITSET_ANDNOT(linkage->flat32_mask, linkage->flat32_mask, tes_masks32.pos_only);
+         BITSET_ANDNOT(linkage->flat32_mask, linkage->flat32_mask, tes_masks32.both);
+         BITSET_ANDNOT(linkage->flat32_mask, linkage->flat32_mask, tes_masks32.var_only);
+
+         BITSET_ANDNOT(linkage->flat16_mask, linkage->flat16_mask, tes_masks16.pos_only);
+         BITSET_ANDNOT(linkage->flat16_mask, linkage->flat16_mask, tes_masks16.both);
+         BITSET_ANDNOT(linkage->flat16_mask, linkage->flat16_mask, tes_masks16.var_only);
+
+         BITSET_OR(tes_masks32.var_only, tes_masks32.var_only, linkage->flat32_mask);
+         BITSET_OR(tes_masks16.var_only, tes_masks16.var_only, linkage->flat16_mask);
+
+         /* The "both" group should be between the other two. */
+         vs_tcs_tes_gs_assign_slots_2sets(linkage, tes_masks32.pos_only,
+                                          tes_masks16.pos_only, &slot_index,
+                                          &patch_slot_index, progress);
+         vs_tcs_tes_gs_assign_slots_2sets(linkage, tes_masks32.both,
+                                          tes_masks16.both, &slot_index,
+                                          &patch_slot_index, progress);
+         vs_tcs_tes_gs_assign_slots_2sets(linkage, tes_masks32.var_only,
+                                          tes_masks16.var_only, &slot_index,
+                                          &patch_slot_index, progress);
+      } else {
+         vs_tcs_tes_gs_assign_slots_2sets(linkage, linkage->flat32_mask,
+                                          linkage->flat16_mask, &slot_index,
+                                          &patch_slot_index, progress);
+      }
 
       /* Put no-varying slots last. These are TCS outputs read by TCS but
        * not TES.
@@ -5150,6 +5204,10 @@ init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
          consumer->info.stage == MESA_SHADER_FRAGMENT &&
          consumer->options->io_options &
             nir_io_always_interpolate_convergent_fs_inputs,
+      .group_tes_inputs_into_pos_var_groups =
+         consumer->info.stage == MESA_SHADER_TESS_EVAL &&
+         consumer->options->io_options &
+         nir_io_compaction_groups_tes_inputs_into_pos_and_var_groups,
       .producer_stage = producer->info.stage,
       .consumer_stage = consumer->info.stage,
       .producer_builder =
