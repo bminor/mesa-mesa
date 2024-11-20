@@ -393,6 +393,9 @@ fs_inst::can_do_cmod() const
          return false;
    }
 
+   if (dst.file == ARF && dst.nr == BRW_ARF_SCALAR && src[0].file == IMM)
+      return false;
+
    return true;
 }
 
