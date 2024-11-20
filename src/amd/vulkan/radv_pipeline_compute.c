@@ -141,8 +141,7 @@ radv_compile_cs(struct radv_device *device, struct vk_pipeline_cache *cache, str
 
    cs_shader->nir_string = nir_string;
 
-   radv_shader_generate_debug_info(device, dump_shader, keep_executable_info, *cs_binary, cs_shader, &cs_stage->nir, 1,
-                                   &cs_stage->info);
+   radv_shader_dump_debug_info(device, dump_shader, *cs_binary, cs_shader, &cs_stage->nir, 1, &cs_stage->info);
 
    if (dump_shader)
       simple_mtx_unlock(&instance->shader_dump_mtx);

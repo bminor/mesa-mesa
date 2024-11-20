@@ -472,8 +472,7 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
    if (shader) {
       shader->nir_string = nir_string;
 
-      radv_shader_generate_debug_info(device, dump_shader, keep_executable_info, binary, shader, shaders, num_shaders,
-                                      &stage->info);
+      radv_shader_dump_debug_info(device, dump_shader, binary, shader, shaders, num_shaders, &stage->info);
 
       if (shader && keep_executable_info && stage->spirv.size) {
          shader->spirv = malloc(stage->spirv.size);
