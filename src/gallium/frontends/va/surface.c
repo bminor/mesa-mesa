@@ -1059,7 +1059,7 @@ rt_format_to_fourcc(uint32_t format)
    case VA_RT_FORMAT_RGB32:
       return VA_FOURCC_BGRA;
    case VA_RT_FORMAT_RGB32_10:
-      return VA_FOURCC('A','B','3','0');
+      return VA_FOURCC_X2R10G10B10;
    default:
       return 0;
    }
