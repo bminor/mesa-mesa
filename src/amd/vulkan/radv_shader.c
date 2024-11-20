@@ -3201,7 +3201,13 @@ radv_create_trap_handler_shader(struct radv_device *device)
    struct radv_shader *shader;
    radv_shader_create_uncached(device, binary, false, NULL, &shader);
 
-   radv_shader_generate_debug_info(device, dump_shader, false, binary, shader, &b.shader, 1, &info);
+   if (options.dump_shader)
+      radv_capture_shader_executable_info(device, shader, NULL, 0, binary);
+
+   if (options.dump_shader) {
+      fprintf(stderr, "Trap handler");
+      fprintf(stderr, "\ndisasm:\n%s\n", shader->disasm_string);
+   }
 
    free(shader->disasm_string);
    ralloc_free(b.shader);
