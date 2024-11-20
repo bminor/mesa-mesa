@@ -1673,7 +1673,7 @@ panvk_per_arch(cmd_inherit_render_state)(
    cmdbuf->state.gfx.render.layer_count = 0;
    *fbinfo = (struct pan_fb_info){
       .tile_buf_budget = panfrost_query_optimal_tib_size(phys_dev->model),
-      .nr_samples = 1,
+      .nr_samples = inheritance_info->rasterizationSamples,
       .rt_count = inheritance_info->colorAttachmentCount,
    };
 
