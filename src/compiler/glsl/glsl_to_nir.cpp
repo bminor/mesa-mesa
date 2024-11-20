@@ -78,8 +78,7 @@ namespace {
 class nir_visitor : public ir_visitor
 {
 public:
-   nir_visitor(const struct gl_constants *consts, nir_shader *shader,
-               const uint8_t *src_blake3);
+   nir_visitor(nir_shader *shader, const uint8_t *src_blake3);
    nir_visitor(const nir_visitor &) = delete;
    ~nir_visitor();
    nir_visitor & operator=(const nir_visitor &) = delete;
@@ -172,16 +171,16 @@ private:
 } /* end of anonymous namespace */
 
 nir_shader *
-glsl_to_nir(const struct gl_constants *consts,
-            struct gl_shader *gl_shader, shader_info *si,
+glsl_to_nir(struct gl_shader *gl_shader,
             const nir_shader_compiler_options *options,
             const uint8_t *src_blake3)
 {
    MESA_TRACE_FUNC();
 
-   nir_shader *shader = nir_shader_create(NULL, gl_shader->Stage, options, si);
+   nir_shader *shader =
+      nir_shader_create(NULL, gl_shader->Stage, options, NULL);
 
-   nir_visitor v1(consts, shader, src_blake3);
+   nir_visitor v1(shader, src_blake3);
    nir_function_visitor v2(&v1);
    v2.run(gl_shader->ir);
    visit_exec_list(gl_shader->ir, &v1);
@@ -199,8 +198,7 @@ glsl_to_nir(const struct gl_constants *consts,
    return shader;
 }
 
-nir_visitor::nir_visitor(const struct gl_constants *consts, nir_shader *shader,
-                         const uint8_t *src_blake3)
+nir_visitor::nir_visitor(nir_shader *shader, const uint8_t *src_blake3)
 {
    this->shader = shader;
    this->is_global = true;
