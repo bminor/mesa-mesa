@@ -70,7 +70,7 @@ libbroadcom_v3d = static_library(
   link_whole : v3d_libs + per_version_libs,
   link_with: [libv3d_neon],
   build_by_default : false,
-  dependencies: [dep_valgrind, dep_thread, idep_mesautil, idep_nir_headers],
+  dependencies: [dep_valgrind, dep_thread, idep_mesautil],
 )
 
 if with_broadcom_vk
