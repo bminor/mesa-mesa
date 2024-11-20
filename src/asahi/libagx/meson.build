@@ -5,7 +5,6 @@ libagx_shader_files = files(
   'libagx.h',
   'compression.cl',
   'draws.cl',
-  'draws.h',
   'geometry.cl',
   'geometry.h',
   'query.cl',
@@ -15,6 +14,7 @@ libagx_shader_files = files(
   'tessellator.h',
   'texture.cl',
   'helper.cl',
+  'libagx_dgc.h',
 )
 
 prepended_input_args = []

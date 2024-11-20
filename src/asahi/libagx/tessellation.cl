@@ -143,15 +143,24 @@ libagx_tess_level_inner_default(constant struct libagx_tess_args *p)
                    p->tess_level_inner_default[1]);
 }
 
-void
-libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool point_mode)
+KERNEL(1)
+libagx_tess_setup_indirect(
+   global struct libagx_tess_args *p,
+   global uint32_t *grids /* output: VS then TCS then tess */,
+   global struct agx_ia_state *ia /* output */, global uint32_t *indirect,
+   global uint64_t *vertex_output_buffer_ptr, uint64_t in_index_buffer,
+   uint32_t in_index_buffer_range_el, uint32_t in_index_size_B,
+   uint64_t vertex_outputs /* bitfield */,
+
+   /* Tess control invocation counter if active, else zero */
+   global uint32_t *tcs_statistic)
 {
-   uint count = p->indirect[0], instance_count = p->indirect[1];
+   uint count = indirect[0], instance_count = indirect[1];
    unsigned in_patches = count / p->input_patch_size;
 
    /* TCS invocation counter increments once per-patch */
-   if (p->tcs_statistic) {
-      *(p->tcs_statistic) += in_patches;
+   if (tcs_statistic) {
+      *tcs_statistic += in_patches;
    }
 
    size_t draw_stride = 5 * sizeof(uint32_t);
@@ -168,7 +177,7 @@ libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool point_mode)
    alloc += unrolled_patches * sizeof(uint32_t);
 
    uint vb_offs = alloc;
-   uint vb_size = libagx_tcs_in_size(count * instance_count, p->vertex_outputs);
+   uint vb_size = libagx_tcs_in_size(count * instance_count, vertex_outputs);
    alloc += vb_size;
 
    /* Allocate all patch calculations in one go */
@@ -180,10 +189,9 @@ libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool point_mode)
    p->coord_allocs = (global uint *)(blob + patch_coord_offs);
    p->nr_patches = unrolled_patches;
 
-   *(p->vertex_output_buffer_ptr) = (uintptr_t)(blob + vb_offs);
+   *vertex_output_buffer_ptr = (uintptr_t)(blob + vb_offs);
    p->counts = (global uint32_t *)(blob + count_offs);
 
-   global struct agx_ia_state *ia = p->ia;
    ia->verts_per_instance = count;
 
    /* If indexing is enabled, the third word is the offset into the index buffer
@@ -193,42 +201,42 @@ libagx_tess_setup_indirect(global struct libagx_tess_args *p, bool point_mode)
     *
     * XXX: Deduplicate?
     */
-   if (p->in_index_size_B) {
+   if (in_index_size_B) {
       ia->index_buffer =
-         libagx_index_buffer(p->in_index_buffer, p->in_index_buffer_range_el,
-                             p->indirect[2], p->in_index_size_B, 0);
+         libagx_index_buffer(in_index_buffer, in_index_buffer_range_el,
+                             indirect[2], in_index_size_B, 0);
 
-      ia->index_buffer_range_el = libagx_index_buffer_range_el(
-         p->in_index_buffer_range_el, p->indirect[2]);
+      ia->index_buffer_range_el =
+         libagx_index_buffer_range_el(in_index_buffer_range_el, indirect[2]);
    }
 
    /* VS grid size */
-   p->grids[0] = count;
-   p->grids[1] = instance_count;
-   p->grids[2] = 1;
+   grids[0] = count;
+   grids[1] = instance_count;
+   grids[2] = 1;
 
    /* VS workgroup size */
-   p->grids[3] = 64;
-   p->grids[4] = 1;
-   p->grids[5] = 1;
+   grids[3] = 64;
+   grids[4] = 1;
+   grids[5] = 1;
 
    /* TCS grid size */
-   p->grids[6] = in_patches * p->output_patch_size;
-   p->grids[7] = instance_count;
-   p->grids[8] = 1;
+   grids[6] = in_patches * p->output_patch_size;
+   grids[7] = instance_count;
+   grids[8] = 1;
 
    /* TCS workgroup size */
-   p->grids[9] = p->output_patch_size;
-   p->grids[10] = 1;
-   p->grids[11] = 1;
+   grids[9] = p->output_patch_size;
+   grids[10] = 1;
+   grids[11] = 1;
 
    /* Tess grid size */
-   p->grids[12] = unrolled_patches;
-   p->grids[13] = 1;
-   p->grids[14] = 1;
+   grids[12] = unrolled_patches;
+   grids[13] = 1;
+   grids[14] = 1;
 
    /* Tess workgroup size */
-   p->grids[15] = 64;
-   p->grids[16] = 1;
-   p->grids[17] = 1;
+   grids[15] = 64;
+   grids[16] = 1;
+   grids[17] = 1;
 }

@@ -17,7 +17,7 @@ enum helper_op {
    OP_END = 15,
 };
 
-void
+KERNEL(1)
 libagx_helper(void)
 {
    uint64_t arg =

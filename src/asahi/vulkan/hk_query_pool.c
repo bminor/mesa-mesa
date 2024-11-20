@@ -14,6 +14,7 @@
 #include "hk_entrypoints.h"
 #include "hk_shader.h"
 
+#include "libagx_shaders.h"
 #include "vk_common_entrypoints.h"
 
 #include "asahi/lib/agx_bo.h"
@@ -186,32 +187,6 @@ hk_query_report_map(struct hk_device *dev, struct hk_query_pool *pool,
    }
 }
 
-struct hk_write_params {
-   uint64_t address;
-   uint32_t value;
-};
-
-static void
-hk_nir_write_u32(nir_builder *b, UNUSED const void *key)
-{
-   nir_def *addr = nir_load_preamble(
-      b, 1, 64, .base = offsetof(struct hk_write_params, address) / 2);
-
-   nir_def *value = nir_load_preamble(
-      b, 1, 32, .base = offsetof(struct hk_write_params, value) / 2);
-
-   nir_store_global(b, addr, 4, value, nir_component_mask(1));
-}
-
-static void
-hk_nir_write_u32s(nir_builder *b, const void *data)
-{
-   nir_def *params = nir_load_preamble(b, 1, 64, .base = 0);
-   nir_def *id = nir_channel(b, nir_load_global_invocation_id(b, 32), 0);
-
-   libagx_write_u32s(b, params, id);
-}
-
 void
 hk_dispatch_imm_writes(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
 {
@@ -229,17 +204,14 @@ hk_dispatch_imm_writes(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
 
    perf_debug(dev, "Queued writes");
 
-   struct hk_shader *s = hk_meta_kernel(dev, hk_nir_write_u32s, NULL, 0);
    uint64_t params =
       hk_pool_upload(cmd, cs->imm_writes.data, cs->imm_writes.size, 16);
-   uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &params, sizeof(params));
 
    uint32_t count =
       util_dynarray_num_elements(&cs->imm_writes, struct libagx_imm_write);
    assert(count > 0);
 
-   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(count, 1, 1),
-                        hk_grid(32, 1, 1));
+   libagx_write_u32s(cs, agx_1d(count), params);
 }
 
 void
@@ -276,13 +248,7 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
    hk_cdm_cache_flush(dev, cs);
 
    perf_debug(dev, "Queued write");
-
-   struct hk_shader *s = hk_meta_kernel(dev, hk_nir_write_u32, NULL, 0);
-   struct hk_write_params params = {.address = address, .value = value};
-   uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &params, sizeof(params));
-
-   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(1, 1, 1),
-                        hk_grid(1, 1, 1));
+   libagx_write_u32(cs, agx_1d(1), address, value);
 }
 
 /**
@@ -588,13 +554,6 @@ hk_GetQueryPoolResults(VkDevice device, VkQueryPool queryPool,
    return status;
 }
 
-static void
-hk_nir_copy_query(nir_builder *b, UNUSED const void *key)
-{
-   nir_def *id = nir_channel(b, nir_load_workgroup_id(b), 0);
-   libagx_copy_query(b, nir_load_preamble(b, 1, 64), id);
-}
-
 VKAPI_ATTR void VKAPI_CALL
 hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
                            uint32_t firstQuery, uint32_t queryCount,
@@ -613,7 +572,7 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
    perf_debug(dev, "Query pool copy");
    hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
 
-   const struct libagx_copy_query_push info = {
+   struct libagx_copy_query_args info = {
       .availability = pool->bo->va->addr,
       .results = pool->oq_queries ? dev->occlusion_queries.bo->va->addr
                                   : pool->bo->va->addr + pool->query_start,
@@ -629,10 +588,5 @@ hk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
       .with_availability = flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT,
    };
 
-   uint64_t push = hk_pool_upload(cmd, &info, sizeof(info), 8);
-
-   struct hk_shader *s = hk_meta_kernel(dev, hk_nir_copy_query, NULL, 0);
-   uint32_t usc = hk_upload_usc_words_kernel(cmd, s, &push, sizeof(push));
-   hk_dispatch_with_usc(dev, cs, &s->b.info, usc, hk_grid(queryCount, 1, 1),
-                        hk_grid(1, 1, 1));
+   libagx_copy_query_struct(cs, agx_1d(queryCount), info);
 }

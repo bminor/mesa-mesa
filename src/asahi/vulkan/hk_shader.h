@@ -383,13 +383,6 @@ struct hk_api_shader *hk_meta_shader(struct hk_device *dev,
                                      hk_internal_builder_t builder, void *data,
                                      size_t data_size);
 
-static inline struct hk_shader *
-hk_meta_kernel(struct hk_device *dev, hk_internal_builder_t builder, void *data,
-               size_t data_size)
-{
-   return hk_only_variant(hk_meta_shader(dev, builder, data, data_size));
-}
-
 struct hk_passthrough_gs_key {
    /* Bit mask of outputs written by the VS/TES, to be passed through */
    uint64_t outputs;

@@ -59,43 +59,10 @@ struct libagx_tess_args {
     */
    GLOBAL(uint32_t) statistic;
 
-   /* Address of the tess control invocation counter for implementing pipeline
-    * statistics, if active. Zero if inactive. Incremented by indirect tess
-    * setup kernel.
-    */
-   GLOBAL(uint32_t) tcs_statistic;
-
-   /* For indirect draws with tessellation, the grid sizes. VS then TCS then
-    * tess. Allocated by the CPU and written by the tessellation
-    * setup indirect kernel.
-    */
-   GLOBAL(uint32_t) grids;
-
-   /* For indirect draws, the output input assembly descriptor */
-   GLOBAL(struct agx_ia_state) ia;
-
-   /* For indirect draws, the indirect draw descriptor. */
-   GLOBAL(uint32_t) indirect;
-
-   /* For indirect draws, the allocation for the vertex buffer.
-    *
-    * TODO: We could move these fields to an indirect setup kernel, not sure if
-    * it's worth it though...
-    */
-   GLOBAL(uint64_t) vertex_output_buffer_ptr;
-
-   /* Yet more indirect draw garbage. I need a refactor. */
-   uint64_t in_index_buffer;
-   uint32_t in_index_buffer_range_el;
-   uint32_t in_index_size_B;
-
    /* When geom+tess used together, the buffer containing TES outputs (executed
     * as a hardware compute shader).
     */
    uint64_t tes_buffer;
-
-   /* For indirect draws, the bitfield of VS outputs */
-   uint64_t vertex_outputs;
 
    /* Bitfield of TCS per-vertex outputs */
    uint64_t tcs_per_vertex_outputs;
@@ -137,4 +104,4 @@ struct libagx_tess_args {
     */
    uint32_t ccw;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 51 * 4);
+AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 35 * 4);

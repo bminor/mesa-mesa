@@ -790,68 +790,16 @@ struct agx_compiled_shader *agx_build_meta_shader(struct agx_context *ctx,
                                                   meta_shader_builder_t builder,
                                                   void *data, size_t data_size);
 
-struct agx_grid {
-   /* Tag for the union */
-   enum agx_cdm_mode mode;
-
-   /* If mode != INDIRECT_LOCAL, the local size */
-   uint32_t local[3];
-
-   union {
-      /* If mode == DIRECT, the global size. This is *not* multiplied by the
-       * local size, differing from the API definition but matching AGX.
-       */
-      uint32_t global[3];
-
-      /* Address of the indirect buffer if mode != DIRECT */
-      uint64_t indirect;
-   };
-};
-
-static inline const struct agx_grid
-agx_grid_direct(uint32_t global_x, uint32_t global_y, uint32_t global_z,
-                uint32_t local_x, uint32_t local_y, uint32_t local_z)
-{
-   return (struct agx_grid){
-      .mode = AGX_CDM_MODE_DIRECT,
-      .global = {global_x, global_y, global_z},
-      .local = {local_x, local_y, local_z},
-   };
-}
-
-static inline const struct agx_grid
-agx_grid_indirect(uint64_t indirect, uint32_t local_x, uint32_t local_y,
-                  uint32_t local_z)
-{
-   return (struct agx_grid){
-      .mode = AGX_CDM_MODE_INDIRECT_GLOBAL,
-      .local = {local_x, local_y, local_z},
-      .indirect = indirect,
-   };
-}
-
-static inline const struct agx_grid
-agx_grid_indirect_local(uint64_t indirect)
-{
-   return (struct agx_grid){
-      .mode = AGX_CDM_MODE_INDIRECT_LOCAL,
-      .indirect = indirect,
-   };
-}
-
-void agx_launch_with_data(struct agx_batch *batch, const struct agx_grid *grid,
-                          meta_shader_builder_t builder, void *key,
-                          size_t key_size, void *data, size_t data_size);
-
-void agx_launch_internal(struct agx_batch *batch, const struct agx_grid *grid,
-                         struct agx_compiled_shader *cs,
-                         const struct agx_shader_info *info,
-                         enum pipe_shader_type stage, uint32_t usc);
-
-void agx_launch(struct agx_batch *batch, const struct agx_grid *grid,
-                struct agx_compiled_shader *cs,
+void agx_launch(struct agx_batch *batch, struct agx_grid grid,
+                struct agx_workgroup wg, struct agx_compiled_shader *cs,
                 struct agx_linked_shader *linked, enum pipe_shader_type stage,
                 unsigned variable_shared_mem);
+
+void agx_launch_precomp(struct agx_batch *batch, struct agx_grid grid,
+                        enum libagx_program program, void *args,
+                        size_t arg_size);
+
+#define MESA_DISPATCH_PRECOMP agx_launch_precomp
 
 void agx_init_query_functions(struct pipe_context *ctx);
 

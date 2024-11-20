@@ -22,7 +22,8 @@
  * offset in bytes. Since the descriptors are all in the u0_u1 push, the former
  * is hardcoded and the latter is an offsetof.
  */
-#define HANDLE(field) (uint2)(0, offsetof(struct libagx_decompress_push, field))
+#define HANDLE(field)                                                          \
+   (uint2)(0, offsetof(struct libagx_decompress_images, field))
 
 /*
  * The metadata buffer is fully twiddled, so interleave the X/Y coordinate bits.
@@ -70,17 +71,23 @@ sample_id(int4 c, uint samples)
       return c.y & 1;
 }
 
-void
-libagx_decompress(constant struct libagx_decompress_push *push, uint3 coord_tl,
-                  uint local_id, uint samples)
+KERNEL(32)
+libagx_decompress(constant struct libagx_decompress_images *images,
+                  global uint64_t *metadata, uint64_t tile_uncompressed,
+                  uint32_t metadata_layer_stride_tl, uint16_t metadata_width_tl,
+                  uint16_t metadata_height_tl,
+                  uint log2_samples__3 /* 1x, 2x, 4x */)
 {
+   uint3 coord_tl = (uint3)(get_group_id(0), get_group_id(1), get_group_id(2));
+   uint local_id = get_local_id(0);
+   uint samples = 1 << log2_samples__3;
+
    /* Index into the metadata buffer */
-   uint index_tl =
-      index_metadata(coord_tl, push->metadata_width_tl,
-                     push->metadata_height_tl, push->metadata_layer_stride_tl);
+   uint index_tl = index_metadata(coord_tl, metadata_width_tl,
+                                  metadata_height_tl, metadata_layer_stride_tl);
 
    /* If the tile is already uncompressed, there's nothing to do. */
-   if (push->metadata[index_tl] == push->tile_uncompressed)
+   if (metadata[index_tl] == tile_uncompressed)
       return;
 
    /* Tiles are 16x16 */
@@ -132,6 +139,6 @@ libagx_decompress(constant struct libagx_decompress_push *push, uint3 coord_tl,
 
    /* We've replaced the body buffer. Mark the tile as uncompressed. */
    if (local_id == 0) {
-      push->metadata[index_tl] = push->tile_uncompressed;
+      metadata[index_tl] = tile_uncompressed;
    }
 }

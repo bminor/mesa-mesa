@@ -3,20 +3,21 @@
  * SPDX-License-Identifier: MIT
  */
 #include "libagx.h"
-#include "draws.h"
 
 /*
  * To implement drawIndirectCount generically, we dispatch a kernel to
  * clone-and-patch the indirect buffer, predicating out draws as appropriate.
  */
-void
-libagx_predicate_indirect(constant struct libagx_predicate_indirect_push *push,
-                          uint draw, bool indexed)
+KERNEL(32)
+libagx_predicate_indirect(global uint32_t *out, constant uint32_t *in,
+                          constant uint32_t *draw_count, uint32_t stride_el,
+                          uint indexed__2)
 {
-   uint words = indexed ? 5 : 4;
-   global uint *out = &push->out[draw * words];
-   constant uint *in = &push->in[draw * push->stride_el];
-   bool enabled = draw < *(push->draw_count);
+   uint draw = get_global_id(0);
+   uint words = indexed__2 ? 5 : 4;
+   bool enabled = draw < *draw_count;
+   out += draw * words;
+   in += draw * stride_el;
 
    /* Copy enabled draws, zero predicated draws. */
    for (uint i = 0; i < words; ++i) {

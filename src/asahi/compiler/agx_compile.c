@@ -2977,7 +2977,7 @@ optimize_bounds(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 static void
-agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
+agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
 {
    /* This runs only once up front since other optimizations don't affect it */
    NIR_PASS(_, nir, nir_opt_shrink_stores, true);
@@ -3075,8 +3075,11 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
     */
    NIR_PASS(_, nir, agx_nir_lower_fminmax);
 
-   if (preamble_size && (!(agx_compiler_debug & AGX_DBG_NOPREAMBLE)))
-      NIR_PASS(_, nir, agx_nir_opt_preamble, preamble_size);
+   if (preamble_size && (!(agx_compiler_debug & AGX_DBG_NOPREAMBLE))) {
+      unsigned temp = *preamble_size;
+      NIR_PASS(_, nir, agx_nir_opt_preamble, &temp);
+      *preamble_size = temp;
+   }
 
    /* Forming preambles may dramatically reduce the instruction count
     * in certain blocks, causing some if-else statements to become

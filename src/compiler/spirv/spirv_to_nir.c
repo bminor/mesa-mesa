@@ -7350,8 +7350,10 @@ spirv_library_to_nir_builder(FILE *fp, const uint32_t *words, size_t word_count,
 
    fprintf(fp, "#include \"compiler/nir/nir_builder.h\"\n\n");
 
+   nir_fixup_is_exported(b->shader);
+
    vtn_foreach_function(func, &b->functions) {
-      if (func->linkage != SpvLinkageTypeExport)
+      if (!func->nir_func->is_exported || func->nir_func->is_entrypoint)
          continue;
 
       if (!func_to_nir_builder(fp, func))

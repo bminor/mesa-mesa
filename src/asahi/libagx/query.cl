@@ -19,31 +19,69 @@ write_query_result(uintptr_t dst_addr, int32_t idx, bool is_64, uint64_t result)
    }
 }
 
-void
-libagx_copy_query(constant struct libagx_copy_query_push *push, unsigned i)
+/* TODO: Optimize workgroup size */
+KERNEL(1)
+libagx_copy_query(global uint32_t *availability, global uint64_t *results,
+                  global uint16_t *oq_index, uint64_t dst_addr,
+                  uint64_t dst_stride, uint32_t first_query, uint16_t partial,
+                  uint16_t _64, uint16_t with_availability,
+                  uint16_t reports_per_query)
 {
-   uint64_t dst = push->dst_addr + (((uint64_t)i) * push->dst_stride);
-   uint32_t query = push->first_query + i;
-   bool available = push->availability[query];
+   uint i = get_global_id(0);
+   uint64_t dst = dst_addr + (((uint64_t)i) * dst_stride);
+   uint32_t query = first_query + i;
+   bool available = availability[query];
 
-   if (available || push->partial) {
+   if (available || partial) {
       /* For occlusion queries, results[] points to the device global heap. We
        * need to remap indices according to the query pool's allocation.
        */
-      uint result_index = push->oq_index ? push->oq_index[query] : query;
-      uint idx = result_index * push->reports_per_query;
+      uint result_index = oq_index ? oq_index[query] : query;
+      uint idx = result_index * reports_per_query;
 
-      for (unsigned i = 0; i < push->reports_per_query; ++i) {
-         write_query_result(dst, i, push->_64, push->results[idx + i]);
+      for (unsigned i = 0; i < reports_per_query; ++i) {
+         write_query_result(dst, i, _64, results[idx + i]);
       }
    }
 
-   if (push->with_availability) {
-      write_query_result(dst, push->reports_per_query, push->_64, available);
+   if (with_availability) {
+      write_query_result(dst, reports_per_query, _64, available);
    }
 }
 
-void
+/* TODO: Share with Gallium... */
+enum pipe_query_value_type {
+   PIPE_QUERY_TYPE_I32,
+   PIPE_QUERY_TYPE_U32,
+   PIPE_QUERY_TYPE_I64,
+   PIPE_QUERY_TYPE_U64,
+};
+
+KERNEL(1)
+libagx_copy_query_gl(global uint64_t *query, global uint64_t *dest,
+                     ushort value_type, ushort bool_size)
+{
+   uint64_t value = *query;
+
+   if (bool_size == 4) {
+      value = (uint32_t)value;
+   }
+
+   if (bool_size) {
+      value = value != 0;
+   }
+
+   if (value_type <= PIPE_QUERY_TYPE_U32) {
+      global uint32_t *dest32 = (global uint32_t *)dest;
+      bool u32 = (value_type == PIPE_QUERY_TYPE_U32);
+
+      *dest32 = u32 ? convert_uint_sat(value) : convert_int_sat((int64_t)value);
+   } else {
+      *dest = value;
+   }
+}
+
+KERNEL(4)
 libagx_copy_xfb_counters(constant struct libagx_xfb_counter_copy *push)
 {
    unsigned i = get_local_id(0);
@@ -51,64 +89,29 @@ libagx_copy_xfb_counters(constant struct libagx_xfb_counter_copy *push)
    *(push->dest[i]) = push->src[i] ? *(push->src[i]) : 0;
 }
 
-void
-libagx_increment_statistic(constant struct libagx_increment_params *p)
+KERNEL(1)
+libagx_increment_statistic(global uint32_t *statistic, uint32_t delta)
 {
-   *(p->statistic) += p->delta;
+   *statistic += delta;
 }
 
-void
-libagx_increment_cs_invocations(constant struct libagx_cs_invocation_params *p)
+KERNEL(1)
+libagx_increment_cs_invocations(global uint *grid, global uint32_t *statistic,
+                                uint32_t local_size_threads)
 {
-   *(p->statistic) += libagx_cs_invocations(p->local_size_threads, p->grid[0],
-                                            p->grid[1], p->grid[2]);
+   *statistic +=
+      libagx_cs_invocations(local_size_threads, grid[0], grid[1], grid[2]);
 }
 
-kernel void
-libagx_increment_ia_counters(constant struct libagx_increment_ia_counters *p,
-                             uint index_size_B, uint tid)
+KERNEL(32)
+libagx_write_u32s(constant struct libagx_imm_write *p)
 {
-   unsigned count = p->draw[0];
-   local uint scratch;
-
-   if (index_size_B /* implies primitive restart */) {
-      uint start = p->draw[2];
-      uint partial = 0;
-
-      /* Count non-restart indices */
-      for (uint i = tid; i < count; i += 1024) {
-         uint index = libagx_load_index_buffer_internal(
-            p->index_buffer, p->index_buffer_range_el, start + i, index_size_B);
-
-         if (index != p->restart_index)
-            partial++;
-      }
-
-      /* Accumulate the partials across the workgroup */
-      scratch = 0;
-      barrier(CLK_LOCAL_MEM_FENCE);
-      atomic_add(&scratch, partial);
-      barrier(CLK_LOCAL_MEM_FENCE);
-      count = scratch;
-
-      /* Elect a single thread from the workgroup to increment the counters */
-      if (tid != 0)
-         return;
-   }
-
-   count *= p->draw[1];
-
-   if (p->ia_vertices) {
-      *(p->ia_vertices) += count;
-   }
-
-   if (p->vs_invocations) {
-      *(p->vs_invocations) += count;
-   }
-}
-
-void
-libagx_write_u32s(constant struct libagx_imm_write *p, uint id)
-{
+   uint id = get_global_id(0);
    *(p[id].address) = p[id].value;
+}
+
+KERNEL(1)
+libagx_write_u32(global uint32_t *address, uint32_t value)
+{
+   *address = value;
 }

@@ -15,6 +15,7 @@
 #include "agx_pack.h"
 #include "agx_tilebuffer.h"
 #include "agx_uvs.h"
+#include "libagx_dgc.h"
 #include "pool.h"
 #include "shader_enums.h"
 
@@ -611,11 +612,7 @@ hk_cmd_buffer_end_compute_internal(struct hk_cmd_buffer *cmd,
          hk_dispatch_imm_writes(cmd, cs);
       }
 
-      void *map = cs->current;
-      agx_push(map, CDM_STREAM_TERMINATE, _)
-         ;
-
-      cs->current = map;
+      cs->current = agx_cdm_terminate(cs->current);
    }
 
    *ptr = NULL;
@@ -633,10 +630,6 @@ hk_cmd_buffer_end_graphics(struct hk_cmd_buffer *cmd)
    struct hk_cs *cs = cmd->current_cs.gfx;
 
    if (cs) {
-      void *map = cs->current;
-      agx_push(map, VDM_STREAM_TERMINATE, _)
-         ;
-
       /* Scissor and depth bias arrays are staged to dynamic arrays on the CPU.
        * When we end the control stream, they're done growing and are ready for
        * upload.
@@ -649,7 +642,7 @@ hk_cmd_buffer_end_graphics(struct hk_cmd_buffer *cmd)
 
       /* TODO: maybe free scissor/depth_bias now? */
 
-      cmd->current_cs.gfx->current = map;
+      cmd->current_cs.gfx->current = agx_vdm_terminate(cs->current);
       cmd->current_cs.gfx = NULL;
    }
 
@@ -736,54 +729,25 @@ void hk_reserve_scratch(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 uint32_t hk_upload_usc_words(struct hk_cmd_buffer *cmd, struct hk_shader *s,
                              struct hk_linked_shader *linked);
 
-uint32_t hk_upload_usc_words_kernel(struct hk_cmd_buffer *cmd,
-                                    struct hk_shader *s, void *data,
-                                    size_t data_size);
-
 void hk_usc_upload_spilled_rt_descs(struct agx_usc_builder *b,
                                     struct hk_cmd_buffer *cmd);
 
 void hk_cdm_cache_flush(struct hk_device *dev, struct hk_cs *cs);
 
-struct hk_grid {
-   bool indirect;
-   bool indirect_local;
-   union {
-      uint32_t count[3];
-      uint64_t ptr;
-   };
-};
-
-static struct hk_grid
-hk_grid(uint32_t x, uint32_t y, uint32_t z)
-{
-   return (struct hk_grid){.indirect = false, .count = {x, y, z}};
-}
-
-static struct hk_grid
-hk_grid_indirect(uint64_t ptr)
-{
-   return (struct hk_grid){.indirect = true, .ptr = ptr};
-}
-
-static struct hk_grid
-hk_grid_indirect_local(uint64_t ptr)
-{
-   return (struct hk_grid){
-      .indirect = true,
-      .indirect_local = true,
-      .ptr = ptr,
-   };
-}
+void hk_dispatch_with_usc_launch(struct hk_device *dev, struct hk_cs *cs,
+                                 struct agx_cdm_launch_word_0_packed launch,
+                                 uint32_t usc, struct agx_grid grid,
+                                 struct agx_workgroup local_size);
 
 void hk_dispatch_with_usc(struct hk_device *dev, struct hk_cs *cs,
                           struct agx_shader_info *info, uint32_t usc,
-                          struct hk_grid grid, struct hk_grid local_size);
+                          struct agx_grid grid,
+                          struct agx_workgroup local_size);
 
 static inline void
 hk_dispatch_with_local_size(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
-                            struct hk_shader *s, struct hk_grid grid,
-                            struct hk_grid local_size)
+                            struct hk_shader *s, struct agx_grid grid,
+                            struct agx_workgroup local_size)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    uint32_t usc = hk_upload_usc_words(cmd, s, s->only_linked);
@@ -792,24 +756,10 @@ hk_dispatch_with_local_size(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    hk_dispatch_with_usc(dev, cs, &s->b.info, usc, grid, local_size);
 }
 
-static inline void
-hk_dispatch(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_shader *s,
-            struct hk_grid grid)
-{
-   assert(s->info.stage == MESA_SHADER_COMPUTE);
+void hk_dispatch_precomp(struct hk_cs *cs, struct agx_grid gird,
+                         enum libagx_program idx, void *data, size_t data_size);
 
-   struct hk_grid local_size =
-      hk_grid(s->b.info.workgroup_size[0], s->b.info.workgroup_size[1],
-              s->b.info.workgroup_size[2]);
-
-   if (!grid.indirect) {
-      grid.count[0] *= local_size.count[0];
-      grid.count[1] *= local_size.count[1];
-      grid.count[2] *= local_size.count[2];
-   }
-
-   hk_dispatch_with_local_size(cmd, cs, s, grid, local_size);
-}
+#define MESA_DISPATCH_PRECOMP hk_dispatch_precomp
 
 void hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
                     bool after_gfx);

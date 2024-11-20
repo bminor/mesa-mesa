@@ -8,21 +8,12 @@
 #include <stdbool.h>
 #include "asahi/compiler/agx_compile.h"
 #include "asahi/layout/layout.h"
-#include "asahi/libagx/compression.h"
 #include "agx_pack.h"
 #include "agx_ppp.h"
+#include "libagx_shaders.h"
 
 #define AGX_MAX_OCCLUSION_QUERIES (32768)
 #define AGX_MAX_VIEWPORTS         (16)
-
-#define agx_push(ptr, T, cfg)                                                  \
-   for (unsigned _loop = 0; _loop < 1; ++_loop, ptr += AGX_##T##_LENGTH)       \
-      agx_pack(ptr, T, cfg)
-
-#define agx_push_packed(ptr, src, T)                                           \
-   STATIC_ASSERT(sizeof(src) == AGX_##T##_LENGTH);                             \
-   memcpy(ptr, &src, sizeof(src));                                             \
-   ptr += sizeof(src);
 
 static inline enum agx_sampler_states
 agx_translate_sampler_state_count(unsigned count, bool extended)
@@ -270,12 +261,12 @@ agx_calculate_vbo_clamp(uint64_t vbuf, uint64_t sink, enum pipe_format format,
    }
 }
 
-static void
-agx_fill_decompress_push(struct libagx_decompress_push *push,
-                         struct ail_layout *layout, unsigned layer,
-                         unsigned level, uint64_t ptr)
+static struct libagx_decompress_args
+agx_fill_decompress_args(struct ail_layout *layout, unsigned layer,
+                         unsigned level, uint64_t ptr, uint64_t images)
 {
-   *push = (struct libagx_decompress_push){
+   return (struct libagx_decompress_args){
+      .images = images,
       .tile_uncompressed = ail_tile_mode_uncompressed(layout->format),
       .metadata = ptr + layout->metadata_offset_B +
                   layout->level_offsets_compressed_B[level] +
@@ -285,6 +276,23 @@ agx_fill_decompress_push(struct libagx_decompress_push *push,
       .metadata_height_tl = ail_metadata_height_tl(layout, level),
    };
 }
+
+#undef libagx_decompress
+#define libagx_decompress(context, grid, layout, layer, level, ptr, images)    \
+   libagx_decompress_struct(                                                   \
+      context, grid,                                                           \
+      agx_fill_decompress_args(layout, layer, level, ptr, images),             \
+      util_logbase2(layout->sample_count_sa))
+
+#define libagx_tessellate(context, grid, prim, mode, state)                    \
+   if (prim == TESS_PRIMITIVE_QUADS) {                                         \
+      libagx_tess_quad(context, grid, state, mode);                            \
+   } else if (prim == TESS_PRIMITIVE_TRIANGLES) {                              \
+      libagx_tess_tri(context, grid, state, mode);                             \
+   } else {                                                                    \
+      assert(prim == TESS_PRIMITIVE_ISOLINES);                                 \
+      libagx_tess_isoline(context, grid, state, mode);                         \
+   }
 
 struct agx_border_packed;
 

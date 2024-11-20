@@ -9,6 +9,7 @@
  */
 #include "hk_queue.h"
 
+#include "agx_bg_eot.h"
 #include "agx_bo.h"
 #include "agx_device.h"
 #include "agx_pack.h"
@@ -89,7 +90,7 @@ asahi_fill_cdm_command(struct hk_device *dev, struct hk_cs *cs,
    if (cs->scratch.cs.main || cs->scratch.cs.preamble) {
       cmd->helper_arg = dev->scratch.cs.buf->va->addr;
       cmd->helper_cfg = cs->scratch.cs.preamble ? (1 << 16) : 0;
-      cmd->helper_program = dev->dev.helper->va->addr | 1;
+      cmd->helper_program = agx_helper_program(&dev->bg_eot);
    }
 }
 
@@ -230,13 +231,13 @@ asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
       c->flags |= ASAHI_RENDER_VERTEX_SPILLS;
       c->vertex_helper_arg = dev->scratch.vs.buf->va->addr;
       c->vertex_helper_cfg = cs->scratch.vs.preamble ? (1 << 16) : 0;
-      c->vertex_helper_program = dev->dev.helper->va->addr | 1;
+      c->vertex_helper_program = agx_helper_program(&dev->bg_eot);
    }
 
    if (cs->scratch.fs.main || cs->scratch.fs.preamble) {
       c->fragment_helper_arg = dev->scratch.fs.buf->va->addr;
       c->fragment_helper_cfg = cs->scratch.fs.preamble ? (1 << 16) : 0;
-      c->fragment_helper_program = dev->dev.helper->va->addr | 1;
+      c->fragment_helper_program = agx_helper_program(&dev->bg_eot);
    }
 }
 

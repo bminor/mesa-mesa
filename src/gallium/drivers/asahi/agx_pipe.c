@@ -43,6 +43,7 @@
 #include "util/u_upload_mgr.h"
 #include "util/xmlconfig.h"
 #include "agx_bg_eot.h"
+#include "agx_bo.h"
 #include "agx_device.h"
 #include "agx_disk_cache.h"
 #include "agx_fence.h"
@@ -1519,12 +1520,12 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
       c->flags |= ASAHI_RENDER_VERTEX_SPILLS;
       c->vertex_helper_arg = batch->ctx->scratch_vs.buf->va->addr;
       c->vertex_helper_cfg = batch->vs_preamble_scratch << 16;
-      c->vertex_helper_program = dev->helper->va->addr | 1;
+      c->vertex_helper_program = agx_helper_program(&batch->ctx->bg_eot);
    }
    if (batch->fs_scratch) {
       c->fragment_helper_arg = batch->ctx->scratch_fs.buf->va->addr;
       c->fragment_helper_cfg = batch->fs_preamble_scratch << 16;
-      c->fragment_helper_program = dev->helper->va->addr | 1;
+      c->fragment_helper_program = agx_helper_program(&batch->ctx->bg_eot);
    }
 }
 
@@ -1646,7 +1647,7 @@ agx_flush_compute(struct agx_context *ctx, struct agx_batch *batch,
       cmdbuf->helper_arg = ctx->scratch_cs.buf->va->addr;
       cmdbuf->helper_cfg = batch->cs_preamble_scratch << 16;
       // cmdbuf->helper_cfg |= 0x40;
-      cmdbuf->helper_program = dev->helper->va->addr | 1;
+      cmdbuf->helper_program = agx_helper_program(&batch->ctx->bg_eot);
    }
 }
 
@@ -2737,6 +2738,20 @@ agx_screen_create(int fd, struct renderonly *ro,
          U_TRANSFER_HELPER_MSAA_MAP | U_TRANSFER_HELPER_Z24_IN_Z32F);
 
    agx_disk_cache_init(agx_screen);
+
+   /* TODO: Refactor readonly data? */
+   {
+      struct agx_bo *bo =
+         agx_bo_create(&agx_screen->dev, 16384, 0, 0, "Rodata");
+
+      agx_pack_txf_sampler((struct agx_sampler_packed *)bo->map);
+
+      agx_pack(&agx_screen->dev.txf_sampler, USC_SAMPLER, cfg) {
+         cfg.start = 0;
+         cfg.count = 1;
+         cfg.buffer = bo->va->addr;
+      }
+   }
 
    return screen;
 }

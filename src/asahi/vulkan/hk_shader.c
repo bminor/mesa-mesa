@@ -1479,13 +1479,13 @@ hk_fast_link(struct hk_device *dev, bool fragment, struct hk_shader *main,
    struct agx_usc_builder b = agx_usc_builder(s->usc.data, sizeof(s->usc.data));
 
    if (main && main->b.info.rodata.size_16) {
-      agx_usc_immediates(&b, &main->b.info, main->bo->va->addr);
+      agx_usc_immediates(&b, &main->b.info.rodata, main->bo->va->addr);
    }
 
    agx_usc_push_packed(&b, UNIFORM, dev->rodata.image_heap);
 
    if (s->b.uses_txf)
-      agx_usc_push_packed(&b, SAMPLER, dev->rodata.txf_sampler);
+      agx_usc_push_packed(&b, SAMPLER, dev->dev.txf_sampler);
 
    agx_usc_shared_non_fragment(&b, &main->b.info, 0);
    agx_usc_push_packed(&b, SHADER, s->b.shader);

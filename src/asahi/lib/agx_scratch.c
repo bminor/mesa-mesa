@@ -25,21 +25,6 @@ struct spill_size {
    uint32_t count;
 };
 
-struct agx_bo *
-agx_build_helper(struct agx_device *dev)
-{
-   struct agx_bo *bo = agx_bo_create(
-      dev, sizeof(libagx_g13_helper), 0,
-      AGX_BO_READONLY | AGX_BO_EXEC | AGX_BO_LOW_VA, "Helper shader");
-   assert(bo);
-   memcpy(bo->map, libagx_g13_helper, sizeof(libagx_g13_helper));
-
-   if (dev->debug & AGX_DBG_SCRATCH)
-      fprintf(stderr, "Helper: 0x%" PRIx64 "\n", bo->va->addr);
-
-   return bo;
-}
-
 static struct spill_size
 agx_scratch_get_spill_size(unsigned dwords)
 {

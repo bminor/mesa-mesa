@@ -62,7 +62,7 @@ hk_upload_rodata(struct hk_device *dev)
    uint32_t offs = 0;
 
    offs = align(offs, 8);
-   agx_pack(&dev->rodata.txf_sampler, USC_SAMPLER, cfg) {
+   agx_pack(&dev->dev.txf_sampler, USC_SAMPLER, cfg) {
       cfg.start = 0;
       cfg.count = 1;
       cfg.buffer = dev->rodata.bo->va->addr + offs;

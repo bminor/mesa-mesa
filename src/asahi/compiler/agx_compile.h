@@ -65,6 +65,17 @@ struct agx_interp_info {
 };
 static_assert(sizeof(struct agx_interp_info) == 16, "packed");
 
+struct agx_rodata {
+   /* Offset in the binary */
+   uint32_t offset;
+
+   /* Base uniform to map constants */
+   uint16_t base_uniform;
+
+   /* Number of 16-bit constants to map contiguously there */
+   uint16_t size_16;
+};
+
 struct agx_shader_info {
    enum pipe_shader_type stage;
    uint32_t binary_size;
@@ -72,13 +83,13 @@ struct agx_shader_info {
    union agx_varyings varyings;
 
    /* Number of uniforms */
-   unsigned push_count;
+   uint16_t push_count;
 
    /* Local memory allocation in bytes */
-   unsigned local_size;
+   uint16_t local_size;
 
    /* Local imageblock allocation in bytes per thread */
-   unsigned imageblock_stride;
+   uint16_t imageblock_stride;
 
    /* Scratch memory allocation in bytes for main/preamble respectively */
    unsigned scratch_size, preamble_scratch_size;
@@ -131,7 +142,7 @@ struct agx_shader_info {
    /* Number of 16-bit registers used by the main shader and preamble
     * respectively.
     */
-   unsigned nr_gprs, nr_preamble_gprs;
+   uint16_t nr_gprs, nr_preamble_gprs;
 
    /* Output mask set during driver lowering */
    uint64_t outputs;
@@ -142,17 +153,42 @@ struct agx_shader_info {
    /* There may be constants in the binary. The driver must map these to uniform
     * registers as specified hre.
     */
-   struct {
-      /* Offset in the binary */
-      uint32_t offset;
-
-      /* Base uniform to map constants */
-      uint16_t base_uniform;
-
-      /* Number of 16-bit constants to map contiguously there */
-      uint16_t size_16;
-   } rodata;
+   struct agx_rodata rodata;
 };
+
+struct agx_precompiled_kernel_info {
+   uint32_t preamble_offset, main_offset;
+   uint32_t main_size, binary_size;
+   struct agx_rodata rodata;
+   uint16_t nr_gprs, nr_preamble_gprs;
+   uint16_t push_count;
+   uint16_t workgroup_size[3];
+   uint16_t local_size;
+   uint16_t imageblock_stride;
+   bool uses_txf;
+};
+
+static inline struct agx_precompiled_kernel_info
+agx_compact_kernel_info(struct agx_shader_info *info)
+{
+   assert(info->has_preamble == (info->nr_preamble_gprs > 0));
+
+   return (struct agx_precompiled_kernel_info){
+      .preamble_offset = info->preamble_offset,
+      .main_offset = info->main_offset,
+      .main_size = info->main_size,
+      .binary_size = info->binary_size,
+      .rodata = info->rodata,
+      .nr_gprs = info->nr_gprs,
+      .nr_preamble_gprs = info->nr_preamble_gprs,
+      .push_count = info->push_count,
+      .workgroup_size = {info->workgroup_size[0], info->workgroup_size[1],
+                         info->workgroup_size[2]},
+      .local_size = info->local_size,
+      .imageblock_stride = info->imageblock_stride,
+      .uses_txf = info->uses_txf,
+   };
+}
 
 struct agx_shader_part {
    struct agx_shader_info info;

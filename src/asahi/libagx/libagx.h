@@ -13,11 +13,19 @@
 #define GLOBAL(type_)            uint64_t
 #define CONSTANT(type_)          uint64_t
 #define AGX_STATIC_ASSERT(_COND) static_assert(_COND, #_COND)
+#define global_
+#define constant_
 #else
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 #define PACKED          __attribute__((packed, aligned(4)))
 #define GLOBAL(type_)   global type_ *
 #define CONSTANT(type_) constant type_ *
+#define global_         global
+#define constant_       constant
+#define ASSERTED
+#define assert(x)
+#define BITFIELD_BIT(b)  (1u << b)
+#define BITFIELD_MASK(m) (((m) == 32) ? 0xffffffff : ((1u << (m)) - 1))
 
 typedef ulong uint64_t;
 typedef uint uint32_t;
@@ -49,10 +57,6 @@ void nir_bindless_image_store(uint2 handle, int4 coord, uint sample,
                               uint image_array, uint format, uint access,
                               uint src_type);
 
-uint libagx_load_index_buffer_internal(uintptr_t index_buffer,
-                                       uint32_t index_buffer_range_el, uint id,
-                                       uint index_size);
-
 /* I have no idea why CL doesn't have this */
 uint nir_ballot(bool cond);
 
@@ -61,6 +65,8 @@ uint nir_ballot(bool cond);
 #define AGX_PASTE(x, y)  AGX_PASTE_(x, y)
 #define AGX_STATIC_ASSERT(_COND)                                               \
    typedef char AGX_PASTE(static_assertion, __LINE__)[(_COND) ? 1 : -1]
+
+#define KERNEL(x) __attribute__((reqd_work_group_size(x, 1, 1))) kernel void
 
 static inline uint
 align(uint x, uint y)

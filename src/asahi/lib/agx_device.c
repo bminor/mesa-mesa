@@ -15,6 +15,7 @@
 #include "agx_scratch.h"
 #include "decode.h"
 #include "glsl_types.h"
+#include "libagx_dgc.h"
 #include "libagx_shaders.h"
 
 #include <fcntl.h>
@@ -570,10 +571,25 @@ agx_open_device(void *memctx, struct agx_device *dev)
 
    glsl_type_singleton_init_or_ref();
    struct blob_reader blob;
-   blob_reader_init(&blob, (void *)libagx_nir, sizeof(libagx_nir));
+   blob_reader_init(&blob, (void *)libagx_0_nir, sizeof(libagx_0_nir));
    dev->libagx = nir_deserialize(memctx, &agx_nir_options, &blob);
 
-   dev->helper = agx_build_helper(dev);
+   if (agx_gather_device_key(dev).needs_g13x_coherency == U_TRISTATE_YES) {
+      dev->libagx_programs = libagx_g13x;
+   } else {
+      dev->libagx_programs = libagx_g13g;
+   }
+
+   if (dev->params.gpu_generation >= 14 && dev->params.num_clusters_total > 1) {
+      dev->chip = AGX_CHIP_G14X;
+   } else if (dev->params.gpu_generation >= 14) {
+      dev->chip = AGX_CHIP_G14G;
+   } else if (dev->params.gpu_generation >= 13 &&
+              dev->params.num_clusters_total > 1) {
+      dev->chip = AGX_CHIP_G13X;
+   } else {
+      dev->chip = AGX_CHIP_G13G;
+   }
 
    return true;
 }
@@ -582,7 +598,6 @@ void
 agx_close_device(struct agx_device *dev)
 {
    ralloc_free((void *)dev->libagx);
-   agx_bo_unreference(dev, dev->helper);
    agx_bo_cache_evict_all(dev);
    util_sparse_array_finish(&dev->bo_map);
    agxdecode_destroy_context(dev->agxdecode);
