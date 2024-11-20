@@ -1430,7 +1430,8 @@ brw_send_indirect_message(struct brw_codegen *p,
                           struct brw_reg dst,
                           struct brw_reg payload,
                           struct brw_reg desc,
-                          bool eot);
+                          bool eot,
+                          bool gather);
 
 void
 brw_send_indirect_split_message(struct brw_codegen *p,
@@ -1442,7 +1443,8 @@ brw_send_indirect_split_message(struct brw_codegen *p,
                                 struct brw_reg ex_desc,
                                 unsigned ex_mlen,
                                 bool ex_bso,
-                                bool eot);
+                                bool eot,
+                                bool gather);
 
 void gfx6_math(struct brw_codegen *p,
 	       struct brw_reg dest,
@@ -1552,12 +1554,12 @@ brw_num_sources_from_inst(const struct brw_isa_info *isa,
 void brw_set_src1(struct brw_codegen *p, brw_eu_inst *insn, struct brw_reg reg);
 
 void brw_set_desc_ex(struct brw_codegen *p, brw_eu_inst *insn,
-                     unsigned desc, unsigned ex_desc);
+                     unsigned desc, unsigned ex_desc, bool gather);
 
 static inline void
-brw_set_desc(struct brw_codegen *p, brw_eu_inst *insn, unsigned desc)
+brw_set_desc(struct brw_codegen *p, brw_eu_inst *insn, unsigned desc, bool gather)
 {
-   brw_set_desc_ex(p, insn, desc, 0);
+   brw_set_desc_ex(p, insn, desc, 0, gather);
 }
 
 void brw_set_uip_jip(struct brw_codegen *p, int start_offset);

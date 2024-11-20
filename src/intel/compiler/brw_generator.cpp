@@ -168,8 +168,10 @@ brw_generator::generate_send(fs_inst *inst,
                             struct brw_reg payload,
                             struct brw_reg payload2)
 {
+   const bool gather = false;
+
    if (ex_desc.file == IMM && ex_desc.ud == 0) {
-      brw_send_indirect_message(p, inst->sfid, dst, payload, desc, inst->eot);
+      brw_send_indirect_message(p, inst->sfid, dst, payload, desc, inst->eot, gather);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst, BRW_OPCODE_SENDC);
    } else {
@@ -178,7 +180,7 @@ brw_generator::generate_send(fs_inst *inst,
        */
       brw_send_indirect_split_message(p, inst->sfid, dst, payload, payload2,
                                       desc, ex_desc, inst->ex_mlen,
-                                      inst->send_ex_bso, inst->eot);
+                                      inst->send_ex_bso, inst->eot, gather);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst,
                              devinfo->ver >= 12 ? BRW_OPCODE_SENDC : BRW_OPCODE_SENDSC);
