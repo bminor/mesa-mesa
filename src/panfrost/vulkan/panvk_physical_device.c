@@ -273,6 +273,7 @@ get_features(const struct panvk_physical_device *device,
       .shaderSampledImageArrayDynamicIndexing = true,
       .shaderStorageBufferArrayDynamicIndexing = true,
       .shaderStorageImageArrayDynamicIndexing = true,
+      .shaderInt16 = true,
       .shaderInt64 = true,
 
       /* Vulkan 1.1 */
