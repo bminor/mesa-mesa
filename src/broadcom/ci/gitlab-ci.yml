@@ -72,7 +72,7 @@ v3d-rpi4-rusticl:arm64:
     - .igalia-bcm2711-rpi-4
     - .broadcom-test:arm64
     - .v3d-rusticl-manual-rules
-  timeout: 30m  # base run time = 17min test, 19min total
+  timeout: 40m  # base run time = 25min test, 32min total
   variables:
     DEQP_SUITE: v3d-rusticl
 
