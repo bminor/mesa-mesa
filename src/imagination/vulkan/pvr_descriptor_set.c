@@ -1449,14 +1449,14 @@ pvr_write_image_descriptor_primaries(const struct pvr_device_info *dev_info,
    if (descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
        (iview->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE ||
         iview->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY)) {
-      qword_ptr[0] = iview->texture_state[PVR_TEXTURE_STATE_STORAGE][0];
-      qword_ptr[1] = iview->texture_state[PVR_TEXTURE_STATE_STORAGE][1];
+      qword_ptr[0] = iview->image_state[PVR_TEXTURE_STATE_STORAGE].words[0];
+      qword_ptr[1] = iview->image_state[PVR_TEXTURE_STATE_STORAGE].words[1];
    } else if (descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-      qword_ptr[0] = iview->texture_state[PVR_TEXTURE_STATE_ATTACHMENT][0];
-      qword_ptr[1] = iview->texture_state[PVR_TEXTURE_STATE_ATTACHMENT][1];
+      qword_ptr[0] = iview->image_state[PVR_TEXTURE_STATE_ATTACHMENT].words[0];
+      qword_ptr[1] = iview->image_state[PVR_TEXTURE_STATE_ATTACHMENT].words[1];
    } else {
-      qword_ptr[0] = iview->texture_state[PVR_TEXTURE_STATE_SAMPLE][0];
-      qword_ptr[1] = iview->texture_state[PVR_TEXTURE_STATE_SAMPLE][1];
+      qword_ptr[0] = iview->image_state[PVR_TEXTURE_STATE_SAMPLE].words[0];
+      qword_ptr[1] = iview->image_state[PVR_TEXTURE_STATE_SAMPLE].words[1];
    }
 
    if (descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
@@ -1652,8 +1652,8 @@ static void pvr_write_buffer_descriptor(const struct pvr_device_info *dev_info,
 {
    uint64_t *qword_ptr = (uint64_t *)primary;
 
-   qword_ptr[0] = bview->texture_state[0];
-   qword_ptr[1] = bview->texture_state[1];
+   qword_ptr[0] = bview->image_state.words[0];
+   qword_ptr[1] = bview->image_state.words[1];
 
    if (descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER &&
        !PVR_HAS_FEATURE(dev_info, tpu_extended_integer_lookup)) {

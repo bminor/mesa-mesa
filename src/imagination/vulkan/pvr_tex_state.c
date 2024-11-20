@@ -61,10 +61,9 @@ static enum ROGUE_TEXSTATE_SWIZ pvr_get_hw_swizzle(VkComponentSwizzle comp,
    };
 }
 
-VkResult
-pvr_pack_tex_state(struct pvr_device *device,
-                   const struct pvr_texture_state_info *info,
-                   uint64_t state[static const ROGUE_NUM_TEXSTATE_IMAGE_WORDS])
+VkResult pvr_pack_tex_state(struct pvr_device *device,
+                            const struct pvr_texture_state_info *info,
+                            struct pvr_image_descriptor *state)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    enum pvr_memlayout mem_layout;
@@ -85,7 +84,7 @@ pvr_pack_tex_state(struct pvr_device *device,
    else
       iview_type = info->type;
 
-   pvr_csb_pack (&state[0], TEXSTATE_IMAGE_WORD0, word0) {
+   pvr_csb_pack (&state->words[0], TEXSTATE_IMAGE_WORD0, word0) {
       if (mem_layout == PVR_MEMLAYOUT_LINEAR) {
          switch (iview_type) {
          case VK_IMAGE_VIEW_TYPE_2D:
@@ -176,7 +175,7 @@ pvr_pack_tex_state(struct pvr_device *device,
    }
 
    if (mem_layout == PVR_MEMLAYOUT_LINEAR) {
-      pvr_csb_pack (&state[1], TEXSTATE_STRIDE_IMAGE_WORD1, word1) {
+      pvr_csb_pack (&state->words[1], TEXSTATE_STRIDE_IMAGE_WORD1, word1) {
          assert(info->stride > 0U);
          word1.stride = info->stride - 1U;
          word1.num_mip_levels = info->mip_levels;
@@ -203,7 +202,7 @@ pvr_pack_tex_state(struct pvr_device *device,
                ROGUE_TEXSTATE_COMPRESSION_MODE_TPU;
       }
    } else {
-      pvr_csb_pack (&state[1], TEXSTATE_IMAGE_WORD1, word1) {
+      pvr_csb_pack (&state->words[1], TEXSTATE_IMAGE_WORD1, word1) {
          word1.num_mip_levels = info->mip_levels;
          word1.mipmaps_present = info->mipmaps_present;
          word1.baselevel = info->base_level;

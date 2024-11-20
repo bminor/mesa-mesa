@@ -635,14 +635,12 @@ static VkResult pvr_setup_texture_state_words(
    memcpy(&info.swizzle, swizzle, sizeof(info.swizzle));
 
    /* TODO: Can we use image_view->texture_state instead of generating here? */
-   result = pvr_pack_tex_state(device, &info, descriptor->image);
+   result = pvr_pack_tex_state(device, &info, &descriptor->image);
    if (result != VK_SUCCESS)
       return result;
 
-   descriptor->sampler = (union pvr_sampler_descriptor){ 0 };
-
-   pvr_csb_pack (&descriptor->sampler.data.sampler_word,
-                 TEXSTATE_SAMPLER,
+   pvr_csb_pack (&descriptor->sampler.words[0],
+                 TEXSTATE_SAMPLER_WORD0,
                  sampler) {
       sampler.non_normalized_coords = true;
       sampler.addrmode_v = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
@@ -650,6 +648,11 @@ static VkResult pvr_setup_texture_state_words(
       sampler.minfilter = ROGUE_TEXSTATE_FILTER_POINT;
       sampler.magfilter = ROGUE_TEXSTATE_FILTER_POINT;
       sampler.dadjust = ROGUE_TEXSTATE_DADJUST_ZERO_UINT;
+   }
+
+   pvr_csb_pack (&descriptor->sampler.words[1],
+                 TEXSTATE_SAMPLER_WORD1,
+                 sampler) {
    }
 
    return VK_SUCCESS;

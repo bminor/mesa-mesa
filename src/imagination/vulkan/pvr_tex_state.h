@@ -105,9 +105,8 @@ struct pvr_texture_state_info {
    pvr_dev_addr_t addr;
 };
 
-VkResult
-pvr_pack_tex_state(struct pvr_device *device,
-                   const struct pvr_texture_state_info *info,
-                   uint64_t state[static const ROGUE_NUM_TEXSTATE_IMAGE_WORDS]);
+VkResult pvr_pack_tex_state(struct pvr_device *device,
+                            const struct pvr_texture_state_info *info,
+                            struct pvr_image_descriptor *state);
 
 #endif /* PVR_TEX_STATE_H */

@@ -188,60 +188,34 @@ enum pvr_query_type {
    PVR_QUERY_TYPE_COPY_QUERY_RESULTS,
 };
 
-union pvr_sampler_descriptor {
-   uint32_t words[PVR_SAMPLER_DESCRIPTOR_SIZE];
+struct pvr_sampler_descriptor {
+   uint64_t words[ROGUE_NUM_TEXSTATE_SAMPLER_WORDS];
+} PACKED;
+static_assert(sizeof(struct pvr_sampler_descriptor) ==
+                 ROGUE_NUM_TEXSTATE_SAMPLER_WORDS * sizeof(uint64_t),
+              "pvr_sampler_descriptor size is invalid.");
 
-   struct {
-      /* Packed ROGUE_TEXSTATE_SAMPLER. */
-      uint64_t sampler_word;
-      uint32_t compare_op;
-      /* TODO: Figure out what this word is for and rename.
-       * Sampler state word 1?
-       */
-      uint32_t word3;
-   } data;
-};
+struct pvr_image_descriptor {
+   uint64_t words[ROGUE_NUM_TEXSTATE_IMAGE_WORDS];
+} PACKED;
+static_assert(sizeof(struct pvr_image_descriptor) ==
+                 ROGUE_NUM_TEXSTATE_IMAGE_WORDS * sizeof(uint64_t),
+              "pvr_image_descriptor size is invalid.");
 
 struct pvr_combined_image_sampler_descriptor {
-   /* | TEXSTATE_IMAGE_WORD0 | TEXSTATE_{STRIDE_,}IMAGE_WORD1 | */
-   uint64_t image[ROGUE_NUM_TEXSTATE_IMAGE_WORDS];
-   union pvr_sampler_descriptor sampler;
-};
-
-#define CHECK_STRUCT_FIELD_SIZE(_struct_type, _field_name, _size)      \
-   static_assert(sizeof(((struct _struct_type *)NULL)->_field_name) == \
-                    (_size),                                           \
-                 "Size of '" #_field_name "' in '" #_struct_type       \
-                 "' differs from expected")
-
-CHECK_STRUCT_FIELD_SIZE(pvr_combined_image_sampler_descriptor,
-                        image,
-                        ROGUE_NUM_TEXSTATE_IMAGE_WORDS * sizeof(uint64_t));
-CHECK_STRUCT_FIELD_SIZE(pvr_combined_image_sampler_descriptor,
-                        image,
-                        PVR_DW_TO_BYTES(PVR_IMAGE_DESCRIPTOR_SIZE));
-#if 0
-/* TODO: Don't really want to include pvr_csb.h in here since this header is
- * shared with the compiler. Figure out a better place for these.
- */
-CHECK_STRUCT_FIELD_SIZE(pvr_combined_image_sampler_descriptor,
-                        image,
-                        (pvr_cmd_length(TEXSTATE_IMAGE_WORD0) +
-                         pvr_cmd_length(TEXSTATE_IMAGE_WORD1)) *
-                           sizeof(uint32_t));
-CHECK_STRUCT_FIELD_SIZE(pvr_combined_image_sampler_descriptor,
-                        image,
-                        (pvr_cmd_length(TEXSTATE_IMAGE_WORD0) +
-                         pvr_cmd_length(TEXSTATE_STRIDE_IMAGE_WORD1)) *
-                           sizeof(uint32_t));
-#endif
-
-#undef CHECK_STRUCT_FIELD_SIZE
+   struct pvr_image_descriptor image;
+   struct pvr_sampler_descriptor sampler;
+} PACKED;
+static_assert(sizeof(struct pvr_combined_image_sampler_descriptor) ==
+                 (ROGUE_NUM_TEXSTATE_IMAGE_WORDS +
+                  ROGUE_NUM_TEXSTATE_SAMPLER_WORDS) *
+                    sizeof(uint64_t),
+              "pvr_combined_image_sampler_descriptor size is invalid.");
 
 struct pvr_sampler {
    struct vk_sampler vk;
 
-   union pvr_sampler_descriptor descriptor;
+   struct pvr_sampler_descriptor descriptor;
 };
 
 struct pvr_descriptor_size_info {

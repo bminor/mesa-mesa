@@ -323,7 +323,7 @@ SOFTWARE.
     <field name="stride" start="0" end="14" type="uint"/>
   </struct>
 
-  <struct name="SAMPLER" length="2">
+  <struct name="SAMPLER_WORD0" length="2">
     <field name="texaddr_plane2_lo" start="50" end="63" shift="2" type="address"/>
     <field name="cmp_mode" start="59" end="61" type="CMP_MODE"/>
     <field name="addrmode_w" start="56" end="58" type="ADDRMODE"/>

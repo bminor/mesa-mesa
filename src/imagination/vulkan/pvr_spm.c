@@ -783,14 +783,14 @@ static VkFormat pvr_get_format_from_dword_count(uint32_t dword_count)
    }
 }
 
-static VkResult pvr_spm_setup_texture_state_words(
-   struct pvr_device *device,
-   uint32_t dword_count,
-   const VkExtent2D framebuffer_size,
-   uint32_t sample_count,
-   pvr_dev_addr_t scratch_buffer_addr,
-   uint64_t image_descriptor[static const ROGUE_NUM_TEXSTATE_IMAGE_WORDS],
-   uint64_t *mem_used_out)
+static VkResult
+pvr_spm_setup_texture_state_words(struct pvr_device *device,
+                                  uint32_t dword_count,
+                                  const VkExtent2D framebuffer_size,
+                                  uint32_t sample_count,
+                                  pvr_dev_addr_t scratch_buffer_addr,
+                                  uint64_t *image_state_ptr,
+                                  uint64_t *mem_used_out)
 {
    /* We can ignore the framebuffer's layer count since we only support
     * writing to layer 0.
@@ -817,15 +817,18 @@ static VkResult pvr_spm_setup_texture_state_words(
       ALIGN_POT(framebuffer_size.width,
                 ROGUE_CR_PBE_WORD0_MRT0_LINESTRIDE_ALIGNMENT);
    const uint64_t fb_area = aligned_fb_width * framebuffer_size.height;
+   struct pvr_image_descriptor image_descriptor;
    const uint8_t *format_swizzle;
    VkResult result;
 
    format_swizzle = pvr_get_format_swizzle(info.format);
    memcpy(info.swizzle, format_swizzle, sizeof(info.swizzle));
 
-   result = pvr_pack_tex_state(device, &info, image_descriptor);
+   result = pvr_pack_tex_state(device, &info, &image_descriptor);
    if (result != VK_SUCCESS)
       return result;
+
+   memcpy(image_state_ptr, &image_descriptor, sizeof(image_descriptor));
 
    *mem_used_out = fb_area * PVR_DW_TO_BYTES(dword_count) * sample_count;
 
@@ -919,7 +922,7 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
    struct pvr_spm_per_load_program_state *load_program_state;
    struct pvr_pds_upload pds_texture_data_upload;
    const struct pvr_shader_factory_info *info;
-   union pvr_sampler_descriptor *descriptor;
+   struct pvr_sampler_descriptor *descriptor;
    uint64_t consts_buffer_size;
    uint32_t dword_count;
    uint32_t *mem_ptr;
@@ -975,10 +978,10 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
    /* TODO: The 32 comes from how the shaders are compiled. We should
     * unhardcode it when this is hooked up to the compiler.
     */
-   descriptor = (union pvr_sampler_descriptor *)(mem_ptr + 32);
-   *descriptor = (union pvr_sampler_descriptor){ 0 };
+   descriptor = (struct pvr_sampler_descriptor *)(mem_ptr + 32);
+   *descriptor = (struct pvr_sampler_descriptor){ 0 };
 
-   pvr_csb_pack (&descriptor->data.sampler_word, TEXSTATE_SAMPLER, sampler) {
+   pvr_csb_pack (&descriptor->words[0], TEXSTATE_SAMPLER_WORD0, sampler) {
       sampler.non_normalized_coords = true;
       sampler.addrmode_v = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
       sampler.addrmode_u = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
@@ -987,6 +990,9 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
       sampler.maxlod = ROGUE_TEXSTATE_CLAMP_MIN;
       sampler.minlod = ROGUE_TEXSTATE_CLAMP_MIN;
       sampler.dadjust = ROGUE_TEXSTATE_DADJUST_ZERO_UINT;
+   }
+
+   pvr_csb_pack (&descriptor->words[1], TEXSTATE_SAMPLER_WORD1, sampler) {
    }
 
    /* Even if we might have 8 output regs we can only pack and write 4 dwords
@@ -1001,10 +1007,10 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
       uint64_t *mem_ptr_u64 = (uint64_t *)mem_ptr;
       uint64_t mem_used = 0;
 
-      STATIC_ASSERT(ROGUE_NUM_TEXSTATE_IMAGE_WORDS * sizeof(uint64_t) /
-                       sizeof(uint32_t) ==
+      STATIC_ASSERT((sizeof(struct pvr_image_descriptor) / sizeof(uint32_t)) ==
                     PVR_IMAGE_DESCRIPTOR_SIZE);
-      mem_ptr_u64 += i * ROGUE_NUM_TEXSTATE_IMAGE_WORDS;
+      mem_ptr_u64 +=
+         i * (sizeof(struct pvr_image_descriptor) / sizeof(uint64_t));
 
       result = pvr_spm_setup_texture_state_words(device,
                                                  dword_count,

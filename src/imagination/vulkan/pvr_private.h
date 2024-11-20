@@ -342,7 +342,7 @@ struct pvr_image_view {
     * We create separate texture states for sampling, storage and input
     * attachment cases.
     */
-   uint64_t texture_state[PVR_TEXTURE_STATE_MAX_ENUM][2];
+   struct pvr_image_descriptor image_state[PVR_TEXTURE_STATE_MAX_ENUM];
 };
 
 struct pvr_buffer_view {
@@ -351,7 +351,7 @@ struct pvr_buffer_view {
    /* Prepacked Texture dword 0 and 1. It will be copied to the descriptor
     * during pvr_UpdateDescriptorSets().
     */
-   uint64_t texture_state[2];
+   struct pvr_image_descriptor image_state;
 };
 
 #define PVR_TRANSFER_MAX_SOURCES 10U

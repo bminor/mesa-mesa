@@ -1484,7 +1484,7 @@ static VkResult pvr_sampler_state_for_surface(
 {
    uint64_t sampler_state[2U] = { 0UL, 0UL };
 
-   pvr_csb_pack (&sampler_state[0U], TEXSTATE_SAMPLER, reg) {
+   pvr_csb_pack (&sampler_state[0U], TEXSTATE_SAMPLER_WORD0, reg) {
       reg.anisoctl = ROGUE_TEXSTATE_ANISOCTL_DISABLED;
       reg.minlod = ROGUE_TEXSTATE_CLAMP_MIN;
       reg.maxlod = ROGUE_TEXSTATE_CLAMP_MIN;
@@ -1528,6 +1528,7 @@ static inline VkResult pvr_image_state_set_codegen_defaults(
 {
    struct pvr_tq_layer_properties *layer = &state->shader_props.layer_props;
    struct pvr_texture_state_info info = { 0U };
+   struct pvr_image_descriptor image_state;
    VkResult result;
 
    switch (surface->vk_format) {
@@ -1607,9 +1608,11 @@ static inline VkResult pvr_image_state_set_codegen_defaults(
    else
       info.type = VK_IMAGE_VIEW_TYPE_1D;
 
-   result = pvr_pack_tex_state(device, &info, mem_ptr);
+   result = pvr_pack_tex_state(device, &info, &image_state);
    if (result != VK_SUCCESS)
       return result;
+
+   memcpy(mem_ptr, &image_state, sizeof(image_state));
 
    return VK_SUCCESS;
 }

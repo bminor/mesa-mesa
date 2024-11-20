@@ -1427,8 +1427,8 @@ static VkResult pvr_pds_idfwdf_programs_create_and_upload(
 
 static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
 {
-   uint64_t sampler_state[ROGUE_NUM_TEXSTATE_SAMPLER_WORDS];
-   uint64_t image_state[ROGUE_NUM_TEXSTATE_IMAGE_WORDS];
+   struct pvr_sampler_descriptor sampler_state;
+   struct pvr_image_descriptor image_state;
    struct util_dynarray usc_program;
    struct pvr_texture_state_info tex_info;
    uint32_t *dword_ptr;
@@ -1477,7 +1477,7 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
 
    /* Pack state words. */
 
-   pvr_csb_pack (&sampler_state[0], TEXSTATE_SAMPLER, sampler) {
+   pvr_csb_pack (&sampler_state.words[0], TEXSTATE_SAMPLER_WORD0, sampler) {
       sampler.dadjust = ROGUE_TEXSTATE_DADJUST_ZERO_UINT;
       sampler.magfilter = ROGUE_TEXSTATE_FILTER_POINT;
       sampler.addrmode_u = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
@@ -1485,10 +1485,8 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
    }
 
    /* clang-format off */
-   pvr_csb_pack (&sampler_state[1], TEXSTATE_SAMPLER_WORD1, sampler_word1) {}
+   pvr_csb_pack (&sampler_state.words[1], TEXSTATE_SAMPLER_WORD1, sampler_word1) {}
    /* clang-format on */
-
-   STATIC_ASSERT(1 + 1 == ROGUE_NUM_TEXSTATE_SAMPLER_WORDS);
 
    tex_info = (struct pvr_texture_state_info){
       .format = VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -1506,7 +1504,7 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
       .addr = device->idfwdf_state.store_bo->vma->dev_addr,
    };
 
-   result = pvr_pack_tex_state(device, &tex_info, image_state);
+   result = pvr_pack_tex_state(device, &tex_info, &image_state);
    if (result != VK_SUCCESS)
       goto err_free_shareds_buffer;
 
@@ -1528,15 +1526,15 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
    dword_ptr[2] = 0U;
    dword_ptr[3] = 0U;
 
-   dword_ptr[4] = LOW_32(image_state[0]);
-   dword_ptr[5] = HIGH_32(image_state[0]);
-   dword_ptr[6] = LOW_32(image_state[1]);
-   dword_ptr[7] = HIGH_32(image_state[1]);
+   dword_ptr[4] = LOW_32(image_state.words[0]);
+   dword_ptr[5] = HIGH_32(image_state.words[0]);
+   dword_ptr[6] = LOW_32(image_state.words[1]);
+   dword_ptr[7] = HIGH_32(image_state.words[1]);
 
-   dword_ptr[8] = LOW_32(sampler_state[0]);
-   dword_ptr[9] = HIGH_32(sampler_state[0]);
-   dword_ptr[10] = LOW_32(sampler_state[1]);
-   dword_ptr[11] = HIGH_32(sampler_state[1]);
+   dword_ptr[8] = LOW_32(sampler_state.words[0]);
+   dword_ptr[9] = HIGH_32(sampler_state.words[0]);
+   dword_ptr[10] = LOW_32(sampler_state.words[1]);
+   dword_ptr[11] = HIGH_32(sampler_state.words[1]);
    assert(11 + 1 == usc_shareds);
 
 #undef HIGH_32
@@ -1745,7 +1743,9 @@ err_release_lock:
 
 static void pvr_device_init_default_sampler_state(struct pvr_device *device)
 {
-   pvr_csb_pack (&device->input_attachment_sampler, TEXSTATE_SAMPLER, sampler) {
+   pvr_csb_pack (&device->input_attachment_sampler,
+                 TEXSTATE_SAMPLER_WORD0,
+                 sampler) {
       sampler.addrmode_u = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
       sampler.addrmode_v = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
       sampler.addrmode_w = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
@@ -2992,9 +2992,6 @@ VkResult pvr_CreateSampler(VkDevice _device,
    float min_lod;
    float max_lod;
 
-   STATIC_ASSERT(sizeof(((union pvr_sampler_descriptor *)NULL)->data) ==
-                 sizeof(((union pvr_sampler_descriptor *)NULL)->words));
-
    sampler =
       vk_sampler_create(&device->vk, pCreateInfo, pAllocator, sizeof(*sampler));
    if (!sampler) {
@@ -3035,18 +3032,9 @@ VkResult pvr_CreateSampler(VkDevice _device,
       }
    }
 
-   if (pCreateInfo->compareEnable) {
-      sampler->descriptor.data.compare_op =
-         (uint32_t)pvr_texstate_cmpmode(pCreateInfo->compareOp);
-   } else {
-      sampler->descriptor.data.compare_op =
-         (uint32_t)pvr_texstate_cmpmode(VK_COMPARE_OP_NEVER);
-   }
+   assert(!pCreateInfo->compareEnable);
 
-   sampler->descriptor.data.word3 = 0;
-   pvr_csb_pack (&sampler->descriptor.data.sampler_word,
-                 TEXSTATE_SAMPLER,
-                 word) {
+   pvr_csb_pack (&sampler->descriptor.words[0], TEXSTATE_SAMPLER_WORD0, word) {
       const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
       const float lod_clamp_max = (float)ROGUE_TEXSTATE_CLAMP_MAX /
                                   (1 << ROGUE_TEXSTATE_CLAMP_FRACTIONAL_BITS);
@@ -3069,13 +3057,6 @@ VkResult pvr_CreateSampler(VkDevice _device,
          pvr_sampler_get_hw_addr_mode_from_vk(pCreateInfo->addressModeV);
       word.addrmode_w =
          pvr_sampler_get_hw_addr_mode_from_vk(pCreateInfo->addressModeW);
-
-      /* TODO: Figure out defines for these. */
-      if (word.addrmode_u == ROGUE_TEXSTATE_ADDRMODE_FLIP)
-         sampler->descriptor.data.word3 |= 0x40000000;
-
-      if (word.addrmode_v == ROGUE_TEXSTATE_ADDRMODE_FLIP)
-         sampler->descriptor.data.word3 |= 0x20000000;
 
       /* The Vulkan 1.0.205 spec says:
        *
@@ -3117,6 +3098,9 @@ VkResult pvr_CreateSampler(VkDevice _device,
 
       if (pCreateInfo->unnormalizedCoordinates)
          word.non_normalized_coords = true;
+   }
+
+   pvr_csb_pack (&sampler->descriptor.words[1], TEXSTATE_SAMPLER_WORD1, word) {
    }
 
    *pSampler = pvr_sampler_to_handle(sampler);
