@@ -453,6 +453,9 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
       case BRW_ARF_FLAG:
          fprintf(file, "f%d.%d", inst->dst.nr & 0xf, inst->dst.subnr);
          break;
+      case BRW_ARF_SCALAR:
+         fprintf(file, "s0.%d", inst->dst.subnr);
+         break;
       default:
          fprintf(file, "arf%d.%d", inst->dst.nr & 0xf, inst->dst.subnr);
          break;
@@ -575,6 +578,9 @@ brw_print_instruction(const fs_visitor &s, const fs_inst *inst, FILE *file, cons
             break;
          case BRW_ARF_FLAG:
             fprintf(file, "f%d.%d", inst->src[i].nr & 0xf, inst->src[i].subnr);
+            break;
+         case BRW_ARF_SCALAR:
+            fprintf(file, "s0.%d", inst->src[i].subnr);
             break;
          default:
             fprintf(file, "arf%d.%d", inst->src[i].nr & 0xf, inst->src[i].subnr);

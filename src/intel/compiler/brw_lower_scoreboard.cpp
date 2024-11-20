@@ -130,7 +130,16 @@ namespace {
          return TGL_PIPE_NONE;
       else if (devinfo->verx10 < 125)
          return TGL_PIPE_FLOAT;
-      else if (inst->is_math() && devinfo->ver >= 20)
+      else if (devinfo->ver >= 30 &&
+               inst->exec_size == 1 &&
+               inst->dst.file == ARF &&
+               inst->dst.nr == BRW_ARF_SCALAR &&
+               inst->src[0].file == IMM) {
+         /* Scalar pipe has a very narrow usage.  See Bspec 56701 (r60146),
+          * in the SWSB description entry.
+          */
+         return TGL_PIPE_SCALAR;
+      } else if (inst->is_math() && devinfo->ver >= 20)
          return TGL_PIPE_MATH;
       else if (inst->opcode == SHADER_OPCODE_MOV_INDIRECT ||
                inst->opcode == SHADER_OPCODE_BROADCAST ||
@@ -692,6 +701,7 @@ namespace {
 
          sb.addr_dep = merge(eq, sb0.addr_dep, sb1.addr_dep);
          sb.accum_dep = merge(eq, sb0.accum_dep, sb1.accum_dep);
+         sb.scalar_dep = merge(eq, sb0.scalar_dep, sb1.scalar_dep);
 
          return sb;
       }
@@ -710,6 +720,7 @@ namespace {
 
          sb.addr_dep = shadow(sb0.addr_dep, sb1.addr_dep);
          sb.accum_dep = shadow(sb0.accum_dep, sb1.accum_dep);
+         sb.scalar_dep = shadow(sb0.scalar_dep, sb1.scalar_dep);
 
          return sb;
       }
@@ -728,6 +739,7 @@ namespace {
 
          sb.addr_dep = transport(sb0.addr_dep, delta);
          sb.accum_dep = transport(sb0.accum_dep, delta);
+         sb.scalar_dep = transport(sb0.scalar_dep, delta);
 
          return sb;
       }
@@ -746,6 +758,9 @@ namespace {
          if (sb0.accum_dep != sb1.accum_dep)
             return false;
 
+         if (sb0.scalar_dep != sb1.scalar_dep)
+            return false;
+
          return true;
       }
 
@@ -759,6 +774,7 @@ namespace {
       dependency grf_deps[XE3_MAX_GRF];
       dependency addr_dep;
       dependency accum_dep;
+      dependency scalar_dep;
 
       dependency *
       dep(const brw_reg &r)
@@ -771,6 +787,8 @@ namespace {
                                   reg < BRW_ARF_ACCUMULATOR ? &addr_dep :
                  r.file == ARF && reg >= BRW_ARF_ACCUMULATOR &&
                                   reg < BRW_ARF_FLAG ? &accum_dep :
+                 r.file == ARF && reg >= BRW_ARF_SCALAR &&
+                                  reg < BRW_ARF_STATE ? &scalar_dep :
                  NULL);
       }
    };

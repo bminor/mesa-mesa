@@ -1182,3 +1182,58 @@ TEST_F(scoreboard_test, gfx200_cannot_embed_outoforder_dst_dependency_in_send_eo
    EXPECT_EQ(instruction(block0, 2)->sched, tgl_swsb_null());
 }
 
+static brw_reg
+brw_s0_with_region(enum brw_reg_type type, unsigned subnr, unsigned v, unsigned w, unsigned h)
+{
+   return brw_make_reg(ARF,
+                       BRW_ARF_SCALAR,
+                       subnr,
+                       0,
+                       0,
+                       type,
+                       cvt(v),
+                       cvt(w)-1,
+                       cvt(h),
+                       BRW_SWIZZLE_XYZW,
+                       WRITEMASK_XYZW);
+}
+
+TEST_F(scoreboard_test, scalar_register_mov_immediate_is_in_scalar_pipe)
+{
+   devinfo->ver = 30;
+   devinfo->verx10 = 300;
+   brw_init_isa_info(&compiler->isa, devinfo);
+
+   brw_reg scalar = brw_s0_with_region(BRW_TYPE_UW, 0, 0, 1, 0);
+
+   bld.group(1, 0).exec_all().MOV(scalar,             brw_imm_uw(0x1415));
+   bld                       .MOV(brw_uw8_grf(20, 0), scalar);
+
+   brw_calculate_cfg(*v);
+   lower_scoreboard(v);
+
+   bblock_t *block0 = v->cfg->blocks[0];
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_null());
+   EXPECT_EQ(instruction(block0, 1)->sched, regdist(TGL_PIPE_SCALAR, 1));
+}
+
+TEST_F(scoreboard_test, scalar_register_mov_grf_is_not_in_scalar_pipe)
+{
+   devinfo->ver = 30;
+   devinfo->verx10 = 300;
+   brw_init_isa_info(&compiler->isa, devinfo);
+
+   brw_reg scalar = brw_s0_with_region(BRW_TYPE_UW, 0, 0, 1, 0);
+
+   bld.group(1, 0).exec_all().MOV(scalar,             brw_uw8_grf(0, 0));
+   bld                       .MOV(brw_uw8_grf(20, 0), scalar);
+
+   brw_calculate_cfg(*v);
+   lower_scoreboard(v);
+
+   bblock_t *block0 = v->cfg->blocks[0];
+
+   EXPECT_EQ(instruction(block0, 0)->sched, tgl_swsb_null());
+   EXPECT_EQ(instruction(block0, 1)->sched, regdist(TGL_PIPE_INT, 1));
+}
