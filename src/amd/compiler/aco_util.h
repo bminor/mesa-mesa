@@ -1046,6 +1046,7 @@ template <typename T, unsigned offset, unsigned size>
 using bitfield_array64 = bitfield_array<T, offset, size, uint64_t>;
 
 using bitarray8 = bitfield_array<uint8_t, 0, 8, uint8_t>;
+using bitarray32 = bitfield_array<uint32_t, 0, 32, uint32_t>;
 
 /*
  * Resizable array optimized for small lengths. If it's smaller than Size, the elements will be

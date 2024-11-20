@@ -1258,11 +1258,15 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       if (instr->def.bit_size >= 32 || dst.type() == RegType::vgpr) {
          aco_ptr<Instruction> vec{create_instruction(aco_opcode::p_create_vector, Format::PSEUDO,
                                                      instr->def.num_components, 1)};
-         RegClass elem_rc = RegClass::get(RegType::vgpr, instr->def.bit_size / 8u);
+         RegClass elem_rc = RegClass::get(dst.type(), instr->def.bit_size / 8u);
          for (unsigned i = 0; i < num; ++i) {
             if (elems[i].type() == RegType::sgpr && elem_rc.is_subdword())
                elems[i] = emit_extract_vector(ctx, elems[i], 0, elem_rc);
-            vec->operands[i] = Operand{elems[i]};
+
+            if (nir_src_is_undef(instr->src[i].src))
+               vec->operands[i] = Operand{elem_rc};
+            else
+               vec->operands[i] = Operand{elems[i]};
          }
          vec->definitions[0] = Definition(dst);
          ctx->block->instructions.emplace_back(std::move(vec));
@@ -1273,16 +1277,20 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
 
          std::array<Temp, NIR_MAX_VEC_COMPONENTS> packed;
          uint32_t const_vals[NIR_MAX_VEC_COMPONENTS] = {};
+         bitarray32 undef_mask = UINT32_MAX;
          for (unsigned i = 0; i < num; i++) {
             unsigned packed_size = use_s_pack ? 16 : 32;
             unsigned idx = i * instr->def.bit_size / packed_size;
             unsigned offset = i * instr->def.bit_size % packed_size;
+            if (nir_src_is_undef(instr->src[i].src))
+               continue;
+            else
+               undef_mask[idx] = false;
+
             if (nir_src_is_const(instr->src[i].src)) {
                const_vals[idx] |= nir_src_as_uint(instr->src[i].src) << offset;
                continue;
             }
-            if (nir_src_is_undef(instr->src[i].src))
-               continue;
 
             if (offset != packed_size - instr->def.bit_size)
                elems[i] =
@@ -1313,7 +1321,9 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
                   packed[i] = bld.sop2(aco_opcode::s_pack_ll_b32_b16, bld.def(s1), packed[i * 2],
                                        Operand::c32(const_vals[i * 2 + 1]));
                else
-                  packed[i] = Temp(); /* Both constants, so reset the entry */
+                  packed[i] = Temp(0, s1); /* Both constants, so reset the entry */
+
+               undef_mask[i] = undef_mask[i * 2] && undef_mask[i * 2 + 1];
 
                if (same)
                   const_vals[i] = const_vals[i * 2] | (const_vals[i * 2 + 1] << 16);
@@ -1326,11 +1336,11 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
             if (const_vals[i] && packed[i].id())
                packed[i] = bld.sop2(aco_opcode::s_or_b32, bld.def(s1), bld.def(s1, scc),
                                     Operand::c32(const_vals[i]), packed[i]);
-            else if (!packed[i].id())
+            else if (!packed[i].id() && !undef_mask[i])
                packed[i] = bld.copy(bld.def(s1), Operand::c32(const_vals[i]));
          }
 
-         if (dst.size() == 1)
+         if (dst.size() == 1 && packed[0].id())
             bld.copy(Definition(dst), packed[0]);
          else {
             aco_ptr<Instruction> vec{
@@ -3330,10 +3340,16 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          ctx, dst, instr->op == nir_op_unpack_32_4x8 || instr->op == nir_op_unpack_64_4x16 ? 4 : 2);
       break;
    case nir_op_pack_64_2x32_split: {
-      Temp src0 = get_alu_src(ctx, instr->src[0]);
-      Temp src1 = get_alu_src(ctx, instr->src[1]);
+      Operand src[2];
+      RegClass elem_rc = dst.regClass() == s2 ? s1 : v1;
+      for (unsigned i = 0; i < 2; i++) {
+         if (nir_src_is_undef(instr->src[i].src))
+            src[i] = Operand(elem_rc);
+         else
+            src[i] = Operand(get_alu_src(ctx, instr->src[i]));
+      }
 
-      bld.pseudo(aco_opcode::p_create_vector, Definition(dst), src0, src1);
+      bld.pseudo(aco_opcode::p_create_vector, Definition(dst), src[0], src[1]);
       break;
    }
    case nir_op_unpack_64_2x32_split_x:
@@ -3363,12 +3379,25 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       }
       break;
    case nir_op_pack_32_2x16_split: {
-      Temp src0 = get_alu_src(ctx, instr->src[0]);
-      Temp src1 = get_alu_src(ctx, instr->src[1]);
+      Operand src0 = Operand(get_alu_src(ctx, instr->src[0]));
+      Operand src1 = Operand(get_alu_src(ctx, instr->src[1]));
       if (dst.regClass() == v1) {
-         src0 = emit_extract_vector(ctx, src0, 0, v2b);
-         src1 = emit_extract_vector(ctx, src1, 0, v2b);
+         if (nir_src_is_undef(instr->src[0].src))
+            src0 = Operand(v2b);
+         else
+            src0 = Operand(emit_extract_vector(ctx, src0.getTemp(), 0, v2b));
+
+         if (nir_src_is_undef(instr->src[1].src))
+            src1 = Operand(v2b);
+         else
+            src1 = Operand(emit_extract_vector(ctx, src1.getTemp(), 0, v2b));
+
          bld.pseudo(aco_opcode::p_create_vector, Definition(dst), src0, src1);
+      } else if (nir_src_is_undef(instr->src[1].src)) {
+         bld.copy(Definition(dst), src0);
+      } else if (nir_src_is_undef(instr->src[0].src)) {
+         bld.pseudo(aco_opcode::p_insert, Definition(dst), bld.def(s1, scc), src1, Operand::c32(1),
+                    Operand::c32(16));
       } else if (ctx->program->gfx_level >= GFX9) {
          bld.sop2(aco_opcode::s_pack_ll_b32_b16, Definition(dst), src0, src1);
       } else {
