@@ -4553,6 +4553,26 @@ vs_tcs_tes_gs_assign_slots(struct linkage_info *linkage,
    }
 }
 
+static void
+vs_tcs_tes_gs_assign_slots_2sets(struct linkage_info *linkage,
+                                 BITSET_WORD *input32_mask,
+                                 BITSET_WORD *input16_mask,
+                                 unsigned *slot_index,
+                                 unsigned *patch_slot_index,
+                                 nir_opt_varyings_progress *progress)
+{
+   /* Compact 32-bit inputs, followed by 16-bit inputs allowing them to
+    * share vec4 slots with 32-bit inputs.
+    */
+   vs_tcs_tes_gs_assign_slots(linkage, input32_mask, slot_index,
+                              patch_slot_index, 2, progress);
+   vs_tcs_tes_gs_assign_slots(linkage, input16_mask, slot_index,
+                              patch_slot_index, 1, progress);
+
+   assert(*slot_index <= VARYING_SLOT_MAX * 8);
+   assert(!patch_slot_index || *patch_slot_index <= VARYING_SLOT_TESS_MAX * 8);
+}
+
 /**
  * Compaction means scalarizing and then packing scalar components into full
  * vec4s, so that we minimize the number of unused components in vec4 slots.
@@ -4734,58 +4754,60 @@ compact_varyings(struct linkage_info *linkage,
                          NUM_SCALAR_SLOTS, false, true, color_channel_rotate,
                          progress);
       }
-   } else {
-      /* The consumer is a TCS, TES, or GS.
-       *
-       * "use_pos" says whether the driver prefers that compaction with non-FS
-       * consumers puts varyings into POS first before using any VARn.
+      return;
+   }
+
+   /* If we get here, the consumer can only be TCS, TES, or GS.
+    *
+    * "use_pos" says whether the driver prefers that compaction with non-FS
+    * consumers puts varyings into POS first before using any VARn.
+    */
+   bool use_pos = !(linkage->producer_builder.shader->options->io_options &
+                    nir_io_dont_use_pos_for_non_fs_varyings);
+   unsigned slot_index = (use_pos ? VARYING_SLOT_POS
+                                  : VARYING_SLOT_VAR0) * 8;
+
+   if (linkage->consumer_stage == MESA_SHADER_TESS_CTRL) {
+      /* Make tcs_cross_invoc*_mask bits disjoint with flat*_mask bits
+       * because tcs_cross_invoc*_mask is initially a subset of flat*_mask,
+       * but we must assign each scalar slot only once.
        */
-      bool use_pos = !(linkage->producer_builder.shader->options->io_options &
-                       nir_io_dont_use_pos_for_non_fs_varyings);
-      unsigned slot_index = (use_pos ? VARYING_SLOT_POS
-                                     : VARYING_SLOT_VAR0) * 8;
+      BITSET_ANDNOT(linkage->flat32_mask, linkage->flat32_mask,
+                    linkage->tcs_cross_invoc32_mask);
+      BITSET_ANDNOT(linkage->flat16_mask, linkage->flat16_mask,
+                    linkage->tcs_cross_invoc16_mask);
+
+      /* Put cross-invocation-accessed TCS inputs first. */
+      vs_tcs_tes_gs_assign_slots_2sets(linkage, linkage->tcs_cross_invoc32_mask,
+                                       linkage->tcs_cross_invoc16_mask,
+                                       &slot_index, NULL, progress);
+      /* Remaining TCS inputs. */
+      vs_tcs_tes_gs_assign_slots_2sets(linkage, linkage->flat32_mask,
+                                       linkage->flat16_mask, &slot_index,
+                                       NULL,  progress);
+      return;
+   }
+
+   if (linkage->consumer_stage == MESA_SHADER_TESS_EVAL) {
       unsigned patch_slot_index = VARYING_SLOT_PATCH0 * 8;
 
-      if (linkage->consumer_stage == MESA_SHADER_TESS_CTRL) {
-         /* Make tcs_cross_invoc*_mask bits disjoint with flat*_mask bits
-          * because tcs_cross_invoc*_mask is initially a subset of flat*_mask,
-          * but we must assign each scalar slot only once.
-          */
-         BITSET_ANDNOT(linkage->flat32_mask, linkage->flat32_mask,
-                       linkage->tcs_cross_invoc32_mask);
-         BITSET_ANDNOT(linkage->flat16_mask, linkage->flat16_mask,
-                       linkage->tcs_cross_invoc16_mask);
+      vs_tcs_tes_gs_assign_slots_2sets(linkage, linkage->flat32_mask,
+                                       linkage->flat16_mask, &slot_index,
+                                       &patch_slot_index, progress);
 
-         /* Compact 32-bit inputs and 16-bit inputs separately. */
-         vs_tcs_tes_gs_assign_slots(linkage, linkage->tcs_cross_invoc32_mask,
-                                    &slot_index, &patch_slot_index, 2, progress);
-         vs_tcs_tes_gs_assign_slots(linkage, linkage->tcs_cross_invoc16_mask,
-                                    &slot_index, &patch_slot_index, 1, progress);
-      }
-
-      /* Compact 32-bit inputs. */
-      vs_tcs_tes_gs_assign_slots(linkage, linkage->flat32_mask, &slot_index,
-                                 &patch_slot_index, 2, progress);
-
-      /* Compact 16-bit inputs, allowing them to share vec4 slots with 32-bit
-       * inputs.
+      /* Put no-varying slots last. These are TCS outputs read by TCS but
+       * not TES.
        */
-      vs_tcs_tes_gs_assign_slots(linkage, linkage->flat16_mask, &slot_index,
-                                 &patch_slot_index, 1, progress);
-
-      if (linkage->producer_stage == MESA_SHADER_TESS_CTRL) {
-         /* Put no-varying slots last. These are TCS outputs read by TCS but
-          * not TES.
-          */
-         vs_tcs_tes_gs_assign_slots(linkage, linkage->no_varying32_mask,
-                                    &slot_index, &patch_slot_index, 2, progress);
-         vs_tcs_tes_gs_assign_slots(linkage, linkage->no_varying16_mask,
-                                    &slot_index, &patch_slot_index, 1, progress);
-      }
-
-      assert(slot_index <= VARYING_SLOT_MAX * 8);
-      assert(patch_slot_index <= VARYING_SLOT_TESS_MAX * 8);
+      vs_tcs_tes_gs_assign_slots_2sets(linkage, linkage->no_varying32_mask,
+                                       linkage->no_varying16_mask, &slot_index,
+                                       &patch_slot_index, progress);
+      return;
    }
+
+   assert(linkage->consumer_stage == MESA_SHADER_GEOMETRY);
+   vs_tcs_tes_gs_assign_slots_2sets(linkage, linkage->flat32_mask,
+                                    linkage->flat16_mask, &slot_index,
+                                    NULL, progress);
 }
 
 /******************************************************************
