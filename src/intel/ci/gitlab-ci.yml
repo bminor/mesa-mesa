@@ -191,7 +191,7 @@ iris-cml-deqp:
     - .iris-cml-test
   variables:
     DEQP_SUITE: iris-cml
-  parallel: 4
+  parallel: 8
 
 iris-jsl-deqp:
   extends:
