@@ -1313,8 +1313,11 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
       .maxArrayLayers = maxArraySize,
       .sampleCounts = sampleCounts,
 
-      /* FINISHME: Accurately calculate
-       * VkImageFormatProperties::maxResourceSize.
+      /* We need to limit images to 32-bit range, because the maximum
+       * slice-stride is 32-bit wide, meaning that if we allocate an image
+       * with the maximum widht and height, we end up overflowing it.
+       *
+       * We get around this by simply limiting the maximum resource size.
        */
       .maxResourceSize = UINT32_MAX,
    };
