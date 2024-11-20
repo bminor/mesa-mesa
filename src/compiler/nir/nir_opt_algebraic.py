@@ -1268,6 +1268,9 @@ optimizations.extend([
    (('ior', ('uge', 2, a), ('ieq', a, 3)), ('uge', 3, a)),
    (('ior', a, ('ieq', a, False)), True),
 
+   (('uge', a, 1), ('ine', a, 0)),
+   (('ult', a, 1), ('ieq', a, 0)),
+
    (('ine', ('ineg', ('b2i', 'a@1')), ('ineg', ('b2i', 'b@1'))), ('ine', a, b)),
    (('b2i', ('ine', 'a@1', 'b@1')), ('b2i', ('ixor', a, b))),
 
