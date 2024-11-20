@@ -3214,7 +3214,7 @@
         "description": "util/cache_test: Fix racey Cache.List test",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4dfd306454a4653a8c0b0a37a3e6bb1632abfc9e",
         "notes": null
