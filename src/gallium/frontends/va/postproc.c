@@ -660,12 +660,14 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
        !drv->vscreen->pscreen->get_param(drv->vscreen->pscreen, PIPE_CAP_COMPUTE))
       return VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
 
+   /* Subsampled formats not supported */
+   if (util_format_is_subsampled_422(context->target->buffer_format))
+      return VA_STATUS_ERROR_UNIMPLEMENTED;
+
    vlVaSetProcParameters(drv, src_surface, dst_surface, param);
 
    /* Try other post proc implementations */
-   if (context->target->buffer_format != PIPE_FORMAT_NV12 &&
-       context->target->buffer_format != PIPE_FORMAT_P010 &&
-       context->target->buffer_format != PIPE_FORMAT_P016)
+   if (!util_format_is_yuv(context->target->buffer_format))
       ret = vlVaPostProcCompositor(drv, context, src_region, dst_region,
                                    src, context->target, deinterlace);
    else

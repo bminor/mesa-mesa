@@ -131,38 +131,13 @@ vlVaBeginPicture(VADriverContextP ctx, VAContextID context_id, VASurfaceID rende
    context->target = surf->buffer;
    context->mjpeg.sampling_factor = 0;
 
+   if (context->templat.entrypoint != PIPE_VIDEO_ENTRYPOINT_ENCODE)
+      context->needs_begin_frame = true;
+
    if (!context->decoder) {
-
-      /* VPP */
-      if (context->templat.profile == PIPE_VIDEO_PROFILE_UNKNOWN &&
-          context->target->buffer_format != PIPE_FORMAT_B8G8R8A8_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_R8G8B8A8_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_B8G8R8X8_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_R8G8B8X8_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_B10G10R10A2_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_R10G10B10A2_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_B10G10R10X2_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_R10G10B10X2_UNORM &&
-          context->target->buffer_format != PIPE_FORMAT_NV12 &&
-          context->target->buffer_format != PIPE_FORMAT_P010 &&
-          context->target->buffer_format != PIPE_FORMAT_P016) {
-         mtx_unlock(&drv->mutex);
-         return VA_STATUS_ERROR_UNIMPLEMENTED;
-      }
-
-      if (drv->pipe->screen->get_video_param(drv->pipe->screen,
-                              PIPE_VIDEO_PROFILE_UNKNOWN,
-                              PIPE_VIDEO_ENTRYPOINT_PROCESSING,
-                              PIPE_VIDEO_CAP_SUPPORTED)) {
-         context->needs_begin_frame = true;
-      }
-
       mtx_unlock(&drv->mutex);
       return VA_STATUS_SUCCESS;
    }
-
-   if (context->decoder->entrypoint != PIPE_VIDEO_ENTRYPOINT_ENCODE)
-      context->needs_begin_frame = true;
 
    /* meta data and seis are per picture basis, it needs to be
     * cleared before rendering the picture. */
