@@ -205,6 +205,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .KHR_get_memory_requirements2 = true,
       .KHR_global_priority = true,
       .KHR_image_format_list = true,
+      .KHR_index_type_uint8 = true,
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
       .KHR_maintenance3 = true,
@@ -364,7 +365,7 @@ get_features(const struct panvk_physical_device *device,
       /* VK_KHR_global_priority */
       .globalPriorityQuery = true,
 
-      /* VK_EXT_index_type_uint8 */
+      /* VK_KHR_index_type_uint8 */
       .indexTypeUint8 = true,
 
       /* VK_EXT_vertex_attribute_divisor */
