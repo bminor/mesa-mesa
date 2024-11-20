@@ -370,8 +370,8 @@
   extends:
     - .iris-test
     - .lava-acer-chromebox-cxi4-puff:x86_64
-#  variables:
-#    LAVA_FORCE_UART: 1
+  variables:
+    LAVA_FORCE_UART: 1
 
 .iris-whl-deqp:
   extends:
