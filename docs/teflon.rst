@@ -88,9 +88,9 @@ Your board should have booted into a mainline 6.7 (6.8 for the i.MX8MP) or great
 Do some inference with MobileNetV1
 ----------------------------------
 
-Run the above for a quick way of checking that the setup is correct and the NPU is accelerating the inference. It assumes you have followed the steps above so Python 3.10 and dependencies have been installed, and assumes that Mesa was built to the `./build` directory.
+Run the above for a quick way of checking that the setup is correct and the NPU is accelerating the inference. It assumes you have followed the steps above so Python 3.10 and dependencies have been installed, and assumes that Mesa was built to the ``./build`` directory.
 
-You can use any image that prominently features one of the objects in the `src/gallium/frontends/teflon/tests/labels_mobilenet_quant_v1_224.txt` file.
+You can use any image that prominently features one of the objects in the ``src/gallium/frontends/teflon/tests/labels_mobilenet_quant_v1_224.txt`` file.
 
 This example script has been based from the code in https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/examples/python.
 
