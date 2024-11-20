@@ -53,7 +53,7 @@ bool do_minmax_prune(exec_list *instructions);
 bool do_tree_grafting(exec_list *instructions);
 bool do_vec_index_to_cond_assign(exec_list *instructions);
 bool lower_instructions(exec_list *instructions,
-                        bool have_gpu_shader5);
+                        bool force_abs_sqrt, bool have_gpu_shader5);
 bool lower_packing_builtins(exec_list *instructions,
                             bool has_shading_language_packing,
                             bool has_gpu_shader5,

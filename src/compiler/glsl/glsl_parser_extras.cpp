@@ -2260,7 +2260,8 @@ opt_shader_and_create_symbol_table(const struct gl_constants *consts,
                           consts->GLSLHasHalfFloatPacking);
    do_mat_op_to_vec(shader->ir);
 
-   lower_instructions(shader->ir, exts->ARB_gpu_shader5);
+   lower_instructions(shader->ir, consts->ForceGLSLAbsSqrt,
+                      exts->ARB_gpu_shader5);
 
    do_vec_index_to_cond_assign(shader->ir);
 
