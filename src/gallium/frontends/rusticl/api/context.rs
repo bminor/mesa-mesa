@@ -15,41 +15,41 @@ use rusticl_proc_macros::cl_info_entrypoint;
 use std::ffi::c_char;
 use std::ffi::c_void;
 use std::mem::transmute;
-use std::mem::MaybeUninit;
 use std::ptr;
 use std::slice;
 
 #[cl_info_entrypoint(clGetContextInfo)]
-impl CLInfo<cl_context_info> for cl_context {
-    fn query(&self, q: cl_context_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_context_info> for cl_context {
+    fn query(&self, q: cl_context_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let ctx = Context::ref_from_raw(*self)?;
-        Ok(match q {
-            CL_CONTEXT_DEVICES => cl_prop::<Vec<cl_device_id>>(
+        match q {
+            CL_CONTEXT_DEVICES => v.write::<Vec<cl_device_id>>(
                 ctx.devs
                     .iter()
                     .map(|&d| cl_device_id::from_ptr(d))
                     .collect(),
             ),
-            CL_CONTEXT_NUM_DEVICES => cl_prop::<cl_uint>(ctx.devs.len() as u32),
-            CL_CONTEXT_PROPERTIES => cl_prop::<&Properties<cl_context_properties>>(&ctx.properties),
-            CL_CONTEXT_REFERENCE_COUNT => cl_prop::<cl_uint>(Context::refcnt(*self)?),
+            CL_CONTEXT_NUM_DEVICES => v.write::<cl_uint>(ctx.devs.len() as u32),
+            // need to return None if no properties exist
+            CL_CONTEXT_PROPERTIES => v.write::<&Properties<cl_context_properties>>(&ctx.properties),
+            CL_CONTEXT_REFERENCE_COUNT => v.write::<cl_uint>(Context::refcnt(*self)?),
             // CL_INVALID_VALUE if param_name is not one of the supported values
-            _ => return Err(CL_INVALID_VALUE),
-        })
+            _ => Err(CL_INVALID_VALUE),
+        }
     }
 }
 
-impl CLInfo<cl_gl_context_info> for GLCtxManager {
-    fn query(&self, q: cl_gl_context_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_gl_context_info> for GLCtxManager {
+    fn query(&self, q: cl_gl_context_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let info = self.interop_dev_info;
 
-        Ok(match q {
+        match q {
             CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR => {
                 let ptr = match get_dev_for_uuid(info.device_uuid) {
                     Some(dev) => dev,
                     None => ptr::null(),
                 };
-                cl_prop::<cl_device_id>(cl_device_id::from_ptr(ptr))
+                v.write::<cl_device_id>(cl_device_id::from_ptr(ptr))
             }
             CL_DEVICES_FOR_GL_CONTEXT_KHR => {
                 // TODO: support multiple devices
@@ -57,10 +57,10 @@ impl CLInfo<cl_gl_context_info> for GLCtxManager {
                     .iter()
                     .map(|&d| cl_device_id::from_ptr(d))
                     .collect();
-                cl_prop::<&Vec<cl_device_id>>(&devs)
+                v.write::<Vec<cl_device_id>>(devs)
             }
-            _ => return Err(CL_INVALID_VALUE),
-        })
+            _ => Err(CL_INVALID_VALUE),
+        }
     }
 }
 

@@ -11,33 +11,32 @@ use rusticl_opencl_gen::*;
 use rusticl_proc_macros::cl_entrypoint;
 use rusticl_proc_macros::cl_info_entrypoint;
 
-use std::mem::MaybeUninit;
 use std::ptr;
 use std::sync::Arc;
 
 #[cl_info_entrypoint(clGetCommandQueueInfo)]
-impl CLInfo<cl_command_queue_info> for cl_command_queue {
-    fn query(&self, q: cl_command_queue_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_command_queue_info> for cl_command_queue {
+    fn query(&self, q: cl_command_queue_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let queue = Queue::ref_from_raw(*self)?;
-        Ok(match q {
+        match q {
             CL_QUEUE_CONTEXT => {
                 // Note we use as_ptr here which doesn't increase the reference count.
                 let ptr = Arc::as_ptr(&queue.context);
-                cl_prop::<cl_context>(cl_context::from_ptr(ptr))
+                v.write::<cl_context>(cl_context::from_ptr(ptr))
             }
-            CL_QUEUE_DEVICE => cl_prop::<cl_device_id>(cl_device_id::from_ptr(queue.device)),
-            CL_QUEUE_DEVICE_DEFAULT => cl_prop::<cl_command_queue>(ptr::null_mut()),
-            CL_QUEUE_PROPERTIES => cl_prop::<cl_command_queue_properties>(queue.props),
+            CL_QUEUE_DEVICE => v.write::<cl_device_id>(cl_device_id::from_ptr(queue.device)),
+            CL_QUEUE_DEVICE_DEFAULT => v.write::<cl_command_queue>(ptr::null_mut()),
+            CL_QUEUE_PROPERTIES => v.write::<cl_command_queue_properties>(queue.props),
             CL_QUEUE_PROPERTIES_ARRAY => {
-                cl_prop::<&Option<Properties<cl_queue_properties>>>(&queue.props_v2)
+                v.write::<Option<&Properties<cl_queue_properties>>>(queue.props_v2.as_ref())
             }
-            CL_QUEUE_REFERENCE_COUNT => cl_prop::<cl_uint>(Queue::refcnt(*self)?),
+            CL_QUEUE_REFERENCE_COUNT => v.write::<cl_uint>(Queue::refcnt(*self)?),
             // clGetCommandQueueInfo, passing CL_QUEUE_SIZE Returns CL_INVALID_COMMAND_QUEUE since
             // command_queue cannot be a valid device command-queue.
-            CL_QUEUE_SIZE => return Err(CL_INVALID_COMMAND_QUEUE),
+            CL_QUEUE_SIZE => Err(CL_INVALID_COMMAND_QUEUE),
             // CL_INVALID_VALUE if param_name is not one of the supported values
-            _ => return Err(CL_INVALID_VALUE),
-        })
+            _ => Err(CL_INVALID_VALUE),
+        }
     }
 }
 

@@ -214,10 +214,10 @@ fn validate_matching_buffer_flags(mem: &MemBase, flags: cl_mem_flags) -> CLResul
 }
 
 #[cl_info_entrypoint(clGetMemObjectInfo)]
-impl CLInfo<cl_mem_info> for cl_mem {
-    fn query(&self, q: cl_mem_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_mem_info> for cl_mem {
+    fn query(&self, q: cl_mem_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let mem = MemBase::ref_from_raw(*self)?;
-        Ok(match *q {
+        match *q {
             CL_MEM_ASSOCIATED_MEMOBJECT => {
                 let ptr = match mem.parent.as_ref() {
                     // Note we use as_ptr here which doesn't increase the reference count.
@@ -225,35 +225,35 @@ impl CLInfo<cl_mem_info> for cl_mem {
                     Some(Mem::Image(image)) => cl_mem::from_ptr(Arc::as_ptr(image)),
                     None => ptr::null_mut(),
                 };
-                cl_prop::<cl_mem>(ptr.cast())
+                v.write::<cl_mem>(ptr.cast())
             }
             CL_MEM_CONTEXT => {
                 // Note we use as_ptr here which doesn't increase the reference count.
                 let ptr = Arc::as_ptr(&mem.context);
-                cl_prop::<cl_context>(cl_context::from_ptr(ptr))
+                v.write::<cl_context>(cl_context::from_ptr(ptr))
             }
-            CL_MEM_FLAGS => cl_prop::<cl_mem_flags>(mem.flags),
+            CL_MEM_FLAGS => v.write::<cl_mem_flags>(mem.flags),
             // TODO debugging feature
-            CL_MEM_MAP_COUNT => cl_prop::<cl_uint>(0),
-            CL_MEM_HOST_PTR => cl_prop::<*mut c_void>(mem.host_ptr()),
-            CL_MEM_OFFSET => cl_prop::<usize>(if mem.is_buffer() {
+            CL_MEM_MAP_COUNT => v.write::<cl_uint>(0),
+            CL_MEM_HOST_PTR => v.write::<*mut c_void>(mem.host_ptr()),
+            CL_MEM_OFFSET => v.write::<usize>(if mem.is_buffer() {
                 Buffer::ref_from_raw(*self)?.offset
             } else {
                 0
             }),
-            CL_MEM_PROPERTIES => cl_prop::<&Vec<cl_mem_properties>>(&mem.props),
-            CL_MEM_REFERENCE_COUNT => cl_prop::<cl_uint>(if mem.is_buffer() {
+            CL_MEM_PROPERTIES => v.write::<&[cl_mem_properties]>(&mem.props),
+            CL_MEM_REFERENCE_COUNT => v.write::<cl_uint>(if mem.is_buffer() {
                 Buffer::refcnt(*self)?
             } else {
                 Image::refcnt(*self)?
             }),
-            CL_MEM_SIZE => cl_prop::<usize>(mem.size),
-            CL_MEM_TYPE => cl_prop::<cl_mem_object_type>(mem.mem_type),
+            CL_MEM_SIZE => v.write::<usize>(mem.size),
+            CL_MEM_TYPE => v.write::<cl_mem_object_type>(mem.mem_type),
             CL_MEM_USES_SVM_POINTER | CL_MEM_USES_SVM_POINTER_ARM => {
-                cl_prop::<cl_bool>(mem.is_svm().into())
+                v.write::<cl_bool>(mem.is_svm().into())
             }
-            _ => return Err(CL_INVALID_VALUE),
-        })
+            _ => Err(CL_INVALID_VALUE),
+        }
     }
 }
 
@@ -731,27 +731,27 @@ fn validate_buffer(
 }
 
 #[cl_info_entrypoint(clGetImageInfo)]
-impl CLInfo<cl_image_info> for cl_mem {
-    fn query(&self, q: cl_image_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_image_info> for cl_mem {
+    fn query(&self, q: cl_image_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let mem = Image::ref_from_raw(*self)?;
-        Ok(match *q {
-            CL_IMAGE_ARRAY_SIZE => cl_prop::<usize>(mem.image_desc.image_array_size),
-            CL_IMAGE_BUFFER => cl_prop::<cl_mem>(unsafe { mem.image_desc.anon_1.buffer }),
-            CL_IMAGE_DEPTH => cl_prop::<usize>(mem.image_desc.image_depth),
-            CL_IMAGE_ELEMENT_SIZE => cl_prop::<usize>(mem.image_elem_size.into()),
-            CL_IMAGE_FORMAT => cl_prop::<cl_image_format>(mem.image_format),
-            CL_IMAGE_HEIGHT => cl_prop::<usize>(mem.image_desc.image_height),
-            CL_IMAGE_NUM_MIP_LEVELS => cl_prop::<cl_uint>(mem.image_desc.num_mip_levels),
-            CL_IMAGE_NUM_SAMPLES => cl_prop::<cl_uint>(mem.image_desc.num_samples),
-            CL_IMAGE_ROW_PITCH => cl_prop::<usize>(mem.image_desc.image_row_pitch),
-            CL_IMAGE_SLICE_PITCH => cl_prop::<usize>(if mem.image_desc.dims() == 1 {
+        match *q {
+            CL_IMAGE_ARRAY_SIZE => v.write::<usize>(mem.image_desc.image_array_size),
+            CL_IMAGE_BUFFER => v.write::<cl_mem>(unsafe { mem.image_desc.anon_1.buffer }),
+            CL_IMAGE_DEPTH => v.write::<usize>(mem.image_desc.image_depth),
+            CL_IMAGE_ELEMENT_SIZE => v.write::<usize>(mem.image_elem_size.into()),
+            CL_IMAGE_FORMAT => v.write::<cl_image_format>(mem.image_format),
+            CL_IMAGE_HEIGHT => v.write::<usize>(mem.image_desc.image_height),
+            CL_IMAGE_NUM_MIP_LEVELS => v.write::<cl_uint>(mem.image_desc.num_mip_levels),
+            CL_IMAGE_NUM_SAMPLES => v.write::<cl_uint>(mem.image_desc.num_samples),
+            CL_IMAGE_ROW_PITCH => v.write::<usize>(mem.image_desc.image_row_pitch),
+            CL_IMAGE_SLICE_PITCH => v.write::<usize>(if mem.image_desc.dims() == 1 {
                 0
             } else {
                 mem.image_desc.image_slice_pitch
             }),
-            CL_IMAGE_WIDTH => cl_prop::<usize>(mem.image_desc.image_width),
-            _ => return Err(CL_INVALID_VALUE),
-        })
+            CL_IMAGE_WIDTH => v.write::<usize>(mem.image_desc.image_width),
+            _ => Err(CL_INVALID_VALUE),
+        }
     }
 }
 
@@ -931,25 +931,25 @@ fn get_supported_image_formats(
 }
 
 #[cl_info_entrypoint(clGetSamplerInfo)]
-impl CLInfo<cl_sampler_info> for cl_sampler {
-    fn query(&self, q: cl_sampler_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_sampler_info> for cl_sampler {
+    fn query(&self, q: cl_sampler_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let sampler = Sampler::ref_from_raw(*self)?;
-        Ok(match q {
-            CL_SAMPLER_ADDRESSING_MODE => cl_prop::<cl_addressing_mode>(sampler.addressing_mode),
+        match q {
+            CL_SAMPLER_ADDRESSING_MODE => v.write::<cl_addressing_mode>(sampler.addressing_mode),
             CL_SAMPLER_CONTEXT => {
                 // Note we use as_ptr here which doesn't increase the reference count.
                 let ptr = Arc::as_ptr(&sampler.context);
-                cl_prop::<cl_context>(cl_context::from_ptr(ptr))
+                v.write::<cl_context>(cl_context::from_ptr(ptr))
             }
-            CL_SAMPLER_FILTER_MODE => cl_prop::<cl_filter_mode>(sampler.filter_mode),
-            CL_SAMPLER_NORMALIZED_COORDS => cl_prop::<bool>(sampler.normalized_coords),
-            CL_SAMPLER_REFERENCE_COUNT => cl_prop::<cl_uint>(Sampler::refcnt(*self)?),
+            CL_SAMPLER_FILTER_MODE => v.write::<cl_filter_mode>(sampler.filter_mode),
+            CL_SAMPLER_NORMALIZED_COORDS => v.write::<bool>(sampler.normalized_coords),
+            CL_SAMPLER_REFERENCE_COUNT => v.write::<cl_uint>(Sampler::refcnt(*self)?),
             CL_SAMPLER_PROPERTIES => {
-                cl_prop::<&Option<Properties<cl_sampler_properties>>>(&sampler.props)
+                v.write::<Option<&Properties<cl_sampler_properties>>>(sampler.props.as_ref())
             }
             // CL_INVALID_VALUE if param_name is not one of the supported values
-            _ => return Err(CL_INVALID_VALUE),
-        })
+            _ => Err(CL_INVALID_VALUE),
+        }
     }
 }
 
@@ -2316,8 +2316,8 @@ fn enqueue_migrate_mem_objects(
 }
 
 #[cl_info_entrypoint(clGetPipeInfo)]
-impl CLInfo<cl_pipe_info> for cl_mem {
-    fn query(&self, _q: cl_pipe_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_pipe_info> for cl_mem {
+    fn query(&self, _q: cl_pipe_info, _v: CLInfoValue) -> CLResult<CLInfoRes> {
         // CL_INVALID_MEM_OBJECT if pipe is a not a valid pipe object.
         Err(CL_INVALID_MEM_OBJECT)
     }
@@ -3018,19 +3018,19 @@ fn create_pipe(
 }
 
 #[cl_info_entrypoint(clGetGLTextureInfo)]
-impl CLInfo<cl_gl_texture_info> for cl_mem {
-    fn query(&self, q: cl_gl_texture_info, _: &[u8]) -> CLResult<Vec<MaybeUninit<u8>>> {
+unsafe impl CLInfo<cl_gl_texture_info> for cl_mem {
+    fn query(&self, q: cl_gl_texture_info, v: CLInfoValue) -> CLResult<CLInfoRes> {
         let mem = MemBase::ref_from_raw(*self)?;
-        Ok(match *q {
-            CL_GL_MIPMAP_LEVEL => cl_prop::<cl_GLint>(0),
-            CL_GL_TEXTURE_TARGET => cl_prop::<cl_GLenum>(
+        match *q {
+            CL_GL_MIPMAP_LEVEL => v.write::<cl_GLint>(0),
+            CL_GL_TEXTURE_TARGET => v.write::<cl_GLenum>(
                 mem.gl_obj
                     .as_ref()
                     .ok_or(CL_INVALID_GL_OBJECT)?
                     .gl_object_target,
             ),
-            _ => return Err(CL_INVALID_VALUE),
-        })
+            _ => Err(CL_INVALID_VALUE),
+        }
     }
 }
 
