@@ -421,6 +421,9 @@ brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *fi
       fprintf(file, "(EOT) ");
    }
 
+   const bool is_send = inst->opcode == BRW_OPCODE_SEND ||
+                        inst->opcode == SHADER_OPCODE_SEND;
+
    switch (inst->dst.file) {
    case VGRF:
       if (defs && defs->get(inst->dst))
@@ -477,9 +480,11 @@ brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *fi
               inst->dst.offset % reg_size);
    }
 
-   if (inst->dst.stride != 1)
-      fprintf(file, "<%u>", inst->dst.stride);
-   fprintf(file, ":%s", brw_reg_type_to_letters(inst->dst.type));
+   if (!is_send) {
+      if (inst->dst.stride != 1)
+         fprintf(file, "<%u>", inst->dst.stride);
+      fprintf(file, ":%s", brw_reg_type_to_letters(inst->dst.type));
+   }
 
    for (int i = 0; i < inst->sources; i++) {
       if (inst->opcode == SHADER_OPCODE_MEMORY_LOAD_LOGICAL ||
@@ -600,7 +605,10 @@ brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *fi
       if (inst->src[i].abs)
          fprintf(file, "|");
 
-      if (inst->src[i].file != IMM) {
+      /* Just print register numbers for payload sources. */
+      const bool omit_src_type_and_region = is_send && i >= 2;
+
+      if (inst->src[i].file != IMM && !omit_src_type_and_region) {
          unsigned stride;
          if (inst->src[i].file == ARF || inst->src[i].file == FIXED_GRF) {
             unsigned hstride = inst->src[i].hstride;
