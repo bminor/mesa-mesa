@@ -45,12 +45,9 @@ unsafe impl CLInfo<cl_program_info> for cl_program {
                 let ptr = Arc::as_ptr(&prog.context);
                 v.write::<cl_context>(cl_context::from_ptr(ptr))
             }
-            CL_PROGRAM_DEVICES => v.write::<Vec<cl_device_id>>(
-                prog.devs
-                    .iter()
-                    .map(|&d| cl_device_id::from_ptr(d))
-                    .collect(),
-            ),
+            CL_PROGRAM_DEVICES => {
+                v.write_iter::<cl_device_id>(prog.devs.iter().map(|&d| cl_device_id::from_ptr(d)))
+            }
             CL_PROGRAM_IL => v.write::<Vec<u8>>(match &prog.src {
                 ProgramSourceType::Il(il) => il.to_bin().to_vec(),
                 _ => Vec::new(),
