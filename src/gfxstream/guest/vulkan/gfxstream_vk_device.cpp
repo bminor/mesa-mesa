@@ -19,6 +19,7 @@
 #include "vk_device.h"
 #include "vk_instance.h"
 #include "vk_sync_dummy.h"
+#include "util/detect_os.h"
 
 uint32_t gSeqno = 0;
 uint32_t gNoRenderControlEnc = 0;
@@ -202,7 +203,7 @@ static VkResult gfxstream_vk_physical_device_init(
     memset(&dispatch_table, 0, sizeof(struct vk_physical_device_dispatch_table));
     vk_physical_device_dispatch_table_from_entrypoints(
         &dispatch_table, &gfxstream_vk_physical_device_entrypoints, false);
-#if !defined(__Fuchsia__)
+#if !DETECT_OS_FUCHSIA
     vk_physical_device_dispatch_table_from_entrypoints(&dispatch_table,
                                                        &wsi_physical_device_entrypoints, false);
 #endif
@@ -364,7 +365,7 @@ VkResult gfxstream_vk_CreateInstance(const VkInstanceCreateInfo* pCreateInfo,
     memset(&dispatch_table, 0, sizeof(struct vk_instance_dispatch_table));
     vk_instance_dispatch_table_from_entrypoints(&dispatch_table, &gfxstream_vk_instance_entrypoints,
                                                 false);
-#if !defined(__Fuchsia__)
+#if !DETECT_OS_FUCHSIA
     vk_instance_dispatch_table_from_entrypoints(&dispatch_table, &wsi_instance_entrypoints, false);
 #endif
 
@@ -516,7 +517,7 @@ VkResult gfxstream_vk_CreateDevice(VkPhysicalDevice physicalDevice,
         memset(&dispatch_table, 0, sizeof(struct vk_device_dispatch_table));
         vk_device_dispatch_table_from_entrypoints(&dispatch_table, &gfxstream_vk_device_entrypoints,
                                                   false);
-#if !defined(__Fuchsia__)
+#if !DETECT_OS_FUCHSIA
         vk_device_dispatch_table_from_entrypoints(&dispatch_table, &wsi_device_entrypoints, false);
 #endif
 
