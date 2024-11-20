@@ -177,22 +177,22 @@ private:
 
 nir_shader *
 glsl_to_nir(const struct gl_constants *consts,
-            struct exec_list **ir, shader_info *si, gl_shader_stage stage,
+            struct gl_shader *gl_shader, shader_info *si,
             const nir_shader_compiler_options *options,
             const uint8_t *src_blake3)
 {
    MESA_TRACE_FUNC();
 
-   nir_shader *shader = nir_shader_create(NULL, stage, options, si);
+   nir_shader *shader = nir_shader_create(NULL, gl_shader->Stage, options, si);
 
    nir_visitor v1(consts, shader, src_blake3);
    nir_function_visitor v2(&v1);
-   v2.run(*ir);
-   visit_exec_list(*ir, &v1);
+   v2.run(gl_shader->ir);
+   visit_exec_list(gl_shader->ir, &v1);
 
    /* The GLSL IR won't be needed anymore. */
-   ralloc_free(*ir);
-   *ir = NULL;
+   ralloc_free(gl_shader->ir);
+   gl_shader->ir = NULL;
 
    nir_validate_shader(shader, "after glsl to nir, before function inline");
    if (should_print_nir(shader)) {

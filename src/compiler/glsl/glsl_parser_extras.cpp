@@ -2499,7 +2499,7 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
    if (shader->CompileStatus == COMPILE_SUCCESS) {
       memcpy(shader->compiled_source_blake3, source_blake3, BLAKE3_OUT_LEN);
 
-      shader->nir = glsl_to_nir(&ctx->Const, &shader->ir, NULL, shader->Stage,
+      shader->nir = glsl_to_nir(&ctx->Const, shader, NULL,
                                 options->NirOptions, source_blake3);
    }
 
