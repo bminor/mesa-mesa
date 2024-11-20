@@ -299,6 +299,11 @@ brw_validate(const fs_visitor &s)
             fsv_assert(is_uniform(inst->src[0]) && is_uniform(inst->src[1]));
             break;
 
+         case SHADER_OPCODE_SEND_GATHER:
+            fsv_assert(is_uniform(inst->src[0]) && is_uniform(inst->src[1]));
+            fsv_assert(devinfo->ver >= 30);
+            break;
+
          case BRW_OPCODE_MOV:
             fsv_assert(inst->sources == 1);
             break;

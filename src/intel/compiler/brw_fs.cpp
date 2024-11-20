@@ -206,6 +206,7 @@ fs_inst::is_send_from_grf() const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
+   case SHADER_OPCODE_SEND_GATHER:
    case FS_OPCODE_INTERPOLATE_AT_SAMPLE:
    case FS_OPCODE_INTERPOLATE_AT_SHARED_OFFSET:
    case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
@@ -240,6 +241,7 @@ fs_inst::is_control_source(unsigned arg) const
       return arg == 1 || arg == 2;
 
    case SHADER_OPCODE_SEND:
+   case SHADER_OPCODE_SEND_GATHER:
       return arg == 0 || arg == 1;
 
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
@@ -277,6 +279,9 @@ fs_inst::is_payload(unsigned arg) const
 
    case SHADER_OPCODE_SEND:
       return arg == 2 || arg == 3;
+
+   case SHADER_OPCODE_SEND_GATHER:
+      return arg >= 2;
 
    default:
       return false;
@@ -606,6 +611,14 @@ fs_inst::size_read(const struct intel_device_info *devinfo, int arg) const
          return mlen * REG_SIZE;
       } else if (arg == 3) {
          return ex_mlen * REG_SIZE;
+      }
+      break;
+
+   case SHADER_OPCODE_SEND_GATHER:
+      if (arg >= 3) {
+         /* SEND_GATHER is Xe3+, so no need to pass devinfo around. */
+         const unsigned reg_unit = 2;
+         return REG_SIZE * reg_unit;
       }
       break;
 

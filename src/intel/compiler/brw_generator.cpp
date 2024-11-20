@@ -168,7 +168,13 @@ brw_generator::generate_send(fs_inst *inst,
                             struct brw_reg payload,
                             struct brw_reg payload2)
 {
-   const bool gather = false;
+   const bool gather = inst->opcode == SHADER_OPCODE_SEND_GATHER;
+   if (gather) {
+      assert(payload.file == ARF);
+      assert(payload.nr == BRW_ARF_SCALAR);
+      assert(payload2.file == ARF);
+      assert(payload2.nr == BRW_ARF_NULL);
+   }
 
    if (ex_desc.file == IMM && ex_desc.ud == 0) {
       brw_send_indirect_message(p, inst->sfid, dst, payload, desc, inst->eot, gather);
@@ -854,7 +860,14 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
          brw_set_default_group(p, inst->group);
       }
 
-      for (unsigned int i = 0; i < inst->sources; i++) {
+      /* For SEND_GATHER, the payload sources are represented inside the
+       * scalar register in src[2], so we can skip them.
+       */
+      const unsigned num_sources =
+         inst->opcode == SHADER_OPCODE_SEND_GATHER ? 3 : inst->sources;
+      assert(num_sources <= ARRAY_SIZE(src));
+
+      for (unsigned int i = 0; i < num_sources; i++) {
          src[i] = normalize_brw_reg_for_encoding(&inst->src[i]);
 	 /* The accumulator result appears to get used for the
 	  * conditional modifier generation.  When negating a UD
@@ -1147,6 +1160,7 @@ brw_generator::generate_code(const cfg_t *cfg, int dispatch_width,
          break;
 
       case SHADER_OPCODE_SEND:
+      case SHADER_OPCODE_SEND_GATHER:
          generate_send(inst, dst, src[0], src[1], src[2],
                        inst->ex_mlen > 0 ? src[3] : brw_null_reg());
          send_count++;

@@ -265,6 +265,19 @@ enum opcode {
    SHADER_OPCODE_SEND,
 
    /**
+    * A variant of SEND that collects its sources to form an input.
+    *
+    * Source 0:    Message descriptor ("desc").
+    * Source 1:    Message extended descriptor ("ex_desc").
+    * Source 2:    Before register allocation must be BAD_FILE,
+    *              after that, the ARF scalar register containing
+    *              the (physical) numbers of the payload sources.
+    * Source 3..n: Payload sources.  For this opcode, they must each
+    *              have the size of a physical GRF.
+    */
+   SHADER_OPCODE_SEND_GATHER,
+
+   /**
     * An "undefined" write which does nothing but indicates to liveness that
     * we don't care about any values in the register which predate this
     * instruction.  Used to prevent partial writes from causing issues with

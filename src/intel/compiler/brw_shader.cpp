@@ -201,6 +201,7 @@ fs_inst::has_side_effects() const
 {
    switch (opcode) {
    case SHADER_OPCODE_SEND:
+   case SHADER_OPCODE_SEND_GATHER:
       return send_has_side_effects;
 
    case BRW_OPCODE_SYNC:
@@ -227,7 +228,8 @@ bool
 fs_inst::is_volatile() const
 {
    return opcode == SHADER_OPCODE_MEMORY_LOAD_LOGICAL ||
-          (opcode == SHADER_OPCODE_SEND && send_is_volatile);
+          ((opcode == SHADER_OPCODE_SEND ||
+            opcode == SHADER_OPCODE_SEND_GATHER) && send_is_volatile);
 }
 
 #ifndef NDEBUG

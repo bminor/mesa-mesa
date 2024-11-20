@@ -120,6 +120,8 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
 
    case SHADER_OPCODE_SEND:
       return "send";
+   case SHADER_OPCODE_SEND_GATHER:
+      return "send_gather";
 
    case SHADER_OPCODE_UNDEF:
       return "undef";

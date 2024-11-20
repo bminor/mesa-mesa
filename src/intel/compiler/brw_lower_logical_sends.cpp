@@ -2629,15 +2629,22 @@ brw_lower_send_descriptors(fs_visitor &s)
    bool progress = false;
 
    foreach_block_and_inst (block, fs_inst, inst, s.cfg) {
-      if (inst->opcode != SHADER_OPCODE_SEND)
+      if (inst->opcode != SHADER_OPCODE_SEND &&
+          inst->opcode != SHADER_OPCODE_SEND_GATHER)
          continue;
 
       const brw_builder ubld = brw_builder(&s, block, inst).exec_all().group(1, 0);
 
       /* Descriptor */
       const unsigned rlen = inst->dst.is_null() ? 0 : inst->size_written / REG_SIZE;
+      unsigned mlen = inst->mlen;
+      if (inst->opcode == SHADER_OPCODE_SEND_GATHER) {
+         assert(inst->sources >= 3);
+         mlen = (inst->sources - 3) * reg_unit(devinfo);
+      }
+
       uint32_t desc_imm = inst->desc |
-         brw_message_desc(devinfo, inst->mlen, rlen, inst->header_size);
+         brw_message_desc(devinfo, mlen, rlen, inst->header_size);
 
       assert(inst->src[0].file != BAD_FILE);
       assert(inst->src[1].file != BAD_FILE);
