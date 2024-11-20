@@ -77,6 +77,15 @@ panvk_image_create(VkDevice _device, const VkImageCreateInfo *pCreateInfo,
       to_panvk_physical_device(device->vk.physical);
    struct panvk_image *image = NULL;
 
+   const VkImageSwapchainCreateInfoKHR *swapchain_info =
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
+   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
+      return wsi_common_create_swapchain_image(&phys_dev->wsi_device,
+                                               pCreateInfo,
+                                               swapchain_info->swapchain,
+                                               pImage);
+   }
+
    image = vk_image_create(&device->vk, pCreateInfo, alloc, sizeof(*image));
    if (!image)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);

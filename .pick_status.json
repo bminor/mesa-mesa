@@ -3794,7 +3794,7 @@
         "description": "panvk: wire up swapchain image creation",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d970fe2e9d6a8e9997a0ce212146d62013b3b455",
         "notes": null
