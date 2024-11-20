@@ -373,12 +373,14 @@ if [ "$DEBIAN_ARCH" = "amd64" ]; then
 fi
 
 ############### Fill rootfs
+cp .gitlab-ci/setup-test-env.sh $ROOTFS/.
 cp .gitlab-ci/container/setup-rootfs.sh $ROOTFS/.
 cp .gitlab-ci/container/strip-rootfs.sh $ROOTFS/.
 cp .gitlab-ci/container/debian/llvm-snapshot.gpg.key $ROOTFS/.
 cp .gitlab-ci/container/debian/winehq.gpg.key $ROOTFS/.
 chroot $ROOTFS bash /setup-rootfs.sh
 rm $ROOTFS/{llvm-snapshot,winehq}.gpg.key
+rm "$ROOTFS/setup-test-env.sh"
 rm "$ROOTFS/setup-rootfs.sh"
 rm "$ROOTFS/strip-rootfs.sh"
 cp /etc/wgetrc $ROOTFS/etc/.
