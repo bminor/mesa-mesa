@@ -298,11 +298,14 @@ blend_needs_shader(const struct pan_blend_state *state, unsigned rt_idx,
 }
 
 VkResult
-panvk_per_arch(blend_emit_descs)(
-   struct panvk_device *dev, const struct vk_dynamic_graphics_state *dyns,
-   const VkFormat *color_attachment_formats, uint8_t *color_attachment_samples,
-   const struct pan_shader_info *fs_info, mali_ptr fs_code,
-   struct mali_blend_packed *bds, struct panvk_blend_info *blend_info)
+panvk_per_arch(blend_emit_descs)(struct panvk_device *dev,
+                                 const struct vk_dynamic_graphics_state *dyns,
+                                 const VkFormat *color_attachment_formats,
+                                 const uint8_t *color_attachment_samples,
+                                 const struct pan_shader_info *fs_info,
+                                 mali_ptr fs_code,
+                                 struct mali_blend_packed *bds,
+                                 struct panvk_blend_info *blend_info)
 {
    const struct vk_color_blend_state *cb = &dyns->cb;
    struct pan_blend_state bs = {
