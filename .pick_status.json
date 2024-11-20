@@ -2214,7 +2214,7 @@
         "description": "v3dv: report correct error on failure to probe",
         "nominated": true,
         "nomination_type": 0,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
