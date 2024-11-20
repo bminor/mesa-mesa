@@ -47,7 +47,7 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
             ),
             CL_DEVICE_AVAILABLE => v.write::<bool>(true),
             CL_DEVICE_BUILT_IN_KERNELS => v.write::<&CStr>(c""),
-            CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION => v.write::<Vec<cl_name_version>>(Vec::new()),
+            CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION => v.write::<&[cl_name_version]>(&[]),
             CL_DEVICE_COMPILER_AVAILABLE => v.write::<bool>(true),
             CL_DEVICE_CROSS_DEVICE_SHARED_MEM_CAPABILITIES_INTEL => {
                 v.write::<cl_device_device_enqueue_capabilities>(0)
@@ -222,8 +222,8 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
             CL_DEVICE_PARENT_DEVICE => v.write::<cl_device_id>(cl_device_id::from_ptr(ptr::null())),
             CL_DEVICE_PARTITION_AFFINITY_DOMAIN => v.write::<cl_device_affinity_domain>(0),
             CL_DEVICE_PARTITION_MAX_SUB_DEVICES => v.write::<cl_uint>(0),
-            CL_DEVICE_PARTITION_PROPERTIES => v.write::<Vec<cl_device_partition_property>>(vec![0]),
-            CL_DEVICE_PARTITION_TYPE => v.write::<Vec<cl_device_partition_property>>(Vec::new()),
+            CL_DEVICE_PARTITION_PROPERTIES => v.write::<&[cl_device_partition_property]>(&[0]),
+            CL_DEVICE_PARTITION_TYPE => v.write::<&[cl_device_partition_property]>(&[]),
             CL_DEVICE_PCI_BUS_INFO_KHR => {
                 v.write::<cl_device_pci_bus_info_khr>(dev.pci_info().ok_or(CL_INVALID_VALUE)?)
             }
