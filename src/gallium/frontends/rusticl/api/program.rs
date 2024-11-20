@@ -48,9 +48,9 @@ unsafe impl CLInfo<cl_program_info> for cl_program {
             CL_PROGRAM_DEVICES => {
                 v.write_iter::<cl_device_id>(prog.devs.iter().map(|&d| cl_device_id::from_ptr(d)))
             }
-            CL_PROGRAM_IL => v.write::<Vec<u8>>(match &prog.src {
-                ProgramSourceType::Il(il) => il.to_bin().to_vec(),
-                _ => Vec::new(),
+            CL_PROGRAM_IL => v.write::<&[u8]>(match &prog.src {
+                ProgramSourceType::Il(il) => il.to_bin(),
+                _ => &[],
             }),
             CL_PROGRAM_KERNEL_NAMES => v.write::<&str>(&prog.build_info().kernels().join(";")),
             CL_PROGRAM_NUM_DEVICES => v.write::<cl_uint>(prog.devs.len() as cl_uint),
