@@ -178,6 +178,7 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
 
    /* Lower to HW Instructions */
    lower_to_hw_instr(program.get());
+   lower_branches(program.get());
    validate(program.get());
 
    if (!options->optimisations_disabled && !(debug_flags & DEBUG_NO_SCHED_VOPD))
@@ -422,6 +423,7 @@ aco_compile_trap_handler(const struct aco_compiler_options* options,
    validate(program.get());
 
    lower_to_hw_instr(program.get());
+   lower_branches(program.get());
    validate(program.get());
 
    insert_waitcnt(program.get());
