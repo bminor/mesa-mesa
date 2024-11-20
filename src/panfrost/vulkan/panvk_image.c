@@ -318,6 +318,17 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
 
    image->vk.drm_format_mod = image->pimage.layout.modifier;
 
+   /*
+    * From the Vulkan spec:
+    *
+    *    If the size of the resultant image would exceed maxResourceSize, then
+    *    vkCreateImage must fail and return VK_ERROR_OUT_OF_DEVICE_MEMORY.
+    */
+   if (panvk_image_get_total_size(image) > UINT32_MAX) {
+      vk_image_destroy(&dev->vk, pAllocator, &image->vk);
+      return panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+   }
+
    *pImage = panvk_image_to_handle(image);
    return VK_SUCCESS;
 }
