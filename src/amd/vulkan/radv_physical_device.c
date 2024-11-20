@@ -151,6 +151,7 @@ radv_get_conformance_version(const struct radv_physical_device *pdev)
       switch (pdev->info.family) {
       case CHIP_TAHITI:
       case CHIP_PITCAIRN:
+      case CHIP_VERDE:
       case CHIP_OLAND:
       case CHIP_BONAIRE:
          conformance_version = (VkConformanceVersion){
