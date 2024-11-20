@@ -257,6 +257,8 @@ get_features(const struct panvk_physical_device *device,
 
    *features = (struct vk_features){
       /* Vulkan 1.0 */
+      .depthClamp = true,
+      .depthBiasClamp = true,
       .robustBufferAccess = true,
       .fullDrawIndexUint32 = true,
       .independentBlend = true,
