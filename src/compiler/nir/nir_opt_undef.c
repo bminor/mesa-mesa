@@ -181,15 +181,9 @@ visit_undef_use(nir_src *src, struct visit_info *info)
        */
       nir_alu_instr *alu = nir_instr_as_alu(instr);
 
-      /* Follow movs and vecs.
-       *
-       * Note that all vector component uses are followed and swizzles are
-       * ignored.
-       */
-      if (alu->op == nir_op_mov || nir_op_is_vec(alu->op)) {
-         nir_foreach_use_including_if(next_src, &alu->def) {
-            visit_undef_use(next_src, info);
-         }
+      /* opt_undef_vecN already copy propagated. */
+      if (nir_op_is_vec(alu->op)) {
+         info->must_keep_undef = true;
          return;
       }
 
