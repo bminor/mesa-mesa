@@ -120,8 +120,6 @@ private:
    nir_alu_instr *emit(nir_op op, unsigned dest_size, nir_def *src1,
                        nir_def *src2, nir_def *src3);
 
-   bool supports_std430;
-
    nir_shader *shader;
    nir_function_impl *impl;
    nir_function_impl *global_impl;
@@ -207,7 +205,6 @@ nir_visitor::nir_visitor(const struct gl_constants *consts, nir_shader *shader,
                          const uint8_t *src_blake3)
 {
    this->consts = consts;
-   this->supports_std430 = consts->UseSTD430AsDefaultPacking;
    this->shader = shader;
    this->is_global = true;
    this->var_table = _mesa_pointer_hash_table_create(NULL);
