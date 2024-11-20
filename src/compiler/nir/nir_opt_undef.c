@@ -62,13 +62,38 @@ opt_undef_csel(nir_builder *b, nir_alu_instr *instr)
    return false;
 }
 
+static bool
+op_is_mov_or_vec_or_pack_or_unpack(nir_op op)
+{
+   switch (op) {
+   case nir_op_pack_32_2x16:
+   case nir_op_pack_32_2x16_split:
+   case nir_op_pack_32_4x8:
+   case nir_op_pack_32_4x8_split:
+   case nir_op_pack_64_2x32:
+   case nir_op_pack_64_2x32_split:
+   case nir_op_pack_64_4x16:
+   case nir_op_unpack_32_2x16:
+   case nir_op_unpack_32_2x16_split_x:
+   case nir_op_unpack_32_2x16_split_y:
+   case nir_op_unpack_32_4x8:
+   case nir_op_unpack_64_2x32:
+   case nir_op_unpack_64_2x32_split_x:
+   case nir_op_unpack_64_2x32_split_y:
+   case nir_op_unpack_64_4x16:
+      return true;
+   default:
+      return nir_op_is_vec_or_mov(op);
+   }
+}
+
 /**
  * Replace vecN(undef, undef, ...) with a single undef.
  */
 static bool
 opt_undef_vecN(nir_builder *b, nir_alu_instr *alu)
 {
-   if (!nir_op_is_vec_or_mov(alu->op))
+   if (!op_is_mov_or_vec_or_pack_or_unpack(alu->op))
       return false;
 
    for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
@@ -182,7 +207,7 @@ visit_undef_use(nir_src *src, struct visit_info *info)
       nir_alu_instr *alu = nir_instr_as_alu(instr);
 
       /* opt_undef_vecN already copy propagated. */
-      if (nir_op_is_vec(alu->op)) {
+      if (op_is_mov_or_vec_or_pack_or_unpack(alu->op)) {
          info->must_keep_undef = true;
          return;
       }
