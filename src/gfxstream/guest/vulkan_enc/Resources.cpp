@@ -23,7 +23,7 @@ extern "C" {
 
 #if DETECT_OS_ANDROID || DETECT_OS_FUCHSIA
 #define SET_HWVULKAN_DISPATCH_MAGIC res->dispatch.magic = HWVULKAN_DISPATCH_MAGIC;
-#elif defined(__linux__)
+#elif DETECT_OS_LINUX
 #define SET_HWVULKAN_DISPATCH_MAGIC res->loaderData.loaderMagic = ICD_LOADER_MAGIC;
 #else
 #define SET_HWVULKAN_DISPATCH_MAGIC

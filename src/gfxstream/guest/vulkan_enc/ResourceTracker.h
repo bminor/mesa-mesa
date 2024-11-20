@@ -23,6 +23,7 @@
 #include "VulkanHandles.h"
 #include "goldfish_vk_transform_guest.h"
 #include "util/perf/cpu_trace.h"
+#include "util/detect_os.h"
 
 /// Use installed headers or locally defined Fuchsia-specific bits
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -842,7 +843,7 @@ class ResourceTracker {
         VkDevice device;
         bool external = false;
         VkExportFenceCreateInfo exportFenceCreateInfo;
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
         // Note: -1 means already signaled.
         std::optional<int> syncFd;
 #endif
@@ -910,7 +911,7 @@ class ResourceTracker {
 
     // 32 bits only for now, upper bits may be used later.
     std::atomic<uint32_t> mAtomicId = 0;
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     int mSyncDeviceFd = -1;
 #endif
 

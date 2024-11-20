@@ -5,7 +5,7 @@
 #include "AndroidHardwareBuffer.h"
 #include "util/detect_os.h"
 
-#if DETECT_OS_ANDROID || defined(__linux__)
+#if DETECT_OS_ANDROID || DETECT_OS_LINUX
 #include <drm_fourcc.h>
 #define DRM_FORMAT_YVU420_ANDROID fourcc_code('9', '9', '9', '7')
 #define DRM_FORMAT_D16_UNORM fourcc_code('9', '9', '9', '6')
@@ -161,7 +161,7 @@ VkResult getAndroidHardwareBufferPropertiesANDROID(
         ahbFormatProps->suggestedXChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
         ahbFormatProps->suggestedYChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
 
-#if DETECT_OS_ANDROID || defined(__linux__)
+#if DETECT_OS_ANDROID || DETECT_OS_LINUX
         if (android_format_is_yuv(format)) {
             uint32_t drmFormat = grallocHelper->getFormatDrmFourcc(buffer);
             ahbFormatProps->externalFormat = static_cast<uint64_t>(drmFormat);

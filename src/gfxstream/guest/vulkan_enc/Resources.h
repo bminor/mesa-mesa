@@ -7,7 +7,7 @@
 
 #if DETECT_OS_ANDROID || DETECT_OS_FUCHSIA
 #include <hardware/hwvulkan.h>
-#elif defined(__linux__)
+#elif DETECT_OS_LINUX
 #include <vulkan/vk_icd.h>
 #endif
 #include <inttypes.h>
@@ -41,7 +41,7 @@ struct goldfish_vk_object_list {
 
 #if DETECT_OS_ANDROID || DETECT_OS_FUCHSIA
 #define DECLARE_HWVULKAN_DISPATCH hwvulkan_dispatch_t dispatch;
-#elif defined(__linux__)
+#elif DETECT_OS_LINUX
 #define DECLARE_HWVULKAN_DISPATCH VK_LOADER_DATA loaderData;
 #else
 #define DECLARE_HWVULKAN_DISPATCH

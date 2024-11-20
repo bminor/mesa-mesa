@@ -17,6 +17,7 @@
 #include "util/macros.h"
 #include "virtgpu_gfxstream_protocol.h"
 #include "vulkan/vulkan_core.h"
+#include "util/detect_os.h"
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "vk_format_info.h"
@@ -34,7 +35,7 @@
 #include "vk_struct_id.h"
 #include "vk_util.h"
 
-#if defined(__linux__)
+#if DETECT_OS_LINUX
 #include <drm_fourcc.h>
 #endif
 
@@ -1118,7 +1119,7 @@ void ResourceTracker::unregister_VkSemaphore(VkSemaphore sem) {
         zx_handle_close(semInfo.eventHandle);
     }
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     if (semInfo.syncFd.value_or(-1) >= 0) {
         mSyncHelper->close(semInfo.syncFd.value());
     }
@@ -1157,7 +1158,7 @@ void ResourceTracker::unregister_VkFence(VkFence fence) {
     auto& fenceInfo = it->second;
     (void)fenceInfo;
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     if (fenceInfo.syncFd && *fenceInfo.syncFd >= 0) {
         mSyncHelper->close(*fenceInfo.syncFd);
     }
@@ -1624,7 +1625,7 @@ VkResult ResourceTracker::on_vkEnumerateInstanceExtensionProperties(
     std::vector<const char*> allowedExtensionNames = {
         "VK_KHR_get_physical_device_properties2",
         "VK_KHR_sampler_ycbcr_conversion",
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
         "VK_KHR_external_semaphore_capabilities",
         "VK_KHR_external_memory_capabilities",
         "VK_KHR_external_fence_capabilities",
@@ -1754,7 +1755,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         "VK_KHR_create_renderpass2",
         "VK_EXT_vertex_attribute_divisor",
         "VK_EXT_host_query_reset",
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
         "VK_KHR_external_semaphore",
         "VK_KHR_external_semaphore_fd",
         // "VK_KHR_external_semaphore_win32", not exposed because it's translated to fd
@@ -1763,7 +1764,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         "VK_KHR_external_fence_fd",
         "VK_EXT_device_memory_report",
 #endif
-#if defined(__linux__) && !defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if DETECT_OS_LINUX && !defined(VK_USE_PLATFORM_ANDROID_KHR)
         "VK_KHR_imageless_framebuffer",
 #endif
         // Vulkan 1.3
@@ -1826,7 +1827,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
      */
     filteredExts.push_back(VkExtensionProperties{"VK_EXT_device_memory_report", 1});
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     bool hostSupportsExternalFenceFd =
         getHostDeviceExtensionIndex("VK_KHR_external_fence_fd") != -1;
     if (!hostSupportsExternalFenceFd) {
@@ -1834,7 +1835,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
     }
 #endif
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     bool hostHasPosixExternalSemaphore =
         getHostDeviceExtensionIndex("VK_KHR_external_semaphore_fd") != -1;
     if (!hostHasPosixExternalSemaphore) {
@@ -1866,7 +1867,7 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
         filteredExts.push_back(VkExtensionProperties{"VK_FUCHSIA_external_memory", 1});
         filteredExts.push_back(VkExtensionProperties{"VK_FUCHSIA_buffer_collection", 1});
 #endif
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(__linux__)
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR) && DETECT_OS_LINUX
         filteredExts.push_back(VkExtensionProperties{"VK_KHR_external_memory_fd", 1});
         filteredExts.push_back(VkExtensionProperties{"VK_EXT_external_memory_dma_buf", 1});
         // In case the host doesn't support format modifiers, they are emulated
@@ -2038,7 +2039,7 @@ VkResult ResourceTracker::on_vkEnumeratePhysicalDevices(void* context, VkResult,
 
 void ResourceTracker::on_vkGetPhysicalDeviceProperties(void*, VkPhysicalDevice,
                                                        VkPhysicalDeviceProperties* pProperties) {
-#if defined(__linux__) && !defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if DETECT_OS_LINUX && !defined(VK_USE_PLATFORM_ANDROID_KHR)
     if (pProperties) {
         if (VK_PHYSICAL_DEVICE_TYPE_CPU == pProperties->deviceType) {
             /* For Linux guest: Even if host driver reports DEVICE_TYPE_CPU,
@@ -2164,7 +2165,7 @@ void ResourceTracker::on_vkDestroyDevice_pre(void* context, VkDevice device,
     }
 }
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
 void updateMemoryTypeBits(uint32_t* memoryTypeBits, uint32_t memoryIndex) {
     *memoryTypeBits = 1u << memoryIndex;
 }
@@ -3279,7 +3280,7 @@ VkResult ResourceTracker::on_vkAllocateMemory(void* context, VkResult input_resu
     void* ahw = nullptr;
 #endif
 
-#if defined(__linux__) && !defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if DETECT_OS_LINUX && !defined(VK_USE_PLATFORM_ANDROID_KHR)
     const VkImportMemoryFdInfoKHR* importFdInfoPtr =
         vk_find_struct<VkImportMemoryFdInfoKHR>(pAllocateInfo);
 #else
@@ -3321,7 +3322,7 @@ VkResult ResourceTracker::on_vkAllocateMemory(void* context, VkResult input_resu
     const bool requestedMemoryIsHostVisible =
         isHostVisible(&physicalDeviceMemoryProps, pAllocateInfo->memoryTypeIndex);
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     shouldPassThroughDedicatedAllocInfo &= !requestedMemoryIsHostVisible;
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
@@ -4625,7 +4626,7 @@ void ResourceTracker::on_vkGetPhysicalDeviceExternalFenceProperties(
         return;
     }
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     pExternalFenceProperties->exportFromImportedHandleTypes =
         VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
     pExternalFenceProperties->compatibleHandleTypes = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
@@ -4652,7 +4653,7 @@ VkResult ResourceTracker::on_vkCreateFence(void* context, VkResult input_result,
     const VkExportFenceCreateInfo* exportFenceInfoPtr =
         vk_find_struct<VkExportFenceCreateInfo>(pCreateInfo);
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     bool exportSyncFd = exportFenceInfoPtr && (exportFenceInfoPtr->handleTypes &
                                                VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT);
 #endif
@@ -4662,7 +4663,7 @@ VkResult ResourceTracker::on_vkCreateFence(void* context, VkResult input_result,
 
     if (input_result != VK_SUCCESS) return input_result;
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     if (exportSyncFd) {
         if (!mFeatureInfo.hasVirtioGpuNativeSync) {
             mesa_logd("%s: ensure sync device\n", __func__);
@@ -4741,7 +4742,7 @@ VkResult ResourceTracker::on_vkImportFenceFdKHR(void* context, VkResult, VkDevic
 
     if (!hasFence) return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
 
     bool syncFdImport = pImportFenceFdInfo->handleType & VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
 
@@ -4805,7 +4806,7 @@ VkResult ResourceTracker::on_vkGetFenceFdKHR(void* context, VkResult, VkDevice d
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     bool syncFdExport = pGetFdInfo->handleType & VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
 
     if (!syncFdExport) {
@@ -4879,7 +4880,7 @@ VkResult ResourceTracker::on_vkGetFenceStatus(void* context, VkResult input_resu
                                               VkFence fence) {
     VkEncoder* enc = (VkEncoder*)context;
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     {
         std::unique_lock<std::recursive_mutex> lock(mLock);
 
@@ -4909,7 +4910,7 @@ VkResult ResourceTracker::on_vkWaitForFences(void* context, VkResult, VkDevice d
                                              VkBool32 waitAll, uint64_t timeout) {
     VkEncoder* enc = (VkEncoder*)context;
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     std::vector<int> fencesExternalSyncFds;
     std::vector<VkFence> fencesNonExternal;
 
@@ -5487,7 +5488,7 @@ VkResult ResourceTracker::on_vkCreateBuffer(void* context, VkResult, VkDevice de
 
     if (res != VK_SUCCESS) return res;
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     if (mCaps.vulkanCapset.colorBufferMemoryIndex == 0xFFFFFFFF) {
         mCaps.vulkanCapset.colorBufferMemoryIndex = getColorBufferMemoryIndex(context, device);
     }
@@ -5624,7 +5625,7 @@ VkResult ResourceTracker::on_vkCreateSemaphore(void* context, VkResult input_res
     }
 #endif
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     bool exportSyncFd = exportSemaphoreInfoPtr && (exportSemaphoreInfoPtr->handleTypes &
                                                    VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT);
 
@@ -5660,7 +5661,7 @@ VkResult ResourceTracker::on_vkCreateSemaphore(void* context, VkResult input_res
     info.eventKoid = getEventKoid(info.eventHandle);
 #endif
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     if (exportSyncFd) {
         if (mFeatureInfo.hasVirtioGpuNativeSync &&
             !(mCaps.params[kParamFencePassing] && mCaps.vulkanCapset.externalSync)) {
@@ -5706,7 +5707,7 @@ void ResourceTracker::on_vkDestroySemaphore(void* context, VkDevice device, VkSe
 VkResult ResourceTracker::on_vkGetSemaphoreFdKHR(void* context, VkResult, VkDevice device,
                                                  const VkSemaphoreGetFdInfoKHR* pGetFdInfo,
                                                  int* pFd) {
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     VkEncoder* enc = (VkEncoder*)context;
     bool getSyncFd = pGetFdInfo->handleType & VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
 
@@ -5766,7 +5767,7 @@ VkResult ResourceTracker::on_vkGetSemaphoreFdKHR(void* context, VkResult, VkDevi
 VkResult ResourceTracker::on_vkImportSemaphoreFdKHR(
     void* context, VkResult input_result, VkDevice device,
     const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) {
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     VkEncoder* enc = (VkEncoder*)context;
     if (input_result != VK_SUCCESS) {
         return input_result;
@@ -5813,7 +5814,7 @@ VkResult ResourceTracker::on_vkImportSemaphoreFdKHR(
 VkResult ResourceTracker::on_vkGetMemoryFdPropertiesKHR(
     void* context, VkResult, VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
     VkMemoryFdPropertiesKHR* pMemoryFdProperties) {
-#if defined(__linux__) && !defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if DETECT_OS_LINUX && !defined(VK_USE_PLATFORM_ANDROID_KHR)
     if (!(handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT)) {
         mesa_loge("%s: VK_KHR_external_memory_fd behavior not defined for handleType: 0x%x\n",
                   __func__, handleType);
@@ -5848,7 +5849,7 @@ VkResult ResourceTracker::on_vkGetMemoryFdPropertiesKHR(
 
 VkResult ResourceTracker::on_vkGetMemoryFdKHR(void* context, VkResult, VkDevice device,
                                               const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd) {
-#if defined(__linux__) && !defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if DETECT_OS_LINUX && !defined(VK_USE_PLATFORM_ANDROID_KHR)
     if (!pGetFdInfo) return VK_ERROR_OUT_OF_HOST_MEMORY;
     if (!pGetFdInfo->memory) return VK_ERROR_OUT_OF_HOST_MEMORY;
 
@@ -6101,7 +6102,7 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
                     pre_signal_semaphores.push_back(semaphore);
                 }
 #endif
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
                 if (semInfo.syncFd.has_value()) {
                     pre_signal_sync_fds.push_back(semInfo.syncFd.value());
                     pre_signal_semaphores.push_back(semaphore);
@@ -6127,7 +6128,7 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
 #endif
                 }
 #endif
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
                 if (semInfo.syncFd.value_or(-1) >= 0) {
                     post_wait_sync_fds.push_back(semInfo.syncFd.value());
                 }
@@ -6151,7 +6152,7 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
             });
         }
 #endif
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
         for (auto fd : pre_signal_sync_fds) {
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImportSemaphoreFdInfoKHR.html
             // fd == -1 is treated as already signaled
@@ -6178,7 +6179,7 @@ VkResult ResourceTracker::on_vkQueueSubmitTemplate(void* context, VkResult input
     lock.lock();
     int externalFenceFdToSignal = -1;
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR) || defined(__linux__)
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
     if (fence != VK_NULL_HANDLE) {
         auto it = info_VkFence.find(fence);
         if (it != info_VkFence.end()) {
@@ -6598,7 +6599,7 @@ void ResourceTracker::on_vkUpdateDescriptorSetWithTemplate(
                        sizeof(VkDescriptorBufferInfo));
 
                 // TODO(b/355497683): move this into gfxstream_vk_UpdateDescriptorSetWithTemplate().
-#if defined(__linux__) || defined(VK_USE_PLATFORM_ANDROID_KHR)
+#if DETECT_OS_LINUX || defined(VK_USE_PLATFORM_ANDROID_KHR)
                 // Convert mesa to internal for objects in the user buffer
                 VkDescriptorBufferInfo* internalBufferInfo =
                     (VkDescriptorBufferInfo*)(((uint8_t*)bufferInfos) + currBufferInfoOffset);
