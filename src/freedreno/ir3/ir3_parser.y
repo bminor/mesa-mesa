@@ -70,6 +70,9 @@ static struct ir3_instruction    *instr;   /* current instruction */
 static unsigned ip; /* current instruction pointer */
 static struct hash_table *labels;
 
+static bool is_in_fullnop_section;
+static bool is_in_fullsync_section;
+
 void *ir3_parser_dead_ctx;
 
 char* current_line;
@@ -110,6 +113,21 @@ static struct ir3_instruction * new_instr(opc_t opc)
 	instr->nop = iflags.nop;
 	instr->line = ir3_yyget_lineno();
 	iflags.flags = iflags.repeat = iflags.nop = 0;
+
+	if (is_in_fullnop_section) {
+		struct ir3_instruction *nop =
+			ir3_instr_create_at(ir3_before_instr(instr), OPC_NOP, 0, 0);
+		nop->repeat = 5;
+		ip++;
+	}
+
+	if (is_in_fullsync_section) {
+		struct ir3_instruction *nop =
+			ir3_instr_create_at(ir3_before_instr(instr), OPC_NOP, 0, 0);
+		nop->flags = IR3_INSTR_SS | IR3_INSTR_SY;
+		ip++;
+	}
+
 	ip++;
 	return instr;
 }
@@ -312,6 +330,10 @@ struct ir3 * ir3_parse(struct ir3_shader_variant *v,
 #endif
 	info = k;
 	variant = v;
+
+	is_in_fullnop_section = false;
+	is_in_fullsync_section = false;
+
 	if (yyparse() || !resolve_labels()) {
 		ir3_destroy(variant->ir);
 		variant->ir = NULL;
@@ -369,6 +391,10 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_A_PVTMEM
 %token <tok> T_A_LOCALMEM
 %token <tok> T_A_EARLYPREAMBLE
+%token <tok> T_A_FULLNOPSTART
+%token <tok> T_A_FULLNOPEND
+%token <tok> T_A_FULLSYNCSTART
+%token <tok> T_A_FULLSYNCEND
 /* todo, re-add @sampler/@uniform/@varying if needed someday */
 
 /* src register flags */
@@ -856,6 +882,11 @@ tex_header:        T_A_TEX '(' T_REGISTER ')'
                        T_IDENTIFIER '=' integer ',' /* wrmask */
                        T_IDENTIFIER '=' integer     /* cmd */ { }
 
+fullnop_start_section: T_A_FULLNOPSTART { is_in_fullnop_section = true; }
+fullnop_end_section: T_A_FULLNOPEND { is_in_fullnop_section = false; }
+fullsync_start_section: T_A_FULLSYNCSTART { is_in_fullsync_section = true; }
+fullsync_end_section: T_A_FULLSYNCEND { is_in_fullsync_section = false; }
+
 iflag:             T_SY   { iflags.flags |= IR3_INSTR_SY; }
 |                  T_SS   { iflags.flags |= IR3_INSTR_SS; }
 |                  T_JP   { iflags.flags |= IR3_INSTR_JP; }
@@ -882,6 +913,10 @@ instr:             iflags cat0_instr
 |                  raw_instr
 |                  meta_print
 |                  label
+|                  fullnop_start_section
+|                  fullnop_end_section
+|                  fullsync_start_section
+|                  fullsync_end_section
 
 label:             T_IDENTIFIER ':' { new_label($1); }
 
