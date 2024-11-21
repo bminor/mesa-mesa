@@ -251,14 +251,19 @@ skips_list = os.path.normpath(os.path.join(os.path.dirname(__file__), skips_list
 env_glinfo = dict(env)
 env_glinfo["AMD_DEBUG"] = "info"
 
-p = subprocess.run(
-    ["./glinfo"],
-    capture_output="True",
-    cwd=os.path.join(piglit_path, "bin"),
-    check=True,
-    env=env_glinfo,
-)
+try:
+    p = subprocess.run(
+        ["./glinfo"],
+        capture_output="True",
+        cwd=os.path.join(piglit_path, "bin"),
+        check=True,
+        env=env_glinfo,
+    )
+except subprocess.CalledProcessError:
+    print('piglit/bin/glinfo failed to create a GL context')
+    exit(1)
 
+renderer = None
 for line in p.stdout.decode().split("\n"):
     if "GL_RENDER" in line:
         line = line.split("=")[1]
@@ -269,6 +274,10 @@ for line in p.stdout.decode().split("\n"):
         break
     elif "gfx_level" in line:
         gfx_level = int(line.split("=")[1])
+
+if renderer is None:
+    print('piglit/bin/glinfo failed to create a GL context')
+    exit(1)
 
 output_folder = args.output_folder
 if is_amd:
