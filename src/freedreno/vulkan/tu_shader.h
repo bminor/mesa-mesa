@@ -38,7 +38,7 @@ struct tu_inline_ubo
  */
 struct tu_push_constant_range
 {
-   uint32_t lo;
+   uint32_t lo_dwords;
    uint32_t dwords;
    enum ir3_push_consts_type type;
 };

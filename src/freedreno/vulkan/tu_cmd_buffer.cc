@@ -5141,25 +5141,30 @@ tu6_user_consts_size(const struct tu_const_state *const_state,
 static void
 tu6_emit_per_stage_push_consts(struct tu_cs *cs,
                                const struct tu_const_state *const_state,
+                               const struct ir3_const_state *ir_const_state,
                                gl_shader_stage type,
                                uint32_t *push_constants)
 {
    if (const_state->push_consts.type == IR3_PUSH_CONSTS_PER_STAGE) {
       unsigned num_units = const_state->push_consts.dwords;
-      unsigned offset = const_state->push_consts.lo;
+      unsigned offset_vec4 =
+         ir_const_state->allocs.consts[IR3_CONST_ALLOC_PUSH_CONSTS]
+            .offset_vec4;
       assert(num_units > 0);
 
       /* DST_OFF and NUM_UNIT requires vec4 units */
       tu_cs_emit_pkt7(cs, tu6_stage2opcode(type), 3 + num_units);
-      tu_cs_emit(cs, CP_LOAD_STATE6_0_DST_OFF(offset / 4) |
+      tu_cs_emit(cs, CP_LOAD_STATE6_0_DST_OFF(offset_vec4) |
             CP_LOAD_STATE6_0_STATE_TYPE(ST6_CONSTANTS) |
             CP_LOAD_STATE6_0_STATE_SRC(SS6_DIRECT) |
             CP_LOAD_STATE6_0_STATE_BLOCK(tu6_stage2shadersb(type)) |
             CP_LOAD_STATE6_0_NUM_UNIT(num_units / 4));
       tu_cs_emit(cs, 0);
       tu_cs_emit(cs, 0);
+
+      unsigned lo = const_state->push_consts.lo_dwords;
       for (unsigned i = 0; i < num_units; i++)
-         tu_cs_emit(cs, push_constants[i + offset]);
+         tu_cs_emit(cs, push_constants[i + lo]);
    }
 }
 
@@ -5264,7 +5269,7 @@ tu6_emit_shared_consts(struct tu_cs *cs,
    if (shared_consts->dwords > 0) {
       /* Offset and num_units for shared consts are in units of dwords. */
       unsigned num_units = shared_consts->dwords;
-      unsigned offset = shared_consts->lo;
+      unsigned offset = shared_consts->lo_dwords;
 
       enum a6xx_state_type st = compute ? ST6_UBO : ST6_CONSTANTS;
       uint32_t cp_load_state = compute ? CP_LOAD_STATE6_FRAG : CP_LOAD_STATE6;
@@ -5289,9 +5294,9 @@ tu7_emit_shared_preamble_consts(
    const struct tu_push_constant_range *shared_consts,
    uint32_t *push_constants)
 {
-   tu_cs_emit_pkt4(cs, REG_A7XX_HLSQ_SHARED_CONSTS_IMM(shared_consts->lo),
+   tu_cs_emit_pkt4(cs, REG_A7XX_HLSQ_SHARED_CONSTS_IMM(shared_consts->lo_dwords),
                    shared_consts->dwords);
-   tu_cs_emit_array(cs, push_constants + shared_consts->lo,
+   tu_cs_emit_array(cs, push_constants + shared_consts->lo_dwords,
                     shared_consts->dwords);
 }
 
@@ -5345,6 +5350,7 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
    if (compute) {
       tu6_emit_per_stage_push_consts(
          &cs, &cmd->state.shaders[MESA_SHADER_COMPUTE]->const_state,
+         cmd->state.shaders[MESA_SHADER_COMPUTE]->variant->const_state,
          MESA_SHADER_COMPUTE, cmd->push_constants);
       tu_emit_inline_ubo(
          &cs, &cmd->state.shaders[MESA_SHADER_COMPUTE]->const_state,
@@ -5359,6 +5365,7 @@ tu_emit_consts(struct tu_cmd_buffer *cmd, bool compute)
          const struct tu_program_descriptor_linkage *link =
             &cmd->state.program.link[type];
          tu6_emit_per_stage_push_consts(&cs, &link->tu_const_state,
+                                        &link->const_state,
                                         (gl_shader_stage) type,
                                         cmd->push_constants);
          tu_emit_inline_ubo(&cs, &link->tu_const_state,

@@ -137,7 +137,8 @@ lower_load_push_constant(struct tu_device *dev,
                          nir_builder *b,
                          nir_intrinsic_instr *instr,
                          struct tu_shader *shader,
-                         const struct tu_pipeline_layout *layout)
+                         const struct tu_pipeline_layout *layout,
+                         uint32_t push_consts_offset_vec4)
 {
    uint32_t base = nir_intrinsic_base(instr);
    assert(base % 4 == 0);
@@ -149,8 +150,9 @@ lower_load_push_constant(struct tu_device *dev,
        */
       base += dev->compiler->shared_consts_base_offset * 4;
    } else {
-      assert(base >= shader->const_state.push_consts.lo * 4);
-      base -= shader->const_state.push_consts.lo * 4;
+      assert(base >= shader->const_state.push_consts.lo_dwords);
+      base -= shader->const_state.push_consts.lo_dwords;
+      base += push_consts_offset_vec4 * 4;
    }
 
    nir_def *load =
@@ -470,11 +472,14 @@ static bool
 lower_intrinsic(nir_builder *b, nir_intrinsic_instr *instr,
                 struct tu_device *dev,
                 struct tu_shader *shader,
-                const struct tu_pipeline_layout *layout)
+                const struct tu_pipeline_layout *layout,
+                struct ir3_const_allocations *const_allocs)
 {
    switch (instr->intrinsic) {
    case nir_intrinsic_load_push_constant:
-      lower_load_push_constant(dev, b, instr, shader, layout);
+      lower_load_push_constant(
+         dev, b, instr, shader, layout,
+         const_allocs->consts[IR3_CONST_ALLOC_PUSH_CONSTS].offset_vec4);
       return true;
 
    case nir_intrinsic_load_vulkan_descriptor:
@@ -643,6 +648,7 @@ struct lower_instr_params {
    const struct tu_pipeline_layout *layout;
    uint32_t read_only_input_attachments;
    bool dynamic_renderpass;
+   struct ir3_const_allocations *const_allocs;
 };
 
 static bool
@@ -656,7 +662,9 @@ lower_instr(nir_builder *b, nir_instr *instr, void *cb_data)
                        params->read_only_input_attachments,
                        params->dynamic_renderpass);
    case nir_instr_type_intrinsic:
-      return lower_intrinsic(b, nir_instr_as_intrinsic(instr), params->dev, params->shader, params->layout);
+      return lower_intrinsic(b, nir_instr_as_intrinsic(instr), params->dev,
+                             params->shader, params->layout,
+                             params->const_allocs);
    default:
       return false;
    }
@@ -797,9 +805,9 @@ gather_push_constants(nir_shader *shader, struct tu_shader *tu_shader)
     * Note there's an alignment requirement of 16 dwords on OFFSET. Expand
     * the range and change units accordingly.
     */
-   tu_shader->const_state.push_consts.lo = (min / 4) / 4 * 4;
+   tu_shader->const_state.push_consts.lo_dwords += (min / 4) / 4 * 4;
    tu_shader->const_state.push_consts.dwords =
-      align(max, 16) / 4 - tu_shader->const_state.push_consts.lo;
+      align(max, 16) / 4 - tu_shader->const_state.push_consts.lo_dwords;
 }
 
 static bool
@@ -828,15 +836,16 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
             bool dynamic_renderpass,
             struct ir3_const_allocations *const_allocs)
 {
-   tu_shader->const_state.push_consts = (struct tu_push_constant_range) {
-      .lo = 0,
+   struct tu_const_state *const_state = &tu_shader->const_state;
+   const_state->push_consts = (struct tu_push_constant_range) {
+      .lo_dwords = 0,
       .dwords = layout->push_constant_size / 4,
       .type = tu_push_consts_type(layout, dev->compiler),
    };
 
-   if (tu_shader->const_state.push_consts.type == IR3_PUSH_CONSTS_PER_STAGE) {
+   if (const_state->push_consts.type == IR3_PUSH_CONSTS_PER_STAGE) {
       gather_push_constants(shader, tu_shader);
-   } else if (tu_shader->const_state.push_consts.type ==
+   } else if (const_state->push_consts.type ==
             IR3_PUSH_CONSTS_SHARED_PREAMBLE) {
       /* Disable pushing constants for this stage if none were loaded in the
        * shader.  If all stages don't load their declared push constants, as
@@ -844,16 +853,21 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
        * emitting REG_A7XX_HLSQ_SHARED_CONSTS_IMM entirely.
        */
       if (!shader_uses_push_consts(shader))
-         tu_shader->const_state.push_consts = (struct tu_push_constant_range) {};
+         const_state->push_consts = (struct tu_push_constant_range) {};
    }
 
-   struct tu_const_state *const_state = &tu_shader->const_state;
-   unsigned push_consts_vec4 =
-      align(DIV_ROUND_UP(const_state->push_consts.dwords, 4),
-            dev->compiler->const_upload_unit);
+   if (const_state->push_consts.type != IR3_PUSH_CONSTS_SHARED) {
+      uint32_t offset_align_vec4 = 1;
+      if (const_state->push_consts.type == IR3_PUSH_CONSTS_PER_STAGE)
+         offset_align_vec4 = dev->compiler->const_upload_unit;
 
-   ir3_const_alloc(const_allocs, IR3_CONST_ALLOC_PUSH_CONSTS,
-                   push_consts_vec4, 1);
+      unsigned push_consts_vec4 =
+         align(DIV_ROUND_UP(const_state->push_consts.dwords, 4),
+               dev->compiler->const_upload_unit);
+
+      ir3_const_alloc(const_allocs, IR3_CONST_ALLOC_PUSH_CONSTS,
+                      push_consts_vec4, offset_align_vec4);
+   }
 
    bool unknown_dynamic_size = false;
    bool unknown_dynamic_offset = false;
@@ -949,6 +963,7 @@ tu_lower_io(nir_shader *shader, struct tu_device *dev,
       .layout = layout,
       .read_only_input_attachments = read_only_input_attachments,
       .dynamic_renderpass = dynamic_renderpass,
+      .const_allocs = const_allocs,
    };
 
    bool progress = false;
@@ -2554,7 +2569,7 @@ tu_shader_create(struct tu_device *dev,
       .api_wavesize = key->api_wavesize,
       .real_wavesize = key->real_wavesize,
       .push_consts_type = shader->const_state.push_consts.type,
-      .push_consts_base = shader->const_state.push_consts.lo,
+      .push_consts_base = shader->const_state.push_consts.lo_dwords,
       .push_consts_dwords = shader->const_state.push_consts.dwords,
       .const_allocs = const_allocs,
       .nir_options = nir_options,
