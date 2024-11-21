@@ -50,6 +50,7 @@
   rules:
     - !reference [.test, rules]
     - !reference [.gl-manual-rules, rules]
+    - !reference [.intel-common-manual-rules, rules]
     - changes:
         *i915g_file_list
       when: manual
@@ -73,6 +74,7 @@
     - !reference [.test, rules]
     - !reference [.anholt-farm-manual-rules, rules]
     - !reference [.gl-manual-rules, rules]
+    - !reference [.intel-common-manual-rules, rules]
     - changes:
         *crocus_file_list
       when: manual
@@ -97,6 +99,7 @@
     - !reference [.test, rules]
     - !reference [.collabora-farm-manual-rules, rules]
     - !reference [.gl-manual-rules, rules]
+    - !reference [.intel-common-manual-rules, rules]
     - changes:
         *iris_file_list
       when: manual
