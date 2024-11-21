@@ -135,6 +135,109 @@ try_remove_simple_block(branch_ctx& ctx, Block& block)
 }
 
 void
+try_merge_break_with_continue(branch_ctx& ctx, Block& block)
+{
+   /* Look for this:
+    * BB1:
+    *    ...
+    *    p_branch_z exec BB3, BB2
+    * BB2:
+    *    ...
+    *    s[0:1], scc = s_andn2 s[0:1], exec
+    *    s_cbranch_scc0 BB4
+    * BB3:
+    *    exec = s_mov_b64 s[0:1]
+    *    s_branch BB1
+    * BB4:
+    *    ...
+    *
+    * And turn it into this:
+    * BB1:
+    *    ...
+    *    p_branch_z exec BB3, BB2
+    * BB2:
+    *    ...
+    * BB3:
+    *    s[0:1], scc, exec = s_andn2_wrexec s[0:1], exec
+    *    s_cbranch_scc1 BB1, BB4
+    * BB4:
+    *    ...
+    */
+   if (block.linear_succs.size() != 2 || block.instructions.size() < 2)
+      return;
+
+   Instruction* branch = block.instructions.back().get();
+   if (branch->opcode != aco_opcode::s_cbranch_scc0)
+      return;
+
+   Block& merge = ctx.program->blocks[block.linear_succs[0]];
+   Block& loopexit = ctx.program->blocks[block.linear_succs[1]];
+
+   /* Just a jump to the loop header. */
+   if (merge.linear_succs.size() != 1)
+      return;
+
+   /* We want to use the loopexit as the fallthrough block from merge,
+    * so there shouldn't be a block inbetween.
+    */
+   for (unsigned i = merge.index + 1; i < loopexit.index; i++) {
+      if (!ctx.program->blocks[i].instructions.empty())
+         return;
+   }
+
+   for (unsigned merge_pred : merge.linear_preds) {
+      if (merge_pred == block.index)
+         continue;
+
+      Block& pred = ctx.program->blocks[merge_pred];
+      Instruction* pred_branch = pred.instructions.back().get();
+      /* The branch needs to be exec zero only, otherwise we corrupt exec. */
+      if (pred_branch->opcode != aco_opcode::p_cbranch_z ||
+          pred_branch->operands[0].physReg() != exec)
+         return;
+   }
+
+   /* merge block: copy to exec, branch */
+   if (merge.instructions.size() != 2 || merge.instructions.back()->opcode != aco_opcode::s_branch)
+      return;
+
+   Builder bld(ctx.program);
+   Instruction* execwrite = merge.instructions[0].get();
+   if (execwrite->opcode != bld.w64or32(Builder::s_mov) || !execwrite->writes_exec())
+      return;
+
+   Instruction* execsrc = block.instructions[block.instructions.size() - 2].get();
+   if (execsrc->opcode != bld.w64or32(Builder::s_andn2) ||
+       execsrc->definitions[0].physReg() != execwrite->operands[0].physReg() ||
+       execsrc->operands[0].physReg() != execwrite->operands[0].physReg() ||
+       execsrc->operands[1].physReg() != exec)
+      return;
+
+   /* Use conditional branch in merge block. */
+   block.instructions.pop_back();
+   merge.instructions.back()->opcode = aco_opcode::s_cbranch_scc1;
+   block.linear_succs.pop_back();
+   block.linear_succs[0] = merge.index;
+   merge.linear_succs.push_back(loopexit.index);
+   std::swap(merge.linear_succs[0], merge.linear_succs[1]);
+   std::replace(loopexit.linear_preds.begin(), loopexit.linear_preds.end(), block.index,
+                merge.index);
+
+   if (ctx.program->gfx_level >= GFX9) {
+      /* Combine s_andn2 and copy to exec to s_andn2_wrexec. */
+      Instruction* wr_exec =
+         bld.sop1(Builder::s_andn2_wrexec, execsrc->definitions[0], execsrc->definitions[1],
+                  Definition(exec, bld.lm), execsrc->operands[0], execsrc->operands[1]);
+      merge.instructions[0].reset(wr_exec);
+   } else {
+      /* Move s_andn2 to the merge block. */
+      merge.instructions.emplace(merge.instructions.begin(), std::move(block.instructions.back()));
+   }
+   block.instructions.pop_back();
+   ctx.blocks_incoming_exec_used[merge.index] = true;
+}
+
+void
 eliminate_useless_exec_writes_in_block(branch_ctx& ctx, Block& block)
 {
    /* Check if any successor needs the outgoing exec mask from the current block. */
@@ -357,6 +460,9 @@ lower_branches(Program* program)
       Block& block = program->blocks[i];
       lower_branch_instruction(ctx, block);
       eliminate_useless_exec_writes_in_block(ctx, block);
+
+      if (block.kind & block_kind_break)
+         try_merge_break_with_continue(ctx, block);
 
       if (block.linear_succs.size() == 1)
          try_remove_simple_block(ctx, block);
