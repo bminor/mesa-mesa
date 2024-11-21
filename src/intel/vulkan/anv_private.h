@@ -3011,6 +3011,9 @@ struct anv_descriptor_pool_heap {
 
    /* Size of the heap */
    uint32_t              size;
+
+   /* Allocated size in the heap */
+   uint32_t              alloc_size;
 };
 
 struct anv_descriptor_pool {

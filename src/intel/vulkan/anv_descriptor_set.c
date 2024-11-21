@@ -1366,8 +1366,12 @@ anv_descriptor_pool_heap_alloc(struct anv_descriptor_pool *pool,
 {
    uint64_t pool_vma_offset =
       util_vma_heap_alloc(&heap->heap, size, alignment);
-   if (pool_vma_offset == 0)
-      return vk_error(pool, VK_ERROR_FRAGMENTED_POOL);
+   if (pool_vma_offset == 0) {
+      if (size > heap->size - heap->alloc_size)
+         return vk_error(pool, VK_ERROR_OUT_OF_POOL_MEMORY);
+      else
+         return vk_error(pool, VK_ERROR_FRAGMENTED_POOL);
+   }
 
    assert(pool_vma_offset >= POOL_HEAP_OFFSET &&
           pool_vma_offset - POOL_HEAP_OFFSET <= INT32_MAX);
@@ -1378,6 +1382,7 @@ anv_descriptor_pool_heap_alloc(struct anv_descriptor_pool *pool,
       state->map = heap->host_mem + state->offset;
    else
       state->map = heap->bo->map + state->offset;
+   heap->alloc_size += size;
 
    return VK_SUCCESS;
 }
@@ -1386,6 +1391,7 @@ static void
 anv_descriptor_pool_heap_free(struct anv_descriptor_pool_heap *heap,
                               struct anv_state state)
 {
+   heap->alloc_size -= state.alloc_size;
    util_vma_heap_free(&heap->heap,
                       (uint64_t)state.offset + POOL_HEAP_OFFSET,
                       state.alloc_size);
