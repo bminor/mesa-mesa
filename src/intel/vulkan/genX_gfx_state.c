@@ -272,7 +272,7 @@ want_stencil_pma_fix(struct anv_cmd_buffer *cmd_buffer,
     * (3DSTATE_DEPTH_BUFFER::SURFACE_TYPE != NULL) &&
     * 3DSTATE_DEPTH_BUFFER::HIZ Enable
     */
-   if (!cmd_buffer->state.hiz_enabled)
+   if (!cmd_buffer->state.gfx.hiz_enabled)
       return false;
 
    /* We can't possibly know if HiZ is enabled without the depth attachment */
@@ -2645,10 +2645,10 @@ genX(cmd_buffer_enable_pma_fix)(struct anv_cmd_buffer *cmd_buffer, bool enable)
    if (!anv_cmd_buffer_is_render_queue(cmd_buffer))
       return;
 
-   if (cmd_buffer->state.pma_fix_enabled == enable)
+   if (cmd_buffer->state.gfx.pma_fix_enabled == enable)
       return;
 
-   cmd_buffer->state.pma_fix_enabled = enable;
+   cmd_buffer->state.gfx.pma_fix_enabled = enable;
 
    /* According to the Broadwell PIPE_CONTROL documentation, software should
     * emit a PIPE_CONTROL with the CS Stall and Depth Cache Flush bits set

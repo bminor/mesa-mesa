@@ -3852,6 +3852,12 @@ enum anv_coarse_pixel_state {
    ANV_COARSE_PIXEL_STATE_ENABLED,
 };
 
+enum anv_depth_reg_mode {
+   ANV_DEPTH_REG_MODE_UNKNOWN = 0,
+   ANV_DEPTH_REG_MODE_HW_DEFAULT,
+   ANV_DEPTH_REG_MODE_D16_1X_MSAA,
+};
+
 /** State tracking for graphics pipeline
  *
  * This has anv_cmd_pipeline_state as a base struct to track things which get
@@ -3932,13 +3938,29 @@ struct anv_cmd_graphics_state {
 
    uint32_t n_occlusion_queries;
 
-   struct anv_gfx_dynamic_state dyn_state;
-};
+   /**
+    * Whether or not the gfx8 PMA fix is enabled.  We ensure that, at the top
+    * of any command buffer it is disabled by disabling it in EndCommandBuffer
+    * and before invoking the secondary in ExecuteCommands.
+    */
+   bool                                         pma_fix_enabled;
 
-enum anv_depth_reg_mode {
-   ANV_DEPTH_REG_MODE_UNKNOWN = 0,
-   ANV_DEPTH_REG_MODE_HW_DEFAULT,
-   ANV_DEPTH_REG_MODE_D16_1X_MSAA,
+   /**
+    * Whether or not we know for certain that HiZ is enabled for the current
+    * subpass.  If, for whatever reason, we are unsure as to whether HiZ is
+    * enabled or not, this will be false.
+    */
+   bool                                         hiz_enabled;
+
+   /**
+    * We ensure the registers for the gfx12 D16 fix are initialized at the
+    * first non-NULL depth stencil packet emission of every command buffer.
+    * For secondary command buffer execution, we transfer the state from the
+    * last command buffer to the primary (if known).
+    */
+   enum anv_depth_reg_mode                      depth_reg_mode;
+
+   struct anv_gfx_dynamic_state dyn_state;
 };
 
 /** State tracking for compute pipeline
@@ -4043,27 +4065,6 @@ struct anv_cmd_state {
    unsigned char                                sampler_sha1s[MESA_VULKAN_SHADER_STAGES][20];
    unsigned char                                surface_sha1s[MESA_VULKAN_SHADER_STAGES][20];
    unsigned char                                push_sha1s[MESA_VULKAN_SHADER_STAGES][20];
-
-   /**
-    * Whether or not the gfx8 PMA fix is enabled.  We ensure that, at the top
-    * of any command buffer it is disabled by disabling it in EndCommandBuffer
-    * and before invoking the secondary in ExecuteCommands.
-    */
-   bool                                         pma_fix_enabled;
-
-   /**
-    * Whether or not we know for certain that HiZ is enabled for the current
-    * subpass.  If, for whatever reason, we are unsure as to whether HiZ is
-    * enabled or not, this will be false.
-    */
-   bool                                         hiz_enabled;
-
-   /* We ensure the registers for the gfx12 D16 fix are initialized at the
-    * first non-NULL depth stencil packet emission of every command buffer.
-    * For secondary command buffer execution, we transfer the state from the
-    * last command buffer to the primary (if known).
-    */
-   enum anv_depth_reg_mode                      depth_reg_mode;
 
    /* The last auxiliary surface operation (or equivalent operation) provided
     * to genX(cmd_buffer_update_color_aux_op).

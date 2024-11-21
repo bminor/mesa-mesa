@@ -3623,8 +3623,8 @@ genX(CmdExecuteCommands)(
          container->perf_query_pool = secondary->perf_query_pool;
 
 #if INTEL_NEEDS_WA_1808121037
-      if (secondary->state.depth_reg_mode != ANV_DEPTH_REG_MODE_UNKNOWN)
-         container->state.depth_reg_mode = secondary->state.depth_reg_mode;
+      if (secondary->state.gfx.depth_reg_mode != ANV_DEPTH_REG_MODE_UNKNOWN)
+         container->state.gfx.depth_reg_mode = secondary->state.gfx.depth_reg_mode;
 #endif
 
       container->state.gfx.viewport_set |= secondary->state.gfx.viewport_set;
@@ -4842,7 +4842,7 @@ genX(cmd_buffer_emit_gfx12_depth_wa)(struct anv_cmd_buffer *cmd_buffer,
    const bool is_d16_1x_msaa = surf->format == ISL_FORMAT_R16_UNORM &&
                                surf->samples == 1;
 
-   switch (cmd_buffer->state.depth_reg_mode) {
+   switch (cmd_buffer->state.gfx.depth_reg_mode) {
    case ANV_DEPTH_REG_MODE_HW_DEFAULT:
       if (!is_d16_1x_msaa)
          return;
@@ -4876,7 +4876,7 @@ genX(cmd_buffer_emit_gfx12_depth_wa)(struct anv_cmd_buffer *cmd_buffer,
       reg.HIZPlaneOptimizationdisablebitMask = true;
    }
 
-   cmd_buffer->state.depth_reg_mode =
+   cmd_buffer->state.gfx.depth_reg_mode =
       is_d16_1x_msaa ? ANV_DEPTH_REG_MODE_D16_1X_MSAA :
                        ANV_DEPTH_REG_MODE_HW_DEFAULT;
 #endif
@@ -5175,7 +5175,7 @@ cmd_buffer_emit_depth_stencil(struct anv_cmd_buffer *cmd_buffer)
    if (info.depth_surf)
       genX(cmd_buffer_emit_gfx12_depth_wa)(cmd_buffer, info.depth_surf);
 
-   cmd_buffer->state.hiz_enabled = isl_aux_usage_has_hiz(info.hiz_usage);
+   cmd_buffer->state.gfx.hiz_enabled = isl_aux_usage_has_hiz(info.hiz_usage);
 }
 
 static void
