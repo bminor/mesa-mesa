@@ -107,6 +107,14 @@ git fetch --depth 1 origin "$DEQP_VERSION"
 git checkout FETCH_HEAD
 DEQP_COMMIT=$(git rev-parse FETCH_HEAD)
 
+if [ "$DEQP_VERSION" = "$DEQP_MAIN_COMMIT" ]; then
+  git fetch origin main
+  if ! git merge-base --is-ancestor "$DEQP_MAIN_COMMIT" origin/main; then
+    echo "VK-GL-CTS commit $DEQP_MAIN_COMMIT is not a commit from the main branch."
+    exit 1
+  fi
+fi
+
 mkdir -p /deqp
 
 if [ "$DEQP_API" = tools ]; then
