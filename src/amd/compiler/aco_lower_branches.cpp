@@ -12,8 +12,11 @@ namespace {
 
 struct branch_ctx {
    Program* program;
+   std::vector<bool> blocks_incoming_exec_used;
 
-   branch_ctx(Program* program_) : program(program_) {}
+   branch_ctx(Program* program_)
+       : program(program_), blocks_incoming_exec_used(program_->blocks.size(), true)
+   {}
 };
 
 void
@@ -33,6 +36,65 @@ remove_linear_successor(branch_ctx& ctx, Block& block, uint32_t succ_index)
       for (unsigned i : succ.linear_succs)
          remove_linear_successor(ctx, succ, i);
    }
+}
+
+void
+eliminate_useless_exec_writes_in_block(branch_ctx& ctx, Block& block)
+{
+   /* Check if any successor needs the outgoing exec mask from the current block. */
+   bool exec_write_used;
+   if (block.kind & block_kind_end_with_regs) {
+      /* Last block of a program with succeed shader part should respect final exec write. */
+      exec_write_used = true;
+   } else if (block.linear_succs.empty() && !block.instructions.empty() &&
+              block.instructions.back()->opcode == aco_opcode::s_setpc_b64) {
+      /* This block ends in a long jump and exec might be needed for the next shader part. */
+      exec_write_used = true;
+   } else {
+      /* blocks_incoming_exec_used is initialized to true, so this is correct even for loops. */
+      exec_write_used =
+         std::any_of(block.linear_succs.begin(), block.linear_succs.end(),
+                     [&ctx](int succ_idx) { return ctx.blocks_incoming_exec_used[succ_idx]; });
+   }
+
+   /* Go through all instructions and eliminate useless exec writes. */
+   for (int i = block.instructions.size() - 1; i >= 0; --i) {
+      aco_ptr<Instruction>& instr = block.instructions[i];
+
+      /* See if the current instruction needs or writes exec. */
+      bool needs_exec = needs_exec_mask(instr.get());
+      bool writes_exec =
+         instr->writes_exec() && instr->definitions[0].regClass() == ctx.program->lane_mask;
+
+      /* See if we found an unused exec write. */
+      if (writes_exec && !exec_write_used) {
+         /* Don't eliminate an instruction that writes registers other than exec and scc.
+          * It is possible that this is eg. an s_and_saveexec and the saved value is
+          * used by a later branch.
+          */
+         bool writes_other = std::any_of(instr->definitions.begin(), instr->definitions.end(),
+                                         [](const Definition& def) -> bool
+                                         { return def.physReg() != exec && def.physReg() != scc; });
+         if (!writes_other) {
+            instr.reset();
+            continue;
+         }
+      }
+
+      /* For a newly encountered exec write, clear the used flag. */
+      if (writes_exec)
+         exec_write_used = false;
+
+      /* If the current instruction needs exec, mark it as used. */
+      exec_write_used |= needs_exec;
+   }
+
+   /* Remember if the current block needs an incoming exec mask from its predecessors. */
+   ctx.blocks_incoming_exec_used[block.index] = exec_write_used;
+
+   /* Cleanup: remove deleted instructions from the vector. */
+   auto new_end = std::remove(block.instructions.begin(), block.instructions.end(), nullptr);
+   block.instructions.resize(new_end - block.instructions.begin());
 }
 
 /**
@@ -196,6 +258,7 @@ lower_branches(Program* program)
    for (int i = program->blocks.size() - 1; i >= 0; i--) {
       Block& block = program->blocks[i];
       lower_branch_instruction(ctx, block);
+      eliminate_useless_exec_writes_in_block(ctx, block);
    }
 }
 
