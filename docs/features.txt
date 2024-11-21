@@ -114,7 +114,7 @@ GL 3.3, GLSL 3.30 --- all DONE: freedreno, nv50, nvc0, r600, radeonsi, llvmpipe,
 GL 4.0, GLSL 4.00 --- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, virgl, zink, d3d12, iris, crocus/gen7+, asahi
 
   GL_ARB_draw_buffers_blend                             DONE (freedreno, nv50, softpipe, panfrost, v3d, crocus/gen6+, etnaviv/HALTI5+)
-  GL_ARB_draw_indirect                                  DONE (freedreno, softpipe, v3d, etnaviv/HALTI5+)
+  GL_ARB_draw_indirect                                  DONE (freedreno, softpipe, v3d, panfrost, etnaviv/HALTI5+)
   GL_ARB_gpu_shader5                                    DONE (freedreno/a6xx)
   - 'precise' qualifier                                 DONE (softpipe)
   - Dynamically uniform sampler array indices           DONE (softpipe)
@@ -133,11 +133,11 @@ GL 4.0, GLSL 4.00 --- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, 
   GL_ARB_shader_subroutine                              DONE (all drivers)
   GL_ARB_tessellation_shader                            DONE (freedreno/a6xx)
   GL_ARB_texture_buffer_object_rgb32                    DONE (freedreno, softpipe, panfrost, crocus/gen6+)
-  GL_ARB_texture_cube_map_array                         DONE (freedreno/a4xx+, nv50, softpipe, v3d, crocus/gen6+)
+  GL_ARB_texture_cube_map_array                         DONE (freedreno/a4xx+, nv50, softpipe, v3d, panfrost, crocus/gen6+)
   GL_ARB_texture_gather                                 DONE (freedreno, nv50, softpipe, v3d, panfrost)
   GL_ARB_texture_query_lod                              DONE (freedreno, nv50, softpipe, v3d, panfrost, crocus/gen5+)
   GL_ARB_transform_feedback2                            DONE (freedreno/a3xx+, nv50, softpipe, v3d, panfrost, crocus/gen6+)
-  GL_ARB_transform_feedback3                            DONE (freedreno/a3xx+, softpipe)
+  GL_ARB_transform_feedback3                            DONE (freedreno/a3xx+, softpipe, panfrost)
 
 
 GL 4.1, GLSL 4.10 --- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, virgl, zink, d3d12, iris, crocus/gen7+, asahi
@@ -156,7 +156,7 @@ GL 4.2, GLSL 4.20 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
   GL_ARB_compressed_texture_pixel_storage               DONE (all drivers)
   GL_ARB_shader_atomic_counters                         DONE (freedreno/a5xx+, softpipe, v3d, panfrost)
   GL_ARB_texture_storage                                DONE (all drivers)
-  GL_ARB_transform_feedback_instanced                   DONE (freedreno, nv50, softpipe, v3d, crocus/gen6+)
+  GL_ARB_transform_feedback_instanced                   DONE (freedreno, nv50, softpipe, v3d, panfrost, crocus/gen6+)
   GL_ARB_base_instance                                  DONE (freedreno, nv50, softpipe, v3d, crocus)
   GL_ARB_shader_image_load_store                        DONE (freedreno/a5xx+, softpipe, panfrost)
   GL_ARB_conservative_depth                             DONE (all drivers that support GLSL 1.30)
@@ -172,11 +172,11 @@ GL 4.3, GLSL 4.30 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
   GL_ARB_ES3_compatibility                              DONE (all drivers that support GLSL 3.30)
   GL_ARB_clear_buffer_object                            DONE (all drivers)
   GL_ARB_compute_shader                                 DONE (freedreno/a5xx+, softpipe, v3d, panfrost, crocus/gen7+)
-  GL_ARB_copy_image                                     DONE (freedreno/a6xx, nv50, softpipe, v3d, crocus)
+  GL_ARB_copy_image                                     DONE (freedreno/a6xx, nv50, softpipe, v3d, panfrost, crocus)
   GL_KHR_debug                                          DONE (all drivers)
   GL_ARB_explicit_uniform_location                      DONE (all drivers that support GLSL)
   GL_ARB_fragment_layer_viewport                        DONE (freedreno/a6xx, nv50, softpipe, crocus/gen6+)
-  GL_ARB_framebuffer_no_attachments                     DONE (freedreno, softpipe, v3d, crocus/gen7+, etnaviv)
+  GL_ARB_framebuffer_no_attachments                     DONE (freedreno, softpipe, v3d, panfrost, crocus/gen7+, etnaviv)
   GL_ARB_internalformat_query2                          DONE (all drivers)
   GL_ARB_invalidate_subdata                             DONE (all drivers)
   GL_ARB_multi_draw_indirect                            DONE (all drivers that supports GL_ARB_draw_indirect)
@@ -185,10 +185,10 @@ GL 4.3, GLSL 4.30 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
   GL_ARB_shader_image_size                              DONE (freedreno/a5xx+, softpipe, v3d, panfrost, crocus/gen7+)
   GL_ARB_shader_storage_buffer_object                   DONE (freedreno/a5xx+, softpipe, v3d, panfrost, crocus/gen7+)
   GL_ARB_stencil_texturing                              DONE (freedreno, nv50, softpipe, v3d, panfrost)
-  GL_ARB_texture_buffer_range                           DONE (freedreno, nv50, softpipe, v3d, crocus)
+  GL_ARB_texture_buffer_range                           DONE (freedreno, nv50, softpipe, v3d, panfrost, crocus)
   GL_ARB_texture_query_levels                           DONE (all drivers that support GLSL 1.30)
   GL_ARB_texture_storage_multisample                    DONE (all drivers that support GL_ARB_texture_multisample)
-  GL_ARB_texture_view                                   DONE (freedreno, nv50, softpipe, v3d, crocus/gen7+)
+  GL_ARB_texture_view                                   DONE (freedreno, nv50, softpipe, v3d, panfrost, crocus/gen7+)
   GL_ARB_vertex_attrib_binding                          DONE (all drivers)
 
 
@@ -197,7 +197,7 @@ GL 4.4, GLSL 4.40 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
   GL_MAX_VERTEX_ATTRIB_STRIDE                           DONE (all drivers)
   GL_ARB_buffer_storage                                 DONE (freedreno, nv50, v3d, vc4, lima, panfrost, softpipe, etnaviv, crocus)
   GL_ARB_clear_texture                                  DONE (all drivers)
-  GL_ARB_enhanced_layouts                               DONE (freedreno/a3xx+, nv50, softpipe, crocus)
+  GL_ARB_enhanced_layouts                               DONE (freedreno/a3xx+, nv50, softpipe, panfrost, crocus)
   - compile-time constant expressions                   DONE
   - explicit byte offsets for blocks                    DONE
   - forced alignment within blocks                      DONE
@@ -213,7 +213,7 @@ GL 4.4, GLSL 4.40 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
 GL 4.5, GLSL 4.50 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, virgl, zink, iris, crocus/gen7.5+, d3d12, asahi
 
   GL_ARB_ES3_1_compatibility                            DONE (freedreno/a6xx, softpipe)
-  GL_ARB_clip_control                                   DONE (freedreno, nv50, softpipe, lima, crocus)
+  GL_ARB_clip_control                                   DONE (freedreno, nv50, softpipe, lima, panfrost, crocus)
   GL_ARB_conditional_render_inverted                    DONE (freedreno, nv50, softpipe, panfrost, crocus/gen6+)
   GL_ARB_cull_distance                                  DONE (freedreno/a6xx,  nv50, softpipe, crocus/gen6+)
   GL_ARB_derivative_control                             DONE (freedreno/a3xx+, nv50, softpipe, crocus/gen7+)
@@ -231,7 +231,7 @@ GL 4.6, GLSL 4.60 -- all DONE: radeonsi, virgl, zink, iris, crocus/gen7+, d3d12,
   GL_ARB_indirect_parameters                            DONE (freedreno/a6xx+, nvc0, llvmpipe, virgl)
   GL_ARB_pipeline_statistics_query                      DONE (freedreno/a6xx+, nvc0, r600, llvmpipe, softpipe, crocus/gen6+)
   GL_ARB_polygon_offset_clamp                           DONE (freedreno, nv50, nvc0, r600, llvmpipe, v3d, panfrost, crocus)
-  GL_ARB_shader_atomic_counter_ops                      DONE (freedreno/a5xx+, nvc0, r600, llvmpipe, softpipe, v3d)
+  GL_ARB_shader_atomic_counter_ops                      DONE (freedreno/a5xx+, nvc0, r600, llvmpipe, softpipe, v3d, panfrost)
   GL_ARB_shader_draw_parameters                         DONE (freedreno/a6xx+, llvmpipe, nvc0, crocus/gen6+)
   GL_ARB_shader_group_vote                              DONE (freedreno/a6xx, nvc0, llvmpipe, crocus)
   GL_ARB_spirv_extensions                               DONE (freedreno, llvmpipe)
@@ -280,7 +280,7 @@ GLES3.2, GLSL ES 3.2 -- all DONE: freedreno/a6xx, radeonsi, virgl, llvmpipe, zin
   GL_OES_draw_elements_base_vertex                      DONE (all drivers)
   GL_OES_geometry_shader                                DONE (freedreno/a6xx, nvc0, r600, softpipe, v3d)
   GL_OES_gpu_shader5                                    DONE (freedreno/a6xx, panfrost/v6+, all drivers that support GL_ARB_gpu_shader5)
-  GL_OES_primitive_bounding_box                         DONE (freedreno/a5xx+, nvc0, r600, softpipe, v3d)
+  GL_OES_primitive_bounding_box                         DONE (freedreno/a5xx+, nvc0, r600, softpipe, v3d, panfrost)
   GL_OES_sample_shading                                 DONE (freedreno/a6xx, nvc0, r600, panfrost/v6+, d3d12)
   GL_OES_sample_variables                               DONE (freedreno/a6xx, nvc0, r600, panfrost/v6+, crocus/gen7+)
   GL_OES_shader_image_atomic                            DONE (All drivers that support GLES 3.1)
