@@ -798,16 +798,31 @@ static bool si_texture_get_handle(struct pipe_screen *screen, struct pipe_contex
          assert(tex->surface.tile_swizzle == 0);
       }
 
-      /* Since shader image stores don't support DCC on GFX8,
-       * disable it for external clients that want write
-       * access.
+      const bool debug_disable_dcc = sscreen->debug_flags & DBG(NO_EXPORTED_DCC);
+      /* Since shader image stores don't support DCC on GFX9 and older,
+       * disable it for external clients that want write access.
        */
-      if (sscreen->debug_flags & DBG(NO_EXPORTED_DCC) ||
-          (usage & PIPE_HANDLE_USAGE_SHADER_WRITE && !tex->is_depth && tex->surface.meta_offset) ||
-          /* Displayable DCC requires an explicit flush. */
-          (!(usage & PIPE_HANDLE_USAGE_EXPLICIT_FLUSH) &&
-           si_displayable_dcc_needs_explicit_flush(tex))) {
-         if (si_texture_disable_dcc(sctx, tex)) {
+      const bool shader_write = sscreen->info.gfx_level <= GFX9 &&
+                                usage & PIPE_HANDLE_USAGE_SHADER_WRITE &&
+                                !tex->is_depth &&
+                                tex->surface.meta_offset;
+       /* Another reason to disable display dcc is front buffer rendering.
+        * This can happens with Xorg. If the ddx driver uses GBM_BO_USE_FRONT_RENDERING,
+        * there's nothing to do because the texture is not using DCC.
+        * If the flag isn't set, we have to infer it to get correct rendering.
+        */
+      const bool front_buffer_rendering = !(usage & PIPE_HANDLE_USAGE_EXPLICIT_FLUSH) &&
+                                           tex->buffer.b.b.bind & PIPE_BIND_SCANOUT;
+
+      /* If display dcc requires a retiling step, drop dcc. */
+      const bool explicit_flush = !(usage & PIPE_HANDLE_USAGE_EXPLICIT_FLUSH) &&
+                                  si_displayable_dcc_needs_explicit_flush(tex);
+
+      if (debug_disable_dcc || shader_write || front_buffer_rendering || explicit_flush) {
+         if (sscreen->info.gfx_level >= GFX12) {
+            si_reallocate_texture_inplace(sctx, tex, PIPE_BIND_CONST_BW, false);
+            update_metadata = true;
+         } else if (si_texture_disable_dcc(sctx, tex)) {
             update_metadata = true;
             /* si_texture_disable_dcc flushes the context */
             flush = false;
