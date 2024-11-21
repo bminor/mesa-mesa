@@ -469,8 +469,8 @@ normalize_dependency(VkPipelineStageFlags2 *src_stages,
       break;
    }
 
-   *src_stages = vk_expand_pipeline_stage_flags2(*src_stages);
-   *dst_stages = vk_expand_pipeline_stage_flags2(*dst_stages);
+   *src_stages = vk_expand_src_stage_flags2(*src_stages);
+   *dst_stages = vk_expand_dst_stage_flags2(*dst_stages);
 
    *src_access = vk_filter_src_access_flags2(*src_stages, *src_access);
    *dst_access = vk_filter_dst_access_flags2(*dst_stages, *dst_access);
