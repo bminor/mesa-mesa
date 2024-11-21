@@ -1557,7 +1557,12 @@ try_copy_propagate_def(const brw_compiler *compiler,
    }
 
    /* Reject cases that would violate register regioning restrictions. */
-   if ((val.file == UNIFORM || !val.is_contiguous()) &&
+   if (inst->opcode == SHADER_OPCODE_BROADCAST) {
+      if (arg == 0)
+         return false;
+
+      assert(inst->src[arg].stride == 0);
+   } else if ((val.file == UNIFORM || !val.is_contiguous()) &&
        (inst->is_send_from_grf() || inst->uses_indirect_addressing())) {
       return false;
    }
