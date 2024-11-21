@@ -241,6 +241,7 @@ static int si_init_surface(struct si_screen *sscreen, struct radeon_surf *surfac
       if (modifier == DRM_FORMAT_MOD_INVALID &&
           (ptex->bind & PIPE_BIND_CONST_BW ||
            ptex->bind & PIPE_BIND_PROTECTED ||
+           ptex->bind & PIPE_BIND_USE_FRONT_RENDERING ||
            sscreen->debug_flags & DBG(NO_DCC) ||
            (ptex->bind & PIPE_BIND_SCANOUT && sscreen->debug_flags & DBG(NO_DISPLAY_DCC))))
          flags |= RADEON_SURF_DISABLE_DCC;
@@ -288,6 +289,9 @@ static int si_init_surface(struct si_screen *sscreen, struct radeon_surf *surfac
 
          /* If constant (non-data-dependent) format is requested, disable DCC: */
          if (ptex->bind & PIPE_BIND_CONST_BW)
+            flags |= RADEON_SURF_DISABLE_DCC;
+
+         if (ptex->bind & PIPE_BIND_USE_FRONT_RENDERING)
             flags |= RADEON_SURF_DISABLE_DCC;
 
          switch (sscreen->info.gfx_level) {
@@ -1634,6 +1638,9 @@ si_modifier_supports_resource(struct pipe_screen *screen,
 
    if (((templ->bind & PIPE_BIND_LINEAR) || sscreen->debug_flags & DBG(NO_TILING)) &&
        modifier != DRM_FORMAT_MOD_LINEAR)
+      return false;
+
+   if ((templ->bind & PIPE_BIND_USE_FRONT_RENDERING) && ac_modifier_has_dcc(modifier))
       return false;
 
    /* Protected content doesn't support DCC on GFX12. */
