@@ -1024,7 +1024,7 @@
         "description": "intel/brw: Fix decoding of cond_modifier and saturate in EU validation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e4440df2d873a167b9b32a36543b84f70a662c4e",
         "notes": null
