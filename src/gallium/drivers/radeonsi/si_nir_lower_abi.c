@@ -417,7 +417,9 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_imm_false(b);
       break;
    case nir_intrinsic_load_cull_any_enabled_amd:
-      replacement = nir_imm_bool(b, si_shader_culling_enabled(shader));
+      /* If culling is enabled at compile time, it's always enabled at runtime. */
+      assert(si_shader_culling_enabled(shader));
+      replacement = nir_imm_true(b);
       break;
    case nir_intrinsic_load_cull_back_face_enabled_amd:
       replacement = nir_i2b(b, GET_FIELD_NIR(GS_STATE_CULL_FACE_BACK));
