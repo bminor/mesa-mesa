@@ -451,6 +451,23 @@ pandecode_cs_binary(struct pandecode_context *ctx, mali_ptr bin_gpu_va,
 }
 
 void
+pandecode_cs_trace(struct pandecode_context *ctx, mali_ptr trace_gpu_va,
+                   uint32_t size, unsigned gpu_id)
+{
+   simple_mtx_lock(&ctx->lock);
+
+   switch (pan_arch(gpu_id)) {
+   case 10:
+      pandecode_cs_trace_v10(ctx, trace_gpu_va, size, gpu_id);
+      break;
+   default:
+      unreachable("Unsupported architecture");
+   }
+
+   simple_mtx_unlock(&ctx->lock);
+}
+
+void
 pandecode_shader_disassemble(struct pandecode_context *ctx, mali_ptr shader_ptr,
                              unsigned gpu_id)
 {

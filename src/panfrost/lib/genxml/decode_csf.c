@@ -30,6 +30,9 @@
 #include "decode.h"
 
 #if PAN_ARCH >= 10
+
+#include "genxml/cs_builder.h"
+
 /* Limit for Mali-G610. -1 because we're not including the active frame */
 #define MAX_CALL_STACK_DEPTH (8 - 1)
 
@@ -1498,6 +1501,14 @@ print_cs_binary(struct pandecode_context *ctx, mali_ptr bin,
          break;
       }
 
+      case MALI_CS_OPCODE_RUN_IDVS:
+      case MALI_CS_OPCODE_RUN_FRAGMENT:
+      case MALI_CS_OPCODE_RUN_COMPUTE:
+      case MALI_CS_OPCODE_RUN_COMPUTE_INDIRECT:
+         fprintf(ctx->dump_stream, " // tracepoint_%" PRIx64,
+                 bin + (i * sizeof(uint64_t)));
+         break;
+
       default:
          break;
       }
@@ -1531,6 +1542,102 @@ GENX(pandecode_cs_binary)(struct pandecode_context *ctx, mali_ptr bin,
 
    ralloc_free(symbols);
 
+   pandecode_map_read_write(ctx);
+}
+
+void
+GENX(pandecode_cs_trace)(struct pandecode_context *ctx, mali_ptr trace,
+                         uint32_t trace_size, unsigned gpu_id)
+{
+   pandecode_dump_file_open(ctx);
+
+   void *trace_data = pandecode_fetch_gpu_mem(ctx, trace, trace_size);
+
+   while (trace_size > 0) {
+      uint32_t regs[256] = {};
+      uint64_t *ip = trace_data;
+
+      uint64_t *instr = pandecode_fetch_gpu_mem(ctx, *ip, sizeof(*instr));
+
+      /* Mali-G610 has 96 registers. Other devices not yet supported, we can
+       * make this configurable later when we encounter new Malis.
+       */
+      struct queue_ctx qctx = {
+         .nr_regs = 96,
+         .regs = regs,
+         .ip = instr,
+         .end = instr + 1,
+         .gpu_id = gpu_id,
+      };
+
+      pandecode_make_indent(ctx);
+      print_cs_instr(ctx->dump_stream, *instr);
+      fprintf(ctx->dump_stream, " // from tracepoint_%" PRIx64 "\n", *ip);
+
+      pan_unpack(instr, CS_BASE, base);
+
+      switch (base.opcode) {
+      case MALI_CS_OPCODE_RUN_IDVS: {
+         struct cs_run_idvs_trace *idvs_trace = trace_data;
+
+         assert(trace_size >= sizeof(idvs_trace));
+         pan_unpack(instr, CS_RUN_IDVS, I);
+         memcpy(regs, idvs_trace->sr, sizeof(idvs_trace->sr));
+
+         if (I.draw_id_register_enable)
+            regs[I.draw_id] = idvs_trace->draw_id;
+
+         pandecode_run_idvs(ctx, ctx->dump_stream, &qctx, &I);
+         trace_data = idvs_trace + 1;
+         trace_size -= sizeof(*idvs_trace);
+         break;
+      }
+
+      case MALI_CS_OPCODE_RUN_FRAGMENT: {
+         struct cs_run_fragment_trace *frag_trace = trace_data;
+
+         assert(trace_size >= sizeof(frag_trace));
+         pan_unpack(instr, CS_RUN_FRAGMENT, I);
+         memcpy(&regs[40], frag_trace->sr, sizeof(frag_trace->sr));
+         pandecode_run_fragment(ctx, ctx->dump_stream, &qctx, &I);
+         trace_data = frag_trace + 1;
+         trace_size -= sizeof(*frag_trace);
+         break;
+      }
+
+      case MALI_CS_OPCODE_RUN_COMPUTE: {
+         struct cs_run_compute_trace *comp_trace = trace_data;
+
+         assert(trace_size >= sizeof(comp_trace));
+         pan_unpack(instr, CS_RUN_COMPUTE, I);
+         memcpy(regs, comp_trace->sr, sizeof(comp_trace->sr));
+         pandecode_run_compute(ctx, ctx->dump_stream, &qctx, &I);
+         trace_data = comp_trace + 1;
+         trace_size -= sizeof(*comp_trace);
+         break;
+      }
+
+      case MALI_CS_OPCODE_RUN_COMPUTE_INDIRECT: {
+         struct cs_run_compute_trace *comp_trace = trace_data;
+
+         assert(trace_size >= sizeof(comp_trace));
+         pan_unpack(instr, CS_RUN_COMPUTE_INDIRECT, I);
+         memcpy(regs, comp_trace->sr, sizeof(comp_trace->sr));
+         pandecode_run_compute_indirect(ctx, ctx->dump_stream, &qctx, &I);
+         trace_data = comp_trace + 1;
+         trace_size -= sizeof(*comp_trace);
+         break;
+      }
+
+      default:
+         assert(!"Invalid trace packet");
+         break;
+      }
+
+      pandecode_log(ctx, "\n");
+   }
+
+   fflush(ctx->dump_stream);
    pandecode_map_read_write(ctx);
 }
 #endif

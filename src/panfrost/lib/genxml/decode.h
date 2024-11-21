@@ -134,6 +134,8 @@ void pandecode_interpret_cs_v10(struct pandecode_context *ctx, mali_ptr queue,
                                 uint32_t size, unsigned gpu_id, uint32_t *regs);
 void pandecode_cs_binary_v10(struct pandecode_context *ctx, mali_ptr bin,
                              uint32_t bin_size, unsigned gpu_id);
+void pandecode_cs_trace_v10(struct pandecode_context *ctx, mali_ptr trace,
+                            uint32_t trace_size, unsigned gpu_id);
 
 /* Logging infrastructure */
 static void

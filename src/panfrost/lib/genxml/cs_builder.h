@@ -1880,3 +1880,179 @@ cs_exception_handler_end(struct cs_builder *b,
            cs_exception_handler_start(__b, __handler, __ctx);                  \
         __ehandler != NULL;                                                    \
         cs_exception_handler_end(__b, __handler), __ehandler = NULL)
+
+struct cs_tracing_ctx {
+   bool enabled;
+   struct cs_index ctx_reg;
+   unsigned tracebuf_addr_offset;
+   uint8_t ls_sb_slot;
+};
+
+static inline void
+cs_trace_preamble(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
+                  struct cs_index scratch_regs, unsigned trace_size)
+{
+   assert(trace_size > 0 && ALIGN_POT(trace_size, 64) == trace_size &&
+          trace_size < INT16_MAX);
+   assert(scratch_regs.size >= 4 && !(scratch_regs.reg & 1));
+
+   struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
+
+   /* We always update the tracebuf position first, so we can easily detect OOB
+    * access. Use cs_trace_field_offset() to get an offset taking this
+    * pre-increment into account. */
+   cs_load64_to(b, tracebuf_addr, ctx->ctx_reg, ctx->tracebuf_addr_offset);
+   cs_wait_slot(b, ctx->ls_sb_slot, false);
+   cs_add64(b, tracebuf_addr, tracebuf_addr, trace_size);
+   cs_store64(b, tracebuf_addr, ctx->ctx_reg, ctx->tracebuf_addr_offset);
+   cs_wait_slot(b, ctx->ls_sb_slot, false);
+}
+
+#define cs_trace_field_offset(__type, __field)                                 \
+   (int16_t)(offsetof(struct cs_##__type##_trace, __field) -                   \
+             sizeof(struct cs_##__type##_trace))
+
+struct cs_run_fragment_trace {
+   uint64_t ip;
+   uint32_t sr[7];
+} __attribute__((aligned(64)));
+
+static inline void
+cs_trace_run_fragment(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
+                      struct cs_index scratch_regs, bool enable_tem,
+                      enum mali_tile_render_order tile_order, bool progress_inc)
+{
+   if (likely(!ctx->enabled)) {
+      cs_run_fragment(b, enable_tem, tile_order, progress_inc);
+      return;
+   }
+
+   struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
+   struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
+
+   cs_trace_preamble(b, ctx, scratch_regs,
+                     sizeof(struct cs_run_fragment_trace));
+
+   /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
+    * won't point to the right instruction. */
+   cs_load_ip_to(b, data);
+   cs_run_fragment(b, enable_tem, tile_order, progress_inc);
+   cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_fragment, ip));
+
+   cs_store(b, cs_reg_tuple(b, 40, 7), tracebuf_addr, BITFIELD_MASK(7),
+            cs_trace_field_offset(run_fragment, sr));
+   cs_wait_slot(b, ctx->ls_sb_slot, false);
+}
+
+struct cs_run_idvs_trace {
+   uint64_t ip;
+   uint32_t draw_id;
+   uint32_t pad;
+   uint32_t sr[61];
+} __attribute__((aligned(64)));
+
+static inline void
+cs_trace_run_idvs(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
+                  struct cs_index scratch_regs, uint32_t flags_override,
+                  bool progress_inc, bool malloc_enable,
+                  struct cs_shader_res_sel varying_sel,
+                  struct cs_shader_res_sel frag_sel, struct cs_index draw_id)
+{
+   if (likely(!ctx->enabled)) {
+      cs_run_idvs(b, flags_override, progress_inc, malloc_enable, varying_sel,
+                  frag_sel, draw_id);
+      return;
+   }
+
+   struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
+   struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
+
+   cs_trace_preamble(b, ctx, scratch_regs,
+                     sizeof(struct cs_run_idvs_trace));
+
+   /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
+    * won't point to the right instruction. */
+   cs_load_ip_to(b, data);
+   cs_run_idvs(b, flags_override, progress_inc, malloc_enable, varying_sel,
+               frag_sel, draw_id);
+   cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_idvs, ip));
+
+   if (draw_id.type != CS_INDEX_UNDEF)
+      cs_store32(b, draw_id, tracebuf_addr,
+                 cs_trace_field_offset(run_idvs, draw_id));
+
+   for (unsigned i = 0; i < 48; i++)
+      cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
+               cs_trace_field_offset(run_idvs, sr[i]));
+   cs_store(b, cs_reg_tuple(b, 48, 13), tracebuf_addr, BITFIELD_MASK(13),
+            cs_trace_field_offset(run_idvs, sr[48]));
+   cs_wait_slot(b, ctx->ls_sb_slot, false);
+}
+
+struct cs_run_compute_trace {
+   uint64_t ip;
+   uint32_t sr[40];
+} __attribute__((aligned(64)));
+
+static inline void
+cs_trace_run_compute(struct cs_builder *b, const struct cs_tracing_ctx *ctx,
+                     struct cs_index scratch_regs, unsigned task_increment,
+                     enum mali_task_axis task_axis, bool progress_inc,
+                     struct cs_shader_res_sel res_sel)
+{
+   if (likely(!ctx->enabled)) {
+      cs_run_compute(b, task_increment, task_axis, progress_inc, res_sel);
+      return;
+   }
+
+   struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
+   struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
+
+   cs_trace_preamble(b, ctx, scratch_regs,
+                     sizeof(struct cs_run_compute_trace));
+
+   /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
+    * won't point to the right instruction. */
+   cs_load_ip_to(b, data);
+   cs_run_compute(b, task_increment, task_axis, progress_inc, res_sel);
+   cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_compute, ip));
+
+   for (unsigned i = 0; i < 32; i++)
+      cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
+               cs_trace_field_offset(run_compute, sr[i]));
+   cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
+            cs_trace_field_offset(run_compute, sr[32]));
+   cs_wait_slot(b, ctx->ls_sb_slot, false);
+}
+
+static inline void
+cs_trace_run_compute_indirect(struct cs_builder *b,
+                              const struct cs_tracing_ctx *ctx,
+                              struct cs_index scratch_regs,
+                              unsigned wg_per_task, bool progress_inc,
+                              struct cs_shader_res_sel res_sel)
+{
+   if (likely(!ctx->enabled)) {
+      cs_run_compute_indirect(b, wg_per_task, progress_inc, res_sel);
+      return;
+   }
+
+   struct cs_index tracebuf_addr = cs_reg64(b, scratch_regs.reg);
+   struct cs_index data = cs_reg64(b, scratch_regs.reg + 2);
+
+   cs_trace_preamble(b, ctx, scratch_regs,
+                     sizeof(struct cs_run_compute_trace));
+
+   /* cs_run_xx() must immediately follow cs_load_ip_to() otherwise the IP
+    * won't point to the right instruction. */
+   cs_load_ip_to(b, data);
+   cs_run_compute_indirect(b, wg_per_task, progress_inc, res_sel);
+   cs_store64(b, data, tracebuf_addr, cs_trace_field_offset(run_compute, ip));
+
+   for (unsigned i = 0; i < 32; i++)
+      cs_store(b, cs_reg_tuple(b, i, 16), tracebuf_addr, BITFIELD_MASK(16),
+               cs_trace_field_offset(run_compute, sr[i]));
+   cs_store(b, cs_reg_tuple(b, 32, 8), tracebuf_addr, BITFIELD_MASK(8),
+            cs_trace_field_offset(run_compute, sr[32]));
+   cs_wait_slot(b, ctx->ls_sb_slot, false);
+}
