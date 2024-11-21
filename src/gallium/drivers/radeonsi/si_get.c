@@ -1181,7 +1181,6 @@ static bool si_vid_is_target_buffer_supported(struct pipe_screen *screen,
 
          if (sscreen->info.vcn_ip_version < VCN_2_0_0 ||
              sscreen->info.vcn_ip_version == VCN_2_2_0 ||
-             sscreen->info.vcn_ip_version >= VCN_5_0_0 ||
              sscreen->debug_flags & DBG(NO_EFC))
             return false;
 
