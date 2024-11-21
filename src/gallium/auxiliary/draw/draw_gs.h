@@ -81,8 +81,8 @@ struct draw_geometry_shader {
 
    unsigned max_output_vertices;
    unsigned primitive_boundary;
-   unsigned input_primitive;
-   unsigned output_primitive;
+   enum mesa_prim input_primitive;
+   enum mesa_prim output_primitive;
    unsigned vertex_size;
 
    struct draw_vertex_stream stream[TGSI_MAX_VERTEX_STREAMS];
