@@ -126,6 +126,11 @@
 /* for VCN5 */
 #define RDECODE_VCN5_256B_D                                 0x00000001
 
+#define RDECODE_TILE_LINEAR                                 0x00000000
+#define RDECODE_TILE_8X4                                    0x00000001
+#define RDECODE_TILE_8X8                                    0x00000002
+#define RDECODE_TILE_32AS8                                  0x00000003
+
 #define RDECODE_MESSAGE_NOT_SUPPORTED                       0x00000000
 #define RDECODE_MESSAGE_CREATE                              0x00000001
 #define RDECODE_MESSAGE_DECODE                              0x00000002
@@ -1181,6 +1186,8 @@ struct jpeg_params {
    unsigned dt_luma_top_offset;
    unsigned dt_chroma_top_offset;
    unsigned dt_chromav_top_offset;
+   unsigned dt_addr_mode;
+   unsigned dt_swizzle_mode;
    uint16_t crop_x;
    uint16_t crop_y;
    uint16_t crop_width;

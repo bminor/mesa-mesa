@@ -13,6 +13,9 @@
 #include "util/u_memory.h"
 #include "util/u_video.h"
 
+#include "ac_vcn_dec.h"
+#include "amd/addrlib/inc/addrtypes.h"
+
 #include <assert.h>
 #include <stdio.h>
 
@@ -20,6 +23,7 @@ static struct pb_buffer_lean *radeon_jpeg_get_decode_param(struct radeon_decoder
                                                            struct pipe_video_buffer *target,
                                                            struct pipe_picture_desc *picture)
 {
+   struct si_context *sctx = (struct si_context *)dec->base.context;
    struct si_texture *luma = (struct si_texture *)((struct vl_video_buffer *)target)->resources[0];
    struct si_texture *chroma, *chromav;
 
@@ -27,6 +31,47 @@ static struct pb_buffer_lean *radeon_jpeg_get_decode_param(struct radeon_decoder
    dec->jpg.dt_luma_top_offset = luma->surface.u.gfx9.surf_offset;
    dec->jpg.dt_chroma_top_offset = 0;
    dec->jpg.dt_chromav_top_offset = 0;
+   dec->jpg.dt_swizzle_mode = luma->surface.u.gfx9.swizzle_mode;
+
+   if (sctx->gfx_level >= GFX12) {
+      switch (dec->jpg.dt_swizzle_mode) {
+      case ADDR3_256B_2D:
+      case ADDR3_4KB_2D:
+      case ADDR3_64KB_2D:
+      case ADDR3_256KB_2D:
+         dec->jpg.dt_addr_mode = RDECODE_TILE_8X8;
+         break;
+      case ADDR3_LINEAR:
+      default:
+         dec->jpg.dt_addr_mode = RDECODE_TILE_LINEAR;
+         break;
+      }
+   } else {
+      switch (dec->jpg.dt_swizzle_mode) {
+      case ADDR_SW_256B_D:
+      case ADDR_SW_4KB_D:
+      case ADDR_SW_64KB_D:
+      case ADDR_SW_4KB_D_X:
+      case ADDR_SW_64KB_D_X:
+      case ADDR_SW_64KB_R_X:
+      case ADDR_SW_256KB_D_X:
+      case ADDR_SW_256KB_R_X:
+         dec->jpg.dt_addr_mode = RDECODE_TILE_8X8;
+         break;
+      case ADDR_SW_256B_S:
+      case ADDR_SW_4KB_S:
+      case ADDR_SW_64KB_S:
+      case ADDR_SW_4KB_S_X:
+      case ADDR_SW_64KB_S_X:
+      case ADDR_SW_256KB_S_X:
+         dec->jpg.dt_addr_mode = RDECODE_TILE_32AS8;
+         break;
+      case ADDR_SW_LINEAR:
+      default:
+         dec->jpg.dt_addr_mode = RDECODE_TILE_LINEAR;
+         break;
+      }
+   }
 
    switch (target->buffer_format) {
       case PIPE_FORMAT_IYUV:
@@ -115,8 +160,10 @@ static void send_cmd_target(struct radeon_decoder *dec, struct pb_buffer_lean *b
    set_reg_jpeg(dec, SOC15_REG_ADDR(mmUVD_JPEG_UV_PITCH), COND0, TYPE0,
                 ((dec->jpg.dt_uv_pitch * 2) >> 4));
 
-   set_reg_jpeg(dec, SOC15_REG_ADDR(mmUVD_JPEG_TILING_CTRL), COND0, TYPE0, 0);
-   set_reg_jpeg(dec, SOC15_REG_ADDR(mmUVD_JPEG_UV_TILING_CTRL), COND0, TYPE0, 0);
+   set_reg_jpeg(dec, SOC15_REG_ADDR(mmUVD_JPEG_TILING_CTRL), COND0, TYPE0,
+                dec->jpg.dt_addr_mode | (dec->jpg.dt_swizzle_mode << 3));
+   set_reg_jpeg(dec, SOC15_REG_ADDR(mmUVD_JPEG_UV_TILING_CTRL), COND0, TYPE0,
+                dec->jpg.dt_addr_mode | (dec->jpg.dt_swizzle_mode << 3));
 
    dec->ws->cs_add_buffer(&dec->jcs[dec->cb_idx], buf, usage | RADEON_USAGE_SYNCHRONIZED, domain);
    addr = dec->ws->buffer_get_virtual_address(buf);
@@ -259,9 +306,10 @@ static void send_cmd_target_direct(struct radeon_decoder *dec, struct pb_buffer_
       set_reg_jpeg(dec, dec->jpg_reg.jpeg_uv_pitch, COND0, TYPE0, ((dec->jpg.dt_uv_pitch * 2) >> 4));
    }
 
-   set_reg_jpeg(dec, dec->jpg_reg.dec_addr_mode, COND0, TYPE0, 0);
-   set_reg_jpeg(dec, dec->jpg_reg.dec_y_gfx10_tiling_surface, COND0, TYPE0, 0);
-   set_reg_jpeg(dec, dec->jpg_reg.dec_uv_gfx10_tiling_surface, COND0, TYPE0, 0);
+   set_reg_jpeg(dec, dec->jpg_reg.dec_addr_mode, COND0, TYPE0,
+                dec->jpg.dt_addr_mode | (dec->jpg.dt_addr_mode << 2));
+   set_reg_jpeg(dec, dec->jpg_reg.dec_y_gfx10_tiling_surface, COND0, TYPE0, dec->jpg.dt_swizzle_mode);
+   set_reg_jpeg(dec, dec->jpg_reg.dec_uv_gfx10_tiling_surface, COND0, TYPE0, dec->jpg.dt_swizzle_mode);
 
    dec->ws->cs_add_buffer(&dec->jcs[dec->cb_idx], buf, usage | RADEON_USAGE_SYNCHRONIZED, domain);
    addr = dec->ws->buffer_get_virtual_address(buf);
