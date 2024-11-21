@@ -682,3 +682,4 @@ wayland-dEQP-EGL.functional.resize.surface_size.grow,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_dst_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_min_reverse_dst_x,Fail
 spec@glsl-1.50@execution@primitive-id-no-gs-quad-strip,Fail
+spec@ext_framebuffer_multisample@interpolation 6 non-centroid-deriv-disabled,Fail
