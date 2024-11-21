@@ -2258,8 +2258,7 @@ static void si_draw(struct pipe_context *ctx,
             ngg_culling = rs->ngg_cull_flags_lines |
                           (!HAS_TESS && !HAS_GS ? SI_NGG_CULL_VS_LINES : 0);
          } else {
-            ngg_culling = (sctx->viewport0_y_inverted ? rs->ngg_cull_flags_tris_y_inverted :
-                                                        rs->ngg_cull_flags_tris) |
+            ngg_culling = rs->ngg_cull_flags_tris |
                           (!HAS_TESS && !HAS_GS ? SI_NGG_CULL_VS_TRIANGLES : 0);
          }
 

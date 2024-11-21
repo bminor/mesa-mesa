@@ -242,8 +242,12 @@ enum
  * can be 55 at most. The ESGS vertex stride in dwords is: NUM_ES_OUTPUTS * 4 + 1
  * Only used by GFX9+ to compute LDS addresses of GS inputs.
  */
-#define GS_STATE_NUM_ES_OUTPUTS__SHIFT          13
+#define GS_STATE_NUM_ES_OUTPUTS__SHIFT          14
 #define GS_STATE_NUM_ES_OUTPUTS__MASK           0x3f
+#define GS_STATE_CULL_FACE_FRONT__SHIFT         20
+#define GS_STATE_CULL_FACE_FRONT__MASK          0x1
+#define GS_STATE_CULL_FACE_BACK__SHIFT          21
+#define GS_STATE_CULL_FACE_BACK__MASK           0x1
 /* Small prim filter precision = num_samples / quant_mode where num_samples is in {1, 2, 4, 8} and
  * quant_mode is in {256, 1024, 4096}, which is equal to 1/2^n where n is between 5 and 12.
  *
@@ -333,11 +337,9 @@ enum
  */
 #define SI_NGG_CULL_VS_TRIANGLES             (1 << 0)   /* this implies W, view.xy, and small prim culling */
 #define SI_NGG_CULL_VS_LINES                 (1 << 1)   /* this implies W and view.xy culling */
-#define SI_NGG_CULL_BACK_FACE                (1 << 2)   /* back faces */
-#define SI_NGG_CULL_FRONT_FACE               (1 << 3)   /* front faces */
-#define SI_NGG_CULL_SMALL_LINES_DIAMOND_EXIT (1 << 4)   /* cull small lines according to the diamond exit rule */
-#define SI_NGG_CULL_CLIP_PLANE_ENABLE(enable) (((enable) & 0xff) << 5)
-#define SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(x)  (((x) >> 5) & 0xff)
+#define SI_NGG_CULL_SMALL_LINES_DIAMOND_EXIT (1 << 2)   /* cull small lines according to the diamond exit rule */
+#define SI_NGG_CULL_CLIP_PLANE_ENABLE(enable) (((enable) & 0xff) << 3)
+#define SI_NGG_CULL_GET_CLIP_PLANE_ENABLE(x)  (((x) >> 3) & 0xff)
 
 struct si_shader_profile {
    uint32_t blake3[BLAKE3_OUT_LEN32];
@@ -768,7 +770,7 @@ struct si_shader_key_ge {
       unsigned remove_streamout : 1;
 
       /* For NGG VS and TES. */
-      unsigned ngg_culling : 13; /* SI_NGG_CULL_* */
+      unsigned ngg_culling : 11; /* SI_NGG_CULL_* */
 
 
       /* For shaders where monolithic variants have better code.

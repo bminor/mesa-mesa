@@ -1016,35 +1016,15 @@ static void *si_create_rs_state(struct pipe_context *ctx, const struct pipe_rast
                          S_028810_DX_LINEAR_ATTR_CLIP_ENA(1);
 
    rs->ngg_cull_flags_tris = SI_NGG_CULL_CLIP_PLANE_ENABLE(state->clip_plane_enable);
-   rs->ngg_cull_flags_tris_y_inverted = rs->ngg_cull_flags_tris;
-
    rs->ngg_cull_flags_lines = (!rs->perpendicular_end_caps ? SI_NGG_CULL_SMALL_LINES_DIAMOND_EXIT : 0) |
                               SI_NGG_CULL_CLIP_PLANE_ENABLE(state->clip_plane_enable);
 
-   if (rs->rasterizer_discard) {
-      rs->ngg_cull_flags_tris |= SI_NGG_CULL_FRONT_FACE |
-                                 SI_NGG_CULL_BACK_FACE;
-      rs->ngg_cull_flags_tris_y_inverted = rs->ngg_cull_flags_tris;
+   if (!state->front_ccw) {
+      rs->ngg_cull_front = state->cull_face & PIPE_FACE_FRONT || rs->rasterizer_discard;
+      rs->ngg_cull_back = state->cull_face & PIPE_FACE_BACK || rs->rasterizer_discard;
    } else {
-      bool cull_front, cull_back;
-
-      if (!state->front_ccw) {
-         cull_front = !!(state->cull_face & PIPE_FACE_FRONT);
-         cull_back = !!(state->cull_face & PIPE_FACE_BACK);
-      } else {
-         cull_back = !!(state->cull_face & PIPE_FACE_FRONT);
-         cull_front = !!(state->cull_face & PIPE_FACE_BACK);
-      }
-
-      if (cull_front) {
-         rs->ngg_cull_flags_tris |= SI_NGG_CULL_FRONT_FACE;
-         rs->ngg_cull_flags_tris_y_inverted |= SI_NGG_CULL_BACK_FACE;
-      }
-
-      if (cull_back) {
-         rs->ngg_cull_flags_tris |= SI_NGG_CULL_BACK_FACE;
-         rs->ngg_cull_flags_tris_y_inverted |= SI_NGG_CULL_FRONT_FACE;
-      }
+      rs->ngg_cull_front = state->cull_face & PIPE_FACE_BACK || rs->rasterizer_discard;
+      rs->ngg_cull_back = state->cull_face & PIPE_FACE_FRONT || rs->rasterizer_discard;
    }
 
    /* Force gl_FrontFacing to true or false if the other face is culled. */
@@ -1335,6 +1315,7 @@ static void si_bind_rs_state(struct pipe_context *ctx, void *state)
    SET_FIELD(sctx->current_vs_state, VS_STATE_CLAMP_VERTEX_COLOR, rs->clamp_vertex_color);
 
    si_pm4_bind_state(sctx, rasterizer, rs);
+   si_update_ngg_cull_face_state(sctx);
 
    if (old_rs->scissor_enable != rs->scissor_enable)
       si_mark_atom_dirty(sctx, &sctx->atoms.s.scissors);

@@ -420,10 +420,10 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       replacement = nir_imm_bool(b, si_shader_culling_enabled(shader));
       break;
    case nir_intrinsic_load_cull_back_face_enabled_amd:
-      replacement = nir_imm_bool(b, key->ge.opt.ngg_culling & SI_NGG_CULL_BACK_FACE);
+      replacement = nir_i2b(b, GET_FIELD_NIR(GS_STATE_CULL_FACE_BACK));
       break;
    case nir_intrinsic_load_cull_front_face_enabled_amd:
-      replacement = nir_imm_bool(b, key->ge.opt.ngg_culling & SI_NGG_CULL_FRONT_FACE);
+      replacement = nir_i2b(b, GET_FIELD_NIR(GS_STATE_CULL_FACE_FRONT));
       break;
    case nir_intrinsic_load_cull_small_triangle_precision_amd:
       replacement = get_small_prim_precision(b, s, false);
