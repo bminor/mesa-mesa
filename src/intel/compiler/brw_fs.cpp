@@ -1609,6 +1609,8 @@ brw_allocate_registers(fs_visitor &s, bool allow_spilling)
       return;
 
    brw_fs_lower_scoreboard(s);
+
+   s.debug_optimizer(nir, "scoreboard", 96, 4);
 }
 
 /**
