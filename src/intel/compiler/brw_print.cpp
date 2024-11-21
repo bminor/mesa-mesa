@@ -648,7 +648,7 @@ brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *fi
    if (inst->has_no_mask_send_params)
       fprintf(file, "NoMaskParams ");
 
-   if (inst->sched.pipe != TGL_PIPE_NONE) {
+   if (inst->sched.regdist || inst->sched.mode) {
       fprintf(file, "{ ");
       brw_print_swsb(file, s.devinfo, inst->sched);
       fprintf(file, " } ");
@@ -661,9 +661,6 @@ brw_print_instruction_to_file(const fs_visitor &s, const fs_inst *inst, FILE *fi
 void
 brw_print_swsb(FILE *f, const struct intel_device_info *devinfo, const tgl_swsb swsb)
 {
-   if (swsb.pipe == TGL_PIPE_NONE)
-      return;
-
    if (swsb.regdist) {
       fprintf(f, "%s@%d",
               (devinfo && devinfo->verx10 < 125 ? "" :
