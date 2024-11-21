@@ -1423,6 +1423,15 @@ VkResult anv_CreateDescriptorPool(
       ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_INDIRECT :
       ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT;
 
+   uint32_t max_descriptor_count = 0;
+   if (device->physical->instance->anv_upper_bound_descriptor_pool_sampler &&
+       !device->physical->indirect_descriptors) {
+      for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; i++) {
+         max_descriptor_count = MAX2(pCreateInfo->pPoolSizes[i].descriptorCount,
+                                     max_descriptor_count);
+      }
+   }
+
    for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; i++) {
       enum anv_descriptor_data desc_data =
          pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT ?
@@ -1449,7 +1458,8 @@ VkResult anv_CreateDescriptorPool(
       uint32_t desc_data_surface_size =
          desc_surface_size * pCreateInfo->pPoolSizes[i].descriptorCount;
       uint32_t desc_data_sampler_size =
-         desc_sampler_size * pCreateInfo->pPoolSizes[i].descriptorCount;
+         desc_sampler_size * MAX2(max_descriptor_count,
+                                  pCreateInfo->pPoolSizes[i].descriptorCount);
 
       /* Combined image sampler descriptors can take up to 3 slots if they
        * hold a YCbCr image.

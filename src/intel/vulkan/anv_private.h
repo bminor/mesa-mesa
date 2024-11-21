@@ -1306,6 +1306,7 @@ struct anv_instance {
     bool                                        disable_xe2_ccs;
     bool                                        compression_control_enabled;
     bool                                        anv_fake_nonlocal_memory;
+    bool                                        anv_upper_bound_descriptor_pool_sampler;
 
     /* HW workarounds */
     bool                                        no_16bit;
