@@ -90,8 +90,12 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
 const char *
 radv_get_debug_option_name(int id)
 {
-   assert(id < ARRAY_SIZE(radv_debug_options) - 1);
-   return radv_debug_options[id].string;
+   assert(id < ARRAY_SIZE(radv_debug_options));
+   for (uint32_t i = 0; i < ARRAY_SIZE(radv_debug_options); i++) {
+      if (radv_debug_options[i].flag == (1ull << id))
+         return radv_debug_options[i].string;
+   }
+   return NULL;
 }
 
 static const struct debug_control radv_perftest_options[] = {{"localbos", RADV_PERFTEST_LOCAL_BOS},
@@ -124,8 +128,12 @@ static const struct debug_control radv_trap_excp_options[] = {
 const char *
 radv_get_perftest_option_name(int id)
 {
-   assert(id < ARRAY_SIZE(radv_perftest_options) - 1);
-   return radv_perftest_options[id].string;
+   assert(id < ARRAY_SIZE(radv_perftest_options));
+   for (uint32_t i = 0; i < ARRAY_SIZE(radv_perftest_options); i++) {
+      if (radv_perftest_options[i].flag == (1ull << id))
+         return radv_perftest_options[i].string;
+   }
+   return NULL;
 }
 
 static const struct debug_control trace_options[] = {
