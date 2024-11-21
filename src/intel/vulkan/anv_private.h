@@ -5034,19 +5034,17 @@ anv_pipeline_is_mesh(const struct anv_graphics_pipeline *pipeline)
 }
 
 static inline bool
-anv_cmd_buffer_all_color_write_masked(const struct anv_cmd_buffer *cmd_buffer)
+anv_gfx_all_color_write_masked(const struct anv_cmd_graphics_state *gfx,
+                               const struct vk_dynamic_graphics_state *dyn)
 {
-   const struct anv_cmd_graphics_state *state = &cmd_buffer->state.gfx;
-   const struct vk_dynamic_graphics_state *dyn =
-      &cmd_buffer->vk.dynamic_graphics_state;
    uint8_t color_writes = dyn->cb.color_write_enables;
 
    /* All writes disabled through vkCmdSetColorWriteEnableEXT */
-   if ((color_writes & ((1u << state->color_att_count) - 1)) == 0)
+   if ((color_writes & ((1u << gfx->color_att_count) - 1)) == 0)
       return true;
 
    /* Or all write masks are empty */
-   for (uint32_t i = 0; i < state->color_att_count; i++) {
+   for (uint32_t i = 0; i < gfx->color_att_count; i++) {
       if (dyn->cb.attachments[i].write_mask != 0)
          return false;
    }
