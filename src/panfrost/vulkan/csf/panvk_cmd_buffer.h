@@ -100,7 +100,12 @@ struct panvk_cs_subqueue_context {
       uint32_t layer_count;
       mali_ptr reg_dump_addr;
    } tiler_oom_ctx;
-   uint64_t debug_syncobjs;
+   struct {
+      uint64_t syncobjs;
+      struct {
+         uint64_t cs;
+      } tracebuf;
+   } debug;
 } __attribute__((aligned(64)));
 
 struct panvk_cache_flush_info {
@@ -249,6 +254,8 @@ struct panvk_cs_state {
    /* Sync point relative to the beginning of the command buffer.
     * Needs to be offset with the subqueue sync point. */
    int32_t relative_sync_point;
+
+   struct cs_tracing_ctx tracing;
 };
 
 static inline struct panvk_cs_reg_upd_context *

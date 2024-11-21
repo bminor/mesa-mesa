@@ -17,20 +17,29 @@
 #include "vk_drm_syncobj.h"
 #include "vk_log.h"
 
+#define MIN_DESC_TRACEBUF_SIZE (128 * 1024)
+#define DEFAULT_DESC_TRACEBUF_SIZE (2 * 1024 * 1024)
+#define MIN_CS_TRACEBUF_SIZE (512 * 1024)
+#define DEFAULT_CS_TRACEBUF_SIZE (2 * 1024 * 1024)
+
 static void
 finish_render_desc_ringbuf(struct panvk_queue *queue)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+   struct panvk_instance *instance =
+      to_panvk_instance(dev->vk.physical->instance);
+   bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
    struct panvk_desc_ringbuf *ringbuf = &queue->render_desc_ringbuf;
 
    panvk_pool_free_mem(&ringbuf->syncobj);
 
    if (dev->debug.decode_ctx && ringbuf->addr.dev) {
       pandecode_inject_free(dev->debug.decode_ctx, ringbuf->addr.dev,
-                            RENDER_DESC_RINGBUF_SIZE);
-      pandecode_inject_free(dev->debug.decode_ctx,
-                            ringbuf->addr.dev + RENDER_DESC_RINGBUF_SIZE,
-                            RENDER_DESC_RINGBUF_SIZE);
+                            ringbuf->size);
+      if (!tracing_enabled)
+         pandecode_inject_free(dev->debug.decode_ctx,
+                               ringbuf->addr.dev + ringbuf->size,
+                               ringbuf->size);
    }
 
    if (ringbuf->addr.dev) {
@@ -38,7 +47,7 @@ finish_render_desc_ringbuf(struct panvk_queue *queue)
          .type = PAN_KMOD_VM_OP_TYPE_UNMAP,
          .va = {
             .start = ringbuf->addr.dev,
-            .size = RENDER_DESC_RINGBUF_SIZE * 2,
+            .size = ringbuf->size * (tracing_enabled ? 2 : 1),
          },
       };
 
@@ -47,14 +56,13 @@ finish_render_desc_ringbuf(struct panvk_queue *queue)
       assert(!ret);
 
       simple_mtx_lock(&dev->as.lock);
-      util_vma_heap_free(&dev->as.heap, ringbuf->addr.dev,
-                         RENDER_DESC_RINGBUF_SIZE * 2);
+      util_vma_heap_free(&dev->as.heap, ringbuf->addr.dev, ringbuf->size * 2);
       simple_mtx_unlock(&dev->as.lock);
    }
 
    if (ringbuf->addr.host) {
       ASSERTED int ret =
-         os_munmap(ringbuf->addr.host, RENDER_DESC_RINGBUF_SIZE);
+         os_munmap(ringbuf->addr.host, ringbuf->size);
       assert(!ret);
    }
 
@@ -65,21 +73,35 @@ static VkResult
 init_render_desc_ringbuf(struct panvk_queue *queue)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+   struct panvk_instance *instance =
+      to_panvk_instance(dev->vk.physical->instance);
+   bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
    uint32_t flags = panvk_device_adjust_bo_flags(dev, PAN_KMOD_BO_FLAG_NO_MMAP);
    struct panvk_desc_ringbuf *ringbuf = &queue->render_desc_ringbuf;
-   const size_t size = RENDER_DESC_RINGBUF_SIZE;
    uint64_t dev_addr = 0;
    VkResult result;
    int ret;
 
-   ringbuf->bo = pan_kmod_bo_alloc(dev->kmod.dev, dev->kmod.vm, size, flags);
+   if (tracing_enabled) {
+      ringbuf->size = debug_get_num_option("PANVK_DESC_TRACEBUF_SIZE",
+                                           DEFAULT_DESC_TRACEBUF_SIZE);
+      flags |= PAN_KMOD_BO_FLAG_GPU_UNCACHED;
+      assert(ringbuf->size > MIN_DESC_TRACEBUF_SIZE &&
+             util_is_power_of_two_nonzero(ringbuf->size));
+   } else {
+      ringbuf->size = RENDER_DESC_RINGBUF_SIZE;
+   }
+
+   ringbuf->bo =
+      pan_kmod_bo_alloc(dev->kmod.dev, dev->kmod.vm, ringbuf->size, flags);
    if (!ringbuf->bo)
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to create a descriptor ring buffer context");
 
    if (!(flags & PAN_KMOD_BO_FLAG_NO_MMAP)) {
-      ringbuf->addr.host = pan_kmod_bo_mmap(
-         ringbuf->bo, 0, size, PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
+      ringbuf->addr.host =
+         pan_kmod_bo_mmap(ringbuf->bo, 0, ringbuf->size, PROT_READ | PROT_WRITE,
+                          MAP_SHARED, NULL);
       if (ringbuf->addr.host == MAP_FAILED) {
          result = panvk_errorf(dev, VK_ERROR_OUT_OF_HOST_MEMORY,
                                "Failed to CPU map ringbuf BO");
@@ -91,7 +113,8 @@ init_render_desc_ringbuf(struct panvk_queue *queue)
     * boundary when accessing the mapping. This way we can encode the wraparound
     * using 32-bit operations. */
    simple_mtx_lock(&dev->as.lock);
-   dev_addr = util_vma_heap_alloc(&dev->as.heap, size * 2, size * 2);
+   dev_addr =
+      util_vma_heap_alloc(&dev->as.heap, ringbuf->size * 2, ringbuf->size * 2);
    simple_mtx_unlock(&dev->as.lock);
 
    if (!dev_addr) {
@@ -106,7 +129,7 @@ init_render_desc_ringbuf(struct panvk_queue *queue)
          .type = PAN_KMOD_VM_OP_TYPE_MAP,
          .va = {
             .start = dev_addr,
-            .size = RENDER_DESC_RINGBUF_SIZE,
+            .size = ringbuf->size,
          },
          .map = {
             .bo = ringbuf->bo,
@@ -116,8 +139,8 @@ init_render_desc_ringbuf(struct panvk_queue *queue)
       {
          .type = PAN_KMOD_VM_OP_TYPE_MAP,
          .va = {
-            .start = dev_addr + RENDER_DESC_RINGBUF_SIZE,
-            .size = RENDER_DESC_RINGBUF_SIZE,
+            .start = dev_addr + ringbuf->size,
+            .size = ringbuf->size,
          },
          .map = {
             .bo = ringbuf->bo,
@@ -126,8 +149,10 @@ init_render_desc_ringbuf(struct panvk_queue *queue)
       },
    };
 
+   /* If tracing is enabled, we keep the second part of the mapping unmapped
+    * to serve as a guard region. */
    ret = pan_kmod_vm_bind(dev->kmod.vm, PAN_KMOD_VM_OP_MODE_IMMEDIATE, vm_ops,
-                          ARRAY_SIZE(vm_ops));
+                          tracing_enabled ? 1 : ARRAY_SIZE(vm_ops));
    if (ret) {
       result = panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                             "Failed to GPU map ringbuf BO");
@@ -138,10 +163,11 @@ init_render_desc_ringbuf(struct panvk_queue *queue)
 
    if (dev->debug.decode_ctx) {
       pandecode_inject_mmap(dev->debug.decode_ctx, ringbuf->addr.dev,
-                            ringbuf->addr.host, RENDER_DESC_RINGBUF_SIZE, NULL);
-      pandecode_inject_mmap(dev->debug.decode_ctx,
-                            ringbuf->addr.dev + RENDER_DESC_RINGBUF_SIZE,
-                            ringbuf->addr.host, RENDER_DESC_RINGBUF_SIZE, NULL);
+                            ringbuf->addr.host, ringbuf->size, NULL);
+      if (!tracing_enabled)
+         pandecode_inject_mmap(dev->debug.decode_ctx,
+                               ringbuf->addr.dev + ringbuf->size,
+                               ringbuf->addr.host, ringbuf->size, NULL);
    }
 
    struct panvk_pool_alloc_info alloc_info = {
@@ -168,12 +194,149 @@ init_render_desc_ringbuf(struct panvk_queue *queue)
 err_finish_ringbuf:
    if (dev_addr && !ringbuf->addr.dev) {
       simple_mtx_lock(&dev->as.lock);
-      util_vma_heap_free(&dev->as.heap, dev_addr, size * 2);
+      util_vma_heap_free(&dev->as.heap, dev_addr, ringbuf->size * 2);
       simple_mtx_unlock(&dev->as.lock);
    }
 
    finish_render_desc_ringbuf(queue);
    return result;
+}
+
+static void
+finish_subqueue_tracing(struct panvk_queue *queue,
+                        enum panvk_subqueue_id subqueue)
+{
+   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+   struct panvk_subqueue *subq = &queue->subqueues[subqueue];
+
+   if (subq->tracebuf.addr.dev) {
+      size_t pgsize = getpagesize();
+
+      pandecode_inject_free(dev->debug.decode_ctx, subq->tracebuf.addr.dev,
+                            subq->tracebuf.size);
+
+      struct pan_kmod_vm_op op = {
+         .type = PAN_KMOD_VM_OP_TYPE_UNMAP,
+         .va = {
+            .start = subq->tracebuf.addr.dev,
+            .size = subq->tracebuf.size,
+         },
+      };
+
+      ASSERTED int ret =
+         pan_kmod_vm_bind(dev->kmod.vm, PAN_KMOD_VM_OP_MODE_IMMEDIATE, &op, 1);
+      assert(!ret);
+
+      simple_mtx_lock(&dev->as.lock);
+      util_vma_heap_free(&dev->as.heap, subq->tracebuf.addr.dev,
+                         subq->tracebuf.size + pgsize);
+      simple_mtx_unlock(&dev->as.lock);
+   }
+
+   if (subq->tracebuf.addr.host) {
+      ASSERTED int ret =
+         os_munmap(subq->tracebuf.addr.host, subq->tracebuf.size);
+      assert(!ret);
+   }
+
+   pan_kmod_bo_put(subq->tracebuf.bo);
+
+   vk_free(&dev->vk.alloc, subq->reg_file);
+}
+
+static VkResult
+init_subqueue_tracing(struct panvk_queue *queue,
+                      enum panvk_subqueue_id subqueue)
+{
+   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+   struct panvk_subqueue *subq = &queue->subqueues[subqueue];
+   struct panvk_instance *instance =
+      to_panvk_instance(dev->vk.physical->instance);
+   unsigned debug = instance->debug_flags;
+   uint64_t dev_addr;
+
+   if (!(debug & PANVK_DEBUG_TRACE))
+      return VK_SUCCESS;
+
+   subq->reg_file =
+      vk_zalloc(&dev->vk.alloc, sizeof(uint32_t) * 256, sizeof(uint64_t),
+                VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!subq->reg_file)
+      return panvk_errorf(dev->vk.physical, VK_ERROR_OUT_OF_HOST_MEMORY,
+                          "Failed to allocate reg file cache");
+
+   subq->tracebuf.size = debug_get_num_option("PANVK_CS_TRACEBUF_SIZE",
+                                              DEFAULT_CS_TRACEBUF_SIZE);
+   assert(subq->tracebuf.size > MIN_CS_TRACEBUF_SIZE &&
+          util_is_power_of_two_nonzero(subq->tracebuf.size));
+
+   subq->tracebuf.bo =
+      pan_kmod_bo_alloc(dev->kmod.dev, dev->kmod.vm, subq->tracebuf.size,
+                        PAN_KMOD_BO_FLAG_GPU_UNCACHED);
+   if (!subq->tracebuf.bo)
+      return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                          "Failed to create a CS tracebuf");
+
+   subq->tracebuf.addr.host =
+      pan_kmod_bo_mmap(subq->tracebuf.bo, 0, subq->tracebuf.size,
+                       PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
+   if (subq->tracebuf.addr.host == MAP_FAILED) {
+      subq->tracebuf.addr.host = NULL;
+      return panvk_errorf(dev, VK_ERROR_OUT_OF_HOST_MEMORY,
+                          "Failed to CPU map tracebuf");
+   }
+
+   /* Add a guard page. */
+   size_t pgsize = getpagesize();
+   simple_mtx_lock(&dev->as.lock);
+   dev_addr =
+      util_vma_heap_alloc(&dev->as.heap, subq->tracebuf.size + pgsize, pgsize);
+   simple_mtx_unlock(&dev->as.lock);
+
+   if (!dev_addr)
+      return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                          "Failed to allocate virtual address for tracebuf");
+
+   struct pan_kmod_vm_op vm_op = {
+      .type = PAN_KMOD_VM_OP_TYPE_MAP,
+      .va = {
+         .start = dev_addr,
+         .size = subq->tracebuf.size,
+      },
+      .map = {
+         .bo = subq->tracebuf.bo,
+         .bo_offset = 0,
+      },
+   };
+
+   /* If tracing is enabled, we keep the second part of the mapping unmapped
+    * to serve as a guard region. */
+   int ret =
+      pan_kmod_vm_bind(dev->kmod.vm, PAN_KMOD_VM_OP_MODE_IMMEDIATE, &vm_op, 1);
+   if (ret) {
+      simple_mtx_lock(&dev->as.lock);
+      util_vma_heap_free(&dev->as.heap, dev_addr, subq->tracebuf.size + pgsize);
+      simple_mtx_unlock(&dev->as.lock);
+      return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                          "Failed to GPU map ringbuf BO");
+   }
+
+   subq->tracebuf.addr.dev = dev_addr;
+
+   if (dev->debug.decode_ctx) {
+      pandecode_inject_mmap(dev->debug.decode_ctx, subq->tracebuf.addr.dev,
+                            subq->tracebuf.addr.host, subq->tracebuf.size,
+                            NULL);
+   }
+
+   return VK_SUCCESS;
+}
+
+static void
+finish_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
+{
+   panvk_pool_free_mem(&queue->subqueues[subqueue].context);
+   finish_subqueue_tracing(queue, subqueue);
 }
 
 static VkResult
@@ -188,21 +351,21 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
    unsigned debug = instance->debug_flags;
    struct panvk_cs_sync64 *syncobjs = panvk_priv_mem_host_addr(queue->syncobjs);
 
-   if (debug & PANVK_DEBUG_TRACE) {
-      subq->reg_file =
-         vk_zalloc(&dev->vk.alloc, sizeof(uint32_t) * 256, sizeof(uint64_t),
-                   VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-      if (!subq->reg_file)
-         return panvk_errorf(dev->vk.physical, VK_ERROR_OUT_OF_HOST_MEMORY,
-                             "Failed to allocate reg file cache");
-   }
+   VkResult result = init_subqueue_tracing(queue, subqueue);
+   if (result != VK_SUCCESS)
+      return result;
 
    struct panvk_pool_alloc_info alloc_info = {
       .size = sizeof(struct panvk_cs_subqueue_context),
       .alignment = 64,
    };
 
-   subq->context = panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
+   /* When tracing is enabled, we want to use a non-cached pool, so can get
+    * up-to-date context even if the CS crashed in the middle. */
+   struct panvk_pool *mempool =
+      (debug & PANVK_DEBUG_TRACE) ? &dev->mempools.rw : &dev->mempools.rw_nc;
+
+   subq->context = panvk_pool_alloc_mem(mempool, alloc_info);
    if (!panvk_priv_mem_host_addr(subq->context))
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to create a queue context");
@@ -212,7 +375,8 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
 
    *cs_ctx = (struct panvk_cs_subqueue_context){
       .syncobjs = panvk_priv_mem_dev_addr(queue->syncobjs),
-      .debug_syncobjs = panvk_priv_mem_dev_addr(queue->debug_syncobjs),
+      .debug.syncobjs = panvk_priv_mem_dev_addr(queue->debug_syncobjs),
+      .debug.tracebuf.cs = subq->tracebuf.addr.dev,
       .iter_sb = 0,
       .tiler_oom_ctx.reg_dump_addr =
          panvk_priv_mem_dev_addr(queue->tiler_oom_regs_save),
@@ -302,10 +466,11 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
                           "SyncobjWait failed: %m");
 
    if (debug & PANVK_DEBUG_TRACE) {
-      pandecode_interpret_cs(dev->debug.decode_ctx, qsubmit.stream_addr,
-                             qsubmit.stream_size,
-                             phys_dev->kmod.props.gpu_prod_id, subq->reg_file);
-      pandecode_next_frame(dev->debug.decode_ctx);
+      pandecode_user_msg(dev->debug.decode_ctx, "Init subqueue %d binary\n\n",
+                         subqueue);
+      pandecode_cs_binary(dev->debug.decode_ctx, qsubmit.stream_addr,
+                          qsubmit.stream_size,
+                          phys_dev->kmod.props.gpu_prod_id);
    }
 
    return VK_SUCCESS;
@@ -314,12 +479,8 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
 static void
 cleanup_queue(struct panvk_queue *queue)
 {
-   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
-
-   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      panvk_pool_free_mem(&queue->subqueues[i].context);
-      vk_free(&dev->vk.alloc, queue->subqueues[i].reg_file);
-   }
+   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
+      finish_subqueue(queue, i);
 
    finish_render_desc_ringbuf(queue);
 
@@ -334,6 +495,7 @@ init_queue(struct panvk_queue *queue)
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
    struct panvk_instance *instance =
       to_panvk_instance(dev->vk.physical->instance);
+   unsigned debug = instance->debug_flags;
    VkResult result;
 
    struct panvk_pool_alloc_info alloc_info = {
@@ -378,6 +540,9 @@ init_queue(struct panvk_queue *queue)
       if (result != VK_SUCCESS)
          goto err_cleanup_queue;
    }
+
+   if (debug & PANVK_DEBUG_TRACE)
+      pandecode_next_frame(dev->debug.decode_ctx);
 
    return VK_SUCCESS;
 
@@ -718,8 +883,26 @@ static VkResult
 panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
 {
    const struct panvk_device *dev = submit->dev;
+   const struct panvk_instance *instance = submit->instance;
    struct panvk_queue *queue = submit->queue;
    int ret;
+
+   if (instance->debug_flags & PANVK_DEBUG_TRACE) {
+      /* If we're tracing, we need to reset the desc ringbufs and the CS
+       * tracebuf. */
+      for (uint32_t i = 0; i < ARRAY_SIZE(queue->subqueues); i++) {
+         struct panvk_cs_subqueue_context *ctx =
+            panvk_priv_mem_host_addr(queue->subqueues[i].context);
+
+         if (ctx->render.desc_ringbuf.ptr) {
+            ctx->render.desc_ringbuf.ptr = queue->render_desc_ringbuf.addr.dev;
+            ctx->render.desc_ringbuf.pos = 0;
+         }
+
+         if (ctx->debug.tracebuf.cs)
+            ctx->debug.tracebuf.cs = queue->subqueues[i].tracebuf.addr.dev;
+      }
+   }
 
    struct drm_panthor_group_submit gsubmit = {
       .group_handle = queue->group_handle,
@@ -781,16 +964,36 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
          if (!qsubmit->stream_size)
             continue;
 
-         uint32_t subqueue = qsubmit->queue_index;
+         pandecode_user_msg(decode_ctx, "CS %d on subqueue %d binaries\n\n", i,
+                            qsubmit->queue_index);
+         pandecode_cs_binary(decode_ctx, qsubmit->stream_addr,
+                             qsubmit->stream_size, props->gpu_prod_id);
+         pandecode_user_msg(decode_ctx, "\n");
+      }
 
-         simple_mtx_lock(&decode_ctx->lock);
-         pandecode_dump_file_open(decode_ctx);
-         pandecode_log(decode_ctx, "CS%d\n", subqueue);
-         simple_mtx_unlock(&decode_ctx->lock);
+      for (uint32_t i = 0; i < ARRAY_SIZE(queue->subqueues); i++) {
+         struct panvk_cs_subqueue_context *ctx =
+            panvk_priv_mem_host_addr(queue->subqueues[i].context);
 
-         pandecode_interpret_cs(decode_ctx, qsubmit->stream_addr,
-                                qsubmit->stream_size, props->gpu_prod_id,
-                                queue->subqueues[subqueue].reg_file);
+         size_t trace_size =
+            ctx->debug.tracebuf.cs - queue->subqueues[i].tracebuf.addr.dev;
+         if (!trace_size)
+            continue;
+
+         assert(
+            trace_size <= queue->subqueues[i].tracebuf.size ||
+            !"OOB access on the CS tracebuf, pass a bigger PANVK_CS_TRACEBUF_SIZE");
+
+         assert(
+            !ctx->render.desc_ringbuf.ptr ||
+            ctx->render.desc_ringbuf.pos <= queue->render_desc_ringbuf.size ||
+            !"OOB access on the desc tracebuf, pass a bigger PANVK_DESC_TRACEBUF_SIZE");
+
+         mali_ptr trace = queue->subqueues[i].tracebuf.addr.dev;
+
+         pandecode_user_msg(decode_ctx, "\nCS traces on subqueue %d\n\n", i);
+         pandecode_cs_trace(decode_ctx, trace, trace_size, props->gpu_prod_id);
+         pandecode_user_msg(decode_ctx, "\n");
       }
    }
 

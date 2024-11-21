@@ -688,7 +688,8 @@ cs_render_desc_ringbuf_reserve(struct cs_builder *b, uint32_t size)
 }
 
 static void
-cs_render_desc_ringbuf_move_ptr(struct cs_builder *b, uint32_t size)
+cs_render_desc_ringbuf_move_ptr(struct cs_builder *b, uint32_t size,
+                                bool wrap_around)
 {
    struct cs_index scratch_reg = cs_scratch_reg32(b, 0);
    struct cs_index ptr_lo = cs_scratch_reg32(b, 2);
@@ -703,12 +704,15 @@ cs_render_desc_ringbuf_move_ptr(struct cs_builder *b, uint32_t size)
    /* Update the relative position and absolute address. */
    cs_add32(b, ptr_lo, ptr_lo, size);
    cs_add32(b, pos, pos, size);
-   cs_add32(b, scratch_reg, pos, -RENDER_DESC_RINGBUF_SIZE);
 
    /* Wrap-around. */
-   cs_if(b, MALI_CS_CONDITION_GEQUAL, scratch_reg) {
-      cs_add32(b, ptr_lo, ptr_lo, -RENDER_DESC_RINGBUF_SIZE);
-      cs_add32(b, pos, pos, -RENDER_DESC_RINGBUF_SIZE);
+   if (likely(wrap_around)) {
+      cs_add32(b, scratch_reg, pos, -RENDER_DESC_RINGBUF_SIZE);
+
+      cs_if(b, MALI_CS_CONDITION_GEQUAL, scratch_reg) {
+         cs_add32(b, ptr_lo, ptr_lo, -RENDER_DESC_RINGBUF_SIZE);
+         cs_add32(b, pos, pos, -RENDER_DESC_RINGBUF_SIZE);
+      }
    }
 
    cs_store(
@@ -740,6 +744,9 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(cmdbuf->vk.base.device->physical);
+   struct panvk_instance *instance =
+      to_panvk_instance(phys_dev->vk.instance);
+   bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
    struct panfrost_tiler_features tiler_features =
       panfrost_query_tiler_features(&phys_dev->kmod.props);
    bool simul_use =
@@ -797,7 +804,7 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
                                render.desc_ringbuf.ptr));
       }
 
-      cs_render_desc_ringbuf_move_ptr(b, descs_sz);
+      cs_render_desc_ringbuf_move_ptr(b, descs_sz, !tracing_enabled);
    } else {
       cs_update_vt_ctx(b) {
          cs_move64_to(b, tiler_ctx_addr, tiler_desc.gpu);
@@ -1661,6 +1668,8 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 static void
 panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 {
+   const struct cs_tracing_ctx *tracing_ctx =
+      &cmdbuf->state.cs[PANVK_SUBQUEUE_VERTEX_TILER].tracing;
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
@@ -1718,11 +1727,12 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
       cs_move32_to(b, counter_reg, idvs_count);
 
       cs_while(b, MALI_CS_CONDITION_GREATER, counter_reg) {
-         cs_run_idvs(b, flags_override.opaque[0], false, true,
-                     cs_shader_res_sel(0, 0, 1, 0),
-                     cs_shader_res_sel(2, 2, 2, 0), cs_undef());
+         cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                           flags_override.opaque[0], false, true,
+                           cs_shader_res_sel(0, 0, 1, 0),
+                           cs_shader_res_sel(2, 2, 2, 0), cs_undef());
 
-	 cs_add32(b, counter_reg, counter_reg, -1);
+         cs_add32(b, counter_reg, counter_reg, -1);
          cs_update_vt_ctx(b) {
             cs_add64(b, tiler_ctx_addr, tiler_ctx_addr,
                      pan_size(TILER_CONTEXT));
@@ -1734,9 +1744,10 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
                   -(idvs_count * pan_size(TILER_CONTEXT)));
       }
    } else {
-      cs_run_idvs(b, flags_override.opaque[0], false, true,
-                  cs_shader_res_sel(0, 0, 1, 0), cs_shader_res_sel(2, 2, 2, 0),
-                  cs_undef());
+      cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                        flags_override.opaque[0], false, true,
+                        cs_shader_res_sel(0, 0, 1, 0),
+                        cs_shader_res_sel(2, 2, 2, 0), cs_undef());
    }
    cs_req_res(b, 0);
 }
@@ -1803,6 +1814,8 @@ static void
 panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
                         struct panvk_draw_info *draw)
 {
+   const struct cs_tracing_ctx *tracing_ctx =
+      &cmdbuf->state.cs[PANVK_SUBQUEUE_VERTEX_TILER].tracing;
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    struct cs_builder *b =
       panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER);
@@ -1852,9 +1865,10 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    cs_wait_slot(b, SB_ID(LS), false);
 
    cs_req_res(b, CS_IDVS_RES);
-   cs_run_idvs(b, flags_override.opaque[0], false, true,
-               cs_shader_res_sel(0, 0, 1, 0), cs_shader_res_sel(2, 2, 2, 0),
-               cs_undef());
+   cs_trace_run_idvs(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                     flags_override.opaque[0], false, true,
+                     cs_shader_res_sel(0, 0, 1, 0),
+                     cs_shader_res_sel(2, 2, 2, 0), cs_undef());
    cs_req_res(b, 0);
 }
 
@@ -2147,6 +2161,8 @@ static VkResult
 issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   const struct cs_tracing_ctx *tracing_ctx =
+      &cmdbuf->state.cs[PANVK_SUBQUEUE_FRAGMENT].tracing;
    struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
 
@@ -2234,13 +2250,16 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 
       cs_move32_to(b, layer_count, cmdbuf->state.gfx.render.layer_count);
       cs_while(b, MALI_CS_CONDITION_GREATER, layer_count) {
-         cs_run_fragment(b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+         cs_trace_run_fragment(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                               false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+
          cs_add32(b, layer_count, layer_count, -1);
          cs_update_frag_ctx(b)
             cs_add64(b, cs_sr_reg64(b, 40), cs_sr_reg64(b, 40), fbd_sz);
       }
    } else {
-      cs_run_fragment(b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+      cs_trace_run_fragment(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                            false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
    }
    cs_req_res(b, 0);
 
@@ -2318,8 +2337,10 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    cs_wait_slot(b, SB_ID(LS), false);
 
    /* Update the ring buffer position. */
-   if (free_render_descs)
-      cs_render_desc_ringbuf_move_ptr(b, calc_render_descs_size(cmdbuf));
+   if (free_render_descs) {
+      cs_render_desc_ringbuf_move_ptr(b, calc_render_descs_size(cmdbuf),
+                                      !tracing_ctx);
+   }
 
    /* Update the frag seqno. */
    ++cmdbuf->state.cs[PANVK_SUBQUEUE_FRAGMENT].relative_sync_point;

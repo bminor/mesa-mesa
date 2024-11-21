@@ -168,6 +168,8 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       &cmdbuf->state.compute.desc_state;
    struct panvk_shader_desc_state *cs_desc_state =
       &cmdbuf->state.compute.cs.desc;
+   const struct cs_tracing_ctx *tracing_ctx =
+      &cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].tracing;
 
    struct panfrost_ptr tsd = panvk_cmd_alloc_desc(cmdbuf, LOCAL_STORAGE);
    if (!tsd.gpu)
@@ -349,16 +351,18 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    panvk_per_arch(cs_pick_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE);
 
    cs_req_res(b, CS_COMPUTE_RES);
-   if (indirect)
-      cs_run_compute_indirect(b, wg_per_task, false,
-                              cs_shader_res_sel(0, 0, 0, 0));
-   else {
+   if (indirect) {
+      cs_trace_run_compute_indirect(b, tracing_ctx,
+                                    cs_scratch_reg_tuple(b, 0, 4), wg_per_task,
+                                    false, cs_shader_res_sel(0, 0, 0, 0));
+   } else {
       unsigned task_axis = MALI_TASK_AXIS_X;
       unsigned task_increment = 0;
       calculate_task_axis_and_increment(shader, phys_dev, &task_axis,
                                         &task_increment);
-      cs_run_compute(b, task_increment, task_axis, false,
-                     cs_shader_res_sel(0, 0, 0, 0));
+      cs_trace_run_compute(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
+                           task_increment, task_axis, false,
+                           cs_shader_res_sel(0, 0, 0, 0));
    }
    cs_req_res(b, 0);
 

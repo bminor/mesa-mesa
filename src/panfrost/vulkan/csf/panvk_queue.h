@@ -37,11 +37,21 @@ struct panvk_tiler_heap {
 struct panvk_subqueue {
    struct panvk_priv_mem context;
    uint32_t *reg_file;
+
+   struct {
+      struct pan_kmod_bo *bo;
+      size_t size;
+      struct {
+         uint64_t dev;
+         void *host;
+      } addr;
+   } tracebuf;
 };
 
 struct panvk_desc_ringbuf {
    struct panvk_priv_mem syncobj;
    struct pan_kmod_bo *bo;
+   size_t size;
    struct {
       uint64_t dev;
       void *host;

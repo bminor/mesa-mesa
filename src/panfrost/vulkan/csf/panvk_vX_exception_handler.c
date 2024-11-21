@@ -25,7 +25,8 @@ tiler_oom_reg_perm_cb(struct cs_builder *b, unsigned reg)
 
 static size_t
 generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
-                           uint32_t rt_count, uint32_t *dump_region_size)
+                           uint32_t rt_count, bool tracing_enabled,
+                           uint32_t *dump_region_size)
 {
    assert(rt_count >= 1 && rt_count <= MAX_RTS);
    uint32_t fbd_size = get_fbd_size(has_zs_ext, rt_count);
@@ -42,6 +43,12 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
    struct cs_exception_handler_ctx handler_ctx = {
       .ctx_reg = cs_subqueue_ctx_reg(&b),
       .dump_addr_offset = TILER_OOM_CTX_FIELD_OFFSET(reg_dump_addr),
+      .ls_sb_slot = SB_ID(LS),
+   };
+   struct cs_tracing_ctx tracing_ctx = {
+      .ctx_reg = cs_subqueue_ctx_reg(&b),
+      .tracebuf_addr_offset =
+         offsetof(struct panvk_cs_subqueue_context, debug.tracebuf.cs),
       .ls_sb_slot = SB_ID(LS),
    };
 
@@ -79,7 +86,12 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
 
       cs_req_res(&b, CS_FRAG_RES);
       cs_while(&b, MALI_CS_CONDITION_GREATER, layer_count) {
-         cs_run_fragment(&b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+         if (tracing_enabled)
+            cs_trace_run_fragment(&b, &tracing_ctx,
+                                  cs_scratch_reg_tuple(&b, 8, 4), false,
+                                  MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+         else
+            cs_run_fragment(&b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
          cs_add32(&b, layer_count, layer_count, -1);
          cs_add64(&b, fbd_ptr, fbd_ptr, fbd_size);
       }
@@ -135,6 +147,9 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
 VkResult
 panvk_per_arch(init_tiler_oom)(struct panvk_device *device)
 {
+   struct panvk_instance *instance =
+      to_panvk_instance(device->vk.physical->instance);
+   bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
    VkResult result = panvk_priv_bo_create(
       device, TILER_OOM_HANDLER_MAX_SIZE * 2 * MAX_RTS, 0,
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, &device->tiler_oom.handlers_bo);
@@ -157,7 +172,7 @@ panvk_per_arch(init_tiler_oom)(struct panvk_device *device)
 
          uint32_t dump_region_size;
          size_t handler_length = generate_tiler_oom_handler(
-            handler_mem, zs_ext, rt_count, &dump_region_size);
+            handler_mem, zs_ext, rt_count, tracing_enabled, &dump_region_size);
 
          /* All handlers must have the same length */
          assert(idx == 0 || handler_length == device->tiler_oom.handler_stride);
