@@ -455,8 +455,8 @@ brw_fs_opt_eliminate_find_live_channel(fs_visitor &s)
          if (depth == 0) {
             inst->opcode = BRW_OPCODE_MOV;
             inst->src[0] = brw_imm_ud(0u);
-            inst->sources = 1;
             inst->force_writemask_all = true;
+            inst->resize_sources(1);
             progress = true;
 
             /* emit_uniformize() frequently emits FIND_LIVE_CHANNEL paired
@@ -475,8 +475,8 @@ brw_fs_opt_eliminate_find_live_channel(fs_visitor &s)
                bcast->opcode = BRW_OPCODE_MOV;
                if (!is_uniform(bcast->src[0]))
                   bcast->src[0] = component(bcast->src[0], 0);
-               bcast->sources = 1;
                bcast->force_writemask_all = true;
+               bcast->resize_sources(1);
             }
          }
          break;
