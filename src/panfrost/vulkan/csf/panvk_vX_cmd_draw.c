@@ -762,17 +762,18 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
          return VK_ERROR_OUT_OF_DEVICE_MEMORY;
    }
 
+   const struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+
    pan_pack(&tiler_tmpl, TILER_CONTEXT, cfg) {
       unsigned max_levels = tiler_features.max_levels;
       assert(max_levels >= 2);
 
       cfg.hierarchy_mask =
          panvk_select_tiler_hierarchy_mask(phys_dev, &cmdbuf->state.gfx);
-      cfg.fb_width = cmdbuf->state.gfx.render.fb.info.width;
-      cfg.fb_height = cmdbuf->state.gfx.render.fb.info.height;
+      cfg.fb_width = fbinfo->width;
+      cfg.fb_height = fbinfo->height;
 
-      cfg.sample_pattern =
-         pan_sample_pattern(cmdbuf->state.gfx.render.fb.info.nr_samples);
+      cfg.sample_pattern = pan_sample_pattern(fbinfo->nr_samples);
 
       /* TODO: revisit for VK_EXT_provoking_vertex. */
       cfg.first_provoking_vertex = true;
