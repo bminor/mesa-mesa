@@ -367,15 +367,6 @@ lookup_ycbcr_conversion(const void *_state, uint32_t set, uint32_t binding,
              : NULL;
 }
 
-static inline bool
-nir_has_image_var(nir_shader *nir)
-{
-   nir_foreach_image_variable(_, nir)
-      return true;
-
-   return false;
-}
-
 static int
 glsl_type_size(const struct glsl_type *type, bool bindless)
 {
