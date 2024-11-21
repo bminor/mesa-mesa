@@ -830,9 +830,16 @@ panvk_per_arch(BeginCommandBuffer)(VkCommandBuffer commandBuffer,
                                    const VkCommandBufferBeginInfo *pBeginInfo)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
+   struct panvk_instance *instance =
+      to_panvk_instance(cmdbuf->vk.base.device->physical->instance);
 
    vk_command_buffer_begin(&cmdbuf->vk, pBeginInfo);
    cmdbuf->flags = pBeginInfo->flags;
+
+   if (instance->debug_flags & PANVK_DEBUG_FORCE_SIMULTANEOUS) {
+      cmdbuf->flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+      cmdbuf->flags &= ~VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+   }
 
    panvk_per_arch(cmd_inherit_render_state)(cmdbuf, pBeginInfo);
 
