@@ -1229,6 +1229,11 @@ nir_pack_bits(nir_builder *b, nir_def *src, unsigned dest_bit_size)
          return nir_pack_64_2x32(b, src);
       case 16:
          return nir_pack_64_4x16(b, src);
+      case 8: {
+         nir_def *lo = nir_pack_32_4x8(b, nir_channels(b, src, 0x0f));
+         nir_def *hi = nir_pack_32_4x8(b, nir_channels(b, src, 0xf0));
+         return nir_pack_64_2x32(b, nir_vec2(b, lo, hi));
+      }
       default:
          break;
       }
