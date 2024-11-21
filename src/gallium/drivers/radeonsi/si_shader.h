@@ -1154,14 +1154,19 @@ static inline bool si_shader_uses_discard(struct si_shader *shader)
 
 static inline bool si_shader_culling_enabled(struct si_shader *shader)
 {
+   /* Legacy VS/TES/GS and ES don't cull in the shader. */
+   if (!shader->key.ge.as_ngg || shader->key.ge.as_es) {
+      assert(!shader->key.ge.opt.ngg_culling);
+      return false;
+   }
+
    if (shader->key.ge.opt.ngg_culling)
       return true;
 
    unsigned output_prim = si_get_output_prim_simplified(shader->selector, &shader->key);
 
    /* This enables NGG culling for non-monolithic TES and GS. */
-   return shader->key.ge.as_ngg && !shader->key.ge.as_es &&
-          shader->selector->ngg_cull_vert_threshold == 0 &&
+   return shader->selector->ngg_cull_vert_threshold == 0 &&
           (output_prim == MESA_PRIM_TRIANGLES || output_prim == MESA_PRIM_LINES);
 }
 
