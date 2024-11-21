@@ -24,6 +24,8 @@
 #define CONSTANT_          constant
 #define GLOBAL_            global
 #define BITFIELD64_MASK(x) ((x == 64) ? ~0ul : ((1ul << x) - 1))
+#define IS_POT(v)          (((v) & ((v) - 1)) == 0)
+#define IS_POT_NONZERO(v)  ((v) != 0 && IS_POT(v))
 
 static uint64_t
 util_bitpack_uint(uint64_t v, uint32_t start, uint32_t end)
