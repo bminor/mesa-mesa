@@ -250,7 +250,12 @@ fs_inst::is_control_source(unsigned arg) const
              arg != MEMORY_LOGICAL_DATA1;
 
    case SHADER_OPCODE_QUAD_SWAP:
-      return arg == 1;
+   case SHADER_OPCODE_INCLUSIVE_SCAN:
+   case SHADER_OPCODE_EXCLUSIVE_SCAN:
+   case SHADER_OPCODE_VOTE_ANY:
+   case SHADER_OPCODE_VOTE_ALL:
+   case SHADER_OPCODE_REDUCE:
+      return arg != 0;
 
    default:
       return false;
