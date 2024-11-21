@@ -1954,7 +1954,7 @@
         "description": "gallium/vl: Don't support planar RGB as video format",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bdb7f36aa8ee4554550f13cf2801dd680fa849c2",
         "notes": null
