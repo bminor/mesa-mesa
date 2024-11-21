@@ -830,22 +830,9 @@ panvk_per_arch(BeginCommandBuffer)(VkCommandBuffer commandBuffer,
                                    const VkCommandBufferBeginInfo *pBeginInfo)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
 
    vk_command_buffer_begin(&cmdbuf->vk, pBeginInfo);
    cmdbuf->flags = pBeginInfo->flags;
-
-   /* The descriptor ringbuf trips out pandecode because we always point to the
-    * next tiler/framebuffer descriptor after CS execution, which means we're
-    * decoding an uninitialized or stale descriptor.
-    * FIXME: find a way to trace the simultaneous path that doesn't crash. One
-    * option would be to disable CS intepretation and dump the RUN_xxx context
-    * on the side at execution time.
-    */
-   if (instance->debug_flags & PANVK_DEBUG_TRACE)
-      cmdbuf->flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
    panvk_per_arch(cmd_inherit_render_state)(cmdbuf, pBeginInfo);
 
