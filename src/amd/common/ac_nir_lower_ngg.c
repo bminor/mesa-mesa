@@ -1926,11 +1926,11 @@ ngg_build_streamout_buffer_info(nir_builder *b,
                                 nir_def *scratch_base,
                                 nir_def *tid_in_tg,
                                 nir_def *gen_prim[4],
-                                nir_def *prim_stride_ret[4],
                                 nir_def *so_buffer_ret[4],
                                 nir_def *buffer_offsets_ret[4],
                                 nir_def *emit_prim_ret[4])
 {
+   nir_def *prim_stride[4] = {0};
    nir_def *undef = nir_undef(b, 1, 32);
 
    /* For radeonsi which pass this value by arg when VS. Streamout need accurate
@@ -1943,7 +1943,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
 
       assert(info->buffers[buffer].stride);
 
-      prim_stride_ret[buffer] =
+      prim_stride[buffer] =
          nir_imul_imm(b, num_vert_per_prim, info->buffers[buffer].stride);
       so_buffer_ret[buffer] = nir_load_streamout_buffer_amd(b, .base = buffer);
    }
@@ -1962,7 +1962,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
              */
             nir_def *buffer_valid = nir_ine_imm(b, buffer_size, 0);
             nir_def *inc_buffer_size =
-               nir_imul(b, gen_prim[info->buffer_to_stream[buffer]], prim_stride_ret[buffer]);
+               nir_imul(b, gen_prim[info->buffer_to_stream[buffer]], prim_stride[buffer]);
             workgroup_buffer_sizes[buffer] =
                nir_bcsel(b, buffer_valid, inc_buffer_size, nir_imm_int(b, 0));
          } else
@@ -2138,7 +2138,7 @@ ngg_build_streamout_buffer_info(nir_builder *b,
          buffer_offset = nir_bcsel(b, buffer_valid, buffer_offset, nir_imm_int(b, 0));
 
          nir_def *remain_size = nir_isub(b, buffer_size, buffer_offset);
-         nir_def *remain_prim = nir_idiv(b, remain_size, prim_stride_ret[buffer]);
+         nir_def *remain_prim = nir_idiv(b, remain_size, prim_stride[buffer]);
          nir_def *overflow = nir_ilt(b, buffer_size, buffer_offset);
 
          any_overflow = nir_ior(b, any_overflow, overflow);
@@ -2337,11 +2337,10 @@ ngg_nogs_build_streamout(nir_builder *b, lower_ngg_nogs_state *s)
    nir_def *emit_prim_per_stream[4] = {0};
    nir_def *buffer_offsets[4] = {0};
    nir_def *so_buffer[4] = {0};
-   nir_def *prim_stride[4] = {0};
    nir_def *tid_in_tg = nir_load_local_invocation_index(b);
    ngg_build_streamout_buffer_info(b, info, s->options->gfx_level, s->options->has_xfb_prim_query,
                                    s->options->use_gfx12_xfb_intrinsic, lds_scratch_base, tid_in_tg,
-                                   gen_prim_per_stream, prim_stride,
+                                   gen_prim_per_stream,
                                    so_buffer, buffer_offsets,
                                    emit_prim_per_stream);
 
@@ -3544,10 +3543,9 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
    nir_def *emit_prim[4] = {0};
    nir_def *buffer_offsets[4] = {0};
    nir_def *so_buffer[4] = {0};
-   nir_def *prim_stride[4] = {0};
    ngg_build_streamout_buffer_info(b, info, s->options->gfx_level, s->options->has_xfb_prim_query,
                                    s->options->use_gfx12_xfb_intrinsic, s->lds_addr_gs_scratch, tid_in_tg,
-                                   gen_prim, prim_stride, so_buffer, buffer_offsets, emit_prim);
+                                   gen_prim, so_buffer, buffer_offsets, emit_prim);
 
    for (unsigned stream = 0; stream < 4; stream++) {
       if (!(info->streams_written & BITFIELD_BIT(stream)))
