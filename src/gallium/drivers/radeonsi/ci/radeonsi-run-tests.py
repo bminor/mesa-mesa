@@ -222,31 +222,37 @@ is_amd = args.llvmpipe + args.softpipe + args.virgl + args.zink == 0
 if args.llvmpipe:
     env["LIBGL_ALWAYS_SOFTWARE"] = '1'
     baseline = "../../llvmpipe/ci/llvmpipe-fails.txt"
-    flakes_lists = ["../../llvmpipe/ci/llvmpipe-flakes.txt"]
+    flakes_list = "../../llvmpipe/ci/llvmpipe-flakes.txt"
     skips_list = "../../llvmpipe/ci/llvmpipe-skips.txt"
 elif args.softpipe:
     env["LIBGL_ALWAYS_SOFTWARE"] = '1'
     env["GALLIUM_DRIVER"] = 'softpipe'
     baseline = "../../softpipe/ci/softpipe-fails.txt"
-    flakes_lists = ["../../softpipe/ci/softpipe-flakes.txt"]
+    flakes_list = "../../softpipe/ci/softpipe-flakes.txt"
     skips_list = "../../softpipe/ci/softpipe-skips.txt"
 elif args.virgl:
     env["PIGLIT_PLATFORM"] = "gbm"
     baseline = ''
-    flakes_lists = []
+    flakes_list = None
     skips_list = "skips.csv"
 elif args.zink:
     env["PIGLIT_PLATFORM"] = "gbm"
     env["MESA_LOADER_DRIVER_OVERRIDE"] = 'zink'
     baseline = "../../zink/ci/zink-radv-navi31-fails.txt"
-    flakes_lists = ["../../zink/ci/zink-radv-navi31-flakes.txt"]
+    flakes_list = "../../zink/ci/zink-radv-navi31-flakes.txt"
     skips_list = "../../zink/ci/zink-radv-navi31-skips.txt"
-else:
+elif is_amd:
     env["PIGLIT_PLATFORM"] = "gbm"
+    flakes_list = None # it will be determined later
     skips_list = "skips.csv"
+else:
+    assert False
 
-if not is_amd and baseline:
+if not is_amd:
     baseline = os.path.normpath(os.path.join(os.path.dirname(__file__), baseline))
+    if flakes_list is not None:
+        flakes_list = os.path.normpath(os.path.join(os.path.dirname(__file__), flakes_list))
+
 skips_list = os.path.normpath(os.path.join(os.path.dirname(__file__), skips_list))
 env_glinfo = dict(env)
 env_glinfo["AMD_DEBUG"] = "info"
@@ -393,12 +399,12 @@ def parse_test_filters(include_tests, baseline):
     return cmd
 
 
-def select_baseline(basepath, gfx_level, gpu_name):
+def select_baseline(basepath, gfx_level, gpu_name, suffix):
     gfx_level_str = gfx_level_to_str(gfx_level)
 
     # select the best baseline we can find
     # 1. exact match
-    exact = os.path.join(basepath, "{}-{}-fail.csv".format(gfx_level_str, gpu_name))
+    exact = os.path.join(basepath, "{}-{}-{}.csv".format(gfx_level_str, gpu_name, suffix))
     if os.path.exists(exact):
         return exact
     # 2. any baseline with the same gfx_level
@@ -406,7 +412,7 @@ def select_baseline(basepath, gfx_level, gpu_name):
         gfx_level_str += '-'
         for subdir, dirs, files in os.walk(basepath):
             for file in files:
-                if file.find(gfx_level_str) == 0 and file.endswith("-fail.csv"):
+                if file.find(gfx_level_str) == 0 and file.endswith("-{}.csv".format(suffix)):
                     return os.path.join(basepath, file)
         # No match. Try an earlier class
         gfx_level = gfx_level - 1
@@ -416,31 +422,21 @@ def select_baseline(basepath, gfx_level, gpu_name):
 
 
 if is_amd:
-    baseline = select_baseline(args.baseline, gfx_level, gpu_name)
+    baseline = select_baseline(args.baseline, gfx_level, gpu_name, 'fail')
+    flakes_list = select_baseline(args.baseline, gfx_level, gpu_name, 'flakes')
 
 success = True
 filters_args = parse_test_filters(args.include_tests, baseline)
-flakes = [
-    os.path.normpath(f)
-    for f in (
-        os.path.join(args.baseline, g)
-        for g in
-        ([
-            "radeonsi-flakes.csv",
-            "{}-{}-flakes.csv".format(gfx_level_to_str(gfx_level), gpu_name),
-        ] if is_amd else flakes_lists)
-    )
-    if os.path.exists(f)
-]
 flakes_args = []
-for f in flakes:
-    flakes_args += ["--flakes", f]
 
 if os.path.exists(baseline):
     print_yellow("Baseline: {}".format(baseline))
+
+if flakes_list is not None and os.path.exists(flakes_list):
+    print_yellow("Flakes: {}".format(flakes_list))
+    flakes_args = ["--flakes", flakes_list]
+
 print_yellow("Skips: {}".format(skips_list))
-if flakes_args:
-    print_yellow("Flakes: {}".format(flakes_args))
 
 # piglit test
 if args.piglit:
