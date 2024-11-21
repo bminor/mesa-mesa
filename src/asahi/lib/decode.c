@@ -569,12 +569,17 @@ agxdecode_cdm(struct agxdecode_ctx *ctx, const uint8_t *map, uint64_t *link,
       agx_unpack(agxdecode_dump_stream, map, CDM_STREAM_LINK, hdr);
       DUMP_UNPACKED(CDM_STREAM_LINK, hdr, "Stream Link\n");
       *link = hdr.target_lo | (((uint64_t)hdr.target_hi) << 32);
-      return STATE_LINK;
+      return hdr.with_return ? STATE_CALL : STATE_LINK;
    }
 
    case AGX_CDM_BLOCK_TYPE_STREAM_TERMINATE: {
       DUMP_CL(CDM_STREAM_TERMINATE, map, "Stream Terminate");
       return STATE_DONE;
+   }
+
+   case AGX_CDM_BLOCK_TYPE_STREAM_RETURN: {
+      DUMP_CL(CDM_STREAM_RETURN, map, "Stream Return");
+      return STATE_RET;
    }
 
    case AGX_CDM_BLOCK_TYPE_BARRIER: {
