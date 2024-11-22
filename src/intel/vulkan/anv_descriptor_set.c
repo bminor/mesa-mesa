@@ -1423,6 +1423,14 @@ VkResult anv_CreateDescriptorPool(
       ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_INDIRECT :
       ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_DIRECT;
 
+   /* Workaround application bugs when we're allocating surfaces & samplers in
+    * separate heaps (!indirect_descriptors). Some applications will specify a
+    * count of samplers too small and we might fail allocations in
+    * vkAllocateDescriptorsSets().
+    *
+    * Find the highest count across all descriptor types and use that for
+    * samplers.
+    */
    uint32_t max_descriptor_count = 0;
    if (device->physical->instance->anv_upper_bound_descriptor_pool_sampler &&
        !device->physical->indirect_descriptors) {
