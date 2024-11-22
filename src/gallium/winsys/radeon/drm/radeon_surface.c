@@ -131,7 +131,7 @@ static int radeon_get_family(struct radeon_surface_manager *surf_man)
 {
     switch (surf_man->device_id) {
 #define CHIPSET(pci_id, name, fam) case pci_id: surf_man->family = CHIP_##fam; break;
-#include "r600_pci_ids.h"
+#include "pci_ids/r600_pci_ids.h"
 #undef CHIPSET
     default:
         return -EINVAL;
