@@ -1090,9 +1090,9 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
    /* Simultaneous acquire and release on external queues is illegal. */
    assert(!src_queue_external || !dst_queue_external);
 
-   /* Ownership transition on an external queue requires special action if the
-    * image has a DRM format modifier because we store image data in
-    * a driver-private bo which is inaccessible to the external queue.
+   /* Ownership transition on an external queue requires special action if we
+    * store any image data in a driver-private bo that is inaccessible to the
+    * external queue.
     */
    const bool private_binding_acquire =
       src_queue_external &&
