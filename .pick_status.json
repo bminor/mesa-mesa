@@ -1714,7 +1714,7 @@
         "description": "lavapipe: Resolved write to pointer after free",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d74ea2c117fe96e527471e572336f931c3c77da1",
         "notes": null
