@@ -101,22 +101,6 @@ lower_system_value_instr(nir_builder *b, nir_instr *instr, void *_state)
          return NULL;
       }
 
-   case nir_intrinsic_load_instance_id:
-      if (b->shader->options->supports_instance_index) {
-         return nir_isub(b, nir_load_instance_index(b),
-                         nir_load_base_instance(b));
-      } else {
-         return NULL;
-      }
-
-   case nir_intrinsic_load_instance_index:
-      if (!b->shader->options->supports_instance_index) {
-         return nir_iadd(b, nir_load_instance_id(b),
-                         nir_load_base_instance(b));
-      } else {
-         return NULL;
-      }
-
    case nir_intrinsic_load_helper_invocation:
       if (b->shader->options->lower_helper_invocation) {
          return nir_build_lowered_load_helper_invocation(b);
@@ -215,19 +199,9 @@ lower_system_value_instr(nir_builder *b, nir_instr *instr, void *_state)
       nir_variable *var = deref->var;
 
       switch (var->data.location) {
-      case SYSTEM_VALUE_INSTANCE_ID:
-         if (b->shader->options->supports_instance_index) {
-            return nir_isub(b, nir_load_instance_index(b),
-                            nir_load_base_instance(b));
-         }
-         break;
-
       case SYSTEM_VALUE_INSTANCE_INDEX:
-         if (!b->shader->options->supports_instance_index) {
-            return nir_iadd(b, nir_load_instance_id(b),
-                            nir_load_base_instance(b));
-         }
-         break;
+         return nir_iadd(b, nir_load_instance_id(b),
+                         nir_load_base_instance(b));
 
       case SYSTEM_VALUE_GLOBAL_INVOCATION_ID: {
          return nir_iadd(b, nir_load_global_invocation_id(b, bit_size),
