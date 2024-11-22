@@ -149,8 +149,10 @@ done
   else
     echo "dEQP $DEQP_API version $DEQP_VERSION"
   fi
-  echo "The following local patches are applied on top:"
-  git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
+  if [ "$(git rev-parse HEAD)" != "$DEQP_COMMIT" ]; then
+    echo "The following local patches are applied on top:"
+    git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
+  fi
 } > /deqp-$deqp_api/version
 
 # --insecure is due to SSL cert failures hitting sourceforge for zlib and
