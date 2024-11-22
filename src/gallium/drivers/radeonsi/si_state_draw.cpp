@@ -1253,7 +1253,7 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
       struct si_streamout_target *t = (struct si_streamout_target *)indirect->count_from_stream_output;
 
       radeon_begin(cs);
-      radeon_set_context_reg(R_028B30_VGT_STRMOUT_DRAW_OPAQUE_VERTEX_STRIDE, t->stride_in_dw);
+      radeon_set_context_reg(R_028B30_VGT_STRMOUT_DRAW_OPAQUE_VERTEX_STRIDE, t->stride);
       radeon_end();
 
       if (GFX_VERSION >= GFX9) {

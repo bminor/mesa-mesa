@@ -777,7 +777,7 @@ struct si_streamout_target {
    unsigned buf_filled_size_draw_count_offset;
    bool buf_filled_size_valid;
 
-   unsigned stride_in_dw;
+   unsigned stride;
 };
 
 struct si_streamout {

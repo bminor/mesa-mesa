@@ -284,7 +284,7 @@ static void si_emit_streamout_begin(struct si_context *sctx, unsigned index)
       if (!t[i])
          continue;
 
-      t[i]->stride_in_dw = sctx->streamout.stride_in_dw[i];
+      t[i]->stride = sctx->streamout.stride_in_dw[i] * 4;
 
       if (sctx->gfx_level >= GFX12) {
          /* Only the first streamout target holds information. */
@@ -330,19 +330,19 @@ static void si_emit_streamout_begin(struct si_context *sctx, unsigned index)
 
             /* Append. */
             radeon_emit(PKT3(PKT3_STRMOUT_BUFFER_UPDATE, 4, 0));
-            radeon_emit(STRMOUT_SELECT_BUFFER(i) |
-                        STRMOUT_OFFSET_SOURCE(STRMOUT_OFFSET_FROM_MEM)); /* control */
-            radeon_emit(0);                                              /* unused */
-            radeon_emit(0);                                              /* unused */
-            radeon_emit(va);                                             /* src address lo */
-            radeon_emit(va >> 32);                                       /* src address hi */
+            radeon_emit(STRMOUT_SELECT_BUFFER(i) | STRMOUT_DATA_TYPE(1) | /* offset in bytes */
+                        STRMOUT_OFFSET_SOURCE(STRMOUT_OFFSET_FROM_MEM));  /* control */
+            radeon_emit(0);                                               /* unused */
+            radeon_emit(0);                                               /* unused */
+            radeon_emit(va);                                              /* src address lo */
+            radeon_emit(va >> 32);                                        /* src address hi */
 
             radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, t[i]->buf_filled_size,
                                       RADEON_USAGE_READ | RADEON_PRIO_SO_FILLED_SIZE);
          } else {
             /* Start from the beginning. */
             radeon_emit(PKT3(PKT3_STRMOUT_BUFFER_UPDATE, 4, 0));
-            radeon_emit(STRMOUT_SELECT_BUFFER(i) |
+            radeon_emit(STRMOUT_SELECT_BUFFER(i) | STRMOUT_DATA_TYPE(1) |   /* offset in bytes */
                         STRMOUT_OFFSET_SOURCE(STRMOUT_OFFSET_FROM_PACKET)); /* control */
             radeon_emit(0);                                                 /* unused */
             radeon_emit(0);                                                 /* unused */
@@ -395,7 +395,7 @@ void si_emit_streamout_end(struct si_context *sctx)
          radeon_begin(cs);
          radeon_emit(PKT3(PKT3_STRMOUT_BUFFER_UPDATE, 4, 0));
          radeon_emit(STRMOUT_SELECT_BUFFER(i) | STRMOUT_OFFSET_SOURCE(STRMOUT_OFFSET_NONE) |
-                     STRMOUT_STORE_BUFFER_FILLED_SIZE); /* control */
+                     STRMOUT_DATA_TYPE(1) | STRMOUT_STORE_BUFFER_FILLED_SIZE); /* control */
          radeon_emit(va);                                  /* dst address lo */
          radeon_emit(va >> 32);                            /* dst address hi */
          radeon_emit(0);                                   /* unused */
