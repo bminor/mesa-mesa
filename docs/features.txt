@@ -283,7 +283,7 @@ GLES3.2, GLSL ES 3.2 -- all DONE: freedreno/a6xx, radeonsi, virgl, llvmpipe, zin
   GL_OES_primitive_bounding_box                         DONE (freedreno/a5xx+, nvc0, r600, softpipe, v3d)
   GL_OES_sample_shading                                 DONE (freedreno/a6xx, nvc0, r600, panfrost, d3d12)
   GL_OES_sample_variables                               DONE (freedreno/a6xx, nvc0, r600, panfrost/bifrost, crocus/gen7+)
-  GL_OES_shader_image_atomic                            DONE (v3d, all drivers that support GL_ARB_shader_image_load_store)
+  GL_OES_shader_image_atomic                            DONE (All drivers that support GLES 3.1)
   GL_OES_shader_io_blocks                               DONE (All drivers that support GLES 3.1)
   GL_OES_shader_multisample_interpolation               DONE (freedreno/a6xx, nvc0, r600)
   GL_OES_tessellation_shader                            DONE (freedreno/a6xx, all drivers that support GL_ARB_tessellation_shader)
