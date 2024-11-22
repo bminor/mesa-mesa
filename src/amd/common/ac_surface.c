@@ -2518,6 +2518,12 @@ static int gfx9_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
             break;
          }
 
+         /* VCN only supports 256B_D. */
+         if (surf->flags & RADEON_SURF_VIDEO_REFERENCE) {
+            AddrSurfInfoIn.swizzleMode = ADDR_SW_256B_D;
+            break;
+         }
+
          r = gfx9_get_preferred_swizzle_mode(addrlib->handle, info, surf, &AddrSurfInfoIn, false,
                                              &AddrSurfInfoIn.swizzleMode);
          if (r)
@@ -3247,6 +3253,8 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
       AddrSurfInfoIn.swizzleMode = ADDR3_LINEAR;
    } else if (config->is_1d && !(surf->flags & RADEON_SURF_Z_OR_SBUFFER)) {
       AddrSurfInfoIn.swizzleMode = ADDR3_LINEAR;
+   } else if (surf->flags & RADEON_SURF_VIDEO_REFERENCE) {
+      AddrSurfInfoIn.swizzleMode = ADDR3_256B_2D;
    } else {
       AddrSurfInfoIn.swizzleMode = gfx12_select_swizzle_mode(addrlib, info, surf, &AddrSurfInfoIn);
    }

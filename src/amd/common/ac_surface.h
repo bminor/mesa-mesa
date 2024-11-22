@@ -78,6 +78,7 @@ enum radeon_micro_mode
 #define RADEON_SURF_NO_STENCIL_ADJUST     (1ull << 35)
 #define RADEON_SURF_PREFER_4K_ALIGNMENT   (1ull << 36)
 #define RADEON_SURF_PREFER_64K_ALIGNMENT  (1ull << 37)
+#define RADEON_SURF_VIDEO_REFERENCE       (1ull << 38)
 
 enum radeon_enc_hevc_surface_alignment
 {
