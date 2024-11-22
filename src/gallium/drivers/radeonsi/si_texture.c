@@ -386,6 +386,9 @@ static int si_init_surface(struct si_screen *sscreen, struct radeon_surf *surfac
    if (ptex->flags & PIPE_RESOURCE_FLAG_SPARSE)
       flags |= RADEON_SURF_PRT;
 
+   if (ptex->bind & (PIPE_BIND_VIDEO_DECODE_DPB | PIPE_BIND_VIDEO_ENCODE_DPB))
+      flags |= RADEON_SURF_VIDEO_REFERENCE;
+
    surface->modifier = modifier;
 
    r = sscreen->ws->surface_init(sscreen->ws, &sscreen->info, ptex, flags, bpe, array_mode,
