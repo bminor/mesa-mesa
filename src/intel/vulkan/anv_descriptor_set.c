@@ -929,13 +929,12 @@ set_layout_descriptor_count(const struct anv_descriptor_set_layout *set_layout,
    if (dynamic_binding == NULL)
       return set_layout->descriptor_count;
 
-   assert(var_desc_count <= dynamic_binding->array_size);
-   uint32_t shrink = dynamic_binding->array_size - var_desc_count;
 
    if (dynamic_binding->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK)
       return set_layout->descriptor_count;
 
-   return set_layout->descriptor_count - shrink;
+   return set_layout->descriptor_count -
+          dynamic_binding->array_size + var_desc_count;
 }
 
 static uint32_t
@@ -947,13 +946,11 @@ set_layout_buffer_view_count(const struct anv_descriptor_set_layout *set_layout,
    if (dynamic_binding == NULL)
       return set_layout->buffer_view_count;
 
-   assert(var_desc_count <= dynamic_binding->array_size);
-   uint32_t shrink = dynamic_binding->array_size - var_desc_count;
-
    if (!(dynamic_binding->data & ANV_DESCRIPTOR_BUFFER_VIEW))
       return set_layout->buffer_view_count;
 
-   return set_layout->buffer_view_count - shrink;
+   return set_layout->buffer_view_count -
+          dynamic_binding->array_size + var_desc_count;
 }
 
 static bool
@@ -977,25 +974,23 @@ anv_descriptor_set_layout_descriptor_buffer_size(const struct anv_descriptor_set
       return;
    }
 
-   assert(var_desc_count <= dynamic_binding->array_size);
-   uint32_t shrink = dynamic_binding->array_size - var_desc_count;
    uint32_t set_surface_size, set_sampler_size;
-
    if (dynamic_binding->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
       /* Inline uniform blocks are specified to use the descriptor array
        * size as the size in bytes of the block.
        */
-      set_surface_size = set_layout->descriptor_buffer_surface_size - shrink;
+      set_surface_size = set_layout->descriptor_buffer_surface_size -
+                         dynamic_binding->array_size + var_desc_count;
       set_sampler_size = 0;
    } else {
       set_surface_size =
-         set_layout->descriptor_buffer_surface_size > 0 ?
-         (set_layout->descriptor_buffer_surface_size -
-          shrink * dynamic_binding->descriptor_surface_stride) : 0;
+         set_layout->descriptor_buffer_surface_size -
+         dynamic_binding->array_size * dynamic_binding->descriptor_surface_stride +
+         var_desc_count * dynamic_binding->descriptor_surface_stride;
       set_sampler_size =
-         set_layout->descriptor_buffer_sampler_size > 0 ?
-         (set_layout->descriptor_buffer_sampler_size -
-          shrink * dynamic_binding->descriptor_sampler_stride) : 0;
+         set_layout->descriptor_buffer_sampler_size -
+         dynamic_binding->array_size * dynamic_binding->descriptor_sampler_stride -
+         var_desc_count * dynamic_binding->descriptor_sampler_stride;
    }
 
    *out_surface_size = ALIGN(set_surface_size, ANV_UBO_ALIGNMENT);
