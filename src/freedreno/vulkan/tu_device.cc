@@ -408,6 +408,11 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->shaderInt16 = true;
    features->sparseBinding = pdevice->has_sparse;
    features->sparseResidencyBuffer = pdevice->has_sparse_prr;
+   features->sparseResidencyImage2D = pdevice->has_sparse_prr &&
+      pdevice->info->a7xx.ubwc_all_formats_compatible;
+   features->sparseResidency2Samples = features->sparseResidencyImage2D;
+   features->sparseResidency4Samples = features->sparseResidencyImage2D;
+   features->sparseResidency8Samples = features->sparseResidencyImage2D;
    features->sparseResidencyAliased = pdevice->has_sparse_prr;
    features->variableMultisampleRate = true;
    features->inheritedQueries = true;
@@ -1155,10 +1160,10 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->dynamicRenderingLocalReadMultisampledAttachments = true;
 
    /* sparse properties */
-   props->sparseResidencyStandard2DBlockShape = { 0 };
-   props->sparseResidencyStandard2DMultisampleBlockShape = { 0 };
-   props->sparseResidencyStandard3DBlockShape = { 0 };
-   props->sparseResidencyAlignedMipSize = { 0 };
+   props->sparseResidencyStandard2DBlockShape = true;
+   props->sparseResidencyStandard2DMultisampleBlockShape = true;
+   props->sparseResidencyStandard3DBlockShape = false;
+   props->sparseResidencyAlignedMipSize = false;
    props->sparseResidencyNonResidentStrict = true;
 
    strcpy(props->deviceName, pdevice->name);

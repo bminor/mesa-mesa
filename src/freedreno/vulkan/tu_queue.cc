@@ -288,6 +288,14 @@ queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
       }
    }
 
+   for (uint32_t i = 0; i < vk_submit->image_bind_count; i++) {
+      const VkSparseImageMemoryBindInfo *bind = &vk_submit->image_binds[i];
+      VK_FROM_HANDLE(tu_image, image, bind->image);
+
+      for (uint32_t j = 0; j < bind->bindCount; j++)
+         tu_bind_sparse_image(device, submit, image, &bind->pBinds[j]);
+   }
+
    for (uint32_t i = 0; i < vk_submit->image_opaque_bind_count; i++) {
       const VkSparseImageOpaqueMemoryBindInfo *bind =
          &vk_submit->image_opaque_binds[i];

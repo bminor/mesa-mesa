@@ -344,7 +344,7 @@ tu_GetPhysicalDeviceFormatProperties2(
       /* note: ubwc_possible() argument values to be ignored except for format */
       if (pFormatProperties->formatProperties.optimalTilingFeatures &&
           tiling_possible(format) &&
-          ubwc_possible(NULL, format, VK_IMAGE_TYPE_2D, 0, 0,
+          ubwc_possible(NULL, format, VK_IMAGE_TYPE_2D, 0, 0, 0,
                         physical_device->info, VK_SAMPLE_COUNT_1_BIT, 1,
                         false)) {
          vk_outarray_append_typed(VkDrmFormatModifierPropertiesEXT, &out, mod_props) {
@@ -403,6 +403,10 @@ tu_get_image_format_properties(
       if (info->flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)
          return VK_ERROR_FORMAT_NOT_SUPPORTED;
 
+      /* Don't allow modifiers with sparse */
+      if (info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
       switch (drm_info->drmFormatModifier) {
       case DRM_FORMAT_MOD_QCOM_COMPRESSED:
          /* falling back to linear/non-UBWC isn't possible with explicit modifier */
@@ -421,9 +425,9 @@ tu_get_image_format_properties(
                return VK_ERROR_FORMAT_NOT_SUPPORTED;
          }
 
-         if (!ubwc_possible(NULL, info->format, info->type, info->usage,
-                            info->usage, physical_device->info, sampleCounts,
-                            1, false)) {
+         if (!ubwc_possible(NULL, info->format, info->type, info->flags,
+                            info->usage, info->usage, physical_device->info,
+                            sampleCounts, 1, false)) {
             return VK_ERROR_FORMAT_NOT_SUPPORTED;
          }
 
@@ -445,6 +449,31 @@ tu_get_image_format_properties(
 
    if (format_feature_flags == 0)
       return tu_image_unsupported_format(pImageFormatProperties);
+
+   if (info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+      if (!physical_device->has_sparse)
+         return tu_image_unsupported_format(pImageFormatProperties);
+   }
+
+   if (info->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+      /* Don't support multi-planar formats with sparse yet */
+      if (vk_format_get_plane_count(info->format) > 1)
+         return tu_image_unsupported_format(pImageFormatProperties);
+
+      /* Sparse isn't compatible with HIC */
+      if (info->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)
+         return tu_image_unsupported_format(pImageFormatProperties);
+
+      /* We can't support sparse when we force linear tiling, so disable
+       * sparse with formats or usages which could cause us to fall back to
+       * linear. We also currently don't support sparse for 3D images.
+       */
+      if (info->type != VK_IMAGE_TYPE_2D ||
+          info->tiling != VK_IMAGE_TILING_OPTIMAL ||
+          !tiling_possible(info->format) ||
+          (info->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT))
+         return tu_image_unsupported_format(pImageFormatProperties);
+   }
 
    if (info->type != VK_IMAGE_TYPE_2D &&
        vk_format_is_depth_or_stencil(info->format))
@@ -765,6 +794,7 @@ tu_GetPhysicalDeviceImageFormatProperties2(
          (fd6_color_swap(vk_format_to_pipe_format(base_info->format),
                                                   TILE6_LINEAR, false) == WZYX &&
          !ubwc_possible(NULL, base_info->format, base_info->type,
+                        base_info->flags,
                         (base_info->usage & ~VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT),
                         (base_info->usage & ~VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT),
                         physical_device->info, VK_SAMPLE_COUNT_1_BIT, 1,
@@ -786,15 +816,4 @@ fail:
    }
 
    return result;
-}
-
-VKAPI_ATTR void VKAPI_CALL
-tu_GetPhysicalDeviceSparseImageFormatProperties2(
-   VkPhysicalDevice physicalDevice,
-   const VkPhysicalDeviceSparseImageFormatInfo2 *pFormatInfo,
-   uint32_t *pPropertyCount,
-   VkSparseImageFormatProperties2 *pProperties)
-{
-   /* Sparse images are not yet supported. */
-   *pPropertyCount = 0;
 }
