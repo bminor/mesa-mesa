@@ -873,7 +873,7 @@ v3dv_cmd_buffer_start_job(struct v3dv_cmd_buffer *cmd_buffer,
                                     VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
 
    if (!job) {
-      fprintf(stderr, "Error: failed to allocate CPU memory for job\n");
+      mesa_loge("Error: failed to allocate CPU memory for job\n");
       v3dv_flag_oom(cmd_buffer, NULL);
       return NULL;
    }
@@ -3557,8 +3557,8 @@ handle_sample_from_linear_image(struct v3dv_cmd_buffer *cmd_buffer,
       if (view->vk.view_type != VK_IMAGE_VIEW_TYPE_2D ||
           view->vk.level_count != 1 || view->vk.layer_count != 1 ||
           blayout->array_size != 1) {
-         fprintf(stderr, "Sampling from linear image is not supported. "
-                 "Expect corruption.\n");
+         mesa_loge("Sampling from linear image is not supported. "
+                   "Expect corruption.\n");
          continue;
       }
 
@@ -3605,8 +3605,8 @@ handle_sample_from_linear_image(struct v3dv_cmd_buffer *cmd_buffer,
          result = v3dv_CreateImage(vk_device, &image_info,
                                    &device->vk.alloc, &tiled_image);
          if (result != VK_SUCCESS) {
-            fprintf(stderr, "Failed to copy linear 2D image for sampling."
-                    "Expect corruption.\n");
+            mesa_loge("Failed to copy linear 2D image for sampling."
+                      "Expect corruption.\n");
             mtx_unlock(&device->meta.mtx);
             continue;
          }
@@ -3641,8 +3641,8 @@ handle_sample_from_linear_image(struct v3dv_cmd_buffer *cmd_buffer,
             result = v3dv_AllocateMemory(vk_device, &alloc_info,
                                          &device->vk.alloc, &mem);
             if (result != VK_SUCCESS) {
-               fprintf(stderr, "Failed to copy linear 2D image for sampling."
-                       "Expect corruption.\n");
+               mesa_loge("Failed to copy linear 2D image for sampling."
+                         "Expect corruption.\n");
                v3dv_DestroyImage(vk_device, tiled_image, &device->vk.alloc);
                mtx_unlock(&device->meta.mtx);
                continue;
@@ -3662,8 +3662,8 @@ handle_sample_from_linear_image(struct v3dv_cmd_buffer *cmd_buffer,
                bind_info.pNext = &plane_bind_info;
             result = v3dv_BindImageMemory2(vk_device, 1, &bind_info);
             if (result != VK_SUCCESS) {
-               fprintf(stderr, "Failed to copy linear 2D image for sampling."
-                       "Expect corruption.\n");
+               mesa_loge("Failed to copy linear 2D image for sampling."
+                         "Expect corruption.\n");
                v3dv_DestroyImage(vk_device, tiled_image, &device->vk.alloc);
                v3dv_FreeMemory(vk_device, mem, &device->vk.alloc);
                mtx_unlock(&device->meta.mtx);
@@ -3696,8 +3696,8 @@ handle_sample_from_linear_image(struct v3dv_cmd_buffer *cmd_buffer,
          };
          result = v3dv_create_image_view(device, &view_info, &tiled_view);
          if (result != VK_SUCCESS) {
-            fprintf(stderr, "Failed to copy linear 2D image for sampling."
-                    "Expect corruption.\n");
+            mesa_loge("Failed to copy linear 2D image for sampling."
+                      "Expect corruption.\n");
             mtx_unlock(&device->meta.mtx);
             continue;
          }
@@ -3806,8 +3806,8 @@ handle_sample_from_linear_image(struct v3dv_cmd_buffer *cmd_buffer,
                }
             }
          } else {
-            fprintf(stderr, "Failed to copy linear 2D image for sampling."
-                    "TFU doesn't support copy. Expect corruption.\n");
+            mesa_loge("Failed to copy linear 2D image for sampling."
+                      "TFU doesn't support copy. Expect corruption.\n");
          }
       }
    }
@@ -3920,7 +3920,7 @@ v3dv_cmd_buffer_ensure_array_state(struct v3dv_cmd_buffer *cmd_buffer,
       *ptr = vk_alloc(&cmd_buffer->device->vk.alloc, bytes, 8,
                       VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
       if (*ptr == NULL) {
-         fprintf(stderr, "Error: failed to allocate CPU buffer for query.\n");
+         mesa_loge("Error: failed to allocate CPU buffer for query.\n");
          v3dv_flag_oom(cmd_buffer, NULL);
          return;
       }

@@ -51,8 +51,8 @@ v3dX(enumerate_performance_query_counters)(struct v3dv_physical_device *pDevice,
          int ret = v3dv_ioctl(pDevice->render_fd, DRM_IOCTL_V3D_PERFMON_GET_COUNTER,
                               &counter);
          if (ret) {
-            fprintf(stderr, "Failed to get counter description for counter %d: %s\n",
-                    i, strerror(errno));
+            mesa_loge("Failed to get counter description for counter %d: %s\n",
+                      i, strerror(errno));
          }
 
          name = (char *) counter.name;

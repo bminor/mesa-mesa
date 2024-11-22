@@ -47,8 +47,8 @@ kperfmon_create(struct v3dv_device *device,
                            DRM_IOCTL_V3D_PERFMON_CREATE,
                            &req);
       if (ret)
-         fprintf(stderr, "Failed to create perfmon for query %d: %s\n", query,
-                 strerror(errno));
+         mesa_loge("Failed to create perfmon for query %d: %s\n", query,
+                   strerror(errno));
 
       pool->queries[query].perf.kperfmon_ids[i] = req.id;
    }
@@ -73,8 +73,8 @@ kperfmon_destroy(struct v3dv_device *device,
                            &req);
 
       if (ret) {
-         fprintf(stderr, "Failed to destroy perfmon %u: %s\n",
-                 req.id, strerror(errno));
+         mesa_loge("Failed to destroy perfmon %u: %s\n",
+                   req.id, strerror(errno));
       }
    }
 }
@@ -655,7 +655,7 @@ write_performance_query_result(struct v3dv_device *device,
                            &req);
 
       if (ret) {
-         fprintf(stderr, "failed to get perfmon values: %s\n", strerror(errno));
+         mesa_loge("failed to get perfmon values: %s\n", strerror(errno));
          return vk_error(device, VK_ERROR_DEVICE_LOST);
       }
    }
@@ -1107,7 +1107,7 @@ cmd_buffer_emit_copy_query_pool_results(struct v3dv_cmd_buffer *cmd_buffer,
                &device->queries.copy_pipeline[pipeline_idx]);
       ralloc_free(copy_query_results_cs_nir);
       if (result != VK_SUCCESS) {
-         fprintf(stderr, "Failed to create copy query results pipeline\n");
+         mesa_loge("Failed to create copy query results pipeline\n");
          return;
       }
    }
@@ -1136,8 +1136,8 @@ cmd_buffer_emit_copy_query_pool_results(struct v3dv_cmd_buffer *cmd_buffer,
       allocate_storage_buffer_descriptor_set(cmd_buffer,
                                              &out_buf_descriptor_set);
    if (result != VK_SUCCESS) {
-      fprintf(stderr, "vkCmdCopyQueryPoolResults failed: "
-              "could not allocate descriptor.\n");
+      mesa_loge("vkCmdCopyQueryPoolResults failed: "
+                "could not allocate descriptor.\n");
       return;
    }
 
@@ -1296,7 +1296,7 @@ v3dv_reset_query_pool_cpu(struct v3dv_device *device,
 
       for (uint32_t i = first; i < first + count; i++) {
          if (vk_sync_reset(&device->vk, pool->queries[i].timestamp.sync) != VK_SUCCESS)
-            fprintf(stderr, "Failed to reset sync");
+            mesa_loge("Failed to reset sync");
       }
 
       mtx_unlock(&device->query_mutex);
@@ -1325,7 +1325,7 @@ v3dv_reset_query_pool_cpu(struct v3dv_device *device,
          kperfmon_destroy(device, pool, i);
          kperfmon_create(device, pool, i);
          if (vk_sync_reset(&device->vk, q->perf.last_job_sync) != VK_SUCCESS)
-            fprintf(stderr, "Failed to reset sync");
+            mesa_loge("Failed to reset sync");
          break;
       default:
          unreachable("Unsupported query type");

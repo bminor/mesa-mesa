@@ -55,7 +55,7 @@ v3dv_clif_dump(struct v3dv_device *device,
 
       bool ok = v3dv_bo_map(device, bo, bo->size);
       if (!ok) {
-         fprintf(stderr, "failed to map BO for clif_dump.\n");
+         mesa_loge("failed to map BO for clif_dump.\n");
          ralloc_free(name);
          goto free_clif;
       }
@@ -1015,8 +1015,8 @@ handle_cl_job(struct v3dv_queue *queue,
 
    static bool warned = false;
    if (ret && !warned) {
-      fprintf(stderr, "Draw call returned %s. Expect corruption.\n",
-              strerror(errno));
+      mesa_loge("Draw call returned %s. Expect corruption.\n",
+                strerror(errno));
       warned = true;
    }
 
@@ -1127,8 +1127,8 @@ handle_csd_job(struct v3dv_queue *queue,
 
    static bool warned = false;
    if (ret && !warned) {
-      fprintf(stderr, "Compute dispatch returned %s. Expect corruption.\n",
-              strerror(errno));
+      mesa_loge("Compute dispatch returned %s. Expect corruption.\n",
+                strerror(errno));
       warned = true;
    }
 

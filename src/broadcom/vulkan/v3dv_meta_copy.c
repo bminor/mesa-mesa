@@ -1787,13 +1787,13 @@ v3dv_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
    struct v3dv_bo *src_bo =
       v3dv_bo_alloc(cmd_buffer->device, dataSize, "vkCmdUpdateBuffer", true);
    if (!src_bo) {
-      fprintf(stderr, "Failed to allocate BO for vkCmdUpdateBuffer.\n");
+      mesa_loge("Failed to allocate BO for vkCmdUpdateBuffer.\n");
       return;
    }
 
    bool ok = v3dv_bo_map(cmd_buffer->device, src_bo, src_bo->size);
    if (!ok) {
-      fprintf(stderr, "Failed to map BO for vkCmdUpdateBuffer.\n");
+      mesa_loge("Failed to map BO for vkCmdUpdateBuffer.\n");
       return;
    }
 

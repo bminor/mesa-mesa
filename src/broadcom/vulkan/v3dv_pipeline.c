@@ -1435,13 +1435,13 @@ upload_assembly(struct v3dv_pipeline *pipeline)
    struct v3dv_bo *bo = v3dv_bo_alloc(pipeline->device, total_size,
                                       "pipeline shader assembly", true);
    if (!bo) {
-      fprintf(stderr, "failed to allocate memory for shader\n");
+      mesa_loge("failed to allocate memory for shader\n");
       return false;
    }
 
    bool ok = v3dv_bo_map(pipeline->device, bo, total_size);
    if (!ok) {
-      fprintf(stderr, "failed to map source shader buffer\n");
+      mesa_loge("failed to map source shader buffer\n");
       return false;
    }
 
@@ -1659,9 +1659,9 @@ pipeline_compile_shader_variant(struct v3dv_pipeline_stage *p_stage,
    struct v3dv_shader_variant *variant = NULL;
 
    if (!qpu_insts) {
-      fprintf(stderr, "Failed to compile %s prog %d NIR to VIR\n",
-              broadcom_shader_stage_name(p_stage->stage),
-              p_stage->program_id);
+      mesa_loge("Failed to compile %s prog %d NIR to VIR\n",
+                broadcom_shader_stage_name(p_stage->stage),
+                p_stage->program_id);
       *out_vk_result = VK_ERROR_UNKNOWN;
    } else {
       variant =

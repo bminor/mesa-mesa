@@ -591,22 +591,22 @@ v3dv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
          instance->default_pipeline_cache_enabled = false;
          instance->meta_cache_enabled = false;
       } else {
-         fprintf(stderr, "Wrong value for envvar V3DV_ENABLE_PIPELINE_CACHE. "
-                 "Allowed values are: full, no-default-cache, no-meta-cache, off\n");
+         mesa_loge("Wrong value for envvar V3DV_ENABLE_PIPELINE_CACHE. "
+                   "Allowed values are: full, no-default-cache, no-meta-cache, off\n");
       }
    }
 
    if (instance->pipeline_cache_enabled == false) {
-      fprintf(stderr, "WARNING: v3dv pipeline cache is disabled. Performance "
-              "can be affected negatively\n");
+      mesa_logw("v3dv pipeline cache is disabled. Performance "
+                "can be affected negatively\n");
    }
    if (instance->default_pipeline_cache_enabled == false) {
-      fprintf(stderr, "WARNING: default v3dv pipeline cache is disabled. "
-              "Performance can be affected negatively\n");
+      mesa_logw("default v3dv pipeline cache is disabled. "
+                "Performance can be affected negatively\n");
    }
    if (instance->meta_cache_enabled == false) {
-      fprintf(stderr, "WARNING: custom pipeline cache for meta operations are disabled. "
-              "Performance can be affected negatively\n");
+      mesa_logw("custom pipeline cache for meta operations are disabled. "
+                "Performance can be affected negatively\n");
    }
 
 
@@ -1438,7 +1438,7 @@ try_device(const char *path, int *fd, const char *target)
 
    *fd = open(path, O_RDWR | O_CLOEXEC);
    if (*fd < 0) {
-      fprintf(stderr, "Opening %s failed: %s\n", path, strerror(errno));
+      mesa_loge("Opening %s failed: %s\n", path, strerror(errno));
       return false;
    }
 
@@ -1447,7 +1447,7 @@ try_device(const char *path, int *fd, const char *target)
 
    version = drmGetVersion(*fd);
    if (!version) {
-      fprintf(stderr, "Retrieving device version failed: %s\n", strerror(errno));
+      mesa_loge("Retrieving device version failed: %s\n", strerror(errno));
       goto fail;
    }
 
@@ -1472,7 +1472,7 @@ try_display_device(struct v3dv_instance *instance, const char *path,
       instance->vk.enabled_extensions.EXT_acquire_drm_display;
    *fd = open(path, O_RDWR | O_CLOEXEC);
    if (*fd < 0) {
-      fprintf(stderr, "Opening %s failed: %s\n", path, strerror(errno));
+      mesa_loge("Opening %s failed: %s\n", path, strerror(errno));
       return;
    }
 
@@ -1501,7 +1501,7 @@ try_display_device(struct v3dv_instance *instance, const char *path,
 
    drmModeResPtr mode_res = drmModeGetResources(*fd);
    if (!mode_res) {
-      fprintf(stderr, "Failed to get DRM mode resources: %s\n", strerror(errno));
+      mesa_loge("Failed to get DRM mode resources: %s\n", strerror(errno));
       goto fail;
    }
 
@@ -1980,7 +1980,7 @@ device_free_wsi_dumb(int32_t display_fd, int32_t dumb_handle)
       .handle = dumb_handle,
    };
    if (v3dv_ioctl(display_fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy_dumb)) {
-      fprintf(stderr, "destroy dumb object %d: %s\n", dumb_handle, strerror(errno));
+      mesa_loge("destroy dumb object %d: %s\n", dumb_handle, strerror(errno));
    }
 }
 

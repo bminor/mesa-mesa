@@ -102,7 +102,7 @@
 #if MESA_DEBUG
 #define v3dv_assert(x) ({ \
    if (unlikely(!(x))) \
-      fprintf(stderr, "%s:%d ASSERT: %s", __FILE__, __LINE__, #x); \
+      mesa_loge("%s:%d ASSERT: %s", __FILE__, __LINE__, #x); \
 })
 #else
 #define v3dv_assert(x)
@@ -110,7 +110,7 @@
 
 #define perf_debug(...) do {                       \
    if (V3D_DBG(PERF))                            \
-      fprintf(stderr, __VA_ARGS__);                \
+      mesa_logi(__VA_ARGS__);                \
 } while (0)
 
 struct v3dv_instance;
