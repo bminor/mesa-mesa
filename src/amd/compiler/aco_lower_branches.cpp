@@ -16,6 +16,25 @@ struct branch_ctx {
    branch_ctx(Program* program_) : program(program_) {}
 };
 
+void
+remove_linear_successor(branch_ctx& ctx, Block& block, uint32_t succ_index)
+{
+   Block& succ = ctx.program->blocks[succ_index];
+   ASSERTED auto it = std::remove(succ.linear_preds.begin(), succ.linear_preds.end(), block.index);
+   assert(std::next(it) == succ.linear_preds.end());
+   succ.linear_preds.pop_back();
+   it = std::remove(block.linear_succs.begin(), block.linear_succs.end(), succ_index);
+   assert(std::next(it) == block.linear_succs.end());
+   block.linear_succs.pop_back();
+
+   if (succ.linear_preds.empty()) {
+      /* This block became unreachable - Recursively remove successors. */
+      succ.instructions.clear();
+      for (unsigned i : succ.linear_succs)
+         remove_linear_successor(ctx, succ, i);
+   }
+}
+
 /**
  *  Check if the branch instruction can be removed:
  *  This is beneficial when executing the next block with an empty exec mask
@@ -126,8 +145,11 @@ lower_branch_instruction(branch_ctx& ctx, Block& block)
    const uint32_t target = branch->branch().target[0];
    block.instructions.pop_back();
 
-   if (can_remove_branch(ctx, block, &branch->branch()))
+   if (can_remove_branch(ctx, block, &branch->branch())) {
+      if (branch->opcode != aco_opcode::p_branch)
+         remove_linear_successor(ctx, block, target);
       return;
+   }
 
    /* emit branch instruction */
    Builder bld(ctx.program, &block.instructions);
