@@ -64,10 +64,13 @@ struct pipe_video_codec *radeon_create_encoder(struct pipe_context *context,
                                                radeon_enc_get_buffer get_buffer);
 
 struct radeon_enc_dpb_buffer {
+   struct pipe_video_buffer templ, *pre;
+
    struct si_texture *luma;      /* recon luma */
    struct si_texture *chroma;    /* recon chroma */
    struct rvid_buffer *fcb;      /* frame context buffer*/
-   struct rvid_buffer *pre;      /* preenc recon */
+   struct si_texture *pre_luma;  /* preenc recon luma */
+   struct si_texture *pre_chroma;/* preenc recon chroma */
    struct rvid_buffer *pre_fcb;  /* preenc frame context buffer */
 };
 
@@ -100,8 +103,6 @@ struct radeon_enc_pic {
    unsigned nal_unit_type;
    unsigned temporal_id;
    unsigned num_temporal_layers;
-   unsigned dpb_luma_size;
-   unsigned dpb_chroma_size;
    unsigned total_coloc_bytes;
    rvcn_enc_quality_modes_t quality_modes;
 

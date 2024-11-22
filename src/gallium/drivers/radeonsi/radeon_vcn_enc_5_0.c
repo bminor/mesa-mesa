@@ -280,7 +280,6 @@ static void radeon_enc_ctx(struct radeon_encoder *enc)
 static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
 {
    uint32_t num_refs = 0;
-   uint32_t swizzle_mode = radeon_enc_ref_swizzle_mode(enc);
    bool is_h264 = u_reduce_video_profile(enc->base.profile)
                              == PIPE_VIDEO_FORMAT_MPEG4_AVC;
    bool is_av1 = u_reduce_video_profile(enc->base.profile)
@@ -318,7 +317,7 @@ static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(0);
-      RADEON_ENC_CS(swizzle_mode);
+      RADEON_ENC_CS(luma->surface.u.gfx9.swizzle_mode);
       RADEON_ENC_READWRITE(fcb->res->buf, fcb->res->domains, 0);
       if (is_h264) {
          RADEON_ENC_CS(enc->enc_pic.fcb_offset.h264.colloc_buffer_offset);
@@ -340,17 +339,18 @@ static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
             RADEON_ENC_CS(0);
          continue;
       }
-      struct rvid_buffer *pre = enc->enc_pic.dpb_bufs[i]->pre;
-      struct rvid_buffer *pre_fcb = enc->enc_pic.dpb_bufs[i]->pre_fcb;
-      RADEON_ENC_READWRITE(pre->res->buf, pre->res->domains, 0);
-      RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_luma_pitch);
-      RADEON_ENC_READWRITE(pre->res->buf, pre->res->domains, enc->enc_pic.dpb_luma_size);
-      RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch);
+      struct si_texture *luma = enc->enc_pic.dpb_bufs[i]->pre_luma;
+      struct si_texture *chroma = enc->enc_pic.dpb_bufs[i]->pre_chroma;
+      struct rvid_buffer *fcb = enc->enc_pic.dpb_bufs[i]->pre_fcb;
+      RADEON_ENC_READWRITE(luma->buffer.buf, luma->buffer.domains, luma->surface.u.gfx9.surf_offset);
+      RADEON_ENC_CS(luma->surface.u.gfx9.surf_pitch);
+      RADEON_ENC_READWRITE(chroma->buffer.buf, chroma->buffer.domains, chroma->surface.u.gfx9.surf_offset);
+      RADEON_ENC_CS(chroma->surface.u.gfx9.surf_pitch);
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(0);
-      RADEON_ENC_CS(swizzle_mode);
-      RADEON_ENC_READWRITE(pre_fcb->res->buf, pre_fcb->res->domains, 0);
+      RADEON_ENC_CS(luma->surface.u.gfx9.swizzle_mode);
+      RADEON_ENC_READWRITE(fcb->res->buf, fcb->res->domains, 0);
       if (is_h264) {
          RADEON_ENC_CS(enc->enc_pic.fcb_offset.h264.colloc_buffer_offset);
          RADEON_ENC_CS(0);

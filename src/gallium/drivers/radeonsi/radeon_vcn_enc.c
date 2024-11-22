@@ -1235,8 +1235,6 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
    enc_pic->ctx_buf.rec_luma_pitch   = pitch;
    enc_pic->ctx_buf.pre_encode_picture_luma_pitch   = pitch;
    enc_pic->ctx_buf.num_reconstructed_pictures = num_reconstructed_pictures;
-   enc_pic->dpb_luma_size   = luma_size;
-   enc_pic->dpb_chroma_size = chroma_size;
    enc_pic->total_coloc_bytes = total_coloc_bytes;
 
    offset = 0;
@@ -1884,7 +1882,6 @@ void radeon_enc_create_dpb_aux_buffers(struct radeon_encoder *enc, struct radeon
       return;
 
    uint32_t fcb_size = radeon_enc_frame_context_buffer_size(enc);
-   uint32_t recon_size = enc->enc_pic.dpb_luma_size + enc->enc_pic.dpb_chroma_size;
 
    buf->fcb = CALLOC_STRUCT(rvid_buffer);
    if (!buf->fcb || !si_vid_create_buffer(enc->screen, buf->fcb, fcb_size, PIPE_USAGE_DEFAULT)) {
@@ -1893,11 +1890,13 @@ void radeon_enc_create_dpb_aux_buffers(struct radeon_encoder *enc, struct radeon
    }
 
    if (enc->enc_pic.quality_modes.pre_encode_mode) {
-      buf->pre = CALLOC_STRUCT(rvid_buffer);
-      if (!buf->pre || !si_vid_create_buffer(enc->screen, buf->pre, recon_size, PIPE_USAGE_DEFAULT)) {
+      buf->pre = enc->base.context->create_video_buffer(enc->base.context, &buf->templ);
+      if (!buf->pre) {
          RADEON_ENC_ERR("Can't create preenc buffer!\n");
          return;
       }
+      buf->pre_luma = (struct si_texture *)((struct vl_video_buffer *)buf->pre)->resources[0];
+      buf->pre_chroma = (struct si_texture *)((struct vl_video_buffer *)buf->pre)->resources[1];
 
       buf->pre_fcb = CALLOC_STRUCT(rvid_buffer);
       if (!buf->pre_fcb || !si_vid_create_buffer(enc->screen, buf->pre_fcb, fcb_size, PIPE_USAGE_DEFAULT)) {
@@ -1911,8 +1910,10 @@ static void radeon_enc_destroy_dpb_buffer(void *data)
 {
    struct radeon_enc_dpb_buffer *dpb = data;
 
+   if (dpb->pre)
+      dpb->pre->destroy(dpb->pre);
+
    RADEON_ENC_DESTROY_VIDEO_BUFFER(dpb->fcb);
-   RADEON_ENC_DESTROY_VIDEO_BUFFER(dpb->pre);
    RADEON_ENC_DESTROY_VIDEO_BUFFER(dpb->pre_fcb);
    FREE(dpb);
 }
@@ -1923,13 +1924,16 @@ static struct pipe_video_buffer *radeon_enc_create_dpb_buffer(struct pipe_video_
 {
    struct radeon_encoder *enc = (struct radeon_encoder *)encoder;
 
-   struct pipe_video_buffer *buf = enc->base.context->create_video_buffer(enc->base.context, templat);
+   struct pipe_video_buffer templ = *templat;
+   templ.bind |= PIPE_BIND_VIDEO_ENCODE_DPB;
+   struct pipe_video_buffer *buf = enc->base.context->create_video_buffer(enc->base.context, &templ);
    if (!buf) {
       RADEON_ENC_ERR("Can't create dpb buffer!\n");
       return NULL;
    }
 
    struct radeon_enc_dpb_buffer *dpb = CALLOC_STRUCT(radeon_enc_dpb_buffer);
+   dpb->templ = templ;
    dpb->luma = (struct si_texture *)((struct vl_video_buffer *)buf)->resources[0];
    dpb->chroma = (struct si_texture *)((struct vl_video_buffer *)buf)->resources[1];
 
