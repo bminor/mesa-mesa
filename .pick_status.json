@@ -424,7 +424,7 @@
         "description": "intel/dev/xe: Fix access to eu_per_dss_mask",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a24d93aa8959dc03bfb77390b8c0352cc2bf21df",
         "notes": null
