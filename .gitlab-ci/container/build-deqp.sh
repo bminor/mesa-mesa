@@ -142,20 +142,16 @@ do
   GIT_COMMITTER_DATE=$(date -d@0) git am < $OLDPWD/.gitlab-ci/container/patches/$patch
 done
 
-if [ "$DEQP_VERSION" = "$DEQP_MAIN_COMMIT" ]; then
-  {
+{
+  if [ "$DEQP_VERSION" = "$DEQP_MAIN_COMMIT" ]; then
     commit_desc=$(git show --no-patch --format='commit %h on %ci' --abbrev=10 "$DEQP_COMMIT")
     echo "dEQP main at $commit_desc"
-    echo "The following local patches are applied on top:"
-    git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
-  } > /deqp-$deqp_api/version
-else
-  {
+  else
     echo "dEQP base version $DEQP_VERSION"
-    echo "The following local patches are applied on top:"
-    git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
-  } > /deqp-$deqp_api/version
-fi
+  fi
+  echo "The following local patches are applied on top:"
+  git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
+} > /deqp-$deqp_api/version
 
 # --insecure is due to SSL cert failures hitting sourceforge for zlib and
 # libpng (sigh).  The archives get their checksums checked anyway, and git
