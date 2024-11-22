@@ -34,6 +34,16 @@ DEQP_GLES_VERSION=3.2.11.0
 # patches.
 
 # shellcheck disable=SC2034
+main_cts_commits_to_backport=(
+    # If you find yourself wanting to add something in here, consider whether
+    # bumping DEQP_MAIN_COMMIT is not a better solution :)
+)
+
+# shellcheck disable=SC2034
+main_cts_patch_files=(
+)
+
+# shellcheck disable=SC2034
 vk_cts_commits_to_backport=(
     # Remove multi-line test results in DRM format modifier tests
     8c95af68a2a85cbdc7e1d9267ab029f73e9427d2
@@ -111,25 +121,35 @@ fi
 mkdir -p /deqp-$deqp_api
 
 if [ "$DEQP_VERSION" = "$DEQP_MAIN_COMMIT" ]; then
-  commit_desc=$(git show --no-patch --format='commit %h on %ci' --abbrev=10 "$DEQP_COMMIT")
-  echo "dEQP main at $commit_desc" > /deqp-$deqp_api/version
+  prefix="main"
 else
-  cts_commits_to_backport="${deqp_api}_cts_commits_to_backport[@]"
-  for commit in "${!cts_commits_to_backport}"
-  do
-    PATCH_URL="https://github.com/KhronosGroup/VK-GL-CTS/commit/$commit.patch"
-    echo "Apply patch to ${DEQP_API} CTS from $PATCH_URL"
-    curl -L --retry 4 -f --retry-all-errors --retry-delay 60 $PATCH_URL | \
-      GIT_COMMITTER_DATE=$(date -d@0) git am -
-  done
+  prefix="$deqp_api"
+fi
 
-  cts_patch_files="${deqp_api}_cts_patch_files[@]"
-  for patch in "${!cts_patch_files}"
-  do
-    echo "Apply patch to ${DEQP_API} CTS from $patch"
-    GIT_COMMITTER_DATE=$(date -d@0) git am < $OLDPWD/.gitlab-ci/container/patches/$patch
-  done
+cts_commits_to_backport="${prefix}_cts_commits_to_backport[@]"
+for commit in "${!cts_commits_to_backport}"
+do
+  PATCH_URL="https://github.com/KhronosGroup/VK-GL-CTS/commit/$commit.patch"
+  echo "Apply patch to ${DEQP_API} CTS from $PATCH_URL"
+  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 $PATCH_URL | \
+    GIT_COMMITTER_DATE=$(date -d@0) git am -
+done
 
+cts_patch_files="${prefix}_cts_patch_files[@]"
+for patch in "${!cts_patch_files}"
+do
+  echo "Apply patch to ${DEQP_API} CTS from $patch"
+  GIT_COMMITTER_DATE=$(date -d@0) git am < $OLDPWD/.gitlab-ci/container/patches/$patch
+done
+
+if [ "$DEQP_VERSION" = "$DEQP_MAIN_COMMIT" ]; then
+  {
+    commit_desc=$(git show --no-patch --format='commit %h on %ci' --abbrev=10 "$DEQP_COMMIT")
+    echo "dEQP main at $commit_desc"
+    echo "The following local patches are applied on top:"
+    git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
+  } > /deqp-$deqp_api/version
+else
   {
     echo "dEQP base version $DEQP_VERSION"
     echo "The following local patches are applied on top:"
