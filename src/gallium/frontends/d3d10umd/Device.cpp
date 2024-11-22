@@ -394,7 +394,7 @@ RelocateDeviceFuncs(D3D10DDI_HDEVICE hDevice,                           // IN
  *
  * RelocateDeviceFuncs1 --
  *
- *    The RelocateDeviceFuncs function notifies the user-mode
+ *    The RelocateDeviceFuncs1 function notifies the user-mode
  *    display driver about the new location of the driver function table.
  *
  * ----------------------------------------------------------------------

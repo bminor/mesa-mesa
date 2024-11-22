@@ -50,7 +50,7 @@
  *
  * CreateEmptyShader --
  *
- *    Update the driver's currently bound constant buffers.
+ *    The CreateEmptyShader function creates a empty shader.
  *
  * ----------------------------------------------------------------------
  */
@@ -110,9 +110,9 @@ CreateEmptyShader(Device *pDevice,
 /*
  * ----------------------------------------------------------------------
  *
- * CreateEmptyShader --
+ * DeleteEmptyShader --
  *
- *    Update the driver's currently bound constant buffers.
+ *    The DeleteEmptyShader function delete a empty shader.
  *
  * ----------------------------------------------------------------------
  */
@@ -213,9 +213,9 @@ SetSamplers(enum pipe_shader_type shader_type,     // IN
 /*
  * ----------------------------------------------------------------------
  *
- * SetSamplers --
+ * SetShaderResources --
  *
- *    Update the driver's currently bound sampler state.
+ *    Update the driver's currently shader resources.
  *
  * ----------------------------------------------------------------------
  */
@@ -1156,9 +1156,9 @@ CalcPrivateShaderResourceViewSize(
 /*
  * ----------------------------------------------------------------------
  *
- * CalcPrivateShaderResourceViewSize --
+ * CalcPrivateShaderResourceViewSize1 --
  *
- *    The CalcPrivateShaderResourceViewSize function determines the size
+ *    The CalcPrivateShaderResourceViewSize1 function determines the size
  *    of the usermode display driver's private region of memory
  *    (that is, the size of internal driver structures, not the size of
  *    the resource video memory) for a shader resource view.
@@ -1260,7 +1260,7 @@ CreateShaderResourceView(
  *
  * CreateShaderResourceView1 --
  *
- *    The CreateShaderResourceView function creates a shader
+ *    The CreateShaderResourceView1 function creates a shader
  *    resource view.
  *
  * ----------------------------------------------------------------------
