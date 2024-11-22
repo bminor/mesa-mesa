@@ -770,11 +770,6 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
                                   &output_width, &output_height, &output_channels);
    }
 
-   if (input_height > input_width) {
-      SWAP(input_width, input_height);
-      SWAP(output_width, output_height);
-   }
-
    if (operation->fully_connected) {
       unsigned original_input_width = input_width;
       input_width = 15;
@@ -787,6 +782,9 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
       input_channels = original_input_height / input_height;
       weight_width = input_width;
       weight_height = input_height;
+   } else {
+      SWAP(input_width, input_height);
+      SWAP(output_width, output_height);
    }
 
    etna_bo_cpu_prep(bo, DRM_ETNA_PREP_WRITE);

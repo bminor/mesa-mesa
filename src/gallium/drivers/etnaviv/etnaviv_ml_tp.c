@@ -349,11 +349,13 @@ split_reshuffle(struct etna_ml_subgraph *subgraph, const struct etna_operation *
    unsigned remaining_out_size, remaining_in_size;
    unsigned dim_to_split = 0;
 
-   if (out_dims[1] >= out_dims[dim_to_split])
-      dim_to_split = 1;
+   if (operation->input_channels >= out_dims[dim_to_split]) {
+      if (out_dims[1] >= out_dims[dim_to_split])
+         dim_to_split = 1;
 
-   if (out_dims[2] >= out_dims[dim_to_split])
-      dim_to_split = 2;
+      if (out_dims[2] >= out_dims[dim_to_split])
+         dim_to_split = 2;
+   }
 
    remaining_in_size = in_dims[dim_to_split];
    remaining_out_size = out_dims[dim_to_split];
@@ -429,10 +431,8 @@ create_reshuffle_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
 
    set_default_tp_config(map);
 
-   if (input_height > input_width) {
-      SWAP(input_width, input_height);
-      SWAP(output_width, output_height);
-   }
+   SWAP(input_width, input_height);
+   SWAP(output_width, output_height);
 
    in_dims[0] = input_width;
    in_dims[1] = input_height;
