@@ -1096,11 +1096,6 @@ extern int glcpp_preprocess(void *ctx, const char **shader, char **info_log,
                             struct _mesa_glsl_parse_state *state,
                             struct gl_context *gl_ctx);
 
-extern void
-_mesa_glsl_copy_symbols_from_table(struct exec_list *shader_ir,
-                                   struct glsl_symbol_table *src,
-                                   struct glsl_symbol_table *dest);
-
 #ifdef __cplusplus
 }
 #endif
