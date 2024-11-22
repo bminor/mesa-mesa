@@ -193,6 +193,8 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
             case nir_intrinsic_shuffle_down:
             case nir_intrinsic_rotate:
             case nir_intrinsic_masked_swizzle_amd:
+            case nir_intrinsic_is_helper_invocation:
+            case nir_intrinsic_load_helper_invocation:
                instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
                goto break_all;
             case nir_intrinsic_terminate_if:
