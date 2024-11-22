@@ -143,7 +143,7 @@ GL 4.0, GLSL 4.00 --- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, 
 GL 4.1, GLSL 4.10 --- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, virgl, zink, d3d12, iris, crocus/gen7+, asahi
 
   GL_ARB_ES2_compatibility                              DONE (freedreno, nv50, softpipe, v3d, vc4, panfrost, lima, crocus)
-  GL_ARB_get_program_binary                             DONE (freedreno, v3d, 0 or 1 binary formats)
+  GL_ARB_get_program_binary                             DONE (all drivers)
   GL_ARB_separate_shader_objects                        DONE (all drivers)
   GL_ARB_shader_precision                               DONE (freedreno/a6xx, all drivers that support GLSL 4.10)
   GL_ARB_vertex_attrib_64bit                            DONE (freedreno/a6xx, softpipe)
