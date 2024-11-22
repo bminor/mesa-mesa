@@ -5627,9 +5627,12 @@ anv_image_is_externally_shared(const struct anv_image *image)
 static inline bool
 anv_image_has_private_binding(const struct anv_image *image)
 {
-   const struct anv_image_binding private_binding =
-      image->bindings[ANV_IMAGE_MEMORY_BINDING_PRIVATE];
-   return private_binding.memory_range.size != 0;
+   if (image->bindings[ANV_IMAGE_MEMORY_BINDING_PRIVATE].memory_range.size > 0) {
+      assert(anv_image_is_externally_shared(image));
+      return true;
+   } else {
+      return false;
+   }
 }
 
 static inline bool
