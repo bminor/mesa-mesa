@@ -2874,7 +2874,7 @@
         "description": "panvk: fix vs image support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5db135f66ad325dcbf782c208480fcdced93db60",
         "notes": null
