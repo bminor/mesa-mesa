@@ -2154,6 +2154,8 @@ static void si_draw(struct pipe_context *ctx,
       }
    }
 
+#define NEED_MIN_DIRECT_COUNT (GFX_VERSION == GFX7 || GFX_VERSION == GFX8)
+#define NEED_TOTAL_DIRECT_COUNT (NGG && !HAS_TESS && !HAS_GS)
    unsigned min_direct_count = 0;
    unsigned total_direct_count = 0;
 
@@ -2173,17 +2175,21 @@ static void si_draw(struct pipe_context *ctx,
             si_resource(indirect->indirect_draw_count)->L2_cache_dirty = false;
          }
       }
-      total_direct_count = INT_MAX; /* just set something other than 0 to enable shader culling */
-   } else {
-      total_direct_count = draws[0].count;
-      if (GFX_VERSION == GFX7 || GFX_VERSION == GFX8)
+
+      if (NEED_TOTAL_DIRECT_COUNT)
+         total_direct_count = INT_MAX; /* just set something other than 0 to enable shader culling */
+   } else if (NEED_MIN_DIRECT_COUNT || NEED_TOTAL_DIRECT_COUNT) {
+      if (NEED_TOTAL_DIRECT_COUNT)
+         total_direct_count = draws[0].count;
+      if (NEED_MIN_DIRECT_COUNT)
          min_direct_count = draws[0].count;
 
       for (unsigned i = 1; i < num_draws; i++) {
          unsigned count = draws[i].count;
 
-         total_direct_count += count;
-         if (GFX_VERSION == GFX7 || GFX_VERSION == GFX8)
+         if (NEED_TOTAL_DIRECT_COUNT)
+            total_direct_count += count;
+         if (NEED_MIN_DIRECT_COUNT)
             min_direct_count = MIN2(min_direct_count, count);
       }
    }
@@ -2245,7 +2251,11 @@ static void si_draw(struct pipe_context *ctx,
           /* Only the first draw for a shader starts with culling disabled and it's disabled
            * until we pass the total_direct_count check and then it stays enabled until
            * the shader is changed. This eliminates most culling on/off state changes. */
-          (old_ngg_culling || total_direct_count > hw_vs->ngg_cull_vert_threshold)) {
+          (old_ngg_culling ||
+           /* If tess or GS is enabled, the shader just has to allow culling. */
+           /* If tess and GS are disabled, the draw has to pass the total_direct_count check. */
+           (HAS_TESS || HAS_GS ? hw_vs->ngg_cull_vert_threshold == 0
+                               : total_direct_count > hw_vs->ngg_cull_vert_threshold))) {
          struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
 
          /* Check that the current shader allows culling. */
@@ -2382,7 +2392,8 @@ static void si_draw(struct pipe_context *ctx,
    }
 
    if (u_trace_perfetto_active(&sctx->ds.trace_context)) {
-      trace_si_end_draw(&sctx->trace, total_direct_count);
+      /* Just use the draw[0] vertex count for perfetto. */
+      trace_si_end_draw(&sctx->trace, draws[0].count);
    }
 
    DRAW_CLEANUP;
