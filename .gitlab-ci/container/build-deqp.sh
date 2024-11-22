@@ -244,7 +244,7 @@ esac
 
 ninja "${deqp_build_targets[@]}"
 
-if [ "${DEQP_TARGET}" != 'android' ] && [ "$DEQP_API" != tools ]; then
+if [ "$DEQP_API" != tools ]; then
     # Copy out the mustpass lists we want.
     mkdir -p mustpass
 
