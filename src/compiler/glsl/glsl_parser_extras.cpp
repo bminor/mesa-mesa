@@ -2215,10 +2215,9 @@ do_late_parsing_checks(struct _mesa_glsl_parse_state *state)
 }
 
 static void
-opt_shader_and_create_symbol_table(const struct gl_constants *consts,
-                                   const struct gl_extensions *exts,
-                                   struct glsl_symbol_table *source_symbols,
-                                   struct gl_shader *shader)
+opt_shader(const struct gl_constants *consts,
+           const struct gl_extensions *exts,
+           struct gl_shader *shader)
 {
    assert(shader->CompileStatus != COMPILE_FAILURE &&
           !shader->ir->is_empty());
@@ -2269,19 +2268,6 @@ opt_shader_and_create_symbol_table(const struct gl_constants *consts,
 
    /* Retain any live IR, but trash the rest. */
    reparent_ir(shader->ir, shader->ir);
-
-   /* Destroy the symbol table.  Create a new symbol table that contains only
-    * the variables and functions that still exist in the IR.  The symbol
-    * table will be used later during linking.
-    *
-    * There must NOT be any freed objects still referenced by the symbol
-    * table.  That could cause the linker to dereference freed memory.
-    *
-    * We don't have to worry about types or interface-types here because those
-    * are fly-weights that are looked up by glsl_type.
-    */
-   _mesa_glsl_copy_symbols_from_table(shader->ir, source_symbols,
-                                      shader->symbols);
 }
 
 static bool
@@ -2434,7 +2420,6 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
    if (!state->error)
       set_shader_inout_layout(shader, state);
 
-   shader->symbols = new(shader->ir) glsl_symbol_table;
    shader->CompileStatus = state->error ? COMPILE_FAILURE : COMPILE_SUCCESS;
    shader->InfoLog = state->info_log;
    shader->Version = state->language_version;
@@ -2454,8 +2439,7 @@ _mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
       lower_builtins(shader->ir);
       assign_subroutine_indexes(state);
       lower_subroutine(shader->ir, state);
-      opt_shader_and_create_symbol_table(&ctx->Const, &ctx->Extensions,
-                                         state->symbols, shader);
+      opt_shader(&ctx->Const, &ctx->Extensions, shader);
    }
 
    if (!force_recompile) {
