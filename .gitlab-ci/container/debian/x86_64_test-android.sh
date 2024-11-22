@@ -3,6 +3,9 @@
 # shellcheck disable=SC1091
 
 set -e
+
+. .gitlab-ci/setup-test-env.sh
+
 set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
