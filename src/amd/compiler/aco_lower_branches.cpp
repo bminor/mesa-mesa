@@ -73,6 +73,7 @@ try_remove_simple_block(branch_ctx& ctx, Block& block)
          succ.linear_preds.push_back(pred_idx);
       } else {
          /* This block is the fall-through target of the predecessor. */
+         assert(pred_idx == block.index - 1);
          if (block.instructions.empty()) {
             /* If this block is empty, just fall-through to the successor. */
             pred.linear_succs[0] = succ_idx;

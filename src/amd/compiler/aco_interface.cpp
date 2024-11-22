@@ -173,10 +173,8 @@ aco_postprocess_shader(const struct aco_compiler_options* options,
       validate(program.get());
    }
 
-   ssa_elimination(program.get());
-   jump_threading(program.get());
-
    /* Lower to HW Instructions */
+   ssa_elimination(program.get());
    lower_to_hw_instr(program.get());
    lower_branches(program.get());
    validate(program.get());
