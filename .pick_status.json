@@ -1,5 +1,825 @@
 [
     {
+        "sha": "2e49448a433e30a0648b3986381f356335211ae9",
+        "description": "vulkan/wsi/wayland: Move timing calculations to the swapchain",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c26ab1aee1dd9a06e17744de7ab6a54530b47ca5",
+        "notes": null
+    },
+    {
+        "sha": "b9c8afae339664e78832af3e4bb54a481015890a",
+        "description": "vulkan/wsi/wayland: Avoid spurious discard event at startup",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c26ab1aee1dd9a06e17744de7ab6a54530b47ca5",
+        "notes": null
+    },
+    {
+        "sha": "ed2bb692f7f3dd94a6e6b76ce30179f15d0825d2",
+        "description": "vulkan/wsi/wayland: Fix time calculation",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c26ab1aee1dd9a06e17744de7ab6a54530b47ca5",
+        "notes": null
+    },
+    {
+        "sha": "f1665024b806a260d3f1b3fa962acd5792dd2384",
+        "description": "panvk/ci: Update CI expectations to have a green CI",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "12fff8005abb3d9f2565230271e7baa7c1a6e880",
+        "description": "frontends/va: Enable 3-plane YUV formats as postproc output",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6c83f3c3bbfec02e6a3bd5eb68988ec544ae6c85",
+        "description": "gallium/vl: Don't support planar RGB as video format",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "bdb7f36aa8ee4554550f13cf2801dd680fa849c2",
+        "notes": null
+    },
+    {
+        "sha": "0f533b387ca7609d5273257b5a6a0142f2751fc3",
+        "description": "gallium/vl: Implement rendering to 3-plane YUV formats",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d1ce3d8029b06ebdd3e601b0ea3622471794c57",
+        "description": "frontends/va: Change default fourcc for RGB 10bit to X2R10G10B10",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e3eb62caec1d931bcb2a41b8a5f1649568859c5",
+        "description": "frontends/va: Return correct pixel formats in surface attributes query",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c20e9868bf0456641133ec4e0d3f225c688c3a57",
+        "description": "ci/container: setup sections in all image builds",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "712eccf54456287064206c0464bc82499af5d7d3",
+        "description": "ci: bump image tags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad42be50c911826f58e98c5c0066e315aacf4cb1",
+        "description": "ci/deqp: fully isolate deqp builds",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1b973278bd86e383507e76810210e5444e92bc75",
+        "description": "ci/deqp: make sure the main commit is actually from the main branch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "84e855953c090a107ad937f3b6fd6ff19889d08e",
+        "description": "ci/deqp: add build of `main` branch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3c3b270d81d1dea4c084befee3c99d78f87d1b5",
+        "description": "ci/deqp: build glcts in gles build, for gles*-khr tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "393eafe10bd487161e7f3d6e924bbf8889415328",
+        "description": "ci/deqp: error out in case of invalid build API",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9a689b15d9652197903cf245a56bb41191f162e7",
+        "description": "ci/deqp: avoid downloading 1.47 GiB multiple times",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7832ff9b26f0f347c5117a0c48fa585eff88a138",
+        "description": "ci/deqp: fetch & checkout exactly the commit/tag/branch requested",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97e6bda35c080a43a22f9ca16b9dd019ad597deb",
+        "description": "ci/deqp: build testlog tools on android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e549b6fba2ddc877e88dccd3a52ec647cf4cb411",
+        "description": "ci/deqp: only compress caselists when they exist",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08e5a5092129e14509f99fb4006b49e5f0310980",
+        "description": "ci/deqp: move testlog-to-* tools to /deqp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55eb200e818a20e33b7d4ebb99c250f7248f9247",
+        "description": "zink+radv/ci: fix deqp binary used for gles tests",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "14279087fb37b2869e6abfbc571ecc69184b5fe1",
+        "notes": null
+    },
+    {
+        "sha": "25bf8e968249f59a82bcf2997625d4f484bc94af",
+        "description": "zink+nvk/ci: fix deqp binary used for gles tests",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5a6ffd1420cecb9d060f386120b94d9b5eafc22e",
+        "notes": null
+    },
+    {
+        "sha": "bb87832ce0b5828b2d49db00e78a68f3d78865d0",
+        "description": "aco/insert_NOPs: add early exit to handle_valu_partial_forwarding_hazard_instr",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07df37ba0113584748d91f9094d40f03c6835884",
+        "description": "aco/insert_NOPs: use RegCounterMap as replacement for the CounterMap implementation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fb5e5adfb35958eb1db3dedace36fb973b2dc4a9",
+        "description": "aco/insert_NOPs: implement vector-based RegCounterMap as replacement for VGPRCounterMap",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b44faa22ab27b9f486aa2c2e2897f59239eb51c1",
+        "description": "anv: document the X4 Foundations workaround a bit more",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0fa3be44aab611c1fd350ac7023e8ca590c05d0d",
+        "description": "anv: add a workaround for X4 Foundations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "14d8da4c3c2c93a5dfdf1db956c556cf2e2ca7dd",
+        "description": "anv: indent driconf code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d483f7d984aa30bc90eb286dd1c3ebf80c0ae575",
+        "description": "anv: track allocated descriptor pool sizes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "25b8f4f7143f2e022df245ba2e1a2ab3ed4a2f90",
+        "description": "venus: handle device probing properly.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d15376647dd64171faf438ceef05b151cf50f0a",
+        "description": "v3dv: report correct error on failure to probe",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e2599d47538907a9cf7759da86f79461bdbd5af",
+        "description": "intel/brw: Use <V,W,H> notation for FIXED_GRF and ARF source when printing IR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71d362db6613c2b619b8b7ebd503a4f673d333ed",
+        "description": "intel/brw: Omit type and region in payload sources when printing IR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8474dc853de1da9a2f60796247ec6a5d6a865faf",
+        "description": "intel/brw: Add SHADER_OPCODE_QUAD_SWAP",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73fc29b25c079c4340bd6917a44cc9f659bdc371",
+        "description": "ac/nir/ngg: Slightly refactor workgroup scan.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24ccd134a6ee1e244d24c543c4dc97ed75ef3fb5",
+        "description": "ac/nir/cull: Slightly refactor control flow for small primitive culling.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "218c824e27a36cac5004444db5391475a98d7231",
+        "description": "ac/nir/ngg: Trade 1 VALU shift for 2 SALU add.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "340ec61984e6ac1bad779da49723a19ee9da02d3",
+        "description": "ac/nir/ngg: Don't emit dead code with dot_op.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b9d2b5e100dd697760ce7d99be0659f78c11a47e",
+        "description": "radv: Don't flush at the end of each command buffer on GFX6.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "030a7510ce5fdebf0a5510cb6c0cdafd4af504a2",
+        "description": "radv: Add a flush postamble on GFX6.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3adf02b2220040f69343329bd4b55d7f4fe2484",
+        "description": "panvk: fix dirty check for prepare_blend",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e6f0c473ca000709b626d2b6c78e85b4ffdc8a49",
+        "description": "panvk: minor clean up to prepare_blend",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc50fb35b0526a10da5e5fe72d4291c5175a9759",
+        "description": "tu,freedreno: Enable linear mipmap tail for UBWC images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9fc01ec4dfd978a730cb8c5f2402efec1c80116e",
+        "description": "freedreno/fdl: Pass fd_dev_info to fdl6_layout",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ccbc924b58c36bb98bf37a7b128febd1ab4a0ae",
+        "description": "tu: Enable UBWC for 3D images without mipmaps",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0aaf174e31a960cfdc568c472bce76394b389997",
+        "description": "nir/lower_system_values: add ID to 32-bit lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f682982e539b5c49d33267dae8c658241ad365bb",
+        "description": "zink: spec@arb_tessellation_shader@execution@gs-primitiveid-instanced is fixed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5379608fe06f6e01c726df23b44b383b11b2398",
+        "description": "llvmpipe: spec@arb_tessellation_shader@execution@gs-primitiveid-instanced is fixed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b80d0d8bf4522b75a175f9431317e7b8d0f599b2",
+        "description": "draw: primitive ID is per-patch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2b7bafd76b28646f8000c95ba9afa11e604615c",
+        "description": "intel/dev: lower amount of max gs threads for Wa_18040209780",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7117e14026a4af0d0fe23d38346659f815c10d19",
+        "description": "intel/dev: update mesa_defs.json from workaround database",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d1e0788d40c9a96310154e1a054864b3430d633",
+        "description": "ci: bump image tags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4facfd6f4d20fd2e88426f785789e1f989988f9c",
+        "description": "ci/container: add section around strip-rootfs.sh",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "31a23d9801184bbb7bd5621018d48d6bca52c88a",
+        "description": "ci/lava: add setup-test-env.sh to the rootfs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05b2024c367fe8238bdc2e24dc5d2a78cfb80ca5",
+        "description": "ci/container: close debian_{setup,cleanup} sections",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b693b704d917f9837aa56e9352b7e55de693e0b9",
+        "description": "ci/container: add sections around the other build scripts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc59acee8ed671923c627238bcdf79fb6da6ca50",
+        "description": "ci/container: move wayland build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b18cb0cb313e0efd3ec4b6174b9a7718a425c5ab",
+        "description": "ci/container: move vulkan-validation build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5655a30412c08a4cb1760a76d68f5955095046d6",
+        "description": "ci/container: move vkd3d-proton build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b791074f2e2ff055b925c5f58763f951f9392c43",
+        "description": "ci/container: move rust build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc5ae2e5cbfd783a46404c69d1fa8a3f9019f2f2",
+        "description": "ci/container: move piglit build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "999cc1a86fa01528544f3b190bc418c835e96d94",
+        "description": "ci/container: move ninetests build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "500c1c2d7c1ceec4ae0c1557467ce88f78377b69",
+        "description": "ci/container: move mold build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a7ab7da1a92bc3d9cbc5cc60b5df70f8d74a368",
+        "description": "ci/container: move llvm-spirv build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0cebd6b09726c6d666f90be504d0b7e1d5c9c87e",
+        "description": "ci/container: move libclc build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aba579811bfc1f947656b8bb228653917b7fd204",
+        "description": "ci/container: move kdl build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5bfd49215bc141a3a4adb93c9dc1d127589fe3dc",
+        "description": "ci/container: move gfxreconstruct build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "493bebb9e9debc9df7aa0edc78149f5d88de9d47",
+        "description": "ci/container: move fossilize build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a824381408c04d6a03856275b888b5b05377f4aa",
+        "description": "ci/container: move deqp-runner build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33ea8d3b8192e93774fd93bc4823b8c2109830fb",
+        "description": "ci/container: move crosvm build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07de2140a3be83ead4e55e54040984c5fd8f8c0d",
+        "description": "ci/container: move apitrace build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6551fb6504b870ebe590c1a2d48bc1a856ea9164",
+        "description": "ci/container: move deqp build section into the script itself",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2bd7592b0b0507dfd40529a5ba8fef8dfc5f1498",
+        "description": "intel/brw: Add SHADER_OPCODE_BALLOT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50e7a8ef2502c246d972714b77523064ee1c23cc",
+        "description": "docs: Add calendar entries for 24.3 release.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "94d3415dcbbc0d999b127e522059709eead9ac62",
+        "description": "docs/release-calendar: remove 24.3 RC dates",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b5d135fadb3d9d57a063bbc3050be98afe72840",
+        "description": "docs/relnotes/24.3.0: Add SHA sums",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8661ff683ac34ad4f98454fcf6d9ecf4a3de41ce",
+        "description": "docs: add release notes for 24.3.0",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1efe655a74086fcdb030d247acce5fbb0cc10d6",
+        "description": "ir3/parser: Add fullnop and fullsync sections for debugging",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ab8eff511d640e50682965eb5d4cd9e28f78487",
+        "description": "tu/a7xx: Implement VK_KHR_fragment_shading_rate",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "117379a77ae830e1cf62760353e49ca38c090252",
+        "description": "ir3,tu: Add support for Fragment Shading Rate and plumb it into Turnip",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2038d363e7e733c0fc04dc123574cbd8b62b9a6e",
+        "description": "freedreno/registers: Define Fragment Shading Rate registers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "a53e6ae6992af51ca422bd82d0adb8accda3b456",
         "description": "radeosi/vcn: enable EFC for VCN5.0+ when gfx >= 12",
         "nominated": false,
