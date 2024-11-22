@@ -496,11 +496,6 @@ dEQP-VK.glsl.limits.near_max.fragment_input.components_124,Fail
 
 dEQP-VK.info.device_mandatory_features,Fail
 
-dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.1024,Fail
-dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.65536,Fail
-dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.8192,Fail
-dEQP-VK.memory.pipeline_barrier.transfer_dst_storage_texel_buffer.1024,Fail
-
 dEQP-VK.pipeline.monolithic.max_varyings.test_vertex_io_between_vertex_fragment,Fail
 dEQP-VK.pipeline.monolithic.multisample.alpha_to_coverage.samples_4.alpha_invisible,Fail
 dEQP-VK.pipeline.monolithic.multisample.alpha_to_coverage.samples_4.alpha_invisible_check_depth,Fail
