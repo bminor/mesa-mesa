@@ -20,7 +20,6 @@
 struct rvcn_dec_dynamic_dpb_t2 {
    struct list_head list;
    uint8_t index;
-   struct rvid_buffer dpb;
    struct pipe_video_buffer *vbuf;
 };
 
@@ -139,8 +138,6 @@ struct radeon_decoder {
    unsigned njctx;
    struct pipe_fence_handle *prev_fence;
    struct pipe_fence_handle *destroy_fence;
-   bool dpb_use_surf;
-   uint64_t dpb_modifier;
 
    struct pipe_context *ectx;
 };
