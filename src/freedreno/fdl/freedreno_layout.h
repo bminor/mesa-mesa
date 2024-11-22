@@ -104,6 +104,11 @@ struct fdl_image_params {
 
    bool is_3d;
    bool is_mutable;
+
+   /* Whether to force extra padding between layers in order to help emulate
+    * standard sparse tiling.
+    */
+   bool sparse;
 };
 
 /**
@@ -156,6 +161,7 @@ struct fdl_layout {
    uint32_t width0, height0, depth0;
    uint32_t mip_levels;
    uint32_t nr_samples;
+   uint32_t mip_tail_first_lod; /* for sparse resources */
    enum pipe_format format;
 
    uint64_t size;       /* Size of the whole image, in bytes. */
@@ -245,6 +251,30 @@ fdl_level_linear(const struct fdl_layout *layout, int level)
 }
 
 static inline uint32_t
+fdl_sparse_miptail_offset(const struct fdl_layout *layout)
+{
+   assert(layout->layer_first);
+
+   if (layout->mip_tail_first_lod == layout->mip_levels)
+      return layout->layer_size + layout->slices[0].offset;
+   else
+      return layout->slices[layout->mip_tail_first_lod].offset;
+}
+
+static inline uint32_t
+fdl_sparse_miptail_size(const struct fdl_layout *layout)
+{
+   assert(layout->layer_first);
+
+   if (layout->mip_tail_first_lod == layout->mip_levels)
+      return 0;
+   else
+      return layout->layer_size -
+         (layout->slices[layout->mip_tail_first_lod].offset -
+         layout->slices[0].offset);
+}
+
+static inline uint32_t
 fdl_tile_mode(const struct fdl_layout *layout, int level)
 {
    if (layout->tile_mode && fdl_level_linear(layout, level))
@@ -277,6 +307,9 @@ fdl_set_pitchalign(struct fdl_layout *layout, unsigned pitchalign)
 }
 
 void fdl_dump_layout(struct fdl_layout *layout);
+
+void fdl_get_sparse_block_size(enum pipe_format format, uint32_t nr_samples,
+                               uint32_t *blockwidth, uint32_t *blockheight);
 
 void fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
                               uint32_t *blockwidth, uint32_t *blockheight);

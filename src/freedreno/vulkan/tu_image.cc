@@ -546,8 +546,10 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
          .tile_mode = tile_mode,
          .ubwc = image->ubwc_enabled,
          .force_ubwc = force_ubwc,
-         image->vk.image_type == VK_IMAGE_TYPE_3D,
-         image->is_mutable,
+         .is_3d = image->vk.image_type == VK_IMAGE_TYPE_3D,
+         .is_mutable = image->is_mutable,
+         .sparse = image->vk.create_flags &
+            VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT,
       };
 
       if (!fdl6_layout_image(layout, &device->physical_device->dev_info,

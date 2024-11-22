@@ -110,6 +110,7 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
 {
    uint32_t offset = 0, heightalign;
    uint32_t ubwc_blockwidth, ubwc_blockheight;
+   uint32_t sparse_blockwidth, sparse_blockheight;
 
    memset(layout, 0, sizeof(*layout));
 
@@ -131,6 +132,7 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
 
    layout->ubwc = params->ubwc;
    layout->tile_mode = params->tile_mode;
+   uint32_t sparse_blocksize = 65536;
 
    if (!util_is_power_of_two_or_zero(layout->cpp)) {
       /* R8G8B8 and other 3 component formats don't get UBWC: */
@@ -138,6 +140,10 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
       layout->ubwc = false;
    } else {
       fdl6_get_ubwc_blockwidth(layout, &ubwc_blockwidth, &ubwc_blockheight);
+
+      fdl_get_sparse_block_size(params->format, params->nr_samples,
+                                &sparse_blockwidth, &sparse_blockheight);
+      assert(sparse_blocksize == sparse_blockwidth * sparse_blockheight * layout->cpp);
 
       /* For simplicity support UBWC only for 3D images without mipmaps,
        * most d3d11 games don't use mipmaps for 3D images.
@@ -234,6 +240,7 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
                         ubwc_tile_height_alignment);
 
    uint32_t min_3d_layer_size = 0;
+   bool in_sparse_miptail = false;
 
    for (uint32_t level = 0; level < params->mip_levels; level++) {
       uint32_t depth = u_minify(params->depth0, level);
@@ -241,9 +248,24 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
       struct fdl_slice *ubwc_slice = &layout->ubwc_slices[level];
       enum a6xx_tile_mode tile_mode = fdl_tile_mode(layout, level);
       uint32_t pitch = fdl_pitch(layout, level);
+      uint32_t width = u_minify(params->width0, level);
       uint32_t height = u_minify(params->height0, level);
 
+      uint32_t nblocksx = util_format_get_nblocksx(params->format, width);
       uint32_t nblocksy = util_format_get_nblocksy(params->format, height);
+
+      /* Follow the Vulkan requirements for when the miptail begins. */
+      if (params->sparse &&
+          (nblocksx < sparse_blockwidth || nblocksy < sparse_blockheight) &&
+          !in_sparse_miptail) {
+         in_sparse_miptail = true;
+         layout->mip_tail_first_lod = level;
+         /* The algorithm here follows the HW, which should ensure that the
+          * miptail is page aligned. If not we're in big trouble.
+          */
+         assert(layout->size % 4096 == 0);
+      }
+
       if (tile_mode)
          nblocksy = align(nblocksy, heightalign);
 
@@ -311,6 +333,38 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
 
    if (layout->layer_first && !explicit_layout) {
       layout->layer_size = align64(layout->size, 4096);
+
+      if (params->sparse) {
+         if (!in_sparse_miptail) {
+            layout->mip_tail_first_lod = layout->mip_levels;
+            assert(layout->layer_size % 4096 == 0);
+         }
+
+         /* Honor the Vulkan requirement that the mip tail region is a
+          * multiple of the sparse block size (i.e. 64k). Note that the mip
+          * tail offset is *not* required to be a multiple of the sparse
+          * block size, and we can't guarantee that anyway as the miplevel
+          * offset is controlled by the HW. The partial block before the
+          * miptail will only be partially mapped.
+          */
+         uint32_t mip_tail_size = fdl_sparse_miptail_size(layout);
+
+         /* Vulkan CTS requires that as the image size decreases, the
+          * memory requirements always decrease or stay the same. If there
+          * is no sparse miptail, apply the same padding to the last layer
+          * so that if the image becomes small enough to have a sparse
+          * miptail then the padding still applies.
+          */
+         if (mip_tail_size == 0) {
+            mip_tail_size = layout->slices[params->mip_levels - 1].size0;
+         }
+
+         assert(mip_tail_size % 4096 == 0);
+
+         layout->layer_size +=
+            (sparse_blocksize - mip_tail_size) % sparse_blocksize;
+      }
+
       layout->size = layout->layer_size * params->array_size;
    }
 
