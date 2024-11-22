@@ -188,7 +188,6 @@ struct gl_shader
 
    struct nir_shader *nir;
    struct exec_list *ir;
-   struct glsl_symbol_table *symbols;
 
    /**
     * Whether early fragment tests are enabled as defined by

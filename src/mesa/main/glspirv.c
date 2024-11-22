@@ -121,8 +121,6 @@ _mesa_spirv_shader_binary(struct gl_context *ctx,
 
       ralloc_free(sh->ir);
       sh->ir = NULL;
-      ralloc_free(sh->symbols);
-      sh->symbols = NULL;
    }
 }
 
