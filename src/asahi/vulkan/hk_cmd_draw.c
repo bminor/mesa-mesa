@@ -1760,12 +1760,18 @@ hk_flush_shaders(struct hk_cmd_buffer *cmd)
    if (cmd->state.gfx.shaders_dirty == 0)
       return;
 
+   struct hk_graphics_state *gfx = &cmd->state.gfx;
+   struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
+   desc->root_dirty = true;
+
    /* Geometry shading overrides the restart index, reemit on rebind */
    if (IS_SHADER_DIRTY(GEOMETRY)) {
+      struct hk_api_shader *gs = gfx->shaders[MESA_SHADER_GEOMETRY];
+
       cmd->state.gfx.dirty |= HK_DIRTY_INDEX;
+      desc->root.draw.api_gs = gs && !gs->is_passthrough;
    }
 
-   struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_shader *hw_vs = hk_bound_hw_vs(gfx);
    struct hk_api_shader *fs = gfx->shaders[MESA_SHADER_FRAGMENT];
 
@@ -1776,9 +1782,6 @@ hk_flush_shaders(struct hk_cmd_buffer *cmd)
    agx_assign_uvs(&gfx->linked_varyings, &hw_vs->info.uvs,
                   fs ? hk_only_variant(fs)->info.fs.interp.flat : 0,
                   fs ? hk_only_variant(fs)->info.fs.interp.linear : 0);
-
-   struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
-   desc->root_dirty = true;
 
    for (unsigned i = 0; i < VARYING_SLOT_MAX; ++i) {
       desc->root.draw.uvs_index[i] = gfx->linked_varyings.slots[i];

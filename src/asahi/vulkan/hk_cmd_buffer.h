@@ -84,6 +84,13 @@ struct hk_root_descriptor_table {
          uint16_t provoking;
          uint16_t _pad4;
 
+         /* True if there is an API geometry shader. If false, there may still
+          * be a geometry shader in use (notably for transform feedback) but it
+          * should not contribute to pipeline statistics.
+          */
+         uint16_t api_gs;
+         uint16_t _pad5;
+
          /* Mapping from varying slots written by the last vertex stage to UVS
           * indices. This mapping must be compatible with the fragment shader.
           */
