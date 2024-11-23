@@ -476,6 +476,13 @@ on Windows.
    if set to 1, true or yes, disables Win32 error dialogs. Useful for
    automated test-runs.
 
+.. envvar:: WGL_SWAP_INTERVAL
+
+   to set a swap interval, equivalent to calling
+   ``wglSwapIntervalEXT()`` in an application. If this environment
+   variable is set, application calls to ``wglSwapIntervalEXT()`` will
+   have no effect.
+
 Intel driver environment variables
 ----------------------------------------------------
 
@@ -1281,16 +1288,6 @@ VMware SVGA driver environment variables
    the host log feature.
 
 See the driver code for other, lesser-used variables.
-
-WGL environment variables
--------------------------
-
-.. envvar:: WGL_SWAP_INTERVAL
-
-   to set a swap interval, equivalent to calling
-   ``wglSwapIntervalEXT()`` in an application. If this environment
-   variable is set, application calls to ``wglSwapIntervalEXT()`` will
-   have no effect.
 
 VA-API environment variables
 ----------------------------
