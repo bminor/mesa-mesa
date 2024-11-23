@@ -316,6 +316,28 @@ BEGIN_TEST(optimize.sdwa.extract_modifiers)
    }
 END_TEST
 
+BEGIN_TEST(optimize.sdwa.extract_modifiers_fp16)
+   for (unsigned i = GFX8; i <= GFX10; i++) {
+      //>> v2b: %a:v[0][0:16], v1: %b:v[1] = p_startpgm
+      if (!setup_cs("v2b v1", (amd_gfx_level)i))
+         continue;
+
+      Temp hi = bld.pseudo(aco_opcode::p_extract_vector, bld.def(v2b), inputs[1], Operand::c32(1));
+
+      //! v2b: %res0 = v_mul_f16 -%b, %a dst_sel:uword0 dst_preserve src0_sel:uword1 src1_sel:uword0
+      //! p_unit_test 0, %res0
+      Temp fneg_hi = fneg(hi);
+      writeout(0, fmul(fneg_hi, inputs[0]));
+
+      //! v2b: %res1 = v_mul_f16 |%b|, %a dst_sel:uword0 dst_preserve src0_sel:uword1 src1_sel:uword0
+      //! p_unit_test 1, %res1
+      Temp fabs_hi = fabs(hi);
+      writeout(1, fmul(fabs_hi, inputs[0]));
+
+      finish_opt_test();
+   }
+END_TEST
+
 BEGIN_TEST(optimize.sdwa.extract.sgpr)
    for (unsigned i = GFX8; i <= GFX10; i++) {
       //>> v1: %a:v[0], v1: %b:v[1], s1: %c:s[0], s1: %d:s[1] = p_startpgm
