@@ -121,7 +121,8 @@ asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
    static_assert(sizeof(c->zls_ctrl) == sizeof(cs->cr.zls_control));
    memcpy(&c->zls_ctrl, &cs->cr.zls_control, sizeof(cs->cr.zls_control));
 
-   c->depth_dimensions = (cs->cr.width - 1) | ((cs->cr.height - 1) << 15);
+   c->depth_dimensions =
+      (cs->cr.zls_width - 1) | ((cs->cr.zls_height - 1) << 15);
 
    c->depth_buffer_load = cs->cr.depth.buffer;
    c->depth_buffer_store = cs->cr.depth.buffer;

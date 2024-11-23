@@ -139,6 +139,7 @@ struct hk_bg_eot {
 
 struct hk_render_registers {
    uint32_t width, height, layers;
+   uint32_t zls_width, zls_height;
    uint32_t isp_bgobjdepth;
    uint32_t isp_bgobjvals;
    struct agx_zls_control_packed zls_control, zls_control_partial;

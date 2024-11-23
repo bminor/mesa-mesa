@@ -520,7 +520,7 @@ is_aligned(unsigned x, unsigned pot_alignment)
 
 static void
 hk_merge_render_iview(struct hk_rendering_state *render,
-                      struct hk_image_view *iview)
+                      struct hk_image_view *iview, bool zls)
 {
    if (iview) {
       unsigned samples = iview->vk.image->samples;
@@ -538,6 +538,11 @@ hk_merge_render_iview(struct hk_rendering_state *render,
        */
       render->cr.width = MAX2(render->cr.width, width);
       render->cr.height = MAX2(render->cr.height, height);
+
+      if (zls) {
+         render->cr.zls_width = width;
+         render->cr.zls_height = height;
+      }
    }
 }
 
@@ -629,11 +634,11 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
    hk_attachment_init(&render->stencil_att, pRenderingInfo->pStencilAttachment);
 
    for (uint32_t i = 0; i < render->color_att_count; i++) {
-      hk_merge_render_iview(render, render->color_att[i].iview);
+      hk_merge_render_iview(render, render->color_att[i].iview, false);
    }
 
-   hk_merge_render_iview(render,
-                         render->depth_att.iview ?: render->stencil_att.iview);
+   hk_merge_render_iview(
+      render, render->depth_att.iview ?: render->stencil_att.iview, true);
 
    /* Infer for attachmentless. samples is inferred at draw-time. */
    render->cr.width =
@@ -641,6 +646,11 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
    render->cr.height = MAX2(render->cr.height,
                             render->area.offset.y + render->area.extent.height);
+
+   if (!render->cr.zls_width) {
+      render->cr.zls_width = render->cr.width;
+      render->cr.zls_height = render->cr.height;
+   }
 
    render->cr.layers = layer_count;
 
