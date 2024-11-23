@@ -158,6 +158,10 @@ asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
 
    c->iogpu_unk_214 = cs->cr.iogpu_unk_214;
 
+   if (cs->cr.dbias_is_int == U_TRISTATE_YES) {
+      c->iogpu_unk_214 |= 0x40000;
+   }
+
    if (dev->dev.debug & AGX_DBG_NOCLUSTER) {
       c->flags |= ASAHI_RENDER_NO_VERTEX_CLUSTERING;
    } else {

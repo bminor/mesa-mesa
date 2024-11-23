@@ -764,7 +764,6 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
       if (z_layout->format == PIPE_FORMAT_Z16_UNORM) {
          render->cr.isp_bgobjdepth = _mesa_float_to_unorm(clear_depth, 16);
-         render->cr.iogpu_unk_214 |= 0x40000;
       } else {
          render->cr.isp_bgobjdepth = fui(clear_depth);
       }
@@ -2587,6 +2586,22 @@ hk_flush_ppp_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs, uint8_t **out)
    agx_ppp_fini(out, &ppp);
 }
 
+/*
+ * Based somewhat on the calculation in the PowerVR driver, and mostly trial &
+ * error to pass CTS. This is a mess.
+ */
+static float
+hk_depth_bias_factor(VkFormat format, bool exact, bool force_unorm)
+{
+   if (format == VK_FORMAT_D16_UNORM) {
+      return exact ? (1 << 16) : (1 << 15);
+   } else if (force_unorm) {
+      return exact ? (1ull << 24) : (1ull << 23);
+   } else {
+      return 1.0;
+   }
+}
+
 static void
 hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                        uint32_t draw_id, struct hk_draw draw)
@@ -3128,15 +3143,17 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       void *ptr =
          util_dynarray_grow_bytes(&cs->depth_bias, 1, AGX_DEPTH_BIAS_LENGTH);
 
+      bool exact = dyn->rs.depth_bias.exact;
+      bool force_unorm =
+         dyn->rs.depth_bias.representation ==
+         VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
+
       agx_pack(ptr, DEPTH_BIAS, cfg) {
-         cfg.depth_bias = dyn->rs.depth_bias.constant;
          cfg.slope_scale = dyn->rs.depth_bias.slope;
          cfg.clamp = dyn->rs.depth_bias.clamp;
-
-         /* Value from the PowerVR driver. */
-         if (render->depth_att.vk_format == VK_FORMAT_D16_UNORM) {
-            cfg.depth_bias /= (1 << 15);
-         }
+         cfg.depth_bias = dyn->rs.depth_bias.constant;
+         cfg.depth_bias /= hk_depth_bias_factor(render->depth_att.vk_format,
+                                                exact, force_unorm);
       }
    }
 
@@ -3284,15 +3301,46 @@ static struct hk_cs *
 hk_flush_gfx_state(struct hk_cmd_buffer *cmd, uint32_t draw_id,
                    struct hk_draw draw)
 {
+   struct hk_device *dev = hk_cmd_buffer_device(cmd);
+   struct hk_graphics_state *gfx = &cmd->state.gfx;
+   struct hk_descriptor_state *desc = &gfx->descriptors;
+
    struct hk_cs *cs = hk_cmd_buffer_get_cs(cmd, false /* compute */);
+   const struct vk_dynamic_graphics_state *dyn =
+      &cmd->vk.dynamic_graphics_state;
+
    if (!cs)
       return NULL;
 
-   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
+   /* Annoyingly,
+    * VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT is
+    * render pass state on Imaginapple but draw state in Vulkan. In practice,
+    * Proton never changes it within a render pass, but we technically need to
+    * handle the switch regardless. Do so early since `cs` will be invalidated
+    * if we need to split the render pass to switch representation mid-frame.
+    */
+   if (IS_DIRTY(RS_DEPTH_BIAS_FACTORS)) {
+      bool dbias_is_int =
+         (dyn->rs.depth_bias.representation ==
+          VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT) ||
+         (gfx->render.depth_att.vk_format == VK_FORMAT_D16_UNORM);
 
-   struct hk_graphics_state *gfx = &cmd->state.gfx;
-   struct hk_descriptor_state *desc = &gfx->descriptors;
-   struct hk_device *dev = hk_cmd_buffer_device(cmd);
+      /* Attempt to set dbias_is_int per the draw requirement. If this fails,
+       * flush the control stream and set it on the new control stream.
+       */
+      bool succ = u_tristate_set(&cs->cr.dbias_is_int, dbias_is_int);
+      if (!succ) {
+         perf_debug(dev, "Splitting control stream due to depth bias");
+
+         hk_cmd_buffer_end_graphics(cmd);
+         cs = hk_cmd_buffer_get_cs(cmd, false /* compute */);
+
+         succ = u_tristate_set(&cs->cr.dbias_is_int, dbias_is_int);
+         assert(succ && "can always set tri-state on a new control stream");
+      }
+   }
+
+   hk_ensure_cs_has_space(cmd, cs, 0x2000 /* TODO */);
 
 #ifndef NDEBUG
    if (unlikely(dev->dev.debug & AGX_DBG_DIRTY)) {

@@ -137,7 +137,7 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .EXT_conditional_rendering = false,
       .EXT_color_write_enable = true,
       .EXT_custom_border_color = true,
-      .EXT_depth_bias_control = false,
+      .EXT_depth_bias_control = true,
       .EXT_depth_clip_control = false,
       .EXT_depth_clip_enable = true,
       .EXT_descriptor_indexing = true,
@@ -438,10 +438,10 @@ hk_get_device_features(
       .customBorderColorWithoutFormat = true,
 
       /* VK_EXT_depth_bias_control */
-      .depthBiasControl = false,
-      .leastRepresentableValueForceUnormRepresentation = false,
+      .depthBiasControl = true,
+      .leastRepresentableValueForceUnormRepresentation = true,
       .floatRepresentation = false,
-      .depthBiasExact = false,
+      .depthBiasExact = true,
 
       /* VK_EXT_depth_clip_control */
       .depthClipControl = false,

@@ -146,6 +146,7 @@ struct hk_render_registers {
    uint32_t iogpu_unk_214;
    uint32_t depth_dimensions;
    bool process_empty_tiles;
+   enum u_tristate dbias_is_int;
 
    struct {
       uint32_t dimensions;
