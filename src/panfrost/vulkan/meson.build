@@ -18,6 +18,19 @@ panvk_entrypoints = custom_target(
   depend_files : vk_entrypoints_gen_depend_files,
 )
 
+panvk_tracepoints = custom_target(
+  'panvk_tracepoints.[ch]',
+  input: 'panvk_tracepoints.py',
+  output: ['panvk_tracepoints.h', 'panvk_tracepoints.c'],
+  command: [
+    prog_python, '@INPUT@',
+    '--import-path', join_paths(dir_source_root, 'src/util/perf/'),
+    '--utrace-hdr', '@OUTPUT0@',
+    '--utrace-src', '@OUTPUT1@',
+  ],
+  depend_files: u_trace_py,
+)
+
 libpanvk_files = files(
   'panvk_buffer.c',
   'panvk_cmd_pool.c',
@@ -75,6 +88,7 @@ csf_files = [
 
 common_per_arch_files = [
   panvk_entrypoints[0],
+  panvk_tracepoints[0],
   'panvk_vX_blend.c',
   'panvk_vX_buffer_view.c',
   'panvk_vX_cmd_fb_preload.c',
@@ -148,7 +162,7 @@ endif
 
 libvulkan_panfrost = shared_library(
   'vulkan_panfrost',
-  [libpanvk_files, panvk_entrypoints],
+  [libpanvk_files, panvk_entrypoints, panvk_tracepoints],
   include_directories : [
     inc_include,
     inc_src,
