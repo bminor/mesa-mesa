@@ -158,7 +158,7 @@ if [ "${DEQP_API}" = 'GLES' ]; then
         -DCMAKE_BUILD_TYPE=Release \
         ${EXTRA_CMAKE_ARGS:-}
     ninja modules/egl/deqp-egl
-    mv /deqp-$deqp_api/modules/egl/deqp-egl{,-android}
+    mv modules/egl/deqp-egl{,-android}
   else
     # When including EGL/X11 testing, do that build first and save off its
     # deqp-egl binary.
@@ -167,14 +167,14 @@ if [ "${DEQP_API}" = 'GLES' ]; then
         -DCMAKE_BUILD_TYPE=Release \
         ${EXTRA_CMAKE_ARGS:-}
     ninja modules/egl/deqp-egl
-    mv /deqp-$deqp_api/modules/egl/deqp-egl{,-x11}
+    mv modules/egl/deqp-egl{,-x11}
 
     cmake -S /VK-GL-CTS -B . -G Ninja \
         -DDEQP_TARGET=wayland \
         -DCMAKE_BUILD_TYPE=Release \
         ${EXTRA_CMAKE_ARGS:-}
     ninja modules/egl/deqp-egl
-    mv /deqp-$deqp_api/modules/egl/deqp-egl{,-wayland}
+    mv modules/egl/deqp-egl{,-wayland}
   fi
 fi
 
@@ -214,57 +214,57 @@ ninja "${deqp_build_targets[@]}"
 
 if [ "${DEQP_TARGET}" != 'android' ] && [ "$DEQP_API" != tools ]; then
     # Copy out the mustpass lists we want.
-    mkdir -p /deqp-$deqp_api/mustpass
+    mkdir -p mustpass
 
     if [ "${DEQP_API}" = 'VK' ]; then
         for mustpass in $(< /VK-GL-CTS/external/vulkancts/mustpass/main/vk-default.txt) ; do
             cat /VK-GL-CTS/external/vulkancts/mustpass/main/$mustpass \
-                >> /deqp-$deqp_api/mustpass/vk-main.txt
+                >> mustpass/vk-main.txt
         done
     fi
 
     if [ "${DEQP_API}" = 'GL' ]; then
         cp \
             /VK-GL-CTS/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass/main/*-main.txt \
-            /deqp-$deqp_api/mustpass/
+            mustpass/
         cp \
             /VK-GL-CTS/external/openglcts/data/gl_cts/data/mustpass/gl/khronos_mustpass_single/main/*-single.txt \
-            /deqp-$deqp_api/mustpass/
+            mustpass/
     fi
 
     if [ "${DEQP_API}" = 'GLES' ]; then
         cp \
             /VK-GL-CTS/external/openglcts/data/gl_cts/data/mustpass/gles/aosp_mustpass/main/*.txt \
-            /deqp-$deqp_api/mustpass/
+            mustpass/
         cp \
             /VK-GL-CTS/external/openglcts/data/gl_cts/data/mustpass/egl/aosp_mustpass/main/egl-main.txt \
-            /deqp-$deqp_api/mustpass/
+            mustpass/
         cp \
             /VK-GL-CTS/external/openglcts/data/gl_cts/data/mustpass/gles/khronos_mustpass/main/*-main.txt \
-            /deqp-$deqp_api/mustpass/
+            mustpass/
     fi
 
     # Compress the caselists, since Vulkan's in particular are gigantic; higher
     # compression levels provide no real measurable benefit.
-    zstd -1 --rm /deqp-$deqp_api/mustpass/*.txt
+    zstd -1 --rm mustpass/*.txt
 fi
 
 if [ "$DEQP_API" = tools ]; then
     # Save *some* executor utils, but otherwise strip things down
     # to reduct deqp build size:
-    mv /deqp-tools/executor/testlog-to-* /deqp-tools
-    rm -rf /deqp-tools/executor
+    mv executor/testlog-to-* .
+    rm -rf executor
 fi
 
 # Remove other mustpass files, since we saved off the ones we wanted to conventient locations above.
-rm -rf /deqp-$deqp_api/external/**/mustpass/
-rm -rf /deqp-$deqp_api/external/vulkancts/modules/vulkan/vk-main*
-rm -rf /deqp-$deqp_api/external/vulkancts/modules/vulkan/vk-default
+rm -rf external/**/mustpass/
+rm -rf external/vulkancts/modules/vulkan/vk-main*
+rm -rf external/vulkancts/modules/vulkan/vk-default
 
-rm -rf /deqp-$deqp_api/external/openglcts/modules/cts-runner
-rm -rf /deqp-$deqp_api/modules/internal
-rm -rf /deqp-$deqp_api/execserver
-rm -rf /deqp-$deqp_api/framework
+rm -rf external/openglcts/modules/cts-runner
+rm -rf modules/internal
+rm -rf execserver
+rm -rf framework
 find . -depth \( -iname '*cmake*' -o -name '*ninja*' -o -name '*.o' -o -name '*.a' \) -exec rm -rf {} \;
 if [ "${DEQP_API}" = 'VK' ]; then
   ${STRIP_CMD:-strip} external/vulkancts/modules/vulkan/deqp-vk
