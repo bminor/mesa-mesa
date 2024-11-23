@@ -1201,6 +1201,23 @@ get_fb_descs(struct panvk_cmd_buffer *cmdbuf)
    return VK_SUCCESS;
 }
 
+static void
+set_provoking_vertex_mode(struct panvk_cmd_buffer *cmdbuf)
+{
+   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+   bool first_provoking_vertex =
+      cmdbuf->vk.dynamic_graphics_state.rs.provoking_vertex ==
+         VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
+
+   /* If this is not the first draw, first_provoking_vertex should match
+    * the one from the previous draws. Unfortunately, we can't check it
+    * when the render pass is inherited. */
+   assert(!cmdbuf->state.gfx.render.fbds.gpu ||
+          fbinfo->first_provoking_vertex == first_provoking_vertex);
+
+   fbinfo->first_provoking_vertex = first_provoking_vertex;
+}
+
 static VkResult
 get_render_ctx(struct panvk_cmd_buffer *cmdbuf)
 {
@@ -1586,6 +1603,8 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
 
    /* FIXME: support non-IDVS. */
    assert(idvs);
+
+   set_provoking_vertex_mode(cmdbuf);
 
    result = update_tls(cmdbuf);
    if (result != VK_SUCCESS)

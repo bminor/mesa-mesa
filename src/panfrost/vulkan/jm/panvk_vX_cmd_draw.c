@@ -1015,6 +1015,23 @@ panvk_emit_tiler_dcd(struct panvk_cmd_buffer *cmdbuf,
    }
 }
 
+static void
+set_provoking_vertex_mode(struct panvk_cmd_buffer *cmdbuf)
+{
+   struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;
+   bool first_provoking_vertex =
+      cmdbuf->vk.dynamic_graphics_state.rs.provoking_vertex ==
+         VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
+
+   /* If this is not the first draw, first_provoking_vertex should match
+    * the one from the previous draws. Unfortunately, we can't check it
+    * when the render pass is inherited. */
+   assert(!cmdbuf->cur_batch->fb.desc.gpu ||
+          fbinfo->first_provoking_vertex == first_provoking_vertex);
+
+   fbinfo->first_provoking_vertex = first_provoking_vertex;
+}
+
 static VkResult
 panvk_draw_prepare_tiler_job(struct panvk_cmd_buffer *cmdbuf,
                              struct panvk_draw_info *draw)
@@ -1232,6 +1249,8 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
    bool active_occlusion =
       cmdbuf->state.gfx.occlusion_query.mode != MALI_OCCLUSION_MODE_DISABLED;
    bool needs_tiling = !rs->rasterizer_discard_enable || active_occlusion;
+
+   set_provoking_vertex_mode(cmdbuf);
 
    if (!rs->rasterizer_discard_enable) {
       struct pan_fb_info *fbinfo = &cmdbuf->state.gfx.render.fb.info;

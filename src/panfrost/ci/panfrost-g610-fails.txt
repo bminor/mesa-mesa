@@ -342,24 +342,6 @@ dEQP-VK.renderpass.dedicated_allocation.attachment_allocation.input_output.63,Fa
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.basic_type.no_perspective,Fail
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.interface_blocks.no_perspective,Fail
 
-dEQP-VK.rasterization.flatshading.line_strip,Fail
-dEQP-VK.rasterization.flatshading.line_strip_wide,Fail
-dEQP-VK.rasterization.flatshading.lines,Fail
-dEQP-VK.rasterization.flatshading.lines_wide,Fail
-dEQP-VK.rasterization.flatshading.non_strict_line_strip,Fail
-dEQP-VK.rasterization.flatshading.non_strict_line_strip_wide,Fail
-dEQP-VK.rasterization.flatshading.non_strict_lines,Fail
-dEQP-VK.rasterization.flatshading.non_strict_lines_wide,Fail
-dEQP-VK.rasterization.flatshading.triangle_fan,Fail
-dEQP-VK.rasterization.flatshading.triangle_strip,Fail
-dEQP-VK.rasterization.flatshading.triangles,Fail
-
-dEQP-VK.rasterization.provoking_vertex.draw.default.line_list,Fail
-dEQP-VK.rasterization.provoking_vertex.draw.default.line_strip,Fail
-dEQP-VK.rasterization.provoking_vertex.draw.default.triangle_fan,Fail
-dEQP-VK.rasterization.provoking_vertex.draw.default.triangle_list,Fail
-dEQP-VK.rasterization.provoking_vertex.draw.default.triangle_strip,Fail
-
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.linear_interpolation.no_offset_1_sample,Fail
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.1_sample,Fail
 dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.separate.no_sample_decoration.4_samples,Fail
