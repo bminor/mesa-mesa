@@ -2968,12 +2968,16 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* With attachmentless rendering, we don't know the sample count until draw
     * time, so we do a late tilebuffer fix up. But with rasterizer discard,
     * rasterization_samples might be 0.
+    *
+    * Note that we ignore dyn->ms.rasterization_samples when we do have a sample
+    * count from an attachment. In Vulkan, these have to match anyway, but DX12
+    * drivers are robust against this scenarios and vkd3d-proton will go out of
+    * spec here. No reason we can't be robust here too.
     */
-   if (dyn->ms.rasterization_samples &&
-       gfx->render.tilebuffer.nr_samples != dyn->ms.rasterization_samples) {
+   if (dyn->ms.rasterization_samples && !gfx->render.tilebuffer.nr_samples) {
+      agx_tilebuffer_set_samples(&gfx->render.tilebuffer,
+                                 dyn->ms.rasterization_samples);
 
-      unsigned nr_samples = MAX2(dyn->ms.rasterization_samples, 1);
-      agx_tilebuffer_set_samples(&gfx->render.tilebuffer, nr_samples);
       cs->tib = gfx->render.tilebuffer;
    }
 
