@@ -438,8 +438,8 @@ def op(name, op_type, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_tar
    bname = f'{prefix}_{_name}'
    cop_mods = 0 if not op_mods else ' | '.join([f'(1ULL << {op_mod.cname})' for op_mod in op_mods])
    op_mod_map = {op_mod.cname: index + 1 for index, op_mod in enumerate(op_mods)}
-   cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
-   csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
+   cdest_mods = {i: 0 if not destn_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
+   csrc_mods = {i: 0 if not srcn_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
 
    builder_params = ['', '', '', '', '', '', '']
 
