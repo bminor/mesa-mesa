@@ -911,7 +911,10 @@ panvk_emit_tiler_primitive(struct panvk_cmd_buffer *cmdbuf,
       if (writes_point_size)
          cfg.point_size_array_format = MALI_POINT_SIZE_ARRAY_FORMAT_FP16;
 
-      cfg.first_provoking_vertex = true;
+      cfg.first_provoking_vertex =
+         cmdbuf->vk.dynamic_graphics_state.rs.provoking_vertex ==
+            VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
+
       if (ia->primitive_restart_enable)
          cfg.primitive_restart = MALI_PRIMITIVE_RESTART_IMPLICIT;
       cfg.job_task_split = 6;

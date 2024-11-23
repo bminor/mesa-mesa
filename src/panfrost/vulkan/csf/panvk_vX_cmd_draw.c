@@ -775,8 +775,9 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
 
       cfg.sample_pattern = pan_sample_pattern(fbinfo->nr_samples);
 
-      /* TODO: revisit for VK_EXT_provoking_vertex. */
-      cfg.first_provoking_vertex = true;
+      cfg.first_provoking_vertex =
+         cmdbuf->vk.dynamic_graphics_state.rs.provoking_vertex ==
+            VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT;
 
       /* This will be overloaded. */
       cfg.layer_count = 1;
