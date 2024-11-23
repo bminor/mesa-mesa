@@ -1680,7 +1680,7 @@ gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es
    /* Get scratch LDS usage. */
    const struct radv_shader_info *info = gs_info ? gs_info : es_info;
    const unsigned scratch_lds_size = ac_ngg_get_scratch_lds_size(info->stage, info->workgroup_size, info->wave_size,
-                                                                 pdev->use_ngg_streamout, info->has_ngg_culling);
+                                                                 pdev->use_ngg_streamout, info->has_ngg_culling, false);
    out->lds_size = out->scratch_lds_base + scratch_lds_size;
 
    unsigned workgroup_size =

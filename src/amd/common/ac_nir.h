@@ -134,6 +134,7 @@ typedef struct {
    bool kill_pointsize;
    bool kill_layer;
    bool force_vrs;
+   bool compact_primitives;
 
    /* VS */
    unsigned num_vertices_per_primitive;

@@ -35,7 +35,8 @@ unsigned gfx10_ngg_get_scratch_dw_size(struct si_shader *shader)
                                       si_get_max_workgroup_size(shader),
                                       shader->wave_size,
                                       si_shader_uses_streamout(shader),
-                                      si_shader_culling_enabled(shader)) / 4;
+                                      si_shader_culling_enabled(shader),
+                                      false) / 4;
 }
 
 /**

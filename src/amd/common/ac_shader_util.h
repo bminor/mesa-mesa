@@ -329,7 +329,8 @@ ac_ngg_get_scratch_lds_size(gl_shader_stage stage,
                             unsigned workgroup_size,
                             unsigned wave_size,
                             bool streamout_enabled,
-                            bool can_cull);
+                            bool can_cull,
+                            bool compact_primitives);
 
 enum gl_access_qualifier ac_get_mem_access_flags(const nir_intrinsic_instr *instr);
 

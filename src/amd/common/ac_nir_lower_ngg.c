@@ -983,6 +983,7 @@ cleanup_culling_shader_after_dce(nir_shader *shader,
  * 3. Emit GS_ALLOC_REQ
  * 4. Repacked invocations load the vertex data from LDS
  * 5. GS threads update their vertex indices
+ * 6. Optionally, do the same for primitives.
  */
 static void
 compact_vertices_after_culling(nir_builder *b,
@@ -993,6 +994,8 @@ compact_vertices_after_culling(nir_builder *b,
                                nir_def *es_vertex_lds_addr,
                                nir_def *es_exporter_tid,
                                nir_def *num_live_vertices_in_workgroup,
+                               nir_def *gs_exporter_tid,
+                               nir_def *num_live_primitives_in_workgroup,
                                unsigned pervertex_lds_bytes,
                                unsigned num_repacked_variables)
 {
@@ -1066,7 +1069,8 @@ compact_vertices_after_culling(nir_builder *b,
    }
    nir_pop_if(b, if_packed_es_thread);
 
-   nir_if *if_gs_accepted = nir_push_if(b, nir_load_var(b, gs_accepted_var));
+   nir_def *gs_accepted = nir_load_var(b, gs_accepted_var);
+   nir_if *if_gs_accepted = nir_push_if(b, gs_accepted);
    {
       nir_def *exporter_vtx_indices[3] = {0};
 
@@ -1086,6 +1090,46 @@ compact_vertices_after_culling(nir_builder *b,
    nir_pop_if(b, if_gs_accepted);
 
    nir_store_var(b, es_accepted_var, es_survived, 0x1u);
+
+   if (s->options->compact_primitives) {
+      /* For primitive compaction, re-use the same LDS space that we used for
+       * vertex compaction, so we need to wait until vertex threads are finished reading it.
+       * Considering we only need 1 DWORD per primitive, let's assume we always have enough space,
+       * since vertex compaction requires at least 5 DWORDs per vertex.
+       */
+      nir_barrier(b, .execution_scope=SCOPE_WORKGROUP, .memory_scope=SCOPE_WORKGROUP,
+                     .memory_semantics=NIR_MEMORY_ACQ_REL, .memory_modes=nir_var_mem_shared);
+
+      if_gs_accepted = nir_push_if(b, gs_accepted);
+      {
+         nir_def *exporter_addr = pervertex_lds_addr(b, gs_exporter_tid, pervertex_lds_bytes);
+         nir_def *prim_exp_arg = nir_load_var(b, prim_exp_arg_var);
+
+         /* Store the primitive export argument into the address of the exporter thread. */
+         nir_store_shared(b, prim_exp_arg, exporter_addr, .base = lds_es_pos_x);
+      }
+      nir_pop_if(b, if_gs_accepted);
+
+      nir_barrier(b, .execution_scope=SCOPE_WORKGROUP, .memory_scope=SCOPE_WORKGROUP,
+                     .memory_semantics=NIR_MEMORY_ACQ_REL, .memory_modes=nir_var_mem_shared);
+
+      nir_def *gs_survived = nir_ilt(b, invocation_index, num_live_primitives_in_workgroup);
+      nir_if *if_packed_gs_thread = nir_push_if(b, gs_survived);
+      {
+         /* Load the primitive export argument that the current thread will export. */
+         nir_def *prim_exp_arg = nir_load_shared(b, 1, 32, es_vertex_lds_addr, .base = lds_es_pos_x);
+
+         nir_store_var(b, prim_exp_arg_var, prim_exp_arg, 0x1u);
+      }
+      nir_push_else(b, if_packed_gs_thread);
+      {
+         nir_store_var(b, prim_exp_arg_var, nir_undef(b, 1, 32), 0x1u);
+      }
+      nir_pop_if(b, if_packed_gs_thread);
+
+      nir_store_var(b, gs_accepted_var, gs_survived, 0x1u);
+      nir_store_var(b, s->gs_exported_var, gs_survived, 0x1u);
+   }
 }
 
 static void
@@ -1649,20 +1693,28 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
       nir_pop_if(b, if_es_thread);
 
       nir_def *es_accepted = nir_load_var(b, s->es_accepted_var);
+      nir_def *gs_accepted = nir_load_var(b, s->gs_accepted_var);
 
-      /* Repack the vertices that survived the culling. */
-      nir_def *accepted[] = { es_accepted };
-      wg_repack_result rep[1] = {0};
-      repack_invocations_in_workgroup(b, accepted, rep, 1, lds_scratch_base,
+      /* Repack the vertices (always) and primitives (optional) that survived the culling. */
+      nir_def *accepted[] = { es_accepted, gs_accepted };
+      wg_repack_result rep[2] = {0};
+      const unsigned num_rep = s->options->compact_primitives ? 2 : 1;
+      repack_invocations_in_workgroup(b, accepted, rep, num_rep, lds_scratch_base,
                                       s->max_num_waves, s->options->wave_size);
       nir_def *num_live_vertices_in_workgroup = rep[0].num_repacked_invocations;
       nir_def *es_exporter_tid = rep[0].repacked_invocation_index;
+      nir_def *num_exported_prims = NULL;
+      nir_def *gs_exporter_tid = NULL;
 
-      /* If all vertices are culled, set primitive count to 0 as well. */
-      nir_def *num_exported_prims = nir_load_workgroup_num_input_primitives_amd(b);
-      nir_def *fully_culled = nir_ieq_imm(b, num_live_vertices_in_workgroup, 0u);
-      num_exported_prims = nir_bcsel(b, fully_culled, nir_imm_int(b, 0u), num_exported_prims);
-      nir_store_var(b, s->gs_exported_var, nir_iand(b, nir_inot(b, fully_culled), has_input_primitive(b)), 0x1u);
+      if (s->options->compact_primitives) {
+         num_exported_prims = rep[1].num_repacked_invocations;
+         gs_exporter_tid = rep[1].repacked_invocation_index;
+      } else {
+         /* If all vertices are culled, set primitive count to 0 as well. */
+         nir_def *fully_culled = nir_ieq_imm(b, num_live_vertices_in_workgroup, 0u);
+         num_exported_prims = nir_bcsel(b, fully_culled, nir_imm_int(b, 0u), nir_load_workgroup_num_input_primitives_amd(b));
+         nir_store_var(b, s->gs_exported_var, nir_iand(b, nir_inot(b, fully_culled), has_input_primitive(b)), 0x1u);
+      }
 
       nir_if *if_wave_0 = nir_push_if(b, nir_ieq_imm(b, nir_load_subgroup_id(b), 0));
       {
@@ -1682,6 +1734,7 @@ add_deferred_attribute_culling(nir_builder *b, nir_cf_list *original_extracted_c
                                      repacked_variables, gs_vtxaddr_vars,
                                      invocation_index, es_vertex_lds_addr,
                                      es_exporter_tid, num_live_vertices_in_workgroup,
+                                     gs_exporter_tid, num_exported_prims,
                                      pervertex_lds_bytes, num_repacked_variables);
    }
    nir_push_else(b, if_cull_en);
@@ -3725,7 +3778,8 @@ ac_ngg_get_scratch_lds_size(gl_shader_stage stage,
                             unsigned workgroup_size,
                             unsigned wave_size,
                             bool streamout_enabled,
-                            bool can_cull)
+                            bool can_cull,
+                            bool compact_primitives)
 {
    unsigned scratch_lds_size = 0;
    unsigned max_num_waves = DIV_ROUND_UP(workgroup_size, wave_size);
@@ -3735,7 +3789,9 @@ ac_ngg_get_scratch_lds_size(gl_shader_stage stage,
          /* 4 dwords for 4 streamout buffer offset, 1 dword for emit prim count */
          scratch_lds_size = 20;
       } else if (can_cull) {
-         scratch_lds_size = ALIGN(max_num_waves, 4u);
+         /* 1 byte per wave per repack, max 8 waves */
+         unsigned num_rep = compact_primitives ? 2 : 1;
+         scratch_lds_size = ALIGN(max_num_waves, 4u) * num_rep;
       }
    } else {
       assert(stage == MESA_SHADER_GEOMETRY);
