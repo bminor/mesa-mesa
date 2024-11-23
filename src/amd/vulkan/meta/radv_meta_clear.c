@@ -820,6 +820,11 @@ radv_get_htile_mask(struct radv_cmd_buffer *cmd_buffer, const struct radv_image 
       if (aspects & VK_IMAGE_ASPECT_STENCIL_BIT)
          mask |= 0x000003f0;
 
+      if (radv_image_has_vrs_htile(device, image)) {
+         mask &= ~(0x3 << 6); /* VRS X-rate */
+         mask &= ~(0x3 << 10); /* VRS Y-rate */
+      }
+
       if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
          /* Clear both aspects on SDMA, it's not ideal but there is no other way to initialize the
           * HTILE buffer.
