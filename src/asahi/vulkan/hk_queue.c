@@ -186,6 +186,18 @@ asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
    c->samples = MAX2(cs->tib.nr_samples, 1);
    c->layers = cs->cr.layers;
 
+   /* Drawing max size will OOM and fail submission. But vkd3d-proton does this
+    * for emulating no-attachment rendering. Clamp to something reasonable and
+    * hope this is good enough in practice. This only affects a case that would
+    * otherwise be guaranteed broken.
+    *
+    * XXX: Hack for vkd3d-proton.
+    */
+   if (c->layers == 2048 && c->fb_width == 16384 && c->fb_height == 16384) {
+      mesa_log(MESA_LOG_WARN, MESA_LOG_TAG, "Clamping massive framebuffer");
+      c->layers = 32;
+   }
+
    c->ppp_multisamplectl = cs->ppp_multisamplectl;
    c->sample_size = cs->tib.sample_size_B;
    c->tib_blocks = ALIGN_POT(agx_tilebuffer_total_size(&cs->tib), 2048) / 2048;
