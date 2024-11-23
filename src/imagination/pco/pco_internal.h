@@ -1641,12 +1641,7 @@ static inline pco_ref pco_ref_ssa(unsigned index, unsigned bits, unsigned chans)
 static inline pco_ref
 pco_ref_new_ssa(pco_func *func, unsigned bits, unsigned chans)
 {
-   return (pco_ref){
-      .val = func->next_ssa++,
-      .chans = chans - 1,
-      .bits = pco_bits(bits),
-      .type = PCO_REF_TYPE_SSA,
-   };
+   return pco_ref_ssa(func->next_ssa++, bits, chans);
 }
 
 /**
@@ -1658,6 +1653,30 @@ pco_ref_new_ssa(pco_func *func, unsigned bits, unsigned chans)
 static inline pco_ref pco_ref_new_ssa32(pco_func *func)
 {
    return pco_ref_new_ssa(func, 32, 1);
+}
+
+/**
+ * \brief Builds and returns a new 32x2 SSA address reference.
+ *
+ * \param[in,out] func The function.
+ * \return SSA address reference.
+ */
+static inline pco_ref pco_ref_new_ssa_addr(pco_func *func)
+{
+   return pco_ref_new_ssa(func, 32, 2);
+}
+
+/**
+ * \brief Builds new 32x1[2] SSA address component references.
+ *
+ * \param[in,out] func The function.
+ * \param[out] addr_comps The new address component references.
+ */
+static inline void pco_ref_new_ssa_addr_comps(pco_func *func,
+                                              pco_ref addr_comps[static 2])
+{
+   addr_comps[0] = pco_ref_new_ssa32(func);
+   addr_comps[1] = pco_ref_new_ssa32(func);
 }
 
 /**
@@ -1718,6 +1737,21 @@ pco_ref_hwreg_vec(unsigned index, enum pco_reg_class reg_class, unsigned chans)
       .type = PCO_REF_TYPE_REG,
       .reg_class = reg_class,
    };
+}
+
+/**
+ * \brief Builds 32x1[2] hardware register address component references.
+ *
+ * \param[in] index Register index.
+ * \param[in] reg_class Register class.
+ * \param[out] addr_comps The new address component references.
+ */
+static inline void pco_ref_hwreg_addr_comps(unsigned index,
+                                            enum pco_reg_class reg_class,
+                                            pco_ref addr_comps[static 2])
+{
+   addr_comps[0] = pco_ref_hwreg(index, reg_class);
+   addr_comps[1] = pco_ref_hwreg(index + 1, reg_class);
 }
 
 /**
@@ -1848,13 +1882,31 @@ static inline pco_ref pco_ref_drc(enum pco_drc drc)
 }
 
 /* PCO ref utils. */
+
+/**
+ * \brief Updates a reference to reset its mods.
+ *
+ * \param[in] ref Base reference.
+ * \return Updated reference.
+ */
+static inline pco_ref pco_ref_reset_mods(pco_ref ref)
+{
+   ref.oneminus = false;
+   ref.clamp = false;
+   ref.flr = false;
+   ref.abs = false;
+   ref.neg = false;
+   ref.elem = 0;
+
+   return ref;
+}
+
 /**
  * \brief Transfers reference mods, optionally resetting them.
  *
  * \param[in,out] dest Reference to transfer mods to.
  * \param[in,out] source Reference to transfer mods from.
  * \param[in] reset Whether to reset the source mods.
- * \return I/O reference.
  */
 static inline void pco_ref_xfer_mods(pco_ref *dest, pco_ref *source, bool reset)
 {
@@ -1865,14 +1917,8 @@ static inline void pco_ref_xfer_mods(pco_ref *dest, pco_ref *source, bool reset)
    dest->neg = source->neg;
    dest->elem = source->elem;
 
-   if (reset) {
-      source->oneminus = false;
-      source->clamp = false;
-      source->flr = false;
-      source->abs = false;
-      source->neg = false;
-      source->elem = 0;
-   }
+   if (reset)
+      *source = pco_ref_reset_mods(*source);
 }
 
 /**
