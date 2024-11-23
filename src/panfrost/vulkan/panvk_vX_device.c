@@ -23,6 +23,7 @@
 #include "panvk_physical_device.h"
 #include "panvk_priv_bo.h"
 #include "panvk_queue.h"
+#include "panvk_utrace.h"
 
 #include "genxml/decode.h"
 #include "genxml/gen_macros.h"
@@ -355,6 +356,8 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       }
    }
 
+   panvk_per_arch(utrace_context_init)(device);
+
    *pDevice = panvk_device_to_handle(device);
    return VK_SUCCESS;
 
@@ -394,6 +397,8 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
 {
    if (!device)
       return;
+
+   panvk_per_arch(utrace_context_fini)(device);
 
    for (unsigned i = 0; i < PANVK_MAX_QUEUE_FAMILIES; i++) {
       for (unsigned q = 0; q < device->queue_count[i]; q++)

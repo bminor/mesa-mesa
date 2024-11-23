@@ -20,6 +20,7 @@
 
 #include "kmod/pan_kmod.h"
 #include "util/pan_ir.h"
+#include "util/perf/u_trace.h"
 
 #include "util/vma.h"
 
@@ -60,6 +61,10 @@ struct panvk_device {
 
    struct panvk_queue *queues[PANVK_MAX_QUEUE_FAMILIES];
    int queue_count[PANVK_MAX_QUEUE_FAMILIES];
+
+   struct {
+      struct u_trace_context utctx;
+   } utrace;
 
    struct {
       struct pandecode_context *decode_ctx;

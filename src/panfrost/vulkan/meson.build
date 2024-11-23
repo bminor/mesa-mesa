@@ -27,6 +27,7 @@ libpanvk_files = files(
   'panvk_mempool.c',
   'panvk_physical_device.c',
   'panvk_priv_bo.c',
+  'panvk_utrace.c',
   'panvk_wsi.c',
 )
 libpanvk_files += [sha1_h]
@@ -69,6 +70,7 @@ csf_files = [
   'csf/panvk_vX_event.c',
   'csf/panvk_vX_exception_handler.c',
   'csf/panvk_vX_queue.c',
+  'csf/panvk_vX_utrace.c',
 ]
 
 common_per_arch_files = [
