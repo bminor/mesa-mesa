@@ -1109,11 +1109,6 @@ Clover environment variables
 
 .. _rusticl-env-var:
 
-.. envvar:: IRIS_ENABLE_CLOVER
-
-   allows to enable experimental Clover NIR support with the iris driver if
-   set to 1 or true.
-
 Rusticl environment variables
 -----------------------------
 
