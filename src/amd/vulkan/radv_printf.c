@@ -116,6 +116,9 @@ radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
    if (cond)
       nir_push_if(b, cond);
 
+   if (b->shader->info.stage == MESA_SHADER_FRAGMENT)
+      nir_push_if(b, nir_inot(b, nir_is_helper_invocation(b, 1)));
+
    nir_def *size = nir_imm_int(b, 4);
 
    va_list arg_list;
@@ -202,6 +205,9 @@ radv_build_printf(nir_builder *b, nir_def *cond, const char *format_string, ...)
    nir_pop_if(b, NULL);
 
    if (cond)
+      nir_pop_if(b, NULL);
+
+   if (b->shader->info.stage == MESA_SHADER_FRAGMENT)
       nir_pop_if(b, NULL);
 
    free(args);
