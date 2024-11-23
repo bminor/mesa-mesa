@@ -246,6 +246,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_pipeline_creation_feedback = true,
       .EXT_pipeline_robustness = true,
       .EXT_private_data = true,
+      .EXT_provoking_vertex = true,
       .EXT_queue_family_foreign = true,
       .EXT_sampler_filter_minmax = arch >= 10,
       .EXT_shader_module_identifier = true,
@@ -388,6 +389,10 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_EXT_custom_border_color */
       .customBorderColors = true,
+
+      /* VK_EXT_provoking_vertex */
+      .provokingVertexLast = true,
+      .transformFeedbackPreservesProvokingVertex = false,
 
       /* v7 doesn't support AFBC(BGR). We need to tweak the texture swizzle to
        * make it work, which forces us to apply the same swizzle on the border
@@ -783,6 +788,10 @@ get_device_properties(const struct panvk_instance *instance,
          VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT,
       .defaultRobustnessImages =
          VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT,
+
+      /* VK_EXT_provoking_vertex */
+      .provokingVertexModePerPipeline = false,
+      .transformFeedbackPreservesTriangleFanProvokingVertex = false,
 
       /* VK_KHR_vertex_attribute_divisor */
       /* We will have to restrict this a bit for multiview */
