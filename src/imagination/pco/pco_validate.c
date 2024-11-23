@@ -152,12 +152,85 @@ static void pco_validate_ssa(struct val_state *state)
                        "SSA destination defined to more than once");
             BITSET_SET(ssa_writes, pdest->val);
          }
+
+         state->instr = NULL;
+         state->cf_node = NULL;
       }
 
       ralloc_free(ssa_writes);
 
       state->func = NULL;
       state->ref = NULL;
+      state->ref_cursor = REF_CURSOR_NONE;
+   }
+}
+
+/**
+ * \brief Validates hardware source mappings.
+ *
+ * \param[in,out] state Validation state.
+ */
+static void pco_validate_src_maps(struct val_state *state)
+{
+   /* Only check after the legalize pass has run. */
+   if (!state->shader->is_legalized)
+      return;
+
+   bool needs_s124;
+   pco_foreach_func_in_shader (func, state->shader) {
+      state->func = func;
+
+      pco_foreach_instr_in_func (instr, func) {
+         const struct pco_op_info *info = &pco_op_info[instr->op];
+         if (info->type == PCO_OP_TYPE_PSEUDO)
+            continue;
+
+         state->cf_node = &instr->parent_block->cf_node;
+         state->instr = instr;
+
+         state->ref_cursor = REF_CURSOR_INSTR_DEST;
+         pco_foreach_instr_dest (pdest, instr) {
+            state->ref = pdest;
+            unsigned dest_index = pdest - instr->dest;
+
+            if (!info->dest_intrn_map[dest_index])
+               continue;
+
+            enum pco_io mapped_src =
+               PCO_IO_S0 + info->dest_intrn_map[dest_index] - 1;
+
+            bool valid = ref_src_map_valid(*pdest, mapped_src, &needs_s124);
+            PCO_ASSERT(state,
+                       valid,
+                       "HW register reference should be mapped to %s",
+                       needs_s124 ? "S1/S2/S4" : "S0/S2/S3");
+         }
+
+         state->ref_cursor = REF_CURSOR_INSTR_SRC;
+         pco_foreach_instr_src (psrc, instr) {
+            state->ref = psrc;
+            unsigned src_index = psrc - instr->src;
+
+            if (!info->src_intrn_map[src_index])
+               continue;
+
+            enum pco_io mapped_src =
+               PCO_IO_S0 + info->src_intrn_map[src_index] - 1;
+
+            bool valid = ref_src_map_valid(*psrc, mapped_src, &needs_s124);
+            PCO_ASSERT(state,
+                       valid,
+                       "HW register reference should be mapped to %s",
+                       needs_s124 ? "S1/S2/S4" : "S0/S2/S3");
+         }
+
+         state->instr = NULL;
+         state->cf_node = NULL;
+      }
+
+      state->func = NULL;
+      state->ref = NULL;
+      state->ref_cursor = REF_CURSOR_NONE;
    }
 }
 
@@ -179,8 +252,10 @@ void pco_validate_shader(UNUSED pco_shader *shader, UNUSED const char *when)
       .phase = -1,
    };
 
-   if (!shader->is_grouped)
+   if (!shader->is_grouped) {
       pco_validate_ssa(&state);
+      pco_validate_src_maps(&state);
+   }
 
    puts("finishme: pco_validate_shader");
 #endif /* NDEBUG */

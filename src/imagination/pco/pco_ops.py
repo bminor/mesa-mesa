@@ -303,6 +303,9 @@ O_UNPCK = hw_op('unpck', OM_ALU + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 1, []
 O_TST = hw_direct_op('tst', [OM_TST_OP_MAIN, OM_PHASE2END, OM_TST_TYPE_MAIN], 2, 2, [], [[RM_ELEM], [RM_ELEM]])
 O_MOVC = hw_direct_op('movc', [OM_PHASE2END], 2, 5, [[RM_ELEM]])
 
+O_MOVWM = hw_op('movwm', OM_ALU + [OM_PHASE2END], 1, 2, [[RM_ELEM]])
+O_MOVS1 = hw_op('movs1', OM_ALU, 1, 1)
+
 # TODO
 # O_PCK_ELEM = pseudo_op('pck.elem', OM_ALU_RPT1 + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 2)
 

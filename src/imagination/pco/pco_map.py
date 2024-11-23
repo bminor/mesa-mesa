@@ -781,6 +781,18 @@ encode_map(O_MOVC,
    ]
 )
 
+encode_map(O_MOVWM,
+   encodings=[
+      (I_MOVC_EXT, [
+         ('movw0', ('pco_ref_get_movw01', SRC(0))),
+         ('movw1', 0),
+         ('maskw0', (RM_ELEM, DEST(0))),
+         ('aw', True),
+         ('p2end', OM_PHASE2END)
+      ])
+   ]
+)
+
 encode_map(O_ADD64_32,
    encodings=[
       (I_INT32_64_EXT, [
@@ -1080,6 +1092,52 @@ group_map(O_UNPCK,
    srcs=[('s[0]', ('0', SRC(0)), 's0')],
    iss=[('is[4]', 'ft0')],
    dests=[('w[0]', ('0', DEST(0)), 'ft0')]
+)
+
+group_map(O_MOVWM,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p2'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MBYP, ['ft0'], [SRC(0)]),
+      ('2_mov', O_MOVWM, [DEST(0)], ['ft0', SRC(1)], [(OM_PHASE2END, OM_PHASE2END)])
+   ],
+   srcs=[
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('2_mov', SRC(1)), 'is4')
+   ],
+   iss=[
+      ('is[0]', 's1'),
+      ('is[4]', 'fte')
+   ],
+   dests=[('w[0]', ('2_mov', DEST(0)), 'w0')]
+)
+
+group_map(O_MOVS1,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p2'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('2_mov', O_MOVWM, [DEST(0)], [SRC(0), 'is4'], [(OM_PHASE2END, True)])],
+   srcs=[('s[1]', ('2_mov', SRC(0)), 'fte')],
+   iss=[
+      ('is[0]', 's1'),
+      ('is[4]', 'fte')
+   ],
+   dests=[('w[0]', ('2_mov', DEST(0)), 'w0')]
 )
 
 group_map(O_ADD64_32,

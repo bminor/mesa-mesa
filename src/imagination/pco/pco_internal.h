@@ -337,6 +337,7 @@ typedef struct _pco_shader {
    const char *name; /** Shader name. */
    bool is_internal; /** Whether this is an internal shader. */
    bool is_grouped; /** Whether the shader uses igrps. */
+   bool is_legalized; /** Whether the shader has been legalized. */
 
    struct list_head funcs; /** List of functions. */
    unsigned next_func; /** Next function index. */
@@ -1112,6 +1113,7 @@ bool pco_dce(pco_shader *shader);
 bool pco_end(pco_shader *shader);
 bool pco_group_instrs(pco_shader *shader);
 bool pco_index(pco_shader *shader, bool skip_ssa);
+bool pco_legalize(pco_shader *shader);
 bool pco_nir_pfo(nir_shader *nir, pco_fs_data *fs);
 bool pco_nir_pvi(nir_shader *nir, pco_vs_data *vs);
 bool pco_opt(pco_shader *shader);
@@ -1944,6 +1946,47 @@ static inline bool pco_refs_are_equal(pco_ref ref0, pco_ref ref1)
       return false;
 
    return true;
+}
+
+/**
+ * \brief Checks a reference has a valid hardware source mapping.
+ *
+ * \param[in] ref Reference.
+ * \param[in] mapped_src Hardware source mapping.
+ * \param[out] needs_s124 Whether the mapping needs to use S{1,2,4}
+ *                        rather than S{0,2,3}.
+ * \return True if the mapping is valid.
+ */
+static inline bool
+ref_src_map_valid(pco_ref ref, enum pco_io mapped_src, bool *needs_s124)
+{
+   if (needs_s124)
+      *needs_s124 = false;
+
+   /* Restrictions only apply to hardware registers. */
+   if (!pco_ref_is_idx_reg(ref) && !pco_ref_is_reg(ref))
+      return true;
+
+   switch (pco_ref_get_reg_class(ref)) {
+   case PCO_REG_CLASS_COEFF:
+   case PCO_REG_CLASS_SHARED:
+   case PCO_REG_CLASS_INDEX:
+   case PCO_REG_CLASS_PIXOUT:
+      return (mapped_src == PCO_IO_S0) || (mapped_src == PCO_IO_S2) ||
+             (mapped_src == PCO_IO_S3);
+
+   case PCO_REG_CLASS_SPEC:
+      if (needs_s124)
+         *needs_s124 = true;
+
+      return (mapped_src == PCO_IO_S1) || (mapped_src == PCO_IO_S2) ||
+             (mapped_src == PCO_IO_S4);
+
+   default:
+      return true;
+   }
+
+   return false;
 }
 
 /**
