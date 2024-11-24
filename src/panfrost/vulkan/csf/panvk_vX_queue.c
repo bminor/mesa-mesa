@@ -656,6 +656,30 @@ panvk_queue_submit_init_waits(struct panvk_queue_submit *submit,
    }
 }
 
+static void
+panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
+                                const struct vk_queue_submit *vk_submit)
+{
+   for (uint32_t i = 0; i < vk_submit->command_buffer_count; i++) {
+      struct panvk_cmd_buffer *cmdbuf = container_of(
+         vk_submit->command_buffers[i], struct panvk_cmd_buffer, vk);
+
+      for (uint32_t j = 0; j < ARRAY_SIZE(cmdbuf->state.cs); j++) {
+         struct cs_builder *b = panvk_get_cs_builder(cmdbuf, j);
+         if (cs_is_empty(b))
+            continue;
+
+         submit->qsubmits[submit->qsubmit_count++] =
+            (struct drm_panthor_queue_submit){
+               .queue_index = j,
+               .stream_size = cs_root_chunk_size(b),
+               .stream_addr = cs_root_chunk_gpu_addr(b),
+               .latest_flush = cmdbuf->flush_id,
+            };
+      }
+   }
+}
+
 static VkResult
 panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
@@ -684,23 +708,7 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    struct drm_panthor_sync_op *signal_ops = psubmit.signal_ops;
 
    panvk_queue_submit_init_waits(&psubmit, submit);
-
-   for (uint32_t i = 0; i < submit->command_buffer_count; i++) {
-      struct panvk_cmd_buffer *cmdbuf =
-         container_of(submit->command_buffers[i], struct panvk_cmd_buffer, vk);
-
-      for (uint32_t j = 0; j < ARRAY_SIZE(cmdbuf->state.cs); j++) {
-         if (cs_is_empty(&cmdbuf->state.cs[j].builder))
-            continue;
-
-         qsubmits[qsubmit_count++] = (struct drm_panthor_queue_submit){
-            .queue_index = j,
-            .stream_size = cs_root_chunk_size(&cmdbuf->state.cs[j].builder),
-            .stream_addr = cs_root_chunk_gpu_addr(&cmdbuf->state.cs[j].builder),
-            .latest_flush = cmdbuf->flush_id,
-         };
-      }
-   }
+   panvk_queue_submit_init_cmdbufs(&psubmit, submit);
 
    if (submit->signal_count || force_sync) {
       uint32_t signal_op = 0;
