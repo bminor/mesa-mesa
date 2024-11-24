@@ -819,33 +819,30 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
 }
 
 static VkResult
-panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
+panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *vk_submit)
 {
-   struct panvk_queue_submit psubmit;
-   panvk_queue_submit_init(&psubmit, vk_queue);
-
-   struct panvk_queue *queue = psubmit.queue;
+   struct panvk_queue_submit_stack_storage stack_storage;
+   struct panvk_queue_submit submit;
    VkResult result = VK_SUCCESS;
 
-   if (vk_queue_is_lost(&queue->vk))
+   if (vk_queue_is_lost(vk_queue))
       return VK_ERROR_DEVICE_LOST;
 
-   struct panvk_queue_submit_stack_storage stack_storage;
-   panvk_queue_submit_init_storage(&psubmit, submit, &stack_storage);
+   panvk_queue_submit_init(&submit, vk_queue);
+   panvk_queue_submit_init_storage(&submit, vk_submit, &stack_storage);
+   panvk_queue_submit_init_waits(&submit, vk_submit);
+   panvk_queue_submit_init_cmdbufs(&submit, vk_submit);
+   panvk_queue_submit_init_signals(&submit, vk_submit);
 
-   panvk_queue_submit_init_waits(&psubmit, submit);
-   panvk_queue_submit_init_cmdbufs(&psubmit, submit);
-   panvk_queue_submit_init_signals(&psubmit, submit);
-
-   result = panvk_queue_submit_ioctl(&psubmit);
+   result = panvk_queue_submit_ioctl(&submit);
    if (result != VK_SUCCESS)
       goto out;
 
-   panvk_queue_submit_process_signals(&psubmit, submit);
-   panvk_queue_submit_process_debug(&psubmit);
+   panvk_queue_submit_process_signals(&submit, vk_submit);
+   panvk_queue_submit_process_debug(&submit);
 
 out:
-   panvk_queue_submit_cleanup_storage(&psubmit, &stack_storage);
+   panvk_queue_submit_cleanup_storage(&submit, &stack_storage);
    return result;
 }
 
