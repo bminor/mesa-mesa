@@ -130,8 +130,8 @@ void pandecode_abort_on_fault_v7(struct pandecode_context *ctx,
 void pandecode_abort_on_fault_v9(struct pandecode_context *ctx,
                                  mali_ptr jc_gpu_va);
 
-void pandecode_cs_v10(struct pandecode_context *ctx, mali_ptr queue,
-                      uint32_t size, unsigned gpu_id, uint32_t *regs);
+void pandecode_interpret_cs_v10(struct pandecode_context *ctx, mali_ptr queue,
+                                uint32_t size, unsigned gpu_id, uint32_t *regs);
 
 /* Logging infrastructure */
 static void

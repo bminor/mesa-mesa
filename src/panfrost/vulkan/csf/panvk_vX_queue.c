@@ -302,9 +302,9 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
                           "SyncobjWait failed: %m");
 
    if (debug & PANVK_DEBUG_TRACE) {
-      pandecode_cs(dev->debug.decode_ctx, qsubmit.stream_addr,
-                   qsubmit.stream_size, phys_dev->kmod.props.gpu_prod_id,
-                   subq->reg_file);
+      pandecode_interpret_cs(dev->debug.decode_ctx, qsubmit.stream_addr,
+                             qsubmit.stream_size,
+                             phys_dev->kmod.props.gpu_prod_id, subq->reg_file);
       pandecode_next_frame(dev->debug.decode_ctx);
    }
 
@@ -788,8 +788,9 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
          pandecode_log(decode_ctx, "CS%d\n", subqueue);
          simple_mtx_unlock(&decode_ctx->lock);
 
-         pandecode_cs(decode_ctx, qsubmit->stream_addr, qsubmit->stream_size,
-                      props->gpu_prod_id, queue->subqueues[subqueue].reg_file);
+         pandecode_interpret_cs(decode_ctx, qsubmit->stream_addr,
+                                qsubmit->stream_size, props->gpu_prod_id,
+                                queue->subqueues[subqueue].reg_file);
       }
    }
 

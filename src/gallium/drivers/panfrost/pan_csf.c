@@ -546,9 +546,9 @@ csf_submit_wait_and_dump(struct panfrost_batch *batch,
 
       for (unsigned i = 0; i < gsubmit->queue_submits.count; i++) {
          uint32_t regs[256] = {0};
-         pandecode_cs(dev->decode_ctx, qsubmits[i].stream_addr,
-                      qsubmits[i].stream_size, panfrost_device_gpu_id(dev),
-                      regs);
+         pandecode_interpret_cs(dev->decode_ctx, qsubmits[i].stream_addr,
+                                qsubmits[i].stream_size,
+                                panfrost_device_gpu_id(dev), regs);
       }
 
       if (dev->debug & PAN_DBG_DUMP)
@@ -1462,8 +1462,9 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
 
    if (dev->debug & PAN_DBG_TRACE) {
       uint32_t regs[256] = {0};
-      pandecode_cs(dev->decode_ctx, qsubmit.stream_addr, qsubmit.stream_size,
-                   panfrost_device_gpu_id(dev), regs);
+      pandecode_interpret_cs(dev->decode_ctx, qsubmit.stream_addr,
+                             qsubmit.stream_size, panfrost_device_gpu_id(dev),
+                             regs);
    }
 
    if (ret)

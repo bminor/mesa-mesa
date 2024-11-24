@@ -417,14 +417,14 @@ pandecode_jc(struct pandecode_context *ctx, mali_ptr jc_gpu_va, unsigned gpu_id)
 }
 
 void
-pandecode_cs(struct pandecode_context *ctx, mali_ptr queue_gpu_va,
-             uint32_t size, unsigned gpu_id, uint32_t *regs)
+pandecode_interpret_cs(struct pandecode_context *ctx, mali_ptr queue_gpu_va,
+                       uint32_t size, unsigned gpu_id, uint32_t *regs)
 {
    simple_mtx_lock(&ctx->lock);
 
    switch (pan_arch(gpu_id)) {
    case 10:
-      pandecode_cs_v10(ctx, queue_gpu_va, size, gpu_id, regs);
+      pandecode_interpret_cs_v10(ctx, queue_gpu_va, size, gpu_id, regs);
       break;
    default:
       unreachable("Unsupported architecture");

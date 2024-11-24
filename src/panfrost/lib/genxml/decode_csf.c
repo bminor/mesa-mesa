@@ -1038,8 +1038,8 @@ no_interpret:
 }
 
 void
-GENX(pandecode_cs)(struct pandecode_context *ctx, mali_ptr queue, uint32_t size,
-                   unsigned gpu_id, uint32_t *regs)
+GENX(pandecode_interpret_cs)(struct pandecode_context *ctx, mali_ptr queue,
+                             uint32_t size, unsigned gpu_id, uint32_t *regs)
 {
    pandecode_dump_file_open(ctx);
 
