@@ -766,6 +766,58 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
    drmSyncobjReset(dev->vk.drm_fd, &queue->syncobj_handle, 1);
 }
 
+static void
+panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
+{
+   const struct panvk_instance *instance = submit->instance;
+   struct panvk_queue *queue = submit->queue;
+   struct pandecode_context *decode_ctx = submit->dev->debug.decode_ctx;
+
+   if (instance->debug_flags & PANVK_DEBUG_TRACE) {
+      const struct pan_kmod_dev_props *props = &submit->phys_dev->kmod.props;
+
+      for (uint32_t i = 0; i < submit->qsubmit_count; i++) {
+         const struct drm_panthor_queue_submit *qsubmit = &submit->qsubmits[i];
+         if (!qsubmit->stream_size)
+            continue;
+
+         uint32_t subqueue = qsubmit->queue_index;
+
+         simple_mtx_lock(&decode_ctx->lock);
+         pandecode_dump_file_open(decode_ctx);
+         pandecode_log(decode_ctx, "CS%d\n", subqueue);
+         simple_mtx_unlock(&decode_ctx->lock);
+
+         pandecode_cs(decode_ctx, qsubmit->stream_addr, qsubmit->stream_size,
+                      props->gpu_prod_id, queue->subqueues[subqueue].reg_file);
+      }
+   }
+
+   if (instance->debug_flags & PANVK_DEBUG_DUMP)
+      pandecode_dump_mappings(decode_ctx);
+
+   if (submit->force_sync) {
+      struct panvk_cs_sync32 *debug_syncs =
+         panvk_priv_mem_host_addr(queue->debug_syncobjs);
+      uint32_t debug_sync_points[PANVK_SUBQUEUE_COUNT] = {0};
+
+      for (uint32_t i = 0; i < submit->qsubmit_count; i++) {
+         const struct drm_panthor_queue_submit *qsubmit = &submit->qsubmits[i];
+         if (qsubmit->stream_size)
+            debug_sync_points[qsubmit->queue_index]++;
+      }
+
+      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
+         if (debug_syncs[i].seqno != debug_sync_points[i] ||
+             debug_syncs[i].error != 0)
+            vk_queue_set_lost(&queue->vk, "Incomplete job or timeout");
+      }
+   }
+
+   if (instance->debug_flags & PANVK_DEBUG_TRACE)
+      pandecode_next_frame(decode_ctx);
+}
+
 static VkResult
 panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
@@ -773,22 +825,13 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    panvk_queue_submit_init(&psubmit, vk_queue);
 
    struct panvk_queue *queue = psubmit.queue;
-   const struct panvk_device *dev = psubmit.dev;
-   const struct panvk_physical_device *phys_dev = psubmit.phys_dev;
    VkResult result = VK_SUCCESS;
 
    if (vk_queue_is_lost(&queue->vk))
       return VK_ERROR_DEVICE_LOST;
 
-   const struct panvk_instance *instance = psubmit.instance;
-   unsigned debug = instance->debug_flags;
-   bool force_sync = psubmit.force_sync;
-
    struct panvk_queue_submit_stack_storage stack_storage;
    panvk_queue_submit_init_storage(&psubmit, submit, &stack_storage);
-
-   uint32_t qsubmit_count = psubmit.qsubmit_count;
-   struct drm_panthor_queue_submit *qsubmits = psubmit.qsubmits;
 
    panvk_queue_submit_init_waits(&psubmit, submit);
    panvk_queue_submit_init_cmdbufs(&psubmit, submit);
@@ -799,47 +842,7 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
       goto out;
 
    panvk_queue_submit_process_signals(&psubmit, submit);
-
-   if (debug & PANVK_DEBUG_TRACE) {
-      for (uint32_t i = 0; i < qsubmit_count; i++) {
-         if (!qsubmits[i].stream_size)
-            continue;
-
-         uint32_t subqueue = qsubmits[i].queue_index;
-
-         simple_mtx_lock(&dev->debug.decode_ctx->lock);
-         pandecode_dump_file_open(dev->debug.decode_ctx);
-         pandecode_log(dev->debug.decode_ctx, "CS%d\n",
-                       qsubmits[i].queue_index);
-         simple_mtx_unlock(&dev->debug.decode_ctx->lock);
-         pandecode_cs(dev->debug.decode_ctx, qsubmits[i].stream_addr,
-                      qsubmits[i].stream_size, phys_dev->kmod.props.gpu_prod_id,
-                      queue->subqueues[subqueue].reg_file);
-      }
-   }
-
-   if (debug & PANVK_DEBUG_DUMP)
-      pandecode_dump_mappings(dev->debug.decode_ctx);
-
-   if (force_sync) {
-      struct panvk_cs_sync32 *debug_syncs =
-         panvk_priv_mem_host_addr(queue->debug_syncobjs);
-      uint32_t debug_sync_points[PANVK_SUBQUEUE_COUNT] = {0};
-
-      for (uint32_t i = 0; i < qsubmit_count; i++) {
-         if (qsubmits[i].stream_size)
-            debug_sync_points[qsubmits[i].queue_index]++;
-      }
-
-      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-         if (debug_syncs[i].seqno != debug_sync_points[i] ||
-             debug_syncs[i].error != 0)
-            vk_queue_set_lost(&queue->vk, "Incomplete job or timeout");
-      }
-   }
-
-   if (debug & PANVK_DEBUG_TRACE)
-      pandecode_next_frame(dev->debug.decode_ctx);
+   panvk_queue_submit_process_debug(&psubmit);
 
 out:
    panvk_queue_submit_cleanup_storage(&psubmit, &stack_storage);
