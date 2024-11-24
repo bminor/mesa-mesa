@@ -734,6 +734,38 @@ panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
    return VK_SUCCESS;
 }
 
+static void
+panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
+                                   const struct vk_queue_submit *vk_submit)
+{
+   struct panvk_device *dev = submit->dev;
+   struct panvk_queue *queue = submit->queue;
+   int ret;
+
+   if (!submit->needs_signals)
+      return;
+
+   if (submit->force_sync) {
+      uint64_t point = util_bitcount(submit->used_queue_mask);
+      ret = drmSyncobjTimelineWait(dev->vk.drm_fd, &queue->syncobj_handle,
+                                   &point, 1, INT64_MAX,
+                                   DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, NULL);
+      assert(!ret);
+   }
+
+   for (uint32_t i = 0; i < vk_submit->signal_count; i++) {
+      const struct vk_sync_signal *signal = &vk_submit->signals[i];
+      const struct vk_drm_syncobj *syncobj =
+         vk_sync_as_drm_syncobj(signal->sync);
+      assert(syncobj);
+
+      drmSyncobjTransfer(dev->vk.drm_fd, syncobj->syncobj, signal->signal_value,
+                         queue->syncobj_handle, 0, 0);
+   }
+
+   drmSyncobjReset(dev->vk.drm_fd, &queue->syncobj_handle, 1);
+}
+
 static VkResult
 panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
@@ -744,7 +776,6 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    const struct panvk_device *dev = psubmit.dev;
    const struct panvk_physical_device *phys_dev = psubmit.phys_dev;
    VkResult result = VK_SUCCESS;
-   int ret;
 
    if (vk_queue_is_lost(&queue->vk))
       return VK_ERROR_DEVICE_LOST;
@@ -757,7 +788,6 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    panvk_queue_submit_init_storage(&psubmit, submit, &stack_storage);
 
    uint32_t qsubmit_count = psubmit.qsubmit_count;
-   uint32_t used_queue_mask = psubmit.used_queue_mask;
    struct drm_panthor_queue_submit *qsubmits = psubmit.qsubmits;
 
    panvk_queue_submit_init_waits(&psubmit, submit);
@@ -768,27 +798,7 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    if (result != VK_SUCCESS)
       goto out;
 
-   if (submit->signal_count || force_sync) {
-      if (force_sync) {
-         uint64_t point = util_bitcount(used_queue_mask);
-         ret = drmSyncobjTimelineWait(dev->vk.drm_fd, &queue->syncobj_handle,
-                                      &point, 1, INT64_MAX,
-                                      DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, NULL);
-         assert(!ret);
-      }
-
-      for (uint32_t i = 0; i < submit->signal_count; i++) {
-         assert(vk_sync_type_is_drm_syncobj(submit->signals[i].sync->type));
-         struct vk_drm_syncobj *syncobj =
-            vk_sync_as_drm_syncobj(submit->signals[i].sync);
-
-         drmSyncobjTransfer(dev->vk.drm_fd, syncobj->syncobj,
-                            submit->signals[i].signal_value,
-                            queue->syncobj_handle, 0, 0);
-      }
-
-      drmSyncobjReset(dev->vk.drm_fd, &queue->syncobj_handle, 1);
-   }
+   panvk_queue_submit_process_signals(&psubmit, submit);
 
    if (debug & PANVK_DEBUG_TRACE) {
       for (uint32_t i = 0; i < qsubmit_count; i++) {
