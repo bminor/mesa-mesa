@@ -36,6 +36,7 @@
 #include "pan_samples.h"
 #include "pan_shader.h"
 
+#include "util/bitscan.h"
 #include "vk_format.h"
 #include "vk_meta.h"
 #include "vk_pipeline_layout.h"
@@ -130,13 +131,10 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
    const struct vk_vertex_input_state *vi =
       cmdbuf->vk.dynamic_graphics_state.vi;
-   unsigned num_vs_attribs = util_last_bit(vi->attributes_valid);
    uint32_t vb_count = 0;
 
-   for (unsigned i = 0; i < num_vs_attribs; i++) {
-      if (vi->attributes_valid & BITFIELD_BIT(i))
-         vb_count = MAX2(vi->attributes[i].binding + 1, vb_count);
-   }
+   u_foreach_bit(i, vi->attributes_valid)
+      vb_count = MAX2(vi->attributes[i].binding + 1, vb_count);
 
    uint32_t vb_offset = vs->desc_info.dyn_bufs.count + MAX_VS_ATTRIBS + 1;
    uint32_t desc_count = vb_offset + vb_count;

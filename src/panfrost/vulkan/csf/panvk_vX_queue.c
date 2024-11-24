@@ -13,6 +13,7 @@
 #include "panvk_macros.h"
 #include "panvk_queue.h"
 
+#include "util/bitscan.h"
 #include "vk_drm_syncobj.h"
 #include "vk_log.h"
 
@@ -572,13 +573,11 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
          };
       }
 
-      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-         if (used_queue_mask & BITFIELD_BIT(i)) {
-            qsubmits[qsubmit_count++] = (struct drm_panthor_queue_submit){
-               .queue_index = i,
-               .syncs = DRM_PANTHOR_OBJ_ARRAY(submit->wait_count, wait_ops),
-            };
-         }
+      u_foreach_bit(i, used_queue_mask) {
+         qsubmits[qsubmit_count++] = (struct drm_panthor_queue_submit){
+            .queue_index = i,
+            .syncs = DRM_PANTHOR_OBJ_ARRAY(submit->wait_count, wait_ops),
+         };
       }
    }
 
@@ -601,20 +600,18 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 
    if (submit->signal_count || force_sync) {
       uint32_t signal_op = 0;
-      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-         if (used_queue_mask & BITFIELD_BIT(i)) {
-            signal_ops[signal_op] = (struct drm_panthor_sync_op){
-               .flags = DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_TIMELINE_SYNCOBJ |
-                        DRM_PANTHOR_SYNC_OP_SIGNAL,
-               .handle = queue->syncobj_handle,
-               .timeline_value = signal_op + 1,
-            };
+      u_foreach_bit(i, used_queue_mask) {
+         signal_ops[signal_op] = (struct drm_panthor_sync_op){
+            .flags = DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_TIMELINE_SYNCOBJ |
+                     DRM_PANTHOR_SYNC_OP_SIGNAL,
+            .handle = queue->syncobj_handle,
+            .timeline_value = signal_op + 1,
+         };
 
-            qsubmits[qsubmit_count++] = (struct drm_panthor_queue_submit){
-               .queue_index = i,
-               .syncs = DRM_PANTHOR_OBJ_ARRAY(1, &signal_ops[signal_op++]),
-            };
-         }
+         qsubmits[qsubmit_count++] = (struct drm_panthor_queue_submit){
+            .queue_index = i,
+            .syncs = DRM_PANTHOR_OBJ_ARRAY(1, &signal_ops[signal_op++]),
+         };
       }
    }
 

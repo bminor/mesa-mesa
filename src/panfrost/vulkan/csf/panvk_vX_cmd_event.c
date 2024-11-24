@@ -7,6 +7,8 @@
 #include "panvk_entrypoints.h"
 #include "panvk_event.h"
 
+#include "util/bitscan.h"
+
 VKAPI_ATTR void VKAPI_CALL
 panvk_per_arch(CmdResetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
                                VkPipelineStageFlags2 stageMask)
@@ -115,15 +117,9 @@ cmd_wait_event(struct panvk_cmd_buffer *cmdbuf, struct panvk_event *event,
    panvk_per_arch(get_cs_deps)(cmdbuf, info, &deps);
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      if (!deps.dst[i].wait_subqueue_mask)
-         continue;
-
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
 
-      for (uint32_t j = 0; j < PANVK_SUBQUEUE_COUNT; j++) {
-         if (!(deps.dst[i].wait_subqueue_mask & BITFIELD_BIT(j)))
-            continue;
-
+      u_foreach_bit(j, deps.dst[i].wait_subqueue_mask) {
          struct cs_index sync_addr = cs_scratch_reg64(b, 0);
          struct cs_index seqno = cs_scratch_reg32(b, 2);
 

@@ -45,6 +45,7 @@
 #include "pan_props.h"
 #include "pan_samples.h"
 
+#include "util/bitscan.h"
 #include "vk_descriptor_update_template.h"
 #include "vk_format.h"
 #include "vk_synchronization.h"
@@ -251,10 +252,7 @@ add_execution_dependency(uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
    if (!src_subqueues || (!dst_subqueues && !dst_host))
       return;
 
-   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      if (!(dst_subqueues & BITFIELD_BIT(i)))
-         continue;
-
+   u_foreach_bit(i, dst_subqueues) {
       /* each dst subqueue should wait for all src subqueues */
       uint32_t wait_mask = src_subqueues;
 
@@ -288,10 +286,8 @@ add_execution_dependency(uint32_t wait_masks[static PANVK_SUBQUEUE_COUNT],
     * are dst subqueues.  Until that changes, make all src subqueues self-wait.
     */
    if (dst_host || dst_subqueues) {
-      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-         if (src_subqueues & BITFIELD_BIT(i))
-            wait_masks[i] |= BITFIELD_BIT(i);
-      }
+      u_foreach_bit(i, src_subqueues)
+         wait_masks[i] |= BITFIELD_BIT(i);
    }
 }
 
@@ -591,14 +587,8 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
    }
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      if (!deps.dst[i].wait_subqueue_mask)
-         continue;
-
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
-      for (uint32_t j = 0; j < PANVK_SUBQUEUE_COUNT; j++) {
-         if (!(deps.dst[i].wait_subqueue_mask & BITFIELD_BIT(j)))
-            continue;
-
+      u_foreach_bit(j, deps.dst[i].wait_subqueue_mask) {
          struct panvk_cs_state *cs_state = &cmdbuf->state.cs[j];
          struct cs_index sync_addr = cs_scratch_reg64(b, 0);
          struct cs_index wait_val = cs_scratch_reg64(b, 2);
