@@ -21,6 +21,11 @@
  * SOFTWARE.
  */
 
+#include "util/bitset.h"
+#include "util/hash_table.h"
+#include "util/list.h"
+#include "util/ralloc.h"
+
 #include "genxml/gen_macros.h"
 #include "decode.h"
 
@@ -1079,6 +1084,453 @@ GENX(pandecode_interpret_cs)(struct pandecode_context *ctx, mali_ptr queue,
    }
 
    fflush(ctx->dump_stream);
+   pandecode_map_read_write(ctx);
+}
+
+struct cs_code_block {
+   struct list_head node;
+   unsigned start;
+   unsigned size;
+   struct util_dynarray predecessors;
+   unsigned successors[2];
+};
+
+struct cs_indirect_branch_target {
+   uint64_t address;
+   uint32_t length;
+};
+
+struct cs_indirect_branch {
+   unsigned instr_idx;
+   bool has_unknown_targets;
+   struct util_dynarray targets;
+};
+
+struct cs_code_cfg {
+   uint64_t *instrs;
+   unsigned instr_count;
+   struct cs_code_block **blk_map;
+   struct util_dynarray indirect_branches;
+};
+
+static struct cs_code_block *
+cs_code_block_alloc(void *alloc_ctx, unsigned start, unsigned size)
+{
+   struct cs_code_block *block = rzalloc(alloc_ctx, struct cs_code_block);
+
+   block->start = start;
+   block->size = size;
+   memset(block->successors, ~0, sizeof(block->successors));
+   list_inithead(&block->node);
+   util_dynarray_init(&block->predecessors, alloc_ctx);
+   return block;
+}
+
+static void
+record_indirect_branch_target(struct cs_code_cfg *cfg,
+                              struct list_head *blk_stack,
+                              struct cs_code_block *cur_blk, unsigned blk_offs,
+                              struct cs_indirect_branch *ibranch)
+{
+   union {
+      uint32_t u32[256];
+      uint32_t u64[256];
+   } reg_file = {0};
+
+   list_add(&cur_blk->node, blk_stack);
+   list_for_each_entry(struct cs_code_block, blk, blk_stack, node) {
+      for (; blk_offs < blk->size &&
+             blk->start + blk_offs != ibranch->instr_idx;
+           blk_offs++) {
+         uint64_t instr = cfg->instrs[blk->start + blk_offs];
+         pan_unpack(&instr, CS_BASE, base);
+         switch (base.opcode) {
+         case MALI_CS_OPCODE_MOVE: {
+            pan_unpack(&instr, CS_MOVE, I);
+            reg_file.u64[I.destination] = I.immediate;
+            break;
+         }
+
+         case MALI_CS_OPCODE_MOVE32: {
+            pan_unpack(&instr, CS_MOVE32, I);
+            reg_file.u32[I.destination] = I.immediate;
+            break;
+         }
+
+         case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
+            pan_unpack(&instr, CS_ADD_IMMEDIATE32, I);
+            reg_file.u32[I.destination] = reg_file.u32[I.source] + I.immediate;
+            break;
+         }
+
+         case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
+            pan_unpack(&instr, CS_ADD_IMMEDIATE64, I);
+            reg_file.u64[I.destination] = reg_file.u64[I.source] + I.immediate;
+            break;
+         }
+
+         case MALI_CS_OPCODE_UMIN32: {
+            pan_unpack(&instr, CS_UMIN32, I);
+            reg_file.u32[I.destination] =
+               MIN2(reg_file.u32[I.source_1], reg_file.u32[I.source_2]);
+            break;
+         }
+
+         default:
+            break;
+         }
+      }
+      blk_offs = 0;
+   }
+   list_delinit(&cur_blk->node);
+
+   uint64_t instr = cfg->instrs[ibranch->instr_idx];
+   pan_unpack(&instr, CS_JUMP, I);
+
+   struct cs_indirect_branch_target target = {
+      .address = reg_file.u64[I.address],
+      .length = reg_file.u32[I.length],
+   };
+
+   util_dynarray_append(&ibranch->targets, struct cs_indirect_branch_target,
+                        target);
+}
+
+static void
+collect_indirect_branch_targets_recurse(struct cs_code_cfg *cfg,
+                                        struct list_head *blk_stack,
+                                        BITSET_WORD *track_map,
+                                        struct cs_code_block *cur_blk,
+                                        int instr_ptr,
+                                        struct cs_indirect_branch *ibranch)
+{
+   for (; instr_ptr >= (int)cur_blk->start; instr_ptr--) {
+      assert(instr_ptr >= 0);
+      uint64_t instr = cfg->instrs[instr_ptr];
+      pan_unpack(&instr, CS_BASE, base);
+      switch (base.opcode) {
+      case MALI_CS_OPCODE_MOVE: {
+         pan_unpack(&instr, CS_MOVE, I);
+         BITSET_CLEAR(track_map, I.destination);
+         BITSET_CLEAR(track_map, I.destination + 1);
+         break;
+      }
+
+      case MALI_CS_OPCODE_MOVE32: {
+         pan_unpack(&instr, CS_MOVE32, I);
+         BITSET_CLEAR(track_map, I.destination);
+         break;
+      }
+
+      case MALI_CS_OPCODE_ADD_IMMEDIATE32: {
+         pan_unpack(&instr, CS_ADD_IMMEDIATE32, I);
+         if (BITSET_TEST(track_map, I.destination)) {
+            BITSET_SET(track_map, I.source);
+            BITSET_CLEAR(track_map, I.destination);
+         }
+         break;
+      }
+
+      case MALI_CS_OPCODE_ADD_IMMEDIATE64: {
+         pan_unpack(&instr, CS_ADD_IMMEDIATE64, I);
+         if (BITSET_TEST(track_map, I.destination)) {
+            BITSET_SET(track_map, I.source);
+            BITSET_CLEAR(track_map, I.destination);
+         }
+         if (BITSET_TEST(track_map, I.destination + 1)) {
+            BITSET_SET(track_map, I.source + 1);
+            BITSET_CLEAR(track_map, I.destination + 1);
+         }
+         break;
+      }
+
+      case MALI_CS_OPCODE_UMIN32: {
+         pan_unpack(&instr, CS_UMIN32, I);
+         if (BITSET_TEST(track_map, I.destination)) {
+            BITSET_SET(track_map, I.source_1);
+            BITSET_SET(track_map, I.source_2);
+            BITSET_CLEAR(track_map, I.destination);
+         }
+         break;
+      }
+
+      case MALI_CS_OPCODE_LOAD_MULTIPLE: {
+         pan_unpack(&instr, CS_LOAD_MULTIPLE, I);
+         for (unsigned i = 0; i < 16; i++) {
+            if ((I.mask & BITFIELD_BIT(i)) &&
+                BITSET_TEST(track_map, I.base_register + i)) {
+               ibranch->has_unknown_targets = true;
+               return;
+            }
+         }
+         break;
+      }
+
+      case MALI_CS_OPCODE_PROGRESS_LOAD: {
+         pan_unpack(&instr, CS_PROGRESS_LOAD, I);
+         for (unsigned i = 0; i < 16; i++) {
+            if (BITSET_TEST(track_map, I.destination) ||
+                BITSET_TEST(track_map, I.destination + 1)) {
+               ibranch->has_unknown_targets = true;
+               return;
+            }
+         }
+         break;
+      }
+
+      default:
+         break;
+      }
+
+      if (__bitset_is_empty(track_map, BITSET_WORDS(256))) {
+         record_indirect_branch_target(cfg, blk_stack, cur_blk,
+                                       instr_ptr - cur_blk->start, ibranch);
+         return;
+      }
+   }
+
+   assert(!__bitset_is_empty(track_map, BITSET_WORDS(256)));
+
+   if (util_dynarray_num_elements(&cur_blk->predecessors, unsigned) == 0) {
+      ibranch->has_unknown_targets = true;
+      return;
+   }
+
+   list_add(&cur_blk->node, blk_stack);
+   util_dynarray_foreach(&cur_blk->predecessors, unsigned, pred) {
+      struct cs_code_block *prev_blk = cfg->blk_map[*pred];
+
+      /* If the node is already in the block stack, we skip it
+       * and consider this path leading to an unknown target. */
+      if (!list_is_empty(&cur_blk->node)) {
+         ibranch->has_unknown_targets = true;
+         continue;
+      }
+
+      collect_indirect_branch_targets_recurse(
+         cfg, blk_stack, track_map, prev_blk,
+         prev_blk->start + prev_blk->size - 1, ibranch);
+   }
+   list_delinit(&cur_blk->node);
+
+   return;
+}
+
+static void
+collect_indirect_branch_targets(struct cs_code_cfg *cfg,
+                                struct cs_indirect_branch *ibranch)
+{
+   uint64_t instr = cfg->instrs[ibranch->instr_idx];
+   struct cs_code_block *cur_blk = cfg->blk_map[ibranch->instr_idx];
+   struct list_head blk_stack;
+   BITSET_DECLARE(track_map, 256) = {0};
+
+   list_inithead(&blk_stack);
+
+   pan_unpack(&instr, CS_JUMP, I);
+   BITSET_SET(track_map, I.address);
+   BITSET_SET(track_map, I.address + 1);
+   BITSET_SET(track_map, I.length);
+
+   collect_indirect_branch_targets_recurse(cfg, &blk_stack, track_map, cur_blk,
+                                           ibranch->instr_idx - 1, ibranch);
+}
+
+static struct cs_code_cfg *
+get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
+           mali_ptr bin, uint32_t bin_size)
+{
+   uint32_t instr_count = bin_size / sizeof(uint64_t);
+   struct cs_code_cfg *cfg = _mesa_hash_table_u64_search(symbols, bin);
+
+   if (cfg) {
+      assert(cfg->instr_count == instr_count);
+      return cfg;
+   }
+
+   uint64_t *instrs = pandecode_fetch_gpu_mem(ctx, bin, bin_size);
+
+   cfg = rzalloc(symbols, struct cs_code_cfg);
+   _mesa_hash_table_u64_insert(symbols, bin, cfg);
+
+   util_dynarray_init(&cfg->indirect_branches, cfg);
+
+   cfg->blk_map =
+      rzalloc_array(cfg, struct cs_code_block *, instr_count);
+   cfg->instrs = instrs;
+   cfg->instr_count = instr_count;
+
+   struct cs_code_block *block = cs_code_block_alloc(cfg, 0, 0);
+
+   for (unsigned i = 0; i < instr_count; i++) {
+      uint64_t instr = instrs[i];
+
+      if (!cfg->blk_map[i]) {
+         cfg->blk_map[i] = block;
+         block->size++;
+      } else {
+         if (block->successors[0] == ~0)
+            block->successors[0] = i;
+
+         block = cfg->blk_map[i];
+         util_dynarray_append(&block->predecessors, unsigned, i - 1);
+      }
+
+      pan_unpack(&instr, CS_BASE, base);
+
+      if (base.opcode == MALI_CS_OPCODE_JUMP ||
+          base.opcode == MALI_CS_OPCODE_CALL) {
+         struct cs_indirect_branch ibranch = {
+            .instr_idx = i,
+         };
+
+         util_dynarray_append(&cfg->indirect_branches,
+                              struct cs_indirect_branch, ibranch);
+      }
+
+      if (base.opcode != MALI_CS_OPCODE_BRANCH)
+         continue;
+
+      pan_unpack(&instr, CS_BRANCH, I);
+
+      unsigned target = MIN2(i + 1 + I.offset, instr_count);
+
+      /* If the target of the branch is the next instruction, it's just a NOP,
+       * and we consider it the same block. */
+      if (target == i + 1)
+         continue;
+
+      if (I.offset < 0 && cfg->blk_map[target]->start != target) {
+         struct cs_code_block *old = cfg->blk_map[target];
+         struct cs_code_block *new =
+            cs_code_block_alloc(cfg, target, old->start + old->size - target);
+
+         util_dynarray_append(&new->predecessors, unsigned, target - 1);
+         memcpy(&new->successors, &old->successors, sizeof(new->successors));
+
+         old->successors[0] = target;
+         old->successors[1] = ~0;
+         old->size = new->start - old->start;
+
+         for (unsigned j = 0; j <= new->size; j++)
+            cfg->blk_map[new->start + j] = new;
+      }
+
+      if (I.offset > 0 && target < instr_count && !cfg->blk_map[target]) {
+         struct cs_code_block *new = cs_code_block_alloc(cfg, target, 1);
+
+         cfg->blk_map[target] = new;
+         util_dynarray_append(&new->predecessors, unsigned, i);
+      }
+
+      block->successors[0] = target;
+      if (I.condition != MALI_CS_CONDITION_ALWAYS)
+         block->successors[1] = i + 1;
+
+      block = cs_code_block_alloc(cfg, i + 1, 0);
+
+      if (target == i + 1 || I.condition != MALI_CS_CONDITION_ALWAYS)
+         util_dynarray_append(&block->predecessors, unsigned, i);
+   }
+
+   util_dynarray_foreach(&cfg->indirect_branches, struct cs_indirect_branch,
+                         ibranch) {
+      collect_indirect_branch_targets(cfg, ibranch);
+      util_dynarray_foreach(&ibranch->targets,
+                            struct cs_indirect_branch_target, target) {
+         get_cs_cfg(ctx, symbols, target->address, target->length);
+      }
+   }
+
+   return cfg;
+}
+
+static void
+print_cs_binary(struct pandecode_context *ctx, mali_ptr bin,
+                struct cs_code_cfg *cfg, const char *name)
+{
+   pandecode_log(ctx, "%s@%" PRIx64 "{\n", name, bin);
+   unsigned ibranch_idx = 0;
+
+   ctx->indent++;
+   for (unsigned i = 0; i < cfg->instr_count; i++) {
+      if (i && cfg->blk_map[i - 1] != cfg->blk_map[i]) {
+         ctx->indent--;
+         pandecode_log(ctx, "label_%" PRIx64 ":\n", bin + i * sizeof(uint64_t));
+         ctx->indent++;
+      }
+
+      pandecode_make_indent(ctx);
+      print_cs_instr(ctx->dump_stream, cfg->instrs[i]);
+      pan_unpack(&cfg->instrs[i], CS_BASE, base);
+      switch (base.opcode) {
+      case MALI_CS_OPCODE_JUMP:
+      case MALI_CS_OPCODE_CALL: {
+         struct cs_indirect_branch *ibranch = util_dynarray_element(
+            &cfg->indirect_branches, struct cs_indirect_branch, ibranch_idx);
+
+         assert(ibranch->instr_idx == i);
+         fprintf(ctx->dump_stream, " // ");
+         util_dynarray_foreach(&ibranch->targets,
+                               struct cs_indirect_branch_target, target) {
+            fprintf(ctx->dump_stream, "%scs@%" PRIx64,
+                    target == ibranch->targets.data ? "" : ",",
+                    target->address);
+         }
+         if (ibranch->has_unknown_targets)
+            fprintf(ctx->dump_stream, "%s??",
+                    ibranch->targets.size ? "," : "");
+         ibranch_idx++;
+         break;
+      }
+
+      case MALI_CS_OPCODE_BRANCH: {
+         pan_unpack(&cfg->instrs[i], CS_BRANCH, I);
+         fprintf(ctx->dump_stream, " // ");
+
+         unsigned target = i + 1 + I.offset;
+
+         if (target < cfg->instr_count)
+            fprintf(ctx->dump_stream, "label_%" PRIx64,
+                    bin + (target * sizeof(uint64_t)));
+         else
+            fprintf(ctx->dump_stream, "end_of_cs");
+         break;
+      }
+
+      default:
+         break;
+      }
+
+      fprintf(ctx->dump_stream, "\n");
+   }
+   ctx->indent--;
+   pandecode_log(ctx, "} // %s@%" PRIx64 "\n\n", name, bin);
+}
+
+void
+GENX(pandecode_cs_binary)(struct pandecode_context *ctx, mali_ptr bin,
+                          uint32_t bin_size, unsigned gpu_id)
+{
+   if (!bin_size)
+      return;
+
+   pandecode_dump_file_open(ctx);
+
+   struct hash_table_u64 *symbols = _mesa_hash_table_u64_create(NULL);
+   struct cs_code_cfg *main_cfg = get_cs_cfg(ctx, symbols, bin, bin_size);
+
+   print_cs_binary(ctx, bin, main_cfg, "main_cs");
+   hash_table_u64_foreach(symbols, he) {
+      struct cs_code_cfg *other_cfg = he.data;
+      if (other_cfg == main_cfg)
+         continue;
+
+      print_cs_binary(ctx, he.key, other_cfg, "cs");
+   }
+
+   ralloc_free(symbols);
+
    pandecode_map_read_write(ctx);
 }
 #endif
