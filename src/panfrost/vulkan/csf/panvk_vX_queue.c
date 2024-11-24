@@ -680,6 +680,40 @@ panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
    }
 }
 
+static void
+panvk_queue_submit_init_signals(struct panvk_queue_submit *submit,
+                                const struct vk_queue_submit *vk_submit)
+{
+   struct panvk_queue *queue = submit->queue;
+
+   if (!submit->needs_signals)
+      return;
+
+   uint32_t signal_op = 0;
+   u_foreach_bit(i, submit->used_queue_mask) {
+      submit->signal_ops[signal_op] = (struct drm_panthor_sync_op){
+         .flags = DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_TIMELINE_SYNCOBJ |
+                  DRM_PANTHOR_SYNC_OP_SIGNAL,
+         .handle = queue->syncobj_handle,
+         .timeline_value = signal_op + 1,
+      };
+
+      submit->qsubmits[submit->qsubmit_count++] =
+         (struct drm_panthor_queue_submit){
+            .queue_index = i,
+            .syncs = DRM_PANTHOR_OBJ_ARRAY(1, &submit->signal_ops[signal_op++]),
+         };
+   }
+
+   if (submit->force_sync) {
+      struct panvk_cs_sync32 *debug_syncs =
+         panvk_priv_mem_host_addr(queue->debug_syncobjs);
+
+      assert(debug_syncs);
+      memset(debug_syncs, 0, sizeof(*debug_syncs) * PANVK_SUBQUEUE_COUNT);
+   }
+}
+
 static VkResult
 panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
@@ -705,35 +739,10 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    uint32_t qsubmit_count = psubmit.qsubmit_count;
    uint32_t used_queue_mask = psubmit.used_queue_mask;
    struct drm_panthor_queue_submit *qsubmits = psubmit.qsubmits;
-   struct drm_panthor_sync_op *signal_ops = psubmit.signal_ops;
 
    panvk_queue_submit_init_waits(&psubmit, submit);
    panvk_queue_submit_init_cmdbufs(&psubmit, submit);
-
-   if (submit->signal_count || force_sync) {
-      uint32_t signal_op = 0;
-      u_foreach_bit(i, used_queue_mask) {
-         signal_ops[signal_op] = (struct drm_panthor_sync_op){
-            .flags = DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_TIMELINE_SYNCOBJ |
-                     DRM_PANTHOR_SYNC_OP_SIGNAL,
-            .handle = queue->syncobj_handle,
-            .timeline_value = signal_op + 1,
-         };
-
-         qsubmits[qsubmit_count++] = (struct drm_panthor_queue_submit){
-            .queue_index = i,
-            .syncs = DRM_PANTHOR_OBJ_ARRAY(1, &signal_ops[signal_op++]),
-         };
-      }
-   }
-
-   if (force_sync) {
-      struct panvk_cs_sync32 *debug_syncs =
-         panvk_priv_mem_host_addr(queue->debug_syncobjs);
-
-      assert(debug_syncs);
-      memset(debug_syncs, 0, sizeof(*debug_syncs) * PANVK_SUBQUEUE_COUNT);
-   }
+   panvk_queue_submit_init_signals(&psubmit, submit);
 
    struct drm_panthor_group_submit gsubmit = {
       .group_handle = queue->group_handle,
