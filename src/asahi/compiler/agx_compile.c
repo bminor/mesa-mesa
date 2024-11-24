@@ -3001,7 +3001,8 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, unsigned *preamble_size)
 
    NIR_PASS(_, nir, nir_opt_load_store_vectorize,
             &(const nir_load_store_vectorize_options){
-               .modes = nir_var_mem_global | nir_var_mem_constant,
+               .modes = nir_var_mem_global | nir_var_mem_constant |
+                        nir_var_shader_temp,
                .callback = agx_mem_vectorize_cb,
             });
    NIR_PASS(_, nir, nir_lower_pack);
