@@ -796,6 +796,10 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
    if (instance->debug_flags & PANVK_DEBUG_DUMP)
       pandecode_dump_mappings(decode_ctx);
 
+   if (instance->debug_flags & PANVK_DEBUG_TRACE)
+      pandecode_next_frame(decode_ctx);
+
+   /* validate last after the command streams are dumped */
    if (submit->force_sync) {
       struct panvk_cs_sync32 *debug_syncs =
          panvk_priv_mem_host_addr(queue->debug_syncobjs);
@@ -813,9 +817,6 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
             vk_queue_set_lost(&queue->vk, "Incomplete job or timeout");
       }
    }
-
-   if (instance->debug_flags & PANVK_DEBUG_TRACE)
-      pandecode_next_frame(decode_ctx);
 }
 
 static VkResult
