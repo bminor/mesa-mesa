@@ -624,6 +624,38 @@ panvk_queue_submit_cleanup_storage(
       free(submit->wait_ops);
 }
 
+static void
+panvk_queue_submit_init_waits(struct panvk_queue_submit *submit,
+                              const struct vk_queue_submit *vk_submit)
+{
+   if (!submit->needs_waits)
+      return;
+
+   for (uint32_t i = 0; i < vk_submit->wait_count; i++) {
+      const struct vk_sync_wait *wait = &vk_submit->waits[i];
+      const struct vk_drm_syncobj *syncobj = vk_sync_as_drm_syncobj(wait->sync);
+      assert(syncobj);
+
+      submit->wait_ops[i] = (struct drm_panthor_sync_op){
+         .flags = (syncobj->base.flags & VK_SYNC_IS_TIMELINE
+                      ? DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_TIMELINE_SYNCOBJ
+                      : DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_SYNCOBJ) |
+                  DRM_PANTHOR_SYNC_OP_WAIT,
+         .handle = syncobj->syncobj,
+         .timeline_value = wait->wait_value,
+      };
+   }
+
+   u_foreach_bit(i, submit->used_queue_mask) {
+      submit->qsubmits[submit->qsubmit_count++] =
+         (struct drm_panthor_queue_submit){
+            .queue_index = i,
+            .syncs =
+               DRM_PANTHOR_OBJ_ARRAY(vk_submit->wait_count, submit->wait_ops),
+         };
+   }
+}
+
 static VkResult
 panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
@@ -649,32 +681,9 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    uint32_t qsubmit_count = psubmit.qsubmit_count;
    uint32_t used_queue_mask = psubmit.used_queue_mask;
    struct drm_panthor_queue_submit *qsubmits = psubmit.qsubmits;
-   struct drm_panthor_sync_op *wait_ops = psubmit.wait_ops;
    struct drm_panthor_sync_op *signal_ops = psubmit.signal_ops;
 
-   if (submit->wait_count) {
-      for (uint32_t i = 0; i < submit->wait_count; i++) {
-         assert(vk_sync_type_is_drm_syncobj(submit->waits[i].sync->type));
-         struct vk_drm_syncobj *syncobj =
-            vk_sync_as_drm_syncobj(submit->waits[i].sync);
-
-         wait_ops[i] = (struct drm_panthor_sync_op){
-            .flags = (submit->waits[i].sync->flags & VK_SYNC_IS_TIMELINE
-                         ? DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_TIMELINE_SYNCOBJ
-                         : DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_SYNCOBJ) |
-                     DRM_PANTHOR_SYNC_OP_WAIT,
-            .handle = syncobj->syncobj,
-            .timeline_value = submit->waits[i].wait_value,
-         };
-      }
-
-      u_foreach_bit(i, used_queue_mask) {
-         qsubmits[qsubmit_count++] = (struct drm_panthor_queue_submit){
-            .queue_index = i,
-            .syncs = DRM_PANTHOR_OBJ_ARRAY(submit->wait_count, wait_ops),
-         };
-      }
-   }
+   panvk_queue_submit_init_waits(&psubmit, submit);
 
    for (uint32_t i = 0; i < submit->command_buffer_count; i++) {
       struct panvk_cmd_buffer *cmdbuf =
