@@ -120,7 +120,7 @@ class Field(object):
                 self.default = mod[1]
             elif mod[0] == 'groups':
                 # The zero encoding means "all"
-                self.default = 1 << int(attrs["size"])
+                self.default = (1 << int(attrs["size"])) * mod[1]
             elif mod[0] in ['shr', 'align']:
                 # Zero encodes to zero
                 pass
