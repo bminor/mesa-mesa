@@ -526,6 +526,21 @@ struct panvk_queue_submit {
    struct panvk_queue *queue;
 
    bool force_sync;
+
+   uint32_t used_queue_mask;
+
+   uint32_t qsubmit_count;
+   bool needs_waits;
+   bool needs_signals;
+
+   struct drm_panthor_queue_submit *qsubmits;
+   struct drm_panthor_sync_op *wait_ops;
+   struct drm_panthor_sync_op *signal_ops;
+};
+
+struct panvk_queue_submit_stack_storage {
+   struct drm_panthor_queue_submit qsubmits[8];
+   struct drm_panthor_sync_op syncops[8];
 };
 
 static void
@@ -543,6 +558,70 @@ panvk_queue_submit_init(struct panvk_queue_submit *submit,
 
    submit->force_sync =
       submit->instance->debug_flags & (PANVK_DEBUG_TRACE | PANVK_DEBUG_SYNC);
+}
+
+static void
+panvk_queue_submit_init_storage(
+   struct panvk_queue_submit *submit, const struct vk_queue_submit *vk_submit,
+   struct panvk_queue_submit_stack_storage *stack_storage)
+{
+   for (uint32_t i = 0; i < vk_submit->command_buffer_count; i++) {
+      struct panvk_cmd_buffer *cmdbuf = container_of(
+         vk_submit->command_buffers[i], struct panvk_cmd_buffer, vk);
+
+      for (uint32_t j = 0; j < ARRAY_SIZE(cmdbuf->state.cs); j++) {
+         struct cs_builder *b = panvk_get_cs_builder(cmdbuf, j);
+         assert(cs_is_valid(b));
+         if (cs_is_empty(b))
+            continue;
+
+         submit->used_queue_mask |= BITFIELD_BIT(j);
+         submit->qsubmit_count++;
+      }
+   }
+
+   /* Synchronize all subqueues if we have no command buffer submitted. */
+   if (!submit->qsubmit_count)
+      submit->used_queue_mask = BITFIELD_MASK(PANVK_SUBQUEUE_COUNT);
+
+   uint32_t syncop_count = 0;
+
+   submit->needs_waits = vk_submit->wait_count > 0;
+   submit->needs_signals = vk_submit->signal_count > 0 || submit->force_sync;
+
+   /* We add sync-only queue submits to place our wait/signal operations. */
+   if (submit->needs_waits) {
+      submit->qsubmit_count += util_bitcount(submit->used_queue_mask);
+      syncop_count += vk_submit->wait_count;
+   }
+   if (submit->needs_signals) {
+      submit->qsubmit_count += util_bitcount(submit->used_queue_mask);
+      syncop_count += util_bitcount(submit->used_queue_mask);
+   }
+
+   submit->qsubmits =
+      submit->qsubmit_count <= ARRAY_SIZE(stack_storage->qsubmits)
+         ? stack_storage->qsubmits
+         : malloc(sizeof(*submit->qsubmits) * submit->qsubmit_count);
+
+   submit->wait_ops = syncop_count <= ARRAY_SIZE(stack_storage->syncops)
+                         ? stack_storage->syncops
+                         : malloc(sizeof(*submit->wait_ops) * syncop_count);
+   submit->signal_ops = submit->wait_ops + vk_submit->wait_count;
+
+   /* reset so that we can initialize submit->qsubmits incrementally */
+   submit->qsubmit_count = 0;
+}
+
+static void
+panvk_queue_submit_cleanup_storage(
+   struct panvk_queue_submit *submit,
+   const struct panvk_queue_submit_stack_storage *stack_storage)
+{
+   if (submit->qsubmits != stack_storage->qsubmits)
+      free(submit->qsubmits);
+   if (submit->wait_ops != stack_storage->syncops)
+      free(submit->wait_ops);
 }
 
 static VkResult
@@ -563,40 +642,16 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    const struct panvk_instance *instance = psubmit.instance;
    unsigned debug = instance->debug_flags;
    bool force_sync = psubmit.force_sync;
-   uint32_t qsubmit_count = 0;
-   uint32_t used_queue_mask = 0;
-   for (uint32_t i = 0; i < submit->command_buffer_count; i++) {
-      struct panvk_cmd_buffer *cmdbuf =
-         container_of(submit->command_buffers[i], struct panvk_cmd_buffer, vk);
 
-      for (uint32_t j = 0; j < ARRAY_SIZE(cmdbuf->state.cs); j++) {
-         assert(cs_is_valid(&cmdbuf->state.cs[j].builder));
-         if (!cs_is_empty(&cmdbuf->state.cs[j].builder)) {
-            used_queue_mask |= BITFIELD_BIT(j);
-            qsubmit_count++;
-         }
-      }
-   }
+   struct panvk_queue_submit_stack_storage stack_storage;
+   panvk_queue_submit_init_storage(&psubmit, submit, &stack_storage);
 
-   /* Synchronize all subqueues if we have no command buffer submitted. */
-   if (!qsubmit_count)
-      used_queue_mask = BITFIELD_MASK(PANVK_SUBQUEUE_COUNT);
+   uint32_t qsubmit_count = psubmit.qsubmit_count;
+   uint32_t used_queue_mask = psubmit.used_queue_mask;
+   struct drm_panthor_queue_submit *qsubmits = psubmit.qsubmits;
+   struct drm_panthor_sync_op *wait_ops = psubmit.wait_ops;
+   struct drm_panthor_sync_op *signal_ops = psubmit.signal_ops;
 
-   /* We add sync-only queue submits to place our wait/signal operations. */
-   if (submit->wait_count > 0)
-      qsubmit_count += util_bitcount(used_queue_mask);
-
-   if (submit->signal_count > 0 || force_sync)
-      qsubmit_count += util_bitcount(used_queue_mask);
-
-   uint32_t syncop_count = submit->wait_count + util_bitcount(used_queue_mask);
-
-   STACK_ARRAY(struct drm_panthor_queue_submit, qsubmits, qsubmit_count);
-   STACK_ARRAY(struct drm_panthor_sync_op, syncops, syncop_count);
-   struct drm_panthor_sync_op *wait_ops = syncops;
-   struct drm_panthor_sync_op *signal_ops = syncops + submit->wait_count;
-
-   qsubmit_count = 0;
    if (submit->wait_count) {
       for (uint32_t i = 0; i < submit->wait_count; i++) {
          assert(vk_sync_type_is_drm_syncobj(submit->waits[i].sync->type));
@@ -738,8 +793,7 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
       pandecode_next_frame(dev->debug.decode_ctx);
 
 out:
-   STACK_ARRAY_FINISH(syncops);
-   STACK_ARRAY_FINISH(qsubmits);
+   panvk_queue_submit_cleanup_storage(&psubmit, &stack_storage);
    return result;
 }
 
