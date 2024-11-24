@@ -519,23 +519,50 @@ cleanup_tiler(struct panvk_queue *queue)
    panvk_pool_free_mem(&tiler_heap->desc);
 }
 
+struct panvk_queue_submit {
+   const struct panvk_instance *instance;
+   const struct panvk_physical_device *phys_dev;
+   struct panvk_device *dev;
+   struct panvk_queue *queue;
+
+   bool force_sync;
+};
+
+static void
+panvk_queue_submit_init(struct panvk_queue_submit *submit,
+                        struct vk_queue *vk_queue)
+{
+   struct vk_device *vk_dev = vk_queue->base.device;
+
+   *submit = (struct panvk_queue_submit){
+      .instance = to_panvk_instance(vk_dev->physical->instance),
+      .phys_dev = to_panvk_physical_device(vk_dev->physical),
+      .dev = to_panvk_device(vk_dev),
+      .queue = container_of(vk_queue, struct panvk_queue, vk),
+   };
+
+   submit->force_sync =
+      submit->instance->debug_flags & (PANVK_DEBUG_TRACE | PANVK_DEBUG_SYNC);
+}
+
 static VkResult
 panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
-   struct panvk_queue *queue = container_of(vk_queue, struct panvk_queue, vk);
-   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
-   const struct panvk_physical_device *phys_dev =
-      to_panvk_physical_device(queue->vk.base.device->physical);
+   struct panvk_queue_submit psubmit;
+   panvk_queue_submit_init(&psubmit, vk_queue);
+
+   struct panvk_queue *queue = psubmit.queue;
+   const struct panvk_device *dev = psubmit.dev;
+   const struct panvk_physical_device *phys_dev = psubmit.phys_dev;
    VkResult result = VK_SUCCESS;
    int ret;
 
    if (vk_queue_is_lost(&queue->vk))
       return VK_ERROR_DEVICE_LOST;
 
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
+   const struct panvk_instance *instance = psubmit.instance;
    unsigned debug = instance->debug_flags;
-   bool force_sync = debug & (PANVK_DEBUG_TRACE | PANVK_DEBUG_SYNC);
+   bool force_sync = psubmit.force_sync;
    uint32_t qsubmit_count = 0;
    uint32_t used_queue_mask = 0;
    for (uint32_t i = 0; i < submit->command_buffer_count; i++) {
