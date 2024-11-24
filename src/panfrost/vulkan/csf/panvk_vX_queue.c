@@ -715,6 +715,26 @@ panvk_queue_submit_init_signals(struct panvk_queue_submit *submit,
 }
 
 static VkResult
+panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
+{
+   const struct panvk_device *dev = submit->dev;
+   struct panvk_queue *queue = submit->queue;
+   int ret;
+
+   struct drm_panthor_group_submit gsubmit = {
+      .group_handle = queue->group_handle,
+      .queue_submits =
+         DRM_PANTHOR_OBJ_ARRAY(submit->qsubmit_count, submit->qsubmits),
+   };
+
+   ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
+   if (ret)
+      return vk_queue_set_lost(&queue->vk, "GROUP_SUBMIT: %m");
+
+   return VK_SUCCESS;
+}
+
+static VkResult
 panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 {
    struct panvk_queue_submit psubmit;
@@ -744,16 +764,9 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    panvk_queue_submit_init_cmdbufs(&psubmit, submit);
    panvk_queue_submit_init_signals(&psubmit, submit);
 
-   struct drm_panthor_group_submit gsubmit = {
-      .group_handle = queue->group_handle,
-      .queue_submits = DRM_PANTHOR_OBJ_ARRAY(qsubmit_count, qsubmits),
-   };
-
-   ret = drmIoctl(dev->vk.drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT, &gsubmit);
-   if (ret) {
-      result = vk_queue_set_lost(&queue->vk, "GROUP_SUBMIT: %m");
+   result = panvk_queue_submit_ioctl(&psubmit);
+   if (result != VK_SUCCESS)
       goto out;
-   }
 
    if (submit->signal_count || force_sync) {
       if (force_sync) {
