@@ -1054,6 +1054,60 @@ update_double_buffer_score(struct v3d_job *job, uint32_t vertex_count)
 }
 
 static void
+v3d_update_job_tlb_load_store(struct v3d_job *job) {
+        struct v3d_context *v3d = job->v3d;
+
+        if (v3d->rasterizer->base.rasterizer_discard)
+               return;
+
+        uint32_t no_load_mask =
+                job->clear_tlb | job->clear_draw | job->invalidated_load;
+
+        if (v3d->zsa && job->zsbuf && v3d->zsa->base.depth_enabled) {
+                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
+                v3d_job_add_bo(job, rsc->bo);
+                job->load |= PIPE_CLEAR_DEPTH & ~no_load_mask;
+                if (v3d->zsa->base.depth_writemask)
+                        job->store |= PIPE_CLEAR_DEPTH;
+                rsc->initialized_buffers |= PIPE_CLEAR_DEPTH;
+        }
+
+        if (v3d->zsa && job->zsbuf && v3d->zsa->base.stencil[0].enabled) {
+                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
+                if (rsc->separate_stencil)
+                        rsc = rsc->separate_stencil;
+
+                v3d_job_add_bo(job, rsc->bo);
+
+                job->load |= PIPE_CLEAR_STENCIL & ~no_load_mask;
+                if (v3d->zsa->base.stencil[0].writemask ||
+                    v3d->zsa->base.stencil[1].writemask) {
+                        job->store |= PIPE_CLEAR_STENCIL;
+                }
+                rsc->initialized_buffers |= PIPE_CLEAR_STENCIL;
+        }
+
+        for (int i = 0; i < job->nr_cbufs; i++) {
+                uint32_t bit = PIPE_CLEAR_COLOR0 << i;
+                int blend_rt = v3d->blend->base.independent_blend_enable ? i : 0;
+
+                if (job->store & bit || !job->cbufs[i])
+                        continue;
+                struct v3d_resource *rsc = v3d_resource(job->cbufs[i]->texture);
+
+                if (rsc->invalidated) {
+                        job->invalidated_load |= bit;
+                        rsc->invalidated = false;
+                } else {
+                        job->load |= bit & ~no_load_mask;
+                }
+                if (v3d->blend->base.rt[blend_rt].colormask)
+                        job->store |= bit;
+                v3d_job_add_bo(job, rsc->bo);
+        }
+}
+
+static void
 v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
              unsigned drawid_offset,
              const struct pipe_draw_indirect_info *indirect,
@@ -1361,51 +1415,7 @@ v3d_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
                 }
         }
 
-        uint32_t no_load_mask =
-                job->clear_tlb | job->clear_draw | job->invalidated_load;
-        if (v3d->zsa && job->zsbuf && v3d->zsa->base.depth_enabled) {
-                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
-                v3d_job_add_bo(job, rsc->bo);
-                job->load |= PIPE_CLEAR_DEPTH & ~no_load_mask;
-                if (v3d->zsa->base.depth_writemask)
-                        job->store |= PIPE_CLEAR_DEPTH;
-                rsc->initialized_buffers |= PIPE_CLEAR_DEPTH;
-        }
-
-        if (v3d->zsa && job->zsbuf && v3d->zsa->base.stencil[0].enabled) {
-                struct v3d_resource *rsc = v3d_resource(job->zsbuf->texture);
-                if (rsc->separate_stencil)
-                        rsc = rsc->separate_stencil;
-
-                v3d_job_add_bo(job, rsc->bo);
-
-                job->load |= PIPE_CLEAR_STENCIL & ~no_load_mask;
-                if (v3d->zsa->base.stencil[0].writemask ||
-                    v3d->zsa->base.stencil[1].writemask) {
-                        job->store |= PIPE_CLEAR_STENCIL;
-                }
-                rsc->initialized_buffers |= PIPE_CLEAR_STENCIL;
-        }
-
-
-        for (int i = 0; i < job->nr_cbufs; i++) {
-                uint32_t bit = PIPE_CLEAR_COLOR0 << i;
-                int blend_rt = v3d->blend->base.independent_blend_enable ? i : 0;
-
-                if (job->store & bit || !job->cbufs[i])
-                        continue;
-                struct v3d_resource *rsc = v3d_resource(job->cbufs[i]->texture);
-
-                if (rsc->invalidated) {
-                        job->invalidated_load |= bit;
-                        rsc->invalidated = false;
-                } else {
-                        job->load |= bit & ~no_load_mask;
-                }
-                if (v3d->blend->base.rt[blend_rt].colormask)
-                        job->store |= bit;
-                v3d_job_add_bo(job, rsc->bo);
-        }
+        v3d_update_job_tlb_load_store(job);
 
         if (indirect && indirect->buffer)
                 job->can_use_double_buffer = false;
