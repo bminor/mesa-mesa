@@ -106,6 +106,7 @@ panvk_per_arch(CreateSampler)(VkDevice _device,
       cfg.mipmap_mode =
          panvk_translate_sampler_mipmap_mode(pCreateInfo->mipmapMode);
       cfg.normalized_coordinates = !pCreateInfo->unnormalizedCoordinates;
+      cfg.clamp_integer_array_indices = false;
 
       cfg.lod_bias = pCreateInfo->mipLodBias;
       cfg.minimum_lod = pCreateInfo->minLod;

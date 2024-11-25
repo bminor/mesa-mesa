@@ -234,7 +234,8 @@ panvk_per_arch(cmd_prepare_shader_desc_tables)(
          return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
       /* Emit a dummy sampler if we have to. */
-      pan_pack(sampler.cpu, SAMPLER, _) {
+      pan_pack(sampler.cpu, SAMPLER, cfg) {
+         cfg.clamp_integer_array_indices = false;
       }
 
       shader_desc_state->tables[PANVK_BIFROST_DESC_TABLE_SAMPLER] = sampler.gpu;

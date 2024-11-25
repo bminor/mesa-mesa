@@ -160,7 +160,8 @@ prepare_vs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    }
 
    /* Dummy sampler always comes right after the vertex attribs. */
-   pan_pack(&descs[MAX_VS_ATTRIBS], SAMPLER, _) {
+   pan_pack(&descs[MAX_VS_ATTRIBS], SAMPLER, cfg) {
+      cfg.clamp_integer_array_indices = false;
    }
 
    panvk_per_arch(cmd_fill_dyn_bufs)(
@@ -203,7 +204,8 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
    /* Dummy sampler always comes first. */
-   pan_pack(&descs[0], SAMPLER, _) {
+   pan_pack(&descs[0], SAMPLER, cfg) {
+      cfg.clamp_integer_array_indices = false;
    }
 
    panvk_per_arch(cmd_fill_dyn_bufs)(desc_state, fs,

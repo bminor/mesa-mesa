@@ -428,6 +428,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
    pan_pack(sampler.cpu, SAMPLER, cfg) {
       cfg.seamless_cube_map = false;
       cfg.normalized_coordinates = false;
+      cfg.clamp_integer_array_indices = false;
       cfg.minify_nearest = true;
       cfg.magnify_nearest = true;
    }
@@ -558,6 +559,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf,
    pan_pack(sampler, SAMPLER, cfg) {
       cfg.seamless_cube_map = false;
       cfg.normalized_coordinates = false;
+      cfg.clamp_integer_array_indices = false;
       cfg.minify_nearest = true;
       cfg.magnify_nearest = true;
    }
