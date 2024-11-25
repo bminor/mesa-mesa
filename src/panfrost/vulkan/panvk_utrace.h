@@ -27,6 +27,11 @@ uint64_t panvk_utrace_read_ts(struct u_trace_context *utctx, void *timestamps,
 void panvk_per_arch(utrace_context_init)(struct panvk_device *dev);
 void panvk_per_arch(utrace_context_fini)(struct panvk_device *dev);
 
+void panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
+                                        void *cmdstream, void *ts_from,
+                                        uint64_t from_offset, void *ts_to,
+                                        uint64_t to_offset, uint64_t size_B);
+
 #else /* PAN_ARCH >= 10 */
 
 static inline void

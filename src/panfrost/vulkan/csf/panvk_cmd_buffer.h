@@ -23,6 +23,7 @@
 #include "vk_command_buffer.h"
 
 #include "util/list.h"
+#include "util/perf/u_trace.h"
 
 #define MAX_VBS 16
 #define MAX_RTS 8
@@ -376,6 +377,10 @@ struct panvk_cmd_buffer {
    struct list_head push_sets;
 
    uint32_t flush_id;
+
+   struct {
+      struct u_trace uts[PANVK_SUBQUEUE_COUNT];
+   } utrace;
 
    struct {
       struct panvk_cmd_graphics_state gfx;

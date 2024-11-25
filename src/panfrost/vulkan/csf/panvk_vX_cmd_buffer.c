@@ -39,6 +39,8 @@
 #include "panvk_instance.h"
 #include "panvk_physical_device.h"
 #include "panvk_priv_bo.h"
+#include "panvk_tracepoints.h"
+#include "panvk_utrace.h"
 
 #include "pan_desc.h"
 #include "pan_encoder.h"
@@ -177,6 +179,8 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
             cs_move32_to(b, cs_reg32(b, i), 0xdead | i << 24);
       }
    }
+
+   trace_end_cmdbuf(&cmdbuf->utrace.uts[subqueue], cmdbuf, cmdbuf->flags);
 
    cs_finish(&cmdbuf->state.cs[subqueue].builder);
 }
@@ -724,6 +728,7 @@ panvk_reset_cmdbuf(struct vk_command_buffer *vk_cmdbuf,
       container_of(vk_cmdbuf, struct panvk_cmd_buffer, vk);
    struct panvk_cmd_pool *pool =
       container_of(vk_cmdbuf->pool, struct panvk_cmd_pool, vk);
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
 
    vk_command_buffer_reset(&cmdbuf->vk);
 
@@ -732,6 +737,12 @@ panvk_reset_cmdbuf(struct vk_command_buffer *vk_cmdbuf,
    panvk_pool_reset(&cmdbuf->tls_pool);
    list_splicetail(&cmdbuf->push_sets, &pool->push_sets);
    list_inithead(&cmdbuf->push_sets);
+
+   for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->utrace.uts); i++) {
+      struct u_trace *ut = &cmdbuf->utrace.uts[i];
+      u_trace_fini(ut);
+      u_trace_init(ut, &dev->utrace.utctx);
+   }
 
    memset(&cmdbuf->state, 0, sizeof(cmdbuf->state));
    init_cs_builders(cmdbuf);
@@ -745,6 +756,9 @@ panvk_destroy_cmdbuf(struct vk_command_buffer *vk_cmdbuf)
    struct panvk_cmd_pool *pool =
       container_of(vk_cmdbuf->pool, struct panvk_cmd_pool, vk);
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+
+   for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->utrace.uts); i++)
+      u_trace_fini(&cmdbuf->utrace.uts[i]);
 
    panvk_pool_cleanup(&cmdbuf->cs_pool);
    panvk_pool_cleanup(&cmdbuf->desc_pool);
@@ -814,6 +828,9 @@ panvk_create_cmdbuf(struct vk_command_pool *vk_pool, VkCommandBufferLevel level,
    panvk_pool_init(&cmdbuf->tls_pool, device, &pool->tls_bo_pool,
                    &tls_pool_props);
 
+   for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->utrace.uts); i++)
+      u_trace_init(&cmdbuf->utrace.uts[i], &device->utrace.utctx);
+
    init_cs_builders(cmdbuf);
    *cmdbuf_out = &cmdbuf->vk;
    return VK_SUCCESS;
@@ -842,6 +859,9 @@ panvk_per_arch(BeginCommandBuffer)(VkCommandBuffer commandBuffer,
    }
 
    panvk_per_arch(cmd_inherit_render_state)(cmdbuf, pBeginInfo);
+
+   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
+      trace_begin_cmdbuf(&cmdbuf->utrace.uts[i], cmdbuf);
 
    return VK_SUCCESS;
 }
@@ -901,6 +921,12 @@ panvk_per_arch(CmdExecuteCommands)(VkCommandBuffer commandBuffer,
             cs_move64_to(prim_b, addr, cs_root_chunk_gpu_addr(sec_b));
             cs_move32_to(prim_b, size, cs_root_chunk_size(sec_b));
             cs_call(prim_b, addr, size);
+
+            struct u_trace *prim_ut = &primary->utrace.uts[j];
+            struct u_trace *sec_ut = &secondary->utrace.uts[j];
+            u_trace_clone_append(u_trace_begin_iterator(sec_ut),
+                                 u_trace_end_iterator(sec_ut), prim_ut, prim_b,
+                                 panvk_per_arch(utrace_copy_buffer));
          }
       }
 
