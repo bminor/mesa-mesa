@@ -241,6 +241,7 @@ get_device_extensions(const struct panvk_physical_device *device,
       .EXT_physical_device_drm = true,
       .EXT_pipeline_creation_cache_control = true,
       .EXT_pipeline_creation_feedback = true,
+      .EXT_pipeline_robustness = true,
       .EXT_private_data = true,
       .EXT_queue_family_foreign = true,
       .EXT_sampler_filter_minmax = arch >= 10,
@@ -394,6 +395,9 @@ get_features(const struct panvk_physical_device *device,
 
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
+
+      /* VK_EXT_pipeline_robustness */
+      .pipelineRobustness = true,
 
       /* VK_KHR_shader_relaxed_extended_instruction */
       .shaderRelaxedExtendedInstruction = true,
@@ -766,6 +770,16 @@ get_device_properties(const struct panvk_instance *instance,
       /* VK_EXT_graphics_pipeline_library */
       .graphicsPipelineLibraryFastLinking = true,
       .graphicsPipelineLibraryIndependentInterpolationDecoration = true,
+
+      /* VK_EXT_pipeline_robustness */
+      .defaultRobustnessStorageBuffers =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT,
+      .defaultRobustnessUniformBuffers =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT,
+      .defaultRobustnessVertexInputs =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT,
+      .defaultRobustnessImages =
+         VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT,
 
       /* VK_KHR_vertex_attribute_divisor */
       /* We will have to restrict this a bit for multiview */
