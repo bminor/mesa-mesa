@@ -2146,27 +2146,7 @@ void nir_rewrite_image_intrinsic(nir_intrinsic_instr *instr,
                                  nir_def *handle, bool bindless);
 
 /* Determine if an intrinsic can be arbitrarily reordered and eliminated. */
-static inline bool
-nir_intrinsic_can_reorder(nir_intrinsic_instr *instr)
-{
-   if (nir_intrinsic_has_access(instr)) {
-      enum gl_access_qualifier access = nir_intrinsic_access(instr);
-      if (access & ACCESS_VOLATILE)
-         return false;
-      if (access & ACCESS_CAN_REORDER)
-         return true;
-   }
-
-   if (instr->intrinsic == nir_intrinsic_load_deref) {
-      nir_deref_instr *deref = nir_src_as_deref(instr->src[0]);
-      return nir_deref_mode_is_in_set(deref, nir_var_read_only_modes);
-   } else {
-      const nir_intrinsic_info *info =
-         &nir_intrinsic_infos[instr->intrinsic];
-      return (info->flags & NIR_INTRINSIC_CAN_ELIMINATE) &&
-             (info->flags & NIR_INTRINSIC_CAN_REORDER);
-   }
-}
+bool nir_intrinsic_can_reorder(nir_intrinsic_instr *instr);
 
 bool nir_intrinsic_writes_external_memory(const nir_intrinsic_instr *instr);
 

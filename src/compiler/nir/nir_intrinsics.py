@@ -875,9 +875,10 @@ intrinsic("global_atomic_swap_amd",  src_comp=[1, 1, 1, 1], dest_comp=1, indices
 intrinsic("global_atomic_swap_ir3",  src_comp=[2, 1, 1], dest_comp=1, indices=[BASE, ATOMIC_OP])
 intrinsic("global_atomic_swap_agx",  src_comp=[1, 1, 1, 1], dest_comp=1, indices=[ATOMIC_OP, SIGN_EXTEND])
 
-def system_value(name, dest_comp, indices=[], bit_sizes=[32]):
+def system_value(name, dest_comp, indices=[], bit_sizes=[32], can_reorder=True):
+    flags = [CAN_ELIMINATE, CAN_REORDER] if can_reorder else [CAN_ELIMINATE]
     intrinsic("load_" + name, [], dest_comp, indices,
-              flags=[CAN_ELIMINATE, CAN_REORDER], sysval=True,
+              flags=flags, sysval=True,
               bit_sizes=bit_sizes)
 
 system_value("frag_coord", 4)
@@ -929,7 +930,8 @@ system_value("base_workgroup_id", 3, bit_sizes=[32, 64])
 system_value("user_clip_plane", 4, indices=[UCP_ID])
 system_value("num_workgroups", 3)
 system_value("num_vertices", 1)
-system_value("helper_invocation", 1, bit_sizes=[1, 32])
+# This can't be reordered because it's undefined after an invocation is demoted.
+system_value("helper_invocation", 1, bit_sizes=[1, 32], can_reorder=False)
 system_value("layer_id", 1)
 system_value("view_index", 1)
 system_value("subgroup_size", 1)
