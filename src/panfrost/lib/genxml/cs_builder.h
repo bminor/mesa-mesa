@@ -180,6 +180,7 @@ struct cs_builder {
       struct cs_block *stack;
       struct util_dynarray instrs;
       struct cs_if_else pending_if;
+      unsigned last_load_ip_target;
    } blocks;
 
    /* Move immediate instruction at the end of the last CS chunk that needs to
@@ -551,10 +552,39 @@ cs_flush_block_instrs(struct cs_builder *b)
    if (!num_instrs)
       return;
 
+   /* If LOAD_IP is the last instruction in the block, we reserve one more
+    * slot to make sure the next instruction won't point to a CS chunk linking
+    * sequence. */
+   if (unlikely(b->blocks.last_load_ip_target >= num_instrs)) {
+      if (!cs_reserve_instrs(b, num_instrs + 1))
+         return;
+   }
+
    void *buffer = cs_alloc_ins_block(b, num_instrs);
 
-   if (likely(cs_is_valid(b)))
+   if (likely(cs_is_valid(b))) {
+      /* If we have a LOAD_IP chain, we need to patch each LOAD_IP
+       * instruction before we copy the block to the final memory
+       * region. */
+      while (unlikely(b->blocks.last_load_ip_target)) {
+         uint64_t *instr = util_dynarray_element(
+            &b->blocks.instrs, uint64_t, b->blocks.last_load_ip_target - 1);
+         unsigned prev_load_ip_target = *instr & BITFIELD_MASK(32);
+         uint64_t ip =
+            b->cur_chunk.buffer.gpu +
+            ((b->cur_chunk.pos - num_instrs + b->blocks.last_load_ip_target) *
+             sizeof(uint64_t));
+
+         /* Drop the prev_load_ip_target value and replace it by the final
+	  * IP. */
+         *instr &= ~BITFIELD64_MASK(32);
+         *instr |= ip;
+
+         b->blocks.last_load_ip_target = prev_load_ip_target;
+      }
+
       memcpy(buffer, b->blocks.instrs.data, b->blocks.instrs.size);
+   }
 
    util_dynarray_clear(&b->blocks.instrs);
 }
@@ -742,6 +772,29 @@ cs_move48_to(struct cs_builder *b, struct cs_index dest, uint64_t imm)
    cs_emit(b, MOVE, I) {
       I.destination = cs_dst64(b, dest);
       I.immediate = imm;
+   }
+}
+
+static inline void
+cs_load_ip_to(struct cs_builder *b, struct cs_index dest)
+{
+   /* If a load_ip instruction is emitted after an if_end(), it flushes the
+    * pending if, causing further cs_else_start() instructions to be invalid.
+    */
+   cs_flush_pending_if(b);
+
+   if (likely(cs_cur_block(b) == NULL)) {
+      if (!cs_reserve_instrs(b, 2))
+         return;
+
+      /* We make IP point to the instruction right after our MOVE. */
+      uint64_t ip =
+         b->cur_chunk.buffer.gpu + (sizeof(uint64_t) * (b->cur_chunk.pos + 1));
+      cs_move48_to(b, dest, ip);
+   } else {
+      cs_move48_to(b, dest, b->blocks.last_load_ip_target);
+      b->blocks.last_load_ip_target =
+         util_dynarray_num_elements(&b->blocks.instrs, uint64_t);
    }
 }
 
