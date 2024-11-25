@@ -47,7 +47,7 @@ libvdpau_gallium = shared_library(
   soversion : '@0@.@1@.0'.format(VDPAU_MAJOR, VDPAU_MINOR),
   install : true,
   install_dir : vdpau_drivers_path,
-  name_suffix : 'so',
+  name_suffix : libname_suffix,
 )
 foreach d : [[with_gallium_r600, 'r600'],
              [with_gallium_radeonsi, 'radeonsi'],

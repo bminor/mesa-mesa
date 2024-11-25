@@ -84,7 +84,7 @@ else
     link_depends : va_link_depends,
     install : true,
     install_dir : va_drivers_path,
-    name_suffix : 'so',
+    name_suffix : libname_suffix,
   )
 
   foreach d : [[with_gallium_r600, 'r600'],
