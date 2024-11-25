@@ -45,7 +45,7 @@ rustfmt:
 
 yaml-toml-shell-test:
   extends:
-    - python-test
+    - .use-debian/x86_64_pyutils
     - .no-auto-retry  # this job can't be flaky
   stage: code-validation
   script:
