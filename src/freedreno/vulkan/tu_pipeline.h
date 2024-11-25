@@ -104,6 +104,7 @@ struct tu_program_state
       bool per_view_viewport;
       bool writes_shading_rate;
       bool reads_shading_rate;
+      bool accesses_smask;
 };
 
 struct tu_pipeline_executable {

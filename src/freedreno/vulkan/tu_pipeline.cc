@@ -2305,6 +2305,7 @@ tu_emit_program_state(struct tu_cs *sub_cs,
       dev->physical_device->info->a6xx.has_per_view_viewport;
    prog->writes_shading_rate = last_shader->writes_shading_rate;
    prog->reads_shading_rate = fs->reads_shading_rate;
+   prog->accesses_smask = fs->reads_smask || fs->writes_smask;
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_vertex_input_state[] = {
@@ -3352,7 +3353,8 @@ tu6_fragment_shading_rate_size(struct tu_device *dev,
                                const vk_fragment_shading_rate_state *fsr,
                                bool enable_att_fsr,
                                bool enable_prim_fsr,
-                               bool fs_reads_fsr)
+                               bool fs_reads_fsr,
+                               bool sample_shading)
 {
    return 6;
 }
@@ -3363,7 +3365,8 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
                                const vk_fragment_shading_rate_state *fsr,
                                bool enable_att_fsr,
                                bool enable_prim_fsr,
-                               bool fs_reads_fsr)
+                               bool fs_reads_fsr,
+                               bool accesses_smask)
 {
    /* gl_ShadingRateEXT don't read 1x1 value with null config, so
     * if it is read - we have to emit the config.
@@ -3374,6 +3377,9 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
       tu_cs_emit_regs(cs, A7XX_GRAS_FSR_CONFIG());
       return;
    }
+
+   uint32_t frag_width = fsr->fragment_size.width;
+   uint32_t frag_height = fsr->fragment_size.height;
 
    bool enable_draw_fsr = true;
    if (enable_att_fsr) {
@@ -3396,6 +3402,15 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
       }
    }
 
+   /* Force 1x1 FSR because we don't support
+    * fragmentShadingRateWithShaderSampleMask.
+    */
+   if (accesses_smask) {
+      enable_att_fsr = enable_prim_fsr = false;
+      frag_width = frag_height = 1;
+      enable_draw_fsr = true;
+   }
+
    tu_cs_emit_regs(
       cs,
       A6XX_RB_FSR_CONFIG(.unk2 = true, .pipeline_fsr_enable = enable_draw_fsr,
@@ -3408,8 +3423,8 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
    tu_cs_emit_regs(
       cs, A7XX_GRAS_FSR_CONFIG(
                 .pipeline_fsr_enable = enable_draw_fsr,
-                .frag_size_x = util_logbase2(fsr->fragment_size.width),
-                .frag_size_y = util_logbase2(fsr->fragment_size.height),
+                .frag_size_x = util_logbase2(frag_width),
+                .frag_size_y = util_logbase2(frag_height),
                 .combiner_op_1 = (a6xx_fsr_combiner) fsr->combiner_ops[0],
                 .combiner_op_2 = (a6xx_fsr_combiner) fsr->combiner_ops[1],
                 .attachment_fsr_enable = enable_att_fsr,
@@ -3613,7 +3628,8 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
                       builder->graphics_state.fsr,
                       has_fsr_att,
                       pipeline->program.writes_shading_rate,
-                      pipeline->program.reads_shading_rate);
+                      pipeline->program.reads_shading_rate,
+                      pipeline->program.accesses_smask);
    }
 #undef DRAW_STATE
 #undef DRAW_STATE_COND
@@ -3789,7 +3805,8 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
                &cmd->vk.dynamic_graphics_state.fsr,
                cmd->state.subpass->fsr_attachment != VK_ATTACHMENT_UNUSED,
                cmd->state.program.writes_shading_rate,
-               cmd->state.program.reads_shading_rate);
+               cmd->state.program.reads_shading_rate,
+               cmd->state.program.accesses_smask);
    }
    DRAW_STATE_COND(rast, TU_DYNAMIC_STATE_RAST,
                    cmd->state.dirty & (TU_CMD_DIRTY_SUBPASS |

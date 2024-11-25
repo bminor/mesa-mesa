@@ -1073,7 +1073,8 @@ tu_get_properties(struct tu_physical_device *pdevice,
    props->maxFragmentShadingRateRasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
    props->fragmentShadingRateWithShaderDepthStencilWrites = true;
    props->fragmentShadingRateWithSampleMask = true;
-   props->fragmentShadingRateWithShaderSampleMask = true;
+   /* Has wrong gl_SampleMaskIn[0] values with VK_EXT_post_depth_coverage used. */
+   props->fragmentShadingRateWithShaderSampleMask = false;
    props->fragmentShadingRateWithConservativeRasterization = false;
    props->fragmentShadingRateWithFragmentShaderInterlock = false;
    props->fragmentShadingRateWithCustomSampleLocations = true;

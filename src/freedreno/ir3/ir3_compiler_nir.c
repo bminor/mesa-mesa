@@ -2869,6 +2869,7 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       break;
    case nir_intrinsic_load_sample_mask_in:
       if (!ctx->samp_mask_in) {
+         ctx->so->reads_smask = true;
          ctx->samp_mask_in =
             create_sysval_input(ctx, SYSTEM_VALUE_SAMPLE_MASK_IN, 0x1);
       }

@@ -517,6 +517,7 @@ struct tu_cmd_state
    VkImageAspectFlags pipeline_feedback_loops;
    bool pipeline_writes_shading_rate;
    bool pipeline_reads_shading_rate;
+   bool pipeline_accesses_smask;
 
    bool pipeline_blend_lrz, pipeline_bandwidth;
    uint32_t pipeline_draw_states;

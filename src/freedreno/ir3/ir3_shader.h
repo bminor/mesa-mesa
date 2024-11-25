@@ -742,6 +742,7 @@ struct ir3_shader_variant {
    } inputs[32 + 2]; /* +POSITION +FACE */
    bool reads_primid;
    bool reads_shading_rate;
+   bool reads_smask;
 
    /* sum of input components (scalar).  For frag shaders, it only counts
     * the varying inputs:
