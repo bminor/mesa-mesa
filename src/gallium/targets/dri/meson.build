@@ -67,7 +67,7 @@ libgallium_dri = shared_library(
     driver_asahi, driver_crocus
   ],
   install : true,
-  name_suffix : 'so',
+  name_suffix : libname_suffix,
 )
 
 if with_gallium_va or with_gallium_vdpau

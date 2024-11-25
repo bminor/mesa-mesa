@@ -59,7 +59,7 @@ dril_dri = shared_library(
   # Will be deleted during installation, see install_megadrivers.py
   install : true,
   install_dir : dri_drivers_path,
-  name_suffix : 'so',
+  name_suffix : libname_suffix,
 )
 
 foreach d : [[with_gallium_kmsro, [
