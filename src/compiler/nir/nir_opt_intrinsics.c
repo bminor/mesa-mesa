@@ -329,6 +329,20 @@ opt_intrinsics_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
             if (!nir_scalar_is_const(other) || nir_scalar_as_uint(other))
                continue;
 
+            nir_cf_node *cf_node = &intrin->instr.block->cf_node;
+            while (cf_node->parent)
+               cf_node = cf_node->parent;
+
+            nir_function_impl *func_impl = nir_cf_node_as_function(cf_node);
+
+            /* We need to insert load_helper before any demote,
+             * which is only possible in the entry point function
+             */
+            if (func_impl != nir_shader_get_entrypoint(b->shader))
+               break;
+
+            b->cursor = nir_before_impl(func_impl);
+
             nir_def *new_expr = nir_load_helper_invocation(b, 1);
 
             if (alu->op == nir_op_ine)
