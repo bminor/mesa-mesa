@@ -334,7 +334,7 @@
         "description": "nir/opt_intrinsic: rework sample mask opt with vector alu",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d3ce8a7f6b93e893929b81f4d6605a2a968730a1",
         "notes": null
