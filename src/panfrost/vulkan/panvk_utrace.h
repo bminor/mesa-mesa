@@ -11,6 +11,14 @@
 #include "panvk_macros.h"
 
 struct panvk_device;
+struct vk_sync;
+
+struct panvk_utrace_flush_data {
+   uint32_t subqueue;
+
+   struct vk_sync *sync;
+   uint64_t wait_value;
+};
 
 void *panvk_utrace_create_buffer(struct u_trace_context *utctx,
                                  uint64_t size_B);
@@ -19,6 +27,9 @@ void panvk_utrace_delete_buffer(struct u_trace_context *utctx, void *buffer);
 
 uint64_t panvk_utrace_read_ts(struct u_trace_context *utctx, void *timestamps,
                               uint64_t offset_B, void *flush_data);
+
+void panvk_utrace_delete_flush_data(struct u_trace_context *utctx,
+                                    void *flush_data);
 
 #ifdef PAN_ARCH
 

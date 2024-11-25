@@ -91,7 +91,7 @@ panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
    u_trace_context_init(&dev->utrace.utctx, NULL, sizeof(uint64_t), 0,
                         panvk_utrace_create_buffer, panvk_utrace_delete_buffer,
                         panvk_utrace_record_ts, panvk_utrace_read_ts, NULL,
-                        NULL, NULL);
+                        NULL, panvk_utrace_delete_flush_data);
 }
 
 void

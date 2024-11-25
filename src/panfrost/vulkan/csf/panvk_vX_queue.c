@@ -722,6 +722,7 @@ struct panvk_queue_submit {
    struct panvk_device *dev;
    struct panvk_queue *queue;
 
+   bool process_utrace;
    bool force_sync;
 
    uint32_t used_queue_mask;
@@ -733,6 +734,16 @@ struct panvk_queue_submit {
    struct drm_panthor_queue_submit *qsubmits;
    struct drm_panthor_sync_op *wait_ops;
    struct drm_panthor_sync_op *signal_ops;
+
+   struct {
+      uint32_t queue_mask;
+      enum panvk_subqueue_id first_subqueue;
+      enum panvk_subqueue_id last_subqueue;
+      const struct u_trace *last_ut;
+      struct panvk_utrace_flush_data *data_storage;
+
+      struct panvk_utrace_flush_data *data[PANVK_SUBQUEUE_COUNT];
+   } utrace;
 };
 
 struct panvk_queue_submit_stack_storage {
@@ -753,6 +764,10 @@ panvk_queue_submit_init(struct panvk_queue_submit *submit,
       .queue = container_of(vk_queue, struct panvk_queue, vk),
    };
 
+   submit->process_utrace =
+      u_trace_should_process(&submit->dev->utrace.utctx) &&
+      submit->phys_dev->kmod.props.timestamp_frequency;
+
    submit->force_sync =
       submit->instance->debug_flags & (PANVK_DEBUG_TRACE | PANVK_DEBUG_SYNC);
 }
@@ -762,6 +777,7 @@ panvk_queue_submit_init_storage(
    struct panvk_queue_submit *submit, const struct vk_queue_submit *vk_submit,
    struct panvk_queue_submit_stack_storage *stack_storage)
 {
+   submit->utrace.first_subqueue = PANVK_SUBQUEUE_COUNT;
    for (uint32_t i = 0; i < vk_submit->command_buffer_count; i++) {
       struct panvk_cmd_buffer *cmdbuf = container_of(
          vk_submit->command_buffers[i], struct panvk_cmd_buffer, vk);
@@ -774,6 +790,16 @@ panvk_queue_submit_init_storage(
 
          submit->used_queue_mask |= BITFIELD_BIT(j);
          submit->qsubmit_count++;
+
+         struct u_trace *ut = &cmdbuf->utrace.uts[j];
+         if (submit->process_utrace && u_trace_has_points(ut) &&
+             (cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
+            submit->utrace.queue_mask |= BITFIELD_BIT(j);
+            if (submit->utrace.first_subqueue == PANVK_SUBQUEUE_COUNT)
+               submit->utrace.first_subqueue = j;
+            submit->utrace.last_subqueue = j;
+            submit->utrace.last_ut = ut;
+         }
       }
    }
 
@@ -784,7 +810,8 @@ panvk_queue_submit_init_storage(
    uint32_t syncop_count = 0;
 
    submit->needs_waits = vk_submit->wait_count > 0;
-   submit->needs_signals = vk_submit->signal_count > 0 || submit->force_sync;
+   submit->needs_signals = vk_submit->signal_count > 0 || submit->force_sync ||
+                           submit->utrace.queue_mask;
 
    /* We add sync-only queue submits to place our wait/signal operations. */
    if (submit->needs_waits) {
@@ -808,6 +835,12 @@ panvk_queue_submit_init_storage(
 
    /* reset so that we can initialize submit->qsubmits incrementally */
    submit->qsubmit_count = 0;
+
+   if (submit->utrace.queue_mask) {
+      submit->utrace.data_storage =
+         malloc(sizeof(*submit->utrace.data_storage) *
+                util_bitcount(submit->utrace.queue_mask));
+   }
 }
 
 static void
@@ -819,6 +852,36 @@ panvk_queue_submit_cleanup_storage(
       free(submit->qsubmits);
    if (submit->wait_ops != stack_storage->syncops)
       free(submit->wait_ops);
+
+   /* either no utrace flush data or the data has been transferred to u_trace */
+   assert(!submit->utrace.data_storage);
+}
+
+static void
+panvk_queue_submit_init_utrace(struct panvk_queue_submit *submit,
+                               const struct vk_queue_submit *vk_submit)
+{
+   if (!submit->utrace.queue_mask)
+      return;
+
+   /* u_trace_context processes trace events in order.  We want to make sure
+    * it waits for the timestamp writes before processing the first event and
+    * it can free the flush data after processing the last event.
+    */
+   struct panvk_utrace_flush_data *next = submit->utrace.data_storage;
+   submit->utrace.data[submit->utrace.last_subqueue] = next++;
+
+   u_foreach_bit(i, submit->utrace.queue_mask) {
+      if (i != submit->utrace.last_subqueue)
+         submit->utrace.data[i] = next++;
+
+      const bool wait = i == submit->utrace.first_subqueue;
+      *submit->utrace.data[i] = (struct panvk_utrace_flush_data){
+         .subqueue = i,
+         .sync = wait ? submit->queue->utrace.sync : NULL,
+         .wait_value = wait ? submit->queue->utrace.next_value : 0,
+      };
+   }
 }
 
 static void
@@ -857,6 +920,8 @@ static void
 panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
                                 const struct vk_queue_submit *vk_submit)
 {
+   struct panvk_device *dev = submit->dev;
+
    for (uint32_t i = 0; i < vk_submit->command_buffer_count; i++) {
       struct panvk_cmd_buffer *cmdbuf = container_of(
          vk_submit->command_buffers[i], struct panvk_cmd_buffer, vk);
@@ -874,7 +939,22 @@ panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
                .latest_flush = cmdbuf->flush_id,
             };
       }
+
+      u_foreach_bit(j, submit->utrace.queue_mask) {
+         struct u_trace *ut = &cmdbuf->utrace.uts[j];
+
+         if (!u_trace_has_points(ut) ||
+             !(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT))
+            continue;
+
+         const bool free_data = ut == submit->utrace.last_ut;
+         u_trace_flush(ut, submit->utrace.data[j], dev->vk.current_frame,
+                       free_data);
+      }
    }
+
+   /* we've transferred the data ownership to utrace, if any */
+   submit->utrace.data_storage = NULL;
 }
 
 static void
@@ -978,6 +1058,18 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
                          queue->syncobj_handle, 0, 0);
    }
 
+   if (submit->utrace.queue_mask) {
+      const struct vk_drm_syncobj *syncobj =
+         vk_sync_as_drm_syncobj(queue->utrace.sync);
+
+      drmSyncobjTransfer(dev->vk.drm_fd, syncobj->syncobj,
+                         queue->utrace.next_value++, queue->syncobj_handle, 0,
+                         0);
+
+      /* process flushed events after the syncobj is set up */
+      u_trace_context_process(&dev->utrace.utctx, false);
+   }
+
    drmSyncobjReset(dev->vk.drm_fd, &queue->syncobj_handle, 1);
 }
 
@@ -1067,6 +1159,7 @@ panvk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *vk_submit)
 
    panvk_queue_submit_init(&submit, vk_queue);
    panvk_queue_submit_init_storage(&submit, vk_submit, &stack_storage);
+   panvk_queue_submit_init_utrace(&submit, vk_submit);
    panvk_queue_submit_init_waits(&submit, vk_submit);
    panvk_queue_submit_init_cmdbufs(&submit, vk_submit);
    panvk_queue_submit_init_signals(&submit, vk_submit);

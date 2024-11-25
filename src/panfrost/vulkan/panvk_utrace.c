@@ -6,10 +6,12 @@
 #include "panvk_utrace.h"
 
 #include "kmod/pan_kmod.h"
+#include "util/log.h"
 #include "util/timespec.h"
 #include "panvk_device.h"
 #include "panvk_physical_device.h"
 #include "panvk_priv_bo.h"
+#include "vk_sync.h"
 
 static struct panvk_device *
 to_dev(struct u_trace_context *utctx)
@@ -46,8 +48,19 @@ panvk_utrace_read_ts(struct u_trace_context *utctx, void *timestamps,
       to_panvk_physical_device(dev->vk.physical);
    const struct pan_kmod_dev_props *props = &pdev->kmod.props;
    const struct panvk_priv_bo *bo = timestamps;
+   struct panvk_utrace_flush_data *data = flush_data;
 
    assert(props->timestamp_frequency);
+
+   /* wait for the submit */
+   if (data->sync) {
+      if (vk_sync_wait(&dev->vk, data->sync, data->wait_value,
+                       VK_SYNC_WAIT_COMPLETE, UINT64_MAX) != VK_SUCCESS)
+         mesa_logw("failed to wait for utrace timestamps");
+
+      data->sync = NULL;
+      data->wait_value = 0;
+   }
 
    const uint64_t *ts_ptr = bo->addr.host + offset_B;
    uint64_t ts = *ts_ptr;
@@ -55,4 +68,12 @@ panvk_utrace_read_ts(struct u_trace_context *utctx, void *timestamps,
       ts = (ts * NSEC_PER_SEC) / props->timestamp_frequency;
 
    return ts;
+}
+
+void
+panvk_utrace_delete_flush_data(struct u_trace_context *utctx, void *flush_data)
+{
+   struct panvk_utrace_flush_data *data = flush_data;
+
+   free(data);
 }
