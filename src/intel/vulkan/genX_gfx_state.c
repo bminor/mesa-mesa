@@ -745,23 +745,14 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
 
             /* Check the last push constant value and update */
 
-            if (gfx->base.push_constants.gfx.fs_msaa_flags != fs_msaa_flags) {
-               gfx->base.push_constants.gfx.fs_msaa_flags = fs_msaa_flags;
-               cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_FRAGMENT_BIT;
-               gfx->base.push_constants_data_dirty = true;
-            }
+            SET(FS_MSAA_FLAGS, fs_msaa_flags, fs_msaa_flags);
          }
-      }
-
-      if (fs_msaa_flags != gfx->fs_msaa_flags) {
-         gfx->fs_msaa_flags = fs_msaa_flags;
-         gfx->dirty |= ANV_CMD_DIRTY_FS_MSAA_FLAGS;
       }
    }
 
    if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
-       (gfx->dirty & ANV_CMD_DIRTY_FS_MSAA_FLAGS) ||
-       (gfx->dirty & ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE)) {
+       (gfx->dirty & ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE) ||
+       BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)) {
       if (wm_prog_data) {
          const struct anv_shader_bin *fs_bin =
             pipeline->base.shaders[MESA_SHADER_FRAGMENT];
@@ -769,7 +760,7 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
          struct GENX(3DSTATE_PS) ps = {};
          intel_set_ps_dispatch_state(&ps, device->info, wm_prog_data,
                                      MAX2(dyn->ms.rasterization_samples, 1),
-                                     gfx->fs_msaa_flags);
+                                     hw_state->fs_msaa_flags);
 
          SET(PS, ps.KernelStartPointer0,
              fs_bin->kernel.offset +
@@ -806,14 +797,14 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
 
          SET(PS, ps.PositionXYOffsetSelect,
              !wm_prog_data->uses_pos_offset ? POSOFFSET_NONE :
-             brw_wm_prog_data_is_persample(wm_prog_data, gfx->fs_msaa_flags) ?
+             brw_wm_prog_data_is_persample(wm_prog_data, hw_state->fs_msaa_flags) ?
              POSOFFSET_SAMPLE : POSOFFSET_CENTROID);
 
          SET(PS_EXTRA, ps_extra.PixelShaderIsPerSample,
-             brw_wm_prog_data_is_persample(wm_prog_data, gfx->fs_msaa_flags));
+             brw_wm_prog_data_is_persample(wm_prog_data, hw_state->fs_msaa_flags));
 #if GFX_VER >= 11
          const bool uses_coarse_pixel =
-            brw_wm_prog_data_is_coarse(wm_prog_data, gfx->fs_msaa_flags);
+            brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags);
          SET(PS_EXTRA, ps_extra.PixelShaderIsPerCoarsePixel, uses_coarse_pixel);
 #endif
 #if GFX_VERx10 >= 125
@@ -832,7 +823,7 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
          SET(PS_EXTRA, ps_extra.EnablePSDependencyOnCPsizeChange, needs_ps_dependency);
 #endif
          SET(WM, wm.BarycentricInterpolationMode,
-             wm_prog_data_barycentric_modes(wm_prog_data, gfx->fs_msaa_flags));
+             wm_prog_data_barycentric_modes(wm_prog_data, hw_state->fs_msaa_flags));
       } else {
 #if GFX_VER < 20
          SET(PS, ps._8PixelDispatchEnable,  false);
@@ -926,10 +917,10 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
 #if GFX_VER >= 11
    if (cmd_buffer->device->vk.enabled_extensions.KHR_fragment_shading_rate &&
        ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
-        (gfx->dirty & ANV_CMD_DIRTY_FS_MSAA_FLAGS) ||
-        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_FSR))) {
+        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_FSR) ||
+        BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS))) {
       const bool cps_enable = wm_prog_data &&
-         brw_wm_prog_data_is_coarse(wm_prog_data, gfx->fs_msaa_flags);
+         brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags);
 #if GFX_VER == 11
       SET(CPS, cps.CoarsePixelShadingMode,
                cps_enable ? CPS_MODE_CONSTANT : CPS_MODE_NONE);
@@ -1746,20 +1737,14 @@ genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
    }
 #endif
 
-   struct anv_push_constants *push = &cmd_buffer->state.gfx.base.push_constants;
-
    /* If the pipeline uses a dynamic value of patch_control_points and either
     * the pipeline change or the dynamic value change, check the value and
     * reemit if needed.
     */
    if (pipeline->dynamic_patch_control_points &&
        ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
-        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS)) &&
-       push->gfx.tcs_input_vertices != dyn->ts.patch_control_points) {
-      push->gfx.tcs_input_vertices = dyn->ts.patch_control_points;
-      cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-      gfx->base.push_constants_data_dirty = true;
-   }
+        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS)))
+      SET(TCS_INPUT_VERTICES, tcs_input_vertices, dyn->ts.patch_control_points);
 
 #undef GET
 #undef SET
@@ -1871,6 +1856,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       anv_pipeline_to_graphics(gfx->base.pipeline);
    const struct vk_dynamic_graphics_state *dyn =
       &cmd_buffer->vk.dynamic_graphics_state;
+   struct anv_push_constants *push_consts =
+      &cmd_buffer->state.gfx.base.push_constants;
    struct anv_gfx_dynamic_state *hw_state = &gfx->dyn_state;
    const bool protected = cmd_buffer->vk.pool->flags &
                           VK_COMMAND_POOL_CREATE_PROTECTED_BIT;
@@ -1888,6 +1875,22 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
        anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL))
       BITSET_CLEAR(hw_state->dirty, ANV_GFX_STATE_DS);
 #endif
+
+   /*
+    * Values provided by push constants
+    */
+
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_TCS_INPUT_VERTICES)) {
+      push_consts->gfx.tcs_input_vertices = dyn->ts.patch_control_points;
+      cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+      gfx->base.push_constants_data_dirty = true;
+   }
+
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)) {
+      push_consts->gfx.fs_msaa_flags = hw_state->fs_msaa_flags;
+      cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_FRAGMENT_BIT;
+      gfx->base.push_constants_data_dirty = true;
+   }
 
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_URB)) {
       genX(urb_workaround)(cmd_buffer, &pipeline->urb_cfg);

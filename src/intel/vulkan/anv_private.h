@@ -1480,6 +1480,8 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_WA_18019816803, /* Fake state to implement workaround */
    ANV_GFX_STATE_WA_14018283232, /* Fake state to implement workaround */
    ANV_GFX_STATE_TBIMR_TILE_PASS_INFO,
+   ANV_GFX_STATE_FS_MSAA_FLAGS,
+   ANV_GFX_STATE_TCS_INPUT_VERTICES,
 
    ANV_GFX_STATE_MAX,
 };
@@ -1769,6 +1771,21 @@ struct anv_gfx_dynamic_state {
       unsigned TileBoxCheck;
    } tbimr;
    bool use_tbimr;
+
+   /**
+    * Dynamic msaa flags, this value can be different from
+    * anv_push_constants::gfx::fs_msaa_flags, as the push constant value only
+    * needs to be updated for fragment shaders dynamically checking the value.
+    */
+   enum intel_msaa_flags fs_msaa_flags;
+
+   /**
+    * Dynamic TCS input vertices, this value can be different from
+    * anv_driver_constants::gfx::tcs_input_vertices, as the push constant
+    * value only needs to be updated for tesselation control shaders
+    * dynamically checking the value.
+    */
+   uint32_t tcs_input_vertices;
 
    bool pma_fix;
 
@@ -3355,9 +3372,8 @@ enum anv_cmd_dirty_bits {
    ANV_CMD_DIRTY_XFB_ENABLE                          = 1 << 4,
    ANV_CMD_DIRTY_RESTART_INDEX                       = 1 << 5,
    ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE              = 1 << 6,
-   ANV_CMD_DIRTY_FS_MSAA_FLAGS                       = 1 << 7,
-   ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE                 = 1 << 8,
-   ANV_CMD_DIRTY_INDIRECT_DATA_STRIDE                = 1 << 9,
+   ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE                 = 1 << 7,
+   ANV_CMD_DIRTY_INDIRECT_DATA_STRIDE                = 1 << 8,
 };
 typedef enum anv_cmd_dirty_bits anv_cmd_dirty_mask_t;
 
@@ -3910,12 +3926,6 @@ struct anv_cmd_graphics_state {
 
    struct vk_vertex_input_state vertex_input;
    struct vk_sample_locations_state sample_locations;
-
-   /* Dynamic msaa flags, this value can be different from
-    * anv_push_constants::gfx::fs_msaa_flags, as the push constant value only
-    * needs to be updated for fragment shaders dynamically checking the value.
-    */
-   enum intel_msaa_flags fs_msaa_flags;
 
    bool object_preemption;
    bool has_uint_rt;
