@@ -3550,6 +3550,19 @@ nir_remove_non_exported(nir_shader *nir)
    }
 }
 
+/*
+ * After precompiling entrypoints from a kernel library, we want to garbage
+ * collect the NIR entrypoints but leave the exported library functions. This
+ * helper does that.
+ */
+void
+nir_remove_entrypoints(nir_shader *nir)
+{
+   nir_foreach_entrypoint_safe(func, nir) {
+      exec_node_remove(&func->node);
+   }
+}
+
 unsigned
 nir_static_workgroup_size(const nir_shader *s)
 {
