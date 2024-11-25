@@ -167,7 +167,7 @@ done
     echo "The following local patches are applied on top:"
     git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
   fi
-} > /deqp-$deqp_api/version
+} > /deqp-$deqp_api/deqp-$deqp_api-version
 
 # --insecure is due to SSL cert failures hitting sourceforge for zlib and
 # libpng (sigh).  The archives get their checksums checked anyway, and git
