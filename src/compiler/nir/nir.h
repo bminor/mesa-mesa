@@ -5561,6 +5561,7 @@ void nir_fixup_deref_modes(nir_shader *shader);
 void nir_fixup_deref_types(nir_shader *shader);
 
 bool nir_lower_global_vars_to_local(nir_shader *shader);
+void nir_lower_constant_to_temp(nir_shader *shader);
 
 typedef enum {
    nir_lower_direct_array_deref_of_vec_load = (1 << 0),
