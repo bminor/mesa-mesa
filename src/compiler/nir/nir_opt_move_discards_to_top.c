@@ -148,6 +148,84 @@ try_move_discard(nir_intrinsic_instr *discard, unsigned *next_discard_id)
    util_dynarray_fini(&state.worklist);
 }
 
+enum intrinsic_discard_info {
+   can_move_after_demote = 1 << 0,
+   can_move_after_terminate = 1 << 1,
+};
+
+static enum intrinsic_discard_info
+can_move_intrinsic_after_discard(nir_intrinsic_instr *intrin)
+{
+   if (nir_intrinsic_can_reorder(intrin))
+      return can_move_after_demote | can_move_after_terminate;
+
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_quad_broadcast:
+   case nir_intrinsic_quad_swap_horizontal:
+   case nir_intrinsic_quad_swap_vertical:
+   case nir_intrinsic_quad_swap_diagonal:
+   case nir_intrinsic_quad_vote_all:
+   case nir_intrinsic_quad_vote_any:
+   case nir_intrinsic_quad_swizzle_amd:
+   case nir_intrinsic_ddx:
+   case nir_intrinsic_ddx_fine:
+   case nir_intrinsic_ddx_coarse:
+   case nir_intrinsic_ddy:
+   case nir_intrinsic_ddy_fine:
+   case nir_intrinsic_ddy_coarse:
+      return can_move_after_demote;
+   case nir_intrinsic_is_helper_invocation:
+   case nir_intrinsic_load_helper_invocation:
+      return can_move_after_terminate;
+   case nir_intrinsic_load_param:
+   case nir_intrinsic_load_deref:
+   case nir_intrinsic_decl_reg:
+   case nir_intrinsic_load_reg:
+   case nir_intrinsic_load_reg_indirect:
+   case nir_intrinsic_as_uniform:
+   case nir_intrinsic_inverse_ballot:
+   case nir_intrinsic_write_invocation_amd:
+   case nir_intrinsic_mbcnt_amd:
+   case nir_intrinsic_atomic_counter_read:
+   case nir_intrinsic_atomic_counter_read_deref:
+   case nir_intrinsic_image_deref_load:
+   case nir_intrinsic_image_load:
+   case nir_intrinsic_bindless_image_load:
+   case nir_intrinsic_image_deref_sparse_load:
+   case nir_intrinsic_image_sparse_load:
+   case nir_intrinsic_bindless_image_sparse_load:
+   case nir_intrinsic_image_deref_samples_identical:
+   case nir_intrinsic_image_samples_identical:
+   case nir_intrinsic_bindless_image_samples_identical:
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_load_output:
+   case nir_intrinsic_load_shared:
+   case nir_intrinsic_load_global:
+   case nir_intrinsic_load_global_2x32:
+   case nir_intrinsic_load_scratch:
+   case nir_intrinsic_load_stack:
+   case nir_intrinsic_load_buffer_amd:
+   case nir_intrinsic_load_typed_buffer_amd:
+   case nir_intrinsic_load_global_amd:
+   case nir_intrinsic_load_shared2_amd:
+      return can_move_after_demote | can_move_after_terminate;
+   case nir_intrinsic_store_deref:
+      if (!nir_deref_mode_is_in_set(nir_src_as_deref(intrin->src[0]),
+                                    nir_var_shader_temp | nir_var_function_temp)) {
+         break;
+      }
+      FALLTHROUGH;
+   case nir_intrinsic_store_reg:
+   case nir_intrinsic_store_reg_indirect:
+   case nir_intrinsic_store_scratch:
+      return can_move_after_demote | can_move_after_terminate;
+   default:
+      break;
+   }
+
+   return 0;
+}
+
 static bool
 opt_move_discards_to_top_impl(nir_function_impl *impl)
 {
@@ -188,48 +266,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
 
          case nir_instr_type_intrinsic: {
             nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-            if (nir_intrinsic_writes_external_memory(intrin)) {
-               instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
-               goto break_all;
-            }
             switch (intrin->intrinsic) {
-            case nir_intrinsic_quad_broadcast:
-            case nir_intrinsic_quad_swap_horizontal:
-            case nir_intrinsic_quad_swap_vertical:
-            case nir_intrinsic_quad_swap_diagonal:
-            case nir_intrinsic_quad_vote_all:
-            case nir_intrinsic_quad_vote_any:
-            case nir_intrinsic_quad_swizzle_amd:
-            case nir_intrinsic_ddx:
-            case nir_intrinsic_ddx_fine:
-            case nir_intrinsic_ddx_coarse:
-            case nir_intrinsic_ddy:
-            case nir_intrinsic_ddy_fine:
-            case nir_intrinsic_ddy_coarse:
-               consider_terminates = false;
-               break;
-            case nir_intrinsic_vote_any:
-            case nir_intrinsic_vote_all:
-            case nir_intrinsic_vote_feq:
-            case nir_intrinsic_vote_ieq:
-            case nir_intrinsic_ballot:
-            case nir_intrinsic_first_invocation:
-            case nir_intrinsic_read_invocation:
-            case nir_intrinsic_read_first_invocation:
-            case nir_intrinsic_elect:
-            case nir_intrinsic_reduce:
-            case nir_intrinsic_inclusive_scan:
-            case nir_intrinsic_exclusive_scan:
-            case nir_intrinsic_shuffle:
-            case nir_intrinsic_shuffle_xor:
-            case nir_intrinsic_shuffle_up:
-            case nir_intrinsic_shuffle_down:
-            case nir_intrinsic_rotate:
-            case nir_intrinsic_masked_swizzle_amd:
-            case nir_intrinsic_is_helper_invocation:
-            case nir_intrinsic_load_helper_invocation:
-               instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
-               goto break_all;
             case nir_intrinsic_terminate_if:
                if (!consider_terminates) {
                   /* assume that a shader either uses terminate or demote, but not both */
@@ -240,8 +277,16 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
             case nir_intrinsic_demote_if:
                try_move_discard(intrin, &next_discard_id);
                break;
-            default:
+            default: {
+               enum intrinsic_discard_info info = can_move_intrinsic_after_discard(intrin);
+               if (!(info & can_move_after_demote)) {
+                  instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
+                  goto break_all;
+               } else if (!(info & can_move_after_terminate)) {
+                  consider_terminates = false;
+               }
                break;
+            }
             }
             continue;
          }
