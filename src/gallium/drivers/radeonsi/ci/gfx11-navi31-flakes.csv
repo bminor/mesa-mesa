@@ -1,0 +1,17 @@
+# These fail randomly
+glx@glx_arb_sync_control@timing -msc-delta 1
+glx@glx_arb_sync_control@timing -waitformsc -divisor 1
+glx@glx-multithread-texture
+glx@glx-visuals-stencil -pixmap
+
+# This one will be Crash or Fail depending on the shader cache state
+spec@!opengl 1.0@rasterpos
+spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked
+spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked
+
+# Random: ../src/util/hash_table.c:311: hash_table_search: Assertion `!key_pointer_is_reserved(ht, key)' failed.
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread
+
+# Random
+KHR-GL46.geometry_shader.primitive_counter.triangles_to_line_strip_rp
+dEQP-GLES2.functional.fragment_ops.random.61
