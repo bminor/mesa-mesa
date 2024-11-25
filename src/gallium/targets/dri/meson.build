@@ -94,7 +94,7 @@ if with_gallium_va or with_gallium_vdpau
       libgallium_dri.full_path(),
       va_drivers_path,
       va_drivers,
-      '--megadriver_libdir', get_option('libdir'),
+      '--megadriver-libdir', get_option('libdir'),
       install_tag : 'runtime',
     )
   endif
@@ -105,7 +105,7 @@ if with_gallium_va or with_gallium_vdpau
       libgallium_dri.full_path(),
       vdpau_drivers_path,
       vdpau_drivers,
-      '--megadriver_libdir', get_option('libdir'),
+      '--megadriver-libdir', get_option('libdir'),
       install_tag : 'runtime',
     )
   endif
