@@ -773,8 +773,8 @@ pandecode_run_fullscreen(struct pandecode_context *ctx, FILE *fp,
 }
 
 static bool
-interpret_ceu_jump(struct pandecode_context *ctx, struct queue_ctx *qctx,
-                   uint64_t reg_address, uint32_t reg_length)
+interpret_cs_jump(struct pandecode_context *ctx, struct queue_ctx *qctx,
+                  uint64_t reg_address, uint32_t reg_length)
 {
    uint32_t address_lo = qctx->regs[reg_address];
    uint32_t address_hi = qctx->regs[reg_address + 1];
@@ -829,9 +829,8 @@ eval_cond(struct queue_ctx *qctx, enum mali_cs_condition cond, uint32_t reg)
 }
 
 static void
-interpret_ceu_branch(struct pandecode_context *ctx, struct queue_ctx *qctx,
-                     int16_t offset, enum mali_cs_condition cond,
-                     uint32_t reg)
+interpret_cs_branch(struct pandecode_context *ctx, struct queue_ctx *qctx,
+                    int16_t offset, enum mali_cs_condition cond, uint32_t reg)
 {
    if (eval_cond(qctx, cond, reg))
       qctx->ip += offset;
@@ -845,7 +844,7 @@ interpret_ceu_branch(struct pandecode_context *ctx, struct queue_ctx *qctx,
  * Returns true if execution should continue.
  */
 static bool
-interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
+interpret_cs_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
 {
    FILE *fp = ctx->dump_stream;
    /* Unpack the base so we get the opcode */
@@ -967,7 +966,7 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
       qctx->call_stack[depth].lr = qctx->ip;
       qctx->call_stack[depth].end = qctx->end;
 
-      return interpret_ceu_jump(ctx, qctx, I.address, I.length);
+      return interpret_cs_jump(ctx, qctx, I.address, I.length);
    }
 
    case MALI_CS_OPCODE_SET_EXCEPTION_HANDLER: {
@@ -990,7 +989,7 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
        * the registers/memory content when the handler is triggered. */
       qctx->in_exception_handler = true;
 
-      return interpret_ceu_jump(ctx, qctx, I.address, I.length);
+      return interpret_cs_jump(ctx, qctx, I.address, I.length);
    }
 
    case MALI_CS_OPCODE_JUMP: {
@@ -1001,13 +1000,13 @@ interpret_ceu_instr(struct pandecode_context *ctx, struct queue_ctx *qctx)
          return false;
       }
 
-      return interpret_ceu_jump(ctx, qctx, I.address, I.length);
+      return interpret_cs_jump(ctx, qctx, I.address, I.length);
    }
 
    case MALI_CS_OPCODE_BRANCH: {
       pan_unpack(bytes, CS_BRANCH, I);
 
-      interpret_ceu_branch(ctx, qctx, I.offset, I.condition, I.value);
+      interpret_cs_branch(ctx, qctx, I.offset, I.condition, I.value);
       break;
    }
 
@@ -1076,7 +1075,7 @@ GENX(pandecode_cs)(struct pandecode_context *ctx, mali_ptr queue, uint32_t size,
 
          print_cs_instr(fp, *(qctx.ip));
          fprintf(fp, "\n");
-      } while (interpret_ceu_instr(ctx, &qctx));
+      } while (interpret_cs_instr(ctx, &qctx));
    }
 
    fflush(ctx->dump_stream);
