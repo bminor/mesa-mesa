@@ -46,7 +46,7 @@ variables:
       artifacts: false
     - job: debian/x86_64_pyutils
       artifacts: false
-    - job: python-test
+    - job: python-artifacts
       artifacts: false
 
 .lava-test:arm32:

@@ -212,6 +212,7 @@ include:
         - bin/git_sha1_gen.py
         - bin/install_megadrivers.py
         - bin/symbols-check.py
+        - bin/ci/**/*
         # GitLab CI
         - .gitlab-ci.yml
         - .gitlab-ci/**/*
