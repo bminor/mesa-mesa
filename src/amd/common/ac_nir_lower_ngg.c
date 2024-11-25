@@ -419,7 +419,7 @@ repack_invocations_in_workgroup(nir_builder *b, nir_def **input_bool,
 
    for (unsigned i = 0; i < num_repacks; ++i) {
       nir_def *index_base_lane = nir_iadd_imm_nuw(b, wave_id, i * 16);
-      nir_def *num_invocartions_lane = nir_iadd_imm_nuw(b, num_waves, i * 16 - 1);
+      nir_def *num_invocartions_lane = nir_iadd_imm(b, num_waves, i * 16 - 1);
       nir_def *wg_repacked_index_base =
          nir_isub(b, nir_read_invocation(b, sum, index_base_lane), surviving_invocations_in_current_wave[i]);
       results[i].num_repacked_invocations =
