@@ -8,7 +8,7 @@ Add.Op/input_size_5_weight_size_5_input_channels_32_output_channels_256_stride_2
 Add.Op/input_size_80_weight_size_3_input_channels_32_output_channels_120_stride_1_padding_same_1_is_signed_0,Fail
 Add.Op/input_size_80_weight_size_5_input_channels_32_output_channels_256_stride_1_padding_same_1_is_signed_0,Fail
 
-MobileDetParam.Op/mobiledet082,Fail
-MobileDet.Whole,Fail
+Models.Op/mobiledet_082,Fail
+Models.Op/mobiledet_ssdlite_mobiledet_coco_qat_postprocess,Fail
 
-YoloX.Whole,Fail
+Models.Op/yolox_yolox,Fail

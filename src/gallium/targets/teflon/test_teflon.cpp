@@ -11,6 +11,9 @@
 #include <xtensor/xrandom.hpp>
 
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 #include "tensorflow/lite/c/c_api.h"
 #include "test_executor.h"
 
@@ -18,9 +21,7 @@
 #define TEST_DEPTHWISE        1
 #define TEST_ADD              1
 #define TEST_FULLY_CONNECTED  1
-#define TEST_MOBILENETV1      1
-#define TEST_MOBILEDET        1
-#define TEST_YOLOX            1
+#define TEST_MODELS           1
 
 #define TOLERANCE       2
 
@@ -124,8 +125,13 @@ test_model_file(std::string file_name, unsigned tolerance, bool use_cache)
 {
    std::ostringstream cache_dir;
 
-   if (use_cache)
-      cache_dir << "/var/cache/teflon_tests/" << std::filesystem::path(file_name).stem().c_str();
+   if (use_cache) {
+      auto path = std::filesystem::path(file_name);
+      cache_dir << "/var/cache/teflon_tests/";
+      cache_dir << path.parent_path().filename().string();
+      cache_dir << "_";
+      cache_dir << path.stem().string();
+   }
 
    set_seed(4);
 
@@ -453,138 +459,56 @@ INSTANTIATE_TEST_SUITE_P(
 
 #endif
 
-#if TEST_MOBILENETV1
+#if TEST_MODELS
 
-class MobileNetV1 : public ::testing::Test {};
+class Models : public testing::TestWithParam<std::string> {};
 
-class MobileNetV1Param : public testing::TestWithParam<int> {};
-
-TEST(MobileNetV1, Whole)
+TEST_P(Models, Op)
 {
    std::ostringstream file_path;
+   auto test_name = GetParam();
+   test_name.replace(test_name.find("_"), 1, "/");
    assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/mobilenet_v1_1.0_224_quant.tflite";
+   file_path << getenv("TEFLON_TEST_DATA") << "/models/" << test_name << ".tflite";
 
    test_model_file(file_path.str(), TOLERANCE, true);
 }
 
-TEST_P(MobileNetV1Param, Op)
+std::vector<std::string>
+get_model_files(void)
 {
-   std::ostringstream file_path;
    assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/mb-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
+   std::stringstream dir;
+   dir << getenv("TEFLON_TEST_DATA") << "/models";
 
-   test_model_file(file_path.str(), TOLERANCE, true);
+   std::vector<std::string> paths;
+   std::filesystem::recursive_directory_iterator b(dir.str());
+   for (auto const& f : b) {
+      if (f.path().extension() != ".tflite")
+         continue;
+
+      std::stringstream path;
+      path << f.path().parent_path().filename().string();
+      path << "_" << f.path().stem().string();
+      paths.push_back(path.str());
+   }
+
+   std::sort(paths.begin(), paths.end());
+
+   return paths;
 }
 
 static inline std::string
-MobileNetV1TestCaseName(
-   const testing::TestParamInfo<int> &info)
+ModelsTestCaseName(
+   const testing::TestParamInfo<std::string> &info)
 {
-   std::string name = "";
-   std::string param = std::to_string(info.param);
-
-   name += "mb";
-   name += std::string(3 - param.length(), '0');
-   name += param;
-
-   return name;
+   return info.param;
 }
 
 INSTANTIATE_TEST_SUITE_P(
-   , MobileNetV1Param,
-   ::testing::Range(0, 31),
-   MobileNetV1TestCaseName);
-
-#endif
-
-#if TEST_MOBILEDET
-
-class MobileDet : public ::testing::Test {};
-
-class MobileDetParam : public testing::TestWithParam<int> {};
-
-TEST(MobileDet, Whole)
-{
-   std::ostringstream file_path;
-   assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/ssdlite_mobiledet_coco_qat_postprocess.tflite";
-
-   test_model_file(file_path.str(), TOLERANCE, true);
-}
-
-TEST_P(MobileDetParam, Op)
-{
-   std::ostringstream file_path;
-   assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/mobiledet-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
-
-   test_model_file(file_path.str(), TOLERANCE, true);
-}
-
-static inline std::string
-MobileDetTestCaseName(
-   const testing::TestParamInfo<int> &info)
-{
-   std::string name = "";
-   std::string param = std::to_string(info.param);
-
-   name += "mobiledet";
-   name += std::string(3 - param.length(), '0');
-   name += param;
-
-   return name;
-}
-
-INSTANTIATE_TEST_SUITE_P(
-   , MobileDetParam,
-   ::testing::Range(0, 124),
-   MobileDetTestCaseName);
-
-#endif
-
-#if TEST_YOLOX
-
-class YoloX : public ::testing::Test {};
-
-class YoloXParam : public testing::TestWithParam<int> {};
-
-TEST(YoloX, Whole)
-{
-   std::ostringstream file_path;
-   assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/yolox.tflite";
-
-   test_model_file(file_path.str(), TOLERANCE, true);
-}
-
-TEST_P(YoloXParam, Op)
-{
-   std::ostringstream file_path;
-   assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/yolox-" << std::setfill('0') << std::setw(3) << GetParam() << ".tflite";
-
-   test_model_file(file_path.str(), TOLERANCE, true);
-}
-
-static inline std::string
-YoloXTestCaseName(
-   const testing::TestParamInfo<int> &info)
-{
-   std::string name = "";
-   std::string param = std::to_string(info.param);
-
-   name += "yolox";
-   name += std::string(3 - param.length(), '0');
-   name += param;
-
-   return name;
-}
-
-INSTANTIATE_TEST_SUITE_P(
-   , YoloXParam,
-   ::testing::Range(0, 128),
-   YoloXTestCaseName);
+   , Models,
+   ::testing::ValuesIn(get_model_files()),
+   ModelsTestCaseName);
 
 #endif
 
