@@ -34,7 +34,6 @@ endif
 # Includes      #
 #===============#
 
-inc_include_mesa = include_directories('../../../include')
 inc_vulkan_headers = include_directories('../../../include/vulkan')
 inc_vulkan_enc = include_directories('vulkan_enc')
 

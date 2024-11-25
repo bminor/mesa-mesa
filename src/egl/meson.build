@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 inc_egl = include_directories('.', 'main')
-inc_egl_dri2 = include_directories('drivers/dri2')
 
 c_args_for_egl = [asan_c_args]
 cpp_args_for_egl = []
