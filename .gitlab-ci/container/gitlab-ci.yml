@@ -267,10 +267,6 @@ debian/x86_64_pyutils:
     - .debian-container
   variables:
     MESA_IMAGE_TAG: &debian-x86_64_pyutils "${DEBIAN_PYUTILS_TAG}"
-  rules:
-    # python-test requires this job
-    - !reference [python-test, rules]
-    - !reference [.container, rules]
 
 .use-debian/x86_64_pyutils:
   extends:
