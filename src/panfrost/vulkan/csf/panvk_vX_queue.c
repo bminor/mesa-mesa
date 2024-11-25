@@ -12,6 +12,7 @@
 #include "panvk_cmd_buffer.h"
 #include "panvk_macros.h"
 #include "panvk_queue.h"
+#include "panvk_utrace.h"
 
 #include "util/bitscan.h"
 #include "vk_drm_syncobj.h"
@@ -340,6 +341,28 @@ finish_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
 }
 
 static VkResult
+init_utrace(struct panvk_queue *queue)
+{
+   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+   const struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(dev->vk.physical);
+   VkResult result;
+
+   const struct vk_sync_type *sync_type = phys_dev->sync_types[0];
+   assert(sync_type && vk_sync_type_is_drm_syncobj(sync_type) &&
+          (sync_type->features & VK_SYNC_FEATURE_TIMELINE));
+
+   result = vk_sync_create(&dev->vk, sync_type, VK_SYNC_IS_TIMELINE, 0,
+                           &queue->utrace.sync);
+   if (result != VK_SUCCESS)
+      return result;
+
+   queue->utrace.next_value = 1;
+
+   return VK_SUCCESS;
+}
+
+static VkResult
 init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
@@ -479,8 +502,13 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
 static void
 cleanup_queue(struct panvk_queue *queue)
 {
+   struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
+
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
       finish_subqueue(queue, i);
+
+   if (queue->utrace.sync)
+      vk_sync_destroy(&dev->vk, queue->utrace.sync);
 
    finish_render_desc_ringbuf(queue);
 
@@ -532,6 +560,10 @@ init_queue(struct panvk_queue *queue)
    }
 
    result = init_render_desc_ringbuf(queue);
+   if (result != VK_SUCCESS)
+      goto err_cleanup_queue;
+
+   result = init_utrace(queue);
    if (result != VK_SUCCESS)
       goto err_cleanup_queue;
 

@@ -70,6 +70,11 @@ struct panvk_queue {
    struct panvk_priv_mem debug_syncobjs;
    struct panvk_priv_mem tiler_oom_regs_save;
 
+   struct {
+      struct vk_sync *sync;
+      uint64_t next_value;
+   } utrace;
+
    struct panvk_subqueue subqueues[PANVK_SUBQUEUE_COUNT];
 };
 
