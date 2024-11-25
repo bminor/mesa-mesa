@@ -26,8 +26,8 @@
 #include "nir_intrinsics_indices.h"
 #include "shader_enums.h"
 
-/* Alignment for shader programs. I'm not sure what the optimal value is. */
-#define AGX_CODE_ALIGN 0x100
+/* Cache-line align shader programs. This matches the prop compiler. */
+#define AGX_CODE_ALIGN 0x80
 
 /* clang-format off */
 static const struct debug_named_value agx_debug_options[] = {
