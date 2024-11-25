@@ -177,14 +177,6 @@ try_merge_break_with_continue(branch_ctx& ctx, Block& block)
    if (merge.linear_succs.size() != 1)
       return;
 
-   /* We want to use the loopexit as the fallthrough block from merge,
-    * so there shouldn't be a block inbetween.
-    */
-   for (unsigned i = merge.index + 1; i < loopexit.index; i++) {
-      if (!ctx.program->blocks[i].instructions.empty())
-         return;
-   }
-
    for (unsigned merge_pred : merge.linear_preds) {
       if (merge_pred == block.index)
          continue;
@@ -214,7 +206,6 @@ try_merge_break_with_continue(branch_ctx& ctx, Block& block)
       return;
 
    /* Use conditional branch in merge block. */
-   block.instructions.pop_back();
    merge.instructions.back()->opcode = aco_opcode::s_cbranch_scc1;
    block.linear_succs.pop_back();
    block.linear_succs[0] = merge.index;
@@ -222,6 +213,18 @@ try_merge_break_with_continue(branch_ctx& ctx, Block& block)
    std::swap(merge.linear_succs[0], merge.linear_succs[1]);
    std::replace(loopexit.linear_preds.begin(), loopexit.linear_preds.end(), block.index,
                 merge.index);
+
+   /* Check if we can use the loopexit as the fallthrough block.
+    * Otherwise, we'll need an extra branch instruction.
+    */
+   for (unsigned i = merge.index + 1; i < loopexit.index; i++) {
+      if (!ctx.program->blocks[i].instructions.empty()) {
+         branch->opcode = aco_opcode::s_branch;
+         merge.instructions.emplace_back(std::move(block.instructions.back()));
+         break;
+      }
+   }
+   block.instructions.pop_back();
 
    if (ctx.program->gfx_level >= GFX9) {
       /* Combine s_andn2 and copy to exec to s_andn2_wrexec. */
