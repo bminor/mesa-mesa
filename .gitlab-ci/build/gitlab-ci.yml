@@ -821,7 +821,7 @@ python-test:
     - .build-common
   variables:
     GIT_STRATEGY: fetch
-    S3_ARTIFACT_NAME: mesa-python-test
+    S3_ARTIFACT_NAME: mesa-python-ci-artifacts
   timeout: 10m
   script:
     - .gitlab-ci/run-pytest.sh
