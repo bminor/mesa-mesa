@@ -1,2 +1,0 @@
-# Regression in 7469f99e...25b8f4f7
-test_shader_sm66_is_helper_lane,Fail
