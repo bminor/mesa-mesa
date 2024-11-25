@@ -2562,7 +2562,6 @@ void si_init_screen_texture_functions(struct si_screen *sscreen)
    sscreen->b.resource_from_handle = si_texture_from_handle;
    sscreen->b.resource_get_handle = si_texture_get_handle;
    sscreen->b.resource_get_param = si_resource_get_param;
-   sscreen->b.resource_get_info = si_texture_get_info;
    sscreen->b.resource_from_memobj = si_resource_from_memobj;
    sscreen->b.memobj_create_from_handle = si_memobj_from_handle;
    sscreen->b.memobj_destroy = si_memobj_destroy;

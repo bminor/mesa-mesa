@@ -809,27 +809,6 @@ trace_screen_resource_get_param(struct pipe_screen *_screen,
    return result;
 }
 
-static void
-trace_screen_resource_get_info(struct pipe_screen *_screen,
-                               struct pipe_resource *resource,
-                               unsigned *stride,
-                               unsigned *offset)
-{
-   struct trace_screen *tr_screen = trace_screen(_screen);
-   struct pipe_screen *screen = tr_screen->screen;
-
-   trace_dump_call_begin("pipe_screen", "resource_get_info");
-   trace_dump_arg(ptr, screen);
-   trace_dump_arg(ptr, resource);
-
-   screen->resource_get_info(screen, resource, stride, offset);
-
-   trace_dump_arg(uint, *stride);
-   trace_dump_arg(uint, *offset);
-
-   trace_dump_call_end();
-}
-
 static uint64_t
 trace_screen_resource_get_address(struct pipe_screen *_screen,
                                   struct pipe_resource *resource)
@@ -1521,7 +1500,6 @@ trace_screen_create(struct pipe_screen *screen)
    SCR_INIT(check_resource_capability);
    tr_scr->base.resource_get_handle = trace_screen_resource_get_handle;
    SCR_INIT(resource_get_param);
-   SCR_INIT(resource_get_info);
    SCR_INIT(resource_get_address);
    SCR_INIT(resource_from_memobj);
    SCR_INIT(resource_changed);

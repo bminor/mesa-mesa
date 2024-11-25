@@ -310,17 +310,6 @@ dd_screen_resource_get_param(struct pipe_screen *_screen,
                                      level, param, handle_usage, value);
 }
 
-static void
-dd_screen_resource_get_info(struct pipe_screen *_screen,
-                            struct pipe_resource *resource,
-                            unsigned *stride,
-                            unsigned *offset)
-{
-   struct pipe_screen *screen = dd_screen(_screen)->screen;
-
-   screen->resource_get_info(screen, resource, stride, offset);
-}
-
 static bool
 dd_screen_check_resource_capability(struct pipe_screen *_screen,
                                     struct pipe_resource *resource,
@@ -652,7 +641,6 @@ ddebug_screen_create(struct pipe_screen *screen)
    SCR_INIT(check_resource_capability);
    dscreen->base.resource_get_handle = dd_screen_resource_get_handle;
    SCR_INIT(resource_get_param);
-   SCR_INIT(resource_get_info);
    SCR_INIT(resource_changed);
    dscreen->base.resource_destroy = dd_screen_resource_destroy;
    SCR_INIT(flush_frontbuffer);

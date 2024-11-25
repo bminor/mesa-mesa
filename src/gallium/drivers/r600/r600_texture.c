@@ -1761,7 +1761,6 @@ void r600_init_screen_texture_functions(struct r600_common_screen *rscreen)
 	rscreen->b.resource_from_handle = r600_texture_from_handle;
 	rscreen->b.resource_get_handle = r600_texture_get_handle;
 	rscreen->b.resource_get_param = r600_texture_get_param;
-	rscreen->b.resource_get_info = r600_texture_get_info;
 	rscreen->b.resource_from_memobj = r600_texture_from_memobj;
 	rscreen->b.memobj_create_from_handle = r600_memobj_from_handle;
 	rscreen->b.memobj_destroy = r600_memobj_destroy;

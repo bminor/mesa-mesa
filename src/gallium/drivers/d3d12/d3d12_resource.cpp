@@ -955,40 +955,6 @@ static constexpr unsigned d3d12_max_planes = 3;
  * Get stride and offset for the given pipe resource without the need to get
  * a winsys_handle.
  */
-void
-d3d12_resource_get_info(struct pipe_screen *pscreen,
-                        struct pipe_resource *pres,
-                        unsigned *stride,
-                        unsigned *offset)
-{
-
-   struct d3d12_resource* res = d3d12_resource(pres);
-   unsigned num_planes = util_format_get_num_planes(res->overall_format);
-
-   pipe_resource *planes[d3d12_max_planes];
-   unsigned int strides[d3d12_max_planes];
-   unsigned int layer_strides[d3d12_max_planes];
-   unsigned int offsets[d3d12_max_planes];
-   unsigned staging_res_size = 0;
-   d3d12_resource_get_planes_info(
-      pres,
-      num_planes,
-      planes,
-      strides,
-      layer_strides,
-      offsets,
-      &staging_res_size
-   );
-
-   if(stride) {
-      *stride = strides[res->plane_slice];
-   }
-
-   if(offset) {
-      *offset = offsets[res->plane_slice];
-   }
-}
-
 static bool
 d3d12_resource_get_param(struct pipe_screen *pscreen,
                          struct pipe_context *context,
@@ -1165,7 +1131,6 @@ d3d12_screen_resource_init(struct pipe_screen *pscreen)
    pscreen->resource_from_handle = d3d12_resource_from_handle;
    pscreen->resource_get_handle = d3d12_resource_get_handle;
    pscreen->resource_destroy = d3d12_resource_destroy;
-   pscreen->resource_get_info = d3d12_resource_get_info;
    pscreen->resource_get_param = d3d12_resource_get_param;
 
    pscreen->memobj_create_from_handle = d3d12_memobj_create_from_handle;

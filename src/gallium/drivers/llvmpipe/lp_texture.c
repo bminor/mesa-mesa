@@ -1686,19 +1686,6 @@ llvmpipe_print_resources(void)
 #endif
 
 
-static void
-llvmpipe_get_resource_info(struct pipe_screen *screen,
-                           struct pipe_resource *resource,
-                           unsigned *stride,
-                           unsigned *offset)
-{
-   struct llvmpipe_resource *lpr = llvmpipe_resource(resource);
-
-   *stride = lpr->row_stride[0];
-   *offset = 0;
-}
-
-
 static bool
 llvmpipe_resource_get_param(struct pipe_screen *screen,
                             struct pipe_context *context,
@@ -1816,7 +1803,6 @@ llvmpipe_init_screen_resource_funcs(struct pipe_screen *screen)
    screen->memobj_create_from_handle = llvmpipe_memobj_create_from_handle;
    screen->memobj_destroy = llvmpipe_memobj_destroy;
 
-   screen->resource_get_info = llvmpipe_get_resource_info;
    screen->resource_get_param = llvmpipe_resource_get_param;
    screen->resource_from_user_memory = llvmpipe_resource_from_user_memory;
    screen->allocate_memory = llvmpipe_allocate_memory;
