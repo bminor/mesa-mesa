@@ -61,7 +61,7 @@ endforeach
 
 if vdpau_drivers.length() > 0
   meson.add_install_script(
-    install_megadrivers_py.full_path(),
+    install_megadrivers,
     libvdpau_gallium.full_path(),
     vdpau_drivers_path,
     vdpau_drivers,

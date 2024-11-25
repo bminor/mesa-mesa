@@ -143,7 +143,7 @@ endif
 
 if dril_drivers.length() > 0
   meson.add_install_script(
-    install_megadrivers_py.full_path(),
+    install_megadrivers,
     dril_dri.full_path(),
     dri_drivers_path,
     dril_drivers,
