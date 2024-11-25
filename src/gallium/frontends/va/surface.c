@@ -1691,7 +1691,7 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
    desc->height = surf->templat.height;
    desc->num_objects = 0;
 
-   bool supports_contiguous_planes = screen->resource_get_info && surf->buffer->contiguous_planes;
+   bool supports_contiguous_planes = screen->resource_get_param && surf->buffer->contiguous_planes;
 
    for (p = 0; p < ARRAY_SIZE(desc->objects); p++) {
       struct winsys_handle whandle;
@@ -1710,7 +1710,7 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
       }
 
       /* If the driver stores all planes contiguously in memory, only one
-       * handle needs to be exported. resource_get_info is used to obtain
+       * handle needs to be exported. resource_get_param is used to obtain
        * pitch and offset for each layer. */
       if (!desc->num_objects || !supports_contiguous_planes) {
          memset(&whandle, 0, sizeof(whandle));
@@ -1736,7 +1736,19 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
          desc->layers[0].object_index[p] = desc->num_objects - 1;
 
          if (supports_contiguous_planes) {
-            screen->resource_get_info(screen, resource, &desc->layers[0].pitch[p], &desc->layers[0].offset[p]);
+            uint64_t value;
+            if (!screen->resource_get_param(screen, drv->pipe, resource, 0, 0, 0,
+                                            PIPE_RESOURCE_PARAM_STRIDE, 0, &value)) {
+               ret = VA_STATUS_ERROR_INVALID_SURFACE;
+               goto fail;
+            }
+            desc->layers[0].pitch[p] = value;
+            if (!screen->resource_get_param(screen, drv->pipe, resource, 0, 0, 0,
+                                            PIPE_RESOURCE_PARAM_OFFSET, 0, &value)) {
+               ret = VA_STATUS_ERROR_INVALID_SURFACE;
+               goto fail;
+            }
+            desc->layers[0].offset[p] = value;
          } else {
             desc->layers[0].pitch[p] = whandle.stride;
             desc->layers[0].offset[p] = whandle.offset;
@@ -1747,7 +1759,19 @@ vlVaExportSurfaceHandle(VADriverContextP ctx,
          desc->layers[p].object_index[0] = desc->num_objects - 1;
 
          if (supports_contiguous_planes) {
-            screen->resource_get_info(screen, resource, &desc->layers[p].pitch[0], &desc->layers[p].offset[0]);
+            uint64_t value;
+            if (!screen->resource_get_param(screen, drv->pipe, resource, 0, 0, 0,
+                                            PIPE_RESOURCE_PARAM_STRIDE, 0, &value)) {
+               ret = VA_STATUS_ERROR_INVALID_SURFACE;
+               goto fail;
+            }
+            desc->layers[p].pitch[0] = value;
+            if (!screen->resource_get_param(screen, drv->pipe, resource, 0, 0, 0,
+                                            PIPE_RESOURCE_PARAM_OFFSET, 0, &value)) {
+               ret = VA_STATUS_ERROR_INVALID_SURFACE;
+               goto fail;
+            }
+            desc->layers[p].offset[0] = value;
          } else {
             desc->layers[p].pitch[0] = whandle.stride;
             desc->layers[p].offset[0] = whandle.offset;
