@@ -523,12 +523,12 @@ intrinsic("vote_ieq", src_comp=[0], dest_comp=1, flags=[CAN_ELIMINATE])
 # These operations work like their ALU counterparts except that the operate
 # on a uvec4 which is treated as a 128bit integer.  Also, they are, in
 # general, free to ignore any bits which are above the subgroup size.
-intrinsic("ballot_bitfield_extract", src_comp=[4, 1], dest_comp=1, flags=[CAN_ELIMINATE])
-intrinsic("ballot_bit_count_reduce", src_comp=[4], dest_comp=1, flags=[CAN_ELIMINATE])
-intrinsic("ballot_bit_count_inclusive", src_comp=[4], dest_comp=1, flags=[CAN_ELIMINATE])
-intrinsic("ballot_bit_count_exclusive", src_comp=[4], dest_comp=1, flags=[CAN_ELIMINATE])
-intrinsic("ballot_find_lsb", src_comp=[4], dest_comp=1, flags=[CAN_ELIMINATE])
-intrinsic("ballot_find_msb", src_comp=[4], dest_comp=1, flags=[CAN_ELIMINATE])
+intrinsic("ballot_bitfield_extract", src_comp=[4, 1], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_bit_count_reduce", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_bit_count_inclusive", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_bit_count_exclusive", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_find_lsb", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_find_msb", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
 
 # Shuffle operations from SPIR-V.
 intrinsic("shuffle", src_comp=[0, 1], dest_comp=0, bit_sizes=src0, flags=[CAN_ELIMINATE])
@@ -567,7 +567,7 @@ intrinsic("masked_swizzle_amd", src_comp=[0], dest_comp=0, bit_sizes=src0,
 intrinsic("write_invocation_amd", src_comp=[0, 0, 1], dest_comp=0, bit_sizes=src0,
           flags=[CAN_ELIMINATE])
 # src = [ mask, addition ]
-intrinsic("mbcnt_amd", src_comp=[1, 1], dest_comp=1, bit_sizes=[32], flags=[CAN_ELIMINATE])
+intrinsic("mbcnt_amd", src_comp=[1, 1], dest_comp=1, bit_sizes=[32], flags=[CAN_REORDER, CAN_ELIMINATE])
 # Compiled to v_permlane16_b32. src = [ value, lanesel_lo, lanesel_hi ]
 intrinsic("lane_permute_16_amd", src_comp=[1, 1, 1], dest_comp=1, bit_sizes=[32], flags=[CAN_ELIMINATE])
 # subgroup shuffle up/down with cluster size 16.
