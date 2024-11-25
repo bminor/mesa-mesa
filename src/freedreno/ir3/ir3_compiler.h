@@ -276,6 +276,8 @@ struct ir3_compiler {
 
    /* True if (rptN) is supported for bary.f. */
    bool has_rpt_bary_f;
+
+   bool reading_shading_rate_requires_smask_quirk;
 };
 
 void ir3_compiler_destroy(struct ir3_compiler *compiler);

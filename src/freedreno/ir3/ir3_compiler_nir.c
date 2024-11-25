@@ -5467,6 +5467,12 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       so->local_size_variable = ctx->s->info.workgroup_size_variable;
    }
 
+   if (so->type == MESA_SHADER_FRAGMENT && so->reads_shading_rate &&
+       !so->reads_smask &&
+       compiler->reading_shading_rate_requires_smask_quirk) {
+      create_sysval_input(ctx, SYSTEM_VALUE_SAMPLE_MASK_IN, 0x1);
+   }
+
    /* Vertex shaders in a tessellation or geometry pipeline treat END as a
     * NOP and has an epilogue that writes the VS outputs to local storage, to
     * be read by the HS.  Then it resets execution mask (chmask) and chains

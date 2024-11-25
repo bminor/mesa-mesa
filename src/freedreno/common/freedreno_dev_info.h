@@ -311,6 +311,12 @@ struct fd_dev_info {
       bool compute_constlen_quirk;
 
       bool has_primitive_shading_rate;
+
+      /* A7XX gen1 and gen2 seem to require declaring SAMPLEMASK input
+       * for fragment shading rate to be read correctly.
+       * This workaround was seen in the prop driver v512.762.12.
+       */
+      bool reading_shading_rate_requires_smask_quirk;
    } a7xx;
 };
 
