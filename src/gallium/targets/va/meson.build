@@ -99,7 +99,7 @@ else
 
   if va_drivers.length() > 0
     meson.add_install_script(
-      install_megadrivers_py.full_path(),
+      install_megadrivers,
       libva_gallium.full_path(),
       va_drivers_path,
       va_drivers,
