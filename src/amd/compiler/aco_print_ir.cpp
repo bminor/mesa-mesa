@@ -921,6 +921,9 @@ void
 aco_print_block(enum amd_gfx_level gfx_level, const Block* block, FILE* output, unsigned flags,
                 const Program* program)
 {
+   if (block->instructions.empty() && block->linear_preds.empty())
+      return;
+
    fprintf(output, "BB%d\n", block->index);
    fprintf(output, "/* logical preds: ");
    for (unsigned pred : block->logical_preds)
