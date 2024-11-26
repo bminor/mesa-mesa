@@ -2748,8 +2748,6 @@ dEQP-VK.renderpass2.suballocation.subpass_dependencies.late_fragment_tests.rende
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.basic_type.no_perspective,Fail
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.interface_blocks.no_perspective,Fail
 
-dEQP-VK.rasterization.depth_bias.d32_sfloat,Fail
-
 # New with vk_clear
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_no_cab.4_bit,Fail
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.copy_with_regions_before_resolving.4_bit,Fail

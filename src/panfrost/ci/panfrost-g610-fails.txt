@@ -321,7 +321,6 @@ dEQP-VK.renderpass2.suballocation.subpass_dependencies.late_fragment_tests.rende
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.basic_type.no_perspective,Fail
 dEQP-VK.spirv_assembly.instruction.graphics.cross_stage.interface_blocks.no_perspective,Fail
 
-dEQP-VK.rasterization.depth_bias.d32_sfloat,Fail
 dEQP-VK.rasterization.flatshading.line_strip,Fail
 dEQP-VK.rasterization.flatshading.line_strip_wide,Fail
 dEQP-VK.rasterization.flatshading.lines,Fail
