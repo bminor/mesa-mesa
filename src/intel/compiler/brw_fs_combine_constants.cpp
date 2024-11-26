@@ -1049,19 +1049,29 @@ can_promote_src_as_imm(const struct intel_device_info *devinfo, fs_inst *inst,
       }
       break;
    }
-   case BRW_TYPE_D: {
-      int16_t w;
-      if (representable_as_w(inst->src[src_idx].d, &w)) {
-         inst->src[src_idx] = brw_imm_w(w);
-         can_promote = true;
-      }
-      break;
-   }
+   case BRW_TYPE_D:
    case BRW_TYPE_UD: {
-      uint16_t uw;
-      if (representable_as_uw(inst->src[src_idx].ud, &uw)) {
-         inst->src[src_idx] = brw_imm_uw(uw);
-         can_promote = true;
+      /* ADD3, CSEL, and MAD can mix signed and unsiged types. Only BFE
+       * cannot.
+       */
+      if (inst->src[src_idx].type == BRW_TYPE_D ||
+          inst->opcode != BRW_OPCODE_BFE) {
+         int16_t w;
+         if (representable_as_w(inst->src[src_idx].d, &w)) {
+            inst->src[src_idx] = brw_imm_w(w);
+            can_promote = true;
+            break;
+         }
+      }
+
+      if (inst->src[src_idx].type == BRW_TYPE_UD ||
+          inst->opcode != BRW_OPCODE_BFE) {
+         uint16_t uw;
+         if (representable_as_uw(inst->src[src_idx].ud, &uw)) {
+            inst->src[src_idx] = brw_imm_uw(uw);
+            can_promote = true;
+            break;
+         }
       }
       break;
    }
