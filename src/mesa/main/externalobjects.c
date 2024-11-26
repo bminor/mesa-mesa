@@ -1080,7 +1080,7 @@ _mesa_ImportMemoryWin32HandleEXT(GLuint memory,
 
    const char *func = "glImportMemoryWin32HandleEXT";
 
-   if (!ctx->Extensions.EXT_memory_object_win32) {
+   if (!_mesa_has_EXT_memory_object_win32(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -1111,7 +1111,7 @@ _mesa_ImportMemoryWin32NameEXT(GLuint memory,
 
    const char *func = "glImportMemoryWin32NameEXT";
 
-   if (!ctx->Extensions.EXT_memory_object_win32) {
+   if (!_mesa_has_EXT_memory_object_win32(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
