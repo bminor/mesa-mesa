@@ -2513,9 +2513,11 @@ print_shader_info(const struct shader_info *info, FILE *fp)
 {
    fprintf(fp, "shader: %s\n", gl_shader_stage_name(info->stage));
 
-   fprintf(fp, "source_blake3: {");
-   _mesa_blake3_print(fp, info->source_blake3);
-   fprintf(fp, "}\n");
+   if (memcmp(info->source_blake3, &(blake3_hash){0}, sizeof(info->source_blake3))) {
+      fprintf(fp, "source_blake3: {");
+      _mesa_blake3_print(fp, info->source_blake3);
+      fprintf(fp, "}\n");
+   }
 
    if (info->name)
       fprintf(fp, "name: %s\n", info->name);
@@ -2523,7 +2525,7 @@ print_shader_info(const struct shader_info *info, FILE *fp)
    if (info->label)
       fprintf(fp, "label: %s\n", info->label);
 
-   fprintf(fp, "internal: %s\n", info->internal ? "true" : "false");
+   print_nz_bool(fp, "internal", info->internal);
 
    if (gl_shader_stage_uses_workgroup(info->stage)) {
       fprintf(fp, "workgroup_size: %u, %u, %u%s\n",
@@ -2533,9 +2535,8 @@ print_shader_info(const struct shader_info *info, FILE *fp)
               info->workgroup_size_variable ? " (variable)" : "");
    }
 
-   fprintf(fp, "stage: %d\n"
-               "next_stage: %d\n",
-           info->stage, info->next_stage);
+   if (info->next_stage != MESA_SHADER_NONE)
+      fprintf(fp, "next_stage: %s\n", gl_shader_stage_name(info->next_stage));
 
    print_nz_unsigned(fp, "num_textures", info->num_textures);
    print_nz_unsigned(fp, "num_ubos", info->num_ubos);
@@ -2705,7 +2706,7 @@ print_shader_info(const struct shader_info *info, FILE *fp)
                  info->cs.workgroup_size_hint[1],
                  info->cs.workgroup_size_hint[2]);
       print_nz_unsigned(fp, "user_data_components_amd", info->cs.user_data_components_amd);
-      fprintf(fp, "ptr_size: %u\n", info->cs.ptr_size);
+      print_nz_unsigned(fp, "ptr_size", info->cs.ptr_size);
       break;
 
    case MESA_SHADER_MESH:
@@ -2734,9 +2735,9 @@ _nir_print_shader_annotated(nir_shader *shader, FILE *fp,
 
    print_shader_info(&shader->info, fp);
 
-   fprintf(fp, "inputs: %u\n", shader->num_inputs);
-   fprintf(fp, "outputs: %u\n", shader->num_outputs);
-   fprintf(fp, "uniforms: %u\n", shader->num_uniforms);
+   print_nz_unsigned(fp, "inputs", shader->num_inputs);
+   print_nz_unsigned(fp, "outputs", shader->num_outputs);
+   print_nz_unsigned(fp, "uniforms", shader->num_uniforms);
    if (shader->scratch_size)
       fprintf(fp, "scratch: %u\n", shader->scratch_size);
    if (shader->constant_data_size)
