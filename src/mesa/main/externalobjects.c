@@ -134,7 +134,7 @@ _mesa_DeleteMemoryObjectsEXT(GLsizei n, const GLuint *memoryObjects)
                   memoryObjects);
    }
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION,
                   "glDeleteMemoryObjectsEXT(unsupported)");
       return;
@@ -169,7 +169,7 @@ _mesa_IsMemoryObjectEXT(GLuint memoryObject)
 {
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION,
                   "glIsMemoryObjectEXT(unsupported)");
       return GL_FALSE;
@@ -191,7 +191,7 @@ _mesa_CreateMemoryObjectsEXT(GLsizei n, GLuint *memoryObjects)
    if (MESA_VERBOSE & (VERBOSE_API))
       _mesa_debug(ctx, "%s(%d, %p)\n", func, n, memoryObjects);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -236,7 +236,7 @@ _mesa_MemoryObjectParameterivEXT(GLuint memoryObject,
 
    const char *func = "glMemoryObjectParameterivEXT";
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -276,7 +276,7 @@ _mesa_GetMemoryObjectParameterivEXT(GLuint memoryObject,
 
    const char *func = "glMemoryObjectParameterivEXT";
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -337,7 +337,7 @@ texstorage_memory(GLuint dims, GLenum target, GLsizei levels,
 
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -381,7 +381,7 @@ texstorage_memory_ms(GLuint dims, GLenum target, GLsizei samples,
 
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -413,7 +413,7 @@ texturestorage_memory(GLuint dims, GLuint texture, GLsizei levels,
 
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -457,7 +457,7 @@ texturestorage_memory_ms(GLuint dims, GLuint texture, GLsizei samples,
 
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }

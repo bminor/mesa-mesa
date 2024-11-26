@@ -655,7 +655,7 @@ set_tex_parameteri(struct gl_context *ctx,
       goto invalid_pname;
 
    case GL_TEXTURE_TILING_EXT:
-      if (ctx->Extensions.EXT_memory_object && !texObj->Immutable) {
+      if (_mesa_has_EXT_memory_object(ctx) && !texObj->Immutable) {
             texObj->TextureTiling = params[0];
 
          return GL_TRUE;
@@ -875,7 +875,7 @@ set_tex_parameterf(struct gl_context *ctx,
       return GL_TRUE;
 
    case GL_TEXTURE_TILING_EXT:
-      if (ctx->Extensions.EXT_memory_object) {
+      if (_mesa_has_EXT_memory_object(ctx)) {
          texObj->TextureTiling = params[0];
          return GL_TRUE;
       }
@@ -2503,7 +2503,7 @@ get_tex_parameterfv(struct gl_context *ctx,
          break;
 
       case GL_TEXTURE_TILING_EXT:
-         if (!ctx->Extensions.EXT_memory_object)
+         if (!_mesa_has_EXT_memory_object(ctx))
             goto invalid_pname;
          *params = ENUM_TO_FLOAT(obj->TextureTiling);
          break;
@@ -2788,7 +2788,7 @@ get_tex_parameteriv(struct gl_context *ctx,
          break;
 
       case GL_TEXTURE_TILING_EXT:
-         if (!ctx->Extensions.EXT_memory_object)
+         if (!_mesa_has_EXT_memory_object(ctx))
             goto invalid_pname;
          *params = (GLint) obj->TextureTiling;
          break;

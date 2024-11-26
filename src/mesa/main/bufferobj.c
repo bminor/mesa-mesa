@@ -2179,7 +2179,7 @@ inlined_buffer_storage(GLenum target, GLuint buffer, GLsizeiptr size,
 
    if (mem) {
       if (!no_error) {
-         if (!ctx->Extensions.EXT_memory_object) {
+         if (!_mesa_has_EXT_memory_object(ctx)) {
             _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
             return;
          }

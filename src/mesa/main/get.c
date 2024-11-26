@@ -2414,7 +2414,7 @@ _mesa_GetUnsignedBytevEXT(GLenum pname, GLubyte *data)
 
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -2909,19 +2909,19 @@ find_value_indexed(const char *func, GLenum pname, GLuint index, union value *v)
 
    /* GL_EXT_external_objects */
    case GL_NUM_DEVICE_UUIDS_EXT:
-      if (!ctx->Extensions.EXT_memory_object && !ctx->Extensions.EXT_semaphore)
+      if (!_mesa_has_EXT_memory_object(ctx) && !ctx->Extensions.EXT_semaphore)
          goto invalid_enum;
       v->value_int = 1;
       return TYPE_INT;
    case GL_DRIVER_UUID_EXT:
-      if (!ctx->Extensions.EXT_memory_object && !ctx->Extensions.EXT_semaphore)
+      if (!_mesa_has_EXT_memory_object(ctx) && !ctx->Extensions.EXT_semaphore)
          goto invalid_enum;
       if (index >= 1)
          goto invalid_value;
       _mesa_get_driver_uuid(ctx, v->value_int_4);
       return TYPE_INT_4;
    case GL_DEVICE_UUID_EXT:
-      if (!ctx->Extensions.EXT_memory_object && !ctx->Extensions.EXT_semaphore)
+      if (!_mesa_has_EXT_memory_object(ctx) && !ctx->Extensions.EXT_semaphore)
          goto invalid_enum;
       if (index >= 1)
          goto invalid_value;
@@ -3351,7 +3351,7 @@ _mesa_GetUnsignedBytei_vEXT(GLenum target, GLuint index, GLubyte *data)
 
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_memory_object) {
+   if (!_mesa_has_EXT_memory_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
