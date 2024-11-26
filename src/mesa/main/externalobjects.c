@@ -1052,7 +1052,7 @@ _mesa_ImportMemoryFdEXT(GLuint memory,
 
    const char *func = "glImportMemoryFdEXT";
 
-   if (!ctx->Extensions.EXT_memory_object_fd) {
+   if (!_mesa_has_EXT_memory_object_fd(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
