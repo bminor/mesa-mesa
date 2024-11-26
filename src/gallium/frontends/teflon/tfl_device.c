@@ -390,6 +390,21 @@ partition_invoke(TfLiteContext *tf_context, TfLiteNode *node)
    return kTfLiteOk;
 }
 
+static bool
+tensor_quantization_supported(TfLiteTensor *tensor)
+{
+   if (tensor->quantization.type == kTfLiteAffineQuantization) {
+      TfLiteAffineQuantization *affine = (TfLiteAffineQuantization *)tensor->quantization.params;
+
+      /*
+       * Per-axis quantization not supported, for details see:
+       * https://ai.google.dev/edge/litert/models/quantization_spec#per-axis_vs_per-tensor
+       */
+      return affine->scale->size == 1 && affine->zero_point->size == 1;
+   }
+   return false;
+}
+
 static TfLiteStatus
 PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
 {
@@ -410,10 +425,18 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
 
       switch(registration->builtin_code) {
          case kTfLiteBuiltinConv2d: {
+            TfLiteTensor *input_tensor = &context->tensors[node->inputs->data[0]];
+            TfLiteTensor *weight_tensor = &context->tensors[node->inputs->data[1]];
+            TfLiteTensor *bias_tensor = &context->tensors[node->inputs->data[2]];
+            TfLiteTensor *output_tensor = &context->tensors[node->outputs->data[0]];
             TfLiteConvParams* params = (TfLiteConvParams*)node->builtin_data;
 
-            // Dilation not yet implemented
-            if ((params->activation == kTfLiteActNone ||
+            // Dilation and per-axis quantization not yet implemented
+            if (tensor_quantization_supported(input_tensor) &&
+                tensor_quantization_supported(weight_tensor) &&
+                tensor_quantization_supported(bias_tensor) &&
+                tensor_quantization_supported(output_tensor) &&
+                (params->activation == kTfLiteActNone ||
                  params->activation == kTfLiteActRelu) &&
                 (registration->version < 2 ||
                  (params->dilation_width_factor == 1 &&
@@ -423,10 +446,18 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
             break;
          }
          case kTfLiteBuiltinDepthwiseConv2d: {
+            TfLiteTensor *input_tensor = &context->tensors[node->inputs->data[0]];
+            TfLiteTensor *weight_tensor = &context->tensors[node->inputs->data[1]];
+            TfLiteTensor *bias_tensor = &context->tensors[node->inputs->data[2]];
+            TfLiteTensor *output_tensor = &context->tensors[node->outputs->data[0]];
             TfLiteDepthwiseConvParams* params = (TfLiteDepthwiseConvParams*)node->builtin_data;
 
-            // Dilation not yet implemented
-            if ((params->activation == kTfLiteActNone ||
+            // Dilation and per-axis quantization not yet implemented
+            if (tensor_quantization_supported(input_tensor) &&
+                tensor_quantization_supported(weight_tensor) &&
+                tensor_quantization_supported(bias_tensor) &&
+                tensor_quantization_supported(output_tensor) &&
+                (params->activation == kTfLiteActNone ||
                  params->activation == kTfLiteActRelu) &&
                 (registration->version < 2 ||
                  (params->dilation_width_factor == 1 &&
