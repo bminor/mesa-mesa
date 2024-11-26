@@ -88,7 +88,7 @@ panvk_utrace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
 void
 panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
 {
-   u_trace_context_init(&dev->utrace.utctx, NULL, sizeof(uint64_t), 0,
+   u_trace_context_init(&dev->utrace.utctx, dev, sizeof(uint64_t), 0,
                         panvk_utrace_create_buffer, panvk_utrace_delete_buffer,
                         panvk_utrace_record_ts, panvk_utrace_read_ts, NULL,
                         NULL, panvk_utrace_delete_flush_data);

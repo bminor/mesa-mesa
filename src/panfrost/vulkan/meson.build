@@ -21,12 +21,15 @@ panvk_entrypoints = custom_target(
 panvk_tracepoints = custom_target(
   'panvk_tracepoints.[ch]',
   input: 'panvk_tracepoints.py',
-  output: ['panvk_tracepoints.h', 'panvk_tracepoints.c'],
+  output: ['panvk_tracepoints.h',
+           'panvk_tracepoints_perfetto.h',
+           'panvk_tracepoints.c'],
   command: [
     prog_python, '@INPUT@',
     '--import-path', join_paths(dir_source_root, 'src/util/perf/'),
     '--utrace-hdr', '@OUTPUT0@',
-    '--utrace-src', '@OUTPUT1@',
+    '--perfetto-hdr', '@OUTPUT1@',
+    '--utrace-src', '@OUTPUT2@',
   ],
   depend_files: u_trace_py,
 )
@@ -148,6 +151,11 @@ foreach arch : [6, 7, 10]
     c_args : [no_override_init_args, panvk_flags, '-DPAN_ARCH=@0@'.format(arch)],
   )
 endforeach
+
+if with_perfetto
+  panvk_deps += dep_perfetto
+  libpanvk_files += ['panvk_utrace_perfetto.cc']
+endif
 
 if with_platform_wayland
   panvk_deps += dep_wayland_client

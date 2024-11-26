@@ -24,6 +24,7 @@
 #include "panvk_priv_bo.h"
 #include "panvk_queue.h"
 #include "panvk_utrace.h"
+#include "panvk_utrace_perfetto.h"
 
 #include "genxml/decode.h"
 #include "genxml/gen_macros.h"
@@ -357,6 +358,11 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    }
 
    panvk_per_arch(utrace_context_init)(device);
+#if PAN_ARCH >= 10
+   panvk_utrace_perfetto_init(device, PANVK_SUBQUEUE_COUNT);
+#else
+   panvk_utrace_perfetto_init(device, 2);
+#endif
 
    *pDevice = panvk_device_to_handle(device);
    return VK_SUCCESS;
