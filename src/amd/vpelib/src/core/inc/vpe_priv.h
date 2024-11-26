@@ -46,6 +46,11 @@ extern "C" {
         vpe_priv->init.funcs.log(vpe_priv->init.funcs.log_ctx, __VA_ARGS__);                       \
     } while (0)
 
+#define vpe_event(event_id, ...)                                                                   \
+    do {                                                                                           \
+        vpe_priv->init.funcs.sys_event(event_id, __VA_ARGS__);                                     \
+    } while (0)
+
 #define container_of(ptr, type, member) (type *)(void *)((char *)ptr - offsetof(type, member))
 
 #define VPE_MIN_VIEWPORT_SIZE                                                                      \

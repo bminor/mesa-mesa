@@ -40,6 +40,11 @@
 #include <stdlib.h>
 #include <time.h>
 
+static void dummy_sys_event(enum vpe_event_id eventId, ...)
+{
+    // Do nothing, if no callback is provided for sys event
+}
+
 static void override_debug_option(
     struct vpe_debug_options *debug, const struct vpe_debug_options *user_debug)
 {
@@ -195,6 +200,11 @@ struct vpe *vpe_create(const struct vpe_init_data *params)
         return NULL;
 
     vpe_priv->init = *params;
+
+    // Make sys event an optional feature but hooking up to dummy function if no callback is
+    // provided
+    if (vpe_priv->init.funcs.sys_event == NULL)
+        vpe_priv->init.funcs.sys_event = dummy_sys_event;
 
     vpe_priv->pub.level =
         vpe_resource_parse_ip_version(params->ver_major, params->ver_minor, params->ver_rev);
@@ -599,6 +609,9 @@ enum vpe_status vpe_check_support(
 
     if (vpe_priv->init.debug.assert_when_not_support)
         VPE_ASSERT(status == VPE_STATUS_OK);
+
+    vpe_event(VPE_EVENT_CHECK_SUPPORT, vpe_priv->num_streams, param->target_rect.width,
+        param->target_rect.height, status);
 
     return status;
 }
