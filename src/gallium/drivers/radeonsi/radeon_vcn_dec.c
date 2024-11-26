@@ -2549,6 +2549,46 @@ static int radeon_dec_end_frame(struct pipe_video_codec *decoder, struct pipe_vi
    return 0;
 }
 
+static bool radeon_dec_jpeg_check_format(struct radeon_decoder *dec, enum pipe_format format,
+                                         unsigned sampling_factor)
+{
+   enum pipe_format expected_format;
+
+   switch (sampling_factor) {
+   case 0x221111:
+      expected_format = PIPE_FORMAT_NV12;
+      break;
+   case 0x211111:
+   case 0x221212:
+   case 0x222121:
+      expected_format = PIPE_FORMAT_YUYV;
+      break;
+   case 0x111111:
+   case 0x222222:
+   case 0x444444:
+      expected_format = PIPE_FORMAT_Y8_U8_V8_444_UNORM;
+      break;
+   case 0x121111:
+      expected_format = PIPE_FORMAT_Y8_U8_V8_440_UNORM;
+      break;
+   case 0x11:
+   case 0x44:
+      expected_format = PIPE_FORMAT_Y8_400_UNORM;
+      break;
+   default:
+      RADEON_DEC_ERR("Unsupported sampling factor 0x%x\n", sampling_factor);
+      return false;
+   }
+
+   /* Format conversion */
+   if (format == PIPE_FORMAT_R8G8B8A8_UNORM ||
+       format == PIPE_FORMAT_A8R8G8B8_UNORM ||
+       format == PIPE_FORMAT_R8_G8_B8_UNORM)
+      return true;
+
+   return expected_format == format;
+}
+
 /**
  * end decoding of the current jpeg frame
  */
@@ -2559,6 +2599,9 @@ static int radeon_dec_jpeg_end_frame(struct pipe_video_codec *decoder, struct pi
    struct pipe_mjpeg_picture_desc *pic = (struct pipe_mjpeg_picture_desc *)picture;
 
    assert(decoder);
+
+   if (!radeon_dec_jpeg_check_format(dec, target->buffer_format, pic->picture_parameter.sampling_factor))
+      RADEON_DEC_ERR("Decode format check failed\n");
 
    if (dec->error)
       return 1;
