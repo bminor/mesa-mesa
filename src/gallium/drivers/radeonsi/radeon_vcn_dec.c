@@ -2337,6 +2337,11 @@ static void radeon_dec_destroy(struct pipe_video_codec *decoder)
 
    assert(decoder);
 
+   if (dec->bs_ptr) {
+      dec->ws->buffer_unmap(dec->ws, dec->bs_buffers[dec->cur_buffer].res->buf);
+      dec->bs_ptr = NULL;
+   }
+
    if (dec->stream_type != RDECODE_CODEC_JPEG) {
       map_msg_fb_it_probs_buf(dec);
       rvcn_dec_message_destroy(dec);
