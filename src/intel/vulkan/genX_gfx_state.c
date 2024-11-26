@@ -884,18 +884,14 @@ update_vfg_list_cut_index(struct anv_gfx_dynamic_state *hw_state,
 
 ALWAYS_INLINE static void
 update_streamout(struct anv_gfx_dynamic_state *hw_state,
-                 struct anv_cmd_buffer *cmd_buffer,
+                 const struct vk_dynamic_graphics_state *dyn,
+                 const struct anv_cmd_graphics_state *gfx,
                  const struct anv_graphics_pipeline *pipeline)
 {
-   const struct vk_dynamic_graphics_state *dyn =
-      &cmd_buffer->vk.dynamic_graphics_state;
-
    SET(STREAMOUT, so.RenderingDisable, dyn->rs.rasterizer_discard_enable);
    SET(STREAMOUT, so.RenderStreamSelect, dyn->rs.rasterization_stream);
 
 #if INTEL_NEEDS_WA_18022508906
-   const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
-
    /* Wa_18022508906 :
     *
     * SKL PRMs, Volume 7: 3D-Media-GPGPU, Stream Output Logic (SOL) Stage:
@@ -932,12 +928,9 @@ update_streamout(struct anv_gfx_dynamic_state *hw_state,
 
 ALWAYS_INLINE static void
 update_provoking_vertex(struct anv_gfx_dynamic_state *hw_state,
-                        struct anv_cmd_buffer *cmd_buffer,
+                        const struct vk_dynamic_graphics_state *dyn,
                         const struct anv_graphics_pipeline *pipeline)
 {
-   const struct vk_dynamic_graphics_state *dyn =
-      &cmd_buffer->vk.dynamic_graphics_state;
-
    SETUP_PROVOKING_VERTEX(SF, sf, dyn->rs.provoking_vertex);
    SETUP_PROVOKING_VERTEX(CLIP, clip, dyn->rs.provoking_vertex);
 
@@ -959,11 +952,9 @@ update_provoking_vertex(struct anv_gfx_dynamic_state *hw_state,
 
 ALWAYS_INLINE static void
 update_topology(struct anv_gfx_dynamic_state *hw_state,
-                struct anv_cmd_buffer *cmd_buffer,
+                const struct vk_dynamic_graphics_state *dyn,
                 const struct anv_graphics_pipeline *pipeline)
 {
-   const struct vk_dynamic_graphics_state *dyn =
-      &cmd_buffer->vk.dynamic_graphics_state;
    uint32_t topology =
       anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL) ?
       _3DPRIM_PATCHLIST(dyn->ts.patch_control_points) :
@@ -1816,14 +1807,14 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
    if ((gfx->dirty & ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_RASTERIZER_DISCARD_ENABLE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_RASTERIZATION_STREAM))
-      update_streamout(hw_state, cmd_buffer, pipeline);
+      update_streamout(hw_state, dyn, gfx, pipeline);
 
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_RS_PROVOKING_VERTEX))
-      update_provoking_vertex(hw_state, cmd_buffer, pipeline);
+      update_provoking_vertex(hw_state, dyn, pipeline);
 
    if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_IA_PRIMITIVE_TOPOLOGY))
-      update_topology(hw_state, cmd_buffer, pipeline);
+      update_topology(hw_state, dyn, pipeline);
 
    if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI) ||
@@ -1832,7 +1823,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
       BITSET_SET(hw_state->dirty, ANV_GFX_STATE_VERTEX_INPUT);
 
 #if GFX_VER >= 11
-   if (cmd_buffer->device->vk.enabled_extensions.KHR_fragment_shading_rate &&
+   if (device->vk.enabled_extensions.KHR_fragment_shading_rate &&
        ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_FSR) ||
         BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)))
@@ -1913,7 +1904,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
       update_vfg_list_cut_index(hw_state, dyn);
 #endif
 
-   if (cmd_buffer->device->vk.enabled_extensions.EXT_sample_locations &&
+   if (device->vk.enabled_extensions.EXT_sample_locations &&
        (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_SAMPLE_LOCATIONS) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_SAMPLE_LOCATIONS_ENABLE)))
       BITSET_SET(hw_state->dirty, ANV_GFX_STATE_SAMPLE_PATTERN);
@@ -1957,7 +1948,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
 #endif
 
 #if INTEL_WA_14018283232_GFX_VER
-   if (intel_needs_workaround(cmd_buffer->device->info, 14018283232) &&
+   if (intel_needs_workaround(device->info, 14018283232) &&
        ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_DS_DEPTH_BOUNDS_TEST_ENABLE))) {
       const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
