@@ -302,6 +302,16 @@ agx_cdm_barrier(GLOBAL uint32_t *out, enum agx_chip chip)
 }
 
 static inline GLOBAL uint32_t *
+agx_vdm_return(GLOBAL uint32_t *out)
+{
+   agx_push(out, VDM_BARRIER, cfg) {
+      cfg.returns = true;
+   }
+
+   return out;
+}
+
+static inline GLOBAL uint32_t *
 agx_cdm_return(GLOBAL uint32_t *out)
 {
    agx_push(out, CDM_STREAM_RETURN, cfg)
