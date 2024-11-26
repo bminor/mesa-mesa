@@ -105,25 +105,20 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
       view->pview.planes[image_plane] = &image->planes[image_plane];
    }
 
+   /* Depth/stencil are viewed as color for copies. */
+   if (view->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT &&
+       image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
+       vk_format_get_blocksize(view->vk.view_format) == 1) {
+      view->pview.planes[0] = &image->planes[1];
+   }
+
    /* We need to patch the view format when the image contains both
     * depth and stencil but the view only contains one of these components, so
     * we can ignore the component we don't use.
     */
-   if (vk_format_is_depth_or_stencil(view->vk.view_format)) {
-      if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
-          view->vk.view_format != VK_FORMAT_D32_SFLOAT_S8_UINT)
-         view->pview.format = view->vk.view_format == VK_FORMAT_D32_SFLOAT
-                                 ? PIPE_FORMAT_Z32_FLOAT_S8X24_UINT
-                                 : PIPE_FORMAT_X32_S8X24_UINT;
-
-      if (image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT &&
-          view->vk.view_format == VK_FORMAT_S8_UINT)
-         view->pview.format = PIPE_FORMAT_X24S8_UINT;
-
-      if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
-          view->vk.view_format == VK_FORMAT_S8_UINT)
-         view->pview.format = PIPE_FORMAT_X32_S8X24_UINT;
-   }
+   if (view->vk.view_format == VK_FORMAT_S8_UINT &&
+       image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT)
+      view->pview.format = PIPE_FORMAT_X24S8_UINT;
 
    /* Attachments need a texture for the FB preload logic. */
    VkImageUsageFlags tex_usage_mask =
@@ -143,8 +138,10 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
       struct pan_image_view pview = view->pview;
       bool can_preload_other_aspect =
          (view->vk.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
-         (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
-          image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT);
+         (image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT ||
+          (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
+           view->vk.aspects ==
+              (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)));
 
       if (util_format_is_depth_or_stencil(view->pview.format)) {
          /* Vulkan wants R001, where the depth/stencil is stored in the red
@@ -160,6 +157,12 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
 
          util_format_compose_swizzles(r001, view->pview.swizzle, pview.swizzle);
       }
+
+      /* If the view contains both stencil and depth, we need to keep only the
+       * depth. We'll create another texture with only the stencil.
+       */
+      if (pview.format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)
+         pview.format = PIPE_FORMAT_Z32_FLOAT;
 
       struct panvk_pool_alloc_info alloc_info = {
 #if PAN_ARCH == 6
@@ -189,19 +192,18 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
 
       if (can_preload_other_aspect) {
          switch (pview.format) {
-         case PIPE_FORMAT_Z32_FLOAT:
-         case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
-            pview.format = PIPE_FORMAT_X32_S8X24_UINT;
-            break;
-         case PIPE_FORMAT_X32_S8X24_UINT:
-            pview.format = PIPE_FORMAT_Z32_FLOAT_S8X24_UINT;
-            break;
          case PIPE_FORMAT_Z24X8_UNORM:
          case PIPE_FORMAT_Z24_UNORM_S8_UINT:
             pview.format = PIPE_FORMAT_X24S8_UINT;
             break;
          case PIPE_FORMAT_X24S8_UINT:
             pview.format = PIPE_FORMAT_Z24X8_UNORM;
+            break;
+         case PIPE_FORMAT_Z32_FLOAT:
+            pview.format = PIPE_FORMAT_S8_UINT;
+            break;
+         case PIPE_FORMAT_S8_UINT:
+            pview.format = PIPE_FORMAT_Z32_FLOAT;
             break;
          default:
             assert(!"Invalid format");
@@ -217,12 +219,26 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
 
 #if PAN_ARCH <= 7
    if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
-      bool is_3d = image->planes[0].layout.dim == MALI_TEXTURE_DIMENSION_3D;
-      unsigned offset = image->planes[0].data.offset;
-      offset +=
-         panfrost_texture_offset(&image->planes[0].layout, view->pview.first_level,
-                                 is_3d ? 0 : view->pview.first_layer,
-                                 is_3d ? view->pview.first_layer : 0);
+      unsigned plane_idx = 0;
+
+      /* Stencil is on plane 1 in a D32_S8 image. The special color case is for
+       * vk_meta copies which create color views of depth/stencil images. In
+       * that case, we base the stencil vs depth detection on the format block
+       * size.
+       */
+      if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
+          (view->vk.aspects == VK_IMAGE_ASPECT_STENCIL_BIT ||
+           (view->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT &&
+            vk_format_get_blocksize(view->vk.view_format) == 1)))
+         plane_idx = 1;
+
+      bool is_3d =
+         image->planes[plane_idx].layout.dim == MALI_TEXTURE_DIMENSION_3D;
+      unsigned offset = image->planes[plane_idx].data.offset;
+      offset += panfrost_texture_offset(&image->planes[plane_idx].layout,
+                                        view->pview.first_level,
+                                        is_3d ? 0 : view->pview.first_layer,
+                                        is_3d ? view->pview.first_layer : 0);
 
       pan_pack(view->descs.img_attrib_buf[0].opaque, ATTRIBUTE_BUFFER, cfg) {
          /* The format is the only thing we lack to emit attribute descriptors
@@ -241,7 +257,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
          cfg.type = image->vk.drm_format_mod == DRM_FORMAT_MOD_LINEAR
                        ? MALI_ATTRIBUTE_TYPE_3D_LINEAR
                        : MALI_ATTRIBUTE_TYPE_3D_INTERLEAVED;
-         cfg.pointer = image->planes[0].data.base + offset;
+         cfg.pointer = image->planes[plane_idx].data.base + offset;
          cfg.stride = fmt_blksize | (hw_fmt << 10);
          cfg.size = pan_kmod_bo_size(image->bo) - offset;
       }
@@ -257,10 +273,11 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
             view->pview.dim == MALI_TEXTURE_DIMENSION_3D
                ? extent.depth
                : (view->pview.last_layer - view->pview.first_layer + 1);
-         cfg.row_stride = image->planes[0].layout.slices[level].row_stride;
+         cfg.row_stride =
+            image->planes[plane_idx].layout.slices[level].row_stride;
          if (cfg.r_dimension > 1) {
-            cfg.slice_stride =
-               panfrost_get_layer_stride(&image->planes[0].layout, level);
+            cfg.slice_stride = panfrost_get_layer_stride(
+               &image->planes[plane_idx].layout, level);
          }
       }
    }

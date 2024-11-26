@@ -37,6 +37,8 @@ panvk_plane_index(VkFormat format, VkImageAspectFlags aspect_mask)
       return 1;
    case VK_IMAGE_ASPECT_PLANE_2_BIT:
       return 2;
+   case VK_IMAGE_ASPECT_STENCIL_BIT:
+      return format == VK_FORMAT_D32_SFLOAT_S8_UINT;
    }
 }
 

@@ -50,6 +50,7 @@ struct panvk_rendering_state {
    } color_attachments;
 
    struct pan_image_view zs_pview;
+   struct pan_image_view s_pview;
 
    struct {
       struct panvk_image_view *iview;

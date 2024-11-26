@@ -207,7 +207,19 @@ panvk_image_init_layouts(struct panvk_image *image,
 
    image->plane_count = vk_format_get_plane_count(pCreateInfo->format);
 
+   /* Z32_S8X24 is not supported on v9+, and we don't want to use it
+    * on v7- anyway, because it's less efficient than the multiplanar
+    * alternative.
+    */
+   if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
+      image->plane_count = 2;
+
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
+      VkFormat format =
+         (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) ?
+         ((plane == 0) ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_S8_UINT) :
+         image->vk.format;
+
       struct pan_image_explicit_layout plane_layout;
       if (explicit_info)
          plane_layout = (struct pan_image_explicit_layout){
@@ -216,7 +228,7 @@ panvk_image_init_layouts(struct panvk_image *image,
          };
 
       image->planes[plane].layout = (struct pan_image_layout){
-         .format = vk_format_to_pipe_format(image->vk.format),
+         .format = vk_format_to_pipe_format(format),
          .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
          .width = image->vk.extent.width,
          .height = image->vk.extent.height,
@@ -299,7 +311,8 @@ panvk_image_get_total_size(const struct panvk_image *image)
 static bool
 is_disjoint(struct panvk_image *image)
 {
-   assert(image->plane_count > 1 ||
+   assert((image->plane_count > 1 &&
+           image->vk.format != VK_FORMAT_D32_SFLOAT_S8_UINT) ||
           !(image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT));
    return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
 }
