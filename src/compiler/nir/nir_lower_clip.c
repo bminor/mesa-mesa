@@ -268,28 +268,17 @@ update_mask(uint32_t ucp_enables)
 }
 
 static void
-lower_clip_outputs(nir_builder *b, nir_variable *position,
-                   nir_variable *clipvertex, nir_variable **out,
-                   unsigned ucp_enables, bool use_vars,
-                   bool use_clipdist_array,
-                   const gl_state_index16 clipplane_state_tokens[][STATE_LENGTH])
+lower_clip_vertex_var(nir_builder *b, nir_variable *position,
+                      nir_variable *clipvertex, nir_variable **out,
+                      unsigned ucp_enables, bool use_clipdist_array,
+                      const gl_state_index16 clipplane_state_tokens[][STATE_LENGTH])
 {
    nir_def *clipdist[MAX_CLIP_PLANES] = {NULL};
-   nir_def *cv;
+   nir_def *cv = nir_load_var(b, clipvertex ? clipvertex : position);
 
-   if (use_vars) {
-      cv = nir_load_var(b, clipvertex ? clipvertex : position);
-
-      if (clipvertex) {
-         clipvertex->data.mode = nir_var_shader_temp;
-         nir_fixup_deref_modes(b->shader);
-      }
-   } else {
-      if (b->shader->info.outputs_written & VARYING_BIT_CLIP_VERTEX)
-         cv = find_output(b, VARYING_SLOT_CLIP_VERTEX);
-      else {
-         cv = find_output(b, VARYING_SLOT_POS);
-      }
+   if (clipvertex) {
+      clipvertex->data.mode = nir_var_shader_temp;
+      nir_fixup_deref_modes(b->shader);
    }
 
    for (int plane = 0; plane < MAX_CLIP_PLANES; plane++) {
@@ -302,7 +291,7 @@ lower_clip_outputs(nir_builder *b, nir_variable *position,
          /* 0.0 == don't-clip == disabled: */
          clipdist[plane] = nir_imm_float(b, 0.0);
       }
-      if (use_clipdist_array && use_vars && plane < util_last_bit(ucp_enables)) {
+      if (use_clipdist_array && plane < util_last_bit(ucp_enables)) {
          nir_deref_instr *deref;
          deref = nir_build_deref_array_imm(b,
                                            nir_build_deref_var(b, out[0]),
@@ -311,25 +300,55 @@ lower_clip_outputs(nir_builder *b, nir_variable *position,
       }
    }
 
-   if (!use_clipdist_array || !use_vars) {
-      if (use_vars) {
-         if (ucp_enables & 0x0f)
-            nir_store_var(b, out[0], nir_vec(b, clipdist, 4), 0xf);
-         if (ucp_enables & 0xf0)
-            nir_store_var(b, out[1], nir_vec(b, &clipdist[4], 4), 0xf);
-      } else if (use_clipdist_array) {
-         /* Always emit the first vec4. */
-         store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 0, &clipdist[0], use_clipdist_array);
-         if (ucp_enables & 0xf0)
-            store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 1, &clipdist[4], use_clipdist_array);
-      } else {
-         /* Always emit the first vec4. */
-         store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 0, &clipdist[0], use_clipdist_array);
-         if (ucp_enables & 0xf0)
-            store_clipdist_output(b, out[1], VARYING_SLOT_CLIP_DIST1, 0, &clipdist[4], use_clipdist_array);
-      }
+   if (!use_clipdist_array) {
+      if (ucp_enables & 0x0f)
+         nir_store_var(b, out[0], nir_vec(b, clipdist, 4), 0xf);
+      if (ucp_enables & 0xf0)
+         nir_store_var(b, out[1], nir_vec(b, &clipdist[4], 4), 0xf);
       b->shader->info.outputs_written |= update_mask(ucp_enables);
    }
+}
+
+static void
+lower_clip_vertex_intrin(nir_builder *b, nir_variable **out,
+                         unsigned ucp_enables, bool use_clipdist_array,
+                         const gl_state_index16 clipplane_state_tokens[][STATE_LENGTH])
+{
+   nir_def *clipdist[MAX_CLIP_PLANES] = {NULL};
+   nir_def *cv =
+      find_output(b, b->shader->info.outputs_written & VARYING_BIT_CLIP_VERTEX ?
+                     VARYING_SLOT_CLIP_VERTEX : VARYING_SLOT_POS);
+
+   for (int plane = 0; plane < MAX_CLIP_PLANES; plane++) {
+      if (ucp_enables & (1 << plane)) {
+         nir_def *ucp = get_ucp(b, plane, clipplane_state_tokens);
+
+         /* calculate clipdist[plane] - dot(ucp, cv): */
+         clipdist[plane] = nir_fdot(b, ucp, cv);
+      } else {
+         /* 0.0 == don't-clip == disabled: */
+         clipdist[plane] = nir_imm_float(b, 0.0);
+      }
+   }
+
+   if (use_clipdist_array) {
+      /* Always emit the first vec4. */
+      store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 0,
+                            &clipdist[0], use_clipdist_array);
+      if (ucp_enables & 0xf0) {
+         store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 1,
+                               &clipdist[4], use_clipdist_array);
+      }
+   } else {
+      /* Always emit the first vec4. */
+      store_clipdist_output(b, out[0], VARYING_SLOT_CLIP_DIST0, 0,
+                            &clipdist[0], use_clipdist_array);
+      if (ucp_enables & 0xf0) {
+         store_clipdist_output(b, out[1], VARYING_SLOT_CLIP_DIST1, 0,
+                               &clipdist[4], use_clipdist_array);
+      }
+   }
+   b->shader->info.outputs_written |= update_mask(ucp_enables);
 }
 
 /*
@@ -359,9 +378,6 @@ nir_lower_clip_vs(nir_shader *shader, unsigned ucp_enables, bool use_vars,
    if (!ucp_enables)
       return false;
 
-   if (shader->info.io_lowered)
-      use_vars = false;
-
    b = nir_builder_create(impl);
 
    /* NIR should ensure that, even in case of loops/if-else, there
@@ -381,11 +397,15 @@ nir_lower_clip_vs(nir_shader *shader, unsigned ucp_enables, bool use_vars,
       return false;
 
    /* insert CLIPDIST outputs */
-   create_clipdist_vars(shader, out, ucp_enables, true,
-                        use_clipdist_array);
+   create_clipdist_vars(shader, out, ucp_enables, true, use_clipdist_array);
 
-   lower_clip_outputs(&b, position, clipvertex, out, ucp_enables, use_vars,
-                      use_clipdist_array, clipplane_state_tokens);
+   if (!use_vars || shader->info.io_lowered) {
+      lower_clip_vertex_intrin(&b, out, ucp_enables, use_clipdist_array,
+                               clipplane_state_tokens);
+   } else {
+      lower_clip_vertex_var(&b, position, clipvertex, out, ucp_enables,
+                            use_clipdist_array, clipplane_state_tokens);
+   }
 
    nir_metadata_preserve(impl, nir_metadata_dominance);
 
@@ -407,8 +427,13 @@ lower_clip_in_gs_block(nir_builder *b, nir_block *block, nir_variable *position,
       case nir_intrinsic_emit_vertex_with_counter:
       case nir_intrinsic_emit_vertex:
          b->cursor = nir_before_instr(instr);
-         lower_clip_outputs(b, position, clipvertex, out, ucp_enables, !b->shader->info.io_lowered,
-                            use_clipdist_array, clipplane_state_tokens);
+         if (b->shader->info.io_lowered) {
+            lower_clip_vertex_intrin(b, out, ucp_enables, use_clipdist_array,
+                                     clipplane_state_tokens);
+         } else {
+            lower_clip_vertex_var(b, position, clipvertex, out, ucp_enables,
+                                  use_clipdist_array, clipplane_state_tokens);
+         }
          break;
       default:
          /* not interesting; skip this */
