@@ -424,3 +424,12 @@ panfrost-g610-vk:arm64:
     DEQP_SUITE: panfrost-g610-vk
     HWCI_START_WESTON: 1
     LAVA_TAGS: at-least-8gb
+
+panfrost-g610-vk-full:arm64:
+  extends:
+    - panfrost-g610-vk:arm64
+    - .panfrost-vk-manual-rules
+  timeout: 1h 35m
+  variables:
+    DEQP_SUITE: panfrost-g610-vk-full
+    JOB_TIMEOUT: 90
