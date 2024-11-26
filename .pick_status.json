@@ -244,7 +244,7 @@
         "description": "intel/decoder: fix COMPUTE_WALKER handling",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17096f87c1acc04504d8ff7917d61fb57e96bfb4",
         "notes": null
