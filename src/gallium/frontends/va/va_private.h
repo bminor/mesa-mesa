@@ -412,12 +412,6 @@ typedef struct vlVaContext {
    } mpeg4;
 
    struct {
-      unsigned sampling_factor;
-      #define MJPEG_SAMPLING_FACTOR_NV12   (0x221111)
-      #define MJPEG_SAMPLING_FACTOR_YUY2   (0x221212)
-      #define MJPEG_SAMPLING_FACTOR_YUV422 (0x211111)
-      #define MJPEG_SAMPLING_FACTOR_YUV444 (0x111111)
-      #define MJPEG_SAMPLING_FACTOR_YUV400 (0x11)
       uint8_t slice_header[MAX_MJPEG_SLICE_HEADER_SIZE];
       unsigned int slice_header_size;
    } mjpeg;

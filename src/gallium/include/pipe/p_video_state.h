@@ -1626,6 +1626,7 @@ struct pipe_mjpeg_picture_desc
       uint16_t crop_y;
       uint16_t crop_width;
       uint16_t crop_height;
+      uint32_t sampling_factor;
    } picture_parameter;
 
    struct
