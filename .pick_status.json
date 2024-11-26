@@ -3184,7 +3184,7 @@
         "description": "Revert \"glsl: Move ForceGLSLAbsSqrt handling to glsl-to-nir.\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "46bf687882ab25042b4e15edc331eb8fe32d3a21",
         "notes": null
