@@ -2267,24 +2267,30 @@ tu_init_dbg_reg_stomper(struct tu_device *device)
                                                  tu_reg_stomper_options,
                                                  TU_DEBUG_REG_STOMP_CMDBUF);
 
-   struct tu_cs *cmdbuf_cs = (struct tu_cs *) calloc(1, sizeof(struct tu_cs));
-   tu_cs_init(cmdbuf_cs, device, TU_CS_MODE_GROW, 4096,
-              "cmdbuf reg stomp cs");
-   tu_cs_begin(cmdbuf_cs);
-
-   struct tu_cs *rp_cs = (struct tu_cs *) calloc(1, sizeof(struct tu_cs));
-   tu_cs_init(rp_cs, device, TU_CS_MODE_GROW, 4096, "rp reg stomp cs");
-   tu_cs_begin(rp_cs);
-
    bool inverse = debug_flags & TU_DEBUG_REG_STOMP_INVERSE;
-   TU_CALLX(device, tu_cs_dbg_stomp_regs)(cmdbuf_cs, false, first_reg, last_reg, inverse);
-   TU_CALLX(device, tu_cs_dbg_stomp_regs)(rp_cs, true, first_reg, last_reg, inverse);
 
-   tu_cs_end(cmdbuf_cs);
-   tu_cs_end(rp_cs);
+   if (debug_flags & TU_DEBUG_REG_STOMP_CMDBUF) {
+      struct tu_cs *cmdbuf_cs =
+         (struct tu_cs *) calloc(1, sizeof(struct tu_cs));
+      tu_cs_init(cmdbuf_cs, device, TU_CS_MODE_GROW, 4096,
+                 "cmdbuf reg stomp cs");
+      tu_cs_begin(cmdbuf_cs);
 
-   device->dbg_cmdbuf_stomp_cs = cmdbuf_cs;
-   device->dbg_renderpass_stomp_cs = rp_cs;
+      TU_CALLX(device, tu_cs_dbg_stomp_regs)(cmdbuf_cs, false, first_reg, last_reg, inverse);
+      tu_cs_end(cmdbuf_cs);
+      device->dbg_cmdbuf_stomp_cs = cmdbuf_cs;
+   }
+
+   if (debug_flags & TU_DEBUG_REG_STOMP_RENDERPASS) {
+      struct tu_cs *rp_cs = (struct tu_cs *) calloc(1, sizeof(struct tu_cs));
+      tu_cs_init(rp_cs, device, TU_CS_MODE_GROW, 4096, "rp reg stomp cs");
+      tu_cs_begin(rp_cs);
+
+      TU_CALLX(device, tu_cs_dbg_stomp_regs)(rp_cs, true, first_reg, last_reg, inverse);
+      tu_cs_end(rp_cs);
+
+      device->dbg_renderpass_stomp_cs = rp_cs;
+   }
 }
 
 /* It is unknown what this workaround is for and what it fixes. */
