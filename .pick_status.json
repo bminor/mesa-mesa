@@ -1,5 +1,445 @@
 [
     {
+        "sha": "64ea1175cc88f10c6c5ec06a4c9d2d65436c51a6",
+        "description": "radeonsi/vcn: Disable 2pass encode for VCN 5.0.",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b11e9168d868048fe3afdccc0038eb0c89914421",
+        "description": "panfrost: Use the handler size returned by cs_exception_handler_def()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16dd990bacd854c956e7277045c85d5925bc0aa4",
+        "description": "panvk/csf: Use the information returned by cs_exception_handler_def()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a8e560c4e1b7399f45f03ca95302da4c8ca53e7",
+        "description": "panfrost: Add cs_exception_handler_def() to the ForEachMacros list",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a32fac596ef1f2852fea2441468be5d05ace340",
+        "description": "pan/cs: Return exception handler size/address",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d0cff9e4c1fd3c498fe17fb9580d0e665e2e3ce6",
+        "description": "pan/cs: Return the dump region size when an exception handler is defined",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cafec54c796a186903e1db7785d468a50230e894",
+        "description": "Revert in correct commit \"fix\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "38c7e40bc02578585cc56c3a2d016d0b06ade184",
+        "notes": null
+    },
+    {
+        "sha": "28dff72d3b97dcf8f0d2b4cd5e835f1deb001a9c",
+        "description": "freedreno/ci: update a630 KSP checksum",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "00e232d5f03b66f2b7cd8ae491e88ae3ab497a09",
+        "description": "panvk/csf: Fix register overlap in issue_fragment_jobs()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5544d39f4420da88c53aaf8dd48d86ac92bd0eaa",
+        "notes": null
+    },
+    {
+        "sha": "b625a573da3f9b587c1c48271c7f78f634654a26",
+        "description": "fix",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6eb48a3e477b4998bd6e4eb0f481aa618e430edb",
+        "description": "brw: move fs_msaa_flags logic to intel_shader_enums.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba3ff8b3bb21eff86fe243c57f0141f2f7f48bd8",
+        "description": "brw: move barycentric_mode enum to intel_shader_enums.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bfcb9bf276c487e1d3f4d2981681c785a8b404f6",
+        "description": "brw: rename brw_sometimes to intel_sometimes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9016a5458a74d675a1504c4b5d5b3b3840558d41",
+        "description": "brw: change fs_msaa flags checks to test compiled flag first",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "54e6a8b019435960dca15af36646787042dd2527",
+        "description": "anv: split runtime flushing code for reuse",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9d1894bb950697c163ac9e875e4e95bd1b71287",
+        "description": "anv: move tracking of tcs_input_vertices/fs_msaa_flags to hw state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1795a73e2804eec99042c090b74599cefb1f404",
+        "description": "anv: move gfx tracking values to anv_cmd_graphics_state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db258503fa0d0d2d059a6aefe1747a8e38477e55",
+        "description": "anv: split vertex buffer emission in a different function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "195350c5da0caf25fa62672bdd0a9359f1a4cadc",
+        "description": "anv: rework vertex input helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4e7578fa6bd7ae887143d3e7780e2bc0ecc9b06",
+        "description": "anv: pass anv_device to batch_set_preemption",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c36f7e42a78a15774ac0886c55b49874c08cdc39",
+        "description": "anv: remove 3DSTATE_VF_STATISTICS from pipeline",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce40a1e05bf039dc7ce9dbcf62eb930a19d266ed",
+        "description": "anv: remove 3DSTATE_MULTISAMPLE from the pipeline",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b49249a4dd3d85d3368719da32f06b035fd0156",
+        "description": "anv: remove 3DSTATE_RASTER from pipeline",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9d8950e435ed80086de41383d8a897e49533e6e6",
+        "description": "anv: move helpers out of genX_pipeline.c/anv_private.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f0b7262209a162f9df4332ada60b961f401f8d89",
+        "description": "iris: allow bo cache for compressed bos on verx10 == 200",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3594a3561070efc9800816b89e692de71dddacaa",
+        "description": "v3dv: use Mesa log infrastructure instead of using stderr",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2c45a999a6c278a40a6591bc9046e86704510926",
+        "description": "v3dv: delete `v3dv_debug.h`",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "afaf454eb71f145aedb04a3371dab70b4d5f099a",
+        "description": "panvk: Add incremental rendering support on v10+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "687fd95399f29c45df73cc8f5c9837f529c3170a",
+        "description": "panvk: Build cmd_fb_preload on explicit fb_info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ae7152b0bcb51a3b6348aa8d9809c8ac7640021",
+        "description": "pan/cs: Add block macro for exception handler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a502841fec8ba9ad01f23f211343922aa8212d45",
+        "description": "pan/cs: Add dynamic save_reg to exception handler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1acc5e1433cc031001d905f2826520f3385d5907",
+        "description": "pan/cs: Align exception handlers with NOPs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ae8e69810ed0449ada45c8288cb0395e989b439",
+        "description": "pan/cs: Add cs_exception_handler_ctx",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2941a44b697f0b26879dde62d5acaf01f0deb177",
+        "description": "pan/cs: Add mask support for reg_perm",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "565476d3b2959db954384b424de0947a870053cb",
+        "description": "pan/genxml: Fix decode of exception_handler 0x0",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8fc640b256fe40bb4262a640cdcfc27bc9895e1f",
+        "description": "nir/lower_io_to_temporaries: fix interp_deref_at_* lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c23abb12e810cc4252e1b991f860188e897975fd",
+        "description": "nir: allow cloning indirect array derefs in nir_clone_deref_instr",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3516dafc9e5be9f4fe5926d7ffddb81fc00282f",
+        "description": "util,amd: add inlinable versions of drmIoctl/drmCommandWrite*",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "049641ca54e4c1a85be683f43af2682abbbbc4dd",
+        "description": "amd: import libdrm_amdgpu ioctl wrappers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65b73e6d87b9e1ff21daea57d694e8e687bb1fd6",
+        "description": "glsl: drop unused symbol table from gl_shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "340f7edfba8f692e406b0a182f8fe5e6e2f7443b",
+        "description": "glsl: use symbol table directly for builtin functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ce9421acb5691742f81137a7bc111a1ba1e5350",
+        "description": "glsl: drop _mesa_glsl_copy_symbols_from_table()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b40db0ef64f375f637e55f214808b491b2a3a03",
+        "description": "glsl: don't copy symbol table to shaders",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f0333920b8a751b27c4d476294f4c676b2e41e4",
+        "description": "nir/opt_varyings: use a hash table to make cloning SSA faster",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "8653abac095c76fc898cbd72bc67b10b828c3478",
         "description": "ac/nir/ngg: Remove erroneous NUW addition from workgroup scan.",
         "nominated": false,
