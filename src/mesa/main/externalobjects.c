@@ -770,7 +770,7 @@ _mesa_GenSemaphoresEXT(GLsizei n, GLuint *semaphores)
    if (MESA_VERBOSE & (VERBOSE_API))
       _mesa_debug(ctx, "%s(%d, %p)\n", func, n, semaphores);
 
-   if (!ctx->Extensions.EXT_semaphore) {
+   if (!_mesa_has_EXT_semaphore(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -805,7 +805,7 @@ _mesa_DeleteSemaphoresEXT(GLsizei n, const GLuint *semaphores)
       _mesa_debug(ctx, "%s(%d, %p)\n", func, n, semaphores);
    }
 
-   if (!ctx->Extensions.EXT_semaphore) {
+   if (!_mesa_has_EXT_semaphore(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -839,7 +839,7 @@ _mesa_IsSemaphoreEXT(GLuint semaphore)
 {
    GET_CURRENT_CONTEXT(ctx);
 
-   if (!ctx->Extensions.EXT_semaphore) {
+   if (!_mesa_has_EXT_semaphore(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "glIsSemaphoreEXT(unsupported)");
       return GL_FALSE;
    }
@@ -867,7 +867,7 @@ _mesa_SemaphoreParameterui64vEXT(GLuint semaphore,
    GET_CURRENT_CONTEXT(ctx);
    const char *func = "glSemaphoreParameterui64vEXT";
 
-   if (!ctx->Extensions.EXT_semaphore) {
+   if (!_mesa_has_EXT_semaphore(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -899,7 +899,7 @@ _mesa_GetSemaphoreParameterui64vEXT(GLuint semaphore,
    GET_CURRENT_CONTEXT(ctx);
    const char *func = "glGetSemaphoreParameterui64vEXT";
 
-   if (!ctx->Extensions.EXT_semaphore) {
+   if (!_mesa_has_EXT_semaphore(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -937,7 +937,7 @@ _mesa_WaitSemaphoreEXT(GLuint semaphore,
 
    const char *func = "glWaitSemaphoreEXT";
 
-   if (!ctx->Extensions.EXT_semaphore) {
+   if (!_mesa_has_EXT_semaphore(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -997,7 +997,7 @@ _mesa_SignalSemaphoreEXT(GLuint semaphore,
 
    const char *func = "glSignalSemaphoreEXT";
 
-   if (!ctx->Extensions.EXT_semaphore) {
+   if (!_mesa_has_EXT_semaphore(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -1141,7 +1141,7 @@ _mesa_ImportSemaphoreFdEXT(GLuint semaphore,
 
    const char *func = "glImportSemaphoreFdEXT";
 
-   if (!ctx->Extensions.EXT_semaphore_fd) {
+   if (!_mesa_has_EXT_semaphore_fd(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }

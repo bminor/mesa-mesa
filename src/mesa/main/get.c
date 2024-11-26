@@ -2909,19 +2909,19 @@ find_value_indexed(const char *func, GLenum pname, GLuint index, union value *v)
 
    /* GL_EXT_external_objects */
    case GL_NUM_DEVICE_UUIDS_EXT:
-      if (!_mesa_has_EXT_memory_object(ctx) && !ctx->Extensions.EXT_semaphore)
+      if (!_mesa_has_EXT_memory_object(ctx) && !_mesa_has_EXT_semaphore(ctx))
          goto invalid_enum;
       v->value_int = 1;
       return TYPE_INT;
    case GL_DRIVER_UUID_EXT:
-      if (!_mesa_has_EXT_memory_object(ctx) && !ctx->Extensions.EXT_semaphore)
+      if (!_mesa_has_EXT_memory_object(ctx) && !_mesa_has_EXT_semaphore(ctx))
          goto invalid_enum;
       if (index >= 1)
          goto invalid_value;
       _mesa_get_driver_uuid(ctx, v->value_int_4);
       return TYPE_INT_4;
    case GL_DEVICE_UUID_EXT:
-      if (!_mesa_has_EXT_memory_object(ctx) && !ctx->Extensions.EXT_semaphore)
+      if (!_mesa_has_EXT_memory_object(ctx) && !_mesa_has_EXT_semaphore(ctx))
          goto invalid_enum;
       if (index >= 1)
          goto invalid_value;
