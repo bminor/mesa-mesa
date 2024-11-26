@@ -28,7 +28,7 @@
 #include "glxextensions.h"
 
 #include "util/u_debug.h"
-#ifndef GLX_USE_APPLEGL
+#if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
 #include "dri_common.h"
 #endif
 
