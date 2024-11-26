@@ -45,8 +45,7 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
       .ls_sb_slot = SB_ID(LS),
    };
 
-   cs_exception_handler_def(&b, &handler, handler_ctx)
-   {
+   cs_exception_handler_def(&b, &handler, handler_ctx) {
       struct cs_index subqueue_ctx = cs_subqueue_ctx_reg(&b);
       struct cs_index zero = cs_scratch_reg64(&b, 0);
       /* Have flush_id read part of the double zero register */

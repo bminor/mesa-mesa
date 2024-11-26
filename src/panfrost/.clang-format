@@ -42,6 +42,7 @@ ForEachMacros: [
   'cs_default',
   'cs_else',
   'cs_emit',
+  'cs_exception_handler_def',
   'cs_if',
   'cs_match',
   'cs_update_compute_ctx',
