@@ -427,13 +427,14 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
          goto fail;
 
       aws->dev = dev;
+      aws->fd = amdgpu_device_get_fd(dev);
+
       /* The device fd might be different from the one we passed because of
        * libdrm_amdgpu device dedup logic. This can happen if radv is initialized
        * first.
        * Get the correct fd or the buffer sharing will not work (see #3424).
        */
-      int device_fd = amdgpu_device_get_fd(dev);
-      if (!are_file_descriptions_equal(device_fd, fd)) {
+      if (!are_file_descriptions_equal(aws->fd, fd)) {
          sws->kms_handles = _mesa_hash_table_create(NULL, kms_handle_hash,
                                                    kms_handle_equals);
          if (!sws->kms_handles)
@@ -442,9 +443,9 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
           * we need it but we'd have to use os_same_file_description() to
           * compare the fds.
           */
-         aws->fd = device_fd;
+         aws->input_fd = aws->fd;
       } else {
-         aws->fd = sws->fd;
+         aws->input_fd = sws->fd;
       }
       aws->info.drm_major = drm_major;
       aws->info.drm_minor = drm_minor;
