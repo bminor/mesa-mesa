@@ -66,8 +66,11 @@ mali_sampling_mode(const struct pan_image_view *view)
    unsigned nr_samples = pan_image_view_get_nr_samples(view);
 
    if (nr_samples > 1) {
+      ASSERTED const struct pan_image *first_plane =
+         pan_image_view_get_first_plane(view);
+
       assert(view->nr_samples == nr_samples);
-      assert(view->planes[0]->layout.slices[0].surface_stride != 0);
+      assert(first_plane->layout.slices[0].surface_stride != 0);
       return MALI_MSAA_LAYERED;
    }
 
@@ -86,7 +89,8 @@ static bool
 renderblock_fits_in_single_pass(const struct pan_image_view *view,
                                 unsigned tile_size)
 {
-   uint64_t mod = view->planes[0]->layout.modifier;
+   const struct pan_image *first_plane = pan_image_view_get_first_plane(view);
+   uint64_t mod = first_plane->layout.modifier;
 
    if (!drm_is_afbc(mod))
       return tile_size >= 16 * 16;
@@ -512,9 +516,10 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
 
    cfg->dithering_enable = true;
 
+   const struct pan_image *first_plane = pan_image_view_get_first_plane(rt);
    unsigned level = rt->first_level;
    ASSERTED unsigned layer_count = rt->dim == MALI_TEXTURE_DIMENSION_3D
-                                      ? rt->planes[0]->layout.depth
+                                      ? first_plane->layout.depth
                                       : rt->last_layer - rt->first_layer + 1;
 
    assert(rt->last_level == rt->first_level);

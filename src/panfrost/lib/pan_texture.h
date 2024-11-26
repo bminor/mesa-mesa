@@ -162,12 +162,39 @@ pan_image_view_get_plane(const struct pan_image_view *iview, uint32_t idx)
    return iview->planes[idx];
 }
 
+static inline unsigned
+pan_image_view_get_plane_mask(const struct pan_image_view *iview)
+{
+   unsigned mask = 0;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(iview->planes); i++) {
+      if (iview->planes[i])
+         mask |= BITFIELD_BIT(i);
+   }
+
+   return mask;
+}
+
+static inline unsigned
+pan_image_view_get_first_plane_idx(const struct pan_image_view *iview)
+{
+   unsigned mask = pan_image_view_get_plane_mask(iview);
+
+   assert(mask);
+   return ffs(mask) - 1;
+}
+
+static inline const struct pan_image *
+pan_image_view_get_first_plane(const struct pan_image_view *iview)
+{
+   unsigned first_plane_idx = pan_image_view_get_first_plane_idx(iview);
+   return pan_image_view_get_plane(iview, first_plane_idx);
+}
+
 static inline uint32_t
 pan_image_view_get_nr_samples(const struct pan_image_view *iview)
 {
-   /* All planes should have the same nr_samples value, so we
-    * just pick the first plane. */
-   const struct pan_image *image = pan_image_view_get_plane(iview, 0);
+   const struct pan_image *image = pan_image_view_get_first_plane(iview);
 
    if (!image)
       return 0;
