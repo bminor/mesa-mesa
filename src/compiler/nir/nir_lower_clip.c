@@ -74,9 +74,6 @@ create_clipdist_vars(nir_shader *shader, nir_variable **io_vars,
                      unsigned ucp_enables, bool output,
                      bool use_clipdist_array)
 {
-   shader->info.clip_distance_array_size = util_last_bit(ucp_enables);
-   if (shader->info.io_lowered)
-      return;
    if (use_clipdist_array) {
       io_vars[0] =
          create_clipdist_var(shader, output,
@@ -396,13 +393,19 @@ nir_lower_clip_vs(nir_shader *shader, unsigned ucp_enables, bool use_vars,
    if (!find_clipvertex_and_position_outputs(shader, &clipvertex, &position))
       return false;
 
-   /* insert CLIPDIST outputs */
-   create_clipdist_vars(shader, out, ucp_enables, true, use_clipdist_array);
+   shader->info.clip_distance_array_size = util_last_bit(ucp_enables);
 
    if (!use_vars || shader->info.io_lowered) {
+      /* If the driver has lowered IO instead of st/mesa, the driver expects
+       * that variables are present even with lowered IO, so create them.
+       */
+      if (!shader->info.io_lowered)
+         create_clipdist_vars(shader, out, ucp_enables, true, use_clipdist_array);
+
       lower_clip_vertex_intrin(&b, out, ucp_enables, use_clipdist_array,
                                clipplane_state_tokens);
    } else {
+      create_clipdist_vars(shader, out, ucp_enables, true, use_clipdist_array);
       lower_clip_vertex_var(&b, position, clipvertex, out, ucp_enables,
                             use_clipdist_array, clipplane_state_tokens);
    }
@@ -464,9 +467,11 @@ nir_lower_clip_gs(nir_shader *shader, unsigned ucp_enables,
    if (!find_clipvertex_and_position_outputs(shader, &clipvertex, &position))
       return false;
 
+   shader->info.clip_distance_array_size = util_last_bit(ucp_enables);
+
    /* insert CLIPDIST outputs */
-   create_clipdist_vars(shader, out, ucp_enables, true,
-                        use_clipdist_array);
+   if (!shader->info.io_lowered)
+      create_clipdist_vars(shader, out, ucp_enables, true, use_clipdist_array);
 
    b = nir_builder_create(impl);
 
@@ -555,6 +560,7 @@ nir_lower_clip_fs(nir_shader *shader, unsigned ucp_enables,
 
    /* this is probably broken until https://gitlab.freedesktop.org/mesa/mesa/-/issues/10826 is fixed */
    assert(!shader->info.io_lowered);
+   shader->info.clip_distance_array_size = util_last_bit(ucp_enables);
 
    /* No hard reason to require use_clipdist_arr to work with
     * frag-shader-based gl_ClipDistance, except that the only user that does
