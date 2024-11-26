@@ -131,7 +131,7 @@ struct panvk_priv_mem {
 static struct panvk_priv_bo *
 panvk_priv_mem_bo(struct panvk_priv_mem mem)
 {
-   return (void *)(mem.bo & ~7ull);
+   return (struct panvk_priv_bo *)(mem.bo & ~7ull);
 }
 
 static uint32_t

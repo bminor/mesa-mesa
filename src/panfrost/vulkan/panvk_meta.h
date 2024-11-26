@@ -51,7 +51,8 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img)
    uint64_t mod = img->vk.drm_format_mod;
    enum pipe_format pfmt = vk_format_to_pipe_format(img->vk.format);
    unsigned blk_sz = util_format_get_blocksize(pfmt);
-   struct vk_meta_copy_image_properties props = {0};
+   struct vk_meta_copy_image_properties props;
+   memset(&props, 0, sizeof(props));
 
    if (drm_is_afbc(mod)) {
       if (!vk_format_is_depth_or_stencil(img->vk.format)) {
