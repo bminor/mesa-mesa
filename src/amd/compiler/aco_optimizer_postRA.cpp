@@ -820,6 +820,29 @@ try_convert_fma_to_vop2(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
 }
 
 void
+try_skip_const_branch(pr_opt_ctx& ctx, aco_ptr<Instruction>& branch)
+{
+   if (branch->opcode != aco_opcode::p_cbranch_z || branch->operands[0].physReg() != exec)
+      return;
+   if (branch->branch().never_taken)
+      return;
+
+   Idx exec_val_idx = last_writer_idx(ctx, branch->operands[0]);
+   if (!exec_val_idx.found())
+      return;
+
+   Instruction* exec_val = ctx.get(exec_val_idx);
+   if ((exec_val->opcode == aco_opcode::p_parallelcopy && exec_val->operands.size() == 1) ||
+       exec_val->opcode == aco_opcode::p_create_vector) {
+      /* Remove the branch instruction when exec is constant non-zero. */
+      bool is_const_val = std::any_of(exec_val->operands.begin(), exec_val->operands.end(),
+                                      [](const Operand& op) -> bool
+                                      { return op.isConstant() && op.constantValue(); });
+      branch->branch().never_taken |= is_const_val;
+   }
+}
+
+void
 process_instruction(pr_opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
    /* Don't try to optimize instructions which are already dead. */
@@ -864,6 +887,8 @@ optimize_postRA(Program* program)
 
       for (aco_ptr<Instruction>& instr : block.instructions)
          process_instruction(ctx, instr);
+
+      try_skip_const_branch(ctx, block.instructions.back());
    }
 
    /* Cleanup pass
