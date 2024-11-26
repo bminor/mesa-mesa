@@ -296,7 +296,7 @@ pan_prepare_crc(const struct pan_fb_info *fb, int rt_crc,
    assert(rt_crc < fb->rt_count);
 
    const struct pan_image_view *rt = fb->rts[rt_crc].view;
-   const struct pan_image *image = pan_image_view_get_rt_image(rt);
+   const struct pan_image *image = pan_image_view_get_color_plane(rt);
    const struct pan_image_slice_layout *slice =
       &image->layout.slices[rt->first_level];
 
@@ -467,7 +467,7 @@ pan_rt_init_format(const struct pan_image_view *rt,
    }
 
 #if PAN_ARCH >= 10
-   const struct pan_image *image = pan_image_view_get_rt_image(rt);
+   const struct pan_image *image = pan_image_view_get_color_plane(rt);
 
    if (drm_is_afrc(image->layout.modifier))
       cfg->afrc.writeback_format = writeback_format;
@@ -505,7 +505,7 @@ pan_prepare_rt(const struct pan_fb_info *fb, unsigned layer_idx,
       return;
    }
 
-   const struct pan_image *image = pan_image_view_get_rt_image(rt);
+   const struct pan_image *image = pan_image_view_get_color_plane(rt);
 
    if (!drm_is_afrc(image->layout.modifier))
       cfg->write_enable = true;
@@ -708,7 +708,7 @@ pan_fix_frame_shader_mode(enum mali_pre_post_frame_shader_mode mode,
 static bool
 pan_force_clean_write_rt(const struct pan_image_view *rt, unsigned tile_size)
 {
-   const struct pan_image *image = pan_image_view_get_rt_image(rt);
+   const struct pan_image *image = pan_image_view_get_color_plane(rt);
    if (!drm_is_afbc(image->layout.modifier))
       return false;
 
@@ -964,7 +964,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
       if (fb->rt_count && fb->rts[0].view) {
          const struct pan_image_view *rt = fb->rts[0].view;
-         const struct pan_image *image = pan_image_view_get_rt_image(rt);
+         const struct pan_image *image = pan_image_view_get_color_plane(rt);
 
          const struct util_format_description *desc =
             util_format_description(rt->format);

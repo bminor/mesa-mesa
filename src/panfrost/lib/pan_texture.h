@@ -176,7 +176,7 @@ pan_image_view_get_nr_samples(const struct pan_image_view *iview)
 }
 
 static inline const struct pan_image *
-pan_image_view_get_rt_image(const struct pan_image_view *iview)
+pan_image_view_get_color_plane(const struct pan_image_view *iview)
 {
    /* We only support rendering to plane 0 */
    assert(pan_image_view_get_plane(iview, 1) == NULL);
@@ -186,7 +186,7 @@ pan_image_view_get_rt_image(const struct pan_image_view *iview)
 static inline bool
 pan_image_view_has_crc(const struct pan_image_view *iview)
 {
-   const struct pan_image *image = pan_image_view_get_rt_image(iview);
+   const struct pan_image *image = pan_image_view_get_color_plane(iview);
 
    if (!image)
       return false;
