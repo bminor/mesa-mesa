@@ -2174,7 +2174,7 @@
         "description": "Revert \"gbm: mark surface buffers as explicit flushed\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c49a71c03c9166b0814db92420eadac74cbc4b11",
         "notes": null
