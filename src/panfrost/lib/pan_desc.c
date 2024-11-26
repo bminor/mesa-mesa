@@ -711,9 +711,11 @@ pan_fix_frame_shader_mode(enum mali_pre_post_frame_shader_mode mode,
  * render target. Check this condition. */
 
 static bool
-pan_force_clean_write_rt(const struct pan_image_view *rt, unsigned tile_size)
+pan_force_clean_write_on(const struct pan_image *image, unsigned tile_size)
 {
-   const struct pan_image *image = pan_image_view_get_color_plane(rt);
+   if (!image)
+      return false;
+
    if (!drm_is_afbc(image->layout.modifier))
       return false;
 
@@ -733,17 +735,24 @@ pan_force_clean_write(const struct pan_fb_info *fb, unsigned tile_size)
    assert(tile_size <= panfrost_max_effective_tile_size(PAN_ARCH));
 
    for (unsigned i = 0; i < fb->rt_count; ++i) {
-      if (fb->rts[i].view && !fb->rts[i].discard &&
-          pan_force_clean_write_rt(fb->rts[i].view, tile_size))
+      if (!fb->rts[i].view || fb->rts[i].discard)
+         continue;
+
+      const struct pan_image *img =
+         pan_image_view_get_color_plane(fb->rts[i].view);
+
+      if (pan_force_clean_write_on(img, tile_size))
          return true;
    }
 
    if (fb->zs.view.zs && !fb->zs.discard.z &&
-       pan_force_clean_write_rt(fb->zs.view.zs, tile_size))
+       pan_force_clean_write_on(pan_image_view_get_zs_plane(fb->zs.view.zs),
+                                tile_size))
       return true;
 
    if (fb->zs.view.s && !fb->zs.discard.s &&
-       pan_force_clean_write_rt(fb->zs.view.s, tile_size))
+       pan_force_clean_write_on(pan_image_view_get_zs_plane(fb->zs.view.s),
+                                tile_size))
       return true;
 
    return false;
@@ -842,8 +851,9 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
          bool clean_tile_write = fb->rts[crc_rt].clear;
 
 #if PAN_ARCH >= 6
-         clean_tile_write |= pan_force_clean_write_rt(fb->rts[crc_rt].view,
-                                                      fb->tile_size);
+         clean_tile_write |= pan_force_clean_write_on(
+            pan_image_view_get_color_plane(fb->rts[crc_rt].view),
+            fb->tile_size);
 #endif
 
          /* If the CRC was valid it stays valid, if it wasn't, we must ensure
