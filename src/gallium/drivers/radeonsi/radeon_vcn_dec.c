@@ -1364,7 +1364,7 @@ static void rvcn_dec_message_create(struct radeon_decoder *dec)
 static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn_dec_message_decode_t *decode,
       rvcn_dec_message_dynamic_dpb_t2_t *dynamic_dpb_t2, bool encrypted)
 {
-   struct rvcn_dec_dynamic_dpb_t2 *dpb = NULL, *dummy = NULL;
+   struct rvcn_dec_dynamic_dpb_t2 *dpb = NULL;
    struct si_resource *res;
    unsigned width, height;
    uint64_t addr;
@@ -1379,15 +1379,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
       res = &(((struct si_texture *)((struct vl_video_buffer *)d->vbuf)->resources[0])->buffer);
       for (i = 0; i < dec->ref_codec.ref_size; ++i) {
          if (((dec->ref_codec.ref_list[i] & 0x7f) != 0x7f) && (d->index == (dec->ref_codec.ref_list[i] & 0x7f))) {
-            if (!dummy)
-               dummy = d;
             addr = dec->ws->buffer_get_virtual_address(res->buf);
-            if (!addr && dummy) {
-               struct si_resource *dummy_res;
-               RVID_ERR("Ref list from application is incorrect, using dummy buffer instead.\n");
-               dummy_res = &(((struct si_texture *)((struct vl_video_buffer *)dummy->vbuf)->resources[0])->buffer);
-               addr = dec->ws->buffer_get_virtual_address(dummy_res->buf);
-            }
             dec->ws->cs_add_buffer(&dec->cs, res->buf, RADEON_USAGE_READWRITE | RADEON_USAGE_SYNCHRONIZED, RADEON_DOMAIN_VRAM);
             dynamic_dpb_t2->dpbAddrLo[i] = addr;
             dynamic_dpb_t2->dpbAddrHi[i] = addr >> 32;
@@ -1460,12 +1452,6 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
 
       res = &(((struct si_texture *)((struct vl_video_buffer *)d->vbuf)->resources[0])->buffer);
       addr = dec->ws->buffer_get_virtual_address(res->buf);
-      if (!addr && dummy) {
-         struct si_resource *dummy_res;
-         dummy_res = &(((struct si_texture *)((struct vl_video_buffer *)dummy->vbuf)->resources[0])->buffer);
-         addr = dec->ws->buffer_get_virtual_address(dummy_res->buf);
-      }
-      assert(addr);
       for (i = 0; i < dec->ref_codec.num_refs; ++i) {
          if (dynamic_dpb_t2->dpbAddrLo[i] || dynamic_dpb_t2->dpbAddrHi[i])
             continue;
