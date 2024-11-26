@@ -1687,15 +1687,15 @@ align_block(asm_context& ctx, std::vector<uint32_t>& code, Block& block)
                                    loop_num_cl <= 3;
 
       if (change_prefetch) {
-         Builder bld(ctx.program);
+         Builder bld(ctx.program, &ctx.program->blocks[loop_header->linear_preds[0]]);
          int16_t prefetch_mode = loop_num_cl == 3 ? 0x1 : 0x2;
-         aco_ptr<Instruction> instr(bld.sopp(aco_opcode::s_inst_prefetch, prefetch_mode));
-         emit_instruction(ctx, nops, instr.get());
+         Instruction* instr = bld.sopp(aco_opcode::s_inst_prefetch, prefetch_mode);
+         emit_instruction(ctx, nops, instr);
          insert_code(ctx, code, loop_header->offset, nops.size(), nops.data());
 
          /* Change prefetch mode back to default (0x3). */
-         instr->salu().imm = 0x3;
-         emit_instruction(ctx, code, instr.get());
+         bld.reset(&block.instructions, block.instructions.begin());
+         bld.sopp(aco_opcode::s_inst_prefetch, 0x3);
       }
 
       const unsigned loop_start_cl = loop_header->offset >> 4;
