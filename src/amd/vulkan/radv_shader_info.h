@@ -182,7 +182,7 @@ struct radv_shader_info {
       uint32_t explicit_strict_shaded_mask;
       uint32_t float16_shaded_mask;
       uint32_t float16_hi_shaded_mask;
-      uint32_t num_interp;
+      uint32_t num_inputs;
       uint32_t num_prim_interp;
       bool can_discard;
       bool early_fragment_test;

@@ -117,7 +117,7 @@ struct aco_shader_info {
       uint32_t num_lds_blocks;
    } tcs;
    struct {
-      uint32_t num_interp;
+      uint32_t num_inputs;
       unsigned spi_ps_input_ena;
       unsigned spi_ps_input_addr;
       bool has_prolog;

@@ -1728,7 +1728,7 @@ radv_precompute_registers_hw_fs(struct radv_device *device, struct radv_shader_b
 
    if (pdev->info.gfx_level >= GFX12) {
       info->regs.ps.spi_ps_in_control = S_028640_PS_W32_EN(info->wave_size == 32);
-      info->regs.ps.spi_gs_out_config_ps = S_00B0C4_NUM_INTERP(info->ps.num_interp);
+      info->regs.ps.spi_gs_out_config_ps = S_00B0C4_NUM_INTERP(info->ps.num_inputs);
 
       info->regs.ps.pa_sc_hisz_control = S_028BBC_ROUND(2); /* required minimum value */
       if (info->ps.depth_layout == FRAG_DEPTH_LAYOUT_GREATER)
@@ -1737,11 +1737,16 @@ radv_precompute_registers_hw_fs(struct radv_device *device, struct radv_shader_b
          info->regs.ps.pa_sc_hisz_control |= S_028BBC_CONSERVATIVE_Z_EXPORT(V_028BBC_EXPORT_LESS_THAN_Z);
    } else {
       /* GFX11 workaround when there are no PS inputs but LDS is used. */
-      const bool param_gen = pdev->info.gfx_level == GFX11 && !info->ps.num_interp && binary->config.lds_size;
+      const bool param_gen = pdev->info.gfx_level == GFX11 && !info->ps.num_inputs && binary->config.lds_size;
 
-      info->regs.ps.spi_ps_in_control = S_0286D8_NUM_INTERP(info->ps.num_interp) |
-                                        S_0286D8_NUM_PRIM_INTERP(info->ps.num_prim_interp) |
-                                        S_0286D8_PS_W32_EN(info->wave_size == 32) | S_0286D8_PARAM_GEN(param_gen);
+      info->regs.ps.spi_ps_in_control = S_0286D8_PS_W32_EN(info->wave_size == 32) | S_0286D8_PARAM_GEN(param_gen);
+
+      if (pdev->info.gfx_level != GFX10_3) {
+         info->regs.ps.spi_ps_in_control |= S_0286D8_NUM_INTERP(info->ps.num_inputs);
+      } else {
+         info->regs.ps.spi_ps_in_control |= S_0286D8_NUM_INTERP(info->ps.num_inputs - info->ps.num_prim_interp) |
+                                            S_0286D8_NUM_PRIM_INTERP(info->ps.num_prim_interp);
+      }
 
       if (pdev->info.gfx_level >= GFX9 && pdev->info.gfx_level < GFX11)
          info->regs.ps.pa_sc_shader_control = S_028C40_LOAD_COLLISION_WAVEID(info->ps.pops);
@@ -2598,7 +2603,7 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
    unsigned lds_per_wave = 0;
 
    if (stage == MESA_SHADER_FRAGMENT) {
-      lds_per_wave = conf->lds_size * gpu_info->lds_encode_granularity + info->ps.num_interp * 48;
+      lds_per_wave = conf->lds_size * gpu_info->lds_encode_granularity + info->ps.num_inputs * 48;
       lds_per_wave = align(lds_per_wave, gpu_info->lds_alloc_granularity);
    } else if (stage == MESA_SHADER_COMPUTE || stage == MESA_SHADER_TASK) {
       unsigned max_workgroup_size = info->workgroup_size;

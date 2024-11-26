@@ -37,7 +37,7 @@ radv_aco_convert_shader_info(struct aco_shader_info *aco_info, const struct radv
    ASSIGN_FIELD(vs.tcs_temp_only_input_mask);
    ASSIGN_FIELD(vs.has_prolog);
    ASSIGN_FIELD(tcs.num_lds_blocks);
-   ASSIGN_FIELD(ps.num_interp);
+   ASSIGN_FIELD(ps.num_inputs);
    ASSIGN_FIELD(cs.uses_full_subgroups);
    aco_info->ps.spi_ps_input_ena = radv->ps.spi_ps_input_ena;
    aco_info->ps.spi_ps_input_addr = radv->ps.spi_ps_input_addr;

@@ -998,7 +998,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
          break;
 
       case MESA_SHADER_FRAGMENT:
-         s->value.u64 += shader->info.ps.num_interp + shader->info.ps.num_prim_interp;
+         s->value.u64 += shader->info.ps.num_inputs;
          break;
 
       default:
