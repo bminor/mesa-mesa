@@ -14,11 +14,19 @@
 class nir_test : public ::testing::Test {
  protected:
    nir_test(const char *name)
+      : nir_test(name, MESA_SHADER_COMPUTE)
+   {
+   }
+
+   nir_test(const char *name, gl_shader_stage stage)
    {
       glsl_type_singleton_init_or_ref();
 
-      _b = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, &options, "%s", name);
+      _b = nir_builder_init_simple_shader(stage, &options, "%s", name);
       b = &_b;
+
+      b->shader->info.next_stage = MESA_SHADER_NONE;
+      b->shader->info.internal = false;
    }
 
    virtual ~nir_test()
