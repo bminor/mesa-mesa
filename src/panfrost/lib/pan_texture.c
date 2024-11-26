@@ -209,6 +209,45 @@ panfrost_get_surface_pointer(const struct pan_image_layout *layout,
    return base + offset;
 }
 
+struct pan_image_section_info {
+   mali_ptr pointer;
+   int32_t row_stride;
+   int32_t surface_stride;
+};
+
+static struct pan_image_section_info
+get_image_section_info(const struct pan_image_view *iview,
+                       const struct pan_image *plane, unsigned level,
+                       unsigned index, unsigned sample)
+{
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
+   mali_ptr base = plane->data.base + plane->data.offset;
+   struct pan_image_section_info info = {0};
+
+   if (iview->buf.size) {
+      assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
+      base += iview->buf.offset;
+   }
+
+   /* v4 does not support compression */
+   assert(PAN_ARCH >= 5 || !drm_is_afbc(plane->layout.modifier));
+   assert(PAN_ARCH >= 5 || desc->layout != UTIL_FORMAT_LAYOUT_ASTC);
+
+   /* panfrost_compression_tag() wants the dimension of the resource, not the
+    * one of the image view (those might differ).
+    */
+   unsigned tag = panfrost_compression_tag(desc, plane->layout.dim,
+                                           plane->layout.modifier);
+
+   info.pointer = panfrost_get_surface_pointer(
+      &plane->layout, iview->dim, base | tag, level, index, sample);
+   panfrost_get_surface_strides(&plane->layout, level, &info.row_stride,
+                                &info.surface_stride);
+
+   return info;
+}
+
 #if PAN_ARCH <= 7
 static void
 panfrost_emit_surface_with_stride(mali_ptr plane, int32_t row_stride,
@@ -463,82 +502,85 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
                       unsigned index, unsigned sample,
                       enum pipe_format format, void **payload)
 {
-   ASSERTED const struct util_format_description *desc =
-      util_format_description(format);
+#if PAN_ARCH == 7 || PAN_ARCH >= 9
+   if (panfrost_format_is_yuv(format)) {
+      UNUSED const struct pan_image_layout *layouts[MAX_IMAGE_PLANES] = {0};
+      struct pan_image_section_info sections[MAX_IMAGE_PLANES] = {0};
+      unsigned plane_count = 0;
 
-   const struct pan_image_layout *layouts[MAX_IMAGE_PLANES] = {0};
-   mali_ptr plane_ptrs[MAX_IMAGE_PLANES] = {0};
-   int32_t row_strides[MAX_IMAGE_PLANES] = {0};
-   int32_t surface_strides[MAX_IMAGE_PLANES] = {0};
+      for (int i = 0; i < MAX_IMAGE_PLANES; i++) {
+         const struct pan_image *plane = pan_image_view_get_plane(iview, i);
 
-   for (int i = 0; i < MAX_IMAGE_PLANES; i++) {
-      const struct pan_image *base_image = pan_image_view_get_plane(iview, i);
+         if (!plane)
+            break;
 
-      if (!base_image) {
-         /* Every texture should have at least one plane. */
-         assert(i > 0);
-         break;
+         layouts[i] = &plane->layout;
+         sections[i] =
+            get_image_section_info(iview, plane, level, index, sample);
+         plane_count++;
       }
-
-      mali_ptr base = base_image->data.base + base_image->data.offset;
-
-      if (iview->buf.size) {
-         assert(iview->dim == MALI_TEXTURE_DIMENSION_1D);
-         base += iview->buf.offset;
-      }
-
-      layouts[i] = &pan_image_view_get_plane(iview, i)->layout;
-
-      /* v4 does not support compression */
-      assert(PAN_ARCH >= 5 || !drm_is_afbc(layouts[i]->modifier));
-      assert(PAN_ARCH >= 5 || desc->layout != UTIL_FORMAT_LAYOUT_ASTC);
-
-      /* panfrost_compression_tag() wants the dimension of the resource, not the
-       * one of the image view (those might differ).
-       */
-      unsigned tag =
-         panfrost_compression_tag(desc, layouts[i]->dim, layouts[i]->modifier);
-
-      plane_ptrs[i] = panfrost_get_surface_pointer(
-         layouts[i], iview->dim, base | tag, level, index, sample);
-      panfrost_get_surface_strides(layouts[i], level, &row_strides[i],
-                                   &surface_strides[i]);
-   }
 
 #if PAN_ARCH >= 9
-   if (panfrost_format_is_yuv(format)) {
-      for (int i = 0; i < MAX_IMAGE_PLANES; i++) {
-         /* 3-plane YUV is submitted using two PLANE descriptors, where the
-          * second one is of type CHROMA_2P */
-         if (i > 1)
-            break;
+      /* 3-plane YUV is submitted using two PLANE descriptors, where the
+       * second one is of type CHROMA_2P */
+      panfrost_emit_plane(iview, 0, layouts[0], format, sections[0].pointer,
+                          level, sections[0].row_stride,
+                          sections[0].surface_stride, 0, payload);
 
-         if (plane_ptrs[i] == 0)
-            break;
-
+      if (plane_count > 1) {
          /* 3-plane YUV requires equal stride for both chroma planes */
-         assert(row_strides[2] == 0 || row_strides[1] == row_strides[2]);
-
-         panfrost_emit_plane(iview, i, layouts[i], format, plane_ptrs[i], level,
-                             row_strides[i], surface_strides[i], plane_ptrs[2],
+         assert(plane_count == 2 ||
+                sections[1].row_stride == sections[2].row_stride);
+         panfrost_emit_plane(iview, 1, layouts[1], format, sections[1].pointer,
+                             level, sections[1].row_stride,
+                             sections[1].surface_stride, sections[2].pointer,
                              payload);
       }
-   } else {
-      panfrost_emit_plane(iview, 0, layouts[0], format, plane_ptrs[0], level,
-                          row_strides[0], surface_strides[0], 0, payload);
-   }
-   return;
-#endif
+#else
+      if (plane_count > 1) {
+         mali_ptr ptrs[MAX_IMAGE_PLANES] = {
+            sections[0].pointer,
+            sections[1].pointer,
+            sections[2].pointer,
+         };
+         int32_t row_strides[MAX_IMAGE_PLANES] = {
+            sections[0].row_stride,
+            sections[1].row_stride,
+            sections[2].row_stride,
+         };
 
-#if PAN_ARCH <= 7
-#if PAN_ARCH == 7
-   if (panfrost_format_is_yuv(format)) {
-      panfrost_emit_multiplanar_surface(plane_ptrs, row_strides, payload);
+         panfrost_emit_multiplanar_surface(ptrs, row_strides, payload);
+      } else {
+         panfrost_emit_surface_with_stride(sections[0].pointer,
+                                           sections[0].row_stride,
+                                           sections[0].surface_stride, payload);
+      }
+#endif
       return;
    }
 #endif
-   panfrost_emit_surface_with_stride(plane_ptrs[0], row_strides[0],
-                                     surface_strides[0], payload);
+
+   const struct util_format_description *fdesc =
+      util_format_description(iview->format);
+
+   /* In case of multiplanar depth/stencil, the stencil is always on
+    * plane 1. Combined depth/stencil only has one plane, so depth
+    * will be on plane 0 in either case.
+    */
+   const struct pan_image *plane = util_format_has_stencil(fdesc)
+                                      ? pan_image_view_get_s_plane(iview)
+                                      : pan_image_view_get_plane(iview, 0);
+   assert(plane != NULL);
+
+   struct pan_image_section_info section =
+      get_image_section_info(iview, plane, level, index, sample);
+
+#if PAN_ARCH >= 9
+   panfrost_emit_plane(iview, 0, &plane->layout, format, section.pointer, level,
+                       section.row_stride, section.surface_stride, 0, payload);
+#else
+   panfrost_emit_surface_with_stride(section.pointer, section.row_stride,
+                                     section.surface_stride, payload);
 #endif
 }
 
