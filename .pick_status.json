@@ -1384,7 +1384,7 @@
         "description": "st/mesa: check requirements for MESA_texture_const_bandwidth",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5cccd6d689c5104599beef5793865d68837488b5",
         "notes": null
