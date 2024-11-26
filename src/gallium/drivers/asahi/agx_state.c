@@ -5111,56 +5111,27 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          cfg.value = info->restart_index;
    }
 
-   agx_push(out, INDEX_LIST, cfg) {
-      cfg.primitive = agx_primitive_for_pipe(info->mode);
-
-      if (indirect != NULL) {
-         cfg.indirect_buffer_present = true;
-      } else {
-         cfg.instance_count_present = true;
-         cfg.index_count_present = true;
-         cfg.start_present = true;
-      }
-
-      if (info->index_size) {
-         cfg.restart_enable = info->primitive_restart;
-         cfg.index_buffer_hi = (ib >> 32);
-         cfg.index_size = agx_translate_index_size(info->index_size);
-         cfg.index_buffer_present = true;
-         cfg.index_buffer_size_present = true;
-      }
-   }
-
+   struct agx_draw draw = {0};
    if (info->index_size) {
-      agx_push(out, INDEX_LIST_BUFFER_LO, cfg) {
-         cfg.buffer_lo = ib & BITFIELD_MASK(32);
-      }
+      draw.index_size = agx_translate_index_size(info->index_size);
+      draw.index_buffer = ib;
+      draw.index_buffer_range_B = ib_extent;
+      draw.restart = info->primitive_restart;
+      draw.indexed = true;
+   } else {
+      draw.start = draws->start;
    }
 
    if (indirect) {
-      uint64_t address = agx_indirect_buffer_ptr(batch, indirect);
-
-      agx_push(out, INDEX_LIST_INDIRECT_BUFFER, cfg) {
-         cfg.address_hi = address >> 32;
-         cfg.address_lo = address & BITFIELD_MASK(32);
-      }
+      draw.b = agx_grid_indirect(agx_indirect_buffer_ptr(batch, indirect));
    } else {
-      agx_push(out, INDEX_LIST_COUNT, cfg)
-         cfg.count = draws->count;
-
-      agx_push(out, INDEX_LIST_INSTANCES, cfg)
-         cfg.count = info->instance_count;
-
-      agx_push(out, INDEX_LIST_START, cfg) {
-         cfg.start = info->index_size ? draws->index_bias : draws->start;
-      }
+      draw.b = agx_3d(draws->count, info->instance_count, 1);
+      if (info->index_size)
+         draw.index_bias = draws->index_bias;
    }
 
-   if (info->index_size) {
-      agx_push(out, INDEX_LIST_BUFFER_SIZE, cfg) {
-         cfg.size = ib_extent;
-      }
-   }
+   out = (void *)agx_vdm_draw((uint32_t *)out, 0 /* ignored for now */, draw,
+                              agx_primitive_for_pipe(info->mode));
 
    batch->vdm.current = out;
    assert((batch->vdm.current + AGX_VDM_STREAM_LINK_LENGTH) <= batch->vdm.end &&
