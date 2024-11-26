@@ -2248,8 +2248,8 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_index iter_sb = cs_scratch_reg32(b, 2);
    struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
    struct cs_index add_val = cs_scratch_reg64(b, 4);
-   struct cs_index release_sz = cs_scratch_reg32(b, 5);
    struct cs_index ringbuf_sync_addr = cs_scratch_reg64(b, 6);
+   struct cs_index release_sz = cs_scratch_reg32(b, 8);
 
    struct cs_index completed = cs_scratch_reg_tuple(b, 10, 4);
    struct cs_index completed_top = cs_scratch_reg64(b, 10);
