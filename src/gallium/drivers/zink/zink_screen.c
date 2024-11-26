@@ -3671,11 +3671,16 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
       }
    }
    if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_AUTO) {
+      switch(screen->info.driver_props.driverID) {
       /* descriptor buffer is not performant with virt yet */
-      if (screen->info.driver_props.driverID == VK_DRIVER_ID_MESA_VENUS)
+      case VK_DRIVER_ID_MESA_VENUS:
+      /* db descriptor mode is known to be broken on IMG proprietary drivers */
+      case VK_DRIVER_ID_IMAGINATION_PROPRIETARY:
          zink_descriptor_mode = ZINK_DESCRIPTOR_MODE_LAZY;
-      else
+	 break;
+      default:
          zink_descriptor_mode = can_db ? ZINK_DESCRIPTOR_MODE_DB : ZINK_DESCRIPTOR_MODE_LAZY;
+      }
    }
    if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
       const uint32_t sampler_size = MAX2(screen->info.db_props.combinedImageSamplerDescriptorSize, screen->info.db_props.robustUniformTexelBufferDescriptorSize);
