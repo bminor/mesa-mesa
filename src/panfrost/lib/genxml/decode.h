@@ -154,6 +154,20 @@ static inline void PRINTFLIKE(2, 3)
    va_end(ap);
 }
 
+static inline void PRINTFLIKE(2, 3)
+   pandecode_user_msg(struct pandecode_context *ctx, const char *format, ...)
+{
+   va_list ap;
+
+   simple_mtx_lock(&ctx->lock);
+   pandecode_dump_file_open(ctx);
+   pandecode_make_indent(ctx);
+   va_start(ap, format);
+   vfprintf(ctx->dump_stream, format, ap);
+   va_end(ap);
+   simple_mtx_unlock(&ctx->lock);
+}
+
 static inline void
 pandecode_log_cont(struct pandecode_context *ctx, const char *format, ...)
 {
