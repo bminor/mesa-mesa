@@ -3029,30 +3029,39 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 }
 
 static bool
-hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct agx_draw draw)
+hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct agx_draw *draw)
 {
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
-   if (!draw.indexed)
+   if (!draw->indexed)
       return false;
 
-   /* If tessellation is used, we'll go through the robust path anyway, don't
-    * end up with a tess+geom doom combo.
+   /* Geometry or tessellation use robust software index buffer fetch anyway */
+   if (gfx->shaders[MESA_SHADER_GEOMETRY] ||
+       gfx->shaders[MESA_SHADER_TESS_EVAL])
+      return false;
+
+   /* Soft fault does not cover the hardware index buffer fetch. So we can't
+    * simply use index buffers. However, we can use our 16-byte zero sink
+    * instead, using the hardware clamp. This does seem to work.
     */
-   if (gfx->shaders[MESA_SHADER_TESS_EVAL])
+   if (draw->index_buffer_range_B == 0) {
+      draw->index_buffer = dev->rodata.zero_sink;
+      draw->index_buffer_range_B = 4;
+      draw->start = 0;
       return false;
-
-   /* Allowed with maint6 without robustness features enabled */
-   if (draw.index_buffer_range_B == 0)
-      return true;
+   }
 
    if (!(dev->vk.enabled_features.robustBufferAccess ||
          dev->vk.enabled_features.robustBufferAccess2 ||
          dev->vk.enabled_features.pipelineRobustness))
       return false;
 
-   return agx_is_indirect(draw.b) || agx_direct_draw_overreads_indices(draw);
+   if (agx_is_indirect(draw->b))
+      return true;
+
+   return agx_direct_draw_overreads_indices(*draw);
 }
 
 static void
@@ -3077,10 +3086,7 @@ hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY) ||
       (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY);
 
-   /* TODO: Don't use a whole GS just for index robustness. */
-   bool index_robustness = hk_needs_index_robustness(cmd, draw);
-
-   bool needs_gs = xfb_outputs || adjacency || index_robustness;
+   bool needs_gs = xfb_outputs || adjacency;
 
    /* Various pipeline statistics are implemented in the pre-GS shader. TODO:
     * This could easily be optimized.
@@ -3131,9 +3137,8 @@ hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    }
 
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
-   perf_debug(dev, "Binding passthrough GS for%s%s%s%s\n",
+   perf_debug(dev, "Binding passthrough GS for%s%s%s\n",
               xfb_outputs ? " XFB" : "", adjacency ? " adjacency" : "",
-              index_robustness ? " robustness" : "",
               ia_stats ? " statistics" : "");
 
    gs = hk_meta_shader(dev, hk_nir_passthrough_gs, key, key_size);
@@ -3373,6 +3378,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
       bool geom = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY];
       bool tess = cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL];
+      bool needs_idx_robust = hk_needs_index_robustness(cmd, &draw);
       struct hk_cs *ccs = NULL;
       uint8_t *out = cs->current;
       assert(cs->current + 0x1000 < cs->end);
@@ -3382,7 +3388,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
       cs->stats.calls++;
 
-      if (geom || tess || ia_stats) {
+      if (geom || tess || ia_stats || needs_idx_robust) {
          ccs =
             hk_cmd_buffer_get_cs_general(cmd, &cmd->current_cs.pre_gfx, true);
          if (!ccs)
@@ -3409,8 +3415,27 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
             continue;
       }
 
-      cs->current = (void *)agx_vdm_draw((uint32_t *)out, dev->dev.chip, draw,
-                                         cmd->state.gfx.topology);
+      enum agx_primitive topology = cmd->state.gfx.topology;
+      if (needs_idx_robust) {
+         assert(!geom && !tess);
+         perf_debug(dev, "lowering robust index buffer");
+
+         cs->current = out;
+
+         draw = hk_draw_as_indexed_indirect(cmd, draw);
+
+         size_t size_B = libagx_draw_robust_index_vdm_size();
+         uint64_t target = hk_cs_alloc_for_indirect(cs, size_B);
+
+         libagx_draw_robust_index(ccs, agx_1d(32), target,
+                                  hk_geometry_state(cmd), draw.b.ptr,
+                                  draw.index_buffer, draw.index_buffer_range_B,
+                                  draw.restart, topology, draw.index_size);
+      } else {
+         cs->current = (void *)agx_vdm_draw((uint32_t *)out, dev->dev.chip,
+                                            draw, topology);
+      }
+
       cs->stats.cmds++;
    }
 }

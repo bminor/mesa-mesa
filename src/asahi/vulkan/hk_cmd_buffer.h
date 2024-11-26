@@ -334,6 +334,9 @@ struct hk_cs {
    /* Address of the root control stream for the job */
    uint64_t addr;
 
+   /* Fat pointer to the start of the current chunk of the control stream */
+   struct agx_ptr chunk;
+
    /* Start pointer of the root control stream */
    void *start;
 
@@ -391,6 +394,12 @@ struct hk_cs {
 
    struct hk_render_registers cr;
 };
+
+static inline uint64_t
+hk_cs_current_addr(struct hk_cs *cs)
+{
+   return cs->chunk.gpu + ((uint8_t *)cs->current - (uint8_t *)cs->chunk.cpu);
+}
 
 struct hk_uploader {
    /** List of hk_cmd_bo */
@@ -551,6 +560,7 @@ hk_cmd_buffer_get_cs_general(struct hk_cmd_buffer *cmd, struct hk_cs **ptr,
          .type = compute ? HK_CS_CDM : HK_CS_VDM,
          .addr = root.gpu,
          .start = root.cpu,
+         .chunk = root,
          .current = root.cpu,
          .end = root.cpu + initial_size,
       };
@@ -590,6 +600,16 @@ hk_cmd_buffer_get_cs(struct hk_cmd_buffer *cmd, bool compute)
 
 void hk_ensure_cs_has_space(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                             size_t space);
+
+static inline uint64_t
+hk_cs_alloc_for_indirect(struct hk_cs *cs, size_t size_B)
+{
+   hk_ensure_cs_has_space(cs->cmd, cs, size_B);
+
+   uint64_t addr = hk_cs_current_addr(cs);
+   cs->current += size_B;
+   return addr;
+}
 
 static void
 hk_cmd_buffer_dirty_all(struct hk_cmd_buffer *cmd)

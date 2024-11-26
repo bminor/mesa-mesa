@@ -817,5 +817,6 @@ hk_ensure_cs_has_space(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Swap out the control stream */
    cs->current = T.cpu;
    cs->end = cs->current + size;
+   cs->chunk = T;
    cs->stream_linked = true;
 }

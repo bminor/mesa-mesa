@@ -30,6 +30,16 @@ struct agx_geometry_state {
 } PACKED;
 static_assert(sizeof(struct agx_geometry_state) == 4 * 4);
 
+#ifdef __OPENCL_VERSION__
+static inline global void *
+agx_heap_alloc_nonatomic(global struct agx_geometry_state *heap, size_t size)
+{
+   global void *out = heap->heap + heap->heap_bottom;
+   heap->heap_bottom += size;
+   return out;
+}
+#endif
+
 struct agx_ia_state {
    /* Index buffer if present. */
    uint64_t index_buffer;

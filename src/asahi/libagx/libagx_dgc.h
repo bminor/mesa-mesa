@@ -306,6 +306,27 @@ agx_vdm_draw(GLOBAL uint32_t *out, enum agx_chip chip, struct agx_draw draw,
    return out;
 }
 
+static inline uint32_t
+agx_vdm_draw_size(enum agx_chip chip, struct agx_draw draw)
+{
+   uint32_t size = AGX_INDEX_LIST_LENGTH;
+
+   if (agx_is_indirect(draw.b)) {
+      size += AGX_INDEX_LIST_INDIRECT_BUFFER_LENGTH;
+   } else {
+      size += AGX_INDEX_LIST_COUNT_LENGTH;
+      size += AGX_INDEX_LIST_INSTANCES_LENGTH;
+      size += AGX_INDEX_LIST_START_LENGTH;
+   }
+
+   if (draw.indexed) {
+      size += AGX_INDEX_LIST_BUFFER_LO_LENGTH;
+      size += AGX_INDEX_LIST_BUFFER_SIZE_LENGTH;
+   }
+
+   return size;
+}
+
 static inline GLOBAL uint32_t *
 agx_cdm_barrier(GLOBAL uint32_t *out, enum agx_chip chip)
 {
@@ -547,4 +568,12 @@ agx_usc_words_precomp(GLOBAL uint32_t *out, CONST struct agx_shader *s,
    struct agx_usc_builder b = agx_usc_builder(out, sizeof(s->usc.data));
    agx_usc_uniform(&b, 0, DIV_ROUND_UP(data_size, 2), data);
    agx_usc_push_blob(&b, s->usc.data, s->usc.size);
+}
+
+/* This prototype is sufficient for sizing the output */
+static inline unsigned
+libagx_draw_robust_index_vdm_size()
+{
+   struct agx_draw draw = agx_draw_indexed(0, 0, 0, 0, 0, 0, 0, 0, 0);
+   return agx_vdm_draw_size(0, draw);
 }
