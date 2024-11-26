@@ -132,6 +132,7 @@ else
     MAX_LD=${FDO_CI_CONCURRENT:-4}
 fi
 
+# shellcheck disable=2206
 force_fallback_for=(
   # FIXME: explain what these are needed for
   perfetto
@@ -143,6 +144,7 @@ force_fallback_for=(
   pest_meta
   roxmltree
   indexmap
+  ${FORCE_FALLBACK_FOR:-}
 )
 
 section_switch meson-configure "meson: configure"
