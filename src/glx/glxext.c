@@ -1039,6 +1039,7 @@ __glXInitialize(Display * dpy)
    if (glx_direct)
       glx_driver |= GLX_DRIVER_SW;
 
+#if !defined(GLX_USE_APPLE)
    if (!dpyPriv->has_explicit_modifiers && glx_accel && !debug_get_bool_option("LIBGL_KOPPER_DRI2", false)) {
       if (glx_driver & GLX_DRIVER_ZINK_YES) {
          /* only print error if zink was explicitly requested */
@@ -1049,6 +1050,7 @@ __glXInitialize(Display * dpy)
       /* if no dri3 and not using dri2, disable zink */
       glx_driver &= ~GLX_DRIVER_ZINK_INFER;
    }
+#endif
 
 #ifdef GLX_USE_WINDOWSGL
    if (glx_direct && glx_accel)
