@@ -2470,8 +2470,9 @@ anv_descriptor_set_write_buffer(struct anv_device *device,
    struct anv_address bind_addr = anv_address_add(buffer->address, offset);
    desc->bind_range = vk_buffer_range(&buffer->vk, offset, range);
 
-   /* We report a bounds checking alignment of 32B for the sake of block
-    * messages which read an entire register worth at a time.
+   /* We report a bounds checking alignment of ANV_UBO_ALIGNMENT in
+    * VkPhysicalDeviceRobustness2PropertiesEXT::robustUniformBufferAccessSizeAlignment
+    * so align the range to that.
     */
    if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
        type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)

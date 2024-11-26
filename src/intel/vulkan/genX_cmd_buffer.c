@@ -1920,7 +1920,9 @@ emit_dynamic_buffer_binding_table_entry(struct anv_cmd_buffer *cmd_buffer,
    /* Clamp the range to the buffer size */
    uint32_t range = MIN2(desc->range, desc->buffer->vk.size - offset);
 
-   /* Align the range for consistency */
+   /* Align the range to the reported bounds checking alignment
+    * VkPhysicalDeviceRobustness2PropertiesEXT::robustUniformBufferAccessSizeAlignment
+    */
    if (desc->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
       range = align(range, ANV_UBO_ALIGNMENT);
 
