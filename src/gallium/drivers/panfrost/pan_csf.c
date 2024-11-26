@@ -187,7 +187,7 @@ csf_oom_handler_init(struct panfrost_context *ctx)
    assert(cs_is_valid(&b));
    cs_finish(&b);
    ctx->csf.tiler_oom_handler.cs_bo = cs_bo;
-   ctx->csf.tiler_oom_handler.length = b.root_chunk.size * 8;
+   ctx->csf.tiler_oom_handler.length = handler.length * sizeof(uint64_t);
    ctx->csf.tiler_oom_handler.save_bo = reg_save_bo;
 }
 
