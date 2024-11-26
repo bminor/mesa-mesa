@@ -1177,7 +1177,7 @@ _mesa_ImportSemaphoreWin32HandleEXT(GLuint semaphore,
 
    const char *func = "glImportSemaphoreWin32HandleEXT";
 
-   if (!ctx->Extensions.EXT_semaphore_win32) {
+   if (!_mesa_has_EXT_semaphore_win32(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }
@@ -1221,7 +1221,7 @@ _mesa_ImportSemaphoreWin32NameEXT(GLuint semaphore,
 
    const char *func = "glImportSemaphoreWin32HandleEXT";
 
-   if (!ctx->Extensions.EXT_semaphore_win32) {
+   if (!_mesa_has_EXT_semaphore_win32(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(unsupported)", func);
       return;
    }

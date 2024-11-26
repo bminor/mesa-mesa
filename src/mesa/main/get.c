@@ -2929,7 +2929,7 @@ find_value_indexed(const char *func, GLenum pname, GLuint index, union value *v)
       return TYPE_INT_4;
    /* GL_EXT_memory_object_win32 */
    case GL_DEVICE_LUID_EXT:
-      if (!_mesa_has_EXT_memory_object_win32(ctx) && !ctx->Extensions.EXT_semaphore_win32)
+      if (!_mesa_has_EXT_memory_object_win32(ctx) && !_mesa_has_EXT_semaphore_win32(ctx))
          goto invalid_enum;
       if (index >= 1)
          goto invalid_value;
