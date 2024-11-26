@@ -195,7 +195,7 @@ pan_image_view_has_crc(const struct pan_image_view *iview)
 }
 
 static inline const struct pan_image *
-pan_image_view_get_zs_image(const struct pan_image_view *iview)
+pan_image_view_get_zs_plane(const struct pan_image_view *iview)
 {
    /* We split depth/stencil combined formats, and end up with only
     * singleplanar depth and stencil formats. */

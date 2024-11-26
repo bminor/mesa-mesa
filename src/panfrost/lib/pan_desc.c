@@ -203,7 +203,7 @@ pan_prepare_s(const struct pan_fb_info *fb, unsigned layer_idx,
    if (!s)
       return;
 
-   const struct pan_image *image = pan_image_view_get_zs_image(s);
+   const struct pan_image *image = pan_image_view_get_zs_plane(s);
    unsigned level = s->first_level;
 
    ext->s_msaa = mali_sampling_mode(s);
@@ -233,7 +233,7 @@ pan_prepare_zs(const struct pan_fb_info *fb, unsigned layer_idx,
    if (!zs)
       return;
 
-   const struct pan_image *image = pan_image_view_get_zs_image(zs);
+   const struct pan_image *image = pan_image_view_get_zs_plane(zs);
    unsigned level = zs->first_level;
 
    ext->zs_msaa = mali_sampling_mode(zs);
@@ -1015,7 +1015,7 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 
       if (fb->zs.view.zs) {
          const struct pan_image_view *zs = fb->zs.view.zs;
-         const struct pan_image *image = pan_image_view_get_zs_image(zs);
+         const struct pan_image *image = pan_image_view_get_zs_plane(zs);
          unsigned level = zs->first_level;
          struct pan_surface surf;
 
