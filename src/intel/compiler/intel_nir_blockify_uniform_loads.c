@@ -91,6 +91,7 @@ intel_nir_blockify_uniform_loads_instr(nir_builder *b,
       return true;
 
    case nir_intrinsic_load_global_constant:
+      return false;
       if (nir_src_is_divergent(&intrin->src[0]))
          return false;
 

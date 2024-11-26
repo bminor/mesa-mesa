@@ -2473,9 +2473,9 @@ anv_descriptor_set_write_buffer(struct anv_device *device,
    /* We report a bounds checking alignment of 32B for the sake of block
     * messages which read an entire register worth at a time.
     */
-   if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-       type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
-      desc->bind_range = align64(desc->bind_range, ANV_UBO_ALIGNMENT);
+   /* if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || */
+   /*     type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) */
+   /*    desc->bind_range = align64(desc->bind_range, ANV_UBO_ALIGNMENT); */
 
    if (data & ANV_DESCRIPTOR_INDIRECT_ADDRESS_RANGE) {
       struct anv_address_range_descriptor desc_data = {

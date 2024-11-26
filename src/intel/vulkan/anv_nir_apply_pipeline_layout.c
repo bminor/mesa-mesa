@@ -424,6 +424,10 @@ build_optimized_load_render_surface_state_address(nir_builder *b,
    nir_def *addr_udw = nir_channel(b, surface_addr, 1);
    nir_def *length = nir_channel(b, surface_addr, 3);
 
+   nir_printf_fmt(b, true, 64, "ubo_len=%u\n",
+                  length);
+
+
    return nir_vec4(b, addr_ldw, addr_udw, length, nir_imm_int(b, 0));
 }
 
@@ -499,6 +503,9 @@ build_non_optimized_load_render_surface_state_address(nir_builder *b,
    length = nir_ior(b, length, nir_ishl_imm(b, height, width_bits));
    length = nir_ior(b, length, nir_ishl_imm(b, depth, width_bits + height_bits));
    length = nir_iadd_imm(b, length, 1);
+
+   nir_printf_fmt(b, true, 64, "ubo_len=%u\n",
+                  length);
 
    /* Check the surface type, if it's SURFTYPE_NULL, set the length of the
     * buffer to 0.
