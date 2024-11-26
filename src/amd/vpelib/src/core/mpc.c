@@ -106,6 +106,7 @@ static enum mpc_color_gamut_type get_color_gamut_type(enum color_space color_spa
         return COLOR_GAMUT_RGB_TYPE;
     case COLOR_SPACE_YCBCR601:
     case COLOR_SPACE_YCBCR601_LIMITED:
+    case COLOR_SPACE_YCBCR_JFIF:
         return COLOR_GAMUT_YCBCR601_TYPE;
     case COLOR_SPACE_YCBCR709:
     case COLOR_SPACE_YCBCR709_LIMITED:
