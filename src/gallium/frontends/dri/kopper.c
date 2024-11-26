@@ -156,8 +156,12 @@ kopper_get_pixmap_buffer(struct dri_drawable *drawable,
     */
    struct dri_screen *screen = drawable->screen;
 
+#ifndef GLX_USE_APPLE
    drawable->image = loader_dri3_get_pixmap_buffer(conn, pixmap, screen,
                                                    fourcc, drawable->screen->dmabuf_import, &width, &height, drawable);
+#else
+   drawable->image = NULL;
+#endif
    if (!drawable->image)
       return NULL;
 
