@@ -3001,6 +3001,16 @@ init_driver_workarounds(struct zink_screen *screen)
       break;
    }
 
+   /* these drivers cannot handle arbitary const value types */
+   switch (zink_driverid(screen)) {
+   case VK_DRIVER_ID_IMAGINATION_PROPRIETARY:
+      screen->driver_compiler_workarounds.broken_const = true;
+      break;
+   default:
+      screen->driver_compiler_workarounds.broken_const = false;
+      break;
+   }
+
    /* When robust contexts are advertised but robustImageAccess2 is not available */
    screen->driver_compiler_workarounds.lower_robustImageAccess2 =
       !screen->info.rb2_feats.robustImageAccess2 &&
