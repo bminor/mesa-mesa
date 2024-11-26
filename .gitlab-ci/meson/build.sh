@@ -10,6 +10,11 @@ section_switch meson-cross-file "meson: cross file generate"
 set -e
 set -o xtrace
 
+comma_separated() {
+  local IFS=,
+  echo "$*"
+}
+
 CROSS_FILE=/cross_file-"$CROSS".txt
 
 export PATH=$PATH:$PWD/.gitlab-ci/build
@@ -127,13 +132,26 @@ else
     MAX_LD=${FDO_CI_CONCURRENT:-4}
 fi
 
+force_fallback_for=(
+  # FIXME: explain what these are needed for
+  perfetto
+  syn
+  paste
+  pest
+  pest_derive
+  pest_generator
+  pest_meta
+  roxmltree
+  indexmap
+)
+
 section_switch meson-configure "meson: configure"
 
 rm -rf _build
 meson setup _build \
       --native-file=native.file \
       --wrap-mode=nofallback \
-      --force-fallback-for perfetto,syn,paste,pest,pest_derive,pest_generator,pest_meta,roxmltree,indexmap \
+      --force-fallback-for "$(comma_separated "${force_fallback_for[@]}")" \
       ${CROSS+--cross "$CROSS_FILE"} \
       -D prefix=$PWD/install \
       -D libdir=lib \
