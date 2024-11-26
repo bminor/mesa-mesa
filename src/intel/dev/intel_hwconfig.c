@@ -193,17 +193,19 @@ should_apply_hwconfig_item(uint16_t always_apply_verx10,
  */
 #define DEVINFO_HWCONFIG_KV(CVER, F, K, V)                              \
    do {                                                                 \
-      if (should_apply_hwconfig_item((CVER), devinfo, devinfo->F))      \
+      if (check_only)                                                   \
+         hwconfig_item_warning(#F, devinfo->F, (K), (V));               \
+      else if (should_apply_hwconfig_item((CVER), devinfo, devinfo->F)) \
          devinfo->F = (V);                                              \
-      hwconfig_item_warning(#F, devinfo->F, (K), (V));                  \
    } while (0)
 
 #define DEVINFO_HWCONFIG(CVER, F, I)                                    \
    DEVINFO_HWCONFIG_KV((CVER), F, (I)->key, (I)->val[0])
 
 static void
-apply_hwconfig_item(struct intel_device_info *devinfo,
-                    const struct hwconfig *item)
+process_hwconfig_item(struct intel_device_info *devinfo,
+                      const struct hwconfig *item,
+                      const bool check_only)
 {
    switch (item->key) {
    case INTEL_HWCONFIG_MAX_SLICES_SUPPORTED:
@@ -324,11 +326,28 @@ apply_hwconfig_item(struct intel_device_info *devinfo,
    }
 }
 
+static void
+apply_hwconfig_item(struct intel_device_info *devinfo,
+                    const struct hwconfig *item)
+{
+   process_hwconfig_item(devinfo, item, false);
+}
+
+UNUSED static void
+check_hwconfig_item(struct intel_device_info *devinfo,
+                    const struct hwconfig *item)
+{
+   process_hwconfig_item(devinfo, item, true);
+}
+
 bool
 intel_hwconfig_process_table(struct intel_device_info *devinfo,
                              void *data, int32_t len)
 {
    process_hwconfig_table(devinfo, data, len, apply_hwconfig_item);
+#ifndef NDEBUG
+   process_hwconfig_table(devinfo, data, len, check_hwconfig_item);
+#endif
 
    return apply_hwconfig(devinfo);
 }
