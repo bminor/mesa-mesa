@@ -145,9 +145,9 @@ done
 {
   if [ "$DEQP_VERSION" = "$DEQP_MAIN_COMMIT" ]; then
     commit_desc=$(git show --no-patch --format='commit %h on %ci' --abbrev=10 "$DEQP_COMMIT")
-    echo "dEQP main at $commit_desc"
+    echo "dEQP $DEQP_API at $commit_desc"
   else
-    echo "dEQP base version $DEQP_VERSION"
+    echo "dEQP $DEQP_API version $DEQP_VERSION"
   fi
   echo "The following local patches are applied on top:"
   git log --reverse --oneline "$DEQP_COMMIT".. --format='- %s'
