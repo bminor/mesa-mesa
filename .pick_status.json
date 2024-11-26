@@ -1264,7 +1264,7 @@
         "description": "asahi,hk: reenable rgb32 buffer textures",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "049808630e244ed87884eb89938285d11d8ffc2e",
         "notes": null
