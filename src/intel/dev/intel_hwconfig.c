@@ -172,9 +172,9 @@ should_apply_hwconfig_item(uint16_t always_apply_verx10,
                            const struct intel_device_info *devinfo,
                            uint32_t devinfo_val)
 {
-   if (apply_hwconfig(devinfo) &&
-       (devinfo->verx10 >= always_apply_verx10 || devinfo_val == 0))
-         return true;
+   assert(apply_hwconfig(devinfo));
+   if ((devinfo->verx10 >= always_apply_verx10 || devinfo_val == 0))
+      return true;
 
    return false;
 }
@@ -344,7 +344,8 @@ bool
 intel_hwconfig_process_table(struct intel_device_info *devinfo,
                              void *data, int32_t len)
 {
-   process_hwconfig_table(devinfo, data, len, apply_hwconfig_item);
+   if (apply_hwconfig(devinfo))
+      process_hwconfig_table(devinfo, data, len, apply_hwconfig_item);
 #ifndef NDEBUG
    process_hwconfig_table(devinfo, data, len, check_hwconfig_item);
 #endif
