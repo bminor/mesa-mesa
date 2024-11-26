@@ -201,3 +201,7 @@ spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvyu,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-transcode-nv12-as-r8-gr88,Fail
+
+# zink_create_quads_emulation_gs doesn't write primitive ID
+# https://gitlab.freedesktop.org/mesa/mesa/-/issues/12214
+spec@glsl-1.50@execution@primitive-id-no-gs-quads,Fail

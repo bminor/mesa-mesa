@@ -2471,9 +2471,10 @@ enum radv_ps_in_type {
 static uint32_t
 offset_to_ps_input(const uint32_t offset, const enum radv_ps_in_type type)
 {
-   assert(offset != AC_EXP_PARAM_UNDEFINED);
-
-   if (offset >= AC_EXP_PARAM_DEFAULT_VAL_0000 && offset <= AC_EXP_PARAM_DEFAULT_VAL_1111) {
+   if (offset == AC_EXP_PARAM_UNDEFINED) {
+      /* The input is UNDEFINED, use zero. */
+      return S_028644_OFFSET(0x20) | S_028644_DEFAULT_VAL(0);
+   } else if (offset >= AC_EXP_PARAM_DEFAULT_VAL_0000 && offset <= AC_EXP_PARAM_DEFAULT_VAL_1111) {
       /* The input is a DEFAULT_VAL constant. */
       return S_028644_OFFSET(0x20) | S_028644_DEFAULT_VAL(offset - AC_EXP_PARAM_DEFAULT_VAL_0000);
    }
@@ -2512,34 +2513,11 @@ offset_to_ps_input(const uint32_t offset, const enum radv_ps_in_type type)
 }
 
 static void
-slot_to_ps_input(const struct radv_vs_output_info *outinfo, unsigned slot, uint32_t *ps_input_cntl, unsigned *ps_offset,
-                 const bool use_default_0, const enum radv_ps_in_type type)
-{
-   unsigned vs_offset = outinfo->vs_output_param_offset[slot];
-
-   if (vs_offset == AC_EXP_PARAM_UNDEFINED) {
-      if (use_default_0)
-         vs_offset = AC_EXP_PARAM_DEFAULT_VAL_0000;
-      else
-         return;
-   }
-
-   ps_input_cntl[*ps_offset] = offset_to_ps_input(vs_offset, type);
-   ++(*ps_offset);
-}
-
-static void
 input_mask_to_ps_inputs(const struct radv_vs_output_info *outinfo, const struct radv_shader *ps, uint32_t input_mask,
                         uint32_t *ps_input_cntl, unsigned *ps_offset, const enum radv_ps_in_type default_type)
 {
    u_foreach_bit (i, input_mask) {
-      unsigned vs_offset = outinfo->vs_output_param_offset[VARYING_SLOT_VAR0 + i];
-      if (vs_offset == AC_EXP_PARAM_UNDEFINED) {
-         ps_input_cntl[*ps_offset] = S_028644_OFFSET(0x20);
-         ++(*ps_offset);
-         continue;
-      }
-
+      const unsigned vs_offset = outinfo->vs_output_param_offset[VARYING_SLOT_VAR0 + i];
       enum radv_ps_in_type type = default_type;
 
       if (ps->info.ps.explicit_shaded_mask & BITFIELD_BIT(*ps_offset))
@@ -2577,10 +2555,12 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
       ps_input_cntl[ps_offset++] = S_028644_PT_SPRITE_TEX(1) | S_028644_OFFSET(0x20);
 
    if (ps->info.ps.input_clips_culls_mask & 0x0f)
-      slot_to_ps_input(outinfo, VARYING_SLOT_CLIP_DIST0, ps_input_cntl, &ps_offset, false, radv_ps_in_interpolated);
+      ps_input_cntl[ps_offset++] =
+         offset_to_ps_input(outinfo->vs_output_param_offset[VARYING_SLOT_CLIP_DIST0], radv_ps_in_interpolated);
 
    if (ps->info.ps.input_clips_culls_mask & 0xf0)
-      slot_to_ps_input(outinfo, VARYING_SLOT_CLIP_DIST1, ps_input_cntl, &ps_offset, false, radv_ps_in_interpolated);
+      ps_input_cntl[ps_offset++] =
+         offset_to_ps_input(outinfo->vs_output_param_offset[VARYING_SLOT_CLIP_DIST1], radv_ps_in_interpolated);
 
    input_mask_to_ps_inputs(outinfo, ps, ps->info.ps.input_mask, ps_input_cntl, &ps_offset, radv_ps_in_flat);
 
@@ -2588,17 +2568,17 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
    if (ps->info.ps.prim_id_input) {
       num_per_primitive_params += !!outinfo->export_prim_id_per_primitive;
       const enum radv_ps_in_type t = outinfo->export_prim_id_per_primitive ? per_prim : radv_ps_in_flat;
-      slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, t);
+      ps_input_cntl[ps_offset++] = offset_to_ps_input(outinfo->vs_output_param_offset[VARYING_SLOT_PRIMITIVE_ID], t);
    }
    if (ps->info.ps.layer_input) {
       num_per_primitive_params += !!outinfo->writes_layer_per_primitive;
       const enum radv_ps_in_type t = outinfo->writes_layer_per_primitive ? per_prim : radv_ps_in_flat;
-      slot_to_ps_input(outinfo, VARYING_SLOT_LAYER, ps_input_cntl, &ps_offset, true, t);
+      ps_input_cntl[ps_offset++] = offset_to_ps_input(outinfo->vs_output_param_offset[VARYING_SLOT_LAYER], t);
    }
    if (ps->info.ps.viewport_index_input) {
       num_per_primitive_params += !!outinfo->writes_viewport_index_per_primitive;
       const enum radv_ps_in_type t = outinfo->writes_viewport_index_per_primitive ? per_prim : radv_ps_in_flat;
-      slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, t);
+      ps_input_cntl[ps_offset++] = offset_to_ps_input(outinfo->vs_output_param_offset[VARYING_SLOT_VIEWPORT], t);
    }
 
    /* Per-primitive PS inputs: the HW needs these to be last. */

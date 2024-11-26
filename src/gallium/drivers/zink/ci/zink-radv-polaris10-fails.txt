@@ -598,3 +598,7 @@ spec@ext_texture_array@copyteximage 1d_array samples=2,Fail
 spec@ext_texture_array@copyteximage 1d_array samples=4,Fail
 spec@ext_texture_array@copyteximage 1d_array samples=6,Fail
 spec@ext_texture_array@copyteximage 1d_array samples=8,Fail
+
+# zink_create_quads_emulation_gs doesn't write primitive ID
+# https://gitlab.freedesktop.org/mesa/mesa/-/issues/12214
+spec@glsl-1.50@execution@primitive-id-no-gs-quads,Fail

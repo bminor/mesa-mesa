@@ -167,3 +167,7 @@ spec@ext_framebuffer_multisample@interpolation 8 non-centroid-disabled,Fail
 
 # Regression noticed in https://gitlab.freedesktop.org/mesa/mesa/-/pipelines/891104
 spec@arb_viewport_array@display-list,Fail
+
+# zink_create_quads_emulation_gs doesn't write primitive ID
+# https://gitlab.freedesktop.org/mesa/mesa/-/issues/12214
+spec@glsl-1.50@execution@primitive-id-no-gs-quads,Fail
