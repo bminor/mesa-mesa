@@ -675,7 +675,17 @@ void
 pan_iview_get_surface(const struct pan_image_view *iview, unsigned level,
                       unsigned layer, unsigned sample, struct pan_surface *surf)
 {
-   const struct pan_image *image = pan_image_view_get_plane(iview, 0);
+   const struct util_format_description *fdesc =
+      util_format_description(iview->format);
+
+
+   /* In case of multiplanar depth/stencil, the stencil is always on
+    * plane 1. Combined depth/stencil only has one plane, so depth
+    * will be on plane 0 in either case.
+    */
+   const struct pan_image *image = util_format_has_stencil(fdesc)
+      ? pan_image_view_get_s_plane(iview)
+      : pan_image_view_get_plane(iview, 0);
 
    level += iview->first_level;
    assert(level < image->layout.nr_slices);

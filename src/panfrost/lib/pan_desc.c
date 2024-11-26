@@ -207,7 +207,7 @@ pan_prepare_s(const struct pan_fb_info *fb, unsigned layer_idx,
    if (!s)
       return;
 
-   const struct pan_image *image = pan_image_view_get_zs_plane(s);
+   const struct pan_image *image = pan_image_view_get_s_plane(s);
    unsigned level = s->first_level;
 
    ext->s_msaa = mali_sampling_mode(s);
@@ -751,7 +751,7 @@ pan_force_clean_write(const struct pan_fb_info *fb, unsigned tile_size)
       return true;
 
    if (fb->zs.view.s && !fb->zs.discard.s &&
-       pan_force_clean_write_on(pan_image_view_get_zs_plane(fb->zs.view.s),
+       pan_force_clean_write_on(pan_image_view_get_s_plane(fb->zs.view.s),
                                 tile_size))
       return true;
 

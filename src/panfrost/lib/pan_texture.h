@@ -222,12 +222,30 @@ pan_image_view_has_crc(const struct pan_image_view *iview)
 }
 
 static inline const struct pan_image *
+pan_image_view_get_s_plane(const struct pan_image_view *iview)
+{
+   ASSERTED const struct util_format_description *fdesc =
+      util_format_description(iview->format);
+   assert(util_format_has_stencil(fdesc));
+
+   /* In case of multiplanar depth/stencil, the stencil is always on
+    * plane 1. Combined depth/stencil only has one plane, so depth
+    * will be on plane 0 in either case.
+    */
+   const struct pan_image *plane = iview->planes[1] ?: iview->planes[0];
+
+   assert(plane);
+   fdesc = util_format_description(plane->layout.format);
+   assert(util_format_has_stencil(fdesc));
+   return plane;
+}
+
+static inline const struct pan_image *
 pan_image_view_get_zs_plane(const struct pan_image_view *iview)
 {
-   /* We split depth/stencil combined formats, and end up with only
-    * singleplanar depth and stencil formats. */
    assert(util_format_is_depth_or_stencil(iview->format));
-   assert(pan_image_view_get_plane(iview, 1) == NULL);
+
+   /* Depth or combined depth-stencil is always on plane 0. */
    return pan_image_view_get_plane(iview, 0);
 }
 
