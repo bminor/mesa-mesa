@@ -154,16 +154,10 @@ apply_hwconfig(const struct intel_device_info *devinfo)
    return devinfo->verx10 >= 125;
 }
 
-static inline bool
-should_apply_hwconfig_item(uint16_t always_apply_verx10,
-                           const struct intel_device_info *devinfo,
-                           const char *devinfo_name, uint32_t devinfo_val,
-                           const uint32_t hwconfig_key, uint32_t hwconfig_val)
+static inline void
+hwconfig_item_warning(const char *devinfo_name, uint32_t devinfo_val,
+                      const uint32_t hwconfig_key, uint32_t hwconfig_val)
 {
-   if (apply_hwconfig(devinfo) &&
-       (devinfo->verx10 >= always_apply_verx10 || devinfo_val == 0))
-         return true;
-
 #ifndef NDEBUG
    if (devinfo_val != hwconfig_val) {
       mesa_logw("%s (%u) != devinfo->%s (%u)",
@@ -171,6 +165,16 @@ should_apply_hwconfig_item(uint16_t always_apply_verx10,
                 devinfo_val);
    }
 #endif
+}
+
+static inline bool
+should_apply_hwconfig_item(uint16_t always_apply_verx10,
+                           const struct intel_device_info *devinfo,
+                           uint32_t devinfo_val)
+{
+   if (apply_hwconfig(devinfo) &&
+       (devinfo->verx10 >= always_apply_verx10 || devinfo_val == 0))
+         return true;
 
    return false;
 }
@@ -189,9 +193,9 @@ should_apply_hwconfig_item(uint16_t always_apply_verx10,
  */
 #define DEVINFO_HWCONFIG_KV(CVER, F, K, V)                              \
    do {                                                                 \
-      if (should_apply_hwconfig_item((CVER), devinfo, #F, devinfo->F,   \
-                                     (K), (V)))                         \
+      if (should_apply_hwconfig_item((CVER), devinfo, devinfo->F))      \
          devinfo->F = (V);                                              \
+      hwconfig_item_warning(#F, devinfo->F, (K), (V));                  \
    } while (0)
 
 #define DEVINFO_HWCONFIG(CVER, F, I)                                    \
