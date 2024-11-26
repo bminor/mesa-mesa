@@ -57,7 +57,7 @@ traces:
       checksum: cea8067f4538fd73e3505f58f0b7044e
   ksp/KSP-trim--f4800-v20201203-v2.trace:
     freedreno-a630:
-      checksum: 2f60f3514e1717e26b03ed3b685a0ad8
+      checksum: 7246aefab114f6521b95e0b463d622ec
   Witcher2/witcher2-s0-1970-f2038-v2.trace:
     freedreno-a630:
       label: [skip, broken]
