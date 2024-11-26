@@ -1081,7 +1081,7 @@ cmd_buffer_post_draw_wa(struct anv_cmd_buffer *cmd_buffer,
                         uint32_t access_type)
 {
    batch_post_draw_wa(&cmd_buffer->batch, cmd_buffer->device,
-                      cmd_buffer->state.gfx.primitive_topology,
+                      cmd_buffer->state.gfx.dyn_state.vft.PrimitiveTopologyType,
                       vertex_count);
 
    update_dirty_vbs_for_gfx8_vb_flush(cmd_buffer, access_type);

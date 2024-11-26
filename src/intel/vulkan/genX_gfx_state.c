@@ -964,14 +964,10 @@ update_topology(struct anv_gfx_dynamic_state *hw_state,
 {
    const struct vk_dynamic_graphics_state *dyn =
       &cmd_buffer->vk.dynamic_graphics_state;
-   struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
-
    uint32_t topology =
       anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL) ?
       _3DPRIM_PATCHLIST(dyn->ts.patch_control_points) :
       vk_to_intel_primitive_type[dyn->ia.primitive_topology];
-
-   gfx->primitive_topology = topology;
 
    SET(VF_TOPOLOGY, vft.PrimitiveTopologyType, topology);
 }
