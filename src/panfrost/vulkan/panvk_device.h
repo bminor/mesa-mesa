@@ -45,6 +45,7 @@ struct panvk_device {
    struct {
       struct panvk_priv_bo *handlers_bo;
       uint32_t handler_stride;
+      uint32_t dump_region_size;
    } tiler_oom;
 
    struct vk_meta_device meta;

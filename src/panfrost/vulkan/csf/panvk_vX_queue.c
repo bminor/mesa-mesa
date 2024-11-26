@@ -359,8 +359,7 @@ init_queue(struct panvk_queue *queue)
       }
    }
 
-   /* Allocate space to store up to 128 registers. */
-   alloc_info.size = 128 * sizeof(uint32_t);
+   alloc_info.size = dev->tiler_oom.dump_region_size;
    alloc_info.alignment = sizeof(uint32_t);
    queue->tiler_oom_regs_save =
       panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);

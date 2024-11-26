@@ -25,7 +25,7 @@ tiler_oom_reg_perm_cb(struct cs_builder *b, unsigned reg)
 
 static size_t
 generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
-                           uint32_t rt_count)
+                           uint32_t rt_count, uint32_t *dump_region_size)
 {
    assert(rt_count >= 1 && rt_count <= MAX_RTS);
    uint32_t fbd_size = get_fbd_size(has_zs_ext, rt_count);
@@ -126,8 +126,9 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
 
    assert(cs_is_valid(&b));
    cs_finish(&b);
+   *dump_region_size = handler.dump_size;
 
-   return b.root_chunk.size * sizeof(uint64_t);
+   return handler.length * sizeof(uint64_t);
 }
 
 #define TILER_OOM_HANDLER_MAX_SIZE 512
@@ -154,12 +155,16 @@ panvk_per_arch(init_tiler_oom)(struct panvk_device *device)
             .capacity = TILER_OOM_HANDLER_MAX_SIZE / sizeof(uint64_t),
          };
 
-         size_t handler_length =
-            generate_tiler_oom_handler(handler_mem, zs_ext, rt_count);
+         uint32_t dump_region_size;
+         size_t handler_length = generate_tiler_oom_handler(
+            handler_mem, zs_ext, rt_count, &dump_region_size);
 
          /* All handlers must have the same length */
          assert(idx == 0 || handler_length == device->tiler_oom.handler_stride);
+         assert(idx == 0 ||
+                dump_region_size == device->tiler_oom.dump_region_size);
          device->tiler_oom.handler_stride = handler_length;
+         device->tiler_oom.dump_region_size = dump_region_size;
       }
    }
 
