@@ -1439,7 +1439,7 @@ static unsigned rvcn_dec_dynamic_dpb_t2_message(struct radeon_decoder *dec, rvcn
       dpb->vbuf = dec->base.context->create_video_buffer(dec->base.context, &templat);
 
       if (!dpb->vbuf) {
-         RVID_ERR("Can't allocate dpb buffer.\n");
+         RADEON_DEC_ERR("Can't allocate dpb buffer.\n");
          FREE(dpb);
          return 1;
       }
@@ -1625,7 +1625,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
          }
          assert(encrypted == (bool)(dec->dpb.res->flags & RADEON_FLAG_ENCRYPTED));
          if (!r) {
-            RVID_ERR("Can't allocated dpb.\n");
+            RADEON_DEC_ERR("Can't allocate dpb.\n");
             return NULL;
          }
       } else if (dec->dpb_type == DPB_DYNAMIC_TIER_1 && dec->dpb.res &&
@@ -1641,9 +1641,9 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
          dec->dpb_size = calc_dpb_size(dec);
          r = si_vid_resize_buffer(dec->base.context, &dec->cs, &dec->dpb, dec->dpb_size, &buf_offset_info);
          if (!r) {
-            RVID_ERR("Can't resize dpb.\n");
+            RADEON_DEC_ERR("Can't resize dpb.\n");
             return NULL;
-	 }
+         }
          dec->max_width = dec->base.width;
          dec->max_height = dec->base.height;
          dpb_resize = true;
@@ -1663,7 +1663,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
          assert((encrypted && dec->tmz_ctx) == (bool)(dec->ctx.res->flags & RADEON_FLAG_ENCRYPTED));
 
          if (!r) {
-            RVID_ERR("Can't allocated context buffer.\n");
+            RADEON_DEC_ERR("Can't allocate context buffer.\n");
             return NULL;
          }
       } else if (fmt == PIPE_VIDEO_FORMAT_VP9) {
@@ -1696,7 +1696,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
             r = si_vid_create_buffer(dec->screen, &dec->ctx, ctx_size, PIPE_USAGE_DEFAULT);
          }
          if (!r) {
-            RVID_ERR("Can't allocated context buffer.\n");
+            RADEON_DEC_ERR("Can't allocate context buffer.\n");
             return NULL;
          }
 
@@ -1720,7 +1720,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
             r = si_vid_create_buffer(dec->screen, &dec->ctx, ctx_size, PIPE_USAGE_DEFAULT);
          }
          if (!r) {
-            RVID_ERR("Can't allocated context buffer.\n");
+            RADEON_DEC_ERR("Can't allocate context buffer.\n");
             return NULL;
          }
       }
@@ -1762,7 +1762,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
    decode->dt_uv_pitch = chroma->surface.u.gfx9.surf_pitch * chroma->surface.blk_w;
 
    if (luma->surface.meta_offset) {
-      RVID_ERR("DCC surfaces not supported.\n");
+      RADEON_DEC_ERR("DCC surfaces not supported.\n");
       return NULL;
    }
 
@@ -1888,7 +1888,7 @@ static struct pb_buffer_lean *rvcn_dec_message_decode(struct radeon_decoder *dec
          uint8_t *ptr;
 
          if (!si_vid_create_buffer(dec->screen, &dec->ctx, ctx_size, PIPE_USAGE_DEFAULT))
-            RVID_ERR("Can't allocated context buffer.\n");
+            RADEON_DEC_ERR("Can't allocate context buffer.\n");
 
          ptr = dec->ws->buffer_map(dec->ws, dec->ctx.res->buf, &dec->cs, PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
 
@@ -2439,8 +2439,13 @@ static void radeon_dec_decode_bitstream(struct pipe_video_codec *decoder,
 
    assert(decoder);
 
-   if (!dec->bs_ptr)
+   if (dec->error)
       return;
+
+   if (!dec->bs_ptr) {
+      RADEON_DEC_ERR("Invalid bitstream ptr!\n");
+      return;
+   }
 
    unsigned long total_bs_size = dec->bs_size;
    for (i = 0; i < num_buffers; ++i)
@@ -2455,12 +2460,12 @@ static void radeon_dec_decode_bitstream(struct pipe_video_codec *decoder,
       if (!dec->bs_size) {
          struct rvid_buffer old_buf = *buf;
          if (!si_vid_create_buffer(dec->screen, buf, total_bs_size, buf->usage)) {
-            RVID_ERR("Can't create bitstream buffer!");
+            RADEON_DEC_ERR("Can't create bitstream buffer!");
             return;
          }
          si_vid_destroy_buffer(&old_buf);
       } else if (!si_vid_resize_buffer(dec->base.context, &dec->cs, buf, total_bs_size, NULL)) {
-         RVID_ERR("Can't resize bitstream buffer!");
+         RADEON_DEC_ERR("Can't resize bitstream buffer!");
          return;
       }
 
@@ -2532,7 +2537,7 @@ static int radeon_dec_end_frame(struct pipe_video_codec *decoder, struct pipe_vi
 
    assert(decoder);
 
-   if (!dec->bs_ptr)
+   if (dec->error)
       return 1;
 
    dec->send_cmd(dec, target, picture);
@@ -2555,7 +2560,7 @@ static int radeon_dec_jpeg_end_frame(struct pipe_video_codec *decoder, struct pi
 
    assert(decoder);
 
-   if (!dec->bs_ptr)
+   if (dec->error)
       return 1;
 
    dec->jpg.crop_x = ROUND_DOWN_TO(pic->picture_parameter.crop_x, VL_MACROBLOCK_WIDTH);
@@ -2691,7 +2696,7 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
    if (!ws->cs_create(&dec->cs,
                       (sctx->vcn_has_ctx) ? ((struct si_context *)dec->ectx)->ctx : sctx->ctx,
                       ring, NULL, NULL)) {
-      RVID_ERR("Can't get command submission context.\n");
+      RADEON_DEC_ERR("Can't get command submission context.\n");
       goto error;
    }
 
@@ -2715,7 +2720,7 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
          if (!sctx->ctx)
             goto error;
          if (!dec->ws->cs_create(&dec->jcs[i], dec->jctx[i], ring, NULL, NULL)) {
-            RVID_ERR("Can't get additional command submission context for mJPEG.\n");
+            RADEON_DEC_ERR("Can't get additional command submission context for mJPEG.\n");
             goto error;
          }
       }
@@ -2758,13 +2763,13 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
       /* use vram to improve performance, workaround an unknown bug */
       if (!si_vid_create_buffer(dec->screen, &dec->msg_fb_it_probs_buffers[i], msg_fb_it_probs_size,
                                 PIPE_USAGE_DEFAULT)) {
-         RVID_ERR("Can't allocated message buffers.\n");
+         RADEON_DEC_ERR("Can't allocate message buffers.\n");
          goto error;
       }
 
       if (!si_vid_create_buffer(dec->screen, &dec->bs_buffers[i], bs_buf_size,
                                 PIPE_USAGE_STAGING)) {
-         RVID_ERR("Can't allocated bitstream buffers.\n");
+         RADEON_DEC_ERR("Can't allocate bitstream buffers.\n");
          goto error;
       }
 
@@ -2811,7 +2816,7 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
 
    if (!si_vid_create_buffer(dec->screen, &dec->sessionctx, RDECODE_SESSION_CONTEXT_SIZE,
                              PIPE_USAGE_DEFAULT)) {
-      RVID_ERR("Can't allocated session ctx.\n");
+      RADEON_DEC_ERR("Can't allocate session ctx.\n");
       goto error;
    }
 
@@ -2871,7 +2876,7 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
       dec->av1_version = RDECODE_AV1_VER_1;
       break;
    default:
-      RVID_ERR("VCN is not supported.\n");
+      RADEON_DEC_ERR("VCN is not supported.\n");
       goto error;
    }
 
