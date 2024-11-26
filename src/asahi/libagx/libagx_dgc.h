@@ -72,6 +72,69 @@ agx_is_indirect(struct agx_grid grid)
    return grid.mode != AGX_CDM_MODE_DIRECT;
 }
 
+struct agx_draw {
+   struct agx_grid b;
+   uint64_t index_buffer;
+   uint32_t index_buffer_range_B;
+   uint32_t start;
+   uint32_t index_bias;
+   uint32_t start_instance;
+
+   /* Primitive restart enabled. If true, implies indexed */
+   bool restart;
+   enum agx_index_size index_size;
+
+   /* TODO: Optimize this boolean. We can't just check if index_buffer != 0
+    * because that breaks with null index buffers.
+    */
+   bool indexed;
+};
+
+static inline struct agx_draw
+agx_draw_indirect(uint64_t ptr)
+{
+   return (struct agx_draw){.b = agx_grid_indirect(ptr)};
+}
+
+static inline struct agx_draw
+agx_draw_indexed(uint32_t index_count, uint32_t instance_count,
+                 uint32_t first_index, uint32_t index_bias,
+                 uint32_t first_instance, uint64_t buf, uint32_t range_B,
+                 enum agx_index_size index_size, bool restart)
+{
+   return (struct agx_draw){
+      .b = agx_3d(index_count, instance_count, 1),
+      .index_buffer = buf,
+      .index_buffer_range_B = range_B,
+      .start = first_index,
+      .index_bias = index_bias,
+      .start_instance = first_instance,
+      .index_size = index_size,
+      .restart = restart,
+      .indexed = true,
+   };
+}
+
+static inline struct agx_draw
+agx_draw_indexed_indirect(uint64_t ptr, uint64_t buf, uint32_t range_B,
+                          enum agx_index_size index_size, bool restart)
+{
+   return (struct agx_draw){
+      .b = agx_grid_indirect(ptr),
+      .index_buffer = buf,
+      .index_buffer_range_B = range_B,
+      .index_size = index_size,
+      .restart = restart,
+      .indexed = true,
+   };
+}
+
+static inline unsigned
+agx_draw_index_range_el(struct agx_draw d)
+{
+   return d.index_buffer_range_B >> d.index_size;
+}
+
 enum agx_chip {
    AGX_CHIP_G13G,
    AGX_CHIP_G13X,
@@ -122,6 +185,69 @@ agx_cdm_launch(GLOBAL uint32_t *out, enum agx_chip chip, struct agx_grid grid,
          cfg.x = wg.x;
          cfg.y = wg.y;
          cfg.z = wg.z;
+      }
+   }
+
+   return out;
+}
+
+static inline GLOBAL uint32_t *
+agx_vdm_draw(GLOBAL uint32_t *out, enum agx_chip chip, struct agx_draw draw,
+             enum agx_primitive topology)
+{
+   uint64_t ib = draw.index_buffer;
+   if (draw.indexed && !agx_is_indirect(draw.b))
+      ib += (draw.start << draw.index_size);
+
+   agx_push(out, INDEX_LIST, cfg) {
+      cfg.primitive = topology;
+
+      if (agx_is_indirect(draw.b)) {
+         cfg.indirect_buffer_present = true;
+      } else {
+         cfg.instance_count_present = true;
+         cfg.index_count_present = true;
+         cfg.start_present = true;
+      }
+
+      if (draw.indexed) {
+         cfg.restart_enable = draw.restart;
+         cfg.index_buffer_hi = ib >> 32;
+         cfg.index_size = draw.index_size;
+
+         cfg.index_buffer_present = true;
+         cfg.index_buffer_size_present = true;
+      }
+   }
+
+   if (draw.indexed) {
+      agx_push(out, INDEX_LIST_BUFFER_LO, cfg) {
+         cfg.buffer_lo = ib;
+      }
+   }
+
+   if (agx_is_indirect(draw.b)) {
+      agx_push(out, INDEX_LIST_INDIRECT_BUFFER, cfg) {
+         cfg.address_hi = draw.b.ptr >> 32;
+         cfg.address_lo = draw.b.ptr & BITFIELD_MASK(32);
+      }
+   } else {
+      agx_push(out, INDEX_LIST_COUNT, cfg) {
+         cfg.count = draw.b.count[0];
+      }
+
+      agx_push(out, INDEX_LIST_INSTANCES, cfg) {
+         cfg.count = draw.b.count[1];
+      }
+
+      agx_push(out, INDEX_LIST_START, cfg) {
+         cfg.start = draw.indexed ? draw.index_bias : draw.start;
+      }
+   }
+
+   if (draw.indexed) {
+      agx_push(out, INDEX_LIST_BUFFER_SIZE, cfg) {
+         cfg.size = draw.index_buffer_range_B;
       }
    }
 

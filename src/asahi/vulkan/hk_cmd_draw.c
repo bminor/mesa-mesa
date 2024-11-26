@@ -41,6 +41,7 @@
 #include "util/ralloc.h"
 #include "vulkan/vulkan_core.h"
 #include "layout.h"
+#include "libagx_dgc.h"
 #include "libagx_shaders.h"
 #include "nir.h"
 #include "nir_builder.h"
@@ -70,21 +71,8 @@
  */
 #define HK_TEST_INDIRECTS (0)
 
-struct hk_draw {
-   struct agx_grid b;
-   struct hk_addr_range index;
-   bool indexed;
-   uint32_t start;
-   uint32_t index_bias;
-   uint32_t start_instance;
-
-   /* Set within hk_draw() but here so geometry/tessellation can override */
-   bool restart;
-   enum agx_index_size index_size;
-};
-
 UNUSED static inline void
-print_draw(struct hk_draw d, FILE *fp)
+print_draw(struct agx_draw d, FILE *fp)
 {
    if (agx_is_indirect(d.b))
       fprintf(fp, "indirect (buffer %" PRIx64 "):", d.b.ptr);
@@ -109,25 +97,6 @@ print_draw(struct hk_draw d, FILE *fp)
       fprintf(fp, " start_instance=%u", d.start_instance);
 
    fprintf(fp, "\n");
-}
-
-static struct hk_draw
-hk_draw_indirect(uint64_t ptr)
-{
-   return (struct hk_draw){.b = agx_grid_indirect(ptr)};
-}
-
-static struct hk_draw
-hk_draw_indexed_indirect(uint64_t ptr, struct hk_addr_range index,
-                         enum agx_index_size index_size, bool restart)
-{
-   return (struct hk_draw){
-      .b = agx_grid_indirect(ptr),
-      .index = index,
-      .indexed = true,
-      .index_size = index_size,
-      .restart = restart,
-   };
 }
 
 /* XXX: deduplicate */
@@ -1090,7 +1059,7 @@ hk_geometry_state(struct hk_cmd_buffer *cmd)
 }
 
 static uint64_t
-hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct hk_draw draw)
+hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    assert(!agx_is_indirect(draw.b) && "indirect params written by GPU");
@@ -1099,10 +1068,10 @@ hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct hk_draw draw)
 
    if (draw.indexed) {
       unsigned index_size_B = agx_index_size_to_B(draw.index_size);
-      unsigned range_el = draw.index.range / index_size_B;
+      unsigned range_el = agx_draw_index_range_el(draw);
 
       ia.index_buffer =
-         libagx_index_buffer(draw.index.addr, range_el, draw.start,
+         libagx_index_buffer(draw.index_buffer, range_el, draw.start,
                              index_size_B, dev->rodata.zero_sink);
 
       ia.index_buffer_range_el =
@@ -1138,7 +1107,7 @@ hk_rast_prim(struct hk_cmd_buffer *cmd)
 }
 
 static uint64_t
-hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct hk_draw draw)
+hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
@@ -1150,12 +1119,11 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct hk_draw draw)
    struct hk_shader *count = hk_count_gs_variant(gs, rast_disc);
 
    /* XXX: We should deduplicate this logic */
-   bool restart = (draw.indexed && draw.restart);
-   bool indirect =
-      agx_is_indirect(draw.b) || gfx->shaders[MESA_SHADER_TESS_EVAL] || restart;
+   bool indirect = agx_is_indirect(draw.b) ||
+                   gfx->shaders[MESA_SHADER_TESS_EVAL] || draw.restart;
    enum mesa_prim mode = hk_gs_in_prim(cmd);
 
-   if (restart) {
+   if (draw.restart) {
       mode = u_decomposed_prim(mode);
    }
 
@@ -1217,7 +1185,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct hk_draw draw)
 
 static void
 hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
-                      struct hk_draw draw)
+                      struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
@@ -1358,9 +1326,9 @@ hk_meta_shader(struct hk_device *dev, hk_internal_builder_t builder, void *data,
    return s;
 }
 
-static struct hk_draw
+static struct agx_draw
 hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
-                        struct hk_draw draw, uint32_t draw_count)
+                        struct agx_draw draw, uint32_t draw_count)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_graphics_state *gfx = &cmd->state.gfx;
@@ -1373,9 +1341,9 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       uint32_t desc[5] = {draw.b.count[0], draw.b.count[1], draw.start,
                           draw.index_bias, draw.start_instance};
 
-      draw =
-         hk_draw_indexed_indirect(hk_pool_upload(cmd, desc, sizeof(desc), 4),
-                                  draw.index, draw.index_size, true);
+      draw = agx_draw_indexed_indirect(
+         hk_pool_upload(cmd, desc, sizeof(desc), 4), draw.index_buffer,
+         draw.index_buffer_range_B, draw.index_size, true);
    }
 
    /* Next, we unroll the index buffer used by the indirect draw */
@@ -1385,13 +1353,12 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    struct libagx_unroll_restart_args ia = {
       .heap = hk_geometry_state(cmd),
-      .index_buffer = draw.index.addr,
+      .index_buffer = draw.index_buffer,
       .in_draw = draw.b.ptr,
       .out_draw = hk_pool_alloc(cmd, 5 * sizeof(uint32_t) * draw_count, 4).gpu,
       .max_draws = 1 /* TODO: MDI */,
       .restart_index = gfx->index.restart,
-      .index_buffer_size_el =
-         draw.index.range / agx_index_size_to_B(draw.index_size),
+      .index_buffer_size_el = agx_draw_index_range_el(draw),
       .flatshade_first =
          dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
       .zero_sink = dev->rodata.zero_sink,
@@ -1400,18 +1367,14 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    libagx_unroll_restart_struct(cs, agx_1d(1024 * draw_count), ia,
                                 draw.index_size, libagx_compact_prim(prim));
 
-   struct hk_addr_range out_index = {
-      .addr = dev->heap->va->addr,
-      .range = dev->heap->size,
-   };
-
-   return hk_draw_indexed_indirect(ia.out_draw, out_index, draw.index_size,
-                                   false /* restart */);
+   return agx_draw_indexed_indirect(ia.out_draw, dev->heap->va->addr,
+                                    dev->heap->size, draw.index_size,
+                                    false /* restart */);
 }
 
-static struct hk_draw
+static struct agx_draw
 hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
-                     struct hk_draw draw)
+                     struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_graphics_state *gfx = &cmd->state.gfx;
@@ -1441,7 +1404,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    enum mesa_prim mode = hk_gs_in_prim(cmd);
 
-   if (draw.indexed && draw.restart) {
+   if (draw.restart) {
       draw = hk_draw_without_restart(cmd, cs, draw, 1);
       mode = u_decomposed_prim(mode);
    }
@@ -1449,7 +1412,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Setup grids */
    if (agx_is_indirect(draw.b)) {
       struct libagx_gs_setup_indirect_args gsi = {
-         .index_buffer = draw.index.addr,
+         .index_buffer = draw.index_buffer,
          .zero_sink = dev->rodata.zero_sink,
          .draw = draw.b.ptr,
          .ia = desc->root.draw.input_assembly,
@@ -1469,7 +1432,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
       if (draw.indexed) {
          gsi.index_size_B = agx_index_size_to_B(draw.index_size);
-         gsi.index_buffer_range_el = draw.index.range / gsi.index_size_B;
+         gsi.index_buffer_range_el = agx_draw_index_range_el(draw);
       }
 
       libagx_gs_setup_indirect_struct(cs, agx_1d(1), gsi);
@@ -1508,18 +1471,15 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Pre-rast geometry shader */
    hk_dispatch_with_local_size(cmd, cs, main, grid_gs, agx_workgroup(1, 1, 1));
 
-   struct hk_addr_range range = (struct hk_addr_range){
-      .addr = dev->heap->va->addr,
-      .range = dev->heap->size,
-   };
-
    bool restart = cmd->state.gfx.topology != AGX_PRIMITIVE_POINTS;
-   return hk_draw_indexed_indirect(cmd->geom_indirect, range,
-                                   AGX_INDEX_SIZE_U32, restart);
+   return agx_draw_indexed_indirect(cmd->geom_indirect, dev->heap->va->addr,
+                                    dev->heap->size, AGX_INDEX_SIZE_U32,
+                                    restart);
 }
 
-static struct hk_draw
-hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
+static struct agx_draw
+hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
+               struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_graphics_state *gfx = &cmd->state.gfx;
@@ -1559,10 +1519,9 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
       };
 
       if (draw.indexed) {
-         args.in_index_buffer = draw.index.addr;
+         args.in_index_buffer = draw.index_buffer;
          args.in_index_size_B = agx_index_size_to_B(draw.index_size);
-         args.in_index_buffer_range_el =
-            draw.index.range / args.in_index_size_B;
+         args.in_index_buffer_range_el = agx_draw_index_range_el(draw);
       }
 
       libagx_tess_setup_indirect_struct(cs, agx_1d(1), args);
@@ -1604,13 +1563,8 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw)
    libagx_tessellate(cs, grid_tess, info.mode, LIBAGX_TESS_MODE_WITH_COUNTS,
                      state);
 
-   struct hk_addr_range range = (struct hk_addr_range){
-      .addr = dev->heap->va->addr,
-      .range = dev->heap->size,
-   };
-
-   return hk_draw_indexed_indirect(gfx->tess.out_draws, range,
-                                   AGX_INDEX_SIZE_U32, false);
+   return agx_draw_indexed_indirect(gfx->tess.out_draws, dev->heap->va->addr,
+                                    dev->heap->size, AGX_INDEX_SIZE_U32, false);
 }
 
 void
@@ -2485,7 +2439,7 @@ hk_depth_bias_factor(VkFormat format, bool exact, bool force_unorm)
 
 static void
 hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
-                       uint32_t draw_id, struct hk_draw draw)
+                       uint32_t draw_id, struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    const struct hk_rendering_state *render = &cmd->state.gfx.render;
@@ -2926,8 +2880,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       desc->root.draw.vertex_outputs = vs->b.info.outputs;
 
       /* XXX: We should deduplicate this logic */
-      bool restart = (draw.indexed && draw.restart);
-      bool indirect = agx_is_indirect(draw.b) || restart;
+      bool indirect = agx_is_indirect(draw.b) || draw.restart;
 
       desc->root.draw.input_assembly =
          indirect ? hk_pool_alloc(cmd, sizeof(struct agx_ia_state), 4).gpu
@@ -3063,7 +3016,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 }
 
 static bool
-hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct hk_draw draw)
+hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
@@ -3078,7 +3031,7 @@ hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct hk_draw draw)
       return false;
 
    /* Allowed with maint6 without robustness features enabled */
-   if (draw.index.range == 0)
+   if (draw.index_buffer_range_B == 0)
       return true;
 
    if (!(dev->vk.enabled_features.robustBufferAccess ||
@@ -3092,12 +3045,12 @@ hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct hk_draw draw)
       uint32_t range_B =
          (draw.start + draw.b.count[0]) * agx_index_size_to_B(draw.index_size);
 
-      return range_B > draw.index.range;
+      return range_B > draw.index_buffer_range_B;
    }
 }
 
 static void
-hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct hk_draw draw)
+hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_api_shader *gs = gfx->shaders[MESA_SHADER_GEOMETRY];
@@ -3184,7 +3137,7 @@ hk_handle_passthrough_gs(struct hk_cmd_buffer *cmd, struct hk_draw draw)
 
 static struct hk_cs *
 hk_flush_gfx_state(struct hk_cmd_buffer *cmd, uint32_t draw_id,
-                   struct hk_draw draw)
+                   struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_graphics_state *gfx = &cmd->state.gfx;
@@ -3353,7 +3306,7 @@ hk_set_view_index(struct hk_cmd_buffer *cmd, uint32_t view_idx)
       if (hk_set_view_index(cmd, view_idx))
 
 static void
-hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw,
+hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct agx_draw draw,
              uint64_t ia_vertices, uint64_t vs_invocations)
 {
    /* XXX: stream link needed? */
@@ -3368,12 +3321,12 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw,
       draw_ptr = hk_pool_upload(cmd, &desc, sizeof(desc), 4);
    }
 
-   if (draw.restart && draw.indexed) {
+   if (draw.restart) {
       uint32_t index_size_B = agx_index_size_to_B(draw.index_size);
-      uint32_t index_range_el = draw.index.range / index_size_B;
 
       libagx_increment_ia_restart(cs, agx_1d(1024), ia_vertices, vs_invocations,
-                                  draw_ptr, draw.index.addr, index_range_el,
+                                  draw_ptr, draw.index_buffer,
+                                  agx_draw_index_range_el(draw),
                                   cmd->state.gfx.index.restart, index_size_B);
    } else {
       libagx_increment_ia(cs, agx_1d(1), ia_vertices, vs_invocations, draw_ptr);
@@ -3381,7 +3334,7 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct hk_cs *cs, struct hk_draw draw,
 }
 
 static void
-hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct hk_draw draw_)
+hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 {
    const struct vk_dynamic_graphics_state *dyn =
       &cmd->vk.dynamic_graphics_state;
@@ -3391,7 +3344,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct hk_draw draw_)
        (draw_.b.count[0] == 0 || draw_.b.count[1] == 0))
       return;
 
-   draw_.restart = dyn->ia.primitive_restart_enable;
+   draw_.restart = dyn->ia.primitive_restart_enable && draw_.indexed;
    draw_.index_size = cmd->state.gfx.index.size;
 
    uint64_t stat_ia_verts = hk_pipeline_stat_addr(
@@ -3404,7 +3357,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct hk_draw draw_)
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
    hk_foreach_view(cmd) {
-      struct hk_draw draw = draw_;
+      struct agx_draw draw = draw_;
       struct hk_cs *cs = hk_flush_gfx_state(cmd, draw_id, draw);
       /* If we failed to allocate a control stream, we've already lost the
        * device. Just drop the draw so we don't crash.
@@ -3450,63 +3403,8 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct hk_draw draw_)
             continue;
       }
 
-      uint64_t ib = draw.index.addr;
-      if (draw.indexed && !agx_is_indirect(draw.b))
-         ib += (draw.start << draw.index_size);
-
-      agx_push(out, INDEX_LIST, cfg) {
-         cfg.primitive = cmd->state.gfx.topology;
-
-         if (agx_is_indirect(draw.b)) {
-            cfg.indirect_buffer_present = true;
-         } else {
-            cfg.instance_count_present = true;
-            cfg.index_count_present = true;
-            cfg.start_present = true;
-         }
-
-         if (draw.indexed) {
-            cfg.restart_enable = draw.restart;
-            cfg.index_buffer_hi = ib >> 32;
-            cfg.index_size = draw.index_size;
-
-            cfg.index_buffer_present = true;
-            cfg.index_buffer_size_present = true;
-         }
-      }
-
-      if (draw.indexed) {
-         agx_push(out, INDEX_LIST_BUFFER_LO, cfg) {
-            cfg.buffer_lo = ib;
-         }
-      }
-
-      if (agx_is_indirect(draw.b)) {
-         agx_push(out, INDEX_LIST_INDIRECT_BUFFER, cfg) {
-            cfg.address_hi = draw.b.ptr >> 32;
-            cfg.address_lo = draw.b.ptr & BITFIELD_MASK(32);
-         }
-      } else {
-         agx_push(out, INDEX_LIST_COUNT, cfg) {
-            cfg.count = draw.b.count[0];
-         }
-
-         agx_push(out, INDEX_LIST_INSTANCES, cfg) {
-            cfg.count = draw.b.count[1];
-         }
-
-         agx_push(out, INDEX_LIST_START, cfg) {
-            cfg.start = draw.indexed ? draw.index_bias : draw.start;
-         }
-      }
-
-      if (draw.indexed) {
-         agx_push(out, INDEX_LIST_BUFFER_SIZE, cfg) {
-            cfg.size = draw.index.range;
-         }
-      }
-
-      cs->current = out;
+      cs->current = (void *)agx_vdm_draw((uint32_t *)out, dev->dev.chip, draw,
+                                         cmd->state.gfx.topology);
       cs->stats.cmds++;
    }
 }
@@ -3516,7 +3414,7 @@ hk_CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount,
            uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
-   struct hk_draw draw;
+   struct agx_draw draw;
 
    if (HK_TEST_INDIRECTS) {
       uint32_t data[] = {
@@ -3526,9 +3424,9 @@ hk_CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount,
          firstInstance,
       };
 
-      draw = hk_draw_indirect(hk_pool_upload(cmd, data, sizeof(data), 4));
+      draw = agx_draw_indirect(hk_pool_upload(cmd, data, sizeof(data), 4));
    } else {
-      draw = (struct hk_draw){
+      draw = (struct agx_draw){
          .b = agx_3d(vertexCount, instanceCount, 1),
          .start = firstVertex,
          .start_instance = firstInstance,
@@ -3547,7 +3445,7 @@ hk_CmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
 
    for (unsigned i = 0; i < drawCount; ++i) {
-      struct hk_draw draw = {
+      struct agx_draw draw = {
          .b = agx_3d(pVertexInfo->vertexCount, instanceCount, 1),
          .start = pVertexInfo->firstVertex,
          .start_instance = firstInstance,
@@ -3565,7 +3463,8 @@ hk_draw_indexed(VkCommandBuffer commandBuffer, uint16_t draw_id,
                 uint32_t firstInstance)
 {
    VK_FROM_HANDLE(hk_cmd_buffer, cmd, commandBuffer);
-   struct hk_draw draw;
+   struct agx_draw draw;
+   struct hk_addr_range buf = cmd->state.gfx.index.buffer;
 
    if (HK_TEST_INDIRECTS && draw_id == 0) {
       uint32_t data[] = {
@@ -3573,16 +3472,11 @@ hk_draw_indexed(VkCommandBuffer commandBuffer, uint16_t draw_id,
       };
       uint64_t addr = hk_pool_upload(cmd, data, sizeof(data), 4);
 
-      draw = hk_draw_indexed_indirect(addr, cmd->state.gfx.index.buffer, 0, 0);
+      draw = agx_draw_indexed_indirect(addr, buf.addr, buf.range, 0, 0);
    } else {
-      draw = (struct hk_draw){
-         .b = agx_3d(indexCount, instanceCount, 1),
-         .indexed = true,
-         .index = cmd->state.gfx.index.buffer,
-         .start = firstIndex,
-         .index_bias = vertexOffset,
-         .start_instance = firstInstance,
-      };
+      draw =
+         agx_draw_indexed(indexCount, instanceCount, firstIndex, vertexOffset,
+                          firstInstance, buf.addr, buf.range, 0, 0);
    }
 
    hk_draw(cmd, draw_id, draw);
@@ -3638,7 +3532,7 @@ hk_draw_indirect_inner(VkCommandBuffer commandBuffer, uint64_t base,
 
    for (unsigned draw_id = 0; draw_id < drawCount; ++draw_id) {
       uint64_t addr = base + stride * draw_id;
-      hk_draw(cmd, draw_id, hk_draw_indirect(addr));
+      hk_draw(cmd, draw_id, agx_draw_indirect(addr));
    }
 }
 
@@ -3677,10 +3571,10 @@ hk_draw_indexed_indirect_inner(VkCommandBuffer commandBuffer, uint64_t buffer,
 
    for (unsigned draw_id = 0; draw_id < drawCount; ++draw_id) {
       uint64_t addr = buffer + stride * draw_id;
+      struct hk_addr_range buf = cmd->state.gfx.index.buffer;
 
-      hk_draw(
-         cmd, draw_id,
-         hk_draw_indexed_indirect(addr, cmd->state.gfx.index.buffer, 0, 0));
+      hk_draw(cmd, draw_id,
+              agx_draw_indexed_indirect(addr, buf.addr, buf.range, 0, 0));
    }
 }
 
