@@ -405,12 +405,12 @@ translate_superblock_size(uint64_t modifier)
 static void
 panfrost_emit_plane(const struct pan_image_view *iview, int index,
                     const struct pan_image_layout *layout,
-                    enum pipe_format format, mali_ptr pointer, unsigned level,
+                    mali_ptr pointer, unsigned level,
                     int32_t row_stride, int32_t surface_stride,
                     mali_ptr plane2_ptr, void **payload)
 {
    const struct util_format_description *desc =
-      util_format_description(format);
+      util_format_description(iview->format);
 
    assert(row_stride >= 0 && surface_stride >= 0 && "negative stride");
 
@@ -467,12 +467,13 @@ panfrost_emit_plane(const struct pan_image_view *iview, int index,
          cfg.afbc.split_block = (layout->modifier & AFBC_FORMAT_MOD_SPLIT);
          cfg.afbc.tiled_header = (layout->modifier & AFBC_FORMAT_MOD_TILED);
          cfg.afbc.prefetch = true;
-         cfg.afbc.compression_mode = GENX(pan_afbc_compression_mode)(format);
+         cfg.afbc.compression_mode =
+            GENX(pan_afbc_compression_mode)(iview->format);
          cfg.afbc.header_stride = layout->slices[level].afbc.header_size;
       } else if (afrc) {
 #if PAN_ARCH >= 10
          struct pan_afrc_format_info finfo =
-            panfrost_afrc_get_format_info(format);
+            panfrost_afrc_get_format_info(iview->format);
 
          cfg.plane_type = MALI_PLANE_TYPE_AFRC;
          cfg.afrc.block_size =
@@ -483,7 +484,7 @@ panfrost_emit_plane(const struct pan_image_view *iview, int index,
       } else {
          cfg.plane_type = is_3_planar_yuv ? MALI_PLANE_TYPE_CHROMA_2P
                                           : MALI_PLANE_TYPE_GENERIC;
-         cfg.clump_format = panfrost_clump_format(format);
+         cfg.clump_format = panfrost_clump_format(iview->format);
       }
 
       if (!afbc && !afrc) {
@@ -499,11 +500,10 @@ panfrost_emit_plane(const struct pan_image_view *iview, int index,
 
 static void
 panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
-                      unsigned index, unsigned sample,
-                      enum pipe_format format, void **payload)
+                      unsigned index, unsigned sample, void **payload)
 {
 #if PAN_ARCH == 7 || PAN_ARCH >= 9
-   if (panfrost_format_is_yuv(format)) {
+   if (panfrost_format_is_yuv(iview->format)) {
       UNUSED const struct pan_image_layout *layouts[MAX_IMAGE_PLANES] = {0};
       struct pan_image_section_info sections[MAX_IMAGE_PLANES] = {0};
       unsigned plane_count = 0;
@@ -523,18 +523,17 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
 #if PAN_ARCH >= 9
       /* 3-plane YUV is submitted using two PLANE descriptors, where the
        * second one is of type CHROMA_2P */
-      panfrost_emit_plane(iview, 0, layouts[0], format, sections[0].pointer,
-                          level, sections[0].row_stride,
-                          sections[0].surface_stride, 0, payload);
+      panfrost_emit_plane(iview, 0, layouts[0], sections[0].pointer, level,
+                          sections[0].row_stride, sections[0].surface_stride, 0,
+                          payload);
 
       if (plane_count > 1) {
          /* 3-plane YUV requires equal stride for both chroma planes */
          assert(plane_count == 2 ||
                 sections[1].row_stride == sections[2].row_stride);
-         panfrost_emit_plane(iview, 1, layouts[1], format, sections[1].pointer,
-                             level, sections[1].row_stride,
-                             sections[1].surface_stride, sections[2].pointer,
-                             payload);
+         panfrost_emit_plane(iview, 1, layouts[1], sections[1].pointer, level,
+                             sections[1].row_stride, sections[1].surface_stride,
+                             sections[2].pointer, payload);
       }
 #else
       if (plane_count > 1) {
@@ -576,7 +575,7 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
       get_image_section_info(iview, plane, level, index, sample);
 
 #if PAN_ARCH >= 9
-   panfrost_emit_plane(iview, 0, &plane->layout, format, section.pointer, level,
+   panfrost_emit_plane(iview, 0, &plane->layout, section.pointer, level,
                        section.row_stride, section.surface_stride, 0, payload);
 #else
    panfrost_emit_surface_with_stride(section.pointer, section.row_stride,
@@ -585,8 +584,7 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
 }
 
 static void
-panfrost_emit_texture_payload(const struct pan_image_view *iview,
-                              enum pipe_format format, void *payload)
+panfrost_emit_texture_payload(const struct pan_image_view *iview, void *payload)
 {
    unsigned nr_samples =
       PAN_ARCH <= 7 ? pan_image_view_get_nr_samples(iview) : 1;
@@ -602,8 +600,7 @@ panfrost_emit_texture_payload(const struct pan_image_view *iview,
    for (int layer = iview->first_layer; layer <= iview->last_layer; ++layer) {
       for (int sample = 0; sample < nr_samples; ++sample) {
          for (int level = iview->first_level; level <= iview->last_level; ++level) {
-            panfrost_emit_surface(iview, level, layer, sample,
-                                  format, &payload);
+            panfrost_emit_surface(iview, level, layer, sample, &payload);
          }
       }
    }
@@ -626,7 +623,7 @@ panfrost_emit_texture_payload(const struct pan_image_view *iview,
          for (int face = 0; face < face_count; ++face) {
             for (int sample = 0; sample < nr_samples; ++sample) {
                panfrost_emit_surface(iview, level, (face_count * layer) + face,
-                                     sample, format, &payload);
+                                     sample, &payload);
             }
          }
       }
@@ -664,11 +661,12 @@ void
 GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
                            const struct panfrost_ptr *payload)
 {
-   enum pipe_format format = iview->format;
-   const struct util_format_description *desc = util_format_description(format);
+   const struct util_format_description *desc =
+      util_format_description(iview->format);
    const struct pan_image *first_plane = pan_image_view_get_first_plane(iview);
    const struct pan_image_layout *layout = &first_plane->layout;
-   uint32_t mali_format = GENX(panfrost_format_from_pipe_format)(format)->hw;
+   uint32_t mali_format =
+      GENX(panfrost_format_from_pipe_format)(iview->format)->hw;
    unsigned char swizzle[4];
 
    if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC && iview->astc.narrow &&
@@ -676,7 +674,7 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
       mali_format = MALI_PACK_FMT(RGBA8_UNORM, RGBA, L);
    }
 
-   if (PAN_ARCH >= 7 && util_format_is_depth_or_stencil(format)) {
+   if (PAN_ARCH >= 7 && util_format_is_depth_or_stencil(iview->format)) {
       /* v7+ doesn't have an _RRRR component order, combine the
        * user swizzle with a .XXXX swizzle to emulate that.
        */
@@ -689,7 +687,7 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
 
       util_format_compose_swizzles(replicate_x, iview->swizzle, swizzle);
    } else if ((PAN_ARCH == 7 || PAN_ARCH == 10) &&
-              !panfrost_format_is_yuv(format)) {
+              !panfrost_format_is_yuv(iview->format)) {
 #if PAN_ARCH == 7 || PAN_ARCH >= 10
       /* v7 (only) restricts component orders when AFBC is in use.
        * Rather than restrict AFBC, we use an allowed component order
@@ -711,7 +709,7 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
       memcpy(swizzle, iview->swizzle, sizeof(swizzle));
    }
 
-   panfrost_emit_texture_payload(iview, format, payload->cpu);
+   panfrost_emit_texture_payload(iview, payload->cpu);
 
    unsigned array_size = iview->last_layer - iview->first_layer + 1;
 
@@ -745,16 +743,16 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
       height = u_minify(layout->height, iview->first_level);
       depth = u_minify(layout->depth, iview->first_level);
       if (util_format_is_compressed(layout->format) &&
-          !util_format_is_compressed(format)) {
+          !util_format_is_compressed(iview->format)) {
          width =
             DIV_ROUND_UP(width, util_format_get_blockwidth(layout->format));
          height =
             DIV_ROUND_UP(height, util_format_get_blockheight(layout->format));
          depth =
             DIV_ROUND_UP(depth, util_format_get_blockdepth(layout->format));
-         assert(util_format_get_blockwidth(format) == 1);
-         assert(util_format_get_blockheight(format) == 1);
-         assert(util_format_get_blockheight(format) == 1);
+         assert(util_format_get_blockwidth(iview->format) == 1);
+         assert(util_format_get_blockheight(iview->format) == 1);
+         assert(util_format_get_blockheight(iview->format) == 1);
          assert(iview->last_level == iview->first_level);
       }
    }
@@ -771,7 +769,7 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
       cfg.swizzle = panfrost_translate_swizzle_4(swizzle);
 #if PAN_ARCH >= 9
       cfg.texel_interleave = (layout->modifier != DRM_FORMAT_MOD_LINEAR) ||
-                             util_format_is_compressed(format);
+                             util_format_is_compressed(iview->format);
 #else
       cfg.texel_ordering = panfrost_modifier_to_layout(layout->modifier);
 #endif
