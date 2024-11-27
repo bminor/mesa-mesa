@@ -86,6 +86,9 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
     */
    if (iview->pview.format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)
       state->render.zs_pview.format = PIPE_FORMAT_Z32_FLOAT;
+
+   state->render.zs_pview.planes[0] = &img->planes[0];
+   state->render.zs_pview.planes[1] = NULL;
    fbinfo->nr_samples =
       MAX2(fbinfo->nr_samples, pan_image_view_get_nr_samples(&iview->pview));
    state->render.z_attachment.iview = iview;
@@ -98,6 +101,9 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
       fbinfo->zs.preload.s = true;
       cmdbuf->state.gfx.render.zs_pview.format =
          PIPE_FORMAT_Z24_UNORM_S8_UINT;
+   } else {
+      state->render.zs_pview.format =
+         vk_format_to_pipe_format(vk_format_depth_only(img->vk.format));
    }
 
    if (att->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -140,8 +146,17 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
    /* D32_S8 is a multiplanar format, so we need to adjust the format of the
     * stencil-only view to match the one of the stencil plane.
     */
-   if (iview->pview.format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)
-      state->render.s_pview.format = PIPE_FORMAT_S8_UINT;
+   state->render.s_pview.format = img->vk.format == VK_FORMAT_D24_UNORM_S8_UINT
+                                     ? PIPE_FORMAT_Z24_UNORM_S8_UINT
+                                     : PIPE_FORMAT_S8_UINT;
+   if (img->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+      state->render.s_pview.planes[0] = NULL;
+      state->render.s_pview.planes[1] = &img->planes[1];
+   } else {
+      state->render.s_pview.planes[0] = &img->planes[0];
+      state->render.s_pview.planes[1] = NULL;
+   }
+
    fbinfo->nr_samples =
       MAX2(fbinfo->nr_samples, pan_image_view_get_nr_samples(&iview->pview));
    state->render.s_attachment.iview = iview;
@@ -239,7 +254,8 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
       const VkRenderingAttachmentInfo *att = pRenderingInfo->pDepthAttachment;
       VK_FROM_HANDLE(panvk_image_view, iview, att->imageView);
 
-      if (iview && (iview->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT)) {
+      if (iview) {
+         assert(iview->vk.image->aspects & VK_IMAGE_ASPECT_DEPTH_BIT);
          render_state_set_z_attachment(cmdbuf, att);
          att_width = MAX2(iview->vk.extent.width, att_width);
          att_height = MAX2(iview->vk.extent.height, att_height);
@@ -251,7 +267,8 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
       const VkRenderingAttachmentInfo *att = pRenderingInfo->pStencilAttachment;
       VK_FROM_HANDLE(panvk_image_view, iview, att->imageView);
 
-      if (iview && (iview->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT)) {
+      if (iview) {
+         assert(iview->vk.image->aspects & VK_IMAGE_ASPECT_STENCIL_BIT);
          render_state_set_s_attachment(cmdbuf, att);
          att_width = MAX2(iview->vk.extent.width, att_width);
          att_height = MAX2(iview->vk.extent.height, att_height);
