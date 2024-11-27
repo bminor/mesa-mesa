@@ -204,7 +204,7 @@ pub struct MemBase {
     // it's a bit hacky, but storing the pointer as `usize` gives us `Send` and `Sync`. The
     // application is required to ensure no data races exist on the memory anyway.
     pub host_ptr: usize,
-    pub props: Vec<cl_mem_properties>,
+    pub props: Properties<cl_mem_properties>,
     pub cbs: Mutex<Vec<MemCB>>,
     pub gl_obj: Option<GLObject>,
     res: Option<HashMap<&'static Device, Arc<PipeResource>>>,
@@ -396,7 +396,7 @@ impl MemBase {
         flags: cl_mem_flags,
         size: usize,
         host_ptr: *mut c_void,
-        props: Vec<cl_mem_properties>,
+        props: Properties<cl_mem_properties>,
     ) -> CLResult<Arc<Buffer>> {
         let res_type = if bit_check(flags, CL_MEM_ALLOC_HOST_PTR) {
             ResourceType::Staging
@@ -457,7 +457,7 @@ impl MemBase {
                 flags: flags,
                 size: size,
                 host_ptr: host_ptr,
-                props: Vec::new(),
+                props: Properties::default(),
                 gl_obj: None,
                 cbs: Mutex::new(Vec::new()),
                 res: None,
@@ -476,7 +476,7 @@ impl MemBase {
         mut image_desc: cl_image_desc,
         image_elem_size: u8,
         host_ptr: *mut c_void,
-        props: Vec<cl_mem_properties>,
+        props: Properties<cl_mem_properties>,
     ) -> CLResult<Arc<Image>> {
         // we have to sanitize the image_desc a little for internal use
         let api_image_desc = image_desc;
@@ -641,7 +641,7 @@ impl MemBase {
             flags: flags,
             size: gl_mem_props.size(),
             host_ptr: 0,
-            props: Vec::new(),
+            props: Properties::default(),
             gl_obj: Some(GLObject {
                 gl_object_target: gl_export_manager.export_in.target,
                 gl_object_type: gl_object_type,

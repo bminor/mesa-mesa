@@ -241,7 +241,7 @@ unsafe impl CLInfo<cl_mem_info> for cl_mem {
             } else {
                 0
             }),
-            CL_MEM_PROPERTIES => v.write::<&[cl_mem_properties]>(&mem.props),
+            CL_MEM_PROPERTIES => v.write::<&Properties<cl_mem_properties>>(&mem.props),
             CL_MEM_REFERENCE_COUNT => v.write::<cl_uint>(if mem.is_buffer() {
                 Buffer::refcnt(*self)?
             } else {
@@ -295,12 +295,14 @@ fn create_buffer_with_properties(
         }
     }
 
-    let props = Properties::from_ptr_raw(properties);
+    // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
+    let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
+
     // CL_INVALID_PROPERTY if a property name in properties is not a supported property name, if
     // the value specified for a supported property name is not valid, or if the same property name
     // is specified more than once.
-    if props.len() > 1 {
-        // we don't support any properties besides the 0 property
+    if !props.is_empty() {
+        // we don't support any properties
         return Err(CL_INVALID_PROPERTY);
     }
 
@@ -798,12 +800,14 @@ fn create_image_with_properties(
         .find(|f| *f & filtered_flags == filtered_flags)
         .ok_or(CL_IMAGE_FORMAT_NOT_SUPPORTED)?;
 
-    let props = Properties::from_ptr_raw(properties);
+    // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
+    let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
+
     // CL_INVALID_PROPERTY if a property name in properties is not a supported property name, if
     // the value specified for a supported property name is not valid, or if the same property name
     // is specified more than once.
-    if props.len() > 1 {
-        // we don't support any properties besides the 0 property
+    if !props.is_empty() {
+        // we don't support any properties
         return Err(CL_INVALID_PROPERTY);
     }
 

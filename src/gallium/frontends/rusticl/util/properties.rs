@@ -5,27 +5,6 @@ pub struct Properties<T> {
 
 /// This encapsulates a C property array, where the list is 0 terminated.
 impl<T> Properties<T> {
-    #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    pub fn from_ptr_raw(mut p: *const T) -> Vec<T>
-    where
-        T: Copy + Default + PartialEq,
-    {
-        let mut res: Vec<T> = Vec::new();
-
-        if !p.is_null() {
-            unsafe {
-                while *p != T::default() {
-                    res.push(*p);
-                    res.push(*p.add(1));
-                    p = p.add(2);
-                }
-            }
-            res.push(T::default());
-        }
-
-        res
-    }
-
     /// Creates a Properties object copying from the supplied pointer.
     ///
     /// It returns `None` if any property is found twice.
