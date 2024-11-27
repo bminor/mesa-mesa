@@ -667,50 +667,18 @@ radv_handle_sqtt(VkQueue _queue)
 {
    VK_FROM_HANDLE(radv_queue, queue, _queue);
    struct radv_device *device = radv_queue_device(queue);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    bool trigger = device->sqtt_triggered;
    device->sqtt_triggered = false;
 
    if (device->sqtt_enabled) {
-      struct ac_sqtt_trace sqtt_trace = {0};
-      struct ac_spm_trace spm_trace;
-
-      radv_end_sqtt(queue);
-      device->sqtt_enabled = false;
-
-      /* TODO: Do something better than this whole sync. */
-      device->vk.dispatch_table.QueueWaitIdle(_queue);
-
-      if (radv_get_sqtt_trace(queue, &sqtt_trace) && (!device->spm.bo || radv_get_spm_trace(queue, &spm_trace))) {
-         ac_dump_rgp_capture(&pdev->info, &sqtt_trace, device->spm.bo ? &spm_trace : NULL);
-      } else {
-         /* Trigger a new capture if the driver failed to get
-          * the trace because the buffer was too small.
-          */
+      if (!radv_sqtt_stop_capturing(queue)) {
+         /* Try to capture the next frame if the buffer was too small initially. */
          trigger = true;
       }
-
-      /* Clear resources used for this capture. */
-      radv_reset_sqtt_trace(device);
    }
 
    if (trigger) {
-      if (ac_check_profile_state(&pdev->info)) {
-         fprintf(stderr, "radv: Canceling RGP trace request as a hang condition has been "
-                         "detected. Force the GPU into a profiling mode with e.g. "
-                         "\"echo profile_peak  > "
-                         "/sys/class/drm/card0/device/power_dpm_force_performance_level\"\n");
-         return;
-      }
-
-      /* Sample CPU/GPU clocks before starting the trace. */
-      if (!radv_sqtt_sample_clocks(device)) {
-         fprintf(stderr, "radv: Failed to sample clocks\n");
-      }
-
-      radv_begin_sqtt(queue);
-      assert(!device->sqtt_enabled);
-      device->sqtt_enabled = true;
+      radv_sqtt_start_capturing(queue);
    }
 }
 
