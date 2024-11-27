@@ -404,12 +404,15 @@ translate_superblock_size(uint64_t modifier)
 
 static void
 panfrost_emit_plane(const struct pan_image_view *iview, int plane_index,
-                    const struct pan_image_layout *layout, mali_ptr pointer,
-                    unsigned level, int32_t row_stride, int32_t surface_stride,
-                    mali_ptr plane2_ptr, void **payload)
+                    mali_ptr pointer, unsigned level, int32_t row_stride,
+                    int32_t surface_stride, mali_ptr plane2_ptr, void **payload)
 {
    const struct util_format_description *desc =
       util_format_description(iview->format);
+   const struct pan_image *plane = util_format_has_stencil(desc)
+                                      ? pan_image_view_get_s_plane(iview)
+                                      : pan_image_view_get_plane(iview, plane_index);
+   const struct pan_image_layout *layout = &plane->layout;
 
    assert(row_stride >= 0 && surface_stride >= 0 && "negative stride");
 
@@ -503,7 +506,6 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
 {
 #if PAN_ARCH == 7 || PAN_ARCH >= 9
    if (panfrost_format_is_yuv(iview->format)) {
-      UNUSED const struct pan_image_layout *layouts[MAX_IMAGE_PLANES] = {0};
       struct pan_image_section_info sections[MAX_IMAGE_PLANES] = {0};
       unsigned plane_count = 0;
 
@@ -513,7 +515,6 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
          if (!plane)
             break;
 
-         layouts[i] = &plane->layout;
          sections[i] =
             get_image_section_info(iview, plane, level, index, sample);
          plane_count++;
@@ -522,7 +523,7 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
 #if PAN_ARCH >= 9
       /* 3-plane YUV is submitted using two PLANE descriptors, where the
        * second one is of type CHROMA_2P */
-      panfrost_emit_plane(iview, 0, layouts[0], sections[0].pointer, level,
+      panfrost_emit_plane(iview, 0, sections[0].pointer, level,
                           sections[0].row_stride, sections[0].surface_stride, 0,
                           payload);
 
@@ -530,7 +531,7 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
          /* 3-plane YUV requires equal stride for both chroma planes */
          assert(plane_count == 2 ||
                 sections[1].row_stride == sections[2].row_stride);
-         panfrost_emit_plane(iview, 1, layouts[1], sections[1].pointer, level,
+         panfrost_emit_plane(iview, 1, sections[1].pointer, level,
                              sections[1].row_stride, sections[1].surface_stride,
                              sections[2].pointer, payload);
       }
@@ -574,8 +575,8 @@ panfrost_emit_surface(const struct pan_image_view *iview, unsigned level,
       get_image_section_info(iview, plane, level, index, sample);
 
 #if PAN_ARCH >= 9
-   panfrost_emit_plane(iview, 0, &plane->layout, section.pointer, level,
-                       section.row_stride, section.surface_stride, 0, payload);
+   panfrost_emit_plane(iview, 0, section.pointer, level, section.row_stride,
+                       section.surface_stride, 0, payload);
 #else
    panfrost_emit_surface_with_stride(section.pointer, section.row_stride,
                                      section.surface_stride, payload);
