@@ -3119,7 +3119,10 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size)
       nir_index_ssa_defs(impl);
    }
 
-   if (soft_fault) {
+   /* TODO: Reenable this pass. It's breaking Fallout 4 in ways I don't
+    * understand yet.
+    */
+   if (soft_fault && 0) {
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, optimize_bounds,
                nir_metadata_control_flow, NULL);
    }
