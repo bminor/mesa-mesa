@@ -1482,11 +1482,18 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_TBIMR_TILE_PASS_INFO,
    ANV_GFX_STATE_FS_MSAA_FLAGS,
    ANV_GFX_STATE_TCS_INPUT_VERTICES,
+   ANV_GFX_STATE_COARSE_STATE,
 
    ANV_GFX_STATE_MAX,
 };
 
 const char *anv_gfx_state_bit_to_str(enum anv_gfx_state_bits state);
+
+enum anv_coarse_pixel_state {
+   ANV_COARSE_PIXEL_STATE_UNKNOWN,
+   ANV_COARSE_PIXEL_STATE_DISABLED,
+   ANV_COARSE_PIXEL_STATE_ENABLED,
+};
 
 /* This structure tracks the values to program in HW instructions for
  * corresponding to dynamic states of the Vulkan API. Only fields that need to
@@ -1798,6 +1805,11 @@ struct anv_gfx_dynamic_state {
     * Toggle tracking for Wa_14018283232.
     */
    bool wa_14018283232_toggle;
+
+   /**
+    * Coarse state tracking for Wa_18038825448.
+    */
+   enum anv_coarse_pixel_state coarse_state;
 
    BITSET_DECLARE(dirty, ANV_GFX_STATE_MAX);
 };
@@ -3372,8 +3384,7 @@ enum anv_cmd_dirty_bits {
    ANV_CMD_DIRTY_XFB_ENABLE                          = 1 << 4,
    ANV_CMD_DIRTY_RESTART_INDEX                       = 1 << 5,
    ANV_CMD_DIRTY_OCCLUSION_QUERY_ACTIVE              = 1 << 6,
-   ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE                 = 1 << 7,
-   ANV_CMD_DIRTY_INDIRECT_DATA_STRIDE                = 1 << 8,
+   ANV_CMD_DIRTY_INDIRECT_DATA_STRIDE                = 1 << 7,
 };
 typedef enum anv_cmd_dirty_bits anv_cmd_dirty_mask_t;
 
@@ -3862,12 +3873,6 @@ struct anv_cmd_pipeline_state {
    struct anv_pipeline      *pipeline;
 };
 
-enum anv_coarse_pixel_state {
-   ANV_COARSE_PIXEL_STATE_UNKNOWN,
-   ANV_COARSE_PIXEL_STATE_DISABLED,
-   ANV_COARSE_PIXEL_STATE_ENABLED,
-};
-
 enum anv_depth_reg_mode {
    ANV_DEPTH_REG_MODE_UNKNOWN = 0,
    ANV_DEPTH_REG_MODE_HW_DEFAULT,
@@ -3937,11 +3942,6 @@ struct anv_cmd_graphics_state {
     * State tracking for Wa_18020335297.
     */
    bool                                         viewport_set;
-
-   /**
-    * State tracking for Wa_18038825448.
-    */
-   enum anv_coarse_pixel_state coarse_pixel_active;
 
    struct intel_urb_config urb_cfg;
 

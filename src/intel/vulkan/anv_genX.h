@@ -147,9 +147,9 @@ genX(cmd_buffer_set_coarse_pixel_active)(struct anv_cmd_buffer *cmd_buffer,
    struct anv_cmd_graphics_state *gfx =
       &cmd_buffer->state.gfx;
    if (intel_needs_workaround(cmd_buffer->device->info, 18038825448) &&
-       gfx->coarse_pixel_active != state) {
-      gfx->coarse_pixel_active = state;
-      gfx->dirty |= ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE;
+       gfx->dyn_state.coarse_state != state) {
+      gfx->dyn_state.coarse_state = state;
+      BITSET_SET(gfx->dyn_state.dirty, ANV_GFX_STATE_COARSE_STATE);
       return true;
    }
    return false;
@@ -190,8 +190,7 @@ genX(cmd_buffer_flush_descriptor_sets)(struct anv_cmd_buffer *cmd_buffer,
 
 void genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer);
 
-anv_cmd_dirty_mask_t
-genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer);
+void genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer);
 
 void genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer);
 

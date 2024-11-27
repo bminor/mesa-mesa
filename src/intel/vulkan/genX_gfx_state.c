@@ -787,16 +787,14 @@ update_ps(struct anv_gfx_dynamic_state *hw_state,
            POSOFFSET_SAMPLE : POSOFFSET_CENTROID);
 }
 
-ALWAYS_INLINE static anv_cmd_dirty_mask_t
+ALWAYS_INLINE static void
 update_ps_extra_wm(struct anv_gfx_dynamic_state *hw_state,
-                   struct anv_cmd_buffer *cmd_buffer,
                    const struct anv_graphics_pipeline *pipeline)
 {
    const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
-   anv_cmd_dirty_mask_t dirty_state_mask = 0;
 
    if (!wm_prog_data)
-      return dirty_state_mask;
+      return;
 
    SET(PS_EXTRA, ps_extra.PixelShaderIsPerSample,
                  brw_wm_prog_data_is_persample(wm_prog_data,
@@ -807,25 +805,14 @@ update_ps_extra_wm(struct anv_gfx_dynamic_state *hw_state,
    SET(PS_EXTRA, ps_extra.PixelShaderIsPerCoarsePixel, uses_coarse_pixel);
 #endif
 #if GFX_VERx10 >= 125
-   enum anv_coarse_pixel_state cps_state = uses_coarse_pixel ?
-            ANV_COARSE_PIXEL_STATE_ENABLED : ANV_COARSE_PIXEL_STATE_DISABLED;
-   bool cps_state_toggled =
-      genX(cmd_buffer_set_coarse_pixel_active)(cmd_buffer, cps_state);
-   if (cps_state_toggled)
-      dirty_state_mask |= ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE;
-
-   const bool needs_ps_dependency =
-      /* TODO: We should only require this when the last geometry shader
-       *       uses a fragment shading rate that is not constant.
-       */
-      uses_coarse_pixel || cps_state_toggled;
-   SET(PS_EXTRA, ps_extra.EnablePSDependencyOnCPsizeChange, needs_ps_dependency);
+   /* TODO: We should only require this when the last geometry shader uses a
+    *       fragment shading rate that is not constant.
+    */
+   SET(PS_EXTRA, ps_extra.EnablePSDependencyOnCPsizeChange, uses_coarse_pixel);
 #endif
 
    SET(WM, wm.BarycentricInterpolationMode,
            wm_prog_data_barycentric_modes(wm_prog_data, hw_state->fs_msaa_flags));
-
-   return dirty_state_mask;
 }
 
 ALWAYS_INLINE static void
@@ -1763,10 +1750,8 @@ update_tbimr_info(struct anv_gfx_dynamic_state *hw_state,
  * reemission if the values are changing.
  *
  * Nothing is emitted in the batch buffer.
- *
- * Returns a mask for state that we want to leave dirty afterwards.
  */
-static anv_cmd_dirty_mask_t
+static void
 cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
                                    const struct anv_graphics_pipeline *pipeline)
 {
@@ -1775,7 +1760,6 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
    const struct vk_dynamic_graphics_state *dyn =
       &cmd_buffer->vk.dynamic_graphics_state;
    struct anv_gfx_dynamic_state *hw_state = &gfx->dyn_state;
-   anv_cmd_dirty_mask_t dirty_state_mask = 0;
 
    UNUSED bool fs_msaa_changed = false;
    if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
@@ -1785,10 +1769,9 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
       update_fs_msaa_flags(hw_state, dyn, pipeline);
 
    if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
-       (gfx->dirty & ANV_CMD_DIRTY_COARSE_PIXEL_ACTIVE) ||
        BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_FS_MSAA_FLAGS)) {
       update_ps(hw_state, device, dyn, pipeline);
-      dirty_state_mask |= update_ps_extra_wm(hw_state, cmd_buffer, pipeline);
+      update_ps_extra_wm(hw_state, pipeline);
    }
 
    if (cmd_buffer->state.gfx.dirty &
@@ -1969,8 +1952,6 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
       SET(TCS_INPUT_VERTICES, tcs_input_vertices, dyn->ts.patch_control_points);
 
    vk_dynamic_graphics_state_clear_dirty(&cmd_buffer->vk.dynamic_graphics_state);
-
-   return dirty_state_mask;
 }
 
 #undef GET
@@ -1984,13 +1965,11 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
  * reemission if the values are changing.
  *
  * Nothing is emitted in the batch buffer.
- *
- * Returns a mask for state that we want to leave dirty afterwards.
  */
-anv_cmd_dirty_mask_t
+void
 genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
 {
-   return cmd_buffer_flush_gfx_runtime_state(
+   cmd_buffer_flush_gfx_runtime_state(
       cmd_buffer,
       anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline));
 }
@@ -2283,7 +2262,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       }
    }
 
-   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_PS_EXTRA)) {
+   if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_PS_EXTRA) ||
+       BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_COARSE_STATE)) {
       anv_batch_emit_merge(&cmd_buffer->batch, GENX(3DSTATE_PS_EXTRA),
                            pipeline, partial.ps_extra, pse) {
          SET(pse, ps_extra, PixelShaderHasUAV);
@@ -2291,10 +2271,18 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 #if GFX_VER >= 11
          SET(pse, ps_extra, PixelShaderIsPerCoarsePixel);
 #endif
-#if GFX_VERx10 >= 125
+         SET(pse, ps_extra, PixelShaderKillsPixel);
+
+#if INTEL_WA_18038825448_GFX_VER
+         /* Add a dependency if easier the shader needs it (because of runtime
+          * change through pre-rasterization shader) or if we notice a change.
+          */
+         pse.EnablePSDependencyOnCPsizeChange =
+            hw_state->ps_extra.EnablePSDependencyOnCPsizeChange ||
+            BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_COARSE_STATE);
+#elif GFX_VERx10 >= 125
          SET(pse, ps_extra, EnablePSDependencyOnCPsizeChange);
 #endif
-         SET(pse, ps_extra, PixelShaderKillsPixel);
       }
    }
 
@@ -2811,6 +2799,15 @@ genX(cmd_buffer_flush_gfx_hw_state)(struct anv_cmd_buffer *cmd_buffer)
        BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_SO_DECL_LIST)) {
       BITSET_SET(hw_state->dirty, ANV_GFX_STATE_STREAMOUT);
    }
+
+#if INTEL_WA_18038825448_GFX_VER
+   const struct brw_wm_prog_data *wm_prog_data = get_wm_prog_data(pipeline);
+   if (wm_prog_data) {
+      genX(cmd_buffer_set_coarse_pixel_active)(
+         cmd_buffer,
+         brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags));
+   }
+#endif
 
    /* Gfx11 undocumented issue :
     * https://gitlab.freedesktop.org/mesa/mesa/-/issues/9781

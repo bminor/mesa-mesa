@@ -881,12 +881,9 @@ genX(cmd_buffer_flush_gfx_state)(struct anv_cmd_buffer *cmd_buffer)
       }
    }
 
-   /* State left dirty after flushing runtime state. */
-   anv_cmd_dirty_mask_t dirty_state_mask = 0;
-
    /* Flush the runtime state into the HW state tracking */
    if (cmd_buffer->state.gfx.dirty || any_dynamic_state_dirty)
-      dirty_state_mask = genX(cmd_buffer_flush_gfx_runtime_state)(cmd_buffer);
+      genX(cmd_buffer_flush_gfx_runtime_state)(cmd_buffer);
 
    /* Flush the HW state into the commmand buffer */
    if (!BITSET_IS_EMPTY(cmd_buffer->state.gfx.dyn_state.dirty))
@@ -958,10 +955,7 @@ genX(cmd_buffer_flush_gfx_state)(struct anv_cmd_buffer *cmd_buffer)
    }
 #endif
 
-   /* When we're done, only thing left is the possible dirty state
-    * returned by cmd_buffer_flush_gfx_runtime_state.
-    */
-   cmd_buffer->state.gfx.dirty = dirty_state_mask;
+   cmd_buffer->state.gfx.dirty = 0;
 }
 
 ALWAYS_INLINE static bool
