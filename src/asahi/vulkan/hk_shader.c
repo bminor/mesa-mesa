@@ -300,22 +300,32 @@ lower_load_global_constant_offset_instr(nir_builder *b,
       if (*has_soft_fault) {
          nir_scalar offs = nir_scalar_resolved(offset, 0);
          if (nir_scalar_is_const(offs)) {
-            unsigned offs_imm = nir_scalar_as_uint(offs);
-            /* Simplify the bounds check */
+            /* Calculate last byte loaded */
+            unsigned offs_imm = nir_scalar_as_uint(offs) + load_size;
+
+            /* Simplify the bounds check. Uniform buffers are bounds checked at
+             * 64B granularity, so `bound` is a multiple of K = 64. Then
+             *
+             * offs_imm < bound <==> round_down(offs_imm, K) < bound. Proof:
+             *
+             * "=>" round_down(offs_imm, K) <= offs_imm < bound.
+             *
+             * "<=" Let a, b be integer s.t. offs_imm = K a + b with b < K.
+             *      Note round_down(offs_imm, K) = Ka.
+             *
+             *      Let c be integer s.t. bound = Kc.
+             *      We have Ka < Kc => a < c.
+             *      b < K => Ka + b < K(a + 1).
+             *
+             *      a < c with integers => a + 1 <= c.
+             *      offs_imm < K(a + 1) <= Kc = bound.
+             *      Hence offs_imm < bound.
+             */
+            assert(align_mul == 64);
             offs_imm &= ~(align_mul - 1);
 
-            /* In hk_buffer_addr_range, we ensure that zero-sized buffers get
-             * address 0. Why? Suppose offs_imm == 0.
-             *
-             * If the buffer is zero-sized, this is out-of-bounds. The above
-             * driver ABI ensures the calculated address is 0 + 0 == 0,
-             * returning zero
-             *
-             * Otherwise, the buffer is not zero-sized. For sufficiently large
-             * robustness granularity, that means the address is necessarily
-             * in-bounds.
-             *
-             * In both cases, the bounds check is unnecessary.
+            /* Bounds checks are `offset > bound ? 0 : val` so if offset = 0,
+             * the bounds check is useless.
              */
             if (offs_imm) {
                val = bounds_check(b, val, nir_imm_int(b, offs_imm), bound);
