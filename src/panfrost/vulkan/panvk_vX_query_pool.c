@@ -129,7 +129,7 @@ static VkResult
 panvk_query_wait_for_available(struct panvk_device *dev,
                                struct panvk_query_pool *pool, uint32_t query)
 {
-   uint64_t abs_timeout_ns = os_time_get_absolute_timeout(PANVK_QUERY_TIMEOUT);
+   int64_t abs_timeout_ns = os_time_get_absolute_timeout(PANVK_QUERY_TIMEOUT);
 
    while (os_time_get_nano() < abs_timeout_ns) {
       if (panvk_query_is_available(pool, query))
