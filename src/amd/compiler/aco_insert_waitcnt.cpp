@@ -562,7 +562,8 @@ insert_wait_entry(wait_ctx& ctx, Definition def, wait_event event, uint8_t vmem_
    /* We can't safely write to unwritten destination VGPR lanes with DS/VMEM on GFX11 without
     * waiting for the load to finish.
     */
-   uint32_t ds_vmem_events = event_lds | event_gds | event_vmem | event_flat;
+   uint32_t ds_vmem_events =
+      event_lds | event_gds | event_vmem | event_vmem_sample | event_vmem_bvh | event_flat;
    bool force_linear = ctx.gfx_level >= GFX11 && (event & ds_vmem_events);
 
    insert_wait_entry(ctx, def.physReg(), def.regClass(), event, true, vmem_types, force_linear);
