@@ -2509,7 +2509,7 @@ do_common_optimization(exec_list *ir, bool linked,
    OPT(do_minmax_prune, ir);
    OPT(do_rebalance_tree, ir);
    OPT(do_algebraic, ir, native_integers, options);
-   OPT(do_lower_jumps, ir, true, false, false, options->EmitNoCont);
+   OPT(do_lower_jumps, ir, true, options->EmitNoCont);
 
    /* If an optimization pass fails to preserve the invariant flag, calling
     * the pass only once earlier may result in incorrect code generation. Always call
