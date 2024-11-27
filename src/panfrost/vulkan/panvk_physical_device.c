@@ -1308,13 +1308,17 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
          }
       }
 
-      if (info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+      if (info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ||
+          ((info->usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
+           !vk_format_is_depth_or_stencil(info->format))) {
          if (!(format_feature_flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
             goto unsupported;
          }
       }
 
-      if (info->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+      if ((info->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) ||
+          ((info->usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
+           vk_format_is_depth_or_stencil(info->format))) {
          if (!(format_feature_flags &
                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             goto unsupported;
