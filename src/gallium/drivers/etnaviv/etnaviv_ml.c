@@ -55,7 +55,7 @@ etna_ml_create_tensor(struct etna_ml_subgraph *subgraph, unsigned idx, unsigned 
    struct pipe_resource *res = tensors[idx];
 
    if (res != NULL) {
-      assert(size == pipe_buffer_size(res));
+      assert(size == pipe_buffer_size(res) || size == pipe_buffer_size(res) / 2);
       return;
    }
 
@@ -315,7 +315,11 @@ lower_operations(struct etna_ml_subgraph *subgraph,
       }
    }
 
+   /* Create combined input tensors first */
    list_for_each_entry(struct etna_operation, operation, etna_operations, link) {
+      if (operation->input_count == 1)
+         continue;
+
       etna_ml_create_tensor(subgraph, operation->input_tensors[0], operation->input_tensor_size);
 
       for (int i = 1; i < operation->input_count; i++)
@@ -325,6 +329,14 @@ lower_operations(struct etna_ml_subgraph *subgraph,
                                       i * operation->input_tensor_size / operation->input_count,
                                       operation->input_tensor_size / operation->input_count);
 
+   }
+
+   /* Create all other input tensors */
+   list_for_each_entry(struct etna_operation, operation, etna_operations, link) {
+      if (operation->input_count != 1)
+         continue;
+
+      etna_ml_create_tensor(subgraph, operation->input_tensors[0], operation->input_tensor_size);
    }
 
    /* Create any output tensors that aren't inputs to other operations, these
