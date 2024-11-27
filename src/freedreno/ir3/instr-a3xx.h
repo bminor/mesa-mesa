@@ -797,4 +797,19 @@ is_cat3_float(opc_t opc)
    }
 }
 
+static inline bool
+is_cat3_alt(opc_t opc)
+{
+   switch (opc) {
+   case OPC_SHLM:
+   case OPC_SHRM:
+   case OPC_SHLG:
+   case OPC_SHRG:
+   case OPC_ANDG:
+      return true;
+   default:
+      return false;
+   }
+}
+
 #endif /* INSTR_A3XX_H_ */

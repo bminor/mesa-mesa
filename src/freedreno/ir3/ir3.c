@@ -1296,10 +1296,23 @@ ir3_valid_flags(struct ir3_instruction *instr, unsigned n, unsigned flags)
       case OPC_SHRG:
       case OPC_SHLG:
       case OPC_ANDG: {
-         valid_flags |= IR3_REG_IMMED;
+         if (n != 1) {
+            valid_flags |= IR3_REG_IMMED;
+         }
+
          /* Can be RELATIV+CONST but not CONST: */
          if (flags & IR3_REG_RELATIV)
             valid_flags |= IR3_REG_CONST;
+
+         if (!(instr->dsts[0]->flags & IR3_REG_SHARED) && n < 2) {
+            /* Of the first two sources, only one can be shared. */
+            unsigned m = n ^ 1;
+
+            if ((flags & IR3_REG_SHARED) &&
+                (instr->srcs[m]->flags & IR3_REG_SHARED)) {
+               return false;
+            }
+         }
          break;
       }
       case OPC_WMM:
@@ -1477,6 +1490,13 @@ ir3_valid_immediate(struct ir3_instruction *instr, int32_t immed)
          /* most cat6 src immediates can only encode 8 bits: */
          return !(immed & ~0xff);
       }
+   }
+
+   /* The alternative cat3 encoding used for sh[lr][gm]/andg uses 12 bit
+    * immediates that won't be sign-extended.
+    */
+   if (is_cat3_alt(instr->opc)) {
+      return !(immed & ~0xfff);
    }
 
    /* Other than cat1 (mov) we can only encode up to 10 bits, sign-extended: */
