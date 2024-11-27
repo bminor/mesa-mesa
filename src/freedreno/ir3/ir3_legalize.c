@@ -1206,6 +1206,31 @@ block_sched(struct ir3 *ir)
    }
 }
 
+/* Some gens have a hardware issue that needs to be worked around by 1)
+ * inserting 4 nops after the second pred[tf] of a pred[tf]/pred[ft] pair and/or
+ * inserting 6 nops after prede.
+ *
+ * This function should be called with the second pred[tf] of such a pair and
+ * NULL if there is only one pred[tf].
+ */
+static void
+add_predication_workaround(struct ir3_compiler *compiler,
+                           struct ir3_instruction *predtf,
+                           struct ir3_instruction *prede)
+{
+   if (predtf && compiler->predtf_nop_quirk) {
+      struct ir3_instruction *nop = ir3_NOP(predtf->block);
+      nop->repeat = 4;
+      ir3_instr_move_after(nop, predtf);
+   }
+
+   if (compiler->prede_nop_quirk) {
+      struct ir3_instruction *nop = ir3_NOP(prede->block);
+      nop->repeat = 6;
+      ir3_instr_move_after(nop, prede);
+   }
+}
+
 static void
 prede_sched(struct ir3 *ir)
 {
@@ -1275,7 +1300,8 @@ prede_sched(struct ir3 *ir)
        *        |----------|
        */
       if (!list_is_empty(&succ1->instr_list)) {
-         ir3_PREDE(succ1);
+         struct ir3_instruction *prede = ir3_PREDE(succ1);
+         add_predication_workaround(ir->compiler, succ0_terminator, prede);
          continue;
       }
 
@@ -1295,7 +1321,8 @@ prede_sched(struct ir3 *ir)
        *        |----------|
        */
       list_delinit(&succ0_terminator->node);
-      ir3_PREDE(succ0);
+      struct ir3_instruction *prede = ir3_PREDE(succ0);
+      add_predication_workaround(ir->compiler, NULL, prede);
       remove_unused_block(succ1);
       block->successors[1] = succ0->successors[0];
       ir3_block_add_predecessor(succ0->successors[0], block);

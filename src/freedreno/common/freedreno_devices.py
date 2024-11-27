@@ -400,6 +400,7 @@ a6xx_gen3 = A6XXProps(
         has_per_view_viewport = True,
         has_scalar_alu = True,
         has_early_preamble = True,
+        prede_nop_quirk = True,
     )
 
 a6xx_gen4 = A6XXProps(
@@ -431,6 +432,8 @@ a6xx_gen4 = A6XXProps(
         # TODO: there seems to be a quirk where at least rcp can't be in an
         # early preamble. a660 at least is affected.
         #has_early_preamble = True,
+        prede_nop_quirk = True,
+        predtf_nop_quirk = True,
     )
 
 add_gpus([
@@ -859,6 +862,8 @@ a7xx_base = A6XXProps(
         has_early_preamble = True,
         has_attachment_shading_rate = True,
         has_ubwc_linear_mipmap_fallback = True,
+        prede_nop_quirk = True,
+        predtf_nop_quirk = True,
     )
 
 a7xx_gen1 = A7XXProps(
