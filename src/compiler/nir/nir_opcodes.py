@@ -1267,6 +1267,16 @@ dst = ((((src0 & 0x0000ffff) << 16) * (src1 & 0xffff0000)) >> 16) + src2;
 triop("imad24_ir3", tint32, _2src_commutative,
       "(((int32_t)src0 << 8) >> 8) * (((int32_t)src1 << 8) >> 8) + src2")
 
+def triop_shift_ir3(name, shift_op, bit_op):
+    opcode(name, 0, tuint, [0, 0, 0], [tuint, tuint32, tuint], False, "",
+           f"(src0 {shift_op} (src1 & (sizeof(src0) * 8 - 1))) {bit_op} src2")
+
+triop_shift_ir3("shrm_ir3", ">>", "&")
+triop_shift_ir3("shlm_ir3", "<<", "&")
+triop_shift_ir3("shrg_ir3", ">>", "|")
+triop_shift_ir3("shlg_ir3", "<<", "|")
+triop("andg_ir3", tuint, _2src_commutative, "(src0 & src1) | src2")
+
 # r600/gcn specific instruction that evaluates unnormalized cube texture coordinates
 # and face index
 # The actual texture coordinates are evaluated from this according to
