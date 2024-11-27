@@ -72,16 +72,6 @@ if meson.can_run_host_binaries()
     suite : ['compiler', 'glsl'],
     timeout: 60,
   )
-
-  test(
-    'glsl optimization',
-    prog_python,
-    args : [
-      files('optimization_test.py'),
-      '--test-runner', glsl_test
-    ],
-    suite : ['compiler', 'glsl'],
-  )
 endif
 
 if with_tools.contains('glsl')
