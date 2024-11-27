@@ -365,14 +365,21 @@ Core Mesa environment variables
    - Creating RMV captures requires the ``scripts/setup.sh`` script in the
      Radeon Developer Tools folder to be run beforehand
 
+.. envvar:: MESA_VK_TRACE_PER_SUBMIT
+
+   Enables per-submit capture for compute-only workload. Disabled by default
+   and only valid with MESA_VK_TRACE=rgp.
+
 .. envvar:: MESA_VK_TRACE_FRAME
 
    Specifies a frame index at which a trace capture is automatically triggered.
+   Ignored when MESA_VK_TRACE_PER_SUBMIT is enabled.
 
 .. envvar:: MESA_VK_TRACE_TRIGGER
 
    Specifies a trigger file. Creating the file triggers the capture. (e.g.
    ``export MESA_VK_TRACE_TRIGGER=/tmp/trigger`` and then ``touch /tmp/trigger``)
+   Ignored when MESA_VK_TRACE_PER_SUBMIT is enabled.
 
 .. envvar:: MESA_LOADER_DRIVER_OVERRIDE
 
