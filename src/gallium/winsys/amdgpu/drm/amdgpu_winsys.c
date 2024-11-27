@@ -127,10 +127,12 @@ static void amdgpu_winsys_destroy_locked(struct radeon_winsys *rws, bool locked)
    if (!locked)
       simple_mtx_unlock(&dev_tab_mutex);
 
+   if (sws->fd != aws->fd)
+      close(sws->fd);
+
    if (destroy)
       do_winsys_deinit(aws);
 
-   close(sws->fd);
    FREE(rws);
 }
 
@@ -375,7 +377,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
       return NULL;
 
    pipe_reference_init(&sws->reference, 1);
-   sws->fd = os_dupfd_cloexec(fd);
+   sws->fd = -1;
 
    /* Look up the winsys from the dev table. */
    simple_mtx_lock(&dev_tab_mutex);
@@ -384,7 +386,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
 
    /* Initialize the amdgpu device. This should always return the same pointer
     * for the same fd. */
-   r = amdgpu_device_initialize(sws->fd, &drm_major, &drm_minor, &dev);
+   r = amdgpu_device_initialize(fd, &drm_major, &drm_minor, &dev);
    if (r) {
       fprintf(stderr, "amdgpu: amdgpu_device_initialize failed.\n");
       goto fail;
@@ -403,8 +405,7 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
 
       simple_mtx_lock(&aws->sws_list_lock);
       for (sws_iter = aws->sws_list; sws_iter; sws_iter = sws_iter->next) {
-         if (are_file_descriptions_equal(sws_iter->fd, sws->fd)) {
-            close(sws->fd);
+         if (are_file_descriptions_equal(sws_iter->fd, fd)) {
             FREE(sws);
             sws = sws_iter;
             pipe_reference(NULL, &sws->reference);
@@ -432,19 +433,14 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
        * first.
        * Get the correct fd or the buffer sharing will not work (see #3424).
        */
-      int device_fd = amdgpu_device_get_fd(dev);
-      if (!are_file_descriptions_equal(device_fd, fd)) {
+      aws->fd = amdgpu_device_get_fd(dev);
+      if (!are_file_descriptions_equal(aws->fd, fd)) {
          sws->kms_handles = _mesa_hash_table_create(NULL, kms_handle_hash,
                                                    kms_handle_equals);
          if (!sws->kms_handles)
             goto fail;
-         /* We could avoid storing the fd and use amdgpu_device_get_fd() where
-          * we need it but we'd have to use os_same_file_description() to
-          * compare the fds.
-          */
-         aws->fd = device_fd;
       } else {
-         aws->fd = sws->fd;
+         sws->fd = aws->fd;
       }
       aws->info.drm_major = drm_major;
       aws->info.drm_minor = drm_minor;
@@ -515,6 +511,9 @@ amdgpu_winsys_create(int fd, const struct pipe_screen_config *config,
       }
    }
 
+   if (sws->fd < 0)
+      sws->fd = os_dupfd_cloexec(fd);
+
    sws->aws = aws;
 
    /* Set functions. */
@@ -563,7 +562,6 @@ fail_alloc:
 fail:
    if (sws->kms_handles)
       _mesa_hash_table_destroy(sws->kms_handles, NULL);
-   close(sws->fd);
    FREE(sws);
    simple_mtx_unlock(&dev_tab_mutex);
    return NULL;
