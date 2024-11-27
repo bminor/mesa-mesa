@@ -161,7 +161,6 @@ static nir_def *
 find_output(nir_builder *b, unsigned location)
 {
    nir_def *comp[4] = {NULL};
-   nir_instr *last_comp = NULL;
 
    nir_foreach_function_impl(impl, b->shader) {
       nir_foreach_block(block, impl) {
@@ -184,9 +183,7 @@ find_output(nir_builder *b, unsigned location)
 
                   /* Each component should be written only once. */
                   assert(!comp[index]);
-                  b->cursor = nir_before_instr(&intr->instr);
                   comp[index] = nir_channel(b, intr->src[0].ssa, i);
-                  last_comp = comp[index]->parent_instr;
                }
 
                /* Remove it because it's going to be replaced by CLIP_DIST. */
@@ -196,11 +193,7 @@ find_output(nir_builder *b, unsigned location)
          }
       }
    }
-
-   if (!last_comp)
-      return NULL;
-
-   b->cursor = nir_after_instr(last_comp);
+   assert(comp[0] || comp[1] || comp[2] || comp[3]);
 
    for (unsigned i = 0; i < 4; i++) {
       if (!comp[i])
