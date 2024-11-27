@@ -32,8 +32,6 @@
 #include "vpe10_dpp.h"
 #include "vpe10_mpc.h"
 #include "vpe10_opp.h"
-#include "vpe10_command.h"
-#include "vpe10_cm_common.h"
 #include "vpe10_background.h"
 #include "vpe10_vpe_desc_writer.h"
 #include "vpe10_plane_desc_writer.h"
@@ -832,10 +830,14 @@ int32_t vpe10_program_frontend(struct vpe_priv *vpe_priv, uint32_t pipe_idx, uin
         fmt.mantissa_bits  = 12;
         fmt.sign           = true;
         if (stream_ctx->stream.tm_params.UID || stream_ctx->stream.tm_params.enable_3dlut) {
-            vpe_convert_to_custom_float_format(
-                stream_ctx->lut3d_func->hdr_multiplier, &fmt, &hw_mult);
+            if (!vpe_convert_to_custom_float_format(
+                    stream_ctx->lut3d_func->hdr_multiplier, &fmt, &hw_mult)) {
+                VPE_ASSERT(0);
+            }
         } else {
-            vpe_convert_to_custom_float_format(stream_ctx->white_point_gain, &fmt, &hw_mult);
+            if (!vpe_convert_to_custom_float_format(stream_ctx->white_point_gain, &fmt, &hw_mult)) {
+                VPE_ASSERT(0);
+            }
         }
         dpp->funcs->set_hdr_multiplier(dpp, hw_mult);
 
@@ -1248,7 +1250,7 @@ enum vpe_status vpe10_update_blnd_gamma(struct vpe_priv *vpe_priv,
         } else {
 
             if (lut3d_enabled) {
-                vpe_color_build_tm_cs(tm_params, param->dst_surface, &tm_out_cs);
+                vpe_color_build_tm_cs(tm_params, &param->dst_surface, &tm_out_cs);
                 vpe_color_get_color_space_and_tf(&tm_out_cs, &cs, &tf);
             } else {
                 can_bypass = true;

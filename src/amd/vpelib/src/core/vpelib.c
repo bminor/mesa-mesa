@@ -138,6 +138,7 @@ static void verify_collaboration_mode(struct vpe_priv *vpe_priv)
     if (vpe_priv->pub.level == VPE_IP_LEVEL_1_1) {
         if (vpe_priv->collaboration_mode == true && vpe_priv->collaborate_sync_index == 0) {
             srand((unsigned int)time(NULL)); // Initialization, should only be called once.
+            // coverity[dont_call]
             uint32_t randnum                 = (uint32_t)rand() % 15;
             randnum                          = randnum << 12;
             vpe_priv->collaborate_sync_index = (int32_t)randnum;

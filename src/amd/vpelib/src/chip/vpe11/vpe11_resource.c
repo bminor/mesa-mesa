@@ -34,17 +34,10 @@
 #include "vpe10_mpc.h"
 #include "vpe10_opp.h"
 #include "vpe11_command.h"
-#include "vpe10_cm_common.h"
 #include "vpe10_background.h"
 #include "vpe10_plane_desc_writer.h"
 #include "vpe11_vpe_desc_writer.h"
 #include "vpe10_config_writer.h"
-#include "vpe10/inc/asic/bringup_vpe_6_1_0_offset.h"
-#include "vpe10/inc/asic/bringup_vpe_6_1_0_sh_mask.h"
-#include "vpe10/inc/asic/bringup_vpe_6_1_0_default.h"
-#include "vpe10/inc/asic/vpe_1_0_offset.h"
-#include "custom_fp16.h"
-#include "custom_float.h"
 #include "background.h"
 
 #define LUT_NUM_ENTRIES   (17 * 17 * 17)

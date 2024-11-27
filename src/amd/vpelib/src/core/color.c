@@ -31,7 +31,6 @@
 #include "color_gamut.h"
 #include "common.h"
 #include "custom_float.h"
-#include "color_test_values.h"
 #include "3dlut_builder.h"
 #include "shaper_builder.h"
 #include "geometric_scaling.h"
@@ -422,8 +421,12 @@ static bool build_scale_and_bias(struct bias_and_scale *bias_and_scale,
         } // else report error? not sure if default is right
     }
 
-    vpe_convert_to_custom_float_format(scale, &fmt, &bias_and_scale->scale_green);
-    vpe_convert_to_custom_float_format(bias, &fmt, &bias_and_scale->bias_green);
+    if (!vpe_convert_to_custom_float_format(scale, &fmt, &bias_and_scale->scale_green)) {
+        VPE_ASSERT(0);
+    }
+    if (!vpe_convert_to_custom_float_format(bias, &fmt, &bias_and_scale->bias_green)) {
+        VPE_ASSERT(0);
+    }
 
     // see definition of scale/bias and scale_c/bias_c
     // RGB formats only have scale/bias since all color channels are the same
@@ -434,8 +437,12 @@ static bool build_scale_and_bias(struct bias_and_scale *bias_and_scale,
         bias_and_scale->bias_red   = bias_and_scale->bias_green;
         bias_and_scale->bias_blue  = bias_and_scale->bias_green;
     } else {
-        vpe_convert_to_custom_float_format(scale_c, &fmt, &bias_and_scale->scale_red);
-        vpe_convert_to_custom_float_format(bias_c, &fmt, &bias_and_scale->bias_red);
+        if (!vpe_convert_to_custom_float_format(scale_c, &fmt, &bias_and_scale->scale_red)) {
+            VPE_ASSERT(0);
+        }
+        if (!vpe_convert_to_custom_float_format(bias_c, &fmt, &bias_and_scale->bias_red)) {
+            VPE_ASSERT(0);
+        }
         bias_and_scale->scale_blue = bias_and_scale->scale_red;
         bias_and_scale->bias_blue  = bias_and_scale->bias_red;
     }
@@ -570,11 +577,11 @@ bool vpe_color_update_degamma_tf(struct vpe_priv *vpe_priv, enum color_transfer_
 }
 
 enum vpe_status vpe_color_build_tm_cs(const struct vpe_tonemap_params *tm_params,
-    struct vpe_surface_info surface_info, struct vpe_color_space *tm_out_cs)
+    const struct vpe_surface_info *surface_info, struct vpe_color_space *tm_out_cs)
 {
     tm_out_cs->tf        = tm_params->lut_out_tf;
     tm_out_cs->primaries = tm_params->lut_out_gamut;
-    tm_out_cs->encoding  = surface_info.cs.encoding;
+    tm_out_cs->encoding  = surface_info->cs.encoding;
     tm_out_cs->range     = VPE_COLOR_RANGE_FULL;     // surface_info.cs.range;
     tm_out_cs->cositing  = VPE_CHROMA_COSITING_NONE; // surface_info.cs.cositing;
 
@@ -830,7 +837,8 @@ enum vpe_status vpe_color_update_movable_cm(
             vpe_color_update_shaper(
                 vpe_priv, SHAPER_EXP_MAX_IN, stream_ctx->in_shaper_func, enable_3dlut);
 
-            vpe_color_build_tm_cs(&stream_ctx->stream.tm_params, vpe_priv->output_ctx.surface, &tm_out_cs);
+            vpe_color_build_tm_cs(
+                &stream_ctx->stream.tm_params, &vpe_priv->output_ctx.surface, &tm_out_cs);
 
             vpe_color_get_color_space_and_tf(&tm_out_cs, &out_lut_cs, &tf);
 

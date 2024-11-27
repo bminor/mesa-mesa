@@ -24,7 +24,6 @@
 
 #include <string.h>
 #include "vpe_priv.h"
-#include "common.h"
 #include "mpc.h"
 
 enum mpc_color_gamut_type {

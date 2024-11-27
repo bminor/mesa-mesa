@@ -282,7 +282,7 @@ enum vpe_status vpe_color_update_shaper(const struct vpe_priv *vpe_priv, uint16_
     struct transfer_func *shaper_func, bool enable_3dlut);
 
 enum vpe_status vpe_color_build_tm_cs(const struct vpe_tonemap_params *tm_params,
-    struct vpe_surface_info surface_info, struct vpe_color_space *vcs);
+    const struct vpe_surface_info *surface_info, struct vpe_color_space *vcs);
 
 enum vpe_status vpe_color_update_3dlut(
     struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx, bool enable_3dlut);
