@@ -104,24 +104,6 @@ agx_translate_sample_count(unsigned samples)
    }
 }
 
-static inline enum agx_index_size
-agx_translate_index_size(uint8_t size_B)
-{
-   /* Index sizes are encoded logarithmically */
-   STATIC_ASSERT(__builtin_ctz(1) == AGX_INDEX_SIZE_U8);
-   STATIC_ASSERT(__builtin_ctz(2) == AGX_INDEX_SIZE_U16);
-   STATIC_ASSERT(__builtin_ctz(4) == AGX_INDEX_SIZE_U32);
-
-   assert((size_B == 1) || (size_B == 2) || (size_B == 4));
-   return __builtin_ctz(size_B);
-}
-
-static inline uint8_t
-agx_index_size_to_B(enum agx_index_size size)
-{
-   return 1 << size;
-}
-
 static enum agx_conservative_depth
 agx_translate_depth_layout(enum gl_frag_depth_layout layout)
 {

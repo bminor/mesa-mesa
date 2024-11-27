@@ -18,6 +18,30 @@
    memcpy(ptr, &src, sizeof(src));                                             \
    ptr = (GLOBAL void *)(((uintptr_t)ptr) + sizeof(src));
 
+static inline enum agx_index_size
+agx_translate_index_size(uint8_t size_B)
+{
+   /* Index sizes are encoded logarithmically */
+   static_assert(__builtin_ctz(1) == AGX_INDEX_SIZE_U8);
+   static_assert(__builtin_ctz(2) == AGX_INDEX_SIZE_U16);
+   static_assert(__builtin_ctz(4) == AGX_INDEX_SIZE_U32);
+
+   assert((size_B == 1) || (size_B == 2) || (size_B == 4));
+   return __builtin_ctz(size_B);
+}
+
+static inline unsigned
+agx_indices_to_B(unsigned x, enum agx_index_size size)
+{
+   return x << size;
+}
+
+static inline uint8_t
+agx_index_size_to_B(enum agx_index_size size)
+{
+   return agx_indices_to_B(1, size);
+}
+
 struct agx_workgroup {
    uint32_t x, y, z;
 };
