@@ -1753,15 +1753,13 @@ update_tbimr_info(struct anv_gfx_dynamic_state *hw_state,
  * Nothing is emitted in the batch buffer.
  */
 static void
-cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
-                                   const struct anv_graphics_pipeline *pipeline)
+cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
+                                   const struct anv_device *device,
+                                   const struct vk_dynamic_graphics_state *dyn,
+                                   struct anv_cmd_graphics_state *gfx,
+                                   const struct anv_graphics_pipeline *pipeline,
+                                   VkCommandBufferLevel cmd_buffer_level)
 {
-   UNUSED struct anv_device *device = cmd_buffer->device;
-   struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
-   const struct vk_dynamic_graphics_state *dyn =
-      &cmd_buffer->vk.dynamic_graphics_state;
-   struct anv_gfx_dynamic_state *hw_state = &gfx->dyn_state;
-
    UNUSED bool fs_msaa_changed = false;
    if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_MS_ALPHA_TO_COVERAGE_ENABLE) ||
@@ -1775,7 +1773,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
       update_ps_extra_wm(hw_state, pipeline);
    }
 
-   if (cmd_buffer->state.gfx.dirty &
+   if (gfx->dirty &
 #if GFX_VERx10 >= 125
        ANV_CMD_DIRTY_PIPELINE
 #else
@@ -1784,7 +1782,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
       )
       update_ps_extra_has_uav(hw_state, gfx, pipeline);
 
-   if ((cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_PIPELINE) ||
+   if ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE))
       update_ps_extra_kills_pixel(hw_state, dyn, gfx, pipeline);
 
@@ -1924,10 +1922,10 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
    if ((gfx->dirty & ANV_CMD_DIRTY_RENDER_AREA) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_SCISSORS) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VP_VIEWPORTS))
-      update_scissors(hw_state, dyn, gfx, cmd_buffer->vk.level);
+      update_scissors(hw_state, dyn, gfx, cmd_buffer_level);
 
 #if GFX_VERx10 == 125
-   if ((cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_RENDER_TARGETS))
+   if ((gfx->dirty & ANV_CMD_DIRTY_RENDER_TARGETS))
       update_tbimr_info(hw_state, device, gfx, pipeline->base.base.l3_config);
 #endif
 
@@ -1951,8 +1949,6 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
        ((gfx->dirty & ANV_CMD_DIRTY_PIPELINE) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS)))
       SET(TCS_INPUT_VERTICES, tcs_input_vertices, dyn->ts.patch_control_points);
-
-   vk_dynamic_graphics_state_clear_dirty(&cmd_buffer->vk.dynamic_graphics_state);
 }
 
 #undef GET
@@ -1971,8 +1967,14 @@ void
 genX(cmd_buffer_flush_gfx_runtime_state)(struct anv_cmd_buffer *cmd_buffer)
 {
    cmd_buffer_flush_gfx_runtime_state(
-      cmd_buffer,
-      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline));
+      &cmd_buffer->state.gfx.dyn_state,
+      cmd_buffer->device,
+      &cmd_buffer->vk.dynamic_graphics_state,
+      &cmd_buffer->state.gfx,
+      anv_pipeline_to_graphics(cmd_buffer->state.gfx.base.pipeline),
+      cmd_buffer->vk.level);
+
+   vk_dynamic_graphics_state_clear_dirty(&cmd_buffer->vk.dynamic_graphics_state);
 }
 
 static void
