@@ -110,7 +110,7 @@ fi
 
 mkdir -p /deqp-$deqp_api
 
-if [ "$DEQP_API" = tools ]; then
+if [ "$DEQP_VERSION" = "$DEQP_MAIN_COMMIT" ]; then
   commit_desc=$(git show --no-patch --format='commit %h on %ci' --abbrev=10 "$DEQP_COMMIT")
   echo "dEQP main at $commit_desc" > /deqp-$deqp_api/version
 else
