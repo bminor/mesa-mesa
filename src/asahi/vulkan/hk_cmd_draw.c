@@ -1326,6 +1326,27 @@ hk_meta_shader(struct hk_device *dev, hk_internal_builder_t builder, void *data,
 }
 
 static struct agx_draw
+hk_draw_as_indexed_indirect(struct hk_cmd_buffer *cmd, struct agx_draw draw)
+{
+   assert(draw.indexed);
+
+   if (agx_is_indirect(draw.b))
+      return draw;
+
+   VkDrawIndexedIndirectCommand desc = {
+      .indexCount = draw.b.count[0],
+      .instanceCount = draw.b.count[1],
+      .firstIndex = draw.start,
+      .vertexOffset = draw.index_bias,
+      .firstInstance = draw.start_instance,
+   };
+
+   return agx_draw_indexed_indirect(
+      hk_pool_upload(cmd, &desc, sizeof(desc), 4), draw.index_buffer,
+      draw.index_buffer_range_B, draw.index_size, draw.restart);
+}
+
+static struct agx_draw
 hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                         struct agx_draw draw, uint32_t draw_count)
 {
@@ -1336,14 +1357,7 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    perf_debug(dev, "Unrolling primitive restart due to GS/XFB");
 
    /* The unroll kernel assumes an indirect draw. Synthesize one if needed */
-   if (!agx_is_indirect(draw.b)) {
-      uint32_t desc[5] = {draw.b.count[0], draw.b.count[1], draw.start,
-                          draw.index_bias, draw.start_instance};
-
-      draw = agx_draw_indexed_indirect(
-         hk_pool_upload(cmd, desc, sizeof(desc), 4), draw.index_buffer,
-         draw.index_buffer_range_B, draw.index_size, true);
-   }
+   draw = hk_draw_as_indexed_indirect(cmd, draw);
 
    /* Next, we unroll the index buffer used by the indirect draw */
    enum mesa_prim prim = vk_conv_topology(dyn->ia.primitive_topology);
