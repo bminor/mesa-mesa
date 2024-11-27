@@ -404,7 +404,7 @@ where
 
     fn count(&self) -> usize {
         // Properties are value pairs terminated with a 0 value.
-        self.props.len() * 2 + 1
+        self.len() * 2 + 1
     }
 
     fn write_to(&self, out: &mut [MaybeUninit<T>]) {
@@ -414,7 +414,7 @@ where
         }
 
         // need to terminate with a 0 value
-        out[self.props.len() * 2].write(T::default());
+        out[self.len() * 2].write(T::default());
     }
 }
 

@@ -2,9 +2,12 @@ pub struct Properties<T> {
     pub props: Vec<(T, T)>,
 }
 
-impl<T: Copy + PartialEq + Default> Properties<T> {
+impl<T: Copy + Default> Properties<T> {
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    pub fn from_ptr_raw(mut p: *const T) -> Vec<T> {
+    pub fn from_ptr_raw(mut p: *const T) -> Vec<T>
+    where
+        T: PartialEq,
+    {
         let mut res: Vec<T> = Vec::new();
 
         if !p.is_null() {
@@ -22,7 +25,10 @@ impl<T: Copy + PartialEq + Default> Properties<T> {
     }
 
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    pub fn from_ptr(mut p: *const T) -> Option<Self> {
+    pub fn from_ptr(mut p: *const T) -> Option<Self>
+    where
+        T: PartialEq,
+    {
         let mut res = Self::default();
 
         if !p.is_null() {
@@ -44,6 +50,16 @@ impl<T: Copy + PartialEq + Default> Properties<T> {
         }
 
         Some(res)
+    }
+
+    /// Returns true when there is no property available.
+    pub fn is_empty(&self) -> bool {
+        self.props.is_empty()
+    }
+
+    /// Returns the amount of key/value pairs available.
+    pub fn len(&self) -> usize {
+        self.props.len()
     }
 }
 
