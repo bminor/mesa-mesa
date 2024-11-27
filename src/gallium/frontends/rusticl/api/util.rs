@@ -135,6 +135,24 @@ impl<'a> CLInfoValue<'a> {
 
         Ok(Self::finish())
     }
+
+    /// Returns the size of the buffer to the application it needs to provide in order to
+    /// successfully execute the query.
+    ///
+    /// Some queries simply provide pointers where the implementation needs to write data to, e.g.
+    /// `CL_PROGRAM_BINARIES`. In that case it's meaningless to write back the same pointers. This
+    /// function can be used to skip those writes.
+    pub fn write_len_only<T: CLProp>(self, len: usize) -> CLResult<CLInfoRes> {
+        let bytes = len * mem::size_of::<T::Output>();
+
+        // param_value_size_ret returns the actual size in bytes of data being queried by
+        // param_name. If param_value_size_ret is NULL, it is ignored.
+        if let Some(param_value_size_ret) = self.param_value_size_ret {
+            param_value_size_ret.write(bytes);
+        }
+
+        Ok(Self::finish())
+    }
 }
 
 /// # Safety
