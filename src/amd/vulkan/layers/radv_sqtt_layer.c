@@ -774,12 +774,15 @@ sqtt_QueueSubmit2(VkQueue _queue, uint32_t submitCount, const VkSubmitInfo2 *pSu
 {
    VK_FROM_HANDLE(radv_queue, queue, _queue);
    struct radv_device *device = radv_queue_device(queue);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    const bool is_gfx_or_ace = queue->state.qf == RADV_QUEUE_GENERAL || queue->state.qf == RADV_QUEUE_COMPUTE;
    VkCommandBufferSubmitInfo *new_cmdbufs = NULL;
    VkResult result = VK_SUCCESS;
 
    /* Only consider queue events on graphics/compute when enabled. */
-   if (!device->sqtt_enabled || !radv_sqtt_queue_events_enabled() || !is_gfx_or_ace)
+   if (((!device->sqtt_enabled || !radv_sqtt_queue_events_enabled()) && !instance->vk.trace_per_submit) ||
+       !is_gfx_or_ace)
       return device->layer_dispatch.rgp.QueueSubmit2(_queue, submitCount, pSubmits, _fence);
 
    for (uint32_t i = 0; i < submitCount; i++) {
@@ -795,6 +798,9 @@ sqtt_QueueSubmit2(VkQueue _queue, uint32_t submitCount, const VkSubmitInfo2 *pSu
 
    if (queue->sqtt_present)
       return radv_sqtt_wsi_submit(_queue, submitCount, pSubmits, _fence);
+
+   if (instance->vk.trace_per_submit)
+      radv_sqtt_start_capturing(queue);
 
    for (uint32_t i = 0; i < submitCount; i++) {
       const VkSubmitInfo2 *pSubmit = &pSubmits[i];
@@ -870,6 +876,14 @@ sqtt_QueueSubmit2(VkQueue _queue, uint32_t submitCount, const VkSubmitInfo2 *pSu
       }
 
       FREE(new_cmdbufs);
+   }
+
+   if (instance->vk.trace_per_submit) {
+      if (!radv_sqtt_stop_capturing(queue)) {
+         fprintf(stderr,
+                 "radv: Failed to capture RGP for this submit because the buffer is too small and auto-resizing "
+                 "is disabled. See RADV_THREAD_TRACE_BUFFER_SIZE for increasing the size.\n");
+      }
    }
 
    return result;
