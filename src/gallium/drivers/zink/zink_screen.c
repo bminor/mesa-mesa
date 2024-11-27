@@ -2106,12 +2106,17 @@ static bool
 zink_internal_setup_moltenvk(struct zink_screen *screen)
 {
 #if defined(MVK_VERSION)
+   // MoltenVK only supports VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE in newer Metal versions
+   // disable unless we can get MoltenVK to confirm it is supported
+   screen->have_dynamic_state_vertex_input_binding_stride = false;
+
    if (!screen->instance_info.have_MVK_moltenvk)
       return true;
 
    GET_PROC_ADDR_INSTANCE_LOCAL(screen, screen->instance, GetMoltenVKConfigurationMVK);
    GET_PROC_ADDR_INSTANCE_LOCAL(screen, screen->instance, SetMoltenVKConfigurationMVK);
    GET_PROC_ADDR_INSTANCE_LOCAL(screen, screen->instance, GetVersionStringsMVK);
+   GET_PROC_ADDR_INSTANCE_LOCAL(screen, screen->instance, GetPhysicalDeviceMetalFeaturesMVK);
 
    if (vk_GetVersionStringsMVK) {
       char molten_version[64] = {0};
@@ -2132,6 +2137,16 @@ zink_internal_setup_moltenvk(struct zink_screen *screen)
          // Encountered when using VK_FORMAT_R8G8_UNORM
          molten_config.fullImageViewSwizzle = VK_TRUE;
          vk_SetMoltenVKConfigurationMVK(screen->instance, &molten_config, &molten_config_size);
+      }
+   }
+
+   if (vk_GetPhysicalDeviceMetalFeaturesMVK) {
+      MVKPhysicalDeviceMetalFeatures metal_features={0};
+      size_t metal_features_size = sizeof(metal_features);
+
+      VkResult res = vk_GetPhysicalDeviceMetalFeaturesMVK(screen->pdev, &metal_features, &metal_features_size);
+      if (res == VK_SUCCESS) {
+        screen->have_dynamic_state_vertex_input_binding_stride = metal_features.dynamicVertexStride;
       }
    }
 #endif // MVK_VERSION
@@ -3397,6 +3412,7 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
                                               VK_FORMAT_D24_UNORM_S8_UINT);
    screen->have_D32_SFLOAT_S8_UINT = zink_is_depth_format_supported(screen,
                                               VK_FORMAT_D32_SFLOAT_S8_UINT);
+   screen->have_dynamic_state_vertex_input_binding_stride = true;
 
    if (!zink_get_physical_device_info(screen)) {
       if (!screen->driver_name_is_inferred)

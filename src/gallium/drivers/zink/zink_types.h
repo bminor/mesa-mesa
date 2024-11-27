@@ -1480,6 +1480,7 @@ struct zink_screen {
    bool have_D24_UNORM_S8_UINT;
    bool have_D32_SFLOAT_S8_UINT;
    bool have_triangle_fans;
+   bool have_dynamic_state_vertex_input_binding_stride;
    bool need_decompose_attrs;
    bool need_2D_zs;
    bool need_2D_sparse;
