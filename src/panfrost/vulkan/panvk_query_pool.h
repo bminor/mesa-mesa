@@ -65,7 +65,7 @@ static uint64_t
 panvk_query_offset(struct panvk_query_pool *pool, uint32_t query)
 {
    assert(query < pool->vk.query_count);
-   return query * pool->query_stride;
+   return query * (uint64_t)pool->query_stride;
 }
 
 static uint64_t
