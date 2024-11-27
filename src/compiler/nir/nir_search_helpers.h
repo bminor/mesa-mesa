@@ -623,6 +623,18 @@ is_only_used_by_iadd(const nir_alu_instr *instr)
 }
 
 static inline bool
+is_only_used_by_iand(const nir_alu_instr *instr)
+{
+   return is_only_used_by_alu_op(instr, nir_op_iand);
+}
+
+static inline bool
+is_only_used_by_ior(const nir_alu_instr *instr)
+{
+   return is_only_used_by_alu_op(instr, nir_op_ior);
+}
+
+static inline bool
 only_lower_8_bits_used(const nir_alu_instr *instr)
 {
    return (nir_def_bits_used(&instr->def) & ~0xffull) == 0;
