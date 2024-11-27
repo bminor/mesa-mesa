@@ -150,10 +150,6 @@ load_clipdist_input(nir_builder *b, nir_variable *in, int location_offset,
    val[3] = nir_channel(b, load, 3);
 }
 
-/* TODO: maybe this would be a useful helper?
- * NOTE: assumes each output is written exactly once (and unconditionally)
- * so if needed nir_lower_outputs_to_temporaries()
- */
 static nir_def *
 find_output(nir_builder *b, unsigned location)
 {
@@ -271,6 +267,9 @@ struct lower_clip_state {
    unsigned ucp_enables;
    bool use_clipdist_array;
    const gl_state_index16 (*clipplane_state_tokens)[STATE_LENGTH];
+
+   /* This holds the current CLIP_VERTEX value for GS. */
+   nir_variable *clipvertex_gs_temp;
 };
 
 static void
@@ -318,9 +317,15 @@ static void
 lower_clip_vertex_intrin(nir_builder *b, const struct lower_clip_state *state)
 {
    nir_def *clipdist[MAX_CLIP_PLANES] = {NULL};
-   nir_def *cv =
-      find_output(b, b->shader->info.outputs_written & VARYING_BIT_CLIP_VERTEX ?
-                     VARYING_SLOT_CLIP_VERTEX : VARYING_SLOT_POS);
+   nir_def *cv;
+
+   if (state->clipvertex_gs_temp) {
+      cv = nir_load_deref(b, nir_build_deref_var(b, state->clipvertex_gs_temp));
+   } else {
+      cv = find_output(b, b->shader->info.outputs_written &
+                       VARYING_BIT_CLIP_VERTEX ?
+                          VARYING_SLOT_CLIP_VERTEX : VARYING_SLOT_POS);
+   }
 
    for (int plane = 0; plane < MAX_CLIP_PLANES; plane++) {
       if (state->ucp_enables & (1 << plane)) {
@@ -423,6 +428,10 @@ nir_lower_clip_vs(nir_shader *shader, unsigned ucp_enables, bool use_vars,
    return true;
 }
 
+/*
+ * GS lowering
+ */
+
 static bool
 lower_clip_vertex_gs(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
 {
@@ -443,9 +452,49 @@ lower_clip_vertex_gs(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
    }
 }
 
-/*
- * GS lowering
+/* Track the CLIP_VERTEX or POS value in a local variable, so that we can
+ * retrieve it at emit_vertex.
  */
+static bool
+save_clipvertex_to_temp_gs(nir_builder *b, nir_intrinsic_instr *intr,
+                           void *opaque)
+{
+   const struct lower_clip_state *state =
+      (const struct lower_clip_state *)opaque;
+   gl_varying_slot clip_output_slot =
+      b->shader->info.outputs_written & VARYING_BIT_CLIP_VERTEX ?
+            VARYING_SLOT_CLIP_VERTEX : VARYING_SLOT_POS;
+
+   if (intr->intrinsic != nir_intrinsic_store_output ||
+       nir_intrinsic_io_semantics(intr).location != clip_output_slot)
+      return false;
+
+   b->cursor = nir_before_instr(&intr->instr);
+
+   unsigned component = nir_intrinsic_component(intr);
+   unsigned writemask = nir_intrinsic_write_mask(intr);
+   nir_def *value = intr->src[0].ssa;
+
+   /* Shift vector elements to the right by component. */
+   if (component) {
+      unsigned swizzle[4] = {0};
+
+      for (unsigned i = 1; i < value->num_components; i++)
+         swizzle[component + i] = i;
+      value = nir_swizzle(b, value, swizzle,
+                          component + value->num_components);
+   }
+
+   nir_store_deref(b, nir_build_deref_var(b, state->clipvertex_gs_temp),
+                   nir_pad_vec4(b, value), writemask << component);
+
+   /* Remove the CLIP_VERTEX store because it will be replaced by CLIP_DIST
+    * stores.
+    */
+   if (clip_output_slot == VARYING_SLOT_CLIP_VERTEX)
+      nir_instr_remove(&intr->instr);
+   return true;
+}
 
 bool
 nir_lower_clip_gs(nir_shader *shader, unsigned ucp_enables,
@@ -467,8 +516,16 @@ nir_lower_clip_gs(nir_shader *shader, unsigned ucp_enables,
 
    shader->info.clip_distance_array_size = util_last_bit(ucp_enables);
 
-   /* insert CLIPDIST outputs */
-   if (!shader->info.io_lowered) {
+   if (shader->info.io_lowered) {
+      /* Track the current value of CLIP_VERTEX or POS in a local variable. */
+      state.clipvertex_gs_temp =
+         nir_local_variable_create(nir_shader_get_entrypoint(shader),
+                                   glsl_vec4_type(), "clipvertex_gs_temp");
+      if (!nir_shader_intrinsics_pass(shader, save_clipvertex_to_temp_gs,
+                                      nir_metadata_control_flow, &state))
+         return false;
+   } else {
+      /* insert CLIPDIST outputs */
       create_clipdist_vars(shader, state.out, ucp_enables, true,
                            use_clipdist_array);
    }
