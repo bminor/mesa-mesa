@@ -182,6 +182,34 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
    }
 }
 
+static bool
+all_scales_equal(const TfLiteAffineQuantization *quant)
+{
+   float scale = quant->scale->data[0];
+   int i;
+
+   for (i = 1; i < quant->scale->size; i++) {
+      if (quant->scale->data[i] != scale)
+         return false;
+   }
+
+   return true;
+}
+
+static bool
+all_zero_points_equal(const TfLiteAffineQuantization *quant)
+{
+   int zero_point = quant->zero_point->data[0];
+   int i;
+
+   for (i = 1; i < quant->zero_point->size; i++) {
+      if (quant->zero_point->data[i] != zero_point)
+         return false;
+   }
+
+   return true;
+}
+
 static void
 fill_tensor(struct teflon_delegate *delegate, TfLiteContext *tf_context, struct pipe_tensor *tensor, unsigned index)
 {
@@ -201,6 +229,16 @@ fill_tensor(struct teflon_delegate *delegate, TfLiteContext *tf_context, struct 
       const TfLiteAffineQuantization *quant = (const TfLiteAffineQuantization *)tf_tensor.quantization.params;
       tensor->scale = quant->scale->data[0];
       tensor->zero_point = quant->zero_point->data[0];
+
+      assert(quant->scale->size == quant->zero_point->size);
+      if (quant->scale->size > 1 &&
+          (!all_scales_equal(quant) || !all_zero_points_equal(quant))) {
+         tensor->scales = calloc(quant->scale->size, sizeof(*tensor->scales));
+         memcpy(tensor->scales, quant->scale->data, quant->scale->size * sizeof(*tensor->scales));
+
+         tensor->zero_points = calloc(quant->zero_point->size, sizeof(*tensor->zero_points));
+         memcpy(tensor->zero_points, quant->zero_point->data, quant->zero_point->size * sizeof(*tensor->zero_points));
+      }
    }
 
    switch(tf_tensor.type) {
@@ -351,6 +389,11 @@ partition_init(TfLiteContext *tf_context, const char *buffer, size_t length)
       teflon_debug("teflon: compiled graph, took %ld ms\n", (end - start));
    }
 
+   for (int i = 0; i < tf_context->tensors_size; i++) {
+      free(tensors[i].scales);
+      free(tensors[i].zero_points);
+   }
+
    return tsubgraph;
 }
 
@@ -492,6 +535,29 @@ tensor_quantization_supported(TfLiteTensor *tensor)
 }
 
 static bool
+weight_tensor_quantization_supported(TfLiteTensor *tensor, int axis)
+{
+   if (tensor->quantization.type == kTfLiteAffineQuantization) {
+      TfLiteAffineQuantization *affine = (TfLiteAffineQuantization *)tensor->quantization.params;
+
+      return (affine->scale->size == 1 && affine->zero_point->size == 1) ||
+             affine->quantized_dimension == axis;
+   }
+   return false;
+}
+
+static bool
+bias_tensor_quantization_supported(TfLiteTensor *tensor)
+{
+   if (tensor->quantization.type == kTfLiteAffineQuantization) {
+      TfLiteAffineQuantization *affine = (TfLiteAffineQuantization *)tensor->quantization.params;
+
+      return affine->quantized_dimension == 0;
+   }
+   return false;
+}
+
+static bool
 fused_relu6_supported(TfLiteTensor *tensor)
 {
    TfLiteAffineQuantization *affine;
@@ -564,8 +630,8 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
 
             // Dilation and per-axis quantization not yet implemented
             if (tensor_quantization_supported(input_tensor) &&
-                tensor_quantization_supported(weight_tensor) &&
-                tensor_quantization_supported(bias_tensor) &&
+                weight_tensor_quantization_supported(weight_tensor, 0) &&
+                bias_tensor_quantization_supported(bias_tensor) &&
                 tensor_quantization_supported(output_tensor) &&
                 fused_activation_supported(params->activation, output_tensor) &&
                 (registration->version < 2 ||
@@ -584,8 +650,8 @@ PrepareDelegate(TfLiteContext *context, TfLiteDelegate *delegate)
 
             // Dilation and per-axis quantization not yet implemented
             if (tensor_quantization_supported(input_tensor) &&
-                tensor_quantization_supported(weight_tensor) &&
-                tensor_quantization_supported(bias_tensor) &&
+                weight_tensor_quantization_supported(weight_tensor, 3) &&
+                bias_tensor_quantization_supported(bias_tensor) &&
                 tensor_quantization_supported(output_tensor) &&
                 fused_activation_supported(params->activation, output_tensor) &&
                 (registration->version < 2 ||

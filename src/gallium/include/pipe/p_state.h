@@ -1039,13 +1039,21 @@ struct pipe_tensor {
     */
    unsigned dims[4];
    /**
-    * Scale used to quantize this tensor. Only per-tensor quantization is supported.
+    * Scale used to quantize this tensor, per-tensor quantization.
     */
    float scale;
    /**
-    * Zero-point used to quantize this tensor.
+    * Scales used to quantize this tensor, per-axis quantization.
+    */
+   float *scales;
+   /**
+    * Zero-point used to quantize this tensor, per-tensor quantization.
     */
    int zero_point;
+   /**
+    * Zero-points used to quantize this tensor, per-axis quantization.
+    */
+   int *zero_points;
    /**
     * Whether the tensor contains data in INT8 or UINT8 format.
     */
