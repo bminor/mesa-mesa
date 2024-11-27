@@ -3038,14 +3038,7 @@ hk_needs_index_robustness(struct hk_cmd_buffer *cmd, struct agx_draw draw)
          dev->vk.enabled_features.pipelineRobustness))
       return false;
 
-   if (agx_is_indirect(draw.b)) {
-      return true;
-   } else {
-      uint32_t range_B =
-         (draw.start + draw.b.count[0]) * agx_index_size_to_B(draw.index_size);
-
-      return range_B > draw.index_buffer_range_B;
-   }
+   return agx_is_indirect(draw.b) || agx_direct_draw_overreads_indices(draw);
 }
 
 static void
