@@ -37,11 +37,17 @@
   stage: intel
   rules:
     - !reference [.test, rules]
+    - !reference [.ondracka-farm-rules, rules]
     - !reference [.gl-rules, rules]
     - !reference [.intel-common-rules, rules]
     - changes: &i915g_file_list
-        - src/gallium/drivers/i915/**/*
+        - src/gallium/drivers/i915/*
         - src/gallium/winsys/i915/**/*
+        - src/gallium/drivers/i915/ci/$GPU_VERSION-fails.txt
+        - src/gallium/drivers/i915/ci/$GPU_VERSION-flakes.txt
+        - src/gallium/drivers/i915/ci/$GPU_VERSION-skips.txt
+        - src/gallium/drivers/i915/ci/deqp-$DEQP_SUITE.toml
+        - src/gallium/drivers/i915/ci/gitlab-ci.yml
       when: on_success
 
 .i915g-manual-rules:
@@ -49,6 +55,7 @@
   extends: .no-auto-retry
   rules:
     - !reference [.test, rules]
+    - !reference [.ondracka-farm-manual-rules, rules]
     - !reference [.gl-manual-rules, rules]
     - !reference [.intel-common-manual-rules, rules]
     - changes:
