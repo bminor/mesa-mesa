@@ -948,9 +948,7 @@ unsafe impl CLInfo<cl_sampler_info> for cl_sampler {
             CL_SAMPLER_FILTER_MODE => v.write::<cl_filter_mode>(sampler.filter_mode),
             CL_SAMPLER_NORMALIZED_COORDS => v.write::<bool>(sampler.normalized_coords),
             CL_SAMPLER_REFERENCE_COUNT => v.write::<cl_uint>(Sampler::refcnt(*self)?),
-            CL_SAMPLER_PROPERTIES => {
-                v.write::<Option<&Properties<cl_sampler_properties>>>(sampler.props.as_ref())
-            }
+            CL_SAMPLER_PROPERTIES => v.write::<&Properties<cl_sampler_properties>>(&sampler.props),
             // CL_INVALID_VALUE if param_name is not one of the supported values
             _ => Err(CL_INVALID_VALUE),
         }
@@ -962,7 +960,7 @@ fn create_sampler_impl(
     normalized_coords: cl_bool,
     addressing_mode: cl_addressing_mode,
     filter_mode: cl_filter_mode,
-    props: Option<Properties<cl_sampler_properties>>,
+    props: Properties<cl_sampler_properties>,
 ) -> CLResult<cl_sampler> {
     let c = Context::arc_from_raw(context)?;
 
@@ -1000,7 +998,7 @@ fn create_sampler(
         normalized_coords,
         addressing_mode,
         filter_mode,
-        None,
+        Properties::default(),
     )
 }
 
@@ -1014,24 +1012,19 @@ fn create_sampler_with_properties(
     let mut filter_mode = CL_FILTER_NEAREST;
 
     // CL_INVALID_VALUE if the same property name is specified more than once.
-    let sampler_properties = if sampler_properties.is_null() {
-        None
-    } else {
-        // SAFETY: sampler_properties is a 0 terminated array by spec.
-        let sampler_properties =
-            unsafe { Properties::from_ptr(sampler_properties) }.ok_or(CL_INVALID_VALUE)?;
-        for (&key, &val) in sampler_properties.iter() {
-            match key as u32 {
-                CL_SAMPLER_ADDRESSING_MODE => addressing_mode = val as u32,
-                CL_SAMPLER_FILTER_MODE => filter_mode = val as u32,
-                CL_SAMPLER_NORMALIZED_COORDS => normalized_coords = val as u32,
-                // CL_INVALID_VALUE if the property name in sampler_properties is not a supported
-                // property name
-                _ => return Err(CL_INVALID_VALUE),
-            }
+    // SAFETY: sampler_properties is a 0 terminated array by spec.
+    let sampler_properties =
+        unsafe { Properties::from_ptr(sampler_properties) }.ok_or(CL_INVALID_VALUE)?;
+    for (&key, &val) in sampler_properties.iter() {
+        match key as u32 {
+            CL_SAMPLER_ADDRESSING_MODE => addressing_mode = val as u32,
+            CL_SAMPLER_FILTER_MODE => filter_mode = val as u32,
+            CL_SAMPLER_NORMALIZED_COORDS => normalized_coords = val as u32,
+            // CL_INVALID_VALUE if the property name in sampler_properties is not a supported
+            // property name
+            _ => return Err(CL_INVALID_VALUE),
         }
-        Some(sampler_properties)
-    };
+    }
 
     create_sampler_impl(
         context,

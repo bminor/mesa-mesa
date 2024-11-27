@@ -1615,7 +1615,7 @@ pub struct Sampler {
     pub normalized_coords: bool,
     pub addressing_mode: cl_addressing_mode,
     pub filter_mode: cl_filter_mode,
-    pub props: Option<Properties<cl_sampler_properties>>,
+    pub props: Properties<cl_sampler_properties>,
 }
 
 impl_cl_type_trait!(cl_sampler, Sampler, CL_INVALID_SAMPLER);
@@ -1626,7 +1626,7 @@ impl Sampler {
         normalized_coords: bool,
         addressing_mode: cl_addressing_mode,
         filter_mode: cl_filter_mode,
-        props: Option<Properties<cl_sampler_properties>>,
+        props: Properties<cl_sampler_properties>,
     ) -> Arc<Sampler> {
         Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Sampler),
