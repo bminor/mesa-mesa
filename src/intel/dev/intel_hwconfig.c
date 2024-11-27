@@ -333,22 +333,12 @@ apply_hwconfig_item(struct intel_device_info *devinfo,
    process_hwconfig_item(devinfo, item, false);
 }
 
-UNUSED static void
-check_hwconfig_item(struct intel_device_info *devinfo,
-                    const struct hwconfig *item)
-{
-   process_hwconfig_item(devinfo, item, true);
-}
-
 bool
 intel_hwconfig_process_table(struct intel_device_info *devinfo,
                              void *data, int32_t len)
 {
    if (apply_hwconfig(devinfo))
       process_hwconfig_table(devinfo, data, len, apply_hwconfig_item);
-#ifndef NDEBUG
-   process_hwconfig_table(devinfo, data, len, check_hwconfig_item);
-#endif
 
    return apply_hwconfig(devinfo);
 }
@@ -371,26 +361,52 @@ intel_print_hwconfig_table(const struct hwconfig *hwconfig,
    process_hwconfig_table(NULL, hwconfig, hwconfig_len, print_hwconfig_item);
 }
 
+static struct hwconfig *
+intel_get_hwconfig_table(int fd, struct intel_device_info *devinfo,
+                         int32_t *hwconfig_len)
+{
+   switch (devinfo->kmd_type) {
+   case INTEL_KMD_TYPE_I915:
+      return intel_device_info_i915_query_hwconfig(fd, hwconfig_len);
+   case INTEL_KMD_TYPE_XE:
+      return intel_device_info_xe_query_hwconfig(fd, hwconfig_len);
+   default:
+      unreachable("unknown kmd type");
+      return NULL;
+   }
+}
+
 void
 intel_get_and_print_hwconfig_table(int fd, struct intel_device_info *devinfo)
 {
    struct hwconfig *hwconfig;
    int32_t hwconfig_len = 0;
 
-   switch (devinfo->kmd_type) {
-   case INTEL_KMD_TYPE_I915:
-      hwconfig = intel_device_info_i915_query_hwconfig(fd, &hwconfig_len);
-      break;
-   case INTEL_KMD_TYPE_XE:
-      hwconfig = intel_device_info_xe_query_hwconfig(fd, &hwconfig_len);
-      break;
-   default:
-      unreachable("unknown kmd type");
-      break;
-   }
-
+   hwconfig = intel_get_hwconfig_table(fd, devinfo, &hwconfig_len);
    if (hwconfig) {
       intel_print_hwconfig_table(hwconfig, hwconfig_len);
       free(hwconfig);
    }
+}
+
+UNUSED static void
+check_hwconfig_item(struct intel_device_info *devinfo,
+                    const struct hwconfig *item)
+{
+   process_hwconfig_item(devinfo, item, true);
+}
+
+void
+intel_check_hwconfig_items(int fd, struct intel_device_info *devinfo)
+{
+#ifndef NDEBUG
+   struct hwconfig *data;
+   int32_t len = 0;
+
+   data = intel_get_hwconfig_table(fd, devinfo, &len);
+   if (data) {
+      process_hwconfig_table(devinfo, data, len, check_hwconfig_item);
+      free(data);
+   }
+#endif
 }

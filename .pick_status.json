@@ -1034,7 +1034,7 @@
         "description": "intel/dev: Add intel_check_hwconfig_items()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a4c5bfd34ca82a51a0e8fff529fb1d11af82b81f",
         "notes": null
