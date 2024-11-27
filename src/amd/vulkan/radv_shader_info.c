@@ -919,17 +919,6 @@ gather_shader_info_fs(const struct radv_device *device, const nir_shader *nir,
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    info->ps.num_inputs = util_bitcount64(nir->info.inputs_read);
-   info->ps.num_prim_interp = 0;
-
-   if (pdev->info.gfx_level == GFX10_3) {
-      /* GFX10.3 distinguishes NUM_INTERP and NUM_PRIM_INTERP, but
-       * these are counted together in NUM_INTERP on GFX11.
-       */
-      const uint64_t per_primitive_input_mask = nir->info.inputs_read & nir->info.per_primitive_inputs;
-      info->ps.num_prim_interp = util_bitcount64(per_primitive_input_mask);
-      assert(info->ps.num_prim_interp <= info->ps.num_inputs);
-   }
-
    info->ps.can_discard = nir->info.fs.uses_discard;
    info->ps.early_fragment_test =
       nir->info.fs.early_fragment_tests ||
