@@ -317,6 +317,21 @@ is_disjoint(struct panvk_image *image)
    return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
 }
 
+static void
+panvk_image_init(struct panvk_device *dev, struct panvk_image *image,
+                 const VkImageCreateInfo *pCreateInfo)
+{
+   /* Add any create/usage flags that might be needed for meta operations.
+    * This is run before the modifier selection because some
+    * usage/create_flags influence the modifier selection logic. */
+   panvk_image_pre_mod_select_meta_adjustments(image);
+
+   /* Now that we've patched the create/usage flags, we can proceed with the
+    * modifier selection. */
+   image->vk.drm_format_mod = panvk_image_get_mod(image, pCreateInfo);
+   panvk_image_init_layouts(image, pCreateInfo);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                   const VkAllocationCallbacks *pAllocator, VkImage *pImage)
@@ -339,15 +354,7 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    if (!image)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   /* Add any create/usage flags that might be needed for meta operations.
-    * This is run before the modifier selection because some
-    * usage/create_flags influence the modifier selection logic. */
-   panvk_image_pre_mod_select_meta_adjustments(image);
-
-   /* Now that we've patched the create/usage flags, we can proceed with the
-    * modifier selection. */
-   image->vk.drm_format_mod = panvk_image_get_mod(image, pCreateInfo);
-   panvk_image_init_layouts(image, pCreateInfo);
+   panvk_image_init(dev, image, pCreateInfo);
 
    /*
     * From the Vulkan spec:
