@@ -4747,7 +4747,7 @@ compact_varyings(struct linkage_info *linkage,
 static void
 init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
              unsigned max_uniform_components, unsigned max_ubos_per_stage,
-             struct linkage_info *linkage)
+             struct linkage_info *linkage, nir_opt_varyings_progress *progress)
 {
    *linkage = (struct linkage_info){
       .spirv = spirv,
@@ -4789,6 +4789,8 @@ init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
    tidy_up_indirect_varyings(linkage);
    determine_uniform_movability(linkage, max_uniform_components);
    determine_ubo_movability(linkage, max_ubos_per_stage);
+   /* This must always be done because it also cleans up bitmasks. */
+   remove_dead_varyings(linkage, progress);
 }
 
 static void
@@ -4801,8 +4803,9 @@ static void
 print_shader_linkage(nir_shader *producer, nir_shader *consumer)
 {
    struct linkage_info *linkage = MALLOC_STRUCT(linkage_info);
+   nir_opt_varyings_progress progress = 0;
 
-   init_linkage(producer, consumer, false, 0, 0, linkage);
+   init_linkage(producer, consumer, false, 0, 0, linkage, &progress);
    print_linkage(linkage);
    free_linkage(linkage);
    FREE(linkage);
@@ -4834,13 +4837,13 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
       nir_vertex_divergence_analysis(producer);
    }
 
+   /* This also removes dead varyings. */
    init_linkage(producer, consumer, spirv, max_uniform_components,
-                max_ubos_per_stage, linkage);
+                max_ubos_per_stage, linkage, &progress);
 
    /* Part 1: Run optimizations that only remove varyings. (they can move
     * instructions between shaders)
     */
-   remove_dead_varyings(linkage, &progress);
    propagate_uniform_expressions(linkage, &progress);
 
    /* Part 2: Deduplicate outputs. */
@@ -4855,9 +4858,7 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
    /* Re-gather linkage info after CSE. */
    free_linkage(linkage);
    init_linkage(producer, consumer, spirv, max_uniform_components,
-                max_ubos_per_stage, linkage);
-   /* This must be done again to clean up bitmasks in linkage. */
-   remove_dead_varyings(linkage, &progress);
+                max_ubos_per_stage, linkage, &progress);
 
    /* This must be done after deduplication and before inter-shader code
     * motion.
