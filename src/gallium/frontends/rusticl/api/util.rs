@@ -408,7 +408,7 @@ where
     }
 
     fn write_to(&self, out: &mut [MaybeUninit<T>]) {
-        for (idx, (k, v)) in self.props.iter().enumerate() {
+        for (idx, (k, v)) in self.iter().enumerate() {
             out[idx * 2].write(*k);
             out[idx * 2 + 1].write(*v);
         }

@@ -78,20 +78,20 @@ pub fn get_gl_context_info_khr(
 
     // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
     let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
-    for p in &props.props {
-        match p.0 as u32 {
+    for (&key, &val) in props.iter() {
+        match key as u32 {
             // CL_INVALID_PLATFORM [...] if platform value specified in properties is not a valid platform.
             CL_CONTEXT_PLATFORM => {
-                (p.1 as cl_platform_id).get_ref()?;
+                (val as cl_platform_id).get_ref()?;
             }
             CL_EGL_DISPLAY_KHR => {
-                egl_display = p.1 as *mut _;
+                egl_display = val as *mut _;
             }
             CL_GL_CONTEXT_KHR => {
-                gl_context = p.1 as *mut _;
+                gl_context = val as *mut _;
             }
             CL_GLX_DISPLAY_KHR => {
-                glx_display = p.1 as *mut _;
+                glx_display = val as *mut _;
             }
             // CL_INVALID_PROPERTY if context property name in properties is not a supported property name
             _ => return Err(CL_INVALID_PROPERTY),
@@ -140,23 +140,23 @@ fn create_context(
 
     // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
     let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
-    for p in &props.props {
-        match p.0 as u32 {
+    for (&key, &val) in props.iter() {
+        match key as u32 {
             // CL_INVALID_PLATFORM [...] if platform value specified in properties is not a valid platform.
             CL_CONTEXT_PLATFORM => {
-                (p.1 as cl_platform_id).get_ref()?;
+                (val as cl_platform_id).get_ref()?;
             }
             CL_CONTEXT_INTEROP_USER_SYNC => {
-                check_cl_bool(p.1).ok_or(CL_INVALID_PROPERTY)?;
+                check_cl_bool(val).ok_or(CL_INVALID_PROPERTY)?;
             }
             CL_EGL_DISPLAY_KHR => {
-                egl_display = p.1 as *mut _;
+                egl_display = val as *mut _;
             }
             CL_GL_CONTEXT_KHR => {
-                gl_context = p.1 as *mut _;
+                gl_context = val as *mut _;
             }
             CL_GLX_DISPLAY_KHR => {
-                glx_display = p.1 as *mut _;
+                glx_display = val as *mut _;
             }
             // CL_INVALID_PROPERTY if context property name in properties is not a supported property name
             _ => return Err(CL_INVALID_PROPERTY),

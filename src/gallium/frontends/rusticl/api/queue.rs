@@ -134,7 +134,7 @@ fn create_command_queue_with_properties(
     } else {
         let properties = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
 
-        for (k, v) in &properties.props {
+        for (k, v) in properties.iter() {
             match *k as cl_uint {
                 CL_QUEUE_PROPERTIES => queue_properties = *v,
                 // CL_INVALID_QUEUE_PROPERTIES if values specified in properties are valid but are not

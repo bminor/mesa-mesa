@@ -1015,11 +1015,11 @@ fn create_sampler_with_properties(
     } else {
         let sampler_properties =
             Properties::from_ptr(sampler_properties).ok_or(CL_INVALID_VALUE)?;
-        for p in &sampler_properties.props {
-            match p.0 as u32 {
-                CL_SAMPLER_ADDRESSING_MODE => addressing_mode = p.1 as u32,
-                CL_SAMPLER_FILTER_MODE => filter_mode = p.1 as u32,
-                CL_SAMPLER_NORMALIZED_COORDS => normalized_coords = p.1 as u32,
+        for (&key, &val) in sampler_properties.iter() {
+            match key as u32 {
+                CL_SAMPLER_ADDRESSING_MODE => addressing_mode = val as u32,
+                CL_SAMPLER_FILTER_MODE => filter_mode = val as u32,
+                CL_SAMPLER_NORMALIZED_COORDS => normalized_coords = val as u32,
                 // CL_INVALID_VALUE if the property name in sampler_properties is not a supported
                 // property name
                 _ => return Err(CL_INVALID_VALUE),

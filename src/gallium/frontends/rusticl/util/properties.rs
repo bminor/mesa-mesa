@@ -57,6 +57,10 @@ impl<T: Copy + Default> Properties<T> {
         self.props.is_empty()
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = (&T, &T)> {
+        self.props.iter().map(|(k, v)| (k, v))
+    }
+
     /// Returns the amount of key/value pairs available.
     pub fn len(&self) -> usize {
         self.props.len()
