@@ -1,5 +1,5 @@
 pub struct Properties<T> {
-    pub props: Vec<(T, T)>,
+    props: Vec<(T, T)>,
 }
 
 impl<T: Copy + Default> Properties<T> {
