@@ -50,7 +50,7 @@ struct amdgpu_cs;
  *
  * This fd tracking is useful for buffer sharing. As an example, if an app
  * wants to use drmModeAddFB it'll need a KMS handle valid for its
- * fd (== amdgpu_screen_winsys::input_fd). If both fds are identical, there's
+ * fd (== amdgpu_screen_winsys::fd). If both fds are identical, there's
  * nothing to do: bo->u.real.kms_handle can be used directly
  * (see amdgpu_bo_get_handle). If they're different, the BO has to be exported
  * from the device fd as a dma-buf, then imported to the app fd to get the
@@ -188,10 +188,8 @@ static_assert(sizeof(((struct amdgpu_seq_no_fences*)NULL)->valid_fence_mask) * 8
 /* One struct amdgpu_winsys is created for one gpu in amdgpu_winsys_create(). */
 struct amdgpu_winsys {
    struct pipe_reference reference;
-   /* Returned by amdgpu_device_get_fd. */
-   int fd;
    /* See comment above */
-   int input_fd;
+   int fd;
 
    /* Protected by bo_fence_lock. */
    struct amdgpu_queue queues[AMDGPU_MAX_QUEUES];

@@ -1652,7 +1652,7 @@ static bool amdgpu_bo_get_handle(struct radeon_winsys *rws,
       type = amdgpu_bo_handle_type_gem_flink_name;
       break;
    case WINSYS_HANDLE_TYPE_KMS:
-      if (sws->fd == aws->input_fd) {
+      if (sws->fd == aws->fd) {
          whandle->handle = bo->kms_handle;
 
          if (bo->is_shared)
