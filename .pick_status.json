@@ -2604,7 +2604,7 @@
         "description": "panvk: Call vk_free on queue array instead of vk_object_free",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b0ff2643f22a25dc167c46d8392ec2da77f5b5f",
         "notes": null
