@@ -596,7 +596,11 @@ zink_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
    }
 
    case PIPE_CAP_FBFETCH:
+#if defined(MVK_VERSION)
+      return 0;
+#else
       return 1;
+#endif
    case PIPE_CAP_FBFETCH_COHERENT:
       return screen->info.have_EXT_rasterization_order_attachment_access;
 
