@@ -873,6 +873,29 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
       dst = ir3_SHR_B_rpt(ctx->block, dst_sz, src[0], 0,
                           resize_shift_amount(ctx, dst_sz, src[1], bs[0]), 0);
       break;
+   case nir_op_shrm_ir3:
+      dst = ir3_SHRM_rpt(ctx->block, dst_sz,
+                         resize_shift_amount(ctx, dst_sz, src[1], bs[0]), 0,
+                         src[0], 0, src[2], 0);
+      break;
+   case nir_op_shlm_ir3:
+      dst = ir3_SHLM_rpt(ctx->block, dst_sz,
+                         resize_shift_amount(ctx, dst_sz, src[1], bs[0]), 0,
+                         src[0], 0, src[2], 0);
+      break;
+   case nir_op_shrg_ir3:
+      dst = ir3_SHRG_rpt(ctx->block, dst_sz,
+                         resize_shift_amount(ctx, dst_sz, src[1], bs[0]), 0,
+                         src[0], 0, src[2], 0);
+      break;
+   case nir_op_shlg_ir3:
+      dst = ir3_SHLG_rpt(ctx->block, dst_sz,
+                         resize_shift_amount(ctx, dst_sz, src[1], bs[0]), 0,
+                         src[0], 0, src[2], 0);
+      break;
+   case nir_op_andg_ir3:
+      dst = ir3_ANDG_rpt(ctx->block, dst_sz, src[0], 0, src[1], 0, src[2], 0);
+      break;
    case nir_op_ilt:
       dst = ir3_CMPS_S_rpt(b, dst_sz, src[0], 0, src[1], 0);
       set_cat2_condition(dst.rpts, dst_sz, IR3_COND_LT);
@@ -1085,6 +1108,7 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
       case nir_op_ixor:
       case nir_op_inot:
       case nir_op_bcsel:
+      case nir_op_andg_ir3:
          break;
       default:
          compile_assert(ctx, alu->def.bit_size != 1);
