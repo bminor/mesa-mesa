@@ -1064,8 +1064,6 @@ radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAl
 {
    radv_device_finish_perf_counter(device);
 
-   radv_device_finish_tools(device);
-
    if (device->gfx_init)
       radv_bo_destroy(device, NULL, device->gfx_init);
 
@@ -1090,7 +1088,7 @@ radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAl
    _mesa_hash_table_destroy(device->rt_handles, NULL);
 
    radv_device_finish_meta(device);
-
+   radv_device_finish_tools(device);
    radv_device_finish_memory_cache(device);
 
    radv_destroy_shader_upload_queue(device);
