@@ -599,7 +599,7 @@ is_only_used_by_fadd(const nir_alu_instr *instr)
 }
 
 static inline bool
-is_only_used_by_iadd(const nir_alu_instr *instr)
+is_only_used_by_alu_op(const nir_alu_instr *instr, nir_op op)
 {
    nir_foreach_use(src, &instr->def) {
       const nir_instr *const user_instr = nir_src_parent_instr(src);
@@ -609,11 +609,17 @@ is_only_used_by_iadd(const nir_alu_instr *instr)
       const nir_alu_instr *const user_alu = nir_instr_as_alu(user_instr);
       assert(instr != user_alu);
 
-      if (user_alu->op != nir_op_iadd)
+      if (user_alu->op != op)
          return false;
    }
 
    return true;
+}
+
+static inline bool
+is_only_used_by_iadd(const nir_alu_instr *instr)
+{
+   return is_only_used_by_alu_op(instr, nir_op_iadd);
 }
 
 static inline bool
