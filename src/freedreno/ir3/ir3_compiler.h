@@ -204,6 +204,9 @@ struct ir3_compiler {
     */
    bool has_shfl;
 
+   /* True if the bitwise triops (sh[lr][gm]/andg) are supported. */
+   bool has_bitwise_triops;
+
    /* Number of available predicate registers (p0.c) */
    uint32_t num_predicates;
 

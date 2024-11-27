@@ -97,6 +97,15 @@ ir3_context_init(struct ir3_compiler *compiler, struct ir3_shader *shader,
    if (compiler->has_branch_and_or)
       NIR_PASS_V(ctx->s, ir3_nir_opt_branch_and_or_not);
 
+   if (compiler->has_bitwise_triops) {
+      bool triops_progress = false;
+      NIR_PASS(triops_progress, ctx->s, ir3_nir_opt_triops_bitwise);
+
+      if (triops_progress) {
+         NIR_PASS_V(ctx->s, nir_opt_dce);
+      }
+   }
+
    /* Enable the texture pre-fetch feature only a4xx onwards.  But
     * only enable it on generations that have been tested:
     */

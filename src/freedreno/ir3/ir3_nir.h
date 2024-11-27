@@ -61,6 +61,7 @@ nir_mem_access_size_align ir3_mem_access_size_align(
    const void *cb_data);
 
 bool ir3_nir_opt_branch_and_or_not(nir_shader *nir);
+bool ir3_nir_opt_triops_bitwise(nir_shader *nir);
 bool ir3_optimize_loop(struct ir3_compiler *compiler,
                        const struct ir3_shader_nir_options *options,
                        nir_shader *s);
