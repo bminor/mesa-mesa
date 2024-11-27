@@ -403,10 +403,9 @@ translate_superblock_size(uint64_t modifier)
 }
 
 static void
-panfrost_emit_plane(const struct pan_image_view *iview, int index,
-                    const struct pan_image_layout *layout,
-                    mali_ptr pointer, unsigned level,
-                    int32_t row_stride, int32_t surface_stride,
+panfrost_emit_plane(const struct pan_image_view *iview, int plane_index,
+                    const struct pan_image_layout *layout, mali_ptr pointer,
+                    unsigned level, int32_t row_stride, int32_t surface_stride,
                     mali_ptr plane2_ptr, void **payload)
 {
    const struct util_format_description *desc =
@@ -477,9 +476,9 @@ panfrost_emit_plane(const struct pan_image_view *iview, int index,
 
          cfg.plane_type = MALI_PLANE_TYPE_AFRC;
          cfg.afrc.block_size =
-            GENX(pan_afrc_block_size)(layout->modifier, index);
+            GENX(pan_afrc_block_size)(layout->modifier, plane_index);
          cfg.afrc.format =
-            GENX(pan_afrc_format)(finfo, layout->modifier, index);
+            GENX(pan_afrc_format)(finfo, layout->modifier, plane_index);
 #endif
       } else {
          cfg.plane_type = is_3_planar_yuv ? MALI_PLANE_TYPE_CHROMA_2P
