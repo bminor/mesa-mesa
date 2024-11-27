@@ -196,6 +196,7 @@ vc4_screen_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
         case PIPE_CAP_TWO_SIDED_COLOR:
         case PIPE_CAP_TEXRECT:
         case PIPE_CAP_IMAGE_STORE_FORMATTED:
+        case PIPE_CAP_CLIP_PLANES:
                 return 0;
 
         case PIPE_CAP_SUPPORTED_PRIM_MODES:
