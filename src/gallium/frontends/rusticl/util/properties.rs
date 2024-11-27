@@ -11,7 +11,12 @@ impl<T> Properties<T> {
     ///
     /// If `p` is null the saved list of properties will be empty. Otherwise it will be 0
     /// terminated.
-    pub fn from_ptr(mut p: *const T) -> Option<Self>
+    ///
+    /// # Safety
+    ///
+    /// Besides `p` being valid to be dereferenced, it also needs to point to a `T::default()`
+    /// terminated array of `T`.
+    pub unsafe fn from_ptr(mut p: *const T) -> Option<Self>
     where
         T: Copy + Default + PartialEq,
     {

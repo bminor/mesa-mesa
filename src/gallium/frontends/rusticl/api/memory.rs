@@ -296,7 +296,7 @@ fn create_buffer_with_properties(
     }
 
     // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
-    let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
+    let props = unsafe { Properties::from_ptr(properties) }.ok_or(CL_INVALID_PROPERTY)?;
 
     // CL_INVALID_PROPERTY if a property name in properties is not a supported property name, if
     // the value specified for a supported property name is not valid, or if the same property name
@@ -801,7 +801,7 @@ fn create_image_with_properties(
         .ok_or(CL_IMAGE_FORMAT_NOT_SUPPORTED)?;
 
     // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
-    let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
+    let props = unsafe { Properties::from_ptr(properties) }.ok_or(CL_INVALID_PROPERTY)?;
 
     // CL_INVALID_PROPERTY if a property name in properties is not a supported property name, if
     // the value specified for a supported property name is not valid, or if the same property name
@@ -1017,8 +1017,9 @@ fn create_sampler_with_properties(
     let sampler_properties = if sampler_properties.is_null() {
         None
     } else {
+        // SAFETY: sampler_properties is a 0 terminated array by spec.
         let sampler_properties =
-            Properties::from_ptr(sampler_properties).ok_or(CL_INVALID_VALUE)?;
+            unsafe { Properties::from_ptr(sampler_properties) }.ok_or(CL_INVALID_VALUE)?;
         for (&key, &val) in sampler_properties.iter() {
             match key as u32 {
                 CL_SAMPLER_ADDRESSING_MODE => addressing_mode = val as u32,

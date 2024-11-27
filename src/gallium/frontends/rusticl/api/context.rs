@@ -77,7 +77,8 @@ pub fn get_gl_context_info_khr(
     let mut gl_context: *mut c_void = ptr::null_mut();
 
     // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
-    let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
+    // SAFETY: properties is a 0 terminated array by spec.
+    let props = unsafe { Properties::from_ptr(properties) }.ok_or(CL_INVALID_PROPERTY)?;
     for (&key, &val) in props.iter() {
         match key as u32 {
             // CL_INVALID_PLATFORM [...] if platform value specified in properties is not a valid platform.
@@ -139,7 +140,8 @@ fn create_context(
     let mut gl_context: *mut c_void = ptr::null_mut();
 
     // CL_INVALID_PROPERTY [...] if the same property name is specified more than once.
-    let props = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
+    // SAFETY: properties is a 0 terminated array by spec.
+    let props = unsafe { Properties::from_ptr(properties) }.ok_or(CL_INVALID_PROPERTY)?;
     for (&key, &val) in props.iter() {
         match key as u32 {
             // CL_INVALID_PLATFORM [...] if platform value specified in properties is not a valid platform.

@@ -132,7 +132,8 @@ fn create_command_queue_with_properties(
     let properties = if properties.is_null() {
         None
     } else {
-        let properties = Properties::from_ptr(properties).ok_or(CL_INVALID_PROPERTY)?;
+        // SAFETY: properties is a 0 terminated array by spec.
+        let properties = unsafe { Properties::from_ptr(properties) }.ok_or(CL_INVALID_PROPERTY)?;
 
         for (k, v) in properties.iter() {
             match *k as cl_uint {
