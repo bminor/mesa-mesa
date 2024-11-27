@@ -79,4 +79,12 @@ impl<T> Properties<T> {
         // correct result.
         self.props.len() / 2
     }
+
+    /// Returns a slice to the raw buffer.
+    ///
+    /// It will return an empty slice if `self` was created with a null pointer. A `T::default()`
+    /// terminated one otherwise.
+    pub fn raw_data(&self) -> &[T] {
+        &self.props
+    }
 }

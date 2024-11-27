@@ -403,18 +403,11 @@ where
     type Output = T;
 
     fn count(&self) -> usize {
-        // Properties are value pairs terminated with a 0 value.
-        self.len() * 2 + 1
+        self.raw_data().count()
     }
 
     fn write_to(&self, out: &mut [MaybeUninit<T>]) {
-        for (idx, (k, v)) in self.iter().enumerate() {
-            out[idx * 2].write(*k);
-            out[idx * 2 + 1].write(*v);
-        }
-
-        // need to terminate with a 0 value
-        out[self.len() * 2].write(T::default());
+        self.raw_data().write_to(out);
     }
 }
 
