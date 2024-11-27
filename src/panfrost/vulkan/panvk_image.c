@@ -454,10 +454,38 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
 }
 
 VKAPI_ATTR void VKAPI_CALL
+panvk_GetDeviceImageMemoryRequirements(VkDevice device,
+                                       const VkDeviceImageMemoryRequirements *pInfo,
+                                       VkMemoryRequirements2 *pMemoryRequirements)
+{
+   VK_FROM_HANDLE(panvk_device, dev, device);
+
+   struct panvk_image image;
+   vk_image_init(&dev->vk, &image.vk, pInfo->pCreateInfo);
+   panvk_image_init(dev, &image, pInfo->pCreateInfo);
+
+   VkImageMemoryRequirementsInfo2 info2 = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+      .image = panvk_image_to_handle(&image),
+   };
+   panvk_GetImageMemoryRequirements2(device, &info2, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL
 panvk_GetImageSparseMemoryRequirements2(
    VkDevice device, const VkImageSparseMemoryRequirementsInfo2 *pInfo,
    uint32_t *pSparseMemoryRequirementCount,
    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements)
+{
+   /* Sparse images are not yet supported. */
+   *pSparseMemoryRequirementCount = 0;
+}
+
+VKAPI_ATTR void VKAPI_CALL
+panvk_GetDeviceImageSparseMemoryRequirements(VkDevice device,
+                                             const VkDeviceImageMemoryRequirements *pInfo,
+                                             uint32_t *pSparseMemoryRequirementCount,
+                                             VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements)
 {
    /* Sparse images are not yet supported. */
    *pSparseMemoryRequirementCount = 0;
