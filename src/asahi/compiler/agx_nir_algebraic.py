@@ -292,6 +292,11 @@ for s_ in range(1, 5):
 fuse_lea += [
     (('iadd', a, ('u2u64', 'b@32')), ('ulea_agx', a, b, 0)),
     (('iadd', a, ('i2i64', 'b@32')), ('ilea_agx', a, b, 0)),
+
+    (('iadd', a, ('iadd', ('u2u64', 'b@32'), c)),
+     ('ulea_agx', ('iadd', a, c), b, 0)),
+    (('iadd', a, ('iadd', ('i2i64', 'b@32'), c)),
+     ('ilea_agx', ('iadd', a, c), b, 0)),
 ]
 
 # After lowering address arithmetic, the various address arithmetic opcodes are
