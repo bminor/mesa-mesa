@@ -306,9 +306,11 @@ DEQP_API=GLES \
 DEQP_TARGET=surfaceless \
 . .gitlab-ci/container/build-deqp.sh
 
-[ "$BUILD_VK" == "ON" ] && DEQP_API=VK \
-DEQP_TARGET=default \
-. .gitlab-ci/container/build-deqp.sh
+if [ "$BUILD_VK" == "ON" ]; then
+  DEQP_API=VK \
+  DEQP_TARGET=default \
+  . .gitlab-ci/container/build-deqp.sh
+fi
 
 rm -rf /VK-GL-CTS
 
