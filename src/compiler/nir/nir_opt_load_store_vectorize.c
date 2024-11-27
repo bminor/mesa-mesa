@@ -258,13 +258,27 @@ get_write_mask(const nir_intrinsic_instr *intrin)
    return nir_component_mask(intrin->src[info->value_src].ssa->num_components);
 }
 
+static nir_op
+get_effective_alu_op(nir_scalar scalar)
+{
+   nir_op op = nir_scalar_alu_op(scalar);
+
+   /* amul can always be replaced by imul and we pattern match on the more
+    * general opcode, so return imul for amul.
+    */
+   if (op == nir_op_amul)
+      return nir_op_imul;
+   else
+      return op;
+}
+
 /* If "def" is from an alu instruction with the opcode "op" and one of it's
  * sources is a constant, update "def" to be the non-constant source, fill "c"
  * with the constant and return true. */
 static bool
 parse_alu(nir_scalar *def, nir_op op, uint64_t *c)
 {
-   if (!nir_scalar_is_alu(*def) || nir_scalar_alu_op(*def) != op)
+   if (!nir_scalar_is_alu(*def) || get_effective_alu_op(*def) != op)
       return false;
 
    nir_scalar src0 = nir_scalar_chase_alu_src(*def, 0);
