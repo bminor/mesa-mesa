@@ -210,6 +210,11 @@ ixor_bcsel = [
 cleanup_amul = [
    # Neither operation overflows so we can keep the amul.
    (('amul', ('amul', a, '#b'), '#c'), ('amul', a, ('imul', b, c))),
+
+   # Result of u2u64 has zero in upper half, so the shift doesn't overflow, so
+   # neither multiplication overflows.
+   (('amul', ('ishl', ('u2u64', 'a@32'), '#b(is_ult_32)'), '#c'),
+    ('amul', ('u2u64', a), ('ishl', c, b))),
 ]
 
 fuse_lea = []
