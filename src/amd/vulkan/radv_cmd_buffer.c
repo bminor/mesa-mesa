@@ -2569,6 +2569,7 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
    const bool gfx11plus = pdev->info.gfx_level >= GFX11;
    const enum radv_ps_in_type per_prim = gfx11plus ? radv_ps_in_per_prim_gfx11 : radv_ps_in_per_prim_gfx103;
 
+   unsigned num_per_primitive_params = 0;
    uint32_t ps_input_cntl[32];
    unsigned ps_offset = 0;
 
@@ -2585,20 +2586,27 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
 
    /* Potentially per-primitive PS inputs */
    if (ps->info.ps.prim_id_input) {
+      num_per_primitive_params += !!outinfo->export_prim_id_per_primitive;
       const enum radv_ps_in_type t = outinfo->export_prim_id_per_primitive ? per_prim : radv_ps_in_flat;
       slot_to_ps_input(outinfo, VARYING_SLOT_PRIMITIVE_ID, ps_input_cntl, &ps_offset, false, t);
    }
    if (ps->info.ps.layer_input) {
+      num_per_primitive_params += !!outinfo->writes_layer_per_primitive;
       const enum radv_ps_in_type t = outinfo->writes_layer_per_primitive ? per_prim : radv_ps_in_flat;
       slot_to_ps_input(outinfo, VARYING_SLOT_LAYER, ps_input_cntl, &ps_offset, true, t);
    }
    if (ps->info.ps.viewport_index_input) {
+      num_per_primitive_params += !!outinfo->writes_viewport_index_per_primitive;
       const enum radv_ps_in_type t = outinfo->writes_viewport_index_per_primitive ? per_prim : radv_ps_in_flat;
       slot_to_ps_input(outinfo, VARYING_SLOT_VIEWPORT, ps_input_cntl, &ps_offset, true, t);
    }
 
    /* Per-primitive PS inputs: the HW needs these to be last. */
+   num_per_primitive_params += util_bitcount(ps->info.ps.input_per_primitive_mask);
    input_mask_to_ps_inputs(outinfo, ps, ps->info.ps.input_per_primitive_mask, ps_input_cntl, &ps_offset, per_prim);
+
+   /* Only GFX10.3+ support per-primitive params */
+   assert(pdev->info.gfx_level >= GFX10_3 || num_per_primitive_params == 0);
 
    if (pdev->info.gfx_level >= GFX12) {
       radeon_set_sh_reg(cmd_buffer->cs, R_00B0C4_SPI_SHADER_GS_OUT_CONFIG_PS,
@@ -2607,6 +2615,17 @@ radv_emit_ps_inputs(struct radv_cmd_buffer *cmd_buffer)
       radeon_opt_set_context_regn(cmd_buffer, R_028664_SPI_PS_INPUT_CNTL_0, ps_input_cntl,
                                   cmd_buffer->tracked_regs.spi_ps_input_cntl, ps_offset);
    } else {
+      if (pdev->info.gfx_level == GFX10_3) {
+         /* NUM_INTERP / NUM_PRIM_INTERP separately contain
+          * the number of per-vertex and per-primitive PS input attributes.
+          * These are only exactly known here so couldn't be precomputed.
+          */
+         const unsigned num_per_vertex_params = ps->info.ps.num_inputs - num_per_primitive_params;
+         radeon_opt_set_context_reg(cmd_buffer, R_0286D8_SPI_PS_IN_CONTROL, RADV_TRACKED_SPI_PS_IN_CONTROL,
+                                    ps->info.regs.ps.spi_ps_in_control | S_0286D8_NUM_INTERP(num_per_vertex_params) |
+                                       S_0286D8_NUM_PRIM_INTERP(num_per_primitive_params));
+      }
+
       radeon_opt_set_context_regn(cmd_buffer, R_028644_SPI_PS_INPUT_CNTL_0, ps_input_cntl,
                                   cmd_buffer->tracked_regs.spi_ps_input_cntl, ps_offset);
    }
@@ -2640,8 +2659,10 @@ radv_emit_fragment_shader(struct radv_cmd_buffer *cmd_buffer)
       radeon_opt_set_context_reg2(cmd_buffer, R_0286CC_SPI_PS_INPUT_ENA, RADV_TRACKED_SPI_PS_INPUT_ENA,
                                   ps->config.spi_ps_input_ena, ps->config.spi_ps_input_addr);
 
-      radeon_opt_set_context_reg(cmd_buffer, R_0286D8_SPI_PS_IN_CONTROL, RADV_TRACKED_SPI_PS_IN_CONTROL,
-                                 ps->info.regs.ps.spi_ps_in_control);
+      if (pdev->info.gfx_level != GFX10_3) {
+         radeon_opt_set_context_reg(cmd_buffer, R_0286D8_SPI_PS_IN_CONTROL, RADV_TRACKED_SPI_PS_IN_CONTROL,
+                                    ps->info.regs.ps.spi_ps_in_control);
+      }
 
       radeon_opt_set_context_reg(cmd_buffer, R_028710_SPI_SHADER_Z_FORMAT, RADV_TRACKED_SPI_SHADER_Z_FORMAT,
                                  ps->info.regs.ps.spi_shader_z_format);

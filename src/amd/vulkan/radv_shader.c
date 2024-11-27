@@ -1741,11 +1741,11 @@ radv_precompute_registers_hw_fs(struct radv_device *device, struct radv_shader_b
 
       info->regs.ps.spi_ps_in_control = S_0286D8_PS_W32_EN(info->wave_size == 32) | S_0286D8_PARAM_GEN(param_gen);
 
+      /* Can't precompute NUM_INTERP on GFX10.3 because per-primititve attributes
+       * are tracked separately in NUM_PRIM_INTERP.
+       */
       if (pdev->info.gfx_level != GFX10_3) {
          info->regs.ps.spi_ps_in_control |= S_0286D8_NUM_INTERP(info->ps.num_inputs);
-      } else {
-         info->regs.ps.spi_ps_in_control |= S_0286D8_NUM_INTERP(info->ps.num_inputs - info->ps.num_prim_interp) |
-                                            S_0286D8_NUM_PRIM_INTERP(info->ps.num_prim_interp);
       }
 
       if (pdev->info.gfx_level >= GFX9 && pdev->info.gfx_level < GFX11)
