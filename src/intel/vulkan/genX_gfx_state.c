@@ -2104,14 +2104,14 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
 #if INTEL_WA_16011107343_GFX_VER
    /* Will be emitted in front of every draw instead */
-   if (intel_needs_workaround(cmd_buffer->device->info, 16011107343) &&
+   if (intel_needs_workaround(device->info, 16011107343) &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_CTRL))
       BITSET_CLEAR(hw_state->dirty, ANV_GFX_STATE_HS);
 #endif
 
 #if INTEL_WA_22018402687_GFX_VER
    /* Will be emitted in front of every draw instead */
-   if (intel_needs_workaround(cmd_buffer->device->info, 22018402687) &&
+   if (intel_needs_workaround(device->info, 22018402687) &&
        anv_pipeline_has_stage(pipeline, MESA_SHADER_TESS_EVAL))
       BITSET_CLEAR(hw_state->dirty, ANV_GFX_STATE_DS);
 #endif
@@ -2608,8 +2608,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
        *    "Workaround: This command must be followed by a PIPE_CONTROL with
        *     CS Stall bit set."
        */
-      genx_batch_emit_pipe_control(&cmd_buffer->batch,
-                                   cmd_buffer->device->info,
+      genx_batch_emit_pipe_control(&cmd_buffer->batch, device->info,
                                    cmd_buffer->state.current_pipeline,
                                    ANV_PIPE_CS_STALL_BIT);
 #endif
@@ -2630,7 +2629,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       uint32_t offset = gfx->index_offset;
       anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_INDEX_BUFFER), ib) {
          ib.IndexFormat           = gfx->index_type;
-         ib.MOCS                  = anv_mocs(cmd_buffer->device,
+         ib.MOCS                  = anv_mocs(device,
                                              buffer ? buffer->address.bo : NULL,
                                              ISL_SURF_USAGE_INDEX_BUFFER_BIT);
 #if GFX_VER >= 12
@@ -2737,7 +2736,7 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
 #if INTEL_WA_18019816803_GFX_VER
    if (BITSET_TEST(hw_state->dirty, ANV_GFX_STATE_WA_18019816803)) {
-      genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
+      genx_batch_emit_pipe_control(&cmd_buffer->batch, device->info,
                                    cmd_buffer->state.current_pipeline,
                                    ANV_PIPE_PSS_STALL_SYNC_BIT);
    }
