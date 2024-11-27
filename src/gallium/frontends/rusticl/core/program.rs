@@ -477,12 +477,7 @@ impl Program {
         res
     }
 
-    pub fn binaries(&self, ptrs: &[*mut u8]) -> CLResult<Vec<*mut u8>> {
-        // if the application didn't provide any pointers, just return the length of devices
-        if ptrs.is_empty() {
-            return Ok(vec![std::ptr::null_mut(); self.devs.len()]);
-        }
-
+    pub fn binaries(&self, ptrs: &[*mut u8]) -> CLResult<()> {
         // ptrs is an array of pointers where we should write the device binaries into
         if ptrs.len() < self.devs.len() {
             return Err(CL_INVALID_VALUE);
@@ -531,7 +526,7 @@ impl Program {
             }
         }
 
-        Ok(ptrs.to_vec())
+        Ok(())
     }
 
     // TODO: at the moment we do not support compiling programs with different signatures across

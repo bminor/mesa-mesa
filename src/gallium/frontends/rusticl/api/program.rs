@@ -28,11 +28,16 @@ unsafe impl CLInfo<cl_program_info> for cl_program {
         match q {
             CL_PROGRAM_BINARIES => {
                 let input = v.input::<*mut u8>()?;
-                // SAFETY: Oer spec it contains an array of pointers to write the binaries to,
-                //         so we can assume the entire slice to be initialized.
-                let input = unsafe { slice_assume_init_ref(input) };
-                let bins = prog.binaries(input)?;
-                v.write::<Vec<*mut u8>>(bins)
+                // This query is a bit weird. At least the CTS is. We need to return the proper size
+                // of the buffer to hold all pointers, but when actually doing the query, we'd just
+                // parse the pointers out and write to them.
+                if !input.is_empty() {
+                    // SAFETY: Per spec it contains an array of pointers to write the binaries to,
+                    //         so we can assume the entire slice to be initialized.
+                    let input = unsafe { slice_assume_init_ref(input) };
+                    prog.binaries(input)?;
+                }
+                v.write_len_only::<&[*mut u8]>(prog.devs.len())
             }
             CL_PROGRAM_BINARY_SIZES => v.write::<Vec<usize>>(prog.bin_sizes()),
             CL_PROGRAM_CONTEXT => {
