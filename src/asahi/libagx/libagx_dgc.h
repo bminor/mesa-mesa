@@ -154,9 +154,39 @@ agx_draw_indexed_indirect(uint64_t ptr, uint64_t buf, uint32_t range_B,
 }
 
 static inline unsigned
+agx_draw_index_range_B(struct agx_draw d)
+{
+   uint range_B = d.index_buffer_range_B;
+   if (!agx_is_indirect(d.b))
+      range_B -= agx_indices_to_B(d.start, d.index_size);
+
+   return range_B;
+}
+
+static inline unsigned
 agx_draw_index_range_el(struct agx_draw d)
 {
-   return d.index_buffer_range_B >> d.index_size;
+   assert(d.indexed);
+   return agx_draw_index_range_B(d) >> d.index_size;
+}
+
+static inline uint64_t
+agx_draw_index_buffer(struct agx_draw d)
+{
+   assert(d.indexed);
+
+   uint64_t ib = d.index_buffer;
+   if (!agx_is_indirect(d.b))
+      ib += agx_indices_to_B(d.start, d.index_size);
+
+   return ib;
+}
+
+static bool
+agx_direct_draw_overreads_indices(struct agx_draw d)
+{
+   uint32_t range_B = agx_indices_to_B(d.start + d.b.count[0], d.index_size);
+   return range_B > d.index_buffer_range_B;
 }
 
 enum agx_chip {
@@ -219,9 +249,7 @@ static inline GLOBAL uint32_t *
 agx_vdm_draw(GLOBAL uint32_t *out, enum agx_chip chip, struct agx_draw draw,
              enum agx_primitive topology)
 {
-   uint64_t ib = draw.index_buffer;
-   if (draw.indexed && !agx_is_indirect(draw.b))
-      ib += (draw.start << draw.index_size);
+   uint64_t ib = draw.indexed ? agx_draw_index_buffer(draw) : 0;
 
    agx_push(out, INDEX_LIST, cfg) {
       cfg.primitive = topology;
@@ -271,7 +299,7 @@ agx_vdm_draw(GLOBAL uint32_t *out, enum agx_chip chip, struct agx_draw draw,
 
    if (draw.indexed) {
       agx_push(out, INDEX_LIST_BUFFER_SIZE, cfg) {
-         cfg.size = draw.index_buffer_range_B;
+         cfg.size = align(agx_draw_index_range_B(draw), 4);
       }
    }
 

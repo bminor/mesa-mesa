@@ -1071,11 +1071,10 @@ hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       unsigned range_el = agx_draw_index_range_el(draw);
 
       ia.index_buffer =
-         libagx_index_buffer(draw.index_buffer, range_el, draw.start,
+         libagx_index_buffer(agx_draw_index_buffer(draw), range_el, 0,
                              index_size_B, dev->rodata.zero_sink);
 
-      ia.index_buffer_range_el =
-         libagx_index_buffer_range_el(range_el, draw.start);
+      ia.index_buffer_range_el = range_el;
    }
 
    return hk_pool_upload(cmd, &ia, sizeof(ia), 8);
