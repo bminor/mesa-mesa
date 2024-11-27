@@ -588,6 +588,18 @@ enum vpe_status vpe_color_build_tm_cs(const struct vpe_tonemap_params *tm_params
     return VPE_STATUS_OK;
 }
 
+enum vpe_status vpe_color_build_shaper_cs(const struct vpe_tonemap_params *tm_params,
+    struct vpe_surface_info *surface_info, struct vpe_color_space *tm_out_cs)
+{
+    tm_out_cs->tf        = tm_params->shaper_tf;
+    tm_out_cs->primaries = tm_params->lut_in_gamut;
+    tm_out_cs->encoding  = VPE_PIXEL_ENCODING_RGB;   // surface_info.cs.range;
+    tm_out_cs->range     = VPE_COLOR_RANGE_FULL;     // surface_info.cs.range;
+    tm_out_cs->cositing  = VPE_CHROMA_COSITING_NONE; // surface_info.cs.cositing;
+
+    return VPE_STATUS_OK;
+}
+
 enum vpe_status vpe_color_update_3dlut(
     struct vpe_priv *vpe_priv, struct stream_ctx *stream_ctx, bool enable_3dlut)
 {
@@ -678,19 +690,30 @@ enum vpe_status vpe_color_update_color_space_and_tf(
             }
 
             if (stream_ctx->dirty_bits.transfer_function) {
-                if (vpe_is_fp16(stream_ctx->stream.surface_info.format)) {
-                    y_scale = vpe_fixpt_div_int(y_scale, CCCS_NORM);
-                }
-
                 vpe_color_update_degamma_tf(vpe_priv, stream_ctx->tf,
                     vpe_priv->stream_ctx->tf_scaling_factor, y_scale, vpe_fixpt_zero,
-                    is_3dlut_enable || geometric_scaling, // By Pass degamma if 3DLUT is enabled
+                    is_3dlut_enable || geometric_scaling ||
+                        vpe_is_fp16(stream_ctx->stream.surface_info.format),
                     stream_ctx->input_tf);
             }
 
             if (stream_ctx->dirty_bits.color_space || output_ctx->dirty_bits.color_space) {
-                status = vpe_color_update_gamut(vpe_priv, stream_ctx->cs, output_ctx->cs,
-                    stream_ctx->gamut_remap, is_3dlut_enable || geometric_scaling);
+                enum color_space shaper_in_cs;
+                bool             can_bypass_gamut = geometric_scaling;
+                if (is_3dlut_enable) {
+                    // Convert vpe_color_space -> color_space
+                    struct vpe_color_space   shaper_params;
+                    enum color_space         in_cs_3dlut;
+                    enum color_transfer_func tf;
+                    vpe_color_build_shaper_cs(&stream_ctx->stream.tm_params,
+                        &vpe_priv->output_ctx.surface, &shaper_params);
+                    vpe_color_get_color_space_and_tf(&shaper_params, &in_cs_3dlut, &tf);
+                    shaper_in_cs = in_cs_3dlut;
+                } else {
+                    shaper_in_cs = output_ctx->cs;
+                }
+                status = vpe_color_update_gamut(vpe_priv, stream_ctx->cs, shaper_in_cs,
+                    stream_ctx->gamut_remap, can_bypass_gamut);
             }
 
             if (output_ctx->dirty_bits.transfer_function || output_ctx->dirty_bits.color_space ||
@@ -710,17 +733,20 @@ enum vpe_status vpe_color_update_color_space_and_tf(
 }
 
 enum vpe_status vpe_color_tm_update_hdr_mult(uint16_t shaper_in_exp_max, uint32_t peak_white,
-    struct fixed31_32 *hdr_multiplier, bool enable3dlut)
+    struct fixed31_32 *hdr_multiplier, bool enable3dlut, bool is_fp16)
 {
     if (enable3dlut) {
         struct fixed31_32 shaper_in_gain;
         struct fixed31_32 pq_norm_gain;
 
-        // HDRMULT = 2^shaper_in_exp_max*(1/PQ(x))
         shaper_in_gain = vpe_fixpt_from_int((long long)1 << shaper_in_exp_max);
-        vpe_compute_pq(vpe_fixpt_from_fraction((long long)peak_white, 10000), &pq_norm_gain);
-
-        *hdr_multiplier = vpe_fixpt_div(shaper_in_gain, pq_norm_gain);
+        if (is_fp16) {
+            *hdr_multiplier = vpe_fixpt_div_int(shaper_in_gain, CCCS_NORM);
+        } else {
+            // HDRMULT = 2^shaper_in_exp_max*(1/PQ(x))
+            vpe_compute_pq(vpe_fixpt_from_fraction((long long)peak_white, 10000), &pq_norm_gain);
+            *hdr_multiplier = vpe_fixpt_div(shaper_in_gain, pq_norm_gain);
+        }
     } else {
         *hdr_multiplier = vpe_fixpt_one;
     }
@@ -729,17 +755,25 @@ enum vpe_status vpe_color_tm_update_hdr_mult(uint16_t shaper_in_exp_max, uint32_
 }
 
 enum vpe_status vpe_color_update_shaper(const struct vpe_priv *vpe_priv, uint16_t shaper_in_exp_max,
-    struct transfer_func *shaper_func, bool enable_3dlut)
+    struct stream_ctx *stream_ctx, enum color_transfer_func tf_in_3dlut, bool enable_3dlut)
 {
-    enum color_transfer_func tf     = TRANSFER_FUNC_LINEAR;
-    bool                     update = false;
-    enum vpe_status          ret    = VPE_STATUS_OK;
-
+    enum color_transfer_func tf           = TRANSFER_FUNC_LINEAR;
+    bool                     update       = false;
+    enum vpe_status          ret          = VPE_STATUS_OK;
+    struct transfer_func    *shaper_func  = stream_ctx->in_shaper_func;
+    struct fixed31_32        pq_norm_gain = vpe_fixpt_one;
     VPE_ASSERT(shaper_func != NULL);
-
     if (!enable_3dlut) {
         shaper_func->type = TF_TYPE_BYPASS;
         return VPE_STATUS_OK;
+    }
+
+    // Force PQ curve when FP16 format
+    if (stream_ctx->tf == TRANSFER_FUNC_LINEAR) {
+        // tf = stream_ctx->stream.tm_params.shaper_tf;
+        tf = tf_in_3dlut;
+        pq_norm_gain =
+            vpe_fixpt_mul_int(vpe_fixpt_one, stream_ctx->stream.tm_params.input_pq_norm_factor);
     }
 
     // right now shaper is always programmed with linear, once cached, it is always reused.
@@ -760,7 +794,8 @@ enum vpe_status vpe_color_update_shaper(const struct vpe_priv *vpe_priv, uint16_
         shaper_in.shaper_in_max      = 1 << 16;
         shaper_in.use_const_hdr_mult = false; // can't be true. Fix is required.
 
-        ret = vpe_build_shaper(&shaper_in, &shaper_func->pwl);
+        ret = vpe_build_shaper(&shaper_in, shaper_func->tf, pq_norm_gain, &shaper_func->pwl);
+
         if (ret == VPE_STATUS_OK) {
             for (uint32_t i = 0; i < vpe_priv->pub.caps->resource_caps.num_mpc_3dlut; i++) {
                 shaper_func->dirty[i]               = true;
@@ -790,8 +825,9 @@ enum vpe_status vpe_color_update_movable_cm(
 
             uint32_t                 shaper_norm_factor;
             struct vpe_color_space   tm_out_cs;
+            struct vpe_color_space   cs;
             enum color_space         out_lut_cs;
-            enum color_transfer_func tf;
+            enum color_transfer_func tf, lut_in_tf;
 
             if (!stream_ctx->in_shaper_func) {
                 stream_ctx->in_shaper_func = vpe_zalloc(sizeof(struct transfer_func));
@@ -832,16 +868,19 @@ enum vpe_status vpe_color_update_movable_cm(
             get_shaper_norm_factor(&stream_ctx->stream.tm_params, stream_ctx, &shaper_norm_factor);
 
             vpe_color_tm_update_hdr_mult(SHAPER_EXP_MAX_IN, shaper_norm_factor,
-                &stream_ctx->lut3d_func->hdr_multiplier, enable_3dlut);
+                &stream_ctx->lut3d_func->hdr_multiplier, enable_3dlut,
+                vpe_is_fp16(stream_ctx->stream.surface_info.format));
 
+            vpe_color_build_shaper_cs(
+                &stream_ctx->stream.tm_params, &vpe_priv->output_ctx.surface, &cs);
+            vpe_color_get_color_space_and_tf(&cs, &out_lut_cs, &lut_in_tf);
             vpe_color_update_shaper(
-                vpe_priv, SHAPER_EXP_MAX_IN, stream_ctx->in_shaper_func, enable_3dlut);
+                vpe_priv, SHAPER_EXP_MAX_IN, stream_ctx, lut_in_tf, enable_3dlut);
 
             vpe_color_build_tm_cs(
                 &stream_ctx->stream.tm_params, &vpe_priv->output_ctx.surface, &tm_out_cs);
 
             vpe_color_get_color_space_and_tf(&tm_out_cs, &out_lut_cs, &tf);
-
             vpe_color_update_gamut(vpe_priv, out_lut_cs, vpe_priv->output_ctx.cs,
                 output_ctx->gamut_remap, !enable_3dlut);
 
@@ -1018,17 +1057,18 @@ enum vpe_status vpe_color_update_whitepoint(
     const struct vpe_color_space *vpe_cs       = &stream->stream.surface_info.cs;
     bool                          output_isHDR = vpe_is_HDR(vpe_priv->output_ctx.tf);
     bool                          input_isHDR  = false;
-    bool                          isYCbCr      = false;
-    bool                          isG24        = false;
+    bool                          is_yCbCr     = false;
+    bool                          is_g24       = false;
+    bool                          is_fp16      = false;
 
     for (unsigned int stream_index = 0; stream_index < vpe_priv->num_streams; stream_index++) {
 
         input_isHDR = vpe_is_HDR(stream->tf);
-        isYCbCr     = stream->is_yuv_input;
-        isG24       = (vpe_cs->tf == VPE_TF_G24);
-
+        is_yCbCr    = stream->is_yuv_input;
+        is_g24      = (vpe_cs->tf == VPE_TF_G24);
+        is_fp16     = vpe_is_fp16(stream->stream.surface_info.format);
         if (!input_isHDR && output_isHDR) {
-            int sdrWhiteLevel        = (isYCbCr || isG24) ? SDR_VIDEO_WHITE_POINT : SDR_WHITE_POINT;
+            int sdrWhiteLevel = (is_yCbCr || is_g24) ? SDR_VIDEO_WHITE_POINT : SDR_WHITE_POINT;
             stream->white_point_gain = vpe_fixpt_from_fraction(sdrWhiteLevel, 10000);
         } else if (input_isHDR && !output_isHDR) {
 
@@ -1039,6 +1079,11 @@ enum vpe_status vpe_color_update_whitepoint(
         } else {
             stream->white_point_gain = vpe_fixpt_one;
         }
+
+        if (is_fp16) {
+            stream->white_point_gain = vpe_fixpt_div_int(stream->white_point_gain, CCCS_NORM);
+        }
+
         stream++;
     }
     return VPE_STATUS_OK;
