@@ -650,6 +650,7 @@ dEQP-VK.ssbo.phys.layout.3_level_unsized_array.std430.row_major_mat4,Timeout
 dEQP-VK.ssbo.phys.layout.3_level_unsized_array.std430.row_major_mat4_comp_access,Timeout
 dEQP-VK.ssbo.phys.layout.3_level_unsized_array.std430.row_major_mat4_comp_access_store_cols,Timeout
 dEQP-VK.ssbo.phys.layout.3_level_unsized_array.std430.row_major_mat4_store_cols,Timeout
+dEQP-VK.ssbo.phys.layout.random.8bit.nested_structs_arrays_instance_arrays.12,Timeout
 
 dEQP-VK.rasterization.discard.point_list.query_pipeline_false,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_1.multi_draw_barriers,Crash
