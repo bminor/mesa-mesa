@@ -1059,9 +1059,6 @@ can_promote_src_as_imm(const struct intel_device_info *devinfo, fs_inst *inst,
    if (!supports_src_as_imm(devinfo, inst, src_idx))
       return false;
 
-   /* TODO - Fix the codepath below to use a bfloat16 immediate on XeHP,
-    *        since HF/F mixed mode has been removed from the hardware.
-    */
    switch (inst->src[src_idx].type) {
    case BRW_TYPE_F: {
       uint16_t hf;
