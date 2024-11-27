@@ -232,11 +232,11 @@ private:
    struct entry {
       uint16_t reg;
       int16_t val;
-      bool operator==(const entry& other) const { return reg == other.reg && val == other.val; }
+      bool operator!=(const entry& other) const { return reg != other.reg || val != other.val; }
    };
 
    std::bitset<128> present;
-   std::vector<entry> list;
+   small_vec<entry, 4> list;
    int base = 0;
 };
 
