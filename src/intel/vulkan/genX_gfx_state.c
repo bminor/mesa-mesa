@@ -544,13 +544,12 @@ calculate_render_area(const struct anv_cmd_graphics_state *gfx,
  * setup.  Return true if TBIMR should be enabled.
  */
 UNUSED static bool
-calculate_tile_dimensions(struct anv_cmd_buffer *cmd_buffer,
+calculate_tile_dimensions(const struct anv_device *device,
+                          const struct anv_cmd_graphics_state *gfx,
+                          const struct intel_l3_config *l3_config,
                           unsigned fb_width, unsigned fb_height,
                           unsigned *tile_width, unsigned *tile_height)
 {
-   const struct anv_device *device = cmd_buffer->device;
-   struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
-
    assert(GFX_VER == 12);
    const unsigned aux_scale = ISL_MAIN_TO_CCS_SIZE_RATIO_XE;
 
@@ -562,7 +561,7 @@ calculate_tile_dimensions(struct anv_cmd_buffer *cmd_buffer,
     * auxiliary surfaces bound to the pipeline.
     */
    for (uint32_t i = 0; i < gfx->color_att_count; i++) {
-      struct anv_attachment *att = &gfx->color_att[i];
+      const struct anv_attachment *att = &gfx->color_att[i];
 
       if (att->iview) {
          const struct anv_image *image = att->iview->image;
@@ -624,7 +623,7 @@ calculate_tile_dimensions(struct anv_cmd_buffer *cmd_buffer,
     * tile cache based on the per-pixel cache footprint estimated
     * above.
     */
-   intel_calculate_tile_dimensions(device->info, cmd_buffer->state.current_l3_config,
+   intel_calculate_tile_dimensions(device->info, l3_config,
                                    32, 32, fb_width, fb_height,
                                    pixel_size, tile_width, tile_height);
 
@@ -1714,18 +1713,20 @@ update_scissors(struct anv_gfx_dynamic_state *hw_state,
 #if GFX_VERx10 == 125
 ALWAYS_INLINE static void
 update_tbimr_info(struct anv_gfx_dynamic_state *hw_state,
-                  struct anv_cmd_buffer *cmd_buffer)
+                  const struct anv_device *device,
+                  const struct anv_cmd_graphics_state *gfx,
+                  const struct intel_l3_config *l3_config)
 {
-   const struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
    unsigned fb_width, fb_height, tile_width, tile_height;
 
-   if (cmd_buffer->device->physical->instance->enable_tbimr &&
+   if (device->physical->instance->enable_tbimr &&
        calculate_render_area(gfx, &fb_width, &fb_height) &&
-       calculate_tile_dimensions(cmd_buffer, fb_width, fb_height,
+       calculate_tile_dimensions(device, gfx, l3_config,
+                                 fb_width, fb_height,
                                  &tile_width, &tile_height)) {
       /* Use a batch size of 128 polygons per slice as recommended */
       /*    by BSpec 68436 "TBIMR Programming". */
-      const unsigned num_slices = cmd_buffer->device->info->num_slices;
+      const unsigned num_slices = device->info->num_slices;
       const unsigned batch_size = DIV_ROUND_UP(num_slices, 2) * 256;
 
       SET(TBIMR_TILE_PASS_INFO, tbimr.TileRectangleHeight, tile_height);
@@ -1927,7 +1928,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_cmd_buffer *cmd_buffer,
 
 #if GFX_VERx10 == 125
    if ((cmd_buffer->state.gfx.dirty & ANV_CMD_DIRTY_RENDER_TARGETS))
-      update_tbimr_info(hw_state, cmd_buffer);
+      update_tbimr_info(hw_state, device, gfx, pipeline->base.base.l3_config);
 #endif
 
 #if INTEL_WA_14018283232_GFX_VER
