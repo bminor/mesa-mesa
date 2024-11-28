@@ -56,7 +56,6 @@ spec@glsl-1.10@execution@samplers@glsl-fs-shadow2d-clamp-z,Fail
 
 spec@glsl-1.20@compiler@invalid-vec4-array-to-vec3-array-conversion.vert,Fail
 
-spec@glsl-1.50@execution@primitive-id-no-gs-quad-strip,Fail
 spec@glsl-es-3.00@execution@built-in-functions@fs-packhalf2x16,Fail
 spec@glsl-es-3.00@execution@built-in-functions@vs-packhalf2x16,Fail
 spec@khr_texture_compression_astc@miptree-gles srgb-fp,Fail
@@ -598,7 +597,3 @@ spec@ext_texture_array@copyteximage 1d_array samples=2,Fail
 spec@ext_texture_array@copyteximage 1d_array samples=4,Fail
 spec@ext_texture_array@copyteximage 1d_array samples=6,Fail
 spec@ext_texture_array@copyteximage 1d_array samples=8,Fail
-
-# zink_create_quads_emulation_gs doesn't write primitive ID
-# https://gitlab.freedesktop.org/mesa/mesa/-/issues/12214
-spec@glsl-1.50@execution@primitive-id-no-gs-quads,Fail
