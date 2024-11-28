@@ -887,6 +887,8 @@ struct agx_screen {
    struct agx_device dev;
    struct disk_cache *disk_cache;
 
+   struct agx_bo *rodata;
+
    /* Shared timeline syncobj and value to serialize flushes across contexts */
    uint32_t flush_syncobj;
    uint64_t flush_cur_seqid;

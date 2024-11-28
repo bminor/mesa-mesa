@@ -94,11 +94,13 @@ agx_batch_init(struct agx_context *ctx,
                struct agx_batch *batch)
 {
    struct agx_device *dev = agx_device(ctx->base.screen);
+   struct agx_screen *screen = agx_screen(ctx->base.screen);
 
    batch->ctx = ctx;
    util_copy_framebuffer_state(&batch->key, key);
    batch->seqnum = ++ctx->batches.seqnum;
 
+   agx_bo_reference(screen->rodata);
    agx_pool_init(&batch->pool, dev, 0, true);
    agx_pool_init(&batch->pipeline_pool, dev, AGX_BO_LOW_VA, true);
 
@@ -316,6 +318,8 @@ static void
 agx_batch_cleanup(struct agx_context *ctx, struct agx_batch *batch, bool reset)
 {
    struct agx_device *dev = agx_device(ctx->base.screen);
+   struct agx_screen *screen = agx_screen(ctx->base.screen);
+
    assert(batch->ctx == ctx);
    assert(agx_batch_is_submitted(batch));
 
@@ -362,6 +366,7 @@ agx_batch_cleanup(struct agx_context *ctx, struct agx_batch *batch, bool reset)
       }
    }
 
+   agx_bo_unreference(dev, screen->rodata);
    agx_bo_unreference(dev, batch->vdm.bo);
    agx_bo_unreference(dev, batch->cdm.bo);
    agx_pool_cleanup(&batch->pool);

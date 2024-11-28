@@ -2569,6 +2569,7 @@ agx_destroy_screen(struct pipe_screen *pscreen)
    if (screen->dev.ro)
       screen->dev.ro->destroy(screen->dev.ro);
 
+   agx_bo_unreference(&screen->dev, screen->rodata);
    u_transfer_helper_destroy(pscreen->transfer_helper);
    agx_close_device(&screen->dev);
    disk_cache_destroy(screen->disk_cache);
@@ -2751,6 +2752,8 @@ agx_screen_create(int fd, struct renderonly *ro,
          cfg.count = 1;
          cfg.buffer = bo->va->addr;
       }
+
+      agx_screen->rodata = bo;
    }
 
    return screen;
