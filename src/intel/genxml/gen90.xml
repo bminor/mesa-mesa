@@ -1415,38 +1415,9 @@
     <field name="3D Command Opcode" start="24" end="26" type="uint" default="0" />
     <field name="Command SubType" start="27" end="28" type="uint" default="3" />
     <field name="Command Type" start="29" end="31" type="uint" default="3" />
-    <field name="Vertex Element 00 Enables" start="32" end="35" type="uint" />
-    <field name="Vertex Element 01 Enables" start="36" end="39" type="uint" />
-    <field name="Vertex Element 02 Enables" start="40" end="43" type="uint" />
-    <field name="Vertex Element 03 Enables" start="44" end="47" type="uint" />
-    <field name="Vertex Element 04 Enables" start="48" end="51" type="uint" />
-    <field name="Vertex Element 05 Enables" start="52" end="55" type="uint" />
-    <field name="Vertex Element 06 Enables" start="56" end="59" type="uint" />
-    <field name="Vertex Element 07 Enables" start="60" end="63" type="uint" />
-    <field name="Vertex Element 08 Enables" start="64" end="67" type="uint" />
-    <field name="Vertex Element 09 Enables" start="68" end="71" type="uint" />
-    <field name="Vertex Element 10 Enables" start="72" end="75" type="uint" />
-    <field name="Vertex Element 11 Enables" start="76" end="79" type="uint" />
-    <field name="Vertex Element 12 Enables" start="80" end="83" type="uint" />
-    <field name="Vertex Element 13 Enables" start="84" end="87" type="uint" />
-    <field name="Vertex Element 14 Enables" start="88" end="91" type="uint" />
-    <field name="Vertex Element 15 Enables" start="92" end="95" type="uint" />
-    <field name="Vertex Element 16 Enables" start="96" end="99" type="uint" />
-    <field name="Vertex Element 17 Enables" start="100" end="103" type="uint" />
-    <field name="Vertex Element 18 Enables" start="104" end="107" type="uint" />
-    <field name="Vertex Element 19 Enables" start="108" end="111" type="uint" />
-    <field name="Vertex Element 20 Enables" start="112" end="115" type="uint" />
-    <field name="Vertex Element 21 Enables" start="116" end="119" type="uint" />
-    <field name="Vertex Element 22 Enables" start="120" end="123" type="uint" />
-    <field name="Vertex Element 23 Enables" start="124" end="127" type="uint" />
-    <field name="Vertex Element 24 Enables" start="128" end="131" type="uint" />
-    <field name="Vertex Element 25 Enables" start="132" end="135" type="uint" />
-    <field name="Vertex Element 26 Enables" start="136" end="139" type="uint" />
-    <field name="Vertex Element 27 Enables" start="140" end="143" type="uint" />
-    <field name="Vertex Element 28 Enables" start="144" end="147" type="uint" />
-    <field name="Vertex Element 29 Enables" start="148" end="151" type="uint" />
-    <field name="Vertex Element 30 Enables" start="152" end="155" type="uint" />
-    <field name="Vertex Element 31 Enables" start="156" end="159" type="uint" />
+    <group count="32" start="32" size="4">
+      <field name="Vertex Element Enables" start="0" end="3" type="uint" />
+    </group>
   </instruction>
   <instruction name="3DSTATE_WM_DEPTH_STENCIL" bias="2" length="4" engine="render">
     <field name="DWord Length" start="0" end="7" type="uint" default="2" />
