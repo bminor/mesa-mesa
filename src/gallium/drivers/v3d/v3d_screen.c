@@ -762,6 +762,7 @@ v3d_screen_get_compiler_options(struct pipe_screen *pscreen,
                 .max_unroll_iterations = 16,
                 .force_indirect_unrolling_sampler = true,
                 .scalarize_ddx = true,
+                .max_varying_expression_cost = 4,
         };
 
         if (!initialized) {
