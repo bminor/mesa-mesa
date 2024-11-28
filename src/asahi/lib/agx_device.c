@@ -394,6 +394,27 @@ const agx_device_ops_t agx_device_drm_ops = {
    .submit = agx_submit,
 };
 
+static uint64_t
+gcd(uint64_t n, uint64_t m)
+{
+   while (n != 0) {
+      uint64_t remainder = m % n;
+      m = n;
+      n = remainder;
+   }
+
+   return m;
+}
+
+static void
+agx_init_timestamps(struct agx_device *dev)
+{
+   uint64_t ts_gcd = gcd(dev->params.timer_frequency_hz, NSEC_PER_SEC);
+
+   dev->timestamp_to_ns.num = NSEC_PER_SEC / ts_gcd;
+   dev->timestamp_to_ns.den = dev->params.timer_frequency_hz / ts_gcd;
+}
+
 bool
 agx_open_device(void *memctx, struct agx_device *dev)
 {
@@ -533,6 +554,8 @@ agx_open_device(void *memctx, struct agx_device *dev)
    assert(user_start < dev->params.vm_user_end);
 
    dev->agxdecode = agxdecode_new_context(dev->shader_base);
+
+   agx_init_timestamps(dev);
 
    util_sparse_array_init(&dev->bo_map, sizeof(struct agx_bo), 512);
    pthread_mutex_init(&dev->bo_map_lock, NULL);
@@ -745,6 +768,16 @@ agx_debug_fault(struct agx_device *dev, uint64_t addr)
 uint64_t
 agx_get_gpu_timestamp(struct agx_device *dev)
 {
+   if (dev->params.feat_compat & DRM_ASAHI_FEAT_GETTIME) {
+      struct drm_asahi_get_time get_time = {.flags = 0, .extensions = 0};
+
+      int ret = asahi_simple_ioctl(dev, DRM_IOCTL_ASAHI_GET_TIME, &get_time);
+      if (ret) {
+         fprintf(stderr, "DRM_IOCTL_ASAHI_GET_TIME failed: %m\n");
+      } else {
+         return get_time.gpu_timestamp;
+      }
+   }
 #if DETECT_ARCH_AARCH64
    uint64_t ret;
    __asm__ volatile("mrs \t%0, cntvct_el0" : "=r"(ret));

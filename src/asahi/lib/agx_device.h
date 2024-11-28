@@ -156,6 +156,11 @@ struct agx_device {
 
    /* Simplified device selection */
    enum agx_chip chip;
+
+   struct {
+      uint64_t num;
+      uint64_t den;
+   } timestamp_to_ns;
 };
 
 static inline bool
@@ -200,7 +205,7 @@ uint64_t agx_get_gpu_timestamp(struct agx_device *dev);
 static inline uint64_t
 agx_gpu_time_to_ns(struct agx_device *dev, uint64_t gpu_time)
 {
-   return (gpu_time * NSEC_PER_SEC) / dev->params.timer_frequency_hz;
+   return (gpu_time * dev->timestamp_to_ns.num) / dev->timestamp_to_ns.den;
 }
 
 void agx_get_device_uuid(const struct agx_device *dev, void *uuid);
