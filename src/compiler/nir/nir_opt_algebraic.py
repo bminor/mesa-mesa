@@ -2636,9 +2636,11 @@ for bit_size in [8, 16, 32, 64]:
 invert = OrderedDict([('feq', 'fneu'), ('fneu', 'feq')])
 
 for left, right in itertools.combinations_with_replacement(invert.keys(), 2):
-   optimizations.append((('inot', ('ior(is_used_once)', (left, a, b), (right, c, d))),
+   optimizations.append((('inot', ('ior(is_used_once)', (left + '(is_used_once)', a, b),
+                                                        (right + '(is_used_once)', c, d))),
                          ('iand', (invert[left], a, b), (invert[right], c, d))))
-   optimizations.append((('inot', ('iand(is_used_once)', (left, a, b), (right, c, d))),
+   optimizations.append((('inot', ('iand(is_used_once)', (left + '(is_used_once)', a, b),
+                                                         (right + '(is_used_once)', c, d))),
                          ('ior', (invert[left], a, b), (invert[right], c, d))))
 
 # Optimize x2yN(b2x(x)) -> b2y
