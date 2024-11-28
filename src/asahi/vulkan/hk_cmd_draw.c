@@ -1391,7 +1391,7 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       .max_draws = 1 /* TODO: MDI */,
       .restart_index = gfx->index.restart,
       .index_buffer_size_el =
-         draw.index.range / agx_translate_index_size(draw.index_size),
+         draw.index.range / agx_index_size_to_B(draw.index_size),
       .flatshade_first =
          dyn->rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_FIRST_VERTEX_EXT,
       .zero_sink = dev->rodata.zero_sink,
