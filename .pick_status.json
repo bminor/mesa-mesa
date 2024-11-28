@@ -3634,7 +3634,7 @@
         "description": "pan/cs: Fix cs_builder allocation failure robustness",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "0e6aaab00ae58a03a279d88d587b1a4721c1c2b9",
         "notes": null

@@ -524,7 +524,7 @@ cs_alloc_ins_block(struct cs_builder *b, uint32_t num_instrs)
       return util_dynarray_grow(&b->blocks.instrs, uint64_t, num_instrs);
 
    if (!cs_reserve_instrs(b, num_instrs))
-      return &b->discard_instr_slot;
+      return NULL;
 
    assert(b->cur_chunk.size + num_instrs - 1 < b->cur_chunk.buffer.capacity);
    uint32_t pos = b->cur_chunk.pos;
@@ -545,7 +545,7 @@ cs_flush_block_instrs(struct cs_builder *b)
 
    void *buffer = cs_alloc_ins_block(b, num_instrs);
 
-   if (likely(cs_is_valid(b)))
+   if (likely(buffer != NULL))
       memcpy(buffer, b->blocks.instrs.data, b->blocks.instrs.size);
 
    util_dynarray_clear(&b->blocks.instrs);
@@ -614,7 +614,7 @@ cs_alloc_ins(struct cs_builder *b)
     * causing further cs_else_start() instructions to be invalid. */
    cs_flush_pending_if(b);
 
-   return cs_alloc_ins_block(b, 1);
+   return cs_alloc_ins_block(b, 1) ?: &b->discard_instr_slot;
 }
 
 /* Call this when you are done building a command stream and want to prepare
