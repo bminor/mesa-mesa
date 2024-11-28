@@ -413,6 +413,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    if (stage->key.storage_robustness2)
       vectorize_opts.robust_modes |= nir_var_mem_ssbo;
 
+   bool constant_fold_for_push_const = false;
    if (!stage->key.optimisations_disabled) {
       progress = false;
       NIR_PASS(progress, stage->nir, nir_opt_load_store_vectorize, &vectorize_opts);
@@ -420,10 +421,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
          NIR_PASS(_, stage->nir, nir_copy_prop);
          NIR_PASS(_, stage->nir, nir_opt_shrink_stores, !instance->drirc.disable_shrink_image_store);
 
-         /* Ensure vectorized load_push_constant still have constant offsets, for
-          * radv_nir_apply_pipeline_layout. */
-         if (stage->args.ac.inline_push_const_mask)
-            NIR_PASS(_, stage->nir, nir_opt_constant_folding);
+         constant_fold_for_push_const = true;
 
          /* Gather info again, to update whether 8/16-bit are used. */
          nir_shader_gather_info(stage->nir, nir_shader_get_entrypoint(stage->nir));
@@ -454,7 +452,10 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       }
    }
 
-   NIR_PASS(_, stage->nir, ac_nir_lower_mem_access_bit_sizes, gfx_level, use_llvm);
+   progress = false;
+   NIR_PASS(progress, stage->nir, ac_nir_lower_mem_access_bit_sizes, gfx_level, use_llvm);
+   if (progress)
+      constant_fold_for_push_const = true;
 
    progress = false;
    NIR_PASS(progress, stage->nir, nir_vk_lower_ycbcr_tex, ycbcr_conversion_lookup, &stage->layout);
@@ -477,6 +478,10 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
 
    if (stage->nir->info.uses_resource_info_query)
       NIR_PASS(_, stage->nir, ac_nir_lower_resinfo, gfx_level);
+
+   /* Ensure split load_push_constant still have constant offsets, for radv_nir_apply_pipeline_layout. */
+   if (constant_fold_for_push_const && stage->args.ac.inline_push_const_mask)
+      NIR_PASS(_, stage->nir, nir_opt_constant_folding);
 
    NIR_PASS_V(stage->nir, radv_nir_apply_pipeline_layout, device, stage);
 
