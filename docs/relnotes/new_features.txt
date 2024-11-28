@@ -4,3 +4,6 @@ storageInputOutput16 on panvk
 VK_KHR_depth_stencil_resolve on panvk
 VK_KHR_separate_depth_stencil_layouts on panvk
 VK_EXT_separate_stencil_usage on panvk
+samplerYcbcrConversion on panvk/v10+
+ycbcr2plane444Formats on panvk/v10+
+ycbcrImageArrays on panvk/v10+

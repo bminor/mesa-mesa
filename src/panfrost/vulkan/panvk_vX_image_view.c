@@ -279,7 +279,10 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
       .dim = panvk_view_type_to_mali_tex_dim(view->vk.view_type),
       .nr_samples = image->vk.samples,
       .first_level = view->vk.base_mip_level,
-      .last_level = view->vk.base_mip_level + view->vk.level_count - 1,
+      /* MIPmapping in YUV formats is not supported by the HW. */
+      .last_level = vk_format_get_ycbcr_info(view->vk.format)
+         ? view->vk.base_mip_level
+         : view->vk.base_mip_level + view->vk.level_count - 1,
       .first_layer = view->vk.base_array_layer,
       .last_layer = view->vk.base_array_layer + view->vk.layer_count - 1,
    };

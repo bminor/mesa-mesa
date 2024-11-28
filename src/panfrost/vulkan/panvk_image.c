@@ -46,6 +46,32 @@
 #include "vk_util.h"
 
 static bool
+can_be_aliased_to_yuv_plane(const struct panvk_image *image)
+{
+   if (!(image->vk.create_flags & VK_IMAGE_CREATE_ALIAS_BIT))
+      return false;
+
+   VkFormat format = image->vk.format;
+
+   if (vk_format_is_depth_or_stencil(format) ||
+       vk_format_is_alpha(format) ||
+       vk_format_get_blockwidth(format) != 1 ||
+       vk_format_get_blockheight(format) != 1)
+      return false;
+
+   unsigned block_size = vk_format_get_blocksize(format);
+
+   switch (block_size) {
+   case 1:
+   case 2:
+   case 4:
+      return true;
+   }
+
+   return false;
+}
+
+static bool
 panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
 {
    struct panvk_physical_device *phys_dev =
@@ -102,6 +128,15 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
    }
 
    if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
+      /* Multiplanar YUV with U-interleaving isn't supported by the HW. We
+       * also need to make sure images that can be aliased to planes of
+       * multi-planar images remain compatible with the aliased images, so
+       * don't allow U-interleaving for those either.
+       */
+      if (vk_format_get_plane_count(image->vk.format) > 1 ||
+          can_be_aliased_to_yuv_plane(image))
+         return false;
+
       /* If we're dealing with a compressed format that requires non-compressed
        * views we can't use U_INTERLEAVED tiling because the tiling is different
        * between compressed and non-compressed formats. If we wanted to support
@@ -218,10 +253,12 @@ panvk_image_init_layouts(struct panvk_image *image,
       image->plane_count = 2;
 
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
-      VkFormat format =
-         (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) ?
-         ((plane == 0) ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_S8_UINT) :
-         image->vk.format;
+      VkFormat format;
+
+      if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
+         format = plane == 0 ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_S8_UINT;
+      else
+         format = vk_format_get_plane_format(image->vk.format, plane);
 
       struct pan_image_explicit_layout plane_layout;
       if (explicit_info)
@@ -233,8 +270,10 @@ panvk_image_init_layouts(struct panvk_image *image,
       image->planes[plane].layout = (struct pan_image_layout){
          .format = vk_format_to_pipe_format(format),
          .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
-         .width = image->vk.extent.width,
-         .height = image->vk.extent.height,
+         .width = vk_format_get_plane_width(image->vk.format, plane,
+                                            image->vk.extent.width),
+         .height = vk_format_get_plane_height(image->vk.format, plane,
+                                              image->vk.extent.height),
          .depth = image->vk.extent.depth,
          .array_size = image->vk.array_layers,
          .nr_samples = image->vk.samples,
