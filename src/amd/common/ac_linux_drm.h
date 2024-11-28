@@ -85,6 +85,8 @@ PROC int ac_drm_query_hw_ip_info(int device_fd, unsigned type, unsigned ip_insta
                                  struct drm_amdgpu_info_hw_ip *info) TAIL;
 PROC int ac_drm_query_firmware_version(int device_fd, unsigned fw_type, unsigned ip_instance,
                                        unsigned index, uint32_t *version, uint32_t *feature) TAIL;
+PROC int ac_drm_query_uq_fw_area_info(int device_fd, unsigned type, unsigned ip_instance,
+                                      struct drm_amdgpu_info_uq_fw_areas *info) TAIL;
 PROC int ac_drm_query_gpu_info(int device_fd, struct amdgpu_gpu_info *info) TAIL;
 PROC int ac_drm_query_heap_info(int device_fd, uint32_t heap, uint32_t flags,
                                 struct amdgpu_heap_info *info) TAIL;

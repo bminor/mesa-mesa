@@ -486,6 +486,21 @@ int ac_drm_query_firmware_version(int device_fd, unsigned fw_type, unsigned ip_i
    return 0;
 }
 
+int ac_drm_query_uq_fw_area_info(int device_fd, unsigned type, unsigned ip_instance,
+                                 struct drm_amdgpu_info_uq_fw_areas *info)
+{
+   struct drm_amdgpu_info request;
+
+   memset(&request, 0, sizeof(request));
+   request.return_pointer = (uintptr_t)info;
+   request.return_size = sizeof(*info);
+   request.query = AMDGPU_INFO_UQ_FW_AREAS;
+   request.query_hw_ip.type = type;
+   request.query_hw_ip.ip_instance = ip_instance;
+
+   return drm_ioctl_write(device_fd, DRM_AMDGPU_INFO, &request, sizeof(struct drm_amdgpu_info));
+}
+
 int ac_drm_query_gpu_info(int device_fd, struct amdgpu_gpu_info *info)
 {
    struct drm_amdgpu_info_device dev_info = {0};
