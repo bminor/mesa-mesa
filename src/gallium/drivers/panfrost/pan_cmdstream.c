@@ -184,6 +184,33 @@ pan_pipe_to_mipmode(enum pipe_tex_mipfilter f)
    }
 }
 
+#if PAN_ARCH == 7
+static void
+pan_afbc_reswizzle_border_color(const struct pipe_sampler_state *cso,
+                                struct panfrost_sampler_state *so)
+{
+   if (!panfrost_format_supports_afbc(PAN_ARCH, cso->border_color_format))
+      return;
+
+   /* On v7, pan_texture.c composes the API swizzle with a bijective
+    * swizzle derived from the format, to allow more formats than the
+    * hardware otherwise supports. When packing border colours, we need to
+    * undo this bijection, by swizzling with its inverse.
+    */
+   unsigned mali_format =
+      GENX(panfrost_format_from_pipe_format)(cso->border_color_format)->hw;
+   enum mali_rgb_component_order order = mali_format & BITFIELD_MASK(12);
+
+   unsigned char inverted_swizzle[4];
+   panfrost_invert_swizzle(GENX(pan_decompose_swizzle)(order).post,
+                           inverted_swizzle);
+
+   util_format_apply_color_swizzle(&so->base.border_color, &cso->border_color,
+                                   inverted_swizzle,
+                                   false /* is_integer (irrelevant) */);
+}
+#endif
+
 static void *
 panfrost_create_sampler_state(struct pipe_context *pctx,
                               const struct pipe_sampler_state *cso)
@@ -192,24 +219,7 @@ panfrost_create_sampler_state(struct pipe_context *pctx,
    so->base = *cso;
 
 #if PAN_ARCH == 7
-   if (panfrost_format_supports_afbc(PAN_ARCH, cso->border_color_format)) {
-      /* On v7, pan_texture.c composes the API swizzle with a bijective
-       * swizzle derived from the format, to allow more formats than the
-       * hardware otherwise supports. When packing border colours, we need to
-       * undo this bijection, by swizzling with its inverse.
-       */
-      unsigned mali_format =
-         GENX(panfrost_format_from_pipe_format)(cso->border_color_format)->hw;
-      enum mali_rgb_component_order order = mali_format & BITFIELD_MASK(12);
-
-      unsigned char inverted_swizzle[4];
-      panfrost_invert_swizzle(GENX(pan_decompose_swizzle)(order).post,
-                              inverted_swizzle);
-
-      util_format_apply_color_swizzle(&so->base.border_color,
-                                      &cso->border_color, inverted_swizzle,
-                                      false /* is_integer (irrelevant) */);
-   }
+   pan_afbc_reswizzle_border_color(cso, so);
 #endif
 
    bool using_nearest = cso->min_img_filter == PIPE_TEX_MIPFILTER_NEAREST;

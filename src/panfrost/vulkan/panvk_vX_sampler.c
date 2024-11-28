@@ -56,11 +56,12 @@ panvk_translate_sampler_compare_func(const VkSamplerCreateInfo *pCreateInfo)
    return panfrost_flip_compare_func((enum mali_func)pCreateInfo->compareOp);
 }
 
+#if PAN_ARCH == 7
 static void
-swizzle_border_color(VkClearColorValue *border_color, VkFormat fmt)
+panvk_afbc_reswizzle_border_color(VkClearColorValue *border_color, VkFormat fmt)
 {
-   if (PAN_ARCH != 7)
-      return;
+   /* Doing border color reswizzle implies disabling support for
+    * customBorderColorWithoutFormat. */
 
    enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
    if (panfrost_format_is_yuv(pfmt) || util_format_is_depth_or_stencil(pfmt) ||
@@ -76,6 +77,7 @@ swizzle_border_color(VkClearColorValue *border_color, VkFormat fmt)
       border_color->uint32[2] = red;
    }
 }
+#endif
 
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_per_arch(CreateSampler)(VkDevice _device,
@@ -99,7 +101,9 @@ panvk_per_arch(CreateSampler)(VkDevice _device,
    VkClearColorValue border_color =
       vk_sampler_border_color_value(pCreateInfo, &fmt);
 
-   swizzle_border_color(&border_color, fmt);
+#if PAN_ARCH == 7
+   panvk_afbc_reswizzle_border_color(&border_color, fmt);
+#endif
 
    pan_pack(sampler->desc.opaque, SAMPLER, cfg) {
       cfg.magnify_nearest = pCreateInfo->magFilter == VK_FILTER_NEAREST;
