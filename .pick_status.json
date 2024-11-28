@@ -314,7 +314,7 @@
         "description": "nir/tests: fix SSA dominance in opt_if_merge tests",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c437f2e79c6dfdbb911c416e264b544fc0699437",
         "notes": null
