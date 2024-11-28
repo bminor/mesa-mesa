@@ -444,7 +444,7 @@
         "description": "anv: fix missing bindings valid dynamic state change check",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9ddd296cd387bae3adfceb66af91e965fdf10f08",
         "notes": null
