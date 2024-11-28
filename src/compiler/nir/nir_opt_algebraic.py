@@ -352,6 +352,18 @@ optimizations = [
     ('fexp2', ('fmulz', a, 'mb'))), {'mb': b}),
 ]
 
+# Bitwise operations affecting the sign may be replaced by equivalent
+# floating point operations, except possibly for denormal
+# behaviour hence the is_only_used_as_float.
+for sz in (16, 32, 64):
+    sign_bit = 1 << (sz - 1)
+
+    optimizations.extend([
+        (('iand(is_only_used_as_float)', f'a@{sz}', sign_bit - 1), ('fabs', a)),
+        (('ixor(is_only_used_as_float)', f'a@{sz}', sign_bit), ('fneg', a)),
+        (('ior(is_only_used_as_float)', f'a@{sz}', sign_bit), ('fneg', ('fabs', a))),
+    ])
+
 # Shorthand for the expansion of just the dot product part of the [iu]dp4a
 # instructions.
 sdot_4x8_a_b = ('iadd', ('iadd', ('imul', ('extract_i8', a, 0), ('extract_i8', b, 0)),
