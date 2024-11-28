@@ -443,6 +443,8 @@ optimizations.extend([
    (('fadd', ('ffloor', a), ('b2f', ('inot', ('fge', 0, ('fmin', ('fneg', a), ('ffract', a)))))), ('ftrunc', ('fadd', a, 0))),
    (('fadd', ('ffloor', a), ('b2f', ('flt', 0, ('fmin', ('fneg', a), ('ffract', a))))), ('ftrunc', ('fadd', a, 0))),
 
+   (('fadd(nnan,nsz)', a, ('ffract', ('fneg', a))), ('fceil', a), '!options->lower_fceil'),
+
    (('ftrunc@16', a), ('bcsel', ('flt', a, 0.0), ('fneg', ('ffloor', ('fabs', a))), ('ffloor', ('fabs', a))), 'options->lower_ftrunc'),
    (('ftrunc@32', a), ('bcsel', ('flt', a, 0.0), ('fneg', ('ffloor', ('fabs', a))), ('ffloor', ('fabs', a))), 'options->lower_ftrunc'),
    (('ftrunc@64', a), ('bcsel', ('flt', a, 0.0), ('fneg', ('ffloor', ('fabs', a))), ('ffloor', ('fabs', a))),
