@@ -195,6 +195,9 @@ get_push_range_address(struct anv_cmd_buffer *cmd_buffer,
          cmd_buffer, gfx_state->base.push_constants_state);
    }
 
+   case ANV_DESCRIPTOR_SET_NULL:
+      return cmd_buffer->device->workaround_address;
+
    default: {
       assert(range->set < MAX_SETS);
       struct anv_descriptor_set *set =
@@ -258,6 +261,7 @@ get_push_range_bound_size(struct anv_cmd_buffer *cmd_buffer,
       return gfx_state->base.pipeline->layout.set[
          range->index].layout->descriptor_buffer_surface_size;
 
+   case ANV_DESCRIPTOR_SET_NULL:
    case ANV_DESCRIPTOR_SET_PUSH_CONSTANTS:
       return (range->start + range->length) * 32;
 
@@ -374,44 +378,12 @@ cmd_buffer_emit_push_constant(struct anv_cmd_buffer *cmd_buffer,
 
 #if GFX_VER >= 12
 static void
-emit_null_push_constant_tbimr_workaround(struct anv_cmd_buffer *cmd_buffer)
-{
-   /* Pass a single-register push constant payload for the PS
-    * stage even if empty, since PS invocations with zero push
-    * constant cycles have been found to cause hangs with TBIMR
-    * enabled.  See HSDES #22020184996.
-    *
-    * XXX - Use workaround infrastructure and final workaround
-    *       when provided by hardware team.
-    */
-   const struct anv_address null_addr = cmd_buffer->device->workaround_address;
-   uint32_t *dw = anv_batch_emitn(
-      &cmd_buffer->batch, 4,
-      GENX(3DSTATE_CONSTANT_ALL),
-      .ShaderUpdateEnable = (1 << MESA_SHADER_FRAGMENT),
-      .PointerBufferMask = 1,
-      .MOCS = isl_mocs(&cmd_buffer->device->isl_dev, 0, false));
-   GENX(3DSTATE_CONSTANT_ALL_DATA_pack)(
-      &cmd_buffer->batch, dw + 2,
-      &(struct GENX(3DSTATE_CONSTANT_ALL_DATA)) {
-         .PointerToConstantBuffer = null_addr,
-         .ConstantBufferReadLength = 1,
-      });
-}
-
-static void
 cmd_buffer_emit_push_constant_all(struct anv_cmd_buffer *cmd_buffer,
                                   uint32_t shader_mask,
                                   struct anv_address *buffers,
                                   uint32_t buffer_count)
 {
    if (buffer_count == 0) {
-      if (cmd_buffer->device->info->needs_null_push_constant_tbimr_workaround &&
-          (shader_mask & (1 << MESA_SHADER_FRAGMENT))) {
-         emit_null_push_constant_tbimr_workaround(cmd_buffer);
-         shader_mask &= ~(1 << MESA_SHADER_FRAGMENT);
-      }
-
       if (shader_mask) {
          anv_batch_emit(&cmd_buffer->batch, GENX(3DSTATE_CONSTANT_ALL), c) {
             c.ShaderUpdateEnable = shader_mask;
