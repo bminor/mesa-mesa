@@ -3203,8 +3203,13 @@ hk_flush_gfx_state(struct hk_cmd_buffer *cmd, uint32_t draw_id,
     * Proton never changes it within a render pass, but we technically need to
     * handle the switch regardless. Do so early since `cs` will be invalidated
     * if we need to split the render pass to switch representation mid-frame.
+    *
+    * Note we only do this dance with depth bias is actually enabled to avoid
+    * senseless control stream splits with DXVK.
     */
-   if (IS_DIRTY(RS_DEPTH_BIAS_FACTORS)) {
+   if ((IS_DIRTY(RS_DEPTH_BIAS_FACTORS) || IS_DIRTY(RS_DEPTH_BIAS_ENABLE)) &&
+       dyn->rs.depth_bias.enable) {
+
       bool dbias_is_int =
          (dyn->rs.depth_bias.representation ==
           VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT) ||
