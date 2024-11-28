@@ -764,7 +764,7 @@
         "description": "nir,zink,asahi: support passing through gl_PrimitiveID",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d0342e28b32d7aa4b25cf045ac9933348ec053a9",
         "notes": null
