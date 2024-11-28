@@ -1134,6 +1134,9 @@ format_is_supported(struct panvk_physical_device *physical_device,
                     const struct panfrost_format fmt,
                     enum pipe_format pfmt)
 {
+   if (pfmt == PIPE_FORMAT_NONE)
+      return false;
+
    /* If the format ID is zero, it's not supported. */
    if (!fmt.hw)
       return false;
@@ -1148,58 +1151,45 @@ format_is_supported(struct panvk_physical_device *physical_device,
          return false;
    }
 
+   /* 3byte formats are not supported by the buffer <-> image copy helpers. */
+   if (util_format_get_blocksize(pfmt) == 3)
+      return false;
+
    return true;
 }
 
-static void
-get_format_properties(struct panvk_physical_device *physical_device,
-                      VkFormat format, VkFormatProperties *out_properties)
+static VkFormatFeatureFlags
+get_image_format_features(struct panvk_physical_device *physical_device,
+                          VkFormat format)
 {
-   VkFormatFeatureFlags tex = 0, buffer = 0;
+   VkFormatFeatureFlags features = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
+   const struct panfrost_format fmt = physical_device->formats.all[pfmt];
    unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
 
-   if (pfmt == PIPE_FORMAT_NONE)
-      goto end;
-
-   const struct panfrost_format fmt = physical_device->formats.all[pfmt];
-
    if (!format_is_supported(physical_device, fmt, pfmt))
-      goto end;
-
-   /* 3byte formats are not supported by the buffer <-> image copy helpers. */
-   if (util_format_get_blocksize(pfmt) == 3)
-      goto end;
-
-   /* Reject sRGB formats (see
-    * https://github.com/KhronosGroup/Vulkan-Docs/issues/2214).
-    */
-   if ((fmt.bind & PAN_BIND_VERTEX_BUFFER) && !util_format_is_srgb(pfmt))
-      buffer |= VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT;
+      return 0;
 
    if (fmt.bind & PAN_BIND_SAMPLER_VIEW) {
-      tex |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT |
-             VK_FORMAT_FEATURE_TRANSFER_DST_BIT |
-             VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
-             VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT |
-             VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT;
+      features |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT |
+                  VK_FORMAT_FEATURE_TRANSFER_DST_BIT |
+                  VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                  VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT |
+                  VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT;
 
       if (arch >= 10)
-         tex |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT;
+         features |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT;
 
       /* Integer formats only support nearest filtering */
       if (!util_format_is_scaled(pfmt) && !util_format_is_pure_integer(pfmt))
-         tex |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+         features |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
 
-      if (!util_format_is_depth_or_stencil(pfmt))
-         buffer |= VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT;
-
-      tex |= VK_FORMAT_FEATURE_BLIT_SRC_BIT;
+      features |= VK_FORMAT_FEATURE_BLIT_SRC_BIT;
    }
 
    if (fmt.bind & PAN_BIND_RENDER_TARGET) {
-      tex |= VK_FORMAT_FEATURE_BLIT_DST_BIT;
-      tex |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+      features |= VK_FORMAT_FEATURE_BLIT_DST_BIT;
+      features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 
       /* SNORM rendering isn't working yet (nir_lower_blend bugs), disable for
        * now.
@@ -1207,26 +1197,49 @@ get_format_properties(struct panvk_physical_device *physical_device,
        * XXX: Enable once fixed.
        */
       if (!util_format_is_snorm(pfmt)) {
-         tex |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-         tex |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
+         features |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+         features |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
       }
-
-      if (!util_format_is_depth_and_stencil(pfmt))
-         buffer |= VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT;
    }
 
-   if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT) {
-      buffer |= VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
-      tex |= VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
-   }
+   if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
+      features |= VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
 
    if (fmt.bind & PAN_BIND_DEPTH_STENCIL)
-      tex |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+      features |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-end:
-   out_properties->linearTilingFeatures = tex;
-   out_properties->optimalTilingFeatures = tex;
-   out_properties->bufferFeatures = buffer;
+   return features;
+}
+
+static VkFormatFeatureFlags
+get_buffer_format_features(struct panvk_physical_device *physical_device,
+                           VkFormat format)
+{
+   VkFormatFeatureFlags features = 0;
+   enum pipe_format pfmt = vk_format_to_pipe_format(format);
+   const struct panfrost_format fmt = physical_device->formats.all[pfmt];
+
+   if (!format_is_supported(physical_device, fmt, pfmt))
+      return 0;
+
+   /* Reject sRGB formats (see
+    * https://github.com/KhronosGroup/Vulkan-Docs/issues/2214).
+    */
+   if ((fmt.bind & PAN_BIND_VERTEX_BUFFER) && !util_format_is_srgb(pfmt))
+      features |= VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT;
+
+   if ((fmt.bind & PAN_BIND_SAMPLER_VIEW) &&
+       !util_format_is_depth_or_stencil(pfmt))
+      features |= VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT;
+
+   if ((fmt.bind & PAN_BIND_RENDER_TARGET) &&
+       !util_format_is_depth_and_stencil(pfmt))
+      features |= VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT;
+
+   if (pfmt == PIPE_FORMAT_R32_UINT || pfmt == PIPE_FORMAT_R32_SINT)
+      features |= VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
+
+   return features;
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -1236,8 +1249,16 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
 
-   get_format_properties(physical_device, format,
-                         &pFormatProperties->formatProperties);
+   VkFormatFeatureFlags tex =
+      get_image_format_features(physical_device, format);
+   VkFormatFeatureFlags buffer =
+      get_buffer_format_features(physical_device, format);
+
+   pFormatProperties->formatProperties = (VkFormatProperties){
+      .linearTilingFeatures = tex,
+      .optimalTilingFeatures = tex,
+      .bufferFeatures = buffer,
+   };
 
    VkDrmFormatModifierPropertiesListEXT *list = vk_find_struct(
       pFormatProperties->pNext, DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT);
@@ -1263,15 +1284,12 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
                             VkImageFormatProperties *pImageFormatProperties,
                             VkFormatFeatureFlags *p_feature_flags)
 {
-   VkFormatProperties format_props;
    VkFormatFeatureFlags format_feature_flags;
    VkExtent3D maxExtent;
    uint32_t maxMipLevels;
    uint32_t maxArraySize;
    VkSampleCountFlags sampleCounts = VK_SAMPLE_COUNT_1_BIT;
    enum pipe_format format = vk_format_to_pipe_format(info->format);
-
-   get_format_properties(physical_device, info->format, &format_props);
 
    const VkImageStencilUsageCreateInfo *stencil_usage_info =
       vk_find_struct_const(info->pNext, IMAGE_STENCIL_USAGE_CREATE_INFO);
@@ -1281,10 +1299,12 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
 
    switch (info->tiling) {
    case VK_IMAGE_TILING_LINEAR:
-      format_feature_flags = format_props.linearTilingFeatures;
+      format_feature_flags =
+         get_image_format_features(physical_device, info->format);
       break;
    case VK_IMAGE_TILING_OPTIMAL:
-      format_feature_flags = format_props.optimalTilingFeatures;
+      format_feature_flags =
+         get_image_format_features(physical_device, info->format);
       break;
    case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT: {
       const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *mod_info =
@@ -1301,10 +1321,8 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
       if (util_format_is_depth_or_stencil(format))
          goto unsupported;
 
-      assert(format_props.optimalTilingFeatures ==
-             format_props.linearTilingFeatures);
-
-      format_feature_flags = format_props.linearTilingFeatures;
+      format_feature_flags =
+         get_image_format_features(physical_device, info->format);
       break;
    }
    default:
