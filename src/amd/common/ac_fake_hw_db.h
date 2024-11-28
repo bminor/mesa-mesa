@@ -18,7 +18,7 @@
 #define AMDGPU_FAMILY_RV         142
 #define AMDGPU_FAMILY_NV         143
 #else
-#include "amdgpu_drm.h"
+#include "drm-uapi/amdgpu_drm.h"
 #endif
 
 typedef void (*gpu_init_func)(struct radeon_info *info);
