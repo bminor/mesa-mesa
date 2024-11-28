@@ -365,9 +365,17 @@ load_push_constant(nir_builder *b, apply_layout_state *state, nir_intrinsic_inst
 
    const unsigned max_push_constant = sizeof(state->args->ac.inline_push_const_mask) * 8u;
 
+   nir_component_mask_t comps_read = nir_def_components_read(&intrin->def);
+
    nir_def *data[NIR_MAX_VEC_COMPONENTS * 2];
    unsigned num_loads = 0;
    for (unsigned start = 0; start < count;) {
+      if (!(comps_read & BITFIELD64_BIT(start >> (bit_size == 64 ? 1 : 0)))) {
+         data[num_loads++] = nir_undef(b, 1, 32);
+         start += 1;
+         continue;
+      }
+
       /* Try to use inline push constants when possible. */
       unsigned inline_idx = const_offset + start;
       if (const_offset != -1 && inline_idx < max_push_constant &&
