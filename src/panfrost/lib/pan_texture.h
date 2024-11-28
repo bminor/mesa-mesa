@@ -404,6 +404,14 @@ struct pan_block_size panfrost_renderblock_size(uint64_t modifier,
 unsigned GENX(panfrost_estimate_texture_payload_size)(
    const struct pan_image_view *iview);
 
+#if PAN_ARCH >= 7
+void GENX(panfrost_texture_swizzle_replicate_x)(struct pan_image_view *iview);
+#endif
+
+#if PAN_ARCH == 7
+void GENX(panfrost_texture_afbc_reswizzle)(struct pan_image_view *iview);
+#endif
+
 void GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
                                 const struct panfrost_ptr *payload);
 #endif

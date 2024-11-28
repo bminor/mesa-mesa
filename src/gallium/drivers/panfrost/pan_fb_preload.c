@@ -891,12 +891,22 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
                           bool zs, unsigned *tex_count_out)
 {
    const struct pan_image_view *views[8];
-   struct pan_image_view patched_s_view;
+   struct pan_image_view patched_views[8];
    unsigned tex_count = 0;
+   unsigned patched_count = 0;
 
    if (zs) {
-      if (fb->zs.preload.z)
-         views[tex_count++] = fb->zs.view.zs;
+      if (fb->zs.preload.z) {
+         const struct pan_image_view *view = fb->zs.view.zs;
+#if PAN_ARCH >= 7
+         struct pan_image_view *pview = &patched_views[patched_count++];
+         *pview = *view;
+         /* v7+ doesn't have an _RRRR component order. */
+         GENX(panfrost_texture_swizzle_replicate_x)(pview);
+         view = pview;
+#endif
+         views[tex_count++] = view;
+      }
 
       if (fb->zs.preload.s) {
          const struct pan_image_view *view = fb->zs.view.s ?: fb->zs.view.zs;
@@ -914,17 +924,39 @@ pan_preload_emit_textures(struct pan_pool *pool, const struct pan_fb_info *fb,
             break;
          }
 
+#if PAN_ARCH >= 7
+         struct pan_image_view *pview = &patched_views[patched_count++];
+         *pview = *view;
+         pview->format = fmt;
+         /* v7+ doesn't have an _RRRR component order. */
+         GENX(panfrost_texture_swizzle_replicate_x)(pview);
+         view = pview;
+#else
          if (fmt != view->format) {
-            patched_s_view = *view;
-            patched_s_view.format = fmt;
-            view = &patched_s_view;
+            struct pan_image_view *pview = &patched_views[patched_count++];
+            *pview = *view;
+            pview->format = fmt;
+            view = pview;
          }
+#endif
          views[tex_count++] = view;
       }
    } else {
       for (unsigned i = 0; i < fb->rt_count; i++) {
-         if (fb->rts[i].preload)
-            views[tex_count++] = fb->rts[i].view;
+         if (fb->rts[i].preload) {
+            const struct pan_image_view *view = fb->rts[i].view;
+#if PAN_ARCH == 7
+            /* v7 requires AFBC reswizzle. */
+            if (!panfrost_format_is_yuv(view->format) &&
+                panfrost_format_supports_afbc(PAN_ARCH, view->format)) {
+               struct pan_image_view *pview = &patched_views[patched_count++];
+               *pview = *view;
+               GENX(panfrost_texture_afbc_reswizzle)(pview);
+               view = pview;
+            }
+#endif
+            views[tex_count++] = view;
+         }
       }
    }
 

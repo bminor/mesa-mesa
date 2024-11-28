@@ -1619,6 +1619,19 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       .buf.size = buf_size,
    };
 
+#if PAN_ARCH >= 7
+   /* v7+ doesn't have an _RRRR component order. */
+   if (util_format_is_depth_or_stencil(format))
+      GENX(panfrost_texture_swizzle_replicate_x)(&iview);
+#endif
+#if PAN_ARCH == 7
+   /* v7 requires AFBC reswizzle */
+   if (!util_format_is_depth_or_stencil(format) &&
+       !panfrost_format_is_yuv(format) &&
+       panfrost_format_supports_afbc(PAN_ARCH, format))
+      GENX(panfrost_texture_afbc_reswizzle)(&iview);
+#endif
+
    panfrost_set_image_view_planes(&iview, texture);
 
    unsigned size = (PAN_ARCH <= 5 ? pan_size(TEXTURE) : 0) +

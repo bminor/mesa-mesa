@@ -90,6 +90,19 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
             },
       };
 
+#if PAN_ARCH >= 7
+      /* v7+ doesn't have an _RRRR component order. */
+      if (util_format_is_depth_or_stencil(pfmt))
+         GENX(panfrost_texture_swizzle_replicate_x)(&pview);
+#endif
+#if PAN_ARCH == 7
+      /* v7 requires AFBC reswizzle. */
+      if (!util_format_is_depth_or_stencil(pfmt) &&
+          !panfrost_format_is_yuv(pfmt) &&
+          panfrost_format_supports_afbc(PAN_ARCH, pfmt))
+         GENX(panfrost_texture_afbc_reswizzle)(&pview);
+#endif
+
       pan_image_layout_init(arch, &plane.layout, NULL);
 
       struct panvk_pool_alloc_info alloc_info = {

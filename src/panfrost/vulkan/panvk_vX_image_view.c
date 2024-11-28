@@ -100,7 +100,17 @@ prepare_tex_descs(struct panvk_image_view *view)
       };
 
       util_format_compose_swizzles(r001, view->pview.swizzle, pview.swizzle);
+
+#if PAN_ARCH >= 7
+      GENX(panfrost_texture_swizzle_replicate_x)(&pview);
+#endif
    }
+#if PAN_ARCH == 7
+   /* v7 requires AFBC reswizzle. */
+   else if (!panfrost_format_is_yuv(view->pview.format) &&
+            panfrost_format_supports_afbc(PAN_ARCH, view->pview.format))
+      GENX(panfrost_texture_afbc_reswizzle)(&pview);
+#endif
 
    /* If the view contains both stencil and depth, we need to keep only the
     * depth. We'll create another texture with only the stencil.
