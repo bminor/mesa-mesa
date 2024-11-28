@@ -289,14 +289,8 @@ agx_print_result(struct agx_device *dev, struct agx_context *ctx,
       agx_debug_fault(dev, info->address);
    }
 
-   /* Obscurely, we need to tolerate faults to pass the robustness parts of the
-    * CTS, so we can't assert that we don't fault. But it's helpful for any sort
-    * of debugging to crash on fault.
-    */
-   if (dev->debug) {
-      assert(info->status == DRM_ASAHI_STATUS_COMPLETE ||
-             info->status == DRM_ASAHI_STATUS_KILLED);
-   }
+   assert(info->status == DRM_ASAHI_STATUS_COMPLETE ||
+          info->status == DRM_ASAHI_STATUS_KILLED);
 }
 
 static void
