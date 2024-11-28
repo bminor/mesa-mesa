@@ -4418,6 +4418,8 @@ typedef struct nir_shader_compiler_options {
     * Return the cost of an instruction that could be moved into the next
     * shader. If the cost of all instructions in an expression is <=
     * varying_expression_max_cost(), the instruction is moved.
+    *
+    * When this callback isn't set, nir_opt_varyings uses its own version.
     */
    unsigned (*varying_estimate_instr_cost)(struct nir_instr *instr);
 } nir_shader_compiler_options;

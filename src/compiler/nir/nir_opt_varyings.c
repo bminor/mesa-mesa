@@ -663,6 +663,7 @@ struct linkage_info {
    nir_builder producer_builder;
    nir_builder consumer_builder;
    unsigned max_varying_expression_cost;
+   unsigned (*varying_estimate_instr_cost)(struct nir_instr *instr);
 
    /* Memory context for linear_alloc_child (fast allocation). */
    void *linear_mem_ctx;
@@ -2384,11 +2385,8 @@ is_uniform_expression(nir_instr *instr, struct is_uniform_expr_state *state)
    }
 
    if (!instr->pass_flags) {
-      const nir_shader_compiler_options *options =
-         state->linkage->producer_builder.shader->options;
-
-      state->cost += options->varying_estimate_instr_cost ?
-                        options->varying_estimate_instr_cost(instr) : 1;
+      state->cost += state->linkage->varying_estimate_instr_cost ?
+                        state->linkage->varying_estimate_instr_cost(instr) : 1;
       instr->pass_flags = 1;
       return nir_foreach_src(instr, src_is_uniform_expression, state);
    }
@@ -4744,6 +4742,122 @@ compact_varyings(struct linkage_info *linkage,
  * PUTTING IT ALL TOGETHER
  ******************************************************************/
 
+/* A costing function determining the cost of a uniform expression to determine
+ * whether it's worth propagating from output stores to the next shader stage.
+ * This tries to model instruction cost of a scalar desktop GPU.
+ *
+ * It's used by uniform expression propagation when drivers provide a cost
+ * limit for such an optimization but don't provide their own costing function,
+ * which are the majority of drivers.
+ */
+static unsigned
+default_varying_estimate_instr_cost(nir_instr *instr)
+{
+   unsigned dst_bit_size, src_bit_size, num_dst_dwords;
+   nir_op alu_op;
+
+   switch (instr->type) {
+   case nir_instr_type_alu:
+      dst_bit_size = nir_instr_as_alu(instr)->def.bit_size;
+      src_bit_size = nir_instr_as_alu(instr)->src[0].src.ssa->bit_size;
+      alu_op = nir_instr_as_alu(instr)->op;
+      num_dst_dwords = DIV_ROUND_UP(dst_bit_size, 32);
+
+      switch (alu_op) {
+      /* Moves are free. */
+      case nir_op_mov:
+      case nir_op_vec2:
+      case nir_op_vec3:
+      case nir_op_vec4:
+      case nir_op_vec5:
+      case nir_op_vec8:
+      case nir_op_vec16:
+      /* These are usually folded into FP instructions as src or dst
+       * modifiers.
+       */
+      case nir_op_fabs:
+      case nir_op_fneg:
+      case nir_op_fsat:
+         return 0;
+
+      /* 16-bit multiplication should be cheap. Greater sizes not so much. */
+      case nir_op_imul:
+      case nir_op_umul_low:
+      case nir_op_imul_2x32_64:
+      case nir_op_umul_2x32_64:
+         return dst_bit_size <= 16 ? 1 : 4 * num_dst_dwords;
+
+      /* High bits of 64-bit multiplications. */
+      case nir_op_imul_high:
+      case nir_op_umul_high:
+      /* Lowered into multiple instructions typically. */
+      case nir_op_fsign:
+         return 4;
+
+      /* Transcendental opcodes typically run at 1/4 rate of FMA. */
+      case nir_op_fexp2:
+      case nir_op_flog2:
+      case nir_op_frcp:
+      case nir_op_frsq:
+      case nir_op_fsqrt:
+      case nir_op_fsin:
+      case nir_op_fcos:
+      case nir_op_fsin_amd:
+      case nir_op_fcos_amd:
+         /* FP64 is usually much slower. */
+         return dst_bit_size == 64 ? 32 : 4;
+
+      case nir_op_fpow:
+         return 4 + 1 + 4; /* log2 + mul + exp2 */
+
+      /* Integer division is slow. */
+      case nir_op_idiv:
+      case nir_op_udiv:
+      case nir_op_imod:
+      case nir_op_umod:
+      case nir_op_irem:
+         return dst_bit_size == 64 ? 80 : 40;
+
+      case nir_op_fdiv:
+         return dst_bit_size == 64 ? 80 : 5; /* FP16 & FP32: rcp + mul */
+
+      case nir_op_fmod:
+      case nir_op_frem:
+         return dst_bit_size == 64 ? 80 : 8;
+
+      default:
+         /* FP64 is usually much slower. */
+         if ((dst_bit_size == 64 &&
+              nir_op_infos[alu_op].output_type & nir_type_float) ||
+             (src_bit_size == 64 &&
+              nir_op_infos[alu_op].input_types[0] & nir_type_float))
+            return 16;
+
+         /* 1 per 32-bit result. */
+         return DIV_ROUND_UP(MAX2(dst_bit_size, src_bit_size), 32);
+      }
+
+   case nir_instr_type_intrinsic:
+      dst_bit_size = nir_instr_as_intrinsic(instr)->def.bit_size;
+      num_dst_dwords = DIV_ROUND_UP(dst_bit_size, 32);
+
+      /* This can only be a uniform load. Other intrinsics and variables are
+       * rejected before this is called.
+       */
+      switch (nir_instr_as_intrinsic(instr)->intrinsic) {
+      case nir_intrinsic_load_deref:
+         /* Uniform loads can appear fast if latency hiding is effective. */
+         return 2 * num_dst_dwords;
+
+      default:
+         unreachable("unexpected intrinsic");
+      }
+
+   default:
+      unreachable("unexpected instr type");
+   }
+}
+
 static void
 init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
              unsigned max_uniform_components, unsigned max_ubos_per_stage,
@@ -4773,6 +4887,10 @@ init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
       .max_varying_expression_cost =
          producer->options->varying_expression_max_cost ?
          producer->options->varying_expression_max_cost(producer, consumer) : 0,
+      .varying_estimate_instr_cost =
+         producer->options->varying_estimate_instr_cost ?
+            producer->options->varying_estimate_instr_cost :
+            default_varying_estimate_instr_cost,
 
       .linear_mem_ctx = linear_context(ralloc_context(NULL)),
    };
