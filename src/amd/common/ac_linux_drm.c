@@ -152,6 +152,35 @@ int ac_drm_bo_va_op_raw(int device_fd, uint32_t bo_handle, uint64_t offset, uint
    return r;
 }
 
+int ac_drm_bo_va_op_raw2(int device_fd, uint32_t bo_handle, uint64_t offset, uint64_t size,
+                         uint64_t addr, uint64_t flags, uint32_t ops,
+                         uint32_t vm_timeline_syncobj_out, uint64_t vm_timeline_point,
+                         uint64_t input_fence_syncobj_handles, uint32_t num_syncobj_handles)
+{
+   struct drm_amdgpu_gem_va va;
+   int r;
+
+   if (ops != AMDGPU_VA_OP_MAP && ops != AMDGPU_VA_OP_UNMAP &&
+       ops != AMDGPU_VA_OP_REPLACE && ops != AMDGPU_VA_OP_CLEAR)
+      return -EINVAL;
+
+   memset(&va, 0, sizeof(va));
+   va.handle = bo_handle;
+   va.operation = ops;
+   va.flags = flags;
+   va.va_address = addr;
+   va.offset_in_bo = offset;
+   va.map_size = size;
+   va.vm_timeline_syncobj_out = vm_timeline_syncobj_out;
+   va.vm_timeline_point = vm_timeline_point;
+   va.input_fence_syncobj_handles = input_fence_syncobj_handles;
+   va.num_syncobj_handles = num_syncobj_handles;
+
+   r = drm_ioctl_write_read(device_fd, DRM_AMDGPU_GEM_VA, &va, sizeof(va));
+
+   return r;
+}
+
 int ac_drm_cs_ctx_create2(int device_fd, uint32_t priority, uint32_t *ctx_handle)
 {
    union drm_amdgpu_ctx args;
@@ -640,4 +669,72 @@ int ac_drm_vm_unreserve_vmid(int device_fd, uint32_t flags)
    vm.in.flags = flags;
 
    return drm_ioctl_write_read(device_fd, DRM_AMDGPU_VM, &vm, sizeof(vm));
+}
+
+int ac_drm_create_userqueue(int device_fd, uint32_t ip_type, uint32_t doorbell_handle,
+                            uint32_t doorbell_offset, uint64_t queue_va, uint64_t queue_size,
+                            uint64_t wptr_va, uint64_t rptr_va, void *mqd_in, uint32_t *queue_id)
+{
+   int ret;
+   union drm_amdgpu_userq userq;
+   uint64_t mqd_size;
+
+   switch (ip_type) {
+   case AMDGPU_HW_IP_GFX:
+      mqd_size = sizeof(struct drm_amdgpu_userq_mqd_gfx11);
+      break;
+   case AMDGPU_HW_IP_DMA:
+      mqd_size = sizeof(struct drm_amdgpu_userq_mqd_sdma_gfx11);
+      break;
+   case AMDGPU_HW_IP_COMPUTE:
+      mqd_size = sizeof(struct drm_amdgpu_userq_mqd_compute_gfx11);
+      break;
+      default:
+      return -EINVAL;
+   }
+
+   memset(&userq, 0, sizeof(userq));
+
+   userq.in.op = AMDGPU_USERQ_OP_CREATE;
+   userq.in.ip_type = ip_type;
+
+   userq.in.doorbell_handle = doorbell_handle;
+   userq.in.doorbell_offset = doorbell_offset;
+
+   userq.in.queue_va = queue_va;
+   userq.in.queue_size = queue_size;
+   userq.in.wptr_va = wptr_va;
+   userq.in.rptr_va = rptr_va;
+
+   userq.in.mqd = (uintptr_t)mqd_in;
+   userq.in.mqd_size = mqd_size;
+
+   ret = drm_ioctl_write_read(device_fd, DRM_AMDGPU_USERQ,
+                              &userq, sizeof(userq));
+   *queue_id = userq.out.queue_id;
+
+   return ret;
+}
+
+int ac_drm_free_userqueue(int device_fd, uint32_t queue_id)
+{
+   union drm_amdgpu_userq userq;
+
+   memset(&userq, 0, sizeof(userq));
+   userq.in.op = AMDGPU_USERQ_OP_FREE;
+   userq.in.queue_id = queue_id;
+
+   return drm_ioctl_write_read(device_fd, DRM_AMDGPU_USERQ, &userq, sizeof(userq));
+}
+
+int ac_drm_userq_signal(int device_fd, struct drm_amdgpu_userq_signal *signal_data)
+{
+   return drm_ioctl_write_read(device_fd, DRM_AMDGPU_USERQ_SIGNAL,
+                               signal_data, sizeof(struct drm_amdgpu_userq_signal));
+}
+
+int ac_drm_userq_wait(int device_fd, struct drm_amdgpu_userq_wait *wait_data)
+{
+   return drm_ioctl_write_read(device_fd, DRM_AMDGPU_USERQ_WAIT, wait_data,
+                               sizeof(struct drm_amdgpu_userq_wait));
 }

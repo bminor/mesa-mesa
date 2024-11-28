@@ -43,6 +43,11 @@ PROC int ac_drm_bo_va_op(int device_fd, uint32_t bo_handle, uint64_t offset, uin
                          uint64_t addr, uint64_t flags, uint32_t ops) TAIL;
 PROC int ac_drm_bo_va_op_raw(int device_fd, uint32_t bo_handle, uint64_t offset, uint64_t size,
                              uint64_t addr, uint64_t flags, uint32_t ops) TAIL;
+PROC int ac_drm_bo_va_op_raw2(int device_fd, uint32_t bo_handle, uint64_t offset, uint64_t size,
+                              uint64_t addr, uint64_t flags, uint32_t ops,
+                              uint32_t vm_timeline_syncobj_out, uint64_t vm_timeline_point,
+                              uint64_t input_fence_syncobj_handles,
+                              uint32_t num_syncobj_handles) TAIL;
 PROC int ac_drm_cs_ctx_create2(int device_fd, uint32_t priority, uint32_t *ctx_handle) TAIL;
 PROC int ac_drm_cs_ctx_free(int device_fd, uint32_t ctx_handle) TAIL;
 PROC int ac_drm_cs_ctx_stable_pstate(int device_fd, uint32_t ctx_handle, uint32_t op,
@@ -90,6 +95,13 @@ PROC int ac_drm_query_video_caps_info(int device_fd, unsigned cap_type, unsigned
 PROC int ac_drm_query_gpuvm_fault_info(int device_fd, unsigned size, void *value) TAIL;
 PROC int ac_drm_vm_reserve_vmid(int device_fd, uint32_t flags) TAIL;
 PROC int ac_drm_vm_unreserve_vmid(int device_fd, uint32_t flags) TAIL;
+PROC int ac_drm_create_userqueue(int device_fd, uint32_t ip_type, uint32_t doorbell_handle,
+                                 uint32_t doorbell_offset, uint64_t queue_va, uint64_t queue_size,
+                                 uint64_t wptr_va, uint64_t rptr_va, void *mqd_in,
+                                 uint32_t *queue_id) TAIL;
+PROC int ac_drm_free_userqueue(int device_fd, uint32_t queue_id) TAIL;
+PROC int ac_drm_userq_signal(int device_fd, struct drm_amdgpu_userq_signal *signal_data) TAIL;
+PROC int ac_drm_userq_wait(int device_fd, struct drm_amdgpu_userq_wait *wait_data) TAIL;
 
 #ifdef __cplusplus
 }
