@@ -3869,17 +3869,7 @@ agx_ensure_cmdbuf_has_space(struct agx_batch *batch, struct agx_encoder *enc,
    struct agx_ptr T = agx_pool_alloc_aligned(&batch->pool, size, 256);
 
    /* Jump from the old command buffer to the new command buffer */
-   if (vdm) {
-      agx_pack(enc->current, VDM_STREAM_LINK, cfg) {
-         cfg.target_lo = T.gpu & BITFIELD_MASK(32);
-         cfg.target_hi = T.gpu >> 32;
-      }
-   } else {
-      agx_pack(enc->current, CDM_STREAM_LINK, cfg) {
-         cfg.target_lo = T.gpu & BITFIELD_MASK(32);
-         cfg.target_hi = T.gpu >> 32;
-      }
-   }
+   agx_cs_jump((uint32_t *)enc->current, T.gpu, vdm);
 
    /* Swap out the command buffer */
    enc->current = T.cpu;

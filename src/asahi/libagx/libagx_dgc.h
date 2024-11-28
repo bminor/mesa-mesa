@@ -231,6 +231,12 @@ agx_vdm_jump(global_ uint32_t *out, uint64_t target)
 }
 
 static inline global_ uint32_t *
+agx_cs_jump(global_ uint32_t *out, uint64_t target, bool vdm)
+{
+   return vdm ? agx_vdm_jump(out, target) : agx_cdm_jump(out, target);
+}
+
+static inline global_ uint32_t *
 agx_cdm_call(global_ uint32_t *out, uint64_t target)
 {
    agx_push(out, CDM_STREAM_LINK, cfg) {

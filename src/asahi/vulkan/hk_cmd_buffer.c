@@ -812,11 +812,7 @@ hk_ensure_cs_has_space(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    struct agx_ptr T = hk_pool_alloc(cmd, size, 256);
 
    /* Jump from the old control stream to the new control stream */
-   if (vdm) {
-      agx_vdm_jump(cs->current, T.gpu);
-   } else {
-      agx_cdm_jump(cs->current, T.gpu);
-   }
+   agx_cs_jump(cs->current, T.gpu, vdm);
 
    /* Swap out the control stream */
    cs->current = T.cpu;
