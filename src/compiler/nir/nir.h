@@ -4330,15 +4330,6 @@ typedef struct nir_shader_compiler_options {
    uint8_t support_indirect_inputs;
    uint8_t support_indirect_outputs;
 
-   /**
-    * Remove varying loaded from uniform, let fragment shader load the
-    * uniform directly. GPU passing varying by memory can benifit from it
-    * for sure; but GPU passing varying by on chip resource may not.
-    * Because it saves on chip resource but may increase memory pressure when
-    * fragment task is far more than vertex one, so better left it disabled.
-    */
-   bool lower_varying_from_uniform;
-
    /** store the variable offset into the instrinsic range_base instead
     *  of adding it to the image index.
     */
@@ -4422,6 +4413,20 @@ typedef struct nir_shader_compiler_options {
     * When this callback isn't set, nir_opt_varyings uses its own version.
     */
    unsigned (*varying_estimate_instr_cost)(struct nir_instr *instr);
+
+   /**
+    * When the varying_expression_max_cost callback isn't set, this specifies
+    * the maximum cost of a uniform expression that is allowed to be moved
+    * from output stores into the next shader stage to eliminate those output
+    * stores and corresponding inputs.
+    *
+    * 0 only allows propagating constants written to output stores to
+    * the next shader.
+    *
+    * At least 2 is required for moving a uniform stored in an output into
+    * the next shader according to default_varying_estimate_instr_cost.
+    */
+   unsigned max_varying_expression_cost;
 } nir_shader_compiler_options;
 
 typedef struct nir_shader {

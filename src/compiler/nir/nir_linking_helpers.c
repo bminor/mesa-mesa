@@ -1410,7 +1410,7 @@ nir_link_opt_varyings(nir_shader *producer, nir_shader *consumer)
 
       nir_scalar uni_scalar;
       if (is_direct_uniform_load(ssa, &uni_scalar)) {
-         if (consumer->options->lower_varying_from_uniform) {
+         if (consumer->options->max_varying_expression_cost >= 2) {
             progress |= replace_varying_input_by_uniform_load(consumer, intr,
                                                               &uni_scalar);
             continue;

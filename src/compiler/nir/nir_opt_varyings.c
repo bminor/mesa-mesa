@@ -4886,7 +4886,8 @@ init_linkage(nir_shader *producer, nir_shader *consumer, bool spirv,
 
       .max_varying_expression_cost =
          producer->options->varying_expression_max_cost ?
-         producer->options->varying_expression_max_cost(producer, consumer) : 0,
+            producer->options->varying_expression_max_cost(producer, consumer) :
+            producer->options->max_varying_expression_cost,
       .varying_estimate_instr_cost =
          producer->options->varying_estimate_instr_cost ?
             producer->options->varying_estimate_instr_cost :
