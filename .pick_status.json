@@ -1694,7 +1694,7 @@
         "description": "vdrm+tu+fd: Make cross-device optional",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "06e57e32310f51e752d7798e287400e8edc10312",
         "notes": null
