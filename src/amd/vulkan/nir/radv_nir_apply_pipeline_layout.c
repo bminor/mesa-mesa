@@ -378,6 +378,14 @@ load_push_constant(nir_builder *b, apply_layout_state *state, nir_intrinsic_inst
          continue;
       }
 
+      if (!state->args->ac.push_constants.used) {
+         /* Assume this is an inlined push constant load which was expanded to include dwords which are not inlined. */
+         assert(const_offset != -1);
+         data[num_loads++] = nir_undef(b, 1, 32);
+         start += 1;
+         continue;
+      }
+
       if (!offset) {
          addr = get_scalar_arg(b, 1, state->args->ac.push_constants);
          addr = convert_pointer_to_64_bit(b, state, addr);
