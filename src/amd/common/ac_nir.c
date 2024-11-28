@@ -1653,6 +1653,7 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
 {
    const mem_access_cb_data *cb_data = (mem_access_cb_data *)cb_data_;
    const bool is_load = nir_intrinsic_infos[intrin].has_dest;
+   const bool is_smem = intrin == nir_intrinsic_load_push_constant || (access & ACCESS_SMEM_AMD);
    const uint32_t combined_align = nir_combined_align(align_mul, align_offset);
 
    /* Make 8-bit accesses 16-bit if possible */
@@ -1663,6 +1664,8 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    if (cb_data->use_llvm && access & (ACCESS_COHERENT | ACCESS_VOLATILE) &&
        (intrin == nir_intrinsic_load_global || intrin == nir_intrinsic_store_global))
       max_components = 1;
+   else if (is_smem)
+      max_components = MIN2(512 / bit_size, 16);
 
    nir_mem_access_size_align res;
    res.num_components = MIN2(bytes / (bit_size / 8), max_components);
@@ -1675,7 +1678,6 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
 
    /* Lower 8/16-bit loads to 32-bit, unless it's a VMEM scalar load. */
 
-   const bool is_smem = intrin == nir_intrinsic_load_push_constant || (access & ACCESS_SMEM_AMD);
    const bool support_subdword = res.num_components == 1 && !is_smem &&
                                  (!cb_data->use_llvm || intrin != nir_intrinsic_load_ubo);
 
