@@ -7,7 +7,6 @@
 #pragma once
 
 #include <stddef.h>
-#include "asahi/genxml/agx_pack.h"
 #include "agx_bo.h"
 
 #include "util/u_dynarray.h"
@@ -38,17 +37,6 @@ void agx_pool_init(struct agx_pool *pool, struct agx_device *dev,
                    unsigned create_flags, bool prealloc);
 
 void agx_pool_cleanup(struct agx_pool *pool);
-
-static inline unsigned
-agx_pool_num_bos(struct agx_pool *pool)
-{
-   return util_dynarray_num_elements(&pool->bos, struct agx_bo *);
-}
-
-void agx_pool_get_bo_handles(struct agx_pool *pool, uint32_t *handles);
-
-/* Represents a fat pointer for GPU-mapped memory, returned from the transient
- * allocator and not used for much else */
 
 struct agx_ptr agx_pool_alloc_aligned_with_bo(struct agx_pool *pool, size_t sz,
                                               unsigned alignment,

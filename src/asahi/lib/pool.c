@@ -51,15 +51,6 @@ agx_pool_cleanup(struct agx_pool *pool)
    util_dynarray_fini(&pool->bos);
 }
 
-void
-agx_pool_get_bo_handles(struct agx_pool *pool, uint32_t *handles)
-{
-   unsigned idx = 0;
-   util_dynarray_foreach(&pool->bos, struct agx_bo *, bo) {
-      handles[idx++] = (*bo)->handle;
-   }
-}
-
 struct agx_ptr
 agx_pool_alloc_aligned_with_bo(struct agx_pool *pool, size_t sz,
                                unsigned alignment, struct agx_bo **out_bo)
