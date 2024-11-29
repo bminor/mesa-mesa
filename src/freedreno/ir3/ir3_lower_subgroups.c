@@ -554,9 +554,73 @@ filter_scan_reduce(const nir_instr *instr, const void *data)
    }
 }
 
+typedef nir_def *(*reduce_cluster)(nir_builder *, nir_op, nir_def *);
+
+/* Execute `reduce` for each cluster in the subgroup with only the invocations
+ * in the current cluster active.
+ */
+static nir_def *
+foreach_cluster(nir_builder *b, nir_op op, nir_def *inclusive,
+                unsigned cluster_size, reduce_cluster reduce)
+{
+   nir_def *id = nir_load_subgroup_invocation(b);
+   nir_def *cluster_size_imm = nir_imm_int(b, cluster_size);
+
+   /* cur_cluster_end = cluster_size;
+    * while (true) {
+    *    if (gl_SubgroupInvocationID < cur_cluster_end) {
+    *       cluster_val = reduce(inclusive);
+    *       break;
+    *    }
+    *
+    *    cur_cluster_end += cluster_size;
+    * }
+    */
+   nir_variable *cur_cluster_end_var =
+      nir_local_variable_create(b->impl, glsl_uint_type(), "cur_cluster_end");
+   nir_store_var(b, cur_cluster_end_var, cluster_size_imm, 1);
+   nir_variable *cluster_val_var = nir_local_variable_create(
+      b->impl, glsl_type_for_def(inclusive), "cluster_val");
+
+   nir_loop *loop = nir_push_loop(b);
+   {
+      nir_def *cur_cluster_end = nir_load_var(b, cur_cluster_end_var);
+      nir_def *in_cur_cluster = nir_ult(b, id, cur_cluster_end);
+
+      nir_if *nif = nir_push_if(b, in_cur_cluster);
+      {
+         nir_def *reduced = reduce(b, op, inclusive);
+         nir_store_var(b, cluster_val_var, reduced, 1);
+         nir_jump(b, nir_jump_break);
+      }
+      nir_pop_if(b, nif);
+
+      nir_def *next_cluster_end =
+         nir_iadd(b, cur_cluster_end, cluster_size_imm);
+      nir_store_var(b, cur_cluster_end_var, next_cluster_end, 1);
+   }
+   nir_pop_loop(b, loop);
+
+   return nir_load_var(b, cluster_val_var);
+}
+
+static nir_def *
+read_last(nir_builder *b, nir_op op, nir_def *val)
+{
+   return nir_read_getlast_ir3(b, val);
+}
+
+static nir_def *
+reduce_clusters(nir_builder *b, nir_op op, nir_def *val)
+{
+   return nir_reduce_clusters_ir3(b, val, .reduction_op = op);
+}
+
 static nir_def *
 lower_scan_reduce(struct nir_builder *b, nir_instr *instr, void *data)
 {
+   struct ir3_shader_variant *v = data;
+
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
    unsigned bit_size = intrin->def.bit_size;
    assert(bit_size < 64);
@@ -566,9 +630,28 @@ lower_scan_reduce(struct nir_builder *b, nir_instr *instr, void *data)
    nir_def *ident = nir_build_imm(b, 1, bit_size, &ident_val);
    nir_def *inclusive = intrin->src[0].ssa;
    nir_def *exclusive = ident;
+   unsigned cluster_size = nir_intrinsic_has_cluster_size(intrin)
+                              ? nir_intrinsic_cluster_size(intrin)
+                              : 0;
+   bool clustered = cluster_size != 0;
+   unsigned subgroup_size, max_subgroup_size;
+   ir3_shader_get_subgroup_size(v->compiler, &v->shader_options, v->type,
+                                &subgroup_size, &max_subgroup_size);
+
+   if (subgroup_size == 0) {
+      subgroup_size = max_subgroup_size;
+   }
+
+   /* Should have been lowered by nir_lower_subgroups. */
+   assert(cluster_size != 1);
+
+   /* Only clustered reduce operations are supported. */
+   assert(intrin->intrinsic == nir_intrinsic_reduce || !clustered);
+
+   unsigned max_brcst_cluster_size = clustered ? MIN2(cluster_size, 8) : 8;
 
    for (unsigned brcst_cluster_size = 2;
-        brcst_cluster_size <= 8; brcst_cluster_size *= 2) {
+        brcst_cluster_size <= max_brcst_cluster_size; brcst_cluster_size *= 2) {
       nir_def *brcst = nir_brcst_active_ir3(b, ident, inclusive,
                                             .cluster_size = brcst_cluster_size);
       inclusive = nir_build_alu2(b, op, inclusive, brcst);
@@ -579,7 +662,24 @@ lower_scan_reduce(struct nir_builder *b, nir_instr *instr, void *data)
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_reduce:
-      return nir_reduce_clusters_ir3(b, inclusive, .reduction_op = op);
+      if (!clustered || cluster_size >= subgroup_size) {
+         /* The normal (non-clustered) path does a full reduction of all brcst
+          * clusters.
+          */
+         return nir_reduce_clusters_ir3(b, inclusive, .reduction_op = op);
+      } else if (cluster_size <= 8) {
+         /* After the brcsts have been executed, each brcst cluster has its
+          * reduction in its last fiber. So if the cluster size is at most the
+          * maximum brcst cluster size (8) we can simply iterate the clusters
+          * and read the value from their last fibers.
+          */
+         return foreach_cluster(b, op, inclusive, cluster_size, read_last);
+      } else {
+         /* For larger clusters, we do a normal reduction for every cluster.
+          */
+         return foreach_cluster(b, op, inclusive, cluster_size,
+                                reduce_clusters);
+      }
    case nir_intrinsic_inclusive_scan:
       return nir_inclusive_scan_clusters_ir3(b, inclusive, .reduction_op = op);
    case nir_intrinsic_exclusive_scan:
@@ -597,7 +697,7 @@ ir3_nir_opt_subgroups(nir_shader *nir, struct ir3_shader_variant *v)
       return false;
 
    return nir_shader_lower_instructions(nir, filter_scan_reduce,
-                                        lower_scan_reduce, NULL);
+                                        lower_scan_reduce, v);
 }
 
 bool
@@ -608,8 +708,17 @@ ir3_nir_lower_subgroups_filter(const nir_instr *instr, const void *data)
 
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
+   const struct ir3_compiler *compiler = data;
+
    switch (intrin->intrinsic) {
    case nir_intrinsic_reduce:
+      if (nir_intrinsic_cluster_size(intrin) == 1) {
+         return true;
+      }
+      if (nir_intrinsic_cluster_size(intrin) > 0 && !compiler->has_getfiberid) {
+         return true;
+      }
+      FALLTHROUGH;
    case nir_intrinsic_inclusive_scan:
    case nir_intrinsic_exclusive_scan:
       switch (nir_intrinsic_reduction_op(intrin)) {
