@@ -50,4 +50,7 @@ void radv_bo_destroy(struct radv_device *device, struct vk_object_base *object, 
 VkResult radv_bo_from_fd(struct radv_device *device, int fd, unsigned priority, struct radv_device_memory *mem,
                          uint64_t *alloc_size);
 
+VkResult radv_bo_from_ptr(struct radv_device *device, void *host_ptr, uint64_t alloc_size, unsigned priority,
+                          struct radv_device_memory *mem);
+
 #endif /* RADV_BUFFER_H */

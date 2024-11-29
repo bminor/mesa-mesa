@@ -340,3 +340,22 @@ radv_bo_from_fd(struct radv_device *device, int fd, unsigned priority, struct ra
 
    return result;
 }
+
+VkResult
+radv_bo_from_ptr(struct radv_device *device, void *host_ptr, uint64_t alloc_size, unsigned priority,
+                 struct radv_device_memory *mem)
+{
+   struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_instance *instance = radv_physical_device_instance(pdev);
+   struct radeon_winsys *ws = device->ws;
+   VkResult result;
+
+   result = ws->buffer_from_ptr(ws, host_ptr, alloc_size, priority, &mem->bo);
+   if (result != VK_SUCCESS)
+      return result;
+
+   vk_address_binding_report(&instance->vk, &mem->base, radv_buffer_get_va(mem->bo), mem->bo->size,
+                             VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
+
+   return result;
+}

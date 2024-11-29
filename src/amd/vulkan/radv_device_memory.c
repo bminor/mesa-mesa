@@ -177,8 +177,7 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
       }
    } else if (host_ptr_info) {
       assert(host_ptr_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT);
-      result = device->ws->buffer_from_ptr(device->ws, host_ptr_info->pHostPointer, pAllocateInfo->allocationSize,
-                                           priority, &mem->bo);
+      result = radv_bo_from_ptr(device, host_ptr_info->pHostPointer, pAllocateInfo->allocationSize, priority, mem);
       if (result != VK_SUCCESS) {
          goto fail;
       } else {
