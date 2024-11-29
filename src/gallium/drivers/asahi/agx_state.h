@@ -1051,7 +1051,7 @@ static inline void
 agx_batch_add_bo_internal(struct agx_batch *batch, struct agx_bo *bo)
 {
    /* Double the size of the BO list if we run out, this is amortized O(1) */
-   if (unlikely(bo->handle > batch->bo_list.bit_count)) {
+   if (unlikely(bo->handle >= batch->bo_list.bit_count)) {
       const unsigned bits_per_word = sizeof(BITSET_WORD) * 8;
 
       unsigned bit_count =
