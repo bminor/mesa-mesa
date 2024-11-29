@@ -3074,7 +3074,7 @@
         "description": "ir3/ra: fix non-trivial collect detection",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b36a7ce0f1988dd93ec31059cd6ab0ccec32ee91",
         "notes": null

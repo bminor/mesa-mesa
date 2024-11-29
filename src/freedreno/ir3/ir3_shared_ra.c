@@ -832,24 +832,6 @@ assign_src(struct ra_ctx *ctx, struct ir3_register *src)
    interval->src = false;
 }
 
-static bool
-is_nontrivial_collect(struct ir3_instruction *collect)
-{
-   if (collect->opc != OPC_META_COLLECT) {
-      return false;
-   }
-
-   struct ir3_register *dst = collect->dsts[0];
-
-   foreach_src_n (src, src_n, collect) {
-      if (src->num != dst->num + src_n) {
-         return true;
-      }
-   }
-
-   return false;
-}
-
 static void
 handle_dst(struct ra_ctx *ctx, struct ir3_instruction *instr,
            struct ir3_register *dst)
@@ -892,11 +874,15 @@ handle_dst(struct ra_ctx *ctx, struct ir3_instruction *instr,
     * sources don't line-up with the destination) may cause source intervals to
     * get implicitly moved when they are inserted as children of the destination
     * interval. Since we don't support moving intervals in shared RA, this may
-    * cause illegal register allocations. Prevent this by creating a new
-    * top-level interval for the destination so that the source intervals will
-    * be left alone.
+    * cause illegal register allocations. Prevent this by making sure
+    * non-trivial collects will not share a merge set with (and will not be a
+    * parent interval of) their components. Detect this by checking if a dst got
+    * a register assignment that does not correspond with the existing preferred
+    * reg of its merge set, as this might cause a future collect covering its
+    * interval to become non-trivial.
     */
-   if (is_nontrivial_collect(instr)) {
+   if (dst->merge_set && dst->merge_set->preferred_reg != (physreg_t)~0 &&
+       physreg != dst->merge_set->preferred_reg + dst->merge_set_offset) {
       dst->merge_set = NULL;
       dst->interval_start = ctx->live->interval_offset;
       dst->interval_end = dst->interval_start + reg_size(dst);
