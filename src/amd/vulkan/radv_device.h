@@ -540,6 +540,8 @@ struct radv_device {
    /* PSO cache stats */
    simple_mtx_t pso_cache_stats_mtx;
    struct radv_pso_cache_stats pso_cache_stats[RADV_PIPELINE_TYPE_COUNT];
+
+   struct radv_address_binding_tracker *addr_binding_tracker;
 };
 
 VK_DEFINE_HANDLE_CASTS(radv_device, vk.base, VkDevice, VK_OBJECT_TYPE_DEVICE)

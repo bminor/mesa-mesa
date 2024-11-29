@@ -31,6 +31,7 @@ there are a couple of files:
 
 * ``*.spv``: SPIR-V binaries of the pipeline that was bound when the hang
   occurred.
+* ``addr_binding_report.log``: VK_EXT_address_binding_report logs.
 * ``app_info.log``: ``VkApplicationInfo`` fields.
 * ``bo_history.log``: A list of every GPU memory allocation and deallocation.
   If the GPU hang was caused by a page fault, you can use

@@ -137,4 +137,20 @@ struct radv_trace_data {
    VkDispatchIndirectCommand indirect_dispatch;
 };
 
+struct radv_address_binding_report {
+   uint64_t timestamp; /* CPU timestamp */
+   uint64_t va;
+   uint64_t size;
+   VkDeviceAddressBindingFlagsEXT flags;
+   VkDeviceAddressBindingTypeEXT binding_type;
+   uint64_t object_handle;
+   VkObjectType object_type;
+};
+
+struct radv_address_binding_tracker {
+   VkDebugUtilsMessengerEXT messenger;
+   struct util_dynarray reports;
+   simple_mtx_t mtx;
+};
+
 #endif /* RADV_DEBUG_H */
