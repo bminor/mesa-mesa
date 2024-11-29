@@ -33,8 +33,6 @@ agx_disassemble(void *_code, size_t maxlen, FILE *fp)
 
 FILE *agxdecode_dump_stream;
 
-#define MAX_MAPPINGS 4096
-
 struct agxdecode_ctx {
    struct util_dynarray mmap_array;
    uint64_t shader_base;
