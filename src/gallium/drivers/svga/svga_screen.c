@@ -479,19 +479,10 @@ vgpu9_get_shader_param(struct pipe_screen *screen,
       case PIPE_SHADER_CAP_MAX_TEMPS:
          val = get_uint_cap(sws, SVGA3D_DEVCAP_MAX_FRAGMENT_SHADER_TEMPS, 32);
          return MIN2(val, SVGA3D_TEMPREG_MAX);
-      case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-         /*
-          * Although PS 3.0 has some addressing abilities it can only represent
-          * loops that can be statically determined and unrolled. Given we can
-          * only handle a subset of the cases that the gallium frontend already
-          * does it is better to defer loop unrolling to the gallium frontend.
-          */
-         return 0;
       case PIPE_SHADER_CAP_CONT_SUPPORTED:
          return 0;
       case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
          return 0;
-      case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
       case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
       case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
          return 0;
@@ -549,9 +540,6 @@ vgpu9_get_shader_param(struct pipe_screen *screen,
          return 0;
       case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
          return 0;
-      case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-      case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
-         return 1;
       case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
          return 0;
       case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
@@ -660,8 +648,6 @@ vgpu10_get_shader_param(struct pipe_screen *screen,
       return svgascreen->max_const_buffers;
    case PIPE_SHADER_CAP_MAX_TEMPS:
       return VGPU10_MAX_TEMPS;
-   case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-   case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
       return true; /* XXX verify */
@@ -722,7 +708,9 @@ vgpu10_get_shader_param(struct pipe_screen *screen,
 #define VGPU10_OPTIONS                                                        \
    .lower_doubles_options = nir_lower_dfloor | nir_lower_dsign | nir_lower_dceil | nir_lower_dtrunc | nir_lower_dround_even, \
    .lower_fmod = true,                                                        \
-   .lower_fpow = true
+   .lower_fpow = true,                                                        \
+   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),      \
+   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES)
 
 static const nir_shader_compiler_options svga_vgpu9_fragment_compiler_options = {
    COMMON_OPTIONS,
@@ -738,6 +726,8 @@ static const nir_shader_compiler_options svga_vgpu9_vertex_compiler_options = {
    .force_indirect_unrolling = nir_var_function_temp,
    .force_indirect_unrolling_sampler = true,
    .no_integers = true,
+   .support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_VERTEX),
+   .support_indirect_outputs = BITFIELD_BIT(MESA_SHADER_VERTEX),
 };
 
 static const nir_shader_compiler_options svga_vgpu10_compiler_options = {

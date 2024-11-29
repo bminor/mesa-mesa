@@ -2768,7 +2768,7 @@ ntq_emit_load_input(struct v3d_compile *c, nir_intrinsic_instr *instr)
 {
         /* XXX: Use ldvpmv (uniform offset) or ldvpmd (non-uniform offset).
          *
-         * Right now the driver sets PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR even
+         * Right now the driver sets support_indirect_inputs even
          * if we don't support non-uniform offsets because we also set the
          * lower_all_io_to_temps option in the NIR compiler. This ensures that
          * any indirect indexing on in/out variables is turned into indirect

@@ -715,10 +715,6 @@ support different features.
 
 * ``PIPE_SHADER_CAP_MAX_TEMPS``: The maximum number of temporary registers.
 * ``PIPE_SHADER_CAP_CONT_SUPPORTED``: Whether continue is supported.
-* ``PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR``: Whether indirect addressing
-  of the input file is supported.
-* ``PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR``: Whether indirect addressing
-  of the output file is supported.
 * ``PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR``: Whether indirect addressing
   of the temporary file is supported.
 * ``PIPE_SHADER_CAP_INDIRECT_CONST_ADDR``: Whether indirect addressing

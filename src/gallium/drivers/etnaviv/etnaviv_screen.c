@@ -418,8 +418,6 @@ etna_screen_get_shader_param(struct pipe_screen *pscreen,
       return ubo_enable ? ETNA_MAX_CONST_BUF : 1;
    case PIPE_SHADER_CAP_CONT_SUPPORTED:
       return 1;
-   case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-   case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
       return 1;

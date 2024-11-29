@@ -169,6 +169,8 @@ static const struct nir_shader_compiler_options gallivm_nir_options = {
    .lower_vector_cmp = true,
    .lower_device_index_to_zero = true,
    /* .support_16bit_alu = true, */
+   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
+   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
    .has_ddx_intrinsics = true,
    .no_integers = true,
 };
@@ -362,8 +364,6 @@ i915_get_shader_param(struct pipe_screen *screen, enum pipe_shader_type shader,
       case PIPE_SHADER_CAP_CONT_SUPPORTED:
       case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
          return 0;
-      case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-      case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
       case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
       case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
       case PIPE_SHADER_CAP_SUBROUTINES:

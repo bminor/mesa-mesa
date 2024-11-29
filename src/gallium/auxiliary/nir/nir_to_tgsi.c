@@ -3297,13 +3297,11 @@ ntt_no_indirects_mask(nir_shader *s, struct pipe_screen *screen)
    unsigned pipe_stage = pipe_shader_type_from_mesa(s->info.stage);
    unsigned indirect_mask = 0;
 
-   if (!screen->get_shader_param(screen, pipe_stage,
-                                 PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR)) {
+   if (!(s->options->support_indirect_inputs & BITFIELD_BIT(pipe_stage))) {
       indirect_mask |= nir_var_shader_in;
    }
 
-   if (!screen->get_shader_param(screen, pipe_stage,
-                                 PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR)) {
+   if (!(s->options->support_indirect_outputs & BITFIELD_BIT(pipe_stage))) {
       indirect_mask |= nir_var_shader_out;
    }
 

@@ -705,8 +705,6 @@ fd_screen_get_shader_param(struct pipe_screen *pscreen,
       return is_ir3(screen) ? 16 : 1;
    case PIPE_SHADER_CAP_CONT_SUPPORTED:
       return 1;
-   case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-   case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
       /* a2xx compiler doesn't handle indirect: */

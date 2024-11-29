@@ -329,6 +329,9 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
    if (compiler->gen >= 5 && !(ir3_shader_debug & IR3_DBG_NOFP16))
       compiler->nir_options.support_16bit_alu = true;
 
+   compiler->nir_options.support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
+   compiler->nir_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
+
    if (!options->disable_cache)
       ir3_disk_cache_init(compiler);
 

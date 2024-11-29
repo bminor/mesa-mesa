@@ -282,8 +282,6 @@ static int r300_get_shader_param(struct pipe_screen *pscreen,
            return r300screen->caps.num_tex_units;
         case PIPE_SHADER_CAP_CONT_SUPPORTED:
         case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
-        case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-        case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
         case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
         case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
         case PIPE_SHADER_CAP_SUBROUTINES:
@@ -369,8 +367,6 @@ static int r300_get_shader_param(struct pipe_screen *pscreen,
         case PIPE_SHADER_CAP_MAX_TEX_INDIRECTIONS:
         case PIPE_SHADER_CAP_CONT_SUPPORTED:
         case PIPE_SHADER_CAP_TGSI_SQRT_SUPPORTED:
-        case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-        case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
         case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
         case PIPE_SHADER_CAP_SUBROUTINES:
         case PIPE_SHADER_CAP_INTEGERS:
@@ -538,6 +534,15 @@ static const nir_shader_compiler_options r300_fs_compiler_options = {
    .max_unroll_iterations = 64,
 };
 
+static const nir_shader_compiler_options gallivm_compiler_options = {
+   COMMON_NIR_OPTIONS,
+   .has_fused_comp_and_csel = true,
+   .max_unroll_iterations = 32,
+
+   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
+   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
+};
+
 static const void *
 r300_get_compiler_options(struct pipe_screen *pscreen,
                           enum pipe_shader_ir ir,
@@ -547,7 +552,9 @@ r300_get_compiler_options(struct pipe_screen *pscreen,
 
    assert(ir == PIPE_SHADER_IR_NIR);
 
-   if (r300screen->caps.is_r500) {
+   if (shader == PIPE_SHADER_VERTEX && !r300screen->caps.has_tcl) {
+      return &gallivm_compiler_options;
+   } else if (r300screen->caps.is_r500) {
       if (shader == PIPE_SHADER_VERTEX)
          return &r500_vs_compiler_options;
        else

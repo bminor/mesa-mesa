@@ -64,6 +64,7 @@ static const nir_shader_compiler_options vs_nir_options = {
    .force_indirect_unrolling_sampler = true,
    .max_unroll_iterations = 32,
    .no_integers = true,
+   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
    .max_varying_expression_cost = 2,
 };
 
@@ -87,6 +88,7 @@ static const nir_shader_compiler_options fs_nir_options = {
    .force_indirect_unrolling_sampler = true,
    .max_unroll_iterations = 32,
    .no_integers = true,
+   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
    .max_varying_expression_cost = 2,
 };
 

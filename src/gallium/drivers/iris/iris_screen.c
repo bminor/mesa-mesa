@@ -511,8 +511,6 @@ iris_get_shader_param(struct pipe_screen *pscreen,
       return 256; /* GL_MAX_PROGRAM_TEMPORARIES_ARB */
    case PIPE_SHADER_CAP_CONT_SUPPORTED:
       return 0;
-   case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-   case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
       /* Lie about these to avoid st/mesa's GLSL IR lowering of indirects,

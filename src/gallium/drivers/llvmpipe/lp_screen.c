@@ -672,6 +672,8 @@ static const struct nir_shader_compiler_options gallivm_nir_options = {
    .lower_fquantize2f16 = true,
    .driver_functions = true,
    .scalarize_ddx = true,
+   .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
+   .support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),
 };
 
 

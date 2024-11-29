@@ -100,6 +100,7 @@ void bifrost_compile_shader_nir(nir_shader *nir,
          (nir_var_shader_in | nir_var_shader_out | nir_var_function_temp),     \
       .force_indirect_unrolling_sampler = true,                                \
       .scalarize_ddx = true,                                                   \
+      .support_indirect_inputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES),    \
    };
 
 DEFINE_OPTIONS(6);

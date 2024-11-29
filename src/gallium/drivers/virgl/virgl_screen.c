@@ -403,16 +403,9 @@ virgl_get_shader_param(struct pipe_screen *screen,
       case PIPE_SHADER_CAP_MAX_TEX_INSTRUCTIONS:
       case PIPE_SHADER_CAP_MAX_TEX_INDIRECTIONS:
          return INT_MAX;
-      case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
       case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
       case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
          return 1;
-      case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-         if ((vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_HOST_IS_GLES) &&
-             (shader == PIPE_SHADER_VERTEX)) {
-            return 0;
-         }
-         FALLTHROUGH;
       case PIPE_SHADER_CAP_TGSI_ANY_INOUT_DECL_RANGE:
          return vscreen->caps.caps.v2.capability_bits & VIRGL_CAP_INDIRECT_INPUT_ADDR;
       case PIPE_SHADER_CAP_MAX_INPUTS:
@@ -1235,6 +1228,17 @@ virgl_create_screen(struct virgl_winsys *vws, const struct pipe_screen_config *c
    screen->compiler_options.lower_ldexp = true;
    screen->compiler_options.lower_image_offset_to_range_base = true;
    screen->compiler_options.lower_atomic_offset_to_range_base = true;
+   screen->compiler_options.support_indirect_outputs = (uint8_t)BITFIELD_MASK(PIPE_SHADER_TYPES);
+
+   if (screen->caps.caps.v2.capability_bits & VIRGL_CAP_INDIRECT_INPUT_ADDR) {
+      screen->compiler_options.support_indirect_inputs |= BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
+                                                           BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
+                                                           BITFIELD_BIT(MESA_SHADER_GEOMETRY) |
+                                                           BITFIELD_BIT(MESA_SHADER_FRAGMENT);
+
+      if (!(screen->caps.caps.v2.capability_bits & VIRGL_CAP_HOST_IS_GLES))
+         screen->compiler_options.support_indirect_inputs |= BITFIELD_BIT(MESA_SHADER_VERTEX);
+   }
 
    slab_create_parent(&screen->transfer_pool, sizeof(struct virgl_transfer), 16);
 

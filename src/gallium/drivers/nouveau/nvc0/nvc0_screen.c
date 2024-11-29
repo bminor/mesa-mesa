@@ -410,17 +410,6 @@ nvc0_screen_get_shader_param(struct pipe_screen *pscreen,
       return NVC0_MAX_CONSTBUF_SIZE;
    case PIPE_SHADER_CAP_MAX_CONST_BUFFERS:
       return NVC0_MAX_PIPE_CONSTBUFS;
-   case PIPE_SHADER_CAP_INDIRECT_OUTPUT_ADDR:
-      return shader != PIPE_SHADER_FRAGMENT;
-   case PIPE_SHADER_CAP_INDIRECT_INPUT_ADDR:
-      /* HW doesn't support indirect addressing of fragment program inputs
-       * on Volta.  The binary driver generates a function to handle every
-       * possible indirection, and indirectly calls the function to handle
-       * this instead.
-       */
-      if (class_3d >= GV100_3D_CLASS)
-         return shader != PIPE_SHADER_FRAGMENT;
-      return 1;
    case PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR:
    case PIPE_SHADER_CAP_INDIRECT_CONST_ADDR:
       return 1;
