@@ -6148,6 +6148,10 @@ typedef struct nir_lower_subgroups_options {
     */
    nir_instr_filter_cb filter;
 
+   /* In case the exact subgroup size is not known, subgroup_size should be
+    * set to 0. In that case, the maximum subgroup size will be calculated by
+    * ballot_components * ballot_bit_size.
+    */
    uint8_t subgroup_size;
    uint8_t ballot_bit_size;
    uint8_t ballot_components;
