@@ -189,7 +189,6 @@ files_libglsl = files(
   'opt_minmax.cpp',
   'opt_rebalance_tree.cpp',
   'opt_tree_grafting.cpp',
-  'program.h',
   'propagate_invariance.cpp',
   'string_to_uint_map.cpp',
   'string_to_uint_map.h',

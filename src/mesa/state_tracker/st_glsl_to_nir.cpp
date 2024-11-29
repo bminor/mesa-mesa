@@ -51,7 +51,6 @@
 #include "compiler/glsl/ir.h"
 #include "compiler/glsl/ir_optimization.h"
 #include "compiler/glsl/linker_util.h"
-#include "compiler/glsl/program.h"
 #include "compiler/glsl/shader_cache.h"
 #include "compiler/glsl/string_to_uint_map.h"
 
