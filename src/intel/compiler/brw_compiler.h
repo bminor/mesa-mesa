@@ -233,6 +233,16 @@ struct brw_base_prog_key {
 /** The program key for Vertex Shaders. */
 struct brw_vs_prog_key {
    struct brw_base_prog_key base;
+
+   /** Enable component packing
+    *
+    * Using this option requires that the driver programs
+    * 3DSTATE_VF_COMPONENT_PACKING with the values provided in
+    * brw_vs_prog_data::vf_component_packing
+    */
+   bool vf_component_packing : 1;
+
+   uint32_t padding : 31;
 };
 
 /** The program key for Tessellation Control Shaders. */
@@ -1028,6 +1038,8 @@ struct brw_vs_prog_data {
    bool uses_firstvertex;
    bool uses_baseinstance;
    bool uses_drawid;
+
+   uint32_t vf_component_packing[4];
 };
 
 struct brw_tcs_prog_data
