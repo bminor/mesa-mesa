@@ -26,12 +26,12 @@
  */
 
 #include "float64_glsl.h"
+#include "glsl_parser_extras.h"
 #include "glsl_to_nir.h"
 #include "ir_visitor.h"
 #include "ir_hierarchical_visitor.h"
 #include "ir.h"
 #include "ir_optimization.h"
-#include "program.h"
 #include "compiler/nir/nir_control_flow.h"
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_builtin_builder.h"

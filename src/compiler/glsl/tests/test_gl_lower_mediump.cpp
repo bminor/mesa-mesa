@@ -33,6 +33,7 @@
 #include "nir.h"
 #include "gl_nir.h"
 #include "gl_nir_linker.h"
+#include "glsl_parser_extras.h"
 #include "glsl_to_nir.h"
 #include "linker_util.h"
 #include "nir_builder.h"

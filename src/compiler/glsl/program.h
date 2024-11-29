@@ -25,23 +25,6 @@
 #ifndef GLSL_PROGRAM_H
 #define GLSL_PROGRAM_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct gl_context;
-struct gl_shader;
-struct gl_shader_program;
-
-extern void
-_mesa_glsl_compile_shader(struct gl_context *ctx, struct gl_shader *shader,
-                          FILE *dump_ir_file, bool dump_ast, bool dump_hir,
-                          bool force_recompile);
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-
 extern void
 link_shaders(struct gl_context *ctx, struct gl_shader_program *prog);
 
