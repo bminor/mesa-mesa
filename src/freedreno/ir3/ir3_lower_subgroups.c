@@ -591,6 +591,36 @@ ir3_nir_opt_subgroups(nir_shader *nir, struct ir3_shader_variant *v)
                                         lower_scan_reduce, NULL);
 }
 
+bool
+ir3_nir_lower_subgroups_filter(const nir_instr *instr, const void *data)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_reduce:
+   case nir_intrinsic_inclusive_scan:
+   case nir_intrinsic_exclusive_scan:
+      switch (nir_intrinsic_reduction_op(intrin)) {
+      case nir_op_imul:
+      case nir_op_imin:
+      case nir_op_imax:
+      case nir_op_umin:
+      case nir_op_umax:
+         if (intrin->def.bit_size == 64) {
+            return true;
+         }
+         FALLTHROUGH;
+      default:
+         return intrin->def.num_components > 1;
+      }
+   default:
+      return true;
+   }
+}
+
 static bool
 filter_64b_scan_reduce(const nir_instr *instr, const void *data)
 {
