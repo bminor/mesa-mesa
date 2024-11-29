@@ -21,6 +21,8 @@
 static const struct spirv_to_nir_options spirv_options = {
    .environment = NIR_SPIRV_VULKAN,
 
+   .ubo_addr_format = nir_address_format_vec2_index_32bit_offset,
+
    .min_ubo_alignment = PVR_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
    .min_ssbo_alignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
 };
@@ -82,6 +84,20 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir,
             nir_split_array_vars,
             nir_var_function_temp | nir_var_shader_temp);
+
+   NIR_PASS(_,
+            nir,
+            nir_lower_io_vars_to_temporaries,
+            nir_shader_get_entrypoint(nir),
+            true,
+            true);
+
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_lower_global_vars_to_local);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_remove_dead_derefs);
+
    NIR_PASS(_,
             nir,
             nir_lower_indirect_derefs,
@@ -93,7 +109,9 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_remove_dead_variables,
             nir_var_function_temp | nir_var_shader_temp,
             NULL);
+   NIR_PASS(_, nir, nir_copy_prop);
    NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_cse);
 
    if (pco_should_print_nir(nir)) {
       puts("after pco_preprocess_nir:");
@@ -168,6 +186,14 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 {
    NIR_PASS(_,
             nir,
+            nir_lower_explicit_io,
+            nir_var_mem_ubo,
+            spirv_options.ubo_addr_format);
+
+   NIR_PASS(_, nir, pco_nir_lower_vk, &data->common);
+
+   NIR_PASS(_,
+            nir,
             nir_lower_io,
             nir_var_shader_in | nir_var_shader_out,
             glsl_type_size,
@@ -204,6 +230,13 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, nir_lower_pack);
    NIR_PASS(_, nir, nir_opt_algebraic);
    NIR_PASS(_, nir, pco_nir_lower_algebraic);
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+   NIR_PASS(_, nir, nir_opt_algebraic);
+   NIR_PASS(_, nir, pco_nir_lower_algebraic);
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+
+   NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
+
    do {
       progress = false;
 
@@ -236,8 +269,6 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
                frag_pos_filter,
                NULL);
    }
-
-   NIR_PASS(_, nir, nir_lower_alu_to_scalar, NULL, NULL);
 
    do {
       progress = false;
@@ -339,6 +370,9 @@ static void gather_data(nir_shader *nir, pco_data *data)
  */
 void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 {
+   NIR_PASS(_, nir, nir_opt_sink, ~0U);
+   NIR_PASS(_, nir, nir_opt_move, ~0U);
+
    NIR_PASS(_, nir, nir_move_vec_src_uses_to_dest, false);
 
    /* Re-index everything. */

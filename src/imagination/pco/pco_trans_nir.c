@@ -408,6 +408,70 @@ trans_store_output_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref src)
    return pco_mov(&tctx->b, dest, src, .olchk = true);
 }
 
+static unsigned fetch_resource_base_reg(const pco_common_data *common,
+                                        uint32_t packed_desc,
+                                        unsigned elem)
+{
+   unsigned desc_set;
+   unsigned binding;
+   pco_unpack_desc(packed_desc, &desc_set, &binding);
+
+   assert(desc_set < ARRAY_SIZE(common->desc_sets));
+   const pco_descriptor_set_data *desc_set_data = &common->desc_sets[desc_set];
+   assert(desc_set_data->used);
+   assert(desc_set_data->bindings && binding < desc_set_data->binding_count);
+
+   const pco_binding_data *binding_data = &desc_set_data->bindings[binding];
+   assert(binding_data->used);
+
+   unsigned reg_offset = elem * binding_data->range.stride;
+   assert(reg_offset < binding_data->range.count);
+
+   unsigned reg_index = binding_data->range.start + reg_offset;
+
+   return reg_index;
+}
+
+static pco_instr *trans_load_ubo(trans_ctx *tctx,
+                                 nir_intrinsic_instr *intr,
+                                 pco_ref dest,
+                                 pco_ref offset_src)
+{
+   const pco_common_data *common = &tctx->shader->data.common;
+
+   unsigned chans = pco_ref_get_chans(dest);
+   ASSERTED unsigned bits = pco_ref_get_bits(dest);
+   assert(bits == 32);
+
+   uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
+   unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
+   unsigned sh_index = fetch_resource_base_reg(common, packed_desc, elem);
+
+   pco_ref base_addr[2];
+   pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
+
+   pco_ref addr_comps[2];
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_comps);
+
+   pco_add64_32(&tctx->b,
+                addr_comps[0],
+                addr_comps[1],
+                base_addr[0],
+                base_addr[1],
+                offset_src,
+                pco_ref_null(),
+                .s = true);
+
+   pco_ref addr = pco_ref_new_ssa_addr(tctx->func);
+   pco_vec(&tctx->b, addr, ARRAY_SIZE(addr_comps), addr_comps);
+
+   return pco_ld(&tctx->b,
+                 dest,
+                 pco_ref_drc(PCO_DRC_0),
+                 pco_ref_imm8(chans),
+                 addr);
+}
+
 /**
  * \brief Translates a NIR intrinsic instruction into PCO.
  *
@@ -444,6 +508,10 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
          instr = trans_store_output_fs(tctx, intr, src[0]);
       else
          unreachable("Unsupported stage for \"nir_intrinsic_store_output\".");
+      break;
+
+   case nir_intrinsic_load_ubo:
+      instr = trans_load_ubo(tctx, intr, dest, src[1]);
       break;
 
    default:
