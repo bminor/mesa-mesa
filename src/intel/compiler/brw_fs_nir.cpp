@@ -6633,33 +6633,15 @@ fs_nir_emit_intrinsic(nir_to_brw_state &ntb,
       const brw_reg value = get_nir_src(ntb, instr->src[0]);
       const brw_reg invocation = get_nir_src_imm(ntb, instr->src[1]);
 
-      if (invocation.file == IMM) {
-         unsigned i = invocation.ud & (bld.dispatch_width() - 1);
-         bld.MOV(retype(dest, value.type), component(value, i));
-         break;
-      }
-
-
-      /* When for some reason the subgroup_size picked by NIR is larger than
-       * the dispatch size picked by the backend (this could happen in RT,
-       * FS), bound the invocation to the dispatch size.
-       */
-      brw_reg bound_invocation = retype(invocation, BRW_TYPE_UD);
-      if (s.api_subgroup_size == 0 ||
-          bld.dispatch_width() < s.api_subgroup_size) {
-         bound_invocation =
-            bld.AND(bound_invocation, brw_imm_ud(s.dispatch_width - 1));
-      }
-
-      brw_reg tmp = bld.BROADCAST(value, bld.emit_uniformize(bound_invocation));
-
-      bld.MOV(retype(dest, value.type), tmp);
+      bld.emit(SHADER_OPCODE_READ_FROM_CHANNEL, retype(dest, value.type),
+               value, invocation);
       break;
    }
 
    case nir_intrinsic_read_first_invocation: {
       const brw_reg value = get_nir_src(ntb, instr->src[0]);
-      bld.MOV(retype(dest, value.type), bld.emit_uniformize(value));
+
+      bld.emit(SHADER_OPCODE_READ_FROM_LIVE_CHANNEL, retype(dest, value.type), value);
       break;
    }
 

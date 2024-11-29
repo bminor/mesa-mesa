@@ -290,6 +290,10 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
       return "ballot";
    case SHADER_OPCODE_QUAD_SWAP:
       return "quad_swap";
+   case SHADER_OPCODE_READ_FROM_LIVE_CHANNEL:
+      return "read_from_live_channel";
+   case SHADER_OPCODE_READ_FROM_CHANNEL:
+      return "read_from_channel";
    }
 
    unreachable("not reached");

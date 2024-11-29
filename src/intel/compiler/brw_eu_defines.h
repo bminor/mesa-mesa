@@ -457,6 +457,21 @@ enum opcode {
     */
    SHADER_OPCODE_QUAD_SWAP,
 
+   /* Read value from the first live channel and broadcast the result
+    * to all channels.
+    *
+    * Source 0: Value.
+    */
+   SHADER_OPCODE_READ_FROM_LIVE_CHANNEL,
+
+   /* Read value from a specified channel and broadcast the result
+    * to all channels.
+    *
+    * Source 0: Value.
+    * Source 1: Index of the channel to pick value from.
+    */
+   SHADER_OPCODE_READ_FROM_CHANNEL,
+
    /* This turns into an align16 mov from src0 to dst with a swizzle
     * provided as an immediate in src1.
     */
