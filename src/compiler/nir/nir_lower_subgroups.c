@@ -893,6 +893,12 @@ lower_scan_reduce(nir_builder *b, nir_intrinsic_instr *intrin,
 static bool
 lower_subgroups_filter(const nir_instr *instr, const void *_options)
 {
+   const nir_lower_subgroups_options *options = _options;
+
+   if (options->filter) {
+      return options->filter(instr, options->filter_data);
+   }
+
    return instr->type == nir_instr_type_intrinsic;
 }
 
@@ -1343,8 +1349,7 @@ bool
 nir_lower_subgroups(nir_shader *shader,
                     const nir_lower_subgroups_options *options)
 {
-   void *filter = options->filter ? options->filter : lower_subgroups_filter;
-   return nir_shader_lower_instructions(shader, filter,
+   return nir_shader_lower_instructions(shader, lower_subgroups_filter,
                                         lower_subgroups_instr,
                                         (void *)options);
 }
