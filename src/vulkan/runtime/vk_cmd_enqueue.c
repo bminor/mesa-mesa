@@ -563,6 +563,7 @@ dispatch_graph_amdx_free(struct vk_cmd_queue *queue, struct vk_cmd_queue_entry *
 
 VKAPI_ATTR void VKAPI_CALL
 vk_cmd_enqueue_CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+                                    VkDeviceSize scratchSize,
                                     const VkDispatchGraphCountInfoAMDX *pCountInfo)
 {
    VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, commandBuffer);
@@ -584,6 +585,7 @@ vk_cmd_enqueue_CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddre
    cmd->driver_free_cb = dispatch_graph_amdx_free;
 
    cmd->u.dispatch_graph_amdx.scratch = scratch;
+   cmd->u.dispatch_graph_amdx.scratch_size = scratchSize;
 
    cmd->u.dispatch_graph_amdx.count_info =
       vk_zalloc(alloc, sizeof(VkDispatchGraphCountInfoAMDX), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);

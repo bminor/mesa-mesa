@@ -6101,10 +6101,10 @@ vtn_handle_ray_query_intrinsic(struct vtn_builder *b, SpvOp opcode,
 }
 
 static void
-vtn_handle_initialize_node_payloads(struct vtn_builder *b, SpvOp opcode,
+vtn_handle_allocate_node_payloads(struct vtn_builder *b, SpvOp opcode,
                                     const uint32_t *w, unsigned count)
 {
-   vtn_assert(opcode == SpvOpInitializeNodePayloadsAMDX);
+   vtn_assert(opcode == SpvOpAllocateNodePayloadsAMDX);
 
    nir_def *payloads = vtn_ssa_value(b, w[1])->def;
    mesa_scope scope = vtn_translate_scope(b, vtn_constant_uint(b, w[2]));
@@ -6621,11 +6621,8 @@ vtn_handle_body_instruction(struct vtn_builder *b, SpvOp opcode,
          nir_undef(&b->nb, 1, 32));
       break;
 
-   case SpvOpInitializeNodePayloadsAMDX:
-      vtn_handle_initialize_node_payloads(b, opcode, w, count);
-      break;
-
-   case SpvOpFinalizeNodePayloadsAMDX:
+   case SpvOpAllocateNodePayloadsAMDX:
+      vtn_handle_allocate_node_payloads(b, opcode, w, count);
       break;
 
    case SpvOpFinishWritingNodePayloadAMDX:
