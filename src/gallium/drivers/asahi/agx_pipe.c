@@ -1113,7 +1113,7 @@ agx_clear(struct pipe_context *pctx, unsigned buffers,
 
    /* Slow clears draw a fullscreen rectangle */
    if (slowclear) {
-      agx_blitter_save(ctx, ctx->blitter, false /* render cond */);
+      agx_blitter_save(ctx, ctx->blitter, ASAHI_CLEAR);
       util_blitter_clear(
          ctx->blitter, ctx->framebuffer.width, ctx->framebuffer.height,
          util_framebuffer_get_num_layers(&ctx->framebuffer), slowclear, color,

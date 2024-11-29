@@ -1140,9 +1140,24 @@ void agx_add_timestamp_end_query(struct agx_context *ctx, struct agx_query *q);
 void agx_query_increment_cpu(struct agx_context *ctx, struct agx_query *query,
                              uint64_t increment);
 
-/* Blit shaders */
+enum asahi_blitter_op /* bitmask */
+{
+   ASAHI_SAVE_TEXTURES = 1,
+   ASAHI_SAVE_FRAMEBUFFER = 2,
+   ASAHI_SAVE_FRAGMENT_STATE = 4,
+   ASAHI_SAVE_FRAGMENT_CONSTANT = 8,
+   ASAHI_DISABLE_RENDER_COND = 16,
+};
+
+enum {
+   ASAHI_CLEAR = ASAHI_SAVE_FRAGMENT_STATE | ASAHI_SAVE_FRAGMENT_CONSTANT,
+
+   ASAHI_BLIT =
+      ASAHI_SAVE_FRAMEBUFFER | ASAHI_SAVE_TEXTURES | ASAHI_SAVE_FRAGMENT_STATE,
+};
+
 void agx_blitter_save(struct agx_context *ctx, struct blitter_context *blitter,
-                      bool render_cond);
+                      enum asahi_blitter_op op);
 
 void agx_blit(struct pipe_context *pipe, const struct pipe_blit_info *info);
 
