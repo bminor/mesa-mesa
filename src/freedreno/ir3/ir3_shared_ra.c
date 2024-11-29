@@ -290,8 +290,45 @@ static bool
 get_reg_specified(struct ra_ctx *ctx, struct ir3_register *reg, physreg_t physreg)
 {
    for (unsigned i = 0; i < reg_size(reg); i++) {
-      if (!BITSET_TEST(ctx->available, physreg + i))
-         return false;
+      physreg_t cur_physreg = physreg + i;
+
+      if (!BITSET_TEST(ctx->available, cur_physreg)) {
+         /* If physreg is unavailable, we might still be able to use it if the
+          * value it holds is in the same merge set at the same offset as the
+          * value in reg.
+          */
+         if (!reg->merge_set) {
+            return false;
+         }
+
+         /* Find the interval for the current element of physreg. */
+         struct ra_interval *interval = ra_ctx_search_right(ctx, cur_physreg);
+
+         /* It must exist since the physreg is unavailable. */
+         assert(interval->physreg_start <= cur_physreg);
+
+         struct ir3_register *live_reg = interval->interval.reg;
+
+         if (reg->merge_set != live_reg->merge_set) {
+            return false;
+         }
+
+         /* We want to check if the currently live value at physreg+i (live_reg)
+          * is at the same offset as the new value (reg+i) in their shared merge
+          * set. However, we cannot simply compare their merge set offsets as
+          * live_reg may be larger than reg+i (e.g., a collect) and reg+i may
+          * not be at the start of live_reg's interval. To account for this, we
+          * want to know the merge set offset delta between live_reg's value at
+          * physreg+i and the start of its interval. This always equals the
+          * delta between the physregs within intervals.
+          */
+         unsigned cur_merge_set_offset = reg->merge_set_offset + i;
+         unsigned interval_offset = cur_physreg - interval->physreg_start;
+         if (cur_merge_set_offset !=
+             live_reg->merge_set_offset + interval_offset) {
+            return false;
+         }
+      }
    }
 
    return true;
