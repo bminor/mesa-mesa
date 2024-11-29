@@ -277,12 +277,24 @@ radv_probe_video_decode(struct radv_physical_device *pdev)
 
    pdev->video_decode_enabled = false;
 
+   /* The support for decode events are available at the same time as encode */
    if (pdev->info.vcn_ip_version >= VCN_4_0_0) {
       if (pdev->info.vcn_enc_major_version > 1)
          pdev->video_decode_enabled = true;
       /* VCN 4 FW 1.22 has all the necessary pieces to pass CTS */
-      /* VCN 4 has unified fw so use the enc versions */
       if (pdev->info.vcn_enc_major_version == 1 && pdev->info.vcn_enc_minor_version >= 22)
+         pdev->video_decode_enabled = true;
+   } else if (pdev->info.vcn_ip_version >= VCN_3_0_0) {
+      if (pdev->info.vcn_enc_major_version > 1)
+         pdev->video_decode_enabled = true;
+      /* VCN 3 FW 1.33 has all the necessary pieces to pass CTS */
+      if (pdev->info.vcn_enc_major_version == 1 && pdev->info.vcn_enc_minor_version >= 33)
+         pdev->video_decode_enabled = true;
+   } else if (pdev->info.vcn_ip_version >= VCN_2_0_0) {
+      if (pdev->info.vcn_enc_major_version > 1)
+         pdev->video_decode_enabled = true;
+      /* VCN 2 FW 1.24 has all the necessary pieces to pass CTS */
+      if (pdev->info.vcn_enc_major_version == 1 && pdev->info.vcn_enc_minor_version >= 24)
          pdev->video_decode_enabled = true;
    }
    if (instance->perftest_flags & RADV_PERFTEST_VIDEO_DECODE) {
