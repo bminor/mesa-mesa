@@ -1021,8 +1021,6 @@ struct brw_vs_prog_data {
    uint64_t inputs_read;
    uint64_t double_inputs_read;
 
-   unsigned nr_attribute_slots;
-
    bool uses_vertexid;
    bool uses_instanceid;
    bool uses_is_indexed_draw;

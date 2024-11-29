@@ -93,7 +93,6 @@ brw_compile_vs(const struct brw_compiler *compiler,
       nir->info.clip_distance_array_size;
 
    unsigned nr_attribute_slots = util_bitcount64(prog_data->inputs_read);
-
    /* gl_VertexID and gl_InstanceID are system values, but arrive via an
     * incoming vertex attribute.  So, add an extra slot.
     */
@@ -129,14 +128,15 @@ brw_compile_vs(const struct brw_compiler *compiler,
       prog_data->uses_drawid = true;
 
    prog_data->base.urb_read_length = DIV_ROUND_UP(nr_attribute_slots, 2);
-   prog_data->nr_attribute_slots = nr_attribute_slots;
+   unsigned nr_attribute_regs = 4 * nr_attribute_slots;
 
    /* Since vertex shaders reuse the same VUE entry for inputs and outputs
     * (overwriting the original contents), we need to make sure the size is
     * the larger of the two.
     */
    const unsigned vue_entries =
-      MAX2(nr_attribute_slots, (unsigned)prog_data->base.vue_map.num_slots);
+      MAX2(DIV_ROUND_UP(nr_attribute_regs, 4),
+           (unsigned)prog_data->base.vue_map.num_slots);
 
    prog_data->base.urb_entry_size = DIV_ROUND_UP(vue_entries, 4);
 
