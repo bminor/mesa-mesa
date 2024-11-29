@@ -133,6 +133,12 @@ enum blorp_batch_flags {
 
    /** Wa_18038825448 */
    BLORP_BATCH_FORCE_CPS_DEPENDENCY  = BITFIELD_BIT(4),
+
+   /** Emit 3DSTATE_VF
+    *
+    * Might be needed by the driver it enabled VF component packing
+    */
+   BLORP_BATCH_EMIT_3DSTATE_VF       = BITFIELD_BIT(5),
 };
 
 struct blorp_batch {

@@ -593,6 +593,17 @@ blorp_emit_vertex_elements(struct blorp_batch *batch,
       }
    }
 
+   if (batch->flags & BLORP_BATCH_EMIT_3DSTATE_VF) {
+      blorp_emit(batch, GENX(3DSTATE_VF), vf) {
+#if GFX_VERx10 >= 125
+         /* Blorp shaders have no requirements that we need to disable geometry
+          * distribution.
+          */
+         vf.GeometryDistributionEnable = true;
+#endif
+      }
+   }
+
    blorp_emit(batch, GENX(3DSTATE_VF_TOPOLOGY), topo) {
       topo.PrimitiveTopologyType = _3DPRIM_RECTLIST;
    }
