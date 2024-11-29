@@ -1048,7 +1048,7 @@ agx_batch_uses_bo(struct agx_batch *batch, struct agx_bo *bo)
 }
 
 static inline void
-agx_batch_add_bo(struct agx_batch *batch, struct agx_bo *bo)
+agx_batch_add_bo_internal(struct agx_batch *batch, struct agx_bo *bo)
 {
    /* Double the size of the BO list if we run out, this is amortized O(1) */
    if (unlikely(bo->handle > batch->bo_list.bit_count)) {
@@ -1072,6 +1072,13 @@ agx_batch_add_bo(struct agx_batch *batch, struct agx_bo *bo)
     */
    agx_bo_reference(bo);
    BITSET_SET(batch->bo_list.set, bo->handle);
+}
+
+static inline void
+agx_batch_add_bo(struct agx_batch *batch, struct agx_bo *bo)
+{
+   agx_batch_add_bo_internal(batch, bo);
+   assert(agx_batch_uses_bo(batch, bo));
 }
 
 #define AGX_BATCH_FOREACH_BO_HANDLE(batch, handle)                             \
