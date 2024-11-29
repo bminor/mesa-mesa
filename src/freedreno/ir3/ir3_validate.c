@@ -241,6 +241,7 @@ validate_instr(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr)
           */
       } else if (instr->opc == OPC_ANY_MACRO || instr->opc == OPC_ALL_MACRO ||
                  instr->opc == OPC_READ_FIRST_MACRO ||
+                 instr->opc == OPC_READ_GETLAST_MACRO ||
                  instr->opc == OPC_READ_COND_MACRO) {
          /* nothing yet */
       } else if (n > 0) {
@@ -283,6 +284,7 @@ validate_instr(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr)
             ctx, util_is_power_of_two_or_zero(instr->dsts[0]->wrmask + 1));
       } else if (instr->opc == OPC_ANY_MACRO || instr->opc == OPC_ALL_MACRO ||
                  instr->opc == OPC_READ_FIRST_MACRO ||
+                 instr->opc == OPC_READ_GETLAST_MACRO ||
                  instr->opc == OPC_READ_COND_MACRO) {
          /* nothing yet */
       } else if (instr->opc == OPC_ELECT_MACRO || instr->opc == OPC_SHPS_MACRO) {

@@ -1083,6 +1083,7 @@ is_subgroup_cond_mov_macro(struct ir3_instruction *instr)
    case OPC_ALL_MACRO:
    case OPC_ELECT_MACRO:
    case OPC_READ_COND_MACRO:
+   case OPC_READ_GETLAST_MACRO:
    case OPC_READ_FIRST_MACRO:
    case OPC_SCAN_MACRO:
    case OPC_SCAN_CLUSTERS_MACRO:
@@ -2764,6 +2765,7 @@ INSTR1(ANY_MACRO)
 INSTR1(ALL_MACRO)
 INSTR1(READ_FIRST_MACRO)
 INSTR2(READ_COND_MACRO)
+INSTR1(READ_GETLAST_MACRO)
 
 static inline struct ir3_instruction *
 ir3_ELECT_MACRO(struct ir3_block *block)

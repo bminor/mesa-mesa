@@ -253,6 +253,7 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
    case OPC_ALL_MACRO:
    case OPC_ELECT_MACRO:
    case OPC_READ_COND_MACRO:
+   case OPC_READ_GETLAST_MACRO:
    case OPC_SCAN_MACRO:
    case OPC_SCAN_CLUSTERS_MACRO:
       break;
@@ -439,6 +440,11 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
          branch_opc = OPC_GETONE;
          branch_flags = instr->flags & IR3_INSTR_NEEDS_HELPERS;
          break;
+      case OPC_READ_GETLAST_MACRO:
+         after_block->reconvergence_point = true;
+         branch_opc = OPC_GETLAST;
+         branch_flags = instr->flags & IR3_INSTR_NEEDS_HELPERS;
+         break;
       default:
          unreachable("bad opcode");
       }
@@ -464,12 +470,14 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
          break;
       }
 
+      case OPC_READ_GETLAST_MACRO:
       case OPC_READ_COND_MACRO: {
          struct ir3_instruction *mov =
             ir3_instr_create(then_block, OPC_MOV, 1, 1);
          ir3_dst_create(mov, instr->dsts[0]->num, instr->dsts[0]->flags);
          struct ir3_register *new_src = ir3_src_create(mov, 0, 0);
-         *new_src = *instr->srcs[1];
+         unsigned idx = instr->opc == OPC_READ_COND_MACRO ? 1 : 0;
+         *new_src = *instr->srcs[idx];
          mov->cat1.dst_type = TYPE_U32;
          mov->cat1.src_type =
             (new_src->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32;

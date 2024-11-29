@@ -3129,6 +3129,19 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       break;
    }
 
+   case nir_intrinsic_read_getlast_ir3: {
+      struct ir3_instruction *src = ir3_get_src(ctx, &intr->src[0])[0];
+      dst[0] = ir3_READ_GETLAST_MACRO(ctx->block, src, 0);
+      dst[0]->dsts[0]->flags |= IR3_REG_SHARED;
+      /* See above. */
+      if (src->dsts[0]->flags & IR3_REG_HALF) {
+         dst[0] = ir3_MOV(b, dst[0], TYPE_U32);
+         if (!ctx->compiler->has_scalar_alu)
+            dst[0]->dsts[0]->flags &= ~IR3_REG_SHARED;
+      }
+      break;
+   }
+
    case nir_intrinsic_ballot: {
       struct ir3_instruction *ballot;
       unsigned components = intr->def.num_components;
