@@ -990,6 +990,35 @@ ir3_shader_outputs(const struct ir3_shader *so)
    return so->nir->info.outputs_written;
 }
 
+void
+ir3_shader_get_subgroup_size(const struct ir3_compiler *compiler,
+                             const struct ir3_shader_options *options,
+                             gl_shader_stage stage, unsigned *subgroup_size,
+                             unsigned *max_subgroup_size)
+{
+   switch (options->api_wavesize) {
+   case IR3_SINGLE_ONLY:
+      *subgroup_size = *max_subgroup_size = compiler->threadsize_base;
+      break;
+   case IR3_DOUBLE_ONLY:
+      *subgroup_size = *max_subgroup_size = compiler->threadsize_base * 2;
+      break;
+   case IR3_SINGLE_OR_DOUBLE:
+      /* For vertex stages, we know the wavesize will never be doubled.
+       * Lower subgroup_size here, to avoid having to deal with it when
+       * translating from NIR. Otherwise use the "real" wavesize obtained as
+       * a driver param.
+       */
+      if (stage != MESA_SHADER_COMPUTE && stage != MESA_SHADER_FRAGMENT) {
+         *subgroup_size = *max_subgroup_size = compiler->threadsize_base;
+      } else {
+         *subgroup_size = 0;
+         *max_subgroup_size = compiler->threadsize_base * 2;
+      }
+      break;
+   }
+}
+
 /* Add any missing varyings needed for stream-out.  Otherwise varyings not
  * used by fragment shader will be stripped out.
  */

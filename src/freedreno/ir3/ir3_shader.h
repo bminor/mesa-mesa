@@ -1075,6 +1075,12 @@ uint64_t ir3_shader_outputs(const struct ir3_shader *so);
 
 int ir3_glsl_type_size(const struct glsl_type *type, bool bindless);
 
+void ir3_shader_get_subgroup_size(const struct ir3_compiler *compiler,
+                                  const struct ir3_shader_options *options,
+                                  gl_shader_stage stage,
+                                  unsigned *subgroup_size,
+                                  unsigned *max_subgroup_size);
+
 /*
  * Helper/util:
  */

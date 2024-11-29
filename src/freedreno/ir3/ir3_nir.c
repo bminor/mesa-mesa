@@ -816,28 +816,8 @@ ir3_nir_post_finalize(struct ir3_shader *shader)
        * the "real" subgroup size.
        */
       unsigned subgroup_size = 0, max_subgroup_size = 0;
-      switch (shader->options.api_wavesize) {
-      case IR3_SINGLE_ONLY:
-         subgroup_size = max_subgroup_size = compiler->threadsize_base;
-         break;
-      case IR3_DOUBLE_ONLY:
-         subgroup_size = max_subgroup_size = compiler->threadsize_base * 2;
-         break;
-      case IR3_SINGLE_OR_DOUBLE:
-         /* For vertex stages, we know the wavesize will never be doubled.
-          * Lower subgroup_size here, to avoid having to deal with it when
-          * translating from NIR. Otherwise use the "real" wavesize obtained as
-          * a driver param.
-          */
-         if (s->info.stage != MESA_SHADER_COMPUTE &&
-             s->info.stage != MESA_SHADER_FRAGMENT) {
-            subgroup_size = max_subgroup_size = compiler->threadsize_base;
-         } else {
-            subgroup_size = 0;
-            max_subgroup_size = compiler->threadsize_base * 2;
-         }
-         break;
-      }
+      ir3_shader_get_subgroup_size(compiler, &shader->options, s->info.stage,
+                                   &subgroup_size, &max_subgroup_size);
 
       nir_lower_subgroups_options options = {
             .subgroup_size = subgroup_size,
