@@ -857,6 +857,10 @@
    DRI_CONF_OPT_B(anv_upper_bound_descriptor_pool_sampler, def, \
                   "Overallocate samplers in descriptor pools to workaround app bug")
 
+#define DRI_CONF_ANV_VF_COMPONENT_PACKING(def) \
+   DRI_CONF_OPT_B(anv_vf_component_packing, def, \
+                  "Vertex fetching component packing")
+
 /**
  * \brief HASVK specific configuration options
  */

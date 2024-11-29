@@ -432,6 +432,16 @@ emit_vertex_input(struct anv_graphics_pipeline *pipeline,
       sgvs.XP2ElementOffset            = drawid_slot;
    }
 #endif
+
+   if (pipeline->base.base.device->physical->instance->vf_component_packing) {
+      anv_pipeline_emit(pipeline, final.vf_component_packing,
+                        GENX(3DSTATE_VF_COMPONENT_PACKING), vfc) {
+         vfc.VertexElementEnablesDW[0] = vs_prog_data->vf_component_packing[0];
+         vfc.VertexElementEnablesDW[1] = vs_prog_data->vf_component_packing[1];
+         vfc.VertexElementEnablesDW[2] = vs_prog_data->vf_component_packing[2];
+         vfc.VertexElementEnablesDW[3] = vs_prog_data->vf_component_packing[3];
+      }
+   }
 }
 
 void
@@ -2024,6 +2034,10 @@ genX(graphics_pipeline_emit)(struct anv_graphics_pipeline *pipeline,
 #if GFX_VER >= 11
       anv_pipeline_emit(pipeline, final.vf_sgvs_2, GENX(3DSTATE_VF_SGVS_2), sgvs);
 #endif
+      if (pipeline->base.base.device->physical->instance->vf_component_packing) {
+         anv_pipeline_emit(pipeline, final.vf_component_packing,
+                           GENX(3DSTATE_VF_COMPONENT_PACKING), vfc);
+      }
       anv_pipeline_emit(pipeline, final.vs, GENX(3DSTATE_VS), vs);
       anv_pipeline_emit(pipeline, final.hs, GENX(3DSTATE_HS), hs);
       anv_pipeline_emit(pipeline, final.ds, GENX(3DSTATE_DS), ds);

@@ -59,6 +59,7 @@ static const driOptionDescription anv_dri_options[] = {
 #else
       DRI_CONF_VK_REQUIRE_ASTC(false)
 #endif
+      DRI_CONF_ANV_VF_COMPONENT_PACKING(true)
    DRI_CONF_SECTION_END
 
    DRI_CONF_SECTION_QUALITY
@@ -186,6 +187,8 @@ anv_init_dri_options(struct anv_instance *instance)
     instance->custom_border_colors_without_format =
        driQueryOptionb(&instance->dri_options,
                        "custom_border_colors_without_format");
+    instance->vf_component_packing =
+       driQueryOptionb(&instance->dri_options, "anv_vf_component_packing");
 
     instance->stack_ids = driQueryOptioni(&instance->dri_options, "intel_stack_id");
     switch (instance->stack_ids) {

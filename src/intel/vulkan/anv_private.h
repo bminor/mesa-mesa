@@ -1319,6 +1319,7 @@ struct anv_instance {
     bool                                        anv_fake_nonlocal_memory;
     bool                                        anv_upper_bound_descriptor_pool_sampler;
     bool                                        custom_border_colors_without_format;
+    bool                                        vf_component_packing;
 
     /* HW workarounds */
     bool                                        no_16bit;
@@ -1444,6 +1445,7 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_VF_SGVS_2,
    ANV_GFX_STATE_VF_SGVS_VI, /* 3DSTATE_VERTEX_ELEMENTS for sgvs elements */
    ANV_GFX_STATE_VF_SGVS_INSTANCING, /* 3DSTATE_VF_INSTANCING for sgvs elements */
+   ANV_GFX_STATE_VF_COMPONENT_PACKING,
    ANV_GFX_STATE_PRIMITIVE_REPLICATION,
    ANV_GFX_STATE_SBE,
    ANV_GFX_STATE_SBE_SWIZ,
@@ -4945,6 +4947,7 @@ struct anv_graphics_pipeline {
       struct anv_gfx_state_ptr                  vf_sgvs_2;
       struct anv_gfx_state_ptr                  vf_sgvs_instancing;
       struct anv_gfx_state_ptr                  vf_instancing;
+      struct anv_gfx_state_ptr                  vf_component_packing;
       struct anv_gfx_state_ptr                  primitive_replication;
       struct anv_gfx_state_ptr                  sbe;
       struct anv_gfx_state_ptr                  sbe_swiz;
