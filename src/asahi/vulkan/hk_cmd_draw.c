@@ -1065,7 +1065,7 @@ hk_geometry_state(struct hk_cmd_buffer *cmd)
        * the CPU as rodata, even though the GPU uses it for scratch internally.
        */
       off_t off = dev->rodata.geometry_state - dev->rodata.bo->va->addr;
-      struct agx_geometry_state *map = dev->rodata.bo->map + off;
+      struct agx_geometry_state *map = agx_bo_map(dev->rodata.bo) + off;
 
       *map = (struct agx_geometry_state){
          .heap = dev->heap->va->addr,

@@ -1563,7 +1563,7 @@ agx_compile_nir(struct agx_device *dev, nir_shader *nir,
       compiled->bo = agx_bo_create(dev, compiled->b.info.binary_size, 0,
                                    AGX_BO_EXEC | AGX_BO_LOW_VA, "Executable");
 
-      memcpy(compiled->bo->map, compiled->b.binary,
+      memcpy(agx_bo_map(compiled->bo), compiled->b.binary,
              compiled->b.info.binary_size);
    }
 
@@ -2854,7 +2854,7 @@ agx_sampler_heap_add(struct agx_device *dev, struct agx_sampler_heap *heap,
 
    /* Precondition: there is room in the heap */
    assert(heap->count < AGX_SAMPLER_HEAP_SIZE);
-   struct agx_sampler_packed *samplers = heap->bo->map;
+   struct agx_sampler_packed *samplers = agx_bo_map(heap->bo);
    memcpy(samplers + heap->count, sampler, sizeof(*sampler));
 
    return heap->count++;

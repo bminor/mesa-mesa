@@ -68,6 +68,9 @@ struct agx_bo {
    /* Used to link the BO to the BO cache LRU list. */
    struct list_head lru_link;
 
+   /* Convenience */
+   struct agx_device *dev;
+
    /* The time this BO was used last, so we can evict stale BOs. */
    time_t last_used;
 
@@ -78,7 +81,9 @@ struct agx_bo {
 
    /* Mapping */
    struct agx_va *va;
-   void *map;
+
+   /* Suffixed to force agx_bo_map access */
+   void *_map;
 
    /* Process-local index */
    uint32_t handle;

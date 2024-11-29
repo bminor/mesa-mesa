@@ -34,7 +34,7 @@ struct hk_query_report {
 static uint16_t *
 hk_pool_oq_index_ptr(const struct hk_query_pool *pool)
 {
-   return (uint16_t *)(pool->bo->map + pool->query_start);
+   return agx_bo_map(pool->bo) + pool->query_start;
 }
 
 static uint32_t
@@ -150,7 +150,7 @@ static uint32_t *
 hk_query_available_map(struct hk_query_pool *pool, uint32_t query)
 {
    assert(query < pool->vk.query_count);
-   return (uint32_t *)pool->bo->map + query;
+   return (uint32_t *)agx_bo_map(pool->bo) + query;
 }
 
 static uint64_t
@@ -178,12 +178,13 @@ hk_query_report_map(struct hk_device *dev, struct hk_query_pool *pool,
                     uint32_t query)
 {
    if (pool->oq_queries) {
-      uint64_t *queries = (uint64_t *)dev->occlusion_queries.bo->map;
+      uint64_t *queries = (uint64_t *)agx_bo_map(dev->occlusion_queries.bo);
       uint16_t *oq_index = hk_pool_oq_index_ptr(pool);
 
       return (struct hk_query_report *)&queries[oq_index[query]];
    } else {
-      return (void *)((char *)pool->bo->map + hk_query_offset(pool, query));
+      return (void *)((char *)agx_bo_map(pool->bo) +
+                      hk_query_offset(pool, query));
    }
 }
 

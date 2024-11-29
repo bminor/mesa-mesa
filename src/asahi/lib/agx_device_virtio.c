@@ -106,6 +106,7 @@ agx_virtio_bo_alloc(struct agx_device *dev, size_t size, size_t align,
    /* Fresh handle */
    assert(!memcmp(bo, &((struct agx_bo){}), sizeof(*bo)));
 
+   bo->dev = dev;
    bo->size = size;
    bo->align = align;
    bo->flags = flags;
@@ -114,8 +115,6 @@ agx_virtio_bo_alloc(struct agx_device *dev, size_t size, size_t align,
    bo->blob_id = blob_id;
    bo->va = va;
    bo->vbo_res_id = vdrm_handle_to_res_id(dev->vdrm, handle);
-
-   dev->ops.bo_mmap(dev, bo);
    return bo;
 }
 
@@ -149,14 +148,10 @@ agx_virtio_bo_bind(struct agx_device *dev, struct agx_bo *bo, uint64_t addr,
 static void
 agx_virtio_bo_mmap(struct agx_device *dev, struct agx_bo *bo)
 {
-   if (bo->map) {
-      return;
-   }
-
-   bo->map = vdrm_bo_map(dev->vdrm, bo->handle, bo->size, NULL);
-   if (bo->map == MAP_FAILED) {
-      bo->map = NULL;
-      fprintf(stderr, "mmap failed: result=%p size=0x%llx fd=%i\n", bo->map,
+   bo->_map = vdrm_bo_map(dev->vdrm, bo->handle, bo->size, NULL);
+   if (bo->_map == MAP_FAILED) {
+      bo->_map = NULL;
+      fprintf(stderr, "mmap failed: result=%p size=0x%llx fd=%i\n", bo->_map,
               (long long)bo->size, dev->fd);
    }
 }

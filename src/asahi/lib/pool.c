@@ -72,7 +72,7 @@ agx_pool_alloc_aligned_with_bo(struct agx_pool *pool, size_t sz,
    pool->transient_offset = offset + sz;
 
    struct agx_ptr ret = {
-      .cpu = bo->map + offset,
+      .cpu = agx_bo_map(bo) + offset,
       .gpu = bo->va->addr + offset,
    };
 

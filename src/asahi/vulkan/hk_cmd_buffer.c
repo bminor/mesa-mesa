@@ -187,7 +187,7 @@ hk_pool_alloc_internal(struct hk_cmd_buffer *cmd, uint32_t size,
       util_dynarray_append(&cmd->large_bos, struct agx_bo *, bo);
       return (struct agx_ptr){
          .gpu = bo->va->addr,
-         .cpu = bo->map,
+         .cpu = agx_bo_map(bo),
       };
    }
 
@@ -220,7 +220,7 @@ hk_pool_alloc_internal(struct hk_cmd_buffer *cmd, uint32_t size,
     * BO.
     */
    if (uploader->map == NULL || size < uploader->offset) {
-      uploader->map = bo->bo->map;
+      uploader->map = agx_bo_map(bo->bo);
       uploader->base = bo->bo->va->addr;
       uploader->offset = size;
    }

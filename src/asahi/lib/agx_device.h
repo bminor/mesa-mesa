@@ -163,6 +163,15 @@ struct agx_device {
    } timestamp_to_ns;
 };
 
+static inline void *
+agx_bo_map(struct agx_bo *bo)
+{
+   if (!bo->_map)
+      bo->dev->ops.bo_mmap(bo->dev, bo);
+
+   return bo->_map;
+}
+
 static inline bool
 agx_has_soft_fault(struct agx_device *dev)
 {

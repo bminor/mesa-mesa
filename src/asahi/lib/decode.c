@@ -111,7 +111,7 @@ __agxdecode_fetch_gpu_mem(struct agxdecode_ctx *ctx, const struct agx_bo *mem,
       assert(0);
    }
 
-   memcpy(buf, mem->map + gpu_va - mem->va->addr, size);
+   memcpy(buf, mem->_map + gpu_va - mem->va->addr, size);
 
    return size;
 }

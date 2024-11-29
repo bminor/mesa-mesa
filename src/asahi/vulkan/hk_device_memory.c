@@ -322,7 +322,7 @@ hk_MapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo,
                        "Memory object already mapped.");
    }
 
-   mem->map = mem->bo->map;
+   mem->map = agx_bo_map(mem->bo);
    *ppData = mem->map + offset;
 
    return VK_SUCCESS;

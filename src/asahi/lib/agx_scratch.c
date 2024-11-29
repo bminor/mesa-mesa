@@ -113,13 +113,14 @@ agx_scratch_realloc(struct agx_scratch *scratch)
 #endif
    scratch->buf = agx_bo_create(scratch->dev, total_alloc, block_size_bytes,
                                 flags, "Scratch");
-   memset(scratch->buf->map, 0, blocks_off);
+   void *map = agx_bo_map(scratch->buf);
+   memset(map, 0, blocks_off);
 
-   struct agx_helper_header *hdr = scratch->buf->map;
+   struct agx_helper_header *hdr = map;
    scratch->header = hdr;
 
    uint64_t blocklist_gpu = scratch->buf->va->addr + blocklist_off;
-   struct agx_helper_block *blocklist_cpu = scratch->buf->map + blocklist_off;
+   struct agx_helper_block *blocklist_cpu = map + blocklist_off;
 
 #ifdef SCRATCH_DEBUG
    scratch->blocklist = blocklist_cpu;

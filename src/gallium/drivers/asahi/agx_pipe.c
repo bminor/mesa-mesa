@@ -692,7 +692,7 @@ agx_shadow(struct agx_context *ctx, struct agx_resource *rsrc, bool needs_copy)
                      (old->flags & AGX_BO_WRITEBACK) ? "cached" : "uncached");
       agx_resource_debug(rsrc, "Shadowed: ");
 
-      memcpy(new_->map, old->map, size);
+      memcpy(agx_bo_map(new_), agx_bo_map(old), size);
    }
 
    /* Swap the pointers, dropping a reference */
@@ -915,7 +915,6 @@ agx_transfer_map(struct pipe_context *pctx, struct pipe_resource *resource,
 {
    struct agx_context *ctx = agx_context(pctx);
    struct agx_resource *rsrc = agx_resource(resource);
-   struct agx_device *dev = agx_device(ctx->base.screen);
 
    /* Can't map tiled/compressed directly */
    if ((usage & PIPE_MAP_DIRECTLY) && rsrc->modifier != DRM_FORMAT_MOD_LINEAR)
@@ -979,11 +978,8 @@ agx_transfer_map(struct pipe_context *pctx, struct pipe_resource *resource,
          agx_sync_writer(ctx, staging, "GPU read staging blit");
       }
 
-      dev->ops.bo_mmap(dev, staging->bo);
-      return staging->bo->map;
+      return agx_bo_map(staging->bo);
    }
-
-   dev->ops.bo_mmap(dev, rsrc->bo);
 
    if (ail_is_level_twiddled_uncompressed(&rsrc->layout, level)) {
       /* Should never happen for buffers, and it's not safe */
@@ -1025,7 +1021,7 @@ agx_transfer_map(struct pipe_context *pctx, struct pipe_resource *resource,
       uint32_t offset =
          ail_get_linear_pixel_B(&rsrc->layout, level, box->x, box->y, box->z);
 
-      return ((uint8_t *)rsrc->bo->map) + offset;
+      return ((uint8_t *)agx_bo_map(rsrc->bo)) + offset;
    }
 }
 
@@ -1622,8 +1618,9 @@ agx_flush_compute(struct agx_context *ctx, struct agx_batch *batch,
    *cmdbuf = (struct drm_asahi_cmd_compute){
       .flags = 0,
       .encoder_ptr = batch->cdm.bo->va->addr,
-      .encoder_end = batch->cdm.bo->va->addr +
-                     (batch->cdm.current - (uint8_t *)batch->cdm.bo->map),
+      .encoder_end =
+         batch->cdm.bo->va->addr +
+         (batch->cdm.current - (uint8_t *)agx_bo_map(batch->cdm.bo)),
       .usc_base = dev->shader_base,
       .helper_arg = 0,
       .helper_cfg = 0,
@@ -2745,7 +2742,7 @@ agx_screen_create(int fd, struct renderonly *ro,
       struct agx_bo *bo =
          agx_bo_create(&agx_screen->dev, 16384, 0, 0, "Rodata");
 
-      agx_pack_txf_sampler((struct agx_sampler_packed *)bo->map);
+      agx_pack_txf_sampler((struct agx_sampler_packed *)agx_bo_map(bo));
 
       agx_pack(&agx_screen->dev.txf_sampler, USC_SAMPLER, cfg) {
          cfg.start = 0;

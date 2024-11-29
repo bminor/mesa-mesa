@@ -101,7 +101,7 @@ agx_alloc_oq(struct agx_context *ctx)
    unsigned offset = index * sizeof(uint64_t);
 
    return (struct agx_ptr){
-      (uint8_t *)heap->bo->map + offset,
+      (uint8_t *)agx_bo_map(heap->bo) + offset,
       heap->bo->va->addr + offset,
    };
 }
@@ -165,7 +165,7 @@ agx_create_query(struct pipe_context *ctx, unsigned query_type, unsigned index)
                                 0, AGX_BO_WRITEBACK, "Query");
       query->ptr = (struct agx_ptr){
          .gpu = query->bo->va->addr,
-         .cpu = query->bo->map,
+         .cpu = agx_bo_map(query->bo),
       };
    }
 

@@ -1233,7 +1233,7 @@ hk_image_plane_bind(struct hk_device *dev, struct hk_image_plane *plane,
       unreachable("todo");
    } else {
       plane->addr = mem->bo->va->addr + *offset_B;
-      plane->map = mem->bo->map + *offset_B;
+      plane->map = agx_bo_map(mem->bo) + *offset_B;
       plane->rem = mem->bo->size - (*offset_B);
    }
 

@@ -489,7 +489,7 @@ hk_CreateDescriptorPool(VkDevice _device,
          return vk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
       }
 
-      pool->mapped_ptr = pool->bo->map;
+      pool->mapped_ptr = agx_bo_map(pool->bo);
 
       /* The BO may be larger thanks to GPU page alignment.  We may as well
        * make that extra space available to the client.

@@ -976,7 +976,7 @@ agx_resource_valid(struct agx_resource *rsrc, int level)
 static inline void *
 agx_map_texture_cpu(struct agx_resource *rsrc, unsigned level, unsigned z)
 {
-   return ((uint8_t *)rsrc->bo->map) +
+   return ((uint8_t *)agx_bo_map(rsrc->bo)) +
           ail_get_layer_level_B(&rsrc->layout, z, level);
 }
 

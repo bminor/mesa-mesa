@@ -58,7 +58,7 @@ hk_upload_rodata(struct hk_device *dev)
    if (!dev->rodata.bo)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-   uint8_t *map = dev->rodata.bo->map;
+   uint8_t *map = agx_bo_map(dev->rodata.bo);
    uint32_t offs = 0;
 
    offs = align(offs, 8);
@@ -85,7 +85,7 @@ hk_upload_rodata(struct hk_device *dev)
       cfg.buffer = dev->rodata.bo->va->addr + offs;
    }
 
-   uint64_t *image_heap_ptr = dev->rodata.bo->map + offs;
+   uint64_t *image_heap_ptr = (void *)map + offs;
    *image_heap_ptr = dev->images.bo->va->addr;
    offs += sizeof(uint64_t);
 
@@ -106,7 +106,7 @@ hk_upload_rodata(struct hk_device *dev)
     */
    offs = align(offs, 16);
    dev->rodata.zero_sink = dev->rodata.bo->va->addr + offs;
-   memset(dev->rodata.bo->map + offs, 0, 16);
+   memset(map + offs, 0, 16);
    offs += 16;
 
    /* For null storage descriptors, we need to reserve 16 bytes to catch writes.
