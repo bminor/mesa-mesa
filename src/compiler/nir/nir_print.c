@@ -2131,9 +2131,7 @@ print_block_preds(nir_block *block, print_state *state)
    FILE *fp = state->fp;
    nir_block **preds = nir_block_get_predecessors_sorted(block, NULL);
    for (unsigned i = 0; i < block->predecessors->entries; i++) {
-      if (i != 0)
-         fprintf(fp, " ");
-      fprintf(fp, "b%u", preds[i]->index);
+      fprintf(fp, " b%u", preds[i]->index);
    }
    ralloc_free(preds);
 }
@@ -2144,7 +2142,7 @@ print_block_succs(nir_block *block, print_state *state)
    FILE *fp = state->fp;
    for (unsigned i = 0; i < 2; i++) {
       if (block->successors[i]) {
-         fprintf(fp, "b%u ", block->successors[i]->index);
+         fprintf(fp, " b%u", block->successors[i]->index);
       }
    }
 }
@@ -2166,9 +2164,9 @@ print_block(nir_block *block, print_state *state, unsigned tabs)
 
    const bool empty_block = exec_list_is_empty(&block->instr_list);
    if (empty_block) {
-      fprintf(fp, "  // preds: ");
+      fprintf(fp, "  // preds:");
       print_block_preds(block, state);
-      fprintf(fp, ", succs: ");
+      fprintf(fp, ", succs:");
       print_block_succs(block, state);
       fprintf(fp, "\n");
       return;
@@ -2177,7 +2175,7 @@ print_block(nir_block *block, print_state *state, unsigned tabs)
    const unsigned block_length = 7 + count_digits(block->index) + 1;
    const unsigned pred_padding = block_length < state->padding_for_no_dest ? state->padding_for_no_dest - block_length : 0;
 
-   fprintf(fp, "%*s// preds: ", pred_padding, "");
+   fprintf(fp, "%*s// preds:", pred_padding, "");
    print_block_preds(block, state);
    fprintf(fp, "\n");
 
@@ -2188,7 +2186,7 @@ print_block(nir_block *block, print_state *state, unsigned tabs)
    }
 
    print_indentation(tabs, fp);
-   fprintf(fp, "%*s// succs: ", state->padding_for_no_dest, "");
+   fprintf(fp, "%*s// succs:", state->padding_for_no_dest, "");
    print_block_succs(block, state);
    fprintf(fp, "\n");
 }
