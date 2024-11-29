@@ -648,31 +648,6 @@ panfrost_query_compression_rates(struct pipe_screen *screen,
    *count = panfrost_afrc_query_rates(format, max, rates);
 }
 
-static void
-panfrost_query_compression_modifiers(struct pipe_screen *screen,
-                                     enum pipe_format format, uint32_t rate,
-                                     int max, uint64_t *modifiers, int *count)
-{
-   struct panfrost_device *dev = pan_device(screen);
-
-   if (!dev->has_afrc || rate == PIPE_COMPRESSION_FIXED_RATE_NONE) {
-      int mod_count = 0;
-      for (unsigned i = 0; i < PAN_MODIFIER_COUNT; ++i) {
-         if (drm_is_afrc(pan_best_modifiers[i]))
-            continue;
-         if (mod_count < max)
-            modifiers[mod_count] = pan_best_modifiers[i];
-         mod_count++;
-         if (max > 0 && mod_count >= max)
-            break;
-      }
-      *count = mod_count;
-      return;
-   }
-
-   *count = panfrost_afrc_get_modifiers(format, rate, max, modifiers);
-}
-
 /* We always support linear and tiled operations, both external and internal.
  * We support AFBC for a subset of formats, and colourspace transform for a
  * subset of those. */
@@ -681,7 +656,7 @@ static void
 panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
                                enum pipe_format format, int max,
                                uint64_t *modifiers, unsigned int *external_only,
-                               int *out_count, uint64_t test_modifier)
+                               int *out_count, uint64_t test_modifier, bool allow_afrc)
 {
    /* Query AFBC status */
    struct panfrost_device *dev = pan_device(screen);
@@ -689,7 +664,7 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
       dev->has_afbc && panfrost_format_supports_afbc(dev->arch, format);
    bool ytr = panfrost_afbc_can_ytr(format);
    bool tiled_afbc = panfrost_afbc_can_tile(dev->arch);
-   bool afrc = dev->has_afrc && panfrost_format_supports_afrc(format);
+   bool afrc = allow_afrc && dev->has_afrc && panfrost_format_supports_afrc(format);
 
    unsigned count = 0;
 
@@ -735,7 +710,27 @@ panfrost_query_dmabuf_modifiers(struct pipe_screen *screen,
                                 unsigned int *external_only, int *out_count)
 {
    panfrost_walk_dmabuf_modifiers(screen, format, max, modifiers, external_only,
-                                  out_count, DRM_FORMAT_MOD_INVALID);
+                                  out_count, DRM_FORMAT_MOD_INVALID, true);
+}
+
+static void
+panfrost_query_compression_modifiers(struct pipe_screen *screen,
+                                     enum pipe_format format, uint32_t rate,
+                                     int max, uint64_t *modifiers, int *count)
+{
+   struct panfrost_device *dev = pan_device(screen);
+
+   if (rate == PIPE_COMPRESSION_FIXED_RATE_NONE)
+      /* no compression requested, return all non-afrc formats */
+      panfrost_walk_dmabuf_modifiers(screen, format, max, modifiers,
+                                     NULL, /* external_only */
+                                     count,
+                                     DRM_FORMAT_MOD_INVALID,
+                                     false /* disallow afrc */);
+   else if (dev->has_afrc)
+      *count = panfrost_afrc_get_modifiers(format, rate, max, modifiers);
+   else
+      *count = 0;  /* compression requested but not supported */
 }
 
 static bool
@@ -749,7 +744,7 @@ panfrost_is_dmabuf_modifier_supported(struct pipe_screen *screen,
    int count;
 
    panfrost_walk_dmabuf_modifiers(screen, format, 1, &unused, &uint_extern_only,
-                                  &count, modifier);
+                                  &count, modifier, true);
 
    if (external_only)
       *external_only = uint_extern_only ? true : false;
