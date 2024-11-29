@@ -64,7 +64,7 @@ agx_pool_alloc_aligned_with_bo(struct agx_pool *pool, size_t sz,
    /* If we don't fit, allocate a new backing */
    if (unlikely(bo == NULL || (offset + sz) >= POOL_SLAB_SIZE)) {
       bo = agx_pool_alloc_backing(pool,
-                                  ALIGN_POT(MAX2(POOL_SLAB_SIZE, sz), 4096));
+                                  ALIGN_POT(MAX2(POOL_SLAB_SIZE, sz), 16384));
       offset = 0;
    }
 
