@@ -567,9 +567,10 @@ lower_scan_reduce(struct nir_builder *b, nir_instr *instr, void *data)
    nir_def *inclusive = intrin->src[0].ssa;
    nir_def *exclusive = ident;
 
-   for (unsigned cluster_size = 2; cluster_size <= 8; cluster_size *= 2) {
+   for (unsigned brcst_cluster_size = 2;
+        brcst_cluster_size <= 8; brcst_cluster_size *= 2) {
       nir_def *brcst = nir_brcst_active_ir3(b, ident, inclusive,
-                                            .cluster_size = cluster_size);
+                                            .cluster_size = brcst_cluster_size);
       inclusive = nir_build_alu2(b, op, inclusive, brcst);
 
       if (intrin->intrinsic == nir_intrinsic_exclusive_scan)
