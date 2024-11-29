@@ -120,12 +120,13 @@ struct ${op.bname}_mods {
   ${op_mod.t.name} ${op_mod.t.tname};
       % endfor
 };
+
    % endif
-#define ${op.bname}(${op.builder_params[1]}${op.builder_params[2]}) _${op.bname}(${op.builder_params[1]}${op.builder_params[3]})
+#define ${op.bname}_(${op.builder_params[2]}${op.builder_params[4]}) _${op.bname}_(${op.builder_params[2]}${op.builder_params[5]})
 static
-pco_instr *_${op.bname}(${op.builder_params[0]})
+pco_instr *_${op.bname}_(${op.builder_params[0]})
 {
-   pco_instr *instr = pco_instr_create(${op.builder_params[4]},
+   pco_instr *instr = pco_instr_create(func,
                                        ${op.cname.upper()},
                                        ${'num_dests' if op.num_dests == VARIABLE else op.num_dests},
                                        ${'num_srcs' if op.num_srcs == VARIABLE else op.num_srcs});
@@ -158,12 +159,21 @@ pco_instr *_${op.bname}(${op.builder_params[0]})
       % endif
    % endfor
 
-   % if op.op_type != 'hw_direct':
-   pco_builder_insert_instr(b, instr);
-   % endif
    return instr;
 }
 
+   % if op.op_type != 'hw_direct':
+#define ${op.bname}(${op.builder_params[3]}${op.builder_params[4]}) _${op.bname}(${op.builder_params[3]}${op.builder_params[5]})
+static inline
+pco_instr *_${op.bname}(${op.builder_params[1]})
+{
+   pco_func *func = pco_cursor_func(b->cursor);
+   pco_instr *instr = _${op.bname}_(${op.builder_params[2]}${op.builder_params[6]});
+   pco_builder_insert_instr(b, instr);
+   return instr;
+}
+
+   % endif
 % endfor
 #endif /* PCO_BUILDER_OPS_H */"""
 

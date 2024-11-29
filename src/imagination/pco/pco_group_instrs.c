@@ -98,7 +98,7 @@ static inline void calc_lengths(pco_igrp *igrp, unsigned *offset_bytes)
 
       case PCO_ALUTYPE_CONTROL:
          igrp->enc.len.instrs[phase] =
-            pco_ctrl_bytes(igrp->variant.instr[phase].ctrl);
+            pco_ctrl_bytes(igrp->variant.instr[phase].control);
          break;
 
       default:

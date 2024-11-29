@@ -283,7 +283,7 @@ static bool pco_ra_func(pco_func *func,
                   pco_ref src = pco_ref_chans(*psrc, 1);
                   src = pco_ref_offset(src, u);
 
-                  pco_mbyp0(&b, dest, src);
+                  pco_mbyp(&b, dest, src);
                }
 
                temps = MAX2(temps, temp_dest_base + offset + chans);

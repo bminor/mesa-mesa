@@ -186,7 +186,7 @@ typedef struct _pco_igrp {
          enum pco_main_variant main;
          enum pco_backend_variant backend;
          enum pco_bitwise_variant bitwise;
-         enum pco_ctrl_variant ctrl;
+         enum pco_ctrl_variant control;
       } instr[_PCO_OP_PHASE_COUNT];
       enum pco_src_variant lower_src;
       enum pco_src_variant upper_src;
@@ -620,7 +620,7 @@ static inline unsigned pco_igrp_variant(const pco_igrp *igrp,
       return igrp->variant.instr[phase].bitwise;
 
    case PCO_ALUTYPE_CONTROL:
-      return igrp->variant.instr[phase].ctrl;
+      return igrp->variant.instr[phase].control;
 
    default:
       break;

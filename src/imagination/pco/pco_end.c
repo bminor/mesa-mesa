@@ -53,7 +53,7 @@ bool pco_end(pco_shader *shader)
       return true;
    }
 
-   pco_nop_end(&b);
+   pco_nop(&b, .end = true);
 
    return true;
 }

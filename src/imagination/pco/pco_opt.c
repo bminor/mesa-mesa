@@ -174,7 +174,7 @@ static inline bool lower_mods(pco_shader *shader, struct pco_opt_ctx *ctx)
       if (mod->src[0].flr)
          pco_fadd(&b, mod->dest[0], mod->src[0], pco_zero);
       else
-         pco_mbyp0(&b, mod->dest[0], mod->src[0]);
+         pco_mbyp(&b, mod->dest[0], mod->src[0]);
 
       pco_instr_delete(mod);
 

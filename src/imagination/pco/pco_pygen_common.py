@@ -441,41 +441,50 @@ def op(name, op_type, op_mods, num_dests, num_srcs, dest_mods, src_mods, has_tar
    cdest_mods = {i: 0 if not dest_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in destn_mods]) for i, destn_mods in enumerate(dest_mods)}
    csrc_mods = {i: 0 if not src_mods else ' | '.join([f'(1ULL << {ref_mod.cname})' for ref_mod in srcn_mods]) for i, srcn_mods in enumerate(src_mods)}
 
-   builder_params = ['', '', '', '', '']
+   builder_params = ['', '', '', '', '', '', '']
 
-   if op_type != 'hw_direct':
-      builder_params[0] = 'pco_builder *b'
-      builder_params[1] = 'b'
-      builder_params[4] = 'pco_cursor_func(b->cursor)'
-   else:
-      builder_params[0] = 'pco_func *func'
-      builder_params[1] = 'func'
-      builder_params[4] = 'func'
+   builder_params[0] = 'pco_func *func'
+   builder_params[1] = 'pco_builder *b'
+   builder_params[2] = 'func'
+   builder_params[3] = 'b'
 
    if has_target_cf_node:
       builder_params[0] += ', pco_cf_node *target_cf_node'
-      builder_params[1] += ', target_cf_node'
+      builder_params[1] += ', pco_cf_node *target_cf_node'
+      builder_params[2] += ', target_cf_node'
+      builder_params[3] += ', target_cf_node'
 
    if num_dests == VARIABLE:
       builder_params[0] += f', unsigned num_dests, pco_ref *dest'
-      builder_params[1] += f', num_dests, dests'
+      builder_params[1] += f', unsigned num_dests, pco_ref *dest'
+      builder_params[2] += f', num_dests, dest'
+      builder_params[3] += f', num_dests, dest'
    else:
       for d in range(num_dests):
          builder_params[0] += f', pco_ref dest{d}'
-         builder_params[1] += f', dest{d}'
+         builder_params[1] += f', pco_ref dest{d}'
+         builder_params[2] += f', dest{d}'
+         builder_params[3] += f', dest{d}'
 
    if num_srcs == VARIABLE:
       builder_params[0] += f', unsigned num_srcs, pco_ref *src'
-      builder_params[1] += f', num_srcs, srcs'
+      builder_params[1] += f', unsigned num_srcs, pco_ref *src'
+      builder_params[2] += f', num_srcs, src'
+      builder_params[3] += f', num_srcs, src'
    else:
       for s in range(num_srcs):
          builder_params[0] += f', pco_ref src{s}'
-         builder_params[1] += f', src{s}'
+         builder_params[1] += f', pco_ref src{s}'
+         builder_params[2] += f', src{s}'
+         builder_params[3] += f', src{s}'
 
    if bool(op_mods):
       builder_params[0] += f', struct {prefix}_{_name}_mods mods'
-      builder_params[2] = ', ...'
-      builder_params[3] = f', (struct {bname}_mods){{0, ##__VA_ARGS__}}'
+      builder_params[1] += f', struct {prefix}_{_name}_mods mods'
+      builder_params[4] = ', ...'
+      builder_params[5] = f', (struct {bname}_mods){{0, ##__VA_ARGS__}}'
+      builder_params[6] = ', mods'
+
 
    op = Op(name, cname, bname, op_type, op_mods, cop_mods, op_mod_map, num_dests, num_srcs, dest_mods, cdest_mods, src_mods, csrc_mods, has_target_cf_node, builder_params)
    ops[name] = op
@@ -487,5 +496,5 @@ def pseudo_op(name, op_mods=[], num_dests=0, num_srcs=0, dest_mods=[], src_mods=
 def hw_op(name, op_mods=[], num_dests=0, num_srcs=0, dest_mods=[], src_mods=[], has_target_cf_node=False):
    return op(name, 'hw', op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)
 
-def hw_direct_op(name, num_dests=0, num_srcs=0, has_target_cf_node=False):
-   return op(name, 'hw_direct', [], num_dests, num_srcs, [], [], has_target_cf_node)
+def hw_direct_op(name, op_mods=[], num_dests=0, num_srcs=0, dest_mods=[], src_mods=[], has_target_cf_node=False):
+   return op(name, 'hw_direct', op_mods, num_dests, num_srcs, dest_mods, src_mods, has_target_cf_node)

@@ -271,13 +271,13 @@ OM_END = op_mod('end', BaseType.bool, unset=True)
 # Ops.
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
-OM_ALU_RPT1 = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
+OM_ALU_RPT1 = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM]
 
 ## Main.
 O_FADD = hw_op('fadd', OM_ALU + [OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
 O_FMUL = hw_op('fmul', OM_ALU + [OM_SAT], 1, 2, [], [[RM_ABS, RM_NEG, RM_FLR], [RM_ABS]])
 O_FMAD = hw_op('fmad', OM_ALU + [OM_SAT, OM_LP], 1, 3, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG], [RM_ABS, RM_NEG, RM_FLR]])
-O_MBYP0 = hw_op('mbyp0', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
+O_MBYP = hw_op('mbyp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_PCK = hw_op('pck', OM_ALU + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 1)
 
 # TODO
@@ -294,15 +294,14 @@ O_FITR = hw_op('fitr', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 3)
 O_FITRP = hw_op('fitrp', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 4)
 
 ## Bitwise.
-O_BBYP0BM = hw_direct_op('bbyp0bm', 2, 2)
+O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 
-O_MOVI32 = pseudo_op('movi32', OM_ALU, 1, 1)
+O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm', [], 2, 2)
 
 ## Control.
 O_WOP = hw_op('wop')
 O_WDF = hw_op('wdf', [], 0, 1)
-O_NOP = hw_op('nop', [OM_EXEC_CND])
-O_NOP_END = hw_op('nop.end', [OM_EXEC_CND])
+O_NOP = hw_op('nop', [OM_EXEC_CND, OM_END])
 
 # TODO NEXT: gate usage of OM_F16!
 O_DITR = hw_op('ditr', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, OM_F16], 1, 3)
