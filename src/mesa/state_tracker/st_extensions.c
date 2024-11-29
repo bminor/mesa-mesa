@@ -1734,6 +1734,11 @@ void st_init_extensions(struct pipe_screen *screen,
       }
    }
 
+   /* Technically speaking, there's no phrasing in the ARB_texture_float spec
+    * that allows ARB_texture_float to be supported without also supporting
+    * linear interpolation for them. However, being strict about this would
+    * make us drop OpenGL 3.0 support for a lot of GPUs, which is bad.
+    */
    extensions->ARB_texture_float =
       extensions->OES_texture_half_float &&
       extensions->OES_texture_float;
