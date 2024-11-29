@@ -687,6 +687,16 @@ radv_dump_umr_waves(struct radv_queue *queue, const char *wave_dump, FILE *f)
    fprintf(f, "\nUMR GFX waves:\n\n%s", wave_dump ? wave_dump : "");
 }
 
+static void
+radv_dump_vm_fault(struct radv_device *device, const struct radv_winsys_gpuvm_fault_info *fault_info, FILE *f)
+{
+   struct radv_physical_device *pdev = radv_device_physical(device);
+
+   fprintf(f, "VM fault report.\n\n");
+   fprintf(f, "Failing VM page: 0x%08" PRIx64 "\n", fault_info->addr);
+   ac_print_gpuvm_fault_status(f, pdev->info.gfx_level, fault_info->status);
+}
+
 static bool
 radv_gpu_hang_occurred(struct radv_queue *queue, enum amd_ip_type ring)
 {
@@ -837,11 +847,8 @@ radv_check_gpu_hangs(struct radv_queue *queue, const struct radv_winsys_submit_i
          device->ws->dump_bo_log(device->ws, f);
          break;
       case RADV_DEVICE_FAULT_CHUNK_VM_FAULT:
-         if (vm_fault_occurred) {
-            fprintf(f, "VM fault report.\n\n");
-            fprintf(f, "Failing VM page: 0x%08" PRIx64 "\n", fault_info.addr);
-            ac_print_gpuvm_fault_status(f, pdev->info.gfx_level, fault_info.status);
-         }
+         if (vm_fault_occurred)
+            radv_dump_vm_fault(device, &fault_info, f);
          break;
       case RADV_DEVICE_FAULT_CHUNK_APP_INFO:
          radv_dump_app_info(device, f);
