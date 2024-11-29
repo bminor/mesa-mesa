@@ -217,7 +217,8 @@ DERIVE_HASH_TABLE(agx_bg_eot_key);
 void
 agx_bg_eot_init(struct agx_bg_eot_cache *cache, struct agx_device *dev)
 {
-   agx_pool_init(&cache->pool, dev, AGX_BO_EXEC | AGX_BO_LOW_VA, true);
+   agx_pool_init(&cache->pool, dev, "Internal programs",
+                 AGX_BO_EXEC | AGX_BO_LOW_VA, true);
    simple_mtx_init(&cache->lock, mtx_plain);
    cache->ht = agx_bg_eot_key_table_create(NULL);
    cache->dev = dev;

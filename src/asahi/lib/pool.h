@@ -31,10 +31,13 @@ struct agx_pool {
 
    /* BO flags to use in the pool */
    unsigned create_flags;
+
+   /* Label for pool allocations */
+   const char *label;
 };
 
 void agx_pool_init(struct agx_pool *pool, struct agx_device *dev,
-                   unsigned create_flags, bool prealloc);
+                   const char *label, unsigned create_flags, bool prealloc);
 
 void agx_pool_cleanup(struct agx_pool *pool);
 

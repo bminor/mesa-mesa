@@ -19,7 +19,7 @@ static struct agx_bo *
 agx_pool_alloc_backing(struct agx_pool *pool, size_t bo_sz)
 {
    struct agx_bo *bo =
-      agx_bo_create(pool->dev, bo_sz, 0, pool->create_flags, "Pool");
+      agx_bo_create(pool->dev, bo_sz, 0, pool->create_flags, pool->label);
 
    util_dynarray_append(&pool->bos, struct agx_bo *, bo);
    pool->transient_bo = bo;
@@ -29,12 +29,13 @@ agx_pool_alloc_backing(struct agx_pool *pool, size_t bo_sz)
 }
 
 void
-agx_pool_init(struct agx_pool *pool, struct agx_device *dev,
+agx_pool_init(struct agx_pool *pool, struct agx_device *dev, const char *label,
               unsigned create_flags, bool prealloc)
 {
    memset(pool, 0, sizeof(*pool));
    pool->dev = dev;
    pool->create_flags = create_flags;
+   pool->label = label;
    util_dynarray_init(&pool->bos, NULL);
 
    if (prealloc)
