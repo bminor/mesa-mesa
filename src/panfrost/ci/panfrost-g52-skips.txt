@@ -85,6 +85,31 @@ dEQP-VK.draw.dynamic_rendering.*.indirect_draw*
 # Jump to 0x0 (XXX: need more research)
 dEQP-VK.glsl.shader_expect_assume.*
 
+# Generate page fault at address 0x0
+dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.1024
+dEQP-VK.memory.pipeline_barrier.transfer_dst_storage_texel_buffer.1024
+dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.1048576
+dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.65536
+dEQP-VK.memory.pipeline_barrier.host_write_storage_texel_buffer.8192
+dEQP-VK.memory.pipeline_barrier.transfer_dst_storage_texel_buffer.1024
+dEQP-VK.memory.pipeline_barrier.transfer_dst_storage_texel_buffer.1048576
+dEQP-VK.memory.pipeline_barrier.transfer_dst_storage_texel_buffer.65536
+dEQP-VK.memory.pipeline_barrier.transfer_dst_storage_texel_buffer.8192
+dEQP-VK.memory.pipeline_barrier.all.1024_vertex_buffer_stride_2
+dEQP-VK.memory.pipeline_barrier.all.1024_vertex_buffer_stride_4
+
+# New with VK_KHR_zero_initialize_workgroup_memory
+# Generate a INSTR_BARRIER_FAULT
+# Possible issue with barrier lowering with mem_modes=shared?
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.max_workgroup_memory.1
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.max_workgroup_memory.128
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.max_workgroup_memory.16
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.max_workgroup_memory.2
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.max_workgroup_memory.4
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.max_workgroup_memory.64
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.types.f32mat3x3
+dEQP-VK.compute.pipeline.zero_initialize_workgroup_memory.types.f32mat4x4
+
 # Slow tests (>= 30s)
 dEQP-VK.api.object_management.multithreaded_shared_resources.device_group
 dEQP-VK.ssbo.phys.layout.2_level_array.std140.row_major_mat4
