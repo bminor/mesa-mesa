@@ -126,7 +126,7 @@ brw_compile_vs(const struct brw_compiler *compiler,
       prog_data->uses_instanceid = true;
 
    if (BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_DRAW_ID))
-          prog_data->uses_drawid = true;
+      prog_data->uses_drawid = true;
 
    prog_data->base.urb_read_length = DIV_ROUND_UP(nr_attribute_slots, 2);
    prog_data->nr_attribute_slots = nr_attribute_slots;
