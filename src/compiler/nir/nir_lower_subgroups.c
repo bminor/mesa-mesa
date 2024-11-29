@@ -1323,6 +1323,10 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
       if (options->lower_rotate_to_shuffle &&
           (!options->lower_boolean_shuffle || intrin->src[0].ssa->bit_size != 1))
          return lower_to_shuffle(b, intrin, options);
+      else if (options->lower_rotate_clustered_to_shuffle &&
+               nir_intrinsic_cluster_size(intrin) > 0 &&
+               (!options->lower_boolean_shuffle || intrin->src[0].ssa->bit_size != 1))
+         return lower_to_shuffle(b, intrin, options);
       else if (options->lower_to_scalar && intrin->num_components > 1)
          return lower_subgroup_op_to_scalar(b, intrin);
       else if (options->lower_boolean_shuffle && intrin->src[0].ssa->bit_size == 1)
