@@ -341,11 +341,8 @@ panfrost_bo_mmap(struct panfrost_bo *bo)
 
    bo->ptr.cpu = pan_kmod_bo_mmap(bo->kmod_bo, 0, panfrost_bo_size(bo),
                                   PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
-   if (bo->ptr.cpu == MAP_FAILED) {
+   if (bo->ptr.cpu == MAP_FAILED)
       bo->ptr.cpu = NULL;
-      mesa_loge("mmap failed: result=%p size=0x%llx\n", bo->ptr.cpu,
-                (long long)panfrost_bo_size(bo));
-   }
 }
 
 static void
