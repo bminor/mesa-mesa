@@ -84,6 +84,12 @@ typedef struct {
    ssize_t (*get_params)(struct agx_device *dev, void *buf, size_t size);
    int (*submit)(struct agx_device *dev, struct drm_asahi_submit *submit,
                  struct agx_submit_virt *virt);
+   int (*bo_bind_object)(struct agx_device *dev, struct agx_bo *bo,
+                         uint32_t *object_handle, size_t size_B,
+                         uint64_t offset_B, uint32_t flags);
+   int (*bo_unbind_object)(struct agx_device *dev, uint32_t object_handle,
+                           uint32_t flags);
+
 } agx_device_ops_t;
 
 struct agx_device {
@@ -161,6 +167,11 @@ struct agx_device {
       uint64_t num;
       uint64_t den;
    } timestamp_to_ns;
+
+   struct {
+      uint64_t num;
+      uint64_t den;
+   } user_timestamp_to_ns;
 };
 
 static inline void *
@@ -215,6 +226,13 @@ static inline uint64_t
 agx_gpu_time_to_ns(struct agx_device *dev, uint64_t gpu_time)
 {
    return (gpu_time * dev->timestamp_to_ns.num) / dev->timestamp_to_ns.den;
+}
+
+static inline uint64_t
+agx_gpu_timestamp_to_ns(struct agx_device *dev, uint64_t gpu_timestamp)
+{
+   return (gpu_timestamp * dev->user_timestamp_to_ns.num) /
+          dev->user_timestamp_to_ns.den;
 }
 
 void agx_get_device_uuid(const struct agx_device *dev, void *uuid);

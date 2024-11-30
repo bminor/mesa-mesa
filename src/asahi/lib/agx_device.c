@@ -343,6 +343,52 @@ agx_bo_export(struct agx_device *dev, struct agx_bo *bo)
    return fd;
 }
 
+static int
+agx_bo_bind_object(struct agx_device *dev, struct agx_bo *bo,
+                   uint32_t *object_handle, size_t size_B, uint64_t offset_B,
+                   uint32_t flags)
+{
+   struct drm_asahi_gem_bind_object gem_bind = {
+      .op = ASAHI_BIND_OBJECT_OP_BIND,
+      .flags = flags,
+      .handle = bo->handle,
+      .vm_id = 0,
+      .offset = offset_B,
+      .range = size_B,
+   };
+
+   int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_BIND_OBJECT, &gem_bind);
+   if (ret) {
+      fprintf(stderr,
+              "DRM_IOCTL_ASAHI_GEM_BIND_OBJECT failed: %m (handle=%d)\n",
+              bo->handle);
+   }
+
+   *object_handle = gem_bind.object_handle;
+
+   return ret;
+}
+
+static int
+agx_bo_unbind_object(struct agx_device *dev, uint32_t object_handle,
+                     uint32_t flags)
+{
+   struct drm_asahi_gem_bind_object gem_bind = {
+      .op = ASAHI_BIND_OBJECT_OP_UNBIND,
+      .flags = flags,
+      .object_handle = object_handle,
+   };
+
+   int ret = drmIoctl(dev->fd, DRM_IOCTL_ASAHI_GEM_BIND_OBJECT, &gem_bind);
+   if (ret) {
+      fprintf(stderr,
+              "DRM_IOCTL_ASAHI_GEM_BIND_OBJECT failed: %m (object_handle=%d)\n",
+              object_handle);
+   }
+
+   return ret;
+}
+
 static void
 agx_get_global_ids(struct agx_device *dev)
 {
@@ -393,6 +439,8 @@ const agx_device_ops_t agx_device_drm_ops = {
    .bo_mmap = agx_bo_mmap,
    .get_params = agx_get_params,
    .submit = agx_submit,
+   .bo_bind_object = agx_bo_bind_object,
+   .bo_unbind_object = agx_bo_unbind_object,
 };
 
 static uint64_t
@@ -414,6 +462,12 @@ agx_init_timestamps(struct agx_device *dev)
 
    dev->timestamp_to_ns.num = NSEC_PER_SEC / ts_gcd;
    dev->timestamp_to_ns.den = dev->params.timer_frequency_hz / ts_gcd;
+
+   uint64_t user_ts_gcd = gcd(dev->params.timer_frequency_hz, NSEC_PER_SEC);
+
+   dev->user_timestamp_to_ns.num = NSEC_PER_SEC / user_ts_gcd;
+   dev->user_timestamp_to_ns.den =
+      dev->params.user_timestamp_frequency_hz / user_ts_gcd;
 }
 
 bool
