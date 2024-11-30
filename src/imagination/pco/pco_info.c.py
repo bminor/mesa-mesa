@@ -3,6 +3,7 @@
 
 from mako.template import Template, exceptions
 from pco_ops import *
+from pco_map import *
 
 template = """/*
  * Copyright © 2024 Imagination Technologies Ltd.
@@ -45,6 +46,18 @@ const struct pco_op_info pco_op_info[_PCO_OP_COUNT] = {
       },
       .type = PCO_OP_TYPE_${op.op_type.upper()},
       .has_target_cf_node = ${str(op.has_target_cf_node).lower()},
+% if op.bname in group_maps:
+      .dest_intrn_map = {
+   % for index, val in group_maps[op.bname].dest_intrn_map:
+         [${index}] = ${val},
+   % endfor
+      },
+      .src_intrn_map = {
+   % for index, val in group_maps[op.bname].src_intrn_map:
+         [${index}] = ${val},
+   % endfor
+      },
+% endif
    },
 % endfor
 };
@@ -91,7 +104,7 @@ const struct pco_ref_mod_info pco_ref_mod_info[_PCO_REF_MOD_COUNT] = {
 
 def main():
    try:
-      print(Template(template).render(BaseType=BaseType, ops=ops, op_mods=op_mods, ref_mods=ref_mods))
+      print(Template(template).render(BaseType=BaseType, ops=ops, op_mods=op_mods, ref_mods=ref_mods, group_maps=group_maps))
    except:
        raise Exception(exceptions.text_error_template().render())
 

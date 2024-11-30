@@ -365,10 +365,12 @@ def encode_map(op, encodings):
 
 # Instruction group mapping.
 class GroupMap(object):
-   def __init__(self, name, cop_name, mapping_sets):
+   def __init__(self, name, cop_name, mapping_sets, dest_intrn_map, src_intrn_map):
       self.name = name
       self.mapping_sets = mapping_sets
       self.cop_name = cop_name
+      self.dest_intrn_map = dest_intrn_map
+      self.src_intrn_map = src_intrn_map
 
 def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
    assert op.bname not in group_maps.keys(), f'Duplicate group mapping for op "{op.name}".'
@@ -585,9 +587,54 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
    assert bool(variant_mappings)
    mapping_sets.append(variant_mappings);
 
+   # Collect src/dest I/O
+   dest_intrn_map = []
+   src_intrn_map = []
+
+   for src, *_spec in srcs:
+      if len(_spec) != 2:
+         continue
+
+      (_phase, origin), _io = _spec
+      phase = OP_PHASE.enum.elems[_phase].cname
+      io = IO.enum.elems[_io]
+
+      if not io.string.startswith('s'):
+         continue
+
+      val = int(io.string[1:]) + 1
+
+      if is_self:
+         if origin.type == 'dest':
+            dest_intrn_map.append((origin.index, val))
+         else:
+            src_intrn_map.append((origin.index, val))
+         continue
+
+      origin_op = None
+      for enc_op in enc_ops:
+         if enc_op[0] != _phase:
+            continue
+
+         origin_op = enc_op
+         break
+      assert origin_op is not None
+
+      _enc_phase, enc_op, *_enc_spec = enc_op
+      enc_dests = _enc_spec[0] if len(_enc_spec) > 0 else []
+      enc_srcs = _enc_spec[1] if len(_enc_spec) > 1 else []
+
+      origin = enc_dests[origin.index] if origin.type == 'dest' else enc_srcs[origin.index]
+      assert isinstance(origin, OpRef)
+
+      if origin.type == 'dest':
+         dest_intrn_map.append((origin.index, val))
+      else:
+         src_intrn_map.append((origin.index, val))
+
    name = op.bname
    cop_name = op.cname.upper()
-   group_maps[name] = GroupMap(name, cop_name, mapping_sets)
+   group_maps[name] = GroupMap(name, cop_name, mapping_sets, dest_intrn_map, src_intrn_map)
 
 # Encode mappings.
 encode_map(O_FADD,

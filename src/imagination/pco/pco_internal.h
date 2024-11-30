@@ -356,6 +356,8 @@ struct pco_op_info {
    uint64_t src_mods[_PCO_OP_MAX_SRCS]; /** Supported source mods. */
    enum pco_op_type type; /** Op type. */
    bool has_target_cf_node; /** Set if op has a cf-node as a target. */
+   uint8_t dest_intrn_map[_PCO_OP_MAX_DESTS];
+   uint8_t src_intrn_map[_PCO_OP_MAX_SRCS];
 };
 extern const struct pco_op_info pco_op_info[_PCO_OP_COUNT];
 
