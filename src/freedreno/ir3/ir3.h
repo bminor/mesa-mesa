@@ -2387,12 +2387,12 @@ type_flags(type_t type)
 }
 
 static inline struct ir3_instruction *
-create_immed_typed_shared(struct ir3_block *block, uint32_t val, type_t type, bool shared)
+create_immed_typed_shared(struct ir3_builder *build, uint32_t val, type_t type, bool shared)
 {
    struct ir3_instruction *mov;
    ir3_register_flags flags = type_flags(type);
 
-   mov = ir3_instr_create(block, OPC_MOV, 1, 1);
+   mov = ir3_build_instr(build, OPC_MOV, 1, 1);
    mov->cat1.src_type = type;
    mov->cat1.dst_type = type;
    __ssa_dst(mov)->flags |= flags | (shared ? IR3_REG_SHARED : 0);
@@ -2402,30 +2402,30 @@ create_immed_typed_shared(struct ir3_block *block, uint32_t val, type_t type, bo
 }
 
 static inline struct ir3_instruction *
-create_immed_typed(struct ir3_block *block, uint32_t val, type_t type)
+create_immed_typed(struct ir3_builder *build, uint32_t val, type_t type)
 {
-   return create_immed_typed_shared(block, val, type, false);
+   return create_immed_typed_shared(build, val, type, false);
 }
 
 static inline struct ir3_instruction *
-create_immed_shared(struct ir3_block *block, uint32_t val, bool shared)
+create_immed_shared(struct ir3_builder *build, uint32_t val, bool shared)
 {
-   return create_immed_typed_shared(block, val, TYPE_U32, shared);
+   return create_immed_typed_shared(build, val, TYPE_U32, shared);
 }
 
 static inline struct ir3_instruction *
-create_immed(struct ir3_block *block, uint32_t val)
+create_immed(struct ir3_builder *build, uint32_t val)
 {
-   return create_immed_shared(block, val, false);
+   return create_immed_shared(build, val, false);
 }
 
 static inline struct ir3_instruction *
-create_uniform_typed(struct ir3_block *block, unsigned n, type_t type)
+create_uniform_typed(struct ir3_builder *build, unsigned n, type_t type)
 {
    struct ir3_instruction *mov;
    ir3_register_flags flags = type_flags(type);
 
-   mov = ir3_instr_create(block, OPC_MOV, 1, 1);
+   mov = ir3_build_instr(build, OPC_MOV, 1, 1);
    mov->cat1.src_type = type;
    mov->cat1.dst_type = type;
    __ssa_dst(mov)->flags |= flags;
@@ -2435,18 +2435,18 @@ create_uniform_typed(struct ir3_block *block, unsigned n, type_t type)
 }
 
 static inline struct ir3_instruction *
-create_uniform(struct ir3_block *block, unsigned n)
+create_uniform(struct ir3_builder *build, unsigned n)
 {
-   return create_uniform_typed(block, n, TYPE_F32);
+   return create_uniform_typed(build, n, TYPE_F32);
 }
 
 static inline struct ir3_instruction *
-create_uniform_indirect(struct ir3_block *block, int n, type_t type,
+create_uniform_indirect(struct ir3_builder *build, int n, type_t type,
                         struct ir3_instruction *address)
 {
    struct ir3_instruction *mov;
 
-   mov = ir3_instr_create(block, OPC_MOV, 1, 1);
+   mov = ir3_build_instr(build, OPC_MOV, 1, 1);
    mov->cat1.src_type = type;
    mov->cat1.dst_type = type;
    __ssa_dst(mov);
@@ -2458,9 +2458,9 @@ create_uniform_indirect(struct ir3_block *block, int n, type_t type,
 }
 
 static inline struct ir3_instruction *
-ir3_MOV(struct ir3_block *block, struct ir3_instruction *src, type_t type)
+ir3_MOV(struct ir3_builder *build, struct ir3_instruction *src, type_t type)
 {
-   struct ir3_instruction *instr = ir3_instr_create(block, OPC_MOV, 1, 1);
+   struct ir3_instruction *instr = ir3_build_instr(build, OPC_MOV, 1, 1);
    ir3_register_flags flags = type_flags(type) | (src->dsts[0]->flags & IR3_REG_SHARED);
 
    __ssa_dst(instr)->flags |= flags;
@@ -2477,24 +2477,24 @@ ir3_MOV(struct ir3_block *block, struct ir3_instruction *src, type_t type)
 }
 
 static inline struct ir3_instruction_rpt
-ir3_MOV_rpt(struct ir3_block *block, unsigned nrpt,
+ir3_MOV_rpt(struct ir3_builder *build, unsigned nrpt,
             struct ir3_instruction_rpt src, type_t type)
 {
    struct ir3_instruction_rpt dst;
    assert(nrpt <= ARRAY_SIZE(dst.rpts));
 
    for (unsigned rpt = 0; rpt < nrpt; ++rpt)
-      dst.rpts[rpt] = ir3_MOV(block, src.rpts[rpt], type);
+      dst.rpts[rpt] = ir3_MOV(build, src.rpts[rpt], type);
 
    ir3_instr_create_rpt(dst.rpts, nrpt);
    return dst;
 }
 
 static inline struct ir3_instruction *
-ir3_COV(struct ir3_block *block, struct ir3_instruction *src, type_t src_type,
+ir3_COV(struct ir3_builder *build, struct ir3_instruction *src, type_t src_type,
         type_t dst_type)
 {
-   struct ir3_instruction *instr = ir3_instr_create(block, OPC_MOV, 1, 1);
+   struct ir3_instruction *instr = ir3_build_instr(build, OPC_MOV, 1, 1);
    ir3_register_flags dst_flags = type_flags(dst_type) | (src->dsts[0]->flags & IR3_REG_SHARED);
    ASSERTED ir3_register_flags src_flags = type_flags(src_type);
 
@@ -2509,22 +2509,22 @@ ir3_COV(struct ir3_block *block, struct ir3_instruction *src, type_t src_type,
 }
 
 static inline struct ir3_instruction_rpt
-ir3_COV_rpt(struct ir3_block *block, unsigned nrpt,
+ir3_COV_rpt(struct ir3_builder *build, unsigned nrpt,
             struct ir3_instruction_rpt src, type_t src_type, type_t dst_type)
 {
    struct ir3_instruction_rpt dst;
 
    for (unsigned rpt = 0; rpt < nrpt; ++rpt)
-      dst.rpts[rpt] = ir3_COV(block, src.rpts[rpt], src_type, dst_type);
+      dst.rpts[rpt] = ir3_COV(build, src.rpts[rpt], src_type, dst_type);
 
    ir3_instr_create_rpt(dst.rpts, nrpt);
    return dst;
 }
 
 static inline struct ir3_instruction *
-ir3_MOVMSK(struct ir3_block *block, unsigned components)
+ir3_MOVMSK(struct ir3_builder *build, unsigned components)
 {
-   struct ir3_instruction *instr = ir3_instr_create(block, OPC_MOVMSK, 1, 0);
+   struct ir3_instruction *instr = ir3_build_instr(build, OPC_MOVMSK, 1, 0);
 
    struct ir3_register *dst = __ssa_dst(instr);
    dst->flags |= IR3_REG_SHARED;
@@ -2534,11 +2534,11 @@ ir3_MOVMSK(struct ir3_block *block, unsigned components)
 }
 
 static inline struct ir3_instruction *
-ir3_BALLOT_MACRO(struct ir3_block *block, struct ir3_instruction *src,
+ir3_BALLOT_MACRO(struct ir3_builder *build, struct ir3_instruction *src,
                  unsigned components)
 {
    struct ir3_instruction *instr =
-      ir3_instr_create(block, OPC_BALLOT_MACRO, 1, 1);
+      ir3_build_instr(build, OPC_BALLOT_MACRO, 1, 1);
 
    struct ir3_register *dst = __ssa_dst(instr);
    dst->flags |= IR3_REG_SHARED;
@@ -2551,9 +2551,9 @@ ir3_BALLOT_MACRO(struct ir3_block *block, struct ir3_instruction *src,
 
 /* clang-format off */
 #define __INSTR0(flag, name, opc)                                              \
-static inline struct ir3_instruction *ir3_##name(struct ir3_block *block)      \
+static inline struct ir3_instruction *ir3_##name(struct ir3_builder *build)    \
 {                                                                              \
-   struct ir3_instruction *instr = ir3_instr_create(block, opc, 1, 0);         \
+   struct ir3_instruction *instr = ir3_build_instr(build, opc, 1, 0);          \
    instr->flags |= flag;                                                       \
    return instr;                                                               \
 }
@@ -2564,10 +2564,10 @@ static inline struct ir3_instruction *ir3_##name(struct ir3_block *block)      \
 /* clang-format off */
 #define __INSTR1(flag, dst_count, name, opc, scalar_alu)                       \
 static inline struct ir3_instruction *ir3_##name(                              \
-   struct ir3_block *block, struct ir3_instruction *a, unsigned aflags)        \
+   struct ir3_builder *build, struct ir3_instruction *a, unsigned aflags)      \
 {                                                                              \
    struct ir3_instruction *instr =                                             \
-      ir3_instr_create(block, opc, dst_count, 1);                              \
+      ir3_build_instr(build, opc, dst_count, 1);                               \
    unsigned dst_flag = scalar_alu ? (a->dsts[0]->flags & IR3_REG_SHARED) : 0;  \
    for (unsigned i = 0; i < dst_count; i++)                                    \
       __ssa_dst(instr)->flags |= dst_flag;                                     \
@@ -2576,13 +2576,13 @@ static inline struct ir3_instruction *ir3_##name(                              \
    return instr;                                                               \
 }                                                                              \
 static inline struct ir3_instruction_rpt ir3_##name##_rpt(                     \
-   struct ir3_block *block, unsigned nrpt,                                     \
+   struct ir3_builder *build, unsigned nrpt,                                   \
    struct ir3_instruction_rpt a, unsigned aflags)                              \
 {                                                                              \
    struct ir3_instruction_rpt dst;                                             \
    assert(nrpt <= ARRAY_SIZE(dst.rpts));                                       \
    for (unsigned rpt = 0; rpt < nrpt; rpt++)                                   \
-      dst.rpts[rpt] = ir3_##name(block, a.rpts[rpt], aflags);                  \
+      dst.rpts[rpt] = ir3_##name(build, a.rpts[rpt], aflags);                  \
    ir3_instr_create_rpt(dst.rpts, nrpt);                                       \
    return dst;                                                                 \
 }
@@ -2597,10 +2597,10 @@ static inline struct ir3_instruction_rpt ir3_##name##_rpt(                     \
 /* clang-format off */
 #define __INSTR2(flag, dst_count, name, opc, scalar_alu)                       \
 static inline struct ir3_instruction *ir3_##name(                              \
-   struct ir3_block *block, struct ir3_instruction *a, unsigned aflags,        \
+   struct ir3_builder *build, struct ir3_instruction *a, unsigned aflags,      \
    struct ir3_instruction *b, unsigned bflags)                                 \
 {                                                                              \
-   struct ir3_instruction *instr = ir3_instr_create(block, opc, dst_count, 2); \
+   struct ir3_instruction *instr = ir3_build_instr(build, opc, dst_count, 2);  \
    unsigned dst_flag = scalar_alu ? (a->dsts[0]->flags & b->dsts[0]->flags &   \
                                      IR3_REG_SHARED) : 0;                      \
    for (unsigned i = 0; i < dst_count; i++)                                    \
@@ -2611,14 +2611,14 @@ static inline struct ir3_instruction *ir3_##name(                              \
    return instr;                                                               \
 }                                                                              \
 static inline struct ir3_instruction_rpt ir3_##name##_rpt(                     \
-   struct ir3_block *block, unsigned nrpt,                                     \
+   struct ir3_builder *build, unsigned nrpt,                                   \
    struct ir3_instruction_rpt a, unsigned aflags,                              \
    struct ir3_instruction_rpt b, unsigned bflags)                              \
 {                                                                              \
    struct ir3_instruction_rpt dst;                                             \
    assert(nrpt <= ARRAY_SIZE(dst.rpts));                                       \
    for (unsigned rpt = 0; rpt < nrpt; rpt++) {                                 \
-      dst.rpts[rpt] = ir3_##name(block, a.rpts[rpt], aflags,                   \
+      dst.rpts[rpt] = ir3_##name(build, a.rpts[rpt], aflags,                   \
                                  b.rpts[rpt], bflags);                         \
    }                                                                           \
    ir3_instr_create_rpt(dst.rpts, nrpt);                                       \
@@ -2634,12 +2634,12 @@ static inline struct ir3_instruction_rpt ir3_##name##_rpt(                     \
 /* clang-format off */
 #define __INSTR3(flag, dst_count, name, opc, scalar_alu)                       \
 static inline struct ir3_instruction *ir3_##name(                              \
-   struct ir3_block *block, struct ir3_instruction *a, unsigned aflags,        \
+   struct ir3_builder *build, struct ir3_instruction *a, unsigned aflags,      \
    struct ir3_instruction *b, unsigned bflags, struct ir3_instruction *c,      \
    unsigned cflags)                                                            \
 {                                                                              \
    struct ir3_instruction *instr =                                             \
-      ir3_instr_create(block, opc, dst_count, 3);                              \
+      ir3_build_instr(build, opc, dst_count, 3);                               \
    unsigned dst_flag = scalar_alu ? (a->dsts[0]->flags & b->dsts[0]->flags &   \
                                      c->dsts[0]->flags & IR3_REG_SHARED) : 0;  \
    for (unsigned i = 0; i < dst_count; i++)                                    \
@@ -2651,7 +2651,7 @@ static inline struct ir3_instruction *ir3_##name(                              \
    return instr;                                                               \
 }                                                                              \
 static inline struct ir3_instruction_rpt ir3_##name##_rpt(                     \
-   struct ir3_block *block, unsigned nrpt,                                     \
+   struct ir3_builder *build, unsigned nrpt,                                   \
    struct ir3_instruction_rpt a, unsigned aflags,                              \
    struct ir3_instruction_rpt b, unsigned bflags,                              \
    struct ir3_instruction_rpt c, unsigned cflags)                              \
@@ -2659,7 +2659,7 @@ static inline struct ir3_instruction_rpt ir3_##name##_rpt(                     \
    struct ir3_instruction_rpt dst;                                             \
    assert(nrpt <= ARRAY_SIZE(dst.rpts));                                       \
    for (unsigned rpt = 0; rpt < nrpt; rpt++) {                                 \
-      dst.rpts[rpt] = ir3_##name(block, a.rpts[rpt], aflags,                   \
+      dst.rpts[rpt] = ir3_##name(build, a.rpts[rpt], aflags,                   \
                                  b.rpts[rpt], bflags,                          \
                                  c.rpts[rpt], cflags);                         \
    }                                                                           \
@@ -2676,12 +2676,12 @@ static inline struct ir3_instruction_rpt ir3_##name##_rpt(                     \
 /* clang-format off */
 #define __INSTR4(flag, dst_count, name, opc)                                   \
 static inline struct ir3_instruction *ir3_##name(                              \
-   struct ir3_block *block, struct ir3_instruction *a, unsigned aflags,        \
+   struct ir3_builder *build, struct ir3_instruction *a, unsigned aflags,      \
    struct ir3_instruction *b, unsigned bflags, struct ir3_instruction *c,      \
    unsigned cflags, struct ir3_instruction *d, unsigned dflags)                \
 {                                                                              \
    struct ir3_instruction *instr =                                             \
-      ir3_instr_create(block, opc, dst_count, 4);                              \
+      ir3_build_instr(build, opc, dst_count, 4);                               \
    for (unsigned i = 0; i < dst_count; i++)                                    \
       __ssa_dst(instr);                                                        \
    __ssa_src(instr, a, aflags);                                                \
@@ -2699,12 +2699,12 @@ static inline struct ir3_instruction *ir3_##name(                              \
 /* clang-format off */
 #define __INSTR5(flag, name, opc)                                              \
 static inline struct ir3_instruction *ir3_##name(                              \
-   struct ir3_block *block, struct ir3_instruction *a, unsigned aflags,        \
+   struct ir3_builder *build, struct ir3_instruction *a, unsigned aflags,      \
    struct ir3_instruction *b, unsigned bflags, struct ir3_instruction *c,      \
    unsigned cflags, struct ir3_instruction *d, unsigned dflags,                \
    struct ir3_instruction *e, unsigned eflags)                                 \
 {                                                                              \
-   struct ir3_instruction *instr = ir3_instr_create(block, opc, 1, 5);         \
+   struct ir3_instruction *instr = ir3_build_instr(build, opc, 1, 5);          \
    __ssa_dst(instr);                                                           \
    __ssa_src(instr, a, aflags);                                                \
    __ssa_src(instr, b, bflags);                                                \
@@ -2721,13 +2721,13 @@ static inline struct ir3_instruction *ir3_##name(                              \
 /* clang-format off */
 #define __INSTR6(flag, dst_count, name, opc)                                   \
 static inline struct ir3_instruction *ir3_##name(                              \
-   struct ir3_block *block, struct ir3_instruction *a, unsigned aflags,        \
+   struct ir3_builder *build, struct ir3_instruction *a, unsigned aflags,      \
    struct ir3_instruction *b, unsigned bflags, struct ir3_instruction *c,      \
    unsigned cflags, struct ir3_instruction *d, unsigned dflags,                \
    struct ir3_instruction *e, unsigned eflags, struct ir3_instruction *f,      \
    unsigned fflags)                                                            \
 {                                                                              \
-   struct ir3_instruction *instr = ir3_instr_create(block, opc, 1, 6);         \
+   struct ir3_instruction *instr = ir3_build_instr(build, opc, 1, 6);          \
    for (unsigned i = 0; i < dst_count; i++)                                    \
       __ssa_dst(instr);                                                        \
    __ssa_src(instr, a, aflags);                                                \
@@ -2773,19 +2773,19 @@ INSTR2(READ_COND_MACRO)
 INSTR1(READ_GETLAST_MACRO)
 
 static inline struct ir3_instruction *
-ir3_ELECT_MACRO(struct ir3_block *block)
+ir3_ELECT_MACRO(struct ir3_builder *build)
 {
    struct ir3_instruction *instr =
-      ir3_instr_create(block, OPC_ELECT_MACRO, 1, 0);
+      ir3_build_instr(build, OPC_ELECT_MACRO, 1, 0);
    __ssa_dst(instr);
    return instr;
 }
 
 static inline struct ir3_instruction *
-ir3_SHPS_MACRO(struct ir3_block *block)
+ir3_SHPS_MACRO(struct ir3_builder *build)
 {
    struct ir3_instruction *instr =
-      ir3_instr_create(block, OPC_SHPS_MACRO, 1, 0);
+      ir3_build_instr(build, OPC_SHPS_MACRO, 1, 0);
    __ssa_dst(instr);
    return instr;
 }
@@ -2887,7 +2887,7 @@ INSTR1F(3D, DSY)
 INSTR1(RGETPOS)
 
 static inline struct ir3_instruction *
-ir3_SAM(struct ir3_block *block, opc_t opc, type_t type, unsigned wrmask,
+ir3_SAM(struct ir3_builder *build, opc_t opc, type_t type, unsigned wrmask,
         ir3_instruction_flags flags, struct ir3_instruction *samp_tex,
         struct ir3_instruction *src0, struct ir3_instruction *src1)
 {
@@ -2904,7 +2904,7 @@ ir3_SAM(struct ir3_block *block, opc_t opc, type_t type, unsigned wrmask,
       nreg++;
    }
 
-   sam = ir3_instr_create(block, opc, 1, nreg);
+   sam = ir3_build_instr(build, opc, 1, nreg);
    sam->flags |= flags;
    __ssa_dst(sam)->wrmask = wrmask;
    if (flags & IR3_INSTR_S2EN) {
@@ -2932,12 +2932,12 @@ ir3_SAM(struct ir3_block *block, opc_t opc, type_t type, unsigned wrmask,
  * argument (the initial value of rx) and tie it to the destination.
  */
 static inline struct ir3_instruction *
-ir3_BRCST_ACTIVE(struct ir3_block *block, unsigned cluster_size,
+ir3_BRCST_ACTIVE(struct ir3_builder *build, unsigned cluster_size,
                  struct ir3_instruction *src,
                  struct ir3_instruction *dst_default)
 {
    struct ir3_instruction *brcst =
-      ir3_instr_create(block, OPC_BRCST_ACTIVE, 1, 2);
+      ir3_build_instr(build, OPC_BRCST_ACTIVE, 1, 2);
    brcst->cat5.cluster_size = cluster_size;
    brcst->cat5.type = TYPE_U32;
    struct ir3_register *brcst_dst = __ssa_dst(brcst);

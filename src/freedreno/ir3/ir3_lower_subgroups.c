@@ -44,7 +44,7 @@ replace_physical_pred(struct ir3_block *block, struct ir3_block *old_pred,
 static void
 mov_immed(struct ir3_register *dst, struct ir3_block *block, unsigned immed)
 {
-   struct ir3_instruction *mov = ir3_instr_create(block, OPC_MOV, 1, 1);
+   struct ir3_instruction *mov = ir3_instr_create_at(ir3_before_terminator(block), OPC_MOV, 1, 1);
    struct ir3_register *mov_dst = ir3_dst_create(mov, dst->num, dst->flags);
    mov_dst->wrmask = dst->wrmask;
    struct ir3_register *src = ir3_src_create(
@@ -59,7 +59,7 @@ static void
 mov_reg(struct ir3_block *block, struct ir3_register *dst,
         struct ir3_register *src)
 {
-   struct ir3_instruction *mov = ir3_instr_create(block, OPC_MOV, 1, 1);
+   struct ir3_instruction *mov = ir3_instr_create_at(ir3_before_terminator(block), OPC_MOV, 1, 1);
 
    struct ir3_register *mov_dst =
       ir3_dst_create(mov, dst->num, dst->flags & (IR3_REG_HALF | IR3_REG_SHARED));
@@ -77,7 +77,7 @@ static void
 binop(struct ir3_block *block, opc_t opc, struct ir3_register *dst,
       struct ir3_register *src0, struct ir3_register *src1)
 {
-   struct ir3_instruction *instr = ir3_instr_create(block, opc, 1, 2);
+   struct ir3_instruction *instr = ir3_instr_create_at(ir3_before_terminator(block), opc, 1, 2);
    
    unsigned flags = dst->flags & IR3_REG_HALF;
    struct ir3_register *instr_dst = ir3_dst_create(instr, dst->num, flags);
@@ -95,7 +95,7 @@ triop(struct ir3_block *block, opc_t opc, struct ir3_register *dst,
       struct ir3_register *src0, struct ir3_register *src1,
       struct ir3_register *src2)
 {
-   struct ir3_instruction *instr = ir3_instr_create(block, opc, 1, 3);
+   struct ir3_instruction *instr = ir3_instr_create_at(ir3_before_terminator(block), opc, 1, 3);
    
    unsigned flags = dst->flags & IR3_REG_HALF;
    struct ir3_register *instr_dst = ir3_dst_create(instr, dst->num, flags);
@@ -201,7 +201,8 @@ link_blocks(struct ir3_block *pred, struct ir3_block *succ, unsigned index)
 static void
 link_blocks_jump(struct ir3_block *pred, struct ir3_block *succ)
 {
-   ir3_JUMP(pred);
+   struct ir3_builder build = ir3_builder_at(ir3_after_block(pred));
+   ir3_JUMP(&build);
    link_blocks(pred, succ, 0);
 }
 
@@ -211,7 +212,7 @@ link_blocks_branch(struct ir3_block *pred, struct ir3_block *target,
                    struct ir3_instruction *condition)
 {
    unsigned nsrc = condition ? 1 : 0;
-   struct ir3_instruction *branch = ir3_instr_create(pred, opc, 0, nsrc);
+   struct ir3_instruction *branch = ir3_instr_create_at(ir3_after_block(pred), opc, 0, nsrc);
    branch->flags |= flags;
 
    if (condition) {
@@ -464,7 +465,7 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
       case OPC_BALLOT_MACRO: {
          unsigned comp_count = util_last_bit(instr->dsts[0]->wrmask);
          struct ir3_instruction *movmsk =
-            ir3_instr_create(then_block, OPC_MOVMSK, 1, 0);
+            ir3_instr_create_at(ir3_before_terminator(then_block), OPC_MOVMSK, 1, 0);
          ir3_dst_create(movmsk, instr->dsts[0]->num, instr->dsts[0]->flags);
          movmsk->repeat = comp_count - 1;
          break;
@@ -473,7 +474,7 @@ lower_instr(struct ir3 *ir, struct ir3_block **block, struct ir3_instruction *in
       case OPC_READ_GETLAST_MACRO:
       case OPC_READ_COND_MACRO: {
          struct ir3_instruction *mov =
-            ir3_instr_create(then_block, OPC_MOV, 1, 1);
+            ir3_instr_create_at(ir3_before_terminator(then_block), OPC_MOV, 1, 1);
          ir3_dst_create(mov, instr->dsts[0]->num, instr->dsts[0]->flags);
          struct ir3_register *new_src = ir3_src_create(mov, 0, 0);
          unsigned idx = instr->opc == OPC_READ_COND_MACRO ? 1 : 0;
