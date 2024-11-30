@@ -104,12 +104,12 @@ radv_vcn_sq_tail(struct radeon_cmdbuf *cs, struct rvcn_sq_var *sq)
    } else {
       size_in_dw = end - sq->signature_ib_total_size_in_dw - 1;
       *sq->signature_ib_total_size_in_dw = size_in_dw;
+      *sq->engine_ib_size_of_packages = size_in_dw * sizeof(uint32_t);
 
       for (int i = 0; i < size_in_dw; i++)
          checksum += *(sq->signature_ib_checksum + 2 + i);
 
       *sq->signature_ib_checksum = checksum;
-      *sq->engine_ib_size_of_packages = size_in_dw * sizeof(uint32_t);
    }
 }
 
