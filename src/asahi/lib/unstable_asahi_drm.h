@@ -34,6 +34,8 @@ extern "C" {
 #define DRM_ASAHI_QUEUE_DESTROY			0x07
 #define DRM_ASAHI_SUBMIT			0x08
 #define DRM_ASAHI_GET_TIME			0x09
+/* TODO: Maybe merge with DRM_ASAHI_GEM_BIND? (Becomes IOWR) */
+#define DRM_ASAHI_GEM_BIND_OBJECT		0x0a
 
 /* TODO: Bump to 64, just in case? */
 #define DRM_ASAHI_MAX_CLUSTERS	32
@@ -115,6 +117,9 @@ struct drm_asahi_params_global {
 	/** @firmware_version: GPU firmware version, as 4 integers */
 	/* TODO: Do something to distinguish iOS */
 	__u32 firmware_version[4];
+
+	/** @user_timestamp_frequency_hz: Timebase frequency for user timestamps */
+	__u64 user_timestamp_frequency_hz;
 };
 
 /** Compatible feature bits */
@@ -200,7 +205,8 @@ struct drm_asahi_gem_create {
 	/** @handle: Returned GEM handle for the BO */
 	__u32 handle;
 
-	/* TODO: u32 pad missing here, fix for next rev bump */
+	/** @pad: MBZ */
+	__u32 pad;
 };
 
 /** Get BO mmap offset */
@@ -260,6 +266,47 @@ struct drm_asahi_gem_bind {
 	__u64 addr;
 };
 
+/** VM_BIND operations */
+enum drm_asahi_bind_object_op {
+	/** Bind a BO as a special GPU object */
+	ASAHI_BIND_OBJECT_OP_BIND = 0,
+	/** Unbind a special GPU object */
+	ASAHI_BIND_OBJECT_OP_UNBIND = 1,
+};
+
+/** Map a BO as a timestamp buffer */
+#define ASAHI_BIND_OBJECT_USAGE_TIMESTAMPS	(1L << 0)
+
+/** BO special object operations */
+struct drm_asahi_gem_bind_object {
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+
+	/** @obj: Bind operation (enum drm_asahi_bind_object_op) */
+	__u32 op;
+
+	/** @flags: One or more of ASAHI_BIND_OBJECT_* */
+	__u32 flags;
+
+	/** @obj: GEM object to bind/unbind (BIND) */
+	__u32 handle;
+
+	/** @vm_id: The ID of the VM to operate on (MBZ currently) */
+	__u32 vm_id;
+
+	/** @offset: Offset into the object (BIND only) */
+	__u64 offset;
+
+	/** @range: Number of bytes to bind/unbind (BIND only) */
+	__u64 range;
+
+	/** @addr: Object handle (out for BIND, in for UNBIND) */
+	__u32 object_handle;
+
+	/** @pad: MBZ */
+	__u32 pad;
+};
+
 /** Command type */
 enum drm_asahi_cmd_type {
 	/** Render command (Render subqueue, Vert+Frag) */
@@ -301,7 +348,8 @@ struct drm_asahi_queue_create {
 	/** @queue_id: The returned queue ID */
 	__u32 queue_id;
 
-	/* TODO: u32 pad missing here, fix for next rev bump */
+	/** @pad: MBZ */
+	__u32 pad;
 };
 
 /** Destroy a queue */
@@ -312,7 +360,8 @@ struct drm_asahi_queue_destroy {
 	/** @queue_id: The queue ID to be destroyed */
 	__u32 queue_id;
 
-	/* TODO: u32 pad missing here, fix for next rev bump */
+	/** @pad: MBZ */
+	__u32 pad;
 };
 
 /** Sync item types */
@@ -541,11 +590,112 @@ struct drm_asahi_cmd_render {
 	__u32 isp_bgobjvals;
 };
 
+#define ASAHI_RENDER_UNK_UNK1			(1UL << 0)
+#define ASAHI_RENDER_UNK_SET_TILE_CONFIG	(1UL << 1)
+#define ASAHI_RENDER_UNK_SET_UTILE_CONFIG	(1UL << 2)
+#define ASAHI_RENDER_UNK_SET_AUX_FB_UNK		(1UL << 3)
+#define ASAHI_RENDER_UNK_SET_G14_UNK		(1UL << 4)
+
+#define ASAHI_RENDER_UNK_SET_FRG_UNK_140	(1UL << 20)
+#define ASAHI_RENDER_UNK_SET_FRG_UNK_158	(1UL << 21)
+#define ASAHI_RENDER_UNK_SET_FRG_TILECFG	(1UL << 22)
+#define ASAHI_RENDER_UNK_SET_LOAD_BGOBJVALS	(1UL << 23)
+#define ASAHI_RENDER_UNK_SET_FRG_UNK_38		(1UL << 24)
+#define ASAHI_RENDER_UNK_SET_FRG_UNK_3C		(1UL << 25)
+
+#define ASAHI_RENDER_UNK_SET_RELOAD_ZLSCTRL	(1UL << 27)
+#define ASAHI_RENDER_UNK_SET_UNK_BUF_10		(1UL << 28)
+#define ASAHI_RENDER_UNK_SET_FRG_UNK_MASK	(1UL << 29)
+
+#define ASAHI_RENDER_UNK_SET_IOGPU_UNK54	(1UL << 40)
+#define ASAHI_RENDER_UNK_SET_IOGPU_UNK56	(1UL << 41)
+#define ASAHI_RENDER_UNK_SET_TILING_CONTROL	(1UL << 42)
+#define ASAHI_RENDER_UNK_SET_TILING_CONTROL_2	(1UL << 43)
+#define ASAHI_RENDER_UNK_SET_VTX_UNK_F0		(1UL << 44)
+#define ASAHI_RENDER_UNK_SET_VTX_UNK_F8		(1UL << 45)
+#define ASAHI_RENDER_UNK_SET_VTX_UNK_118	(1UL << 46)
+#define ASAHI_RENDER_UNK_SET_VTX_UNK_MASK	(1UL << 47)
+
+#define ASAHI_RENDER_EXT_UNKNOWNS	0xff00
+
+/* XXX: Do not upstream this struct */
+struct drm_asahi_cmd_render_unknowns {
+	/** @type: Type ID of this extension */
+	__u32 type;
+	__u32 pad;
+	/** @next: Pointer to the next extension struct, if any */
+	__u64 next;
+
+	__u64 flags;
+
+	__u64 tile_config;
+	__u64 utile_config;
+
+	__u64 aux_fb_unk;
+	__u64 g14_unk;
+	__u64 frg_unk_140;
+	__u64 frg_unk_158;
+	__u64 frg_tilecfg;
+	__u64 load_bgobjvals;
+	__u64 frg_unk_38;
+	__u64 frg_unk_3c;
+	__u64 reload_zlsctrl;
+	__u64 unk_buf_10;
+	__u64 frg_unk_mask;
+
+	__u64 iogpu_unk54;
+	__u64 iogpu_unk56;
+	__u64 tiling_control;
+	__u64 tiling_control_2;
+	__u64 vtx_unk_f0;
+	__u64 vtx_unk_f8;
+	__u64 vtx_unk_118;
+	__u64 vtx_unk_mask;
+};
+
+#define ASAHI_RENDER_EXT_TIMESTAMPS	0x0001
+
+/** User timestamp buffers for render commands */
+struct drm_asahi_cmd_render_user_timestamps {
+	/** @type: Type ID of this extension */
+	__u32 type;
+	/** @pad: MBZ */
+	__u32 pad;
+	/** @next: Pointer to the next extension struct, if any */
+	__u64 next;
+
+	/** @vtx_start_handle: Handle of the timestamp buffer for the vertex start ts */
+	__u32 vtx_start_handle;
+	/** @vtx_start_offset: Offset into the timestamp buffer of the vertex start ts */
+	__u32 vtx_start_offset;
+
+	/** @vtx_end_handle: Handle of the timestamp buffer for the vertex end ts */
+	__u32 vtx_end_handle;
+	/** @vtx_end_offset: Offset into the timestamp buffer of the vertex end ts */
+	__u32 vtx_end_offset;
+
+	/** @frg_start_handle: Handle of the timestamp buffer for the fragment start ts */
+	__u32 frg_start_handle;
+	/** @frg_start_offset: Offset into the timestamp buffer of the fragment start ts */
+	__u32 frg_start_offset;
+
+	/** @frg_end_handle: Handle of the timestamp buffer for the fragment end ts */
+	__u32 frg_end_handle;
+	/** @frg_end_offset: Offset into the timestamp buffer of the fragment end ts */
+	__u32 frg_end_offset;
+};
+
 /* XXX check */
 #define ASAHI_COMPUTE_NO_PREEMPTION (1UL << 0)
 
 /** Compute command submission data */
 struct drm_asahi_cmd_compute {
+	/* TODO: remove guards on next bump */
+#if DRM_ASAHI_UNSTABLE_UABI_VERSION > 10011
+	/** @extensions: Pointer to the first extension struct, if any */
+	__u64 extensions;
+#endif
+
 	__u64 flags;
 
 	__u64 encoder_ptr;
@@ -569,6 +719,34 @@ struct drm_asahi_cmd_compute {
 
 	__u32 iogpu_unk_40;
 	__u32 unk_mask;
+
+#if DRM_ASAHI_UNSTABLE_UABI_VERSION <= 10011
+	/* We forgot the extension pointer in <=10011... */
+	__u64 extensions;
+#endif
+};
+
+#define ASAHI_COMPUTE_EXT_TIMESTAMPS	0x0001
+
+/** User timestamp buffers for compute commands */
+struct drm_asahi_cmd_compute_user_timestamps {
+	/** @type: Type ID of this extension */
+	__u32 type;
+	/** @pad: MBZ */
+	__u32 pad;
+	/** @next: Pointer to the next extension struct, if any */
+	__u64 next;
+
+	/** @start_handle: Handle of the timestamp buffer for the start ts */
+	__u32 start_handle;
+	/** @start_offset: Offset into the timestamp buffer of the start ts */
+	__u32 start_offset;
+
+	/** @end_handle: Handle of the timestamp buffer for the end ts */
+	__u32 end_handle;
+	/** @end_offset: Offset into the timestamp buffer of the end ts */
+	__u32 end_offset;
+
 };
 
 /** Command completion status */
@@ -700,6 +878,7 @@ enum {
    DRM_IOCTL_ASAHI_QUEUE_DESTROY    = DRM_IOW(DRM_COMMAND_BASE + DRM_ASAHI_QUEUE_DESTROY, struct drm_asahi_queue_destroy),
    DRM_IOCTL_ASAHI_SUBMIT           = DRM_IOW(DRM_COMMAND_BASE + DRM_ASAHI_SUBMIT, struct drm_asahi_submit),
    DRM_IOCTL_ASAHI_GET_TIME         = DRM_IOWR(DRM_COMMAND_BASE + DRM_ASAHI_GET_TIME, struct drm_asahi_get_time),
+   DRM_IOCTL_ASAHI_GEM_BIND_OBJECT  = DRM_IOWR(DRM_COMMAND_BASE + DRM_ASAHI_GEM_BIND_OBJECT, struct drm_asahi_gem_bind_object),
 };
 
 #if defined(__cplusplus)

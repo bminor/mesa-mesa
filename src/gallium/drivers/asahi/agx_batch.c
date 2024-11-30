@@ -927,7 +927,10 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
          .cmd_type = DRM_ASAHI_CMD_COMPUTE,
          .flags = 0,
          .cmd_buffer = (uint64_t)(uintptr_t)compute,
-         .cmd_buffer_size = sizeof(struct drm_asahi_cmd_compute),
+
+         /* Work around for shipping 6.11.8 kernels, remove when we bump uapi
+          */
+         .cmd_buffer_size = sizeof(struct drm_asahi_cmd_compute) - 8,
          .result_offset = feedback ? batch->result_off : 0,
          .result_size = feedback ? sizeof(union agx_batch_result) : 0,
          /* Barrier on previous submission */

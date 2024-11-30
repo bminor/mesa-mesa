@@ -497,6 +497,11 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
             cmd.cmd_buffer_size = sizeof(struct drm_asahi_cmd_compute);
             nr_cdm++;
 
+            /* Work around for shipping 6.11.8 kernels, remove when we bump uapi
+             */
+            if (!cmd.extensions)
+               cmd.cmd_buffer_size -= 8;
+
             asahi_fill_cdm_command(dev, cs, &cmds_inner[cmd_it].compute);
          } else {
             assert(cs->type == HK_CS_VDM);
