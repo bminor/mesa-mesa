@@ -406,12 +406,15 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
     * whether it is a double-precision type or not.
     */
    nir_lower_io(nir, nir_var_shader_in, type_size_vec4,
-                nir_lower_io_lower_64bit_to_32);
+                nir_lower_io_lower_64bit_to_32_new);
 
    /* This pass needs actual constants */
    nir_opt_constant_folding(nir);
 
    nir_io_add_const_offset_to_base(nir, nir_var_shader_in);
+
+   /* Update shader_info::dual_slot_inputs */
+   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
    /* The last step is to remap VERT_ATTRIB_* to actual registers */
 
@@ -424,7 +427,14 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
       BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_VERTEX_ID_ZERO_BASE) ||
       BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_INSTANCE_ID);
 
-   const unsigned num_inputs = util_bitcount64(nir->info.inputs_read);
+   const unsigned num_inputs = util_bitcount64(nir->info.inputs_read) +
+      util_bitcount64(nir->info.inputs_read & nir->info.dual_slot_inputs);
+
+   /* In the following loop, the intrinsic base value is the offset in
+    * register slots (2 slots can make up in single input for double/64bit
+    * values). The io_semantics location field is the offset in terms of
+    * attributes.
+    */
 
    nir_foreach_function_impl(impl, nir) {
       nir_builder b = nir_builder_create(impl);
@@ -453,7 +463,7 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
                   nir_intrinsic_instr_create(nir, nir_intrinsic_load_input);
                load->src[0] = nir_src_for_ssa(nir_imm_int(&b, 0));
 
-               nir_intrinsic_set_base(load, num_inputs);
+               unsigned input_offset = 0;
                switch (intrin->intrinsic) {
                case nir_intrinsic_load_first_vertex:
                   nir_intrinsic_set_component(load, 0);
@@ -472,7 +482,7 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
                   /* gl_DrawID and IsIndexedDraw are stored right after
                    * gl_VertexID and friends if any of them exist.
                    */
-                  nir_intrinsic_set_base(load, num_inputs + has_sgvs);
+                  input_offset += has_sgvs ? 1 : 0;
                   if (intrin->intrinsic == nir_intrinsic_load_draw_id)
                      nir_intrinsic_set_component(load, 0);
                   else
@@ -482,6 +492,16 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
                   unreachable("Invalid system value intrinsic");
                }
 
+               /* Position the value behind the app's inputs, for base we
+                * account for the double inputs, for the io_semantics
+                * location, it's just the input count.
+                */
+               nir_intrinsic_set_base(load, num_inputs + input_offset);
+               struct nir_io_semantics io = {
+                  .location = util_last_bit64(nir->info.inputs_read) + input_offset,
+                  .num_slots = 1,
+               };
+               nir_intrinsic_set_io_semantics(load, io);
                load->num_components = 1;
                nir_def_init(&load->instr, &load->def, 1, 32);
                nir_builder_instr_insert(&b, &load->instr);
@@ -496,9 +516,14 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
                 * number for an attribute by masking out the enabled attributes
                 * before it and counting the bits.
                 */
-               int attr = nir_intrinsic_base(intrin);
-               int slot = util_bitcount64(nir->info.inputs_read &
-                                          BITFIELD64_MASK(attr));
+               const struct nir_io_semantics io =
+                  nir_intrinsic_io_semantics(intrin);
+               const int attr = nir_intrinsic_base(intrin);
+               const int slot = util_bitcount64(nir->info.inputs_read &
+                                                BITFIELD64_MASK(attr)) +
+                                util_bitcount64(nir->info.dual_slot_inputs &
+                                                BITFIELD64_MASK(attr)) +
+                                io.high_dvec2;
                nir_intrinsic_set_base(intrin, slot);
                break;
             }
