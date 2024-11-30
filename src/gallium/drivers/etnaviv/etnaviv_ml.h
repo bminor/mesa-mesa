@@ -118,6 +118,7 @@ struct etna_operation {
 unsigned etna_ml_allocate_tensor(struct etna_ml_subgraph *subgraph);
 struct pipe_resource *etna_ml_get_tensor(struct etna_ml_subgraph *subgraph, unsigned idx);
 unsigned etna_ml_get_offset(struct etna_ml_subgraph *subgraph, unsigned idx);
+unsigned etna_ml_get_size(struct etna_ml_subgraph *subgraph, unsigned idx);
 
 struct etna_bo *etna_ml_create_bo(struct pipe_context *pctx, size_t size);
 

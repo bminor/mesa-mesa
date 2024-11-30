@@ -29,6 +29,12 @@ etna_ml_get_offset(struct etna_ml_subgraph *subgraph, unsigned idx)
 }
 
 unsigned
+etna_ml_get_size(struct etna_ml_subgraph *subgraph, unsigned idx)
+{
+   return *util_dynarray_element(&subgraph->sizes, unsigned, idx);
+}
+
+unsigned
 etna_ml_allocate_tensor(struct etna_ml_subgraph *subgraph)
 {
    struct pipe_resource **tensors = util_dynarray_grow(&subgraph->tensors, struct pipe_resource *, 1);
@@ -789,12 +795,12 @@ etna_ml_subgraph_read_outputs(struct pipe_context *context, struct pipe_ml_subgr
                                                      PIPE_MAP_READ,
                                                      &src_transfer);
          assert(src_map);
-         for (unsigned k = 0; k < pipe_buffer_size(res); k++) {
+         for (unsigned k = 0; k < etna_ml_get_size(subgraph, output_idxs[i]); k++) {
             ((uint8_t *)(outputs[i]))[k] = src_map[k] - 128;
          }
          pipe_buffer_unmap(context, src_transfer);
       } else {
-         pipe_buffer_read(context, res, 0, pipe_buffer_size(res), outputs[i]);
+         pipe_buffer_read(context, res, 0, etna_ml_get_size(subgraph, output_idxs[i]), outputs[i]);
       }
    }
 }
