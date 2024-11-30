@@ -852,7 +852,8 @@ apply_push_consts_load_macro(struct ir3_legalize_ctx *ctx,
 {
    foreach_instr (n, &block->instr_list) {
       if (n->opc == OPC_PUSH_CONSTS_LOAD_MACRO) {
-         struct ir3_instruction *stsc = ir3_instr_create_at(ir3_after_instr(n), OPC_STSC, 0, 2);
+         struct ir3_instruction *stsc =
+            ir3_instr_create_at(ir3_after_instr(n), OPC_STSC, 0, 2);
          ir3_src_create(stsc, 0, IR3_REG_IMMED)->iim_val =
             n->push_consts.dst_base;
          ir3_src_create(stsc, 0, IR3_REG_IMMED)->iim_val =
@@ -1378,7 +1379,8 @@ kill_sched(struct ir3 *ir, struct ir3_shader_variant *so)
          if (instr->opc != OPC_KILL)
             continue;
 
-         struct ir3_instruction *br = ir3_instr_create_at(ir3_after_instr(instr), OPC_BR, 0, 1);
+         struct ir3_instruction *br =
+            ir3_instr_create_at(ir3_after_instr(instr), OPC_BR, 0, 1);
          ir3_src_create(br, instr->srcs[0]->num, instr->srcs[0]->flags)->wrmask =
             1;
          br->cat0.target =

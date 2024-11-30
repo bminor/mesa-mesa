@@ -2387,7 +2387,8 @@ type_flags(type_t type)
 }
 
 static inline struct ir3_instruction *
-create_immed_typed_shared(struct ir3_builder *build, uint32_t val, type_t type, bool shared)
+create_immed_typed_shared(struct ir3_builder *build, uint32_t val, type_t type,
+                          bool shared)
 {
    struct ir3_instruction *mov;
    ir3_register_flags flags = type_flags(type);
@@ -2784,8 +2785,7 @@ ir3_ELECT_MACRO(struct ir3_builder *build)
 static inline struct ir3_instruction *
 ir3_SHPS_MACRO(struct ir3_builder *build)
 {
-   struct ir3_instruction *instr =
-      ir3_build_instr(build, OPC_SHPS_MACRO, 1, 0);
+   struct ir3_instruction *instr = ir3_build_instr(build, OPC_SHPS_MACRO, 1, 0);
    __ssa_dst(instr);
    return instr;
 }

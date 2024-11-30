@@ -124,7 +124,8 @@ create_input(struct ir3_context *ctx, unsigned compmask)
 {
    struct ir3_instruction *in;
 
-   in = ir3_instr_create_at(ir3_before_terminator(ctx->in_block), OPC_META_INPUT, 1, 0);
+   in = ir3_instr_create_at(ir3_before_terminator(ctx->in_block),
+                            OPC_META_INPUT, 1, 0);
    in->input.sysval = ~0;
    __ssa_dst(in)->wrmask = compmask;
 
@@ -1713,8 +1714,8 @@ emit_sam(struct ir3_context *ctx, opc_t opc, struct tex_src_info info,
    if (info.flags & IR3_INSTR_A1EN) {
       addr = ir3_get_addr1(ctx, info.a1_val);
    }
-   sam = ir3_SAM(&ctx->build, opc, type, wrmask, info.flags, info.samp_tex, src0,
-                 src1);
+   sam = ir3_SAM(&ctx->build, opc, type, wrmask, info.flags, info.samp_tex,
+                 src0, src1);
    if (info.flags & IR3_INSTR_A1EN) {
       ir3_instr_set_address(sam, addr);
    }
@@ -2259,8 +2260,8 @@ get_frag_coord(struct ir3_context *ctx, nir_intrinsic_instr *intr)
        */
       struct ir3_instruction_rpt xy =
          ir3_COV_rpt(&b, 2, xyzw, TYPE_U32, TYPE_F32);
-      xy =
-         ir3_MUL_F_rpt(&b, 2, xy, 0, create_immed_rpt(&b, 2, fui(1.0 / 16.0)), 0);
+      xy = ir3_MUL_F_rpt(&b, 2, xy, 0, create_immed_rpt(&b, 2, fui(1.0 / 16.0)),
+                         0);
       cp_instrs(xyzw.rpts, xy.rpts, 2);
       ctx->frag_coord = ir3_create_collect(&b, xyzw.rpts, 4);
    }
@@ -2363,9 +2364,8 @@ emit_intrinsic_reduce(struct ir3_context *ctx, nir_intrinsic_instr *intr)
     * always be 32-bit even when the source isn't because half shared regs are
     * not supported.
     */
-   struct ir3_instruction *identity =
-      create_immed_shared(&ctx->build, get_reduce_identity(nir_reduce_op, dst_size),
-                          true);
+   struct ir3_instruction *identity = create_immed_shared(
+      &ctx->build, get_reduce_identity(nir_reduce_op, dst_size), true);
 
    /* OPC_SCAN_MACRO has the following destinations:
     * - Exclusive scan result (interferes with source)
@@ -2427,9 +2427,8 @@ emit_intrinsic_reduce_clusters(struct ir3_context *ctx,
     * always be 32-bit even when the source isn't because half shared regs are
     * not supported.
     */
-   struct ir3_instruction *identity =
-      create_immed_shared(&ctx->build, get_reduce_identity(nir_reduce_op, dst_size),
-                          true);
+   struct ir3_instruction *identity = create_immed_shared(
+      &ctx->build, get_reduce_identity(nir_reduce_op, dst_size), true);
 
    struct ir3_instruction *inclusive_src = ir3_get_src(ctx, &intr->src[0])[0];
 
@@ -3104,8 +3103,7 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_read_invocation_cond_ir3: {
       struct ir3_instruction *src = ir3_get_src(ctx, &intr->src[0])[0];
       struct ir3_instruction *cond = ir3_get_src(ctx, &intr->src[1])[0];
-      dst[0] = ir3_READ_COND_MACRO(b, ir3_get_predicate(ctx, cond), 0,
-                                   src, 0);
+      dst[0] = ir3_READ_COND_MACRO(b, ir3_get_predicate(ctx, cond), 0, src, 0);
       dst[0]->dsts[0]->flags |= IR3_REG_SHARED;
       dst[0]->srcs[0]->flags |= IR3_REG_PREDICATE;
       /* Work around a bug with half-register shared -> non-shared moves by
@@ -3282,7 +3280,7 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       }
 
       struct ir3_instruction *stc =
-         ir3_STC(b, create_immed(b, dst_lo),  0, src, 0);
+         ir3_STC(b, create_immed(b, dst_lo), 0, src, 0);
       stc->cat6.iim_val = components;
       stc->cat6.type = TYPE_U32;
       stc->barrier_conflict = IR3_BARRIER_CONST_W;
@@ -3385,15 +3383,19 @@ emit_load_const(struct ir3_context *ctx, nir_load_const_instr *instr)
          dst[i] = create_immed_typed(&ctx->build, instr->value[i].u8, TYPE_U8);
    } else if (bit_size <= 16) {
       for (int i = 0; i < instr->def.num_components; i++)
-         dst[i] = create_immed_typed(&ctx->build, instr->value[i].u16, TYPE_U16);
+         dst[i] =
+            create_immed_typed(&ctx->build, instr->value[i].u16, TYPE_U16);
    } else if (bit_size <= 32) {
       for (int i = 0; i < instr->def.num_components; i++)
-         dst[i] = create_immed_typed(&ctx->build, instr->value[i].u32, TYPE_U32);
+         dst[i] =
+            create_immed_typed(&ctx->build, instr->value[i].u32, TYPE_U32);
    } else {
       assert(instr->def.num_components == 1);
       for (int i = 0; i < instr->def.num_components; i++) {
-         dst[2 * i] = create_immed_typed(&ctx->build, (uint32_t)(instr->value[i].u64), TYPE_U32);
-         dst[2 * i + 1] = create_immed_typed(&ctx->build, (uint32_t)(instr->value[i].u64 >> 32), TYPE_U32);
+         dst[2 * i] = create_immed_typed(
+            &ctx->build, (uint32_t)(instr->value[i].u64), TYPE_U32);
+         dst[2 * i + 1] = create_immed_typed(
+            &ctx->build, (uint32_t)(instr->value[i].u64 >> 32), TYPE_U32);
       }
    }
 }
@@ -3801,9 +3803,9 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
          /* Otherwise append a sampler to be patched into the texture
           * state:
           */
-         info.samp_tex = ir3_collect(
-               b, create_immed_typed(b, ctx->so->num_samp, TYPE_U16),
-               create_immed_typed(b, ctx->so->num_samp, TYPE_U16));
+         info.samp_tex =
+            ir3_collect(b, create_immed_typed(b, ctx->so->num_samp, TYPE_U16),
+                        create_immed_typed(b, ctx->so->num_samp, TYPE_U16));
          info.flags = IR3_INSTR_S2EN;
       }
 
@@ -4043,7 +4045,7 @@ emit_phi(struct ir3_context *ctx, nir_phi_instr *nphi)
 
    for (unsigned i = 0; i < num_components; i++) {
       phi = ir3_build_instr(&ctx->build, OPC_META_PHI, 1,
-                             exec_list_length(&nphi->srcs));
+                            exec_list_length(&nphi->srcs));
       __ssa_dst(phi);
       phi->phi.nphi = nphi;
       phi->phi.comp = i;
@@ -4795,7 +4797,8 @@ setup_input(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    struct ir3_instruction *coord = NULL;
 
    if (intr->intrinsic == nir_intrinsic_load_interpolated_input)
-      coord = ir3_create_collect(&ctx->build, ir3_get_src(ctx, &intr->src[0]), 2);
+      coord =
+         ir3_create_collect(&ctx->build, ir3_get_src(ctx, &intr->src[0]), 2);
 
    compile_assert(ctx, nir_src_is_const(intr->src[coord ? 1 : 0]));
 
@@ -5538,7 +5541,8 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
          unsigned n = so->outputs_count++;
          so->outputs[n].slot = VARYING_SLOT_PRIMITIVE_ID;
 
-         struct ir3_instruction *out = ir3_collect(&ctx->build, ctx->primitive_id);
+         struct ir3_instruction *out =
+            ir3_collect(&ctx->build, ctx->primitive_id);
          outputs[outputs_count] = out;
          outidxs[outputs_count] = n;
          if (so->type == MESA_SHADER_VERTEX && ctx->rel_patch_id)
@@ -5551,7 +5555,8 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       if (so->type == MESA_SHADER_VERTEX && ctx->rel_patch_id) {
          unsigned n = so->outputs_count++;
          so->outputs[n].slot = VARYING_SLOT_REL_PATCH_ID_IR3;
-         struct ir3_instruction *out = ir3_collect(&ctx->build, ctx->rel_patch_id);
+         struct ir3_instruction *out =
+            ir3_collect(&ctx->build, ctx->rel_patch_id);
          outputs[outputs_count] = out;
          outidxs[outputs_count] = n;
          regids[outputs_count] = regid(0, 1);
@@ -5571,7 +5576,8 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       if (ctx->tcs_header) {
          unsigned n = so->outputs_count++;
          so->outputs[n].slot = VARYING_SLOT_TCS_HEADER_IR3;
-         struct ir3_instruction *out = ir3_collect(&ctx->build, ctx->tcs_header);
+         struct ir3_instruction *out =
+            ir3_collect(&ctx->build, ctx->tcs_header);
          outputs[outputs_count] = out;
          outidxs[outputs_count] = n;
          regids[outputs_count] = regid(0, 0);

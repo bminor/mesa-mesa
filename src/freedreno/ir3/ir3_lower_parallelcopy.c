@@ -142,7 +142,8 @@ do_swap(struct ir3_compiler *compiler, struct ir3_instruction *instr,
       do_xor(instr, src_num, src_num, dst_num, entry->flags);
       do_xor(instr, dst_num, dst_num, src_num, entry->flags);
    } else {
-      struct ir3_instruction *swz = ir3_instr_create_at(ir3_before_instr(instr), OPC_SWZ, 2, 2);
+      struct ir3_instruction *swz =
+         ir3_instr_create_at(ir3_before_instr(instr), OPC_SWZ, 2, 2);
       ir3_dst_create(swz, dst_num, entry->flags);
       ir3_dst_create(swz, src_num, entry->flags);
       ir3_src_create(swz, src_num, entry->flags);
@@ -223,7 +224,8 @@ do_copy(struct ir3_compiler *compiler, struct ir3_instruction *instr,
    unsigned src_num = ra_physreg_to_num(entry->src.reg, entry->flags);
    unsigned dst_num = ra_physreg_to_num(entry->dst, entry->flags);
 
-   struct ir3_instruction *mov = ir3_instr_create_at(ir3_before_instr(instr), OPC_MOV, 1, 1);
+   struct ir3_instruction *mov =
+      ir3_instr_create_at(ir3_before_instr(instr), OPC_MOV, 1, 1);
    ir3_dst_create(mov, dst_num, entry->flags);
    if (entry->src.flags & (IR3_REG_IMMED | IR3_REG_CONST))
       ir3_src_create(mov, INVALID_REG, (entry->flags & IR3_REG_HALF) | entry->src.flags);
@@ -567,7 +569,8 @@ ir3_lower_copies(struct ir3_shader_variant *v)
                         struct ir3_cursor cursor = i == 0
                                                       ? ir3_before_instr(instr)
                                                       : ir3_after_instr(instr);
-                        struct ir3_instruction *swz = ir3_instr_create_at(cursor, OPC_SWZ, 2, 2);
+                        struct ir3_instruction *swz =
+                           ir3_instr_create_at(cursor, OPC_SWZ, 2, 2);
                         ir3_dst_create(swz, src_num - 1, IR3_REG_HALF);
                         ir3_dst_create(swz, src_num, IR3_REG_HALF);
                         ir3_src_create(swz, src_num, IR3_REG_HALF);

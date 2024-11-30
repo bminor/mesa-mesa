@@ -248,7 +248,8 @@ get_shared(struct ir3_builder *build, struct ir3_instruction *src, bool shared)
 {
    if (!!(src->dsts[0]->flags & IR3_REG_SHARED) != shared) {
       struct ir3_instruction *mov =
-         ir3_MOV(build, src, (src->dsts[0]->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32);
+         ir3_MOV(build, src,
+                 (src->dsts[0]->flags & IR3_REG_HALF) ? TYPE_U16 : TYPE_U32);
       mov->dsts[0]->flags &= ~IR3_REG_SHARED;
       mov->dsts[0]->flags |= COND(shared, IR3_REG_SHARED);
       return mov;
@@ -310,8 +311,8 @@ dest_flags(struct ir3_instruction *instr)
 }
 
 struct ir3_instruction *
-ir3_create_collect(struct ir3_builder *build, struct ir3_instruction *const *arr,
-                   unsigned arrsz)
+ir3_create_collect(struct ir3_builder *build,
+                   struct ir3_instruction *const *arr, unsigned arrsz)
 {
    struct ir3_instruction *collect;
 
@@ -538,8 +539,8 @@ ir3_get_predicate(struct ir3_context *ctx, struct ir3_instruction *src)
 
    /* NOTE: we use cpms.s.ne x, 0 to move x into a predicate register */
    struct ir3_instruction *zero =
-         create_immed_typed_shared(&b, 0, is_half(src) ? TYPE_U16 : TYPE_U32,
-                                   src->dsts[0]->flags & IR3_REG_SHARED);
+      create_immed_typed_shared(&b, 0, is_half(src) ? TYPE_U16 : TYPE_U32,
+                                src->dsts[0]->flags & IR3_REG_SHARED);
    cond = ir3_CMPS_S(&b, src, 0, zero, 0);
    cond->cat2.condition = IR3_COND_NE;
 
@@ -691,8 +692,8 @@ ir3_lower_imm_offset(struct ir3_context *ctx, nir_intrinsic_instr *intr,
        * among multiple contiguous accesses.
        */
       uint32_t full_offset = base + nir_const_offset->u32;
-      *offset =
-         create_immed(&ctx->build, ROUND_DOWN_TO(full_offset, imm_offset_bound));
+      *offset = create_immed(&ctx->build,
+                             ROUND_DOWN_TO(full_offset, imm_offset_bound));
       *imm_offset = full_offset % imm_offset_bound;
    } else {
       *offset = ir3_get_src(ctx, offset_src)[0];

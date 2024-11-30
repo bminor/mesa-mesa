@@ -466,7 +466,8 @@ spill_interval(struct ra_ctx *ctx, struct ra_interval *interval)
          before = last_phi_input;
       }
 
-      struct ir3_instruction *mov = ir3_instr_create_at(ir3_after_instr(before), OPC_MOV, 1, 1);
+      struct ir3_instruction *mov =
+         ir3_instr_create_at(ir3_after_instr(before), OPC_MOV, 1, 1);
       mov->flags |= IR3_INSTR_SHARED_SPILL;
       struct ir3_register *dst = __ssa_dst(mov);
       dst->flags |= (interval->interval.reg->flags & IR3_REG_HALF);
@@ -896,7 +897,8 @@ handle_dst(struct ra_ctx *ctx, struct ir3_instruction *instr,
    d("insert dst %u physreg %u", dst->name, physreg);
 
    if (dst->tied) {
-      struct ir3_instruction *mov = ir3_instr_create_at(ir3_before_instr(instr), OPC_META_PARALLEL_COPY, 1, 1);
+      struct ir3_instruction *mov = ir3_instr_create_at(
+         ir3_before_instr(instr), OPC_META_PARALLEL_COPY, 1, 1);
       unsigned flags = IR3_REG_SHARED | (dst->flags & IR3_REG_HALF);
       ir3_dst_create(mov, dst->num, flags)->wrmask = dst->wrmask;
       ir3_src_create(mov, dst->tied->num, flags)->wrmask = dst->wrmask;
@@ -1263,8 +1265,8 @@ lower_pcopy(struct ir3 *ir, struct ra_ctx *ctx)
                    * original shared->non-shared copy becomes a
                    * non-shared->non-shared copy).
                    */
-                  struct ir3_instruction *mov =
-                     ir3_instr_create_at(ir3_before_instr(instr), OPC_MOV, 1, 1);
+                  struct ir3_instruction *mov = ir3_instr_create_at(
+                     ir3_before_instr(instr), OPC_MOV, 1, 1);
                   mov->flags |= IR3_INSTR_SHARED_SPILL;
                   struct ir3_register *dst =
                      ir3_dst_create(mov, INVALID_REG, instr->dsts[i]->flags);
@@ -1353,9 +1355,9 @@ lower_pcopy(struct ir3 *ir, struct ra_ctx *ctx)
             }
 
             if (non_shared_copies != 0) {
-               struct ir3_instruction *pcopy =
-                  ir3_instr_create_at(ir3_before_terminator(block), OPC_META_PARALLEL_COPY,
-                                   non_shared_copies, non_shared_copies);
+               struct ir3_instruction *pcopy = ir3_instr_create_at(
+                  ir3_before_terminator(block), OPC_META_PARALLEL_COPY,
+                  non_shared_copies, non_shared_copies);
 
                unsigned j = 0;
                for (unsigned i = 0; i < instr->dsts_count;) {

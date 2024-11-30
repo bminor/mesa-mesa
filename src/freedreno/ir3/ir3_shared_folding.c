@@ -46,7 +46,8 @@ try_shared_folding(struct ir3_instruction *mov, void *mem_ctx)
       for (unsigned i = 0; i < block->predecessors_count; i++) {
          struct ir3_block *pred = block->predecessors[i];
          if (src->srcs[i]->def) {
-            struct ir3_instruction *pred_mov = ir3_instr_create_at(ir3_before_terminator(pred), OPC_MOV, 1, 1);
+            struct ir3_instruction *pred_mov =
+               ir3_instr_create_at(ir3_before_terminator(pred), OPC_MOV, 1, 1);
             __ssa_dst(pred_mov)->flags |= (src->srcs[i]->flags & IR3_REG_HALF);
             unsigned src_flags = IR3_REG_SSA | IR3_REG_SHARED |
                (src->srcs[i]->flags & IR3_REG_HALF);
