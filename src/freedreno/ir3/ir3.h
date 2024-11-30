@@ -2335,6 +2335,16 @@ ir3_after_phis(struct ir3_block *block)
    return ir3_after_block(block);
 }
 
+static inline struct ir3_cursor
+ir3_after_instr_and_phis(struct ir3_instruction *instr)
+{
+   if (instr->opc == OPC_META_PHI) {
+      return ir3_after_phis(instr->block);
+   } else {
+      return ir3_after_instr(instr);
+   }
+}
+
 static inline struct ir3_builder
 ir3_builder_at(struct ir3_cursor cursor)
 {
