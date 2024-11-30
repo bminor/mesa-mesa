@@ -642,6 +642,54 @@ trans_scmp(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src0, pco_ref src1)
 }
 
 /**
+ * \brief Translates a NIR bitwise logical op into PCO.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] op The NIR op.
+ * \param[in] dest Instruction destination.
+ * \param[in] src0 First logical operand.
+ * \param[in] src1 Second logical operand.
+ * \return The translated PCO instruction.
+ */
+static pco_instr *trans_logical(trans_ctx *tctx,
+                                nir_op op,
+                                pco_ref dest,
+                                pco_ref src0,
+                                pco_ref src1)
+{
+   ASSERTED unsigned bits = pco_ref_get_bits(dest);
+
+   /* TODO: bool support. */
+   /* TODO: 8/16-bit support via masking. */
+   assert(bits == 32);
+
+   enum pco_logiop logiop;
+   switch (op) {
+   case nir_op_iand:
+      logiop = PCO_LOGIOP_AND;
+      break;
+
+   case nir_op_ior:
+      logiop = PCO_LOGIOP_OR;
+      break;
+
+   case nir_op_ixor:
+      logiop = PCO_LOGIOP_XOR;
+      break;
+
+   case nir_op_inot:
+      logiop = PCO_LOGIOP_XNOR;
+      src1 = pco_zero;
+      break;
+
+   default:
+      unreachable();
+   }
+
+   return pco_logical(&tctx->b, dest, src0, src1, .logiop = logiop);
+}
+
+/**
  * \brief Translates a NIR alu instruction into PCO.
  *
  * \param[in] tctx Translation context.
@@ -694,6 +742,13 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    case nir_op_seq:
    case nir_op_sne:
       instr = trans_scmp(tctx, alu->op, dest, src[0], src[1]);
+      break;
+
+   case nir_op_iand:
+   case nir_op_ior:
+   case nir_op_ixor:
+   case nir_op_inot:
+      instr = trans_logical(tctx, alu->op, dest, src[0], src[1]);
       break;
 
    case nir_op_f2i32:

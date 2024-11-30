@@ -192,6 +192,15 @@ enum_map(OM_TST_TYPE_MAIN.t, F_TST_TYPE, [
    ('s32', 's32'),
 ])
 
+enum_map(OM_LOGIOP.t, F_LOGICAL_OP, [
+   ('or', 'or'),
+   ('and', 'and'),
+   ('xor', 'xor'),
+   ('nor', 'nor'),
+   ('nand', 'nand'),
+   ('xnor', 'xnor'),
+])
+
 enum_map(RM_ELEM.t, F_UPCK_ELEM, [
    ('e0', 'e0'),
    ('e1', 'e1'),
@@ -794,6 +803,27 @@ encode_map(O_BBYP0BM_IMM32,
    ]
 )
 
+encode_map(O_BBYP0S1,
+   encodings=[
+      (I_PHASE0_SRC, [
+         ('count_src', 's2'),
+         ('count_op', 'byp'),
+         ('bitmask_src_op', 'byp'),
+         ('shift1_op', 'byp')
+      ])
+   ]
+)
+
+encode_map(O_LOGICAL,
+   encodings=[
+      (I_PHASE1, [
+         ('mskb', False),
+         ('mska', False),
+         ('logical_op', OM_LOGIOP),
+      ])
+   ]
+)
+
 encode_map(O_WOP, encodings=[(I_WOP, [])])
 encode_map(O_WDF, encodings=[(I_WDF, [])])
 encode_map(O_NOP, encodings=[(I_NOP, [])])
@@ -1187,6 +1217,28 @@ group_map(O_MOVI32,
    ]),
    enc_ops=[('0', O_BBYP0BM_IMM32, ['ft0', 'dest[0]'], ['s0', 'src[0]'])],
    dests=[('w[0]', ('0', 'dest[1]'), 'ft1')]
+)
+
+group_map(O_LOGICAL,
+   hdr=(I_IGRP_HDR_BITWISE, [
+      ('opcnt', ['p0', 'p1']),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_BBYP0S1, ['ft2'], ['src[0]']),
+      ('1', O_LOGICAL, ['dest[0]'], ['ft2', 'src[1]'], [(OM_LOGIOP, OM_LOGIOP)])
+   ],
+   srcs=[
+      ('s[2]', ('0', 'src[0]'), 's2'),
+      ('s[3]', ('1', 'src[1]'), 's3')
+   ],
+   dests=[('w[0]', ('1', 'dest[0]'), 'ft4')]
 )
 
 group_map(O_WOP,

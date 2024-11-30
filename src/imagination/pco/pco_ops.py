@@ -277,6 +277,14 @@ OM_ATOM = op_mod('atom', BaseType.bool, unset=True)
 OM_OLCHK = op_mod('olchk', BaseType.bool, unset=True)
 OM_END = op_mod('end', BaseType.bool, unset=True)
 
+OM_LOGIOP = op_mod_enum('logiop', [
+   'or',
+   'and',
+   'xor',
+   'nor',
+   'nand',
+   'xnor',
+])
 # Ops.
 
 OM_ALU = [OM_OLCHK, OM_EXEC_CND, OM_END, OM_ATOM, OM_RPT]
@@ -313,7 +321,10 @@ O_LD = hw_op('ld', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
 
+O_LOGICAL = hw_op('logical', OM_ALU + [OM_LOGIOP], 1, 2)
+
 O_BBYP0BM_IMM32 = hw_direct_op('bbyp0bm', [], 2, 2)
+O_BBYP0S1 = hw_direct_op('bbyp0s1', [], 1, 1)
 
 ## Control.
 O_WOP = hw_op('wop')
