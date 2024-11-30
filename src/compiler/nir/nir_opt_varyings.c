@@ -4275,8 +4275,41 @@ fs_assign_slots(struct linkage_info *linkage,
    }
 
    assert(slot_index <= max_slot * 8);
-   /* Return how many 16-bit slots are left unused in the last vec4. */
-   return (NUM_SCALAR_SLOTS - slot_index) % 8;
+
+   if (!convergent && fs_vec4_type != FS_VEC4_TYPE_NONE) {
+      /* Count the number of unused 16-bit components. There can be holes
+       * because indirect inputs are not moved from their original locations.
+       * The result is used to determine which compoments should be filled
+       * with convergent inputs.
+       */
+      unsigned unused_slots = 0;
+
+      for (unsigned i = assign_colors ? VARYING_SLOT_COL0 : VARYING_SLOT_VAR0;
+           i < max_slot; i++) {
+         if (assigned_fs_vec4_type[i] != fs_vec4_type)
+            continue;
+
+         unsigned comp_mask =
+            BITSET_GET_RANGE_INSIDE_WORD(assigned_mask, i * 8, i * 8 + 7);
+         assert(comp_mask);
+         assert(comp_mask <= 0xff);
+
+         if (comp_mask == 0xff)
+            continue;
+
+         /* Only count full unused 32-bit slots, so that 2 disjoint unused
+          * 16-bit slots don't give the misleading impression that there is
+          * a full unused 32-bit slots.
+          */
+         for (unsigned i = 0; i < 4; i++) {
+            if (!(comp_mask & BITFIELD_RANGE(i * 2, 2)))
+               unused_slots += 2;
+         }
+      }
+      return unused_slots;
+   }
+
+   return 0;
 }
 
 /**
