@@ -604,6 +604,44 @@ static pco_instr *pco_trans_nir_vec(trans_ctx *tctx,
 }
 
 /**
+ * \brief Translates a NIR float set-on comparison into PCO.
+ *
+ * \param[in,out] tctx Translation context.
+ * \param[in] op The NIR op.
+ * \param[in] dest Instruction destination.
+ * \param[in] src0 First comparison source.
+ * \param[in] src1 Second comparison source.
+ * \return The translated PCO instruction.
+ */
+static pco_instr *
+trans_scmp(trans_ctx *tctx, nir_op op, pco_ref dest, pco_ref src0, pco_ref src1)
+{
+   enum pco_tst_op_main tst_op_main;
+   switch (op) {
+   case nir_op_slt:
+      tst_op_main = PCO_TST_OP_MAIN_LESS;
+      break;
+
+   case nir_op_sge:
+      tst_op_main = PCO_TST_OP_MAIN_GEQUAL;
+      break;
+
+   case nir_op_seq:
+      tst_op_main = PCO_TST_OP_MAIN_EQUAL;
+      break;
+
+   case nir_op_sne:
+      tst_op_main = PCO_TST_OP_MAIN_NOTEQUAL;
+      break;
+
+   default:
+      unreachable();
+   }
+
+   return pco_scmp(&tctx->b, dest, src0, src1, .tst_op_main = tst_op_main);
+}
+
+/**
  * \brief Translates a NIR alu instruction into PCO.
  *
  * \param[in] tctx Translation context.
@@ -649,6 +687,13 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
 
    case nir_op_frcp:
       instr = pco_frcp(&tctx->b, dest, src[0]);
+      break;
+
+   case nir_op_slt:
+   case nir_op_sge:
+   case nir_op_seq:
+   case nir_op_sne:
+      instr = trans_scmp(tctx, alu->op, dest, src[0], src[1]);
       break;
 
    case nir_op_pack_unorm_4x8:

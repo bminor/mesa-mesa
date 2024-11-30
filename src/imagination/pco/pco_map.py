@@ -163,6 +163,36 @@ enum_map(OM_SCHED.t, F_SCHED_CTRL, [
    ('wdf', 'wdf'),
 ])
 
+enum_map(OM_TST_OP_MAIN.t, F_TST_OP, [
+   ('zero', 'z'),
+   ('gzero', 'gz'),
+   ('gezero', 'gez'),
+   ('carry', 'c'),
+   ('equal', 'e'),
+   ('greater', 'g'),
+   ('gequal', 'ge'),
+   ('notequal', 'ne'),
+   ('less', 'l'),
+   ('lequal', 'le'),
+])
+
+enum_map(OM_TST_TYPE_MAIN.t, F_TST_TYPE, [
+   ('f32', 'f32'),
+   ('u16', 'u16'),
+   ('s16', 's16'),
+   ('u8', 'u8'),
+   ('s8', 's8'),
+   ('u32', 'u32'),
+   ('s32', 's32'),
+])
+
+enum_map(RM_ELEM.t, F_MASKW0, [
+   ('e0', 'e0'),
+   ('e1', 'e1'),
+   ('e2', 'e2'),
+   ('e3', 'e3'),
+], pass_zero=['e0', 'e1', 'e2', 'e3'])
+
 encode_maps = {}
 group_maps = {}
 
@@ -598,6 +628,48 @@ encode_map(O_PCK,
    ]
 )
 
+encode_map(O_TST,
+   encodings=[
+      (I_TST_EXT, [
+         ('tst_op', OM_TST_OP_MAIN),
+         ('pwen', ('!pco_ref_is_null', 'dest[1]')),
+         ('type', OM_TST_TYPE_MAIN),
+         ('p2end', OM_PHASE2END),
+         ('elem', (RM_ELEM, 'src[0]'))
+      ]),
+      (I_TST, [
+         ('tst_op', OM_TST_OP_MAIN),
+         ('pwen', ('!pco_ref_is_null', 'dest[1]')),
+      ], [
+         (OM_TST_OP_MAIN, '<= PCO_TST_OP_MAIN_NOTEQUAL'),
+         (OM_TST_TYPE_MAIN, '== PCO_TST_TYPE_MAIN_F32'),
+         (OM_PHASE2END, '== false'),
+         (OM_TST_TYPE_MAIN, '== PCO_TST_TYPE_MAIN_F32'),
+         (RM_ELEM, 'src[0]', '== 0'),
+         (RM_ELEM, 'src[1]', '== 0'),
+      ])
+   ]
+)
+
+encode_map(O_MOVC,
+   encodings=[
+      (I_MOVC_EXT, [
+         ('movw0', ('pco_ref_get_movw01', 'src[1]')),
+         ('movw1', ('pco_ref_get_movw01', 'src[3]')),
+         ('maskw0', (RM_ELEM, 'dest[0]')),
+         ('aw', False),
+         ('p2end', OM_PHASE2END)
+      ]),
+      (I_MOVC, [
+         ('movw0', ('pco_ref_get_movw01', 'src[1]')),
+         ('movw1', ('pco_ref_get_movw01', 'src[3]')),
+      ], [
+         (RM_ELEM, 'dest[0]', '== 0b1111'),
+         (OM_PHASE2END, '== false'),
+      ])
+   ]
+)
+
 encode_map(O_UVSW_WRITE,
    encodings=[
       (I_UVSW_WRITE_IMM, [
@@ -820,6 +892,40 @@ group_map(O_PCK,
       ('is[4]', 'ft2')
    ],
    dests=[('w[0]', ('2_pck', 'dest[0]'), 'ft2')]
+)
+
+group_map(O_SCMP,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0_p1_p2'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[
+      ('0', O_MBYP, ['ft0'], ['src[0]']),
+      ('1', O_MBYP, ['ft1'], ['src[1]']),
+      ('2_tst', O_TST, ['ftt', '_'], ['is1', 'is2'], [(OM_TST_OP_MAIN, OM_TST_OP_MAIN), (OM_TST_TYPE_MAIN, 'f32')]),
+      ('2_pck', O_PCK, ['ft2'], ['_'], [(OM_PCK_FMT, 'one')]),
+      ('2_mov', O_MOVC, ['dest[0]', '_'], ['ftt', 'ft2', 'is4', '_', '_'])
+   ],
+   srcs=[
+      ('s[0]', ('0', 'src[0]'), 's0'),
+      ('s[1]', 'pco_zero'),
+      ('s[3]', ('1', 'src[0]'), 's3'),
+   ],
+   iss=[
+      ('is[0]', 's1'),
+      ('is[1]', 'ft0'),
+      ('is[2]', 'ft1'),
+      ('is[4]', 'fte'),
+   ],
+   dests=[
+      ('w[0]', ('2_mov', 'dest[0]'), 'w0'),
+   ]
 )
 
 group_map(O_UVSW_WRITE,

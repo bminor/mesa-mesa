@@ -1435,6 +1435,38 @@ static inline enum pco_io pco_ref_get_io(pco_ref ref)
 }
 
 /**
+ * \brief Returns the movw01 value of an I/O reference type.
+ *
+ * \param[in] ref Reference.
+ * \return movw01 value.
+ */
+static inline enum pco_movw01 pco_ref_get_movw01(pco_ref ref)
+{
+   /* Default/unused case. */
+   if (pco_ref_is_null(ref))
+      return PCO_MOVW01_FT0;
+
+   switch (pco_ref_get_io(ref)) {
+   case PCO_IO_FT0:
+      return PCO_MOVW01_FT0;
+
+   case PCO_IO_FT1:
+      return PCO_MOVW01_FT1;
+
+   case PCO_IO_FT2:
+      return PCO_MOVW01_FT2;
+
+   case PCO_IO_FTE:
+      return PCO_MOVW01_FTE;
+
+   default:
+      break;
+   }
+
+   unreachable();
+}
+
+/**
  * \brief Returns the predicate from its reference type.
  *
  * \param[in] ref Reference.
