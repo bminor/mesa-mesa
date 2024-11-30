@@ -968,6 +968,15 @@ elems=[
    ('exp', 0b1),
 ])
 
+F_UPCK_ELEM = field_enum_type(
+name='upck_elem', num_bits=2,
+elems=[
+   ('e0', 0b00),
+   ('e1', 0b01),
+   ('e2', 0b10),
+   ('e3', 0b11),
+])
+
 F_PCK_FORMAT = field_enum_type(
 name='pck_format', num_bits=5,
 elems=[
@@ -1221,7 +1230,7 @@ fields=[
    ('s0abs_sngl', (F_BOOL, ['s0abs_sngl'])),
 
    ## PCK/UPCK
-   ('upck_elem', (F_UINT2, ['upck_elem'])),
+   ('upck_elem', (F_UPCK_ELEM, ['upck_elem'])),
    ('scale_rtz', (F_BOOL, ['scale_rtz'])),
 
    ('prog', (F_BOOL, ['prog'])),

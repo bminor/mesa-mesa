@@ -696,6 +696,36 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = trans_scmp(tctx, alu->op, dest, src[0], src[1]);
       break;
 
+   case nir_op_f2i32:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .pck_fmt = PCO_PCK_FMT_S32,
+                      .roundzero = true);
+      break;
+
+   case nir_op_f2u32:
+      instr = pco_pck(&tctx->b,
+                      dest,
+                      src[0],
+                      .pck_fmt = PCO_PCK_FMT_U32,
+                      .roundzero = true);
+      break;
+
+   case nir_op_i2f32:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .pck_fmt = PCO_PCK_FMT_S32);
+      break;
+
+   case nir_op_u2f32:
+      instr = pco_unpck(&tctx->b,
+                        dest,
+                        pco_ref_elem(src[0], 0),
+                        .pck_fmt = PCO_PCK_FMT_U32);
+      break;
+
    case nir_op_pack_unorm_4x8:
       instr = pco_pck(&tctx->b,
                       dest,

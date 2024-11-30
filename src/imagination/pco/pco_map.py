@@ -192,6 +192,13 @@ enum_map(OM_TST_TYPE_MAIN.t, F_TST_TYPE, [
    ('s32', 's32'),
 ])
 
+enum_map(RM_ELEM.t, F_UPCK_ELEM, [
+   ('e0', 'e0'),
+   ('e1', 'e1'),
+   ('e2', 'e2'),
+   ('e3', 'e3'),
+], pass_zero=0)
+
 enum_map(RM_ELEM.t, F_MASKW0, [
    ('e0', 'e0'),
    ('e1', 'e1'),
@@ -639,6 +646,16 @@ encode_map(O_PCK,
    ]
 )
 
+encode_map(O_UNPCK,
+   encodings=[
+      (I_UPCK, [
+         ('elem', (RM_ELEM, 'src[0]')),
+         ('scale_rtz', {'or': [OM_SCALE, OM_ROUNDZERO]}),
+         ('pck_format', OM_PCK_FMT)
+      ])
+   ]
+)
+
 encode_map(O_TST,
    encodings=[
       (I_TST_EXT, [
@@ -942,6 +959,23 @@ group_map(O_PCK,
       ('is[4]', 'ft2')
    ],
    dests=[('w[0]', ('2_pck', 'dest[0]'), 'ft2')]
+)
+
+group_map(O_UNPCK,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_UNPCK)],
+   srcs=[('s[0]', ('0', 'src[0]'), 's0')],
+   iss=[('is[4]', 'ft0')],
+   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
 )
 
 group_map(O_ADD64_32,
