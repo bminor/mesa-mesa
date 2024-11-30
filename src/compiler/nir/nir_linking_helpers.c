@@ -1409,22 +1409,11 @@ nir_link_opt_varyings(nir_shader *producer, nir_shader *consumer)
       }
 
       nir_scalar uni_scalar;
-      if (is_direct_uniform_load(ssa, &uni_scalar)) {
-         if (consumer->options->max_varying_expression_cost >= 2) {
-            progress |= replace_varying_input_by_uniform_load(consumer, intr,
-                                                              &uni_scalar);
-            continue;
-         } else {
-            nir_variable *in_var = get_matching_input_var(consumer, out_var);
-            /* The varying is loaded from same uniform, so no need to do any
-             * interpolation. Mark it as flat explicitly.
-             */
-            if (!consumer->options->no_integers &&
-                in_var && in_var->data.interpolation <= INTERP_MODE_NOPERSPECTIVE) {
-               in_var->data.interpolation = INTERP_MODE_FLAT;
-               out_var->data.interpolation = INTERP_MODE_FLAT;
-            }
-         }
+      if (consumer->options->max_varying_expression_cost >= 2 &&
+          is_direct_uniform_load(ssa, &uni_scalar)) {
+         progress |= replace_varying_input_by_uniform_load(consumer, intr,
+                                                           &uni_scalar);
+         continue;
       }
 
       struct hash_entry *entry = _mesa_hash_table_search(varying_values, ssa);
