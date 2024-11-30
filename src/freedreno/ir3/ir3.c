@@ -680,7 +680,20 @@ ir3_build_instr(struct ir3_builder *builder, opc_t opc, int ndst, int nsrc)
 {
    struct ir3_instruction *instr =
       ir3_instr_create_at(builder->cursor, opc, ndst, nsrc);
-   builder->cursor = ir3_after_instr(instr);
+
+   /* During instruction selection, instructions are sometimes emitted to blocks
+    * other than the current one. For example, to predecessor blocks for phi
+    * sources or to the first block for inputs. For those cases, a new builder
+    * is created to emit at the end of the target block. However, if the target
+    * block happens to be the same as the current block, the main builder would
+    * not be updated to point past the new instructions. Therefore, don't update
+    * the cursor when it points to the end of a block to ensure that new
+    * instructions will always be added at the end.
+    */
+   if (builder->cursor.option != IR3_CURSOR_AFTER_BLOCK) {
+      builder->cursor = ir3_after_instr(instr);
+   }
+
    return instr;
 }
 
