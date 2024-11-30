@@ -2845,10 +2845,9 @@ init_driver_workarounds(struct zink_screen *screen)
    }
 
    if (zink_driverid(screen) ==
-       VK_DRIVER_ID_IMAGINATION_PROPRIETARY) {
-      assert(screen->info.feats.features.geometryShader);
+       VK_DRIVER_ID_IMAGINATION_PROPRIETARY &&
+       screen->info.feats.features.geometryShader)
       screen->driver_workarounds.no_linesmooth = true;
-   }
 
    /* This is a workarround for the lack of
     * gl_PointSize + glPolygonMode(..., GL_LINE), in the imagination
