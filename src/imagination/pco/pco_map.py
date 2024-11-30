@@ -215,6 +215,17 @@ enum_map(RM_ELEM.t, F_MASKW0, [
    ('e3', 'e3'),
 ], pass_zero=['e0', 'e1', 'e2', 'e3'])
 
+class OpRef(object):
+   def __init__(self, ref_type, index):
+      self.type = ref_type
+      self.index = index
+
+def SRC(index):
+   return OpRef('src', index)
+
+def DEST(index):
+   return OpRef('dest', index)
+
 encode_maps = {}
 group_maps = {}
 
@@ -268,16 +279,20 @@ def encode_map(op, encodings):
                encode_variant += f'pco_instr_get_mod({{1}}, {val_spec.cname})'
 
          elif isinstance(val_spec, tuple):
-            mod, origin = val_spec
+            mod, _origin = val_spec
+            assert isinstance(_origin, OpRef)
+            origin = f'{_origin.type}[{_origin.index}]'
+
             if isinstance(mod, RefMod):
                # This is different from op mods, in that enum maps are *optional*.
+               assert (_origin.type == 'src' and mod in op.src_mods[_origin.index]) or (_origin.type == 'dest' and mod in op.dest_mods[_origin.index])
+
                enum_map_key = (mod.t, struct_field.type)
                if struct_field.type.base_type == BaseType.enum and enum_map_key in enum_maps.keys():
                   enum_mapping = enum_maps[enum_map_key]
                   encode_variant += f'{enum_mapping.name}({{1}}->{origin}.{mod.t.tname})'
                else:
                   encode_variant += f'{{1}}->{origin}.{mod.t.tname}'
-
             elif isinstance(mod, str):
                encode_variant += f'{mod}({{1}}->{origin})'
             else:
@@ -318,8 +333,13 @@ def encode_map(op, encodings):
                conds_variant += ' && '
 
             if isinstance(isa_op_cond, tuple) and len(isa_op_cond) == 3:
-               mod, origin, cond = isa_op_cond
+               mod, _origin, cond = isa_op_cond
+
+               assert isinstance(_origin, OpRef)
+               origin = f'{_origin.type}[{_origin.index}]'
+
                assert isinstance(mod, RefMod)
+               assert (_origin.type == 'src' and mod in op.src_mods[_origin.index]) or (_origin.type == 'dest' and mod in op.dest_mods[_origin.index])
                conds_variant += f'{{1}}->{origin}.{mod.t.tname} {cond}'
             elif isinstance(isa_op_cond, tuple) and len(isa_op_cond) == 2:
                if isinstance(isa_op_cond[0], OpMod):
@@ -327,7 +347,9 @@ def encode_map(op, encodings):
                   assert mod in op.op_mods
                   conds_variant += f'pco_instr_get_mod({{1}}, {mod.cname}) {cond}'
                elif isinstance(isa_op_cond[0], str):
-                  mod, origin = isa_op_cond
+                  mod, _origin = isa_op_cond
+                  assert isinstance(_origin, OpRef)
+                  origin = f'{_origin.type}[{_origin.index}]'
                   conds_variant += f'{mod}({{1}}->{origin})'
                else:
                   assert False
@@ -397,7 +419,9 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
             reset_val = 0 if val_spec.t.nzdefault is None else val_spec.t.nzdefault
             hdr_mappings.append(f'pco_instr_set_mod({{1}}, {val_spec.cname}, {reset_val});')
       elif isinstance(val_spec, tuple):
-         mod, origin = val_spec
+         mod, _origin = val_spec
+         assert isinstance(_origin, OpRef)
+         origin = f'{_origin.type}[{_origin.index}]'
          assert isinstance(mod, str) and isinstance(origin, str)
          hdr_mappings.append(f'{{}}->hdr.{hdr_field} = {mod}({{}}->{origin});')
       elif isinstance(val_spec, list):
@@ -445,13 +469,13 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
             if _ref in IO.enum.elems.keys():
                io = IO.enum.elems[_ref]
                enc_mapping += f', pco_ref_io({io.cname})'
-            elif _ref == '_':
+            elif isinstance(_ref, OpRef):
+               origin = f'{_ref.type}[{_ref.index}]'
+               enc_mapping += f', {{1}}->{origin}'
+            elif isinstance(_ref, str) and _ref == '_':
                enc_mapping += f', pco_ref_null()'
-            elif len(_ref) == 2:
-               mod_func, ref = _ref
-               enc_mapping += f', {mod_func}({{1}}->{ref})'
             else:
-               enc_mapping += f', {{1}}->{_ref}'
+               assert False
 
          for op_mod, _val in enc_op_mods:
             assert isinstance(op_mod, OpMod)
@@ -496,15 +520,15 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
          assert _phase in OP_PHASE.enum.elems.keys()
          phase = OP_PHASE.enum.elems[_phase].cname
 
-         if _io in IO.enum.elems.keys():
-            io = IO.enum.elems[_io].cname
-         else:
-            assert isinstance(_io, str)
-            io = _io
+         assert isinstance(val_spec, OpRef)
+         origin = f'{val_spec.type}[{val_spec.index}]'
 
-         src_mappings.append(f'{{0}}->srcs.{src} = {{0}}->instrs[{phase}]->{val_spec};')
-         src_mappings.append(f'{{0}}->instrs[{phase}]->{val_spec} = pco_ref_io({io});')
-         src_mappings.append(f'pco_ref_xfer_mods(&{{0}}->instrs[{phase}]->{val_spec}, &{{0}}->srcs.{src}, true);')
+         assert _io in IO.enum.elems.keys()
+         io = IO.enum.elems[_io].cname
+
+         src_mappings.append(f'{{0}}->srcs.{src} = {{0}}->instrs[{phase}]->{origin};')
+         src_mappings.append(f'{{0}}->instrs[{phase}]->{origin} = pco_ref_io({io});')
+         src_mappings.append(f'pco_ref_xfer_mods(&{{0}}->instrs[{phase}]->{origin}, &{{0}}->srcs.{src}, true);')
       elif len(_spec) == 1:
          val = _spec[0]
          assert isinstance(val, str)
@@ -535,15 +559,18 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
       assert _phase in OP_PHASE.enum.elems.keys()
       phase = OP_PHASE.enum.elems[_phase].cname
 
+      assert isinstance(val_spec, OpRef)
+      origin = f'{val_spec.type}[{val_spec.index}]'
+
       if _io in IO.enum.elems.keys():
          io = IO.enum.elems[_io].cname
       else:
          assert isinstance(_io, str)
          io = _io
 
-      dest_mappings.append(f'{{0}}->dests.{dest} = {{0}}->instrs[{phase}]->{val_spec};')
-      dest_mappings.append(f'{{0}}->instrs[{phase}]->{val_spec} = pco_ref_io({io});')
-      dest_mappings.append(f'pco_ref_xfer_mods(&{{0}}->instrs[{phase}]->{val_spec}, &{{0}}->dests.{dest}, true);')
+      dest_mappings.append(f'{{0}}->dests.{dest} = {{0}}->instrs[{phase}]->{origin};')
+      dest_mappings.append(f'{{0}}->instrs[{phase}]->{origin} = pco_ref_io({io});')
+      dest_mappings.append(f'pco_ref_xfer_mods(&{{0}}->instrs[{phase}]->{origin}, &{{0}}->dests.{dest}, true);')
 
    if bool(dest_mappings):
       mapping_sets.append(dest_mappings);
@@ -567,10 +594,10 @@ encode_map(O_FADD,
    encodings=[
       (I_FADD, [
          ('sat', OM_SAT),
-         ('s0neg', (RM_NEG, 'src[0]')),
-         ('s0abs', (RM_ABS, 'src[0]')),
-         ('s1abs', (RM_ABS, 'src[1]')),
-         ('s0flr', (RM_FLR, 'src[0]'))
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0))),
+         ('s1abs', (RM_ABS, SRC(1))),
+         ('s0flr', (RM_FLR, SRC(0)))
       ])
    ]
 )
@@ -579,10 +606,10 @@ encode_map(O_FMUL,
    encodings=[
       (I_FMUL, [
          ('sat', OM_SAT),
-         ('s0neg', (RM_NEG, 'src[0]')),
-         ('s0abs', (RM_ABS, 'src[0]')),
-         ('s1abs', (RM_ABS, 'src[1]')),
-         ('s0flr', (RM_FLR, 'src[0]'))
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0))),
+         ('s1abs', (RM_ABS, SRC(1))),
+         ('s0flr', (RM_FLR, SRC(0)))
       ])
    ]
 )
@@ -590,28 +617,28 @@ encode_map(O_FMUL,
 encode_map(O_FMAD,
    encodings=[
       (I_FMAD_EXT, [
-         ('s0neg', (RM_NEG, 'src[0]')),
-         ('s0abs', (RM_ABS, 'src[0]')),
-         ('s2neg', (RM_NEG, 'src[2]')),
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0))),
+         ('s2neg', (RM_NEG, SRC(2))),
          ('sat', OM_SAT),
 
          ('lp', OM_LP),
-         ('s1abs', (RM_ABS, 'src[1]')),
-         ('s1neg', (RM_NEG, 'src[1]')),
-         ('s2flr', (RM_FLR, 'src[2]')),
-         ('s2abs', (RM_ABS, 'src[2]'))
+         ('s1abs', (RM_ABS, SRC(1))),
+         ('s1neg', (RM_NEG, SRC(1))),
+         ('s2flr', (RM_FLR, SRC(2))),
+         ('s2abs', (RM_ABS, SRC(2)))
       ]),
       (I_FMAD, [
-         ('s0neg', (RM_NEG, 'src[0]')),
-         ('s0abs', (RM_ABS, 'src[0]')),
-         ('s2neg', (RM_NEG, 'src[2]')),
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0))),
+         ('s2neg', (RM_NEG, SRC(2))),
          ('sat', OM_SAT)
       ], [
          (OM_LP, '== false'),
-         (RM_ABS, 'src[1]', '== false'),
-         (RM_NEG, 'src[1]', '== false'),
-         (RM_FLR, 'src[2]', '== false'),
-         (RM_ABS, 'src[2]', '== false')
+         (RM_ABS, SRC(1), '== false'),
+         (RM_NEG, SRC(1), '== false'),
+         (RM_FLR, SRC(2), '== false'),
+         (RM_ABS, SRC(2), '== false')
       ])
    ]
 )
@@ -620,12 +647,12 @@ encode_map(O_FRCP,
    encodings=[
       (I_SNGL_EXT, [
          ('sngl_op', 'rcp'),
-         ('s0neg', (RM_NEG, 'src[0]')),
-         ('s0abs', (RM_ABS, 'src[0]'))
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0)))
       ]),
       (I_SNGL, [('sngl_op', 'rcp')], [
-         (RM_NEG, 'src[0]', '== false'),
-         (RM_ABS, 'src[0]', '== false')
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false')
       ])
    ]
 )
@@ -634,12 +661,12 @@ encode_map(O_MBYP,
    encodings=[
       (I_SNGL_EXT, [
          ('sngl_op', 'byp'),
-         ('s0neg', (RM_NEG, 'src[0]')),
-         ('s0abs', (RM_ABS, 'src[0]'))
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0)))
       ]),
       (I_SNGL, [('sngl_op', 'byp')], [
-         (RM_NEG, 'src[0]', '== false'),
-         (RM_ABS, 'src[0]', '== false')
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false')
       ])
    ]
 )
@@ -658,7 +685,7 @@ encode_map(O_PCK,
 encode_map(O_UNPCK,
    encodings=[
       (I_UPCK, [
-         ('elem', (RM_ELEM, 'src[0]')),
+         ('elem', (RM_ELEM, SRC(0))),
          ('scale_rtz', {'or': [OM_SCALE, OM_ROUNDZERO]}),
          ('pck_format', OM_PCK_FMT)
       ])
@@ -669,21 +696,21 @@ encode_map(O_TST,
    encodings=[
       (I_TST_EXT, [
          ('tst_op', OM_TST_OP_MAIN),
-         ('pwen', ('!pco_ref_is_null', 'dest[1]')),
+         ('pwen', ('!pco_ref_is_null', DEST(1))),
          ('type', OM_TST_TYPE_MAIN),
          ('p2end', OM_PHASE2END),
-         ('elem', (RM_ELEM, 'src[0]'))
+         ('elem', (RM_ELEM, SRC(0)))
       ]),
       (I_TST, [
          ('tst_op', OM_TST_OP_MAIN),
-         ('pwen', ('!pco_ref_is_null', 'dest[1]')),
+         ('pwen', ('!pco_ref_is_null', DEST(1))),
       ], [
          (OM_TST_OP_MAIN, '<= PCO_TST_OP_MAIN_NOTEQUAL'),
          (OM_TST_TYPE_MAIN, '== PCO_TST_TYPE_MAIN_F32'),
          (OM_PHASE2END, '== false'),
          (OM_TST_TYPE_MAIN, '== PCO_TST_TYPE_MAIN_F32'),
-         (RM_ELEM, 'src[0]', '== 0'),
-         (RM_ELEM, 'src[1]', '== 0'),
+         (RM_ELEM, SRC(0), '== 0'),
+         (RM_ELEM, SRC(1), '== 0'),
       ])
    ]
 )
@@ -691,17 +718,17 @@ encode_map(O_TST,
 encode_map(O_MOVC,
    encodings=[
       (I_MOVC_EXT, [
-         ('movw0', ('pco_ref_get_movw01', 'src[1]')),
-         ('movw1', ('pco_ref_get_movw01', 'src[3]')),
-         ('maskw0', (RM_ELEM, 'dest[0]')),
+         ('movw0', ('pco_ref_get_movw01', SRC(1))),
+         ('movw1', ('pco_ref_get_movw01', SRC(3))),
+         ('maskw0', (RM_ELEM, DEST(0))),
          ('aw', False),
          ('p2end', OM_PHASE2END)
       ]),
       (I_MOVC, [
-         ('movw0', ('pco_ref_get_movw01', 'src[1]')),
-         ('movw1', ('pco_ref_get_movw01', 'src[3]')),
+         ('movw0', ('pco_ref_get_movw01', SRC(1))),
+         ('movw1', ('pco_ref_get_movw01', SRC(3))),
       ], [
-         (RM_ELEM, 'dest[0]', '== 0b1111'),
+         (RM_ELEM, DEST(0), '== 0b1111'),
          (OM_PHASE2END, '== false'),
       ])
    ]
@@ -712,24 +739,24 @@ encode_map(O_ADD64_32,
       (I_INT32_64_EXT, [
          ('s', OM_S),
          ('int32_64_op', 'add6432'),
-         ('cin', ('!pco_ref_is_null', 'src[3]')),
+         ('cin', ('!pco_ref_is_null', SRC(3))),
 
-         ('s0neg', (RM_NEG, 'src[0]')),
-         ('s0abs', (RM_ABS, 'src[0]')),
+         ('s0neg', (RM_NEG, SRC(0))),
+         ('s0abs', (RM_ABS, SRC(0))),
          ('s1neg', False),
          ('s1abs', False),
-         ('s2neg', (RM_NEG, 'src[2]')),
-         ('s2abs', (RM_ABS, 'src[2]'))
+         ('s2neg', (RM_NEG, SRC(2))),
+         ('s2abs', (RM_ABS, SRC(2)))
       ]),
       (I_INT32_64, [
          ('s', OM_S),
          ('int32_64_op', 'add6432'),
-         ('s2neg', (RM_NEG, 'src[2]')),
+         ('s2neg', (RM_NEG, SRC(2))),
       ], [
-         ('pco_ref_is_null', 'src[3]'),
-         (RM_NEG, 'src[0]', '== false'),
-         (RM_ABS, 'src[0]', '== false'),
-         (RM_ABS, 'src[2]', '== false')
+         ('pco_ref_is_null', SRC(3)),
+         (RM_NEG, SRC(0), '== false'),
+         (RM_ABS, SRC(0), '== false'),
+         (RM_ABS, SRC(2), '== false')
       ])
    ]
 )
@@ -738,7 +765,7 @@ encode_map(O_UVSW_WRITE,
    encodings=[
       (I_UVSW_WRITE_IMM, [
          ('dsel', 'w0'),
-         ('imm_addr', ('pco_ref_get_imm', 'src[1]'))
+         ('imm_addr', ('pco_ref_get_imm', SRC(1)))
       ])
    ]
 )
@@ -751,7 +778,7 @@ encode_map(O_UVSW_WRITE_EMIT_ENDTASK,
    encodings=[
       (I_UVSW_WRITE_EMIT_ENDTASK_IMM, [
          ('dsel', 'w0'),
-         ('imm_addr', ('pco_ref_get_imm', 'src[1]'))
+         ('imm_addr', ('pco_ref_get_imm', SRC(1)))
       ])
    ]
 )
@@ -760,10 +787,10 @@ encode_map(O_FITR,
    encodings=[
       (I_FITR, [
          ('p', False),
-         ('drc', ('pco_ref_get_drc', 'src[0]')),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
          ('iter_mode', OM_ITR_MODE),
          ('sat', OM_SAT),
-         ('count', ('pco_ref_get_imm', 'src[2]'))
+         ('count', ('pco_ref_get_imm', SRC(2)))
       ])
    ]
 )
@@ -772,10 +799,10 @@ encode_map(O_FITRP,
    encodings=[
       (I_FITR, [
          ('p', True),
-         ('drc', ('pco_ref_get_drc', 'src[0]')),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
          ('iter_mode', OM_ITR_MODE),
          ('sat', OM_SAT),
-         ('count', ('pco_ref_get_imm', 'src[3]'))
+         ('count', ('pco_ref_get_imm', SRC(3)))
       ])
    ]
 )
@@ -783,8 +810,8 @@ encode_map(O_FITRP,
 encode_map(O_LD,
    encodings=[
       (I_LD_IMMBL, [
-         ('drc', ('pco_ref_get_drc', 'src[0]')),
-         ('burstlen', ('pco_ref_get_imm', 'src[1]')),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
+         ('burstlen', ('pco_ref_get_imm', SRC(1))),
 
          ('srcseladd', 's0'),
          ('cachemode_ld', OM_MCU_CACHE_MODE_LD)
@@ -798,7 +825,7 @@ encode_map(O_BBYP0BM_IMM32,
          ('count_src', 's2'),
          ('count_op', 'byp'),
          ('shift1_op', 'byp'),
-         ('imm32', ('pco_ref_get_imm', 'src[1]'))
+         ('imm32', ('pco_ref_get_imm', SRC(1)))
       ])
    ]
 )
@@ -831,21 +858,21 @@ encode_map(O_NOP, encodings=[(I_NOP, [])])
 encode_map(O_DITR,
    encodings=[
       (I_DITR, [
-         ('dest', ('pco_ref_get_temp', 'dest[0]')),
+         ('dest', ('pco_ref_get_temp', DEST(0))),
 
-         ('coff', ('pco_ref_get_coeff', 'src[1]')),
+         ('coff', ('pco_ref_get_coeff', SRC(1))),
          ('p', 'none'),
 
          ('woff', 0),
          ('mode', OM_ITR_MODE),
 
-         ('count', ('pco_ref_get_imm', 'src[2]')),
-         ('coff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', 'src[1]')),
+         ('count', ('pco_ref_get_imm', SRC(2))),
+         ('coff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', SRC(1))),
          ('woff_idx_ctrl', 'none'),
 
          ('f16', OM_F16),
          ('sched_ctrl', OM_SCHED),
-         ('drc', ('pco_ref_get_drc', 'src[0]')),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
          ('sat', OM_SAT)
       ])
    ]
@@ -854,21 +881,21 @@ encode_map(O_DITR,
 encode_map(O_DITRP,
    encodings=[
       (I_DITR, [
-         ('dest', ('pco_ref_get_temp', 'dest[0]')),
+         ('dest', ('pco_ref_get_temp', DEST(0))),
 
-         ('coff', ('pco_ref_get_coeff', 'src[1]')),
+         ('coff', ('pco_ref_get_coeff', SRC(1))),
          ('p', 'iter_mul'),
 
-         ('woff', ('pco_ref_get_coeff', 'src[2]')),
+         ('woff', ('pco_ref_get_coeff', SRC(2))),
          ('mode', OM_ITR_MODE),
 
-         ('count', ('pco_ref_get_imm', 'src[3]')),
-         ('coff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', 'src[1]')),
-         ('woff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', 'src[2]')),
+         ('count', ('pco_ref_get_imm', SRC(3))),
+         ('coff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', SRC(1))),
+         ('woff_idx_ctrl', ('pco_ref_get_reg_idx_ctrl', SRC(2))),
 
          ('f16', OM_F16),
          ('sched_ctrl', OM_SCHED),
-         ('drc', ('pco_ref_get_drc', 'src[0]')),
+         ('drc', ('pco_ref_get_drc', SRC(0))),
          ('sat', OM_SAT)
       ])
    ]
@@ -888,11 +915,11 @@ group_map(O_FADD,
    ]),
    enc_ops=[('0', O_FADD)],
    srcs=[
-      ('s[0]', ('0', 'src[0]'), 's0'),
-      ('s[1]', ('0', 'src[1]'), 's1')
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1')
    ],
    iss=[('is[4]', 'ft0')],
-   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
 )
 
 group_map(O_FMUL,
@@ -908,11 +935,11 @@ group_map(O_FMUL,
    ]),
    enc_ops=[('0', O_FMUL)],
    srcs=[
-      ('s[0]', ('0', 'src[0]'), 's0'),
-      ('s[1]', ('0', 'src[1]'), 's1')
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1')
    ],
    iss=[('is[4]', 'ft0')],
-   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
 )
 
 group_map(O_FMAD,
@@ -928,12 +955,12 @@ group_map(O_FMAD,
    ]),
    enc_ops=[('0', O_FMAD)],
    srcs=[
-      ('s[0]', ('0', 'src[0]'), 's0'),
-      ('s[1]', ('0', 'src[1]'), 's1'),
-      ('s[2]', ('0', 'src[2]'), 's2')
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2')
    ],
    iss=[('is[4]', 'ft0')],
-   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
 )
 
 group_map(O_FRCP,
@@ -948,9 +975,9 @@ group_map(O_FRCP,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[('0', O_FRCP)],
-   srcs=[('s[0]', ('0', 'src[0]'), 's0')],
+   srcs=[('s[0]', ('0', SRC(0)), 's0')],
    iss=[('is[4]', 'ft0')],
-   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
 )
 
 group_map(O_MBYP,
@@ -965,9 +992,9 @@ group_map(O_MBYP,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[('0', O_MBYP)],
-   srcs=[('s[0]', ('0', 'src[0]'), 's0')],
+   srcs=[('s[0]', ('0', SRC(0)), 's0')],
    iss=[('is[4]', 'ft0')],
-   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
 )
 
 group_map(O_PCK,
@@ -982,13 +1009,13 @@ group_map(O_PCK,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[('2_pck', O_PCK)],
-   srcs=[('s[0]', ('2_pck', 'src[0]'), 'is3')],
+   srcs=[('s[2]', ('2_pck', SRC(0)), 'is3')],
    iss=[
-      ('is[0]', 's0'),
+      ('is[0]', 's2'),
       ('is[3]', 'fte'),
       ('is[4]', 'ft2')
    ],
-   dests=[('w[0]', ('2_pck', 'dest[0]'), 'ft2')]
+   dests=[('w[0]', ('2_pck', DEST(0)), 'ft2')]
 )
 
 group_map(O_UNPCK,
@@ -1003,9 +1030,9 @@ group_map(O_UNPCK,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[('0', O_UNPCK)],
-   srcs=[('s[0]', ('0', 'src[0]'), 's0')],
+   srcs=[('s[0]', ('0', SRC(0)), 's0')],
    iss=[('is[4]', 'ft0')],
-   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
+   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
 )
 
 group_map(O_ADD64_32,
@@ -1021,17 +1048,17 @@ group_map(O_ADD64_32,
    ]),
    enc_ops=[('0', O_ADD64_32)],
    srcs=[
-      ('s[0]', ('0', 'src[0]'), 's0'),
-      ('s[1]', ('0', 'src[1]'), 's1'),
-      ('s[2]', ('0', 'src[2]'), 's2')
+      ('s[0]', ('0', SRC(0)), 's0'),
+      ('s[1]', ('0', SRC(1)), 's1'),
+      ('s[2]', ('0', SRC(2)), 's2')
    ],
    iss=[
       ('is[4]', 'ft0'),
       ('is[5]', 'fte')
    ],
    dests=[
-      ('w[0]', ('0', 'dest[0]'), 'ft0'),
-      ('w[1]', ('0', 'dest[1]'), 'fte')
+      ('w[0]', ('0', DEST(0)), 'ft0'),
+      ('w[1]', ('0', DEST(1)), 'fte')
    ]
 )
 
@@ -1047,16 +1074,16 @@ group_map(O_SCMP,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[
-      ('0', O_MBYP, ['ft0'], ['src[0]']),
-      ('1', O_MBYP, ['ft1'], ['src[1]']),
+      ('0', O_MBYP, ['ft0'], [SRC(0)]),
+      ('1', O_MBYP, ['ft1'], [SRC(1)]),
       ('2_tst', O_TST, ['ftt', '_'], ['is1', 'is2'], [(OM_TST_OP_MAIN, OM_TST_OP_MAIN), (OM_TST_TYPE_MAIN, 'f32')]),
       ('2_pck', O_PCK, ['ft2'], ['_'], [(OM_PCK_FMT, 'one')]),
-      ('2_mov', O_MOVC, ['dest[0]', '_'], ['ftt', 'ft2', 'is4', '_', '_'])
+      ('2_mov', O_MOVC, [DEST(0), '_'], ['ftt', 'ft2', 'is4', '_', '_'])
    ],
    srcs=[
-      ('s[0]', ('0', 'src[0]'), 's0'),
+      ('s[0]', ('0', SRC(0)), 's0'),
       ('s[1]', 'pco_zero'),
-      ('s[3]', ('1', 'src[0]'), 's3'),
+      ('s[3]', ('1', SRC(0)), 's3'),
    ],
    iss=[
       ('is[0]', 's1'),
@@ -1065,7 +1092,7 @@ group_map(O_SCMP,
       ('is[4]', 'fte'),
    ],
    dests=[
-      ('w[0]', ('2_mov', 'dest[0]'), 'w0'),
+      ('w[0]', ('2_mov', DEST(0)), 'w0'),
    ]
 )
 
@@ -1081,7 +1108,7 @@ group_map(O_UVSW_WRITE,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[('backend', O_UVSW_WRITE)],
-   srcs=[('s[0]', ('backend', 'src[0]'), 'w0')],
+   srcs=[('s[0]', ('backend', SRC(0)), 'w0')],
    iss=[
       ('is[0]', 's0'),
       ('is[4]', 'fte')
@@ -1142,7 +1169,7 @@ group_map(O_UVSW_WRITE_EMIT_ENDTASK,
       ('rpt', 1)
    ]),
    enc_ops=[('backend', O_UVSW_WRITE_EMIT_ENDTASK)],
-   srcs=[('s[0]', ('backend', 'src[0]'), 'w0')],
+   srcs=[('s[0]', ('backend', SRC(0)), 'w0')],
    iss=[
       ('is[0]', 's0'),
       ('is[4]', 'fte')
@@ -1162,8 +1189,8 @@ group_map(O_FITR,
    ]),
    enc_ops=[('backend', O_FITR)],
    srcs=[
-      ('s[0]', ('backend', 'src[1]'), 's0'),
-      ('s[3]', ('backend', 'dest[0]'), 's3')
+      ('s[0]', ('backend', SRC(1)), 's0'),
+      ('s[3]', ('backend', DEST(0)), 's3')
    ]
 )
 
@@ -1180,9 +1207,9 @@ group_map(O_FITRP,
    ]),
    enc_ops=[('backend', O_FITRP)],
    srcs=[
-      ('s[0]', ('backend', 'src[1]'), 's0'),
-      ('s[2]', ('backend', 'src[2]'), 's2'),
-      ('s[3]', ('backend', 'dest[0]'), 's3')
+      ('s[0]', ('backend', SRC(1)), 's0'),
+      ('s[2]', ('backend', SRC(2)), 's2'),
+      ('s[3]', ('backend', DEST(0)), 's3')
    ]
 )
 
@@ -1199,8 +1226,8 @@ group_map(O_LD,
    ]),
    enc_ops=[('backend', O_LD)],
    srcs=[
-      ('s[0]', ('backend', 'src[2]'), 's0'),
-      ('s[3]', ('backend', 'dest[0]'), 's3')
+      ('s[0]', ('backend', SRC(2)), 's0'),
+      ('s[3]', ('backend', DEST(0)), 's3')
    ]
 )
 
@@ -1215,8 +1242,8 @@ group_map(O_MOVI32,
       ('atom', OM_ATOM),
       ('rpt', OM_RPT)
    ]),
-   enc_ops=[('0', O_BBYP0BM_IMM32, ['ft0', 'dest[0]'], ['s0', 'src[0]'])],
-   dests=[('w[0]', ('0', 'dest[1]'), 'ft1')]
+   enc_ops=[('0', O_BBYP0BM_IMM32, ['ft0', DEST(0)], ['s0', SRC(0)])],
+   dests=[('w[0]', ('0', DEST(1)), 'ft1')]
 )
 
 group_map(O_LOGICAL,
@@ -1231,14 +1258,14 @@ group_map(O_LOGICAL,
       ('rpt', OM_RPT)
    ]),
    enc_ops=[
-      ('0', O_BBYP0S1, ['ft2'], ['src[0]']),
-      ('1', O_LOGICAL, ['dest[0]'], ['ft2', 'src[1]'], [(OM_LOGIOP, OM_LOGIOP)])
+      ('0', O_BBYP0S1, ['ft2'], [SRC(0)]),
+      ('1', O_LOGICAL, [DEST(0)], ['ft2', SRC(1)], [(OM_LOGIOP, OM_LOGIOP)])
    ],
    srcs=[
-      ('s[2]', ('0', 'src[0]'), 's2'),
-      ('s[3]', ('1', 'src[1]'), 's3')
+      ('s[2]', ('0', SRC(0)), 's2'),
+      ('s[3]', ('1', SRC(1)), 's3')
    ],
-   dests=[('w[0]', ('1', 'dest[0]'), 'ft4')]
+   dests=[('w[0]', ('1', DEST(0)), 'ft4')]
 )
 
 group_map(O_WOP,
@@ -1259,7 +1286,7 @@ group_map(O_WDF,
       ('w1p', False),
       ('w0p', False),
       ('cc', 'e1_zx'),
-      ('miscctl', ('pco_ref_get_drc', 'src[0]')),
+      ('miscctl', ('pco_ref_get_drc', SRC(0))),
       ('ctrlop', 'wdf')
    ]),
    enc_ops=[('ctrl', O_WDF)]
