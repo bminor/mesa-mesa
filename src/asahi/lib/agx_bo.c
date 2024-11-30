@@ -388,8 +388,10 @@ agx_bo_create(struct agx_device *dev, size_t size, unsigned align,
    bo->label = label;
    p_atomic_set(&bo->refcnt, 1);
 
-   if (dev->debug & AGX_DBG_TRACE)
+   if (dev->debug & AGX_DBG_TRACE) {
+      agx_bo_map(bo);
       agxdecode_track_alloc(dev->agxdecode, bo);
+   }
 
    agx_bo_dump_all_periodic(dev);
    return bo;
