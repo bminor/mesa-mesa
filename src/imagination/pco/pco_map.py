@@ -163,6 +163,12 @@ enum_map(OM_SCHED.t, F_SCHED_CTRL, [
    ('wdf', 'wdf'),
 ])
 
+enum_map(OM_MCU_CACHE_MODE_LD.t, F_CACHEMODE_LD, [
+   ('normal', 'normal'),
+   ('bypass', 'bypass'),
+   ('force_line_fill', 'force_line_fill'),
+])
+
 enum_map(OM_TST_OP_MAIN.t, F_TST_OP, [
    ('zero', 'z'),
    ('gzero', 'gz'),
@@ -300,10 +306,15 @@ def encode_map(op, encodings):
                assert isinstance(mod, RefMod)
                conds_variant += f'{{1}}->{origin}.{mod.t.tname} {cond}'
             elif isinstance(isa_op_cond, tuple) and len(isa_op_cond) == 2:
-               mod, cond = isa_op_cond
-               assert isinstance(mod, OpMod)
-               assert mod in op.op_mods
-               conds_variant += f'pco_instr_get_mod({{1}}, {mod.cname}) {cond}'
+               if isinstance(isa_op_cond[0], OpMod):
+                  mod, cond = isa_op_cond
+                  assert mod in op.op_mods
+                  conds_variant += f'pco_instr_get_mod({{1}}, {mod.cname}) {cond}'
+               elif isinstance(isa_op_cond[0], str):
+                  mod, origin = isa_op_cond
+                  conds_variant += f'{mod}({{1}}->{origin})'
+               else:
+                  assert False
             else:
                assert False
          conds_variant += ')'
@@ -670,6 +681,33 @@ encode_map(O_MOVC,
    ]
 )
 
+encode_map(O_ADD64_32,
+   encodings=[
+      (I_INT32_64_EXT, [
+         ('s', OM_S),
+         ('int32_64_op', 'add6432'),
+         ('cin', ('!pco_ref_is_null', 'src[3]')),
+
+         ('s0neg', (RM_NEG, 'src[0]')),
+         ('s0abs', (RM_ABS, 'src[0]')),
+         ('s1neg', False),
+         ('s1abs', False),
+         ('s2neg', (RM_NEG, 'src[2]')),
+         ('s2abs', (RM_ABS, 'src[2]'))
+      ]),
+      (I_INT32_64, [
+         ('s', OM_S),
+         ('int32_64_op', 'add6432'),
+         ('s2neg', (RM_NEG, 'src[2]')),
+      ], [
+         ('pco_ref_is_null', 'src[3]'),
+         (RM_NEG, 'src[0]', '== false'),
+         (RM_ABS, 'src[0]', '== false'),
+         (RM_ABS, 'src[2]', '== false')
+      ])
+   ]
+)
+
 encode_map(O_UVSW_WRITE,
    encodings=[
       (I_UVSW_WRITE_IMM, [
@@ -712,6 +750,18 @@ encode_map(O_FITRP,
          ('iter_mode', OM_ITR_MODE),
          ('sat', OM_SAT),
          ('count', ('pco_ref_get_imm', 'src[3]'))
+      ])
+   ]
+)
+
+encode_map(O_LD,
+   encodings=[
+      (I_LD_IMMBL, [
+         ('drc', ('pco_ref_get_drc', 'src[0]')),
+         ('burstlen', ('pco_ref_get_imm', 'src[1]')),
+
+         ('srcseladd', 's0'),
+         ('cachemode_ld', OM_MCU_CACHE_MODE_LD)
       ])
    ]
 )
@@ -894,6 +944,33 @@ group_map(O_PCK,
    dests=[('w[0]', ('2_pck', 'dest[0]'), 'ft2')]
 )
 
+group_map(O_ADD64_32,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', True),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_ADD64_32)],
+   srcs=[
+      ('s[0]', ('0', 'src[0]'), 's0'),
+      ('s[1]', ('0', 'src[1]'), 's1'),
+      ('s[2]', ('0', 'src[2]'), 's2')
+   ],
+   iss=[
+      ('is[4]', 'ft0'),
+      ('is[5]', 'fte')
+   ],
+   dests=[
+      ('w[0]', ('0', 'dest[0]'), 'ft0'),
+      ('w[1]', ('0', 'dest[1]'), 'fte')
+   ]
+)
+
 group_map(O_SCMP,
    hdr=(I_IGRP_HDR_MAIN, [
       ('oporg', 'p0_p1_p2'),
@@ -1041,6 +1118,24 @@ group_map(O_FITRP,
    srcs=[
       ('s[0]', ('backend', 'src[1]'), 's0'),
       ('s[2]', ('backend', 'src[2]'), 's2'),
+      ('s[3]', ('backend', 'dest[0]'), 's3')
+   ]
+)
+
+group_map(O_LD,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'be'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', False),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', 1)
+   ]),
+   enc_ops=[('backend', O_LD)],
+   srcs=[
+      ('s[0]', ('backend', 'src[2]'), 's0'),
       ('s[3]', ('backend', 'dest[0]'), 's3')
    ]
 )

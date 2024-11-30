@@ -289,6 +289,7 @@ O_FMAD = hw_op('fmad', OM_ALU + [OM_SAT, OM_LP], 1, 3, [], [[RM_ABS, RM_NEG], [R
 O_FRCP = hw_op('frcp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_MBYP = hw_op('mbyp', OM_ALU, 1, 1, [], [[RM_ABS, RM_NEG]])
 O_PCK = hw_op('pck', OM_ALU + [OM_PCK_FMT, OM_ROUNDZERO, OM_SCALE], 1, 1)
+O_ADD64_32 = hw_op('add64_32', OM_ALU + [OM_S], 2, 4, [], [[RM_ABS, RM_NEG], [], [RM_ABS, RM_NEG]])
 
 O_TST = hw_direct_op('tst', [OM_TST_OP_MAIN, OM_PHASE2END, OM_TST_TYPE_MAIN], 2, 2, [], [[RM_ELEM], [RM_ELEM]])
 O_MOVC = hw_direct_op('movc', [OM_PHASE2END], 2, 5, [[RM_ELEM]])
@@ -305,6 +306,8 @@ O_UVSW_WRITE_EMIT_ENDTASK = hw_op('uvsw.write.emit.endtask', [OM_END], 0, 2)
 
 O_FITR = hw_op('fitr', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 3)
 O_FITRP = hw_op('fitrp', OM_ALU + [OM_ITR_MODE, OM_SAT], 1, 4)
+
+O_LD = hw_op('ld', OM_ALU_RPT1 + [OM_MCU_CACHE_MODE_LD], 1, 3)
 
 ## Bitwise.
 O_MOVI32 = hw_op('movi32', OM_ALU, 1, 1)
