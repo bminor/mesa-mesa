@@ -4212,13 +4212,7 @@ fs_assign_slots(struct linkage_info *linkage,
       /* Skip indirectly-indexed scalar slots and slots incompatible
        * with the FS vec4 type.
        */
-      while ((fs_vec4_type != FS_VEC4_TYPE_NONE &&
-              assigned_fs_vec4_type[vec4_slot(slot_index)] !=
-              FS_VEC4_TYPE_NONE &&
-              assigned_fs_vec4_type[vec4_slot(slot_index)] !=
-              fs_vec4_type) ||
-             BITSET_TEST32(linkage->indirect_mask, slot_index) ||
-             BITSET_TEST(assigned_mask, slot_index)) {
+      while (1) {
          /* If the FS vec4 type is incompatible. Move to the next vec4. */
          if (fs_vec4_type != FS_VEC4_TYPE_NONE &&
              assigned_fs_vec4_type[vec4_slot(slot_index)] !=
@@ -4244,7 +4238,11 @@ fs_assign_slots(struct linkage_info *linkage,
          /* This slot is already assigned (assigned_mask is set). Move to
           * the next one.
           */
-         slot_index += slot_size;
+         if (BITSET_TEST(assigned_mask, slot_index)) {
+            slot_index += slot_size;
+            continue;
+         }
+         break;
       }
 
       /* Assign color channels in this order, starting
