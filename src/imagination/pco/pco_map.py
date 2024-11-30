@@ -7,11 +7,12 @@ from pco_ops import *
 # Enum mappings.
 
 class EnumMap(object):
-   def __init__(self, name, type_from, type_to, mappings, pass_zero_val):
+   def __init__(self, name, type_from, type_to, mappings, both_bitsets, pass_zero_val):
       self.name = name
       self.type_from = type_from
       self.type_to = type_to
       self.mappings = mappings
+      self.both_bitsets = both_bitsets
       self.pass_zero_val = pass_zero_val
 
 enum_maps = {}
@@ -40,11 +41,18 @@ def enum_map(enum_from, enum_to, mappings, pass_zero=None):
    if pass_zero is not None:
       if isinstance(pass_zero, int):
          pass_zero_val = str(pass_zero)
+      elif isinstance(pass_zero, str):
+         assert pass_zero in enum_to.enum.elems.keys()
+         pass_zero_val = enum_to.enum.elems[pass_zero].cname
+      elif isinstance(pass_zero, list):
+         assert all(elem_to in enum_to.enum.elems.keys() for elem_to in pass_zero)
+         pass_zero_val = ' | '.join([enum_to.enum.elems[elem_to].cname for elem_to in pass_zero])
       else:
          assert False
 
    name = f'{prefix}_map_{enum_from.tname}_to_{enum_to.tname}'
-   enum_maps[key] = EnumMap(name, enum_from.name, enum_to.name, _mappings, pass_zero_val)
+   both_bitsets = enum_from.enum.is_bitset and enum_to.enum.is_bitset
+   enum_maps[key] = EnumMap(name, enum_from.name, enum_to.name, _mappings, both_bitsets, pass_zero_val)
 
 enum_map(OM_EXEC_CND.t, F_CC, [
    ('e1_zx', 'e1_zx'),

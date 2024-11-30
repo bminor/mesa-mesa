@@ -33,21 +33,40 @@ template = """/*
 static inline
 ${enum_map.type_to} ${enum_map.name}(${enum_map.type_from} val)
 {
+   uint64_t to = 0;
+
    % if enum_map.pass_zero_val is not None:
    if (!val)
       return ${enum_map.pass_zero_val};
 
    % endif
-   switch (val) {
-   % for elem_from, elem_to in enum_map.mappings:
-   case ${elem_from}:
-      return ${elem_to};
+   % if enum_map.both_bitsets:
+   u_foreach_bit64 (b, val) {
+      switch (b) {
+      % for elem_from, elem_to in enum_map.mappings:
+      case ${elem_from}:
+         to |= ${elem_to};
+         break;
 
-   % endfor
-   default: break;
+      % endfor
+      default:
+         unreachable();
+      }
    }
+   % else:
+   switch (val) {
+      % for elem_from, elem_to in enum_map.mappings:
+   case ${elem_from}:
+      to = ${elem_to};
+      break;
 
-   unreachable();
+      % endfor
+   default:
+      unreachable();
+   }
+   % endif
+
+   return to;
 }
 
 % endfor
