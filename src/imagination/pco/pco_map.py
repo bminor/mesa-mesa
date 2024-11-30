@@ -559,6 +559,20 @@ encode_map(O_FMAD,
    ]
 )
 
+encode_map(O_FRCP,
+   encodings=[
+      (I_SNGL_EXT, [
+         ('sngl_op', 'rcp'),
+         ('s0neg', (RM_NEG, 'src[0]')),
+         ('s0abs', (RM_ABS, 'src[0]'))
+      ]),
+      (I_SNGL, [('sngl_op', 'rcp')], [
+         (RM_NEG, 'src[0]', '== false'),
+         (RM_ABS, 'src[0]', '== false')
+      ])
+   ]
+)
+
 encode_map(O_MBYP,
    encodings=[
       (I_SNGL_EXT, [
@@ -749,6 +763,23 @@ group_map(O_FMAD,
       ('s[1]', ('0', 'src[1]'), 's1'),
       ('s[2]', ('0', 'src[2]'), 's2')
    ],
+   iss=[('is[4]', 'ft0')],
+   dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
+)
+
+group_map(O_FRCP,
+   hdr=(I_IGRP_HDR_MAIN, [
+      ('oporg', 'p0'),
+      ('olchk', OM_OLCHK),
+      ('w1p', False),
+      ('w0p', True),
+      ('cc', OM_EXEC_CND),
+      ('end', OM_END),
+      ('atom', OM_ATOM),
+      ('rpt', OM_RPT)
+   ]),
+   enc_ops=[('0', O_FRCP)],
+   srcs=[('s[0]', ('0', 'src[0]'), 's0')],
    iss=[('is[4]', 'ft0')],
    dests=[('w[0]', ('0', 'dest[0]'), 'ft0')]
 )

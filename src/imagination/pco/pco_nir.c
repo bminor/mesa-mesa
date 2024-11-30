@@ -25,6 +25,7 @@ static const struct spirv_to_nir_options pco_base_spirv_options = {
 static const nir_shader_compiler_options pco_base_nir_options = {
    .fuse_ffma32 = true,
 
+   .lower_fdiv = true,
    .lower_fquantize2f16 = true,
    .lower_layer_fs_input_to_sysval = true,
    .compact_arrays = true,

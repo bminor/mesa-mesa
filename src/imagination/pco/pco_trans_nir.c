@@ -647,6 +647,10 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_fmad(&tctx->b, dest, src[0], src[1], src[2]);
       break;
 
+   case nir_op_frcp:
+      instr = pco_frcp(&tctx->b, dest, src[0]);
+      break;
+
    case nir_op_pack_unorm_4x8:
       instr = pco_pck(&tctx->b,
                       dest,
