@@ -4222,19 +4222,6 @@ fs_assign_slots(struct linkage_info *linkage,
             continue;
          }
 
-         /* Copy the FS vec4 type if indexed indirectly, and move to
-          * the next slot.
-          */
-         if (BITSET_TEST32(linkage->indirect_mask, slot_index)) {
-            if (assigned_fs_vec4_type) {
-               assigned_fs_vec4_type[vec4_slot(slot_index)] =
-                  linkage->fs_vec4_type[vec4_slot(slot_index)];
-            }
-            assert(slot_index % 2 == 0);
-            slot_index += 2; /* increment by 32 bits */
-            continue;
-         }
-
          /* This slot is already assigned (assigned_mask is set). Move to
           * the next one.
           */
@@ -4558,6 +4545,38 @@ compact_varyings(struct linkage_info *linkage,
       uint8_t assigned_fs_vec4_type[NUM_TOTAL_VARYING_SLOTS] = {0};
       BITSET_DECLARE(assigned_mask, NUM_SCALAR_SLOTS);
       BITSET_ZERO(assigned_mask);
+
+      /* Iterate over all indirectly accessed inputs and set the assigned vec4
+       * type of each occupied slot to the vec4 type of indirect inputs, so
+       * that compaction doesn't put inputs of a different vec4 type in
+       * the same vec4.
+       *
+       * We don't try to compact indirect input arrays, though we could.
+       */
+      unsigned i;
+      BITSET_FOREACH_SET(i, linkage->indirect_mask, NUM_SCALAR_SLOTS) {
+         struct scalar_slot *slot = &linkage->slot[i];
+
+         /* The slot of the first array element contains all loads for all
+          * elements, including all direct accesses, while all other array
+          * elements are empty (on purpose).
+          */
+         if (list_is_empty(&linkage->slot[i].consumer.loads))
+            continue;
+
+         assert(slot->num_slots >= 2);
+
+         for (unsigned array_index = 0; array_index < slot->num_slots;
+              array_index++) {
+            unsigned vec4_index = vec4_slot(i) + array_index;
+            unsigned scalar_index = i + array_index * 8;
+            assigned_fs_vec4_type[vec4_index] = linkage->fs_vec4_type[vec4_index];
+            /* Indirectly-indexed slots are marked to always occupy 32 bits
+             * (2 16-bit slots), though we waste the high 16 bits if they are unused.
+             */
+            BITSET_SET_RANGE_INSIDE_WORD(assigned_mask, scalar_index, scalar_index + 1);
+         }
+      }
 
       if (linkage->has_flexible_interp) {
          /* This codepath packs convergent varyings with both interpolated and
