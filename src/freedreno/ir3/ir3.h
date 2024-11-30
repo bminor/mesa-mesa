@@ -2549,12 +2549,6 @@ ir3_BALLOT_MACRO(struct ir3_block *block, struct ir3_instruction *src,
    return instr;
 }
 
-static inline struct ir3_instruction *
-ir3_NOP(struct ir3_block *block)
-{
-   return ir3_instr_create(block, OPC_NOP, 0, 0);
-}
-
 /* clang-format off */
 #define __INSTR0(flag, name, opc)                                              \
 static inline struct ir3_instruction *ir3_##name(struct ir3_block *block)      \
@@ -2751,6 +2745,7 @@ static inline struct ir3_instruction *ir3_##name(                              \
 #define INSTR6NODST(name) __INSTR6((ir3_instruction_flags)0, 0, name, OPC_##name)
 
 /* cat0 instructions: */
+INSTR0(NOP)
 INSTR1NODST(BR)
 INSTR1NODST(BALL)
 INSTR1NODST(BANY)
