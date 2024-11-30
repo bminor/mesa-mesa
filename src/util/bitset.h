@@ -207,11 +207,13 @@ __bitset_shl(BITSET_WORD *x, unsigned amount, unsigned n)
 
 /* bit range operations (e=end is inclusive)
  */
-#define BITSET_TEST_RANGE_INSIDE_WORD(x, b, e, mask) \
+#define BITSET_GET_RANGE_INSIDE_WORD(x, b, e) \
    (BITSET_BITWORD(b) == BITSET_BITWORD(e) ? \
-   (((x)[BITSET_BITWORD(b)] & BITSET_RANGE(b, e)) == \
-   (((BITSET_WORD)mask) << (b % BITSET_WORDBITS))) : \
+   (((x)[BITSET_BITWORD(b)] >> (b % BITSET_WORDBITS)) & \
+   BITSET_MASK((e) - (b) + 1)) : \
    (assert (!"BITSET_TEST_RANGE: bit range crosses word boundary"), 0))
+#define BITSET_TEST_RANGE_INSIDE_WORD(x, b, e, mask) \
+   (BITSET_GET_RANGE_INSIDE_WORD(x, b, e) == (mask))
 #define BITSET_SET_RANGE_INSIDE_WORD(x, b, e) \
    (BITSET_BITWORD(b) == BITSET_BITWORD(e) ? \
    ((x)[BITSET_BITWORD(b)] |= BITSET_RANGE(b, e)) : \
