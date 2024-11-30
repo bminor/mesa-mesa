@@ -1973,9 +1973,9 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
    *slice_offset = 0;
 
    /* Intra-only decoding will only work without a setup slot for AV1
-    * currently, other codecs require the application to pass a
+    * (non-filmgrain) currently, other codecs require the application to pass a
     * setup slot for this use-case, since the FW is not able to skip write-out
-    * for H26X.  In order to fix that properly, additional scratch space will
+    * for H26X. In order to fix that properly, additional scratch space will
     * be needed in the video session just for intra-only DPB targets.
     */
    int dpb_update_required = 1;
@@ -2015,10 +2015,10 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
       assert(frame_info->pSetupReferenceSlot != NULL);
 
    struct radv_image_view *dpb_iv =
-      dpb_update_required
+      frame_info->pSetupReferenceSlot
          ? radv_image_view_from_handle(frame_info->pSetupReferenceSlot->pPictureResource->imageViewBinding)
          : NULL;
-   struct radv_image *dpb = dpb_update_required ? dpb_iv->image : img;
+   struct radv_image *dpb = dpb_iv ? dpb_iv->image : img;
 
    int dpb_array_idx = 0;
    if (dpb_update_required) {
