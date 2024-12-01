@@ -317,9 +317,6 @@ ac_nir_opt_pack_half(nir_shader *shader, enum amd_gfx_level gfx_level);
 unsigned
 ac_nir_varying_expression_max_cost(nir_shader *producer, nir_shader *consumer);
 
-unsigned
-ac_nir_varying_estimate_instr_cost(nir_instr *instr);
-
 bool
 ac_nir_opt_shared_append(nir_shader *shader);
 
