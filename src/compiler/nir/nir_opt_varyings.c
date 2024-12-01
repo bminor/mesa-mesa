@@ -4198,7 +4198,7 @@ fs_assign_slots(struct linkage_info *linkage,
 
    if (assign_colors) {
       slot_index = VARYING_SLOT_COL0 * 8; /* starting slot */
-      max_slot = VARYING_SLOT_COL1 * 8 + 8;
+      max_slot = VARYING_SLOT_COL1 + 1;
    } else {
       slot_index = VARYING_SLOT_VAR0 * 8; /* starting slot */
       max_slot = VARYING_SLOT_MAX;
