@@ -3236,26 +3236,86 @@ update_movable_flags(struct linkage_info *linkage, nir_instr *instr)
          if (NEED_UPDATE_MOVABLE_FLAGS(deref))
             update_movable_flags(linkage, deref);
 
-         if (deref->pass_flags & FLAG_MOVABLE) {
-            /* Treat uniforms as convergent, which means compatible with both
-             * flat and non-flat inputs.
-             */
-            instr->pass_flags |= FLAG_MOVABLE | FLAG_INTERP_CONVERGENT;
-            return;
-         }
+         instr->pass_flags |= deref->pass_flags;
+         return;
       }
 
       instr->pass_flags |= FLAG_UNMOVABLE;
       return;
    }
 
-   case nir_instr_type_deref:
-      if (can_move_deref_between_shaders(linkage, instr) &&
-          !nir_deref_instr_has_indirect(nir_instr_as_deref(instr)))
-         instr->pass_flags |= FLAG_MOVABLE;
-      else
+   case nir_instr_type_deref: {
+      if (!can_move_deref_between_shaders(linkage, instr)) {
          instr->pass_flags |= FLAG_UNMOVABLE;
-      return;
+         return;
+      }
+
+      nir_deref_instr *deref = nir_instr_as_deref(instr);
+      nir_deref_instr *parent = nir_deref_instr_parent(deref);
+
+      if (parent) {
+         if (NEED_UPDATE_MOVABLE_FLAGS(&parent->instr))
+            update_movable_flags(linkage, &parent->instr);
+
+         if (parent->instr.pass_flags & FLAG_UNMOVABLE) {
+            instr->pass_flags |= FLAG_UNMOVABLE;
+            return;
+         }
+      }
+
+      switch (deref->deref_type) {
+      case nir_deref_type_var:
+         instr->pass_flags |= FLAG_MOVABLE;
+         return;
+
+      case nir_deref_type_struct:
+         assert(parent->instr.pass_flags & FLAG_MOVABLE);
+         instr->pass_flags |= parent->instr.pass_flags;
+         return;
+
+      case nir_deref_type_array: {
+         nir_instr *index = deref->arr.index.ssa->parent_instr;
+
+         if (NEED_UPDATE_MOVABLE_FLAGS(index))
+            update_movable_flags(linkage, index);
+
+         /* Integer array indices should be movable only if they are
+          * convergent or flat.
+          */
+         ASSERTED unsigned index_interp = index->pass_flags & FLAG_INTERP_MASK;
+         assert(index->pass_flags & FLAG_UNMOVABLE ||
+                (index_interp == FLAG_INTERP_CONVERGENT ||
+                 index_interp == FLAG_INTERP_FLAT));
+
+         if (parent) {
+            unsigned parent_interp = parent->instr.pass_flags & FLAG_INTERP_MASK;
+
+            /* Check if the interpolation flags are compatible. */
+            if (parent_interp != FLAG_INTERP_CONVERGENT &&
+                index_interp != FLAG_INTERP_CONVERGENT &&
+                parent_interp != index_interp) {
+               instr->pass_flags |= FLAG_UNMOVABLE;
+               return;
+            }
+
+            /* Pick the one that isn't convergent because convergent inputs
+             * can be in expressions with any other qualifier.
+             */
+            if (parent_interp == FLAG_INTERP_CONVERGENT)
+               instr->pass_flags |= index->pass_flags;
+            else
+               instr->pass_flags |= parent->instr.pass_flags;
+         } else {
+            instr->pass_flags |= index->pass_flags;
+         }
+         return;
+      }
+
+      default:
+         instr->pass_flags |= FLAG_UNMOVABLE;
+         return;
+      }
+   }
 
    default:
       instr->pass_flags |= FLAG_UNMOVABLE;
@@ -3289,8 +3349,12 @@ gather_used_input_loads(nir_instr *instr,
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
       switch (intr->intrinsic) {
-      case nir_intrinsic_load_deref:
       case nir_intrinsic_load_tess_coord:
+         return;
+
+      case nir_intrinsic_load_deref:
+         gather_used_input_loads(intr->src[0].ssa->parent_instr,
+                                 loads, num_loads);
          return;
 
       case nir_intrinsic_load_input:
@@ -3306,6 +3370,28 @@ gather_used_input_loads(nir_instr *instr,
       default:
          printf("%u\n", intr->intrinsic);
          unreachable("unexpected intrinsic");
+      }
+   }
+
+   case nir_instr_type_deref: {
+      nir_deref_instr *deref = nir_instr_as_deref(instr);
+      nir_deref_instr *parent = nir_deref_instr_parent(deref);
+
+      if (parent)
+         gather_used_input_loads(&parent->instr, loads, num_loads);
+
+      switch (deref->deref_type) {
+      case nir_deref_type_var:
+      case nir_deref_type_struct:
+         return;
+
+      case nir_deref_type_array:
+         gather_used_input_loads(deref->arr.index.ssa->parent_instr,
+                                 loads, num_loads);
+         return;
+
+      default:
+         unreachable("unexpected deref type");
       }
    }
 
@@ -3336,6 +3422,7 @@ try_move_postdominator(struct linkage_info *linkage,
    nir_intrinsic_instr *loads[NUM_SCALAR_SLOTS*8];
    unsigned num_loads = 0;
    gather_used_input_loads(postdom, loads, &num_loads);
+   assert(num_loads && "no loads were gathered");
 
    /* Clear the flag set by gather_used_input_loads. */
    for (unsigned i = 0; i < num_loads; i++)
@@ -3909,28 +3996,57 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
             if (iter->pass_flags & FLAG_UNMOVABLE)
                break;
 
-            /* This can only be an ALU instruction. */
-            nir_alu_instr *alu = nir_instr_as_alu(iter);
-
-            /* Skip unsupported bit sizes and keep searching. */
-            if (!(alu->def.bit_size & supported_io_types))
+            /* We can't move derefs into the previous shader, but we can move
+             * instructions that use derefs.
+             */
+            if (iter->type == nir_instr_type_deref)
                continue;
 
-            /* Skip comparison opcodes that directly source the first load
-             * and a constant because any 1-bit values would have to be
-             * converted to 32 bits in the producer and then converted back
-             * to 1 bit using nir_op_ine in the consumer, achieving nothing.
-             */
-            if (alu->def.bit_size == 1 &&
-                ((nir_op_infos[alu->op].num_inputs == 1 &&
-                  alu->src[0].src.ssa == load_def) ||
-                 (nir_op_infos[alu->op].num_inputs == 2 &&
-                  ((alu->src[0].src.ssa == load_def &&
-                    alu->src[1].src.ssa->parent_instr->type ==
-                    nir_instr_type_load_const) ||
-                   (alu->src[0].src.ssa->parent_instr->type ==
-                    nir_instr_type_load_const &&
-                    alu->src[1].src.ssa == load_def)))))
+            unsigned bit_size;
+
+            if (iter->type == nir_instr_type_alu) {
+               nir_alu_instr *alu = nir_instr_as_alu(iter);
+
+               /* Skip comparison opcodes that directly source the first load
+                * and a constant because any 1-bit values would have to be
+                * converted to 32 bits in the producer and then converted back
+                * to 1 bit using nir_op_ine in the consumer, achieving nothing.
+                */
+               if (alu->def.bit_size == 1 &&
+                   ((nir_op_infos[alu->op].num_inputs == 1 &&
+                     alu->src[0].src.ssa == load_def) ||
+                    (nir_op_infos[alu->op].num_inputs == 2 &&
+                     ((alu->src[0].src.ssa == load_def &&
+                       alu->src[1].src.ssa->parent_instr->type ==
+                       nir_instr_type_load_const) ||
+                      (alu->src[0].src.ssa->parent_instr->type ==
+                       nir_instr_type_load_const &&
+                       alu->src[1].src.ssa == load_def)))))
+                  continue;
+
+               bit_size = alu->def.bit_size;
+            } else if (iter->type == nir_instr_type_intrinsic) {
+               nir_intrinsic_instr *intr = nir_instr_as_intrinsic(iter);
+
+               /* This is a uniform load with a non-constant index because
+                * only a non-constant index can be post-dominated by a load.
+                */
+               assert(intr->intrinsic == nir_intrinsic_load_deref);
+
+               /* Uniform loads must be scalar if their result is immediately
+                * stored into an output because this pass only works with
+                * scalar outputs.
+                */
+               if (intr->num_components > 1)
+                  continue;
+
+               bit_size = intr->def.bit_size;
+            } else {
+               unreachable("unexpected instr type");
+            }
+
+            /* Skip unsupported bit sizes and keep searching. */
+            if (!(bit_size & supported_io_types))
                continue;
 
             movable_postdom = iter;
