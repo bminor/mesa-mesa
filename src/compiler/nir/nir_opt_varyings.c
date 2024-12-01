@@ -5249,9 +5249,9 @@ nir_opt_varyings(nir_shader *producer, nir_shader *consumer, bool spirv,
 #if PRINT
    int i = 0;
    puts("Before:");
-   nir_print_shader(linkage.producer_builder.shader, stdout);
-   nir_print_shader(linkage.consumer_builder.shader, stdout);
-   print_linkage(&linkage);
+   nir_print_shader(linkage->producer_builder.shader, stdout);
+   nir_print_shader(linkage->consumer_builder.shader, stdout);
+   print_linkage(linkage);
    puts("");
 #endif
 
