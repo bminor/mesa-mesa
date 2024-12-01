@@ -133,6 +133,8 @@ struct vk_acceleration_structure_build_ops {
 struct vk_acceleration_structure_build_args {
    uint32_t subgroup_size;
    uint32_t bvh_bounds_offset;
+   uint32_t root_flags_offset;
+   bool propagate_cull_flags;
    bool emit_markers;
    const radix_sort_vk_t *radix_sort;
 };

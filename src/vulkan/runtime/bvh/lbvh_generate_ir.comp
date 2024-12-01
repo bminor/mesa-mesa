@@ -57,6 +57,7 @@ main(void)
    vk_aabb previous_bounds;
    previous_bounds.min = vec3(INFINITY);
    previous_bounds.max = vec3(-INFINITY);
+   uint32_t previous_flags;
 
    for (;;) {
       uint32_t count = 0;
@@ -82,6 +83,7 @@ main(void)
 
       REF(vk_ir_box_node) node = REF(vk_ir_box_node)(OFFSET(args.bvh, current_offset));
       vk_aabb bounds = previous_bounds;
+      uint32_t flags = VK_BVH_BOX_FLAG_ONLY_OPAQUE | VK_BVH_BOX_FLAG_NO_OPAQUE;
 
       lbvh_node_info info = DEREF(INDEX(lbvh_node_info, args.node_info, idx));
 
@@ -101,8 +103,14 @@ main(void)
             vk_aabb child_bounds = DEREF(child).aabb;
             bounds.min = min(bounds.min, child_bounds.min);
             bounds.max = max(bounds.max, child_bounds.max);
+
+            if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+               flags &= fetch_child_flags(args.bvh, children[0]);
          }
          previous_child_index = 0;
+      } else {
+            if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+               flags &= previous_flags;
       }
 
       /* Fetch the non-cached child */
@@ -112,13 +120,20 @@ main(void)
          vk_aabb child_bounds = DEREF(child).aabb;
          bounds.min = min(bounds.min, child_bounds.min);
          bounds.max = max(bounds.max, child_bounds.max);
+
+         if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+            flags &= fetch_child_flags(args.bvh, children[1 - previous_child_index]);
       }
+
 
       vk_ir_box_node node_value;
 
       node_value.base.aabb = bounds;
       node_value.bvh_offset = VK_UNKNOWN_BVH_OFFSET;
       node_value.children = children;
+
+      if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+         node_value.flags = flags;
 
       DEREF(node) = node_value;
 
@@ -132,6 +147,7 @@ main(void)
 
       previous_id = current_id;
       previous_bounds = bounds;
+      previous_flags = flags;
 
       memoryBarrierBuffer();
    }

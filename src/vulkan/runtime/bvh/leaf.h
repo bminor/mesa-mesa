@@ -184,6 +184,18 @@ build_instance(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_
    DEREF(node).sbt_offset_and_flags = instance.sbt_offset_and_flags;
    DEREF(node).instance_id = global_id;
 
+   if (!VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+      return true;
+
+   uint32_t root_flags = 0;
+   if ((instance.sbt_offset_and_flags & (VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR << 24)) != 0)
+      root_flags = VK_BVH_BOX_FLAG_ONLY_OPAQUE;
+   else if ((instance.sbt_offset_and_flags & (VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR << 24)) != 0)
+      root_flags = VK_BVH_BOX_FLAG_NO_OPAQUE;
+   else
+      root_flags = DEREF(REF(uint32_t)(instance.accelerationStructureReference + ROOT_FLAGS_OFFSET));
+   DEREF(node).root_flags = root_flags;
+
    return true;
 }
 

@@ -111,10 +111,16 @@ struct vk_ir_node {
 #define VK_UNKNOWN_BVH_OFFSET 0xFFFFFFFF
 #define VK_NULL_BVH_OFFSET    0xFFFFFFFE
 
+/* Box node contains only opaque leaves */
+#define VK_BVH_BOX_FLAG_ONLY_OPAQUE  0x1
+/* Box node contains no opaque leaves */
+#define VK_BVH_BOX_FLAG_NO_OPAQUE    0x2
+
 struct vk_ir_box_node {
    vk_ir_node base;
    uint32_t children[2];
    uint32_t bvh_offset;
+   uint32_t flags;
 };
 
 struct vk_ir_aabb_node {
@@ -139,6 +145,8 @@ struct vk_ir_instance_node {
    uint32_t sbt_offset_and_flags;
    mat3x4 otw_matrix;
    uint32_t instance_id;
+   /* The root node's flags. */
+   uint32_t root_flags;
 };
 
 #define VK_BVH_INVALID_NODE 0xFFFFFFFF

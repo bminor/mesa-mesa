@@ -145,18 +145,24 @@ push_node(uint32_t children[2], vk_aabb bounds[2])
    total_bounds.min = vec3(INFINITY);
    total_bounds.max = vec3(-INFINITY);
 
-   for (uint i = 0; i < 2; ++i) {
-      VOID_REF node = OFFSET(args.bvh, ir_id_to_offset(children[i]));
-      REF(vk_ir_node) child = REF(vk_ir_node)(node);
+   uint32_t dst_flags = VK_BVH_BOX_FLAG_ONLY_OPAQUE | VK_BVH_BOX_FLAG_NO_OPAQUE;
 
+   for (uint i = 0; i < 2; ++i) {
       total_bounds.min = min(total_bounds.min, bounds[i].min);
       total_bounds.max = max(total_bounds.max, bounds[i].max);
 
       DEREF(dst_node).children[i] = children[i];
+
+      if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+         dst_flags &= fetch_child_flags(args.bvh, children[i]);
    }
 
    DEREF(dst_node).base.aabb = total_bounds;
    DEREF(dst_node).bvh_offset = VK_UNKNOWN_BVH_OFFSET;
+
+   if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+      DEREF(dst_node).flags = dst_flags;
+
    return dst_id;
 }
 

@@ -303,7 +303,7 @@ vk_get_bvh_build_pipeline_spv(struct vk_device *device, struct vk_meta_device *m
       .pCode = spv,
    };
 
-   VkSpecializationMapEntry spec_map[3] = {
+   VkSpecializationMapEntry spec_map[4] = {
       {
          .constantID = SUBGROUP_SIZE_ID,
          .offset = 0,
@@ -319,12 +319,19 @@ vk_get_bvh_build_pipeline_spv(struct vk_device *device, struct vk_meta_device *m
          .offset = sizeof(args->subgroup_size) + sizeof(args->bvh_bounds_offset),
          .size = sizeof(flags),
       },
+      {
+         .constantID = ROOT_FLAGS_OFFSET_ID,
+         .offset = sizeof(args->subgroup_size) +
+                   sizeof(args->bvh_bounds_offset),
+         .size = sizeof(args->root_flags_offset),
+      }
    };
 
-   uint32_t spec_constants[3] = {
+   uint32_t spec_constants[4] = {
       args->subgroup_size,
       args->bvh_bounds_offset,
       flags,
+      args->root_flags_offset,
    };
 
    VkSpecializationInfo spec_info = {
@@ -489,9 +496,14 @@ build_leaves(VkCommandBuffer commandBuffer,
       spirv_size = device->as_build_ops->leaf_spirv_override_size;
    }
 
+   uint32_t flags = 0;
+   if (updateable)
+      flags |= VK_BUILD_FLAG_ALWAYS_ACTIVE;
+   if (args->propagate_cull_flags)
+      flags |= VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS;
    VkResult result = vk_get_bvh_build_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LEAF,
                                                    spirv, spirv_size, sizeof(struct leaf_args),
-                                                   args, updateable ? VK_BUILD_FLAG_ALWAYS_ACTIVE : 0,
+                                                   args, flags,
                                                    &pipeline);
    if (result != VK_SUCCESS)
       return result;
@@ -847,9 +859,13 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
    VkPipeline pipeline;
    VkPipelineLayout layout;
 
+   uint32_t flags = 0;
+   if (args->propagate_cull_flags)
+      flags |= VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS;
+
    VkResult result = vk_get_bvh_build_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LBVH_MAIN,
                                                    lbvh_main_spv, sizeof(lbvh_main_spv),
-                                                   sizeof(struct lbvh_main_args), args, 0,
+                                                   sizeof(struct lbvh_main_args), args, flags,
                                                    &pipeline);
    if (result != VK_SUCCESS)
       return result;
@@ -893,7 +909,7 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
 
    result = vk_get_bvh_build_pipeline_spv(device, meta, VK_META_OBJECT_KEY_LBVH_GENERATE_IR,
                                           lbvh_generate_ir_spv, sizeof(lbvh_generate_ir_spv),
-                                          sizeof(struct lbvh_generate_ir_args), args, 0,
+                                          sizeof(struct lbvh_generate_ir_args), args, flags,
                                           &pipeline);
    if (result != VK_SUCCESS)
       return result;
@@ -937,9 +953,13 @@ ploc_build_internal(VkCommandBuffer commandBuffer,
    VkPipeline pipeline;
    VkPipelineLayout layout;
 
+   uint32_t flags = 0;
+   if (args->propagate_cull_flags)
+      flags |= VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS;
+
    VkResult result = vk_get_bvh_build_pipeline_spv(device, meta, VK_META_OBJECT_KEY_PLOC, ploc_spv,
                                                    sizeof(ploc_spv), sizeof(struct ploc_args),
-                                                   args, 0, &pipeline);
+                                                   args, flags, &pipeline);
    if (result != VK_SUCCESS)
       return result;
 
