@@ -2126,12 +2126,14 @@ can_move_deref_between_shaders(struct linkage_info *linkage, nir_instr *instr)
    if (!nir_deref_mode_is_one_of(deref, allowed_modes))
       return false;
 
-   /* Indirectly-indexed uniforms and UBOs are not moved into later shaders
-    * due to performance concerns, and they are not moved into previous shaders
-    * because it's unimplemented (TODO).
-    */
-   if (nir_deref_instr_has_indirect(deref))
+   switch (deref->deref_type) {
+   case nir_deref_type_var:
+   case nir_deref_type_struct:
+   case nir_deref_type_array:
+      break;
+   default:
       return false;
+   }
 
    nir_variable *var = nir_deref_instr_get_variable(deref);
 
@@ -2264,28 +2266,8 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
 
       switch (intr->intrinsic) {
       case nir_intrinsic_load_deref: {
-         nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
-
-         assert(deref);
-         assert(nir_deref_mode_is_one_of(deref, nir_var_uniform | nir_var_mem_ubo));
-         /* Indirect uniform indexing is disallowed here. */
-         assert(!nir_deref_instr_has_indirect(deref));
-
-         /* Get the uniform from the original shader. */
-         nir_variable *var = nir_deref_instr_get_variable(deref);
-         assert(!(var->data.mode & nir_var_mem_ubo) || linkage->can_move_ubos);
-
-         /* Declare the uniform in the target shader. If it's the same shader
-          * (in the case of replacing output loads with a uniform), this has
-          * no effect.
-          */
-         var = nir_clone_uniform_variable(b->shader, var, linkage->spirv);
-
-         /* Re-build the uniform deref load before the load. */
-         nir_deref_instr *load_uniform_deref =
-            nir_clone_deref_instr(b, var, deref);
-
-         clone = nir_load_deref(b, load_uniform_deref);
+         nir_def *ssa = clone_ssa_impl(linkage, b, intr->src[0].ssa);
+         clone = nir_load_deref(b, nir_instr_as_deref(ssa->parent_instr));
          break;
       }
 
@@ -2304,6 +2286,46 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
 
       default:
          unreachable("unexpected intrinsic");
+      }
+      break;
+   }
+
+   case nir_instr_type_deref: {
+      nir_deref_instr *deref = nir_instr_as_deref(ssa->parent_instr);
+      assert(nir_deref_mode_is_one_of(deref, nir_var_uniform | nir_var_mem_ubo));
+
+      /* Get the uniform from the original shader. */
+      nir_variable *var = nir_deref_instr_get_variable(deref);
+      assert(!(var->data.mode & nir_var_mem_ubo) || linkage->can_move_ubos);
+
+      /* Declare the uniform in the target shader. If it's the same shader
+       * (in the case of replacing output loads with a uniform), this has
+       * no effect. If the variable already exists in the target shader, this
+       * just returns the existing one.
+       */
+      var = nir_clone_uniform_variable(b->shader, var, linkage->spirv);
+
+      if (deref->deref_type == nir_deref_type_var) {
+         clone = &nir_build_deref_var(b, var)->def;
+      } else {
+         nir_deref_instr *parent_orig = nir_deref_instr_parent(deref);
+         nir_deref_instr *parent_clone =
+            nir_instr_as_deref(clone_ssa_impl(linkage, b, &parent_orig->def)
+                               ->parent_instr);
+
+         switch (deref->deref_type) {
+         case nir_deref_type_array: {
+            nir_def *index = clone_ssa_impl(linkage, b, deref->arr.index.ssa);
+            clone = &nir_build_deref_array(b, parent_clone, index)->def;
+            break;
+         }
+         case nir_deref_type_struct:
+            clone = &nir_build_deref_struct(b, parent_clone,
+                                            deref->strct.index)->def;
+            break;
+         default:
+            unreachable("invalid deref type");
+         }
       }
       break;
    }
@@ -2378,7 +2400,10 @@ is_uniform_expression(nir_instr *instr, struct is_uniform_expr_state *state)
       return false;
 
    case nir_instr_type_deref:
-      return can_move_deref_between_shaders(state->linkage, instr);
+      if (!can_move_deref_between_shaders(state->linkage, instr))
+         return false;
+      /* We need to iterate over the deref chain recursively. */
+      break;
 
    default:
       return false;
@@ -3225,7 +3250,8 @@ update_movable_flags(struct linkage_info *linkage, nir_instr *instr)
    }
 
    case nir_instr_type_deref:
-      if (can_move_deref_between_shaders(linkage, instr))
+      if (can_move_deref_between_shaders(linkage, instr) &&
+          !nir_deref_instr_has_indirect(nir_instr_as_deref(instr)))
          instr->pass_flags |= FLAG_MOVABLE;
       else
          instr->pass_flags |= FLAG_UNMOVABLE;
@@ -4925,6 +4951,25 @@ default_varying_estimate_instr_cost(nir_instr *instr)
       default:
          unreachable("unexpected intrinsic");
       }
+
+   case nir_instr_type_deref: {
+      nir_deref_instr *deref = nir_instr_as_deref(instr);
+
+      switch (deref->deref_type) {
+      case nir_deref_type_var:
+      case nir_deref_type_struct:
+         return 0;
+      case nir_deref_type_array:
+         /* Indexing uniforms with a divergent index has a high cost. This cost
+          * is likely only going to be accepted by the driver if the next
+          * shader doesn't run after amplification (e.g. VS->TCS, TES->GS).
+          */
+         return nir_src_is_const(deref->arr.index) ? 0 : 128;
+
+      default:
+         unreachable("unexpected deref type");
+      }
+   }
 
    default:
       unreachable("unexpected instr type");
