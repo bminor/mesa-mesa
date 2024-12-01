@@ -220,10 +220,24 @@ vertex_id_for_topology(enum mesa_prim mode, bool flatshade_first, uint prim,
    }
 }
 
+static void
+store_index(uintptr_t index_buffer, uint index_size_B, uint id, uint value)
+{
+   global uint32_t *out_32 = (global uint32_t *)index_buffer;
+   global uint16_t *out_16 = (global uint16_t *)index_buffer;
+   global uint8_t *out_8 = (global uint8_t *)index_buffer;
+
+   if (index_size_B == 4)
+      out_32[id] = value;
+   else if (index_size_B == 2)
+      out_16[id] = value;
+   else
+      out_8[id] = value;
+}
+
 static uint
-libagx_load_index_buffer_internal(uintptr_t index_buffer,
-                                  uint32_t index_buffer_range_el, uint id,
-                                  uint index_size)
+load_index(uintptr_t index_buffer, uint32_t index_buffer_range_el, uint id,
+           uint index_size)
 {
    bool oob = id >= index_buffer_range_el;
 
@@ -256,8 +270,7 @@ uint
 libagx_load_index_buffer(constant struct agx_ia_state *p, uint id,
                          uint index_size)
 {
-   return libagx_load_index_buffer_internal(
-      p->index_buffer, p->index_buffer_range_el, id, index_size);
+   return load_index(p->index_buffer, p->index_buffer_range_el, id, index_size);
 }
 
 static void
@@ -296,8 +309,8 @@ libagx_increment_ia_restart(global uint32_t *ia_vertices,
 
    /* Count non-restart indices */
    for (uint i = tid; i < count; i += 1024) {
-      uint index = libagx_load_index_buffer_internal(
-         index_buffer, index_buffer_range_el, start + i, index_size_B);
+      uint index = load_index(index_buffer, index_buffer_range_el, start + i,
+                              index_size_B);
 
       if (index != restart_index)
          partial++;
@@ -389,9 +402,6 @@ libagx_unroll_restart(global struct agx_geometry_state *heap,
    }
 
    barrier(CLK_LOCAL_MEM_FENCE);
-   global uint32_t *out_32 = (global uint32_t *)out_ptr;
-   global uint16_t *out_16 = (global uint16_t *)out_ptr;
-   global uint8_t *out_8 = (global uint8_t *)out_ptr;
 
    uintptr_t in_ptr = (uintptr_t)(libagx_index_buffer(
       index_buffer, index_buffer_size_el, in_draw[2], index_size_B, zero_sink));
@@ -406,9 +416,9 @@ libagx_unroll_restart(global struct agx_geometry_state *heap,
       uint next_restart = needle;
       for (;;) {
          uint idx = next_restart + tid;
-         bool restart = idx >= count || libagx_load_index_buffer_internal(
-                                           in_ptr, index_buffer_size_el, idx,
-                                           index_size_B) == restart_index;
+         bool restart =
+            idx >= count || load_index(in_ptr, index_buffer_size_el, idx,
+                                       index_size_B) == restart_index;
 
          uint next_offs = first_true_thread_in_workgroup(restart, scratch);
 
@@ -428,15 +438,10 @@ libagx_unroll_restart(global struct agx_geometry_state *heap,
             uint offset = needle + id;
 
             uint x = ((out_prims_base + i) * per_prim) + vtx;
-            uint y = libagx_load_index_buffer_internal(
-               in_ptr, index_buffer_size_el, offset, index_size_B);
+            uint y =
+               load_index(in_ptr, index_buffer_size_el, offset, index_size_B);
 
-            if (index_size_B == 4)
-               out_32[x] = y;
-            else if (index_size_B == 2)
-               out_16[x] = y;
-            else
-               out_8[x] = y;
+            store_index(out_ptr, index_size_B, x, y);
          }
       }
 
