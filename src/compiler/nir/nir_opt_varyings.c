@@ -3294,7 +3294,7 @@ gather_used_input_loads(nir_instr *instr,
 static bool
 try_move_postdominator(struct linkage_info *linkage,
                        struct nir_use_dominance_state *postdom_state,
-                       nir_alu_instr *postdom,
+                       nir_instr *postdom,
                        nir_def *load_def,
                        nir_intrinsic_instr *first_load,
                        nir_opt_varyings_progress *progress)
@@ -3302,14 +3302,14 @@ try_move_postdominator(struct linkage_info *linkage,
 #define PRINT 0
 #if PRINT
    printf("Trying to move post-dom: ");
-   nir_print_instr(&postdom->instr, stdout);
+   nir_print_instr(postdom, stdout);
    puts("");
 #endif
 
    /* Gather the input loads used by the post-dominator using DFS. */
    nir_intrinsic_instr *loads[NUM_SCALAR_SLOTS*8];
    unsigned num_loads = 0;
-   gather_used_input_loads(&postdom->instr, loads, &num_loads);
+   gather_used_input_loads(postdom, loads, &num_loads);
 
    /* Clear the flag set by gather_used_input_loads. */
    for (unsigned i = 0; i < num_loads; i++)
@@ -3343,7 +3343,7 @@ try_move_postdominator(struct linkage_info *linkage,
 
 #if PRINT
    printf("Post-dom accepted: ");
-   nir_print_instr(&postdom->instr, stdout);
+   nir_print_instr(postdom, stdout);
    puts("\n");
 #endif
 
@@ -3365,7 +3365,8 @@ try_move_postdominator(struct linkage_info *linkage,
    struct scalar_slot *slot = &linkage->slot[slot_index];
    nir_builder *b = &linkage->consumer_builder;
    b->cursor = nir_after_instr(load_def->parent_instr);
-   unsigned alu_interp = postdom->instr.pass_flags & FLAG_INTERP_MASK;
+   nir_def *postdom_def = nir_instr_def(postdom);
+   unsigned alu_interp = postdom->pass_flags & FLAG_INTERP_MASK;
    nir_def *new_input, *new_tes_loads[3];
    BITSET_WORD *mask;
 
@@ -3382,13 +3383,14 @@ try_move_postdominator(struct linkage_info *linkage,
    if (linkage->consumer_stage == MESA_SHADER_FRAGMENT &&
        alu_interp == FLAG_INTERP_CONVERGENT &&
        !linkage->can_mix_convergent_flat_with_interpolated &&
-       ((postdom->def.bit_size != 16 && postdom->def.bit_size != 32) ||
-        !(nir_op_infos[postdom->op].output_type & nir_type_float)))
+       (postdom->type != nir_instr_type_alu ||
+        (postdom_def->bit_size != 16 && postdom_def->bit_size != 32) ||
+        !(nir_op_infos[nir_instr_as_alu(postdom)->op].output_type & nir_type_float)))
       return false;
 
    /* NIR can't do 1-bit inputs. Convert them to a bigger size. */
-   assert(postdom->def.bit_size & (1 | 16 | 32));
-   unsigned new_bit_size = postdom->def.bit_size;
+   assert(postdom_def->bit_size & (1 | 16 | 32));
+   unsigned new_bit_size = postdom_def->bit_size;
 
    if (new_bit_size == 1) {
       assert(alu_interp == FLAG_INTERP_CONVERGENT ||
@@ -3578,7 +3580,7 @@ try_move_postdominator(struct linkage_info *linkage,
       }
 
       assert(i == 3);
-      assert(postdom->def.bit_size != 1);
+      assert(postdom_def->bit_size != 1);
 
       slot->consumer.tes_interp_load =
          nir_instr_as_alu(new_input->parent_instr);
@@ -3588,18 +3590,18 @@ try_move_postdominator(struct linkage_info *linkage,
          nir_instr_as_intrinsic(new_input->parent_instr);
 
       /* The input is a bigger type even if the post-dominator is boolean. */
-      if (postdom->def.bit_size == 1)
+      if (postdom_def->bit_size == 1)
          new_input = nir_ine_imm(b, new_input, 0);
    }
 
-   nir_def_rewrite_uses(&postdom->def, new_input);
+   nir_def_rewrite_uses(postdom_def, new_input);
 
    /* Clone the post-dominator at the end of the block in the producer
     * where the output stores are.
     */
    b = &linkage->producer_builder;
    b->cursor = nir_after_block_before_jump(block);
-   nir_def *producer_clone = clone_ssa(linkage, b, &postdom->def);
+   nir_def *producer_clone = clone_ssa(linkage, b, postdom_def);
 
    /* Boolean post-dominators are upcast in the producer because we can't
     * use 1-bit outputs.
@@ -3652,7 +3654,7 @@ try_move_postdominator(struct linkage_info *linkage,
                                   struct list_node, head)->instr->instr;
       }
 
-      if (nir_instr_dominates_use(postdom_state, &postdom->instr, load)) {
+      if (nir_instr_dominates_use(postdom_state, postdom, load)) {
          list_inithead(&slot->consumer.loads);
 
          /* Remove stores. (transform feedback is allowed here, just not
@@ -3912,8 +3914,7 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
       /* Add the post-dominator to the list unless it's been added already. */
       if (movable_postdom &&
           !(movable_postdom->pass_flags & FLAG_POST_DOMINATOR_PROCESSED)) {
-         if (try_move_postdominator(linkage, postdom_state,
-                                    nir_instr_as_alu(movable_postdom),
+         if (try_move_postdominator(linkage, postdom_state, movable_postdom,
                                     load_def, movable_loads[i].first_load,
                                     progress)) {
             /* Moving only one postdominator can change the IR enough that
