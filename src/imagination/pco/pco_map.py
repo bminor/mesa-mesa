@@ -4,6 +4,46 @@
 from pco_isa import *
 from pco_ops import *
 
+REF_MAP = enum_type('ref_map', [
+   ('_', '_'),
+
+   ('s0', 's0'),
+   ('s1', 's1'),
+   ('s2', 's2'),
+
+   ('s3', 's3'),
+   ('s4', 's4'),
+   ('s5', 's5'),
+
+   ('w0', 'w0'),
+   ('w1', 'w1'),
+
+   ('is0', 'is0'),
+   ('is1', 'is1'),
+   ('is2', 'is2'),
+   ('is3', 'is3'),
+   ('is4', 'is4'),
+   ('is5', 'is5'),
+
+   ('ft0', 'ft0'),
+   ('ft1', 'ft1'),
+   ('ft2', 'ft2'),
+   ('fte', 'fte'),
+
+   ('ft3', 'ft3'),
+   ('ft4', 'ft4'),
+   ('ft5', 'ft5'),
+
+   ('ftt', 'ftt'),
+
+   ('p0', 'p0'),
+
+   ('imm', 'imm'),
+   ('drc', 'drc'),
+   ('temp', 'temp'),
+   ('coeff', 'coeff'),
+])
+
 # Enum mappings.
 
 class EnumMap(object):
@@ -231,12 +271,13 @@ group_maps = {}
 
 # Instruction encoding mapping.
 class EncodeMap(object):
-   def __init__(self, name, cop_name, variants):
+   def __init__(self, name, cop_name, variants, op_ref_maps):
       self.name = name
       self.cop_name = cop_name
       self.variants = variants
+      self.op_ref_maps = op_ref_maps
 
-def encode_map(op, encodings):
+def encode_map(op, encodings, op_ref_maps):
    assert op.bname not in encode_maps.keys(), f'Duplicate encode mapping for op "{op.name}".'
 
    encode_variants = []
@@ -359,9 +400,45 @@ def encode_map(op, encodings):
 
       encode_variants.append((variant, encode_variant, conds_variant))
 
+   _op_ref_maps = []
+
+   for phase, dests, srcs in op_ref_maps:
+      assert phase in OP_PHASE.enum.elems.keys()
+      _phase = OP_PHASE.enum.elems[phase].cname
+
+      assert len(dests) == op.num_dests
+      assert all((isinstance(dest, str) and dest in REF_MAP.enum.elems.keys()) or \
+            (isinstance(dest, list) and _dest in REF_MAP.enum.elems.keys() for _dest in dest) \
+            for dest in dests)
+
+      _dests = []
+      for dest in dests:
+         if isinstance(dest, str):
+            _dests.append(f'(1U << {REF_MAP.enum.elems[dest].cname})')
+         elif isinstance(dest, list):
+            _dests.append(' | '.join(f'(1U << {REF_MAP.enum.elems[_dest].cname})' for _dest in dest))
+         else:
+            assert False
+
+      assert len(srcs) == op.num_srcs
+      assert all((isinstance(src, str) and src in REF_MAP.enum.elems.keys()) or \
+                 (isinstance(src, list) and _src in REF_MAP.enum.elems.keys() for _src in src) \
+                 for src in srcs)
+
+      _srcs = []
+      for src in srcs:
+         if isinstance(src, str):
+            _srcs.append(f'(1U << {REF_MAP.enum.elems[src].cname})')
+         elif isinstance(src, list):
+            _srcs.append(' | '.join(f'(1U << {REF_MAP.enum.elems[_src].cname})' for _src in src))
+         else:
+            assert False
+
+      _op_ref_maps.append((_phase, _dests, _srcs))
+
    name = op.bname
    cop_name = op.cname.upper()
-   encode_maps[name] = EncodeMap(name, cop_name, encode_variants)
+   encode_maps[name] = EncodeMap(name, cop_name, encode_variants, _op_ref_maps)
 
 # Instruction group mapping.
 class GroupMap(object):
@@ -451,6 +528,10 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
       assert _phase in OP_PHASE.enum.elems.keys()
       phase = OP_PHASE.enum.elems[_phase].cname
 
+      _enc_op = enc_ops[0][1]
+      assert _enc_op.bname in encode_maps.keys()
+      assert phase in [phase_map for phase_map, *_ in encode_maps[_enc_op.bname].op_ref_maps]
+
       op_mappings.append(f'list_del(&{{1}}->link);')
       op_mappings.append(f'{{}}->instrs[{phase}] = {{}};')
       op_mappings.append(f'ralloc_steal(igrp, {{1}});')
@@ -460,6 +541,7 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
          phase = OP_PHASE.enum.elems[_phase].cname
 
          assert enc_op.bname in encode_maps.keys(), f'Op "{enc_op.name}" used in group mapping for "{op.name}" has no encode mapping defined.'
+         assert phase in [phase_map for phase_map, *_ in encode_maps[enc_op.bname].op_ref_maps]
 
          enc_dests = _enc_spec[0] if len(_enc_spec) > 0 else []
          enc_srcs = _enc_spec[1] if len(_enc_spec) > 1 else []
@@ -646,6 +728,10 @@ encode_map(O_FADD,
          ('s1abs', (RM_ABS, SRC(1))),
          ('s0flr', (RM_FLR, SRC(0)))
       ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0', 's1']),
+      ('1', ['ft1'], ['s3', 's4'])
    ]
 )
 
@@ -658,6 +744,10 @@ encode_map(O_FMUL,
          ('s1abs', (RM_ABS, SRC(1))),
          ('s0flr', (RM_FLR, SRC(0)))
       ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0', 's1']),
+      ('1', ['ft1'], ['s3', 's4'])
    ]
 )
 
@@ -687,6 +777,10 @@ encode_map(O_FMAD,
          (RM_FLR, SRC(2), '== false'),
          (RM_ABS, SRC(2), '== false')
       ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0', 's1', 's2']),
+      ('1', ['ft1'], ['s3', 's4', 's5'])
    ]
 )
 
@@ -701,7 +795,8 @@ encode_map(O_FRCP,
          (RM_NEG, SRC(0), '== false'),
          (RM_ABS, SRC(0), '== false')
       ])
-   ]
+   ],
+   op_ref_maps=[('0', ['w0'], ['s0'])]
 )
 
 encode_map(O_MBYP,
@@ -715,6 +810,10 @@ encode_map(O_MBYP,
          (RM_NEG, SRC(0), '== false'),
          (RM_ABS, SRC(0), '== false')
       ])
+   ],
+   op_ref_maps=[
+      ('0', ['ft0'], ['s0']),
+      ('1', ['ft1'], ['s3'])
    ]
 )
 
@@ -726,7 +825,8 @@ encode_map(O_PCK,
          ('scale', OM_SCALE),
          ('pck_format', OM_PCK_FMT)
       ])
-   ]
+   ],
+   op_ref_maps=[('2_pck', ['ft2'], [['is3', '_']])]
 )
 
 encode_map(O_UNPCK,
@@ -736,7 +836,8 @@ encode_map(O_UNPCK,
          ('scale_rtz', {'or': [OM_SCALE, OM_ROUNDZERO]}),
          ('pck_format', OM_PCK_FMT)
       ])
-   ]
+   ],
+   op_ref_maps=[('0', ['ft0'], ['s0'])]
 )
 
 encode_map(O_TST,
@@ -759,7 +860,8 @@ encode_map(O_TST,
          (RM_ELEM, SRC(0), '== 0'),
          (RM_ELEM, SRC(1), '== 0'),
       ])
-   ]
+   ],
+   op_ref_maps=[('2_tst', ['ftt', ['p0', '_']], ['is1', 'is2'])]
 )
 
 encode_map(O_MOVC,
@@ -778,6 +880,11 @@ encode_map(O_MOVC,
          (RM_ELEM, DEST(0), '== 0b1111'),
          (OM_PHASE2END, '== false'),
       ])
+   ],
+   op_ref_maps=[
+      ('2_mov',
+       [['w0', '_'], ['w1', '_']],
+       ['ftt', ['_', 'ft0', 'ft1', 'ft2', 'fte'], ['_', 'is4'], ['_', 'ft0', 'ft1', 'ft2', 'fte'], ['_', 'is5']])
    ]
 )
 
@@ -790,7 +897,8 @@ encode_map(O_MOVWM,
          ('aw', True),
          ('p2end', OM_PHASE2END)
       ])
-   ]
+   ],
+   op_ref_maps=[('2_mov', ['w0'], [['_', 'ft0', 'ft1', 'ft2', 'fte'], 'is4'])]
 )
 
 encode_map(O_ADD64_32,
@@ -817,7 +925,8 @@ encode_map(O_ADD64_32,
          (RM_ABS, SRC(0), '== false'),
          (RM_ABS, SRC(2), '== false')
       ])
-   ]
+   ],
+   op_ref_maps=[('0', ['ft0', 'fte'], ['s0', 's1', 's2', ['_', 'p0']])]
 )
 
 encode_map(O_UVSW_WRITE,
@@ -826,12 +935,13 @@ encode_map(O_UVSW_WRITE,
          ('dsel', 'w0'),
          ('imm_addr', ('pco_ref_get_imm', SRC(1)))
       ])
-   ]
+   ],
+   op_ref_maps=[('backend', [], ['w0', 'imm'])]
 )
 
-encode_map(O_UVSW_EMIT, encodings=[(I_UVSW_EMIT, [])])
-encode_map(O_UVSW_ENDTASK, encodings=[(I_UVSW_ENDTASK, [])])
-encode_map(O_UVSW_EMIT_ENDTASK, encodings=[(I_UVSW_EMIT_ENDTASK, [])])
+encode_map(O_UVSW_EMIT, encodings=[(I_UVSW_EMIT, [])], op_ref_maps=[('backend', [], [])])
+encode_map(O_UVSW_ENDTASK, encodings=[(I_UVSW_ENDTASK, [])], op_ref_maps=[('backend', [], [])])
+encode_map(O_UVSW_EMIT_ENDTASK, encodings=[(I_UVSW_EMIT_ENDTASK, [])], op_ref_maps=[('backend', [], [])])
 
 encode_map(O_UVSW_WRITE_EMIT_ENDTASK,
    encodings=[
@@ -839,7 +949,8 @@ encode_map(O_UVSW_WRITE_EMIT_ENDTASK,
          ('dsel', 'w0'),
          ('imm_addr', ('pco_ref_get_imm', SRC(1)))
       ])
-   ]
+   ],
+   op_ref_maps=[('backend', [], ['w0', 'imm'])]
 )
 
 encode_map(O_FITR,
@@ -851,7 +962,8 @@ encode_map(O_FITR,
          ('sat', OM_SAT),
          ('count', ('pco_ref_get_imm', SRC(2)))
       ])
-   ]
+   ],
+   op_ref_maps=[('backend', ['s3'], ['drc', 's0', 'imm'])]
 )
 
 encode_map(O_FITRP,
@@ -863,7 +975,8 @@ encode_map(O_FITRP,
          ('sat', OM_SAT),
          ('count', ('pco_ref_get_imm', SRC(3)))
       ])
-   ]
+   ],
+   op_ref_maps=[('backend', ['s3'], ['drc', 's0', 's2', 'imm'])]
 )
 
 encode_map(O_LD,
@@ -875,7 +988,8 @@ encode_map(O_LD,
          ('srcseladd', 's0'),
          ('cachemode_ld', OM_MCU_CACHE_MODE_LD)
       ])
-   ]
+   ],
+   op_ref_maps=[('backend', ['s3'], ['drc', 'imm', ['s0', 's1', 's2', 's3', 's4', 's5']])]
 )
 
 encode_map(O_BBYP0BM_IMM32,
@@ -886,7 +1000,8 @@ encode_map(O_BBYP0BM_IMM32,
          ('shift1_op', 'byp'),
          ('imm32', ('pco_ref_get_imm', SRC(1)))
       ])
-   ]
+   ],
+   op_ref_maps=[('0', ['ft0', 'ft1'], ['s0', 'imm'])]
 )
 
 encode_map(O_BBYP0S1,
@@ -897,7 +1012,8 @@ encode_map(O_BBYP0S1,
          ('bitmask_src_op', 'byp'),
          ('shift1_op', 'byp')
       ])
-   ]
+   ],
+   op_ref_maps=[('0', ['ft2'], ['s2'])]
 )
 
 encode_map(O_LOGICAL,
@@ -907,12 +1023,13 @@ encode_map(O_LOGICAL,
          ('mska', False),
          ('logical_op', OM_LOGIOP),
       ])
-   ]
+   ],
+   op_ref_maps=[('1', ['ft4'], ['ft2', 's3'])]
 )
 
-encode_map(O_WOP, encodings=[(I_WOP, [])])
-encode_map(O_WDF, encodings=[(I_WDF, [])])
-encode_map(O_NOP, encodings=[(I_NOP, [])])
+encode_map(O_WOP, encodings=[(I_WOP, [])], op_ref_maps=[('ctrl', [], [])])
+encode_map(O_WDF, encodings=[(I_WDF, [])], op_ref_maps=[('ctrl', [], ['drc'])])
+encode_map(O_NOP, encodings=[(I_NOP, [])], op_ref_maps=[('ctrl', [], [])])
 
 encode_map(O_DITR,
    encodings=[
@@ -934,7 +1051,8 @@ encode_map(O_DITR,
          ('drc', ('pco_ref_get_drc', SRC(0))),
          ('sat', OM_SAT)
       ])
-   ]
+   ],
+   op_ref_maps=[('ctrl', ['temp'], ['drc', 'coeff', 'imm'])]
 )
 
 encode_map(O_DITRP,
@@ -957,7 +1075,8 @@ encode_map(O_DITRP,
          ('drc', ('pco_ref_get_drc', SRC(0))),
          ('sat', OM_SAT)
       ])
-   ]
+   ],
+   op_ref_maps=[('ctrl', ['temp'], ['drc', 'coeff', 'coeff', 'imm'])]
 )
 
 # Group mappings.
@@ -1035,8 +1154,7 @@ group_map(O_FRCP,
    ]),
    enc_ops=[('0', O_FRCP)],
    srcs=[('s[0]', ('0', SRC(0)), 's0')],
-   iss=[('is[4]', 'ft0')],
-   dests=[('w[0]', ('0', DEST(0)), 'ft0')]
+   dests=[('w[0]', ('0', DEST(0)), 'w0')]
 )
 
 group_map(O_MBYP,

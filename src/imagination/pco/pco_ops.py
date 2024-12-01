@@ -83,7 +83,6 @@ IO = enum_type('io', [
    ('is5', 'is5'),
 
    ('ft0', 'ft0'),
-   ('ft0h', 'ft0h'),
    ('ft1', 'ft1'),
    ('ft2', 'ft2'),
    ('fte', 'fte'),
@@ -96,6 +95,8 @@ IO = enum_type('io', [
    ('ftt', 'ftt'),
 
    ('cout', 'cout'),
+
+   ('p0', 'p0'),
 ])
 
 PRED = enum_type('pred', [
