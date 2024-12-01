@@ -24,3 +24,5 @@ struct libagx_imm_write {
    GLOBAL(uint32_t) address;
    uint32_t value;
 };
+
+#define LIBAGX_QUERY_UNAVAILABLE (uint64_t)((int64_t)-1)

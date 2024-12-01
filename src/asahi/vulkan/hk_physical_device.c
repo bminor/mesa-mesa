@@ -23,6 +23,7 @@
 #include "util/simple_mtx.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/wsi/wsi_common.h"
+#include "unstable_asahi_drm.h"
 #include "vk_drm_syncobj.h"
 #include "vk_shader_module.h"
 
@@ -714,7 +715,7 @@ hk_get_device_properties(const struct agx_device *dev,
       .sampledImageStencilSampleCounts = sample_counts,
       .storageImageSampleCounts = sample_counts,
       .maxSampleMaskWords = 1,
-      .timestampComputeAndGraphics = false,
+      .timestampComputeAndGraphics = agx_supports_timestamps(dev),
       .timestampPeriod = 1,
       .maxClipDistances = 8,
       .maxCullDistances = 8,
@@ -1378,7 +1379,8 @@ hk_GetPhysicalDeviceQueueFamilyProperties2(
       {
          p->queueFamilyProperties.queueFlags = queue_family->queue_flags;
          p->queueFamilyProperties.queueCount = queue_family->queue_count;
-         p->queueFamilyProperties.timestampValidBits = 0; // TODO 64;
+         p->queueFamilyProperties.timestampValidBits =
+            agx_supports_timestamps(&pdev->dev) ? 64 : 0;
          p->queueFamilyProperties.minImageTransferGranularity =
             (VkExtent3D){1, 1, 1};
 

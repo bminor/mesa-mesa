@@ -68,7 +68,8 @@ queue_submit_empty(struct hk_device *dev, struct hk_queue *queue,
 
 static void
 asahi_fill_cdm_command(struct hk_device *dev, struct hk_cs *cs,
-                       struct drm_asahi_cmd_compute *cmd)
+                       struct drm_asahi_cmd_compute *cmd,
+                       struct drm_asahi_cmd_compute_user_timestamps *timestamps)
 {
    size_t len = cs->stream_linked ? 65536 /* XXX */ : (cs->current - cs->start);
 
@@ -87,6 +88,18 @@ asahi_fill_cdm_command(struct hk_device *dev, struct hk_cs *cs,
       .unk_mask = 0xffffffff,
    };
 
+   if (cs->timestamp.end.handle) {
+      assert(agx_supports_timestamps(&dev->dev));
+
+      *timestamps = (struct drm_asahi_cmd_compute_user_timestamps){
+         .type = ASAHI_COMPUTE_EXT_TIMESTAMPS,
+         .end_handle = cs->timestamp.end.handle,
+         .end_offset = cs->timestamp.end.offset_B,
+      };
+
+      cmd->extensions = (uint64_t)(uintptr_t)timestamps;
+   }
+
    if (cs->scratch.cs.main || cs->scratch.cs.preamble) {
       cmd->helper_arg = dev->scratch.cs.buf->va->addr;
       cmd->helper_cfg = cs->scratch.cs.preamble ? (1 << 16) : 0;
@@ -96,7 +109,8 @@ asahi_fill_cdm_command(struct hk_device *dev, struct hk_cs *cs,
 
 static void
 asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
-                       struct drm_asahi_cmd_render *c)
+                       struct drm_asahi_cmd_render *c,
+                       struct drm_asahi_cmd_render_user_timestamps *timestamps)
 {
    unsigned cmd_ta_id = agx_get_global_id(&dev->dev);
    unsigned cmd_3d_id = agx_get_global_id(&dev->dev);
@@ -251,6 +265,18 @@ asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
       c->fragment_helper_cfg = cs->scratch.fs.preamble ? (1 << 16) : 0;
       c->fragment_helper_program = agx_helper_program(&dev->bg_eot);
    }
+
+   if (cs->timestamp.end.handle) {
+      assert(agx_supports_timestamps(&dev->dev));
+
+      c->extensions = (uint64_t)(uintptr_t)timestamps;
+
+      *timestamps = (struct drm_asahi_cmd_render_user_timestamps){
+         .type = ASAHI_RENDER_EXT_TIMESTAMPS,
+         .frg_end_handle = cs->timestamp.end.handle,
+         .frg_end_offset = cs->timestamp.end.offset_B,
+      };
+   }
 }
 
 static void
@@ -276,6 +302,11 @@ asahi_fill_sync(struct drm_asahi_sync *sync, struct vk_sync *vk_sync,
 union drm_asahi_cmd {
    struct drm_asahi_cmd_compute compute;
    struct drm_asahi_cmd_render render;
+};
+
+union drm_asahi_user_timestamps {
+   struct drm_asahi_cmd_compute_user_timestamps compute;
+   struct drm_asahi_cmd_render_user_timestamps render;
 };
 
 /* XXX: Batching multiple commands per submission is causing rare (7ppm) flakes
@@ -466,6 +497,8 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
    struct drm_asahi_command *cmds = alloca(sizeof(*cmds) * command_count);
    union drm_asahi_cmd *cmds_inner =
       alloca(sizeof(*cmds_inner) * command_count);
+   union drm_asahi_user_timestamps *ts_inner =
+      alloca(sizeof(*ts_inner) * command_count);
 
    unsigned cmd_it = 0;
    unsigned nr_vdm = 0, nr_cdm = 0;
@@ -491,29 +524,33 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
                "%u: Submitting CDM with %u API calls, %u dispatches, %u flushes",
                i, cs->stats.calls, cs->stats.cmds, cs->stats.flushes);
 
-            assert(cs->stats.cmds > 0 || cs->stats.flushes > 0);
+            assert(cs->stats.cmds > 0 || cs->stats.flushes > 0 ||
+                   cs->timestamp.end.handle);
 
             cmd.cmd_type = DRM_ASAHI_CMD_COMPUTE;
             cmd.cmd_buffer_size = sizeof(struct drm_asahi_cmd_compute);
             nr_cdm++;
 
+            asahi_fill_cdm_command(dev, cs, &cmds_inner[cmd_it].compute,
+                                   &ts_inner[cmd_it].compute);
+
             /* Work around for shipping 6.11.8 kernels, remove when we bump uapi
              */
-            if (!cmd.extensions)
+            if (!agx_supports_timestamps(&dev->dev))
                cmd.cmd_buffer_size -= 8;
-
-            asahi_fill_cdm_command(dev, cs, &cmds_inner[cmd_it].compute);
          } else {
             assert(cs->type == HK_CS_VDM);
             perf_debug(dev, "%u: Submitting VDM with %u API draws, %u draws", i,
                        cs->stats.calls, cs->stats.cmds);
-            assert(cs->stats.cmds > 0 || cs->cr.process_empty_tiles);
+            assert(cs->stats.cmds > 0 || cs->cr.process_empty_tiles ||
+                   cs->timestamp.end.handle);
 
             cmd.cmd_type = DRM_ASAHI_CMD_RENDER;
             cmd.cmd_buffer_size = sizeof(struct drm_asahi_cmd_render);
             nr_vdm++;
 
-            asahi_fill_vdm_command(dev, cs, &cmds_inner[cmd_it].render);
+            asahi_fill_vdm_command(dev, cs, &cmds_inner[cmd_it].render,
+                                   &ts_inner[cmd_it].render);
          }
 
          cmds[cmd_it++] = cmd;

@@ -245,3 +245,11 @@ struct agx_va *agx_va_alloc(struct agx_device *dev, uint64_t size_B,
                             uint64_t align_B, enum agx_va_flags flags,
                             uint64_t fixed_va);
 void agx_va_free(struct agx_device *dev, struct agx_va *va);
+
+static inline bool
+agx_supports_timestamps(const struct agx_device *dev)
+{
+   /* TODO: Ungate virtio once virglrenderer supports the timestamp uapi */
+   return !dev->is_virtio &&
+          (dev->params.feat_compat & DRM_ASAHI_FEAT_USER_TIMESTAMPS);
+}

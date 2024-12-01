@@ -29,7 +29,12 @@ libagx_copy_query(global uint32_t *availability, global uint64_t *results,
    uint i = get_global_id(0);
    uint64_t dst = dst_addr + (((uint64_t)i) * dst_stride);
    uint32_t query = first_query + i;
-   bool available = availability[query];
+
+   bool available;
+   if (availability)
+      available = availability[query];
+   else
+      available = (results[query] != LIBAGX_QUERY_UNAVAILABLE);
 
    if (available || partial) {
       /* For occlusion queries, results[] points to the device global heap. We
@@ -107,6 +112,17 @@ libagx_write_u32s(constant struct libagx_imm_write *p)
 {
    uint id = get_global_id(0);
    *(p[id].address) = p[id].value;
+}
+
+/*
+ * We set the source as volatile since the caching situation around timestamps
+ * is a bit unclear. It might not be necessary but - absent hardware/firmware
+ * documentation - this gives me peace of mind.
+ */
+KERNEL(1)
+libagx_copy_timestamp(global uint64_t *dest, volatile global uint64_t *src)
+{
+   *dest = *src;
 }
 
 KERNEL(1)

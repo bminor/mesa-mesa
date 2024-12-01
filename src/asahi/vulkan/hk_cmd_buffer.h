@@ -301,6 +301,19 @@ struct hk_scratch_req {
 };
 
 /*
+ * Represents a firmware timestamp request.  Handle is a kernel timestamp object
+ * handle, not a GEM handle.
+ *
+ * The kernel/firmware uses the handle/offset_B to write. We use the address to
+ * read the results back. We could deduplicate this, but this is convenient.
+ */
+struct agx_timestamp_req {
+   uint64_t addr;
+   uint32_t handle;
+   uint32_t offset_B;
+};
+
+/*
  * hk_cs represents a single control stream, to be enqueued either to the
  * CDM or VDM for compute/3D respectively.
  */
@@ -352,6 +365,14 @@ struct hk_cs {
    struct {
       uint32_t calls, cmds, flushes;
    } stats;
+
+   /* Timestamp writes. Currently just compute end / fragment end. We could
+    * flesh this out later if we want finer info. (We will, but it's not
+    * required for conformance.)
+    */
+   struct {
+      struct agx_timestamp_req end;
+   } timestamp;
 
    /* Remaining state is for graphics only, ignored for compute */
    struct agx_tilebuffer_layout tib;
