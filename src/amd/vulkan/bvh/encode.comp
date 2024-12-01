@@ -108,6 +108,8 @@ main()
       if (bvh_offset == VK_NULL_BVH_OFFSET)
          break;
 
+      uint32_t flags = 0;
+
       REF(radv_bvh_box32_node) dst_node = REF(radv_bvh_box32_node)(OFFSET(args.output_bvh, bvh_offset));
       uint32_t node_id = pack_node_id(bvh_offset, radv_bvh_node_box32);
 
@@ -184,6 +186,7 @@ main()
 
             REF(vk_ir_box_node) child_node = REF(vk_ir_box_node)OFFSET(args.intermediate_bvh, offset);
             DEREF(child_node).bvh_offset = dst_offset;
+            flags |= (DEREF(child_node).flags & 0x3) << i * 8;
          } else {
             uint32_t child_index = offset / ir_leaf_node_size;
             dst_offset = dst_leaf_offset + child_index * output_leaf_node_size;
@@ -192,6 +195,10 @@ main()
                vk_ir_instance_node src_node =
                   DEREF(REF(vk_ir_instance_node)(OFFSET(args.intermediate_bvh, offset)));
                radv_encode_instance_gfx10_3(OFFSET(args.output_bvh, dst_offset), src_node);
+               flags |= (src_node.root_flags & 0x3) << i * 8;
+            } else {
+               uint32_t child_flags = fetch_child_flags(args.intermediate_bvh, children[i]);
+               flags |= (child_flags & 0x3) << i * 8;
             }
          }
 
@@ -231,13 +238,15 @@ main()
                     gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
 
       DEREF(dst_node).children = children;
+      DEREF(dst_node).flags = flags;
       break;
    }
 
    if (is_root_node) {
       REF(radv_accel_struct_header) header = REF(radv_accel_struct_header)(args.output_bvh - args.output_bvh_offset);
-      DEREF(header).aabb = src.base.aabb;
       DEREF(header).bvh_offset = args.output_bvh_offset;
+      DEREF(header).root_flags = src.flags;
+      DEREF(header).aabb = src.base.aabb;
 
       set_parent(RADV_BVH_ROOT_NODE, RADV_BVH_INVALID_NODE);
    }

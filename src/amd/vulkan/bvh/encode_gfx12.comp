@@ -190,8 +190,11 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
          uint32_t child_node_size_128b = 1;
          uint32_t encoded_type = 0;
          uint32_t cull_mask = 0xff;
+         uint32_t cull_flags = 0;
          if (type == vk_ir_node_internal) {
             encoded_type = 5;
+            REF(vk_ir_box_node) child_node = REF(vk_ir_box_node)OFFSET(args.intermediate_bvh, offset);
+            cull_flags = DEREF(child_node).flags & 0x3;
          } else {
             /* Write leaf node offset. */
             uint32_t leaf_index = offset / ir_leaf_node_size;
@@ -205,11 +208,17 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
             case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
                vk_ir_triangle_node src_node = DEREF(REF(vk_ir_triangle_node)(OFFSET(args.intermediate_bvh, offset)));
                radv_encode_triangle_gfx12(dst_leaf_addr, src_node);
+
+               bool opaque = (src_node.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0;
+               cull_flags = opaque ? VK_BVH_BOX_FLAG_ONLY_OPAQUE : VK_BVH_BOX_FLAG_NO_OPAQUE;
                break;
             }
             case VK_GEOMETRY_TYPE_AABBS_KHR: {
                vk_ir_aabb_node src_node = DEREF(REF(vk_ir_aabb_node)(OFFSET(args.intermediate_bvh, offset)));
                radv_encode_aabb_gfx12(dst_leaf_addr, src_node);
+
+               bool opaque = (src_node.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0;
+               cull_flags = opaque ? VK_BVH_BOX_FLAG_ONLY_OPAQUE : VK_BVH_BOX_FLAG_NO_OPAQUE;
                break;
             }
             default:
@@ -221,7 +230,7 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
                radv_encode_instance_gfx12(dst_leaf_addr, src_node);
 
                cull_mask = src_node.custom_instance_and_mask >> 24;
-
+               cull_flags = src_node.root_flags & 0x3;
                break;
             }
          }
@@ -229,10 +238,10 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
          vk_aabb child_aabb = DEREF(REF(vk_ir_node) OFFSET(args.intermediate_bvh, offset)).aabb;
 
          radv_gfx12_box_child box_child;
-         /* TODO: subtree flags culling */
          box_child.dword0 =
             min(uint32_t(floor((child_aabb.min.x - origin.x) / extent.x * float(0x1000))), 0xfff) |
-            (min(uint32_t(floor((child_aabb.min.y - origin.y) / extent.y * float(0x1000))), 0xfff) << 12);
+            (min(uint32_t(floor((child_aabb.min.y - origin.y) / extent.y * float(0x1000))), 0xfff) << 12) |
+            cull_flags << 24;
          /* TODO: subtree mask culling */
          box_child.dword1 =
             min(uint32_t(floor((child_aabb.min.z - origin.z) / extent.z * float(0x1000))), 0xfff) |
