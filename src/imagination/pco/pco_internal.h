@@ -223,7 +223,10 @@ typedef struct _pco_instr {
          pco_block *parent_block; /** Basic block containing the instruction. */
       };
 
-      pco_igrp *parent_igrp; /** Igrp containing the instruction. */
+      struct {
+         enum pco_op_phase phase; /** Igrp phase the instruction is in. */
+         pco_igrp *parent_igrp; /** Igrp containing the instruction. */
+      };
    };
 
    pco_func *parent_func; /** Parent function. */
@@ -525,6 +528,19 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    assert(!func->parent_shader->is_grouped);            \
    pco_foreach_block_in_func_rev (block, func)          \
       list_for_each_entry_safe_rev (pco_instr, instr, &(block)->instrs, link)
+
+#define pco_foreach_igrp_in_func(igrp, func) \
+   assert(func->parent_shader->is_grouped);  \
+   pco_foreach_block_in_func (block, func)   \
+      list_for_each_entry (pco_igrp, igrp, &(block)->instrs, link)
+
+#define pco_foreach_instr_in_igrp(instr, igrp)                        \
+   for (pco_instr *instr = pco_igrp_first_instr(igrp); instr != NULL; \
+        instr = pco_igrp_next_instr(instr))
+
+#define pco_foreach_instr_in_igrp_rev(instr, igrp)                   \
+   for (pco_instr *instr = pco_igrp_last_instr(igrp); instr != NULL; \
+        instr = pco_igrp_prev_instr(instr))
 
 #define pco_foreach_instr_dest(pdest, instr)    \
    for (pco_ref *pdest = &instr->dest[0];       \
@@ -1035,6 +1051,75 @@ static inline pco_igrp *pco_prev_igrp(pco_igrp *igrp)
       return NULL;
 
    return list_entry(igrp->link.prev, pco_igrp, link);
+}
+
+/**
+ * \brief Returns the first instruction in an igrp.
+ *
+ * \param[in] igrp The igrp.
+ * \return The first instruction.
+ */
+static inline pco_instr *pco_igrp_first_instr(pco_igrp *igrp)
+{
+   for (enum pco_op_phase p = 0; p < _PCO_OP_PHASE_COUNT; ++p)
+      if (igrp->instrs[p])
+         return igrp->instrs[p];
+
+   unreachable();
+}
+
+/**
+ * \brief Returns the last instruction in an igrp.
+ *
+ * \param[in] igrp The igrp.
+ * \return The last instruction.
+ */
+static inline pco_instr *pco_igrp_last_instr(pco_igrp *igrp)
+{
+   for (enum pco_op_phase p = _PCO_OP_PHASE_COUNT; p-- > 0;)
+      if (igrp->instrs[p])
+         return igrp->instrs[p];
+
+   unreachable();
+}
+
+/**
+ * \brief Returns the next instruction in an igrp.
+ *
+ * \param[in] instr The current instruction.
+ * \return The next instruction, or NULL if we've reached the end of the igrp.
+ */
+static inline pco_instr *pco_igrp_next_instr(pco_instr *instr)
+{
+   if (!instr)
+      return NULL;
+
+   pco_igrp *igrp = instr->parent_igrp;
+   for (enum pco_op_phase p = instr->phase + 1; p < _PCO_OP_PHASE_COUNT; ++p)
+      if (igrp->instrs[p])
+         return igrp->instrs[p];
+
+   return NULL;
+}
+
+/**
+ * \brief Returns the previous instruction in an igrp.
+ *
+ * \param[in] instr The current instruction.
+ * \return The previous instruction, or NULL if we've reached the end of the
+ *         igrp.
+ */
+static inline pco_instr *pco_igrp_prev_instr(pco_instr *instr)
+{
+   if (!instr)
+      return NULL;
+
+   pco_igrp *igrp = instr->parent_igrp;
+   for (enum pco_op_phase p = instr->phase; p-- > 0;)
+      if (igrp->instrs[p])
+         return igrp->instrs[p];
+
+   return NULL;
 }
 
 /* Debug printing helpers. */

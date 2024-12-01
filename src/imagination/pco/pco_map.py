@@ -534,6 +534,8 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
 
       op_mappings.append(f'list_del(&{{1}}->link);')
       op_mappings.append(f'{{}}->instrs[{phase}] = {{}};')
+      op_mappings.append(f'{{0}}->instrs[{phase}]->phase = {phase};')
+      op_mappings.append(f'{{0}}->instrs[{phase}]->parent_igrp = {{0}};')
       op_mappings.append(f'ralloc_steal(igrp, {{1}});')
    else:
       for _phase, enc_op, *_enc_spec in enc_ops:
@@ -588,6 +590,8 @@ def group_map(op, hdr, enc_ops, srcs=[], iss=[], dests=[]):
          enc_mapping += ');'
 
          op_mappings.append(enc_mapping)
+         op_mappings.append(f'{{0}}->instrs[{phase}]->phase = {phase};')
+         op_mappings.append(f'{{0}}->instrs[{phase}]->parent_igrp = {{0}};')
 
       op_mappings.append(f'pco_instr_delete({{1}});')
 
