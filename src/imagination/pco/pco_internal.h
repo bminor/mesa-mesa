@@ -554,16 +554,31 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
         pdest < &instr->dest[instr->num_dests]; \
         ++pdest)
 
+#define pco_foreach_instr_dest_from(pdest, instr, pdest_from)                \
+   for (pco_ref *pdest = pdest_from; pdest < &instr->dest[instr->num_dests]; \
+        ++pdest)
+
 #define pco_foreach_instr_src(psrc, instr)                                   \
    for (pco_ref *psrc = &instr->src[0]; psrc < &instr->src[instr->num_srcs]; \
         ++psrc)
+
+#define pco_foreach_instr_src_from(psrc, instr, psrc_from) \
+   for (pco_ref *psrc = psrc_from; psrc < &instr->src[instr->num_srcs]; ++psrc)
 
 #define pco_foreach_instr_dest_ssa(pdest, instr) \
    pco_foreach_instr_dest (pdest, instr)         \
       if (pco_ref_is_ssa(*pdest))
 
+#define pco_foreach_instr_dest_ssa_from(pdest, instr, pdest_from) \
+   pco_foreach_instr_dest_from (pdest, instr, pdest_from)         \
+      if (pco_ref_is_ssa(*pdest))
+
 #define pco_foreach_instr_src_ssa(psrc, instr) \
    pco_foreach_instr_src (psrc, instr)         \
+      if (pco_ref_is_ssa(*psrc))
+
+#define pco_foreach_instr_src_ssa_from(psrc, instr, psrc_from) \
+   pco_foreach_instr_src_from (psrc, instr, psrc_from)         \
       if (pco_ref_is_ssa(*psrc))
 
 #define pco_first_cf_node(body) list_first_entry(body, pco_cf_node, link)

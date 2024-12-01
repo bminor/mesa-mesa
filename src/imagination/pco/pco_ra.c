@@ -39,6 +39,26 @@ struct vec_override {
 };
 
 /**
+ * \brief Checks if a vec has ssa sources that are referenced more than once.
+ *
+ * \param[in] vec Vec instruction.
+ * \return True if the vec has ssa sources that are referenced more than once.
+ */
+static bool vec_has_repeated_ssas(pco_instr *vec)
+{
+   assert(vec->op == PCO_OP_VEC);
+
+   pco_foreach_instr_src_ssa (psrc, vec) {
+      pco_foreach_instr_src_ssa_from (psrc_inner, vec, psrc + 1) {
+         if (psrc_inner->val == psrc->val)
+            return true;
+      }
+   }
+
+   return false;
+}
+
+/**
  * \brief Performs register allocation on a function.
  *
  * \param[in,out] func PCO shader.
@@ -85,6 +105,10 @@ static bool pco_ra_func(pco_func *func,
    struct hash_table_u64 *overrides = _mesa_hash_table_u64_create(ra_regs);
    pco_foreach_instr_in_func_rev (instr, func) {
       if (instr->op != PCO_OP_VEC)
+         continue;
+
+      /* Can't override vec ssa sources if they're referenced more than once. */
+      if (vec_has_repeated_ssas(instr))
          continue;
 
       pco_ref dest = instr->dest[0];
@@ -268,22 +292,28 @@ static bool pco_ra_func(pco_func *func,
          unsigned offset = override ? override->offset : 0;
 
          unsigned temp_dest_base =
-            override ? ra_get_node_reg(ra_graph, override->ref.val) + offset
+            override ? ra_get_node_reg(ra_graph, override->ref.val)
                      : ra_get_node_reg(ra_graph, instr->dest[0].val);
 
          pco_foreach_instr_src (psrc, instr) {
-            if (pco_ref_is_ssa(*psrc)) {
-               assert(_mesa_hash_table_u64_search(overrides, psrc->val));
-            } else {
+            if (!pco_ref_is_ssa(*psrc) ||
+                !_mesa_hash_table_u64_search(overrides, psrc->val)) {
                unsigned chans = pco_ref_get_chans(*psrc);
 
                for (unsigned u = 0; u < chans; ++u) {
-                  pco_ref dest = pco_ref_hwreg(temp_dest_base + offset + u,
-                                               PCO_REG_CLASS_TEMP);
-                  pco_ref src = pco_ref_chans(*psrc, 1);
+                  pco_ref dest =
+                     pco_ref_hwreg(temp_dest_base + offset, PCO_REG_CLASS_TEMP);
+                  dest = pco_ref_offset(dest, u);
+
+                  pco_ref src =
+                     pco_ref_is_ssa(*psrc)
+                        ? pco_ref_hwreg(ra_get_node_reg(ra_graph, psrc->val),
+                                        PCO_REG_CLASS_TEMP)
+                        : pco_ref_chans(*psrc, 1);
                   src = pco_ref_offset(src, u);
 
-                  pco_mbyp(&b, dest, src);
+                  if (!pco_refs_are_equal(src, dest))
+                     pco_mbyp(&b, dest, src);
                }
 
                temps = MAX2(temps, temp_dest_base + offset + chans);
@@ -357,7 +387,7 @@ bool pco_ra(pco_shader *shader)
    assert(!shader->is_grouped);
 
    /* Instruction indices need to be ordered for live ranges. */
-   pco_index(shader, true);
+   pco_index(shader, false);
 
    unsigned hw_temps = rogue_get_temps(shader->ctx->dev_info);
    /* TODO:
