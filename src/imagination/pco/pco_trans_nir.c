@@ -355,6 +355,15 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
                                              .itr_mode = itr_mode);
    }
 
+   case INTERP_MODE_FLAT: {
+      pco_ref coeff_c =
+         pco_ref_hwreg(coeffs_index + ROGUE_USC_COEFFICIENT_SET_C,
+                       PCO_REG_CLASS_COEFF);
+
+      assert(chans == 1);
+      return pco_mov(&tctx->b, dest, coeff_c);
+   }
+
    case INTERP_MODE_NOPERSPECTIVE:
       return usc_itrsmp_enhanced ? pco_ditr(&tctx->b,
                                             dest,

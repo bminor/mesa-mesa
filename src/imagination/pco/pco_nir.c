@@ -168,21 +168,33 @@ static uint8_t vectorize_filter(const nir_instr *instr, UNUSED const void *data)
 }
 
 /**
- * \brief Filters for a varying position load_input in frag shaders.
+ * \brief Filter for fragment shader inputs that need to be scalar.
  *
  * \param[in] instr Instruction.
  * \param[in] data User data.
  * \return True if the instruction was found.
  */
-static bool frag_pos_filter(const nir_instr *instr, UNUSED const void *data)
+static bool frag_in_scalar_filter(const nir_instr *instr, const void *data)
 {
    assert(instr->type == nir_instr_type_intrinsic);
+   nir_shader *nir = (nir_shader *)data;
 
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
    if (intr->intrinsic != nir_intrinsic_load_input)
       return false;
 
-   return nir_intrinsic_io_semantics(intr).location == VARYING_SLOT_POS;
+   gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
+   if (location == VARYING_SLOT_POS)
+      return true;
+
+   nir_variable *var =
+      nir_find_variable_with_location(nir, nir_var_shader_in, location);
+   assert(var);
+
+   if (var->data.interpolation == INTERP_MODE_FLAT)
+      return true;
+
+   return false;
 }
 
 /**
@@ -285,8 +297,8 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
                nir,
                nir_lower_io_to_scalar,
                nir_var_shader_in,
-               frag_pos_filter,
-               NULL);
+               frag_in_scalar_filter,
+               nir);
    }
 
    do {
