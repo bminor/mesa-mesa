@@ -220,6 +220,50 @@ vertex_id_for_topology(enum mesa_prim mode, bool flatshade_first, uint prim,
    }
 }
 
+uint
+libagx_map_to_line_adj(uint id)
+{
+   /* Sequence (1, 2), (5, 6), (9, 10), ... */
+   return ((id & ~1) * 2) + (id & 1) + 1;
+}
+
+uint
+libagx_map_to_line_strip_adj(uint id)
+{
+   /* Sequence (1, 2), (2, 3), (4, 5), .. */
+   uint prim = id / 2;
+   uint vert = id & 1;
+   return prim + vert + 1;
+}
+
+uint
+libagx_map_to_tri_strip_adj(uint id)
+{
+   /* Sequence (0, 2, 4), (2, 6, 4), (4, 6, 8), (6, 10, 8)
+    *
+    * Although tri strips with adjacency have 6 cases in general, after
+    * disregarding the vertices only available in a geometry shader, there are
+    * only even/odd cases. In other words, it's just a triangle strip subject to
+    * extra padding.
+    *
+    * Dividing through by two, the sequence is:
+    *
+    *   (0, 1, 2), (1, 3, 2), (2, 3, 4), (3, 5, 4)
+    */
+   uint prim = id / 3;
+   uint vtx = id % 3;
+
+   /* Flip the winding order of odd triangles */
+   if ((prim % 2) == 1) {
+      if (vtx == 1)
+         vtx = 2;
+      else if (vtx == 2)
+         vtx = 1;
+   }
+
+   return 2 * (prim + vtx);
+}
+
 static void
 store_index(uintptr_t index_buffer, uint index_size_B, uint id, uint value)
 {

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "compiler/libcl/libcl.h"
+#include "compiler/shader_enums.h"
 #include "agx_pack.h"
 
 #define agx_push(ptr, T, cfg)                                                  \
@@ -496,10 +497,6 @@ struct agx_usc_builder {
 #endif
 } PACKED;
 
-#ifdef __OPENCL_VERSION__
-static_assert(sizeof(struct agx_usc_builder) == 8);
-#endif
-
 static struct agx_usc_builder
 agx_usc_builder(GLOBAL void *out, ASSERTED size_t size)
 {
@@ -576,4 +573,19 @@ libagx_draw_robust_index_vdm_size()
 {
    struct agx_draw draw = agx_draw_indexed(0, 0, 0, 0, 0, 0, 0, 0, 0);
    return agx_vdm_draw_size(0, draw);
+}
+
+static inline unsigned
+libagx_remap_adj_count(unsigned count, enum mesa_prim prim)
+{
+   if (prim == MESA_PRIM_TRIANGLE_STRIP_ADJACENCY) {
+      /* Spec gives formula for # of primitives in a tri strip adj */
+      unsigned c4 = count >= 4 ? count - 4 : 0;
+      return 3 * (c4 / 2);
+   } else if (prim == MESA_PRIM_LINE_STRIP_ADJACENCY) {
+      return 2 * (count >= 3 ? count - 3 : 0);
+   } else {
+      /* Adjacency lists just drop half the vertices. */
+      return count / 2;
+   }
 }

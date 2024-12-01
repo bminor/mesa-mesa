@@ -28,6 +28,34 @@ libagx_predicate_indirect(global uint32_t *out, constant uint32_t *in,
    }
 }
 
+/*
+ * Indexing/offseting is in software if necessary so we strip all
+ * indexing/offset information.
+ */
+KERNEL(1)
+libagx_draw_without_adj(global VkDrawIndirectCommand *out,
+                        global VkDrawIndirectCommand *in,
+                        global struct agx_ia_state *ia, uint64_t index_buffer,
+                        uint64_t index_buffer_range_el, int index_size_B,
+                        enum mesa_prim prim)
+{
+   *out = (VkDrawIndirectCommand){
+      .vertexCount = libagx_remap_adj_count(in->vertexCount, prim),
+      .instanceCount = in->instanceCount,
+   };
+
+   /* TODO: Deduplicate */
+   if (index_size_B) {
+      uint offs = in->firstVertex;
+
+      ia->index_buffer = libagx_index_buffer(
+         index_buffer, index_buffer_range_el, offs, index_size_B, 0);
+
+      ia->index_buffer_range_el =
+         libagx_index_buffer_range_el(index_buffer_range_el, offs);
+   }
+}
+
 /* Precondition: len must be < the group size */
 static void
 libagx_memcpy_small(global uchar *dst, constant uchar *src, uint len, uint tid)
