@@ -351,10 +351,6 @@ void st_init_limits(struct pipe_screen *screen,
          !screen->get_shader_param(screen, sh,
                                    PIPE_SHADER_CAP_CONT_SUPPORTED);
 
-      options->EmitNoIndirectInput =
-         !(options->NirOptions->support_indirect_inputs & BITFIELD_BIT(sh));
-      options->EmitNoIndirectOutput =
-         !(options->NirOptions->support_indirect_outputs & BITFIELD_BIT(sh));
       options->EmitNoIndirectTemp =
          !screen->get_shader_param(screen, sh,
                                    PIPE_SHADER_CAP_INDIRECT_TEMP_ADDR);

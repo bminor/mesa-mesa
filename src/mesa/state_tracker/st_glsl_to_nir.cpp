@@ -599,14 +599,15 @@ st_link_glsl_to_nir(struct gl_context *ctx,
       /* If there are forms of indirect addressing that the driver
        * cannot handle, perform the lowering pass.
        */
-      if (options->EmitNoIndirectInput || options->EmitNoIndirectOutput ||
+      if (!(nir->options->support_indirect_inputs & BITFIELD_BIT(stage)) ||
+          !(nir->options->support_indirect_outputs & BITFIELD_BIT(stage)) ||
           options->EmitNoIndirectTemp || options->EmitNoIndirectUniform) {
          nir_variable_mode mode = (nir_variable_mode)0;
 
          if (!nir->info.io_lowered) {
-            mode |= options->EmitNoIndirectInput ?
+            mode |= !(nir->options->support_indirect_inputs & BITFIELD_BIT(stage)) ?
                nir_var_shader_in : (nir_variable_mode)0;
-            mode |= options->EmitNoIndirectOutput ?
+            mode |= !(nir->options->support_indirect_outputs & BITFIELD_BIT(stage)) ?
                nir_var_shader_out : (nir_variable_mode)0;
          }
          mode |= options->EmitNoIndirectTemp ?
