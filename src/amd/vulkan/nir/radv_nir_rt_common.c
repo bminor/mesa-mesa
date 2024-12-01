@@ -487,6 +487,9 @@ create_bvh_descriptor(nir_builder *b, const struct radv_physical_device *pdev, s
    uint32_t dword3 = ((bvh_size - 1) >> 32) | triangle_return_mode | (1u << 31);
 
    if (pdev->info.gfx_level >= GFX11) {
+      /* Enable pointer flags on GFX11+ */
+      dword3 |= BITFIELD_BIT(119 - 96);
+
       /* Instead of the default box sorting (closest point), use largest for terminate_on_first_hit rays and midpoint
        * for closest hit; this makes it more likely that the ray traversal will visit fewer nodes. */
       const uint32_t box_sort_largest = 1;
@@ -507,8 +510,6 @@ create_bvh_descriptor(nir_builder *b, const struct radv_physical_device *pdev, s
       dword3 |= BITFIELD_BIT(117 - 96);
       /* instance_en */
       dword3 |= BITFIELD_BIT(118 - 96);
-      /* pointer_flags */
-      dword3 |= BITFIELD_BIT(119 - 96);
    }
 
    return nir_vec4(b, nir_imm_intN_t(b, dword0, 32), dword1, nir_imm_intN_t(b, dword2, 32), nir_imm_intN_t(b, dword3, 32));
@@ -518,6 +519,7 @@ static void
 insert_traversal_triangle_case(struct radv_device *device, nir_builder *b, const struct radv_ray_traversal_args *args,
                                const struct radv_ray_flags *ray_flags, nir_def *result, nir_def *bvh_node)
 {
+   struct radv_physical_device *pdev = radv_device_physical(device);
    if (!args->triangle_cb)
       return;
 
@@ -531,18 +533,22 @@ insert_traversal_triangle_case(struct radv_device *device, nir_builder *b, const
    nir_push_if(b, nir_flt(b, intersection.t, tmax));
    {
       intersection.frontface = nir_fgt_imm(b, div, 0);
-      nir_def *switch_ccw =
-         nir_test_mask(b, nir_load_deref(b, args->vars.sbt_offset_and_flags), RADV_INSTANCE_TRIANGLE_FLIP_FACING);
-      intersection.frontface = nir_ixor(b, intersection.frontface, switch_ccw);
+      nir_def *not_cull;
+      if (pdev->info.gfx_level < GFX11) {
+         nir_def *switch_ccw = nir_test_mask(b, nir_load_deref(b, args->vars.sbt_offset_and_flags),
+                                             RADV_INSTANCE_TRIANGLE_FLIP_FACING);
+         intersection.frontface = nir_ixor(b, intersection.frontface, switch_ccw);
 
-      nir_def *not_cull = ray_flags->no_skip_triangles;
-      nir_def *not_facing_cull =
-         nir_bcsel(b, intersection.frontface, ray_flags->no_cull_front, ray_flags->no_cull_back);
+         not_cull = ray_flags->no_skip_triangles;
+         nir_def *not_facing_cull = nir_bcsel(b, intersection.frontface, ray_flags->no_cull_front,
+                                              ray_flags->no_cull_back);
 
-      not_cull = nir_iand(b, not_cull,
-                          nir_ior(b, not_facing_cull,
-                                  nir_test_mask(b, nir_load_deref(b, args->vars.sbt_offset_and_flags),
-                                                RADV_INSTANCE_TRIANGLE_FACING_CULL_DISABLE)));
+         not_cull = nir_iand(b, not_cull, nir_ior(b, not_facing_cull,
+                                                  nir_test_mask(b, nir_load_deref(b, args->vars.sbt_offset_and_flags),
+                                                                RADV_INSTANCE_TRIANGLE_FACING_CULL_DISABLE)));
+      } else {
+         not_cull = nir_imm_true(b);
+      }
 
       nir_push_if(b, nir_iand(b,
 
@@ -671,6 +677,22 @@ radv_test_flag(nir_builder *b, const struct radv_ray_traversal_args *args, uint3
    return set ? result : nir_inot(b, result);
 }
 
+static nir_def *
+build_bvh_base(nir_builder *b, const struct radv_physical_device *pdev, nir_def *base_addr, nir_def *ptr_flags,
+              bool overwrite)
+{
+   if (pdev->info.gfx_level < GFX11)
+      return base_addr;
+
+   nir_def *base_addr_vec = nir_unpack_64_2x32(b, base_addr);
+   nir_def *addr_hi = nir_channel(b, base_addr_vec, 1);
+   if (overwrite)
+      addr_hi = nir_bitfield_insert(b, addr_hi, ptr_flags, nir_imm_int(b, 22), nir_imm_int(b, 10));
+   else
+      addr_hi = nir_ior(b, addr_hi, nir_ishl_imm(b, ptr_flags, 22));
+   return nir_pack_64_2x32(b, nir_vector_insert_imm(b, base_addr_vec, addr_hi, 1));
+}
+
 nir_def *
 radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struct radv_ray_traversal_args *args)
 {
@@ -689,6 +711,11 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
       .no_skip_triangles = radv_test_flag(b, args, SpvRayFlagsSkipTrianglesKHRMask, false),
       .no_skip_aabbs = radv_test_flag(b, args, SpvRayFlagsSkipAABBsKHRMask, false),
    };
+
+   nir_def *ptr_flags = nir_iand_imm(b, args->flags, ~(SpvRayFlagsTerminateOnFirstHitKHRMask | SpvRayFlagsSkipClosestHitShaderKHRMask));
+
+   nir_store_deref(b, args->vars.bvh_base, build_bvh_base(b, pdev, nir_load_deref(b, args->vars.bvh_base), ptr_flags, true),
+                   0x1);
 
    nir_def *desc = create_bvh_descriptor(b, pdev, &ray_flags);
    nir_def *vec3ones = nir_imm_vec3(b, 1.0, 1.0, 1.0);
@@ -717,7 +744,7 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
             nir_store_deref(b, args->vars.previous_node, nir_load_deref(b, args->vars.instance_top_node), 1);
             nir_store_deref(b, args->vars.instance_bottom_node, nir_imm_int(b, RADV_BVH_NO_INSTANCE_ROOT), 1);
 
-            nir_store_deref(b, args->vars.bvh_base, args->root_bvh_base, 1);
+            nir_store_deref(b, args->vars.bvh_base, build_bvh_base(b, pdev, args->root_bvh_base, ptr_flags, true), 0x1);
             nir_store_deref(b, args->vars.origin, args->origin, 7);
             nir_store_deref(b, args->vars.dir, args->dir, 7);
             nir_store_deref(b, args->vars.inv_dir, nir_fdiv(b, vec3ones, args->dir), 7);
@@ -812,7 +839,21 @@ radv_build_ray_traversal(struct radv_device *device, nir_builder *b, const struc
                }
 
                nir_store_deref(b, args->vars.top_stack, nir_load_deref(b, args->vars.stack), 1);
-               nir_store_deref(b, args->vars.bvh_base, nir_pack_64_2x32(b, nir_trim_vector(b, instance_data, 2)), 1);
+
+               /* If ray flags dictate a forced opaqueness/nonopaqueness, instance flags dictating the same are
+                * meaningless.
+                */
+               uint32_t forced_opaqueness_mask = SpvRayFlagsOpaqueKHRMask | SpvRayFlagsNoOpaqueKHRMask;
+               nir_def *instance_flag_mask = nir_bcsel(b, nir_test_mask(b, ptr_flags, forced_opaqueness_mask),
+                                                       nir_imm_int64(b, ~((uint64_t)forced_opaqueness_mask << 54ull)),
+                                                       nir_imm_int64(b, ~0ull));
+
+               nir_def *instance_pointer = nir_pack_64_2x32(b, nir_trim_vector(b, instance_data, 2));
+               instance_pointer = nir_iand(b, instance_pointer, instance_flag_mask);
+
+               nir_store_deref(
+                       b, args->vars.bvh_base,
+                       build_bvh_base(b, pdev, instance_pointer, ptr_flags, false), 0x1);
 
                /* Push the instance root node onto the stack */
                nir_store_deref(b, args->vars.current_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 0x1);
