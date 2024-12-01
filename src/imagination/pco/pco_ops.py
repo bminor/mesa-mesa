@@ -95,8 +95,6 @@ IO = enum_type('io', [
    ('ftt', 'ftt'),
 
    ('cout', 'cout'),
-
-   ('p0', 'p0'),
 ])
 
 PRED = enum_type('pred', [

@@ -362,8 +362,14 @@ struct pco_op_info {
    bool has_target_cf_node; /** Set if op has a cf-node as a target. */
    uint8_t dest_intrn_map[_PCO_OP_MAX_DESTS];
    uint8_t src_intrn_map[_PCO_OP_MAX_SRCS];
+#ifndef NDEBUG
+   uint32_t grp_dest_maps[_PCO_OP_PHASE_COUNT][_PCO_OP_MAX_DESTS];
+   uint32_t grp_src_maps[_PCO_OP_PHASE_COUNT][_PCO_OP_MAX_SRCS];
+#endif /* NDEBUG */
 };
 extern const struct pco_op_info pco_op_info[_PCO_OP_COUNT];
+static_assert(_PCO_REF_MAP_COUNT <= 32,
+              "enum pco_ref_map must fit into an uint32_t");
 
 /** Op mod info. */
 struct pco_op_mod_info {
@@ -2164,5 +2170,8 @@ void pco_print_instr(pco_shader *shader, pco_instr *instr);
 void pco_print_igrp(pco_shader *shader, pco_igrp *igrp);
 void pco_print_cf_node_name(pco_shader *shader, pco_cf_node *cf_node);
 void pco_print_shader_info(pco_shader *shader);
+void pco_print_phase(pco_shader *shader,
+                     enum pco_alutype alutype,
+                     enum pco_op_phase phase);
 
 #endif /* PCO_INTERNAL_H */

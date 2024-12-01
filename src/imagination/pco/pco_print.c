@@ -528,9 +528,9 @@ static void _pco_print_instr(pco_print_state *state, pco_instr *instr)
  * \param[in] alutype ALU type.
  * \param[in] phase Phase.
  */
-static void pco_print_phase(pco_print_state *state,
-                            enum pco_alutype alutype,
-                            enum pco_op_phase phase)
+static void _pco_print_phase(pco_print_state *state,
+                             enum pco_alutype alutype,
+                             enum pco_op_phase phase)
 {
    switch (alutype) {
    case PCO_ALUTYPE_MAIN:
@@ -567,7 +567,7 @@ static void pco_print_igrp_phases(pco_print_state *state, pco_igrp *igrp)
       if (printed)
          pco_printf(state, ",");
 
-      pco_print_phase(state, igrp->hdr.alutype, phase);
+      _pco_print_phase(state, igrp->hdr.alutype, phase);
 
       printed = true;
    }
@@ -772,13 +772,13 @@ static void _pco_print_igrp(pco_print_state *state, pco_igrp *igrp)
       else if (printed)
          pco_printf(state, " ");
 
-      pco_print_phase(state, igrp->hdr.alutype, phase);
+      _pco_print_phase(state, igrp->hdr.alutype, phase);
       pco_printf(state, ": ");
       _pco_print_instr(state, igrp->instrs[phase]);
 
       if (state->verbose) {
          pco_printf(state, " /* ");
-         pco_print_phase(state, igrp->hdr.alutype, phase);
+         _pco_print_phase(state, igrp->hdr.alutype, phase);
          pco_printf(state, " bytes: %u */\n", igrp->enc.len.instrs[phase]);
       }
 
@@ -1232,4 +1232,26 @@ void pco_print_shader_info(pco_shader *shader)
       .verbose = false,
    };
    return _pco_print_shader_info(&state, shader);
+}
+
+/**
+ * \brief Print the name of a phase(wrapper).
+ *
+ * \param[in] shader PCO shader.
+ * \param[in] alutype ALU type.
+ * \param[in] phase Phase.
+ */
+void pco_print_phase(pco_shader *shader,
+                     enum pco_alutype alutype,
+                     enum pco_op_phase phase)
+{
+   pco_print_state state = {
+      .fp = stdout,
+      .shader = shader,
+      .indent = 0,
+      .is_grouped = shader->is_grouped,
+      .verbose = false,
+   };
+
+   return _pco_print_phase(&state, alutype, phase);
 }

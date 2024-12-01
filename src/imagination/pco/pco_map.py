@@ -37,6 +37,7 @@ REF_MAP = enum_type('ref_map', [
    ('ftt', 'ftt'),
 
    ('p0', 'p0'),
+   ('pe', 'pe'),
 
    ('imm', 'imm'),
    ('drc', 'drc'),

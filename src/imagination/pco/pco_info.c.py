@@ -58,6 +58,28 @@ const struct pco_op_info pco_op_info[_PCO_OP_COUNT] = {
    % endfor
       },
 % endif
+#ifndef NDEBUG
+% if op.bname in encode_maps:
+      .grp_dest_maps = {
+   % for phase, dests, _ in encode_maps[op.bname].op_ref_maps:
+         [${phase}] = {
+      % for dest in dests:
+            [${loop.index}] = ${dest},
+      % endfor
+         },
+   % endfor
+      },
+      .grp_src_maps = {
+   % for phase, _, srcs in encode_maps[op.bname].op_ref_maps:
+         [${phase}] = {
+      % for src in srcs:
+            [${loop.index}] = ${src},
+      % endfor
+         },
+   % endfor
+      },
+% endif
+#endif /* NDEBUG */
    },
 % endfor
 };
@@ -104,7 +126,7 @@ const struct pco_ref_mod_info pco_ref_mod_info[_PCO_REF_MOD_COUNT] = {
 
 def main():
    try:
-      print(Template(template).render(BaseType=BaseType, ops=ops, op_mods=op_mods, ref_mods=ref_mods, group_maps=group_maps))
+      print(Template(template).render(BaseType=BaseType, ops=ops, op_mods=op_mods, ref_mods=ref_mods, group_maps=group_maps, encode_maps=encode_maps))
    except:
        raise Exception(exceptions.text_error_template().render())
 
