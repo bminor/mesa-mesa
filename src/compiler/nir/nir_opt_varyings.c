@@ -1053,7 +1053,7 @@ is_sysval(nir_instr *instr, gl_system_value sysval)
             nir_instr_as_deref(intr->src[0].ssa->parent_instr);
 
           return nir_deref_mode_is_one_of(deref, nir_var_system_value) &&
-                 deref->var->data.location == sysval;
+                 nir_deref_instr_get_variable(deref)->data.location == sysval;
       }
    }
 
