@@ -2838,9 +2838,23 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
 
    case nir_op_fquantize2f16: {
       bi_instr *f16 = bi_v2f32_to_v2f16_to(b, bi_temp(b->shader), s0, s0);
+
+      if (b->shader->arch < 9) {
+         /* Bifrost has psuedo-ftz on conversions, that is lowered to an ftz
+          * flag in the clause header */
+         f16->ftz = true;
+      } else {
+         /* Valhall doesn't have clauses, and uses a separate flush
+          * instruction */
+         f16 = bi_flush_to(b, 16, bi_temp(b->shader), f16->dest[0]);
+         f16->ftz = true;
+      }
+
       bi_instr *f32 = bi_f16_to_f32_to(b, dst, bi_half(f16->dest[0], false));
 
-      f16->ftz = f32->ftz = true;
+      if (b->shader->arch < 9)
+         f32->ftz = true;
+
       break;
    }
 
