@@ -882,6 +882,32 @@ virtio_bo_allow_dump(struct tu_device *dev, struct tu_bo *bo)
    mtx_unlock(&dev->bo_mutex);
 }
 
+static void
+virtio_bo_finish(struct tu_device *dev, struct tu_bo *bo)
+{
+   assert(bo->gem_handle);
+
+   u_rwlock_rdlock(&dev->dma_bo_lock);
+
+   if (!p_atomic_dec_zero(&bo->refcnt)) {
+      u_rwlock_rdunlock(&dev->dma_bo_lock);
+      return;
+   }
+
+   tu_debug_bos_del(dev, bo);
+   tu_dump_bo_del(dev, bo);
+
+   if (bo->map)
+      munmap(bo->map, bo->size);
+
+   tu_bo_list_del(dev, bo);
+
+   assert(dev->physical_device->has_set_iova);
+   tu_bo_make_zombie(dev, bo);
+
+   u_rwlock_rdunlock(&dev->dma_bo_lock);
+}
+
 static VkResult
 setup_fence_cmds(struct tu_device *dev)
 {
@@ -1122,7 +1148,7 @@ static const struct tu_knl virtio_knl_funcs = {
       .bo_export_dmabuf = virtio_bo_export_dmabuf,
       .bo_map = virtio_bo_map,
       .bo_allow_dump = virtio_bo_allow_dump,
-      .bo_finish = tu_drm_bo_finish,
+      .bo_finish = virtio_bo_finish,
       .submit_create = msm_submit_create,
       .submit_finish = msm_submit_finish,
       .submit_add_entries = msm_submit_add_entries,

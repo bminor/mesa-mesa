@@ -59,27 +59,8 @@ tu_drm_export_dmabuf(struct tu_device *dev, struct tu_bo *bo)
 }
 
 void
-tu_drm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
+tu_bo_list_del(struct tu_device *dev, struct tu_bo *bo)
 {
-   assert(bo->gem_handle);
-
-   u_rwlock_rdlock(&dev->dma_bo_lock);
-
-   if (!p_atomic_dec_zero(&bo->refcnt)) {
-      u_rwlock_rdunlock(&dev->dma_bo_lock);
-      return;
-   }
-
-   tu_debug_bos_del(dev, bo);
-   tu_dump_bo_del(dev, bo);
-
-   if (bo->map) {
-      TU_RMV(bo_unmap, dev, bo);
-      munmap(bo->map, bo->size);
-   }
-
-   TU_RMV(bo_destroy, dev, bo);
-
    mtx_lock(&dev->bo_mutex);
    dev->submit_bo_count--;
    dev->submit_bo_list[bo->submit_bo_list_idx] = dev->submit_bo_list[dev->submit_bo_count];
@@ -91,44 +72,28 @@ tu_drm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
       dev->implicit_sync_bo_count--;
 
    mtx_unlock(&dev->bo_mutex);
+}
 
-   if (dev->physical_device->has_set_iova) {
-      mtx_lock(&dev->vma_mutex);
-      struct tu_zombie_vma *vma = (struct tu_zombie_vma *)
-            u_vector_add(&dev->zombie_vmas);
-      vma->gem_handle = bo->gem_handle;
+void
+tu_bo_make_zombie(struct tu_device *dev, struct tu_bo *bo)
+{
+   mtx_lock(&dev->vma_mutex);
+   struct tu_zombie_vma *vma = (struct tu_zombie_vma *)
+         u_vector_add(&dev->zombie_vmas);
+   vma->gem_handle = bo->gem_handle;
 #ifdef TU_HAS_VIRTIO
-      vma->res_id = bo->res_id;
+   vma->res_id = bo->res_id;
 #endif
-      vma->iova = bo->iova;
-      vma->size = bo->size;
-      vma->fence = p_atomic_read(&dev->queues[0]->fence);
+   vma->iova = bo->iova;
+   vma->size = bo->size;
+   vma->fence = p_atomic_read(&dev->queues[0]->fence);
 
-      /* Must be cleared under the VMA mutex, or another thread could race to
-       * reap the VMA, closing the BO and letting a new GEM allocation produce
-       * this handle again.
-       */
-      memset(bo, 0, sizeof(*bo));
-      mtx_unlock(&dev->vma_mutex);
-   } else {
-      /* Our BO structs are stored in a sparse array in the physical device,
-       * so we don't want to free the BO pointer, instead we want to reset it
-       * to 0, to signal that array entry as being free.
-       */
-      uint32_t gem_handle = bo->gem_handle;
-      memset(bo, 0, sizeof(*bo));
-
-      /* Note that virtgpu GEM_CLOSE path is a bit different, but it does
-       * not use the !has_set_iova path so we can ignore that
-       */
-      struct drm_gem_close req = {
-         .handle = gem_handle,
-      };
-
-      drmIoctl(dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
-   }
-
-   u_rwlock_rdunlock(&dev->dma_bo_lock);
+   /* Must be cleared under the VMA mutex, or another thread could race to
+    * reap the VMA, closing the BO and letting a new GEM allocation produce
+    * this handle again.
+    */
+   memset(bo, 0, sizeof(*bo));
+   mtx_unlock(&dev->vma_mutex);
 }
 
 void *

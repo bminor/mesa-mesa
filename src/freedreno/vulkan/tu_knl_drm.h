@@ -20,7 +20,9 @@ VkResult tu_allocate_userspace_iova(struct tu_device *dev,
                                     enum tu_bo_alloc_flags flags,
                                     uint64_t *iova);
 int tu_drm_export_dmabuf(struct tu_device *dev, struct tu_bo *bo);
-void tu_drm_bo_finish(struct tu_device *dev, struct tu_bo *bo);
+
+void tu_bo_list_del(struct tu_device *dev, struct tu_bo *bo);
+void tu_bo_make_zombie(struct tu_device *dev, struct tu_bo *bo);
 
 struct tu_msm_queue_submit
 {

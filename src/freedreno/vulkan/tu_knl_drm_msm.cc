@@ -853,6 +853,50 @@ msm_bo_get_metadata(struct tu_device *dev, struct tu_bo *bo,
    return ret;
 }
 
+static void
+msm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
+{
+   assert(bo->gem_handle);
+
+   u_rwlock_rdlock(&dev->dma_bo_lock);
+
+   if (!p_atomic_dec_zero(&bo->refcnt)) {
+      u_rwlock_rdunlock(&dev->dma_bo_lock);
+      return;
+   }
+
+   tu_debug_bos_del(dev, bo);
+   tu_dump_bo_del(dev, bo);
+
+   if (bo->map) {
+      TU_RMV(bo_unmap, dev, bo);
+      munmap(bo->map, bo->size);
+   }
+
+   TU_RMV(bo_destroy, dev, bo);
+
+   tu_bo_list_del(dev, bo);
+
+   if (dev->physical_device->has_set_iova) {
+      tu_bo_make_zombie(dev, bo);
+   } else {
+      /* Our BO structs are stored in a sparse array in the physical device,
+       * so we don't want to free the BO pointer, instead we want to reset it
+       * to 0, to signal that array entry as being free.
+       */
+      uint32_t gem_handle = bo->gem_handle;
+      memset(bo, 0, sizeof(*bo));
+
+      struct drm_gem_close req = {
+         .handle = gem_handle,
+      };
+
+      drmIoctl(dev->fd, DRM_IOCTL_GEM_CLOSE, &req);
+   }
+
+   u_rwlock_rdunlock(&dev->dma_bo_lock);
+}
+
 static VkResult
 msm_queue_submit(struct tu_queue *queue, void *_submit,
                  struct vk_sync_wait *waits, uint32_t wait_count,
@@ -1021,7 +1065,7 @@ static const struct tu_knl msm_knl_funcs = {
       .bo_export_dmabuf = tu_drm_export_dmabuf,
       .bo_map = msm_bo_map,
       .bo_allow_dump = msm_bo_allow_dump,
-      .bo_finish = tu_drm_bo_finish,
+      .bo_finish = msm_bo_finish,
       .bo_set_metadata = msm_bo_set_metadata,
       .bo_get_metadata = msm_bo_get_metadata,
       .submit_create = msm_submit_create,
