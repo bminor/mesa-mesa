@@ -1091,6 +1091,7 @@ get_format_properties(struct panvk_physical_device *physical_device,
 {
    VkFormatFeatureFlags tex = 0, buffer = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
+   unsigned arch = pan_arch(physical_device->kmod.props.gpu_prod_id);
 
    if (pfmt == PIPE_FORMAT_NONE)
       goto end;
@@ -1116,6 +1117,9 @@ get_format_properties(struct panvk_physical_device *physical_device,
              VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
              VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT |
              VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT;
+
+      if (arch >= 10)
+         tex |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT;
 
       /* Integer formats only support nearest filtering */
       if (!util_format_is_scaled(pfmt) && !util_format_is_pure_integer(pfmt))
