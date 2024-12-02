@@ -156,7 +156,7 @@ panvk_meta_cleanup(struct panvk_device *device)
 
 static enum pan_kmod_group_allow_priority_flags
 global_priority_to_group_allow_priority_flag(
-   enum VkQueueGlobalPriorityKHR priority)
+   VkQueueGlobalPriorityKHR priority)
 {
    switch (priority) {
    case VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR:
@@ -179,7 +179,7 @@ check_global_priority(const struct panvk_physical_device *phys_dev,
    const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(create_info->pNext,
                            DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR);
-   const enum VkQueueGlobalPriorityKHR priority =
+   const VkQueueGlobalPriorityKHR priority =
       priority_info ? priority_info->globalPriority
                     : VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
 

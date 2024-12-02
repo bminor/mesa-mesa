@@ -1851,7 +1851,7 @@ tu_queue_init(struct tu_device *device,
    const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(create_info->pNext,
             DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR);
-   const enum VkQueueGlobalPriorityKHR global_priority = priority_info ?
+   const VkQueueGlobalPriorityKHR global_priority = priority_info ?
       priority_info->globalPriority :
       (TU_DEBUG(HIPRIO) ? VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR :
        VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR);

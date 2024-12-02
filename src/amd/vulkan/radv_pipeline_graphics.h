@@ -332,7 +332,7 @@ radv_translate_fill(VkPolygonMode func)
 }
 
 static inline uint32_t
-radv_translate_stencil_op(enum VkStencilOp op)
+radv_translate_stencil_op(VkStencilOp op)
 {
    switch (op) {
    case VK_STENCIL_OP_KEEP:

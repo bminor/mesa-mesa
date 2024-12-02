@@ -558,7 +558,7 @@ hk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 }
 
 static uint32_t
-translate_priority(enum VkQueueGlobalPriorityKHR prio)
+translate_priority(VkQueueGlobalPriorityKHR prio)
 {
    /* clang-format off */
    switch (prio) {
@@ -584,7 +584,7 @@ hk_queue_init(struct hk_device *dev, struct hk_queue *queue,
    const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(pCreateInfo->pNext,
                            DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR);
-   const enum VkQueueGlobalPriorityKHR priority =
+   const VkQueueGlobalPriorityKHR priority =
       priority_info ? priority_info->globalPriority
                     : VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
 

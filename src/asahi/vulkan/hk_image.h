@@ -89,7 +89,7 @@ hk_image_base_address(const struct hk_image *image, uint8_t plane)
 }
 
 static inline enum pipe_format
-hk_format_to_pipe_format(enum VkFormat vkformat)
+hk_format_to_pipe_format(VkFormat vkformat)
 {
    switch (vkformat) {
    case VK_FORMAT_R10X6_UNORM_PACK16:

@@ -260,7 +260,7 @@ const enum pipe_format vk_format_map[] = {
 };
 
 enum pipe_format
-vk_format_to_pipe_format(enum VkFormat vkformat)
+vk_format_to_pipe_format(VkFormat vkformat)
 {
    if (vkformat >= ARRAY_SIZE(vk_format_map)) {
       switch (vkformat) {

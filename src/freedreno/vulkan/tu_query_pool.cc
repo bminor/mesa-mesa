@@ -1269,7 +1269,7 @@ template <chip CHIP>
 static void
 emit_stop_primitive_ctrs(struct tu_cmd_buffer *cmdbuf,
                          struct tu_cs *cs,
-                         enum VkQueryType query_type)
+                         VkQueryType query_type)
 {
    bool is_secondary = cmdbuf->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
    cmdbuf->state.prim_counters_running--;

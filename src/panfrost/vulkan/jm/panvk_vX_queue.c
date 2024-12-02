@@ -313,7 +313,7 @@ panvk_per_arch(queue_init)(struct panvk_device *device,
    ASSERTED const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(create_info->pNext,
                            DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR);
-   ASSERTED const enum VkQueueGlobalPriorityKHR priority =
+   ASSERTED const VkQueueGlobalPriorityKHR priority =
       priority_info ? priority_info->globalPriority
                     : VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
 

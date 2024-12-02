@@ -362,7 +362,7 @@ vk_spec_info_to_nir_spirv(const VkSpecializationInfo *spec_info,
    if (name != _stack_##name) free(name)
 
 static inline uint8_t
-vk_index_type_to_bytes(enum VkIndexType type)
+vk_index_type_to_bytes(VkIndexType type)
 {
    switch (type) {
    case VK_INDEX_TYPE_NONE_KHR:  return 0;
@@ -374,7 +374,7 @@ vk_index_type_to_bytes(enum VkIndexType type)
 }
 
 static inline uint32_t
-vk_index_to_restart(enum VkIndexType type)
+vk_index_to_restart(VkIndexType type)
 {
    switch (type) {
    case VK_INDEX_TYPE_UINT8_KHR: return 0xff;

@@ -3181,7 +3181,7 @@ tu_CmdBindDescriptorBufferEmbeddedSamplers2EXT(
    }
 }
 
-static enum VkResult
+static VkResult
 tu_push_descriptor_set_update_layout(struct tu_device *device,
                                      struct tu_descriptor_set *set,
                                      struct tu_descriptor_set_layout *layout)
