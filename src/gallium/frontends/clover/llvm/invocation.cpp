@@ -40,6 +40,10 @@
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <clang/Basic/TargetInfo.h>
 
+#if LLVM_VERSION_MAJOR >= 20
+#include <llvm/Support/VirtualFileSystem.h>
+#endif
+
 // We need to include internal headers last, because the internal headers
 // include CL headers which have #define's like:
 //
@@ -305,7 +309,11 @@ namespace {
                                 ::llvm::Triple(target.triple),
                                 get_language_version(opts, device_clc_version));
 
-      c->createDiagnostics(new clang::TextDiagnosticPrinter(
+      c->createDiagnostics(
+#if LLVM_VERSION_MAJOR >= 20
+                           *llvm::vfs::getRealFileSystem(),
+#endif
+                           new clang::TextDiagnosticPrinter(
                               *new raw_string_ostream(r_log),
                               &c->getDiagnosticOpts(), true));
 

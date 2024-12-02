@@ -56,6 +56,10 @@
 #include <spirv-tools/linker.hpp>
 #include <spirv-tools/optimizer.hpp>
 
+#if LLVM_VERSION_MAJOR >= 20
+#include <llvm/Support/VirtualFileSystem.h>
+#endif
+
 #include "util/macros.h"
 #include "glsl_types.h"
 
@@ -841,7 +845,11 @@ clc_compile_to_llvm_module(LLVMContext &llvm_ctx,
    // http://www.llvm.org/bugs/show_bug.cgi?id=19735
    c->getDiagnosticOpts().ShowCarets = false;
 
-   c->createDiagnostics(new clang::TextDiagnosticPrinter(
+   c->createDiagnostics(
+#if LLVM_VERSION_MAJOR >= 20
+                   *llvm::vfs::getRealFileSystem(),
+#endif
+                   new clang::TextDiagnosticPrinter(
                            diag_log_stream,
                            &c->getDiagnosticOpts()));
 
