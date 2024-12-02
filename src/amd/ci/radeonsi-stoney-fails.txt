@@ -151,3 +151,6 @@ spec@arb_fragment_layer_viewport@layer-gs-writes-out-of-range,Fail
 # glcts update
 KHR-GLES3.clip_distance.coverage,Fail
 KHR-GLES3.cull_distance.functional,Fail
+
+# This will be fixed by a piglit update
+spec@arb_uniform_buffer_object@referenced-by-shader,Fail
