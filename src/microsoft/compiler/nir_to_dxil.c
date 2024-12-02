@@ -162,6 +162,7 @@ nir_options = {
    .preserve_mediump = true,
    .discard_is_demote = true,
    .scalarize_ddx = true,
+   .io_options = nir_io_dont_use_pos_for_non_fs_varyings,
 };
 
 const nir_shader_compiler_options*
