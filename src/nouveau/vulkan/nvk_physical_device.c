@@ -437,14 +437,30 @@ nvk_get_device_features(const struct nv_device_info *info,
       .maintenance4 = true,
 
       /* Vulkan 1.4 */
+      .globalPriorityQuery = true,
+      .shaderSubgroupRotate = nvk_use_nak(info),
+      .shaderSubgroupRotateClustered = nvk_use_nak(info),
+      .shaderFloatControls2 = true,
+      .shaderExpectAssume = true,
+      .rectangularLines = true,
+      .bresenhamLines = true,
+      .smoothLines = true,
+      .stippledRectangularLines = true,
+      .stippledBresenhamLines = true,
+      .stippledSmoothLines = true,
+      .vertexAttributeInstanceRateDivisor = true,
+      .vertexAttributeInstanceRateZeroDivisor = true,
+      .indexTypeUint8 = true,
+      .dynamicRenderingLocalRead = true,
+      .maintenance5 = true,
+      .maintenance6 = true,
+      .pipelineRobustness = true,
+      .hostImageCopy = info->cls_eng3d >= TURING_A,
       .pushDescriptor = true,
 
       /* VK_KHR_compute_shader_derivatives */
       .computeDerivativeGroupQuads = true,
       .computeDerivativeGroupLinear = true,
-
-      /* VK_KHR_dynamic_rendering_local_read */
-      .dynamicRenderingLocalRead = true,
 
       /* VK_KHR_fragment_shader_barycentric */
       .fragmentShaderBarycentric = info->cls_eng3d >= TURING_A &&
@@ -454,26 +470,6 @@ nvk_get_device_features(const struct nv_device_info *info,
       .pipelineFragmentShadingRate = info->cls_eng3d >= TURING_A,
       .primitiveFragmentShadingRate = info->cls_eng3d >= TURING_A,
       .attachmentFragmentShadingRate = info->cls_eng3d >= TURING_A,
-
-      /* VK_KHR_global_priority */
-      .globalPriorityQuery = true,
-
-      /* VK_KHR_index_type_uint8 */
-      .indexTypeUint8 = true,
-
-      /* VK_KHR_line_rasterization */
-      .rectangularLines = true,
-      .bresenhamLines = true,
-      .smoothLines = true,
-      .stippledRectangularLines = true,
-      .stippledBresenhamLines = true,
-      .stippledSmoothLines = true,
-
-      /* VK_KHR_maintenance5 */
-      .maintenance5 = true,
-
-      /* VK_KHR_maintenance6 */
-      .maintenance6 = true,
 
       /* VK_KHR_maintenance7 */
       .maintenance7 = true,
@@ -497,25 +493,11 @@ nvk_get_device_features(const struct nv_device_info *info,
       .shaderSubgroupClock = true,
       .shaderDeviceClock = true,
 
-      /* VK_KHR_shader_expect_assume */
-      .shaderExpectAssume = true,
-
-      /* VK_KHR_shader_float_controls2 */
-      .shaderFloatControls2 = true,
-
       /* VK_KHR_shader_maximal_reconvergence */
       .shaderMaximalReconvergence = true,
 
-      /* VK_KHR_shader_subgroup_rotate */
-      .shaderSubgroupRotate = nvk_use_nak(info),
-      .shaderSubgroupRotateClustered = nvk_use_nak(info),
-
       /* VK_KHR_shader_subgroup_uniform_control_flow */
       .shaderSubgroupUniformControlFlow = nvk_use_nak(info),
-
-      /* VK_KHR_vertex_attribute_divisor */
-      .vertexAttributeInstanceRateDivisor = true,
-      .vertexAttributeInstanceRateZeroDivisor = true,
 
       /* VK_KHR_workgroup_memory_explicit_layout */
       .workgroupMemoryExplicitLayout = true,
@@ -623,9 +605,6 @@ nvk_get_device_features(const struct nv_device_info *info,
       /* VK_EXT_graphics_pipeline_library */
       .graphicsPipelineLibrary = true,
 
-      /* VK_EXT_host_image_copy */
-      .hostImageCopy = info->cls_eng3d >= TURING_A,
-
       /* VK_EXT_image_2d_view_of_3d */
       .image2DViewOf3D = true,
       .sampler2DViewOf3D = true,
@@ -662,9 +641,6 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_EXT_non_seamless_cube_map */
       .nonSeamlessCubeMap = true,
-
-      /* VK_EXT_pipeline_robustness */
-      .pipelineRobustness = true,
 
       /* VK_EXT_primitive_topology_list_restart */
       .primitiveTopologyListRestart = true,
