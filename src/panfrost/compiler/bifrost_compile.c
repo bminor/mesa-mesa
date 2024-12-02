@@ -1797,18 +1797,33 @@ bi_emit_ld_tile(bi_builder *b, nir_intrinsic_instr *instr)
 {
    bi_index dest = bi_def_index(&instr->def);
    nir_alu_type T = nir_intrinsic_dest_type(instr);
+   nir_io_semantics sem = nir_intrinsic_io_semantics(instr);
+   bool is_zs =
+      sem.location == FRAG_RESULT_DEPTH || sem.location == FRAG_RESULT_STENCIL;
    enum bi_register_format regfmt = bi_reg_fmt_for_nir(T);
    unsigned size = instr->def.bit_size;
    unsigned nr = instr->num_components;
+   unsigned target = 0;
 
-   /* Get the render target */
-   nir_io_semantics sem = nir_intrinsic_io_semantics(instr);
-   unsigned loc = sem.location;
-   assert(loc >= FRAG_RESULT_DATA0);
-   unsigned rt = (loc - FRAG_RESULT_DATA0);
+   if (sem.location == FRAG_RESULT_DEPTH) {
+      target = 255;
+   } else if (sem.location == FRAG_RESULT_STENCIL) {
+      target = 254;
+   } else if (nir_src_is_const(instr->src[0])) {
+      target = nir_src_as_uint(instr->src[0]);
+      assert(target < 8);
+   }
 
-   bi_ld_tile_to(b, dest, bi_pixel_indices(b, rt), bi_coverage(b),
-                 bi_src_index(&instr->src[0]), regfmt, nr - 1);
+   bi_index pi = bi_pixel_indices(b, target);
+
+   if (!is_zs && !nir_src_is_const(instr->src[0]))
+      pi = bi_lshift_or(b, 32, bi_src_index(&instr->src[0]), pi, bi_imm_u8(8));
+
+   bi_instr *I = bi_ld_tile_to(b, dest, pi, bi_coverage(b),
+                               bi_src_index(&instr->src[1]), regfmt, nr - 1);
+   if (is_zs)
+      I->z_stencil = true;
+
    bi_emit_cached_split(b, dest, size * nr);
 }
 
@@ -5498,8 +5513,8 @@ bi_lower_load_output(nir_builder *b, nir_intrinsic_instr *intr,
       b, .base = rt, .src_type = nir_intrinsic_dest_type(intr));
 
    nir_def *lowered = nir_load_converted_output_pan(
-      b, intr->def.num_components, intr->def.bit_size, conversion,
-      .dest_type = nir_intrinsic_dest_type(intr),
+      b, intr->def.num_components, intr->def.bit_size, nir_imm_int(b, rt),
+      conversion, .dest_type = nir_intrinsic_dest_type(intr),
       .io_semantics = nir_intrinsic_io_semantics(intr));
 
    nir_def_rewrite_uses(&intr->def, lowered);
