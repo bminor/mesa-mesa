@@ -8,7 +8,7 @@ process_isolation = true
 [[piglit]]
 piglit_folder = "/piglit"
 profile = "quick_shader"
-fraction = 2
+fraction = 3
 process_isolation = true
   [piglit.env]
   PIGLIT_PLATFORM = "mixed_glx_egl"
