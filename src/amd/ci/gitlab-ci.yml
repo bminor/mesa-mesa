@@ -102,22 +102,15 @@ radv-raven-traces-restricted:
     PIGLIT_REPLAY_EXTRA_ARGS: --keep-image --minio_bucket=${S3_TRACIE_PRIVATE_BUCKET} --jwt-file=${S3_JWT_FILE}
     FDO_CI_CONCURRENT: 10
 
-radeonsi-raven-piglit-quick_gl:
+radeonsi-raven-piglit:
   extends:
-    - .lava-piglit:x86_64
+    - .lava-test-deqp:x86_64
     - .radeonsi-raven-test:x86_64
     - .lava-lenovo-TPad-C13-Yoga-zork:x86_64
+  parallel: 2
   variables:
-    PIGLIT_PLATFORM: mixed_glx_egl
-    PIGLIT_PROFILES: quick_gl
+    DEQP_SUITE: radeonsi-raven
     HWCI_START_WESTON: 1
-
-radeonsi-raven-piglit-quick_shader:
-  extends:
-    - radeonsi-raven-piglit-quick_gl
-  variables:
-    PIGLIT_PROFILES: quick_shader
-    PIGLIT_FRACTION: 2
 
 # lower image opcodes to emulate CDNA compute devices
 radeonsi-raven-cdna-lower-image:
