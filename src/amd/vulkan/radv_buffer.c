@@ -187,7 +187,7 @@ radv_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindBuf
 
 static void
 radv_get_buffer_memory_requirements(struct radv_device *device, VkDeviceSize size, VkBufferCreateFlags flags,
-                                    VkBufferUsageFlags2KHR usage, VkMemoryRequirements2 *pMemoryRequirements)
+                                    VkBufferUsageFlags2 usage, VkMemoryRequirements2 *pMemoryRequirements)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
@@ -229,11 +229,11 @@ radv_get_buffer_memory_requirements(struct radv_device *device, VkDeviceSize siz
    }
 }
 
-static const VkBufferUsageFlagBits2KHR
+static const VkBufferUsageFlagBits2
 radv_get_buffer_usage_flags(const VkBufferCreateInfo *pCreateInfo)
 {
-   const VkBufferUsageFlags2CreateInfoKHR *flags2 =
-      vk_find_struct_const(pCreateInfo->pNext, BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR);
+   const VkBufferUsageFlags2CreateInfo *flags2 =
+      vk_find_struct_const(pCreateInfo->pNext, BUFFER_USAGE_FLAGS_2_CREATE_INFO);
    return flags2 ? flags2->usage : pCreateInfo->usage;
 }
 
@@ -242,7 +242,7 @@ radv_GetDeviceBufferMemoryRequirements(VkDevice _device, const VkDeviceBufferMem
                                        VkMemoryRequirements2 *pMemoryRequirements)
 {
    VK_FROM_HANDLE(radv_device, device, _device);
-   const VkBufferUsageFlagBits2KHR usage_flags = radv_get_buffer_usage_flags(pInfo->pCreateInfo);
+   const VkBufferUsageFlagBits2 usage_flags = radv_get_buffer_usage_flags(pInfo->pCreateInfo);
 
    radv_get_buffer_memory_requirements(device, pInfo->pCreateInfo->size, pInfo->pCreateInfo->flags, usage_flags,
                                        pMemoryRequirements);

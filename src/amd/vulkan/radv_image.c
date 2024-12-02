@@ -1795,8 +1795,8 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_GetImageSubresourceLayout2KHR(VkDevice _device, VkImage _image, const VkImageSubresource2KHR *pSubresource,
-                                   VkSubresourceLayout2KHR *pLayout)
+radv_GetImageSubresourceLayout2(VkDevice _device, VkImage _image, const VkImageSubresource2 *pSubresource,
+                                VkSubresourceLayout2 *pLayout)
 {
    VK_FROM_HANDLE(radv_image, image, _image);
    VK_FROM_HANDLE(radv_device, device, _device);

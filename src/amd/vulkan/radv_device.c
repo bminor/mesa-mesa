@@ -313,9 +313,9 @@ radv_device_init_vrs_state(struct radv_device *device)
    VkBufferCreateInfo buffer_create_info = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
       .pNext =
-         &(VkBufferUsageFlags2CreateInfoKHR){
-            .sType = VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR,
-            .usage = VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT_KHR,
+         &(VkBufferUsageFlags2CreateInfo){
+            .sType = VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO,
+            .usage = VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT,
          },
       .size = radv_image_from_handle(image)->planes[0].surface.meta_size,
       .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -1858,8 +1858,8 @@ radv_ReleaseProfilingLockKHR(VkDevice _device)
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR *pInfo,
-                                        VkSubresourceLayout2KHR *pLayout)
+radv_GetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
+                                     VkSubresourceLayout2 *pLayout)
 {
    UNUSED VkResult result;
    VkImage image;
@@ -1868,7 +1868,7 @@ radv_GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubr
       radv_image_create(device, &(struct radv_image_create_info){.vk_info = pInfo->pCreateInfo}, NULL, &image, true);
    assert(result == VK_SUCCESS);
 
-   radv_GetImageSubresourceLayout2KHR(device, image, pInfo->pSubresource, pLayout);
+   radv_GetImageSubresourceLayout2(device, image, pInfo->pSubresource, pLayout);
 
    radv_DestroyImage(device, image, NULL);
 }

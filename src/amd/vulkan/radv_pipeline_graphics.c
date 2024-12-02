@@ -216,7 +216,7 @@ static bool
 radv_pipeline_uses_vrs_attachment(const struct radv_graphics_pipeline *pipeline,
                                   const struct vk_graphics_pipeline_state *state)
 {
-   VkPipelineCreateFlags2KHR create_flags = pipeline->base.create_flags;
+   VkPipelineCreateFlags2 create_flags = pipeline->base.create_flags;
    if (state->rp)
       create_flags |= state->pipeline_flags;
 
@@ -611,7 +611,7 @@ radv_pipeline_import_graphics_info(struct radv_device *device, struct radv_graph
 }
 
 static bool
-radv_should_import_lib_binaries(const VkPipelineCreateFlags2KHR create_flags)
+radv_should_import_lib_binaries(const VkPipelineCreateFlags2 create_flags)
 {
    return !(create_flags & (VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT |
                             VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT));
@@ -663,7 +663,7 @@ static bool
 radv_pipeline_uses_ds_feedback_loop(const struct radv_graphics_pipeline *pipeline,
                                     const struct vk_graphics_pipeline_state *state)
 {
-   VkPipelineCreateFlags2KHR create_flags = pipeline->base.create_flags;
+   VkPipelineCreateFlags2 create_flags = pipeline->base.create_flags;
    if (state->rp)
       create_flags |= state->pipeline_flags;
 
@@ -1983,7 +1983,7 @@ radv_generate_graphics_pipeline_key(const struct radv_device *device, const VkGr
                                     const struct vk_graphics_pipeline_state *state,
                                     VkGraphicsPipelineLibraryFlagBitsEXT lib_flags)
 {
-   VkPipelineCreateFlags2KHR create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
+   VkPipelineCreateFlags2 create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
    struct radv_graphics_pipeline_key key = {0};
 
    key.gfx_state = radv_generate_graphics_state_key(device, state, lib_flags);
@@ -2449,7 +2449,7 @@ static void
 radv_pipeline_load_retained_shaders(const struct radv_device *device, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                     struct radv_shader_stage *stages)
 {
-   const VkPipelineCreateFlags2KHR create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
+   const VkPipelineCreateFlags2 create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
    const VkPipelineLibraryCreateInfoKHR *libs_info =
       vk_find_struct_const(pCreateInfo->pNext, PIPELINE_LIBRARY_CREATE_INFO_KHR);
 
@@ -2497,7 +2497,7 @@ radv_get_rasterization_prim(const struct radv_shader_stage *stages, const struct
 static bool
 radv_is_fast_linking_enabled(const VkGraphicsPipelineCreateInfo *pCreateInfo)
 {
-   const VkPipelineCreateFlags2KHR create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
+   const VkPipelineCreateFlags2 create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
    const VkPipelineLibraryCreateInfoKHR *libs_info =
       vk_find_struct_const(pCreateInfo->pNext, PIPELINE_LIBRARY_CREATE_INFO_KHR);
 
@@ -2511,7 +2511,7 @@ static bool
 radv_skip_graphics_pipeline_compile(const struct radv_device *device, const VkGraphicsPipelineCreateInfo *pCreateInfo)
 {
    const VkPipelineBinaryInfoKHR *binary_info = vk_find_struct_const(pCreateInfo->pNext, PIPELINE_BINARY_INFO_KHR);
-   const VkPipelineCreateFlags2KHR create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
+   const VkPipelineCreateFlags2 create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    VkShaderStageFlagBits binary_stages = 0;
    VkShaderStageFlags active_stages = 0;
@@ -2799,7 +2799,7 @@ radv_generate_graphics_pipeline_state(struct radv_device *device, const VkGraphi
                                       struct radv_graphics_pipeline_state *gfx_state)
 {
    VK_FROM_HANDLE(radv_pipeline_layout, pipeline_layout, pCreateInfo->layout);
-   const VkPipelineCreateFlags2KHR create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
+   const VkPipelineCreateFlags2 create_flags = vk_graphics_pipeline_create_flags(pCreateInfo);
    const bool fast_linking_enabled = radv_is_fast_linking_enabled(pCreateInfo);
    enum radv_pipeline_type pipeline_type = RADV_PIPELINE_GRAPHICS;
    VkResult result;
@@ -2978,7 +2978,7 @@ radv_graphics_pipeline_compile(struct radv_graphics_pipeline *pipeline, const Vk
       goto done;
    }
 
-   if (pipeline->base.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)
+   if (pipeline->base.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)
       return VK_PIPELINE_COMPILE_REQUIRED;
 
    if (retain_shaders) {
@@ -3590,7 +3590,7 @@ radv_CreateGraphicsPipelines(VkDevice _device, VkPipelineCache pipelineCache, ui
    unsigned i = 0;
 
    for (; i < count; i++) {
-      const VkPipelineCreateFlagBits2KHR create_flags = vk_graphics_pipeline_create_flags(&pCreateInfos[i]);
+      const VkPipelineCreateFlagBits2 create_flags = vk_graphics_pipeline_create_flags(&pCreateInfos[i]);
       VkResult r;
       if (create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) {
          r = radv_graphics_lib_pipeline_create(_device, pipelineCache, &pCreateInfos[i], pAllocator, &pPipelines[i]);
@@ -3601,7 +3601,7 @@ radv_CreateGraphicsPipelines(VkDevice _device, VkPipelineCache pipelineCache, ui
          result = r;
          pPipelines[i] = VK_NULL_HANDLE;
 
-         if (create_flags & VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR)
+         if (create_flags & VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT)
             break;
       }
    }

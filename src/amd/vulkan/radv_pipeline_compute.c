@@ -159,7 +159,7 @@ void
 radv_compute_pipeline_hash(const struct radv_device *device, const VkComputePipelineCreateInfo *pCreateInfo,
                            unsigned char *hash)
 {
-   VkPipelineCreateFlags2KHR create_flags = vk_compute_pipeline_create_flags(pCreateInfo);
+   VkPipelineCreateFlags2 create_flags = vk_compute_pipeline_create_flags(pCreateInfo);
    VK_FROM_HANDLE(radv_pipeline_layout, pipeline_layout, pCreateInfo->layout);
    const VkPipelineShaderStageCreateInfo *sinfo = &pCreateInfo->stage;
    struct mesa_sha1 ctx;
@@ -204,7 +204,7 @@ radv_compute_pipeline_compile(const VkComputePipelineCreateInfo *pCreateInfo, st
       goto done;
    }
 
-   if (pipeline->base.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)
+   if (pipeline->base.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)
       return VK_PIPELINE_COMPILE_REQUIRED;
 
    int64_t stage_start = os_time_get_nano();
@@ -327,8 +327,8 @@ radv_create_compute_pipelines(VkDevice _device, VkPipelineCache pipelineCache, u
          result = r;
          pPipelines[i] = VK_NULL_HANDLE;
 
-         VkPipelineCreateFlagBits2KHR create_flags = vk_compute_pipeline_create_flags(&pCreateInfos[i]);
-         if (create_flags & VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR)
+         VkPipelineCreateFlagBits2 create_flags = vk_compute_pipeline_create_flags(&pCreateInfos[i]);
+         if (create_flags & VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT)
             break;
       }
    }
