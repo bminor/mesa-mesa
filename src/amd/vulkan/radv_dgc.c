@@ -1391,8 +1391,8 @@ dgc_get_index_type(struct dgc_cmdbuf *cs, nir_def *user_index_type)
    } else {
       nir_def *index_type = nir_bcsel(b, nir_ieq_imm(b, user_index_type, VK_INDEX_TYPE_UINT32),
                                       nir_imm_int(b, V_028A7C_VGT_INDEX_32), nir_imm_int(b, V_028A7C_VGT_INDEX_16));
-      return nir_bcsel(b, nir_ieq_imm(b, user_index_type, VK_INDEX_TYPE_UINT8_KHR),
-                       nir_imm_int(b, V_028A7C_VGT_INDEX_8), index_type);
+      return nir_bcsel(b, nir_ieq_imm(b, user_index_type, VK_INDEX_TYPE_UINT8), nir_imm_int(b, V_028A7C_VGT_INDEX_8),
+                       index_type);
    }
 }
 
