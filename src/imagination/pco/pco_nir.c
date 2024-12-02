@@ -212,15 +212,17 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, nir_lower_alu);
    NIR_PASS(_, nir, nir_lower_pack);
    NIR_PASS(_, nir, nir_opt_algebraic);
+   NIR_PASS(_, nir, pco_nir_lower_algebraic);
    do {
       progress = false;
 
       NIR_PASS(progress, nir, nir_opt_algebraic_late);
-      NIR_PASS(_, nir, nir_opt_constant_folding);
-      NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
-      NIR_PASS(_, nir, nir_copy_prop);
-      NIR_PASS(_, nir, nir_opt_dce);
-      NIR_PASS(_, nir, nir_opt_cse);
+      NIR_PASS(progress, nir, pco_nir_lower_algebraic_late);
+      NIR_PASS(progress, nir, nir_opt_constant_folding);
+      NIR_PASS(progress, nir, nir_lower_load_const_to_scalar);
+      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_dce);
+      NIR_PASS(progress, nir, nir_opt_cse);
    } while (progress);
 
    nir_variable_mode vec_modes = nir_var_shader_in;

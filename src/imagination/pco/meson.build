@@ -93,9 +93,20 @@ idep_pco_pygen = declare_dependency(
 
 pco_pygen_c_files = [pco_info_c]
 
+pco_nir_algebraic_c = custom_target(
+  'pco_nir_algebraic.c',
+  input : 'pco_nir_algebraic.py',
+  output : 'pco_nir_algebraic.c',
+  command : [
+    prog_python, '@INPUT@', '-p', dir_compiler_nir,
+  ],
+  capture : true,
+  depend_files : nir_algebraic_depends,
+)
+
 libpowervr_compiler = static_library(
   'powervr_compiler',
-  [libpowervr_compiler_files, pco_pygen_c_files],
+  [libpowervr_compiler_files, pco_pygen_c_files, pco_nir_algebraic_c],
   include_directories : [
     inc_imagination,
     inc_powervr_compiler,

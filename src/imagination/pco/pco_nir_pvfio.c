@@ -177,19 +177,21 @@ static bool lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
 /**
  * \brief Per-fragment output pass.
  *
- * \param[in,out] nir NIR shader.
+ * \param[in,out] shader NIR shader.
  * \param[in,out] fs Fragment shader-specific data.
  * \return True if the pass made progress.
  */
-bool pco_nir_pfo(nir_shader *nir, pco_fs_data *fs)
+bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
 {
-   assert(nir->info.stage == MESA_SHADER_FRAGMENT);
+   assert(shader->info.stage == MESA_SHADER_FRAGMENT);
 
    struct pfo_state state = { .fs = fs };
    util_dynarray_init(&state.stores, NULL);
 
-   bool progress =
-      nir_shader_instructions_pass(nir, lower_pfo, nir_metadata_none, &state);
+   bool progress = nir_shader_instructions_pass(shader,
+                                                lower_pfo,
+                                                nir_metadata_none,
+                                                &state);
 
    util_dynarray_fini(&state.stores);
 
@@ -199,13 +201,13 @@ bool pco_nir_pfo(nir_shader *nir, pco_fs_data *fs)
 /**
  * \brief Per-vertex input pass.
  *
- * \param[in,out] nir NIR shader.
+ * \param[in,out] shader NIR shader.
  * \param[in,out] vs Vertex shader-specific data.
  * \return True if the pass made progress.
  */
-bool pco_nir_pvi(nir_shader *nir, pco_vs_data *vs)
+bool pco_nir_pvi(nir_shader *shader, pco_vs_data *vs)
 {
-   assert(nir->info.stage == MESA_SHADER_VERTEX);
+   assert(shader->info.stage == MESA_SHADER_VERTEX);
 
    puts("finishme: pco_nir_pvi");
 
