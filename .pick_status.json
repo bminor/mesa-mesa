@@ -244,7 +244,7 @@
         "description": "anv/iris: leave 4k alignments for clear colors with modifiers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17f97a69c13832a6c1b0b3aad45b06f07d4b852f",
         "notes": null
