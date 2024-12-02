@@ -208,7 +208,6 @@
 # job prefixes: radeonsi (OpenGL), radv (Vulkan), amd (radeonsi+radv)
 .stoney-test:x86_64:
   variables:
-    DEQP_EXPECTED_RENDERER: STONEY
     FLAKES_CHANNEL: "#amd-ci"
 
 .radeonsi-stoney-test:x86_64:
@@ -227,7 +226,6 @@
     - .lava-hp-14-db0003na-grunt:x86_64
     - .radv-collabora-rules
   variables:
-    DEQP_VER: vk
     DRIVER_NAME: radv
     GPU_VERSION: radv-stoney-aco
 
