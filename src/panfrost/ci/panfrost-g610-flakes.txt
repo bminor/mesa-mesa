@@ -165,3 +165,7 @@ dEQP-VK.synchronization2.op.single_queue.event.write_clear_color_image_read_imag
 dEQP-VK.synchronization2.signal_order.shared_timeline_semaphore.write_ssbo_compute_indirect_read_ssbo_compute_indirect.buffer_262144_opaque_fd
 
 dEQP-VK.texture.filtering.3d.combinations.nearest.linear.clamp_to_edge.repeat.clamp_to_border
+
+dEQP-VK.wsi.wayland.swapchain.simulate_oom.clipped
+dEQP-VK.wsi.xcb.swapchain.simulate_oom.exclusive_nonzero_queues
+dEQP-VK.wsi.xlib.swapchain.simulate_oom.image_usage
