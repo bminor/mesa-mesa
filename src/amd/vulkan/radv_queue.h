@@ -102,11 +102,11 @@ radv_queue_device(const struct radv_queue *queue)
 
 int radv_queue_init(struct radv_device *device, struct radv_queue *queue, int idx,
                     const VkDeviceQueueCreateInfo *create_info,
-                    const VkDeviceQueueGlobalPriorityCreateInfoKHR *global_priority);
+                    const VkDeviceQueueGlobalPriorityCreateInfo *global_priority);
 
 void radv_queue_finish(struct radv_queue *queue);
 
-enum radeon_ctx_priority radv_get_queue_global_priority(const VkDeviceQueueGlobalPriorityCreateInfoKHR *pObj);
+enum radeon_ctx_priority radv_get_queue_global_priority(const VkDeviceQueueGlobalPriorityCreateInfo *pObj);
 
 void radv_emit_graphics(struct radv_device *device, struct radeon_cmdbuf *cs);
 

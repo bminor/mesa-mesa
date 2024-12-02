@@ -2459,11 +2459,11 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
    *pCount = idx;
 }
 
-static const VkQueueGlobalPriorityKHR radv_global_queue_priorities[] = {
-   VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR,
-   VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR,
-   VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR,
-   VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR,
+static const VkQueueGlobalPriority radv_global_queue_priorities[] = {
+   VK_QUEUE_GLOBAL_PRIORITY_LOW,
+   VK_QUEUE_GLOBAL_PRIORITY_MEDIUM,
+   VK_QUEUE_GLOBAL_PRIORITY_HIGH,
+   VK_QUEUE_GLOBAL_PRIORITY_REALTIME,
 };
 
 VKAPI_ATTR void VKAPI_CALL
@@ -2486,9 +2486,9 @@ radv_GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, ui
    for (uint32_t i = 0; i < *pCount; i++) {
       vk_foreach_struct (ext, pQueueFamilyProperties[i].pNext) {
          switch (ext->sType) {
-         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_KHR: {
-            VkQueueFamilyGlobalPriorityPropertiesKHR *prop = (VkQueueFamilyGlobalPriorityPropertiesKHR *)ext;
-            STATIC_ASSERT(ARRAY_SIZE(radv_global_queue_priorities) <= VK_MAX_GLOBAL_PRIORITY_SIZE_KHR);
+         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES: {
+            VkQueueFamilyGlobalPriorityProperties *prop = (VkQueueFamilyGlobalPriorityProperties *)ext;
+            STATIC_ASSERT(ARRAY_SIZE(radv_global_queue_priorities) <= VK_MAX_GLOBAL_PRIORITY_SIZE);
             prop->priorityCount = ARRAY_SIZE(radv_global_queue_priorities);
             memcpy(&prop->priorities, radv_global_queue_priorities, sizeof(radv_global_queue_priorities));
             break;
