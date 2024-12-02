@@ -252,7 +252,5 @@ void agx_va_free(struct agx_device *dev, struct agx_va *va);
 static inline bool
 agx_supports_timestamps(const struct agx_device *dev)
 {
-   /* TODO: Ungate virtio once virglrenderer supports the timestamp uapi */
-   return !dev->is_virtio &&
-          (dev->params.feat_compat & DRM_ASAHI_FEAT_USER_TIMESTAMPS);
+   return (dev->params.feat_compat & DRM_ASAHI_FEAT_USER_TIMESTAMPS);
 }
