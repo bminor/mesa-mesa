@@ -1,5 +1,485 @@
 [
     {
+        "sha": "0c55770b3ee30be1b91b6efc211674694afcc5cd",
+        "description": "tu: Expose Vulkan 1.4 on a7xx",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "21838dcbb63e7cf886f884c331276c379cb8cc7a",
+        "description": "tu: Add Vulkan 1.4 features and properties",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2cac1389e57b917f76f40f655574df6198bcb7db",
+        "description": "panvk: enable shaderInt8, VK_KHR_8bit_storage and VK_KHR_shader_float16_int8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9ce6b266fc51dd0af2d60197922eac3445f7fba",
+        "description": "panvk: implement vkGetDeviceImageMemoryRequirements",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "110f5edf7a277d73927d62e2e02048a3f7f23486",
+        "description": "panvk: add panvk_image_init helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dbdaefb6edf7df47c220f68d671d3116bbec0324",
+        "description": "panvk: never require dedicated allocation for images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed64fa034b0585dea444c127f73148d63d1b3803",
+        "description": "panvk: never prefer or require dedicated allocation for buffers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef120460e7fa0f413fc091bc7b70604a66df75c0",
+        "description": "panvk: replace vkGetBufferMemoryRequirements2 with vkGetDeviceBufferMemoryRequirements",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07b8ce43514d5ac8d9fe61c1b80257a860327bf7",
+        "description": "panvk: Support D32_S8 as a multiplanar format",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc2cb69e2ef7fb770f4579accb44fba7e0d7d3b8",
+        "description": "pan/texture: Pass pan_image_section_info around",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0dfb28cebc7b8467ffcdd7329bf6ab6979c18899",
+        "description": "pan/texture: Stop passing a layout to panfrost_emit_plane()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d731abb17ab17461a260f063d88234fa8e2eb8db",
+        "description": "pan/texture: s/index/plane_index/ in panfrost_emit_plane()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3cf2658a9a7692fe8cee42929d5f9d3b72fef64e",
+        "description": "pan/texture: Stop passing the view format around",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "726dec5abdfb45d67126381f82349f1c650de30e",
+        "description": "pan/texture: Move the plane info retrieval logic to a helper function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a8ed53881e3f9be882a9e630c5fd070b9d48e74a",
+        "description": "pan/desc: Add a pan_image_view_get_s_plane() helper and use it",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c9b4030f33818f409cb3e4da49add48be33a83c5",
+        "description": "pan/desc: Pass an image to pan_force_clean_write_rt()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "878a7d6de05938d4db9c2f2524de4492cfd3ccae",
+        "description": "pan/texture: Accept holes in the pan_image_view::planes array",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5df95a97f192f67685644fffef8649546287a9c8",
+        "description": "pan/texture: s/pan_image_view_get_rt_image/pan_image_view_get_color_plane/",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0140148f121768bb769ad0b4630ab842a197982",
+        "description": "pan/texture: s/pan_image_view_get_zs_image/pan_image_view_get_zs_plane/",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a0dd108b8a6d3779301da2fb6b30297e6b2c30b8",
+        "description": "panfrost: convert resources before binding them to images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fc3cfaa4aa1e9c3f36722c4e4aff967c734ffa11",
+        "description": "panfrost: add a perf warning when resources need to be converted",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56acdca86dc9bf113a95d3c7b09bf517eca91815",
+        "description": "hk: claim 1.4",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f5086016bc2fdab72883be406ac3dca4cc373ef",
+        "description": "hk: implement timestamps",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55cd987de29c4c4891a88c9f7e3f832dd60c4fed",
+        "description": "asahi: fix agxdecode memory mapping",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fbb38a30a64fa8d9481146b68c68cd9c96311f73",
+        "description": "asahi: Add timestamp buffer ops",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6697fb26edf844bee71fb24e64e54e20232e1524",
+        "description": "asahi: UAPI update to add support for user timestamp buffers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "751bd986fbdf9bd2e41ed011df855f80919678a0",
+        "description": "asahi: add =bodump debug help",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8caddd2ca1a967104556ea692cd33f6c9173773c",
+        "description": "asahi: fix agx_batch_add_bo",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f34cd9e96685002e9e31266d22726806b79e29ea",
+        "description": "asahi: add more asserts around bo add",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f98971e776705006f8f6541be28601fb641d0519",
+        "description": "asahi,hk: mmap BO on first use",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e7b3dcb9f7112fe9f9ec8a377ead1f0735830e07",
+        "description": "asahi: label individual pools",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09c85202933ebbc2a4927067a45c68e96e31f472",
+        "description": "asahi: fix u_blitter related leaks",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d49f0786c8bb66b6dc09c36fef94a813fd42b8c5",
+        "description": "asahi: fix page size alignment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "59b0dd7c6473c7ccfa6bd6f2fcd8c58ef0cf91c7",
+        "description": "asahi: drop dead",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07e836b932854450d5b1d187afc671365a2ec5cd",
+        "description": "asahi: Fix agx_gpu_time_to_ns & implement DRM_ASAHI_GET_TIME",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "925eca02c4c9cc9f0818b7f8b6bd5c405ce2fadf",
+        "description": "asahi: UAPI update to add GET_TIME & cleanup",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d894941895b0b03120b86d87bf2c01f706412600",
+        "description": "hk,asahi,libagx: unify a bit of code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b41b7e6bc87075f7c5c34991c1ab120f9c8c382b",
+        "description": "asahi: don't leak rodata",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ac82c8d24fccc13eaa8482dbb94b0e5c3f7d572",
+        "description": "asahi: drop dead pool stuff",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fe92abf82b24220707daa79c9a940576c805dae1",
+        "description": "agx: reduce preamble/main alignment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "91ce43410385e233430586850d99c989059d73c2",
+        "description": "agx: disable bounds check optimization",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2b3b0cd3391370f48f8a3467bdd51200c1b307e3",
+        "description": "hk: clarify bounds check calculations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d4f82b7394ba1c0e792438439422833f6f8d28c",
+        "description": "hk: implement hack for layered no attachments",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4386150ab3435871398b4d7dec1c2ad83195b5ec",
+        "description": "hk: fix z bias perf regression",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57447cbb827ce2b3406e0b850baa7247b83781bd",
+        "description": "hk: fix incorrect index size translate",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "be8a24f3b2909a13f9b2d2bdaca0f878d1653dbc",
+        "description": "asahi: crash on fault",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ecd94113ca70d055108fc8bf7db492da6db2a56e",
+        "description": "libagx: increase wg size for query copy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "105fcb9cfdb4fc28de99f9647ed3d370393058f0",
+        "description": "dri: revert INVALID modifier special-casing",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "361f3622587e5bc452a62dbd671969b713273b79",
+        "notes": null
+    },
+    {
         "sha": "1b42bc76daf10b968409471e5829173e97ae297c",
         "description": "ir3: Fix reload_live_out() in shared RA",
         "nominated": true,
