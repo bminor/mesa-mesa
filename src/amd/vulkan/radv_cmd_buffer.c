@@ -8764,8 +8764,8 @@ radv_CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
-                                           const VkRenderingAttachmentLocationInfoKHR *pLocationInfo)
+radv_CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                        const VkRenderingAttachmentLocationInfo *pLocationInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_cmd_state *state = &cmd_buffer->state;
@@ -8782,8 +8782,8 @@ radv_CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_CmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                              const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo)
+radv_CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
+                                           const VkRenderingInputAttachmentIndexInfo *pLocationInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_cmd_state *state = &cmd_buffer->state;
