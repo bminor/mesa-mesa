@@ -245,7 +245,7 @@ radv_CreateDescriptorSetLayout(VkDevice _device, const VkDescriptorSetLayoutCrea
          switch (binding->descriptorType) {
          case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
          case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-            assert(!(pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+            assert(!(pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
             set_layout->binding[b].dynamic_offset_count = 1;
             set_layout->dynamic_shader_stages |= binding->stageFlags;
             if (binding->stageFlags & RADV_RT_STAGE_BITS)
@@ -1007,7 +1007,7 @@ radv_AllocateDescriptorSets(VkDevice _device, const VkDescriptorSetAllocateInfo 
             variable_count = &zero;
       }
 
-      assert(!(layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+      assert(!(layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
 
       result = radv_descriptor_set_create(device, pool, layout, variable_count, &set);
       if (result != VK_SUCCESS)
@@ -1299,7 +1299,7 @@ radv_update_descriptor_sets_impl(struct radv_device *device, struct radv_cmd_buf
          case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
             unsigned idx = writeset->dstArrayElement + j;
             idx += binding_layout->dynamic_offset_offset;
-            assert(!(set->header.layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+            assert(!(set->header.layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
             write_dynamic_buffer_descriptor(device, set->header.dynamic_descriptors + idx, buffer_list,
                                             writeset->pBufferInfo + j);
             break;
@@ -1582,7 +1582,7 @@ radv_update_descriptor_set_with_template_impl(struct radv_device *device, struct
          case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
          case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
             const unsigned idx = templ->entry[i].dst_offset + j;
-            assert(!(set->header.layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+            assert(!(set->header.layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
             write_dynamic_buffer_descriptor(device, set->header.dynamic_descriptors + idx, buffer_list,
                                             (struct VkDescriptorBufferInfo *)pSrc);
             break;

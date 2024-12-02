@@ -7107,7 +7107,7 @@ radv_bind_descriptor_set(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint
    radv_set_descriptor_set(cmd_buffer, bind_point, set, idx);
 
    assert(set);
-   assert(!(set->header.layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+   assert(!(set->header.layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
 
    if (!device->use_global_bo_list) {
       for (unsigned j = 0; j < set->header.buffer_count; ++j)
@@ -7229,7 +7229,7 @@ radv_meta_push_descriptor_set(struct radv_cmd_buffer *cmd_buffer, VkPipelineBind
    unsigned bo_offset;
 
    assert(set == 0);
-   assert(layout->set[set].layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+   assert(layout->set[set].layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
    push_set->header.size = layout->set[set].layout->size;
    push_set->header.layout = layout->set[set].layout;
@@ -7256,14 +7256,13 @@ radv_push_descriptor_set(struct radv_cmd_buffer *cmd_buffer, const VkPushDescrip
    struct radv_descriptor_set *push_set = (struct radv_descriptor_set *)&descriptors_state->push_set.set;
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
-   assert(layout->set[pPushDescriptorSetInfo->set].layout->flags &
-          VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+   assert(layout->set[pPushDescriptorSetInfo->set].layout->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
    if (!radv_init_push_descriptor_set(cmd_buffer, push_set, layout->set[pPushDescriptorSetInfo->set].layout,
                                       bind_point))
       return;
 
-   /* Check that there are no inline uniform block updates when calling vkCmdPushDescriptorSetKHR()
+   /* Check that there are no inline uniform block updates when calling vkCmdPushDescriptorSet()
     * because it is invalid, according to Vulkan spec.
     */
    for (int i = 0; i < pPushDescriptorSetInfo->descriptorWriteCount; i++) {
@@ -7310,7 +7309,7 @@ radv_CmdPushDescriptorSetWithTemplate2KHR(
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    assert(layout->set[pPushDescriptorSetWithTemplateInfo->set].layout->flags &
-          VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+          VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
    if (!radv_init_push_descriptor_set(cmd_buffer, push_set, layout->set[pPushDescriptorSetWithTemplateInfo->set].layout,
                                       templ->bind_point))

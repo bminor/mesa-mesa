@@ -727,7 +727,7 @@ radv_meta_create_descriptor_set_layout(struct radv_device *device, uint32_t num_
 {
    const VkDescriptorSetLayoutCreateInfo desc_layout_info = {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR,
+      .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT,
       .bindingCount = num_bindings,
       .pBindings = bindings,
    };
