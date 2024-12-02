@@ -399,7 +399,7 @@ static bool build_scale_and_bias(struct bias_and_scale *bias_and_scale,
             scale = vpe_fixpt_from_fraction(1024, 940 - 64);
             bias  = vpe_fixpt_from_fraction(-64, 1024);
         } // else report error? here just go with default (1.0, 0.0)
-    } else if (vpe_is_yuv420_8(format) || vpe_is_yuv444_8(format)) {
+    } else if (vpe_is_yuv8(format)) {
         if (vcs->range == VPE_COLOR_RANGE_FULL) {
             scale = vpe_fixpt_from_fraction(256, 255);
         } else if (vcs->range == VPE_COLOR_RANGE_STUDIO) {
@@ -409,7 +409,7 @@ static bool build_scale_and_bias(struct bias_and_scale *bias_and_scale,
             bias_c  = vpe_fixpt_from_fraction(-16, 256); // See notes in function comment
             is_chroma_different = true;
         } // else report error? not sure if default is right
-    } else if (vpe_is_yuv420_10(format) || vpe_is_yuv444_10(format)) {
+    } else if (vpe_is_yuv10(format)) {
         if (vcs->range == VPE_COLOR_RANGE_FULL) {
             scale = vpe_fixpt_from_fraction(1024, 1023);
         } else if (vcs->range == VPE_COLOR_RANGE_STUDIO) {

@@ -196,6 +196,18 @@ bool vpe_is_yuv444(enum vpe_surface_pixel_format format)
             vpe_is_yuv444_10(format));
 }
 
+bool vpe_is_yuv8(enum vpe_surface_pixel_format format)
+{
+    return (vpe_is_yuv420_8(format) ||
+            vpe_is_yuv444_8(format));
+}
+
+bool vpe_is_yuv10(enum vpe_surface_pixel_format format)
+{
+    return (vpe_is_yuv420_10(format) ||
+            vpe_is_yuv444_10(format));
+}
+
 bool vpe_is_yuv(enum vpe_surface_pixel_format format)
 {
     return (vpe_is_yuv420(format) ||

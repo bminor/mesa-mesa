@@ -64,6 +64,9 @@ bool vpe_is_rgb8(enum vpe_surface_pixel_format format);
 bool vpe_is_rgb10(enum vpe_surface_pixel_format format);
 bool vpe_is_fp16(enum vpe_surface_pixel_format format);
 
+bool vpe_is_yuv8(enum vpe_surface_pixel_format format);
+bool vpe_is_yuv10(enum vpe_surface_pixel_format format);
+
 // yuv 4:2:0 check
 bool vpe_is_yuv420_8(enum vpe_surface_pixel_format format);
 bool vpe_is_yuv420_10(enum vpe_surface_pixel_format format);
