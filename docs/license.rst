@@ -10,8 +10,7 @@ implementation isn't formally conformant on all combinations of drivers
 and hardware. `Khronos`_ maintains lists of conformant implementations
 for each of their APIs, as well as `trademark details`_.
 
-Please do not refer to the library as *MesaGL* (for legal reasons). It's
-just *Mesa* or *The Mesa 3-D graphics library*.
+This project is called *Mesa*, *Mesa3D*, or *The Mesa 3-D graphics library*.
 
 .. _OpenGL: https://www.opengl.org/
 .. _OpenGL ES: https://www.khronos.org/opengles/
