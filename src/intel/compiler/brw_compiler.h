@@ -230,6 +230,14 @@ struct brw_base_prog_key {
 #define MAX_VK_VERT_ATTRIB     (VERT_ATTRIB_GENERIC0 + 29)
 #define MAX_HW_VERT_ATTRIB     (VERT_ATTRIB_GENERIC0 + 34)
 
+/**
+ * Use the last 2 slots :
+ *   - slot 32: start vertex, vertex count, instance count, start instance
+ *   - slot 33: base vertex, base instance, draw id
+ */
+#define BRW_SVGS_VE_INDEX (32)
+#define BRW_DRAWID_VE_INDEX (33)
+
 /** The program key for Vertex Shaders. */
 struct brw_vs_prog_key {
    struct brw_base_prog_key base;

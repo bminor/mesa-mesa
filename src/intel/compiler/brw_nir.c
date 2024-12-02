@@ -464,6 +464,7 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
                load->src[0] = nir_src_for_ssa(nir_imm_int(&b, 0));
 
                unsigned input_offset = 0;
+               unsigned location = BRW_SVGS_VE_INDEX;
                switch (intrin->intrinsic) {
                case nir_intrinsic_load_first_vertex:
                   nir_intrinsic_set_component(load, 0);
@@ -483,6 +484,7 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
                    * gl_VertexID and friends if any of them exist.
                    */
                   input_offset += has_sgvs ? 1 : 0;
+                  location = BRW_DRAWID_VE_INDEX;
                   if (intrin->intrinsic == nir_intrinsic_load_draw_id)
                      nir_intrinsic_set_component(load, 0);
                   else
@@ -498,7 +500,7 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
                 */
                nir_intrinsic_set_base(load, num_inputs + input_offset);
                struct nir_io_semantics io = {
-                  .location = util_last_bit64(nir->info.inputs_read) + input_offset,
+                  .location = VERT_ATTRIB_GENERIC0 + location,
                   .num_slots = 1,
                };
                nir_intrinsic_set_io_semantics(load, io);
@@ -2484,5 +2486,3 @@ brw_nir_lower_simd(nir_shader *nir, unsigned dispatch_width)
    return nir_shader_lower_instructions(nir, filter_simd, lower_simd,
                                  (void *)(uintptr_t)dispatch_width);
 }
-
-
