@@ -674,6 +674,9 @@ add_aux_state_tracking_buffer(struct anv_device *device,
    enum anv_image_memory_binding binding =
       ANV_IMAGE_MEMORY_BINDING_PLANE_0 + plane;
 
+   const struct isl_drm_modifier_info *mod_info =
+      isl_drm_modifier_get_info(image->vk.drm_format_mod);
+
    /* If an auxiliary surface is used for an externally-shareable image,
     * we have to hide this from the memory of the image since other
     * processes with access to the memory may not be aware of it or of
@@ -683,14 +686,19 @@ add_aux_state_tracking_buffer(struct anv_device *device,
     * But when the image is created with a drm modifier that supports
     * clear color, it will be exported along with main surface.
     */
-   if (anv_image_is_externally_shared(image)
-       && !isl_drm_modifier_get_info(image->vk.drm_format_mod)->supports_clear_color) {
+   if (anv_image_is_externally_shared(image) &&
+       !mod_info->supports_clear_color)
       binding = ANV_IMAGE_MEMORY_BINDING_PRIVATE;
-   }
 
-   /* The indirect clear color BO requires 64B-alignment on gfx11+. */
+   /* The indirect clear color BO requires 64B-alignment on gfx11+. If we're
+    * using a modifier with clear color, then some kernels might require a 4k
+    * alignment.
+    */
+   const uint32_t clear_color_alignment =
+      (mod_info && mod_info->supports_clear_color) ? 4096 : 64;
+
    return image_binding_grow(device, image, binding,
-                             state_offset, state_size, 64,
+                             state_offset, state_size, clear_color_alignment,
                              &image->planes[plane].fast_clear_memory_range);
 }
 
@@ -1163,7 +1171,7 @@ check_memory_bindings(const struct anv_device *device,
          }
 
          /* The indirect clear color BO requires 64B-alignment on gfx11+. */
-         assert(plane->fast_clear_memory_range.alignment == 64);
+         assert(plane->fast_clear_memory_range.alignment % 64 == 0);
          check_memory_range(accum_ranges,
                             .test_range = &plane->fast_clear_memory_range,
                             .expect_binding = binding);
