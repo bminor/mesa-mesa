@@ -147,7 +147,6 @@
     <field name="Dispatch Walk Order" start="101" end="102" type="uint">
       <value name="Linear Walk" value="0" />
       <value name="Y order walk" value="1" />
-      <value name="Morton Walk" value="2" />
     </field>
     <field name="Message SIMD" start="113" end="114" type="uint">
       <value name="SIMT16" value="1" />
