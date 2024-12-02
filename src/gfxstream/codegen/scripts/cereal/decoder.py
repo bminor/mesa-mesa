@@ -963,6 +963,7 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.endBlock() # switch stmt
 
         self.cgen.stmt("ptr += packetLen")
+        self.cgen.stmt("vkStream->clearPool()")
         self.cgen.endBlock() # while loop
 
         self.cgen.beginIf("m_forSnapshotLoad")
