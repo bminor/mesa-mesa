@@ -85,6 +85,12 @@ nvk_get_vk_version(const struct nv_device_info *info)
    return VK_MAKE_VERSION(1, 1, VK_HEADER_VERSION);
 #endif
 
+   /* Vulkan 1.4 requires hostImageCopy which is currently only supported on
+    * Turing+.
+    */
+   if (info->cls_eng3d < TURING_A)
+      return VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION);
+
    return VK_MAKE_VERSION(1, 4, VK_HEADER_VERSION);
 }
 
