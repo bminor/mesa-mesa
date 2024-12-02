@@ -250,7 +250,15 @@ struct brw_vs_prog_key {
     */
    bool vf_component_packing : 1;
 
-   uint32_t padding : 31;
+   /** Prevent compaction of slots of VF inputs
+    *
+    * So that 3DSTATE_VERTEX_ELEMENTS programming remains independent of
+    * shader inputs (essentially an unused location should have an associated
+    * VERTEX_ELEMENT_STATE).
+    */
+   bool no_vf_slot_compaction : 1;
+
+   uint32_t padding : 30;
 };
 
 /** The program key for Tessellation Control Shaders. */
@@ -1046,6 +1054,7 @@ struct brw_vs_prog_data {
    bool uses_firstvertex;
    bool uses_baseinstance;
    bool uses_drawid;
+   bool no_vf_slot_compaction;
 
    uint32_t vf_component_packing[4];
 };
