@@ -940,14 +940,32 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .maxBufferSize = NVK_MAX_BUFFER_SIZE,
 
       /* Vulkan 1.4 properties */
+      .lineSubPixelPrecisionBits = 8,
+      .maxVertexAttribDivisor = UINT32_MAX,
+      .supportsNonZeroFirstInstance = true,
+      .maxPushDescriptors = NVK_MAX_PUSH_DESCRIPTORS,
       .dynamicRenderingLocalReadDepthStencilAttachments = true,
       .dynamicRenderingLocalReadMultisampledAttachments = true,
+      .earlyFragmentMultisampleCoverageAfterSampleCounting = true,
+      .earlyFragmentSampleMaskTestBeforeSampleCounting = true,
+      .depthStencilSwizzleOneSupport = true,
+      .polygonModePointSize = true,
+      .nonStrictSinglePixelWideLinesUseParallelogram = false,
+      .nonStrictWideLinesUseParallelogram = false,
+      .blockTexelViewCompatibleMultipleLayers = true,
+      .maxCombinedImageSamplerDescriptorCount = 3,
+      .fragmentShadingRateClampCombinerInputs = false, /* TODO */
+      .defaultRobustnessStorageBuffers =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT,
+      .defaultRobustnessUniformBuffers =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT,
+      .defaultRobustnessVertexInputs =
+         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
+      .defaultRobustnessImages =
+         VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT,
 
       /* VK_KHR_compute_shader_derivatives */
       .meshAndTaskShaderDerivatives = false,
-
-      /* VK_KHR_push_descriptor */
-      .maxPushDescriptors = NVK_MAX_PUSH_DESCRIPTORS,
 
       /* VK_EXT_conservative_rasterization */
       .primitiveOverestimationSize = info->cls_eng3d >= VOLTA_A ? 1.0f / 512.0f : 0.0,
@@ -1026,22 +1044,6 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .graphicsPipelineLibraryFastLinking = true,
       .graphicsPipelineLibraryIndependentInterpolationDecoration = true,
 
-      /* VK_KHR_line_rasterization */
-      .lineSubPixelPrecisionBits = 8,
-
-      /* VK_KHR_maintenance5 */
-      .earlyFragmentMultisampleCoverageAfterSampleCounting = true,
-      .earlyFragmentSampleMaskTestBeforeSampleCounting = true,
-      .depthStencilSwizzleOneSupport = true,
-      .polygonModePointSize = true,
-      .nonStrictSinglePixelWideLinesUseParallelogram = false,
-      .nonStrictWideLinesUseParallelogram = false,
-
-      /* VK_KHR_maintenance6 */
-      .blockTexelViewCompatibleMultipleLayers = true,
-      .maxCombinedImageSamplerDescriptorCount = 3,
-      .fragmentShadingRateClampCombinerInputs = false, /* TODO */
-
       /* VK_KHR_maintenance7 */
       .robustFragmentShadingRateAttachmentAccess = false,
       .separateDepthStencilAttachmentAccess = false,
@@ -1069,16 +1071,6 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .pciBus      = info->pci.bus,
       .pciDevice   = info->pci.dev,
       .pciFunction = info->pci.func,
-
-      /* VK_EXT_pipeline_robustness */
-      .defaultRobustnessStorageBuffers =
-         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT,
-      .defaultRobustnessUniformBuffers =
-         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT,
-      .defaultRobustnessVertexInputs =
-         VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
-      .defaultRobustnessImages =
-         VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT,
 
       /* VK_EXT_physical_device_drm gets populated later */
 
@@ -1112,10 +1104,6 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .transformFeedbackStreamsLinesTriangles = false,
       .transformFeedbackRasterizationStreamSelect = true,
       .transformFeedbackDraw = true,
-
-      /* VK_KHR_vertex_attribute_divisor */
-      .maxVertexAttribDivisor = UINT32_MAX,
-      .supportsNonZeroFirstInstance = true,
 
       /* VK_KHR_fragment_shader_barycentric */
       .triStripVertexOrderIndependentOfProvokingVertex = false,
