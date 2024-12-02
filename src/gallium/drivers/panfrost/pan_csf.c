@@ -300,7 +300,7 @@ csf_submit_gsubmit(struct panfrost_context *ctx,
    return 0;
 }
 
-static void
+static int
 csf_emit_batch_end(struct panfrost_batch *batch)
 {
    struct panfrost_device *dev = pan_device(batch->ctx->base.screen);
@@ -326,8 +326,11 @@ csf_emit_batch_end(struct panfrost_batch *batch)
    cs_wait_slot(b, 0, false);
 
    /* Finish the command stream */
-   assert(cs_is_valid(batch->csf.cs.builder));
+   if (!cs_is_valid(batch->csf.cs.builder))
+      return -1;
+
    cs_finish(batch->csf.cs.builder);
+   return 0;
 }
 
 static int
@@ -564,8 +567,12 @@ csf_submit_wait_and_dump(struct panfrost_batch *batch,
 int
 GENX(csf_submit_batch)(struct panfrost_batch *batch)
 {
+   int ret;
+
    /* Close the batch before submitting. */
-   csf_emit_batch_end(batch);
+   ret = csf_emit_batch_end(batch);
+   if (ret)
+      return ret;
 
    uint64_t cs_start = cs_root_chunk_gpu_addr(batch->csf.cs.builder);
    uint32_t cs_size = cs_root_chunk_size(batch->csf.cs.builder);
@@ -573,7 +580,6 @@ GENX(csf_submit_batch)(struct panfrost_batch *batch)
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    uint32_t vm_sync_handle = panthor_kmod_vm_sync_handle(dev->kmod.vm);
    struct util_dynarray syncops;
-   int ret;
 
    util_dynarray_init(&syncops, NULL);
 
