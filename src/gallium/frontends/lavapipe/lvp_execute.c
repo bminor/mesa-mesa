@@ -1331,7 +1331,7 @@ handle_descriptor_sets(VkBindDescriptorSetsInfoKHR *bds, struct rendering_state 
 static void
 handle_descriptor_sets_cmd(struct vk_cmd_queue_entry *cmd, struct rendering_state *state)
 {
-   VkBindDescriptorSetsInfoKHR *bds = cmd->u.bind_descriptor_sets2_khr.bind_descriptor_sets_info;
+   VkBindDescriptorSetsInfoKHR *bds = cmd->u.bind_descriptor_sets2.bind_descriptor_sets_info;
    handle_descriptor_sets(bds, state);
 }
 
@@ -1964,7 +1964,7 @@ static void handle_end_rendering(struct vk_cmd_queue_entry *cmd,
 static void
 handle_rendering_attachment_locations(struct vk_cmd_queue_entry *cmd, struct rendering_state *state)
 {
-   VkRenderingAttachmentLocationInfoKHR *set = cmd->u.set_rendering_attachment_locations_khr.location_info;
+   VkRenderingAttachmentLocationInfoKHR *set = cmd->u.set_rendering_attachment_locations.location_info;
    state->fb_remapped = true;
    memset(state->fb_map, PIPE_MAX_COLOR_BUFS, sizeof(state->fb_map));
    assert(state->color_att_count == set->colorAttachmentCount);
@@ -2742,7 +2742,7 @@ static void handle_index_buffer(struct vk_cmd_queue_entry *cmd,
 static void handle_index_buffer2(struct vk_cmd_queue_entry *cmd,
                                  struct rendering_state *state)
 {
-   struct vk_cmd_bind_index_buffer2_khr *ib = &cmd->u.bind_index_buffer2_khr;
+   struct vk_cmd_bind_index_buffer2 *ib = &cmd->u.bind_index_buffer2;
 
    if (ib->buffer) {
       state->index_size = vk_index_type_to_bytes(ib->index_type);
@@ -2796,7 +2796,7 @@ static void handle_dispatch_indirect(struct vk_cmd_queue_entry *cmd,
 static void handle_push_constants(struct vk_cmd_queue_entry *cmd,
                                   struct rendering_state *state)
 {
-   VkPushConstantsInfoKHR *pci = cmd->u.push_constants2_khr.push_constants_info;
+   VkPushConstantsInfoKHR *pci = cmd->u.push_constants2.push_constants_info;
    memcpy(state->push_constants + pci->offset, pci->pValues, pci->size);
 
    VkShaderStageFlags stage_flags = pci->stageFlags;
@@ -3286,7 +3286,7 @@ static void handle_draw_indirect_count(struct vk_cmd_queue_entry *cmd,
 static void handle_push_descriptor_set(struct vk_cmd_queue_entry *cmd,
                                        struct rendering_state *state)
 {
-   VkPushDescriptorSetInfoKHR *pds = cmd->u.push_descriptor_set2_khr.push_descriptor_set_info;
+   VkPushDescriptorSetInfoKHR *pds = cmd->u.push_descriptor_set2.push_descriptor_set_info;
    LVP_FROM_HANDLE(lvp_pipeline_layout, layout, pds->layout);
    struct lvp_descriptor_set_layout *set_layout = (struct lvp_descriptor_set_layout *)layout->vk.set_layouts[pds->set];
 
@@ -3323,7 +3323,7 @@ static void handle_push_descriptor_set(struct vk_cmd_queue_entry *cmd,
 static void handle_push_descriptor_set_with_template(struct vk_cmd_queue_entry *cmd,
                                                      struct rendering_state *state)
 {
-   VkPushDescriptorSetWithTemplateInfoKHR *pds = cmd->u.push_descriptor_set_with_template2_khr.push_descriptor_set_with_template_info;
+   VkPushDescriptorSetWithTemplateInfoKHR *pds = cmd->u.push_descriptor_set_with_template2.push_descriptor_set_with_template_info;
    LVP_FROM_HANDLE(vk_descriptor_update_template, templ, pds->descriptorUpdateTemplate);
    LVP_FROM_HANDLE(lvp_pipeline_layout, layout, pds->layout);
    struct lvp_descriptor_set_layout *set_layout = (struct lvp_descriptor_set_layout *)layout->vk.set_layouts[pds->set];
@@ -3578,8 +3578,8 @@ static void handle_set_stencil_op(struct vk_cmd_queue_entry *cmd,
 static void handle_set_line_stipple(struct vk_cmd_queue_entry *cmd,
                                     struct rendering_state *state)
 {
-   state->rs_state.line_stipple_factor = cmd->u.set_line_stipple_khr.line_stipple_factor - 1;
-   state->rs_state.line_stipple_pattern = cmd->u.set_line_stipple_khr.line_stipple_pattern;
+   state->rs_state.line_stipple_factor = cmd->u.set_line_stipple.line_stipple_factor - 1;
+   state->rs_state.line_stipple_pattern = cmd->u.set_line_stipple.line_stipple_pattern;
    state->rs_dirty = true;
 }
 
@@ -3993,8 +3993,8 @@ process_sequence(struct rendering_state *state,
          cmd_size += token->pushconstantSize + sizeof(VkPushConstantsInfoKHR);
          if (max_size < size + cmd_size)
             abort();
-         cmd->u.push_constants2_khr.push_constants_info = (void*)cmdptr;
-         VkPushConstantsInfoKHR *pci = cmd->u.push_constants2_khr.push_constants_info;
+         cmd->u.push_constants2.push_constants_info = (void*)cmdptr;
+         VkPushConstantsInfoKHR *pci = cmd->u.push_constants2.push_constants_info;
          pci->layout = token->pushconstantPipelineLayout;
          pci->stageFlags = token->pushconstantShaderStageFlags;
          pci->offset = token->pushconstantOffset;
@@ -4219,8 +4219,8 @@ process_sequence_ext(struct rendering_state *state,
       case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT: {
          uint32_t *data = input;
          const VkIndirectCommandsPushConstantTokenEXT *info = token->data.pPushConstant;
-         cmd->u.push_constants2_khr.push_constants_info = (void*)cmdptr;
-         VkPushConstantsInfoKHR *pci = cmd->u.push_constants2_khr.push_constants_info;
+         cmd->u.push_constants2.push_constants_info = (void*)cmdptr;
+         VkPushConstantsInfoKHR *pci = cmd->u.push_constants2.push_constants_info;
          pci->layout = elayout->vk.layout;
          pci->stageFlags = VK_SHADER_STAGE_ALL;
          pci->offset = info->updateRange.offset;
@@ -4239,26 +4239,26 @@ process_sequence_ext(struct rendering_state *state,
       case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT: {
          const VkIndirectCommandsIndexBufferTokenEXT *info = token->data.pIndexBuffer;
          VkBindIndexBufferIndirectCommandEXT *data = input;
-         cmd->u.bind_index_buffer2_khr.offset = 0;
+         cmd->u.bind_index_buffer2.offset = 0;
          if (data->bufferAddress)
-            cmd->u.bind_index_buffer2_khr.buffer = get_buffer(state, (void*)(uintptr_t)data->bufferAddress, (size_t*)&cmd->u.bind_index_buffer.offset);
+            cmd->u.bind_index_buffer2.buffer = get_buffer(state, (void*)(uintptr_t)data->bufferAddress, (size_t*)&cmd->u.bind_index_buffer.offset);
          else
-            cmd->u.bind_index_buffer2_khr.buffer = VK_NULL_HANDLE;
+            cmd->u.bind_index_buffer2.buffer = VK_NULL_HANDLE;
          if (info->mode == VK_INDIRECT_COMMANDS_INPUT_MODE_VULKAN_INDEX_BUFFER_EXT) {
-            cmd->u.bind_index_buffer2_khr.index_type = data->indexType;
+            cmd->u.bind_index_buffer2.index_type = data->indexType;
          } else {
             switch ((int)data->indexType) {
             case DXGI_FORMAT_R32_UINT:
-               cmd->u.bind_index_buffer2_khr.index_type = VK_INDEX_TYPE_UINT32;
+               cmd->u.bind_index_buffer2.index_type = VK_INDEX_TYPE_UINT32;
                break;
             case DXGI_FORMAT_R16_UINT:
-               cmd->u.bind_index_buffer2_khr.index_type = VK_INDEX_TYPE_UINT16;
+               cmd->u.bind_index_buffer2.index_type = VK_INDEX_TYPE_UINT16;
                break;
             default:
                unreachable("unknown DXGI index type!");
             }
          }
-         cmd->u.bind_index_buffer2_khr.size = data->size;
+         cmd->u.bind_index_buffer2.size = data->size;
          break;
       }
       case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT: {
@@ -5129,13 +5129,13 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
       case VK_CMD_SET_STENCIL_REFERENCE:
          handle_set_stencil_reference(cmd, state);
          break;
-      case VK_CMD_BIND_DESCRIPTOR_SETS2_KHR:
+      case VK_CMD_BIND_DESCRIPTOR_SETS2:
          handle_descriptor_sets_cmd(cmd, state);
          break;
       case VK_CMD_BIND_INDEX_BUFFER:
          handle_index_buffer(cmd, state);
          break;
-      case VK_CMD_BIND_INDEX_BUFFER2_KHR:
+      case VK_CMD_BIND_INDEX_BUFFER2:
          handle_index_buffer2(cmd, state);
          break;
       case VK_CMD_BIND_VERTEX_BUFFERS2:
@@ -5235,7 +5235,7 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
       case VK_CMD_COPY_QUERY_POOL_RESULTS:
          handle_copy_query_pool_results(cmd, state);
          break;
-      case VK_CMD_PUSH_CONSTANTS2_KHR:
+      case VK_CMD_PUSH_CONSTANTS2:
          handle_push_constants(cmd, state);
          break;
       case VK_CMD_EXECUTE_COMMANDS:
@@ -5249,10 +5249,10 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
          emit_state(state);
          handle_draw_indirect_count(cmd, state, true);
          break;
-      case VK_CMD_PUSH_DESCRIPTOR_SET2_KHR:
+      case VK_CMD_PUSH_DESCRIPTOR_SET2:
          handle_push_descriptor_set(cmd, state);
          break;
-      case VK_CMD_PUSH_DESCRIPTOR_SET_WITH_TEMPLATE2_KHR:
+      case VK_CMD_PUSH_DESCRIPTOR_SET_WITH_TEMPLATE2:
          handle_push_descriptor_set_with_template(cmd, state);
          break;
       case VK_CMD_BIND_TRANSFORM_FEEDBACK_BUFFERS_EXT:
@@ -5304,7 +5304,7 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
       case VK_CMD_SET_STENCIL_OP:
          handle_set_stencil_op(cmd, state);
          break;
-      case VK_CMD_SET_LINE_STIPPLE_KHR:
+      case VK_CMD_SET_LINE_STIPPLE:
          handle_set_line_stipple(cmd, state);
          break;
       case VK_CMD_SET_DEPTH_BIAS_ENABLE:
@@ -5446,10 +5446,10 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
          handle_dispatch_graph(cmd, state);
          break;
 #endif
-      case VK_CMD_SET_RENDERING_ATTACHMENT_LOCATIONS_KHR:
+      case VK_CMD_SET_RENDERING_ATTACHMENT_LOCATIONS:
          handle_rendering_attachment_locations(cmd, state);
          break;
-      case VK_CMD_SET_RENDERING_INPUT_ATTACHMENT_INDICES_KHR:
+      case VK_CMD_SET_RENDERING_INPUT_ATTACHMENT_INDICES:
          handle_rendering_input_attachment_indices(cmd, state);
          break;
       case VK_CMD_COPY_ACCELERATION_STRUCTURE_KHR:

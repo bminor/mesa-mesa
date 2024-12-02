@@ -80,7 +80,7 @@ lvp_nv_dgc_token_to_cmd_type(const VkIndirectCommandsLayoutTokenNV *token)
          assert(!"unknown token type!");
          break;
       case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV:
-         return VK_CMD_PUSH_CONSTANTS2_KHR;
+         return VK_CMD_PUSH_CONSTANTS2;
       case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV:
          return VK_CMD_BIND_INDEX_BUFFER;
       case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV:
@@ -343,9 +343,9 @@ lvp_ext_dgc_token_to_cmd_type(const struct lvp_indirect_command_layout_ext *elay
       return VK_CMD_BIND_VERTEX_BUFFERS2;
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT:
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT:
-      return VK_CMD_PUSH_CONSTANTS2_KHR;
+      return VK_CMD_PUSH_CONSTANTS2;
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT:
-      return VK_CMD_BIND_INDEX_BUFFER2_KHR;
+      return VK_CMD_BIND_INDEX_BUFFER2;
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT:
       return elayout->vk.is_shaders ? VK_CMD_BIND_SHADERS_EXT : VK_CMD_BIND_PIPELINE;
    case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT:
@@ -380,7 +380,7 @@ lvp_ext_dgc_token_size(const struct lvp_indirect_command_layout_ext *elayout, co
    enum vk_cmd_type type = lvp_ext_dgc_token_to_cmd_type(elayout, token);
    size_t size = vk_cmd_queue_type_sizes[type];
    if (token->type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT || token->type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) {
-      size += sizeof(*cmd->u.push_constants2_khr.push_constants_info);
+      size += sizeof(*cmd->u.push_constants2.push_constants_info);
       size += token->data.pPushConstant->updateRange.size;
       return size;
    }
