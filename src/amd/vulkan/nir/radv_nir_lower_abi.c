@@ -491,7 +491,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    }
    case nir_intrinsic_load_poly_line_smooth_enabled: {
       nir_def *line_rast_mode = GET_SGPR_FIELD_NIR(s->args->ps_state, PS_STATE_LINE_RAST_MODE);
-      replacement = nir_ieq_imm(b, line_rast_mode, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR);
+      replacement = nir_ieq_imm(b, line_rast_mode, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH);
       break;
    }
    case nir_intrinsic_load_initial_edgeflags_amd:

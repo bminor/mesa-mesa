@@ -1047,7 +1047,7 @@ radv_get_line_mode(const struct radv_cmd_buffer *cmd_buffer)
    if (draw_lines)
       return d->vk.rs.line.mode;
 
-   return VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
+   return VK_LINE_RASTERIZATION_MODE_DEFAULT;
 }
 
 static ALWAYS_INLINE unsigned
@@ -1057,7 +1057,7 @@ radv_get_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
 
    VkLineRasterizationModeEXT line_mode = radv_get_line_mode(cmd_buffer);
 
-   if (line_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR) {
+   if (line_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM) {
       /* From the Vulkan spec 1.3.221:
        *
        * "When Bresenham lines are being rasterized, sample locations may all be treated as being at
@@ -1070,7 +1070,7 @@ radv_get_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
       return 1;
    }
 
-   if (line_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR) {
+   if (line_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH) {
       return RADV_NUM_SMOOTH_AA_SAMPLES;
    }
 
@@ -5445,7 +5445,7 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
                     S_028804_MASK_EXPORT_NUM_SAMPLES(log_samples) | S_028804_ALPHA_TO_MASK_NUM_SAMPLES(log_samples);
       }
 
-      if (radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR)
+      if (radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)
          db_eqaa |= S_028804_OVERRASTERIZATION_AMOUNT(log_samples);
    }
 
@@ -8154,7 +8154,7 @@ radv_CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocat
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_CmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
+radv_CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_cmd_state *state = &cmd_buffer->state;
@@ -8668,7 +8668,7 @@ radv_CmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountF
 }
 
 VKAPI_ATTR void VKAPI_CALL
-radv_CmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer, VkLineRasterizationModeKHR lineRasterizationMode)
+radv_CmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer, VkLineRasterizationMode lineRasterizationMode)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_cmd_state *state = &cmd_buffer->state;
@@ -10495,8 +10495,8 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
     * correct value.
     * Also apply the bug workaround for smoothing (overrasterization) on GFX6.
     */
-   if (uses_ds_feedback_loop || (gpu_info->gfx_level == GFX6 &&
-                                 radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR))
+   if (uses_ds_feedback_loop ||
+       (gpu_info->gfx_level == GFX6 && radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH))
       db_shader_control = (db_shader_control & C_02880C_Z_ORDER) | S_02880C_Z_ORDER(V_02880C_LATE_Z);
 
    if (ps && ps->info.ps.pops) {
@@ -10726,7 +10726,7 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
     */
    radeon_opt_set_context_reg(
       cmd_buffer, R_028BDC_PA_SC_LINE_CNTL, RADV_TRACKED_PA_SC_LINE_CNTL,
-      S_028BDC_PERPENDICULAR_ENDCAP_ENA(radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR));
+      S_028BDC_PERPENDICULAR_ENDCAP_ENA(radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR));
 
    const bool depth_clip_enable = radv_get_depth_clip_enable(cmd_buffer);
 
@@ -10752,7 +10752,7 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
        */
       pa_su_sc_mode_cntl |=
          S_028814_KEEP_TOGETHER_ENABLE(d->vk.rs.polygon_mode != V_028814_X_DRAW_TRIANGLES ||
-                                       radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR);
+                                       radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR);
    }
 
    if (pdev->info.gfx_level >= GFX12) {

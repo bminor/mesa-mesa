@@ -295,7 +295,7 @@ radv_dynamic_state_mask(VkDynamicState state)
       return RADV_DYNAMIC_DISCARD_RECTANGLE;
    case VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
       return RADV_DYNAMIC_SAMPLE_LOCATIONS;
-   case VK_DYNAMIC_STATE_LINE_STIPPLE_KHR:
+   case VK_DYNAMIC_STATE_LINE_STIPPLE:
       return RADV_DYNAMIC_LINE_STIPPLE;
    case VK_DYNAMIC_STATE_CULL_MODE:
       return RADV_DYNAMIC_CULL_MODE;
@@ -1964,7 +1964,7 @@ radv_generate_graphics_state_key(const struct radv_device *device, const struct 
        * simplifies the implementation.
        */
       if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_RS_LINE_MODE) ||
-          (state->rs && state->rs->line.mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR))
+          (state->rs && state->rs->line.mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH))
          key.dynamic_line_rast_mode = true;
 
       /* For GPL, when the fragment shader is compiled without any pre-rasterization information,
