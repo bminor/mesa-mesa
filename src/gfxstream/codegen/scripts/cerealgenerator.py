@@ -22,6 +22,7 @@ SUPPORTED_FEATURES = [
     "VK_VERSION_1_1",
     "VK_VERSION_1_2",
     "VK_VERSION_1_3",
+    "VK_VERSION_1_4",
     # Instance extensions
     "VK_KHR_get_physical_device_properties2",
     "VK_KHR_external_semaphore_capabilities",
