@@ -43,7 +43,6 @@ pvr_files = files(
   'pvr_job_context.c',
   'pvr_job_render.c',
   'pvr_job_transfer.c',
-  'pvr_nir.c',
   'pvr_pass.c',
   'pvr_pipeline.c',
   'pvr_transfer_frag_store.c',

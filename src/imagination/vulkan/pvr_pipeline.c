@@ -39,7 +39,6 @@
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"
 #include "pvr_hardcode.h"
-#include "pvr_nir.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"
 #include "pvr_robustness.h"
@@ -2170,7 +2169,6 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
                                  pCreateInfo);
 
       pco_lower_nir(pco_ctx, nir_shaders[stage], &shader_data[stage]);
-      pvr_lower_nir(pco_ctx, layout, nir_shaders[stage]);
 
       pco_postprocess_nir(pco_ctx, nir_shaders[stage], &shader_data[stage]);
 
