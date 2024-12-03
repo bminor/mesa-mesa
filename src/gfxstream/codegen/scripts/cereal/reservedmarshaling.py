@@ -867,7 +867,7 @@ class VulkanReservedMarshaling(VulkanWrapperGenerator):
                 self.module.appendHeader(
                     self.cgenHeader.makeFuncDecl(marshalPrototype))
 
-                if name in CUSTOM_MARSHAL_TYPES:
+                if name in CUSTOM_MARSHAL_TYPES and CUSTOM_MARSHAL_TYPES[name].get("reservedmarshaling"):
                     self.module.appendImpl(
                         self.cgenImpl.makeFuncImpl(
                             marshalPrototype, structMarshalingCustom))
@@ -937,7 +937,7 @@ class VulkanReservedMarshaling(VulkanWrapperGenerator):
                 self.module.appendHeader(
                     self.cgenHeader.makeFuncDecl(unmarshalPrototype))
 
-                if name in CUSTOM_MARSHAL_TYPES:
+                if name in CUSTOM_MARSHAL_TYPES and CUSTOM_MARSHAL_TYPES[name].get("reservedunmarshaling"):
                     self.module.appendImpl(
                         self.cgenImpl.makeFuncImpl(
                             unmarshalPrototype, structUnmarshalingCustom))
