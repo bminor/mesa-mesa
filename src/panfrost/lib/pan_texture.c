@@ -670,7 +670,8 @@ GENX(panfrost_new_texture)(const struct pan_image_view *iview, void *out,
       };
 
       util_format_compose_swizzles(replicate_x, iview->swizzle, swizzle);
-   } else if ((PAN_ARCH == 7) && !panfrost_format_is_yuv(iview->format)) {
+   } else if ((PAN_ARCH == 7) && !panfrost_format_is_yuv(iview->format) &&
+              panfrost_format_supports_afbc(PAN_ARCH, iview->format)) {
 #if PAN_ARCH == 7
       /* v7 (only) restricts component orders when AFBC is in use.
        * Rather than restrict AFBC, we use an allowed component order

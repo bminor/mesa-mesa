@@ -63,7 +63,8 @@ swizzle_border_color(VkClearColorValue *border_color, VkFormat fmt)
       return;
 
    enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
-   if (panfrost_format_is_yuv(pfmt) || util_format_is_depth_or_stencil(pfmt))
+   if (panfrost_format_is_yuv(pfmt) || util_format_is_depth_or_stencil(pfmt) ||
+       !panfrost_format_supports_afbc(PAN_ARCH, pfmt))
       return;
 
    const struct util_format_description *fdesc = util_format_description(pfmt);
