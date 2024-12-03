@@ -933,6 +933,13 @@ struct dxil_nir_split_clip_cull_distance_params {
  *
  * To help emitting a valid input signature for this case, split the variables so that they
  * match what we need to put in the signature (e.g. { float clip[4]; float clip1; float cull[3]; })
+ * 
+ * This pass can deal with splitting across two axes:
+ * 1. Given { float clip[5]; float cull[3]; }, split clip into clip[4] and clip1[1]. This is
+ *    what's produced by nir_lower_clip_cull_distance_arrays.
+ * 2. Given { float clip[4]; float clipcull[4]; }, split clipcull into clip1[1] and cull[3].
+ *    This is what's produced by the sequence of nir_lower_clip_cull_distance_arrays, then
+ *    I/O lowering, vectorization, optimization, and I/O un-lowering.
  */
 static bool
 dxil_nir_split_clip_cull_distance_instr(nir_builder *b,
@@ -971,6 +978,9 @@ dxil_nir_split_clip_cull_distance_instr(nir_builder *b,
    assert(deref->deref_type == nir_deref_type_var ||
           deref->deref_type == nir_deref_type_array);
 
+   bool clip_size_accurate = var->data.mode == nir_var_shader_out || b->shader->info.stage == MESA_SHADER_FRAGMENT;
+   bool is_clip_cull_split = false;
+
    b->cursor = nir_before_instr(instr);
    unsigned arrayed_io_length = 0;
    const struct glsl_type *old_type = var->type;
@@ -978,16 +988,32 @@ dxil_nir_split_clip_cull_distance_instr(nir_builder *b,
       arrayed_io_length = glsl_array_size(old_type);
       old_type = glsl_get_array_element(old_type);
    }
+   int old_length = glsl_array_size(old_type);
    if (!new_var) {
       /* Update lengths for new and old vars */
-      int old_length = glsl_array_size(old_type);
       int new_length = (old_length + var->data.location_frac) - 4;
-      old_length -= new_length;
 
       /* The existing variable fits in the float4 */
-      if (new_length <= 0)
-         return false;
+      if (new_length <= 0) {
+         /* If we don't have an accurate clip size in the shader info, then we're in case 1 (only
+          * lowered clip_cull, not lowered+unlowered I/O), since I/O optimization moves these varyings
+          * out of sysval locations and into generic locations. */
+         if (!clip_size_accurate)
+            return false;
 
+         assert(old_length <= 4);
+         unsigned start = (var->data.location - VARYING_SLOT_CLIP_DIST0) * 4;
+         unsigned end = start + old_length;
+         /* If it doesn't straddle the clip array size, then it's either just clip or cull, not both. */
+         if (start >= b->shader->info.clip_distance_array_size ||
+               end <= b->shader->info.clip_distance_array_size)
+            return false;
+
+         new_length = end - b->shader->info.clip_distance_array_size;
+         is_clip_cull_split = true;
+      }
+
+      old_length -= new_length;
       new_var = nir_variable_clone(var, params->shader);
       nir_shader_add_variable(params->shader, new_var);
       assert(glsl_get_base_type(glsl_get_array_element(old_type)) == GLSL_TYPE_FLOAT);
@@ -997,8 +1023,13 @@ dxil_nir_split_clip_cull_distance_instr(nir_builder *b,
          var->type = glsl_array_type(var->type, arrayed_io_length, 0);
          new_var->type = glsl_array_type(new_var->type, arrayed_io_length, 0);
       }
-      new_var->data.location++;
-      new_var->data.location_frac = 0;
+
+      if (is_clip_cull_split) {
+         new_var->data.location_frac = old_length;
+      } else {
+         new_var->data.location++;
+         new_var->data.location_frac = 0;
+      }
       params->new_var[new_var_idx] = new_var;
    }
 
@@ -1019,13 +1050,10 @@ dxil_nir_split_clip_cull_distance_instr(nir_builder *b,
    nir_const_value *index = nir_src_as_const_value(deref->arr.index);
    assert(index);
 
-   /* Treat this array as a vector starting at the component index in location_frac,
-    * so if location_frac is 1 and index is 0, then it's accessing the 'y' component
-    * of the vector. If index + location_frac is >= 4, there's no component there,
-    * so we need to add a new variable and adjust the index.
+   /* If we're indexing out-of-bounds of the old variable, then adjust to point
+    * to the new variable with a smaller index.
     */
-   unsigned total_index = index->u32 + var->data.location_frac;
-   if (total_index < 4)
+   if (index->u32 < old_length)
       return false;
 
    nir_deref_instr *new_var_deref = nir_build_deref_var(b, new_var);
@@ -1035,7 +1063,7 @@ dxil_nir_split_clip_cull_distance_instr(nir_builder *b,
       assert(parent->deref_type == nir_deref_type_array);
       new_intermediate_deref = nir_build_deref_array(b, new_intermediate_deref, parent->arr.index.ssa);
    }
-   nir_deref_instr *new_array_deref = nir_build_deref_array(b, new_intermediate_deref, nir_imm_int(b, total_index % 4));
+   nir_deref_instr *new_array_deref = nir_build_deref_array(b, new_intermediate_deref, nir_imm_int(b, index->u32 - old_length));
    nir_def_rewrite_uses(&deref->def, &new_array_deref->def);
    return true;
 }
