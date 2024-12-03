@@ -457,6 +457,9 @@ static const struct test {
    /* dEQP-GLES31.functional.shaders.opaque_type_indexing.sampler.const_literal.fragment.sampler2d */
    INSTR_6XX(a0c01f04_0cc00005, "sam (f32)(xyzw)r1.x, r0.z, s#6, t#6"),
 
+   /* custom */
+   INSTR_6XX(a0c01f04_0cc40005, "sam.clp (f32)(xyzw)r1.x, r0.z, r0.x, s#6, t#6"),
+
    /* dEQP-GLES31.functional.shaders.opaque_type_indexing.sampler.uniform.fragment.sampler2d */
    INSTR_4XX(a0c81f02_00800001, "sam.s2en.uniform (f32)(xyzw)r0.z, r0.x, hr1.x"), /* sam.s2en.mode0 (f32)(xyzw)r0.z, r0.x, hr1.x */ /* same for 5xx */
    INSTR_6XX(a0c81f07_0100000b, "sam.s2en.uniform (f32)(xyzw)r1.w, r1.y, hr2.x"), /* sam.s2en.mode0 (f32)(xyzw)r1.w, r1.y, hr2.x */
@@ -464,6 +467,9 @@ static const struct test {
    /* dEQP-GLES31.functional.shaders.opaque_type_indexing.sampler.dynamically_uniform.fragment.sampler2d */
    INSTR_4XX(a0c81f02_80800001, "sam.s2en.nonuniform (f32)(xyzw)r0.z, r0.x, hr1.x"), /* sam.s2en.uniform (f32)(xyzw)r0.z, r0.x, hr1.x */ /* same for 5xx */
    INSTR_6XX(a0c81f07_8100000b, "sam.s2en.nonuniform (f32)(xyzw)r1.w, r1.y, hr2.x"), /* sam.s2en.mode4 (f32)(xyzw)r1.w, r1.y, hr2.x */
+
+   /* custom */
+   INSTR_6XX(a1083f06_c0240805, "samb.base0.clp (u32)(xyzw)r1.z, r0.z, r1.x, s#1, t#0"), /* sam.s2en.mode4.clp (f32)(xyzw)r1.w, r1.y, hr2.x */
 
    /* NonUniform: */
    /* dEQP-VK.descriptor_indexing.storage_buffer */

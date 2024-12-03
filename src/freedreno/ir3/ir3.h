@@ -413,6 +413,9 @@ typedef enum ir3_instruction_flags {
     * non-resident page. Only allowed for cat5 texture loads and ldib.
     */
    IR3_INSTR_RCK = BIT(24),
+
+   /* Clamp computed LOD using the given minimum. Only for cat5. */
+   IR3_INSTR_CLP = BIT(25),
 } ir3_instruction_flags;
 
 struct ir3_instruction {

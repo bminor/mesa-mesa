@@ -770,6 +770,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_NONUNIFORM
 %token <tok> T_IMM
 %token <tok> T_RCK
+%token <tok> T_CLP
 
 %token <tok> T_NAN
 %token <tok> T_INF
@@ -1231,6 +1232,7 @@ cat5_flag:         '.' T_3D       { instr->flags |= IR3_INSTR_3D; }
 |                  '.' T_BASE     { instr->flags |= IR3_INSTR_B; instr->cat5.tex_base = $2; }
 |                  '.' T_W        { instr->cat5.cluster_size = $2; }
 |                  '.' T_RCK      { instr->flags |= IR3_INSTR_RCK; }
+|                  '.' T_CLP      { instr->flags |= IR3_INSTR_CLP; }
 cat5_flags:
 |                  cat5_flag cat5_flags
 

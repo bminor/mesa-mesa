@@ -3400,7 +3400,7 @@ shader-blocks:
 	:7:0001:0001[edc6145bx_11fa09c3x] no match: edc6145b11fa09c3
 	:2:0002:0002[41440087x_008c504ax] ceil.f hr33.w, (neg)hc18.z	; dontcare bits in ceil.f: 00040000008c0000
 	:0:0003:0003[14183488x_d5c04509x] no match: 14183488d5c04509
-	:5:0004:0004[a52373bdx_8ff7c071x] no match: a52373bd8ff7c071
+	:5:0004:0004[a52373bdx_8ff7c071x] samgp0.3d.a.p.clp.rck (xy)r47.y, r14.x, r56.x, s#15, t#71	; dontcare bits in samgp0: 0000000000020000, WARNING: unexpected bits[19:20] in #instruction-cat5-tex-base: 0000000000000002 vs 0000000000000000
 	:1:0005:0005[39301c43x_1d826d16x] no match: 39301c431d826d16
 	-----------------------------------------------
 	8192 (0x2000) bytes
