@@ -1260,7 +1260,7 @@ radv_enc_bitstream(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buffe
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radeon_cmdbuf *cs = cmd_buffer->cs;
-   uint64_t va = radv_buffer_get_va(buffer->bo) + buffer->offset;
+   uint64_t va = radv_buffer_get_va(buffer->bo) + buffer->offset + offset;
    radv_cs_add_buffer(device->ws, cs, buffer->bo);
 
    ENC_BEGIN;
@@ -1269,7 +1269,7 @@ radv_enc_bitstream(struct radv_cmd_buffer *cmd_buffer, struct radv_buffer *buffe
    radeon_emit(cs, va >> 32);
    radeon_emit(cs, va & 0xffffffff);
    radeon_emit(cs, buffer->vk.size);
-   radeon_emit(cs, offset);
+   radeon_emit(cs, 0);
    ENC_END;
 }
 
