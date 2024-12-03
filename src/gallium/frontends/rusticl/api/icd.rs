@@ -438,29 +438,31 @@ macro_rules! impl_cl_type_trait {
 // We need those functions exported
 
 #[no_mangle]
-extern "C" fn clGetPlatformInfo(
+unsafe extern "C" fn clGetPlatformInfo(
     platform: cl_platform_id,
     param_name: cl_platform_info,
     param_value_size: usize,
     param_value: *mut ::std::ffi::c_void,
     param_value_size_ret: *mut usize,
 ) -> cl_int {
-    platform::clGetPlatformInfo(
-        platform,
-        param_name,
-        param_value_size,
-        param_value,
-        param_value_size_ret,
-    )
+    unsafe {
+        platform::clGetPlatformInfo(
+            platform,
+            param_name,
+            param_value_size,
+            param_value,
+            param_value_size_ret,
+        )
+    }
 }
 
 #[no_mangle]
-extern "C" fn clIcdGetPlatformIDsKHR(
+unsafe extern "C" fn clIcdGetPlatformIDsKHR(
     num_entries: cl_uint,
     platforms: *mut cl_platform_id,
     num_platforms: *mut cl_uint,
 ) -> cl_int {
-    clGetPlatformIDs(num_entries, platforms, num_platforms)
+    unsafe { clGetPlatformIDs(num_entries, platforms, num_platforms) }
 }
 
 macro_rules! cl_ext_func {
