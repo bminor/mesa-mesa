@@ -1431,7 +1431,7 @@ impl Kernel {
                             KernelArgValue::Buffer(buffer) => {
                                 let buffer = &buffer_arcs[&(buffer.as_ptr() as usize)];
                                 let res = buffer.get_res_of_dev(q.device)?;
-                                add_global(q, &mut input, &mut resource_info, res, buffer.offset);
+                                add_global(q, &mut input, &mut resource_info, res, buffer.offset());
                             }
                             KernelArgValue::Image(image) => {
                                 let image = &image_arcs[&(image.as_ptr() as usize)];

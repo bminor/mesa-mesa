@@ -219,7 +219,7 @@ unsafe impl CLInfo<cl_mem_info> for cl_mem {
         let mem = MemBase::ref_from_raw(*self)?;
         match *q {
             CL_MEM_ASSOCIATED_MEMOBJECT => {
-                let ptr = match mem.parent.as_ref() {
+                let ptr = match mem.parent() {
                     // Note we use as_ptr here which doesn't increase the reference count.
                     Some(Mem::Buffer(buffer)) => cl_mem::from_ptr(Arc::as_ptr(buffer)),
                     Some(Mem::Image(image)) => cl_mem::from_ptr(Arc::as_ptr(image)),
@@ -237,7 +237,7 @@ unsafe impl CLInfo<cl_mem_info> for cl_mem {
             CL_MEM_MAP_COUNT => v.write::<cl_uint>(0),
             CL_MEM_HOST_PTR => v.write::<*mut c_void>(mem.host_ptr()),
             CL_MEM_OFFSET => v.write::<usize>(if mem.is_buffer() {
-                Buffer::ref_from_raw(*self)?.offset
+                Buffer::ref_from_raw(*self)?.offset()
             } else {
                 0
             }),
@@ -329,7 +329,7 @@ fn create_sub_buffer(
     let b = Buffer::arc_from_raw(buffer)?;
 
     // CL_INVALID_MEM_OBJECT if buffer ... is a sub-buffer object.
-    if b.parent.is_some() {
+    if b.parent().is_some() {
         return Err(CL_INVALID_MEM_OBJECT);
     }
 
@@ -1166,8 +1166,8 @@ fn enqueue_copy_buffer(
     // sub-buffers of the same associated buffer object and they overlap. The regions overlap if
     // src_offset ≤ dst_offset ≤ src_offset + size - 1 or if dst_offset ≤ src_offset ≤ dst_offset + size - 1.
     if src.has_same_parent(&dst) {
-        let src_offset = src_offset + src.offset;
-        let dst_offset = dst_offset + dst.offset;
+        let src_offset = src_offset + src.offset();
+        let dst_offset = dst_offset + dst.offset();
 
         if (src_offset <= dst_offset && dst_offset < src_offset + size)
             || (dst_offset <= src_offset && src_offset < dst_offset + size)
@@ -1523,9 +1523,9 @@ fn enqueue_copy_buffer_rect(
     if src.has_same_parent(&dst)
         && check_copy_overlap(
             &src_ori,
-            src.offset,
+            src.offset(),
             &dst_ori,
-            dst.offset,
+            dst.offset(),
             &r,
             src_row_pitch,
             src_slice_pitch,
