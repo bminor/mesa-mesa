@@ -85,6 +85,16 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_split_array_vars,
             nir_var_function_temp | nir_var_shader_temp);
 
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
+         .frag_coord = true,
+         .point_coord = true,
+      };
+      NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
+   }
+
+   NIR_PASS(_, nir, nir_lower_system_values);
+
    NIR_PASS(_,
             nir,
             nir_lower_io_vars_to_temporaries,
