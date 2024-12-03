@@ -803,10 +803,10 @@ static void parse_sdma_ib(FILE *f, struct ac_ib_parser *ib)
       }
       case SDMA_OPCODE_CONSTANT_FILL: {
          fprintf(f, "CONSTANT_FILL\n");
-         ac_ib_get(ib);
-         fprintf(f, "\n");
-         ac_ib_get(ib);
-         fprintf(f, "\n");
+         uint32_t fill_va_lo = ac_ib_get(ib);
+         fprintf(f, "    fill va lo = %08x\n", fill_va_lo);
+         uint32_t fill_va_hi = ac_ib_get(ib);
+         fprintf(f, "    fill va hi = %08x\n", fill_va_hi);
          uint32_t value = ac_ib_get(ib);
          fprintf(f, "    fill value = %u\n", value);
          uint32_t byte_count = ac_ib_get(ib) + 1;
@@ -817,10 +817,10 @@ static void parse_sdma_ib(FILE *f, struct ac_ib_parser *ib)
          fprintf(f, "WRITE\n");
 
          /* VA */
-         ac_ib_get(ib);
-         fprintf(f, "\n");
-         ac_ib_get(ib);
-         fprintf(f, "\n");
+         uint32_t va_lo = ac_ib_get(ib);
+         fprintf(f, "    va lo = %08x\n", va_lo);
+         uint32_t va_hi = ac_ib_get(ib);
+         fprintf(f, "    va hi = %08x\n", va_hi);
 
          uint32_t dwords = ac_ib_get(ib) + 1;
          fprintf(f, "    written dword count = %u\n", dwords);
