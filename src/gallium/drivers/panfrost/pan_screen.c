@@ -616,8 +616,8 @@ panfrost_is_format_supported(struct pipe_screen *screen,
    /* Check we support the format with the given bind */
 
    unsigned pan_bind_flags = pipe_to_pan_bind_flags(bind);
-
    struct panfrost_format fmt = dev->formats[format];
+   unsigned fmt_bind_flags = fmt.bind;
 
    /* Also check that compressed texture formats are supported on this
     * particular chip. They may not be depending on system integration
@@ -630,7 +630,24 @@ panfrost_is_format_supported(struct pipe_screen *screen,
    if (!supported)
       return false;
 
-   return MALI_EXTRACT_INDEX(fmt.hw) && ((pan_bind_flags & ~fmt.bind) == 0);
+   if (bind & PIPE_BIND_DEPTH_STENCIL) {
+      /* On panfrost, S8_UINT is actually stored as X8S8_UINT, which
+       * causes us headaches when we try to bind it as DEPTH_STENCIL;
+       * the gallium driver doesn't handle this correctly. So reject
+       * it for now.
+       */
+      switch (format) {
+      case PIPE_FORMAT_S8_UINT:
+         fmt_bind_flags &= ~PAN_BIND_DEPTH_STENCIL;
+         break;
+      default:
+         /* no other special handling required yet */
+         break;
+      }
+   }
+
+   return MALI_EXTRACT_INDEX(fmt.hw) &&
+      ((pan_bind_flags & ~fmt_bind_flags) == 0);
 }
 
 static void
