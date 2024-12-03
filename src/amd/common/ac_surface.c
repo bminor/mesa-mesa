@@ -557,11 +557,22 @@ bool ac_get_supported_modifiers(const struct radeon_info *info,
                              AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12) |
                              AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_256B_2D);
 
+      uint64_t mod_4K_2D = AMD_FMT_MOD |
+                           AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12) |
+                           AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_4K_2D);
+
+      uint64_t mod_256K_2D = AMD_FMT_MOD |
+                             AMD_FMT_MOD_SET(TILE_VERSION, AMD_FMT_MOD_TILE_VER_GFX12) |
+                             AMD_FMT_MOD_SET(TILE, AMD_FMT_MOD_TILE_GFX12_256K_2D);
+
       /* Modifiers must be sorted from best to worst. */
       ADD_MOD(mod_64K_2D | dcc_128B)      /* 64K with DCC and 128B compressed blocks */
       ADD_MOD(mod_64K_2D | dcc_64B)       /* 64K with DCC and 64B compressed blocks */
       ADD_MOD(mod_64K_2D)                 /* 64K without DCC */
       ADD_MOD(mod_64K_2D_as_gfx11)        /* the same as above, but for gfx11 interop */
+      ADD_MOD(mod_256K_2D | dcc_128B)     /* OpenGL exported modifier */
+      ADD_MOD(mod_4K_2D | dcc_128B)       /* OpenGL exported modifier */
+      ADD_MOD(mod_256B_2D | dcc_128B)     /* OpenGL exported modifier */
       ADD_MOD(mod_256B_2D)
       ADD_MOD(DRM_FORMAT_MOD_LINEAR)
       break;
