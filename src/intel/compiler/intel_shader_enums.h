@@ -5,7 +5,10 @@
 
 #pragma once
 
+#ifndef __OPENCL_VERSION__
 #include <stdint.h>
+#include "util/bitscan.h"
+#endif
 
 #include "compiler/shader_enums.h"
 #include "util/enum_operators.h"
@@ -199,7 +202,7 @@ struct intel_cs_dispatch_info {
    uint32_t right_mask;
 };
 
-enum PACKED intel_compute_walk_order {
+enum intel_compute_walk_order {
    INTEL_WALK_ORDER_XYZ = 0,
    INTEL_WALK_ORDER_XZY = 1,
    INTEL_WALK_ORDER_YXZ = 2,
@@ -331,10 +334,9 @@ intel_fs_is_coarse(enum intel_sometimes shader_coarse_pixel_dispatch,
 
    assert(pushed_msaa_flags & INTEL_MSAA_FLAG_ENABLE_DYNAMIC);
 
-   if (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES)
-      assert(shader_coarse_pixel_dispatch != INTEL_NEVER);
-   else
-      assert(shader_coarse_pixel_dispatch != INTEL_ALWAYS);
+   assert((pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES) ?
+          shader_coarse_pixel_dispatch != INTEL_NEVER :
+          shader_coarse_pixel_dispatch != INTEL_ALWAYS);
 
    return (pushed_msaa_flags & INTEL_MSAA_FLAG_COARSE_RT_WRITES) != 0;
 }
