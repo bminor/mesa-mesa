@@ -2584,7 +2584,7 @@
         "description": "radv: fix initializing HTILE when the image has VRS rates",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8197d744f5324af52ab0fcbbd67f66f7b6172f16",
         "notes": null
