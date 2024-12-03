@@ -239,6 +239,8 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
          sel->nir = (struct nir_shader *)cso->prog;
       }
 
+      sel->nir->info.shared_size = cso->static_shared_mem;
+
       if (si_can_dump_shader(sscreen, sel->stage, SI_DUMP_INIT_NIR))
          nir_print_shader(sel->nir, stderr);
 

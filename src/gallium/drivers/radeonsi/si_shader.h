@@ -1081,7 +1081,7 @@ unsigned si_get_shader_prefetch_size(struct si_shader *shader);
 unsigned si_get_shader_binary_size(struct si_screen *screen, struct si_shader *shader);
 
 /* si_shader_info.c */
-void si_nir_scan_shader(struct si_screen *sscreen,  const struct nir_shader *nir,
+void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info);
 
 /* si_shader_nir.c */

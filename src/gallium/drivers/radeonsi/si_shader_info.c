@@ -523,23 +523,28 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
    }
 }
 
-void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
+void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info)
 {
-   memset(info, 0, sizeof(*info));
-   info->base = nir->info;
-
    bool force_use_aco = false;
    if (sscreen->force_shader_use_aco) {
-      if (!memcmp(sscreen->use_aco_shader_blake, info->base.source_blake3,
+      if (!memcmp(sscreen->use_aco_shader_blake, nir->info.source_blake3,
                   sizeof(sscreen->use_aco_shader_blake))) {
          force_use_aco = true;
       }
    }
 
-   info->base.use_aco_amd = aco_is_gpu_supported(&sscreen->info) &&
-                            (sscreen->use_aco || nir->info.use_aco_amd || force_use_aco) &&
-                            sscreen->info.has_image_opcodes;
+   nir->info.use_aco_amd = aco_is_gpu_supported(&sscreen->info) &&
+                           (sscreen->use_aco || nir->info.use_aco_amd || force_use_aco) &&
+                           sscreen->info.has_image_opcodes;
+
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      /* post_depth_coverage implies early_fragment_tests */
+      nir->info.fs.early_fragment_tests |= nir->info.fs.post_depth_coverage;
+   }
+
+   memset(info, 0, sizeof(*info));
+   info->base = nir->info;
 
    /* Get options from shader profiles. */
    for (unsigned i = 0; i < ARRAY_SIZE(si_shader_profiles); i++) {
@@ -550,9 +555,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, const struct nir_shader *nir,
    }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      /* post_depth_coverage implies early_fragment_tests */
-      info->base.fs.early_fragment_tests |= info->base.fs.post_depth_coverage;
-
       info->color_interpolate[0] = nir->info.fs.color0_interp;
       info->color_interpolate[1] = nir->info.fs.color1_interp;
       for (unsigned i = 0; i < 2; i++) {
