@@ -453,6 +453,64 @@ lower_branch_instruction(branch_ctx& ctx, Block& block)
    }
 }
 
+void
+try_stitch_linear_block(branch_ctx& ctx, Block& block)
+{
+   /* Don't stitch blocks that are part of the logical CFG. */
+   if (block.linear_preds.empty() || block.linear_succs.empty() || !block.logical_preds.empty())
+      return;
+
+   /* Try to stitch this block with the predecessor:
+    * This block must have exactly one predecessor and
+    * the predecessor must have exactly one successor.
+    */
+   Block& pred = ctx.program->blocks[block.linear_preds[0]];
+   if (block.linear_preds.size() == 1 && pred.linear_succs.size() == 1 &&
+       (pred.instructions.empty() || !pred.instructions.back()->isSOPP())) {
+      /* Insert the instructions at the end of the predecessor and fixup edges. */
+      pred.instructions.insert(pred.instructions.end(),
+                               std::move_iterator(block.instructions.begin()),
+                               std::move_iterator(block.instructions.end()));
+      for (unsigned succ_idx : block.linear_succs) {
+         Block& s = ctx.program->blocks[succ_idx];
+         std::replace(s.linear_preds.begin(), s.linear_preds.end(), block.index, pred.index);
+      }
+      pred.linear_succs = std::move(block.linear_succs);
+
+      block.instructions.clear();
+      block.linear_preds.clear();
+      block.linear_succs.clear();
+      return;
+   }
+
+   /* Try to stitch this block with the successor:
+    * This block must have exactly one successor and
+    * the successor must have exactly one predecessor.
+    */
+   Block& succ = ctx.program->blocks[block.linear_succs[0]];
+   if (block.linear_succs.size() == 1 && succ.linear_preds.size() == 1 &&
+       (block.instructions.empty() || !block.instructions.back()->isSOPP())) {
+      /* Insert the instructions at the beginning of the successor. */
+      succ.instructions.insert(succ.instructions.begin(),
+                               std::move_iterator(block.instructions.begin()),
+                               std::move_iterator(block.instructions.end()));
+      for (unsigned pred_idx : block.linear_preds) {
+         Block& p = ctx.program->blocks[pred_idx];
+         if (!p.instructions.empty() &&
+             instr_info.classes[(int)p.instructions.back()->opcode] == instr_class::branch &&
+             p.instructions.back()->salu().imm == block.index) {
+            p.instructions.back()->salu().imm = succ.index;
+         }
+         std::replace(p.linear_succs.begin(), p.linear_succs.end(), block.index, succ.index);
+      }
+      succ.linear_preds = std::move(block.linear_preds);
+
+      block.instructions.clear();
+      block.linear_preds.clear();
+      block.linear_succs.clear();
+   }
+}
+
 } /* end namespace */
 
 void
@@ -470,6 +528,10 @@ lower_branches(Program* program)
 
       if (block.linear_succs.size() == 1)
          try_remove_simple_block(ctx, block);
+   }
+
+   for (Block& block : program->blocks) {
+      try_stitch_linear_block(ctx, block);
    }
 }
 
