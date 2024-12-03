@@ -414,6 +414,7 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->sparseResidency4Samples = features->sparseResidencyImage2D;
    features->sparseResidency8Samples = features->sparseResidencyImage2D;
    features->sparseResidencyAliased = pdevice->has_sparse_prr;
+   features->shaderResourceResidency = pdevice->has_sparse_prr;
    features->variableMultisampleRate = true;
    features->inheritedQueries = true;
 
