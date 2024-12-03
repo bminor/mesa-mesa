@@ -3599,12 +3599,12 @@ static void
 emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
 {
    struct ir3_builder *b = &ctx->build;
-   struct ir3_instruction **dst, *sam, *src0[12], *src1[4];
+   struct ir3_instruction **dst, *sam, *src0[12], *src1[5];
    struct ir3_instruction *const *coord, *const *off, *const *ddx, *const *ddy;
-   struct ir3_instruction *lod, *compare, *proj, *sample_index;
+   struct ir3_instruction *lod, *compare, *proj, *sample_index, *min_lod;
    struct tex_src_info info = {0};
    bool has_bias = false, has_lod = false, has_proj = false, has_off = false;
-   bool lod_zero = false;
+   bool lod_zero = false, has_min_lod = false;
    unsigned i, coords, flags, ncomp;
    unsigned nsrc0 = 0, nsrc1 = 0;
    type_t type;
@@ -3613,7 +3613,7 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
    ncomp = tex->def.num_components;
 
    coord = off = ddx = ddy = NULL;
-   lod = proj = compare = sample_index = NULL;
+   lod = proj = compare = sample_index = min_lod = NULL;
 
    dst = ir3_get_def(ctx, &tex->def, ncomp);
 
@@ -3657,6 +3657,10 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
          break;
       case nir_tex_src_ms_index:
          sample_index = ir3_get_src(ctx, &tex->src[i].src)[0];
+         break;
+      case nir_tex_src_min_lod:
+         min_lod = ir3_get_src(ctx, &tex->src[i].src)[0];
+         has_min_lod = true;
          break;
       case nir_tex_src_texture_offset:
       case nir_tex_src_sampler_offset:
@@ -3831,7 +3835,7 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
     *  - lod
     *  - bias
     */
-   if (has_off | has_lod | has_bias) {
+   if (has_off | has_lod | has_bias | has_min_lod) {
       if (has_off) {
          unsigned off_coords = coords;
          if (tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE)
@@ -3845,6 +3849,11 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
 
       if (has_lod | has_bias)
          src1[nsrc1++] = lod;
+
+      if (has_min_lod) {
+         src1[nsrc1++] = min_lod;
+         flags |= IR3_INSTR_CLP;
+      }
    }
 
    type = get_tex_dest_type(tex);

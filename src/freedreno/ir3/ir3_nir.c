@@ -13,6 +13,8 @@
 #include "ir3_nir.h"
 #include "ir3_shader.h"
 
+#include "nir_builtin_builder.h"
+
 /* For use by binning_pass shaders, where const_state is const, but expected
  * to be already set up when we compiled the corresponding non-binning variant
  */
@@ -626,6 +628,44 @@ ir3_nir_lower_sparse_residency(nir_shader *shader)
       nir_metadata_control_flow, NULL);
 }
 
+/* The hardware implementiation of min LOD clamp is broken when the given LOD
+ * clamp value (min_lod) is greater than levelCount - 1 (that is, when it would
+ * be clamped by the hardware to avoid accessing an out-of-bounds level).
+ * Instead of clamping the clamped LOD afterwards, it just returns zero. Because
+ * the LOD would always be clamped to levelCount - 1 in this case, we can just
+ * clamp min_lod to levelCount - 1 and get the same result while avoiding the
+ * hardware bug.
+ */
+static bool
+ir3_nir_min_lod_workaround_cb(struct nir_builder *b, nir_tex_instr *tex, void *_data)
+{
+   int src_idx = nir_tex_instr_src_index(tex, nir_tex_src_min_lod);
+   if (src_idx < 0)
+      return false;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   nir_def *level_count = nir_build_texture_query(b, tex,
+                                                  nir_texop_query_levels, 1,
+                                                  nir_type_uint32,
+                                                  false, false);
+
+   nir_def *src = tex->src[src_idx].src.ssa;
+   src = nir_fmin(b, src, nir_i2fN(b, nir_iadd_imm(b, level_count, -1),
+                                   src->bit_size));
+   nir_src_rewrite(&tex->src[src_idx].src, src);
+
+   return true;
+}
+
+static bool
+ir3_nir_min_lod_workaround(nir_shader *shader)
+{
+   return nir_shader_tex_pass(
+      shader, ir3_nir_min_lod_workaround_cb,
+      nir_metadata_control_flow, NULL);
+}
+
 void
 ir3_finalize_nir(struct ir3_compiler *compiler,
                  const struct ir3_shader_nir_options *options,
@@ -666,6 +706,7 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
    OPT(s, nir_lower_load_const_to_scalar);
 
    NIR_PASS(_, s, ir3_nir_lower_sparse_residency);
+   NIR_PASS(_, s, ir3_nir_min_lod_workaround);
 
    if (compiler->array_index_add_half)
       OPT(s, ir3_nir_lower_array_sampler);
