@@ -408,6 +408,11 @@ typedef enum ir3_instruction_flags {
 
    /* a7xx, set on a nop after all cat5/cat6 */
    IR3_INSTR_EOGM = BIT(23),
+
+   /* Residency ChecK. Returns if the equivalent access would've accesssed a
+    * non-resident page. Only allowed for cat5 texture loads and ldib.
+    */
+   IR3_INSTR_RCK = BIT(24),
 } ir3_instruction_flags;
 
 struct ir3_instruction {

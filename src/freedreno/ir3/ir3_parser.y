@@ -769,6 +769,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <tok> T_UNIFORM
 %token <tok> T_NONUNIFORM
 %token <tok> T_IMM
+%token <tok> T_RCK
 
 %token <tok> T_NAN
 %token <tok> T_INF
@@ -1229,12 +1230,14 @@ cat5_flag:         '.' T_3D       { instr->flags |= IR3_INSTR_3D; }
 |                  '.' T_NONUNIFORM  { instr->flags |= IR3_INSTR_NONUNIF; }
 |                  '.' T_BASE     { instr->flags |= IR3_INSTR_B; instr->cat5.tex_base = $2; }
 |                  '.' T_W        { instr->cat5.cluster_size = $2; }
+|                  '.' T_RCK      { instr->flags |= IR3_INSTR_RCK; }
 cat5_flags:
 |                  cat5_flag cat5_flags
 
 cat5_samp:         T_SAMP         { instr->cat5.samp = $1; }
 cat5_tex:          T_TEX          { instr->cat5.tex = $1; }
 cat5_type:         '(' type ')'   { instr->cat5.type = $2; }
+|                                 { } /* type does not exist for rck */
 cat5_a1:           src_a1         { instr->flags |= IR3_INSTR_A1EN; }
 
 cat5_samp_tex:     src_gpr
@@ -1420,10 +1423,13 @@ cat6_bindless_ibo_opc_3src: T_OP_STIB_B     { new_instr(OPC_STIB); dummy_dst(); 
 
 cat6_bindless_ibo_opc_3src_dst: T_OP_LDIB_B              { new_instr(OPC_LDIB); }
 
+cat6_rck:
+|                  T_RCK '.' { instr->flags |= IR3_INSTR_RCK; }
+
 cat6_bindless_ibo: cat6_bindless_ibo_opc_1src cat6_typed cat6_dim cat6_type '.' cat6_immed '.' cat6_bindless_mode dst_reg ',' cat6_reg_or_immed
 |                  cat6_bindless_ibo_opc_2src cat6_typed cat6_dim cat6_type '.' cat6_immed '.' cat6_bindless_mode src_reg ',' cat6_reg_or_immed ',' cat6_reg_or_immed { swap(instr->srcs[0], instr->srcs[2]); }
 |                  cat6_bindless_ibo_opc_3src cat6_typed cat6_dim cat6_type '.' cat6_immed '.' cat6_bindless_mode src_reg ',' cat6_reg_or_immed src_uoffset ',' cat6_reg_or_immed { swap(instr->srcs[0], instr->srcs[3]); }
-|                  cat6_bindless_ibo_opc_3src_dst cat6_typed cat6_dim cat6_type '.' cat6_immed '.' cat6_bindless_mode dst_reg ',' cat6_reg_or_immed src_uoffset ',' cat6_reg_or_immed { swap(instr->srcs[0], instr->srcs[2]); swap(instr->srcs[1], instr->srcs[2]); }
+|                  cat6_bindless_ibo_opc_3src_dst cat6_typed cat6_dim cat6_type '.' cat6_rck cat6_immed '.' cat6_bindless_mode dst_reg ',' cat6_reg_or_immed src_uoffset ',' cat6_reg_or_immed { swap(instr->srcs[0], instr->srcs[2]); swap(instr->srcs[1], instr->srcs[2]); }
 
 cat6_bindless_ldc_opc: T_OP_LDC  { new_instr(OPC_LDC); }
 

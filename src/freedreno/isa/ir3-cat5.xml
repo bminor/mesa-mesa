@@ -56,7 +56,7 @@ SOFTWARE.
 		The "normal" case, ie. not s2en (indirect) and/or bindless
 	</doc>
 	<display>
-		{SY}{JP}{NAME}{3D}{A}{O}{P}{SV}{1D} {TYPE}({WRMASK}){DST_HALF}{DST}{SRC1}{SRC2}{SAMP}{TEX}
+		{SY}{JP}{NAME}{3D}{A}{O}{P}{SV}{1D}{RCK} {TYPE}({WRMASK}){DST_HALF}{DST}{SRC1}{SRC2}{SAMP}{TEX}
 	</display>
 	<derived name="DST_HALF" expr="#type-half" type="bool" display="h"/>
 	<field name="FULL" pos="0" type="bool"/>
@@ -126,6 +126,7 @@ SOFTWARE.
 	<derived name="SRC2_IMM_OFFSET" expr="#false" type="bool"/>
 	<derived name="P" expr="#false" type="bool" display=""/>
 	<derived name="1D" expr="#false" type="bool" display=""/>
+	<derived name="RCK" expr="#cat5-is-rck" type="bool" display=".rck"/>
 </bitset>
 
 <bitset name="#instruction-cat5-tex-base" extends="#instruction-cat5">
@@ -135,7 +136,7 @@ SOFTWARE.
 			The s2en (indirect) or bindless case
 		</doc>
 		<display>
-			{SY}{JP}{NAME}{3D}{A}{O}{P}{SV}{S2EN}{UNIFORM}{NONUNIFORM}{BASE}{1D} {TYPE}({WRMASK}){DST_HALF}{DST}{SRC1}{SRC2}{SRC3}{A1}
+			{SY}{JP}{NAME}{3D}{A}{O}{P}{SV}{S2EN}{UNIFORM}{NONUNIFORM}{BASE}{1D}{RCK} {TYPE}({WRMASK}){DST_HALF}{DST}{SRC1}{SRC2}{SRC3}{A1}
 		</display>
 		<field name="BASE_HI" low="19" high="20" type="uint"/>
 		<field name="SRC3" low="21" high="28" type="#cat5-src3">
@@ -736,7 +737,7 @@ SOFTWARE.
 <bitset name="#cat5-type" size="3">
 	<display/>
 	<override>
-		<expr>{HAS_TYPE}</expr>
+		<expr>{HAS_TYPE} &amp;&amp; {TYPE} != 7</expr>
 		<display>
 			({TYPE})
 		</display>
@@ -748,7 +749,9 @@ SOFTWARE.
 			the decoded disasm, but the type field is one of those
 			special exceptions
 		 -->
-		<map name="TYPE" force="true">src->cat5.type</map>
+		<map name="TYPE" force="true">
+			(src->flags &amp; IR3_INSTR_RCK) ? 7 : src->cat5.type
+		</map>
 	</encode>
 </bitset>
 
@@ -866,6 +869,10 @@ SOFTWARE.
 	({DESC_MODE} == 2) /* CAT5_BINDLESS_NONUNIFORM */ ||
 	({DESC_MODE} == 3) /* CAT5_BINDLESS_A1_NONUNIFORM */ ||
 	({DESC_MODE} == 4) /* CAT5_NONUNIFORM */
+</expr>
+
+<expr name="#cat5-is-rck">
+	{TYPE} == 7
 </expr>
 
 <bitset name="#cat5-src3" size="8">
