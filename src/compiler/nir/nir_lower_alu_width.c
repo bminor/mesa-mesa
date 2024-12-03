@@ -278,6 +278,14 @@ lower_alu_instr_width(nir_builder *b, nir_instr *instr, void *_data)
        */
       return NULL;
 
+   case nir_op_unpack_snorm_8_8:
+   case nir_op_unpack_unorm_8_8:
+   case nir_op_unpack_snorm_8_8_8:
+   case nir_op_unpack_unorm_8_8_8:
+   case nir_op_unpack_unorm_10_10_10_2:
+   case nir_op_unpack_float_11_11_10:
+      return NULL;
+
    case nir_op_unpack_half_2x16: {
       if (!b->shader->options->lower_unpack_half_2x16)
          return NULL;

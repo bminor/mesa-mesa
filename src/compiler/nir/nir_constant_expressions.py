@@ -171,6 +171,16 @@ unpack_snorm_1x16(uint16_t u)
 }
 
 /**
+ * Evaluate component 3 of packUnorm3x10_1x2.
+ */
+static uint16_t
+pack_unorm_1x2(float x)
+{
+   return (uint16_t) (int)
+          _mesa_roundevenf(CLAMP(x, 0.0f, 1.0f) * 3.0f);
+}
+
+/**
  * Evaluate one component packUnorm4x8.
  */
 static uint8_t
@@ -187,6 +197,16 @@ pack_unorm_1x8(float x)
      */
    return (uint8_t) (int)
           _mesa_roundevenf(CLAMP(x, 0.0f, 1.0f) * 255.0f);
+}
+
+/**
+ * Evaluate component [0,2] of packUnorm3x10_1x2.
+ */
+static uint16_t
+pack_unorm_1x10(float x)
+{
+   return (uint16_t) (int)
+          _mesa_roundevenf(CLAMP(x, 0.0f, 1.0f) * 1023.0f);
 }
 
 /**
@@ -209,6 +229,16 @@ pack_unorm_1x16(float x)
 }
 
 /**
+ * Evaluate component 3 of unpackUnorm3x10_1x2.
+ */
+static float
+unpack_unorm_1x2(uint16_t u)
+{
+   u &= 0x0003;
+   return (float) u / 3.0f;
+}
+
+/**
  * Evaluate one component of unpackUnorm4x8.
  */
 static float
@@ -224,6 +254,16 @@ unpack_unorm_1x8(uint8_t u)
      *       unpackUnorm4x8: f / 255.0
      */
    return (float) u / 255.0f;
+}
+
+/**
+ * Evaluate component [0,2] of unpackUnorm3x10_1x2.
+ */
+static float
+unpack_unorm_1x10(uint16_t u)
+{
+   u &= 0x03FF;
+   return (float) u / 1023.0f;
 }
 
 /**

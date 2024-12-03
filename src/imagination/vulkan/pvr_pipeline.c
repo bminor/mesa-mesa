@@ -1247,8 +1247,6 @@ static void pvr_graphics_pipeline_setup_vertex_dma(
 
    const VkVertexInputBindingDescription
       *sorted_bindings[PVR_MAX_VERTEX_INPUT_BINDINGS] = { 0 };
-   const VkVertexInputAttributeDescription
-      *sorted_attributes[PVR_MAX_VERTEX_INPUT_BINDINGS] = { 0 };
 
    /* Vertex attributes map to the `layout(location = x)` annotation in the
     * shader where `x` is the attribute's location.
@@ -1270,17 +1268,8 @@ static void pvr_graphics_pipeline_setup_vertex_dma(
 
    for (uint32_t i = 0; i < vertex_input_state->vertexAttributeDescriptionCount;
         i++) {
-      const VkVertexInputAttributeDescription *attribute_desc =
+      const VkVertexInputAttributeDescription *attribute =
          &vertex_input_state->pVertexAttributeDescriptions[i];
-
-      sorted_attributes[attribute_desc->location] = attribute_desc;
-   }
-
-   for (uint32_t i = 0; i < vertex_input_state->vertexAttributeDescriptionCount;
-        i++) {
-      const VkVertexInputAttributeDescription *attribute = sorted_attributes[i];
-      if (!attribute)
-         continue;
 
       gl_vert_attrib location = attribute->location + VERT_ATTRIB_GENERIC0;
       const VkVertexInputBindingDescription *binding =
@@ -1629,7 +1618,6 @@ static void pvr_init_vs_attribs(
 
 static void pvr_alloc_vs_attribs(pco_data *data, nir_shader *nir)
 {
-   /* TODO NEXT: this should be based on the format size. */
    nir_foreach_shader_in_variable (var, nir) {
       allocate_var(data->vs.attribs, &data->common.vtxins, var, 1);
    }
