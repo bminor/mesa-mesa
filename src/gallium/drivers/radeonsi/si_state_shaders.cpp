@@ -3469,11 +3469,10 @@ static void si_init_shader_selector_async(void *job, void *gdata, int thread_ind
          /* Compile the shader if it hasn't been loaded from the cache. */
          if (!si_compile_shader(sscreen, *compiler, shader, debug)) {
             fprintf(stderr,
-               "radeonsi: can't compile a main shader part (type: %s, name: %s).\n"
+               "radeonsi: can't compile a main shader part (type: %s).\n"
                "This is probably a driver bug, please report "
                "it to https://gitlab.freedesktop.org/mesa/mesa/-/issues.\n",
-               gl_shader_stage_name(shader->selector->stage),
-               shader->selector->info.base.name);
+               gl_shader_stage_name(shader->selector->stage));
             FREE(shader);
             return;
          }
@@ -3565,8 +3564,8 @@ void si_get_active_slot_masks(struct si_screen *sscreen, const struct si_shader_
    num_constbufs = info->base.num_ubos;
    /* two 8-byte images share one 16-byte slot */
    num_images = align(info->base.num_images, 2);
-   num_msaa_images = align(BITSET_LAST_BIT(info->base.msaa_images), 2);
-   num_samplers = BITSET_LAST_BIT(info->base.textures_used);
+   num_msaa_images = align(util_last_bit(info->base.msaa_images), 2);
+   num_samplers = util_last_bit(info->base.textures_used);
 
    /* The layout is: sb[last] ... sb[0], cb[0] ... cb[last] */
    start = si_get_shaderbuf_slot(num_shaderbufs - 1);

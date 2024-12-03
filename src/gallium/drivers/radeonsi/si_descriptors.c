@@ -2442,7 +2442,7 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
          unsigned num_sgprs = 8;
 
          /* Image buffers are in desc[4..7]. */
-         if (BITSET_TEST(shader->info.base.image_buffers, i))
+         if (shader->info.base.image_buffers & BITFIELD_BIT(i))
             num_sgprs = 4;
 
          radeon_emit_array(&desc->list[desc_offset], num_sgprs);
@@ -3003,7 +3003,7 @@ bool si_gfx_resources_check_encrypted(struct si_context *sctx)
          si_buffer_resources_check_encrypted(sctx, &sctx->const_and_shader_buffers[i]);
       use_encrypted_bo |=
          si_sampler_views_check_encrypted(sctx, &sctx->samplers[i],
-                                          current_shader->cso->info.base.textures_used[0]);
+                                          current_shader->cso->info.base.textures_used);
       use_encrypted_bo |= si_image_views_check_encrypted(sctx, &sctx->images[i],
                                           u_bit_consecutive(0, current_shader->cso->info.base.num_images));
    }
@@ -3088,7 +3088,7 @@ bool si_compute_resources_check_encrypted(struct si_context *sctx)
     * or all writable buffers are encrypted.
     */
    return si_buffer_resources_check_encrypted(sctx, &sctx->const_and_shader_buffers[sh]) ||
-          si_sampler_views_check_encrypted(sctx, &sctx->samplers[sh], info->base.textures_used[0]) ||
+          si_sampler_views_check_encrypted(sctx, &sctx->samplers[sh], info->base.textures_used) ||
           si_image_views_check_encrypted(sctx, &sctx->images[sh], u_bit_consecutive(0, info->base.num_images)) ||
           si_buffer_resources_check_encrypted(sctx, &sctx->internal_bindings);
 }

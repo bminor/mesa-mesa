@@ -467,7 +467,71 @@ struct si_vs_tcs_input_info {
 };
 
 struct si_shader_info {
-   shader_info base;
+   struct {
+      blake3_hash source_blake3;
+
+      bool use_aco_amd:1;
+      bool writes_memory:1;
+      enum gl_subgroup_size subgroup_size;
+
+      uint64_t outputs_read;
+      uint64_t outputs_written;
+      uint32_t patch_outputs_read;
+      uint32_t patch_outputs_written;
+
+      uint8_t num_ubos;
+      uint8_t num_ssbos;
+      uint8_t num_images;
+      uint32_t textures_used;
+      uint32_t image_buffers;
+      uint32_t msaa_images;
+
+      unsigned shared_size;
+      uint16_t workgroup_size[3];
+      bool workgroup_size_variable:1;
+      enum gl_derivative_group derivative_group:2;
+
+      uint8_t xfb_stride[MAX_XFB_BUFFERS];
+      uint8_t num_inlinable_uniforms:4;
+
+      union {
+         struct {
+            uint8_t blit_sgprs_amd:4;
+            bool window_space_position:1;
+         } vs;
+
+         struct {
+            enum tess_primitive_mode _primitive_mode;
+            enum gl_tess_spacing spacing;
+            uint8_t tcs_vertices_out;
+            bool ccw:1;
+            bool point_mode:1;
+         } tess;
+
+         struct {
+            enum mesa_prim output_primitive;
+            enum mesa_prim input_primitive;
+            uint16_t vertices_out;
+            uint8_t invocations;
+            uint8_t active_stream_mask:4;
+         } gs;
+
+         struct {
+            bool uses_discard:1;
+            bool uses_fbfetch_output:1;
+            bool needs_coarse_quad_helper_invocations:1;
+            bool uses_sample_shading:1;
+            bool early_fragment_tests:1;
+            bool post_depth_coverage:1;
+            bool pixel_center_integer:1;
+            enum gl_frag_depth_layout depth_layout:3;
+         } fs;
+
+         struct {
+            uint8_t user_data_components_amd:4;
+         } cs;
+      };
+   } base;
 
    uint32_t options; /* bitmask of SI_PROFILE_* */
 

@@ -767,7 +767,7 @@ static void si_check_render_feedback(struct si_context *sctx)
       si_check_render_feedback_images(sctx, &sctx->images[i],
                                       u_bit_consecutive(0, info->base.num_images));
       si_check_render_feedback_textures(sctx, &sctx->samplers[i],
-                                        info->base.textures_used[0]);
+                                        info->base.textures_used);
    }
 
    si_check_render_feedback_resident_images(sctx);

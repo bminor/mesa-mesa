@@ -334,7 +334,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
    const struct ac_shader_config *config = &shader->config;
    unsigned rsrc2;
-   unsigned stage = shader->selector->info.base.stage;
+   unsigned stage = shader->selector->stage;
 
    *prefetch = false;
 
@@ -849,7 +849,7 @@ static bool si_check_needs_implicit_sync(struct si_context *sctx, uint32_t usage
     */
    struct si_shader_info *info = &sctx->cs_shader_state.program->sel.info;
    struct si_samplers *samplers = &sctx->samplers[PIPE_SHADER_COMPUTE];
-   unsigned mask = samplers->enabled_mask & info->base.textures_used[0];
+   unsigned mask = samplers->enabled_mask & info->base.textures_used;
 
    while (mask) {
       int i = u_bit_scan(&mask);

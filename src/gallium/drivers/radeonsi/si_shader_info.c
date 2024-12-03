@@ -371,6 +371,7 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
 void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered)
 {
+   nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    nir_divergence_analysis(nir);
 
 #if AMD_LLVM_AVAILABLE
@@ -400,7 +401,74 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    }
 
    memset(info, 0, sizeof(*info));
-   info->base = nir->info;
+   memcpy(info->base.source_blake3, nir->info.source_blake3, sizeof(nir->info.source_blake3));
+
+   info->base.use_aco_amd = nir->info.use_aco_amd;
+   info->base.writes_memory = nir->info.writes_memory;
+   info->base.subgroup_size = nir->info.subgroup_size;
+
+   info->base.outputs_read = nir->info.outputs_read;
+   info->base.outputs_written = nir->info.outputs_written;
+   info->base.patch_outputs_read = nir->info.patch_outputs_read;
+   info->base.patch_outputs_written = nir->info.patch_outputs_written;
+
+   info->base.num_ubos = nir->info.num_ubos;
+   info->base.num_ssbos = nir->info.num_ssbos;
+   info->base.num_images = nir->info.num_images;
+   info->base.textures_used = nir->info.textures_used[0];
+   info->base.image_buffers = nir->info.image_buffers[0];
+   info->base.msaa_images = nir->info.msaa_images[0];
+
+   info->base.shared_size = nir->info.shared_size;
+   memcpy(info->base.workgroup_size, nir->info.workgroup_size, sizeof(nir->info.workgroup_size));
+   info->base.workgroup_size_variable = nir->info.workgroup_size_variable;
+   info->base.derivative_group = nir->info.derivative_group;
+
+   memcpy(info->base.xfb_stride, nir->info.xfb_stride, sizeof(nir->info.xfb_stride));
+   info->base.num_inlinable_uniforms = nir->info.num_inlinable_uniforms;
+
+   switch (nir->info.stage) {
+   case MESA_SHADER_VERTEX:
+      info->base.vs.blit_sgprs_amd = nir->info.vs.blit_sgprs_amd;
+      info->base.vs.window_space_position = nir->info.vs.window_space_position;
+      break;
+
+   case MESA_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_EVAL:
+      info->base.tess._primitive_mode = nir->info.tess._primitive_mode;
+      info->base.tess.spacing = nir->info.tess.spacing;
+      info->base.tess.tcs_vertices_out = nir->info.tess.tcs_vertices_out;
+      info->base.tess.ccw = nir->info.tess.ccw;
+      info->base.tess.point_mode = nir->info.tess.point_mode;
+      break;
+
+   case MESA_SHADER_GEOMETRY:
+      info->base.gs.output_primitive = nir->info.gs.output_primitive;
+      info->base.gs.input_primitive = nir->info.gs.input_primitive;
+      info->base.gs.vertices_out = nir->info.gs.vertices_out;
+      info->base.gs.invocations = nir->info.gs.invocations;
+      info->base.gs.active_stream_mask = nir->info.gs.active_stream_mask;
+      break;
+
+   case MESA_SHADER_FRAGMENT:
+      info->base.fs.uses_discard = nir->info.fs.uses_discard;
+      info->base.fs.uses_fbfetch_output = nir->info.fs.uses_fbfetch_output;
+      info->base.fs.needs_coarse_quad_helper_invocations = nir->info.fs.needs_coarse_quad_helper_invocations;
+      info->base.fs.uses_sample_shading = nir->info.fs.uses_sample_shading;
+      info->base.fs.early_fragment_tests = nir->info.fs.early_fragment_tests;
+      info->base.fs.post_depth_coverage = nir->info.fs.post_depth_coverage;
+      info->base.fs.pixel_center_integer = nir->info.fs.pixel_center_integer;
+      info->base.fs.depth_layout = nir->info.fs.depth_layout;
+      break;
+
+   case MESA_SHADER_COMPUTE:
+   case MESA_SHADER_KERNEL:
+      info->base.cs.user_data_components_amd = nir->info.cs.user_data_components_amd;
+      break;
+
+   default:
+      unreachable("unexpected shader stage");
+   }
 
    /* Get options from shader profiles. */
    for (unsigned i = 0; i < ARRAY_SIZE(si_shader_profiles); i++) {
