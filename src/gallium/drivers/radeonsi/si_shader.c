@@ -2331,6 +2331,8 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
       nir_print_shader(nir, stdout);
    }
 
+   si_init_shader_args(shader, args);
+
    /* Kill outputs according to the shader key. */
    if (sel->stage <= MESA_SHADER_GEOMETRY)
       NIR_PASS(progress, nir, si_nir_kill_outputs, key);
@@ -2986,8 +2988,6 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    }
 
    struct si_shader_args args;
-   si_init_shader_args(shader, &args);
-
    bool free_nir;
    struct nir_shader *nir =
       si_get_nir_shader(shader, &args, &free_nir, &legacy_gs_output_info.info);
@@ -3715,8 +3715,6 @@ nir_shader *si_get_prev_stage_nir_shader(struct si_shader *shader,
    prev_shader->key.ge.opt.kill_outputs = 0;
    prev_shader->is_monolithic = true;
    prev_shader->wave_size = shader->wave_size;
-
-   si_init_shader_args(prev_shader, args);
 
    nir_shader *nir = si_get_nir_shader(prev_shader, args, free_nir, NULL);
    si_update_shader_binary_info(shader, nir);
