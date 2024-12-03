@@ -2068,6 +2068,10 @@ static void pvr_init_descriptors(pco_data *data,
                                  nir_shader *nir,
                                  struct vk_pipeline_layout *layout)
 {
+   const struct pvr_device *device = vk_to_pvr_device(layout->base.device);
+   data->common.robust_buffer_access =
+      device->vk.enabled_features.robustBufferAccess;
+
    for (unsigned desc_set = 0; desc_set < layout->set_count; ++desc_set) {
       const struct pvr_descriptor_set_layout *set_layout =
          vk_to_pvr_descriptor_set_layout(layout->set_layouts[desc_set]);

@@ -659,6 +659,25 @@ void pco_rev_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
       nir_print_shader(consumer, stdout);
    }
 }
+
+static bool robustness_filter(const nir_intrinsic_instr *intr,
+                              UNUSED const void *data)
+{
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_ubo:
+   case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_store_ssbo:
+   case nir_intrinsic_ssbo_atomic:
+   case nir_intrinsic_ssbo_atomic_swap:
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
 /**
  * \brief Lowers a NIR shader.
  *
@@ -714,6 +733,9 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_var_mem_push_const | nir_var_mem_shared,
             nir_address_format_32bit_offset);
    NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_mem_shared, NULL, NULL);
+
+   if (data->common.robust_buffer_access)
+      NIR_PASS(_, nir, nir_lower_robust_access, robustness_filter, NULL);
 
    NIR_PASS(_, nir, pco_nir_lower_vk, data);
    NIR_PASS(_, nir, pco_nir_lower_io);
