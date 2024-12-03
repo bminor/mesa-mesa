@@ -73,6 +73,7 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
        * - tiling is set to linear
        * - this is a 1D image
        * - this is a 3D image on a pre-v7 GPU
+       * - this is a mutable format image on v7
        */
       if (!(instance->debug_flags & PANVK_DEBUG_AFBC) ||
           ((image->vk.usage | image->vk.stencil_usage) &
@@ -82,7 +83,9 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
           !panfrost_format_supports_afbc(arch, pfmt) ||
           image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
           image->vk.image_type == VK_IMAGE_TYPE_1D ||
-          (image->vk.image_type == VK_IMAGE_TYPE_3D && arch < 7))
+          (image->vk.image_type == VK_IMAGE_TYPE_3D && arch < 7) ||
+          ((image->vk.create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
+           arch == 7))
          return false;
 
       const struct util_format_description *fdesc =
