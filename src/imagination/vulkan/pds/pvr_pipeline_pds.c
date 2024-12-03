@@ -1496,12 +1496,11 @@ void pvr_pds_generate_descriptor_upload_program(
    uint32_t *code_section,
    struct pvr_pds_info *info)
 {
-   unsigned int num_consts64;
-   unsigned int num_consts32;
+   unsigned int num_consts64 = 0;
+   unsigned int num_consts32 = 0;
    unsigned int next_const64;
    unsigned int next_const32;
    unsigned int instruction = 0;
-   uint32_t compile_time_buffer_index = 0;
 
    unsigned int total_dma_count = 0;
    unsigned int running_dma_count = 0;
@@ -1516,31 +1515,9 @@ void pvr_pds_generate_descriptor_upload_program(
    num_consts64 = input_program->descriptor_set_count;
    total_dma_count = input_program->descriptor_set_count;
 
-   /* 1 DOUTD for buffer containing address literals. */
-   if (input_program->addr_literal_count > 0) {
-      num_consts32++;
-      num_consts64++;
-      total_dma_count++;
-   }
-
    pvr_init_pds_const_map_entry_write_state(info, &entry_write_state);
 
-   for (unsigned int index = 0; index < input_program->buffer_count; index++) {
-      struct pvr_pds_buffer *buffer = &input_program->buffers[index];
-
-      /* This switch statement looks pointless but we want to optimize DMAs
-       * that can be done as a DOUTW.
-       */
-      switch (buffer->type) {
-      default: {
-         /* 1 DOUTD per compile time buffer: */
-         num_consts32++;
-         num_consts64++;
-         total_dma_count++;
-         break;
-      }
-      }
-   }
+   assert(!input_program->buffer_count);
 
    /* DOUTU for the secondary update program requires a 64-bit constant. */
    if (input_program->secondary_program_present)
@@ -1551,67 +1528,6 @@ void pvr_pds_generate_descriptor_upload_program(
    /* Start counting constants. */
    next_const64 = 0;
    next_const32 = num_consts64 * 2;
-
-   if (input_program->addr_literal_count > 0) {
-      bool last_dma = (++running_dma_count == total_dma_count);
-      bool halt = last_dma && !input_program->secondary_program_present;
-
-      unsigned int size_in_dwords = input_program->addr_literal_count *
-                                    sizeof(uint64_t) / sizeof(uint32_t);
-      unsigned int destination = input_program->addr_literals[0].destination;
-
-      struct pvr_pds_const_map_entry_addr_literal_buffer
-         *addr_literal_buffer_entry;
-
-      addr_literal_buffer_entry = pvr_prepare_next_pds_const_map_entry(
-         &entry_write_state,
-         sizeof(*addr_literal_buffer_entry));
-
-      addr_literal_buffer_entry->type =
-         PVR_PDS_CONST_MAP_ENTRY_TYPE_ADDR_LITERAL_BUFFER;
-      addr_literal_buffer_entry->size = PVR_DW_TO_BYTES(size_in_dwords);
-      addr_literal_buffer_entry->const_offset = next_const64 * 2;
-
-      for (unsigned int i = 0; i < input_program->addr_literal_count; i++) {
-         struct pvr_pds_const_map_entry_addr_literal *addr_literal_entry;
-
-         /* Check that the destinations for the addr literals are contiguous.
-          * Not supporting non contiguous ranges as that would either require a
-          * single large buffer with wasted memory for DMA, or multiple buffers
-          * to DMA.
-          */
-         if (i > 0) {
-            const uint32_t current_addr_literal_destination =
-               input_program->addr_literals[i].destination;
-            const uint32_t previous_addr_literal_destination =
-               input_program->addr_literals[i - 1].destination;
-
-            /* 2 regs to store 64 bits address. */
-            assert(current_addr_literal_destination ==
-                   previous_addr_literal_destination + 2);
-         }
-
-         addr_literal_entry =
-            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
-                                                 sizeof(*addr_literal_entry));
-
-         addr_literal_entry->type = PVR_PDS_CONST_MAP_ENTRY_TYPE_ADDR_LITERAL;
-         addr_literal_entry->addr_type = input_program->addr_literals[i].type;
-      }
-
-      PVR_PDS_MODE_TOGGLE(code_section,
-                          instruction,
-                          pvr_encode_burst_cs(&entry_write_state,
-                                              last_dma,
-                                              halt,
-                                              next_const32,
-                                              next_const64,
-                                              size_in_dwords,
-                                              destination));
-
-      next_const64++;
-      next_const32++;
-   }
 
    /* For each descriptor set perform a DOUTD. */
    for (unsigned int descriptor_index = 0;
@@ -1630,8 +1546,6 @@ void pvr_pds_generate_descriptor_upload_program(
       descriptor_set_entry->type = PVR_PDS_CONST_MAP_ENTRY_TYPE_DESCRIPTOR_SET;
       descriptor_set_entry->const_offset = next_const64 * 2;
       descriptor_set_entry->descriptor_set = descriptor_set->descriptor_set;
-      descriptor_set_entry->primary = descriptor_set->primary;
-      descriptor_set_entry->offset_in_dwords = descriptor_set->offset_in_dwords;
 
       PVR_PDS_MODE_TOGGLE(code_section,
                           instruction,
@@ -1642,120 +1556,6 @@ void pvr_pds_generate_descriptor_upload_program(
                                               next_const64,
                                               descriptor_set->size_in_dwords,
                                               descriptor_set->destination));
-
-      next_const64++;
-      next_const32++;
-   }
-
-   for (unsigned int index = 0; index < input_program->buffer_count; index++) {
-      struct pvr_pds_buffer *buffer = &input_program->buffers[index];
-
-      bool last_dma = (++running_dma_count == total_dma_count);
-      bool halt = last_dma && !input_program->secondary_program_present;
-
-      switch (buffer->type) {
-      case PVR_BUFFER_TYPE_PUSH_CONSTS: {
-         struct pvr_const_map_entry_special_buffer *special_buffer_entry;
-
-         special_buffer_entry =
-            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
-                                                 sizeof(*special_buffer_entry));
-         special_buffer_entry->type =
-            PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
-         special_buffer_entry->buffer_type = PVR_BUFFER_TYPE_PUSH_CONSTS;
-         special_buffer_entry->buffer_index = buffer->source_offset;
-         break;
-      }
-      case PVR_BUFFER_TYPE_DYNAMIC: {
-         struct pvr_const_map_entry_special_buffer *special_buffer_entry;
-
-         special_buffer_entry =
-            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
-                                                 sizeof(*special_buffer_entry));
-         special_buffer_entry->type =
-            PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
-         special_buffer_entry->buffer_type = PVR_BUFFER_TYPE_DYNAMIC;
-         special_buffer_entry->buffer_index = buffer->source_offset;
-         break;
-      }
-      case PVR_BUFFER_TYPE_COMPILE_TIME: {
-         struct pvr_const_map_entry_special_buffer *special_buffer_entry;
-
-         special_buffer_entry =
-            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
-                                                 sizeof(*special_buffer_entry));
-         special_buffer_entry->type =
-            PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
-         special_buffer_entry->buffer_type = PVR_BUFFER_TYPE_COMPILE_TIME;
-         special_buffer_entry->buffer_index = compile_time_buffer_index++;
-         break;
-      }
-      case PVR_BUFFER_TYPE_BUFFER_LENGTHS: {
-         struct pvr_const_map_entry_special_buffer *special_buffer_entry;
-
-         special_buffer_entry =
-            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
-                                                 sizeof(*special_buffer_entry));
-         special_buffer_entry->type =
-            PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
-         special_buffer_entry->buffer_type = PVR_BUFFER_TYPE_BUFFER_LENGTHS;
-         break;
-      }
-      case PVR_BUFFER_TYPE_BLEND_CONSTS: {
-         struct pvr_const_map_entry_special_buffer *special_buffer_entry;
-
-         special_buffer_entry =
-            pvr_prepare_next_pds_const_map_entry(&entry_write_state,
-                                                 sizeof(*special_buffer_entry));
-         special_buffer_entry->type =
-            PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER;
-         special_buffer_entry->buffer_type = PVR_BUFFER_TYPE_BLEND_CONSTS;
-         special_buffer_entry->buffer_index =
-            input_program->blend_constants_used_mask;
-         break;
-      }
-      case PVR_BUFFER_TYPE_UBO: {
-         struct pvr_const_map_entry_constant_buffer *constant_buffer_entry;
-
-         constant_buffer_entry = pvr_prepare_next_pds_const_map_entry(
-            &entry_write_state,
-            sizeof(*constant_buffer_entry));
-         constant_buffer_entry->type =
-            PVR_PDS_CONST_MAP_ENTRY_TYPE_CONSTANT_BUFFER;
-         constant_buffer_entry->buffer_id = buffer->buffer_id;
-         constant_buffer_entry->desc_set = buffer->desc_set;
-         constant_buffer_entry->binding = buffer->binding;
-         constant_buffer_entry->offset = buffer->source_offset;
-         constant_buffer_entry->size_in_dwords = buffer->size_in_dwords;
-         break;
-      }
-      case PVR_BUFFER_TYPE_UBO_ZEROING: {
-         struct pvr_const_map_entry_constant_buffer_zeroing
-            *constant_buffer_entry;
-
-         constant_buffer_entry = pvr_prepare_next_pds_const_map_entry(
-            &entry_write_state,
-            sizeof(*constant_buffer_entry));
-         constant_buffer_entry->type =
-            PVR_PDS_CONST_MAP_ENTRY_TYPE_CONSTANT_BUFFER_ZEROING;
-         constant_buffer_entry->buffer_id = buffer->buffer_id;
-         constant_buffer_entry->offset = buffer->source_offset;
-         constant_buffer_entry->size_in_dwords = buffer->size_in_dwords;
-         break;
-      }
-      }
-
-      entry_write_state.entry->const_offset = next_const64 * 2;
-
-      PVR_PDS_MODE_TOGGLE(code_section,
-                          instruction,
-                          pvr_encode_burst_cs(&entry_write_state,
-                                              last_dma,
-                                              halt,
-                                              next_const32,
-                                              next_const64,
-                                              buffer->size_in_dwords,
-                                              buffer->destination));
 
       next_const64++;
       next_const32++;

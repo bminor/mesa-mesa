@@ -44,6 +44,7 @@
 #include "pvr_types.h"
 #include "util/list.h"
 #include "util/macros.h"
+#include "util/vma.h"
 #include "vk_descriptor_set_layout.h"
 #include "vk_object.h"
 #include "vk_sampler.h"
@@ -189,6 +190,12 @@ enum pvr_query_type {
    PVR_QUERY_TYPE_COPY_QUERY_RESULTS,
 };
 
+struct pvr_buffer_descriptor {
+   uint64_t addr;
+} PACKED;
+static_assert(sizeof(struct pvr_buffer_descriptor) == 2 * sizeof(uint32_t),
+              "pvr_buffer_descriptor size is invalid.");
+
 struct pvr_sampler_descriptor {
    uint64_t words[ROGUE_NUM_TEXSTATE_SAMPLER_WORDS];
 } PACKED;
@@ -215,108 +222,54 @@ static_assert(sizeof(struct pvr_combined_image_sampler_descriptor) ==
 
 struct pvr_sampler {
    struct vk_sampler vk;
-
    struct pvr_sampler_descriptor descriptor;
-};
-
-struct pvr_descriptor_size_info {
-   /* Non-spillable size for storage in the common store. */
-   uint32_t primary;
-
-   /* Spillable size to accommodate limitation of the common store. */
-   uint32_t secondary;
-
-   uint32_t alignment;
 };
 
 struct pvr_descriptor_set_layout_binding {
    VkDescriptorType type;
+   VkDescriptorBindingFlags flags;
 
-   /* "M" in layout(set = N, binding = M)
-    * Can be used to index bindings in the descriptor_set_layout.
-    */
-   uint32_t binding_number;
+   uint32_t stage_flags; /** Which stages can use this binding. */
 
    uint32_t descriptor_count;
+   uint32_t immutable_sampler_count;
+   struct pvr_sampler **immutable_samplers;
 
-   /* Index into the flattened descriptor set */
-   uint16_t descriptor_index;
-
-   /* Mask of enum pvr_stage_allocation. */
-   uint8_t shader_stage_mask;
-
-   struct {
-      uint32_t primary;
-      uint32_t secondary;
-   } per_stage_offset_in_dwords[PVR_STAGE_ALLOCATION_COUNT];
-
-   bool has_immutable_samplers;
-   /* Index at which the samplers can be found in the descriptor_set_layout.
-    * 0 when the samplers are at index 0 or no samplers are present.
-    */
-   uint32_t immutable_samplers_index;
-};
-
-/* All sizes are in dwords. */
-struct pvr_descriptor_set_layout_mem_layout {
-   uint32_t primary_offset;
-   uint32_t primary_size;
-
-   uint32_t secondary_offset;
-   uint32_t secondary_size;
-
-   uint32_t primary_dynamic_size;
-   uint32_t secondary_dynamic_size;
+   unsigned offset; /** Offset within the descriptor set. */
+   unsigned stride; /** Stride of each descriptor in this binding. */
 };
 
 struct pvr_descriptor_set_layout {
    struct vk_descriptor_set_layout vk;
+   VkDescriptorSetLayoutCreateFlagBits flags;
 
-   /* Total amount of descriptors contained in this set. */
    uint32_t descriptor_count;
-
-   /* Count of dynamic buffers. */
    uint32_t dynamic_buffer_count;
-   uint32_t total_dynamic_size_in_dwords;
 
    uint32_t binding_count;
    struct pvr_descriptor_set_layout_binding *bindings;
 
    uint32_t immutable_sampler_count;
-   const struct pvr_sampler **immutable_samplers;
+   struct pvr_sampler **immutable_samplers;
 
-   /* Shader stages requiring access to descriptors in this set. */
-   /* Mask of enum pvr_stage_allocation. */
-   uint8_t shader_stage_mask;
+   uint32_t stage_flags; /** Which stages can use this binding. */
 
-   /* Count of each VkDescriptorType per shader stage. Dynamically allocated
-    * arrays per stage as to not hard code the max descriptor type here.
-    *
-    * Note: when adding a new type, it might not numerically follow the
-    * previous type so a sparse array will be created. You might want to
-    * readjust how these arrays are created and accessed.
-    */
-   uint32_t *per_stage_descriptor_count[PVR_STAGE_ALLOCATION_COUNT];
-
-   uint32_t total_size_in_dwords;
-   struct pvr_descriptor_set_layout_mem_layout
-      memory_layout_in_dwords_per_stage[PVR_STAGE_ALLOCATION_COUNT];
+   unsigned size; /** Size in bytes. */
 };
 
 struct pvr_descriptor_pool {
    struct vk_object_base base;
 
+   VkDescriptorType type;
    VkAllocationCallbacks alloc;
+   VkDescriptorPoolCreateFlags flags;
 
-   /* Saved information from pCreateInfo. */
-   uint32_t max_sets;
+   /** List of the descriptor sets created using this pool. */
+   struct list_head desc_sets;
 
-   uint32_t total_size_in_dwords;
-   uint32_t current_size_in_dwords;
-
-   /* Derived and other state. */
-   /* List of the descriptor sets created using this pool. */
-   struct list_head descriptor_sets;
+   struct pvr_suballoc_bo *pvr_bo; /** Pool buffer object. */
+   void *mapping; /** Pool buffer CPU mapping. */
+   struct util_vma_heap heap; /** Pool (sub)allocation heap. */
 };
 
 struct pvr_descriptor {
@@ -344,14 +297,11 @@ struct pvr_descriptor_set {
    struct pvr_descriptor_set_layout *layout;
    struct pvr_descriptor_pool *pool;
 
-   struct pvr_suballoc_bo *pvr_bo;
+   unsigned size; /** Descriptor set size. */
+   pvr_dev_addr_t dev_addr; /** Descriptor set device address. */
+   void *mapping; /** Descriptor set CPU mapping. */
 
-   /* Links this descriptor set into pvr_descriptor_pool::descriptor_sets list.
-    */
-   struct list_head link;
-
-   /* Array of size layout::descriptor_count. */
-   struct pvr_descriptor descriptors[0];
+   struct list_head link; /** Link in pvr_descriptor_pool::desc_sets. */
 };
 
 struct pvr_event {
@@ -366,128 +316,10 @@ struct pvr_event {
     PVR_MAX_DESCRIPTOR_SET_STORAGE_DYNAMIC_BUFFERS)
 
 struct pvr_descriptor_state {
-   struct pvr_descriptor_set *descriptor_sets[PVR_MAX_DESCRIPTOR_SETS];
-   uint32_t valid_mask;
-
-   uint32_t dynamic_offsets[PVR_MAX_DYNAMIC_BUFFERS];
+   struct pvr_descriptor_set *sets[PVR_MAX_DESCRIPTOR_SETS];
+   uint32_t dirty_sets;
 };
 
 #undef PVR_MAX_DYNAMIC_BUFFERS
-
-/**
- * \brief Indicates the layout of shared registers allocated by the driver.
- *
- * 'present' fields indicate if a certain resource was allocated for, and
- * whether it will be present in the shareds.
- * 'offset' fields indicate at which shared reg the resource starts at.
- */
-struct pvr_sh_reg_layout {
-   /* If this is present, it will always take up 2 sh regs in size and contain
-    * the device address of the descriptor set addrs table.
-    */
-   struct {
-      bool present;
-      uint32_t offset;
-   } descriptor_set_addrs_table;
-
-   /* If this is present, it will always take up 2 sh regs in size and contain
-    * the device address of the push constants buffer.
-    */
-   struct {
-      bool present;
-      uint32_t offset;
-   } push_consts;
-
-   /* If this is present, it will always take up 2 sh regs in size and contain
-    * the device address of the blend constants buffer.
-    */
-   struct {
-      bool present;
-      uint32_t offset;
-   } blend_consts;
-};
-
-struct pvr_pipeline_layout {
-   struct vk_object_base base;
-
-   uint32_t set_count;
-   /* Contains set_count amount of descriptor set layouts. */
-   struct pvr_descriptor_set_layout *set_layout[PVR_MAX_DESCRIPTOR_SETS];
-
-   /* Mask of enum pvr_stage_allocation. */
-   uint8_t push_constants_shader_stages;
-   uint32_t vert_push_constants_offset;
-   uint32_t frag_push_constants_offset;
-   uint32_t compute_push_constants_offset;
-
-   /* Mask of enum pvr_stage_allocation. */
-   uint8_t shader_stage_mask;
-
-   /* Per stage masks indicating which set in the layout contains any
-    * descriptor of the appropriate types: VK..._{SAMPLER, SAMPLED_IMAGE,
-    * UNIFORM_TEXEL_BUFFER, UNIFORM_BUFFER, STORAGE_BUFFER}.
-    * Shift by the set's number to check the mask (1U << set_num).
-    */
-   uint32_t per_stage_descriptor_masks[PVR_STAGE_ALLOCATION_COUNT];
-
-   /* Array of descriptor offsets at which the set's descriptors' start, per
-    * stage, within all the sets in the pipeline layout per descriptor type.
-    * Note that we only store into for specific descriptor types
-    * VK_DESCRIPTOR_TYPE_{SAMPLER, SAMPLED_IMAGE, UNIFORM_TEXEL_BUFFER,
-    * UNIFORM_BUFFER, STORAGE_BUFFER}, the rest will be 0.
-    */
-   uint32_t
-      descriptor_offsets[PVR_MAX_DESCRIPTOR_SETS][PVR_STAGE_ALLOCATION_COUNT]
-                        [PVR_PIPELINE_LAYOUT_SUPPORTED_DESCRIPTOR_TYPE_COUNT];
-
-   /* There is no accounting for dynamics in here. They will be garbage values.
-    */
-   struct pvr_descriptor_set_layout_mem_layout
-      register_layout_in_dwords_per_stage[PVR_STAGE_ALLOCATION_COUNT]
-                                         [PVR_MAX_DESCRIPTOR_SETS];
-
-   /* TODO: Consider whether this needs to be here. */
-   struct pvr_sh_reg_layout sh_reg_layout_per_stage[PVR_STAGE_ALLOCATION_COUNT];
-
-   /* All sizes in dwords. */
-   struct pvr_pipeline_layout_reg_info {
-      uint32_t primary_dynamic_size_in_dwords;
-      uint32_t secondary_dynamic_size_in_dwords;
-   } per_stage_reg_info[PVR_STAGE_ALLOCATION_COUNT];
-};
-
-static int pvr_compare_layout_binding(const void *a, const void *b)
-{
-   uint32_t binding_a;
-   uint32_t binding_b;
-
-   binding_a = ((struct pvr_descriptor_set_layout_binding *)a)->binding_number;
-   binding_b = ((struct pvr_descriptor_set_layout_binding *)b)->binding_number;
-
-   if (binding_a < binding_b)
-      return -1;
-
-   if (binding_a > binding_b)
-      return 1;
-
-   return 0;
-}
-
-/* This function does not assume that the binding will always exist for a
- * particular binding_num. Caller should check before using the return pointer.
- */
-static struct pvr_descriptor_set_layout_binding *
-pvr_get_descriptor_binding(const struct pvr_descriptor_set_layout *layout,
-                           const uint32_t binding_num)
-{
-   struct pvr_descriptor_set_layout_binding binding;
-   binding.binding_number = binding_num;
-
-   return bsearch(&binding,
-                  layout->bindings,
-                  layout->binding_count,
-                  sizeof(binding),
-                  pvr_compare_layout_binding);
-}
 
 #endif /* PVR_COMMON_H */

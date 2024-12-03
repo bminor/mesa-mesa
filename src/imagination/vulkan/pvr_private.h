@@ -896,12 +896,8 @@ struct pvr_fragment_shader_state {
 
 struct pvr_pipeline {
    struct vk_object_base base;
-
    enum pvr_pipeline_type type;
-
-   /* Saved information from pCreateInfo. */
-   struct pvr_pipeline_layout *layout;
-
+   struct vk_pipeline_layout *layout;
    VkPipelineCreateFlags2KHR pipeline_flags;
 };
 
@@ -1257,6 +1253,17 @@ to_pvr_graphics_pipeline(struct pvr_pipeline *pipeline)
    return container_of(pipeline, struct pvr_graphics_pipeline, base);
 }
 
+static inline struct pvr_device *vk_to_pvr_device(struct vk_device *device)
+{
+   return container_of(device, struct pvr_device, vk);
+}
+
+static inline struct pvr_descriptor_set_layout *
+vk_to_pvr_descriptor_set_layout(struct vk_descriptor_set_layout *layout)
+{
+   return container_of(layout, struct pvr_descriptor_set_layout, vk);
+}
+
 static inline const struct pvr_image *
 vk_to_pvr_image(const struct vk_image *image)
 {
@@ -1431,11 +1438,6 @@ void pvr_reset_graphics_dirty_state(struct pvr_cmd_buffer *const cmd_buffer,
 const struct pvr_renderpass_hwsetup_subpass *
 pvr_get_hw_subpass(const struct pvr_render_pass *pass, const uint32_t subpass);
 
-void pvr_descriptor_size_info_init(
-   const struct pvr_device *device,
-   VkDescriptorType type,
-   struct pvr_descriptor_size_info *const size_info_out);
-
 #define PVR_FROM_HANDLE(__pvr_type, __name, __handle) \
    VK_FROM_HANDLE(__pvr_type, __name, __handle)
 
@@ -1488,10 +1490,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_sampler,
                                vk.base,
                                VkSampler,
                                VK_OBJECT_TYPE_SAMPLER)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_pipeline_layout,
-                               base,
-                               VkPipelineLayout,
-                               VK_OBJECT_TYPE_PIPELINE_LAYOUT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_pipeline,
                                base,
                                VkPipeline,

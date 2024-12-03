@@ -66,6 +66,7 @@
 #include "vk_graphics_state.h"
 #include "vk_log.h"
 #include "vk_object.h"
+#include "vk_pipeline_layout.h"
 #include "vk_util.h"
 
 /* Structure used to pass data into pvr_compute_generate_control_stream()
@@ -2600,70 +2601,34 @@ void pvr_CmdSetDepthBounds(VkCommandBuffer commandBuffer,
    mesa_logd("No support for depth bounds testing.");
 }
 
-void pvr_CmdBindDescriptorSets(VkCommandBuffer commandBuffer,
-                               VkPipelineBindPoint pipelineBindPoint,
-                               VkPipelineLayout _layout,
-                               uint32_t firstSet,
-                               uint32_t descriptorSetCount,
-                               const VkDescriptorSet *pDescriptorSets,
-                               uint32_t dynamicOffsetCount,
-                               const uint32_t *pDynamicOffsets)
+void pvr_CmdBindDescriptorSets2KHR(
+   VkCommandBuffer commandBuffer,
+   const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo)
 {
    PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   struct pvr_descriptor_state *descriptor_state;
-
-   assert(firstSet + descriptorSetCount <= PVR_MAX_DESCRIPTOR_SETS);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
-   switch (pipelineBindPoint) {
-   case VK_PIPELINE_BIND_POINT_GRAPHICS:
-   case VK_PIPELINE_BIND_POINT_COMPUTE:
-      break;
+   if (pBindDescriptorSetsInfo->stageFlags & VK_SHADER_STAGE_ALL_GRAPHICS) {
+      struct pvr_descriptor_state *desc_state =
+         &cmd_buffer->state.gfx_desc_state;
 
-   default:
-      unreachable("Unsupported bind point.");
-      break;
-   }
+      for (unsigned u = 0; u < pBindDescriptorSetsInfo->descriptorSetCount;
+           ++u) {
+         VK_FROM_HANDLE(pvr_descriptor_set,
+                        set,
+                        pBindDescriptorSetsInfo->pDescriptorSets[u]);
+         unsigned desc_set = u + pBindDescriptorSetsInfo->firstSet;
 
-   if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-      descriptor_state = &cmd_buffer->state.gfx_desc_state;
-      cmd_buffer->state.dirty.gfx_desc_dirty = true;
-   } else {
-      descriptor_state = &cmd_buffer->state.compute_desc_state;
-      cmd_buffer->state.dirty.compute_desc_dirty = true;
-   }
-
-   for (uint32_t i = 0; i < descriptorSetCount; i++) {
-      PVR_FROM_HANDLE(pvr_descriptor_set, set, pDescriptorSets[i]);
-      uint32_t index = firstSet + i;
-
-      if (descriptor_state->descriptor_sets[index] != set) {
-         descriptor_state->descriptor_sets[index] = set;
-         descriptor_state->valid_mask |= (1u << index);
+         if (desc_state->sets[desc_set] != set) {
+            desc_state->sets[desc_set] = set;
+            desc_state->dirty_sets |= BITFIELD_BIT(desc_set);
+         }
       }
+
+      cmd_buffer->state.dirty.gfx_desc_dirty = true;
    }
-
-   if (dynamicOffsetCount > 0) {
-      PVR_FROM_HANDLE(pvr_pipeline_layout, pipeline_layout, _layout);
-      uint32_t set_offset = 0;
-
-      for (uint32_t set = 0; set < firstSet; set++)
-         set_offset += pipeline_layout->set_layout[set]->dynamic_buffer_count;
-
-      assert(set_offset + dynamicOffsetCount <=
-             ARRAY_SIZE(descriptor_state->dynamic_offsets));
-
-      /* From the Vulkan 1.3.238 spec. :
-       *
-       *    "If any of the sets being bound include dynamic uniform or storage
-       *    buffers, then pDynamicOffsets includes one element for each array
-       *    element in each dynamic descriptor type binding in each set."
-       *
-       */
-      for (uint32_t i = 0; i < dynamicOffsetCount; i++)
-         descriptor_state->dynamic_offsets[set_offset + i] = pDynamicOffsets[i];
-   }
+   assert(!(pBindDescriptorSetsInfo->stageFlags & VK_SHADER_STAGE_COMPUTE_BIT));
 }
 
 void pvr_CmdBindVertexBuffers(VkCommandBuffer commandBuffer,
@@ -3529,7 +3494,7 @@ pvr_setup_vertex_buffers(struct pvr_cmd_buffer *cmd_buffer,
    return VK_SUCCESS;
 }
 
-static VkResult pvr_setup_descriptor_mappings_old(
+static VkResult pvr_setup_descriptor_mappings(
    struct pvr_cmd_buffer *const cmd_buffer,
    enum pvr_stage_allocation stage,
    const struct pvr_stage_allocation_descriptor_state *descriptor_state,
@@ -3593,113 +3558,19 @@ static VkResult pvr_setup_descriptor_mappings_old(
          break;
       }
 
-      case PVR_PDS_CONST_MAP_ENTRY_TYPE_CONSTANT_BUFFER: {
-         const struct pvr_const_map_entry_constant_buffer *const_buffer_entry =
-            (struct pvr_const_map_entry_constant_buffer *)entries;
-         const uint32_t desc_set = const_buffer_entry->desc_set;
-         const uint32_t binding = const_buffer_entry->binding;
-         const struct pvr_descriptor_set *descriptor_set;
-         const struct pvr_descriptor *descriptor;
-         pvr_dev_addr_t buffer_addr;
-
-         assert(desc_set < PVR_MAX_DESCRIPTOR_SETS);
-         descriptor_set = desc_state->descriptor_sets[desc_set];
-
-         /* TODO: Handle dynamic buffers. */
-         descriptor = &descriptor_set->descriptors[binding];
-         assert(descriptor->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-
-         assert(descriptor->buffer_desc_range ==
-                PVR_DW_TO_BYTES(const_buffer_entry->size_in_dwords));
-         assert(descriptor->buffer_whole_range ==
-                PVR_DW_TO_BYTES(const_buffer_entry->size_in_dwords));
-
-         buffer_addr =
-            PVR_DEV_ADDR_OFFSET(descriptor->buffer_dev_addr,
-                                const_buffer_entry->offset * sizeof(uint32_t));
-
-         PVR_WRITE(qword_buffer,
-                   buffer_addr.addr,
-                   const_buffer_entry->const_offset,
-                   pds_info->data_size_in_dwords);
-
-         entries += sizeof(*const_buffer_entry);
-         break;
-      }
-
       case PVR_PDS_CONST_MAP_ENTRY_TYPE_DESCRIPTOR_SET: {
          const struct pvr_const_map_entry_descriptor_set *desc_set_entry =
             (struct pvr_const_map_entry_descriptor_set *)entries;
-         const uint32_t desc_set_num = desc_set_entry->descriptor_set;
+         const uint32_t desc_set = desc_set_entry->descriptor_set;
          const struct pvr_descriptor_set *descriptor_set;
          pvr_dev_addr_t desc_set_addr;
-         uint64_t desc_portion_offset;
 
-         assert(desc_set_num < PVR_MAX_DESCRIPTOR_SETS);
+         assert(desc_set < PVR_MAX_DESCRIPTOR_SETS);
 
-         /* TODO: Remove this when the compiler provides us with usage info?
-          */
-         /* We skip DMAing unbound descriptor sets. */
-         if (!(desc_state->valid_mask & BITFIELD_BIT(desc_set_num))) {
-            const struct pvr_const_map_entry_literal32 *literal;
-            uint32_t zero_literal_value;
+         descriptor_set = desc_state->sets[desc_set];
+         assert(descriptor_set);
 
-            /* The code segment contains a DOUT instructions so in the data
-             * section we have to write a DOUTD_SRC0 and DOUTD_SRC1.
-             * We'll write 0 for DOUTD_SRC0 since we don't have a buffer to DMA.
-             * We're expecting a LITERAL32 entry containing the value for
-             * DOUTD_SRC1 next so let's make sure we get it and write it
-             * with BSIZE to 0 disabling the DMA operation.
-             * We don't want the LITERAL32 to be processed as normal otherwise
-             * we'd be DMAing from an address of 0.
-             */
-
-            entries += sizeof(*desc_set_entry);
-            literal = (struct pvr_const_map_entry_literal32 *)entries;
-
-            assert(literal->type == PVR_PDS_CONST_MAP_ENTRY_TYPE_LITERAL32);
-
-            zero_literal_value =
-               literal->literal_value &
-               PVR_ROGUE_PDSINST_DOUT_FIELDS_DOUTD_SRC1_BSIZE_CLRMSK;
-
-            PVR_WRITE(qword_buffer,
-                      UINT64_C(0),
-                      desc_set_entry->const_offset,
-                      pds_info->data_size_in_dwords);
-
-            PVR_WRITE(dword_buffer,
-                      zero_literal_value,
-                      desc_set_entry->const_offset,
-                      pds_info->data_size_in_dwords);
-
-            entries += sizeof(*literal);
-            i++;
-            continue;
-         }
-
-         descriptor_set = desc_state->descriptor_sets[desc_set_num];
-
-         desc_set_addr = descriptor_set->pvr_bo->dev_addr;
-
-         if (desc_set_entry->primary) {
-            desc_portion_offset =
-               descriptor_set->layout->memory_layout_in_dwords_per_stage[stage]
-                  .primary_offset;
-         } else {
-            desc_portion_offset =
-               descriptor_set->layout->memory_layout_in_dwords_per_stage[stage]
-                  .secondary_offset;
-         }
-         desc_portion_offset = PVR_DW_TO_BYTES(desc_portion_offset);
-
-         desc_set_addr =
-            PVR_DEV_ADDR_OFFSET(desc_set_addr, desc_portion_offset);
-
-         desc_set_addr = PVR_DEV_ADDR_OFFSET(
-            desc_set_addr,
-            PVR_DW_TO_BYTES((uint64_t)desc_set_entry->offset_in_dwords));
-
+         desc_set_addr = descriptor_set->dev_addr;
          PVR_WRITE(qword_buffer,
                    desc_set_addr.addr,
                    desc_set_entry->const_offset,
@@ -3709,50 +3580,6 @@ static VkResult pvr_setup_descriptor_mappings_old(
          break;
       }
 
-      case PVR_PDS_CONST_MAP_ENTRY_TYPE_SPECIAL_BUFFER: {
-         const struct pvr_const_map_entry_special_buffer *special_buff_entry =
-            (struct pvr_const_map_entry_special_buffer *)entries;
-
-         switch (special_buff_entry->buffer_type) {
-         case PVR_BUFFER_TYPE_COMPILE_TIME: {
-            uint64_t addr = descriptor_state->static_consts->dev_addr.addr;
-
-            PVR_WRITE(qword_buffer,
-                      addr,
-                      special_buff_entry->const_offset,
-                      pds_info->data_size_in_dwords);
-            break;
-         }
-
-         case PVR_BUFFER_TYPE_BLEND_CONSTS:
-            /* TODO: See if instead of reusing the blend constant buffer type
-             * entry, we can setup a new buffer type specifically for
-             * num_workgroups or other built-in variables. The mappings are
-             * setup at pipeline creation when creating the descriptor program.
-             */
-            if (stage == PVR_STAGE_ALLOCATION_COMPUTE) {
-               assert(num_worgroups_buff_addr->addr);
-
-               /* TODO: Check if we need to offset this (e.g. for just y and z),
-                * or cope with any reordering?
-                */
-               PVR_WRITE(qword_buffer,
-                         num_worgroups_buff_addr->addr,
-                         special_buff_entry->const_offset,
-                         pds_info->data_size_in_dwords);
-            } else {
-               pvr_finishme("Add blend constants support.");
-            }
-            break;
-
-         default:
-            unreachable("Unsupported special buffer type.");
-         }
-
-         entries += sizeof(*special_buff_entry);
-         break;
-      }
-
       default:
          unreachable("Unsupported map entry type.");
       }
@@ -3763,527 +3590,6 @@ static VkResult pvr_setup_descriptor_mappings_old(
       cmd_buffer->device->heaps.pds_heap->base_addr.addr;
 
    return VK_SUCCESS;
-}
-
-/* Note that the descriptor set doesn't have any space for dynamic buffer
- * descriptors so this works on the assumption that you have a buffer with space
- * for them at the end.
- */
-static uint16_t pvr_get_dynamic_descriptor_primary_offset(
-   const struct pvr_device *device,
-   const struct pvr_descriptor_set_layout *layout,
-   const struct pvr_descriptor_set_layout_binding *binding,
-   const uint32_t stage,
-   const uint32_t desc_idx)
-{
-   struct pvr_descriptor_size_info size_info;
-   uint32_t offset;
-
-   assert(vk_descriptor_type_is_dynamic(binding->type));
-   assert(desc_idx < binding->descriptor_count);
-
-   pvr_descriptor_size_info_init(device, binding->type, &size_info);
-
-   offset = layout->total_size_in_dwords;
-   offset += binding->per_stage_offset_in_dwords[stage].primary;
-   offset += (desc_idx * size_info.primary);
-
-   /* Offset must be less than * 16bits. */
-   assert(offset < UINT16_MAX);
-
-   return (uint16_t)offset;
-}
-
-/* Note that the descriptor set doesn't have any space for dynamic buffer
- * descriptors so this works on the assumption that you have a buffer with space
- * for them at the end.
- */
-static uint16_t pvr_get_dynamic_descriptor_secondary_offset(
-   const struct pvr_device *device,
-   const struct pvr_descriptor_set_layout *layout,
-   const struct pvr_descriptor_set_layout_binding *binding,
-   const uint32_t stage,
-   const uint32_t desc_idx)
-{
-   struct pvr_descriptor_size_info size_info;
-   uint32_t offset;
-
-   assert(vk_descriptor_type_is_dynamic(binding->type));
-   assert(desc_idx < binding->descriptor_count);
-
-   pvr_descriptor_size_info_init(device, binding->type, &size_info);
-
-   offset = layout->total_size_in_dwords;
-   offset +=
-      layout->memory_layout_in_dwords_per_stage[stage].primary_dynamic_size;
-   offset += binding->per_stage_offset_in_dwords[stage].secondary;
-   offset += (desc_idx * size_info.secondary);
-
-   /* Offset must be less than * 16bits. */
-   assert(offset < UINT16_MAX);
-
-   return (uint16_t)offset;
-}
-
-/**
- * \brief Upload a copy of the descriptor set with dynamic buffer offsets
- * applied.
- */
-/* TODO: We should probably make the compiler aware of the dynamic descriptors.
- * We could use push constants like Anv seems to do. This would avoid having to
- * duplicate all sets containing dynamic descriptors each time the offsets are
- * updated.
- */
-static VkResult pvr_cmd_buffer_upload_patched_desc_set(
-   struct pvr_cmd_buffer *cmd_buffer,
-   const struct pvr_descriptor_set *desc_set,
-   const uint32_t *dynamic_offsets,
-   struct pvr_suballoc_bo **const bo_out)
-{
-   const struct pvr_descriptor_set_layout *layout = desc_set->layout;
-   const uint64_t normal_desc_set_size =
-      PVR_DW_TO_BYTES(layout->total_size_in_dwords);
-   const uint64_t dynamic_descs_size =
-      PVR_DW_TO_BYTES(layout->total_dynamic_size_in_dwords);
-   struct pvr_descriptor_size_info dynamic_uniform_buffer_size_info;
-   struct pvr_descriptor_size_info dynamic_storage_buffer_size_info;
-   struct pvr_device *device = cmd_buffer->device;
-   struct pvr_suballoc_bo *patched_desc_set_bo;
-   uint32_t *src_mem_ptr, *dst_mem_ptr;
-   uint32_t desc_idx_offset = 0;
-   VkResult result;
-
-   assert(desc_set->layout->dynamic_buffer_count > 0);
-
-   pvr_descriptor_size_info_init(device,
-                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                                 &dynamic_uniform_buffer_size_info);
-   pvr_descriptor_size_info_init(device,
-                                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
-                                 &dynamic_storage_buffer_size_info);
-
-   /* TODO: In the descriptor set we don't account for dynamic buffer
-    * descriptors and take care of them in the pipeline layout. The pipeline
-    * layout allocates them at the beginning but let's put them at the end just
-    * because it makes things a bit easier. Ideally we should be using the
-    * pipeline layout and use the offsets from the pipeline layout to patch
-    * descriptors.
-    */
-   result = pvr_cmd_buffer_alloc_mem(cmd_buffer,
-                                     cmd_buffer->device->heaps.general_heap,
-                                     normal_desc_set_size + dynamic_descs_size,
-                                     &patched_desc_set_bo);
-   if (result != VK_SUCCESS)
-      return result;
-
-   src_mem_ptr = (uint32_t *)pvr_bo_suballoc_get_map_addr(desc_set->pvr_bo);
-   dst_mem_ptr = (uint32_t *)pvr_bo_suballoc_get_map_addr(patched_desc_set_bo);
-
-   memcpy(dst_mem_ptr, src_mem_ptr, normal_desc_set_size);
-
-   for (uint32_t i = 0; i < desc_set->layout->binding_count; i++) {
-      const struct pvr_descriptor_set_layout_binding *binding =
-         &desc_set->layout->bindings[i];
-      const struct pvr_descriptor *descriptors =
-         &desc_set->descriptors[binding->descriptor_index];
-      const struct pvr_descriptor_size_info *size_info;
-
-      if (binding->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)
-         size_info = &dynamic_uniform_buffer_size_info;
-      else if (binding->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)
-         size_info = &dynamic_storage_buffer_size_info;
-      else
-         continue;
-
-      for (uint32_t stage = 0; stage < PVR_STAGE_ALLOCATION_COUNT; stage++) {
-         uint32_t primary_offset;
-         uint32_t secondary_offset;
-
-         if (!(binding->shader_stage_mask & BITFIELD_BIT(stage)))
-            continue;
-
-         /* Get the offsets for the first dynamic descriptor in the current
-          * binding.
-          */
-         primary_offset =
-            pvr_get_dynamic_descriptor_primary_offset(device,
-                                                      desc_set->layout,
-                                                      binding,
-                                                      stage,
-                                                      0);
-         secondary_offset =
-            pvr_get_dynamic_descriptor_secondary_offset(device,
-                                                        desc_set->layout,
-                                                        binding,
-                                                        stage,
-                                                        0);
-
-         /* clang-format off */
-         for (uint32_t desc_idx = 0;
-              desc_idx < binding->descriptor_count;
-              desc_idx++) {
-            /* clang-format on */
-            const pvr_dev_addr_t addr =
-               PVR_DEV_ADDR_OFFSET(descriptors[desc_idx].buffer_dev_addr,
-                                   dynamic_offsets[desc_idx + desc_idx_offset]);
-            const VkDeviceSize range =
-               MIN2(descriptors[desc_idx].buffer_desc_range,
-                    descriptors[desc_idx].buffer_whole_range -
-                       dynamic_offsets[desc_idx]);
-
-#if MESA_DEBUG
-            uint32_t desc_primary_offset;
-            uint32_t desc_secondary_offset;
-
-            desc_primary_offset =
-               pvr_get_dynamic_descriptor_primary_offset(device,
-                                                         desc_set->layout,
-                                                         binding,
-                                                         stage,
-                                                         desc_idx);
-            desc_secondary_offset =
-               pvr_get_dynamic_descriptor_secondary_offset(device,
-                                                           desc_set->layout,
-                                                           binding,
-                                                           stage,
-                                                           desc_idx);
-
-            /* Check the assumption that the descriptors within a binding, for
-             * a particular stage, are allocated consecutively.
-             */
-            assert(desc_primary_offset ==
-                   primary_offset + size_info->primary * desc_idx);
-            assert(desc_secondary_offset ==
-                   secondary_offset + size_info->secondary * desc_idx);
-#endif
-
-            assert(descriptors[desc_idx].type == binding->type);
-
-            memcpy(dst_mem_ptr + primary_offset + size_info->primary * desc_idx,
-                   &addr.addr,
-                   PVR_DW_TO_BYTES(size_info->primary));
-            memcpy(dst_mem_ptr + secondary_offset +
-                      size_info->secondary * desc_idx,
-                   &range,
-                   PVR_DW_TO_BYTES(size_info->secondary));
-         }
-      }
-
-      desc_idx_offset += binding->descriptor_count;
-   }
-
-   *bo_out = patched_desc_set_bo;
-
-   return VK_SUCCESS;
-}
-
-#define PVR_SELECT(_geom, _frag, _compute)         \
-   (stage == PVR_STAGE_ALLOCATION_VERTEX_GEOMETRY) \
-      ? (_geom)                                    \
-      : (stage == PVR_STAGE_ALLOCATION_FRAGMENT) ? (_frag) : (_compute)
-
-static VkResult
-pvr_cmd_buffer_upload_desc_set_table(struct pvr_cmd_buffer *const cmd_buffer,
-                                     enum pvr_stage_allocation stage,
-                                     pvr_dev_addr_t *addr_out)
-{
-   uint64_t bound_desc_sets[PVR_MAX_DESCRIPTOR_SETS];
-   const struct pvr_descriptor_state *desc_state;
-   struct pvr_suballoc_bo *suballoc_bo;
-   uint32_t dynamic_offset_idx = 0;
-   VkResult result;
-
-   switch (stage) {
-   case PVR_STAGE_ALLOCATION_VERTEX_GEOMETRY:
-   case PVR_STAGE_ALLOCATION_FRAGMENT:
-   case PVR_STAGE_ALLOCATION_COMPUTE:
-      break;
-
-   default:
-      unreachable("Unsupported stage.");
-      break;
-   }
-
-   desc_state = PVR_SELECT(&cmd_buffer->state.gfx_desc_state,
-                           &cmd_buffer->state.gfx_desc_state,
-                           &cmd_buffer->state.compute_desc_state);
-
-   for (uint32_t set = 0; set < ARRAY_SIZE(bound_desc_sets); set++)
-      bound_desc_sets[set] = ~0;
-
-   assert(util_last_bit(desc_state->valid_mask) <= ARRAY_SIZE(bound_desc_sets));
-   for (uint32_t set = 0; set < util_last_bit(desc_state->valid_mask); set++) {
-      const struct pvr_descriptor_set *desc_set;
-
-      if (!(desc_state->valid_mask & BITFIELD_BIT(set))) {
-         const struct pvr_pipeline_layout *pipeline_layout =
-            PVR_SELECT(cmd_buffer->state.gfx_pipeline->base.layout,
-                       cmd_buffer->state.gfx_pipeline->base.layout,
-                       cmd_buffer->state.compute_pipeline->base.layout);
-         const struct pvr_descriptor_set_layout *set_layout;
-
-         assert(set <= pipeline_layout->set_count);
-
-         set_layout = pipeline_layout->set_layout[set];
-         dynamic_offset_idx += set_layout->dynamic_buffer_count;
-
-         continue;
-      }
-
-      desc_set = desc_state->descriptor_sets[set];
-
-      /* TODO: Is it better if we don't set the valid_mask for empty sets? */
-      if (desc_set->layout->descriptor_count == 0)
-         continue;
-
-      if (desc_set->layout->dynamic_buffer_count > 0) {
-         struct pvr_suballoc_bo *new_desc_set_bo;
-
-         assert(dynamic_offset_idx + desc_set->layout->dynamic_buffer_count <=
-                ARRAY_SIZE(desc_state->dynamic_offsets));
-
-         result = pvr_cmd_buffer_upload_patched_desc_set(
-            cmd_buffer,
-            desc_set,
-            &desc_state->dynamic_offsets[dynamic_offset_idx],
-            &new_desc_set_bo);
-         if (result != VK_SUCCESS)
-            return result;
-
-         dynamic_offset_idx += desc_set->layout->dynamic_buffer_count;
-
-         bound_desc_sets[set] = new_desc_set_bo->dev_addr.addr;
-      } else {
-         bound_desc_sets[set] = desc_set->pvr_bo->dev_addr.addr;
-      }
-   }
-
-   result = pvr_cmd_buffer_upload_general(cmd_buffer,
-                                          bound_desc_sets,
-                                          sizeof(bound_desc_sets),
-                                          &suballoc_bo);
-   if (result != VK_SUCCESS)
-      return result;
-
-   *addr_out = suballoc_bo->dev_addr;
-   return VK_SUCCESS;
-}
-
-static VkResult
-pvr_process_addr_literal(struct pvr_cmd_buffer *cmd_buffer,
-                         enum pvr_pds_addr_literal_type addr_literal_type,
-                         enum pvr_stage_allocation stage,
-                         pvr_dev_addr_t *addr_out)
-{
-   VkResult result;
-
-   switch (addr_literal_type) {
-   case PVR_PDS_ADDR_LITERAL_DESC_SET_ADDRS_TABLE: {
-      /* TODO: Maybe we want to free pvr_bo? And only when the data
-       * section is written successfully we link all bos to the command
-       * buffer.
-       */
-      result =
-         pvr_cmd_buffer_upload_desc_set_table(cmd_buffer, stage, addr_out);
-      if (result != VK_SUCCESS)
-         return result;
-
-      break;
-   }
-
-   case PVR_PDS_ADDR_LITERAL_PUSH_CONSTS: {
-      const struct pvr_pipeline_layout *layout =
-         PVR_SELECT(cmd_buffer->state.gfx_pipeline->base.layout,
-                    cmd_buffer->state.gfx_pipeline->base.layout,
-                    cmd_buffer->state.compute_pipeline->base.layout);
-      const uint32_t push_constants_offset =
-         PVR_SELECT(layout->vert_push_constants_offset,
-                    layout->frag_push_constants_offset,
-                    layout->compute_push_constants_offset);
-
-      *addr_out = PVR_DEV_ADDR_OFFSET(cmd_buffer->state.push_constants.dev_addr,
-                                      push_constants_offset);
-      break;
-   }
-
-   case PVR_PDS_ADDR_LITERAL_BLEND_CONSTANTS: {
-      float *blend_consts =
-         cmd_buffer->vk.dynamic_graphics_state.cb.blend_constants;
-      size_t size =
-         sizeof(cmd_buffer->vk.dynamic_graphics_state.cb.blend_constants);
-      struct pvr_suballoc_bo *blend_consts_bo;
-
-      result = pvr_cmd_buffer_upload_general(cmd_buffer,
-                                             blend_consts,
-                                             size,
-                                             &blend_consts_bo);
-      if (result != VK_SUCCESS)
-         return result;
-
-      *addr_out = blend_consts_bo->dev_addr;
-
-      break;
-   }
-
-   default:
-      unreachable("Invalid add literal type.");
-   }
-
-   return VK_SUCCESS;
-}
-
-#undef PVR_SELECT
-
-static VkResult pvr_setup_descriptor_mappings_new(
-   struct pvr_cmd_buffer *const cmd_buffer,
-   enum pvr_stage_allocation stage,
-   const struct pvr_stage_allocation_descriptor_state *descriptor_state,
-   uint32_t *const descriptor_data_offset_out)
-{
-   const struct pvr_pds_info *const pds_info = &descriptor_state->pds_info;
-   struct pvr_suballoc_bo *pvr_bo;
-   const uint8_t *entries;
-   uint32_t *dword_buffer;
-   uint64_t *qword_buffer;
-   VkResult result;
-
-   if (!pds_info->data_size_in_dwords)
-      return VK_SUCCESS;
-
-   result =
-      pvr_cmd_buffer_alloc_mem(cmd_buffer,
-                               cmd_buffer->device->heaps.pds_heap,
-                               PVR_DW_TO_BYTES(pds_info->data_size_in_dwords),
-                               &pvr_bo);
-   if (result != VK_SUCCESS)
-      return result;
-
-   dword_buffer = (uint32_t *)pvr_bo_suballoc_get_map_addr(pvr_bo);
-   qword_buffer = (uint64_t *)pvr_bo_suballoc_get_map_addr(pvr_bo);
-
-   entries = (uint8_t *)pds_info->entries;
-
-   switch (stage) {
-   case PVR_STAGE_ALLOCATION_VERTEX_GEOMETRY:
-   case PVR_STAGE_ALLOCATION_FRAGMENT:
-   case PVR_STAGE_ALLOCATION_COMPUTE:
-      break;
-
-   default:
-      unreachable("Unsupported stage.");
-      break;
-   }
-
-   for (uint32_t i = 0; i < pds_info->entry_count; i++) {
-      const struct pvr_const_map_entry *const entry_header =
-         (struct pvr_const_map_entry *)entries;
-
-      switch (entry_header->type) {
-      case PVR_PDS_CONST_MAP_ENTRY_TYPE_LITERAL32: {
-         const struct pvr_const_map_entry_literal32 *const literal =
-            (struct pvr_const_map_entry_literal32 *)entries;
-
-         PVR_WRITE(dword_buffer,
-                   literal->literal_value,
-                   literal->const_offset,
-                   pds_info->data_size_in_dwords);
-
-         entries += sizeof(*literal);
-         break;
-      }
-
-      case PVR_PDS_CONST_MAP_ENTRY_TYPE_ADDR_LITERAL_BUFFER: {
-         const struct pvr_pds_const_map_entry_addr_literal_buffer
-            *const addr_literal_buffer_entry =
-               (struct pvr_pds_const_map_entry_addr_literal_buffer *)entries;
-         struct pvr_device *device = cmd_buffer->device;
-         struct pvr_suballoc_bo *addr_literal_buffer_bo;
-         uint32_t addr_literal_count = 0;
-         uint64_t *addr_literal_buffer;
-
-         result = pvr_cmd_buffer_alloc_mem(cmd_buffer,
-                                           device->heaps.general_heap,
-                                           addr_literal_buffer_entry->size,
-                                           &addr_literal_buffer_bo);
-         if (result != VK_SUCCESS)
-            return result;
-
-         addr_literal_buffer =
-            (uint64_t *)pvr_bo_suballoc_get_map_addr(addr_literal_buffer_bo);
-
-         entries += sizeof(*addr_literal_buffer_entry);
-
-         PVR_WRITE(qword_buffer,
-                   addr_literal_buffer_bo->dev_addr.addr,
-                   addr_literal_buffer_entry->const_offset,
-                   pds_info->data_size_in_dwords);
-
-         for (uint32_t j = i + 1; j < pds_info->entry_count; j++) {
-            const struct pvr_const_map_entry *const entry_header =
-               (struct pvr_const_map_entry *)entries;
-            const struct pvr_pds_const_map_entry_addr_literal *addr_literal;
-            pvr_dev_addr_t dev_addr;
-
-            if (entry_header->type != PVR_PDS_CONST_MAP_ENTRY_TYPE_ADDR_LITERAL)
-               break;
-
-            addr_literal =
-               (struct pvr_pds_const_map_entry_addr_literal *)entries;
-
-            result = pvr_process_addr_literal(cmd_buffer,
-                                              addr_literal->addr_type,
-                                              stage,
-                                              &dev_addr);
-            if (result != VK_SUCCESS)
-               return result;
-
-            addr_literal_buffer[addr_literal_count++] = dev_addr.addr;
-
-            entries += sizeof(*addr_literal);
-         }
-
-         assert(addr_literal_count * sizeof(uint64_t) ==
-                addr_literal_buffer_entry->size);
-
-         i += addr_literal_count;
-
-         break;
-      }
-
-      default:
-         unreachable("Unsupported map entry type.");
-      }
-   }
-
-   *descriptor_data_offset_out =
-      pvr_bo->dev_addr.addr -
-      cmd_buffer->device->heaps.pds_heap->base_addr.addr;
-
-   return VK_SUCCESS;
-}
-
-static VkResult pvr_setup_descriptor_mappings(
-   struct pvr_cmd_buffer *const cmd_buffer,
-   enum pvr_stage_allocation stage,
-   const struct pvr_stage_allocation_descriptor_state *descriptor_state,
-   const pvr_dev_addr_t *const num_worgroups_buff_addr,
-   uint32_t *const descriptor_data_offset_out)
-{
-   const bool old_path =
-      pvr_has_hard_coded_shaders(&cmd_buffer->device->pdevice->dev_info);
-
-   if (old_path) {
-      return pvr_setup_descriptor_mappings_old(cmd_buffer,
-                                               stage,
-                                               descriptor_state,
-                                               num_worgroups_buff_addr,
-                                               descriptor_data_offset_out);
-   }
-
-   return pvr_setup_descriptor_mappings_new(cmd_buffer,
-                                            stage,
-                                            descriptor_state,
-                                            descriptor_data_offset_out);
 }
 
 static void pvr_compute_update_shared(struct pvr_cmd_buffer *cmd_buffer,
@@ -4666,46 +3972,7 @@ static void pvr_cmd_dispatch(
       state->push_constants.dirty_stages &= ~VK_SHADER_STAGE_COMPUTE_BIT;
    }
 
-   if (compute_pipeline->shader_state.uses_num_workgroups) {
-      pvr_dev_addr_t descriptor_data_offset_out;
-
-      if (indirect_addr.addr) {
-         descriptor_data_offset_out = indirect_addr;
-      } else {
-         struct pvr_suballoc_bo *num_workgroups_bo;
-
-         result = pvr_cmd_buffer_upload_general(cmd_buffer,
-                                                workgroup_size,
-                                                sizeof(*workgroup_size) *
-                                                   PVR_WORKGROUP_DIMENSIONS,
-                                                &num_workgroups_bo);
-         if (result != VK_SUCCESS)
-            return;
-
-         descriptor_data_offset_out = num_workgroups_bo->dev_addr;
-      }
-
-      result = pvr_setup_descriptor_mappings(
-         cmd_buffer,
-         PVR_STAGE_ALLOCATION_COMPUTE,
-         &compute_pipeline->descriptor_state,
-         &descriptor_data_offset_out,
-         &state->pds_compute_descriptor_data_offset);
-      if (result != VK_SUCCESS)
-         return;
-   } else if ((compute_pipeline->base.layout
-                  ->per_stage_descriptor_masks[PVR_STAGE_ALLOCATION_COMPUTE] &&
-               state->dirty.compute_desc_dirty) ||
-              state->dirty.compute_pipeline_binding) {
-      result = pvr_setup_descriptor_mappings(
-         cmd_buffer,
-         PVR_STAGE_ALLOCATION_COMPUTE,
-         &compute_pipeline->descriptor_state,
-         NULL,
-         &state->pds_compute_descriptor_data_offset);
-      if (result != VK_SUCCESS)
-         return;
-   }
+   unreachable("compute descriptor support");
 
    pvr_compute_update_shared(cmd_buffer, sub_cmd);
    pvr_compute_update_kernel(cmd_buffer, sub_cmd, indirect_addr, workgroup_size);

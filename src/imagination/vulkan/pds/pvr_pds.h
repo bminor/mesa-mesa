@@ -96,12 +96,6 @@ enum pvr_pds_vertex_attrib_program_type {
    PVR_PDS_VERTEX_ATTRIB_PROGRAM_COUNT
 };
 
-enum pvr_pds_addr_literal_type {
-   PVR_PDS_ADDR_LITERAL_DESC_SET_ADDRS_TABLE,
-   PVR_PDS_ADDR_LITERAL_PUSH_CONSTS,
-   PVR_PDS_ADDR_LITERAL_BLEND_CONSTANTS,
-};
-
 /*****************************************************************************
  Structure definitions
 *****************************************************************************/
@@ -876,21 +870,13 @@ uint32_t *pvr_pds_generate_single_ldst_instruction(
    bool data_fence,
    enum pvr_pds_generate_mode gen_mode,
    const struct pvr_device_info *dev_info);
+
 struct pvr_pds_descriptor_set {
    unsigned int descriptor_set; /* id of the descriptor set. */
    unsigned int size_in_dwords; /* Number of dwords to transfer. */
    unsigned int destination; /* Destination shared register to which
                               * descriptor entries should be loaded.
                               */
-   bool primary; /* Primary or secondary? */
-   unsigned int offset_in_dwords; /* Offset from the start of the descriptor
-                                   * set to start DMA'ing from.
-                                   */
-};
-
-struct pvr_pds_addr_literal {
-   enum pvr_pds_addr_literal_type type;
-   unsigned int destination;
 };
 
 #define PVR_BUFFER_TYPE_UBO (0)
@@ -925,9 +911,6 @@ struct pvr_pds_descriptor_program_input {
    /* User-specified descriptor sets. */
    unsigned int descriptor_set_count;
    struct pvr_pds_descriptor_set descriptor_sets[8];
-
-   unsigned int addr_literal_count;
-   struct pvr_pds_addr_literal addr_literals[8];
 
    /* "State" buffers, including:
     * compile-time constants
@@ -1017,35 +1000,32 @@ struct pvr_pds_vertex_primary_program_input {
 #define PVR_PDS_CONST_MAP_ENTRY_TYPE_BASE_WORKGROUP (13)
 #define PVR_PDS_CONST_MAP_ENTRY_TYPE_COND_RENDER (14)
 
-#define PVR_PDS_CONST_MAP_ENTRY_TYPE_ADDR_LITERAL_BUFFER (15)
-#define PVR_PDS_CONST_MAP_ENTRY_TYPE_ADDR_LITERAL (16)
-
 /* We pack all the following structs tightly into a buffer using += sizeof(x)
  * offsets, this can lead to data that is not native aligned. Supplying the
  * packed attribute indicates that unaligned accesses may be required, and the
  * aligned attribute causes the size of the structure to be aligned to a
  * specific boundary.
  */
-#define PVR_ALIGNED __attribute__((packed, aligned(1)))
+#define PVR_PACKED __attribute__((packed, aligned(1)))
 
 struct pvr_const_map_entry {
    uint8_t type;
    uint8_t const_offset;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_literal32 {
    uint8_t type;
    uint8_t const_offset;
 
    uint32_t literal_value;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_literal64 {
    uint8_t type;
    uint8_t const_offset;
 
    uint64_t literal_value;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_descriptor_set {
    uint8_t type;
@@ -1054,7 +1034,7 @@ struct pvr_const_map_entry_descriptor_set {
    uint32_t descriptor_set;
    PVR_PDS_BOOL primary;
    uint32_t offset_in_dwords;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_constant_buffer {
    uint8_t type;
@@ -1065,7 +1045,7 @@ struct pvr_const_map_entry_constant_buffer {
    uint16_t binding;
    uint32_t offset;
    uint32_t size_in_dwords;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_constant_buffer_zeroing {
    uint8_t type;
@@ -1074,7 +1054,7 @@ struct pvr_const_map_entry_constant_buffer_zeroing {
    uint16_t buffer_id;
    uint32_t offset;
    uint32_t size_in_dwords;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_special_buffer {
    uint8_t type;
@@ -1082,14 +1062,14 @@ struct pvr_const_map_entry_special_buffer {
 
    uint8_t buffer_type;
    uint32_t buffer_index;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_doutu_address {
    uint8_t type;
    uint8_t const_offset;
 
    uint64_t doutu_control;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_vertex_attribute_address {
    uint8_t type;
@@ -1099,7 +1079,7 @@ struct pvr_const_map_entry_vertex_attribute_address {
    uint16_t stride;
    uint8_t binding_index;
    uint8_t size_in_dwords;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_robust_vertex_attribute_address {
    uint8_t type;
@@ -1111,7 +1091,7 @@ struct pvr_const_map_entry_robust_vertex_attribute_address {
    uint8_t size_in_dwords;
    uint16_t robustness_buffer_offset;
    uint8_t component_size_in_bytes;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_vertex_attribute_max_index {
    uint8_t type;
@@ -1122,12 +1102,12 @@ struct pvr_const_map_entry_vertex_attribute_max_index {
    uint16_t offset;
    uint16_t stride;
    uint8_t component_size_in_bytes;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_base_instance {
    uint8_t type;
    uint8_t const_offset;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_const_map_entry_base_vertex {
    uint8_t type;
@@ -1138,32 +1118,20 @@ struct pvr_pds_const_map_entry_base_workgroup {
    uint8_t type;
    uint8_t const_offset;
    uint8_t workgroup_component;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_pds_const_map_entry_vertex_attr_ddmadt_oob_buffer_size {
    uint8_t type;
    uint8_t const_offset;
    uint8_t binding_index;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_pds_const_map_entry_cond_render {
    uint8_t type;
    uint8_t const_offset;
 
    uint32_t cond_render_pred_temp;
-} PVR_ALIGNED;
-
-struct pvr_pds_const_map_entry_addr_literal_buffer {
-   uint8_t type;
-   uint8_t const_offset;
-
-   uint32_t size;
-} PVR_ALIGNED;
-
-struct pvr_pds_const_map_entry_addr_literal {
-   uint8_t type;
-   enum pvr_pds_addr_literal_type addr_type;
-} PVR_ALIGNED;
+} PVR_PACKED;
 
 struct pvr_pds_info {
    uint32_t temps_required;

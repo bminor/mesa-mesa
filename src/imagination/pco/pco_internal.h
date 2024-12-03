@@ -1208,6 +1208,7 @@ bool pco_index(pco_shader *shader, bool skip_ssa);
 bool pco_legalize(pco_shader *shader);
 bool pco_nir_lower_algebraic(nir_shader *shader);
 bool pco_nir_lower_algebraic_late(nir_shader *shader);
+bool pco_nir_lower_vk(nir_shader *shader, pco_common_data *common);
 bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs);
 bool pco_nir_pvi(nir_shader *shader, pco_vs_data *vs);
 bool pco_opt(pco_shader *shader);
@@ -2248,5 +2249,37 @@ void pco_print_shader_info(pco_shader *shader);
 void pco_print_phase(pco_shader *shader,
                      enum pco_alutype alutype,
                      enum pco_op_phase phase);
+
+/**
+ * \brief Packs a descriptor set and binding into a uint32_t.
+ *
+ * \param[in] desc_set The descriptor set.
+ * \param[in] binding The binding.
+ * \return The packed descriptor set and binding.
+ */
+static inline uint32_t pco_pack_desc(unsigned desc_set, unsigned binding)
+{
+   assert(desc_set <= UINT16_MAX);
+   assert(binding <= UINT16_MAX);
+
+   return desc_set | binding << 16;
+}
+
+/**
+ * \brief Unpacks a descriptor set and binding from a uint32_t.
+ *
+ * \param[in] packed The packed descriptor set and binding.
+ * \param[out] desc_set The descriptor set.
+ * \param[out] binding The binding.
+ */
+static inline void
+pco_unpack_desc(uint32_t packed, unsigned *desc_set, unsigned *binding)
+{
+   assert(desc_set);
+   assert(binding);
+
+   *desc_set = packed & 0xffff;
+   *binding = packed >> 16;
+}
 
 #endif /* PCO_INTERNAL_H */

@@ -13,6 +13,7 @@
  * \brief PCO shader-specific data/compiler-driver interface.
  */
 
+#include "common/pvr_limits.h"
 #include "compiler/shader_enums.h"
 #include "util/format/u_format.h"
 
@@ -22,6 +23,7 @@
 typedef struct _pco_range {
    unsigned start;
    unsigned count;
+   unsigned stride;
 } pco_range;
 
 /** PCO vertex shader-specific data. */
@@ -72,10 +74,29 @@ typedef struct _pco_cs_data {
    /**/
 } pco_cs_data;
 
+/** PCO descriptor binding data. */
+typedef struct _pco_binding_data {
+   pco_range range; /** Descriptor location range. */
+   bool used; /** Whether the descriptor binding is used by the shader. */
+} pco_binding_data;
+
+/** PCO descriptor set data. */
+typedef struct _pco_descriptor_set_data {
+   pco_range range; /** Descriptor location range. */
+
+   unsigned binding_count; /** Number of bindings. */
+   pco_binding_data *bindings; /** Descriptor set bindings. */
+
+   bool used; /** Whether the descriptor set is used by the shader. */
+} pco_descriptor_set_data;
+
 /** PCO common data. */
 typedef struct _pco_common_data {
    /** System value mappings. */
    pco_range sys_vals[SYSTEM_VALUE_MAX];
+
+   /** Descriptor set data. */
+   pco_descriptor_set_data desc_sets[PVR_MAX_DESCRIPTOR_SETS];
 
    unsigned temps; /** Number of allocated temp registers. */
    unsigned vtxins; /** Number of allocated vertex input registers. */
