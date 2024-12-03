@@ -139,8 +139,6 @@ files_libglsl = files(
   'glsl_to_nir.cpp',
   'glsl_to_nir.h',
   'hir_field_selection.cpp',
-  'ir_array_refcount.cpp',
-  'ir_array_refcount.h',
   'ir_basic_block.cpp',
   'ir_basic_block.h',
   'ir_builder.cpp',

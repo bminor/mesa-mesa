@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 general_ir_test_files = files(
-  'array_refcount_test.cpp',
   'builtin_variable_test.cpp',
   'general_ir_test.cpp',
 )
