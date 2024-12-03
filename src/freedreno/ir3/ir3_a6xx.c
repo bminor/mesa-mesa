@@ -290,15 +290,19 @@ emit_intrinsic_load_image(struct ir3_context *ctx, nir_intrinsic_instr *intr,
                           struct ir3_instruction **dst)
 {
    struct ir3_builder *b = &ctx->build;
-   struct ir3_instruction *ldib;
+   struct ir3_instruction *ldib, *rck;
    struct ir3_instruction *const *coords = ir3_get_src(ctx, &intr->src[1]);
    unsigned ncoords = ir3_get_image_coords(intr, NULL);
+   unsigned num_components = intr->num_components;
+   if (intr->intrinsic == nir_intrinsic_image_sparse_load ||
+       intr->intrinsic == nir_intrinsic_bindless_image_sparse_load)
+      num_components--;
 
    ldib = ir3_LDIB(b, ir3_image_to_ibo(ctx, intr->src[0]), 0,
                    ir3_create_collect(b, coords, ncoords), 0,
                    create_immed(b, 0), 0);
-   ldib->dsts[0]->wrmask = MASK(intr->num_components);
-   ldib->cat6.iim_val = intr->num_components;
+   ldib->dsts[0]->wrmask = MASK(num_components);
+   ldib->cat6.iim_val = num_components;
    ldib->cat6.d = ncoords;
    ldib->cat6.type = ir3_get_type_for_image_intrinsic(intr);
    ldib->cat6.typed = true;
@@ -306,6 +310,23 @@ emit_intrinsic_load_image(struct ir3_context *ctx, nir_intrinsic_instr *intr,
    ldib->barrier_conflict = IR3_BARRIER_IMAGE_W;
    ir3_handle_bindless_cat6(ldib, intr->src[0]);
    ir3_handle_nonuniform(ldib, intr);
+
+   if (intr->intrinsic == nir_intrinsic_image_sparse_load ||
+       intr->intrinsic == nir_intrinsic_bindless_image_sparse_load) {
+      rck = ir3_LDIB(b, ir3_image_to_ibo(ctx, intr->src[0]), 0,
+                      ir3_create_collect(b, coords, ncoords), 0,
+                      create_immed(b, 0), 0);
+      rck->dsts[0]->wrmask = 0b1;
+      rck->cat6.iim_val = 1;
+      rck->cat6.d = ncoords;
+      rck->cat6.type = TYPE_U32;
+      rck->cat6.typed = true;
+      rck->flags |= IR3_INSTR_RCK;
+      ir3_handle_bindless_cat6(rck, intr->src[0]);
+      ir3_handle_nonuniform(rck, intr);
+
+      dst[num_components] = rck;
+   }
 
    ir3_split_dest(b, dst, ldib, 0, intr->num_components);
 }

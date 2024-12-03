@@ -1767,7 +1767,7 @@ emit_intrinsic_load_image(struct ir3_context *ctx, nir_intrinsic_instr *intr,
 
    struct ir3_builder *b = &ctx->build;
    struct tex_src_info info = get_image_ssbo_samp_tex_src(ctx, &intr->src[0], true);
-   struct ir3_instruction *sam;
+   struct ir3_instruction *sam, *rck;
    struct ir3_instruction *const *src0 = ir3_get_src(ctx, &intr->src[1]);
    struct ir3_instruction *coords[4];
    unsigned flags, ncoords = ir3_get_image_coords(intr, &flags);
@@ -1799,6 +1799,17 @@ emit_intrinsic_load_image(struct ir3_context *ctx, nir_intrinsic_instr *intr,
    sam->barrier_conflict = IR3_BARRIER_IMAGE_W;
 
    ir3_split_dest(b, dst, sam, 0, 4);
+
+   if (intr->intrinsic == nir_intrinsic_image_sparse_load ||
+       intr->intrinsic == nir_intrinsic_bindless_image_sparse_load) {
+      /* The results of the residency check cannot change within the shader, so
+       * it doesn't need any barriers.
+       */
+      rck = emit_sam(ctx, OPC_ISAM, info, type, 0b1,
+                     ir3_create_collect(b, coords, ncoords), NULL);
+      rck->flags |= IR3_INSTR_RCK;
+      dst[4] = rck;
+   }
 }
 
 /* A4xx version of image_size, see ir3_a6xx.c for newer resinfo version. */
@@ -2901,6 +2912,8 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       break;
    case nir_intrinsic_image_load:
    case nir_intrinsic_bindless_image_load:
+   case nir_intrinsic_image_sparse_load:
+   case nir_intrinsic_bindless_image_sparse_load:
       emit_intrinsic_load_image(ctx, intr, dst);
       break;
    case nir_intrinsic_image_store:
@@ -3604,6 +3617,12 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
 
    dst = ir3_get_def(ctx, &tex->def, ncomp);
 
+   /* For sparse residency check, the last component is a residency code that is
+    * emitted separately.
+    */
+   if (tex->is_sparse)
+      ncomp--;
+
    for (unsigned i = 0; i < tex->num_srcs; i++) {
       switch (tex->src[i].src_type) {
       case nir_tex_src_coord:
@@ -3919,6 +3938,14 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
    } else {
       info.flags |= flags;
       sam = emit_sam(ctx, opc, info, type, MASK(ncomp), col0, col1);
+   }
+
+   if (tex->is_sparse) {
+      info.flags |= flags;
+      struct ir3_instruction *rck =
+         emit_sam(ctx, opc, info, TYPE_U32, MASK(1), col0, col1);
+      rck->flags |= IR3_INSTR_RCK;
+      dst[ncomp] = rck;
    }
 
    if (tg4_swizzle_fixup) {

@@ -102,7 +102,9 @@ ir3_get_type_for_image_intrinsic(const nir_intrinsic_instr *instr)
    nir_alu_type type = nir_type_uint;
    switch (instr->intrinsic) {
    case nir_intrinsic_image_load:
+   case nir_intrinsic_image_sparse_load:
    case nir_intrinsic_bindless_image_load:
+   case nir_intrinsic_bindless_image_sparse_load:
       type = nir_alu_type_get_base_type(nir_intrinsic_dest_type(instr));
       /* SpvOpAtomicLoad doesn't have dest type */
       if (type == nir_type_invalid)

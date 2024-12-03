@@ -502,6 +502,7 @@ lower_intrinsic(nir_builder *b, nir_intrinsic_instr *instr,
       return lower_ssbo_ubo_intrinsic(dev, b, instr);
 
    case nir_intrinsic_image_deref_load:
+   case nir_intrinsic_image_deref_sparse_load:
    case nir_intrinsic_image_deref_store:
    case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_deref_atomic_swap:
