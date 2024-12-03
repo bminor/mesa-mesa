@@ -265,16 +265,20 @@ main(int argc, char **argv)
 
    nir_shader *nir = compile(mem_ctx, spirv_map, spirv_len);
 
+   /* load_preamble works at 16-bit granularity */
+   struct nir_precomp_opts opt = {.arg_align_B = 2};
+
    nir_foreach_entrypoint(libfunc, nir) {
       libfunc->pass_flags = 0;
-      struct nir_precomp_layout layout = nir_precomp_derive_layout(libfunc);
+      struct nir_precomp_layout layout =
+         nir_precomp_derive_layout(&opt, libfunc);
       unsigned nr_vars = nir_precomp_nr_variants(libfunc);
 
-      nir_precomp_print_layout_struct(fp_h, libfunc);
+      nir_precomp_print_layout_struct(fp_h, &opt, libfunc);
 
       for (unsigned v = 0; v < nr_vars; ++v) {
          nir_shader *s = nir_precompiled_build_variant(
-            libfunc, v, &agx_nir_options, load_kernel_input);
+            libfunc, v, &agx_nir_options, &opt, load_kernel_input);
 
          agx_link_libagx(s, nir);
 
@@ -338,7 +342,7 @@ main(int argc, char **argv)
    }
 
    nir_precomp_print_program_enum(fp_h, nir, "libagx");
-   nir_precomp_print_dispatch_macros(fp_h, nir);
+   nir_precomp_print_dispatch_macros(fp_h, &opt, nir);
 
    /* For each target, generate a table mapping programs to binaries */
    foreach_target(target)

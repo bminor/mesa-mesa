@@ -161,6 +161,14 @@
 
 #define NIR_PRECOMP_MAX_ARGS (64)
 
+struct nir_precomp_opts {
+   /* If nonzero, minimum (power-of-two) alignment required for kernel
+    * arguments. Kernel arguments will be naturally aligned regardless, but this
+    * models a minimum alignment required by some hardware.
+    */
+   unsigned arg_align_B;
+};
+
 struct nir_precomp_layout {
    unsigned size_B;
    unsigned offset_B[NIR_PRECOMP_MAX_ARGS];
@@ -217,7 +225,8 @@ nir_precomp_has_variants(const nir_function *f)
 }
 
 static inline struct nir_precomp_layout
-nir_precomp_derive_layout(const nir_function *f)
+nir_precomp_derive_layout(const struct nir_precomp_opts *opt,
+                          const nir_function *f)
 {
    struct nir_precomp_layout l = { 0 };
 
@@ -227,6 +236,12 @@ nir_precomp_derive_layout(const nir_function *f)
 
       /* Align members naturally */
       l.offset_B[a] = ALIGN_POT(l.size_B, param.bit_size / 8);
+
+      /* Align arguments to driver minimum */
+      if (opt->arg_align_B) {
+         l.offset_B[a] = ALIGN_POT(l.offset_B[a], opt->arg_align_B);
+      }
+
       l.prepadded[a] = (l.offset_B[a] != l.size_B);
       l.size_B = l.offset_B[a] + (param.num_components * param.bit_size) / 8;
    }
@@ -400,9 +415,10 @@ nir_precomp_print_program_enum(FILE *fp, const nir_shader *lib, const char *pref
 }
 
 static inline void
-nir_precomp_print_layout_struct(FILE *fp, const nir_function *func)
+nir_precomp_print_layout_struct(FILE *fp, const struct nir_precomp_opts *opt,
+                                const nir_function *func)
 {
-   struct nir_precomp_layout layout = nir_precomp_derive_layout(func);
+   struct nir_precomp_layout layout = nir_precomp_derive_layout(opt, func);
 
    /* Generate a C struct matching the data layout we chose. This is how
     * the CPU will pack arguments.
@@ -454,10 +470,11 @@ nir_precomp_print_layout_struct(FILE *fp, const nir_function *func)
 }
 
 static inline void
-nir_precomp_print_dispatch_macros(FILE *fp, const nir_shader *nir)
+nir_precomp_print_dispatch_macros(FILE *fp, const struct nir_precomp_opts *opt,
+                                  const nir_shader *nir)
 {
    nir_foreach_entrypoint(func, nir) {
-      struct nir_precomp_layout layout = nir_precomp_derive_layout(func);
+      struct nir_precomp_layout layout = nir_precomp_derive_layout(opt, func);
 
       for (unsigned i = 0; i < 2; ++i) {
          bool is_struct = i == 0;
@@ -551,13 +568,15 @@ nir_precomp_print_binary_map(FILE *fp, const nir_shader *nir,
 static inline nir_shader *
 nir_precompiled_build_variant(const nir_function *libfunc, unsigned variant,
                               const nir_shader_compiler_options *opts,
+                              const struct nir_precomp_opts *precomp_opt,
                               nir_def *(*load_arg)(nir_builder *b,
                                                    unsigned num_components,
                                                    unsigned bit_size,
                                                    unsigned offset_B))
 {
-   struct nir_precomp_layout layout = nir_precomp_derive_layout(libfunc);
    bool has_variants = nir_precomp_has_variants(libfunc);
+   struct nir_precomp_layout layout =
+      nir_precomp_derive_layout(precomp_opt, libfunc);
 
    nir_builder b;
    if (has_variants) {
