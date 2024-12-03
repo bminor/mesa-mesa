@@ -16,7 +16,7 @@ impl<T> Properties<T> {
     ///
     /// Besides `p` being valid to be dereferenced, it also needs to point to a `T::default()`
     /// terminated array of `T`.
-    pub unsafe fn from_ptr(mut p: *const T) -> Option<Self>
+    pub unsafe fn new(mut p: *const T) -> Option<Self>
     where
         T: Copy + Default + PartialEq,
     {

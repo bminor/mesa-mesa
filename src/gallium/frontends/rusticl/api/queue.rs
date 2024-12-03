@@ -131,7 +131,7 @@ fn create_command_queue_with_properties(
     let mut queue_properties = cl_command_queue_properties::default();
 
     // SAFETY: properties is a 0 terminated array by spec.
-    let properties = unsafe { Properties::from_ptr(properties) }.ok_or(CL_INVALID_PROPERTY)?;
+    let properties = unsafe { Properties::new(properties) }.ok_or(CL_INVALID_PROPERTY)?;
     for (k, v) in properties.iter() {
         match *k as cl_uint {
             CL_QUEUE_PROPERTIES => queue_properties = *v,
