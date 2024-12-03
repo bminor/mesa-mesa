@@ -1919,7 +1919,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir)
       .kill_pointsize = key->ge.opt.kill_pointsize,
       .kill_layer = key->ge.opt.kill_layer,
       .force_vrs = sel->screen->options.vrs2x2,
-      .use_gfx12_xfb_intrinsic = true,
+      .use_gfx12_xfb_intrinsic = !sel->info.base.use_aco_amd,
    };
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||
