@@ -225,6 +225,9 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
       memcpy(operation->reshape.shape, shape, 4 * sizeof(*operation->reshape.shape));
       break;
    }
+   case kTfLiteBuiltinRelu:
+      operation->type = PIPE_ML_OPERATION_TYPE_RELU;
+      break;
    default:
       return false;
    }
@@ -357,6 +360,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
          break;
       case PIPE_ML_OPERATION_TYPE_RESHAPE:
          teflon_debug("%-6s ", "RESHAPE");
+         break;
+      case PIPE_ML_OPERATION_TYPE_RELU:
+         teflon_debug("%-6s ", "RELU");
          break;
       }
 
