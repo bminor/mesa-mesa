@@ -3620,7 +3620,7 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
    switch (sel->stage) {
    case MESA_SHADER_GEOMETRY:
       /* Only possibilities: POINTS, LINE_STRIP, TRIANGLES */
-      sel->rast_prim = (enum mesa_prim)sel->info.base.gs.output_primitive;
+      sel->rast_prim = (enum mesa_prim)sel->nir->info.gs.output_primitive;
       if (util_rast_prim_is_triangles(sel->rast_prim))
          sel->rast_prim = MESA_PRIM_TRIANGLES;
 
@@ -3631,17 +3631,17 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
        */
       sel->tess_turns_off_ngg = sscreen->info.gfx_level >= GFX10 &&
                                 sscreen->info.gfx_level <= GFX10_3 &&
-                                (sel->info.base.gs.invocations * sel->info.base.gs.vertices_out > 256 ||
-                                 sel->info.base.gs.invocations * sel->info.base.gs.vertices_out *
+                                (sel->nir->info.gs.invocations * sel->nir->info.gs.vertices_out > 256 ||
+                                 sel->nir->info.gs.invocations * sel->nir->info.gs.vertices_out *
                                  (sel->info.num_outputs * 4 + 1) > 6500 /* max dw per GS primitive */);
       break;
 
    case MESA_SHADER_VERTEX:
    case MESA_SHADER_TESS_EVAL:
       if (sel->stage == MESA_SHADER_TESS_EVAL) {
-         if (sel->info.base.tess.point_mode)
+         if (sel->nir->info.tess.point_mode)
             sel->rast_prim = MESA_PRIM_POINTS;
-         else if (sel->info.base.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES)
+         else if (sel->nir->info.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES)
             sel->rast_prim = MESA_PRIM_LINE_STRIP;
          else
             sel->rast_prim = MESA_PRIM_TRIANGLES;
@@ -3657,13 +3657,13 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       sscreen->use_ngg_culling &&
       sel->info.writes_position &&
       !sel->info.writes_viewport_index && /* cull only against viewport 0 */
-      !sel->info.base.writes_memory &&
+      !sel->nir->info.writes_memory &&
       /* NGG GS supports culling with streamout because it culls after streamout. */
       (sel->stage == MESA_SHADER_GEOMETRY || !sel->info.enabled_streamout_buffer_mask) &&
       (sel->stage != MESA_SHADER_GEOMETRY || sel->info.num_stream_output_components[0]) &&
       (sel->stage != MESA_SHADER_VERTEX ||
-       (!sel->info.base.vs.blit_sgprs_amd &&
-        !sel->info.base.vs.window_space_position));
+       (!sel->nir->info.vs.blit_sgprs_amd &&
+        !sel->nir->info.vs.window_space_position));
 
    sel->ngg_cull_vert_threshold = UINT_MAX; /* disabled (changed below) */
 

@@ -38,9 +38,9 @@ static nir_def *build_attr_ring_desc(nir_builder *b, struct si_shader *shader,
    struct si_shader_selector *sel = shader->selector;
 
    nir_def *attr_address =
-      sel->stage == MESA_SHADER_VERTEX && sel->info.base.vs.blit_sgprs_amd ?
+      b->shader->info.stage == MESA_SHADER_VERTEX && b->shader->info.vs.blit_sgprs_amd ?
       ac_nir_load_arg_at_offset(b, &args->ac, args->vs_blit_inputs,
-                                sel->info.base.vs.blit_sgprs_amd - 1) :
+                                b->shader->info.vs.blit_sgprs_amd - 1) :
       ac_nir_load_arg(b, &args->ac, args->gs_attr_address);
 
    unsigned stride = 16 * si_shader_num_alloc_param_exports(shader);
@@ -178,7 +178,7 @@ static void build_gsvs_ring_desc(nir_builder *b, struct lower_abi_state *s)
 
    if (s->shader->is_gs_copy_shader) {
       s->gsvs_ring[0] = si_nir_load_internal_binding(b, s->args, SI_RING_GSVS, 4);
-   } else if (sel->stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
+   } else if (b->shader->info.stage == MESA_SHADER_GEOMETRY && !key->ge.as_ngg) {
       nir_def *base_addr = si_nir_load_internal_binding(b, s->args, SI_RING_GSVS, 2);
       base_addr = nir_pack_64_2x32(b, base_addr);
 
@@ -196,7 +196,7 @@ static void build_gsvs_ring_desc(nir_builder *b, struct lower_abi_state *s)
          if (!num_components)
             continue;
 
-         unsigned stride = 4 * num_components * sel->info.base.gs.vertices_out;
+         unsigned stride = 4 * num_components * b->shader->info.gs.vertices_out;
          /* Limit on the stride field for <= GFX7. */
          assert(stride < (1 << 14));
 
@@ -240,12 +240,13 @@ static void preload_reusable_variables(nir_builder *b, struct lower_abi_state *s
 
    b->cursor = nir_before_impl(b->impl);
 
-   if (sel->screen->info.gfx_level <= GFX8 && sel->stage <= MESA_SHADER_GEOMETRY &&
-       (key->ge.as_es || sel->stage == MESA_SHADER_GEOMETRY)) {
+   if (sel->screen->info.gfx_level <= GFX8 && b->shader->info.stage <= MESA_SHADER_GEOMETRY &&
+       (key->ge.as_es || b->shader->info.stage == MESA_SHADER_GEOMETRY)) {
       s->esgs_ring = build_esgs_ring_desc(b, sel->screen->info.gfx_level, s->args);
    }
 
-   if (sel->stage == MESA_SHADER_TESS_CTRL || sel->stage == MESA_SHADER_TESS_EVAL)
+   if (b->shader->info.stage == MESA_SHADER_TESS_CTRL ||
+       b->shader->info.stage == MESA_SHADER_TESS_EVAL)
       s->tess_offchip_ring = build_tess_ring_desc(b, sel->screen, s->args);
 
    build_gsvs_ring_desc(b, s);
@@ -286,7 +287,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    struct si_shader_args *args = s->args;
    struct si_shader_selector *sel = shader->selector;
    union si_shader_key *key = &shader->key;
-   gl_shader_stage stage = sel->stage;
+   gl_shader_stage stage = b->shader->info.stage;
 
    b->cursor = nir_before_instr(instr);
 
@@ -305,7 +306,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       break;
    }
    case nir_intrinsic_load_workgroup_size: {
-      assert(sel->info.base.workgroup_size_variable && sel->info.uses_variable_block_size);
+      assert(b->shader->info.workgroup_size_variable && sel->info.uses_variable_block_size);
 
       nir_def *block_size = ac_nir_load_arg(b, &args->ac, args->block_size);
       nir_def *comp[] = {
@@ -373,7 +374,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       if (stage == MESA_SHADER_TESS_CTRL) {
          const unsigned num_hs_out = util_last_bit64(sel->info.tcs_outputs_written_for_tes);
          const unsigned out_vtx_size = num_hs_out * 16;
-         const unsigned out_vtx_per_patch = sel->info.base.tess.tcs_vertices_out;
+         const unsigned out_vtx_per_patch = b->shader->info.tess.tcs_vertices_out;
          per_vtx_out_patch_size = nir_imm_int(b, out_vtx_size * out_vtx_per_patch);
       } else {
          nir_def *num_hs_out = ac_nir_unpack_arg(b, &args->ac, args->tcs_offchip_layout, 23, 6);
@@ -681,7 +682,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       if (output_prim == MESA_PRIM_POINTS || output_prim == MESA_PRIM_LINES ||
           output_prim == SI_PRIM_RECTANGLE_LIST) {
          replacement = nir_imm_int(b, 0);
-      } else if (shader->selector->stage == MESA_SHADER_VERTEX) {
+      } else if (stage == MESA_SHADER_VERTEX) {
          if (sel->screen->info.gfx_level >= GFX12) {
             replacement = nir_iand_imm(b, ac_nir_load_arg(b, &args->ac, args->ac.gs_vtx_offset[0]),
                                        ac_get_all_edge_flag_bits(sel->screen->info.gfx_level));
@@ -716,7 +717,7 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
       break;
    case nir_intrinsic_load_tess_rel_patch_id_amd:
       /* LLVM need to replace patch id arg, so have to be done in LLVM backend. */
-      if (!sel->info.base.use_aco_amd)
+      if (!b->shader->info.use_aco_amd)
          return false;
 
       if (stage == MESA_SHADER_TESS_CTRL) {

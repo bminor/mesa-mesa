@@ -103,7 +103,7 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    assert(program->ir_type == PIPE_SHADER_IR_NIR);
    si_nir_scan_shader(sscreen, sel->nir, &sel->info);
 
-   if (!sel->info.base.use_aco_amd && !*compiler)
+   if (!sel->nir->info.use_aco_amd && !*compiler)
       *compiler = si_create_llvm_compiler(sscreen);
 
    si_get_active_slot_masks(sscreen, &sel->info, &sel->active_const_and_shader_buffers,
@@ -117,11 +117,11 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
     */
    unsigned user_sgprs = SI_NUM_RESOURCE_SGPRS + (sel->info.uses_grid_size ? 3 : 0) +
                          (sel->info.uses_variable_block_size ? 1 : 0) +
-                         sel->info.base.cs.user_data_components_amd;
+                         sel->nir->info.cs.user_data_components_amd;
 
    /* Fast path for compute shaders - some descriptors passed via user SGPRs. */
    /* Shader buffers in user SGPRs. */
-   for (unsigned i = 0; i < MIN2(3, sel->info.base.num_ssbos) && user_sgprs <= 12; i++) {
+   for (unsigned i = 0; i < MIN2(3, sel->nir->info.num_ssbos) && user_sgprs <= 12; i++) {
       user_sgprs = align(user_sgprs, 4);
       if (i == 0)
          sel->cs_shaderbufs_sgpr_index = user_sgprs;
@@ -130,16 +130,16 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    }
 
    /* Images in user SGPRs. */
-   unsigned non_fmask_images = u_bit_consecutive(0, sel->info.base.num_images);
+   unsigned non_fmask_images = u_bit_consecutive(0, sel->nir->info.num_images);
 
    /* Remove images with FMASK from the bitmask.  We only care about the first
     * 3 anyway, so we can take msaa_images[0] and ignore the rest.
     */
    if (sscreen->info.gfx_level < GFX11)
-      non_fmask_images &= ~sel->info.base.msaa_images[0];
+      non_fmask_images &= ~sel->nir->info.msaa_images[0];
 
    for (unsigned i = 0; i < 3 && non_fmask_images & (1 << i); i++) {
-      unsigned num_sgprs = BITSET_TEST(sel->info.base.image_buffers, i) ? 4 : 8;
+      unsigned num_sgprs = BITSET_TEST(sel->nir->info.image_buffers, i) ? 4 : 8;
 
       if (align(user_sgprs, num_sgprs) + num_sgprs > 16)
          break;

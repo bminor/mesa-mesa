@@ -548,7 +548,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
 
    /* Get options from shader profiles. */
    for (unsigned i = 0; i < ARRAY_SIZE(si_shader_profiles); i++) {
-      if (_mesa_printed_blake3_equal(info->base.source_blake3, si_shader_profiles[i].blake3)) {
+      if (_mesa_printed_blake3_equal(nir->info.source_blake3, si_shader_profiles[i].blake3)) {
          info->options = si_shader_profiles[i].options;
          break;
       }
@@ -681,7 +681,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN) ||
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_HELPER_INVOCATION));
 
-      info->uses_vmem_load_other |= info->base.fs.uses_fbfetch_output;
+      info->uses_vmem_load_other |= nir->info.fs.uses_fbfetch_output;
 
       /* Add both front and back color inputs. */
       unsigned num_inputs_with_colors = info->num_inputs;
@@ -710,7 +710,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       info->num_vs_inputs =
-         nir->info.stage == MESA_SHADER_VERTEX && !info->base.vs.blit_sgprs_amd ? info->num_inputs : 0;
+         nir->info.stage == MESA_SHADER_VERTEX && !nir->info.vs.blit_sgprs_amd ? info->num_inputs : 0;
       unsigned num_vbos_in_sgprs = si_num_vbos_in_user_sgprs_inline(sscreen->info.gfx_level);
       info->num_vbos_in_user_sgprs = MIN2(info->num_vs_inputs, num_vbos_in_sgprs);
    }
@@ -731,23 +731,23 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
          assert(((info->esgs_vertex_stride / 4) & C_028AAC_ITEMSIZE) == 0);
       }
 
-      info->tcs_inputs_via_temp = info->base.tess.tcs_same_invocation_inputs_read;
-      info->tcs_inputs_via_lds = info->base.tess.tcs_cross_invocation_inputs_read |
-                                 (info->base.tess.tcs_same_invocation_inputs_read &
-                                  info->base.inputs_read_indirectly);
+      info->tcs_inputs_via_temp = nir->info.tess.tcs_same_invocation_inputs_read;
+      info->tcs_inputs_via_lds = nir->info.tess.tcs_cross_invocation_inputs_read |
+                                 (nir->info.tess.tcs_same_invocation_inputs_read &
+                                  nir->info.inputs_read_indirectly);
    }
 
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {
       info->gsvs_vertex_size = info->num_outputs * 16;
-      info->max_gsvs_emit_size = info->gsvs_vertex_size * info->base.gs.vertices_out;
+      info->max_gsvs_emit_size = info->gsvs_vertex_size * nir->info.gs.vertices_out;
       info->gs_input_verts_per_prim =
-         mesa_vertices_per_prim(info->base.gs.input_primitive);
+         mesa_vertices_per_prim(nir->info.gs.input_primitive);
    }
 
    info->clipdist_mask = info->writes_clipvertex ? SI_USER_CLIP_PLANE_MASK :
-                         u_bit_consecutive(0, info->base.clip_distance_array_size);
-   info->culldist_mask = u_bit_consecutive(0, info->base.cull_distance_array_size) <<
-                         info->base.clip_distance_array_size;
+                         u_bit_consecutive(0, nir->info.clip_distance_array_size);
+   info->culldist_mask = u_bit_consecutive(0, nir->info.cull_distance_array_size) <<
+                         nir->info.clip_distance_array_size;
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       for (unsigned i = 0; i < info->num_inputs; i++) {

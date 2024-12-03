@@ -548,13 +548,13 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
    const struct si_shader_info *info = &sel->info;
 
    ctx->shader = shader;
-   ctx->stage = shader->is_gs_copy_shader ? MESA_SHADER_VERTEX : sel->stage;
+   ctx->stage = shader->is_gs_copy_shader ? MESA_SHADER_VERTEX : nir->info.stage;
 
-   ctx->num_const_buffers = info->base.num_ubos;
-   ctx->num_shader_buffers = info->base.num_ssbos;
+   ctx->num_const_buffers = nir->info.num_ubos;
+   ctx->num_shader_buffers = nir->info.num_ssbos;
 
-   ctx->num_samplers = BITSET_LAST_BIT(info->base.textures_used);
-   ctx->num_images = info->base.num_images;
+   ctx->num_samplers = BITSET_LAST_BIT(nir->info.textures_used);
+   ctx->num_images = nir->info.num_images;
 
    ctx->abi.intrinsic_load = si_llvm_load_intrinsic;
    ctx->abi.load_sampler_desc = si_llvm_load_sampler_desc;
@@ -710,7 +710,7 @@ static bool si_llvm_translate_nir(struct si_shader_context *ctx, struct si_shade
              * the wave size is a multiple of the number of patch vertices.
              */
             if (!shader->key.ge.opt.same_patch_vertices ||
-                ctx->ac.wave_size % sel->info.base.tess.tcs_vertices_out != 0)
+                ctx->ac.wave_size % nir->info.tess.tcs_vertices_out != 0)
                ac_build_s_barrier(&ctx->ac, ctx->stage);
          }
       } else if (ctx->stage == MESA_SHADER_GEOMETRY) {
@@ -810,11 +810,12 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 {
    struct si_shader_selector *sel = shader->selector;
    struct si_shader_context ctx;
-   enum ac_float_mode float_mode = nir->info.stage == MESA_SHADER_KERNEL ? AC_FLOAT_MODE_DEFAULT : AC_FLOAT_MODE_DEFAULT_OPENGL;
+   enum ac_float_mode float_mode = nir->info.stage == MESA_SHADER_KERNEL ?
+                                       AC_FLOAT_MODE_DEFAULT : AC_FLOAT_MODE_DEFAULT_OPENGL;
    bool exports_color_null = false;
    bool exports_mrtz = false;
 
-   if (sel->stage == MESA_SHADER_FRAGMENT) {
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       exports_color_null = sel->info.colors_written;
       exports_mrtz = shader->ps.writes_z || shader->ps.writes_stencil ||
                      shader->ps.writes_samplemask ||
@@ -834,7 +835,7 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 
    /* For merged shader stage. */
    if (shader->is_monolithic && sscreen->info.gfx_level >= GFX9 &&
-       (sel->stage == MESA_SHADER_TESS_CTRL || sel->stage == MESA_SHADER_GEOMETRY)) {
+       (nir->info.stage == MESA_SHADER_TESS_CTRL || nir->info.stage == MESA_SHADER_GEOMETRY)) {
       /* LS or ES shader. */
       struct si_shader prev_shader = {};
 
@@ -853,7 +854,7 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 
       /* Reset the shader context. */
       ctx.shader = shader;
-      ctx.stage = sel->stage;
+      ctx.stage = nir->info.stage;
 
       bool same_thread_count = shader->key.ge.opt.same_patch_vertices;
       si_build_wrapper_function(&ctx, parts, same_thread_count);
@@ -866,7 +867,7 @@ bool si_llvm_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *
 
    /* Compile to bytecode. */
    if (!si_compile_llvm(sscreen, &shader->binary, &shader->config, compiler, &ctx.ac, debug,
-                        sel->stage, si_get_shader_name(shader),
+                        nir->info.stage, si_get_shader_name(shader),
                         si_should_optimize_less(compiler, shader->selector))) {
       si_llvm_dispose(&ctx);
       fprintf(stderr, "LLVM failed to compile shader\n");
