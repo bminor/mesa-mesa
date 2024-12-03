@@ -2339,7 +2339,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    /* Update the ring buffer position. */
    if (free_render_descs) {
       cs_render_desc_ringbuf_move_ptr(b, calc_render_descs_size(cmdbuf),
-                                      !tracing_ctx);
+                                      !tracing_ctx->enabled);
    }
 
    /* Update the frag seqno. */
