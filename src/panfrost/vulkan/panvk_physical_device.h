@@ -64,7 +64,7 @@ to_panvk_physical_device(struct vk_physical_device *phys_dev)
 }
 
 static inline uint32_t
-panvk_get_vk_version()
+panvk_get_vk_version(unsigned arch)
 {
    const uint32_t version_override = vk_get_version_override();
    if (version_override)
