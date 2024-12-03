@@ -12460,7 +12460,7 @@ radv_initialize_htile(struct radv_cmd_buffer *cmd_buffer, struct radv_image *ima
                                                  VK_ACCESS_2_SHADER_READ_BIT, image, range);
    }
 
-   state->flush_bits |= radv_clear_htile(cmd_buffer, image, range, htile_value);
+   state->flush_bits |= radv_clear_htile(cmd_buffer, image, range, htile_value, false);
 
    radv_set_ds_clear_metadata(cmd_buffer, image, range, value, range->aspectMask);
 
