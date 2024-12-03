@@ -5804,7 +5804,7 @@
         "description": "panvk: expand top-of-pipe and bottom-of-pipe",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "5544d39f4420da88c53aaf8dd48d86ac92bd0eaa",
         "notes": null
