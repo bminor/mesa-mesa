@@ -1273,7 +1273,6 @@ spec@glsl-1.20@execution@built-in-functions@fs-op-mult-mat4x3-float,Fail
 spec@glsl-1.20@execution@built-in-functions@fs-op-mult-mat4x3-mat2x4,Fail
 spec@glsl-1.20@execution@built-in-functions@fs-op-mult-mat4x3-mat3x4,Fail
 spec@glsl-1.20@execution@built-in-functions@fs-op-mult-mat4x3-mat4,Fail
-spec@glsl-1.20@execution@built-in-functions@fs-op-mult-mat4x3-vec4,Fail
 spec@glsl-1.20@execution@built-in-functions@fs-op-mult-vec2-mat3x2,Fail
 spec@glsl-1.20@execution@built-in-functions@fs-op-mult-vec2-mat4x2,Fail
 spec@glsl-1.20@execution@built-in-functions@fs-op-mult-vec3-mat2x3,Fail
