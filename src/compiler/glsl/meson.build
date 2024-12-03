@@ -149,7 +149,6 @@ files_libglsl = files(
   'ir_constant_expression.cpp',
   'ir.cpp',
   'ir.h',
-  'ir_equals.cpp',
   'ir_expression_flattening.cpp',
   'ir_expression_flattening.h',
   'ir_function_detect_recursion.cpp',
