@@ -363,7 +363,7 @@ init_subqueue(struct panvk_queue *queue, enum panvk_subqueue_id subqueue)
    /* When tracing is enabled, we want to use a non-cached pool, so can get
     * up-to-date context even if the CS crashed in the middle. */
    struct panvk_pool *mempool =
-      (debug & PANVK_DEBUG_TRACE) ? &dev->mempools.rw : &dev->mempools.rw_nc;
+      (debug & PANVK_DEBUG_TRACE) ? &dev->mempools.rw_nc : &dev->mempools.rw;
 
    subq->context = panvk_pool_alloc_mem(mempool, alloc_info);
    if (!panvk_priv_mem_host_addr(subq->context))
