@@ -724,7 +724,7 @@
         "description": "radv: fix reporting mesh/task/rt as supported dgc indirect stages",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8300378bf367609242fc6509e9a34325bcc075d1",
         "notes": null
