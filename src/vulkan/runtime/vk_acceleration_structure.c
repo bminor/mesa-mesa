@@ -1015,6 +1015,8 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
          batch_state.any_lbvh = true;
       } else if (config.internal_type == INTERNAL_BUILD_TYPE_UPDATE) {
          batch_state.any_update = true;
+         /* For updates, the leaf node pass never runs, so set leaf_node_count here. */
+         bvh_states[i].leaf_node_count = leaf_node_count;
       } else {
          unreachable("Unknown internal_build_type");
       }
