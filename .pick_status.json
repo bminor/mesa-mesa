@@ -344,7 +344,7 @@
         "description": "anv: ensure Wa_16012775297 interacts correctly with Wa_18020335297",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dddd7655531557dcd1f46058561c6213ee5377a6",
         "notes": null
