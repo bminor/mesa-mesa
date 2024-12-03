@@ -811,13 +811,6 @@ static void parse_sdma_ib(FILE *f, struct ac_ib_parser *ib)
          fprintf(f, "    fill value = %u\n", value);
          uint32_t byte_count = ac_ib_get(ib) + 1;
          fprintf(f, "    fill byte count = %u\n", byte_count);
-
-         unsigned dwords = byte_count / 4;
-         for (unsigned i = 0; i < dwords; ++i) {
-            ac_ib_get(ib);
-            fprintf(f, "\n");
-         }
-
          break;
       }
       case SDMA_OPCODE_WRITE: {
