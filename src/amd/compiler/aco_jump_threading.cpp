@@ -109,6 +109,12 @@ try_remove_simple_block(jump_threading_ctx& ctx, Block* block)
    if (!is_empty_block(block, false))
       return;
 
+   /* Don't remove the preheader as it might be needed as convergence point
+    * in order to insert code (e.g. for loop alignment, wait states, etc.).
+    */
+   if (block->kind & block_kind_loop_preheader)
+      return;
+
    Block& pred = ctx.program->blocks[block->linear_preds[0]];
    Block& succ = ctx.program->blocks[block->linear_succs[0]];
    Pseudo_branch_instruction& branch = pred.instructions.back()->branch();
