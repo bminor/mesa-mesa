@@ -438,7 +438,8 @@ brw_fs_get_lowered_simd_width(const fs_visitor *shader, const fs_inst *inst)
 
    case SHADER_OPCODE_LOAD_PAYLOAD: {
       const unsigned reg_count =
-         DIV_ROUND_UP(inst->dst.component_size(inst->exec_size), REG_SIZE);
+         DIV_ROUND_UP(inst->dst.component_size(inst->exec_size),
+                      REG_SIZE * reg_unit(devinfo));
 
       if (reg_count > 2) {
          /* Only LOAD_PAYLOAD instructions with per-channel destination region
