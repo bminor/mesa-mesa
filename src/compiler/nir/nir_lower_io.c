@@ -3298,6 +3298,15 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       NIR_PASS_V(nir, nir_split_var_copies);
       NIR_PASS_V(nir, nir_lower_var_copies);
       NIR_PASS_V(nir, nir_lower_global_vars_to_local);
+
+      /* This is partially redundant with nir_lower_io_to_temporaries.
+       * The problem is that nir_lower_io_to_temporaries doesn't handle TCS.
+       */
+      if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
+         NIR_PASS(_, nir, nir_lower_indirect_derefs,
+                  (!has_indirect_inputs ? nir_var_shader_in : 0) |
+                  (!has_indirect_outputs ? nir_var_shader_out : 0), UINT32_MAX);
+      }
    }
 
    /* The correct lower_64bit_to_32 flag is required by st/mesa depending
