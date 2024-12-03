@@ -3605,12 +3605,10 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
    si_nir_scan_shader(sscreen, sel->nir, &sel->info);
 
    sel->stage = sel->nir->info.stage;
-   const enum pipe_shader_type type = pipe_shader_type_from_mesa(sel->stage);
-   sel->pipe_shader_type = type;
    sel->const_and_shader_buf_descriptors_index =
-      si_const_and_shader_buffer_descriptors_idx(type);
+      si_const_and_shader_buffer_descriptors_idx(sel->stage);
    sel->sampler_and_images_descriptors_index =
-      si_sampler_and_image_descriptors_idx(type);
+      si_sampler_and_image_descriptors_idx(sel->stage);
 
    if (si_can_dump_shader(sscreen, sel->stage, SI_DUMP_INIT_NIR))
       nir_print_shader(sel->nir, stderr);
@@ -4130,13 +4128,12 @@ static void si_destroy_shader_selector(struct pipe_context *ctx, void *cso)
 {
    struct si_context *sctx = (struct si_context *)ctx;
    struct si_shader_selector *sel = (struct si_shader_selector *)cso;
-   enum pipe_shader_type type = pipe_shader_type_from_mesa(sel->stage);
 
    util_queue_drop_job(&sctx->screen->shader_compiler_queue, &sel->ready);
 
-   if (sctx->shaders[type].cso == sel) {
-      sctx->shaders[type].cso = NULL;
-      sctx->shaders[type].current = NULL;
+   if (sctx->shaders[sel->stage].cso == sel) {
+      sctx->shaders[sel->stage].cso = NULL;
+      sctx->shaders[sel->stage].current = NULL;
    }
 
    for (unsigned i = 0; i < sel->variants_count; i++) {

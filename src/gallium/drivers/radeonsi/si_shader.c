@@ -1987,8 +1987,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir)
 struct nir_shader *si_deserialize_shader(struct si_shader_selector *sel)
 {
    struct pipe_screen *screen = &sel->screen->b;
-   const void *options = screen->get_compiler_options(screen, PIPE_SHADER_IR_NIR,
-                                                      pipe_shader_type_from_mesa(sel->stage));
+   const void *options = screen->get_compiler_options(screen, PIPE_SHADER_IR_NIR, sel->stage);
 
    struct blob_reader blob_reader;
    blob_reader_init(&blob_reader, sel->nir_binary, sel->nir_size);
@@ -2347,7 +2346,7 @@ static struct nir_shader *si_get_nir_shader(struct si_shader *shader, struct si_
 
    bool inline_uniforms = false;
    uint32_t *inlined_uniform_values;
-   si_get_inline_uniform_state((union si_shader_key*)key, sel->pipe_shader_type,
+   si_get_inline_uniform_state((union si_shader_key*)key, sel->stage,
                                &inline_uniforms, &inlined_uniform_values);
 
    if (inline_uniforms) {
