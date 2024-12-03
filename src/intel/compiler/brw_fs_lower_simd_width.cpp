@@ -305,7 +305,10 @@ brw_fs_get_lowered_simd_width(const fs_visitor *shader, const fs_inst *inst)
       if (is_half_float_src_dst(inst))
          return devinfo->ver < 20 ? MIN2(8,  inst->exec_size) :
                                     MIN2(16, inst->exec_size);
-      return MIN2(16, inst->exec_size);
+      if (devinfo->ver < 20)
+         return MIN2(16, inst->exec_size);
+
+      return inst->exec_size;
    }
 
    case SHADER_OPCODE_POW: {
