@@ -209,5 +209,27 @@ section_switch cuttlefish_results "cuttlefish: gathering the results"
 
 $ADB pull "$AOSP_RESULTS/." "$RESULTS_DIR"
 
+# Remove all but the first 50 individual XML files uploaded as artifacts, to
+# save fd.o space when you break everything.
+find $RESULTS_DIR -name \*.xml | \
+    sort -n |
+    sed -n '1,+49!p' | \
+    xargs rm -f
+
+# If any QPA XMLs are there, then include the XSL/CSS in our artifacts.
+find $RESULTS_DIR -name \*.xml \
+    -exec cp /deqp-tools/testlog.css /deqp-tools/testlog.xsl "$RESULTS_DIR/" ";" \
+    -quit
+
+$ADB shell "cd ${AOSP_RESULTS}/..; \
+./deqp-runner junit \
+   --testsuite dEQP \
+   --results $AOSP_RESULTS/failures.csv \
+   --output $AOSP_RESULTS/junit.xml \
+   --limit 50 \
+   --template \"See $ARTIFACTS_BASE_URL/results/{{testcase}}.xml\""
+
+$ADB pull "$AOSP_RESULTS/junit.xml" "$RESULTS_DIR"
+
 section_end cuttlefish_results
 exit $EXIT_CODE
