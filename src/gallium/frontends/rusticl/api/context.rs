@@ -99,14 +99,16 @@ pub fn get_gl_context_info_khr(
     }
 
     let gl_ctx_manager = GLCtxManager::new(gl_context, glx_display, egl_display)?;
-    gl_ctx_manager
-        .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?
-        .get_info(
-            param_name,
-            param_value_size,
-            param_value,
-            param_value_size_ret,
-        )
+    unsafe {
+        gl_ctx_manager
+            .ok_or(CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)?
+            .get_info(
+                param_name,
+                param_value_size,
+                param_value,
+                param_value_size_ret,
+            )
+    }
 }
 
 #[cl_entrypoint(clCreateContext)]

@@ -215,13 +215,17 @@ impl<'a> CLInfoValue<'a> {
 pub unsafe trait CLInfo<I> {
     fn query(&self, q: I, v: CLInfoValue) -> CLResult<CLInfoRes>;
 
-    fn get_info(
+    /// # Safety
+    ///
+    /// Same requirements from [CLInfoValue::new] apply.
+    unsafe fn get_info(
         &self,
         param_name: I,
         param_value_size: usize,
         param_value: *mut ::std::os::raw::c_void,
         param_value_size_ret: *mut usize,
     ) -> CLResult<()> {
+        // SAFETY: It's up to the caller as this function is marked unsafe.
         let value =
             unsafe { CLInfoValue::new(param_value_size, param_value, param_value_size_ret)? };
         self.query(param_name, value)?;
@@ -235,7 +239,10 @@ pub unsafe trait CLInfo<I> {
 pub unsafe trait CLInfoObj<I, O> {
     fn query(&self, o: O, q: I, v: CLInfoValue) -> CLResult<CLInfoRes>;
 
-    fn get_info_obj(
+    /// # Safety
+    ///
+    /// Same requirements from [CLInfoValue::new] apply.
+    unsafe fn get_info_obj(
         &self,
         obj: O,
         param_name: I,
@@ -243,6 +250,7 @@ pub unsafe trait CLInfoObj<I, O> {
         param_value: *mut ::std::os::raw::c_void,
         param_value_size_ret: *mut usize,
     ) -> CLResult<()> {
+        // SAFETY: It's up to the caller as this function is marked unsafe.
         let value =
             unsafe { CLInfoValue::new(param_value_size, param_value, param_value_size_ret)? };
         self.query(obj, param_name, value)?;
