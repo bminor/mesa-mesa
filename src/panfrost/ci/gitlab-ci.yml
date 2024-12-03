@@ -358,14 +358,13 @@ panfrost-g52-vk-full:arm64:
 
 panfrost-g52-piglit-gles2:arm64:
   extends:
-    - .lava-piglit:arm64
+    - .lava-test-deqp:arm64
     - .panfrost-bifrost-gl-rules
     - .panfrost-test
     - .lava-meson-g12b-a311d-khadas-vim3:arm64
   variables:
     HWCI_START_WESTON: 1
-    DEQP_VER: gles2
-    PIGLIT_PROFILES: quick_gl
+    DEQP_SUITE: panfrost-g52-piglit
 
 panfrost-g72-gl:arm64:
   parallel: 3
