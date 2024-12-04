@@ -605,8 +605,8 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
    pan_shader_preprocess(b.shader, inputs.gpu_id);
 
    if (PAN_ARCH == 4) {
-      NIR_PASS_V(b.shader, nir_shader_intrinsics_pass, lower_sampler_parameters,
-                 nir_metadata_control_flow, NULL);
+      NIR_PASS(_, b.shader, nir_shader_intrinsics_pass,
+               lower_sampler_parameters, nir_metadata_control_flow, NULL);
    }
 
    GENX(pan_shader_compile)(b.shader, &inputs, &binary, &shader->info);

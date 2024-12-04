@@ -68,12 +68,13 @@ panfrost_alloc_variant(struct panfrost_uncompiled_shader *so)
    return util_dynarray_grow(&so->variants, struct panfrost_compiled_shader, 1);
 }
 
-static void
+static bool
 lower_load_poly_line_smooth_enabled(nir_shader *nir,
                                     const struct panfrost_shader_key *key)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
    nir_builder b = nir_builder_create(impl);
+   bool progress = false;
 
    nir_foreach_block_safe(block, impl) {
       nir_foreach_instr_safe(instr, block) {
@@ -87,8 +88,11 @@ lower_load_poly_line_smooth_enabled(nir_shader *nir,
          b.cursor = nir_before_instr(instr);
          nir_def_replace(&intrin->def, nir_imm_true(&b));
          nir_instr_free(instr);
+	 progress = true;
       }
    }
+
+   return progress;
 }
 
 static void
@@ -126,10 +130,10 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
       inputs.no_idvs = s->info.has_transform_feedback_varyings;
 
       if (s->info.has_transform_feedback_varyings) {
-         NIR_PASS_V(s, nir_io_add_const_offset_to_base,
-                    nir_var_shader_in | nir_var_shader_out);
-         NIR_PASS_V(s, nir_io_add_intrinsic_xfb_info);
-         NIR_PASS_V(s, pan_lower_xfb);
+         NIR_PASS(_, s, nir_io_add_const_offset_to_base,
+                  nir_var_shader_in | nir_var_shader_out);
+         NIR_PASS(_, s, nir_io_add_intrinsic_xfb_info);
+         NIR_PASS(_, s, pan_lower_xfb);
       }
    }
 
@@ -137,38 +141,38 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
       if (key->fs.nr_cbufs_for_fragcolor) {
-         NIR_PASS_V(s, panfrost_nir_remove_fragcolor_stores,
-                    key->fs.nr_cbufs_for_fragcolor);
+         NIR_PASS(_, s, panfrost_nir_remove_fragcolor_stores,
+                  key->fs.nr_cbufs_for_fragcolor);
       }
 
       if (key->fs.sprite_coord_enable) {
-         NIR_PASS_V(s, nir_lower_texcoord_replace_late,
-                    key->fs.sprite_coord_enable,
-                    true /* point coord is sysval */);
+         NIR_PASS(_, s, nir_lower_texcoord_replace_late,
+                  key->fs.sprite_coord_enable,
+                  true /* point coord is sysval */);
       }
 
       if (key->fs.clip_plane_enable) {
-         NIR_PASS_V(s, nir_lower_clip_fs, key->fs.clip_plane_enable, false,
-                    true);
+         NIR_PASS(_, s, nir_lower_clip_fs, key->fs.clip_plane_enable,
+                  false, true);
       }
 
       if (key->fs.line_smooth) {
-         NIR_PASS_V(s, nir_lower_poly_line_smooth, 16);
-         NIR_PASS_V(s, lower_load_poly_line_smooth_enabled, key);
-         NIR_PASS_V(s, nir_lower_alu);
+         NIR_PASS(_, s, nir_lower_poly_line_smooth, 16);
+         NIR_PASS(_, s, lower_load_poly_line_smooth_enabled, key);
+         NIR_PASS(_, s, nir_lower_alu);
       }
    }
 
    if (dev->arch <= 5 && s->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS_V(s, pan_lower_framebuffer, key->fs.rt_formats,
-                 pan_raw_format_mask_midgard(key->fs.rt_formats), 0,
-                 panfrost_device_gpu_id(dev) < 0x700);
+      NIR_PASS(_, s, pan_lower_framebuffer, key->fs.rt_formats,
+               pan_raw_format_mask_midgard(key->fs.rt_formats), 0,
+               panfrost_device_gpu_id(dev) < 0x700);
    }
 
-   NIR_PASS_V(s, panfrost_nir_lower_sysvals, dev->arch, &out->sysvals);
+   NIR_PASS(_, s, panfrost_nir_lower_sysvals, dev->arch, &out->sysvals);
 
    /* Lower resource indices */
-   NIR_PASS_V(s, panfrost_nir_lower_res_indices, &inputs);
+   NIR_PASS(_, s, panfrost_nir_lower_res_indices, &inputs);
 
    screen->vtbl.compile_shader(s, &inputs, &out->binary, &out->info);
 
@@ -407,7 +411,8 @@ panfrost_create_shader_state(struct pipe_context *pctx,
    if (nir->info.stage == MESA_SHADER_FRAGMENT &&
        nir->info.outputs_written & BITFIELD_BIT(FRAG_RESULT_COLOR)) {
 
-      NIR_PASS_V(nir, nir_lower_fragcolor, nir->info.fs.color_is_dual_source ? 1 : 8);
+      NIR_PASS(_, nir, nir_lower_fragcolor,
+               nir->info.fs.color_is_dual_source ? 1 : 8);
       so->fragcolor_lowered = true;
    }
 
@@ -420,8 +425,8 @@ panfrost_create_shader_state(struct pipe_context *pctx,
     * to the right attribute.
     */
    if (nir->info.stage == MESA_SHADER_VERTEX && dev->arch <= 7) {
-      NIR_PASS_V(nir, pan_lower_image_index,
-                 util_bitcount64(nir->info.inputs_read));
+      NIR_PASS(_, nir, pan_lower_image_index,
+               util_bitcount64(nir->info.inputs_read));
    }
 
    /* If this shader uses transform feedback, compile the transform
