@@ -37,7 +37,7 @@ libasahi_decode = static_library(
   'asahi_decode',
   [libasahi_decode_files, agx_pack],
   dependencies : [dep_valgrind, idep_mesautil],
-  c_args : [no_override_init_args],
+  c_args : [no_override_init_args, '-Wno-c2x-extensions'],
   gnu_symbol_visibility : 'hidden',
   build_by_default : false,
 )
@@ -46,7 +46,7 @@ libasahi_decode_shared = shared_library(
   'asahi_decode',
   [libasahi_decode_files, agx_pack],
   dependencies : [dep_valgrind, idep_mesautil],
-  c_args : [no_override_init_args],
+  c_args : [no_override_init_args, '-Wno-c2x-extensions'],
   build_by_default : with_tools.contains('asahi'),
 )
 
@@ -68,7 +68,7 @@ libasahi_lib = static_library(
   'asahi_lib',
   [libasahi_lib_files, libagx_shaders, agx_pack, sha1_h],
   include_directories : [inc_asahi, inc_virtio_gpu, inc_virtio_vdrm],
-  c_args : [no_override_init_args],
+  c_args : [no_override_init_args, '-Wno-c2x-extensions'],
   gnu_symbol_visibility : 'hidden',
   link_with: [libasahi_decode, libvdrm],
   dependencies: [dep_libdrm, dep_valgrind, idep_nir, idep_mesautil, idep_libagx],
