@@ -762,6 +762,7 @@ struct pipe_h264_enc_dpb_entry
    bool is_ltr;
    struct pipe_video_buffer *buffer;
    bool evict;
+   enum pipe_h2645_enc_picture_type picture_type;
 };
 
 struct pipe_h264_enc_picture_desc
