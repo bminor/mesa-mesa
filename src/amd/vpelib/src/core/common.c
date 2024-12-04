@@ -621,6 +621,10 @@ enum vpe_status vpe_check_tone_map_support(
         }
     }
 
+    if (is_3D_lut_enabled && stream->tm_params.lut_dim != LUT_DIM_9 &&
+        stream->tm_params.lut_dim != LUT_DIM_17) { /* only support 9/17 cube */
+        status = VPE_STATUS_BAD_TONE_MAP_PARAMS;
+    }
     return status;
 }
 

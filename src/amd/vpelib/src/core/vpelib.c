@@ -242,7 +242,6 @@ struct vpe *vpe_create(const struct vpe_init_data *params)
     vpe_priv->scale_yuv_matrix = true;
 
     vpe_priv->collaborate_sync_index = 0;
-
     return &vpe_priv->pub;
 }
 

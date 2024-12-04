@@ -483,7 +483,6 @@ struct vpe_debug_options {
     uint32_t mpc_crc_ctrl            : 1;
     uint32_t skip_optimal_tap_check  : 1;
     uint32_t disable_lut_caching     : 1; /*< disable config caching for all luts */
-
     uint32_t bg_bit_depth;
 
     struct vpe_mem_low_power_enable_options enable_mem_low_power;
@@ -750,10 +749,9 @@ struct vpe_tonemap_params {
     enum vpe_color_primaries   lut_out_gamut;        /**< Output color primary */
     uint16_t                   input_pq_norm_factor; /**< Perceptual Quantizer normalization
                                                         factor. */
-    uint16_t lut_dim;                                /**< Size of one dimension of the 3D-LUT */
+    uint16_t                   lut_dim;              /**< Size of one dimension of the 3D-LUT */
     union {
         uint16_t *lut_data;                          /**< Accessible to CPU */
-        void     *dma_lut_data;                      /**< Accessible to GPU. Only for fast load */
     };
     bool is_dma_lut;
     bool enable_3dlut; /**< Enable/Disable 3D-LUT */
