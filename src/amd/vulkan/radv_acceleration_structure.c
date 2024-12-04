@@ -659,6 +659,8 @@ static const struct radix_sort_vk_target_config radix_sort_config = {
 };
 
 static const struct vk_acceleration_structure_build_ops build_ops = {
+   .begin_debug_marker = vk_accel_struct_cmd_begin_debug_marker,
+   .end_debug_marker = vk_accel_struct_cmd_end_debug_marker,
    .get_as_size = radv_get_as_size,
    .get_update_scratch_size = radv_get_update_scratch_size,
    .get_encode_key[0] = radv_get_encode_key,
