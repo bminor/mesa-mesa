@@ -462,6 +462,55 @@ valhall_lower_get_ssbo_size(struct nir_builder *b,
    return true;
 }
 
+static bool
+lower_load_push_consts(nir_builder *b, nir_intrinsic_instr *intr,
+                       UNUSED void *data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_push_constant)
+      return false;
+
+   unsigned base = nir_intrinsic_base(intr);
+
+   /* We always set the range to zero, to make sure no pass is using it after
+    * that point. */
+   nir_intrinsic_set_range(intr, 0);
+
+   b->cursor = nir_before_instr(&intr->instr);
+
+   /* Offset is constant, we just propagate base to the offset if it's not
+    * already zero. */
+   if (nir_src_is_const(intr->src[0])) {
+      if (base == 0)
+         return true;
+
+      nir_src_rewrite(&intr->src[0],
+                      nir_imm_int(b, nir_src_as_uint(intr->src[0]) + base));
+      nir_intrinsic_set_base(intr, 0);
+      return true;
+   }
+
+   /* We don't use load_sysval() on purpose, because it would set
+    * .base=SYSVALS_PUSH_CONST_BASE, and we're supposed to force a base of
+    * zero in this pass. */
+   unsigned push_const_addr_offset =
+      SYSVALS_PUSH_CONST_BASE +
+      (b->shader->info.stage == MESA_SHADER_COMPUTE
+          ? offsetof(struct panvk_compute_sysvals, push_consts)
+          : offsetof(struct panvk_graphics_sysvals, push_consts));
+   nir_def *push_const_buf =
+      nir_load_push_constant(b, 1, 64, nir_imm_int(b, push_const_addr_offset));
+
+   nir_def *offset = nir_iadd_imm(b, intr->src[0].ssa, base);
+   unsigned align = nir_combined_align(nir_intrinsic_align_mul(intr),
+                                       nir_intrinsic_align_offset(intr));
+   nir_def *value =
+      nir_load_global(b, nir_iadd(b, push_const_buf, nir_u2u64(b, offset)),
+                      align, intr->def.num_components, intr->def.bit_size);
+
+   nir_def_replace(&intr->def, value);
+   return true;
+}
+
 static void
 panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 uint32_t set_layout_count,
@@ -584,6 +633,25 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                *noperspective_varyings);
 
    NIR_PASS(_, nir, nir_shader_instructions_pass, panvk_lower_sysvals,
+            nir_metadata_control_flow, NULL);
+
+   /* Before we lower load_push_constant()s with a dynamic offset to global
+    * loads, we want to run a few optimization passes to get rid of offset
+    * calculation involving only constant values. */
+   bool progress = false;
+   do {
+      progress = false;
+      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_remove_phis);
+      NIR_PASS(progress, nir, nir_opt_dce);
+      NIR_PASS(progress, nir, nir_opt_dead_cf);
+      NIR_PASS(progress, nir, nir_opt_cse);
+      NIR_PASS(progress, nir, nir_opt_peephole_select, 64, false, true);
+      NIR_PASS(progress, nir, nir_opt_algebraic);
+      NIR_PASS(progress, nir, nir_opt_constant_folding);
+   } while (progress);
+
+   NIR_PASS(_, nir, nir_shader_intrinsics_pass, lower_load_push_consts,
             nir_metadata_control_flow, NULL);
 }
 

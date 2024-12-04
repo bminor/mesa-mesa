@@ -21,6 +21,11 @@ panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
       cmdbuf, desc, SYSVALS_PUSH_CONST_BASE + sysvals_sz, 16);
 
    if (push_uniforms.gpu) {
+      if (ptype == VK_PIPELINE_BIND_POINT_GRAPHICS)
+         cmdbuf->state.gfx.sysvals.push_consts = push_uniforms.gpu;
+      else
+         cmdbuf->state.compute.sysvals.push_consts = push_uniforms.gpu;
+
       /* The first half is used for push constants. */
       memcpy(push_uniforms.cpu, cmdbuf->state.push_constants.data,
              sizeof(cmdbuf->state.push_constants.data));

@@ -69,6 +69,8 @@ struct panvk_graphics_sysvals {
       uint32_t noperspective_varyings;
    } vs;
 
+   uint64_t push_consts;
+
 #if PAN_ARCH <= 7
    /* gl_Layer on Bifrost is a bit of hack. We have to issue one draw per
     * layer, and filter primitives at the VS level.
@@ -91,6 +93,8 @@ struct panvk_compute_sysvals {
    struct {
       uint32_t x, y, z;
    } local_group_size;
+
+   uint64_t push_consts;
 
 #if PAN_ARCH <= 7
    struct {
