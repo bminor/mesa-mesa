@@ -654,7 +654,7 @@
         "description": "intel/brw: Add is_control_source for the new subgroup ops",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "019770f026ad1e1a9b03ddacab2df252126fd636",
         "notes": null
