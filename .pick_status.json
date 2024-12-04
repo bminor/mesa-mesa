@@ -504,7 +504,7 @@
         "description": "panvk: free preload-shaders after compiling",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0bc3502ca36b7b5f244e5de34813f46ce2ff4a1b",
         "notes": null
