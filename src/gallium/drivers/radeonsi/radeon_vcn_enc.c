@@ -513,6 +513,12 @@ static void radeon_vcn_enc_h264_get_param(struct radeon_encoder *enc,
    enc->enc_pic.h264_enc_params.is_long_term = pic->is_ltr;
    enc->enc_pic.not_referenced = pic->not_referenced;
 
+   if ((pic->ref_list0[0] != PIPE_H2645_LIST_REF_INVALID_ENTRY &&
+        pic->dpb[pic->ref_list0[0]].picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B) ||
+       (pic->ref_list1[0] != PIPE_H2645_LIST_REF_INVALID_ENTRY &&
+        pic->dpb[pic->ref_list1[0]].picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B))
+      RADEON_ENC_ERR("B-frame references not supported\n");
+
    if (enc->dpb_type == DPB_TIER_2) {
       for (uint32_t i = 0; i < ARRAY_SIZE(pic->dpb); i++) {
          struct pipe_video_buffer *buf = pic->dpb[i].buffer;
