@@ -46,6 +46,7 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
       .ls_sb_slot = SB_ID(LS),
    };
    struct cs_tracing_ctx tracing_ctx = {
+      .enabled = tracing_enabled,
       .ctx_reg = cs_subqueue_ctx_reg(&b),
       .tracebuf_addr_offset =
          offsetof(struct panvk_cs_subqueue_context, debug.tracebuf.cs),
@@ -86,12 +87,9 @@ generate_tiler_oom_handler(struct cs_buffer handler_mem, bool has_zs_ext,
 
       cs_req_res(&b, CS_FRAG_RES);
       cs_while(&b, MALI_CS_CONDITION_GREATER, layer_count) {
-         if (tracing_enabled)
-            cs_trace_run_fragment(&b, &tracing_ctx,
-                                  cs_scratch_reg_tuple(&b, 8, 4), false,
-                                  MALI_TILE_RENDER_ORDER_Z_ORDER, false);
-         else
-            cs_run_fragment(&b, false, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
+         cs_trace_run_fragment(&b, &tracing_ctx,
+                               cs_scratch_reg_tuple(&b, 8, 4), false,
+                               MALI_TILE_RENDER_ORDER_Z_ORDER, false);
          cs_add32(&b, layer_count, layer_count, -1);
          cs_add64(&b, fbd_ptr, fbd_ptr, fbd_size);
       }
