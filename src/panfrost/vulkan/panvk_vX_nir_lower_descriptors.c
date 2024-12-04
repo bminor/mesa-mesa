@@ -1198,7 +1198,7 @@ upload_shader_desc_info(struct panvk_device *dev, struct panvk_shader *shader,
    shader->desc_info.used_set_mask = desc_info->used_set_mask;
 }
 
-bool
+void
 panvk_per_arch(nir_lower_descriptors)(
    nir_shader *nir, struct panvk_device *dev,
    const struct vk_pipeline_robustness_state *rs, uint32_t set_layout_count,
@@ -1234,18 +1234,17 @@ panvk_per_arch(nir_lower_descriptors)(
    for (uint32_t i = 0; i < set_layout_count; i++)
       ctx.set_layouts[i] = to_panvk_descriptor_set_layout(set_layouts[i]);
 
-   progress = nir_shader_instructions_pass(nir, collect_instr_desc_access,
-                                           nir_metadata_all, &ctx);
+   NIR_PASS(progress, nir, nir_shader_instructions_pass,
+            collect_instr_desc_access, nir_metadata_all, &ctx);
    if (!progress)
       goto out;
 
    create_copy_table(nir, &ctx);
    upload_shader_desc_info(dev, shader, &ctx.desc_info);
 
-   progress = nir_shader_instructions_pass(nir, lower_descriptors_instr,
-                                           nir_metadata_control_flow, &ctx);
+   NIR_PASS(progress, nir, nir_shader_instructions_pass,
+            lower_descriptors_instr, nir_metadata_control_flow, &ctx);
 
 out:
    _mesa_hash_table_destroy(ctx.ht, NULL);
-   return progress;
 }

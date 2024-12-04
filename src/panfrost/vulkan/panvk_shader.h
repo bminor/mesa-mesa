@@ -191,7 +191,7 @@ panvk_shader_link_cleanup(struct panvk_shader_link *link)
 }
 #endif
 
-bool panvk_per_arch(nir_lower_descriptors)(
+void panvk_per_arch(nir_lower_descriptors)(
    nir_shader *nir, struct panvk_device *dev,
    const struct vk_pipeline_robustness_state *rs, uint32_t set_layout_count,
    struct vk_descriptor_set_layout *const *set_layouts,
