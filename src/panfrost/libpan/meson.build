@@ -3,7 +3,7 @@
 
 
 libpan_shader_files = files(
-  'placeholder.cl',
+  'query_pool.cl',
 )
 
 # We need to set -fmacro-prefix-map properly for reproducability.
