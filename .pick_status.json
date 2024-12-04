@@ -124,7 +124,7 @@
         "description": "aco: don't CSE p_shader_cycles_hi_lo_hi",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fae2a85d57a49bfbd4efb05ea1d4e53071c2ffd2",
         "notes": null
