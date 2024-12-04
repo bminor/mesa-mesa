@@ -89,8 +89,8 @@ struct vk_acceleration_structure_build_ops {
                                         const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
                                         const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos,
                                         uint32_t leaf_count,
-                                        struct vk_acceleration_structure *dst,
-                                        struct vk_acceleration_structure *src);
+                                        struct vk_acceleration_structure *src,
+                                        struct vk_acceleration_structure *dst);
 };
 
 struct vk_acceleration_structure_build_args {

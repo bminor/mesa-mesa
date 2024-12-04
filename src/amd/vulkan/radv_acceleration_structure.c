@@ -599,7 +599,7 @@ pack_geometry_id_and_flags(uint32_t geometry_id, uint32_t flags)
 static void
 radv_update_as(VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *build_info,
                const VkAccelerationStructureBuildRangeInfoKHR *build_range_infos, uint32_t leaf_count,
-               struct vk_acceleration_structure *dst, struct vk_acceleration_structure *src)
+               struct vk_acceleration_structure *src, struct vk_acceleration_structure *dst)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
