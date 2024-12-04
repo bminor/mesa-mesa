@@ -1,3 +1,0 @@
-# CTS main not recognizing 1.4 yet.
-dEQP-VK.info.device_properties,Fail
-dEQP-VK.api.version_check.version,Fail
