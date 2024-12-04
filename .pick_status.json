@@ -514,7 +514,7 @@
         "description": "vulkan/meta: plug a couple of memory leaks",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "514c10344e6f2e99776c4bcc907d500f0837dc2b",
         "notes": null
