@@ -148,6 +148,7 @@ foreach arch : [6, 7, 10]
       idep_mesautil,
       dep_libdrm,
       dep_valgrind,
+      idep_libpan_per_arch[arch.to_string()],
     ],
     c_args : [no_override_init_args, panvk_flags, '-DPAN_ARCH=@0@'.format(arch)],
   )
