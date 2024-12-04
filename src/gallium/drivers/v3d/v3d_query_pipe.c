@@ -116,6 +116,8 @@ v3d_begin_query_pipe(struct v3d_context *v3d, struct v3d_query *query)
                 v3d_submit_timestamp_query(&v3d->base, pquery->bo,
                                            pquery->sync[0], 0);
                 break;
+        case PIPE_QUERY_TIMESTAMP_DISJOINT:
+                break;
         default:
                 unreachable("unsupported query type");
         }
@@ -173,6 +175,8 @@ v3d_end_query_pipe(struct v3d_context *v3d, struct v3d_query *query)
                 uint32_t sync = pquery->type == PIPE_QUERY_TIMESTAMP ? 0 : 1;
                 v3d_submit_timestamp_query(&v3d->base, pquery->bo,
                                            pquery->sync[sync], offset);
+                break;
+        case PIPE_QUERY_TIMESTAMP_DISJOINT:
                 break;
         default:
                 unreachable("unsupported query type");
@@ -246,6 +250,11 @@ v3d_get_query_result_pipe(struct v3d_context *v3d, struct v3d_query *query,
         case PIPE_QUERY_TIME_ELAPSED:
                 vresult->u64 = pquery->time_result;
                 break;
+        case PIPE_QUERY_TIMESTAMP_DISJOINT:
+                /* os_time_get_nano returns time in nanoseconds */
+                vresult->timestamp_disjoint.frequency = UINT64_C(1000000000);
+                vresult->timestamp_disjoint.disjoint = false;
+           break;
         default:
                 unreachable("unsupported query type");
         }
