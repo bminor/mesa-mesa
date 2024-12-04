@@ -52,7 +52,13 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    /* Atomic add a buffer size counter to determine where to write.  If
     * overflowed, return -1, otherwise, store the arguments and return 0.
     */
-   nir_def *buffer_addr = nir_load_printf_buffer_address(b, ptr_bit_size);
+   nir_def *buffer_addr;
+   if (options->buffer_address != 0) {
+      buffer_addr = nir_imm_intN_t(b, options->buffer_address, ptr_bit_size);
+   } else {
+      buffer_addr = nir_load_printf_buffer_address(b, ptr_bit_size);
+   }
+
    nir_deref_instr *buffer =
       nir_build_deref_cast(b, buffer_addr, nir_var_mem_global,
                            glsl_array_type(glsl_uint8_t_type(), 0, 4), 0);

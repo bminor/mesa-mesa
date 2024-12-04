@@ -6850,6 +6850,11 @@ typedef struct nir_lower_printf_options {
    unsigned max_buffer_size;
    unsigned ptr_bit_size;
    bool     use_printf_base_identifier;
+
+   /* Some drivers may know the address of the printf buffer at compile-time. If
+    * buffer_address is nonzero, it will be used instead of intrinsics.
+    */
+   uint64_t buffer_address;
 } nir_lower_printf_options;
 
 bool nir_lower_printf(nir_shader *nir, const nir_lower_printf_options *options);
