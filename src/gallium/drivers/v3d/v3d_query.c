@@ -149,6 +149,155 @@ v3d_render_condition(struct pipe_context *pipe,
         v3d->cond_mode = mode;
 }
 
+static void
+extension_set(struct drm_v3d_extension *ext, struct drm_v3d_extension *next,
+              uint32_t id, uintptr_t flags)
+{
+        ext->next = (uintptr_t)(void *)next;
+        ext->id = id;
+        ext->flags = flags;
+}
+
+static struct drm_v3d_sem *
+in_syncs_set(struct v3d_context *v3d, uint32_t *count,
+             struct v3d_submit_sync_info *sync_info)
+{
+        uint32_t nsyncs = sync_info->wait_count;
+
+        *count = nsyncs;
+
+        struct drm_v3d_sem *syncs =
+             rzalloc_array(v3d, struct drm_v3d_sem, *count);
+
+        if (!syncs) return NULL;
+
+        for (int i = 0; i < nsyncs; i++) {
+           syncs[i].handle = sync_info->waits[i];
+        }
+
+        assert(*count == nsyncs);
+
+        return syncs;
+}
+
+static struct drm_v3d_sem *
+out_syncs_set(struct v3d_context *v3d, uint32_t *count,
+              struct v3d_submit_sync_info *sync_info)
+{
+        (*count) = sync_info->signal_count;
+
+        struct drm_v3d_sem *syncs =
+             rzalloc_array(v3d, struct drm_v3d_sem, *count);
+
+        if (!syncs) return NULL;
+
+        for (unsigned i = 0; i < *count; i++) {
+           syncs[i].handle = sync_info->signals[i];
+        }
+
+        return syncs;
+}
+
+static void
+multisync_set(struct v3d_context *v3d, struct drm_v3d_multi_sync *ms,
+              struct v3d_submit_sync_info *sync_info,
+              struct drm_v3d_extension *next, uint32_t wait_stage)
+{
+        uint32_t ocount = 0, icount = 0;
+        struct drm_v3d_sem *out_syncs = NULL, *in_syncs = NULL;
+
+        in_syncs = in_syncs_set(v3d, &icount, sync_info);
+        if (!in_syncs && icount) goto out;
+
+        out_syncs = out_syncs_set(v3d, &ocount, sync_info);
+        if (!out_syncs) goto out;
+
+        extension_set(&ms->base, next, DRM_V3D_EXT_ID_MULTI_SYNC, 0);
+        ms->wait_stage = wait_stage;
+        ms->out_sync_count = ocount;
+        ms->out_syncs = (uintptr_t)(void *)out_syncs;
+        ms->in_sync_count = icount;
+        ms->in_syncs = (uintptr_t)(void *)in_syncs;
+
+        return;
+
+out:
+        fprintf(stderr, "Multisync Set Failed\n");
+        if (in_syncs) {
+           free(in_syncs);
+        }
+}
+
+static void
+multisync_free(struct drm_v3d_multi_sync *ms)
+{
+        ralloc_free((void *)(uintptr_t)ms->out_syncs);
+        ralloc_free((void *)(uintptr_t)ms->in_syncs);
+}
+
+uint64_t
+v3d_get_timestamp(struct pipe_context *pctx)
+{
+        /* Calling glGetInteger64v with GL_TIMESTAMP will return the GPU
+         * timestamp when all previously given commands have issued, but not
+         * necessarily completed
+         */
+        v3d_flush(pctx);
+
+        /* Use os_time_get_nano as all of our timestamps come from the CPU clock */
+        return os_time_get_nano();
+}
+
+void
+v3d_submit_timestamp_query(struct pipe_context *pctx, struct v3d_bo *bo,
+                           uint32_t sync, uint32_t offset)
+{
+        struct v3d_context *v3d = v3d_context(pctx);
+        struct v3d_screen *screen = v3d->screen;
+        int ret;
+
+        /* check for multisync support */
+        assert(screen->has_multisync);
+
+        /* check for a valid bo to store the timestamp result */
+        assert(bo);
+
+        /* check for a valid syncobj */
+        assert(sync);
+
+        struct drm_v3d_timestamp_query timestamp = {0};
+
+        extension_set(&timestamp.base, NULL, DRM_V3D_EXT_ID_CPU_TIMESTAMP_QUERY, 0);
+
+        timestamp.count = 1;
+        timestamp.offsets = (uintptr_t)(void *)&offset;
+        timestamp.syncs = (uintptr_t)(void *)&sync;
+
+        struct v3d_submit_sync_info sync_info = {
+           .wait_count = 1,
+           .waits = &v3d->out_sync,
+           .signal_count = 1,
+           .signals = &v3d->out_sync,
+        };
+
+        struct drm_v3d_multi_sync ms = {0};
+
+        multisync_set(v3d, &ms, &sync_info, (void *)&timestamp, V3D_CPU);
+
+        struct drm_v3d_submit_cpu submit = {0};
+
+        submit.bo_handle_count = 1;
+        submit.bo_handles = (uintptr_t)(void *)&bo->handle;
+        submit.flags |= DRM_V3D_SUBMIT_EXTENSION;
+        submit.extensions = (uintptr_t)(void *)&ms;
+
+        ret = v3d_ioctl(screen->fd, DRM_IOCTL_V3D_SUBMIT_CPU, &submit);
+        if (ret)
+           fprintf(stderr, "Failed to submit cpu job: %s\n", strerror(errno));
+
+        multisync_free(&ms);
+}
+
 void
 v3d_query_init(struct pipe_context *pctx)
 {
@@ -160,4 +309,5 @@ v3d_query_init(struct pipe_context *pctx)
         pctx->get_query_result = v3d_get_query_result;
         pctx->set_active_query_state = v3d_set_active_query_state;
         pctx->render_condition = v3d_render_condition;
+        pctx->get_timestamp = v3d_get_timestamp;
 }
