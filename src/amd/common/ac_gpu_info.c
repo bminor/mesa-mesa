@@ -1005,7 +1005,7 @@ bool ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    info->has_userptr = !info->is_virtio;
    info->has_syncobj = true;
-   info->has_timeline_syncobj = has_timeline_syncobj(fd);
+   info->has_timeline_syncobj = !info->is_virtio && has_timeline_syncobj(fd);
    info->has_fence_to_handle = true;
    info->has_local_buffers = !info->is_virtio;
    info->has_bo_metadata = true;
