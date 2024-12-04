@@ -47,7 +47,7 @@ struct v3d_query_pipe
 
         /* these fields are used for timestamp queries */
         uint64_t time_result;
-        uint32_t sync[1];
+        uint32_t sync[2];
 };
 
 static void
@@ -57,6 +57,8 @@ v3d_destroy_query_pipe(struct v3d_context *v3d, struct v3d_query *query)
 
         if (pquery->sync[0])
                drmSyncobjDestroy(v3d->fd, pquery->sync[0]);
+        if (pquery->sync[1])
+               drmSyncobjDestroy(v3d->fd, pquery->sync[1]);
         v3d_bo_unreference(&pquery->bo);
         free(pquery);
 }
@@ -97,6 +99,23 @@ v3d_begin_query_pipe(struct v3d_context *v3d, struct v3d_query *query)
                 v3d->current_oq = pquery->bo;
                 v3d->dirty |= V3D_DIRTY_OQ;
                 break;
+        case PIPE_QUERY_TIME_ELAPSED:
+                /* GL_TIME_ELAPSED​: Records the time that it takes for the GPU
+                 * to execute all of the scoped commands.
+                 *
+                 * The timer starts when all commands before the scope have
+                 * completed, and the timer ends when the last scoped command
+                 * has completed.
+                 */
+                assert(pquery->bo);
+
+                /* flush any pending jobs */
+                v3d_flush(&v3d->base);
+
+                /* submit time elapsed query to cpu queue */
+                v3d_submit_timestamp_query(&v3d->base, pquery->bo,
+                                           pquery->sync[0], 0);
+                break;
         default:
                 unreachable("unsupported query type");
         }
@@ -136,6 +155,7 @@ v3d_end_query_pipe(struct v3d_context *v3d, struct v3d_query *query)
                 v3d->dirty |= V3D_DIRTY_OQ;
                 break;
         case PIPE_QUERY_TIMESTAMP:
+        case PIPE_QUERY_TIME_ELAPSED:
                 /* Mesa only calls EndQuery and not BeginQuery for regular
                  * timestamp queries
                  *
@@ -147,8 +167,12 @@ v3d_end_query_pipe(struct v3d_context *v3d, struct v3d_query *query)
                 /* flush any pending jobs */
                 v3d_flush(&v3d->base);
 
-                /* submit timestamp query to cpu queue */
-                v3d_submit_timestamp_query(&v3d->base, pquery->bo, pquery->sync[0], 0);
+                /* submit time elapsed query to cpu queue */
+                uint32_t offset = pquery->type == PIPE_QUERY_TIME_ELAPSED ?
+                        sizeof(uint64_t) : 0;
+                uint32_t sync = pquery->type == PIPE_QUERY_TIMESTAMP ? 0 : 1;
+                v3d_submit_timestamp_query(&v3d->base, pquery->bo,
+                                           pquery->sync[sync], offset);
                 break;
         default:
                 unreachable("unsupported query type");
@@ -164,17 +188,25 @@ v3d_get_query_result_pipe(struct v3d_context *v3d, struct v3d_query *query,
         struct v3d_query_pipe *pquery = (struct v3d_query_pipe *)query;
 
         if (pquery->bo) {
-                /* For timestamp queries we already flush relevant jobs
-                 * before submitting the query */
-                if (pquery->type != PIPE_QUERY_TIMESTAMP)
+                /* For timestamp & time elapsed queries we already flush
+                 * relevant jobs before submitting the query */
+                if (pquery->type != PIPE_QUERY_TIMESTAMP &&
+                    pquery->type != PIPE_QUERY_TIME_ELAPSED) {
                         v3d_flush_jobs_using_bo(v3d, pquery->bo);
+                }
 
                 if (wait) {
                         if (!v3d_bo_wait(pquery->bo, ~0ull, "query"))
                                 return false;
-                        assert(pquery->type != PIPE_QUERY_TIMESTAMP ||
+
+                        assert((pquery->type != PIPE_QUERY_TIMESTAMP &&
+                               pquery->type != PIPE_QUERY_TIME_ELAPSED) ||
                                drmSyncobjWait(v3d->fd, &pquery->sync[0], 1, 0,
                                               0, NULL) != -ETIME);
+
+                        assert(pquery->type != PIPE_QUERY_TIME_ELAPSED ||
+                                drmSyncobjWait(v3d->fd, &pquery->sync[1], 1,
+                                               0, 0, NULL) != -ETIME);
                 } else {
                         if (!v3d_bo_wait(pquery->bo, 0, "query"))
                                 return false;
@@ -183,6 +215,9 @@ v3d_get_query_result_pipe(struct v3d_context *v3d, struct v3d_query *query,
                 if (pquery->type == PIPE_QUERY_TIMESTAMP) {
                         uint64_t *map = v3d_bo_map(pquery->bo);
                         pquery->time_result = *map;
+                } else if (pquery->type == PIPE_QUERY_TIME_ELAPSED) {
+                        uint64_t *map = v3d_bo_map(pquery->bo);
+                        pquery->time_result = map[1] - map[0];
                 } else {
                         /* XXX: Sum up per-core values. */
                         uint32_t *map = v3d_bo_map(pquery->bo);
@@ -208,6 +243,7 @@ v3d_get_query_result_pipe(struct v3d_context *v3d, struct v3d_query *query,
                 vresult->u64 = pquery->end - pquery->start;
                 break;
         case PIPE_QUERY_TIMESTAMP:
+        case PIPE_QUERY_TIME_ELAPSED:
                 vresult->u64 = pquery->time_result;
                 break;
         default:
@@ -241,11 +277,14 @@ v3d_create_query_pipe(struct v3d_context *v3d, unsigned query_type, unsigned ind
          */
         switch (pquery->type) {
         case PIPE_QUERY_TIMESTAMP:
+        case PIPE_QUERY_TIME_ELAPSED:
                 pquery->bo = v3d_bo_alloc(v3d->screen, 4096, "query");
                 uint32_t *map = v3d_bo_map(pquery->bo);
                 *map = 0;
 
                 drmSyncobjCreate(v3d->fd, 0, &pquery->sync[0]);
+                if (pquery->type == PIPE_QUERY_TIME_ELAPSED)
+                        drmSyncobjCreate(v3d->fd, 0, &pquery->sync[1]);
                 break;
         default:
                 break;

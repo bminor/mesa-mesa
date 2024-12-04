@@ -160,6 +160,7 @@ v3d_screen_get_param(struct pipe_screen *pscreen, enum pipe_cap param)
         case PIPE_CAP_TEXTURE_QUERY_LOD:
                 return 1;
         case PIPE_CAP_QUERY_TIMESTAMP:
+        case PIPE_CAP_QUERY_TIME_ELAPSED:
                 return screen->has_cpu_queue && screen->has_multisync;
         case PIPE_CAP_TEXTURE_SAMPLER_INDEPENDENT:
                 return 0;
