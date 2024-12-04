@@ -199,6 +199,7 @@ spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render,Fail
 spec@ext_framebuffer_object@getteximage-formats init-by-rendering,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-modifiers,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-modifiers@autogen-R16-DRM_FORMAT_MOD_LINEAR-clear_reimport,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-tex-modifier,Crash
 spec@ext_packed_depth_stencil@texwrap formats bordercolor,Fail
 spec@ext_packed_depth_stencil@texwrap formats bordercolor-swizzled,Fail
 spec@ext_packed_depth_stencil@texwrap formats bordercolor-swizzled@GL_DEPTH24_STENCIL8- swizzled- border color only,Fail
@@ -806,3 +807,4 @@ dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_line_lin
 dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_points_mode_point_line_raster_smooth,Fail
 dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_triangles_mode_fill_line_raster_smooth,Fail
 dEQP-VK.draw.renderpass.non_line_with_params.vtx_lines_geom_triangles_mode_point_line_raster_smooth,Fail
+
