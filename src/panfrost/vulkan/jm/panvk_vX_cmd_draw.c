@@ -424,8 +424,8 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
       cfg.stencil_mask_misc.single_sampled_lines =
          dyns->ms.rasterization_samples <= 1;
 
-      cfg.depth_units = rs->depth_bias.constant;
-      cfg.depth_factor = rs->depth_bias.slope;
+      cfg.depth_units = rs->depth_bias.constant_factor;
+      cfg.depth_factor = rs->depth_bias.slope_factor;
       cfg.depth_bias_clamp = rs->depth_bias.clamp;
 
       cfg.stencil_front.mask = ds->stencil.front.compare_mask;

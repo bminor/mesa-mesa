@@ -3034,9 +3034,9 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
 
       agx_pack(ptr, DEPTH_BIAS, cfg) {
-         cfg.slope_scale = dyn->rs.depth_bias.slope;
+         cfg.slope_scale = dyn->rs.depth_bias.slope_factor;
          cfg.clamp = dyn->rs.depth_bias.clamp;
-         cfg.depth_bias = dyn->rs.depth_bias.constant;
+         cfg.depth_bias = dyn->rs.depth_bias.constant_factor;
          cfg.depth_bias /= hk_depth_bias_factor(render->depth_att.vk_format,
                                                 exact, force_unorm);
       }

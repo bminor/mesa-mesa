@@ -191,9 +191,9 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.ts.domain_origin, RADV_DYNAMIC_TESS_DOMAIN_ORIGIN);
 
    RADV_CMP_COPY(vk.rs.line.width, RADV_DYNAMIC_LINE_WIDTH);
-   RADV_CMP_COPY(vk.rs.depth_bias.constant, RADV_DYNAMIC_DEPTH_BIAS);
+   RADV_CMP_COPY(vk.rs.depth_bias.constant_factor, RADV_DYNAMIC_DEPTH_BIAS);
    RADV_CMP_COPY(vk.rs.depth_bias.clamp, RADV_DYNAMIC_DEPTH_BIAS);
-   RADV_CMP_COPY(vk.rs.depth_bias.slope, RADV_DYNAMIC_DEPTH_BIAS);
+   RADV_CMP_COPY(vk.rs.depth_bias.slope_factor, RADV_DYNAMIC_DEPTH_BIAS);
    RADV_CMP_COPY(vk.rs.depth_bias.representation, RADV_DYNAMIC_DEPTH_BIAS);
    RADV_CMP_COPY(vk.rs.line.stipple.factor, RADV_DYNAMIC_LINE_STIPPLE);
    RADV_CMP_COPY(vk.rs.line.stipple.pattern, RADV_DYNAMIC_LINE_STIPPLE);
@@ -3197,7 +3197,7 @@ radv_emit_depth_bias(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_rendering_state *render = &cmd_buffer->state.render;
-   unsigned slope = fui(d->vk.rs.depth_bias.slope * 16.0f);
+   unsigned slope = fui(d->vk.rs.depth_bias.slope_factor * 16.0f);
    unsigned pa_su_poly_offset_db_fmt_cntl = 0;
 
    if (vk_format_has_depth(render->ds_att.format) &&
@@ -3219,11 +3219,11 @@ radv_emit_depth_bias(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radeon_set_context_reg_seq(cmd_buffer->cs, R_028B7C_PA_SU_POLY_OFFSET_CLAMP, 5);
-   radeon_emit(cmd_buffer->cs, fui(d->vk.rs.depth_bias.clamp));    /* CLAMP */
-   radeon_emit(cmd_buffer->cs, slope);                             /* FRONT SCALE */
-   radeon_emit(cmd_buffer->cs, fui(d->vk.rs.depth_bias.constant)); /* FRONT OFFSET */
-   radeon_emit(cmd_buffer->cs, slope);                             /* BACK SCALE */
-   radeon_emit(cmd_buffer->cs, fui(d->vk.rs.depth_bias.constant)); /* BACK OFFSET */
+   radeon_emit(cmd_buffer->cs, fui(d->vk.rs.depth_bias.clamp));             /* CLAMP */
+   radeon_emit(cmd_buffer->cs, slope);                                      /* FRONT SCALE */
+   radeon_emit(cmd_buffer->cs, fui(d->vk.rs.depth_bias.constant_factor));   /* FRONT OFFSET */
+   radeon_emit(cmd_buffer->cs, slope);                                      /* BACK SCALE */
+   radeon_emit(cmd_buffer->cs, fui(d->vk.rs.depth_bias.constant_factor));   /* BACK OFFSET */
 
    radeon_set_context_reg(cmd_buffer->cs, R_028B78_PA_SU_POLY_OFFSET_DB_FMT_CNTL, pa_su_poly_offset_db_fmt_cntl);
 }
@@ -8752,9 +8752,9 @@ radv_CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT
    const VkDepthBiasRepresentationInfoEXT *dbr_info =
       vk_find_struct_const(pDepthBiasInfo->pNext, DEPTH_BIAS_REPRESENTATION_INFO_EXT);
 
-   state->dynamic.vk.rs.depth_bias.constant = pDepthBiasInfo->depthBiasConstantFactor;
+   state->dynamic.vk.rs.depth_bias.constant_factor = pDepthBiasInfo->depthBiasConstantFactor;
    state->dynamic.vk.rs.depth_bias.clamp = pDepthBiasInfo->depthBiasClamp;
-   state->dynamic.vk.rs.depth_bias.slope = pDepthBiasInfo->depthBiasSlopeFactor;
+   state->dynamic.vk.rs.depth_bias.slope_factor = pDepthBiasInfo->depthBiasSlopeFactor;
    state->dynamic.vk.rs.depth_bias.representation =
       dbr_info ? dbr_info->depthBiasRepresentation : VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT;
 

@@ -5273,8 +5273,8 @@ pvr_setup_isp_depth_bias_scissor_state(struct pvr_cmd_buffer *const cmd_buffer)
          .constant_factor = pvr_calculate_final_depth_bias_contant_factor(
             dev_info,
             cmd_buffer->state.depth_format,
-            dynamic_state->rs.depth_bias.constant),
-         .slope_factor = dynamic_state->rs.depth_bias.slope,
+            dynamic_state->rs.depth_bias.constant_factor),
+         .slope_factor = dynamic_state->rs.depth_bias.slope_factor,
          .clamp = dynamic_state->rs.depth_bias.clamp,
       };
 

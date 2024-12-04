@@ -1127,8 +1127,8 @@ update_clip_raster(struct anv_gfx_dynamic_state *hw_state,
    SET(RASTER, raster.GlobalDepthOffsetEnableSolid, dyn->rs.depth_bias.enable);
    SET(RASTER, raster.GlobalDepthOffsetEnableWireframe, dyn->rs.depth_bias.enable);
    SET(RASTER, raster.GlobalDepthOffsetEnablePoint, dyn->rs.depth_bias.enable);
-   SET(RASTER, raster.GlobalDepthOffsetConstant, dyn->rs.depth_bias.constant);
-   SET(RASTER, raster.GlobalDepthOffsetScale, dyn->rs.depth_bias.slope);
+   SET(RASTER, raster.GlobalDepthOffsetConstant, dyn->rs.depth_bias.constant_factor);
+   SET(RASTER, raster.GlobalDepthOffsetScale, dyn->rs.depth_bias.slope_factor);
    SET(RASTER, raster.GlobalDepthOffsetClamp, dyn->rs.depth_bias.clamp);
    SET(RASTER, raster.FrontFaceFillMode, vk_to_intel_fillmode[dyn->rs.polygon_mode]);
    SET(RASTER, raster.BackFaceFillMode, vk_to_intel_fillmode[dyn->rs.polygon_mode]);

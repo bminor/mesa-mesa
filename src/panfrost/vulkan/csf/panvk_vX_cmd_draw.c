@@ -1396,8 +1396,8 @@ prepare_ds(struct panvk_cmd_buffer *cmdbuf)
       cfg.depth_bias_enable = rs->depth_bias.enable;
       cfg.depth_function = test_z ? translate_compare_func(ds->depth.compare_op)
                                   : MALI_FUNC_ALWAYS;
-      cfg.depth_units = rs->depth_bias.constant;
-      cfg.depth_factor = rs->depth_bias.slope;
+      cfg.depth_units = rs->depth_bias.constant_factor;
+      cfg.depth_factor = rs->depth_bias.slope_factor;
       cfg.depth_bias_clamp = rs->depth_bias.clamp;
    }
 

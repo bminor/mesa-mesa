@@ -870,8 +870,8 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
       if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_ENABLE))
          state->depth_bias.enabled = ps->rs->depth_bias.enable;
       if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_FACTORS)) {
-         state->depth_bias.offset_units = ps->rs->depth_bias.constant;
-         state->depth_bias.offset_scale = ps->rs->depth_bias.slope;
+         state->depth_bias.offset_units = ps->rs->depth_bias.constant_factor;
+         state->depth_bias.offset_scale = ps->rs->depth_bias.slope_factor;
          state->depth_bias.offset_clamp = ps->rs->depth_bias.clamp;
       }
 
