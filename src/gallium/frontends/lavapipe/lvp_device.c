@@ -61,7 +61,12 @@
     defined(VK_USE_PLATFORM_METAL_EXT)
 #define LVP_USE_WSI_PLATFORM
 #endif
+
+#if LLVM_VERSION_MAJOR >= 10
+#define LVP_API_VERSION VK_MAKE_VERSION(1, 4, VK_HEADER_VERSION)
+#else
 #define LVP_API_VERSION VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION)
+#endif
 
 VKAPI_ATTR VkResult VKAPI_CALL lvp_EnumerateInstanceVersion(uint32_t* pApiVersion)
 {
@@ -453,6 +458,28 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .shaderIntegerDotProduct = true,
       .maintenance4 = true,
 
+      /* Vulkan 1.4 */
+      .globalPriorityQuery = true,
+      .shaderSubgroupRotate = true,
+      .shaderSubgroupRotateClustered = true,
+      .shaderFloatControls2 = true,
+      .shaderExpectAssume = true,
+      .rectangularLines = true,
+      .bresenhamLines = true,
+      .smoothLines = true,
+      .stippledRectangularLines = true,
+      .stippledBresenhamLines = true,
+      .stippledSmoothLines = true,
+      .vertexAttributeInstanceRateDivisor = instance_divisor,
+      .vertexAttributeInstanceRateZeroDivisor = instance_divisor,
+      .indexTypeUint8 = true,
+      .dynamicRenderingLocalRead = true,
+      .maintenance5 = true,
+      .maintenance6 = true,
+      .pipelineRobustness = true,
+      .hostImageCopy = true,
+      .pushDescriptor = true,
+
       /* VK_KHR_acceleration_structure */
       .accelerationStructure = true,
       .accelerationStructureCaptureReplay = false,
@@ -478,9 +505,6 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       /* VK_EXT_non_seamless_cube_map */
       .nonSeamlessCubeMap = true,
 
-      /* VK_KHR_global_priority */
-      .globalPriorityQuery = true,
-
       /* VK_EXT_attachment_feedback_loop_layout */
       .attachmentFeedbackLoopLayout = true,
 
@@ -492,26 +516,11 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .rasterizationOrderDepthAttachmentAccess = true,
       .rasterizationOrderStencilAttachmentAccess = true,
 
-      /* VK_EXT_line_rasterization */
-      .rectangularLines = true,
-      .bresenhamLines = true,
-      .smoothLines = true,
-      .stippledRectangularLines = true,
-      .stippledBresenhamLines = true,
-      .stippledSmoothLines = true,
-
-      /* VK_EXT_vertex_attribute_divisor */
-      .vertexAttributeInstanceRateZeroDivisor = instance_divisor,
-      .vertexAttributeInstanceRateDivisor = instance_divisor,
-
       /* VK_EXT_multisampled_render_to_single_sampled */
       .multisampledRenderToSingleSampled = true,
 
       /* VK_EXT_mutable_descriptor_type */
       .mutableDescriptorType = true,
-
-      /* VK_EXT_index_type_uint8 */
-      .indexTypeUint8 = true,
 
       /* VK_EXT_vertex_input_dynamic_state */
       .vertexInputDynamicState = true,
@@ -590,9 +599,6 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
 
       /* VK_EXT_multi_draw */
       .multiDraw = true,
-
-      /* VK_EXT_pipeline_robustness */
-      .pipelineRobustness = true,
 
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = (pdevice->pscreen->get_param(pdevice->pscreen, PIPE_CAP_DEPTH_CLAMP_ENABLE) != 0),
@@ -699,9 +705,6 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .nestedCommandBufferRendering = true,
       .nestedCommandBufferSimultaneousUse = true,
 
-      /* VK_KHR_dynamic_rendering_local_read */
-      .dynamicRenderingLocalRead = true,
-
       /* VK_EXT_mesh_shader */
       .taskShader = true,
       .meshShader = true,
@@ -709,25 +712,14 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       .primitiveFragmentShadingRateMeshShader = false,
       .meshShaderQueries = true,
 
-      /* host_image_copy */
-      .hostImageCopy = true,
-
-      /* maintenance5 */
-      .maintenance5 = true,
-
       /* VK_EXT_ycbcr_2plane_444_formats */
       .ycbcr2plane444Formats = true,
 
       /* VK_EXT_ycbcr_image_arrays */
       .ycbcrImageArrays = true,
 
-      /* maintenance6 */
-      .maintenance6 = true,
       /* maintenance7 */
       .maintenance7 = true,
-
-      /* VK_KHR_shader_expect_assume */
-      .shaderExpectAssume = true,
 
       /* VK_KHR_shader_maximal_reconvergence */
       .shaderMaximalReconvergence = true,
@@ -748,9 +740,6 @@ lvp_get_features(const struct lvp_physical_device *pdevice,
       /* VK_KHR_shader_subgroup_rotate */
       .shaderSubgroupRotate = true,
       .shaderSubgroupRotateClustered = true,
-
-      /* KHR_shader_float_controls2 */
-      .shaderFloatControls2 = true,
 
       /* VK_KHR_compute_shader_derivatives */
       .computeDerivativeGroupQuads = true,
@@ -1030,10 +1019,22 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .uniformTexelBufferOffsetSingleTexelAlignment = true,
       .maxBufferSize = UINT32_MAX,
 
-      /* VK_KHR_push_descriptor */
+      /* Vulkan 1.4 */
+      .lineSubPixelPrecisionBits = device->pscreen->get_param(device->pscreen, PIPE_CAP_RASTERIZER_SUBPIXEL_BITS),
       .maxPushDescriptors = MAX_PUSH_DESCRIPTORS,
-
-      /* VK_EXT_host_image_copy */
+      /* FIXME No idea about most of these ones. */
+      .earlyFragmentMultisampleCoverageAfterSampleCounting = true,
+      .earlyFragmentSampleMaskTestBeforeSampleCounting = false,
+      .depthStencilSwizzleOneSupport = false,
+      .polygonModePointSize = true, /* This one is correct. */
+      .nonStrictSinglePixelWideLinesUseParallelogram = false,
+      .nonStrictWideLinesUseParallelogram = false,
+      .blockTexelViewCompatibleMultipleLayers = true,
+      .maxCombinedImageSamplerDescriptorCount = 3,
+      .defaultRobustnessStorageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
+      .defaultRobustnessUniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
+      .defaultRobustnessVertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
+      .defaultRobustnessImages = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT,
       .pCopySrcLayouts = lvp_host_copy_image_layouts,
       .copySrcLayoutCount = ARRAY_SIZE(lvp_host_copy_image_layouts),
       .pCopyDstLayouts = lvp_host_copy_image_layouts,
@@ -1052,23 +1053,8 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .transformFeedbackRasterizationStreamSelect = false,
       .transformFeedbackDraw = true,
 
-      /* VK_KHR_maintenance5 */
-      /* FIXME No idea about most of these ones. */
-      .earlyFragmentMultisampleCoverageAfterSampleCounting = true,
-      .earlyFragmentSampleMaskTestBeforeSampleCounting = false,
-      .depthStencilSwizzleOneSupport = false,
-      .polygonModePointSize = true, /* This one is correct. */
-      .nonStrictSinglePixelWideLinesUseParallelogram = false,
-      .nonStrictWideLinesUseParallelogram = false,
-
-      /* maintenance6 */
-      .maxCombinedImageSamplerDescriptorCount = 3,
-
       /* VK_EXT_extended_dynamic_state3 */
       .dynamicPrimitiveTopologyUnrestricted = VK_TRUE,
-
-      /* VK_EXT_line_rasterization */
-      .lineSubPixelPrecisionBits = device->pscreen->get_param(device->pscreen, PIPE_CAP_RASTERIZER_SUBPIXEL_BITS),
 
       /* VK_NV_device_generated_commands */
       .maxGraphicsShaderGroupCount = 1<<12,
@@ -1104,12 +1090,6 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
 
       /* VK_EXT_multi_draw */
       .maxMultiDrawCount = 2048,
-
-      /* VK_EXT_pipeline_robustness */
-      .defaultRobustnessStorageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
-      .defaultRobustnessUniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
-      .defaultRobustnessVertexInputs = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT,
-      .defaultRobustnessImages = VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT,
 
       /* VK_EXT_descriptor_buffer */
       .combinedImageSamplerDescriptorSingleArray = VK_TRUE,
@@ -1249,20 +1229,17 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
 #endif
            );
 
-   /* VK_EXT_nested_command_buffer */
-   p->maxCommandBufferNestingLevel = UINT32_MAX;
-
-   /* VK_EXT_host_image_copy */
-   lvp_device_get_cache_uuid(p->optimalTilingLayoutUUID);
-
-   /* VK_EXT_vertex_attribute_divisor */
+   /* Vulkan 1.4 */
    if (device->pscreen->get_param(device->pscreen, PIPE_CAP_VERTEX_ELEMENT_INSTANCE_DIVISOR) != 0)
       p->maxVertexAttribDivisor = UINT32_MAX;
    else
       p->maxVertexAttribDivisor = 1;
 
-   /* maintenance6 */
-   p->blockTexelViewCompatibleMultipleLayers = true,
+   /* VK_EXT_nested_command_buffer */
+   p->maxCommandBufferNestingLevel = UINT32_MAX;
+
+   /* VK_EXT_host_image_copy */
+   lvp_device_get_cache_uuid(p->optimalTilingLayoutUUID);
 
    /* maintenance7 */
    p->robustFragmentShadingRateAttachmentAccess = false;
