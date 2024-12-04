@@ -14,6 +14,7 @@
 
 #include "pan_desc.h"
 
+#include "panvk_cmd_push_constant.h"
 #include "panvk_descriptor_set.h"
 #include "panvk_macros.h"
 #include "panvk_mempool.h"
@@ -89,6 +90,8 @@ struct panvk_compute_sysvals {
    } desc;
 #endif
 };
+
+#define SYSVALS_PUSH_CONST_BASE MAX_PUSH_CONSTANTS_SIZE
 
 #if PAN_ARCH <= 7
 enum panvk_bifrost_desc_table_type {

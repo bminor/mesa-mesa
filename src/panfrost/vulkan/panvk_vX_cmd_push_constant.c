@@ -9,10 +9,16 @@
 
 mali_ptr
 panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
-                                          void *sysvals, unsigned sysvals_sz)
+                                          VkPipelineBindPoint ptype)
 {
-   struct panfrost_ptr push_uniforms =
-      panvk_cmd_alloc_dev_mem(cmdbuf, desc, 512, 16);
+   uint32_t sysvals_sz = ptype == VK_PIPELINE_BIND_POINT_GRAPHICS
+                            ? sizeof(struct panvk_graphics_sysvals)
+                            : sizeof(struct panvk_compute_sysvals);
+   const void *sysvals = ptype == VK_PIPELINE_BIND_POINT_GRAPHICS
+                            ? (void *)&cmdbuf->state.gfx.sysvals
+                            : (void *)&cmdbuf->state.compute.sysvals;
+   struct panfrost_ptr push_uniforms = panvk_cmd_alloc_dev_mem(
+      cmdbuf, desc, SYSVALS_PUSH_CONST_BASE + sysvals_sz, 16);
 
    if (push_uniforms.gpu) {
       /* The first half is used for push constants. */
@@ -20,7 +26,8 @@ panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
              sizeof(cmdbuf->state.push_constants.data));
 
       /* The second half is used for sysvals. */
-      memcpy((uint8_t *)push_uniforms.cpu + 256, sysvals, sysvals_sz);
+      memcpy((uint8_t *)push_uniforms.cpu + SYSVALS_PUSH_CONST_BASE, sysvals,
+             sysvals_sz);
    }
 
    return push_uniforms.gpu;

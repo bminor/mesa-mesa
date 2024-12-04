@@ -368,9 +368,11 @@ panvk_draw_prepare_fs_rsd(struct panvk_cmd_buffer *cmdbuf,
 
          if (binfo.shader_loads_blend_const) {
             /* Preload the blend constant if the blend shader depends on it. */
-            cfg.preload.uniform_count = MAX2(
-               cfg.preload.uniform_count,
-               DIV_ROUND_UP(256 + sizeof(struct panvk_graphics_sysvals), 8));
+            cfg.preload.uniform_count =
+               MAX2(cfg.preload.uniform_count,
+                    DIV_ROUND_UP(SYSVALS_PUSH_CONST_BASE +
+                                    sizeof(struct panvk_graphics_sysvals),
+                                 8));
          }
 
          uint8_t rt_written = fs_info->outputs_written >> FRAG_RESULT_DATA0;
@@ -1356,8 +1358,7 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
          return;
 
       cmdbuf->state.gfx.push_uniforms = panvk_per_arch(
-         cmd_prepare_push_uniforms)(cmdbuf, &cmdbuf->state.gfx.sysvals,
-                                    sizeof(cmdbuf->state.gfx.sysvals));
+         cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS);
       if (!cmdbuf->state.gfx.push_uniforms)
          return;
 

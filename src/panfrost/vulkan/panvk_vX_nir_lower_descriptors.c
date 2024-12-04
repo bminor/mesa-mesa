@@ -424,7 +424,10 @@ build_buffer_addr_for_res_index(nir_builder *b, nir_def *res_index,
          b, nir_iadd(b, array_index, first_desc_index), PANVK_DESCRIPTOR_SIZE);
 
       nir_def *base_addr = nir_load_push_constant(
-         b, 1, 64, base_addr_sysval_offset, .base = 256, .range = 256);
+         b, 1, 64, base_addr_sysval_offset, .base = SYSVALS_PUSH_CONST_BASE,
+         .range = b->shader->info.stage == MESA_SHADER_COMPUTE
+                     ? sizeof(struct panvk_compute_sysvals)
+                     : sizeof(struct panvk_graphics_sysvals));
       nir_def *desc_addr = nir_iadd(b, base_addr, nir_u2u64(b, desc_offset));
       nir_def *desc =
          nir_load_global(b, desc_addr, PANVK_DESCRIPTOR_SIZE, 4, 32);
@@ -559,8 +562,8 @@ load_resource_deref_desc(nir_builder *b, nir_deref_instr *deref,
          ? offsetof(struct panvk_compute_sysvals, desc.sets[set])
          : offsetof(struct panvk_graphics_sysvals, desc.sets[set]);
    nir_def *set_base_addr = nir_load_push_constant(
-      b, 1, 64, nir_imm_int(b, 0), .base = 256 + set_base_addr_sysval_offs,
-      .range = 8);
+      b, 1, 64, nir_imm_int(b, 0),
+      .base = SYSVALS_PUSH_CONST_BASE + set_base_addr_sysval_offs, .range = 8);
 
    unsigned desc_align = 1 << (ffs(PANVK_DESCRIPTOR_SIZE + desc_offset) - 1);
 

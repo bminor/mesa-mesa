@@ -20,6 +20,6 @@ struct panvk_push_constant_state {
 
 mali_ptr
 panvk_per_arch(cmd_prepare_push_uniforms)(struct panvk_cmd_buffer *cmdbuf,
-                                          void *sysvals, unsigned sysvals_sz);
+                                          VkPipelineBindPoint ptype);
 
 #endif

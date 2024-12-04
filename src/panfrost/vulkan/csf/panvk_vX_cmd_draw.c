@@ -1334,12 +1334,12 @@ prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
 
    if (gfx_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
       cmdbuf->state.gfx.push_uniforms = panvk_per_arch(
-         cmd_prepare_push_uniforms)(cmdbuf, &cmdbuf->state.gfx.sysvals,
-                                    sizeof(cmdbuf->state.gfx.sysvals));
+         cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS);
       if (!cmdbuf->state.gfx.push_uniforms)
          return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-      uint32_t push_size = 256 + sizeof(struct panvk_graphics_sysvals);
+      uint32_t push_size =
+         SYSVALS_PUSH_CONST_BASE + sizeof(struct panvk_graphics_sysvals);
       uint64_t fau_count = DIV_ROUND_UP(push_size, 8);
       mali_ptr fau_ptr = cmdbuf->state.gfx.push_uniforms | (fau_count << 56);
 
@@ -1932,11 +1932,14 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    struct cs_index fau_block_addr = cs_scratch_reg64(b, 2);
    cs_move64_to(b, fau_block_addr, cmdbuf->state.gfx.push_uniforms);
    cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
-              256 + offsetof(struct panvk_graphics_sysvals, vs.first_vertex));
+              SYSVALS_PUSH_CONST_BASE +
+                 offsetof(struct panvk_graphics_sysvals, vs.first_vertex));
    cs_store32(b, cs_sr_reg32(b, 36), fau_block_addr,
-              256 + offsetof(struct panvk_graphics_sysvals, vs.base_vertex));
+              SYSVALS_PUSH_CONST_BASE +
+                 offsetof(struct panvk_graphics_sysvals, vs.base_vertex));
    cs_store32(b, cs_sr_reg32(b, 37), fau_block_addr,
-              256 + offsetof(struct panvk_graphics_sysvals, vs.base_instance));
+              SYSVALS_PUSH_CONST_BASE +
+                 offsetof(struct panvk_graphics_sysvals, vs.base_instance));
 
    /* Wait for the store using SR-37 as src to finish, so we can overwrite it. */
    cs_wait_slot(b, SB_ID(LS), false);

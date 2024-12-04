@@ -68,8 +68,7 @@ static VkResult
 prepare_push_uniforms(struct panvk_cmd_buffer *cmdbuf)
 {
    cmdbuf->state.compute.push_uniforms = panvk_per_arch(
-      cmd_prepare_push_uniforms)(cmdbuf, &cmdbuf->state.compute.sysvals,
-                                 sizeof(cmdbuf->state.compute.sysvals));
+      cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE);
    return cmdbuf->state.compute.push_uniforms ? VK_SUCCESS
                                               : VK_ERROR_OUT_OF_DEVICE_MEMORY;
 }
@@ -296,7 +295,8 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          cs_move64_to(b, cs_sr_reg64(b, 0), cs_desc_state->res_table);
 
       if (compute_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
-         uint32_t push_size = 256 + sizeof(struct panvk_compute_sysvals);
+         uint32_t push_size =
+            SYSVALS_PUSH_CONST_BASE + sizeof(struct panvk_compute_sysvals);
          uint64_t fau_count = DIV_ROUND_UP(push_size, 8);
          mali_ptr fau_ptr =
             cmdbuf->state.compute.push_uniforms | (fau_count << 56);
@@ -336,10 +336,10 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          cs_move64_to(b, cs_scratch_reg64(b, 0),
                       cmdbuf->state.compute.push_uniforms);
          cs_wait_slot(b, SB_ID(LS), false);
-         cs_store(
-            b, cs_sr_reg_tuple(b, 37, 3), cs_scratch_reg64(b, 0),
-            BITFIELD_MASK(3),
-            256 + offsetof(struct panvk_compute_sysvals, num_work_groups));
+         cs_store(b, cs_sr_reg_tuple(b, 37, 3), cs_scratch_reg64(b, 0),
+                  BITFIELD_MASK(3),
+                  SYSVALS_PUSH_CONST_BASE +
+                     offsetof(struct panvk_compute_sysvals, num_work_groups));
          cs_wait_slot(b, SB_ID(LS), false);
       } else {
          cs_move32_to(b, cs_sr_reg32(b, 37), info->direct.groupCountX);

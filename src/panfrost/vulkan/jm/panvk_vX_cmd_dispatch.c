@@ -103,8 +103,7 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
 
    if (compute_state_dirty(cmdbuf, PUSH_UNIFORMS)) {
       cmdbuf->state.compute.push_uniforms = panvk_per_arch(
-         cmd_prepare_push_uniforms)(cmdbuf, &cmdbuf->state.compute.sysvals,
-                                    sizeof(cmdbuf->state.compute.sysvals));
+         cmd_prepare_push_uniforms)(cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE);
       if (!cmdbuf->state.compute.push_uniforms)
          return;
    }

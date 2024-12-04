@@ -63,7 +63,8 @@ load_sysval_from_push_const(nir_builder *b, unsigned offset, unsigned bit_size,
    return nir_load_push_constant(
       b, num_comps, bit_size, nir_imm_int(b, 0),
       /* Push constants are placed first, and then come the sysvals. */
-      .base = offset + 256, .range = num_comps * bit_size / 8);
+      .base = offset + SYSVALS_PUSH_CONST_BASE,
+      .range = num_comps * bit_size / 8);
 }
 
 static bool
