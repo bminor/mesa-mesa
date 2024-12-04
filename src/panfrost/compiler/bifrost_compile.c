@@ -4822,13 +4822,16 @@ mem_access_size_align_cb(nir_intrinsic_op intrin, uint8_t bytes,
          num_comps = (bytes / 4) + 2;
       }
 
-      bit_size = MIN2(bit_size, 32);
+      bit_size = MAX2(bit_size, 32);
+      align = 4;
+   } else {
+      align = bit_size / 8;
    }
 
    return (nir_mem_access_size_align){
       .num_components = num_comps,
       .bit_size = bit_size,
-      .align = bit_size / 8,
+      .align = align,
       .shift = nir_mem_access_shift_method_scalar,
    };
 }
