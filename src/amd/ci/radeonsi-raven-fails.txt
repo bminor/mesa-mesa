@@ -43,6 +43,3 @@ spec@!opengl 1.1@line-smooth-stipple,Fail
 spec@arb_viewport_array@display-list,Fail
 # since transition XORG -> WESTON
 glx@glx_arb_sync_control@waitformsc,Fail
-
-# This will be fixed by a piglit update
-spec@arb_uniform_buffer_object@referenced-by-shader,Fail
