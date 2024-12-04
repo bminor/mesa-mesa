@@ -1217,8 +1217,10 @@ bi_emit_load_push_constant(bi_builder *b, nir_intrinsic_instr *instr)
    assert(b->shader->inputs->no_ubo_to_push && "can't mix push constant forms");
 
    nir_src *offset = &instr->src[0];
+   assert(!nir_intrinsic_base(instr) && "base must be zero");
+   assert(!nir_intrinsic_range(instr) && "range must be zero");
    assert(nir_src_is_const(*offset) && "no indirect push constants");
-   uint32_t base = nir_intrinsic_base(instr) + nir_src_as_uint(*offset);
+   uint32_t base = nir_src_as_uint(*offset);
    assert((base & 3) == 0 && "unaligned push constants");
 
    unsigned bits = instr->def.bit_size * instr->def.num_components;
