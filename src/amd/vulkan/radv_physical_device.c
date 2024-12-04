@@ -1948,7 +1948,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .supportedIndirectCommandsShaderStages =
          VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT | taskmesh_stages | rt_stages,
       .supportedIndirectCommandsShaderStagesPipelineBinding = VK_SHADER_STAGE_COMPUTE_BIT,
-      .supportedIndirectCommandsShaderStagesShaderBinding = 0,
+      .supportedIndirectCommandsShaderStagesShaderBinding = VK_SHADER_STAGE_COMPUTE_BIT,
       .deviceGeneratedCommandsTransformFeedback = true,
       .deviceGeneratedCommandsMultiDrawIndirectCount = true,
    };
