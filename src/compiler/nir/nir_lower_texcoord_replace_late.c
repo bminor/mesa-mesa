@@ -69,7 +69,7 @@ pass(nir_builder *b, nir_instr *instr, void *data)
    return true;
 }
 
-void
+bool
 nir_lower_texcoord_replace_late(nir_shader *s, unsigned coord_replace,
                                 bool point_coord_is_sysval)
 {
@@ -80,7 +80,7 @@ nir_lower_texcoord_replace_late(nir_shader *s, unsigned coord_replace,
 
    /* If no relevant texcoords are read, there's nothing to do */
    if (!(s->info.inputs_read & replace_mask))
-      return;
+      return false;
 
    /* Otherwise, we're going to replace these texcoord reads with a PNTC read */
    s->info.inputs_read &= ~(((uint64_t)coord_replace) << VARYING_SLOT_TEX0);
@@ -88,10 +88,10 @@ nir_lower_texcoord_replace_late(nir_shader *s, unsigned coord_replace,
    if (!point_coord_is_sysval)
       s->info.inputs_read |= BITFIELD64_BIT(VARYING_SLOT_PNTC);
 
-   nir_shader_instructions_pass(s, pass,
-                                nir_metadata_control_flow,
-                                &(struct opts){
-                                   .coord_replace = coord_replace,
-                                   .point_coord_is_sysval = point_coord_is_sysval,
-                                });
+   return nir_shader_instructions_pass(s, pass,
+                                       nir_metadata_control_flow,
+                                       &(struct opts){
+                                          .coord_replace = coord_replace,
+                                          .point_coord_is_sysval = point_coord_is_sysval,
+                                       });
 }

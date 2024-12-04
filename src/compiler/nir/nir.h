@@ -6706,7 +6706,7 @@ bool nir_lower_point_size(nir_shader *shader, float min, float max);
 void nir_lower_texcoord_replace(nir_shader *s, unsigned coord_replace,
                                 bool point_coord_is_sysval, bool yinvert);
 
-void nir_lower_texcoord_replace_late(nir_shader *s, unsigned coord_replace,
+bool nir_lower_texcoord_replace_late(nir_shader *s, unsigned coord_replace,
                                      bool point_coord_is_sysval);
 
 typedef enum {
