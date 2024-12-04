@@ -56,17 +56,6 @@
 #include "vk_shader.h"
 #include "vk_util.h"
 
-static nir_def *
-load_sysval_from_push_const(nir_builder *b, unsigned offset, unsigned bit_size,
-                            unsigned num_comps)
-{
-   return nir_load_push_constant(
-      b, num_comps, bit_size, nir_imm_int(b, 0),
-      /* Push constants are placed first, and then come the sysvals. */
-      .base = offset + SYSVALS_PUSH_CONST_BASE,
-      .range = num_comps * bit_size / 8);
-}
-
 static bool
 panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
 {
@@ -74,62 +63,49 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       return false;
 
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-   unsigned num_comps = intr->def.num_components;
    unsigned bit_size = intr->def.bit_size;
    nir_def *val = NULL;
    b->cursor = nir_before_instr(instr);
 
-#define SYSVAL(ptype, name) offsetof(struct panvk_##ptype##_sysvals, name)
    switch (intr->intrinsic) {
    case nir_intrinsic_load_base_workgroup_id:
-      val = load_sysval_from_push_const(b, SYSVAL(compute, base), bit_size,
-                                        num_comps);
+      val = load_sysval(b, compute, bit_size, base);
       break;
    case nir_intrinsic_load_num_workgroups:
-      val = load_sysval_from_push_const(b, SYSVAL(compute, num_work_groups),
-                                        bit_size, num_comps);
+      val = load_sysval(b, compute, bit_size, num_work_groups);
       break;
    case nir_intrinsic_load_workgroup_size:
-      val = load_sysval_from_push_const(b, SYSVAL(compute, local_group_size),
-                                        bit_size, num_comps);
+      val = load_sysval(b, compute, bit_size, local_group_size);
       break;
    case nir_intrinsic_load_viewport_scale:
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, viewport.scale),
-                                        bit_size, num_comps);
+      val = load_sysval(b, graphics, bit_size, viewport.scale);
       break;
    case nir_intrinsic_load_viewport_offset:
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, viewport.offset),
-                                        bit_size, num_comps);
+      val = load_sysval(b, graphics, bit_size, viewport.offset);
       break;
    case nir_intrinsic_load_first_vertex:
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, vs.first_vertex),
-                                        bit_size, num_comps);
+      val = load_sysval(b, graphics, bit_size, vs.first_vertex);
       break;
    case nir_intrinsic_load_base_vertex:
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, vs.base_vertex),
-                                        bit_size, num_comps);
+      val = load_sysval(b, graphics, bit_size, vs.base_vertex);
       break;
    case nir_intrinsic_load_base_instance:
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, vs.base_instance),
-                                        bit_size, num_comps);
+      val = load_sysval(b, graphics, bit_size, vs.base_instance);
       break;
    case nir_intrinsic_load_blend_const_color_rgba:
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, blend.constants),
-                                        bit_size, num_comps);
+      val = load_sysval(b, graphics, bit_size, blend.constants);
       break;
    case nir_intrinsic_load_noperspective_varyings_pan:
       /* TODO: use a VS epilog specialized on constant noperspective_varyings
        * with VK_EXT_graphics_pipeline_libraries and VK_EXT_shader_object */
       assert(b->shader->info.stage == MESA_SHADER_VERTEX);
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, vs.noperspective_varyings),
-                                        bit_size, num_comps);
+      val = load_sysval(b, graphics, bit_size, vs.noperspective_varyings);
       break;
 
 #if PAN_ARCH <= 7
    case nir_intrinsic_load_layer_id:
       assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
-      val = load_sysval_from_push_const(b, SYSVAL(graphics, layer_id), bit_size,
-                                        num_comps);
+      val = load_sysval(b, graphics, bit_size, layer_id);
       break;
 #endif
 
@@ -144,7 +120,8 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
    default:
       return false;
    }
-#undef SYSVAL
+
+   assert(val->num_components == intr->def.num_components);
 
    b->cursor = nir_after_instr(instr);
    nir_def_rewrite_uses(&intr->def, val);
@@ -211,8 +188,7 @@ lower_gl_pos_layer_writes(nir_builder *b, nir_instr *instr, void *data)
       nir_def *layer = nir_load_var(b, temp_layer_var);
       nir_def *pos = nir_load_var(b, temp_pos_var);
       nir_def *inf_pos = nir_imm_vec4(b, INFINITY, INFINITY, INFINITY, 1.0f);
-      nir_def *ref_layer = load_sysval_from_push_const(
-         b, offsetof(struct panvk_graphics_sysvals, layer_id), 32, 1);
+      nir_def *ref_layer = load_sysval(b, graphics, 32, layer_id);
 
       nir_store_var(b, temp_pos_var,
                     nir_bcsel(b, nir_ieq(b, layer, ref_layer), pos, inf_pos),

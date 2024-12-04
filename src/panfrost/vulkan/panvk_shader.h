@@ -40,6 +40,17 @@ enum panvk_varying_buf_id {
    PANVK_VARY_BUF_MAX,
 };
 
+#if PAN_ARCH <= 7
+enum panvk_desc_table_id {
+   PANVK_DESC_TABLE_USER = 0,
+   PANVK_DESC_TABLE_CS_DYN_SSBOS = MAX_SETS,
+   PANVK_DESC_TABLE_COMPUTE_COUNT = PANVK_DESC_TABLE_CS_DYN_SSBOS + 1,
+   PANVK_DESC_TABLE_VS_DYN_SSBOS = MAX_SETS,
+   PANVK_DESC_TABLE_FS_DYN_SSBOS = MAX_SETS + 1,
+   PANVK_DESC_TABLE_GFX_COUNT = PANVK_DESC_TABLE_FS_DYN_SSBOS + 1,
+};
+#endif
+
 struct panvk_graphics_sysvals {
    struct {
       struct {
@@ -65,9 +76,7 @@ struct panvk_graphics_sysvals {
    int32_t layer_id;
 
    struct {
-      uint64_t sets[MAX_SETS];
-      uint64_t vs_dyn_ssbos;
-      uint64_t fs_dyn_ssbos;
+      uint64_t sets[PANVK_DESC_TABLE_GFX_COUNT];
    } desc;
 #endif
 };
@@ -85,13 +94,37 @@ struct panvk_compute_sysvals {
 
 #if PAN_ARCH <= 7
    struct {
-      uint64_t sets[MAX_SETS];
-      uint64_t dyn_ssbos;
+      uint64_t sets[PANVK_DESC_TABLE_COMPUTE_COUNT];
    } desc;
 #endif
 };
 
 #define SYSVALS_PUSH_CONST_BASE MAX_PUSH_CONSTANTS_SIZE
+
+#define load_sysval(__b, __ptype, __bitsz, __name)                             \
+   nir_load_push_constant(                                                     \
+      __b,                                                                     \
+      sizeof(((struct panvk_##__ptype##_sysvals *)NULL)->__name) /             \
+         ((__bitsz) / 8),                                                      \
+      __bitsz,                                                                 \
+      nir_imm_int(__b, offsetof(struct panvk_##__ptype##_sysvals, __name)),    \
+      .base = SYSVALS_PUSH_CONST_BASE,                                         \
+      .range = sizeof(struct panvk_##__ptype##_sysvals))
+
+#define load_sysval_entry(__b, __ptype, __bitsz, __name, __dyn_idx)            \
+   nir_load_push_constant(                                                     \
+      __b,                                                                     \
+      sizeof(((struct panvk_##__ptype##_sysvals *)NULL)->__name[0]) /          \
+         ((__bitsz) / 8),                                                      \
+      __bitsz,                                                                 \
+      nir_iadd_imm(                                                            \
+         __b,                                                                  \
+         nir_imul_imm(                                                         \
+            __b, __dyn_idx,                                                    \
+            sizeof(((struct panvk_##__ptype##_sysvals *)NULL)->__name[0])),    \
+         offsetof(struct panvk_##__ptype##_sysvals, __name)),                  \
+      .base = SYSVALS_PUSH_CONST_BASE,                                         \
+      .range = sizeof(struct panvk_##__ptype##_sysvals))
 
 #if PAN_ARCH <= 7
 enum panvk_bifrost_desc_table_type {

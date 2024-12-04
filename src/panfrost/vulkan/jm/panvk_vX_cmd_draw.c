@@ -155,7 +155,8 @@ panvk_cmd_prepare_draw_sysvals(struct panvk_cmd_buffer *cmdbuf,
       if (result != VK_SUCCESS)
          return result;
 
-      sysvals->desc.vs_dyn_ssbos = vs_desc_state->dyn_ssbos;
+      sysvals->desc.sets[PANVK_DESC_TABLE_VS_DYN_SSBOS] =
+         vs_desc_state->dyn_ssbos;
       gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 
@@ -165,7 +166,8 @@ panvk_cmd_prepare_draw_sysvals(struct panvk_cmd_buffer *cmdbuf,
       if (result != VK_SUCCESS)
          return result;
 
-      sysvals->desc.fs_dyn_ssbos = fs_desc_state->dyn_ssbos;
+      sysvals->desc.sets[PANVK_DESC_TABLE_FS_DYN_SSBOS] =
+         fs_desc_state->dyn_ssbos;
       gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
    }
 

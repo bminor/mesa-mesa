@@ -90,7 +90,8 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
       if (result != VK_SUCCESS)
          return;
 
-      sysvals->desc.dyn_ssbos = cs_desc_state->dyn_ssbos;
+      sysvals->desc.sets[PANVK_DESC_TABLE_CS_DYN_SSBOS] =
+         cs_desc_state->dyn_ssbos;
    }
 
    for (uint32_t i = 0; i < MAX_SETS; i++) {

@@ -272,17 +272,20 @@ shader_ssbo_table(nir_builder *b, unsigned set, unsigned binding,
           bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
    bool is_dyn = bind_layout->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
 
-   if (b->shader->info.stage == MESA_SHADER_COMPUTE)
-      return !is_dyn ? offsetof(struct panvk_compute_sysvals, desc.sets[set])
-                     : offsetof(struct panvk_compute_sysvals, desc.dyn_ssbos);
-   else if (b->shader->info.stage == MESA_SHADER_VERTEX)
-      return !is_dyn
-                ? offsetof(struct panvk_graphics_sysvals, desc.sets[set])
-                : offsetof(struct panvk_graphics_sysvals, desc.vs_dyn_ssbos);
-   else
-      return !is_dyn
-                ? offsetof(struct panvk_graphics_sysvals, desc.sets[set])
-                : offsetof(struct panvk_graphics_sysvals, desc.fs_dyn_ssbos);
+   if (!is_dyn)
+      return PANVK_DESC_TABLE_USER + set;
+
+   switch (b->shader->info.stage) {
+   case MESA_SHADER_COMPUTE:
+      return PANVK_DESC_TABLE_CS_DYN_SSBOS;
+   case MESA_SHADER_VERTEX:
+      return PANVK_DESC_TABLE_VS_DYN_SSBOS;
+   case MESA_SHADER_FRAGMENT:
+      return PANVK_DESC_TABLE_FS_DYN_SSBOS;
+   default:
+      assert(!"Invalid stage");
+      return ~0;
+   }
 }
 #endif
 
@@ -331,9 +334,9 @@ build_res_index(nir_builder *b, uint32_t set, uint32_t binding,
 
    case nir_address_format_64bit_bounded_global:
    case nir_address_format_64bit_global_32bit_offset: {
-      unsigned base_addr_sysval_offs = shader_ssbo_table(b, set, binding, ctx);
+      unsigned desc_table = shader_ssbo_table(b, set, binding, ctx);
 
-      return nir_vec4(b, nir_imm_int(b, base_addr_sysval_offs),
+      return nir_vec4(b, nir_imm_int(b, desc_table),
                       nir_imm_int(b, desc_idx), array_index,
                       nir_imm_int(b, array_size - 1));
    }
@@ -412,7 +415,7 @@ build_buffer_addr_for_res_index(nir_builder *b, nir_def *res_index,
 
    case nir_address_format_64bit_bounded_global:
    case nir_address_format_64bit_global_32bit_offset: {
-      nir_def *base_addr_sysval_offset = nir_channel(b, res_index, 0);
+      nir_def *desc_table_index = nir_channel(b, res_index, 0);
       nir_def *first_desc_index = nir_channel(b, res_index, 1);
       nir_def *array_index = nir_channel(b, res_index, 2);
       nir_def *array_max = nir_channel(b, res_index, 3);
@@ -423,11 +426,11 @@ build_buffer_addr_for_res_index(nir_builder *b, nir_def *res_index,
       nir_def *desc_offset = nir_imul_imm(
          b, nir_iadd(b, array_index, first_desc_index), PANVK_DESCRIPTOR_SIZE);
 
-      nir_def *base_addr = nir_load_push_constant(
-         b, 1, 64, base_addr_sysval_offset, .base = SYSVALS_PUSH_CONST_BASE,
-         .range = b->shader->info.stage == MESA_SHADER_COMPUTE
-                     ? sizeof(struct panvk_compute_sysvals)
-                     : sizeof(struct panvk_graphics_sysvals));
+      nir_def *base_addr =
+         b->shader->info.stage == MESA_SHADER_COMPUTE
+            ? load_sysval_entry(b, compute, 64, desc.sets, desc_table_index)
+            : load_sysval_entry(b, graphics, 64, desc.sets, desc_table_index);
+
       nir_def *desc_addr = nir_iadd(b, base_addr, nir_u2u64(b, desc_offset));
       nir_def *desc =
          nir_load_global(b, desc_addr, PANVK_DESCRIPTOR_SIZE, 4, 32);
@@ -557,13 +560,10 @@ load_resource_deref_desc(nir_builder *b, nir_deref_instr *deref,
    set_offset = nir_iadd_imm(b, set_offset, desc_offset);
 
 #if PAN_ARCH <= 7
-   unsigned set_base_addr_sysval_offs =
+   nir_def *set_base_addr =
       b->shader->info.stage == MESA_SHADER_COMPUTE
-         ? offsetof(struct panvk_compute_sysvals, desc.sets[set])
-         : offsetof(struct panvk_graphics_sysvals, desc.sets[set]);
-   nir_def *set_base_addr = nir_load_push_constant(
-      b, 1, 64, nir_imm_int(b, 0),
-      .base = SYSVALS_PUSH_CONST_BASE + set_base_addr_sysval_offs, .range = 8);
+         ? load_sysval_entry(b, compute, 64, desc.sets, nir_imm_int(b, set))
+         : load_sysval_entry(b, graphics, 64, desc.sets, nir_imm_int(b, set));
 
    unsigned desc_align = 1 << (ffs(PANVK_DESCRIPTOR_SIZE + desc_offset) - 1);
 
