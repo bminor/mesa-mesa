@@ -265,7 +265,15 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
    u_foreach_bit(aspect_bit, view->vk.aspects) {
       uint8_t image_plane =
          panvk_plane_index(image->vk.format, 1u << aspect_bit);
-      view->pview.planes[image_plane] = &image->planes[image_plane];
+
+      /* Place the view plane at index 0 for single-plane views of multiplane
+       * formats. Does not apply to YCbCr views of multiplane images since
+       * view->vk.aspects for those will contain the full set of plane aspects.
+       */
+      uint8_t view_plane = (view->vk.aspects == VK_IMAGE_ASPECT_PLANE_1_BIT ||
+                            view->vk.aspects == VK_IMAGE_ASPECT_PLANE_2_BIT) ?
+                           0 : image_plane;
+      view->pview.planes[view_plane] = &image->planes[image_plane];
    }
 
    /* Depth/stencil are viewed as color for copies. */
