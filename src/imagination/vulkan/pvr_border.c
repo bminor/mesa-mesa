@@ -56,11 +56,12 @@ struct pvr_border_color_table_entry {
 static inline void pvr_border_color_table_pack_single(
    struct pvr_border_color_table_value *const dst,
    const union pipe_color_union *const color,
-   const struct pvr_tex_format_description *const format,
+   const struct pvr_tex_format_description *const pvr_tex_fmt_desc,
    const bool is_int)
 {
-   const enum pipe_format pipe_format = is_int ? format->pipe_format_int
-                                               : format->pipe_format_float;
+   const enum pipe_format pipe_format =
+      is_int ? pvr_tex_fmt_desc->pipe_format_int
+             : pvr_tex_fmt_desc->pipe_format_float;
 
    if (pipe_format == PIPE_FORMAT_NONE)
       return;
@@ -88,14 +89,17 @@ static inline void pvr_border_color_table_pack_single(
 static inline void pvr_border_color_table_pack_single_compressed(
    struct pvr_border_color_table_value *const dst,
    const union pipe_color_union *const color,
-   const struct pvr_tex_format_compressed_description *const format,
+   const struct pvr_tex_format_compressed_description *const pvr_tex_fmt_desc,
    const struct pvr_device_info *const dev_info)
 {
    if (PVR_HAS_FEATURE(dev_info, tpu_border_colour_enhanced)) {
-      const struct pvr_tex_format_description *format_simple =
-         pvr_get_tex_format_description(format->tex_format_simple);
+      const struct pvr_tex_format_description *pvr_tex_fmt_desc_simple =
+         pvr_get_tex_format_description(pvr_tex_fmt_desc->tex_format_simple);
 
-      pvr_border_color_table_pack_single(dst, color, format_simple, false);
+      pvr_border_color_table_pack_single(dst,
+                                         color,
+                                         pvr_tex_fmt_desc_simple,
+                                         false);
       return;
    }
 
