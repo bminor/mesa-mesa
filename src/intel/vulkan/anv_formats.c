@@ -919,6 +919,7 @@ get_buffer_format_features2(const struct intel_device_info *devinfo,
       flags |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
 
    if (devinfo->has_ray_tracing) {
+#if ANV_SUPPORT_RT_GRL
       switch (vk_format) {
       case VK_FORMAT_R32G32_SFLOAT:
       case VK_FORMAT_R32G32B32_SFLOAT:
@@ -937,6 +938,10 @@ get_buffer_format_features2(const struct intel_device_info *devinfo,
       default:
          break;
       }
+#else
+      if (vk_acceleration_struct_vtx_format_supported(vk_format))
+         flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
+#endif
    }
 
    return flags;
