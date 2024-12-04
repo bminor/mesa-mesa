@@ -4798,7 +4798,7 @@ mem_vectorize_cb(unsigned align_mul, unsigned align_offset, unsigned bit_size,
 static void
 bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
 {
-   NIR_PASS_V(nir, nir_opt_shrink_stores, true);
+   NIR_PASS(_, nir, nir_opt_shrink_stores, true);
 
    bool progress;
 
@@ -4878,9 +4878,9 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
    NIR_PASS(progress, nir, nir_opt_dce);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS_V(nir, nir_shader_intrinsics_pass,
-                 bifrost_nir_lower_blend_components,
-                 nir_metadata_control_flow, NULL);
+      NIR_PASS(_, nir, nir_shader_intrinsics_pass,
+               bifrost_nir_lower_blend_components, nir_metadata_control_flow,
+               NULL);
    }
 
    /* Backend scheduler is purely local, so do some global optimizations
@@ -4889,8 +4889,8 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
                                nir_move_load_input | nir_move_comparisons |
                                nir_move_copies | nir_move_load_ssbo;
 
-   NIR_PASS_V(nir, nir_opt_sink, move_all);
-   NIR_PASS_V(nir, nir_opt_move, move_all);
+   NIR_PASS(_, nir, nir_opt_sink, move_all);
+   NIR_PASS(_, nir, nir_opt_move, move_all);
 
    /* We might lower attribute, varying, and image indirects. Use the
     * gathered info to skip the extra analysis in the happy path. */
@@ -4901,9 +4901,9 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, bool is_blend)
                         nir->info.images_used[0];
 
    if (any_indirects) {
-      NIR_PASS_V(nir, nir_divergence_analysis);
-      NIR_PASS_V(nir, bi_lower_divergent_indirects,
-                 pan_subgroup_size(pan_arch(gpu_id)));
+      nir_divergence_analysis(nir);
+      NIR_PASS(_, nir, bi_lower_divergent_indirects,
+               pan_subgroup_size(pan_arch(gpu_id)));
    }
 }
 
@@ -5188,11 +5188,11 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
     * (so we don't accidentally duplicate the epilogue since mesa/st has
     * messed with our I/O quite a bit already) */
 
-   NIR_PASS_V(nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
-      NIR_PASS_V(nir, nir_lower_viewport_transform);
-      NIR_PASS_V(nir, nir_lower_point_size, 1.0, 0.0);
+      NIR_PASS(_, nir, nir_lower_viewport_transform);
+      NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0);
 
       nir_variable *psiz = nir_find_variable_with_location(
          nir, nir_var_shader_out, VARYING_SLOT_PSIZ);
@@ -5201,7 +5201,7 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    }
 
    /* Get rid of any global vars before we lower to scratch. */
-   NIR_PASS_V(nir, nir_lower_global_vars_to_local);
+   NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
    /* Valhall introduces packed thread local storage, which improves cache
     * locality of TLS access. However, access to packed TLS cannot
@@ -5213,38 +5213,38 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
       (gpu_id >= 0x9000) ? glsl_get_vec4_size_align_bytes
                          : glsl_get_natural_size_align_bytes;
    /* Lower large arrays to scratch and small arrays to bcsel */
-   NIR_PASS_V(nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
-              vars_to_scratch_size_align_func, vars_to_scratch_size_align_func);
-   NIR_PASS_V(nir, nir_lower_indirect_derefs, nir_var_function_temp, ~0);
+   NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
+            vars_to_scratch_size_align_func, vars_to_scratch_size_align_func);
+   NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, ~0);
 
-   NIR_PASS_V(nir, nir_split_var_copies);
-   NIR_PASS_V(nir, nir_lower_var_copies);
-   NIR_PASS_V(nir, nir_lower_vars_to_ssa);
-   NIR_PASS_V(nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-              glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
+            glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
    /* nir_lower[_explicit]_io is lazy and emits mul+add chains even for
     * offsets it could figure out are constant.  Do some constant folding
     * before bifrost_nir_lower_store_component below.
     */
-   NIR_PASS_V(nir, nir_opt_constant_folding);
+   NIR_PASS(_, nir, nir_opt_constant_folding);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS_V(nir, nir_lower_mediump_io,
-                 nir_var_shader_in | nir_var_shader_out,
-                 ~bi_fp32_varying_mask(nir), false);
+      NIR_PASS(_, nir, nir_lower_mediump_io,
+               nir_var_shader_in | nir_var_shader_out,
+               ~bi_fp32_varying_mask(nir), false);
 
-      NIR_PASS_V(nir, nir_shader_intrinsics_pass, bi_lower_sample_mask_writes,
-                 nir_metadata_control_flow, NULL);
+      NIR_PASS(_, nir, nir_shader_intrinsics_pass, bi_lower_sample_mask_writes,
+               nir_metadata_control_flow, NULL);
 
-      NIR_PASS_V(nir, bifrost_nir_lower_load_output);
+      NIR_PASS(_, nir, bifrost_nir_lower_load_output);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
       if (gpu_id >= 0x9000) {
-         NIR_PASS_V(nir, nir_lower_mediump_io, nir_var_shader_out,
-                    BITFIELD64_BIT(VARYING_SLOT_PSIZ), false);
+         NIR_PASS(_, nir, nir_lower_mediump_io, nir_var_shader_out,
+                  BITFIELD64_BIT(VARYING_SLOT_PSIZ), false);
       }
 
-      NIR_PASS_V(nir, pan_nir_lower_store_component);
+      NIR_PASS(_, nir, pan_nir_lower_store_component);
    }
 
    nir_lower_mem_access_bit_sizes_options mem_size_options = {
@@ -5254,51 +5254,51 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
                nir_var_mem_global | nir_var_mem_shared,
       .callback = mem_access_size_align_cb,
    };
-   NIR_PASS_V(nir, nir_lower_mem_access_bit_sizes, &mem_size_options);
+   NIR_PASS(_, nir, nir_lower_mem_access_bit_sizes, &mem_size_options);
 
-   NIR_PASS_V(nir, nir_shader_intrinsics_pass,
-              bi_lower_load_push_const_with_dyn_offset,
-              nir_metadata_control_flow, NULL);
+   NIR_PASS(_, nir, nir_shader_intrinsics_pass,
+            bi_lower_load_push_const_with_dyn_offset, nir_metadata_control_flow,
+            NULL);
 
    nir_lower_ssbo_options ssbo_opts = {
       .native_loads = pan_arch(gpu_id) >= 9,
       .native_offset = pan_arch(gpu_id) >= 9,
    };
-   NIR_PASS_V(nir, nir_lower_ssbo, &ssbo_opts);
+   NIR_PASS(_, nir, nir_lower_ssbo, &ssbo_opts);
 
-   NIR_PASS_V(nir, pan_lower_sample_pos);
-   NIR_PASS_V(nir, nir_lower_bit_size, bi_lower_bit_size, NULL);
-   NIR_PASS_V(nir, nir_lower_64bit_phis);
-   NIR_PASS_V(nir, pan_lower_helper_invocation);
-   NIR_PASS_V(nir, nir_lower_int64);
+   NIR_PASS(_, nir, pan_lower_sample_pos);
+   NIR_PASS(_, nir, nir_lower_bit_size, bi_lower_bit_size, NULL);
+   NIR_PASS(_, nir, nir_lower_64bit_phis);
+   NIR_PASS(_, nir, pan_lower_helper_invocation);
+   NIR_PASS(_, nir, nir_lower_int64);
 
-   NIR_PASS_V(nir, nir_opt_idiv_const, 8);
-   NIR_PASS_V(nir, nir_lower_idiv,
-              &(nir_lower_idiv_options){.allow_fp16 = true});
+   NIR_PASS(_, nir, nir_opt_idiv_const, 8);
+   NIR_PASS(_, nir, nir_lower_idiv,
+            &(nir_lower_idiv_options){.allow_fp16 = true});
 
-   NIR_PASS_V(nir, nir_lower_tex,
-              &(nir_lower_tex_options){
-                 .lower_txs_lod = true,
-                 .lower_txp = ~0,
-                 .lower_tg4_broadcom_swizzle = true,
-                 .lower_txd_cube_map = true,
-                 .lower_invalid_implicit_lod = true,
-                 .lower_index_to_offset = true,
-              });
+   NIR_PASS(_, nir, nir_lower_tex,
+            &(nir_lower_tex_options){
+               .lower_txs_lod = true,
+               .lower_txp = ~0,
+               .lower_tg4_broadcom_swizzle = true,
+               .lower_txd_cube_map = true,
+               .lower_invalid_implicit_lod = true,
+               .lower_index_to_offset = true,
+            });
 
-   NIR_PASS_V(nir, nir_lower_image_atomics_to_global);
+   NIR_PASS(_, nir, nir_lower_image_atomics_to_global);
 
    /* on bifrost, lower MSAA load/stores to 3D load/stores */
    if (pan_arch(gpu_id) < 9)
-      NIR_PASS_V(nir, pan_nir_lower_image_ms);
+      NIR_PASS(_, nir, pan_nir_lower_image_ms);
 
-   NIR_PASS_V(nir, nir_lower_alu_to_scalar, bi_scalarize_filter, NULL);
-   NIR_PASS_V(nir, nir_lower_load_const_to_scalar);
-   NIR_PASS_V(nir, nir_lower_phis_to_scalar, true);
-   NIR_PASS_V(nir, nir_lower_flrp, 16 | 32 | 64, false /* always_precise */);
-   NIR_PASS_V(nir, nir_lower_var_copies);
-   NIR_PASS_V(nir, nir_lower_alu);
-   NIR_PASS_V(nir, nir_lower_frag_coord_to_pixel_coord);
+   NIR_PASS(_, nir, nir_lower_alu_to_scalar, bi_scalarize_filter, NULL);
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
+   NIR_PASS(_, nir, nir_lower_phis_to_scalar, true);
+   NIR_PASS(_, nir, nir_lower_flrp, 16 | 32 | 64, false /* always_precise */);
+   NIR_PASS(_, nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_lower_alu);
+   NIR_PASS(_, nir, nir_lower_frag_coord_to_pixel_coord);
 }
 
 static bi_context *
@@ -5329,8 +5329,8 @@ bi_compile_variant_nir(nir_shader *nir,
       if (offset == 0)
          ctx->nir = nir = nir_shader_clone(ctx, nir);
 
-      NIR_PASS_V(nir, nir_shader_instructions_pass, bifrost_nir_specialize_idvs,
-                 nir_metadata_control_flow, &idvs);
+      NIR_PASS(_, nir, nir_shader_instructions_pass,
+               bifrost_nir_specialize_idvs, nir_metadata_control_flow, &idvs);
 
       /* After specializing, clean up the mess */
       bool progress = true;
@@ -5687,7 +5687,7 @@ bifrost_compile_shader_nir(nir_shader *nir,
    /* Combine stores late, to give the driver a chance to lower dual-source
     * blending as regular store_output intrinsics.
     */
-   NIR_PASS_V(nir, pan_nir_lower_zs_store);
+   NIR_PASS(_, nir, pan_nir_lower_zs_store);
 
    bi_optimize_nir(nir, inputs->gpu_id, inputs->is_blend);
 
