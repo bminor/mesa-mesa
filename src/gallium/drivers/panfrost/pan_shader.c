@@ -69,30 +69,15 @@ panfrost_alloc_variant(struct panfrost_uncompiled_shader *so)
 }
 
 static bool
-lower_load_poly_line_smooth_enabled(nir_shader *nir,
-                                    const struct panfrost_shader_key *key)
+lower_load_poly_line_smooth_enabled(nir_builder *b, nir_intrinsic_instr *intrin,
+                                    void *data)
 {
-   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
-   nir_builder b = nir_builder_create(impl);
-   bool progress = false;
+   if (intrin->intrinsic != nir_intrinsic_load_poly_line_smooth_enabled)
+      return false;
 
-   nir_foreach_block_safe(block, impl) {
-      nir_foreach_instr_safe(instr, block) {
-         if (instr->type != nir_instr_type_intrinsic)
-            continue;
-
-         nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-         if (intrin->intrinsic != nir_intrinsic_load_poly_line_smooth_enabled)
-            continue;
-
-         b.cursor = nir_before_instr(instr);
-         nir_def_replace(&intrin->def, nir_imm_true(&b));
-         nir_instr_free(instr);
-	 progress = true;
-      }
-   }
-
-   return progress;
+   b->cursor = nir_before_instr(&intrin->instr);
+   nir_def_replace(&intrin->def, nir_imm_true(b));
+   return true;
 }
 
 static void
@@ -158,7 +143,9 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
       if (key->fs.line_smooth) {
          NIR_PASS(_, s, nir_lower_poly_line_smooth, 16);
-         NIR_PASS(_, s, lower_load_poly_line_smooth_enabled, key);
+         NIR_PASS(_, s, nir_shader_intrinsics_pass,
+                  lower_load_poly_line_smooth_enabled,
+                  nir_metadata_control_flow, key);
          NIR_PASS(_, s, nir_lower_alu);
       }
    }
