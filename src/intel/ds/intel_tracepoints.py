@@ -199,6 +199,13 @@ def define_tracepoints(args):
                  need_cs_param=True)
 
     begin_end_tp('as_build')
+    begin_end_tp('as_build_leaves', compute=True)
+    begin_end_tp('as_morton_generate', compute=True)
+    begin_end_tp('as_morton_sort', compute=True)
+    begin_end_tp('as_lbvh_build_internal', compute=True)
+    begin_end_tp('as_ploc_build_internal', compute=True)
+    begin_end_tp('as_encode', compute=True)
+    begin_end_tp('as_copy', compute=True)
 
     begin_end_tp('rays',
                  tp_args=[Arg(type='uint32_t', var='group_x', c_format='%u'),

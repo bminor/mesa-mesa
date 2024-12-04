@@ -4028,6 +4028,9 @@ struct anv_cmd_ray_tracing_state {
       struct brw_rt_scratch_layout layout;
    } scratch;
 
+   uint32_t debug_marker_count;
+   enum vk_acceleration_structure_build_step debug_markers[5];
+
    struct anv_address build_priv_mem_addr;
    size_t             build_priv_mem_size;
 };

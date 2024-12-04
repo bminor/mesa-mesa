@@ -40,6 +40,77 @@ static uint32_t tlas_id = 0;
 static struct bvh_dump_struct *bvhDumpArray = NULL;
 static uint32_t bvh_dump_array_size = 0;
 
+static void
+begin_debug_marker(VkCommandBuffer commandBuffer,
+                   enum vk_acceleration_structure_build_step step,
+                   const char *format, ...)
+{
+   ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+
+   assert(cmd_buffer->state.rt.debug_marker_count <
+          ARRAY_SIZE(cmd_buffer->state.rt.debug_markers));
+   cmd_buffer->state.rt.debug_markers[cmd_buffer->state.rt.debug_marker_count++] =
+      step;
+   switch (step) {
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP:
+      trace_intel_begin_as_build(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES:
+      trace_intel_begin_as_build_leaves(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_GENERATE:
+      trace_intel_begin_as_morton_generate(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_SORT:
+      trace_intel_begin_as_morton_sort(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL:
+      trace_intel_begin_as_lbvh_build_internal(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL:
+      trace_intel_begin_as_ploc_build_internal(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
+      trace_intel_begin_as_encode(&cmd_buffer->trace);
+      break;
+   default:
+      unreachable("Invalid build step");
+   }
+}
+
+static void
+end_debug_marker(VkCommandBuffer commandBuffer)
+{
+   ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
+
+   cmd_buffer->state.rt.debug_marker_count--;
+   switch (cmd_buffer->state.rt.debug_markers[cmd_buffer->state.rt.debug_marker_count]) {
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP:
+      trace_intel_end_as_build(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES:
+      trace_intel_end_as_build_leaves(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_GENERATE:
+      trace_intel_end_as_morton_generate(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_SORT:
+      trace_intel_end_as_morton_sort(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL:
+      trace_intel_end_as_lbvh_build_internal(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL:
+      trace_intel_end_as_ploc_build_internal(&cmd_buffer->trace);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
+      trace_intel_end_as_encode(&cmd_buffer->trace);
+      break;
+   default:
+      unreachable("Invalid build step");
+   }
+}
+
 /* clear out everything from (header + bvh_offset) to the end */
 static void
 clear_out_anv_bvh(struct anv_cmd_buffer *cmd_buffer,
@@ -533,6 +604,8 @@ anv_init_header(VkCommandBuffer commandBuffer,
 }
 
 static const struct vk_acceleration_structure_build_ops anv_build_ops = {
+   .begin_debug_marker = begin_debug_marker,
+   .end_debug_marker = end_debug_marker,
    .get_as_size = anv_get_as_size,
    .get_encode_key = { anv_get_encode_key, anv_get_header_key },
    .encode_bind_pipeline = { anv_encode_bind_pipeline,
@@ -582,6 +655,7 @@ anv_device_init_accel_struct_build_state(struct anv_device *device)
 
    device->accel_struct_build.build_args =
       (struct vk_acceleration_structure_build_args) {
+         .emit_markers = u_trace_enabled(&device->ds.trace_context),
          .subgroup_size = device->info->ver >= 20 ? 16 : 8,
          .radix_sort = device->accel_struct_build.radix_sort,
          /* See struct anv_accel_struct_header from anv_bvh.h
@@ -640,7 +714,6 @@ genX(CmdBuildAccelerationStructuresKHR)(
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
-   trace_intel_begin_as_build(&cmd_buffer->trace);
 
    struct anv_device *device = cmd_buffer->device;
 
@@ -662,7 +735,6 @@ genX(CmdBuildAccelerationStructuresKHR)(
                                         &device->accel_struct_build.build_args);
 
    anv_cmd_buffer_restore_state(cmd_buffer, &saved);
-   trace_intel_end_as_build(&cmd_buffer->trace);
 }
 
 void
@@ -685,6 +757,8 @@ genX(CmdCopyAccelerationStructureKHR)(
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(vk_acceleration_structure, src, pInfo->src);
    VK_FROM_HANDLE(vk_acceleration_structure, dst, pInfo->dst);
+
+   trace_intel_begin_as_copy(&cmd_buffer->trace);
 
    VkPipeline pipeline;
    VkPipelineLayout layout;
@@ -737,6 +811,8 @@ genX(CmdCopyAccelerationStructureKHR)(
                              copy_dispatch_size));
 
    anv_cmd_buffer_restore_state(cmd_buffer, &saved);
+
+   trace_intel_end_as_copy(&cmd_buffer->trace);
 }
 
 void
@@ -746,8 +822,10 @@ genX(CmdCopyAccelerationStructureToMemoryKHR)(
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(vk_acceleration_structure, src, pInfo->src);
-
    struct anv_device *device = cmd_buffer->device;
+
+   trace_intel_begin_as_copy(&cmd_buffer->trace);
+
    VkPipeline pipeline;
    VkPipelineLayout layout;
    VkResult result = get_pipeline_spv(device, "copy", copy_spv,
@@ -804,6 +882,8 @@ genX(CmdCopyAccelerationStructureToMemoryKHR)(
                              copy_dispatch_size));
 
    anv_cmd_buffer_restore_state(cmd_buffer, &saved);
+
+   trace_intel_end_as_copy(&cmd_buffer->trace);
 }
 
 void
@@ -813,6 +893,8 @@ genX(CmdCopyMemoryToAccelerationStructureKHR)(
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(vk_acceleration_structure, dst, pInfo->dst);
+
+   trace_intel_begin_as_copy(&cmd_buffer->trace);
 
    VkPipeline pipeline;
    VkPipelineLayout layout;
@@ -853,6 +935,8 @@ genX(CmdCopyMemoryToAccelerationStructureKHR)(
 
    vk_common_CmdDispatch(commandBuffer, 512, 1, 1);
    anv_cmd_buffer_restore_state(cmd_buffer, &saved);
+
+   trace_intel_end_as_copy(&cmd_buffer->trace);
 }
 
 /* TODO: Host commands */
