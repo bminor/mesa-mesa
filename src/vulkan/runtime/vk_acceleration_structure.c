@@ -452,6 +452,7 @@ vk_fill_geometry_data(VkAccelerationStructureTypeKHR type, uint32_t first_id, ui
 
 void
 vk_accel_struct_cmd_begin_debug_marker(VkCommandBuffer commandBuffer,
+                                       enum vk_acceleration_structure_build_step step,
                                        const char *format, ...)
 {
    VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, commandBuffer);
@@ -517,8 +518,11 @@ build_leaves(VkCommandBuffer commandBuffer,
    if (result != VK_SUCCESS)
       return result;
 
-   if (args->emit_markers)
-      device->as_build_ops->begin_debug_marker(commandBuffer, "build_leaves");
+   if (args->emit_markers) {
+      device->as_build_ops->begin_debug_marker(commandBuffer,
+                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES,
+                                               "build_leaves");
+   }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
    disp->CmdBindPipeline(
@@ -576,8 +580,11 @@ morton_generate(VkCommandBuffer commandBuffer, struct vk_device *device,
    if (result != VK_SUCCESS)
       return result;
 
-   if (args->emit_markers)
-      device->as_build_ops->begin_debug_marker(commandBuffer, "morton_generate");
+   if (args->emit_markers) {
+      device->as_build_ops->begin_debug_marker(commandBuffer,
+                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_GENERATE,
+                                               "morton_generate");
+   }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
    disp->CmdBindPipeline(
@@ -611,8 +618,11 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
 {
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
 
-   if (args->emit_markers)
-      device->as_build_ops->begin_debug_marker(commandBuffer, "morton_sort");
+   if (args->emit_markers) {
+      device->as_build_ops->begin_debug_marker(commandBuffer,
+                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_SORT,
+                                               "morton_sort");
+   }
 
    /* Copyright 2019 The Fuchsia Authors. */
    const radix_sort_vk_t *rs = args->radix_sort;
@@ -856,8 +866,11 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
    if (result != VK_SUCCESS)
       return result;
 
-   if (args->emit_markers)
-      device->as_build_ops->begin_debug_marker(commandBuffer, "lbvh_build_internal");
+   if (args->emit_markers) {
+      device->as_build_ops->begin_debug_marker(commandBuffer,
+                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL,
+                                               "lbvh_build_internal");
+   }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
    disp->CmdBindPipeline(
@@ -937,8 +950,11 @@ ploc_build_internal(VkCommandBuffer commandBuffer,
    if (result != VK_SUCCESS)
       return result;
 
-   if (args->emit_markers)
-      device->as_build_ops->begin_debug_marker(commandBuffer, "ploc_build_internal");
+   if (args->emit_markers) {
+      device->as_build_ops->begin_debug_marker(commandBuffer,
+                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL,
+                                               "ploc_build_internal");
+   }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
    disp->CmdBindPipeline(
@@ -992,6 +1008,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
 
    if (args->emit_markers) {
       device->as_build_ops->begin_debug_marker(commandBuffer,
+                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP,
                                                "vkCmdBuildAccelerationStructuresKHR(%u)",
                                                infoCount);
    }
