@@ -22,6 +22,7 @@
 #include "util/u_dynarray.h"
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -240,7 +241,7 @@ static bool pco_ra_func(pco_func *func,
          printf("RA overrides:\n");
          hash_table_u64_foreach (overrides, entry) {
             struct vec_override *override = entry.data;
-            printf("  %%%lu: ref = ", entry.key);
+            printf("  %%%" PRIu64 ": ref = ", entry.key);
             pco_print_ref(func->parent_shader, override->ref);
             printf(", offset = %u\n", override->offset);
          }

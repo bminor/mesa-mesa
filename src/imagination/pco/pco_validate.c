@@ -16,6 +16,7 @@
 #include "util/macros.h"
 #include "util/ralloc.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 
 enum ref_cursor {
@@ -69,11 +70,11 @@ static void pco_assert(struct val_state *state,
    if (state->ref_cursor != REF_CURSOR_NONE) {
       switch (state->ref_cursor) {
       case REF_CURSOR_INSTR_DEST:
-         printf(" instr dest #%lu", state->ref - state->instr->dest);
+         printf(" instr dest #%" PRIuPTR, state->ref - state->instr->dest);
          break;
 
       case REF_CURSOR_INSTR_SRC:
-         printf(" instr src #%lu", state->ref - state->instr->src);
+         printf(" instr src #%" PRIuPTR, state->ref - state->instr->src);
          break;
 
       default:
