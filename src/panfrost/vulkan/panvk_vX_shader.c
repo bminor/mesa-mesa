@@ -283,23 +283,23 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev, nir_shader *nir)
 {
    /* Ensure to regroup output variables at the same location */
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS_V(nir, nir_lower_io_to_vector, nir_var_shader_out);
+      NIR_PASS(_, nir, nir_lower_io_to_vector, nir_var_shader_out);
 
-   NIR_PASS_V(nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir),
-              true, true);
+   NIR_PASS(_, nir, nir_lower_io_to_temporaries, nir_shader_get_entrypoint(nir),
+            true, true);
 
 #if PAN_ARCH <= 7
    /* This needs to be done just after the io_to_temporaries pass, because we
     * rely on in/out temporaries to collect the final layer_id value. */
-   NIR_PASS_V(nir, lower_layer_writes);
+   NIR_PASS(_, nir, lower_layer_writes);
 #endif
 
-   NIR_PASS_V(nir, nir_lower_indirect_derefs,
-              nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
+   NIR_PASS(_, nir, nir_lower_indirect_derefs,
+            nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
 
-   NIR_PASS_V(nir, nir_opt_copy_prop_vars);
-   NIR_PASS_V(nir, nir_opt_combine_stores, nir_var_all);
-   NIR_PASS_V(nir, nir_opt_loop);
+   NIR_PASS(_, nir, nir_opt_copy_prop_vars);
+   NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
+   NIR_PASS(_, nir, nir_opt_loop);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       struct nir_input_attachment_options lower_input_attach_opts = {
@@ -307,7 +307,7 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev, nir_shader *nir)
          .use_layer_id_sysval = true,
       };
 
-      NIR_PASS_V(nir, nir_lower_input_attachments, &lower_input_attach_opts);
+      NIR_PASS(_, nir, nir_lower_input_attachments, &lower_input_attach_opts);
    }
 
    /* Do texture lowering here.  Yes, it's a duplication of the texture
@@ -340,20 +340,20 @@ panvk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev, nir_shader *nir)
       .lower_txd_cube_map = true,
       .lower_invalid_implicit_lod = true,
    };
-   NIR_PASS_V(nir, nir_lower_tex, &lower_tex_options);
-   NIR_PASS_V(nir, nir_lower_system_values);
+   NIR_PASS(_, nir, nir_lower_tex, &lower_tex_options);
+   NIR_PASS(_, nir, nir_lower_system_values);
 
    nir_lower_compute_system_values_options options = {
       .has_base_workgroup_id = true,
    };
 
-   NIR_PASS_V(nir, nir_lower_compute_system_values, &options);
+   NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS_V(nir, nir_lower_wpos_center);
+      NIR_PASS(_, nir, nir_lower_wpos_center);
 
-   NIR_PASS_V(nir, nir_split_var_copies);
-   NIR_PASS_V(nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_lower_var_copies);
 }
 
 static void
@@ -458,37 +458,36 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       to_panvk_instance(dev->vk.physical->instance);
    gl_shader_stage stage = nir->info.stage;
 
-   NIR_PASS_V(nir, panvk_per_arch(nir_lower_descriptors), dev, rs,
-              set_layout_count, set_layouts, shader);
+   NIR_PASS(_, nir, panvk_per_arch(nir_lower_descriptors), dev, rs,
+            set_layout_count, set_layouts, shader);
 
-   NIR_PASS_V(nir, nir_split_var_copies);
-   NIR_PASS_V(nir, nir_lower_var_copies);
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_lower_var_copies);
 
-   NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_mem_ubo,
-              panvk_buffer_ubo_addr_format(rs->uniform_buffers));
-   NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_mem_ssbo,
-              panvk_buffer_ssbo_addr_format(rs->storage_buffers));
-   NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_mem_push_const,
-              nir_address_format_32bit_offset);
-   NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_mem_global,
-              nir_address_format_64bit_global);
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ubo,
+            panvk_buffer_ubo_addr_format(rs->uniform_buffers));
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ssbo,
+            panvk_buffer_ssbo_addr_format(rs->storage_buffers));
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_push_const,
+            nir_address_format_32bit_offset);
+   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_global,
+            nir_address_format_64bit_global);
 
 #if PAN_ARCH >= 9
-   NIR_PASS_V(nir, nir_shader_intrinsics_pass,
-              valhall_lower_get_ssbo_size,
-              nir_metadata_control_flow, NULL);
-   NIR_PASS_V(nir, nir_shader_instructions_pass, valhall_pack_buf_idx,
-              nir_metadata_control_flow, NULL);
+   NIR_PASS(_, nir, nir_shader_intrinsics_pass, valhall_lower_get_ssbo_size,
+            nir_metadata_control_flow, NULL);
+   NIR_PASS(_, nir, nir_shader_instructions_pass, valhall_pack_buf_idx,
+            nir_metadata_control_flow, NULL);
 #endif
 
    if (gl_shader_stage_uses_workgroup(stage)) {
       if (!nir->info.shared_memory_explicit_layout) {
-         NIR_PASS_V(nir, nir_lower_vars_to_explicit_types, nir_var_mem_shared,
-                    shared_type_info);
+         NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_mem_shared,
+                  shared_type_info);
       }
 
-      NIR_PASS_V(nir, nir_lower_explicit_io, nir_var_mem_shared,
-                 nir_address_format_32bit_offset);
+      NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared,
+               nir_address_format_32bit_offset);
    }
 
    if (nir->info.zero_initialize_shared_memory && nir->info.shared_size > 0) {
@@ -526,7 +525,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    /* Needed to turn shader_temp into function_temp since the backend only
     * handles the latter for now.
     */
-   NIR_PASS_V(nir, nir_lower_global_vars_to_local);
+   NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    if (unlikely(instance->debug_flags & PANVK_DEBUG_NIR)) {
@@ -540,10 +539,10 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
     * driver set and the user sets, and does not need pan_lower_image_index
     */
    if (PAN_ARCH < 9 && stage == MESA_SHADER_VERTEX)
-      NIR_PASS_V(nir, pan_lower_image_index, MAX_VS_ATTRIBS);
+      NIR_PASS(_, nir, pan_lower_image_index, MAX_VS_ATTRIBS);
 
-   NIR_PASS_V(nir, nir_shader_instructions_pass, panvk_lower_sysvals,
-              nir_metadata_control_flow, NULL);
+   NIR_PASS(_, nir, nir_shader_instructions_pass, panvk_lower_sysvals,
+            nir_metadata_control_flow, NULL);
 }
 
 static VkResult

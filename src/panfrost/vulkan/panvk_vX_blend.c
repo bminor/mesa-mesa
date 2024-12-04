@@ -85,8 +85,8 @@ get_blend_shader(struct panvk_device *dev,
    nir_shader *nir =
       GENX(pan_blend_create_shader)(state, src0_type, src1_type, rt);
 
-   NIR_PASS_V(nir, nir_shader_instructions_pass, lower_load_blend_const,
-              nir_metadata_control_flow, NULL);
+   NIR_PASS(_, nir, nir_shader_instructions_pass, lower_load_blend_const,
+            nir_metadata_control_flow, NULL);
 
    /* Compile the NIR shader */
    struct panfrost_compile_inputs inputs = {
@@ -105,7 +105,7 @@ get_blend_shader(struct panvk_device *dev,
 
    enum pipe_format rt_formats[8] = {0};
    rt_formats[rt] = key.info.format;
-   NIR_PASS_V(nir, GENX(pan_inline_rt_conversion), rt_formats);
+   NIR_PASS(_, nir, GENX(pan_inline_rt_conversion), rt_formats);
 
    VkResult result =
       panvk_per_arch(create_internal_shader)(dev, nir, &inputs, &shader);
