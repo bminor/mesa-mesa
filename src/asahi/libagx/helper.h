@@ -6,8 +6,8 @@
 #ifndef LIBAGX_HELPER_H
 #define LIBAGX_HELPER_H
 
+#include "compiler/libcl/libcl.h"
 #include "agx_pack.h"
-#include "libagx.h"
 
 // Enable this to debug core mappings.
 // #define SCRATCH_DEBUG_CORES 512
@@ -26,7 +26,7 @@
 struct agx_helper_block {
    uint32_t blocks[4];
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct agx_helper_block) == 16);
+static_assert(sizeof(struct agx_helper_block) == 16);
 
 struct agx_helper_core {
    GLOBAL(struct agx_helper_block) blocklist;
@@ -36,15 +36,15 @@ struct agx_helper_core {
    uint32_t _pad;
    uint32_t alloc_count[AGX_SPILL_SIZE_BUCKETS];
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct agx_helper_core) ==
-                  (8 + 3 * 4 + AGX_SPILL_SIZE_BUCKETS * 4 + 4));
+static_assert(sizeof(struct agx_helper_core) ==
+              (8 + 3 * 4 + AGX_SPILL_SIZE_BUCKETS * 4 + 4));
 
 struct agx_helper_header {
    uint32_t subgroups;
    uint32_t _pad;
    struct agx_helper_core cores[AGX_MAX_CORE_ID];
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct agx_helper_header) ==
-                  (4 + 4 + AGX_MAX_CORE_ID * sizeof(struct agx_helper_core)));
+static_assert(sizeof(struct agx_helper_header) ==
+              (4 + 4 + AGX_MAX_CORE_ID * sizeof(struct agx_helper_core)));
 
 #endif

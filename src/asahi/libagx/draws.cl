@@ -2,7 +2,7 @@
  * Copyright 2024 Valve Corporation
  * SPDX-License-Identifier: MIT
  */
-#include "libagx.h"
+#include "compiler/libcl/libcl.h"
 
 /*
  * To implement drawIndirectCount generically, we dispatch a kernel to

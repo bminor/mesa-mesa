@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "libagx.h"
+#include "compiler/libcl/libcl.h"
 
 enum libagx_tess_partitioning {
    LIBAGX_TESS_PARTITIONING_FRACTIONAL_ODD,
@@ -25,7 +25,7 @@ struct libagx_tess_point {
    uint32_t u;
    uint32_t v;
 };
-AGX_STATIC_ASSERT(sizeof(struct libagx_tess_point) == 8);
+static_assert(sizeof(struct libagx_tess_point) == 8);
 
 struct libagx_tess_args {
    /* Heap to allocate tessellator outputs in */
@@ -104,4 +104,4 @@ struct libagx_tess_args {
     */
    uint32_t ccw;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct libagx_tess_args) == 35 * 4);
+static_assert(sizeof(struct libagx_tess_args) == 35 * 4);

@@ -2,11 +2,12 @@
  * Copyright 2024 Valve Corporation
  * SPDX-License-Identifier: MIT
  */
+#include "compiler/libcl/libcl.h"
 #include "compiler/nir/nir_defines.h"
 #include "compiler/shader_enums.h"
 #include "agx_pack.h"
 #include "compression.h"
-#include "libagx.h"
+#include "libagx_intrinsics.h"
 
 /*
  * Decompress in place. The metadata is updated, so other processes can read the
@@ -38,7 +39,7 @@ index_metadata(uint3 c, uint width, uint height, uint layer_stride)
    uint major_coord = width > height ? c.x : c.y;
    uint minor_dim = min(width, height);
 
-   uint intl_bits = libagx_logbase2_ceil(minor_dim);
+   uint intl_bits = util_logbase2_ceil(minor_dim);
    uint intl_mask = (1 << intl_bits) - 1;
    uint2 intl_coords = c.xy & intl_mask;
 

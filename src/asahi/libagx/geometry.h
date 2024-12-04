@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "compiler/libcl/libcl.h"
 #include "compiler/shader_enums.h"
-#include "libagx.h"
 
 #ifndef __OPENCL_VERSION__
 #include "util/bitscan.h"
@@ -30,7 +30,7 @@ struct agx_geometry_state {
    GLOBAL(uchar) heap;
    uint32_t heap_bottom, heap_size;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct agx_geometry_state) == 4 * 4);
+static_assert(sizeof(struct agx_geometry_state) == 4 * 4);
 
 struct agx_ia_state {
    /* Index buffer if present. */
@@ -44,7 +44,7 @@ struct agx_ia_state {
     */
    uint32_t verts_per_instance;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct agx_ia_state) == 4 * 4);
+static_assert(sizeof(struct agx_ia_state) == 4 * 4);
 
 static inline uint64_t
 libagx_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
@@ -139,7 +139,7 @@ struct agx_geometry_params {
     */
    uint32_t input_topology;
 } PACKED;
-AGX_STATIC_ASSERT(sizeof(struct agx_geometry_params) == 82 * 4);
+static_assert(sizeof(struct agx_geometry_params) == 82 * 4);
 
 /* TCS shared memory layout:
  *
@@ -237,8 +237,8 @@ libagx_tcs_out_stride(uint nr_patch_out, uint out_patch_size,
 static uint
 libagx_compact_prim(enum mesa_prim prim)
 {
-   AGX_STATIC_ASSERT(MESA_PRIM_QUAD_STRIP == MESA_PRIM_QUADS + 1);
-   AGX_STATIC_ASSERT(MESA_PRIM_POLYGON == MESA_PRIM_QUADS + 2);
+   static_assert(MESA_PRIM_QUAD_STRIP == MESA_PRIM_QUADS + 1);
+   static_assert(MESA_PRIM_POLYGON == MESA_PRIM_QUADS + 2);
 
 #ifndef __OPENCL_VERSION__
    assert(prim != MESA_PRIM_QUADS);

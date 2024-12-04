@@ -5,24 +5,18 @@
 
 #pragma once
 
+#include "compiler/libcl/libcl.h"
 #include "agx_pack.h"
-#include "libagx.h"
-
-#ifdef __OPENCL_VERSION__
-#define NDEBUG
-#define memcpy        __builtin_memcpy
-#define STATIC_ASSERT AGX_STATIC_ASSERT
-#endif
 
 #define agx_push(ptr, T, cfg)                                                  \
    for (unsigned _loop = 0; _loop < 1;                                         \
-        ++_loop, ptr = (global_ void *)(((uintptr_t)ptr) + AGX_##T##_LENGTH))  \
+        ++_loop, ptr = (global void *)(((uintptr_t)ptr) + AGX_##T##_LENGTH))   \
       agx_pack(ptr, T, cfg)
 
 #define agx_push_packed(ptr, src, T)                                           \
-   STATIC_ASSERT(sizeof(src) == AGX_##T##_LENGTH);                             \
+   static_assert(sizeof(src) == AGX_##T##_LENGTH);                             \
    memcpy(ptr, &src, sizeof(src));                                             \
-   ptr = (global_ void *)(((uintptr_t)ptr) + sizeof(src));
+   ptr = (global void *)(((uintptr_t)ptr) + sizeof(src));
 
 struct agx_workgroup {
    uint32_t x, y, z;
@@ -85,8 +79,8 @@ enum agx_chip {
    AGX_CHIP_G14X,
 };
 
-static inline global_ uint32_t *
-agx_cdm_launch(global_ uint32_t *out, enum agx_chip chip, struct agx_grid grid,
+static inline global uint32_t *
+agx_cdm_launch(global uint32_t *out, enum agx_chip chip, struct agx_grid grid,
                struct agx_workgroup wg,
                struct agx_cdm_launch_word_0_packed launch, uint32_t usc)
 {
@@ -134,8 +128,8 @@ agx_cdm_launch(global_ uint32_t *out, enum agx_chip chip, struct agx_grid grid,
    return out;
 }
 
-static inline global_ uint32_t *
-agx_cdm_barrier(global_ uint32_t *out, enum agx_chip chip)
+static inline global uint32_t *
+agx_cdm_barrier(global uint32_t *out, enum agx_chip chip)
 {
    agx_push(out, CDM_BARRIER, cfg) {
       cfg.unk_5 = true;
@@ -181,8 +175,8 @@ agx_cdm_barrier(global_ uint32_t *out, enum agx_chip chip)
    return out;
 }
 
-static inline global_ uint32_t *
-agx_cdm_return(global_ uint32_t *out)
+static inline global uint32_t *
+agx_cdm_return(global uint32_t *out)
 {
    agx_push(out, CDM_STREAM_RETURN, cfg)
       ;
@@ -190,8 +184,8 @@ agx_cdm_return(global_ uint32_t *out)
    return out;
 }
 
-static inline global_ uint32_t *
-agx_cdm_terminate(global_ uint32_t *out)
+static inline global uint32_t *
+agx_cdm_terminate(global uint32_t *out)
 {
    agx_push(out, CDM_STREAM_TERMINATE, _)
       ;
@@ -199,8 +193,8 @@ agx_cdm_terminate(global_ uint32_t *out)
    return out;
 }
 
-static inline global_ uint32_t *
-agx_vdm_terminate(global_ uint32_t *out)
+static inline global uint32_t *
+agx_vdm_terminate(global uint32_t *out)
 {
    agx_push(out, VDM_STREAM_TERMINATE, _)
       ;
@@ -208,8 +202,8 @@ agx_vdm_terminate(global_ uint32_t *out)
    return out;
 }
 
-static inline global_ uint32_t *
-agx_cdm_jump(global_ uint32_t *out, uint64_t target)
+static inline global uint32_t *
+agx_cdm_jump(global uint32_t *out, uint64_t target)
 {
    agx_push(out, CDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -219,8 +213,8 @@ agx_cdm_jump(global_ uint32_t *out, uint64_t target)
    return out;
 }
 
-static inline global_ uint32_t *
-agx_vdm_jump(global_ uint32_t *out, uint64_t target)
+static inline global uint32_t *
+agx_vdm_jump(global uint32_t *out, uint64_t target)
 {
    agx_push(out, VDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -230,14 +224,14 @@ agx_vdm_jump(global_ uint32_t *out, uint64_t target)
    return out;
 }
 
-static inline global_ uint32_t *
-agx_cs_jump(global_ uint32_t *out, uint64_t target, bool vdm)
+static inline global uint32_t *
+agx_cs_jump(global uint32_t *out, uint64_t target, bool vdm)
 {
    return vdm ? agx_vdm_jump(out, target) : agx_cdm_jump(out, target);
 }
 
-static inline global_ uint32_t *
-agx_cdm_call(global_ uint32_t *out, uint64_t target)
+static inline global uint32_t *
+agx_cdm_call(global uint32_t *out, uint64_t target)
 {
    agx_push(out, CDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -248,8 +242,8 @@ agx_cdm_call(global_ uint32_t *out, uint64_t target)
    return out;
 }
 
-static inline global_ uint32_t *
-agx_vdm_call(global_ uint32_t *out, uint64_t target)
+static inline global uint32_t *
+agx_vdm_call(global uint32_t *out, uint64_t target)
 {
    agx_push(out, VDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -285,7 +279,7 @@ struct agx_shader {
 
 /* Opaque structure representing a USC program being constructed */
 struct agx_usc_builder {
-   global_ uint8_t *head;
+   global uint8_t *head;
 
 #ifndef NDEBUG
    uint8_t *begin;
@@ -294,11 +288,11 @@ struct agx_usc_builder {
 } PACKED;
 
 #ifdef __OPENCL_VERSION__
-AGX_STATIC_ASSERT(sizeof(struct agx_usc_builder) == 8);
+static_assert(sizeof(struct agx_usc_builder) == 8);
 #endif
 
 static struct agx_usc_builder
-agx_usc_builder(global_ void *out, ASSERTED size_t size)
+agx_usc_builder(global void *out, ASSERTED size_t size)
 {
    return (struct agx_usc_builder){
       .head = out,
@@ -358,7 +352,7 @@ agx_usc_uniform(struct agx_usc_builder *b, unsigned start_halfs,
 }
 
 static inline void
-agx_usc_words_precomp(global_ uint32_t *out, constant_ struct agx_shader *s,
+agx_usc_words_precomp(global uint32_t *out, constant struct agx_shader *s,
                       uint64_t data, unsigned data_size)
 {
    /* Map the data directly as uniforms starting at u0 */

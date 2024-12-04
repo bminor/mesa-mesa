@@ -3,7 +3,8 @@
  * Copyright 2023 Valve Corporation
  * SPDX-License-Identifier: MIT
  */
-#include "libagx.h"
+#include "compiler/libcl/libcl.h"
+#include "libagx_intrinsics.h"
 #include <agx_pack.h>
 
 uint3

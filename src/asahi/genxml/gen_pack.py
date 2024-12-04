@@ -395,7 +395,7 @@ class Group(object):
             convert = None
 
             args = []
-            args.append('(CONSTANT_ uint32_t *) cl')
+            args.append('(constant uint32_t *) cl')
             args.append(str(fieldref.start))
             args.append(str(fieldref.end))
 
@@ -573,7 +573,7 @@ class Parser(object):
         print("};\n")
 
     def emit_pack_function(self, name, group):
-        print("static inline void\n%s_pack(GLOBAL_ uint32_t * restrict cl,\n%sconst struct %s * restrict values)\n{" %
+        print("static inline void\n%s_pack(global uint32_t * restrict cl,\n%sconst struct %s * restrict values)\n{" %
               (name, ' ' * (len(name) + 6), name))
 
         group.emit_pack_function()
@@ -590,7 +590,7 @@ class Parser(object):
 
     def emit_unpack_function(self, name, group):
         print("static inline bool")
-        print("%s_unpack(FILE_TYPE *fp, CONSTANT_ uint8_t * restrict cl,\n%sstruct %s * restrict values)\n{" %
+        print("%s_unpack(FILE *fp, constant uint8_t * restrict cl,\n%sstruct %s * restrict values)\n{" %
               (name.upper(), ' ' * (len(name) + 8), name))
 
         group.emit_unpack_function()

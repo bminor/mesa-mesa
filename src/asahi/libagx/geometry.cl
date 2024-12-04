@@ -5,18 +5,9 @@
  */
 
 #include "geometry.h"
+#include "libagx_intrinsics.h"
 #include "query.h"
 #include "tessellator.h"
-
-/* Compatible with util/u_math.h */
-static inline uint
-util_logbase2_ceil(uint n)
-{
-   if (n <= 1)
-      return 0;
-   else
-      return 32 - clz(n - 1);
-}
 
 /* Swap the two non-provoking vertices third vert in odd triangles. This
  * generates a vertex ID list with a consistent winding order.
@@ -332,10 +323,11 @@ static uint
 first_true_thread_in_workgroup(bool cond, local uint *scratch)
 {
    barrier(CLK_LOCAL_MEM_FENCE);
-   scratch[get_sub_group_id()] = nir_ballot(cond);
+   scratch[get_sub_group_id()] = sub_group_ballot(cond)[0];
    barrier(CLK_LOCAL_MEM_FENCE);
 
-   uint first_group = ctz(nir_ballot(scratch[get_sub_group_local_id()]));
+   uint first_group =
+      ctz(sub_group_ballot(scratch[get_sub_group_local_id()])[0]);
    uint off = ctz(first_group < 32 ? scratch[first_group] : 0);
    return (first_group * 32) + off;
 }

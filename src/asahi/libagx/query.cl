@@ -4,7 +4,7 @@
  * Copyright 2022 Collabora Ltd. and Red Hat Inc.
  * SPDX-License-Identifier: MIT
  */
-#include "libagx.h"
+#include "compiler/libcl/libcl.h"
 #include "query.h"
 
 static inline void

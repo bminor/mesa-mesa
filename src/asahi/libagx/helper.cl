@@ -2,8 +2,9 @@
  * Copyright 2023 Asahi Lina
  * SPDX-License-Identifier: MIT
  */
+#include "compiler/libcl/libcl.h"
 #include "helper.h"
-#include "libagx.h"
+#include "libagx_intrinsics.h"
 
 #define DB_NEXT 32
 #define DB_ACK  48
