@@ -1169,11 +1169,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
     */
    device->use_global_bo_list =
       (instance->perftest_flags & RADV_PERFTEST_BO_LIST) || device->vk.enabled_features.bufferDeviceAddress ||
-      device->vk.enabled_features.descriptorIndexing || device->vk.enabled_extensions.EXT_descriptor_indexing ||
-      device->vk.enabled_extensions.EXT_buffer_device_address ||
-      device->vk.enabled_extensions.KHR_buffer_device_address ||
-      device->vk.enabled_extensions.KHR_ray_tracing_pipeline ||
-      device->vk.enabled_extensions.KHR_acceleration_structure;
+      device->vk.enabled_features.descriptorIndexing || device->vk.enabled_extensions.EXT_descriptor_indexing;
 
    radv_init_shader_arenas(device);
 
