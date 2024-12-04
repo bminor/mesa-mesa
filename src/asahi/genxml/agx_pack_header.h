@@ -22,7 +22,7 @@
    _mesa_half_to_float(__gen_unpack_uint(x, y, z))
 
 static inline uint64_t
-__gen_unpack_uint(constant uint32_t *restrict cl, uint32_t start, uint32_t end)
+__gen_unpack_uint(CONST uint32_t *restrict cl, uint32_t start, uint32_t end)
 {
    uint64_t val = 0;
    const int width = end - start + 1;
@@ -48,13 +48,13 @@ __gen_pack_lod(float f, uint32_t start, uint32_t end)
 }
 
 static inline float
-__gen_unpack_lod(constant uint32_t *restrict cl, uint32_t start, uint32_t end)
+__gen_unpack_lod(CONST uint32_t *restrict cl, uint32_t start, uint32_t end)
 {
    return ((float)__gen_unpack_uint(cl, start, end)) / (1 << 6);
 }
 
 static inline uint64_t
-__gen_unpack_sint(constant uint32_t *restrict cl, uint32_t start, uint32_t end)
+__gen_unpack_sint(CONST uint32_t *restrict cl, uint32_t start, uint32_t end)
 {
    int size = end - start + 1;
    int64_t val = __gen_unpack_uint(cl, start, end);
@@ -90,16 +90,16 @@ __gen_from_groups(uint32_t value, uint32_t group_size, uint32_t length)
 
 #define agx_pack(dst, T, name)                                                 \
    for (struct AGX_##T name = {AGX_##T##_header},                              \
-                       *_loop_count = (global void *)((uintptr_t)0);           \
+                       *_loop_count = (GLOBAL void *)((uintptr_t)0);           \
         (uintptr_t)_loop_count < 1; (                                          \
            {                                                                   \
-              AGX_##T##_pack((global uint32_t *)(dst), &name);                 \
-              _loop_count = (global void *)(((uintptr_t)_loop_count) + 1);     \
+              AGX_##T##_pack((GLOBAL uint32_t *)(dst), &name);                 \
+              _loop_count = (GLOBAL void *)(((uintptr_t)_loop_count) + 1);     \
            }))
 
 #define agx_unpack(fp, src, T, name)                                           \
    struct AGX_##T name;                                                        \
-   AGX_##T##_unpack(fp, (constant uint8_t *)(src), &name)
+   AGX_##T##_unpack(fp, (CONST uint8_t *)(src), &name)
 
 #define agx_print(fp, T, var, indent) AGX_##T##_print(fp, &(var), indent)
 

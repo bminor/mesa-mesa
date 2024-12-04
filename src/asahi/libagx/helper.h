@@ -29,7 +29,7 @@ struct agx_helper_block {
 static_assert(sizeof(struct agx_helper_block) == 16);
 
 struct agx_helper_core {
-   GLOBAL(struct agx_helper_block) blocklist;
+   DEVICE(struct agx_helper_block) blocklist;
    uint32_t alloc_cur;
    uint32_t alloc_max;
    uint32_t alloc_failed;

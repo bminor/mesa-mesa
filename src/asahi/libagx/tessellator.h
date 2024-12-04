@@ -29,35 +29,35 @@ static_assert(sizeof(struct libagx_tess_point) == 8);
 
 struct libagx_tess_args {
    /* Heap to allocate tessellator outputs in */
-   GLOBAL(struct agx_geometry_state) heap;
+   DEVICE(struct agx_geometry_state) heap;
 
    /* Patch coordinate buffer, indexed as:
     *
     *    coord_allocs[patch_ID] + vertex_in_patch
     */
-   GLOBAL(struct libagx_tess_point) patch_coord_buffer;
+   DEVICE(struct libagx_tess_point) patch_coord_buffer;
 
    /* Per-patch index within the heap for the tess coords, written by the
     * tessellator based on the allocated memory.
     */
-   GLOBAL(uint32_t) coord_allocs;
+   DEVICE(uint32_t) coord_allocs;
 
    /* Space for output draws from the tessellator. API draw calls. */
-   GLOBAL(uint32_t) out_draws;
+   DEVICE(uint32_t) out_draws;
 
    /* Tessellation control shader output buffer. */
-   GLOBAL(float) tcs_buffer;
+   DEVICE(float) tcs_buffer;
 
    /* Count buffer. # of indices per patch written here, then prefix summed. */
-   GLOBAL(uint32_t) counts;
+   DEVICE(uint32_t) counts;
 
    /* Allocated index buffer for all patches, if we're prefix summing counts */
-   GLOBAL(uint32_t) index_buffer;
+   DEVICE(uint32_t) index_buffer;
 
    /* Address of the tess eval invocation counter for implementing pipeline
     * statistics, if active. Zero if inactive. Incremented by tessellator.
     */
-   GLOBAL(uint32_t) statistic;
+   DEVICE(uint32_t) statistic;
 
    /* When geom+tess used together, the buffer containing TES outputs (executed
     * as a hardware compute shader).

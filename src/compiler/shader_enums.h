@@ -31,8 +31,7 @@
 #include "util/macros.h"
 #include "util/u_debug.h"
 #else
-#define ENUM_PACKED
-#define BITFIELD_BIT(b) (1u << (b))
+#include "libcl/libcl.h"
 #define debug_printf(x, ...)
 #endif
 

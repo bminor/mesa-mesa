@@ -10,13 +10,13 @@
 
 #define agx_push(ptr, T, cfg)                                                  \
    for (unsigned _loop = 0; _loop < 1;                                         \
-        ++_loop, ptr = (global void *)(((uintptr_t)ptr) + AGX_##T##_LENGTH))   \
+        ++_loop, ptr = (GLOBAL void *)(((uintptr_t)ptr) + AGX_##T##_LENGTH))   \
       agx_pack(ptr, T, cfg)
 
 #define agx_push_packed(ptr, src, T)                                           \
    static_assert(sizeof(src) == AGX_##T##_LENGTH);                             \
    memcpy(ptr, &src, sizeof(src));                                             \
-   ptr = (global void *)(((uintptr_t)ptr) + sizeof(src));
+   ptr = (GLOBAL void *)(((uintptr_t)ptr) + sizeof(src));
 
 struct agx_workgroup {
    uint32_t x, y, z;
@@ -79,8 +79,8 @@ enum agx_chip {
    AGX_CHIP_G14X,
 };
 
-static inline global uint32_t *
-agx_cdm_launch(global uint32_t *out, enum agx_chip chip, struct agx_grid grid,
+static inline GLOBAL uint32_t *
+agx_cdm_launch(GLOBAL uint32_t *out, enum agx_chip chip, struct agx_grid grid,
                struct agx_workgroup wg,
                struct agx_cdm_launch_word_0_packed launch, uint32_t usc)
 {
@@ -128,8 +128,8 @@ agx_cdm_launch(global uint32_t *out, enum agx_chip chip, struct agx_grid grid,
    return out;
 }
 
-static inline global uint32_t *
-agx_cdm_barrier(global uint32_t *out, enum agx_chip chip)
+static inline GLOBAL uint32_t *
+agx_cdm_barrier(GLOBAL uint32_t *out, enum agx_chip chip)
 {
    agx_push(out, CDM_BARRIER, cfg) {
       cfg.unk_5 = true;
@@ -175,8 +175,8 @@ agx_cdm_barrier(global uint32_t *out, enum agx_chip chip)
    return out;
 }
 
-static inline global uint32_t *
-agx_cdm_return(global uint32_t *out)
+static inline GLOBAL uint32_t *
+agx_cdm_return(GLOBAL uint32_t *out)
 {
    agx_push(out, CDM_STREAM_RETURN, cfg)
       ;
@@ -184,8 +184,8 @@ agx_cdm_return(global uint32_t *out)
    return out;
 }
 
-static inline global uint32_t *
-agx_cdm_terminate(global uint32_t *out)
+static inline GLOBAL uint32_t *
+agx_cdm_terminate(GLOBAL uint32_t *out)
 {
    agx_push(out, CDM_STREAM_TERMINATE, _)
       ;
@@ -193,8 +193,8 @@ agx_cdm_terminate(global uint32_t *out)
    return out;
 }
 
-static inline global uint32_t *
-agx_vdm_terminate(global uint32_t *out)
+static inline GLOBAL uint32_t *
+agx_vdm_terminate(GLOBAL uint32_t *out)
 {
    agx_push(out, VDM_STREAM_TERMINATE, _)
       ;
@@ -202,8 +202,8 @@ agx_vdm_terminate(global uint32_t *out)
    return out;
 }
 
-static inline global uint32_t *
-agx_cdm_jump(global uint32_t *out, uint64_t target)
+static inline GLOBAL uint32_t *
+agx_cdm_jump(GLOBAL uint32_t *out, uint64_t target)
 {
    agx_push(out, CDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -213,8 +213,8 @@ agx_cdm_jump(global uint32_t *out, uint64_t target)
    return out;
 }
 
-static inline global uint32_t *
-agx_vdm_jump(global uint32_t *out, uint64_t target)
+static inline GLOBAL uint32_t *
+agx_vdm_jump(GLOBAL uint32_t *out, uint64_t target)
 {
    agx_push(out, VDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -224,14 +224,14 @@ agx_vdm_jump(global uint32_t *out, uint64_t target)
    return out;
 }
 
-static inline global uint32_t *
-agx_cs_jump(global uint32_t *out, uint64_t target, bool vdm)
+static inline GLOBAL uint32_t *
+agx_cs_jump(GLOBAL uint32_t *out, uint64_t target, bool vdm)
 {
    return vdm ? agx_vdm_jump(out, target) : agx_cdm_jump(out, target);
 }
 
-static inline global uint32_t *
-agx_cdm_call(global uint32_t *out, uint64_t target)
+static inline GLOBAL uint32_t *
+agx_cdm_call(GLOBAL uint32_t *out, uint64_t target)
 {
    agx_push(out, CDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -242,8 +242,8 @@ agx_cdm_call(global uint32_t *out, uint64_t target)
    return out;
 }
 
-static inline global uint32_t *
-agx_vdm_call(global uint32_t *out, uint64_t target)
+static inline GLOBAL uint32_t *
+agx_vdm_call(GLOBAL uint32_t *out, uint64_t target)
 {
    agx_push(out, VDM_STREAM_LINK, cfg) {
       cfg.target_lo = target & BITFIELD_MASK(32);
@@ -279,7 +279,7 @@ struct agx_shader {
 
 /* Opaque structure representing a USC program being constructed */
 struct agx_usc_builder {
-   global uint8_t *head;
+   GLOBAL uint8_t *head;
 
 #ifndef NDEBUG
    uint8_t *begin;
@@ -292,7 +292,7 @@ static_assert(sizeof(struct agx_usc_builder) == 8);
 #endif
 
 static struct agx_usc_builder
-agx_usc_builder(global void *out, ASSERTED size_t size)
+agx_usc_builder(GLOBAL void *out, ASSERTED size_t size)
 {
    return (struct agx_usc_builder){
       .head = out,
@@ -352,7 +352,7 @@ agx_usc_uniform(struct agx_usc_builder *b, unsigned start_halfs,
 }
 
 static inline void
-agx_usc_words_precomp(global uint32_t *out, constant struct agx_shader *s,
+agx_usc_words_precomp(GLOBAL uint32_t *out, CONST struct agx_shader *s,
                       uint64_t data, unsigned data_size)
 {
    /* Map the data directly as uniforms starting at u0 */

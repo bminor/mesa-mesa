@@ -9,12 +9,12 @@
 #pragma once
 
 struct libagx_xfb_counter_copy {
-   GLOBAL(uint32_t) dest[4];
-   GLOBAL(uint32_t) src[4];
+   DEVICE(uint32_t) dest[4];
+   DEVICE(uint32_t) src[4];
 };
 
 struct libagx_imm_write {
-   GLOBAL(uint32_t) address;
+   DEVICE(uint32_t) address;
    uint32_t value;
 };
 

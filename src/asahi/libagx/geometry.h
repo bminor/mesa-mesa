@@ -9,11 +9,9 @@
 
 #ifndef __OPENCL_VERSION__
 #include "util/bitscan.h"
-#define CONST(type_)         uint64_t
 #define libagx_popcount(x)   util_bitcount64(x)
 #define libagx_sub_sat(x, y) ((x >= y) ? (x - y) : 0)
 #else
-#define CONST(type_)         constant type_ *
 #define libagx_popcount(x)   popcount(x)
 #define libagx_sub_sat(x, y) sub_sat(x, y)
 #endif
@@ -27,7 +25,7 @@
 /* Packed geometry state buffer */
 struct agx_geometry_state {
    /* Heap to allocate from. */
-   GLOBAL(uchar) heap;
+   DEVICE(uchar) heap;
    uint32_t heap_bottom, heap_size;
 } PACKED;
 static_assert(sizeof(struct agx_geometry_state) == 4 * 4);
@@ -64,35 +62,35 @@ libagx_index_buffer_range_el(uint size_el, uint offset_el)
 
 struct agx_geometry_params {
    /* Persistent (cross-draw) geometry state */
-   GLOBAL(struct agx_geometry_state) state;
+   DEVICE(struct agx_geometry_state) state;
 
    /* Address of associated indirect draw buffer */
-   GLOBAL(uint) indirect_desc;
+   DEVICE(uint) indirect_desc;
 
    /* Address of count buffer. For an indirect draw, this will be written by the
     * indirect setup kernel.
     */
-   GLOBAL(uint) count_buffer;
+   DEVICE(uint) count_buffer;
 
    /* Address of the primitives generated counters */
-   GLOBAL(uint) prims_generated_counter[MAX_VERTEX_STREAMS];
-   GLOBAL(uint) xfb_prims_generated_counter[MAX_VERTEX_STREAMS];
-   GLOBAL(uint) xfb_overflow[MAX_VERTEX_STREAMS];
-   GLOBAL(uint) xfb_any_overflow;
+   DEVICE(uint) prims_generated_counter[MAX_VERTEX_STREAMS];
+   DEVICE(uint) xfb_prims_generated_counter[MAX_VERTEX_STREAMS];
+   DEVICE(uint) xfb_overflow[MAX_VERTEX_STREAMS];
+   DEVICE(uint) xfb_any_overflow;
 
    /* Pointers to transform feedback buffer offsets in bytes */
-   GLOBAL(uint) xfb_offs_ptrs[MAX_SO_BUFFERS];
+   DEVICE(uint) xfb_offs_ptrs[MAX_SO_BUFFERS];
 
    /* Output index buffer, allocated by pre-GS. */
-   GLOBAL(uint) output_index_buffer;
+   DEVICE(uint) output_index_buffer;
 
    /* Address of transform feedback buffer in general, supplied by the CPU. */
-   GLOBAL(uchar) xfb_base_original[MAX_SO_BUFFERS];
+   DEVICE(uchar) xfb_base_original[MAX_SO_BUFFERS];
 
    /* Address of transform feedback for the current primitive. Written by pre-GS
     * program.
     */
-   GLOBAL(uchar) xfb_base[MAX_SO_BUFFERS];
+   DEVICE(uchar) xfb_base[MAX_SO_BUFFERS];
 
    /* Address and present mask for the input to the geometry shader. These will
     * reflect the vertex shader for VS->GS or instead the tessellation
