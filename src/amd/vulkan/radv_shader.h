@@ -112,7 +112,6 @@ struct radv_ps_epilog_key {
 
 struct radv_spirv_to_nir_options {
    uint32_t lower_view_index_to_zero : 1;
-   uint32_t fix_dual_src_mrt1_export : 1;
    uint32_t lower_view_index_to_device_index : 1;
 };
 

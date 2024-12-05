@@ -306,24 +306,6 @@ radv_compiler_debug(void *private_data, enum aco_compiler_debug_level level, con
    vk_debug_report(&instance->vk, vk_flags[level] | VK_DEBUG_REPORT_DEBUG_BIT_EXT, NULL, 0, 0, "radv", message);
 }
 
-/* If the shader doesn't have an index=1 output, then assume that it meant for a location=1 to be used. This works on
- * some older hardware because the MRT1 target is used for both location=1 and index=1, but GFX11 works differently.
- */
-static void
-fix_dual_src_mrt1_export(nir_shader *nir)
-{
-   nir_foreach_shader_out_variable (var, nir) {
-      if (var->data.location == FRAG_RESULT_DATA0 && var->data.index == 1)
-         return;
-   }
-
-   nir_variable *loc1_var = nir_find_variable_with_location(nir, nir_var_shader_out, FRAG_RESULT_DATA1);
-   if (loc1_var) {
-      loc1_var->data.location = FRAG_RESULT_DATA0;
-      loc1_var->data.index = 1;
-   }
-}
-
 nir_shader *
 radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_stage *stage,
                          const struct radv_spirv_to_nir_options *options, bool is_internal)
@@ -456,9 +438,6 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       };
       NIR_PASS(_, nir, nir_remove_dead_variables,
                nir_var_shader_in | nir_var_shader_out | nir_var_system_value | nir_var_mem_shared, &dead_vars_opts);
-
-      if (nir->info.stage == MESA_SHADER_FRAGMENT && options->fix_dual_src_mrt1_export)
-         fix_dual_src_mrt1_export(nir);
 
       /* Variables can make nir_propagate_invariant more conservative
        * than it needs to be.

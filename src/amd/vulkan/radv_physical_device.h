@@ -50,7 +50,6 @@ struct radv_physical_device_cache_key {
    uint32_t disable_aniso_single_level : 1;
    uint32_t disable_shrink_image_store : 1;
    uint32_t disable_sinking_load_input_fs : 1;
-   uint32_t dual_color_blend_by_location : 1;
    uint32_t emulate_rt : 1;
    uint32_t ge_wave32 : 1;
    uint32_t invariant_geom : 1;
