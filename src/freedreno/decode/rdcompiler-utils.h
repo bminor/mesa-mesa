@@ -427,7 +427,7 @@ gpu_print(struct replay_context *ctx, struct cmdstream *_cs, uint64_t iova,
  */
 static void
 gpu_read_into_file(struct replay_context *ctx, struct cmdstream *_cs,
-                    uint64_t iova, uint64_t size, bool clear, const char *name)
+                   uint64_t iova, uint64_t size, bool clear, const char *name)
 {
    struct wrbuf *wrbuf = (struct wrbuf *) calloc(1, sizeof(struct wrbuf));
    wrbuf->iova = iova;
