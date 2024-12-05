@@ -539,6 +539,151 @@ panvk_per_arch(cmd_preload_render_area_border)(
       panvk_per_arch(cmd_force_fb_preload)(cmdbuf, render_info);
 }
 
+/* This value has been selected to get
+ * dEQP-VK.draw.renderpass.inverted_depth_ranges.nodepthclamp_deltazero passing.
+ */
+#define MIN_DEPTH_CLIP_RANGE 37.7E-06f
+
+void
+panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
+                                         const struct panvk_draw_info *info)
+{
+   struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
+   struct vk_color_blend_state *cb = &cmdbuf->vk.dynamic_graphics_state.cb;
+   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
+   uint32_t noperspective_varyings = fs ? fs->info.varyings.noperspective : 0;
+
+   if (sysvals->vs.noperspective_varyings != noperspective_varyings) {
+      sysvals->vs.noperspective_varyings = noperspective_varyings;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   if (sysvals->vs.first_vertex != info->vertex.base) {
+      sysvals->vs.first_vertex = info->vertex.base;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   if (sysvals->vs.base_instance != info->instance.base) {
+      sysvals->vs.base_instance = info->instance.base;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+#if PAN_ARCH <= 7
+   if (sysvals->vs.raw_vertex_offset != info->vertex.raw_offset) {
+      sysvals->vs.raw_vertex_offset = info->vertex.raw_offset;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   if (sysvals->layer_id != info->layer_id) {
+      sysvals->layer_id = info->layer_id;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+#endif
+
+   if (dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
+      for (unsigned i = 0; i < ARRAY_SIZE(cb->blend_constants); i++)
+         sysvals->blend.constants[i] =
+            CLAMP(cb->blend_constants[i], 0.0f, 1.0f);
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
+       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
+      VkViewport *viewport = &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
+
+      /* Upload the viewport scale. Defined as (px/2, py/2, pz) at the start of
+       * section 24.5 ("Controlling the Viewport") of the Vulkan spec. At the
+       * end of the section, the spec defines:
+       *
+       * px = width
+       * py = height
+       * pz = maxDepth - minDepth
+       */
+      sysvals->viewport.scale.x = 0.5f * viewport->width;
+      sysvals->viewport.scale.y = 0.5f * viewport->height;
+      sysvals->viewport.scale.z = (viewport->maxDepth - viewport->minDepth);
+
+      /* Upload the viewport offset. Defined as (ox, oy, oz) at the start of
+       * section 24.5 ("Controlling the Viewport") of the Vulkan spec. At the
+       * end of the section, the spec defines:
+       *
+       * ox = x + width/2
+       * oy = y + height/2
+       * oz = minDepth
+       */
+      sysvals->viewport.offset.x = (0.5f * viewport->width) + viewport->x;
+      sysvals->viewport.offset.y = (0.5f * viewport->height) + viewport->y;
+      sysvals->viewport.offset.z = viewport->minDepth;
+
+#if PAN_ARCH >= 9
+      /* Doing the viewport transform in the vertex shader and then depth
+       * clipping with the viewport depth range gets a similar result to
+       * clipping in clip-space, but loses precision when the viewport depth
+       * range is very small. When minDepth == maxDepth, this completely
+       * flattens the clip-space depth and results in never clipping.
+       *
+       * To work around this, set a lower limit on depth range when clipping is
+       * enabled. This results in slightly incorrect fragment depth values, and
+       * doesn't help with the precision loss, but at least clipping isn't
+       * completely broken.
+       */
+      const struct vk_rasterization_state *rs =
+         &cmdbuf->vk.dynamic_graphics_state.rs;
+
+      if (vk_rasterization_state_depth_clip_enable(rs) &&
+          fabsf(sysvals->viewport.scale.z) < MIN_DEPTH_CLIP_RANGE) {
+         float z_min = viewport->minDepth;
+         float z_max = viewport->maxDepth;
+         float z_sign = z_min <= z_max ? 1.0f : -1.0f;
+
+         sysvals->viewport.scale.z = z_sign * MIN_DEPTH_CLIP_RANGE;
+
+         /* Middle of the user range is
+         *    z_range_center = z_min + (z_max - z_min) * 0.5f,
+         * and we want to set the offset to
+         *    z_offset = z_range_center - viewport.scale.z * 0.5f
+         * which, when expanding, gives us
+         *    z_offset = (z_max + z_min - viewport.scale.z) * 0.5f
+         */
+         float z_offset = (z_max + z_min - sysvals->viewport.scale.z) * 0.5f;
+         /* Bump offset off-center if necessary, to not go out of range */
+         sysvals->viewport.offset.z = CLAMP(z_offset, 0.0f, 1.0f);
+      }
+#endif
+
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+#if PAN_ARCH <= 7
+   const struct panvk_shader *vs = cmdbuf->state.gfx.vs.shader;
+   struct panvk_descriptor_state *desc_state = &cmdbuf->state.gfx.desc_state;
+   struct panvk_shader_desc_state *vs_desc_state = &cmdbuf->state.gfx.vs.desc;
+   struct panvk_shader_desc_state *fs_desc_state = &cmdbuf->state.gfx.fs.desc;
+
+   if (gfx_state_dirty(cmdbuf, DESC_STATE) || gfx_state_dirty(cmdbuf, VS)) {
+      sysvals->desc.sets[PANVK_DESC_TABLE_VS_DYN_SSBOS] =
+         vs_desc_state->dyn_ssbos;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   if (gfx_state_dirty(cmdbuf, DESC_STATE) || gfx_state_dirty(cmdbuf, FS)) {
+      sysvals->desc.sets[PANVK_DESC_TABLE_FS_DYN_SSBOS] =
+         fs_desc_state->dyn_ssbos;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+
+   for (uint32_t i = 0; i < MAX_SETS; i++) {
+      uint32_t used_set_mask =
+         vs->desc_info.used_set_mask | (fs ? fs->desc_info.used_set_mask : 0);
+
+      if (used_set_mask & BITFIELD_BIT(i))
+         sysvals->desc.sets[i] = desc_state->sets[i]->descs.dev;
+      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
+   }
+#endif
+}
+
 VKAPI_ATTR void VKAPI_CALL
 panvk_per_arch(CmdBindVertexBuffers)(VkCommandBuffer commandBuffer,
                                      uint32_t firstBinding,

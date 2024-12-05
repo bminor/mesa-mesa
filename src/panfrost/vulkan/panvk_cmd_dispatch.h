@@ -43,4 +43,22 @@ struct panvk_cmd_compute_state {
       compute_state_clear_all_dirty(__cmdbuf);                                 \
    } while (0)
 
+struct panvk_dispatch_info {
+   struct {
+      struct {
+         uint32_t x, y, z;
+      } wg_base;
+      struct {
+         uint32_t x, y, z;
+      } wg_count;
+   } direct;
+
+   struct {
+      mali_ptr buffer_dev_addr;
+   } indirect;
+};
+
+void panvk_per_arch(cmd_prepare_dispatch_sysvals)(
+   struct panvk_cmd_buffer *cmdbuf, const struct panvk_dispatch_info *info);
+
 #endif

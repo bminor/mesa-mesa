@@ -299,4 +299,38 @@ panvk_per_arch(cmd_preload_render_area_border)(struct panvk_cmd_buffer *cmdbuf,
 
 void panvk_per_arch(cmd_resolve_attachments)(struct panvk_cmd_buffer *cmdbuf);
 
+struct panvk_draw_info {
+   struct {
+      uint32_t size;
+      uint32_t offset;
+   } index;
+
+   struct {
+#if PAN_ARCH <= 7
+      int32_t raw_offset;
+#endif
+      int32_t base;
+      uint32_t count;
+   } vertex;
+
+   struct {
+      int32_t base;
+      uint32_t count;
+   } instance;
+
+   struct {
+      mali_ptr buffer_dev_addr;
+      uint32_t draw_count;
+      uint32_t stride;
+   } indirect;
+
+#if PAN_ARCH <= 7
+   uint32_t layer_id;
+#endif
+};
+
+void
+panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
+                                         const struct panvk_draw_info *info);
+
 #endif

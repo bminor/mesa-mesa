@@ -42,30 +42,6 @@
 #include "vk_pipeline_layout.h"
 #include "vk_render_pass.h"
 
-struct panvk_draw_info {
-   struct {
-      uint32_t size;
-      uint32_t offset;
-   } index;
-
-   struct {
-      int32_t base;
-      uint32_t count;
-   } vertex;
-
-   struct {
-      int32_t base;
-      uint32_t count;
-   } instance;
-
-   struct {
-      struct panvk_buffer *buffer;
-      uint64_t offset;
-      uint32_t draw_count;
-      uint32_t stride;
-   } indirect;
-};
-
 static void
 emit_vs_attrib(const struct vk_vertex_attribute_state *attrib_info,
                const struct vk_vertex_binding_state *buf_info,
@@ -215,104 +191,6 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    fs_desc_state->driver_set.size = desc_count * PANVK_DESCRIPTOR_SIZE;
    gfx_state_set_dirty(cmdbuf, DESC_STATE);
    return VK_SUCCESS;
-}
-
-/* This value has been selected to get
- * dEQP-VK.draw.renderpass.inverted_depth_ranges.nodepthclamp_deltazero passing.
- */
-#define MIN_DEPTH_CLIP_RANGE 37.7E-06f
-
-static void
-prepare_sysvals(struct panvk_cmd_buffer *cmdbuf,
-                const struct panvk_draw_info *draw)
-{
-   struct panvk_graphics_sysvals *sysvals = &cmdbuf->state.gfx.sysvals;
-   struct vk_color_blend_state *cb = &cmdbuf->vk.dynamic_graphics_state.cb;
-   const struct vk_rasterization_state *rs =
-      &cmdbuf->vk.dynamic_graphics_state.rs;
-   const struct panvk_shader *fs = cmdbuf->state.gfx.fs.shader;
-
-   uint32_t noperspective_varyings = fs ? fs->info.varyings.noperspective : 0;
-   if (sysvals->vs.noperspective_varyings != noperspective_varyings) {
-      sysvals->vs.noperspective_varyings = noperspective_varyings;
-      cmdbuf->state.gfx.push_uniforms = 0;
-   }
-
-   if (dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
-      for (unsigned i = 0; i < ARRAY_SIZE(cb->blend_constants); i++)
-         sysvals->blend.constants[i] =
-            CLAMP(cb->blend_constants[i], 0.0f, 1.0f);
-      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
-   }
-
-   if (dyn_gfx_state_dirty(cmdbuf, VP_VIEWPORTS) ||
-       dyn_gfx_state_dirty(cmdbuf, RS_CULL_MODE) ||
-       dyn_gfx_state_dirty(cmdbuf, RS_DEPTH_CLAMP_ENABLE)) {
-      VkViewport *viewport = &cmdbuf->vk.dynamic_graphics_state.vp.viewports[0];
-
-      /* Upload the viewport scale. Defined as (px/2, py/2, pz) at the start of
-       * section 24.5 ("Controlling the Viewport") of the Vulkan spec. At the
-       * end of the section, the spec defines:
-       *
-       * px = width
-       * py = height
-       * pz = maxDepth - minDepth
-       */
-      sysvals->viewport.scale.x = 0.5f * viewport->width;
-      sysvals->viewport.scale.y = 0.5f * viewport->height;
-      sysvals->viewport.scale.z = (viewport->maxDepth - viewport->minDepth);
-
-      /* Upload the viewport offset. Defined as (ox, oy, oz) at the start of
-       * section 24.5 ("Controlling the Viewport") of the Vulkan spec. At the
-       * end of the section, the spec defines:
-       *
-       * ox = x + width/2
-       * oy = y + height/2
-       * oz = minDepth
-       */
-      sysvals->viewport.offset.x = (0.5f * viewport->width) + viewport->x;
-      sysvals->viewport.offset.y = (0.5f * viewport->height) + viewport->y;
-      sysvals->viewport.offset.z = viewport->minDepth;
-
-      /* Doing the viewport transform in the vertex shader and then depth
-       * clipping with the viewport depth range gets a similar result to
-       * clipping in clip-space, but loses precision when the viewport depth
-       * range is very small. When minDepth == maxDepth, this completely
-       * flattens the clip-space depth and results in never clipping.
-       *
-       * To work around this, set a lower limit on depth range when clipping is
-       * enabled. This results in slightly incorrect fragment depth values, and
-       * doesn't help with the precision loss, but at least clipping isn't
-       * completely broken.
-       */
-      if (vk_rasterization_state_depth_clip_enable(rs) &&
-          fabsf(sysvals->viewport.scale.z) < MIN_DEPTH_CLIP_RANGE) {
-         float z_min = viewport->minDepth;
-         float z_max = viewport->maxDepth;
-         float z_sign = z_min <= z_max ? 1.0f : -1.0f;
-
-         sysvals->viewport.scale.z = z_sign * MIN_DEPTH_CLIP_RANGE;
-
-         /* Middle of the user range is
-         *    z_range_center = z_min + (z_max - z_min) * 0.5f,
-         * and we want to set the offset to
-         *    z_offset = z_range_center - viewport.scale.z * 0.5f
-         * which, when expanding, gives us
-         *    z_offset = (z_max + z_min - viewport.scale.z) * 0.5f
-         */
-         float z_offset = (z_max + z_min - sysvals->viewport.scale.z) * 0.5f;
-         /* Bump offset off-center if necessary, to not go out of range */
-         sysvals->viewport.offset.z = CLAMP(z_offset, 0.0f, 1.0f);
-      }
-      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
-   }
-
-   if (draw->vertex.base != sysvals->vs.first_vertex ||
-       draw->instance.base != sysvals->vs.base_instance) {
-      sysvals->vs.first_vertex = draw->vertex.base;
-      sysvals->vs.base_instance = draw->instance.base;
-      gfx_state_set_dirty(cmdbuf, PUSH_UNIFORMS);
-   }
 }
 
 static bool
@@ -1664,7 +1542,7 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_info *draw)
          return result;
    }
 
-   prepare_sysvals(cmdbuf, draw);
+   panvk_per_arch(cmd_prepare_draw_sysvals)(cmdbuf, draw);
 
    result = prepare_push_uniforms(cmdbuf);
    if (result != VK_SUCCESS)
@@ -1925,9 +1803,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       return;
 
    struct cs_index draw_params_addr = cs_scratch_reg64(b, 0);
-   cs_move64_to(
-      b, draw_params_addr,
-      panvk_buffer_gpu_ptr(draw->indirect.buffer, draw->indirect.offset));
+   cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
 
    cs_update_vt_ctx(b) {
       cs_move32_to(b, cs_sr_reg32(b, 32), 0);
@@ -1981,8 +1857,7 @@ panvk_per_arch(CmdDrawIndirect)(VkCommandBuffer commandBuffer, VkBuffer _buffer,
       return;
 
    struct panvk_draw_info draw = {
-      .indirect.buffer = buffer,
-      .indirect.offset = offset,
+      .indirect.buffer_dev_addr = panvk_buffer_gpu_ptr(buffer, offset),
       .indirect.draw_count = drawCount,
       .indirect.stride = stride,
    };
@@ -2003,8 +1878,7 @@ panvk_per_arch(CmdDrawIndexedIndirect)(VkCommandBuffer commandBuffer,
 
    struct panvk_draw_info draw = {
       .index.size = cmdbuf->state.gfx.ib.index_size,
-      .indirect.buffer = buffer,
-      .indirect.offset = offset,
+      .indirect.buffer_dev_addr = panvk_buffer_gpu_ptr(buffer, offset),
       .indirect.draw_count = drawCount,
       .indirect.stride = stride,
    };
