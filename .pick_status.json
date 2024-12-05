@@ -234,7 +234,7 @@
         "description": "aco/gfx12: disable vinterp ddx/ddy optimization",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bee487df48b19fc3bf792874aa6aff25104e281a",
         "notes": null
