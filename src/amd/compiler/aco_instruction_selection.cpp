@@ -13513,6 +13513,9 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
 
    Builder bld(ctx.program, ctx.block);
 
+   bool has_mrtz_alpha = einfo->alpha_to_coverage_via_mrtz && einfo->colors[0].used;
+   Temp mrtz_alpha;
+
    Temp colors[MAX_DRAW_BUFFERS][4];
    for (unsigned i = 0; i < MAX_DRAW_BUFFERS; i++) {
       if (!einfo->colors[i].used)
@@ -13526,22 +13529,24 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
          colors[i][c] = emit_extract_vector(&ctx, color, c, col_types == ACO_TYPE_ANY32 ? v1 : v2b);
       }
 
+      /* Store MRTZ.a before applying alpha-to-one if enabled. */
+      if (has_mrtz_alpha && i == 0)
+         mrtz_alpha = colors[0][3];
+
       emit_clamp_alpha_test(&ctx, einfo, colors[i], i);
    }
 
    bool has_mrtz_depth = einfo->depth.used;
    bool has_mrtz_stencil = einfo->stencil.used;
    bool has_mrtz_samplemask = einfo->samplemask.used;
-   bool has_mrtz_alpha = einfo->alpha_to_coverage_via_mrtz && einfo->colors[0].used;
    bool has_mrtz_export =
       has_mrtz_depth || has_mrtz_stencil || has_mrtz_samplemask || has_mrtz_alpha;
    if (has_mrtz_export) {
       Temp depth = has_mrtz_depth ? get_arg(&ctx, einfo->depth) : Temp();
       Temp stencil = has_mrtz_stencil ? get_arg(&ctx, einfo->stencil) : Temp();
       Temp samplemask = has_mrtz_samplemask ? get_arg(&ctx, einfo->samplemask) : Temp();
-      Temp alpha = has_mrtz_alpha ? colors[0][3] : Temp();
 
-      export_fs_mrtz(&ctx, depth, stencil, samplemask, alpha);
+      export_fs_mrtz(&ctx, depth, stencil, samplemask, mrtz_alpha);
    }
 
    /* Export all color render targets */
