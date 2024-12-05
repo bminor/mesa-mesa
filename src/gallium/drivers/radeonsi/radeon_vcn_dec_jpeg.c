@@ -74,8 +74,6 @@ static struct pb_buffer_lean *radeon_jpeg_get_decode_param(struct radeon_decoder
    }
 
    switch (target->buffer_format) {
-      case PIPE_FORMAT_IYUV:
-      case PIPE_FORMAT_YV12:
       case PIPE_FORMAT_Y8_U8_V8_444_UNORM:
       case PIPE_FORMAT_Y8_U8_V8_440_UNORM:
       case PIPE_FORMAT_R8_G8_B8_UNORM:
@@ -85,12 +83,16 @@ static struct pb_buffer_lean *radeon_jpeg_get_decode_param(struct radeon_decoder
          dec->jpg.dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset;
          break;
       case PIPE_FORMAT_NV12:
-      case PIPE_FORMAT_P010:
-      case PIPE_FORMAT_P016:
          chroma = (struct si_texture *)((struct vl_video_buffer*)target)->resources[1];
          dec->jpg.dt_chroma_top_offset = chroma->surface.u.gfx9.surf_offset;
          break;
+      case PIPE_FORMAT_YUYV:
+      case PIPE_FORMAT_Y8_400_UNORM:
+      case PIPE_FORMAT_R8G8B8A8_UNORM:
+      case PIPE_FORMAT_A8R8G8B8_UNORM:
+         break;
       default:
+         assert(0);
          break;
    }
    dec->jpg.dt_pitch = luma->surface.u.gfx9.surf_pitch * luma->surface.blk_w;

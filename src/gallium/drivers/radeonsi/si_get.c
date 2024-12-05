@@ -1113,7 +1113,6 @@ static bool si_vid_is_format_supported(struct pipe_screen *screen, enum pipe_for
       switch (format) {
       case PIPE_FORMAT_NV12:
       case PIPE_FORMAT_YUYV:
-      case PIPE_FORMAT_L8_UNORM:
       case PIPE_FORMAT_Y8_400_UNORM:
          return true;
       case PIPE_FORMAT_Y8_U8_V8_444_UNORM:
