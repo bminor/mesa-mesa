@@ -5718,6 +5718,8 @@ void nir_assign_io_var_locations(nir_shader *shader,
                                  unsigned *size,
                                  gl_shader_stage stage);
 
+bool nir_opt_clip_cull_const(nir_shader *shader);
+
 typedef enum {
    /* If set, this causes all 64-bit IO operations to be lowered on-the-fly
     * to 32-bit operations.  This is only valid for nir_var_shader_in/out
