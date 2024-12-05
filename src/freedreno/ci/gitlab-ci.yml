@@ -133,7 +133,6 @@ a618-egl:
     - .lava-sc7180-trogdor-lazor-limozeen:arm64
     - .collabora-freedreno-rules
   variables:
-    DEQP_VER: egl
     FLAKES_CHANNEL: "#freedreno-ci"
     HWCI_START_XORG: 1
     HWCI_START_WESTON: 1
