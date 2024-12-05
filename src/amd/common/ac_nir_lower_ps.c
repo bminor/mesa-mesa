@@ -351,10 +351,8 @@ emit_ps_color_clamp_and_alpha_test(nir_builder *b, lower_ps_state *s)
 }
 
 static void
-emit_ps_mrtz_export(nir_builder *b, lower_ps_state *s)
+emit_ps_mrtz_export(nir_builder *b, lower_ps_state *s, nir_def *mrtz_alpha)
 {
-   nir_def *mrtz_alpha = s->options->alpha_to_coverage_via_mrtz ? s->color[0][3] : NULL;
-
    /* skip mrtz export if no one has written to any of them */
    if (!s->depth && !s->stencil && !s->sample_mask && !mrtz_alpha)
       return;
@@ -740,12 +738,18 @@ emit_ps_null_export(nir_builder *b, lower_ps_state *s)
 static void
 export_ps_outputs(nir_builder *b, lower_ps_state *s)
 {
+   nir_def *mrtz_alpha = NULL;
+
    b->cursor = nir_after_impl(b->impl);
+
+   /* Alpha-to-coverage should be before alpha-to-one. */
+   if (!s->options->no_depth_export && s->options->alpha_to_coverage_via_mrtz)
+      mrtz_alpha = s->color[0][3];
 
    emit_ps_color_clamp_and_alpha_test(b, s);
 
    if (!s->options->no_depth_export)
-      emit_ps_mrtz_export(b, s);
+      emit_ps_mrtz_export(b, s, mrtz_alpha);
 
    /* When non-monolithic shader, RADV export mrtz in main part (except on
     * RDNA3 for alpha to coverage) and export color in epilog.
