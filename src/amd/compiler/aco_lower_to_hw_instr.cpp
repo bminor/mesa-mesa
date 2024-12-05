@@ -1563,9 +1563,15 @@ do_pack_2x16(lower_context* ctx, Builder& bld, Definition def, Operand lo, Opera
       return;
    }
 
+   /* v_pack_b32_f16 can be used for bit exact copies if:
+    * - fp16 input denorms are enabled, otherwise they get flushed to zero
+    * - signalling input NaNs are kept, which is the case with IEEE_MODE=0
+    *   GFX12+ always quiets signalling NaNs, IEEE_MODE was removed
+    */
    bool can_use_pack = (ctx->block->fp_mode.denorm16_64 & fp_denorm_keep_in) &&
                        (ctx->program->gfx_level >= GFX10 ||
-                        (ctx->program->gfx_level >= GFX9 && !lo.isLiteral() && !hi.isLiteral()));
+                        (ctx->program->gfx_level >= GFX9 && !lo.isLiteral() && !hi.isLiteral())) &&
+                       ctx->program->gfx_level < GFX12;
 
    if (can_use_pack) {
       Instruction* instr = bld.vop3(aco_opcode::v_pack_b32_f16, def, lo, hi);
