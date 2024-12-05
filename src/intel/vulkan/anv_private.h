@@ -1137,7 +1137,10 @@ struct anv_physical_device {
       uint32_t                                  dynamic_visible_mem_types;
       /** Mask of memory types of protected buffers/images */
       uint32_t                                  protected_mem_types;
-      /** Mask of memory types of compressed buffers/images */
+      /**
+       * Mask of memory types of compressed buffers/images. This is generally
+       * a win for images, but a loss for buffers.
+       */
       uint32_t                                  compressed_mem_types;
     } memory;
 
@@ -1304,7 +1307,7 @@ struct anv_instance {
     unsigned                                    force_vk_vendor;
     bool                                        has_fake_sparse;
     bool                                        disable_fcv;
-    bool                                        disable_xe2_ccs;
+    bool                                        enable_buffer_comp;
     bool                                        compression_control_enabled;
     bool                                        anv_fake_nonlocal_memory;
     bool                                        anv_upper_bound_descriptor_pool_sampler;
