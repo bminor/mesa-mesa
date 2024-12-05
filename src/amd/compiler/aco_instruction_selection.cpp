@@ -11025,7 +11025,8 @@ export_fs_mrt_color(isel_context* ctx, const struct aco_ps_epilog_info* info, Te
 }
 
 static void
-export_fs_mrtz(isel_context* ctx, Temp depth, Temp stencil, Temp samplemask, Temp alpha)
+export_fs_mrtz(isel_context* ctx, const struct aco_ps_epilog_info* info, Temp depth, Temp stencil,
+               Temp samplemask, Temp alpha)
 {
    Builder bld(ctx->program, ctx->block);
    unsigned enabled_channels = 0;
@@ -11068,7 +11069,7 @@ export_fs_mrtz(isel_context* ctx, Temp depth, Temp stencil, Temp samplemask, Tem
       }
 
       if (alpha.id()) {
-         assert(ctx->program->gfx_level >= GFX11);
+         assert(ctx->program->gfx_level >= GFX11 || info->alpha_to_one);
          values[3] = Operand(alpha);
          enabled_channels |= 0x8;
       }
@@ -13546,7 +13547,7 @@ select_ps_epilog(Program* program, void* pinfo, ac_shader_config* config,
       Temp stencil = has_mrtz_stencil ? get_arg(&ctx, einfo->stencil) : Temp();
       Temp samplemask = has_mrtz_samplemask ? get_arg(&ctx, einfo->samplemask) : Temp();
 
-      export_fs_mrtz(&ctx, depth, stencil, samplemask, mrtz_alpha);
+      export_fs_mrtz(&ctx, einfo, depth, stencil, samplemask, mrtz_alpha);
    }
 
    /* Export all color render targets */

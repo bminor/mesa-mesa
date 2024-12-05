@@ -1886,16 +1886,24 @@ radv_generate_graphics_state_key(const struct radv_device *device, const struct 
    if (state->ts)
       key.ts.patch_control_points = state->ts->patch_control_points;
 
+   const bool alpha_to_coverage_unknown =
+      !state->ms || BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_ALPHA_TO_COVERAGE_ENABLE);
+   const bool alpha_to_coverage_enabled = alpha_to_coverage_unknown || state->ms->alpha_to_coverage_enable;
+   const bool alpha_to_one_unknown = !state->ms || BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_ALPHA_TO_ONE_ENABLE);
+   const bool alpha_to_one_enabled = alpha_to_one_unknown || state->ms->alpha_to_one_enable;
+
+   /* alpha-to-coverage is always exported via MRTZ on GFX11 but it's also using MRTZ when
+    * alpha-to-one is enabled (alpha to MRTZ.a and one to MRT0.a).
+    */
+   key.ms.alpha_to_coverage_via_mrtz =
+      alpha_to_coverage_enabled && (pdev->info.gfx_level >= GFX11 || alpha_to_one_enabled);
+
    if (state->ms) {
       key.ms.sample_shading_enable = state->ms->sample_shading_enable;
       if (!BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES) &&
           state->ms->rasterization_samples > 1) {
          key.ms.rasterization_samples = state->ms->rasterization_samples;
       }
-   }
-
-   if (pdev->info.gfx_level >= GFX11 && state->ms) {
-      key.ms.alpha_to_coverage_via_mrtz = state->ms->alpha_to_coverage_enable;
    }
 
    if (state->ia) {
@@ -1922,14 +1930,17 @@ radv_generate_graphics_state_key(const struct radv_device *device, const struct 
 
    key.ps.epilog = radv_pipeline_generate_ps_epilog_key(device, state);
 
-   if (pdev->info.gfx_level >= GFX11) {
-      /* On GFX11, alpha to coverage is exported via MRTZ when depth/stencil/samplemask are also
-       * exported. Though, when a PS epilog is needed and the MS state is NULL (with dynamic
-       * rendering), it's not possible to know the info at compile time and MRTZ needs to be
-       * exported in the epilog.
-       */
-      key.ps.exports_mrtz_via_epilog =
-         key.ps.has_epilog && (!state->ms || BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_ALPHA_TO_COVERAGE_ENABLE));
+   /* Alpha to coverage is exported via MRTZ when depth/stencil/samplemask are also exported.
+    * Though, when a PS epilog is needed and the MS state is NULL (with dynamic rendering), it's not
+    * possible to know the info at compile time and MRTZ needs to be exported in the epilog.
+    */
+   if (key.ps.has_epilog) {
+      if (pdev->info.gfx_level >= GFX11) {
+         key.ps.exports_mrtz_via_epilog = alpha_to_coverage_unknown;
+      } else {
+         key.ps.exports_mrtz_via_epilog =
+            (alpha_to_coverage_unknown && alpha_to_one_enabled) || (alpha_to_one_unknown && alpha_to_coverage_enabled);
+      }
    }
 
    key.dynamic_rasterization_samples = BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES) ||
