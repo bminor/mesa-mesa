@@ -1142,6 +1142,7 @@ vk_dynamic_graphics_state_init_ial(struct vk_dynamic_graphics_state *dst,
                                    const struct vk_input_attachment_location_state *ial)
 {
    if (IS_NEEDED(INPUT_ATTACHMENT_MAP)) {
+      dst->ial.color_attachment_count = ial->color_attachment_count;
       typed_memcpy(dst->ial.color_map, ial->color_map, MESA_VK_MAX_COLOR_ATTACHMENTS);
       dst->ial.depth_att = ial->depth_att;
       dst->ial.stencil_att = ial->stencil_att;
@@ -2245,6 +2246,14 @@ vk_dynamic_graphics_state_copy(struct vk_dynamic_graphics_state *dst,
       COPY_ARRAY(CB_BLEND_CONSTANTS, cb.blend_constants, 4);
 
    COPY_IF_SET(RP_ATTACHMENTS, rp.attachments);
+
+   if (IS_SET_IN_SRC(INPUT_ATTACHMENT_MAP)) {
+      COPY_MEMBER(INPUT_ATTACHMENT_MAP, ial.color_attachment_count);
+      COPY_ARRAY(INPUT_ATTACHMENT_MAP, ial.color_map,
+                 MESA_VK_MAX_COLOR_ATTACHMENTS);
+      COPY_MEMBER(INPUT_ATTACHMENT_MAP, ial.depth_att);
+      COPY_MEMBER(INPUT_ATTACHMENT_MAP, ial.stencil_att);
+   }
 
    if (IS_SET_IN_SRC(COLOR_ATTACHMENT_MAP)) {
       COPY_ARRAY(COLOR_ATTACHMENT_MAP, cal.color_map,
