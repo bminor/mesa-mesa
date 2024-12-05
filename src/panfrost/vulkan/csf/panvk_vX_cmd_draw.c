@@ -31,6 +31,7 @@
 #include "panvk_priv_bo.h"
 #include "panvk_query_pool.h"
 #include "panvk_shader.h"
+#include "panvk_tracepoints.h"
 
 #include "pan_desc.h"
 #include "pan_earlyzs.h"
@@ -2829,6 +2830,9 @@ panvk_per_arch(CmdBeginRendering)(VkCommandBuffer commandBuffer,
    /* If we're not resuming, the FBD should be NULL. */
    assert(!state->render.fbds.gpu || resuming);
 
+   trace_begin_render(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_VERTEX_TILER], cmdbuf);
+   trace_begin_render(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf);
+
    if (!resuming)
       panvk_per_arch(cmd_preload_render_area_border)(cmdbuf, pRenderingInfo);
 }
@@ -3031,7 +3035,9 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
                             length_reg);
 
    /* Wait for the tiling to be done before submitting the fragment job. */
+   trace_begin_sync_wait(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf);
    wait_finish_tiling(cmdbuf);
+   trace_end_sync_wait(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf);
 
    /* Disable the oom handler once the vertex/tiler work has finished.
     * We need to disable the handler at this point as the vertex/tiler subqueue
@@ -3403,4 +3409,11 @@ panvk_per_arch(CmdEndRendering)(VkCommandBuffer commandBuffer)
    /* If we're not suspending, we need to resolve attachments. */
    if (!suspending)
       panvk_per_arch(cmd_resolve_attachments)(cmdbuf);
+
+   trace_end_render(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_VERTEX_TILER], cmdbuf,
+                    cmdbuf->state.gfx.render.flags,
+                    &cmdbuf->state.gfx.render.fb.info);
+   trace_end_render(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf,
+                    cmdbuf->state.gfx.render.flags,
+                    &cmdbuf->state.gfx.render.fb.info);
 }

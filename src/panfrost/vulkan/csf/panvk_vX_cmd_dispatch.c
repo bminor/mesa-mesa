@@ -23,6 +23,7 @@
 #include "panvk_macros.h"
 #include "panvk_meta.h"
 #include "panvk_physical_device.h"
+#include "panvk_tracepoints.h"
 
 #include "pan_desc.h"
 #include "pan_encoder.h"
@@ -351,11 +352,20 @@ panvk_per_arch(CmdDispatchBase)(VkCommandBuffer commandBuffer,
                                 uint32_t groupCountY, uint32_t groupCountZ)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
+   const struct panvk_shader *shader = cmdbuf->state.compute.shader;
    struct panvk_dispatch_info info = {
       .wg_base = {baseGroupX, baseGroupY, baseGroupZ},
       .direct.wg_count = {groupCountX, groupCountY, groupCountZ},
    };
+
+   trace_begin_dispatch(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf);
+
    cmd_dispatch(cmdbuf, &info);
+
+   trace_end_dispatch(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf,
+                      baseGroupX, baseGroupY, baseGroupZ, groupCountX,
+                      groupCountY, groupCountZ, shader->cs.local_size.x,
+                      shader->cs.local_size.y, shader->cs.local_size.z);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -368,5 +378,13 @@ panvk_per_arch(CmdDispatchIndirect)(VkCommandBuffer commandBuffer,
    struct panvk_dispatch_info info = {
       .indirect.buffer_dev_addr = buffer_gpu,
    };
+
+   trace_begin_dispatch_indirect(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE],
+                                 cmdbuf);
+
    cmd_dispatch(cmdbuf, &info);
+
+   trace_end_dispatch_indirect(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE],
+                               cmdbuf,
+                               (struct u_trace_address){.offset = buffer_gpu});
 }

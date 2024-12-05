@@ -6,6 +6,7 @@
 
 #include "panvk_cmd_meta.h"
 #include "panvk_entrypoints.h"
+#include "panvk_tracepoints.h"
 
 static bool
 copy_to_image_use_gfx_pipeline(struct panvk_device *dev,
@@ -45,6 +46,10 @@ panvk_per_arch(cmd_meta_compute_start)(
    save_ctx->push_constants = cmdbuf->state.push_constants;
    save_ctx->cs.shader = cmdbuf->state.compute.shader;
    save_ctx->cs.desc = cmdbuf->state.compute.cs.desc;
+
+#if PAN_ARCH >= 10
+   trace_begin_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf);
+#endif
 }
 
 void
@@ -54,6 +59,10 @@ panvk_per_arch(cmd_meta_compute_end)(
 {
    struct panvk_descriptor_set *push_set0 =
       cmdbuf->state.compute.desc_state.push_sets[0];
+
+#if PAN_ARCH >= 10
+   trace_end_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_COMPUTE], cmdbuf);
+#endif
 
    cmdbuf->state.compute.desc_state.sets[0] = save_ctx->set0;
    if (save_ctx->push_set0.desc_count) {
@@ -108,6 +117,11 @@ panvk_per_arch(cmd_meta_gfx_start)(
    gfx_state_set_dirty(cmdbuf, OQ);
 
    cmdbuf->state.gfx.vk_meta = true;
+
+#if PAN_ARCH >= 10
+   trace_begin_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_VERTEX_TILER], cmdbuf);
+   trace_begin_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf);
+#endif
 }
 
 void
@@ -117,6 +131,11 @@ panvk_per_arch(cmd_meta_gfx_end)(
 {
    struct panvk_descriptor_set *push_set0 =
       cmdbuf->state.gfx.desc_state.push_sets[0];
+
+#if PAN_ARCH >= 10
+   trace_end_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_VERTEX_TILER], cmdbuf);
+   trace_end_meta(&cmdbuf->utrace.uts[PANVK_SUBQUEUE_FRAGMENT], cmdbuf);
+#endif
 
    cmdbuf->state.gfx.desc_state.sets[0] = save_ctx->set0;
    if (save_ctx->push_set0.desc_count) {
