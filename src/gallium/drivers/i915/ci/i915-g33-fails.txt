@@ -1104,6 +1104,28 @@ spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-col-wr,Fa
 spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-row-wr,Fail
 spec@glsl-1.20@execution@variable-indexing@vs-varying-array-mat3-index-wr,Fail
 
+# regression between 81971118 and e26a383e
+spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-col-row-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-col-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-index-row-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-index-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-row-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat4-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-mat4-col-row-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-mat4-col-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-mat4-row-wr,Fail
+spec@glsl-1.10@execution@variable-indexing@fs-temp-mat4-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-col-row-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-col-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-index-row-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-index-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-row-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-array-mat4-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-mat4-col-row-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-mat4-col-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-mat4-row-wr,Fail
+spec@glsl-1.20@execution@variable-indexing@fs-temp-mat4-wr,Fail
+
 spec@glsl-1.20@linker@invariant-propagation,Fail
 spec@glsl-1.20@linker@invariant-propagation-globals,Fail
 spec@glsl-es-1.00@linker@glsl-undefined-varying,Fail
