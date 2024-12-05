@@ -27,7 +27,7 @@ libagx_spv = custom_target(
   output : 'libagx.spv',
   command : [
     prog_mesa_clc,
-    prepended_input_args, '-o', '@OUTPUT@', '--',
+    prepended_input_args, '-o', '@OUTPUT@', '--depfile', '@DEPFILE@', '--',
     '-cl-std=cl2.0', '-D__OPENCL_VERSION__=200',
     '-I' + join_paths(meson.current_source_dir(), '.'),
     '-I' + join_paths(meson.current_source_dir(), '../../'),
@@ -36,6 +36,7 @@ libagx_spv = custom_target(
     ],
   env: ['MESA_SHADER_CACHE_DISABLE=true'],
   depends : [prog_mesa_clc, agx_pack],
+  depfile : 'libagx_shaders.h.d',
 )
 
 libagx_h = custom_target(
