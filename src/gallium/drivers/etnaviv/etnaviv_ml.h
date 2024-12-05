@@ -25,6 +25,8 @@
 enum etna_job_type {
     ETNA_JOB_TYPE_NN,
     ETNA_JOB_TYPE_TP,
+    ETNA_JOB_TYPE_CONCAT, /* Fake operation, won't execute on HW. Hack will go away after the move to NIR. */
+    ETNA_JOB_TYPE_SPLIT, /* Fake operation, won't execute on HW. Hack will go away after the move to NIR. */
 };
 
 enum etna_ml_tp_type {
@@ -57,7 +59,7 @@ struct etna_vip_instruction {
    struct etna_bo *kernel;
 };
 
-#define MAX_INPUTS 10
+#define MAX_TENSORS 10
 struct etna_operation {
    struct list_head link;
 
@@ -73,16 +75,22 @@ struct etna_operation {
 
    unsigned stride;
 
-   unsigned input_tensors[MAX_INPUTS];
+   unsigned input_tensors[MAX_TENSORS];
    unsigned input_count;
-   unsigned input_tensor_size;
+   unsigned input_tensor_sizes[MAX_TENSORS];
+
+   /* The following apply to the first input tensor only */
    unsigned input_width;
    unsigned input_height;
    unsigned input_channels;
    uint8_t input_zero_point;
    float input_scale;
 
-   unsigned output_tensor;
+   unsigned output_tensors[MAX_TENSORS];
+   unsigned output_count;
+   unsigned output_tensor_sizes[MAX_TENSORS];
+
+   /* The following apply to the first output tensor only */
    unsigned output_width;
    unsigned output_height;
    unsigned output_channels;

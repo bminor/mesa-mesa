@@ -266,8 +266,8 @@ create_transpose_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
    unsigned offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
    map->in_image_base_address = etna_bo_gpu_va(etna_resource(input)->bo) + offset;
 
-   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
-   offset = etna_ml_get_offset(subgraph, operation->output_tensor);
+   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
+   offset = etna_ml_get_offset(subgraph, operation->output_tensors[0]);
    map->out_image_base_address = etna_bo_gpu_va(etna_resource(output)->bo) + offset;
 
    map->out_loop_1_inc = operation->input_width * operation->input_height;
@@ -316,8 +316,8 @@ create_detranspose_config(struct etna_ml_subgraph *subgraph, const struct etna_o
    unsigned offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
    map->in_image_base_address = etna_bo_gpu_va(etna_resource(input)->bo) + offset;
 
-   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
-   offset = etna_ml_get_offset(subgraph, operation->output_tensor);
+   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
+   offset = etna_ml_get_offset(subgraph, operation->output_tensors[0]);
    map->out_image_base_address = etna_bo_gpu_va(etna_resource(output)->bo) + offset;
 
    map->out_loop_0_inc = input_channels;
@@ -468,8 +468,8 @@ create_reshuffle_config(struct etna_ml_subgraph *subgraph, const struct etna_ope
    unsigned offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
    map->in_image_base_address = etna_bo_gpu_va(etna_resource(input)->bo) + offset;
 
-   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
-   offset = etna_ml_get_offset(subgraph, operation->output_tensor);
+   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
+   offset = etna_ml_get_offset(subgraph, operation->output_tensors[0]);
    map->out_image_base_address = etna_bo_gpu_va(etna_resource(output)->bo) + offset;
 
    for (unsigned i = 0; i < tp_core; i++) {
@@ -566,17 +566,20 @@ etna_ml_lower_transpose(struct etna_ml_subgraph *subgraph,
    operation->input_channels = input_tensor->dims[3];
    operation->input_zero_point = etna_tensor_zero_point(input_tensor);
    operation->input_scale = input_tensor->scale;
-   operation->input_tensor_size = operation->input_width *
-                                  operation->input_height *
-                                  operation->input_channels;
+   operation->input_tensor_sizes[0] = operation->input_width *
+                                      operation->input_height *
+                                      operation->input_channels;
 
    *output_tensor = etna_ml_allocate_tensor(subgraph);
-   operation->output_tensor = *output_tensor;
+   operation->output_tensors[0] = *output_tensor;
    operation->output_width = operation->input_width;
    operation->output_height = operation->input_height;
    operation->output_channels = operation->input_channels;
    operation->output_zero_point = operation->input_zero_point;
    operation->output_scale = operation->input_scale;
+   operation->output_tensor_sizes[0] = operation->output_width *
+                                       operation->output_height *
+                                       operation->output_channels;
 }
 
 void
@@ -594,16 +597,20 @@ etna_ml_lower_detranspose(struct etna_ml_subgraph *subgraph,
    operation->input_channels = convolution->output_channels;
    operation->input_zero_point = convolution->output_zero_point;
    operation->input_scale = convolution->output_scale;
-   operation->input_tensor_size = operation->input_width *
-                                  operation->input_height *
-                                  operation->input_channels;
+   operation->input_tensor_sizes[0] = operation->input_width *
+                                      operation->input_height *
+                                      operation->input_channels;
 
-   operation->output_tensor = convolution->output_tensor;
+   operation->output_tensors[0] = convolution->output_tensors[0];
+   operation->output_count = 1;
    operation->output_width = convolution->output_width;
    operation->output_height = convolution->output_height;
    operation->output_channels = convolution->output_channels;
    operation->output_zero_point = convolution->output_zero_point;
    operation->output_scale = convolution->output_scale;
+   operation->output_tensor_sizes[0] = operation->output_width *
+                                       operation->output_height *
+                                       operation->output_channels;
 }
 
 void
@@ -624,17 +631,20 @@ etna_ml_lower_reshuffle(struct etna_ml_subgraph *subgraph,
    operation->input_channels = convolution->input_tensors[0]->dims[3];
    operation->input_zero_point = etna_tensor_zero_point(convolution->input_tensors[0]);
    operation->input_scale = convolution->input_tensors[0]->scale;
-   operation->input_tensor_size = operation->input_width *
-                                  operation->input_height *
-                                  operation->input_channels;
+   operation->input_tensor_sizes[0] = operation->input_width *
+                                      operation->input_height *
+                                      operation->input_channels;
 
    *output_tensor = etna_ml_allocate_tensor(subgraph);
-   operation->output_tensor = *output_tensor;
+   operation->output_tensors[0] = *output_tensor;
    operation->output_width = DIV_ROUND_UP(operation->input_width, operation->stride);
    operation->output_height = DIV_ROUND_UP(operation->input_height, operation->stride);
    operation->output_channels = operation->input_channels * operation->stride * operation->stride;
    operation->output_zero_point = etna_tensor_zero_point(convolution->input_tensors[0]);
    operation->output_scale = convolution->input_tensors[0]->scale;
+   operation->output_tensor_sizes[0] = operation->output_width *
+                                       operation->output_height *
+                                       operation->output_channels;
 
    /* When destriding a convolution, the transformation to be made to the input
     * tensor will depend on the size of the weight tensor.
@@ -663,9 +673,12 @@ etna_ml_compile_operation_tp(struct etna_ml_subgraph *subgraph,
    assert(input);
    pipe_resource_reference(&instruction->input, input);
 
-   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensor);
+   struct pipe_resource *output = etna_ml_get_tensor(subgraph, operation->output_tensors[0]);
    assert(output);
    pipe_resource_reference(&instruction->output, output);
+
+   instruction->input_offset = etna_ml_get_offset(subgraph, operation->input_tensors[0]);
+   instruction->output_offset = etna_ml_get_offset(subgraph, operation->output_tensors[0]);
 
    switch (operation->tp_type) {
    case ETNA_ML_TP_TRANSPOSE:
