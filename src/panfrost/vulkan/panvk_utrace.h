@@ -9,6 +9,7 @@
 #include "util/perf/u_trace.h"
 
 #include "panvk_macros.h"
+#include "panvk_mempool.h"
 
 struct panvk_device;
 struct vk_sync;
@@ -18,6 +19,8 @@ struct panvk_utrace_flush_data {
 
    struct vk_sync *sync;
    uint64_t wait_value;
+
+   struct panvk_pool clone_pool;
 };
 
 void *panvk_utrace_create_buffer(struct u_trace_context *utctx,
@@ -42,6 +45,14 @@ void panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
                                         void *cmdstream, void *ts_from,
                                         uint64_t from_offset, void *ts_to,
                                         uint64_t to_offset, uint64_t size_B);
+
+struct cs_builder;
+
+void panvk_per_arch(utrace_clone_init_pool)(struct panvk_pool *pool,
+                                            struct panvk_device *dev);
+void panvk_per_arch(utrace_clone_init_builder)(struct cs_builder *b,
+                                               struct panvk_pool *pool);
+void panvk_per_arch(utrace_clone_finish_builder)(struct cs_builder *b);
 
 #else /* PAN_ARCH >= 10 */
 

@@ -739,6 +739,7 @@ struct panvk_queue_submit {
       uint32_t queue_mask;
       enum panvk_subqueue_id first_subqueue;
       enum panvk_subqueue_id last_subqueue;
+      bool needs_clone;
       const struct u_trace *last_ut;
       struct panvk_utrace_flush_data *data_storage;
 
@@ -792,13 +793,19 @@ panvk_queue_submit_init_storage(
          submit->qsubmit_count++;
 
          struct u_trace *ut = &cmdbuf->utrace.uts[j];
-         if (submit->process_utrace && u_trace_has_points(ut) &&
-             (cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
+         if (submit->process_utrace && u_trace_has_points(ut)) {
             submit->utrace.queue_mask |= BITFIELD_BIT(j);
             if (submit->utrace.first_subqueue == PANVK_SUBQUEUE_COUNT)
                submit->utrace.first_subqueue = j;
             submit->utrace.last_subqueue = j;
             submit->utrace.last_ut = ut;
+
+            if (!(cmdbuf->flags &
+                  VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
+               /* we will follow the user cs with a timestamp copy cs */
+               submit->qsubmit_count++;
+               submit->utrace.needs_clone = true;
+            }
          }
       }
    }
@@ -861,6 +868,8 @@ static void
 panvk_queue_submit_init_utrace(struct panvk_queue_submit *submit,
                                const struct vk_queue_submit *vk_submit)
 {
+   struct panvk_device *dev = submit->dev;
+
    if (!submit->utrace.queue_mask)
       return;
 
@@ -881,6 +890,11 @@ panvk_queue_submit_init_utrace(struct panvk_queue_submit *submit,
          .sync = wait ? submit->queue->utrace.sync : NULL,
          .wait_value = wait ? submit->queue->utrace.next_value : 0,
       };
+   }
+
+   if (submit->utrace.needs_clone) {
+      struct panvk_pool *clone_pool = &submit->utrace.data_storage->clone_pool;
+      panvk_per_arch(utrace_clone_init_pool)(clone_pool, dev);
    }
 }
 
@@ -943,11 +957,38 @@ panvk_queue_submit_init_cmdbufs(struct panvk_queue_submit *submit,
       u_foreach_bit(j, submit->utrace.queue_mask) {
          struct u_trace *ut = &cmdbuf->utrace.uts[j];
 
-         if (!u_trace_has_points(ut) ||
-             !(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT))
+         if (!u_trace_has_points(ut))
             continue;
 
          const bool free_data = ut == submit->utrace.last_ut;
+
+         struct u_trace clone_ut;
+         if (!(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
+            u_trace_init(&clone_ut, &dev->utrace.utctx);
+
+            struct panvk_pool *clone_pool =
+               &submit->utrace.data_storage->clone_pool;
+            struct cs_builder clone_builder;
+            panvk_per_arch(utrace_clone_init_builder)(&clone_builder,
+                                                      clone_pool);
+
+            u_trace_clone_append(
+               u_trace_begin_iterator(ut), u_trace_end_iterator(ut), &clone_ut,
+               &clone_builder, panvk_per_arch(utrace_copy_buffer));
+
+            panvk_per_arch(utrace_clone_finish_builder)(&clone_builder);
+
+            submit->qsubmits[submit->qsubmit_count++] =
+               (struct drm_panthor_queue_submit){
+                  .queue_index = j,
+                  .stream_size = cs_root_chunk_size(&clone_builder),
+                  .stream_addr = cs_root_chunk_gpu_addr(&clone_builder),
+                  .latest_flush = panthor_kmod_get_flush_id(dev->kmod.dev),
+               };
+
+            ut = &clone_ut;
+         }
+
          u_trace_flush(ut, submit->utrace.data[j], dev->vk.current_frame,
                        free_data);
       }
