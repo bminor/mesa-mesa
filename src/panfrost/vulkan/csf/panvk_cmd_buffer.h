@@ -437,6 +437,14 @@ panvk_cmd_get_desc_state(struct panvk_cmd_buffer *cmdbuf,
    }
 }
 
+static bool
+panvk_cache_flush_is_nop(const struct panvk_cache_flush_info *cache_flush)
+{
+   return cache_flush->l2 == MALI_CS_FLUSH_MODE_NONE &&
+          cache_flush->lsc == MALI_CS_FLUSH_MODE_NONE &&
+          cache_flush->others == MALI_CS_OTHER_FLUSH_MODE_NONE;
+}
+
 extern const struct vk_command_buffer_ops panvk_per_arch(cmd_buffer_ops);
 
 void panvk_per_arch(cmd_flush_draws)(struct panvk_cmd_buffer *cmdbuf);
