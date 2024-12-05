@@ -187,6 +187,13 @@ gather_intrinsic_store_output_info(const nir_shader *nir, const nir_intrinsic_in
       const uint8_t gs_streams = nir_intrinsic_io_semantics(instr).gs_streams;
       info->gs.output_streams[location] |= gs_streams << (component * 2);
    }
+
+   if ((location == VARYING_SLOT_CLIP_DIST0 || location == VARYING_SLOT_CLIP_DIST1) && !io_sem.no_sysval_output) {
+      unsigned base = (location == VARYING_SLOT_CLIP_DIST1 ? 4 : 0) + component;
+      unsigned clip_array_mask = BITFIELD_MASK(nir->info.clip_distance_array_size);
+      info->outinfo.clip_dist_mask |= (write_mask << base) & clip_array_mask;
+      info->outinfo.cull_dist_mask |= (write_mask << base) & ~clip_array_mask;
+   }
 }
 
 static void
@@ -303,6 +310,7 @@ gather_intrinsic_info(const nir_shader *nir, const nir_intrinsic_instr *instr, s
       gather_intrinsic_load_input_info(nir, instr, info, gfx_state, stage_key);
       break;
    case nir_intrinsic_store_output:
+   case nir_intrinsic_store_per_vertex_output:
       gather_intrinsic_store_output_info(nir, instr, info, consider_force_vrs);
       break;
    case nir_intrinsic_bvh64_intersect_ray_amd:
@@ -1223,26 +1231,18 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
       outinfo->writes_primitive_shading_rate_per_primitive = per_prim_mask & VARYING_BIT_PRIMITIVE_SHADING_RATE;
       outinfo->export_prim_id_per_primitive = per_prim_mask & VARYING_BIT_PRIMITIVE_ID;
 
-      /* Clip/cull distances. */
-      outinfo->clip_dist_mask = (1 << nir->info.clip_distance_array_size) - 1;
-      outinfo->cull_dist_mask = (1 << nir->info.cull_distance_array_size) - 1;
-      outinfo->cull_dist_mask <<= nir->info.clip_distance_array_size;
-
-      int pos_written = 0x1;
+      outinfo->pos_exports = 1;
 
       if (outinfo->writes_pointsize || outinfo->writes_viewport_index || outinfo->writes_layer ||
           outinfo->writes_primitive_shading_rate)
-         pos_written |= 1 << 1;
+         outinfo->pos_exports++;
 
-      unsigned num_clip_distances = util_bitcount(outinfo->clip_dist_mask);
-      unsigned num_cull_distances = util_bitcount(outinfo->cull_dist_mask);
+      unsigned clip_cull_mask = outinfo->clip_dist_mask | outinfo->cull_dist_mask;
 
-      if (num_clip_distances + num_cull_distances > 0)
-         pos_written |= 1 << 2;
-      if (num_clip_distances + num_cull_distances > 4)
-         pos_written |= 1 << 3;
-
-      outinfo->pos_exports = util_bitcount(pos_written);
+      if (clip_cull_mask & 0x0f)
+         outinfo->pos_exports++;
+      if (clip_cull_mask & 0xf0)
+         outinfo->pos_exports++;
    }
 
    info->vs.needs_draw_id |= BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_DRAW_ID);
