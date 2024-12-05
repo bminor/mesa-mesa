@@ -1093,16 +1093,14 @@ ir3_key_clear_unused(struct ir3_shader_key *key, struct ir3_shader *shader)
    uint32_t *key_bits = (uint32_t *)key;
    uint32_t *key_mask = (uint32_t *)&shader->key_mask;
    STATIC_ASSERT(sizeof(*key) % 4 == 0);
-   for (int i = 0; i < sizeof(*key) >> 2; i++)
+   for (unsigned i = 0; i < sizeof(*key) >> 2; i++)
       key_bits[i] &= key_mask[i];
 }
 
 static inline int
 ir3_find_output(const struct ir3_shader_variant *so, gl_varying_slot slot)
 {
-   int j;
-
-   for (j = 0; j < so->outputs_count; j++)
+   for (unsigned j = 0; j < so->outputs_count; j++)
       if (so->outputs[j].slot == slot)
          return j;
 
@@ -1125,7 +1123,7 @@ ir3_find_output(const struct ir3_shader_variant *so, gl_varying_slot slot)
       return -1;
    }
 
-   for (j = 0; j < so->outputs_count; j++)
+   for (unsigned j = 0; j < so->outputs_count; j++)
       if (so->outputs[j].slot == slot)
          return j;
 
@@ -1135,7 +1133,8 @@ ir3_find_output(const struct ir3_shader_variant *so, gl_varying_slot slot)
 static inline int
 ir3_next_varying(const struct ir3_shader_variant *so, int i)
 {
-   while (++i < so->inputs_count)
+   assert(so->inputs_count <= (unsigned)INT_MAX);
+   while (++i < (int)so->inputs_count)
       if (so->inputs[i].compmask && so->inputs[i].bary)
          break;
    return i;
@@ -1149,7 +1148,8 @@ ir3_find_input(const struct ir3_shader_variant *so, gl_varying_slot slot)
    while (true) {
       j = ir3_next_varying(so, j);
 
-      if (j >= so->inputs_count)
+      assert(so->inputs_count <= (unsigned)INT_MAX);
+      if (j >= (int)so->inputs_count)
          return -1;
 
       if (so->inputs[j].slot == slot)
@@ -1200,7 +1200,7 @@ static inline void
 ir3_link_add(struct ir3_shader_linkage *l, uint8_t slot, uint8_t regid_,
              uint8_t compmask, uint8_t loc)
 {
-   for (int j = 0; j < util_last_bit(compmask); j++) {
+   for (unsigned j = 0; j < util_last_bit(compmask); j++) {
       uint8_t comploc = loc + j;
       l->varmask[comploc / 32] |= 1 << (comploc % 32);
    }
@@ -1242,7 +1242,8 @@ ir3_link_shaders(struct ir3_shader_linkage *l,
    while (l->cnt < ARRAY_SIZE(l->var)) {
       j = ir3_next_varying(fs, j);
 
-      if (j >= fs->inputs_count)
+      assert(fs->inputs_count <= (unsigned)INT_MAX);
+      if (j >= (int)fs->inputs_count)
          break;
 
       if (fs->inputs[j].inloc >= fs->total_in)
@@ -1274,8 +1275,7 @@ ir3_link_shaders(struct ir3_shader_linkage *l,
 static inline uint32_t
 ir3_find_output_regid(const struct ir3_shader_variant *so, unsigned slot)
 {
-   int j;
-   for (j = 0; j < so->outputs_count; j++)
+   for (unsigned j = 0; j < so->outputs_count; j++)
       if (so->outputs[j].slot == slot) {
          uint32_t regid = so->outputs[j].regid;
          if (so->outputs[j].half)
@@ -1300,7 +1300,7 @@ ir3_find_sysval_regid(const struct ir3_shader_variant *so, unsigned slot)
 {
    if (!so)
       return regid(63, 0);
-   for (int j = 0; j < so->inputs_count; j++)
+   for (unsigned j = 0; j < so->inputs_count; j++)
       if (so->inputs[j].sysval && (so->inputs[j].slot == slot))
          return so->inputs[j].regid;
    return regid(63, 0);
