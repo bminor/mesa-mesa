@@ -91,13 +91,31 @@ panvk_utrace_record_ts(struct u_trace *ut, void *cs, void *timestamps,
    cmd_write_timestamp(dev, b, addr);
 }
 
+static void
+panvk_utrace_capture_data(struct u_trace *ut, void *cs, void *dst_buffer,
+                          uint64_t dst_offset_B, void *src_buffer,
+                          uint64_t src_offset_B, uint32_t size_B)
+{
+   struct cs_builder *b = get_builder(cs, ut);
+   const struct panvk_priv_bo *dst_bo = dst_buffer;
+   const uint64_t dst_addr = dst_bo->addr.dev + dst_offset_B;
+   const uint64_t src_addr = src_offset_B;
+
+   /* src_offset_B is absolute */
+   assert(!src_buffer);
+
+   cmd_copy_data(b, dst_addr, src_addr, size_B);
+}
+
 void
 panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
 {
-   u_trace_context_init(&dev->utrace.utctx, dev, sizeof(uint64_t), 0,
+   u_trace_context_init(&dev->utrace.utctx, dev, sizeof(uint64_t),
+                        sizeof(VkDispatchIndirectCommand),
                         panvk_utrace_create_buffer, panvk_utrace_delete_buffer,
-                        panvk_utrace_record_ts, panvk_utrace_read_ts, NULL,
-                        NULL, panvk_utrace_delete_flush_data);
+                        panvk_utrace_record_ts, panvk_utrace_read_ts,
+                        panvk_utrace_capture_data, panvk_utrace_get_data,
+                        panvk_utrace_delete_flush_data);
 }
 
 void

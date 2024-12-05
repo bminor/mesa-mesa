@@ -31,6 +31,9 @@ void panvk_utrace_delete_buffer(struct u_trace_context *utctx, void *buffer);
 uint64_t panvk_utrace_read_ts(struct u_trace_context *utctx, void *timestamps,
                               uint64_t offset_B, uint32_t flags, void *flush_data);
 
+const void *panvk_utrace_get_data(struct u_trace_context *utctx, void *buffer,
+                                  uint64_t offset_B, uint32_t size_B);
+
 void panvk_utrace_delete_flush_data(struct u_trace_context *utctx,
                                     void *flush_data);
 
