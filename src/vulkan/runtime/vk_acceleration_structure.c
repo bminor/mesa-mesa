@@ -1150,6 +1150,12 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
       vk_barrier_compute_w_to_indirect_compute_r(commandBuffer);
    }
 
+   if (args->emit_markers) {
+      device->as_build_ops->begin_debug_marker(commandBuffer,
+                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE,
+                                               "encode");
+   }
+
    for (unsigned pass = 0; pass < ARRAY_SIZE(ops->encode_as); pass++) {
       if (!ops->encode_as[pass] && !ops->update_as[pass])
          break;
@@ -1210,6 +1216,9 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
          }
       } while (progress);
    }
+
+   if (args->emit_markers)
+      device->as_build_ops->end_debug_marker(commandBuffer);
 
    if (args->emit_markers)
       device->as_build_ops->end_debug_marker(commandBuffer);
