@@ -30,10 +30,12 @@
 #include "genxml/gen_macros.h"
 
 #include "panvk_cmd_buffer.h"
+#include "panvk_descriptor_set_layout.h"
 #include "panvk_device.h"
 #include "panvk_instance.h"
 #include "panvk_mempool.h"
 #include "panvk_physical_device.h"
+#include "panvk_sampler.h"
 #include "panvk_shader.h"
 
 #include "spirv/nir_spirv.h"
@@ -45,7 +47,9 @@
 #include "nir_deref.h"
 
 #include "vk_graphics_state.h"
+#include "vk_nir_convert_ycbcr.h"
 #include "vk_shader_module.h"
+#include "vk_ycbcr_conversion.h"
 
 #include "compiler/bifrost_nir.h"
 #include "pan_shader.h"
@@ -620,6 +624,37 @@ lower_load_push_consts(nir_shader *nir, struct panvk_shader *shader)
             nir_metadata_control_flow, shader);
 }
 
+struct lower_ycbcr_state {
+   uint32_t set_layout_count;
+   struct vk_descriptor_set_layout *const *set_layouts;
+};
+
+static const struct vk_ycbcr_conversion_state *
+lookup_ycbcr_conversion(const void *_state, uint32_t set,
+                        uint32_t binding, uint32_t array_index)
+{
+   const struct lower_ycbcr_state *state = _state;
+   assert(set < state->set_layout_count);
+   assert(state->set_layouts[set] != NULL);
+   const struct panvk_descriptor_set_layout *set_layout =
+      to_panvk_descriptor_set_layout(state->set_layouts[set]);
+   assert(binding < set_layout->binding_count);
+
+   const struct panvk_descriptor_set_binding_layout *bind_layout =
+      &set_layout->bindings[binding];
+
+   if (bind_layout->immutable_samplers == NULL)
+      return NULL;
+
+   array_index = MIN2(array_index, bind_layout->desc_count - 1);
+
+   const struct panvk_sampler *sampler =
+      bind_layout->immutable_samplers[array_index];
+
+   return sampler && sampler->vk.ycbcr_conversion ?
+          &sampler->vk.ycbcr_conversion->state : NULL;
+}
+
 static void
 panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 uint32_t set_layout_count,
@@ -660,6 +695,15 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       shader->desc_info.max_varying_loads = nir->num_inputs;
 #endif
    }
+
+#if PAN_ARCH >= 10
+   const struct lower_ycbcr_state ycbcr_state = {
+      .set_layout_count = set_layout_count,
+      .set_layouts = set_layouts,
+   };
+   NIR_PASS(_, nir, nir_vk_lower_ycbcr_tex, lookup_ycbcr_conversion,
+            &ycbcr_state);
+#endif
 
    panvk_per_arch(nir_lower_descriptors)(nir, dev, rs, set_layout_count,
                                          set_layouts, shader);
