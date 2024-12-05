@@ -204,7 +204,7 @@
         "description": "brw: don't forget the base when emitting SHADER_OPCODE_MOV_RELOC_IMM",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ecbec25e8462ecd3c9610f64f48d47dd4ac7ef43",
         "notes": null
