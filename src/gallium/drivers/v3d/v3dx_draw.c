@@ -1062,6 +1062,7 @@ v3d_update_job_tlb_load_store(struct v3d_job *job) {
 
         if (v3d->rasterizer->base.rasterizer_discard)
                return;
+        job->does_rasterization = true;
 
         uint32_t no_load_mask =
                 job->clear_tlb | job->clear_draw | job->invalidated_load;
@@ -1797,6 +1798,12 @@ v3d_clear(struct pipe_context *pctx, unsigned buffers, const struct pipe_scissor
 {
         struct v3d_context *v3d = v3d_context(pctx);
         struct v3d_job *job = v3d_get_job_for_fbo(v3d);
+
+        /* If the clear call reaches the drives implies that rasterizer
+         * discard is always disabled. The state tracker is already ignoring
+         * clear calls if rasterization discard is enabled.
+         */
+        job->does_rasterization = true;
 
         buffers &= ~v3d_tlb_clear(job, buffers, color, depth, stencil);
 

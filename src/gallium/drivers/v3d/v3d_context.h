@@ -538,6 +538,12 @@ struct v3d_job {
         bool early_zs_clear;
 
         /**
+         * Tracks if at least one of the draws/clears submitted to the
+         * job was submitted with GL_RASTERIZER_DISCARD disabled.
+         */
+        bool does_rasterization;
+
+        /**
          * Number of draw calls (not counting full buffer clears) queued in
          * the current job.
          */
