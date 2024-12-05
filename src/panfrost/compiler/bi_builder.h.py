@@ -21,7 +21,7 @@
 
 SKIP = set(["lane", "lane_dest", "lanes", "lanes", "replicate", "swz", "widen",
     "swap", "neg", "abs", "not", "sign", "extend", "divzero", "clamp", "sem",
-    "not_result", "skip", "round", "ftz"])
+    "not_result", "skip", "round", "ftz", "z_stencil"])
 
 TEMPLATE = """
 #ifndef _BI_BUILDER_H_

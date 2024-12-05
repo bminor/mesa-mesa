@@ -6397,6 +6397,7 @@
       <opt>u32</opt>
       <opt>s32</opt>
     </mod>
+    <mod name="z_stencil" size="1" pseudo="true"/>
   </ins>
 
   <ins name="LD_VAR" staging="w=format" message="varying" unit="add">

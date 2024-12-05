@@ -473,6 +473,7 @@ typedef struct {
       bool threads;              /* IMULD, IMOV_FMA */
       bool combine;              /* BRANCHC */
       bool format;               /* LEA_TEX */
+      bool z_stencil;            /* LD_TILE */
 
       struct {
          enum bi_special special;   /* FADD_RSCALE, FMA_RSCALE */

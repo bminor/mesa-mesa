@@ -154,6 +154,9 @@ bi_message_type_for_instr(bi_instr *ins)
    if (ld_var_special && ins->varying_name == BI_VARYING_NAME_FRAG_Z)
       return BIFROST_MESSAGE_Z_STENCIL;
 
+   if (ins->op == BI_OPCODE_LD_TILE && ins->z_stencil)
+      return BIFROST_MESSAGE_Z_STENCIL;
+
    if (msg == BIFROST_MESSAGE_LOAD && ins->seg == BI_SEG_UBO)
       return BIFROST_MESSAGE_ATTRIBUTE;
 
@@ -1780,6 +1783,11 @@ bi_schedule_clause(bi_context *ctx, bi_block *block, struct bi_worklist st,
                clause->dependencies |= (1 << BIFROST_SLOT_ELDEST_DEPTH);
                break;
             case BI_OPCODE_LD_TILE:
+               if (clause->message_type == BIFROST_MESSAGE_Z_STENCIL)
+                  clause->dependencies |= (1 << BIFROST_SLOT_ELDEST_DEPTH);
+               else
+                  clause->dependencies |= (1 << BIFROST_SLOT_ELDEST_COLOUR);
+               break;
             case BI_OPCODE_ST_TILE:
                clause->dependencies |= (1 << BIFROST_SLOT_ELDEST_COLOUR);
                break;
