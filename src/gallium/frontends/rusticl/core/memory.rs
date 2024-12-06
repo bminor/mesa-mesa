@@ -1048,13 +1048,6 @@ impl MemBase {
         self.alloc.get_res_of_dev(dev)
     }
 
-    fn get_parent(&self) -> &Self {
-        match self.parent() {
-            Some(parent) => parent,
-            None => self,
-        }
-    }
-
     /// Returns the parent memory object or None if self isn't a sub allocated memory object.
     pub fn parent(&self) -> Option<&Mem> {
         match &self.alloc {
@@ -1542,14 +1535,12 @@ impl Image {
         dst_origin: CLVec<usize>,
         region: &CLVec<usize>,
     ) -> CLResult<()> {
-        let src_parent = self.get_parent();
-        let dst_parent = dst.get_parent();
-        let src_res = src_parent.get_res_of_dev(ctx.dev)?;
-        let dst_res = dst_parent.get_res_of_dev(ctx.dev)?;
+        let src_res = self.get_res_of_dev(ctx.dev)?;
+        let dst_res = dst.get_res_of_dev(ctx.dev)?;
 
         // We just want to use sw_copy if mem objects have different types or if copy can have
         // custom strides (image2d from buff/images)
-        if src_parent.is_buffer() || dst_parent.is_buffer() {
+        if self.is_parent_buffer() || dst.is_parent_buffer() {
             let bpp = self.image_format.pixel_size().unwrap().into();
 
             let tx_src;
@@ -1568,7 +1559,7 @@ impl Image {
             } else {
                 tx_src = self.tx_image(
                     ctx,
-                    &create_pipe_box(src_origin, *region, src_parent.mem_type)?,
+                    &create_pipe_box(src_origin, *region, self.mem_type)?,
                     RWFlags::RD,
                 )?;
 
@@ -1588,7 +1579,7 @@ impl Image {
             } else {
                 tx_dst = dst.tx_image(
                     ctx,
-                    &create_pipe_box(dst_origin, *region, dst_parent.mem_type)?,
+                    &create_pipe_box(dst_origin, *region, dst.mem_type)?,
                     RWFlags::WR,
                 )?;
 
@@ -1616,10 +1607,10 @@ impl Image {
                 bpp as u8,
             )
         } else {
-            let bx = create_pipe_box(src_origin, *region, src_parent.mem_type)?;
+            let bx = create_pipe_box(src_origin, *region, self.mem_type)?;
             let mut dst_origin: [u32; 3] = dst_origin.try_into()?;
 
-            if src_parent.mem_type == CL_MEM_OBJECT_IMAGE1D_ARRAY {
+            if self.mem_type == CL_MEM_OBJECT_IMAGE1D_ARRAY {
                 (dst_origin[1], dst_origin[2]) = (dst_origin[2], dst_origin[1]);
             }
 
