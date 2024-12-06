@@ -11,6 +11,7 @@
 #include "util/simple_mtx.h"
 #include "util/sparse_array.h"
 #include "util/timespec.h"
+#include "util/u_printf.h"
 #include "util/vma.h"
 #include "agx_bo.h"
 #include "agx_pack.h"
@@ -172,6 +173,8 @@ struct agx_device {
       uint64_t num;
       uint64_t den;
    } user_timestamp_to_ns;
+
+   struct u_printf_ctx printf;
 };
 
 static inline void *

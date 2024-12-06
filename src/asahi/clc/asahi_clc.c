@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "asahi_clc.h"
 #include "asahi/compiler/agx_compile.h"
 #include "asahi/compiler/agx_nir.h"
 #include "compiler/glsl_types.h"
@@ -36,6 +37,7 @@ static const struct spirv_to_nir_options spirv_options = {
    .temp_addr_format = nir_address_format_62bit_generic,
    .constant_addr_format = nir_address_format_64bit_global,
    .create_library = true,
+   .printf = true,
 };
 
 /* Standard optimization loop */
@@ -93,6 +95,12 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size)
 
    nir_lower_compute_system_values_options cs = {.global_id_is_32bit = true};
    NIR_PASS(_, nir, nir_lower_compute_system_values, &cs);
+
+   NIR_PASS(_, nir, nir_lower_printf,
+            &(const struct nir_lower_printf_options){
+               .buffer_address = LIBAGX_PRINTF_BUFFER_ADDRESS,
+               .max_buffer_size = LIBAGX_PRINTF_BUFFER_SIZE - 8,
+            });
 
    /* We have to lower away local constant initializers right before we
     * inline functions.  That way they get properly initialized at the top

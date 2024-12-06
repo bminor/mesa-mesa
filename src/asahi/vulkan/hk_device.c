@@ -27,6 +27,8 @@
 #include "vulkan/wsi/wsi_common.h"
 #include "vk_cmd_enqueue_entrypoints.h"
 #include "vk_common_entrypoints.h"
+#include "vk_debug_utils.h"
+#include "vk_device.h"
 #include "vk_pipeline_cache.h"
 
 #include <fcntl.h>
@@ -276,6 +278,15 @@ hk_sampler_heap_remove(struct hk_device *dev, struct hk_rc_sampler *rc)
    simple_mtx_unlock(&h->lock);
 }
 
+static VkResult
+hk_check_status(struct vk_device *device)
+{
+   struct hk_device *dev = container_of(device, struct hk_device, vk);
+   return vk_check_printf_status(&dev->vk, &dev->dev.printf,
+                                 dev->dev.libagx->printf_info,
+                                 dev->dev.libagx->printf_info_count);
+}
+
 /*
  * To implement nullDescriptor, the descriptor set code will reference
  * preuploaded null descriptors at fixed offsets in the image heap. Here we
@@ -387,6 +398,7 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
 
    vk_device_set_drm_fd(&dev->vk, dev->dev.fd);
    dev->vk.command_buffer_ops = &hk_cmd_buffer_ops;
+   dev->vk.check_status = hk_check_status;
 
    result = hk_descriptor_table_init(dev, &dev->images, AGX_TEXTURE_LENGTH,
                                      1024, 1024 * 1024);

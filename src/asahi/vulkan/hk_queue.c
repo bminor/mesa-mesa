@@ -606,9 +606,24 @@ hk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 
    VkResult result = queue_submit(dev, queue, submit);
    if (result != VK_SUCCESS)
-      return vk_queue_set_lost(&queue->vk, "Submit failed");
+      result = vk_queue_set_lost(&queue->vk, "Submit failed");
 
-   return VK_SUCCESS;
+   if (dev->dev.debug & AGX_DBG_SYNC) {
+      /* Wait for completion */
+      int err = drmSyncobjTimelineWait(
+         dev->dev.fd, &queue->drm.syncobj, &queue->drm.timeline_value, 1,
+         INT64_MAX, DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT, NULL);
+
+      if (err) {
+         result = vk_queue_set_lost(&queue->vk, "Wait failed");
+      } else {
+         VkResult res = dev->vk.check_status(&dev->vk);
+         if (result == VK_SUCCESS)
+            result = res;
+      }
+   }
+
+   return result;
 }
 
 static uint32_t

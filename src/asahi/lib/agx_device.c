@@ -7,6 +7,8 @@
 
 #include "agx_device.h"
 #include <inttypes.h>
+#include "clc/asahi_clc.h"
+#include "util/macros.h"
 #include "util/ralloc.h"
 #include "util/timespec.h"
 #include "agx_bo.h"
@@ -587,6 +589,12 @@ agx_open_device(void *memctx, struct agx_device *dev)
     */
    uint64_t reservation = (1ull << 36);
 
+   /* Also reserve VA space for the printf buffer at a stable address, avoiding
+    * the need for relocs in precompiled shaders.
+    */
+   assert(reservation == LIBAGX_PRINTF_BUFFER_ADDRESS);
+   reservation += LIBAGX_PRINTF_BUFFER_SIZE;
+
    dev->guard_size = dev->params.vm_page_size;
    if (dev->params.vm_usc_start) {
       dev->shader_base = dev->params.vm_usc_start;
@@ -671,12 +679,27 @@ agx_open_device(void *memctx, struct agx_device *dev)
       dev->chip = AGX_CHIP_G13G;
    }
 
+   void *bo = agx_bo_create(dev, LIBAGX_PRINTF_BUFFER_SIZE, 0, AGX_BO_WRITEBACK,
+                            "Printf/abort");
+
+   ret = dev->ops.bo_bind(dev, bo, LIBAGX_PRINTF_BUFFER_ADDRESS,
+                          LIBAGX_PRINTF_BUFFER_SIZE, 0,
+                          ASAHI_BIND_READ | ASAHI_BIND_WRITE, false);
+   if (ret) {
+      fprintf(stderr, "Failed to bind printf buffer");
+      return false;
+   }
+
+   u_printf_init(&dev->printf, bo, agx_bo_map(bo));
+
    return true;
 }
 
 void
 agx_close_device(struct agx_device *dev)
 {
+   agx_bo_unreference(dev, dev->printf.bo);
+   u_printf_destroy(&dev->printf);
    ralloc_free((void *)dev->libagx);
    agx_bo_cache_evict_all(dev);
    util_sparse_array_finish(&dev->bo_map);
