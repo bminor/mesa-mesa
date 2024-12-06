@@ -187,17 +187,17 @@ void brw_set_default_access_mode( struct brw_codegen *p, unsigned access_mode )
  * [group, group + exec_size) to the instruction passed as argument.
  */
 void
-brw_inst_set_group(const struct intel_device_info *devinfo,
+brw_eu_inst_set_group(const struct intel_device_info *devinfo,
                    brw_eu_inst *inst, unsigned group)
 {
    if (devinfo->ver >= 20) {
       assert(group % 8 == 0 && group < 32);
-      brw_inst_set_qtr_control(devinfo, inst, group / 8);
+      brw_eu_inst_set_qtr_control(devinfo, inst, group / 8);
 
    } else {
       assert(group % 4 == 0 && group < 32);
-      brw_inst_set_qtr_control(devinfo, inst, group / 8);
-      brw_inst_set_nib_control(devinfo, inst, (group / 4) % 2);
+      brw_eu_inst_set_qtr_control(devinfo, inst, group / 8);
+      brw_eu_inst_set_nib_control(devinfo, inst, (group / 4) % 2);
 
    }
 }
@@ -448,7 +448,7 @@ brw_label_assembly(const struct brw_isa_info *isa,
       const brw_eu_inst *inst = (const brw_eu_inst *) ((const char *) assembly + offset);
       brw_eu_inst uncompacted;
 
-      bool is_compact = brw_inst_cmpt_control(devinfo, inst);
+      bool is_compact = brw_eu_inst_cmpt_control(devinfo, inst);
 
       if (is_compact) {
          brw_eu_compact_inst *compacted = (brw_eu_compact_inst *)inst;
@@ -456,14 +456,14 @@ brw_label_assembly(const struct brw_isa_info *isa,
          inst = &uncompacted;
       }
 
-      if (brw_has_uip(devinfo, brw_inst_opcode(isa, inst))) {
+      if (brw_has_uip(devinfo, brw_eu_inst_opcode(isa, inst))) {
          /* Instructions that have UIP also have JIP. */
          brw_create_label(&root_label,
-            offset + brw_inst_uip(devinfo, inst) * to_bytes_scale, mem_ctx);
+            offset + brw_eu_inst_uip(devinfo, inst) * to_bytes_scale, mem_ctx);
          brw_create_label(&root_label,
-            offset + brw_inst_jip(devinfo, inst) * to_bytes_scale, mem_ctx);
-      } else if (brw_has_jip(devinfo, brw_inst_opcode(isa, inst))) {
-         int jip = brw_inst_jip(devinfo, inst);
+            offset + brw_eu_inst_jip(devinfo, inst) * to_bytes_scale, mem_ctx);
+      } else if (brw_has_jip(devinfo, brw_eu_inst_opcode(isa, inst))) {
+         int jip = brw_eu_inst_jip(devinfo, inst);
 
          brw_create_label(&root_label, offset + jip * to_bytes_scale, mem_ctx);
       }
@@ -511,7 +511,7 @@ brw_disassemble(const struct brw_isa_info *isa,
         }
       }
 
-      bool compacted = brw_inst_cmpt_control(devinfo, insn);
+      bool compacted = brw_eu_inst_cmpt_control(devinfo, insn);
       if (0)
          fprintf(out, "0x%08x: ", offset);
 
@@ -708,11 +708,11 @@ brw_num_sources_from_inst(const struct brw_isa_info *isa,
 {
    const struct intel_device_info *devinfo = isa->devinfo;
    const struct opcode_desc *desc =
-      brw_opcode_desc(isa, brw_inst_opcode(isa, inst));
+      brw_opcode_desc(isa, brw_eu_inst_opcode(isa, inst));
    unsigned math_function;
 
-   if (brw_inst_opcode(isa, inst) == BRW_OPCODE_MATH) {
-      math_function = brw_inst_math_function(devinfo, inst);
+   if (brw_eu_inst_opcode(isa, inst) == BRW_OPCODE_MATH) {
+      math_function = brw_eu_inst_math_function(devinfo, inst);
    } else {
       assert(desc->nsrc < 4);
       return desc->nsrc;

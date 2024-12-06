@@ -1339,9 +1339,9 @@ has_unmapped_bits(const struct brw_isa_info *isa, const brw_eu_inst *src)
    const struct intel_device_info *devinfo = isa->devinfo;
 
    /* EOT can only be mapped on a send if the src1 is an immediate */
-   if ((brw_inst_opcode(isa, src) == BRW_OPCODE_SENDC ||
-        brw_inst_opcode(isa, src) == BRW_OPCODE_SEND) &&
-       brw_inst_eot(devinfo, src))
+   if ((brw_eu_inst_opcode(isa, src) == BRW_OPCODE_SENDC ||
+        brw_eu_inst_opcode(isa, src) == BRW_OPCODE_SEND) &&
+       brw_eu_inst_eot(devinfo, src))
       return true;
 
    /* Check for instruction bits that don't map to any of the fields of the
@@ -1393,14 +1393,14 @@ brw_try_compact_3src_instruction(const struct brw_isa_info *isa,
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
-   bool is_dpas = brw_inst_opcode(isa, src) == BRW_OPCODE_DPAS;
+   bool is_dpas = brw_eu_inst_opcode(isa, src) == BRW_OPCODE_DPAS;
    if (has_3src_unmapped_bits(devinfo, src, is_dpas))
       return false;
 
 #define compact(field) \
-   brw_compact_inst_set_3src_##field(devinfo, dst, brw_inst_3src_##field(devinfo, src))
+   brw_compact_inst_set_3src_##field(devinfo, dst, brw_eu_inst_3src_##field(devinfo, src))
 #define compact_a16(field) \
-   brw_compact_inst_set_3src_##field(devinfo, dst, brw_inst_3src_a16_##field(devinfo, src))
+   brw_compact_inst_set_3src_##field(devinfo, dst, brw_eu_inst_3src_a16_##field(devinfo, src))
 
    compact(hw_opcode);
 
@@ -1571,11 +1571,11 @@ static bool
 has_immediate(const struct intel_device_info *devinfo, const brw_eu_inst *inst,
               enum brw_reg_type *type)
 {
-   if (brw_inst_src0_reg_file(devinfo, inst) == IMM) {
-      *type = brw_inst_src0_type(devinfo, inst);
+   if (brw_eu_inst_src0_reg_file(devinfo, inst) == IMM) {
+      *type = brw_eu_inst_src0_type(devinfo, inst);
       return *type != BRW_TYPE_INVALID;
-   } else if (brw_inst_src1_reg_file(devinfo, inst) == IMM) {
-      *type = brw_inst_src1_type(devinfo, inst);
+   } else if (brw_eu_inst_src1_reg_file(devinfo, inst) == IMM) {
+      *type = brw_eu_inst_src1_type(devinfo, inst);
       return *type != BRW_TYPE_INVALID;
    }
 
@@ -1596,26 +1596,26 @@ precompact(const struct brw_isa_info *isa, brw_eu_inst inst)
     * sequential elements, so convert to those before compacting.
     */
    if (devinfo->verx10 >= 125) {
-      if (brw_inst_src0_reg_file(devinfo, &inst) == FIXED_GRF &&
-          brw_inst_src0_vstride(devinfo, &inst) > BRW_VERTICAL_STRIDE_1 &&
-          brw_inst_src0_vstride(devinfo, &inst) == (brw_inst_src0_width(devinfo, &inst) + 1) &&
-          brw_inst_src0_hstride(devinfo, &inst) == BRW_HORIZONTAL_STRIDE_1) {
-         brw_inst_set_src0_vstride(devinfo, &inst, BRW_VERTICAL_STRIDE_1);
-         brw_inst_set_src0_width(devinfo, &inst, BRW_WIDTH_1);
-         brw_inst_set_src0_hstride(devinfo, &inst, BRW_HORIZONTAL_STRIDE_0);
+      if (brw_eu_inst_src0_reg_file(devinfo, &inst) == FIXED_GRF &&
+          brw_eu_inst_src0_vstride(devinfo, &inst) > BRW_VERTICAL_STRIDE_1 &&
+          brw_eu_inst_src0_vstride(devinfo, &inst) == (brw_eu_inst_src0_width(devinfo, &inst) + 1) &&
+          brw_eu_inst_src0_hstride(devinfo, &inst) == BRW_HORIZONTAL_STRIDE_1) {
+         brw_eu_inst_set_src0_vstride(devinfo, &inst, BRW_VERTICAL_STRIDE_1);
+         brw_eu_inst_set_src0_width(devinfo, &inst, BRW_WIDTH_1);
+         brw_eu_inst_set_src0_hstride(devinfo, &inst, BRW_HORIZONTAL_STRIDE_0);
       }
 
-      if (brw_inst_src1_reg_file(devinfo, &inst) == FIXED_GRF &&
-          brw_inst_src1_vstride(devinfo, &inst) > BRW_VERTICAL_STRIDE_1 &&
-          brw_inst_src1_vstride(devinfo, &inst) == (brw_inst_src1_width(devinfo, &inst) + 1) &&
-          brw_inst_src1_hstride(devinfo, &inst) == BRW_HORIZONTAL_STRIDE_1) {
-         brw_inst_set_src1_vstride(devinfo, &inst, BRW_VERTICAL_STRIDE_1);
-         brw_inst_set_src1_width(devinfo, &inst, BRW_WIDTH_1);
-         brw_inst_set_src1_hstride(devinfo, &inst, BRW_HORIZONTAL_STRIDE_0);
+      if (brw_eu_inst_src1_reg_file(devinfo, &inst) == FIXED_GRF &&
+          brw_eu_inst_src1_vstride(devinfo, &inst) > BRW_VERTICAL_STRIDE_1 &&
+          brw_eu_inst_src1_vstride(devinfo, &inst) == (brw_eu_inst_src1_width(devinfo, &inst) + 1) &&
+          brw_eu_inst_src1_hstride(devinfo, &inst) == BRW_HORIZONTAL_STRIDE_1) {
+         brw_eu_inst_set_src1_vstride(devinfo, &inst, BRW_VERTICAL_STRIDE_1);
+         brw_eu_inst_set_src1_width(devinfo, &inst, BRW_WIDTH_1);
+         brw_eu_inst_set_src1_hstride(devinfo, &inst, BRW_HORIZONTAL_STRIDE_0);
       }
    }
 
-   if (brw_inst_src0_reg_file(devinfo, &inst) != IMM)
+   if (brw_eu_inst_src0_reg_file(devinfo, &inst) != IMM)
       return inst;
 
    /* The Bspec's section titled "Non-present Operands" claims that if src0
@@ -1640,10 +1640,10 @@ precompact(const struct brw_isa_info *isa, brw_eu_inst inst)
     * overlap with the immediate and setting them would overwrite the
     * immediate we set.
     */
-   if (!(brw_inst_src0_type(devinfo, &inst) == BRW_TYPE_DF ||
-         brw_inst_src0_type(devinfo, &inst) == BRW_TYPE_UQ ||
-         brw_inst_src0_type(devinfo, &inst) == BRW_TYPE_Q)) {
-      brw_inst_set_src1_reg_hw_type(devinfo, &inst, 0);
+   if (!(brw_eu_inst_src0_type(devinfo, &inst) == BRW_TYPE_DF ||
+         brw_eu_inst_src0_type(devinfo, &inst) == BRW_TYPE_UQ ||
+         brw_eu_inst_src0_type(devinfo, &inst) == BRW_TYPE_Q)) {
+      brw_eu_inst_set_src1_reg_hw_type(devinfo, &inst, 0);
    }
 
    /* Compacted instructions only have 12-bits (plus 1 for the other 20)
@@ -1661,12 +1661,12 @@ precompact(const struct brw_isa_info *isa, brw_eu_inst inst)
     * removing the need for this.
     */
    if (devinfo->ver < 12 &&
-       brw_inst_imm_ud(devinfo, &inst) == 0x0 &&
-       brw_inst_src0_type(devinfo, &inst) == BRW_TYPE_F &&
-       brw_inst_dst_type(devinfo, &inst) == BRW_TYPE_F &&
-       brw_inst_dst_hstride(devinfo, &inst) == BRW_HORIZONTAL_STRIDE_1) {
-      enum brw_reg_file file = brw_inst_src0_reg_file(devinfo, &inst);
-      brw_inst_set_src0_file_type(devinfo, &inst, file, BRW_TYPE_VF);
+       brw_eu_inst_imm_ud(devinfo, &inst) == 0x0 &&
+       brw_eu_inst_src0_type(devinfo, &inst) == BRW_TYPE_F &&
+       brw_eu_inst_dst_type(devinfo, &inst) == BRW_TYPE_F &&
+       brw_eu_inst_dst_hstride(devinfo, &inst) == BRW_HORIZONTAL_STRIDE_1) {
+      enum brw_reg_file file = brw_eu_inst_src0_reg_file(devinfo, &inst);
+      brw_eu_inst_set_src0_file_type(devinfo, &inst, file, BRW_TYPE_VF);
    }
 
    /* There are no mappings for dst:d | i:d, so if the immediate is suitable
@@ -1676,15 +1676,15 @@ precompact(const struct brw_isa_info *isa, brw_eu_inst inst)
     */
    if (devinfo->ver < 12 &&
        compact_immediate(devinfo, BRW_TYPE_D,
-                         brw_inst_imm_ud(devinfo, &inst)) != -1 &&
-       brw_inst_cond_modifier(devinfo, &inst) == BRW_CONDITIONAL_NONE &&
-       brw_inst_src0_type(devinfo, &inst) == BRW_TYPE_D &&
-       brw_inst_dst_type(devinfo, &inst) == BRW_TYPE_D) {
-      enum brw_reg_file src_file = brw_inst_src0_reg_file(devinfo, &inst);
-      enum brw_reg_file dst_file = brw_inst_dst_reg_file(devinfo, &inst);
+                         brw_eu_inst_imm_ud(devinfo, &inst)) != -1 &&
+       brw_eu_inst_cond_modifier(devinfo, &inst) == BRW_CONDITIONAL_NONE &&
+       brw_eu_inst_src0_type(devinfo, &inst) == BRW_TYPE_D &&
+       brw_eu_inst_dst_type(devinfo, &inst) == BRW_TYPE_D) {
+      enum brw_reg_file src_file = brw_eu_inst_src0_reg_file(devinfo, &inst);
+      enum brw_reg_file dst_file = brw_eu_inst_dst_reg_file(devinfo, &inst);
 
-      brw_inst_set_src0_file_type(devinfo, &inst, src_file, BRW_TYPE_UD);
-      brw_inst_set_dst_file_type(devinfo, &inst, dst_file, BRW_TYPE_UD);
+      brw_eu_inst_set_src0_file_type(devinfo, &inst, src_file, BRW_TYPE_UD);
+      brw_eu_inst_set_dst_file_type(devinfo, &inst, dst_file, BRW_TYPE_UD);
    }
 
    return inst;
@@ -1703,9 +1703,9 @@ try_compact_instruction(const struct compaction_state *c,
    const struct intel_device_info *devinfo = c->isa->devinfo;
    brw_eu_compact_inst temp;
 
-   assert(brw_inst_cmpt_control(devinfo, src) == 0);
+   assert(brw_eu_inst_cmpt_control(devinfo, src) == 0);
 
-   if (is_3src(c->isa, brw_inst_opcode(c->isa, src))) {
+   if (is_3src(c->isa, brw_eu_inst_opcode(c->isa, src))) {
       memset(&temp, 0, sizeof(temp));
       if (brw_try_compact_3src_instruction(c->isa, &temp, src)) {
          *dst = temp;
@@ -1722,7 +1722,7 @@ try_compact_instruction(const struct compaction_state *c,
 
    if (is_immediate) {
       compacted_imm = compact_immediate(devinfo, type,
-                                        brw_inst_imm_ud(devinfo, src));
+                                        brw_eu_inst_imm_ud(devinfo, src));
       if (compacted_imm == -1)
          return false;
    }
@@ -1733,10 +1733,10 @@ try_compact_instruction(const struct compaction_state *c,
    memset(&temp, 0, sizeof(temp));
 
 #define compact(field) \
-   brw_compact_inst_set_##field(devinfo, &temp, brw_inst_##field(devinfo, src))
+   brw_compact_inst_set_##field(devinfo, &temp, brw_eu_inst_##field(devinfo, src))
 #define compact_reg(field) \
    brw_compact_inst_set_##field##_reg_nr(devinfo, &temp, \
-                                       brw_inst_##field##_da_reg_nr(devinfo, src))
+                                       brw_eu_inst_##field##_da_reg_nr(devinfo, src))
 
    compact(hw_opcode);
    compact(debug_control);
@@ -2085,9 +2085,9 @@ brw_uncompact_3src_instruction(const struct compaction_state *c,
    const struct intel_device_info *devinfo = c->isa->devinfo;
 
 #define uncompact(field) \
-   brw_inst_set_3src_##field(devinfo, dst, brw_compact_inst_3src_##field(devinfo, src))
+   brw_eu_inst_set_3src_##field(devinfo, dst, brw_compact_inst_3src_##field(devinfo, src))
 #define uncompact_a16(field) \
-   brw_inst_set_3src_a16_##field(devinfo, dst, brw_compact_inst_3src_##field(devinfo, src))
+   brw_eu_inst_set_3src_a16_##field(devinfo, dst, brw_compact_inst_3src_##field(devinfo, src))
 
    uncompact(hw_opcode);
 
@@ -2119,7 +2119,7 @@ brw_uncompact_3src_instruction(const struct compaction_state *c,
       uncompact_a16(src1_subreg_nr);
       uncompact_a16(src2_subreg_nr);
    }
-   brw_inst_set_3src_cmpt_control(devinfo, dst, false);
+   brw_eu_inst_set_3src_cmpt_control(devinfo, dst, false);
 
 #undef uncompact
 #undef uncompact_a16
@@ -2141,9 +2141,9 @@ uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
    }
 
 #define uncompact(field) \
-   brw_inst_set_##field(devinfo, dst, brw_compact_inst_##field(devinfo, src))
+   brw_eu_inst_set_##field(devinfo, dst, brw_compact_inst_##field(devinfo, src))
 #define uncompact_reg(field) \
-   brw_inst_set_##field##_da_reg_nr(devinfo, dst, \
+   brw_eu_inst_set_##field##_da_reg_nr(devinfo, dst, \
                                     brw_compact_inst_##field##_reg_nr(devinfo, src))
 
    uncompact(hw_opcode);
@@ -2158,7 +2158,7 @@ uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
    if (has_immediate(devinfo, dst, &type)) {
       unsigned imm = uncompact_immediate(devinfo, type,
                                          brw_compact_inst_imm(devinfo, src));
-      brw_inst_set_imm_ud(devinfo, dst, imm);
+      brw_eu_inst_set_imm_ud(devinfo, dst, imm);
    } else {
       set_uncompacted_src1(c, dst, src);
       uncompact_reg(src1);
@@ -2176,7 +2176,7 @@ uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
       uncompact_reg(dst);
       uncompact_reg(src0);
    }
-   brw_inst_set_cmpt_control(devinfo, dst, false);
+   brw_eu_inst_set_cmpt_control(devinfo, dst, false);
 
 #undef uncompact
 #undef uncompact_reg
@@ -2240,24 +2240,24 @@ update_uip_jip(const struct brw_isa_info *isa, brw_eu_inst *insn,
    /* Even though the values are signed, we don't need the rounding behavior
     * of integer division. The shifts are safe.
     */
-   assert(brw_inst_jip(devinfo, insn) % 8 == 0 &&
-          brw_inst_uip(devinfo, insn) % 8 == 0);
+   assert(brw_eu_inst_jip(devinfo, insn) % 8 == 0 &&
+          brw_eu_inst_uip(devinfo, insn) % 8 == 0);
 
-   int32_t jip_compacted = brw_inst_jip(devinfo, insn) >> shift;
+   int32_t jip_compacted = brw_eu_inst_jip(devinfo, insn) >> shift;
    jip_compacted -= compacted_between(this_old_ip,
                                       this_old_ip + (jip_compacted / 2),
                                       compacted_counts);
-   brw_inst_set_jip(devinfo, insn, (uint32_t)jip_compacted << shift);
+   brw_eu_inst_set_jip(devinfo, insn, (uint32_t)jip_compacted << shift);
 
-   if (brw_inst_opcode(isa, insn) == BRW_OPCODE_ENDIF ||
-       brw_inst_opcode(isa, insn) == BRW_OPCODE_WHILE)
+   if (brw_eu_inst_opcode(isa, insn) == BRW_OPCODE_ENDIF ||
+       brw_eu_inst_opcode(isa, insn) == BRW_OPCODE_WHILE)
       return;
 
-   int32_t uip_compacted = brw_inst_uip(devinfo, insn) >> shift;
+   int32_t uip_compacted = brw_eu_inst_uip(devinfo, insn) >> shift;
    uip_compacted -= compacted_between(this_old_ip,
                                       this_old_ip + (uip_compacted / 2),
                                       compacted_counts);
-   brw_inst_set_uip(devinfo, insn, (uint32_t)uip_compacted << shift);
+   brw_eu_inst_set_uip(devinfo, insn, (uint32_t)uip_compacted << shift);
 }
 
 static void
@@ -2407,7 +2407,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
       int this_old_ip = old_ip[offset / sizeof(brw_eu_compact_inst)];
       int this_compacted_count = compacted_counts[this_old_ip];
 
-      switch (brw_inst_opcode(p->isa, insn)) {
+      switch (brw_eu_inst_opcode(p->isa, insn)) {
       case BRW_OPCODE_BREAK:
       case BRW_OPCODE_CONTINUE:
       case BRW_OPCODE_HALT:
@@ -2418,7 +2418,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
       case BRW_OPCODE_ELSE:
       case BRW_OPCODE_ENDIF:
       case BRW_OPCODE_WHILE:
-         if (brw_inst_cmpt_control(devinfo, insn)) {
+         if (brw_eu_inst_cmpt_control(devinfo, insn)) {
             brw_eu_inst uncompacted;
             uncompact_instruction(&c, &uncompacted,
                                   (brw_eu_compact_inst *)insn);
@@ -2439,20 +2439,20 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
           * and Gens that use this cannot compact instructions with immediate
           * operands.
           */
-         if (brw_inst_cmpt_control(devinfo, insn))
+         if (brw_eu_inst_cmpt_control(devinfo, insn))
             break;
 
-         if (brw_inst_dst_reg_file(devinfo, insn) == ARF &&
-             brw_inst_dst_da_reg_nr(devinfo, insn) == BRW_ARF_IP) {
-            assert(brw_inst_src1_reg_file(devinfo, insn) == IMM);
+         if (brw_eu_inst_dst_reg_file(devinfo, insn) == ARF &&
+             brw_eu_inst_dst_da_reg_nr(devinfo, insn) == BRW_ARF_IP) {
+            assert(brw_eu_inst_src1_reg_file(devinfo, insn) == IMM);
 
             int shift = 3;
-            int jump_compacted = brw_inst_imm_d(devinfo, insn) >> shift;
+            int jump_compacted = brw_eu_inst_imm_d(devinfo, insn) >> shift;
 
             int target_old_ip = this_old_ip + (jump_compacted / 2);
             int target_compacted_count = compacted_counts[target_old_ip];
             jump_compacted -= (target_compacted_count - this_compacted_count);
-            brw_inst_set_imm_ud(devinfo, insn, jump_compacted << shift);
+            brw_eu_inst_set_imm_ud(devinfo, insn, jump_compacted << shift);
          }
          break;
 

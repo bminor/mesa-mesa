@@ -142,7 +142,7 @@ void brw_set_default_exec_size(struct brw_codegen *p, unsigned value);
 void brw_set_default_mask_control( struct brw_codegen *p, unsigned value );
 void brw_set_default_saturate( struct brw_codegen *p, bool enable );
 void brw_set_default_access_mode( struct brw_codegen *p, unsigned access_mode );
-void brw_inst_set_group(const struct intel_device_info *devinfo,
+void brw_eu_inst_set_group(const struct intel_device_info *devinfo,
                         brw_eu_inst *inst, unsigned group);
 void brw_set_default_group(struct brw_codegen *p, unsigned group);
 void brw_set_default_predicate_control(struct brw_codegen *p, enum brw_predicate pc);
@@ -1593,7 +1593,7 @@ next_offset(const struct intel_device_info *devinfo, void *store, int offset)
 {
    brw_eu_inst *insn = (brw_eu_inst *)((char *)store + offset);
 
-   if (brw_inst_cmpt_control(devinfo, insn))
+   if (brw_eu_inst_cmpt_control(devinfo, insn))
       return offset + 8;
    else
       return offset + 16;

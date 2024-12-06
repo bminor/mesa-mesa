@@ -95,10 +95,10 @@ clear_pad_bits(const struct brw_isa_info *isa, brw_eu_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
-   if (brw_inst_opcode(isa, inst) != BRW_OPCODE_SEND &&
-       brw_inst_opcode(isa, inst) != BRW_OPCODE_SENDC &&
-       brw_inst_src0_reg_file(devinfo, inst) != IMM &&
-       brw_inst_src1_reg_file(devinfo, inst) != IMM) {
+   if (brw_eu_inst_opcode(isa, inst) != BRW_OPCODE_SEND &&
+       brw_eu_inst_opcode(isa, inst) != BRW_OPCODE_SENDC &&
+       brw_eu_inst_src0_reg_file(devinfo, inst) != IMM &&
+       brw_eu_inst_src1_reg_file(devinfo, inst) != IMM) {
       brw_eu_inst_set_bits(inst, 127, 111, 0);
    }
 }
@@ -116,7 +116,7 @@ skip_bit(const struct brw_isa_info *isa, brw_eu_inst *src, int bit)
    if (bit == 29)
       return true;
 
-   if (is_3src(isa, brw_inst_opcode(isa, src))) {
+   if (is_3src(isa, brw_eu_inst_opcode(isa, src))) {
       if (bit == 127)
          return true;
    } else {
@@ -131,10 +131,10 @@ skip_bit(const struct brw_isa_info *isa, brw_eu_inst *src, int bit)
    }
 
    /* sometimes these are pad bits. */
-   if (brw_inst_opcode(isa, src) != BRW_OPCODE_SEND &&
-       brw_inst_opcode(isa, src) != BRW_OPCODE_SENDC &&
-       brw_inst_src0_reg_file(devinfo, src) != IMM &&
-       brw_inst_src1_reg_file(devinfo, src) != IMM &&
+   if (brw_eu_inst_opcode(isa, src) != BRW_OPCODE_SEND &&
+       brw_eu_inst_opcode(isa, src) != BRW_OPCODE_SENDC &&
+       brw_eu_inst_src0_reg_file(devinfo, src) != IMM &&
+       brw_eu_inst_src1_reg_file(devinfo, src) != IMM &&
        bit >= 121) {
       return true;
    }
@@ -285,6 +285,6 @@ TEST_P(Instructions, f0_1_MOV_GRF_GRF)
    brw_push_insn_state(p);
    brw_set_default_predicate_control(p, BRW_PREDICATE_NORMAL);
    brw_eu_inst *mov = brw_MOV(p, g0, g2);
-   brw_inst_set_flag_subreg_nr(p->devinfo, mov, 1);
+   brw_eu_inst_set_flag_subreg_nr(p->devinfo, mov, 1);
    brw_pop_insn_state(p);
 }

@@ -35,7 +35,7 @@ i965_postprocess_labels()
             int relative_offset = (tlabel->offset - ilabel->offset) / sizeof(brw_eu_inst);
             relative_offset *= to_bytes_scale;
 
-            unsigned opcode = brw_inst_opcode(p->isa, inst);
+            unsigned opcode = brw_eu_inst_opcode(p->isa, inst);
 
             if (ilabel->type == INSTR_LABEL_JIP) {
                switch (opcode) {
@@ -43,12 +43,12 @@ i965_postprocess_labels()
                case BRW_OPCODE_ELSE:
                case BRW_OPCODE_ENDIF:
                case BRW_OPCODE_WHILE:
-                  brw_inst_set_jip(p->devinfo, inst, relative_offset);
+                  brw_eu_inst_set_jip(p->devinfo, inst, relative_offset);
                   break;
                case BRW_OPCODE_BREAK:
                case BRW_OPCODE_HALT:
                case BRW_OPCODE_CONTINUE:
-                  brw_inst_set_jip(p->devinfo, inst, relative_offset);
+                  brw_eu_inst_set_jip(p->devinfo, inst, relative_offset);
                   break;
                default:
                   fprintf(stderr, "Unknown opcode %d with JIP label\n", opcode);
@@ -58,7 +58,7 @@ i965_postprocess_labels()
                switch (opcode) {
                case BRW_OPCODE_IF:
                case BRW_OPCODE_ELSE:
-                  brw_inst_set_uip(p->devinfo, inst, relative_offset);
+                  brw_eu_inst_set_uip(p->devinfo, inst, relative_offset);
                   break;
                case BRW_OPCODE_WHILE:
                case BRW_OPCODE_ENDIF:
@@ -67,7 +67,7 @@ i965_postprocess_labels()
                case BRW_OPCODE_BREAK:
                case BRW_OPCODE_CONTINUE:
                case BRW_OPCODE_HALT:
-                  brw_inst_set_uip(p->devinfo, inst, relative_offset);
+                  brw_eu_inst_set_uip(p->devinfo, inst, relative_offset);
                   break;
                default:
                   fprintf(stderr, "Unknown opcode %d with UIP label\n", opcode);
@@ -144,7 +144,7 @@ brw_assemble(void *mem_ctx, const struct intel_device_info *devinfo,
       int compacted = 0;
       for (int i = 0; i < result.inst_count; i++) {
          const brw_eu_inst *inst = result.bin + i;
-         if (brw_inst_cmpt_control(devinfo, inst))
+         if (brw_eu_inst_cmpt_control(devinfo, inst))
             compacted++;
       }
       result.bin_size -= compacted * 8;

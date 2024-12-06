@@ -140,17 +140,17 @@ fs_generator::patch_halt_jumps()
     * tests.
     */
    brw_eu_inst *last_halt = brw_HALT(p);
-   brw_inst_set_uip(p->devinfo, last_halt, 1 * scale);
-   brw_inst_set_jip(p->devinfo, last_halt, 1 * scale);
+   brw_eu_inst_set_uip(p->devinfo, last_halt, 1 * scale);
+   brw_eu_inst_set_jip(p->devinfo, last_halt, 1 * scale);
 
    int ip = p->nr_insn;
 
    foreach_in_list(ip_record, patch_ip, &discard_halt_patches) {
       brw_eu_inst *patch = &p->store[patch_ip->ip];
 
-      assert(brw_inst_opcode(p->isa, patch) == BRW_OPCODE_HALT);
+      assert(brw_eu_inst_opcode(p->isa, patch) == BRW_OPCODE_HALT);
       /* HALT takes a half-instruction distance from the pre-incremented IP. */
-      brw_inst_set_uip(p->devinfo, patch, (ip - patch_ip->ip) * scale);
+      brw_eu_inst_set_uip(p->devinfo, patch, (ip - patch_ip->ip) * scale);
    }
 
    this->discard_halt_patches.make_empty();
@@ -184,13 +184,13 @@ fs_generator::generate_send(fs_inst *inst,
                                       inst->send_ex_desc_scratch,
                                       inst->send_ex_bso, inst->eot);
       if (inst->check_tdr)
-         brw_inst_set_opcode(p->isa, brw_last_inst,
+         brw_eu_inst_set_opcode(p->isa, brw_last_inst,
                              devinfo->ver >= 12 ? BRW_OPCODE_SENDC : BRW_OPCODE_SENDSC);
    } else {
       brw_send_indirect_message(p, inst->sfid, dst, payload, desc, desc_imm,
                                    inst->eot);
       if (inst->check_tdr)
-         brw_inst_set_opcode(p->isa, brw_last_inst, BRW_OPCODE_SENDC);
+         brw_eu_inst_set_opcode(p->isa, brw_last_inst, BRW_OPCODE_SENDC);
    }
 }
 
@@ -284,18 +284,18 @@ fs_generator::generate_mov_indirect(fs_inst *inst,
        * instruction.
        */
       insn = brw_MOV(p, addr, brw_imm_uw(imm_byte_offset));
-      brw_inst_set_mask_control(devinfo, insn, BRW_MASK_DISABLE);
-      brw_inst_set_pred_control(devinfo, insn, BRW_PREDICATE_NONE);
+      brw_eu_inst_set_mask_control(devinfo, insn, BRW_MASK_DISABLE);
+      brw_eu_inst_set_pred_control(devinfo, insn, BRW_PREDICATE_NONE);
       if (devinfo->ver >= 12)
          brw_set_default_swsb(p, tgl_swsb_null());
       else
-         brw_inst_set_no_dd_clear(devinfo, insn, use_dep_ctrl);
+         brw_eu_inst_set_no_dd_clear(devinfo, insn, use_dep_ctrl);
 
       insn = brw_ADD(p, addr, indirect_byte_offset, brw_imm_uw(imm_byte_offset));
       if (devinfo->ver >= 12)
          brw_set_default_swsb(p, tgl_swsb_regdist(1));
       else
-         brw_inst_set_no_dd_check(devinfo, insn, use_dep_ctrl);
+         brw_eu_inst_set_no_dd_check(devinfo, insn, use_dep_ctrl);
 
       if (brw_type_size_bytes(reg.type) > 4 &&
           (intel_device_info_is_9lp(devinfo) || !devinfo->has_64bit_int)) {
@@ -428,12 +428,12 @@ fs_generator::generate_shuffle(fs_inst *inst,
           * pipelined NoMask MOV instruction.
           */
          insn = brw_MOV(p, addr, brw_imm_uw(src_start_offset));
-         brw_inst_set_mask_control(devinfo, insn, BRW_MASK_DISABLE);
-         brw_inst_set_pred_control(devinfo, insn, BRW_PREDICATE_NONE);
+         brw_eu_inst_set_mask_control(devinfo, insn, BRW_MASK_DISABLE);
+         brw_eu_inst_set_pred_control(devinfo, insn, BRW_PREDICATE_NONE);
          if (devinfo->ver >= 12)
             brw_set_default_swsb(p, tgl_swsb_null());
          else
-            brw_inst_set_no_dd_clear(devinfo, insn, use_dep_ctrl);
+            brw_eu_inst_set_no_dd_clear(devinfo, insn, use_dep_ctrl);
 
          /* Take into account the component size and horizontal stride. */
          assert(src.vstride == src.hstride + src.width);
@@ -443,7 +443,7 @@ fs_generator::generate_shuffle(fs_inst *inst,
          if (devinfo->ver >= 12)
             brw_set_default_swsb(p, tgl_swsb_regdist(1));
          else
-            brw_inst_set_no_dd_check(devinfo, insn, use_dep_ctrl);
+            brw_eu_inst_set_no_dd_check(devinfo, insn, use_dep_ctrl);
 
          /* Add on the register start offset */
          brw_ADD(p, addr, addr, brw_imm_uw(src_start_offset));
@@ -513,8 +513,8 @@ fs_generator::generate_quad_swizzle(const fs_inst *inst,
                stride(suboffset(src, BRW_GET_SWZ(swiz, c)), 4, 1, 0));
 
             if (devinfo->ver < 12) {
-               brw_inst_set_no_dd_clear(devinfo, insn, c < 3);
-               brw_inst_set_no_dd_check(devinfo, insn, c > 0);
+               brw_eu_inst_set_no_dd_clear(devinfo, insn, c < 3);
+               brw_eu_inst_set_no_dd_check(devinfo, insn, c > 0);
             }
 
             brw_set_default_swsb(p, tgl_swsb_null());
@@ -716,22 +716,22 @@ fs_generator::generate_scratch_header(fs_inst *inst,
    if (devinfo->ver >= 12)
       brw_set_default_swsb(p, tgl_swsb_null());
    else
-      brw_inst_set_no_dd_clear(p->devinfo, insn, true);
+      brw_eu_inst_set_no_dd_clear(p->devinfo, insn, true);
 
    /* Copy the per-thread scratch space size from g0.3[3:0] */
    brw_set_default_exec_size(p, BRW_EXECUTE_1);
    insn = brw_AND(p, suboffset(dst, 3), component(src, 3),
                      brw_imm_ud(INTEL_MASK(3, 0)));
    if (devinfo->ver < 12) {
-      brw_inst_set_no_dd_clear(p->devinfo, insn, true);
-      brw_inst_set_no_dd_check(p->devinfo, insn, true);
+      brw_eu_inst_set_no_dd_clear(p->devinfo, insn, true);
+      brw_eu_inst_set_no_dd_check(p->devinfo, insn, true);
    }
 
    /* Copy the scratch base address from g0.5[31:10] */
    insn = brw_AND(p, suboffset(dst, 5), component(src, 5),
                      brw_imm_ud(INTEL_MASK(31, 10)));
    if (devinfo->ver < 12)
-      brw_inst_set_no_dd_check(p->devinfo, insn, true);
+      brw_eu_inst_set_no_dd_check(p->devinfo, insn, true);
 }
 
 void
@@ -794,8 +794,8 @@ fs_generator::generate_code(const cfg_t *cfg, int dispatch_width,
        */
       if (devinfo->ver <= 9 &&
           p->nr_insn > 1 &&
-          brw_inst_opcode(p->isa, brw_last_inst) == BRW_OPCODE_MATH &&
-          brw_inst_math_function(devinfo, brw_last_inst) == BRW_MATH_FUNCTION_POW &&
+          brw_eu_inst_opcode(p->isa, brw_last_inst) == BRW_OPCODE_MATH &&
+          brw_eu_inst_math_function(devinfo, brw_last_inst) == BRW_MATH_FUNCTION_POW &&
           inst->dst.component_size(inst->exec_size) > REG_SIZE) {
          brw_NOP(p);
          last_insn_offset = p->next_insn_offset;
@@ -1375,10 +1375,10 @@ fs_generator::generate_code(const cfg_t *cfg, int dispatch_width,
          brw_eu_inst *last = &p->store[last_insn_offset / 16];
 
          if (inst->conditional_mod)
-            brw_inst_set_cond_modifier(p->devinfo, last, inst->conditional_mod);
+            brw_eu_inst_set_cond_modifier(p->devinfo, last, inst->conditional_mod);
          if (devinfo->ver < 12) {
-            brw_inst_set_no_dd_clear(p->devinfo, last, inst->no_dd_clear);
-            brw_inst_set_no_dd_check(p->devinfo, last, inst->no_dd_check);
+            brw_eu_inst_set_no_dd_clear(p->devinfo, last, inst->no_dd_clear);
+            brw_eu_inst_set_no_dd_check(p->devinfo, last, inst->no_dd_check);
          }
       }
 

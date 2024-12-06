@@ -241,7 +241,7 @@ int main(int argc, char **argv)
       const brw_eu_inst *insn = r.bin + offset;
       bool compacted = false;
 
-      if (compact && brw_inst_cmpt_control(devinfo, insn)) {
+      if (compact && brw_eu_inst_cmpt_control(devinfo, insn)) {
             offset += 8;
             compacted = true;
       } else {

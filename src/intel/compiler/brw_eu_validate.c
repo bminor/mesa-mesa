@@ -256,9 +256,9 @@ invalid_values(const struct brw_isa_info *isa, const brw_hw_decoded_inst *inst)
    struct string error_msg = { .str = NULL, .len = 0 };
 
    if (devinfo->ver >= 12) {
-      unsigned qtr_ctrl = brw_inst_qtr_control(devinfo, inst->raw);
+      unsigned qtr_ctrl = brw_eu_inst_qtr_control(devinfo, inst->raw);
       unsigned nib_ctrl =
-         devinfo->ver == 12 ? brw_inst_nib_control(devinfo, inst->raw) : 0;
+         devinfo->ver == 12 ? brw_eu_inst_nib_control(devinfo, inst->raw) : 0;
 
       unsigned chan_off = (qtr_ctrl * 2 + nib_ctrl) << 2;
       ERROR_IF(chan_off % inst->exec_size != 0,
@@ -328,10 +328,10 @@ send_restrictions(const struct brw_isa_info *isa,
                "src1 of split send must be a GRF or NULL");
 
       if (devinfo->ver < 30) {
-         ERROR_IF(brw_inst_eot(devinfo, inst->raw) &&
+         ERROR_IF(brw_eu_inst_eot(devinfo, inst->raw) &&
                   inst->src[0].nr < 112,
                   "send with EOT must use g112-g127");
-         ERROR_IF(brw_inst_eot(devinfo, inst->raw) &&
+         ERROR_IF(brw_eu_inst_eot(devinfo, inst->raw) &&
                   inst->src[1].file == FIXED_GRF &&
                   inst->src[1].nr < 112,
                   "send with EOT must use g112-g127");
@@ -340,14 +340,14 @@ send_restrictions(const struct brw_isa_info *isa,
       if (inst->src[0].file == FIXED_GRF && inst->src[1].file == FIXED_GRF) {
          /* Assume minimums if we don't know */
          unsigned mlen = 1;
-         if (!brw_inst_send_sel_reg32_desc(devinfo, inst->raw)) {
-            const uint32_t desc = brw_inst_send_desc(devinfo, inst->raw);
+         if (!brw_eu_inst_send_sel_reg32_desc(devinfo, inst->raw)) {
+            const uint32_t desc = brw_eu_inst_send_desc(devinfo, inst->raw);
             mlen = brw_message_desc_mlen(devinfo, desc) / reg_unit(devinfo);
          }
 
          unsigned ex_mlen = 1;
-         if (!brw_inst_send_sel_reg32_ex_desc(devinfo, inst->raw)) {
-            const uint32_t ex_desc = brw_inst_sends_ex_desc(devinfo, inst->raw, false);
+         if (!brw_eu_inst_send_sel_reg32_ex_desc(devinfo, inst->raw)) {
+            const uint32_t ex_desc = brw_eu_inst_sends_ex_desc(devinfo, inst->raw, false);
             ex_mlen = brw_message_ex_desc_ex_mlen(devinfo, ex_desc) /
                       reg_unit(devinfo);
          }
@@ -365,13 +365,13 @@ send_restrictions(const struct brw_isa_info *isa,
 
       ERROR_IF(inst->src[0].file != FIXED_GRF,
                "send from non-GRF");
-      ERROR_IF(brw_inst_eot(devinfo, inst->raw) &&
+      ERROR_IF(brw_eu_inst_eot(devinfo, inst->raw) &&
                inst->src[0].nr < 112,
                "send with EOT must use g112-g127");
 
       ERROR_IF(!dst_is_null(inst) &&
-               (inst->dst.nr + brw_inst_rlen(devinfo, inst->raw) > 127) &&
-               (inst->src[0].nr + brw_inst_mlen(devinfo, inst->raw) > inst->dst.nr),
+               (inst->dst.nr + brw_eu_inst_rlen(devinfo, inst->raw) > 127) &&
+               (inst->src[0].nr + brw_eu_inst_mlen(devinfo, inst->raw) > inst->dst.nr),
                "r127 must not be used for return address when there is "
                "a src and dest overlap");
    }
@@ -383,7 +383,7 @@ static bool
 is_unsupported_inst(const struct brw_isa_info *isa,
                     const brw_eu_inst *inst)
 {
-   return brw_inst_opcode(isa, inst) == BRW_OPCODE_ILLEGAL;
+   return brw_eu_inst_opcode(isa, inst) == BRW_OPCODE_ILLEGAL;
 }
 
 /**
@@ -652,15 +652,15 @@ general_restrictions_based_on_operand_types(const struct brw_isa_info *isa,
           */
          switch (s) {
          case 0:
-            ERROR_IF(brw_inst_3src_a16_src0_rep_ctrl(devinfo, inst->raw),
+            ERROR_IF(brw_eu_inst_3src_a16_src0_rep_ctrl(devinfo, inst->raw),
                      "RepCtrl must be zero for 64-bit source 0");
             break;
          case 1:
-            ERROR_IF(brw_inst_3src_a16_src1_rep_ctrl(devinfo, inst->raw),
+            ERROR_IF(brw_eu_inst_3src_a16_src1_rep_ctrl(devinfo, inst->raw),
                      "RepCtrl must be zero for 64-bit source 1");
             break;
          case 2:
-            ERROR_IF(brw_inst_3src_a16_src2_rep_ctrl(devinfo, inst->raw),
+            ERROR_IF(brw_eu_inst_3src_a16_src2_rep_ctrl(devinfo, inst->raw),
                      "RepCtrl must be zero for 64-bit source 2");
             break;
          default: unreachable("invalid src");
@@ -1581,7 +1581,7 @@ special_requirements_for_handling_double_precision_data_types(
       if (is_double_precision &&
           intel_device_info_is_9lp(devinfo)) {
          ERROR_IF(inst->opcode == BRW_OPCODE_MAC ||
-                  brw_inst_acc_wr_control(devinfo, inst->raw) ||
+                  brw_eu_inst_acc_wr_control(devinfo, inst->raw) ||
                   (ARF == file &&
                    reg != BRW_ARF_NULL) ||
                   (ARF == inst->dst.file &&
@@ -1680,8 +1680,8 @@ special_requirements_for_handling_double_precision_data_types(
     */
    if (is_double_precision &&
        intel_device_info_is_9lp(devinfo)) {
-      ERROR_IF(brw_inst_no_dd_check(devinfo, inst->raw) ||
-               brw_inst_no_dd_clear(devinfo, inst->raw),
+      ERROR_IF(brw_eu_inst_no_dd_check(devinfo, inst->raw) ||
+               brw_eu_inst_no_dd_clear(devinfo, inst->raw),
                "DepCtrl is not allowed when the execution type is 64-bit");
    }
 
@@ -1795,7 +1795,7 @@ instruction_restrictions(const struct brw_isa_info *isa,
    }
 
    if (inst->opcode == BRW_OPCODE_MATH) {
-      unsigned math_function = brw_inst_math_function(devinfo, inst->raw);
+      unsigned math_function = brw_eu_inst_math_function(devinfo, inst->raw);
       switch (math_function) {
       case BRW_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER:
       case BRW_MATH_FUNCTION_INT_DIV_QUOTIENT:
@@ -1969,7 +1969,7 @@ instruction_restrictions(const struct brw_isa_info *isa,
    }
 
    if (inst->opcode == BRW_OPCODE_DPAS) {
-      ERROR_IF(brw_inst_dpas_3src_sdepth(devinfo, inst->raw) != BRW_SYSTOLIC_DEPTH_8,
+      ERROR_IF(brw_eu_inst_dpas_3src_sdepth(devinfo, inst->raw) != BRW_SYSTOLIC_DEPTH_8,
                "Systolic depth must be 8.");
 
       const unsigned sdepth = 8;
@@ -1980,7 +1980,7 @@ instruction_restrictions(const struct brw_isa_info *isa,
       const enum brw_reg_type src2_type = inst->src[2].type;
 
       const enum gfx12_sub_byte_precision src1_sub_byte =
-         brw_inst_dpas_3src_src1_subbyte(devinfo, inst->raw);
+         brw_eu_inst_dpas_3src_src1_subbyte(devinfo, inst->raw);
 
       if (src1_type != BRW_TYPE_B && src1_type != BRW_TYPE_UB) {
          ERROR_IF(src1_sub_byte != BRW_SUB_BYTE_PRECISION_NONE,
@@ -1993,7 +1993,7 @@ instruction_restrictions(const struct brw_isa_info *isa,
       }
 
       const enum gfx12_sub_byte_precision src2_sub_byte =
-         brw_inst_dpas_3src_src2_subbyte(devinfo, inst->raw);
+         brw_eu_inst_dpas_3src_src2_subbyte(devinfo, inst->raw);
 
       if (src2_type != BRW_TYPE_B && src2_type != BRW_TYPE_UB) {
          ERROR_IF(src2_sub_byte != BRW_SUB_BYTE_PRECISION_NONE,
@@ -2007,11 +2007,11 @@ instruction_restrictions(const struct brw_isa_info *isa,
 
       const unsigned src1_bits_per_element =
          brw_type_size_bits(src1_type) >>
-         brw_inst_dpas_3src_src1_subbyte(devinfo, inst->raw);
+         brw_eu_inst_dpas_3src_src1_subbyte(devinfo, inst->raw);
 
       const unsigned src2_bits_per_element =
          brw_type_size_bits(src2_type) >>
-         brw_inst_dpas_3src_src2_subbyte(devinfo, inst->raw);
+         brw_eu_inst_dpas_3src_src2_subbyte(devinfo, inst->raw);
 
       /* The MAX2(1, ...) is just to prevent possible division by 0 later. */
       const unsigned ops_per_chan =
@@ -2059,7 +2059,7 @@ instruction_restrictions(const struct brw_isa_info *isa,
       ERROR_IF((src2_subnr * brw_type_size_bytes(src2_type) * src2_bits_per_element) / 8 >= REG_SIZE,
                "Src2 subregister specifies next register.");
 
-      if (brw_inst_3src_atomic_control(devinfo, inst->raw)) {
+      if (brw_eu_inst_3src_atomic_control(devinfo, inst->raw)) {
          /* FINISHME: When we start emitting DPAS with Atomic set, figure out
           * a way to validate it. Also add a test in test_eu_validate.cpp.
           */
@@ -2068,7 +2068,7 @@ instruction_restrictions(const struct brw_isa_info *isa,
                   "DPAS instruction.");
       }
 
-      if (brw_inst_dpas_3src_exec_type(devinfo, inst->raw) ==
+      if (brw_eu_inst_dpas_3src_exec_type(devinfo, inst->raw) ==
           BRW_ALIGN1_3SRC_EXEC_TYPE_FLOAT) {
          ERROR_IF(dst_type != BRW_TYPE_F,
                   "DPAS destination type must be F.");
@@ -2124,7 +2124,7 @@ send_descriptor_restrictions(const struct brw_isa_info *isa,
 
    if (inst_is_split_send(isa, inst)) {
       /* We can only validate immediate descriptors */
-      if (brw_inst_send_sel_reg32_desc(devinfo, inst->raw))
+      if (brw_eu_inst_send_sel_reg32_desc(devinfo, inst->raw))
          return error_msg;
    } else if (inst_is_send(inst)) {
       /* We can only validate immediate descriptors */
@@ -2134,9 +2134,9 @@ send_descriptor_restrictions(const struct brw_isa_info *isa,
       return error_msg;
    }
 
-   const uint32_t desc = brw_inst_send_desc(devinfo, inst->raw);
+   const uint32_t desc = brw_eu_inst_send_desc(devinfo, inst->raw);
 
-   switch (brw_inst_sfid(devinfo, inst->raw)) {
+   switch (brw_eu_inst_sfid(devinfo, inst->raw)) {
    case BRW_SFID_URB:
       if (devinfo->ver < 20)
          break;
@@ -2156,11 +2156,11 @@ send_descriptor_restrictions(const struct brw_isa_info *isa,
       break;
    }
 
-   if (brw_inst_sfid(devinfo, inst->raw) == BRW_SFID_URB && devinfo->ver < 20) {
-      ERROR_IF(!brw_inst_header_present(devinfo, inst->raw),
+   if (brw_eu_inst_sfid(devinfo, inst->raw) == BRW_SFID_URB && devinfo->ver < 20) {
+      ERROR_IF(!brw_eu_inst_header_present(devinfo, inst->raw),
                "Header must be present for all URB messages.");
 
-      switch (brw_inst_urb_opcode(devinfo, inst->raw)) {
+      switch (brw_eu_inst_urb_opcode(devinfo, inst->raw)) {
       case GFX7_URB_OPCODE_ATOMIC_INC:
       case GFX7_URB_OPCODE_ATOMIC_MOV:
       case GFX8_URB_OPCODE_ATOMIC_ADD:
@@ -2168,7 +2168,7 @@ send_descriptor_restrictions(const struct brw_isa_info *isa,
          break;
 
       case GFX8_URB_OPCODE_SIMD8_READ:
-         ERROR_IF(brw_inst_rlen(devinfo, inst->raw) == 0,
+         ERROR_IF(brw_eu_inst_rlen(devinfo, inst->raw) == 0,
                   "URB SIMD8 read message must read some data.");
          break;
 
@@ -2440,14 +2440,14 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
    struct string error_msg = { .str = NULL, .len = 0 };
 
    inst->raw = raw;
-   inst->opcode = brw_inst_opcode(isa, raw);
+   inst->opcode = brw_eu_inst_opcode(isa, raw);
    inst->num_sources = brw_num_sources_from_inst(isa, raw);
 
    const struct opcode_desc *desc = brw_opcode_desc(isa, inst->opcode);
    assert(desc->ndst == 0 || desc->ndst == 1);
    inst->has_dst = desc->ndst == 1;
 
-   enum brw_execution_size exec_size = brw_inst_exec_size(devinfo, raw);
+   enum brw_execution_size exec_size = brw_eu_inst_exec_size(devinfo, raw);
    switch (exec_size) {
    case BRW_EXECUTE_1:
    case BRW_EXECUTE_2:
@@ -2462,8 +2462,8 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
       break;
    }
 
-   inst->access_mode = brw_inst_access_mode(devinfo, raw);
-   inst->pred_control = brw_inst_pred_control(devinfo, raw);
+   inst->access_mode = brw_eu_inst_access_mode(devinfo, raw);
+   inst->pred_control = brw_eu_inst_pred_control(devinfo, raw);
 
    RETURN_ERROR_IF(inst->num_sources == 3 && inst->access_mode == BRW_ALIGN_1 && devinfo->ver == 9,
                    "Align1 mode not allowed on Gfx9 for 3-src instructions");
@@ -2529,67 +2529,67 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
              inst->opcode == BRW_OPCODE_SYNC);
 
       if (inst->has_dst) {
-         inst->dst.file = brw_inst_dst_reg_file(devinfo, raw);
-         inst->dst.type = brw_inst_dst_type(devinfo, raw);
-         inst->dst.address_mode = brw_inst_dst_address_mode(devinfo, raw);
+         inst->dst.file = brw_eu_inst_dst_reg_file(devinfo, raw);
+         inst->dst.type = brw_eu_inst_dst_type(devinfo, raw);
+         inst->dst.address_mode = brw_eu_inst_dst_address_mode(devinfo, raw);
          if (inst->dst.address_mode == BRW_ADDRESS_DIRECT) {
-            inst->dst.nr = brw_inst_dst_da_reg_nr(devinfo, raw);
+            inst->dst.nr = brw_eu_inst_dst_da_reg_nr(devinfo, raw);
             if (inst->access_mode == BRW_ALIGN_1) {
-               inst->dst.subnr = brw_inst_dst_da1_subreg_nr(devinfo, raw);
+               inst->dst.subnr = brw_eu_inst_dst_da1_subreg_nr(devinfo, raw);
             } else {
-               inst->dst.subnr = brw_inst_dst_da16_subreg_nr(devinfo, raw);
+               inst->dst.subnr = brw_eu_inst_dst_da16_subreg_nr(devinfo, raw);
             }
          } else {
-            inst->dst.subnr = brw_inst_dst_ia_subreg_nr(devinfo, raw);
+            inst->dst.subnr = brw_eu_inst_dst_ia_subreg_nr(devinfo, raw);
          }
-         inst->dst.hstride = STRIDE(brw_inst_dst_hstride(devinfo, raw));
+         inst->dst.hstride = STRIDE(brw_eu_inst_dst_hstride(devinfo, raw));
       }
 
-      inst->src[0].file = brw_inst_src0_reg_file(devinfo, raw);
-      inst->src[0].type = brw_inst_src0_type(devinfo, raw);
-      inst->src[0].address_mode = brw_inst_src0_address_mode(devinfo, raw);
-      inst->src[0].negate = brw_inst_src0_negate(devinfo, raw);
-      inst->src[0].abs = brw_inst_src0_abs(devinfo, raw);
+      inst->src[0].file = brw_eu_inst_src0_reg_file(devinfo, raw);
+      inst->src[0].type = brw_eu_inst_src0_type(devinfo, raw);
+      inst->src[0].address_mode = brw_eu_inst_src0_address_mode(devinfo, raw);
+      inst->src[0].negate = brw_eu_inst_src0_negate(devinfo, raw);
+      inst->src[0].abs = brw_eu_inst_src0_abs(devinfo, raw);
       if (inst->src[0].file != IMM) {
          if (inst->src[0].address_mode == BRW_ADDRESS_DIRECT) {
-            inst->src[0].nr = brw_inst_src0_da_reg_nr(devinfo, raw);
+            inst->src[0].nr = brw_eu_inst_src0_da_reg_nr(devinfo, raw);
             if (inst->access_mode == BRW_ALIGN_1) {
-               inst->src[0].subnr = brw_inst_src0_da1_subreg_nr(devinfo, raw);
+               inst->src[0].subnr = brw_eu_inst_src0_da1_subreg_nr(devinfo, raw);
             } else {
-               inst->src[0].subnr = brw_inst_src0_da16_subreg_nr(devinfo, raw) * 16;
+               inst->src[0].subnr = brw_eu_inst_src0_da16_subreg_nr(devinfo, raw) * 16;
             }
          } else {
-            inst->src[0].subnr = brw_inst_src0_ia_subreg_nr(devinfo, raw);
+            inst->src[0].subnr = brw_eu_inst_src0_ia_subreg_nr(devinfo, raw);
          }
 
-         inst->src[0].vstride = STRIDE(brw_inst_src0_vstride(devinfo, raw));
+         inst->src[0].vstride = STRIDE(brw_eu_inst_src0_vstride(devinfo, raw));
          if (inst->access_mode == BRW_ALIGN_1) {
-            inst->src[0].width = WIDTH(brw_inst_src0_width(devinfo, raw));
-            inst->src[0].hstride = STRIDE(brw_inst_src0_hstride(devinfo, raw));
+            inst->src[0].width = WIDTH(brw_eu_inst_src0_width(devinfo, raw));
+            inst->src[0].hstride = STRIDE(brw_eu_inst_src0_hstride(devinfo, raw));
          }
       }
 
       if (inst->num_sources > 1) {
-         inst->src[1].file = brw_inst_src1_reg_file(devinfo, raw);
-         inst->src[1].type = brw_inst_src1_type(devinfo, raw);
-         inst->src[1].negate = brw_inst_src1_negate(devinfo, raw);
-         inst->src[1].abs = brw_inst_src1_abs(devinfo, raw);
+         inst->src[1].file = brw_eu_inst_src1_reg_file(devinfo, raw);
+         inst->src[1].type = brw_eu_inst_src1_type(devinfo, raw);
+         inst->src[1].negate = brw_eu_inst_src1_negate(devinfo, raw);
+         inst->src[1].abs = brw_eu_inst_src1_abs(devinfo, raw);
          if (inst->src[1].file != IMM) {
             if (inst->src[1].address_mode == BRW_ADDRESS_DIRECT) {
-               inst->src[1].nr = brw_inst_src1_da_reg_nr(devinfo, raw);
+               inst->src[1].nr = brw_eu_inst_src1_da_reg_nr(devinfo, raw);
                if (inst->access_mode == BRW_ALIGN_1) {
-                  inst->src[1].subnr = brw_inst_src1_da1_subreg_nr(devinfo, raw);
+                  inst->src[1].subnr = brw_eu_inst_src1_da1_subreg_nr(devinfo, raw);
                } else {
-                  inst->src[1].subnr = brw_inst_src1_da16_subreg_nr(devinfo, raw) * 16;
+                  inst->src[1].subnr = brw_eu_inst_src1_da16_subreg_nr(devinfo, raw) * 16;
                }
             } else {
-               inst->src[1].subnr = brw_inst_src1_ia_subreg_nr(devinfo, raw);
+               inst->src[1].subnr = brw_eu_inst_src1_ia_subreg_nr(devinfo, raw);
             }
 
-            inst->src[1].vstride = STRIDE(brw_inst_src1_vstride(devinfo, raw));
+            inst->src[1].vstride = STRIDE(brw_eu_inst_src1_vstride(devinfo, raw));
             if (inst->access_mode == BRW_ALIGN_1) {
-               inst->src[1].width = WIDTH(brw_inst_src1_width(devinfo, raw));
-               inst->src[1].hstride = STRIDE(brw_inst_src1_hstride(devinfo, raw));
+               inst->src[1].width = WIDTH(brw_eu_inst_src1_width(devinfo, raw));
+               inst->src[1].hstride = STRIDE(brw_eu_inst_src1_hstride(devinfo, raw));
             }
          }
       }
@@ -2602,64 +2602,64 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
       assert(inst->has_dst);
 
       if (inst->access_mode == BRW_ALIGN_1) {
-         inst->dst.file = brw_inst_3src_a1_dst_reg_file(devinfo, raw);
-         inst->dst.type = brw_inst_3src_a1_dst_type(devinfo, raw);
-         inst->dst.nr = brw_inst_3src_dst_reg_nr(devinfo, raw);
-         inst->dst.subnr = brw_inst_3src_a1_dst_subreg_nr(devinfo, raw) * 8;
-         inst->dst.hstride = STRIDE(brw_inst_3src_a1_dst_hstride(devinfo, raw));
+         inst->dst.file = brw_eu_inst_3src_a1_dst_reg_file(devinfo, raw);
+         inst->dst.type = brw_eu_inst_3src_a1_dst_type(devinfo, raw);
+         inst->dst.nr = brw_eu_inst_3src_dst_reg_nr(devinfo, raw);
+         inst->dst.subnr = brw_eu_inst_3src_a1_dst_subreg_nr(devinfo, raw) * 8;
+         inst->dst.hstride = STRIDE(brw_eu_inst_3src_a1_dst_hstride(devinfo, raw));
 
-         inst->src[0].file = brw_inst_3src_a1_src0_reg_file(devinfo, raw);
-         inst->src[0].type = brw_inst_3src_a1_src0_type(devinfo, raw);
-         inst->src[0].negate = brw_inst_3src_src0_negate(devinfo, raw);
-         inst->src[0].abs = brw_inst_3src_src0_abs(devinfo, raw);
+         inst->src[0].file = brw_eu_inst_3src_a1_src0_reg_file(devinfo, raw);
+         inst->src[0].type = brw_eu_inst_3src_a1_src0_type(devinfo, raw);
+         inst->src[0].negate = brw_eu_inst_3src_src0_negate(devinfo, raw);
+         inst->src[0].abs = brw_eu_inst_3src_src0_abs(devinfo, raw);
          if (inst->src[0].file != IMM) {
-            inst->src[0].nr = brw_inst_3src_src0_reg_nr(devinfo, raw);
-            inst->src[0].subnr = brw_inst_3src_a1_src0_subreg_nr(devinfo, raw);
-            inst->src[0].vstride = VSTRIDE_3SRC(brw_inst_3src_a1_src0_vstride(devinfo, raw));
-            inst->src[0].hstride = STRIDE(brw_inst_3src_a1_src0_hstride(devinfo, raw));
+            inst->src[0].nr = brw_eu_inst_3src_src0_reg_nr(devinfo, raw);
+            inst->src[0].subnr = brw_eu_inst_3src_a1_src0_subreg_nr(devinfo, raw);
+            inst->src[0].vstride = VSTRIDE_3SRC(brw_eu_inst_3src_a1_src0_vstride(devinfo, raw));
+            inst->src[0].hstride = STRIDE(brw_eu_inst_3src_a1_src0_hstride(devinfo, raw));
          }
 
-         inst->src[1].file = brw_inst_3src_a1_src1_reg_file(devinfo, raw);
-         inst->src[1].type = brw_inst_3src_a1_src1_type(devinfo, raw);
-         inst->src[1].negate = brw_inst_3src_src1_negate(devinfo, raw);
-         inst->src[1].abs = brw_inst_3src_src1_abs(devinfo, raw);
-         inst->src[1].nr = brw_inst_3src_src1_reg_nr(devinfo, raw);
-         inst->src[1].subnr = brw_inst_3src_a1_src1_subreg_nr(devinfo, raw);
-         inst->src[1].vstride = VSTRIDE_3SRC(brw_inst_3src_a1_src1_vstride(devinfo, raw));
-         inst->src[1].hstride = STRIDE(brw_inst_3src_a1_src1_hstride(devinfo, raw));
+         inst->src[1].file = brw_eu_inst_3src_a1_src1_reg_file(devinfo, raw);
+         inst->src[1].type = brw_eu_inst_3src_a1_src1_type(devinfo, raw);
+         inst->src[1].negate = brw_eu_inst_3src_src1_negate(devinfo, raw);
+         inst->src[1].abs = brw_eu_inst_3src_src1_abs(devinfo, raw);
+         inst->src[1].nr = brw_eu_inst_3src_src1_reg_nr(devinfo, raw);
+         inst->src[1].subnr = brw_eu_inst_3src_a1_src1_subreg_nr(devinfo, raw);
+         inst->src[1].vstride = VSTRIDE_3SRC(brw_eu_inst_3src_a1_src1_vstride(devinfo, raw));
+         inst->src[1].hstride = STRIDE(brw_eu_inst_3src_a1_src1_hstride(devinfo, raw));
 
-         inst->src[2].file = brw_inst_3src_a1_src2_reg_file(devinfo, raw);
-         inst->src[2].type = brw_inst_3src_a1_src2_type(devinfo, raw);
-         inst->src[2].negate = brw_inst_3src_src2_negate(devinfo, raw);
-         inst->src[2].abs = brw_inst_3src_src2_abs(devinfo, raw);
+         inst->src[2].file = brw_eu_inst_3src_a1_src2_reg_file(devinfo, raw);
+         inst->src[2].type = brw_eu_inst_3src_a1_src2_type(devinfo, raw);
+         inst->src[2].negate = brw_eu_inst_3src_src2_negate(devinfo, raw);
+         inst->src[2].abs = brw_eu_inst_3src_src2_abs(devinfo, raw);
          if (inst->src[2].file != IMM) {
-            inst->src[2].nr = brw_inst_3src_src2_reg_nr(devinfo, raw);
-            inst->src[2].subnr = brw_inst_3src_a1_src2_subreg_nr(devinfo, raw);
-            inst->src[2].hstride = STRIDE(brw_inst_3src_a1_src2_hstride(devinfo, raw));
+            inst->src[2].nr = brw_eu_inst_3src_src2_reg_nr(devinfo, raw);
+            inst->src[2].subnr = brw_eu_inst_3src_a1_src2_subreg_nr(devinfo, raw);
+            inst->src[2].hstride = STRIDE(brw_eu_inst_3src_a1_src2_hstride(devinfo, raw));
          }
 
       } else {
          inst->dst.file = FIXED_GRF;
-         inst->dst.type = brw_inst_3src_a16_dst_type(devinfo, raw);
-         inst->dst.nr = brw_inst_3src_dst_reg_nr(devinfo, raw);
-         inst->dst.subnr = brw_inst_3src_a16_dst_subreg_nr(devinfo, raw) * 4;
+         inst->dst.type = brw_eu_inst_3src_a16_dst_type(devinfo, raw);
+         inst->dst.nr = brw_eu_inst_3src_dst_reg_nr(devinfo, raw);
+         inst->dst.subnr = brw_eu_inst_3src_a16_dst_subreg_nr(devinfo, raw) * 4;
 
-         enum brw_reg_type src_type = brw_inst_3src_a16_src_type(devinfo, raw);
+         enum brw_reg_type src_type = brw_eu_inst_3src_a16_src_type(devinfo, raw);
 
          inst->src[0].file = FIXED_GRF;
          inst->src[0].type = src_type;
-         inst->src[0].nr = brw_inst_3src_src0_reg_nr(devinfo, raw);
-         inst->src[0].subnr = brw_inst_3src_a16_src0_subreg_nr(devinfo, raw) * 4;
+         inst->src[0].nr = brw_eu_inst_3src_src0_reg_nr(devinfo, raw);
+         inst->src[0].subnr = brw_eu_inst_3src_a16_src0_subreg_nr(devinfo, raw) * 4;
 
          inst->src[1].file = FIXED_GRF;
          inst->src[1].type = src_type;
-         inst->src[1].nr = brw_inst_3src_src1_reg_nr(devinfo, raw);
-         inst->src[1].subnr = brw_inst_3src_a16_src1_subreg_nr(devinfo, raw) * 4;
+         inst->src[1].nr = brw_eu_inst_3src_src1_reg_nr(devinfo, raw);
+         inst->src[1].subnr = brw_eu_inst_3src_a16_src1_subreg_nr(devinfo, raw) * 4;
 
          inst->src[2].file = FIXED_GRF;
          inst->src[2].type = src_type;
-         inst->src[2].nr = brw_inst_3src_src2_reg_nr(devinfo, raw);
-         inst->src[2].subnr = brw_inst_3src_a16_src2_subreg_nr(devinfo, raw) * 4;
+         inst->src[2].nr = brw_eu_inst_3src_src2_reg_nr(devinfo, raw);
+         inst->src[2].subnr = brw_eu_inst_3src_a16_src2_subreg_nr(devinfo, raw) * 4;
       }
       break;
    }
@@ -2668,25 +2668,25 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
       assert(inst->num_sources == 3);
       assert(inst->has_dst);
 
-      inst->dst.file = brw_inst_dpas_3src_dst_reg_file(devinfo, raw);
-      inst->dst.type = brw_inst_dpas_3src_dst_type(devinfo, raw);
-      inst->dst.nr = brw_inst_dpas_3src_dst_reg_nr(devinfo, raw);
-      inst->dst.subnr = brw_inst_dpas_3src_dst_subreg_nr(devinfo, raw);
+      inst->dst.file = brw_eu_inst_dpas_3src_dst_reg_file(devinfo, raw);
+      inst->dst.type = brw_eu_inst_dpas_3src_dst_type(devinfo, raw);
+      inst->dst.nr = brw_eu_inst_dpas_3src_dst_reg_nr(devinfo, raw);
+      inst->dst.subnr = brw_eu_inst_dpas_3src_dst_subreg_nr(devinfo, raw);
 
-      inst->src[0].file = brw_inst_dpas_3src_src0_reg_file(devinfo, raw);
-      inst->src[0].type = brw_inst_dpas_3src_src0_type(devinfo, raw);
-      inst->src[0].nr = brw_inst_dpas_3src_src0_reg_nr(devinfo, raw);
-      inst->src[0].subnr = brw_inst_dpas_3src_src0_subreg_nr(devinfo, raw);
+      inst->src[0].file = brw_eu_inst_dpas_3src_src0_reg_file(devinfo, raw);
+      inst->src[0].type = brw_eu_inst_dpas_3src_src0_type(devinfo, raw);
+      inst->src[0].nr = brw_eu_inst_dpas_3src_src0_reg_nr(devinfo, raw);
+      inst->src[0].subnr = brw_eu_inst_dpas_3src_src0_subreg_nr(devinfo, raw);
 
-      inst->src[1].file = brw_inst_dpas_3src_src1_reg_file(devinfo, raw);
-      inst->src[1].type = brw_inst_dpas_3src_src1_type(devinfo, raw);
-      inst->src[1].nr = brw_inst_dpas_3src_src1_reg_nr(devinfo, raw);
-      inst->src[1].subnr = brw_inst_dpas_3src_src1_subreg_nr(devinfo, raw);
+      inst->src[1].file = brw_eu_inst_dpas_3src_src1_reg_file(devinfo, raw);
+      inst->src[1].type = brw_eu_inst_dpas_3src_src1_type(devinfo, raw);
+      inst->src[1].nr = brw_eu_inst_dpas_3src_src1_reg_nr(devinfo, raw);
+      inst->src[1].subnr = brw_eu_inst_dpas_3src_src1_subreg_nr(devinfo, raw);
 
-      inst->src[2].file = brw_inst_dpas_3src_src2_reg_file(devinfo, raw);
-      inst->src[2].type = brw_inst_dpas_3src_src2_type(devinfo, raw);
-      inst->src[2].nr = brw_inst_dpas_3src_src2_reg_nr(devinfo, raw);
-      inst->src[2].subnr = brw_inst_dpas_3src_src2_subreg_nr(devinfo, raw);
+      inst->src[2].file = brw_eu_inst_dpas_3src_src2_reg_file(devinfo, raw);
+      inst->src[2].type = brw_eu_inst_dpas_3src_src2_type(devinfo, raw);
+      inst->src[2].nr = brw_eu_inst_dpas_3src_src2_reg_nr(devinfo, raw);
+      inst->src[2].subnr = brw_eu_inst_dpas_3src_src2_subreg_nr(devinfo, raw);
       break;
    }
 
@@ -2694,36 +2694,36 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
       if (inst->opcode == BRW_OPCODE_SENDS || inst->opcode == BRW_OPCODE_SENDSC) {
          assert(devinfo->ver < 12);
 
-         inst->dst.file = brw_inst_send_dst_reg_file(devinfo, raw);
+         inst->dst.file = brw_eu_inst_send_dst_reg_file(devinfo, raw);
          inst->dst.type = BRW_TYPE_D;
-         inst->dst.nr = brw_inst_dst_da_reg_nr(devinfo, raw);
-         inst->dst.subnr = brw_inst_dst_da16_subreg_nr(devinfo, raw) * 16;
+         inst->dst.nr = brw_eu_inst_dst_da_reg_nr(devinfo, raw);
+         inst->dst.subnr = brw_eu_inst_dst_da16_subreg_nr(devinfo, raw) * 16;
 
          inst->src[0].file = FIXED_GRF;
          inst->src[0].type = BRW_TYPE_D;
-         inst->src[0].nr = brw_inst_src0_da_reg_nr(devinfo, raw);
-         inst->src[0].subnr = brw_inst_src0_da16_subreg_nr(devinfo, raw) * 16;
+         inst->src[0].nr = brw_eu_inst_src0_da_reg_nr(devinfo, raw);
+         inst->src[0].subnr = brw_eu_inst_src0_da16_subreg_nr(devinfo, raw) * 16;
 
          if (inst->num_sources > 1) {
-            inst->src[1].file = brw_inst_send_src1_reg_file(devinfo, raw);
+            inst->src[1].file = brw_eu_inst_send_src1_reg_file(devinfo, raw);
             inst->src[1].type = BRW_TYPE_D;
-            inst->src[1].nr = brw_inst_send_src1_reg_nr(devinfo, raw);
+            inst->src[1].nr = brw_eu_inst_send_src1_reg_nr(devinfo, raw);
          }
       } else {
          assert(devinfo->ver >= 12);
 
-         inst->dst.file = brw_inst_dst_reg_file(devinfo, raw);
+         inst->dst.file = brw_eu_inst_dst_reg_file(devinfo, raw);
          inst->dst.type = BRW_TYPE_D;
-         inst->dst.nr = brw_inst_dst_da_reg_nr(devinfo, raw);
+         inst->dst.nr = brw_eu_inst_dst_da_reg_nr(devinfo, raw);
 
-         inst->src[0].file = brw_inst_send_src0_reg_file(devinfo, raw);
+         inst->src[0].file = brw_eu_inst_send_src0_reg_file(devinfo, raw);
          inst->src[0].type = BRW_TYPE_D;
-         inst->src[0].nr = brw_inst_src0_da_reg_nr(devinfo, raw);
+         inst->src[0].nr = brw_eu_inst_src0_da_reg_nr(devinfo, raw);
 
          if (inst->num_sources > 1) {
-            inst->src[1].file = brw_inst_send_src1_reg_file(devinfo, raw);
+            inst->src[1].file = brw_eu_inst_send_src1_reg_file(devinfo, raw);
             inst->src[1].type = BRW_TYPE_D;
-            inst->src[1].nr = brw_inst_send_src1_reg_nr(devinfo, raw);
+            inst->src[1].nr = brw_eu_inst_send_src1_reg_nr(devinfo, raw);
          }
       }
       break;
@@ -2756,13 +2756,13 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
         inst->format == FORMAT_BASIC_THREE_SRC ||
         inst->format == FORMAT_DPAS_THREE_SRC) &&
        !inst_is_send(inst)) {
-      inst->saturate = brw_inst_saturate(devinfo, raw);
+      inst->saturate = brw_eu_inst_saturate(devinfo, raw);
 
       if (inst->num_sources > 1 ||
           devinfo->ver < 12 ||
           inst->src[0].file != IMM  ||
           brw_type_size_bytes(inst->src[0].type) < 8) {
-         inst->cond_modifier = brw_inst_cond_modifier(devinfo, raw);
+         inst->cond_modifier = brw_eu_inst_cond_modifier(devinfo, raw);
       }
    }
 
@@ -2831,7 +2831,7 @@ brw_validate_instructions(const struct brw_isa_info *isa,
 
    for (int src_offset = start_offset; src_offset < end_offset;) {
       const brw_eu_inst *inst = assembly + src_offset;
-      bool is_compact = brw_inst_cmpt_control(devinfo, inst);
+      bool is_compact = brw_eu_inst_cmpt_control(devinfo, inst);
       unsigned inst_size = is_compact ? sizeof(brw_eu_compact_inst)
                                       : sizeof(brw_eu_inst);
       brw_eu_inst uncompacted;
