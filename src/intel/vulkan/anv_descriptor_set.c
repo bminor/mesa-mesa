@@ -2258,6 +2258,15 @@ anv_descriptor_set_write_image_view(struct anv_device *device,
                device->physical,
                anv_image_view_storage_surface_state(image_view)->state),
             .image_depth = image_view->vk.storage.z_slice_count,
+            .image_address = (anv_image_is_sparse(image_view->image) ?
+                              image_view->image->bindings[
+                                 ANV_IMAGE_MEMORY_BINDING_MAIN].sparse_data.address :
+                              anv_address_physical(
+                                 image_view->image->bindings[
+                                    ANV_IMAGE_MEMORY_BINDING_MAIN].address)),
+            .tile_mode = image_view->image->planes[0].primary_surface.isl.tiling == ISL_TILING_LINEAR ? 0 : 0xffffffff,
+            .row_pitch_B = image_view->image->planes[0].primary_surface.isl.row_pitch_B,
+            .qpitch = image_view->image->planes[0].primary_surface.isl.array_pitch_el_rows,
          };
          memcpy(desc_surface_map, &desc_data, sizeof(desc_data));
       } else {
@@ -2392,6 +2401,8 @@ anv_descriptor_set_write_buffer_view(struct anv_device *device,
       struct anv_storage_image_descriptor desc_data = {
          .vanilla = anv_surface_state_to_handle(
             device->physical, buffer_view->storage.state),
+         .image_address = anv_address_physical(buffer_view->address),
+         /* tile_mode, row_pitch_B, qpitch = 0 */
       };
       memcpy(desc_map, &desc_data, sizeof(desc_data));
    }

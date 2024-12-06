@@ -57,6 +57,7 @@ genX_bits_included_symbols = [
   # structures
   'RENDER_SURFACE_STATE::Surface Base Address',
   'RENDER_SURFACE_STATE::Surface Pitch',
+  'RENDER_SURFACE_STATE::Surface QPitch',
   'RENDER_SURFACE_STATE::Auxiliary Surface Base Address',
   'RENDER_SURFACE_STATE::Auxiliary Surface Pitch',
   'RENDER_SURFACE_STATE::Clear Value Address',
@@ -69,6 +70,7 @@ genX_bits_included_symbols = [
   'RENDER_SURFACE_STATE::Depth',
   'RENDER_SURFACE_STATE::Surface Type',
   'RENDER_SURFACE_STATE::Render Target View Extent',
+  'RENDER_SURFACE_STATE::Tile Mode',
   'CLEAR_COLOR',
   'VERTEX_BUFFER_STATE::Buffer Starting Address',
   'CPS_STATE',

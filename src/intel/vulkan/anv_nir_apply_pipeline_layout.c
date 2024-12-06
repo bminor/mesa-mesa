@@ -1662,6 +1662,121 @@ lower_get_ssbo_size(nir_builder *b, nir_intrinsic_instr *intrin,
 }
 
 static bool
+lower_image_load_intel_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
+                                 struct apply_pipeline_layout_state *state)
+{
+   nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+
+   unsigned set = var->data.descriptor_set;
+   unsigned binding = var->data.binding;
+
+   b->cursor = nir_instr_remove(&intrin->instr);
+
+   nir_def *array_index;
+   if (deref->deref_type != nir_deref_type_var) {
+      assert(deref->deref_type == nir_deref_type_array);
+      assert(nir_deref_instr_parent(deref)->deref_type == nir_deref_type_var);
+      array_index = deref->arr.index.ssa;
+   } else {
+      array_index = nir_imm_int(b, 0);
+   }
+
+   nir_def *desc_addr = build_desc_addr_for_binding(
+      b, set, binding, array_index, 0 /* plane */, state);
+
+   nir_def *desc;
+
+   if (state->layout->type == ANV_PIPELINE_DESCRIPTOR_SET_LAYOUT_TYPE_INDIRECT) {
+      switch (nir_intrinsic_base(intrin)) {
+      case ISL_SURF_PARAM_BASE_ADDRESSS:
+         desc = build_load_descriptor_mem(
+            b, desc_addr,
+            offsetof(struct anv_storage_image_descriptor, image_address),
+            1, 64, state);
+         break;
+      case ISL_SURF_PARAM_TILE_MODE:
+         desc = build_load_descriptor_mem(
+            b, desc_addr,
+            offsetof(struct anv_storage_image_descriptor, tile_mode),
+            1, 32, state);
+         break;
+      case ISL_SURF_PARAM_PITCH:
+         desc = build_load_descriptor_mem(
+            b, desc_addr,
+            offsetof(struct anv_storage_image_descriptor, row_pitch_B),
+            1, 32, state);
+         break;
+      case ISL_SURF_PARAM_QPITCH:
+         desc = build_load_descriptor_mem(
+            b, desc_addr,
+            offsetof(struct anv_storage_image_descriptor, qpitch),
+            1, 32, state);
+         break;
+      default:
+         unreachable("Invalid surface parameter");
+      }
+   } else {
+      const struct intel_device_info *devinfo = &state->pdevice->info;
+
+      switch (nir_intrinsic_base(intrin)) {
+      case ISL_SURF_PARAM_BASE_ADDRESSS: {
+         desc = build_load_descriptor_mem(
+            b, desc_addr,
+            RENDER_SURFACE_STATE_SurfaceBaseAddress_start(devinfo) / 8,
+            intrin->def.num_components,
+            intrin->def.bit_size, state);
+         break;
+      }
+      case ISL_SURF_PARAM_TILE_MODE: {
+         // tile mode [13:12] is in the first dword
+         const unsigned tile_mode_bits =
+            RENDER_SURFACE_STATE_TileMode_bits(devinfo);
+         const unsigned tile_mode_start =
+            RENDER_SURFACE_STATE_TileMode_start(devinfo);
+
+         nir_def *dword =
+            build_load_descriptor_mem(b, desc_addr, tile_mode_start / 32, 1, 32, state);
+
+         desc = nir_iand_imm(b,
+                             nir_ishr_imm(b, dword, tile_mode_start % 32),
+                             (1u << tile_mode_bits) - 1);
+         break;
+      }
+      case ISL_SURF_PARAM_PITCH: {
+         assert(RENDER_SURFACE_STATE_SurfacePitch_start(devinfo) % 32 == 0);
+         const unsigned surfPitch_bits =
+            RENDER_SURFACE_STATE_SurfacePitch_bits(devinfo);
+         nir_def *pitch_dword = build_load_descriptor_mem(
+            b, desc_addr,
+            RENDER_SURFACE_STATE_SurfacePitch_start(devinfo) / 8,
+            1, 32, state);
+         desc = nir_iand_imm(b, pitch_dword, (1u << surfPitch_bits) - 1);
+         desc = nir_iadd_imm(b, desc, 1);
+         break;
+      }
+      case ISL_SURF_PARAM_QPITCH: {
+         assert(RENDER_SURFACE_STATE_SurfaceQPitch_start(devinfo) % 32 == 0);
+         const unsigned surfQPitch_bits =
+            RENDER_SURFACE_STATE_SurfaceQPitch_bits(devinfo);
+         nir_def *pitch_dword = build_load_descriptor_mem(
+            b, desc_addr,
+            RENDER_SURFACE_STATE_SurfaceQPitch_start(devinfo) / 8,
+            1, 32, state);
+         desc = nir_iand_imm(b, pitch_dword, (1u << surfQPitch_bits) - 1);
+         desc = nir_ishl_imm(b, desc, 2);
+         break;
+      }
+      default:
+         unreachable("Invalid surface parameter");
+      }
+   }
+
+   nir_def_rewrite_uses(&intrin->def, desc);
+   return true;
+}
+
+static bool
 lower_image_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
                       struct apply_pipeline_layout_state *state)
 {
@@ -1955,11 +2070,12 @@ apply_pipeline_layout(nir_builder *b, nir_instr *instr, void *_state)
       case nir_intrinsic_image_deref_atomic:
       case nir_intrinsic_image_deref_atomic_swap:
       case nir_intrinsic_image_deref_samples:
-      case nir_intrinsic_image_deref_load_param_intel:
       case nir_intrinsic_image_deref_load_raw_intel:
       case nir_intrinsic_image_deref_store_raw_intel:
       case nir_intrinsic_image_deref_sparse_load:
          return lower_image_intrinsic(b, intrin, state);
+      case nir_intrinsic_image_deref_load_param_intel:
+         return lower_image_load_intel_intrinsic(b, intrin, state);
       case nir_intrinsic_image_deref_size:
          return lower_image_size_intrinsic(b, intrin, state);
       case nir_intrinsic_load_constant:
