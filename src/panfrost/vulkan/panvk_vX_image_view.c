@@ -89,8 +89,7 @@ prepare_tex_descs(struct panvk_image_view *view)
 
    if (util_format_is_depth_or_stencil(view->pview.format)) {
       /* Vulkan wants R001, where the depth/stencil is stored in the red
-       * component, but the pan_format/texture logic gives us RRRR.
-       * Tweak the swizzle so we get what Vulkan wants.
+       * component. Tweak the swizzle so we get what Vulkan wants.
        */
       static const unsigned char r001[4] = {
          PIPE_SWIZZLE_X,
@@ -100,10 +99,6 @@ prepare_tex_descs(struct panvk_image_view *view)
       };
 
       util_format_compose_swizzles(r001, view->pview.swizzle, pview.swizzle);
-
-#if PAN_ARCH >= 7
-      GENX(panfrost_texture_swizzle_replicate_x)(&pview);
-#endif
    }
 #if PAN_ARCH == 7
    /* v7 requires AFBC reswizzle. */
