@@ -2364,6 +2364,13 @@ static void
 agx_emit_jump(agx_builder *b, nir_jump_instr *instr)
 {
    agx_context *ctx = b->shader;
+
+   if (instr->type == nir_jump_halt) {
+      agx_stop(b);
+      ctx->current_block->unconditional_jumps = true;
+      return;
+   }
+
    assert(instr->type == nir_jump_break || instr->type == nir_jump_continue);
 
    /* Break out of either one or two loops */
