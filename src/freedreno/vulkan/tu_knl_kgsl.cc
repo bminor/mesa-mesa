@@ -167,6 +167,37 @@ bo_init_new_ion_legacy(struct tu_device *dev, struct tu_bo **out_bo, uint64_t si
 }
 
 static VkResult
+kgsl_bo_user_map(struct tu_device *dev, struct tu_bo *bo, uint64_t client_iova)
+{
+   uint64_t offset = bo->gem_handle << 12;
+   void *map = mmap((void *)client_iova, bo->size, PROT_READ | PROT_WRITE,
+                    MAP_SHARED, dev->physical_device->local_fd, offset);
+   if (map == MAP_FAILED) {
+      kgsl_bo_finish(dev, bo);
+
+      return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                       "mmap failed (%s)", strerror(errno));
+   }
+
+   if (client_iova && (uint64_t)map != client_iova) {
+      kgsl_bo_finish(dev, bo);
+
+      return vk_errorf(dev, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS,
+                       "mmap could not map the given address");
+   }
+
+   bo->map = map;
+   bo->iova = (uint64_t)map;
+
+   /* Because we're using SVM, the CPU mapping and GPU mapping are the same
+    * and the CPU mapping must stay fixed for the lifetime of the BO.
+    */
+   bo->never_unmap = true;
+
+   return VK_SUCCESS;
+}
+
+static VkResult
 kgsl_bo_init(struct tu_device *dev,
              struct vk_object_base *base,
              struct tu_bo **out_bo,
@@ -239,30 +270,9 @@ kgsl_bo_init(struct tu_device *dev,
    };
 
    if (flags & TU_BO_ALLOC_REPLAYABLE) {
-      uint64_t offset = req.id << 12;
-      void *map = mmap((void *)client_iova, bo->size, PROT_READ | PROT_WRITE,
-                       MAP_SHARED, dev->physical_device->local_fd, offset);
-      if (map == MAP_FAILED) {
-         kgsl_bo_finish(dev, bo);
-
-         return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
-                          "mmap failed (%s)", strerror(errno));
-      }
-
-      if (client_iova && (uint64_t)map != client_iova) {
-         kgsl_bo_finish(dev, bo);
-
-         return vk_errorf(dev, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS,
-                          "mmap could not map the given address");
-      }
-
-      bo->map = map;
-      bo->iova = (uint64_t)map;
-
-      /* Because we're using SVM, the CPU mapping and GPU mapping are the same
-       * and the CPU mapping must stay fixed for the lifetime of the BO.
-       */
-      bo->never_unmap = true;
+      VkResult result = kgsl_bo_user_map(dev, bo, client_iova);
+      if (result != VK_SUCCESS)
+         return result;
    }
 
    tu_dump_bo_init(dev, bo);
@@ -398,6 +408,124 @@ kgsl_bo_finish(struct tu_device *dev, struct tu_bo *bo)
 }
 
 static VkResult
+kgsl_sparse_vma_init(struct tu_device *dev,
+                     struct vk_object_base *base,
+                     struct tu_sparse_vma *out_vma,
+                     uint64_t *out_iova,
+                     enum tu_sparse_vma_flags flags,
+                     uint64_t size, uint64_t client_iova)
+{
+   /* Note: we cannot use kgsl_gpumem_alloc_id because it only has a 32-bit
+    * flags value. kgsl_gpuobj_alloc seems to be the only ioctl we can use.
+    */
+   struct kgsl_gpuobj_alloc req = {
+      .size = size,
+      .flags = KGSL_MEMFLAGS_VBO,
+      .va_len = 0, /* seems to be unused? */
+   };
+
+   if (flags & TU_SPARSE_VMA_REPLAYABLE)
+      req.flags |= KGSL_MEMFLAGS_USE_CPU_MAP;
+
+   if (!(flags & TU_SPARSE_VMA_MAP_ZERO))
+      req.flags |= KGSL_MEMFLAGS_VBO_NO_MAP_ZERO;
+
+   int ret;
+
+   ret = safe_ioctl(dev->physical_device->local_fd,
+                    IOCTL_KGSL_GPUOBJ_ALLOC, &req);
+   if (ret) {
+      return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                       "GPUOBJ_ALLOC failed (%s)", strerror(errno));
+   }
+
+   struct tu_bo *bo = tu_device_lookup_bo(dev, req.id);
+   assert(bo && bo->gem_handle == 0);
+
+   *bo = (struct tu_bo) {
+      .gem_handle = req.id,
+      .size = req.mmapsize,
+      .name = NULL,
+      .refcnt = 1,
+      .shared_fd = -1,
+      .base = base,
+   };
+
+   if (flags & TU_SPARSE_VMA_REPLAYABLE) {
+      VkResult result = kgsl_bo_user_map(dev, bo, client_iova);
+      if (result != VK_SUCCESS)
+         return result;
+   } else {
+      /* For some cursed reason, the ioctl doesn't return the GPU address so
+       * we have to query it.
+       */
+      struct kgsl_gpumem_get_info info = {
+         .id = req.id,
+      };
+
+      ret = safe_ioctl(dev->physical_device->local_fd,
+                       IOCTL_KGSL_GPUMEM_GET_INFO, &info);
+      if (ret) {
+         return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                          "GPUMEM_GET_INFO failed (%s)", strerror(errno));
+      }
+
+      bo->iova = info.gpuaddr;
+   }
+
+   out_vma->kgsl.virtual_bo = bo;
+   *out_iova = bo->iova;
+   return VK_SUCCESS;
+}
+
+static VkResult
+kgsl_sparse_vma_map(struct tu_device *dev,
+                    struct tu_sparse_vma *vma,
+                    struct tu_bo *bo, uint64_t bo_offset)
+{
+   struct kgsl_gpumem_bind_range range = {
+      .child_offset = bo_offset,
+      .target_offset = 0,
+      .length = vma->kgsl.virtual_bo->size,
+      .child_id = bo->gem_handle,
+      .op = KGSL_GPUMEM_RANGE_OP_BIND,
+   };
+
+   struct kgsl_gpumem_bind_ranges req = {
+      .ranges = (uint64_t)(uintptr_t)&range,
+      .ranges_nents = 1,
+      .ranges_size = sizeof(range),
+      .id = vma->kgsl.virtual_bo->gem_handle,
+      .flags = 0,
+   };
+
+   int ret;
+
+   ret = safe_ioctl(dev->physical_device->local_fd,
+                    IOCTL_KGSL_GPUMEM_BIND_RANGES, &req);
+   if (ret) {
+      return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                       "GPUMEM_BIND_RANGES failed (%s)", strerror(errno));
+   }
+
+   return VK_SUCCESS;
+}
+
+static void
+kgsl_sparse_vma_finish(struct tu_device *dev,
+                       struct tu_sparse_vma *vma)
+{
+   struct kgsl_gpuobj_free req = {
+      .id = vma->kgsl.virtual_bo->gem_handle
+   };
+
+   /* Tell sparse array that entry is free */
+   memset(vma->kgsl.virtual_bo, 0, sizeof(*vma->kgsl.virtual_bo));
+
+   safe_ioctl(dev->physical_device->local_fd, IOCTL_KGSL_GPUOBJ_FREE, &req);
+}
+
+static VkResult
 get_kgsl_prop(int fd, unsigned int type, void *value, size_t size)
 {
    struct kgsl_device_getproperty getprop = {
@@ -427,6 +555,26 @@ kgsl_is_memory_type_supported(int fd, uint32_t flags)
    struct kgsl_gpumem_free_id req_free = { .id = req_alloc.id };
 
    safe_ioctl(fd, IOCTL_KGSL_GPUMEM_FREE_ID, &req_free);
+
+   return true;
+}
+
+static bool
+kgsl_is_virtual_bo_supported(int fd)
+{
+   struct kgsl_gpuobj_alloc req_alloc = {
+      .size = 0x1000,
+      .flags = KGSL_MEMFLAGS_VBO,
+   };
+
+   int ret = safe_ioctl(fd, IOCTL_KGSL_GPUOBJ_ALLOC, &req_alloc);
+   if (ret) {
+      return false;
+   }
+
+   struct kgsl_gpuobj_free req_free = { .id = req_alloc.id };
+
+   safe_ioctl(fd, IOCTL_KGSL_GPUOBJ_FREE, &req_free);
 
    return true;
 }
@@ -1047,6 +1195,10 @@ const struct vk_sync_type vk_kgsl_sync_type = {
 
 struct tu_kgsl_queue_submit {
    struct util_dynarray commands;
+   struct util_dynarray ranges;
+   struct util_dynarray bind_cmds;
+   struct tu_sparse_vma *cur_vma;
+   unsigned cur_vma_range_start;
 };
 
 static void *
@@ -1064,6 +1216,8 @@ kgsl_submit_finish(struct tu_device *device,
       (struct tu_kgsl_queue_submit *)_submit;
 
    util_dynarray_fini(&submit->commands);
+   util_dynarray_fini(&submit->ranges);
+   util_dynarray_fini(&submit->bind_cmds);
    vk_free(&device->vk.alloc, submit);
 }
 
@@ -1085,6 +1239,76 @@ kgsl_submit_add_entries(struct tu_device *device, void *_submit,
          .flags = KGSL_CMDLIST_IB,
          .id = entries[i].bo->gem_handle,
       };
+   }
+}
+
+static void
+kgsl_submit_add_bind(struct tu_device *device,
+                     void *_submit,
+                     struct tu_sparse_vma *vma, uint64_t vma_offset,
+                     struct tu_bo *bo, uint64_t bo_offset,
+                     uint64_t size)
+{
+   struct tu_kgsl_queue_submit *submit =
+      (struct tu_kgsl_queue_submit *)_submit;
+
+   if (vma != submit->cur_vma) {
+      unsigned range_count =
+         util_dynarray_num_elements(&submit->ranges,
+                                    struct kgsl_gpumem_bind_range);
+      if (submit->cur_vma) {
+         struct kgsl_gpu_aux_command_bind *last_bind =
+            util_dynarray_top_ptr(&submit->bind_cmds,
+                                  struct kgsl_gpu_aux_command_bind);
+         last_bind->numranges = range_count - submit->cur_vma_range_start;
+      }
+
+      struct kgsl_gpu_aux_command_bind bind = {
+         .rangeslist = submit->ranges.size,
+         .numranges = 0,
+         .rangesize = sizeof(struct kgsl_gpumem_bind_range),
+         .target = vma->kgsl.virtual_bo->gem_handle,
+      };
+
+
+      util_dynarray_append(&submit->bind_cmds,
+                           struct kgsl_gpu_aux_command_bind, bind);
+
+      submit->cur_vma = vma;
+      submit->cur_vma_range_start = range_count;
+   }
+
+   struct kgsl_gpumem_bind_range range = {
+      .child_offset = bo_offset,
+      .target_offset = vma_offset,
+      .length = size,
+      .child_id = bo ? bo->gem_handle : 0,
+      .op = bo ? KGSL_GPUMEM_RANGE_OP_BIND : KGSL_GPUMEM_RANGE_OP_UNBIND,
+   };
+
+   util_dynarray_append(&submit->ranges, struct kgsl_gpumem_bind_range,
+                        range);
+}
+
+/* We don't know the actual CPU pointers until we've finished adding all the
+ * bind commands, so we put the offset from the base instead. We need to write
+ * the actual pointer after all the ranges are added. We also need to fill out
+ * of the size of the last command.
+ */
+static void
+kgsl_bind_finalize(struct tu_kgsl_queue_submit *submit)
+{
+   unsigned range_count =
+      util_dynarray_num_elements(&submit->ranges,
+                                 struct kgsl_gpumem_bind_range);
+   struct kgsl_gpu_aux_command_bind *last_bind =
+      util_dynarray_top_ptr(&submit->bind_cmds,
+                            struct kgsl_gpu_aux_command_bind);
+   last_bind->numranges = range_count - submit->cur_vma_range_start;
+
+   util_dynarray_foreach (&submit->bind_cmds,
+                          struct kgsl_gpu_aux_command_bind, bind) {
+      bind->rangeslist += (uint64_t)(uintptr_t)submit->ranges.data;
    }
 }
 
@@ -1164,6 +1388,9 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
 
    VkResult result = VK_SUCCESS;
 
+   if (submit->bind_cmds.size != 0)
+      kgsl_bind_finalize(submit);
+
    if (u_trace_submission_data) {
       mtx_lock(&queue->device->kgsl_profiling_mutex);
       tu_suballoc_bo_alloc(&u_trace_submission_data->kgsl_timestamp_bo,
@@ -1240,29 +1467,76 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
       UNREACHABLE("invalid syncobj state");
    }
 
-   struct kgsl_gpu_command req = {
-      .flags = KGSL_CMDBATCH_SUBMIT_IB_LIST,
-      .cmdlist = (uintptr_t) submit->commands.data,
-      .cmdsize = sizeof(struct kgsl_command_object),
-      .numcmds = util_dynarray_num_elements(&submit->commands,
-                                            struct kgsl_command_object),
-      .synclist = (uintptr_t) &sync,
-      .syncsize = sizeof(sync),
-      .numsyncs = has_sync != 0 ? 1 : 0,
-      .context_id = queue->msm_queue_id,
-   };
+   int ret;
+   uint32_t timestamp = 0;
+   uint64_t gpu_offset = 0;
 
-   if (obj_idx) {
-      req.flags |= KGSL_CMDBATCH_PROFILING;
-      req.objlist = (uintptr_t) objs;
-      req.objsize = sizeof(struct kgsl_command_object);
-      req.numobjs = obj_idx;
+   if (submit->bind_cmds.size == 0) {
+      struct kgsl_gpu_command req = {
+         .flags = KGSL_CMDBATCH_SUBMIT_IB_LIST,
+         .cmdlist = (uintptr_t) submit->commands.data,
+         .cmdsize = sizeof(struct kgsl_command_object),
+         .numcmds = util_dynarray_num_elements(&submit->commands,
+                                               struct kgsl_command_object),
+         .synclist = (uintptr_t) &sync,
+         .syncsize = sizeof(sync),
+         .numsyncs = has_sync != 0 ? 1 : 0,
+         .context_id = queue->msm_queue_id,
+      };
+
+      if (obj_idx) {
+         req.flags |= KGSL_CMDBATCH_PROFILING;
+         req.objlist = (uintptr_t) objs;
+         req.objsize = sizeof(struct kgsl_command_object);
+         req.numobjs = obj_idx;
+      }
+
+      ret = safe_ioctl(queue->device->physical_device->local_fd,
+                       IOCTL_KGSL_GPU_COMMAND, &req);
+
+      timestamp = req.timestamp;
+   } else {
+      /* kgsl doesn't support multiple bind commands at once */
+      uint32_t i = 0;
+      util_dynarray_foreach(&submit->bind_cmds,
+                            struct kgsl_gpu_aux_command_bind, bind) {
+         bool do_sync = has_sync && i == 0;
+
+         struct kgsl_gpu_aux_command_generic aux = {
+            .priv = (uintptr_t) bind,
+            .size = sizeof(*bind),
+            .type = KGSL_GPU_AUX_COMMAND_BIND,
+         };
+
+         uint32_t flags = KGSL_GPU_AUX_COMMAND_BIND;
+         if (do_sync)
+            flags |= KGSL_GPU_AUX_COMMAND_SYNC;
+
+         struct kgsl_gpu_aux_command req = {
+            .flags = flags,
+            .cmdlist = (uintptr_t) &aux,
+            .cmdsize = sizeof(aux),
+            .numcmds = 1,
+            .synclist = (uintptr_t) &sync,
+            .syncsize = sizeof(sync),
+            .numsyncs = do_sync ? 1 : 0,
+            .context_id = queue->msm_queue_id,
+         };
+         ret = safe_ioctl(queue->device->physical_device->local_fd,
+                          IOCTL_KGSL_GPU_AUX_COMMAND, &req);
+
+         if (ret) {
+            result = vk_device_set_lost(&queue->device->vk,
+                                        "bind submit failed: %s\n",
+                                        strerror(errno));
+            goto fail_submit;
+         }
+
+         timestamp = req.timestamp;
+         i++;
+      }
    }
 
-   int ret = safe_ioctl(queue->device->physical_device->local_fd,
-                        IOCTL_KGSL_GPU_COMMAND, &req);
-
-   uint64_t gpu_offset = 0;
 #if HAVE_PERFETTO
    if (profiling_buffer) {
       /* We need to wait for KGSL to queue the GPU command before we can read
@@ -1310,7 +1584,7 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
       goto fail_submit;
    }
 
-   p_atomic_set(&queue->fence, req.timestamp);
+   p_atomic_set(&queue->fence, timestamp);
 
    for (uint32_t i = 0; i < signal_count; i++) {
       struct kgsl_syncobj *signal_sync =
@@ -1320,7 +1594,7 @@ kgsl_queue_submit(struct tu_queue *queue, void *_submit,
       kgsl_syncobj_reset(signal_sync);
       signal_sync->state = KGSL_SYNCOBJ_STATE_TS;
       signal_sync->queue = queue;
-      signal_sync->timestamp = req.timestamp;
+      signal_sync->timestamp = timestamp;
    }
 
    if (u_trace_submission_data) {
@@ -1412,8 +1686,11 @@ static const struct tu_knl kgsl_knl_funcs = {
       .submit_create = kgsl_submit_create,
       .submit_finish = kgsl_submit_finish,
       .submit_add_entries = kgsl_submit_add_entries,
+      .submit_add_bind = kgsl_submit_add_bind,
       .queue_submit = kgsl_queue_submit,
       .queue_wait_fence = kgsl_queue_wait_fence,
+      .sparse_vma_init = kgsl_sparse_vma_init,
+      .sparse_vma_finish = kgsl_sparse_vma_finish,
 };
 
 static bool
@@ -1529,6 +1806,16 @@ tu_knl_kgsl_load(struct tu_instance *instance, int fd)
    device->has_cached_coherent_memory = kgsl_is_memory_type_supported(
       fd, KGSL_MEMFLAGS_IOCOHERENT |
              (KGSL_CACHEMODE_WRITEBACK << KGSL_CACHEMODE_SHIFT));
+
+   device->has_sparse = kgsl_is_virtual_bo_supported(fd);
+   device->has_sparse_prr = device->has_sparse;
+   get_kgsl_prop(fd, KGSL_PROP_GPU_VA64_SIZE, &device->va_size,
+                 sizeof(device->va_size));
+   /* We don't actually use the VMA, but set a fake offset so that it doesn't
+    * think we're trying to allocate 0 and assert.
+    */
+   device->va_start = 0x100000000;
+
 
    /* preemption is always supported on kgsl */
    device->has_preemption = true;
