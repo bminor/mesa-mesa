@@ -125,6 +125,7 @@ enum radeon_family
    CHIP_GFX1150,
    CHIP_GFX1151,
    CHIP_GFX1152,
+   CHIP_GFX1153,
    /* GFX12 (RDNA 4) */
    CHIP_GFX1200,
    CHIP_GFX1201,
