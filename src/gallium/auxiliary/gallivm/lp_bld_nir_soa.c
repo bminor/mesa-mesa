@@ -3246,12 +3246,22 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
    lp_exec_mask_fini(&bld.exec_mask);
 }
 
+void
+lp_build_nir_soa_prepasses(struct nir_shader *nir)
+{
+   NIR_PASS_V(nir, nir_convert_to_lcssa, true, true);
+   NIR_PASS_V(nir, nir_convert_from_ssa, true, false);
+   NIR_PASS_V(nir, nir_lower_locals_to_regs, 32);
+   NIR_PASS_V(nir, nir_remove_dead_derefs);
+   NIR_PASS_V(nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+}
+
 void lp_build_nir_soa(struct gallivm_state *gallivm,
                       struct nir_shader *shader,
                       const struct lp_build_tgsi_params *params,
                       LLVMValueRef (*outputs)[4])
 {
-   lp_build_nir_prepasses(shader);
+   lp_build_nir_soa_prepasses(shader);
    lp_build_nir_soa_func(gallivm, shader,
                          nir_shader_get_entrypoint(shader),
                          params, outputs);

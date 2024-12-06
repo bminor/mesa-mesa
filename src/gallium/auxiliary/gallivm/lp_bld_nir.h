@@ -326,7 +326,7 @@ struct lp_build_nir_soa_context
 };
 
 void
-lp_build_nir_prepasses(struct nir_shader *nir);
+lp_build_nir_soa_prepasses(struct nir_shader *nir);
 
 bool
 lp_build_nir_llvm(struct lp_build_nir_context *bld_base,

@@ -447,7 +447,7 @@ generate_compute(struct llvmpipe_context *lp,
    lp_build_name(thread_data_ptr, "thread_data");
    lp_build_name(io_ptr, "vertex_io");
 
-   lp_build_nir_prepasses(nir);
+   lp_build_nir_soa_prepasses(nir);
    struct hash_table *fns = _mesa_pointer_hash_table_create(NULL);
 
    sampler = lp_llvm_sampler_soa_create(lp_cs_variant_key_samplers(key),
