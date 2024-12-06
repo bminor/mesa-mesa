@@ -277,10 +277,11 @@ static bool gather_fs_data_pass(UNUSED struct nir_builder *b,
 
    unsigned component = nir_intrinsic_component(intr);
    unsigned chans = intr->def.num_components;
+   assert(component == 2 || chans == 1);
 
    pco_data *data = cb_data;
 
-   data->fs.uses.z |= (component + chans > 2);
+   data->fs.uses.z |= (component == 2);
    data->fs.uses.w |= (component + chans > 3);
 
    return false;
