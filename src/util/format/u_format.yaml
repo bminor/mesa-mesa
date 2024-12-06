@@ -1933,6 +1933,12 @@
   block: {width: 1, height: 1, depth: 1}
   channels: [UN8]
   swizzles: [X, Y, Z, W]
+- name: R8_G8B8_422_UNORM
+  layout: planar2
+  colorspace: RGB
+  block: {width: 1, height: 1, depth: 1}
+  channels: [UN8]
+  swizzles: [X, Y, Z, W]
 - name: R10_G10B10_420_UNORM
   layout: planar2
   colorspace: RGB
