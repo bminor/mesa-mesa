@@ -5374,6 +5374,13 @@ anv_is_compressed_format_emulated(const struct anv_physical_device *pdevice,
                                               format) != VK_FORMAT_UNDEFINED;
 }
 
+static inline bool
+anv_is_storage_format_emulated(VkFormat format)
+{
+   return format == VK_FORMAT_R64_SINT ||
+          format == VK_FORMAT_R64_UINT;
+}
+
 static inline struct isl_swizzle
 anv_swizzle_for_render(struct isl_swizzle swizzle)
 {
@@ -5996,6 +6003,7 @@ anv_image_ccs_op(struct anv_cmd_buffer *cmd_buffer,
 
 isl_surf_usage_flags_t
 anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
+                                VkFormat vk_format,
                                 VkImageCreateFlags vk_create_flags,
                                 VkImageUsageFlags vk_usage,
                                 isl_surf_usage_flags_t isl_extra_usage,

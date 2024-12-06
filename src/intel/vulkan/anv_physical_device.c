@@ -334,6 +334,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .EXT_shader_atomic_float               = true,
       .EXT_shader_atomic_float2              = true,
       .EXT_shader_demote_to_helper_invocation = true,
+      .EXT_shader_image_atomic_int64         = true,
       .EXT_shader_module_identifier          = true,
       .EXT_shader_replicated_composites      = true,
       .EXT_shader_stencil_export             = true,
@@ -907,6 +908,10 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_EXT_host_image_copy */
       .hostImageCopy = true,
+
+      /* VK_EXT_shader_image_atomic_int64 */
+      .shaderImageInt64Atomics = true,
+      .sparseImageInt64Atomics = false,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without

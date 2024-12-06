@@ -205,6 +205,7 @@ memory_range_merge(struct anv_image_memory_range *a,
 
 isl_surf_usage_flags_t
 anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
+                                VkFormat vk_format,
                                 VkImageCreateFlags vk_create_flags,
                                 VkImageUsageFlags vk_usage,
                                 isl_surf_usage_flags_t isl_extra_usage,
@@ -299,6 +300,11 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
 
    if (comp_flags & VK_IMAGE_COMPRESSION_DISABLED_EXT)
       isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
+
+   if (anv_is_storage_format_emulated(vk_format)) {
+      isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT |
+                   ISL_SURF_USAGE_SOFTWARE_DETILING;
+   }
 
    return isl_usage;
 }
@@ -1252,6 +1258,7 @@ add_all_surfaces_implicit_layout(
       VkImageUsageFlags vk_usage = vk_image_usage(&image->vk, aspect);
       isl_surf_usage_flags_t isl_usage =
          anv_image_choose_isl_surf_usage(device->physical,
+                                         image->vk.format,
                                          image->vk.create_flags, vk_usage,
                                          isl_extra_usage_flags, aspect,
                                          image->vk.compr_flags);
@@ -1857,8 +1864,8 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
             device->physical, image->emu_plane_format, 0, image->vk.tiling);
 
       isl_surf_usage_flags_t isl_usage = anv_image_choose_isl_surf_usage(
-         device->physical, image->vk.create_flags, image->vk.usage,
-         isl_extra_usage_flags, VK_IMAGE_ASPECT_COLOR_BIT,
+         device->physical, image->vk.format, image->vk.create_flags,
+         image->vk.usage, isl_extra_usage_flags, VK_IMAGE_ASPECT_COLOR_BIT,
          image->vk.compr_flags);
 
       r = add_primary_surface(device, image, plane, plane_format,

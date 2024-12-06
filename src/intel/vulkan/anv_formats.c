@@ -86,6 +86,19 @@
       .flags = __flags, \
    }
 
+#define fmtvbi(__vk_fmt, __hw_vbo_fmt, __hw_img_fmt) \
+   [VK_ENUM_OFFSET(__vk_fmt)] = { \
+      .planes = { \
+         { .isl_format = __hw_img_fmt, \
+           .vbo_format = __hw_vbo_fmt, \
+           .swizzle = RGBA, \
+           .aspect = VK_IMAGE_ASPECT_COLOR_BIT, \
+         }, \
+      }, \
+      .vk_format = __vk_fmt, \
+      .n_planes = 1, \
+   }
+
 #define fmt1(__vk_fmt, __hw_fmt) \
    swiz_fmt1(__vk_fmt, __hw_fmt, RGBA)
 
@@ -263,8 +276,8 @@ static const struct anv_format main_formats[] = {
    fmt1(VK_FORMAT_R32G32B32A32_UINT,                 ISL_FORMAT_R32G32B32A32_UINT),
    fmt1(VK_FORMAT_R32G32B32A32_SINT,                 ISL_FORMAT_R32G32B32A32_SINT),
    fmt1(VK_FORMAT_R32G32B32A32_SFLOAT,               ISL_FORMAT_R32G32B32A32_FLOAT),
-   fmtvb(VK_FORMAT_R64_UINT,                         ISL_FORMAT_R64_PASSTHRU),
-   fmtvb(VK_FORMAT_R64_SINT,                         ISL_FORMAT_R64_PASSTHRU),
+   fmtvbi(VK_FORMAT_R64_UINT,                        ISL_FORMAT_R64_PASSTHRU, ISL_FORMAT_R32G32_UINT),
+   fmtvbi(VK_FORMAT_R64_SINT,                        ISL_FORMAT_R64_PASSTHRU, ISL_FORMAT_R32G32_UINT),
    fmtvb(VK_FORMAT_R64_SFLOAT,                       ISL_FORMAT_R64_PASSTHRU),
    fmtvb(VK_FORMAT_R64G64_UINT,                      ISL_FORMAT_R64G64_PASSTHRU),
    fmtvb(VK_FORMAT_R64G64_SINT,                      ISL_FORMAT_R64G64_PASSTHRU),
@@ -614,6 +627,34 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
       return flags;
    }
 
+   if (anv_is_storage_format_emulated(vk_format)) {
+      /* Somehow the block shape is not right */
+      if (is_sparse)
+         return 0;
+
+      if (isl_mod_info) {
+         /* The emulation shader code doesn't work with any kind of
+          * compression or fast clear.
+          */
+         if (isl_mod_info->supports_render_compression ||
+             isl_mod_info->supports_media_compression ||
+             isl_mod_info->supports_clear_color)
+            return 0;
+
+         /* If it's not linear or the select tiling format for emulation we
+          * can't support it.
+          */
+         if (isl_mod_info->tiling != ISL_TILING_LINEAR ||
+             isl_mod_info->tiling != physical_device->isl_dev.shader_tiling)
+            return 0;
+      }
+
+      return VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
+             VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT |
+             VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
+             VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT;
+   }
+
    const VkImageAspectFlags aspects = vk_format_aspects(vk_format);
 
    if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
@@ -724,6 +765,9 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
    if (flags & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)
       flags |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
 
+   /* We only support single component 32bit formats for image atomics. We
+    * also emulate for some formats using software detiling & untyped atomics.
+    */
    if (base_isl_format == ISL_FORMAT_R32_SINT ||
        base_isl_format == ISL_FORMAT_R32_UINT ||
        base_isl_format == ISL_FORMAT_R32_FLOAT)
@@ -947,45 +991,54 @@ get_buffer_format_features2(const struct intel_device_info *devinfo,
    const enum isl_format vbo_format = anv_format->planes[0].vbo_format;
 
    if (img_format != ISL_FORMAT_UNSUPPORTED) {
-      if (isl_format_supports_sampling(devinfo, img_format) &&
-          !isl_format_is_compressed(img_format))
-         flags |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
+      if (anv_is_storage_format_emulated(vk_format)) {
+         /* Emulation through shader detiling does not allow
+          * STORAGE_(READ|WRITE)_WITHOUT_FORMAT_BIT
+          */
+         flags = VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT |
+                 VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT |
+                 VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
+      } else {
+         if (isl_format_supports_sampling(devinfo, img_format) &&
+             !isl_format_is_compressed(img_format))
+            flags |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
 
-      if (isl_is_storage_image_format(devinfo, img_format))
-         flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
+         if (isl_is_storage_image_format(devinfo, img_format))
+            flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
 
-      if (img_format == ISL_FORMAT_R32_SINT || img_format == ISL_FORMAT_R32_UINT)
-         flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
+         if (img_format == ISL_FORMAT_R32_SINT || img_format == ISL_FORMAT_R32_UINT)
+            flags |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
 
-      if (isl_format_supports_typed_reads(devinfo, img_format))
-         flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
-      if (isl_format_supports_typed_writes(devinfo, img_format))
-         flags |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
+         if (isl_format_supports_typed_reads(devinfo, img_format))
+            flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT;
+         if (isl_format_supports_typed_writes(devinfo, img_format))
+            flags |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
 
-      if (devinfo->has_ray_tracing) {
+         if (devinfo->has_ray_tracing) {
 #if ANV_SUPPORT_RT_GRL
-         switch (vk_format) {
-         case VK_FORMAT_R32G32_SFLOAT:
-         case VK_FORMAT_R32G32B32_SFLOAT:
-         case VK_FORMAT_R16G16_SFLOAT:
-         case VK_FORMAT_R16G16B16A16_SFLOAT:
-         case VK_FORMAT_R16G16_SNORM:
-         case VK_FORMAT_R16G16B16A16_SNORM:
-         case VK_FORMAT_R16G16B16A16_UNORM:
-         case VK_FORMAT_R16G16_UNORM:
-         case VK_FORMAT_R8G8B8A8_UNORM:
-         case VK_FORMAT_R8G8_UNORM:
-         case VK_FORMAT_R8G8B8A8_SNORM:
-         case VK_FORMAT_R8G8_SNORM:
-            flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
-         break;
-         default:
-            break;
-         }
+            switch (vk_format) {
+            case VK_FORMAT_R32G32_SFLOAT:
+            case VK_FORMAT_R32G32B32_SFLOAT:
+            case VK_FORMAT_R16G16_SFLOAT:
+            case VK_FORMAT_R16G16B16A16_SFLOAT:
+            case VK_FORMAT_R16G16_SNORM:
+            case VK_FORMAT_R16G16B16A16_SNORM:
+            case VK_FORMAT_R16G16B16A16_UNORM:
+            case VK_FORMAT_R16G16_UNORM:
+            case VK_FORMAT_R8G8B8A8_UNORM:
+            case VK_FORMAT_R8G8_UNORM:
+            case VK_FORMAT_R8G8B8A8_SNORM:
+            case VK_FORMAT_R8G8_SNORM:
+               flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
+               break;
+            default:
+               break;
+            }
 #else
-         if (vk_acceleration_struct_vtx_format_supported(vk_format))
-            flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
+            if (vk_acceleration_struct_vtx_format_supported(vk_format))
+               flags |= VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR;
 #endif
+         }
       }
    }
 
@@ -2028,6 +2081,7 @@ void anv_GetPhysicalDeviceSparseImageFormatProperties2(
 
       isl_surf_usage_flags_t isl_usage =
          anv_image_choose_isl_surf_usage(physical_device,
+                                         pFormatInfo->format,
                                          vk_create_flags, pFormatInfo->usage,
                                          0, aspect,
                                          VK_IMAGE_COMPRESSION_DEFAULT_EXT);
