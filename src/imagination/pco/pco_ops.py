@@ -341,6 +341,8 @@ O_DITRP_READ = hw_op('ditrp.read', [OM_EXEC_CND, OM_ITR_MODE, OM_SAT, OM_SCHED, 
 
 # Combination (> 1 instructions per group).
 O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_FMIN = hw_op('fmin', OM_ALU, 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
+O_FMAX = hw_op('fmax', OM_ALU, 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
 
 # Pseudo-ops (unmapped).
 O_NEG = pseudo_op('neg', OM_ALU, 1, 1)

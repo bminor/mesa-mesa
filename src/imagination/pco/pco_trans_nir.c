@@ -849,6 +849,14 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                         .pck_fmt = PCO_PCK_FMT_U32);
       break;
 
+   case nir_op_fmin:
+      instr = pco_fmin(&tctx->b, dest, src[0], src[1]);
+      break;
+
+   case nir_op_fmax:
+      instr = pco_fmax(&tctx->b, dest, src[0], src[1]);
+      break;
+
    case nir_op_pack_unorm_4x8:
       instr = pco_pck(&tctx->b,
                       dest,
@@ -865,6 +873,10 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
    case nir_op_vec8:
    case nir_op_vec16:
       instr = pco_trans_nir_vec(tctx, dest, num_srcs, src);
+      break;
+
+   case nir_op_mov:
+      instr = pco_mov(&tctx->b, dest, src[0]);
       break;
 
    default:
