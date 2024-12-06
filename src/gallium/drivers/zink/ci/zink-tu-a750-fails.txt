@@ -451,7 +451,6 @@ spec@ext_framebuffer_multisample@alpha-to-coverage-dual-src-blend 2,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-dual-src-blend 4,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 2,Fail
 spec@ext_framebuffer_multisample@alpha-to-coverage-no-draw-buffer-zero 4,Fail
-spec@ext_framebuffer_multisample@blit-mismatched-formats,Fail
 spec@ext_framebuffer_multisample@draw-buffers-alpha-to-coverage 2,Fail
 spec@ext_framebuffer_multisample@draw-buffers-alpha-to-coverage 4,Fail
 spec@ext_framebuffer_multisample@enable-flag,Fail

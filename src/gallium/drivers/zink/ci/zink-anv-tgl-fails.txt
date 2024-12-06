@@ -527,7 +527,6 @@ spec@egl_mesa_configless_context@basic,Fail
 
 spec@ext_external_objects@vk-image-overwrite@RGB 10 A2 UINT optimal: Failed to initialize OpenGL FBO/RBO,Fail
 
-spec@ext_framebuffer_multisample@blit-mismatched-formats,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 16 msaa,Fail
 spec@ext_framebuffer_multisample@enable-flag,Fail
 spec@ext_framebuffer_multisample@interpolation 16 centroid-deriv-disabled,Fail
