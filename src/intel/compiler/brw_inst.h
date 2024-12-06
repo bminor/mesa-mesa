@@ -28,8 +28,7 @@
  * get and set various fields.  This is the actual hardware format.
  */
 
-#ifndef BRW_INST_H
-#define BRW_INST_H
+#pragma once
 
 #include <assert.h>
 #include <stdint.h>
@@ -1430,6 +1429,4 @@ brw_inst_opcode(const struct brw_isa_info *isa,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

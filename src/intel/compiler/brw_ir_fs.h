@@ -22,8 +22,7 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef BRW_IR_FS_H
-#define BRW_IR_FS_H
+#pragma once
 
 #include "brw_ir.h"
 #include "brw_ir_allocator.h"
@@ -599,5 +598,3 @@ brw_fs_flag_mask(const brw_reg &r, unsigned sz)
       return 0;
    }
 }
-
-#endif

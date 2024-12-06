@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef INTEL_SHADER_ENUMS_H
-#define INTEL_SHADER_ENUMS_H
+#pragma once
 
 #include <stdint.h>
 
@@ -343,5 +342,3 @@ intel_fs_is_coarse(enum intel_sometimes shader_coarse_pixel_dispatch,
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-
-#endif /* INTEL_SHADER_ENUMS_H */

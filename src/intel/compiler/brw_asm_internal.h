@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef BRW_ASM_INTERNAL_H
-#define BRW_ASM_INTERNAL_H
+#pragma once
 
 /* Assembler internal state and definitions used by the brw_gram/brw_lex. */
 
@@ -102,6 +101,3 @@ struct target_label {
    char *name;
    int offset;
 };
-
-#endif /* BRW_ASM_H */
-

@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef BRW_DISASM_H
-#define BRW_DISASM_H
+#pragma once
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -42,5 +41,3 @@ const char *brw_lsc_data_size_to_string(unsigned s);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-
-#endif /* BRW_DISASM_H */

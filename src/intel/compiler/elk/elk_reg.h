@@ -39,8 +39,7 @@
  * the abstract elk_reg type into the actual hardware instruction encoding.
  */
 
-#ifndef ELK_REG_H
-#define ELK_REG_H
+#pragma once
 
 #include <stdbool.h>
 #include "util/compiler.h"
@@ -1359,6 +1358,4 @@ elk_type_is_float(enum elk_reg_type type)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

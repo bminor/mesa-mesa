@@ -22,8 +22,7 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef BRW_FS_BUILDER_H
-#define BRW_FS_BUILDER_H
+#pragma once
 
 #include "brw_ir_fs.h"
 #include "brw_eu.h"
@@ -897,5 +896,3 @@ offset(const brw_reg &reg, const brw::fs_builder &bld, unsigned delta)
 {
    return offset(reg, bld.dispatch_width(), delta);
 }
-
-#endif

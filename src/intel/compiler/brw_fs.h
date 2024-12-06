@@ -25,8 +25,7 @@
  *
  */
 
-#ifndef BRW_FS_H
-#define BRW_FS_H
+#pragma once
 
 #include "brw_cfg.h"
 #include "brw_compiler.h"
@@ -681,5 +680,3 @@ bool brw_fs_workaround_nomask_control_flow(fs_visitor &s);
 /* Helpers. */
 unsigned brw_fs_get_lowered_simd_width(const fs_visitor *shader,
                                        const fs_inst *inst);
-
-#endif /* BRW_FS_H */

@@ -29,9 +29,7 @@
   *   Keith Whitwell <keithw@vmware.com>
   */
 
-
-#ifndef BRW_EU_H
-#define BRW_EU_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -1606,6 +1604,4 @@ next_offset(const struct intel_device_info *devinfo, void *store, int offset)
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -39,8 +39,7 @@
  * the abstract brw_reg type into the actual hardware instruction encoding.
  */
 
-#ifndef BRW_REG_H
-#define BRW_REG_H
+#pragma once
 
 #include <stdbool.h>
 #include "util/compiler.h"
@@ -1511,5 +1510,3 @@ byte_stride(const brw_reg &reg)
 }
 
 #endif /* __cplusplus */
-
-#endif

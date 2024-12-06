@@ -21,8 +21,7 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef ELK_NIR_H
-#define ELK_NIR_H
+#pragma once
 
 #include "compiler/nir/nir.h"
 #include "elk_compiler.h"
@@ -278,5 +277,3 @@ void elk_nir_adjust_payload(nir_shader *shader);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* ELK_NIR_H */

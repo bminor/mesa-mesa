@@ -21,8 +21,7 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef BRW_COMPILER_H
-#define BRW_COMPILER_H
+#pragma once
 
 #include <stdio.h>
 #include "c11/threads.h"
@@ -1561,5 +1560,3 @@ enum brw_topology_id
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-
-#endif /* BRW_COMPILER_H */
