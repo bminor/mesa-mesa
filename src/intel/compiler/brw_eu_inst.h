@@ -1264,7 +1264,7 @@ typedef struct {
  * Bits indices range from 0..63.
  */
 static inline unsigned
-brw_compact_inst_bits(const brw_eu_compact_inst *inst, unsigned high, unsigned low)
+brw_eu_compact_inst_bits(const brw_eu_compact_inst *inst, unsigned high, unsigned low)
 {
    assume(high < 64);
    assume(high >= low);
@@ -1279,8 +1279,8 @@ brw_compact_inst_bits(const brw_eu_compact_inst *inst, unsigned high, unsigned l
  * Bits indices range from 0..63.
  */
 static inline void
-brw_compact_inst_set_bits(brw_eu_compact_inst *inst, unsigned high, unsigned low,
-                          uint64_t value)
+brw_eu_compact_inst_set_bits(brw_eu_compact_inst *inst, unsigned high, unsigned low,
+                             uint64_t value)
 {
    assume(high < 64);
    assume(high >= low);
@@ -1294,25 +1294,26 @@ brw_compact_inst_set_bits(brw_eu_compact_inst *inst, unsigned high, unsigned low
 
 #define FC(name, hi9, lo9, hi12, lo12, assertions)                 \
 static inline void                                                 \
-brw_compact_inst_set_##name(const struct                           \
-                            intel_device_info *devinfo,            \
-                            brw_eu_compact_inst *inst, unsigned v) \
+brw_eu_compact_inst_set_##name(const struct                        \
+                               intel_device_info *devinfo,         \
+                               brw_eu_compact_inst *inst,          \
+                               unsigned v)                         \
 {                                                                  \
    assert(assertions);                                             \
    if (devinfo->ver >= 12)                                         \
-      brw_compact_inst_set_bits(inst, hi12, lo12, v);              \
+      brw_eu_compact_inst_set_bits(inst, hi12, lo12, v);           \
    else                                                            \
-      brw_compact_inst_set_bits(inst, hi9, lo9, v);                \
+      brw_eu_compact_inst_set_bits(inst, hi9, lo9, v);             \
 }                                                                  \
 static inline unsigned                                             \
-brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
-                        const brw_eu_compact_inst *inst)           \
+brw_eu_compact_inst_##name(const struct intel_device_info *devinfo,\
+                           const brw_eu_compact_inst *inst)        \
 {                                                                  \
    assert(assertions);                                             \
    if (devinfo->ver >= 12)                                         \
-      return brw_compact_inst_bits(inst, hi12, lo12);              \
+      return brw_eu_compact_inst_bits(inst, hi12, lo12);           \
    else                                                            \
-      return brw_compact_inst_bits(inst, hi9, lo9);                \
+      return brw_eu_compact_inst_bits(inst, hi9, lo9);             \
 }
 
 /* A simple macro for fields which stay in the same place on all generations
@@ -1325,27 +1326,28 @@ brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
  */
 #define F20(name, hi9, lo9, hi12, lo12, hi20, lo20)                \
 static inline void                                                 \
-brw_compact_inst_set_##name(const struct                           \
-                            intel_device_info *devinfo,            \
-                            brw_eu_compact_inst *inst, unsigned v) \
+brw_eu_compact_inst_set_##name(const struct                        \
+                               intel_device_info *devinfo,         \
+                               brw_eu_compact_inst *inst,          \
+                               unsigned v)                         \
 {                                                                  \
    if (devinfo->ver >= 20)                                         \
-      brw_compact_inst_set_bits(inst, hi20, lo20, v);              \
+      brw_eu_compact_inst_set_bits(inst, hi20, lo20, v);           \
    else if (devinfo->ver >= 12)                                    \
-      brw_compact_inst_set_bits(inst, hi12, lo12, v);              \
+      brw_eu_compact_inst_set_bits(inst, hi12, lo12, v);           \
    else                                                            \
-      brw_compact_inst_set_bits(inst, hi9, lo9, v);                \
+      brw_eu_compact_inst_set_bits(inst, hi9, lo9, v);             \
 }                                                                  \
 static inline unsigned                                             \
-brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
-                        const brw_eu_compact_inst *inst)           \
+brw_eu_compact_inst_##name(const struct intel_device_info *devinfo,\
+                           const brw_eu_compact_inst *inst)        \
 {                                                                  \
    if (devinfo->ver >= 20)                                         \
-      return brw_compact_inst_bits(inst, hi20, lo20);              \
+      return brw_eu_compact_inst_bits(inst, hi20, lo20);           \
    else if (devinfo->ver >= 12)                                    \
-      return brw_compact_inst_bits(inst, hi12, lo12);              \
+      return brw_eu_compact_inst_bits(inst, hi12, lo12);           \
    else                                                            \
-      return brw_compact_inst_bits(inst, hi9, lo9);                \
+      return brw_eu_compact_inst_bits(inst, hi9, lo9);             \
 }
 
 /* A macro for fields which gained extra discontiguous bits in Gfx20
@@ -1354,32 +1356,32 @@ brw_compact_inst_##name(const struct intel_device_info *devinfo,   \
 #define FD20(name, hi9, lo9, hi12, lo12,                                \
              hi20, lo20, hi20ex, lo20ex)                                \
    static inline void                                                   \
-brw_compact_inst_set_##name(const struct                                \
-                            intel_device_info *devinfo,                 \
-                            brw_eu_compact_inst *inst, unsigned v)      \
+brw_eu_compact_inst_set_##name(const struct                             \
+                               intel_device_info *devinfo,              \
+                               brw_eu_compact_inst *inst, unsigned v)   \
 {                                                                       \
    if (devinfo->ver >= 20) {                                            \
       const unsigned k = hi20 - lo20 + 1;                               \
-      brw_compact_inst_set_bits(inst, hi20ex, lo20ex, v >> k);          \
-      brw_compact_inst_set_bits(inst, hi20, lo20, v & ((1u << k) - 1)); \
+      brw_eu_compact_inst_set_bits(inst, hi20ex, lo20ex, v >> k);       \
+      brw_eu_compact_inst_set_bits(inst, hi20, lo20, v & ((1u << k) - 1)); \
    } else if (devinfo->ver >= 12) {                                     \
-      brw_compact_inst_set_bits(inst, hi12, lo12, v);                   \
+      brw_eu_compact_inst_set_bits(inst, hi12, lo12, v);                \
    } else {                                                             \
-      brw_compact_inst_set_bits(inst, hi9, lo9, v);                     \
+      brw_eu_compact_inst_set_bits(inst, hi9, lo9, v);                  \
    }                                                                    \
 }                                                                       \
 static inline unsigned                                                  \
-brw_compact_inst_##name(const struct intel_device_info *devinfo,        \
-                        const brw_eu_compact_inst *inst)                \
+brw_eu_compact_inst_##name(const struct intel_device_info *devinfo,     \
+                           const brw_eu_compact_inst *inst)             \
 {                                                                       \
    if (devinfo->ver >= 20) {                                            \
       const unsigned k = hi20 - lo20 + 1;                               \
-      return (brw_compact_inst_bits(inst, hi20ex, lo20ex) << k |        \
-              brw_compact_inst_bits(inst, hi20, lo20));                 \
+      return (brw_eu_compact_inst_bits(inst, hi20ex, lo20ex) << k |     \
+              brw_eu_compact_inst_bits(inst, hi20, lo20));              \
    } else if (devinfo->ver >= 12) {                                     \
-      return brw_compact_inst_bits(inst, hi12, lo12);                   \
+      return brw_eu_compact_inst_bits(inst, hi12, lo12);                \
    } else {                                                             \
-      return brw_compact_inst_bits(inst, hi9, lo9);                     \
+      return brw_eu_compact_inst_bits(inst, hi9, lo9);                  \
    }                                                                    \
 }
 
@@ -1399,14 +1401,14 @@ F(debug_control,     /* 9+ */  7,  7, /* 12+ */  7,  7)
 F(hw_opcode,         /* 9+ */  6,  0, /* 12+ */  6,  0) /* Same location as brw_eu_inst */
 
 static inline unsigned
-brw_compact_inst_imm(const struct intel_device_info *devinfo,
-                     const brw_eu_compact_inst *inst)
+brw_eu_compact_inst_imm(const struct intel_device_info *devinfo,
+                        const brw_eu_compact_inst *inst)
 {
    if (devinfo->ver >= 12) {
-      return brw_compact_inst_bits(inst, 63, 52);
+      return brw_eu_compact_inst_bits(inst, 63, 52);
    } else {
-      return (brw_compact_inst_bits(inst, 39, 35) << 8) |
-             (brw_compact_inst_bits(inst, 63, 56));
+      return (brw_eu_compact_inst_bits(inst, 39, 35) << 8) |
+             (brw_eu_compact_inst_bits(inst, 63, 56));
    }
 }
 

@@ -962,7 +962,7 @@ set_control_index(const struct compaction_state *c,
 
    for (int i = 0; i < 32; i++) {
       if (c->control_index_table[i] == uncompacted) {
-         brw_compact_inst_set_control_index(devinfo, dst, i);
+         brw_eu_compact_inst_set_control_index(devinfo, dst, i);
 	 return true;
       }
    }
@@ -1002,7 +1002,7 @@ set_datatype_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
 
    for (int i = 0; i < 32; i++) {
       if (c->datatype_table[i] == uncompacted) {
-         brw_compact_inst_set_datatype_index(devinfo, dst, i);
+         brw_eu_compact_inst_set_datatype_index(devinfo, dst, i);
 	 return true;
       }
    }
@@ -1040,7 +1040,7 @@ set_subreg_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
 
    for (int i = 0; i < table_len; i++) {
       if (c->subreg_table[i] == uncompacted) {
-         brw_compact_inst_set_subreg_index(devinfo, dst, i);
+         brw_eu_compact_inst_set_subreg_index(devinfo, dst, i);
 	 return true;
       }
    }
@@ -1073,7 +1073,7 @@ set_src0_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
 
    for (int i = 0; i < table_len; i++) {
       if (c->src0_index_table[i] == uncompacted) {
-         brw_compact_inst_set_src0_index(devinfo, dst, i);
+         brw_eu_compact_inst_set_src0_index(devinfo, dst, i);
 	 return true;
       }
    }
@@ -1089,10 +1089,10 @@ set_src1_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
    if (is_immediate) {
       if (devinfo->ver >= 12) {
          /* src1 index takes the low 4 bits of the 12-bit compacted value */
-         brw_compact_inst_set_src1_index(devinfo, dst, imm & 0xf);
+         brw_eu_compact_inst_set_src1_index(devinfo, dst, imm & 0xf);
       } else {
          /* src1 index takes the high 5 bits of the 13-bit compacted value */
-         brw_compact_inst_set_src1_index(devinfo, dst, imm >> 8);
+         brw_eu_compact_inst_set_src1_index(devinfo, dst, imm >> 8);
       }
       return true;
    } else {
@@ -1121,7 +1121,7 @@ set_src1_index(const struct compaction_state *c, brw_eu_compact_inst *dst,
 
       for (int i = 0; i < table_len; i++) {
          if (c->src1_index_table[i] == uncompacted) {
-            brw_compact_inst_set_src1_index(devinfo, dst, i);
+            brw_eu_compact_inst_set_src1_index(devinfo, dst, i);
             return true;
          }
       }
@@ -1165,7 +1165,7 @@ set_3src_control_index(const struct intel_device_info *devinfo,
                                       ARRAY_SIZE(xe2_3src_control_index_table);
       for (unsigned i = 0; i < size; i++) {
          if (table[i] == uncompacted) {
-            brw_compact_inst_set_3src_control_index(devinfo, dst, i);
+            brw_eu_compact_inst_set_3src_control_index(devinfo, dst, i);
             return true;
          }
       }
@@ -1192,7 +1192,7 @@ set_3src_control_index(const struct intel_device_info *devinfo,
 
       for (unsigned i = 0; i < ARRAY_SIZE(xehp_3src_control_index_table); i++) {
          if (xehp_3src_control_index_table[i] == uncompacted) {
-            brw_compact_inst_set_3src_control_index(devinfo, dst, i);
+            brw_eu_compact_inst_set_3src_control_index(devinfo, dst, i);
             return true;
          }
       }
@@ -1219,7 +1219,7 @@ set_3src_control_index(const struct intel_device_info *devinfo,
 
       for (unsigned i = 0; i < ARRAY_SIZE(gfx12_3src_control_index_table); i++) {
          if (gfx12_3src_control_index_table[i] == uncompacted) {
-            brw_compact_inst_set_3src_control_index(devinfo, dst, i);
+            brw_eu_compact_inst_set_3src_control_index(devinfo, dst, i);
             return true;
          }
       }
@@ -1231,7 +1231,7 @@ set_3src_control_index(const struct intel_device_info *devinfo,
 
       for (unsigned i = 0; i < ARRAY_SIZE(gfx8_3src_control_index_table); i++) {
          if (gfx8_3src_control_index_table[i] == uncompacted) {
-            brw_compact_inst_set_3src_control_index(devinfo, dst, i);
+            brw_eu_compact_inst_set_3src_control_index(devinfo, dst, i);
             return true;
          }
       }
@@ -1279,7 +1279,7 @@ set_3src_source_index(const struct intel_device_info *devinfo,
 
       for (unsigned i = 0; i < three_src_source_index_table_len; i++) {
          if (three_src_source_index_table[i] == uncompacted) {
-            brw_compact_inst_set_3src_source_index(devinfo, dst, i);
+            brw_eu_compact_inst_set_3src_source_index(devinfo, dst, i);
             return true;
          }
       }
@@ -1296,7 +1296,7 @@ set_3src_source_index(const struct intel_device_info *devinfo,
 
       for (unsigned i = 0; i < ARRAY_SIZE(gfx8_3src_source_index_table); i++) {
          if (gfx8_3src_source_index_table[i] == uncompacted) {
-            brw_compact_inst_set_3src_source_index(devinfo, dst, i);
+            brw_eu_compact_inst_set_3src_source_index(devinfo, dst, i);
             return true;
          }
       }
@@ -1325,7 +1325,7 @@ set_3src_subreg_index(const struct intel_device_info *devinfo,
 
    for (unsigned i = 0; i < len; i++) {
       if (table[i] == uncompacted) {
-         brw_compact_inst_set_3src_subreg_index(devinfo, dst, i);
+         brw_eu_compact_inst_set_3src_subreg_index(devinfo, dst, i);
 	 return true;
       }
    }
@@ -1398,9 +1398,9 @@ brw_try_compact_3src_instruction(const struct brw_isa_info *isa,
       return false;
 
 #define compact(field) \
-   brw_compact_inst_set_3src_##field(devinfo, dst, brw_eu_inst_3src_##field(devinfo, src))
+   brw_eu_compact_inst_set_3src_##field(devinfo, dst, brw_eu_inst_3src_##field(devinfo, src))
 #define compact_a16(field) \
-   brw_compact_inst_set_3src_##field(devinfo, dst, brw_eu_inst_3src_a16_##field(devinfo, src))
+   brw_eu_compact_inst_set_3src_##field(devinfo, dst, brw_eu_inst_3src_a16_##field(devinfo, src))
 
    compact(hw_opcode);
 
@@ -1434,7 +1434,7 @@ brw_try_compact_3src_instruction(const struct brw_isa_info *isa,
       compact_a16(src1_subreg_nr);
       compact_a16(src2_subreg_nr);
    }
-   brw_compact_inst_set_3src_cmpt_control(devinfo, dst, true);
+   brw_eu_compact_inst_set_3src_cmpt_control(devinfo, dst, true);
 
 #undef compact
 #undef compact_a16
@@ -1733,9 +1733,9 @@ try_compact_instruction(const struct compaction_state *c,
    memset(&temp, 0, sizeof(temp));
 
 #define compact(field) \
-   brw_compact_inst_set_##field(devinfo, &temp, brw_eu_inst_##field(devinfo, src))
+   brw_eu_compact_inst_set_##field(devinfo, &temp, brw_eu_inst_##field(devinfo, src))
 #define compact_reg(field) \
-   brw_compact_inst_set_##field##_reg_nr(devinfo, &temp, \
+   brw_eu_compact_inst_set_##field##_reg_nr(devinfo, &temp, \
                                        brw_eu_inst_##field##_da_reg_nr(devinfo, src))
 
    compact(hw_opcode);
@@ -1759,7 +1759,7 @@ try_compact_instruction(const struct compaction_state *c,
 
       if (is_immediate) {
          /* src1 reg takes the high 8 bits (of the 12-bit compacted value) */
-         brw_compact_inst_set_src1_reg_nr(devinfo, &temp, compacted_imm >> 4);
+         brw_eu_compact_inst_set_src1_reg_nr(devinfo, &temp, compacted_imm >> 4);
       } else {
          compact_reg(src1);
       }
@@ -1773,12 +1773,12 @@ try_compact_instruction(const struct compaction_state *c,
 
       if (is_immediate) {
          /* src1 reg takes the low 8 bits (of the 13-bit compacted value) */
-         brw_compact_inst_set_src1_reg_nr(devinfo, &temp, compacted_imm & 0xff);
+         brw_eu_compact_inst_set_src1_reg_nr(devinfo, &temp, compacted_imm & 0xff);
       } else {
          compact_reg(src1);
       }
    }
-   brw_compact_inst_set_cmpt_control(devinfo, &temp, true);
+   brw_eu_compact_inst_set_cmpt_control(devinfo, &temp, true);
 
 #undef compact
 #undef compact_reg
@@ -1803,7 +1803,7 @@ set_uncompacted_control(const struct compaction_state *c, brw_eu_inst *dst,
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint32_t uncompacted =
-      c->control_index_table[brw_compact_inst_control_index(devinfo, src)];
+      c->control_index_table[brw_eu_compact_inst_control_index(devinfo, src)];
 
    if (devinfo->ver >= 20) {
       brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 14) & 0xf);
@@ -1841,7 +1841,7 @@ set_uncompacted_datatype(const struct compaction_state *c, brw_eu_inst *dst,
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint32_t uncompacted =
-      c->datatype_table[brw_compact_inst_datatype_index(devinfo, src)];
+      c->datatype_table[brw_eu_compact_inst_datatype_index(devinfo, src)];
 
    if (devinfo->ver >= 12) {
       brw_eu_inst_set_bits(dst, 98, 98, (uncompacted >> 19));
@@ -1867,7 +1867,7 @@ set_uncompacted_subreg(const struct compaction_state *c, brw_eu_inst *dst,
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint16_t uncompacted =
-      c->subreg_table[brw_compact_inst_subreg_index(devinfo, src)];
+      c->subreg_table[brw_eu_compact_inst_subreg_index(devinfo, src)];
 
    if (devinfo->ver >= 20) {
       brw_eu_inst_set_bits(dst, 33, 33, (uncompacted >> 0) & 0x1);
@@ -1890,7 +1890,7 @@ set_uncompacted_src0(const struct compaction_state *c, brw_eu_inst *dst,
                      brw_eu_compact_inst *src)
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
-   uint32_t compacted = brw_compact_inst_src0_index(devinfo, src);
+   uint32_t compacted = brw_eu_compact_inst_src0_index(devinfo, src);
    uint16_t uncompacted = c->src0_index_table[compacted];
 
    if (devinfo->ver >= 12) {
@@ -1912,7 +1912,7 @@ set_uncompacted_src1(const struct compaction_state *c, brw_eu_inst *dst,
 {
    const struct intel_device_info *devinfo = c->isa->devinfo;
    uint16_t uncompacted =
-      c->src1_index_table[brw_compact_inst_src1_index(devinfo, src)];
+      c->src1_index_table[brw_eu_compact_inst_src1_index(devinfo, src)];
 
    if (devinfo->ver >= 20) {
       brw_eu_inst_set_bits(dst, 121, 120, (uncompacted >> 14) & 0x3);
@@ -1940,7 +1940,7 @@ set_uncompacted_3src_control_index(const struct compaction_state *c,
    const struct intel_device_info *devinfo = c->isa->devinfo;
 
    if (devinfo->ver >= 20) {
-      uint64_t compacted = brw_compact_inst_3src_control_index(devinfo, src);
+      uint64_t compacted = brw_eu_compact_inst_3src_control_index(devinfo, src);
       uint64_t uncompacted = is_dpas ? xe2_3src_dpas_control_index_table[compacted] :
                                        xe2_3src_control_index_table[compacted];
 
@@ -1962,7 +1962,7 @@ set_uncompacted_3src_control_index(const struct compaction_state *c,
       brw_eu_inst_set_bits(dst, 20, 18, (uncompacted >>  0) & 0x7);
 
    } else if (devinfo->verx10 >= 125) {
-      uint64_t compacted = brw_compact_inst_3src_control_index(devinfo, src);
+      uint64_t compacted = brw_eu_compact_inst_3src_control_index(devinfo, src);
       uint64_t uncompacted = xehp_3src_control_index_table[compacted];
 
       brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 33));
@@ -1985,7 +1985,7 @@ set_uncompacted_3src_control_index(const struct compaction_state *c,
       brw_eu_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
 
    } else if (devinfo->ver >= 12) {
-      uint64_t compacted = brw_compact_inst_3src_control_index(devinfo, src);
+      uint64_t compacted = brw_eu_compact_inst_3src_control_index(devinfo, src);
       uint64_t uncompacted = gfx12_3src_control_index_table[compacted];
 
       brw_eu_inst_set_bits(dst, 95, 92, (uncompacted >> 32));
@@ -2007,7 +2007,7 @@ set_uncompacted_3src_control_index(const struct compaction_state *c,
       brw_eu_inst_set_bits(dst, 21, 19, (uncompacted >>  3) & 0x7);
       brw_eu_inst_set_bits(dst, 18, 16, (uncompacted >>  0) & 0x7);
    } else {
-      uint32_t compacted = brw_compact_inst_3src_control_index(devinfo, src);
+      uint32_t compacted = brw_eu_compact_inst_3src_control_index(devinfo, src);
       uint32_t uncompacted = gfx8_3src_control_index_table[compacted];
 
       brw_eu_inst_set_bits(dst, 34, 32, (uncompacted >> 21) & 0x7);
@@ -2022,7 +2022,7 @@ set_uncompacted_3src_source_index(const struct intel_device_info *devinfo,
                                   brw_eu_inst *dst, brw_eu_compact_inst *src,
                                   bool is_dpas)
 {
-   uint32_t compacted = brw_compact_inst_3src_source_index(devinfo, src);
+   uint32_t compacted = brw_eu_compact_inst_3src_source_index(devinfo, src);
 
    if (devinfo->ver >= 12) {
       const uint32_t *three_src_source_index_table =
@@ -2068,7 +2068,7 @@ set_uncompacted_3src_subreg_index(const struct intel_device_info *devinfo,
 {
    assert(devinfo->ver >= 12);
 
-   uint32_t compacted = brw_compact_inst_3src_subreg_index(devinfo, src);
+   uint32_t compacted = brw_eu_compact_inst_3src_subreg_index(devinfo, src);
    uint32_t uncompacted = (devinfo->ver >= 20 ? xe2_3src_subreg_table[compacted]:
                            gfx12_3src_subreg_table[compacted]);
 
@@ -2085,9 +2085,9 @@ brw_uncompact_3src_instruction(const struct compaction_state *c,
    const struct intel_device_info *devinfo = c->isa->devinfo;
 
 #define uncompact(field) \
-   brw_eu_inst_set_3src_##field(devinfo, dst, brw_compact_inst_3src_##field(devinfo, src))
+   brw_eu_inst_set_3src_##field(devinfo, dst, brw_eu_compact_inst_3src_##field(devinfo, src))
 #define uncompact_a16(field) \
-   brw_eu_inst_set_3src_a16_##field(devinfo, dst, brw_compact_inst_3src_##field(devinfo, src))
+   brw_eu_inst_set_3src_a16_##field(devinfo, dst, brw_eu_compact_inst_3src_##field(devinfo, src))
 
    uncompact(hw_opcode);
 
@@ -2133,7 +2133,7 @@ uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
    memset(dst, 0, sizeof(*dst));
 
    const enum opcode opcode =
-      brw_opcode_decode(c->isa, brw_compact_inst_3src_hw_opcode(devinfo, src));
+      brw_opcode_decode(c->isa, brw_eu_compact_inst_3src_hw_opcode(devinfo, src));
    if (is_3src(c->isa, opcode)) {
       const bool is_dpas = opcode == BRW_OPCODE_DPAS;
       brw_uncompact_3src_instruction(c, dst, src, is_dpas);
@@ -2141,10 +2141,10 @@ uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
    }
 
 #define uncompact(field) \
-   brw_eu_inst_set_##field(devinfo, dst, brw_compact_inst_##field(devinfo, src))
+   brw_eu_inst_set_##field(devinfo, dst, brw_eu_compact_inst_##field(devinfo, src))
 #define uncompact_reg(field) \
    brw_eu_inst_set_##field##_da_reg_nr(devinfo, dst, \
-                                    brw_compact_inst_##field##_reg_nr(devinfo, src))
+                                    brw_eu_compact_inst_##field##_reg_nr(devinfo, src))
 
    uncompact(hw_opcode);
    uncompact(debug_control);
@@ -2157,7 +2157,7 @@ uncompact_instruction(const struct compaction_state *c, brw_eu_inst *dst,
    enum brw_reg_type type;
    if (has_immediate(devinfo, dst, &type)) {
       unsigned imm = uncompact_immediate(devinfo, type,
-                                         brw_compact_inst_imm(devinfo, src));
+                                         brw_eu_compact_inst_imm(devinfo, src));
       brw_eu_inst_set_imm_ud(devinfo, dst, imm);
    } else {
       set_uncompacted_src1(c, dst, src);
@@ -2469,9 +2469,9 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
    if (p->next_insn_offset & sizeof(brw_eu_compact_inst)) {
       brw_eu_compact_inst *align = store + offset;
       memset(align, 0, sizeof(*align));
-      brw_compact_inst_set_hw_opcode(
+      brw_eu_compact_inst_set_hw_opcode(
          devinfo, align, brw_opcode_encode(p->isa, BRW_OPCODE_NOP));
-      brw_compact_inst_set_cmpt_control(devinfo, align, true);
+      brw_eu_compact_inst_set_cmpt_control(devinfo, align, true);
       p->next_insn_offset += sizeof(brw_eu_compact_inst);
    }
    p->nr_insn = p->next_insn_offset / sizeof(brw_eu_inst);
