@@ -1281,6 +1281,13 @@ system_value("printf_buffer_address", 1, bit_sizes=[32,64])
 # single output buffer, it needs each shader to have its own base identifier
 # from which each printf is indexed.
 system_value("printf_base_identifier", 1, bit_sizes=[32])
+# Abort the program, triggering device fault. The invoking thread halts
+# immediately. Other threads eventually terminate.
+#
+# This does not take a payload, payloads should be specified with a preceding
+# printf. After lowering, the intrinsic will set an aborted? bit in the printf
+# buffer. This avoids a separate abort buffer.
+intrinsic("printf_abort")
 
 # Mesh shading MultiView intrinsics
 system_value("mesh_view_count", 1)
