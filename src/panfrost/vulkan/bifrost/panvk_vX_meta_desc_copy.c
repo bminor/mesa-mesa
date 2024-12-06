@@ -35,17 +35,46 @@ struct pan_nir_desc_copy_info {
 #define get_input_field(b, name)                                               \
    nir_load_push_constant(                                                     \
       b, 1, sizeof(((struct pan_nir_desc_copy_info *)0)->name) * 8,            \
-      nir_imm_int(b, 0),                                                       \
-      .base = offsetof(struct pan_nir_desc_copy_info, name),                   \
-      .range = sizeof(((struct pan_nir_desc_copy_info *)0)->name))
+      nir_imm_int(b, offsetof(struct pan_nir_desc_copy_info, name)))
+
+static nir_def *
+get_array_entry(nir_builder *b, unsigned array_offset, unsigned array_size,
+                unsigned array_stride, nir_def *idx)
+{
+   assert(array_size > 0);
+   assert(array_stride == 4 || array_stride == 8);
+
+   STACK_ARRAY(nir_def *, lut, array_size);
+
+   /* First we populate a lookup table covering the whole array. */
+   for (unsigned i = 0; i < array_size; i++) {
+      lut[i] = nir_load_push_constant(
+         b, 1, array_stride * 8,
+         nir_imm_int(b, (i * array_stride) + array_offset));
+   }
+
+   /* Then we test each bit in the index starting from the MSB of the biggest
+    * valid index in the array and select the entry accordingly. */
+   for (unsigned lut_stride = BITFIELD_BIT(util_last_bit(array_size - 1) - 1);
+        lut_stride > 0; lut_stride >>= 1) {
+      nir_def *bit_is_set = nir_i2b(b, nir_iand_imm(b, idx, lut_stride));
+
+      for (unsigned i = 0; i < lut_stride && i + lut_stride < array_size; i++)
+         lut[i] = nir_bcsel(b, bit_is_set, lut[i + lut_stride], lut[i]);
+   }
+
+   nir_def *result = lut[0];
+
+   STACK_ARRAY_FINISH(lut);
+
+   return result;
+}
 
 #define get_input_array_slot(b, name, index)                                   \
-   nir_load_push_constant(                                                     \
-      b, 1, sizeof(((struct pan_nir_desc_copy_info *)0)->name[0]) * 8,         \
-      nir_imul_imm(b, index,                                                   \
-                   sizeof(((struct pan_nir_desc_copy_info *)0)->name[0])),     \
-      .base = offsetof(struct pan_nir_desc_copy_info, name),                   \
-      .range = sizeof(((struct pan_nir_desc_copy_info *)0)->name))
+   get_array_entry(b, offsetof(struct pan_nir_desc_copy_info, name),           \
+                   ARRAY_SIZE(((struct pan_nir_desc_copy_info *)0)->name),     \
+                   sizeof(((struct pan_nir_desc_copy_info *)0)->name[0]),      \
+                   index)
 
 static void
 extract_desc_info_from_handle(nir_builder *b, nir_def *handle, nir_def **table,
