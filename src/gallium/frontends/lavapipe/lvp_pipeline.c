@@ -1469,7 +1469,8 @@ lvp_GetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executi
                                              VkExecutionGraphPipelineScratchSizeAMDX *pSizeInfo)
 {
    VK_FROM_HANDLE(lvp_pipeline, pipeline, executionGraph);
-   pSizeInfo->size = MAX2(pipeline->exec_graph.scratch_size * 32, 16);
+   pSizeInfo->minSize = MAX2(pipeline->exec_graph.scratch_size * 32, 16);
+   pSizeInfo->maxSize = pSizeInfo->minSize;
    return VK_SUCCESS;
 }
 
