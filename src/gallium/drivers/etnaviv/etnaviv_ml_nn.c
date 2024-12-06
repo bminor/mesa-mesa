@@ -677,7 +677,7 @@ etna_ml_lower_fully_connected(struct etna_ml_subgraph *subgraph,
    operation->input_width = poperation->input_tensors[0]->dims[1];
    operation->input_height = 1;
    operation->input_channels = 1;
-   operation->input_zero_point = poperation->input_tensors[0]->zero_point;
+   operation->input_zero_point = etna_tensor_zero_point(poperation->input_tensors[0]);
    operation->input_scale = poperation->input_tensors[0]->scale;
    operation->input_tensor_sizes[0] = operation->input_width *
                                       operation->input_height *
@@ -687,7 +687,7 @@ etna_ml_lower_fully_connected(struct etna_ml_subgraph *subgraph,
    operation->output_width = 1;
    operation->output_height = 1;
    operation->output_channels = poperation->output_tensors[0]->dims[1];
-   operation->output_zero_point = poperation->output_tensors[0]->zero_point;
+   operation->output_zero_point = etna_tensor_zero_point(poperation->output_tensors[0]);
    operation->output_scale = poperation->output_tensors[0]->scale;
    operation->output_tensor_sizes[0] = operation->output_width *
                                       operation->output_height *
